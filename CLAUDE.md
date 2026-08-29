@@ -20,6 +20,7 @@ trabaje en este repositorio. Léelo entero al empezar a trabajar.
 | `docs/PRD.md` | Qué construimos, por qué, y el alcance de la Fase 1 | Entero, al empezar cualquier sesión |
 | `docs/ROADMAP.md` | En qué orden lo construimos (fases e hitos) | Entero, al empezar cualquier sesión |
 | `docs/PLAN-H1-H2.md` | Plan detallado de los hitos activos (se sustituye cuando avanzamos de hito) | Entero, al empezar cualquier sesión |
+| `docs/DECISIONES.md` | Aclaraciones y reglas nuevas surgidas después de consolidar la Especificación Maestra. **Manda sobre lo que contradiga** a la Especificación Maestra, igual que ella manda sobre documentos anteriores | Entero, al empezar cualquier sesión |
 | `docs/ESPECIFICACION-MAESTRA.md` | Especificación funcional completa del producto (180 secciones) | **NUNCA entero.** Solo la sección concreta a la que te remita el PRD o el ROADMAP. Es un documento muy largo; leerlo completo desperdicia contexto sin necesidad. |
 
 Cuando el PRD diga algo como "ver Especificación Maestra §44", ve directamente a esa

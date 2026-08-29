@@ -59,6 +59,10 @@ Cuando este documento contradiga textos, mockups o conversaciones anteriores, pr
 
 Este documento define el producto completo conocido, no la primera versión. La división por versiones se realizará después. Los apartados marcados como **Pendiente deliberadamente** no deben completarse inventando reglas durante el desarrollo.
 
+Las aclaraciones, correcciones y reglas nuevas que vayan surgiendo después de esta
+consolidación se registran en `docs/DECISIONES.md`, que manda sobre lo que contradiga a
+este documento.
+
 ---
 
 # PARTE I — IDENTIDAD, VISIÓN Y ALCANCE
