@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { Logo } from "@/components/Logo";
 import { signIn, type AuthFormState } from "../actions";
+import styles from "../auth.module.css";
 
 const initialState: AuthFormState = { error: null };
 
@@ -11,27 +13,52 @@ export default function LoginPage() {
 
   return (
     <form action={formAction}>
-      <h1>Entrar en Cuotly</h1>
+      <Logo />
 
-      <label htmlFor="email">Correo electrónico</label>
-      <input id="email" name="email" type="email" autoComplete="email" required />
+      <h1 className={styles.title}>Bienvenido de nuevo</h1>
+      <p className={styles.subtitle}>
+        Entra para consultar y actualizar los mantenimientos.
+      </p>
 
-      <label htmlFor="password">Contraseña</label>
-      <input
-        id="password"
-        name="password"
-        type="password"
-        autoComplete="current-password"
-        required
-      />
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="email">
+          Correo electrónico
+        </label>
+        <input
+          className={styles.input}
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+        />
+      </div>
 
-      {state.error ? <p role="alert">{state.error}</p> : null}
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor="password">
+          Contraseña
+        </label>
+        <input
+          className={styles.input}
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
+      </div>
 
-      <button type="submit" disabled={pending}>
-        {pending ? "Entrando…" : "Entrar"}
+      {state.error ? (
+        <p className={styles.error} role="alert">
+          {state.error}
+        </p>
+      ) : null}
+
+      <button className={styles.submit} type="submit" disabled={pending}>
+        {pending ? "Entrando…" : "Entrar en Cuotly"}
       </button>
 
-      <p>
+      <p className={styles.footer}>
         ¿No tienes cuenta? <Link href="/signup">Regístrate</Link>
       </p>
     </form>
