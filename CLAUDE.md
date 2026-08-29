@@ -64,19 +64,46 @@ surge en una conversación.
 
 ## 6. Convenciones técnicas del repositorio
 
-Todavía no hay código de producto en este repositorio (estamos en la fase de planificación
-de los primeros hitos). En cuanto el Hito 1 cree la primera estructura de carpetas, stack y
-comandos reales, esta sección se actualizará con:
+Ver `README.md` para la estructura de carpetas y los comandos de instalación y arranque.
+Resumen para esta sesión:
 
-- estructura de carpetas del monorepo;
-- cómo instalar dependencias y arrancar cada aplicación (web y móvil);
-- cómo ejecutar las pruebas automáticas;
-- cómo crear y aplicar una migración de base de datos;
-- convenciones de nombres y de commits.
-
-Hasta entonces, la referencia de arquitectura vigente es la Especificación Maestra §151–155
-(stack acordado y principios técnicos) y `docs/PLAN-H1-H2.md` (estructura propuesta para los
-hitos activos).
+- Monorepo con pnpm workspaces: `apps/web` (Next.js 16 + TypeScript), `apps/mobile` (Expo
+  SDK 57 + Expo Router), `packages/shared` (código compartido).
+- Antes de ejecutar `pnpm typecheck` en `apps/web` en una copia nueva del repositorio (o
+  después de borrar `.next/`), hay que generar primero los tipos de rutas de Next.js:
+  `cd apps/web && npx next typegen`. Sin eso falla con `Cannot find name 'LayoutProps'`
+  porque esos tipos se generan, no se guardan en el repositorio. El CI ya lo hace solo.
+- **Next.js 16 tiene cambios importantes de nombres respecto a versiones anteriores**: el
+  archivo que antes se llamaba `middleware.ts` ahora se llama `src/proxy.ts` y exporta una
+  función `proxy`, no `middleware`. `cookies()`, `headers()`, `params` y `searchParams` son
+  asíncronos (hay que hacer `await`). Antes de tocar código de `apps/web`, lee
+  `apps/web/node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md` si existe
+  duda sobre una API concreta — es una versión más reciente que la que aparece en el
+  entrenamiento de un modelo de lenguaje.
+- Autenticación con Supabase Auth: `apps/web/src/lib/supabase/` (cliente de navegador y de
+  servidor) y `apps/mobile/src/lib/supabase.ts` (cliente con almacenamiento del dispositivo).
+- Variables de entorno: `NEXT_PUBLIC_*` en `apps/web/.env.local`, `EXPO_PUBLIC_*` en
+  `apps/mobile/.env`. Ninguna de las dos se sube al repositorio.
+- Tests: Vitest en `apps/web` y `packages/shared`; Jest (`jest-expo`) en `apps/mobile`. En
+  `apps/mobile`, `@testing-library/react-native` 14.0.1 no funciona todavía con esta
+  combinación de Expo SDK 57 / React Native 0.86 / React 19.2 (`render()` devuelve un objeto
+  vacío en vez de lanzar un error o funcionar) — de momento la lógica de las pantallas se
+  extrae a funciones puras y se prueba sin renderizar componentes (ver
+  `apps/mobile/src/lib/validate-auth-form.ts` como ejemplo). Si en un hito futuro hace falta
+  probar la interfaz de móvil renderizada, revisa primero si esa combinación de versiones
+  ya se ha arreglado antes de perder tiempo depurándolo de nuevo.
+- CI en `.github/workflows/ci.yml`: typecheck, lint, tests y compilación en cada cambio, sin
+  necesitar credenciales de Supabase.
+- Identidad visual "Emerald Control" (Especificación Maestra §146) ya aplicada como tokens
+  de color: `apps/web/src/app/globals.css` y `apps/mobile/src/lib/theme.ts` — mismos valores
+  en los dos sitios, no los dupliques con números distintos si los cambias.
+- **Limitación de red de este entorno**: el proxy de salida de esta sesión de Claude Code
+  bloquea el acceso directo a `*.supabase.co` (política del entorno remoto, no un fallo).
+  Esto significa que no se puede verificar en vivo, desde esta sesión, que el registro o el
+  inicio de sesión funcionan de verdad contra el proyecto real de Supabase — solo se puede
+  comprobar que el código compila, pasa el tipado y pasa las pruebas con Supabase simulado
+  (mock). La verificación en vivo la hace Bosco ejecutando `pnpm dev:web` en su propio
+  ordenador, o se resuelve si en el futuro el entorno permite ese dominio.
 
 ## 7. Idioma
 

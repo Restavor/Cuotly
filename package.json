@@ -1,0 +1,17 @@
+{
+  "name": "cuotly",
+  "private": true,
+  "description": "Cuotly — plataforma SaaS multiempresa de mantenimiento web para restaurantes (Restavor).",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @cuotly/web dev",
+    "dev:mobile": "pnpm --filter @cuotly/mobile start",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}

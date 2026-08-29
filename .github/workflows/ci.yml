@@ -1,0 +1,53 @@
+name: CI
+
+# Se ejecuta en cada cambio subido a una rama y en cada Pull Request, para
+# detectar errores antes de fusionar. No necesita secretos: el tipado, las
+# pruebas y la compilación no requieren conectarse a Supabase de verdad.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+  EXPO_NO_TELEMETRY: "1"
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Generar tipos de rutas de Next.js
+        # Necesario antes del typecheck: Next.js genera tipos como
+        # `LayoutProps` en `.next/types`, una carpeta que no se sube al
+        # repositorio (se genera). Sin este paso, el typecheck de apps/web
+        # falla con "Cannot find name 'LayoutProps'".
+        run: cd apps/web && npx next typegen
+
+      - name: Comprobar tipos (TypeScript)
+        run: pnpm -r typecheck
+
+      - name: Lint
+        run: pnpm -r lint
+
+      - name: Tests automáticos
+        run: pnpm -r test
+
+      - name: Compilar la web (Next.js)
+        run: pnpm --filter @cuotly/web build
+
+      - name: Compilar el bundle web de la app móvil (comprobación de que el código de Expo compila)
+        run: cd apps/mobile && npx expo export --platform web
