@@ -21,6 +21,12 @@
 -- las comprobaciones de acceso denegado pasarían por casualidad, no por
 -- estar bien implementadas).
 --
+-- Además, algunos bloques usan `set role service_role;` — record_classification()
+-- solo la puede ejecutar ese rol desde la auditoría posterior al Hito 4
+-- (supabase/migrations/20260830000018_hito4_audit_fixes.sql, hallazgo 1):
+-- el código de servidor de confianza que ya invocó de verdad a Anthropic,
+-- nunca el cliente por RPC directa.
+--
 -- Cómo ejecutarlo: igual que hito2_permisos.sql — automáticamente en CI,
 -- o a mano con
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/hito4_solicitudes.sql
@@ -42,7 +48,11 @@ insert into auth.users (id, email, role, aud) values
   ('f0000000-0000-0000-0000-000000000007', 'h4-other-group-owner@example.com', 'authenticated', 'authenticated');
 
 insert into public.spaces (id, name, slug, created_by) values
-  ('f1000000-0000-0000-0000-000000000001', 'Espacio H4', 'espacio-h4-test', 'f0000000-0000-0000-0000-000000000001');
+  ('f1000000-0000-0000-0000-000000000001', 'Espacio H4', 'espacio-h4-test', 'f0000000-0000-0000-0000-000000000001'),
+  -- Solo para el hallazgo 3 (space_id ajeno en request_attachments): un
+  -- segundo espacio real al que referenciar, para distinguir un rechazo
+  -- por RLS de un simple error de clave foránea inexistente.
+  ('f1000000-0000-0000-0000-000000000002', 'Espacio H4 (solo FK, sin miembros)', 'espacio-h4-ajeno-test', 'f0000000-0000-0000-0000-000000000001');
 
 insert into public.space_memberships (space_id, user_id, role, status) values
   ('f1000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000001', 'owner', 'active'),
@@ -105,6 +115,11 @@ begin
   -- Guarda el id para los siguientes bloques del script (vía tabla temporal:
   -- un bloque DO no puede devolver un valor al script, así que se persiste aquí).
   create temporary table h4_ctx (key text primary key, value text);
+  -- El resto del script lee esta tabla temporal también con `set role
+  -- service_role` (para llamar a record_classification, hallazgo 1) —
+  -- sin este grant, esa lectura fallaría por permisos, no por la propia
+  -- comprobación que el bloque quiere hacer.
+  grant select, insert on h4_ctx to authenticated, service_role;
   insert into h4_ctx values ('request_a1', v_request_id::text);
 end $$;
 
@@ -131,6 +146,18 @@ begin
     raise exception 'RN-ARC-06 FALLIDO: se aceptó un archivo de más de 25 MB';
   exception
     when check_violation then null; -- esperado
+  end;
+
+  -- Hallazgo 3 de la auditoría (corregido en 20260830000018): space_id
+  -- no se comprobaba contra el espacio real de la solicitud. Un
+  -- establishment_id válido con un space_id de otro espacio real debe
+  -- rechazarse por RLS, no colarse.
+  begin
+    insert into public.request_attachments (request_id, space_id, establishment_id, storage_path, file_name, mime_type, size_bytes, created_by)
+    values (v_request_id, 'f1000000-0000-0000-0000-000000000002', 'f3000000-0000-0000-0000-000000000001', 'requests/a1/ajeno.jpg', 'ajeno.jpg', 'image/jpeg', 1024, auth.uid());
+    raise exception 'Hallazgo 3 FALLIDO: se aceptó un adjunto con space_id distinto al real de la solicitud';
+  exception
+    when insufficient_privilege then null; -- esperado: la política de INSERT lo rechaza (WITH CHECK)
   end;
 end $$;
 
@@ -203,15 +230,41 @@ end $$;
 -- "La IA caída no bloquea el flujo" (ROADMAP, Hito 4): el análisis se
 -- registra igual con una propuesta del motor de reglas, con su
 -- fallback_reason, y la solicitud sigue avanzando con normalidad.
+--
+-- Hallazgo 1 de la auditoría (corregido en 20260830000018):
+-- record_classification() ya no la puede llamar el cliente directamente
+-- — solo service_role, con el actor recibido explícito en p_actor_id
+-- (auth.uid() no resuelve nada bajo ese rol). Se comprueba primero que el
+-- propio cliente NO puede llamarla (ni siquiera para registrar una
+-- propuesta "por reglas" legítima), y luego se llama de verdad con la
+-- identidad de servidor.
 -- ============================================================
+do $$
+begin
+  begin
+    perform public.record_classification(
+      (select value::uuid from h4_ctx where key = 'request_a1'),
+      'f0000000-0000-0000-0000-000000000004'::uuid, 'ai', 'large',
+      'Propuesta falsa inventada por el propio cliente, sin pasar por Anthropic',
+      null, 'claude-opus-5', 999999999, 999999999, 999999999, null
+    );
+    raise exception 'Hallazgo 1 FALLIDO: el cliente pudo llamar a record_classification() directamente';
+  exception
+    when insufficient_privilege then null; -- esperado: revoke/grant restringe la función a service_role
+  end;
+end $$;
+
+set role service_role;
+
 do $$
 declare
   v_request_id uuid := (select value::uuid from h4_ctx where key = 'request_a1');
+  v_actor_id uuid := 'f0000000-0000-0000-0000-000000000004'::uuid;
   v_state text;
   v_classification_id uuid;
 begin
   v_classification_id := public.record_classification(
-    v_request_id, 'rules', 'small',
+    v_request_id, v_actor_id, 'rules', 'small',
     'Propuesta automática por reglas (categoría "small"), pendiente de validación.',
     array['precio'], null, null, null, null, 'anthropic_unavailable'
   );
@@ -223,8 +276,10 @@ begin
   end if;
 
   -- Idempotente: registrar el análisis dos veces no duplica la fila.
-  perform public.record_classification(v_request_id, 'rules', 'small', 'segundo intento', null, null, null, null, null, null);
+  perform public.record_classification(v_request_id, v_actor_id, 'rules', 'small', 'segundo intento', null, null, null, null, null, null);
 end $$;
+
+set role authenticated;
 
 -- `classifications`/`ai_usage` tampoco los lee el cliente (RN-CLS-03) —
 -- se verifica su contenido con la identidad del propietario.
@@ -382,7 +437,18 @@ begin
   insert into h4_ctx values ('request_a2', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
-  perform public.record_classification(v_request_id, 'rules', 'photo', 'Propuesta automática.', array['fotografia'], null, null, null, null, null);
+end $$;
+
+-- record_classification() es solo de service_role (hallazgo 1).
+set role service_role;
+
+do $$
+begin
+  perform public.record_classification(
+    (select value::uuid from h4_ctx where key = 'request_a2'),
+    'f0000000-0000-0000-0000-000000000004'::uuid, 'rules', 'photo', 'Propuesta automática.',
+    array['fotografia'], null, null, null, null, null
+  );
 end $$;
 
 reset role;
@@ -437,7 +503,18 @@ begin
   insert into h4_ctx values ('request_a3', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
-  perform public.record_classification(v_request_id, 'rules', 'small', 'Propuesta automática.', array['un dia de horario'], null, null, null, null, null);
+end $$;
+
+-- record_classification() es solo de service_role (hallazgo 1).
+set role service_role;
+
+do $$
+begin
+  perform public.record_classification(
+    (select value::uuid from h4_ctx where key = 'request_a3'),
+    'f0000000-0000-0000-0000-000000000004'::uuid, 'rules', 'small', 'Propuesta automática.',
+    array['un dia de horario'], null, null, null, null, null
+  );
 end $$;
 
 reset role;
@@ -495,6 +572,31 @@ begin
 
   -- El cliente responde: needs_information -> pending_internal_validation, T1 se reanuda.
   perform public.provide_additional_information(v_request_id, 'Es el sábado, de 13:00 a 16:00.');
+end $$;
+
+-- RN-MSG-03 (hallazgo 2, corregido en 20260830000018): el trabajador NO
+-- ve las conversaciones de solicitud — en el Hito 4 no existe todavía el
+-- concepto de "trabajo autorizado" (llega en el Hito 6), así que solo
+-- propietario y administrador tienen acceso (el mismo criterio que ya
+-- exige validar/pedir información/rechazar).
+select set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000003', false);
+
+do $$
+declare
+  v_request_id uuid := (select value::uuid from h4_ctx where key = 'request_a3');
+  v_count int;
+begin
+  select count(*) into v_count from public.conversations where request_id = v_request_id;
+  if v_count <> 0 then
+    raise exception 'RN-MSG-03 FALLIDO: un Trabajador ve la conversación de una solicitud (esperado 0 filas)';
+  end if;
+
+  select count(*) into v_count from public.messages m
+  join public.conversations c on c.id = m.conversation_id
+  where c.request_id = v_request_id;
+  if v_count <> 0 then
+    raise exception 'RN-MSG-03 FALLIDO: un Trabajador ve % mensaje(s) de la conversación de una solicitud (esperado 0)', v_count;
+  end if;
 end $$;
 
 -- El estado ya lo puede confirmar el propio cliente (requests es
@@ -564,6 +666,25 @@ begin
   where entity_id = v_request_id and counter_kind = 't1' and event_type = 'stopped';
   if v_stop_events <> 1 then
     raise exception 'RN-SLA-03 FALLIDO: rechazar debería detener T1 (eventos stopped = %)', v_stop_events;
+  end if;
+end $$;
+
+-- CA-15 (corregido en 20260830000018): "quién, qué, cuándo, valor
+-- anterior, valor nuevo, motivo cuando corresponda" — comprobado con
+-- old_value/new_value reales, no solo con la existencia de la fila.
+do $$
+declare
+  v_old jsonb;
+  v_new jsonb;
+begin
+  select old_value, new_value into v_old, v_new from public.audit_log
+  where space_id = 'f1000000-0000-0000-0000-000000000001' and action = 'request.rejected';
+
+  if v_old is null or v_new is null then
+    raise exception 'CA-15 FALLIDO: request.rejected no registra valor anterior/nuevo en audit_log';
+  end if;
+  if v_old ->> 'state' <> 'pending_internal_validation' or v_new ->> 'state' <> 'rejected' then
+    raise exception 'CA-15 FALLIDO: valor anterior/nuevo incorrectos en audit_log (old=%, new=%)', v_old, v_new;
   end if;
 end $$;
 
@@ -745,8 +866,8 @@ reset role;
 -- ============================================================
 -- Limpieza: no deja nada de esto en la base de datos real.
 -- ============================================================
-delete from public.audit_log where space_id = 'f1000000-0000-0000-0000-000000000001';
-delete from public.spaces where id = 'f1000000-0000-0000-0000-000000000001';
+delete from public.audit_log where space_id in ('f1000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000002');
+delete from public.spaces where id in ('f1000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000002');
 delete from auth.users where email like 'h4-%@example.com';
 
 do $$
@@ -755,7 +876,7 @@ declare
   v_profiles int;
   v_users int;
 begin
-  select count(*) into v_spaces from public.spaces where slug = 'espacio-h4-test';
+  select count(*) into v_spaces from public.spaces where slug in ('espacio-h4-test', 'espacio-h4-ajeno-test');
   select count(*) into v_profiles from public.profiles where email like 'h4-%@example.com';
   select count(*) into v_users from auth.users where email like 'h4-%@example.com';
 

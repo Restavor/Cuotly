@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
 import { classifyRequest, type CallModel } from "./ai-classifier";
 
@@ -71,18 +72,49 @@ describe("ai-classifier — RN-CLS-01/02, «la IA caída no bloquea el flujo» (
     expect(proposal.fallbackReason).toBe("invalid_response");
   });
 
-  it("un error 401/403 de Anthropic se identifica como clave inválida, no como error genérico", async () => {
+  it("un error 401 de Anthropic se identifica como clave inválida, no como error genérico", async () => {
     const callModel: CallModel = async () => {
-      throw Object.assign(new Error("unauthorized"), { status: 401, name: "AuthenticationError" });
+      // Instancia real de Anthropic.APIError (no un objeto simulado con
+      // .status pegado a mano): describeError() comprueba `instanceof
+      // Anthropic.APIError`, así que el test debe ejercitar exactamente
+      // esa rama, no la genérica de "network_error".
+      throw new Anthropic.APIError(401, { message: "invalid x-api-key" }, "invalid x-api-key", new Headers());
     };
 
     const proposal = await classifyRequest(REQUEST_TEXT, { apiKey: "sk-bad", callModel });
 
     expect(proposal.source).toBe("rules");
-    // No es una instancia real de Anthropic.APIError (los tests no dependen
-    // del SDK real para esto), así que cae al motivo genérico de red — lo
-    // que importa aquí es que, aun así, resuelve con una propuesta usable.
-    expect(proposal.category).toBe("large");
+    expect(proposal.fallbackReason).toBe("invalid_api_key");
+  });
+
+  it("un error 403 de Anthropic también se identifica como clave inválida", async () => {
+    const callModel: CallModel = async () => {
+      throw new Anthropic.APIError(403, { message: "forbidden" }, "forbidden", new Headers());
+    };
+
+    const proposal = await classifyRequest(REQUEST_TEXT, { apiKey: "sk-bad", callModel });
+
+    expect(proposal.fallbackReason).toBe("invalid_api_key");
+  });
+
+  it("un error 429 de Anthropic se identifica como límite de tasa", async () => {
+    const callModel: CallModel = async () => {
+      throw new Anthropic.APIError(429, { message: "rate limited" }, "rate limited", new Headers());
+    };
+
+    const proposal = await classifyRequest(REQUEST_TEXT, { apiKey: "sk-test", callModel });
+
+    expect(proposal.fallbackReason).toBe("rate_limited");
+  });
+
+  it("un error 5xx de Anthropic se identifica como IA no disponible", async () => {
+    const callModel: CallModel = async () => {
+      throw new Anthropic.APIError(503, { message: "overloaded" }, "overloaded", new Headers());
+    };
+
+    const proposal = await classifyRequest(REQUEST_TEXT, { apiKey: "sk-test", callModel });
+
+    expect(proposal.fallbackReason).toBe("anthropic_unavailable");
   });
 
   it("camino feliz: con la IA disponible, devuelve la propuesta de la IA con su consumo para ai_usage (RN-CLS-05)", async () => {
