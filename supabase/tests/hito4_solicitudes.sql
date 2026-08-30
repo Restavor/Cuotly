@@ -252,6 +252,24 @@ begin
   exception
     when insufficient_privilege then null; -- esperado: revoke/grant restringe la función a service_role
   end;
+
+  -- Hallazgo introducido por 20260830000018 y corregido en
+  -- 20260830000019: can_write_establishment_as() se creó sin ningún
+  -- REVOKE, así que cualquier autenticado podía usarla directamente como
+  -- oráculo de membresía entre tenants (¿tiene este UUID cualquiera
+  -- acceso de escritura a este establecimiento cualquiera?), sin poder
+  -- leer ni escribir ningún dato de negocio pero sí filtrando relaciones
+  -- de membresía de un espacio con el que quien pregunta no tiene
+  -- ninguna relación.
+  begin
+    perform public.can_write_establishment_as(
+      'f3000000-0000-0000-0000-000000000001'::uuid,
+      'f0000000-0000-0000-0000-000000000002'::uuid
+    );
+    raise exception 'Hallazgo (20260830000019) FALLIDO: el cliente pudo llamar a can_write_establishment_as() directamente';
+  exception
+    when insufficient_privilege then null; -- esperado: revoke/grant restringe la función a service_role
+  end;
 end $$;
 
 set role service_role;
