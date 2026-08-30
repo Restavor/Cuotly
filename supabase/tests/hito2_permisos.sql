@@ -23,6 +23,18 @@
 --
 -- El script crea sus propios usuarios y espacios de prueba y los borra al
 -- final (comprobado con una aserción final de que no queda ningún rastro).
+--
+-- El cambio de identidad usa `set role authenticated` (sin LOCAL) seguido
+-- de `reset role`, y `set_config(..., false)` (tampoco LOCAL) — nunca
+-- `set local`. Corregido durante la auditoría del Hito 5: fuera de un
+-- bloque de transacción explícito, `set local` no tiene ningún efecto
+-- (PostgreSQL lo advierte y lo ignora) y `psql -f` ejecuta cada sentencia
+-- de nivel superior como su propia transacción implícita, así que la
+-- versión anterior de este archivo (con LOCAL) nunca cambiaba de
+-- identidad de verdad al ejecutarse así — solo funcionaba por casualidad
+-- cuando se pegaba a mano dentro de una transacción explícita (el SQL
+-- Editor de Supabase, o la herramienta execute_sql). Mismo motivo y mismo
+-- arreglo que ya documentaba hito4_solicitudes.sql.
 
 -- ============================================================
 -- Preparación: dos espacios ("A" y "B"). A tiene un propietario, un
@@ -78,8 +90,8 @@ insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id
 -- Bosco: "un test que intente leer datos de otro espacio con identidad
 -- ajena y compruebe que falla".
 -- ============================================================
-select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
-set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
 
 do $$
 declare
@@ -128,8 +140,8 @@ reset role;
 -- vez de fallar se ejecutan, el bloque los detecta y lanza su propia
 -- excepción con el motivo.
 -- ============================================================
-select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', true);
-set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
 
 do $$
 begin
@@ -157,8 +169,8 @@ reset role;
 -- Control positivo: el propietario SÍ puede crear un establecimiento, y
 -- recibe un código EST-000N correlativo. Confirma que la política no
 -- bloquea a quien sí tiene el permiso.
-select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
-set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
 
 do $$
 declare
@@ -182,8 +194,8 @@ reset role;
 -- 30/08/2026: antes del arreglo, esta llamada mutaba el contador de un
 -- espacio ajeno).
 -- ============================================================
-select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', true);
-set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
 
 do $$
 begin
@@ -205,8 +217,8 @@ reset role;
 -- descarta la fila en vez de devolver un error: se comprueba con el
 -- recuento de filas afectadas.
 -- ============================================================
-select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
-set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
 
 do $$
 declare
@@ -234,8 +246,8 @@ reset role;
 -- aunque no pertenezca al espacio de mantenimiento. Y sigue sin poder ver
 -- el espacio en sí (eso es del equipo de mantenimiento, no del cliente).
 -- ============================================================
-select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', true);
-set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
 
 do $$
 declare
@@ -268,8 +280,8 @@ reset role;
 -- CA-16 · "Ninguna operación de la aplicación puede editar o borrar una
 -- fila de auditoría."
 -- ============================================================
-select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
-set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
 
 do $$
 declare

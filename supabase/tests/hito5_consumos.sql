@@ -21,10 +21,14 @@
 -- un plan con un único crédito "pequeño" incluido (para poder agotarlo con
 -- una sola aceptación en las pruebas de abajo) y su suscripción.
 -- ============================================================
+-- ...000099 ("ajeno") se crea aquí, no más abajo junto a CA-02, porque los
+-- bloques F1 (auditoría) lo necesitan antes de que request_ca17 cambie de
+-- estado.
 insert into auth.users (id, email, role, aud) values
   ('90000000-0000-0000-0000-000000000001', 'h5-owner@example.com', 'authenticated', 'authenticated'),
   ('90000000-0000-0000-0000-000000000002', 'h5-client@example.com', 'authenticated', 'authenticated'),
-  ('90000000-0000-0000-0000-000000000003', 'h5-worker@example.com', 'authenticated', 'authenticated');
+  ('90000000-0000-0000-0000-000000000003', 'h5-worker@example.com', 'authenticated', 'authenticated'),
+  ('90000000-0000-0000-0000-000000000099', 'h5-ajeno@example.com', 'authenticated', 'authenticated');
 
 insert into public.spaces (id, name, slug, created_by) values
   ('91000000-0000-0000-0000-000000000001', 'Espacio H5', 'espacio-h5-test', '90000000-0000-0000-0000-000000000001');
@@ -87,6 +91,56 @@ begin
 end $$;
 
 reset role;
+
+-- ============================================================
+-- F2 (auditoría del Hito 5) · subscriptions_insert no deja vincular por
+-- escritura directa (saltándose create_plan_subscription()) un plan de
+-- OTRO espacio a una suscripción, aunque quien escribe tenga
+-- 'manage_clients' en su propio espacio y conozca el UUID ajeno.
+-- ============================================================
+insert into auth.users (id, email, role, aud) values
+  ('90000000-0000-0000-0000-000000000004', 'h5-owner-b@example.com', 'authenticated', 'authenticated');
+
+insert into public.spaces (id, name, slug, created_by) values
+  ('91000000-0000-0000-0000-000000000002', 'Espacio H5 B', 'espacio-h5-b-test', '90000000-0000-0000-0000-000000000004');
+
+insert into public.space_memberships (space_id, user_id, role, status) values
+  ('91000000-0000-0000-0000-000000000002', '90000000-0000-0000-0000-000000000004', 'owner', 'active');
+
+insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours) values
+  ('92000000-0000-0000-0000-000000000002', '91000000-0000-0000-0000-000000000002', 'Plan H5 B', 9900, 1, 0, 0, 0, 24);
+
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_inserted int := 0;
+begin
+  begin
+    -- h5-owner tiene 'manage_clients' en Espacio H5 y su propio
+    -- establecimiento pertenece a Espacio H5 — pero el plan que intenta
+    -- vincular es de Espacio H5 B.
+    insert into public.subscriptions (space_id, establishment_id, kind, plan_id, created_by)
+    values (
+      '91000000-0000-0000-0000-000000000001', '94000000-0000-0000-0000-000000000001',
+      'plan', '92000000-0000-0000-0000-000000000002', auth.uid()
+    );
+    v_inserted := 1;
+  exception
+    when insufficient_privilege then null; -- esperado
+  end;
+  if v_inserted <> 0 then
+    raise exception 'F2 FALLIDO: se pudo vincular por escritura directa un plan de otro espacio a una suscripción';
+  end if;
+end $$;
+
+reset role;
+
+-- Limpieza del fixture de F2, para no arrastrarlo al resto del archivo.
+delete from public.plans where id = '92000000-0000-0000-0000-000000000002';
+delete from public.spaces where id = '91000000-0000-0000-0000-000000000002';
+delete from auth.users where id = '90000000-0000-0000-0000-000000000004';
 
 -- Función auxiliar para el resto del archivo: lleva una solicitud desde el
 -- borrador hasta "pendiente de aceptación" con categoría "small", en el
@@ -178,6 +232,30 @@ end $$;
 reset role;
 
 -- ============================================================
+-- F1 (auditoría del Hito 5) · un usuario sin ningún acceso al
+-- establecimiento no puede "ejecutar con éxito" accept_request() sobre
+-- una solicitud ya accepted de un espacio ajeno: can_write_establishment()
+-- se comprueba ANTES del retorno idempotente (si el orden estuviera al
+-- revés, esta llamada devolvería silenciosamente sin ninguna excepción,
+-- revelando que la solicitud ya está aceptada sin haber comprobado
+-- autorización primero).
+-- ============================================================
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000099', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    perform public.accept_request((select value::uuid from h5_ctx where key = 'request_ca17'));
+    raise exception 'F1 FALLIDO: un usuario ajeno "aceptó" con éxito (sin excepción) una solicitud ya accepted sin tener acceso al establecimiento';
+  exception
+    when raise_exception then null; -- esperado: can_write_establishment() lo rechaza antes de mirar el estado
+  end;
+end $$;
+
+reset role;
+
+-- ============================================================
 -- CA-06 (parte 1) · cancelar ANTES de Comenzar devuelve el consumo.
 -- El plan de este espacio solo incluye 1 "pequeño": tras devolver el de
 -- CA-17, debe quedar disponible de nuevo para una solicitud nueva.
@@ -215,6 +293,26 @@ begin
   if v_entries <> '[{"type": "debit", "amount": -1}, {"type": "return", "amount": 1}]'::jsonb then
     raise exception 'CA-06 FALLIDO: se esperaba un débito y una única devolución (sin duplicar), se obtuvo %', v_entries;
   end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- F1 (auditoría del Hito 5), parte 2 · mismo motivo que arriba, para
+-- cancel_accepted_request(): un usuario ajeno no puede "cancelar con
+-- éxito" (sin excepción) un trabajo ya cancelled_before_start.
+-- ============================================================
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000099', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    perform public.cancel_accepted_request((select value::uuid from h5_ctx where key = 'request_ca17'));
+    raise exception 'F1 FALLIDO: un usuario ajeno "canceló" con éxito (sin excepción) una solicitud ya cancelada sin tener acceso al establecimiento';
+  exception
+    when raise_exception then null; -- esperado
+  end;
 end $$;
 
 reset role;
@@ -585,9 +683,6 @@ end $$;
 -- CA-02 · aislamiento entre espacios también para las tablas nuevas del
 -- Hito 5 (un usuario sin relación con Espacio H5 no ve nada de él).
 -- ============================================================
-insert into auth.users (id, email, role, aud) values
-  ('90000000-0000-0000-0000-000000000099', 'h5-ajeno@example.com', 'authenticated', 'authenticated');
-
 select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000099', false);
 set role authenticated;
 
