@@ -24,8 +24,9 @@ export type TimerEvent = {
  * Minutos laborables consumidos por un contador a partir de su historial
  * de eventos, en el calendario dado (RN-CLK-10: debe ser la fotografía
  * del calendario vigente cuando ocurrió cada tramo, no el calendario
- * actual del espacio — eso lo decide quien llama, pasando el `calendar`
- * correcto).
+ * actual del espacio — eso lo decide quien llama, construyendo `calendar`
+ * con `holidaysKnownAsOf(records, arrancadaDelContador)` en vez de leer
+ * la tabla `holidays` directamente).
  *
  * - `started`/`resumed` abren un tramo en marcha.
  * - `paused`/`stopped` lo cierran y suman los minutos laborables de ese

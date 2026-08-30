@@ -3,9 +3,11 @@ import {
   addBusinessMinutes,
   businessMinutesBetween,
   contractualCalendar,
+  holidaysKnownAsOf,
   isWithinBusinessWindow,
   menuDiarioCalendar,
   supportCalendar,
+  type HolidayRecord,
   type WorkCalendar,
 } from "./business-clock";
 
@@ -183,18 +185,46 @@ describe("business-clock — RN-CLK-09: Menú Diario opera todos los días, fest
 });
 
 describe("business-clock — RN-CLK-10: los calendarios laborales se versionan", () => {
-  it("añadir un festivo a un calendario nuevo no cambia el resultado ya calculado con la fotografía anterior", () => {
-    const calendarAtStart = contractualCalendar(TZ, []);
-    const calendarAfterAddingHoliday = contractualCalendar(TZ, ["2026-02-03"]);
+  // Simula la tabla `holidays`: el martes 2026-02-03 se da de alta como
+  // festivo el propio lunes de esa semana (antes de que arranque un
+  // contador), y el jueves 2026-02-05 se da de alta el viernes siguiente
+  // — es decir, después de que el contador que arranca el lunes ya haya
+  // dado ese jueves por laborable.
+  const counterStartedAt = madrid("2026-02-02", "09:00");
+  const records: readonly HolidayRecord[] = [
+    { date: "2026-02-03", configuredAt: madrid("2026-02-02", "08:00") }, // antes de arrancar
+    { date: "2026-02-05", configuredAt: madrid("2026-02-06", "08:00") }, // después de arrancar
+  ];
+
+  it("un festivo dado de alta antes de que arrancara el contador sí está en su fotografía", () => {
+    expect(holidaysKnownAsOf(records, counterStartedAt)).toEqual(["2026-02-03"]);
+  });
+
+  it("un festivo dado de alta después de que arrancara el contador no está en su fotografía", () => {
+    expect(holidaysKnownAsOf(records, counterStartedAt)).not.toContain("2026-02-05");
+  });
+
+  it("recalcular con la fotografía correcta no cierra retroactivamente un día que el contador ya dio por laborable", () => {
+    // Si se recalculase con TODOS los festivos "actuales" (incluido el
+    // dado de alta después), el jueves 2026-02-05 se descontaría del
+    // total — precisamente lo que RN-CLK-10 prohíbe.
+    const snapshotAtStart = contractualCalendar(TZ, holidaysKnownAsOf(records, counterStartedAt));
+    const allHolidaysToday = contractualCalendar(
+      TZ,
+      records.map((r) => r.date),
+    );
     const from = madrid("2026-02-02", "09:00");
     const to = madrid("2026-02-09", "09:00");
 
-    // Un contador ya en curso se recalcula con la fotografía del
-    // calendario vigente cuando arrancó, no con el calendario actual del
-    // espacio: recalcular con calendarAtStart sigue dando el mismo total.
-    expect(businessMinutesBetween(from, to, calendarAtStart)).toBe(7530);
-    expect(businessMinutesBetween(from, to, calendarAtStart)).toBe(7530);
-    expect(businessMinutesBetween(from, to, calendarAfterAddingHoliday)).toBe(7530 - 1440);
+    // Recalcular dos veces con la misma fotografía da el mismo resultado
+    // (CA-10) y ese resultado no incluye el cierre del festivo tardío.
+    expect(businessMinutesBetween(from, to, snapshotAtStart)).toBe(7530 - 1440);
+    expect(businessMinutesBetween(from, to, snapshotAtStart)).toBe(7530 - 1440);
+
+    // Usar el calendario "actual" en vez de la fotografía sí lo cerraría
+    // de más: la diferencia demuestra que la fotografía es la que evita
+    // la recalculación retroactiva, no una coincidencia del resultado.
+    expect(businessMinutesBetween(from, to, allHolidaysToday)).toBe(7530 - 1440 - 1440);
   });
 });
 

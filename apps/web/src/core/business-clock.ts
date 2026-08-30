@@ -53,6 +53,36 @@ export function menuDiarioCalendar(timezone: string): WorkCalendar {
   return { kind: "menu_diario", timezone, holidays: [] };
 }
 
+/**
+ * Un festivo tal como se guarda (`holidays.holiday_date`, `holidays.created_at`
+ * en el esquema): el día que cierra y el instante en el que se configuró.
+ */
+export type HolidayRecord = {
+  /** Fecha local "YYYY-MM-DD" que cierra el día completo (RN-CLK-03). */
+  readonly date: string;
+  /** Momento en el que se dio de alta el festivo (`holidays.created_at`). */
+  readonly configuredAt: Date;
+};
+
+/**
+ * RN-CLK-10: construye la lista de festivos "tal como estaban configurados"
+ * en `asOf`, para recalcular un contador ya en curso — no los festivos que
+ * haya *ahora* en el espacio. Un festivo dado de alta después de `asOf`
+ * queda fuera aunque su fecha caiga dentro del rango que se recalcula, así
+ * que no cierra retroactivamente un día que el contador ya dio por
+ * laborable. `asOf` debe ser el instante en el que arrancó el tramo que se
+ * está recalculando (o, para no recalcular nada retroactivamente en
+ * absoluto, el instante del cálculo original).
+ *
+ * Esto es lo que cualquier código que lea la tabla `holidays` (Hito 4 en
+ * adelante) debe usar para construir el `WorkCalendar` de un recálculo:
+ * nunca `WHERE holiday_date <= ...` a secas, siempre filtrando también por
+ * `configured_at`/`created_at`.
+ */
+export function holidaysKnownAsOf(records: readonly HolidayRecord[], asOf: Date): readonly string[] {
+  return records.filter((record) => record.configuredAt.getTime() <= asOf.getTime()).map((record) => record.date);
+}
+
 // ---------------------------------------------------------------------
 // Zona horaria: leer y construir instantes a partir de hora local, sin
 // librería externa. El truco es estándar: formatear el instante en la
