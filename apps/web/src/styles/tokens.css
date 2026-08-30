@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/*
+ * Identidad visual "Emerald Control" — PRD §20.6.
+ * Único origen de la paleta de colores del proyecto. Ningún componente debe
+ * usar un valor hexadecimal suelto: siempre a través de estas utilidades de
+ * Tailwind (`bg-primary`, `text-danger`, `border-border`...), generadas
+ * automáticamente por Tailwind v4 a partir del bloque @theme.
+ *
+ * Un único modo claro (PRD §20.6: "sin modo oscuro, sin selector de
+ * densidad"), así que no hay variantes de tema aquí.
+ */
+@theme {
+  --color-primary-darkest: #051510;
+  --color-primary-dark: #0b2f2a;
+  --color-primary: #145c4e;
+  --color-cuotly-green: #1d8a6a;
+  --color-accent-green: #32b889;
+
+  --color-background: #f5f7f4;
+  --color-surface: #ffffff;
+  --color-soft-surface: #eaf0ec;
+  --color-text: #17211f;
+  --color-text-secondary: #66736e;
+  --color-border: #dde5e1;
+
+  --color-success: #168a6d;
+  --color-warning: #d89524;
+  --color-danger: #c84c4c;
+  --color-info: #3976d4;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-field: 10px;
+  --radius-card: 20px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-background text-text font-sans antialiased;
+  }
+}

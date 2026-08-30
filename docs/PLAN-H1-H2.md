@@ -1,3 +1,11 @@
+> **Nota del 30/08/2026:** Bosco subió una versión nueva y definitiva de `CLAUDE.md`,
+> `docs/PRD.md` y `docs/ROADMAP.md`, que manda sobre lo que este archivo diga. El
+> ROADMAP nuevo ya trae su propia descripción detallada de cada hito, así que este
+> documento ha quedado en gran parte redundante — se conserva por trazabilidad de cómo
+> se planificó el Hito 1 original, no como plan vigente. Antes de seguir cualquier
+> instrucción de aquí, comprueba que no contradiga al PRD o al ROADMAP nuevos; si
+> contradice, gana el documento nuevo.
+
 # Plan detallado — Hito 1 y Hito 2
 
 Este documento es el plan de trabajo de los dos primeros hitos de la Fase 1 (ver

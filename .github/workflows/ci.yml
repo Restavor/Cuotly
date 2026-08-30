@@ -49,5 +49,11 @@ jobs:
       - name: Compilar la web (Next.js)
         run: pnpm --filter @cuotly/web build
 
+      - name: Instalar navegador de Playwright
+        run: cd apps/web && npx playwright install --with-deps chromium
+
+      - name: Tests end-to-end (Playwright)
+        run: cd apps/web && pnpm test:e2e
+
       - name: Compilar el bundle web de la app móvil (comprobación de que el código de Expo compila)
         run: cd apps/mobile && npx expo export --platform web

@@ -2,25 +2,31 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { es } from "@/i18n/es";
 
 export type AuthFormState = {
   error: string | null;
 };
 
+function readCredentials(formData: FormData) {
+  return {
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+  };
+}
+
 /**
- * Registro con correo y contraseña. En el Hito 1 no hay inicio de sesión con
- * Google ni Apple todavía (ver docs/PLAN-H1-H2.md, decisión 2) — se añaden en
- * un hito posterior.
+ * Registro con correo y contraseña. El login con Google se añade en el
+ * Hito 2 (ver docs/PLAN-H1-H2.md).
  */
 export async function signUp(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
+  const { email, password } = readCredentials(formData);
 
   if (!email || !password) {
-    return { error: "Rellena correo y contraseña." };
+    return { error: es.auth.signup.validationRequired };
   }
 
   const supabase = await createClient();
@@ -37,11 +43,10 @@ export async function signIn(
   _prevState: AuthFormState,
   formData: FormData,
 ): Promise<AuthFormState> {
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
+  const { email, password } = readCredentials(formData);
 
   if (!email || !password) {
-    return { error: "Rellena correo y contraseña." };
+    return { error: es.auth.login.validationRequired };
   }
 
   const supabase = await createClient();
@@ -51,7 +56,7 @@ export async function signIn(
   });
 
   if (error) {
-    return { error: "Correo o contraseña incorrectos." };
+    return { error: es.auth.login.invalidCredentials };
   }
 
   redirect("/");

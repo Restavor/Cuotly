@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui";
+import { es } from "@/i18n/es";
 import { signOut } from "./(auth)/actions";
 
 export default async function HomePage() {
@@ -13,15 +15,16 @@ export default async function HomePage() {
   }
 
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Cuotly</h1>
-      <p>Has entrado como {user.email}.</p>
-      <p>
-        Todavía no hay más funcionalidad — esto es la evidencia del Hito 1:
-        el registro y el inicio de sesión funcionan de verdad.
+    <main className="mx-auto max-w-xl p-8">
+      <h1 className="mb-2 text-2xl font-bold text-primary-dark">{es.common.appName}</h1>
+      <p className="mb-1 text-text">
+        {es.home.signedInAs} {user.email}.
       </p>
+      <p className="mb-6 text-sm text-text-secondary">{es.home.placeholderNote}</p>
       <form action={signOut}>
-        <button type="submit">Cerrar sesión</button>
+        <Button type="submit" variant="secondary">
+          {es.home.signOut}
+        </Button>
       </form>
     </main>
   );

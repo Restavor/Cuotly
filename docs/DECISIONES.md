@@ -1,3 +1,9 @@
+> **Nota del 30/08/2026:** las 8 aclaraciones de este archivo quedaron incorporadas
+> palabra por palabra en `docs/PRD.md` (versión nueva, subida por Bosco) y en
+> `docs/ESPECIFICACION-MAESTRA.md`. No hay ninguna contradicción entre este archivo y
+> esos dos — simplemente ya no hace falta consultarlo, la fuente vigente es el PRD.
+> Se conserva sin borrar por trazabilidad, no como referencia activa.
+
 # Cuotly — Registro de decisiones posteriores a la Especificación Maestra
 
 `docs/ESPECIFICACION-MAESTRA.md` quedó consolidado el 29/08/2026. A partir de esa fecha,

@@ -51,8 +51,15 @@ Desde la raíz del repositorio:
 | `pnpm dev:mobile` | Arranca el servidor de desarrollo de Expo (elige iOS, Android o web) |
 | `pnpm -r typecheck` | Comprueba tipos de TypeScript en todo el repositorio |
 | `pnpm -r lint` | Ejecuta el linter en todo el repositorio |
-| `pnpm -r test` | Ejecuta las pruebas automáticas en todo el repositorio |
+| `pnpm -r test` | Ejecuta las pruebas automáticas (unitarias) en todo el repositorio |
+| `cd apps/web && pnpm test:e2e` | Ejecuta las pruebas end-to-end con Playwright |
 | `pnpm build` | Compila todo lo compilable |
+| `supabase start` | Arranca Supabase en local (necesita Docker instalado y en marcha) |
+| `supabase db reset` | Recrea la base de datos local aplicando las migraciones desde cero |
+| `supabase migration new <nombre>` | Crea un archivo de migración nuevo. Nunca se edita una ya aplicada |
+
+La página `http://localhost:3000/styleguide` enseña todos los componentes base del
+sistema de diseño (Emerald Control) en un solo sitio.
 
 ## CI
 
