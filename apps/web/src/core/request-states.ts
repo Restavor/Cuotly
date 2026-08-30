@@ -6,14 +6,15 @@
  * web, correo, PDF e historial" — el nombre interno es la única fuente de
  * verdad de la que salen los demás).
  *
- * El Hito 4 solo implementa el tramo "Solicitudes y clasificación": del
+ * El Hito 4 implementó el tramo "Solicitudes y clasificación": del
  * borrador a la aceptación o el rechazo del cliente (PRD §9.1, pasos 1-7).
- * Los estados posteriores a `accepted` (creación del trabajo, ejecución,
- * publicación, corrección, cancelación) existen ya en el tipo — porque
- * conforman el propio nombre de la columna en base de datos, RN-REQ-01 —
- * pero sus transiciones llegan con los hitos que los implementan (Hito 5
- * en adelante) y a propósito no están en `REQUEST_TRANSITIONS`: ninguna
- * función de este módulo permite alcanzarlos todavía.
+ * El Hito 5 añade la cancelación del cliente tras la aceptación (RN-JOB-04,
+ * CA-06/CA-07): `accepted -> cancelled_before_start` / `cancelled_after_start`.
+ * Los estados posteriores (ejecución, publicación, corrección) existen ya
+ * en el tipo — porque conforman el propio nombre de la columna en base de
+ * datos, RN-REQ-01 — pero sus transiciones llegan con el Hito 6 y a
+ * propósito no están en `REQUEST_TRANSITIONS`: ninguna función de este
+ * módulo permite alcanzarlos todavía.
  */
 
 /** PRD §9.2, los catorce estados de una solicitud, en el orden del documento. */
@@ -91,6 +92,13 @@ export type RequestTransition = {
  *     único nombre visible por estado; quién la rechazó y por qué queda
  *     en el mensaje de la conversación y en la auditoría, no en el nombre
  *     del estado.
+ *   - `accepted -> cancelled_before_start` / `accepted -> cancelled_after_start`
+ *     (Hito 5): el cliente cancela una solicitud ya aceptada (RN-JOB-04).
+ *     Cuál de las dos alcanza depende de si el trabajo ya empezó
+ *     (`jobs.started_at`), no de quién actúa — por eso ambas comparten
+ *     actor y regla; `cancel_accepted_request()` en la base de datos es
+ *     quien decide cuál, con la misma condición que
+ *     `resolveCancellationOutcome()` de `consumption-ledger.ts` (CA-06).
  */
 export const REQUEST_TRANSITIONS: readonly RequestTransition[] = [
   { from: "draft", to: "received", actor: "client", rule: "RN-SLA-01 / HU-10", t1: "start" },
@@ -120,6 +128,8 @@ export const REQUEST_TRANSITIONS: readonly RequestTransition[] = [
   },
   { from: "pending_client_acceptance", to: "accepted", actor: "client", rule: "RN-REQ-02 / HU-12", t1: null },
   { from: "pending_client_acceptance", to: "rejected", actor: "client", rule: "HU-12", t1: null },
+  { from: "accepted", to: "cancelled_before_start", actor: "client", rule: "RN-JOB-04 / CA-06", t1: null },
+  { from: "accepted", to: "cancelled_after_start", actor: "client", rule: "RN-JOB-04 / CA-06", t1: null },
 ] as const;
 
 /** Busca la transición exacta (origen, destino, actor) en la tabla, si existe. */
@@ -152,5 +162,14 @@ export const OPEN_REQUEST_STATES: readonly RequestState[] = [
   "pending_client_acceptance",
 ] as const;
 
-/** Estados terminales del tramo del Hito 4: nada más los mueve desde aquí todavía. */
-export const TERMINAL_REQUEST_STATES: readonly RequestState[] = ["accepted", "rejected"] as const;
+/**
+ * Estados terminales del tramo implementado hasta el Hito 5: nada más los
+ * mueve desde aquí todavía. `accepted` ya no es terminal — el Hito 5 añade
+ * la cancelación del cliente (RN-JOB-04) — así que sale de esta lista y
+ * entran sus dos destinos.
+ */
+export const TERMINAL_REQUEST_STATES: readonly RequestState[] = [
+  "rejected",
+  "cancelled_before_start",
+  "cancelled_after_start",
+] as const;

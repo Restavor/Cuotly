@@ -63,15 +63,34 @@ jobs:
   rls-tests:
     # Job aparte: levanta una Supabase real en local (con Docker, ya
     # instalado en los runners de GitHub) aplicando las migraciones desde
-    # cero, y ejecuta supabase/tests/hito2_permisos.sql contra ella. Ese
-    # archivo lanza una excepción real (RAISE EXCEPTION) en cuanto una
-    # regla de RLS se rompe, así que `psql -v ON_ERROR_STOP=1` devuelve un
-    # código de salida distinto de cero y este job falla — ya no depende
-    # de que alguien lo pegue a mano en el SQL Editor y compare filas a
-    # ojo. No necesita ningún secreto: todo corre contra la base local.
+    # cero, y ejecuta los scripts de supabase/tests/*.sql contra ella. Cada
+    # uno lanza una excepción real (RAISE EXCEPTION) en cuanto una regla de
+    # RLS se rompe, así que `psql -v ON_ERROR_STOP=1` devuelve un código de
+    # salida distinto de cero y este job falla — ya no depende de que
+    # alguien lo pegue a mano en el SQL Editor y compare filas a ojo. No
+    # necesita ningún secreto: todo corre contra la base local.
+    #
+    # También instala Node/pnpm (a diferencia de antes) para el test de
+    # concurrencia real de CA-05 (Hito 5): esa prueba necesita dos
+    # transacciones de servidor genuinamente simultáneas, algo que un
+    # script `psql -f` no puede expresar (cada sentencia de nivel superior
+    # es su propia transacción secuencial en una única conexión) — ver la
+    # cabecera de apps/web/scripts/hito5-concurrency-test.mjs.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
 
       - uses: supabase/setup-cli@v1
         with:
@@ -80,11 +99,28 @@ jobs:
       - name: Levantar Supabase en local (aplica las migraciones)
         run: supabase start
 
-      - name: Verificar CA-01, CA-02, CA-16, RN-DAT-03, RN-DAT-06, RN-EST-03
+      - name: "Hito 2 — Verificar CA-01, CA-02, CA-16, RN-DAT-03, RN-DAT-06, RN-EST-03"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/hito2_permisos.sql
+
+      - name: "Hito 4 — Verificar HU-10 a HU-15"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hito4_solicitudes.sql
+
+      - name: "Hito 5 — Verificar CA-06, CA-07, CA-08, CA-09, CA-17"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hito5_consumos.sql
+
+      - name: "Hito 5 — Verificar CA-05 (concurrencia real: dos aceptaciones simultáneas)"
+        run: |
+          cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            node scripts/hito5-concurrency-test.mjs
 
       - name: Parar Supabase
         if: always()

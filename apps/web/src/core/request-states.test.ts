@@ -86,22 +86,31 @@ describe("request-states — RN-REQ, PRD §9.2", () => {
     expect(canTransitionRequestState("closed", "published", "system")).toBe(false);
   });
 
-  it("los estados posteriores a la aceptación no tienen ninguna transición implementada todavía (quedan para hitos posteriores)", () => {
-    const postAcceptance: RequestState[] = [
+  it("los estados de ejecución del Hito 6 no tienen ninguna transición implementada todavía (quedan para ese hito)", () => {
+    const jobExecutionStates: RequestState[] = [
       "in_progress",
       "published",
       "correction_requested",
       "in_correction",
       "closed",
-      "cancelled_before_start",
-      "cancelled_after_start",
     ];
-    for (const state of postAcceptance) {
+    for (const state of jobExecutionStates) {
       const asOrigin = REQUEST_TRANSITIONS.some((t) => t.from === state);
       const asDestination = REQUEST_TRANSITIONS.some((t) => t.to === state);
-      expect(asOrigin, `${state} no debería ser origen de ninguna transición del Hito 4`).toBe(false);
-      expect(asDestination, `${state} no debería ser destino de ninguna transición del Hito 4`).toBe(false);
+      expect(asOrigin, `${state} no debería ser origen de ninguna transición todavía`).toBe(false);
+      expect(asDestination, `${state} no debería ser destino de ninguna transición todavía`).toBe(false);
     }
+  });
+
+  it("RN-JOB-04 / CA-06: el cliente cancela una solicitud ya aceptada, hacia antes o después de empezar", () => {
+    expect(canTransitionRequestState("accepted", "cancelled_before_start", "client")).toBe(true);
+    expect(canTransitionRequestState("accepted", "cancelled_after_start", "client")).toBe(true);
+    // Nadie del equipo cancela en nombre del cliente en este hito.
+    expect(canTransitionRequestState("accepted", "cancelled_before_start", "staff")).toBe(false);
+    expect(canTransitionRequestState("accepted", "cancelled_after_start", "staff")).toBe(false);
+    // Ninguna de las dos es origen de otra transición: son terminales.
+    expect(REQUEST_TRANSITIONS.some((t) => t.from === "cancelled_before_start")).toBe(false);
+    expect(REQUEST_TRANSITIONS.some((t) => t.from === "cancelled_after_start")).toBe(false);
   });
 
   describe("RN-SLA-01 a 03: qué le pasa a T1 en cada transición", () => {
