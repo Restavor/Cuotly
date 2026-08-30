@@ -80,10 +80,17 @@ Supabase devuelve un error controlado en vez de romper la página.
 ## Verificar el aislamiento entre espacios (CA-01, CA-02, CA-16)
 
 `supabase/tests/hito2_permisos.sql` es un script real y repetible que
-verifica los tres criterios con consultas directas a la base de datos,
-simulando identidades distintas. Se ejecuta pegándolo en el SQL Editor de
-Supabase, con `psql`, o con la herramienta `execute_sql` si tienes el
-conector de Supabase activo en Claude Code. No modifica nada de forma
+verifica esos tres criterios, más las reglas RN-DAT-03, RN-DAT-06 y
+RN-EST-03, con consultas directas a la base de datos, simulando identidades
+distintas. Cada comprobación lanza una excepción real si el resultado no es
+el esperado — no es un listado de filas para comparar a ojo.
+
+Se ejecuta automáticamente en cada push (`.github/workflows/ci.yml`, job
+`rls-tests`): levanta una Supabase local desechable con Docker, aplica las
+migraciones y corre el script con `psql -v ON_ERROR_STOP=1`; si una regla se
+rompe, el job falla. También se puede ejecutar a mano — pegándolo en el SQL
+Editor de Supabase, con `psql`, o con la herramienta `execute_sql` si tienes
+el conector de Supabase activo en Claude Code. No modifica nada de forma
 permanente: crea sus propios datos de prueba y los borra al final.
 
 ## Regenerar los tipos de TypeScript de la base de datos

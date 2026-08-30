@@ -1,31 +1,39 @@
 -- Verificación de los criterios de aceptación CA-01, CA-02 y CA-16 del
--- Hito 2, con consultas directas a la base de datos usando identidades
--- simuladas (tal como exige la propia redacción de CA-02). No usa la API
--- HTTP de Supabase ni el cliente JS: prueba las políticas RLS en el sitio
--- donde viven, la base de datos.
+-- Hito 2, más las reglas RN-DAT-03, RN-DAT-06 y RN-EST-03 corregidas tras
+-- la auditoría del 30/08/2026, con consultas directas a la base de datos
+-- usando identidades simuladas (tal como exige la propia redacción de
+-- CA-02). No usa la API HTTP de Supabase ni el cliente JS: prueba las
+-- políticas RLS en el sitio donde viven, la base de datos.
+--
+-- A diferencia de la versión anterior, cada comprobación usa un bloque
+-- `do $$ ... end $$` que lanza una excepción real (RAISE EXCEPTION) si el
+-- resultado no es el esperado. Esto hace que el script entero falle con
+-- código de salida distinto de cero en cuanto una sola regla se rompe —
+-- ya no depende de que una persona compare una columna "esperado" a ojo.
 --
 -- Cómo ejecutarlo:
---   - Con la CLI de Supabase conectada al proyecto: pega este archivo en
---     el SQL Editor del panel de Supabase, o `psql "$DATABASE_URL" -f
---     supabase/tests/hito2_permisos.sql`.
---   - Desde una sesión de Claude Code con el conector de Supabase activo:
---     pégalo por partes con la herramienta execute_sql.
+--   - Automáticamente en CI (.github/workflows/ci.yml, job
+--     "rls-tests"): `supabase start` levanta una base local con Docker,
+--     aplica las migraciones, y este archivo se ejecuta con
+--     `psql -v ON_ERROR_STOP=1`. Si algo falla, el job de CI falla.
+--   - A mano contra el proyecto real: pégalo en el SQL Editor del panel
+--     de Supabase, con `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f
+--     supabase/tests/hito2_permisos.sql`, o con la herramienta
+--     execute_sql si tienes el conector de Supabase activo en Claude Code.
 --
--- El script crea usuarios y espacios de prueba, comprueba los tres
--- criterios, e imprime cuánto queda al final (debe ser todo cero: no deja
--- basura en la base de datos real).
---
--- Verificado por última vez el 30/08/2026 contra el proyecto real de
--- Supabase de Cuotly. Resultado: los tres criterios se cumplen.
+-- El script crea sus propios usuarios y espacios de prueba y los borra al
+-- final (comprobado con una aserción final de que no queda ningún rastro).
 
 -- ============================================================
--- Preparación: dos espacios ("A" y "B"), cada uno con su propietario, y
--- un trabajador en el espacio A.
+-- Preparación: dos espacios ("A" y "B"). A tiene un propietario, un
+-- trabajador, y un "cliente" (Propietario global de un grupo de A sin
+-- pertenecer al espacio de mantenimiento — RN-EST-03).
 -- ============================================================
 insert into auth.users (id, email, role, aud) values
   ('a0000000-0000-0000-0000-000000000001', 'test-a@example.com', 'authenticated', 'authenticated'),
   ('a0000000-0000-0000-0000-000000000002', 'test-b@example.com', 'authenticated', 'authenticated'),
-  ('a0000000-0000-0000-0000-000000000003', 'test-worker@example.com', 'authenticated', 'authenticated');
+  ('a0000000-0000-0000-0000-000000000003', 'test-worker@example.com', 'authenticated', 'authenticated'),
+  ('a0000000-0000-0000-0000-000000000004', 'test-cliente@example.com', 'authenticated', 'authenticated');
 
 insert into public.spaces (id, name, slug, created_by) values
   ('b0000000-0000-0000-0000-000000000001', 'Espacio A (test)', 'espacio-a-test', 'a0000000-0000-0000-0000-000000000001'),
@@ -40,9 +48,25 @@ insert into public.groups (id, space_id, name) values
   ('c0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', 'Grupo A'),
   ('c0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000002', 'Grupo B');
 
-insert into public.establishments (space_id, group_id, name) values
-  ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Restaurante A'),
-  ('b0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000002', 'Restaurante B');
+-- El código se da explícito (en vez de dejar que lo genere el trigger)
+-- porque esta parte de la semilla se ejecuta como postgres, sin una
+-- identidad autenticada todavía — set_establishment_code() llama a
+-- next_space_sequence(), que desde el arreglo de RN-DAT-03 exige
+-- is_space_member() (auth.uid()), y auth.uid() es null fuera de una
+-- sesión autenticada. La generación real del código se prueba más abajo,
+-- en el INSERT que sí hace el propietario autenticado (control positivo
+-- de CA-01).
+insert into public.establishments (id, space_id, group_id, code, name) values
+  ('d0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'EST-TEST-A', 'Restaurante A'),
+  ('d0000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000002', 'EST-TEST-B', 'Restaurante B');
+
+-- El "cliente" es Propietario global del grupo A, sin fila en
+-- space_memberships (no es miembro del equipo de mantenimiento).
+insert into public.group_memberships (group_id, user_id) values
+  ('c0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004');
+
+insert into public.plans (id, space_id, name, price_cents, start_sla_hours) values
+  ('e0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', 'Plan de prueba', 9900, 24);
 
 insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id) values
   ('b0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'test.seed', 'space', 'b0000000-0000-0000-0000-000000000001');
@@ -50,29 +74,47 @@ insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id
 -- ============================================================
 -- CA-02 · "Un usuario de un espacio no puede leer ni una sola fila de
 -- otro espacio, verificado con consultas directas a la base de datos
--- usando su identidad."
---
--- También es, literalmente, el test que pidió Bosco: "un test que
--- intente leer datos de otro espacio con identidad ajena y compruebe que
--- falla".
+-- usando su identidad." También es, literalmente, el test que pidió
+-- Bosco: "un test que intente leer datos de otro espacio con identidad
+-- ajena y compruebe que falla".
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
 set local role authenticated;
 
-select * from (
-  select 1 as orden, 'CA-02 · leer spaces de B (ajeno)' as test, count(*) as filas_visibles, 0 as esperado from public.spaces where slug = 'espacio-b-test'
-  union all
-  select 2, 'CA-02 · leer establishments de B (ajeno)', count(*), 0 from public.establishments where space_id = 'b0000000-0000-0000-0000-000000000002'
-  union all
-  select 3, 'CA-02 · leer groups de B (ajeno)', count(*), 0 from public.groups where space_id = 'b0000000-0000-0000-0000-000000000002'
-  union all
-  select 4, 'CA-02 · leer space_memberships de B (ajeno)', count(*), 0 from public.space_memberships where space_id = 'b0000000-0000-0000-0000-000000000002'
-  union all
-  select 5, 'control · leer su propio espacio A', count(*), 1 from public.spaces where slug = 'espacio-a-test'
-  union all
-  select 6, 'control · leer su propio establishment A', count(*), 1 from public.establishments where space_id = 'b0000000-0000-0000-0000-000000000001'
-) t
-order by orden;
+do $$
+declare
+  v_count int;
+begin
+  select count(*) into v_count from public.spaces where slug = 'espacio-b-test';
+  if v_count <> 0 then
+    raise exception 'CA-02 FALLIDO: % fila(s) de spaces de un espacio ajeno visibles (esperado 0)', v_count;
+  end if;
+
+  select count(*) into v_count from public.establishments where space_id = 'b0000000-0000-0000-0000-000000000002';
+  if v_count <> 0 then
+    raise exception 'CA-02 FALLIDO: % fila(s) de establishments de un espacio ajeno visibles (esperado 0)', v_count;
+  end if;
+
+  select count(*) into v_count from public.groups where space_id = 'b0000000-0000-0000-0000-000000000002';
+  if v_count <> 0 then
+    raise exception 'CA-02 FALLIDO: % fila(s) de groups de un espacio ajeno visibles (esperado 0)', v_count;
+  end if;
+
+  select count(*) into v_count from public.space_memberships where space_id = 'b0000000-0000-0000-0000-000000000002';
+  if v_count <> 0 then
+    raise exception 'CA-02 FALLIDO: % fila(s) de space_memberships de un espacio ajeno visibles (esperado 0)', v_count;
+  end if;
+
+  select count(*) into v_count from public.spaces where slug = 'espacio-a-test';
+  if v_count <> 1 then
+    raise exception 'CA-02 control FALLIDO: no se pudo leer el propio espacio (esperado 1, encontrado %)', v_count;
+  end if;
+
+  select count(*) into v_count from public.establishments where space_id = 'b0000000-0000-0000-0000-000000000001';
+  if v_count <> 1 then
+    raise exception 'CA-02 control FALLIDO: no se pudo leer el propio establishment (esperado 1, encontrado %)', v_count;
+  end if;
+end $$;
 
 reset role;
 
@@ -80,33 +122,145 @@ reset role;
 -- CA-01 · "Un usuario sin permiso no puede ejecutar la operación ni por
 -- URL directa, ni por llamada a la API, ni manipulando el cliente."
 --
--- Dos filas relevantes de la matriz de permisos: un Trabajador no puede
--- crear un establecimiento (RN-EST-02) ni invitar a nadie (PRD §4.2).
--- Ambos INSERT deben fallar con "row-level security policy" — si en vez
--- de fallar se ejecutan, este script se detiene aquí con el error real.
+-- Dos filas de la matriz de permisos: un Trabajador no puede crear un
+-- establecimiento (RN-EST-02) ni invitar a nadie (PRD §4.2). Ambos INSERT
+-- deben fallar con SQLSTATE 42501 (insufficient_privilege / RLS). Si en
+-- vez de fallar se ejecutan, el bloque los detecta y lanza su propia
+-- excepción con el motivo.
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', true);
 set local role authenticated;
 
-insert into public.establishments (space_id, group_id, name)
-values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Intento no autorizado');
--- Esperado: ERROR 42501 "new row violates row-level security policy for table establishments"
+do $$
+begin
+  begin
+    insert into public.establishments (space_id, group_id, name)
+    values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Intento no autorizado');
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo crear un establecimiento sin permiso (RN-EST-02)';
+  exception
+    when insufficient_privilege then
+      null; -- esperado
+  end;
 
-insert into public.space_invitations (space_id, email, role, invited_by)
-values ('b0000000-0000-0000-0000-000000000001', 'nuevo@example.com', 'worker', 'a0000000-0000-0000-0000-000000000003');
--- Esperado: ERROR 42501 "new row violates row-level security policy for table space_invitations"
+  begin
+    insert into public.space_invitations (space_id, email, role, invited_by)
+    values ('b0000000-0000-0000-0000-000000000001', 'nuevo@example.com', 'worker', 'a0000000-0000-0000-0000-000000000003');
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo invitar a alguien sin permiso (PRD §4.2)';
+  exception
+    when insufficient_privilege then
+      null; -- esperado
+  end;
+end $$;
 
 reset role;
 
--- Control positivo: el propietario SÍ puede hacer lo mismo. Confirma que
--- la política no bloquea a quien sí tiene el permiso.
+-- Control positivo: el propietario SÍ puede crear un establecimiento, y
+-- recibe un código EST-000N correlativo. Confirma que la política no
+-- bloquea a quien sí tiene el permiso.
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
 set local role authenticated;
 
-insert into public.establishments (space_id, group_id, name)
-values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Creado por el propietario')
-returning code, name;
--- Esperado: una fila, con un código EST-000N correlativo.
+do $$
+declare
+  v_code text;
+begin
+  insert into public.establishments (space_id, group_id, name)
+  values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Creado por el propietario')
+  returning code into v_code;
+
+  if v_code !~ '^EST-\d{4}$' then
+    raise exception 'CA-01 control positivo FALLIDO: código inesperado "%"', v_code;
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- RN-DAT-03 · next_space_sequence() debe rechazar a quien no pertenece al
+-- espacio, aunque llame a la función directamente por RPC en vez de pasar
+-- por el INSERT de establishments (hallazgo de la auditoría del
+-- 30/08/2026: antes del arreglo, esta llamada mutaba el contador de un
+-- espacio ajeno).
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', true);
+set local role authenticated;
+
+do $$
+begin
+  begin
+    perform public.next_space_sequence('b0000000-0000-0000-0000-000000000002', 'establishment');
+    raise exception 'RN-DAT-03 FALLIDO: un usuario ajeno al espacio B pudo mutar su contador vía RPC directa';
+  exception
+    when raise_exception then
+      null; -- esperado: next_space_sequence() lanza 'No perteneces a este espacio'
+  end;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- RN-DAT-06 / MUST NOT de CLAUDE.md ("no se borra físicamente un registro
+-- de negocio") · un propietario no puede borrar un plan por DELETE
+-- directo, ni con permiso de escritura. Sin política de DELETE, RLS
+-- descarta la fila en vez de devolver un error: se comprueba con el
+-- recuento de filas afectadas.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
+set local role authenticated;
+
+do $$
+declare
+  v_deleted int;
+  v_remaining int;
+begin
+  with intento_borrar as (
+    delete from public.plans where id = 'e0000000-0000-0000-0000-000000000001'
+    returning id
+  )
+  select count(*) into v_deleted from intento_borrar;
+
+  select count(*) into v_remaining from public.plans where id = 'e0000000-0000-0000-0000-000000000001';
+
+  if v_deleted <> 0 or v_remaining <> 1 then
+    raise exception 'RN-DAT-06 FALLIDO: borradas=% (esperado 0), restantes=% (esperado 1)', v_deleted, v_remaining;
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- RN-EST-03 · el Propietario global de un grupo (lado cliente, sin fila
+-- en space_memberships) debe poder leer su grupo y sus establecimientos,
+-- aunque no pertenezca al espacio de mantenimiento. Y sigue sin poder ver
+-- el espacio en sí (eso es del equipo de mantenimiento, no del cliente).
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', true);
+set local role authenticated;
+
+do $$
+declare
+  v_count int;
+begin
+  select count(*) into v_count from public.groups where id = 'c0000000-0000-0000-0000-000000000001';
+  if v_count <> 1 then
+    raise exception 'RN-EST-03 FALLIDO: el Propietario global no pudo leer su propio grupo (esperado 1, encontrado %)', v_count;
+  end if;
+
+  select count(*) into v_count from public.establishments where group_id = 'c0000000-0000-0000-0000-000000000001';
+  if v_count <> 2 then
+    raise exception 'RN-EST-03 FALLIDO: el Propietario global no pudo leer los establecimientos de su grupo (esperado 2, encontrado %)', v_count;
+  end if;
+
+  select count(*) into v_count from public.spaces where id = 'b0000000-0000-0000-0000-000000000001';
+  if v_count <> 0 then
+    raise exception 'RN-EST-03 control FALLIDO: el Propietario global pudo leer el espacio de mantenimiento (esperado 0, encontrado %)', v_count;
+  end if;
+
+  select count(*) into v_count from public.groups where id = 'c0000000-0000-0000-0000-000000000002';
+  if v_count <> 0 then
+    raise exception 'RN-EST-03 control FALLIDO: el Propietario global pudo leer un grupo ajeno (esperado 0, encontrado %)', v_count;
+  end if;
+end $$;
 
 reset role;
 
@@ -117,39 +271,73 @@ reset role;
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
 set local role authenticated;
 
-with intento_editar as (
-  update public.audit_log
-  set reason = 'manipulado'
-  where space_id = 'b0000000-0000-0000-0000-000000000001'
-  returning id
-),
-intento_borrar as (
-  delete from public.audit_log
-  where space_id = 'b0000000-0000-0000-0000-000000000001'
-  returning id
-)
-select
-  (select count(*) from intento_editar) as filas_editadas_esperado_0,
-  (select count(*) from intento_borrar) as filas_borradas_esperado_0,
-  (select count(*) from public.audit_log where space_id = 'b0000000-0000-0000-0000-000000000001') as filas_que_siguen_ahi_esperado_1;
+do $$
+declare
+  v_updated int;
+  v_deleted int;
+  v_remaining int;
+begin
+  with intento_editar as (
+    update public.audit_log
+    set reason = 'manipulado'
+    where space_id = 'b0000000-0000-0000-0000-000000000001'
+    returning id
+  )
+  select count(*) into v_updated from intento_editar;
+
+  with intento_borrar as (
+    delete from public.audit_log
+    where space_id = 'b0000000-0000-0000-0000-000000000001'
+    returning id
+  )
+  select count(*) into v_deleted from intento_borrar;
+
+  select count(*) into v_remaining from public.audit_log where space_id = 'b0000000-0000-0000-0000-000000000001';
+
+  if v_updated <> 0 or v_deleted <> 0 or v_remaining <> 1 then
+    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0), restantes=% (esperado 1)', v_updated, v_deleted, v_remaining;
+  end if;
+end $$;
 
 reset role;
 
 -- ============================================================
 -- Limpieza: no deja nada de esto en la base de datos real. El orden
--- importa por las claves foráneas (audit_log → spaces → auth.users).
+-- importa por las claves foráneas (audit_log / plans / establishments →
+-- spaces → auth.users). Se ejecuta con el rol postgres (sin RLS) para no
+-- depender de ninguna política de DELETE.
 -- ============================================================
+reset role;
+
 delete from public.audit_log where space_id in (
+  select id from public.spaces where slug in ('espacio-a-test', 'espacio-b-test')
+);
+delete from public.plans where space_id in (
   select id from public.spaces where slug in ('espacio-a-test', 'espacio-b-test')
 );
 delete from public.spaces where slug in ('espacio-a-test', 'espacio-b-test');
 delete from auth.users where id in (
   'a0000000-0000-0000-0000-000000000001',
   'a0000000-0000-0000-0000-000000000002',
-  'a0000000-0000-0000-0000-000000000003'
+  'a0000000-0000-0000-0000-000000000003',
+  'a0000000-0000-0000-0000-000000000004'
 );
 
-select
-  (select count(*) from public.spaces) as spaces_deben_ser_0,
-  (select count(*) from public.profiles) as profiles_deben_ser_0,
-  (select count(*) from auth.users) as auth_users_deben_ser_0;
+do $$
+declare
+  v_spaces int;
+  v_profiles int;
+  v_users int;
+begin
+  select count(*) into v_spaces from public.spaces where slug in ('espacio-a-test', 'espacio-b-test');
+  select count(*) into v_profiles from public.profiles where email like 'test-%@example.com';
+  select count(*) into v_users from auth.users where email like 'test-%@example.com';
+
+  if v_spaces <> 0 or v_profiles <> 0 or v_users <> 0 then
+    raise exception 'LIMPIEZA FALLIDA: spaces=%, profiles=%, auth.users=% (todo debía ser 0)', v_spaces, v_profiles, v_users;
+  end if;
+end $$;
+
+-- Si el script llega hasta aquí sin lanzar ninguna excepción, los seis
+-- criterios/reglas se cumplen y no queda ningún dato de prueba.
+select 'hito2_permisos.sql: todos los criterios cumplidos, base de datos limpia' as resultado;

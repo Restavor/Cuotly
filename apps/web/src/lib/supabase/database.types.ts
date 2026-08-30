@@ -541,10 +541,20 @@ export type Database = {
       accept_space_invitation: { Args: { p_token: string }; Returns: string }
       create_restavor_space: { Args: never; Returns: string }
       current_space_id: { Args: never; Returns: string }
+      establishment_space_id: {
+        Args: { p_establishment_id: string }
+        Returns: string
+      }
+      group_space_id: { Args: { p_group_id: string }; Returns: string }
       has_capability: {
         Args: { p_capability: string; p_space_id: string }
         Returns: boolean
       }
+      is_establishment_member: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
+      is_group_member: { Args: { p_group_id: string }; Returns: boolean }
       is_platform_owner: { Args: never; Returns: boolean }
       is_space_member: { Args: { p_space_id: string }; Returns: boolean }
       next_space_sequence: {

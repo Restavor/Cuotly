@@ -2,7 +2,9 @@ name: CI
 
 # Se ejecuta en cada cambio subido a una rama y en cada Pull Request, para
 # detectar errores antes de fusionar. No necesita secretos: el tipado, las
-# pruebas y la compilación no requieren conectarse a Supabase de verdad.
+# pruebas y la compilación no requieren conectarse a Supabase de verdad. El
+# job rls-tests sí levanta una base de datos, pero una local y desechable
+# (con Docker, en el propio runner) — nunca toca el proyecto real.
 on:
   push:
     branches: ["**"]
@@ -57,3 +59,33 @@ jobs:
 
       - name: Compilar el bundle web de la app móvil (comprobación de que el código de Expo compila)
         run: cd apps/mobile && npx expo export --platform web
+
+  rls-tests:
+    # Job aparte: levanta una Supabase real en local (con Docker, ya
+    # instalado en los runners de GitHub) aplicando las migraciones desde
+    # cero, y ejecuta supabase/tests/hito2_permisos.sql contra ella. Ese
+    # archivo lanza una excepción real (RAISE EXCEPTION) en cuanto una
+    # regla de RLS se rompe, así que `psql -v ON_ERROR_STOP=1` devuelve un
+    # código de salida distinto de cero y este job falla — ya no depende
+    # de que alguien lo pegue a mano en el SQL Editor y compare filas a
+    # ojo. No necesita ningún secreto: todo corre contra la base local.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Levantar Supabase en local (aplica las migraciones)
+        run: supabase start
+
+      - name: Verificar CA-01, CA-02, CA-16, RN-DAT-03, RN-DAT-06, RN-EST-03
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hito2_permisos.sql
+
+      - name: Parar Supabase
+        if: always()
+        run: supabase stop
