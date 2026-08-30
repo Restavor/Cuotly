@@ -1,114 +1,83 @@
-# CLAUDE.md — Cómo trabajar en el repositorio de Cuotly
+# CLAUDE.md — Cuotly
 
-Este archivo son las instrucciones permanentes para cualquier sesión de Claude Code que
-trabaje en este repositorio. Léelo entero al empezar a trabajar.
+Reglas permanentes de este repositorio. Son obligatorias, no sugerencias.
+La especificación funcional está en `docs/PRD.md`. El plan de fases en `docs/ROADMAP.md`.
+El documento maestro completo del producto está en `docs/ESPECIFICACION-MAESTRA.md` (referencia de fondo).
 
-## 1. Quién es quién
+**Jerarquía de autoridad:** `CLAUDE.md` > `docs/PRD.md` > `docs/ESPECIFICACION-MAESTRA.md`.
+Si detectas una contradicción entre los tres, PARA y pregúntame. No la resuelvas por tu cuenta.
 
-- **Bosco Núñez** es el propietario del producto (Restavor). Es la primera vez que usa
-  Claude Code. No des por hecho que conoce términos técnicos (migración, política RLS,
-  worktree, etc.) — explícalos en lenguaje llano la primera vez que aparezcan en una
-  conversación con él.
-- Tú (Claude Code) eres quien implementa. Bosco decide el alcance y el orden; tú decides
-  el "cómo" técnico, pero solo dentro de lo ya acordado en los documentos de este repo.
+---
 
-## 2. Los documentos del proyecto, y cuándo leer cada uno
+## Comandos
 
-| Documento | Qué es | Cuándo leerlo |
-|---|---|---|
-| `CLAUDE.md` (este archivo) | Reglas de colaboración y de trabajo en el repo | Entero, al empezar cualquier sesión |
-| `docs/PRD.md` | Qué construimos, por qué, y el alcance de la Fase 1 | Entero, al empezar cualquier sesión |
-| `docs/ROADMAP.md` | En qué orden lo construimos (fases e hitos) | Entero, al empezar cualquier sesión |
-| `docs/PLAN-H1-H2.md` | Plan detallado de los hitos activos (se sustituye cuando avanzamos de hito) | Entero, al empezar cualquier sesión |
-| `docs/DECISIONES.md` | Aclaraciones y reglas nuevas surgidas después de consolidar la Especificación Maestra. **Manda sobre lo que contradiga** a la Especificación Maestra, igual que ella manda sobre documentos anteriores | Entero, al empezar cualquier sesión |
-| `docs/ESPECIFICACION-MAESTRA.md` | Especificación funcional completa del producto (180 secciones) | **NUNCA entero.** Solo la sección concreta a la que te remita el PRD o el ROADMAP. Es un documento muy largo; leerlo completo desperdicia contexto sin necesidad. |
+```bash
+pnpm dev              # servidor de desarrollo
+pnpm typecheck        # comprobación de tipos (debe pasar siempre)
+pnpm lint             # eslint
+pnpm test             # tests unitarios (vitest)
+pnpm test:e2e         # tests end-to-end (playwright)
+supabase start        # base de datos local
+supabase db reset     # recrear BD local aplicando migraciones + seed
+supabase migration new <nombre>   # nueva migración (NUNCA editar una migración ya aplicada)
+```
 
-Cuando el PRD diga algo como "ver Especificación Maestra §44", ve directamente a esa
-sección con una búsqueda, no leas el archivo de principio a fin.
+## Flujo de trabajo obligatorio
 
-## 3. Cómo trabajamos: hito a hito
+1. Antes de escribir código de una tarea nueva, lee las secciones del PRD que la cubren.
+2. Al terminar cada tarea: `pnpm typecheck && pnpm lint && pnpm test`. No declares una tarea terminada si algo falla.
+3. Toda regla de negocio con número (`RN-xxx`) del PRD debe tener al menos un test que la cubra, y el test debe citar el número de la regla en su nombre.
+4. Cada migración de base de datos es un archivo nuevo y versionado. Nunca modifiques una migración existente.
+5. Cuando termines un hito del ROADMAP, para y avísame antes de empezar el siguiente.
 
-- El trabajo avanza **hito a hito**, en el orden fijado en `docs/ROADMAP.md`. No adelantes
-  trabajo de hitos posteriores, aunque te parezca más eficiente hacerlo ya.
-- Al terminar un hito, **paras**. Enseñas a Bosco evidencia real de que funciona: salida de
-  los tests, capturas de pantalla si hay interfaz, o una demostración de la funcionalidad.
-  No sigas al siguiente hito sin su visto bueno explícito.
-- Un hito no está "hecho" solo porque el código compila. Tiene que demostrarse que hace lo
-  que el plan de ese hito decía que haría.
+## Reglas duras de producto
 
-## 4. Cuándo PARAR y preguntar en vez de decidir
+- **MUST**: toda operación se valida en el servidor. Ocultar un botón NO es un control de acceso. Una función no está terminada hasta que un usuario sin permiso tampoco pueda ejecutarla por URL o llamada directa.
+- **MUST**: toda tabla que pertenezca a un espacio lleva `space_id NOT NULL` y tiene RLS **activado** con políticas explícitas. Ninguna tabla se crea sin RLS.
+- **MUST**: los cálculos de consumos, permisos, pagos, contadores de tiempo y estados derivados se hacen en el servidor. El cliente nunca es la autoridad.
+- **MUST**: consumos y movimientos financieros se registran como **libro inmutable** de apuntes con signo. NUNCA un contador que se actualiza con UPDATE.
+- **MUST**: todo cambio de estado relevante genera un evento y un registro de auditoría con actor, fecha, valor anterior, valor nuevo y motivo cuando proceda. Los registros de auditoría no se editan ni se borran desde la aplicación.
+- **MUST**: las operaciones críticas (aceptar, comenzar, publicar, pagar, consumir crédito) usan transacción + clave de idempotencia. Pulsar dos veces nunca duplica el efecto.
+- **MUST**: las fechas se guardan en `timestamptz` y se calculan en la zona horaria del espacio.
+- **MUST NOT**: mostrar al cliente el nombre, foto o identidad individual de nadie del equipo de mantenimiento. El cliente siempre ve "Equipo de mantenimiento".
+- **MUST NOT**: mostrar datos ficticios, de ejemplo o rellenos de relleno en pantallas de producción. Si no hay dato, se dice cuál es el motivo (no conectado / sin datos todavía / error / periodo insuficiente).
+- **MUST NOT**: borrar físicamente registros de negocio. Se archiva o se marca como eliminado.
 
-Para y pregunta a Bosco, sin intentar resolverlo tú, cuando:
+## No inventes lo que está pendiente
 
-1. **Encuentres una contradicción** entre `CLAUDE.md`, `docs/PRD.md` y `docs/ROADMAP.md`.
-   No decidas cuál prevalece — pregúntale.
-2. **Una tarea toque algo de la sección 24 del PRD** ("Pendientes deliberados"): legal,
-   Agente Cuotly, API y webhooks, almacenamiento adicional, o fórmulas/umbrales aún sin
-   calibrar (asignación automática, categorías de tareas largas, umbrales de oportunidades).
-   Estas cosas están así a propósito — no inventes una regla para rellenar el hueco.
-3. **Vayas a tomar una decisión de producto** (qué hace o no hace Cuotly, qué ve o no ve
-   un usuario) que no esté ya escrita en el PRD o en la Especificación Maestra. Las
-   decisiones técnicas de implementación (qué librería, qué estructura de carpetas) sí
-   puedes tomarlas tú, explicándolas.
-4. **Vayas a hacer algo difícil de revertir** fuera de este repositorio: crear o modificar
-   infraestructura real (proyectos de Supabase/Vercel/Resend/Expo), desplegar a producción,
-   o cualquier acción que cueste dinero o afecte a servicios externos.
+Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja el placeholder documentado y pregúntame. NO inventes reglas, fórmulas ni umbrales:
 
-## 5. Cómo explicar las cosas
+- Agente Cuotly: solo existe la entrada de menú con la etiqueta "Próximamente". Sin funcionalidad simulada.
+- Fórmula ponderada de recomendación de trabajador (usa el orden determinista del PRD, no inventes porcentajes).
+- Categoría de puntos para tareas de más de 4 horas.
+- Umbrales concretos de detección de oportunidades y definición de impacto/esfuerzo.
+- Todo el bloque legal y fiscal: términos, privacidad, retenciones, numeración fiscal de facturas, jurisdicción.
+- API pública y webhooks.
+- Precio del almacenamiento adicional.
+- Sincronización bidireccional de calendarios.
 
-Bosco no tiene formación técnica. Cuando menciones un concepto técnico por primera vez en
-una conversación (migración de base de datos, política RLS, variable de entorno, rama de
-git, worktree, caché, etc.), explica en una frase qué es y por qué importa aquí, antes de
-usarlo con soltura. No hace falta repetir la explicación cada vez, solo la primera vez que
-surge en una conversación.
+## Decisiones que NO deben reaparecer
 
-## 6. Convenciones técnicas del repositorio
+- Cuotly es multiempresa, no solo el espacio de Restavor.
+- Menú Diario: 30 actualizaciones (no 25). 229 € + IVA, o 199 € + IVA si el establecimiento es Premium.
+- Planes: Básico 99 €, Impulso 399 €, Premium 599 €, todos + IVA. Básico NO incluye ningún cambio ni fotografía.
+- Permanencia de mantenimiento: 3 meses. No existen bolsas de horas.
+- "Supervisor" no es un rol: es una relación Administrador–Trabajador.
+- El supervisor NO aprueba antes de publicar. El trabajador publica directamente.
+- El reloj contractual empieza el lunes a las 09:00, no a las 00:00.
+- El horario de soporte humano es un reloj distinto y no afecta a los plazos contractuales.
+- Los mensajes se editan durante 10 minutos y no se eliminan nunca.
+- Menú Diario no tiene botón "Comenzar".
+- Reservas y delivery no se monitorizan.
+- No existe botón "Sincronizar ahora" en las integraciones analíticas.
+- Sin Stripe: los pagos se registran manualmente (transferencia o Bizum).
+- Sin modo oscuro, sin selector de densidad, sin marca blanca, sin publicidad.
+- No se crean bases de datos ni proyectos separados por restaurante.
 
-Ver `README.md` para la estructura de carpetas y los comandos de instalación y arranque.
-Resumen para esta sesión:
+## Estilo de código
 
-- Monorepo con pnpm workspaces: `apps/web` (Next.js 16 + TypeScript), `apps/mobile` (Expo
-  SDK 57 + Expo Router), `packages/shared` (código compartido).
-- Antes de ejecutar `pnpm typecheck` en `apps/web` en una copia nueva del repositorio (o
-  después de borrar `.next/`), hay que generar primero los tipos de rutas de Next.js:
-  `cd apps/web && npx next typegen`. Sin eso falla con `Cannot find name 'LayoutProps'`
-  porque esos tipos se generan, no se guardan en el repositorio. El CI ya lo hace solo.
-- **Next.js 16 tiene cambios importantes de nombres respecto a versiones anteriores**: el
-  archivo que antes se llamaba `middleware.ts` ahora se llama `src/proxy.ts` y exporta una
-  función `proxy`, no `middleware`. `cookies()`, `headers()`, `params` y `searchParams` son
-  asíncronos (hay que hacer `await`). Antes de tocar código de `apps/web`, lee
-  `apps/web/node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md` si existe
-  duda sobre una API concreta — es una versión más reciente que la que aparece en el
-  entrenamiento de un modelo de lenguaje.
-- Autenticación con Supabase Auth: `apps/web/src/lib/supabase/` (cliente de navegador y de
-  servidor) y `apps/mobile/src/lib/supabase.ts` (cliente con almacenamiento del dispositivo).
-- Variables de entorno: `NEXT_PUBLIC_*` en `apps/web/.env.local`, `EXPO_PUBLIC_*` en
-  `apps/mobile/.env`. Ninguna de las dos se sube al repositorio.
-- Tests: Vitest en `apps/web` y `packages/shared`; Jest (`jest-expo`) en `apps/mobile`. En
-  `apps/mobile`, `@testing-library/react-native` 14.0.1 no funciona todavía con esta
-  combinación de Expo SDK 57 / React Native 0.86 / React 19.2 (`render()` devuelve un objeto
-  vacío en vez de lanzar un error o funcionar) — de momento la lógica de las pantallas se
-  extrae a funciones puras y se prueba sin renderizar componentes (ver
-  `apps/mobile/src/lib/validate-auth-form.ts` como ejemplo). Si en un hito futuro hace falta
-  probar la interfaz de móvil renderizada, revisa primero si esa combinación de versiones
-  ya se ha arreglado antes de perder tiempo depurándolo de nuevo.
-- CI en `.github/workflows/ci.yml`: typecheck, lint, tests y compilación en cada cambio, sin
-  necesitar credenciales de Supabase.
-- Identidad visual "Emerald Control" (Especificación Maestra §146) ya aplicada como tokens
-  de color: `apps/web/src/app/globals.css` y `apps/mobile/src/lib/theme.ts` — mismos valores
-  en los dos sitios, no los dupliques con números distintos si los cambias.
-- **Limitación de red de este entorno**: el proxy de salida de esta sesión de Claude Code
-  bloquea el acceso directo a `*.supabase.co` (política del entorno remoto, no un fallo).
-  Esto significa que no se puede verificar en vivo, desde esta sesión, que el registro o el
-  inicio de sesión funcionan de verdad contra el proyecto real de Supabase — solo se puede
-  comprobar que el código compila, pasa el tipado y pasa las pruebas con Supabase simulado
-  (mock). La verificación en vivo la hace Bosco ejecutando `pnpm dev:web` en su propio
-  ordenador, o se resuelve si en el futuro el entorno permite ese dominio.
-
-## 7. Idioma
-
-El producto es en español. La documentación de este repositorio (PRD, ROADMAP, este
-archivo) se escribe en español, igual que las conversaciones con Bosco. Los nombres de
-código (variables, tablas, funciones) pueden ir en inglés siguiendo la convención habitual
-de programación, salvo que el propio dominio del negocio use un término en español que no
-tenga una traducción natural y sea mejor conservarlo (p. ej. `menu_diario`).
+- TypeScript estricto. `strict: true`, sin `any` salvo justificación en comentario.
+- Identificadores, nombres de tablas, columnas y funciones en **inglés**. Todo el texto visible al usuario en **español**, siempre a través del sistema de i18n (`src/i18n/es.ts`). Nunca literales de UI incrustados en los componentes.
+- Lógica de dominio pura (reloj laboral, consumos, permisos, estados) en `src/core/`, sin dependencias de Supabase, Next ni React, y con tests unitarios. Los adaptadores externos viven en `src/services/`.
+- Colores, espaciados y tipografía solo mediante los tokens del sistema Emerald Control. Nunca un hexadecimal suelto en un componente.
+- Errores de negocio como tipos de resultado explícitos, no como excepciones genéricas.
