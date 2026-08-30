@@ -59,9 +59,7 @@ Cuando este documento contradiga textos, mockups o conversaciones anteriores, pr
 
 Este documento define el producto completo conocido, no la primera versión. La división por versiones se realizará después. Los apartados marcados como **Pendiente deliberadamente** no deben completarse inventando reglas durante el desarrollo.
 
-Las aclaraciones, correcciones y reglas nuevas que vayan surgiendo después de esta
-consolidación se registran en `docs/DECISIONES.md`, que manda sobre lo que contradiga a
-este documento.
+**Enmiendas integradas del 29/08/2026:** composición plan/Menú Diario, comportamiento de establecimientos con solo Menú Diario, estado Finalizando, permanencia de 30 días en la columna Finalizados, corrección mínima de Menú Diario con límite de garantía de las 21:00, calendario de Menú Diario todos los días del año, deuda de permanencia en caso de impago/baja y reglas exactas de prorrateo.
 
 ---
 
@@ -275,7 +273,7 @@ Todos los precios son más IVA. Cada establecimiento contrata su propio plan, in
 - Facturación mensual.
 - Permanencia mínima inicial: 3 meses.
 - Tras esos tres meses, renovación mensual automática.
-- Si se cancela antes, deben abonarse las mensualidades restantes.
+- La baja anticipada no extingue el compromiso ni la deuda. Si el establecimiento solicita la baja antes de terminar la permanencia, las mensualidades restantes siguen adeudadas y deben abonarse íntegramente para causar baja.
 - Un cambio voluntario de plan inicia una nueva permanencia de 3 meses.
 - Los consumos se renuevan en la fecha de renovación del establecimiento.
 - Los consumos no se acumulan.
@@ -343,7 +341,7 @@ Menú Diario es un servicio independiente de los planes de mantenimiento.
 - Tres plantillas personalizadas iniciales incluidas una sola vez.
 - El restaurante puede elegir cualquiera de las tres en cada menú.
 - Sustituciones, nuevas plantillas y rediseños se presupuestan aparte.
-- Puede contratarse con o sin plan de mantenimiento.
+- Puede contratarse con o sin plan de mantenimiento. En Restavor, un establecimiento puede tener un plan de mantenimiento, Menú Diario o ambos a la vez; como máximo puede tener un plan de mantenimiento activo.
 
 ---
 
@@ -804,6 +802,8 @@ No tiene por qué ser prominente para el cliente.
 
 En Pausado se puede consultar, pero no crear solicitudes o menús. Los motivos específicos, como impago, se muestran junto al estado.
 
+**Finalizando** significa que el restaurante ya ha comunicado la baja, pero el servicio continúa activo hasta el final del periodo pagado o de la permanencia vigente. Al llegar esa fecha, el establecimiento pasa a **Solo lectura** durante 24 horas y después a **Suspendido**.
+
 ## 28. Datos del establecimiento
 
 Incluye al menos:
@@ -891,7 +891,7 @@ Flujo base:
 
 Cuotly no debe mezclar:
 
-1. **Primera atención interna:** comienza cuando la solicitud llega al espacio y utiliza 48 horas laborables en Básico o 24 en Impulso/Premium. Reciben aviso propietario y administradores; un trabajador solo cuando ya exista asignación válida.
+1. **Primera atención interna:** comienza cuando la solicitud llega al espacio y utiliza 48 horas laborables en Básico o en un establecimiento sin plan de mantenimiento, aunque tenga Menú Diario; utiliza 24 horas laborables en Impulso/Premium. Reciben aviso propietario y administradores; un trabajador solo cuando ya exista asignación válida.
 2. **Inicio operativo:** después de la aceptación final y la asignación, mide el tiempo disponible para pulsar Comenzar.
 3. **Ejecución:** comienza al pulsar Comenzar y utiliza el plazo de 72 o 120 horas laborables según categoría.
 
@@ -988,6 +988,10 @@ El trabajador publica directamente cuando termina. No necesita aprobación previ
 - Puede revisar lo publicado.
 - Un error del equipo se corrige sin consumir cambios ni la corrección mínima del cliente.
 
+### 40.1 Finalizados
+
+Los trabajos y tareas finalizados permanecen **30 días naturales** en la columna **Finalizados** de las vistas operativas. Transcurridos esos 30 días dejan de mostrarse en esa columna y quedan accesibles en el historial de trabajos y tareas finalizados. **No se borra nada.**
+
 ---
 
 # PARTE VIII — CLASIFICACIÓN, CONSUMOS, PLAZOS Y CORRECCIONES
@@ -1078,6 +1082,8 @@ Ejemplos:
 - Una petición del sábado por la tarde o domingo empieza a contar el lunes a las 09:00.
 - La disponibilidad personal del trabajador no cambia este reloj.
 
+Este reloj contractual **no se aplica a Menú Diario**. Menú Diario utiliza un calendario de servicio independiente que opera **todos los días del año, festivos incluidos**. El horario humano de soporte es también un reloj distinto y no modifica ninguno de estos plazos.
+
 ## 45. Plazo para comenzar
 
 - Básico: máximo 48 horas laborables.
@@ -1143,6 +1149,8 @@ No incluye:
 - una segunda corrección.
 
 Los errores imputables al equipo de mantenimiento se corrigen sin consumir esta corrección ni créditos.
+
+**Menú Diario:** también dispone de una corrección mínima sobre el mismo menú. Sin embargo, si la edición del menú o la petición de cambio llega **después de las 21:00 del día anterior**, el sistema puede aceptar la corrección, pero **no se garantiza que pueda realizarse a tiempo para la publicación prevista**.
 
 ## 49. Cancelaciones y devolución
 
@@ -1354,7 +1362,7 @@ Al marcar Publicado, Cuotly registra automáticamente:
 - Si la versión definitiva está antes de las 21:00, se garantiza publicación antes de las 08:00.
 - Cambios después de las 21:00 se aceptan, pero no se garantiza que entren en la publicación prevista.
 - El trabajador ve cambios de versión y hora.
-- Menú Diario opera también fines de semana y utiliza su propio calendario de servicio.
+- Menú Diario opera **todos los días del año, festivos incluidos**, y utiliza su propio calendario de servicio.
 - A las 20:00 se recuerda al propietario y Editores si no existe menú preparado para el día siguiente.
 
 ## 63. Estados de Menú Diario
@@ -1632,11 +1640,12 @@ Tras aceptación se crea solicitud o trabajo sin consumir bolsa. Puede exigirse 
 ## 85. Impago del restaurante a su proveedor
 
 - +24 horas naturales desde vencimiento: establecimiento Pausado por impago.
-- +72 horas naturales: servicio cancelado y establecimiento Suspendido por impago.
+- +72 horas naturales: servicio **detenido** y establecimiento Suspendido por impago.
+- La suspensión por impago **no cancela el compromiso contractual**. La deuda se mantiene y, para causar baja, el establecimiento debe abonar las mensualidades restantes de su permanencia, además de cualquier importe ya vencido.
 - Se detienen trabajos, publicaciones y contadores.
 - No se borra información.
-- Al confirmarse pago se reactiva y los contadores siguen con tiempo restante.
-- La pausa financiera queda auditada.
+- Al confirmarse el pago correspondiente, se reactiva y los contadores siguen exactamente con el tiempo restante, sin duplicar solicitudes ni trabajos.
+- La pausa financiera, la reactivación y el pago quedan auditados.
 
 ## 86. Panel financiero
 
@@ -1921,8 +1930,9 @@ Otros espacios pueden crear categorías propias y periodicidades mensuales, trim
 
 ## 105. Asignación y precio
 
-- Un establecimiento tiene un plan de mantenimiento activo.
-- Puede tener varios servicios adicionales.
+- Un establecimiento puede tener **un plan de mantenimiento, Menú Diario o ambos**. El plan de mantenimiento es opcional.
+- Como máximo puede existir **un plan de mantenimiento activo** a la vez. Puede haber servicios adicionales según la configuración del espacio.
+- Un establecimiento de Restavor **sin plan de mantenimiento y con Menú Diario** puede crear solicitudes de cambio en su web. Esas solicitudes se comportan como en Básico: **sin consumos incluidos, todo a presupuesto y primera atención de 48 horas laborables**.
 - No se permiten precios negociados individuales para los planes de Restavor.
 - Otros espacios aplicarán sus reglas, pero Cuotly no fomenta negociación oculta.
 
@@ -1930,11 +1940,21 @@ Otros espacios pueden crear categorías propias y periodicidades mensuales, trim
 
 ### Mejora inmediata
 
-- diferencia económica proporcional;
-- consumos adicionales proporcionales al periodo restante;
-- no duplica lo ya utilizado;
-- nuevo SLA solo para solicitudes posteriores;
-- nueva permanencia de 3 meses.
+- La diferencia económica proporcional al periodo restante se **redondea a 2 cifras decimales**.
+- Los consumos adicionales son proporcionales al periodo restante y, como son unidades enteras, se **redondean al alza a favor del cliente**.
+- No se duplica lo ya utilizado.
+- El nuevo SLA solo se aplica a solicitudes posteriores al cambio.
+- Se inicia una nueva permanencia de 3 meses.
+
+Fórmula:
+
+```text
+fracción_restante = minutos_naturales_restantes_del_ciclo / minutos_naturales_totales_del_ciclo
+importe_diferencia = redondear2((precio_nuevo - precio_antiguo) * fracción_restante)
+unidades_extra(categoría) = techo((incluidas_nuevo(categoría) - incluidas_antiguo(categoría)) * fracción_restante)
+```
+
+Si `unidades_extra` resulta negativo, se trata como 0: una mejora nunca quita consumos.
 
 ### Mejora en renovación
 

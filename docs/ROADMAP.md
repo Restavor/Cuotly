@@ -1,75 +1,112 @@
-# Cuotly — ROADMAP
+# ROADMAP — Cuotly
 
-Este documento fija el **orden** de trabajo: primero las fases, y dentro de la Fase 1, los
-hitos. No se empieza un hito sin haber cerrado (con visto bueno de Bosco) el anterior, y no
-se detalla un hito futuro hasta que le toque — para no invertir tiempo de planificación en
-algo que puede cambiar antes de llegar ahí.
+La Fase 1 se construye por **hitos**. Cada hito termina con `pnpm typecheck && pnpm lint && pnpm test`
+en verde, y con una parada para que Bosco lo revise antes de empezar el siguiente.
 
-Para el "qué" y el "por qué" de cada fase, ver `docs/PRD.md`. Este documento es solo el
-"en qué orden y con qué evidencia de que funciona".
+El orden no es negociable: cada hito se apoya en el anterior. **El hito 2 es la referencia de calidad
+de todo el proyecto** — es la rebanada vertical que el resto del código imita.
 
 ---
 
-## Fases
+## FASE 1 — Operación real de Restavor
 
-| Fase | Contenido | Estado |
-|---|---|---|
-| **Fase 1** | Núcleo operativo mínimo (web y móvil en paralelo) | **En curso** — ver hitos abajo |
-| Fase 2 | Finanzas y planes/servicios configurables | Sin detallar |
-| Fase 3 | Menú Diario | Sin detallar |
-| Fase 4 | Informes, analítica e integraciones externas | Sin detallar |
-| Fase 5 | Resto del producto completo (calendario avanzado, archivos avanzados, soporte, administración de Cuotly, seguridad avanzada, apertura a otros espacios) | Sin detallar |
+### Hito 1 · Cimientos
+- Next.js 15 + TypeScript estricto + Tailwind, App Router.
+- Supabase local con migraciones versionadas.
+- Sistema visual Emerald Control como tokens (`src/styles/tokens.css`) y componentes base: botón, campo, selector, tabla, tarjeta, badge de estado, modal, toast, estados vacío/carga/error/sin permisos.
+- i18n español (`src/i18n/es.ts`). Ningún literal de UI en los componentes.
+- Vitest y Playwright configurados con un test de humo que pase.
+- `src/core/` creado y vacío de dependencias externas.
 
-Las fases 2 a 5 solo tienen nombre y una frase de contenido por ahora. Se detallan en
-hitos cuando la Fase 1 esté cerrada y aprobada, salvo que aparezca antes una razón de peso
-para adelantar la planificación de una — y en ese caso, se para y se pregunta a Bosco, no
-se decide en solitario.
+**Se verifica con:** `pnpm dev` levanta, `pnpm test` pasa, la página de estilos muestra todos los componentes base.
+
+### Hito 2 · Identidad, espacios y permisos *(rebanada vertical de referencia)*
+- Esquema de `users`, `profiles`, `spaces`, `space_memberships`, `groups`, `establishments`, membresías y permisos.
+- **RLS en todas las tablas**, con helpers SQL (`current_space_id()`, `has_capability()`).
+- Registro, verificación de correo, login con contraseña y con Google, recuperación, gestión de sesiones.
+- Selector de contexto y acción "Cambiar de espacio".
+- Invitaciones con caducidad de 7 días y flujo de "usuario ya registrado".
+- Matriz de capacidades completa en servidor + tabla de auditoría.
+- Semilla: el espacio Restavor, sus tres planes, el servicio Menú Diario, Bosco como propietario de plataforma vía `CUOTLY_OWNER_EMAIL`.
+
+**Se verifica con:** CA-01, CA-02, CA-16. Test que intenta leer datos de otro espacio con identidad ajena y falla.
+
+### Hito 3 · Motor de tiempo
+- `src/core/business-clock.ts` con los tres calendarios (contractual, Menú Diario, soporte) y calendarios versionados.
+- `holidays` y `space_working_hours` con interfaz de configuración.
+- `timer_events` y recálculo de contadores desde eventos.
+
+**Se verifica con:** CA-10 y CA-11. Este hito es lógica pura: debe tener la batería de tests más densa del proyecto.
+
+### Hito 4 · Solicitudes y clasificación
+- `requests`, `request_versions`, `classifications`, conversaciones de solicitud.
+- Flujo completo de estados con sus transiciones válidas.
+- Clasificación con la API de Anthropic desde el servidor + fallback por reglas + registro en `ai_usage`.
+- Validación humana obligatoria antes de mostrar nada al cliente.
+- Copiar y pegar solicitud dentro del grupo.
+- T1 en marcha con sus avisos.
+
+**Se verifica con:** HU-10 a HU-15. Test de que la IA caída no bloquea el flujo.
+
+### Hito 5 · Consumos y aceptación
+- `consumption_cycles`, `consumption_entries`, `acceptances`.
+- Libro inmutable, saldos calculados, créditos compensatorios, devoluciones.
+- Aceptación del cliente con transacción, bloqueo de fila e idempotencia.
+- Creación del trabajo a partir de la aceptación.
+
+**Se verifica con:** CA-05 a CA-09, CA-17.
+
+### Hito 6 · Trabajos, tareas, asignación y carga
+- `jobs`, `tasks`, `assignments`, `supervisions`, `blocks`, `corrections`, `state_events`.
+- Asignación automática con candidato único y recomendación determinista con varios.
+- Comenzar, bloquear, pausar, publicar, corregir, reasignar.
+- T2 y T3 con todos sus avisos. "Fuera de plazo" calculado.
+- Puntos de carga y niveles, con el reparto por tareas.
+- Columna "Finalizados" con la regla de 30 días.
+
+**Se verifica con:** HU-16 a HU-23, CA-12 a CA-14.
+
+### Hito 7 · Mensajes, archivos y finanzas
+- Los tres tipos de conversación, notas internas separadas, edición de 10 minutos, sin eliminación.
+- Archivos con versiones, marca interno/compartido, límite de 25 MB, tipos permitidos.
+- `charges`, `payments`, confirmación manual, justificantes, ciclo de impago 24 h / 72 h y reactivación.
+- Panel financiero operativo.
+
+**Se verifica con:** HU-24 a HU-28, HU-35, RN-FIN-13.
+
+### Hito 8 · Inicio por rol, búsqueda, notificaciones y cierre
+- Inicio distinto para propietario, administrador, trabajador y propietario global.
+- Búsqueda global con `Ctrl/Cmd + K`, filtrada en servidor.
+- Botón Crear contextual.
+- Centro de notificaciones + correo con Resend, por cola, con reintentos e idempotencia.
+- Calendario operativo básico con eventos automáticos y ausencias.
+- Entrada "Agente Cuotly · Próximamente".
+- Repaso completo de los criterios CA-19 a CA-22.
+
+**Se verifica con:** revisión adversarial de toda la Fase 1 por un subagente contra este ROADMAP y el PRD.
 
 ---
 
-## Fase 1 — Núcleo operativo mínimo
+## FASE 2 — Menú Diario
+Menús con sus tipos, versiones y estados · tres plantillas · generación de PNG y PDF · solicitud de
+publicación y consumo de actualizaciones · flujo manual de publicación en LandingSite con "Marcar como
+publicado" · garantía de las 21:00 y recordatorio de las 20:00 · calendario de todos los días del año ·
+corrección mínima con la salvedad de las 21:00 · calendario operativo completo · presupuestos adicionales.
 
-Objetivo de la fase: que Bosco pueda, de principio a fin y en web y en móvil, crear su
-espacio (Restavor), dar de alta un restaurante, invitar a alguien de su equipo con un rol
-concreto, recibir una solicitud de ese restaurante, convertirla en un trabajo, asignarlo,
-ejecutarlo y publicarlo — con los plazos, los permisos y el aislamiento entre empresas
-funcionando de verdad, no simulados.
+## FASE 3 — Datos e informes
+Integraciones GA4, Search Console, Business Profile, Clarity y PageSpeed con OAuth y credenciales
+cifradas · sincronización programada con estados y sin botón "Sincronizar ahora" · series de métricas ·
+oportunidades **por reglas deterministas** con su ciclo de estados · informes de operación, finanzas y
+rendimiento digital con flujo de aprobación, versiones, PDF, CSV y envío programado.
 
-### Hitos
+## FASE 4 — Plataforma y móvil
+App React Native + Expo reutilizando la misma API y el mismo dominio · push con Expo sobre FCM y APNs ·
+panel de Administración de Cuotly · solicitudes de creación de espacio y su aprobación · onboarding de
+espacio nuevo · suscripciones Pro y Agency con su ciclo de pago manual, impago y archivado · prueba
+gratuita de 7 días · Modo soporte · centro de ayuda y página de estado · exportación y conservación.
 
-| Hito | Nombre | Objetivo resumido | Detalle |
-|---|---|---|---|
-| **H1** | Cimientos técnicos | Repositorio, entornos, base de datos y autenticación funcionando; una persona puede registrarse e iniciar sesión en web y en móvil, sin funcionalidad de negocio todavía | ✅ **Cerrado** (29/08/2026) — `docs/PLAN-H1-H2.md` |
-| **H2** | Identidad multiempresa | Modelo de datos de Espacios/Grupos/Establecimientos, roles básicos y aislamiento entre espacios (RLS) reales; Bosco puede crear el espacio de Restavor, dar de alta un establecimiento e invitar a alguien con un rol, en web y en móvil | **En curso** — `docs/PLAN-H1-H2.md` |
-| H3 | Ciclo Solicitud → Trabajo → Tarea (estados) | El flujo completo de estados de §32–40, sin relojes de tiempo todavía | Se detalla al llegar |
-| H4 | Reloj contractual y plazos | Los tres relojes de tiempo (§44–47) aplicados al ciclo del H3, con sus avisos | Se detalla al llegar |
-| H5 | Clasificación, consumos y corrección mínima | Categorías de cambio, consumo del plan y corrección gratuita (§41–43, §48–49) | Se detalla al llegar |
-| H6 | Asignación de trabajadores | Asignación manual primero; versión simplificada de la recomendación automática (§51) | Se detalla al llegar |
-| H7 | Mensajes básicos | Conversación vinculada a una solicitud, con la regla de "Equipo de mantenimiento" (§66.1, §67) | Se detalla al llegar |
-| H8 | Notificaciones mínimas y auditoría básica | Avisos de los eventos anteriores (centro de avisos, correo, push) y registro de quién-qué-cuándo | Se detalla al llegar |
+---
 
-**Notas de cierre del H1** (aprobado por Bosco el 29/08/2026): el diseño visual real
-("Emerald Control") se aplicó a las pantallas de login/registro de la web a partir de una
-referencia que compartió Bosco; la app móvil todavía tiene esas mismas pantallas sin
-diseño, pendiente de aplicarlo en un momento posterior. La confirmación en vivo de que el
-registro funciona contra el proyecto real de Supabase quedó pendiente de verificar (el
-entorno de esta sesión bloquea la conexión directa a Supabase); se retoma en el H2.
-
-Esta lista de H3 en adelante es una **propuesta de orden**, no un compromiso cerrado: puede
-reordenarse o dividirse de otra forma cuando lleguemos ahí, según lo que aprendamos en H1 y
-H2. Lo que no cambia es que ningún hito de esta lista empieza sin que el anterior esté
-aprobado por Bosco con evidencia.
-
-### Qué significa "cerrar un hito" en esta fase
-
-Para cada hito, antes de pedir el visto bueno de Bosco, tiene que poder enseñarse:
-
-1. Los tests automáticos relacionados con ese hito, en verde, con su salida real (no un
-   resumen inventado).
-2. Una demostración de que funciona: en hitos con interfaz, capturas de pantalla o un
-   recorrido guiado de la pantalla real (web y móvil, cuando aplique); en hitos sin
-   interfaz (como H1), evidencia de que el sistema hace lo que decía que haría (por
-   ejemplo, un usuario nuevo consigue registrarse e iniciar sesión de verdad).
-3. Confirmación explícita de que las reglas de seguridad de ese hito se cumplen (por
-   ejemplo, desde H2: que un usuario de un espacio no puede ver datos de otro espacio,
-   probado intentándolo, no solo asumiéndolo).
+## Antes de lanzar
+El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
+cualificado**. No se lanza sin eso.
