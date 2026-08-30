@@ -60,9 +60,90 @@ export const es = {
 
   home: {
     signedInAs: "Has entrado como",
-    placeholderNote:
-      "Todavía no hay más funcionalidad — esto es la evidencia del Hito 1: el registro y el inicio de sesión funcionan de verdad.",
     signOut: "Cerrar sesión",
+  },
+
+  platform: {
+    createRestavor: {
+      title: "Todavía no existe ningún espacio",
+      description:
+        "Como propietario de Cuotly, puedes crear el espacio de Restavor. Solo hace falta hacerlo una vez.",
+      button: "Crear Restavor",
+      confirmTitle: "Crear el espacio de Restavor",
+      confirmBody:
+        "Esto crea el espacio de mantenimiento de Restavor con sus tres planes y el servicio Menú Diario ya configurados. Se audita quién lo creó y cuándo. Solo puede hacerse una vez.",
+      confirmAction: "Crear espacio",
+      confirmCancel: "Cancelar",
+      pending: "Creando…",
+      error: "No se ha podido crear el espacio.",
+    },
+    noSpaceYet: {
+      title: "Todavía no perteneces a ningún espacio",
+      description: "Cuando alguien te invite a un espacio de mantenimiento, aparecerá aquí.",
+    },
+  },
+
+  invitations: {
+    invalid: "Esta invitación no es válida, ya se usó, o ha caducado.",
+  },
+
+  actions: {
+    establishmentValidation: "Rellena el grupo y el nombre del establecimiento.",
+    inviteValidation: "Indica un correo y un rol válidos.",
+    notAuthenticated: "Tu sesión ha caducado. Vuelve a entrar.",
+  },
+
+  contextSelector: {
+    title: "Elige un espacio",
+    subtitle: "Perteneces a más de un espacio de mantenimiento.",
+  },
+
+  space: {
+    establishments: {
+      title: "Restaurantes",
+      empty: "Todavía no hay ningún establecimiento en este espacio.",
+      newButton: "+ Nuevo establecimiento",
+      formTitle: "Nuevo establecimiento",
+      groupLabel: "Grupo o empresa cliente",
+      nameLabel: "Nombre del establecimiento",
+      submit: "Crear establecimiento",
+      submitPending: "Creando…",
+      codeColumn: "Código",
+      nameColumn: "Nombre",
+      statusColumn: "Estado",
+    },
+    team: {
+      title: "Equipo",
+      empty: "Todavía no hay nadie más en el equipo.",
+      inviteButton: "Invitar",
+      inviteFormTitle: "Invitar a alguien al equipo",
+      emailLabel: "Correo electrónico",
+      roleLabel: "Rol",
+      roleAdmin: "Administrador",
+      roleWorker: "Trabajador",
+      submit: "Enviar invitación",
+      submitPending: "Enviando…",
+      alreadyRegistered: "Este usuario ya está registrado en Cuotly. Se ha añadido directamente al espacio.",
+      invitationCreated:
+        "Invitación creada. Como todavía no hay envío automático de correo, comparte este enlace tú mismo:",
+      emailColumn: "Correo",
+      roleColumn: "Rol",
+      statusColumn: "Estado",
+      pendingInvitations: "Invitaciones pendientes",
+    },
+    statuses: {
+      active: "Activo",
+      configuring: "Configurando",
+      paused: "Pausado",
+      ending: "Finalizando",
+      read_only: "Solo lectura",
+      suspended: "Suspendido",
+      archived: "Archivado",
+      invited: "Invitado",
+      temporarily_absent: "Ausente",
+      inactive: "Inactivo",
+      access_revoked: "Acceso revocado",
+    },
   },
 } as const;
 

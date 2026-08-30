@@ -61,6 +61,39 @@ Desde la raíz del repositorio:
 La página `http://localhost:3000/styleguide` enseña todos los componentes base del
 sistema de diseño (Emerald Control) en un solo sitio.
 
+## Primer arranque (Hito 2): crear el espacio de Restavor
+
+1. Entra con la cuenta cuyo correo coincide con `CUOTLY_OWNER_EMAIL` (§0 de la
+   Especificación Maestra: el Propietario de Cuotly).
+2. En Inicio verás el botón **Crear Restavor**. Solo lo ve esa cuenta — la
+   base de datos lo comprueba de verdad, no solo la pantalla.
+3. Se crea el espacio, sus tres planes y el servicio Menú Diario, todo en
+   una única operación (`create_restavor_space()`).
+
+## Login con Google
+
+El botón "Continuar con Google" ya está construido, pero para que funcione
+hace falta configurar un proyecto de Google Cloud y pegar sus credenciales
+en el panel de Supabase → Authentication → Providers → Google. Sin eso,
+Supabase devuelve un error controlado en vez de romper la página.
+
+## Verificar el aislamiento entre espacios (CA-01, CA-02, CA-16)
+
+`supabase/tests/hito2_permisos.sql` es un script real y repetible que
+verifica los tres criterios con consultas directas a la base de datos,
+simulando identidades distintas. Se ejecuta pegándolo en el SQL Editor de
+Supabase, con `psql`, o con la herramienta `execute_sql` si tienes el
+conector de Supabase activo en Claude Code. No modifica nada de forma
+permanente: crea sus propios datos de prueba y los borra al final.
+
+## Regenerar los tipos de TypeScript de la base de datos
+
+Después de aplicar una migración nueva, los tipos en
+`apps/web/src/lib/supabase/database.types.ts` hay que regenerarlos (con la
+CLI de Supabase — `supabase gen types typescript` — o con la herramienta
+`generate_typescript_types` si tienes el conector activo) y pegarlos ahí.
+No se escriben a mano.
+
 ## CI
 
 Cada cambio subido a GitHub ejecuta automáticamente tipado, lint, pruebas y

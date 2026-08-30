@@ -1,4 +1,5 @@
 export { Button } from "./Button";
+export { GoogleButton } from "./GoogleButton";
 export { Field } from "./Field";
 export { Select } from "./Select";
 export { Card } from "./Card";

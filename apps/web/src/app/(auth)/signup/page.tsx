@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { Logo } from "@/components/Logo";
-import { Button, Field } from "@/components/ui";
+import { Button, Field, GoogleButton } from "@/components/ui";
 import { es } from "@/i18n/es";
 import { signUp, type AuthFormState } from "../actions";
 
@@ -48,6 +48,14 @@ export default function SignUpPage() {
       <Button type="submit" pending={pending} className="w-full">
         {pending ? t.submitPending : t.submit}
       </Button>
+
+      <div className="my-4 flex items-center gap-3 text-xs text-text-secondary">
+        <span className="h-px flex-1 bg-border" />
+        {t.divider}
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <GoogleButton />
 
       <p className="mt-6 text-center text-sm text-text-secondary">
         {t.hasAccount}{" "}
