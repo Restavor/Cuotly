@@ -99,32 +99,32 @@ declare
 begin
   select count(*) into v_count from public.spaces where slug = 'espacio-b-test';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de spaces de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de spaces de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.establishments where space_id = 'b0000000-0000-0000-0000-000000000002';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de establishments de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de establishments de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.groups where space_id = 'b0000000-0000-0000-0000-000000000002';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de groups de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de groups de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.space_memberships where space_id = 'b0000000-0000-0000-0000-000000000002';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de space_memberships de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de space_memberships de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.spaces where slug = 'espacio-a-test';
   if v_count <> 1 then
-    raise exception 'CA-02 control FALLIDO: no se pudo leer el propio espacio (esperado 1, encontrado %)', v_count;
+    raise exception 'CA-02 control FALLIDO: no se pudo leer el propio espacio (esperado 1, encontrado %)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.establishments where space_id = 'b0000000-0000-0000-0000-000000000001';
   if v_count <> 1 then
-    raise exception 'CA-02 control FALLIDO: no se pudo leer el propio establishment (esperado 1, encontrado %)', v_count;
+    raise exception 'CA-02 control FALLIDO: no se pudo leer el propio establishment (esperado 1, encontrado %)', v_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -148,7 +148,7 @@ begin
   begin
     insert into public.establishments (space_id, group_id, name)
     values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Intento no autorizado');
-    raise exception 'CA-01 FALLIDO: un Trabajador pudo crear un establecimiento sin permiso (RN-EST-02)';
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo crear un establecimiento sin permiso (RN-EST-02)' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then
       null; -- esperado
@@ -157,7 +157,7 @@ begin
   begin
     insert into public.space_invitations (space_id, email, role, invited_by)
     values ('b0000000-0000-0000-0000-000000000001', 'nuevo@example.com', 'worker', 'a0000000-0000-0000-0000-000000000003');
-    raise exception 'CA-01 FALLIDO: un Trabajador pudo invitar a alguien sin permiso (PRD §4.2)';
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo invitar a alguien sin permiso (PRD §4.2)' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then
       null; -- esperado
@@ -181,7 +181,7 @@ begin
   returning code into v_code;
 
   if v_code !~ '^EST-\d{4}$' then
-    raise exception 'CA-01 control positivo FALLIDO: código inesperado "%"', v_code;
+    raise exception 'CA-01 control positivo FALLIDO: código inesperado "%"', v_code using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -201,7 +201,7 @@ do $$
 begin
   begin
     perform public.next_space_sequence('b0000000-0000-0000-0000-000000000002', 'establishment');
-    raise exception 'RN-DAT-03 FALLIDO: un usuario ajeno al espacio B pudo mutar su contador vía RPC directa';
+    raise exception 'RN-DAT-03 FALLIDO: un usuario ajeno al espacio B pudo mutar su contador vía RPC directa' using errcode = 'assert_failure';
   exception
     when raise_exception then
       null; -- esperado: next_space_sequence() lanza 'No perteneces a este espacio'
@@ -234,7 +234,7 @@ begin
   select count(*) into v_remaining from public.plans where id = 'e0000000-0000-0000-0000-000000000001';
 
   if v_deleted <> 0 or v_remaining <> 1 then
-    raise exception 'RN-DAT-06 FALLIDO: borradas=% (esperado 0), restantes=% (esperado 1)', v_deleted, v_remaining;
+    raise exception 'RN-DAT-06 FALLIDO: borradas=% (esperado 0), restantes=% (esperado 1)', v_deleted, v_remaining using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -255,22 +255,22 @@ declare
 begin
   select count(*) into v_count from public.groups where id = 'c0000000-0000-0000-0000-000000000001';
   if v_count <> 1 then
-    raise exception 'RN-EST-03 FALLIDO: el Propietario global no pudo leer su propio grupo (esperado 1, encontrado %)', v_count;
+    raise exception 'RN-EST-03 FALLIDO: el Propietario global no pudo leer su propio grupo (esperado 1, encontrado %)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.establishments where group_id = 'c0000000-0000-0000-0000-000000000001';
   if v_count <> 2 then
-    raise exception 'RN-EST-03 FALLIDO: el Propietario global no pudo leer los establecimientos de su grupo (esperado 2, encontrado %)', v_count;
+    raise exception 'RN-EST-03 FALLIDO: el Propietario global no pudo leer los establecimientos de su grupo (esperado 2, encontrado %)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.spaces where id = 'b0000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'RN-EST-03 control FALLIDO: el Propietario global pudo leer el espacio de mantenimiento (esperado 0, encontrado %)', v_count;
+    raise exception 'RN-EST-03 control FALLIDO: el Propietario global pudo leer el espacio de mantenimiento (esperado 0, encontrado %)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.groups where id = 'c0000000-0000-0000-0000-000000000002';
   if v_count <> 0 then
-    raise exception 'RN-EST-03 control FALLIDO: el Propietario global pudo leer un grupo ajeno (esperado 0, encontrado %)', v_count;
+    raise exception 'RN-EST-03 control FALLIDO: el Propietario global pudo leer un grupo ajeno (esperado 0, encontrado %)', v_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -307,7 +307,7 @@ begin
   select count(*) into v_remaining from public.audit_log where space_id = 'b0000000-0000-0000-0000-000000000001';
 
   if v_updated <> 0 or v_deleted <> 0 or v_remaining <> 1 then
-    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0), restantes=% (esperado 1)', v_updated, v_deleted, v_remaining;
+    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0), restantes=% (esperado 1)', v_updated, v_deleted, v_remaining using errcode = 'assert_failure';
   end if;
 end $$;
 

@@ -133,6 +133,12 @@ export const REQUEST_TRANSITIONS: readonly RequestTransition[] = [
   { from: "pending_client_acceptance", to: "rejected", actor: "client", rule: "HU-12", t1: null },
   { from: "accepted", to: "cancelled_before_start", actor: "client", rule: "RN-JOB-04 / CA-06", t1: null },
   { from: "accepted", to: "cancelled_after_start", actor: "client", rule: "RN-JOB-04 / CA-06", t1: null },
+  // El cliente también puede cancelar con el trabajo ya en marcha, que es
+  // literalmente el caso "después de Comenzar" de RN-JOB-04 (el consumo se
+  // mantiene). Desde el Hito 6, pulsar Comenzar mueve la solicitud a
+  // `in_progress`, así que sin esta transición ese caso — el que CA-06
+  // exige probar — sería inalcanzable.
+  { from: "in_progress", to: "cancelled_after_start", actor: "client", rule: "RN-JOB-04 / CA-06", t1: null },
 
   // Hito 6 (ver la nota de cabecera):
   //   - `accepted -> in_progress`: el responsable pulsa Comenzar

@@ -18,7 +18,30 @@ import {
   t3DurationHours,
   t3Status,
 } from "./sla-timers";
+import { findJobTransition, type JobActor, type JobState } from "./job-states";
 import type { TimerEvent } from "./timer-events";
+
+/**
+ * Aplica transiciones reales de la máquina de estados del trabajo
+ * (`JOB_TRANSITIONS`) y devuelve los `timer_events` de T2 que el servidor
+ * escribiría por ellas. Así los tests de CA-12 no describen a mano el
+ * historial que quieren probar: lo derivan de la misma tabla que hace
+ * cumplir la regla.
+ */
+function applyJobTransitions(
+  events: readonly TimerEvent[],
+  transitions: readonly (readonly [JobState, JobState, JobActor])[],
+  occurredAt: Date,
+): TimerEvent[] {
+  const result = [...events];
+  for (const [from, to, actor] of transitions) {
+    const transition = findJobTransition(from, to, actor);
+    if (!transition) throw new Error(`Transición inexistente: ${from} -> ${to} (${actor})`);
+    if (transition.t2 === "start") result.push({ type: "started", occurredAt });
+    if (transition.t2 === "stop") result.push({ type: "stopped", occurredAt });
+  }
+  return result;
+}
 
 const MADRID = "Europe/Madrid";
 const calendar = contractualCalendar(MADRID);
@@ -117,18 +140,46 @@ describe("T2 — inicio operativo (RN-SLA-05 a 10)", () => {
     });
 
     it("RN-SLA-09: una reasignación no escribe ningún evento, así que T2 sigue exactamente donde estaba", () => {
-      const antesDeReasignar: TimerEvent[] = [{ type: "started", occurredAt: LUNES_09 }];
-      // Pedir y aprobar la reasignación no añade ni un solo timer_event
-      // (job-states.ts: t2 = null en ambas transiciones).
-      const despuesDeReasignar: TimerEvent[] = [...antesDeReasignar];
+      // El historial no se inventa: se construye aplicando las
+      // transiciones reales de JOB_TRANSITIONS, que es lo que hace el
+      // servidor. Si alguien pusiera t2: "start" en la aprobación de una
+      // reasignación, `applyJobTransitions` escribiría el arranque y este
+      // test se pondría rojo.
+      const asignado = applyJobTransitions([], [["pending_assignment", "assigned", "staff"]], LUNES_09);
+      const trasReasignar = applyJobTransitions(
+        asignado,
+        [
+          ["assigned", "reassignment_requested", "worker"],
+          ["reassignment_requested", "assigned", "staff"],
+        ],
+        LUNES_13,
+      );
 
-      const antes = t2Status(antesDeReasignar, calendar, LUNES_15, true);
-      const despues = t2Status(despuesDeReasignar, calendar, LUNES_15, true);
+      expect(trasReasignar).toHaveLength(asignado.length);
+
+      const antes = t2Status(asignado, calendar, LUNES_15, true);
+      const despues = t2Status(trasReasignar, calendar, LUNES_15, true);
 
       expect(despues.elapsedMinutes).toBe(antes.elapsedMinutes);
-      expect(despues.remainingMinutes).toBe(antes.remainingMinutes);
       // El nuevo responsable recibe el tiempo restante exacto, no uno nuevo.
+      expect(despues.remainingMinutes).toBe(antes.remainingMinutes);
       expect(despues.remainingMinutes).toBe(18 * 60);
+    });
+
+    it("RN-SLA-08 frente a RN-SLA-09: comenzar de nuevo tras una nueva aceptación sí reinicia, reasignar no", () => {
+      // Las dos secuencias, construidas con la misma tabla de transiciones:
+      // la reasignación deja el contador donde estaba; la nueva aceptación
+      // (parada del intento anterior + arranque nuevo) lo pone a cero.
+      const asignado = applyJobTransitions([], [["pending_assignment", "assigned", "staff"]], LUNES_09);
+
+      const nuevaAceptacion: TimerEvent[] = [
+        ...asignado,
+        { type: "stopped", occurredAt: LUNES_12 },
+        { type: "started", occurredAt: LUNES_13 },
+      ];
+
+      expect(t2Status(asignado, calendar, LUNES_15, true).elapsedMinutes).toBe(6 * 60);
+      expect(t2Status(nuevaAceptacion, calendar, LUNES_15, true).elapsedMinutes).toBe(2 * 60);
     });
   });
 });
@@ -205,9 +256,19 @@ describe("CA-14 · RN-SLA-17: \"Fuera de plazo\" es una condición calculada, no
     });
   });
 
-  it("y con una pausa autorizada o una corrección en curso", () => {
+  it("y con una pausa autorizada, que sigue midiéndose con T3", () => {
     expect(jobDeadlineCondition("authorized_pause", { t3: vencido }).outOfDeadline).toBe(true);
-    expect(jobDeadlineCondition("in_correction", { t3: vencido }).outOfDeadline).toBe(true);
+  });
+
+  it("RN-SLA-13: una corrección es posterior a la publicación, así que no revive el plazo", () => {
+    // T3 se detuvo al publicar y el PRD no define ningún contador para la
+    // corrección: si `in_correction` mirase el T3 congelado, "Fuera de
+    // plazo" parpadearía al entrar y salir de corrección.
+    expect(jobDeadlineCondition("in_correction", { t3: vencido })).toEqual({
+      state: "in_correction",
+      outOfDeadline: false,
+      counter: null,
+    });
   });
 
   it("antes de Comenzar la condición la decide T2, no T3", () => {

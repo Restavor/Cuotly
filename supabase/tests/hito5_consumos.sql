@@ -59,7 +59,7 @@ do $$
 begin
   begin
     perform public.create_plan_subscription('94000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001');
-    raise exception 'CA-01 FALLIDO: un Trabajador pudo asignar un plan a un establecimiento (RN-COM-11)';
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo asignar un plan a un establecimiento (RN-COM-11)' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado
   end;
@@ -84,7 +84,7 @@ begin
   -- sobre el mismo establecimiento debe fallar por el índice único parcial.
   begin
     perform public.create_plan_subscription('94000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-000000000001');
-    raise exception 'RN-COM-13 FALLIDO: se asignaron dos planes activos al mismo establecimiento';
+    raise exception 'RN-COM-13 FALLIDO: se asignaron dos planes activos al mismo establecimiento' using errcode = 'assert_failure';
   exception
     when unique_violation then null; -- esperado
   end;
@@ -131,7 +131,7 @@ begin
     when insufficient_privilege then null; -- esperado
   end;
   if v_inserted <> 0 then
-    raise exception 'F2 FALLIDO: se pudo vincular por escritura directa un plan de otro espacio a una suscripción';
+    raise exception 'F2 FALLIDO: se pudo vincular por escritura directa un plan de otro espacio a una suscripción' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -208,25 +208,27 @@ begin
 
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'accepted' then
-    raise exception 'CA-17 FALLIDO: tras aceptar, el estado debería ser accepted, es %', v_state;
+    raise exception 'CA-17 FALLIDO: tras aceptar, el estado debería ser accepted, es %', v_state using errcode = 'assert_failure';
   end if;
 
-  select count(*) into v_job_count from public.jobs where request_id = v_request_id;
+  -- El cliente lee sus trabajos por client_jobs (Hito 6: `jobs` no le
+  -- muestra las columnas de identidad del equipo, CLAUDE.md MUST NOT).
+  select count(*) into v_job_count from public.client_jobs where request_id = v_request_id;
   if v_job_count <> 1 then
-    raise exception 'CA-17/RN-REQ-02 FALLIDO: aceptar tres veces creó % trabajos (esperado 1)', v_job_count;
+    raise exception 'CA-17/RN-REQ-02 FALLIDO: aceptar tres veces creó % trabajos (esperado 1)', v_job_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_entry_count from public.consumption_entries where request_id = v_request_id;
   if v_entry_count <> 1 then
-    raise exception 'CA-17/RN-CON-06 FALLIDO: aceptar tres veces generó % apuntes de consumo (esperado 1)', v_entry_count;
+    raise exception 'CA-17/RN-CON-06 FALLIDO: aceptar tres veces generó % apuntes de consumo (esperado 1)', v_entry_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_acceptance_count from public.acceptances where request_id = v_request_id;
   if v_acceptance_count <> 1 then
-    raise exception 'CA-17 FALLIDO: aceptar tres veces generó % filas en acceptances (esperado 1)', v_acceptance_count;
+    raise exception 'CA-17 FALLIDO: aceptar tres veces generó % filas en acceptances (esperado 1)', v_acceptance_count using errcode = 'assert_failure';
   end if;
 
-  insert into h5_ctx values ('job_ca17', (select id::text from public.jobs where request_id = v_request_id));
+  insert into h5_ctx values ('job_ca17', (select id::text from public.client_jobs where request_id = v_request_id));
 end $$;
 
 reset role;
@@ -247,7 +249,7 @@ do $$
 begin
   begin
     perform public.accept_request((select value::uuid from h5_ctx where key = 'request_ca17'));
-    raise exception 'F1 FALLIDO: un usuario ajeno "aceptó" con éxito (sin excepción) una solicitud ya accepted sin tener acceso al establecimiento';
+    raise exception 'F1 FALLIDO: un usuario ajeno "aceptó" con éxito (sin excepción) una solicitud ya accepted sin tener acceso al establecimiento' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado: can_write_establishment() lo rechaza antes de mirar el estado
   end;
@@ -277,21 +279,21 @@ begin
   -- Pulsarlo dos veces no duplica la devolución.
   perform public.cancel_accepted_request(v_request_id, 'segundo intento');
 
-  select state into v_job_state from public.jobs where id = v_job_id;
+  select state into v_job_state from public.client_jobs where id = v_job_id;
   if v_job_state <> 'cancelled_before_start' then
-    raise exception 'CA-06 FALLIDO: el trabajo debería quedar cancelled_before_start, está %', v_job_state;
+    raise exception 'CA-06 FALLIDO: el trabajo debería quedar cancelled_before_start, está %', v_job_state using errcode = 'assert_failure';
   end if;
 
   select state into v_request_state from public.requests where id = v_request_id;
   if v_request_state <> 'cancelled_before_start' then
-    raise exception 'RN-REQ-01 FALLIDO: la solicitud debería reflejar el mismo nombre de estado, está %', v_request_state;
+    raise exception 'RN-REQ-01 FALLIDO: la solicitud debería reflejar el mismo nombre de estado, está %', v_request_state using errcode = 'assert_failure';
   end if;
 
   select jsonb_agg(jsonb_build_object('type', entry_type, 'amount', amount) order by created_at) into v_entries
   from public.consumption_entries where job_id = v_job_id;
 
   if v_entries <> '[{"type": "debit", "amount": -1}, {"type": "return", "amount": 1}]'::jsonb then
-    raise exception 'CA-06 FALLIDO: se esperaba un débito y una única devolución (sin duplicar), se obtuvo %', v_entries;
+    raise exception 'CA-06 FALLIDO: se esperaba un débito y una única devolución (sin duplicar), se obtuvo %', v_entries using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -309,7 +311,7 @@ do $$
 begin
   begin
     perform public.cancel_accepted_request((select value::uuid from h5_ctx where key = 'request_ca17'));
-    raise exception 'F1 FALLIDO: un usuario ajeno "canceló" con éxito (sin excepción) una solicitud ya cancelada sin tener acceso al establecimiento';
+    raise exception 'F1 FALLIDO: un usuario ajeno "canceló" con éxito (sin excepción) una solicitud ya cancelada sin tener acceso al establecimiento' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado
   end;
@@ -347,7 +349,7 @@ begin
   -- devuelve el consumo" — vuelve a estar disponible de verdad, no solo
   -- de nombre).
   if v_balance <> v_included_small then
-    raise exception 'CA-08 FALLIDO: el saldo calculado (%) no coincide con la suma de apuntes esperada (%)', v_balance, v_included_small;
+    raise exception 'CA-08 FALLIDO: el saldo calculado (%) no coincide con la suma de apuntes esperada (%)', v_balance, v_included_small using errcode = 'assert_failure';
   end if;
 
   -- Ninguna ruta de cliente puede tocar el libro directamente.
@@ -359,7 +361,7 @@ begin
     when insufficient_privilege then null; -- esperado: sin política de INSERT
   end;
   if v_inserted <> 0 then
-    raise exception 'CA-08 FALLIDO: el cliente pudo insertar un apunte directamente en consumption_entries';
+    raise exception 'CA-08 FALLIDO: el cliente pudo insertar un apunte directamente en consumption_entries' using errcode = 'assert_failure';
   end if;
 
   with intento_editar as (
@@ -375,7 +377,7 @@ begin
   select count(*) into v_deleted from intento_borrar;
 
   if v_updated <> 0 or v_deleted <> 0 then
-    raise exception 'CA-08 FALLIDO: editados=% (esperado 0), borrados=% (esperado 0) — el libro no es inmutable', v_updated, v_deleted;
+    raise exception 'CA-08 FALLIDO: editados=% (esperado 0), borrados=% (esperado 0) — el libro no es inmutable', v_updated, v_deleted using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -432,7 +434,7 @@ declare
   v_job_id uuid;
 begin
   perform public.accept_request(v_request_id);
-  v_job_id := (select id from public.jobs where request_id = v_request_id);
+  v_job_id := (select id from public.client_jobs where request_id = v_request_id);
   insert into h5_ctx values ('job_ca06b', v_job_id::text);
 end $$;
 
@@ -456,18 +458,18 @@ declare
 begin
   perform public.cancel_accepted_request(v_request_id, 'CA-06: el cliente cancela después de que el trabajo ya empezó');
 
-  select state into v_job_state from public.jobs where id = v_job_id;
+  select state into v_job_state from public.client_jobs where id = v_job_id;
   if v_job_state <> 'cancelled_after_start' then
-    raise exception 'CA-06 FALLIDO: el trabajo debería quedar cancelled_after_start, está %', v_job_state;
+    raise exception 'CA-06 FALLIDO: el trabajo debería quedar cancelled_after_start, está %', v_job_state using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_entry_count from public.consumption_entries where job_id = v_job_id;
   if v_entry_count <> 1 then
-    raise exception 'RN-JOB-04/CA-06 FALLIDO: cancelar después de Comenzar debería mantener el consumo (1 apunte, el débito), hay %', v_entry_count;
+    raise exception 'RN-JOB-04/CA-06 FALLIDO: cancelar después de Comenzar debería mantener el consumo (1 apunte, el débito), hay %', v_entry_count using errcode = 'assert_failure';
   end if;
 
   if exists (select 1 from public.consumption_entries where job_id = v_job_id and entry_type <> 'debit') then
-    raise exception 'RN-JOB-04/CA-06 FALLIDO: se generó una devolución tras cancelar después de Comenzar';
+    raise exception 'RN-JOB-04/CA-06 FALLIDO: se generó una devolución tras cancelar después de Comenzar' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -543,7 +545,7 @@ declare
   v_job_id uuid;
 begin
   perform public.accept_request(v_request_id);
-  v_job_id := (select id from public.jobs where request_id = v_request_id);
+  v_job_id := (select id from public.client_jobs where request_id = v_request_id);
   insert into h5_ctx values ('job_ca07', v_job_id::text);
 end $$;
 
@@ -598,19 +600,19 @@ begin
   where job_id = v_job_id and entry_type <> 'debit';
 
   if v_new_entry_type is null then
-    raise exception 'CA-07 FALLIDO: no se generó ningún apunte de devolución/crédito compensatorio';
+    raise exception 'CA-07 FALLIDO: no se generó ningún apunte de devolución/crédito compensatorio' using errcode = 'assert_failure';
   end if;
   if v_new_entry_type <> 'compensatory_credit' then
-    raise exception 'CA-07 FALLIDO: se esperaba un crédito compensatorio, se generó un %', v_new_entry_type;
+    raise exception 'CA-07 FALLIDO: se esperaba un crédito compensatorio, se generó un %', v_new_entry_type using errcode = 'assert_failure';
   end if;
   if v_new_entry_amount <> 1 then
-    raise exception 'CA-07 FALLIDO: el crédito compensatorio debería sumar 1, suma %', v_new_entry_amount;
+    raise exception 'CA-07 FALLIDO: el crédito compensatorio debería sumar 1, suma %', v_new_entry_amount using errcode = 'assert_failure';
   end if;
   if v_new_entry_cycle = v_old_cycle_id then
-    raise exception 'RN-CON-10 FALLIDO: la devolución reabrió el ciclo original ya cerrado, en vez de generar un crédito en el ciclo actual';
+    raise exception 'RN-CON-10 FALLIDO: la devolución reabrió el ciclo original ya cerrado, en vez de generar un crédito en el ciclo actual' using errcode = 'assert_failure';
   end if;
   if v_new_entry_cycle <> v_current_cycle_id then
-    raise exception 'CA-07 FALLIDO: el crédito compensatorio no se creó en el ciclo actual (%), se creó en %', v_current_cycle_id, v_new_entry_cycle;
+    raise exception 'CA-07 FALLIDO: el crédito compensatorio no se creó en el ciclo actual (%), se creó en %', v_current_cycle_id, v_new_entry_cycle using errcode = 'assert_failure';
   end if;
 
   -- RN-CON-11: el crédito compensatorio caduca con el ciclo en el que se
@@ -620,7 +622,7 @@ begin
   if (select included_small + coalesce(sum(amount), 0) from public.consumption_cycles cc
       left join public.consumption_entries ce on ce.consumption_cycle_id = cc.id and ce.category = 'small'
       where cc.id = v_old_cycle_id group by included_small) <> 0 then
-    raise exception 'RN-CON-11 FALLIDO: el ciclo original quedó con saldo distinto de 0 tras la devolución compensatoria';
+    raise exception 'RN-CON-11 FALLIDO: el ciclo original quedó con saldo distinto de 0 tras la devolución compensatoria' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -661,10 +663,10 @@ begin
   select count(*) into v_old_entry_count_after from public.consumption_entries where consumption_cycle_id = v_old_cycle_id;
 
   if v_old_included_before <> v_old_included_after then
-    raise exception 'CA-09 FALLIDO: la bolsa incluida del ciclo viejo cambió tras crear el ciclo de renovación (% -> %)', v_old_included_before, v_old_included_after;
+    raise exception 'CA-09 FALLIDO: la bolsa incluida del ciclo viejo cambió tras crear el ciclo de renovación (% -> %)', v_old_included_before, v_old_included_after using errcode = 'assert_failure';
   end if;
   if v_old_entry_count_before <> v_old_entry_count_after then
-    raise exception 'CA-09 FALLIDO: el número de apuntes del ciclo viejo cambió tras la renovación (% -> %)', v_old_entry_count_before, v_old_entry_count_after;
+    raise exception 'CA-09 FALLIDO: el número de apuntes del ciclo viejo cambió tras la renovación (% -> %)', v_old_entry_count_before, v_old_entry_count_after using errcode = 'assert_failure';
   end if;
 
   -- Y el propio apunte de débito de CA-07 sigue apuntando al ciclo viejo,
@@ -675,7 +677,7 @@ begin
       and entry_type = 'debit'
       and consumption_cycle_id <> v_old_cycle_id
   ) then
-    raise exception 'CA-09 FALLIDO: el apunte de débito ya aceptado cambió de ciclo tras la renovación';
+    raise exception 'CA-09 FALLIDO: el apunte de débito ya aceptado cambió de ciclo tras la renovación' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -692,27 +694,27 @@ declare
 begin
   select count(*) into v_count from public.subscriptions where space_id = '91000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de subscriptions de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de subscriptions de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.consumption_cycles where space_id = '91000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de consumption_cycles de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de consumption_cycles de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.consumption_entries where space_id = '91000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de consumption_entries de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de consumption_entries de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.jobs where space_id = '91000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de jobs de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de jobs de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.acceptances where space_id = '91000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de acceptances de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de acceptances de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -742,12 +744,12 @@ begin
   select count(*) into v_deleted from intento_borrar;
 
   if v_updated <> 0 or v_deleted <> 0 then
-    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0)', v_updated, v_deleted;
+    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0)', v_updated, v_deleted using errcode = 'assert_failure';
   end if;
   -- Tres cancelaciones a lo largo del archivo: CA-06 (antes de empezar),
   -- CA-06 (después de empezar) y CA-07.
   if (select count(*) from public.audit_log where space_id = '91000000-0000-0000-0000-000000000001' and action = 'request.cancelled') <> 3 then
-    raise exception 'CA-16 FALLIDO: no se encuentran los tres registros de auditoría de cancelación esperados (CA-06 x2 y CA-07)';
+    raise exception 'CA-16 FALLIDO: no se encuentran los tres registros de auditoría de cancelación esperados (CA-06 x2 y CA-07)' using errcode = 'assert_failure';
   end if;
 end $$;
 

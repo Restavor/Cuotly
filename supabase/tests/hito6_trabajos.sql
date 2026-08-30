@@ -152,14 +152,14 @@ declare
 begin
   begin
     perform public.auto_assign_job(v_job_id);
-    raise exception 'CA-01 FALLIDO: un Trabajador pudo disparar la asignación automática (RN-ASG-04)';
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo disparar la asignación automática (RN-ASG-04)' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
 
   begin
     perform public.assign_job(v_job_id, 'a0000000-0000-0000-0000-000000000003');
-    raise exception 'CA-01 FALLIDO: un Trabajador pudo asignarse un trabajo a sí mismo (RN-ASG-04)';
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo asignarse un trabajo a sí mismo (RN-ASG-04)' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -181,24 +181,24 @@ begin
   v_assigned := public.auto_assign_job(v_job_id);
 
   if v_assigned is distinct from 'a0000000-0000-0000-0000-000000000003' then
-    raise exception 'HU-16/RN-ASG-03 FALLIDO: con un único candidato válido no se asignó automáticamente (devolvió %)', v_assigned;
+    raise exception 'HU-16/RN-ASG-03 FALLIDO: con un único candidato válido no se asignó automáticamente (devolvió %)', v_assigned using errcode = 'assert_failure';
   end if;
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'assigned' then
-    raise exception 'HU-16 FALLIDO: el trabajo no quedó en estado assigned sino en %', v_state;
+    raise exception 'HU-16 FALLIDO: el trabajo no quedó en estado assigned sino en %', v_state using errcode = 'assert_failure';
   end if;
 
   select kind into v_kind from public.assignments where job_id = v_job_id and released_at is null;
   if v_kind <> 'auto' then
-    raise exception 'RN-ASG-03 FALLIDO: la asignación no quedó registrada como automática (kind = %)', v_kind;
+    raise exception 'RN-ASG-03 FALLIDO: la asignación no quedó registrada como automática (kind = %)', v_kind using errcode = 'assert_failure';
   end if;
 
   -- RN-SLA-05: T2 arranca cuando el trabajo queda asignado.
   select count(*) into v_t2_starts from public.timer_events
   where entity_type = 'job' and entity_id = v_job_id and counter_kind = 't2' and event_type = 'started';
   if v_t2_starts <> 1 then
-    raise exception 'RN-SLA-05 FALLIDO: se esperaba un único arranque de T2 y hay %', v_t2_starts;
+    raise exception 'RN-SLA-05 FALLIDO: se esperaba un único arranque de T2 y hay %', v_t2_starts using errcode = 'assert_failure';
   end if;
 
   -- CA-17: repetirlo no duplica nada.
@@ -206,7 +206,7 @@ begin
   select count(*) into v_t2_starts from public.timer_events
   where entity_type = 'job' and entity_id = v_job_id and counter_kind = 't2' and event_type = 'started';
   if v_t2_starts <> 1 then
-    raise exception 'CA-17 FALLIDO: repetir la asignación automática duplicó el arranque de T2';
+    raise exception 'CA-17 FALLIDO: repetir la asignación automática duplicó el arranque de T2' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -246,24 +246,24 @@ declare
 begin
   v_assigned := public.auto_assign_job(v_job_id);
   if v_assigned is not null then
-    raise exception 'RN-ASG-04 FALLIDO: con varios candidatos válidos se asignó automáticamente';
+    raise exception 'RN-ASG-04 FALLIDO: con varios candidatos válidos se asignó automáticamente' using errcode = 'assert_failure';
   end if;
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'pending_assignment' then
-    raise exception 'RN-ASG-04 FALLIDO: el trabajo debería seguir pendiente de asignación, está en %', v_state;
+    raise exception 'RN-ASG-04 FALLIDO: el trabajo debería seguir pendiente de asignación, está en %', v_state using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_candidates from public.list_job_candidates(v_job_id);
   if v_candidates <> 2 then
-    raise exception 'RN-ASG-02 FALLIDO: se esperaban 2 candidatos válidos y hay %', v_candidates;
+    raise exception 'RN-ASG-02 FALLIDO: se esperaban 2 candidatos válidos y hay %', v_candidates using errcode = 'assert_failure';
   end if;
 
   -- RN-ASG-06, primer criterio de desempate: menor carga actual en puntos.
   -- Ana ya tiene un trabajo "small" asignado (1 punto), Luis ninguno.
   select worker_id into v_first from public.list_job_candidates(v_job_id) limit 1;
   if v_first <> 'a0000000-0000-0000-0000-000000000004' then
-    raise exception 'RN-ASG-06 FALLIDO: el primer candidato debería ser el de menor carga';
+    raise exception 'RN-ASG-06 FALLIDO: el primer candidato debería ser el de menor carga' using errcode = 'assert_failure';
   end if;
 
   -- RN-ASG-04: una persona autorizada elige; RN-ASG-15: nada bloquea por carga.
@@ -271,7 +271,7 @@ begin
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'assigned' then
-    raise exception 'RN-ASG-04 FALLIDO: la asignación manual no dejó el trabajo asignado';
+    raise exception 'RN-ASG-04 FALLIDO: la asignación manual no dejó el trabajo asignado' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -303,19 +303,19 @@ declare
   v_state text;
 begin
   if public.auto_assign_job(v_job_id) is not null then
-    raise exception 'RN-ASG-05 FALLIDO: se asignó un trabajo sin candidatos válidos';
+    raise exception 'RN-ASG-05 FALLIDO: se asignó un trabajo sin candidatos válidos' using errcode = 'assert_failure';
   end if;
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'pending_assignment' then
-    raise exception 'RN-ASG-05 FALLIDO: el trabajo sin candidatos no quedó pendiente de asignación';
+    raise exception 'RN-ASG-05 FALLIDO: el trabajo sin candidatos no quedó pendiente de asignación' using errcode = 'assert_failure';
   end if;
 
   -- Y tampoco se puede forzar a mano a alguien que no es candidato válido:
   -- asignar a Ana el establecimiento B le daría acceso por la puerta de atrás.
   begin
     perform public.assign_job(v_job_id, 'a0000000-0000-0000-0000-000000000003');
-    raise exception 'RN-ASG-01 FALLIDO: se asignó un trabajo a alguien sin acceso a ese establecimiento';
+    raise exception 'RN-ASG-01 FALLIDO: se asignó un trabajo a alguien sin acceso a ese establecimiento' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -339,13 +339,13 @@ begin
   select count(*) into v_visible from public.jobs
   where id = (select value::uuid from h6_ctx where key = 'job_sin_candidatos');
   if v_visible <> 0 then
-    raise exception '§4.3 FALLIDO: un Trabajador ve trabajos de un establecimiento que no tiene autorizado';
+    raise exception '§4.3 FALLIDO: un Trabajador ve trabajos de un establecimiento que no tiene autorizado' using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_visible from public.jobs
   where id = (select value::uuid from h6_ctx where key = 'job_auto');
   if v_visible <> 1 then
-    raise exception '§4.3 FALLIDO: un Trabajador no ve los trabajos de sus establecimientos autorizados';
+    raise exception '§4.3 FALLIDO: un Trabajador no ve los trabajos de sus establecimientos autorizados' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -372,7 +372,7 @@ begin
 
   select count(*) into v_candidates from public.list_job_candidates(v_job_id);
   if v_candidates <> 0 then
-    raise exception 'RN-ASG-01 FALLIDO: la especialidad exigida no excluyó a quien no la tiene (hay % candidatos)', v_candidates;
+    raise exception 'RN-ASG-01 FALLIDO: la especialidad exigida no excluyó a quien no la tiene (hay % candidatos)', v_candidates using errcode = 'assert_failure';
   end if;
 
   -- §4.6: `general` habilita cualquier categoría.
@@ -381,7 +381,7 @@ begin
 
   select count(*) into v_candidates from public.list_job_candidates(v_job_id);
   if v_candidates <> 1 then
-    raise exception '§4.6 FALLIDO: `general` no habilitó la especialidad exigida (hay % candidatos)', v_candidates;
+    raise exception '§4.6 FALLIDO: `general` no habilitó la especialidad exigida (hay % candidatos)', v_candidates using errcode = 'assert_failure';
   end if;
 
   -- Se deja el escenario como estaba para el resto del archivo.
@@ -432,12 +432,12 @@ declare
 begin
   select count(*) into v_candidates from public.list_job_candidates(v_job_id);
   if v_candidates <> 1 then
-    raise exception 'RN-ASG-10/11 FALLIDO: quien se declaró no disponible sigue entre los candidatos (hay %)', v_candidates;
+    raise exception 'RN-ASG-10/11 FALLIDO: quien se declaró no disponible sigue entre los candidatos (hay %)', v_candidates using errcode = 'assert_failure';
   end if;
 
   -- Con un único candidato válido, vuelve a asignarse solo (RN-ASG-03).
   if public.auto_assign_job(v_job_id) is distinct from 'a0000000-0000-0000-0000-000000000003' then
-    raise exception 'RN-ASG-03 FALLIDO: la disponibilidad no dejó un único candidato asignable';
+    raise exception 'RN-ASG-03 FALLIDO: la disponibilidad no dejó un único candidato asignable' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -466,7 +466,7 @@ begin
   -- Control negativo: Luis no es el responsable de ese trabajo.
   begin
     perform public.start_job(v_job_id);
-    raise exception 'CA-01 FALLIDO: alguien que no es el responsable pudo comenzar el trabajo';
+    raise exception 'CA-01 FALLIDO: alguien que no es el responsable pudo comenzar el trabajo' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -494,12 +494,12 @@ begin
   where j.id = v_job_id;
 
   if v_state <> 'in_progress' then
-    raise exception 'HU-18 FALLIDO: el trabajo no quedó en curso sino en %', v_state;
+    raise exception 'HU-18 FALLIDO: el trabajo no quedó en curso sino en %', v_state using errcode = 'assert_failure';
   end if;
 
   -- CA-21: el mismo nombre de estado en la solicitud y en el trabajo.
   if v_request_state <> 'in_progress' then
-    raise exception 'CA-21 FALLIDO: la solicitud no acompañó al trabajo (está en %)', v_request_state;
+    raise exception 'CA-21 FALLIDO: la solicitud no acompañó al trabajo (está en %)', v_request_state using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_t2_stops from public.timer_events
@@ -508,7 +508,7 @@ begin
   where entity_id = v_job_id and counter_kind = 't3' and event_type = 'started';
 
   if v_t2_stops <> 1 or v_t3_starts <> 1 then
-    raise exception 'RN-SLA-07/11 + CA-17 FALLIDO: T2 parado % veces, T3 arrancado % veces', v_t2_stops, v_t3_starts;
+    raise exception 'RN-SLA-07/11 + CA-17 FALLIDO: T2 parado % veces, T3 arrancado % veces', v_t2_stops, v_t3_starts using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -532,7 +532,7 @@ begin
   -- propietario o del administrador.
   begin
     perform public.block_job(v_job_id, 'authorized_pause', 'no me apetece seguir');
-    raise exception 'RN-JOB-07 FALLIDO: un Trabajador pudo autorizarse una pausa';
+    raise exception 'RN-JOB-07 FALLIDO: un Trabajador pudo autorizarse una pausa' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -544,12 +544,12 @@ begin
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'blocked_by_client' then
-    raise exception 'HU-19 FALLIDO: el trabajo no quedó bloqueado sino en %', v_state;
+    raise exception 'HU-19 FALLIDO: el trabajo no quedó bloqueado sino en %', v_state using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_open_blocks from public.blocks where job_id = v_job_id and ended_at is null;
   if v_open_blocks <> 1 then
-    raise exception 'CA-17 FALLIDO: hay % bloqueos abiertos a la vez', v_open_blocks;
+    raise exception 'CA-17 FALLIDO: hay % bloqueos abiertos a la vez', v_open_blocks using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -569,7 +569,7 @@ begin
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'in_progress' then
-    raise exception 'CA-13 FALLIDO: el trabajo no volvió a En curso tras desbloquearlo';
+    raise exception 'CA-13 FALLIDO: el trabajo no volvió a En curso tras desbloquearlo' using errcode = 'assert_failure';
   end if;
 
   -- CA-13: la secuencia de T3 es exactamente arranque · pausa ·
@@ -579,7 +579,7 @@ begin
   from public.timer_events where entity_id = v_job_id and counter_kind = 't3';
 
   if v_events <> 'started,paused,resumed' then
-    raise exception 'CA-13 FALLIDO: la secuencia de eventos de T3 es "%" en vez de "started,paused,resumed"', v_events;
+    raise exception 'CA-13 FALLIDO: la secuencia de eventos de T3 es "%" en vez de "started,paused,resumed"', v_events using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -612,14 +612,14 @@ begin
   where job_id = v_job_id order by started_at desc limit 1;
 
   if not v_reverted then
-    raise exception 'RN-JOB-09 FALLIDO: la reversión del bloqueo no quedó registrada';
+    raise exception 'RN-JOB-09 FALLIDO: la reversión del bloqueo no quedó registrada' using errcode = 'assert_failure';
   end if;
 
   if not exists (
     select 1 from public.audit_log
     where entity_id = v_job_id and action = 'job.unblocked' and new_value->>'reverted' = 'true'
   ) then
-    raise exception 'RN-JOB-09 FALLIDO: la reversión no dejó registro de auditoría';
+    raise exception 'RN-JOB-09 FALLIDO: la reversión no dejó registro de auditoría' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -642,19 +642,19 @@ begin
       and table_name in ('jobs', 'tasks', 'requests')
       and column_name in ('out_of_deadline', 'overdue', 'fuera_de_plazo')
   ) then
-    raise exception 'CA-14 FALLIDO: hay una columna que almacena "fuera de plazo" como dato';
+    raise exception 'CA-14 FALLIDO: hay una columna que almacena "fuera de plazo" como dato' using errcode = 'assert_failure';
   end if;
 
   begin
     update public.jobs set state = 'out_of_deadline' where id = v_job_id;
-    raise exception 'CA-14 FALLIDO: "out_of_deadline" se aceptó como estado de un trabajo';
+    raise exception 'CA-14 FALLIDO: "out_of_deadline" se aceptó como estado de un trabajo' using errcode = 'assert_failure';
   exception
     when check_violation then null; -- esperado: no es un estado
   end;
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'in_progress' then
-    raise exception 'CA-14 FALLIDO: el estado del trabajo cambió al comprobar la condición (está en %)', v_state;
+    raise exception 'CA-14 FALLIDO: el estado del trabajo cambió al comprobar la condición (está en %)', v_state using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -676,7 +676,7 @@ begin
   -- dividirse y el servidor no la acepta.
   begin
     perform public.create_job_task(v_job_id, 'Rehacer la carta entera', 300, 'a0000000-0000-0000-0000-000000000003');
-    raise exception 'RN-ASG-16 FALLIDO: se aceptó una tarea de más de 4 horas';
+    raise exception 'RN-ASG-16 FALLIDO: se aceptó una tarea de más de 4 horas' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -688,11 +688,11 @@ begin
   -- §14.4: 30 min = Normal (3 puntos), 90 min = Alta (6 puntos).
   select weight into v_weight from public.tasks where id = v_task_ana;
   if v_weight <> 'normal' then
-    raise exception '§14.4 FALLIDO: una tarea de 30 min debería ser Normal, es %', v_weight;
+    raise exception '§14.4 FALLIDO: una tarea de 30 min debería ser Normal, es %', v_weight using errcode = 'assert_failure';
   end if;
   select weight into v_weight from public.tasks where id = v_task_luis;
   if v_weight <> 'high' then
-    raise exception '§14.4 FALLIDO: una tarea de 90 min debería ser Alta, es %', v_weight;
+    raise exception '§14.4 FALLIDO: una tarea de 90 min debería ser Alta, es %', v_weight using errcode = 'assert_failure';
   end if;
 
   -- RN-ASG-14: al desglosarse, los puntos generales del trabajo dejan de
@@ -704,26 +704,26 @@ begin
   -- los puntos de Luis se hace más abajo con el administrador.
   begin
     perform public.worker_load('a1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004');
-    raise exception 'RN-ASG-17 FALLIDO: un Trabajador pudo consultar la carga de otro';
+    raise exception 'RN-ASG-17 FALLIDO: un Trabajador pudo consultar la carga de otro' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
 
   if v_puntos_ana <> 1 + 3 then
-    raise exception 'RN-ASG-14 FALLIDO: Ana debería sumar 4 puntos (1 del trabajo sin desglosar + 3 de su tarea) y suma %', v_puntos_ana;
+    raise exception 'RN-ASG-14 FALLIDO: Ana debería sumar 4 puntos (1 del trabajo sin desglosar + 3 de su tarea) y suma %', v_puntos_ana using errcode = 'assert_failure';
   end if;
 
   -- RN-JOB-01: el trabajador no puede cancelar una tarea.
   begin
     perform public.cancel_task(v_task_ana, 'ya no hace falta');
-    raise exception 'RN-JOB-01 FALLIDO: un Trabajador pudo cancelar una tarea';
+    raise exception 'RN-JOB-01 FALLIDO: un Trabajador pudo cancelar una tarea' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
 
   begin
     perform public.update_task_state(v_task_ana, 'cancelled');
-    raise exception 'RN-JOB-01 FALLIDO: un Trabajador canceló una tarea por la puerta de atrás';
+    raise exception 'RN-JOB-01 FALLIDO: un Trabajador canceló una tarea por la puerta de atrás' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -735,7 +735,7 @@ begin
   -- RN-ASG-13: al completarse deja de sumar.
   v_puntos_ana := public.worker_load('a1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000003');
   if v_puntos_ana <> 1 then
-    raise exception 'RN-ASG-13 FALLIDO: una tarea completada sigue sumando (Ana suma %)', v_puntos_ana;
+    raise exception 'RN-ASG-13 FALLIDO: una tarea completada sigue sumando (Ana suma %)', v_puntos_ana using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -756,13 +756,13 @@ begin
   -- de su tarea Alta; los 1 punto del trabajo desglosado no cuentan.
   v_puntos_luis := public.worker_load('a1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004');
   if v_puntos_luis <> 1 + 6 then
-    raise exception 'RN-ASG-14 FALLIDO: Luis debería sumar 7 puntos y suma %', v_puntos_luis;
+    raise exception 'RN-ASG-14 FALLIDO: Luis debería sumar 7 puntos y suma %', v_puntos_luis using errcode = 'assert_failure';
   end if;
 
   perform public.cancel_task(v_task_luis, 'La hará el mismo responsable');
   select state into v_state from public.tasks where id = v_task_luis;
   if v_state <> 'cancelled' then
-    raise exception 'RN-JOB-01 FALLIDO: el administrador no pudo cancelar la tarea';
+    raise exception 'RN-JOB-01 FALLIDO: el administrador no pudo cancelar la tarea' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -778,41 +778,79 @@ set role authenticated;
 
 do $$
 declare
+  v_space uuid := 'a1000000-0000-0000-0000-000000000001';
   v_principales int;
   v_supervisores int;
+  v_ok boolean;
+  v_substitute_id uuid;
+  v_ends_at timestamptz;
 begin
   -- RN-SUP-01/02/05: la supervisión la crea el propietario, y es una
   -- relación Administrador–Trabajador, no un rol.
-  perform public.set_principal_supervisor('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002');
+  perform public.set_principal_supervisor(v_space, 'a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002');
   -- RN-SUP-02: exactamente un principal — repetirlo sustituye al anterior,
   -- no acumula (el anterior queda revocado, con su historial).
-  perform public.set_principal_supervisor('a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002');
+  perform public.set_principal_supervisor(v_space, 'a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002');
 
   select count(*) into v_principales from public.supervisions
   where worker_id = 'a0000000-0000-0000-0000-000000000003' and kind = 'principal' and revoked_at is null;
   if v_principales <> 1 then
-    raise exception 'RN-SUP-02 FALLIDO: el trabajador tiene % supervisores principales vigentes', v_principales;
+    raise exception 'RN-SUP-02 FALLIDO: el trabajador tiene % supervisores principales vigentes', v_principales using errcode = 'assert_failure';
+  end if;
+
+  -- RN-SUP-01: el sustituto también es un Administrador — recibe los
+  -- mismos avisos que el principal (RN-SUP-04), así que no puede ser otro
+  -- trabajador.
+  v_ok := false;
+  begin
+    perform public.set_substitute_supervisor(
+      v_space, 'a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000004',
+      now(), now() + interval '3 days'
+    );
+  exception
+    when raise_exception then v_ok := true;
+  end;
+  if not v_ok then
+    raise exception 'RN-SUP-01 FALLIDO: se nombró sustituto a un Trabajador' using errcode = 'assert_failure';
   end if;
 
   -- RN-SUP-03: un sustituto temporal con fecha de inicio y fin.
-  perform public.set_substitute_supervisor(
-    'a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001',
+  v_substitute_id := public.set_substitute_supervisor(
+    v_space, 'a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001',
     now() - interval '1 day', now() + interval '7 days'
   );
 
+  v_ok := false;
   begin
     perform public.set_substitute_supervisor(
-      'a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', now(), null
+      v_space, 'a0000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000001', now(), null
     );
-    raise exception 'RN-SUP-03 FALLIDO: se aceptó una sustitución sin fecha de fin';
   exception
-    when raise_exception then null;
+    when raise_exception then v_ok := true;
   end;
+  if not v_ok then
+    raise exception 'RN-SUP-03 FALLIDO: se aceptó una sustitución sin fecha de fin' using errcode = 'assert_failure';
+  end if;
 
   -- RN-SUP-04: mientras la sustitución esté vigente, los avisos van a los dos.
   select count(*) into v_supervisores from public.current_supervisors('a0000000-0000-0000-0000-000000000003');
   if v_supervisores <> 2 then
-    raise exception 'RN-SUP-04 FALLIDO: se esperaban 2 supervisores vigentes (principal y sustituto) y hay %', v_supervisores;
+    raise exception 'RN-SUP-04 FALLIDO: se esperaban 2 supervisores vigentes (principal y sustituto) y hay %', v_supervisores using errcode = 'assert_failure';
+  end if;
+
+  -- RN-SUP-03: "puede retirarse antes o ampliarse".
+  perform public.reschedule_substitute_supervision(v_substitute_id, now() + interval '30 days');
+  select ends_at into v_ends_at from public.supervisions where id = v_substitute_id;
+  if v_ends_at < now() + interval '29 days' then
+    raise exception 'RN-SUP-03 FALLIDO: no se pudo ampliar la sustitución' using errcode = 'assert_failure';
+  end if;
+
+  perform public.revoke_supervision(v_substitute_id, 'RN-SUP-03: se retira antes de tiempo');
+  perform public.revoke_supervision(v_substitute_id, 'repetido'); -- idempotente
+
+  select count(*) into v_supervisores from public.current_supervisors('a0000000-0000-0000-0000-000000000003');
+  if v_supervisores <> 1 then
+    raise exception 'RN-SUP-03 FALLIDO: tras retirar la sustitución deberían quedar 1 supervisor vigente y hay %', v_supervisores using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -824,13 +862,21 @@ select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002
 set role authenticated;
 
 do $$
+declare
+  v_ok boolean := false;
 begin
   begin
-    perform public.set_principal_supervisor('a0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000002');
-    raise exception 'RN-SUP-05 FALLIDO: un Administrador pudo cambiar una relación de supervisión';
+    perform public.set_principal_supervisor(
+      'a1000000-0000-0000-0000-000000000001',
+      'a0000000-0000-0000-0000-000000000004',
+      'a0000000-0000-0000-0000-000000000002'
+    );
   exception
-    when raise_exception then null;
+    when raise_exception then v_ok := true;
   end;
+  if not v_ok then
+    raise exception 'RN-SUP-05 FALLIDO: un Administrador pudo cambiar una relación de supervisión' using errcode = 'assert_failure';
+  end if;
 end $$;
 
 reset role;
@@ -844,7 +890,7 @@ declare
 begin
   begin
     perform public.publish_job(v_job_id, now() + interval '3 days');
-    raise exception 'CA-01 FALLIDO: alguien que no es el responsable pudo publicar el trabajo';
+    raise exception 'CA-01 FALLIDO: alguien que no es el responsable pudo publicar el trabajo' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -867,7 +913,7 @@ begin
   -- rechaza (ver la nota de publish_job()).
   begin
     perform public.publish_job(v_job_id, now() + interval '400 days');
-    raise exception 'FALLIDO: se aceptó una ventana de corrección fuera de toda medida';
+    raise exception 'FALLIDO: se aceptó una ventana de corrección fuera de toda medida' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -880,13 +926,13 @@ begin
   from public.jobs j join public.requests r on r.id = j.request_id where j.id = v_job_id;
 
   if v_state <> 'published' or v_request_state <> 'published' then
-    raise exception 'HU-20 FALLIDO: publicar dejó el trabajo en % y la solicitud en %', v_state, v_request_state;
+    raise exception 'HU-20 FALLIDO: publicar dejó el trabajo en % y la solicitud en %', v_state, v_request_state using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_t3_stops from public.timer_events
   where entity_id = v_job_id and counter_kind = 't3' and event_type = 'stopped';
   if v_t3_stops <> 1 then
-    raise exception 'RN-SLA-13 + CA-17 FALLIDO: T3 se detuvo % veces', v_t3_stops;
+    raise exception 'RN-SLA-13 + CA-17 FALLIDO: T3 se detuvo % veces', v_t3_stops using errcode = 'assert_failure';
   end if;
 
   -- RN-JOB-10: no existe ningún registro de aprobación previa del
@@ -894,7 +940,7 @@ begin
   select count(*) into v_supervisor_approvals from public.state_events
   where entity_id = v_job_id and to_state = 'published' and actor_id <> 'a0000000-0000-0000-0000-000000000003';
   if v_supervisor_approvals <> 0 then
-    raise exception 'RN-JOB-10 FALLIDO: la publicación pasó por alguien distinto del responsable';
+    raise exception 'RN-JOB-10 FALLIDO: la publicación pasó por alguien distinto del responsable' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -914,7 +960,7 @@ begin
     perform public.request_free_correction(
       (select value::uuid from h6_ctx where key = 'job_auto'), 'Quiero cambiar otra cosa'
     );
-    raise exception 'CA-02 FALLIDO: alguien ajeno pudo pedir la corrección de un trabajo que no es suyo';
+    raise exception 'CA-02 FALLIDO: alguien ajeno pudo pedir la corrección de un trabajo que no es suyo' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -935,21 +981,23 @@ begin
   v_correction_id := public.request_free_correction(v_job_id, 'El teléfono tiene un dígito mal');
   insert into h6_ctx values ('correction', v_correction_id::text);
 
-  select free_correction_used_at into v_used_at from public.jobs where id = v_job_id;
+  -- El cliente lee sus trabajos por client_jobs: `jobs` no le expone las
+  -- columnas de identidad del equipo (CLAUDE.md MUST NOT, CA-04).
+  select free_correction_used_at into v_used_at from public.client_jobs where id = v_job_id;
   if v_used_at is null then
-    raise exception 'RN-COR-01 FALLIDO: la corrección no quedó marcada como usada';
+    raise exception 'RN-COR-01 FALLIDO: la corrección no quedó marcada como usada' using errcode = 'assert_failure';
   end if;
 
   select r.state into v_request_state
-  from public.requests r join public.jobs j on j.request_id = r.id where j.id = v_job_id;
+  from public.requests r join public.client_jobs j on j.request_id = r.id where j.id = v_job_id;
   if v_request_state <> 'correction_requested' then
-    raise exception 'HU-23 FALLIDO: la solicitud no refleja la corrección pedida (está en %)', v_request_state;
+    raise exception 'HU-23 FALLIDO: la solicitud no refleja la corrección pedida (está en %)', v_request_state using errcode = 'assert_failure';
   end if;
 
   -- RN-COR-01: una sola corrección en total por trabajo.
   begin
     perform public.request_free_correction(v_job_id, 'Y ya que estamos, cambiadme la foto de inicio');
-    raise exception 'RN-COR-01 FALLIDO: se aceptó una segunda corrección mínima sobre el mismo trabajo';
+    raise exception 'RN-COR-01 FALLIDO: se aceptó una segunda corrección mínima sobre el mismo trabajo' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -971,13 +1019,13 @@ begin
   perform public.start_correction(v_correction_id);
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'in_correction' then
-    raise exception 'RN-COR-06 FALLIDO: el trabajo no pasó a corrección (está en %)', v_state;
+    raise exception 'RN-COR-06 FALLIDO: el trabajo no pasó a corrección (está en %)', v_state using errcode = 'assert_failure';
   end if;
 
   perform public.complete_correction(v_correction_id, 'Corregido el dígito');
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'published' then
-    raise exception 'RN-COR-06 FALLIDO: al terminar la corrección el trabajo no volvió a publicado';
+    raise exception 'RN-COR-06 FALLIDO: al terminar la corrección el trabajo no volvió a publicado' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -1012,7 +1060,7 @@ begin
     perform public.request_free_correction(
       (select value::uuid from h6_ctx where key = 'job_varios'), 'Fuera de plazo'
     );
-    raise exception 'RN-COR-02 FALLIDO: se aceptó una corrección con la ventana ya cerrada';
+    raise exception 'RN-COR-02 FALLIDO: se aceptó una corrección con la ventana ya cerrada' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -1035,13 +1083,13 @@ begin
 
   select free_correction_used_at into v_used_at from public.jobs where id = v_job_id;
   if v_used_at is not null then
-    raise exception 'RN-COR-07 FALLIDO: un error del equipo gastó la corrección mínima del cliente';
+    raise exception 'RN-COR-07 FALLIDO: un error del equipo gastó la corrección mínima del cliente' using errcode = 'assert_failure';
   end if;
 
   if not exists (
     select 1 from public.corrections where id = v_correction_id and kind = 'team_error'
   ) then
-    raise exception 'RN-COR-07 FALLIDO: la corrección por error del equipo no quedó registrada como tal';
+    raise exception 'RN-COR-07 FALLIDO: la corrección por error del equipo no quedó registrada como tal' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -1057,10 +1105,26 @@ declare
   v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_varios');
   v_state text;
   v_request_state text;
+  v_correction_id uuid;
+  v_ok boolean;
 begin
-  perform public.complete_correction(
-    (select id from public.corrections where job_id = v_job_id and kind = 'team_error'), 'Tipografía corregida'
-  );
+  -- M5 / RN-COR-06: una corrección se empieza antes de cerrarse. Cerrar
+  -- una que nadie ha empezado ya no devuelve éxito en silencio.
+  v_correction_id := (select id from public.corrections where job_id = v_job_id and kind = 'team_error');
+
+  v_ok := false;
+  begin
+    perform public.complete_correction(v_correction_id, 'sin empezarla');
+  exception
+    when raise_exception then v_ok := true;
+  end;
+  if not v_ok then
+    raise exception 'RN-COR-06 FALLIDO: se cerró una corrección que nadie había empezado' using errcode = 'assert_failure';
+  end if;
+
+  perform public.start_correction(v_correction_id);
+  perform public.complete_correction(v_correction_id, 'Tipografía corregida');
+  perform public.complete_correction(v_correction_id, 'repetido'); -- CA-17
 
   perform public.complete_job(v_job_id);
   perform public.complete_job(v_job_id); -- CA-17
@@ -1069,13 +1133,13 @@ begin
   from public.jobs j join public.requests r on r.id = j.request_id where j.id = v_job_id;
 
   if v_state <> 'completed' or v_request_state <> 'closed' then
-    raise exception 'RN-COR-08 FALLIDO: cerrar dejó el trabajo en % y la solicitud en %', v_state, v_request_state;
+    raise exception 'RN-COR-08 FALLIDO: cerrar dejó el trabajo en % y la solicitud en %', v_state, v_request_state using errcode = 'assert_failure';
   end if;
 
   -- Y un trabajo cuya ventana sigue abierta no se puede cerrar todavía.
   begin
     perform public.complete_job((select value::uuid from h6_ctx where key = 'job_auto'));
-    raise exception 'RN-COR-02 FALLIDO: se cerró un trabajo con la ventana de corrección abierta';
+    raise exception 'RN-COR-02 FALLIDO: se cerró un trabajo con la ventana de corrección abierta' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -1122,7 +1186,7 @@ begin
   -- RN-ASG-07: hay que explicar el motivo.
   begin
     perform public.request_job_reassignment(v_job_id, '   ');
-    raise exception 'RN-ASG-07 FALLIDO: se aceptó una reasignación sin motivo';
+    raise exception 'RN-ASG-07 FALLIDO: se aceptó una reasignación sin motivo' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -1131,13 +1195,13 @@ begin
 
   select state into v_state from public.jobs where id = v_job_id;
   if v_state <> 'reassignment_requested' then
-    raise exception 'HU-22 FALLIDO: el trabajo no quedó con la reasignación pedida (está en %)', v_state;
+    raise exception 'HU-22 FALLIDO: el trabajo no quedó con la reasignación pedida (está en %)', v_state using errcode = 'assert_failure';
   end if;
 
   -- RN-ASG-08: no la aprueba el propio trabajador.
   begin
     perform public.approve_job_reassignment(v_job_id, 'a0000000-0000-0000-0000-000000000004');
-    raise exception 'RN-ASG-08 FALLIDO: un Trabajador aprobó su propia reasignación';
+    raise exception 'RN-ASG-08 FALLIDO: un Trabajador aprobó su propia reasignación' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -1170,19 +1234,19 @@ begin
   -- exactamente donde estaba y el nuevo responsable recibe el tiempo
   -- restante exacto.
   if v_t2_events_after <> v_t2_events_before then
-    raise exception 'CA-12 FALLIDO: la reasignación tocó T2 (% eventos antes, % después)', v_t2_events_before, v_t2_events_after;
+    raise exception 'CA-12 FALLIDO: la reasignación tocó T2 (% eventos antes, % después)', v_t2_events_before, v_t2_events_after using errcode = 'assert_failure';
   end if;
 
   select state, assigned_to into v_state, v_assigned_to from public.jobs where id = v_job_id;
   if v_state <> 'assigned' or v_assigned_to <> 'a0000000-0000-0000-0000-000000000004' then
-    raise exception 'HU-22 FALLIDO: tras aprobar la reasignación el trabajo está en % y asignado a %', v_state, v_assigned_to;
+    raise exception 'HU-22 FALLIDO: tras aprobar la reasignación el trabajo está en % y asignado a %', v_state, v_assigned_to using errcode = 'assert_failure';
   end if;
 
   -- RN-ASG-09: se conserva todo el historial.
   select count(*) into v_history from public.assignments where job_id = v_job_id;
   select count(*) into v_active from public.assignments where job_id = v_job_id and released_at is null;
   if v_history <> 2 or v_active <> 1 then
-    raise exception 'RN-ASG-09 FALLIDO: el historial de asignaciones tiene % filas y % activas', v_history, v_active;
+    raise exception 'RN-ASG-09 FALLIDO: el historial de asignaciones tiene % filas y % activas', v_history, v_active using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -1216,7 +1280,9 @@ declare
   v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_reasignacion');
   v_request_id uuid;
 begin
-  select request_id into v_request_id from public.jobs where id = v_job_id;
+  -- Identidad del cliente: lee sus trabajos por client_jobs (el Hito 6
+  -- retira de `jobs` las columnas de identidad del equipo).
+  select request_id into v_request_id from public.client_jobs where id = v_job_id;
 
   perform public.accept_revised_request(v_request_id);
   perform public.accept_revised_request(v_request_id); -- CA-17
@@ -1249,18 +1315,18 @@ begin
   select count(*) into v_t2_starts from public.timer_events
   where entity_id = v_job_id and counter_kind = 't2' and event_type = 'started';
   if v_t2_starts <> 2 then
-    raise exception 'CA-12 FALLIDO: se esperaban 2 arranques de T2 (uno por intento) y hay %', v_t2_starts;
+    raise exception 'CA-12 FALLIDO: se esperaban 2 arranques de T2 (uno por intento) y hay %', v_t2_starts using errcode = 'assert_failure';
   end if;
 
   -- RN-SLA-08: "la solicitud conserva todos los intentos anteriores".
   select count(*) into v_acceptances from public.acceptances where request_id = v_request_id;
   if v_acceptances <> 2 then
-    raise exception 'RN-SLA-08 FALLIDO: se esperaban 2 aceptaciones registradas y hay %', v_acceptances;
+    raise exception 'RN-SLA-08 FALLIDO: se esperaban 2 aceptaciones registradas y hay %', v_acceptances using errcode = 'assert_failure';
   end if;
 
   select category into v_category from public.jobs where id = v_job_id;
   if v_category <> 'medium' then
-    raise exception 'RN-CLS-09 FALLIDO: el trabajo no recogió la categoría nueva (sigue en %)', v_category;
+    raise exception 'RN-CLS-09 FALLIDO: el trabajo no recogió la categoría nueva (sigue en %)', v_category using errcode = 'assert_failure';
   end if;
 
   -- RN-CON-04 / CA-08: el libro es inmutable — el consumo anterior se
@@ -1272,8 +1338,375 @@ begin
   where job_id = v_job_id and entry_type = 'debit' and category = 'medium';
 
   if v_devoluciones <> 1 or v_debitos_medium <> 1 then
-    raise exception 'RN-CLS-09 FALLIDO: devoluciones = %, débitos nuevos = %', v_devoluciones, v_debitos_medium;
+    raise exception 'RN-CLS-09 FALLIDO: devoluciones = %, débitos nuevos = %', v_devoluciones, v_debitos_medium using errcode = 'assert_failure';
   end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- Hallazgos de la revisión adversarial del Hito 6, cerrados en la
+-- migración 20260830000023. Cada bloque de aquí abajo falla si se
+-- reintroduce el hueco correspondiente.
+-- ============================================================
+
+-- Marta: trabajadora activa del espacio SIN ningún establecimiento
+-- autorizado. Es el control que faltaba: hasta ahora los dos trabajadores
+-- del fixture tenían acceso al establecimiento A.
+insert into auth.users (id, email, role, aud) values
+  ('a0000000-0000-0000-0000-000000000006', 'h6-marta@example.com', 'authenticated', 'authenticated');
+
+insert into public.space_memberships (space_id, user_id, role, status) values
+  ('a1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000006', 'worker', 'active');
+
+insert into public.worker_specialties (space_id, user_id, specialty, created_by) values
+  ('a1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000006', 'web', 'a0000000-0000-0000-0000-000000000001');
+
+-- Un trabajo nuevo del establecimiento A para los escenarios de abajo.
+do $$
+declare
+  v_job_id uuid;
+begin
+  v_job_id := public.h6_make_job(
+    'a4000000-0000-0000-0000-000000000001',
+    'a0000000-0000-0000-0000-000000000005',
+    'a0000000-0000-0000-0000-000000000001',
+    'Revisión: cambiar el texto del pie de pagina', 'small'
+  );
+  insert into h6_ctx values ('job_revision', v_job_id::text);
+end $$;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_revision');
+begin
+  perform public.assign_job(v_job_id, 'a0000000-0000-0000-0000-000000000003', 'Escenarios de la revisión');
+end $$;
+
+reset role;
+
+-- ------------------------------------------------------------
+-- I6 · RN-ASG-01 / §4.3: repartir una tarea no concede acceso.
+-- ------------------------------------------------------------
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_revision');
+  v_ok boolean := false;
+begin
+  begin
+    perform public.create_job_task(v_job_id, 'Tarea para quien no tiene el establecimiento', 30, 'a0000000-0000-0000-0000-000000000006');
+  exception
+    when raise_exception then v_ok := true;
+  end;
+  if not v_ok then
+    raise exception 'RN-ASG-01 FALLIDO: se repartió una tarea a alguien sin ese establecimiento autorizado' using errcode = 'assert_failure';
+  end if;
+
+  -- Con el establecimiento autorizado sí se puede (control positivo).
+  perform public.create_job_task(v_job_id, 'Tarea para Luis', 30, 'a0000000-0000-0000-0000-000000000004');
+end $$;
+
+reset role;
+
+-- ------------------------------------------------------------
+-- I4 · RN-COR-02, primera mitad: la corrección mínima puede pedirse
+-- durante la ejecución, no solo tras publicar.
+-- ------------------------------------------------------------
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+do $$
+begin
+  perform public.start_job((select value::uuid from h6_ctx where key = 'job_revision'));
+end $$;
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_revision');
+  v_used_at timestamptz;
+  v_request_state text;
+  v_ok boolean := false;
+begin
+  perform public.request_free_correction(v_job_id, 'Falta una tilde en el texto que ya estáis cambiando');
+
+  select free_correction_used_at into v_used_at from public.client_jobs where id = v_job_id;
+  if v_used_at is null then
+    raise exception 'RN-COR-02 FALLIDO: la corrección pedida durante la ejecución no quedó registrada' using errcode = 'assert_failure';
+  end if;
+
+  -- El trabajo sigue en curso: la corrección forma parte de lo que ya se
+  -- está haciendo, no abre un estado nuevo.
+  select r.state into v_request_state
+  from public.requests r join public.client_jobs j on j.request_id = r.id where j.id = v_job_id;
+  if v_request_state <> 'in_progress' then
+    raise exception 'RN-COR-02 FALLIDO: pedirla durante la ejecución cambió el estado de la solicitud a %', v_request_state using errcode = 'assert_failure';
+  end if;
+
+  -- RN-COR-02: usada durante la ejecución, no vuelve a estar disponible.
+  begin
+    perform public.request_free_correction(v_job_id, 'Y otra cosa más');
+  exception
+    when raise_exception then v_ok := true;
+  end;
+  if not v_ok then
+    raise exception 'RN-COR-01 FALLIDO: se aceptó una segunda corrección tras usarla durante la ejecución' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ------------------------------------------------------------
+-- B2 · RN-JOB-04 / CA-06 por el flujo real: tras pulsar Comenzar, el
+-- cliente todavía puede cancelar, y entonces el consumo se mantiene.
+-- ------------------------------------------------------------
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_revision');
+  v_request_id uuid;
+  v_job_state text;
+  v_request_state text;
+  v_debitos int;
+  v_devoluciones int;
+begin
+  select request_id into v_request_id from public.client_jobs where id = v_job_id;
+
+  -- El trabajo está en curso (Comenzar ya se pulsó arriba): este es
+  -- exactamente el caso "después de Comenzar" de RN-JOB-04.
+  perform public.cancel_accepted_request(v_request_id, 'CA-06: el restaurante cancela con el trabajo ya empezado');
+  perform public.cancel_accepted_request(v_request_id, 'repetido'); -- CA-17
+
+  select state into v_job_state from public.client_jobs where id = v_job_id;
+  select state into v_request_state from public.requests where id = v_request_id;
+
+  if v_job_state <> 'cancelled_after_start' or v_request_state <> 'cancelled_after_start' then
+    raise exception 'CA-06 FALLIDO: cancelar tras Comenzar dejó el trabajo en % y la solicitud en %', v_job_state, v_request_state using errcode = 'assert_failure';
+  end if;
+
+  select count(*) into v_debitos from public.consumption_entries where job_id = v_job_id and entry_type = 'debit';
+  select count(*) into v_devoluciones from public.consumption_entries
+  where job_id = v_job_id and entry_type in ('return', 'compensatory_credit');
+
+  -- RN-CON-09: después de Comenzar, el consumo se mantiene.
+  if v_debitos <> 1 or v_devoluciones <> 0 then
+    raise exception 'CA-06/RN-CON-09 FALLIDO: tras cancelar después de Comenzar hay % débitos y % devoluciones', v_debitos, v_devoluciones using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- El contador vivo del trabajo cancelado queda parado (comprobado con la
+-- identidad del equipo: los timer_events son internos).
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_revision');
+  v_ultimo text;
+begin
+  select event_type into v_ultimo from public.timer_events
+  where entity_type = 'job' and entity_id = v_job_id and counter_kind = 't3'
+  order by occurred_at desc, id desc limit 1;
+
+  if v_ultimo <> 'stopped' then
+    raise exception 'RN-SLA-17 FALLIDO: T3 sigue corriendo sobre un trabajo cancelado (último evento: %)', v_ultimo using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ------------------------------------------------------------
+-- I1 · §4.3 / CA-01 e I2 · §4.3: una corrección es una operación sobre un
+-- trabajo concreto, y quien no puede leer el trabajo tampoco la abre ni la
+-- lee.
+-- ------------------------------------------------------------
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000006', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_varios');
+  v_ok boolean := false;
+  v_visibles int;
+begin
+  begin
+    perform public.open_team_error_correction(v_job_id, 'Abro una corrección sobre un trabajo que ni veo');
+  exception
+    when raise_exception then v_ok := true;
+  end;
+  if not v_ok then
+    raise exception 'CA-01 FALLIDO: un trabajador sin ese establecimiento abrió una corrección' using errcode = 'assert_failure';
+  end if;
+
+  select count(*) into v_visibles from public.corrections;
+  if v_visibles <> 0 then
+    raise exception '§4.3 FALLIDO: un trabajador sin establecimientos autorizados lee % correcciones', v_visibles using errcode = 'assert_failure';
+  end if;
+
+  select count(*) into v_visibles from public.blocks;
+  if v_visibles <> 0 then
+    raise exception '§4.3 FALLIDO: un trabajador sin establecimientos autorizados lee % bloqueos', v_visibles using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ------------------------------------------------------------
+-- I3 · CLAUDE.md MUST NOT / CA-04: el cliente no ve la identidad
+-- individual de nadie del equipo, ni las notas internas de un bloqueo.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_columnas int;
+begin
+  select count(*) into v_columnas from information_schema.columns
+  where table_schema = 'public' and table_name = 'client_jobs'
+    and column_name in ('assigned_to', 'started_by', 'published_by', 'cancelled_by');
+  if v_columnas <> 0 then
+    raise exception 'CA-04 FALLIDO: client_jobs expone % columna(s) de identidad del equipo', v_columnas using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- Un bloqueo con nota interna sobre el trabajo del cliente.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+do $$
+declare
+  v_job_id uuid;
+begin
+  v_job_id := (select value::uuid from h6_ctx where key = 'job_reasignacion');
+  perform public.assign_job(v_job_id, 'a0000000-0000-0000-0000-000000000004');
+exception
+  when raise_exception then null; -- ya estaba asignado tras la reasignación
+end $$;
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_reasignacion');
+begin
+  perform public.start_job(v_job_id);
+  perform public.block_job(v_job_id, 'client_information', 'NOTA INTERNA: el restaurante no contesta al teléfono');
+end $$;
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h6_ctx where key = 'job_reasignacion');
+  v_bloqueos int;
+  v_estado text;
+begin
+  select count(*) into v_bloqueos from public.blocks where job_id = v_job_id;
+  if v_bloqueos <> 0 then
+    raise exception 'CLAUDE.md MUST NOT FALLIDO: el cliente lee % fila(s) de blocks, con su nota interna', v_bloqueos using errcode = 'assert_failure';
+  end if;
+
+  -- RN-JOB-08: lo que sí ve es que su trabajo está esperándole.
+  select state into v_estado from public.client_jobs where id = v_job_id;
+  if v_estado <> 'blocked_by_client' then
+    raise exception 'RN-JOB-08 FALLIDO: el cliente no ve que su trabajo está bloqueado (ve %)', v_estado using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ------------------------------------------------------------
+-- I5 · RN-COR-08: la conversación de una solicitud cerrada es de solo
+-- lectura. La conversación se crea desde fuera de la aplicación (como
+-- propietario de la base de datos) porque en el flujo normal solo la crean
+-- funciones del equipo, y aquí lo que se prueba es la política de INSERT.
+-- ------------------------------------------------------------
+insert into public.conversations (space_id, type, request_id)
+select 'a1000000-0000-0000-0000-000000000001', 'request', j.request_id
+from public.jobs j where j.id = (select value::uuid from h6_ctx where key = 'job_varios')
+on conflict (request_id) do nothing;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_conversation_id uuid;
+  v_ok boolean := false;
+begin
+  select c.id into v_conversation_id from public.conversations c
+  join public.requests r on r.id = c.request_id
+  where r.state = 'closed'
+  limit 1;
+
+  if v_conversation_id is null then
+    raise exception 'RN-COR-08 FALLIDO: no hay ninguna conversación de solicitud cerrada que probar' using errcode = 'assert_failure';
+  end if;
+
+  begin
+    insert into public.messages (conversation_id, space_id, sender_id, sender_role, body)
+    values (v_conversation_id, 'a1000000-0000-0000-0000-000000000001', auth.uid(), 'client', 'Otra cosa más, ya que estamos');
+  exception
+    when insufficient_privilege then v_ok := true;
+  end;
+
+  if not v_ok then
+    raise exception 'RN-COR-08 FALLIDO: se pudo escribir en la conversación de una solicitud cerrada' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ------------------------------------------------------------
+-- M2 · Cuotly es multiempresa: la misma persona puede trabajar en dos
+-- espacios, con sus especialidades y su supervisión en cada uno.
+-- ------------------------------------------------------------
+insert into public.spaces (id, name, slug, created_by) values
+  ('a1000000-0000-0000-0000-000000000002', 'Espacio H6 B', 'espacio-h6-b-test', 'a0000000-0000-0000-0000-000000000001');
+
+insert into public.space_memberships (space_id, user_id, role, status) values
+  ('a1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'owner', 'active'),
+  ('a1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000002', 'admin', 'active'),
+  ('a1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', 'worker', 'active');
+
+do $$
+begin
+  -- La misma especialidad de la misma persona en otro espacio: antes
+  -- chocaba con un índice único global.
+  insert into public.worker_specialties (space_id, user_id, specialty, created_by)
+  values ('a1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000003', 'web', 'a0000000-0000-0000-0000-000000000001');
+exception
+  when unique_violation then
+    raise exception 'CLAUDE.md FALLIDO: la misma persona no puede tener la misma especialidad en dos espacios' using errcode = 'assert_failure';
+end $$;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  -- Y su supervisor principal en cada espacio (RN-SUP-02 es "uno por
+  -- trabajador **en su espacio**", no uno en toda la plataforma).
+  perform public.set_principal_supervisor(
+    'a1000000-0000-0000-0000-000000000002',
+    'a0000000-0000-0000-0000-000000000003',
+    'a0000000-0000-0000-0000-000000000002'
+  );
+exception
+  when unique_violation then
+    raise exception 'RN-SUP-02 FALLIDO: la misma persona no puede tener supervisor principal en dos espacios' using errcode = 'assert_failure';
 end $$;
 
 reset role;
@@ -1300,7 +1733,7 @@ begin
 
   if v_jobs <> 0 or v_tasks <> 0 or v_assignments <> 0 or v_state_events <> 0 then
     raise exception 'CA-02 FALLIDO: un ajeno leyó % trabajos, % tareas, % asignaciones y % eventos de estado',
-      v_jobs, v_tasks, v_assignments, v_state_events;
+      v_jobs, v_tasks, v_assignments, v_state_events using errcode = 'assert_failure';
   end if;
 
   begin
@@ -1310,7 +1743,7 @@ begin
   end;
 
   if not v_candidates_ok then
-    raise exception 'CA-01 FALLIDO: un ajeno pudo listar los candidatos de un trabajo de otro espacio';
+    raise exception 'CA-01 FALLIDO: un ajeno pudo listar los candidatos de un trabajo de otro espacio' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -1336,7 +1769,7 @@ begin
   where not exists (select 1 from public.audit_log al where al.action = a.action);
 
   if v_missing is not null then
-    raise exception 'CA-16/§21.2 FALLIDO: estas operaciones no dejaron auditoría: %', v_missing;
+    raise exception 'CA-16/§21.2 FALLIDO: estas operaciones no dejaron auditoría: %', v_missing using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -1345,13 +1778,18 @@ end $$;
 -- ============================================================
 drop function public.h6_make_job(uuid, uuid, uuid, text, text);
 
-delete from public.audit_log where space_id = 'a1000000-0000-0000-0000-000000000001';
-delete from public.spaces where id = 'a1000000-0000-0000-0000-000000000001';
+delete from public.audit_log where space_id in (
+  'a1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002'
+);
+delete from public.spaces where id in (
+  'a1000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002'
+);
 delete from auth.users where id in (
   'a0000000-0000-0000-0000-000000000001',
   'a0000000-0000-0000-0000-000000000002',
   'a0000000-0000-0000-0000-000000000003',
   'a0000000-0000-0000-0000-000000000004',
   'a0000000-0000-0000-0000-000000000005',
+  'a0000000-0000-0000-0000-000000000006',
   'a0000000-0000-0000-0000-000000000099'
 );

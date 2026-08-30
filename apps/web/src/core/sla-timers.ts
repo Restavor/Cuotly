@@ -22,15 +22,13 @@ import type { JobState } from "./job-states";
  * RN-SLA-02: 48 h laborables para Básico o un establecimiento sin plan de
  * mantenimiento (RN-COM-12); 24 h laborables para Impulso y Premium.
  *
- * La tabla `plans` ya guarda `start_sla_hours` con estos mismos números
- * (semilla de Restavor, Hito 2) — quien llame a esta función en el
- * servidor debe leer ese valor de la suscripción vigente del
- * establecimiento en cuanto exista `subscriptions` (Hito 5). Hasta
- * entonces no hay forma de saber qué plan tiene un establecimiento, así
- * que el llamador pasa `hasAcceleratedSla=false` (se le trata como
- * Básico/sin plan, el caso que no falla nunca por exceso: nunca corta un
- * plazo antes de tiempo) y dejará un comentario junto a esa llamada
- * apuntando a este mismo sitio.
+ * La tabla `plans` guarda `start_sla_hours` con estos mismos números
+ * (semilla de Restavor, Hito 2) y `subscriptions` (Hito 5) dice qué plan
+ * tiene vigente cada establecimiento: quien llame a esta función en el
+ * servidor debe leer ese valor de la suscripción activa del
+ * establecimiento — nunca decidirlo en el cliente ni suponerlo. Sin
+ * suscripción de plan activa, `hasAcceleratedSla` es `false` (RN-COM-12:
+ * un establecimiento sin plan se comporta como Básico, 48 h).
  */
 export function t1DurationHours(hasAcceleratedSla: boolean): number {
   return hasAcceleratedSla ? 24 : 48;
@@ -226,16 +224,20 @@ export function jobDeadlineCondition(
     case "in_progress":
     case "blocked_by_client":
     case "authorized_pause":
-    case "in_correction":
       return { state, outOfDeadline: counters.t3?.overdue ?? false, counter: "t3" };
 
+    case "in_correction":
     case "published":
     case "completed":
     case "cancelled_before_start":
     case "cancelled_after_start":
       // RN-SLA-13: T3 se detiene al publicar. A partir de ahí el trabajo ya
       // no puede quedarse fuera de plazo, aunque su historial conserve si
-      // lo estuvo.
+      // lo estuvo. `in_correction` entra aquí por lo mismo: una corrección
+      // es posterior a la publicación y el PRD no define ningún contador
+      // para ella (ver job-states.ts), así que resucitar el T3 congelado
+      // haría que "Fuera de plazo" parpadeara al entrar y salir de
+      // corrección.
       return { state, outOfDeadline: false, counter: null };
   }
 }

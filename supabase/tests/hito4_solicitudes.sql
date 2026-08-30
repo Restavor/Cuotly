@@ -103,13 +103,13 @@ begin
   select code, state into v_code, v_state from public.requests where id = v_request_id;
 
   if v_code !~ '^SOL-\d{4}$' then
-    raise exception 'HU-10 FALLIDO: código inesperado "%"', v_code;
+    raise exception 'HU-10 FALLIDO: código inesperado "%"', v_code using errcode = 'assert_failure';
   end if;
   if v_state <> 'draft' then
-    raise exception 'HU-10 FALLIDO: el borrador debería nacer en draft, está en %', v_state;
+    raise exception 'HU-10 FALLIDO: el borrador debería nacer en draft, está en %', v_state using errcode = 'assert_failure';
   end if;
   if (select count(*) from public.request_versions where request_id = v_request_id) <> 1 then
-    raise exception 'HU-10 FALLIDO: debería existir la versión 1 del borrador';
+    raise exception 'HU-10 FALLIDO: debería existir la versión 1 del borrador' using errcode = 'assert_failure';
   end if;
 
   -- Guarda el id para los siguientes bloques del script (vía tabla temporal:
@@ -135,7 +135,7 @@ begin
   begin
     insert into public.request_attachments (request_id, space_id, establishment_id, storage_path, file_name, mime_type, size_bytes, created_by)
     values (v_request_id, 'f1000000-0000-0000-0000-000000000001', 'f3000000-0000-0000-0000-000000000001', 'requests/a1/video.mp4', 'video.mp4', 'video/mp4', 1024, auth.uid());
-    raise exception 'RN-ARC-06 FALLIDO: se aceptó un tipo de archivo prohibido (vídeo)';
+    raise exception 'RN-ARC-06 FALLIDO: se aceptó un tipo de archivo prohibido (vídeo)' using errcode = 'assert_failure';
   exception
     when check_violation then null; -- esperado
   end;
@@ -143,7 +143,7 @@ begin
   begin
     insert into public.request_attachments (request_id, space_id, establishment_id, storage_path, file_name, mime_type, size_bytes, created_by)
     values (v_request_id, 'f1000000-0000-0000-0000-000000000001', 'f3000000-0000-0000-0000-000000000001', 'requests/a1/grande.pdf', 'grande.pdf', 'application/pdf', 30 * 1024 * 1024, auth.uid());
-    raise exception 'RN-ARC-06 FALLIDO: se aceptó un archivo de más de 25 MB';
+    raise exception 'RN-ARC-06 FALLIDO: se aceptó un archivo de más de 25 MB' using errcode = 'assert_failure';
   exception
     when check_violation then null; -- esperado
   end;
@@ -155,7 +155,7 @@ begin
   begin
     insert into public.request_attachments (request_id, space_id, establishment_id, storage_path, file_name, mime_type, size_bytes, created_by)
     values (v_request_id, 'f1000000-0000-0000-0000-000000000002', 'f3000000-0000-0000-0000-000000000001', 'requests/a1/ajeno.jpg', 'ajeno.jpg', 'image/jpeg', 1024, auth.uid());
-    raise exception 'Hallazgo 3 FALLIDO: se aceptó un adjunto con space_id distinto al real de la solicitud';
+    raise exception 'Hallazgo 3 FALLIDO: se aceptó un adjunto con space_id distinto al real de la solicitud' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then null; -- esperado: la política de INSERT lo rechaza (WITH CHECK)
   end;
@@ -168,7 +168,7 @@ do $$
 begin
   begin
     perform public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Intento no autorizado', null);
-    raise exception 'CA-01 FALLIDO: Consulta pudo crear una solicitud (RN-EST §4.3)';
+    raise exception 'CA-01 FALLIDO: Consulta pudo crear una solicitud (RN-EST §4.3)' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado: can_write_establishment() lo rechaza
   end;
@@ -189,7 +189,7 @@ begin
 
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'received' then
-    raise exception 'HU-10 FALLIDO: tras enviar, el estado debería ser received, es %', v_state;
+    raise exception 'HU-10 FALLIDO: tras enviar, el estado debería ser received, es %', v_state using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -206,7 +206,7 @@ begin
   select count(*) into v_t1_events from public.timer_events
   where entity_id = v_request_id and counter_kind = 't1' and event_type = 'started';
   if v_t1_events <> 1 then
-    raise exception 'RN-DAT-09/CA-17 FALLIDO: enviar dos veces generó % eventos de arranque de T1 (esperado 1)', v_t1_events;
+    raise exception 'RN-DAT-09/CA-17 FALLIDO: enviar dos veces generó % eventos de arranque de T1 (esperado 1)', v_t1_events using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -222,7 +222,7 @@ begin
   perform public.begin_request_analysis(v_request_id);
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'analyzing' then
-    raise exception 'RN-CLS-01 FALLIDO: tras el paso automático debería estar analyzing, está %', v_state;
+    raise exception 'RN-CLS-01 FALLIDO: tras el paso automático debería estar analyzing, está %', v_state using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -248,7 +248,7 @@ begin
       'Propuesta falsa inventada por el propio cliente, sin pasar por Anthropic',
       null, 'claude-opus-5', 999999999, 999999999, 999999999, null
     );
-    raise exception 'Hallazgo 1 FALLIDO: el cliente pudo llamar a record_classification() directamente';
+    raise exception 'Hallazgo 1 FALLIDO: el cliente pudo llamar a record_classification() directamente' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then null; -- esperado: revoke/grant restringe la función a service_role
   end;
@@ -266,7 +266,7 @@ begin
       'f3000000-0000-0000-0000-000000000001'::uuid,
       'f0000000-0000-0000-0000-000000000002'::uuid
     );
-    raise exception 'Hallazgo (20260830000019) FALLIDO: el cliente pudo llamar a can_write_establishment_as() directamente';
+    raise exception 'Hallazgo (20260830000019) FALLIDO: el cliente pudo llamar a can_write_establishment_as() directamente' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then null; -- esperado: revoke/grant restringe la función a service_role
   end;
@@ -290,7 +290,7 @@ begin
 
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'pending_internal_validation' then
-    raise exception 'RN-CLS-02 FALLIDO: la caída de la IA bloqueó el flujo, estado = %', v_state;
+    raise exception 'RN-CLS-02 FALLIDO: la caída de la IA bloqueó el flujo, estado = %', v_state using errcode = 'assert_failure';
   end if;
 
   -- Idempotente: registrar el análisis dos veces no duplica la fila.
@@ -312,16 +312,16 @@ declare
 begin
   select fallback_reason into v_fallback_reason from public.classifications where id = v_classification_id;
   if v_fallback_reason <> 'anthropic_unavailable' then
-    raise exception 'RN-CLS-02 FALLIDO: no se registró el motivo de la caída de la IA';
+    raise exception 'RN-CLS-02 FALLIDO: no se registró el motivo de la caída de la IA' using errcode = 'assert_failure';
   end if;
 
   if exists (select 1 from public.ai_usage where classification_id = v_classification_id) then
-    raise exception 'RN-CLS-05 FALLIDO: una clasificación por reglas no debería generar apunte de ai_usage';
+    raise exception 'RN-CLS-05 FALLIDO: una clasificación por reglas no debería generar apunte de ai_usage' using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.classifications where request_id = v_request_id;
   if v_count <> 1 then
-    raise exception 'RN-DAT-09 FALLIDO: record_classification duplicó la fila al llamarse dos veces (filas = %)', v_count;
+    raise exception 'RN-DAT-09 FALLIDO: record_classification duplicó la fila al llamarse dos veces (filas = %)', v_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -345,7 +345,7 @@ declare
 begin
   select count(*) into v_count from public.classifications where request_id = v_request_id;
   if v_count <> 0 then
-    raise exception 'RN-CLS-03 FALLIDO: el cliente ve % fila(s) de classifications (esperado 0)', v_count;
+    raise exception 'RN-CLS-03 FALLIDO: el cliente ve % fila(s) de classifications (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -361,7 +361,7 @@ declare
 begin
   begin
     perform public.validate_classification(v_request_id, 'medium', 'Corrección de un trabajador');
-    raise exception 'CA-01 FALLIDO: un Trabajador pudo validar una clasificación (RN-CLS-03)';
+    raise exception 'CA-01 FALLIDO: un Trabajador pudo validar una clasificación (RN-CLS-03)' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado
   end;
@@ -385,21 +385,21 @@ begin
 
   select state, validated_category into v_state, v_validated_category from public.requests where id = v_request_id;
   if v_state <> 'pending_client_acceptance' then
-    raise exception 'HU-11 FALLIDO: tras validar, el estado debería ser pending_client_acceptance, es %', v_state;
+    raise exception 'HU-11 FALLIDO: tras validar, el estado debería ser pending_client_acceptance, es %', v_state using errcode = 'assert_failure';
   end if;
   if v_validated_category <> 'medium' then
-    raise exception 'HU-11 FALLIDO: la corrección del administrador no se guardó (categoría = %)', v_validated_category;
+    raise exception 'HU-11 FALLIDO: la corrección del administrador no se guardó (categoría = %)', v_validated_category using errcode = 'assert_failure';
   end if;
 
   select decided_category into v_decided_category from public.classifications where request_id = v_request_id;
   if v_decided_category <> 'medium' then
-    raise exception 'RN-CLS-04 FALLIDO: no se guardó qué decidió la persona en classifications.decided_category';
+    raise exception 'RN-CLS-04 FALLIDO: no se guardó qué decidió la persona en classifications.decided_category' using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_t1_stop_events from public.timer_events
   where entity_id = v_request_id and counter_kind = 't1' and event_type = 'stopped';
   if v_t1_stop_events <> 1 then
-    raise exception 'RN-SLA-03 FALLIDO: validar la clasificación debería detener T1 (eventos stopped = %)', v_t1_stop_events;
+    raise exception 'RN-SLA-03 FALLIDO: validar la clasificación debería detener T1 (eventos stopped = %)', v_t1_stop_events using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -424,7 +424,7 @@ begin
   -- diferencia de classifications, requests.validated_* sí es visible).
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'pending_client_acceptance' then
-    raise exception 'HU-12 FALLIDO: precondición rota, estado = %', v_state;
+    raise exception 'HU-12 FALLIDO: precondición rota, estado = %', v_state using errcode = 'assert_failure';
   end if;
 
   perform public.accept_request(v_request_id);
@@ -433,7 +433,7 @@ begin
 
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'accepted' then
-    raise exception 'HU-12 FALLIDO: tras aceptar, el estado debería ser accepted, es %', v_state;
+    raise exception 'HU-12 FALLIDO: tras aceptar, el estado debería ser accepted, es %', v_state using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -496,10 +496,10 @@ begin
 
   select state, rejected_reason into v_state, v_reason from public.requests where id = v_request_id;
   if v_state <> 'rejected' then
-    raise exception 'HU-12 FALLIDO: tras rechazar, el estado debería ser rejected, es %', v_state;
+    raise exception 'HU-12 FALLIDO: tras rechazar, el estado debería ser rejected, es %', v_state using errcode = 'assert_failure';
   end if;
   if v_reason is null then
-    raise exception 'HU-12 FALLIDO: no se guardó el motivo del rechazo del cliente';
+    raise exception 'HU-12 FALLIDO: no se guardó el motivo del rechazo del cliente' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -550,13 +550,13 @@ begin
 
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'needs_information' then
-    raise exception 'HU-13 FALLIDO: tras pedir información, el estado debería ser needs_information, es %', v_state;
+    raise exception 'HU-13 FALLIDO: tras pedir información, el estado debería ser needs_information, es %', v_state using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_pause_events from public.timer_events
   where entity_id = v_request_id and counter_kind = 't1' and event_type = 'paused';
   if v_pause_events <> 1 then
-    raise exception 'RN-SLA-03 FALLIDO: pedir información debería pausar T1 (eventos paused = %)', v_pause_events;
+    raise exception 'RN-SLA-03 FALLIDO: pedir información debería pausar T1 (eventos paused = %)', v_pause_events using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -577,15 +577,15 @@ declare
 begin
   select id into v_conversation_id from public.conversations where request_id = v_request_id;
   if v_conversation_id is null then
-    raise exception 'HU-13 FALLIDO: el cliente no puede leer la conversación de su propia solicitud';
+    raise exception 'HU-13 FALLIDO: el cliente no puede leer la conversación de su propia solicitud' using errcode = 'assert_failure';
   end if;
 
   select body, sender_role into v_body, v_sender_role from public.messages where conversation_id = v_conversation_id order by created_at asc limit 1;
   if v_body !~ 'día de la semana' then
-    raise exception 'HU-13 FALLIDO: el cliente no ve el mensaje pidiendo información';
+    raise exception 'HU-13 FALLIDO: el cliente no ve el mensaje pidiendo información' using errcode = 'assert_failure';
   end if;
   if v_sender_role <> 'staff' then
-    raise exception 'HU-13 FALLIDO: sender_role inesperado "%"', v_sender_role;
+    raise exception 'HU-13 FALLIDO: sender_role inesperado "%"', v_sender_role using errcode = 'assert_failure';
   end if;
 
   -- El cliente responde: needs_information -> pending_internal_validation, T1 se reanuda.
@@ -606,14 +606,14 @@ declare
 begin
   select count(*) into v_count from public.conversations where request_id = v_request_id;
   if v_count <> 0 then
-    raise exception 'RN-MSG-03 FALLIDO: un Trabajador ve la conversación de una solicitud (esperado 0 filas)';
+    raise exception 'RN-MSG-03 FALLIDO: un Trabajador ve la conversación de una solicitud (esperado 0 filas)' using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.messages m
   join public.conversations c on c.id = m.conversation_id
   where c.request_id = v_request_id;
   if v_count <> 0 then
-    raise exception 'RN-MSG-03 FALLIDO: un Trabajador ve % mensaje(s) de la conversación de una solicitud (esperado 0)', v_count;
+    raise exception 'RN-MSG-03 FALLIDO: un Trabajador ve % mensaje(s) de la conversación de una solicitud (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -630,13 +630,13 @@ declare
 begin
   select state into v_state from public.requests where id = v_request_id;
   if v_state <> 'pending_internal_validation' then
-    raise exception 'HU-13 FALLIDO: tras responder, el estado debería volver a pending_internal_validation, es %', v_state;
+    raise exception 'HU-13 FALLIDO: tras responder, el estado debería volver a pending_internal_validation, es %', v_state using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_resume_events from public.timer_events
   where entity_id = v_request_id and counter_kind = 't1' and event_type = 'resumed';
   if v_resume_events <> 1 then
-    raise exception 'RN-SLA-03 FALLIDO: responder debería reanudar T1 (eventos resumed = %)', v_resume_events;
+    raise exception 'RN-SLA-03 FALLIDO: responder debería reanudar T1 (eventos resumed = %)', v_resume_events using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -657,7 +657,7 @@ declare
 begin
   begin
     perform public.reject_request(v_request_id, '');
-    raise exception 'HU-14 FALLIDO: se rechazó sin motivo';
+    raise exception 'HU-14 FALLIDO: se rechazó sin motivo' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado
   end;
@@ -674,16 +674,16 @@ begin
 
   select state, rejected_reason into v_state, v_reason from public.requests where id = v_request_id;
   if v_state <> 'rejected' then
-    raise exception 'HU-14 FALLIDO: tras rechazar, el estado debería ser rejected, es %', v_state;
+    raise exception 'HU-14 FALLIDO: tras rechazar, el estado debería ser rejected, es %', v_state using errcode = 'assert_failure';
   end if;
   if v_reason is null or v_reason = '' then
-    raise exception 'RN-REQ-03 FALLIDO: el motivo del rechazo no se guardó para que lo vea el cliente';
+    raise exception 'RN-REQ-03 FALLIDO: el motivo del rechazo no se guardó para que lo vea el cliente' using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_stop_events from public.timer_events
   where entity_id = v_request_id and counter_kind = 't1' and event_type = 'stopped';
   if v_stop_events <> 1 then
-    raise exception 'RN-SLA-03 FALLIDO: rechazar debería detener T1 (eventos stopped = %)', v_stop_events;
+    raise exception 'RN-SLA-03 FALLIDO: rechazar debería detener T1 (eventos stopped = %)', v_stop_events using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -699,10 +699,10 @@ begin
   where space_id = 'f1000000-0000-0000-0000-000000000001' and action = 'request.rejected';
 
   if v_old is null or v_new is null then
-    raise exception 'CA-15 FALLIDO: request.rejected no registra valor anterior/nuevo en audit_log';
+    raise exception 'CA-15 FALLIDO: request.rejected no registra valor anterior/nuevo en audit_log' using errcode = 'assert_failure';
   end if;
   if v_old ->> 'state' <> 'pending_internal_validation' or v_new ->> 'state' <> 'rejected' then
-    raise exception 'CA-15 FALLIDO: valor anterior/nuevo incorrectos en audit_log (old=%, new=%)', v_old, v_new;
+    raise exception 'CA-15 FALLIDO: valor anterior/nuevo incorrectos en audit_log (old=%, new=%)', v_old, v_new using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -722,14 +722,14 @@ declare
 begin
   select rejected_reason into v_reason from public.requests where id = v_request_id;
   if v_reason !~ 'fuera de servicio' then
-    raise exception 'RN-REQ-03 FALLIDO: el cliente no ve el motivo del rechazo';
+    raise exception 'RN-REQ-03 FALLIDO: el cliente no ve el motivo del rechazo' using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_message_count from public.messages m
   join public.conversations c on c.id = m.conversation_id
   where c.request_id = v_request_id and m.body ~ 'fuera de servicio';
   if v_message_count <> 1 then
-    raise exception 'RN-REQ-03 FALLIDO: el motivo del rechazo no llegó a la conversación que lee el cliente';
+    raise exception 'RN-REQ-03 FALLIDO: el motivo del rechazo no llegó a la conversación que lee el cliente' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -757,18 +757,18 @@ begin
   from public.requests where id = v_pasted_id;
 
   if v_state <> 'draft' then
-    raise exception 'HU-15 FALLIDO: el borrador pegado debería nacer en draft (sin enviarse automáticamente), está en %', v_state;
+    raise exception 'HU-15 FALLIDO: el borrador pegado debería nacer en draft (sin enviarse automáticamente), está en %', v_state using errcode = 'assert_failure';
   end if;
   if v_establishment_id <> 'f3000000-0000-0000-0000-000000000002' then
-    raise exception 'HU-15 FALLIDO: el borrador no se creó en el establecimiento de destino';
+    raise exception 'HU-15 FALLIDO: el borrador no se creó en el establecimiento de destino' using errcode = 'assert_failure';
   end if;
   if v_description !~ 'ensalada César' then
-    raise exception 'HU-15 FALLIDO: no se copió la descripción de la solicitud de origen';
+    raise exception 'HU-15 FALLIDO: no se copió la descripción de la solicitud de origen' using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_attachment_count from public.request_attachments where request_id = v_pasted_id;
   if v_attachment_count <> 1 then
-    raise exception 'RN-REQ-04 FALLIDO: los adjuntos de la solicitud de origen no se copiaron (%)', v_attachment_count;
+    raise exception 'RN-REQ-04 FALLIDO: los adjuntos de la solicitud de origen no se copiaron (%)', v_attachment_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -786,7 +786,7 @@ declare
 begin
   begin
     perform public.copy_paste_request(v_source_id, 'f3000000-0000-0000-0000-000000000003');
-    raise exception 'RN-REQ-04 FALLIDO: se pegó en un establecimiento sin acceso de escritura';
+    raise exception 'RN-REQ-04 FALLIDO: se pegó en un establecimiento sin acceso de escritura' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado
   end;
@@ -807,7 +807,7 @@ begin
     -- pertenece a un establecimiento de un grupo distinto — RN-REQ-04
     -- debe bloquearlo por el grupo, no por el establecimiento de destino.
     perform public.copy_paste_request(v_source_id, 'f3000000-0000-0000-0000-000000000003');
-    raise exception 'RN-REQ-04 FALLIDO: se copió entre grupos distintos';
+    raise exception 'RN-REQ-04 FALLIDO: se copió entre grupos distintos' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado: "no tienes acceso a la solicitud de origen"
   end;
@@ -831,17 +831,17 @@ declare
 begin
   select count(*) into v_count from public.requests where space_id = 'f1000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de requests de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de requests de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.classifications where space_id = 'f1000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de classifications de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de classifications de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 
   select count(*) into v_count from public.messages where space_id = 'f1000000-0000-0000-0000-000000000001';
   if v_count <> 0 then
-    raise exception 'CA-02 FALLIDO: % fila(s) de messages de un espacio ajeno visibles (esperado 0)', v_count;
+    raise exception 'CA-02 FALLIDO: % fila(s) de messages de un espacio ajeno visibles (esperado 0)', v_count using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -872,10 +872,10 @@ begin
   select count(*) into v_deleted from intento_borrar;
 
   if v_updated <> 0 or v_deleted <> 0 then
-    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0)', v_updated, v_deleted;
+    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0)', v_updated, v_deleted using errcode = 'assert_failure';
   end if;
   if (select count(*) from public.audit_log where space_id = 'f1000000-0000-0000-0000-000000000001' and action = 'request.rejected') <> 1 then
-    raise exception 'CA-16 FALLIDO: no se encuentra el registro de auditoría original del rechazo';
+    raise exception 'CA-16 FALLIDO: no se encuentra el registro de auditoría original del rechazo' using errcode = 'assert_failure';
   end if;
 end $$;
 
