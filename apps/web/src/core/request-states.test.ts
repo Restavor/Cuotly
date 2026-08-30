@@ -86,7 +86,7 @@ describe("request-states — RN-REQ, PRD §9.2", () => {
     expect(canTransitionRequestState("closed", "published", "system")).toBe(false);
   });
 
-  it("los estados de ejecución del Hito 6 no tienen ninguna transición implementada todavía (quedan para ese hito)", () => {
+  it("Hito 6: los estados de ejecución ya son alcanzables, y ninguno quedó suelto", () => {
     const jobExecutionStates: RequestState[] = [
       "in_progress",
       "published",
@@ -95,11 +95,32 @@ describe("request-states — RN-REQ, PRD §9.2", () => {
       "closed",
     ];
     for (const state of jobExecutionStates) {
-      const asOrigin = REQUEST_TRANSITIONS.some((t) => t.from === state);
       const asDestination = REQUEST_TRANSITIONS.some((t) => t.to === state);
-      expect(asOrigin, `${state} no debería ser origen de ninguna transición todavía`).toBe(false);
-      expect(asDestination, `${state} no debería ser destino de ninguna transición todavía`).toBe(false);
+      expect(asDestination, `${state} debería ser alcanzable desde el Hito 6`).toBe(true);
     }
+    // RN-COR-08: `closed` es terminal, nada sale de él.
+    expect(REQUEST_TRANSITIONS.some((t) => t.from === "closed")).toBe(false);
+  });
+
+  it("HU-18 / HU-20 / HU-23: el recorrido de ejecución de la solicitud, con sus actores", () => {
+    // El responsable pulsa Comenzar y publica; no hay ninguna transición de
+    // aprobación previa del supervisor entre las dos (RN-JOB-10).
+    expect(canTransitionRequestState("accepted", "in_progress", "worker")).toBe(true);
+    expect(canTransitionRequestState("in_progress", "published", "worker")).toBe(true);
+    expect(canTransitionRequestState("accepted", "published", "worker")).toBe(false);
+
+    // HU-23: la corrección mínima la pide el cliente; el equipo la ejecuta.
+    expect(canTransitionRequestState("published", "correction_requested", "client")).toBe(true);
+    expect(canTransitionRequestState("published", "correction_requested", "staff")).toBe(false);
+    expect(canTransitionRequestState("correction_requested", "in_correction", "worker")).toBe(true);
+    expect(canTransitionRequestState("in_correction", "published", "worker")).toBe(true);
+
+    // RN-COR-07 / RN-JOB-12: un error del equipo se corrige sin que el
+    // cliente haya pedido nada.
+    expect(canTransitionRequestState("published", "in_correction", "worker")).toBe(true);
+
+    // RN-COR-08: al cerrarse la ventana, la solicitud queda cerrada.
+    expect(canTransitionRequestState("published", "closed", "system")).toBe(true);
   });
 
   it("RN-JOB-04 / CA-06: el cliente cancela una solicitud ya aceptada, hacia antes o después de empezar", () => {

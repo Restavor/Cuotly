@@ -10,11 +10,12 @@
  * borrador a la aceptación o el rechazo del cliente (PRD §9.1, pasos 1-7).
  * El Hito 5 añade la cancelación del cliente tras la aceptación (RN-JOB-04,
  * CA-06/CA-07): `accepted -> cancelled_before_start` / `cancelled_after_start`.
- * Los estados posteriores (ejecución, publicación, corrección) existen ya
- * en el tipo — porque conforman el propio nombre de la columna en base de
- * datos, RN-REQ-01 — pero sus transiciones llegan con el Hito 6 y a
- * propósito no están en `REQUEST_TRANSITIONS`: ninguna función de este
- * módulo permite alcanzarlos todavía.
+ * El Hito 6 cierra el recorrido: ejecución, publicación, corrección mínima
+ * y cierre. La solicitud es el espejo que ve el cliente del trabajo que hay
+ * detrás (`src/core/job-states.ts`) — cada transición de aquí acompaña a
+ * una del trabajo, con el mismo nombre visible en los dos sitios
+ * (RN-REQ-01, CA-21). Los contadores T2 y T3 los lleva el trabajo, no la
+ * solicitud: por eso todas las transiciones del Hito 6 tienen `t1: null`.
  */
 
 /** PRD §9.2, los catorce estados de una solicitud, en el orden del documento. */
@@ -46,10 +47,12 @@ export function isRequestState(value: string): value is RequestState {
  * Quién puede disparar la transición. `client` es el restaurante (o su
  * grupo), `staff` es propietario o administrador del espacio (RN-CLS-03:
  * "Propietario o administrador la valida o corrige" — un trabajador no
- * interviene en este tramo, RN-SLA-04), `system` es el paso automático de
- * análisis que corre nada más enviarse la solicitud (RN-CLS-01).
+ * interviene en el tramo de clasificación, RN-SLA-04), `worker` es el
+ * responsable asignado del trabajo, que aparece a partir del Hito 6
+ * (RN-JOB-03/10: Comenzar y publicar), y `system` es un paso automático sin
+ * persona detrás (el análisis de RN-CLS-01, el cierre de RN-COR-08).
  */
-export type RequestActor = "client" | "staff" | "system";
+export type RequestActor = "client" | "staff" | "worker" | "system";
 
 /** Qué le pasa a T1 (RN-SLA-01 a 04) al completar la transición. */
 export type T1Action = "start" | "pause" | "resume" | "stop" | null;
@@ -130,6 +133,29 @@ export const REQUEST_TRANSITIONS: readonly RequestTransition[] = [
   { from: "pending_client_acceptance", to: "rejected", actor: "client", rule: "HU-12", t1: null },
   { from: "accepted", to: "cancelled_before_start", actor: "client", rule: "RN-JOB-04 / CA-06", t1: null },
   { from: "accepted", to: "cancelled_after_start", actor: "client", rule: "RN-JOB-04 / CA-06", t1: null },
+
+  // Hito 6 (ver la nota de cabecera):
+  //   - `accepted -> in_progress`: el responsable pulsa Comenzar
+  //     (RN-JOB-03, HU-18). Lo que arranca ahí es T3, del trabajo.
+  //   - `in_progress -> published`: el trabajador publica directamente, sin
+  //     aprobación previa del supervisor (RN-JOB-10, HU-20).
+  //   - `published -> correction_requested`: el restaurante pide su
+  //     corrección mínima gratuita dentro de la ventana (RN-COR-02, HU-23).
+  //     Pedirla no cambia todavía el estado del trabajo: lo cambia el
+  //     responsable al ponerse con ella (RN-COR-06).
+  //   - `published -> in_correction` con actor `worker`: corrección de un
+  //     error imputable al equipo (RN-COR-07/RN-JOB-12), que no nace de
+  //     ninguna petición del cliente y no gasta su corrección.
+  //   - `published -> closed`: al terminar la ventana de corrección, la
+  //     conversación de esa solicitud pasa a solo lectura (RN-COR-08). Una
+  //     necesidad nueva exige una solicitud nueva.
+  { from: "accepted", to: "in_progress", actor: "worker", rule: "RN-JOB-03 / HU-18", t1: null },
+  { from: "in_progress", to: "published", actor: "worker", rule: "RN-JOB-10 / HU-20", t1: null },
+  { from: "published", to: "correction_requested", actor: "client", rule: "RN-COR-01/02 / HU-23", t1: null },
+  { from: "correction_requested", to: "in_correction", actor: "worker", rule: "RN-COR-06 / HU-23", t1: null },
+  { from: "published", to: "in_correction", actor: "worker", rule: "RN-COR-07 / RN-JOB-12", t1: null },
+  { from: "in_correction", to: "published", actor: "worker", rule: "RN-COR-06 / HU-23", t1: null },
+  { from: "published", to: "closed", actor: "system", rule: "RN-COR-08", t1: null },
 ] as const;
 
 /** Busca la transición exacta (origen, destino, actor) en la tabla, si existe. */
@@ -163,13 +189,13 @@ export const OPEN_REQUEST_STATES: readonly RequestState[] = [
 ] as const;
 
 /**
- * Estados terminales del tramo implementado hasta el Hito 5: nada más los
- * mueve desde aquí todavía. `accepted` ya no es terminal — el Hito 5 añade
- * la cancelación del cliente (RN-JOB-04) — así que sale de esta lista y
- * entran sus dos destinos.
+ * Estados terminales: nada mueve una solicitud desde aquí. Con el Hito 6
+ * entra `closed` — al cerrarse la ventana de corrección, la solicitud queda
+ * cerrada y una necesidad nueva exige una solicitud nueva (RN-COR-08).
  */
 export const TERMINAL_REQUEST_STATES: readonly RequestState[] = [
   "rejected",
+  "closed",
   "cancelled_before_start",
   "cancelled_after_start",
 ] as const;

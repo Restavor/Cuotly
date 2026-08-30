@@ -42,7 +42,7 @@ export function recalculateElapsedBusinessMinutes(
   calendar: WorkCalendar,
   measuredAt: Date,
 ): number {
-  const ordered = [...events].sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+  const ordered = orderedEvents(events);
 
   let totalMinutes = 0;
   let runningSince: Date | null = null;
@@ -68,4 +68,31 @@ export function recalculateElapsedBusinessMinutes(
   }
 
   return totalMinutes;
+}
+
+function orderedEvents(events: readonly TimerEvent[]): readonly TimerEvent[] {
+  return [...events].sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+}
+
+/**
+ * Los eventos desde el último `started`, descartando los de arranques
+ * anteriores (RN-SLA-08, Hito 6): "si durante la validación cambia la
+ * clasificación, el alcance o el consumo, el cliente vuelve a aceptar y T2
+ * se reinicia **desde cero**. La solicitud conserva todos los intentos
+ * anteriores."
+ *
+ * Ese "desde cero" y ese "conserva todos los intentos" son exactamente
+ * esto: el libro de `timer_events` no se toca nunca (nada se borra ni se
+ * edita — sigue siendo un libro inmutable), pero el contador vigente se
+ * calcula solo sobre el tramo abierto por el último arranque. Una
+ * reasignación, en cambio, **no** escribe ningún `started` nuevo, así que
+ * no reinicia nada (RN-SLA-09, CA-12).
+ *
+ * Solo T2 usa este recorte. T1 y T3 arrancan una única vez por entidad y no
+ * tienen reinicio definido en el PRD, así que suman su historial completo.
+ */
+export function eventsSinceLastStart(events: readonly TimerEvent[]): readonly TimerEvent[] {
+  const ordered = orderedEvents(events);
+  const lastStartIndex = ordered.map((event) => event.type).lastIndexOf("started");
+  return lastStartIndex === -1 ? [] : ordered.slice(lastStartIndex);
 }

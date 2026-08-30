@@ -131,6 +131,44 @@ export const es = {
       statusColumn: "Estado",
       pendingInvitations: "Invitaciones pendientes",
     },
+    // CA-21: "cada entidad y cada estado se llama igual en escritorio,
+    // móvil, correo, PDF e historial". Estas son esas etiquetas para los
+    // estados de trabajo y tarea del Hito 6 (src/core/job-states.ts): un
+    // único nombre visible por nombre interno, sin sinónimos.
+    jobs: {
+      states: {
+        pending_assignment: "Pendiente de asignación",
+        assigned: "Asignado",
+        reassignment_requested: "Reasignación pedida",
+        in_progress: "En curso",
+        blocked_by_client: "Bloqueado · Esperando al restaurante",
+        authorized_pause: "En pausa autorizada",
+        published: "Publicado",
+        in_correction: "En corrección",
+        completed: "Finalizado",
+        cancelled_before_start: "Cancelado antes de empezar",
+        cancelled_after_start: "Cancelado después de empezar",
+      },
+      taskStates: {
+        pending: "Pendiente",
+        in_progress: "En curso",
+        blocked: "Bloqueada",
+        completed: "Completada",
+        cancelled: "Cancelada",
+      },
+      // RN-SLA-17: es una condición calculada que convive con el estado,
+      // nunca lo sustituye.
+      outOfDeadline: "Fuera de plazo",
+      // RN-JOB-13: 30 días naturales en la columna, después al historial.
+      finishedColumn: "Finalizados",
+      loadLevels: {
+        low: "Carga baja",
+        normal: "Carga normal",
+        high: "Carga alta",
+        very_high: "Carga muy alta",
+      },
+    },
+
     statuses: {
       active: "Activo",
       configuring: "Configurando",

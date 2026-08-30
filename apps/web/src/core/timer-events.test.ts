@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { contractualCalendar } from "./business-clock";
-import { recalculateElapsedBusinessMinutes, type TimerEvent } from "./timer-events";
+import { eventsSinceLastStart, recalculateElapsedBusinessMinutes, type TimerEvent } from "./timer-events";
 
 const TZ = "Europe/Madrid";
 const calendar = contractualCalendar(TZ);
@@ -71,5 +71,39 @@ describe("CA-10 · los contadores son reproducibles a partir de timer_events", (
     ];
 
     expect(recalculateElapsedBusinessMinutes(events, calendar, madrid("2026-02-09", "12:00"))).toBe(90 + 20);
+  });
+});
+
+describe("eventsSinceLastStart — RN-SLA-08 (el reinicio de T2)", () => {
+  const intento1: TimerEvent = { type: "started", occurredAt: madrid("2026-02-02", "09:00") };
+  const parada1: TimerEvent = { type: "stopped", occurredAt: madrid("2026-02-02", "11:00") };
+  const intento2: TimerEvent = { type: "started", occurredAt: madrid("2026-02-02", "12:00") };
+
+  it("devuelve solo el tramo abierto por el último arranque", () => {
+    expect(eventsSinceLastStart([intento1, parada1, intento2])).toEqual([intento2]);
+  });
+
+  it("ordena antes de recortar: da igual en qué orden lleguen de la base de datos (CA-10)", () => {
+    expect(eventsSinceLastStart([intento2, intento1, parada1])).toEqual([intento2]);
+  });
+
+  it("sin ningún arranque no hay tramo que contar", () => {
+    expect(eventsSinceLastStart([])).toEqual([]);
+    expect(eventsSinceLastStart([parada1])).toEqual([]);
+  });
+
+  it("no modifica el historial que recibe: el libro sigue siendo inmutable", () => {
+    const historial: TimerEvent[] = [intento1, parada1, intento2];
+    eventsSinceLastStart(historial);
+    expect(historial).toHaveLength(3);
+  });
+
+  it("un contador que solo arrancó una vez conserva su historial entero (T1 y T3)", () => {
+    const eventos: TimerEvent[] = [
+      intento1,
+      { type: "paused", occurredAt: madrid("2026-02-02", "10:00") },
+      { type: "resumed", occurredAt: madrid("2026-02-02", "10:30") },
+    ];
+    expect(eventsSinceLastStart(eventos)).toEqual(eventos);
   });
 });
