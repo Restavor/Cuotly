@@ -2078,7 +2078,9 @@ begin
       ('files','deletion_requested_by'),
       ('requests','validated_by'),
       ('requests','rejected_by'),
-      ('subscriptions','created_by')
+      ('subscriptions','created_by'),
+      ('corrections','requested_by'),
+      ('corrections','completed_by')
     ) as t(tabla, columna)
   loop
     if has_column_privilege('authenticated', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select')
