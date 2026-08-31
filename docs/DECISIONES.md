@@ -65,6 +65,17 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    Fase 1. Aplicado en `RN-FIN-03` del PRD, en `PAYMENT_METHODS` (`src/core/finance.ts`) y
    en la restricción de la tabla `payments` (migración `20260830000031`).
 
+11. **El servicio se detiene a las 24 horas, no a las 72** (contradicción resuelta,
+   31/08/2026). RN-FIN-10 decía que a las +24 h el establecimiento queda "Pausado por
+   impago" sin mencionar que el servicio se detenga, y RN-FIN-11 ponía la detención en las
+   +72 h. El código hacía una cosa intermedia y contradictoria: `evaluate_establishment_dunning()`
+   paraba todos los contadores ya a las 24 h, pero nada impedía arrancar otros nuevos acto
+   seguido — se paraban once contadores y el cliente o el trabajador encendían dos más.
+   Bosco decide: **el servicio se detiene a las 24 h**. A las 72 h lo que cambia es el
+   estado (Suspendido) y su gravedad, no la detención, que ya estaba. Aplicado en RN-FIN-10
+   a 12 del PRD y en la guarda de servidor, que pasa a rechazar tanto `paused` como
+   `suspended` (migración `20260830000033`).
+
 ### Pendiente de completar (no bloquea la Fase 1)
 
 9. **Redondeo de consumos prorrateados** (relacionado con §106, "Mejora inmediata" de

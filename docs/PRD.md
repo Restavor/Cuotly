@@ -547,9 +547,9 @@ Cuotly es un **control financiero operativo**. No procesa pagos ni sustituye a u
 
 ### 17.1 Impago del restaurante
 
-- **RN-FIN-10**: +24 h naturales desde el vencimiento → establecimiento **Pausado por impago**.
-- **RN-FIN-11**: +72 h naturales → servicio detenido y establecimiento **Suspendido por impago**.
-- **RN-FIN-12**: se detienen trabajos, publicaciones y contadores. **No se borra información.**
+- **RN-FIN-10** (aclarada 31/08/2026): +24 h naturales desde el vencimiento → establecimiento **Pausado por impago**, y el **servicio se detiene ya aquí**. La redacción anterior no lo decía y el código sí lo hacía a medias (paraba los contadores a las 24 h pero no impedía arrancar otros nuevos); resuelto por Bosco, decisión 11 de `docs/DECISIONES.md`.
+- **RN-FIN-11**: +72 h naturales → establecimiento **Suspendido por impago**. El servicio ya estaba detenido desde las 24 h; lo que cambia a las 72 h es el estado y su gravedad de cara al cliente.
+- **RN-FIN-12**: se detienen trabajos, publicaciones y contadores, desde las +24 h. **No se borra información.**
 - **RN-FIN-13**: al confirmarse el pago, se reactiva y los contadores continúan **exactamente** donde se pausaron, sin duplicar solicitudes ni trabajos. La reactivación y el pago quedan registrados.
 - **RN-FIN-14 (enmienda 29/08/2026)**: la suspensión por impago **no cancela el compromiso**. La deuda se mantiene y, para causar baja, el establecimiento debe abonar las mensualidades restantes de su permanencia.
 

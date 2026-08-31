@@ -2886,7 +2886,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo COMENZAR un trabajo con el establecimiento suspendido por impago' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: start_job() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -2900,7 +2900,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo PUBLICAR un trabajo con el establecimiento suspendido por impago' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: publish_job() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -2919,7 +2919,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo ENVIAR una solicitud con el establecimiento suspendido por impago' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: submit_request() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -2930,13 +2930,78 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo ACEPTAR una solicitud con el establecimiento suspendido por impago' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: accept_request() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
 end $$;
 
 reset role;
+
+-- ============================================================
+-- RN-FIN-10 (aclarada 31/08/2026) · el servicio se detiene a las 24 h,
+-- no a las 72.
+--
+-- La quinta revisión encontró que el código hacía dos cosas
+-- contradictorias: `evaluate_establishment_dunning()` paraba TODOS los
+-- contadores ya en la etapa `paused` (+24 h), pero la guarda solo miraba
+-- `suspended` (+72 h). Se paraban once contadores y acto seguido el
+-- cliente enviaba una solicitud y el trabajador comenzaba un trabajo,
+-- arrancando dos nuevos que corrían durante el impago.
+--
+-- No era un fallo de implementación sino una contradicción entre
+-- documentos, así que se preguntó. Bosco: el servicio se detiene a las
+-- 24 h (decisión 11 de docs/DECISIONES.md). Esto lo comprueba con el
+-- establecimiento SOLO pausado, que es el caso que antes se colaba.
+-- ============================================================
+do $$
+begin
+  update public.establishments set status = 'paused'
+  where id = 'b4000000-0000-0000-0000-000000000001';
+end $$;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    perform public.start_job((select value::uuid from h7_ctx where key = 'job_susp_asignado'));
+    raise exception 'RN-FIN-10 FALLIDO: se pudo COMENZAR un trabajo con el establecimiento PAUSADO por impago (+24 h)' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%detenido por impago%' then
+        raise exception 'RN-FIN-10 FALLIDO: start_job() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    perform public.submit_request((select value::uuid from h7_ctx where key = 'request_susp_borrador'));
+    raise exception 'RN-FIN-10 FALLIDO: se pudo ENVIAR una solicitud con el establecimiento PAUSADO por impago (+24 h)' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%detenido por impago%' then
+        raise exception 'RN-FIN-10 FALLIDO: submit_request() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+reset role;
+
+-- Y de vuelta a `suspended`, que es donde lo dejan los bloques siguientes.
+do $$
+begin
+  update public.establishments set status = 'suspended'
+  where id = 'b4000000-0000-0000-0000-000000000001';
+end $$;
 
 -- ============================================================
 -- H1 a H4 (5ª revisión) · el resto del pasillo.
@@ -2989,7 +3054,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo REANUDAR un trabajo retenido por impago' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' and sqlerrm not like '%retenido por impago%' then
+      if sqlerrm not like '%detenido por impago%' and sqlerrm not like '%retenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: unblock_job() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -3019,7 +3084,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo EMPEZAR una corrección con el establecimiento suspendido' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: start_correction() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -3040,7 +3105,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo APORTAR INFORMACIÓN (y reanudar T1) con el establecimiento suspendido' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: provide_additional_information() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -3051,7 +3116,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo ACEPTAR UNA REVISIÓN (y consumir crédito) con el establecimiento suspendido' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: accept_revised_request() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -3071,7 +3136,7 @@ begin
     raise exception 'RN-FIN-11/12 FALLIDO: se pudo ASIGNAR un trabajo (y arrancar T2) con el establecimiento suspendido' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%suspendido por impago%' then
+      if sqlerrm not like '%detenido por impago%' then
         raise exception 'RN-FIN-11/12 FALLIDO: auto_assign_job() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
@@ -3215,7 +3280,7 @@ begin
     -- que `client_jobs` existe para esconder (CA-04).
     'job_assignee(uuid)',
     'is_eligible_job_candidate(uuid, uuid)',
-    'assert_establishment_not_suspended(uuid)']
+    'assert_establishment_service_running(uuid)']
   loop
     if has_function_privilege('authenticated', 'public.' || v_fn, 'execute')
        or has_function_privilege('anon', 'public.' || v_fn, 'execute') then

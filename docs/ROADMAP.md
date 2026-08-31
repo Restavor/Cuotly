@@ -46,7 +46,7 @@ no son un fallo, sino alcance:
    sensata antes de dar el hito por terminado de verdad.
 
 3. **La base de datos real va por detrás del repositorio.** El proyecto de
-   Supabase está en la migración 24; las migraciones 25 a 32 (el Hito 7
+   Supabase está en la migración 24; las migraciones 25 a 33 (el Hito 7
    entero) siguen sin desplegar. Los arreglos de seguridad que tocaban
    objetos del Hito 6 ya vivos se aplican a mano: el primero (migraciones
    27, 29 y 30) el 31/08/2026, verificado; el segundo (migración 32, con la
