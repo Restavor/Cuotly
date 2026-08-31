@@ -35,19 +35,23 @@ no son un fallo, sino alcance:
    las HU-24 a HU-28 redactadas como "quiero ver…" todavía no tienen
    interfaz. Las pantallas de los tres hitos se construyen juntas.
 
-2. **Falta una revisión que pase en limpio.** Han pasado cuatro revisiones
-   adversariales. La cuarta encontró tres bloqueantes, dos de ellos en
-   migraciones ya desplegadas del Hito 6. Están arreglados y verificados
-   uno a uno, pero la quinta revisión se cortó por un límite de uso y queda
-   pendiente. Lo que encuentre se trata como arreglo encima, no como
-   reapertura del hito.
+2. **Falta una revisión que pase en limpio.** Han pasado cinco revisiones
+   adversariales. La cuarta encontró tres bloqueantes y la quinta uno más
+   (`unblock_job()` levantaba la retención por impago) junto con ocho
+   hallazgos importantes, entre ellos que dos de las tres comprobaciones
+   que la cuarta añadió eran **vacuas**: el fixture no creaba tareas ni
+   correcciones, así que comparaban cero con cero. Todo corregido y
+   verificado con mutación, pero el patrón se repite: cada pasada encuentra
+   algo que la anterior dio por bueno. Una sexta revisión sigue siendo
+   sensata antes de dar el hito por terminado de verdad.
 
 3. **La base de datos real va por detrás del repositorio.** El proyecto de
-   Supabase está en la migración 24; las migraciones 25 a 31 (el Hito 7
-   entero) siguen sin desplegar. El arreglo de seguridad de las
-   migraciones 27, 29 y 30 que tocaba objetos del Hito 6 ya vivos se aplicó
-   a mano el 31/08/2026 y quedó verificado (comprobación final: `SELECT` /
-   `true`).
+   Supabase está en la migración 24; las migraciones 25 a 32 (el Hito 7
+   entero) siguen sin desplegar. Los arreglos de seguridad que tocaban
+   objetos del Hito 6 ya vivos se aplican a mano: el primero (migraciones
+   27, 29 y 30) el 31/08/2026, verificado; el segundo (migración 32, con la
+   función que `anon` podía usar para escribir sin sesión) queda pendiente
+   de aplicar.
 
 ### Cosas aplazadas que este hito NO inventó
 
