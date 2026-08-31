@@ -3,6 +3,8 @@ import {
   CREDIT_AMOUNT,
   DEBIT_AMOUNT,
   calculateConsumptionBalance,
+  cycleAllowance,
+  describeLedgerEntry,
   isCategoryIncludedInPlan,
   resolveCancellationOutcome,
   type PlanAllowance,
@@ -98,6 +100,79 @@ describe("consumption-ledger — RN-CON, PRD §12", () => {
           originalCycleIsCurrent: false,
         }),
       ).toEqual({ jobState: "cancelled_after_start", entryType: null });
+    });
+  });
+});
+
+describe("consumption-ledger — HU-24 y HU-25 (Hito 7)", () => {
+  // Impulso, tal como lo siembra el Hito 2: 16 pequeños, 12 fotográficos,
+  // 3 medianos y ningún grande (RN-COM-02).
+  const cicloImpulso = {
+    includedSmall: 16,
+    includedPhoto: 12,
+    includedMedium: 3,
+    includedLarge: 0,
+    renewsAt: new Date("2026-09-15T22:00:00.000Z"),
+  };
+
+  describe("HU-24: cuántos cambios de cada categoría quedan y cuándo se renuevan", () => {
+    it("con la bolsa intacta, quedan los del plan y la renovación es el fin del ciclo guardado", () => {
+      const allowance = cycleAllowance(cicloImpulso, []);
+      expect(allowance.remaining).toEqual({ small: 16, photo: 12, medium: 3, large: 0 });
+      expect(allowance.renewsAt).toEqual(new Date("2026-09-15T22:00:00.000Z"));
+    });
+
+    it("cada categoría descuenta la suya y no toca a las demás", () => {
+      const allowance = cycleAllowance(cicloImpulso, [
+        { category: "small", amount: DEBIT_AMOUNT },
+        { category: "small", amount: DEBIT_AMOUNT },
+        { category: "medium", amount: DEBIT_AMOUNT },
+      ]);
+      expect(allowance.remaining).toEqual({ small: 14, photo: 12, medium: 2, large: 0 });
+    });
+
+    it("una devolución vuelve a la bolsa de su categoría (RN-CON-08)", () => {
+      const allowance = cycleAllowance(cicloImpulso, [
+        { category: "photo", amount: DEBIT_AMOUNT },
+        { category: "photo", amount: CREDIT_AMOUNT },
+      ]);
+      expect(allowance.remaining.photo).toBe(12);
+    });
+
+    it("'0 restantes' y 'no incluido en tu plan' se distinguen: Impulso no incluye cambios grandes (RN-COM-02)", () => {
+      const allowance = cycleAllowance(cicloImpulso, [{ category: "medium", amount: DEBIT_AMOUNT * 3 }]);
+      expect(allowance.remaining.medium).toBe(0);
+      expect(allowance.included.medium).toBe(3);
+      expect(allowance.remaining.large).toBe(0);
+      expect(allowance.included.large).toBe(0);
+    });
+  });
+
+  describe("HU-25: el libro de consumos con cada apunte, su motivo y su autor", () => {
+    it("un débito ordinario conserva su tipo, su importe y quién lo generó", () => {
+      expect(
+        describeLedgerEntry({ entryType: "debit", reason: null, createdBy: "cliente-1", amount: DEBIT_AMOUNT }),
+      ).toEqual({ reasonKey: "debit", explanation: null, authorId: "cliente-1", amount: -1 });
+    });
+
+    it("una devolución conserva el motivo que escribió la persona (RN-CON-12)", () => {
+      expect(
+        describeLedgerEntry({
+          entryType: "return",
+          reason: "Cancelado antes de comenzar",
+          createdBy: "admin-2",
+          amount: CREDIT_AMOUNT,
+        }),
+      ).toEqual({
+        reasonKey: "return",
+        explanation: "Cancelado antes de comenzar",
+        authorId: "admin-2",
+        amount: 1,
+      });
+    });
+
+    it("sin motivo escrito no se inventa uno (P6)", () => {
+      expect(describeLedgerEntry({ entryType: "compensatory_credit", reason: null, createdBy: null, amount: CREDIT_AMOUNT }).explanation).toBeNull();
     });
   });
 });

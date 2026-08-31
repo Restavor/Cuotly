@@ -110,3 +110,109 @@ export function resolveCancellationOutcome(input: CancellationInput): Cancellati
     entryType: input.originalCycleIsCurrent ? "return" : "compensatory_credit",
   };
 }
+
+// ---------------------------------------------------------------------
+// Hito 7 · HU-24 y HU-25: lo que el restaurante ve de su bolsa y lo que
+// el administrador ve del libro.
+// ---------------------------------------------------------------------
+
+/**
+ * El ciclo vigente tal como lo guarda `consumption_cycles`: su bolsa
+ * incluida (la instantánea del plan, RN-CON-05/CA-09) y cuándo termina.
+ */
+export type ConsumptionCycle = {
+  readonly includedSmall: number;
+  readonly includedPhoto: number;
+  readonly includedMedium: number;
+  readonly includedLarge: number;
+  /** `consumption_cycles.cycle_end`: la fecha de renovación (RN-COM-06). */
+  readonly renewsAt: Date;
+};
+
+/** Un apunte del ciclo, con su categoría (RN-CON-01). */
+export type CategorizedLedgerEntry = LedgerEntry & { readonly category: ChangeCategory };
+
+export type CycleAllowance = {
+  readonly remaining: Readonly<Record<ChangeCategory, number>>;
+  readonly included: Readonly<Record<ChangeCategory, number>>;
+  /** RN-COM-06: los consumos se renuevan en esta fecha y **no se acumulan**. */
+  readonly renewsAt: Date;
+};
+
+/**
+ * HU-24: "ver cuántos cambios de cada categoría me quedan en el ciclo
+ * actual y cuándo se renuevan."
+ *
+ * Cada categoría es su propia bolsa incluida más sus propios apuntes
+ * (CA-08: el saldo mostrado siempre es igual a la suma de los apuntes).
+ * `renewsAt` es el fin del ciclo tal como está guardado, no un "mismo día
+ * del mes que viene" recalculado aquí: el corte de mes depende de la zona
+ * horaria del espacio (RN-DAT-08) y lo decide el servidor al crear el
+ * ciclo, una sola vez.
+ *
+ * Una categoría que el plan no incluye vale 0 y no es un error: en Básico
+ * todo se presupuesta aparte (RN-COM-01) y en Impulso los cambios grandes
+ * también (RN-COM-02). "0 restantes" y "no incluido en tu plan" son cosas
+ * distintas — `included` viaja al lado de `remaining` precisamente para
+ * que la pantalla pueda decir cuál de las dos es (P6, no inventar datos).
+ */
+export function cycleAllowance(
+  cycle: ConsumptionCycle,
+  entries: readonly CategorizedLedgerEntry[],
+): CycleAllowance {
+  const included: Record<ChangeCategory, number> = {
+    small: cycle.includedSmall,
+    photo: cycle.includedPhoto,
+    medium: cycle.includedMedium,
+    large: cycle.includedLarge,
+  };
+
+  const remaining: Record<ChangeCategory, number> = {
+    small: 0,
+    photo: 0,
+    medium: 0,
+    large: 0,
+  };
+
+  for (const category of ["small", "photo", "medium", "large"] as const) {
+    remaining[category] = calculateConsumptionBalance(
+      included[category],
+      entries.filter((entry) => entry.category === category),
+    );
+  }
+
+  return { remaining, included, renewsAt: cycle.renewsAt };
+}
+
+/**
+ * HU-25: "ver el libro de consumos de un establecimiento con cada apunte,
+ * su motivo y su autor."
+ *
+ * El motivo de un apunte tiene dos caras que no deben confundirse: **por
+ * qué existe** (su `entry_type`, que es dato estructurado y no texto
+ * libre) y **qué explicó la persona** (`reason`, que puede faltar en un
+ * débito ordinario). Esta función devuelve la primera como identificador
+ * estable para el diccionario de i18n, sin inventar un texto cuando no lo
+ * hay: si no hay `reason`, se dice que no lo hay (P6), no se rellena con
+ * una frase de relleno (CLAUDE.md MUST NOT).
+ */
+export type LedgerEntryView = {
+  readonly reasonKey: "debit" | "return" | "compensatory_credit";
+  readonly explanation: string | null;
+  readonly authorId: string | null;
+  readonly amount: number;
+};
+
+export function describeLedgerEntry(entry: {
+  readonly entryType: "debit" | "return" | "compensatory_credit";
+  readonly reason: string | null;
+  readonly createdBy: string | null;
+  readonly amount: number;
+}): LedgerEntryView {
+  return {
+    reasonKey: entry.entryType,
+    explanation: entry.reason,
+    authorId: entry.createdBy,
+    amount: entry.amount,
+  };
+}
