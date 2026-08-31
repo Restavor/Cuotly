@@ -1845,6 +1845,183 @@ end $$;
 reset role;
 
 -- ============================================================
+-- X5 (segunda auditoría) · release_financial_holds() solo debe auditar
+-- las transiciones que de verdad ocurrieron. Si el trabajo ya no estaba
+-- en `authorized_pause`, el bloqueo se cierra pero NO se escribe un
+-- state_event de un cambio que no pasó (CLAUDE.md: la auditoría no se
+-- edita ni se borra, así que un asiento falso es permanente).
+-- ============================================================
+reset role;
+do $$
+declare
+  v_job_id uuid := (select value::uuid from h7_ctx where key = 'job_a');
+  v_eventos_antes integer;
+  v_eventos_despues integer;
+  v_bloqueo_abierto integer;
+  v_devueltos integer;
+begin
+  -- Un bloqueo financiero abierto sobre un trabajo que NO está en
+  -- authorized_pause (job_a quedó publicado en la sección de RN-COR-08).
+  insert into public.blocks (space_id, job_id, reason_type, note, started_by)
+  values ('b1000000-0000-0000-0000-000000000001', v_job_id, 'financial_hold', 'impago', 'b0000000-0000-0000-0000-000000000002');
+
+  select count(*) into v_eventos_antes from public.state_events
+  where entity_type = 'job' and entity_id = v_job_id;
+
+  v_devueltos := public.release_financial_holds('b4000000-0000-0000-0000-000000000001');
+
+  select count(*) into v_eventos_despues from public.state_events
+  where entity_type = 'job' and entity_id = v_job_id;
+
+  select count(*) into v_bloqueo_abierto from public.blocks
+  where job_id = v_job_id and reason_type = 'financial_hold' and ended_at is null;
+
+  if v_bloqueo_abierto <> 0 then
+    raise exception 'RN-FIN-13 FALLIDO: el bloqueo financiero no se cerró'
+      using errcode = 'assert_failure';
+  end if;
+
+  if v_eventos_despues <> v_eventos_antes then
+    raise exception 'X5 FALLIDO: se auditó un cambio de estado que no ocurrió (eventos % -> %)',
+      v_eventos_antes, v_eventos_despues using errcode = 'assert_failure';
+  end if;
+
+  if v_devueltos <> 0 then
+    raise exception 'X5 FALLIDO: se contaron % reactivaciones sobre un trabajo que no estaba en pausa', v_devueltos
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- ============================================================
+-- X1 / X3 (segunda auditoría) · las vistas que lee el restaurante son de
+-- SOLO LECTURA, y `state_events` no le deja ver actor_id.
+--
+-- X1 fue un fallo real: una vista simple es auto-actualizable y, al
+-- pertenecer a postgres, escribir por ella se saltaba el RLS de la tabla
+-- base — el restaurante llegó a BORRAR sus eventos de estado. X3 es que
+-- el arreglo de la política de state_events no tenía ningún test: se
+-- podía revertir sin que nada fallara.
+-- ============================================================
+-- Un evento de estado de establecimiento, creado aquí de forma explícita
+-- (como postgres) para no depender de que la sección de impago haya
+-- dejado uno: lo que se prueba es la vista y la política, no el ciclo de
+-- impago, que ya tiene su propia sección.
+reset role;
+insert into public.state_events (space_id, entity_type, entity_id, from_state, to_state, actor_id, reason, cause)
+values ('b1000000-0000-0000-0000-000000000001', 'establishment', 'b4000000-0000-0000-0000-000000000001',
+        'active', 'paused', 'b0000000-0000-0000-0000-000000000002', 'Ciclo de impago', 'nonpayment_pause');
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_borradas integer;
+  v_actor_visible boolean;
+  v_eventos integer;
+begin
+  -- Escritura: denegada en las dos vistas de cliente.
+  begin
+    delete from public.client_establishment_status_events
+    where establishment_id = 'b4000000-0000-0000-0000-000000000001';
+    get diagnostics v_borradas = row_count;
+    if v_borradas > 0 then
+      raise exception 'X1 FALLIDO: el restaurante borró % eventos de estado a través de la vista', v_borradas
+        using errcode = 'assert_failure';
+    end if;
+  exception
+    when insufficient_privilege then null; -- esperado
+  end;
+
+  begin
+    update public.client_jobs set state = 'completed'
+    where establishment_id = 'b4000000-0000-0000-0000-000000000001';
+    get diagnostics v_borradas = row_count;
+    if v_borradas > 0 then
+      raise exception 'X1 FALLIDO: el restaurante cambió el estado de % trabajos a través de client_jobs', v_borradas
+        using errcode = 'assert_failure';
+    end if;
+  exception
+    when insufficient_privilege then null; -- esperado
+  end;
+
+  -- Lectura: sí ve el motivo de su estado (RN-EST-08)...
+  select count(*) into v_eventos from public.client_establishment_status_events
+  where establishment_id = 'b4000000-0000-0000-0000-000000000001';
+  if v_eventos = 0 then
+    raise exception 'RN-EST-08 FALLIDO: el restaurante no ve ningún cambio de estado de su establecimiento'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- ...pero no la identidad de quien lo hizo, ni por la tabla base.
+  select count(*) > 0 into v_actor_visible from public.state_events
+  where entity_type = 'establishment' and entity_id = 'b4000000-0000-0000-0000-000000000001';
+  if v_actor_visible then
+    raise exception 'X3 FALLIDO: el restaurante alcanza state_events (y con él actor_id) por la tabla base'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- X4 (segunda auditoría) · RN-FIN-07 en las funciones de dinero. El
+-- arreglo que las cerró no tenía test: quitarle la comprobación pasaba
+-- las cinco suites.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000008', false);
+set role authenticated;
+
+do $$
+declare
+  v_charge uuid := (select value::uuid from h7_ctx where key = 'charge_a');
+  v_importe integer;
+begin
+  -- El rol Consulta no tiene visibilidad financiera: no ve el cobro por
+  -- RLS, y tampoco puede sacarle el importe por RPC.
+  --
+  -- Nota de cobertura, comprobada con mutación: charge_status() delega en
+  -- charge_outstanding_cents(), así que quitarle la comprobación a una
+  -- sola de las tres no cambia el comportamiento (la otra la ataja). Este
+  -- test detecta que se le quite a las tres, que es la regresión real.
+  begin
+    v_importe := public.charge_outstanding_cents(v_charge);
+    raise exception 'RN-FIN-07 FALLIDO: el rol Consulta obtuvo el importe pendiente (%) por RPC', v_importe
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then null; -- esperado
+  end;
+
+  begin
+    perform public.charge_status(v_charge);
+    raise exception 'RN-FIN-07 FALLIDO: el rol Consulta obtuvo el estado del cobro por RPC'
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then null; -- esperado
+  end;
+end $$;
+
+reset role;
+
+-- Control positivo: quien SÍ tiene visibilidad financiera las sigue
+-- usando (si el arreglo se pasara de celoso, esto lo detecta).
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000007', false);
+set role authenticated;
+
+do $$
+declare
+  v_estado text;
+begin
+  v_estado := public.charge_status((select value::uuid from h7_ctx where key = 'charge_a'));
+  if v_estado is null then
+    raise exception 'RN-FIN-07 FALLIDO: el Editor con visibilidad financiera no pudo consultar el estado del cobro'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
 -- Limpieza.
 -- ============================================================
 drop function public.h7_make_job(uuid, uuid, uuid, text, text);
@@ -1896,7 +2073,12 @@ begin
       ('payment_confirmations','confirmed_by'),
       ('payment_confirmations','confirmed_role'),
       ('receipts','uploaded_by'),
-      ('financial_entries','created_by')
+      ('financial_entries','created_by'),
+      ('files','archived_by'),
+      ('files','deletion_requested_by'),
+      ('requests','validated_by'),
+      ('requests','rejected_by'),
+      ('subscriptions','created_by')
     ) as t(tabla, columna)
   loop
     if has_column_privilege('authenticated', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select')
@@ -1934,8 +2116,11 @@ begin
     'release_financial_holds(uuid)',
     'set_establishment_nonpayment_status(uuid, text, text)',
     'reactivate_establishment_after_payment(uuid)',
-    'mirror_request_attachment_to_catalogue()'
-  ]
+    'mirror_request_attachment_to_catalogue()',
+    'file_current_version(uuid)',
+    'conversation_establishment_id(uuid)',
+    'counter_is_running(text, text, uuid)',
+    'counter_pause_cause(text, text, uuid)']
   loop
     if has_function_privilege('authenticated', 'public.' || v_fn, 'execute')
        or has_function_privilege('anon', 'public.' || v_fn, 'execute') then
