@@ -131,6 +131,40 @@ begin
 end;
 $$;
 
+-- Igual que h7_make_job(), pero se para en `pending_client_acceptance`:
+-- hace falta una solicitud validada y SIN aceptar para comprobar que
+-- aceptar se niega con el establecimiento suspendido (RN-FIN-11/12).
+create or replace function public.h7_make_pending_request(
+  p_establishment_id uuid,
+  p_client uuid,
+  p_staff uuid,
+  p_description text,
+  p_category text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_request_id uuid;
+begin
+  perform set_config('request.jwt.claim.sub', p_client::text, false);
+  v_request_id := public.create_request_draft(p_establishment_id, p_description, null);
+  perform public.submit_request(v_request_id);
+  perform public.begin_request_analysis(v_request_id);
+
+  perform public.record_classification(
+    v_request_id, p_client, 'rules', p_category, p_description, null, null, null, null, null, null
+  );
+
+  perform set_config('request.jwt.claim.sub', p_staff::text, false);
+  perform public.validate_classification(v_request_id, p_category, p_description);
+
+  return v_request_id;
+end;
+$$;
+
 do $$
 declare
   v_job_id uuid;
@@ -1159,6 +1193,61 @@ end $$;
 
 reset role;
 
+-- RN-FIN-13, control del filtro `cause = 'nonpayment'`: un segundo
+-- trabajo del mismo restaurante, bloqueado por el CLIENTE (le falta
+-- información) antes de que empiece el impago. Al cobrar, la reactivación
+-- debe reanudar solo lo que pausó el impago; este T3 tiene que seguir
+-- pausado, porque su causa es otra y el restaurante sigue sin contestar.
+--
+-- Sin este escenario, `resume_establishment_counters()` podía reanudar
+-- cualquier contador parado y la suite seguía verde (mutación: quitar el
+-- filtro por causa).
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_id uuid;
+begin
+  v_job_id := public.h7_make_job(
+    'b4000000-0000-0000-0000-000000000001',
+    'b0000000-0000-0000-0000-000000000005',
+    'b0000000-0000-0000-0000-000000000001',
+    'RN-FIN-13: pendiente de que el restaurante mande las fotos', 'small'
+  );
+  insert into h7_ctx values ('job_bloqueado', v_job_id::text);
+  perform set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+  perform public.auto_assign_job(v_job_id);
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+begin
+  perform public.start_job((select value::uuid from h7_ctx where key = 'job_bloqueado'));
+end $$;
+
+-- En un bloque aparte a propósito: `psql -f` ejecuta cada sentencia de
+-- nivel superior en su propia transacción, así que el bloqueo ocurre en un
+-- `now()` posterior al arranque. Hacerlo en la misma transacción daría a
+-- los dos eventos el mismo `occurred_at` Y el mismo `created_at`, y el
+-- desempate de `counter_is_running()` dejaría de ser determinista — algo
+-- que no ocurre en producción, donde comenzar y bloquear son dos acciones
+-- distintas del trabajador.
+do $$
+begin
+  -- RN-JOB-08 / RN-JOB-09: el trabajador marca el bloqueo por cliente.
+  perform public.block_job(
+    (select value::uuid from h7_ctx where key = 'job_bloqueado'),
+    'client_information', 'Faltan las fotos del local'
+  );
+end $$;
+
+reset role;
+
 do $$
 begin
   insert into h7_ctx values ('estado_previo', (select status from public.establishments where id = 'b4000000-0000-0000-0000-000000000001'));
@@ -1322,6 +1411,27 @@ begin
     when raise_exception then null;
   end;
 
+  -- RN-FIN-05: "no puede ... perdonar deuda". Sobre `charge_a`, el cobro
+  -- del establecimiento que Ana SÍ tiene asignado, y AQUÍ, antes de
+  -- cobrarlo, porque es el único momento en que tiene deuda viva: si se
+  -- intenta después, lo que rechaza la llamada es la guarda de "no hay
+  -- deuda que perdonar" y la de `manage_finance` queda tapada.
+  --
+  -- Antes se intentaba sobre `charge_b`, de un establecimiento ajeno a
+  -- Ana, así que lo que saltaba era la visibilidad financiera y el test
+  -- seguía verde con la regla rota (mutación: `if false then` en lugar de
+  -- la guarda de capacidad).
+  begin
+    perform public.waive_charge(v_charge_a, 'Regalo');
+    raise exception 'RN-FIN-05 FALLIDO: una trabajadora pudo perdonar deuda viva de su propio establecimiento' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%perdonar un cobro%' then
+        raise exception 'RN-FIN-05 FALLIDO: waive_charge() falló por otro motivo, no por falta de capacidad: %', sqlerrm
+          using errcode = 'assert_failure';
+      end if;
+  end;
+
   -- HU-27, con el justificante que RN-FIN-05 le permite adjuntar.
   v_justificante := public.register_file(
     'b4000000-0000-0000-0000-000000000001', 'billing', 'Resguardo del banco',
@@ -1338,9 +1448,16 @@ begin
   end if;
 
   -- RN-FIN-05: no perdona deuda, no reembolsa y no corrige.
+  --
+  -- Sobre `charge_a`, el cobro del establecimiento que Ana SÍ tiene
+  -- asignado, y comprobando el MENSAJE. Antes se intentaba sobre
+  -- `charge_b`, de un establecimiento ajeno a Ana: lo que saltaba no era
+  -- la comprobación de `manage_finance` sino la de visibilidad
+  -- financiera, así que el test seguía verde con la regla rota
+  -- (comprobado con una mutación: sustituir la guarda por `if false`).
   begin
     perform public.waive_charge(v_charge_b, 'Regalo');
-    raise exception 'RN-FIN-05 FALLIDO: una trabajadora pudo perdonar deuda' using errcode = 'assert_failure';
+    raise exception 'RN-FIN-05 FALLIDO: una trabajadora pudo perdonar deuda de un establecimiento ajeno' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
   end;
@@ -1430,6 +1547,29 @@ begin
   where entity_type = 'job' and entity_id = v_job_id and counter_kind = 't3' and event_type = 'started';
   if v_arranques <> 1 then
     raise exception 'RN-FIN-13 FALLIDO: T3 se reinició desde cero (% arranques)', v_arranques using errcode = 'assert_failure';
+  end if;
+
+  -- RN-FIN-13: "los contadores continúan EXACTAMENTE donde se pausaron".
+  -- El trabajo que el restaurante tenía bloqueado por falta de
+  -- información no lo desbloquea un pago: su T3 sigue pausado, y su
+  -- bloqueo sigue abierto. Cobrar la deuda reanuda lo que paró la deuda,
+  -- nada más.
+  select event_type, cause into v_evento
+  from public.timer_events
+  where entity_type = 'job'
+    and entity_id = (select value::uuid from h7_ctx where key = 'job_bloqueado')
+    and counter_kind = 't3'
+  order by occurred_at desc, created_at desc limit 1;
+  if v_evento.event_type <> 'paused' then
+    raise exception 'RN-FIN-13 FALLIDO: la reactivación por pago reanudó un T3 que estaba pausado por el cliente, no por el impago (último evento: % / %)',
+      v_evento.event_type, v_evento.cause using errcode = 'assert_failure';
+  end if;
+  if not exists (
+    select 1 from public.blocks
+    where job_id = (select value::uuid from h7_ctx where key = 'job_bloqueado')
+      and reason_type = 'client_information' and ended_at is null
+  ) then
+    raise exception 'RN-FIN-13 FALLIDO: el pago cerró un bloqueo por falta de información del cliente' using errcode = 'assert_failure';
   end if;
 
   -- RN-FIN-13: "sin duplicar solicitudes ni trabajos".
@@ -2022,9 +2162,313 @@ end $$;
 reset role;
 
 -- ============================================================
+-- ============================================================
+-- B2 (4ª revisión) · BARRIDO DE IDENTIDAD.
+--
+-- CLAUDE.md MUST NOT: "mostrar al cliente el nombre, foto o identidad
+-- individual de nadie del equipo de mantenimiento". PRD, principio P7:
+-- "El cliente no ve la organización interna".
+--
+-- Las tres revisiones anteriores comprobaban esto con una lista blanca
+-- escrita a mano, y por eso se escaparon tres veces columnas nuevas
+-- (files.archived_by, corrections.requested_by/completed_by, y las cinco
+-- de assignments/tasks/state_events que encontró la 4ª). Una lista que
+-- hay que acordarse de ampliar no protege nada.
+--
+-- Esto es distinto: sentado como el restaurante, recorre TODAS las
+-- columnas del esquema que apuntan a `profiles` — las de hoy y las que se
+-- añadan mañana — y comprueba que ninguna le devuelve el uuid de alguien
+-- del equipo. No le importa CÓMO está protegida cada una (privilegio de
+-- columna, política de RLS o vista barrera): comprueba la propiedad, no
+-- el mecanismo.
+--
+-- Un `insufficient_privilege` al leer una columna es exactamente lo que se
+-- busca en las tablas cerradas con privilegio de columna, así que cuenta
+-- como aprobado.
+--
+-- LÍMITE, dicho aquí para que nadie se confíe: este barrido solo ejercita
+-- una columna si el fixture tiene alguna fila escrita por el equipo en
+-- ella. Una tabla vacía pasa sin comprobar nada. Por eso NO sustituye a la
+-- lista explícita de privilegios de columna que hay más abajo, que sí es
+-- estática y no depende de los datos: se complementan. El barrido caza
+-- fugas de FILA (una política de RLS que deja entrar al cliente); la lista
+-- caza fugas de COLUMNA (un `grant select` de más).
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_col record;
+  v_uuid uuid;
+  v_expuestas text := '';
+  v_equipo uuid[] := array[
+    'b0000000-0000-0000-0000-000000000001'::uuid,  -- propietario
+    'b0000000-0000-0000-0000-000000000002'::uuid,  -- administrador
+    'b0000000-0000-0000-0000-000000000003'::uuid,  -- Ana, trabajadora
+    'b0000000-0000-0000-0000-000000000004'::uuid   -- Luis, trabajador
+  ];
+begin
+  for v_col in
+    select c.relname as tabla, a.attname as columna
+    from pg_constraint k
+    join pg_class c on c.oid = k.conrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    join unnest(k.conkey) as ck(attnum) on true
+    join pg_attribute a on a.attrelid = c.oid and a.attnum = ck.attnum
+    where k.contype = 'f'
+      and k.confrelid = 'public.profiles'::regclass
+      and n.nspname = 'public'
+    order by 1, 2
+  loop
+    begin
+      execute format(
+        'select %I from public.%I where %I = any($1) limit 1',
+        v_col.columna, v_col.tabla, v_col.columna
+      ) into v_uuid using v_equipo;
+
+      if v_uuid is not null then
+        v_expuestas := v_expuestas || ' ' || v_col.tabla || '.' || v_col.columna;
+      end if;
+    exception
+      -- Columna revocada a nivel de privilegio: es justo lo que se quiere.
+      when insufficient_privilege then null;
+    end;
+  end loop;
+
+  if v_expuestas <> '' then
+    raise exception 'CLAUDE.md MUST NOT / P7 FALLIDO: el restaurante obtiene la identidad de miembros del equipo en:%', v_expuestas
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- B2 · Y explícitamente, las tres tablas que la 4ª revisión encontró
+-- abiertas: la organización interna del equipo no es del restaurante, ni
+-- fila ni columna (P7). No basta con taparle las columnas, como en
+-- `messages` o `corrections`, donde la fila SÍ es suya.
+do $$
+declare
+  v_filas integer;
+begin
+  select count(*) into v_filas from public.assignments;
+  if v_filas <> 0 then
+    raise exception 'P7 FALLIDO: el restaurante ve % asignaciones del equipo', v_filas using errcode = 'assert_failure';
+  end if;
+
+  select count(*) into v_filas from public.tasks;
+  if v_filas <> 0 then
+    raise exception 'P7 FALLIDO: el restaurante ve % tareas internas', v_filas using errcode = 'assert_failure';
+  end if;
+
+  select count(*) into v_filas from public.state_events where entity_type = 'task';
+  if v_filas <> 0 then
+    raise exception 'P7 FALLIDO: el restaurante ve % cambios de estado de tareas internas', v_filas using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- M5 (4ª revisión) · RN-FIN-06: quien registra un pago es el equipo. El
+-- restaurante no cobra su propia deuda.
+--
+-- Hasta ahora no había control negativo: con la comprobación de rol
+-- neutralizada, lo único que frenaba al cliente era el NOT NULL de
+-- `payments.recorded_role`. La regla se cumplía por accidente.
+do $$
+begin
+  begin
+    perform public.register_payment(
+      (select value::uuid from h7_ctx where key = 'charge_b'), 1000, 'transfer', now()
+    );
+    raise exception 'RN-FIN-06 FALLIDO: el restaurante pudo registrar el pago de su propia deuda' using errcode = 'assert_failure';
+  exception
+    when raise_exception then null;
+  end;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- B3 (4ª revisión) · RN-FIN-11 / RN-FIN-12 — "servicio detenido" tiene
+-- que detener el servicio, no solo lo que estuviera corriendo en el
+-- instante en que se evaluó el impago.
+--
+-- `apply_financial_hold_on_jobs()` pausa los trabajos vivos en ese
+-- momento, y hasta la 4ª revisión eso era todo: `start_job()`,
+-- `publish_job()`, `submit_request()` y `accept_request()` no miraban el
+-- estado del establecimiento, así que bastaba con pulsar un botón después
+-- para arrancar un T3 nuevo, o un T1 nuevo, corriendo durante la
+-- suspensión. Los contadores no estaban detenidos: solo lo estaban los
+-- que existían al evaluar.
+--
+-- La transición impago -> `suspended` ya la cubre la sección de RN-FIN-10
+-- / RN-FIN-11 de más arriba. Lo que se comprueba aquí es lo otro: DADO un
+-- establecimiento suspendido, esas cuatro operaciones se niegan. Por eso
+-- el estado se pone directamente, sin repetir el ciclo de impago entero.
+--
+-- Solo `suspended`. RN-FIN-10 deja el establecimiento "Pausado por impago"
+-- a las +24 h y no dice que el servicio se detenga; se detiene a las +72 h
+-- (RN-FIN-11). Guardar también `paused` sería una regla más dura que la
+-- escrita.
+-- ============================================================
+
+-- Fixture, ANTES de suspender: un trabajo asignado sin comenzar, otro en
+-- curso, una solicitud pendiente de aceptación y un borrador.
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_job_asignado uuid;
+  v_job_en_curso uuid;
+  v_request_pendiente uuid;
+begin
+  v_job_asignado := public.h7_make_job(
+    'b4000000-0000-0000-0000-000000000001',
+    'b0000000-0000-0000-0000-000000000005',
+    'b0000000-0000-0000-0000-000000000001',
+    'B3: trabajo asignado sin comenzar', 'small'
+  );
+  perform set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+  perform public.auto_assign_job(v_job_asignado);
+  insert into h7_ctx values ('job_susp_asignado', v_job_asignado::text);
+
+  v_job_en_curso := public.h7_make_job(
+    'b4000000-0000-0000-0000-000000000001',
+    'b0000000-0000-0000-0000-000000000005',
+    'b0000000-0000-0000-0000-000000000001',
+    'B3: trabajo en curso', 'small'
+  );
+  perform set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+  perform public.auto_assign_job(v_job_en_curso);
+  insert into h7_ctx values ('job_susp_en_curso', v_job_en_curso::text);
+
+  -- Una solicitud que se queda a las puertas de aceptarse.
+  v_request_pendiente := public.h7_make_pending_request(
+    'b4000000-0000-0000-0000-000000000001',
+    'b0000000-0000-0000-0000-000000000005',
+    'b0000000-0000-0000-0000-000000000001',
+    'B3: pendiente de aceptación', 'small'
+  );
+  perform set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+  insert into h7_ctx values ('request_susp_pendiente', v_request_pendiente::text);
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+begin
+  perform public.start_job((select value::uuid from h7_ctx where key = 'job_susp_en_curso'));
+end $$;
+
+reset role;
+
+-- Un borrador del restaurante, todavía sin enviar.
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+begin
+  insert into h7_ctx values ('request_susp_borrador', public.create_request_draft(
+    'b4000000-0000-0000-0000-000000000001', 'B3: borrador sin enviar', null
+  )::text);
+end $$;
+
+reset role;
+
+-- Y ahora, suspendido por impago.
+do $$
+begin
+  insert into h7_ctx values ('estado_antes_susp',
+    (select status from public.establishments where id = 'b4000000-0000-0000-0000-000000000001'));
+  update public.establishments set status = 'suspended'
+  where id = 'b4000000-0000-0000-0000-000000000001';
+end $$;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+begin
+  -- RN-FIN-12: "se detienen trabajos".
+  begin
+    perform public.start_job((select value::uuid from h7_ctx where key = 'job_susp_asignado'));
+    raise exception 'RN-FIN-11/12 FALLIDO: se pudo COMENZAR un trabajo con el establecimiento suspendido por impago' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%suspendido por impago%' then
+        raise exception 'RN-FIN-11/12 FALLIDO: start_job() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+
+  -- RN-FIN-12: "...y publicaciones".
+  begin
+    perform public.publish_job(
+      (select value::uuid from h7_ctx where key = 'job_susp_en_curso'),
+      now() + interval '30 days'
+    );
+    raise exception 'RN-FIN-11/12 FALLIDO: se pudo PUBLICAR un trabajo con el establecimiento suspendido por impago' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%suspendido por impago%' then
+        raise exception 'RN-FIN-11/12 FALLIDO: publish_job() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+begin
+  -- RN-FIN-12: "...y contadores". Enviar una solicitud arranca un T1.
+  begin
+    perform public.submit_request((select value::uuid from h7_ctx where key = 'request_susp_borrador'));
+    raise exception 'RN-FIN-11/12 FALLIDO: se pudo ENVIAR una solicitud con el establecimiento suspendido por impago' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%suspendido por impago%' then
+        raise exception 'RN-FIN-11/12 FALLIDO: submit_request() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+
+  -- Aceptar crea un trabajo nuevo (RN-REQ-02) y arranca T2.
+  begin
+    perform public.accept_request((select value::uuid from h7_ctx where key = 'request_susp_pendiente'));
+    raise exception 'RN-FIN-11/12 FALLIDO: se pudo ACEPTAR una solicitud con el establecimiento suspendido por impago' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%suspendido por impago%' then
+        raise exception 'RN-FIN-11/12 FALLIDO: accept_request() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+reset role;
+
+-- RN-FIN-12: "No se borra información". La suspensión detiene, no destruye.
+do $$
+declare
+  v_estado text;
+begin
+  select state into v_estado from public.jobs
+  where id = (select value::uuid from h7_ctx where key = 'job_susp_en_curso');
+  if v_estado <> 'in_progress' then
+    raise exception 'RN-FIN-12 FALLIDO: la suspensión cambió el estado del trabajo a %', v_estado using errcode = 'assert_failure';
+  end if;
+
+  update public.establishments
+  set status = (select value from h7_ctx where key = 'estado_antes_susp')
+  where id = 'b4000000-0000-0000-0000-000000000001';
+end $$;
+
 -- Limpieza.
 -- ============================================================
 drop function public.h7_make_job(uuid, uuid, uuid, text, text);
+drop function public.h7_make_pending_request(uuid, uuid, uuid, text, text);
 
 delete from public.audit_log where space_id = 'b1000000-0000-0000-0000-000000000001';
 delete from public.spaces where id = 'b1000000-0000-0000-0000-000000000001';
@@ -2122,7 +2566,14 @@ begin
     'file_current_version(uuid)',
     'conversation_establishment_id(uuid)',
     'counter_is_running(text, text, uuid)',
-    'counter_pause_cause(text, text, uuid)']
+    'counter_pause_cause(text, text, uuid)',
+    -- 4ª revisión · B1: `job_assignee()` es SECURITY DEFINER, no comprueba
+    -- nada, devuelve `jobs.assigned_to` y no tiene ni un llamador. Estaba
+    -- abierta a `anon`: sin sesión ninguna se obtenía por RPC la identidad
+    -- que `client_jobs` existe para esconder (CA-04).
+    'job_assignee(uuid)',
+    'is_eligible_job_candidate(uuid, uuid)',
+    'assert_establishment_not_suspended(uuid)']
   loop
     if has_function_privilege('authenticated', 'public.' || v_fn, 'execute')
        or has_function_privilege('anon', 'public.' || v_fn, 'execute') then

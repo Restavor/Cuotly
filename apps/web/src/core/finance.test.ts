@@ -101,6 +101,17 @@ describe("finance — RN-FIN, HU-26, HU-27, HU-28", () => {
       ).toBe("refunded");
     });
 
+    it("RN-FIN-04: perdonar una deuda no es haberla cobrado", () => {
+      // El panel de HU-28 presenta "Cobrado" como dinero que entró. Un
+      // `waiver` cancela la deuda sin que entre nada, así que no puede
+      // sumar. `charge_collected_cents()` en SQL lo respeta; hasta la 4ª
+      // revisión nada lo comprobaba aquí, y añadir `case "waiver"` al
+      // mismo `return total - entry.amountCents` dejaba los tests verdes.
+      const entries: FinancialEntry[] = [cargo(IMPULSO_TOTAL), { type: "waiver", amountCents: -IMPULSO_TOTAL }];
+      expect(collectedCents(entries)).toBe(0);
+      expect(outstandingCents(entries)).toBe(0);
+    });
+
     it("RN-FIN-04: corregir un cobro mal registrado es un apunte contrario, no una edición", () => {
       const entries: FinancialEntry[] = [
         cargo(IMPULSO_TOTAL),
