@@ -87,7 +87,7 @@ describe("files — RN-ARC, RN-MSG-09", () => {
       // isAuthorizedForEstablishment: false a propósito — propietario y
       // administrador ven todo su espacio aunque no tengan el
       // establecimiento autorizado (§4.2); el campo solo lo consulta el
-      // trabajador (RN-ARC-10).
+      // trabajador (RN-ASG-01 y §4.3).
       expect(canViewFile({ side: "space", role: "owner", isAuthorizedForEstablishment: false }, factura)).toBe(true);
       expect(canViewFile({ side: "space", role: "admin", isAuthorizedForEstablishment: false }, interna)).toBe(true);
     });

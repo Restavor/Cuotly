@@ -1620,6 +1620,231 @@ begin
 end $$;
 
 -- ============================================================
+-- N2 (auditoría) · RN-FIN-09 — adjuntar la factura a un cobro. Era la
+-- única operación de usuario del hito sin ninguna cobertura.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000008', false);
+set role authenticated;
+
+do $$
+begin
+  -- El rol Consulta no gestiona facturación (RN-FIN-07).
+  begin
+    perform public.attach_invoice_to_charge(
+      (select value::uuid from h7_ctx where key = 'charge_a'),
+      (select value::uuid from h7_ctx where key = 'file_factura')
+    );
+    raise exception 'RN-FIN-09 FALLIDO: el rol Consulta pudo adjuntar la factura de un cobro' using errcode = 'assert_failure';
+  exception
+    when raise_exception then null; -- esperado
+  end;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+declare
+  v_charge_id uuid := (select value::uuid from h7_ctx where key = 'charge_a');
+  v_file_id uuid := (select value::uuid from h7_ctx where key = 'file_factura');
+  v_links integer;
+begin
+  perform public.attach_invoice_to_charge(v_charge_id, v_file_id);
+
+  -- Queda enlazada al cobro (y por RN-ARC-07, ya no se puede borrar).
+  select count(*) into v_links from public.file_links
+  where file_id = v_file_id and entity_type = 'charge' and entity_id = v_charge_id;
+  if v_links <> 1 then
+    raise exception 'RN-FIN-09 FALLIDO: la factura no quedó enlazada al cobro (enlaces=%)', v_links;
+  end if;
+
+  -- Idempotente: repetirla no duplica el enlace (CLAUDE.md MUST).
+  perform public.attach_invoice_to_charge(v_charge_id, v_file_id);
+  select count(*) into v_links from public.file_links
+  where file_id = v_file_id and entity_type = 'charge' and entity_id = v_charge_id;
+  if v_links <> 1 then
+    raise exception 'RN-FIN-09 FALLIDO: adjuntar dos veces creó % enlaces (esperado 1)', v_links;
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- N10 (auditoría) · un justificante tiene que ser un archivo que quien lo
+-- adjunta pueda ver. Antes solo se comprobaba que fuera del mismo
+-- establecimiento, así que el restaurante podía enlazar a su cobro un
+-- archivo INTERNO del equipo: no lo leía, pero lo dejaba permanentemente
+-- no archivable ni borrable (RN-ARC-07) y ensuciaba el expediente.
+-- ============================================================
+-- Un archivo interno recién creado por el equipo: `file_interno` del
+-- fixture ya se compartió con el restaurante en la sección de RN-ARC-04,
+-- así que leerlo sería legítimo y el test pasaría por el motivo
+-- equivocado.
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+declare
+  v_file_id uuid;
+begin
+  v_file_id := public.register_file(
+    'b4000000-0000-0000-0000-000000000001', 'documents', 'Documento interno del equipo',
+    'h7/nota-interna.pdf', 'nota-interna.pdf', 'application/pdf', 5000
+  );
+  insert into h7_ctx values ('file_solo_interno', v_file_id::text);
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_file_interno uuid := (select value::uuid from h7_ctx where key = 'file_solo_interno');
+  v_enlaces integer;
+begin
+  begin
+    perform public.upload_payment_receipt(
+      (select value::uuid from h7_ctx where key = 'charge_a'),
+      v_file_interno,
+      'intento con un archivo interno del equipo'
+    );
+    raise exception 'RN-ARC-04 FALLIDO: el restaurante adjuntó como justificante un archivo interno que no puede ver' using errcode = 'assert_failure';
+  exception
+    when raise_exception then null; -- esperado
+  end;
+
+  -- Y no quedó ningún rastro: ni el enlace que lo volvería indestructible.
+  select count(*) into v_enlaces from public.file_links
+  where file_id = v_file_interno and entity_type = 'charge';
+  if v_enlaces <> 0 then
+    raise exception 'RN-ARC-07 FALLIDO: quedó un enlace de cobro sobre un archivo interno (enlaces=%)', v_enlaces
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- N3 (auditoría) · RN-COR-08 — cerrada la ventana de corrección, la
+-- conversación de esa solicitud queda de solo lectura **en el servidor**,
+-- no solo en la lógica pura. Los dos caminos: la función y el INSERT
+-- directo.
+-- ============================================================
+-- Precondición: se publica el trabajo y se da la ventana por vencida.
+-- Se hace como postgres (sin RLS), igual que jobs.started_at en el Hito 5.
+reset role;
+update public.jobs
+set state = 'published',
+    published_at = now() - interval '5 days',
+    correction_window_ends_at = now() - interval '1 day'
+where id = (select value::uuid from h7_ctx where key = 'job_a');
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_conv_id uuid := (select value::uuid from h7_ctx where key = 'conv_a');
+  v_inserted integer := 0;
+begin
+  if not public.conversation_is_read_only(v_conv_id) then
+    raise exception 'RN-COR-08 FALLIDO: la conversación no se considera de solo lectura con la ventana vencida';
+  end if;
+
+  begin
+    perform public.post_message(v_conv_id, 'quiero anadir algo mas');
+    raise exception 'RN-COR-08 FALLIDO: se pudo escribir en una conversación con la ventana de corrección cerrada' using errcode = 'assert_failure';
+  exception
+    when raise_exception then null; -- esperado
+  end;
+
+  -- Y tampoco por la puerta de atrás, con un INSERT directo.
+  begin
+    insert into public.messages (conversation_id, space_id, sender_id, sender_role, body)
+    values (v_conv_id, 'b1000000-0000-0000-0000-000000000001', auth.uid(), 'client', 'por la puerta de atras');
+    v_inserted := 1;
+  exception
+    when insufficient_privilege then null; -- esperado
+  end;
+  if v_inserted <> 0 then
+    raise exception 'RN-COR-08 FALLIDO: un INSERT directo saltó la conversación de solo lectura';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- N4 (auditoría) · dos casos negativos que faltaban: sin ellos, quitar la
+-- comprobación de permiso de estas dos funciones no rompía ningún test.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+begin
+  -- RN-ARC-04: compartir un archivo con el restaurante lo decide el
+  -- equipo, no el propio restaurante.
+  begin
+    perform public.share_file_with_client((select value::uuid from h7_ctx where key = 'file_interno'));
+    raise exception 'RN-ARC-04 FALLIDO: el restaurante pudo compartirse a sí mismo un archivo interno del equipo' using errcode = 'assert_failure';
+  exception
+    when raise_exception then null; -- esperado
+  end;
+end $$;
+
+reset role;
+
+-- Se guarda un mensaje real del hilo interno (como postgres: el
+-- restaurante no puede leerlo, que es justo el punto). Sin un mensaje de
+-- verdad, la llamada de abajo fallaría por "elige al menos un mensaje" y
+-- el test pasaría por el motivo equivocado.
+reset role;
+insert into h7_ctx values ('msg_interno',
+  (select id::text from public.messages
+   where conversation_id = (select value::uuid from h7_ctx where key = 'conv_job')
+   order by created_at limit 1));
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+begin
+  -- Convertir una conversación en solicitud exige poder LEERLA. El caso
+  -- que de verdad lo prueba no es un usuario ajeno (ese falla después, al
+  -- crear el borrador, porque tampoco puede escribir en el
+  -- establecimiento): es el propio restaurante sobre la conversación
+  -- INTERNA de un trabajo. Sí puede escribir en su establecimiento, pero
+  -- RN-MSG-04 le prohíbe leer ese hilo — así que si las comprobaciones
+  -- desaparecieran, se llevaría a una solicitud nueva el contenido de una
+  -- conversación interna del equipo.
+  --
+  -- Nota de cobertura, comprobada con mutación: convert_conversation_to_request()
+  -- tiene DOS guardas que protegen esto (el tipo de conversación y
+  -- can_read_conversation), y se tapan la una a la otra — quitar solo una
+  -- no cambia el comportamiento observable, así que ningún test puede
+  -- distinguirlo. Este test detecta que caigan las dos, que es la
+  -- propiedad que de verdad importa. La segunda guarda es defensa en
+  -- profundidad, no una puerta abierta.
+  begin
+    perform public.convert_conversation_to_request(
+      (select value::uuid from h7_ctx where key = 'conv_job'),
+      array[(select value::uuid from h7_ctx where key = 'msg_interno')],
+      'intento sobre una conversación interna'
+    );
+    raise exception 'RN-MSG-04/HU-25 FALLIDO: el restaurante pudo convertir en solicitud una conversación interna del equipo' using errcode = 'assert_failure';
+  exception
+    when raise_exception then null; -- esperado
+    when insufficient_privilege then null; -- esperado
+  end;
+end $$;
+
+reset role;
+
+-- ============================================================
 -- Limpieza.
 -- ============================================================
 drop function public.h7_make_job(uuid, uuid, uuid, text, text);
@@ -1637,6 +1862,54 @@ delete from auth.users where id in (
   'b0000000-0000-0000-0000-000000000008',
   'b0000000-0000-0000-0000-000000000099'
 );
+
+-- ============================================================
+-- B2 (auditoría) · ninguna columna de identidad individual del equipo
+-- puede quedar legible con un SELECT normal. RLS filtra filas, no
+-- columnas, así que esto lo sostiene el privilegio de columna — y sin una
+-- comprobación como esta, añadir una columna `*_by` a cualquiera de estas
+-- tablas la dejaría expuesta al restaurante sin que nada avisara.
+--
+-- Se omite si no existen los roles (PostgreSQL desnudo sin el stub).
+-- ============================================================
+do $$
+declare
+  v_col record;
+  v_abiertas text := '';
+begin
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    raise notice 'Sin rol authenticated: se omite la comprobación de columnas de identidad';
+    return;
+  end if;
+
+  for v_col in
+    select * from (values
+      ('messages','sender_id'),
+      ('message_edits','edited_by'),
+      ('files','created_by'),
+      ('file_versions','created_by'),
+      ('file_links','created_by'),
+      ('charges','issued_by'),
+      ('payments','recorded_by'),
+      ('payments','recorded_role'),
+      ('payments','reversed_by'),
+      ('payment_confirmations','confirmed_by'),
+      ('payment_confirmations','confirmed_role'),
+      ('receipts','uploaded_by'),
+      ('financial_entries','created_by')
+    ) as t(tabla, columna)
+  loop
+    if has_column_privilege('authenticated', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select')
+       or has_column_privilege('anon', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select') then
+      v_abiertas := v_abiertas || ' ' || v_col.tabla || '.' || v_col.columna;
+    end if;
+  end loop;
+
+  if v_abiertas <> '' then
+    raise exception 'CLAUDE.md MUST NOT FALLIDO: el cliente puede leer columnas de identidad del equipo:%', v_abiertas
+      using errcode = 'assert_failure';
+  end if;
+end $$;
 
 -- ============================================================
 -- Ninguna función interna del Hito 7 puede quedar invocable por RPC

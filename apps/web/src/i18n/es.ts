@@ -169,6 +169,32 @@ export const es = {
       },
     },
 
+    messages: {
+      // RN-MSG-02 / HU-35 y CLAUDE.md MUST NOT: el cliente nunca ve quién
+      // del equipo escribió. `list_conversation_messages()` devuelve
+      // sender_display='maintenance_team' y la pantalla lo resuelve aquí.
+      maintenanceTeam: "Equipo de mantenimiento",
+      edited: "Editado",
+      readOnly: "Esta conversación es de solo lectura",
+      internalNote: "Nota interna",
+      unread: "Sin leer",
+    },
+    files: {
+      internal: "Interno",
+      sharedWithClient: "Compartido con el restaurante",
+      archived: "Archivado",
+      version: "Versión",
+    },
+    finance: {
+      statusPending: "Pendiente",
+      statusPartiallyPaid: "Pago parcial",
+      statusPaid: "Pagado",
+      statusOverdue: "Vencido",
+      statusRefunded: "Reembolsado",
+      statusWaived: "Perdonado",
+      outstanding: "Pendiente de cobro",
+      collected: "Cobrado",
+    },
     statuses: {
       active: "Activo",
       configuring: "Configurando",

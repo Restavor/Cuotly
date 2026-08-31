@@ -21,6 +21,9 @@
  */
 
 /** RN-FIN-08: Restavor usa IVA 21 %; otros espacios configuran el suyo. */
+import { recalculateElapsedBusinessMinutes, type TimerEvent } from "./timer-events";
+import type { WorkCalendar } from "./business-clock";
+
 export const RESTAVOR_TAX_RATE_PERCENT = 21;
 
 export type ChargeAmounts = {
@@ -192,10 +195,21 @@ export function establishmentNonpaymentStage(
  * el mismo número.
  */
 export function elapsedIsPreservedAcrossPause(input: {
-  readonly elapsedMinutesAtPause: number;
-  readonly elapsedMinutesAtResume: number;
+  /** El libro completo de eventos del contador, pausa y reanudación incluidas. */
+  readonly events: readonly TimerEvent[];
+  readonly calendar: WorkCalendar;
+  /** Instante de la pausa financiera (RN-FIN-11). */
+  readonly pausedAt: Date;
+  /** Instante de la reactivación tras confirmarse el pago (RN-FIN-13). */
+  readonly resumedAt: Date;
 }): boolean {
-  return input.elapsedMinutesAtPause === input.elapsedMinutesAtResume;
+  // Se recalcula el consumido en los dos instantes a partir del MISMO libro
+  // de eventos, con el mismo recalculador que usa el resto del sistema
+  // (CA-10). Si la pausa se hubiera implementado descontando de un número
+  // guardado — o si el tramo pausado contara — los dos valores diferirían.
+  const atPause = recalculateElapsedBusinessMinutes(input.events, input.calendar, input.pausedAt);
+  const atResume = recalculateElapsedBusinessMinutes(input.events, input.calendar, input.resumedAt);
+  return atPause === atResume;
 }
 
 /** RN-COM-04/05: permanencia mínima de 3 meses; después, renovación mensual. */

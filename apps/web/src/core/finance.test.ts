@@ -18,6 +18,12 @@ import {
   terminationSettlementCents,
   type FinancialEntry,
 } from "./finance";
+import { contractualCalendar } from "./business-clock";
+import { recalculateElapsedBusinessMinutes, type TimerEvent } from "./timer-events";
+
+function madrid(date: string, time: string): Date {
+  return new Date(`${date}T${time}:00+01:00`);
+}
 
 const VENCIMIENTO = new Date("2026-09-01T08:00:00.000Z");
 const horasDespues = (hours: number) => new Date(VENCIMIENTO.getTime() + hours * 3_600_000);
@@ -161,12 +167,34 @@ describe("finance — RN-FIN, HU-26, HU-27, HU-28", () => {
   });
 
   describe("RN-FIN-13: al confirmarse el pago se reactiva y los contadores continúan exactamente donde se pausaron", () => {
+    // El libro real: el contador arranca el lunes a las 09:00, se pausa por
+    // impago a las 12:00 (RN-FIN-11) y se reanuda dos días después, al
+    // confirmarse el pago (RN-FIN-13). Los minutos consumidos se recalculan
+    // desde ESTE libro en los dos instantes — es la propiedad de verdad, no
+    // dos números que le pasemos ya hechos.
+    const calendar = contractualCalendar("Europe/Madrid");
+    const pausedAt = madrid("2026-02-02", "12:00");
+    const resumedAt = madrid("2026-02-04", "10:00");
+    const libro: TimerEvent[] = [
+      { type: "started", occurredAt: madrid("2026-02-02", "09:00") },
+      { type: "paused", occurredAt: pausedAt },
+      { type: "resumed", occurredAt: resumedAt },
+    ];
+
     it("los minutos consumidos antes de la pausa y después de la reactivación son el mismo número", () => {
-      expect(elapsedIsPreservedAcrossPause({ elapsedMinutesAtPause: 465, elapsedMinutesAtResume: 465 })).toBe(true);
+      expect(elapsedIsPreservedAcrossPause({ events: libro, calendar, pausedAt, resumedAt })).toBe(true);
+    });
+
+    it("y ese número son las 3 horas trabajadas de verdad, no el tiempo de calendario transcurrido", () => {
+      expect(recalculateElapsedBusinessMinutes(libro, calendar, resumedAt)).toBe(180);
     });
 
     it("si el contador hubiera seguido corriendo durante la pausa, la comprobación falla", () => {
-      expect(elapsedIsPreservedAcrossPause({ elapsedMinutesAtPause: 465, elapsedMinutesAtResume: 1_905 })).toBe(false);
+      // Mismo escenario pero sin el evento `paused`: el tramo del impago
+      // cuenta, y los dos instantes ya no coinciden. Es exactamente la
+      // regresión que RN-FIN-13 prohíbe.
+      const sinPausa: TimerEvent[] = [{ type: "started", occurredAt: madrid("2026-02-02", "09:00") }];
+      expect(elapsedIsPreservedAcrossPause({ events: sinPausa, calendar, pausedAt, resumedAt })).toBe(false);
     });
   });
 

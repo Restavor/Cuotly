@@ -90,7 +90,7 @@ export type FileViewer =
   | {
       readonly side: "space";
       readonly role: "owner" | "admin" | "worker";
-      /** Solo lo consulta el trabajador (RN-ARC-10, "establecimientos asignados"). */
+      /** Solo lo consulta el trabajador (RN-ASG-01 y §4.3, "establecimientos asignados"). */
       readonly isAuthorizedForEstablishment: boolean;
     }
   | {
