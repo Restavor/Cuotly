@@ -56,6 +56,15 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    plan Básico: sin consumos incluidos, todo se presupuesta aparte, con primera atención de
    48 horas laborables.
 
+10. **Métodos de pago: transferencia o Bizum** (contradicción resuelta, 31/08/2026).
+   Los tres documentos no decían lo mismo: el PRD (RN-FIN-03) listaba cinco métodos
+   —transferencia, tarjeta, efectivo, domiciliación, otro— y no mencionaba Bizum, mientras
+   que CLAUDE.md y la Especificación Maestra (§244) hablaban de "transferencia o Bizum".
+   Bosco decide: **transferencia o Bizum, y nada más**. Sin Stripe ni pasarela no hay quien
+   cobre una tarjeta ni gestione una domiciliación, así que esos métodos no existen en la
+   Fase 1. Aplicado en `RN-FIN-03` del PRD, en `PAYMENT_METHODS` (`src/core/finance.ts`) y
+   en la restricción de la tabla `payments` (migración `20260830000031`).
+
 ### Pendiente de completar (no bloquea la Fase 1)
 
 9. **Redondeo de consumos prorrateados** (relacionado con §106, "Mejora inmediata" de

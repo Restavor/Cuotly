@@ -1611,7 +1611,7 @@ declare
   v_charge_b uuid := (select value::uuid from h7_ctx where key = 'charge_b');
   v_payment_id uuid;
 begin
-  v_payment_id := public.register_payment(v_charge_b, 10000, 'cash', now(), null, 'Entrega a cuenta');
+  v_payment_id := public.register_payment(v_charge_b, 10000, 'bizum', now(), null, 'Entrega a cuenta');
   if public.charge_status(v_charge_b) <> 'partially_paid' then
     raise exception 'RN-FIN-02 FALLIDO: un cobro parcial en plazo debería estar "partially_paid", está "%"', public.charge_status(v_charge_b) using errcode = 'assert_failure';
   end if;
@@ -2281,6 +2281,50 @@ begin
     raise exception 'RN-FIN-06 FALLIDO: el restaurante pudo registrar el pago de su propia deuda' using errcode = 'assert_failure';
   exception
     when raise_exception then null;
+  end;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- RN-FIN-03 (corregida 31/08/2026) · transferencia o Bizum, y nada más.
+--
+-- Sin Stripe ni pasarela no hay quien cobre una tarjeta ni gestione una
+-- domiciliación, así que esos métodos no existen (decisión 10 de
+-- docs/DECISIONES.md). Hasta ahora la regla solo se comprobaba en
+-- TypeScript, contra una lista; esto la comprueba contra la base, que es
+-- donde manda.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_charge_b uuid := (select value::uuid from h7_ctx where key = 'charge_b');
+  v_metodo text;
+begin
+  -- Bizum sí.
+  perform public.register_payment(v_charge_b, 1000, 'bizum', now(), null, null, 'bizum-1');
+  select method into v_metodo from public.payments
+  where charge_id = v_charge_b and idempotency_key = 'bizum-1';
+  if v_metodo <> 'bizum' then
+    raise exception 'RN-FIN-03 FALLIDO: no se pudo registrar un pago por Bizum (método guardado: %)', v_metodo
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Tarjeta y domiciliación, no: no hay pasarela que las cobre.
+  begin
+    perform public.register_payment(v_charge_b, 1000, 'card', now(), null, null, 'tarjeta-1');
+    raise exception 'RN-FIN-03 FALLIDO: se registró un pago con tarjeta' using errcode = 'assert_failure';
+  exception
+    when check_violation then null;
+  end;
+
+  begin
+    perform public.register_payment(v_charge_b, 1000, 'direct_debit', now(), null, null, 'domiciliacion-1');
+    raise exception 'RN-FIN-03 FALLIDO: se registró un pago por domiciliación' using errcode = 'assert_failure';
+  exception
+    when check_violation then null;
   end;
 end $$;
 

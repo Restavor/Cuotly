@@ -131,8 +131,13 @@ export function chargeStatus(input: {
   return collectedCents(input.entries) > 0 ? "partially_paid" : "pending";
 }
 
-/** RN-FIN-03: los cinco métodos registrados, sin inventar ninguno más. */
-export const PAYMENT_METHODS = ["transfer", "card", "cash", "direct_debit", "other"] as const;
+/**
+ * RN-FIN-03: transferencia o Bizum, sin inventar ninguno más. Sin Stripe:
+ * los pagos se registran a mano (CLAUDE.md, decisión 10 de
+ * docs/DECISIONES.md). No hay tarjeta ni domiciliación porque no hay
+ * pasarela que las cobre.
+ */
+export const PAYMENT_METHODS = ["transfer", "bizum"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 // ---------------------------------------------------------------------

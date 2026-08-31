@@ -537,7 +537,7 @@ Cuotly es un **control financiero operativo**. No procesa pagos ni sustituye a u
 
 - **RN-FIN-01**: la mensualidad se genera automáticamente en la fecha de renovación según plan, impuestos y condiciones vigentes.
 - **RN-FIN-02**: estados de cobro: `pending` · `paid` · `partially_paid` · `overdue` · `waived` · `refunded`.
-- **RN-FIN-03**: métodos registrados: transferencia, tarjeta, efectivo, domiciliación, otro.
+- **RN-FIN-03** (corregida 31/08/2026): métodos registrados: **transferencia o Bizum**. Sin Stripe ni pasarela, los pagos se registran a mano, así que no hay tarjeta ni domiciliación. La redacción anterior listaba cinco métodos y contradecía a CLAUDE.md y a la Especificación Maestra; resuelto por Bosco (decisión 10 de `docs/DECISIONES.md`).
 - **RN-FIN-04**: propietario y administradores confirman, corrigen y gestionan cobros.
 - **RN-FIN-05**: un **trabajador** puede marcar "Pagado" desde la ficha de un restaurante asignado sin acceder al módulo Finanzas. Indica fecha, importe y método, y puede adjuntar justificante. **No** puede cambiar precios, perdonar deuda, reembolsar ni ver ingresos globales. Su acción queda auditada.
 - **RN-FIN-06**: el restaurante puede subir un justificante, pero la confirmación siempre corresponde al equipo.

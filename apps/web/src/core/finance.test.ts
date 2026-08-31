@@ -124,8 +124,8 @@ describe("finance — RN-FIN, HU-26, HU-27, HU-28", () => {
   });
 
   describe("RN-FIN-03: métodos de pago registrados", () => {
-    it("son exactamente los cinco del PRD", () => {
-      expect([...PAYMENT_METHODS]).toEqual(["transfer", "card", "cash", "direct_debit", "other"]);
+    it("son exactamente dos: transferencia y Bizum", () => {
+      expect([...PAYMENT_METHODS]).toEqual(["transfer", "bizum"]);
     });
   });
 
