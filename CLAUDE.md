@@ -42,6 +42,7 @@ supabase migration new <nombre>   # nueva migración (NUNCA editar una migració
 - **MUST NOT**: mostrar al cliente el nombre, foto o identidad individual de nadie del equipo de mantenimiento. El cliente siempre ve "Equipo de mantenimiento".
 - **MUST NOT**: mostrar datos ficticios, de ejemplo o rellenos de relleno en pantallas de producción. Si no hay dato, se dice cuál es el motivo (no conectado / sin datos todavía / error / periodo insuficiente).
 - **MUST NOT**: borrar físicamente registros de negocio. Se archiva o se marca como eliminado.
+- **MUST**: una función interna (`SECURITY DEFINER` que no comprueba permisos por su cuenta, o reservada a `service_role`) se protege con `revoke all on function ... from public, anon, authenticated`. **Nunca solo `from public`**: un proyecto de Supabase concede `EXECUTE` por defecto a `anon` y `authenticated` sobre toda función nueva, así que revocar solo a PUBLIC deja la función abierta por RPC a cualquiera, con sesión o sin ella. Verificado en vivo el 30/08/2026 (migración `20260830000024`), donde nueve funciones que se creían internas resultaron ser públicas. Esto no se reproduce en un PostgreSQL desnudo: para comprobarlo en local hay que replicar antes `alter default privileges in schema public grant execute on functions to anon, authenticated, service_role`.
 
 ## No inventes lo que está pendiente
 

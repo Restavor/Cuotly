@@ -1793,3 +1793,49 @@ delete from auth.users where id in (
   'a0000000-0000-0000-0000-000000000006',
   'a0000000-0000-0000-0000-000000000099'
 );
+
+-- ============================================================
+-- Ninguna función interna puede quedar invocable por RPC (regresión real
+-- detectada el 30/08/2026 al aplicar las migraciones contra el proyecto
+-- real: `revoke ... from public` no basta en Supabase, que concede EXECUTE
+-- por defecto a anon y authenticated — ver CLAUDE.md y la migración
+-- 20260830000024).
+--
+-- Esta comprobación solo tiene sentido donde existan esos roles, es decir,
+-- en una Supabase de verdad (el job `rls-tests` de CI usa `supabase
+-- start`). En un PostgreSQL desnudo sin los roles, se omite.
+-- ============================================================
+do $$
+declare
+  v_fn text;
+  v_abiertas text := '';
+begin
+  if not exists (select 1 from pg_roles where rolname = 'authenticated') then
+    raise notice 'Sin rol authenticated: se omite la comprobacion de funciones internas';
+    return;
+  end if;
+
+  foreach v_fn in array array[
+    'record_state_event(uuid, text, uuid, text, text, text)',
+    'apply_job_assignment(uuid, uuid, text, text)',
+    'job_candidate_ids(uuid)',
+    'member_can_perform_jobs(uuid, uuid)',
+    'worker_active_load_points(uuid, uuid)',
+    'is_authorized_for_establishment(uuid, uuid)',
+    'get_or_create_consumption_cycle(uuid)',
+    'record_classification(uuid, uuid, text, text, text, text[], text, integer, integer, integer, text)',
+    'can_write_establishment_as(uuid, uuid)'
+  ]
+  loop
+    if has_function_privilege('authenticated', 'public.' || v_fn, 'execute')
+       or has_function_privilege('anon', 'public.' || v_fn, 'execute') then
+      v_abiertas := v_abiertas || ' ' || v_fn;
+    end if;
+  end loop;
+
+  if v_abiertas <> '' then
+    raise exception 'FUNCIONES INTERNAS ABIERTAS por RPC a anon/authenticated:%', v_abiertas;
+  end if;
+end $$;
+
+select 'hito6_trabajos.sql: RN-JOB, RN-COR, RN-ASG y RN-SUP cumplidos, base de datos limpia' as resultado;
