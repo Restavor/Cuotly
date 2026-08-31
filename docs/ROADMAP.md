@@ -8,6 +8,57 @@ de todo el proyecto** — es la rebanada vertical que el resto del código imita
 
 ---
 
+## Estado de los hitos
+
+Actualizado el 31/08/2026.
+
+| Hito | Estado | Nota |
+|---|---|---|
+| 1 · Cimientos | Cerrado | |
+| 2 · Identidad, espacios y permisos | Cerrado | Rebanada vertical de referencia. |
+| 3 · Motor de tiempo | Cerrado | |
+| 4 · Solicitudes y clasificación | Cerrado | |
+| 5 · Consumos y aceptación | Cerrado | Servidor y dominio; sin pantallas. |
+| 6 · Trabajos, tareas, asignación y carga | Cerrado | Servidor y dominio; sin pantallas. |
+| 7 · Mensajes, archivos y finanzas | Cerrado el 31/08/2026 | Ver salvedades abajo. |
+| 8 · Inicio por rol, búsqueda, notificaciones y cierre | Sin empezar | |
+
+### Salvedades del Hito 7, dichas en claro
+
+Se cierra a petición de Bosco. Tres cosas que conviene tener presentes y que
+no son un fallo, sino alcance:
+
+1. **Entrega servidor y dominio, no pantallas.** Igual que los hitos 5 y 6.
+   Las reglas de RN-MSG, RN-ARC, RN-FIN y RN-COR-08 están implementadas y
+   verificadas en el servidor (funciones, RLS, libro de apuntes) y en
+   `src/core/`, pero el "Panel financiero operativo" que pide este hito y
+   las HU-24 a HU-28 redactadas como "quiero ver…" todavía no tienen
+   interfaz. Las pantallas de los tres hitos se construyen juntas.
+
+2. **Falta una revisión que pase en limpio.** Han pasado cuatro revisiones
+   adversariales. La cuarta encontró tres bloqueantes, dos de ellos en
+   migraciones ya desplegadas del Hito 6. Están arreglados y verificados
+   uno a uno, pero la quinta revisión se cortó por un límite de uso y queda
+   pendiente. Lo que encuentre se trata como arreglo encima, no como
+   reapertura del hito.
+
+3. **La base de datos real va por detrás del repositorio.** El proyecto de
+   Supabase está en la migración 24. Las migraciones 25 a 31 (el Hito 7
+   entero) siguen sin desplegar. Hay un arreglo de seguridad de las
+   migraciones 27, 29 y 30 pendiente de aplicar a mano, porque toca objetos
+   del Hito 6 que sí están vivos.
+
+### Cosas aplazadas que este hito NO inventó
+
+`generate_monthly_charge()` y `evaluate_establishment_dunning()` existen y
+funcionan, pero **no se disparan solas**: alguien del equipo tiene que
+llamarlas. RN-FIN-01 y RN-FIN-10/11 hablan de que ocurra "automáticamente"
+en la fecha de renovación y a las +24 h / +72 h. La cola de trabajos que lo
+dispare pertenece al Hito 8; aquí se deja dicho en vez de fingir que ya
+pasa.
+
+---
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
