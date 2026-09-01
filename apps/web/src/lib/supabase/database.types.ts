@@ -190,6 +190,86 @@ export type Database = {
           },
         ]
       }
+      // Festivos del espacio: los necesita el cálculo de la ventana de
+      // corrección al publicar (RN-COR-02 + RN-CLK-10). A mano.
+      holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          id: string
+          name: string | null
+          space_id: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      // La propuesta de la IA: solo la lee el equipo (RN-CLS-04). A mano.
+      classifications: {
+        Row: {
+          created_at: string
+          decided_category: string | null
+          decided_summary: string | null
+          fallback_reason: string | null
+          id: string
+          matched_keywords: string[] | null
+          model: string | null
+          proposed_category: string | null
+          proposed_summary: string | null
+          request_id: string
+          source: string
+          space_id: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      // jobs y charges, también a mano. `charges` tiene privilegios de
+      // columna, así que aquí solo están las legibles.
+      jobs: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          category: string | null
+          code: string
+          completed_at: string | null
+          correction_window_ends_at: string | null
+          created_at: string
+          establishment_id: string
+          free_correction_used_at: string | null
+          id: string
+          published_at: string | null
+          request_id: string
+          required_specialty: string | null
+          space_id: string
+          started_at: string | null
+          state: string
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      charges: {
+        Row: {
+          base_cents: number
+          concept: string
+          created_at: string
+          due_at: string
+          establishment_id: string
+          id: string
+          issued_at: string
+          period_end: string
+          period_start: string
+          space_id: string
+          subscription_id: string | null
+          tax_cents: number
+          tax_rate_percent: number
+          total_cents: number
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       // Solo las columnas que `authenticated` puede leer: `requests` tiene
       // privilegios de columna (CLAUDE.md), así que `select *` devuelve
       // 403 y toda consulta debe enumerar. (a mano, migración 17 y ss.)
@@ -602,6 +682,80 @@ export type Database = {
       }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
       accept_request: { Args: { p_request_id: string }; Returns: undefined }
+      // Lado del equipo (a mano, migraciones 17, 18, 22, 23 y 25).
+      begin_request_analysis: { Args: { p_request_id: string }; Returns: undefined }
+      validate_classification: {
+        Args: { p_request_id: string; p_category: string; p_summary: string }
+        Returns: undefined
+      }
+      request_more_information: {
+        Args: { p_request_id: string; p_message: string }
+        Returns: undefined
+      }
+      reject_request: { Args: { p_request_id: string; p_reason: string }; Returns: undefined }
+      list_job_candidates: {
+        Args: { p_job_id: string }
+        Returns: {
+          worker_id: string
+          active_load_points: number
+          active_job_count: number
+          last_assigned_at: string | null
+        }[]
+      }
+      apply_job_assignment: {
+        Args: { p_job_id: string; p_worker_id: string; p_kind: string; p_reason?: string | null }
+        Returns: undefined
+      }
+      start_job: { Args: { p_job_id: string }; Returns: undefined }
+      block_job: {
+        Args: { p_job_id: string; p_reason_type: string; p_note?: string | null }
+        Returns: undefined
+      }
+      unblock_job: {
+        Args: { p_job_id: string; p_note?: string | null; p_reverted?: boolean }
+        Returns: undefined
+      }
+      publish_job: {
+        Args: { p_job_id: string; p_correction_window_ends_at: string }
+        Returns: undefined
+      }
+      financial_dashboard: {
+        Args: { p_space_id: string; p_from: string; p_to: string }
+        Returns: {
+          forecast_base_cents: number
+          forecast_total_cents: number
+          collected_cents: number
+          pending_cents: number
+          overdue_cents: number
+          recurring_monthly_base_cents: number
+          recurring_monthly_total_cents: number
+        }[]
+      }
+      establishments_with_nonpayment: {
+        Args: { p_space_id: string }
+        Returns: {
+          establishment_id: string
+          establishment_name: string
+          status: string
+          oldest_due_at: string
+          outstanding_cents: number
+          stage: string
+        }[]
+      }
+      charge_status: { Args: { p_charge_id: string }; Returns: string | null }
+      charge_outstanding_cents: { Args: { p_charge_id: string }; Returns: number | null }
+      register_payment: {
+        Args: {
+          p_charge_id: string
+          p_amount_cents: number
+          p_method: string
+          p_paid_at?: string
+          p_receipt_file_id?: string | null
+          p_note?: string | null
+          p_idempotency_key?: string | null
+        }
+        Returns: string
+      }
       create_restavor_space: { Args: never; Returns: string }
       current_space_id: { Args: never; Returns: string }
       establishment_space_id: {

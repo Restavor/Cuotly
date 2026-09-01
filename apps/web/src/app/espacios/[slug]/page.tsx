@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -76,6 +77,24 @@ export default async function SpacePage({
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-8">
       <h1 className="text-2xl font-bold text-primary-dark">{space.name}</h1>
+
+      {/*
+        Enlaces a las pantallas de operación. El armazón completo de
+        §20.2 (menú lateral, barra de móvil, búsqueda, avisos) existe y se
+        prueba en /armazon, pero todavía no envuelve estas rutas: eso
+        queda dicho en el ROADMAP en vez de darlo por hecho.
+      */}
+      <nav aria-label={es.nav.home} className="flex flex-wrap gap-3 text-sm">
+        <Link href={`/espacios/${space.slug}/solicitudes`} className="text-cuotly-green underline">
+          {es.nav.requests}
+        </Link>
+        <Link href={`/espacios/${space.slug}/trabajos`} className="text-cuotly-green underline">
+          {es.nav.jobs}
+        </Link>
+        <Link href={`/espacios/${space.slug}/finanzas`} className="text-cuotly-green underline">
+          {es.nav.finance}
+        </Link>
+      </nav>
 
       <Card
         title={es.space.establishments.title}

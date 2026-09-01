@@ -1,0 +1,48 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+
+import { createClient } from "@/lib/supabase/server";
+
+export type PaymentState = { error: string | null; done: boolean };
+
+export const INITIAL_PAYMENT: PaymentState = { error: null, done: false };
+
+/**
+ * HU-26 · registrar el cobro de una mensualidad.
+ *
+ * El importe llega en euros desde el formulario y se convierte a céntimos
+ * aquí: todo el esquema trabaja en enteros para no arrastrar redondeos de
+ * coma flotante en el dinero.
+ *
+ * La clave de idempotencia la construye el servidor con el cobro y el
+ * importe, no el navegador: pulsar dos veces no cobra dos veces
+ * (CLAUDE.md MUST, RN-DAT-09).
+ */
+export async function registerPayment(
+  _prev: PaymentState,
+  formData: FormData,
+): Promise<PaymentState> {
+  const chargeId = String(formData.get("chargeId") ?? "");
+  const method = String(formData.get("method") ?? "");
+  const euros = Number(String(formData.get("amount") ?? "").replace(",", "."));
+
+  if (!Number.isFinite(euros) || euros <= 0) {
+    return { error: null, done: false };
+  }
+
+  const cents = Math.round(euros * 100);
+  const supabase = await createClient();
+
+  const { error } = await supabase.rpc("register_payment", {
+    p_charge_id: chargeId,
+    p_amount_cents: cents,
+    p_method: method,
+    p_idempotency_key: `ui:${chargeId}:${cents}`,
+  });
+
+  if (error) return { error: error.message, done: false };
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
+}

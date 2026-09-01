@@ -226,6 +226,33 @@ no son un fallo, sino alcance:
     entero. No afecta a lo que hay hecho; sí conviene arreglarlo antes de
     que las pantallas crezcan.
 
+11. **El lado del equipo tiene ya sus pantallas de operación.** Bandeja de
+    solicitudes y detalle (empezar el análisis, validar la clasificación,
+    pedir información, rechazar), tablero de trabajos y detalle (asignar
+    con los candidatos que calcula el servidor, comenzar, bloquear,
+    desbloquear, publicar) y panel financiero (previsión, cobros, registrar
+    un pago, restaurantes con impago).
+
+    Ninguna de esas pantallas autoriza nada: cada botón llama a la función
+    del servidor que hace cumplir su regla, y cuando el estado no la admite
+    se enseña el error que devuelve. La ventana de corrección al publicar
+    se calcula con el reloj laborable de `src/core/`, no en SQL.
+
+    Lo que falta del lado del equipo: mensajes, archivos, tareas,
+    calendario, informes, planes y ajustes. Y el armazón de §20.2 —menú
+    lateral, barra de móvil, búsqueda, avisos— existe y se prueba en
+    `/armazon`, pero **todavía no envuelve estas rutas**: se llega a ellas
+    por enlaces desde la pantalla del espacio.
+
+12. **Estado del despliegue: el proyecto de Supabase va por la migración
+    26 de 42.** Está en `docs/DESPLIEGUE-SUPABASE.md`, con la lista de las
+    pendientes en orden. La 29 corrige una fuga de identidad que está viva
+    en el esquema desplegado, así que no es un arreglo preventivo.
+
+    Mientras el proyecto no tenga las 42, `database.types.ts` no se puede
+    regenerar y hay que seguir añadiendo a mano lo que use cada pantalla
+    nueva (salvedad 10).
+
 ### Cosas aplazadas que este hito NO inventó
 
 `generate_monthly_charge()` y `evaluate_establishment_dunning()` existían y
