@@ -2591,6 +2591,9 @@ begin
         'request_space_id', 'request_state',
         -- Disparadores: los ejecuta la base, no se invocan por RPC.
         'handle_new_user', 'set_establishment_code',
+        -- Disparador de la revisión de cierre: impide cambiar el estado de
+        -- un establecimiento sin pasar por set_establishment_status().
+        'guard_establishment_status_change',
         -- Las primitivas de permisos: son el mecanismo con el que se
         -- comprueba, no pueden comprobarse a sí mismas.
         'has_capability', 'is_space_member', 'is_platform_owner',
@@ -2976,8 +2979,14 @@ do $$
 begin
   insert into h7_ctx values ('estado_antes_susp',
     (select status from public.establishments where id = 'b4000000-0000-0000-0000-000000000001'));
+  -- La barrera de la migración 37 impide cambiar el estado con un
+  -- UPDATE directo. Este es un atajo de FIXTURE, no una operación de
+  -- la aplicación: se abre la barrera igual que hacen las funciones
+  -- internas del ciclo de impago.
+  perform set_config('cuotly.status_change', 'on', true);
   update public.establishments set status = 'suspended'
   where id = 'b4000000-0000-0000-0000-000000000001';
+  perform set_config('cuotly.status_change', 'off', true);
 end $$;
 
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000003', false);
@@ -3061,8 +3070,14 @@ reset role;
 -- ============================================================
 do $$
 begin
+  -- La barrera de la migración 37 impide cambiar el estado con un
+  -- UPDATE directo. Este es un atajo de FIXTURE, no una operación de
+  -- la aplicación: se abre la barrera igual que hacen las funciones
+  -- internas del ciclo de impago.
+  perform set_config('cuotly.status_change', 'on', true);
   update public.establishments set status = 'paused'
   where id = 'b4000000-0000-0000-0000-000000000001';
+  perform set_config('cuotly.status_change', 'off', true);
 end $$;
 
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000003', false);
@@ -3104,8 +3119,14 @@ reset role;
 -- Y de vuelta a `suspended`, que es donde lo dejan los bloques siguientes.
 do $$
 begin
+  -- La barrera de la migración 37 impide cambiar el estado con un
+  -- UPDATE directo. Este es un atajo de FIXTURE, no una operación de
+  -- la aplicación: se abre la barrera igual que hacen las funciones
+  -- internas del ciclo de impago.
+  perform set_config('cuotly.status_change', 'on', true);
   update public.establishments set status = 'suspended'
   where id = 'b4000000-0000-0000-0000-000000000001';
+  perform set_config('cuotly.status_change', 'off', true);
 end $$;
 
 -- ============================================================
@@ -3284,9 +3305,13 @@ begin
     raise exception 'RN-FIN-12 FALLIDO: la suspensión borró información del trabajo' using errcode = 'assert_failure';
   end if;
 
+  -- Atajo de fixture: se restaura el estado anterior abriendo la barrera
+  -- de la migración 37, igual que arriba.
+  perform set_config('cuotly.status_change', 'on', true);
   update public.establishments
   set status = (select value from h7_ctx where key = 'estado_antes_susp')
   where id = 'b4000000-0000-0000-0000-000000000001';
+  perform set_config('cuotly.status_change', 'off', true);
 end $$;
 
 -- ============================================================

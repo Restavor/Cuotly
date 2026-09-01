@@ -46,6 +46,39 @@ insert into public.establishments (id, space_id, group_id, code, name) values
 insert into public.establishment_memberships (establishment_id, user_id, role) values
   ('84000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000005', 'local_owner');
 
+-- Atajo del fixture: lleva una solicitud de borrador a `accepted` (y por
+-- tanto crea su trabajo, RN-REQ-02) recorriendo el flujo real, cambiando
+-- de identidad en cada paso igual que lo haría la aplicación. Es SECURITY
+-- DEFINER porque `record_classification()` está reservada a `service_role`.
+-- Se borra al final del archivo.
+create or replace function public.h8_make_job(
+  p_establishment_id uuid, p_client uuid, p_staff uuid, p_description text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_request_id uuid;
+begin
+  perform set_config('request.jwt.claim.sub', p_client::text, false);
+  v_request_id := public.create_request_draft(p_establishment_id, p_description, null);
+  perform public.submit_request(v_request_id);
+  perform public.begin_request_analysis(v_request_id);
+  perform public.record_classification(
+    v_request_id, p_client, 'rules', 'small', p_description, null, null, null, null, null, null);
+
+  perform set_config('request.jwt.claim.sub', p_staff::text, false);
+  perform public.validate_classification(v_request_id, 'small', p_description);
+
+  perform set_config('request.jwt.claim.sub', p_client::text, false);
+  perform public.accept_request(v_request_id);
+
+  return (select id from public.jobs where request_id = v_request_id);
+end;
+$$;
+
 create temporary table h8_ctx (key text primary key, value text);
 grant select, insert on h8_ctx to authenticated, service_role;
 
@@ -404,6 +437,358 @@ begin
   end if;
 end $$;
 
+-- ============================================================
+-- B4 (revisión de cierre) · RN-ASG-12: "una ausencia aprobada marca
+-- automáticamente al trabajador como no disponible y, si deja trabajos sin
+-- cobertura, se avisa para reasignar".
+--
+-- Antes no hacía ninguna de las dos cosas: con la ausencia APROBADA,
+-- `auto_assign_job()` seguía asignándole trabajos a la persona ausente.
+-- ============================================================
+insert into public.worker_establishments (space_id, user_id, establishment_id, created_by) values
+  ('81000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000003', '84000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000001');
+insert into public.worker_specialties (space_id, user_id, specialty, created_by) values
+  ('81000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000003', 'web', '80000000-0000-0000-0000-000000000001');
+
+-- Un trabajo pendiente de asignar, para poder mirar su lista de candidatos.
+insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours)
+values ('82000000-0000-0000-0000-000000000009', '81000000-0000-0000-0000-000000000001', 'Plan RNASG12', 39900, 20, 12, 3, 0, 24);
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  perform public.create_plan_subscription('84000000-0000-0000-0000-000000000001', '82000000-0000-0000-0000-000000000009');
+  insert into h8_ctx values ('job_rnasg12', public.h8_make_job(
+    '84000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000005',
+    '80000000-0000-0000-0000-000000000001', 'RN-ASG-12: trabajo sin asignar')::text);
+  perform set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000001', false);
+end $$;
+
+reset role;
+
+-- Control positivo: sin ausencia, Ana SÍ es candidata. Sin esto, la
+-- aserción de abajo pasaría igual si nunca lo fuera por cualquier otro
+-- motivo — que es justo cómo se cuelan las comprobaciones vacías.
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1 from public.list_job_candidates((select value::uuid from h8_ctx where key = 'job_rnasg12'))
+    where worker_id = '80000000-0000-0000-0000-000000000003'
+  ) then
+    raise exception 'FIXTURE RN-ASG-12: Ana debería ser candidata antes de la ausencia; sin eso el test no prueba nada'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+declare
+  v_absence uuid;
+begin
+  -- Una ausencia que incluye HOY, para que la indisponibilidad esté viva.
+  v_absence := public.request_absence('81000000-0000-0000-0000-000000000001',
+    current_date, current_date + 5, 'Baja');
+  insert into h8_ctx values ('ausencia_hoy', v_absence::text);
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+declare
+  v_absence uuid := (select value::uuid from h8_ctx where key = 'ausencia_hoy');
+begin
+  perform public.decide_absence(v_absence, true, 'Aprobada');
+
+  -- RN-ASG-12, primera mitad: deja de ser candidata mientras dure. Se
+  -- comprueba por su EFECTO —la lista de candidatos que ve quien
+  -- asigna— y no llamando a `is_eligible_job_candidate()`, que es interna
+  -- desde la migración 30. Además así se prueba lo que de verdad importa.
+  if exists (
+    select 1 from public.list_job_candidates((select value::uuid from h8_ctx where key = 'job_rnasg12'))
+    where worker_id = '80000000-0000-0000-0000-000000000003'
+  ) then
+    raise exception 'RN-ASG-12 FALLIDO: una trabajadora con ausencia aprobada sigue apareciendo como candidata'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- Y fuera de las fechas de la ausencia vuelve a serlo: la indisponibilidad
+-- se deriva de la ausencia, no pisa la disponibilidad que declara ella.
+-- Las fechas se mueven FUERA del rol: `absences` no tiene política de
+-- UPDATE (el libro de ausencias no se edita desde la aplicación), así que
+-- hacerlo dentro no cambiaba nada y la aserción pasaba por el motivo
+-- equivocado.
+do $$
+begin
+  update public.absences set starts_on = current_date + 30, ends_on = current_date + 35
+  where id = (select value::uuid from h8_ctx where key = 'ausencia_hoy');
+end $$;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1 from public.list_job_candidates((select value::uuid from h8_ctx where key = 'job_rnasg12'))
+    where worker_id = '80000000-0000-0000-0000-000000000003'
+  ) then
+    raise exception 'RN-ASG-12 FALLIDO: una ausencia FUTURA deja indisponible a la trabajadora hoy'
+      using errcode = 'assert_failure';
+  end if;
+
+end $$;
+
+reset role;
+
+do $$
+begin
+  update public.absences set starts_on = current_date, ends_on = current_date + 5
+  where id = (select value::uuid from h8_ctx where key = 'ausencia_hoy');
+end $$;
+
+reset role;
+
+-- ============================================================
+-- B1 (revisión de cierre) · las operaciones de negocio emiten avisos.
+--
+-- Toda la maquinaria estaba montada y nadie la usaba: un trabajo asignado,
+-- comenzado y publicado dejaba CERO avisos. Aquí se comprueba el recorrido
+-- de verdad, y de paso RN-NOT-01 sobre datos reales: el trabajador que NO
+-- está asignado no recibe nada.
+-- ============================================================
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  insert into h8_ctx values ('job_b1', public.h8_make_job(
+    '84000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000005',
+    '80000000-0000-0000-0000-000000000001', 'B1: cambiar el teléfono')::text);
+  perform set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000001', false);
+end $$;
+
+reset role;
+
+do $$
+declare
+  v_job uuid := (select value::uuid from h8_ctx where key = 'job_b1');
+  v_antes integer;
+begin
+  select count(*) into v_antes from public.notifications where event_type = 'job_assigned';
+
+  perform public.apply_job_assignment(v_job, '80000000-0000-0000-0000-000000000003', 'manual', 'Para Ana');
+
+  if (select count(*) from public.notifications where event_type = 'job_assigned') <= v_antes then
+    raise exception '§18/B1 FALLIDO: asignar un trabajo no emitió ningún aviso' using errcode = 'assert_failure';
+  end if;
+
+  -- RN-NOT-01 sobre datos reales: Luis no está asignado y no recibe nada.
+  if exists (
+    select 1 from public.notifications
+    where event_type = 'job_assigned' and recipient_id = '80000000-0000-0000-0000-000000000004'
+  ) then
+    raise exception 'RN-NOT-01 FALLIDO: un trabajador sin asignar recibió el aviso del trabajo'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Y la responsable sí.
+  if not exists (
+    select 1 from public.notifications
+    where event_type = 'job_assigned' and recipient_id = '80000000-0000-0000-0000-000000000003'
+  ) then
+    raise exception 'RN-NOT-01 FALLIDO: la responsable asignada no recibió el aviso' using errcode = 'assert_failure';
+  end if;
+
+  -- RN-NOT-04: el aviso apunta al trabajo exacto.
+  if not exists (
+    select 1 from public.notifications
+    where event_type = 'job_assigned' and deep_link like '%/trabajos/' || v_job::text
+  ) then
+    raise exception 'RN-NOT-04 FALLIDO: el aviso no apunta al trabajo exacto' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+declare
+  v_job uuid := (select value::uuid from h8_ctx where key = 'job_b1');
+begin
+  perform public.start_job(v_job);
+  if not exists (select 1 from public.notifications where event_type = 'job_started' and entity_id = v_job) then
+    raise exception '§18/B1 FALLIDO: comenzar un trabajo no emitió ningún aviso' using errcode = 'assert_failure';
+  end if;
+
+  perform public.publish_job(v_job, now() + interval '30 days');
+  if not exists (select 1 from public.notifications where event_type = 'job_published' and entity_id = v_job) then
+    raise exception '§18/B1 FALLIDO: publicar un trabajo no emitió ningún aviso' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- B2 (revisión de cierre) · el estado de un establecimiento no se cambia
+-- con un UPDATE directo.
+--
+-- Antes, el administrador levantaba una suspensión por impago con
+--   update public.establishments set status = 'active' …
+-- y el servicio volvía a estar en marcha con cero pagos y cero auditoría,
+-- con los contadores todavía pausados.
+-- ============================================================
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_sub uuid;
+begin
+  -- La suscripción ya existe (la creó el bloque de RN-ASG-12): un
+  -- establecimiento solo puede tener un plan activo a la vez.
+  select id into v_sub from public.subscriptions
+  where establishment_id = '84000000-0000-0000-0000-000000000001' and kind = 'plan' and status = 'active';
+  perform public.generate_monthly_charge(v_sub, now() - interval '80 hours');
+  perform public.evaluate_establishment_dunning('84000000-0000-0000-0000-000000000001');
+
+  if (select status from public.establishments where id = '84000000-0000-0000-0000-000000000001') <> 'suspended' then
+    raise exception 'FIXTURE B2: el establecimiento debería quedar suspendido por impago' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  -- CLAUDE.md MUST: todo cambio de estado deja evento y auditoría.
+  begin
+    update public.establishments set status = 'active'
+    where id = '84000000-0000-0000-0000-000000000001';
+    raise exception 'CLAUDE.md MUST FALLIDO: se cambió el estado de un establecimiento con un UPDATE directo, sin auditoría ni evento'
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%set_establishment_status%' then
+        raise exception 'B2 FALLIDO: el UPDATE falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+
+  -- RN-FIN-13: y tampoco por la puerta buena se sale de un impago sin cobrar.
+  begin
+    perform public.set_establishment_status('84000000-0000-0000-0000-000000000001', 'active', 'Venga va');
+    raise exception 'RN-FIN-13 FALLIDO: se salió de una parada por impago sin registrar ningún pago'
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%se reactiva al cobrar%' then
+        raise exception 'B2 FALLIDO: set_establishment_status() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+
+  if (select status from public.establishments where id = '84000000-0000-0000-0000-000000000001') <> 'suspended' then
+    raise exception 'B2 FALLIDO: el establecimiento dejó de estar suspendido' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- HU-09 / RN-EST-08: el cambio legítimo sí ocurre, y deja rastro.
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  perform public.set_establishment_status('84000000-0000-0000-0000-000000000001', 'archived', 'Cierra el local');
+
+  if (select status from public.establishments where id = '84000000-0000-0000-0000-000000000001') <> 'archived' then
+    raise exception 'HU-09 FALLIDO: el cambio legítimo de estado no se aplicó' using errcode = 'assert_failure';
+  end if;
+  if not exists (
+    select 1 from public.audit_log
+    where action = 'establishment.status_changed'
+      and entity_id = '84000000-0000-0000-0000-000000000001'
+      and reason = 'Cierra el local'
+  ) then
+    raise exception 'CA-15/CA-16 FALLIDO: el cambio de estado no quedó auditado con su motivo' using errcode = 'assert_failure';
+  end if;
+  if not exists (
+    select 1 from public.state_events
+    where entity_type = 'establishment' and entity_id = '84000000-0000-0000-0000-000000000001'
+  ) then
+    raise exception 'RN-EST-08 FALLIDO: el cambio de estado no dejó evento' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- B3 (revisión de cierre) · CA-03: un trabajador no ve finanzas globales,
+-- tampoco por la auditoría.
+--
+-- Las tablas financieras estaban bien cerradas, pero `audit_log` guarda
+-- los importes en `new_value` y su política se lo abría a todo miembro del
+-- espacio. El test de CA-03 del Hito 7 solo miraba la puerta estrecha.
+-- ============================================================
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+declare
+  v_financieras integer;
+begin
+  -- Ojo: NO se comprueba que vea cero cobros. RN-FIN-05 le deja marcar
+  -- como pagado un cobro de un restaurante que tenga asignado, así que
+  -- verlos es correcto. Lo que CA-03 prohíbe son las finanzas GLOBALES, y
+  -- por ahí es por donde se colaba la auditoría: `audit_log` guarda los
+  -- importes en `new_value` y su política se lo abría a todo el espacio,
+  -- incluidos establecimientos que no tiene asignados.
+  select count(*) into v_financieras from public.audit_log
+  where action like 'charge.%' or action like 'payment.%' or action like 'subscription.%';
+
+  if v_financieras <> 0 then
+    raise exception 'CA-03 FALLIDO: un trabajador lee % filas financieras de la auditoría (importes incluidos)', v_financieras
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Control positivo: lo que NO es financiero sigue viéndose (CA-16).
+  if (select count(*) from public.audit_log where action = 'absence.decided') = 0 then
+    raise exception 'CA-16 FALLIDO: el equipo dejó de ver la auditoría no financiera' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- Y quien sí lleva finanzas la ve.
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  if (select count(*) from public.audit_log where action like 'charge.%') = 0 then
+    raise exception 'CA-16 FALLIDO: el propietario no ve la auditoría financiera de su espacio' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
 -- Limpieza. `audit_log` no borra en cascada a propósito (CLAUDE.md: los
 -- registros de auditoría no se editan ni se borran desde la aplicación),
 -- así que aquí se quita a mano lo que este fixture escribió.
@@ -412,6 +797,7 @@ delete from public.audit_log where space_id in (
 delete from public.spaces where id in (
   '81000000-0000-0000-0000-000000000001', '81000000-0000-0000-0000-000000000009');
 delete from auth.users where email like 'h8-%@example.com';
+drop function public.h8_make_job(uuid, uuid, uuid, text);
 drop table if exists h8_ctx;
 
 do $$
