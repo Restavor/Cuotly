@@ -142,11 +142,39 @@ sin caso que enseñar:
 Más un cobro de Impulso (399 € + 21 % = 482,79 €) emitido y pagado por
 transferencia, para que Finanzas no esté vacía.
 
+## Recorrer los flujos con Playwright
+
+`apps/web/e2e/flujos-espacio-demo.spec.ts` entra con los tres usuarios y
+recorre las pantallas sobre los datos de arriba. Nueve tests, en cuatro
+grupos: dónde aterriza cada papel (HU-02, los dos lados), que el equipo NO
+ve el borrador del cliente y el cliente SÍ, que la bolsa del plan refleja
+lo consumido de verdad (14 de 16 pequeños), y que el cliente no ve el
+nombre de nadie del equipo (CA-04).
+
+Se ejecuta **aparte de la suite normal**, con una señal explícita:
+
+```bash
+cd apps/web
+pnpm test:e2e         # los 14 de siempre; los de datos se saltan con motivo
+pnpm test:e2e:datos   # E2E_DATOS=1 · los 9 que necesitan base de datos
+```
+
+La señal es `E2E_DATOS=1` y no "¿hay NEXT_PUBLIC_SUPABASE_URL?" por dos
+motivos, los dos escritos en la cabecera del archivo: Playwright no lee
+`apps/web/.env.local` (eso lo hace Next.js al arrancar el servidor), así
+que mirar esas variables desde el proceso de Playwright daría "no
+configurado" siempre y el archivo se saltaría entero pareciendo verde; y
+con la señal puesta y la base caída, los tests **fallan** en vez de
+saltarse, que es lo correcto cuando has pedido el recorrido con datos.
+
+Antes de lanzarlo: `apps/web/.env.local` apuntando al proyecto y el
+sembrado aplicado.
+
 ## Lo que NO se pudo probar desde el contenedor de desarrollo
 
-Los tests de Playwright que **entran con estos usuarios y recorren las
-pantallas** no se pueden ejecutar desde el contenedor de Claude Code: la
-política de salida a internet del entorno bloquea el dominio del proyecto.
+Esos nueve tests **no se han ejecutado en verde ni una vez**, y conviene
+saberlo antes de fiarse de ellos. La política de salida a internet del
+contenedor de Claude Code bloquea el dominio del proyecto:
 
 ```
 $ curl https://mcajbfxhkxtdhjoyrqha.supabase.co/rest/v1/
@@ -155,10 +183,26 @@ connect_rejected — gateway answered 403 to CONNECT
 
 El conector MCP de Supabase sí llega (va por otra ruta, permitida), y por
 eso se han podido aplicar las migraciones y sembrar los datos; lo que no
-llega es la aplicación Next.js que levanta Playwright. La suite actual
-(14 tests, todos en verde) no lo nota porque solo toca `/styleguide`,
-`/login` y `/armazon`, que no consultan la base de datos.
+llega es la aplicación Next.js que levanta Playwright.
 
-Para recorrer los flujos con Playwright hay que hacerlo desde una máquina
-con salida al dominio del proyecto, o contra una base local con `supabase
-start` (que necesita Docker, y en este contenedor no hay demonio).
+Lo que sí quedó comprobado del archivo, ejecutándolo:
+
+- compila (`typecheck`) y pasa `lint`;
+- con la señal quitada, se salta con su motivo y los otros 14 tests siguen
+  en verde — o sea que el archivo carga y no rompe la suite;
+- con `E2E_DATOS=1`, el recorrido **se ejecuta**: los selectores del login
+  resuelven, el formulario se rellena y se envía, y la server action
+  corre. Falla en el único sitio donde puede fallar aquí, con la página
+  mostrando "Correo o contraseña incorrectos." — que es lo que devuelve
+  `signIn` cuando `signInWithPassword` no puede hablar con Supabase.
+
+Es decir: la cadena está probada hasta el borde de red, y lo que queda por
+verificar son las aserciones posteriores al login. Cada selector que usan
+está anclado a lo que renderiza el código (`app/page.tsx`,
+`espacios/[slug]/solicitudes/page.tsx`, `.../trabajos/page.tsx`,
+`.../restaurantes/[id]/page.tsx`) y a las etiquetas de `src/i18n/es.ts`,
+no inventado — pero anclado no es lo mismo que ejecutado.
+
+Para cerrarlos hace falta una máquina con salida al dominio del proyecto,
+o una base local con `supabase start` (que necesita Docker, y en este
+contenedor no hay demonio).
