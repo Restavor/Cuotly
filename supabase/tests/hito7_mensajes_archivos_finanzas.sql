@@ -2612,6 +2612,15 @@ begin
         -- cinco de arriba: compara `auth.uid()` con el destinatario del
         -- aviso y lanza excepción si no coincide.
         'mark_notification_read',
+        -- HU-05, misma familia otra vez: `my_active_sessions` filtra
+        -- `auth.sessions` por `auth.uid()` —el filtro ES la barrera,
+        -- porque ese esquema no admite RLS— y `revoke_my_session`
+        -- compara el dueño de la sesión con `auth.uid()` y lanza
+        -- excepción si no coincide. Las dos tienen que seguir abiertas a
+        -- `authenticated`: es la propia persona mirando lo suyo. Las dos
+        -- están revocadas a `anon`, y hay test de que uno no puede cerrar
+        -- la sesión de otro.
+        'my_active_sessions', 'revoke_my_session',
         -- `space_slug` no comprueba nada, y no debe: devuelve el segmento
         -- de URL del espacio, que no es un dato sensible —el restaurante
         -- ya navega por él— y la necesita `global_search()`, que es

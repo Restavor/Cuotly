@@ -579,11 +579,103 @@ begin
   end if;
 end $$;
 
+-- ============================================================
+-- HU-05 · "ver y cerrar mis sesiones activas".
+--
+-- El Hito 2 se dio por cerrado con "gestión de sesiones" en su lista y lo
+-- único que había era cerrar la sesión actual. `auth.sessions` no la
+-- expone PostgREST y no admite RLS, así que el filtro por `auth.uid()` de
+-- la función ES la barrera: por eso este bloque comprueba sobre todo que
+-- nadie ve ni cierra las sesiones de otro.
+-- ============================================================
+insert into auth.sessions (id, user_id, user_agent, ip) values
+  ('a1000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000001', 'Firefox en Linux', '10.0.0.1'),
+  ('a1000000-0000-0000-0000-000000000002', 'a0000000-0000-0000-0000-000000000001', 'Safari en iPhone', '10.0.0.2'),
+  ('a1000000-0000-0000-0000-000000000003', 'a0000000-0000-0000-0000-000000000002', 'Chrome ajeno', '10.0.0.3');
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+select set_config('request.jwt.claim.session_id', 'a1000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_mias integer;
+begin
+  select count(*) into v_mias from public.my_active_sessions();
+  if v_mias <> 2 then
+    raise exception 'HU-05 FALLIDO: veo % sesiones y tengo 2', v_mias using errcode = 'assert_failure';
+  end if;
+
+  -- CA-02: y ni una de otro, que es lo que aquí importa.
+  if exists (select 1 from public.my_active_sessions() where id = 'a1000000-0000-0000-0000-000000000003') then
+    raise exception 'CA-02 FALLIDO: veo la sesión de otro usuario' using errcode = 'assert_failure';
+  end if;
+
+  -- HU-05: cuál es la que estoy usando, para no cerrarla sin querer.
+  if not exists (select 1 from public.my_active_sessions() where id = 'a1000000-0000-0000-0000-000000000001' and is_current) then
+    raise exception 'HU-05 FALLIDO: no se distingue la sesión actual' using errcode = 'assert_failure';
+  end if;
+  if exists (select 1 from public.my_active_sessions() where id = 'a1000000-0000-0000-0000-000000000002' and is_current) then
+    raise exception 'HU-05 FALLIDO: otra sesión aparece como la actual' using errcode = 'assert_failure';
+  end if;
+
+  -- Cerrar la otra: desaparece de verdad, no se queda marcada. Una sesión
+  -- es una credencial viva, no un registro de negocio.
+  if not public.revoke_my_session('a1000000-0000-0000-0000-000000000002') then
+    raise exception 'HU-05 FALLIDO: no se pudo cerrar una sesión propia' using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.my_active_sessions()) <> 1 then
+    raise exception 'HU-05 FALLIDO: la sesión cerrada sigue activa' using errcode = 'assert_failure';
+  end if;
+
+  -- CA-17: cerrarla dos veces no es un error, simplemente ya no está.
+  if public.revoke_my_session('a1000000-0000-0000-0000-000000000002') then
+    raise exception 'CA-17 FALLIDO: cerrar dos veces la misma sesión no fue idempotente'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- CA-01/CA-02: la de otro, ni tocarla.
+  begin
+    perform public.revoke_my_session('a1000000-0000-0000-0000-000000000003');
+    raise exception 'CA-02 FALLIDO: cerré la sesión de otro usuario' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%tus propias sesiones%' then
+        raise exception 'CA-02 FALLIDO: falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+
+  -- CLAUDE.md MUST: el cierre deja rastro, y lo ve el interesado.
+  if not exists (
+    select 1 from public.audit_log
+    where action = 'session.revoked' and entity_id = 'a1000000-0000-0000-0000-000000000002'
+      and actor_id = 'a0000000-0000-0000-0000-000000000001'
+  ) then
+    raise exception 'CLAUDE.md MUST FALLIDO: cerrar una sesión no dejó auditoría visible para su dueño'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- Y la sesión ajena sigue viva: el intento fallido no se la llevó por delante.
+do $$
+begin
+  if not exists (select 1 from auth.sessions where id = 'a1000000-0000-0000-0000-000000000003') then
+    raise exception 'CA-02 FALLIDO: el intento contra la sesión ajena la borró igualmente'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+select set_config('request.jwt.claim.session_id', '', false);
+
 reset role;
 
 delete from public.audit_log where space_id in (
   select id from public.spaces where slug in ('espacio-a-test', 'espacio-b-test')
 );
+-- Las de HU-05 no tienen espacio: se quitan por actor.
+delete from public.audit_log where action = 'session.revoked';
 delete from public.plans where space_id in (
   select id from public.spaces where slug in ('espacio-a-test', 'espacio-b-test')
 );

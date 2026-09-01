@@ -128,8 +128,22 @@ test.describe("CA-22 · navegación completa por teclado", () => {
 
   test("Ctrl/Cmd + K abre la búsqueda y Escape la cierra devolviendo el foco", async ({ page }) => {
     await page.goto("/armazon");
-    await page.keyboard.press("Control+k");
-    await expect(page.getByTestId("search-dialog")).toBeVisible();
+
+    // El foco arranca en el disparador de la búsqueda: así la comprobación
+    // final —que Escape devuelve el foco a donde estaba— dice algo, en vez
+    // de comprobar dónde acabó el foco por casualidad.
+    await page.getByTestId("search-trigger").focus();
+
+    // El atajo lo instala un `useEffect`, así que hasta que la página no
+    // hidrata no hay nadie escuchando. Se reintenta la pulsación en vez de
+    // pulsar una vez y esperar: sin esto el test pasaba solo y fallaba en
+    // la suite completa, que es cuando el servidor de desarrollo va más
+    // cargado. No tapa ningún fallo del atajo — si no funcionara, esto
+    // agotaría el tiempo igual.
+    await expect(async () => {
+      await page.keyboard.press("Control+k");
+      await expect(page.getByTestId("search-dialog")).toBeVisible({ timeout: 500 });
+    }).toPass({ timeout: 10_000 });
 
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("search-dialog")).toHaveCount(0);

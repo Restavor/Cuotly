@@ -96,6 +96,11 @@ export const es = {
   contextSelector: {
     title: "Elige un espacio",
     subtitle: "Perteneces a más de un espacio de mantenimiento.",
+    // HU-02 desde el otro lado: un cliente no pertenece a ningún espacio
+    // de mantenimiento, sus contextos son sus restaurantes.
+    clientTitle: "Elige un restaurante",
+    clientSubtitle: "Tienes acceso a más de un restaurante.",
+    sessionsLink: "Mis sesiones",
   },
 
   space: {
@@ -234,6 +239,14 @@ export const es = {
       file: "Archivo",
       absence: "Ausencia",
       conversation: "Conversación",
+    },
+    // CA-21: las cuatro categorías de cambio (RN-CLS), con un solo nombre
+    // visible cada una.
+    categories: {
+      small: "Cambio pequeño",
+      photo: "Fotografía",
+      medium: "Cambio mediano",
+      large: "Cambio grande",
     },
     states: {
       request: {
@@ -387,6 +400,59 @@ export const es = {
           "Puedes cambiar qué avisos recibes por correo desde Preferencias de aviso.",
         ].join("\n"),
     },
+  },
+
+  clientArea: {
+    title: "Tu restaurante",
+    statusLabel: "Estado del servicio",
+    allowanceTitle: "Lo que incluye tu plan este ciclo",
+    allowanceRenews: (fecha: string) => `Se renueva el ${fecha}`,
+    allowanceRemaining: "disponibles",
+    allowanceOf: (incluidas: number) => `de ${incluidas}`,
+    allowanceEmptyTitle: "Este restaurante no tiene plan con consumos incluidos",
+    allowanceEmptyReason:
+      "Con el plan Básico o sin plan de mantenimiento, cada cambio se presupuesta aparte.",
+    requestsTitle: "Tus solicitudes",
+    requestsEmptyTitle: "Todavía no has pedido nada",
+    requestsEmptyReason: "Cuando envíes tu primera solicitud, aparecerá aquí con su estado.",
+    codeColumn: "Código",
+    descriptionColumn: "Qué pediste",
+    stateColumn: "Estado",
+    dateColumn: "Fecha",
+    newTitle: "Pedir un cambio",
+    newDescriptionLabel: "Qué quieres cambiar",
+    newDescriptionHelp:
+      "Cuéntalo con tus palabras. El equipo lo revisa, te dice de qué tamaño es y tú decides si sigue adelante.",
+    newContextLabel: "Dónde está (opcional)",
+    newContextHelp: "La página o la sección, si lo sabes.",
+    newSubmit: "Enviar solicitud",
+    newSubmitPending: "Enviando…",
+    newValidationRequired: "Escribe qué quieres cambiar.",
+    acceptTitle: "Pendiente de tu aceptación",
+    acceptSubmit: "Aceptar y que empiecen",
+    acceptPending: "Aceptando…",
+    acceptCategory: (categoria: string) => `El equipo lo ha clasificado como: ${categoria}`,
+    serviceStoppedTitle: "El servicio de este restaurante está detenido",
+    serviceStoppedReason:
+      "Mientras esté detenido no se pueden enviar solicitudes nuevas. Si es por un impago, se reactiva al cobrar.",
+  },
+
+  sessions: {
+    title: "Mis sesiones",
+    subtitle: "Los dispositivos y navegadores donde tu cuenta está abierta ahora mismo.",
+    current: "Esta sesión",
+    device: "Dispositivo",
+    lastUsed: "Última actividad",
+    ip: "Dirección IP",
+    close: "Cerrar sesión",
+    closing: "Cerrando…",
+    closed: "Sesión cerrada.",
+    unknownDevice: "Dispositivo desconocido",
+    emptyTitle: "No hay otras sesiones",
+    emptyReason: "Tu cuenta solo está abierta en este dispositivo.",
+    errorTitle: "No se pudieron cargar tus sesiones",
+    errorReason: "Vuelve a intentarlo en un momento.",
+    cannotCloseCurrent: "Para cerrar esta sesión usa el botón de salir.",
   },
 
   calendar: {

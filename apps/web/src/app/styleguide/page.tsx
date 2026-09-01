@@ -7,6 +7,7 @@ import {
   EmptyState,
   ErrorState,
   Field,
+  TextArea,
   LoadingState,
   Modal,
   NoPermissionState,
@@ -55,10 +56,16 @@ export default function StyleGuidePage() {
         </div>
       </Card>
 
-      <Card title="Field y Select">
+      <Card title="Field, TextArea y Select">
         <div className="grid gap-4 sm:grid-cols-2" data-testid="fields">
           <Field label="Correo electrónico" placeholder="tu@correo.com" />
           <Field label="Con error" defaultValue="algo mal" error="Este campo no es válido." />
+          <Field label="Con ayuda" hint="El texto de ayuda va enlazado con aria-describedby." />
+          <TextArea
+            label="Texto largo"
+            hint="Misma anatomía que Field: etiqueta, ayuda y error."
+            placeholder="Cuéntalo con tus palabras…"
+          />
           <Select
             label="Plan"
             options={[

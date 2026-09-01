@@ -1,18 +1,18 @@
-import { type InputHTMLAttributes, forwardRef, useId } from "react";
+import { type TextareaHTMLAttributes, forwardRef, useId } from "react";
 
-type Props = InputHTMLAttributes<HTMLInputElement> & {
+type Props = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
   error?: string;
-  /** Texto de ayuda bajo la etiqueta. Se enlaza con aria-describedby. */
   hint?: string;
 };
 
 /**
- * Campo de texto con su etiqueta y su mensaje de error, siempre juntos —
- * evita que cada pantalla reinvente el mismo bloque de label+input+error.
+ * La hermana de `Field` para texto largo. Misma anatomía —etiqueta, ayuda,
+ * error— para que un formulario no mezcle dos maneras de presentar lo
+ * mismo (CA-21: la misma cosa se llama y se ve igual en todas partes).
  */
-export const Field = forwardRef<HTMLInputElement, Props>(function Field(
-  { label, error, hint, id, className = "", ...rest },
+export const TextArea = forwardRef<HTMLTextAreaElement, Props>(function TextArea(
+  { label, error, hint, id, className = "", rows = 4, ...rest },
   ref,
 ) {
   const generatedId = useId();
@@ -31,9 +31,10 @@ export const Field = forwardRef<HTMLInputElement, Props>(function Field(
           {hint}
         </p>
       ) : null}
-      <input
+      <textarea
         ref={ref}
         id={fieldId}
+        rows={rows}
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy || undefined}
         className={`w-full rounded-[10px] border border-border bg-surface px-3.5 py-2.5 text-[15px] text-text outline-none transition-colors focus:border-cuotly-green focus:ring-3 focus:ring-cuotly-green/15 ${className}`}

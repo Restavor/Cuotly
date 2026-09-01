@@ -1,6 +1,7 @@
 export { Button } from "./Button";
 export { GoogleButton } from "./GoogleButton";
 export { Field } from "./Field";
+export { TextArea } from "./TextArea";
 export { Select } from "./Select";
 export { Card } from "./Card";
 export { StatusBadge } from "./StatusBadge";

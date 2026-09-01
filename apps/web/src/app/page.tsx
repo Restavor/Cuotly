@@ -7,9 +7,20 @@ import { es } from "@/i18n/es";
 import { signOut } from "./(auth)/actions";
 
 /**
- * Selector de contexto (PRD §20.1). Con un solo espacio, entra
- * directamente. Con varios, se elige. Con ninguno, solo el Propietario de
- * Cuotly ve el botón para crear el primero (Restavor).
+ * Selector de contexto (PRD §20.1, HU-02).
+ *
+ * Tiene DOS lados, y hasta la tercera revisión solo estaba hecho uno. El
+ * equipo de mantenimiento entra por `space_memberships`; el cliente no
+ * pertenece a ningún espacio —sus accesos viven en
+ * `establishment_memberships` y `group_memberships`— así que miraba su
+ * lista de espacios, la encontraba vacía y aterrizaba en "todavía no
+ * tienes espacio", que es la pantalla del Propietario de Cuotly sin
+ * espacios. HU-02 dice "usuario con varios contextos": para un cliente,
+ * sus contextos son sus restaurantes.
+ *
+ * Qué restaurantes ve no lo decide esta pantalla: lo decide RLS con
+ * `can_read_establishment()`. Aquí solo se pinta lo que la base de datos
+ * devuelve.
  */
 export default async function HomePage() {
   const supabase = await createClient();
@@ -46,6 +57,48 @@ export default async function HomePage() {
             </Link>
           ))}
         </div>
+        <p className="mt-6 text-center text-sm">
+          <Link href="/cuenta/sesiones" className="text-cuotly-green underline">
+            {es.contextSelector.sessionsLink}
+          </Link>
+        </p>
+      </main>
+    );
+  }
+
+  // El otro lado de HU-02: sin espacio de mantenimiento, los contextos son
+  // los restaurantes a los que se tiene acceso.
+  const { data: establishments } = await supabase
+    .from("establishments")
+    .select("id, name, spaces(slug)")
+    .order("name");
+
+  const restaurants = (establishments ?? []).filter(
+    (e): e is { id: string; name: string; spaces: { slug: string } } => Boolean(e.spaces),
+  );
+
+  if (restaurants.length > 0) {
+    return (
+      <main className="mx-auto max-w-lg p-8">
+        <h1 className="mb-1 text-2xl font-bold text-primary-dark">
+          {es.contextSelector.clientTitle}
+        </h1>
+        <p className="mb-6 text-sm text-text-secondary">{es.contextSelector.clientSubtitle}</p>
+        <div className="space-y-3">
+          {restaurants.map((restaurant) => (
+            <Link
+              key={restaurant.id}
+              href={`/espacios/${restaurant.spaces.slug}/restaurantes/${restaurant.id}`}
+            >
+              <Card className="cursor-pointer hover:border-cuotly-green">{restaurant.name}</Card>
+            </Link>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-sm">
+          <Link href="/cuenta/sesiones" className="text-cuotly-green underline">
+            {es.contextSelector.sessionsLink}
+          </Link>
+        </p>
       </main>
     );
   }

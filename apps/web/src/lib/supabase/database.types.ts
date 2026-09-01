@@ -1,7 +1,15 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (mcp__Supabase__generate_typescript_types, 30/08/2026). No se edita a
-// mano: se regenera cada vez que cambian las migraciones en
-// supabase/migrations/.
+// (mcp__Supabase__generate_typescript_types, 30/08/2026).
+//
+// AVISO (01/09/2026): este archivo se quedó en el esquema del Hito 2 y el
+// esquema real va por la migración 42. No es un problema mientras la web
+// solo use lo que aquí está descrito —el resto del producto vive de
+// momento en el servidor— pero cada función nueva que una pantalla llame
+// hay que añadirla aquí a mano hasta que se pueda volver a generar el
+// archivo entero contra el proyecto real. Las añadidas a mano están
+// marcadas con el comentario "(a mano)". Regenerarlo es una tarea
+// pendiente anotada en el ROADMAP: no se hace desde esta sesión porque no
+// hay CLI de Supabase ni proyecto con estas migraciones aplicadas.
 export type Json =
   | string
   | number
@@ -181,6 +189,32 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      // Solo las columnas que `authenticated` puede leer: `requests` tiene
+      // privilegios de columna (CLAUDE.md), así que `select *` devuelve
+      // 403 y toda consulta debe enumerar. (a mano, migración 17 y ss.)
+      requests: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          code: string
+          context: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          establishment_id: string
+          id: string
+          rejected_at: string | null
+          rejected_reason: string | null
+          space_id: string
+          state: string
+          validated_at: string | null
+          validated_category: string | null
+          validated_summary: string | null
+        }
+        Insert: never
+        Update: never
+        Relationships: []
       }
       group_memberships: {
         Row: {
@@ -539,6 +573,35 @@ export type Database = {
     }
     Functions: {
       accept_space_invitation: { Args: { p_token: string }; Returns: string }
+      // HU-05 (a mano, migración 20260830000042).
+      my_active_sessions: {
+        Args: never
+        Returns: {
+          id: string
+          created_at: string
+          refreshed_at: string | null
+          user_agent: string | null
+          ip: string | null
+          is_current: boolean | null
+        }[]
+      }
+      revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      // Área de cliente (a mano, migraciones 17, 19 y 20).
+      establishment_cycle_allowance: {
+        Args: { p_establishment_id: string }
+        Returns: {
+          category: string
+          included: number
+          remaining: number
+          renews_at: string
+        }[]
+      }
+      create_request_draft: {
+        Args: { p_establishment_id: string; p_description: string; p_context?: string | null }
+        Returns: string
+      }
+      submit_request: { Args: { p_request_id: string }; Returns: undefined }
+      accept_request: { Args: { p_request_id: string }; Returns: undefined }
       create_restavor_space: { Args: never; Returns: string }
       current_space_id: { Args: never; Returns: string }
       establishment_space_id: {

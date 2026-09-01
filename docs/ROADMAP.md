@@ -184,11 +184,18 @@ no son un fallo, sino alcance:
    `apply_scheduled_plan_change()`, igual que a `generate_monthly_charge()`
    y a `evaluate_establishment_dunning()`. Es la misma cola que falta.
 
-7. **HU-05 ("ver y cerrar mis sesiones activas") no está.** Lo único que
-   hay es cerrar la sesión actual. Listar y cerrar las demás necesita la
-   API de administración de Supabase Auth, que no es SQL y no se puede
-   probar con los barridos de este repositorio. El Hito 2 se dio por
-   cerrado sin decirlo; queda dicho aquí.
+7. **HU-05 y el otro lado de HU-02, hechos (migración 42).** HU-05 ("ver y
+   cerrar mis sesiones activas") existe: `my_active_sessions()` y
+   `revoke_my_session()` leen y borran sobre `auth.sessions` filtrando por
+   `auth.uid()` —ese esquema no admite RLS, así que el filtro de la función
+   ES la barrera— con pantalla en `/cuenta/sesiones` y tests de que nadie ve
+   ni cierra las sesiones de otro.
+
+   Y el selector de contexto tenía solo un lado: miraba `space_memberships`,
+   así que un **cliente** —que no pertenece a ningún espacio— caía en la
+   pantalla de "todavía no tienes espacio". Ahora, si no hay espacio de
+   mantenimiento, se ofrecen sus restaurantes, que es lo que HU-02 llama sus
+   contextos.
 
 8. **La app móvil (`apps/mobile`) es un adelanto consciente, no alcance
    colado.** El PRD §24.1 sitúa "app móvil nativa y push" en la Fase 4, y
@@ -197,6 +204,27 @@ no son un fallo, sino alcance:
    solo HU-01: registro y login contra Supabase. El push, que es lo que el
    PRD aplaza de verdad, sigue sin existir. Queda dicho para que nadie lo
    confunda con la Fase 4 hecha a medias.
+
+9. **El área de cliente arranca, y no está terminada.** La primera pantalla
+   con datos reales del producto: `/espacios/<espacio>/restaurantes/<id>`,
+   con el estado del servicio, la bolsa del ciclo, la lista de solicitudes
+   con su estado, el formulario para pedir un cambio (HU-10) y el botón de
+   aceptar (HU-14). Todo lo que muestra lo filtra RLS; no hay ni una
+   comprobación de permisos escrita en la pantalla, a propósito.
+
+   Lo que NO tiene todavía: mensajes, archivos, finanzas del cliente, ni el
+   detalle de una solicitud. Y **no tiene pruebas de extremo a extremo**: la
+   suite de Playwright corre contra el servidor de desarrollo sin base de
+   datos sembrada ni sesión, así que solo cubre lo que se puede ver sin
+   entrar. Cubrirla de verdad pide un entorno de pruebas con Supabase
+   sembrado; queda dicho en vez de fingir un recorrido.
+
+10. **`database.types.ts` se quedó en el Hito 2.** El archivo lo genera la
+    CLI de Supabase contra el proyecto real, y el esquema va ya por la
+    migración 42. Cada función que una pantalla nueva llama hay que añadirla
+    a mano —van marcadas con "(a mano)"— hasta que se pueda regenerar
+    entero. No afecta a lo que hay hecho; sí conviene arreglarlo antes de
+    que las pantallas crezcan.
 
 ### Cosas aplazadas que este hito NO inventó
 
