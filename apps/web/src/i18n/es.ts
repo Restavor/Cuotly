@@ -375,6 +375,18 @@ export const es = {
       absence_decided: "Ausencia resuelta",
       absence_uncovered_jobs: "Trabajos sin cobertura",
     },
+    email: {
+      subject: (evento: string, espacio: string) => `${evento} · ${espacio}`,
+      body: (evento: string, espacio: string, enlace: string) =>
+        [
+          `${evento}.`,
+          "",
+          `Espacio: ${espacio}`,
+          `Ábrelo en Cuotly: ${enlace}`,
+          "",
+          "Puedes cambiar qué avisos recibes por correo desde Preferencias de aviso.",
+        ].join("\n"),
+    },
   },
 
   calendar: {

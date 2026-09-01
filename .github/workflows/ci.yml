@@ -140,6 +140,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/hito8_inicio_busqueda_notificaciones.sql
 
+      - name: "Hito 8 — Verificar la cola y los barridos (RN-FIN-01, RN-FIN-10/11, RN-EST-09/10, §18)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hito8_cola_y_barridos.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

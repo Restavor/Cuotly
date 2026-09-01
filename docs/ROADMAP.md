@@ -113,12 +113,41 @@ no son un fallo, sino alcance:
    | Consumo de bolsa al 80 % y al 100 % | **No emite** |
    | Umbrales de T2 y T3 | **No emite** |
 
-   Las dos últimas no son un olvido: necesitan un barrido periódico que
-   mire los contadores, y ese barrido no existe. Lo que sigue sin existir,
-   dicho sin adornos: el barrido de umbrales de consumo y de T2/T3, el
-   productor y el consumidor de `scheduled_jobs`, y
-   `src/services/queue-runner.ts`. Las cabeceras de las migraciones 35 y
-   36 los citaban como si estuvieran hechos.
+   **Tercera corrección (migración 41): la cola ya existe.** Las dos filas
+   que faltaban emiten hoy. Los avisos de consumo al 80 % y al 100 % los
+   emite `run_consumption_thresholds()`, y los umbrales de T2 y T3 los
+   calcula `src/services/queue-runner.ts` con el reloj laboral de
+   `src/core/`, porque duplicar ese cálculo en SQL es justo lo que
+   CLAUDE.md prohíbe. La tabla queda así:
+
+   | Fila del §18 | Estado |
+   |---|---|
+   | Nueva solicitud sin asignar → propietario y administradores | Emite |
+   | Asignación de un trabajo → el responsable | Emite, también al aprobar una reasignación |
+   | Inicio → visible dentro de Cuotly para el cliente, sin correo | Emite; sin correo al cliente, con correo al equipo (decisión 13) |
+   | Publicación → cliente y supervisión | Emite |
+   | Corrección pedida → el responsable | Emite |
+   | Consumo de bolsa al 80 % y al 100 % | Emite |
+   | Umbrales de T2 y T3 | Emite |
+
+   Con ella se disparan solos, además, la mensualidad (RN-FIN-01), el ciclo
+   de impago (RN-FIN-10 y RN-FIN-11), el final de servicio por baja
+   (RN-EST-09 y RN-EST-10) y el cambio de plan programado a renovación
+   (§6.4). Los cuatro existían y esperaban a que alguien los llamara.
+
+   **Un matiz que no me inventé y conviene que Bosco confirme:** la fila del
+   §18 sobre el consumo de bolsa no dice a quién se avisa —su segunda
+   columna describe los umbrales, no a los destinatarios—. Se aplica lo que
+   sí está escrito: la bolsa es del cliente, así que se le avisa a él, y
+   RN-NOT-02 ("los propietarios reciben todo por defecto") añade al
+   propietario y a los administradores.
+
+   Lo que sigue sin existir: **el cron que llama a la cola** y **la clave de
+   Resend**. La ruta `POST /api/cola` está hecha y protegida con un secreto
+   compartido; falta el entorno donde ejecutarla y programarla. Sin clave de
+   Resend los avisos no se pierden — se quedan encolados con espera
+   creciente y salen en cuanto se configure, nunca se marcan como enviados
+   sin haberlo sido.
 
 ### Salvedades de la tercera pasada de la revisión
 
@@ -171,12 +200,14 @@ no son un fallo, sino alcance:
 
 ### Cosas aplazadas que este hito NO inventó
 
-`generate_monthly_charge()` y `evaluate_establishment_dunning()` existen y
-funcionan, pero **no se disparan solas**: alguien del equipo tiene que
+`generate_monthly_charge()` y `evaluate_establishment_dunning()` existían y
+funcionaban, pero **no se disparaban solas**: alguien del equipo tenía que
 llamarlas. RN-FIN-01 y RN-FIN-10/11 hablan de que ocurra "automáticamente"
-en la fecha de renovación y a las +24 h / +72 h. La cola de trabajos que lo
-dispare pertenece al Hito 8; aquí se deja dicho en vez de fingir que ya
-pasa.
+en la fecha de renovación y a las +24 h / +72 h.
+
+**Resuelto en la migración 41**: `run_monthly_charges()` y
+`run_dunning_sweep()` lo hacen, y la cola los despacha. Queda dicho aquí
+porque durante tres hitos esta línea decía lo contrario.
 
 ---
 
