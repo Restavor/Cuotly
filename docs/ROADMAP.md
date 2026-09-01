@@ -21,7 +21,7 @@ Actualizado el 31/08/2026.
 | 5 · Consumos y aceptación | Cerrado | Servidor y dominio; sin pantallas. |
 | 6 · Trabajos, tareas, asignación y carga | Cerrado | Servidor y dominio; sin pantallas. |
 | 7 · Mensajes, archivos y finanzas | Cerrado el 31/08/2026 | Ver salvedades abajo. |
-| 8 · Inicio por rol, búsqueda, notificaciones y cierre | Sin empezar | |
+| 8 · Inicio por rol, búsqueda, notificaciones y cierre | Servidor, dominio y armazón | Ver salvedades abajo. |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -60,6 +60,36 @@ no son un fallo, sino alcance:
    27, 29 y 30) el 31/08/2026, verificado; el segundo (migración 32, con la
    función que `anon` podía usar para escribir sin sesión) queda pendiente
    de aplicar.
+
+### Salvedades del Hito 8, dichas en claro
+
+1. **CA-19 no está cumplido del todo, y no puede estarlo todavía.** El
+   criterio pide que *cada flujo principal* —solicitar, aceptar, asignar,
+   comenzar, bloquear, publicar, corregir, pagar, consultar, gestionar
+   equipo— pueda completarse íntegramente en móvil. Esos flujos existen y
+   están probados en el servidor, pero sus PANTALLAS no se construyeron:
+   los hitos 4 a 7 entregaron servidor y dominio. Lo que este hito entrega
+   es el armazón por el que pasarán —menú, barra de móvil de 5 destinos,
+   búsqueda, avisos, botón Crear— y lo prueba con la anchura de un
+   teléfono. Cada pantalla que llegue añade su recorrido al mismo archivo
+   de tests.
+
+2. **CA-22 destapó un problema real de la paleta.** Tres de los cuatro
+   colores semánticos del PRD §20.6 no llegan a 4,5:1 contra blanco en
+   ninguna de las dos direcciones: `success` 4,29:1, `info` 4,45:1 —a
+   0,05 del umbral— y `warning` bastante menos. No se ha cambiado la
+   paleta, que es identidad de marca: se ha fijado su USO (iconos, bordes,
+   medidores y texto grande, donde AA pide 3:1 y los tres pasan) y queda
+   comprobado con un test que falla si alguien los usa para texto normal.
+   Si se quiere poder usarlos como texto, hace falta una variante más
+   oscura, y esa es una decisión de Bosco.
+
+3. **La cola de envío está montada pero no envía.** `notification_deliveries`
+   guarda estado, intentos y espera creciente, y `emit_notification()`
+   encola en la misma transacción que la operación de negocio (que es lo
+   que hace cierto CA-18). El proceso que llama a Resend y consume la cola
+   necesita la clave del proveedor y despliegue, así que queda para cuando
+   haya entorno donde ejecutarlo.
 
 ### Cosas aplazadas que este hito NO inventó
 

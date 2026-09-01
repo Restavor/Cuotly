@@ -2604,7 +2604,18 @@ begin
         -- 01/09/2026. Se enumeran porque la heurística mira el texto y no
         -- entiende esa forma; si alguien las toca, hay que releerlas.
         'accept_space_invitation', 'edit_message', 'publish_job',
-        'start_job', 'request_job_reassignment'
+        'start_job', 'request_job_reassignment',
+        -- Hito 8. `mark_notification_read` es de la misma familia que las
+        -- cinco de arriba: compara `auth.uid()` con el destinatario del
+        -- aviso y lanza excepción si no coincide.
+        'mark_notification_read',
+        -- `space_slug` no comprueba nada, y no debe: devuelve el segmento
+        -- de URL del espacio, que no es un dato sensible —el restaurante
+        -- ya navega por él— y la necesita `global_search()`, que es
+        -- SECURITY INVOKER, para construir el enlace de cada resultado sin
+        -- unirse a `spaces` (a la que el cliente no tiene acceso). Está
+        -- revocada a `anon`.
+        'space_slug'
       )
       -- Los ayudantes del propio fixture (`h7_make_job` y compañía), que
       -- este archivo crea y borra: son andamiaje del test, no producto.

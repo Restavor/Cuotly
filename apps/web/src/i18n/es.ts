@@ -209,6 +209,205 @@ export const es = {
       access_revoked: "Acceso revocado",
     },
   },
+
+  /**
+   * CA-21 · el ÚNICO sitio donde una entidad o un estado tiene nombre.
+   *
+   * Escritorio, navegación móvil, cuerpo del correo, historial y búsqueda
+   * importan de aquí. Si un estado necesitara llamarse distinto en algún
+   * sitio, dejaría de cumplirse el criterio — así que no hay variantes
+   * "cortas" ni "para móvil": el nombre es el nombre.
+   *
+   * `naming.test.ts` comprueba que cubre exactamente los valores de
+   * `src/core/naming.ts`, ni uno menos ni uno más.
+   */
+  naming: {
+    entities: {
+      establishment: "Restaurante",
+      group: "Grupo",
+      request: "Solicitud",
+      job: "Trabajo",
+      task: "Tarea",
+      person: "Persona",
+      plan: "Plan",
+      charge: "Cobro",
+      file: "Archivo",
+      absence: "Ausencia",
+      conversation: "Conversación",
+    },
+    states: {
+      request: {
+        draft: "Borrador",
+        received: "Recibida",
+        analyzing: "En análisis",
+        pending_internal_validation: "Pendiente de validar",
+        needs_information: "Falta información",
+        pending_client_acceptance: "Pendiente de aceptación",
+        accepted: "Aceptada",
+        in_progress: "En curso",
+        published: "Publicada",
+        in_correction: "En corrección",
+        closed: "Cerrada",
+        rejected: "Rechazada",
+        cancelled_before_start: "Cancelada antes de empezar",
+        cancelled_after_start: "Cancelada después de empezar",
+      },
+      job: {
+        pending_assignment: "Pendiente de asignar",
+        assigned: "Asignado",
+        in_progress: "En curso",
+        blocked_by_client: "Bloqueado · Esperando al restaurante",
+        authorized_pause: "En pausa autorizada",
+        published: "Publicado",
+        in_correction: "En corrección",
+        completed: "Finalizado",
+        cancelled: "Cancelado",
+      },
+      task: {
+        pending: "Pendiente",
+        in_progress: "En curso",
+        done: "Hecha",
+        cancelled: "Cancelada",
+      },
+      charge: {
+        pending: "Pendiente",
+        paid: "Pagado",
+        partially_paid: "Pagado en parte",
+        overdue: "Vencido",
+        waived: "Perdonado",
+        refunded: "Reembolsado",
+      },
+      establishment: {
+        configuring: "Configurando",
+        active: "Activo",
+        paused: "Pausado por impago",
+        ending: "Finalizando",
+        read_only: "Solo lectura",
+        suspended: "Suspendido por impago",
+        archived: "Archivado",
+      },
+      absence: {
+        requested: "Pedida",
+        approved: "Aprobada",
+        rejected: "Rechazada",
+        cancelled: "Cancelada",
+      },
+    },
+  },
+
+  nav: {
+    home: "Inicio",
+    establishments: "Restaurantes",
+    requests: "Solicitudes",
+    jobs: "Trabajos",
+    tasks: "Tareas",
+    dailyMenu: "Menú Diario",
+    messages: "Mensajes",
+    calendar: "Calendario",
+    finance: "Finanzas",
+    reports: "Informes",
+    team: "Equipo",
+    plans: "Planes y servicios",
+    agent: "Agente Cuotly",
+    agentBadge: "Próximamente",
+    settings: "Ajustes",
+    more: "Más",
+    newRequest: "+ Nueva solicitud",
+    skipToContent: "Saltar al contenido",
+    mainLabel: "Contenido principal",
+    menuLabel: "Menú del espacio",
+  },
+
+  search: {
+    open: "Buscar",
+    placeholder: "Buscar restaurantes, solicitudes, trabajos…",
+    hint: "Ctrl/Cmd + K",
+    title: "Búsqueda global",
+    minLength: "Escribe al menos dos caracteres.",
+    noResults: "Sin resultados",
+    noResultsReason:
+      "No hay nada con ese texto entre lo que tú puedes ver. La búsqueda solo devuelve elementos a los que tienes acceso.",
+    resultsLabel: "Resultados de la búsqueda",
+  },
+
+  create: {
+    label: "Crear",
+    ariaLabel: "Crear elemento",
+    request: "Nueva solicitud",
+    establishment: "Nuevo restaurante",
+    invite: "Invitar a alguien al equipo",
+    absence: "Pedir una ausencia",
+    holiday: "Añadir un festivo",
+    empty: "No tienes permiso para crear nada aquí.",
+  },
+
+  notifications: {
+    title: "Avisos",
+    open: "Abrir avisos",
+    unreadLabel: "avisos sin leer",
+    markRead: "Marcar como leído",
+    markAllRead: "Marcar todos como leídos",
+    emptyTitle: "No tienes avisos",
+    emptyReason: "Cuando pase algo que te afecte, aparecerá aquí.",
+    mandatoryHint: "Este aviso no se puede desactivar.",
+    preferences: "Preferencias de aviso",
+    events: {
+      request_submitted: "Solicitud enviada",
+      job_unassigned: "Trabajo sin asignar",
+      job_assigned: "Trabajo asignado",
+      job_started: "Trabajo comenzado",
+      job_published: "Trabajo publicado",
+      correction_requested: "Corrección pedida",
+      consumption_threshold_80: "Has consumido el 80 % de tu plan",
+      consumption_threshold_100: "Has agotado tu plan",
+      t2_threshold_50: "Plazo de inicio al 50 %",
+      t2_threshold_80: "Plazo de inicio al 80 %",
+      t2_threshold_100: "Plazo de inicio agotado",
+      t2_critical_alert: "Aviso crítico del plazo de inicio",
+      t2_reassignment_suggestion: "Conviene reasignar el trabajo",
+      t3_threshold_75: "Plazo de ejecución al 75 %",
+      t3_threshold_90: "Plazo de ejecución al 90 %",
+      t3_threshold_100: "Plazo de ejecución agotado",
+      establishment_paused_nonpayment: "Restaurante pausado por impago",
+      establishment_suspended_nonpayment: "Restaurante suspendido por impago",
+      establishment_reactivated: "Restaurante reactivado",
+      absence_requested: "Ausencia pedida",
+      absence_decided: "Ausencia resuelta",
+      absence_uncovered_jobs: "Trabajos sin cobertura",
+    },
+  },
+
+  calendar: {
+    title: "Calendario",
+    emptyTitle: "Nada en este periodo",
+    emptyReason: "No hay festivos, ausencias ni vencimientos entre estas dos fechas.",
+    kinds: {
+      holiday: "Festivo",
+      absence: "Ausencia",
+      correction_window: "Fin de la ventana de corrección",
+      charge_due: "Vencimiento de cobro",
+    },
+  },
+
+  agent: {
+    title: "Agente Cuotly",
+    badge: "Próximamente",
+    description:
+      "Todavía no está disponible. Cuando lo esté, se anunciará aquí: de momento esta pantalla no hace nada y no hay nada que configurar.",
+  },
+
+  /**
+   * CA-20 · "Ninguna pantalla muestra números ficticios: sin datos se
+   * indica el MOTIVO". Los cuatro motivos del PRD, y ninguno más: si una
+   * pantalla no sabe cuál es su caso, es que le falta información, no que
+   * necesite un quinto texto genérico.
+   */
+  emptyReasons: {
+    not_connected: "No conectado. Falta enlazar el servicio para ver este dato.",
+    no_data_yet: "Sin datos todavía. Aparecerán en cuanto haya actividad.",
+    error: "No se ha podido cargar. Vuelve a intentarlo.",
+    insufficient_period: "Periodo insuficiente. Hace falta más historial para calcular esto.",
+  },
 } as const;
 
 export type Dictionary = typeof es;

@@ -134,6 +134,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/hito7_mensajes_archivos_finanzas.sql
 
+      - name: "Hito 8 — Verificar HU-30, HU-31, HU-33, HU-34 y RN-NOT-01 a 05"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hito8_inicio_busqueda_notificaciones.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
