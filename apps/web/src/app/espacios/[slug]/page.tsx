@@ -75,7 +75,7 @@ export default async function SpacePage({
   ]);
 
   return (
-    <main className="mx-auto max-w-4xl space-y-8 p-8">
+    <div className="mx-auto max-w-4xl space-y-8 p-8">
       <h1 className="text-2xl font-bold text-primary-dark">{space.name}</h1>
 
       {/*
@@ -180,6 +180,6 @@ export default async function SpacePage({
           </div>
         ) : null}
       </Card>
-    </main>
+    </div>
   );
 }

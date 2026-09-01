@@ -85,7 +85,7 @@ export default async function TeamJobDetailPage({
     blocked;
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 p-8">
       <header>
         <p className="text-sm text-text-secondary">
           {job.code} · {establishment?.name ?? "—"}
@@ -137,6 +137,6 @@ export default async function TeamJobDetailPage({
           <p className="text-sm text-text-secondary">{es.teamArea.jobs.noActionReason}</p>
         </Card>
       )}
-    </main>
+    </div>
   );
 }

@@ -10,7 +10,7 @@ import { es } from "@/i18n/es";
  */
 export default function AgentePage() {
   return (
-    <main className="mx-auto max-w-2xl p-6">
+    <div className="mx-auto max-w-2xl p-6">
       <div className="flex items-center gap-2">
         <h1 className="text-xl font-semibold">{es.agent.title}</h1>
         <span
@@ -21,6 +21,6 @@ export default function AgentePage() {
         </span>
       </div>
       <p className="mt-3 text-sm text-text-secondary">{es.agent.description}</p>
-    </main>
+    </div>
   );
 }

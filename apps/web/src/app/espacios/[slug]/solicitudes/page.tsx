@@ -77,10 +77,10 @@ export default async function TeamRequestsPage({
 
   if (!membership) {
     return (
-      <main className="mx-auto max-w-4xl p-8">
+      <div className="mx-auto max-w-4xl p-8">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
         <NoPermissionState />
-      </main>
+      </div>
     );
   }
 
@@ -101,7 +101,7 @@ export default async function TeamRequestsPage({
   const nameById = new Map((establishments ?? []).map((e) => [e.id, e.name]));
 
   return (
-    <main className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-4xl p-8">
       <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
       <p className="mb-6 text-sm text-text-secondary">{es.teamArea.requests.subtitle}</p>
 
@@ -158,6 +158,6 @@ export default async function TeamRequestsPage({
           </Table>
         )}
       </Card>
-    </main>
+    </div>
   );
 }

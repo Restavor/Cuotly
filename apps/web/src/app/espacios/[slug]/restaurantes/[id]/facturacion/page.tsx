@@ -71,13 +71,13 @@ export default async function ClientBillingPage({
 
   if (!canViewBilling) {
     return (
-      <main className="mx-auto max-w-3xl p-8">
+      <div className="mx-auto max-w-3xl p-8">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.clientArea.billingTitle}</h1>
         <NoPermissionState
           title={es.clientArea.billingNoAccessTitle}
           description={es.clientArea.billingNoAccessReason}
         />
-      </main>
+      </div>
     );
   }
 
@@ -105,7 +105,7 @@ export default async function ClientBillingPage({
   const ledgerRows = ledger ?? [];
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 p-8">
       <header>
         <p className="text-sm text-text-secondary">
           {establishment.code} · {establishment.name}
@@ -200,6 +200,6 @@ export default async function ClientBillingPage({
           </Table>
         )}
       </Card>
-    </main>
+    </div>
   );
 }

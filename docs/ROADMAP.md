@@ -74,6 +74,16 @@ no son un fallo, sino alcance:
    teléfono. Cada pantalla que llegue añade su recorrido al mismo archivo
    de tests.
 
+   **Al día 01/09/2026**: las pantallas ya existen (solicitudes, trabajos y
+   finanzas del equipo; ficha, solicitud y facturación del restaurante) y
+   el armazón las envuelve. Lo que sigue sin poder comprobarse es el
+   recorrido completo en un navegador: la suite de Playwright corre contra
+   el servidor de desarrollo **sin sesión y sin base de datos sembrada**,
+   así que sigue midiendo el armazón en `/armazon` y no el producto. Eso
+   necesita el proyecto de Supabase al día (salvedad 12) y un espacio de
+   prueba sembrado. Hasta entonces CA-19 no está cumplido, y decir otra
+   cosa sería mentir sobre la única parte que no se ha visto funcionar.
+
 2. **CA-22 destapó un problema real de la paleta.** Tres de los cuatro
    colores semánticos del PRD §20.6 no llegan a 4,5:1 contra blanco en
    ninguna de las dos direcciones: `success` 4,29:1, `info` 4,45:1 —a
@@ -241,9 +251,22 @@ no son un fallo, sino alcance:
     Lo que falta del lado del equipo: archivos, tareas, calendario,
     informes, planes y ajustes, y la conversación interna de un trabajo
     (§66.2), que es otra distinta de la de la solicitud. Y el armazón de
-    §20.2 —menú lateral, barra de móvil, búsqueda, avisos— existe y se
-    prueba en `/armazon`, pero **todavía no envuelve estas rutas**: se
-    llega a ellas por enlaces desde la pantalla del espacio.
+    §20.2 —menú lateral, barra de móvil, búsqueda, avisos— **ya envuelve
+    estas rutas**: un layout en `/espacios/[slug]` las mete todas dentro,
+    con el rol sacado de la membresía real y la búsqueda global resuelta
+    en el servidor.
+
+    Al hacerlo apareció un fallo mío: las diez pantallas traían su propio
+    `<main>` de cuando vivían sueltas, y el armazón pone el suyo. Dos
+    regiones principales anidadas es HTML inválido y deja el atajo "Saltar
+    al contenido" apuntando a la de fuera. Corregido, y con un test que lo
+    impide de vuelta.
+
+    Y una segunda cosa que la navegación tenía mal desde el Hito 8: los
+    destinos del **cliente** apuntaban a rutas del equipo
+    (`/espacios/<espacio>/solicitudes`), donde un restaurante solo vería un
+    404. Ahora cuelgan de su propio restaurante, y cuando tiene más de uno
+    lo llevan al selector de contexto.
 
 13. **El lado del cliente, completado con lo que le tocaba.** El detalle de
     su solicitud —lo que pidió, lo que el equipo le propone, el motivo si

@@ -100,7 +100,7 @@ export default async function ClientRequestDetailPage({
     job !== null && job.state === "published" && job.free_correction_used_at === null;
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 p-8">
       <header>
         <p className="text-sm text-text-secondary">{request.code}</p>
         <h1 className="text-2xl font-bold text-primary-dark">
@@ -182,6 +182,6 @@ export default async function ClientRequestDetailPage({
           readOnly={readOnly}
         />
       ) : null}
-    </main>
+    </div>
   );
 }

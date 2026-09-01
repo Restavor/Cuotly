@@ -39,6 +39,7 @@ export function AppShell({
   role,
   notifications,
   onSearch,
+  establishmentId = null,
   children,
 }: {
   spaceSlug: string;
@@ -46,6 +47,12 @@ export function AppShell({
   role: ShellRole;
   notifications: readonly ShellNotification[];
   onSearch: (query: string) => Promise<readonly SearchResult[]>;
+  /**
+   * El restaurante del que se está hablando, cuando quien mira es un
+   * cliente y solo tiene uno. Sin él, sus destinos apuntan al selector de
+   * contexto en vez de a rutas del equipo (ver `navigation.ts`).
+   */
+  establishmentId?: string | null;
   children: React.ReactNode;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -53,8 +60,14 @@ export function AppShell({
   const searchTrigger = useRef<HTMLButtonElement>(null);
 
   const menu = useMemo(() => desktopMenu(spaceSlug), [spaceSlug]);
-  const mobile = useMemo(() => mobileNav(spaceSlug, role), [spaceSlug, role]);
-  const creates = useMemo(() => createOptions(spaceSlug, role), [spaceSlug, role]);
+  const mobile = useMemo(
+    () => mobileNav(spaceSlug, role, establishmentId),
+    [spaceSlug, role, establishmentId],
+  );
+  const creates = useMemo(
+    () => createOptions(spaceSlug, role, establishmentId),
+    [spaceSlug, role, establishmentId],
+  );
   const unread = notifications.filter((n) => n.readAt === null).length;
 
   useEffect(() => {

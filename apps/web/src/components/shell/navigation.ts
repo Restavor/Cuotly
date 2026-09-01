@@ -43,9 +43,30 @@ export function desktopMenu(spaceSlug: string): readonly NavDestination[] {
  * una barra inferior con más de cinco deja de ser pulsable con el pulgar,
  * y el PRD lo fija así.
  */
-export function mobileNav(spaceSlug: string, role: ShellRole): readonly NavDestination[] {
+/**
+ * Para el equipo, los destinos cuelgan del espacio. Para el **cliente**, no:
+ * sus solicitudes viven dentro de su restaurante
+ * (`/espacios/<espacio>/restaurantes/<id>/…`), porque un cliente puede
+ * tener varios y "sus solicitudes" no significa nada sin decir de cuál.
+ *
+ * Cuando no se sabe de qué restaurante hablamos —tiene más de uno, o el
+ * armazón se está enseñando fuera de contexto— los destinos del cliente
+ * apuntan al selector de contexto, que es donde elige. Nunca a una ruta
+ * del equipo: ahí no tiene nada que hacer y solo vería un 404 o una
+ * pantalla sin permiso.
+ */
+function clientBase(spaceSlug: string, establishmentId: string | null): string | null {
+  return establishmentId === null ? null : `/espacios/${spaceSlug}/restaurantes/${establishmentId}`;
+}
+
+export function mobileNav(
+  spaceSlug: string,
+  role: ShellRole,
+  establishmentId: string | null = null,
+): readonly NavDestination[] {
   const base = `/espacios/${spaceSlug}`;
   const more = D("more", es.nav.more, `${base}/mas`);
+  const mine = clientBase(spaceSlug, establishmentId);
 
   switch (role) {
     case "owner":
@@ -67,18 +88,18 @@ export function mobileNav(spaceSlug: string, role: ShellRole): readonly NavDesti
       ];
     case "client_daily_menu":
       return [
-        D("home", es.nav.home, base),
-        D("requests", es.nav.requests, `${base}/solicitudes`),
-        D("dailyMenu", es.nav.dailyMenu, `${base}/menu-diario`),
-        D("messages", es.nav.messages, `${base}/mensajes`),
+        D("home", es.nav.home, mine ?? "/"),
+        D("requests", es.nav.requests, mine ?? "/"),
+        D("dailyMenu", es.nav.dailyMenu, mine ? `${mine}/menu-diario` : "/"),
+        D("messages", es.nav.messages, mine ?? "/"),
         more,
       ];
     case "client":
       return [
-        D("home", es.nav.home, base),
-        D("requests", es.nav.requests, `${base}/solicitudes`),
-        D("newRequest", es.nav.newRequest, `${base}/solicitudes/nueva`),
-        D("messages", es.nav.messages, `${base}/mensajes`),
+        D("home", es.nav.home, mine ?? "/"),
+        D("requests", es.nav.requests, mine ?? "/"),
+        D("newRequest", es.nav.newRequest, mine ?? "/"),
+        D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         more,
       ];
   }
@@ -90,8 +111,13 @@ export function mobileNav(spaceSlug: string, role: ShellRole): readonly NavDesti
  * pantalla: el servidor vuelve a comprobar el permiso al ejecutar
  * (CLAUDE.md MUST — "ocultar un botón NO es un control de acceso").
  */
-export function createOptions(spaceSlug: string, role: ShellRole): readonly NavDestination[] {
+export function createOptions(
+  spaceSlug: string,
+  role: ShellRole,
+  establishmentId: string | null = null,
+): readonly NavDestination[] {
   const base = `/espacios/${spaceSlug}`;
+  const mine = clientBase(spaceSlug, establishmentId);
   switch (role) {
     case "owner":
       return [
@@ -108,6 +134,8 @@ export function createOptions(spaceSlug: string, role: ShellRole): readonly NavD
       return [D("absence", es.create.absence, `${base}/calendario/ausencia`)];
     case "client":
     case "client_daily_menu":
-      return [D("request", es.create.request, `${base}/solicitudes/nueva`)];
+      // El formulario de pedir un cambio vive en la ficha del restaurante,
+      // no en una ruta aparte: el restaurante ya está mirando la suya.
+      return [D("request", es.create.request, mine ?? "/")];
   }
 }

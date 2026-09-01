@@ -89,7 +89,7 @@ export default async function ClientEstablishmentPage({
   const statusKey = establishment.status as StatusKey;
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 p-8">
       <header>
         <p className="text-sm text-text-secondary">{establishment.code}</p>
         <h1 className="text-2xl font-bold text-primary-dark">{establishment.name}</h1>
@@ -218,6 +218,6 @@ export default async function ClientEstablishmentPage({
           </Table>
         )}
       </Card>
-    </main>
+    </div>
   );
 }

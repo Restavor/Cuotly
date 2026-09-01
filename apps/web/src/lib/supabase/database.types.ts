@@ -190,6 +190,28 @@ export type Database = {
           },
         ]
       }
+      // Avisos del centro de notificaciones (a mano, migración 35).
+      notifications: {
+        Row: {
+          amount_cents: number | null
+          audience: string
+          created_at: string
+          deep_link: string
+          dedupe_key: string
+          entity_id: string
+          entity_type: string
+          establishment_id: string | null
+          event_type: string
+          id: string
+          read_at: string | null
+          recipient_id: string
+          space_id: string
+          threshold_percent: number | null
+        }
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       // Festivos del espacio: los necesita el cálculo de la ventana de
       // corrección al publicar (RN-COR-02 + RN-CLK-10). A mano.
       holidays: {
@@ -682,6 +704,18 @@ export type Database = {
       }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
       accept_request: { Args: { p_request_id: string }; Returns: undefined }
+      // Armazón: búsqueda global y avisos (a mano, migraciones 35 y 36).
+      global_search: {
+        Args: { p_query: string; p_limit?: number }
+        Returns: {
+          kind: string
+          id: string
+          title: string
+          subtitle: string | null
+          state: string | null
+          deep_link: string
+        }[]
+      }
       // Conversación y acciones del cliente (a mano, migraciones 17, 22 y 25).
       get_or_create_request_conversation: {
         Args: { p_request_id: string }

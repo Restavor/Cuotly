@@ -70,13 +70,13 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
 
   if (dashboardError) {
     return (
-      <main className="mx-auto max-w-4xl p-8">
+      <div className="mx-auto max-w-4xl p-8">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.teamArea.finance.title}</h1>
         <NoPermissionState
           title={es.teamArea.finance.noPermissionTitle}
           description={es.teamArea.finance.noPermissionReason}
         />
-      </main>
+      </div>
     );
   }
 
@@ -108,7 +108,7 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
   );
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-8">
+    <div className="mx-auto max-w-4xl space-y-6 p-8">
       <header>
         <h1 className="text-2xl font-bold text-primary-dark">{es.teamArea.finance.title}</h1>
         <p className="text-sm text-text-secondary">{es.teamArea.finance.subtitle}</p>
@@ -223,6 +223,6 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
           </Table>
         )}
       </Card>
-    </main>
+    </div>
   );
 }
