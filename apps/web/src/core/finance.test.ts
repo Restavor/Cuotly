@@ -84,7 +84,7 @@ describe("finance — RN-FIN, HU-26, HU-27, HU-28", () => {
       );
     });
 
-    it("perdonado y reembolsado tienen sus propios estados", () => {
+    it("perdonado y reembolsado tienen sus propios estados cuando el cobro queda cerrado", () => {
       expect(
         chargeStatus({
           entries: [cargo(IMPULSO_TOTAL), { type: "waiver", amountCents: -IMPULSO_TOTAL }],
@@ -92,13 +92,52 @@ describe("finance — RN-FIN, HU-26, HU-27, HU-28", () => {
           now: horasDespues(200),
         }),
       ).toBe("waived");
+      // Reembolso parcial que deja el cobro saldado: se cobró todo y se
+      // devolvió una parte que ya se había perdonado antes.
+      expect(
+        chargeStatus({
+          entries: [
+            cargo(IMPULSO_TOTAL),
+            pago(IMPULSO_TOTAL),
+            { type: "refund", amountCents: 1000 },
+            { type: "waiver", amountCents: -1000 },
+          ],
+          dueAt: VENCIMIENTO,
+          now: horasDespues(200),
+        }),
+      ).toBe("refunded");
+    });
+
+    it("RN-DAT-05: un cobro perdonado o reembolsado con deuda viva NO se muestra cerrado", () => {
+      // El ciclo de impago (RN-FIN-10/11) actúa sobre el SALDO, no sobre la
+      // etiqueta. Hasta la 6ª revisión `refunded` y `waived` ganaban sin
+      // mirar el saldo, así que un cobro con deuda viva se mostraba cerrado
+      // mientras suspendía el establecimiento por impago.
+      //
+      // Reembolso total: el reembolso devuelve la deuda al saldo.
       expect(
         chargeStatus({
           entries: [cargo(IMPULSO_TOTAL), pago(IMPULSO_TOTAL), { type: "refund", amountCents: IMPULSO_TOTAL }],
           dueAt: VENCIMIENTO,
           now: horasDespues(200),
         }),
-      ).toBe("refunded");
+      ).toBe("overdue");
+
+      // Perdonar y luego revertir el pago que sostenía ese perdón: se
+      // perdonó lo que se debía entonces, no el cobro entero, así que
+      // revive la parte que se creía cobrada.
+      expect(
+        chargeStatus({
+          entries: [
+            cargo(IMPULSO_TOTAL),
+            pago(10_000),
+            { type: "waiver", amountCents: -(IMPULSO_TOTAL - 10_000) },
+            { type: "payment_reversal", amountCents: 10_000 },
+          ],
+          dueAt: VENCIMIENTO,
+          now: horasDespues(200),
+        }),
+      ).toBe("overdue");
     });
 
     it("RN-FIN-04: perdonar una deuda no es haberla cobrado", () => {

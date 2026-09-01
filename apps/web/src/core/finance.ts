@@ -121,11 +121,19 @@ export function chargeStatus(input: {
   readonly dueAt: Date;
   readonly now: Date;
 }): ChargeStatus {
-  if (input.entries.some((entry) => entry.type === "refund")) return "refunded";
-  if (input.entries.some((entry) => entry.type === "waiver")) return "waived";
-
   const outstanding = outstandingCents(input.entries);
-  if (outstanding <= 0) return "paid";
+
+  // `refunded` y `waived` son actos explícitos del equipo (RN-FIN-04) y
+  // describen mejor lo que pasó con el cobro que su saldo... siempre que el
+  // cobro esté cerrado. Con deuda viva mienten: el ciclo de impago
+  // (RN-FIN-10/11) actúa sobre el saldo, no sobre la etiqueta, así que un
+  // cobro reembolsado con deuda viva suspendía el establecimiento mientras
+  // la pantalla decía "Reembolsado" (H-02 de la 6ª revisión).
+  if (outstanding <= 0) {
+    if (input.entries.some((entry) => entry.type === "refund")) return "refunded";
+    if (input.entries.some((entry) => entry.type === "waiver")) return "waived";
+    return "paid";
+  }
 
   if (input.now.getTime() > input.dueAt.getTime()) return "overdue";
   return collectedCents(input.entries) > 0 ? "partially_paid" : "pending";

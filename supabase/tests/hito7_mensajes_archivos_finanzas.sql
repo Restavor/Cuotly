@@ -1293,6 +1293,7 @@ declare
   v_stage text;
   v_status text;
   v_evento record;
+  v_job_estado text;
 begin
   v_stage := public.evaluate_establishment_dunning('b4000000-0000-0000-0000-000000000001');
   if v_stage <> 'paused' then
@@ -1317,6 +1318,23 @@ begin
 
   if v_evento.event_type <> 'paused' or v_evento.cause is distinct from 'nonpayment' then
     raise exception 'RN-FIN-12 FALLIDO: T3 no quedó pausado por impago (% / %)', v_evento.event_type, v_evento.cause using errcode = 'assert_failure';
+  end if;
+
+  -- RN-FIN-12 (aclarada 31/08/2026): "se detienen trabajos, publicaciones y
+  -- contadores, **desde las +24 h**". Hasta la 6ª revisión los contadores
+  -- se paraban ya aquí pero el trabajo en curso seguía en `in_progress` y
+  -- sin retención, así que el restaurante lo veía "En curso" mientras el
+  -- servicio estaba detenido. Detener y parar contadores van juntos.
+  select state into v_job_estado from public.jobs where id = (select value::uuid from h7_ctx where key = 'job_a');
+  if v_job_estado <> 'authorized_pause' then
+    raise exception 'RN-FIN-12 FALLIDO: a las +24 h el trabajo en curso debería quedar retenido (authorized_pause), está en %', v_job_estado using errcode = 'assert_failure';
+  end if;
+  if not exists (
+    select 1 from public.blocks
+    where job_id = (select value::uuid from h7_ctx where key = 'job_a')
+      and reason_type = 'financial_hold' and ended_at is null
+  ) then
+    raise exception 'RN-FIN-12 FALLIDO: a las +24 h el trabajo en curso no quedó con retención por impago' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -2554,7 +2572,16 @@ begin
     where n.nspname = 'public' and p.prosecdef
       and (has_function_privilege('anon', p.oid, 'execute')
         or has_function_privilege('authenticated', p.oid, 'execute'))
-      and p.prosrc !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|auth\.uid\(\)|client_can_view_billing|current_supervisors'
+      -- Sobre el cuerpo SIN COMENTARIOS: la heurística miraba el texto
+      -- crudo, así que una sola línea de comentario con la palabra
+      -- `can_read` bastaba para colar una función que devolvía el nombre y
+      -- el correo de todo el equipo (H-03 de la 6ª revisión, demostrado).
+      --
+      -- Y `auth.uid()` ya no absuelve: estampar el actor en un `audit_log`
+      -- no es comprobar nada, y trece funciones pasaban el filtro solo por
+      -- mencionarlo.
+      and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2563,7 +2590,21 @@ begin
         'group_space_id', 'message_conversation_id', 'request_establishment_id',
         'request_space_id', 'request_state',
         -- Disparadores: los ejecuta la base, no se invocan por RPC.
-        'handle_new_user', 'set_establishment_code'
+        'handle_new_user', 'set_establishment_code',
+        -- Las primitivas de permisos: son el mecanismo con el que se
+        -- comprueba, no pueden comprobarse a sí mismas.
+        'has_capability', 'is_space_member', 'is_platform_owner',
+        'is_group_member', 'is_establishment_member',
+        'is_authorized_worker_establishment', 'can_write_establishment',
+        'client_can_view_billing',
+        -- Estas cinco SÍ comprueban permisos, pero a mano: comparan
+        -- `auth.uid()` con el dueño de la fila y lanzan excepción si no
+        -- coincide (el responsable asignado, el autor del mensaje, el
+        -- destinatario de la invitación). Verificadas una a una el
+        -- 01/09/2026. Se enumeran porque la heurística mira el texto y no
+        -- entiende esa forma; si alguien las toca, hay que releerlas.
+        'accept_space_invitation', 'edit_message', 'publish_job',
+        'start_job', 'request_job_reassignment'
       )
       -- Los ayudantes del propio fixture (`h7_make_job` y compañía), que
       -- este archivo crea y borra: son andamiaje del test, no producto.
@@ -2853,6 +2894,59 @@ end $$;
 
 reset role;
 
+-- Y una SEGUNDA corrección, esta ya empezada antes del impago. Hace falta
+-- porque `complete_correction()` exige el trabajo en `in_correction`, y
+-- `start_correction()` está guardada: sin dejar una corrección en marcha
+-- de antemano, la guarda de `complete_correction()` es inalcanzable desde
+-- el test y no la observa ninguna mutación (H-01 de la 6ª revisión — el
+-- commit 1bf6fe4 afirmaba haber mutado las cinco guardas una a una, y para
+-- esta no era cierto).
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_job uuid;
+  v_corr uuid;
+begin
+  v_job := public.h7_make_job(
+    'b4000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000005',
+    'b0000000-0000-0000-0000-000000000001', 'H-01: corrección ya empezada', 'small');
+  perform set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+  perform public.auto_assign_job(v_job);
+  insert into h7_ctx values ('job_corr_empezada', v_job::text);
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+declare
+  v_job uuid := (select value::uuid from h7_ctx where key = 'job_corr_empezada');
+begin
+  perform public.start_job(v_job);
+  perform public.publish_job(v_job, now() + interval '30 days');
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+declare
+  v_corr uuid;
+begin
+  v_corr := public.open_team_error_correction(
+    (select value::uuid from h7_ctx where key = 'job_corr_empezada'), 'Nos equivocamos otra vez');
+  perform public.start_correction(v_corr);
+  insert into h7_ctx values ('correccion_empezada', v_corr::text);
+end $$;
+
+reset role;
+
 -- Un borrador del restaurante, todavía sin enviar.
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000005', false);
 set role authenticated;
@@ -3088,6 +3182,19 @@ begin
         raise exception 'RN-FIN-11/12 FALLIDO: start_correction() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
       end if;
   end;
+
+  -- Y una que YA estaba empezada tampoco se cierra: `complete_correction()`
+  -- publica el trabajo (`update public.jobs set state = 'published'`), y
+  -- RN-FIN-12 dice "se detienen trabajos, publicaciones y contadores".
+  begin
+    perform public.complete_correction((select value::uuid from h7_ctx where key = 'correccion_empezada'), 'Ya está');
+    raise exception 'RN-FIN-11/12 FALLIDO: se pudo CERRAR (y publicar) una corrección con el establecimiento suspendido' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%detenido por impago%' then
+        raise exception 'RN-FIN-11/12 FALLIDO: complete_correction() falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
 end $$;
 
 reset role;
@@ -3169,6 +3276,143 @@ begin
   update public.establishments
   set status = (select value from h7_ctx where key = 'estado_antes_susp')
   where id = 'b4000000-0000-0000-0000-000000000001';
+end $$;
+
+-- ============================================================
+-- H-02 (6ª revisión) · un cobro perdonado o reembolsado no puede ocultar
+-- deuda viva.
+--
+-- El ciclo de impago (RN-FIN-10/11) actúa sobre el SALDO; la pantalla
+-- miraba el APUNTE. Resultado: el establecimiento quedaba suspendido por
+-- un cobro que se mostraba como "Perdonado" o "Reembolsado", y
+-- `waive_charge()` no podía arreglarlo porque su idempotencia miraba "¿ya
+-- existe un perdón?" en vez de "¿queda deuda?".
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_sub uuid;
+  v_charge uuid;
+  v_pago uuid;
+  v_estado text;
+  v_deuda integer;
+begin
+  -- Un cobro propio para no tocar los de los bloques anteriores.
+  select id into v_sub from public.subscriptions
+  where establishment_id = 'b4000000-0000-0000-0000-000000000002' and kind = 'plan' limit 1;
+  v_charge := public.generate_monthly_charge(v_sub, now() - interval '80 hours');
+  if v_charge is null then
+    raise exception 'FIXTURE H-02: no se pudo emitir el cobro' using errcode = 'assert_failure';
+  end if;
+
+  -- Camino 1: reembolso total. Sin revertir nada.
+  v_pago := public.register_payment(v_charge, public.charge_outstanding_cents(v_charge), 'transfer', now(), null, null, 'h02-1');
+  if public.charge_status(v_charge) <> 'paid' then
+    raise exception 'FIXTURE H-02: el cobro debería quedar pagado, está %', public.charge_status(v_charge) using errcode = 'assert_failure';
+  end if;
+
+  perform public.refund_charge(v_charge, public.charge_collected_cents(v_charge), 'Servicio no prestado');
+  v_deuda := public.charge_outstanding_cents(v_charge);
+  v_estado := public.charge_status(v_charge);
+
+  if v_deuda <= 0 then
+    raise exception 'FIXTURE H-02: se esperaba deuda viva tras el reembolso, hay %', v_deuda using errcode = 'assert_failure';
+  end if;
+  if v_estado in ('refunded', 'waived', 'paid') then
+    raise exception 'RN-DAT-05 FALLIDO: un cobro con % céntimos de deuda viva se muestra como "%" — el impago actúa sobre el saldo y la pantalla enseñaría lo contrario',
+      v_deuda, v_estado using errcode = 'assert_failure';
+  end if;
+
+  -- Y el equipo puede perdonar esa deuda revivida: la idempotencia de
+  -- waive_charge() va por saldo, no por "ya existe un perdón".
+  perform public.waive_charge(v_charge, 'Lo damos por cerrado');
+  if public.charge_outstanding_cents(v_charge) <> 0 then
+    raise exception 'H-02 FALLIDO: waive_charge() no pudo perdonar la deuda revivida (quedan %)',
+      public.charge_outstanding_cents(v_charge) using errcode = 'assert_failure';
+  end if;
+  if public.charge_status(v_charge) not in ('refunded', 'waived') then
+    raise exception 'RN-FIN-02 FALLIDO: sin deuda viva, el cobro debería mostrarse cerrado, está %',
+      public.charge_status(v_charge) using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- H-08 (6ª revisión) · las dos invariantes que CLAUDE.md marca como MUST,
+-- comprobadas en falso-cerrado.
+--
+-- H-05 (`request_versions` sin `space_id`) y H-07 (`space_sequences` con
+-- RLS y cero políticas) llevaban meses en el árbol y seis revisiones no
+-- los vieron, porque ningún test comprobaba la invariante: se comprobaban
+-- las tablas que uno se acordaba de mirar. Esto las recorre todas.
+-- ============================================================
+do $$
+declare
+  v_t record;
+  v_sin_rls text := '';
+  v_sin_politica text := '';
+  v_sin_space text := '';
+begin
+  for v_t in
+    select c.relname as tabla, c.relrowsecurity as rls,
+           (select count(*) from pg_policy p where p.polrelid = c.oid) as politicas,
+           exists (
+             select 1 from pg_attribute a
+             where a.attrelid = c.oid and a.attname = 'space_id'
+               and a.attnum > 0 and not a.attisdropped and a.attnotnull
+           ) as tiene_space_id
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public' and c.relkind = 'r'
+    order by 1
+  loop
+    if not v_t.rls then
+      v_sin_rls := v_sin_rls || ' ' || v_t.tabla;
+    end if;
+
+    -- Política explícita. `space_sequences` es la excepción justificada:
+    -- no se toca desde la aplicación, solo desde next_space_sequence()
+    -- (SECURITY DEFINER), y la migración 34 le quitó los privilegios de
+    -- tabla en vez de darle una política que nadie usaría.
+    if v_t.politicas = 0 and v_t.tabla not in ('space_sequences') then
+      v_sin_politica := v_sin_politica || ' ' || v_t.tabla;
+    end if;
+
+    -- `space_id NOT NULL`. Las excepciones son tablas que no pertenecen a
+    -- un espacio (son de plataforma, de identidad, o el espacio mismo).
+    if not v_t.tiene_space_id and v_t.tabla not in (
+         'spaces', 'profiles', 'platform_roles', 'space_memberships',
+         'group_memberships', 'establishment_memberships',
+         'establishment_permissions', 'space_sequences', 'audit_log'
+       ) then
+      v_sin_space := v_sin_space || ' ' || v_t.tabla;
+    end if;
+  end loop;
+
+  -- `space_sequences` está exenta de tener política porque se cierra por
+  -- privilegio de tabla. La exención SOLO vale mientras eso sea cierto: si
+  -- alguien le devuelve el grant, se queda sin política Y sin privilegio
+  -- restringido, o sea abierta.
+  if has_table_privilege('authenticated', 'public.space_sequences', 'select')
+     or has_table_privilege('authenticated', 'public.space_sequences', 'insert')
+     or has_table_privilege('authenticated', 'public.space_sequences', 'update')
+     or has_table_privilege('anon', 'public.space_sequences', 'select') then
+    raise exception 'CLAUDE.md MUST FALLIDO: `space_sequences` está exenta de tener política de RLS porque no tiene privilegios de tabla, y alguien se los ha devuelto'
+      using errcode = 'assert_failure';
+  end if;
+
+  if v_sin_rls <> '' then
+    raise exception 'CLAUDE.md MUST FALLIDO: tablas sin RLS activado:%', v_sin_rls using errcode = 'assert_failure';
+  end if;
+  if v_sin_politica <> '' then
+    raise exception 'CLAUDE.md MUST FALLIDO: tablas con RLS y sin ninguna política explícita:%. O le falta la política, o hay que justificarla en la lista de excepciones de este test.', v_sin_politica using errcode = 'assert_failure';
+  end if;
+  if v_sin_space <> '' then
+    raise exception 'CLAUDE.md MUST FALLIDO: tablas de espacio sin `space_id NOT NULL`:%. O le falta la columna, o hay que justificarla en la lista de excepciones de este test.', v_sin_space using errcode = 'assert_failure';
+  end if;
 end $$;
 
 -- Limpieza.

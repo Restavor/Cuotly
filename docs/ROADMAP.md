@@ -35,15 +35,23 @@ no son un fallo, sino alcance:
    las HU-24 a HU-28 redactadas como "quiero ver…" todavía no tienen
    interfaz. Las pantallas de los tres hitos se construyen juntas.
 
-2. **Falta una revisión que pase en limpio.** Han pasado cinco revisiones
-   adversariales. La cuarta encontró tres bloqueantes y la quinta uno más
-   (`unblock_job()` levantaba la retención por impago) junto con ocho
-   hallazgos importantes, entre ellos que dos de las tres comprobaciones
-   que la cuarta añadió eran **vacuas**: el fixture no creaba tareas ni
-   correcciones, así que comparaban cero con cero. Todo corregido y
-   verificado con mutación, pero el patrón se repite: cada pasada encuentra
-   algo que la anterior dio por bueno. Una sexta revisión sigue siendo
-   sensata antes de dar el hito por terminado de verdad.
+2. **Seis revisiones adversariales; la sexta, sin bloqueantes.** La cuarta
+   encontró tres bloqueantes, la quinta uno más y ocho importantes (entre
+   ellos que dos comprobaciones de la cuarta eran **vacuas**), y la sexta
+   —dirigida a atacar los tests de la quinta, no solo el código— encontró
+   cuatro importantes y dos menores, **ninguno de ellos una puerta abierta
+   al exterior**. Todo corregido y verificado con mutación. La curva baja,
+   pero cada pasada sigue encontrando algo, así que el hito se da por
+   cerrado sin fingir que está probado del todo.
+
+   Lo que la sexta cambió de fondo: los tests ya no comprueban solo las
+   tablas y funciones que uno se acuerda de mirar. Hay tres barridos en
+   falso-cerrado —identidad del equipo, funciones internas abiertas por
+   RPC, e invariantes de RLS y `space_id`— que fallan ante cualquier tabla
+   o función NUEVA que incumpla la regla, hasta que alguien la clasifique
+   con su motivo. Dos fallos que llevaban meses en el árbol
+   (`request_versions` sin `space_id`, `space_sequences` con RLS y cero
+   políticas) se encontraron precisamente por no tener ese barrido.
 
 3. **La base de datos real va por detrás del repositorio.** El proyecto de
    Supabase está en la migración 24; las migraciones 25 a 33 (el Hito 7
