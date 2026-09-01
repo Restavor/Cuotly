@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { es } from "../i18n/es";
 import { colors } from "../lib/theme";
 import { validateCredentials } from "../lib/validate-auth-form";
 
@@ -54,7 +55,7 @@ export function AuthForm({
     <View style={styles.container}>
       <Text style={styles.title}>{title}</Text>
 
-      <Text style={styles.label}>Correo electrónico</Text>
+      <Text style={styles.label}>{es.auth.emailLabel}</Text>
       <TextInput
         style={styles.input}
         value={email}
@@ -65,7 +66,7 @@ export function AuthForm({
         testID="email-input"
       />
 
-      <Text style={styles.label}>Contraseña</Text>
+      <Text style={styles.label}>{es.auth.passwordLabel}</Text>
       <TextInput
         style={styles.input}
         value={password}

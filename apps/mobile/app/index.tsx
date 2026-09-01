@@ -2,6 +2,7 @@ import { Redirect } from "expo-router";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../src/lib/auth-context";
 import { supabase } from "../src/lib/supabase";
+import { es } from "../src/i18n/es";
 import { colors } from "../src/lib/theme";
 
 export default function HomeScreen() {
@@ -21,14 +22,11 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cuotly</Text>
-      <Text style={styles.text}>Has entrado como {session.user.email}.</Text>
-      <Text style={styles.text}>
-        Todavía no hay más funcionalidad — esto es la evidencia del Hito 1: el
-        registro y el inicio de sesión funcionan de verdad.
-      </Text>
+      <Text style={styles.title}>{es.home.title}</Text>
+      <Text style={styles.text}>{es.home.signedInAs(session.user.email ?? "")}</Text>
+      <Text style={styles.text}>{es.home.noFeaturesYet}</Text>
       <Text style={styles.link} onPress={() => supabase.auth.signOut()}>
-        Cerrar sesión
+        {es.home.signOut}
       </Text>
     </View>
   );

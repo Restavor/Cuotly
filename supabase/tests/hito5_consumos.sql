@@ -720,6 +720,302 @@ end $$;
 
 reset role;
 
+create temporary table h5_plan_ctx (key text primary key, value text);
+grant select, insert on h5_plan_ctx to authenticated;
+
+-- ============================================================
+-- §6.4 · cambio de plan (RN-COM-04, RN-COM-05, RN-COM-15 a RN-COM-18).
+--
+-- La tercera pasada de la revisión lo encontró sin dueño: la migración 20
+-- lo dejó fuera del alcance del Hito 5 y ningún hito posterior lo recogió.
+-- ============================================================
+insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours) values
+  ('92000000-0000-0000-0000-000000000010', '91000000-0000-0000-0000-000000000001', 'Premium H5', 59900, 25, 24, 5, 1, 24),
+  ('92000000-0000-0000-0000-000000000011', '91000000-0000-0000-0000-000000000001', 'Básico H5', 9900, 0, 0, 0, 0, 48);
+
+insert into public.establishments (id, space_id, group_id, code, name) values
+  ('94000000-0000-0000-0000-000000000010', '91000000-0000-0000-0000-000000000001',
+   '93000000-0000-0000-0000-000000000001', 'EST-H5-PLAN', 'Restaurante del cambio de plan');
+
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_sub uuid;
+  v_ends timestamptz;
+begin
+  v_sub := public.create_plan_subscription('94000000-0000-0000-0000-000000000010', '92000000-0000-0000-0000-000000000001');
+  insert into h5_plan_ctx values ('sub', v_sub::text);
+
+  -- RN-COM-04: "permanencia mínima inicial de 3 meses". No existía en el
+  -- esquema, así que RN-COM-17 no se podía ni comprobar.
+  select ends_at into v_ends from public.plan_commitments
+  where subscription_id = v_sub and cause = 'initial';
+
+  if v_ends is null then
+    raise exception 'RN-COM-04 FALLIDO: dar de alta un plan no abrió ninguna permanencia'
+      using errcode = 'assert_failure';
+  end if;
+  if v_ends < now() + interval '89 days' or v_ends > now() + interval '93 days' then
+    raise exception 'RN-COM-04 FALLIDO: la permanencia inicial no es de 3 meses (termina el %)', v_ends
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- RN-COM-18 · la fórmula, con el ciclo recién abierto: queda casi todo el
+-- periodo por delante, así que la fracción ronda 1.
+do $$
+declare
+  v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
+  v_pro record;
+begin
+  perform public.get_or_create_consumption_cycle(v_sub);
+  select * into v_pro from public.plan_change_proration(v_sub, '92000000-0000-0000-0000-000000000010');
+
+  if v_pro.fraction <= 0.98 or v_pro.fraction > 1 then
+    raise exception 'RN-COM-18 FALLIDO: con el ciclo recién abierto la fracción restante debería rondar 1, y es %', v_pro.fraction
+      using errcode = 'assert_failure';
+  end if;
+
+  -- (59900 - 39900) * ~1 = ~20000 céntimos.
+  if v_pro.difference_cents < 19600 or v_pro.difference_cents > 20000 then
+    raise exception 'RN-COM-18 FALLIDO: la diferencia proporcional no cuadra: %', v_pro.difference_cents
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Impulso H5 incluye (1,0,0,0) y Premium H5 (25,24,5,1). Al alza.
+  if v_pro.extra_small <> 24 or v_pro.extra_photo <> 24 or v_pro.extra_medium <> 5 or v_pro.extra_large <> 1 then
+    raise exception 'RN-COM-18 FALLIDO: las unidades extra no se redondean al alza: %/%/%/%',
+      v_pro.extra_small, v_pro.extra_photo, v_pro.extra_medium, v_pro.extra_large
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- RN-COM-15 · mejora inmediata.
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
+  v_charge uuid;
+  v_saldo integer;
+begin
+  v_charge := public.change_plan_immediately(v_sub, '92000000-0000-0000-0000-000000000010', 'mejora-1');
+
+  if v_charge is null then
+    raise exception 'RN-COM-15 FALLIDO: la mejora inmediata no emitió el cobro de la diferencia'
+      using errcode = 'assert_failure';
+  end if;
+
+  if (select plan_id from public.subscriptions where id = v_sub) <> '92000000-0000-0000-0000-000000000010' then
+    raise exception 'RN-COM-15 FALLIDO: la suscripción no quedó en el plan nuevo' using errcode = 'assert_failure';
+  end if;
+
+  -- "Se añaden consumos adicionales proporcionales, redondeando al alza."
+  -- El saldo sale del libro de apuntes, no de un contador.
+  select remaining into v_saldo
+  from public.establishment_cycle_allowance('94000000-0000-0000-0000-000000000010')
+  where category = 'photo';
+  if v_saldo < 24 then
+    raise exception 'RN-COM-15 FALLIDO: la mejora no añadió los consumos proporcionales (saldo photo = %)', v_saldo
+      using errcode = 'assert_failure';
+  end if;
+
+  -- RN-COM-05: "un cambio voluntario de plan inicia una nueva permanencia
+  -- de 3 meses".
+  if (select count(*) from public.plan_commitments
+      where subscription_id = v_sub and cause = 'plan_change') <> 1 then
+    raise exception 'RN-COM-05 FALLIDO: la mejora no abrió una permanencia nueva'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- CA-17 / RN-DAT-09 · la misma mejora con la misma clave no cobra dos
+-- veces ni regala otra bolsa.
+--
+-- Para observar la CLAVE hay que deshacer antes el plan a mano: si no, la
+-- segunda llamada sale por la guarda de "ese ya es el plan actual" y la
+-- aserción pasaría por el motivo equivocado — el mutante que borra la
+-- comprobación de idempotencia sobrevivía justo por eso. El UPDATE va
+-- fuera del rol porque `subscriptions` no tiene política de UPDATE.
+do $$
+begin
+  update public.subscriptions set plan_id = '92000000-0000-0000-0000-000000000001'
+  where id = (select value::uuid from h5_plan_ctx where key = 'sub');
+
+  if (select plan_id from public.subscriptions where id = (select value::uuid from h5_plan_ctx where key = 'sub'))
+     <> '92000000-0000-0000-0000-000000000001' then
+    raise exception 'FIXTURE CA-17: no se pudo deshacer el plan; el test no probaría la clave'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
+begin
+  if public.change_plan_immediately(v_sub, '92000000-0000-0000-0000-000000000010', 'mejora-1') is not null then
+    raise exception 'CA-17 FALLIDO: la misma mejora con la misma clave volvió a cobrar'
+      using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.consumption_entries
+      where establishment_id = '94000000-0000-0000-0000-000000000010'
+        and entry_type = 'compensatory_credit') <> 4 then
+    raise exception 'CA-17 FALLIDO: la mejora repetida duplicó los apuntes de consumo'
+      using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.plan_commitments where subscription_id = v_sub and cause = 'plan_change') <> 1 then
+    raise exception 'CA-17 FALLIDO: la mejora repetida abrió una segunda permanencia'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Y se deja en Premium, que es donde la dejó la mejora de verdad.
+  perform public.change_plan_immediately(v_sub, '92000000-0000-0000-0000-000000000010', 'mejora-2');
+end $$;
+
+-- RN-COM-17 · la reducción no es inmediata, y no se puede ni programar
+-- mientras corra la permanencia vigente.
+do $$
+declare
+  v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
+begin
+  begin
+    perform public.change_plan_immediately(v_sub, '92000000-0000-0000-0000-000000000011', 'bajada-1');
+    raise exception 'RN-COM-17 FALLIDO: se aplicó una reducción de plan de forma inmediata'
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%solo se aplica en la renovación%' then
+        raise exception 'RN-COM-17 FALLIDO: la reducción falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+
+  begin
+    perform public.schedule_plan_change(v_sub, '92000000-0000-0000-0000-000000000011');
+    raise exception 'RN-COM-17 FALLIDO: se programó una reducción sin cumplir la permanencia vigente'
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%permanencia vigente%' then
+        raise exception 'RN-COM-17 FALLIDO: programar la reducción falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+-- RN-COM-16 · la mejora en renovación sí se programa, y no se aplica antes
+-- de tiempo.
+do $$
+declare
+  v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
+  v_id uuid;
+begin
+  -- Se vuelve a Impulso primero para que Premium sea otra vez una mejora.
+  update public.subscriptions set plan_id = '92000000-0000-0000-0000-000000000001' where id = v_sub;
+
+  v_id := public.schedule_plan_change(v_sub, '92000000-0000-0000-0000-000000000010');
+  if v_id is null then
+    raise exception 'RN-COM-16 FALLIDO: no se pudo programar la mejora para la renovación'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- CA-17: pedirlo dos veces no apila dos cambios contradictorios.
+  if public.schedule_plan_change(v_sub, '92000000-0000-0000-0000-000000000010') <> v_id then
+    raise exception 'CA-17 FALLIDO: programar dos veces el mismo cambio creó dos filas'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Todavía no toca: el cambio es en la fecha de renovación.
+  if public.apply_scheduled_plan_change(v_sub) then
+    raise exception 'RN-COM-16 FALLIDO: el cambio programado se aplicó antes de la renovación'
+      using errcode = 'assert_failure';
+  end if;
+  if (select plan_id from public.subscriptions where id = v_sub) <> '92000000-0000-0000-0000-000000000001' then
+    raise exception 'RN-COM-16 FALLIDO: el plan cambió antes de la renovación' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- Llegada la renovación, sí.
+do $$
+begin
+  update public.scheduled_plan_changes set effective_at = now() - interval '1 minute'
+  where subscription_id = (select value::uuid from h5_plan_ctx where key = 'sub') and state = 'pending';
+end $$;
+
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
+begin
+  if not public.apply_scheduled_plan_change(v_sub) then
+    raise exception 'RN-COM-16 FALLIDO: llegada la renovación, el cambio programado no se aplicó'
+      using errcode = 'assert_failure';
+  end if;
+  if (select plan_id from public.subscriptions where id = v_sub) <> '92000000-0000-0000-0000-000000000010' then
+    raise exception 'RN-COM-16 FALLIDO: el plan no quedó en el nuevo tras la renovación'
+      using errcode = 'assert_failure';
+  end if;
+  -- CA-17: aplicarlo dos veces no vuelve a hacer nada.
+  if public.apply_scheduled_plan_change(v_sub) then
+    raise exception 'CA-17 FALLIDO: el cambio programado se aplicó dos veces' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- CA-01 · y nada de esto lo puede hacer quien no lleva clientes.
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
+do $$
+declare
+  v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
+begin
+  begin
+    perform public.change_plan_immediately(v_sub, '92000000-0000-0000-0000-000000000011', 'trabajador');
+    raise exception 'CA-01 FALLIDO: un trabajador cambió el plan de un restaurante' using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%Solo el propietario o un administrador%' then
+        raise exception 'CA-01 FALLIDO: falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+reset role;
+
+-- CLAUDE.md MUST NOT · el cliente ve su permanencia, no quién la firmó.
+select set_config('request.jwt.claim.sub', '90000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+declare
+  v_col text;
+begin
+  begin
+    execute 'select created_by from public.plan_commitments limit 1' into v_col;
+    raise exception 'CLAUDE.md MUST NOT FALLIDO: el cliente lee plan_commitments.created_by'
+      using errcode = 'assert_failure';
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+end $$;
+
+reset role;
+
 -- ============================================================
 -- CA-16 · la auditoría de las nuevas acciones no se puede editar ni borrar.
 -- ============================================================
@@ -758,6 +1054,7 @@ reset role;
 -- ============================================================
 -- Limpieza: no deja nada de esto en la base de datos real.
 -- ============================================================
+drop table if exists h5_plan_ctx;
 delete from public.audit_log where space_id in ('91000000-0000-0000-0000-000000000001');
 delete from public.spaces where id = '91000000-0000-0000-0000-000000000001';
 delete from auth.users where email like 'h5-%@example.com';

@@ -45,7 +45,8 @@ insert into auth.users (id, email, role, aud) values
   ('a0000000-0000-0000-0000-000000000001', 'test-a@example.com', 'authenticated', 'authenticated'),
   ('a0000000-0000-0000-0000-000000000002', 'test-b@example.com', 'authenticated', 'authenticated'),
   ('a0000000-0000-0000-0000-000000000003', 'test-worker@example.com', 'authenticated', 'authenticated'),
-  ('a0000000-0000-0000-0000-000000000004', 'test-cliente@example.com', 'authenticated', 'authenticated');
+  ('a0000000-0000-0000-0000-000000000004', 'test-cliente@example.com', 'authenticated', 'authenticated'),
+  ('a0000000-0000-0000-0000-000000000005', 'test-editor@example.com', 'authenticated', 'authenticated');
 
 insert into public.spaces (id, name, slug, created_by) values
   ('b0000000-0000-0000-0000-000000000001', 'Espacio A (test)', 'espacio-a-test', 'a0000000-0000-0000-0000-000000000001'),
@@ -319,6 +320,265 @@ reset role;
 -- spaces → auth.users). Se ejecuta con el rol postgres (sin RLS) para no
 -- depender de ninguna política de DELETE.
 -- ============================================================
+-- ============================================================
+-- RN-EST-04 · "un Editor puede asignarse a uno, varios, todos los
+-- actuales, o todos los actuales **y futuros**".
+--
+-- Lo último solo se expresa a nivel de grupo, y `group_memberships` tenía
+-- `check (role = 'global_owner')`: para un Editor no existía la forma.
+-- ============================================================
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  insert into public.group_memberships (group_id, user_id, role)
+  values ('c0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000005', 'editor');
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+begin
+  -- "Todos los actuales": el establecimiento que ya existe en el grupo.
+  if not public.can_write_establishment('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'RN-EST-04 FALLIDO: un Editor de grupo no puede escribir en un establecimiento del grupo'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Y no se le cuela lo ajeno (CA-02).
+  if public.can_write_establishment('d0000000-0000-0000-0000-000000000002') then
+    raise exception 'CA-02 FALLIDO: un Editor de grupo escribe en el establecimiento de otro espacio'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- RN-EST-04 vs facturación: el Editor escribe, pero las cuentas son del
+  -- propietario. Para el editor de UN establecimiento hace falta el
+  -- permiso explícito `view_billing`; para el de grupo no hay ninguno.
+  if public.client_can_view_billing('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'RN-EST-04 FALLIDO: un Editor de grupo ve la facturación sin permiso explícito'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- "Y futuros": un establecimiento creado DESPUÉS en el mismo grupo queda
+-- cubierto sin tocar nada. Ese es todo el sentido de la regla.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+insert into public.establishments (id, space_id, group_id, name) values
+  ('d0000000-0000-0000-0000-000000000009', 'b0000000-0000-0000-0000-000000000001',
+   'c0000000-0000-0000-0000-000000000001', 'Restaurante Futuro');
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+begin
+  if not public.can_write_establishment('d0000000-0000-0000-0000-000000000009') then
+    raise exception 'RN-EST-04 FALLIDO: el Editor de grupo no alcanza a un establecimiento creado después'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
+-- RN-EST-05 · "al retirar un acceso desaparece de inmediato, pero la
+-- actividad histórica permanece".
+--
+-- No existía: `establishment_memberships` y `group_memberships` no tenían
+-- ninguna columna de revocación, borrar la fila lo prohíbe CLAUDE.md, y el
+-- DELETE se lo tragaba RLS en silencio. El acceso de un cliente a un
+-- restaurante era permanente.
+-- ============================================================
+
+-- Control positivo antes de retirar nada: el propietario global lee su
+-- establecimiento y ve la facturación.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
+
+do $$
+begin
+  if not public.can_read_establishment('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'FIXTURE RN-EST-05: el propietario global no leía su establecimiento; el test no probaría nada'
+      using errcode = 'assert_failure';
+  end if;
+  if not public.client_can_view_billing('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'FIXTURE RN-EST-05: el propietario global no veía la facturación; el test no probaría nada'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- Y la vía directa no existe: las columnas de revocación no se pueden
+-- tocar con un UPDATE. Como en el arreglo de `establishments.status`, la
+-- barrera es un privilegio de columna, no una convención.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  begin
+    update public.group_memberships set revoked_at = now()
+    where group_id = 'c0000000-0000-0000-0000-000000000001'
+      and user_id = 'a0000000-0000-0000-0000-000000000004';
+    raise exception 'RN-EST-05 FALLIDO: se retiró un acceso con un UPDATE directo, sin auditoría'
+      using errcode = 'assert_failure';
+  exception
+    when insufficient_privilege then
+      null;
+  end;
+end $$;
+
+-- La vía buena sí, y deja rastro.
+do $$
+begin
+  if not public.revoke_group_access(
+       'c0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004',
+       'El grupo cambia de manos') then
+    raise exception 'RN-EST-05 FALLIDO: revoke_group_access() no retiró un acceso vivo'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- CA-17: pulsar dos veces produce un único efecto.
+  if public.revoke_group_access(
+       'c0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', null) then
+    raise exception 'CA-17 FALLIDO: revocar dos veces el mismo acceso no fue idempotente'
+      using errcode = 'assert_failure';
+  end if;
+
+  if not exists (
+    select 1 from public.audit_log
+    where action = 'group_access.revoked'
+      and entity_id = 'c0000000-0000-0000-0000-000000000001'
+      and reason = 'El grupo cambia de manos'
+  ) then
+    raise exception 'CLAUDE.md MUST FALLIDO: retirar un acceso no dejó registro de auditoría'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- "Desaparece de inmediato": ya no lee nada.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
+
+do $$
+begin
+  if public.can_read_establishment('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'RN-EST-05 FALLIDO: el acceso retirado sigue leyendo el establecimiento'
+      using errcode = 'assert_failure';
+  end if;
+  if public.client_can_view_billing('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'RN-EST-05 FALLIDO: el acceso retirado sigue viendo la facturación'
+      using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.establishments where id = 'd0000000-0000-0000-0000-000000000001') <> 0 then
+    raise exception 'RN-EST-05 FALLIDO: el acceso retirado sigue viendo la fila del establecimiento'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- "Pero la actividad histórica permanece": la fila sigue ahí, con quién y
+-- cuándo. CLAUDE.md prohíbe el borrado físico y RN-EST-05 pide el rastro.
+do $$
+begin
+  if not exists (
+    select 1 from public.group_memberships
+    where group_id = 'c0000000-0000-0000-0000-000000000001'
+      and user_id = 'a0000000-0000-0000-0000-000000000004'
+      and revoked_at is not null
+      and revoked_by = 'a0000000-0000-0000-0000-000000000001'
+  ) then
+    raise exception 'RN-EST-05 FALLIDO: retirar el acceso borró el rastro en vez de marcarlo'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- Lo mismo por el lado del establecimiento, que es la otra tabla de
+-- acceso del cliente.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+insert into public.establishment_memberships (establishment_id, user_id, role) values
+  ('d0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', 'editor');
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
+
+do $$
+begin
+  if not public.can_write_establishment('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'FIXTURE RN-EST-05: el editor no escribía; el test no probaría nada'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+begin
+  if not public.revoke_establishment_access(
+       'd0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', 'Deja de llevar la web') then
+    raise exception 'RN-EST-05 FALLIDO: revoke_establishment_access() no retiró un acceso vivo'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
+
+do $$
+begin
+  if public.can_write_establishment('d0000000-0000-0000-0000-000000000001') then
+    raise exception 'RN-EST-05 FALLIDO: el acceso retirado sigue escribiendo en el establecimiento'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- Y se le puede volver a dar sin borrar el rastro del anterior: la
+-- unicidad es de los accesos VIVOS, no de todos los que hubo.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+insert into public.establishment_memberships (establishment_id, user_id, role) values
+  ('d0000000-0000-0000-0000-000000000001', 'a0000000-0000-0000-0000-000000000004', 'consulta');
+
+reset role;
+
+do $$
+begin
+  if (select count(*) from public.establishment_memberships
+      where establishment_id = 'd0000000-0000-0000-0000-000000000001'
+        and user_id = 'a0000000-0000-0000-0000-000000000004') <> 2 then
+    raise exception 'RN-EST-05 FALLIDO: volver a dar el acceso pisó el histórico en vez de añadirse'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
 reset role;
 
 delete from public.audit_log where space_id in (
@@ -332,7 +592,8 @@ delete from auth.users where id in (
   'a0000000-0000-0000-0000-000000000001',
   'a0000000-0000-0000-0000-000000000002',
   'a0000000-0000-0000-0000-000000000003',
-  'a0000000-0000-0000-0000-000000000004'
+  'a0000000-0000-0000-0000-000000000004',
+  'a0000000-0000-0000-0000-000000000005'
 );
 
 do $$

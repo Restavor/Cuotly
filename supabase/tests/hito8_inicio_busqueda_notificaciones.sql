@@ -1241,6 +1241,141 @@ end $$;
 
 reset role;
 
+-- ============================================================
+-- H1/H2 (tercera pasada) · `read_only` y `archived` tienen que detener el
+-- servicio, y no lo detenían.
+--
+-- El arreglo R1 cerró `ending` y dejó `archived` abierto a propósito
+-- —RN-FIN-14 permite archivar a un moroso—, pero
+-- `assert_establishment_service_running()` seguía parando el servicio solo
+-- en `paused` y `suspended`, así que archivar era exactamente la misma
+-- puerta con otro nombre: comprobado, un establecimiento archivado con
+-- deuda viva dejaba enviar una solicitud nueva y arrancaba su contador T1.
+--
+-- Y `read_only`, que RN-EST-09 y RN-EST-10 describen como las 24 h de
+-- SOLO LECTURA previas a la suspensión, no lo hacía cumplir nadie: estaba
+-- en el CHECK de la tabla y en los nombres, en ninguna guarda.
+-- ============================================================
+
+-- Control positivo primero: en `ending` el servicio SIGUE activo
+-- (RN-EST-09, "hasta el final del periodo pagado"). Sin esto, prohibirlo
+-- todo pasaría el test.
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_draft uuid;
+begin
+  if (select status from public.establishments where id = '84000000-0000-0000-0000-000000000001') <> 'ending' then
+    raise exception 'FIXTURE H1: el establecimiento debería estar en `ending` aquí' using errcode = 'assert_failure';
+  end if;
+
+  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H1: en ending sí se puede', null);
+  perform public.submit_request(v_draft);
+  if (select state from public.requests where id = v_draft) <> 'received' then
+    raise exception 'RN-EST-09 FALLIDO: en `ending` el servicio debe seguir activo' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  perform public.set_establishment_status('84000000-0000-0000-0000-000000000001', 'read_only', 'Se acaba el periodo');
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_draft uuid;
+begin
+  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H2: en solo lectura no', null);
+  begin
+    perform public.submit_request(v_draft);
+    raise exception 'RN-EST-10 FALLIDO: en `read_only` se envió una solicitud; "solo lectura" no significaba nada'
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%solo lectura%' then
+        raise exception 'H2 FALLIDO: el envío falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+reset role;
+
+-- Y archivado, igual: RN-FIN-14 deja archivar a un moroso, pero archivar
+-- es la salida, no una forma de seguir trabajando.
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  perform public.set_establishment_status('84000000-0000-0000-0000-000000000001', 'archived', 'Cierra');
+end $$;
+
+reset role;
+
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+
+do $$
+declare
+  v_draft uuid;
+  v_antes integer;
+begin
+  select count(*) into v_antes from public.timer_events where counter_kind = 't1' and event_type = 'started';
+
+  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H1: archivado tampoco', null);
+  begin
+    perform public.submit_request(v_draft);
+    raise exception 'H1 FALLIDO: un establecimiento archivado admitió una solicitud nueva'
+      using errcode = 'assert_failure';
+  exception
+    when raise_exception then
+      if sqlerrm not like '%archivado%' then
+        raise exception 'H1 FALLIDO: el envío falló por otro motivo: %', sqlerrm using errcode = 'assert_failure';
+      end if;
+  end;
+end $$;
+
+reset role;
+
+-- Ningún contador arrancó por el camino: era el daño concreto de la
+-- decisión 11 ("se paraban once contadores y el cliente encendía dos
+-- más").
+do $$
+begin
+  if exists (
+    select 1 from public.timer_events te
+    join public.requests r on r.id = te.entity_id
+    where te.counter_kind = 't1' and te.event_type = 'started'
+      and r.description in ('H2: en solo lectura no', 'H1: archivado tampoco')
+  ) then
+    raise exception 'RN-FIN-12 FALLIDO: se arrancó un contador con el servicio detenido'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- Se deja donde lo esperaba el bloque siguiente.
+select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+
+do $$
+begin
+  perform public.set_establishment_status('84000000-0000-0000-0000-000000000001', 'ending', 'Vuelve a ending');
+end $$;
+
+reset role;
+
 -- HU-09 / RN-EST-08: el cambio legítimo sí ocurre, y deja rastro.
 select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000002', false);
 set role authenticated;

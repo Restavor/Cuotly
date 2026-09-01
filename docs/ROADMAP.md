@@ -120,6 +120,55 @@ no son un fallo, sino alcance:
    `src/services/queue-runner.ts`. Las cabeceras de las migraciones 35 y
    36 los citaban como si estuvieran hechos.
 
+### Salvedades de la tercera pasada de la revisión
+
+4. **`read_only` y `archived` no detenían el servicio, y ahora sí.** La
+   revisión encontró que el arreglo de la segunda pasada cerró
+   `suspended → ending` y dejó `suspended → archived` abierto: como
+   `assert_establishment_service_running()` solo paraba en `paused` y
+   `suspended`, un restaurante archivado con deuda viva seguía admitiendo
+   solicitudes y arrancando contadores. De paso, `read_only` —las 24 h de
+   solo lectura de RN-EST-09 y RN-EST-10— no lo hacía cumplir nadie:
+   estaba en el CHECK de la tabla y en los nombres, en ninguna guarda.
+   `ending` sigue fuera de la lista a propósito: RN-EST-09 mantiene el
+   servicio hasta el final del periodo pagado.
+
+5. **RN-EST-05 y RN-EST-04 no estaban implementadas.** No había forma de
+   retirar el acceso de un cliente a un restaurante (ninguna columna de
+   revocación, y borrar la fila lo prohíbe CLAUDE.md), así que el acceso
+   era permanente; y `group_memberships` tenía `check (role =
+   'global_owner')`, de modo que "un Editor puede asignarse a todos los
+   actuales **y futuros**" no se podía expresar. Las dos están hechas en la
+   migración 39, con revocación auditada y sin borrado físico.
+
+6. **§6.4, el cambio de plan, ya existe (migración 40).** Estaba sin dueño:
+   la migración 20 lo dejó fuera del alcance del Hito 5 y ningún hito
+   posterior lo recogió, ni figuraba aquí. Se ha implementado con la
+   fórmula que el PRD da cerrada (RN-COM-18), la permanencia de 3 meses que
+   tampoco existía en el esquema (RN-COM-04 y RN-COM-05) y el plazo de
+   inicio congelado al aceptar, que es lo que impide que un cambio de plan
+   reescriba hacia atrás las condiciones de lo ya aceptado (RN-COM-15 y
+   RN-COM-17).
+
+   Lo que sigue sin existir, dicho sin adornos: **el cambio programado a
+   renovación no se dispara solo**. Hay que llamar a
+   `apply_scheduled_plan_change()`, igual que a `generate_monthly_charge()`
+   y a `evaluate_establishment_dunning()`. Es la misma cola que falta.
+
+7. **HU-05 ("ver y cerrar mis sesiones activas") no está.** Lo único que
+   hay es cerrar la sesión actual. Listar y cerrar las demás necesita la
+   API de administración de Supabase Auth, que no es SQL y no se puede
+   probar con los barridos de este repositorio. El Hito 2 se dio por
+   cerrado sin decirlo; queda dicho aquí.
+
+8. **La app móvil (`apps/mobile`) es un adelanto consciente, no alcance
+   colado.** El PRD §24.1 sitúa "app móvil nativa y push" en la Fase 4, y
+   la revisión la señaló como fuera de alcance. Se construyó en el Hito 1
+   porque así se aprobó al empezar (web y móvil en paralelo) y hoy contiene
+   solo HU-01: registro y login contra Supabase. El push, que es lo que el
+   PRD aplaza de verdad, sigue sin existir. Queda dicho para que nadie lo
+   confunda con la Fase 4 hecha a medias.
+
 ### Cosas aplazadas que este hito NO inventó
 
 `generate_monthly_charge()` y `evaluate_establishment_dunning()` existen y
