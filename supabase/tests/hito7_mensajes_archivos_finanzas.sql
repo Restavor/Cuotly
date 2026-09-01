@@ -3325,6 +3325,46 @@ begin
       v_deuda, v_estado using errcode = 'assert_failure';
   end if;
 
+  -- RN-FIN-04b (decisión 12, 01/09/2026): reembolsar REABRE el cobro. Con
+  -- el vencimiento ya pasado queda "Vencido"; con el vencimiento por
+  -- delante quedaría "Pendiente" (la rama sin vencer se cubre en
+  -- finance.test.ts, donde se puede mover el reloj). Devolver el dinero
+  -- dejando al cliente a cero es otra operación —cancelación/abono— que no
+  -- existe y que no se improvisa aquí.
+  -- Este cobro todavía no ha vencido (`generate_monthly_charge` es
+  -- idempotente por periodo y devuelve el que ya existe, con vencimiento
+  -- por delante), así que le toca "Pendiente".
+  if v_estado <> 'pending' then
+    raise exception 'RN-FIN-04b FALLIDO: un cobro reembolsado SIN vencer debería quedar "pending", está "%"', v_estado using errcode = 'assert_failure';
+  end if;
+
+  insert into h7_ctx values ('charge_h02', v_charge::text);
+end $$;
+
+reset role;
+
+-- La otra rama de RN-FIN-04b: el mismo cobro, con el vencimiento ya
+-- pasado, queda "Vencido". La fecha se mueve desde fuera del rol porque
+-- `charges` no tiene política de UPDATE (el libro es inmutable, RN-DAT-04),
+-- así que hacerlo dentro del bloque no cambiaba nada y la aserción pasaba
+-- por el motivo equivocado.
+do $$
+begin
+  update public.charges set due_at = now() - interval '80 hours'
+  where id = (select value::uuid from h7_ctx where key = 'charge_h02');
+end $$;
+
+select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare
+  v_charge uuid := (select value::uuid from h7_ctx where key = 'charge_h02');
+begin
+  if public.charge_status(v_charge) <> 'overdue' then
+    raise exception 'RN-FIN-04b FALLIDO: un cobro reembolsado y ya vencido debería quedar "overdue", está "%"', public.charge_status(v_charge) using errcode = 'assert_failure';
+  end if;
+
   -- Y el equipo puede perdonar esa deuda revivida: la idempotencia de
   -- waive_charge() va por saldo, no por "ya existe un perdón".
   perform public.waive_charge(v_charge, 'Lo damos por cerrado');

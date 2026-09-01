@@ -76,6 +76,17 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    a 12 del PRD y en la guarda de servidor, que pasa a rechazar tanto `paused` como
    `suspended` (migración `20260830000033`).
 
+12. **Reembolsar deja el cobro reabierto** (01/09/2026). La sexta revisión destapó que un
+   cobro reembolsado se mostraba como "Reembolsado" mientras el ciclo de impago contaba su
+   deuda como viva, y al hacer coherente el estado surgió la pregunta de fondo: ¿reembolsar
+   cierra el cobro o lo reabre? Bosco decide: **lo reabre**. `refund_charge` revierte el
+   pago, la deuda vuelve a estar viva y el estado sale de la fecha de vencimiento —
+   **Vencido** si ya pasó, **Pendiente** si no.
+
+   Devolver el dinero *y* que el cliente no deba nada es una operación **distinta**:
+   cancelación, anulación o abono del cobro. **No existe todavía y no se improvisa dentro
+   de `refund_charge`.** Cuando haga falta, se diseña aparte.
+
 ### Pendiente de completar (no bloquea la Fase 1)
 
 9. **Redondeo de consumos prorrateados** (relacionado con §106, "Mejora inmediata" de

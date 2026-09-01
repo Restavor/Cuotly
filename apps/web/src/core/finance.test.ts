@@ -108,6 +108,22 @@ describe("finance — RN-FIN, HU-26, HU-27, HU-28", () => {
       ).toBe("refunded");
     });
 
+    it("RN-FIN-04b: reembolsar reabre el cobro — Vencido si ya venció, Pendiente si no", () => {
+      // Decisión 12 (01/09/2026): `refund_charge` revierte el pago, así que
+      // la deuda vuelve a estar viva y el estado sale de la fecha de
+      // vencimiento. Devolver el dinero dejando al cliente a cero es otra
+      // operación (cancelación/abono) y no existe.
+      const reembolsado: FinancialEntry[] = [
+        cargo(IMPULSO_TOTAL),
+        pago(IMPULSO_TOTAL),
+        { type: "refund", amountCents: IMPULSO_TOTAL },
+      ];
+      expect(outstandingCents(reembolsado)).toBe(IMPULSO_TOTAL);
+
+      expect(chargeStatus({ entries: reembolsado, dueAt: VENCIMIENTO, now: horasDespues(200) })).toBe("overdue");
+      expect(chargeStatus({ entries: reembolsado, dueAt: VENCIMIENTO, now: horasDespues(-200) })).toBe("pending");
+    });
+
     it("RN-DAT-05: un cobro perdonado o reembolsado con deuda viva NO se muestra cerrado", () => {
       // El ciclo de impago (RN-FIN-10/11) actúa sobre el SALDO, no sobre la
       // etiqueta. Hasta la 6ª revisión `refunded` y `waived` ganaban sin

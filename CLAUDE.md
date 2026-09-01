@@ -59,6 +59,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - Todo el bloque legal y fiscal: términos, privacidad, retenciones, numeración fiscal de facturas, jurisdicción.
 - API pública y webhooks.
 - Precio del almacenamiento adicional.
+- Cancelación/anulación/abono de un cobro. Reembolsar lo **reabre** (RN-FIN-04b, decisión 12): devolver el dinero dejando al cliente a cero es otra operación, y no existe. No la metas dentro de `refund_charge`.
 - Sincronización bidireccional de calendarios.
 
 ## Decisiones que NO deben reaparecer
