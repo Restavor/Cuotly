@@ -39,7 +39,7 @@ export async function assignJob(
       p_job_id: jobId,
       p_worker_id: workerId,
       p_kind: "manual",
-      p_reason: null,
+      p_reason: undefined,
     }),
   );
 }
@@ -62,7 +62,7 @@ export async function blockJob(
   const reasonType = String(formData.get("reasonType") ?? "");
   const note = String(formData.get("note") ?? "").trim();
   return run((s) =>
-    s.rpc("block_job", { p_job_id: jobId, p_reason_type: reasonType, p_note: note || null }),
+    s.rpc("block_job", { p_job_id: jobId, p_reason_type: reasonType, p_note: note || undefined }),
   );
 }
 
@@ -71,7 +71,7 @@ export async function unblockJob(
   formData: FormData,
 ): Promise<JobActionState> {
   const jobId = String(formData.get("jobId") ?? "");
-  return run((s) => s.rpc("unblock_job", { p_job_id: jobId, p_note: null, p_reverted: false }));
+  return run((s) => s.rpc("unblock_job", { p_job_id: jobId, p_note: undefined, p_reverted: false }));
 }
 
 /**

@@ -34,7 +34,7 @@ export async function submitNewRequest(
   const { data: requestId, error: draftError } = await supabase.rpc("create_request_draft", {
     p_establishment_id: establishmentId,
     p_description: description,
-    p_context: context || null,
+    p_context: context || undefined,
   });
 
   if (draftError || !requestId) {

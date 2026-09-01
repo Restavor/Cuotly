@@ -27,7 +27,7 @@ export async function declineRequest(
 ): Promise<ClientRequestState> {
   const requestId = String(formData.get("requestId") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
-  return run((s) => s.rpc("decline_request", { p_request_id: requestId, p_reason: reason || null }));
+  return run((s) => s.rpc("decline_request", { p_request_id: requestId, p_reason: reason || undefined }));
 }
 
 /** HU-12 · responder a una petición de información. Reanuda el contador. */
