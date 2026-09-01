@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
@@ -52,7 +53,7 @@ export default async function ClientEstablishmentPage({
 }: {
   params: Promise<{ slug: string; id: string }>;
 }) {
-  const { id } = await params;
+  const { slug, id } = await params;
   const supabase = await createClient();
 
   const {
@@ -97,6 +98,14 @@ export default async function ClientEstablishmentPage({
           <StatusBadge tone={serviceStopped ? "warning" : "success"}>
             {es.space.statuses[statusKey] ?? establishment.status}
           </StatusBadge>
+        </p>
+        <p className="mt-3 text-sm">
+          <Link
+            href={`/espacios/${slug}/restaurantes/${id}/facturacion`}
+            className="text-cuotly-green underline"
+          >
+            {es.clientArea.billingLink}
+          </Link>
         </p>
       </header>
 
@@ -184,7 +193,14 @@ export default async function ClientEstablishmentPage({
             <TableBody>
               {rows.map((request) => (
                 <TableRow key={request.id}>
-                  <TableCell>{request.code}</TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/espacios/${slug}/restaurantes/${id}/solicitudes/${request.id}`}
+                      className="text-cuotly-green underline"
+                    >
+                      {request.code}
+                    </Link>
+                  </TableCell>
                   <TableCell>{request.description}</TableCell>
                   <TableCell>
                     <StatusBadge tone={toneForState(request.state)}>

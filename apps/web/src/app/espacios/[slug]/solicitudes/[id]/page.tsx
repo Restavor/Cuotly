@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { Conversation, type ConversationMessage } from "@/components/conversation/Conversation";
 import { Card, StatusBadge } from "@/components/ui";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -70,6 +71,45 @@ export default async function TeamRequestDetailPage({
     .limit(1)
     .maybeSingle();
 
+  // La misma conversación que ve el restaurante (§66). Quién aparece como
+  // autor lo decide el servidor: a este lado sí le dice la persona.
+  const { data: conversationId } = await supabase.rpc("get_or_create_request_conversation", {
+    p_request_id: id,
+  });
+
+  let messages: ConversationMessage[] = [];
+  let conversationClosed = true;
+
+  if (conversationId) {
+    const [{ data: rows }, { data: closed }] = await Promise.all([
+      supabase.rpc("list_conversation_messages", { p_conversation_id: conversationId }),
+      supabase.rpc("conversation_is_read_only", { p_conversation_id: conversationId }),
+    ]);
+
+    const authorIds = (rows ?? [])
+      .map((row) => row.sender_id)
+      .filter((value): value is string => value !== null);
+    const { data: people } = authorIds.length
+      ? await supabase.from("profiles").select("id, full_name, email").in("id", authorIds)
+      : { data: [] };
+    const personName = new Map(
+      (people ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]),
+    );
+
+    messages = (rows ?? []).map((row) => ({
+      id: row.id,
+      body: row.body,
+      senderDisplay: row.sender_display,
+      senderName: row.sender_id ? (personName.get(row.sender_id) ?? null) : null,
+      createdAt: row.created_at,
+      editCount: row.edit_count,
+      isMine: row.sender_id === user.id,
+    }));
+    conversationClosed = Boolean(closed);
+
+    await supabase.rpc("mark_conversation_read", { p_conversation_id: conversationId });
+  }
+
   const state = request.state;
 
   return (
@@ -125,6 +165,14 @@ export default async function TeamRequestDetailPage({
             {es.teamArea.requests.waitingClientReason}
           </p>
         </Card>
+      ) : null}
+
+      {conversationId ? (
+        <Conversation
+          conversationId={conversationId}
+          messages={messages}
+          readOnly={conversationClosed}
+        />
       ) : null}
 
       {job ? (

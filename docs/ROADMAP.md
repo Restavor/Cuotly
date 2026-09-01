@@ -238,11 +238,32 @@ no son un fallo, sino alcance:
     se enseña el error que devuelve. La ventana de corrección al publicar
     se calcula con el reloj laborable de `src/core/`, no en SQL.
 
-    Lo que falta del lado del equipo: mensajes, archivos, tareas,
-    calendario, informes, planes y ajustes. Y el armazón de §20.2 —menú
-    lateral, barra de móvil, búsqueda, avisos— existe y se prueba en
-    `/armazon`, pero **todavía no envuelve estas rutas**: se llega a ellas
-    por enlaces desde la pantalla del espacio.
+    Lo que falta del lado del equipo: archivos, tareas, calendario,
+    informes, planes y ajustes, y la conversación interna de un trabajo
+    (§66.2), que es otra distinta de la de la solicitud. Y el armazón de
+    §20.2 —menú lateral, barra de móvil, búsqueda, avisos— existe y se
+    prueba en `/armazon`, pero **todavía no envuelve estas rutas**: se
+    llega a ellas por enlaces desde la pantalla del espacio.
+
+13. **El lado del cliente, completado con lo que le tocaba.** El detalle de
+    su solicitud —lo que pidió, lo que el equipo le propone, el motivo si
+    se la rechazan— con las acciones que son suyas: responder cuando le
+    piden información, aceptar o no seguir adelante, volver a aceptar
+    cuando el equipo cambia el alcance (RN-SLA-08) y pedir la corrección
+    mínima gratuita dentro de su ventana. Y su facturación: sus cobros con
+    el estado que deriva el servidor, y el libro de consumos de HU-25.
+
+    La conversación (§66, HU-35) es un componente compartido por los dos
+    lados. Quién aparece como autor no lo decide la pantalla: al equipo el
+    servidor le devuelve la persona; al restaurante, "Equipo de
+    mantenimiento", y la columna `sender_id` ni siquiera es legible con un
+    `select` normal.
+
+    Lo que falta del lado del cliente: adjuntar archivos a un mensaje y
+    subir el justificante de un pago. Las dos cosas las admite ya el
+    servidor y las dos necesitan la subida real de ficheros a Storage, que
+    no está conectada. La pantalla de facturación lo dice en claro en vez
+    de enseñar un botón que no funciona.
 
 12. **Estado del despliegue: el proyecto de Supabase va por la migración
     26 de 42.** Está en `docs/DESPLIEGUE-SUPABASE.md`, con la lista de las

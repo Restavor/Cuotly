@@ -682,6 +682,59 @@ export type Database = {
       }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
       accept_request: { Args: { p_request_id: string }; Returns: undefined }
+      // Conversación y acciones del cliente (a mano, migraciones 17, 22 y 25).
+      get_or_create_request_conversation: {
+        Args: { p_request_id: string }
+        Returns: string
+      }
+      list_conversation_messages: {
+        Args: { p_conversation_id: string }
+        Returns: {
+          id: string
+          body: string
+          sender_role: string
+          sender_display: string
+          sender_id: string | null
+          created_at: string
+          edited_at: string | null
+          edit_count: number
+          is_unread: boolean
+        }[]
+      }
+      post_message: {
+        Args: { p_conversation_id: string; p_body: string; p_idempotency_key?: string | null }
+        Returns: string
+      }
+      mark_conversation_read: { Args: { p_conversation_id: string }; Returns: undefined }
+      conversation_is_read_only: { Args: { p_conversation_id: string }; Returns: boolean }
+      decline_request: {
+        Args: { p_request_id: string; p_reason?: string | null }
+        Returns: undefined
+      }
+      provide_additional_information: {
+        Args: { p_request_id: string; p_message: string }
+        Returns: undefined
+      }
+      accept_revised_request: { Args: { p_request_id: string }; Returns: undefined }
+      request_free_correction: {
+        Args: { p_job_id: string; p_description: string }
+        Returns: string
+      }
+      establishment_consumption_ledger: {
+        Args: { p_establishment_id: string }
+        Returns: {
+          entry_id: string
+          occurred_at: string
+          category: string
+          amount: number
+          entry_type: string
+          reason: string | null
+          request_code: string | null
+          author_display: string
+          author_id: string | null
+        }[]
+      }
+      client_can_view_billing: { Args: { p_establishment_id: string }; Returns: boolean }
       // Lado del equipo (a mano, migraciones 17, 18, 22, 23 y 25).
       begin_request_analysis: { Args: { p_request_id: string }; Returns: undefined }
       validate_classification: {
