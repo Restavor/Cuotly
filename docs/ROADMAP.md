@@ -94,11 +94,31 @@ no son un fallo, sino alcance:
    Corrección de la revisión de cierre: esta salvedad decía que solo
    faltaba "el proceso que llama a Resend", y era falso. Faltaba también
    que las operaciones de negocio EMITIERAN avisos — nadie llamaba a
-   `emit_notification()` salvo las ausencias — y eso ya está hecho
-   (migración 37). Lo que sigue sin existir, y esta vez se dice sin
-   adornos: el barrido de umbrales de T2/T3, el productor y el consumidor
-   de `scheduled_jobs`, y `src/services/queue-runner.ts`. Las cabeceras de
-   las migraciones 35 y 36 los citaban como si estuvieran hechos.
+   `emit_notification()` salvo las ausencias.
+
+   Segunda corrección, tras la segunda pasada de la revisión: la anterior
+   daba por hecho el §18 entero con la migración 37, y tampoco era cierto.
+   Dos de aquellos siete emisores estaban DETRÁS del `return` de su
+   función, que en PL/pgSQL no se ejecuta nunca, y de las siete filas del
+   §18 solo se cubrían dos y media. Con la migración 38, del §18 emiten
+   hoy:
+
+   | Fila del §18 | Estado |
+   |---|---|
+   | Nueva solicitud sin asignar → propietario y administradores | Emite |
+   | Asignación de un trabajo → el responsable | Emite, también al aprobar una reasignación |
+   | Inicio → visible dentro de Cuotly para el cliente, sin correo | Emite, y sin encolar correo |
+   | Publicación → cliente y supervisión | Emite |
+   | Corrección pedida → el responsable | Emite |
+   | Consumo de bolsa al 80 % y al 100 % | **No emite** |
+   | Umbrales de T2 y T3 | **No emite** |
+
+   Las dos últimas no son un olvido: necesitan un barrido periódico que
+   mire los contadores, y ese barrido no existe. Lo que sigue sin existir,
+   dicho sin adornos: el barrido de umbrales de consumo y de T2/T3, el
+   productor y el consumidor de `scheduled_jobs`, y
+   `src/services/queue-runner.ts`. Las cabeceras de las migraciones 35 y
+   36 los citaban como si estuvieran hechos.
 
 ### Cosas aplazadas que este hito NO inventó
 

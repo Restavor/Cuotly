@@ -189,3 +189,57 @@ export function nextRetryDelayMinutes(attempts: number): number {
 export function deliveryStatusAfterFailure(attempts: number): "pending" | "dead" {
   return attempts >= MAX_DELIVERY_ATTEMPTS ? "dead" : "pending";
 }
+
+/**
+ * §18, filas 3 y 4 · el cliente también recibe avisos, y no los mismos que
+ * el equipo.
+ *
+ *   · "Inicio de un trabajo → visible **dentro** de Cuotly para el
+ *     cliente, sin correo ni push".
+ *   · "Publicación → cliente y supervisión" (esta sí sale por correo).
+ *
+ * De los eventos de trabajo, solo esos dos cruzan al cliente: los demás
+ * son organización interna del equipo y P7 dice que el cliente no la ve.
+ */
+export const CLIENT_VISIBLE_JOB_EVENTS: readonly NotificationEvent[] = [
+  "job_started",
+  "job_published",
+];
+
+export function jobEventClientRecipients(
+  event: NotificationEvent,
+  establishmentMemberIds: readonly string[],
+): readonly string[] {
+  if (!CLIENT_VISIBLE_JOB_EVENTS.includes(event)) return [];
+  return [...new Set(establishmentMemberIds)];
+}
+
+/**
+ * §18 distingue entre "visible dentro de Cuotly" y "visible + correo". Hoy
+ * la única fila que pide lo primero sin lo segundo es el inicio de un
+ * trabajo mirado desde el lado del cliente; para el equipo ese mismo
+ * evento sí sale por correo.
+ */
+export function shouldQueueEmail(
+  event: NotificationEvent,
+  audience: NotificationAudience,
+): boolean {
+  return !(audience === "client" && event === "job_started");
+}
+
+/**
+ * §18, fila 1: "Nueva solicitud sin asignar → propietario y todos los
+ * administradores". Ningún trabajador, porque todavía no es de nadie
+ * (RN-NOT-01).
+ */
+export function requestSubmittedRecipients(
+  members: readonly SpaceMemberForNotification[],
+): readonly string[] {
+  return [
+    ...new Set(
+      members
+        .filter((member) => member.role === "owner" || member.role === "admin")
+        .map((member) => member.userId),
+    ),
+  ];
+}

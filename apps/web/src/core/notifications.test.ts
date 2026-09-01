@@ -9,10 +9,14 @@ import {
   deepLinkFor,
   deliveryStatusAfterFailure,
   isMandatoryEvent,
+  jobEventClientRecipients,
   jobEventRecipients,
   nextRetryDelayMinutes,
+  requestSubmittedRecipients,
   shouldDeliver,
+  shouldQueueEmail,
   type NotificationEvent,
+  type SpaceMemberForNotification,
 } from "./notifications";
 
 const PROPIETARIO = { userId: "u-owner", role: "owner" } as const;
@@ -134,5 +138,34 @@ describe("CA-21 · cada evento tiene su nombre en el único diccionario", () => 
   it("no hay evento sin texto ni texto sin evento", () => {
     const nombrados = Object.keys(es.notifications.events).sort();
     expect(nombrados).toEqual([...NOTIFICATION_EVENTS].sort());
+  });
+});
+
+describe("§18 · el lado del cliente y el canal de cada fila", () => {
+  const equipo: SpaceMemberForNotification[] = [
+    { userId: "duena", role: "owner" },
+    { userId: "admin", role: "admin" },
+    { userId: "ana", role: "worker" },
+    { userId: "luis", role: "worker" },
+  ];
+
+  it("§18: el cliente ve el inicio y la publicación de su trabajo, y nada más", () => {
+    expect(jobEventClientRecipients("job_started", ["cliente"])).toEqual(["cliente"]);
+    expect(jobEventClientRecipients("job_published", ["cliente"])).toEqual(["cliente"]);
+    expect(jobEventClientRecipients("job_assigned", ["cliente"])).toEqual([]);
+    expect(jobEventClientRecipients("correction_requested", ["cliente"])).toEqual([]);
+  });
+
+  it("§18: el inicio se ve dentro de Cuotly pero no sale por correo para el cliente", () => {
+    expect(shouldQueueEmail("job_started", "client")).toBe(false);
+    // Para el equipo, el mismo evento sí sale por correo.
+    expect(shouldQueueEmail("job_started", "staff")).toBe(true);
+    // Y la publicación sale por correo para los dos lados.
+    expect(shouldQueueEmail("job_published", "client")).toBe(true);
+    expect(shouldQueueEmail("job_published", "staff")).toBe(true);
+  });
+
+  it("§18/RN-NOT-01: una solicitud sin asignar va a propietario y administradores, no a los trabajadores", () => {
+    expect([...requestSubmittedRecipients(equipo)].sort()).toEqual(["admin", "duena"]);
   });
 });
