@@ -107,7 +107,7 @@ no son un fallo, sino alcance:
    |---|---|
    | Nueva solicitud sin asignar → propietario y administradores | Emite |
    | Asignación de un trabajo → el responsable | Emite, también al aprobar una reasignación |
-   | Inicio → visible dentro de Cuotly para el cliente, sin correo | Emite, y sin encolar correo |
+   | Inicio → visible dentro de Cuotly para el cliente, sin correo | Emite; sin correo al cliente, con correo al equipo (decisión 13) |
    | Publicación → cliente y supervisión | Emite |
    | Corrección pedida → el responsable | Emite |
    | Consumo de bolsa al 80 % y al 100 % | **No emite** |

@@ -87,12 +87,21 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    cancelación, anulación o abono del cobro. **No existe todavía y no se improvisa dentro
    de `refund_charge`.** Cuando haga falta, se diseña aparte.
 
+13. **El aviso de inicio de un trabajo: sin correo para el cliente, con correo para el
+   equipo** (01/09/2026). La tercera revisión señaló que la fila del §18 —"Inicio de un
+   trabajo | Visible **dentro** de Cuotly para el cliente, sin correo ni push"— admite dos
+   lecturas: o la fila nombra al único destinatario y al canal de todos, o nombra el canal
+   *del cliente*. Bosco decide: **la segunda**. El cliente lo ve dentro de Cuotly y no
+   recibe correo; el equipo sigue recibiendo el suyo, apoyado en RN-NOT-02 ("los
+   propietarios reciben todo por defecto"). El comportamiento actual es el correcto y no
+   hay que cambiar nada.
+
 ### Pendiente de completar (no bloquea la Fase 1)
 
-9. **Redondeo de consumos prorrateados** (relacionado con §106, "Mejora inmediata" de
-   plan). El dinero se redondea a 2 decimales (ver decisión 7), pero los consumos
-   (cambios pequeños/medianos/grandes, actualizaciones de Menú Diario) son unidades
-   enteras — no existen "7,5 cambios pequeños". Falta decidir la regla exacta de redondeo
-   al prorratear consumos adicionales al cambiar de plan a mitad de periodo. Pertenece a la
-   Fase 2 (Finanzas); no bloquea el Hito 1 ni el Hito 2. Bosco: pendiente de que me mandes
-   la pregunta/propuesta que mencionaste.
+9. **Redondeo de consumos prorrateados — resuelto por el PRD** (01/09/2026). Este punto
+   quedó abierto porque el dinero se redondea a 2 decimales (decisión 7) pero los consumos
+   son unidades enteras. Al implementar el §6.4 se vio que **el PRD ya lo cierra**:
+   RN-COM-18 dice `unidades_extra(cat) = techo(...)`, es decir, **al alza, a favor del
+   cliente**, y añade que si sale negativo se trata como 0 ("una mejora nunca quita
+   consumos"). No hizo falta inventar nada: se implementó eso y está cubierto por tests que
+   citan la regla. Como manda `CLAUDE.md`, el PRD manda sobre la Especificación Maestra.
