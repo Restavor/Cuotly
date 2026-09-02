@@ -132,6 +132,25 @@ no son un fallo, sino alcance:
    `src/app/use-server-exports.test.ts` recorre ahora todos los archivos
    con la directiva y falla si alguno exporta otra cosa.
 
+   Y dos más, del mismo tipo —flujos que no se podían completar y que
+   ninguna revisión de código había visto porque hasta ahora nada pulsaba
+   los botones—:
+
+   - **Asignar llamaba a la función equivocada.** El botón usaba
+     `apply_job_assignment()`, el ayudante interno, en vez de
+     `assign_job()`, que es donde están la capacidad `assign_jobs`, la
+     idempotencia de CA-17, el estado y la elegibilidad del candidato
+     (RN-ASG-02). No llegó a saltarse ningún control porque el ayudante
+     tiene el EXECUTE revocado y PostgREST devolvía 403; el botón
+     simplemente no asignaba.
+   - **El restaurante no podía pedir su corrección gratuita** (RN-COR-01).
+     La pantalla del cliente leía la tabla `jobs`, y el cliente no puede
+     leerla a propósito: la fila entera es organización interna (P7) y
+     lleva cuatro identidades del equipo (CA-04). Devolvía siempre null y
+     el formulario no aparecía nunca. Lo arregla la migración
+     `20260902000043_client_request_job`, con una función que contesta
+     solo el estado del trabajo y si queda corrección.
+
    El recorrido destapó de paso un agujero de producto que no era del
    armazón sino del dominio: **la clasificación no la llamaba nadie**.
    `src/services/ai-classifier.ts` existía desde el Hito 4, con sus tests,

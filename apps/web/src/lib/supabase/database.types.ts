@@ -3874,6 +3874,15 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: boolean
       }
+      client_request_job: {
+        Args: { p_request_id: string }
+        Returns: {
+          correction_window_ends_at: string
+          free_correction_used: boolean
+          job_id: string
+          state: string
+        }[]
+      }
       complete_correction: {
         Args: { p_correction_id: string; p_note?: string }
         Returns: undefined

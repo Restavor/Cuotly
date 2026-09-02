@@ -6,11 +6,11 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 01/09/2026.
+Actualizado el 02/09/2026.
 
 ## Aplicadas
 
-**Las 42 migraciones del repositorio están aplicadas.** No queda ninguna
+**Las 43 migraciones del repositorio están aplicadas.** No queda ninguna
 pendiente.
 
 - Las 01–24 se aplicaron el 30/08/2026.
@@ -18,6 +18,12 @@ pendiente.
   revisión) el 01/09/2026 — la 25 en seis partes, porque el archivo son
   111 KB y no cabe en una sola llamada.
 - Las **27–42** el 01/09/2026, en la misma sesión.
+- La **43** (`client_request_job`) el 02/09/2026, desde el conector MCP: la
+  destapó el recorrido de CA-19 en un teléfono. El restaurante no podía
+  pedir su corrección gratuita porque la pantalla leía la tabla `jobs`,
+  que el cliente no puede leer a propósito (P7 y CA-04); ahora se lo
+  pregunta a una función que solo contesta el estado del trabajo y si le
+  queda corrección, sin ninguna identidad.
 
 Los archivos grandes se trocearon por sentencias completas, respetando los
 cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
@@ -40,6 +46,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 40 | `plan_change` | `plan_change_p1`, `_p2` |
 | 41 | `queue_and_sweeps` | `queue_and_sweeps_p1`, `_p2` |
 | 42 | `hu05_sessions` | `hu05_sessions` |
+| 43 | `client_request_job` | `client_request_job` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

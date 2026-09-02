@@ -59,11 +59,23 @@ export default async function ClientRequestDetailPage({
 
   if (!request) notFound();
 
-  const { data: job } = await supabase
-    .from("jobs")
-    .select("id, state, free_correction_used_at, correction_window_ends_at")
-    .eq("request_id", requestId)
-    .maybeSingle();
+  // El trabajo NO se lee de la tabla: el cliente no puede, y es
+  // deliberado. `jobs_select` es `is_space_member(space_id) and
+  // can_read_job(id)`, la misma forma que `assignments`, `blocks`,
+  // `tasks` y los `state_events` de trabajo — la fila entera es
+  // organización interna (P7) y lleva cuatro identidades del equipo
+  // (`assigned_to`, `started_by`, `published_by`, `cancelled_by`) que el
+  // cliente no puede ver (CA-04).
+  //
+  // Leerla desde aquí devolvía SIEMPRE null para el restaurante, y con
+  // ella se decide si se le ofrece la corrección gratuita: el flujo de
+  // RN-COR-01 era inalcanzable desde la interfaz. `client_request_job()`
+  // (migración 20260902000043) contesta solo lo que le corresponde saber,
+  // sin ninguna identidad.
+  const { data: jobRows } = await supabase.rpc("client_request_job", {
+    p_request_id: requestId,
+  });
+  const job = jobRows?.[0] ?? null;
 
   // La conversación se crea al abrirla si no existía: es la de esta
   // solicitud, no un hilo suelto (§66).
@@ -97,7 +109,7 @@ export default async function ClientRequestDetailPage({
 
   const state = request.state;
   const correctionAvailable =
-    job !== null && job.state === "published" && job.free_correction_used_at === null;
+    job !== null && job.state === "published" && !job.free_correction_used;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
@@ -167,9 +179,9 @@ export default async function ClientRequestDetailPage({
         </>
       ) : null}
 
-      {correctionAvailable ? <RequestCorrectionForm jobId={job.id} /> : null}
+      {correctionAvailable ? <RequestCorrectionForm jobId={job.job_id} /> : null}
 
-      {job !== null && job.free_correction_used_at !== null ? (
+      {job !== null && job.free_correction_used ? (
         <Card title={es.clientArea.correctionUsedTitle}>
           <p className="text-sm text-text-secondary">{es.clientArea.correctionUsedReason}</p>
         </Card>
