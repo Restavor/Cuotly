@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { INITIAL_JOB_ACTION } from "./action-state";
 import {
   Button,
   Card,
@@ -18,7 +19,6 @@ import {
 import { es } from "@/i18n/es";
 
 import {
-  INITIAL_JOB_ACTION,
   assignJob,
   blockJob,
   publishJob,

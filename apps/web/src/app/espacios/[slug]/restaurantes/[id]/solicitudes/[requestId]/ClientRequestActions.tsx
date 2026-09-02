@@ -5,8 +5,8 @@ import { useActionState } from "react";
 import { Button, Card, TextArea } from "@/components/ui";
 import { es } from "@/i18n/es";
 
+import { INITIAL_CLIENT_REQUEST } from "./action-state";
 import {
-  INITIAL_CLIENT_REQUEST,
   acceptRevised,
   declineRequest,
   provideInformation,

@@ -4,10 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-
-export type PaymentState = { error: string | null; done: boolean };
-
-export const INITIAL_PAYMENT: PaymentState = { error: null, done: false };
+import type { PaymentState } from "./action-state";
 
 /**
  * HU-26 · registrar el cobro de una mensualidad.

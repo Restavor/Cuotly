@@ -3,10 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-
-export type RequestActionState = { error: string | null; done: boolean };
-
-export const INITIAL_REQUEST_ACTION: RequestActionState = { error: null, done: false };
+import type { RequestActionState } from "./action-state";
 
 /**
  * Las cuatro acciones hacen lo mismo: llamar a su función del servidor y

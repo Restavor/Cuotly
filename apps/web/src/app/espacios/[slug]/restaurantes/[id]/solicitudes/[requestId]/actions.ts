@@ -3,10 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-
-export type ClientRequestState = { error: string | null; done: boolean };
-
-export const INITIAL_CLIENT_REQUEST: ClientRequestState = { error: null, done: false };
+import type { ClientRequestState } from "./action-state";
 
 async function run(
   fn: (

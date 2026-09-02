@@ -188,6 +188,16 @@ Antes de lanzarlo, tres cosas y ninguna es opcional:
    para en el segundo paso. La consola del servidor de desarrollo lo dice
    con todas las letras (`[clasificación] Falta SUPABASE_SERVICE_ROLE_KEY…`).
 
+Para comprobar el punto 3 sin adivinar, con el servidor levantado:
+`curl http://localhost:3000/api/diagnostico`. Esa ruta solo existe en
+desarrollo y solo devuelve booleanos —nunca el valor de nada—, y dice qué
+variables ve **el proceso que atiende**, que no siempre es lo mismo que lo
+que hay escrito en el archivo. Los tests de CA-19 la consultan antes de
+empezar y se paran ahí con el motivo si falta la clave.
+
+Si la clave está en el archivo y el servidor sigue sin verla, **borra la
+carpeta `apps/web/.next`**: la caché de Turbopack persiste entre arranques.
+
 Y **cierra cualquier `pnpm dev` que tengas escuchando en el 3000** antes
 de lanzar `pnpm test:e2e:datos`. Playwright ya no reutiliza un servidor
 existente en la ejecución con datos, precisamente por esto: Next.js lee

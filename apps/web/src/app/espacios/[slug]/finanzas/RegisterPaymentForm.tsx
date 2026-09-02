@@ -5,7 +5,8 @@ import { useActionState } from "react";
 import { Button, Field, Select } from "@/components/ui";
 import { es } from "@/i18n/es";
 
-import { INITIAL_PAYMENT, registerPayment } from "./actions";
+import { INITIAL_PAYMENT } from "./action-state";
+import { registerPayment } from "./actions";
 
 export function RegisterPaymentForm({
   chargeId,

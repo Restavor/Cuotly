@@ -10,10 +10,7 @@ import {
 } from "@/core/business-clock";
 import { FREE_CORRECTION_WINDOW_BUSINESS_HOURS } from "@/core/free-correction";
 import { createClient } from "@/lib/supabase/server";
-
-export type JobActionState = { error: string | null; done: boolean };
-
-export const INITIAL_JOB_ACTION: JobActionState = { error: null, done: false };
+import type { JobActionState } from "./action-state";
 
 async function run(
   fn: (

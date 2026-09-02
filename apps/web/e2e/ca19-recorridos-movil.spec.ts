@@ -80,8 +80,31 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     expect(desborda, `${donde} se desborda a lo ancho en un teléfono`).toBe(false);
   }
 
+  /**
+   * Lo primero, antes de tocar ninguna pantalla: preguntarle al servidor
+   * qué variables VE ÉL. "Está en el .env.local" y "la ve el proceso que
+   * atiende" no son la misma cosa —Next lee ese archivo al arrancar— y
+   * confundirlas costó tres ejecuciones enteras persiguiendo el síntoma en
+   * la interfaz. /api/diagnostico solo existe en desarrollo y solo
+   * devuelve booleanos.
+   */
+  async function elServidorVeLaClaveDeServicio(page: Page) {
+    const respuesta = await page.request.get("/api/diagnostico");
+    expect(respuesta.ok(), "/api/diagnostico no respondió; ¿el servidor es `next dev`?").toBe(true);
+    const entorno = (await respuesta.json()) as Record<string, boolean>;
+    expect(
+      entorno.supabaseServiceRoleKey,
+      "El servidor NO ve SUPABASE_SERVICE_ROLE_KEY. Sin ella no se clasifica ninguna " +
+        "solicitud (RN-CLS-01: record_classification() está reservada a service_role) y el " +
+        "recorrido no puede pasar del segundo paso. Ponla en apps/web/.env.local, borra la " +
+        "carpeta .next y vuelve a lanzar los tests con ningún `pnpm dev` abierto.",
+    ).toBe(true);
+  }
+
   test("de pedir un cambio a corregirlo publicado, sin salir del móvil", async ({ page }) => {
     test.setTimeout(180_000);
+
+    await elServidorVeLaClaveDeServicio(page);
 
     let solicitudUrl = "";
     let trabajoUrl = "";

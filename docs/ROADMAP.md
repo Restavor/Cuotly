@@ -112,6 +112,26 @@ no son un fallo, sino alcance:
    restaurante del sembrado ("Café Prueba", EST-0002) para no mover el
    suelo del otro archivo, que cuenta cosas exactas de "Bar Demo".
 
+   **Y destapó una avería mucho mayor, que es la razón de ser de este
+   recorrido**: cinco archivos de acciones exportaban una constante (el
+   estado inicial del formulario) además de sus funciones. Un archivo
+   `"use server"` **solo puede exportar funciones asíncronas**, así que
+   Next.js tiraba el módulo entero al evaluarlo y **ninguna** de sus
+   acciones funcionaba: mensajes, trabajos (asignar, comenzar, bloquear,
+   publicar), solicitudes (validar, pedir información, rechazar), finanzas
+   (registrar un pago) y correcciones. Casi todo lo que escribe en la
+   aplicación.
+
+   Cómo se veía: el formulario enviaba, el servidor devolvía un 500 y
+   `useActionState` dejaba el estado como estaba, así que la pantalla no
+   cambiaba **y tampoco daba error**. Indistinguible de "no ha pasado
+   nada". No lo vio `tsc`, ni eslint, ni `next build` —el módulo compila
+   sin quejarse; el fallo solo aparece al ejecutar la acción—, y por eso
+   pasó por cuatro revisiones sin que nadie lo notara: hasta que no hubo un
+   test que PULSA, no había forma de verlo. El barrido de
+   `src/app/use-server-exports.test.ts` recorre ahora todos los archivos
+   con la directiva y falla si alguno exporta otra cosa.
+
    El recorrido destapó de paso un agujero de producto que no era del
    armazón sino del dominio: **la clasificación no la llamaba nadie**.
    `src/services/ai-classifier.ts` existía desde el Hito 4, con sus tests,

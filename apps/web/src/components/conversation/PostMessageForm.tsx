@@ -5,7 +5,8 @@ import { useActionState } from "react";
 import { Button, TextArea } from "@/components/ui";
 import { es } from "@/i18n/es";
 
-import { INITIAL_MESSAGE, postMessage } from "./actions";
+import { INITIAL_MESSAGE } from "./action-state";
+import { postMessage } from "./actions";
 
 export function PostMessageForm({ conversationId }: { conversationId: string }) {
   const [state, action, pending] = useActionState(postMessage, INITIAL_MESSAGE);

@@ -3,10 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-
-export type MessageState = { error: string | null; sent: boolean };
-
-export const INITIAL_MESSAGE: MessageState = { error: null, sent: false };
+import type { MessageState } from "./action-state";
 
 /**
  * Publicar un mensaje (HU-13, HU-35).
