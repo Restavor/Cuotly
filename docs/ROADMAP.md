@@ -10,7 +10,7 @@ de todo el proyecto** — es la rebanada vertical que el resto del código imita
 
 ## Estado de los hitos
 
-Actualizado el 31/08/2026.
+Actualizado el 02/09/2026.
 
 | Hito | Estado | Nota |
 |---|---|---|
@@ -21,7 +21,7 @@ Actualizado el 31/08/2026.
 | 5 · Consumos y aceptación | Cerrado | Servidor y dominio; sin pantallas. |
 | 6 · Trabajos, tareas, asignación y carga | Cerrado | Servidor y dominio; sin pantallas. |
 | 7 · Mensajes, archivos y finanzas | Cerrado el 31/08/2026 | Ver salvedades abajo. |
-| 8 · Inicio por rol, búsqueda, notificaciones y cierre | Servidor, dominio y armazón | Ver salvedades abajo. |
+| 8 · Inicio por rol, búsqueda, notificaciones y cierre | Servidor, dominio, armazón y pantallas | CA-19 cumplido el 02/09/2026. Ver salvedades abajo. |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -63,7 +63,9 @@ no son un fallo, sino alcance:
 
 ### Salvedades del Hito 8, dichas en claro
 
-1. **CA-19 no está cumplido del todo, y no puede estarlo todavía.** El
+1. **CA-19: CUMPLIDO el 02/09/2026.** Se deja debajo el historial de cómo
+   se llegó, porque cada "al día" explica por qué antes no lo estaba y qué
+   faltaba; el veredicto está al final del apartado. El
    criterio pide que *cada flujo principal* —solicitar, aceptar, asignar,
    comenzar, bloquear, publicar, corregir, pagar, consultar, gestionar
    equipo— pueda completarse íntegramente en móvil. Esos flujos existen y
@@ -168,9 +170,22 @@ no son un fallo, sino alcance:
    hoy no funciona. O se le da el permiso del equipo, o sobra. No lo
    decido yo.
 
-   CA-19 se dará por cumplido cuando esos tres recorridos pasen en verde en
-   una máquina con salida a Supabase; el contenedor de Claude Code no la
-   tiene (salvedad 12).
+   **CA-19 está cumplido.** Los doce tests pasan en verde en Windows el
+   02/09/2026, contra el proyecto real y el espacio sembrado: los nueve de
+   lectura y los tres del recorrido a 390 px. Ya no queda ningún flujo
+   principal que no se pueda completar desde un teléfono.
+
+   Lo que costó llegar merece quedar escrito, porque no fue el criterio:
+   fueron **cuatro fallos de producto** que ninguna de las seis revisiones
+   de código había visto, y que solo aparecen cuando algo PULSA los
+   botones. Ninguno se veía en pantalla — los cuatro se manifestaban como
+   "no pasa nada".
+
+   Y una lección sobre el banco de pruebas: la suite con datos corre contra
+   `next build && next start`, no contra `next dev`. Tres rondas enteras de
+   fallos fueron el servidor de desarrollo compilando bajo demanda mientras
+   varios tests le pedían pantallas; ninguno era un fallo de la
+   aplicación.
 
 2. **CA-22 destapó un problema real de la paleta.** Tres de los cuatro
    colores semánticos del PRD §20.6 no llegan a 4,5:1 contra blanco en
@@ -310,19 +325,21 @@ no son un fallo, sino alcance:
    aceptar (HU-14). Todo lo que muestra lo filtra RLS; no hay ni una
    comprobación de permisos escrita en la pantalla, a propósito.
 
-   Lo que NO tiene todavía: mensajes, archivos, finanzas del cliente, ni el
-   detalle de una solicitud. Y **no tiene pruebas de extremo a extremo**: la
-   suite de Playwright corre contra el servidor de desarrollo sin base de
-   datos sembrada ni sesión, así que solo cubre lo que se puede ver sin
-   entrar. Cubrirla de verdad pide un entorno de pruebas con Supabase
-   sembrado; queda dicho en vez de fingir un recorrido.
+   Lo que NO tiene todavía: mensajes, archivos y finanzas del cliente.
 
-10. **`database.types.ts` se quedó en el Hito 2.** El archivo lo genera la
-    CLI de Supabase contra el proyecto real, y el esquema va ya por la
-    migración 42. Cada función que una pantalla nueva llama hay que añadirla
-    a mano —van marcadas con "(a mano)"— hasta que se pueda regenerar
-    entero. No afecta a lo que hay hecho; sí conviene arreglarlo antes de
-    que las pantallas crezcan.
+   **Al día 02/09/2026 ya tiene pruebas de extremo a extremo**: el detalle
+   de la solicitud existe, y doce tests de Playwright entran con sesión de
+   verdad sobre el espacio sembrado — nueve leen y tres recorren los flujos
+   pulsando, con anchura de teléfono. La salvedad de "no se puede probar
+   sin un entorno con Supabase sembrado" decae: el entorno es el proyecto
+   real y el sembrado es `supabase/seed/espacio-demo.sql`.
+
+10. **`database.types.ts` ya está al día** (02/09/2026). Se regeneró contra
+    el proyecto real con las 42 migraciones aplicadas: pasó de 1.014 a
+    4.711 líneas y dejó de necesitar añadidos "(a mano)". La única
+    excepción es la firma de `client_request_job()` (migración 43), añadida
+    a mano con el formato exacto del generador; conviene regenerarlo entero
+    con `supabase gen types` en la próxima ocasión que haya CLI.
 
 11. **El lado del equipo tiene ya sus pantallas de operación.** Bandeja de
     solicitudes y detalle (empezar el análisis, validar la clasificación,

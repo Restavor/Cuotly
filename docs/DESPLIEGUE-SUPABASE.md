@@ -226,9 +226,10 @@ existente en la ejecución con datos, precisamente por esto: Next.js lee
 añadir la clave sigue sin verla y el fallo aparece donde no está la
 avería. Si el puerto está ocupado, Playwright lo dirá.
 
-## Estado: los nueve pasan
+## Estado: los doce pasan
 
-**9 passed**, en Windows, el 02/09/2026. Se cerraron desde una máquina con
+**12 passed**, en Windows, el 02/09/2026 — los nueve de lectura y los
+tres del recorrido de CA-19 a 390 px. Se cerraron desde una máquina con
 salida al dominio del proyecto, no desde el contenedor de Claude Code: la
 política de salida de ese entorno bloquea el dominio, así que allí la
 aplicación Next.js no llega a Supabase aunque el sembrado sí esté puesto.
