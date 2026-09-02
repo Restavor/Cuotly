@@ -16,7 +16,10 @@ import { expect, test, type Page } from "@playwright/test";
  *      NEXT_PUBLIC_SUPABASE_ANON_KEY del proyecto.
  *   2. El sembrado aplicado:
  *      psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed/espacio-demo.sql
- *   3. `pnpm test:e2e` desde `apps/web`.
+ *   3. `pnpm test:e2e:datos` desde `apps/web`. El script pasa por
+ *      `cross-env` para que la variable se ponga igual en bash, en cmd y
+ *      en PowerShell: `E2E_DATOS=1 playwright test` a secas es sintaxis
+ *      POSIX y en Windows falla con "no se reconoce como un comando".
  *
  * NO se puede ejecutar desde el contenedor de Claude Code: su política de
  * salida bloquea el dominio del proyecto (403 al CONNECT), así que la

@@ -159,6 +159,14 @@ pnpm test:e2e         # los 14 de siempre; los de datos se saltan con motivo
 pnpm test:e2e:datos   # E2E_DATOS=1 · los 9 que necesitan base de datos
 ```
 
+El script pasa por `cross-env`. No es adorno: `E2E_DATOS=1 playwright test` a
+secas es sintaxis POSIX y en Windows revienta antes de arrancar, con
+`"E2E_DATOS" no se reconoce como un comando interno o externo`. Con
+`cross-env` la variable se pone igual en bash, en cmd y en PowerShell.
+
+Si prefieres no usar el script, el equivalente a mano en PowerShell es
+`$env:E2E_DATOS="1"; npx playwright test flujos-espacio-demo`.
+
 La señal es `E2E_DATOS=1` y no "¿hay NEXT_PUBLIC_SUPABASE_URL?" por dos
 motivos, los dos escritos en la cabecera del archivo: Playwright no lee
 `apps/web/.env.local` (eso lo hace Next.js al arrancar el servidor), así
