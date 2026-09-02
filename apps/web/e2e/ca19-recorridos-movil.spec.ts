@@ -64,11 +64,13 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
-    // Cuarenta y cinco segundos, y no veinte: aunque las rutas se
-    // compilan antes de empezar (e2e/calentar-rutas.ts), el primer
-    // aterrizaje de cada papel encadena varias consultas a Supabase
-    // por la red, con doce tests a la vez. Esperar de más no oculta
-    // ningún fallo: si no llega, falla igual.
+    // Cuarenta y cinco segundos, y no los cinco de serie: aunque las
+    // rutas se compilan antes de empezar (e2e/calentar-rutas.ts), el
+    // primer aterrizaje de cada papel encadena varias consultas a
+    // Supabase por la red. Cabe dentro del límite del test, que la
+    // configuración pone en 120 s para esta suite — un margen interior
+    // mayor que el exterior no es un margen, es un mensaje de error peor.
+    // Esperar de más no oculta ningún fallo: si no llega, falla igual.
     await page.waitForURL(destino, { timeout: 45_000 });
   }
 
@@ -174,7 +176,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await cabeEnElTelefono(page, "la bandeja de solicitudes");
 
       await page.locator("tbody tr").filter({ hasText: MARCA }).getByRole("link").first().click();
-      await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 15_000 });
+      await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 30_000 });
       solicitudUrl = page.url();
       await cabeEnElTelefono(page, "el detalle de la solicitud");
 
@@ -234,7 +236,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
         .filter({ hasText: "Sin asignar" })
         .first();
       await fila.getByRole("link").first().click();
-      await page.waitForURL(/\/trabajos\/[0-9a-f-]{36}/, { timeout: 15_000 });
+      await page.waitForURL(/\/trabajos\/[0-9a-f-]{36}/, { timeout: 30_000 });
       trabajoUrl = page.url();
       await cabeEnElTelefono(page, "el detalle del trabajo");
 
@@ -292,7 +294,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await entrar(page, CLIENTE_CAFE, new RegExp(`/restaurantes/${CAFE_ID}`));
 
       await page.locator("tbody tr").filter({ hasText: MARCA }).getByRole("link").first().click();
-      await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 15_000 });
+      await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 30_000 });
       await cabeEnElTelefono(page, "el detalle de la solicitud publicada");
 
       // RN-COR-01: una sola por trabajo, dentro de la ventana que se abre

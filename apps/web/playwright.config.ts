@@ -9,9 +9,33 @@ const executablePath = process.env.PLAYWRIGHT_BROWSERS_PATH
   ? `${process.env.PLAYWRIGHT_BROWSERS_PATH}/chromium`
   : undefined;
 
+/**
+ * Los tests con datos juegan en otra liga que los del armazón: entran con
+ * sesión, cada pantalla encadena varias consultas a Supabase por la red y
+ * todo eso corre contra UN `next dev`, que es un solo proceso.
+ *
+ * De ahí las dos diferencias de abajo, y las dos vienen de la misma
+ * equivocación: subí el tiempo de espera del login a 45 s dejando el
+ * límite del test en los 30 s de serie, así que ese 45 nunca podía
+ * agotarse — Playwright mataba el test antes, con "Test timeout of 30000ms
+ * exceeded" y sin decir qué esperaba. Un margen interior mayor que el
+ * límite exterior no es un margen: es un mensaje de error peor.
+ *
+ * Y con doce tests a la vez sobre un servidor de desarrollo, la lentitud
+ * no era mala suerte: era la carga que les metíamos nosotros mismos.
+ */
+const CON_DATOS = process.env.E2E_DATOS === "1";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // El límite de CADA test. Tiene que ser mayor que la suma de esperas de
+  // dentro, o las esperas no significan nada.
+  timeout: CON_DATOS ? 120_000 : 30_000,
+  // Dos en paralelo, no doce. El cuello de botella es el servidor, así que
+  // más trabajadores no acortan la ejecución: solo hacen que todos vayan
+  // lentos a la vez y que falle el que peor suerte tuvo.
+  workers: CON_DATOS ? 2 : undefined,
   // Compila las pantallas antes de repartir los tests. Solo hace algo con
   // E2E_DATOS=1; el porqué está en el propio archivo.
   globalSetup: "./e2e/calentar-rutas.ts",
@@ -32,7 +56,7 @@ export default defineConfig({
     // que en el código estaba bien. Si el puerto está ocupado, Playwright
     // lo dice y se cierra ese `pnpm dev`; eso se arregla en diez segundos,
     // y lo otro cuesta una tarde.
-    reuseExistingServer: !process.env.CI && process.env.E2E_DATOS !== "1",
+    reuseExistingServer: !process.env.CI && !CON_DATOS,
     timeout: 60_000,
   },
   projects: [

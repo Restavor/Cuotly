@@ -99,20 +99,21 @@ test.describe("Flujos sobre el espacio de demostración", () => {
    * corto: en ese momento la segunda redirección todavía no ha ocurrido.
    *
    * El margen es holgado, y no el de 5 s por defecto, porque esto corre
-   * contra `next dev` con doce tests a la vez. No enmascara nada: si la
-   * redirección no llega, el test sigue fallando, solo que por no llegar y
-   * no por llegar tarde.
+   * contra `next dev`. No enmascara nada: si la redirección no llega, el
+   * test sigue fallando, solo que por no llegar y no por llegar tarde.
    */
   async function entrar(page: Page, email: string, destino: RegExp) {
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
-    // Cuarenta y cinco segundos, y no veinte: aunque las rutas se
-    // compilan antes de empezar (e2e/calentar-rutas.ts), el primer
-    // aterrizaje de cada papel encadena varias consultas a Supabase
-    // por la red, con doce tests a la vez. Esperar de más no oculta
-    // ningún fallo: si no llega, falla igual.
+    // Cuarenta y cinco segundos, y no los cinco de serie: aunque las
+    // rutas se compilan antes de empezar (e2e/calentar-rutas.ts), el
+    // primer aterrizaje de cada papel encadena varias consultas a
+    // Supabase por la red. Cabe dentro del límite del test, que la
+    // configuración pone en 120 s para esta suite — un margen interior
+    // mayor que el exterior no es un margen, es un mensaje de error peor.
+    // Esperar de más no oculta ningún fallo: si no llega, falla igual.
     await page.waitForURL(destino, { timeout: 45_000 });
   }
 
