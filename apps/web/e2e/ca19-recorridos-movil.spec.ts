@@ -64,7 +64,12 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
-    await page.waitForURL(destino, { timeout: 20_000 });
+    // Cuarenta y cinco segundos, y no veinte: aunque las rutas se
+    // compilan antes de empezar (e2e/calentar-rutas.ts), el primer
+    // aterrizaje de cada papel encadena varias consultas a Supabase
+    // por la red, con doce tests a la vez. Esperar de más no oculta
+    // ningún fallo: si no llega, falla igual.
+    await page.waitForURL(destino, { timeout: 45_000 });
   }
 
   /**
@@ -109,9 +114,17 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
    * rondas enteras escondidas detrás de un timeout mudo.
    */
   async function sinErrores(page: Page, donde: string) {
-    const alerta = page.getByRole("alert");
-    if (await alerta.count()) {
-      throw new Error(`${donde}: el servidor lo rechazó — ${await alerta.first().innerText()}`);
+    // VISIBLES y CON TEXTO. `getByRole("alert")` a secas encontraba un
+    // `role="alert"` oculto y vacío —el armazón de desarrollo de Next trae
+    // uno— y hacía fallar pasos que habían ido bien, con un mensaje que
+    // terminaba en un guion y nada detrás. Una alerta que nadie ve no es
+    // un error que nadie ha visto.
+    const textos = (await page.locator('[role="alert"]:visible').allInnerTexts())
+      .map((texto) => texto.trim())
+      .filter(Boolean);
+
+    if (textos.length) {
+      throw new Error(`${donde}: el servidor lo rechazó — ${textos.join(" / ")}`);
     }
   }
 

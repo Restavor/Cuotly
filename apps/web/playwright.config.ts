@@ -12,6 +12,9 @@ const executablePath = process.env.PLAYWRIGHT_BROWSERS_PATH
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
+  // Compila las pantallas antes de repartir los tests. Solo hace algo con
+  // E2E_DATOS=1; el porqué está en el propio archivo.
+  globalSetup: "./e2e/calentar-rutas.ts",
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: "list",
