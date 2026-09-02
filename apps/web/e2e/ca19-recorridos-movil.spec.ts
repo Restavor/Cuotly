@@ -28,11 +28,11 @@ import { expect, test, type Page } from "@playwright/test";
  * pierde si se mete todo en un bloque sin marcar.
  *
  * Requisitos, además de los del otro archivo: `SUPABASE_SERVICE_ROLE_KEY`
- * en `apps/web/.env.local`. El paso de análisis graba lo que propuso el
- * clasificador con `record_classification()`, reservada a `service_role`
- * porque RN-CLS-01 dice que eso no puede depender de lo que afirme el
- * cliente. Sin esa clave el recorrido para en el análisis, con un mensaje
- * que lo dice.
+ * en `apps/web/.env.local`. El envío graba lo que propuso el clasificador
+ * con `record_classification()`, reservada a `service_role` porque
+ * RN-CLS-01 dice que eso no puede depender de lo que afirme el cliente.
+ * Sin esa clave la solicitud se queda en "Recibida" y el recorrido para en
+ * el segundo paso.
  */
 
 const ESPACIO = "demo";
@@ -95,14 +95,16 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await page.getByLabel("Dónde está (opcional)").fill("En el pie de todas las páginas");
       await page.getByRole("button", { name: "Enviar solicitud" }).click();
 
-      // Aparece en su lista, ya enviada: `submit_request` la deja en
-      // "Recibida" y arranca el contador de primera atención.
+      // Aparece en su lista, ya enviada y ya clasificada: RN-CLS-01 dice
+      // que la clasificación ocurre "al enviarse una solicitud", así que el
+      // propio envío la lleva de "Recibida" a "Pendiente de validar" sin
+      // que nadie del equipo pulse nada.
       const fila = page.locator("tbody tr").filter({ hasText: MARCA });
       await expect(fila).toBeVisible({ timeout: 15_000 });
-      await expect(fila).toContainText("Recibida");
+      await expect(fila).toContainText("Pendiente de validar");
     });
 
-    await test.step("ANALIZAR y VALIDAR · el equipo clasifica", async () => {
+    await test.step("VALIDAR · el equipo confirma la clasificación", async () => {
       await entrar(page, PROPIETARIA, new RegExp(`/espacios/${ESPACIO}$`));
       await page.goto(`/espacios/${ESPACIO}/solicitudes`);
       await cabeEnElTelefono(page, "la bandeja de solicitudes");
@@ -112,13 +114,12 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       solicitudUrl = page.url();
       await cabeEnElTelefono(page, "el detalle de la solicitud");
 
-      // Empezar el análisis clasifica: la propuesta la graba el servidor
-      // con `record_classification()`, y sin clave de IA cae al motor de
-      // reglas (RN-CLS-02). Si faltara la service role key, la pantalla lo
-      // diría aquí en vez de dejar la solicitud atascada en silencio.
-      await page.getByRole("button", { name: "Empezar el análisis" }).click();
+      // La propuesta ya está grabada: la escribió el servidor al enviar,
+      // con `record_classification()`, y sin clave de IA habrá caído al
+      // motor de reglas (RN-CLS-02). El equipo no arranca nada: llega y
+      // valida.
       await expect(page.getByRole("heading", { name: "Validar la clasificación" })).toBeVisible({
-        timeout: 30_000,
+        timeout: 15_000,
       });
 
       // RN-CLS-03: hasta que una persona valida, el restaurante no ve ni
@@ -238,13 +239,47 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // que queda por cobrar.
     const fila = page.locator("tbody tr").filter({ hasText: "Café Prueba" }).first();
     await expect(fila).toBeVisible();
-    await expect(fila.getByLabel("Importe cobrado")).toHaveValue(/\d/);
 
+    const importe = fila.getByLabel("Importe cobrado");
+    await expect(importe).toHaveValue(/\d/);
+
+    // Se cobra UN EURO, no la deuda entera, y esa es la decisión de este
+    // test: un cobro saldado deja de ofrecer el formulario, así que pagar
+    // los 119,79 € lo dejaría sin nada que pulsar en la segunda ejecución
+    // y obligaría a resembrar entre pasada y pasada. Cobrar una parte
+    // ejercita exactamente los mismos botones y se puede repetir. El
+    // importe se escribe a mano en vez de fiarse del valor que trae puesto
+    // el campo: lo que se está probando es que un importe tecleado en un
+    // teléfono llega hasta el libro de apuntes.
+    // Los céntimos cambian en cada ejecución a propósito: la clave de
+    // idempotencia que arma el servidor es `ui:<cobro>:<céntimos>`, así que
+    // repetir el importe exacto devolvería el pago anterior sin escribir
+    // nada y el test pasaría sin haber probado nada. Se escribe con coma,
+    // que es como se teclea un importe en español.
+    await importe.fill(`1,${String(Date.now() % 100).padStart(2, "0")}`);
     await fila.getByLabel("Método").selectOption("transfer");
+
+    // El envío se espera explícitamente. Sin esto, un formulario que no
+    // llega a enviarse y un servidor que rechaza el pago fallan igual —con
+    // un "no encuentro el estado" a los 20 segundos— y son dos averías
+    // distintas.
+    const envio = page.waitForResponse(
+      (r) => r.request().method() === "POST" && r.url().includes("/finanzas"),
+      { timeout: 20_000 },
+    );
     await fila.getByRole("button", { name: "Registrar el pago" }).click();
+    await envio;
+
+    const alerta = fila.getByRole("alert");
+    if (await alerta.count()) {
+      throw new Error(`El servidor rechazó el pago: ${await alerta.first().innerText()}`);
+    }
 
     // RN-FIN: el estado sale del libro de apuntes, no de una marca.
-    await expect(fila.getByText("Pagado")).toBeVisible({ timeout: 20_000 });
+    // "Pagado en parte" es precisamente lo que `charge_status()` deriva
+    // cuando hay cobrado y queda deuda, así que ver ese estado es ver que
+    // el apunte con signo se escribió.
+    await expect(fila.getByText("Pagado en parte")).toBeVisible({ timeout: 20_000 });
   });
 
   test("CONSULTAR y GESTIONAR EQUIPO · desde el teléfono", async ({ page }) => {

@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { classifyRequest } from "@/services/ai-classifier";
 import { es } from "@/i18n/es";
 
 export type RequestFormState = { error: string | null; created: boolean };
@@ -49,8 +51,72 @@ export async function submitNewRequest(
     return { error: submitError.message, created: false };
   }
 
+  await clasificar(supabase, requestId, establishmentId, description, context);
+
   revalidatePath(`/espacios`, "layout");
   return { error: null, created: true };
+}
+
+/**
+ * RN-CLS-01: "**al enviarse una solicitud**, Cuotly llama a la API de
+ * Anthropic desde el servidor para proponer categoría, consumo y un
+ * resumen del alcance". Aquí, y no en una pantalla del equipo: la
+ * clasificación es automática y va pegada al envío.
+ *
+ * Faltaba entera. `src/services/ai-classifier.ts` existía desde el Hito 4
+ * con sus tests y no lo llamaba nadie, así que una solicitud enviada se
+ * quedaba en "Recibida" para siempre: `validate_classification()` exige
+ * `pending_internal_validation` y nada llevaba hasta ahí. El flujo
+ * solicitar → aceptar era imposible de completar desde la interfaz.
+ *
+ * No devuelve error ni revierte nada, a propósito. RN-CLS-02: "el flujo
+ * nunca se bloquea por la IA". La solicitud ya está enviada y el contador
+ * de primera atención ya corre; si la clasificación no sale, se queda en
+ * "Recibida" y el equipo puede empezarla a mano desde su pantalla. Hacer
+ * fallar el envío por esto sería peor que no clasificar.
+ *
+ * `record_classification()` está reservada a `service_role` (migración
+ * 20260830000018) porque RN-CLS-01 dice que la clave nunca se expone al
+ * cliente y RN-CLS-04 que se guarda qué propuso de verdad la IA: eso no
+ * puede depender de lo que afirme el navegador. De ahí el cliente
+ * administrativo, y de ahí que el actor sea quien envió la solicitud —
+ * esa función comprueba que el actor tenga acceso de escritura al
+ * establecimiento, y quien lo tiene es el cliente.
+ */
+async function clasificar(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  requestId: string,
+  establishmentId: string,
+  description: string,
+  context: string,
+) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { error: analysisError } = await supabase.rpc("begin_request_analysis", {
+    p_request_id: requestId,
+  });
+  if (analysisError) return;
+
+  const propuesta = await classifyRequest([description, context].filter(Boolean).join("\n\n"));
+
+  await createAdminClient().rpc("record_classification", {
+    p_request_id: requestId,
+    p_actor_id: user.id,
+    p_source: propuesta.source,
+    p_category: propuesta.category,
+    p_summary: propuesta.summary,
+    p_matched_keywords: propuesta.matchedKeywords ? [...propuesta.matchedKeywords] : undefined,
+    p_model: propuesta.model,
+    p_input_tokens: propuesta.usage?.inputTokens,
+    p_output_tokens: propuesta.usage?.outputTokens,
+    p_estimated_cost_cents: propuesta.estimatedCostCents,
+    p_fallback_reason: propuesta.fallbackReason,
+  });
 }
 
 export type AcceptState = { error: string | null; accepted: boolean };

@@ -56,6 +56,17 @@ const EQUIPO = {
 const CLIENTE = { email: "restaurante@cuotly.test" };
 
 /**
+ * La fila de una tabla, identificada por el código que lleva dentro
+ * (SOL-0002, TRB-0001…). Los estados se comprueban SOBRE la fila y no
+ * sueltos en la página: los listados del equipo enseñan todo el espacio,
+ * así que cualquier recorrido que cree una solicitud o un trabajo en el
+ * otro restaurante añade filas con los mismos estados.
+ */
+function fila(page: Page, codigo: string) {
+  return page.locator("tbody tr").filter({ hasText: codigo });
+}
+
+/**
  * La señal es EXPLÍCITA (`E2E_DATOS=1`), y no "¿está
  * NEXT_PUBLIC_SUPABASE_URL?", por dos motivos:
  *
@@ -143,14 +154,16 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // Los estados, con el nombre único de CA-21 (src/i18n/es.ts), no en
       // crudo desde la base de datos.
       //
-      // Se buscan dentro del `tbody`: "Recibida" es también la cabecera de
-      // la columna de fecha (`dateColumn`), así que a nivel de página el
-      // texto sale dos veces y Playwright lo rechaza por ambiguo. La
-      // cabecera no es un estado; lo que se comprueba son las filas.
-      const filas = page.locator("tbody");
-      await expect(filas.getByText("Recibida")).toBeVisible();
-      await expect(filas.getByText("En curso")).toBeVisible();
-      await expect(filas.getByText("Publicada")).toBeVisible();
+      // Cada estado se comprueba EN SU FILA, identificada por el código de
+      // la solicitud. Buscarlo suelto en el `tbody` era ambiguo por dos
+      // motivos distintos: "Recibida" es además la cabecera de la columna
+      // de fecha, y esta bandeja enseña TODO el espacio, así que en cuanto
+      // el recorrido de CA-19 crea una solicitud en Café Prueba hay dos
+      // filas con el mismo estado y Playwright lo rechaza. Anclar a la
+      // fila deja el test estable ejecute lo que ejecute a su lado.
+      await expect(fila(page, "SOL-0002")).toContainText("Recibida");
+      await expect(fila(page, "SOL-0003")).toContainText("En curso");
+      await expect(fila(page, "SOL-0004")).toContainText("Publicada");
     });
 
     test("el tablero de trabajos enseña los dos, con su responsable y su estado", async ({
@@ -165,11 +178,10 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(page.getByRole("link", { name: "TRB-0002" })).toBeVisible();
 
       // Uno en curso y otro publicado: es lo que dejó el sembrado, y son
-      // dos estados distintos del mismo tablero. Dentro del `tbody`, por lo
-      // mismo que en la bandeja: un estado es una celda, no una cabecera.
-      const filas = page.locator("tbody");
-      await expect(filas.getByText("En curso")).toBeVisible();
-      await expect(filas.getByText("Publicado")).toBeVisible();
+      // dos estados distintos del mismo tablero. Anclados a su fila por lo
+      // mismo que en la bandeja de solicitudes.
+      await expect(fila(page, "TRB-0001")).toContainText("En curso");
+      await expect(fila(page, "TRB-0002")).toContainText("Publicado");
 
       // El equipo SÍ ve quién es el responsable — es su organización
       // interna (P7). Lo que no puede verlo es el cliente, y eso se

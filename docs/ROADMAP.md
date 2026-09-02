@@ -104,6 +104,35 @@ no son un fallo, sino alcance:
    cada flujo principal, pulsando, con viewport de teléfono, sobre el
    espacio sembrado.
 
+   **Al día 02/09/2026, por la tarde**: eso es lo que hay ahora en
+   `apps/web/e2e/ca19-recorridos-movil.spec.ts`, a 390 px de ancho y
+   pulsando: pedir un cambio, validar la clasificación, aceptar, asignar,
+   comenzar, bloquear, desbloquear, publicar, corregir, registrar un pago,
+   consultar y ver el equipo. Todo lo que ESCRIBE ocurre en el segundo
+   restaurante del sembrado ("Café Prueba", EST-0002) para no mover el
+   suelo del otro archivo, que cuenta cosas exactas de "Bar Demo".
+
+   El recorrido destapó de paso un agujero de producto que no era del
+   armazón sino del dominio: **la clasificación no la llamaba nadie**.
+   `src/services/ai-classifier.ts` existía desde el Hito 4, con sus tests,
+   y ninguna pantalla lo usaba, así que una solicitud enviada se quedaba en
+   "Recibida" para siempre y el flujo solicitar → aceptar era imposible de
+   completar desde la interfaz. Ahora la llama el propio envío, que es lo
+   que dice RN-CLS-01 ("al enviarse una solicitud").
+
+   **Queda una decisión de producto, sin resolver a propósito**: el botón
+   "Empezar el análisis" de la pantalla del equipo llama a
+   `begin_request_analysis()`, que exige `can_write_establishment()` —
+   permiso de CLIENTE—, así que nadie del equipo puede pulsarlo. Con la
+   clasificación automática ese botón ya no está en el camino normal, pero
+   sigue siendo el único asidero del equipo si la clasificación falla, y
+   hoy no funciona. O se le da el permiso del equipo, o sobra. No lo
+   decido yo.
+
+   CA-19 se dará por cumplido cuando esos tres recorridos pasen en verde en
+   una máquina con salida a Supabase; el contenedor de Claude Code no la
+   tiene (salvedad 12).
+
 2. **CA-22 destapó un problema real de la paleta.** Tres de los cuatro
    colores semánticos del PRD §20.6 no llegan a 4,5:1 contra blanco en
    ninguna de las dos direcciones: `success` 4,29:1, `info` 4,45:1 —a
