@@ -24,7 +24,26 @@ async function run(
   return { error: null, done: true };
 }
 
-/** HU-17 · asignar. El candidato lo elige quien asigna; la lista y su orden los calcula el servidor. */
+/**
+ * HU-17 · asignar. El candidato lo elige quien asigna; la lista y su orden
+ * los calcula el servidor.
+ *
+ * Llama a `assign_job()`, que es la puerta de entrada, y NO a
+ * `apply_job_assignment()`, que es el ayudante interno que comparte con
+ * `auto_assign_job()` y `approve_job_reassignment()`. Llamaba al ayudante,
+ * y el ayudante no comprueba nada: la capacidad `assign_jobs`, la
+ * idempotencia de CA-17 ("pulsar dos veces asignar no duplica nada"), que
+ * el trabajo esté pendiente de asignación y que la persona sea un
+ * candidato válido (RN-ASG-02, "asignar a alguien sin acceso a ese
+ * establecimiento sería concederle acceso por la puerta de atrás") están
+ * todas en `assign_job()`.
+ *
+ * En la práctica no se saltaba ningún control, porque el ayudante tiene
+ * revocado el EXECUTE de `authenticated` (migración 20260830000024) y
+ * PostgREST devolvía 403: la red de seguridad hizo su trabajo y el botón
+ * no asignaba a nadie. Pero el botón tenía que llamar a la puerta, no a la
+ * ventana.
+ */
 export async function assignJob(
   _prev: JobActionState,
   formData: FormData,
@@ -32,10 +51,9 @@ export async function assignJob(
   const jobId = String(formData.get("jobId") ?? "");
   const workerId = String(formData.get("workerId") ?? "");
   return run((s) =>
-    s.rpc("apply_job_assignment", {
+    s.rpc("assign_job", {
       p_job_id: jobId,
       p_worker_id: workerId,
-      p_kind: "manual",
       p_reason: undefined,
     }),
   );

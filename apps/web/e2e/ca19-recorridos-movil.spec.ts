@@ -101,6 +101,20 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     ).toBe(true);
   }
 
+  /**
+   * Después de pulsar algo que ESCRIBE, mirar si la pantalla ha puesto un
+   * error. Es la diferencia entre "no aparece el estado que espero" a los
+   * quince segundos y "el servidor dijo esto". Tres de las averías de este
+   * recorrido —el pago, la clasificación y la asignación— se pasaron
+   * rondas enteras escondidas detrás de un timeout mudo.
+   */
+  async function sinErrores(page: Page, donde: string) {
+    const alerta = page.getByRole("alert");
+    if (await alerta.count()) {
+      throw new Error(`${donde}: el servidor lo rechazó — ${await alerta.first().innerText()}`);
+    }
+  }
+
   test("de pedir un cambio a corregirlo publicado, sin salir del móvil", async ({ page }) => {
     test.setTimeout(180_000);
 
@@ -160,7 +174,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
         .fill("Corrección del teléfono del pie de página.");
       await page.getByRole("button", { name: "Validar y enviar al restaurante" }).click();
 
-      await expect(page.getByText("Esperando al restaurante")).toBeVisible({ timeout: 15_000 });
+      await expect(async () => {
+        await sinErrores(page, "VALIDAR");
+        await expect(page.getByText("Esperando al restaurante")).toBeVisible();
+      }).toPass({ timeout: 15_000 });
     });
 
     await test.step("ACEPTAR · el restaurante da el visto bueno", async () => {
@@ -178,7 +195,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       // Aceptar crea el trabajo. En Básico no gasta bolsa: se presupuesta
       // aparte (CLAUDE.md, "Básico NO incluye ningún cambio").
       const fila = page.locator("tbody tr").filter({ hasText: MARCA });
-      await expect(fila).toContainText("Aceptada", { timeout: 15_000 });
+      await expect(async () => {
+        await sinErrores(page, "ACEPTAR");
+        await expect(fila).toContainText("Aceptada");
+      }).toPass({ timeout: 15_000 });
     });
 
     await test.step("ASIGNAR · el equipo elige responsable", async () => {
@@ -201,7 +221,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       // Los candidatos y su orden los calcula el servidor, no la pantalla.
       await expect(page.getByRole("heading", { name: "Asignar" })).toBeVisible();
       await page.getByRole("button", { name: "Asignar" }).first().click();
-      await expect(page.getByText("Asignado").first()).toBeVisible({ timeout: 15_000 });
+      await expect(async () => {
+        await sinErrores(page, "ASIGNAR");
+        await expect(page.getByText("Asignado").first()).toBeVisible();
+      }).toPass({ timeout: 15_000 });
     });
 
     await test.step("COMENZAR, BLOQUEAR y DESBLOQUEAR · la trabajadora", async () => {
@@ -211,16 +234,25 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
 
       // Comenzar para T2 y arranca T3 (RN-SLA). Solo puede el responsable.
       await page.getByRole("button", { name: "Comenzar" }).click();
-      await expect(page.getByText("En curso").first()).toBeVisible({ timeout: 15_000 });
+      await expect(async () => {
+        await sinErrores(page, "COMENZAR");
+        await expect(page.getByText("En curso").first()).toBeVisible();
+      }).toPass({ timeout: 15_000 });
 
       // Bloquear detiene el contador de ejecución.
       await page.getByLabel("Motivo del bloqueo").selectOption("client_information");
       await page.getByLabel("Detalle").fill("Falta el número nuevo.");
       await page.getByRole("button", { name: "Bloquear" }).click();
-      await expect(page.getByText("Bloqueado").first()).toBeVisible({ timeout: 15_000 });
+      await expect(async () => {
+        await sinErrores(page, "BLOQUEAR");
+        await expect(page.getByText("Bloqueado").first()).toBeVisible();
+      }).toPass({ timeout: 15_000 });
 
       await page.getByRole("button", { name: "Desbloquear" }).click();
-      await expect(page.getByText("En curso").first()).toBeVisible({ timeout: 15_000 });
+      await expect(async () => {
+        await sinErrores(page, "DESBLOQUEAR");
+        await expect(page.getByText("En curso").first()).toBeVisible();
+      }).toPass({ timeout: 15_000 });
     });
 
     await test.step("PUBLICAR · la trabajadora entrega", async () => {
@@ -230,7 +262,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       // La ventana de corrección la calcula el reloj laborable de
       // src/core/, no SQL; la pantalla solo la envía.
       await page.getByRole("button", { name: "Publicar" }).click();
-      await expect(page.getByText("Publicado").first()).toBeVisible({ timeout: 15_000 });
+      await expect(async () => {
+        await sinErrores(page, "PUBLICAR");
+        await expect(page.getByText("Publicado").first()).toBeVisible();
+      }).toPass({ timeout: 15_000 });
     });
 
     await test.step("CORREGIR · el restaurante pide su corrección gratuita", async () => {
@@ -247,9 +282,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await page.getByRole("button", { name: "Pedir la corrección" }).click();
 
       // Gastada la única, la pantalla lo dice en vez de ofrecerla otra vez.
-      await expect(page.getByText("Ya has usado la corrección de este trabajo")).toBeVisible({
-        timeout: 15_000,
-      });
+      await expect(async () => {
+        await sinErrores(page, "CORREGIR");
+        await expect(page.getByText("Ya has usado la corrección de este trabajo")).toBeVisible();
+      }).toPass({ timeout: 15_000 });
     });
 
     expect(solicitudUrl, "no se llegó a abrir el detalle de la solicitud").not.toBe("");
