@@ -171,6 +171,20 @@ secas es sintaxis POSIX y en Windows revienta antes de arrancar, con
 `"E2E_DATOS" no se reconoce como un comando interno o externo`. Con
 `cross-env` la variable se pone igual en bash, en cmd y en PowerShell.
 
+La suite con datos corre contra una **compilación de producción**, no
+contra `next dev`: Playwright lanza `pnpm build && pnpm start`. La razón no
+es purismo, es que tres rondas de fallos seguidos fueron todas el servidor
+de desarrollo compilando y renderizando bajo demanda mientras varios tests
+le pedían pantallas — `waitForURL` agotados, estados que no aparecían a
+tiempo, tests muertos por el reloj, y ni uno solo era un fallo del
+producto. Cuesta un `build` al principio; a cambio la ejecución deja de
+depender de la suerte. `pnpm test:e2e` (la del armazón) sigue con `next
+dev`.
+
+Por eso el script pone también `E2E_DIAGNOSTICO=1`: `/api/diagnostico`
+existe siempre en desarrollo, y fuera de desarrollo solo con esa variable,
+que no está puesta en ningún despliegue real.
+
 Si prefieres no usar el script, el equivalente a mano en PowerShell es
 `$env:E2E_DATOS="1"; npx playwright test flujos-espacio-demo`.
 

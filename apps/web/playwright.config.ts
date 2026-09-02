@@ -11,18 +11,23 @@ const executablePath = process.env.PLAYWRIGHT_BROWSERS_PATH
 
 /**
  * Los tests con datos juegan en otra liga que los del armazón: entran con
- * sesión, cada pantalla encadena varias consultas a Supabase por la red y
- * todo eso corre contra UN `next dev`, que es un solo proceso.
+ * sesión y cada pantalla encadena una docena de consultas a Supabase por
+ * la red.
  *
- * De ahí las dos diferencias de abajo, y las dos vienen de la misma
- * equivocación: subí el tiempo de espera del login a 45 s dejando el
- * límite del test en los 30 s de serie, así que ese 45 nunca podía
- * agotarse — Playwright mataba el test antes, con "Test timeout of 30000ms
- * exceeded" y sin decir qué esperaba. Un margen interior mayor que el
- * límite exterior no es un margen: es un mensaje de error peor.
+ * Se les cambia el servidor: **compilación de producción**, no `next dev`.
+ * Tres rondas de fallos fueron todas la misma historia contada de formas
+ * distintas —un `waitForURL` que se agota, un estado que no aparece a
+ * tiempo, un test muerto por el reloj— y ninguna era un fallo del
+ * producto: era `next dev` compilando y renderizando bajo demanda mientras
+ * varios tests le pedían pantallas a la vez. Subir márgenes lo tapa unas
+ * veces sí y otras no, que es lo peor de los dos mundos. `next build` una
+ * vez y `next start` quita la causa: sin compilación en caliente, los
+ * renders van varias veces más rápidos y la ejecución deja de depender de
+ * la suerte.
  *
- * Y con doce tests a la vez sobre un servidor de desarrollo, la lentitud
- * no era mala suerte: era la carga que les metíamos nosotros mismos.
+ * Cuesta un `build` al principio de cada ejecución. Vale la pena: un test
+ * que falla por el reloj no dice nada de la aplicación, y hemos gastado
+ * varias tardes averiguándolo.
  */
 const CON_DATOS = process.env.E2E_DATOS === "1";
 
@@ -30,14 +35,16 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   // El límite de CADA test. Tiene que ser mayor que la suma de esperas de
-  // dentro, o las esperas no significan nada.
+  // dentro, o las esperas no significan nada: subir la espera del login a
+  // 45 s dejando este en 30 s hizo que Playwright matara diez tests por el
+  // reloj sin decir a qué esperaban.
   timeout: CON_DATOS ? 120_000 : 30_000,
-  // Dos en paralelo, no doce. El cuello de botella es el servidor, así que
-  // más trabajadores no acortan la ejecución: solo hacen que todos vayan
-  // lentos a la vez y que falle el que peor suerte tuvo.
-  workers: CON_DATOS ? 2 : undefined,
-  // Compila las pantallas antes de repartir los tests. Solo hace algo con
-  // E2E_DATOS=1; el porqué está en el propio archivo.
+  // Con el servidor de producción el cuello de botella pasa a ser la red
+  // contra Supabase, que sí aguanta ir en paralelo.
+  workers: CON_DATOS ? 4 : undefined,
+  // Pide cada pantalla una vez antes de repartir los tests. Con `next
+  // start` ya no hay compilación que adelantar, pero sigue sirviendo de
+  // comprobación de que el servidor contesta de verdad antes de empezar.
   globalSetup: "./e2e/calentar-rutas.ts",
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -47,7 +54,9 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    command: "pnpm dev",
+    // `build` + `start` para la suite con datos; `dev` para la del
+    // armazón, que no lo necesita y agradece el arranque instantáneo.
+    command: CON_DATOS ? "pnpm build && pnpm start" : "pnpm dev",
     url: "http://localhost:3000",
     // Los tests con datos NO reutilizan un servidor que ya esté escuchando.
     // Reutilizarlo fue una trampa cara: un `pnpm dev` arrancado antes de
@@ -57,7 +66,8 @@ export default defineConfig({
     // lo dice y se cierra ese `pnpm dev`; eso se arregla en diez segundos,
     // y lo otro cuesta una tarde.
     reuseExistingServer: !process.env.CI && !CON_DATOS,
-    timeout: 60_000,
+    // Compilar entero lleva su rato; arrancar `next dev`, no.
+    timeout: CON_DATOS ? 300_000 : 60_000,
   },
   projects: [
     {

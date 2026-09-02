@@ -1,23 +1,20 @@
 import { request } from "@playwright/test";
 
 /**
- * Compila las rutas antes de que empiecen los tests con datos.
+ * Pide cada pantalla una vez antes de que empiecen los tests con datos.
  *
- * `next dev` compila cada ruta la primera vez que alguien la pide. Con
- * doce tests en paralelo pidiéndolas a la vez, esa primera compilación
- * puede tardar más que el tiempo que un test está dispuesto a esperar, y
- * entonces falla el que la pagó — no el que está mal. Fue exactamente eso:
- * un `waitForURL` de veinte segundos se agotó esperando a que
- * `/espacios/[slug]` compilara, y el error decía "se quedó en la portada",
- * que es cierto y no es la avería.
+ * Nació para adelantar la compilación de `next dev`, que construye cada
+ * ruta la primera vez que alguien la pide y hacía fallar por el reloj al
+ * test que pagaba esa cuenta. Ahora la suite con datos corre contra
+ * `next build && next start`, así que no queda compilación que adelantar,
+ * pero el paseo sigue valiendo: comprueba que el servidor contesta de
+ * verdad en todas las rutas antes de repartir el trabajo, en vez de
+ * descubrirlo dentro de un test.
  *
- * Subir el tiempo de espera lo habría tapado a veces. Compilarlas antes lo
- * quita: cuando el primer test entra, las pantallas ya están construidas.
- *
- * No hace falta sesión. Sin ella cada ruta acaba redirigiendo al login,
- * pero para llegar a esa decisión Next ha tenido que compilar el módulo,
- * que es justo lo que se busca. Los identificadores inventados sirven
- * igual: lo que se compila es el segmento dinámico, no el dato.
+ * No hace falta sesión: sin ella cada ruta acaba redirigiendo al login, y
+ * lo que se comprueba es que la ruta existe y contesta. Los
+ * identificadores inventados sirven igual, porque lo que se recorre es el
+ * segmento dinámico, no el dato.
  */
 
 const BASE = "http://localhost:3000";

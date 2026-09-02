@@ -64,13 +64,12 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
-    // Cuarenta y cinco segundos, y no los cinco de serie: aunque las
-    // rutas se compilan antes de empezar (e2e/calentar-rutas.ts), el
-    // primer aterrizaje de cada papel encadena varias consultas a
-    // Supabase por la red. Cabe dentro del límite del test, que la
-    // configuración pone en 120 s para esta suite — un margen interior
-    // mayor que el exterior no es un margen, es un mensaje de error peor.
-    // Esperar de más no oculta ningún fallo: si no llega, falla igual.
+    // Cuarenta y cinco segundos, y no los cinco de serie: el primer
+    // aterrizaje de cada papel encadena varias consultas a Supabase por
+    // la red. Cabe dentro del límite del test, que la configuración pone
+    // en 120 s para esta suite — un margen interior mayor que el exterior
+    // no es un margen, es un mensaje de error peor. Esperar de más no
+    // oculta ningún fallo: si no llega, falla igual.
     await page.waitForURL(destino, { timeout: 45_000 });
   }
 
@@ -92,19 +91,23 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
    * qué variables VE ÉL. "Está en el .env.local" y "la ve el proceso que
    * atiende" no son la misma cosa —Next lee ese archivo al arrancar— y
    * confundirlas costó tres ejecuciones enteras persiguiendo el síntoma en
-   * la interfaz. /api/diagnostico solo existe en desarrollo y solo
-   * devuelve booleanos.
+   * la interfaz. /api/diagnostico solo existe en desarrollo o con
+   * E2E_DIAGNOSTICO=1, y solo devuelve booleanos.
    */
   async function elServidorVeLaClaveDeServicio(page: Page) {
     const respuesta = await page.request.get("/api/diagnostico");
-    expect(respuesta.ok(), "/api/diagnostico no respondió; ¿el servidor es `next dev`?").toBe(true);
+    expect(
+      respuesta.ok(),
+      "/api/diagnostico no respondió. Solo existe en desarrollo o con E2E_DIAGNOSTICO=1, " +
+        "que es lo que pone `pnpm test:e2e:datos`.",
+    ).toBe(true);
     const entorno = (await respuesta.json()) as Record<string, boolean>;
     expect(
       entorno.supabaseServiceRoleKey,
       "El servidor NO ve SUPABASE_SERVICE_ROLE_KEY. Sin ella no se clasifica ninguna " +
         "solicitud (RN-CLS-01: record_classification() está reservada a service_role) y el " +
-        "recorrido no puede pasar del segundo paso. Ponla en apps/web/.env.local, borra la " +
-        "carpeta .next y vuelve a lanzar los tests con ningún `pnpm dev` abierto.",
+        "recorrido no puede pasar del segundo paso. Ponla en apps/web/.env.local y vuelve a " +
+        "lanzar los tests con ningún `pnpm dev` abierto en el 3000.",
     ).toBe(true);
   }
 

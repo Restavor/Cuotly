@@ -19,7 +19,17 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  if (process.env.NODE_ENV !== "development") {
+  // En desarrollo, siempre. Fuera de desarrollo solo si alguien la
+  // enciende a propósito con `E2E_DIAGNOSTICO=1`: los tests con datos
+  // corren contra una compilación de producción (`next build && next
+  // start`), donde `NODE_ENV` es "production" y esta ruta, sin la
+  // variable, no existiría. La variable no está puesta en ningún
+  // despliegue real, y aun encendida esto solo dice SI hay valor, nunca
+  // cuál.
+  const permitida =
+    process.env.NODE_ENV !== "production" || process.env.E2E_DIAGNOSTICO === "1";
+
+  if (!permitida) {
     return new NextResponse(null, { status: 404 });
   }
 
