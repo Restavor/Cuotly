@@ -515,6 +515,7 @@ export const es = {
       registerSubmit: "Registrar el pago",
       registerPending: "Registrando…",
       registerAmountInvalid: "Escribe el importe cobrado en euros, mayor que cero.",
+      registerDone: "Pago registrado.",
       noPermissionTitle: "Sin acceso a finanzas",
       noPermissionReason:
         "Solo el propietario y los administradores ven las finanzas del espacio.",

@@ -22,7 +22,14 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    // Los tests con datos NO reutilizan un servidor que ya esté escuchando.
+    // Reutilizarlo fue una trampa cara: un `pnpm dev` arrancado antes de
+    // añadir SUPABASE_SERVICE_ROLE_KEY sigue sin verla, así que la
+    // clasificación se saltaba en silencio y el recorrido fallaba por algo
+    // que en el código estaba bien. Si el puerto está ocupado, Playwright
+    // lo dice y se cierra ese `pnpm dev`; eso se arregla en diez segundos,
+    // y lo otro cuesta una tarde.
+    reuseExistingServer: !process.env.CI && process.env.E2E_DATOS !== "1",
     timeout: 60_000,
   },
   projects: [

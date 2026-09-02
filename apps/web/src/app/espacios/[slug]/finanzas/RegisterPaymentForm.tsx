@@ -47,6 +47,17 @@ export function RegisterPaymentForm({
           {state.error}
         </p>
       ) : null}
+      {/*
+        Registrar un cobro no decía nada al terminar: el estado de la fila
+        cambia, pero eso está en otra celda y no siempre se mueve (un cobro
+        a cuenta sigue "Pagado en parte"). Quien pulsa el botón necesita
+        saber que su pulsación llegó.
+      */}
+      {state.done ? (
+        <p role="status" className="mb-4 w-full text-sm text-text-secondary">
+          {es.teamArea.finance.registerDone}
+        </p>
+      ) : null}
     </form>
   );
 }

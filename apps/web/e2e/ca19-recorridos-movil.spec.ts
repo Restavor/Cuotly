@@ -101,7 +101,14 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       // que nadie del equipo pulse nada.
       const fila = page.locator("tbody tr").filter({ hasText: MARCA });
       await expect(fila).toBeVisible({ timeout: 15_000 });
-      await expect(fila).toContainText("Pendiente de validar");
+      await expect(
+        fila,
+        'Si aquí pone "Recibida", la solicitud se envió pero NO se clasificó. ' +
+          "La consola del servidor de desarrollo dice por qué; casi siempre es que " +
+          "falta SUPABASE_SERVICE_ROLE_KEY en apps/web/.env.local, o que el servidor " +
+          "se arrancó antes de añadirla (Playwright reutiliza el `pnpm dev` que ya " +
+          "esté escuchando en el 3000: ciérralo y vuelve a lanzar los tests).",
+      ).toContainText("Pendiente de validar", { timeout: 15_000 });
     });
 
     await test.step("VALIDAR · el equipo confirma la clasificación", async () => {
@@ -268,9 +275,28 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       { timeout: 20_000 },
     );
     await fila.getByRole("button", { name: "Registrar el pago" }).click();
-    await envio;
 
+    // Si la acción del servidor revienta, Next devuelve un 500 y
+    // `useActionState` deja la pantalla igual que estaba: sin este control
+    // ese caso y "el formulario ni se envió" fallan idénticos.
+    const respuesta = await envio;
+    if (!respuesta.ok()) {
+      throw new Error(
+        `El servidor devolvió ${respuesta.status()} al registrar el pago: ` +
+          `${(await respuesta.text()).slice(0, 800)}`,
+      );
+    }
+
+    // A partir de aquí la acción SIEMPRE dice algo: o la confirmación o el
+    // error. Se espera a cualquiera de las dos y luego se mira cuál fue,
+    // en vez de preguntar por el error antes de que haya llegado.
+    const confirmacion = fila.getByText("Pago registrado.");
     const alerta = fila.getByRole("alert");
+    await expect(
+      confirmacion.or(alerta),
+      "el pago no dejó ni confirmación ni error: la acción del servidor no llegó a ejecutarse",
+    ).toBeVisible({ timeout: 20_000 });
+
     if (await alerta.count()) {
       throw new Error(`El servidor rechazó el pago: ${await alerta.first().innerText()}`);
     }

@@ -90,33 +90,62 @@ async function clasificar(
   description: string,
   context: string,
 ) {
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+  // No devuelve error, pero tampoco se calla: cada salida deja dicho en la
+  // consola del servidor POR QUÉ la solicitud se queda en "Recibida". Sin
+  // esto la avería es invisible —la solicitud se envía, todo parece bien y
+  // el equipo se encuentra una bandeja atascada— y cuesta una tarde
+  // averiguar que faltaba una variable de entorno.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error(
+      "[clasificación] Falta SUPABASE_SERVICE_ROLE_KEY: la solicitud se queda en 'Recibida'. " +
+        "record_classification() está reservada a service_role (RN-CLS-01). " +
+        "Ponla en apps/web/.env.local y reinicia el servidor de desarrollo.",
+    );
+    return;
+  }
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  if (!user) {
+    console.error("[clasificación] Sin sesión al clasificar; la solicitud se queda en 'Recibida'.");
+    return;
+  }
 
-  const { error: analysisError } = await supabase.rpc("begin_request_analysis", {
-    p_request_id: requestId,
-  });
-  if (analysisError) return;
+  try {
+    const { error: analysisError } = await supabase.rpc("begin_request_analysis", {
+      p_request_id: requestId,
+    });
+    if (analysisError) {
+      console.error("[clasificación] begin_request_analysis falló", analysisError.message);
+      return;
+    }
 
-  const propuesta = await classifyRequest([description, context].filter(Boolean).join("\n\n"));
+    const propuesta = await classifyRequest([description, context].filter(Boolean).join("\n\n"));
 
-  await createAdminClient().rpc("record_classification", {
-    p_request_id: requestId,
-    p_actor_id: user.id,
-    p_source: propuesta.source,
-    p_category: propuesta.category,
-    p_summary: propuesta.summary,
-    p_matched_keywords: propuesta.matchedKeywords ? [...propuesta.matchedKeywords] : undefined,
-    p_model: propuesta.model,
-    p_input_tokens: propuesta.usage?.inputTokens,
-    p_output_tokens: propuesta.usage?.outputTokens,
-    p_estimated_cost_cents: propuesta.estimatedCostCents,
-    p_fallback_reason: propuesta.fallbackReason,
-  });
+    const { error: recordError } = await createAdminClient().rpc("record_classification", {
+      p_request_id: requestId,
+      p_actor_id: user.id,
+      p_source: propuesta.source,
+      p_category: propuesta.category,
+      p_summary: propuesta.summary,
+      p_matched_keywords: propuesta.matchedKeywords ? [...propuesta.matchedKeywords] : undefined,
+      p_model: propuesta.model,
+      p_input_tokens: propuesta.usage?.inputTokens,
+      p_output_tokens: propuesta.usage?.outputTokens,
+      p_estimated_cost_cents: propuesta.estimatedCostCents,
+      p_fallback_reason: propuesta.fallbackReason,
+    });
+
+    if (recordError) {
+      console.error("[clasificación] record_classification falló", recordError.message);
+    }
+  } catch (fallo) {
+    console.error(
+      "[clasificación] excepción al clasificar",
+      fallo instanceof Error ? fallo.message : String(fallo),
+    );
+  }
 }
 
 export type AcceptState = { error: string | null; accepted: boolean };

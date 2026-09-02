@@ -38,16 +38,38 @@ export async function registerPayment(
   }
 
   const cents = Math.round(euros * 100);
-  const supabase = await createClient();
 
-  const { error } = await supabase.rpc("register_payment", {
-    p_charge_id: chargeId,
-    p_amount_cents: cents,
-    p_method: method,
-    p_idempotency_key: `ui:${chargeId}:${cents}`,
-  });
+  // El try/catch no es decorativo. Una excepción aquí —la red, el cliente
+  // de Supabase, cualquier cosa— sale como un 500 de la acción, y
+  // `useActionState` deja el estado como estaba: la pantalla no cambia y
+  // no dice nada, que es indistinguible de "no pasó nada". Convertirla en
+  // un resultado con mensaje es lo que pide CLAUDE.md ("errores de
+  // negocio como tipos de resultado explícitos") y además deja rastro en
+  // el servidor para quien esté mirando la consola.
+  try {
+    const supabase = await createClient();
 
-  if (error) return { error: error.message, done: false };
+    const { error } = await supabase.rpc("register_payment", {
+      p_charge_id: chargeId,
+      p_amount_cents: cents,
+      p_method: method,
+      p_idempotency_key: `ui:${chargeId}:${cents}`,
+    });
+
+    if (error) {
+      console.error("[finanzas] register_payment devolvió error", {
+        chargeId,
+        cents,
+        method,
+        message: error.message,
+      });
+      return { error: error.message, done: false };
+    }
+  } catch (fallo) {
+    const message = fallo instanceof Error ? fallo.message : String(fallo);
+    console.error("[finanzas] register_payment lanzó", { chargeId, cents, method, message });
+    return { error: message, done: false };
+  }
 
   revalidatePath("/espacios", "layout");
   return { error: null, done: true };

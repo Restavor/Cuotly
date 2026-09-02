@@ -175,8 +175,25 @@ configurado" siempre y el archivo se saltaría entero pareciendo verde; y
 con la señal puesta y la base caída, los tests **fallan** en vez de
 saltarse, que es lo correcto cuando has pedido el recorrido con datos.
 
-Antes de lanzarlo: `apps/web/.env.local` apuntando al proyecto y el
-sembrado aplicado.
+Antes de lanzarlo, tres cosas y ninguna es opcional:
+
+1. `apps/web/.env.local` apuntando al proyecto.
+2. El sembrado aplicado.
+3. **`SUPABASE_SERVICE_ROLE_KEY` en ese mismo `.env.local`.** Los
+   recorridos de CA-19 la necesitan: al enviarse una solicitud, el
+   servidor la clasifica y graba la propuesta con
+   `record_classification()`, que está reservada a `service_role` porque
+   RN-CLS-01 dice que eso no puede depender de lo que afirme el cliente.
+   Sin esa clave la solicitud se queda en "Recibida" y el recorrido se
+   para en el segundo paso. La consola del servidor de desarrollo lo dice
+   con todas las letras (`[clasificación] Falta SUPABASE_SERVICE_ROLE_KEY…`).
+
+Y **cierra cualquier `pnpm dev` que tengas escuchando en el 3000** antes
+de lanzar `pnpm test:e2e:datos`. Playwright ya no reutiliza un servidor
+existente en la ejecución con datos, precisamente por esto: Next.js lee
+`.env.local` **al arrancar**, así que un servidor levantado antes de
+añadir la clave sigue sin verla y el fallo aparece donde no está la
+avería. Si el puerto está ocupado, Playwright lo dirá.
 
 ## Estado: los nueve pasan
 
