@@ -84,6 +84,26 @@ no son un fallo, sino alcance:
    prueba sembrado. Hasta entonces CA-19 no está cumplido, y decir otra
    cosa sería mentir sobre la única parte que no se ha visto funcionar.
 
+   **Al día 02/09/2026**: el bloqueo desapareció. El proyecto tiene las 42
+   migraciones, hay un espacio sembrado y nueve tests entran con sesión de
+   verdad y recorren las pantallas (salvedad 12).
+
+   Pero **CA-19 sigue sin cumplirse**, y por dos razones que conviene no
+   confundir con la anterior:
+
+   - Esos nueve **navegan y leen**; no *completan* ningún flujo desde la
+     interfaz. Nadie crea una solicitud, la acepta, la asigna, la comienza
+     y la publica pulsando botones. Los flujos están probados en el
+     servidor desde los hitos 4 a 7, y ahora también las pantallas que los
+     enseñan, pero no el recorrido de punta a punta que pide el criterio.
+   - Y corren con el viewport de escritorio. CA-19 dice **en móvil**. Lo
+     que hoy se prueba con anchura de teléfono es el armazón en
+     `/armazon`, no estas pantallas.
+
+   Lo que falta para cerrarlo es concreto y ya no está bloqueado: recorrer
+   cada flujo principal, pulsando, con viewport de teléfono, sobre el
+   espacio sembrado.
+
 2. **CA-22 destapó un problema real de la paleta.** Tres de los cuatro
    colores semánticos del PRD §20.6 no llegan a 4,5:1 contra blanco en
    ninguna de las dos direcciones: `success` 4,29:1, `info` 4,45:1 —a
@@ -288,14 +308,27 @@ no son un fallo, sino alcance:
     no está conectada. La pantalla de facturación lo dice en claro en vez
     de enseñar un botón que no funciona.
 
-12. **Estado del despliegue: el proyecto de Supabase va por la migración
-    26 de 42.** Está en `docs/DESPLIEGUE-SUPABASE.md`, con la lista de las
-    pendientes en orden. La 29 corrige una fuga de identidad que está viva
-    en el esquema desplegado, así que no es un arreglo preventivo.
+12. ~~**Estado del despliegue: el proyecto de Supabase va por la migración
+    26 de 42.**~~ **Resuelto el 01/09/2026: las 42 están aplicadas.**
+    Detalle en `docs/DESPLIEGUE-SUPABASE.md`. El esquema pasa a 57 tablas
+    (todas con RLS) y 176 funciones, y `database.types.ts` está regenerado
+    entero — ya no hay nada añadido "a mano", así que la salvedad 10
+    también decae.
 
-    Mientras el proyecto no tenga las 42, `database.types.ts` no se puede
-    regenerar y hay que seguir añadiendo a mano lo que use cada pantalla
-    nueva (salvedad 10).
+    Con el proyecto al día se sembró un espacio de prueba
+    (`supabase/seed/espacio-demo.sql`) y se escribió el primer recorrido de
+    Playwright con sesión y datos reales
+    (`apps/web/e2e/flujos-espacio-demo.spec.ts`, `pnpm test:e2e:datos`).
+    **Los nueve pasan** (Windows, 02/09/2026).
+
+    Lo que encontró esa primera ejecución conviene tenerlo escrito, porque
+    es el argumento para seguir por ahí: de cinco fallos, **tres eran de la
+    aplicación**, no de los tests —usuarios sembrados que no autenticaban
+    contra GoTrue, un espacio con dos personas que nunca redirigía porque
+    la consulta se apoyaba en RLS para algo que RLS no hace, y el cliente
+    sin acceso al slug de su espacio, que dejaba su pantalla de contexto
+    vacía—. Los tres llevaban ahí sin verse porque el proyecto no tenía
+    datos.
 
 ### Cosas aplazadas que este hito NO inventó
 
