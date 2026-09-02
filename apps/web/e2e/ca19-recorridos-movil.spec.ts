@@ -114,12 +114,19 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
    * rondas enteras escondidas detrás de un timeout mudo.
    */
   async function sinErrores(page: Page, donde: string) {
-    // VISIBLES y CON TEXTO. `getByRole("alert")` a secas encontraba un
-    // `role="alert"` oculto y vacío —el armazón de desarrollo de Next trae
-    // uno— y hacía fallar pasos que habían ido bien, con un mensaje que
-    // terminaba en un guion y nada detrás. Una alerta que nadie ve no es
-    // un error que nadie ha visto.
-    const textos = (await page.locator('[role="alert"]:visible').allInnerTexts())
+    // Se descarta el anunciador de rutas de Next, que NO es un error de
+    // nada: `app-router-announcer.js` crea un `<div role="alert">` de un
+    // píxel dentro de un shadow root y le mete el título de la página en
+    // cada navegación, para que un lector de pantalla diga dónde has
+    // llegado. Playwright atraviesa el shadow DOM y lo cuenta como
+    // visible, así que este paso fallaba con "el servidor lo rechazó —
+    // Cuotly", que es el título del sitio. Se identifica por su id, que
+    // Next fija en esa misma línea.
+    //
+    // Y con texto: una alerta vacía tampoco es un error.
+    const textos = (
+      await page.locator('[role="alert"]:visible:not(#__next-route-announcer__)').allInnerTexts()
+    )
       .map((texto) => texto.trim())
       .filter(Boolean);
 
