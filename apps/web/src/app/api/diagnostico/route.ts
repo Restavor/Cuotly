@@ -30,5 +30,15 @@ export async function GET() {
     anthropicApiKey: Boolean(process.env.ANTHROPIC_API_KEY),
     queueRunnerSecret: Boolean(process.env.QUEUE_RUNNER_SECRET),
     resendApiKey: Boolean(process.env.RESEND_API_KEY),
+
+    // Un booleano en `false` no distingue tres averías muy distintas: que
+    // la variable no esté, que esté con otro nombre (un dedazo, un
+    // NEXT_PUBLIC_ de más) o que esté con el valor vacío porque el valor
+    // se quedó en la línea siguiente. Los NOMBRES de las variables no son
+    // secretos y su longitud tampoco; el valor no sale de aquí.
+    detectadas: Object.keys(process.env)
+      .filter((nombre) => /SUPABASE|ANTHROPIC|RESEND|QUEUE|CUOTLY/i.test(nombre))
+      .sort()
+      .map((nombre) => `${nombre} (${(process.env[nombre] ?? "").length} caracteres)`),
   });
 }
