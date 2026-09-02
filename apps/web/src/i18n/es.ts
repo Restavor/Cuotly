@@ -424,6 +424,9 @@ export const es = {
       analyzePending: "Empezando…",
       analyzeHint:
         "Al empezar el análisis, la solicitud pasa a estar en estudio y el restaurante lo ve.",
+      classifyNoServiceKey:
+        "El análisis empezó, pero falta configurar SUPABASE_SERVICE_ROLE_KEY en el servidor: sin ella no se puede grabar lo que propuso el clasificador. La solicitud se queda en análisis.",
+      classifyNotFound: "El análisis empezó, pero la solicitud ya no está disponible.",
       validateTitle: "Validar la clasificación",
       validateHint:
         "El restaurante no ve nada de esto hasta que lo validas. Elige la categoría real y escribe el resumen que él leerá.",

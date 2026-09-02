@@ -17,10 +17,16 @@
 --   o pegándolo en el SQL Editor del panel, o con la herramienta
 --   execute_sql del conector de Supabase.
 --
--- Las tres identidades, todas con la contraseña `Cuotly-demo-2026`:
---   owner@cuotly.test         Propietario del espacio (equipo)
+-- Las cuatro identidades, todas con la contraseña `Cuotly-demo-2026`:
+--   owner@cuotly.test         Propietaria del espacio (equipo)
 --   trabajadora@cuotly.test   Trabajadora que ejecuta los trabajos
---   restaurante@cuotly.test   Propietario local del restaurante (cliente)
+--   restaurante@cuotly.test   Propietario local de "Bar Demo" (cliente)
+--   cliente2@cuotly.test      Propietario local de "Café Prueba" (cliente)
+--
+-- Dos restaurantes, y la separación es deliberada: "Bar Demo" es el de los
+-- tests que LEEN (cuentan solicitudes, miran la bolsa) y no lo toca nadie;
+-- "Café Prueba" es donde ocurren los recorridos que ESCRIBEN. Ver la
+-- sección 5 bis.
 --
 -- Los flujos NO se fabrican metiendo filas a mano en `requests`, `jobs` y
 -- `timer_events`: se ejecutan llamando a las mismas funciones que llama la
@@ -56,7 +62,7 @@ end $$;
 delete from auth.users where email like '%@cuotly.test';
 
 -- ============================================================
--- 1 · Las tres identidades.
+-- 1 · Las identidades del equipo y del primer cliente.
 --
 -- Crear un usuario a mano en `auth.users` NO basta para poder entrar, y
 -- esto costó una tanda entera de tests en rojo. Que una columna acepte
@@ -232,6 +238,84 @@ values
    now() - interval '10 days', now() + interval '80 days', 'initial',
    'd0000000-0000-0000-0000-000000000001');
 
+-- ============================================================
+-- 5 bis · El segundo restaurante, para los recorridos que ESCRIBEN.
+--
+-- Los tests de lectura miran "Bar Demo" y cuentan cosas exactas —cuatro
+-- solicitudes, catorce de dieciséis en la bolsa—, así que un recorrido que
+-- cree una solicitud y la lleve hasta publicar les cambiaría el suelo bajo
+-- los pies. Se separan los datos: "Bar Demo" no lo toca nadie, y todo lo
+-- que muta ocurre en "Café Prueba".
+--
+-- Con plan **Básico**, y no es un detalle menor: Básico no incluye ningún
+-- cambio (CLAUDE.md), así que `accept_request()` marca la aceptación como
+-- presupuestada y NO escribe ningún apunte de consumo. El recorrido se
+-- puede repetir tantas veces como haga falta sin agotar una bolsa — con
+-- Impulso, a la dieciseisava ejecución empezaría a fallar por falta de
+-- crédito. Y de paso es un caso de producto real, no un apaño: un cambio
+-- en Básico se presupuesta aparte.
+--
+-- Y con su propio cliente, porque si "Bar Demo" y "Café Prueba" fueran del
+-- mismo, ese cliente pasaría a tener dos contextos y dejaría de entrar
+-- directo a su restaurante (PRD §20.1) — que es justo lo que comprueban
+-- tres de los tests de lectura.
+-- ============================================================
+insert into auth.users
+  (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+   confirmation_token, recovery_token, email_change, email_change_token_new,
+   raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values
+  ('d0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'cliente2@cuotly.test',
+   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   '', '', '', '',
+   '{"provider":"email","providers":["email"]}'::jsonb,
+   '{"full_name":"Café Prueba"}'::jsonb, now(), now());
+
+insert into auth.identities
+  (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select u.id::text, u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email,
+                     'email_verified', true, 'phone_verified', false),
+  'email', now(), now(), now()
+from auth.users u
+where u.id = 'd0000000-0000-0000-0000-000000000004';
+
+update public.profiles set full_name = 'Café Prueba'
+where id = 'd0000000-0000-0000-0000-000000000004';
+
+insert into public.establishments (id, space_id, group_id, name, status)
+values ('d4000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001',
+        'd3000000-0000-0000-0000-000000000001', 'Café Prueba', 'active');
+
+insert into public.establishment_memberships (id, establishment_id, user_id, role)
+values ('d5000000-0000-0000-0000-000000000002', 'd4000000-0000-0000-0000-000000000002',
+        'd0000000-0000-0000-0000-000000000004', 'local_owner');
+
+insert into public.establishment_permissions (establishment_membership_id, edit_establishment_data, view_billing)
+values ('d5000000-0000-0000-0000-000000000002', true, true);
+
+-- La trabajadora también autorizada aquí, o no sería candidata a los
+-- trabajos de este restaurante y no se podría probar la asignación.
+insert into public.worker_establishments (space_id, user_id, establishment_id, created_by)
+values ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002',
+        'd4000000-0000-0000-0000-000000000002', 'd0000000-0000-0000-0000-000000000001');
+
+insert into public.subscriptions
+  (id, space_id, establishment_id, kind, plan_id, status, started_at, created_by)
+values
+  ('d6000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001',
+   'd4000000-0000-0000-0000-000000000002', 'plan', 'd2000000-0000-0000-0000-000000000001',
+   'active', now() - interval '5 days', 'd0000000-0000-0000-0000-000000000001');
+
+insert into public.plan_commitments
+  (space_id, establishment_id, subscription_id, plan_id, started_at, ends_at, cause, created_by)
+values
+  ('d1000000-0000-0000-0000-000000000001', 'd4000000-0000-0000-0000-000000000002',
+   'd6000000-0000-0000-0000-000000000002', 'd2000000-0000-0000-0000-000000000001',
+   now() - interval '5 days', now() + interval '85 days', 'initial',
+   'd0000000-0000-0000-0000-000000000001');
+
 
 -- ============================================================
 -- 6 · Los flujos, ejecutados con las funciones de verdad.
@@ -391,6 +475,13 @@ begin
       p_paid_at      => now(),
       p_note         => 'Transferencia de demostración');
   end if;
+
+  -- Y uno del segundo restaurante que se queda SIN pagar, para que el
+  -- recorrido de CA-19 tenga sobre qué registrar un pago. Básico son 99 €
+  -- + 21 % = 119,79 €. Vence dentro de 20 días: pendiente, no vencido, así
+  -- que el ciclo de impago no lo toca.
+  perform public.generate_monthly_charge(
+    'd6000000-0000-0000-0000-000000000002'::uuid, now() + interval '20 days');
 end $$;
 
 -- ============================================================
@@ -431,8 +522,8 @@ begin
     and exists (select 1 from auth.identities i
                 where i.user_id = u.id and i.provider = 'email');
 
-  if v_entrables <> 3 then
-    raise exception 'Solo % de los 3 usuarios pueden entrar: revisa tokens NULL o identidades que falten', v_entrables;
+  if v_entrables <> 4 then
+    raise exception 'Solo % de los 4 usuarios pueden entrar: revisa tokens NULL o identidades que falten', v_entrables;
   end if;
 
   select count(*) into v_solicitudes from public.requests where space_id = v_space;
@@ -441,9 +532,6 @@ begin
   select count(*) into v_consumos    from public.consumption_entries where space_id = v_space;
   select count(*) into v_contadores  from public.timer_events where space_id = v_space;
   select count(*) into v_cobros      from public.charges where space_id = v_space;
-  select coalesce(sum(public.charge_outstanding_cents(id)), 0) into v_deuda
-    from public.charges where space_id = v_space;
-
   if v_solicitudes <> 4 then
     raise exception 'Se esperaban 4 solicitudes y hay %', v_solicitudes;
   end if;
@@ -459,11 +547,22 @@ begin
   if v_contadores < 6 then
     raise exception 'Se esperaban al menos 6 eventos de contador y hay %', v_contadores;
   end if;
-  if v_cobros <> 1 then
-    raise exception 'Se esperaba 1 cobro y hay %', v_cobros;
+  if v_cobros <> 2 then
+    raise exception 'Se esperaban 2 cobros y hay %', v_cobros;
   end if;
+
+  -- El de Bar Demo, pagado. El de Café Prueba, pendiente a propósito: es
+  -- sobre el que el recorrido de CA-19 registra un pago.
+  select coalesce(public.charge_outstanding_cents(id), 0) into v_deuda
+  from public.charges where establishment_id = 'd4000000-0000-0000-0000-000000000001';
   if v_deuda <> 0 then
-    raise exception 'El cobro tenía que quedar pagado y quedan % céntimos', v_deuda;
+    raise exception 'El cobro de Bar Demo tenía que quedar pagado y quedan % céntimos', v_deuda;
+  end if;
+
+  select coalesce(public.charge_outstanding_cents(id), 0) into v_deuda
+  from public.charges where establishment_id = 'd4000000-0000-0000-0000-000000000002';
+  if v_deuda <= 0 then
+    raise exception 'El cobro de Café Prueba tenía que quedar pendiente y está a %', v_deuda;
   end if;
 
   raise notice 'Espacio de demostración sembrado: % solicitudes, % trabajos (% publicado), % consumos, % eventos de contador, % cobro sin deuda',
