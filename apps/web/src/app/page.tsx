@@ -22,6 +22,12 @@ import { signOut } from "./(auth)/actions";
  * `can_read_establishment()`. Aquí solo se pinta lo que la base de datos
  * devuelve.
  */
+// Lo que se ve aquí depende de QUIÉN entra, así que esta pantalla no se
+// cachea nunca. Era la única de todas las que leen datos de sesión que no
+// lo declaraba; el resto (solicitudes, trabajos, finanzas, el restaurante
+// del cliente…) sí.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const supabase = await createClient();
   const {
@@ -81,16 +87,40 @@ export default async function HomePage() {
 
   // El otro lado de HU-02: sin espacio de mantenimiento, los contextos son
   // los restaurantes a los que se tiene acceso.
+  //
+  // El slug del espacio NO puede salir de un embed `spaces(slug)`: la
+  // política `spaces_select` exige ser MIEMBRO del espacio y el cliente no
+  // lo es —sus accesos viven en `establishment_memberships`—, así que el
+  // embed venía null, el filtro que lo exigía descartaba todas las filas y
+  // esta pantalla, que existe precisamente para el cliente, no le enseñaba
+  // ni un restaurante: caía en "todavía no tienes espacio".
+  //
+  // Se resuelve con `space_slug()`, la función SECURITY DEFINER que la
+  // migración 20260830000036 creó para este mismo problema en la búsqueda
+  // global. El slug no es un dato sensible: es el segmento de URL por el
+  // que el cliente ya navega.
   const { data: establishments } = await supabase
     .from("establishments")
-    .select("id, name, spaces(slug)")
+    .select("id, name, space_id")
     .order("name");
 
-  const restaurants = (establishments ?? []).filter(
-    (e): e is { id: string; name: string; spaces: { slug: string } } => Boolean(e.spaces),
-  );
+  const restaurants = await Promise.all(
+    (establishments ?? []).map(async (e) => {
+      const { data: slug } = await supabase.rpc("space_slug", { p_space_id: e.space_id });
+      return slug ? { id: e.id, name: e.name, slug } : null;
+    }),
+  ).then((rows) => rows.filter((r): r is { id: string; name: string; slug: string } => r !== null));
 
-  if (restaurants.length > 0) {
+  // PRD §20.1: "Con un solo contexto accesible se entra directamente. Con
+  // varios, aparece un selector". Vale igual para los restaurantes del
+  // cliente que para los espacios del equipo — antes se le enseñaba el
+  // selector aunque tuviera uno solo, con un subtítulo que además le decía
+  // que tenía acceso a más de uno.
+  if (restaurants.length === 1) {
+    redirect(`/espacios/${restaurants[0].slug}/restaurantes/${restaurants[0].id}`);
+  }
+
+  if (restaurants.length > 1) {
     return (
       <main className="mx-auto max-w-lg p-8">
         <h1 className="mb-1 text-2xl font-bold text-primary-dark">
@@ -101,7 +131,7 @@ export default async function HomePage() {
           {restaurants.map((restaurant) => (
             <Link
               key={restaurant.id}
-              href={`/espacios/${restaurant.spaces.slug}/restaurantes/${restaurant.id}`}
+              href={`/espacios/${restaurant.slug}/restaurantes/${restaurant.id}`}
             >
               <Card className="cursor-pointer hover:border-cuotly-green">{restaurant.name}</Card>
             </Link>

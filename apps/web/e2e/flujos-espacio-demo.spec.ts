@@ -70,22 +70,34 @@ test.describe("Flujos sobre el espacio de demostración", () => {
   );
 
   /**
-   * Entrar es el mismo formulario para los tres. Se espera a que el
-   * servidor redirija fuera de /login: el `signIn` de
-   * `app/(auth)/actions.ts` hace `redirect("/")` y es la raíz la que
-   * decide dónde aterriza cada papel.
+   * Entrar es el mismo formulario para los tres, pero cada papel acaba en
+   * un sitio distinto, así que el destino se pasa y se espera aquí.
+   *
+   * Entrar encadena DOS redirecciones de servidor: `signIn`
+   * (`app/(auth)/actions.ts`) manda a `/`, y es la raíz la que decide a
+   * dónde va cada uno. Esperar solo a "ya no estoy en /login" se queda
+   * corto: en ese momento la segunda redirección todavía no ha ocurrido.
+   *
+   * El margen es de 20 s y no de los 5 s por defecto porque `next dev`
+   * compila cada ruta la primera vez que alguien la pide, y quien paga esa
+   * compilación es el primer test que pasa por ella. No enmascara nada: si
+   * la redirección no llega, el test sigue fallando, solo que por no
+   * llegar y no por llegar tarde.
    */
-  async function entrar(page: Page, email: string) {
+  async function entrar(page: Page, email: string, destino: RegExp) {
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
-    await expect(page).not.toHaveURL(/\/login/);
+    await page.waitForURL(destino, { timeout: 20_000 });
   }
+
+  const ESPACIO_URL = new RegExp(`/espacios/${ESPACIO}$`);
+  const RESTAURANTE_URL = new RegExp(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
 
   test.describe("El equipo", () => {
     test("la propietaria aterriza en su espacio, con el restaurante sembrado", async ({ page }) => {
-      await entrar(page, EQUIPO.propietaria.email);
+      await entrar(page, EQUIPO.propietaria.email, ESPACIO_URL);
 
       // Pertenece a un solo espacio, así que la raíz redirige sola
       // (app/page.tsx: `if (spaces.length === 1) redirect(...)`).
@@ -105,7 +117,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     test("la bandeja de solicitudes enseña las enviadas y NO el borrador del cliente", async ({
       page,
     }) => {
-      await entrar(page, EQUIPO.propietaria.email);
+      await entrar(page, EQUIPO.propietaria.email, ESPACIO_URL);
       await page.goto(`/espacios/${ESPACIO}/solicitudes`);
 
       await expect(page.getByRole("heading", { name: "Solicitudes" })).toBeVisible();
@@ -121,15 +133,21 @@ test.describe("Flujos sobre el espacio de demostración", () => {
 
       // Los estados, con el nombre único de CA-21 (src/i18n/es.ts), no en
       // crudo desde la base de datos.
-      await expect(page.getByText("Recibida")).toBeVisible();
-      await expect(page.getByText("En curso")).toBeVisible();
-      await expect(page.getByText("Publicada")).toBeVisible();
+      //
+      // Se buscan dentro del `tbody`: "Recibida" es también la cabecera de
+      // la columna de fecha (`dateColumn`), así que a nivel de página el
+      // texto sale dos veces y Playwright lo rechaza por ambiguo. La
+      // cabecera no es un estado; lo que se comprueba son las filas.
+      const filas = page.locator("tbody");
+      await expect(filas.getByText("Recibida")).toBeVisible();
+      await expect(filas.getByText("En curso")).toBeVisible();
+      await expect(filas.getByText("Publicada")).toBeVisible();
     });
 
     test("el tablero de trabajos enseña los dos, con su responsable y su estado", async ({
       page,
     }) => {
-      await entrar(page, EQUIPO.propietaria.email);
+      await entrar(page, EQUIPO.propietaria.email, ESPACIO_URL);
       await page.goto(`/espacios/${ESPACIO}/trabajos`);
 
       await expect(page.getByRole("heading", { name: "Trabajos" })).toBeVisible();
@@ -138,9 +156,11 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(page.getByRole("link", { name: "TRB-0002" })).toBeVisible();
 
       // Uno en curso y otro publicado: es lo que dejó el sembrado, y son
-      // dos estados distintos del mismo tablero.
-      await expect(page.getByText("En curso")).toBeVisible();
-      await expect(page.getByText("Publicado")).toBeVisible();
+      // dos estados distintos del mismo tablero. Dentro del `tbody`, por lo
+      // mismo que en la bandeja: un estado es una celda, no una cabecera.
+      const filas = page.locator("tbody");
+      await expect(filas.getByText("En curso")).toBeVisible();
+      await expect(filas.getByText("Publicado")).toBeVisible();
 
       // El equipo SÍ ve quién es el responsable — es su organización
       // interna (P7). Lo que no puede verlo es el cliente, y eso se
@@ -151,7 +171,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     test("la trabajadora entra al mismo espacio y ve el trabajo que tiene asignado", async ({
       page,
     }) => {
-      await entrar(page, EQUIPO.trabajadora.email);
+      await entrar(page, EQUIPO.trabajadora.email, ESPACIO_URL);
 
       await expect(page).toHaveURL(new RegExp(`/espacios/${ESPACIO}$`));
 
@@ -163,14 +183,14 @@ test.describe("Flujos sobre el espacio de demostración", () => {
 
   test.describe("El cliente", () => {
     test("aterriza en su restaurante, no en un espacio de mantenimiento", async ({ page }) => {
-      await entrar(page, CLIENTE.email);
+      await entrar(page, CLIENTE.email, RESTAURANTE_URL);
 
       // El otro lado de HU-02: no pertenece a ningún espacio, así que sus
-      // contextos son sus restaurantes (app/page.tsx). Con uno solo, la
-      // raíz pinta el selector de cliente con su tarjeta.
-      await expect(page.getByRole("heading", { name: "Elige un restaurante" })).toBeVisible();
-      await page.getByText("Bar Demo").click();
-
+      // contextos son sus restaurantes (app/page.tsx). Y como solo tiene
+      // uno, entra directamente — PRD §20.1: "Con un solo contexto
+      // accesible se entra directamente. Con varios, aparece un selector".
+      // El selector es para el cliente con varios restaurantes, y su
+      // subtítulo lo dice: "Tienes acceso a más de un restaurante".
       await expect(page).toHaveURL(
         new RegExp(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`),
       );
@@ -179,7 +199,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     });
 
     test("la bolsa del plan refleja lo que se ha consumido de verdad", async ({ page }) => {
-      await entrar(page, CLIENTE.email);
+      await entrar(page, CLIENTE.email, RESTAURANTE_URL);
       await page.goto(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
 
       await expect(
@@ -201,7 +221,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     });
 
     test("ve sus cuatro solicitudes, el borrador incluido", async ({ page }) => {
-      await entrar(page, CLIENTE.email);
+      await entrar(page, CLIENTE.email, RESTAURANTE_URL);
       await page.goto(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
 
       await expect(page.getByRole("heading", { name: "Tus solicitudes" })).toBeVisible();
@@ -222,7 +242,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
      * el otro extremo: mirando lo que la pantalla enseña de verdad.
      */
     test("nunca ve el nombre de nadie del equipo (CA-04)", async ({ page }) => {
-      await entrar(page, CLIENTE.email);
+      await entrar(page, CLIENTE.email, RESTAURANTE_URL);
 
       const pantallas = [
         `/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`,
@@ -239,7 +259,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     });
 
     test("no puede entrar en las pantallas del equipo por la URL", async ({ page }) => {
-      await entrar(page, CLIENTE.email);
+      await entrar(page, CLIENTE.email, RESTAURANTE_URL);
 
       // Ocultar un enlace no es un control de acceso (CLAUDE.md): la
       // comprobación es ir por la URL directa. La bandeja del equipo
