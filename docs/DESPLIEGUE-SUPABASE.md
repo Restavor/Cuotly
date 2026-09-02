@@ -178,39 +178,51 @@ saltarse, que es lo correcto cuando has pedido el recorrido con datos.
 Antes de lanzarlo: `apps/web/.env.local` apuntando al proyecto y el
 sembrado aplicado.
 
-## Lo que NO se pudo probar desde el contenedor de desarrollo
+## Estado: los nueve pasan
 
-Esos nueve tests **no se han ejecutado en verde ni una vez**, y conviene
-saberlo antes de fiarse de ellos. La política de salida a internet del
-contenedor de Claude Code bloquea el dominio del proyecto:
+**9 passed**, en Windows, el 02/09/2026. Se cerraron desde una máquina con
+salida al dominio del proyecto, no desde el contenedor de Claude Code: la
+política de salida de ese entorno bloquea el dominio, así que allí la
+aplicación Next.js no llega a Supabase aunque el sembrado sí esté puesto.
 
 ```
 $ curl https://mcajbfxhkxtdhjoyrqha.supabase.co/rest/v1/
 connect_rejected — gateway answered 403 to CONNECT
 ```
 
-El conector MCP de Supabase sí llega (va por otra ruta, permitida), y por
-eso se han podido aplicar las migraciones y sembrar los datos; lo que no
-llega es la aplicación Next.js que levanta Playwright.
+El conector MCP sí llega, por otra ruta permitida, y por eso desde el
+contenedor se pueden aplicar migraciones y sembrar datos, pero no correr
+estos tests. Quien los toque desde ahí verá los nueve fallar en el login,
+con la página mostrando "Correo o contraseña incorrectos." — que es lo que
+devuelve `signIn` cuando no puede hablar con Supabase, y no un problema de
+credenciales.
 
-Lo que sí quedó comprobado del archivo, ejecutándolo:
+### Lo que encontraron al ejecutarse por primera vez
 
-- compila (`typecheck`) y pasa `lint`;
-- con la señal quitada, se salta con su motivo y los otros 14 tests siguen
-  en verde — o sea que el archivo carga y no rompe la suite;
-- con `E2E_DATOS=1`, el recorrido **se ejecuta**: los selectores del login
-  resuelven, el formulario se rellena y se envía, y la server action
-  corre. Falla en el único sitio donde puede fallar aquí, con la página
-  mostrando "Correo o contraseña incorrectos." — que es lo que devuelve
-  `signIn` cuando `signInWithPassword` no puede hablar con Supabase.
+Valió la pena escribirlos: de cuatro tandas en rojo, **dos fallos eran de
+la aplicación**, no de los tests ni del sembrado. Ninguno se habría visto
+sin datos reales y tres identidades distintas.
 
-Es decir: la cadena está probada hasta el borde de red, y lo que queda por
-verificar son las aserciones posteriores al login. Cada selector que usan
-está anclado a lo que renderiza el código (`app/page.tsx`,
-`espacios/[slug]/solicitudes/page.tsx`, `.../trabajos/page.tsx`,
-`.../restaurantes/[id]/page.tsx`) y a las etiquetas de `src/i18n/es.ts`,
-no inventado — pero anclado no es lo mismo que ejecutado.
+1. **El sembrado creaba usuarios que no podían entrar.** Insertar en
+   `auth.users` a mano no basta: cuatro campos de texto quedaban a NULL y
+   GoTrue no sabe leerlos, y faltaba la fila en `auth.identities`. Ver la
+   cabecera de `supabase/seed/espacio-demo.sql`, que ahora lo explica y lo
+   comprueba antes de dar el sembrado por bueno.
 
-Para cerrarlos hace falta una máquina con salida al dominio del proyecto,
-o una base local con `supabase start` (que necesita Docker, y en este
-contenedor no hay demonio).
+2. **Un espacio con dos personas nunca redirigía.** `app/page.tsx` contaba
+   los espacios sin filtrar por usuario, apoyándose en RLS para algo que
+   RLS no hace: `space_memberships_select` es `is_space_member(space_id)`,
+   que deja ver a todo el equipo. Salía una fila por miembro y el selector
+   pintaba el mismo espacio repetido. Se dispara con cualquier espacio
+   real.
+
+3. **El cliente nunca veía sus restaurantes.** El slug del espacio salía de
+   un embed `spaces(slug)` y el cliente no puede leer `public.spaces`.
+   Mismo fallo que la migración 36 documentó para la búsqueda global, misma
+   solución: `space_slug()`. Y de paso, con un solo restaurante ahora se
+   entra directamente, como manda el PRD §20.1.
+
+Los otros dos fallos sí eran de los tests: un `getByText("Recibida")` que
+chocaba con la cabecera de columna del mismo nombre, y un `entrar()` que
+esperaba a salir de `/login` cuando entrar encadena dos redirecciones de
+servidor.

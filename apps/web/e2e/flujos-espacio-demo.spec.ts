@@ -23,8 +23,17 @@ import { expect, test, type Page } from "@playwright/test";
  *
  * NO se puede ejecutar desde el contenedor de Claude Code: su política de
  * salida bloquea el dominio del proyecto (403 al CONNECT), así que la
- * aplicación no llega a Supabase aunque el sembrado sí esté puesto. Está
- * explicado en docs/DESPLIEGUE-SUPABASE.md.
+ * aplicación no llega a Supabase aunque el sembrado sí esté puesto — los
+ * nueve fallan en el login con "Correo o contraseña incorrectos.", que es
+ * lo que devuelve `signIn` cuando no puede hablar con Supabase, y no un
+ * problema de credenciales. Está explicado en docs/DESPLIEGUE-SUPABASE.md.
+ *
+ * En una máquina con salida al dominio pasan los nueve (comprobado en
+ * Windows el 02/09/2026). Al ejecutarse por primera vez encontraron tres
+ * fallos de la aplicación: usuarios sembrados que no autenticaban, un
+ * espacio con dos personas que nunca redirigía, y el cliente sin acceso al
+ * slug de su espacio. Los tres están en el historial de git y resumidos en
+ * docs/DESPLIEGUE-SUPABASE.md.
  *
  * Lo que se comprueba no es "que la página cargue", sino las cuatro cosas
  * que solo se ven con datos reales y tres identidades distintas:
