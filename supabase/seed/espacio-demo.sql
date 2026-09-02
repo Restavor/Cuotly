@@ -39,47 +39,89 @@ declare
   v_space_id uuid;
 begin
   select id into v_space_id from public.spaces where slug = 'demo';
-  if v_space_id is null then
-    return;
-  end if;
 
-  -- `audit_log.space_id` no tiene borrado en cascada (es un libro: la
-  -- cascada se la puso a propósito nadie), así que va a mano y primero.
-  delete from public.audit_log where space_id = v_space_id;
-  delete from public.spaces where id = v_space_id;
-  delete from auth.users where email like '%@cuotly.test';
+  if v_space_id is not null then
+    -- `audit_log.space_id` no tiene borrado en cascada (es un libro: la
+    -- cascada se la puso a propósito nadie), así que va a mano y primero.
+    delete from public.audit_log where space_id = v_space_id;
+    delete from public.spaces where id = v_space_id;
+  end if;
 end $$;
+
+-- Fuera del bloque anterior a propósito: si el espacio no existe pero los
+-- usuarios sí (porque una resiembra se quedó a medias), salir antes de
+-- borrarlos dejaba el sembrado sin poder repetirse — la inserción de la
+-- sección 1 fallaba por clave duplicada. Las identidades caen solas: su
+-- clave ajena a `auth.users` es ON DELETE CASCADE.
+delete from auth.users where email like '%@cuotly.test';
 
 -- ============================================================
 -- 1 · Las tres identidades.
 --
--- `auth.users` solo exige `id`; el resto tiene valor por defecto. La
--- contraseña va con bcrypt (pgcrypto vive en el esquema `extensions` en
--- un proyecto de Supabase) y `email_confirmed_at` se rellena para que se
--- pueda entrar sin pasar por el correo de confirmación.
+-- Crear un usuario a mano en `auth.users` NO basta para poder entrar, y
+-- esto costó una tanda entera de tests en rojo. Que una columna acepte
+-- NULL no significa que GoTrue —el servicio de autenticación de Supabase,
+-- escrito en Go— sepa leerla. Hacen falta las tres cosas:
+--
+--   · Los CUATRO campos de texto que son nullable y no tienen valor por
+--     defecto (`confirmation_token`, `recovery_token`, `email_change` y
+--     `email_change_token_new`) van a cadena vacía, NUNCA a NULL. Go los
+--     lee como `string`, y un NULL revienta el escaneo de la fila con
+--     "converting NULL to string is unsupported". El login devuelve un
+--     error del servidor que la pantalla enseña como "Correo o contraseña
+--     incorrectos", así que parece un problema de credenciales y no lo es.
+--
+--   · Una fila en `auth.identities` por usuario. GoTrue resuelve el login
+--     por correo a través de la identidad, no de `auth.users`: sin ella
+--     el usuario existe y aun así "no existe".
+--
+--   · La contraseña con coste 10, que es el que usa Supabase.
+--     `gen_salt('bf')` a secas usa 6.
 --
 -- El disparador `on insert on auth.users` de la migración 01 crea solo el
 -- `profiles` correspondiente: no hace falta insertarlo aquí.
 -- ============================================================
 insert into auth.users
   (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+   confirmation_token, recovery_token, email_change, email_change_token_new,
    raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
 values
   ('d0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'owner@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf')), now(),
+   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Elena Ruiz (propietaria)"}'::jsonb, now(), now()),
   ('d0000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'trabajadora@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf')), now(),
+   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Marta Gil (trabajadora)"}'::jsonb, now(), now()),
   ('d0000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'restaurante@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf')), now(),
+   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Bar Demo"}'::jsonb, now(), now());
+
+-- La identidad de cada uno. `provider_id` para el proveedor `email` es el
+-- propio id del usuario, y `identity_data` tiene que llevar `sub` y
+-- `email`: es de ahí de donde GoTrue saca a quién pertenece la identidad.
+insert into auth.identities
+  (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select
+  u.id::text,
+  u.id,
+  jsonb_build_object(
+    'sub', u.id::text,
+    'email', u.email,
+    'email_verified', true,
+    'phone_verified', false),
+  'email',
+  now(), now(), now()
+from auth.users u
+where u.email like '%@cuotly.test';
 
 -- El disparador puede no rellenar el nombre visible según cómo esté
 -- escrito; se asegura aquí para que las pantallas no muestren el correo.
@@ -371,7 +413,28 @@ declare
   v_contadores integer;
   v_cobros integer;
   v_deuda integer;
+  v_entrables integer;
 begin
+  -- Lo primero, que se pueda ENTRAR. El sembrado anterior daba todo esto
+  -- por bueno y dejaba tres usuarios que no autenticaban: comprobaba los
+  -- datos de negocio y no la puerta. Aquí se comprueba que la contraseña
+  -- verifica contra el hash y que cada uno tiene su identidad.
+  select count(*) into v_entrables
+  from auth.users u
+  where u.email like '%@cuotly.test'
+    and u.encrypted_password = extensions.crypt('Cuotly-demo-2026', u.encrypted_password)
+    and u.email_confirmed_at is not null
+    and u.confirmation_token is not null
+    and u.recovery_token is not null
+    and u.email_change is not null
+    and u.email_change_token_new is not null
+    and exists (select 1 from auth.identities i
+                where i.user_id = u.id and i.provider = 'email');
+
+  if v_entrables <> 3 then
+    raise exception 'Solo % de los 3 usuarios pueden entrar: revisa tokens NULL o identidades que falten', v_entrables;
+  end if;
+
   select count(*) into v_solicitudes from public.requests where space_id = v_space;
   select count(*) into v_trabajos    from public.jobs where space_id = v_space;
   select count(*) into v_publicados  from public.jobs where space_id = v_space and state = 'published';
