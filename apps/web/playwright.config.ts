@@ -54,9 +54,16 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   webServer: {
-    // `build` + `start` para la suite con datos; `dev` para la del
-    // armazón, que no lo necesita y agradece el arranque instantáneo.
-    command: CON_DATOS ? "pnpm build && pnpm start" : "pnpm dev",
+    // La suite con datos sirve la compilación de producción; la del
+    // armazón, `next dev`.
+    //
+    // El `pnpm build` NO se hace aquí sino en el script `test:e2e:datos`,
+    // antes de llamar a Playwright, y por un motivo práctico: lo que
+    // imprime el proceso del WebServer sale recortado, así que un fallo de
+    // compilación aparecía como "[WebServer] Failed to type check." y
+    // punto, sin el error. Compilando fuera, el error se lee entero en la
+    // terminal.
+    command: CON_DATOS ? "pnpm start" : "pnpm dev",
     url: "http://localhost:3000",
     // Los tests con datos NO reutilizan un servidor que ya esté escuchando.
     // Reutilizarlo fue una trampa cara: un `pnpm dev` arrancado antes de
@@ -66,8 +73,7 @@ export default defineConfig({
     // lo dice y se cierra ese `pnpm dev`; eso se arregla en diez segundos,
     // y lo otro cuesta una tarde.
     reuseExistingServer: !process.env.CI && !CON_DATOS,
-    // Compilar entero lleva su rato; arrancar `next dev`, no.
-    timeout: CON_DATOS ? 300_000 : 60_000,
+    timeout: 60_000,
   },
   projects: [
     {
