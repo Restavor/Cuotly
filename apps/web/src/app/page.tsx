@@ -32,9 +32,22 @@ export default async function HomePage() {
     redirect("/login");
   }
 
+  // `user_id` va explícito, y no es redundante con RLS: la política de
+  // `space_memberships` es `is_space_member(space_id)`, que deja ver a
+  // TODO el equipo del espacio — tiene que hacerlo, o la pantalla de
+  // equipo de HU-08 no funcionaría. Filtra por acceso, no por pertenencia
+  // propia, que es lo que hace falta aquí.
+  //
+  // Sin esta línea, esta consulta devolvía una fila por cada miembro del
+  // espacio, `spaces` salía con el mismo espacio repetido, y un espacio
+  // con dos personas nunca redirigía: caía en la rama de "más de un
+  // espacio" y pintaba el selector con el mismo nombre dos veces. Se
+  // dispara con cualquier espacio real; no se vio antes porque el
+  // proyecto no tenía datos.
   const { data: memberships } = await supabase
     .from("space_memberships")
     .select("role, spaces(name, slug)")
+    .eq("user_id", user.id)
     .eq("status", "active");
 
   const spaces = (memberships ?? [])
