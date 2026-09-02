@@ -94,6 +94,9 @@ export const es = {
   },
 
   contextSelector: {
+    loadErrorTitle: "No se han podido cargar tus contextos",
+    loadErrorReason:
+      "La consulta al servidor falló. Vuelve a cargar la página; si sigue igual, es un problema de conexión con la base de datos, no de tu cuenta.",
     title: "Elige un espacio",
     subtitle: "Perteneces a más de un espacio de mantenimiento.",
     // HU-02 desde el otro lado: un cliente no pertenece a ningún espacio

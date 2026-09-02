@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, ErrorState } from "@/components/ui";
 import { CreateRestavorCard } from "@/components/CreateRestavorCard";
 import { es } from "@/i18n/es";
 import { signOut } from "./(auth)/actions";
@@ -50,7 +50,7 @@ export default async function HomePage() {
   // espacio" y pintaba el selector con el mismo nombre dos veces. Se
   // dispara con cualquier espacio real; no se vio antes porque el
   // proyecto no tenía datos.
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membershipsError } = await supabase
     .from("space_memberships")
     .select("role, spaces(name, slug)")
     .eq("user_id", user.id)
@@ -59,6 +59,35 @@ export default async function HomePage() {
   const spaces = (memberships ?? [])
     .map((m) => m.spaces)
     .filter((s): s is { name: string; slug: string } => Boolean(s));
+
+  // Esta pantalla decide A DÓNDE ENTRA cada persona, así que equivocarse
+  // aquí no es un detalle: es no poder entrar. Y hasta ahora se podía
+  // equivocar en silencio de dos formas, las dos indistinguibles de "no
+  // tienes nada":
+  //
+  //   · que la consulta fallara —una sesión que no cuaja, la base
+  //     inalcanzable— y `memberships` viniera null;
+  //   · que la consulta fuera bien pero el embed `spaces(...)` viniera
+  //     null, que es lo que devuelve PostgREST cuando RLS tapa la tabla
+  //     enlazada. Ya pasó una vez, con el cliente y su slug.
+  //
+  // En ambos casos se caía a la rama del cliente, se pintaba un selector
+  // de restaurantes o "todavía no perteneces a ningún espacio", y ahí se
+  // quedaba: sin redirigir, sin error y sin pista. CLAUDE.md lo prohíbe
+  // con todas las letras — si no hay dato, se dice el motivo.
+  const contextosIlegibles =
+    Boolean(membershipsError) || ((memberships?.length ?? 0) > 0 && spaces.length === 0);
+
+  if (contextosIlegibles) {
+    return (
+      <main className="mx-auto max-w-lg p-8">
+        <ErrorState
+          title={es.contextSelector.loadErrorTitle}
+          description={membershipsError?.message ?? es.contextSelector.loadErrorReason}
+        />
+      </main>
+    );
+  }
 
   if (spaces.length === 1) {
     redirect(`/espacios/${spaces[0].slug}`);
@@ -99,10 +128,23 @@ export default async function HomePage() {
   // migración 20260830000036 creó para este mismo problema en la búsqueda
   // global. El slug no es un dato sensible: es el segmento de URL por el
   // que el cliente ya navega.
-  const { data: establishments } = await supabase
+  const { data: establishments, error: establishmentsError } = await supabase
     .from("establishments")
     .select("id, name, space_id")
     .order("name");
+
+  // Mismo motivo que arriba: sin esto, un error de red aquí le dice a un
+  // cliente que no tiene restaurantes.
+  if (establishmentsError) {
+    return (
+      <main className="mx-auto max-w-lg p-8">
+        <ErrorState
+          title={es.contextSelector.loadErrorTitle}
+          description={establishmentsError.message}
+        />
+      </main>
+    );
+  }
 
   const restaurants = await Promise.all(
     (establishments ?? []).map(async (e) => {

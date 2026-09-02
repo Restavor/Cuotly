@@ -66,11 +66,32 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
     // Cuarenta y cinco segundos, y no los cinco de serie: el primer
     // aterrizaje de cada papel encadena varias consultas a Supabase por
-    // la red. Cabe dentro del límite del test, que la configuración pone
-    // en 120 s para esta suite — un margen interior mayor que el exterior
-    // no es un margen, es un mensaje de error peor. Esperar de más no
-    // oculta ningún fallo: si no llega, falla igual.
-    await page.waitForURL(destino, { timeout: 45_000 });
+    // la red. Cabe dentro del límite del test (120 s en esta suite) — un
+    // margen interior mayor que el exterior no es un margen, es un
+    // mensaje de error peor.
+    try {
+      await page.waitForURL(destino, { timeout: 45_000 });
+    } catch (fallo) {
+      // Si no llega, decir DÓNDE se quedó y QUÉ ponía ahí. Un
+      // "waitForURL: Timeout" a secas obliga a adivinar, y ya hemos
+      // adivinado bastante: la portada decide a dónde entra cada papel, y
+      // cuando esa decisión sale mal lo que se ve es otra pantalla, no un
+      // error del navegador.
+      const titulo = await page
+        .getByRole("heading")
+        .first()
+        .innerText()
+        .catch(() => "(sin titular)");
+      const alertas = await page
+        .locator('[role="alert"]:visible:not(#__next-route-announcer__)')
+        .allInnerTexts();
+      throw new Error(
+        `Entrando como ${email} no se llegó a ${destino}. Se quedó en ${page.url()}, ` +
+          `con el titular "${titulo.trim()}"` +
+          (alertas.length ? ` y este error en pantalla: ${alertas.join(" / ")}` : " y sin error en pantalla") +
+          `. Causa original: ${fallo instanceof Error ? fallo.message.split("\n")[0] : String(fallo)}`,
+      );
+    }
   }
 
   /**
