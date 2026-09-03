@@ -3792,6 +3792,14 @@ export type Database = {
         Args: { p_charge_id: string; p_file_id: string }
         Returns: undefined
       }
+      audit_action_capability: {
+        Args: { p_action: string }
+        Returns: string
+      }
+      audit_entity_is_visible: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: boolean
+      }
       auto_assign_job: { Args: { p_job_id: string }; Returns: string }
       begin_request_analysis: {
         Args: { p_request_id: string }
@@ -4558,6 +4566,14 @@ export type Database = {
           state: string
           title: string
         }[]
+      }
+      set_space_name: {
+        Args: { p_name: string; p_space_id: string }
+        Returns: boolean
+      }
+      set_space_timezone: {
+        Args: { p_reason: string; p_space_id: string; p_timezone: string }
+        Returns: boolean
       }
       space_slug: { Args: { p_space_id: string }; Returns: string }
       start_correction: {

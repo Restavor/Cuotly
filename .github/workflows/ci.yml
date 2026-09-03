@@ -152,6 +152,18 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/hito8_cola_y_barridos.sql
 
+      - name: "HU-07 — Verificar planes y servicios (RN-COM-09, RN-COM-11, RN-COM-13, RN-COM-18, CA-01, CA-17)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hu07_planes_y_servicios.sql
+
+      - name: "HU-36 — Verificar los ajustes del espacio y la auditoría (§124, §125, §21.2, RN-CLK-10, CA-16)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hu36_ajustes_auditoria.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

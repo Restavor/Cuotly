@@ -782,6 +782,110 @@ no son un fallo, sino alcance:
     existir la pantalla, el test falla hasta que alguien viene a borrar la
     entrada. Quedan siete destinos.
 
+20. **HU-36, los ajustes del espacio y la auditoría, con pantalla**
+    (03/09/2026). `/ajustes` era el destino más antiguo del menú de §20.2
+    sin construir, y al construirlo volvió a pasar lo de siempre —van
+    cuatro— pero esta vez lo que faltaba no era una función: era una
+    **puerta abierta**.
+
+    - **El espacio se podía renombrar, y cambiar de zona horaria, sin
+      dejar rastro.** `spaces` tenía desde la migración 8 una política de
+      UPDATE para el propietario y ninguna función: cambiar el nombre —o
+      la zona horaria, que mueve el reloj contractual de TODOS los plazos
+      vivos— era un UPDATE directo por PostgREST, sin actor, sin valor
+      anterior y sin motivo. Es un MUST de CLAUDE.md y el principio P4 del
+      PRD, incumplidos durante todo el proyecto porque ninguna pantalla lo
+      hacía y nadie fue a mirar. Ahora la política **no existe** —`spaces`
+      se queda sin ninguna de UPDATE, que en RLS significa "nadie"— y los
+      dos cambios pasan por `set_space_name()` y `set_space_timezone()`,
+      que comprueban `manage_space` y escriben en `audit_log`.
+    - **Cambiar la zona horaria no versionaba los calendarios.**
+      `space_working_hours` existe desde el Hito 3 para eso exactamente
+      (RN-CLK-10: poder reconstruir qué calendario aplicaba a un tramo
+      pasado) y nadie insertaba nunca una versión, porque nadie podía
+      cambiar la zona. Ahora se da de alta la versión del calendario
+      contractual y del de Menú Diario. El de **soporte no se toca**: §132
+      fija su zona en Europa/Madrid y es un reloj distinto.
+    - **La visibilidad de la auditoría no era la que dice §21.2.** La
+      política vigente (migración 42) dejaba que **cualquier miembro
+      activo** viera todo el espacio salvo lo financiero: un trabajador
+      leía por RPC quién supervisa a quién, a quién se había invitado y qué
+      accesos de cliente se habían revocado. Ahora el propietario ve su
+      espacio entero, el administrador la operativa, y el trabajador sus
+      propias acciones y las filas que ya puede ver.
+
+    Cómo se reparte, porque el criterio importa más que la lista: **la
+    capacidad que hace falta para ver una acción es la misma que hace
+    falta para ejecutarla**. No es un invento para la pantalla, sale de
+    `has_capability_as()`, que ya dice quién renombra el espacio, quién
+    cobra y quién gestiona clientes. Y las familias que no dependen de una
+    capacidad sino de la fila —trabajos, solicitudes, tareas, archivos,
+    ausencias, correcciones— las resuelve `audit_entity_is_visible()`,
+    que es **SECURITY INVOKER a propósito**: pregunta por la fila y deja
+    que conteste la RLS de esa fila, en vez de escribir una segunda copia
+    de esas reglas que el día que discrepara ganaría la peor.
+
+    Todo eso es la **migración 49**, y la pantalla son dos: `/ajustes`
+    (identidad del espacio, configuración contractual, calendarios
+    vigentes, preferencias de aviso, mi cuenta) y `/ajustes/auditoria`
+    (el libro, con filtros por familia y periodo y paginación de §20.7).
+    De paso, la sección "Notificaciones" de §123 deja de ser servidor sin
+    pantalla: `set_notification_preference()` existía desde el Hito 8 sin
+    que nada la llamara, RN-NOT-03 incluido.
+
+    **Verificado contra una base de datos de verdad, no razonado**, y esta
+    vez de forma repetible: `supabase/tests/bootstrap-postgres-local.sql`
+    emula lo que un proyecto de Supabase da por hecho —los tres roles, el
+    esquema `auth`, el `storage` y, sobre todo, el `alter default
+    privileges` que concede EXECUTE a `anon` y `authenticated`— así que
+    las suites de `supabase/tests/` corren contra cualquier PostgreSQL 16
+    sin Docker y sin CLI. Las 49 migraciones se aplican desde cero y pasan
+    las diez suites, incluida la nueva `hu36_ajustes_auditoria.sql`.
+    Comprobado **con mutación**, que es lo que separa un test de un
+    adorno: devolviendo la política permisiva de la migración 42, el test
+    falla; haciendo que `audit_entity_is_visible()` devuelva siempre
+    `true`, falla; devolviéndole a `spaces` su política de UPDATE, falla.
+
+    De paso, dos cosas que llevaban un día sin estar: `hu07_planes_y_servicios.sql`
+    **no se ejecutaba en CI** —se escribió ayer y nadie la enganchó— y
+    ahora sí, junto con la nueva.
+
+    **Lo que NO entrega, y se dice en vez de fingirlo:**
+
+    - **El cliente sigue sin ver auditoría.** §21.2 dice que el propietario
+      de un restaurante ve la de su establecimiento, y no está: cada fila
+      lleva `actor_id`, así que enseñársela rompería el MUST NOT de
+      CLAUDE.md. Hace falta una proyección sin identidad, como la que ya
+      tiene `establishment_consumption_ledger()`, y una pantalla suya.
+      HU-36 es la historia del propietario del espacio.
+    - **El logotipo del espacio (§124).** `files.establishment_id` es NOT
+      NULL: hoy no existe un archivo que sea del espacio y no de un
+      restaurante. La pantalla lo dice en vez de enseñar un botón muerto.
+    - **Las secciones de §123 que son de otra fase** —integraciones,
+      suscripción a Cuotly, exportación, propiedad y eliminación del
+      espacio— se enumeran en la pantalla con su motivo, no se esconden.
+    - **El recorrido de Playwright con datos.** `ca19-recorridos-movil.spec.ts`
+      no crece con esta pantalla, igual que no creció con equipo,
+      calendario, tareas ni planes: esos tests entran con sesión contra el
+      proyecto real y desde aquí no se pueden ejecutar. Escribir uno sin
+      haberlo visto pasar sería exactamente lo que este repositorio ha
+      pagado caro cuatro veces. Queda dicho como deuda de las cinco
+      pantallas, no de esta.
+
+    **Un matiz de §21.2 que conviene que Bosco confirme.** La frase "los
+    administradores, la operativa" no dice qué queda fuera. Lo que se ha
+    implementado es: fuera la configuración del espacio (§125) y la
+    composición del equipo —invitaciones, permisos y supervisores—, que son
+    justo las capacidades que `has_capability_as()` reserva al propietario
+    (`manage_space`, `invite_member`); dentro todo lo demás, finanzas
+    incluidas, porque `manage_finance` ya es suya. Es una derivación de lo
+    que el permiso dice, no una regla nueva, pero si "la operativa"
+    significaba otra cosa, se cambia en una línea de
+    `audit_action_capability()`.
+
+    Con esto `/ajustes` sale de la lista de pendientes de
+    `navigation-routes.test.ts`. Quedan seis destinos.
+
 12. ~~**Estado del despliegue: el proyecto de Supabase va por la migración
     26 de 42.**~~ **Resuelto el 01/09/2026: las 42 están aplicadas.**
     Detalle en `docs/DESPLIEGUE-SUPABASE.md`. El esquema pasa a 57 tablas
