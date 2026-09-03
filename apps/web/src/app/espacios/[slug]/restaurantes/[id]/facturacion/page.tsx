@@ -15,6 +15,8 @@ import {
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { UploadReceiptForm } from "./UploadReceiptForm";
+
 /**
  * La facturación del restaurante, vista por él (HU-25, RN-FIN-07).
  *
@@ -104,6 +106,43 @@ export default async function ClientBillingPage({
 
   const ledgerRows = ledger ?? [];
 
+  // RN-FIN-06 · los justificantes que este restaurante puede ver. No salen
+  // de `receipts` —esa tabla es del equipo: su política es
+  // `can_read_establishment_finance()`, que al cliente lo deja fuera— sino
+  // de `file_links`, cuya política es `can_read_file()`. Así el cliente ve
+  // lo suyo y sigue sin ver lo que el equipo adjuntó como interno.
+  const chargeIds = chargeRows.map((charge) => charge.id);
+  const { data: links } = chargeIds.length
+    ? await supabase
+        .from("file_links")
+        .select("file_id, entity_id")
+        .eq("entity_type", "charge")
+        .in("entity_id", chargeIds)
+    : { data: [] };
+
+  const fileIds = [...new Set((links ?? []).map((link) => link.file_id))];
+  const { data: attachedFiles } = fileIds.length
+    ? await supabase.from("files").select("id, name, created_at").in("id", fileIds)
+    : { data: [] };
+
+  const fileById = new Map((attachedFiles ?? []).map((file) => [file.id, file]));
+  const receiptsByCharge = new Map<string, { id: string; name: string }[]>();
+  for (const link of links ?? []) {
+    const file = fileById.get(link.file_id);
+    if (!file) continue;
+    const lista = receiptsByCharge.get(link.entity_id) ?? [];
+    lista.push({ id: file.id, name: file.name });
+    receiptsByCharge.set(link.entity_id, lista);
+  }
+
+  // Solo tiene sentido adjuntar a un cobro con deuda viva.
+  const chargesPendientes = chargeRows
+    .filter((charge) => charge.outstanding > 0)
+    .map((charge) => ({
+      id: charge.id,
+      label: `${charge.concept} · ${euros(charge.outstanding)}`,
+    }));
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
       <header>
@@ -153,12 +192,41 @@ export default async function ClientBillingPage({
           </Table>
         )}
 
-        <p className="mt-4 text-sm text-text-secondary">
-          <strong className="font-semibold text-text">
-            {es.clientArea.receiptPendingTitle}
-          </strong>{" "}
-          {es.clientArea.receiptPendingReason}
-        </p>
+      </Card>
+
+      <Card title={es.clientArea.receiptTitle}>
+        {chargesPendientes.length === 0 ? (
+          <p className="text-sm text-text-secondary">{es.clientArea.receiptNothingToSend}</p>
+        ) : (
+          <UploadReceiptForm establishmentId={id} charges={chargesPendientes} />
+        )}
+
+        <div className="mt-6">
+          <h3 className="mb-2 text-sm font-semibold text-text">
+            {es.clientArea.receiptSentTitle}
+          </h3>
+          {receiptsByCharge.size === 0 ? (
+            <p className="text-sm text-text-secondary">{es.clientArea.receiptSentEmpty}</p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {chargeRows.flatMap((charge) =>
+                (receiptsByCharge.get(charge.id) ?? []).map((file) => (
+                  <li key={file.id}>
+                    <span className="text-text-secondary">{charge.concept} · </span>
+                    {/*
+                      RN-ARC-08: el enlace no es al objeto, es a una ruta que
+                      comprueba `can_read_file()` y firma una URL de unos
+                      minutos. No hay URL permanente de ningún archivo.
+                    */}
+                    <a href={`/api/archivos/${file.id}`} className="text-cuotly-green underline">
+                      {file.name}
+                    </a>
+                  </li>
+                )),
+              )}
+            </ul>
+          )}
+        </div>
       </Card>
 
       <Card title={es.clientArea.ledgerTitle}>

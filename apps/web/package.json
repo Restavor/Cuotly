@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "comprobar:storage": "node scripts/comprobar-storage.mjs",
     "test:e2e:datos": "node scripts/limpiar-artefactos-dev.mjs && pnpm build && cross-env E2E_DATOS=1 E2E_DIAGNOSTICO=1 playwright test flujos-espacio-demo ca19-recorridos-movil"
   },
   "dependencies": {

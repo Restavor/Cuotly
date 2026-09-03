@@ -21,6 +21,12 @@ import type { PaymentState } from "./action-state";
  * La clave de idempotencia la construye el servidor con el cobro, el
  * importe y el día, no el navegador: pulsar dos veces no cobra dos veces
  * (CLAUDE.md MUST, RN-DAT-09).
+ *
+ * El justificante es opcional y llega como identificador de un archivo ya
+ * registrado. Quién puede adjuntarlo no lo decide este formulario:
+ * `register_file()` exige `can_write_file(establecimiento, 'billing')` y
+ * `register_payment()` comprueba además que el archivo sea de ese mismo
+ * establecimiento.
  */
 export async function registerPayment(
   _prev: PaymentState,
@@ -30,6 +36,11 @@ export async function registerPayment(
   const method = String(formData.get("method") ?? "");
   const euros = Number(String(formData.get("amount") ?? "").replace(",", "."));
   const dia = String(formData.get("paidAt") ?? "").trim();
+  // HU-26 · "con fecha, importe, método y **justificante**". Llega ya
+  // subido y registrado (`src/app/archivos/actions.ts`), así que por aquí
+  // solo viaja su identificador. Es opcional: RN-FIN-06 no exige
+  // justificante para confirmar un cobro.
+  const receiptFileId = String(formData.get("receiptFileId") ?? "").trim();
 
   // Antes esto devolvía `{ error: null, done: false }`: la pantalla se
   // quedaba exactamente igual, sin apunte y sin decir por qué, y el cobro
@@ -76,6 +87,7 @@ export async function registerPayment(
       p_amount_cents: cents,
       p_method: method,
       p_paid_at: paidAt,
+      p_receipt_file_id: receiptFileId === "" ? undefined : receiptFileId,
       // El día entra en la clave: sin él, un segundo cobro del mismo
       // importe sobre el mismo cargo —una entrega a cuenta repetida— se
       // tomaría por un doble clic y se descartaría en silencio.

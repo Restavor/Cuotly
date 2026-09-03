@@ -214,6 +214,7 @@ export default async function TeamJobDetailPage({
                     <TableCell>
                       <RegisterPaymentForm
                         chargeId={charge.id}
+                        establishmentId={job.establishment_id}
                         outstandingEuros={(charge.outstanding / 100).toFixed(2)}
                         defaultDay={hoy}
                       />

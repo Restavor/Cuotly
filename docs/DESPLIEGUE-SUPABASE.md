@@ -10,7 +10,7 @@ Actualizado el 02/09/2026.
 
 ## Aplicadas
 
-**Las 44 migraciones del repositorio están aplicadas.** No queda ninguna
+**Las 45 migraciones del repositorio están aplicadas.** No queda ninguna
 pendiente.
 
 - Las 01–24 se aplicaron el 30/08/2026.
@@ -29,6 +29,17 @@ pendiente.
   análisis de una solicitud cuando el automático falló. Comprobada en vivo
   con las tres identidades sembradas: la trabajadora rechazada, la
   propietaria aceptada, y el camino automático del cliente intacto.
+- La **45** (`storage_bucket_files`) el 03/09/2026, desde el MCP: crea el
+  bucket privado `files`, que era lo único que faltaba para que la
+  interfaz de archivos funcionara. Ver el apartado "El bucket de
+  archivos" más abajo.
+
+  Un detalle del que conviene acordarse: el archivo del repositorio
+  termina comprobando que `storage.objects` tiene RLS activado en vez de
+  activarlo. Activarlo desde una migración da `must be owner of table
+  objects` —esa tabla es de Supabase, no del proyecto—, así que la
+  migración se para con un mensaje claro si alguna vez apareciera
+  desactivado.
 
 Los archivos grandes se trocearon por sentencias completas, respetando los
 cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
@@ -53,6 +64,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 42 | `hu05_sessions` | `hu05_sessions` |
 | 43 | `client_request_job` | `client_request_job` |
 | 44 | `retry_request_analysis` | `retry_request_analysis` |
+| 45 | `storage_bucket_files` | `storage_bucket_files` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
@@ -123,6 +135,52 @@ saber qué son antes de que alguien los descubra y crea que son nuevos:
   nadie salvo `next_space_sequence()`, y se le quitaron los privilegios a
   `anon` y `authenticated` en vez de añadirle una política que no hace
   falta.
+
+## El bucket de archivos
+
+Creado el 03/09/2026 por la migración 45. Es el sitio donde viven los
+bytes de todo lo que sube alguien: justificantes de cobro (HU-26),
+adjuntos de los mensajes (HU-35) y el resto del catálogo de RN-ARC.
+
+| | |
+|---|---|
+| Nombre | `files` |
+| Público | **no** |
+| Tamaño máximo por archivo | 26 214 400 bytes (25 MB, RN-ARC-06) |
+| Tipos permitidos | los 11 de la lista blanca de RN-ARC-06 |
+| Políticas en `storage.objects` | **ninguna**, a propósito |
+
+Cero políticas con RLS activado significa "nadie": ni `anon` ni
+`authenticated` pueden tocar un objeto, aunque Supabase les conceda de
+fábrica los GRANT de tabla. Las dos únicas puertas son el `service_role`
+—solo desde el servidor de la aplicación— y las URLs firmadas, que
+autorizan una ruta concreta y las emite el servidor después de comprobar
+el permiso en la base de datos.
+
+Es deliberado, y es lo contrario de lo que suele hacerse: quién puede
+subir y quién puede ver ya está escrito una vez, en `can_write_file()` y
+`can_read_file()`, con RN-ARC-04, RN-ARC-05 y RN-FIN-07 dentro. Repetirlo
+en políticas que parsean el nombre del objeto sería tenerlo en dos sitios.
+
+### Cómo comprobar que el bucket funciona
+
+Los permisos se comprueban con SQL; mover bytes, no. Para eso está
+`pnpm comprobar:storage`, desde `apps/web`:
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY="<la clave secreta>" pnpm comprobar:storage
+```
+
+Recorre el camino entero —firma de subida, subida sin sesión, metadatos
+del objeto guardado, enlace firmado de descarga, bytes idénticos— y
+además comprueba que el bucket está cerrado: que con la clave pública no
+se puede listar ni descargar por ruta, y que no hay URL pública. Al
+terminar retira lo que subió.
+
+**No se ha ejecutado todavía**: la clave de servicio no está en el
+`.env.local` del contenedor donde se escribió esto, y no se guarda en el
+repositorio. Es la única parte de la tanda de archivos que no se ha visto
+funcionar.
 
 ## El espacio de demostración
 

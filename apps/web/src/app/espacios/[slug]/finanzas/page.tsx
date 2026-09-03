@@ -111,6 +111,35 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
     }),
   );
 
+  // HU-26 · los justificantes ya adjuntos a cada cobro. Salen de
+  // `file_links` y no de `receipts` para que sea `can_read_file()` quien
+  // decida: así, si algún día llega a esta pantalla alguien que no debe ver
+  // facturación, no ve tampoco los archivos (RN-ARC-05).
+  const chargeIds = chargeRows.map((charge) => charge.id);
+  const { data: links } = chargeIds.length
+    ? await supabase
+        .from("file_links")
+        .select("file_id, entity_id")
+        .eq("entity_type", "charge")
+        .in("entity_id", chargeIds)
+    : { data: [] };
+
+  const fileIds = [...new Set((links ?? []).map((link) => link.file_id))];
+  const { data: attachedFiles } = fileIds.length
+    ? await supabase.from("files").select("id, name").in("id", fileIds)
+    : { data: [] };
+
+  const fileById = new Map((attachedFiles ?? []).map((file) => [file.id, file]));
+  const receiptsByCharge = new Map<string, { id: string; name: string }[]>();
+  for (const link of links ?? []) {
+    const file = fileById.get(link.file_id);
+    if (!file) continue;
+    receiptsByCharge.set(link.entity_id, [
+      ...(receiptsByCharge.get(link.entity_id) ?? []),
+      { id: file.id, name: file.name },
+    ]);
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-8">
       <header>
@@ -154,6 +183,7 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
                 <TableHeaderCell>{es.teamArea.finance.totalColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.teamArea.finance.dueColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.teamArea.finance.statusColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.teamArea.finance.receiptColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.teamArea.finance.registerTitle}</TableHeaderCell>
               </TableRow>
             </TableHead>
@@ -174,9 +204,30 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
                     </StatusBadge>
                   </TableCell>
                   <TableCell>
+                    {(receiptsByCharge.get(charge.id) ?? []).length === 0 ? (
+                      <span className="text-text-secondary">{es.teamArea.finance.receiptNone}</span>
+                    ) : (
+                      <ul className="space-y-1">
+                        {(receiptsByCharge.get(charge.id) ?? []).map((file) => (
+                          <li key={file.id}>
+                            {/* RN-ARC-08: enlace privado y temporal, firmado
+                                tras comprobar `can_read_file()`. */}
+                            <a
+                              href={`/api/archivos/${file.id}`}
+                              className="text-cuotly-green underline"
+                            >
+                              {file.name}
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     {charge.outstanding > 0 ? (
                       <RegisterPaymentForm
                         chargeId={charge.id}
+                        establishmentId={charge.establishment_id}
                         outstandingEuros={(charge.outstanding / 100).toFixed(2)}
                         defaultDay={hoy}
                       />

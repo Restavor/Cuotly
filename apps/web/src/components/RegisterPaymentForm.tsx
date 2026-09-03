@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 
+import { FileUploadField } from "@/components/FileUploadField";
 import { Button, Field, Select } from "@/components/ui";
 import { es } from "@/i18n/es";
 
@@ -14,9 +15,9 @@ import { registerPayment } from "@/app/espacios/[slug]/finanzas/actions";
  * navegador de quien registra el cobro puede estar en otro huso, y quien
  * manda es el espacio (CLAUDE.md MUST).
  *
- * Falta el justificante, que es la cuarta pieza de HU-26 y depende del
- * bucket de Storage: sin él no hay dónde subir el archivo, así que no se
- * finge un campo que no guardaría nada (CLAUDE.md, P6).
+ * El justificante es la cuarta pieza de HU-26 y es opcional: RN-FIN-06 no
+ * lo exige para confirmar un cobro. Se sube antes de enviar el formulario
+ * y por la acción viaja solo su identificador.
  *
  * Vive en `components/` y no en `finanzas/` porque lo usan dos pantallas:
  * Finanzas (HU-26) y el detalle de un trabajo, que es por donde el
@@ -27,10 +28,12 @@ import { registerPayment } from "@/app/espacios/[slug]/finanzas/actions";
  */
 export function RegisterPaymentForm({
   chargeId,
+  establishmentId,
   outstandingEuros,
   defaultDay,
 }: {
   chargeId: string;
+  establishmentId: string;
   outstandingEuros: string;
   defaultDay: string;
 }) {
@@ -66,6 +69,21 @@ export function RegisterPaymentForm({
             { value: "transfer", label: es.teamArea.methods.transfer },
             { value: "bizum", label: es.teamArea.methods.bizum },
           ]}
+        />
+      </div>
+      <div className="w-64">
+        {/*
+          Categoría "billing": es lo que hace que RN-ARC-05 se cumpla
+          después. Un trabajador puede adjuntarlo (RN-FIN-05) y luego no
+          puede verlo, porque `can_read_file()` le niega la facturación —
+          entre "puede adjuntar" y "nunca ve facturación" gana la
+          prohibición explícita.
+        */}
+        <FileUploadField
+          establishmentId={establishmentId}
+          category="billing"
+          name="receiptFileId"
+          label={es.teamArea.finance.registerReceiptLabel}
         />
       </div>
       <Button type="submit" disabled={pending} className="mb-4">

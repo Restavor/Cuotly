@@ -41,7 +41,7 @@ export default async function ClientRequestDetailPage({
 }: {
   params: Promise<{ slug: string; id: string; requestId: string }>;
 }) {
-  const { requestId } = await params;
+  const { id, requestId } = await params;
   const supabase = await createClient();
 
   const {
@@ -190,6 +190,7 @@ export default async function ClientRequestDetailPage({
       {conversationId ? (
         <Conversation
           conversationId={conversationId}
+          establishmentId={id}
           messages={messages}
           readOnly={readOnly}
         />

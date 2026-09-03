@@ -198,6 +198,7 @@ export default async function TeamRequestDetailPage({
       {conversationId ? (
         <Conversation
           conversationId={conversationId}
+          establishmentId={request.establishment_id}
           messages={messages}
           readOnly={conversationClosed}
         />

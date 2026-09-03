@@ -5,6 +5,9 @@ import {
   canRequestPermanentDeletion,
   canViewFile,
   nextVersionNumber,
+  sanitizeFileName,
+  storageObjectPath,
+  storagePrefixFor,
   validateUpload,
 } from "./files";
 
@@ -127,5 +130,68 @@ describe("files — RN-ARC, RN-MSG-09", () => {
         canRequestPermanentDeletion({ viewerRole: "owner", isMessageAttachment: false, linkedEntityTypes: [] }),
       ).toEqual({ ok: true, value: undefined });
     });
+  });
+});
+
+describe("RN-ARC-08 · la ruta del objeto en el bucket privado", () => {
+  const ESPACIO = "d1000000-0000-0000-0000-000000000001";
+  const RESTAURANTE = "d4000000-0000-0000-0000-000000000001";
+
+  it("cuelga del espacio y del establecimiento, con un segmento único por versión", () => {
+    expect(
+      storageObjectPath({
+        spaceId: ESPACIO,
+        establishmentId: RESTAURANTE,
+        uniqueId: "abc123",
+        fileName: "carta.pdf",
+      }),
+    ).toBe(`${ESPACIO}/${RESTAURANTE}/abc123/carta.pdf`);
+  });
+
+  it("el prefijo del establecimiento es el que se comprueba al registrar", () => {
+    const ruta = storageObjectPath({
+      spaceId: ESPACIO,
+      establishmentId: RESTAURANTE,
+      uniqueId: "abc123",
+      fileName: "carta.pdf",
+    });
+    expect(ruta.startsWith(storagePrefixFor(ESPACIO, RESTAURANTE))).toBe(true);
+    expect(ruta.startsWith(storagePrefixFor(ESPACIO, "d4000000-0000-0000-0000-000000000002"))).toBe(
+      false,
+    );
+  });
+
+  it("RN-ARC-03: dos subidas del mismo nombre no comparten ruta, porque ninguna versión desaparece", () => {
+    const uno = storageObjectPath({ spaceId: ESPACIO, establishmentId: RESTAURANTE, uniqueId: "v1", fileName: "menu.pdf" });
+    const dos = storageObjectPath({ spaceId: ESPACIO, establishmentId: RESTAURANTE, uniqueId: "v2", fileName: "menu.pdf" });
+    expect(uno).not.toBe(dos);
+  });
+});
+
+describe("sanitizeFileName · el nombre que llega del navegador es texto del usuario", () => {
+  it("no deja salir de la carpeta", () => {
+    expect(sanitizeFileName("../../etc/passwd")).toBe("etc-passwd");
+    expect(sanitizeFileName("/absoluto/carta.pdf")).toBe("absoluto-carta.pdf");
+    expect(sanitizeFileName("..")).toBe("archivo");
+  });
+
+  it("quita acentos y espacios en vez de dejar una ruta frágil", () => {
+    expect(sanitizeFileName("Menú de Otoño.pdf")).toBe("Menu-de-Otono.pdf");
+    expect(sanitizeFileName("factura   marzo.pdf")).toBe("factura-marzo.pdf");
+  });
+
+  it("nunca devuelve vacío ni algo que empiece por punto", () => {
+    expect(sanitizeFileName("")).toBe("archivo");
+    expect(sanitizeFileName("   ")).toBe("archivo");
+    expect(sanitizeFileName("😀😀")).toBe("archivo");
+    expect(sanitizeFileName(".oculto")).toBe("oculto");
+  });
+
+  it("acorta un nombre desmedido sin romperse", () => {
+    expect(sanitizeFileName("a".repeat(500))).toHaveLength(80);
+  });
+
+  it("conserva la extensión de un nombre normal", () => {
+    expect(sanitizeFileName("justificante_2026-09-03.pdf")).toBe("justificante_2026-09-03.pdf");
   });
 });

@@ -93,6 +93,33 @@ export const es = {
     notAuthenticated: "Tu sesión ha caducado. Vuelve a entrar.",
   },
 
+  /**
+   * PRD §19 (RN-ARC) · subir y descargar archivos. Cada rechazo dice cuál
+   * es el motivo concreto: "no se ha podido subir" no sirve para que
+   * alguien sepa si tiene que cambiar el archivo o pedir permiso (P6).
+   */
+  files: {
+    label: "Adjuntar un archivo",
+    hint: "Imágenes, PDF, Word, Excel o texto. Hasta 25 MB.",
+    choose: "Elegir archivo",
+    uploading: "Subiendo…",
+    uploaded: "Archivo subido.",
+    remove: "Quitar",
+    attachmentsTitle: "Archivos adjuntos",
+    download: "Descargar",
+    rejectedType: "Ese tipo de archivo no se admite. Se aceptan imágenes, PDF, Word, Excel y texto.",
+    rejectedSize: "El archivo pasa de 25 MB, que es el máximo por archivo.",
+    rejectedEmpty: "El archivo está vacío.",
+    rejectedCategory: "Esa categoría de archivo no existe.",
+    noEstablishment: "Ese restaurante no existe o no tienes acceso a él.",
+    noWritePermission: "No tienes permiso para subir archivos de esa categoría a este restaurante.",
+    uploadUnavailable: "No se ha podido preparar la subida. Vuelve a intentarlo.",
+    pathMismatch: "La subida no corresponde a este restaurante.",
+    objectMissing: "La subida no ha llegado a completarse. Vuelve a elegir el archivo.",
+    registerFailed: "El archivo se subió pero no se pudo registrar.",
+    transferFailed: "La subida se ha cortado. Vuelve a intentarlo.",
+  },
+
   contextSelector: {
     loadErrorTitle: "No se han podido cargar tus contextos",
     loadErrorReason:
@@ -576,6 +603,9 @@ export const es = {
       registerTitle: "Registrar un pago",
       registerAmountLabel: "Importe cobrado",
       registerDateLabel: "Fecha del cobro",
+      registerReceiptLabel: "Justificante (opcional)",
+      receiptColumn: "Justificante",
+      receiptNone: "Sin justificante",
       registerMethodLabel: "Método",
       registerSubmit: "Registrar el pago",
       registerPending: "Registrando…",
@@ -704,9 +734,21 @@ export const es = {
     billingNoAccessTitle: "Sin acceso a la facturación",
     billingNoAccessReason:
       "Las cuentas de este restaurante las ve su propietario, y quien él autorice expresamente.",
-    receiptPendingTitle: "Subir un justificante todavía no se puede",
-    receiptPendingReason:
-      "El servidor ya lo admite, pero falta conectar la subida de archivos. Mientras tanto, envía el justificante por la conversación.",
+    // RN-FIN-06: el restaurante sube el justificante; la **confirmación**
+    // del cobro sigue siendo del equipo. Que se suba uno no salda nada, y
+    // la pantalla lo dice para que nadie se quede esperando.
+    receiptTitle: "Enviar un justificante",
+    receiptHint:
+      "Sube el resguardo de la transferencia o del Bizum. El equipo confirma el cobro cuando lo comprueba: subirlo no lo da por pagado.",
+    receiptChargeLabel: "Cobro",
+    receiptSubmit: "Enviar justificante",
+    receiptPending: "Enviando…",
+    receiptDone: "Justificante enviado.",
+    receiptMissingFile: "Elige primero el archivo del justificante.",
+    receiptMissingCharge: "Elige a qué cobro corresponde.",
+    receiptNothingToSend: "No hay ningún cobro pendiente al que adjuntar un justificante.",
+    receiptSentTitle: "Justificantes enviados",
+    receiptSentEmpty: "Todavía no has enviado ninguno.",
     serviceStoppedTitle: "El servicio de este restaurante está detenido",
     serviceStoppedReason:
       "Mientras esté detenido no se pueden enviar solicitudes nuevas. Si es por un impago, se reactiva al cobrar.",

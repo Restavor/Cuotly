@@ -1,5 +1,6 @@
 import { Card, EmptyState } from "@/components/ui";
 import { es } from "@/i18n/es";
+import { createClient } from "@/lib/supabase/server";
 
 import { PostMessageForm } from "./PostMessageForm";
 
@@ -32,15 +33,53 @@ function authorLabel(message: ConversationMessage): string {
   return message.senderName ?? es.clientArea.maintenanceTeam;
 }
 
-export function Conversation({
+export async function Conversation({
   conversationId,
+  establishmentId,
   messages,
   readOnly,
 }: {
   conversationId: string;
+  establishmentId: string;
   messages: readonly ConversationMessage[];
   readOnly: boolean;
 }) {
+  // RN-MSG-09 · los adjuntos de estos mensajes. Se piden aquí y no en cada
+  // pantalla que monta una conversación para que las dos —la del equipo y
+  // la del restaurante— enseñen exactamente lo mismo y no puedan
+  // divergir.
+  //
+  // Quién ve qué lo deciden las políticas: `file_links` y `files` se
+  // filtran con `can_read_file()`, así que un adjunto que no corresponda
+  // sencillamente no vuelve. Las columnas se enumeran porque las dos
+  // tablas tienen privilegios de columna y `select *` daría 403.
+  const supabase = await createClient();
+  const messageIds = messages.map((message) => message.id);
+
+  const { data: links } = messageIds.length
+    ? await supabase
+        .from("file_links")
+        .select("file_id, entity_id")
+        .eq("entity_type", "message")
+        .in("entity_id", messageIds)
+    : { data: [] };
+
+  const fileIds = [...new Set((links ?? []).map((link) => link.file_id))];
+  const { data: files } = fileIds.length
+    ? await supabase.from("files").select("id, name").in("id", fileIds)
+    : { data: [] };
+
+  const fileById = new Map((files ?? []).map((file) => [file.id, file]));
+  const attachmentsByMessage = new Map<string, { id: string; name: string }[]>();
+  for (const link of links ?? []) {
+    const file = fileById.get(link.file_id);
+    if (!file) continue;
+    attachmentsByMessage.set(link.entity_id, [
+      ...(attachmentsByMessage.get(link.entity_id) ?? []),
+      { id: file.id, name: file.name },
+    ]);
+  }
+
   return (
     <Card title={es.clientArea.conversationTitle}>
       {messages.length === 0 ? (
@@ -62,6 +101,20 @@ export function Conversation({
                 {message.editCount > 0 ? ` · ${es.clientArea.edited}` : ""}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-text">{message.body}</p>
+              {(attachmentsByMessage.get(message.id) ?? []).length > 0 ? (
+                <ul className="mt-2 space-y-1 text-sm">
+                  {(attachmentsByMessage.get(message.id) ?? []).map((file) => (
+                    <li key={file.id}>
+                      {/* RN-ARC-08: el enlace no apunta al objeto sino a una
+                          ruta que comprueba el permiso y firma una URL de
+                          unos minutos. */}
+                      <a href={`/api/archivos/${file.id}`} className="text-cuotly-green underline">
+                        {file.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -76,7 +129,7 @@ export function Conversation({
         </div>
       ) : (
         <div className="mt-4">
-          <PostMessageForm conversationId={conversationId} />
+          <PostMessageForm conversationId={conversationId} establishmentId={establishmentId} />
         </div>
       )}
     </Card>

@@ -77,6 +77,61 @@ export function validateUpload(file: {
 }
 
 /**
+ * La ruta del objeto dentro del bucket privado `files`.
+ *
+ * Tres segmentos, y cada uno está por algo:
+ * - `<espacio>/<establecimiento>/` hace que la ruta diga a quién pertenece
+ *   el objeto. No autoriza nada —quien autoriza es `can_read_file()`—,
+ *   pero permite comprobar al registrar que el archivo que alguien dice
+ *   haber subido cae donde se le dio permiso, y no en la carpeta de otro.
+ * - `<identificador único>/` evita que dos personas que suben "menu.pdf"
+ *   el mismo día se pisen. Sustituir un archivo **no** sobrescribe el
+ *   objeto: RN-ARC-03 dice que la versión anterior permanece, así que cada
+ *   versión es un objeto nuevo con su propia ruta.
+ * - El nombre saneado al final, para que una descarga tenga un nombre
+ *   reconocible aunque alguien mire el bucket por dentro.
+ */
+export function storageObjectPath(input: {
+  readonly spaceId: string;
+  readonly establishmentId: string;
+  readonly uniqueId: string;
+  readonly fileName: string;
+}): string {
+  return `${input.spaceId}/${input.establishmentId}/${input.uniqueId}/${sanitizeFileName(input.fileName)}`;
+}
+
+/** El prefijo que debe tener todo objeto de un establecimiento. */
+export function storagePrefixFor(spaceId: string, establishmentId: string): string {
+  return `${spaceId}/${establishmentId}/`;
+}
+
+const MAX_SANITIZED_NAME_LENGTH = 80;
+
+/**
+ * El nombre que llega del navegador es texto del usuario, así que no entra
+ * tal cual en una ruta: `../` saldría de la carpeta, una barra inventaría
+ * un nivel y los acentos y espacios dan rutas frágiles. Lista blanca otra
+ * vez —letras sin acento, dígitos, punto, guion y guion bajo—, y lo demás
+ * pasa a guion.
+ *
+ * Si no queda nada utilizable devuelve `archivo`: una ruta vacía o que
+ * empiece por punto es peor que un nombre genérico, y el nombre real se
+ * guarda igualmente en `file_versions.file_name`, que es de donde sale al
+ * descargar.
+ */
+export function sanitizeFileName(fileName: string): string {
+  const sinAcentos = fileName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const limpio = sinAcentos
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/-{2,}/g, "-")
+    .replace(/^[-.]+/, "")
+    .replace(/[-.]+$/, "")
+    .slice(0, MAX_SANITIZED_NAME_LENGTH);
+
+  return limpio.length > 0 ? limpio : "archivo";
+}
+
+/**
  * RN-ARC-03: "sustituir un archivo crea una versión nueva; la anterior
  * permanece". El número de versión es el siguiente al mayor existente —
  * nunca se reutiliza el hueco de una versión, porque ninguna desaparece.

@@ -506,6 +506,90 @@ no son un fallo, sino alcance:
       `tareas`, `menu-diario`, `mensajes`, `calendario`, `informes`,
       `equipo`, `planes`, `ajustes` y `mas` del mismo menú.
 
+15. **Los archivos, conectados de verdad** (03/09/2026). Era el bloqueante
+    que arrastraban HU-26 y HU-35: el catálogo entero existía —`files`,
+    `file_versions`, `file_links`, `register_file()`, `can_read_file()`,
+    `can_write_file()`, `attach_file_to_message()`,
+    `upload_payment_receipt()`— y **no había ningún sitio donde poner los
+    bytes**. Ni un bucket.
+
+    - **El bucket** (migración 45) es privado, con el límite de 25 MB y la
+      lista blanca de RN-ARC-06 declarados también ahí, y `storage.objects`
+      se queda **sin ninguna política**: con RLS activado eso significa
+      "nadie", así que las dos únicas puertas son el `service_role` y las
+      URLs firmadas que emite el servidor. Es deliberado y va explicado en
+      la cabecera de la migración: las reglas de quién sube y quién ve ya
+      están escritas una vez en `can_write_file()` y `can_read_file()`, y
+      repetirlas parseando el nombre del objeto sería tenerlas en dos
+      sitios.
+
+    - **Los bytes no pasan por la aplicación.** El navegador sube
+      directamente al bucket con una URL firmada que el servidor emite
+      *después* de comprobar `can_write_file()`, y por la server action solo
+      viaja un uuid. La razón es prosaica: RN-ARC-06 permite 25 MB y el
+      cuerpo de una server action va por la función de Vercel, cuyo límite
+      es mucho menor. Subir por ahí habría sido escribir una función que
+      falla con cualquier foto de móvil.
+
+    - **Se valida el objeto, no lo que dice el formulario.** Antes de
+      registrar nada, el servidor pregunta a Storage el tamaño y el tipo
+      **reales** del objeto guardado y valida contra eso; si no vale,
+      retira los bytes y no hay archivo. Quien sube controla lo que declara,
+      así que declarar no es validar.
+
+    - **La descarga es `/api/archivos/<id>`**, que comprueba
+      `can_read_file()` con la sesión de quien pide y redirige a una URL
+      firmada de cinco minutos (RN-ARC-08). A quien no puede verlo se le
+      responde **404 y no 403**: un 403 confirmaría que el archivo existe, y
+      para un trabajador husmeando la facturación de un restaurante
+      (RN-ARC-05) eso ya es información.
+
+    Con eso quedan cerradas las dos cosas que la tanda anterior dejó
+    pendientes:
+
+    - **HU-26 · el justificante.** El equipo lo adjunta al registrar el
+      cobro y el restaurante lo envía desde su facturación
+      (`upload_payment_receipt()`, RN-FIN-06). El aviso de "subir un
+      justificante todavía no se puede" ha desaparecido de la pantalla
+      porque ya se puede.
+    - **HU-35 · los adjuntos de un mensaje.** Se enganchan con
+      `attach_file_to_message()` después de publicar, porque esa función
+      necesita el mensaje ya creado. Si el enganche falla, el mensaje se
+      queda publicado sin adjunto y se dice: RN-MSG-08 prohíbe borrarlo,
+      así que fingir que todo fue bien sería mentir.
+
+    **Comprobado en vivo contra el proyecto, todo con rollback:** el
+    restaurante registra un archivo de facturación (que `register_file()`
+    marca solo como "compartido con el restaurante"), lo envía como
+    justificante y queda enlazado al cobro; un cliente de otro restaurante
+    no lo ve y `files` le devuelve cero filas; la **trabajadora puede
+    adjuntar** un justificante (RN-FIN-05) y **no puede verlo después**
+    (RN-ARC-05) —cero filas también—; el propietario ve los dos; el
+    restaurante adjunta a su propio mensaje y el equipo lo ve; y adjuntar a
+    un mensaje ajeno se niega. Nada de eso quedó escrito: los contadores de
+    `files`, `file_versions`, `file_links`, `receipts` y `messages` siguen a
+    cero.
+
+    **Lo que no se ha visto funcionar, y hay que decirlo:** el movimiento
+    real de bytes. La clave de servicio no está en el `.env.local` de este
+    contenedor y no se guarda en el repositorio, así que no he podido
+    ejecutar una subida de verdad. Para eso queda escrito
+    `pnpm comprobar:storage`, que recorre el camino entero (firmar, subir
+    sin sesión, leer metadatos, firmar descarga, comparar bytes) y además
+    comprueba que el bucket está cerrado a la clave pública. **Hay que
+    ejecutarlo con la clave de servicio antes de dar los archivos por
+    buenos.**
+
+    **Lo que sigue sin estar:** la segunda mitad de RN-ARC-08 ("se optimiza
+    la versión visual conservando el original") necesita una tubería de
+    transformación de imágenes que la Fase 1 no monta, y ya estaba dicho en
+    `src/services/file-storage.ts`. Tampoco hay recogida de huérfanos: quien
+    abandone entre la firma y el registro deja un objeto sin fila en
+    `files`, invisible para la aplicación pero ocupando sitio. Y no hay
+    pantalla de catálogo de archivos por establecimiento (RN-ARC-01 a
+    RN-ARC-04, con sus versiones y su marca de interno / compartido): lo
+    que hay son los dos sitios donde se sube y se descarga.
+
 12. ~~**Estado del despliegue: el proyecto de Supabase va por la migración
     26 de 42.**~~ **Resuelto el 01/09/2026: las 42 están aplicadas.**
     Detalle en `docs/DESPLIEGUE-SUPABASE.md`. El esquema pasa a 57 tablas
