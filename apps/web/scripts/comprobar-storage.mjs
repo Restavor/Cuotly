@@ -18,12 +18,26 @@
 //      nada, porque bastaría con saber la ruta.
 //   4. Limpia lo que ha subido.
 //
-// Cómo ejecutarlo, desde `apps/web`:
-//   SUPABASE_SERVICE_ROLE_KEY="<la clave secreta>" node scripts/comprobar-storage.mjs
+// Cómo ejecutarlo. En PowerShell (Windows), la variable se pone antes y
+// en su propia línea — la forma `VAR=valor comando` es de bash y allí no
+// funciona:
 //
-// La URL y la clave pública salen de `.env.local`. La clave de servicio
-// NO se guarda en ningún archivo del repositorio: se pasa a mano.
+//   $env:SUPABASE_SERVICE_ROLE_KEY = "<la clave secreta>"
+//   pnpm comprobar:storage
+//
+// En bash / zsh (macOS, Linux) vale la forma de una línea:
+//
+//   SUPABASE_SERVICE_ROLE_KEY="<la clave secreta>" pnpm comprobar:storage
+//
+// `pnpm comprobar:storage` funciona tanto en la raíz del repositorio como
+// en `apps/web`. Sin pnpm, desde `apps/web`:
+//   node scripts/comprobar-storage.mjs
+//
+// La URL y la clave pública salen de `apps/web/.env.local`. La clave de
+// servicio NO se guarda en ningún archivo del repositorio: se pasa a
+// mano, y con ella se salta RLS por completo.
 
+import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
 
@@ -70,8 +84,10 @@ if (!URL_SUPABASE || !CLAVE_PUBLICA) {
 }
 if (!CLAVE_SERVICIO) {
   console.error(
-    "Falta SUPABASE_SERVICE_ROLE_KEY. Pásala en la línea de comandos:\n" +
-      '  SUPABASE_SERVICE_ROLE_KEY="…" node scripts/comprobar-storage.mjs',
+    "Falta SUPABASE_SERVICE_ROLE_KEY.\n\n" +
+      "  PowerShell:  $env:SUPABASE_SERVICE_ROLE_KEY = \"…\"\n" +
+      "               pnpm comprobar:storage\n\n" +
+      '  bash/zsh:    SUPABASE_SERVICE_ROLE_KEY="…" pnpm comprobar:storage\n',
   );
   process.exit(2);
 }
@@ -86,7 +102,7 @@ const publico = createClient(URL_SUPABASE, CLAVE_PUBLICA, {
 // Un PDF mínimo de verdad: el bucket comprueba el tipo declarado, y así
 // además el contenido se corresponde con él.
 const CONTENIDO = Buffer.from("%PDF-1.4\n% comprobación de Cuotly\n%%EOF\n", "utf8");
-const RUTA = `comprobacion/${crypto.randomUUID()}/comprobacion.pdf`;
+const RUTA = `comprobacion/${randomUUID()}/comprobacion.pdf`;
 
 console.log("\n1 · El bucket");
 const { data: buckets, error: errorBuckets } = await admin.storage.listBuckets();

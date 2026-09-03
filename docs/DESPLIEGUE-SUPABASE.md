@@ -165,7 +165,18 @@ en políticas que parsean el nombre del objeto sería tenerlo en dos sitios.
 ### Cómo comprobar que el bucket funciona
 
 Los permisos se comprueban con SQL; mover bytes, no. Para eso está
-`pnpm comprobar:storage`, desde `apps/web`:
+`pnpm comprobar:storage`, que funciona tanto en la raíz del repositorio
+como en `apps/web`.
+
+En PowerShell la variable va antes y en su propia línea — la forma
+`VAR=valor comando` es de bash y en PowerShell no funciona:
+
+```powershell
+$env:SUPABASE_SERVICE_ROLE_KEY = "<la clave secreta>"
+pnpm comprobar:storage
+```
+
+En bash o zsh vale la forma de una línea:
 
 ```bash
 SUPABASE_SERVICE_ROLE_KEY="<la clave secreta>" pnpm comprobar:storage
