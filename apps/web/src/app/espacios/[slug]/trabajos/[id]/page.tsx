@@ -26,6 +26,7 @@ import {
   UnblockJobForm,
   type Candidate,
 } from "./JobActions";
+import { TaskBreakdown, type TaskCandidate, type TaskRow } from "./TaskBreakdown";
 
 /**
  * Detalle de un trabajo para el equipo (HU-17 a HU-20).
@@ -129,8 +130,81 @@ export default async function TeamJobDetailPage({
     }));
   }
 
+  // HU-21 · el desglose de este trabajo. Las filas las filtra
+  // `tasks_select`: un trabajador ve las de sus trabajos autorizados y las
+  // suyas, el cliente no ve ninguna (P7, las tareas son organización
+  // interna). Aquí no se comprueba nada de eso.
+  const { data: taskRows } = await supabase
+    .from("tasks")
+    .select("id, title, description, state, weight, estimated_minutes, assignee_id")
+    .eq("job_id", id)
+    .order("created_at", { ascending: true });
+
+  // Quién puede desglosar y repartir es lo mismo que comprueban
+  // `create_job_task()` y `assign_task()`: el responsable del trabajo, o
+  // quien tiene `assign_jobs`. Se pregunta para no pintar un formulario
+  // que el servidor va a rechazar; lo que lo impide de verdad es él.
+  const { data: puedeAsignar } = await supabase.rpc("has_capability", {
+    p_space_id: job.space_id,
+    p_capability: "assign_jobs",
+  });
+  const esResponsable = job.assigned_to === user.id;
+  const puedeDesglosar = Boolean(puedeAsignar) || esResponsable;
+
+  // Los candidatos de una tarea no son los del trabajo: `list_job_candidates()`
+  // filtra por la especialidad y la elegibilidad completa de RN-ASG-02, y
+  // una tarea es un paso interno que puede recaer en alguien que no sería
+  // candidato a llevarse el trabajo entero.
+  let taskCandidates: TaskCandidate[] = [];
+  if (puedeDesglosar) {
+    const { data: filas } = await supabase.rpc("list_task_candidates", {
+      p_job_id: id,
+    });
+    const ids = (filas ?? []).map((f) => f.worker_id);
+    const { data: personas } = ids.length
+      ? await supabase.from("profiles").select("id, full_name, email").in("id", ids)
+      : { data: [] };
+    const nombre = new Map((personas ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]));
+    taskCandidates = (filas ?? []).map((f) => ({
+      workerId: f.worker_id,
+      name: nombre.get(f.worker_id) ?? f.worker_id,
+      loadPoints: f.active_load_points,
+    }));
+  }
+
+  // El nombre del responsable de cada tarea sale de `profiles`. Es
+  // información interna del equipo y nunca llega al cliente: esta pantalla
+  // es del espacio, y `tasks_select` ya le ha negado las filas.
+  const assigneeIds = [...new Set((taskRows ?? []).map((t) => t.assignee_id).filter(Boolean))];
+  const { data: responsables } = assigneeIds.length
+    ? await supabase.from("profiles").select("id, full_name, email").in("id", assigneeIds as string[])
+    : { data: [] };
+  const nombrePorId = new Map(
+    (responsables ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]),
+  );
+
+  const tasks: TaskRow[] = (taskRows ?? []).map((t) => ({
+    id: t.id,
+    title: t.title,
+    description: t.description,
+    state: t.state,
+    weight: t.weight as TaskRow["weight"],
+    estimatedMinutes: t.estimated_minutes,
+    assigneeId: t.assignee_id,
+    assigneeName: t.assignee_id ? (nombrePorId.get(t.assignee_id) ?? null) : null,
+  }));
+
   // CLAUDE.md MUST: la fecha que se propone es hoy en la zona del espacio.
   const hoy = todayInTimeZone(new Date(), space?.timezone ?? "Europe/Madrid");
+
+  // Los cuatro estados en los que `create_job_task()` deja de admitir
+  // altas. Se repite aquí solo para no pintar un formulario condenado; la
+  // regla vive en la función.
+  const terminado =
+    job.state === "published" ||
+    job.state === "completed" ||
+    job.state === "cancelled_before_start" ||
+    job.state === "cancelled_after_start";
 
   const blocked = job.state === "blocked_by_client" || job.state === "authorized_pause";
   const hasActions =
@@ -226,6 +300,23 @@ export default async function TeamJobDetailPage({
           </>
         )}
       </Card>
+
+      {/*
+        HU-21 · el desglose. Se enseña siempre que haya tareas, aunque el
+        trabajo ya esté terminado: en ese caso el servidor no admite altas
+        ni cambios y lo que queda es el historial de cómo se repartió
+        (RN-JOB-13, que las conserva). El alta solo aparece mientras el
+        trabajo sigue vivo, que es lo que admite `create_job_task()`.
+      */}
+      {tasks.length > 0 || puedeDesglosar ? (
+        <TaskBreakdown
+          jobId={id}
+          tasks={tasks}
+          candidates={taskCandidates}
+          canAdd={puedeDesglosar && !terminado}
+          canCancel={Boolean(puedeAsignar)}
+        />
+      ) : null}
 
       {job.state === "pending_assignment" ? (
         <AssignJobForm jobId={id} candidates={candidates} />

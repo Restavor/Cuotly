@@ -3770,6 +3770,10 @@ export type Database = {
         Args: { p_job_id: string; p_reason?: string; p_worker_id: string }
         Returns: undefined
       }
+      assign_task: {
+        Args: { p_assignee_id: string; p_task_id: string }
+        Returns: undefined
+      }
       attach_file_to_message: {
         Args: { p_file_id: string; p_message_id: string }
         Returns: undefined
@@ -4191,6 +4195,13 @@ export type Database = {
           active_job_count: number
           active_load_points: number
           last_assigned_at: string
+          worker_id: string
+        }[]
+      }
+      list_task_candidates: {
+        Args: { p_job_id: string }
+        Returns: {
+          active_load_points: number | null
           worker_id: string
         }[]
       }

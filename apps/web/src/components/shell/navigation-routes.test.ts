@@ -35,8 +35,6 @@ const ROLES: readonly ShellRole[] = ["owner", "admin", "worker", "client", "clie
 const PENDIENTES: Readonly<Record<string, string>> = {
   // §20.2 · destinos del menú de escritorio cuyo hito todavía no ha
   // llegado. El ROADMAP los enumera en las salvedades del Hito 8.
-  "/espacios/[slug]/tareas":
-    "HU-21 · servidor y puntos de carga hechos (src/core/load-points.ts); sin pantalla.",
   "/espacios/[slug]/mensajes":
     "§66.2 · la conversación interna de un trabajo, distinta de la de la solicitud.",
   "/espacios/[slug]/informes": "Fase 3. §20.2 pide su estructura con estado vacío; todavía no está.",

@@ -30,8 +30,12 @@ type CategoryKey = keyof typeof es.naming.categories;
 export function jobTone(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
   if (state === "published" || state === "completed") return "success";
   if (state === "blocked_by_client" || state === "authorized_pause") return "warning";
-  if (state === "cancelled") return "danger";
+  // La base no admite un `cancelled` a secas: son los dos de RN-JOB-04,
+  // según si se canceló antes o después de Comenzar. Comparar con
+  // "cancelled" no acertaba nunca y un trabajo cancelado salía en gris.
+  if (state === "cancelled_before_start" || state === "cancelled_after_start") return "danger";
   if (state === "in_progress" || state === "in_correction") return "info";
+  if (state === "reassignment_requested") return "warning";
   return "neutral";
 }
 

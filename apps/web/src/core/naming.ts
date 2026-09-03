@@ -14,10 +14,26 @@
  * nombre huérfano suele ser el resto de un estado renombrado a medias, o
  * un segundo nombre para algo que ya se llamaba de otra manera).
  *
- * Y `hito8_inicio_busqueda_notificaciones.sql` comprueba lo que este
- * archivo no puede: que la lista coincida con los CHECK de la base. Sin
- * eso, esto sería una lista de deseos.
+ * Y `state-catalogue.test.ts` comprueba lo que este archivo no puede: que
+ * cada lista coincida con el CHECK de la columna correspondiente en las
+ * migraciones. Sin eso, esto sería una lista de deseos — y lo fue: hasta
+ * el 03/09/2026 esta cabecera decía que ese barrido lo hacía
+ * `hito8_inicio_busqueda_notificaciones.sql`, que no lo hacía ni lo había
+ * hecho nunca. Las tres listas de estados que este archivo redeclaraba a
+ * mano llevaban meses desfasadas de la base sin que nada lo dijera:
+ * faltaban `correction_requested` en las solicitudes y
+ * `reassignment_requested` en los trabajos, los dos cancelados del trabajo
+ * eran un `cancelled` que la base no admite, y una tarea `completed` se
+ * llamaba aquí `done`. Ahora no se redeclaran: se importan de su dueño en
+ * `src/core/`, que es el que ya estaba bien.
  */
+
+import { JOB_STATES, TASK_STATES } from "./job-states";
+import { REQUEST_STATES } from "./request-states";
+
+export { JOB_STATES, TASK_STATES, REQUEST_STATES };
+export type { JobState, TaskState } from "./job-states";
+export type { RequestState } from "./request-states";
 
 export const ENTITY_KINDS = [
   "establishment",
@@ -33,40 +49,6 @@ export const ENTITY_KINDS = [
   "conversation",
 ] as const;
 export type EntityKind = (typeof ENTITY_KINDS)[number];
-
-export const REQUEST_STATES = [
-  "draft",
-  "received",
-  "analyzing",
-  "pending_internal_validation",
-  "needs_information",
-  "pending_client_acceptance",
-  "accepted",
-  "in_progress",
-  "published",
-  "in_correction",
-  "closed",
-  "rejected",
-  "cancelled_before_start",
-  "cancelled_after_start",
-] as const;
-export type RequestState = (typeof REQUEST_STATES)[number];
-
-export const JOB_STATES = [
-  "pending_assignment",
-  "assigned",
-  "in_progress",
-  "blocked_by_client",
-  "authorized_pause",
-  "published",
-  "in_correction",
-  "completed",
-  "cancelled",
-] as const;
-export type JobState = (typeof JOB_STATES)[number];
-
-export const TASK_STATES = ["pending", "in_progress", "done", "cancelled"] as const;
-export type TaskState = (typeof TASK_STATES)[number];
 
 export const CHARGE_STATES = [
   "pending",

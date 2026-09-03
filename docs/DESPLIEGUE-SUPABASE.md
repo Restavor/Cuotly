@@ -6,12 +6,25 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 02/09/2026.
+Actualizado el 03/09/2026.
+
+## Pendiente de aplicar
+
+**La migración 47 (`task_assignment`) está en el repositorio y NO se ha
+aplicado al proyecto real.** Es la que añade `assign_task()` y
+`list_task_candidates()`, sin las cuales la mitad "y repartirlas" de HU-21
+no funciona: la pantalla de tareas cargará, pero repartir una tarea
+responderá que la función no existe.
+
+Está verificada, eso sí, y no solo razonada: se aplicó desde cero junto con
+las otras 46 sobre un PostgreSQL 16 local con los roles y el esquema `auth`
+de Supabase emulados, y contra esa base pasan las siete suites de
+`supabase/tests/` más `hu21_reparto_tareas.sql`. CI hace lo mismo en cada
+push con `supabase start`.
 
 ## Aplicadas
 
-**Las 46 migraciones del repositorio están aplicadas.** No queda ninguna
-pendiente.
+**Las 46 primeras migraciones del repositorio están aplicadas.**
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -70,6 +83,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 44 | `retry_request_analysis` | `retry_request_analysis` |
 | 45 | `storage_bucket_files` | `storage_bucket_files` |
 | 46 | `consumption_threshold_client_only` | `consumption_threshold_client_only` |
+| 47 | `task_assignment` | **sin aplicar** |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

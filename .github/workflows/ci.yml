@@ -128,6 +128,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/hito6_trabajos.sql
 
+      - name: "HU-21 — Verificar el reparto de tareas (RN-ASG-01, RN-ASG-17, CA-01, CA-17)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/hu21_reparto_tareas.sql
+
       - name: "Hito 7 — Verificar HU-24 a HU-28, HU-35, RN-FIN-13"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

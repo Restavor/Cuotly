@@ -635,6 +635,91 @@ no son un fallo, sino alcance:
     (§20.3), `/informes` (Fase 3), `menu-diario` (Fase 2, dos rutas) y
     `/restaurantes/nuevo`.
 
+17. **HU-21, las tareas, con pantalla** (03/09/2026). Era la última
+    historia del flujo operativo sin interfaz: el Hito 6 dejó `tasks`,
+    `create_job_task()`, `update_task_state()`, `cancel_task()` y los
+    puntos de `src/core/load-points.ts` probados, y ninguna pantalla los
+    usaba. El destino `/tareas` del menú devolvía 404 desde el Hito 8.
+
+    - **El desglose vive en el detalle del trabajo**, que es donde está
+      quien desglosa: alta con título, duración y responsable, reparto,
+      avance (comenzar, bloquear, reanudar, marcar hecha) y cancelación.
+      El peso de §14.4 no lo manda el formulario: lo deduce el servidor de
+      la duración, y por encima de 4 h RN-ASG-16 lo rechaza en vez de
+      inventarse una categoría.
+    - **Y el reparto de puntos de RN-ASG-14**, calculado con la tabla de
+      `src/core/load-points.ts`: cuando el trabajo está desglosado, sus
+      puntos generales dejan de sumar y cada persona recibe los de sus
+      tareas. Las tareas sin repartir lo dicen en claro en vez de
+      atribuirle sus puntos a nadie (P6).
+    - **`/espacios/<espacio>/tareas`**, con sus tres filtros. Qué tareas ve
+      cada uno lo decide `tasks_select`, no la pantalla: el cliente no ve
+      ninguna, porque la fila entera es organización interna (P7).
+
+    **Migración 47 · el hueco que no se ve hasta que hay pantalla.**
+    `create_job_task()` acepta responsable **al crearla**, y no había
+    ninguna función para ponérselo después. Una tarea creada sin nadie —lo
+    natural cuando primero se desglosa y luego se reparte— se quedaba sin
+    repartir para siempre, porque `tasks` no tiene política de UPDATE a
+    propósito. HU-21 dice "desglosar **y repartirlas**", así que solo
+    estaba la primera mitad. La arreglan `assign_task()` y
+    `list_task_candidates()`, que repiten las guardas de
+    `create_job_task()` en vez de relajarlas: RN-ASG-01 (repartir una tarea
+    no concede acceso a un establecimiento que no se tenga autorizado, que
+    es el agujero que la revisión del Hito 6 ya tuvo que cerrar en la
+    puerta de al lado) y RN-ASG-17 (los puntos de carga de los compañeros
+    solo se le devuelven a quien tiene `assign_jobs`; al responsable que
+    reparte sus propias tareas se le da la lista sin ellos).
+
+    **Verificado contra una base de datos de verdad, no razonado.** Las 47
+    migraciones se aplicaron desde cero sobre un PostgreSQL 16 con los
+    roles y el esquema `auth` de Supabase emulados, y ahí pasan las siete
+    suites de `supabase/tests/` más la nueva
+    `hu21_reparto_tareas.sql`, que además corre en CI. Las dos guardas
+    están comprobadas **con mutación**: quitando la de RN-ASG-01 el test
+    falla, y haciendo que los puntos se devuelvan siempre, también.
+
+18. **Tres listas de estados llevaban meses desfasadas de la base, y el
+    barrido que decía vigilarlas no existía** (03/09/2026). Apareció al ir
+    a pintar el estado de una tarea, que es lo primero que lo tocaba.
+
+    `src/core/naming.ts` —el archivo de CA-21, el que dice que "solo existe
+    UN sitio donde un estado tiene nombre"— **redeclaraba a mano** tres
+    listas que ya tenían dueño en `src/core/`, y las tres se habían quedado
+    atrás:
+
+    | Lista | Lo que decía | Lo que admite la base |
+    |---|---|---|
+    | Solicitudes | 14 estados | 15: faltaba `correction_requested` |
+    | Trabajos | 9, con un `cancelled` | 11: faltaba `reassignment_requested`, y los cancelados son los dos de RN-JOB-04 |
+    | Tareas | `done`, sin `blocked` | `completed` y `blocked` |
+
+    Consecuencias que ya estaban en pantalla: un trabajo en
+    `reassignment_requested` enseñaba el valor crudo en inglés, y
+    `jobTone()` comparaba con un `"cancelled"` que la base no produce
+    nunca, así que un trabajo cancelado salía en gris en vez de en rojo.
+
+    Por qué no lo vio nadie: `naming.test.ts` comparaba el diccionario con
+    la lista equivocada —los dos lados estaban mal a la vez, así que
+    coincidían—, y la cabecera del archivo afirmaba desde el Hito 8 que
+    `hito8_inicio_busqueda_notificaciones.sql` comprobaba la coincidencia
+    con los CHECK de la base. **No lo comprobaba: esa comprobación no
+    existía en ningún archivo del repositorio.** Es la cuarta vez en este
+    proyecto que una garantía escrita en un comentario resulta no estar
+    implementada.
+
+    Arreglado en los tres sitios: `naming.ts` ya no redeclara nada
+    —importa de `request-states.ts` y `job-states.ts`, que estaban bien—,
+    el diccionario nombra los estados que faltaban, y el nuevo
+    `state-catalogue.test.ts` lee los CHECK de las migraciones y falla si
+    el catálogo y la base dejan de coincidir. Comprobado con mutación.
+
+    De paso apareció un **segundo diccionario** de los mismos estados en
+    `es.space.jobs.states`/`taskStates`, con nombres distintos para lo
+    mismo ("Pendiente de asignación" frente a "Pendiente de asignar",
+    "Completada" frente a "Hecha"). No lo usaba ninguna pantalla y
+    `naming.test.ts` no lo veía. Eliminado.
+
 12. ~~**Estado del despliegue: el proyecto de Supabase va por la migración
     26 de 42.**~~ **Resuelto el 01/09/2026: las 42 están aplicadas.**
     Detalle en `docs/DESPLIEGUE-SUPABASE.md`. El esquema pasa a 57 tablas

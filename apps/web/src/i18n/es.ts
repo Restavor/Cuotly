@@ -166,31 +166,15 @@ export const es = {
       statusColumn: "Estado",
       pendingInvitations: "Invitaciones pendientes",
     },
-    // CA-21: "cada entidad y cada estado se llama igual en escritorio,
-    // móvil, correo, PDF e historial". Estas son esas etiquetas para los
-    // estados de trabajo y tarea del Hito 6 (src/core/job-states.ts): un
-    // único nombre visible por nombre interno, sin sinónimos.
+    // Los nombres de los estados NO están aquí: están una sola vez en
+    // `naming.states`, que es lo que CA-21 pide de verdad. Hasta el
+    // 03/09/2026 este bloque tenía su propia copia de los once estados de
+    // trabajo y los cinco de tarea —con "Pendiente de asignación" frente a
+    // "Pendiente de asignar" y "Completada" frente a "Hecha"—, o sea dos
+    // nombres visibles para el mismo estado, que es exactamente lo que el
+    // comentario de encima decía impedir. No la usaba ninguna pantalla, y
+    // `naming.test.ts` no la veía porque solo vigila `naming.states`.
     jobs: {
-      states: {
-        pending_assignment: "Pendiente de asignación",
-        assigned: "Asignado",
-        reassignment_requested: "Reasignación pedida",
-        in_progress: "En curso",
-        blocked_by_client: "Bloqueado · Esperando al restaurante",
-        authorized_pause: "En pausa autorizada",
-        published: "Publicado",
-        in_correction: "En corrección",
-        completed: "Finalizado",
-        cancelled_before_start: "Cancelado antes de empezar",
-        cancelled_after_start: "Cancelado después de empezar",
-      },
-      taskStates: {
-        pending: "Pendiente",
-        in_progress: "En curso",
-        blocked: "Bloqueada",
-        completed: "Completada",
-        cancelled: "Cancelada",
-      },
       // RN-SLA-17: es una condición calculada que convive con el estado,
       // nunca lo sustituye.
       outOfDeadline: "Fuera de plazo",
@@ -289,27 +273,40 @@ export const es = {
         accepted: "Aceptada",
         in_progress: "En curso",
         published: "Publicada",
+        // RN-COR: el restaurante ha pedido la corrección y todavía nadie
+        // la ha empezado. Faltaba, y es un estado por el que pasa toda
+        // corrección antes de `in_correction`.
+        correction_requested: "Corrección pedida",
         in_correction: "En corrección",
         closed: "Cerrada",
         rejected: "Rechazada",
         cancelled_before_start: "Cancelada antes de empezar",
         cancelled_after_start: "Cancelada después de empezar",
       },
+      // PRD §11.1, los once estados de trabajo. `reassignment_requested`
+      // y los dos cancelados faltaban: un trabajo en cualquiera de los
+      // tres enseñaba el valor crudo en inglés, y el `cancelled` que
+      // había aquí la base no lo admite (RN-ASG-09, RN-JOB-04).
       job: {
         pending_assignment: "Pendiente de asignar",
         assigned: "Asignado",
+        reassignment_requested: "Reasignación pedida",
         in_progress: "En curso",
         blocked_by_client: "Bloqueado · Esperando al restaurante",
         authorized_pause: "En pausa autorizada",
         published: "Publicado",
         in_correction: "En corrección",
         completed: "Finalizado",
-        cancelled: "Cancelado",
+        cancelled_before_start: "Cancelado antes de empezar",
+        cancelled_after_start: "Cancelado después de empezar",
       },
+      // PRD §11.2, los cinco estados de tarea. `blocked` faltaba y
+      // `completed` se llamaba aquí `done`, que no existe en la base.
       task: {
         pending: "Pendiente",
         in_progress: "En curso",
-        done: "Hecha",
+        blocked: "Bloqueada",
+        completed: "Hecha",
         cancelled: "Cancelada",
       },
       charge: {
@@ -577,6 +574,92 @@ export const es = {
       chargesEmptyTitle: "No hay ningún cobro pendiente",
       chargesEmptyReason: "Este restaurante no tiene ahora mismo ninguna deuda viva.",
       chargesOutstandingColumn: "Deuda viva",
+    },
+
+    /**
+     * HU-21 · desglosar un trabajo en tareas y repartirlas.
+     *
+     * Los puntos se nombran aquí una sola vez porque salen en dos sitios
+     * (el desglose del trabajo y la pantalla de Tareas) y CA-21 exige que
+     * se llamen igual en los dos.
+     */
+    tasks: {
+      title: "Tareas",
+      subtitle: "Los pasos internos de los trabajos del espacio.",
+      emptyTitle: "No hay ninguna tarea",
+      emptyReason:
+        "Una tarea nace cuando alguien desglosa un trabajo. Los trabajos pequeños no necesitan desglose.",
+      titleColumn: "Tarea",
+      jobColumn: "Trabajo",
+      establishmentColumn: "Restaurante",
+      assigneeColumn: "Responsable",
+      stateColumn: "Estado",
+      weightColumn: "Peso",
+      pointsColumn: "Puntos",
+      durationColumn: "Duración estimada",
+      unassigned: "Sin repartir",
+      openJobLink: "Abrir el trabajo",
+      filterAll: "Todas",
+      filterMine: "Mías",
+      filterOpen: "Sin terminar",
+      minutesSuffix: "min",
+      // §14.4, los cuatro pesos de tarea. RN-ASG-16 deja fuera a
+      // propósito cualquier categoría por encima de 4 h.
+      weights: {
+        light: "Ligera",
+        normal: "Normal",
+        high: "Alta",
+        very_high: "Muy alta",
+      },
+      // El desglose, dentro del detalle del trabajo.
+      breakdownTitle: "Tareas de este trabajo",
+      breakdownHint:
+        "Las tareas son opcionales en un trabajo pequeño y recomendables en uno grande. El peso lo deduce el servidor de la duración que estimes.",
+      breakdownEmptyTitle: "Este trabajo no está desglosado",
+      breakdownEmptyReason:
+        "Todavía no tiene tareas. Mientras no las tenga, los puntos del trabajo son enteros del responsable.",
+      addTitle: "Añadir una tarea",
+      addTitleLabel: "Qué hay que hacer",
+      addDescriptionLabel: "Detalle",
+      addMinutesLabel: "Duración estimada en minutos",
+      addAssigneeLabel: "Responsable",
+      addAssigneeNobody: "Repartir después",
+      addSubmit: "Añadir la tarea",
+      addPending: "Añadiendo…",
+      // RN-ASG-16, dicho antes de que el servidor lo rechace.
+      addMinutesHint:
+        "Hasta 15 min es Ligera, hasta 45 Normal, hasta 2 h Alta y hasta 4 h Muy alta. Una tarea de más de 4 horas hay que dividirla: no existe una categoría de puntos para ella.",
+      assignSubmit: "Repartir",
+      assignPending: "Repartiendo…",
+      assignEmptyTitle: "No hay a quién repartirle esta tarea",
+      assignEmptyReason:
+        "Nadie del equipo puede ejecutar trabajos en este restaurante ahora mismo. Repartir una tarea no concede acceso a un restaurante que no se tenga autorizado.",
+      startSubmit: "Comenzar",
+      startPending: "Comenzando…",
+      blockSubmit: "Bloquear",
+      blockPending: "Bloqueando…",
+      resumeSubmit: "Reanudar",
+      resumePending: "Reanudando…",
+      completeSubmit: "Marcar hecha",
+      completePending: "Guardando…",
+      cancelTitle: "Cancelar la tarea",
+      cancelReasonLabel: "Motivo",
+      cancelSubmit: "Cancelar la tarea",
+      cancelPending: "Cancelando…",
+      // RN-JOB-01, dicho en la pantalla del trabajador en vez de
+      // enseñarle un botón que el servidor le va a negar.
+      cancelOnlyStaff:
+        "Cancelar una tarea es cosa de un administrador. Si esta ya no hace falta, pídeselo.",
+      // RN-ASG-14, el reparto de puntos.
+      pointsTitle: "Cómo quedan los puntos",
+      pointsBrokenDown:
+        "Este trabajo está desglosado, así que sus puntos generales dejan de sumar y cada persona recibe los de sus tareas (RN-ASG-14).",
+      pointsWholeJob:
+        "Este trabajo no está desglosado, así que sus puntos son enteros del responsable.",
+      pointsPersonColumn: "Persona",
+      pointsColumnLabel: "Puntos de sus tareas",
+      pointsUnassignedWarning:
+        "Las tareas sin repartir no suman a nadie todavía. Sus puntos aparecerán cuando tengan responsable.",
     },
     finance: {
       title: "Finanzas",
