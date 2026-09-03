@@ -13,7 +13,6 @@ import {
   TableRow,
 } from "@/components/ui";
 import { NewEstablishmentForm } from "@/components/NewEstablishmentForm";
-import { InviteMemberForm } from "@/components/InviteMemberForm";
 import { es } from "@/i18n/es";
 
 type StatusKey = keyof typeof es.space.statuses;
@@ -49,29 +48,13 @@ export default async function SpacePage({
     notFound();
   }
 
-  const [
-    { data: establishments },
-    { data: memberships },
-    { data: invitations },
-    { data: canCreateEstablishment },
-    { data: canInvite },
-  ] = await Promise.all([
+  const [{ data: establishments }, { data: canCreateEstablishment }] = await Promise.all([
     supabase
       .from("establishments")
       .select("id, code, name, status")
       .eq("space_id", space.id)
       .order("code"),
-    supabase
-      .from("space_memberships")
-      .select("role, status, profiles(email, full_name)")
-      .eq("space_id", space.id),
-    supabase
-      .from("space_invitations")
-      .select("id, email, role, status, expires_at")
-      .eq("space_id", space.id)
-      .eq("status", "pending"),
     supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "create_establishment" }),
-    supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "invite_member" }),
   ]);
 
   return (
@@ -79,10 +62,10 @@ export default async function SpacePage({
       <h1 className="text-2xl font-bold text-primary-dark">{space.name}</h1>
 
       {/*
-        Enlaces a las pantallas de operación. El armazón completo de
-        §20.2 (menú lateral, barra de móvil, búsqueda, avisos) existe y se
-        prueba en /armazon, pero todavía no envuelve estas rutas: eso
-        queda dicho en el ROADMAP en vez de darlo por hecho.
+        Accesos directos a las pantallas de operación. No sustituyen al
+        armazón de §20.2 —el menú lateral, la barra de móvil, la búsqueda y
+        los avisos envuelven ya estas rutas desde el layout del espacio—:
+        son los atajos del inicio.
       */}
       <nav aria-label={es.nav.home} className="flex flex-wrap gap-3 text-sm">
         <Link href={`/espacios/${space.slug}/solicitudes`} className="text-cuotly-green underline">
@@ -93,6 +76,12 @@ export default async function SpacePage({
         </Link>
         <Link href={`/espacios/${space.slug}/finanzas`} className="text-cuotly-green underline">
           {es.nav.finance}
+        </Link>
+        <Link href={`/espacios/${space.slug}/calendario`} className="text-cuotly-green underline">
+          {es.nav.calendar}
+        </Link>
+        <Link href={`/espacios/${space.slug}/equipo`} className="text-cuotly-green underline">
+          {es.nav.team}
         </Link>
       </nav>
 
@@ -131,54 +120,16 @@ export default async function SpacePage({
         )}
       </Card>
 
-      <Card title={es.space.team.title} className="space-y-4">
-        <div className="flex justify-end">
-          {canInvite ? <InviteMemberForm spaceId={space.id} spaceSlug={space.slug} /> : null}
-        </div>
-        {memberships && memberships.length > 0 ? (
-          <Table>
-            <TableHead>
-              <TableHeaderCell>{es.space.team.emailColumn}</TableHeaderCell>
-              <TableHeaderCell>{es.space.team.roleColumn}</TableHeaderCell>
-              <TableHeaderCell>{es.space.team.statusColumn}</TableHeaderCell>
-            </TableHead>
-            <TableBody>
-              {memberships.map((m, i) => (
-                <TableRow key={i}>
-                  <TableCell>{m.profiles?.full_name ?? m.profiles?.email}</TableCell>
-                  <TableCell>{m.role}</TableCell>
-                  <TableCell>
-                    <StatusBadge tone={m.status === "active" ? "success" : "neutral"}>
-                      {es.space.statuses[m.status as StatusKey]}
-                    </StatusBadge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <EmptyState description={es.space.team.empty} />
-        )}
-
-        {canInvite && invitations && invitations.length > 0 ? (
-          <div>
-            <p className="mb-2 text-sm font-semibold text-text">{es.space.team.pendingInvitations}</p>
-            <Table>
-              <TableHead>
-                <TableHeaderCell>{es.space.team.emailColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.space.team.roleColumn}</TableHeaderCell>
-              </TableHead>
-              <TableBody>
-                {invitations.map((invite) => (
-                  <TableRow key={invite.id}>
-                    <TableCell>{invite.email}</TableCell>
-                    <TableCell>{invite.role}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : null}
+      {/*
+        La lista del equipo y las invitaciones (HU-03, HU-04) viven ahora
+        en su propio destino del menú, junto a la supervisión de HU-29.
+        Estaban aquí porque en el Hito 2 no existía `/equipo`; tenerlas en
+        dos sitios sería la misma lista con dos verdades posibles.
+      */}
+      <Card title={es.space.team.title}>
+        <Link href={`/espacios/${space.slug}/equipo`} className="text-sm text-cuotly-green underline">
+          {es.nav.team}
+        </Link>
       </Card>
     </div>
   );

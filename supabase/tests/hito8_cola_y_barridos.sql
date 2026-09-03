@@ -332,14 +332,21 @@ begin
       using errcode = 'assert_failure';
   end if;
 
-  -- Y al propietario, por RN-NOT-02.
-  if not exists (
+  -- Y SOLO al restaurante. Decisión de Bosco, 03/09/2026, migración 46:
+  -- la fila del §18 no dice a quién se avisa, y quien tiene que reaccionar
+  -- al agotar su bolsa es el cliente. El equipo lo ve en la ficha del
+  -- establecimiento cuando entra, sin un aviso por categoría y ciclo.
+  --
+  -- Este control estaba escrito al revés hasta la migración 46 (exigía que
+  -- el propietario SÍ lo recibiera, aplicando RN-NOT-02 a una fila que no
+  -- lo pedía). Se deja como negativo para que reintroducir el segundo
+  -- destinatario haga fallar el test.
+  if exists (
     select 1 from public.notifications
     where event_type = 'consumption_threshold_100'
-      and recipient_id = 'c1000000-0000-0000-0000-000000000001'
       and audience = 'staff'
   ) then
-    raise exception 'RN-NOT-02 FALLIDO: el propietario no recibió el aviso de bolsa agotada'
+    raise exception '§18 FALLIDO: el aviso de bolsa agotada se emitió al equipo, y es solo del restaurante'
       using errcode = 'assert_failure';
   end if;
 

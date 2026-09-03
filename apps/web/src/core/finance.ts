@@ -176,8 +176,14 @@ export function todayInTimeZone(now: Date, timeZone: string): string {
  * su horario de verano ya aplicado, que es justo lo que no se puede
  * suponer fijo. Se obtiene formateando el instante en esa zona y leyendo
  * el resultado como si fuera UTC: la diferencia es el desplazamiento.
+ *
+ * Se exporta porque no es de finanzas: es el primitivo de zona horaria que
+ * necesita cualquiera que convierta un día civil del espacio en un
+ * instante (`src/core/team-calendar.ts` lo usa para las sustituciones).
+ * Vive aquí por historia —lo estrenó HU-26— y moverlo obligaría a tocar
+ * todas las pantallas de finanzas sin ganar nada.
  */
-function zoneOffsetMinutes(instant: Date, timeZone: string): number {
+export function zoneOffsetMinutes(instant: Date, timeZone: string): number {
   const partes = new Intl.DateTimeFormat("en-CA", {
     timeZone,
     hourCycle: "h23",

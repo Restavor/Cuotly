@@ -10,7 +10,7 @@ Actualizado el 02/09/2026.
 
 ## Aplicadas
 
-**Las 45 migraciones del repositorio están aplicadas.** No queda ninguna
+**Las 46 migraciones del repositorio están aplicadas.** No queda ninguna
 pendiente.
 
 - Las 01–24 se aplicaron el 30/08/2026.
@@ -40,6 +40,10 @@ pendiente.
   objects` —esa tabla es de Supabase, no del proyecto—, así que la
   migración se para con un mensaje claro si alguna vez apareciera
   desactivado.
+- La **46** (`consumption_threshold_client_only`) el 03/09/2026: el aviso
+  de consumo de bolsa (§18, 80 % y 100 %) pasa a emitirse **solo al
+  restaurante**. Cambia a quién se avisa, nada más; los avisos ya emitidos
+  al equipo no se tocan.
 
 Los archivos grandes se trocearon por sentencias completas, respetando los
 cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
@@ -65,6 +69,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 43 | `client_request_job` | `client_request_job` |
 | 44 | `retry_request_analysis` | `retry_request_analysis` |
 | 45 | `storage_bucket_files` | `storage_bucket_files` |
+| 46 | `consumption_threshold_client_only` | `consumption_threshold_client_only` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

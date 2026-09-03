@@ -782,6 +782,158 @@ export const es = {
       correction_window: "Fin de la ventana de corrección",
       charge_due: "Vencimiento de cobro",
     },
+    months: [
+      "enero",
+      "febrero",
+      "marzo",
+      "abril",
+      "mayo",
+      "junio",
+      "julio",
+      "agosto",
+      "septiembre",
+      "octubre",
+      "noviembre",
+      "diciembre",
+    ],
+    monthTitle: (mes: string, anio: number) => `${mes} de ${anio}`,
+    previousMonth: "Mes anterior",
+    nextMonth: "Mes siguiente",
+    today: "Hoy",
+    timeZoneHint: (zona: string) =>
+      `Las fechas son las del espacio (${zona}), no las del navegador de quien mira.`,
+    dateColumn: "Fecha",
+    kindColumn: "Qué",
+    detailColumn: "Detalle",
+    stateColumn: "Estado",
+    absenceStates: {
+      requested: "Pedida",
+      approved: "Aprobada",
+      rejected: "Rechazada",
+      cancelled: "Cancelada",
+    },
+    noDetail: "Sin detalle",
+
+    // HU-31 · aprobar una ausencia y ver qué trabajos quedan sin cobertura.
+    pendingTitle: "Ausencias pendientes de decidir",
+    pendingEmpty: "No hay ninguna ausencia esperando decisión.",
+    pendingPersonColumn: "Quién",
+    pendingRangeColumn: "Fechas",
+    absenceRange: (desde: string, hasta: string, dias: number) =>
+      dias === 1 ? `${desde} · 1 día` : `${desde} → ${hasta} · ${dias} días`,
+    uncoveredTitle: "Trabajos que quedarían sin cobertura",
+    uncoveredEmpty: "Ninguno: no tiene trabajos vivos que cubrir.",
+    uncoveredHint:
+      "RN-ASG-12: al aprobarla, esta persona deja de ser candidata mientras dure la ausencia. Estos trabajos hay que reasignarlos.",
+    decisionNoteLabel: "Motivo de la decisión (opcional)",
+    approve: "Aprobar",
+    reject: "Rechazar",
+    decidePending: "Guardando…",
+    decideDone: "Decisión registrada.",
+
+    // HU-30 · disponibilidad declarada.
+    availabilityTitle: "Mi disponibilidad",
+    availabilityHint:
+      "Sirve para planificación y recomendación (RN-ASG-11): no cambia ningún plazo del restaurante.",
+    availabilityLabel: "¿Estás disponible para recibir trabajos?",
+    availableYes: "Sí, disponible",
+    availableNo: "No disponible ahora mismo",
+    availabilityNoteLabel: "Nota (opcional)",
+    availabilitySave: "Guardar disponibilidad",
+    availabilityPending: "Guardando…",
+    availabilityDone: "Disponibilidad guardada.",
+    availabilityNotWorker:
+      "Esta sección es de quien realiza trabajos. Tu rol en este espacio no recibe asignaciones.",
+
+    // HU-30 · pedir una ausencia.
+    newAbsenceTitle: "Pedir una ausencia",
+    newAbsenceIntro:
+      "La decide el propietario o un administrador. Mientras esté aprobada no se te asignarán trabajos nuevos (RN-ASG-12).",
+    absenceStartLabel: "Primer día ausente",
+    absenceEndLabel: "Último día ausente",
+    absenceReasonLabel: "Motivo (opcional)",
+    absenceSubmit: "Pedir la ausencia",
+    absencePending: "Enviando…",
+    absenceDone: "Ausencia pedida. Aparecerá en el calendario hasta que la decidan.",
+    absenceStartInvalid: "El primer día no es una fecha válida.",
+    absenceEndInvalid: "El último día no es una fecha válida.",
+    absenceEndBeforeStart: "El último día no puede ser anterior al primero.",
+    absenceTooLong: "Ese rango pasa de un año. Revisa las fechas.",
+    myAbsencesTitle: "Mis ausencias",
+    myAbsencesEmpty: "No has pedido ninguna ausencia.",
+
+    // HU-32 · festivos y cierres del espacio.
+    newHolidayTitle: "Añadir un festivo",
+    newHolidayIntro:
+      "El reloj contractual se para el día completo (RN-CLK-03). Un festivo no se edita ni se borra: RN-CLK-10 impide que un cambio recalcule hacia atrás contadores ya en curso.",
+    holidayDateLabel: "Día",
+    holidayNameLabel: "Nombre",
+    holidaySubmit: "Añadir el festivo",
+    holidayPending: "Guardando…",
+    holidayDone: "Festivo añadido.",
+    holidayDateInvalid: "Ese día no es una fecha válida.",
+    holidayNameRequired: "Ponle nombre: es lo que se verá en el calendario.",
+    holidayDuplicate: "Ya hay un festivo ese día en este espacio.",
+    holidaysTitle: "Festivos del espacio",
+    holidaysEmpty: "Todavía no hay ningún festivo configurado.",
+
+    back: "Volver al calendario",
+  },
+
+  /**
+   * HU-29 y RN-SUP · la pantalla de Equipo. Los textos de invitar viven en
+   * `space.team` desde el Hito 2 y no se duplican aquí: son los mismos.
+   */
+  teamPage: {
+    intro:
+      "Quién está en el espacio y quién supervisa a quién. La supervisión no es un rol: es una relación Administrador–Trabajador (RN-SUP-01).",
+    membersTitle: "Personas del espacio",
+    nameColumn: "Quién",
+    roleColumn: "Rol",
+    statusColumn: "Estado",
+    principalColumn: "Administrador principal",
+    substituteColumn: "Sustituto vigente",
+    roles: {
+      owner: "Propietario",
+      admin: "Administrador",
+      worker: "Trabajador",
+    },
+    noPrincipal: "Sin asignar",
+    noSubstitute: "Ninguno",
+    substituteUntil: (hasta: string) => `hasta el ${hasta}`,
+
+    supervisionTitle: "Supervisión",
+    supervisionIntro:
+      "Cada trabajador tiene exactamente un administrador principal (RN-SUP-02) y puede tener un sustituto temporal con fechas (RN-SUP-03). Solo el propietario del espacio las cambia (RN-SUP-05).",
+    workerLabel: "Trabajador",
+    adminLabel: "Administrador",
+    setPrincipal: "Asignar principal",
+    setPrincipalPending: "Asignando…",
+    setPrincipalDone: "Administrador principal asignado.",
+    substituteTitle: "Sustitución temporal",
+    substituteStartLabel: "Desde",
+    substituteEndLabel: "Hasta",
+    setSubstitute: "Nombrar sustituto",
+    setSubstitutePending: "Nombrando…",
+    setSubstituteDone: "Sustitución registrada.",
+    substituteWindowInvalid: "La fecha de fin tiene que ser posterior a la de inicio (RN-SUP-03).",
+    rescheduleLabel: "Nueva fecha de fin",
+    reschedule: "Cambiar la fecha de fin",
+    rescheduleDone: "Fecha de fin actualizada.",
+    revoke: "Retirar",
+    revokeReasonLabel: "Motivo (opcional)",
+    revokeDone: "Supervisión retirada.",
+    revokeHint: "Retirar no borra nada: la relación se conserva como historial.",
+
+    noWorkers: "Todavía no hay ningún trabajador al que asignar supervisión.",
+    noAdmins: "No hay ningún administrador en el espacio al que asignar como supervisor.",
+    withoutWorkerHint:
+      "Un administrador puede existir sin supervisados: no hace falta asignarle nadie (RN-SUP-06).",
+    onlyOwner:
+      "Solo el propietario del espacio crea o cambia relaciones de supervisión (RN-SUP-05). Puedes ver quién supervisa a quién, pero no cambiarlo.",
+    inviteTitle: "Invitar a alguien al equipo",
+    inviteLink: "Invitar a alguien",
+    backToTeam: "Volver al equipo",
   },
 
   agent: {

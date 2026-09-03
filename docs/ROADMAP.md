@@ -589,6 +589,52 @@ no son un fallo, sino alcance:
     RN-ARC-04, con sus versiones y su marca de interno / compartido): lo
     que hay son los dos sitios donde se sube y se descarga.
 
+16. **Equipo y calendario, con pantalla: HU-29 a HU-32** (03/09/2026).
+
+    - **HU-29 · el supervisor.** "Supervisor" no es un rol, es una relación
+      Administrador–Trabajador (RN-SUP-01 a RN-SUP-06), y ahora se asigna
+      desde `/equipo`, con su sustituto y sus fechas. La tabla del equipo y
+      las invitaciones salen del inicio del espacio, donde estaban de
+      prestado, y pasan a su destino del menú, que hasta hoy devolvía 404.
+    - **HU-30, HU-31 · ausencias.** El trabajador declara disponibilidad y
+      pide una ausencia; el administrador la aprueba y ve qué trabajos
+      quedan sin cobertura.
+    - **HU-32 · festivos y cierres** del espacio, con su auditoría.
+
+    La aritmética de días civiles —límites de mes, ventanas de sustitución
+    vigentes, validación de un rango de ausencia— vive en
+    `src/core/team-calendar.ts` con sus tests, sin Supabase ni React
+    (CLAUDE.md). Reutiliza `zoneOffsetMinutes()` de `core/finance.ts`, que
+    pasa a exportarse: no es de finanzas, es el primitivo de zona horaria
+    que necesita cualquiera que convierta un día del espacio en un
+    instante, y lo estrenó HU-26 por casualidad.
+
+    **Migración 46 · el aviso de consumo pasa a ser solo del restaurante.**
+    La fila del §18 describe los umbrales del 80 % y el 100 % y **no dice a
+    quién se avisa**. La migración 41 rellenó ese silencio aplicando
+    RN-NOT-02 y avisaba también al propietario y a los administradores, y
+    quedó anotado como matiz a confirmar. Decisión de Bosco: la bolsa es
+    del restaurante y quien tiene que reaccionar es él; el equipo lo ve en
+    la ficha cuando entra. Solo cambia a quién se emite —umbrales, cálculo
+    y deduplicación siguen igual— y los avisos ya emitidos al equipo no se
+    tocan, que son historial. El control del test SQL, que exigía lo
+    contrario, se ha invertido para que reintroducir al segundo
+    destinatario haga fallar.
+
+    **Y un barrido nuevo que faltaba hacer desde el Hito 8:**
+    `navigation-routes.test.ts` recorre todos los destinos que pinta el
+    armazón, con los cinco roles, y falla si alguno lleva a una ruta que no
+    existe y que no esté clasificada con su motivo. El menú de §20.2 se
+    escribió entero antes que las pantallas, así que hubo semanas con
+    destinos que llevaban a un 404 sin que nada lo dijera; se encontró dos
+    veces a mano y tarde. No exige que estén todas —la Fase 1 sigue—: exige
+    que nadie añada un destino sin ruta en silencio, y que quien construya
+    una pendiente venga a borrarla de la lista. Los nueve que quedan hoy
+    están ahí enumerados, cada uno con su porqué: `/tareas` (HU-21),
+    `/planes` (HU-07), `/ajustes` (HU-36), `/mensajes` (§66.2), `/mas`
+    (§20.3), `/informes` (Fase 3), `menu-diario` (Fase 2, dos rutas) y
+    `/restaurantes/nuevo`.
+
 12. ~~**Estado del despliegue: el proyecto de Supabase va por la migración
     26 de 42.**~~ **Resuelto el 01/09/2026: las 42 están aplicadas.**
     Detalle en `docs/DESPLIEGUE-SUPABASE.md`. El esquema pasa a 57 tablas
