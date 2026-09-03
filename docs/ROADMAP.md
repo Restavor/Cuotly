@@ -883,6 +883,16 @@ no son un fallo, sino alcance:
     significaba otra cosa, se cambia en una línea de
     `audit_action_capability()`.
 
+    **La migración 49 está SIN APLICAR al proyecto de Supabase**, que se
+    queda en la 48. A diferencia de las anteriores, esta no se ha
+    ejecutado en vivo con rollback: se ha verificado desde cero en un
+    PostgreSQL local con el bootstrap de arriba. Hay que aplicarla, y
+    conviene saber que **retira una política existente**
+    (`spaces_update_owner`): en cuanto se aplique, cualquier UPDATE
+    directo sobre `spaces` deja de funcionar, incluido el del propietario.
+    Es el efecto buscado y ninguna pantalla lo usa, pero no es una
+    migración solo aditiva.
+
     Con esto `/ajustes` sale de la lista de pendientes de
     `navigation-routes.test.ts`. Quedan seis destinos.
 
