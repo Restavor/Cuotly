@@ -188,10 +188,11 @@ además comprueba que el bucket está cerrado: que con la clave pública no
 se puede listar ni descargar por ruta, y que no hay URL pública. Al
 terminar retira lo que subió.
 
-**No se ha ejecutado todavía**: la clave de servicio no está en el
-`.env.local` del contenedor donde se escribió esto, y no se guarda en el
-repositorio. Es la única parte de la tanda de archivos que no se ha visto
-funcionar.
+**Ejecutado el 03/09/2026 por Bosco, con todas las comprobaciones en
+verde.** Con eso el camino de los archivos está visto funcionar de punta a
+punta: el bucket con su configuración, la subida sin sesión con URL
+firmada, los metadatos reales del objeto, la descarga firmada devolviendo
+los mismos bytes, y el bucket cerrado a la clave pública.
 
 ## El espacio de demostración
 

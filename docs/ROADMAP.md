@@ -570,15 +570,14 @@ no son un fallo, sino alcance:
     `files`, `file_versions`, `file_links`, `receipts` y `messages` siguen a
     cero.
 
-    **Lo que no se ha visto funcionar, y hay que decirlo:** el movimiento
-    real de bytes. La clave de servicio no está en el `.env.local` de este
-    contenedor y no se guarda en el repositorio, así que no he podido
-    ejecutar una subida de verdad. Para eso queda escrito
-    `pnpm comprobar:storage`, que recorre el camino entero (firmar, subir
-    sin sesión, leer metadatos, firmar descarga, comparar bytes) y además
-    comprueba que el bucket está cerrado a la clave pública. **Hay que
-    ejecutarlo con la clave de servicio antes de dar los archivos por
-    buenos.**
+    **El movimiento real de bytes, comprobado el 03/09/2026.** Es lo único
+    que no se puede verificar con SQL, y quedó escrito como
+    `pnpm comprobar:storage`: recorre el camino entero —firmar, subir sin
+    sesión, leer los metadatos del objeto guardado, firmar la descarga,
+    comparar los bytes— y además comprueba que el bucket está cerrado a la
+    clave pública. **Lo ejecutó Bosco con la clave de servicio y dio todo
+    correcto**, así que los archivos están vistos funcionar de punta a
+    punta y no solo razonados.
 
     **Lo que sigue sin estar:** la segunda mitad de RN-ARC-08 ("se optimiza
     la versión visual conservando el original") necesita una tubería de
