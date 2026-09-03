@@ -15,7 +15,9 @@ import {
   financialSummary,
   nonpaymentStage,
   outstandingCents,
+  paymentDayToTimestamp,
   terminationSettlementCents,
+  todayInTimeZone,
   type FinancialEntry,
 } from "./finance";
 import { contractualCalendar } from "./business-clock";
@@ -391,5 +393,68 @@ describe("finance — RN-FIN, HU-26, HU-27, HU-28", () => {
         recurringMonthly: { baseCents: 0, totalCents: 0 },
       });
     });
+  });
+});
+
+describe("RN-FIN-05 · la fecha del cobro que elige el equipo", () => {
+  it("un día natural se ancla al mediodía de la zona del espacio", () => {
+    // Madrid en septiembre va en UTC+2: mediodía local = 10:00 UTC.
+    expect(paymentDayToTimestamp("2026-09-03", "Europe/Madrid")).toBe("2026-09-03T10:00:00.000Z");
+    // Y en enero, UTC+1. El horario de verano no se supone fijo.
+    expect(paymentDayToTimestamp("2026-01-15", "Europe/Madrid")).toBe("2026-01-15T11:00:00.000Z");
+    // UTC de verdad, sin desplazamiento.
+    expect(paymentDayToTimestamp("2026-09-03", "UTC")).toBe("2026-09-03T12:00:00.000Z");
+  });
+
+  it("RN-FIN-05: el día elegido sigue siendo ese día en la zona del espacio, en cualquier huso", () => {
+    // Ésta es la razón de ser de la conversión: guardando 00:00 UTC, Los
+    // Ángeles vería el 2 de septiembre.
+    for (const zona of [
+      "Europe/Madrid",
+      "America/Los_Angeles",
+      "Pacific/Auckland",
+      "Pacific/Kiritimati", // UTC+14, el extremo por el este
+      "Pacific/Niue", // UTC-11, el extremo por el oeste
+    ]) {
+      const guardado = paymentDayToTimestamp("2026-09-03", zona);
+      expect(guardado).not.toBeNull();
+      expect(todayInTimeZone(new Date(guardado as string), zona)).toBe("2026-09-03");
+    }
+  });
+
+  it("rechaza lo que no es un día, en vez de lanzar", () => {
+    expect(paymentDayToTimestamp("", "Europe/Madrid")).toBeNull();
+    expect(paymentDayToTimestamp("3/9/2026", "Europe/Madrid")).toBeNull();
+    expect(paymentDayToTimestamp("2026-9-3", "Europe/Madrid")).toBeNull();
+    expect(paymentDayToTimestamp("mañana", "Europe/Madrid")).toBeNull();
+  });
+
+  it("rechaza un día que no existe, que `new Date` aceptaría corriéndolo", () => {
+    expect(new Date("2026-02-31T12:00:00.000Z").toISOString().slice(0, 10)).toBe("2026-03-03");
+    expect(paymentDayToTimestamp("2026-02-31", "Europe/Madrid")).toBeNull();
+    expect(paymentDayToTimestamp("2026-13-01", "Europe/Madrid")).toBeNull();
+    // 2028 sí es bisiesto; 2026 no.
+    expect(paymentDayToTimestamp("2028-02-29", "UTC")).toBe("2028-02-29T12:00:00.000Z");
+    expect(paymentDayToTimestamp("2026-02-29", "UTC")).toBeNull();
+  });
+
+  it("una zona horaria inexistente es dato inválido, no una excepción", () => {
+    expect(paymentDayToTimestamp("2026-09-03", "Marte/Olympus")).toBeNull();
+  });
+});
+
+describe("todayInTimeZone", () => {
+  it("propone el día del espacio, no el del servidor en UTC", () => {
+    // 00:30 del 4 de septiembre en Madrid son las 22:30 del 3 en UTC.
+    const ahora = new Date("2026-09-03T22:30:00.000Z");
+    expect(ahora.toISOString().slice(0, 10)).toBe("2026-09-03");
+    expect(todayInTimeZone(ahora, "Europe/Madrid")).toBe("2026-09-04");
+  });
+
+  it("y hacia el otro lado igual", () => {
+    // 02:00 UTC del 4 son las 19:00 del 3 en Los Ángeles.
+    expect(todayInTimeZone(new Date("2026-09-04T02:00:00.000Z"), "America/Los_Angeles")).toBe(
+      "2026-09-03",
+    );
   });
 });

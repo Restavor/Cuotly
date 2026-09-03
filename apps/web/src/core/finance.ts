@@ -148,6 +148,104 @@ export function chargeStatus(input: {
 export const PAYMENT_METHODS = ["transfer", "bizum"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
+/**
+ * El día natural que es "hoy" **en la zona del espacio** (CLAUDE.md MUST:
+ * "las fechas se calculan en la zona horaria del espacio"), en el formato
+ * `YYYY-MM-DD` que espera un `<input type="date">`.
+ *
+ * Existe porque el valor por defecto del formulario lo pinta el servidor,
+ * que corre en UTC: a las 00:30 de Madrid, `toISOString()` propondría
+ * ayer.
+ */
+export function todayInTimeZone(now: Date, timeZone: string): string {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+
+  const parte = (tipo: "year" | "month" | "day") =>
+    partes.find((p) => p.type === tipo)?.value ?? "";
+
+  return `${parte("year")}-${parte("month")}-${parte("day")}`;
+}
+
+/**
+ * Cuántos minutos separa `timeZone` de UTC en ese instante concreto —con
+ * su horario de verano ya aplicado, que es justo lo que no se puede
+ * suponer fijo. Se obtiene formateando el instante en esa zona y leyendo
+ * el resultado como si fuera UTC: la diferencia es el desplazamiento.
+ */
+function zoneOffsetMinutes(instant: Date, timeZone: string): number {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(instant);
+
+  const n = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value ?? "0");
+
+  const comoSiFueraUtc = Date.UTC(
+    n("year"),
+    n("month") - 1,
+    n("day"),
+    n("hour"),
+    n("minute"),
+    n("second"),
+  );
+
+  return (comoSiFueraUtc - instant.getTime()) / 60_000;
+}
+
+/**
+ * RN-FIN-05 / HU-26: "indica **fecha**, importe y método". La fecha se
+ * elige en un calendario, así que llega como un día natural suelto
+ * ("2026-09-03"), sin hora y sin zona; `payments.paid_at` es `timestamptz`
+ * (CLAUDE.md MUST), de modo que alguien tiene que ponerle una hora.
+ *
+ * Cuál se elige no da igual. Guardar `2026-09-03T00:00:00Z` hace que
+ * cualquier espacio al oeste de Greenwich vea el pago fechado el día
+ * **anterior** al que marcó la persona. Aquí se ancla al **mediodía de la
+ * zona del espacio**, que es lo que pide CLAUDE.md ("las fechas se
+ * calculan en la zona horaria del espacio") y lo que deja el día natural
+ * intacto en cualquier huso, incluidos los de UTC+13 y UTC+14. El mediodía
+ * y no las 00:00 locales porque los saltos de horario de verano ocurren de
+ * madrugada: a mediodía no hay ninguna hora que no exista o que exista dos
+ * veces.
+ *
+ * Devuelve `null` —y no lanza— si el texto no es un día real: un error de
+ * negocio se devuelve como resultado explícito (CLAUDE.md, estilo de
+ * código). Rechaza también `2026-02-31`, que `new Date()` aceptaría
+ * corriéndolo al 3 de marzo sin avisar.
+ */
+export function paymentDayToTimestamp(day: string, timeZone: string): string | null {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+  if (!partes) return null;
+
+  const [anio, mes, dia] = [Number(partes[1]), Number(partes[2]), Number(partes[3])];
+  const mediodiaComoUtc = Date.UTC(anio, mes - 1, dia, 12, 0, 0);
+  // Descarta los días que no existen: `Date.UTC` desborda el 31 de febrero
+  // al 3 de marzo en silencio.
+  if (new Date(mediodiaComoUtc).toISOString().slice(0, 10) !== day) return null;
+
+  let desplazamiento: number;
+  try {
+    desplazamiento = zoneOffsetMinutes(new Date(mediodiaComoUtc), timeZone);
+  } catch {
+    // Una zona inexistente hace lanzar a Intl. Se trata como dato
+    // inválido, no como caída.
+    return null;
+  }
+
+  return new Date(mediodiaComoUtc - desplazamiento * 60_000).toISOString();
+}
+
 // ---------------------------------------------------------------------
 // Ciclo de impago (RN-FIN-10 a 14)
 // ---------------------------------------------------------------------

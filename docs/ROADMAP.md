@@ -442,6 +442,70 @@ no son un fallo, sino alcance:
     no está conectada. La pantalla de facturación lo dice en claro en vez
     de enseñar un botón que no funciona.
 
+14. **Las finanzas del equipo, cerradas: HU-25, HU-26 y HU-27** (03/09/2026).
+    Eran las tres piezas que el Hito 8 dejó a medias porque tenían servidor
+    y no pantalla.
+
+    - **HU-26 · la fecha del cobro.** El formulario de Finanzas registraba
+      importe y método pero no fecha, así que `register_payment()` se
+      quedaba con su `default now()`: un cobro que entró el viernes y se
+      apuntó el lunes quedaba fechado el lunes. Ahora hay campo de fecha, y
+      la conversión de día natural a `timestamptz` la hace
+      `paymentDayToTimestamp()` en `src/core/finance.ts` anclando al
+      **mediodía de la zona del espacio** —no a las 00:00 UTC, que le
+      corría el día a cualquier espacio al oeste de Greenwich, ni al
+      mediodía UTC, que se lo corría a UTC+13 y UTC+14—. El día propuesto
+      por defecto también sale de la zona del espacio y no de la del
+      servidor (`todayInTimeZone()`). Comprobado en vivo: guardando el 3 de
+      septiembre desde Madrid, `paid_at` es `10:00Z`, que son las 12:00 de
+      ese mismo día allí.
+
+      De paso, la clave de idempotencia pasa de `ui:<cobro>:<céntimos>` a
+      `ui:<cobro>:<céntimos>:<día>`. La anterior no distinguía un doble
+      clic de una segunda entrega a cuenta del mismo importe: la segunda se
+      descartaba en silencio y la pantalla decía "Pago registrado".
+
+    - **HU-27 · el trabajador marca pagado sin entrar en Finanzas.** El
+      formulario de pago vive ahora en `src/components/` y aparece también
+      en el detalle del trabajo, que es por donde el trabajador llega a su
+      restaurante. Es el mismo formulario y la misma función a propósito:
+      lo que le está vedado a un trabajador —cambiar precios, perdonar
+      deuda, reembolsar— no está ahí porque tampoco se lo permite el
+      servidor. Comprobado en vivo con la trabajadora sembrada, y
+      comprobado también el lado que importa: quitándole la autorización
+      sobre un restaurante, `charges` le devuelve **cero filas**,
+      `charge_outstanding_cents()` responde "No tienes visibilidad
+      financiera de este establecimiento" y `register_payment()` responde
+      "Solo puedes marcar como pagado un cobro de un restaurante que tengas
+      asignado" (RN-FIN-05, CLAUDE.md MUST).
+
+    - **HU-25 · el libro de consumos para el equipo**, en
+      `/espacios/<espacio>/restaurantes/<id>/consumos`, con cada apunte, su
+      tipo, su motivo y **su autor**, que es lo que lo distingue del libro
+      que ya veía el restaurante en su facturación. La identidad no la
+      decide la pantalla: `establishment_consumption_ledger()` solo
+      devuelve `author_id` a quien es del espacio, y al cliente le llega
+      nulo, así que la misma pantalla no tiene por dónde enseñarle una
+      persona. Verificado con las tres identidades sembradas: el equipo ve
+      el autor, el cliente se ve a sí mismo como "Tú", y el cliente del
+      otro restaurante no ve ni una fila.
+
+    **Lo que esta tanda NO entrega, y hay que decirlo:**
+
+    - El **justificante** de HU-26 sigue sin estar. Es la cuarta pieza que
+      pide la historia y depende del bucket de Storage, que no existe en
+      ninguna migración. El formulario no finge un campo que no guardaría
+      nada.
+    - La **ficha del restaurante del PRD §15.2** —cinco pestañas, datos
+      fiscales, notas internas, archivos— tampoco. Lo que hay en
+      `/espacios/<espacio>/restaurantes` es un listado mínimo cuya razón de
+      ser es dar entrada al libro de consumos, y además tapa un agujero que
+      venía del Hito 8: ese destino del menú de escritorio existía y
+      devolvía 404. La pantalla lo dice en claro en vez de aparentar una
+      ficha (P6). Siguen sin ruta `restaurantes/nuevo`,
+      `tareas`, `menu-diario`, `mensajes`, `calendario`, `informes`,
+      `equipo`, `planes`, `ajustes` y `mas` del mismo menú.
+
 12. ~~**Estado del despliegue: el proyecto de Supabase va por la migración
     26 de 42.**~~ **Resuelto el 01/09/2026: las 42 están aplicadas.**
     Detalle en `docs/DESPLIEGUE-SUPABASE.md`. El esquema pasa a 57 tablas

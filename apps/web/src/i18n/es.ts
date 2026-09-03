@@ -406,6 +406,53 @@ export const es = {
   },
 
   teamArea: {
+    /**
+     * HU-25 · el libro de consumos de un establecimiento visto por el
+     * equipo, que a diferencia del del cliente (`clientArea.ledger*`)
+     * lleva **autor**: es lo que pide la historia.
+     */
+    establishments: {
+      title: "Restaurantes",
+      subtitle: "Los restaurantes de este espacio.",
+      emptyTitle: "No hay ningún restaurante",
+      emptyReason: "Cuando se dé de alta un restaurante, aparecerá aquí.",
+      nameColumn: "Restaurante",
+      codeColumn: "Código",
+      statusColumn: "Estado",
+      ledgerLink: "Consumos",
+      pendingSheetTitle: "La ficha completa todavía no está",
+      pendingSheetReason:
+        "De la ficha del restaurante solo está el libro de consumos. Las cinco pestañas del PRD llegan más adelante.",
+    },
+    ledger: {
+      title: "Libro de consumos",
+      subtitle: "Cada apunte del ciclo, con su motivo y quién lo hizo.",
+      emptyTitle: "Este restaurante no ha consumido nada",
+      emptyReason: "Aquí aparece cada cambio que descuenta del plan, en cuanto haya uno.",
+      dateColumn: "Fecha",
+      categoryColumn: "Categoría",
+      amountColumn: "Movimiento",
+      requestColumn: "Solicitud",
+      typeColumn: "Tipo de apunte",
+      reasonColumn: "Motivo",
+      authorColumn: "Autor",
+      // RN-CON: los tres tipos de apunte del libro, con un solo nombre
+      // visible cada uno (CA-21).
+      types: {
+        debit: "Consumo",
+        return: "Devolución",
+        compensatory_credit: "Crédito compensatorio",
+      },
+      // P6: un apunte sin explicación se dice que no la tiene; no se
+      // rellena con una frase inventada.
+      noReason: "Sin motivo anotado",
+      authorSystem: "Sistema",
+      authorSelf: "Tú",
+      authorClient: "El restaurante",
+      authorTeam: "Equipo de mantenimiento",
+      noAccessTitle: "Sin acceso a este restaurante",
+      noAccessReason: "El libro de consumos lo ve el equipo del espacio.",
+    },
     requests: {
       title: "Solicitudes",
       subtitle: "Lo que han pedido los restaurantes, por orden de llegada.",
@@ -494,6 +541,15 @@ export const es = {
       publishPending: "Publicando…",
       noActionTitle: "Nada que hacer aquí ahora",
       noActionReason: "Este trabajo está en un estado que no admite acciones tuyas en este momento.",
+      // HU-27 / RN-FIN-05: el trabajador marca pagado un cobro de su
+      // restaurante sin pasar por Finanzas. Se habla del restaurante de
+      // este trabajo, nunca de los ingresos del espacio.
+      chargesTitle: "Cobros de este restaurante",
+      chargesHint:
+        "Solo los cobros que siguen con deuda viva. Aquí no se cambian precios ni se perdona deuda.",
+      chargesEmptyTitle: "No hay ningún cobro pendiente",
+      chargesEmptyReason: "Este restaurante no tiene ahora mismo ninguna deuda viva.",
+      chargesOutstandingColumn: "Deuda viva",
     },
     finance: {
       title: "Finanzas",
@@ -519,10 +575,13 @@ export const es = {
       stageColumn: "Etapa",
       registerTitle: "Registrar un pago",
       registerAmountLabel: "Importe cobrado",
+      registerDateLabel: "Fecha del cobro",
       registerMethodLabel: "Método",
       registerSubmit: "Registrar el pago",
       registerPending: "Registrando…",
       registerAmountInvalid: "Escribe el importe cobrado en euros, mayor que cero.",
+      registerDateInvalid: "Elige la fecha en que se cobró.",
+      registerChargeMissing: "Este cobro ya no existe o no tienes acceso a él.",
       registerDone: "Pago registrado.",
       noPermissionTitle: "Sin acceso a finanzas",
       noPermissionReason:

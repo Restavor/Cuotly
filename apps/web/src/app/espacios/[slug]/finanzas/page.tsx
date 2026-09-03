@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import {
   Card,
   EmptyState,
@@ -12,10 +13,9 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { todayInTimeZone } from "@/core/finance";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-
-import { RegisterPaymentForm } from "./RegisterPaymentForm";
 
 /**
  * Panel financiero del equipo (HU-26, HU-28, PRD §17.2).
@@ -52,10 +52,14 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name, slug")
+    .select("id, name, slug, timezone")
     .eq("slug", slug)
     .maybeSingle();
   if (!space) notFound();
+
+  // El día que propone el formulario es hoy **en la zona del espacio**, no
+  // en UTC ni en la del navegador (CLAUDE.md MUST).
+  const hoy = todayInTimeZone(new Date(), space.timezone);
 
   // Últimos 12 meses: un periodo declarado, no una ventana inventada por
   // la pantalla según lo que haya (P6).
@@ -174,6 +178,7 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
                       <RegisterPaymentForm
                         chargeId={charge.id}
                         outstandingEuros={(charge.outstanding / 100).toFixed(2)}
+                        defaultDay={hoy}
                       />
                     ) : (
                       "—"

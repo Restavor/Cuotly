@@ -2,19 +2,24 @@
 
 import { revalidatePath } from "next/cache";
 
+import { paymentDayToTimestamp } from "@/core/finance";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import type { PaymentState } from "./action-state";
 
 /**
- * HU-26 · registrar el cobro de una mensualidad.
+ * HU-26 · registrar el cobro de una mensualidad, con **fecha**, importe y
+ * método (RN-FIN-05). La misma acción sirve al trabajador desde la ficha
+ * de un restaurante asignado (HU-27): quién puede llamarla lo decide
+ * `register_payment()` en el servidor, no la pantalla que la enseñe
+ * (CLAUDE.md MUST).
  *
  * El importe llega en euros desde el formulario y se convierte a céntimos
  * aquí: todo el esquema trabaja en enteros para no arrastrar redondeos de
  * coma flotante en el dinero.
  *
- * La clave de idempotencia la construye el servidor con el cobro y el
- * importe, no el navegador: pulsar dos veces no cobra dos veces
+ * La clave de idempotencia la construye el servidor con el cobro, el
+ * importe y el día, no el navegador: pulsar dos veces no cobra dos veces
  * (CLAUDE.md MUST, RN-DAT-09).
  */
 export async function registerPayment(
@@ -24,6 +29,7 @@ export async function registerPayment(
   const chargeId = String(formData.get("chargeId") ?? "");
   const method = String(formData.get("method") ?? "");
   const euros = Number(String(formData.get("amount") ?? "").replace(",", "."));
+  const dia = String(formData.get("paidAt") ?? "").trim();
 
   // Antes esto devolvía `{ error: null, done: false }`: la pantalla se
   // quedaba exactamente igual, sin apunte y sin decir por qué, y el cobro
@@ -46,11 +52,34 @@ export async function registerPayment(
   try {
     const supabase = await createClient();
 
+    // La zona horaria sale del espacio del cobro, no del navegador ni del
+    // servidor: CLAUDE.md MUST, "las fechas se calculan en la zona horaria
+    // del espacio". Se lee aquí, del lado autorizado, porque el cliente no
+    // es la autoridad de nada.
+    const { data: charge, error: chargeError } = await supabase
+      .from("charges")
+      .select("space_id, spaces (timezone)")
+      .eq("id", chargeId)
+      .maybeSingle();
+
+    if (chargeError || !charge) {
+      return { error: es.teamArea.finance.registerChargeMissing, done: false };
+    }
+
+    const paidAt = paymentDayToTimestamp(dia, charge.spaces?.timezone ?? "Europe/Madrid");
+    if (!paidAt) {
+      return { error: es.teamArea.finance.registerDateInvalid, done: false };
+    }
+
     const { error } = await supabase.rpc("register_payment", {
       p_charge_id: chargeId,
       p_amount_cents: cents,
       p_method: method,
-      p_idempotency_key: `ui:${chargeId}:${cents}`,
+      p_paid_at: paidAt,
+      // El día entra en la clave: sin él, un segundo cobro del mismo
+      // importe sobre el mismo cargo —una entrega a cuenta repetida— se
+      // tomaría por un doble clic y se descartaría en silencio.
+      p_idempotency_key: `ui:${chargeId}:${cents}:${dia}`,
     });
 
     if (error) {
