@@ -277,6 +277,23 @@ no son un fallo, sino alcance:
    creciente y salen en cuanto se configure, nunca se marcan como enviados
    sin haberlo sido.
 
+   **Al día 02/09/2026**: Bosco decide desplegar en **Vercel**, y el cron
+   queda preparado — `apps/web/vercel.json` lo declara cada hora sobre
+   `/api/cola`, la ruta responde también a GET (que es como invoca Vercel) y
+   acepta `CRON_SECRET` además de `QUEUE_RUNNER_SECRET`, porque el cron de
+   Vercel manda esa cabecera él solo y obligar a duplicar el mismo valor en
+   dos variables es una avería con fecha. La puerta tiene tests: sin
+   secreto configurado responde 503 y no ejecuta nada, con cabecera
+   equivocada 401, y cierra igual por GET que por POST.
+
+   Sigue faltando **desplegar**: nadie ha ejecutado esto en Vercel todavía,
+   y `vercel.com` está bloqueado desde el contenedor de desarrollo, así que
+   tres detalles del contrato de su cron (frecuencia permitida según plan,
+   `maxDuration` y que la invocación llegue) están escritos de memoria y hay
+   que confirmarlos al desplegar. Están señalados como tales en
+   `docs/DESPLIEGUE-VERCEL.md`. Y el primer envío real de correo con Resend
+   —dominio verificado incluido— no se ha visto nunca.
+
 ### Salvedades de la tercera pasada de la revisión
 
 4. **`read_only` y `archived` no detenían el servicio, y ahora sí.** La
