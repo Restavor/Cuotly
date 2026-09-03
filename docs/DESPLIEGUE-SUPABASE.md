@@ -8,23 +8,10 @@ costado caro en este proyecto.
 
 Actualizado el 03/09/2026.
 
-## Pendiente de aplicar
-
-**La migración 47 (`task_assignment`) está en el repositorio y NO se ha
-aplicado al proyecto real.** Es la que añade `assign_task()` y
-`list_task_candidates()`, sin las cuales la mitad "y repartirlas" de HU-21
-no funciona: la pantalla de tareas cargará, pero repartir una tarea
-responderá que la función no existe.
-
-Está verificada, eso sí, y no solo razonada: se aplicó desde cero junto con
-las otras 46 sobre un PostgreSQL 16 local con los roles y el esquema `auth`
-de Supabase emulados, y contra esa base pasan las siete suites de
-`supabase/tests/` más `hu21_reparto_tareas.sql`. CI hace lo mismo en cada
-push con `supabase start`.
-
 ## Aplicadas
 
-**Las 46 primeras migraciones del repositorio están aplicadas.**
+**Las 48 migraciones del repositorio están aplicadas.** No queda ninguna
+pendiente.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -57,6 +44,22 @@ push con `supabase start`.
   de consumo de bolsa (§18, 80 % y 100 %) pasa a emitirse **solo al
   restaurante**. Cambia a quién se avisa, nada más; los avisos ya emitidos
   al equipo no se tocan.
+- La **47** (`task_assignment`) el 03/09/2026: `assign_task()` y
+  `list_task_candidates()`, sin las cuales la mitad "y repartirlas" de
+  HU-21 no funcionaba.
+- La **48** (`hu07_service_subscriptions`) el 03/09/2026, en dos partes:
+  contratar un servicio adicional (`create_service_subscription()`, con su
+  permanencia de 3 meses de RN-COM-09), deshacer un cambio de plan
+  programado (`cancel_scheduled_plan_change()`) y enseñar el prorrateo
+  antes de cobrarlo (`plan_change_preview()`). Incluye el relleno que abre
+  el ciclo de consumo de los planes que ya estaban de alta sin uno.
+
+  Comprobadas en vivo con las identidades sembradas, con rollback: la
+  trabajadora no contrata servicios ni ve el prorrateo; el propietario sí,
+  y contratar dos veces devuelve la misma suscripción (CA-17); la
+  permanencia del servicio sale a 3 meses; anular un cambio programado lo
+  deja en `cancelled` en vez de borrarlo y libera el índice para programar
+  otro, y anularlo dos veces devuelve `false` sin error.
 
 Los archivos grandes se trocearon por sentencias completas, respetando los
 cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
@@ -83,7 +86,8 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 44 | `retry_request_analysis` | `retry_request_analysis` |
 | 45 | `storage_bucket_files` | `storage_bucket_files` |
 | 46 | `consumption_threshold_client_only` | `consumption_threshold_client_only` |
-| 47 | `task_assignment` | **sin aplicar** |
+| 47 | `task_assignment` | `task_assignment` |
+| 48 | `hu07_service_subscriptions` | `hu07_service_subscriptions_p1`, `_p2` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

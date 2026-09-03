@@ -40,7 +40,6 @@ const PENDIENTES: Readonly<Record<string, string>> = {
   "/espacios/[slug]/informes": "Fase 3. §20.2 pide su estructura con estado vacío; todavía no está.",
   "/espacios/[slug]/menu-diario":
     "Fase 2. §20.2 pide su estructura con estado vacío; todavía no está.",
-  "/espacios/[slug]/planes": "HU-07 · asignar plan y servicios y ver el ciclo vigente; sin pantalla.",
   "/espacios/[slug]/ajustes": "HU-36 · la auditoría del espacio; sin pantalla.",
   // §20.3 · el sexto elemento de la barra de móvil.
   "/espacios/[slug]/mas": "§20.3 · la pantalla 'Más' con el resto de destinos; sin construir.",

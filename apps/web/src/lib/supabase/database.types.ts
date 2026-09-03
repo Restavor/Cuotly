@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 01/09/2026), con las 42 migraciones del
+// (generate_typescript_types, 03/09/2026), con las 48 migraciones del
 // repositorio aplicadas.
 //
 // Sustituye a la versión anterior, que se había quedado en el esquema del
@@ -2200,7 +2200,8 @@ export type Database = {
           ends_at: string
           establishment_id: string
           id: string
-          plan_id: string
+          plan_id: string | null
+          service_id: string | null
           space_id: string
           started_at: string
           subscription_id: string
@@ -2212,7 +2213,8 @@ export type Database = {
           ends_at: string
           establishment_id: string
           id?: string
-          plan_id: string
+          plan_id?: string | null
+          service_id?: string | null
           space_id: string
           started_at?: string
           subscription_id: string
@@ -2224,7 +2226,8 @@ export type Database = {
           ends_at?: string
           establishment_id?: string
           id?: string
-          plan_id?: string
+          plan_id?: string | null
+          service_id?: string | null
           space_id?: string
           started_at?: string
           subscription_id?: string
@@ -2249,6 +2252,13 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_commitments_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
           {
@@ -3834,6 +3844,10 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
       }
+      cancel_scheduled_plan_change: {
+        Args: { p_reason?: string; p_subscription_id: string }
+        Returns: boolean
+      }
       cancel_task: {
         Args: { p_reason?: string; p_task_id: string }
         Returns: undefined
@@ -3959,6 +3973,10 @@ export type Database = {
         Returns: string
       }
       create_restavor_space: { Args: never; Returns: string }
+      create_service_subscription: {
+        Args: { p_establishment_id: string; p_service_id: string }
+        Returns: string
+      }
       current_space_id: { Args: never; Returns: string }
       current_supervisors: {
         Args: { p_worker_id: string }
@@ -4138,6 +4156,10 @@ export type Database = {
         Args: { p_capability: string; p_space_id: string }
         Returns: boolean
       }
+      has_capability_as: {
+        Args: { p_capability: string; p_space_id: string; p_user_id: string }
+        Returns: boolean
+      }
       is_authorized_for_establishment: {
         Args: { p_establishment_id: string; p_user_id: string }
         Returns: boolean
@@ -4201,7 +4223,7 @@ export type Database = {
       list_task_candidates: {
         Args: { p_job_id: string }
         Returns: {
-          active_load_points: number | null
+          active_load_points: number
           worker_id: string
         }[]
       }
@@ -4276,6 +4298,17 @@ export type Database = {
       pause_establishment_counters: {
         Args: { p_establishment_id: string }
         Returns: number
+      }
+      plan_change_preview: {
+        Args: { p_new_plan_id: string; p_subscription_id: string }
+        Returns: {
+          difference_cents: number
+          extra_large: number
+          extra_medium: number
+          extra_photo: number
+          extra_small: number
+          fraction: number
+        }[]
       }
       plan_change_proration: {
         Args: { p_new_plan_id: string; p_subscription_id: string }
@@ -4606,12 +4639,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4635,11 +4668,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4660,11 +4693,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4685,11 +4718,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -4702,11 +4735,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

@@ -1019,6 +1019,115 @@ export const es = {
     backToTeam: "Volver al equipo",
   },
 
+  /**
+   * HU-07 · "asignar un plan y servicios a un establecimiento y ver su
+   * ciclo de consumo vigente" (§6 del PRD).
+   *
+   * Los textos hablan de dinero y de permanencia, así que dicen lo que
+   * pasa antes de que pase: cuánto se va a cobrar, cuándo empieza la
+   * permanencia nueva y por qué una reducción no se puede todavía. Nada de
+   * "no disponible" a secas (P6).
+   */
+  plansPage: {
+    title: "Planes y servicios",
+    subtitle: "Qué tiene contratado cada restaurante y qué le queda del ciclo.",
+    emptyTitle: "No hay ningún restaurante",
+    emptyReason: "Cuando se dé de alta un restaurante, aparecerá aquí con su plan.",
+    establishmentColumn: "Restaurante",
+    planColumn: "Plan",
+    servicesColumn: "Servicios",
+    commitmentColumn: "Permanencia",
+    renewsColumn: "Renueva",
+    manageLink: "Gestionar",
+    noPlan: "Sin plan de mantenimiento",
+    noPlanHint:
+      "Un restaurante sin plan puede pedir cambios: se presupuestan aparte y su primera atención es de 48 h laborables (RN-COM-12).",
+    noServices: "Ninguno",
+    noCommitment: "Sin permanencia registrada",
+    commitmentUntil: "Hasta el",
+    commitmentOver: "Cumplida",
+    noCycle: "Sin ciclo abierto",
+    noAccessTitle: "Sin acceso a los planes de este espacio",
+    noAccessReason: "Los planes y servicios de los restaurantes los ve el equipo del espacio.",
+
+    detailTitle: "Plan y servicios",
+    backToList: "Volver a planes y servicios",
+    currentPlanTitle: "Plan vigente",
+    priceLabel: "Precio mensual",
+    slaLabel: "Plazo de inicio",
+    slaHours: "h laborables",
+    includedTitle: "Bolsa del ciclo vigente",
+    includedColumn: "Incluidas",
+    remainingColumn: "Restantes",
+    categoryColumn: "Categoría",
+    renewsAtLabel: "Renueva el",
+    cycleEmptyTitle: "Este restaurante no tiene ciclo de consumo",
+    cycleEmptyReason:
+      "El ciclo se abre al asignarle un plan de mantenimiento. Sin plan no hay bolsa: todo se presupuesta aparte (RN-COM-01/12).",
+
+    assignPlanTitle: "Asignar un plan",
+    assignPlanHint:
+      "Asignar un plan abre su ciclo de consumo y una permanencia de 3 meses (RN-COM-04).",
+    planLabel: "Plan",
+    assignPlanSubmit: "Asignar el plan",
+    assignPlanPending: "Asignando…",
+    assignPlanDone: "Plan asignado.",
+
+    changePlanTitle: "Cambiar de plan",
+    changePlanHint:
+      "Una mejora se puede cobrar prorrateada ahora mismo (RN-COM-15) o esperar a la renovación (RN-COM-16). Una reducción solo cabe en la renovación y tras cumplir la permanencia (RN-COM-17). En los tres casos empieza una permanencia nueva de 3 meses (RN-COM-05).",
+    targetPlanLabel: "Nuevo plan",
+    previewSubmit: "Ver qué costaría",
+    previewPending: "Calculando…",
+    previewTitle: "Lo que costaría la mejora ahora",
+    previewDifference: "Se emitirá un cobro de",
+    previewFraction: "por la parte del ciclo que queda",
+    previewExtras: "Y se añaden a la bolsa:",
+    previewNoExtras: "No añade consumos: el plan nuevo no incluye más de ninguna categoría.",
+    upgradeNowSubmit: "Mejorar ahora y cobrar la diferencia",
+    upgradeNowPending: "Cambiando…",
+    upgradeNowDone: "Plan cambiado y diferencia cobrada.",
+    scheduleSubmit: "Programar para la renovación",
+    schedulePending: "Programando…",
+    scheduleDone: "Cambio programado para la renovación.",
+    downgradeBlocked:
+      "La permanencia vigente no se ha cumplido: esta reducción no se puede programar todavía (RN-COM-17).",
+    samePlan: "Ese ya es su plan.",
+
+    scheduledTitle: "Cambio programado",
+    scheduledTo: "Pasará a",
+    scheduledAt: "en la renovación del",
+    scheduledUpgrade: "Mejora",
+    scheduledDowngrade: "Reducción",
+    cancelScheduledReasonLabel: "Motivo (opcional)",
+    cancelScheduledSubmit: "Anular el cambio programado",
+    cancelScheduledPending: "Anulando…",
+    cancelScheduledDone: "Cambio programado anulado.",
+    cancelScheduledHint:
+      "Anularlo no borra nada: queda como anulado, y es lo que permite programar otro.",
+
+    servicesTitle: "Servicios adicionales",
+    servicesHint:
+      "Un restaurante puede tener plan, servicios, o ambos (RN-COM-11). Un mismo servicio no se contrata dos veces.",
+    serviceLabel: "Servicio",
+    contractServiceSubmit: "Contratar el servicio",
+    contractServicePending: "Contratando…",
+    contractServiceDone: "Servicio contratado.",
+    servicesNoneAvailable: "Este espacio no tiene servicios dados de alta.",
+    servicesAllContracted: "Ya tiene contratados todos los servicios del espacio.",
+    serviceContractedOn: "Contratado el",
+    // P6 · lo que falta se nombra. Las dos cosas que esta pantalla no hace
+    // y por qué, en vez de un botón que no funcionaría.
+    servicePendingBillingTitle: "La mensualidad de un servicio todavía no se emite",
+    servicePendingBillingReason:
+      "RN-COM-08 fija dos precios para Menú Diario según el restaurante tenga o no plan Premium, y el sistema todavía no distingue cuál de los planes es Premium. El servicio queda contratado; su cobro mensual llega con Menú Diario (Fase 2).",
+    terminationTitle: "Dar de baja un plan o un servicio no se hace aquí",
+    terminationReason:
+      "La baja del PRD es del restaurante entero (RN-EST-09): se comunica, el servicio sigue hasta el final del periodo pagado o de la permanencia, y después queda 24 h en solo lectura. Qué pasa al cancelar un plan o un servicio sueltos con la permanencia viva no está definido, así que no se ofrece.",
+    readOnlyHint:
+      "Puedes consultar los planes y servicios, pero no cambiarlos: eso es del propietario o de un administrador (RN-COM-14).",
+  },
+
   agent: {
     title: "Agente Cuotly",
     badge: "Próximamente",

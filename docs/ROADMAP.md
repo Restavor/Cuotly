@@ -720,6 +720,68 @@ no son un fallo, sino alcance:
     "Completada" frente a "Hecha"). No lo usaba ninguna pantalla y
     `naming.test.ts` no lo veía. Eliminado.
 
+19. **HU-07, planes y servicios, con pantalla** (03/09/2026). El plan
+    tenía servidor entero desde la migración 40 —alta con permanencia,
+    mejora inmediata, cambio programado, prorrateo— y al ir a construirle
+    la pantalla aparecieron tres huecos que solo se ven cuando alguien
+    tiene que pulsar un botón. Es el mismo patrón que la 47 con las tareas,
+    y ya van tres veces: **el servidor "completo" de un hito no está
+    completo hasta que una pantalla lo usa.**
+
+    - **Los servicios no se podían contratar.** `subscriptions` admite
+      `kind = 'service'` desde el Hito 5 y **ninguna función escribía una**:
+      `create_plan_subscription()` solo crea planes. Menú Diario, que es
+      medio catálogo de Restavor (RN-COM-08 a 10), no se podía asignar a un
+      restaurante ni a mano. La primera mitad de HU-07 —"asignar un plan **y
+      servicios**"— sencillamente no existía.
+    - **Un cambio programado no se podía deshacer.** El índice único
+      parcial deja como mucho uno vivo, así que programar el plan
+      equivocado bloqueaba la suscripción hasta la renovación, sin salida.
+      El estado `cancelled` llevaba desde el principio en el CHECK
+      esperando a que alguien lo pusiera.
+    - **El prorrateo no se podía enseñar antes de cobrarlo.**
+      `plan_change_proration()` es interna con razón (no comprueba
+      permisos), así que la pantalla no tenía forma de decir "esto te va a
+      cobrar 125,92 €" antes de confirmar. Cobrar sin enseñar la cifra es
+      justo lo que prohíbe P6.
+
+    Y una cuarta cosa, más callada: **el ciclo de consumo no existía hasta
+    que alguien aceptaba la primera solicitud**, así que un restaurante
+    recién dado de alta enseñaba una bolsa vacía que no era la suya. Ahora
+    se abre al dar de alta el plan. No se inventa nada: sale del mismo
+    `get_or_create_consumption_cycle_internal()`, con el mismo cálculo, así
+    que el ciclo es exactamente el que habría tenido — lo único que cambia
+    es cuándo se ve. La migración incluye el relleno para los planes que ya
+    estaban de alta sin ciclo abierto.
+
+    Todo eso es la **migración 48**, aplicada al proyecto y comprobada en
+    vivo con las identidades sembradas, con rollback: la trabajadora no
+    contrata servicios ni ve el prorrateo; el propietario sí, y contratar
+    dos veces devuelve la misma suscripción (CA-17); la permanencia del
+    servicio sale a 3 meses (RN-COM-09); el prorrateo se lee sin escribir
+    un solo apunte; anular un cambio programado lo deja en `cancelled` en
+    vez de borrarlo (CLAUDE.md MUST NOT) y libera el índice para programar
+    otro, y anularlo dos veces devuelve `false` sin error. Nada quedó
+    escrito salvo el relleno de ciclos, que es el efecto buscado.
+
+    **Lo que NO hace, y se dice en vez de fingirlo:**
+
+    - **La mensualidad de un servicio sigue siendo Fase 2.** RN-COM-08 fija
+      dos precios para Menú Diario según el establecimiento tenga o no plan
+      Premium activo, y el esquema no sabe cuál de los planes es "Premium":
+      solo tienen nombre. Contratar el servicio queda registrado y su cobro
+      llegará con Menú Diario. La pantalla lo dice.
+    - **Dar de baja una suscripción suelta no existe.** El PRD define la
+      baja a nivel de establecimiento (RN-EST-09) y no dice qué pasa si se
+      cancela un plan o un servicio estando viva la permanencia de
+      RN-COM-04/09. No me lo invento: no hay función, y la pantalla explica
+      por qué.
+
+    Con esto `/planes` sale de la lista de pendientes de
+    `navigation-routes.test.ts`, que es el barrido que lo hizo notar: al
+    existir la pantalla, el test falla hasta que alguien viene a borrar la
+    entrada. Quedan siete destinos.
+
 12. ~~**Estado del despliegue: el proyecto de Supabase va por la migración
     26 de 42.**~~ **Resuelto el 01/09/2026: las 42 están aplicadas.**
     Detalle en `docs/DESPLIEGUE-SUPABASE.md`. El esquema pasa a 57 tablas
