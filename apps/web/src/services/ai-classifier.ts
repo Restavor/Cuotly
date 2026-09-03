@@ -17,8 +17,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { classifyByRules, isChangeCategory, type ChangeCategory } from "@/core/classification-rules";
 
-/** claude-opus-5, el modelo por defecto para tareas nuevas de la plataforma. */
-const MODEL = "claude-opus-5";
+/**
+ * claude-haiku-4-5: clasificar en cuatro categorías cerradas, con las
+ * definiciones dadas enteras en el prompt y una persona validando después
+ * (RN-CLS-03), es exactamente la clase de tarea corta para la que basta el
+ * modelo pequeño.
+ */
+const MODEL = "claude-haiku-4-5";
 const MAX_TOKENS = 512;
 const DEFAULT_TIMEOUT_MS = 8000;
 
