@@ -342,7 +342,24 @@ no son un fallo, sino alcance:
    mantenimiento, se ofrecen sus restaurantes, que es lo que HU-02 llama sus
    contextos.
 
-8. **La app móvil (`apps/mobile`) es un adelanto consciente, no alcance
+8. **El coste de la IA se registra en céntimos, y con Haiku 4.5 siempre
+   sale 0.** El clasificador pasó a `claude-haiku-4-5` el 02/09/2026
+   (decisión de Bosco): la tarea es una clasificación en cuatro categorías
+   cerradas, con las definiciones dadas enteras en el prompt y una persona
+   validando después (RN-CLS-03). Las constantes de precio se ajustaron con
+   él —1,00 $ / 5,00 $ por millón, frente a 5,00 $ / 25,00 $ de Opus 5—,
+   porque quedarse con las viejas habría escrito un coste cinco veces mayor
+   en `ai_usage`, que es un libro inmutable.
+
+   Efecto colateral que conviene decidir: con esos precios y `max_tokens` en
+   512, una clasificación cuesta ~0,03 céntimos y `estimated_cost_cents`
+   (RN-CLS-05) **redondea a 0 en todas las llamadas**. La columna deja de
+   informar de nada mientras el modelo sea Haiku. Se puede vivir con ello
+   —el consumo real se reconstruye de `input_tokens`/`output_tokens`, que sí
+   se guardan— o cambiar la unidad a milicéntimos. Es una decisión de
+   producto, no se toma por cuenta propia.
+
+9. **La app móvil (`apps/mobile`) es un adelanto consciente, no alcance
    colado.** El PRD §24.1 sitúa "app móvil nativa y push" en la Fase 4, y
    la revisión la señaló como fuera de alcance. Se construyó en el Hito 1
    porque así se aprobó al empezar (web y móvil en paralelo) y hoy contiene
@@ -350,7 +367,7 @@ no son un fallo, sino alcance:
    PRD aplaza de verdad, sigue sin existir. Queda dicho para que nadie lo
    confunda con la Fase 4 hecha a medias.
 
-9. **El área de cliente arranca, y no está terminada.** La primera pantalla
+10. **El área de cliente arranca, y no está terminada.** La primera pantalla
    con datos reales del producto: `/espacios/<espacio>/restaurantes/<id>`,
    con el estado del servicio, la bolsa del ciclo, la lista de solicitudes
    con su estado, el formulario para pedir un cambio (HU-10) y el botón de
@@ -366,14 +383,14 @@ no son un fallo, sino alcance:
    sin un entorno con Supabase sembrado" decae: el entorno es el proyecto
    real y el sembrado es `supabase/seed/espacio-demo.sql`.
 
-10. **`database.types.ts` ya está al día** (02/09/2026). Se regeneró contra
+11. **`database.types.ts` ya está al día** (02/09/2026). Se regeneró contra
     el proyecto real con las 42 migraciones aplicadas: pasó de 1.014 a
     4.711 líneas y dejó de necesitar añadidos "(a mano)". La única
     excepción es la firma de `client_request_job()` (migración 43), añadida
     a mano con el formato exacto del generador; conviene regenerarlo entero
     con `supabase gen types` en la próxima ocasión que haya CLI.
 
-11. **El lado del equipo tiene ya sus pantallas de operación.** Bandeja de
+12. **El lado del equipo tiene ya sus pantallas de operación.** Bandeja de
     solicitudes y detalle (empezar el análisis, validar la clasificación,
     pedir información, rechazar), tablero de trabajos y detalle (asignar
     con los candidatos que calcula el servidor, comenzar, bloquear,

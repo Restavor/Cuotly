@@ -27,12 +27,16 @@ const MODEL = "claude-haiku-4-5";
 const MAX_TOKENS = 512;
 const DEFAULT_TIMEOUT_MS = 8000;
 
-// Precio de claude-opus-5: 5,00 $ / 1M tokens de entrada, 25,00 $ / 1M de
+// Precio de claude-haiku-4-5: 1,00 $ / 1M tokens de entrada, 5,00 $ / 1M de
 // salida. En céntimos de dólar por token, para que ai_usage.estimated_cost_cents
 // (RN-CLS-05) sea un entero sin arrastrar redondeos de coma flotante en
 // cada llamada.
-const INPUT_CENTS_PER_TOKEN = 500 / 1_000_000;
-const OUTPUT_CENTS_PER_TOKEN = 2500 / 1_000_000;
+//
+// ESTAS CONSTANTES VAN ATADAS A `MODEL`. Cambiar uno sin el otro no rompe
+// nada visible: simplemente escribe un coste falso en `ai_usage`, que es un
+// libro inmutable, y nadie se entera hasta que alguien suma la columna.
+const INPUT_CENTS_PER_TOKEN = 100 / 1_000_000;
+const OUTPUT_CENTS_PER_TOKEN = 500 / 1_000_000;
 
 const SYSTEM_PROMPT = `Eres el clasificador de solicitudes de Cuotly, una plataforma de mantenimiento web para restaurantes.
 Dada la descripción de una solicitud de cambio en la web de un restaurante, debes proponer:

@@ -136,7 +136,7 @@ describe("ai-classifier — RN-CLS-01/02, «la IA caída no bloquea el flujo» (
     expect(proposal.summary).toBe("Carta completa nueva con menú especial de Navidad.");
     expect(proposal.model).toBe("claude-opus-5");
     expect(proposal.usage).toEqual({ inputTokens: 120, outputTokens: 40 });
-    // 120 * 500/1e6 + 40 * 2500/1e6 = 0,06 + 0,10 = 0,16 céntimos -> redondeado a 0.
+    // 120 * 100/1e6 + 40 * 500/1e6 = 0,012 + 0,02 = 0,032 céntimos -> redondeado a 0.
     expect(proposal.estimatedCostCents).toBe(0);
   });
 
@@ -151,7 +151,15 @@ describe("ai-classifier — RN-CLS-01/02, «la IA caída no bloquea el flujo» (
 
     expect(proposal.source).toBe("ai");
     expect(proposal.category).toBe("small");
-    // 50 * 500/1e6 + 300 * 2500/1e6 = 0,025 + 0,75 = 0,775 -> redondea a 1 céntimo.
-    expect(proposal.estimatedCostCents).toBe(1);
+    // 50 * 100/1e6 + 300 * 500/1e6 = 0,005 + 0,15 = 0,155 -> redondea a 0.
+    //
+    // Con los precios de Haiku 4.5 y `max_tokens` en 512, UNA clasificación
+    // suelta no llega nunca a un céntimo: harían falta ~2.000 tokens de
+    // salida. O sea que `ai_usage.estimated_cost_cents` valdrá 0 en todas
+    // las llamadas normales. No se maquilla con números imposibles para que
+    // el test enseñe otra cosa: es lo que va a pasar de verdad, y está
+    // dicho en el ROADMAP para que se decida si el céntimo es la unidad
+    // correcta.
+    expect(proposal.estimatedCostCents).toBe(0);
   });
 });
