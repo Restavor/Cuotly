@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { requestTone } from "../page";
 import {
-  BeginAnalysisForm,
+  RetryAnalysisForm,
   RejectRequestForm,
   RequestInformationForm,
   ValidateClassificationForm,
@@ -59,6 +59,23 @@ export default async function TeamRequestDetailPage({
       .maybeSingle(),
     supabase.from("jobs").select("id, code, state").eq("request_id", id).maybeSingle(),
   ]);
+
+  // ¿Puede esta persona reintentar el análisis? Lo contesta el servidor,
+  // no una comprobación escrita aquí: `manage_requests` es propietario o
+  // administrador, y es lo mismo que exigen validar, pedir información y
+  // rechazar.
+  const { data: space } = await supabase
+    .from("establishments")
+    .select("space_id")
+    .eq("id", request.establishment_id)
+    .maybeSingle();
+
+  const { data: puedeGestionar } = space
+    ? await supabase.rpc("has_capability", {
+        p_space_id: space.space_id,
+        p_capability: "manage_requests",
+      })
+    : { data: false };
 
   // La propuesta de la IA vive en `classifications` y solo la lee el
   // equipo (RN-CLS-04). Si no hay ninguna, no se inventa: el formulario
@@ -142,7 +159,18 @@ export default async function TeamRequestDetailPage({
         ) : null}
       </Card>
 
-      {state === "received" ? <BeginAnalysisForm requestId={id} /> : null}
+      {/*
+        El botón de reintentar SOLO aquí: "Recibida" es, desde que la
+        clasificación es automática (RN-CLS-01), el estado en el que se
+        queda una solicitud cuyo análisis falló. En el camino normal esta
+        pantalla nunca lo enseña.
+
+        Y solo a quien puede ejecutarlo. Que no se vea no es el control de
+        acceso —el control está en `begin_request_analysis()` y en
+        `record_classification()`, migración 20260902000044—: es no
+        ofrecerle a un trabajador un botón que le va a decir que no.
+      */}
+      {state === "received" && puedeGestionar ? <RetryAnalysisForm requestId={id} /> : null}
 
       {state === "analyzing" || state === "pending_internal_validation" ? (
         <ValidateClassificationForm

@@ -7,7 +7,7 @@ import { es } from "@/i18n/es";
 
 import { INITIAL_REQUEST_ACTION } from "./action-state";
 import {
-  beginAnalysis,
+  retryAnalysis,
   rejectRequest,
   requestMoreInformation,
   validateClassification,
@@ -21,16 +21,21 @@ function Error({ message }: { message: string | null }) {
   ) : null;
 }
 
-export function BeginAnalysisForm({ requestId }: { requestId: string }) {
-  const [state, action, pending] = useActionState(beginAnalysis, INITIAL_REQUEST_ACTION);
+/**
+ * La red de seguridad del análisis automático. La pantalla solo la pinta
+ * cuando la solicitud sigue en "Recibida" —o sea, cuando la clasificación
+ * automática de RN-CLS-01 no salió— y solo a quien tiene `manage_requests`.
+ */
+export function RetryAnalysisForm({ requestId }: { requestId: string }) {
+  const [state, action, pending] = useActionState(retryAnalysis, INITIAL_REQUEST_ACTION);
   return (
-    <Card title={es.teamArea.requests.analyzeSubmit}>
+    <Card title={es.teamArea.requests.retryTitle}>
       <form action={action} className="space-y-3">
         <input type="hidden" name="requestId" value={requestId} />
-        <p className="text-sm text-text-secondary">{es.teamArea.requests.analyzeHint}</p>
+        <p className="text-sm text-text-secondary">{es.teamArea.requests.retryHint}</p>
         <Error message={state.error} />
         <Button type="submit" disabled={pending}>
-          {pending ? es.teamArea.requests.analyzePending : es.teamArea.requests.analyzeSubmit}
+          {pending ? es.teamArea.requests.retryPending : es.teamArea.requests.retrySubmit}
         </Button>
       </form>
     </Card>

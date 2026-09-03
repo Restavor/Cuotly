@@ -882,6 +882,96 @@ end $$;
 reset role;
 
 -- ============================================================
+-- RN-CLS-01 y RN-CLS-02 · reintentar el análisis, decisión de producto de
+-- Bosco (02/09/2026): el análisis se intenta solo al enviarse la solicitud
+-- y, si ESE intento falla, el equipo autorizado puede reintentarlo.
+--
+-- La solicitud se queda a propósito en 'received' —que es exactamente
+-- donde la deja un análisis automático fallido— y se comprueban las dos
+-- mitades del permiso que añadió la migración 20260902000044:
+-- `begin_request_analysis()` y `record_classification()`. Antes de ella
+-- las dos exigían permiso de CLIENTE, así que el equipo no podía
+-- reintentar nada.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
+
+do $$
+declare v_request_id uuid;
+begin
+  v_request_id := public.create_request_draft(
+    'f3000000-0000-0000-0000-000000000001', 'Cambiar el teléfono del pie.', null);
+  insert into h4_ctx values ('request_a4', v_request_id::text);
+  perform public.submit_request(v_request_id);
+  -- Y NO se llama a begin_request_analysis: se simula que el análisis
+  -- automático no salió.
+end $$;
+
+-- Un trabajador no tiene `manage_requests`: no puede reintentar.
+select set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000003', false);
+
+do $$
+declare
+  v_request_id uuid := (select value::uuid from h4_ctx where key = 'request_a4');
+begin
+  begin
+    perform public.begin_request_analysis(v_request_id);
+    raise exception 'RN-CLS-01 FALLIDO: un trabajador pudo reintentar el análisis' using errcode = 'assert_failure';
+  exception
+    when assert_failure then raise;
+    when others then null; -- rechazado, que es lo correcto
+  end;
+
+  if (select state from public.requests where id = v_request_id) <> 'received' then
+    raise exception 'RN-CLS-01 FALLIDO: el trabajador movió el estado sin permiso' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- El administrador sí: mueve el estado y, además, vale como actor al
+-- grabar la propuesta (que es la mitad que se olvidaba).
+select set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000002', false);
+
+do $$
+declare
+  v_request_id uuid := (select value::uuid from h4_ctx where key = 'request_a4');
+begin
+  perform public.begin_request_analysis(v_request_id);
+  if (select state from public.requests where id = v_request_id) <> 'analyzing' then
+    raise exception 'RN-CLS-01 FALLIDO: el administrador no pudo reintentar el análisis' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+set role service_role;
+
+do $$
+declare
+  v_request_id uuid := (select value::uuid from h4_ctx where key = 'request_a4');
+begin
+  perform public.record_classification(
+    v_request_id,
+    'f0000000-0000-0000-0000-000000000002'::uuid, 'rules', 'small', 'Reintento del equipo.',
+    null, null, null, null, null, 'sin clave de IA'
+  );
+
+  if (select state from public.requests where id = v_request_id) <> 'pending_internal_validation' then
+    raise exception 'RN-CLS-02 FALLIDO: el reintento no dejó la solicitud pendiente de validar' using errcode = 'assert_failure';
+  end if;
+
+  -- CLAUDE.md MUST: la auditoría dice quién lo hizo DE VERDAD. En un
+  -- reintento del equipo, el actor es el equipo, no el restaurante.
+  if not exists (
+    select 1 from public.audit_log
+    where entity_id = v_request_id
+      and action = 'request.classified'
+      and actor_id = 'f0000000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'CLAUDE.md FALLIDO: el reintento no quedó auditado a nombre de quien lo pidió' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- ============================================================
 -- Limpieza: no deja nada de esto en la base de datos real.
 -- ============================================================
 delete from public.audit_log where space_id in ('f1000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000002');

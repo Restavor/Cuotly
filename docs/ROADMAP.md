@@ -161,14 +161,29 @@ no son un fallo, sino alcance:
    completar desde la interfaz. Ahora la llama el propio envío, que es lo
    que dice RN-CLS-01 ("al enviarse una solicitud").
 
-   **Queda una decisión de producto, sin resolver a propósito**: el botón
-   "Empezar el análisis" de la pantalla del equipo llama a
-   `begin_request_analysis()`, que exige `can_write_establishment()` —
-   permiso de CLIENTE—, así que nadie del equipo puede pulsarlo. Con la
-   clasificación automática ese botón ya no está en el camino normal, pero
-   sigue siendo el único asidero del equipo si la clasificación falla, y
-   hoy no funciona. O se le da el permiso del equipo, o sobra. No lo
-   decido yo.
+   **Decisión de Bosco, 02/09/2026, y ya implementada**: el análisis se
+   intenta solo al enviarse la solicitud y, si ese primer intento falla, el
+   equipo autorizado ve un botón **"Reintentar análisis"**. No aparece en el
+   camino normal —la pantalla solo lo pinta con la solicitud en "Recibida",
+   que es justo donde la deja un análisis fallido— ni lo ve el cliente, que
+   no entra en esa pantalla.
+
+   El permiso lo da la migración `20260902000044`, y son DOS mitades, no
+   una: `begin_request_analysis()` acepta ahora al cliente (camino
+   automático) **o** a quien tenga `manage_requests`, y
+   `record_classification()` acepta a los mismos como actor — sin esa
+   segunda mitad el reintento habría movido el estado y fallado al grabar.
+   Para preguntar por la capacidad de un usuario concreto sin duplicar la
+   matriz de quién puede qué, esa matriz vive ahora en
+   `has_capability_as(space, user, cap)` y `has_capability()` la llama con
+   `auth.uid()`: un único sitio, dos puertas.
+
+   Y la clasificación deja de estar copiada en dos sitios: envío y
+   reintento llaman a `clasificarSolicitud()`
+   (`src/services/request-classification.ts`). La diferencia entre ambos es
+   deliberada — el envío ignora el fallo (RN-CLS-02, "el flujo nunca se
+   bloquea por la IA") y el reintento lo enseña, porque alguien lo ha
+   pedido a mano.
 
    **CA-19 está cumplido.** Los doce tests pasan en verde en Windows el
    02/09/2026, contra el proyecto real y el espacio sembrado: los nueve de

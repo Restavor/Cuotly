@@ -423,10 +423,15 @@ export const es = {
       filterMine: "Pendientes de mí",
       detailTitle: "Solicitud",
       contextLabel: "Dónde",
-      analyzeSubmit: "Empezar el análisis",
-      analyzePending: "Empezando…",
-      analyzeHint:
-        "Al empezar el análisis, la solicitud pasa a estar en estudio y el restaurante lo ve.",
+      // El análisis se intenta solo al enviarse la solicitud (RN-CLS-01).
+      // Esto es la red de seguridad para cuando aquel intento falló, y por
+      // eso el texto no dice "empezar": dice lo que pasó y lo que se puede
+      // hacer.
+      retryTitle: "El análisis automático no salió",
+      retrySubmit: "Reintentar análisis",
+      retryPending: "Analizando…",
+      retryHint:
+        "Esta solicitud tenía que haberse clasificado sola al enviarse y no fue posible. Reintentarlo vuelve a pedir la propuesta de categoría y resumen; el restaurante no ve nada hasta que la valides.",
       validateTitle: "Validar la clasificación",
       validateHint:
         "El restaurante no ve nada de esto hasta que lo validas. Elige la categoría real y escribe el resumen que él leerá.",

@@ -10,7 +10,7 @@ Actualizado el 02/09/2026.
 
 ## Aplicadas
 
-**Las 43 migraciones del repositorio están aplicadas.** No queda ninguna
+**Las 44 migraciones del repositorio están aplicadas.** No queda ninguna
 pendiente.
 
 - Las 01–24 se aplicaron el 30/08/2026.
@@ -24,6 +24,11 @@ pendiente.
   que el cliente no puede leer a propósito (P7 y CA-04); ahora se lo
   pregunta a una función que solo contesta el estado del trabajo y si le
   queda corrección, sin ninguna identidad.
+- La **44** (`retry_request_analysis`) el 02/09/2026, también desde el MCP:
+  le da al equipo con `manage_requests` el permiso para reintentar el
+  análisis de una solicitud cuando el automático falló. Comprobada en vivo
+  con las tres identidades sembradas: la trabajadora rechazada, la
+  propietaria aceptada, y el camino automático del cliente intacto.
 
 Los archivos grandes se trocearon por sentencias completas, respetando los
 cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
@@ -47,6 +52,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 41 | `queue_and_sweeps` | `queue_and_sweeps_p1`, `_p2` |
 | 42 | `hu05_sessions` | `hu05_sessions` |
 | 43 | `client_request_job` | `client_request_job` |
+| 44 | `retry_request_analysis` | `retry_request_analysis` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
