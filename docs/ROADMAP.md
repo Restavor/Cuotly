@@ -888,14 +888,21 @@ no son un fallo, sino alcance:
     siquiera generaba, así que esa parte de la comprobación era vacua.
 
     **La migración 49 está SIN APLICAR al proyecto de Supabase**, que se
-    queda en la 48. A diferencia de las anteriores, esta no se ha
-    ejecutado en vivo con rollback: se ha verificado desde cero en un
-    PostgreSQL local con el bootstrap de arriba. Hay que aplicarla, y
-    conviene saber que **retira una política existente**
-    (`spaces_update_owner`): en cuanto se aplique, cualquier UPDATE
-    directo sobre `spaces` deja de funcionar, incluido el del propietario.
-    Es el efecto buscado y ninguna pantalla lo usa, pero no es una
-    migración solo aditiva.
+    queda en la 48. Hay que aplicarla, y conviene saber que **retira una
+    política existente** (`spaces_update_owner`): en cuanto se aplique,
+    cualquier UPDATE directo sobre `spaces` deja de funcionar, incluido el
+    del propietario. Es el efecto buscado y ninguna pantalla lo usa
+    —comprobado: no hay ni un `.update(` sobre `spaces` en `apps/web/src`—,
+    pero no es una migración solo aditiva.
+
+    Antes de aplicarla se hizo la comprobación previa entera, y está
+    escrita en `docs/DESPLIEGUE-SUPABASE.md`: las 49 migraciones desde
+    cero más las diez suites y los dos scripts de concurrencia sobre un
+    PostgreSQL local, el ensayo del archivo completo contra el proyecto
+    real dentro de `begin` … `rollback`, las cuatro mutaciones que
+    demuestran que la suite HU-36 falla cuando debe —cada una sobre una
+    base reconstruida, porque una sola base ensuciada da falsos
+    positivos—, y el SQL exacto para volver al estado de la 48.
 
     Con esto `/ajustes` sale de la lista de pendientes de
     `navigation-routes.test.ts`. Quedan seis destinos.

@@ -15,6 +15,23 @@
 --   for f in supabase/migrations/*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
 --   for f in supabase/tests/hito*.sql supabase/tests/hu*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
 --
+-- En un contenedor donde se trabaja como `root` no hay PostgreSQL en
+-- marcha y `initdb` se niega a correr como root. La receta completa, que
+-- funciona en el contenedor de desarrollo de este proyecto:
+--
+--   export PATH=/usr/lib/postgresql/16/bin:$PATH
+--   BASE=/var/lib/postgresql/m49            # un directorio que `postgres` pueda atravesar
+--   mkdir -p $BASE/pgdata $BASE/run && chown -R postgres:postgres $BASE
+--   su postgres -c "initdb -D $BASE/pgdata -U postgres --auth=trust"
+--   su postgres -c "pg_ctl -D $BASE/pgdata -o '-p 5433 -k $BASE/run -c listen_addresses=' -l $BASE/pg.log start"
+--   export DATABASE_URL="postgresql://postgres@localhost:5433/cuotly_test?host=$BASE/run"
+--
+-- Un aviso que cuesta media hora si no se sabe: cuando una suite falla, se
+-- queda a medias y NO limpia su fixture, así que la siguiente ejecución
+-- muere con `duplicate key ... users_pkey` y parece otro fallo. Para
+-- probar mutaciones hay que rehacer la base entera entre una y otra
+-- (`dropdb`/`createdb` + bootstrap + migraciones), no reutilizarla.
+--
 -- Lo que NO es. No es un sustituto de Supabase: no hay PostgREST, ni
 -- GoTrue, ni Storage de verdad. Lo que se comprueba aquí son las
 -- migraciones, las políticas de RLS, los privilegios y las funciones, que

@@ -6,12 +6,14 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 03/09/2026.
+Actualizado el 04/09/2026.
 
 ## Aplicadas
 
-**Las 48 migraciones del repositorio están aplicadas.** No queda ninguna
-pendiente.
+**Las 48 primeras migraciones del repositorio están aplicadas. La 49 no.**
+El repositorio va una por delante del proyecto; el apartado "La 49, sin
+aplicar" de más abajo dice qué falta, qué se comprobó antes y cómo se
+deshace si hiciera falta.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -60,6 +62,115 @@ pendiente.
   permanencia del servicio sale a 3 meses; anular un cambio programado lo
   deja en `cancelled` en vez de borrarlo y libera el índice para programar
   otro, y anularlo dos veces devuelve `false` sin error.
+
+## La 49, sin aplicar
+
+La **49** (`hu36_ajustes_auditoria`) está en el repositorio y **no** en el
+proyecto. No es solo aditiva, y por eso no se aplicó junto a las demás:
+
+- **Retira `spaces_update_owner`.** En cuanto se aplique, `spaces` se queda
+  sin ninguna política de UPDATE, que en RLS significa "nadie": ni siquiera
+  el propietario cambia una fila por PostgREST. El nombre (§124) y la zona
+  horaria (§125) pasan a `set_space_name()` y `set_space_timezone()`, que
+  dejan rastro en `audit_log`. Comprobado en el código antes de decidirlo:
+  no hay **ni un solo** `.update(` sobre `spaces` en `apps/web/src`, así que
+  no rompe ninguna pantalla.
+- **Estrecha `audit_log_select`.** La política vigente (migración 42) deja
+  ver a cualquier miembro activo todo el espacio salvo lo financiero;
+  la nueva reparte por capacidad como manda §21.2. Trabajadores y Editores
+  dejan de ver la configuración del espacio y la composición del equipo.
+  Es el efecto buscado.
+
+### Lo que se comprobó antes de aplicarla (04/09/2026)
+
+1. **Las 49 migraciones aplican desde cero** sobre un PostgreSQL 16 local
+   con `supabase/tests/bootstrap-postgres-local.sql`, sin Docker y sin CLI
+   —lo que la versión anterior de este documento daba por imposible— y
+   **las diez suites de `supabase/tests/` pasan**, más los dos scripts de
+   concurrencia real de CI (`hito5-concurrency-test.mjs` y
+   `hito7-concurrency-test.mjs`).
+2. **Ensayo en vivo contra el proyecto, dentro de `begin` … `rollback`.**
+   El archivo entero entra de una sola llamada (14 KB, no hay que trocearlo):
+   al final de la transacción había 0 políticas de UPDATE sobre `spaces`,
+   las 4 funciones creadas y el índice `audit_log_space_created_idx`. Tras
+   el rollback se verificó que la base quedó intacta.
+3. **La suite HU-36 no es un adorno**, comprobado con cuatro mutaciones,
+   cada una sobre una base reconstruida desde cero (una sola base ensuciada
+   da falsos positivos: el fixture no se limpia cuando la suite aborta):
+
+   | Mutación | La suite falla con |
+   |---|---|
+   | `audit_entity_is_visible()` devuelve siempre `true` | "la trabajadora del restaurante A ve 2 asignaciones de trabajo (debería ver 1)" |
+   | Volver a la política permisiva de la migración 42 | "un administrador ve la configuración del espacio y del equipo" |
+   | Devolverle a `spaces` su política de UPDATE | "el propietario puede cambiar el espacio por UPDATE directo, sin auditoría" |
+   | `set_space_timezone()` sin versionar ni exigir motivo | "se cambió la zona horaria sin motivo" |
+
+4. **Las firmas coinciden con lo que llama la pantalla**: `set_space_name`
+   (`p_space_id`, `p_name`) y `set_space_timezone` (`p_space_id`,
+   `p_timezone`, `p_reason`). Un desajuste aquí sería un `PGRST202` en
+   producción con la migración ya aplicada.
+5. **Los datos vivos no activan el falso-cerrado.** Las 95 filas de
+   `audit_log` son de cinco familias —`request`, `job`, `payment`, `charge`,
+   `correction`— y las cinco están clasificadas: ninguna cae en el "solo lo
+   ven el propietario y quien lo hizo" de lo desconocido.
+6. **El índice nuevo no bloquea nada**: `audit_log` son 95 filas y 112 kB.
+7. **`space_working_hours` está vacía** y nadie más que la pantalla de
+   ajustes la lee: el motor del reloj usa `spaces.timezone`. Las versiones
+   que inserta `set_space_timezone()` son historia (RN-CLK-10), no cambian
+   ningún plazo vivo. La pantalla ya dice "sin versión registrada" en vez
+   de inventarse una.
+8. **Base de avisos antes de aplicar: 239** (`get_advisors`, seguridad).
+   Eran 232 cuando se escribió el apartado de más abajo; los 7 de más son
+   funciones nuevas de las migraciones 43–48, de la misma clase ya
+   explicada. Tras aplicar la 49 deberían ser 241: `set_space_name` y
+   `set_space_timezone` son `SECURITY DEFINER` concedidas a
+   `authenticated`, y comprueban `manage_space` ellas mismas.
+9. `pnpm typecheck`, `pnpm lint` y `pnpm test` (490 tests) en verde.
+
+### Cómo se deshace
+
+No hace falta ninguna migración inversa para volver al estado de la 48: se
+recrean las dos políticas con su definición exacta de hoy, capturada del
+proyecto antes de tocarlo. Las funciones nuevas pueden quedarse (nadie las
+llamaría) o retirarse después.
+
+```sql
+-- Volver al estado anterior a la 49.
+drop policy if exists audit_log_select on public.audit_log;
+create policy audit_log_select on public.audit_log
+  for select using (
+    is_platform_owner()
+    or ((space_id is null) and (actor_id = auth.uid()))
+    or ((space_id is not null) and is_space_member(space_id)
+        and (((action !~~ 'charge.%') and (action !~~ 'payment.%')
+              and (action !~~ 'subscription.%') and (action !~~ 'financial%'))
+             or has_capability(space_id, 'manage_finance')))
+  );
+
+create policy spaces_update_owner on public.spaces
+  for update using (has_capability(id, 'manage_space'))
+  with check (has_capability(id, 'manage_space'));
+
+drop index if exists public.audit_log_space_created_idx;
+drop function if exists public.set_space_name(uuid, text);
+drop function if exists public.set_space_timezone(uuid, text, text);
+-- `audit_action_capability` y `audit_entity_is_visible` no existían antes
+-- de la 49: al retirarlas hay que haber recreado ya la política de arriba,
+-- que es quien las usaba.
+drop function if exists public.audit_action_capability(text);
+drop function if exists public.audit_entity_is_visible(text, uuid);
+```
+
+### Al aplicarla, y después
+
+- El **orden importa**: la base va primero. El código de `/ajustes` ya llama
+  a `set_space_name` y `set_space_timezone`; si esa rama se despliega antes,
+  la pantalla contesta `PGRST202` al guardar.
+- Si tras aplicarla una RPC nueva diera `PGRST202`, es la caché de esquema
+  de PostgREST: `notify pgrst, 'reload schema'`.
+- Comprobar después: que `spaces` no tiene política de UPDATE, que las
+  cuatro funciones existen, que el índice está, y volver a pasar
+  `get_advisors`.
 
 Los archivos grandes se trocearon por sentencias completas, respetando los
 cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
@@ -112,6 +223,12 @@ No se pudo hacer la comparación contra una base reconstruida desde cero
 que sugería la versión anterior de este documento: en el contenedor de
 desarrollo no hay demonio de Docker ni CLI de Supabase, así que `supabase
 start` no se puede levantar. En su lugar se comprobó, contra el proyecto:
+
+> **Esto dejó de ser cierto el 04/09/2026.** Con
+> `supabase/tests/bootstrap-postgres-local.sql` y el PostgreSQL 16 que ya
+> viene instalado en el contenedor, la base sí se reconstruye desde cero
+> sin Docker y sin CLI; la cabecera de ese archivo trae la receta. Lo que
+> sigue se mantiene tal cual porque es lo que se hizo entonces.
 
 - que existen **las 7 tablas, las 12 políticas y las 41 funciones** que
   declaran las migraciones 27–42, y las 4 columnas nuevas
