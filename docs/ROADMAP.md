@@ -887,22 +887,33 @@ no son un fallo, sino alcance:
     expresamente y que el fixture de `hu36_ajustes_auditoria.sql` ni
     siquiera generaba, así que esa parte de la comprobación era vacua.
 
-    **La migración 49 está SIN APLICAR al proyecto de Supabase**, que se
-    queda en la 48. Hay que aplicarla, y conviene saber que **retira una
-    política existente** (`spaces_update_owner`): en cuanto se aplique,
-    cualquier UPDATE directo sobre `spaces` deja de funcionar, incluido el
-    del propietario. Es el efecto buscado y ninguna pantalla lo usa
-    —comprobado: no hay ni un `.update(` sobre `spaces` en `apps/web/src`—,
-    pero no es una migración solo aditiva.
+    **La migración 49 está aplicada** desde el 04/09/2026: el proyecto ya
+    va por las 49. No era solo aditiva —**retira `spaces_update_owner`**—,
+    así que desde ahora ningún UPDATE directo sobre `spaces` funciona, ni
+    el del propietario. Es el efecto buscado y ninguna pantalla lo usa
+    (no hay ni un `.update(` sobre `spaces` en `apps/web/src`), y quedó
+    comprobado en vivo: el propietario cambia 0 filas por UPDATE directo y
+    sí renombra por la función, dejando su rastro.
 
-    Antes de aplicarla se hizo la comprobación previa entera, y está
-    escrita en `docs/DESPLIEGUE-SUPABASE.md`: las 49 migraciones desde
-    cero más las diez suites y los dos scripts de concurrencia sobre un
-    PostgreSQL local, el ensayo del archivo completo contra el proyecto
-    real dentro de `begin` … `rollback`, las cuatro mutaciones que
-    demuestran que la suite HU-36 falla cuando debe —cada una sobre una
-    base reconstruida, porque una sola base ensuciada da falsos
-    positivos—, y el SQL exacto para volver al estado de la 48.
+    La comprobación entera, antes y después, está en
+    `docs/DESPLIEGUE-SUPABASE.md`: las 49 migraciones desde cero más las
+    diez suites y los dos scripts de concurrencia sobre un PostgreSQL
+    local, las cuatro mutaciones que demuestran que la suite HU-36 falla
+    cuando debe, las huellas `md5` que prueban que lo aplicado es
+    exactamente lo que dice el repositorio, doce comprobaciones de
+    comportamiento con las identidades sembradas y el SQL exacto para
+    volver al estado de la 48.
+
+    Un matiz que conviene no adornar: **hoy el estrechamiento de §21.2 no
+    le quita a la trabajadora nada que antes viera** (ve 83 de 95 filas
+    con la política nueva, y las 12 que faltan son financieras, que la
+    anterior también le tapaba). Las 95 filas vivas son de cinco familias
+    operativas y todavía no hay registrada ni una acción de configuración
+    del espacio ni de composición del equipo. El cambio es real; su efecto
+    empieza con la primera invitación o el primer cambio de permisos.
+
+    Lo que ahora **sí** falta es desplegar la rama: la base va por delante,
+    que es el orden correcto.
 
     Con esto `/ajustes` sale de la lista de pendientes de
     `navigation-routes.test.ts`. Quedan seis destinos.

@@ -10,10 +10,10 @@ Actualizado el 04/09/2026.
 
 ## Aplicadas
 
-**Las 48 primeras migraciones del repositorio están aplicadas. La 49 no.**
-El repositorio va una por delante del proyecto; el apartado "La 49, sin
-aplicar" de más abajo dice qué falta, qué se comprobó antes y cómo se
-deshace si hiciera falta.
+**Las 49 migraciones del repositorio están aplicadas.** No queda ninguna
+pendiente. La última, la 49, se aplicó el 04/09/2026; el apartado "La 49"
+de más abajo cuenta lo que se comprobó antes y después, y cómo se deshace
+si hiciera falta.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -63,10 +63,13 @@ deshace si hiciera falta.
   deja en `cancelled` en vez de borrarlo y libera el índice para programar
   otro, y anularlo dos veces devuelve `false` sin error.
 
-## La 49, sin aplicar
+## La 49
 
-La **49** (`hu36_ajustes_auditoria`) está en el repositorio y **no** en el
-proyecto. No es solo aditiva, y por eso no se aplicó junto a las demás:
+La **49** (`hu36_ajustes_auditoria`) se aplicó el **04/09/2026**, en una
+sola llamada y con el archivo íntegro (14 KB, no hubo que trocearlo).
+Quedó sellada como `20260904001857 · hu36_ajustes_auditoria`.
+
+No es solo aditiva, y por eso se preparó aparte:
 
 - **Retira `spaces_update_owner`.** En cuanto se aplique, `spaces` se queda
   sin ninguna política de UPDATE, que en RLS significa "nadie": ni siquiera
@@ -81,7 +84,7 @@ proyecto. No es solo aditiva, y por eso no se aplicó junto a las demás:
   dejan de ver la configuración del espacio y la composición del equipo.
   Es el efecto buscado.
 
-### Lo que se comprobó antes de aplicarla (04/09/2026)
+### Lo que se comprobó antes de aplicarla
 
 1. **Las 49 migraciones aplican desde cero** sobre un PostgreSQL 16 local
    con `supabase/tests/bootstrap-postgres-local.sql`, sin Docker y sin CLI
@@ -127,6 +130,60 @@ proyecto. No es solo aditiva, y por eso no se aplicó junto a las demás:
    `authenticated`, y comprueban `manage_space` ellas mismas.
 9. `pnpm typecheck`, `pnpm lint` y `pnpm test` (490 tests) en verde.
 
+### Lo que se comprobó después, contra el proyecto
+
+Primero que lo aplicado **es** lo que dice el repositorio, y no una copia
+parecida: las huellas `md5` de los cuerpos de las cuatro funciones, de la
+expresión de la política y de la definición del índice coinciden exactamente
+con las de la base local construida desde el archivo. Y los privilegios
+quedaron como manda CLAUDE.md: `anon` no puede ejecutar ninguna de las
+cuatro; `authenticated` sí las cuatro, incluidas a propósito las dos que
+evalúa la política de RLS.
+
+Después, doce comprobaciones de comportamiento con las dos identidades
+sembradas (`owner@cuotly.test` y `trabajadora@cuotly.test`), todas dentro de
+una transacción revertida — el espacio siguió llamándose "Demo Cuotly", en
+`Europe/Madrid`, con 0 versiones de calendario y las mismas 95 filas de
+auditoría:
+
+| Comprobación | Resultado |
+|---|---|
+| La trabajadora renombra el espacio | rechazado: "Solo el propietario del espacio puede cambiar su nombre" |
+| La trabajadora cambia la zona horaria | rechazado: "Solo el propietario…" |
+| El propietario por `UPDATE` directo | **0 filas cambiadas** — ya no hay política de UPDATE |
+| El propietario renombra por la función | `true`, con su fila en `audit_log` |
+| …y repite el mismo nombre | `false`: guardar lo mismo no ensucia el libro |
+| Zona horaria sin motivo | rechazado (§21.1) |
+| Zona horaria inexistente | rechazado: "La zona horaria \"Europa/Inventada\" no existe" |
+| Zona horaria con motivo | `true` + las dos versiones (`contractual` y `menu_diario`), sin tocar la de soporte |
+| El rastro | `space.renamed` y `space.timezone_changed`, este con su motivo |
+| Auditoría que ve el propietario | 95 de 95 |
+| Auditoría que ve la trabajadora | 83 de 95 |
+
+Las 12 filas que la trabajadora no ve son las de `payment` y `charge`, que
+piden `manage_finance`. Conviene decirlo sin adornos: **hoy el cambio de
+§21.2 no le quita nada que antes viera**, porque las 95 filas vivas son de
+cinco familias operativas y todavía no hay ni una acción de configuración
+del espacio ni de composición del equipo registrada. El estrechamiento es
+real, pero su efecto empieza con la primera invitación o el primer cambio
+de permisos que se registre.
+
+### Avisos: 239 antes, 242 después
+
+Tres nuevos, todos esperados y ninguno una fuga:
+
+- **2** de `SECURITY DEFINER` ejecutable por `authenticated`: `set_space_name`
+  y `set_space_timezone`. Es exactamente lo que deben ser — las llama la
+  aplicación y comprueban `manage_space` ellas mismas en la primera línea.
+- **1** de `search_path` mutable en `audit_action_capability`, que se me
+  había escapado al predecir 241. Es de la misma clase que los tres ya
+  documentados abajo: la función es `SECURITY INVOKER` y pura (un `case`
+  sobre `split_part`, sin tocar ninguna tabla), y ningún rol de la
+  aplicación puede crear objetos en `public` con los que sombrear nada
+  —comprobado: `anon`, `authenticated` y `service_role` tienen `CREATE`
+  denegado—. Vale la pena fijarle el `search_path` en la misma migración de
+  higiene que arregle las otras tres, no antes.
+
 ### Cómo se deshace
 
 No hace falta ninguna migración inversa para volver al estado de la 48: se
@@ -161,16 +218,12 @@ drop function if exists public.audit_action_capability(text);
 drop function if exists public.audit_entity_is_visible(text, uuid);
 ```
 
-### Al aplicarla, y después
+### Lo que queda por hacer con esto
 
-- El **orden importa**: la base va primero. El código de `/ajustes` ya llama
-  a `set_space_name` y `set_space_timezone`; si esa rama se despliega antes,
-  la pantalla contesta `PGRST202` al guardar.
-- Si tras aplicarla una RPC nueva diera `PGRST202`, es la caché de esquema
-  de PostgREST: `notify pgrst, 'reload schema'`.
-- Comprobar después: que `spaces` no tiene política de UPDATE, que las
-  cuatro funciones existen, que el índice está, y volver a pasar
-  `get_advisors`.
+- **La base ya va por delante del despliegue, que es el orden correcto.**
+  Falta desplegar la rama con las pantallas `/ajustes` y `/ajustes/auditoria`.
+- Si al guardar en `/ajustes` saliera un `PGRST202`, es la caché de esquema
+  de PostgREST, no la migración: `notify pgrst, 'reload schema'`.
 
 Los archivos grandes se trocearon por sentencias completas, respetando los
 cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
@@ -199,6 +252,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 46 | `consumption_threshold_client_only` | `consumption_threshold_client_only` |
 | 47 | `task_assignment` | `task_assignment` |
 | 48 | `hu07_service_subscriptions` | `hu07_service_subscriptions_p1`, `_p2` |
+| 49 | `hu36_ajustes_auditoria` | `hu36_ajustes_auditoria` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
@@ -206,12 +260,15 @@ es el orden, y el orden es el mismo.
 
 ## Cómo quedó el esquema
 
-|  | Antes (hasta la 26) | Después (hasta la 42) |
-|---|---|---|
-| Tablas | 50 | **57** |
-| Tablas con RLS | 50 | **57** (todas) |
-| Funciones | 136 | **176** |
-| Políticas | — | **96** |
+|  | Antes (hasta la 26) | Hasta la 42 | Hasta la 49 |
+|---|---|---|---|
+| Tablas | 50 | 57 | **57** |
+| Tablas con RLS | 50 | 57 | **57** (todas) |
+| Funciones | 136 | 176 | **187** |
+| Políticas | — | 96 | **95** |
+
+Las políticas bajan de 96 a 95 con la 49: retira `spaces_update_owner` y
+sustituye `audit_log_select` por otra más estrecha.
 
 Las siete tablas nuevas son `absences`, `notifications`,
 `notification_preferences`, `notification_deliveries`, `scheduled_jobs`,
@@ -248,8 +305,10 @@ start` no se puede levantar. En su lugar se comprobó, contra el proyecto:
 
 ## Avisos del analizador de Supabase
 
-`get_advisors` devuelve 232 avisos. Ninguno es una regresión; conviene
-saber qué son antes de que alguien los descubra y crea que son nuevos:
+`get_advisors` devolvía 232 avisos cuando se escribió este apartado y hoy
+devuelve 242 (las funciones nuevas de las migraciones 43–49). Ninguno es
+una regresión; conviene saber qué son antes de que alguien los descubra y
+crea que son nuevos:
 
 - **226 `WARN` de funciones `SECURITY DEFINER` ejecutables por `anon` o
   `authenticated`.** El analizador no distingue una función interna de una
@@ -266,9 +325,10 @@ saber qué son antes de que alguien los descubra y crea que son nuevos:
   llevan `security_invoker` a propósito, porque existen justamente para
   tapar columnas de identidad del equipo. Las migraciones 27 y 28 les
   revocan toda escritura y les conceden solo `select`.
-- **3 `WARN` de `search_path` mutable** en `job_load_points`,
-  `task_load_points` y `task_weight_for_minutes`. Son funciones de cálculo
-  puro, sin acceso a tablas. Vale la pena fijarles el `search_path` en una
+- **4 `WARN` de `search_path` mutable** en `job_load_points`,
+  `task_load_points`, `task_weight_for_minutes` y `audit_action_capability`
+  (esta última desde la 49). Son funciones de cálculo puro, sin acceso a
+  tablas. Vale la pena fijarles el `search_path` en una
   migración futura por higiene, pero no hay fuga.
 - **1 `INFO`**: `space_sequences` tiene RLS y ninguna política. Es
   deliberado y está documentado en la migración 34: la tabla no la toca
