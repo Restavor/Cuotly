@@ -953,6 +953,61 @@ porque durante tres hitos esta línea decía lo contrario.
 
 ---
 
+21. **Los destinos que faltaban del menú, y "Más"** (03/09/2026). De los
+    nueve que el barrido de navegación tenía clasificados como pendientes
+    quedan **uno**: `/mensajes`. Los otros ocho eran de tres clases
+    distintas y se han cerrado como merecía cada una.
+
+    - **`/mas` (§20.3) es la que de verdad faltaba.** La barra de móvil
+      ofrece cinco destinos y un sexto botón "Más" que llevaba a un 404
+      desde el Hito 8, así que un trabajador con el teléfono **no tenía
+      forma de llegar** a Finanzas, al calendario ni a sus sesiones: los
+      tenía en el menú de escritorio y en ningún sitio en móvil. Era un
+      agujero de CA-19 que los recorridos no habían pillado porque
+      probaban los flujos, no el desbordamiento de la barra.
+
+      `moreDestinations()` **deriva** esa lista de las dos que ya existen
+      —el menú completo del rol menos lo que ya está en la barra— en vez de
+      escribirla a mano. Es la mitad estructural de CA-21 otra vez: una
+      tercera lista escrita a mano sería la tercera que se queda desfasada,
+      y de eso va entera la salvedad 18. Se le añaden "Cambiar de espacio"
+      (§20.1) y "Mis sesiones" (HU-05), que no son del espacio sino de la
+      cuenta y en móvil no tienen otro sitio.
+
+      Con seis tests, y el que importa es el de cobertura: entre la barra y
+      "Más" está **todo** el menú del equipo, así que ningún destino puede
+      quedarse sin puerta en un teléfono. Los otros comprueban que no se
+      repite ninguno, que al cliente no se le ofrece jamás una ruta del
+      equipo, que Menú Diario solo se le ofrece a quien lo tiene contratado
+      y que sin saber de qué restaurante hablamos va al selector y no a un
+      404.
+
+    - **`/informes` y `/menu-diario` (las dos del espacio, más la del
+      restaurante) enseñan su estructura y dicen por qué están vacías.**
+      Es literalmente lo que pide §20.2 para la Fase 1. El estado vacío
+      **no** dice "todavía no hay datos", que sería mentir sobre el motivo:
+      dice que no está construido y en qué fase llega (CA-20). Ni una cifra
+      de ejemplo ni una gráfica de relleno (CLAUDE.md MUST NOT). Los
+      números que se citan —30 actualizaciones, tres plantillas— son
+      RN-COM-09 y RN-COM-10, y van en prosa: un contador a cero parecería
+      un dato real.
+
+    - **`/restaurantes/nuevo` (§20.5)** era solo una ruta que faltaba. El
+      formulario es el mismo del Hito 2 que vive en el inicio del espacio.
+
+    De paso, la resolución de "qué rol tiene quien mira y cuál es su
+    restaurante" sale del layout a `src/components/shell/viewer.ts`, porque
+    ahora la usan dos sitios: el armazón y "Más". Dos copias de eso
+    discrepando harían que la barra y su desbordamiento ofrecieran cosas
+    distintas.
+
+    **Lo que queda pendiente, y es uno:** `/mensajes`. No es la
+    conversación de una solicitud —esa existe y la monta `Conversation`—
+    sino la bandeja del equipo y la conversación **interna** de un trabajo,
+    que RN-MSG-04 exige mantener estrictamente separada de lo que ve el
+    cliente. Eso es trabajo de verdad, no una ruta que falte, y no se
+    despacha con un estado vacío.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

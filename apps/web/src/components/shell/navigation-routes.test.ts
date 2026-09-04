@@ -33,20 +33,13 @@ const ROLES: readonly ShellRole[] = ["owner", "admin", "worker", "client", "clie
  * mismo test en su primera ejecución.
  */
 const PENDIENTES: Readonly<Record<string, string>> = {
-  // §20.2 · destinos del menú de escritorio cuyo hito todavía no ha
-  // llegado. El ROADMAP los enumera en las salvedades del Hito 8.
+  // §66.2 · el último destino del menú de §20.2 sin construir. No es la
+  // conversación de una solicitud —esa existe y la monta `Conversation`—
+  // sino la bandeja del equipo y la conversación interna de un trabajo,
+  // que RN-MSG-04 exige mantener estrictamente separada de lo que ve el
+  // cliente.
   "/espacios/[slug]/mensajes":
-    "§66.2 · la conversación interna de un trabajo, distinta de la de la solicitud.",
-  "/espacios/[slug]/informes": "Fase 3. §20.2 pide su estructura con estado vacío; todavía no está.",
-  "/espacios/[slug]/menu-diario":
-    "Fase 2. §20.2 pide su estructura con estado vacío; todavía no está.",
-  // §20.3 · el sexto elemento de la barra de móvil.
-  "/espacios/[slug]/mas": "§20.3 · la pantalla 'Más' con el resto de destinos; sin construir.",
-  // §20.5 · opciones del botón Crear.
-  "/espacios/[slug]/restaurantes/nuevo":
-    "El formulario de nuevo restaurante vive dentro del inicio del espacio, no en esta ruta.",
-  // §20.3 · Menú Diario del restaurante, Fase 2.
-  "/espacios/[slug]/restaurantes/[id]/menu-diario": "Fase 2 · Menú Diario del restaurante.",
+    "§66.2 · la bandeja del equipo y la conversación interna de un trabajo.",
 };
 
 /**

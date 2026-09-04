@@ -353,6 +353,11 @@ export const es = {
     settings: "Ajustes",
     more: "Más",
     newRequest: "+ Nueva solicitud",
+    // §20.1 y HU-05 · dos destinos que no son del espacio sino de la
+    // cuenta. Viven en "Más" porque en móvil no hay menú lateral donde
+    // ponerlos.
+    switchSpace: "Cambiar de espacio",
+    sessions: "Mis sesiones",
     skipToContent: "Saltar al contenido",
     mainLabel: "Contenido principal",
     menuLabel: "Menú del espacio",
@@ -1367,6 +1372,80 @@ export const es = {
       "task.created": "Tarea creada",
       "task.state_changed": "Estado de una tarea cambiado",
     },
+  },
+
+  /**
+   * §20.3 · la pantalla "Más" de la barra de móvil. No tiene contenido
+   * propio: enseña los destinos que `moreDestinations()` deja fuera de los
+   * cinco. Si algún día caben todos, esta pantalla se queda con las dos
+   * acciones de cuenta y nada más, y eso también es cierto.
+   */
+  morePage: {
+    title: "Más",
+    subtitle: "Los destinos que no caben en los cinco de la barra inferior.",
+  },
+
+  /**
+   * §20.2 · "En Fase 1, Menú Diario e Informes muestran su estructura con
+   * el estado vacío correspondiente."
+   *
+   * "Estructura" son las tres familias que el ROADMAP fija para la Fase 3,
+   * nombradas. El estado vacío no es "sin datos todavía": es que no está
+   * construido, y decir lo primero sería mentir sobre el motivo (CA-20).
+   * Ni una cifra de ejemplo, ni una gráfica de relleno (CLAUDE.md MUST NOT).
+   */
+  reportsPage: {
+    title: "Informes",
+    subtitle: "La estructura de la Fase 3. Todavía no se genera ningún informe.",
+    phaseTitle: "Por qué esta pantalla está vacía",
+    phaseReason:
+      "Los informes son de la Fase 3: llegarán con flujo de aprobación, versiones, PDF, CSV y envío programado. En la Fase 1 esta pantalla solo enseña su estructura, así que aquí no hay ningún informe que abrir ni ninguna cifra que leer.",
+    operationTitle: "Operación",
+    operationEmpty: "Sin informes de operación",
+    financeTitle: "Finanzas",
+    financeEmpty: "Sin informes de finanzas",
+    digitalTitle: "Rendimiento digital",
+    digitalEmpty: "Sin informes de rendimiento digital",
+    notBuiltReason: "No está construido. Llega en la Fase 3.",
+    digitalNotBuiltReason:
+      "No está construido. Llega en la Fase 3 y depende de las integraciones analíticas, que tampoco existen todavía (PRD §24.1).",
+  },
+
+  /**
+   * §20.2, la otra mitad de la misma frase. La estructura de Menú Diario
+   * sale del alcance de la Fase 2 del ROADMAP y de §6.2; los números que
+   * se citan (30 actualizaciones, tres plantillas) son RN-COM-09 y
+   * RN-COM-10, no invenciones — y se cuentan en prosa, no como contadores
+   * a cero que parecerían un dato real.
+   */
+  dailyMenuPage: {
+    title: "Menú Diario",
+    subtitle: "La estructura de la Fase 2. Todavía no hay ningún menú.",
+    phaseTitle: "Por qué esta pantalla está vacía",
+    phaseReason:
+      "Menú Diario es el servicio de la Fase 2: 30 actualizaciones por ciclo (RN-COM-09) y tres plantillas iniciales (RN-COM-10), con generación de PNG y PDF y publicación manual en LandingSite. En la Fase 1 esta pantalla solo enseña su estructura, así que no hay menús, ni plantillas, ni calendario de publicación.",
+    menusTitle: "Menús",
+    menusEmpty: "Sin menús",
+    templatesTitle: "Plantillas",
+    templatesEmpty: "Sin plantillas",
+    calendarTitle: "Calendario de publicación",
+    calendarEmpty: "Sin calendario",
+    notBuiltReason: "No está construido. Llega en la Fase 2.",
+    clientSubtitle: "El Menú Diario de tu restaurante. Todavía no está disponible.",
+    clientPhaseReason:
+      "Menú Diario llega en la Fase 2. Cuando esté, aquí verás tus menús, pedirás su publicación y consumirás las actualizaciones del ciclo. De momento no hay nada que enseñar, y preferimos decirlo a enseñarte una pantalla que no hace nada.",
+  },
+
+  /**
+   * §20.5 · la opción "Nuevo restaurante" del botón Crear, que llevaba a
+   * un 404. El formulario es el mismo del Hito 2 que vive en el inicio del
+   * espacio; lo que se añade es la ruta.
+   */
+  newEstablishmentPage: {
+    title: "Nuevo restaurante",
+    intro:
+      "El restaurante se crea dentro de un grupo. Si el grupo todavía no existe, se crea con él; si ya existe, se reutiliza.",
+    back: "Volver a Restaurantes",
   },
 
   agent: {

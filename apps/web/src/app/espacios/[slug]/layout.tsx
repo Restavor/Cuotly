@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { AppShell, type ShellNotification } from "@/components/shell/AppShell";
-import type { ShellRole } from "@/components/shell/navigation";
+import { resolveShellViewer } from "@/components/shell/viewer";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,34 +46,10 @@ export default async function SpaceLayout({
     .eq("slug", slug)
     .maybeSingle();
 
-  // Un cliente no puede leer `spaces` —no es miembro del espacio— pero sí
-  // sus restaurantes. Sin espacio legible seguimos adelante con el nombre
-  // que ya trae la URL: negarle el armazón entero por eso lo dejaría sin
-  // navegación en sus propias pantallas.
-  const spaceId = space?.id ?? null;
-
-  const { data: membership } = spaceId
-    ? await supabase
-        .from("space_memberships")
-        .select("role")
-        .eq("space_id", spaceId)
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .maybeSingle()
-    : { data: null };
-
-  const role: ShellRole = (membership?.role as ShellRole | undefined) ?? "client";
-
-  // Para un cliente, los destinos del armazón cuelgan de su restaurante.
-  // Solo se puede saber cuál si tiene exactamente uno: con varios, la
-  // navegación lo manda al selector de contexto, que es donde elige.
-  let establishmentId: string | null = null;
-  if (role === "client") {
-    const { data: mine } = await supabase.from("establishments").select("id").limit(2);
-    if (mine && mine.length === 1) {
-      establishmentId = mine[0].id;
-    }
-  }
+  // El rol y el restaurante salen de `resolveShellViewer()`, compartido con
+  // la pantalla "Más": las dos tienen que responder lo mismo o la barra de
+  // móvil y su desbordamiento acabarían discrepando.
+  const { role, establishmentId } = await resolveShellViewer(supabase, user.id, slug);
 
   const { data: rows } = await supabase
     .from("notifications")

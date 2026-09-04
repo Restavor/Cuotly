@@ -139,3 +139,79 @@ export function createOptions(
       return [D("request", es.create.request, mine ?? "/")];
   }
 }
+
+/**
+ * La superficie COMPLETA de un rol: todos los destinos que le pertenecen,
+ * quepan o no en los cinco de la barra de móvil.
+ *
+ * Para el equipo esa superficie es el menú de §20.2, que es justo lo que
+ * ya devuelve `desktopMenu`. Para el cliente NO: el menú de escritorio es
+ * del equipo —`/solicitudes`, `/trabajos`, `/equipo`— y ahí un
+ * restaurante no tiene nada que hacer. Sus destinos cuelgan de su propio
+ * restaurante, igual que en `mobileNav`.
+ *
+ * Menú Diario solo aparece para quien lo tiene contratado
+ * (`client_daily_menu`). Ofrecérselo a un restaurante sin el servicio
+ * sería enseñarle una puerta que no es suya.
+ */
+function fullNav(
+  spaceSlug: string,
+  role: ShellRole,
+  establishmentId: string | null,
+): readonly NavDestination[] {
+  const mine = clientBase(spaceSlug, establishmentId);
+
+  switch (role) {
+    case "owner":
+    case "admin":
+    case "worker":
+      return desktopMenu(spaceSlug);
+    case "client":
+      return [
+        D("home", es.nav.home, mine ?? "/"),
+        D("requests", es.nav.requests, mine ?? "/"),
+        D("newRequest", es.nav.newRequest, mine ?? "/"),
+        D("messages", es.nav.messages, mine ?? "/"),
+        D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
+      ];
+    case "client_daily_menu":
+      return [
+        D("home", es.nav.home, mine ?? "/"),
+        D("requests", es.nav.requests, mine ?? "/"),
+        D("newRequest", es.nav.newRequest, mine ?? "/"),
+        D("dailyMenu", es.nav.dailyMenu, mine ? `${mine}/menu-diario` : "/"),
+        D("messages", es.nav.messages, mine ?? "/"),
+        D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
+      ];
+  }
+}
+
+/**
+ * §20.3 · el sexto elemento de la barra de móvil. "Más" es literalmente
+ * el resto: lo que no cabe en los cinco.
+ *
+ * Se DERIVA de las dos listas anteriores en vez de escribirse a mano, que
+ * es la mitad estructural de CA-21 aplicada aquí: si mañana un destino
+ * entra o sale de la barra, "Más" se ajusta solo. Una tercera lista
+ * escrita a mano sería la tercera que se queda desfasada — ya pasó con
+ * los estados (salvedad 18 del ROADMAP).
+ *
+ * Y se le añaden las dos acciones que no son del espacio sino de la
+ * cuenta, y que hoy solo se alcanzan desde el selector de contexto:
+ * "Cambiar de espacio" (§20.1) y "Mis sesiones" (HU-05). En escritorio se
+ * llega a ellas por el menú y por Ajustes; en móvil, sin esta pantalla, no
+ * se llegaba por ningún sitio.
+ */
+export function moreDestinations(
+  spaceSlug: string,
+  role: ShellRole,
+  establishmentId: string | null = null,
+): readonly NavDestination[] {
+  const enLaBarra = new Set(mobileNav(spaceSlug, role, establishmentId).map((d) => d.key));
+
+  return [
+    ...fullNav(spaceSlug, role, establishmentId).filter((d) => !enLaBarra.has(d.key)),
+    D("switchSpace", es.nav.switchSpace, "/"),
+    D("sessions", es.nav.sessions, "/cuenta/sesiones"),
+  ];
+}
