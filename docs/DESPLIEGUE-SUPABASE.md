@@ -10,10 +10,10 @@ Actualizado el 04/09/2026.
 
 ## Aplicadas
 
-**Las 49 migraciones del repositorio están aplicadas.** No queda ninguna
-pendiente. La última, la 49, se aplicó el 04/09/2026; el apartado "La 49"
-de más abajo cuenta lo que se comprobó antes y después, y cómo se deshace
-si hiciera falta.
+**Las 51 migraciones del repositorio están aplicadas.** No queda ninguna
+pendiente. Las tres últimas (49, 50 y 51) se aplicaron el 04/09/2026; el
+apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
+la que no era solo aditiva, y cómo se deshace si hiciera falta.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -62,6 +62,31 @@ si hiciera falta.
   permanencia del servicio sale a 3 meses; anular un cambio programado lo
   deja en `cancelled` en vez de borrarlo y libera el índice para programar
   otro, y anularlo dos veces devuelve `false` sin error.
+
+- La **50** (`bandeja_de_conversaciones`) el 04/09/2026: `list_conversations()`
+  para la bandeja de §66 y `list_conversation_messages()` recreada con
+  `is_mine`, que es lo que arregla que el restaurante viera sus propios
+  mensajes firmados como "Equipo de mantenimiento".
+- La **51** (`borrador_de_solicitud`) el 04/09/2026, en dos llamadas: el
+  cuerpo (columna `requests.source_conversation_id` con su `grant select`
+  de columna, `update_request_draft()`, `attach_file_to_request_draft()` y
+  `detach_file_from_request_draft()`) y, aparte, el `revoke` de
+  `convert_conversation_to_request()` a `anon`.
+
+  Ese `revoke` no estaba planeado: se descubrió comprobando privilegios en
+  vivo después de aplicar el cuerpo. La función nació en el Hito 7 con el
+  `EXECUTE` que Supabase concede por defecto a toda función nueva y nadie
+  se lo quitó, así que una función que ESCRIBE llevaba abierta a `anon`
+  desde entonces. No era explotable —comprueba `can_read_conversation()`, y
+  sin sesión `auth.uid()` es null—, pero es exactamente lo que CLAUDE.md
+  manda cerrar.
+
+  Comprobado en vivo después de aplicarla: las tres funciones nuevas y la
+  de conversión tienen `EXECUTE` para `authenticated` y no para `anon`, y
+  la columna nueva la lee `authenticated` y no `anon`. Antes de aplicarla,
+  las **51 migraciones aplican desde cero** sobre un PostgreSQL 16 local y
+  **las doce suites de `supabase/tests/` pasan**, con cuatro mutaciones que
+  confirman que la nueva no es un adorno.
 
 ## La 49
 

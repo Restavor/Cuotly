@@ -258,6 +258,27 @@ export default async function ClientEstablishmentPage({
           emptyReason={es.clientArea.establishmentConversationEmptyReason}
         />
       ) : null}
+
+      {/*
+        §68 · RN-MSG-10 · "Convertir en solicitud". Cuelga de la
+        conversación general porque es de ella de la que sale: elegir los
+        mensajes relevantes pasa a su propia pantalla, y lo que se crea es
+        un BORRADOR que hay que revisar antes de enviarlo.
+
+        Se ofrece con el servicio detenido igual que sin él: lo que decide
+        es el servidor, y aquí no hay nada que ocultar — convertir no
+        envía nada ni arranca ningún contador.
+      */}
+      {conversationId ? (
+        <p>
+          <Link
+            href={`/espacios/${slug}/restaurantes/${id}/convertir`}
+            className="text-cuotly-green underline"
+          >
+            {es.clientArea.convertLink}
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }

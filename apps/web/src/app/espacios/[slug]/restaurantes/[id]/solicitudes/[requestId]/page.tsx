@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 import { Card, StatusBadge } from "@/components/ui";
+import { isDraft } from "@/core/request-draft";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,7 +43,7 @@ export default async function ClientRequestDetailPage({
 }: {
   params: Promise<{ slug: string; id: string; requestId: string }>;
 }) {
-  const { id, requestId } = await params;
+  const { slug, id, requestId } = await params;
   const supabase = await createClient();
 
   const {
@@ -59,6 +60,15 @@ export default async function ClientRequestDetailPage({
     .maybeSingle();
 
   if (!request) notFound();
+
+  // §68 · un borrador no es una solicitud que enseñar: es una que todavía
+  // se está revisando, y su pantalla es otra. Sin esto, el enlace de la
+  // lista llevaba a una ficha con estado "Borrador" y ningún sitio donde
+  // revisarlo ni enviarlo, que es exactamente lo que quedaba pendiente de
+  // §66.
+  if (isDraft(request.state)) {
+    redirect(`/espacios/${slug}/restaurantes/${id}/solicitudes/${requestId}/borrador`);
+  }
 
   // El trabajo NO se lee de la tabla: el cliente no puede, y es
   // deliberado. `jobs_select` es `is_space_member(space_id) and

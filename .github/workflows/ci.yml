@@ -170,6 +170,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/bandeja_conversaciones.sql
 
+      - name: "§68 — Verificar la conversión a solicitud y la revisión del borrador (RN-MSG-10, RN-DAT-07, RN-SLA-01)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/conversion_a_solicitud.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

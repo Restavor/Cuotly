@@ -1066,12 +1066,99 @@ porque durante tres hitos esta línea decía lo contrario.
       positiva. Comprobado además por mutación: quitarle el filtro de
       permisos a `list_conversations()` hace fallar la suite.
 
-    **Lo que sigue pendiente de §66, dicho en claro:** "Convertir en
-    solicitud" (RN-MSG-10, §68). La función existe y está probada desde el
-    Hito 7 (`convert_conversation_to_request()`), pero crea un **borrador**,
-    y §68 exige revisar alcance, destinatario y archivos antes de enviarlo:
-    eso pide una pantalla de borrador que hoy no existe —el formulario de
-    HU-10 crea y envía de una vez— y no se despacha metiéndola aquí.
+    **Lo que quedaba pendiente de §66 era uno, "Convertir en solicitud", y
+    se cierra en el punto 23.**
+
+23. **Convertir en solicitud, con la revisión que §68 exige** (04/09/2026,
+    migración `20260904000051`, aplicada al proyecto). `convert_conversation_to_request()`
+    existía y estaba probada desde el Hito 7, pero lo que crea es un
+    **borrador**, y §68 dice que "antes de enviar se revisa alcance,
+    destinatario y archivos". No había ninguna pantalla en la que
+    revisarlo: el borrador aparecía en la lista del cliente, su enlace
+    llevaba a una ficha de solo lectura con el estado "Borrador" y desde
+    ahí no se podía ni cambiar ni enviar. Era un callejón sin salida.
+
+    - **Elegir los mensajes (`/restaurantes/<id>/convertir`)** es una
+      pantalla propia y no un modo dentro de la conversación. §68 habla de
+      los mensajes *relevantes*, no del hilo entero, así que hace falta una
+      casilla por mensaje; y el componente `Conversation` lo montan cuatro
+      pantallas, de modo que un modo "elegir" que solo vale en una de las
+      cuatro es la clase de bifurcación que acaba enseñando la casilla
+      donde no toca. Cuelga del restaurante y no de `/mensajes` porque
+      convertir es del lado del cliente: `create_request_draft()` exige
+      `can_write_establishment()`, que deja fuera al equipo a propósito
+      ("el equipo no crea solicitudes en nombre del cliente, solo las
+      valida"). A propósito NO usa `loadConversation()`: ese cargador marca
+      la conversación como leída, y entrar a elegir mensajes no es haber
+      leído el hilo.
+
+    - **Revisar el borrador (`…/solicitudes/<id>/borrador`)** tiene
+      exactamente los tres apartados de §68, y salen de
+      `DRAFT_REVIEW_POINTS` (`src/core/request-draft.ts`) para que no pueda
+      faltar ninguno. La ficha de la solicitud redirige aquí mientras el
+      estado sea `draft`: un borrador no es una solicitud que enseñar, es
+      una que todavía se está revisando.
+
+      · **Alcance.** El texto que trae son los mensajes pegados, que casi
+        nunca es como uno redactaría lo que pide. `update_request_draft()`
+        lo reescribe y deja versión en `request_versions` (RN-DAT-07) — la
+        versión 2 que la migración `20260830000017` dejó dicho que no
+        existiría "hasta que exista esa pantalla". Guardar sin cambiar nada
+        no inventa una versión.
+
+      · **Destinatario.** Se revisa, no se cambia, y la pantalla dice por
+        qué en vez de callarlo: una solicitud es de un restaurante y el
+        borrador sale de la conversación general de ese mismo restaurante.
+        Mover un borrador a otro restaurante sería inventar una regla que
+        el PRD no tiene —lo más parecido es RN-REQ-04, "copiar y pegar
+        dentro del mismo grupo", que es otra operación y ya está hecha—.
+        **§68 dice "se revisa el destinatario" y no dice si se puede
+        cambiar: esta es la lectura que se ha implementado, y si Bosco
+        quiere la otra, se hace aparte.**
+
+      · **Archivos.** Se puede quitar el adjunto que se arrastró y no venía
+        a cuento, y añadir el que faltaba. Quitar **no borra el archivo**:
+        `detach_file_from_request_draft()` borra el ENLACE con el borrador
+        y solo mientras es borrador; el archivo sigue en el catálogo con
+        sus versiones y en el mensaje del que vino (CLAUDE.md MUST NOT,
+        RN-MSG-08). En cuanto se envía, ese enlace ya es "vinculado a una
+        operación" (RN-ARC-07) y no se toca.
+
+    - **Enviar es el mismo camino que HU-10**: `submit_request()` y después
+      la clasificación, con RN-CLS-02 vigente (la IA caída no bloquea
+      nada). Hasta ese botón, el equipo no ve ninguna solicitud y **T1 no
+      corre**: es justo lo que la revisión de §68 protege, y por eso el
+      test lo comprueba en los dos sentidos.
+
+    - **Un hallazgo de camino.** `convert_conversation_to_request()` nació
+      en el Hito 7 con el `EXECUTE` que Supabase concede por defecto y
+      nadie se lo quitó a `anon`: una función que ESCRIBE, abierta a quien
+      no ha iniciado sesión. No era explotable —comprueba
+      `can_read_conversation()` y sin sesión `auth.uid()` es null—, pero
+      estaba abierta de verdad en el proyecto, comprobado en vivo el
+      04/09/2026. La migración se lo revoca y el test lo vigila.
+
+    - **Lo que NO se ha hecho, y por qué.** No hay forma de **descartar** un
+      borrador: ningún estado de PRD §9.2 lo recoge y CLAUDE.md prohíbe el
+      borrado físico, así que un borrador se envía o se queda. Inventar un
+      estado "descartado" habría sido inventar producto.
+
+    - **Verificado, no supuesto.** `supabase/tests/conversion_a_solicitud.sql`
+      (en CI) comprueba que convertir crea un borrador y no arranca T1, que
+      el alcance se versiona y que guardar sin cambios no, que quitar un
+      archivo deja intactos el catálogo y el mensaje, que un archivo de
+      otro restaurante no entra, que el rol Consulta y el equipo no
+      escriben en el borrador, y que enviada ya no se toca. Cada negativa
+      va con su positiva. Comprobado por mutación en cuatro puntos: quitar
+      la comprobación de estado o la de permiso de `update_request_draft()`,
+      la de estado de `detach_file_from_request_draft()` y la de
+      establecimiento de `attach_file_to_request_draft()` hacen fallar la
+      suite. La cuarta no la detectaba al principio —`can_read_file()`
+      paraba antes al cliente— y por eso el fixture tiene un propietario
+      global de grupo: sin esa identidad, la comprobación pasaba sin
+      ejercitarse.
+
+    **Con esto §66 y §68 quedan cerrados.**
 
 ## FASE 1 — Operación real de Restavor
 

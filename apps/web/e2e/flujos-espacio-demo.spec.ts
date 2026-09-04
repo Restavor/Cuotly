@@ -281,6 +281,36 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     });
 
     /**
+     * §68 · RN-MSG-10: "antes de enviar se revisa alcance, destinatario y
+     * archivos". El borrador del sembrado (SOL-0001) es el caso: abrirlo
+     * no lleva a una ficha de solo lectura sino a la pantalla de revisión,
+     * con los tres apartados que nombra el documento y el botón de enviar.
+     *
+     * Sin esto, el borrador era un callejón sin salida: aparecía en la
+     * lista del cliente y no había ninguna pantalla desde la que enviarlo.
+     */
+    test("abre su borrador y encuentra los tres puntos de revisión de §68", async ({ page }) => {
+      await entrar(page, CLIENTE.email, RESTAURANTE_URL);
+      await page.goto(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
+
+      await page.getByRole("link", { name: "SOL-0001" }).click();
+
+      await expect(page).toHaveURL(/\/borrador$/);
+      await expect(page.getByRole("heading", { name: "Borrador de solicitud" })).toBeVisible();
+
+      await expect(page.getByText("1. Alcance: qué pides")).toBeVisible();
+      await expect(page.getByText("2. Destinatario: para quién es")).toBeVisible();
+      await expect(page.getByText("3. Archivos: qué lo acompaña")).toBeVisible();
+
+      // El alcance llega editable con lo que el cliente escribió.
+      await expect(page.getByLabel("Qué quieres cambiar")).toHaveValue(
+        /horario de apertura de los domingos/,
+      );
+
+      await expect(page.getByRole("button", { name: "Enviar solicitud" })).toBeVisible();
+    });
+
+    /**
      * CA-04 y el MUST NOT de CLAUDE.md: "no mostrar al cliente el nombre,
      * foto o identidad individual de nadie del equipo de mantenimiento".
      *

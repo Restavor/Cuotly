@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 04/09/2026), con las 50 migraciones del
+// (generate_typescript_types, 04/09/2026), con las 51 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -2588,6 +2588,7 @@ export type Database = {
           rejected_at: string | null
           rejected_by: string | null
           rejected_reason: string | null
+          source_conversation_id: string | null
           space_id: string
           state: string
           validated_at: string | null
@@ -2610,6 +2611,7 @@ export type Database = {
           rejected_at?: string | null
           rejected_by?: string | null
           rejected_reason?: string | null
+          source_conversation_id?: string | null
           space_id: string
           state?: string
           validated_at?: string | null
@@ -2632,6 +2634,7 @@ export type Database = {
           rejected_at?: string | null
           rejected_by?: string | null
           rejected_reason?: string | null
+          source_conversation_id?: string | null
           space_id?: string
           state?: string
           validated_at?: string | null
@@ -2673,6 +2676,13 @@ export type Database = {
             columns: ["rejected_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requests_source_conversation_id_fkey"
+            columns: ["source_conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
           {
@@ -3784,6 +3794,10 @@ export type Database = {
         Args: { p_file_id: string; p_message_id: string }
         Returns: undefined
       }
+      attach_file_to_request_draft: {
+        Args: { p_file_id: string; p_request_id: string }
+        Returns: undefined
+      }
       attach_invoice_to_charge: {
         Args: { p_charge_id: string; p_file_id: string }
         Returns: undefined
@@ -3992,6 +4006,10 @@ export type Database = {
       }
       decline_request: {
         Args: { p_reason?: string; p_request_id: string }
+        Returns: undefined
+      }
+      detach_file_from_request_draft: {
+        Args: { p_file_id: string; p_request_id: string }
         Returns: undefined
       }
       edit_message: {
@@ -4618,6 +4636,14 @@ export type Database = {
           plan_name: string
           renews_at: string
         }[]
+      }
+      update_request_draft: {
+        Args: {
+          p_context?: string
+          p_description: string
+          p_request_id: string
+        }
+        Returns: number
       }
       update_task_state: {
         Args: { p_state: string; p_task_id: string }

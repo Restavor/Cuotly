@@ -866,6 +866,66 @@ export const es = {
     establishmentConversationEmptyTitle: "Todavía no hay mensajes",
     establishmentConversationEmptyReason:
       "Escribe aquí lo que quieras contarle al equipo y que no sea todavía una solicitud.",
+    // §68 · RN-MSG-10 · convertir la conversación general en solicitud, y
+    // revisar el borrador antes de enviarlo. Los tres apartados de la
+    // pantalla de revisión son los tres que nombra §68 —alcance,
+    // destinatario y archivos—, en su orden.
+    convertLink: "Convertir en solicitud",
+    convertTitle: "Convertir en solicitud",
+    convertSubtitle:
+      "Elige los mensajes que cuentan lo que necesitas. Con ellos se prepara un borrador que podrás revisar antes de enviarlo: hasta que lo envíes, el equipo no ve ninguna solicitud ni empieza a contar el plazo.",
+    convertChooseLabel: "Mensajes que van a la solicitud",
+    convertContextLabel: "Dónde está (opcional)",
+    convertContextHelp: "La página o la sección, si lo sabes.",
+    convertSubmit: "Preparar el borrador",
+    convertPending: "Preparando…",
+    convertValidationRequired: "Elige al menos un mensaje.",
+    convertEmptyTitle: "Esta conversación todavía no tiene mensajes",
+    convertEmptyReason:
+      "Escribe primero lo que necesitas en la conversación con el equipo y después conviértelo en solicitud.",
+    convertAttachmentsNote: (cuantos: number) =>
+      cuantos === 1
+        ? "Lleva 1 archivo adjunto"
+        : `Lleva ${cuantos} archivos adjuntos`,
+    convertBack: "Volver a tu restaurante",
+
+    draftTitle: "Borrador de solicitud",
+    draftSubtitle:
+      "Todavía no se ha enviado. Repasa lo que pides, para qué restaurante es y qué archivos lo acompañan; cuando lo envíes, el equipo lo recibe y empieza a contar el plazo de primera atención.",
+    draftFromConversation: "Sale de tu conversación general con el equipo",
+    draftOpenConversation: "Ver la conversación",
+    draftScopeTitle: "1. Alcance: qué pides",
+    draftScopeHint:
+      "Es el texto de los mensajes que elegiste, tal cual. Reescríbelo si hace falta: se guarda cada versión.",
+    draftScopeSave: "Guardar el alcance",
+    draftScopeSaving: "Guardando…",
+    draftScopeSaved: "Alcance guardado",
+    draftScopeUnchanged: "No has cambiado nada.",
+    draftScopeVersion: (numero: number) => `Versión ${numero} del texto`,
+    draftRecipientTitle: "2. Destinatario: para quién es",
+    draftRecipientTeam: "La atiende el equipo de mantenimiento de tu espacio.",
+    draftRecipientFixed:
+      "Una solicitud es siempre de un restaurante, y este borrador sale de la conversación de este. Si te has equivocado de restaurante, conviértelo desde el suyo.",
+    draftFilesTitle: "3. Archivos: qué lo acompaña",
+    draftFilesHint:
+      "Vinieron con los mensajes que elegiste. Quita los que no vengan a cuento y añade los que falten: quitarlos de aquí no los borra, siguen en tu conversación.",
+    draftFilesEmptyTitle: "Este borrador no lleva archivos",
+    draftFilesEmptyReason:
+      "Ni los mensajes que elegiste traían adjuntos ni has añadido ninguno. Puedes enviarlo así.",
+    draftFileRemove: "Quitar del borrador",
+    draftFileRemoving: "Quitando…",
+    draftFileAdd: "Añadir un archivo",
+    draftFileAdding: "Añadiendo…",
+    draftSubmitTitle: "Enviar la solicitud",
+    draftSubmitHint:
+      "Al enviarla, el equipo la recibe, la clasifica y te dirá de qué tamaño es antes de empezar nada.",
+    draftSubmit: "Enviar solicitud",
+    draftSubmitPending: "Enviando…",
+    draftEmptyScope: "Escribe qué necesitas antes de enviarla.",
+    draftAlreadySent: "Esta solicitud ya se envió.",
+    draftNotFoundTitle: "Este borrador no existe o no es tuyo",
+    draftNotFoundReason:
+      "O se envió ya, o no tienes acceso a él. Vuelve a tu restaurante para ver tus solicitudes.",
     correctionUsedTitle: "Ya has usado la corrección de este trabajo",
     correctionUsedReason:
       "La corrección mínima gratuita es una por trabajo. Para algo más, pide un cambio nuevo.",
@@ -1417,6 +1477,9 @@ export const es = {
       "request.copied": "Solicitud copiada",
       "request.declined_by_client": "Solicitud no continuada por el restaurante",
       "request.draft_created": "Borrador de solicitud creado",
+      "request.draft_file_attached": "Archivo añadido al borrador",
+      "request.draft_file_detached": "Archivo quitado del borrador",
+      "request.draft_updated": "Alcance del borrador revisado",
       "request.information_provided": "Información aportada",
       "request.information_requested": "Información pedida",
       "request.new_acceptance_requested": "Nueva aceptación pedida",
