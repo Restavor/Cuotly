@@ -872,16 +872,20 @@ no son un fallo, sino alcance:
       pagado caro cuatro veces. Queda dicho como deuda de las cinco
       pantallas, no de esta.
 
-    **Un matiz de §21.2 que conviene que Bosco confirme.** La frase "los
-    administradores, la operativa" no dice qué queda fuera. Lo que se ha
-    implementado es: fuera la configuración del espacio (§125) y la
-    composición del equipo —invitaciones, permisos y supervisores—, que son
-    justo las capacidades que `has_capability_as()` reserva al propietario
-    (`manage_space`, `invite_member`); dentro todo lo demás, finanzas
-    incluidas, porque `manage_finance` ya es suya. Es una derivación de lo
-    que el permiso dice, no una regla nueva, pero si "la operativa"
-    significaba otra cosa, se cambia en una línea de
-    `audit_action_capability()`.
+    **El matiz de §21.2 quedó confirmado el 04/09/2026** (decisión 14 de
+    `docs/DECISIONES.md`, incorporada a §21.2 del PRD). La frase "los
+    administradores, la operativa" no decía qué queda fuera. Bosco confirma
+    la lectura implementada: los administradores gestionan **toda la
+    operativa diaria, incluidas finanzas, cambios, menús e incidencias**, y
+    quedan fuera la configuración del espacio (§125) y la
+    gestión/composición del equipo —invitaciones, permisos, supervisores y
+    las demás capacidades reservadas al propietario—, que son justo las que
+    `has_capability_as()` no delega (`manage_space`, `invite_member`). No
+    hubo que cambiar nada de la migración 49: es la derivación de lo que el
+    permiso ya decía. Lo único que se añadió al confirmarlo es la mitad del
+    test que faltaba —la familia `invitation`, que la confirmación nombra
+    expresamente y que el fixture de `hu36_ajustes_auditoria.sql` ni
+    siquiera generaba, así que esa parte de la comprobación era vacua.
 
     **La migración 49 está SIN APLICAR al proyecto de Supabase**, que se
     queda en la 48. A diferencia de las anteriores, esta no se ha

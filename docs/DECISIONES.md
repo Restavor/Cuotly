@@ -96,6 +96,25 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    propietarios reciben todo por defecto"). El comportamiento actual es el correcto y no
    hay que cambiar nada.
 
+14. **Qué ve un administrador en la auditoría: "la operativa" es toda la operativa diaria**
+   (04/09/2026). §21.2 del PRD reparte la auditoría —"el propietario del espacio ve la auditoría
+   completa de su espacio; los administradores, la operativa"— pero no decía qué queda fuera de "la
+   operativa", y HU-36 tuvo que elegir una lectura para escribir la política de RLS. Bosco confirma la
+   que se implementó: **los administradores pueden gestionar toda la operativa diaria, incluidas
+   finanzas, cambios, menús e incidencias. Quedan fuera la configuración del espacio y la
+   gestión/composición del equipo: invitaciones, permisos, supervisores y capacidades reservadas al
+   propietario.**
+
+   No es una lista aparte que haya que mantener a mano: sale del criterio de que **la capacidad que
+   hace falta para ver una acción es la misma que hace falta para ejecutarla**, así que lo que queda
+   fuera es justo lo que el propietario no delega (`manage_space`, `invite_member`). En la base son
+   `audit_action_capability()` y la política `audit_log_select` de la migración
+   `20260903000049`, que ya lo hacían así; el comportamiento vigente es el correcto y no hay que
+   cambiar nada. Se cierra con esto el matiz que el ROADMAP dejaba pendiente en el punto 20 del Hito 9,
+   incorporado a §21.2 del PRD, cubierto por `supabase/tests/hu36_ajustes_auditoria.sql` (que ahora
+   comprueba también la familia `invitation`, la única de las tres que nombra la confirmación que no
+   se estaba verificando) y dicho en pantalla en `auditWhatYouSee.admin`.
+
 ### Pendiente de completar (no bloquea la Fase 1)
 
 9. **Redondeo de consumos prorrateados — resuelto por el PRD** (01/09/2026). Este punto

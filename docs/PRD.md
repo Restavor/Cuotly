@@ -676,6 +676,16 @@ Visibilidad: el propietario del espacio ve la auditoría completa de su espacio;
 operativa; el propietario de un restaurante, la de su establecimiento; trabajadores y Editores, sus
 propias acciones y las operaciones autorizadas.
 
+**Qué es "la operativa" de un administrador** (confirmado el 04/09/2026, decisión 14 de
+`docs/DECISIONES.md`): **toda la operativa diaria, incluidas finanzas, cambios, menús e incidencias**.
+Quedan fuera la **configuración del espacio** (§125) y la **gestión y composición del equipo** —
+invitaciones, permisos, supervisores y demás capacidades reservadas al propietario. El criterio no es una
+lista aparte: **la capacidad que hace falta para ver una acción es la misma que hace falta para
+ejecutarla**, así que lo que queda fuera es exactamente lo que el propietario no delega
+(`manage_space`, `invite_member`). Las acciones cuya visibilidad no depende de una capacidad sino de la
+fila —trabajos, solicitudes, tareas, archivos, ausencias, correcciones— se resuelven preguntando por esa
+fila, que es lo que significan "las operaciones autorizadas".
+
 ### 21.3 Rendimiento (objetivos internos, no promesas al cliente)
 Pantallas habituales por debajo de 2 s. Información principal por debajo de 3 s con conexión móvil
 normal. Los procesos pesados muestran progreso y no bloquean la aplicación.

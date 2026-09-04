@@ -1231,7 +1231,7 @@ export const es = {
     auditWhatYouSee: {
       owner: "Ves la auditoría completa de tu espacio (§21.2).",
       admin:
-        "Ves la operativa del espacio. La configuración del espacio y la composición del equipo son del propietario (§21.2).",
+        "Ves toda la operativa diaria del espacio, finanzas incluidas. Quedan fuera la configuración del espacio y la gestión del equipo —invitaciones, permisos y supervisores—, que son del propietario (§21.2).",
       worker:
         "Ves tus propias acciones y las de los trabajos, solicitudes y archivos que ya puedes ver (§21.2).",
     },

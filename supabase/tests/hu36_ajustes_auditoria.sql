@@ -12,7 +12,11 @@
 --     exige motivo (§21.1);
 --   · §21.2 · quién ve qué en la auditoría: el propietario todo lo de su
 --     espacio, el administrador la operativa, el trabajador sus propias
---     acciones y las filas que ya puede ver, y el cliente nada;
+--     acciones y las filas que ya puede ver, y el cliente nada. Qué es "la
+--     operativa" lo fija la decisión 14 de docs/DECISIONES.md (04/09/2026):
+--     todo salvo la configuración del espacio y la composición del equipo
+--     —invitaciones, permisos y supervisores—, y las tres familias de esa
+--     frase se comprueban una por una;
 --   · CA-16 · ninguna operación de la aplicación edita ni borra una fila
 --     de auditoría, tampoco el propietario;
 --   · falso-cerrado: toda acción que aparezca en el libro tiene que estar
@@ -36,7 +40,13 @@ insert into auth.users (id, email, role, aud) values
   ('e0000000-0000-0000-0000-000000000002', 'hu36-admin@example.com', 'authenticated', 'authenticated'),
   ('e0000000-0000-0000-0000-000000000003', 'hu36-eva@example.com', 'authenticated', 'authenticated'),
   ('e0000000-0000-0000-0000-000000000004', 'hu36-nuria@example.com', 'authenticated', 'authenticated'),
-  ('e0000000-0000-0000-0000-000000000005', 'hu36-client@example.com', 'authenticated', 'authenticated');
+  ('e0000000-0000-0000-0000-000000000005', 'hu36-client@example.com', 'authenticated', 'authenticated'),
+  -- La sexta identidad existe solo para la familia `invitation`: alguien a
+  -- quien se invita y acepta, que es la única forma de que se escriba un
+  -- apunte `invitation.accepted`. La decisión 14 nombra las invitaciones
+  -- entre lo que un administrador NO ve, y sin esta fila la comprobación
+  -- de abajo pasaba porque no había nada que ver.
+  ('e0000000-0000-0000-0000-000000000006', 'hu36-invitada@example.com', 'authenticated', 'authenticated');
 
 insert into public.spaces (id, name, slug, timezone, created_by) values
   ('e1000000-0000-0000-0000-000000000001', 'Espacio HU36', 'espacio-hu36-test', 'Europe/Madrid',
@@ -145,6 +155,19 @@ begin
   perform public.set_principal_supervisor(
     'e1000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000003',
     'e0000000-0000-0000-0000-000000000002');
+
+  -- Familia `invitation`: composición del equipo, reservada al propietario
+  -- (§21.2, decisión 14). El apunte lo escribe QUIEN ACEPTA, no quien
+  -- invita, así que su actor es la invitada: eso hace la comprobación del
+  -- administrador de más abajo no vacua y a la vez comprueba la otra mitad
+  -- de la regla —cada cual ve siempre sus propias acciones.
+  insert into public.space_invitations (space_id, email, role, invited_by, token)
+  values ('e1000000-0000-0000-0000-000000000001', 'hu36-invitada@example.com', 'worker',
+          'e0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000f0036');
+
+  perform set_config('request.jwt.claim.sub', 'e0000000-0000-0000-0000-000000000006', false);
+  perform public.accept_space_invitation('00000000-0000-0000-0000-0000000f0036');
+  perform set_config('request.jwt.claim.sub', 'e0000000-0000-0000-0000-000000000001', false);
 
   -- Familia `establishment`: cartera de clientes (manage_clients).
   perform public.set_establishment_status(
@@ -387,6 +410,7 @@ begin
   if not exists (select 1 from public.audit_log where space_id = 'e1000000-0000-0000-0000-000000000001' and action = 'space.renamed')
      or not exists (select 1 from public.audit_log where space_id = 'e1000000-0000-0000-0000-000000000001' and action = 'supervision.principal_set')
      or not exists (select 1 from public.audit_log where space_id = 'e1000000-0000-0000-0000-000000000001' and action = 'membership.perform_jobs_changed')
+     or not exists (select 1 from public.audit_log where space_id = 'e1000000-0000-0000-0000-000000000001' and action = 'invitation.accepted')
      or not exists (select 1 from public.audit_log where space_id = 'e1000000-0000-0000-0000-000000000001' and action = 'establishment.status_changed')
      or not exists (select 1 from public.audit_log where space_id = 'e1000000-0000-0000-0000-000000000001' and action = 'subscription.plan_created')
      or not exists (select 1 from public.audit_log where space_id = 'e1000000-0000-0000-0000-000000000001' and action = 'payment.registered')
@@ -429,7 +453,8 @@ begin
   from public.audit_log
   where space_id = 'e1000000-0000-0000-0000-000000000001'
     and action in ('space.renamed', 'space.timezone_changed',
-                   'membership.perform_jobs_changed', 'supervision.principal_set')
+                   'membership.perform_jobs_changed', 'supervision.principal_set',
+                   'invitation.accepted')
     and actor_id <> auth.uid();
 
   if v_prohibida is not null then
@@ -466,8 +491,8 @@ begin
   from public.audit_log
   where space_id = 'e1000000-0000-0000-0000-000000000001'
     and action in ('space.renamed', 'space.timezone_changed', 'supervision.principal_set',
-                   'membership.perform_jobs_changed', 'subscription.plan_created',
-                   'establishment.status_changed', 'charge.issued');
+                   'membership.perform_jobs_changed', 'invitation.accepted',
+                   'subscription.plan_created', 'establishment.status_changed', 'charge.issued');
 
   if v_prohibida is not null then
     raise exception '§21.2 FALLIDO: una trabajadora ve la configuración o las finanzas del espacio: %', v_prohibida
@@ -669,7 +694,8 @@ delete from auth.users where id in (
   'e0000000-0000-0000-0000-000000000002',
   'e0000000-0000-0000-0000-000000000003',
   'e0000000-0000-0000-0000-000000000004',
-  'e0000000-0000-0000-0000-000000000005'
+  'e0000000-0000-0000-0000-000000000005',
+  'e0000000-0000-0000-0000-000000000006'
 );
 
 select 'hu36_ajustes_auditoria.sql: §124, §125, §21.2, RN-CLK-10 y CA-16 cumplidos, base de datos limpia' as resultado;
