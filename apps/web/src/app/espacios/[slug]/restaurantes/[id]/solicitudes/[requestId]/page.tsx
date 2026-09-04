@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
-import { Conversation, type ConversationMessage } from "@/components/conversation/Conversation";
+import { Conversation } from "@/components/conversation/Conversation";
+import { loadConversation } from "@/components/conversation/load";
 import { Card, StatusBadge } from "@/components/ui";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -83,29 +84,12 @@ export default async function ClientRequestDetailPage({
     p_request_id: requestId,
   });
 
-  let messages: ConversationMessage[] = [];
-  let readOnly = true;
-
-  if (conversationId) {
-    const [{ data: rows }, { data: closed }] = await Promise.all([
-      supabase.rpc("list_conversation_messages", { p_conversation_id: conversationId }),
-      supabase.rpc("conversation_is_read_only", { p_conversation_id: conversationId }),
-    ]);
-
-    messages = (rows ?? []).map((row) => ({
-      id: row.id,
-      body: row.body,
-      senderDisplay: row.sender_display,
-      senderName: null,
-      createdAt: row.created_at,
-      editCount: row.edit_count,
-      isMine: row.sender_display === "client",
-    }));
-    readOnly = Boolean(closed);
-
-    // RN-MSG-06: abrir la conversación es haberla leído.
-    await supabase.rpc("mark_conversation_read", { p_conversation_id: conversationId });
-  }
+  // RN-MSG-06 · abrir la conversación es haberla leído; lo marca
+  // `loadConversation()`, que es el mismo cargador que usa la pantalla del
+  // equipo. Antes esto estaba copiado, y la copia decidía "es mío" mirando
+  // `sender_display === "client"`, con lo que el mensaje de un compañero
+  // del local aparecía firmado como "Tú".
+  const conversation = conversationId ? await loadConversation(supabase, conversationId) : null;
 
   const state = request.state;
   const correctionAvailable =
@@ -187,12 +171,12 @@ export default async function ClientRequestDetailPage({
         </Card>
       ) : null}
 
-      {conversationId ? (
+      {conversationId && conversation ? (
         <Conversation
           conversationId={conversationId}
           establishmentId={id}
-          messages={messages}
-          readOnly={readOnly}
+          messages={conversation.messages}
+          readOnly={conversation.readOnly}
         />
       ) : null}
     </div>

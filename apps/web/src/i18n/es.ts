@@ -193,10 +193,28 @@ export const es = {
       // del equipo escribió. `list_conversation_messages()` devuelve
       // sender_display='maintenance_team' y la pantalla lo resuelve aquí.
       maintenanceTeam: "Equipo de mantenimiento",
+      // Quien escribe del lado del restaurante, cuando la pantalla no
+      // tiene su nombre: al propio restaurante no se le dan identidades
+      // individuales de nadie, ni del equipo ni de sus compañeros.
+      establishmentSide: "El restaurante",
       edited: "Editado",
       readOnly: "Esta conversación es de solo lectura",
       internalNote: "Nota interna",
       unread: "Sin leer",
+      // RN-MSG-06 · la separación que marca dónde se dejó de leer. Se
+      // dice con palabras y no solo con un color: un cambio de tono no lo
+      // percibe todo el mundo.
+      unreadSeparator: "Mensajes nuevos",
+      // RN-MSG-07 · los 10 minutos. Quién puede editar lo decide el
+      // servidor (`edit_message()`); esta pantalla solo se adelanta al
+      // mismo cálculo, con `canEditMessage()` de src/core/messages.ts.
+      editAction: "Editar",
+      editLabel: "Corrige tu mensaje",
+      editSubmit: "Guardar el cambio",
+      editPending: "Guardando…",
+      editCancel: "Dejarlo como estaba",
+      editWindowHint:
+        "Puedes corregirlo durante 10 minutos desde que lo enviaste. Después queda la marca «Editado» y se conserva lo que decía antes.",
     },
     files: {
       internal: "Interno",
@@ -666,6 +684,47 @@ export const es = {
       pointsUnassignedWarning:
         "Las tareas sin repartir no suman a nadie todavía. Sus puntos aparecerán cuando tengan responsable.",
     },
+    /**
+     * §66 · la bandeja del equipo y las dos conversaciones que hasta ahora
+     * no tenían pantalla: la interna de un trabajo (§66.2) y la general de
+     * un restaurante (§66.3).
+     */
+    messages: {
+      title: "Mensajes",
+      subtitle: "Tus conversaciones del espacio, de la del último mensaje a la más antigua.",
+      emptyTitle: "No hay ninguna conversación",
+      emptyReason:
+        "Aquí aparecen las conversaciones de las solicitudes, las internas de cada trabajo y las generales de cada restaurante, en cuanto exista una.",
+      subjectColumn: "Asunto",
+      establishmentColumn: "Restaurante",
+      lastMessageColumn: "Último mensaje",
+      dateColumn: "Fecha",
+      unreadColumn: "Sin leer",
+      noMessagesYet: "Todavía sin mensajes",
+      openLink: "Abrir",
+      // El tipo de conversación, dicho como lo entiende quien lo lee.
+      typeRequest: "Solicitud",
+      typeJobInternal: "Interna del trabajo",
+      typeEstablishment: "General del restaurante",
+      // §66.2 · el aviso que separa la conversación interna de lo que ve
+      // el restaurante. No es decorativo: RN-MSG-04 marca el fallo aquí
+      // como grave, y quien escribe tiene que saber en cuál de las dos
+      // está.
+      internalTitle: "Conversación interna del equipo",
+      internalNotice:
+        "El restaurante no ve esta conversación. Para hablar con él, usa la de su solicitud o la general de su restaurante.",
+      internalOpen: "Abrir la conversación interna del equipo",
+      establishmentTitle: "Conversación general del restaurante",
+      establishmentNotice:
+        "El restaurante lee esta conversación. Para coordinaros entre vosotros, usa la interna de su trabajo.",
+      relatedRequest: "Ver la solicitud",
+      relatedJob: "Ver el trabajo",
+      relatedEstablishment: "Ver el restaurante",
+      backToInbox: "Volver a Mensajes",
+      notFoundTitle: "Esta conversación no existe o no es tuya",
+      notFoundReason:
+        "O se ha borrado el elemento del que colgaba, o no tienes acceso a ella. Vuelve a Mensajes para ver las tuyas.",
+    },
     finance: {
       title: "Finanzas",
       subtitle: "Cobros, previsión e impagos del espacio.",
@@ -798,6 +857,15 @@ export const es = {
     correctionLabel: "Qué hay que corregir",
     correctionSubmit: "Pedir la corrección",
     correctionPending: "Pidiendo…",
+    // §66.3 · la conversación general del restaurante: lo que todavía no
+    // es una solicitud. Es a donde lleva "Mensajes" en el menú del
+    // restaurante.
+    establishmentConversationTitle: "Mensajes con el equipo",
+    establishmentConversationHint:
+      "Para lo que todavía no es una solicitud: dudas, avisos y cosas sueltas. Si hace falta un cambio, pídelo como solicitud para que empiece a contar el plazo.",
+    establishmentConversationEmptyTitle: "Todavía no hay mensajes",
+    establishmentConversationEmptyReason:
+      "Escribe aquí lo que quieras contarle al equipo y que no sea todavía una solicitud.",
     correctionUsedTitle: "Ya has usado la corrección de este trabajo",
     correctionUsedReason:
       "La corrección mínima gratuita es una por trabajo. Para algo más, pide un cambio nuevo.",

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import {
   contractualCalendar,
@@ -9,6 +10,7 @@ import {
   type HolidayRecord,
 } from "@/core/business-clock";
 import { FREE_CORRECTION_WINDOW_BUSINESS_HOURS } from "@/core/free-correction";
+import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import type { JobActionState } from "./action-state";
 
@@ -138,4 +140,38 @@ export async function publishJob(
   if (error) return { error: error.message, done: false };
   revalidatePath("/espacios", "layout");
   return { error: null, done: true };
+}
+
+/**
+ * §66.2 · abrir la conversación interna de un trabajo.
+ *
+ * Se crea al pulsar, no al mirar la ficha. Es la diferencia con la
+ * conversación de una solicitud, que sí se crea al abrir la pantalla: allí
+ * hay una por solicitud y siempre acaba usándose, mientras que crear una
+ * interna por cada trabajo que alguien mira de pasada llenaría la bandeja
+ * de §66.2 de conversaciones vacías.
+ *
+ * `get_or_create_job_conversation()` comprueba dos cosas que esta capa no
+ * puede: que quien llama sea del espacio —que es lo que deja al cliente
+ * fuera, RN-MSG-04— y que pueda leer ese trabajo (RN-MSG-03). Si dice que
+ * no, se enseña el motivo; no se decide aquí.
+ */
+export async function openJobInternalConversation(
+  _prev: JobActionState,
+  formData: FormData,
+): Promise<JobActionState> {
+  const jobId = String(formData.get("jobId") ?? "");
+  const slug = String(formData.get("slug") ?? "");
+  if (!jobId || !slug) return { error: null, done: false };
+
+  const supabase = await createClient();
+  const { data: conversationId, error } = await supabase.rpc("get_or_create_job_conversation", {
+    p_job_id: jobId,
+  });
+
+  if (error || !conversationId) {
+    return { error: error?.message ?? es.states.errorDescription, done: false };
+  }
+
+  redirect(`/espacios/${slug}/mensajes/${conversationId}`);
 }

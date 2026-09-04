@@ -15,6 +15,9 @@ import {
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { Conversation } from "@/components/conversation/Conversation";
+import { loadConversation } from "@/components/conversation/load";
+
 import { AcceptRequestButton } from "./AcceptRequestButton";
 import { NewRequestForm } from "./NewRequestForm";
 
@@ -87,6 +90,19 @@ export default async function ClientEstablishmentPage({
   const pending = rows.filter((r) => r.state === "pending_client_acceptance");
   const serviceStopped = SERVICE_STOPPED.includes(establishment.status);
   const statusKey = establishment.status as StatusKey;
+
+  // §66.3 · la conversación general del restaurante. Se crea al abrir la
+  // pantalla, igual que la de una solicitud: hay exactamente una por
+  // restaurante y es el destino de "Mensajes" en su menú, así que siempre
+  // acaba usándose. `get_or_create_establishment_conversation()` comprueba
+  // el acceso por su cuenta y devuelve error a quien no lo tenga; aquí eso
+  // se traduce en no pintar el bloque, no en un permiso concedido.
+  const { data: conversationId } = await supabase.rpc(
+    "get_or_create_establishment_conversation",
+    { p_establishment_id: id },
+  );
+
+  const conversation = conversationId ? await loadConversation(supabase, conversationId) : null;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
@@ -218,6 +234,30 @@ export default async function ClientEstablishmentPage({
           </Table>
         )}
       </Card>
+
+      {/*
+        §66.3 · la conversación general del restaurante: lo que todavía no
+        es una solicitud. Es a donde lleva "Mensajes" en el menú del
+        restaurante (src/components/shell/navigation.ts), que hasta ahora
+        traía aquí y aquí no había ninguna conversación.
+
+        Quién puede escribir lo decide `post_message()`, que pasa por
+        `can_write_conversation()`: el rol Consulta lee y no responde
+        (RN-MSG-05). Esta pantalla no lo comprueba — si lo hiciera, sería
+        una segunda regla que podría discrepar de la del servidor.
+      */}
+      {conversationId && conversation ? (
+        <Conversation
+          conversationId={conversationId}
+          establishmentId={id}
+          messages={conversation.messages}
+          readOnly={conversation.readOnly}
+          title={es.clientArea.establishmentConversationTitle}
+          notice={es.clientArea.establishmentConversationHint}
+          emptyTitle={es.clientArea.establishmentConversationEmptyTitle}
+          emptyReason={es.clientArea.establishmentConversationEmptyReason}
+        />
+      ) : null}
     </div>
   );
 }

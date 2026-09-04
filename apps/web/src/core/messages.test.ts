@@ -8,6 +8,7 @@ import {
   isClientVisibleConversation,
   isConversationReadOnly,
   isEdited,
+  resolveAuthorLabel,
   resolveSenderIdentity,
   unreadCount,
 } from "./messages";
@@ -34,6 +35,43 @@ describe("messages — RN-MSG, HU-35", () => {
 
     it("el propio cliente se identifica como cliente, no como equipo", () => {
       expect(resolveSenderIdentity({ role: "client", profileId: "client-3" }, "staff")).toEqual({ kind: "client" });
+    });
+  });
+
+  describe("RN-MSG-02: quién firma cada mensaje en la pantalla", () => {
+    // El restaurante NUNCA recibe `sender_id`, ni siquiera el de sus
+    // propios mensajes, así que "es mío" solo puede venir de `is_mine`.
+    const delRestaurante = { senderDisplay: "client", hasResolvedName: false };
+
+    it("un mensaje propio se firma como tuyo aunque no llegue ninguna identidad con él", () => {
+      expect(resolveAuthorLabel({ ...delRestaurante, isMine: true })).toBe("you");
+    });
+
+    it("el mensaje del restaurante NO se firma como el equipo de mantenimiento", () => {
+      // La regresión concreta: con `is_mine` en falso y sin nombre
+      // resuelto, la versión anterior caía en "maintenance_team" y el
+      // restaurante veía sus propios mensajes firmados por el equipo.
+      expect(resolveAuthorLabel({ ...delRestaurante, isMine: false })).toBe("establishment");
+    });
+
+    it("al restaurante, cualquiera del equipo es el equipo", () => {
+      expect(
+        resolveAuthorLabel({ isMine: false, senderDisplay: "maintenance_team", hasResolvedName: false }),
+      ).toBe("maintenance_team");
+    });
+
+    it("y no deja de serlo porque la pantalla creyera tener un nombre", () => {
+      // Falso-cerrado: si algún día una pantalla resolviera un nombre para
+      // un mensaje marcado como del equipo, RN-MSG-02 seguiría mandando.
+      expect(
+        resolveAuthorLabel({ isMine: false, senderDisplay: "maintenance_team", hasResolvedName: true }),
+      ).toBe("maintenance_team");
+    });
+
+    it("dentro del espacio sí se firma con la persona (§15 de la especificación maestra)", () => {
+      expect(
+        resolveAuthorLabel({ isMine: false, senderDisplay: "person", hasResolvedName: true }),
+      ).toBe("person");
     });
   });
 

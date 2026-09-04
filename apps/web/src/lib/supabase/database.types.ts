@@ -1,10 +1,6 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 03/09/2026), con las 48 migraciones del
+// (generate_typescript_types, 04/09/2026), con las 50 migraciones del
 // repositorio aplicadas.
-//
-// Sustituye a la versión anterior, que se había quedado en el esquema del
-// Hito 2 y llevaba las funciones nuevas añadidas a mano. Ya no hay nada
-// "(a mano)" en este archivo: todo sale del esquema desplegado.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
 // aplica una migración nueva.
@@ -3792,10 +3788,7 @@ export type Database = {
         Args: { p_charge_id: string; p_file_id: string }
         Returns: undefined
       }
-      audit_action_capability: {
-        Args: { p_action: string }
-        Returns: string
-      }
+      audit_action_capability: { Args: { p_action: string }; Returns: string }
       audit_entity_is_visible: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
@@ -4213,10 +4206,29 @@ export type Database = {
           edit_count: number
           edited_at: string
           id: string
+          is_mine: boolean
           is_unread: boolean
           sender_display: string
           sender_id: string
           sender_role: string
+        }[]
+      }
+      list_conversations: {
+        Args: { p_space_id: string }
+        Returns: {
+          establishment_id: string
+          establishment_name: string
+          id: string
+          is_read_only: boolean
+          job_code: string
+          job_id: string
+          last_message_at: string
+          last_message_preview: string
+          last_sender_role: string
+          request_code: string
+          request_id: string
+          type: string
+          unread_count: number
         }[]
       }
       list_job_candidates: {
@@ -4529,6 +4541,14 @@ export type Database = {
         Args: { p_admin_id: string; p_space_id: string; p_worker_id: string }
         Returns: string
       }
+      set_space_name: {
+        Args: { p_name: string; p_space_id: string }
+        Returns: boolean
+      }
+      set_space_timezone: {
+        Args: { p_reason: string; p_space_id: string; p_timezone: string }
+        Returns: boolean
+      }
       set_substitute_supervisor: {
         Args: {
           p_admin_id: string
@@ -4566,14 +4586,6 @@ export type Database = {
           state: string
           title: string
         }[]
-      }
-      set_space_name: {
-        Args: { p_name: string; p_space_id: string }
-        Returns: boolean
-      }
-      set_space_timezone: {
-        Args: { p_reason: string; p_space_id: string; p_timezone: string }
-        Returns: boolean
       }
       space_slug: { Args: { p_space_id: string }; Returns: string }
       start_correction: {

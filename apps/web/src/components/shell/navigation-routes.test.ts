@@ -27,20 +27,22 @@ const ROLES: readonly ShellRole[] = ["owner", "admin", "worker", "client", "clie
  */
 /**
  * La clave es la RUTA, no la clave del destino: la misma clave sirve a dos
- * sitios distintos según el rol —"messages" lleva al equipo a
- * `/mensajes`, que no existe, y al cliente a su propio restaurante, que
- * sí—, así que clasificar por clave taparía una ruta rota. Lo enseñó este
- * mismo test en su primera ejecución.
+ * sitios distintos según el rol —"messages" lleva al equipo a su bandeja
+ * (`/mensajes`) y al cliente a su propio restaurante, donde está la
+ * conversación general de §66.3—, así que clasificar por clave taparía una
+ * ruta rota. Lo enseñó este mismo test en su primera ejecución.
  */
-const PENDIENTES: Readonly<Record<string, string>> = {
-  // §66.2 · el último destino del menú de §20.2 sin construir. No es la
-  // conversación de una solicitud —esa existe y la monta `Conversation`—
-  // sino la bandeja del equipo y la conversación interna de un trabajo,
-  // que RN-MSG-04 exige mantener estrictamente separada de lo que ve el
-  // cliente.
-  "/espacios/[slug]/mensajes":
-    "§66.2 · la bandeja del equipo y la conversación interna de un trabajo.",
-};
+/**
+ * Vacía desde el 04/09/2026: `/espacios/[slug]/mensajes` era el último, y
+ * ya tiene pantalla (la bandeja de §66 y la conversación que se abre desde
+ * ella). **Todo** destino del menú de §20.2 lleva hoy a una ruta que
+ * existe.
+ *
+ * Que esté vacía no la hace inútil, al contrario: es ahora cuando el test
+ * muerde de verdad, porque cualquier destino nuevo sin ruta falla sin que
+ * nadie tenga que acordarse de comprobarlo.
+ */
+const PENDIENTES: Readonly<Record<string, string>> = {};
 
 /**
  * De una URL a la ruta del App Router que la serviría. El slug y el

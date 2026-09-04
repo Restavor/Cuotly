@@ -61,6 +61,45 @@ export function resolveSenderIdentity(
   return audience === "client" ? { kind: "maintenance_team" } : { kind: "person", profileId: sender.profileId };
 }
 
+/**
+ * RN-MSG-02 · cómo se firma un mensaje en la pantalla.
+ *
+ * Devuelve una CLAVE, no un texto: los literales viven en `src/i18n/es.ts`.
+ *
+ * Por qué es una función del dominio y no un `if` dentro del componente:
+ * estaba dentro del componente, y estaba mal. Decidía "es mío" comparando
+ * `sender_id` con quien mira, y `list_conversation_messages()` le devuelve
+ * esa columna en null al restaurante **también en sus propios mensajes**,
+ * así que el restaurante veía sus mensajes firmados como "Equipo de
+ * mantenimiento". Nadie lo vio porque no había forma de probarlo sin
+ * levantar media aplicación.
+ *
+ * Las cuatro respuestas, en el orden en que se deciden:
+ *   · `you` — lo escribiste tú. Lo contesta el servidor (`is_mine`), no se
+ *     deduce de ninguna columna de identidad;
+ *   · `maintenance_team` — alguien del equipo, visto por el restaurante.
+ *     Es RN-MSG-02 literal, y es lo único que el restaurante puede llegar
+ *     a saber de quien le contesta;
+ *   · `person` — alguien del equipo, visto por el equipo (§15 de la
+ *     especificación maestra: "internamente, Cuotly registra quién
+ *     realizó cada acción"). La pantalla ya tiene el nombre resuelto;
+ *   · `establishment` — alguien del restaurante cuyo nombre esta pantalla
+ *     no tiene. Le pasa al propio restaurante con los mensajes de sus
+ *     compañeros de local: no ve identidades individuales de nadie.
+ */
+export type AuthorLabel = "you" | "maintenance_team" | "person" | "establishment";
+
+export function resolveAuthorLabel(message: {
+  readonly isMine: boolean;
+  readonly senderDisplay: string;
+  readonly hasResolvedName: boolean;
+}): AuthorLabel {
+  if (message.isMine) return "you";
+  if (message.senderDisplay === "maintenance_team") return "maintenance_team";
+  if (message.hasResolvedName) return "person";
+  return message.senderDisplay === "client" ? "establishment" : "maintenance_team";
+}
+
 /** RN-MSG-07: la ventana de edición son 10 minutos naturales, no laborables. */
 export const MESSAGE_EDIT_WINDOW_MINUTES = 10;
 

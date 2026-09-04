@@ -955,8 +955,9 @@ porque durante tres hitos esta línea decía lo contrario.
 
 21. **Los destinos que faltaban del menú, y "Más"** (03/09/2026). De los
     nueve que el barrido de navegación tenía clasificados como pendientes
-    quedan **uno**: `/mensajes`. Los otros ocho eran de tres clases
-    distintas y se han cerrado como merecía cada una.
+    quedaba **uno**, `/mensajes`, que cerró el punto 22 al día siguiente.
+    Los otros ocho eran de tres clases distintas y se han cerrado como
+    merecía cada una.
 
     - **`/mas` (§20.3) es la que de verdad faltaba.** La barra de móvil
       ofrece cinco destinos y un sexto botón "Más" que llevaba a un 404
@@ -1001,12 +1002,76 @@ porque durante tres hitos esta línea decía lo contrario.
     discrepando harían que la barra y su desbordamiento ofrecieran cosas
     distintas.
 
-    **Lo que queda pendiente, y es uno:** `/mensajes`. No es la
-    conversación de una solicitud —esa existe y la monta `Conversation`—
-    sino la bandeja del equipo y la conversación **interna** de un trabajo,
-    que RN-MSG-04 exige mantener estrictamente separada de lo que ve el
-    cliente. Eso es trabajo de verdad, no una ruta que falte, y no se
-    despacha con un estado vacío.
+    **Lo que quedaba pendiente era uno, `/mensajes`, y se cierra en el
+    punto 22.**
+
+22. **Mensajes, terminados: la bandeja y las dos conversaciones que no
+    tenían pantalla** (04/09/2026, migración `20260904000050`, aplicada al
+    proyecto). Los tres tipos de conversación de §66 existían en la base de
+    datos desde el Hito 7 y solo uno se veía: la de solicitud. La interna
+    de trabajo (§66.2) y la general del restaurante (§66.3) se podían crear
+    por RPC y no las miraba nadie.
+
+    - **La bandeja (`/mensajes`)** lista todas las conversaciones que quien
+      mira puede leer, con el último mensaje y lo que lleva sin leer. El
+      contador NO se calcula en la pantalla, y no por comodidad: "sin
+      leer" se define contra `messages.sender_id`, una columna que el
+      Hito 7 revocó a todo el mundo para que el restaurante no pueda
+      distinguir individualmente a nadie del equipo. Sale de
+      `list_conversations()`, que filtra con `can_read_conversation()` —la
+      misma función que sostiene la política de la tabla, no una segunda
+      copia de RN-MSG-03.
+
+    - **La conversación interna del trabajo** se abre desde su ficha, y se
+      crea al pulsar y no al mirar: una por cada trabajo que alguien
+      hojea llenaría la bandeja de conversaciones vacías. El botón solo se
+      le ofrece a quien es del espacio (P7: al restaurante no se le cuenta
+      que existe una organización interna), y quien lo impide de verdad es
+      `get_or_create_job_conversation()`.
+
+    - **La general del restaurante** se monta en la ficha del restaurante,
+      que es exactamente a donde llevaba "Mensajes" en el menú del cliente
+      desde el Hito 8 — y donde no había ninguna conversación. Ese destino
+      no estaba roto a ojos del barrido de navegación, porque la ruta
+      existía; estaba vacío de lo que prometía.
+
+    - **Dos fallos que salieron al montarlo, y ninguno era pequeño.** El
+      primero: `list_conversation_messages()` le devuelve `sender_id` en
+      null al restaurante **también en sus propios mensajes**, y las dos
+      pantallas decidían "es mío" comparando esa columna, así que el
+      restaurante veía **sus propios mensajes firmados como "Equipo de
+      mantenimiento"**. Se arregla contestando la pregunta que la pantalla
+      necesita sin revelar la columna (`is_mine`), no devolviéndole la
+      identidad. El segundo, en la pantalla del cliente: decidía "es mío"
+      por `sender_display === 'client'`, con lo que el mensaje de un
+      compañero de local aparecía firmado como "Tú". Los dos vivían en un
+      `if` dentro de un componente, donde no había forma de probarlos; la
+      decisión está ahora en `resolveAuthorLabel()` (`src/core/messages.ts`)
+      con sus tests, y las cuatro pantallas cargan la conversación con el
+      mismo `loadConversation()` en vez de con cuatro copias.
+
+    - **RN-MSG-06 y RN-MSG-07 tenían regla y no tenían interfaz.** Ahora la
+      conversación marca dónde empiezan los mensajes nuevos y ofrece los 10
+      minutos de edición sobre los mensajes propios. Quién puede editar lo
+      decide `edit_message()`; la pantalla se adelanta con el mismo cálculo
+      de `src/core/messages.ts`, y cuando el servidor dice que no, se
+      enseña el motivo en vez de esconder el botón.
+
+    - **Verificado, no supuesto.** `supabase/tests/bandeja_conversaciones.sql`
+      (en CI) comprueba quién ve qué conversación, que la interna de
+      trabajo no llega al cliente ni por la bandeja ni por su
+      identificador, el contador de sin leer en sus tres estados, y —sobre
+      la FIRMA de la función, no sobre los datos— que la bandeja no
+      devuelve ninguna columna de identidad. Cada negativa va con su
+      positiva. Comprobado además por mutación: quitarle el filtro de
+      permisos a `list_conversations()` hace fallar la suite.
+
+    **Lo que sigue pendiente de §66, dicho en claro:** "Convertir en
+    solicitud" (RN-MSG-10, §68). La función existe y está probada desde el
+    Hito 7 (`convert_conversation_to_request()`), pero crea un **borrador**,
+    y §68 exige revisar alcance, destinatario y archivos antes de enviarlo:
+    eso pide una pantalla de borrador que hoy no existe —el formulario de
+    HU-10 crea y envía de una vez— y no se despacha metiéndola aquí.
 
 ## FASE 1 — Operación real de Restavor
 

@@ -21,6 +21,7 @@ import { jobTone } from "../page";
 import {
   AssignJobForm,
   BlockJobForm,
+  OpenInternalConversationForm,
   PublishJobForm,
   StartJobForm,
   UnblockJobForm,
@@ -150,6 +151,17 @@ export default async function TeamJobDetailPage({
   });
   const esResponsable = job.assigned_to === user.id;
   const puedeDesglosar = Boolean(puedeAsignar) || esResponsable;
+
+  // §66.2 y P7 · la conversación interna solo se le ofrece a quien es del
+  // espacio. El restaurante puede abrir la ficha de su trabajo por URL
+  // (`can_read_job()` le deja a propósito, ve el estado del suyo), y
+  // enseñarle un botón de coordinación interna sería contarle que existe
+  // una organización interna que no le corresponde ver. Quien lo impide de
+  // verdad es `get_or_create_job_conversation()`, que exige ser del
+  // espacio; esto solo evita ofrecerle una puerta que no es suya.
+  const { data: esDelEquipo } = await supabase.rpc("is_space_member", {
+    p_space_id: job.space_id,
+  });
 
   // Los candidatos de una tarea no son los del trabajo: `list_job_candidates()`
   // filtra por la especialidad y la elegibilidad completa de RN-ASG-02, y
@@ -317,6 +329,17 @@ export default async function TeamJobDetailPage({
           canCancel={Boolean(puedeAsignar)}
         />
       ) : null}
+
+      {/*
+        §66.2 · la coordinación del equipo sobre este trabajo. Se ofrece
+        siempre, en cualquier estado: un trabajo terminado también se
+        comenta, y el historial de cómo se coordinó no se cierra con él.
+        Quién puede abrirla lo decide `get_or_create_job_conversation()`,
+        que exige ser del espacio y poder leer el trabajo — al cliente,
+        que sí puede leer la ficha de su trabajo, le dice que no
+        (RN-MSG-04).
+      */}
+      {esDelEquipo ? <OpenInternalConversationForm jobId={id} slug={slug} /> : null}
 
       {job.state === "pending_assignment" ? (
         <AssignJobForm jobId={id} candidates={candidates} />

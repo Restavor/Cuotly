@@ -68,3 +68,37 @@ export async function postMessage(
   revalidatePath("/espacios", "layout");
   return { error: null, sent: true };
 }
+
+/**
+ * RN-MSG-07 · corregir un mensaje dentro de los 10 minutos.
+ *
+ * Las tres reglas —que sea tuyo, que la ventana siga abierta y que la
+ * conversación no esté cerrada— las hace cumplir `edit_message()` en el
+ * servidor, con la fila bloqueada y guardando la versión anterior en
+ * `message_edits`. Esta acción no comprueba ninguna: si la pantalla
+ * ofreciera el botón cuando no toca, la función lanza y el error se
+ * enseña (CLAUDE.md: ocultar un botón no es un control de acceso).
+ *
+ * Y no hay ninguna forma de borrar: RN-MSG-08, y en la base de datos
+ * `messages` no tiene política de DELETE.
+ */
+export async function editMessage(
+  _prev: MessageState,
+  formData: FormData,
+): Promise<MessageState> {
+  const messageId = String(formData.get("messageId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+
+  if (!messageId || !body) return { error: null, sent: false };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("edit_message", {
+    p_message_id: messageId,
+    p_body: body,
+  });
+
+  if (error) return { error: error.message, sent: false };
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, sent: true };
+}

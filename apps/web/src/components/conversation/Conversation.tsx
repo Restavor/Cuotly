@@ -1,7 +1,9 @@
 import { Card, EmptyState } from "@/components/ui";
+import { canEditMessage, resolveAuthorLabel } from "@/core/messages";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { EditMessageForm } from "./EditMessageForm";
 import { PostMessageForm } from "./PostMessageForm";
 
 /**
@@ -16,6 +18,12 @@ import { PostMessageForm } from "./PostMessageForm";
  *
  * `sender_display` llega como identificador ('client', 'person',
  * 'maintenance_team'), nunca como texto: los literales viven en i18n.
+ *
+ * Este componente lo montan las cuatro pantallas que enseñan una
+ * conversación —las dos de solicitud, la interna de trabajo y la general
+ * del restaurante—, y todas le pasan lo que carga `loadConversation()`.
+ * Es a propósito: es el único sitio donde se decide qué se enseña de un
+ * mensaje, así que las cuatro no pueden divergir.
  */
 export interface ConversationMessage {
   readonly id: string;
@@ -25,12 +33,42 @@ export interface ConversationMessage {
   readonly createdAt: string;
   readonly editCount: number;
   readonly isMine: boolean;
+  /** RN-MSG-06 · lo calcula el servidor: escrito por otra persona después de tu última lectura. */
+  readonly isUnread: boolean;
 }
 
+/**
+ * Las dos identidades que `canEditMessage()` necesita comparar. No son
+ * identificadores de nadie: la comparación de verdad —`sender_id` contra
+ * `auth.uid()`— la hace `edit_message()` en el servidor, y aquí solo se
+ * traduce lo que el servidor ya contestó en `is_mine`.
+ */
+const YO = "self";
+const OTRA_PERSONA = "other";
+
+/**
+ * RN-MSG-02 · quién firma cada mensaje. La decisión es de
+ * `resolveAuthorLabel()` (src/core/messages.ts), que la toma sin depender
+ * de React ni de Supabase y tiene sus propios tests; aquí solo se traduce
+ * la clave que devuelve al literal en español.
+ */
 function authorLabel(message: ConversationMessage): string {
-  if (message.isMine) return es.clientArea.you;
-  if (message.senderDisplay === "maintenance_team") return es.clientArea.maintenanceTeam;
-  return message.senderName ?? es.clientArea.maintenanceTeam;
+  switch (
+    resolveAuthorLabel({
+      isMine: message.isMine,
+      senderDisplay: message.senderDisplay,
+      hasResolvedName: message.senderName !== null,
+    })
+  ) {
+    case "you":
+      return es.clientArea.you;
+    case "person":
+      return message.senderName ?? es.clientArea.maintenanceTeam;
+    case "establishment":
+      return es.space.messages.establishmentSide;
+    case "maintenance_team":
+      return es.clientArea.maintenanceTeam;
+  }
 }
 
 export async function Conversation({
@@ -38,11 +76,25 @@ export async function Conversation({
   establishmentId,
   messages,
   readOnly,
+  title,
+  notice,
+  emptyTitle,
+  emptyReason,
 }: {
   conversationId: string;
   establishmentId: string;
   messages: readonly ConversationMessage[];
   readOnly: boolean;
+  /**
+   * Qué conversación es. La de una solicitud no necesita decirlo —la
+   * pantalla entera va de esa solicitud—, pero la interna de un trabajo y
+   * la general de un restaurante SÍ: quien escribe tiene que saber en
+   * cuál de las dos está antes de escribir (RN-MSG-04).
+   */
+  title?: string;
+  notice?: string;
+  emptyTitle?: string;
+  emptyReason?: string;
 }) {
   // RN-MSG-09 · los adjuntos de estos mensajes. Se piden aquí y no en cada
   // pantalla que monta una conversación para que las dos —la del equipo y
@@ -80,43 +132,86 @@ export async function Conversation({
     ]);
   }
 
+  // RN-MSG-06 · dónde va la marca "Mensajes nuevos": justo antes del
+  // primero que llegó sin leer. Los mensajes vienen ordenados por fecha,
+  // así que es el primero con `isUnread`.
+  const firstUnreadId = messages.find((message) => message.isUnread)?.id ?? null;
+
+  const now = new Date();
+
   return (
-    <Card title={es.clientArea.conversationTitle}>
+    <Card title={title ?? es.clientArea.conversationTitle}>
+      {notice ? (
+        <p className="mb-4 rounded-lg border border-border bg-soft-surface p-3 text-sm text-text-secondary">
+          {notice}
+        </p>
+      ) : null}
+
       {messages.length === 0 ? (
         <EmptyState
-          title={es.clientArea.conversationEmptyTitle}
-          description={es.clientArea.conversationEmptyReason}
+          title={emptyTitle ?? es.clientArea.conversationEmptyTitle}
+          description={emptyReason ?? es.clientArea.conversationEmptyReason}
         />
       ) : (
         <ul className="space-y-4">
-          {messages.map((message) => (
-            <li key={message.id} className="rounded-lg bg-soft-surface p-3">
-              <p className="text-xs font-semibold text-text-secondary">
-                {authorLabel(message)}
-                {" · "}
-                {new Intl.DateTimeFormat("es-ES", {
-                  dateStyle: "short",
-                  timeStyle: "short",
-                }).format(new Date(message.createdAt))}
-                {message.editCount > 0 ? ` · ${es.clientArea.edited}` : ""}
-              </p>
-              <p className="mt-1 whitespace-pre-wrap text-text">{message.body}</p>
-              {(attachmentsByMessage.get(message.id) ?? []).length > 0 ? (
-                <ul className="mt-2 space-y-1 text-sm">
-                  {(attachmentsByMessage.get(message.id) ?? []).map((file) => (
-                    <li key={file.id}>
-                      {/* RN-ARC-08: el enlace no apunta al objeto sino a una
-                          ruta que comprueba el permiso y firma una URL de
-                          unos minutos. */}
-                      <a href={`/api/archivos/${file.id}`} className="text-cuotly-green underline">
-                        {file.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
-            </li>
-          ))}
+          {messages.map((message) => {
+            // RN-MSG-07 · el mismo cálculo que hace `edit_message()`. No
+            // autoriza nada: se adelanta a la decisión del servidor, que
+            // vuelve a tomarla al ejecutar.
+            //
+            // La autoría la ha contestado ya el servidor con `is_mine`
+            // —esta pantalla no recibe `sender_id` cuando quien mira es
+            // el restaurante—, así que a `canEditMessage()` se le pasa esa
+            // respuesta como identidad y lo que comprueba de verdad es lo
+            // que falta: la ventana de 10 minutos y el cierre de la
+            // conversación.
+            const autor = message.isMine ? YO : OTRA_PERSONA;
+            const editable = canEditMessage({
+              message: { senderId: autor, createdAt: new Date(message.createdAt) },
+              actorId: YO,
+              now,
+              conversationIsReadOnly: readOnly,
+            }).ok;
+
+            return (
+              <li key={message.id}>
+                {message.id === firstUnreadId ? (
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-cuotly-green">
+                    {es.space.messages.unreadSeparator}
+                  </p>
+                ) : null}
+
+                <div className="rounded-lg bg-soft-surface p-3">
+                  <p className="text-xs font-semibold text-text-secondary">
+                    {authorLabel(message)}
+                    {" · "}
+                    {new Intl.DateTimeFormat("es-ES", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    }).format(new Date(message.createdAt))}
+                    {message.editCount > 0 ? ` · ${es.clientArea.edited}` : ""}
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-text">{message.body}</p>
+                  {(attachmentsByMessage.get(message.id) ?? []).length > 0 ? (
+                    <ul className="mt-2 space-y-1 text-sm">
+                      {(attachmentsByMessage.get(message.id) ?? []).map((file) => (
+                        <li key={file.id}>
+                          {/* RN-ARC-08: el enlace no apunta al objeto sino a una
+                              ruta que comprueba el permiso y firma una URL de
+                              unos minutos. */}
+                          <a href={`/api/archivos/${file.id}`} className="text-cuotly-green underline">
+                            {file.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+
+                  {editable ? <EditMessageForm messageId={message.id} body={message.body} /> : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

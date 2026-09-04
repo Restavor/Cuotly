@@ -21,6 +21,7 @@ import { es } from "@/i18n/es";
 import {
   assignJob,
   blockJob,
+  openJobInternalConversation,
   publishJob,
   startJob,
   unblockJob,
@@ -167,6 +168,33 @@ export function PublishJobForm({ jobId, spaceId }: { jobId: string; spaceId: str
         <Error message={state.error} />
         <Button type="submit" disabled={pending}>
           {pending ? es.teamArea.jobs.publishPending : es.teamArea.jobs.publishSubmit}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+/**
+ * §66.2 · la puerta a la conversación interna del equipo desde la ficha
+ * del trabajo.
+ *
+ * Es un formulario y no un enlace porque la conversación puede no existir
+ * todavía: la acción la abre —creándola la primera vez— y lleva a ella.
+ * El aviso de que el restaurante no la ve va en la conversación misma,
+ * que es donde se escribe (RN-MSG-04).
+ */
+export function OpenInternalConversationForm({ jobId, slug }: { jobId: string; slug: string }) {
+  const [state, action, pending] = useActionState(openJobInternalConversation, INITIAL_JOB_ACTION);
+
+  return (
+    <Card title={es.teamArea.messages.internalTitle}>
+      <p className="mb-3 text-sm text-text-secondary">{es.teamArea.messages.internalNotice}</p>
+      <form action={action}>
+        <input type="hidden" name="jobId" value={jobId} />
+        <input type="hidden" name="slug" value={slug} />
+        <Error message={state.error} />
+        <Button type="submit" disabled={pending}>
+          {es.teamArea.messages.internalOpen}
         </Button>
       </form>
     </Card>

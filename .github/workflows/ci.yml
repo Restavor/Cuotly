@@ -164,6 +164,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/hu36_ajustes_auditoria.sql
 
+      - name: "§66 — Verificar la bandeja de conversaciones (RN-MSG-02, RN-MSG-03, RN-MSG-04, RN-MSG-06)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/bandeja_conversaciones.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
