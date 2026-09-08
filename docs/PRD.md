@@ -536,6 +536,7 @@ Tres tipos de conversación: **de solicitud**, **interna de trabajo** y **genera
 Cuotly es un **control financiero operativo**. No procesa pagos ni sustituye a un sistema contable.
 
 - **RN-FIN-01**: la mensualidad se genera automáticamente en la fecha de renovación según plan, impuestos y condiciones vigentes.
+- **RN-FIN-01b (añadida 08/09/2026)**: la mensualidad **vence a los `payment_term_days` naturales de emitirse**, un dato configurable de cada espacio con **7 días por defecto** que solo cambia el propietario. Antes no existía plazo alguno y el cobro se emitía con `due_at = cycle_start`, es decir **ya vencido**: RN-FIN-10 pausaba el restaurante veinticuatro horas después de emitirle la cuota. El plazo se congela en el cobro al emitirlo, igual que el tipo impositivo de RN-FIN-08: cambiarlo mueve las mensualidades futuras y ninguna de las ya emitidas. Decisión 15 de `docs/DECISIONES.md`.
 - **RN-FIN-02**: estados de cobro: `pending` · `paid` · `partially_paid` · `overdue` · `waived` · `refunded`.
 - **RN-FIN-03** (corregida 31/08/2026): métodos registrados: **transferencia o Bizum**. Sin Stripe ni pasarela, los pagos se registran a mano, así que no hay tarjeta ni domiciliación. La redacción anterior listaba cinco métodos y contradecía a CLAUDE.md y a la Especificación Maestra; resuelto por Bosco (decisión 10 de `docs/DECISIONES.md`).
 - **RN-FIN-04**: propietario y administradores confirman, corrigen y gestionan cobros.

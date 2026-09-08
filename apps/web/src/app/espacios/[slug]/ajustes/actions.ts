@@ -89,6 +89,43 @@ export async function changeSpaceTimezone(
 }
 
 /**
+ * RN-FIN-01b · el plazo de pago del espacio. No pide motivo, a diferencia
+ * de la zona horaria: no mueve ningún plazo vivo, porque `charges.due_at`
+ * se congela al emitir y las mensualidades ya emitidas conservan el suyo.
+ */
+export async function changeSpacePaymentTerm(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const days = Number(formData.get("paymentTermDays"));
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("set_space_payment_term", {
+      p_space_id: spaceId,
+      p_days: Number.isFinite(days) ? days : -1,
+    });
+    if (error) {
+      console.error("[ajustes] set_space_payment_term devolvió error", {
+        spaceId,
+        message: error.message,
+      });
+      return { error: error.message, done: false, unchanged: false };
+    }
+
+    revalidatePath("/espacios", "layout");
+    return { error: null, done: data === true, unchanged: data !== true };
+  } catch (fallo) {
+    console.error("[ajustes] set_space_payment_term lanzó", {
+      spaceId,
+      message: mensajeDeFallo(fallo),
+    });
+    return { error: mensajeDeFallo(fallo), done: false, unchanged: false };
+  }
+}
+
+/**
  * Las preferencias de aviso de quien mira (§123 · Notificaciones). Son
  * suyas y de este espacio, no del espacio entero: por eso
  * `set_notification_preference()` no admite un tercero como destinatario y

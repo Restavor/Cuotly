@@ -939,6 +939,17 @@ end $$;
 
 reset role;
 
+-- Desde la migración 52 el alta de un plan ya emite la mensualidad de su
+-- primer ciclo (RN-FIN-01), con el plazo de pago del espacio (RN-FIN-01b),
+-- así que la de A **no** nace vencida. El ciclo de impago de más abajo
+-- necesita que lo esté: se le mueve el vencimiento 25 horas atrás desde
+-- fuera de la aplicación. Es fixture y no operativa — `charges.due_at` se
+-- congela al emitir y ninguna función lo reabre.
+update public.charges set due_at = now() - interval '25 hours'
+where subscription_id = (
+  select id from public.subscriptions
+  where establishment_id = 'b4000000-0000-0000-0000-000000000001' and kind = 'plan');
+
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', false);
 set role authenticated;
 
@@ -954,11 +965,13 @@ declare
   v_estado text;
   v_apuntes integer;
 begin
-  -- Cobro A: vencido hace 25 horas (para el ciclo de impago de más abajo).
+  -- Cobro A: el que emitió el alta, ya vencido por el fixture de arriba.
+  -- Volver a pedirlo devuelve ESE, no uno nuevo (RN-DAT-09), y por eso el
+  -- `due_at` que se pasa aquí se ignora: el periodo ya estaba cobrado.
   v_charge_a := public.generate_monthly_charge(v_sub_a, now() - interval '25 hours');
   insert into h7_ctx values ('charge_a', v_charge_a::text);
 
-  -- Cobro B: todavía en plazo.
+  -- Cobro B: el suyo, todavía en plazo (RN-FIN-01b, 7 días por defecto).
   v_charge_b := public.generate_monthly_charge(v_sub_b, now() + interval '10 days');
   insert into h7_ctx values ('charge_b', v_charge_b::text);
 

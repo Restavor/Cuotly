@@ -133,6 +133,7 @@ export const AUDIT_ACTIONS = [
   "request.submitted",
   "session.revoked",
   "space.created",
+  "space.payment_term_changed",
   "space.renamed",
   "space.timezone_changed",
   "subscription.plan_change_cancelled",

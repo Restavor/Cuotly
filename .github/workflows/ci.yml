@@ -176,6 +176,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/conversion_a_solicitud.sql
 
+      - name: "Migraciones 52 y 53 — Verificar que la cola se llena sola y el cobro no nace vencido (RN-FIN-01, RN-FIN-01b, RN-DAT-04, CA-17)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/cola_llena_y_vencimiento.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

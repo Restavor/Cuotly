@@ -952,6 +952,19 @@ en la fecha de renovación y a las +24 h / +72 h.
 `run_dunning_sweep()` lo hacen, y la cola los despacha. Queda dicho aquí
 porque durante tres hitos esta línea decía lo contrario.
 
+> **Corrección del 08/09/2026 — no estaba resuelto.** Esta línea era falsa
+> y conviene que se quede escrita como aviso. La cola sabía **despachar**,
+> pero **nadie la llenaba**: no había una sola llamada a
+> `enqueue_scheduled_job()` en todo el repositorio, ni en SQL ni en
+> TypeScript, así que `scheduled_jobs` llevaba vacía desde el primer día y
+> el cron de Vercel entraba cada mañana a reclamar de una tabla vacía. La
+> mensualidad de RN-FIN-01 no se habría emitido jamás.
+>
+> Se cierra en el punto 24, y con él tres averías más que este silencio
+> tapaba. La lección para el propio ROADMAP: "la función existe" no es
+> "la función se ejecuta", y sin un test que recorra el camino entero
+> —encolar, reclamar, ejecutar— la diferencia no se ve.
+
 ---
 
 21. **Los destinos que faltaban del menú, y "Más"** (03/09/2026). De los
@@ -1160,6 +1173,57 @@ porque durante tres hitos esta línea decía lo contrario.
       ejercitarse.
 
     **Con esto §66 y §68 quedan cerrados.**
+
+24. **La cola que nadie llenaba** (08/09/2026, migraciones 52 y 53). El
+    punto de arriba daba por cerrado en la migración 41 lo que no lo
+    estaba. Cuatro averías encadenadas, y las tres últimas solo se veían
+    porque la primera las tapaba.
+
+    - **Nadie llamaba a `enqueue_scheduled_job()`.** Ni SQL ni TypeScript.
+      `scheduled_jobs` estaba vacía, el cron reclamaba de una tabla vacía y
+      se iba. Ni RN-FIN-01 (mensualidad), ni RN-FIN-10/11 (impago), ni
+      RN-EST-09/10 (final de servicio), ni §6.4 (cambio de plan
+      programado), ni los avisos del §18 se disparaban solos. Lo arregla
+      `enqueue_due_scheduled_jobs()`, y el llenado se mete **dentro** de
+      `runScheduledJobs()` para que no exista la forma de vaciar la cola
+      sin haberla llenado: dejarlo como un paso más que la ruta tiene que
+      acordarse de dar es exactamente como se perdió la primera vez.
+
+    - **Y aunque se hubiera llenado, no habría cobrado.**
+      `generate_monthly_charge_internal()` pasaba por
+      `get_or_create_consumption_cycle()`, la **pública**, que comprueba
+      `is_space_member()`. El proceso de la cola entra como `service_role`
+      y no es miembro de ningún espacio, así que la excepción caía en el
+      `exception when others then null` del barrido y **nadie se
+      enteraba**. Por eso el test que más importa de los nuevos es el que
+      ejecuta el barrido **sin identidad**, como el cron de verdad.
+
+    - **Y aunque hubiera cobrado, el cobro nacía vencido.** `due_at =
+      cycle_start`, así que RN-FIN-10 pausaba el restaurante 24 h después
+      de emitirle la cuota. El PRD no fija plazo de pago y no se ha
+      inventado uno: es `spaces.payment_term_days`, configurable, 7 días
+      por defecto (RN-FIN-01b, decisión 15).
+
+    - **Y habría cobrado de más.** `create_plan_subscription()` abría la
+      bolsa y la permanencia pero **no emitía la mensualidad del primer
+      ciclo**. Una mejora de plan dentro de ese ciclo cobra la
+      **diferencia** (RN-COM-15) contra una base inexistente, y el barrido
+      emitía después la mensualidad **entera** del plan nuevo por el mismo
+      periodo. Restavor tenía el caso vivo: 299,96 € cobrados y 399 € a
+      punto de emitirse encima.
+
+    De propina, mirando esos datos salió una quinta:
+    `change_plan_immediately()` insertaba el cobro de la diferencia en
+    `charges` y **ninguna fila en `financial_entries`**. Como `charges` no
+    tiene columna de estado a propósito —lo deriva `charge_status()`
+    sumando apuntes—, ese cobro salía **saldado sin que nadie hubiera
+    pagado**, el ciclo de impago no lo miraba nunca y no contaba en el
+    panel. La migración 53 lo arregla y repara los cobros ya emitidos así.
+
+    Cubierto por `supabase/tests/cola_llena_y_vencimiento.sql`, con un
+    barrido en falso-cerrado que recorre **todos** los cobros y falla si
+    alguno no tiene su apunte: esta avería se encontró mirando los datos,
+    no leyendo el código, y la próxima tiene que romper el test.
 
 ## FASE 1 — Operación real de Restavor
 

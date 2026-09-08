@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 04/09/2026), con las 51 migraciones del
+// (generate_typescript_types, 08/09/2026), con las 53 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -3044,6 +3044,7 @@ export type Database = {
           created_by: string
           id: string
           name: string
+          payment_term_days: number
           slug: string
           tax_rate_percent: number
           timezone: string
@@ -3053,6 +3054,7 @@ export type Database = {
           created_by: string
           id?: string
           name: string
+          payment_term_days?: number
           slug: string
           tax_rate_percent?: number
           timezone?: string
@@ -3062,6 +3064,7 @@ export type Database = {
           created_by?: string
           id?: string
           name?: string
+          payment_term_days?: number
           slug?: string
           tax_rate_percent?: number
           timezone?: string
@@ -4041,6 +4044,10 @@ export type Database = {
         }
         Returns: number
       }
+      enqueue_due_scheduled_jobs: {
+        Args: { p_run_after?: string }
+        Returns: number
+      }
       enqueue_scheduled_job: {
         Args: {
           p_dedupe_key?: string
@@ -4561,6 +4568,10 @@ export type Database = {
       }
       set_space_name: {
         Args: { p_name: string; p_space_id: string }
+        Returns: boolean
+      }
+      set_space_payment_term: {
+        Args: { p_days: number; p_space_id: string }
         Returns: boolean
       }
       set_space_timezone: {

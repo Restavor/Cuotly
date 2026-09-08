@@ -37,6 +37,10 @@ async function rpc<T>(client: AnyClient, fn: string, args: Record<string, unknow
 
 export function createSupabaseQueueGateway(client: AnyClient): QueueGateway {
   return {
+    // La pieza que faltaba desde la migración 41: sin esta llamada
+    // `scheduled_jobs` se quedaba vacía y reclamar no devolvía nunca nada.
+    enqueueDueJobs: () => rpc<number>(client, "enqueue_due_scheduled_jobs", {}),
+
     claimScheduledJobs: (limit) =>
       rpc<readonly ScheduledJobRow[]>(client, "claim_scheduled_jobs", { p_limit: limit }),
 

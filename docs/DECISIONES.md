@@ -115,6 +115,42 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    comprueba también la familia `invitation`, la única de las tres que nombra la confirmación que no
    se estaba verificando) y dicho en pantalla en `auditWhatYouSee.admin`.
 
+---
+
+## 2026-09-08
+
+15. **El plazo de pago de una mensualidad: dato del espacio, no regla escrita en el
+   código** (08/09/2026). Al poner en marcha la cola periódica salió que
+   `generate_monthly_charge_internal()` emitía la mensualidad con `due_at = cycle_start`,
+   es decir **ya vencida**: RN-FIN-10 pausaría el restaurante veinticuatro horas después de
+   emitírsela. El PRD no fija ningún plazo de pago —RN-FIN-01 dice "en la fecha de
+   renovación" y nada más— y `CLAUDE.md` prohíbe inventar umbrales.
+
+   Bosco decide: **no se escribe un número en el código, se añade configuración**. Nace
+   `spaces.payment_term_days`, días naturales entre la emisión y el vencimiento, **7 por
+   defecto**, que el propietario cambia desde Ajustes (`set_space_payment_term()`,
+   `manage_space`, auditada). El plazo se congela en `charges.due_at` al emitir, igual que
+   el tipo impositivo: cambiarlo mueve las mensualidades futuras y ninguna de las ya
+   emitidas (P4). Se incorpora al PRD como **RN-FIN-01b** y está en la migración
+   `20260908000052`.
+
+   Con esto sigue **sin** existir el resto del bloque legal y fiscal (numeración,
+   retenciones, jurisdicción): esto es solo cuándo vence un cobro, no cómo se factura.
+
+16. **Los datos de prueba del restaurante «Prueba» se reinician** (08/09/2026). Ese
+   establecimiento tenía el ciclo 08/09–08/10 con **solo** el cobro de la mejora de plan
+   (299,96 € de base) y sin la mensualidad base de Básico, porque `create_plan_subscription()`
+   no la emitía. En cuanto la cola empezara a andar se le habría emitido encima la
+   mensualidad completa de Impulso: 399 € sobre 299,96 € ya cobrados. Bosco decide
+   reiniciarlo en vez de cuadrarlo a mano.
+
+   Hecho el 08/09/2026 sobre el proyecto: el cobro se **perdona** con su apunte de signo
+   contrario (`waiver`) y la suscripción pasa a `cancelled`, las dos cosas con su fila de
+   auditoría y su motivo. **No se borró nada físicamente** (`CLAUDE.md`), y el
+   establecimiento se conserva para poder volver a asignarle un plan.
+
+---
+
 ### Pendiente de completar (no bloquea la Fase 1)
 
 9. **Redondeo de consumos prorrateados — resuelto por el PRD** (01/09/2026). Este punto

@@ -14,6 +14,7 @@ import {
 
 function gateway(overrides: Partial<QueueGateway> = {}): QueueGateway {
   return {
+    enqueueDueJobs: async () => 0,
     claimScheduledJobs: async () => [],
     runScheduledJob: async () => 0,
     finishScheduledJob: async () => {},
@@ -115,13 +116,71 @@ describe("La cola de barridos", () => {
     { id: "j2", space_id: "e1", kind: "dunning_sweep", attempts: 1 },
   ];
 
+  /**
+   * Reclamar devuelve una tanda y después nada, que es lo que hace la
+   * base: `claim_scheduled_jobs()` marca lo que reparte como `running`, y
+   * un segundo reclamo ya no lo devuelve.
+   */
+  function porTandas(...tandas: readonly ScheduledJobRow[][]) {
+    let i = 0;
+    return async () => tandas[i++] ?? [];
+  }
+
   it("ejecuta cada trabajo reclamado", async () => {
     const run = vi.fn(async () => 3);
     const result = await runScheduledJobs(
-      gateway({ claimScheduledJobs: async () => trabajos, runScheduledJob: run }),
+      gateway({ claimScheduledJobs: porTandas(trabajos), runScheduledJob: run }),
     );
     expect(run).toHaveBeenCalledTimes(2);
-    expect(result).toEqual({ ran: 2, failed: 0 });
+    expect(result).toEqual({ enqueued: 0, ran: 2, failed: 0 });
+  });
+
+  /**
+   * RN-FIN-01 · la avería que esta tanda de cambios arregla, dicha como
+   * test: vaciar la cola sin haberla llenado antes es lo que dejó
+   * `scheduled_jobs` vacía desde la migración 41, y con ella la
+   * mensualidad sin emitir para siempre.
+   */
+  it("RN-FIN-01: llena la cola ANTES de reclamar, no después", async () => {
+    const orden: string[] = [];
+    const result = await runScheduledJobs(
+      gateway({
+        enqueueDueJobs: async () => {
+          orden.push("llenar");
+          return 4;
+        },
+        claimScheduledJobs: async () => {
+          orden.push("reclamar");
+          return [];
+        },
+      }),
+    );
+
+    expect(orden).toEqual(["llenar", "reclamar"]);
+    expect(result.enqueued).toBe(4);
+  });
+
+  it("sigue reclamando tandas hasta agotar la cola", async () => {
+    const run = vi.fn(async () => 1);
+    const segunda: ScheduledJobRow[] = [
+      { id: "j3", space_id: "e2", kind: "lifecycle_sweep", attempts: 1 },
+    ];
+    const result = await runScheduledJobs(
+      gateway({ claimScheduledJobs: porTandas(trabajos, segunda), runScheduledJob: run }),
+      2,
+    );
+    expect(run).toHaveBeenCalledTimes(3);
+    expect(result).toEqual({ enqueued: 0, ran: 3, failed: 0 });
+  });
+
+  it("una cola que no se agota nunca se corta en el tope, no se queda dando vueltas", async () => {
+    const run = vi.fn(async () => 1);
+    const result = await runScheduledJobs(
+      gateway({ claimScheduledJobs: async () => trabajos, runScheduledJob: run }),
+      2,
+      5,
+    );
+    expect(result.ran).toBe(6);
   });
 
   it("un trabajo que falla no tumba a los siguientes y queda marcado con su error", async () => {
@@ -131,9 +190,13 @@ describe("La cola de barridos", () => {
       return 1;
     });
     const result = await runScheduledJobs(
-      gateway({ claimScheduledJobs: async () => trabajos, runScheduledJob: run, finishScheduledJob: finish }),
+      gateway({
+        claimScheduledJobs: porTandas(trabajos),
+        runScheduledJob: run,
+        finishScheduledJob: finish,
+      }),
     );
-    expect(result).toEqual({ ran: 1, failed: 1 });
+    expect(result).toEqual({ enqueued: 0, ran: 1, failed: 1 });
     expect(finish).toHaveBeenCalledWith("j1", false, "el restaurante no tiene plan");
   });
 });

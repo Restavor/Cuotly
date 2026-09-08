@@ -1306,6 +1306,16 @@ export const es = {
     timezoneUnchanged: "El espacio ya estaba en esa zona horaria.",
     timezoneWarning:
       "Afecta al reloj contractual y al de Menú Diario. El reloj de soporte no se mueve: su zona es Europa/Madrid y es un reloj distinto (§132).",
+
+    paymentTermLabel: "Plazo de pago de las mensualidades (días naturales)",
+    paymentTermHint:
+      "Días desde que se emite una mensualidad hasta que vence. Pasadas 24 h del vencimiento el restaurante queda pausado por impago, y a las 72 h suspendido (RN-FIN-10 y RN-FIN-11).",
+    paymentTermSubmit: "Guardar el plazo de pago",
+    paymentTermPending: "Guardando…",
+    paymentTermDone:
+      "Plazo de pago guardado. Se aplica a las mensualidades futuras: las ya emitidas conservan su vencimiento.",
+    paymentTermUnchanged: "El plazo de pago ya era ese.",
+
     fixedRulesTitle: "Lo que no se configura, y por qué",
     fixedRules: [
       "Permanencia de mantenimiento: 3 meses, fijada por RN-COM-04. No hay bolsas de horas.",
@@ -1487,6 +1497,7 @@ export const es = {
       "request.submitted": "Solicitud enviada",
       "session.revoked": "Sesión cerrada",
       "space.created": "Espacio creado",
+      "space.payment_term_changed": "Plazo de pago cambiado",
       "space.renamed": "Espacio renombrado",
       "space.timezone_changed": "Zona horaria cambiada",
       "subscription.plan_change_cancelled": "Cambio de plan anulado",

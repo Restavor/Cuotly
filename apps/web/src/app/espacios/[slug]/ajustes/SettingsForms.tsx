@@ -6,7 +6,12 @@ import { Button, Field, Select, TextArea } from "@/components/ui";
 import { es } from "@/i18n/es";
 
 import { INITIAL_SETTINGS } from "./action-state";
-import { changeSpaceTimezone, saveNotificationPreferences, saveSpaceName } from "./actions";
+import {
+  changeSpacePaymentTerm,
+  changeSpaceTimezone,
+  saveNotificationPreferences,
+  saveSpaceName,
+} from "./actions";
 
 /**
  * HU-36 · los formularios de Ajustes.
@@ -126,6 +131,50 @@ export function TimezoneForm({
         unchanged={state.unchanged}
         hecho={es.settings.timezoneDone}
         igual={es.settings.timezoneUnchanged}
+      />
+    </form>
+  );
+}
+
+/**
+ * RN-FIN-01b · el plazo de pago de las mensualidades.
+ *
+ * El PRD no fija ninguno, así que no lo fija tampoco una constante
+ * escondida: es un dato del espacio. El `min`/`max` del campo es cortesía
+ * —`set_space_payment_term()` vuelve a comprobar el rango— y el aviso de
+ * que no toca lo ya emitido se enseña antes de pulsar, no después.
+ */
+export function PaymentTermForm({
+  spaceId,
+  days,
+}: {
+  spaceId: string;
+  days: number;
+}) {
+  const [state, action, pending] = useActionState(changeSpacePaymentTerm, INITIAL_SETTINGS);
+
+  return (
+    <form action={action} className="mt-4 space-y-2">
+      <input type="hidden" name="spaceId" value={spaceId} />
+      <Field
+        label={es.settings.paymentTermLabel}
+        name="paymentTermDays"
+        type="number"
+        defaultValue={String(days)}
+        required
+        min={0}
+        max={90}
+        hint={es.settings.paymentTermHint}
+      />
+      <Button type="submit" disabled={pending}>
+        {pending ? es.settings.paymentTermPending : es.settings.paymentTermSubmit}
+      </Button>
+      <Aviso
+        error={state.error}
+        done={state.done}
+        unchanged={state.unchanged}
+        hecho={es.settings.paymentTermDone}
+        igual={es.settings.paymentTermUnchanged}
       />
     </form>
   );

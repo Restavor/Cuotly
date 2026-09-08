@@ -994,6 +994,18 @@ end $$;
 -- y el servicio volvía a estar en marcha con cero pagos y cero auditoría,
 -- con los contadores todavía pausados.
 -- ============================================================
+-- Desde la migración 52 el alta del plan ya emitió la mensualidad de este
+-- ciclo (RN-FIN-01) con el plazo de pago del espacio (RN-FIN-01b), así que
+-- pedirla otra vez devuelve ESA y el `due_at` que se le pase se ignora
+-- (RN-DAT-09). Para el impago hace falta que esté vencida hace 80 horas:
+-- se le mueve el vencimiento desde fuera de la aplicación, que es lo que un
+-- fixture puede hacer y la aplicación no.
+update public.charges set due_at = now() - interval '80 hours'
+where subscription_id = (
+  select id from public.subscriptions
+  where establishment_id = '84000000-0000-0000-0000-000000000001'
+    and kind = 'plan' and status = 'active');
+
 select set_config('request.jwt.claim.sub', '80000000-0000-0000-0000-000000000001', false);
 set role authenticated;
 

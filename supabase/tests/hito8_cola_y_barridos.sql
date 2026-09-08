@@ -139,9 +139,17 @@ do $$
 declare
   v_emitidos integer;
 begin
-  if (select count(*) from public.charges where establishment_id = 'c5000000-0000-0000-0000-000000000001') <> 0 then
-    raise exception 'FIXTURE: no debería haber cobros todavía' using errcode = 'assert_failure';
-  end if;
+  -- Desde la migración 52 el alta del plan ya emite la mensualidad de su
+  -- primer ciclo (RN-FIN-01), así que el barrido no tendría nada que hacer.
+  -- Lo que este bloque prueba es lo OTRO: que el barrido emita el cobro de
+  -- un ciclo que no lo tiene —el caso de la renovación—, y para eso el
+  -- fixture deja el ciclo sin cobrar. Borrar cobros es de fixture, no de
+  -- operativa: la aplicación no borra registros de negocio (CLAUDE.md).
+  delete from public.financial_entries
+  where charge_id in (select id from public.charges
+                      where establishment_id = 'c5000000-0000-0000-0000-000000000001');
+  delete from public.charges
+  where establishment_id = 'c5000000-0000-0000-0000-000000000001';
 
   v_emitidos := public.run_monthly_charges('c2000000-0000-0000-0000-000000000001');
   if v_emitidos <> 1 then

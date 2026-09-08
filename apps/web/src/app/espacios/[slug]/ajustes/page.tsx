@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import {
   NotificationPreferencesForm,
+  PaymentTermForm,
   SpaceNameForm,
   TimezoneForm,
   type NotificationPreference,
@@ -67,7 +68,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name, slug, timezone")
+    .select("id, name, slug, timezone, payment_term_days")
     .eq("slug", slug)
     .maybeSingle();
   if (!space) notFound();
@@ -176,15 +177,26 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         <p className="mb-3 text-sm text-text-secondary">{es.settings.contractHint}</p>
 
         {canManageSpace ? (
-          <TimezoneForm
-            spaceId={space.id}
-            timezone={space.timezone}
-            zones={zonasHorarias(space.timezone)}
-          />
+          <>
+            <TimezoneForm
+              spaceId={space.id}
+              timezone={space.timezone}
+              zones={zonasHorarias(space.timezone)}
+            />
+            {/* RN-FIN-01b · el plazo de pago, que el PRD no fija y por eso
+                es un dato del espacio y no una constante escondida. */}
+            <PaymentTermForm spaceId={space.id} days={space.payment_term_days} />
+          </>
         ) : (
-          <p className="mb-4 text-sm text-text">
-            <span className="font-semibold">{es.settings.timezoneLabel}:</span> {space.timezone}
-          </p>
+          <>
+            <p className="mb-4 text-sm text-text">
+              <span className="font-semibold">{es.settings.timezoneLabel}:</span> {space.timezone}
+            </p>
+            <p className="mb-4 text-sm text-text">
+              <span className="font-semibold">{es.settings.paymentTermLabel}:</span>{" "}
+              {space.payment_term_days}
+            </p>
+          </>
         )}
 
         <h3 className="mt-4 mb-2 text-sm font-semibold text-text">

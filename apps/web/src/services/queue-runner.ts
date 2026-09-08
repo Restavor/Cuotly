@@ -10,6 +10,9 @@
  *
  * Qué hace y qué no:
  *
+ *   · Llena la cola antes de vaciarla (`enqueue_due_scheduled_jobs()`).
+ *     No es un detalle: hasta la migración 52 nadie la llenaba, así que
+ *     este proceso reclamaba trabajos de una tabla vacía y se iba.
  *   · Los barridos que solo necesitan la base de datos —mensualidades,
  *     impago, final de servicio, umbrales de consumo— los ejecuta SQL
  *     (`run_scheduled_job()`), y aquí solo se despachan.
@@ -70,6 +73,12 @@ export interface DeliveryRow {
 }
 
 export interface QueueGateway {
+  /**
+   * Llena la cola con los barridos de SQL que le tocan a cada espacio.
+   * Deduplica por hora en la base, así que llamarla de más no encola de
+   * más (CA-17).
+   */
+  enqueueDueJobs(): Promise<number>;
   claimScheduledJobs(limit: number): Promise<readonly ScheduledJobRow[]>;
   runScheduledJob(jobId: string): Promise<number>;
   finishScheduledJob(jobId: string, ok: boolean, error: string | null): Promise<void>;
@@ -181,38 +190,62 @@ export async function runSlaSweep(
 // ---------------------------------------------------------------------
 
 export interface ScheduledJobsResult {
+  readonly enqueued: number;
   readonly ran: number;
   readonly failed: number;
 }
 
 /**
- * Reclama y ejecuta los trabajos de cola pendientes. Un trabajo que falla
- * no puede tumbar a los demás ni quedarse en `running` para siempre: se
- * marca como fallido con su error.
+ * Llena la cola y la vacía, en ese orden, y las dos cosas están aquí a
+ * propósito.
+ *
+ * Durante toda la vida de la migración 41 esta función solo hacía lo
+ * segundo: reclamaba trabajos de una tabla que nadie llenaba, así que
+ * `scheduled_jobs` estaba vacía desde el primer día y el cron entraba cada
+ * mañana a no hacer nada. La mensualidad de RN-FIN-01 no se habría emitido
+ * jamás. Poner el llenado DENTRO —en vez de dejarlo como un paso más que
+ * la ruta tiene que acordarse de dar— es lo que impide que vuelva a
+ * pasar: no hay forma de vaciar la cola sin haberla llenado antes.
+ *
+ * Se reclama por tandas hasta agotarla, no una sola tanda: con cuatro
+ * barridos por espacio, un `limit` de diez dejaba trabajos para el día
+ * siguiente en cuanto hubiera tres espacios, y "el día siguiente" en un
+ * cobro mensual es un día de retraso. El tope de `maxJobs` está para que
+ * una cola atascada no convierta la tanda en infinita.
+ *
+ * Un trabajo que falla no puede tumbar a los demás ni quedarse en
+ * `running` para siempre: se marca como fallido con su error.
  */
 export async function runScheduledJobs(
   gateway: QueueGateway,
   limit = 10,
+  maxJobs = 200,
 ): Promise<ScheduledJobsResult> {
-  const jobs = await gateway.claimScheduledJobs(limit);
+  const enqueued = await gateway.enqueueDueJobs();
+
   let ran = 0;
   let failed = 0;
 
-  for (const job of jobs) {
-    try {
-      await gateway.runScheduledJob(job.id);
-      ran += 1;
-    } catch (error) {
-      failed += 1;
-      await gateway.finishScheduledJob(
-        job.id,
-        false,
-        error instanceof Error ? error.message : String(error),
-      );
+  while (ran + failed < maxJobs) {
+    const jobs = await gateway.claimScheduledJobs(limit);
+    if (jobs.length === 0) break;
+
+    for (const job of jobs) {
+      try {
+        await gateway.runScheduledJob(job.id);
+        ran += 1;
+      } catch (error) {
+        failed += 1;
+        await gateway.finishScheduledJob(
+          job.id,
+          false,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
     }
   }
 
-  return { ran, failed };
+  return { enqueued, ran, failed };
 }
 
 // ---------------------------------------------------------------------
