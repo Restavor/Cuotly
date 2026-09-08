@@ -116,7 +116,7 @@ export function AppShell({
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background text-text">
+    <div className="min-h-screen bg-soft-surface text-text lg:flex lg:h-screen lg:p-6">
       <a
         href="#contenido"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:outline focus:outline-2 focus:outline-cuotly-green"
@@ -125,221 +125,247 @@ export function AppShell({
       </a>
 
       {/*
-        §20.2 · el menú del espacio. Fijo a la izquierda y con su propio
-        desplazamiento: la lista tiene catorce destinos y en una pantalla
-        de portátil no caben sin que el pie —el Agente y Ajustes— se salga.
+        §20.6 · en escritorio la aplicación es UNA tarjeta con esquinas
+        redondeadas sobre el fondo de la página, no un tablero a sangre. Eso
+        obliga a que el desplazamiento sea interno: el marco mide lo que la
+        ventana (`lg:h-screen`) y quien se desplaza es el `main`, no el
+        documento. Si el documento se desplazara, la esquina inferior del
+        menú se iría fuera de la vista y la tarjeta dejaría de ser una
+        tarjeta.
+
+        Nada de esto pasa por debajo de `lg`: en móvil no hay menú lateral
+        que enmarcar, la barra inferior es `fixed` y el desplazamiento
+        vuelve a ser el del documento, que es el que espera un teléfono.
       */}
-      <aside className="sticky top-0 hidden h-screen w-[264px] shrink-0 flex-col border-r border-border bg-surface lg:flex">
-        <div className="px-5 pb-4 pt-6">
-          <Link
-            href={`/espacios/${spaceSlug}`}
-            className="block rounded-lg focus:outline focus:outline-2 focus:outline-cuotly-green"
-          >
-            <span className="block text-2xl font-bold leading-none tracking-tight text-primary-dark">
-              {es.common.appName}
-            </span>
-            <span className="mt-1 block text-xs text-text-secondary">{es.common.appOwner}</span>
-          </Link>
-        </div>
-
+      <div className="flex min-h-screen w-full min-w-0 bg-surface lg:min-h-0 lg:flex-1 lg:overflow-hidden lg:rounded-card lg:border lg:border-border lg:shadow-sm">
         {/*
-          §20.1 · la acción persistente "Cambiar de espacio". Es UN control,
-          no dos: la caja entera lleva al selector de contexto. Dos enlaces
-          al mismo sitio, uno encima del otro, es un tabulador de más para
-          quien navega con teclado y dos veces lo mismo para quien escucha.
+          §20.2 · el menú del espacio, sobre verde oscuro. Con su propio
+          desplazamiento: la lista tiene catorce destinos y en una pantalla
+          de portátil no caben sin que el pie —el Agente y Ajustes— se salga.
+
+          Ya no necesita `sticky top-0 h-screen`: es un hijo del marco, que
+          mide lo que la ventana, así que se estira solo.
         */}
-        <div className="px-3">
-          <Link
-            href="/"
-            aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
-            className="block rounded-[10px] border border-border transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-          >
-            <span className="flex items-center gap-2 px-3 py-2.5">
-              <span aria-hidden="true" className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-text">{spaceName}</span>
-                <span className="block truncate text-xs text-text-secondary">{roleLabel}</span>
-              </span>
-              <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-text-secondary" />
-            </span>
-            <span
-              aria-hidden="true"
-              className="flex items-center justify-center gap-1.5 border-t border-border px-3 py-2 text-xs font-medium text-cuotly-green"
-            >
-              <Icon name="switchSpace" className="h-3.5 w-3.5" />
-              {es.nav.switchSpace}
-            </span>
-          </Link>
-        </div>
-
-        <nav
-          aria-label={es.nav.menuLabel}
-          className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-4 pt-4"
-        >
-          <ul className="flex flex-col gap-0.5">
-            {menu.main.map((destination) => (
-              <li key={destination.key}>
-                <SidebarLink destination={destination} active={active?.key === destination.key} />
-              </li>
-            ))}
-          </ul>
-
-          <ul className="mt-auto flex flex-col gap-0.5 border-t border-border pt-3">
-            {menu.footer.map((destination) => (
-              <li key={destination.key}>
-                <SidebarLink destination={destination} active={active?.key === destination.key} />
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </aside>
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-surface px-4 py-3 lg:px-6">
-          {/*
-            Miga de pan: dónde está quien mira. En móvil no hay menú lateral
-            que lo diga, así que el nombre del espacio ocupa su sitio.
-          */}
-          <nav aria-label={es.nav.breadcrumbLabel} className="flex min-w-0 items-center gap-2">
+        <aside className="hidden w-[240px] shrink-0 flex-col bg-primary-dark lg:flex">
+          <div className="px-5 pb-5 pt-6">
             <Link
               href={`/espacios/${spaceSlug}`}
-              className="rounded p-1 text-text-secondary hover:text-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+              className="block rounded-lg focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
-              <Icon name="home" className="h-4 w-4" title={es.nav.home} />
+              <span className="block text-2xl font-bold leading-none tracking-tight text-surface">
+                {es.common.appName}
+              </span>
+              <span className="mt-1.5 block text-xs text-sidebar-text">{es.common.appOwner}</span>
             </Link>
-            <span aria-hidden="true" className="text-border lg:hidden">
-              /
-            </span>
-            <span className="truncate text-sm font-medium lg:hidden">{spaceName}</span>
-            {active === null ? null : (
-              <>
-                <Icon name="chevronRight" className="hidden h-3.5 w-3.5 text-text-secondary lg:block" />
-                <span className="hidden truncate text-sm font-medium lg:block">{active.label}</span>
-              </>
-            )}
-          </nav>
-
-          <button
-            ref={searchTrigger}
-            type="button"
-            data-testid="search-trigger"
-            aria-label={es.search.title}
-            onClick={() => setSearchOpen(true)}
-            className="ml-auto flex items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm text-text-secondary transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green lg:w-72"
-          >
-            <Icon name="search" className="h-4 w-4" />
-            <span className="hidden sm:inline">{es.search.open}</span>
-            <kbd className="ml-auto hidden rounded bg-soft-surface px-1.5 py-0.5 text-xs lg:inline">
-              {es.search.shortcut}
-            </kbd>
-          </button>
-
-          <div className="relative">
-            <button
-              type="button"
-              data-testid="notifications-trigger"
-              aria-label={`${es.notifications.open}${unread > 0 ? ` (${unread} ${es.notifications.unreadLabel})` : ""}`}
-              aria-expanded={notificationsOpen}
-              onClick={() => setNotificationsOpen((open) => !open)}
-              className="relative rounded-[10px] border border-border p-2 text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-            >
-              <Icon name="bell" className="h-5 w-5" />
-              {unread > 0 ? (
-                <span
-                  data-testid="unread-count"
-                  className="absolute -right-1.5 -top-1.5 min-w-[18px] rounded-full bg-danger px-1 text-center text-[11px] font-semibold leading-[18px] text-surface"
-                >
-                  {unread}
-                </span>
-              ) : null}
-            </button>
-
-            {notificationsOpen ? (
-              <section
-                data-testid="notifications-panel"
-                aria-label={es.notifications.title}
-                className="absolute right-0 top-full z-40 mt-2 w-80 rounded-[20px] border border-border bg-surface p-3 shadow-lg"
-              >
-                <h2 className="mb-2 px-1 text-sm font-semibold text-primary-dark">
-                  {es.notifications.title}
-                </h2>
-                {notifications.length === 0 ? (
-                  <EmptyReason
-                    testId="notifications-empty"
-                    reason="no_data_yet"
-                    title={es.notifications.emptyTitle}
-                  />
-                ) : (
-                  <ul className="flex flex-col gap-1">
-                    {notifications.map((n) => (
-                      <li key={n.id}>
-                        <Link
-                          href={n.deepLink}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
-                        >
-                          {n.readAt === null ? (
-                            <span
-                              aria-hidden="true"
-                              className="h-1.5 w-1.5 shrink-0 rounded-full bg-cuotly-green"
-                            />
-                          ) : null}
-                          {es.notifications.events[n.eventType]}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ) : null}
           </div>
 
           {/*
-            §20.5 · el botón global Crear. Sigue siendo un `<details>`: se
-            abre con Enter y con el ratón sin una línea de JavaScript, que
-            es lo que hace que CA-22 se cumpla sin depender de la
-            hidratación.
+            §20.1 · la acción persistente "Cambiar de espacio". Es UN control,
+            no dos: la caja entera lleva al selector de contexto. Dos enlaces
+            al mismo sitio, uno encima del otro, es un tabulador de más para
+            quien navega con teclado y dos veces lo mismo para quien escucha.
           */}
-          {creates.length > 0 ? (
-            <details data-testid="create-menu" className="relative">
-              <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-[10px] bg-primary px-3 py-2 text-sm font-medium text-surface hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green [&::-webkit-details-marker]:hidden">
-                <Icon name="plus" className="h-4 w-4" />
-                {es.create.label}
-                <Icon name="chevronDown" className="h-4 w-4" />
-              </summary>
-              <ul className="absolute right-0 z-40 mt-2 w-64 rounded-[20px] border border-border bg-surface p-2 shadow-lg">
-                {creates.map((option) => (
-                  <li key={option.key}>
-                    <Link
-                      href={option.href}
-                      className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
-                    >
-                      <Icon
-                        name={DESTINATION_ICONS[option.key] ?? "plus"}
-                        className="h-4 w-4 text-text-secondary"
-                      />
-                      {option.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ) : null}
+          <div className="px-3">
+            <Link
+              href="/"
+              aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
+              className="block rounded-field border border-sidebar-border bg-sidebar-raised transition-colors hover:border-accent-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+            >
+              <span className="flex items-center gap-2 px-3 py-2.5">
+                <span aria-hidden="true" className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-surface">{spaceName}</span>
+                  <span className="block truncate text-xs text-sidebar-text">{roleLabel}</span>
+                </span>
+                <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-sidebar-text" />
+              </span>
+              <span
+                aria-hidden="true"
+                className="flex items-center justify-center gap-1.5 border-t border-sidebar-border px-3 py-2 text-xs font-medium text-sidebar-text"
+              >
+                <Icon name="switchSpace" className="h-3.5 w-3.5" />
+                {es.nav.switchSpace}
+              </span>
+            </Link>
+          </div>
 
-          <Link
-            href="/cuenta/sesiones"
-            aria-label={`${es.nav.account} · ${userLabel}`}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft-surface text-sm font-semibold text-primary-dark hover:bg-border focus:outline focus:outline-2 focus:outline-cuotly-green"
+          <nav
+            aria-label={es.nav.menuLabel}
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-5 pt-5"
           >
-            <span aria-hidden="true">{userInitial}</span>
-          </Link>
-        </header>
+            <ul className="flex flex-col gap-0.5">
+              {menu.main.map((destination) => (
+                <li key={destination.key}>
+                  <SidebarLink destination={destination} active={active?.key === destination.key} />
+                </li>
+              ))}
+            </ul>
 
-        <main
-          id="contenido"
-          aria-label={es.nav.mainLabel}
-          className="min-w-0 flex-1 px-4 pb-24 pt-6 lg:px-8 lg:pb-10"
-        >
-          {children}
-        </main>
+            {/*
+              El pie no lleva línea divisoria: sobre el verde oscuro el hueco
+              de `mt-auto` ya lo separa, y una línea más solo añadiría ruido.
+            */}
+            <ul className="mt-auto flex flex-col gap-0.5 pt-6">
+              {menu.footer.map((destination) => (
+                <li key={destination.key}>
+                  <SidebarLink destination={destination} active={active?.key === destination.key} />
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </aside>
+
+        <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden">
+          <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-surface px-4 py-3 lg:px-6">
+            {/*
+              Miga de pan: dónde está quien mira. En móvil no hay menú lateral
+              que lo diga, así que el nombre del espacio ocupa su sitio.
+            */}
+            <nav aria-label={es.nav.breadcrumbLabel} className="flex min-w-0 items-center gap-2">
+              <Link
+                href={`/espacios/${spaceSlug}`}
+                className="rounded p-1 text-text-secondary hover:text-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                <Icon name="home" className="h-4 w-4" title={es.nav.home} />
+              </Link>
+              <span aria-hidden="true" className="text-border lg:hidden">
+                /
+              </span>
+              <span className="truncate text-sm font-medium lg:hidden">{spaceName}</span>
+              {active === null ? null : (
+                <>
+                  <Icon name="chevronRight" className="hidden h-3.5 w-3.5 text-text-secondary lg:block" />
+                  <span className="hidden truncate text-sm font-medium lg:block">{active.label}</span>
+                </>
+              )}
+            </nav>
+
+            <button
+              ref={searchTrigger}
+              type="button"
+              data-testid="search-trigger"
+              aria-label={es.search.title}
+              onClick={() => setSearchOpen(true)}
+              className="ml-auto flex items-center gap-2 rounded-field border border-border px-3 py-2 text-sm text-text-secondary transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green lg:w-72"
+            >
+              <Icon name="search" className="h-4 w-4" />
+              <span className="hidden sm:inline">{es.search.open}</span>
+              <kbd className="ml-auto hidden text-xs lg:inline">{es.search.shortcut}</kbd>
+            </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                data-testid="notifications-trigger"
+                aria-label={`${es.notifications.open}${unread > 0 ? ` (${unread} ${es.notifications.unreadLabel})` : ""}`}
+                aria-expanded={notificationsOpen}
+                onClick={() => setNotificationsOpen((open) => !open)}
+                className="relative rounded-field p-2 text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                <Icon name="bell" className="h-5 w-5" />
+                {/*
+                  El número exacto de avisos no se pinta: es un punto. Quien no
+                  lo ve NO pierde el dato —el nombre accesible del botón sigue
+                  diciendo cuántos hay (`aria-label`, arriba)—, y quien lo ve
+                  tiene el número entero a un clic, en el panel. Sin avisos no
+                  hay punto: un cero en un círculo es ruido, no dato (CA-20).
+                */}
+                {unread > 0 ? (
+                  <span
+                    aria-hidden="true"
+                    data-testid="unread-count"
+                    className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-danger"
+                  />
+                ) : null}
+              </button>
+
+              {notificationsOpen ? (
+                <section
+                  data-testid="notifications-panel"
+                  aria-label={es.notifications.title}
+                  className="absolute right-0 top-full z-40 mt-2 w-80 rounded-[20px] border border-border bg-surface p-3 shadow-lg"
+                >
+                  <h2 className="mb-2 px-1 text-sm font-semibold text-primary-dark">
+                    {es.notifications.title}
+                  </h2>
+                  {notifications.length === 0 ? (
+                    <EmptyReason
+                      testId="notifications-empty"
+                      reason="no_data_yet"
+                      title={es.notifications.emptyTitle}
+                    />
+                  ) : (
+                    <ul className="flex flex-col gap-1">
+                      {notifications.map((n) => (
+                        <li key={n.id}>
+                          <Link
+                            href={n.deepLink}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+                          >
+                            {n.readAt === null ? (
+                              <span
+                                aria-hidden="true"
+                                className="h-1.5 w-1.5 shrink-0 rounded-full bg-cuotly-green"
+                              />
+                            ) : null}
+                            {es.notifications.events[n.eventType]}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+              ) : null}
+            </div>
+
+            {/*
+              §20.5 · el botón global Crear. Sigue siendo un `<details>`: se
+              abre con Enter y con el ratón sin una línea de JavaScript, que
+              es lo que hace que CA-22 se cumpla sin depender de la
+              hidratación.
+            */}
+            {creates.length > 0 ? (
+              <details data-testid="create-menu" className="relative">
+                <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-field bg-primary px-3.5 py-2 text-sm font-medium text-surface transition-colors hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green [&::-webkit-details-marker]:hidden">
+                  <Icon name="plus" className="h-4 w-4" />
+                  {es.create.label}
+                  <Icon name="chevronDown" className="h-4 w-4" />
+                </summary>
+                <ul className="absolute right-0 z-40 mt-2 w-64 rounded-[20px] border border-border bg-surface p-2 shadow-lg">
+                  {creates.map((option) => (
+                    <li key={option.key}>
+                      <Link
+                        href={option.href}
+                        className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+                      >
+                        <Icon
+                          name={DESTINATION_ICONS[option.key] ?? "plus"}
+                          className="h-4 w-4 text-text-secondary"
+                        />
+                        {option.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+
+            <Link
+              href="/cuenta/sesiones"
+              aria-label={`${es.nav.account} · ${userLabel}`}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft-surface text-sm font-semibold text-primary-dark hover:bg-border focus:outline focus:outline-2 focus:outline-cuotly-green"
+            >
+              <span aria-hidden="true">{userInitial}</span>
+            </Link>
+          </header>
+
+          <main
+            id="contenido"
+            aria-label={es.nav.mainLabel}
+            className="min-w-0 flex-1 bg-background px-4 pb-24 pt-6 lg:overflow-y-auto lg:px-8 lg:pb-10"
+          >
+            {children}
+          </main>
+        </div>
       </div>
 
       <nav
@@ -379,19 +405,19 @@ function SidebarLink({
     <Link
       href={destination.href}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-2.5 rounded-[10px] px-3 py-2 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
+      className={`flex items-center gap-2.5 rounded-field px-3 py-2 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
         active
-          ? "bg-soft-surface font-semibold text-primary-dark"
-          : "text-text hover:bg-soft-surface"
+          ? "bg-primary font-semibold text-surface"
+          : "text-sidebar-text hover:bg-sidebar-raised hover:text-surface"
       }`}
     >
       <Icon
         name={DESTINATION_ICONS[destination.key] ?? "chevronRight"}
-        className={`h-[18px] w-[18px] shrink-0 ${active ? "text-cuotly-green" : "text-text-secondary"}`}
+        className={`h-[18px] w-[18px] shrink-0 ${active ? "text-surface" : "text-sidebar-text"}`}
       />
       <span className="min-w-0 shrink-0 truncate">{destination.label}</span>
       {destination.key === "agent" ? (
-        <span className="ml-auto shrink-0 rounded bg-soft-surface px-1 py-0.5 text-[10px] font-medium leading-4 text-text-secondary">
+        <span className="ml-auto shrink-0 rounded bg-sidebar-border px-1.5 py-0.5 text-[10px] font-medium leading-4 text-sidebar-text">
           {es.nav.agentBadge}
         </span>
       ) : null}

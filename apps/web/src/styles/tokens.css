@@ -24,6 +24,22 @@
   --color-text-secondary: #66736e;
   --color-border: #dde5e1;
 
+  /*
+   * El menú lateral de escritorio va sobre verde oscuro (§20.2). Su fondo es
+   * `primary-dark` y el destino activo `primary` —los dos ya están arriba—,
+   * así que aquí solo entran los tres tonos que NO existen en la paleta
+   * clara: sobre ese fondo, `border` y `text-secondary` se quedan por debajo
+   * del contraste mínimo y no valen.
+   *
+   * Los tres se midieron sobre la maqueta, no se eligieron a ojo, y los tres
+   * pasan AA sobre el fondo que les toca: `sidebar-text` da 9,0:1 sobre
+   * `primary-dark`, 7,5:1 sobre `sidebar-raised` y 6,4:1 sobre
+   * `sidebar-border`.
+   */
+  --color-sidebar-raised: #1b3c35;
+  --color-sidebar-border: #24473f;
+  --color-sidebar-text: #b5d2cd;
+
   --color-success: #168a6d;
   --color-warning: #d89524;
   --color-danger: #c84c4c;
