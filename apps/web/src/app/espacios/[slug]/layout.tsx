@@ -58,6 +58,19 @@ export default async function SpaceLayout({
     .order("created_at", { ascending: false })
     .limit(20);
 
+  // Nombre e inicial de quien mira, para el avatar de la cabecera. Sale de
+  // `profiles`, no del token: el nombre lo edita la persona y el correo es
+  // el respaldo cuando todavía no lo ha puesto. Nunca una foto — no hay
+  // fotos de perfil en Cuotly.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, email")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const userLabel = profile?.full_name?.trim() || profile?.email || user.email || "";
+  const userInitial = (userLabel.trim()[0] ?? "·").toUpperCase();
+
   const notifications: ShellNotification[] = (rows ?? []).map((row) => ({
     id: row.id,
     eventType: row.event_type as EventKey,
@@ -72,6 +85,9 @@ export default async function SpaceLayout({
       spaceSlug={slug}
       spaceName={space?.name ?? slug}
       role={role}
+      roleLabel={es.roles[role]}
+      userInitial={userInitial}
+      userLabel={userLabel}
       notifications={notifications}
       onSearch={searchEverything}
       establishmentId={establishmentId}

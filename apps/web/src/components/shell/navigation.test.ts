@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { createOptions, desktopMenu, mobileNav, moreDestinations } from "./navigation";
+import {
+  activeDestination,
+  createOptions,
+  DESTINATION_ICONS,
+  desktopMenu,
+  desktopMenuGroups,
+  mobileNav,
+  moreDestinations,
+} from "./navigation";
 
 const SLUG = "restavor";
 const REST = "84000000-0000-0000-0000-000000000001";
@@ -127,5 +135,55 @@ describe("§20.3 · 'Más' es el resto, y se deriva en vez de escribirse", () =>
     for (const destino of moreDestinations(SLUG, "client", null)) {
       expect(destino.href.startsWith(`/espacios/${SLUG}/restaurantes/`)).toBe(false);
     }
+  });
+});
+
+describe("El menú lateral se pinta con iconos, y ninguno falta", () => {
+  it("todo destino del menú de §20.2 tiene icono", () => {
+    const sinIcono = desktopMenu(SLUG)
+      .filter((d) => DESTINATION_ICONS[d.key] === undefined)
+      .map((d) => d.key);
+
+    expect(sinIcono, "añade su icono en DESTINATION_ICONS").toEqual([]);
+  });
+
+  it("todo destino de móvil y de Crear tiene icono", () => {
+    const claves = new Set(
+      (["owner", "admin", "worker", "client", "client_daily_menu"] as const).flatMap((role) => [
+        ...mobileNav(SLUG, role, REST).map((d) => d.key),
+        ...moreDestinations(SLUG, role, REST).map((d) => d.key),
+      ]),
+    );
+
+    expect([...claves].filter((k) => DESTINATION_ICONS[k] === undefined)).toEqual([]);
+  });
+
+  it("el menú de escritorio se parte en dos grupos sin perder ni repetir destinos", () => {
+    const { main, footer } = desktopMenuGroups(SLUG);
+    expect([...main, ...footer].map((d) => d.key)).toEqual(desktopMenu(SLUG).map((d) => d.key));
+    expect(footer.map((d) => d.key)).toEqual(["agent", "settings"]);
+  });
+});
+
+describe("El destino activo es el más concreto, no el primero que casa", () => {
+  it("la ficha de un trabajo activa Trabajos, no Inicio", () => {
+    const activo = activeDestination(SLUG, `/espacios/${SLUG}/trabajos/${REST}`);
+    expect(activo?.key).toBe("jobs");
+  });
+
+  it("la raíz del espacio activa Inicio", () => {
+    expect(activeDestination(SLUG, `/espacios/${SLUG}`)?.key).toBe("home");
+    // Con barra final es la misma pantalla: si no, el menú se quedaría sin
+    // marcar y la miga de pan sin nombre.
+    expect(activeDestination(SLUG, `/espacios/${SLUG}/`)?.key).toBe("home");
+  });
+
+  it("un prefijo a medias no activa nada por parecerse", () => {
+    // `/tareasx` no es `/tareas`: se compara por segmentos completos.
+    expect(activeDestination(SLUG, `/espacios/${SLUG}/tareasx`)?.key).not.toBe("tasks");
+  });
+
+  it("una ruta de otro espacio no activa ningún destino de este", () => {
+    expect(activeDestination(SLUG, "/espacios/otro/trabajos")).toBeNull();
   });
 });

@@ -149,6 +149,32 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    auditoría y su motivo. **No se borró nada físicamente** (`CLAUDE.md`), y el
    establecimiento se conserva para poder volver a asignarle un plan.
 
+17. **Qué significa "trabajos próximos a vencer" en el Inicio** (08/09/2026). El rediseño
+   del Inicio (§20.4) pide un contador de trabajos críticos, y "próximo a vencer" suena a
+   umbral inventado — justo lo que `CLAUDE.md` prohíbe. **No se inventa ninguno**: se
+   compone con los tres que el PRD ya da.
+
+   - **T2** (plazo de inicio): está en riesgo cuando quedan **2 h laborables**, que es el
+     momento exacto en el que RN-SLA-10 manda la alerta importante. No es un porcentaje: con
+     48 h de plazo, el 80 % consumido deja casi diez horas por delante y no es riesgo
+     ninguno.
+   - **T3** (plazo de ejecución): está en riesgo al **90 %**, el último aviso de RN-SLA-15
+     antes de agotarse.
+   - **Fuera de plazo** (RN-SLA-17) cuenta también, y gana: un trabajo pasado de plazo no es
+     un trabajo "a punto de", y mezclarlos lo escondería entre los que todavía llegan.
+
+   Qué contador manda en cada estado no se decide en la pantalla: lo dice
+   `jobDeadlineCondition()`, que ya existía. La composición vive en `src/core/home.ts` con
+   tests que citan las tres reglas, y la tarjeta del Inicio lleva escrito debajo del número
+   qué está contando, para que nadie tenga que suponerlo.
+
+18. **Menú Diario en el Inicio: el motivo, no un cero** (08/09/2026). La maqueta del Inicio
+   enseña "3 publicaciones pendientes" de Menú Diario. Menú Diario es la **Fase 2** entera y
+   no publica nada todavía, así que ese número no se puede calcular. Un `0` habría tenido
+   aspecto de dato real, que es lo que `CLAUDE.md` prohíbe (MUST NOT, CA-20). La tarjeta
+   existe en su sitio de la maqueta y dice el motivo: "Menú Diario llega en la Fase 2". El
+   día que la Fase 2 exista, el contador entra ahí y no hay que rediseñar nada.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)

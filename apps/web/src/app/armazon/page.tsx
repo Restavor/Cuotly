@@ -29,6 +29,9 @@ export default function ArmazonPage() {
       spaceSlug="referencia"
       spaceName="Armazón de referencia"
       role="owner"
+      roleLabel={es.roles.owner}
+      userInitial="·"
+      userLabel="Armazón de referencia"
       notifications={[]}
       onSearch={buscar}
     >

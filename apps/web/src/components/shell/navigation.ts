@@ -1,3 +1,4 @@
+import type { IconName } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 
 /**
@@ -214,4 +215,82 @@ export function moreDestinations(
     D("switchSpace", es.nav.switchSpace, "/"),
     D("sessions", es.nav.sessions, "/cuenta/sesiones"),
   ];
+}
+
+/**
+ * El icono de cada destino del menú (§20.2). Vive aquí, junto a la lista
+ * de destinos, y no dentro del JSX del armazón: así el barrido de
+ * `navigation.test.ts` puede comprobar que **todo** destino tiene el suyo.
+ * Un destino nuevo sin icono no se pinta con un hueco en blanco — hace
+ * fallar el test.
+ */
+export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
+  home: "home",
+  establishments: "building",
+  requests: "request",
+  jobs: "job",
+  tasks: "task",
+  dailyMenu: "dailyMenu",
+  messages: "messages",
+  calendar: "calendar",
+  finance: "finance",
+  reports: "reports",
+  team: "team",
+  plans: "plans",
+  agent: "agent",
+  settings: "settings",
+  // Destinos que solo existen en móvil o en el botón Crear.
+  more: "plus",
+  newRequest: "plus",
+  billing: "finance",
+  switchSpace: "switchSpace",
+  sessions: "person",
+};
+
+/**
+ * Los dos destinos que el menú de escritorio deja abajo del todo,
+ * separados del resto: el Agente (que todavía no hace nada, §20.2
+ * "Próximamente") y Ajustes.
+ *
+ * No es una lista aparte de destinos —eso sería la tercera copia que se
+ * desfasa—: es una partición de `desktopMenu()`, así que un destino nuevo
+ * aparece arriba sin tocar nada, y quitar uno de estos dos del menú lo
+ * quita de los dos sitios a la vez.
+ */
+const FOOTER_KEYS = new Set(["agent", "settings"]);
+
+export function desktopMenuGroups(spaceSlug: string): {
+  readonly main: readonly NavDestination[];
+  readonly footer: readonly NavDestination[];
+} {
+  const todos = desktopMenu(spaceSlug);
+  return {
+    main: todos.filter((d) => !FOOTER_KEYS.has(d.key)),
+    footer: todos.filter((d) => FOOTER_KEYS.has(d.key)),
+  };
+}
+
+/**
+ * Qué destino del menú corresponde a la dirección que se está mirando.
+ * Sirve para dos cosas que en la captura son la misma: marcar el destino
+ * activo en el menú lateral y poner el nombre de la pantalla en la miga
+ * de pan de la cabecera.
+ *
+ * Gana el destino cuya ruta es el prefijo **más largo** de la dirección:
+ * `/espacios/x/trabajos/123` es "Trabajos", no "Inicio", aunque los dos
+ * casen. Y se compara por segmentos completos, para que
+ * `/espacios/x/tareas` no active "Tar…" de nada que empiece igual.
+ */
+export function activeDestination(
+  spaceSlug: string,
+  pathname: string,
+): NavDestination | null {
+  const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+
+  return desktopMenu(spaceSlug)
+    .filter((d) => limpio === d.href || limpio.startsWith(`${d.href}/`))
+    .reduce<NavDestination | null>(
+      (mejor, d) => (mejor === null || d.href.length > mejor.href.length ? d : mejor),
+      null,
+    );
 }

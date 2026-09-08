@@ -182,6 +182,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/cola_llena_y_vencimiento.sql
 
+      - name: "Migración 54 — Verificar el Inicio del espacio (§20.4, RN-COM-17, RN-ASG-17, CA-01, CA-02)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/inicio_del_espacio.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

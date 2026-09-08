@@ -11,6 +11,10 @@
 export const es = {
   common: {
     appName: "Cuotly",
+    // §20.6: "la identidad `Cuotly · by Restavor` se conserva siempre",
+    // incluso cuando el espacio tiene su propio nombre y logotipo. En el
+    // menú lateral se pinta en dos líneas, así que la firma va suelta.
+    appOwner: "by Restavor",
     tagline: "Cuotly · by Restavor",
     save: "Guardar",
     cancel: "Cancelar",
@@ -353,6 +357,115 @@ export const es = {
     },
   },
 
+  /**
+   * §20.4 · el Inicio del espacio. "Resumen general, restaurantes y
+   * estados, solicitudes y trabajos críticos, carga del equipo, ingresos y
+   * pendientes, incidencias, actividad reciente."
+   *
+   * Los nombres de estado NO se repiten aquí: la insignia de cada fila de
+   * "Necesita atención" sale de `naming.states`, que es el único sitio
+   * donde un estado tiene nombre (CA-21). Lo que sí vive aquí son los
+   * títulos, los motivos de los vacíos y las frases de la actividad, que
+   * no son estados sino lo que ha pasado.
+   */
+  spaceHome: {
+    title: "Inicio",
+    // El subtítulo dice la verdad de la pantalla, no una consigna fija:
+    // con la lista vacía, "Esto necesita tu atención" sería mentira.
+    subtitleAttention: "Esto necesita tu atención",
+    subtitleClear: "Nada reclama tu atención ahora mismo",
+
+    kpi: {
+      establishments: "Restaurantes activos",
+      requests: "Solicitudes pendientes",
+      jobs: "Trabajos próximos a vencer",
+      // Qué cuenta exactamente el tercer número. RN-SLA-10, RN-SLA-15 y
+      // RN-SLA-17: no es una estimación, son los plazos del PRD.
+      jobsHint: "Con el plazo de inicio o de entrega a punto de agotarse, o ya agotado.",
+      // CA-20 · cuando la consulta falla, lo que va en el sitio del número
+      // es el motivo. Un cero sería indistinguible de "no hay ninguno".
+      unavailable: "No se ha podido calcular",
+    },
+
+    attention: {
+      title: "Necesita atención",
+      seeAll: "Ver todas",
+      emptyTitle: "No hay nada pendiente",
+      emptyReason:
+        "Cuando una solicitud espere validación, un trabajo se quede sin asignar o un plazo se acerque, aparecerá aquí.",
+      reviewRequest: "Revisar solicitud",
+      openJob: "Abrir trabajo",
+      // RN-SLA-10 y RN-SLA-15 · el tiempo que queda, en horas laborables:
+      // el reloj contractual no cuenta noches ni fines de semana, así que
+      // "2 h" aquí no son dos horas de reloj de pared.
+      remainingToStart: (tiempo: string) => `Quedan ${tiempo} para comenzar`,
+      remainingToDeliver: (tiempo: string) => `Quedan ${tiempo} para entregar`,
+      hours: (horas: number) => `${horas} h`,
+      minutes: (minutos: number) => `${minutos} min`,
+      hoursAndMinutes: (horas: number, minutos: number) => `${horas} h ${minutos} min`,
+    },
+
+    teamLoad: {
+      title: "Carga del equipo",
+      seeAll: "Ver equipo",
+      points: (puntos: number) => (puntos === 1 ? "1 punto" : `${puntos} puntos`),
+      emptyTitle: "Todavía no hay nadie en el equipo",
+      noPermissionTitle: "No puedes ver la carga del equipo",
+      noPermissionReason:
+        "Hace falta poder asignar trabajos para ver la carga de otras personas.",
+    },
+
+    dailyMenu: {
+      title: "Menú Diario",
+      // CLAUDE.md MUST NOT: un contador a cero aquí parecería un dato real.
+      // Menú Diario es la Fase 2 entera y todavía no publica nada.
+      notBuiltTitle: "Todavía no está construido",
+      notBuiltReason:
+        "Menú Diario llega en la Fase 2. Cuando exista, sus publicaciones pendientes se contarán aquí.",
+      openLink: "Ver Menú Diario",
+    },
+
+    activity: {
+      title: "Actividad reciente",
+      seeAll: "Ver toda la actividad",
+      emptyTitle: "Todavía no ha pasado nada",
+      today: "Hoy",
+      yesterday: "Ayer",
+      // "Hoy, 10:24" — la fecha se compone con la hora del espacio.
+      at: (dia: string, hora: string) => `${dia}, ${hora}`,
+      /**
+       * Qué ha pasado, dicho como frase. No sustituye al nombre del
+       * estado —ese sigue saliendo de `naming.states` y va en la insignia
+       * de al lado—: describe la transición, que es lo que se lee en una
+       * lista de actividad.
+       *
+       * Sin identidad de nadie, a propósito (CLAUDE.md MUST NOT): dice qué
+       * ha pasado y dónde, nunca quién lo hizo. Para eso está la auditoría,
+       * con su permiso.
+       */
+      job: {
+        pending_assignment: "Se ha creado un trabajo",
+        assigned: "Se ha asignado un trabajo",
+        reassignment_requested: "Se ha pedido reasignar un trabajo",
+        in_progress: "Ha comenzado un trabajo",
+        blocked_by_client: "Un trabajo se ha bloqueado esperando al restaurante",
+        authorized_pause: "Un trabajo se ha pausado",
+        published: "Se ha publicado un trabajo",
+        in_correction: "Ha empezado una corrección",
+        completed: "Se ha cerrado un trabajo",
+        cancelled_before_start: "Se ha cancelado un trabajo antes de empezar",
+        cancelled_after_start: "Se ha cancelado un trabajo ya empezado",
+      },
+      task: {
+        pending: "Se ha creado una tarea",
+        in_progress: "Ha comenzado una tarea",
+        blocked: "Una tarea se ha bloqueado",
+        completed: "Se ha terminado una tarea",
+        cancelled: "Se ha cancelado una tarea",
+      },
+    },
+  },
+
   nav: {
     home: "Inicio",
     establishments: "Restaurantes",
@@ -379,12 +492,34 @@ export const es = {
     skipToContent: "Saltar al contenido",
     mainLabel: "Contenido principal",
     menuLabel: "Menú del espacio",
+    breadcrumbLabel: "Dónde estás",
+    account: "Mi cuenta",
+  },
+
+  /**
+   * El rol, con el nombre que ve la persona. §20.1: el selector de
+   * contexto enseña "nombre, logotipo, tipo, rol y alertas rápidas", y el
+   * menú lateral repite ese mismo par para que quien mira sepa siempre con
+   * qué sombrero está entrando.
+   *
+   * Un cliente no tiene rol en el espacio de mantenimiento —no es miembro—:
+   * lo que es, es un restaurante. Por eso los dos roles de cliente se
+   * llaman igual que la entidad (CA-21).
+   */
+  roles: {
+    owner: "Propietario del espacio",
+    admin: "Administrador",
+    worker: "Trabajador",
+    client: "Restaurante",
+    client_daily_menu: "Restaurante",
   },
 
   search: {
     open: "Buscar",
     placeholder: "Buscar restaurantes, solicitudes, trabajos…",
     hint: "Ctrl/Cmd + K",
+    // El mismo atajo, en la forma corta que cabe en la cabecera.
+    shortcut: "⌘K",
     title: "Búsqueda global",
     minLength: "Escribe al menos dos caracteres.",
     noResults: "Sin resultados",

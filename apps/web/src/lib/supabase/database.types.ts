@@ -4,6 +4,11 @@
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
 // aplica una migración nueva.
+//
+// Salvedad viva: `space_job_counters` y `space_team_load` están escritas a
+// mano porque la migración que las crea (54) todavía no está aplicada al
+// proyecto. Al aplicarla y regenerar, deben salir idénticas; si no salen,
+// manda el esquema y hay que corregir aquí.
 export type Json =
   | string
   | number
@@ -4616,7 +4621,32 @@ export type Database = {
           title: string
         }[]
       }
+      // Añadidas a mano con la migración 54 (`20260908000054_inicio_del_espacio`),
+      // que todavía no se ha aplicado al proyecto de Supabase: en cuanto se
+      // aplique, la regeneración las traerá tal cual y este comentario sobra.
+      space_job_counters: {
+        Args: { p_space_id: string }
+        Returns: {
+          category: string
+          counter_kind: string
+          establishment_id: string
+          events: Json
+          job_code: string
+          job_id: string
+          job_state: string
+          start_sla_hours: number
+          timezone: string
+        }[]
+      }
       space_slug: { Args: { p_space_id: string }; Returns: string }
+      space_team_load: {
+        Args: { p_space_id: string }
+        Returns: {
+          load_points: number
+          role: string
+          user_id: string
+        }[]
+      }
       start_correction: {
         Args: { p_correction_id: string }
         Returns: undefined
