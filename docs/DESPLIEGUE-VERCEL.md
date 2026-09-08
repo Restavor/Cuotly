@@ -59,12 +59,15 @@ una llave maestra pública.
 Ya está declarado en `apps/web/vercel.json`:
 
 ```json
-{ "crons": [{ "path": "/api/cola", "schedule": "0 * * * *" }] }
+{ "crons": [{ "path": "/api/cola", "schedule": "0 6 * * *" }] }
 ```
 
-Cada hora en punto. La ruta está protegida: sin la cabecera correcta
-responde 401, y si no hay ningún secreto configurado responde 503 en vez de
-quedarse abierta.
+Una vez al día, a las 06:00 UTC. El plan Hobby de Vercel solo admite
+crons diarios y rechaza `0 * * * *`; cuando el plan permita más
+frecuencia se puede subir sin tocar nada más, porque las funciones son
+idempotentes y los avisos esperan en cola. La ruta está protegida: sin
+la cabecera correcta responde 401, y si no hay ningún secreto
+configurado responde 503 en vez de quedarse abierta.
 
 **Por qué `CRON_SECRET` y no `QUEUE_RUNNER_SECRET`**: el cron de Vercel manda
 él solo `Authorization: Bearer <CRON_SECRET>` cuando esa variable existe, y
@@ -82,11 +85,11 @@ esa cabecera.
 se escribió esto, así que **estos tres puntos salen de lo que sé, no de la
 documentación de Vercel leída hoy**. Confírmalos al desplegar:
 
-1. **La frecuencia según el plan.** Los planes gratuitos limitan los crons
-   (número y frecuencia; el horario de arriba puede no estar permitido). Si
-   Vercel rechaza `0 * * * *`, pon `0 6 * * *` —una vez al día— y sube la
-   frecuencia cuando el plan lo permita. Nada se pierde por ir lento: las
-   funciones son idempotentes y los avisos esperan en cola.
+1. **La frecuencia según el plan.** Ya confirmado: el plan Hobby rechaza
+   `0 * * * *` y solo admite crons diarios, por eso el archivo declara
+   `0 6 * * *`. Sube la frecuencia cuando el plan lo permita. Nada se
+   pierde por ir lento: las funciones son idempotentes y los avisos
+   esperan en cola.
 2. **`maxDuration`.** La ruta declara 60 segundos; si el plan permite
    menos, manda el plan. Una tanda procesa como mucho 10 tareas
    programadas y 20 correos, así que suele bastar con mucho menos.

@@ -278,7 +278,8 @@ no son un fallo, sino alcance:
    sin haberlo sido.
 
    **Al día 02/09/2026**: Bosco decide desplegar en **Vercel**, y el cron
-   queda preparado — `apps/web/vercel.json` lo declara cada hora sobre
+   queda preparado — `apps/web/vercel.json` lo declara una vez al día
+   (`0 6 * * *`, lo máximo que admite el plan Hobby) sobre
    `/api/cola`, la ruta responde también a GET (que es como invoca Vercel) y
    acepta `CRON_SECRET` además de `QUEUE_RUNNER_SECRET`, porque el cron de
    Vercel manda esa cabecera él solo y obligar a duplicar el mismo valor en
