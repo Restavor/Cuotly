@@ -1225,6 +1225,41 @@ porque durante tres hitos esta línea decía lo contrario.
     alguno no tiene su apunte: esta avería se encontró mirando los datos,
     no leyendo el código, y la próxima tiene que romper el test.
 
+La ficha del restaurante (§15.2) va **por la mitad**, y conviene decir por
+cuál: está el servidor y la capa de datos, y **falta la pantalla**.
+
+Lo que hay, verificado: la migración 55 aplicada, `src/core/establishments.ts`
+con sus tests, `sheet-load.ts` con un cargador por pestaña —cabecera,
+resumen, operación, recuentos, pagos, usuarios, archivos e historial—,
+`components/establishment/` con las pestañas y sus bloques, el listado de
+`/restaurantes` con filtros, y los 186 renglones de i18n que nombran cada
+columna y cada estado vacío.
+
+Lo que **no** hay: la ruta que lo renderiza. `sheet-load.ts` y `tabs.ts` no
+los importa todavía ninguna página, así que hoy son código sin usar. El
+listado enlaza a `/restaurantes/<id>`, que sigue sirviendo la vista del
+cliente; la ficha del equipo tiene que salir ahí, ramificando por rol.
+
+La única pieza que faltaba **en el servidor** era la pestaña Usuarios, y por
+un motivo que solo se ve al construirla: `profiles_select` deja ver el
+perfil de quien comparte **espacio**, y un cliente no es miembro del
+espacio, así que el equipo que le da servicio no podía leer su nombre. La
+lista habría sido de uuids.
+
+Se resolvió con una función que comprueba el permiso por su cuenta
+(migración 55), no ensanchando la política de `profiles`: la política es de
+toda la tabla y afectaría a cualquier consulta futura. Y la dirección **no
+es simétrica**, que es lo que importa aquí: al equipo se le dice quién es
+cada persona del restaurante —es a quien da de alta y a quien retira el
+acceso—, y al restaurante no se le da la identidad de nadie del equipo. La
+función no tiene rama de cliente: a quien no es del espacio le contesta con
+cero filas, no con una lista distinta. Comprobado en vivo con las dos
+identidades.
+
+Con esto desaparece también la última salvedad de `database.types.ts`: ya
+no queda ninguna función escrita a mano esperando su migración. Al
+regenerar salió idéntica, así que no había desviación.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

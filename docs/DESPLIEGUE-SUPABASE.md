@@ -10,10 +10,11 @@ Actualizado el 04/09/2026.
 
 ## Aplicadas
 
-**Las 51 migraciones del repositorio están aplicadas.** No queda ninguna
-pendiente. Las tres últimas (49, 50 y 51) se aplicaron el 04/09/2026; el
+**Las 55 migraciones del repositorio están aplicadas.** No queda ninguna
+pendiente. Las tres de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
-la que no era solo aditiva, y cómo se deshace si hiciera falta.
+la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
+54 el 08/09/2026 y la 55 el 09/09/2026.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -278,10 +279,36 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 47 | `task_assignment` | `task_assignment` |
 | 48 | `hu07_service_subscriptions` | `hu07_service_subscriptions_p1`, `_p2` |
 | 49 | `hu36_ajustes_auditoria` | `hu36_ajustes_auditoria` |
+| 50 | `bandeja_de_conversaciones` | `bandeja_de_conversaciones` |
+| 51 | `borrador_de_solicitud` | `borrador_de_solicitud`, `revoke_anon_convert_conversation_to_request` |
+| 52 | `cola_llena_y_vencimiento` | `cola_llena_y_vencimiento` |
+| 53 | `cobro_de_mejora_en_el_libro` | `cobro_de_mejora_en_el_libro` |
+| 54 | `inicio_del_espacio` | `inicio_del_espacio` |
+| 55 | `ficha_del_restaurante` | `ficha_del_restaurante` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
 es el orden, y el orden es el mismo.
+
+### La 55 · la ficha del restaurante
+
+Aplicada el 09/09/2026. Añade una sola función,
+`establishment_client_users()`, que es lo único de la ficha de §15.2 que no
+se podía consultar ya con RLS: `establishment_memberships` la lee el equipo
+sin problema, pero `profiles_select` solo deja ver el perfil de quien
+comparte **espacio**, y un cliente no es miembro del espacio. Sin ella, la
+pestaña Usuarios enseñaría uuids.
+
+Comprobada en vivo con las identidades sembradas: el propietario del
+espacio ve al responsable del restaurante con su nombre, su rol y sus
+permisos finos; **el cliente recibe cero filas**, no una lista distinta. La
+función no tiene rama de cliente a propósito —la identidad no viaja hacia
+él (RN-MSG-02)—, y está revocada a `anon`.
+
+Con ella queda cerrada la última salvedad de `database.types.ts`: ya no hay
+ninguna función escrita a mano esperando a que se aplique su migración. Al
+regenerar contra el proyecto, la firma salió **idéntica** a la que estaba
+escrita a mano, así que no había desviación que corregir.
 
 ## Cómo quedó el esquema
 

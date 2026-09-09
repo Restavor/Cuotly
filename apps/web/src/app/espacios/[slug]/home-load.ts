@@ -126,21 +126,50 @@ function counterStatuses(
   return porTrabajo;
 }
 
-export async function loadSpaceHome(
+/**
+ * Lo que necesita atención en un espacio, y los trabajos, solicitudes y
+ * restaurantes de los que sale.
+ *
+ * Está separado de `loadSpaceHome()` porque lo usan dos pantallas: el
+ * Inicio (§20.4) y el listado de restaurantes (§20.2), cuya columna
+ * "Necesita atención" tiene que decir exactamente lo mismo que la lista
+ * del Inicio. Calcularlo dos veces sería tener dos definiciones de
+ * "urgente" y verlas discrepar en la misma sesión.
+ */
+export interface SpaceAttention {
+  readonly items: readonly AttentionItem[];
+  /** `null` cuando los contadores no se han podido leer (ver `SpaceHome`). */
+  readonly jobsAtDeadlineRisk: number | null;
+  readonly pendingRequests: number;
+  readonly establishments: readonly EstablishmentRow[];
+  readonly openJobs: readonly JobRow[];
+}
+
+interface EstablishmentRow {
+  readonly id: string;
+  readonly name: string;
+  readonly status: string;
+}
+
+interface JobRow {
+  readonly id: string;
+  readonly code: string;
+  readonly state: string;
+  readonly establishment_id: string;
+}
+
+export async function loadSpaceAttention(
   supabase: Supabase,
   spaceId: string,
   spaceSlug: string,
   now: Date = new Date(),
-): Promise<SpaceHome> {
+): Promise<SpaceAttention> {
   const [
     { data: establishments },
     { data: requests },
     { data: jobs },
     { data: counters, error: countersError },
     { data: holidayRows },
-    { data: teamLoad, error: teamLoadError },
-    { data: canAssignJobs },
-    { data: events },
   ] = await Promise.all([
     supabase.from("establishments").select("id, name, status").eq("space_id", spaceId),
     // `requests` tiene privilegios de columna (CLAUDE.md): se enumeran
@@ -157,18 +186,6 @@ export async function loadSpaceHome(
       .in("state", [...OPEN_JOB_STATES]),
     supabase.rpc("space_job_counters", { p_space_id: spaceId }),
     supabase.from("holidays").select("holiday_date, created_at").eq("space_id", spaceId),
-    supabase.rpc("space_team_load", { p_space_id: spaceId }),
-    // La misma capacidad que comprueba `space_team_load()` por dentro. Se
-    // pregunta aquí para poder distinguir dos cosas que se parecen y no lo
-    // son: "no puedes ver la carga del equipo" y "no hay equipo". CA-20
-    // exige decir cuál de las dos es.
-    supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "assign_jobs" }),
-    supabase
-      .from("state_events")
-      .select("id, entity_type, entity_id, to_state, occurred_at")
-      .eq("space_id", spaceId)
-      .order("occurred_at", { ascending: false })
-      .limit(8),
   ]);
 
   const establishmentName = new Map((establishments ?? []).map((e) => [e.id, e.name]));
@@ -202,6 +219,7 @@ export async function loadSpaceHome(
         id: job.id,
         title: job.code,
         establishment,
+        establishmentId: job.establishment_id,
         deepLink,
         remainingMinutes,
         counter,
@@ -217,6 +235,7 @@ export async function loadSpaceHome(
         id: job.id,
         title: job.code,
         establishment,
+        establishmentId: job.establishment_id,
         deepLink,
         remainingMinutes: null,
         counter: null,
@@ -227,6 +246,7 @@ export async function loadSpaceHome(
         id: job.id,
         title: job.code,
         establishment,
+        establishmentId: job.establishment_id,
         deepLink,
         remainingMinutes: null,
         counter: null,
@@ -247,10 +267,51 @@ export async function loadSpaceHome(
       id: r.id,
       title: r.description,
       establishment: establishmentName.get(r.establishment_id) ?? null,
+      establishmentId: r.establishment_id,
       deepLink: `/espacios/${spaceSlug}/solicitudes/${r.id}`,
       remainingMinutes: null,
       counter: null,
     }));
+
+  return {
+    items: sortAttentionItems([...jobItems, ...requestItems]),
+    // Sin contadores no hay número que dar: decir "0 trabajos próximos a
+    // vencer" sería tranquilizar sin haber mirado (CA-20).
+    jobsAtDeadlineRisk: countersError === null ? atRisk : null,
+    pendingRequests: requestRows.filter((r) =>
+      (PENDING_REQUEST_STATES as readonly string[]).includes(r.state),
+    ).length,
+    establishments: establishments ?? [],
+    openJobs: jobRows,
+  };
+}
+
+export async function loadSpaceHome(
+  supabase: Supabase,
+  spaceId: string,
+  spaceSlug: string,
+  now: Date = new Date(),
+): Promise<SpaceHome> {
+  const [
+    attention,
+    { data: teamLoad, error: teamLoadError },
+    { data: canAssignJobs },
+    { data: events },
+  ] = await Promise.all([
+    loadSpaceAttention(supabase, spaceId, spaceSlug, now),
+    supabase.rpc("space_team_load", { p_space_id: spaceId }),
+    // La misma capacidad que comprueba `space_team_load()` por dentro. Se
+    // pregunta aquí para poder distinguir dos cosas que se parecen y no lo
+    // son: "no puedes ver la carga del equipo" y "no hay equipo". CA-20
+    // exige decir cuál de las dos es.
+    supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "assign_jobs" }),
+    supabase
+      .from("state_events")
+      .select("id, entity_type, entity_id, to_state, occurred_at")
+      .eq("space_id", spaceId)
+      .order("occurred_at", { ascending: false })
+      .limit(8),
+  ]);
 
   // ------------------------------------------------------------------
   // Carga del equipo. Sin `assign_jobs`, la función solo devuelve la fila
@@ -285,7 +346,8 @@ export async function loadSpaceHome(
   // quién lo hizo (CLAUDE.md MUST NOT). Quién hizo qué sale de la
   // auditoría, que tiene su propia pantalla y su propio permiso.
   // ------------------------------------------------------------------
-  const jobById = new Map(jobRows.map((j) => [j.id, j]));
+  const establishmentName = new Map(attention.establishments.map((e) => [e.id, e.name]));
+  const jobById = new Map(attention.openJobs.map((j) => [j.id, j]));
   const activity: ActivityEntry[] = (events ?? []).map((event) => {
     const job = event.entity_type === "job" ? jobById.get(event.entity_id) : undefined;
     return {
@@ -299,16 +361,10 @@ export async function loadSpaceHome(
   });
 
   return {
-    activeEstablishments: (establishments ?? []).filter((e) => e.status === "active").length,
-    pendingRequests: requestRows.filter((r) =>
-      (PENDING_REQUEST_STATES as readonly string[]).includes(r.state),
-    ).length,
-    // Sin contadores no hay número que dar. Pasa, por ejemplo, mientras la
-    // migración que crea `space_job_counters()` no esté aplicada al
-    // proyecto: entonces la llamada devuelve error, y decir "0 trabajos
-    // próximos a vencer" sería tranquilizar sin haber mirado.
-    jobsAtDeadlineRisk: countersError === null ? atRisk : null,
-    attention: sortAttentionItems([...jobItems, ...requestItems]),
+    activeEstablishments: attention.establishments.filter((e) => e.status === "active").length,
+    pendingRequests: attention.pendingRequests,
+    jobsAtDeadlineRisk: attention.jobsAtDeadlineRisk,
+    attention: attention.items,
     team,
     teamLoadAvailable: canAssignJobs === true,
     teamLoadFailed: teamLoadError !== null,

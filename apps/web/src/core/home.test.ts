@@ -121,6 +121,7 @@ describe("'Necesita atención' se ordena igual en cada recarga", () => {
     id,
     title: id,
     establishment: null,
+    establishmentId: null,
     deepLink: `/${id}`,
     remainingMinutes,
     counter: remainingMinutes === null ? null : "t2",

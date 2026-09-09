@@ -22,7 +22,16 @@ import { es } from "@/i18n/es";
  */
 type Tone = "danger" | "warning" | "info" | "neutral";
 
-const ASPECTO: Readonly<Record<AttentionKind, { tone: Tone; icon: IconName; entity: IconName }>> = {
+/**
+ * Cómo se ve cada motivo: tono, icono del aviso e icono de la entidad.
+ *
+ * Se exporta porque la columna "Necesita atención" del listado de
+ * restaurantes (§20.2) pinta lo mismo en una celda: si tuviera su propia
+ * tabla, el mismo aviso saldría naranja en una pantalla y rojo en la otra.
+ */
+export const ATTENTION_ASPECT: Readonly<
+  Record<AttentionKind, { tone: Tone; icon: IconName; entity: IconName }>
+> = {
   job_out_of_deadline: { tone: "danger", icon: "alert", entity: "job" },
   job_about_to_expire: { tone: "warning", icon: "clock", entity: "job" },
   job_pending_assignment: { tone: "warning", icon: "alert", entity: "job" },
@@ -69,7 +78,7 @@ export function AttentionList({ items }: { items: readonly AttentionItem[] }) {
   return (
     <ul className="flex flex-col">
       {items.map((item) => {
-        const aspecto = ASPECTO[item.kind];
+        const aspecto = ATTENTION_ASPECT[item.kind];
         return (
           <li key={item.id} className="border-b border-border last:border-b-0">
             <Link

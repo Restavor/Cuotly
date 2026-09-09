@@ -1,14 +1,10 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 08/09/2026), con las 53 migraciones del
+// (generate_typescript_types, 09/09/2026), con las 55 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
-// aplica una migración nueva.
-//
-// Salvedad viva: `space_job_counters` y `space_team_load` están escritas a
-// mano porque la migración que las crea (54) todavía no está aplicada al
-// proyecto. Al aplicarla y regenerar, deben salir idénticas; si no salen,
-// manda el esquema y hay que corregir aquí.
+// aplica una migración nueva. Sin salvedades: no queda ninguna función
+// escrita a mano esperando a que se aplique su migración.
 export type Json =
   | string
   | number
@@ -4062,6 +4058,19 @@ export type Database = {
         }
         Returns: string
       }
+      establishment_client_users: {
+        Args: { p_establishment_id: string }
+        Returns: {
+          display_name: string
+          edit_establishment_data: boolean
+          email: string
+          granted_at: string
+          role: string
+          source: string
+          user_id: string
+          view_billing: boolean
+        }[]
+      }
       establishment_consumption_ledger: {
         Args: { p_establishment_id: string }
         Returns: {
@@ -4621,9 +4630,6 @@ export type Database = {
           title: string
         }[]
       }
-      // Añadidas a mano con la migración 54 (`20260908000054_inicio_del_espacio`),
-      // que todavía no se ha aplicado al proyecto de Supabase: en cuanto se
-      // aplique, la regeneración las traerá tal cual y este comentario sobra.
       space_job_counters: {
         Args: { p_space_id: string }
         Returns: {

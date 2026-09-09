@@ -596,15 +596,57 @@ export const es = {
     establishments: {
       title: "Restaurantes",
       subtitle: "Los restaurantes de este espacio.",
+      // §20.2 · el subtítulo del listado cuenta lo que hay, y cuenta
+      // ACTIVOS: un restaurante archivado sigue en la lista pero no es un
+      // establecimiento en servicio.
+      activeCount: (n: number) =>
+        n === 1 ? "1 establecimiento activo" : `${n} establecimientos activos`,
+      createButton: "Crear establecimiento",
       emptyTitle: "No hay ningún restaurante",
       emptyReason: "Cuando se dé de alta un restaurante, aparecerá aquí.",
-      nameColumn: "Restaurante",
+      filteredEmptyTitle: "Ningún restaurante coincide",
+      filteredEmptyReason:
+        "Hay restaurantes en el espacio, pero ninguno cumple los filtros de arriba. Quítalos para verlos todos.",
+      nameColumn: "Establecimiento",
       codeColumn: "Código",
+      groupColumn: "Grupo",
+      planColumn: "Plan",
       statusColumn: "Estado",
+      attentionColumn: "Necesita atención",
       ledgerLink: "Consumos",
-      pendingSheetTitle: "La ficha completa todavía no está",
-      pendingSheetReason:
-        "De la ficha del restaurante solo está el libro de consumos. Las cinco pestañas del PRD llegan más adelante.",
+      openSheet: "Abrir la ficha",
+      noPlan: "Sin plan",
+      noAttention: "Sin pendientes",
+      // El resumen de la columna: el motivo más urgente y cuántos hay de
+      // él. Los nombres de estado NO se repiten aquí — son frases sobre lo
+      // que hay que hacer, no etiquetas de estado (CA-21).
+      attentionHeadline: {
+        job_out_of_deadline: (n: number) =>
+          n === 1 ? "1 trabajo fuera de plazo" : `${n} trabajos fuera de plazo`,
+        job_about_to_expire: (n: number) =>
+          n === 1 ? "1 trabajo a punto de vencer" : `${n} trabajos a punto de vencer`,
+        job_pending_assignment: (n: number) =>
+          n === 1 ? "1 trabajo por asignar" : `${n} trabajos por asignar`,
+        request_pending_validation: (n: number) =>
+          n === 1 ? "1 solicitud por validar" : `${n} solicitudes por validar`,
+        request_correction_requested: (n: number) =>
+          n === 1 ? "1 corrección pedida" : `${n} correcciones pedidas`,
+        job_blocked_by_client: (n: number) =>
+          n === 1 ? "1 trabajo esperando al restaurante" : `${n} trabajos esperando al restaurante`,
+      },
+      attentionOthers: (n: number) => `y ${n} más`,
+      filters: {
+        legend: "Filtrar los restaurantes",
+        searchLabel: "Buscar restaurante",
+        searchPlaceholder: "Nombre o código",
+        groupLabel: "Grupo",
+        planLabel: "Plan",
+        statusLabel: "Estado",
+        all: "Todos",
+        withoutPlan: "Sin plan",
+        submit: "Filtrar",
+        clear: "Quitar filtros",
+      },
     },
     ledger: {
       title: "Libro de consumos",
@@ -1738,6 +1780,205 @@ export const es = {
    * pantalla no sabe cuál es su caso, es que le falta información, no que
    * necesite un quinto texto genérico.
    */
+  /**
+   * PRD §15.2 · la ficha del restaurante, con sus cinco pestañas
+   * (Resumen · Operación · Informes y datos · Gestión · Historial).
+   *
+   * Los nombres de estado no están aquí: salen de `naming.states`, igual
+   * que en el resto del proyecto (CA-21). Lo que vive aquí son los
+   * títulos, las unidades y —sobre todo— los MOTIVOS de cada hueco: la
+   * ficha enseña varias cosas que la Fase 1 todavía no calcula, y cada una
+   * dice por qué en vez de un cero con pinta de dato (CA-20).
+   */
+  establishmentSheet: {
+    tabs: {
+      summary: "Resumen",
+      operation: "Operación",
+      data: "Informes y datos",
+      management: "Gestión",
+      history: "Historial",
+    },
+    tabsLabel: "Secciones de la ficha",
+    blocksLabel: "Bloques de gestión",
+    blocks: {
+      plan: "Plan",
+      payments: "Pagos",
+      users: "Usuarios",
+      files: "Archivos",
+      integrations: "Integraciones",
+    },
+    noAccessTitle: "Esta ficha no es tuya",
+    noAccessReason:
+      "La ficha interna de un restaurante es del equipo del espacio. Si eres del restaurante, lo tuyo está en su pantalla de inicio.",
+
+    // ---- Resumen -------------------------------------------------
+    planTitle: "Plan de mantenimiento",
+    planNone: "Sin plan",
+    planNoneReason: "Este restaurante no tiene ningún plan contratado (RN-COM-11: el plan es opcional).",
+    planPrice: (price: string) => `${price} + IVA / mes`,
+    serviceTitle: "Menú Diario",
+    serviceContracted: "Contratado",
+    serviceNotContracted: "No contratado",
+    renewalTitle: "Renovación",
+    renewalNone: "Sin ciclo abierto",
+    cycleTitle: "Consumos del ciclo",
+    cycleRange: (from: string, to: string) => `${from} – ${to}`,
+    cycleUsed: (used: number, included: number) => `${used} de ${included} usados`,
+    cycleRemaining: (remaining: number) =>
+      remaining === 1 ? "queda 1" : `quedan ${remaining}`,
+    cycleExhausted: "Bolsa agotada",
+    cycleNotIncluded: "No incluido en el plan",
+    cycleReturned: (returned: number) =>
+      returned === 1 ? "1 devuelto sobre lo incluido" : `${returned} devueltos sobre lo incluido`,
+    cycleEmptyTitle: "Sin ciclo de consumo",
+    cycleEmptyReason:
+      "Los consumos se cuentan sobre el ciclo del plan. Sin plan contratado no hay bolsa que contar.",
+    ledgerLink: "Ver el libro de consumos",
+    dailyMenuCounterTitle: "Actualizaciones de Menú Diario",
+    dailyMenuCounterEmptyTitle: "Todavía no se cuentan",
+    dailyMenuCounterEmptyReason:
+      "Menú Diario tiene su propio contador de actualizaciones, separado del de cambios (RN-CON-02). Se pone en marcha con la Fase 2, cuando el servicio empiece a publicar.",
+    attentionTitle: "Necesita atención",
+    attentionEmptyTitle: "Nada pendiente en este restaurante",
+    attentionEmptyReason:
+      "Aquí aparecen sus solicitudes por validar y sus trabajos en riesgo de plazo, en cuanto haya alguno.",
+    identityTitle: "Datos fiscales y de contacto",
+    identityMissing: "Todavía no se guardan",
+    identityMissingReason:
+      "La ficha del PRD §15.2 pide razón social, identificación fiscal, dirección, teléfonos, correos, sitio web, dominio y horarios. Ninguno de esos campos existe todavía en la base de datos, así que no se enseña un formulario que no guardaría nada.",
+
+    // ---- Operación -----------------------------------------------
+    requestsTitle: "Solicitudes abiertas",
+    requestsEmptyTitle: "Ninguna solicitud abierta",
+    requestsEmptyReason: "Las solicitudes de este restaurante aparecerán aquí mientras estén en curso.",
+    jobsTitle: "Trabajos en curso",
+    jobsEmptyTitle: "Ningún trabajo en curso",
+    jobsEmptyReason: "Cuando se acepte una solicitud y se cree su trabajo, aparecerá aquí.",
+    conversationLink: "Abrir la conversación general",
+    codeColumn: "Código",
+    descriptionColumn: "Descripción",
+    stateColumn: "Estado",
+    dateColumn: "Fecha",
+
+    // ---- Informes y datos ----------------------------------------
+    countsTitle: "Indicadores operativos",
+    countsHint:
+      "Fase 1: recuentos de lo que hay, contados sobre las filas de este restaurante. No hay ninguna media, ningún objetivo ni ninguna tendencia — eso son informes, y llegan en la Fase 3.",
+    countsRequests: "Solicitudes",
+    countsJobs: "Trabajos",
+    countsFiles: "Archivos",
+    countsByState: "Por estado",
+    countsEmptyTitle: "Sin actividad todavía",
+    countsEmptyReason: "En cuanto este restaurante tenga solicitudes o trabajos, se contarán aquí.",
+    digitalTitle: "Analítica digital",
+    digitalEmptyTitle: "No está construida",
+    digitalEmptyReason:
+      "GA4, Search Console, Business Profile, Clarity y PageSpeed son la Fase 3. No hay ninguna integración conectada, así que no hay ningún dato que enseñar.",
+
+    // ---- Gestión · Plan ------------------------------------------
+    subscriptionTitle: "Lo contratado",
+    servicesTitle: "Servicios adicionales",
+    servicesNone: "Ninguno",
+    commitmentTitle: "Permanencia",
+    commitmentUntil: (day: string) => `Vigente hasta el ${day}`,
+    commitmentOver: "Cumplida",
+    commitmentNone: "Sin permanencia registrada",
+    manageplanLink: "Cambiar de plan o contratar servicios",
+
+    // ---- Gestión · Pagos -----------------------------------------
+    chargesTitle: "Cobros",
+    chargesEmptyTitle: "Sin cobros emitidos",
+    chargesEmptyReason: "La mensualidad se emite en la fecha de renovación del plan (RN-FIN-01).",
+    chargesNoAccessTitle: "Sin acceso a la facturación",
+    chargesNoAccessReason:
+      "La facturación de un restaurante la ven el propietario, los administradores y el trabajador que lo tiene asignado. RN-ARC-05: los trabajadores no ven los archivos de facturación.",
+    conceptColumn: "Concepto",
+    amountColumn: "Importe",
+    dueColumn: "Vence",
+    outstandingColumn: "Pendiente",
+    financeLink: "Abrir Finanzas",
+
+    // ---- Gestión · Usuarios --------------------------------------
+    usersTitle: "Quién tiene acceso",
+    usersEmptyTitle: "Nadie del restaurante tiene acceso todavía",
+    usersEmptyReason:
+      "Aquí aparecen el propietario global del grupo y las personas del restaurante con su rol, en cuanto se les dé acceso.",
+    usersFailedTitle: "No se ha podido leer quién tiene acceso",
+    usersFailedReason:
+      "La consulta ha fallado. No es que no haya nadie: es que no se ha podido comprobar.",
+    personColumn: "Persona",
+    accessColumn: "Acceso",
+    roleColumn: "Rol",
+    permissionsColumn: "Permisos",
+    sinceColumn: "Desde",
+    sourceGroup: "Propietario global del grupo",
+    sourceEstablishment: "Acceso al restaurante",
+    clientRoles: {
+      global_owner: "Propietario global",
+      local_owner: "Propietario local",
+      editor: "Editor",
+      consulta: "Consulta",
+    },
+    permissionEditData: "Editar datos",
+    permissionViewBilling: "Ver facturación",
+    permissionsNone: "Solo lectura",
+    noName: "Sin nombre",
+    revokeHint:
+      "Retirar un acceso se hace desde el servidor (RN-EST-05). El botón todavía no está en esta pantalla.",
+
+    // ---- Gestión · Archivos --------------------------------------
+    filesTitle: (name: string) => `Archivos de ${name}`,
+    filesEmptyTitle: "Sin archivos",
+    filesEmptyReason:
+      "Aquí aparece el catálogo del restaurante: logos, fotografías, menús, documentos e informes, con sus versiones.",
+    fileNameColumn: "Nombre",
+    fileCategoryColumn: "Tipo",
+    fileVisibilityColumn: "Visibilidad",
+    fileVersionColumn: "Versión",
+    fileVersion: (n: number) => `v${n}`,
+    fileCategories: {
+      logos: "Logos",
+      photos: "Fotografías",
+      menus: "Menús",
+      documents: "Documentos",
+      reports: "Informes",
+      billing: "Facturación",
+      requests_and_jobs: "Solicitudes y trabajos",
+      other: "Otros",
+    },
+    fileVariants: {
+      original: "Original",
+      retouched: "Retocada",
+      published: "Publicada",
+    },
+    versionsTitle: "Versiones",
+    versionsOf: (name: string) => `Versiones de ${name}`,
+    versionsPick: "Elige un archivo para ver sus versiones.",
+    versionsClose: "Cerrar",
+    fileSize: (megabytes: string) => `${megabytes} MB`,
+    fileArchived: "Archivado",
+    filesUploadHint:
+      "Subir un archivo se hace hoy desde el mensaje o desde el justificante de un cobro. El botón de subida directa al catálogo llega con la pantalla de archivos.",
+    backupTitle: "Backup de la web",
+    backupEmptyTitle: "No conectado",
+    backupEmptyReason:
+      "Cuotly no hace copias de la web del restaurante todavía: no hay ninguna integración con el alojamiento, así que no hay fecha de último respaldo que enseñar.",
+
+    // ---- Gestión · Integraciones ---------------------------------
+    integrationsTitle: "Integraciones",
+    integrationsEmptyTitle: "No está construido",
+    integrationsEmptyReason:
+      "Las integraciones analíticas (GA4, Search Console, Business Profile, Clarity, PageSpeed) son la Fase 3, con OAuth y credenciales cifradas. No hay ninguna conectada y no existe el botón «Sincronizar ahora».",
+
+    // ---- Historial -----------------------------------------------
+    historyTitle: "Historial de estados",
+    historyHint:
+      "Sale de `state_events`, el libro inmutable de cambios de estado (RN-DAT-05). Dice qué pasó y cuándo; quién lo hizo está en la auditoría, que tiene su propio permiso.",
+    historyEmptyTitle: "Sin historial todavía",
+    historyEmptyReason: "El primer cambio de estado de un trabajo de este restaurante aparecerá aquí.",
+    auditLink: "Ver la auditoría del espacio",
+  },
+
   emptyReasons: {
     not_connected: "No conectado. Falta enlazar el servicio para ver este dato.",
     no_data_yet: "Sin datos todavía. Aparecerán en cuanto haya actividad.",

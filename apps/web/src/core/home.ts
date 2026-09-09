@@ -127,6 +127,13 @@ export interface AttentionItem {
   readonly title: string;
   /** El restaurante del que es, o `null` si la pantalla no lo sabe. */
   readonly establishment: string | null;
+  /**
+   * El identificador de ese restaurante. El nombre sirve para leerlo; este
+   * sirve para agrupar, y son cosas distintas: dos restaurantes de grupos
+   * distintos pueden llamarse igual, y agrupar por nombre los fundiría en
+   * una fila (§20.2, columna "Necesita atención" del listado).
+   */
+  readonly establishmentId: string | null;
   readonly deepLink: string;
   /** Minutos laborables restantes, cuando la fila viene de un contador. */
   readonly remainingMinutes: number | null;
