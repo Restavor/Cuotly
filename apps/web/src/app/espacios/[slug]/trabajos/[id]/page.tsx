@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
+import { splitRemaining } from "@/core/home";
 import {
   Card,
   EmptyState,
@@ -18,6 +19,7 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import { jobTone } from "../page";
+import { loadJobTimers } from "./timers-load";
 import {
   AssignJobForm,
   BlockJobForm,
@@ -47,6 +49,43 @@ type CategoryKey = keyof typeof es.naming.categories;
 
 function euros(cents: number): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
+/** El tiempo restante, en horas y minutos laborables (RN-SLA-16). */
+function tiempoRestante(minutes: number): string {
+  const { hours, minutes: resto } = splitRemaining(minutes);
+  if (hours === 0) return es.spaceHome.attention.minutes(resto);
+  if (resto === 0) return es.spaceHome.attention.hours(hours);
+  return es.spaceHome.attention.hoursAndMinutes(hours, resto);
+}
+
+/**
+ * Una línea de contador: su nombre, lo que dice y por qué. Cuando el
+ * contador no ha arrancado se dice ESO, no "quedan 0 h", que sería
+ * afirmar un plazo agotado cuando lo que pasa es que no ha empezado
+ * (CA-20).
+ */
+function Contador({
+  titulo,
+  valor,
+  pista,
+  tono,
+}: {
+  titulo: string;
+  valor: string;
+  pista: string;
+  tono: "normal" | "hecho" | "alerta";
+}) {
+  const color =
+    tono === "alerta" ? "text-danger" : tono === "hecho" ? "text-cuotly-green" : "text-primary-dark";
+
+  return (
+    <div className="border-b border-border py-3 last:border-b-0">
+      <p className="text-xs text-text-secondary">{titulo}</p>
+      <p className={`text-sm font-semibold ${color}`}>{valor}</p>
+      <p className="mt-0.5 text-xs text-text-secondary">{pista}</p>
+    </div>
+  );
 }
 
 export default async function TeamJobDetailPage({
@@ -218,6 +257,12 @@ export default async function TeamJobDetailPage({
     job.state === "cancelled_before_start" ||
     job.state === "cancelled_after_start";
 
+  // §20.4 · los dos contadores y lo que pesa el trabajo. Se recalculan
+  // desde sus eventos, no se leen de ningún campo (CA-10).
+  const timers = await loadJobTimers(supabase, job);
+
+  const responsable = job.assigned_to === null ? null : nombrePorId.get(job.assigned_to) ?? null;
+
   const blocked = job.state === "blocked_by_client" || job.state === "authorized_pause";
   const hasActions =
     job.state === "pending_assignment" ||
@@ -231,11 +276,26 @@ export default async function TeamJobDetailPage({
         <p className="text-sm text-text-secondary">
           {job.code} · {establishment?.name ?? "—"}
         </p>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.teamArea.jobs.detailTitle}</h1>
-        <div className="mt-2 flex items-center gap-2">
+        {/*
+          El título es el ALCANCE, no la palabra "Trabajo": quien abre esto
+          quiere saber de qué va, y el código y el restaurante ya están
+          encima. Si no hay solicitud legible, se cae al nombre genérico.
+        */}
+        <h1 className="text-2xl font-bold text-primary-dark">
+          {request?.description ?? es.teamArea.jobs.detailTitle}
+        </h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <StatusBadge tone={jobTone(job.state)}>
             {es.naming.states.job[job.state as JobStateKey] ?? job.state}
           </StatusBadge>
+          {/*
+            RN-SLA-17 · "Fuera de plazo" va AL LADO del estado, nunca en su
+            lugar: es una condición calculada que convive con En curso,
+            Bloqueado o el que sea.
+          */}
+          {timers.outOfDeadline ? (
+            <StatusBadge tone="danger">{es.teamArea.jobs.outOfDeadline}</StatusBadge>
+          ) : null}
           {job.category ? (
             <span className="text-sm text-text-secondary">
               {es.naming.categories[job.category as CategoryKey] ?? job.category}
@@ -257,6 +317,113 @@ export default async function TeamJobDetailPage({
           </p>
         </Card>
       ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card title={es.teamArea.jobs.operativeTitle}>
+          <div className="border-b border-border py-3">
+            <p className="text-xs text-text-secondary">{es.teamArea.jobs.assigneeLabel}</p>
+            {/*
+              El nombre de quien lleva el trabajo es información del EQUIPO.
+              Esta pantalla es del espacio y `jobs_select` ya le ha negado la
+              fila al restaurante; aun así el nombre sale de `profiles` y no
+              de una columna de `jobs`, que las de identidad están revocadas.
+            */}
+            <p className="text-sm font-semibold text-primary-dark">
+              {responsable ?? es.teamArea.jobs.assigneeNone}
+            </p>
+          </div>
+
+          {timers.t2Done ? (
+            <Contador
+              titulo={es.teamArea.jobs.t2Title}
+              valor={es.teamArea.jobs.t2Done}
+              pista={es.teamArea.jobs.t2DoneHint}
+              tono="hecho"
+            />
+          ) : timers.t2 === null ? (
+            <Contador
+              titulo={es.teamArea.jobs.t2Title}
+              valor={es.teamArea.jobs.t2NotStarted}
+              pista={es.teamArea.jobs.t2NotStartedHint}
+              tono="normal"
+            />
+          ) : (
+            <Contador
+              titulo={es.teamArea.jobs.t2Title}
+              valor={
+                timers.t2.overdue
+                  ? es.teamArea.jobs.outOfDeadline
+                  : es.teamArea.jobs.remaining(tiempoRestante(timers.t2.remainingMinutes))
+              }
+              pista={
+                timers.t2.overdue ? es.teamArea.jobs.outOfDeadlineHint : es.teamArea.jobs.t2Hint
+              }
+              tono={timers.t2.overdue ? "alerta" : "normal"}
+            />
+          )}
+
+          {timers.t3 === null ? (
+            <Contador
+              titulo={es.teamArea.jobs.t3Title}
+              valor={es.teamArea.jobs.t3NotStarted}
+              pista={es.teamArea.jobs.t3NotStartedHint}
+              tono="normal"
+            />
+          ) : (
+            <Contador
+              titulo={es.teamArea.jobs.t3Title}
+              valor={
+                timers.t3.overdue
+                  ? es.teamArea.jobs.outOfDeadline
+                  : es.teamArea.jobs.remaining(tiempoRestante(timers.t3.remainingMinutes))
+              }
+              pista={
+                timers.t3.overdue
+                  ? es.teamArea.jobs.outOfDeadlineHint
+                  : blocked
+                    ? es.teamArea.jobs.t3PausedHint
+                    : es.teamArea.jobs.t3Hint
+              }
+              tono={timers.t3.overdue ? "alerta" : "normal"}
+            />
+          )}
+        </Card>
+
+        <Card title={es.teamArea.jobs.detailsTitle}>
+          <div className="border-b border-border py-3">
+            <p className="text-xs text-text-secondary">{es.teamArea.jobs.categoryLabel}</p>
+            <p className="text-sm font-semibold text-primary-dark">
+              {job.category
+                ? (es.naming.categories[job.category as CategoryKey] ?? job.category)
+                : es.teamArea.jobs.categoryNone}
+            </p>
+          </div>
+
+          <div className="border-b border-border py-3">
+            <p className="text-xs text-text-secondary">{es.teamArea.jobs.consumedLabel}</p>
+            {/*
+              Un trabajo consume UN cambio de su categoría al aceptarse
+              (RN-CON-01), y ninguno si el plan no incluye esa categoría:
+              entonces se presupuesta aparte y decirlo es más útil que un
+              cero (RN-COM-12).
+            */}
+            <p className="text-sm font-semibold text-primary-dark">
+              {timers.loadPoints === null
+                ? es.teamArea.jobs.consumedNone
+                : es.teamArea.jobs.consumedOne}
+            </p>
+          </div>
+
+          <div className="py-3">
+            <p className="text-xs text-text-secondary">{es.teamArea.jobs.loadPointsLabel}</p>
+            <p className="text-sm font-semibold text-primary-dark">
+              {timers.loadPoints === null
+                ? es.teamArea.jobs.loadPointsNone
+                : es.teamArea.jobs.loadPointsValue(timers.loadPoints)}
+            </p>
+          </div>
+        </Card>
+      </div>
 
       {/*
         HU-27 · "marcar como pagado un cobro de un restaurante asignado,
