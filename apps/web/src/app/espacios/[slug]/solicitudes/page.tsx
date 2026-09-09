@@ -13,6 +13,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { requestHeadline, requestTone } from "@/core/requests";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,14 +34,6 @@ export const dynamic = "force-dynamic";
 
 type RequestStateKey = keyof typeof es.naming.states.request;
 type CategoryKey = keyof typeof es.naming.categories;
-
-export function requestTone(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
-  if (state === "published" || state === "closed" || state === "accepted") return "success";
-  if (state === "pending_client_acceptance" || state === "needs_information") return "warning";
-  if (state.startsWith("cancelled") || state === "rejected") return "danger";
-  if (state === "in_progress" || state === "in_correction" || state === "analyzing") return "info";
-  return "neutral";
-}
 
 export default async function TeamRequestsPage({
   params,
@@ -77,8 +70,8 @@ export default async function TeamRequestsPage({
 
   if (!membership) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <h1 className="text-3xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
         <NoPermissionState />
       </div>
     );
@@ -101,9 +94,11 @@ export default async function TeamRequestsPage({
   const nameById = new Map((establishments ?? []).map((e) => [e.id, e.name]));
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
-      <p className="mb-6 text-sm text-text-secondary">{es.teamArea.requests.subtitle}</p>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <header>
+        <h1 className="text-3xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
+        <p className="mt-1 text-sm text-text-secondary">{es.teamArea.requests.subtitle}</p>
+      </header>
 
       <Card>
         {rows.length === 0 ? (
@@ -129,13 +124,19 @@ export default async function TeamRequestsPage({
                   <TableCell>
                     <Link
                       href={`/espacios/${slug}/solicitudes/${request.id}`}
-                      className="text-cuotly-green underline"
+                      className="font-medium text-cuotly-green underline"
                     >
                       {request.code}
                     </Link>
                   </TableCell>
                   <TableCell>{nameById.get(request.establishment_id) ?? "—"}</TableCell>
-                  <TableCell>{request.description}</TableCell>
+                  {/*
+                    La misma primera frase que hace de titular en el
+                    detalle: la fila y la pantalla a la que lleva tienen que
+                    llamar igual a lo mismo (CA-21). El texto completo sigue
+                    entero allí, en "Mensaje del restaurante".
+                  */}
+                  <TableCell>{requestHeadline(request.description)}</TableCell>
                   <TableCell>
                     <StatusBadge tone={requestTone(request.state)}>
                       {es.naming.states.request[request.state as RequestStateKey] ?? request.state}

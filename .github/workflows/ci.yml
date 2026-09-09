@@ -194,6 +194,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/compartir_con_el_restaurante.sql
 
+      - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/validacion_interna.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

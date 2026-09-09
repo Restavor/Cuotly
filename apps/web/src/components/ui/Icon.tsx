@@ -50,6 +50,12 @@ const PATHS = {
   chevronDown: "m7 10 5 5 5-5",
   chevronRight: "m10 6 6 6-6 6",
   arrowRight: "M4.5 12h15M13.5 6l6 6-6 6",
+  arrowLeft: "M19.5 12h-15M10.5 6l-6 6 6 6",
+  // La flecha de bajar, que es la de `upload` del revés. No se reutiliza
+  // aquella girada con una clase: subir y descargar aparecen en la misma
+  // pantalla (los adjuntos de una solicitud) y dos flechas que solo se
+  // distinguen por una rotación se leen igual de rápido que ninguna.
+  download: "M12 3.5v12M8 11.5l4 4 4-4M4.5 14.5v4a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4",
   switchSpace: "M4 8h13l-3-3M20 16H7l3 3",
   clock: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7.5V12l3 1.8",
   alert: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7.5V13M12 16.2v.1",

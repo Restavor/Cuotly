@@ -208,9 +208,19 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       // con `record_classification()`, y sin clave de IA habrá caído al
       // motor de reglas (RN-CLS-02). El equipo no arranca nada: llega y
       // valida.
-      await expect(page.getByRole("heading", { name: "Validar la clasificación" })).toBeVisible({
+      await expect(page.getByRole("heading", { name: "Propuesta de clasificación" })).toBeVisible({
         timeout: 15_000,
       });
+
+      // Los dos caminos de RN-CLS-03 están a la vista: aceptar la
+      // propuesta tal cual, o corregirla. Este recorrido va por el
+      // segundo, que es el que escribe la categoría y el resumen a mano y
+      // por tanto prueba más; el primero se prueba en
+      // `supabase/tests/validacion_interna.sql`, donde se comprueba que
+      // validar la propuesta tal cual guarda exactamente lo propuesto.
+      await expect(page.getByRole("button", { name: "Validar propuesta" })).toBeVisible();
+      await page.getByRole("link", { name: "Corregir clasificación" }).click();
+      await page.waitForURL(/corregir=1/, { timeout: 15_000 });
 
       // RN-CLS-03: hasta que una persona valida, el restaurante no ve ni
       // categoría ni resumen.

@@ -26,6 +26,12 @@
 --   magarinos@cuotly.test      Propietaria local de "Magariños" (cliente)
 --   sala.magarinos@cuotly.test Acceso de solo consulta a "Magariños"
 --
+-- Y una octava que NO es de mentira ni la crea este archivo:
+-- info@restavor.com, el correo con el que se usa Cuotly de verdad. La
+-- sección 11 le da la pertenencia al espacio como propietario si ya se ha
+-- registrado en la aplicación; si no, lo dice y no falla. El porqué de no
+-- crearla está ahí escrito.
+--
 -- Tres restaurantes, y la separación es deliberada:
 --
 --   "Bar Demo" ..... el de los tests que LEEN (cuentan solicitudes, miran
@@ -782,26 +788,50 @@ declare
 begin
   for r in
     select * from (values
-      ('small',  'Actualizar los horarios de Navidad en la web.',                'publicado'),
-      ('small',  'Cambiar el teléfono de reservas del pie de página.',           'publicado'),
-      ('small',  'Corregir una errata en la descripción del arroz de la casa.',  'publicado'),
-      ('small',  'Añadir el enlace al nuevo perfil de Instagram.',               'publicado'),
-      ('small',  'Actualizar los precios del menú del mediodía.',                'publicado'),
-      ('photo',  'Sustituir la fotografía de portada por la de la terraza.',     'publicado'),
-      ('photo',  'Publicar las fotografías nuevas de los postres.',              'publicado'),
-      ('photo',  'Fotografía del comedor privado para la página de grupos.',     'en_curso'),
-      ('photo',  'Actualizar la fotografía del equipo de cocina.',               'en_curso'),
-      ('photo',  'Añadir la fotografía de la barra a la galería.',               'publicado'),
-      ('medium', 'Rehacer la página de grupos y celebraciones.',                 'publicado'),
-      ('photo',  'Reportaje de las tapas de temporada.',                         'en_curso'),
-      ('small',  'Cambiar el horario del sábado.',                               'por_comenzar'),
-      ('small',  'Retirar el banner de las fiestas de agosto.',                  'sin_asignar'),
-      ('small',  'Añadir el aviso de cierre por vacaciones.',                    'por_comenzar'),
-      ('medium', 'Nueva sección de eventos con formulario de reserva.',          'por_aceptar'),
-      ('small',  'Actualizar la carta de verano.',                               'por_validar'),
-      ('small',  'Añadir los alérgenos a los platos nuevos.',                    'recibida'),
-      ('small',  'Cambiar la foto de portada por la del plato nuevo.',           'borrador')
-    ) as t(categoria, descripcion, destino)
+      ('small',  'Actualizar los horarios de Navidad en la web.',
+                 'Cambiar los horarios de un periodo concreto.',                 'publicado'),
+      ('small',  'Cambiar el teléfono de reservas del pie de página.',
+                 'Actualizar un dato de contacto existente.',                    'publicado'),
+      ('small',  'Corregir una errata en la descripción del arroz de la casa.',
+                 'Corregir un texto ya publicado.',                              'publicado'),
+      ('small',  'Añadir el enlace al nuevo perfil de Instagram.',
+                 'Añadir un enlace a una red social.',                           'publicado'),
+      ('small',  'Actualizar los precios del menú del mediodía.',
+                 'Actualizar precios ya publicados.',                            'publicado'),
+      ('photo',  'Sustituir la fotografía de portada por la de la terraza.',
+                 'Sustituir una fotografía entregada por el restaurante.',       'publicado'),
+      ('photo',  'Publicar las fotografías nuevas de los postres.',
+                 'Publicar fotografías entregadas por el restaurante.',          'publicado'),
+      ('photo',  'Fotografía del comedor privado para la página de grupos.',
+                 'Colocar una fotografía en una página existente.',              'en_curso'),
+      ('photo',  'Actualizar la fotografía del equipo de cocina.',
+                 'Sustituir una fotografía existente.',                          'en_curso'),
+      ('photo',  'Añadir la fotografía de la barra a la galería.',
+                 'Añadir una fotografía a la galería.',                          'publicado'),
+      ('medium', 'Rehacer la página de grupos y celebraciones.',
+                 'Rehacer el contenido de una sección existente.',               'publicado'),
+      ('photo',  'Reportaje de las tapas de temporada.',
+                 'Publicar un conjunto de fotografías entregadas.',              'en_curso'),
+      ('small',  'Cambiar el horario del sábado.',
+                 'Cambiar un día del horario.',                                  'por_comenzar'),
+      ('small',  'Retirar el banner de las fiestas de agosto.',
+                 'Retirar un elemento temporal de la portada.',                  'sin_asignar'),
+      ('small',  'Añadir el aviso de cierre por vacaciones.',
+                 'Añadir un aviso breve en la portada.',                         'por_comenzar'),
+      ('medium', 'Nueva sección de eventos con formulario de reserva.',
+                 'Añadir una sección con formulario de reserva.',                'por_aceptar'),
+      -- La de la maqueta 05 · "Solicitudes — Validación interna": es la
+      -- que se queda esperando al equipo, y por eso es la única que lleva
+      -- adjunto y la única con dos frases. La primera hace de titular en
+      -- la pantalla (`requestHeadline()` se queda con la primera frase) y
+      -- el mensaje completo se lee entero debajo, tal como está aquí.
+      ('small',  'Actualizar los precios de la carta. Cambiar el precio del menú de 18 € a 19 € en la carta.',
+                 'Actualizar un precio existente.',                              'por_validar'),
+      ('small',  'Añadir los alérgenos a los platos nuevos.',
+                 'Añadir información a platos existentes.',                      'recibida'),
+      ('small',  'Cambiar la foto de portada por la del plato nuevo.',
+                 'Sustituir la fotografía de portada.',                          'borrador')
+    ) as t(categoria, descripcion, resumen, destino)
   loop
     ------------------------------------------------------------------
     -- El cliente: borrador, envío y arranque del análisis.
@@ -810,6 +840,37 @@ begin
       json_build_object('sub', v_cli, 'role', 'authenticated')::text, false);
 
     v_req := public.create_request_draft(v_est, r.descripcion, null);
+
+    ------------------------------------------------------------------
+    -- El adjunto de la maqueta 05 ("Carta actual.pdf", 320 KB). Va
+    -- aquí, con la solicitud todavía en BORRADOR, porque es el único
+    -- momento en que un adjunto puede entrar: la política de INSERT de
+    -- `request_attachments` lo exige (migración 17). Metérselo después a
+    -- una solicitud ya enviada sería sembrar un camino que la
+    -- aplicación no tiene.
+    --
+    -- No hace falta crear nada en el catálogo: el disparador
+    -- `request_attachments_mirror_to_catalogue` (migración 25) crea el
+    -- `files`, su primera versión y el `file_links` de tipo 'request',
+    -- que es de donde la pantalla lee los adjuntos. Por eso Magariños
+    -- pasa a tener CINCO archivos y no cuatro (el quinto, de categoría
+    -- "solicitudes y trabajos"), y la comprobación de la sección 10 lo
+    -- cuenta así.
+    --
+    -- La ruta apunta a un objeto que NO existe en el bucket, igual que
+    -- las de la sección 9.6: esto siembra la base, no sube bytes. La
+    -- fila del adjunto se ve entera y la descarga devuelve el 404 del
+    -- Storage.
+    if r.destino = 'por_validar' then
+      insert into public.request_attachments
+        (request_id, space_id, establishment_id, storage_path, file_name,
+         mime_type, size_bytes, created_by)
+      values
+        (v_req, 'd1000000-0000-0000-0000-000000000001', v_est,
+         'demo/magarinos/carta-actual.pdf', 'Carta actual.pdf',
+         'application/pdf', 327680, v_cli::uuid);
+    end if;
+
     continue when r.destino = 'borrador';
 
     perform public.submit_request(v_req);
@@ -824,8 +885,15 @@ begin
     -- clasificó una IA que nunca se ejecutó.
     ------------------------------------------------------------------
     perform set_config('request.jwt.claims', '', false);
+    --
+    -- El resumen propuesto es el ALCANCE, no una copia de lo que
+    -- escribió el restaurante: es lo que el equipo lee en "Propuesta de
+    -- clasificación" y lo que el restaurante leerá al aceptarla
+    -- (RN-CLS-01). Copiar ahí la descripción dejaba la pantalla
+    -- diciendo la misma frase dos veces, que es exactamente lo que una
+    -- propuesta no es.
     perform public.record_classification(
-      v_req, v_cli::uuid, 'rules', r.categoria, r.descripcion,
+      v_req, v_cli::uuid, 'rules', r.categoria, r.resumen,
       null, null, null, null, null, 'Sin clave de IA configurada');
 
     continue when r.destino = 'por_validar';
@@ -835,7 +903,7 @@ begin
     ------------------------------------------------------------------
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_owner, 'role', 'authenticated')::text, false);
-    perform public.validate_classification(v_req, r.categoria, r.descripcion);
+    perform public.validate_classification(v_req, r.categoria, r.resumen);
 
     continue when r.destino = 'por_aceptar';
 
@@ -1000,6 +1068,9 @@ declare
   v_deuda integer;
   v_por_validar integer;
   v_entrables integer;
+  v_solicitud_maqueta uuid;
+  v_adjuntos integer;
+  v_propuestas integer;
 begin
   select count(*) into v_entrables
   from auth.users u
@@ -1027,10 +1098,29 @@ begin
 
   -- La solicitud que espera al equipo: es la que pone la fila "Pendiente
   -- de validación" en "Necesita atención" del Inicio y de la ficha.
-  select count(*) into v_por_validar from public.requests
+  select id, count(*) over () into v_solicitud_maqueta, v_por_validar
+  from public.requests
   where establishment_id = v_est and state = 'pending_internal_validation';
-  if v_por_validar <> 1 then
-    raise exception 'Se esperaba 1 solicitud pendiente de validación y hay %', v_por_validar;
+  if coalesce(v_por_validar, 0) <> 1 then
+    raise exception 'Se esperaba 1 solicitud pendiente de validación y hay %', coalesce(v_por_validar, 0);
+  end if;
+
+  -- Lo que la pantalla de esa solicitud (maqueta 05) va a leer: su
+  -- adjunto, por el mismo camino que lo lee ella —el enlace del catálogo,
+  -- no `request_attachments`—, y la propuesta que hay que validar. Sin
+  -- las dos cosas, la pantalla se ve pero no se ve resuelta.
+  select count(*) into v_adjuntos
+  from public.file_links
+  where entity_type = 'request' and entity_id = v_solicitud_maqueta;
+  if v_adjuntos <> 1 then
+    raise exception 'La solicitud pendiente de validar tenía que llevar 1 adjunto y lleva %', v_adjuntos;
+  end if;
+
+  select count(*) into v_propuestas
+  from public.classifications
+  where request_id = v_solicitud_maqueta and proposed_category = 'small';
+  if v_propuestas <> 1 then
+    raise exception 'La solicitud pendiente de validar tenía que tener 1 propuesta y tiene %', v_propuestas;
   end if;
 
   -- Las bolsas, leídas como las lee el Resumen. `included - remaining` es
@@ -1046,14 +1136,17 @@ begin
       v_pequenos, v_fotos, v_medianos, v_grandes;
   end if;
 
+  -- Cinco archivos, no cuatro: los cuatro de la sección 9.6 más el
+  -- adjunto de la solicitud pendiente de validar, que el disparador de la
+  -- migración 25 vuelca al catálogo con su propia versión.
   select count(*) into v_archivos from public.files where establishment_id = v_est;
   select count(*) into v_versiones from public.file_versions v
   join public.files f on f.id = v.file_id where f.establishment_id = v_est;
-  if v_archivos <> 4 then
-    raise exception 'Se esperaban 4 archivos y hay %', v_archivos;
+  if v_archivos <> 5 then
+    raise exception 'Se esperaban 5 archivos y hay %', v_archivos;
   end if;
-  if v_versiones <> 7 then
-    raise exception 'Se esperaban 7 versiones de archivo y hay %', v_versiones;
+  if v_versiones <> 8 then
+    raise exception 'Se esperaban 8 versiones de archivo y hay %', v_versiones;
   end if;
 
   select count(*) into v_usuarios from public.establishment_client_users(v_est);
@@ -1067,9 +1160,58 @@ begin
     raise exception 'La mensualidad de Magariños tenía que quedar pagada y quedan % céntimos', v_deuda;
   end if;
 
-  raise notice 'Magariños sembrado: % solicitudes, % trabajos (% publicados), bolsas %/%/%/%, % archivos con % versiones, % usuarios, mensualidad sin deuda',
+  raise notice 'Magariños sembrado: % solicitudes (1 por validar, con adjunto y propuesta), % trabajos (% publicados), bolsas %/%/%/%, % archivos con % versiones, % usuarios, mensualidad sin deuda',
     v_solicitudes, v_trabajos, v_publicados, v_pequenos, v_fotos, v_medianos, v_grandes,
     v_archivos, v_versiones, v_usuarios;
+end $$;
+
+-- ============================================================
+-- 11 · El acceso de Bosco: info@restavor.com entra al espacio sembrado.
+--
+-- Los siete usuarios de arriba son de mentira (@cuotly.test) y sirven
+-- para probar cada papel por separado. El correo con el que se entra a
+-- Cuotly de verdad es info@restavor.com —el mismo que reconoce
+-- `is_platform_owner()` (migración 06) y el mismo de `CUOTLY_OWNER_EMAIL`—
+-- y ese no es un usuario de demostración: es una cuenta real, con su
+-- contraseña, creada al registrarse en la aplicación.
+--
+-- Por eso este bloque NO la crea. Crear aquí una cuenta real con la
+-- contraseña de demostración —que está escrita en este archivo, en un
+-- repositorio— sería publicar la credencial del administrador. Lo que
+-- hace es lo único que le falta cuando ya existe: darle la pertenencia al
+-- espacio de demostración como PROPIETARIO, que es lo que hace que vea
+-- Magariños, sus solicitudes y todo lo demás. Ser propietario de la
+-- plataforma no da acceso a los espacios: el Modo soporte es de la Fase 4
+-- (PRD §4.1), así que hasta entonces hace falta una membresía como la de
+-- cualquiera.
+--
+-- Si la cuenta todavía no existe, no falla ni inventa nada: lo dice y se
+-- vuelve a ejecutar el sembrado después de haberse registrado una vez.
+--
+-- A Elena (owner@cuotly.test) no se la toca: es la que suplantan las
+-- secciones 6 y 9 para construir los flujos, y quitarla dejaría el
+-- sembrado sin poder repetirse. Un espacio con dos propietarios es
+-- exactamente lo que dice el modelo que puede haber.
+-- ============================================================
+do $$
+declare
+  v_space constant uuid := 'd1000000-0000-0000-0000-000000000001';
+  v_bosco uuid;
+begin
+  select id into v_bosco
+  from public.profiles
+  where lower(email) = lower('info@restavor.com');
+
+  if v_bosco is null then
+    raise notice 'info@restavor.com todavía no tiene cuenta: regístrate una vez en la aplicación con ese correo y vuelve a ejecutar este archivo para que sea propietario del espacio de demostración';
+  else
+    insert into public.space_memberships (space_id, user_id, role, status, can_perform_jobs)
+    values (v_space, v_bosco, 'owner', 'active', true)
+    on conflict (space_id, user_id) do update
+      set role = 'owner', status = 'active';
+
+    raise notice 'info@restavor.com es propietario del espacio de demostración';
+  end if;
 end $$;
 
 -- Se suelta la identidad al final, para no dejar la sesión suplantando a

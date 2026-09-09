@@ -535,6 +535,38 @@ sin caso que enseñar:
 Más un cobro de Impulso (399 € + 21 % = 482,79 €) emitido y pagado por
 transferencia, para que Finanzas no esté vacía.
 
+El sembrado ha crecido desde entonces: hay tres identidades más
+(`trabajador2@`, `magarinos@` y `sala.magarinos@`), un segundo restaurante
+para los recorridos que ESCRIBEN (`EST-0002`, "Café Prueba") y un tercero,
+**Magariños** (`EST-0003`), que es el que llena las pantallas: plan
+Premium con Menú Diario, 19 solicitudes en ocho estados, 15 trabajos, cinco
+archivos y su mensualidad pagada. La lista completa, con el porqué de cada
+uno, está en la cabecera del propio archivo.
+
+### Entrar con info@restavor.com
+
+Es el correo con el que se usa Cuotly de verdad: el de `CUOTLY_OWNER_EMAIL`
+y el que reconoce `is_platform_owner()`. Ser propietario de la plataforma
+**no da acceso a ningún espacio** —el Modo soporte es de la Fase 4 (PRD
+§4.1)—, así que para ver el espacio de demostración hace falta una
+membresía como la de cualquiera, y eso es lo que le da la última sección
+del sembrado: propietario del espacio `demo`.
+
+Dos pasos, en este orden:
+
+1. **Registrarse una vez** en la aplicación con `info@restavor.com` (o
+   entrar con Google si es esa la cuenta). El sembrado **no crea** esa
+   cuenta a propósito: escribir en el repositorio una cuenta real con la
+   contraseña de demostración sería publicar la credencial del
+   administrador.
+2. **Ejecutar el sembrado**. Si la cuenta existe, deja el aviso
+   `info@restavor.com es propietario del espacio de demostración`; si no,
+   avisa de que hay que registrarse primero y no falla.
+
+Ejecutarlo otra vez no rompe nada: la membresía se vuelve a crear (el
+sembrado rehace el espacio entero) y la cuenta, que vive fuera del espacio,
+no se toca nunca.
+
 ## Recorrer los flujos con Playwright
 
 `apps/web/e2e/flujos-espacio-demo.spec.ts` entra con los tres usuarios y

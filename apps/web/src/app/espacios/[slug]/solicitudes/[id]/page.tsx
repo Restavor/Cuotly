@@ -3,38 +3,55 @@ import { notFound, redirect } from "next/navigation";
 
 import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
-import { Card, StatusBadge } from "@/components/ui";
+import {
+  AfterValidateNote,
+  ClassificationCard,
+  ClientRequestCard,
+  RequestHeader,
+  RequestHistoryCard,
+} from "@/components/request/Detail";
+import { Card, NoPermissionState } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
+import { requestHeadline } from "@/core/requests";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import { requestTone } from "../page";
+import { loadRequestDetail } from "./detail-load";
 import {
+  CorrectClassificationForm,
   RetryAnalysisForm,
   RejectRequestForm,
   RequestInformationForm,
-  ValidateClassificationForm,
+  ValidateProposalForm,
 } from "./RequestActions";
 
 /**
- * Detalle de una solicitud para el equipo (HU-12, HU-13, HU-14).
+ * Detalle de una solicitud para el equipo (HU-11, HU-12, HU-13, HU-14),
+ * con la forma de la maqueta 05 · "Solicitudes — Validación interna": lo
+ * que pidió el restaurante a un lado, la propuesta de clasificación con su
+ * plazo y sus dos botones al otro, y el historial debajo.
  *
  * Las acciones que se ofrecen dependen del estado, pero eso es
  * **presentación**: quien decide si una acción es legal es el servidor.
  * Cada botón llama a la función que hace cumplir su regla, y si el estado
  * no la admite, la función lanza y el error se enseña. Esta pantalla no
  * puede autorizar nada por su cuenta (CLAUDE.md MUST).
+ *
+ * `?corregir=1` abre el formulario largo de corrección. Va en la dirección
+ * y no en un estado del navegador para que el botón de volver lo cierre y
+ * para que la pantalla entera siga funcionando sin JavaScript (CA-22).
  */
 export const dynamic = "force-dynamic";
 
-type RequestStateKey = keyof typeof es.naming.states.request;
-type CategoryKey = keyof typeof es.naming.categories;
-
 export default async function TeamRequestDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
+  searchParams: Promise<{ corregir?: string }>;
 }) {
   const { slug, id } = await params;
+  const { corregir } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -42,52 +59,25 @@ export default async function TeamRequestDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: request } = await supabase
-    .from("requests")
-    .select(
-      "id, code, description, context, state, created_at, validated_category, validated_summary, establishment_id",
-    )
-    .eq("id", id)
-    .maybeSingle();
+  const detail = await loadRequestDetail(supabase, id);
+  if (detail === null) notFound();
 
-  if (!request) notFound();
+  const { request, establishment, proposal, counter, estimate, job, canManage } = detail;
+  const state = request.state;
 
-  const [{ data: establishment }, { data: job }] = await Promise.all([
-    supabase
-      .from("establishments")
-      .select("id, name, code")
-      .eq("id", request.establishment_id)
-      .maybeSingle(),
-    supabase.from("jobs").select("id, code, state").eq("request_id", id).maybeSingle(),
-  ]);
+  // Un restaurante SÍ puede leer su propia solicitud (RLS se la deja), así
+  // que puede llegar a esta dirección. No se le enseña esta pantalla: no
+  // porque no pueda ver la fila, sino porque casi todo lo que hay aquí
+  // —la propuesta, el reloj interno, el historial— le vuelve vacío, y una
+  // pantalla vacía se lee como "todavía no hay nada", que es mentira
+  // (CA-20). Se le lleva a la suya, que enseña lo que sí es suyo.
+  const { data: esDelEquipo } = await supabase.rpc("is_space_member", {
+    p_space_id: request.space_id,
+  });
 
-  // ¿Puede esta persona reintentar el análisis? Lo contesta el servidor,
-  // no una comprobación escrita aquí: `manage_requests` es propietario o
-  // administrador, y es lo mismo que exigen validar, pedir información y
-  // rechazar.
-  const { data: space } = await supabase
-    .from("establishments")
-    .select("space_id")
-    .eq("id", request.establishment_id)
-    .maybeSingle();
-
-  const { data: puedeGestionar } = space
-    ? await supabase.rpc("has_capability", {
-        p_space_id: space.space_id,
-        p_capability: "manage_requests",
-      })
-    : { data: false };
-
-  // La propuesta de la IA vive en `classifications` y solo la lee el
-  // equipo (RN-CLS-04). Si no hay ninguna, no se inventa: el formulario
-  // sale vacío y quien valida escribe el resumen.
-  const { data: classification } = await supabase
-    .from("classifications")
-    .select("proposed_category, proposed_summary")
-    .eq("request_id", id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  if (!esDelEquipo) {
+    redirect(`/espacios/${slug}/restaurantes/${request.establishment_id}/solicitudes/${id}`);
+  }
 
   // La misma conversación que ve el restaurante (§66). Quién aparece como
   // autor lo decide el servidor: a este lado sí le dice la persona.
@@ -97,73 +87,128 @@ export default async function TeamRequestDetailPage({
 
   const conversation = conversationId ? await loadConversation(supabase, conversationId) : null;
 
-  const state = request.state;
+  const base = `/espacios/${slug}/solicitudes/${id}`;
+  const enValidacion = state === "analyzing" || state === "pending_internal_validation";
+
+  // Sin propuesta que validar no hay atajo posible: el formulario largo es
+  // la única forma, y sale abierto (RN-CLS-03 exige que alguien decida la
+  // categoría, y aquí no hay ninguna que aceptar de un botón).
+  const corrigiendo = corregir === "1" || proposal === null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
-      <header>
-        <p className="text-sm text-text-secondary">
-          {request.code} · {establishment?.name ?? "—"}
-        </p>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.teamArea.requests.detailTitle}</h1>
-        <div className="mt-2">
-          <StatusBadge tone={requestTone(state)}>
-            {es.naming.states.request[state as RequestStateKey] ?? state}
-          </StatusBadge>
+    <div className="mx-auto max-w-6xl space-y-6">
+      <RequestHeader
+        headline={requestHeadline(request.description)}
+        code={request.code}
+        state={state}
+        establishmentName={establishment?.name ?? null}
+        backHref={`/espacios/${slug}/solicitudes`}
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-start">
+        <div className="space-y-6">
+          <ClientRequestCard
+            request={request}
+            establishmentName={establishment?.name ?? null}
+            attachments={detail.attachments}
+            attachmentsFailed={detail.attachmentsFailed}
+          />
+
+          <RequestHistoryCard entries={detail.history} />
         </div>
-      </header>
 
-      <Card title={es.teamArea.requests.descriptionColumn}>
-        <p className="whitespace-pre-wrap text-text">{request.description}</p>
-        {request.context ? (
-          <p className="mt-3 text-sm text-text-secondary">
-            {es.teamArea.requests.contextLabel}: {request.context}
-          </p>
-        ) : null}
-        {request.validated_category ? (
-          <p className="mt-3 text-sm text-text-secondary">
-            {es.teamArea.requests.categoryColumn}:{" "}
-            {es.naming.categories[request.validated_category as CategoryKey] ??
-              request.validated_category}
-          </p>
-        ) : null}
-      </Card>
+        <div className="space-y-6">
+          <ClassificationCard
+            request={request}
+            proposal={proposal}
+            estimate={estimate}
+            counter={counter}
+            /*
+              Fuera del tramo de validación la tarjeta no lleva botones:
+              lo que enseña ya está decidido. Y dentro, a quien no puede
+              validar se le dice por qué en vez de dejarle el hueco: el
+              control no es esto —`validate_classification()` comprueba
+              `manage_requests` pase lo que pase aquí—, es no ofrecerle un
+              botón que le va a decir que no (CLAUDE.md).
+            */
+            actions={
+              !enValidacion ? null : canManage ? (
+                <>
+                  {corrigiendo ? (
+                    <CorrectClassificationForm
+                      requestId={id}
+                      suggestedCategory={proposal?.category ?? null}
+                      suggestedSummary={proposal?.summary ?? null}
+                      cancelHref={proposal === null ? null : base}
+                    />
+                  ) : (
+                    <ValidateProposalForm
+                      requestId={id}
+                      category={proposal.category}
+                      summary={proposal.summary}
+                      correctHref={`${base}?corregir=1`}
+                    />
+                  )}
+                  <AfterValidateNote />
+                </>
+              ) : (
+                <div className="mt-4">
+                  <NoPermissionState
+                    title={es.teamArea.requests.noManageTitle}
+                    description={es.teamArea.requests.noManageReason}
+                  />
+                </div>
+              )
+            }
+          />
 
-      {/*
-        El botón de reintentar SOLO aquí: "Recibida" es, desde que la
-        clasificación es automática (RN-CLS-01), el estado en el que se
-        queda una solicitud cuyo análisis falló. En el camino normal esta
-        pantalla nunca lo enseña.
+          {/*
+            El botón de reintentar SOLO aquí: "Recibida" es, desde que la
+            clasificación es automática (RN-CLS-01), el estado en el que se
+            queda una solicitud cuyo análisis falló. En el camino normal
+            esta pantalla nunca lo enseña.
 
-        Y solo a quien puede ejecutarlo. Que no se vea no es el control de
-        acceso —el control está en `begin_request_analysis()` y en
-        `record_classification()`, migración 20260902000044—: es no
-        ofrecerle a un trabajador un botón que le va a decir que no.
-      */}
-      {state === "received" && puedeGestionar ? <RetryAnalysisForm requestId={id} /> : null}
+            Y solo a quien puede ejecutarlo. Que no se vea no es el control
+            de acceso —el control está en `begin_request_analysis()` y en
+            `record_classification()`, migración 20260902000044—: es no
+            ofrecerle a un trabajador un botón que le va a decir que no.
+          */}
+          {state === "received" && canManage ? <RetryAnalysisForm requestId={id} /> : null}
 
-      {state === "analyzing" || state === "pending_internal_validation" ? (
-        <ValidateClassificationForm
-          requestId={id}
-          suggestedCategory={classification?.proposed_category ?? null}
-          suggestedSummary={classification?.proposed_summary ?? null}
-        />
-      ) : null}
+          {(state === "received" || enValidacion) && canManage ? (
+            <>
+              <RequestInformationForm requestId={id} />
+              <RejectRequestForm requestId={id} />
+            </>
+          ) : null}
 
-      {state === "received" || state === "analyzing" || state === "pending_internal_validation" ? (
-        <>
-          <RequestInformationForm requestId={id} />
-          <RejectRequestForm requestId={id} />
-        </>
-      ) : null}
+          {state === "pending_client_acceptance" ? (
+            <Card title={es.teamArea.requests.waitingClient}>
+              <p className="text-sm text-text-secondary">
+                {es.teamArea.requests.waitingClientReason}
+              </p>
+            </Card>
+          ) : null}
 
-      {state === "pending_client_acceptance" ? (
-        <Card title={es.teamArea.requests.waitingClient}>
-          <p className="text-sm text-text-secondary">
-            {es.teamArea.requests.waitingClientReason}
-          </p>
-        </Card>
-      ) : null}
+          {request.rejected_reason ? (
+            <Card title={es.naming.states.request.rejected}>
+              <p className="whitespace-pre-wrap text-sm text-text">{request.rejected_reason}</p>
+            </Card>
+          ) : null}
+
+          {job ? (
+            <Card>
+              <Link
+                href={`/espacios/${slug}/trabajos/${job.id}`}
+                className="flex items-center gap-2 text-sm font-semibold text-cuotly-green underline"
+              >
+                <Icon name="job" className="h-[18px] w-[18px]" />
+                {es.teamArea.requests.jobLink} · {job.code}
+              </Link>
+            </Card>
+          ) : null}
+        </div>
+      </div>
 
       {conversationId && conversation ? (
         <Conversation
@@ -172,14 +217,6 @@ export default async function TeamRequestDetailPage({
           messages={conversation.messages}
           readOnly={conversation.readOnly}
         />
-      ) : null}
-
-      {job ? (
-        <Card>
-          <Link href={`/espacios/${slug}/trabajos/${job.id}`} className="text-cuotly-green underline">
-            {es.teamArea.requests.jobLink} · {job.code}
-          </Link>
-        </Card>
       ) : null}
     </div>
   );

@@ -1366,6 +1366,99 @@ regenerar salió idéntica, así que no había desviación.
       implementada, y queda escrito aquí para que se decida qué se hace con
       ella, no para taparlo.
 
+26. **Solicitudes: la pantalla de validación interna** (09/09/2026, sin
+    migración). La maqueta 05 · "Solicitudes — Validación interna" puesta
+    en pie sobre datos de verdad: lo que pidió el restaurante a un lado
+    —con su fecha, su mensaje entero y sus adjuntos—, la propuesta de
+    clasificación al otro con su categoría, su consumo estimado, su alcance
+    y el reloj de primera atención, y debajo el historial.
+
+    **No añade ni una tabla ni una función.** Todo lo que enseña ya estaba:
+    `requests`, `classifications`, `timer_events`, `audit_log`, el catálogo
+    de archivos y `establishment_cycle_allowance()`. Lo que faltaba era
+    pedirlo y saber decirlo, y eso vive en `src/core/requests.ts` con sus
+    tests: el titular (la primera frase de lo que escribió el
+    restaurante, porque **no hay columna "título" y no se ha inventado
+    una**), si el contador sigue corriendo —la misma regla que
+    `counter_is_running()` en SQL, que no se puede llamar por RPC—, y el
+    consumo estimado.
+
+    **El consumo estimado no es "1 cambio" y ya.** Son los cuatro
+    desenlaces reales de `accept_request()`, que no significan lo mismo:
+    un cambio de la bolsa cuando queda saldo (RN-CLS-08: se registra al
+    aceptar, no ahora); **a presupuesto** cuando el plan no incluye
+    ninguno de esa categoría (RN-COM-12); **sin crédito** cuando sí la
+    incluye y el ciclo está a cero, que NO es presupuesto sino una
+    aceptación que va a fallar —y quien valida tiene que saberlo antes de
+    mandar una propuesta que el restaurante no va a poder aceptar—; y "no
+    se ha podido calcular" cuando la bolsa no llegó, que es lo honesto en
+    vez de suponer uno de los otros tres (CA-20).
+
+    **Dos botones, no un formulario.** "Validar propuesta" acepta lo
+    propuesto de un clic —que es lo que se hace el 90 % de las veces— y
+    "Corregir clasificación" abre el formulario largo cambiando la
+    dirección (`?corregir=1`), así que el botón de volver lo cierra y la
+    pantalla entera sigue siendo de servidor (CA-22). Que el atajo mande
+    la categoría y el resumen ocultos **no le concede nada a nadie**:
+    `validate_classification()` comprueba `manage_requests` y el estado, y
+    mandar otra categoría por ahí es exactamente lo mismo que elegirla en
+    el desplegable de al lado. Sin propuesta grabada no hay atajo: sale el
+    formulario, diciendo por qué.
+
+    **El historial no es una tabla nueva.** `state_events` es de trabajos y
+    tareas, así que el historial de una solicitud sale de `audit_log`, que
+    es donde ya está quién, qué, cuándo y por qué (§21.2, CA-15), con los
+    mismos nombres en español que la pantalla de auditoría (CA-21). No se
+    ha escrito una frase bonita por cada paso: eso habría sido un segundo
+    relato que se separa del libro en cuanto cambie una función.
+
+    **Magariños llena la pantalla.** El sembrado da a la solicitud que
+    espera validación el texto de la maqueta, su adjunto ("Carta
+    actual.pdf", que entra con la solicitud todavía en borrador porque es
+    el único momento en que la política lo permite) y una propuesta cuyo
+    resumen es el **alcance** y no una copia de la descripción, que era lo
+    que había y dejaba la pantalla diciendo la misma frase dos veces. El
+    adjunto sube a cinco los archivos del catálogo de Magariños, y la
+    comprobación del propio sembrado lo cuenta así.
+
+    **`supabase/tests/validacion_interna.sql`**, ejecutada contra un
+    PostgreSQL 16 con `bootstrap-postgres-local.sql` junto a las otras
+    quince, comprueba las cinco cosas de las que depende una pantalla que
+    solo consulta: que el equipo lee todo lo que pinta, que el restaurante
+    **no** lee la propuesta (RN-CLS-04) ni antes ni después de validarla,
+    que un trabajador que llame a la función directamente se lleva un
+    error —el botón no es el control (CLAUDE.md MUST)—, que el atajo
+    guarda exactamente lo propuesto, y que validar **para T1**
+    (RN-SLA-03), que es lo que el recuadro del plazo dice. **Comprobada
+    con dos mutaciones**: abrirle `classifications` al cliente y darle
+    `manage_requests` al trabajador hacen fallar la suite, cada una por su
+    comprobación.
+
+    **info@restavor.com entra al espacio sembrado.** Es el correo con el
+    que se usa Cuotly de verdad y el que ya reconoce `is_platform_owner()`,
+    pero ser propietario de la plataforma **no da acceso a un espacio** (el
+    Modo soporte es de la Fase 4), así que le faltaba la membresía. El
+    sembrado se la da como propietario si la cuenta existe. **No la crea**:
+    escribir aquí una cuenta real con la contraseña de demostración, que
+    está en este repositorio, sería publicar la credencial del
+    administrador. Si todavía no existe, lo dice y se vuelve a ejecutar
+    después de registrarse una vez. A la propietaria de demostración no se
+    la toca: es la que suplantan las secciones que construyen los flujos.
+
+    **Lo que NO entrega, y se dice en vez de fingirlo:**
+
+    - **Sin recorrido de Playwright ejecutado**, igual que las seis
+      pantallas anteriores: esos tests entran con sesión contra el proyecto
+      real y desde aquí no se pueden ejecutar. El recorrido de CA-19 sí se
+      ha **actualizado** al camino nuevo (pasa por "Corregir clasificación"
+      antes de validar), pero no se ha visto pasar, y eso no es lo mismo.
+    - **El menú de tres puntos de la maqueta no está.** No hay ninguna
+      acción que meter dentro que no esté ya a la vista, y un menú vacío es
+      peor que ninguno.
+    - **El titular sale de la primera frase de la descripción.** Es una
+      decisión de presentación, no un campo nuevo: si algún día se quiere
+      un asunto de verdad, es una columna y una migración, no un recorte.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

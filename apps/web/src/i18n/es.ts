@@ -111,6 +111,25 @@ export const es = {
     remove: "Quitar",
     attachmentsTitle: "Archivos adjuntos",
     download: "Descargar",
+    /*
+      El tipo de archivo, dicho corto, para la fila de un adjunto. Las
+      claves son los `mime_type` que admite RN-ARC-06 —la misma lista del
+      CHECK de `file_versions`— y no una extensión adivinada del nombre:
+      un archivo llamado "carta.pdf" que en realidad es un JPEG diría PDF.
+    */
+    types: {
+      "image/jpeg": "JPG",
+      "image/png": "PNG",
+      "image/webp": "WEBP",
+      "image/gif": "GIF",
+      "application/pdf": "PDF",
+      "application/msword": "Word",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "Word",
+      "application/vnd.ms-excel": "Excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "Excel",
+      "text/plain": "Texto",
+      "text/csv": "CSV",
+    },
     rejectedType: "Ese tipo de archivo no se admite. Se aceptan imágenes, PDF, Word, Excel y texto.",
     rejectedSize: "El archivo pasa de 25 MB, que es el máximo por archivo.",
     rejectedEmpty: "El archivo está vacío.",
@@ -740,6 +759,84 @@ export const es = {
       waitingClientReason:
         "Ya está validada y enviada. El siguiente paso es suyo: aceptar o rechazar el alcance.",
       jobLink: "Ver el trabajo",
+
+      // ---------------------------------------------------------------
+      // El detalle de una solicitud (§20.4, HU-11): lo que pidió el
+      // restaurante a la izquierda, la propuesta y su validación a la
+      // derecha, y debajo el historial.
+      // ---------------------------------------------------------------
+      back: "Volver a solicitudes",
+      clientCardTitle: "Solicitud del restaurante",
+      establishmentLabel: "Restaurante",
+      receivedAtLabel: "Fecha de recepción",
+      messageLabel: "Mensaje del restaurante",
+      attachments: (cuantos: number) => `Adjuntos (${cuantos})`,
+      attachmentsNone: "Sin adjuntos",
+      attachmentsNoneReason: "Esta solicitud no lleva ningún archivo.",
+      attachmentsFailedTitle: "No se han podido leer los adjuntos",
+      attachmentDownload: "Descargar",
+      attachmentUnknownType: "Archivo",
+      attachmentNoVersion: "Sin versión registrada",
+      // RN-ARC-06 · el tamaño se guarda en bytes; el que se lee es en MB
+      // o KB, con la coma decimal del español.
+      attachmentMegabytes: (mb: string) => `${mb} MB`,
+      attachmentKilobytes: (kb: string) => `${kb} KB`,
+
+      proposalTitle: "Propuesta de clasificación",
+      validatedTitle: "Clasificación validada",
+      proposalCategoryLabel: "Categoría",
+      proposalConsumptionLabel: "Consumo estimado",
+      proposalScopeLabel: "Alcance",
+      // RN-CLS-08 · lo que costará aceptarla. Se registra en la
+      // aceptación del cliente, no ahora, y por eso es "estimado".
+      consumptionOne: (categoria: string) => `1 ${categoria.toLocaleLowerCase("es-ES")}`,
+      consumptionRemaining: (quedan: number, incluidos: number) =>
+        `Le quedan ${quedan} de ${incluidos} en este ciclo`,
+      consumptionBudgeted: "A presupuesto",
+      consumptionBudgetedReason:
+        "Su plan no incluye ningún cambio de esta categoría, así que no toca bolsa: se presupuesta aparte.",
+      consumptionExhausted: "Sin crédito en el ciclo",
+      consumptionExhaustedReason:
+        "Ha gastado los que incluye su plan de esta categoría. Con la bolsa a cero no podrá aceptar la propuesta hasta que renueve el ciclo.",
+      consumptionUnknown: "No se ha podido calcular",
+      consumptionUnknownReason:
+        "No se ha podido leer el ciclo de consumos de este restaurante, así que no se afirma lo que costará.",
+      // RN-CLS-02 · si la propuesta salió del motor de reglas y no de la
+      // IA, se dice: quien valida tiene que saber qué está leyendo.
+      proposalSourceAi: "Propuesta por la IA",
+      proposalSourceRules: "Propuesta por reglas",
+      proposalFallbackReason: (motivo: string) => `Motivo: ${motivo}`,
+      proposalNoneTitle: "Todavía no hay propuesta",
+      proposalNoneReason:
+        "El análisis automático no ha dejado ninguna clasificación para esta solicitud. Escribe tú la categoría y el resumen que leerá el restaurante.",
+
+      // RN-SLA-01/02/03 · el reloj de primera atención.
+      t1Title: "Primera atención",
+      t1Remaining: (tiempo: string) => `Quedan ${tiempo} laborables`,
+      t1Hint: "Tiempo estimado para validar la propuesta de clasificación.",
+      t1Overdue: "Fuera de plazo",
+      t1OverdueHint:
+        "El plazo de primera atención se ha pasado. Sigue contando: validarla ahora es lo que lo cierra.",
+      t1NotStarted: "El contador no ha arrancado",
+      t1NotStartedHint: "Arranca cuando el restaurante envía la solicitud.",
+      t1StoppedWaitingClient: "Contador parado: espera al restaurante",
+      t1StoppedWaitingInformation: "Contador parado: falta información",
+      t1StoppedRejected: "Contador parado: solicitud rechazada",
+      t1StoppedClosed: "Contador parado: este tramo ya pasó",
+      t1Total: (horas: number) => `Plazo de ${horas} h laborables`,
+
+      validateProposalSubmit: "Validar propuesta",
+      validateProposalPending: "Validando…",
+      correctClassification: "Corregir clasificación",
+      correctCancel: "Dejarlo como está",
+      afterValidateNote: "Después se solicitará la aceptación del cliente.",
+      noManageTitle: "No puedes validar esta solicitud",
+      noManageReason:
+        "Validar, corregir, pedir información o rechazar es cosa del propietario o de un administrador (RN-CLS-03).",
+
+      historyTitle: "Historial de la solicitud",
+      historySystemActor: "Sistema",
+      historyEmptyTitle: "Sin movimientos registrados",
     },
     jobs: {
       title: "Trabajos",

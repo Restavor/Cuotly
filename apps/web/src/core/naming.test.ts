@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { es } from "@/i18n/es";
+import { ALLOWED_MIME_TYPES } from "./files";
 import { ENTITY_KINDS, STATE_CATALOGUE, type StatefulEntity } from "./naming";
 
 /**
@@ -42,6 +43,14 @@ describe("CA-21 · un solo juego de nombres", () => {
         expect(nombre, `"${entity}.${valor}" sigue mostrando el valor crudo`).not.toMatch(/^[a-z][a-z0-9_]*$/);
       }
     }
+  });
+
+  it("RN-ARC-06 · cada tipo de archivo admitido tiene nombre corto, y ninguno sobra", () => {
+    // La fila de un adjunto lee "PDF · 320 KB". Ese "PDF" sale del
+    // `mime_type` guardado, así que un tipo admitido sin nombre dejaría la
+    // fila diciendo "application/pdf", y un nombre huérfano es casi
+    // siempre el resto de un tipo que se dejó de admitir.
+    expect(Object.keys(es.files.types).sort()).toEqual([...ALLOWED_MIME_TYPES].sort());
   });
 
   it("CA-20: los cuatro motivos de pantalla vacía del PRD, y ninguno más", () => {

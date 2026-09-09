@@ -4,6 +4,7 @@ import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 import { Card, StatusBadge } from "@/components/ui";
 import { isDraft } from "@/core/request-draft";
+import { requestTone } from "@/core/requests";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,14 +30,6 @@ export const dynamic = "force-dynamic";
 
 type RequestStateKey = keyof typeof es.naming.states.request;
 type CategoryKey = keyof typeof es.naming.categories;
-
-function tone(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
-  if (state === "published" || state === "closed" || state === "accepted") return "success";
-  if (state === "pending_client_acceptance" || state === "needs_information") return "warning";
-  if (state.startsWith("cancelled") || state === "rejected") return "danger";
-  if (state === "in_progress" || state === "in_correction") return "info";
-  return "neutral";
-}
 
 export default async function ClientRequestDetailPage({
   params,
@@ -113,7 +106,7 @@ export default async function ClientRequestDetailPage({
           {es.clientArea.requestDetailTitle}
         </h1>
         <div className="mt-2">
-          <StatusBadge tone={tone(state)}>
+          <StatusBadge tone={requestTone(state)}>
             {es.naming.states.request[state as RequestStateKey] ?? state}
           </StatusBadge>
         </div>
