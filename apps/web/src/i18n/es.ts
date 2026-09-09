@@ -2153,6 +2153,20 @@ export const es = {
     auditLink: "Ver la auditoría del espacio",
   },
 
+  /**
+   * PRD §21.4 · el estado nunca se expresa solo con color: la insignia
+   * roja lleva su texto al lado, y debajo queda el motivo largo de
+   * siempre.
+   *
+   * Es una marca, no una función. Las integraciones analíticas y las
+   * oportunidades que dependen de ellas son la Fase 3 (PRD §24.1) y aquí
+   * no se construye nada de eso: lo único que se dice, en rojo, es que no
+   * hay sincronización, que es el hecho cierto hoy.
+   */
+  analyticsSync: {
+    noSyncBadge: "Sin sincronización",
+  },
+
   emptyReasons: {
     not_connected: "No conectado. Falta enlazar el servicio para ver este dato.",
     no_data_yet: "Sin datos todavía. Aparecerán en cuanto haya actividad.",

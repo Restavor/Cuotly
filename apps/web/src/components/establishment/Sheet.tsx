@@ -594,7 +594,10 @@ export function EstablishmentSheet({
             )}
           </Card>
 
-          <Card title={t.digitalTitle}>
+          <Card
+            title={t.digitalTitle}
+            action={<StatusBadge tone="danger" icon="alert">{es.analyticsSync.noSyncBadge}</StatusBadge>}
+          >
             <EmptyState title={t.digitalEmptyTitle} description={t.digitalEmptyReason} />
           </Card>
         </>
@@ -1001,7 +1004,10 @@ export function EstablishmentSheet({
 
 
           {block.key === "integrations" ? (
-            <Card title={t.integrationsTitle}>
+            <Card
+              title={t.integrationsTitle}
+              action={<StatusBadge tone="danger" icon="alert">{es.analyticsSync.noSyncBadge}</StatusBadge>}
+            >
               <EmptyState
                 title={t.integrationsEmptyTitle}
                 description={t.integrationsEmptyReason}

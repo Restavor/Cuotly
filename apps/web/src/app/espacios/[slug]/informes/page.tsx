@@ -1,4 +1,4 @@
-import { Card, EmptyState } from "@/components/ui";
+import { Card, EmptyState, StatusBadge } from "@/components/ui";
 import { es } from "@/i18n/es";
 
 /**
@@ -15,9 +15,9 @@ export const dynamic = "force-static";
 
 export default function ReportsPage() {
   const familias = [
-    { title: es.reportsPage.operationTitle, empty: es.reportsPage.operationEmpty, reason: es.reportsPage.notBuiltReason },
-    { title: es.reportsPage.financeTitle, empty: es.reportsPage.financeEmpty, reason: es.reportsPage.notBuiltReason },
-    { title: es.reportsPage.digitalTitle, empty: es.reportsPage.digitalEmpty, reason: es.reportsPage.digitalNotBuiltReason },
+    { title: es.reportsPage.operationTitle, empty: es.reportsPage.operationEmpty, reason: es.reportsPage.notBuiltReason, noSync: false },
+    { title: es.reportsPage.financeTitle, empty: es.reportsPage.financeEmpty, reason: es.reportsPage.notBuiltReason, noSync: false },
+    { title: es.reportsPage.digitalTitle, empty: es.reportsPage.digitalEmpty, reason: es.reportsPage.digitalNotBuiltReason, noSync: true },
   ];
 
   return (
@@ -32,7 +32,17 @@ export default function ReportsPage() {
       </Card>
 
       {familias.map((familia) => (
-        <Card key={familia.title} title={familia.title}>
+        <Card
+          key={familia.title}
+          title={familia.title}
+          action={
+            familia.noSync ? (
+              <StatusBadge tone="danger" icon="alert">
+                {es.analyticsSync.noSyncBadge}
+              </StatusBadge>
+            ) : null
+          }
+        >
           <EmptyState title={familia.empty} description={familia.reason} />
         </Card>
       ))}
