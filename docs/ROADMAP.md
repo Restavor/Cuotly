@@ -1243,12 +1243,12 @@ comparte, el botón de volver deshace el cambio de pestaña, y la pantalla
 entera es de servidor, así que no se pierde nada si no hidrata (CA-22).
 
 **Lo que la Fase 1 no tiene aparece diciendo por qué**, no como un hueco ni
-como un dato de ejemplo: los datos fiscales (§15.2 los pide y
-`establishments` no tiene esas columnas), el contador propio de Menú Diario
-(RN-CON-02), el backup de la web, las integraciones analíticas y el botón
-de retirar un acceso (RN-EST-05). Las maquetas de las que sale esta
-pantalla enseñaban esos bloques rellenos y van marcadas como "Datos de
-ejemplo"; aquí no se copiaron (CLAUDE.md MUST NOT).
+como un dato de ejemplo: el contador propio de Menú Diario (RN-CON-02), el
+backup de la web, las integraciones analíticas y el botón de retirar un
+acceso (RN-EST-05). Las maquetas de las que sale esta pantalla enseñaban
+esos bloques rellenos y van marcadas como "Datos de ejemplo"; aquí no se
+copiaron (CLAUDE.md MUST NOT). Los datos fiscales estaban en esa lista y ya
+no: los guarda la migración 57 (punto 27).
 
 Dos distinciones que la pantalla sí hace, y que se pierden fácil: una
 consulta de usuarios **fallida** no es una lista vacía —"no se ha podido
@@ -1458,6 +1458,117 @@ regenerar salió idéntica, así que no había desviación.
     - **El titular sale de la primera frase de la descripción.** Es una
       decisión de presentación, no un campo nuevo: si algún día se quiere
       un asunto de verdad, es una columna y una migración, no un recorte.
+
+---
+
+27. **Los datos del establecimiento: RN-EST-11 dejó de ser decorativa**
+    (09/09/2026, migración 57). §15.2 pide **quince datos mínimos** de un
+    restaurante y `establishments` tenía siete columnas: `id`, `space_id`,
+    `group_id`, `code`, `name`, `status` y `created_at`. Razón social,
+    identificación fiscal, dirección, código postal, ciudad, teléfonos,
+    correo de contacto, sitio web, dominio, horarios y plataforma web **no
+    existían en ninguna parte de la base de datos**, y el bloque de
+    Operación de la ficha se limitaba a decir por qué no había nada.
+
+    Con ellos entran las dos reglas que los acompañan, y una de las dos
+    llevaba seis migraciones sin hacer nada:
+
+    - **RN-EST-11** ("el propietario puede editar contacto y datos
+      fiscales; los Editores solo con el permiso `edit_establishment_data`").
+      Ese permiso existe en `establishment_permissions` desde la migración
+      3 y **no lo leía nadie**: la pestaña Usuarios lo enseñaba ("Editar
+      datos") y no había ni un dato que editar ni una función que lo
+      comprobara. Ahora lo comprueba
+      `client_can_edit_establishment_data()`, con el mismo molde que
+      `client_can_view_billing()` y el mismo reparto de cuatro casos: el
+      propietario global del grupo sí, el propietario local sí, el editor
+      con el permiso sí, el editor de grupo y Consulta no.
+    - **RN-EST-12** ("cambiar datos en la ficha de Cuotly no cambia el
+      contenido público de la web"). Va escrito **encima** del formulario y
+      no debajo: hay que leerlo antes de escribir el teléfono nuevo, no
+      después de guardarlo.
+
+    **La puerta lateral se cierra, y era una de verdad.** Mientras
+    `establishments` tuviera política de UPDATE, un administrador podía
+    reescribir el CIF de un cliente por PostgREST sin actor y sin valor
+    anterior — el mismo agujero que el bloqueante B2 de la migración 37
+    encontró con `status`. Se hacen las dos cosas que aquella hizo a
+    medias: se retira la política (`establishments` ya no se escribe por
+    PostgREST: el estado va por `set_establishment_status()` y la ficha por
+    `set_establishment_data()`) **y** se añade el disparador, porque la
+    barrera tiene que estar en la tabla y no en el privilegio. Y la función
+    del disparador queda revocada a `public`, `anon` y `authenticated`, que
+    es un paso más que la 37 (aquella se quedó en justificarse en el
+    barrido del Hito 7).
+
+    La auditoría escribe **solo lo que cambió**: un apunte con los trece
+    campos en cada guardado esconde el único dato que importa. Y guardar lo
+    mismo dos veces no escribe nada (CA-17).
+
+    **La lista de campos es un dato, no trece formularios.**
+    `IDENTITY_FIELDS` (`src/core/establishments.ts`) es la fuente y el tipo
+    se **deriva** de ella, igual que `CYCLE_CATEGORY_ORDER` de
+    `CHANGE_CATEGORIES`. `identity-fields.test.ts` comprueba las cuatro
+    copias contra ella —etiquetas en español, formulario, acción y las
+    columnas de la propia migración— y **falla con cuatro pruebas** si se
+    añade un campo a una sola. Es el fallo que se cuela solo: se añade la
+    columna, se añade al formulario, y la vista de lectura sigue enseñando
+    once de doce sin que falle ningún tipo. Comprobado con mutación.
+
+    Gestión pasa a tener **seis bloques** y no cinco. §20 de la
+    especificación maestra enumera cinco contenidos —"plan, pagos,
+    usuarios, archivos e integraciones"— y ninguno es la ficha de datos,
+    pero los nueve datos de identidad de §15.2 no caben en ninguno de los
+    cinco: van donde los pone la maqueta, primeros, porque la identidad del
+    restaurante se consulta antes que su plan. **Está anotado para que
+    Bosco lo confirme**, no resuelto por cuenta propia.
+
+    **`supabase/tests/datos_del_establecimiento.sql`**, ejecutada contra un
+    PostgreSQL 16 con `bootstrap-postgres-local.sql` junto a las otras
+    dieciséis: RN-EST-11 por los ocho lados (propietario del espacio,
+    administrador, trabajadora **no**, propietario global, propietario
+    local, editor con permiso, editor sin permiso **no**, Consulta **no**),
+    el propietario del restaurante **de al lado** tampoco —los dos son del
+    mismo grupo, que es lo que hace la prueba interesante—, RN-EST-05 (un
+    acceso revocado deja de contar), CA-17, la normalización, las tres
+    validaciones y las dos mitades de la barrera. La segunda mitad importa:
+    el UPDATE directo como `authenticated` lo niega RLS por no haber
+    política, así que ese bloque pasaría igual **sin disparador alguno** y
+    no probaría nada — hay un segundo bloque que escribe sin RLS por
+    delante y exige que el error mencione `set_establishment_data()`.
+    También que el disparador no ha roto la puerta de al lado
+    (`set_establishment_status()` escribe otra columna y tiene que seguir
+    pasando).
+
+    El sembrado llena la ficha de Magariños **por su función**, no con un
+    INSERT de columnas: un UPDATE directo lo rechazaría el disparador igual
+    que en producción, y sembrar así comprueba de paso que la puerta
+    funciona. El sitio web se siembra sin esquema a propósito, para
+    ejercitar la normalización.
+
+    **Lo que NO entrega, y se dice en vez de fingirlo:**
+
+    - **Las notas internas (RN-EST-13) siguen sin existir.** "Los clientes
+      nunca" las ven, y una columna de `establishments` la vería: RLS
+      filtra filas y la fila del restaurante es suya. Taparla exige
+      privilegios de columna sobre la tabla que consultan diecisiete
+      pantallas, y además RN-EST-13 reparte las notas en tres niveles. Eso
+      es una tabla con su RLS, no una columna.
+    - **El CIF no se valida.** Todo el bloque fiscal está aplazado
+      (CLAUDE.md) y el dígito de control es parte de él. Se guarda en
+      mayúsculas y sin espacios, y no se afirma que sea válido.
+    - **Proyecto, estado y última publicación de LandingSite** (§121) no
+      están: la plataforma web se registra —es uno de los quince datos— y
+      lo demás es de la Fase 2, cuando Menú Diario publique. No se inventan
+      tres columnas para dejarlas vacías.
+    - **`database.types.ts` vuelve a tener una salvedad viva.** Las trece
+      columnas y las dos funciones están escritas a mano contra el esquema
+      que produce la migración sobre un PostgreSQL local, porque la
+      migración 57 todavía no está aplicada al proyecto de Supabase:
+      regenerar el archivo ahora borraría esos tipos. Está dicho en su
+      cabecera y desaparece al desplegar.
+    - **Sin recorrido de Playwright ejecutado**, igual que las siete
+      pantallas anteriores.
 
 ## FASE 1 — Operación real de Restavor
 

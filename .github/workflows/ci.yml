@@ -194,6 +194,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/compartir_con_el_restaurante.sql
 
+      - name: "Migración 57 — Verificar los datos del establecimiento (§15.2, RN-EST-11, RN-EST-05, CA-17)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/datos_del_establecimiento.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

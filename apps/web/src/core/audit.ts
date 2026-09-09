@@ -92,6 +92,7 @@ export const AUDIT_ACTIONS = [
   "correction.requested",
   "correction.started",
   "correction.team_error_opened",
+  "establishment.data_changed",
   "establishment.status_changed",
   "establishment_access.revoked",
   "file.archived",

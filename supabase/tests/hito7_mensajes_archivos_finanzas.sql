@@ -2613,6 +2613,12 @@ begin
         'is_group_member', 'is_establishment_member',
         'is_authorized_worker_establishment', 'can_write_establishment',
         'client_can_view_billing',
+        -- Migración 57 · misma familia que `client_can_view_billing`: es
+        -- LA comprobación de RN-EST-11 del lado cliente, así que no puede
+        -- comprobarse a sí misma. Filtra por `auth.uid()` y solo contesta
+        -- si quien pregunta puede editar ESE restaurante, nunca quién más
+        -- puede.
+        'client_can_edit_establishment_data',
         -- Estas cinco SÍ comprueban permisos, pero a mano: comparan
         -- `auth.uid()` con el dueño de la fila y lanzan excepción si no
         -- coincide (el responsable asignado, el autor del mensaje, el

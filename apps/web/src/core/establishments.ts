@@ -18,6 +18,68 @@ import { ATTENTION_KINDS, type AttentionItem, type AttentionKind } from "./home"
 import type { EstablishmentState } from "./naming";
 
 // ---------------------------------------------------------------------
+// La ficha de datos (§15.2, RN-EST-11).
+// ---------------------------------------------------------------------
+
+/**
+ * Los campos de la ficha, en el orden en el que se enseñan y se piden.
+ *
+ * La lista es la fuente y el tipo se DERIVA de ella, igual que
+ * `CYCLE_CATEGORY_ORDER` se deriva de `CHANGE_CATEGORIES`: así no puede
+ * existir un campo que se guarde y no se enseñe, ni al revés. Es el fallo
+ * que se cuela solo — se añade una columna a la migración, se añade al
+ * formulario y nadie se acuerda de la vista de lectura, que sigue
+ * enseñando diez campos de once sin que falle nada.
+ *
+ * El nombre comercial NO está: es `establishments.name`, existe desde que
+ * el restaurante se da de alta y se enseña en el encabezado, no como una
+ * fila más de la ficha.
+ */
+export const IDENTITY_FIELDS = [
+  "legalName",
+  "taxId",
+  "address",
+  "postalCode",
+  "city",
+  "contactEmail",
+  "phonePrimary",
+  "phoneSecondary",
+  "websiteUrl",
+  "domain",
+  "webPlatform",
+  "openingHours",
+] as const;
+
+export type IdentityField = (typeof IDENTITY_FIELDS)[number];
+
+/**
+ * §15.2 · razón social, identificación fiscal, dirección, teléfonos,
+ * correos, sitio web, dominio, horarios y plataforma web.
+ *
+ * Todos pueden ser nulos y eso es información: un restaurante se da de
+ * alta con su nombre y su código (RN-EST-06) y la ficha se rellena
+ * después, así que la pantalla tiene que poder decir "sin rellenar" en vez
+ * de enseñar un hueco (CA-20).
+ */
+export type EstablishmentIdentity = { readonly [K in IdentityField]: string | null };
+
+/**
+ * El único campo multilínea: el horario se guarda con sus saltos porque un
+ * horario partido en dos tramos son dos líneas, y aplanarlo lo vuelve
+ * ilegible.
+ */
+export const MULTILINE_IDENTITY_FIELDS: readonly IdentityField[] = ["openingHours"];
+
+/**
+ * Si la ficha está entera por rellenar. Sirve para distinguir "no hay
+ * datos" de "hay algunos": lo primero se cuenta con su motivo y su enlace
+ * para rellenarla, lo segundo se enseña.
+ */
+export function identityIsEmpty(identity: EstablishmentIdentity): boolean {
+  return IDENTITY_FIELDS.every((field) => identity[field] === null);
+}
+
+// ---------------------------------------------------------------------
 // Consumos del ciclo (RN-CON, §15.2 "Resumen").
 // ---------------------------------------------------------------------
 

@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 
+import { EstablishmentDataForm } from "@/components/establishment/DataForm";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
 import { resolveShellViewer } from "@/components/shell/viewer";
@@ -130,14 +131,41 @@ export default async function EstablishmentPage({
         slug={slug}
         tab={parseSheetTab(soloUno(query.vista))}
         block={parseManagementBlock(soloUno(query.bloque))}
-        data={{ header, summary, operation, counts, payments, users, files, history }}
+        data={{
+          header,
+          /*
+            RN-EST-11 del lado del equipo: `manage_clients`, que tienen el
+            propietario y los administradores. Un trabajador consulta la
+            ficha y no la edita.
+
+            Esto decide qué se PINTA y nada más. La regla la hace cumplir
+            `set_establishment_data()`, que desde la migración 57 es la
+            única puerta —`establishments` se quedó sin política de UPDATE
+            y un disparador rechaza el resto—, así que equivocarse aquí
+            enseñaría un formulario que el servidor rechazaría, no un
+            permiso concedido (CLAUDE.md).
+          */
+          canEditData: role === "owner" || role === "admin",
+          summary,
+          operation,
+          counts,
+          payments,
+          users,
+          files,
+          history,
+        }}
       />
     );
   }
 
   const { data: establishment } = await supabase
     .from("establishments")
-    .select("id, name, code, status")
+    // Las columnas de §15.2 vienen aquí porque RN-EST-11 le deja editarlas
+    // a él: el propietario de un restaurante corrige su propia razón
+    // social y su propio teléfono. Enumeradas, como en todo el proyecto.
+    .select(
+      "id, name, code, status, legal_name, tax_id, address, postal_code, city, contact_email, phone_primary, phone_secondary, website_url, domain, opening_hours, web_platform",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -145,8 +173,15 @@ export default async function EstablishmentPage({
     notFound();
   }
 
-  const [{ data: allowance }, { data: requests }, { data: sharedFiles }] = await Promise.all([
+  const [{ data: allowance }, { data: canEditData }, { data: requests }, { data: sharedFiles }] =
+    await Promise.all([
     supabase.rpc("establishment_cycle_allowance", { p_establishment_id: id }),
+    // RN-EST-11 · se le PREGUNTA al servidor, no se deduce del rol aquí:
+    // el reparto tiene cuatro casos (propietario global, propietario
+    // local, editor con el permiso y editor sin él) y esta pantalla no
+    // conoce ninguno. Y aunque contestara mal, el "no" que vale lo da
+    // `set_establishment_data()` (CLAUDE.md).
+    supabase.rpc("client_can_edit_establishment_data", { p_establishment_id: id }),
     supabase
       .from("requests")
       .select("id, code, description, state, created_at, validated_category")
@@ -276,6 +311,45 @@ export default async function EstablishmentPage({
           />
         )}
       </Card>
+
+      {/*
+        RN-EST-11 · "el propietario puede editar contacto y datos
+        fiscales". Es la otra mitad de la regla: la ficha del equipo tiene
+        su formulario desde la migración 57 y el propietario del
+        restaurante no tenía dónde corregir su propio teléfono.
+
+        Se enseña según lo que ha contestado el servidor
+        (`client_can_edit_establishment_data()`), no según un rol leído
+        aquí. Y se ofrece con el servicio detenido igual que sin él: RN-EST-08
+        impide crear solicitudes y menús, no corregir un CIF mal escrito
+        —que es justo lo que hace falta poder hacer cuando el restaurante
+        está parado por un impago—.
+
+        RN-EST-12 lo dice el propio formulario, arriba: esto no cambia la
+        web.
+      */}
+      {canEditData === true ? (
+        <Card title={es.clientArea.dataTitle}>
+          <EstablishmentDataForm
+            establishmentId={id}
+            name={establishment.name}
+            identity={{
+              legalName: establishment.legal_name,
+              taxId: establishment.tax_id,
+              address: establishment.address,
+              postalCode: establishment.postal_code,
+              city: establishment.city,
+              contactEmail: establishment.contact_email,
+              phonePrimary: establishment.phone_primary,
+              phoneSecondary: establishment.phone_secondary,
+              websiteUrl: establishment.website_url,
+              domain: establishment.domain,
+              openingHours: establishment.opening_hours,
+              webPlatform: establishment.web_platform,
+            }}
+          />
+        </Card>
+      ) : null}
 
       {serviceStopped ? null : <NewRequestForm establishmentId={id} />}
 

@@ -1205,6 +1205,14 @@ export const es = {
     // pantalla de revisión son los tres que nombra §68 —alcance,
     // destinatario y archivos—, en su orden.
     convertLink: "Convertir en solicitud",
+
+    /*
+     * RN-EST-11 · el propietario de un restaurante edita sus datos de
+     * contacto y fiscales. La otra mitad de la regla está en la ficha del
+     * equipo; esta es la del cliente, y quién puede de verdad lo contesta
+     * el servidor (`client_can_edit_establishment_data()`).
+     */
+    dataTitle: "Datos de tu restaurante",
     convertTitle: "Convertir en solicitud",
     convertSubtitle:
       "Elige los mensajes que cuentan lo que necesitas. Con ellos se prepara un borrador que podrás revisar antes de enviarlo: hasta que lo envíes, el equipo no ve ninguna solicitud ni empieza a contar el plazo.",
@@ -1790,6 +1798,7 @@ export const es = {
       "correction.requested": "Corrección pedida",
       "correction.started": "Corrección comenzada",
       "correction.team_error_opened": "Corrección por error del equipo",
+      "establishment.data_changed": "Datos del restaurante editados",
       "establishment.status_changed": "Estado del restaurante cambiado",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
       "file.archived": "Archivo archivado",
@@ -1958,12 +1967,18 @@ export const es = {
     tabsLabel: "Secciones de la ficha",
     blocksLabel: "Bloques de gestión",
     blocks: {
+      establishmentData: "Datos",
       plan: "Plan",
       payments: "Pagos",
       users: "Usuarios",
       files: "Archivos",
       integrations: "Integraciones",
     },
+    // Maqueta 06 · el enlace del encabezado. Solo aparece cuando hay sitio
+    // web guardado: un botón que no lleva a ninguna parte es peor que no
+    // tenerlo.
+    websiteLink: "Ver sitio web",
+    websiteLinkNewTab: "(se abre en una pestaña nueva)",
     noAccessTitle: "Esta ficha no es tuya",
     noAccessReason:
       "La ficha interna de un restaurante es del equipo del espacio. Si eres del restaurante, lo tuyo está en su pantalla de inicio.",
@@ -2001,9 +2016,71 @@ export const es = {
     attentionEmptyReason:
       "Aquí aparecen sus solicitudes por validar y sus trabajos en riesgo de plazo, en cuanto haya alguno.",
     identityTitle: "Datos fiscales y de contacto",
-    identityMissing: "Todavía no se guardan",
+    identityMissing: "Sin rellenar",
     identityMissingReason:
-      "La ficha del PRD §15.2 pide razón social, identificación fiscal, dirección, teléfonos, correos, sitio web, dominio y horarios. Ninguno de esos campos existe todavía en la base de datos, así que no se enseña un formulario que no guardaría nada.",
+      "Este restaurante todavía no tiene razón social, identificación fiscal ni datos de contacto guardados. Se rellenan en Gestión · Datos.",
+    identityEditLink: "Rellenar los datos del restaurante",
+    identityFieldEmpty: "Sin rellenar",
+    /**
+     * Una etiqueta por campo de `IDENTITY_FIELDS` (src/core/establishments.ts),
+     * con su misma clave: `establishments.identity-fields.test.ts` falla si
+     * sobra o falta alguna, que es lo que evita que un campo nuevo aparezca
+     * en pantalla con su nombre en inglés.
+     */
+    identityFields: {
+      legalName: "Razón social",
+      taxId: "Identificación fiscal",
+      address: "Dirección",
+      postalCode: "Código postal",
+      city: "Ciudad",
+      contactEmail: "Correo de contacto",
+      phonePrimary: "Teléfono principal",
+      phoneSecondary: "Teléfono secundario",
+      websiteUrl: "Sitio web",
+      domain: "Dominio",
+      webPlatform: "Plataforma web",
+      openingHours: "Horario del establecimiento",
+    },
+
+    // ---- Gestión · Datos del establecimiento ---------------------
+    // RN-EST-12 · el aviso más importante de esta pantalla: aquí se
+    // corrige la ficha de Cuotly, no la web del restaurante.
+    dataTitle: "Datos del establecimiento",
+    dataNotPublicNotice:
+      "Editar esta ficha no actualiza la web del restaurante. Un cambio en el contenido público requiere una solicitud (RN-EST-12).",
+    dataNameLabel: "Nombre comercial",
+    dataNameHint: "Es el nombre con el que el restaurante aparece en toda la aplicación.",
+    dataLegalNameLabel: "Nombre fiscal",
+    dataTaxIdLabel: "CIF / NIF",
+    dataTaxIdHint:
+      "Se guarda tal cual, en mayúsculas. Cuotly no comprueba el dígito de control ni emite facturas todavía (RN-FIN-09).",
+    dataAddressLabel: "Dirección",
+    dataPostalCodeLabel: "Código postal",
+    dataCityLabel: "Ciudad",
+    dataContactEmailLabel: "Email de contacto",
+    dataPhonePrimaryLabel: "Teléfono principal",
+    dataPhoneSecondaryLabel: "Teléfono secundario",
+    dataWebsiteLabel: "Sitio web",
+    dataWebsiteHint: "Si se escribe sin https://, se guarda con él.",
+    dataDomainLabel: "Dominio",
+    dataOpeningHoursLabel: "Horario del establecimiento",
+    dataOpeningHoursHint:
+      "Texto libre, una línea por tramo. No es el calendario laboral del espacio: este horario no mueve ningún plazo.",
+    dataWebPlatformLabel: "Plataforma web",
+    dataWebPlatforms: {
+      unset: "Sin indicar",
+      landing_site: "LandingSite de Cuotly",
+      other: "Otra plataforma",
+    },
+    dataWebPlatformHint:
+      "El proyecto y el estado de publicación de LandingSite llegan con la Fase 2 (§121): aquí solo se registra cuál usa.",
+    dataSubmit: "Guardar cambios",
+    dataPending: "Guardando…",
+    dataDone: "Datos guardados. La web del restaurante no ha cambiado.",
+    dataUnchanged: "No había nada que cambiar: los datos ya eran esos.",
+    dataReadOnlyTitle: "Solo lectura",
+    dataReadOnlyReason:
+      "Los datos fiscales y de contacto los edita el propietario o un administrador del espacio (RN-EST-11). Un trabajador los consulta.",
 
     // ---- Operación -----------------------------------------------
     requestsTitle: "Solicitudes abiertas",

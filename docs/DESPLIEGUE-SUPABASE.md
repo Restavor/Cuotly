@@ -10,13 +10,24 @@ Actualizado el 09/09/2026.
 
 ## Pendiente de aplicar
 
-**La 56 (`compartir_con_el_restaurante`) NO está aplicada.** Es la única
-que le falta al proyecto. Ver el apartado "La 56" más abajo: no crea ni
-cambia ninguna función, solo **retira el `EXECUTE` de `anon`** sobre las
-siete funciones que escriben archivos, así que aplicarla no puede romper
-nada que hoy funcione —ninguna pantalla llama a esas funciones sin
-sesión— pero sí es un cambio de privilegios, y este archivo no da por
-aplicado lo que nadie ha aplicado.
+**Faltan dos: la 56 y la 57.**
+
+**La 56 (`compartir_con_el_restaurante`).** Ver el apartado "La 56" más
+abajo: no crea ni cambia ninguna función, solo **retira el `EXECUTE` de
+`anon`** sobre las siete funciones que escriben archivos, así que aplicarla
+no puede romper nada que hoy funcione —ninguna pantalla llama a esas
+funciones sin sesión— pero sí es un cambio de privilegios, y este archivo
+no da por aplicado lo que nadie ha aplicado.
+
+**La 57 (`datos_del_establecimiento`).** Ver el apartado "La 57" más abajo.
+Esta **no es solo aditiva**: añade trece columnas y dos funciones, pero
+además **retira la política `establishments_update`** y añade un disparador
+que rechaza cualquier escritura de esas columnas que no venga de
+`set_establishment_data()`. Hasta que se aplique, la pantalla de la ficha
+—Gestión · Datos— **no funciona contra el proyecto real**: la RPC no
+existe. Y mientras no se aplique, `database.types.ts` tiene una salvedad
+viva: esos tipos están escritos a mano y **regenerar el archivo los
+borraría**.
 
 ## Aplicadas
 
@@ -296,6 +307,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 54 | `inicio_del_espacio` | `inicio_del_espacio` |
 | 55 | `ficha_del_restaurante` | `ficha_del_restaurante` |
 | 56 | `compartir_con_el_restaurante` | **sin aplicar** |
+| 57 | `datos_del_establecimiento` | **sin aplicar** |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
@@ -367,6 +379,57 @@ que PostgreSQL evalúa con los privilegios de quien consulta, así que
 tocarlas es de la familia de la excepción documentada en la migración 32 y
 no se hace de paso en una migración de otra cosa. Sin privilegio de
 columna sobre esas tablas, `anon` no puede leerlas de todos modos.
+
+### La 57 · los datos del establecimiento (SIN APLICAR)
+
+Lo que hace, entero:
+
+1. **Trece columnas nuevas en `establishments`**, todas `text` y todas
+   nulas: `legal_name`, `tax_id`, `address`, `postal_code`, `city`,
+   `contact_email`, `phone_primary`, `phone_secondary`, `website_url`,
+   `domain`, `opening_hours` y `web_platform` (más una restricción `check`
+   sobre la última, con dos valores). Aditivo puro.
+2. **Dos funciones nuevas**: `set_establishment_data()` y
+   `client_can_edit_establishment_data()`, las dos revocadas a `public` y
+   `anon` y concedidas a `authenticated`. Aditivo puro.
+3. **`drop policy establishments_update`** — esto NO es aditivo.
+4. **Un disparador `before update`** que rechaza cualquier cambio de esas
+   trece columnas (y de `name`) que no venga de `set_establishment_data()`,
+   con su función revocada a `public`, `anon` y `authenticated`.
+
+**Qué puede romper el punto 3, comprobado antes de escribirlo:** nada del
+código actual escribe `establishments` por PostgREST. Ni una llamada
+`.update()` en `apps/web`, y las siete funciones SQL que tocan la tabla
+—las del ciclo de impago y `set_establishment_status()`— son
+`security definer`, así que se ejecutan como el dueño y RLS no les aplica.
+Lo que el punto 3 cierra es lo que **habría podido** hacer un
+administrador con la clave pública y un `curl`: reescribir el CIF de un
+cliente sin actor y sin valor anterior.
+
+**Qué puede romper el punto 4:** un UPDATE legítimo que toque una de esas
+columnas sin pasar por la función. Hoy no existe ninguno, y el disparador
+solo salta si la columna **cambia de verdad** (`is distinct from`), así que
+`set_establishment_status()`, que escribe únicamente `status`, sigue
+pasando. Está comprobado con su propio bloque en
+`supabase/tests/datos_del_establecimiento.sql`.
+
+**Cómo se deshace:** `drop trigger establishments_guard_data on
+public.establishments;` devuelve la tabla a estar escribible por función, y
+
+```sql
+create policy establishments_update on public.establishments
+for update
+using (public.has_capability(space_id, 'create_establishment'))
+with check (public.has_capability(space_id, 'create_establishment'));
+```
+
+restaura la política tal como estaba en la migración 8. Las columnas y las
+funciones se pueden dejar: son aditivas y no molestan.
+
+**Al aplicarla hay que regenerar `database.types.ts`.** Sus tipos están
+hoy escritos a mano (la salvedad está dicha en la cabecera del archivo), y
+al regenerar contra el proyecto hay que comprobar que la firma sale igual,
+como se hizo con la 55.
 
 ## Cómo quedó el esquema
 

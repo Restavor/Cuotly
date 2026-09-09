@@ -13,13 +13,22 @@ import {
 } from "@/components/ui";
 import { AttentionList } from "@/components/home/AttentionList";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { EstablishmentDataForm } from "./DataForm";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
-import { sortedCycleUsage, type CycleUsage } from "@/core/establishments";
+import {
+  IDENTITY_FIELDS,
+  MULTILINE_IDENTITY_FIELDS,
+  identityIsEmpty,
+  sortedCycleUsage,
+  type CycleUsage,
+} from "@/core/establishments";
 import { es } from "@/i18n/es";
 
 import {
+  FILES_BLOCK,
   MANAGEMENT_BLOCKS,
+  MANAGEMENT_TAB,
   SHEET_TABS,
   filesHref,
   managementBlockLabel,
@@ -32,6 +41,7 @@ import type {
   SheetCounts,
   SheetFiles,
   SheetHeader,
+  SheetIdentity,
   SheetHistoryEntry,
   SheetOperation,
   SheetPayments,
@@ -57,6 +67,13 @@ import type {
  */
 export interface SheetData {
   readonly header: SheetHeader;
+  /**
+   * RN-EST-11 · si quien mira puede editar la ficha. Decide qué se pinta y
+   * NADA más: `set_establishment_data()` lo comprueba por su cuenta, así
+   * que un `true` de más aquí no autoriza nada — solo enseñaría un
+   * formulario que el servidor rechazaría (CLAUDE.md).
+   */
+  readonly canEditData: boolean;
   readonly summary: SheetSummary;
   readonly operation: SheetOperation;
   readonly counts: SheetCounts;
@@ -75,8 +92,16 @@ type FileCategoryKey = keyof typeof es.space.files.categories;
 type FileVariantKey = keyof typeof es.establishmentSheet.fileVariants;
 type ClientRoleKey = keyof typeof es.establishmentSheet.clientRoles;
 type ChargeStateKey = keyof typeof es.teamArea.chargeStates;
+type WebPlatformKey = keyof typeof es.establishmentSheet.dataWebPlatforms;
 
 const t = es.establishmentSheet;
+
+/**
+ * El bloque de la ficha de datos, buscado por su clave y no por su
+ * posición, igual que `FILES_BLOCK`: es a donde llevan los enlaces de
+ * "rellenar los datos".
+ */
+const DATA_BLOCK = MANAGEMENT_BLOCKS.find((block) => block.key === "establishmentData")!;
 
 function euros(cents: number): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
@@ -225,8 +250,8 @@ function CategoryFilter({
         La pestaña y el bloque viajan como campos ocultos: sin ellos,
         filtrar devolvería a Resumen, que no es donde estaba quien filtra.
       */}
-      <input type="hidden" name="vista" value={SHEET_TABS[3].slug} />
-      <input type="hidden" name="bloque" value={MANAGEMENT_BLOCKS[3].slug} />
+      <input type="hidden" name="vista" value={MANAGEMENT_TAB.slug} />
+      <input type="hidden" name="bloque" value={FILES_BLOCK.slug} />
       {selectedFileId === null ? null : (
         <input type="hidden" name="archivo" value={selectedFileId} />
       )}
@@ -277,6 +302,61 @@ function VisibilityMark({ visibility }: { visibility: string }) {
   );
 }
 
+/**
+ * §15.2 · la ficha de datos en lectura. Los mismos campos que el
+ * formulario, en el mismo orden, para que quien alterna entre Operación y
+ * Gestión no tenga que buscarlos dos veces (CA-21).
+ *
+ * Por defecto **omite lo vacío**: en Operación esto es una consulta y una
+ * lista de "sin rellenar" repetida doce veces no informa de nada. En el
+ * bloque de Gestión de quien no puede editar sí se enseñan todos
+ * (`withEmptyFields`), porque ahí la pregunta es justamente qué falta.
+ *
+ * El horario respeta sus saltos de línea (`whitespace-pre-line`): se
+ * guarda multilínea porque un horario partido en dos tramos son dos
+ * líneas, y aplanarlo lo vuelve ilegible.
+ */
+function IdentityFacts({
+  identity,
+  withEmptyFields = false,
+}: {
+  identity: SheetIdentity;
+  withEmptyFields?: boolean;
+}) {
+  // La lista de campos no se escribe aquí: sale de `IDENTITY_FIELDS`
+  // (src/core/establishments.ts), que es la misma que usa el formulario.
+  // Un campo nuevo aparece en los dos sitios o en ninguno.
+  const filas = IDENTITY_FIELDS.map((field) => {
+    // La plataforma web es una lista cerrada: se enseña su nombre en
+    // español, no la clave con la que se guarda.
+    const valor =
+      field === "webPlatform" && identity.webPlatform !== null
+        ? (t.dataWebPlatforms[identity.webPlatform as WebPlatformKey] ?? identity.webPlatform)
+        : identity[field];
+    return { field, valor, multilinea: MULTILINE_IDENTITY_FIELDS.includes(field) };
+  });
+
+  const visibles = withEmptyFields ? filas : filas.filter(({ valor }) => valor !== null);
+  if (visibles.length === 0) return null;
+
+  return (
+    <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+      {visibles.map(({ field, valor, multilinea }) => (
+        <div key={field} className={multilinea ? "sm:col-span-2" : undefined}>
+          <dt className="text-text-secondary">{t.identityFields[field]}</dt>
+          <dd
+            className={`font-medium text-text ${multilinea ? "whitespace-pre-line" : ""} ${
+              valor === null ? "italic text-text-secondary" : ""
+            }`}
+          >
+            {valor ?? t.identityFieldEmpty}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function TabNav({ base, active }: { base: string; active: SheetTab }) {
   return (
     <nav aria-label={t.tabsLabel} className="border-b border-border">
@@ -322,7 +402,7 @@ function BlockNav({ base, active }: { base: string; active: ManagementBlock }) {
           return (
             <li key={block.key}>
               <Link
-                href={sheetHref(base, SHEET_TABS[3], block)}
+                href={sheetHref(base, MANAGEMENT_TAB, block)}
                 aria-current={seleccionado ? "true" : undefined}
                 className={`inline-block rounded-[10px] px-3.5 py-1.5 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
                   seleccionado
@@ -353,7 +433,7 @@ export function EstablishmentSheet({
   block: ManagementBlock;
   data: SheetData;
 }) {
-  const { header, summary, operation, counts, payments, users, files, history } = data;
+  const { header, canEditData, summary, operation, counts, payments, users, files, history } = data;
   const bolsas = sortedCycleUsage(summary.bags);
 
   return (
@@ -368,6 +448,29 @@ export function EstablishmentSheet({
             {es.space.statuses[header.status as StatusKey] ?? header.status}
           </StatusBadge>
           {header.planName ? <StatusBadge tone="info">{header.planName}</StatusBadge> : null}
+
+          {/*
+            El enlace al sitio web del restaurante, como en la maqueta 06.
+            Solo cuando hay uno guardado: un botón que no lleva a ninguna
+            parte es peor que no tenerlo, y hasta la migración 57 esta
+            columna no existía.
+
+            `rel="noreferrer"` porque es una web ajena, y el "se abre en
+            una pestaña nueva" va escrito para quien no ve el icono: un
+            enlace que cambia de contexto sin avisar desorienta (§21.4).
+          */}
+          {header.identity.websiteUrl === null ? null : (
+            <a
+              href={header.identity.websiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+            >
+              <Icon name="externalLink" aria-hidden="true" className="h-4 w-4" />
+              {t.websiteLink}
+              <span className="sr-only">{t.websiteLinkNewTab}</span>
+            </a>
+          )}
         </div>
       </header>
 
@@ -467,13 +570,32 @@ export function EstablishmentSheet({
       {tab.key === "operation" ? (
         <>
           {/*
-            §15.2 pide razón social, identificación fiscal, dirección,
-            teléfonos y contactos. `establishments` no tiene ninguna de esas
-            columnas, así que no hay nada que enseñar y se dice cuál es el
-            motivo en vez de dejar el bloque en blanco.
+            §15.2 · razón social, identificación fiscal, dirección,
+            teléfonos, correos, sitio web, dominio y horarios. Aquí se LEEN;
+            se editan en Gestión · Datos, que es donde está el formulario y
+            el aviso de RN-EST-12.
+
+            Sin nada guardado se dice el motivo —"sin rellenar", con el
+            enlace para rellenarlo— en vez de enseñar una lista de guiones
+            (CA-20).
           */}
           <Card title={t.identityTitle}>
-            <EmptyState title={t.identityMissing} description={t.identityMissingReason} />
+            <IdentityFacts identity={header.identity} />
+            {identityIsEmpty(header.identity) ? (
+              <>
+                <EmptyState title={t.identityMissing} description={t.identityMissingReason} />
+                {canEditData ? (
+                  <p className="mt-3 text-sm">
+                    <Link
+                      href={sheetHref(base, MANAGEMENT_TAB, DATA_BLOCK)}
+                      className="text-cuotly-green underline"
+                    >
+                      {t.identityEditLink}
+                    </Link>
+                  </p>
+                ) : null}
+              </>
+            ) : null}
           </Card>
 
           <Card title={t.requestsTitle}>
@@ -606,6 +728,41 @@ export function EstablishmentSheet({
       {tab.key === "management" ? (
         <>
           <BlockNav base={base} active={block} />
+
+          {/*
+            §15.2 · la ficha de datos. El formulario solo a quien puede
+            editar (RN-EST-11); a los demás, los mismos datos en lectura y
+            el motivo de que no haya formulario —no un formulario
+            deshabilitado, que parece un fallo—.
+
+            Quien puede editar de verdad lo decide
+            `set_establishment_data()`, y desde la migración 57 es la única
+            puerta: `establishments` no tiene política de UPDATE.
+          */}
+          {block.key === "establishmentData" ? (
+            <Card title={t.dataTitle}>
+              {canEditData ? (
+                <EstablishmentDataForm
+                  establishmentId={header.id}
+                  name={header.name}
+                  identity={header.identity}
+                />
+              ) : (
+                <>
+                  <p className="mb-4 rounded-[10px] bg-soft-surface p-3 text-sm text-text-secondary">
+                    {t.dataNotPublicNotice}
+                  </p>
+                  <IdentityFacts identity={header.identity} withEmptyFields />
+                  <div className="mt-4">
+                    <EmptyState
+                      title={t.dataReadOnlyTitle}
+                      description={t.dataReadOnlyReason}
+                    />
+                  </div>
+                </>
+              )}
+            </Card>
+          ) : null}
 
           {block.key === "plan" ? (
             <Card title={t.subscriptionTitle}>

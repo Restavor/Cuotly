@@ -1,4 +1,4 @@
-import type { CycleBag } from "@/core/establishments";
+import type { CycleBag, EstablishmentIdentity } from "@/core/establishments";
 import type { AttentionItem } from "@/core/home";
 import { groupAttentionByEstablishment } from "@/core/establishments";
 import type { EstablishmentState } from "@/core/naming";
@@ -28,6 +28,14 @@ import { loadSpaceAttention } from "../../home-load";
  */
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
+/**
+ * Los datos de §15.2, tal como los guarda la migración 57. El tipo vive en
+ * `src/core/establishments.ts` y se deriva de `IDENTITY_FIELDS`, la lista
+ * que también ordena el formulario y la vista de lectura: así no puede
+ * haber un campo guardado que ninguna pantalla enseñe.
+ */
+export type SheetIdentity = EstablishmentIdentity;
+
 export interface SheetHeader {
   readonly id: string;
   readonly name: string;
@@ -43,6 +51,8 @@ export interface SheetHeader {
   readonly commitmentEndsAt: string | null;
   readonly cycleStart: string | null;
   readonly cycleEnd: string | null;
+  /** §15.2 · la ficha de datos, que se lee en la misma fila. */
+  readonly identity: SheetIdentity;
 }
 
 export async function loadSheetHeader(
@@ -51,7 +61,14 @@ export async function loadSheetHeader(
 ): Promise<SheetHeader | null> {
   const { data: establishment } = await supabase
     .from("establishments")
-    .select("id, name, code, status, group_id")
+    // §15.2 · las trece columnas de la ficha vienen en esta misma fila, así
+    // que se piden aquí y no en una segunda consulta. Enumeradas, como en
+    // todo el proyecto: `establishments` no tiene privilegios de columna
+    // hoy, pero la costumbre es la que evita que un `select *` se cuele en
+    // una tabla que sí los tenga (CLAUDE.md).
+    .select(
+      "id, name, code, status, group_id, legal_name, tax_id, address, postal_code, city, contact_email, phone_primary, phone_secondary, website_url, domain, opening_hours, web_platform",
+    )
     .eq("id", establishmentId)
     .maybeSingle();
 
@@ -107,6 +124,20 @@ export async function loadSheetHeader(
     commitmentEndsAt: commitments?.[0]?.ends_at ?? null,
     cycleStart: cycle?.cycle_start ?? null,
     cycleEnd: cycle?.cycle_end ?? null,
+    identity: {
+      legalName: establishment.legal_name,
+      taxId: establishment.tax_id,
+      address: establishment.address,
+      postalCode: establishment.postal_code,
+      city: establishment.city,
+      contactEmail: establishment.contact_email,
+      phonePrimary: establishment.phone_primary,
+      phoneSecondary: establishment.phone_secondary,
+      websiteUrl: establishment.website_url,
+      domain: establishment.domain,
+      openingHours: establishment.opening_hours,
+      webPlatform: establishment.web_platform,
+    },
   };
 }
 

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { es } from "@/i18n/es";
 import {
+  FILES_BLOCK,
   MANAGEMENT_BLOCKS,
+  MANAGEMENT_TAB,
   parseManagementBlock,
   parseSheetTab,
   SHEET_TABS,
@@ -11,6 +13,14 @@ import {
 } from "./tabs";
 
 describe("las cinco pestañas de la ficha (PRD §15.2)", () => {
+  it("los dos bloques que se nombran desde fuera se buscan por clave, no por posición", () => {
+    // Es la prueba de la trampa que dejó la migración 57 al poner la ficha
+    // de datos primera: `MANAGEMENT_BLOCKS[3]` era "archivos" y pasó a ser
+    // "usuarios" sin que fallara ningún tipo.
+    expect(MANAGEMENT_TAB.key).toBe("management");
+    expect(FILES_BLOCK.key).toBe("files");
+  });
+
   it("son exactamente las cinco del PRD, en su orden", () => {
     expect(SHEET_TABS.map((t) => t.key)).toEqual([
       "summary",
@@ -39,13 +49,18 @@ describe("las cinco pestañas de la ficha (PRD §15.2)", () => {
     expect(parseSheetTab(undefined).key).toBe("summary");
     expect(parseSheetTab("inventada").key).toBe("summary");
     expect(parseSheetTab("gestion").key).toBe("management");
-    expect(parseManagementBlock("inventado").key).toBe("plan");
+    // Un bloque desconocido cae en el primero, que desde la migración 57
+    // es la ficha de datos: la identidad del restaurante es lo que se
+    // consulta antes que su plan.
+    expect(parseManagementBlock("inventado").key).toBe("establishmentData");
+    expect(parseManagementBlock("ficha").key).toBe("establishmentData");
+    expect(parseManagementBlock("plan").key).toBe("plan");
     expect(parseManagementBlock("archivos").key).toBe("files");
   });
 
   it("el enlace de una pestaña no fija bloque salvo que se le pida", () => {
-    expect(sheetHref("/r/1", SHEET_TABS[3])).toBe("/r/1?vista=gestion");
-    expect(sheetHref("/r/1", SHEET_TABS[3], MANAGEMENT_BLOCKS[3])).toBe(
+    expect(sheetHref("/r/1", MANAGEMENT_TAB)).toBe("/r/1?vista=gestion");
+    expect(sheetHref("/r/1", MANAGEMENT_TAB, FILES_BLOCK)).toBe(
       "/r/1?vista=gestion&bloque=archivos",
     );
   });

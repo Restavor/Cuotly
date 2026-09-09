@@ -35,13 +35,42 @@ export const SHEET_TABS: readonly SheetTab[] = [
   { key: "history", slug: "historial" },
 ];
 
+/**
+ * Gestión, con la ficha de datos por delante.
+ *
+ * §20 de la especificación maestra enumera cinco contenidos —"plan, pagos,
+ * usuarios, archivos e integraciones"— y ninguno es el bloque de datos.
+ * Pero §15.2 pide quince datos mínimos, y nueve de ellos (razón social,
+ * identificación fiscal, dirección, teléfonos, correos, sitio web,
+ * dominio, horarios y plataforma web) no caben en ninguno de los cinco:
+ * hasta la migración 57 no se guardaban en ninguna parte y el bloque de
+ * Operación se limitaba a decir por qué. Van aquí, que es donde los pone
+ * la maqueta, y primeros: es la identidad del restaurante, lo que se
+ * consulta antes que su plan.
+ *
+ * `establishmentData` y no `data` porque `data` ya es la pestaña "Informes
+ * y datos", y dos cosas distintas con el mismo nombre en la misma pantalla
+ * se confunden en la primera lectura. Su hueco en la dirección es
+ * `?vista=gestion&bloque=ficha`.
+ */
 export const MANAGEMENT_BLOCKS: readonly ManagementBlock[] = [
+  { key: "establishmentData", slug: "ficha" },
   { key: "plan", slug: "plan" },
   { key: "payments", slug: "pagos" },
   { key: "users", slug: "usuarios" },
   { key: "files", slug: "archivos" },
   { key: "integrations", slug: "integraciones" },
 ];
+
+/**
+ * Los dos que se nombran desde fuera de esta lista. Se buscan por su clave
+ * y no por su posición: `MANAGEMENT_BLOCKS[3]` era "archivos" hasta que la
+ * ficha de datos se puso delante, y un índice a mano habría movido el
+ * filtro del catálogo al bloque de usuarios sin que fallara ningún tipo.
+ */
+export const MANAGEMENT_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "management")!;
+export const FILES_BLOCK: ManagementBlock =
+  MANAGEMENT_BLOCKS.find((block) => block.key === "files")!;
 
 /**
  * Qué pestaña pide la dirección. Lo que no se reconoce cae en la primera,
@@ -89,8 +118,8 @@ export function filesHref(
   { category, fileId }: { category: string | null; fileId: string | null },
 ): string {
   const params = new URLSearchParams({
-    vista: SHEET_TABS[3].slug,
-    bloque: MANAGEMENT_BLOCKS[3].slug,
+    vista: MANAGEMENT_TAB.slug,
+    bloque: FILES_BLOCK.slug,
   });
   if (category !== null) params.set("tipo", category);
   if (fileId !== null) params.set("archivo", fileId);

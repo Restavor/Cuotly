@@ -694,6 +694,34 @@ insert into public.establishments (id, space_id, group_id, name, status)
 values ('d4000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001',
         'd3000000-0000-0000-0000-000000000002', 'Magariños', 'active');
 
+-- 9.3.b · La ficha de §15.2, por su función.
+--
+-- No es un INSERT con las columnas puestas a mano: `set_establishment_data()`
+-- es la única puerta (migración 57) y un UPDATE directo lo rechaza el
+-- disparador, igual que lo rechazaría en producción. De paso, sembrar así
+-- comprueba que la puerta funciona.
+--
+-- Los datos son los del restaurante de demostración —dominio
+-- `magarinos.es`, correos @cuotly.test para las cuentas— y el sitio web se
+-- escribe sin esquema a propósito: así el sembrado ejercita la
+-- normalización y la ficha enseña un enlace que se puede pulsar.
+select public.set_establishment_data(
+  'd4000000-0000-0000-0000-000000000003',
+  'Magariños',
+  'Restauración Magariños, S.L.',
+  'B12345678',
+  'Calle Velázquez, 18',
+  '28001',
+  'Madrid',
+  'info@magarinos.es',
+  '910 123 456',
+  '620 987 654',
+  'www.magarinos.es',
+  'magarinos.es',
+  E'Lunes a Domingo\n13:00 – 16:00\n20:00 – 23:30',
+  'landing_site'
+);
+
 -- Dos accesos con permisos distintos: la propietaria local lo ve todo, y
 -- la persona de sala entra en modo Consulta —lee y no responde
 -- (RN-MSG-05)— y sin facturación (RN-FIN-07). El bloque Usuarios de la
@@ -1071,6 +1099,9 @@ declare
   v_solicitud_maqueta uuid;
   v_adjuntos integer;
   v_propuestas integer;
+  v_razon text;
+  v_cif text;
+  v_web text;
 begin
   select count(*) into v_entrables
   from auth.users u
@@ -1121,6 +1152,16 @@ begin
   where request_id = v_solicitud_maqueta and proposed_category = 'small';
   if v_propuestas <> 1 then
     raise exception 'La solicitud pendiente de validar tenía que tener 1 propuesta y tiene %', v_propuestas;
+  end if;
+
+  -- §15.2 · la ficha, y en concreto la normalización de la sección 9.3.b:
+  -- el sitio web se sembró sin esquema y tiene que haberse guardado con
+  -- él, o el enlace de la pantalla no llevaría a ninguna parte.
+  select legal_name, tax_id, website_url into v_razon, v_cif, v_web
+  from public.establishments where id = v_est;
+  if (v_razon, v_cif, v_web) is distinct from
+     ('Restauración Magariños, S.L.', 'B12345678', 'https://www.magarinos.es') then
+    raise exception 'La ficha de §15.2 no se ha sembrado: razón social %, CIF %, web %', v_razon, v_cif, v_web;
   end if;
 
   -- Las bolsas, leídas como las lee el Resumen. `included - remaining` es

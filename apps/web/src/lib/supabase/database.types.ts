@@ -1,10 +1,19 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 09/09/2026), con las 55 migraciones del
+// (generate_typescript_types, 09/09/2026), con las 56 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
-// aplica una migración nueva. Sin salvedades: no queda ninguna función
-// escrita a mano esperando a que se aplique su migración.
+// aplica una migración nueva.
+//
+// SALVEDAD VIVA (migración 20260909000057_datos_del_establecimiento):
+// las trece columnas nuevas de `establishments`, `set_establishment_data`
+// y `client_can_edit_establishment_data` están escritas a mano, contra el
+// esquema que produce esa migración aplicada sobre un PostgreSQL local
+// (supabase/tests/bootstrap-postgres-local.sql). La migración todavía no
+// está aplicada al proyecto de Supabase, así que regenerar este archivo
+// AHORA borraría esos tipos y rompería la pantalla de la ficha. En cuanto
+// se aplique (docs/DESPLIEGUE-SUPABASE.md), se regenera y esta salvedad
+// desaparece.
 export type Json =
   | string
   | number
@@ -1100,31 +1109,67 @@ export type Database = {
       }
       establishments: {
         Row: {
+          address: string | null
+          city: string | null
           code: string
+          contact_email: string | null
           created_at: string
+          domain: string | null
           group_id: string
           id: string
+          legal_name: string | null
           name: string
+          opening_hours: string | null
+          phone_primary: string | null
+          phone_secondary: string | null
+          postal_code: string | null
           space_id: string
           status: string
+          tax_id: string | null
+          web_platform: string | null
+          website_url: string | null
         }
         Insert: {
+          address?: string | null
+          city?: string | null
           code?: string
+          contact_email?: string | null
           created_at?: string
+          domain?: string | null
           group_id: string
           id?: string
+          legal_name?: string | null
           name: string
+          opening_hours?: string | null
+          phone_primary?: string | null
+          phone_secondary?: string | null
+          postal_code?: string | null
           space_id: string
           status?: string
+          tax_id?: string | null
+          web_platform?: string | null
+          website_url?: string | null
         }
         Update: {
+          address?: string | null
+          city?: string | null
           code?: string
+          contact_email?: string | null
           created_at?: string
+          domain?: string | null
           group_id?: string
           id?: string
+          legal_name?: string | null
           name?: string
+          opening_hours?: string | null
+          phone_primary?: string | null
+          phone_secondary?: string | null
+          postal_code?: string | null
           space_id?: string
           status?: string
+          tax_id?: string | null
+          web_platform?: string | null
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -3907,6 +3952,10 @@ export type Database = {
           space_id: string
         }[]
       }
+      client_can_edit_establishment_data: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
       client_can_view_billing: {
         Args: { p_establishment_id: string }
         Returns: boolean
@@ -4554,6 +4603,25 @@ export type Database = {
       set_establishment_nonpayment_status: {
         Args: { p_cause: string; p_establishment_id: string; p_status: string }
         Returns: undefined
+      }
+      set_establishment_data: {
+        Args: {
+          p_address?: string
+          p_city?: string
+          p_contact_email?: string
+          p_domain?: string
+          p_establishment_id: string
+          p_legal_name?: string
+          p_name: string
+          p_opening_hours?: string
+          p_phone_primary?: string
+          p_phone_secondary?: string
+          p_postal_code?: string
+          p_tax_id?: string
+          p_web_platform?: string
+          p_website_url?: string
+        }
+        Returns: boolean
       }
       set_establishment_status: {
         Args: {
