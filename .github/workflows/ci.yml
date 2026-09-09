@@ -188,6 +188,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/inicio_del_espacio.sql
 
+      - name: "Migración 56 — Verificar compartir con el restaurante (RN-ARC-04, RN-ARC-05, RN-FIN-07)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/compartir_con_el_restaurante.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

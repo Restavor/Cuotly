@@ -27,8 +27,17 @@ export const FILE_CATEGORIES = [
 
 export type FileCategory = (typeof FILE_CATEGORIES)[number];
 
-/** RN-ARC-04: todo archivo está marcado como una de estas dos cosas. */
-export type FileVisibility = "internal" | "shared_with_client";
+/**
+ * RN-ARC-04: todo archivo está marcado como una de estas dos cosas.
+ *
+ * Es una lista y no solo un tipo porque la pantalla de subida ofrece la
+ * marca al crear el archivo y la acción tiene que validar lo que llega
+ * del navegador: un tipo de TypeScript no comprueba nada en ejecución.
+ * La misma pareja está en el CHECK de `files.visibility`.
+ */
+export const FILE_VISIBILITIES = ["internal", "shared_with_client"] as const;
+
+export type FileVisibility = (typeof FILE_VISIBILITIES)[number];
 
 /** RN-ARC-03: "en fotografía se separan original, retocada y publicada". */
 export type PhotoVariant = "original" | "retouched" | "published";

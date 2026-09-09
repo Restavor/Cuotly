@@ -6,10 +6,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   FILE_CATEGORIES,
+  FILE_VISIBILITIES,
   storageObjectPath,
   storagePrefixFor,
   validateUpload,
   type FileCategory,
+  type FileVisibility,
 } from "@/core/files";
 import { es } from "@/i18n/es";
 import { createSignedUpload, discardObject, readObjectMetadata } from "@/services/file-storage";
@@ -41,6 +43,10 @@ export type ResultadoRegistro =
 
 function esCategoria(valor: string): valor is FileCategory {
   return (FILE_CATEGORIES as readonly string[]).includes(valor);
+}
+
+function esVisibilidad(valor: string): valor is FileVisibility {
+  return (FILE_VISIBILITIES as readonly string[]).includes(valor);
 }
 
 /** RN-ARC-06: el motivo del rechazo se dice, no se devuelve un booleano. */
@@ -114,9 +120,27 @@ export async function registrarArchivo(entrada: {
   name: string;
   path: string;
   fileName: string;
+  /**
+   * RN-ARC-04 · con qué marca nace el archivo. Sin ella nace **interno**,
+   * que es el valor por defecto de `register_file()` y lo prudente: un
+   * archivo que se comparte sin querer ya lo ha visto el restaurante.
+   *
+   * Lo que llegue de aquí no manda del todo: a lo que sube el propio
+   * restaurante, `register_file()` le pone "compartido" pase lo que pase
+   * —marcarle como interno lo suyo lo escondería de quien lo subió— y a
+   * la facturación la sigue guardando `can_write_file()`.
+   */
+  visibility?: string;
 }): Promise<ResultadoRegistro> {
   if (!esCategoria(entrada.category)) {
     return { ok: false, motivo: es.files.rejectedCategory };
+  }
+
+  // Llega del navegador, así que se comprueba: un valor que no sea uno de
+  // los dos reventaría contra el CHECK de `files.visibility` con un error
+  // de base de datos en vez de con un motivo legible.
+  if (entrada.visibility !== undefined && !esVisibilidad(entrada.visibility)) {
+    return { ok: false, motivo: es.files.rejectedVisibility };
   }
 
   const supabase = await createClient();
@@ -161,6 +185,7 @@ export async function registrarArchivo(entrada: {
     p_file_name: entrada.fileName,
     p_mime_type: metadatos.value.mimeType,
     p_size_bytes: metadatos.value.sizeBytes,
+    p_visibility: entrada.visibility ?? "internal",
   });
 
   if (error || !fileId) {
@@ -172,4 +197,42 @@ export async function registrarArchivo(entrada: {
   }
 
   return { ok: true, fileId };
+}
+
+export type ResultadoCompartir = { readonly ok: true } | { readonly ok: false; readonly motivo: string };
+
+/**
+ * RN-ARC-04 · compartir con el restaurante un archivo interno.
+ *
+ * La acción no decide nada: quien decide es `share_file_with_client()`,
+ * que exige la capacidad `manage_files` **y** poder ver el archivo
+ * (`can_read_file()`, que es lo que deja fuera al trabajador para la
+ * facturación, RN-ARC-05). Aquí solo se traduce lo que conteste. Que el
+ * botón se pinte no autoriza a nadie: llamando a esta acción desde la
+ * consola, la respuesta es la misma (CLAUDE.md MUST).
+ *
+ * Es idempotente en el servidor —compartir dos veces no escribe un
+ * segundo apunte de auditoría— así que un doble clic no duplica nada y no
+ * hace falta ninguna clave aquí.
+ *
+ * No se revalida ninguna ruta desde aquí: la pantalla que llama refresca
+ * la suya, y esta acción la usan dos (la ficha del equipo y, el día que
+ * haga falta, cualquier otra que enseñe el catálogo).
+ */
+export async function compartirArchivo(fileId: string): Promise<ResultadoCompartir> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, motivo: es.actions.notAuthenticated };
+
+  const { error } = await supabase.rpc("share_file_with_client", { p_file_id: fileId });
+
+  // El mensaje viene de la función, en español y diciendo el motivo real
+  // ("No tienes permiso para compartir este archivo con el restaurante").
+  // Traducirlo aquí sería inventar un segundo motivo que puede discrepar.
+  if (error) return { ok: false, motivo: error.message };
+
+  return { ok: true };
 }

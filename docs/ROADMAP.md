@@ -1276,6 +1276,96 @@ Con esto desaparece también la última salvedad de `database.types.ts`: ya
 no queda ninguna función escrita a mano esperando su migración. Al
 regenerar salió idéntica, así que no había desviación.
 
+---
+
+25. **Compartir con el restaurante, montado de punta a punta** (09/09/2026,
+    migración 56). RN-ARC-04 dice dos cosas —que cada archivo está marcado
+    **Interno** o **Compartido con el restaurante**, y que "un trabajador
+    puede compartir después uno interno, y queda auditado"— y de las dos
+    solo estaba la primera mitad de la primera: todo lo que subía el equipo
+    nacía interno y ahí se quedaba.
+
+    Faltaban **los dos extremos**, y el segundo es el que convierte a esto
+    en una función y no en una columna:
+
+    - **El botón.** `share_file_with_client()` existe desde el Hito 7, con
+      su capacidad (`manage_files`), su idempotencia y su apunte en
+      `audit_log`, y **no la llamaba ninguna pantalla**. Van cuatro veces
+      —la 47 con las tareas, la 48 con los planes, la 50 con las
+      conversaciones y ahora esta—: una función del servidor no está
+      terminada hasta que algo la usa. Vive en el panel del archivo, no en
+      la fila de la tabla, porque compartir **no se deshace** y la decisión
+      se toma mirando qué es el archivo. La pantalla lo dice en claro en
+      vez de callarlo: no existe la operación contraria, ni en el PRD ni en
+      el servidor, y para cuando se quisiera desandar el restaurante ya lo
+      ha visto.
+    - **La marca, al subir.** El formulario de subida ofrece ahora
+      Interno / Compartido, que es la primera frase de la regla. Por
+      defecto interno, que es lo prudente en una operación que solo va de
+      ida.
+    - **El otro extremo, que no existía.** El restaurante **no tenía dónde
+      ver un archivo compartido**: su pantalla no enseñaba archivos por
+      ninguna parte, así que compartir era marcar una columna y nada más.
+      Ahora tiene su catálogo, con la descarga por la ruta privada y
+      temporal de RN-ARC-08. La consulta no lleva ni un filtro de
+      visibilidad escrito en la pantalla: lo que llega es lo que
+      `can_read_file()` deja pasar, y la facturación solo con visibilidad
+      financiera (RN-FIN-07). Los archivados no se le ofrecen —RN-ARC-07,
+      "se archiva, no se borra"— y siguen enteros para el equipo.
+
+    **La migración 56 no añade lógica: cierra una puerta.** Las **siete**
+    funciones que escriben archivos estaban abiertas a `anon` —Supabase
+    concede `EXECUTE` por defecto y el Hito 7 no revocó ninguna—,
+    comprobado en vivo, no supuesto. No eran explotables (las siete
+    comprueban el permiso y sin sesión `auth.uid()` es null), pero son
+    escrituras accesibles por RPC sin haber iniciado sesión: exactamente lo
+    que la migración 51 encontró con `convert_conversation_to_request()`.
+    `can_read_file()` y `can_write_file()` se quedan como están a
+    propósito: viven dentro de las políticas de RLS y son la excepción
+    documentada en la migración 32.
+
+    **Verificado contra una base de datos de verdad, no razonado.** Las 56
+    migraciones aplican desde cero sobre un PostgreSQL 16 con
+    `bootstrap-postgres-local.sql`, y ahí pasan las **quince** suites en el
+    orden de CI. La nueva, `compartir_con_el_restaurante.sql`, no repite lo
+    que ya probaba el Hito 7: comprueba la consulta que hace la pantalla
+    del restaurante tal cual —columnas enumeradas, y `select *` dando error
+    de privilegios, que es el motivo de enumerarlas—, RN-FIN-07 en ese
+    catálogo, que un trabajador no comparte lo que no puede ver
+    (RN-ARC-05), que `files` **no tiene ninguna política de UPDATE** —que
+    es lo que sostiene el "y queda auditado", porque no hay otra puerta— y
+    los privilegios de las siete. **Comprobada con cuatro mutaciones**:
+    devolverle el `EXECUTE` a `anon`, darle a `files` una política de
+    UPDATE, quitarle a la función su `return` de idempotencia y hacer que
+    `can_read_file()` ignore la visibilidad del cliente hacen fallar la
+    suite, cada una por su comprobación.
+
+    De paso, una comprobación que era **vacua** desde el Hito 7: aquella
+    suite llama dos veces a `share_file_with_client()` "para probar la
+    idempotencia" y no mira nada después, así que un segundo apunte de
+    auditoría habría pasado inadvertido. Ahora se cuentan los apuntes, que
+    es lo que hace falta cuando hay un botón que se puede pulsar dos veces.
+
+    **Lo que NO entrega, y se dice en vez de fingirlo:**
+
+    - **La migración 56 no está aplicada al proyecto.** Es la primera vez
+      en varios hitos que el repositorio va por delante de la base, y es
+      deliberado: retirar privilegios en producción se hace mirando, no de
+      pasada. El detalle y el `grant` exacto que la deshace están en
+      `docs/DESPLIEGUE-SUPABASE.md`.
+    - **Sin recorrido de Playwright con datos**, igual que las cinco
+      pantallas anteriores: esos tests entran con sesión contra el proyecto
+      real y desde aquí no se pueden ejecutar. Escribir uno sin haberlo
+      visto pasar es lo que este repositorio ha pagado caro cuatro veces.
+    - **Dejar de compartir no existe**, y no se ha inventado. El PRD no lo
+      tiene, y "desandar lo compartido" no es lo mismo que no haberlo
+      compartido.
+    - **`supabase/tests/ficha_del_restaurante.sql` sigue sin existir**,
+      aunque la cabecera de la migración 55 diga "se comprueba con". Es la
+      quinta vez que una garantía escrita en un comentario resulta no estar
+      implementada, y queda escrito aquí para que se decida qué se hace con
+      ella, no para taparlo.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

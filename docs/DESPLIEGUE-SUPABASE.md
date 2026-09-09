@@ -6,12 +6,22 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 04/09/2026.
+Actualizado el 09/09/2026.
+
+## Pendiente de aplicar
+
+**La 56 (`compartir_con_el_restaurante`) NO está aplicada.** Es la única
+que le falta al proyecto. Ver el apartado "La 56" más abajo: no crea ni
+cambia ninguna función, solo **retira el `EXECUTE` de `anon`** sobre las
+siete funciones que escriben archivos, así que aplicarla no puede romper
+nada que hoy funcione —ninguna pantalla llama a esas funciones sin
+sesión— pero sí es un cambio de privilegios, y este archivo no da por
+aplicado lo que nadie ha aplicado.
 
 ## Aplicadas
 
-**Las 55 migraciones del repositorio están aplicadas.** No queda ninguna
-pendiente. Las tres de la 49 a la 51 se aplicaron el 04/09/2026 —el
+**Las 55 primeras migraciones del repositorio están aplicadas.** Las tres
+de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026 y la 55 el 09/09/2026.
@@ -285,6 +295,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 53 | `cobro_de_mejora_en_el_libro` | `cobro_de_mejora_en_el_libro` |
 | 54 | `inicio_del_espacio` | `inicio_del_espacio` |
 | 55 | `ficha_del_restaurante` | `ficha_del_restaurante` |
+| 56 | `compartir_con_el_restaurante` | **sin aplicar** |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
@@ -309,6 +320,53 @@ Con ella queda cerrada la última salvedad de `database.types.ts`: ya no hay
 ninguna función escrita a mano esperando a que se aplique su migración. Al
 regenerar contra el proyecto, la firma salió **idéntica** a la que estaba
 escrita a mano, así que no había desviación que corregir.
+
+### La 56 · compartir con el restaurante (SIN APLICAR)
+
+Lo que hace, entero: `revoke all ... from public, anon` más `grant execute
+... to authenticated` sobre las **siete** funciones que escriben archivos
+—`share_file_with_client`, `register_file`, `add_file_version`,
+`archive_file`, `request_file_permanent_deletion`,
+`attach_file_to_message` y `upload_payment_receipt`—. Ni una función nueva,
+ni un cambio de lógica, ni una tabla tocada.
+
+Por qué hacía falta: un proyecto de Supabase concede `EXECUTE` por defecto
+a `anon` y `authenticated` sobre toda función nueva, y el Hito 7 no revocó
+ninguna de las siete. **Comprobado en vivo** sobre un PostgreSQL 16 con las
+55 migraciones aplicadas desde cero: las siete devolvían `t` para
+`has_function_privilege('anon', ..., 'execute')`. No eran explotables —las
+siete comprueban el permiso por su cuenta y sin sesión `auth.uid()` es
+null—, pero son escrituras accesibles por RPC sin haber iniciado sesión.
+Es lo mismo que encontró la migración 51 con
+`convert_conversation_to_request()`.
+
+Lo que se comprobó antes de darla por buena, en local y sin Docker
+(`supabase/tests/bootstrap-postgres-local.sql`):
+
+- Las **56 migraciones** aplican desde cero sobre una base vacía.
+- Las **15 suites** de `supabase/tests/` pasan, en el orden de CI, sobre
+  esa base recién construida — las 14 que ya había más la nueva
+  `compartir_con_el_restaurante.sql`.
+- Las siete funciones pasan de `anon = t` a `anon = f`, conservando
+  `authenticated = t`.
+- **Cuatro mutaciones**, para que la suite nueva no sea un adorno: (1)
+  devolverle a `anon` el `EXECUTE` de `share_file_with_client` la hace
+  fallar; (2) darle a `files` una política de UPDATE, también; (3) quitarle
+  a `share_file_with_client()` su `return` de idempotencia deja dos apuntes
+  de auditoría y falla; (4) hacer que `can_read_file()` ignore la
+  visibilidad del cliente le enseña los tres archivos y falla. Restaurado
+  todo, la suite vuelve a verde.
+
+Cómo se deshace, si hiciera falta: `grant execute on function <cada una>
+to anon;`. No hay nada más que revertir.
+
+Lo que NO toca, y conviene saberlo antes de "completar" el trabajo:
+`can_read_file()` y `can_write_file()` siguen abiertas a `anon`. Aparecen
+dentro de las políticas de RLS de `files`, `file_versions` y `file_links`,
+que PostgreSQL evalúa con los privilegios de quien consulta, así que
+tocarlas es de la familia de la excepción documentada en la migración 32 y
+no se hace de paso en una migración de otra cosa. Sin privilegio de
+columna sobre esas tablas, `anon` no puede leerlas de todos modos.
 
 ## Cómo quedó el esquema
 

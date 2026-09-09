@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
-import { ALLOWED_MIME_TYPES, FILE_CATEGORIES } from "@/core/files";
+import { ALLOWED_MIME_TYPES, FILE_CATEGORIES, FILE_VISIBILITIES } from "@/core/files";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/client";
 import { FILES_BUCKET } from "@/services/file-storage";
@@ -26,6 +26,13 @@ import { prepararSubida, registrarArchivo } from "@/app/archivos/actions";
  * fotografía en "Documentos" la esconde de quien la busque. La lista es la
  * de `src/core/files.ts`, la misma que valida el servidor.
  *
+ * Y la marca de RN-ARC-04 también se elige, aquí y no después: la regla
+ * dice que "cada archivo se marca Interno o Compartido con el
+ * restaurante", y quien sube una fotografía retocada para el cliente sabe
+ * en ese momento para quién es. Por defecto **interno**, que es lo
+ * prudente: compartir de más ya no se deshace, y lo que falte se comparte
+ * luego desde el panel del archivo.
+ *
  * Al terminar se refresca la ruta en vez de añadir la fila a mano: la
  * tabla sale de una consulta con RLS, y pintar aquí lo que creemos haber
  * creado sería una segunda verdad que puede discrepar de la del servidor.
@@ -33,8 +40,10 @@ import { prepararSubida, registrarArchivo } from "@/app/archivos/actions";
 export function UploadFileForm({ establishmentId }: { establishmentId: string }) {
   const router = useRouter();
   const categoriaId = useId();
+  const visibilidadId = useId();
   const entrada = useRef<HTMLInputElement>(null);
   const [categoria, setCategoria] = useState<string>(FILE_CATEGORIES[0]);
+  const [visibilidad, setVisibilidad] = useState<string>(FILE_VISIBILITIES[0]);
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [subido, setSubido] = useState<string | null>(null);
@@ -82,6 +91,7 @@ export function UploadFileForm({ establishmentId }: { establishmentId: string })
         name: archivo.name,
         path: preparacion.path,
         fileName: archivo.name,
+        visibility: visibilidad,
       });
 
       if (!registro.ok) {
@@ -115,9 +125,25 @@ export function UploadFileForm({ establishmentId }: { establishmentId: string })
           >
             {FILE_CATEGORIES.map((opcion) => (
               <option key={opcion} value={opcion}>
-                {t.fileCategories[opcion]}
+                {es.space.files.categories[opcion]}
               </option>
             ))}
+          </select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor={visibilidadId} className="text-sm font-semibold text-text">
+            {t.uploadVisibilityLabel}
+          </label>
+          <select
+            id={visibilidadId}
+            value={visibilidad}
+            onChange={(evento) => setVisibilidad(evento.target.value)}
+            disabled={subiendo}
+            className="rounded-field border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition-colors focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+          >
+            <option value="internal">{es.space.files.internal}</option>
+            <option value="shared_with_client">{es.space.files.sharedWithClient}</option>
           </select>
         </div>
 
@@ -148,7 +174,9 @@ export function UploadFileForm({ establishmentId }: { establishmentId: string })
         </label>
       </div>
 
-      <p className="mt-2 text-xs text-text-secondary">{es.files.hint}</p>
+      <p className="mt-2 text-xs text-text-secondary">
+        {es.files.hint} {t.uploadVisibilityHint}
+      </p>
 
       {error ? (
         <p role="alert" className="mt-2 text-sm text-danger">

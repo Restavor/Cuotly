@@ -115,6 +115,7 @@ export const es = {
     rejectedSize: "El archivo pasa de 25 MB, que es el máximo por archivo.",
     rejectedEmpty: "El archivo está vacío.",
     rejectedCategory: "Esa categoría de archivo no existe.",
+    rejectedVisibility: "Esa marca de visibilidad no existe.",
     noEstablishment: "Ese restaurante no existe o no tienes acceso a él.",
     noWritePermission: "No tienes permiso para subir archivos de esa categoría a este restaurante.",
     uploadUnavailable: "No se ha podido preparar la subida. Vuelve a intentarlo.",
@@ -225,6 +226,21 @@ export const es = {
       sharedWithClient: "Compartido con el restaurante",
       archived: "Archivado",
       version: "Versión",
+      // RN-ARC-01 · las ocho categorías, nombradas UNA vez. Viven aquí y
+      // no en la ficha del equipo porque las leen los dos lados: la ficha
+      // de §15.2 y el catálogo del restaurante. Un segundo diccionario de
+      // lo mismo es cómo aparecieron "Completada" y "Hecha" para el mismo
+      // estado (salvedad 18 del ROADMAP).
+      categories: {
+        logos: "Logos",
+        photos: "Fotografías",
+        menus: "Menús",
+        documents: "Documentos",
+        reports: "Informes",
+        billing: "Facturación",
+        requests_and_jobs: "Solicitudes y trabajos",
+        other: "Otros",
+      },
     },
     finance: {
       statusPending: "Pendiente",
@@ -1034,6 +1050,19 @@ export const es = {
     correctionLabel: "Qué hay que corregir",
     correctionSubmit: "Pedir la corrección",
     correctionPending: "Pidiendo…",
+    // RN-ARC-04, el otro extremo de "Compartido con el restaurante": lo
+    // que el equipo comparte y lo que el propio restaurante sube. Lo
+    // interno del equipo no está aquí, y no por estar escondido — RLS no
+    // le devuelve la fila.
+    filesTitle: "Archivos",
+    filesHint:
+      "Lo que el equipo comparte contigo y lo que envías tú. Cada descarga usa un enlace privado que caduca a los pocos minutos.",
+    filesEmptyTitle: "Todavía no hay archivos",
+    filesEmptyReason:
+      "Aquí aparecerán los archivos que el equipo comparta contigo —logos, fotografías, menús, documentos— y los que envíes tú. Lo que el equipo guarda para su trabajo interno no se comparte solo.",
+    filesNameColumn: "Nombre",
+    filesCategoryColumn: "Tipo",
+    filesDateColumn: "Fecha",
     // §66.3 · la conversación general del restaurante: lo que todavía no
     // es una solicitud. Es a donde lleva "Mensajes" en el menú del
     // restaurante.
@@ -1937,21 +1966,24 @@ export const es = {
     fileVisibilityColumn: "Visibilidad",
     fileVersionColumn: "Versión",
     fileVersion: (n: number) => `v${n}`,
-    fileCategories: {
-      logos: "Logos",
-      photos: "Fotografías",
-      menus: "Menús",
-      documents: "Documentos",
-      reports: "Informes",
-      billing: "Facturación",
-      requests_and_jobs: "Solicitudes y trabajos",
-      other: "Otros",
-    },
     fileVariants: {
       original: "Original",
       retouched: "Retocada",
       published: "Publicada",
     },
+    // RN-ARC-04 · "un trabajador puede compartir después uno interno".
+    // El aviso de que no se deshace no es prudencia decorativa: no existe
+    // la operación contraria, ni en el servidor ni en la regla, y el
+    // restaurante ya lo habrá visto.
+    shareTitle: "Visibilidad",
+    shareInternalHint:
+      "Este archivo solo lo ve el equipo. Compartirlo lo pone en el catálogo del restaurante, que podrá verlo y descargarlo.",
+    shareSharedHint:
+      "El restaurante ve este archivo en su catálogo y puede descargarlo.",
+    shareIrreversible:
+      "Compartir no se deshace: no existe la operación contraria, y para entonces el restaurante ya lo ha visto.",
+    shareButton: "Compartir con el restaurante",
+    sharePending: "Compartiendo…",
     versionsTitle: "Versiones",
     versionsOf: (name: string) => `Versiones de ${name}`,
     versionsPick: "Elige un archivo para ver sus versiones.",
@@ -1961,6 +1993,12 @@ export const es = {
     uploadHint:
       "El archivo entra en el catálogo de este restaurante. Quién puede subir cada categoría lo decide el servidor: si no te corresponde, te lo dirá al intentarlo.",
     uploadCategoryLabel: "Categoría del archivo",
+    // RN-ARC-04 · la marca se elige al subir, y por defecto es la
+    // prudente: un archivo compartido sin querer ya lo ha visto el
+    // restaurante, y no hay forma de deshacerlo.
+    uploadVisibilityLabel: "Quién lo ve",
+    uploadVisibilityHint:
+      "Puedes compartir después un archivo interno; volver atrás no, así que en la duda déjalo interno.",
     uploadButton: "Subir archivo",
     uploadPending: "Subiendo…",
     uploadDone: (name: string) => `${name} está ya en el catálogo.`,

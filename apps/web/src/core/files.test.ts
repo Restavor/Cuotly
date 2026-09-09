@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
+
+import { es } from "@/i18n/es";
+
 import {
   ALLOWED_MIME_TYPES,
+  FILE_CATEGORIES,
   MAX_FILE_SIZE_BYTES,
   canRequestPermanentDeletion,
   canViewFile,
@@ -193,5 +197,29 @@ describe("sanitizeFileName · el nombre que llega del navegador es texto del usu
 
   it("conserva la extensión de un nombre normal", () => {
     expect(sanitizeFileName("justificante_2026-09-03.pdf")).toBe("justificante_2026-09-03.pdf");
+  });
+});
+
+/**
+ * CA-21 aplicado a los archivos: "solo existe UN sitio donde algo tiene
+ * nombre". Las ocho categorías las leen ahora dos pantallas —la ficha del
+ * equipo (§15.2) y el catálogo del restaurante— y por eso su diccionario
+ * vive en `es.space.files.categories` y no dentro de una de las dos. Este
+ * barrido es lo que impide que la próxima pantalla escriba la tercera
+ * copia: si alguien añade una categoría en `src/core/files.ts` y no le
+ * pone nombre, o deja un nombre huérfano de una que ya no existe, falla.
+ * Es el mismo control que `naming.test.ts` hace con los estados, y la
+ * razón de tenerlo está en la salvedad 18 del ROADMAP: tres listas
+ * escritas a mano llevaban meses discrepando de la base.
+ */
+describe("RN-ARC-01 · las ocho categorías, nombradas una sola vez", () => {
+  it("el diccionario cubre todas las categorías y no tiene ninguna de más", () => {
+    expect(Object.keys(es.space.files.categories).sort()).toEqual([...FILE_CATEGORIES].sort());
+  });
+
+  it("ningún nombre está vacío", () => {
+    for (const nombre of Object.values(es.space.files.categories)) {
+      expect(nombre.trim().length).toBeGreaterThan(0);
+    }
   });
 });

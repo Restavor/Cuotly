@@ -64,6 +64,11 @@ const PATHS = {
   image:
     "M5 5h14a1.5 1.5 0 0 1 1.5 1.5v11A1.5 1.5 0 0 1 19 19H5a1.5 1.5 0 0 1-1.5-1.5v-11A1.5 1.5 0 0 1 5 5ZM9 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM3.5 16.5 8 12.5l3.5 3 3-2.5 4.5 4",
   close: "M6.5 6.5l11 11M17.5 6.5l-11 11",
+  // Los tres nodos enlazados de "compartir" (RN-ARC-04). No se reutiliza
+  // `upload`, que es la flecha de subir: subir un archivo y compartirlo
+  // con el restaurante son dos operaciones distintas y en el mismo bloque.
+  share:
+    "M17.5 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM6.5 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM17.5 20.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM8.7 10.8l6.6-3.6M8.7 13.2l6.6 3.6",
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -56,6 +56,7 @@ const SERVICE_STOPPED = ["paused", "suspended", "read_only", "archived"];
 type StatusKey = keyof typeof es.space.statuses;
 type RequestStateKey = keyof typeof es.naming.states.request;
 type CategoryKey = keyof typeof es.naming.categories;
+type FileCategoryKey = keyof typeof es.space.files.categories;
 
 function toneForState(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
   if (state === "published" || state === "closed" || state === "accepted") return "success";
@@ -144,16 +145,37 @@ export default async function EstablishmentPage({
     notFound();
   }
 
-  const [{ data: allowance }, { data: requests }] = await Promise.all([
+  const [{ data: allowance }, { data: requests }, { data: sharedFiles }] = await Promise.all([
     supabase.rpc("establishment_cycle_allowance", { p_establishment_id: id }),
     supabase
       .from("requests")
       .select("id, code, description, state, created_at, validated_category")
       .eq("establishment_id", id)
       .order("created_at", { ascending: false }),
+    // RN-ARC-04 · el catálogo del restaurante. No hay ningún filtro de
+    // visibilidad escrito aquí, y es a propósito: `files_select` llama a
+    // `can_read_file()`, que al cliente solo le devuelve lo marcado
+    // "Compartido con el restaurante" —y la facturación solo con
+    // visibilidad financiera (RN-FIN-07)—. Filtrarlo también en la
+    // pantalla sería una segunda regla que puede discrepar de la del
+    // servidor, y la que ganaría el día que discrepen sería la peor.
+    //
+    // Las columnas van enumeradas porque `files` tiene privilegios de
+    // columna para tapar la identidad del equipo: `select *` devuelve
+    // 403 (CLAUDE.md).
+    supabase
+      .from("files")
+      .select("id, name, category, created_at")
+      .eq("establishment_id", id)
+      // Un archivo archivado está retirado de la circulación (RN-ARC-07:
+      // "se archiva, no se borra"), así que no se le ofrece al
+      // restaurante. Sigue existiendo, con sus versiones, para el equipo.
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
   ]);
 
   const rows = requests ?? [];
+  const archivos = sharedFiles ?? [];
   const pending = rows.filter((r) => r.state === "pending_client_acceptance");
   const serviceStopped = SERVICE_STOPPED.includes(establishment.status);
   const statusKey = establishment.status as StatusKey;
@@ -299,6 +321,65 @@ export default async function EstablishmentPage({
               ))}
             </TableBody>
           </Table>
+        )}
+      </Card>
+
+      {/*
+        RN-ARC-04, el otro extremo del botón "Compartir con el
+        restaurante" de la ficha del equipo: hasta ahora se podía marcar
+        un archivo como compartido y el restaurante no tenía **dónde
+        verlo** — su pantalla no enseñaba archivos por ninguna parte.
+
+        Aquí está lo que puede ver, que no lo decide esta pantalla: la
+        consulta no lleva ni un filtro de visibilidad, y lo que llega es
+        lo que `can_read_file()` deja pasar.
+      */}
+      <Card title={es.clientArea.filesTitle}>
+        {archivos.length === 0 ? (
+          <EmptyState
+            title={es.clientArea.filesEmptyTitle}
+            description={es.clientArea.filesEmptyReason}
+          />
+        ) : (
+          <>
+            <p className="mb-3 text-sm text-text-secondary">{es.clientArea.filesHint}</p>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeaderCell>{es.clientArea.filesNameColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.clientArea.filesCategoryColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.clientArea.filesDateColumn}</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {archivos.map((file) => (
+                  <TableRow key={file.id}>
+                    <TableCell>
+                      {/*
+                        RN-ARC-08 · el enlace no es al objeto del bucket,
+                        que es privado, sino a la ruta que comprueba
+                        `can_read_file()` con la sesión de quien pulsa y
+                        firma una URL de cinco minutos. Sin `?version=`
+                        sirve la vigente, que es la que quiere quien
+                        descarga desde una lista.
+                      */}
+                      <a href={`/api/archivos/${file.id}`} className="text-cuotly-green underline">
+                        {file.name}
+                      </a>
+                    </TableCell>
+                    <TableCell>
+                      {es.space.files.categories[file.category as FileCategoryKey] ?? file.category}
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
+                        new Date(file.created_at),
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
         )}
       </Card>
 

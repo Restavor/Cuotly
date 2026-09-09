@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import { AttentionList } from "@/components/home/AttentionList";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
 import { sortedCycleUsage, type CycleUsage } from "@/core/establishments";
 import { es } from "@/i18n/es";
@@ -70,7 +71,7 @@ type RequestStateKey = keyof typeof es.naming.states.request;
 type JobStateKey = keyof typeof es.naming.states.job;
 type TaskStateKey = keyof typeof es.naming.states.task;
 type CategoryKey = keyof typeof es.naming.categories;
-type FileCategoryKey = keyof typeof es.establishmentSheet.fileCategories;
+type FileCategoryKey = keyof typeof es.space.files.categories;
 type FileVariantKey = keyof typeof es.establishmentSheet.fileVariants;
 type ClientRoleKey = keyof typeof es.establishmentSheet.clientRoles;
 type ChargeStateKey = keyof typeof es.teamArea.chargeStates;
@@ -242,7 +243,7 @@ function CategoryFilter({
         <option value="">{t.filterAll}</option>
         {categories.map((category) => (
           <option key={category} value={category}>
-            {t.fileCategories[category as FileCategoryKey] ?? category}
+            {es.space.files.categories[category as FileCategoryKey] ?? category}
           </option>
         ))}
       </select>
@@ -811,7 +812,7 @@ export function EstablishmentSheet({
                                 )}
                               </TableCell>
                               <TableCell>
-                                {t.fileCategories[file.category as FileCategoryKey] ?? file.category}
+                                {es.space.files.categories[file.category as FileCategoryKey] ?? file.category}
                               </TableCell>
                               <TableCell>
                                 <VisibilityMark visibility={file.visibility} />
@@ -854,7 +855,7 @@ export function EstablishmentSheet({
                           </p>
                           <p className="mt-1">
                             <StatusBadge tone="neutral">
-                              {t.fileCategories[
+                              {es.space.files.categories[
                                 files.selected.file.category as FileCategoryKey
                               ] ?? files.selected.file.category}
                             </StatusBadge>
@@ -867,6 +868,41 @@ export function EstablishmentSheet({
                         >
                           <Icon name="close" className="h-4 w-4" />
                         </Link>
+                      </div>
+
+                      {/*
+                        RN-ARC-04 · la marca y, si es interno, el botón de
+                        compartirlo. Va en el panel y no en la fila de la
+                        tabla a propósito: es aquí donde se ve QUÉ es el
+                        archivo —su categoría, sus versiones, su
+                        miniatura—, y compartir con el restaurante no se
+                        deshace, así que la decisión se toma mirándolo.
+
+                        El botón se le ofrece a cualquiera que llegue
+                        hasta aquí, sin mirar su rol, y no por descuido:
+                        las filas de esta tabla son las que `can_read_file()`
+                        ha dejado pasar, `manage_files` la tienen los tres
+                        roles del espacio (propietario, administrador y
+                        trabajador) y esta pantalla es la del equipo. Quien
+                        no pueda —un trabajador con facturación, que ni
+                        siquiera ve la fila— recibe el "no" del servidor.
+                      */}
+                      <h3 className="mb-2 text-base font-semibold text-primary-dark">
+                        {t.shareTitle}
+                      </h3>
+                      <div className="mb-5 rounded-[10px] bg-soft-surface p-3 text-sm">
+                        <VisibilityMark visibility={files.selected.file.visibility} />
+                        {files.selected.file.visibility === "shared_with_client" ? (
+                          <p className="mt-2 text-text-secondary">{t.shareSharedHint}</p>
+                        ) : (
+                          <>
+                            <p className="mt-2 text-text-secondary">{t.shareInternalHint}</p>
+                            <ShareFileButton fileId={files.selected.file.id} />
+                            <p className="mt-2 text-xs text-text-secondary">
+                              {t.shareIrreversible}
+                            </p>
+                          </>
+                        )}
                       </div>
 
                       <h3 className="mb-2 text-base font-semibold text-primary-dark">
