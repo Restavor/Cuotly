@@ -30,6 +30,7 @@ const item = (
   deepLink: `/${id}`,
   remainingMinutes: null,
   counter: null,
+  createdAt: null,
 });
 
 describe("las bolsas del ciclo de la ficha (§15.2, RN-CON-01)", () => {

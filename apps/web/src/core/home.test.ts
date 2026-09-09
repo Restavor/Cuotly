@@ -125,6 +125,7 @@ describe("'Necesita atención' se ordena igual en cada recarga", () => {
     deepLink: `/${id}`,
     remainingMinutes,
     counter: remainingMinutes === null ? null : "t2",
+    createdAt: null,
   });
 
   it("lo que ya está fuera de plazo va antes que lo que está a punto", () => {

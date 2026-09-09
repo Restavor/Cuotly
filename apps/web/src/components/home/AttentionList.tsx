@@ -40,6 +40,11 @@ export const ATTENTION_ASPECT: Readonly<
   job_blocked_by_client: { tone: "neutral", icon: "clock", entity: "job" },
 };
 
+/** El día en que entró la fila, como se lee en la maqueta: "7 sep 2026". */
+function fecha(value: string): string {
+  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(value));
+}
+
 /** El tiempo restante, en horas y minutos laborables. */
 function tiempoRestante(minutes: number): string {
   const { hours, minutes: resto } = splitRemaining(minutes);
@@ -117,6 +122,17 @@ export function AttentionList({ items }: { items: readonly AttentionItem[] }) {
                   {es.spaceHome.attention.reviewRequest}
                 </span>
               ) : null}
+
+              {/*
+                Desde cuándo espera. Va antes del galón porque es un dato
+                de la fila, no un control, y se calla cuando no se sabe:
+                una fecha inventada ordenaría mal el trabajo del día.
+              */}
+              {item.createdAt === null ? null : (
+                <span className="hidden shrink-0 text-xs text-text-secondary sm:inline">
+                  {fecha(item.createdAt)}
+                </span>
+              )}
 
               <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-text-secondary" />
             </Link>

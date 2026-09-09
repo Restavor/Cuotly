@@ -349,6 +349,12 @@ export interface SheetFileVersion {
   readonly sizeBytes: number;
   readonly variant: string | null;
   readonly createdAt: string;
+  /**
+   * Para saber si de esta versión se puede enseñar una miniatura. Se pide
+   * el tipo real guardado al registrar el archivo, no se adivina por la
+   * extensión del nombre: un `.jpg` que en realidad es un PDF no se pinta.
+   */
+  readonly mimeType: string;
 }
 
 export interface SheetFile {
@@ -364,12 +370,26 @@ export interface SheetFiles {
   readonly files: readonly SheetFile[];
   /** Las versiones del archivo elegido en la dirección (`?archivo=`). */
   readonly selected: { readonly file: SheetFile; readonly versions: readonly SheetFileVersion[] } | null;
+  /**
+   * Las categorías que este restaurante TIENE, para el desplegable de
+   * "Categoría". No las ocho de RN-ARC-01: ofrecer un filtro que devuelve
+   * cero filas se lee como un error de la pantalla, no como un filtro bien
+   * aplicado (el mismo criterio que los filtros del listado, §20.2).
+   *
+   * Se calculan sobre el catálogo entero, antes de filtrar: si salieran de
+   * las filas ya filtradas, elegir "Menús" dejaría el desplegable con
+   * "Menús" como única opción y no habría forma de volver.
+   */
+  readonly categories: readonly string[];
+  /** La categoría por la que se está filtrando, o `null` si no hay filtro. */
+  readonly category: string | null;
 }
 
 export async function loadSheetFiles(
   supabase: Supabase,
   establishmentId: string,
   selectedFileId: string | undefined,
+  category: string | undefined,
 ): Promise<SheetFiles> {
   // Ni `files.created_by` ni `file_versions.created_by` están concedidas
   // (migraciones 26 y 28): quien subió el archivo es identidad del equipo y
@@ -387,7 +407,7 @@ export async function loadSheetFiles(
   const { data: versions } = ids.length
     ? await supabase
         .from("file_versions")
-        .select("id, file_id, version_number, file_name, size_bytes, variant, created_at")
+        .select("id, file_id, version_number, file_name, size_bytes, variant, mime_type, created_at")
         .in("file_id", ids)
         .order("version_number", { ascending: false })
     : { data: [] };
@@ -402,6 +422,7 @@ export async function loadSheetFiles(
       sizeBytes: version.size_bytes,
       variant: version.variant,
       createdAt: version.created_at,
+      mimeType: version.mime_type,
     });
     porArchivo.set(version.file_id, suyas);
   }
@@ -415,10 +436,23 @@ export async function loadSheetFiles(
     lastVersion: porArchivo.get(file.id)?.[0]?.versionNumber ?? 1,
   }));
 
+  const categories = [...new Set(rows.map((file) => file.category))].sort();
+
+  // Una categoría que no existe en este restaurante no filtra: se ignora y
+  // se enseña el catálogo entero. Filtrar por ella dejaría la tabla vacía
+  // y parecería que no hay archivos (CA-20).
+  const filtro = category !== undefined && categories.includes(category) ? category : null;
+  const visibles = filtro === null ? rows : rows.filter((file) => file.category === filtro);
+
+  // El archivo elegido se busca sobre el catálogo entero, no sobre lo
+  // filtrado: el enlace de "los archivos de Magariños con este abierto"
+  // debe seguir abriéndolo aunque el filtro lo esconda de la tabla.
   const elegido = rows.find((file) => file.id === selectedFileId) ?? null;
 
   return {
-    files: rows,
+    files: visibles,
+    categories,
+    category: filtro,
     selected:
       elegido === null
         ? null

@@ -144,6 +144,16 @@ export interface AttentionItem {
    * decir la que no es engaña sobre lo que hay que hacer.
    */
   readonly counter: "t2" | "t3" | null;
+  /**
+   * Cuándo entró en el sistema lo que pide atención. La maqueta de §15.2
+   * lo enseña al final de cada fila, y hace falta: "1 solicitud por
+   * validar" sin fecha no distingue la de esta mañana de la de hace tres
+   * semanas, que es justo lo que decide a cuál mirar primero.
+   *
+   * Es `null` cuando la consulta de la que sale la fila no lo trajo. No se
+   * sustituye por la fecha de hoy: eso sería inventarse un dato (CA-20).
+   */
+  readonly createdAt: string | null;
 }
 
 /**

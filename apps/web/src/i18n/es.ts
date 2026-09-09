@@ -1826,6 +1826,7 @@ export const es = {
     cycleUsed: (used: number, included: number) => `${used} de ${included} usados`,
     cycleRemaining: (remaining: number) =>
       remaining === 1 ? "queda 1" : `quedan ${remaining}`,
+    cyclePercent: (percent: number) => `${percent} %`,
     cycleExhausted: "Bolsa agotada",
     cycleNotIncluded: "No incluido en el plan",
     cycleReturned: (returned: number) =>
@@ -1954,11 +1955,18 @@ export const es = {
     versionsTitle: "Versiones",
     versionsOf: (name: string) => `Versiones de ${name}`,
     versionsPick: "Elige un archivo para ver sus versiones.",
-    versionsClose: "Cerrar",
+    versionsClose: "Cerrar el panel de versiones",
     fileSize: (megabytes: string) => `${megabytes} MB`,
     fileArchived: "Archivado",
-    filesUploadHint:
-      "Subir un archivo se hace hoy desde el mensaje o desde el justificante de un cobro. El botón de subida directa al catálogo llega con la pantalla de archivos.",
+    uploadHint:
+      "El archivo entra en el catálogo de este restaurante. Quién puede subir cada categoría lo decide el servidor: si no te corresponde, te lo dirá al intentarlo.",
+    uploadCategoryLabel: "Categoría del archivo",
+    uploadButton: "Subir archivo",
+    uploadPending: "Subiendo…",
+    uploadDone: (name: string) => `${name} está ya en el catálogo.`,
+    filterLabel: "Categoría",
+    filterAll: "Todas",
+    filterSubmit: "Filtrar",
     backupTitle: "Backup de la web",
     backupEmptyTitle: "No conectado",
     backupEmptyReason:

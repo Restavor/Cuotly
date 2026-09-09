@@ -12,12 +12,15 @@ import {
   TableRow,
 } from "@/components/ui";
 import { AttentionList } from "@/components/home/AttentionList";
+import { Icon, type IconName } from "@/components/ui/Icon";
+import { UploadFileForm } from "./UploadFileForm";
 import { sortedCycleUsage, type CycleUsage } from "@/core/establishments";
 import { es } from "@/i18n/es";
 
 import {
   MANAGEMENT_BLOCKS,
   SHEET_TABS,
+  filesHref,
   managementBlockLabel,
   sheetHref,
   sheetTabLabel,
@@ -86,11 +89,62 @@ function diaCorto(value: string): string {
   return new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(new Date(value));
 }
 
+/**
+ * El tamaño en megabytes, con la coma decimal del español. `toFixed()`
+ * escribe siempre un punto, así que "2.4 MB" se colaba en una pantalla que
+ * en la línea de al lado escribe "599,00 €".
+ */
+function megabytes(sizeBytes: number): string {
+  return new Intl.NumberFormat("es-ES", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(sizeBytes / 1_048_576);
+}
+
 function statusTone(status: string): "success" | "warning" | "danger" | "neutral" {
   if (status === "active") return "success";
   if (status === "suspended" || status === "archived") return "danger";
   if (status === "paused" || status === "ending" || status === "read_only") return "warning";
   return "neutral";
+}
+
+/**
+ * Una de las tres tarjetas de cabecera del Resumen: plan, Menú Diario y
+ * renovación (maqueta §15.2).
+ *
+ * El recuadro del icono es decoración —va con `aria-hidden`— y el dato lo
+ * lleva siempre el texto: quien no ve el icono no pierde nada (§21.4). El
+ * pie es opcional porque no todas las tarjetas tienen segunda línea, y
+ * cuando no la hay se queda sin ella en vez de rellenarla con un guion.
+ */
+function FactCard({
+  icon,
+  label,
+  value,
+  hint,
+}: {
+  icon: IconName;
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="flex items-center gap-4 rounded-[20px] border border-border bg-surface p-5">
+      <span
+        aria-hidden="true"
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-cuotly-green/10 text-cuotly-green"
+      >
+        <Icon name={icon} className="h-6 w-6" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xs text-text-secondary">{label}</span>
+        <span className="block truncate text-lg font-semibold text-primary-dark">{value}</span>
+        {hint === undefined ? null : (
+          <span className="block text-sm text-text-secondary">{hint}</span>
+        )}
+      </span>
+    </div>
+  );
 }
 
 /**
@@ -124,13 +178,101 @@ function CycleBagCard({ bag }: { bag: CycleUsage }) {
           >
             <div className="h-full bg-cuotly-green" style={{ width: `${bag.percentUsed}%` }} />
           </div>
-          <p className="mt-1 text-xs text-text-secondary">
-            {bag.exhausted ? t.cycleExhausted : t.cycleRemaining(bag.remaining)}
-            {devueltos > 0 ? ` · ${t.cycleReturned(devueltos)}` : ""}
+          {/*
+            El porcentaje va escrito además de dibujado. La barra sola
+            obliga a estimar a ojo cuánto queda, y a quien no la ve no le
+            dice nada: el número es el dato y la barra, su forma.
+          */}
+          <p className="mt-1 flex items-baseline justify-between gap-2 text-xs text-text-secondary">
+            <span>
+              {bag.exhausted ? t.cycleExhausted : t.cycleRemaining(bag.remaining)}
+              {devueltos > 0 ? ` · ${t.cycleReturned(devueltos)}` : ""}
+            </span>
+            <span className="shrink-0 font-semibold text-text">
+              {t.cyclePercent(bag.percentUsed)}
+            </span>
           </p>
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * El desplegable "Categoría" del catálogo. Es un `<form method="get">`,
+ * sin una línea de JavaScript, igual que los filtros del listado (§20.2):
+ * filtra al enviar, no mientras se elige, y funciona antes de que hidrate
+ * nada.
+ *
+ * Solo se pinta cuando hay más de una categoría que elegir. Un filtro con
+ * una única opción no filtra nada y solo estorba.
+ */
+function CategoryFilter({
+  base,
+  categories,
+  current,
+  selectedFileId,
+}: {
+  base: string;
+  categories: readonly string[];
+  current: string | null;
+  selectedFileId: string | null;
+}) {
+  return (
+    <form method="get" action={base} className="flex shrink-0 items-center gap-2">
+      {/*
+        La pestaña y el bloque viajan como campos ocultos: sin ellos,
+        filtrar devolvería a Resumen, que no es donde estaba quien filtra.
+      */}
+      <input type="hidden" name="vista" value={SHEET_TABS[3].slug} />
+      <input type="hidden" name="bloque" value={MANAGEMENT_BLOCKS[3].slug} />
+      {selectedFileId === null ? null : (
+        <input type="hidden" name="archivo" value={selectedFileId} />
+      )}
+
+      <label htmlFor="filtro-tipo-archivo" className="text-sm text-text-secondary">
+        {t.filterLabel}
+      </label>
+      <select
+        id="filtro-tipo-archivo"
+        name="tipo"
+        defaultValue={current ?? ""}
+        className="rounded-field border border-border bg-surface px-3 py-1.5 text-sm text-text outline-none transition-colors focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+      >
+        <option value="">{t.filterAll}</option>
+        {categories.map((category) => (
+          <option key={category} value={category}>
+            {t.fileCategories[category as FileCategoryKey] ?? category}
+          </option>
+        ))}
+      </select>
+      <button
+        type="submit"
+        className="rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+      >
+        {t.filterSubmit}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * RN-ARC-04 · si un archivo lo ve el restaurante o solo el equipo.
+ *
+ * El punto acompaña al texto, nunca lo sustituye: el color no puede ser la
+ * única señal de algo que decide quién ve qué (§21.4). Quien mira en
+ * blanco y negro lee "Interno" igual.
+ */
+function VisibilityMark({ visibility }: { visibility: string }) {
+  const compartido = visibility === "shared_with_client";
+  return (
+    <span className="flex items-center gap-2 whitespace-nowrap">
+      <span
+        aria-hidden="true"
+        className={`h-2 w-2 shrink-0 rounded-full ${compartido ? "bg-success" : "bg-text-secondary"}`}
+      />
+      {compartido ? es.space.files.sharedWithClient : es.space.files.internal}
+    </span>
   );
 }
 
@@ -161,10 +303,19 @@ function TabNav({ base, active }: { base: string; active: SheetTab }) {
   );
 }
 
+/**
+ * Los cinco bloques de Gestión, como control segmentado: una pista clara
+ * con el bloque elegido en blanco encima (maqueta §15.2).
+ *
+ * Siguen siendo enlaces, no botones: el bloque vive en la dirección
+ * (`?vista=gestion&bloque=archivos`) y esta barra solo lo enseña. Que
+ * parezca un interruptor no lo convierte en uno — sin JavaScript navega
+ * igual (CA-22).
+ */
 function BlockNav({ base, active }: { base: string; active: ManagementBlock }) {
   return (
     <nav aria-label={t.blocksLabel}>
-      <ul className="flex flex-wrap gap-2">
+      <ul className="inline-flex flex-wrap gap-1 rounded-[14px] bg-soft-surface p-1">
         {MANAGEMENT_BLOCKS.map((block) => {
           const seleccionado = block.key === active.key;
           return (
@@ -172,10 +323,10 @@ function BlockNav({ base, active }: { base: string; active: ManagementBlock }) {
               <Link
                 href={sheetHref(base, SHEET_TABS[3], block)}
                 aria-current={seleccionado ? "true" : undefined}
-                className={`inline-block rounded-[10px] px-3 py-1.5 text-sm ${
+                className={`inline-block rounded-[10px] px-3.5 py-1.5 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
                   seleccionado
-                    ? "bg-primary-dark font-semibold text-white"
-                    : "bg-soft-surface text-text-secondary hover:text-text"
+                    ? "bg-surface font-semibold text-primary-dark shadow-sm"
+                    : "text-text-secondary hover:text-text"
                 }`}
               >
                 {managementBlockLabel(block)}
@@ -224,72 +375,83 @@ export function EstablishmentSheet({
       {tab.key === "summary" ? (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Card title={t.planTitle}>
-              {header.planName === null ? (
-                <>
-                  <p className="font-semibold text-primary-dark">{t.planNone}</p>
-                  <p className="mt-1 text-sm text-text-secondary">{t.planNoneReason}</p>
-                </>
+            <FactCard
+              icon="crown"
+              label={t.planTitle}
+              value={header.planName ?? t.planNone}
+              hint={
+                header.planName === null
+                  ? t.planNoneReason
+                  : header.planPriceCents === null
+                    ? undefined
+                    : t.planPrice(euros(header.planPriceCents))
+              }
+            />
+
+            <FactCard
+              icon="document"
+              label={t.serviceTitle}
+              value={header.services.length > 0 ? t.serviceContracted : t.serviceNotContracted}
+            />
+
+            <FactCard
+              icon="calendar"
+              label={t.renewalTitle}
+              value={header.cycleEnd === null ? t.renewalNone : dia(header.cycleEnd)}
+            />
+          </div>
+
+          {/*
+            Las dos cuentas del ciclo van una al lado de la otra, como en
+            la maqueta: los cambios del plan a la izquierda y las
+            actualizaciones de Menú Diario a la derecha. Son contadores
+            distintos (RN-CON-02) y verlos juntos es justo lo que evita
+            confundirlos.
+          */}
+          <div className="grid items-start gap-4 lg:grid-cols-[2fr_1fr]">
+            <Card
+              title={t.cycleTitle}
+              action={
+                header.cycleStart !== null && header.cycleEnd !== null ? (
+                  <span className="shrink-0 text-sm text-text-secondary">
+                    {t.cycleRange(dia(header.cycleStart), dia(header.cycleEnd))}
+                  </span>
+                ) : undefined
+              }
+            >
+              {bolsas.length === 0 ? (
+                <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
               ) : (
                 <>
-                  <p className="font-semibold text-primary-dark">{header.planName}</p>
-                  {header.planPriceCents === null ? null : (
-                    <p className="mt-1 text-sm text-text-secondary">
-                      {t.planPrice(euros(header.planPriceCents))}
-                    </p>
-                  )}
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {bolsas.map((bag) => (
+                      <CycleBagCard key={bag.category} bag={bag} />
+                    ))}
+                  </div>
+                  <p className="mt-3 text-sm">
+                    <Link href={`${base}/consumos`} className="text-cuotly-green underline">
+                      {t.ledgerLink}
+                    </Link>
+                  </p>
                 </>
               )}
             </Card>
 
-            <Card title={t.serviceTitle}>
-              <p className="font-semibold text-primary-dark">
-                {header.services.length > 0 ? t.serviceContracted : t.serviceNotContracted}
-              </p>
-            </Card>
-
-            <Card title={t.renewalTitle}>
-              <p className="font-semibold text-primary-dark">
-                {header.cycleEnd === null ? t.renewalNone : dia(header.cycleEnd)}
-              </p>
+            {/*
+              RN-CON-02: Menú Diario cuenta sus actualizaciones aparte de
+              los cambios, y ese contador todavía no existe. La maqueta
+              enseña aquí "12 de 30 actualizaciones usadas" con su barra al
+              40 %, y va marcada como datos de ejemplo: ese número no lo
+              está contando nadie, así que aquí se dice el motivo en vez de
+              copiarlo (CLAUDE.md MUST NOT).
+            */}
+            <Card title={t.dailyMenuCounterTitle}>
+              <EmptyState
+                title={t.dailyMenuCounterEmptyTitle}
+                description={t.dailyMenuCounterEmptyReason}
+              />
             </Card>
           </div>
-
-          <Card title={t.cycleTitle}>
-            {bolsas.length === 0 ? (
-              <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
-            ) : (
-              <>
-                {header.cycleStart !== null && header.cycleEnd !== null ? (
-                  <p className="mb-3 text-sm text-text-secondary">
-                    {t.cycleRange(dia(header.cycleStart), dia(header.cycleEnd))}
-                  </p>
-                ) : null}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {bolsas.map((bag) => (
-                    <CycleBagCard key={bag.category} bag={bag} />
-                  ))}
-                </div>
-                <p className="mt-3 text-sm">
-                  <Link href={`${base}/consumos`} className="text-cuotly-green underline">
-                    {t.ledgerLink}
-                  </Link>
-                </p>
-              </>
-            )}
-          </Card>
-
-          {/*
-            RN-CON-02: Menú Diario cuenta sus actualizaciones aparte de los
-            cambios, y ese contador todavía no existe. Se dice; no se pinta
-            un "12 de 30" que nadie está contando.
-          */}
-          <Card title={t.dailyMenuCounterTitle}>
-            <EmptyState
-              title={t.dailyMenuCounterEmptyTitle}
-              description={t.dailyMenuCounterEmptyReason}
-            />
-          </Card>
 
           <Card title={t.attentionTitle}>
             {summary.attention.length === 0 ? (
@@ -594,109 +756,213 @@ export function EstablishmentSheet({
           ) : null}
 
           {block.key === "files" ? (
-            <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-              <Card title={t.filesTitle(header.name)}>
-                {files.files.length === 0 ? (
-                  <EmptyState title={t.filesEmptyTitle} description={t.filesEmptyReason} />
-                ) : (
-                  <>
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableHeaderCell>{t.fileNameColumn}</TableHeaderCell>
-                          <TableHeaderCell>{t.fileCategoryColumn}</TableHeaderCell>
-                          <TableHeaderCell>{t.fileVisibilityColumn}</TableHeaderCell>
-                          <TableHeaderCell>{t.fileVersionColumn}</TableHeaderCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {files.files.map((file) => (
-                          <TableRow key={file.id}>
-                            <TableCell>
-                              {/*
-                                El enlace elige el archivo del panel de
-                                versiones. Va en la dirección: compartirlo
-                                abre exactamente esto.
-                              */}
-                              <Link
-                                href={`${sheetHref(base, SHEET_TABS[3], MANAGEMENT_BLOCKS[3])}&archivo=${file.id}`}
+            <>
+              <div className="grid items-start gap-4 lg:grid-cols-[2fr_1fr]">
+                <Card
+                  title={t.filesTitle(header.name)}
+                  action={
+                    files.categories.length > 1 ? (
+                      <CategoryFilter
+                        base={base}
+                        categories={files.categories}
+                        current={files.category}
+                        selectedFileId={files.selected?.file.id ?? null}
+                      />
+                    ) : undefined
+                  }
+                >
+                  <UploadFileForm establishmentId={header.id} />
+
+                  <div className="mt-4">
+                    {files.files.length === 0 ? (
+                      <EmptyState title={t.filesEmptyTitle} description={t.filesEmptyReason} />
+                    ) : (
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableHeaderCell>{t.fileNameColumn}</TableHeaderCell>
+                            <TableHeaderCell>{t.fileCategoryColumn}</TableHeaderCell>
+                            <TableHeaderCell>{t.fileVisibilityColumn}</TableHeaderCell>
+                            <TableHeaderCell>{t.fileVersionColumn}</TableHeaderCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {files.files.map((file) => (
+                            <TableRow key={file.id}>
+                              <TableCell>
+                                {/*
+                                  El enlace elige el archivo del panel de
+                                  versiones. Va en la dirección: compartirlo
+                                  abre exactamente esto.
+                                */}
+                                <Link
+                                  href={filesHref(base, {
+                                    category: files.category,
+                                    fileId: file.id,
+                                  })}
+                                  className="text-cuotly-green underline"
+                                >
+                                  {file.name}
+                                </Link>
+                                {file.archivedAt === null ? null : (
+                                  <span className="ml-2 text-xs text-text-secondary">
+                                    {t.fileArchived}
+                                  </span>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {t.fileCategories[file.category as FileCategoryKey] ?? file.category}
+                              </TableCell>
+                              <TableCell>
+                                <VisibilityMark visibility={file.visibility} />
+                              </TableCell>
+                              <TableCell>{t.fileVersion(file.lastVersion)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </div>
+                </Card>
+
+                <Card>
+                  {files.selected === null ? (
+                    <>
+                      <h3 className="mb-3 text-base font-semibold text-primary-dark">
+                        {t.versionsTitle}
+                      </h3>
+                      <p className="text-sm text-text-secondary">{t.versionsPick}</p>
+                    </>
+                  ) : (
+                    <>
+                      {/*
+                        La cabecera del panel: qué archivo se está mirando y
+                        la salida. La X es un enlace a este mismo bloque sin
+                        `?archivo=`, así que cerrar el panel también se
+                        deshace con el botón de volver.
+                      */}
+                      <div className="mb-4 flex items-start gap-3">
+                        <span
+                          aria-hidden="true"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface text-text-secondary"
+                        >
+                          <Icon name="image" className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-primary-dark">
+                            {files.selected.file.name}
+                          </p>
+                          <p className="mt-1">
+                            <StatusBadge tone="neutral">
+                              {t.fileCategories[
+                                files.selected.file.category as FileCategoryKey
+                              ] ?? files.selected.file.category}
+                            </StatusBadge>
+                          </p>
+                        </div>
+                        <Link
+                          href={filesHref(base, { category: files.category, fileId: null })}
+                          aria-label={t.versionsClose}
+                          className="shrink-0 rounded p-1 text-text-secondary transition-colors hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+                        >
+                          <Icon name="close" className="h-4 w-4" />
+                        </Link>
+                      </div>
+
+                      <h3 className="mb-2 text-base font-semibold text-primary-dark">
+                        {t.versionsTitle}
+                      </h3>
+                      <ul className="space-y-2">
+                        {files.selected.versions.map((version) => (
+                          <li
+                            key={version.id}
+                            className="flex items-start gap-3 rounded-[10px] bg-soft-surface p-2 text-sm"
+                          >
+                            {/*
+                              La miniatura es el propio archivo servido por
+                              la ruta privada, no una copia optimizada:
+                              RN-ARC-08 pide esa optimización y la Fase 1 no
+                              la monta, así que se dice en el adaptador y no
+                              se finge aquí. Lo que no es imagen no enseña
+                              recuadro vacío: dice que no hay vista previa.
+                            */}
+                            {version.mimeType.startsWith("image/") ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- el original vive en un bucket privado y llega por un 302 firmado y temporal (RN-ARC-08): `next/image` no puede optimizar una URL que caduca en cinco minutos.
+                              <img
+                                src={`/api/archivos/${files.selected!.file.id}?version=${version.versionNumber}`}
+                                /*
+                                  Alternativa vacía a propósito: la miniatura
+                                  no añade nada que no esté escrito al lado
+                                  —el nombre del archivo está en la cabecera
+                                  del panel y la versión, en la fila—, y una
+                                  alternativa que repite eso solo lo hace
+                                  leer dos veces. Además, así una miniatura
+                                  que no cargue deja un hueco y no un párrafo
+                                  desbordado.
+                                */
+                                alt=""
+                                className="h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-border bg-soft-surface object-cover"
+                              />
+                            ) : (
+                              <span
+                                aria-hidden="true"
+                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] border border-border bg-surface text-text-secondary"
+                              >
+                                <Icon name="document" className="h-5 w-5" />
+                              </span>
+                            )}
+
+                            <span className="min-w-0 flex-1">
+                              <span className="block font-semibold text-primary-dark">
+                                {version.variant === null
+                                  ? t.fileVersion(version.versionNumber)
+                                  : (t.fileVariants[version.variant as FileVariantKey] ??
+                                    version.variant)}
+                              </span>
+                              <span className="block text-xs text-text-secondary">
+                                {dia(version.createdAt)} · {t.fileSize(megabytes(version.sizeBytes))}
+                              </span>
+                              {/* RN-ARC-08: enlace privado y temporal, firmado tras
+                                  comprobar el permiso. Cada versión descarga LA SUYA. */}
+                              <a
+                                href={`/api/archivos/${files.selected!.file.id}?version=${version.versionNumber}`}
                                 className="text-cuotly-green underline"
                               >
-                                {file.name}
-                              </Link>
-                              {file.archivedAt === null ? null : (
-                                <span className="ml-2 text-xs text-text-secondary">
-                                  {t.fileArchived}
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              {t.fileCategories[file.category as FileCategoryKey] ?? file.category}
-                            </TableCell>
-                            <TableCell>
-                              {file.visibility === "shared_with_client"
-                                ? es.space.files.sharedWithClient
-                                : es.space.files.internal}
-                            </TableCell>
-                            <TableCell>{t.fileVersion(file.lastVersion)}</TableCell>
-                          </TableRow>
+                                {es.files.download}
+                              </a>
+                            </span>
+                          </li>
                         ))}
-                      </TableBody>
-                    </Table>
-                    <p className="mt-3 text-sm text-text-secondary">{t.filesUploadHint}</p>
-                  </>
-                )}
-              </Card>
+                      </ul>
+                    </>
+                  )}
+                </Card>
+              </div>
 
-              <Card title={t.versionsTitle}>
-                {files.selected === null ? (
-                  <p className="text-sm text-text-secondary">{t.versionsPick}</p>
-                ) : (
-                  <>
-                    <p className="mb-3 text-sm font-semibold text-text">
-                      {t.versionsOf(files.selected.file.name)}
-                    </p>
-                    <ul className="space-y-2">
-                      {files.selected.versions.map((version) => (
-                        <li key={version.id} className="rounded-lg bg-soft-surface p-2 text-sm">
-                          <p className="font-semibold text-primary-dark">
-                            {version.variant === null
-                              ? t.fileVersion(version.versionNumber)
-                              : (t.fileVariants[version.variant as FileVariantKey] ??
-                                version.variant)}
-                          </p>
-                          <p className="text-xs text-text-secondary">
-                            {diaCorto(version.createdAt)} ·{" "}
-                            {t.fileSize((version.sizeBytes / 1_048_576).toFixed(1))}
-                          </p>
-                          {/* RN-ARC-08: enlace privado y temporal, firmado tras
-                              comprobar el permiso. */}
-                          <a
-                            href={`/api/archivos/${files.selected!.file.id}`}
-                            className="text-cuotly-green underline"
-                          >
-                            {es.files.download}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="mt-3 text-sm">
-                      <Link
-                        href={sheetHref(base, SHEET_TABS[3], MANAGEMENT_BLOCKS[3])}
-                        className="text-cuotly-green underline"
-                      >
-                        {t.versionsClose}
-                      </Link>
-                    </p>
-                  </>
-                )}
+              {/*
+                El backup va a lo ancho y debajo, como en la maqueta. Lo que
+                la maqueta enseña dentro —"Último respaldo: 7 sep 2026"— es
+                un dato de ejemplo: Cuotly no copia la web de nadie todavía,
+                así que aquí va el motivo (CLAUDE.md MUST NOT).
+              */}
+              <Card>
+                <div className="flex items-start gap-4">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-soft-surface text-text-secondary"
+                  >
+                    <Icon name="database" className="h-6 w-6" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-primary-dark">{t.backupTitle}</h3>
+                    <p className="mt-1 text-sm font-medium text-text">{t.backupEmptyTitle}</p>
+                    <p className="mt-1 text-sm text-text-secondary">{t.backupEmptyReason}</p>
+                  </div>
+                </div>
               </Card>
-
-              <Card title={t.backupTitle}>
-                <EmptyState title={t.backupEmptyTitle} description={t.backupEmptyReason} />
-              </Card>
-            </div>
+            </>
           ) : null}
+
 
           {block.key === "integrations" ? (
             <Card title={t.integrationsTitle}>

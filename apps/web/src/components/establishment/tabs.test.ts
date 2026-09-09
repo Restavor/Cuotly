@@ -7,6 +7,7 @@ import {
   parseSheetTab,
   SHEET_TABS,
   sheetHref,
+  filesHref,
 } from "./tabs";
 
 describe("las cinco pestañas de la ficha (PRD §15.2)", () => {
@@ -46,6 +47,29 @@ describe("las cinco pestañas de la ficha (PRD §15.2)", () => {
     expect(sheetHref("/r/1", SHEET_TABS[3])).toBe("/r/1?vista=gestion");
     expect(sheetHref("/r/1", SHEET_TABS[3], MANAGEMENT_BLOCKS[3])).toBe(
       "/r/1?vista=gestion&bloque=archivos",
+    );
+  });
+});
+
+describe("la dirección del catálogo de archivos (§15.2, RN-ARC-01)", () => {
+  it("sin filtro ni archivo abierto es el bloque a secas", () => {
+    expect(filesHref("/r/1", { category: null, fileId: null })).toBe(
+      "/r/1?vista=gestion&bloque=archivos",
+    );
+  });
+
+  it("RN-ARC-01 · el filtro de categoría viaja en la dirección, así que el enlace se comparte", () => {
+    expect(filesHref("/r/1", { category: "menus", fileId: null })).toBe(
+      "/r/1?vista=gestion&bloque=archivos&tipo=menus",
+    );
+  });
+
+  it("RN-ARC-03 · el archivo abierto en el panel de versiones también, y convive con el filtro", () => {
+    expect(filesHref("/r/1", { category: "photos", fileId: "abc" })).toBe(
+      "/r/1?vista=gestion&bloque=archivos&tipo=photos&archivo=abc",
+    );
+    expect(filesHref("/r/1", { category: null, fileId: "abc" })).toBe(
+      "/r/1?vista=gestion&bloque=archivos&archivo=abc",
     );
   });
 });

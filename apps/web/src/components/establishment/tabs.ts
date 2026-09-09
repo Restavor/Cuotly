@@ -71,6 +71,32 @@ export function sheetHref(
   return `${base}?${params.toString()}`;
 }
 
+/**
+ * La dirección del bloque de archivos, con su filtro de categoría
+ * (`?tipo=`) y el archivo abierto en el panel de versiones (`?archivo=`).
+ *
+ * Los dos viajan en la dirección y no en un estado del navegador, por lo
+ * mismo que la pestaña: "los menús de Magariños con la carta de
+ * septiembre abierta" es un enlace que se pega en un mensaje, y el botón
+ * de volver deshace tanto el filtro como la apertura del panel (CA-22).
+ *
+ * Lo que llega como `null` NO se escribe. Un `?tipo=` vacío en la
+ * dirección se lee luego como un filtro, y filtrar por nada dejaría la
+ * tabla vacía sin que nadie lo hubiera pedido.
+ */
+export function filesHref(
+  base: string,
+  { category, fileId }: { category: string | null; fileId: string | null },
+): string {
+  const params = new URLSearchParams({
+    vista: SHEET_TABS[3].slug,
+    bloque: MANAGEMENT_BLOCKS[3].slug,
+  });
+  if (category !== null) params.set("tipo", category);
+  if (fileId !== null) params.set("archivo", fileId);
+  return `${base}?${params.toString()}`;
+}
+
 export function sheetTabLabel(tab: SheetTab): string {
   return es.establishmentSheet.tabs[tab.key];
 }

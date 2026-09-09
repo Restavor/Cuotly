@@ -119,7 +119,7 @@ export default async function EstablishmentPage({
       loadSheetCounts(supabase, id),
       loadSheetPayments(supabase, id),
       loadSheetUsers(supabase, id),
-      loadSheetFiles(supabase, id, soloUno(query.archivo)),
+      loadSheetFiles(supabase, id, soloUno(query.archivo), soloUno(query.tipo)),
       loadSheetHistory(supabase, slug, id),
     ]);
 

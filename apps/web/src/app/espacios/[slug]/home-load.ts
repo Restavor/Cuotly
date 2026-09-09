@@ -176,12 +176,12 @@ export async function loadSpaceAttention(
     // siempre, `select *` devuelve 403.
     supabase
       .from("requests")
-      .select("id, code, description, state, establishment_id")
+      .select("id, code, description, state, establishment_id, created_at")
       .eq("space_id", spaceId)
       .in("state", [...PENDING_REQUEST_STATES, "correction_requested"]),
     supabase
       .from("jobs")
-      .select("id, code, state, establishment_id")
+      .select("id, code, state, establishment_id, created_at")
       .eq("space_id", spaceId)
       .in("state", [...OPEN_JOB_STATES]),
     supabase.rpc("space_job_counters", { p_space_id: spaceId }),
@@ -223,6 +223,7 @@ export async function loadSpaceAttention(
         deepLink,
         remainingMinutes,
         counter,
+        createdAt: job.created_at,
       });
       continue;
     }
@@ -239,6 +240,7 @@ export async function loadSpaceAttention(
         deepLink,
         remainingMinutes: null,
         counter: null,
+        createdAt: job.created_at,
       });
     } else if (state === "blocked_by_client") {
       jobItems.push({
@@ -250,6 +252,7 @@ export async function loadSpaceAttention(
         deepLink,
         remainingMinutes: null,
         counter: null,
+        createdAt: job.created_at,
       });
     }
   }
@@ -271,6 +274,7 @@ export async function loadSpaceAttention(
       deepLink: `/espacios/${spaceSlug}/solicitudes/${r.id}`,
       remainingMinutes: null,
       counter: null,
+      createdAt: r.created_at,
     }));
 
   return {
