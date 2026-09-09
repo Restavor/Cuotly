@@ -1225,20 +1225,36 @@ porque durante tres hitos esta línea decía lo contrario.
     alguno no tiene su apunte: esta avería se encontró mirando los datos,
     no leyendo el código, y la próxima tiene que romper el test.
 
-La ficha del restaurante (§15.2) va **por la mitad**, y conviene decir por
-cuál: está el servidor y la capa de datos, y **falta la pantalla**.
+La ficha del restaurante (§15.2) está **entera**: las cinco pestañas
+—Resumen · Operación · Informes y datos · Gestión · Historial— y los cinco
+bloques de Gestión —Plan · Pagos · Usuarios · Archivos · Integraciones—.
 
-Lo que hay, verificado: la migración 55 aplicada, `src/core/establishments.ts`
-con sus tests, `sheet-load.ts` con un cargador por pestaña —cabecera,
-resumen, operación, recuentos, pagos, usuarios, archivos e historial—,
-`components/establishment/` con las pestañas y sus bloques, el listado de
-`/restaurantes` con filtros, y los 186 renglones de i18n que nombran cada
-columna y cada estado vacío.
+**La misma dirección sirve a los dos lados.** `/restaurantes/<id>` ramifica
+por la membresía real del espacio: al equipo le da la ficha interna, al
+restaurante lo suyo. Un restaurante es un restaurante y su enlace debería
+ser el mismo lo mire quien lo mire; lo que cambia es qué se enseña.
+Ramificar ahí no autoriza nada —si un cliente forzara `?vista=gestion`
+seguiría viendo su pantalla, y aunque no ramificáramos, RLS y
+`establishment_client_users()` le devuelven cero filas de todo lo interno—.
 
-Lo que **no** hay: la ruta que lo renderiza. `sheet-load.ts` y `tabs.ts` no
-los importa todavía ninguna página, así que hoy son código sin usar. El
-listado enlaza a `/restaurantes/<id>`, que sigue sirviendo la vista del
-cliente; la ficha del equipo tiene que salir ahí, ramificando por rol.
+La pestaña viaja en la dirección (`?vista=gestion&bloque=archivos`) y no en
+un estado del navegador: "los archivos de Magariños" es un enlace que se
+comparte, el botón de volver deshace el cambio de pestaña, y la pantalla
+entera es de servidor, así que no se pierde nada si no hidrata (CA-22).
+
+**Lo que la Fase 1 no tiene aparece diciendo por qué**, no como un hueco ni
+como un dato de ejemplo: los datos fiscales (§15.2 los pide y
+`establishments` no tiene esas columnas), el contador propio de Menú Diario
+(RN-CON-02), el backup de la web, las integraciones analíticas y el botón
+de retirar un acceso (RN-EST-05). Las maquetas de las que sale esta
+pantalla enseñaban esos bloques rellenos y van marcadas como "Datos de
+ejemplo"; aquí no se copiaron (CLAUDE.md MUST NOT).
+
+Dos distinciones que la pantalla sí hace, y que se pierden fácil: una
+consulta de usuarios **fallida** no es una lista vacía —"no se ha podido
+comprobar" frente a "no hay nadie"—, y una bolsa del ciclo que el plan no
+incluye no pinta barra, porque una barra al 0 % diría "te quedan todos",
+que es lo contrario de lo que pasa.
 
 La única pieza que faltaba **en el servidor** era la pestaña Usuarios, y por
 un motivo que solo se ve al construirla: `profiles_select` deja ver el

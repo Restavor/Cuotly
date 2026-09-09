@@ -18,8 +18,22 @@ import { createClient } from "@/lib/supabase/server";
 import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 
+import { EstablishmentSheet } from "@/components/establishment/Sheet";
+import { parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
+import { resolveShellViewer } from "@/components/shell/viewer";
+
 import { AcceptRequestButton } from "./AcceptRequestButton";
 import { NewRequestForm } from "./NewRequestForm";
+import {
+  loadSheetCounts,
+  loadSheetFiles,
+  loadSheetHeader,
+  loadSheetHistory,
+  loadSheetOperation,
+  loadSheetPayments,
+  loadSheetSummary,
+  loadSheetUsers,
+} from "./sheet-load";
 
 /**
  * El restaurante, visto por su cliente (PRD §20.2). Es la pantalla a la
@@ -51,12 +65,27 @@ function toneForState(state: string): "success" | "warning" | "info" | "neutral"
   return "neutral";
 }
 
-export default async function ClientEstablishmentPage({
+/**
+ * La misma dirección sirve a los dos lados, y es a propósito: un
+ * restaurante es un restaurante, y su enlace debería ser el mismo lo mire
+ * quien lo mire. Lo que cambia es **qué** se enseña — al equipo la ficha
+ * interna de §15.2 con sus cinco pestañas, al restaurante lo suyo — y eso
+ * lo decide la membresía real del espacio, no un parámetro.
+ *
+ * Ramificar aquí no autoriza nada: si un cliente forzara `?vista=gestion`,
+ * seguiría viendo su pantalla, y aunque no la ramificáramos, RLS y
+ * `establishment_client_users()` le devolverían cero filas de todo lo
+ * interno (CLAUDE.md: ocultar no es controlar).
+ */
+export default async function EstablishmentPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug, id } = await params;
+  const query = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -65,6 +94,44 @@ export default async function ClientEstablishmentPage({
 
   if (!user) {
     redirect("/login");
+  }
+
+  const soloUno = (valor: string | string[] | undefined): string | undefined =>
+    Array.isArray(valor) ? valor[0] : valor;
+
+  const { role } = await resolveShellViewer(supabase, user.id, slug);
+
+  if (role !== "client") {
+    const header = await loadSheetHeader(supabase, id);
+    if (header === null) notFound();
+
+    const { data: space } = await supabase
+      .from("spaces")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle();
+    if (!space) notFound();
+
+    const base = `/espacios/${slug}/restaurantes/${id}`;
+    const [summary, operation, counts, payments, users, files, history] = await Promise.all([
+      loadSheetSummary(supabase, space.id, slug, id),
+      loadSheetOperation(supabase, id),
+      loadSheetCounts(supabase, id),
+      loadSheetPayments(supabase, id),
+      loadSheetUsers(supabase, id),
+      loadSheetFiles(supabase, id, soloUno(query.archivo)),
+      loadSheetHistory(supabase, slug, id),
+    ]);
+
+    return (
+      <EstablishmentSheet
+        base={base}
+        slug={slug}
+        tab={parseSheetTab(soloUno(query.vista))}
+        block={parseManagementBlock(soloUno(query.bloque))}
+        data={{ header, summary, operation, counts, payments, users, files, history }}
+      />
+    );
   }
 
   const { data: establishment } = await supabase
