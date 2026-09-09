@@ -17,16 +17,26 @@
 --   o pegándolo en el SQL Editor del panel, o con la herramienta
 --   execute_sql del conector de Supabase.
 --
--- Las cuatro identidades, todas con la contraseña `Cuotly-demo-2026`:
---   owner@cuotly.test         Propietaria del espacio (equipo)
---   trabajadora@cuotly.test   Trabajadora que ejecuta los trabajos
---   restaurante@cuotly.test   Propietario local de "Bar Demo" (cliente)
---   cliente2@cuotly.test      Propietario local de "Café Prueba" (cliente)
+-- Las siete identidades, todas con la contraseña `Cuotly-demo-2026`:
+--   owner@cuotly.test          Propietaria del espacio (equipo)
+--   trabajadora@cuotly.test    Trabajadora que ejecuta los trabajos
+--   trabajador2@cuotly.test    Segundo trabajador (equipo)
+--   restaurante@cuotly.test    Propietario local de "Bar Demo" (cliente)
+--   cliente2@cuotly.test       Propietario local de "Café Prueba" (cliente)
+--   magarinos@cuotly.test      Propietaria local de "Magariños" (cliente)
+--   sala.magarinos@cuotly.test Acceso de solo consulta a "Magariños"
 --
--- Dos restaurantes, y la separación es deliberada: "Bar Demo" es el de los
--- tests que LEEN (cuentan solicitudes, miran la bolsa) y no lo toca nadie;
--- "Café Prueba" es donde ocurren los recorridos que ESCRIBEN. Ver la
--- sección 5 bis.
+-- Tres restaurantes, y la separación es deliberada:
+--
+--   "Bar Demo" ..... el de los tests que LEEN (cuentan solicitudes, miran
+--                    la bolsa). No lo toca nadie.
+--   "Café Prueba" .. donde ocurren los recorridos que ESCRIBEN, para que
+--                    no le muevan el suelo al anterior. Ver la sección 5 bis.
+--   "Magariños" .... el que se MIRA. Los otros dos son pequeños a
+--                    propósito y dejan la ficha del PRD §15.2 medio vacía,
+--                    que no sirve para juzgar si está bien resuelta. Este
+--                    llena las cinco pestañas y los cinco bloques de
+--                    Gestión. Ver la sección 9.
 --
 -- Los flujos NO se fabrican metiendo filas a mano en `requests`, `jobs` y
 -- `timer_events`: se ejecutan llamando a las mismas funciones que llama la
@@ -522,6 +532,9 @@ begin
     and exists (select 1 from auth.identities i
                 where i.user_id = u.id and i.provider = 'email');
 
+  -- Cuatro y no siete: las tres identidades de "Magariños" se crean en la
+  -- sección 9, que va después de esta comprobación a propósito. Las suyas
+  -- las comprueba la sección 10.
   if v_entrables <> 4 then
     raise exception 'Solo % de los 4 usuarios pueden entrar: revisa tokens NULL o identidades que falten', v_entrables;
   end if;
@@ -567,6 +580,496 @@ begin
 
   raise notice 'Espacio de demostración sembrado: % solicitudes, % trabajos (% publicado), % consumos, % eventos de contador, % cobro sin deuda',
     v_solicitudes, v_trabajos, v_publicados, v_consumos, v_contadores, v_cobros;
+end $$;
+
+-- ============================================================
+-- 9 · "Magariños": el restaurante con la ficha llena.
+--
+-- Va DESPUÉS de la comprobación de la sección 8 a propósito: aquella
+-- cuenta solicitudes, trabajos y cobros de TODO el espacio y afirma
+-- números exactos. Sembrar este restaurante antes se los cambiaría bajo
+-- los pies, y bajar aquellas comprobaciones a "al menos tantos" sería
+-- perder justo lo que sirve de ellas.
+--
+-- Para qué existe. "Bar Demo" y "Café Prueba" están hechos para los tests
+-- —cuatro solicitudes contadas, una bolsa a catorce de dieciséis— y por eso
+-- son pequeños: sirven para comprobar, no para MIRAR. Con ellos la ficha
+-- del PRD §15.2 se ve, pero se ve medio vacía, y una pantalla medio vacía
+-- no dice si está bien resuelta. Este restaurante llena las cinco
+-- pestañas y los cinco bloques de Gestión: bolsas del ciclo con consumo de
+-- verdad, solicitudes en siete estados distintos, trabajos repartidos
+-- entre dos personas, archivos con sus versiones, dos usuarios del
+-- restaurante con permisos distintos, un cobro pagado e historial.
+--
+-- Nada de esto se mete a mano en las tablas de estado. Los quince
+-- consumos salen de quince aceptaciones reales, los trabajos de sus
+-- solicitudes y el pago del libro de apuntes, por las mismas funciones que
+-- llama la aplicación. Un decorado montado con INSERTs se desmonta en
+-- cuanto una pantalla recalcula algo, que es exactamente lo que hacen
+-- todas las de esta ficha.
+--
+-- Es un restaurante de demostración con correos @cuotly.test, igual que
+-- los otros dos, y vive en el espacio `demo`. No es un dato de ejemplo
+-- pintado en una pantalla de producción, que es lo que prohíbe CLAUDE.md:
+-- es una fila de verdad en una base de datos de pruebas.
+-- ============================================================
+
+-- 9.1 · Tres identidades más: dos del restaurante, con permisos
+-- distintos para que el bloque Usuarios tenga algo que distinguir, y un
+-- segundo trabajador para que la carga del equipo del Inicio no sea una
+-- sola fila.
+insert into auth.users
+  (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+   confirmation_token, recovery_token, email_change, email_change_token_new,
+   raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+values
+  ('d0000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'magarinos@cuotly.test',
+   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   '', '', '', '',
+   '{"provider":"email","providers":["email"]}'::jsonb,
+   '{"full_name":"Nuria Ferreiro (Magariños)"}'::jsonb, now(), now()),
+  ('d0000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'sala.magarinos@cuotly.test',
+   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   '', '', '', '',
+   '{"provider":"email","providers":["email"]}'::jsonb,
+   '{"full_name":"Iván Cortés (sala)"}'::jsonb, now(), now()),
+  ('d0000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000000',
+   'authenticated', 'authenticated', 'trabajador2@cuotly.test',
+   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   '', '', '', '',
+   '{"provider":"email","providers":["email"]}'::jsonb,
+   '{"full_name":"Diego Sanz (trabajador)"}'::jsonb, now(), now());
+
+insert into auth.identities
+  (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select u.id::text, u.id,
+  jsonb_build_object('sub', u.id::text, 'email', u.email,
+                     'email_verified', true, 'phone_verified', false),
+  'email', now(), now(), now()
+from auth.users u
+where u.id in ('d0000000-0000-0000-0000-000000000005',
+               'd0000000-0000-0000-0000-000000000006',
+               'd0000000-0000-0000-0000-000000000007');
+
+update public.profiles p
+set full_name = u.raw_user_meta_data ->> 'full_name'
+from auth.users u
+where u.id = p.id
+  and u.id in ('d0000000-0000-0000-0000-000000000005',
+               'd0000000-0000-0000-0000-000000000006',
+               'd0000000-0000-0000-0000-000000000007');
+
+-- 9.2 · El segundo trabajador, con lo que le hace candidato.
+insert into public.space_memberships (space_id, user_id, role, status, can_perform_jobs)
+values ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000007',
+        'worker', 'active', true);
+
+insert into public.worker_specialties (space_id, user_id, specialty, created_by)
+values ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000007',
+        'general', 'd0000000-0000-0000-0000-000000000001');
+
+insert into public.worker_availability (space_id, user_id, available)
+values ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000007', true);
+
+-- 9.3 · El restaurante, en su propio grupo. Un segundo grupo, y no el
+-- "Grupo Demo" que ya hay, para que el filtro de grupo del listado
+-- (§20.2) tenga más de una opción y se pueda ver filtrar de verdad.
+select set_config('request.jwt.claims',
+  json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                    'role', 'authenticated')::text, false);
+
+insert into public.groups (id, space_id, name)
+values ('d3000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001',
+        'Grupo Magariños');
+
+insert into public.establishments (id, space_id, group_id, name, status)
+values ('d4000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001',
+        'd3000000-0000-0000-0000-000000000002', 'Magariños', 'active');
+
+-- Dos accesos con permisos distintos: la propietaria local lo ve todo, y
+-- la persona de sala entra en modo Consulta —lee y no responde
+-- (RN-MSG-05)— y sin facturación (RN-FIN-07). El bloque Usuarios de la
+-- ficha enseña justo esa diferencia, y con un solo usuario no se ve.
+insert into public.establishment_memberships (id, establishment_id, user_id, role)
+values
+  ('d5000000-0000-0000-0000-000000000003', 'd4000000-0000-0000-0000-000000000003',
+   'd0000000-0000-0000-0000-000000000005', 'local_owner'),
+  ('d5000000-0000-0000-0000-000000000004', 'd4000000-0000-0000-0000-000000000003',
+   'd0000000-0000-0000-0000-000000000006', 'consulta');
+
+insert into public.establishment_permissions (establishment_membership_id, edit_establishment_data, view_billing)
+values
+  ('d5000000-0000-0000-0000-000000000003', true, true),
+  ('d5000000-0000-0000-0000-000000000004', false, false);
+
+-- Los dos trabajadores autorizados aquí, o no serían candidatos.
+insert into public.worker_establishments (space_id, user_id, establishment_id, created_by)
+values
+  ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002',
+   'd4000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000001'),
+  ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000007',
+   'd4000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000001');
+
+-- 9.4 · Plan Premium y Menú Diario, con las funciones de verdad y no a
+-- mano como en la sección 5: `create_plan_subscription()` crea además la
+-- permanencia de RN-COM-04, el ciclo de RN-COM-06 y la mensualidad de
+-- RN-FIN-01, que es lo que hace falta para que la ficha tenga ciclo,
+-- bolsas y un cobro que enseñar.
+do $$
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                      'role', 'authenticated')::text, false);
+
+  perform public.create_plan_subscription(
+    'd4000000-0000-0000-0000-000000000003'::uuid,
+    'd2000000-0000-0000-0000-000000000003'::uuid);
+
+  -- RN-COM-13: los servicios adicionales van aparte del plan. Menú Diario
+  -- entero es Fase 2; lo que existe hoy es la contratación, y con ella la
+  -- ficha puede decir "Contratado" sin inventarse nada. Su mensualidad NO
+  -- se emite: `generate_monthly_charge()` se para a propósito ante un
+  -- servicio porque el precio de RN-COM-08 depende de si el plan es
+  -- Premium y el esquema todavía no sabe cuál lo es.
+  perform public.create_service_subscription(
+    'd4000000-0000-0000-0000-000000000003'::uuid,
+    (select id from public.services
+     where space_id = 'd1000000-0000-0000-0000-000000000001' and name = 'Menú Diario'));
+end $$;
+
+-- 9.5 · Diecinueve solicitudes, cada una llevada hasta donde toca.
+--
+-- La tabla de abajo es el sembrado entero: categoría, texto y hasta dónde
+-- llega. El recorrido es siempre el mismo —el de la sección 6— y lo único
+-- que cambia es dónde se para, así que se escribe una vez y se recorre.
+-- Escribir diecinueve bloques a mano habría sido diecinueve sitios donde
+-- se puede colar un paso distinto sin que se note.
+--
+-- Los ocho destinos, en orden del recorrido:
+--
+--   borrador ...... el cliente la empezó y no la ha enviado.
+--   recibida ...... enviada, con T1 corriendo y nadie mirándola aún.
+--   por_validar ... clasificada y esperando al equipo (RN-CLS-03). Es la
+--                   que sale en "Necesita atención" como "Pendiente de
+--                   validación".
+--   por_aceptar ... validada y esperando al restaurante.
+--   sin_asignar ... aceptada, con trabajo y sin nadie que lo asuma
+--                   (RN-ASG-05: el reloj de inicio ni ha arrancado).
+--   por_comenzar .. asignada, con T2 corriendo.
+--   en_curso ...... comenzada, con T3 corriendo.
+--   publicado ..... publicada, con su ventana de corrección abierta.
+--
+-- El consumo se gasta al ACEPTAR, así que las cuatro primeras no tocan la
+-- bolsa y las cuatro últimas sí. La cuenta que sale, sobre las bolsas del
+-- plan Premium (25 pequeños, 24 fotográficos, 5 medianos, 1 grande):
+-- ocho pequeños, seis fotográficos y un mediano usados, y el grande
+-- entero sin tocar — que es una bolsa a cero muy a propósito, porque el
+-- Resumen tiene que saber pintar también la que no se ha usado.
+do $$
+declare
+  v_owner constant text := 'd0000000-0000-0000-0000-000000000001';
+  v_marta constant text := 'd0000000-0000-0000-0000-000000000002';
+  v_diego constant text := 'd0000000-0000-0000-0000-000000000007';
+  v_cli   constant text := 'd0000000-0000-0000-0000-000000000005';
+  v_est   constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_req uuid;
+  v_job uuid;
+  v_trabajador text;
+  v_n integer := 0;
+  r record;
+begin
+  for r in
+    select * from (values
+      ('small',  'Actualizar los horarios de Navidad en la web.',                'publicado'),
+      ('small',  'Cambiar el teléfono de reservas del pie de página.',           'publicado'),
+      ('small',  'Corregir una errata en la descripción del arroz de la casa.',  'publicado'),
+      ('small',  'Añadir el enlace al nuevo perfil de Instagram.',               'publicado'),
+      ('small',  'Actualizar los precios del menú del mediodía.',                'publicado'),
+      ('photo',  'Sustituir la fotografía de portada por la de la terraza.',     'publicado'),
+      ('photo',  'Publicar las fotografías nuevas de los postres.',              'publicado'),
+      ('photo',  'Fotografía del comedor privado para la página de grupos.',     'en_curso'),
+      ('photo',  'Actualizar la fotografía del equipo de cocina.',               'en_curso'),
+      ('photo',  'Añadir la fotografía de la barra a la galería.',               'publicado'),
+      ('medium', 'Rehacer la página de grupos y celebraciones.',                 'publicado'),
+      ('photo',  'Reportaje de las tapas de temporada.',                         'en_curso'),
+      ('small',  'Cambiar el horario del sábado.',                               'por_comenzar'),
+      ('small',  'Retirar el banner de las fiestas de agosto.',                  'sin_asignar'),
+      ('small',  'Añadir el aviso de cierre por vacaciones.',                    'por_comenzar'),
+      ('medium', 'Nueva sección de eventos con formulario de reserva.',          'por_aceptar'),
+      ('small',  'Actualizar la carta de verano.',                               'por_validar'),
+      ('small',  'Añadir los alérgenos a los platos nuevos.',                    'recibida'),
+      ('small',  'Cambiar la foto de portada por la del plato nuevo.',           'borrador')
+    ) as t(categoria, descripcion, destino)
+  loop
+    ------------------------------------------------------------------
+    -- El cliente: borrador, envío y arranque del análisis.
+    ------------------------------------------------------------------
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_cli, 'role', 'authenticated')::text, false);
+
+    v_req := public.create_request_draft(v_est, r.descripcion, null);
+    continue when r.destino = 'borrador';
+
+    perform public.submit_request(v_req);
+    continue when r.destino = 'recibida';
+
+    perform public.begin_request_analysis(v_req);
+
+    ------------------------------------------------------------------
+    -- El servidor graba lo que propuso el clasificador. Sin identidad y
+    -- con `source` = 'rules', por lo mismo que en la sección 6: este
+    -- sembrado no llama a Anthropic y decir 'ai' sería afirmar que la
+    -- clasificó una IA que nunca se ejecutó.
+    ------------------------------------------------------------------
+    perform set_config('request.jwt.claims', '', false);
+    perform public.record_classification(
+      v_req, v_cli::uuid, 'rules', r.categoria, r.descripcion,
+      null, null, null, null, null, 'Sin clave de IA configurada');
+
+    continue when r.destino = 'por_validar';
+
+    ------------------------------------------------------------------
+    -- El equipo valida (RN-CLS-03). Para T1.
+    ------------------------------------------------------------------
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_owner, 'role', 'authenticated')::text, false);
+    perform public.validate_classification(v_req, r.categoria, r.descripcion);
+
+    continue when r.destino = 'por_aceptar';
+
+    ------------------------------------------------------------------
+    -- El cliente acepta: gasta el consumo de su bolsa y crea el trabajo.
+    ------------------------------------------------------------------
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_cli, 'role', 'authenticated')::text, false);
+    perform public.accept_request(v_req);
+    select id into v_job from public.jobs where request_id = v_req;
+
+    continue when r.destino = 'sin_asignar';
+
+    ------------------------------------------------------------------
+    -- El equipo asigna, alternando entre los dos trabajadores para que
+    -- la carga del Inicio tenga dos filas con números distintos.
+    ------------------------------------------------------------------
+    v_n := v_n + 1;
+    v_trabajador := case when v_n % 3 = 0 then v_diego else v_marta end;
+
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_owner, 'role', 'authenticated')::text, false);
+    perform public.apply_job_assignment(v_job, v_trabajador::uuid, 'manual', null);
+
+    continue when r.destino = 'por_comenzar';
+
+    ------------------------------------------------------------------
+    -- Quien lo tiene asignado lo comienza y, si toca, lo publica.
+    ------------------------------------------------------------------
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_trabajador, 'role', 'authenticated')::text, false);
+    perform public.start_job(v_job);
+
+    continue when r.destino = 'en_curso';
+
+    perform public.publish_job(v_job, now() + interval '5 days');
+  end loop;
+end $$;
+
+-- 9.6 · Los archivos, con sus versiones y su visibilidad.
+--
+-- Cuatro archivos de cuatro categorías distintas (RN-ARC-01), y no cuatro
+-- del mismo tipo: el desplegable de "Categoría" del bloque Archivos se
+-- construye con las categorías que este restaurante TIENE, así que con
+-- una sola no hay filtro que ver.
+--
+-- Las rutas de almacenamiento apuntan a objetos que NO existen en el
+-- bucket: esto siembra la base, no sube bytes. La consecuencia hay que
+-- saberla antes de encontrársela — la lista, las versiones y la
+-- visibilidad se ven enteras, y al pulsar la descarga la URL firmada
+-- devuelve un 404 del Storage. Subir de verdad se prueba con
+-- `pnpm comprobar:storage`, que es lo que hay para eso.
+do $$
+declare
+  v_est constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_logo uuid;
+  v_carta uuid;
+  v_notas uuid;
+  v_fachada uuid;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                      'role', 'authenticated')::text, false);
+
+  -- Nace interno y se comparte después con `share_file_with_client()`,
+  -- que es la segunda mitad de RN-ARC-04 y la que deja el apunte de
+  -- auditoría. Marcarlo compartido al subir también vale, y así se hace
+  -- con la carta: las dos formas existen y conviene ver las dos.
+  v_logo := public.register_file(
+    v_est, 'logos', 'Logo principal.png',
+    'demo/magarinos/logo-principal-v1.png', 'logo-principal-v1.png',
+    'image/png', 184320);
+  perform public.add_file_version(
+    v_logo, 'demo/magarinos/logo-principal-v2.png', 'logo-principal-v2.png',
+    'image/png', 191488);
+  perform public.share_file_with_client(v_logo);
+
+  v_carta := public.register_file(
+    v_est, 'menus', 'Carta septiembre.pdf',
+    'demo/magarinos/carta-septiembre.pdf', 'carta-septiembre.pdf',
+    'application/pdf', 1258291, 'shared_with_client');
+
+  -- Este se queda INTERNO, y es el que demuestra que la marca sirve para
+  -- algo: el restaurante no lo ve en su pantalla, y el equipo sí lo ve en
+  -- la ficha. Con todos compartidos no se distinguiría una cosa de la otra.
+  v_notas := public.register_file(
+    v_est, 'documents', 'Notas de publicación.docx',
+    'demo/magarinos/notas-publicacion.docx', 'notas-publicacion.docx',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 45056);
+
+  -- Las tres variantes de una fotografía (RN-ARC-03), que es el caso para
+  -- el que existe el panel de versiones: original, retocada y publicada.
+  v_fachada := public.register_file(
+    v_est, 'photos', 'Fachada.jpg',
+    'demo/magarinos/fachada-original.jpg', 'fachada-original.jpg',
+    'image/jpeg', 2516582, 'shared_with_client', 'original');
+  perform public.add_file_version(
+    v_fachada, 'demo/magarinos/fachada-retocada.jpg', 'fachada-retocada.jpg',
+    'image/jpeg', 2726297, 'retouched');
+  perform public.add_file_version(
+    v_fachada, 'demo/magarinos/fachada-publicada.jpg', 'fachada-publicada.jpg',
+    'image/jpeg', 2621440, 'published');
+end $$;
+
+-- 9.7 · La mensualidad, pagada.
+--
+-- El cobro no se emite aquí: lo emitió `create_plan_subscription()` al dar
+-- de alta el plan (RN-FIN-01), que es como ocurre de verdad. Lo que falta
+-- es el pago, y va con `register_payment()` para que quede el apunte con
+-- signo en el libro inmutable en vez de un estado escrito a mano
+-- (CLAUDE.md). Premium son 599 € + 21 % de IVA = 724,79 €.
+do $$
+declare v_charge uuid;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                      'role', 'authenticated')::text, false);
+
+  select id into v_charge from public.charges
+  where establishment_id = 'd4000000-0000-0000-0000-000000000003';
+
+  if v_charge is null then
+    raise exception 'El alta del plan Premium tenía que haber emitido su mensualidad';
+  end if;
+
+  perform public.register_payment(
+    p_charge_id    => v_charge,
+    p_amount_cents => (select total_cents from public.charges where id = v_charge),
+    p_method       => 'transfer',
+    p_paid_at      => now(),
+    p_note         => 'Transferencia de demostración');
+end $$;
+
+-- ============================================================
+-- 10 · Comprobación de "Magariños".
+--
+-- No comprueba que las filas estén: comprueba lo que la ficha va a LEER,
+-- que es otra cosa. Las bolsas salen de `establishment_cycle_allowance()`,
+-- el estado del cobro de `charge_status()` y los usuarios de
+-- `establishment_client_users()` — las mismas funciones que llaman
+-- `sheet-load.ts` y la pantalla del restaurante. Si una de ellas devuelve
+-- algo distinto de lo que dice la tabla de la sección 9.5, el sembrado no
+-- se da por bueno.
+--
+-- Sigue puesta la identidad del propietario desde la sección 9.7: las
+-- funciones de dinero devuelven error, no nulo, a quien no tiene
+-- visibilidad financiera.
+-- ============================================================
+do $$
+declare
+  v_est constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_solicitudes integer;
+  v_trabajos integer;
+  v_publicados integer;
+  v_pequenos integer;
+  v_fotos integer;
+  v_medianos integer;
+  v_grandes integer;
+  v_archivos integer;
+  v_versiones integer;
+  v_usuarios integer;
+  v_deuda integer;
+  v_por_validar integer;
+  v_entrables integer;
+begin
+  select count(*) into v_entrables
+  from auth.users u
+  where u.email in ('magarinos@cuotly.test', 'sala.magarinos@cuotly.test', 'trabajador2@cuotly.test')
+    and u.encrypted_password = extensions.crypt('Cuotly-demo-2026', u.encrypted_password)
+    and u.email_confirmed_at is not null
+    and exists (select 1 from auth.identities i where i.user_id = u.id and i.provider = 'email');
+  if v_entrables <> 3 then
+    raise exception 'Solo % de las 3 identidades nuevas pueden entrar', v_entrables;
+  end if;
+
+  select count(*) into v_solicitudes from public.requests where establishment_id = v_est;
+  if v_solicitudes <> 19 then
+    raise exception 'Se esperaban 19 solicitudes en Magariños y hay %', v_solicitudes;
+  end if;
+
+  select count(*) into v_trabajos   from public.jobs where establishment_id = v_est;
+  select count(*) into v_publicados from public.jobs where establishment_id = v_est and state = 'published';
+  if v_trabajos <> 15 then
+    raise exception 'Se esperaban 15 trabajos en Magariños y hay %', v_trabajos;
+  end if;
+  if v_publicados <> 9 then
+    raise exception 'Se esperaban 9 trabajos publicados y hay %', v_publicados;
+  end if;
+
+  -- La solicitud que espera al equipo: es la que pone la fila "Pendiente
+  -- de validación" en "Necesita atención" del Inicio y de la ficha.
+  select count(*) into v_por_validar from public.requests
+  where establishment_id = v_est and state = 'pending_internal_validation';
+  if v_por_validar <> 1 then
+    raise exception 'Se esperaba 1 solicitud pendiente de validación y hay %', v_por_validar;
+  end if;
+
+  -- Las bolsas, leídas como las lee el Resumen. `included - remaining` es
+  -- lo consumido, y esa resta la hace aquí a propósito el mismo camino que
+  -- la pantalla, no una consulta a `consumption_entries`: lo que hay que
+  -- comprobar es lo que se va a VER.
+  select included - remaining into v_pequenos from public.establishment_cycle_allowance(v_est) where category = 'small';
+  select included - remaining into v_fotos    from public.establishment_cycle_allowance(v_est) where category = 'photo';
+  select included - remaining into v_medianos from public.establishment_cycle_allowance(v_est) where category = 'medium';
+  select included - remaining into v_grandes  from public.establishment_cycle_allowance(v_est) where category = 'large';
+  if (v_pequenos, v_fotos, v_medianos, v_grandes) is distinct from (8, 6, 1, 0) then
+    raise exception 'Las bolsas tenían que quedar en 8/6/1/0 y están en %/%/%/%',
+      v_pequenos, v_fotos, v_medianos, v_grandes;
+  end if;
+
+  select count(*) into v_archivos from public.files where establishment_id = v_est;
+  select count(*) into v_versiones from public.file_versions v
+  join public.files f on f.id = v.file_id where f.establishment_id = v_est;
+  if v_archivos <> 4 then
+    raise exception 'Se esperaban 4 archivos y hay %', v_archivos;
+  end if;
+  if v_versiones <> 7 then
+    raise exception 'Se esperaban 7 versiones de archivo y hay %', v_versiones;
+  end if;
+
+  select count(*) into v_usuarios from public.establishment_client_users(v_est);
+  if v_usuarios <> 2 then
+    raise exception 'Se esperaban 2 usuarios del restaurante y hay %', v_usuarios;
+  end if;
+
+  select coalesce(public.charge_outstanding_cents(id), 0) into v_deuda
+  from public.charges where establishment_id = v_est;
+  if v_deuda <> 0 then
+    raise exception 'La mensualidad de Magariños tenía que quedar pagada y quedan % céntimos', v_deuda;
+  end if;
+
+  raise notice 'Magariños sembrado: % solicitudes, % trabajos (% publicados), bolsas %/%/%/%, % archivos con % versiones, % usuarios, mensualidad sin deuda',
+    v_solicitudes, v_trabajos, v_publicados, v_pequenos, v_fotos, v_medianos, v_grandes,
+    v_archivos, v_versiones, v_usuarios;
 end $$;
 
 -- Se suelta la identidad al final, para no dejar la sesión suplantando a

@@ -70,6 +70,19 @@ grant usage on schema public to anon, authenticated, service_role;
 grant anon, authenticated, service_role to postgres;
 
 -- ------------------------------------------------------------
+-- Esquema `extensions`
+--
+-- En un proyecto de Supabase las extensiones no viven en `public`: viven
+-- aquí, y por eso el sembrado escribe `extensions.crypt(...)` y
+-- `extensions.gen_salt(...)` para cifrar las contraseñas. Se instala en el
+-- mismo sitio en vez de crear un atajo en `public`, para que lo que se
+-- ejecuta en local sea literalmente el mismo SQL que en el proyecto.
+-- ------------------------------------------------------------
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
+create extension if not exists pgcrypto with schema extensions;
+
+-- ------------------------------------------------------------
 -- Esquema `auth` (GoTrue)
 -- ------------------------------------------------------------
 create schema auth;
@@ -87,7 +100,35 @@ create table auth.users (
   instance_id uuid,
   raw_app_meta_data jsonb,
   raw_user_meta_data jsonb,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  -- Las seis de abajo no las toca ninguna migración: las escribe el
+  -- sembrado (`supabase/seed/espacio-demo.sql`), y sin ellas no se puede
+  -- ejecutar aquí. Los cuatro campos de texto van a cadena vacía y nunca a
+  -- NULL por el motivo que explica la cabecera de aquel archivo: GoTrue
+  -- los lee como `string` de Go y un NULL revienta el escaneo de la fila.
+  -- Aquí no hay GoTrue, pero la columna existe para que el sembrado sea el
+  -- MISMO en local y en el proyecto real; un sembrado que hay que retocar
+  -- para probarlo no prueba el que se ejecuta.
+  email_confirmed_at timestamptz,
+  confirmation_token text,
+  recovery_token text,
+  email_change text,
+  email_change_token_new text,
+  updated_at timestamptz not null default now()
+);
+
+-- GoTrue resuelve el login por aquí, no por `auth.users` a secas. Las
+-- migraciones no la tocan; el sembrado sí, y comprobar que cada usuario
+-- tiene la suya es parte de su verificación final.
+create table auth.identities (
+  provider_id text not null,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  identity_data jsonb not null,
+  provider text not null,
+  last_sign_in_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (provider, provider_id)
 );
 
 -- HU-05 lee de aquí las sesiones abiertas de cada persona.
@@ -106,12 +147,27 @@ create table auth.sessions (
 -- mismo ajuste de sesión que usan los fixtures
 -- (`set_config('request.jwt.claim.sub', …)`), que es como lo hace también
 -- el proyecto real por debajo.
+-- Se leen las DOS formas de poner la identidad, y no una:
+--
+--   · `request.jwt.claims`, el JSON entero, que es lo que usa Supabase de
+--     verdad y lo que usa el sembrado;
+--   · `request.jwt.claim.sub`, el ajuste suelto, que es lo que usan las
+--     suites de `supabase/tests/`.
+--
+-- Antes solo valía la segunda, y la consecuencia era que el sembrado no se
+-- podía ejecutar aquí: ponía la identidad en la primera, `auth.uid()`
+-- devolvía null y la primera función que comprueba permisos lo paraba con
+-- "No perteneces a este espacio". El JSON va primero porque es el que usa
+-- el proyecto real.
 create or replace function auth.uid()
 returns uuid
 language sql
 stable
 as $$
-  select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid;
+  select coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub',
+    nullif(current_setting('request.jwt.claim.sub', true), '')
+  )::uuid;
 $$;
 
 create or replace function auth.role()
@@ -119,7 +175,10 @@ returns text
 language sql
 stable
 as $$
-  select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), 'authenticated');
+  select coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role',
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    'authenticated');
 $$;
 
 grant execute on function auth.uid(), auth.role() to anon, authenticated, service_role;
