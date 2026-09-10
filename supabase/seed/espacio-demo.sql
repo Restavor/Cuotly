@@ -1551,6 +1551,339 @@ begin
   end if;
 end $$;
 
+-- ============================================================
+-- 12 · Lo que quedaba a cero: conversaciones, calendario y equipo.
+--
+-- Con todo lo anterior aplicado seguían vacías dieciséis tablas del
+-- espacio, y cinco de ellas sostienen pantallas ya construidas: Mensajes
+-- salía sin una sola conversación, el Calendario sin festivos, sin
+-- ausencias y sin los dos relojes del espacio, la relación de supervisión
+-- no existía en ninguna parte y `corrections` estaba a cero, así que la
+-- mitad del recorrido de RN-COR no se veía. Una demostración con media
+-- aplicación en blanco no enseña la aplicación.
+--
+-- (Las tareas NO están aquí: las siembra ya la sección de la maqueta 04.
+-- Lo que las hacía parecer ausentes era que el proyecto llevaba una
+-- ejecución vieja de este archivo, no que faltaran.)
+--
+-- Nada de esto entra con un INSERT de columnas: se crea por las MISMAS
+-- funciones que usa la pantalla —`create_job_task()`, `post_message()`,
+-- `request_absence()`, `decide_absence()`— suplantando a quien de verdad
+-- lo haría. Sembrar así comprueba de paso que esas puertas funcionan, y es
+-- lo que ya se hizo con la ficha de Magariños: un INSERT directo se
+-- saltaría las comprobaciones y dejaría el espacio en un estado que la
+-- aplicación no sabe producir.
+--
+-- Los datos son inventados y lo son a propósito: es un espacio de
+-- demostración. Lo que CLAUDE.md prohíbe es enseñar datos ficticios en
+-- pantallas de PRODUCCIÓN —un número que nadie ha contado—, no que exista
+-- un espacio de pruebas con contenido de pruebas.
+-- ============================================================
+
+-- ------------------------------------------------------------
+-- 12.1 · Los dos calendarios del espacio (RN-CLK).
+--
+-- El contractual y el de soporte son relojes DISTINTOS y no se mezclan
+-- (decisión fijada en CLAUDE.md): el contractual arranca el lunes a las
+-- 09:00 y es el que mide los plazos; el de soporte es el horario de
+-- atención humana y no mueve ningún plazo. Sin una fila aquí, la pantalla
+-- de ajustes de calendario no tenía nada que enseñar.
+-- ------------------------------------------------------------
+select set_config('request.jwt.claims',
+  json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                    'role', 'authenticated')::text, false);
+
+insert into public.space_working_hours (space_id, calendar_kind, timezone, created_by)
+values
+  ('d1000000-0000-0000-0000-000000000001', 'contractual', 'Europe/Madrid',
+   'd0000000-0000-0000-0000-000000000001'),
+  ('d1000000-0000-0000-0000-000000000001', 'support', 'Europe/Madrid',
+   'd0000000-0000-0000-0000-000000000001')
+on conflict (space_id, calendar_kind, effective_from) do nothing;
+
+-- ------------------------------------------------------------
+-- 12.2 · Festivos (HU-32, RN-CLK-10).
+--
+-- Fechas fijas de España, las mismas cualquier año, para que el calendario
+-- tenga algo que enseñar y los plazos algo que saltarse. Se ponen las del
+-- año que viene además de las de este: un festivo pasado no cambia ningún
+-- plazo vivo, y el calendario se mira hacia delante.
+-- ------------------------------------------------------------
+insert into public.holidays (space_id, holiday_date, name, created_by)
+select 'd1000000-0000-0000-0000-000000000001',
+       make_date(anio, mes, dia), nombre,
+       'd0000000-0000-0000-0000-000000000001'
+from (values
+  (1, 1, 'Año Nuevo'),
+  (1, 6, 'Reyes'),
+  (5, 1, 'Fiesta del Trabajo'),
+  (8, 15, 'Asunción'),
+  (10, 12, 'Fiesta Nacional'),
+  (11, 1, 'Todos los Santos'),
+  (12, 6, 'Constitución'),
+  (12, 8, 'Inmaculada'),
+  (12, 25, 'Navidad')
+) as f(mes, dia, nombre)
+cross join (
+  select extract(year from now())::int as anio
+  union all
+  select extract(year from now())::int + 1
+) as a(anio)
+on conflict do nothing;
+
+-- ------------------------------------------------------------
+-- 12.3 · Conversaciones y mensajes (§16, HU-33 a HU-35).
+--
+-- La pantalla de Mensajes salía sin una sola conversación. Se crean por
+-- `get_or_create_request_conversation()` y `post_message()`, que es lo que
+-- hace la aplicación: la primera decide a qué solicitud pertenece el hilo
+-- y la segunda escribe el mensaje con el papel de quien lo manda
+-- (`sender_role`), que es lo que luego pinta cada burbuja a un lado o al
+-- otro.
+--
+-- Se suplanta a cada persona para cada mensaje. Escribirlos todos como la
+-- propietaria dejaría un hilo en el que el restaurante nunca habla, que es
+-- justo lo contrario de lo que hay que enseñar.
+--
+-- RN-MSG-04 · el hilo de una solicitud CERRADA es de solo lectura, así que
+-- los mensajes van en solicitudes vivas.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_conv uuid;
+  v_req uuid;
+  v_marta constant uuid := 'd0000000-0000-0000-0000-000000000002';
+  v_nuria constant uuid := 'd0000000-0000-0000-0000-000000000005';
+  v_elena constant uuid := 'd0000000-0000-0000-0000-000000000001';
+begin
+  -- El hilo de la solicitud que espera validación: el restaurante pregunta
+  -- y el equipo contesta.
+  select id into v_req
+  from public.requests
+  where establishment_id = 'd4000000-0000-0000-0000-000000000003'
+    and state = 'pending_internal_validation'
+  limit 1;
+
+  if v_req is not null then
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+    v_conv := public.get_or_create_request_conversation(v_req);
+
+    if not exists (select 1 from public.messages where conversation_id = v_conv) then
+      perform public.post_message(v_conv,
+        'Buenos días. Os he mandado los precios nuevos de la carta. ¿Entra en el plan del mes o va aparte?',
+        'demo-msg-1');
+
+      perform set_config('request.jwt.claims',
+        json_build_object('sub', v_marta, 'role', 'authenticated')::text, false);
+      perform public.post_message(v_conv,
+        'Buenos días, Nuria. Lo hemos clasificado como cambio mediano, así que entra en el plan: os quedan cuatro de cinco este ciclo. En cuanto lo validemos os llega la propuesta para aceptar.',
+        'demo-msg-2');
+
+      perform set_config('request.jwt.claims',
+        json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+      perform public.post_message(v_conv, 'Perfecto, gracias.', 'demo-msg-3');
+    end if;
+  end if;
+
+  -- Un segundo hilo, en un trabajo en marcha, con el equipo preguntando.
+  select r.id into v_req
+  from public.requests r
+  where r.establishment_id = 'd4000000-0000-0000-0000-000000000003'
+    and r.state = 'in_progress'
+  order by r.created_at
+  limit 1;
+
+  if v_req is not null then
+    perform set_config('request.jwt.claims',
+      json_build_object('sub', v_marta, 'role', 'authenticated')::text, false);
+    v_conv := public.get_or_create_request_conversation(v_req);
+
+    if not exists (select 1 from public.messages where conversation_id = v_conv) then
+      perform public.post_message(v_conv,
+        '¿La fotografía del comedor privado la queréis en horizontal para la cabecera o en vertical para la galería?',
+        'demo-msg-4');
+
+      perform set_config('request.jwt.claims',
+        json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+      perform public.post_message(v_conv,
+        'En horizontal, que va arriba del todo. Si podéis, sin las sillas de la izquierda.',
+        'demo-msg-5');
+    end if;
+  end if;
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_elena, 'role', 'authenticated')::text, false);
+end $$;
+
+-- ------------------------------------------------------------
+-- 12.4 · Ausencias (HU-31, §125).
+--
+-- Por `request_absence()` y `decide_absence()`: una pedida y aprobada, y
+-- otra todavía esperando respuesta, para que el calendario del equipo
+-- enseñe los dos estados y no solo uno.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_espacio constant uuid := 'd1000000-0000-0000-0000-000000000001';
+  v_marta constant uuid := 'd0000000-0000-0000-0000-000000000002';
+  v_diego constant uuid := 'd0000000-0000-0000-0000-000000000007';
+  v_elena constant uuid := 'd0000000-0000-0000-0000-000000000001';
+  v_ausencia uuid;
+begin
+  if exists (select 1 from public.absences where space_id = v_espacio) then
+    return;
+  end if;
+
+  -- Marta pide vacaciones y Elena se las aprueba.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_marta, 'role', 'authenticated')::text, false);
+  v_ausencia := public.request_absence(
+    v_espacio,
+    (current_date + 20)::date,
+    (current_date + 27)::date,
+    'Vacaciones de verano');
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_elena, 'role', 'authenticated')::text, false);
+  perform public.decide_absence(v_ausencia, true, 'Aprobadas. Reparto sus trabajos esa semana.');
+
+  -- Diego pide un día y todavía no hay respuesta: el calendario tiene que
+  -- distinguir "aprobada" de "pedida".
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_diego, 'role', 'authenticated')::text, false);
+  perform public.request_absence(
+    v_espacio,
+    (current_date + 9)::date,
+    (current_date + 9)::date,
+    'Asuntos propios');
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_elena, 'role', 'authenticated')::text, false);
+end $$;
+
+-- ------------------------------------------------------------
+-- 12.5 · Supervisión (RN-SUP, §14).
+--
+-- "Supervisor" NO es un rol: es una relación Administrador–Trabajador
+-- (decisión fijada en CLAUDE.md), y sin una fila aquí esa relación no se
+-- veía en ninguna pantalla. Elena supervisa a los dos, que es lo normal en
+-- un equipo de tres.
+-- ------------------------------------------------------------
+insert into public.supervisions (space_id, worker_id, admin_id, kind)
+select 'd1000000-0000-0000-0000-000000000001', w.id,
+       'd0000000-0000-0000-0000-000000000001', 'principal'
+from (values
+  ('d0000000-0000-0000-0000-000000000002'::uuid),
+  ('d0000000-0000-0000-0000-000000000007'::uuid)
+) as w(id)
+where not exists (
+  select 1 from public.supervisions s
+  where s.space_id = 'd1000000-0000-0000-0000-000000000001' and s.worker_id = w.id
+);
+
+-- ------------------------------------------------------------
+-- 12.6 · Una corrección gratuita (RN-COR-01/02, HU-23).
+--
+-- La pide el restaurante sobre un trabajo publicado, dentro de su ventana,
+-- y la empieza el responsable. Por sus funciones: `request_free_correction()`
+-- comprueba la ventana y que no se haya gastado ya (RN-COR-04), y
+-- `start_correction()` mueve el trabajo. Sin esto, `corrections` estaba a
+-- cero y la mitad del recorrido de RN-COR no se veía en ninguna pantalla.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_job uuid;
+  v_nuria constant uuid := 'd0000000-0000-0000-0000-000000000005';
+  v_elena constant uuid := 'd0000000-0000-0000-0000-000000000001';
+begin
+  if exists (select 1 from public.corrections
+             where space_id = 'd1000000-0000-0000-0000-000000000001') then
+    return;
+  end if;
+
+  -- Un trabajo publicado de Magariños con su ventana todavía abierta y sin
+  -- corrección gastada.
+  select id into v_job
+  from public.jobs
+  where establishment_id = 'd4000000-0000-0000-0000-000000000003'
+    and state = 'published'
+    and free_correction_used_at is null
+    and (correction_window_ends_at is null or correction_window_ends_at > now())
+  order by published_at desc nulls last
+  limit 1;
+
+  if v_job is null then
+    raise notice 'sin trabajo publicado con ventana abierta: no se siembra ninguna corrección';
+    return;
+  end if;
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+  perform public.request_free_correction(v_job,
+    'En la galería nueva, el pie de la tercera fotografía dice "comedor principal" y es el comedor privado.');
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_elena, 'role', 'authenticated')::text, false);
+end $$;
+
+-- ------------------------------------------------------------
+-- 12.7 · Comprobación de la sección 12.
+--
+-- El mismo criterio que la comprobación de Magariños: si el sembrado se
+-- queda a medias, esto lo dice en voz alta en vez de dejar un espacio a
+-- medio llenar que parece lleno. No comprueba números exactos —esta
+-- sección es idempotente y volver a ejecutarla no añade filas— sino que
+-- cada cosa exista al menos una vez.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_espacio constant uuid := 'd1000000-0000-0000-0000-000000000001';
+  v_faltan text := '';
+  v_conv integer;
+  v_msg integer;
+  v_papeles integer;
+begin
+  if not exists (select 1 from public.space_working_hours where space_id = v_espacio) then
+    v_faltan := v_faltan || ' calendarios';
+  end if;
+  if not exists (select 1 from public.holidays where space_id = v_espacio) then
+    v_faltan := v_faltan || ' festivos';
+  end if;
+  if not exists (select 1 from public.absences where space_id = v_espacio and state = 'approved') then
+    v_faltan := v_faltan || ' ausencia-aprobada';
+  end if;
+  if not exists (select 1 from public.absences where space_id = v_espacio and state = 'requested') then
+    v_faltan := v_faltan || ' ausencia-pedida';
+  end if;
+  if not exists (select 1 from public.supervisions where space_id = v_espacio) then
+    v_faltan := v_faltan || ' supervisiones';
+  end if;
+  if not exists (select 1 from public.corrections where space_id = v_espacio) then
+    v_faltan := v_faltan || ' correcciones';
+  end if;
+
+  select count(*) into v_conv from public.conversations where space_id = v_espacio;
+  select count(*) into v_msg from public.messages where space_id = v_espacio;
+
+  -- Que hablen los DOS lados. Un hilo en el que solo escribe el equipo se
+  -- pinta entero a un lado de la pantalla y no enseña nada de lo que la
+  -- pantalla de Mensajes tiene que enseñar.
+  select count(distinct sender_role) into v_papeles
+  from public.messages where space_id = v_espacio;
+
+  if v_conv = 0 then v_faltan := v_faltan || ' conversaciones'; end if;
+  if v_msg = 0 then v_faltan := v_faltan || ' mensajes'; end if;
+  if v_papeles < 2 then v_faltan := v_faltan || ' un-lado-del-hilo'; end if;
+
+  if v_faltan <> '' then
+    raise exception 'El sembrado de la sección 12 se ha quedado a medias, falta:%', v_faltan;
+  end if;
+
+  raise notice 'Sección 12 sembrada: % conversaciones, % mensajes de los dos lados, festivos, ausencias, supervisión y una corrección',
+    v_conv, v_msg;
+end $$;
+
 -- Se suelta la identidad al final, para no dejar la sesión suplantando a
 -- nadie si esto se ejecuta dentro de una sesión más larga.
 select set_config('request.jwt.claims', '', false);

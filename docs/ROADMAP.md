@@ -1957,6 +1957,92 @@ regenerar salió idéntica, así que no había desviación.
       dos ramas solo están cubiertas por los tests unitarios.
     - **Sin recorrido de Playwright ejecutado.**
 
+- [x] **El espacio de demostración deja de estar medio vacío, y los huecos
+    dejan de ser feos** — sección 12 del sembrado, y los cuatro estados de
+    §20.7 rehechos.
+
+    Dos cosas que Bosco pidió el mismo día, y que resultaron estar
+    relacionadas: la demostración enseñaba huecos donde tenía que haber
+    datos, y los huecos, además, eran feos.
+
+    **El sembrado.** Contadas las tablas del espacio con `space_id`,
+    dieciséis seguían a cero después de ejecutar el archivo entero, y cinco
+    de ellas sostienen pantallas ya construidas: Mensajes salía sin una
+    sola conversación, el Calendario sin festivos, sin ausencias y sin los
+    dos relojes del espacio, la relación de supervisión —que no es un rol,
+    es una relación (CLAUDE.md)— no existía en ninguna parte, y
+    `corrections` estaba a cero, así que la mitad del recorrido de RN-COR
+    no se veía. La sección 12 los llena.
+
+    Nada entra con un INSERT de columnas: se crea por las MISMAS funciones
+    que usa la pantalla —`get_or_create_request_conversation()`,
+    `post_message()`, `request_absence()`, `decide_absence()`,
+    `request_free_correction()`— suplantando a quien de verdad lo haría.
+    Los mensajes se escriben alternando identidades, y la comprobación de
+    la sección exige que hablen **los dos lados**: un hilo en el que solo
+    escribe el equipo se pinta entero a un lado de la pantalla y no enseña
+    nada de lo que Mensajes tiene que enseñar.
+
+    **Las tareas NO estaban donde parecía.** El primer recuento dijo
+    `tasks = 0` y la conclusión evidente era que el sembrado no las creaba.
+    No era eso: las crea desde la maqueta 04, y lo que pasaba es que el
+    proyecto llevaba una ejecución **vieja** del archivo. Medir el
+    repositorio contra una base reconstruida desde cero, y no solo el
+    proyecto, es lo que lo distinguió — y es la diferencia entre añadir una
+    sección duplicada y ponerse al día.
+
+    **Los datos son inventados y lo son a propósito.** Lo que CLAUDE.md
+    prohíbe es enseñar datos ficticios en pantallas de PRODUCCIÓN —un
+    número que nadie ha contado—, no que un espacio de demostración tenga
+    contenido de demostración.
+
+    **Los huecos.** Los cuatro estados de §20.7 se pintaban con un emoji
+    dentro de una caja de borde discontinuo. El emoji lo dibuja cada
+    sistema operativo a su manera y desafinaba junto a los iconos de trazo
+    del sistema; el borde discontinuo es la convención de "esto está roto",
+    y un hueco bien puesto no está roto: es la respuesta correcta. Ahora
+    comparten figura —icono del juego en un círculo con el tinte de su
+    tono, título, motivo y sitio para la acción— y `EmptyReason` distingue
+    por fin sus cuatro motivos a la vista en vez de obligar a leerse el
+    párrafo.
+
+    **Y midiendo los colores apareció un fallo de verdad, en toda la
+    aplicación.** `StatusBadge` ponía el texto del tono sobre su propio
+    tinte al 10 %, y los cuatro estaban por debajo de AA: success 3,78:1,
+    warning 2,33:1, danger 4,01:1, info 3,92:1, contra los 4,5:1 de CA-22.
+    No lo veía nadie porque `contrast.test.ts` medía la PALETA —`success`
+    contra blanco— y no la mezcla que pinta el navegador. El comentario de
+    aquel test afirmaba además que los badges ya usaban una combinación que
+    cumple; no era verdad. **Séptima vez** que una garantía escrita en un
+    comentario resulta no estar implementada. El mismo fallo estaba en seis
+    sitios más.
+
+    El ámbar es aparte y no tiene arreglo dentro de la paleta: 2,55:1 sobre
+    blanco y 2,36:1 sobre el fondo, así que no llega a los 3:1 de un icono
+    en **ninguna** superficie clara del sistema. Como fondo con letra
+    oscura sigue valiendo (15,09:1), así que se prohíbe el primer plano y
+    no el color. Donde hacía falta se usa `info`.
+
+    Tres comprobaciones nuevas: `blend()` calcula la mezcla del navegador,
+    se miden las combinaciones **reales** de los componentes —con una
+    aserción deliberadamente en `false` para quien vuelva a ponerlo mal— y
+    un barrido del código falla si el ámbar reaparece como primer plano. El
+    barrido cazó en el acto un caso que se me había escapado.
+
+    **Comprobado**: el sembrado entero contra un PostgreSQL 16
+    reconstruido desde cero y ejecutado **dos veces** —mismos recuentos, es
+    idempotente—, y aplicado además al proyecto real, que llevaba la
+    ejecución vieja y ahora coincide: 6 tareas, 2 conversaciones, 5
+    mensajes, 2 ausencias, 18 festivos, 2 calendarios, 2 supervisiones y
+    una corrección.
+
+    **Lo que NO entrega:** siguen a cero `receipts`, `internal_notes`,
+    `space_invitations`, `notification_preferences`, `assignment_weights`,
+    `blocks`, `conversation_reads`, `message_edits`, `ai_usage`,
+    `scheduled_jobs` y `scheduled_plan_changes`. Ninguna sostiene hoy una
+    pantalla que se vea vacía por su culpa, y queda escrito aquí en vez de
+    darlo por hecho.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
