@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 10/09/2026), con las 60 migraciones del
+// (generate_typescript_types, 10/09/2026), con las 63 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -2325,6 +2325,7 @@ export type Database = {
       plans: {
         Row: {
           created_at: string
+          grants_priority: boolean
           id: string
           included_large: number
           included_medium: number
@@ -2337,6 +2338,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          grants_priority?: boolean
           id?: string
           included_large?: number
           included_medium?: number
@@ -2349,6 +2351,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          grants_priority?: boolean
           id?: string
           included_large?: number
           included_medium?: number
@@ -2634,6 +2637,7 @@ export type Database = {
           description: string
           establishment_id: string
           id: string
+          priority_rank: number | null
           rejected_at: string | null
           rejected_by: string | null
           rejected_reason: string | null
@@ -2657,6 +2661,7 @@ export type Database = {
           description: string
           establishment_id: string
           id?: string
+          priority_rank?: number | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejected_reason?: string | null
@@ -2680,6 +2685,7 @@ export type Database = {
           description?: string
           establishment_id?: string
           id?: string
+          priority_rank?: number | null
           rejected_at?: string | null
           rejected_by?: string | null
           rejected_reason?: string | null
@@ -3963,6 +3969,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: boolean
       }
+      client_can_set_priority: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
       client_can_view_billing: {
         Args: { p_establishment_id: string }
         Returns: boolean
@@ -4565,6 +4575,7 @@ export type Database = {
         Args: { p_description: string; p_job_id: string }
         Returns: string
       }
+      request_is_rankable: { Args: { p_state: string }; Returns: boolean }
       request_job_reassignment: {
         Args: { p_job_id: string; p_reason: string }
         Returns: undefined
@@ -4679,6 +4690,10 @@ export type Database = {
       set_principal_supervisor: {
         Args: { p_admin_id: string; p_space_id: string; p_worker_id: string }
         Returns: string
+      }
+      set_request_priority_order: {
+        Args: { p_establishment_id: string; p_request_ids: string[] }
+        Returns: undefined
       }
       set_space_name: {
         Args: { p_name: string; p_space_id: string }

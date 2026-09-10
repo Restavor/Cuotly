@@ -2248,17 +2248,84 @@ regenerar salió idéntica, así que no había desviación.
     **Lo que NO entrega, y necesita una decisión tuya** (no lo invento,
     CLAUDE.md):
 
-    - **"Prioridad: Media".** No existe columna `priority` en `jobs` ni
-      regla que la defina en el PRD. Hacen falta los valores, quién la fija
-      y si cambia algo (el orden de la bandeja, el reparto de RN-ASG) o es
-      solo una etiqueta.
-    - **"Tipo: Actualización web".** No es ninguna de las cuatro categorías
-      de RN-CLS (Cambio pequeño, Fotografía, Cambio mediano, Cambio
-      grande), que es lo único que hoy clasifica un trabajo. O es otro
-      nombre para la categoría, o es un eje nuevo.
+    - ~~**"Prioridad: Media"**~~ y ~~**"Tipo: Actualización web"**~~ —
+      **contestadas por Bosco el 10/09/2026**, y las dos cambiaron el
+      diseño respecto del dibujo. Ver la entrada siguiente.
 
     - **Sin recorrido de Playwright con datos** (ver la entrada "Los
       recorridos de Playwright").
+
+- [x] **La prioridad la pone el restaurante** — migraciones 62 y 63,
+    decisión de producto de Bosco (10/09/2026).
+
+    Literal: *"los clientes premium son los únicos que pueden indicar la
+    prioridad, y lo hacen organizando sus cambios por cuál es más
+    importante: 5 cambios, pues ponerlos en orden del 1 más importante al 5
+    menos importante"*. Tres cosas de esa frase cambian el diseño respecto
+    de la maqueta 06, donde "Prioridad" era una etiqueta con el valor
+    "Media":
+
+    1. **No es una etiqueta, es un ORDEN.** No hay Alta/Media/Baja: hay un
+       1, un 2 y un 3 dentro de los cambios pendientes de ese restaurante.
+       Una etiqueta no dice cuál va antes entre dos "Media"; un orden sí,
+       que es justo lo que el restaurante quiere expresar.
+    2. **"Los únicos" es literal.** Ni el propietario del espacio ni un
+       administrador la ponen, y hay un test que lo comprueba sentándose
+       como la propietaria. Es la aserción que impide que un día se cuele
+       un `or has_capability(...)` "para poder ayudar al cliente" y
+       convierta la preferencia del restaurante en una decisión del equipo.
+       Comprobado con mutación: colar ese `or` rompe el test.
+    3. **Depende del plan**, no del nombre del plan.
+
+    **Por qué `plans.grants_priority` y no `name = 'Premium'`.** CLAUDE.md
+    fija que Cuotly es multiempresa: otro espacio puede llamar a su plan
+    alto "Total" o "Avanzado" y seguiría siendo el que da prioridad. Un
+    nombre escrito dentro de una función es una regla que se rompe en
+    silencio con el segundo cliente de la plataforma. El test lo vigila
+    llamando "Total" y "Sencillo" a sus dos planes: si la regla mirara el
+    nombre, fallaría.
+
+    **Por qué la función recibe la lista entera.** Escribir "pon esta la 3"
+    invita a que haya dos terceras o un hueco entre la 2 y la 4, y entonces
+    el orden deja de ser un orden. Recibiendo la lista ordenada y
+    reescribiendo 1..N de una vez, los empates y los huecos son imposibles
+    por construcción, no por cuidado. Las cuatro maneras de romperlo
+    —repetidas, de otro restaurante, ya publicada, incompleta— se rechazan
+    ANTES de escribir nada, y hay un test de que un intento rechazado deja
+    el orden intacto: media lista reordenada es peor que ninguna.
+
+    **La pantalla del cliente sube y baja, no escribe números.** Con
+    números hay que teclear cinco casillas sin repetir ninguna y el
+    servidor rechaza —con razón— cualquier empate; con dos flechas el
+    orden inválido no se puede ni escribir. Es un formulario de servidor:
+    sin JavaScript sigue funcionando (CA-22).
+
+    **"Tipo: Actualización web" no entra, y la respuesta explica por qué.**
+    Bosco: *"al hacerse un cambio se actualiza la web para que aparezca ese
+    cambio"*. Eso describe lo que hace todo trabajo de mantenimiento, no un
+    eje de clasificación con varios valores: no hay un segundo "tipo" que
+    guardar. Lo que clasifica un trabajo sigue siendo su categoría de
+    RN-CLS, que ya se enseña.
+
+    **Dos cosas que encontraron los tests, no la lectura del código:**
+
+    - **La columna nueva no se leía.** `requests` tiene el `select`
+      revocado y concedido columna a columna (CLAUDE.md), y una columna
+      nueva no se concede sola: `priority_rank` existía, la función la
+      escribía y ninguna pantalla podía leerla. El error —"permission
+      denied for table requests"— ni siquiera menciona la columna.
+    - **El barrido en falso-cerrado del Hito 7 la marcó** como función
+      `SECURITY DEFINER` sin comprobación. Comprobaba, pero a través de
+      `client_can_set_priority()`, un nombre que la heurística no conocía.
+      Se le enseña el nombre en vez de meterla en la lista de excepciones:
+      la excepción es para las que no comprueban, y ésta sí.
+
+    **Lo que NO decide esta entrada, y hace falta decidir algún día:** el
+    orden que pone el restaurante **no cambia hoy el reparto del equipo**.
+    RN-ASG-02 tiene su orden determinista en el PRD y no se toca por
+    cuenta propia. Hoy la prioridad es lo que el restaurante dice y el
+    equipo ve; si además tiene que mover la cola de trabajo, es otra
+    decisión y otra regla con su test.
 
 ## FASE 1 — Operación real de Restavor
 

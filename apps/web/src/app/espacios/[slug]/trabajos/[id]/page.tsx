@@ -185,7 +185,7 @@ export default async function TeamJobDetailPage({
         .maybeSingle(),
       supabase
         .from("requests")
-        .select("id, code, description")
+        .select("id, code, description, priority_rank")
         .eq("id", job.request_id)
         .maybeSingle(),
       supabase.from("spaces").select("timezone").eq("id", job.space_id).maybeSingle(),
@@ -538,6 +538,29 @@ export default async function TeamJobDetailPage({
             se movería sola (RN-JOB-08, RN-SLA-14). Dar una fecha ahí sería
             mentir sin que fallara nada.
           */}
+          {/*
+            Maqueta 06 · "Prioridad". No es una etiqueta Alta/Media/Baja:
+            es el PUESTO que el restaurante le ha dado entre sus cambios
+            pendientes (decisión de Bosco, 10/09/2026 — "organizando sus
+            cambios por cuál es más importante"). Lo pone el cliente y solo
+            con un plan que lo conceda, así que la mayoría de los trabajos
+            no lo tienen y eso se dice en vez de inventar un "Media"
+            (CA-20).
+          */}
+          <div className="border-b border-border py-3">
+            <p className="text-xs text-text-secondary">{es.teamArea.jobs.priorityLabel}</p>
+            <p className="text-sm font-semibold text-primary-dark">
+              {request?.priority_rank == null
+                ? es.teamArea.jobs.priorityNone
+                : es.teamArea.jobs.priorityValue(request.priority_rank)}
+            </p>
+            <p className="text-xs text-text-secondary">
+              {request?.priority_rank == null
+                ? es.teamArea.jobs.priorityNoneHint
+                : es.teamArea.jobs.priorityHint}
+            </p>
+          </div>
+
           <div className="border-b border-border py-3">
             <p className="text-xs text-text-secondary">{es.teamArea.jobs.startedAtLabel}</p>
             <p className="text-sm font-semibold text-primary-dark">

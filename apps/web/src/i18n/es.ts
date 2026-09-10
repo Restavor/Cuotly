@@ -1007,6 +1007,16 @@ export const es = {
       specialtyNone: "Sin especialidad requerida",
       specialtyNoneHint: "Cualquiera del equipo con acceso a este restaurante puede llevarlo.",
 
+      // Maqueta 06 · la prioridad es el PUESTO que le da el restaurante
+      // entre sus cambios pendientes, no una etiqueta. La mayoría de los
+      // trabajos no la tienen, y eso se dice.
+      priorityLabel: "Prioridad del restaurante",
+      priorityValue: (rank: number) => `Nº ${rank} de sus cambios pendientes`,
+      priorityHint: "Lo ha ordenado así el propio restaurante, incluido en su plan.",
+      priorityNone: "Sin ordenar",
+      priorityNoneHint:
+        "Ordenar los cambios por importancia va incluido en el plan Premium. Este restaurante no lo ha hecho, o su plan no lo incluye.",
+
       startedAtLabel: "Fecha de inicio",
       startedAtNone: "Todavía no ha comenzado",
 
@@ -1256,6 +1266,22 @@ export const es = {
   },
 
   clientArea: {
+
+    // Decisión de Bosco (10/09/2026): el restaurante con plan que lo
+    // conceda ordena sus cambios pendientes por importancia.
+    priority: {
+      title: "Orden de importancia",
+      hint: "Coloca primero el cambio que más te corre. El equipo lo verá en ese orden.",
+      position: (index: number, total: number) => `${index} de ${total}`,
+      moveUp: (what: string) => `Subir: ${what}`,
+      moveDown: (what: string) => `Bajar: ${what}`,
+      emptyTitle: "No tienes cambios pendientes",
+      emptyReason:
+        "Cuando pidas un cambio y esté esperando, aparecerá aquí para que digas cuánto te corre.",
+      notAllowed:
+        "Ordenar los cambios por importancia va incluido en el plan Premium. Con tu plan actual el equipo los atiende por orden de llegada.",
+      back: "Volver al restaurante",
+    },
     title: "Tu restaurante",
     statusLabel: "Estado del servicio",
     allowanceTitle: "Lo que incluye tu plan este ciclo",
@@ -1983,6 +2009,7 @@ export const es = {
       "request.information_provided": "Información aportada",
       "request.information_requested": "Información pedida",
       "request.new_acceptance_requested": "Nueva aceptación pedida",
+      "request.priority_set": "Cambios ordenados por importancia",
       "request.rejected": "Solicitud rechazada",
       "request.submitted": "Solicitud enviada",
       "session.revoked": "Sesión cerrada",

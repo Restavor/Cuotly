@@ -175,12 +175,17 @@ values
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'owner',  'active', true),
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002', 'worker', 'active', true);
 
+-- `grants_priority`: Premium es el único que deja al restaurante ordenar
+-- sus cambios por importancia (migración 62). Se marca aquí y no con un
+-- `update ... where name = 'Premium'` porque este archivo ES quien crea
+-- estos planes: dejarlo para después haría que el sembrado dependiera del
+-- orden en que se ejecutan sus propias secciones.
 insert into public.plans
-  (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours)
+  (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority)
 values
-  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',   9900,  0,  0, 0, 0, 48),
-  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso', 39900, 16, 12, 3, 0, 24),
-  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium', 59900, 25, 24, 5, 1, 24);
+  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',   9900,  0,  0, 0, 0, 48, false),
+  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso', 39900, 16, 12, 3, 0, 24, false),
+  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium', 59900, 25, 24, 5, 1, 24, true);
 
 insert into public.services (space_id, name, price_cents, price_premium_cents)
 values ('d1000000-0000-0000-0000-000000000001', 'Menú Diario', 22900, 19900);
@@ -1975,6 +1980,53 @@ begin
 end $$;
 
 -- ------------------------------------------------------------
+-- 12.10 · Magariños ordena sus cambios (decisión de Bosco, 10/09/2026).
+--
+-- Magariños tiene plan Premium, que es el que concede la prioridad, así
+-- que puede ordenar sus cambios pendientes por importancia. Lo hace SU
+-- propietaria —Nuria—, no el equipo: "los clientes premium son los únicos
+-- que pueden indicar la prioridad".
+--
+-- Se manda la lista ENTERA de lo que está pendiente, que es lo único que
+-- `set_request_priority_order()` acepta: ordenar tres de cinco dejaría dos
+-- sin sitio, y "sin sitio" no es lo mismo que "las menos importantes".
+-- ------------------------------------------------------------
+do $$
+declare
+  v_est constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_nuria constant uuid := 'd0000000-0000-0000-0000-000000000005';
+  v_orden uuid[];
+begin
+  if exists (
+    select 1 from public.requests
+    where establishment_id = v_est and priority_rank is not null
+  ) then
+    return;
+  end if;
+
+  -- El orden de la demostración: lo más antiguo primero, que es lo que
+  -- lleva más tiempo esperando. No es una regla —la regla es que decide el
+  -- restaurante—, es lo que este restaurante de mentira ha decidido.
+  select array_agg(r.id order by r.created_at)
+  into v_orden
+  from public.requests r
+  where r.establishment_id = v_est
+    and r.state in ('received', 'analyzing', 'needs_information',
+                    'pending_internal_validation', 'pending_client_acceptance',
+                    'accepted', 'in_progress');
+
+  if v_orden is null then
+    raise notice 'Magariños no tiene cambios pendientes que ordenar';
+    return;
+  end if;
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+  perform public.set_request_priority_order(v_est, v_orden);
+  perform set_config('request.jwt.claims', '', false);
+end $$;
+
+-- ------------------------------------------------------------
 -- 12.7 · Comprobación de la sección 12.
 --
 -- El mismo criterio que la comprobación de Magariños: si el sembrado se
@@ -2013,6 +2065,11 @@ begin
     select 1 from public.file_links where space_id = v_espacio and entity_type = 'job'
   ) then
     v_faltan := v_faltan || ' evidencia-de-publicacion';
+  end if;
+  if not exists (
+    select 1 from public.requests where space_id = v_espacio and priority_rank = 1
+  ) then
+    v_faltan := v_faltan || ' prioridad-del-restaurante';
   end if;
 
   select count(*) into v_conv from public.conversations where space_id = v_espacio;

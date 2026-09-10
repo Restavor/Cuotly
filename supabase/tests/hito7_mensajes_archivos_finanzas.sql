@@ -2594,7 +2594,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2619,6 +2619,13 @@ begin
         -- si quien pregunta puede editar ESE restaurante, nunca quién más
         -- puede.
         'client_can_edit_establishment_data',
+        -- Migración 62, misma familia: contesta si el restaurante puede
+        -- ordenar sus cambios por importancia (escribe en el
+        -- establecimiento Y su plan lo concede). Es el mecanismo, así que
+        -- no se comprueba a sí misma; quien la llama —
+        -- `set_request_priority_order()`— sí queda cubierto por la
+        -- heurística de arriba.
+        'client_can_set_priority',
         -- Estas cinco SÍ comprueban permisos, pero a mano: comparan
         -- `auth.uid()` con el dueño de la fila y lanzan excepción si no
         -- coincide (el responsable asignado, el autor del mensaje, el

@@ -137,6 +137,7 @@ export const AUDIT_ACTIONS = [
   "request.information_provided",
   "request.information_requested",
   "request.new_acceptance_requested",
+  "request.priority_set",
   "request.rejected",
   "request.submitted",
   "session.revoked",
