@@ -16,6 +16,7 @@ import {
 import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadTeamJobs } from "./list-query";
 
 /**
  * Tablero de trabajos del equipo (HU-16 a HU-23, PRD §20.4).
@@ -82,11 +83,11 @@ export default async function TeamJobsPage({
     );
   }
 
-  const { data: jobs } = await supabase
-    .from("jobs")
-    .select("id, code, state, category, assigned_to, establishment_id, created_at")
-    .eq("space_id", space.id)
-    .order("created_at", { ascending: false });
+  // Qué filas y en qué orden lo decide `loadTeamJobs()`, el mismo sitio
+  // del que lo lee el paginador del detalle: así el "siguiente" de un
+  // trabajo no puede llevar a otro sitio que el siguiente de esta tabla.
+  const jobs = await loadTeamJobs(supabase, space.id);
+
 
   const [{ data: establishments }, { data: people }] = await Promise.all([
     supabase.from("establishments").select("id, name").eq("space_id", space.id),
@@ -139,7 +140,11 @@ export default async function TeamJobsPage({
                 <TableRow key={job.id}>
                   <TableCell>
                     <Link
-                      href={`/espacios/${slug}/trabajos/${job.id}`}
+                      href={
+                        restaurante === undefined
+                          ? `/espacios/${slug}/trabajos/${job.id}`
+                          : `/espacios/${slug}/trabajos/${job.id}?restaurante=${restaurante}`
+                      }
                       className="text-cuotly-green underline"
                     >
                       {job.code}

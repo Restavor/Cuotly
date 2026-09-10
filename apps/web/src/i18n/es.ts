@@ -902,6 +902,13 @@ export const es = {
       historyEmptyTitle: "Sin movimientos registrados",
     },
     jobs: {
+      // Maqueta 06 · volver a la lista y moverse por ella.
+      backToList: "Volver a trabajos",
+
+      pagerLabel: "Moverse por la lista",
+      pagerPosition: (index: number, total: number) => `${index} de ${total}`,
+      pagerPrevious: "Trabajo anterior de la lista",
+      pagerNext: "Trabajo siguiente de la lista",
       title: "Trabajos",
       subtitle: "Lo aceptado por los restaurantes, listo para hacerse.",
       emptyTitle: "No hay trabajos",
@@ -1085,6 +1092,10 @@ export const es = {
       },
       // El desglose, dentro del detalle del trabajo.
       breakdownTitle: "Tareas de este trabajo",
+      // Maqueta 06 · el mismo título con el recuento. Lo cuenta
+      // `taskProgress()`, que no suma las canceladas en ninguno de los dos
+      // números.
+      breakdownTitleWithCount: (done: number, total: number) => `Tareas (${done}/${total})`,
       // Maqueta 06 · "Tareas (2/4)". Lo cancelado no entra en ninguno de
       // los dos números: lo cuenta `taskProgress()` en
       // src/core/job-execution.ts.

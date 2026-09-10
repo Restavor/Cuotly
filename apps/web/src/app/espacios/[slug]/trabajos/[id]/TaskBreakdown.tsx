@@ -19,6 +19,7 @@ import {
 } from "@/components/ui";
 import { TASK_LOAD_POINTS, type TaskWeight } from "@/core/load-points";
 import { es } from "@/i18n/es";
+import { taskProgress } from "@/core/job-execution";
 
 import { INITIAL_TASK_ACTION } from "./task-action-state";
 import { assignTask, cancelTask, createTask, updateTaskState } from "./tasks-actions";
@@ -267,8 +268,26 @@ export function TaskBreakdown({
 }) {
   const vivas = tasks.filter((t) => t.state !== "cancelled");
 
+  /*
+    Maqueta 06 · "Tareas (2/4)" en el propio título. Lo cuenta
+    `taskProgress()` en `src/core/`, con sus tests, y no aquí: una tarea
+    cancelada no cuenta en NINGUNO de los dos números, y hacerlo a ojo en
+    la plantilla es como un trabajo con dos hechas y dos canceladas acaba
+    leyéndose "2/4" y pareciendo a medias cuando no queda nada.
+
+    Sin tareas no se pinta contador: "(0/0)" no dice nada que no diga ya el
+    estado vacío de debajo.
+  */
+  const progreso = taskProgress(tasks);
+
   return (
-    <Card title={es.teamArea.tasks.breakdownTitle}>
+    <Card
+      title={
+        progreso.total === 0
+          ? es.teamArea.tasks.breakdownTitle
+          : es.teamArea.tasks.breakdownTitleWithCount(progreso.done, progreso.total)
+      }
+    >
       <p className="mb-3 text-sm text-text-secondary">{es.teamArea.tasks.breakdownHint}</p>
 
       {tasks.length === 0 ? (

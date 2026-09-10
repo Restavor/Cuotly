@@ -1914,6 +1914,67 @@ begin
 end $$;
 
 -- ------------------------------------------------------------
+-- 12.9 · La evidencia de lo publicado (maqueta 06, RN-JOB-10, RN-ARC-02).
+--
+-- El bloque "Evidencia de publicación" de la ficha de un trabajo salía con
+-- su estado vacío en los cuatro restaurantes: `file_links` no tenía ni un
+-- enlace con `entity_type = 'job'`, así que la migración 60 y
+-- `attach_job_evidence()` no se veían por ninguna parte.
+--
+-- El archivo se REGISTRA, no se reutiliza uno cualquiera del catálogo.
+-- Adjuntar "Fachada.jpg" como prueba de lo que se publicó sería una
+-- evidencia que no evidencia nada, y el bloque entero existe para poder
+-- mirar después qué se dejó publicado.
+--
+-- Queda INTERNO (`register_file` sin `shared_with_client`): es material de
+-- trabajo del equipo, no algo que el restaurante haya pedido. Si mañana se
+-- decide compartirlo, `share_file_with_client()` está para eso y deja su
+-- apunte (RN-ARC-04).
+-- ------------------------------------------------------------
+do $$
+declare
+  v_est constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_job uuid;
+  v_responsable uuid;
+  v_captura uuid;
+begin
+  if exists (
+    select 1 from public.file_links fl
+    join public.jobs j on j.id = fl.entity_id
+    where fl.entity_type = 'job' and j.establishment_id = v_est
+  ) then
+    return;
+  end if;
+
+  -- Un trabajo ya publicado: la evidencia es de lo que SE publicó, así que
+  -- el caso natural es uno que ya lo esté.
+  select id, assigned_to into v_job, v_responsable
+  from public.jobs
+  where establishment_id = v_est and state = 'published' and assigned_to is not null
+  order by published_at desc nulls last
+  limit 1;
+
+  if v_job is null then
+    raise notice 'sin trabajo publicado con responsable: no se siembra evidencia';
+    return;
+  end if;
+
+  -- La registra quien la hizo: el responsable del trabajo. Es además quien
+  -- `attach_job_evidence()` deja adjuntar sin necesitar `assign_jobs`.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_responsable, 'role', 'authenticated')::text, false);
+
+  v_captura := public.register_file(
+    v_est, 'requests_and_jobs', 'Captura de la carta publicada.png',
+    'demo/magarinos/captura-carta-publicada.png', 'captura-carta-publicada.png',
+    'image/png', 1887436);
+
+  perform public.attach_job_evidence(v_captura, v_job);
+
+  perform set_config('request.jwt.claims', '', false);
+end $$;
+
+-- ------------------------------------------------------------
 -- 12.7 · Comprobación de la sección 12.
 --
 -- El mismo criterio que la comprobación de Magariños: si el sembrado se
@@ -1947,6 +2008,11 @@ begin
   end if;
   if not exists (select 1 from public.corrections where space_id = v_espacio) then
     v_faltan := v_faltan || ' correcciones';
+  end if;
+  if not exists (
+    select 1 from public.file_links where space_id = v_espacio and entity_type = 'job'
+  ) then
+    v_faltan := v_faltan || ' evidencia-de-publicacion';
   end if;
 
   select count(*) into v_conv from public.conversations where space_id = v_espacio;

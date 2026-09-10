@@ -2207,6 +2207,59 @@ regenerar salió idéntica, así que no había desviación.
     contraseña no vale", que es justo lo que no conviene contarle a quien
     prueba correos.
 
+- [x] **Maqueta 06 · la ficha de un trabajo en ejecución** — la pantalla
+    que usa por fin lo que ya estaba construido.
+
+    La migración 60, `attach_job_evidence()` y `src/core/job-execution.ts`
+    con sus 16 tests estaban hechos desde ayer. **La pantalla no llamaba a
+    nada de eso**: ni al recuento de tareas, ni a la fecha de fin, ni a la
+    evidencia. Van siete veces que algo del servidor resulta no tener quien
+    lo use; esta es la séptima y se cierra pintándolo.
+
+    **Lo que entra:**
+
+    - **El paginador "1 de 5" y "Volver a trabajos"**, con el mismo patrón
+      que la maqueta 05: `loadTeamJobs()` es ahora el único sitio donde se
+      decide qué trabajos hay y en qué orden, y de él leen el listado y el
+      paginador. El filtro viaja en `?restaurante=`.
+    - **"Tareas (2/4)"** en el título del desglose, contado por
+      `taskProgress()` — una cancelada no cuenta en ninguno de los dos
+      números, o un trabajo con dos hechas y dos canceladas se leería "2/4"
+      y parecería a medias cuando no queda nada.
+    - **Fecha de inicio y fecha estimada de fin**, decididas por `jobEnd()`.
+      Los cuatro casos sin fecha se pintan con su motivo y desde una tabla
+      única, no con un `switch` repartido por la plantilla: así se ve de un
+      golpe que están los cuatro. **En pausa no se da fecha**, y eso es la
+      regla, no un hueco: el tiempo restante se conserva y la fecha se
+      movería sola (RN-JOB-08, RN-SLA-14).
+    - **La evidencia de publicación**, con su descarga por
+      `/api/archivos/<id>` —que contesta 404 y no 403 a quien no puede,
+      porque un 403 confirma que el archivo existe— y su formulario de
+      adjuntar, solo para el equipo (P7).
+
+    **La demo la enseña con datos**: la sección 12.9 registra una captura
+    de verdad, "Captura de la carta publicada.png", 1,8 MB, y la adjunta al
+    trabajo publicado. **No se reutiliza un archivo cualquiera del
+    catálogo**: adjuntar "Fachada.jpg" como prueba de lo que se publicó
+    sería una evidencia que no evidencia nada, y el bloque existe para
+    poder mirar después qué se dejó publicado. Queda interna, que es lo que
+    es: material de trabajo del equipo.
+
+    **Lo que NO entrega, y necesita una decisión tuya** (no lo invento,
+    CLAUDE.md):
+
+    - **"Prioridad: Media".** No existe columna `priority` en `jobs` ni
+      regla que la defina en el PRD. Hacen falta los valores, quién la fija
+      y si cambia algo (el orden de la bandeja, el reparto de RN-ASG) o es
+      solo una etiqueta.
+    - **"Tipo: Actualización web".** No es ninguna de las cuatro categorías
+      de RN-CLS (Cambio pequeño, Fotografía, Cambio mediano, Cambio
+      grande), que es lo único que hoy clasifica un trabajo. O es otro
+      nombre para la categoría, o es un eje nuevo.
+
+    - **Sin recorrido de Playwright con datos** (ver la entrada "Los
+      recorridos de Playwright").
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
