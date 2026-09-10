@@ -32,9 +32,16 @@ export function KpiCard({
   hint?: string;
   href: string;
 }) {
+  /*
+    El circulo es un icono, y AA pide 3:1 para lo que no es texto. `info`
+    da 3,62:1 y `danger` 3,69:1 sobre su tinte; el ambar da 2,15:1 y no
+    llega, asi que el tono "warning" se pinta con `info`. No se aclara ni
+    se oscurece la paleta: la fija el PRD §20.6 (CA-22, y la prueba que lo
+    mide esta en `src/core/contrast.test.ts`).
+  */
   const tones = {
     info: "bg-info/10 text-info",
-    warning: "bg-warning/10 text-warning",
+    warning: "bg-info/10 text-info",
     danger: "bg-danger/10 text-danger",
   } as const;
 

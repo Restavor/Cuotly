@@ -1,6 +1,17 @@
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
-import { AA_NORMAL_TEXT, contrastRatio, meetsAA, parseHex, relativeLuminance } from "./contrast";
+import {
+  AA_LARGE_TEXT,
+  AA_NORMAL_TEXT,
+  blend,
+  contrastRatio,
+  meetsAA,
+  parseHex,
+  relativeLuminance,
+} from "./contrast";
 
 /** Paleta Emerald Control (PRD §20.6), copiada de src/styles/tokens.css. */
 const PALETA = {
@@ -86,5 +97,138 @@ describe("CA-22 · contraste WCAG AA de la paleta Emerald Control", () => {
   it("el badge de estado (superficie suave + texto principal) cumple AA", () => {
     expect(meetsAA(PALETA.text, PALETA.softSurface)).toBe(true);
     expect(meetsAA(PALETA.text, PALETA.warning)).toBe(true);
+  });
+});
+
+/**
+ * CA-22 · lo que pintan los componentes, no lo que dice la paleta.
+ *
+ * Estas comprobaciones existen porque las de arriba dejaron pasar un fallo
+ * real y en toda la aplicación: `StatusBadge` ponía `text-success` sobre
+ * `bg-success/10`, y los cuatro tonos estaban por debajo de AA (success
+ * 3,78:1, warning 2,33:1, danger 4,01:1, info 3,92:1). Ninguna aserción lo
+ * veía porque todas medían la paleta cruda —`success` contra blanco— y
+ * `bg-success/10` **no es** `success`: es la mezcla que hace el navegador,
+ * otro color, y el contraste contra el texto del mismo tono es mucho menor.
+ *
+ * La regla que sale de aquí: cuando un componente usa una utilidad `/10`,
+ * lo que hay que medir es la mezcla. `blend()` la calcula.
+ */
+describe("CA-22 · el contraste de lo que se pinta de verdad", () => {
+  const TINTE = 0.1;
+
+  const SEMANTICOS = [
+    ["success", PALETA.success],
+    ["warning", PALETA.warning],
+    ["danger", PALETA.danger],
+    ["info", PALETA.info],
+  ] as const;
+
+  it("blend() reproduce la mezcla del navegador", () => {
+    // Los extremos: sin transparencia es el color, con todo es el fondo.
+    expect(blend(PALETA.danger, PALETA.surface, 1)).toBe(PALETA.danger);
+    expect(blend(PALETA.danger, PALETA.surface, 0)).toBe(PALETA.surface);
+  });
+
+  describe("StatusBadge · texto principal sobre el tinte del tono", () => {
+    for (const [nombre, color] of SEMANTICOS) {
+      it(`${nombre} cumple AA para texto normal`, () => {
+        const fondo = blend(color, PALETA.surface, TINTE);
+        const razon = contrastRatio(PALETA.text, fondo);
+        expect(razon, `texto sobre ${fondo} da ${razon.toFixed(2)}:1`).toBeGreaterThanOrEqual(
+          AA_NORMAL_TEXT,
+        );
+      });
+    }
+
+    it("el tono NO vale como color del texto sobre su propio tinte", () => {
+      // Deliberadamente `false`: si alguien vuelve a poner `text-success`
+      // sobre `bg-success/10` creyendo que se lee, este test se lo dice.
+      for (const [nombre, color] of SEMANTICOS) {
+        const fondo = blend(color, PALETA.surface, TINTE);
+        expect(meetsAA(color, fondo), `${nombre} como texto sobre su tinte`).toBe(false);
+      }
+    });
+  });
+
+  describe("iconos de los huecos · el tono sobre su tinte", () => {
+    // AA pide 3:1 para lo que no es texto. Tres de los cuatro pasan.
+    for (const [nombre, color] of [
+      ["danger", PALETA.danger],
+      ["info", PALETA.info],
+    ] as const) {
+      it(`${nombre} vale como icono sobre su tinte`, () => {
+        const fondo = blend(color, PALETA.surface, TINTE);
+        expect(contrastRatio(color, fondo)).toBeGreaterThanOrEqual(AA_LARGE_TEXT);
+      });
+    }
+
+    it("warning NO vale como icono sobre su tinte, y por eso no se usa", () => {
+      // 2,15:1. No hay manera de subirlo sin un ámbar más oscuro, que
+      // sería un color de marca nuevo (la paleta la fija el PRD §20.6).
+      // Donde hacía falta, se usa `info`.
+      const fondo = blend(PALETA.warning, PALETA.surface, TINTE);
+      expect(contrastRatio(PALETA.warning, fondo)).toBeLessThan(AA_LARGE_TEXT);
+    });
+
+    it("el icono neutro sobre superficie suave sí vale", () => {
+      expect(
+        contrastRatio(PALETA.textSecondary, PALETA.softSurface),
+      ).toBeGreaterThanOrEqual(AA_LARGE_TEXT);
+    });
+  });
+});
+
+
+/**
+ * El ámbar no vale como color de primer plano en ninguna parte, y esto lo
+ * impide de vuelta.
+ *
+ * Medido: `warning` da 2,55:1 sobre `surface` y 2,36:1 sobre `background`,
+ * contra los 3:1 que AA pide para un icono y los 4,5:1 para texto. No hay
+ * superficie clara del sistema donde llegue, así que `text-warning` está
+ * mal **siempre**, no "según dónde". Subirlo exigiría un ámbar más oscuro,
+ * que sería un color de marca nuevo, y la paleta la fija el PRD §20.6.
+ *
+ * Se comprueba leyendo el código y no razonando sobre él, que es lo mismo
+ * que hacen `identity-fields.test.ts` con las columnas de la ficha y
+ * `audit.test.ts` con las acciones de auditoría: una regla que solo vive
+ * en un comentario se salta sola a la tercera pantalla.
+ *
+ * Lo que SÍ vale es `bg-warning` con `text-text` encima: fondo ámbar y
+ * letra oscura dan 15,09:1. Por eso se prohíbe el primer plano y no el
+ * fondo.
+ */
+describe("CA-22 · el ámbar nunca es color de primer plano", () => {
+  const RAIZ = join(process.cwd(), "src");
+
+  function fuentes(directorio: string): string[] {
+    return readdirSync(directorio).flatMap((entrada) => {
+      const ruta = join(directorio, entrada);
+      if (statSync(ruta).isDirectory()) return fuentes(ruta);
+      return ruta.endsWith(".tsx") || ruta.endsWith(".ts") ? [ruta] : [];
+    });
+  }
+
+  it("ningún componente usa text-warning", () => {
+    const culpables = fuentes(RAIZ).filter((ruta) => {
+      // Este propio archivo lo nombra para prohibirlo.
+      if (ruta.endsWith("contrast.test.ts")) return false;
+      return /\btext-warning\b/.test(readFileSync(ruta, "utf8"));
+    });
+
+    expect(
+      culpables.map((ruta) => ruta.slice(RAIZ.length + 1)),
+      "text-warning no llega a 3:1 sobre ninguna superficie clara de la paleta",
+    ).toEqual([]);
+  });
+
+  it("y no es que el barrido no encuentre nada: text-danger sí aparece", () => {
+    // Si el barrido dejara de leer archivos, la comprobación de arriba
+    // pasaría siempre y no diría nada.
+    const conDanger = fuentes(RAIZ).filter((ruta) =>
+      /\btext-danger\b/.test(readFileSync(ruta, "utf8")),
+    );
+    expect(conDanger.length).toBeGreaterThan(0);
   });
 });

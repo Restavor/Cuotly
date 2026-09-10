@@ -33,7 +33,7 @@ export function InviteMemberForm({ spaceId, spaceSlug }: { spaceId: string; spac
         onClose={() => setOpen(false)}
       >
         {state.message === "already_registered" ? (
-          <p className="mb-4 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-success">
+          <p className="mb-4 rounded-lg bg-success/10 px-3 py-2.5 text-sm text-text">
             {t.alreadyRegistered}
           </p>
         ) : inviteLink ? (
@@ -54,7 +54,7 @@ export function InviteMemberForm({ spaceId, spaceSlug }: { spaceId: string; spac
               ]}
             />
             {state.error ? (
-              <p role="alert" className="mb-4 rounded-lg bg-danger/10 px-3 py-2.5 text-sm text-danger">
+              <p role="alert" className="mb-4 rounded-lg bg-danger/10 px-3 py-2.5 text-sm text-text">
                 {state.error}
               </p>
             ) : null}

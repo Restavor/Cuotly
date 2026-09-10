@@ -168,7 +168,10 @@ const MARCA_DEL_PASO: Record<
   { readonly icon: IconName; readonly clase: string }
 > = {
   done: { icon: "check", clase: "bg-cuotly-green/10 text-cuotly-green" },
-  current: { icon: "alert", clase: "bg-warning/10 text-warning" },
+  // En `info` y no en ámbar: el ámbar sobre su tinte da 2,15:1 y AA pide
+  // 3:1 para un icono. Además el paso actual no es un aviso, es dónde está
+  // la solicitud ahora mismo.
+  current: { icon: "alert", clase: "bg-info/10 text-info" },
   rejected: { icon: "close", clase: "bg-danger/10 text-danger" },
   pending: { icon: "clock", clase: "bg-soft-surface text-text-secondary" },
   unknown: { icon: "clock", clase: "bg-soft-surface text-text-secondary" },
@@ -492,7 +495,7 @@ export function ClassificationCard({
 /** El aviso de qué pasa después de validar, tal cual lo dice la maqueta. */
 export function AfterValidateNote() {
   return (
-    <p className="mt-3 flex items-start gap-2 rounded-[12px] bg-info/10 p-3 text-xs text-info">
+    <p className="mt-3 flex items-start gap-2 rounded-[12px] bg-info/10 p-3 text-xs text-text">
       <Icon name="alert" className="mt-px h-4 w-4 shrink-0" />
       {t.afterValidateNote}
     </p>

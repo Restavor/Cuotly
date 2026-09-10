@@ -39,7 +39,7 @@ export default function LoginPage() {
       />
 
       {state.error ? (
-        <p role="alert" className="mb-4 rounded-lg bg-danger/10 px-3 py-2.5 text-sm text-danger">
+        <p role="alert" className="mb-4 rounded-lg bg-danger/10 px-3 py-2.5 text-sm text-text">
           {state.error}
         </p>
       ) : null}

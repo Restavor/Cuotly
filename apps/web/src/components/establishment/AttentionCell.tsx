@@ -3,9 +3,28 @@ import { ATTENTION_ASPECT } from "@/components/home/AttentionList";
 import { Icon } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 
+/*
+ * El color del icono, medido y no elegido a ojo: AA pide 3:1 para lo que
+ * no es texto, y sobre las superficies claras de la paleta dan 4,57:1
+ * `danger`, 4,45:1 `info` y 4,95:1 el secundario.
+ *
+ * `warning` NO aparece, y no es un descuido: el ámbar de §20.6 da 2,55:1
+ * sobre blanco y 2,36:1 sobre el fondo, así que no llega en NINGUNA
+ * superficie clara del sistema. Subirlo exigiría un ámbar más oscuro, que
+ * es un color de marca nuevo, y la paleta la fija el PRD. Lo que era
+ * "warning" se pinta con `info`: el icono ya distingue el motivo por su
+ * forma (§21.4) y el texto lo dice entero al lado, así que no se pierde
+ * ninguna señal — se pierde solo un color que no se veía.
+ *
+ * Medido en `src/core/contrast.test.ts`, que además barre el código y
+ * falla si el ámbar vuelve a colarse como color de primer plano en algún
+ * componente. Por eso este comentario no escribe la clase con su nombre:
+ * el barrido busca el literal, y encontrarlo aquí sería un falso positivo
+ * — que es exactamente lo estricto que tiene que ser.
+ */
 const TONO: Readonly<Record<"danger" | "warning" | "info" | "neutral", string>> = {
   danger: "text-danger",
-  warning: "text-warning",
+  warning: "text-info",
   info: "text-info",
   neutral: "text-text-secondary",
 };

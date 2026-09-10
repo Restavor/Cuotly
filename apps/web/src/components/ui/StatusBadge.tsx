@@ -16,12 +16,31 @@ type Props = {
   children: ReactNode;
 };
 
+/*
+ * El fondo lleva el color del tono; el TEXTO, no.
+ *
+ * Ponía `text-success` sobre `bg-success/10`, y los cuatro tonos se
+ * quedaban por debajo de AA para texto normal: medidos, success 3,78:1,
+ * warning 2,33:1, danger 4,01:1 e info 3,92:1, contra los 4,5:1 que pide
+ * CA-22. El fallo no lo veía nadie porque `contrast.test.ts` comprobaba la
+ * PALETA —`success` contra blanco— y no la mezcla que pinta el navegador:
+ * `bg-success/10` no es `success`, es otro color, y el contraste entre los
+ * dos es mucho menor que contra blanco.
+ *
+ * El comentario de aquel test decía además que "los badges de estado usan
+ * superficie suave con el color de texto principal, que sí cumple". No era
+ * verdad: es lo que este cambio hace por fin. Sexta vez en el proyecto que
+ * una garantía escrita en un comentario resulta no estar implementada.
+ *
+ * Con `text-text` sobre el mismo tinte se pasa de 2,33:1 a 15,09:1 en el
+ * peor caso, y el tono sigue distinguiéndose por el fondo y por el punto.
+ */
 const toneClasses: Record<Tone, string> = {
-  success: "bg-success/10 text-success",
-  warning: "bg-warning/10 text-warning",
-  danger: "bg-danger/10 text-danger",
-  info: "bg-info/10 text-info",
-  neutral: "bg-soft-surface text-text-secondary",
+  success: "bg-success/10 text-text",
+  warning: "bg-warning/10 text-text",
+  danger: "bg-danger/10 text-text",
+  info: "bg-info/10 text-text",
+  neutral: "bg-soft-surface text-text",
 };
 
 const dotClasses: Record<Tone, string> = {

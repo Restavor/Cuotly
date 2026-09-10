@@ -80,6 +80,10 @@ const PATHS = {
   // otra pestaña. No se reutiliza `arrowRight`, que es navegación dentro
   // de la aplicación.
   externalLink: "M14 4.5h5.5V10M19 5 12 12M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10",
+  // El candado de "no te corresponde ver esto" (§20.7). Sustituye al emoji
+  // 🔒 que pintaba `NoPermissionState`: cada sistema operativo lo dibuja a
+  // su manera y desafinaba junto a los iconos de trazo del sistema.
+  lock: "M7 10.5V8a5 5 0 0 1 10 0v2.5M6 10.5h12a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 6 10.5ZM12 14.5v2.5",
 } as const;
 
 export type IconName = keyof typeof PATHS;

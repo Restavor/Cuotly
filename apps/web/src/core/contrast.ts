@@ -67,3 +67,25 @@ export const AA_LARGE_TEXT = 3;
 export function meetsAA(foreground: string, background: string, largeText = false): boolean {
   return contrastRatio(foreground, background) >= (largeText ? AA_LARGE_TEXT : AA_NORMAL_TEXT);
 }
+
+/**
+ * El color que resulta de pintar `foreground` con una transparencia sobre
+ * `background`, en sRGB. Es lo que hace el navegador con `bg-warning/10`:
+ * la utilidad de Tailwind no pinta el color, pinta una mezcla.
+ *
+ * Hace falta para medir lo que se ve DE VERDAD. Comprobar la paleta cruda
+ * —`warning` contra `surface`— no dice nada del componente que pone texto
+ * `warning` sobre un tinte del 10 % de `warning`: son dos colores
+ * distintos y el contraste entre ellos es mucho menor. Ese hueco entre
+ * "la paleta cumple" y "la pantalla cumple" es el que dejó pasar cuatro
+ * insignias de estado por debajo de AA (CA-22).
+ */
+export function blend(foreground: string, background: string, alpha: number): string {
+  const f = parseHex(foreground);
+  const b = parseHex(background);
+  const canal = (x: number, y: number) =>
+    Math.round(x * alpha + y * (1 - alpha))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${canal(f.r, b.r)}${canal(f.g, b.g)}${canal(f.b, b.b)}`;
+}
