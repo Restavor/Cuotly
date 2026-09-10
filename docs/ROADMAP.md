@@ -1956,11 +1956,18 @@ regenerar salió idéntica, así que no había desviación.
 
     **Lo que NO entrega:**
 
-    - **El paginador "1 de 3" no está.** Necesita saber de qué lista viene
-      esta solicitud y en qué posición, y esa lista depende del filtro con
-      el que se llegó. Se deja para cuando la navegación entre listado y
-      detalle se toque entera, en vez de inventar aquí un orden que no
-      coincida con el del listado.
+    - ~~**El paginador "1 de 3" no está.**~~ **Cerrado el 10/09/2026.** La
+      objeción era buena y por eso se resolvió atacándola: "qué
+      solicitudes y en qué orden" pasa a estar en UN solo sitio
+      (`solicitudes/list-query.ts`), del que leen el listado y el
+      paginador, así que no pueden discrepar — si mañana la bandeja se
+      ordena por vencimiento, el paginador se entera solo. El filtro viaja
+      en `?restaurante=`, y `listPosition()` (en `src/core/`, con sus
+      tests) devuelve `null` cuando la solicitud no está en esa lista: al
+      llegar por un enlace directo no se pinta paginador, porque "1 de 1"
+      fingiría un recorrido que no existe. Las flechas de los extremos se
+      deshabilitan y no se ocultan: un control que desaparece mueve los de
+      al lado y se pulsa el que no era.
     - ~~**Los dos caminos de rechazo no los ejercita la semilla.**~~
       **Cerrado el 10/09/2026**: la sección 12.8 siembra los dos, con dos
       solicitudes NUEVAS —no se reutilizan las que llenan las pantallas de

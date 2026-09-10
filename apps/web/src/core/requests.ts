@@ -260,3 +260,46 @@ export function validationSteps(request: {
 
   return [analisis, interna, cliente];
 }
+
+// ---------------------------------------------------------------------
+// Moverse por la lista sin salir del detalle (maqueta 05)
+// ---------------------------------------------------------------------
+
+/**
+ * Dónde está esta solicitud dentro de la lista de la que se viene, y
+ * cuáles son la anterior y la siguiente.
+ *
+ * El paginador "1 de 3" de la maqueta se quedó sin hacer con un motivo que
+ * sigue siendo válido: **el orden tiene que ser el mismo que el del
+ * listado**, o el "siguiente" del detalle lleva a otro sitio que el
+ * siguiente de la lista y nadie entiende por qué. Se resuelve no
+ * calculando aquí ningún orden: esta función recibe la lista YA ordenada
+ * por quien la ordena de verdad, y solo busca la posición.
+ *
+ * Devuelve `null` cuando la solicitud no está en la lista —se llegó por un
+ * enlace directo, o el filtro de la lista la excluye—, y entonces la
+ * pantalla no pinta paginador. Enseñar "1 de 1" para algo que no viene de
+ * ninguna lista sería inventarse un recorrido.
+ */
+export interface ListPosition {
+  /** 1-based, como se lee: "2 de 7". */
+  readonly index: number;
+  readonly total: number;
+  readonly previousId: string | null;
+  readonly nextId: string | null;
+}
+
+export function listPosition(
+  ids: readonly string[],
+  currentId: string,
+): ListPosition | null {
+  const posicion = ids.indexOf(currentId);
+  if (posicion === -1) return null;
+
+  return {
+    index: posicion + 1,
+    total: ids.length,
+    previousId: posicion > 0 ? ids[posicion - 1] : null,
+    nextId: posicion < ids.length - 1 ? ids[posicion + 1] : null,
+  };
+}

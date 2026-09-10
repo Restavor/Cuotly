@@ -99,18 +99,64 @@ function Dato({ label, children }: { label: string; children: React.ReactNode })
 // Cabecera
 // ---------------------------------------------------------------------
 
+export interface RequestPager {
+  readonly index: number;
+  readonly total: number;
+  readonly previousHref: string | null;
+  readonly nextHref: string | null;
+}
+
+/** Una flecha del paginador. Deshabilitada en los extremos, nunca oculta. */
+function PagerLink({
+  href,
+  icon,
+  label,
+}: {
+  href: string | null;
+  icon: IconName;
+  label: string;
+}) {
+  const clases =
+    "flex h-9 w-9 items-center justify-center rounded-[10px] border border-border transition-colors";
+
+  if (href === null) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`${clases} cursor-not-allowed text-border`}
+      >
+        <Icon name={icon} className="h-[18px] w-[18px]" />
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      title={label}
+      className={`${clases} text-text-secondary hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green`}
+    >
+      <Icon name={icon} aria-hidden="true" className="h-[18px] w-[18px]" />
+    </Link>
+  );
+}
+
 export function RequestHeader({
   headline,
   code,
   state,
   establishmentName,
   backHref,
+  pager,
 }: {
   headline: string;
   code: string;
   state: string;
   establishmentName: string | null;
   backHref: string;
+  /** Ausente cuando no se viene de una lista que contenga esta solicitud. */
+  pager?: RequestPager;
 }) {
   return (
     <header className="flex items-start gap-4">
@@ -139,13 +185,35 @@ export function RequestHeader({
         dónde volvía por una flecha, y en móvil, sin `title` que se pueda
         posar, no había manera de averiguarlo.
       */}
-      <Link
-        href={backHref}
-        className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
-      >
-        <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
-        {t.back}
-      </Link>
+      <div className="flex shrink-0 items-center gap-2">
+        <Link
+          href={backHref}
+          className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+        >
+          <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
+          {t.back}
+        </Link>
+
+        {/*
+          Maqueta 05 · "1 de 3" con sus flechas. Solo cuando se viene de
+          una lista que contiene esta solicitud: llegando por un enlace
+          directo no se pinta, porque "1 de 1" fingiría un recorrido que no
+          existe (`listPosition()` devuelve null y aquí no hay nada que
+          decidir).
+
+          Los extremos van deshabilitados y no ocultos: un control que
+          desaparece mueve los de al lado y se pulsa el que no era.
+        */}
+        {pager === undefined ? null : (
+          <nav aria-label={t.pagerLabel} className="flex shrink-0 items-center gap-1">
+            <PagerLink href={pager.previousHref} icon="arrowLeft" label={t.pagerPrevious} />
+            <span className="whitespace-nowrap px-1 text-sm text-text-secondary">
+              {t.pagerPosition(pager.index, pager.total)}
+            </span>
+            <PagerLink href={pager.nextHref} icon="arrowRight" label={t.pagerNext} />
+          </nav>
+        )}
+      </div>
     </header>
   );
 }

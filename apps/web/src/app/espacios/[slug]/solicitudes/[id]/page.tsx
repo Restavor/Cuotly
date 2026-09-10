@@ -13,7 +13,8 @@ import {
 } from "@/components/request/Detail";
 import { Card, NoPermissionState } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
-import { requestHeadline } from "@/core/requests";
+import { listPosition, requestHeadline } from "@/core/requests";
+import { loadTeamRequests } from "../list-query";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -49,10 +50,13 @@ export default async function TeamRequestDetailPage({
   searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
-  searchParams: Promise<{ corregir?: string }>;
+  searchParams: Promise<{ corregir?: string; restaurante?: string }>;
 }) {
   const { slug, id } = await params;
-  const { corregir } = await searchParams;
+  // `?restaurante=` dice de qué lista se viene. Es lo que hace posible el
+  // paginador: sin saber la lista, "1 de 3" sería sobre una lista
+  // inventada.
+  const { corregir, restaurante } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -96,14 +100,53 @@ export default async function TeamRequestDetailPage({
   // categoría, y aquí no hay ninguna que aceptar de un botón).
   const corrigiendo = corregir === "1" || proposal === null;
 
-  return (
+    /*
+    El paginador de la maqueta 05. La lista y su orden salen de
+    `loadTeamRequests()`, el MISMO sitio del que los lee la bandeja: es lo
+    que impide que el "siguiente" de aquí lleve a otro sitio que el
+    siguiente de allí. La posición la calcula `listPosition()`, con sus
+    tests.
+
+    Si esta solicitud no está en esa lista —enlace directo, o el filtro la
+    excluye— no se pinta paginador: "1 de 1" fingiría un recorrido.
+  */
+  const hermanas = await loadTeamRequests(supabase, request.space_id, restaurante);
+  const posicion = listPosition(
+    hermanas.map((hermana) => hermana.id),
+    id,
+  );
+
+  const sufijo = restaurante === undefined ? "" : `?restaurante=${restaurante}`;
+  const listaHref =
+    restaurante === undefined
+      ? `/espacios/${slug}/solicitudes`
+      : `/espacios/${slug}/solicitudes?restaurante=${restaurante}`;
+
+  const pager =
+    posicion === null
+      ? undefined
+      : {
+          index: posicion.index,
+          total: posicion.total,
+          previousHref:
+            posicion.previousId === null
+              ? null
+              : `/espacios/${slug}/solicitudes/${posicion.previousId}${sufijo}`,
+          nextHref:
+            posicion.nextId === null
+              ? null
+              : `/espacios/${slug}/solicitudes/${posicion.nextId}${sufijo}`,
+        };
+
+return (
     <div className="mx-auto max-w-6xl space-y-6">
       <RequestHeader
         headline={requestHeadline(request.description)}
         code={request.code}
         state={state}
         establishmentName={establishment?.name ?? null}
-        backHref={`/espacios/${slug}/solicitudes`}
+        backHref={listaHref}
+        pager={pager}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-start">

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui";
 import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
 import { requestHeadline, requestTone } from "@/core/requests";
+import { loadTeamRequests } from "./list-query";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -84,12 +85,11 @@ export default async function TeamRequestsPage({
     );
   }
 
-  const { data: requests } = await supabase
-    .from("requests")
-    .select("id, code, description, state, created_at, validated_category, establishment_id")
-    .eq("space_id", space.id)
-    .neq("state", "draft")
-    .order("created_at", { ascending: false });
+  // Qué filas y en qué orden lo decide `loadTeamRequests()`, que es el
+  // mismo sitio del que lo lee el paginador del detalle: así el
+  // "siguiente" de una solicitud no puede llevar a otro sitio que el
+  // siguiente de esta tabla.
+  const rows = await loadTeamRequests(supabase, space.id, restaurante);
 
   const { data: establishments } = await supabase
     .from("establishments")
@@ -97,11 +97,6 @@ export default async function TeamRequestsPage({
     .eq("space_id", space.id);
 
   const nameById = new Map((establishments ?? []).map((e) => [e.id, e.name]));
-
-  const rows =
-    restaurante === undefined
-      ? (requests ?? [])
-      : (requests ?? []).filter((request) => request.establishment_id === restaurante);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -140,7 +135,11 @@ export default async function TeamRequestsPage({
                 <TableRow key={request.id}>
                   <TableCell>
                     <Link
-                      href={`/espacios/${slug}/solicitudes/${request.id}`}
+                      href={
+                        restaurante === undefined
+                          ? `/espacios/${slug}/solicitudes/${request.id}`
+                          : `/espacios/${slug}/solicitudes/${request.id}?restaurante=${restaurante}`
+                      }
                       className="font-medium text-cuotly-green underline"
                     >
                       {request.code}

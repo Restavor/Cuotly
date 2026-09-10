@@ -807,6 +807,12 @@ export const es = {
       // derecha, y debajo el historial.
       // ---------------------------------------------------------------
       back: "Volver a solicitudes",
+
+      // Maqueta 05 · el paginador. Solo aparece viniendo de una lista.
+      pagerLabel: "Moverse por la lista",
+      pagerPosition: (index: number, total: number) => `${index} de ${total}`,
+      pagerPrevious: "Solicitud anterior de la lista",
+      pagerNext: "Solicitud siguiente de la lista",
       clientCardTitle: "Solicitud del restaurante",
       establishmentLabel: "Restaurante",
       receivedAtLabel: "Fecha de recepción",

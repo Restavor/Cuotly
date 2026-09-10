@@ -4,6 +4,7 @@ import {
   consumptionEstimate,
   counterIsRunning,
   requestHeadline,
+  listPosition,
   requestTone,
   t1StopCause,
   VALIDATION_STEPS,
@@ -275,5 +276,48 @@ describe("maqueta 05 · el estado de validación (RN-CLS-01/03, RN-REQ-02)", () 
         `${state} no sitúa la solicitud en ningún paso`,
       ).toBe(true);
     }
+  });
+});
+
+describe("maqueta 05 · moverse por la lista desde el detalle", () => {
+  const lista = ["a", "b", "c"];
+
+  it("dice la posición como se lee: 1-based", () => {
+    expect(listPosition(lista, "a")).toEqual({
+      index: 1, total: 3, previousId: null, nextId: "b",
+    });
+    expect(listPosition(lista, "b")).toEqual({
+      index: 2, total: 3, previousId: "a", nextId: "c",
+    });
+    expect(listPosition(lista, "c")).toEqual({
+      index: 3, total: 3, previousId: "b", nextId: null,
+    });
+  });
+
+  it("no hay anterior en la primera ni siguiente en la última", () => {
+    expect(listPosition(lista, "a")?.previousId).toBeNull();
+    expect(listPosition(lista, "c")?.nextId).toBeNull();
+  });
+
+  it("una sola solicitud es 1 de 1, sin vecinos", () => {
+    expect(listPosition(["única"], "única")).toEqual({
+      index: 1, total: 1, previousId: null, nextId: null,
+    });
+  });
+
+  it("si no está en la lista NO se inventa un recorrido", () => {
+    // Se llegó por un enlace directo, o el filtro de la lista la excluye.
+    // Enseñar "1 de 1" fingiría que viene de una lista que no la contiene.
+    expect(listPosition(lista, "z")).toBeNull();
+    expect(listPosition([], "a")).toBeNull();
+  });
+
+  it("respeta el orden que le dan, no ordena por su cuenta", () => {
+    // Es el motivo por el que esta función no toca el orden: si lo
+    // decidiera aquí, el "siguiente" del detalle llevaría a otro sitio que
+    // el siguiente del listado.
+    const alReves = ["c", "b", "a"];
+    expect(listPosition(alReves, "c")?.index).toBe(1);
+    expect(listPosition(alReves, "c")?.nextId).toBe("b");
   });
 });
