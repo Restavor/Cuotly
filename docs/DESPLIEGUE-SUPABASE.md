@@ -6,36 +6,20 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 09/09/2026.
+Actualizado el 10/09/2026.
 
 ## Pendiente de aplicar
 
-**Faltan dos: la 56 y la 57.**
-
-**La 56 (`compartir_con_el_restaurante`).** Ver el apartado "La 56" más
-abajo: no crea ni cambia ninguna función, solo **retira el `EXECUTE` de
-`anon`** sobre las siete funciones que escriben archivos, así que aplicarla
-no puede romper nada que hoy funcione —ninguna pantalla llama a esas
-funciones sin sesión— pero sí es un cambio de privilegios, y este archivo
-no da por aplicado lo que nadie ha aplicado.
-
-**La 57 (`datos_del_establecimiento`).** Ver el apartado "La 57" más abajo.
-Esta **no es solo aditiva**: añade trece columnas y dos funciones, pero
-además **retira la política `establishments_update`** y añade un disparador
-que rechaza cualquier escritura de esas columnas que no venga de
-`set_establishment_data()`. Hasta que se aplique, la pantalla de la ficha
-—Gestión · Datos— **no funciona contra el proyecto real**: la RPC no
-existe. Y mientras no se aplique, `database.types.ts` tiene una salvedad
-viva: esos tipos están escritos a mano y **regenerar el archivo los
-borraría**.
+**Ninguna.** Las 59 migraciones del repositorio están aplicadas en el
+proyecto.
 
 ## Aplicadas
 
-**Las 55 primeras migraciones del repositorio están aplicadas.** Las tres
+**Las 59 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
-54 el 08/09/2026 y la 55 el 09/09/2026.
+54 el 08/09/2026, la 55 el 09/09/2026 y las 56 a 59 el 10/09/2026.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -306,8 +290,10 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 53 | `cobro_de_mejora_en_el_libro` | `cobro_de_mejora_en_el_libro` |
 | 54 | `inicio_del_espacio` | `inicio_del_espacio` |
 | 55 | `ficha_del_restaurante` | `ficha_del_restaurante` |
-| 56 | `compartir_con_el_restaurante` | **sin aplicar** |
-| 57 | `datos_del_establecimiento` | **sin aplicar** |
+| 56 | `compartir_con_el_restaurante` | `compartir_con_el_restaurante` |
+| 57 | `datos_del_establecimiento` | `datos_del_establecimiento_p1_columnas`, `_p2_permiso_y_barrera`, `_p3_set_data` |
+| 58 | `alta_del_restaurante` | `alta_del_restaurante_p1_columnas`, `_p2_set_data`, `_p3_create`, `_p4_auditoria_group` |
+| 59 | `instagram_del_restaurante` | `instagram_del_restaurante` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
@@ -333,7 +319,7 @@ ninguna función escrita a mano esperando a que se aplique su migración. Al
 regenerar contra el proyecto, la firma salió **idéntica** a la que estaba
 escrita a mano, así que no había desviación que corregir.
 
-### La 56 · compartir con el restaurante (SIN APLICAR)
+### La 56 · compartir con el restaurante
 
 Lo que hace, entero: `revoke all ... from public, anon` más `grant execute
 ... to authenticated` sobre las **siete** funciones que escriben archivos
@@ -380,7 +366,7 @@ tocarlas es de la familia de la excepción documentada en la migración 32 y
 no se hace de paso en una migración de otra cosa. Sin privilegio de
 columna sobre esas tablas, `anon` no puede leerlas de todos modos.
 
-### La 57 · los datos del establecimiento (SIN APLICAR)
+### La 57 · los datos del establecimiento
 
 Lo que hace, entero:
 
@@ -430,6 +416,68 @@ funciones se pueden dejar: son aditivas y no molestan.
 hoy escritos a mano (la salvedad está dicha en la cabecera del archivo), y
 al regenerar contra el proyecto hay que comprobar que la firma sale igual,
 como se hizo con la 55.
+
+### La 58 · el alta de un restaurante
+
+Aplicada el 10/09/2026, en cuatro partes.
+
+Lo que hace, entero:
+
+1. **Cuatro columnas nuevas en `establishments`**: `contact_name`,
+   `instagram`, `facebook_url` —los tres campos de la maqueta 02 que no
+   existían— y `idempotency_key`, con un índice único parcial sobre
+   `(space_id, idempotency_key)`. Aditivo puro.
+2. **`set_establishment_data()` con firma nueva** (16 parámetros en vez de
+   13). Se **borra la anterior** antes de crearla: dejar las dos la habría
+   vuelto ambigua por RPC, y PostgREST habría elegido una u otra según los
+   argumentos sin fallar nunca.
+3. **`create_establishment_with_data()`**, la puerta del alta: comprueba
+   `create_establishment`, resuelve o crea el grupo, inserta el
+   establecimiento, llama a `set_establishment_data()` para la ficha y a
+   `create_plan_subscription()` si se eligió plan, todo en una
+   transacción. Revocada a `public` y `anon`, concedida a `authenticated`.
+4. **`drop policy establishments_insert`** — esto NO es aditivo.
+5. **`audit_action_capability()` reescrita** para repartir la familia
+   `group` (que ahora escribe `group.created`) como `manage_clients`. Sin
+   esto, el apunte existiría y no lo vería nadie: la función clasifica lo
+   que no conoce como "lo decide la fila", y `audit_entity_is_visible()`
+   devuelve `false` para un tipo de entidad que no está en su `case`.
+
+**Qué rompió el punto 4, y cómo se arregló.** Tres sitios escribían
+`establishments` por PostgREST: la acción `createEstablishment()` del
+navegador (sustituida por la función) y dos bloques de
+`supabase/tests/hito2_permisos.sql` (reapuntados a la función). El fallo
+salió al ejecutar las suites contra un PostgreSQL local con las 59
+migraciones desde cero, no en producción.
+
+**Cómo se deshace.** `drop function create_establishment_with_data(...)` y
+`create policy establishments_insert on public.establishments for insert
+with check (public.has_capability(space_id, 'create_establishment'))`. Las
+columnas se pueden dejar: son nulas y no estorban.
+
+### La 59 · el usuario de Instagram, no su host
+
+Aplicada el 10/09/2026. Corrige un fallo de la 58 encontrado
+comprobándola en vivo contra el proyecto, antes de subirla: la
+normalización del campo de Instagram quitaba el prefijo
+`https://instagram.com/` y **después** cortaba por la primera barra
+siempre, así que un perfil escrito sin esquema se guardaba como el host:
+
+```
+instagram.com/magarinos           ->  @instagram.com      (mal)
+www.instagram.com/magarinos       ->  @www.instagram.com  (mal)
+instagram.com/magarinos?hl=es     ->  @magarinos?hl=es    (mal)
+```
+
+Escribir el perfil sin `https://` es lo normal, así que no era un caso
+raro: era el caso. Y el dato quedaba guardado mal en silencio.
+
+Solo cambia el bloque de Instagram de `set_establishment_data()`; el resto
+de la función es idéntico a la 58 (plpgsql no permite parchear un cuerpo:
+`create or replace` sustituye la función entera o nada). Los siete casos
+están en `supabase/tests/alta_del_restaurante.sql`, y se comprobó que la
+suite **falla** con la versión de la 58 puesta de vuelta: un test que pasa
+igual con el fallo no vale para nada.
 
 ## Cómo quedó el esquema
 

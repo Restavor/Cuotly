@@ -124,21 +124,24 @@ declare
   v_dominio text;
   v_correo text;
 begin
+  -- Argumentos con nombre, no por posicion: la migracion 58 metio
+  -- `contact_name` en medio de la firma y una llamada posicional habria
+  -- guardado el correo como nombre de contacto sin fallar.
   v_cambio := public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001',
-    'Magarinos',                       -- nombre comercial
-    'Restauracion Magarinos, S.L.',    -- razon social
-    ' b12345678 ',                     -- identificacion fiscal, sin normalizar
-    'Calle Velazquez, 18',
-    '28001',
-    'Madrid',
-    'INFO@Magarinos.ES',               -- correo en mayusculas
-    '910 123 456',
-    '620 987 654',
-    'www.magarinos.es',                -- sitio web sin esquema
-    'https://magarinos.es/carta',      -- dominio pegado como URL entera
-    E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30',
-    'landing_site'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos',
+    p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := ' b12345678 ',           -- sin normalizar
+    p_address := 'Calle Velazquez, 18',
+    p_postal_code := '28001',
+    p_city := 'Madrid',
+    p_contact_email := 'INFO@Magarinos.ES',   -- correo en mayusculas
+    p_phone_primary := '910 123 456',
+    p_phone_secondary := '620 987 654',
+    p_website_url := 'www.magarinos.es',      -- sin esquema
+    p_domain := 'https://magarinos.es/carta', -- URL entera en el campo del dominio
+    p_opening_hours := E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30',
+    p_web_platform := 'landing_site'
   );
 
   if not v_cambio then
@@ -195,11 +198,15 @@ begin
   end if;
 
   v_cambio := public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001',
-    'Magarinos', 'Restauracion Magarinos, S.L.', 'B12345678',
-    'Calle Velazquez, 18', '28001', 'Madrid', 'info@magarinos.es',
-    '910 123 456', '620 987 654', 'https://www.magarinos.es', 'magarinos.es',
-    E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30', 'landing_site'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos', p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := 'B12345678', p_address := 'Calle Velazquez, 18',
+    p_postal_code := '28001', p_city := 'Madrid',
+    p_contact_email := 'info@magarinos.es',
+    p_phone_primary := '910 123 456', p_phone_secondary := '620 987 654',
+    p_website_url := 'https://www.magarinos.es', p_domain := 'magarinos.es',
+    p_opening_hours := E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30',
+    p_web_platform := 'landing_site'
   );
 
   if v_cambio then
@@ -225,12 +232,16 @@ declare
   v_cambio boolean;
 begin
   v_cambio := public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001',
-    'Magarinos', 'Restauracion Magarinos, S.L.', 'B12345678',
-    'Calle Velazquez, 18', '28001', 'Madrid', 'info@magarinos.es',
-    '910 999 999',                     -- lo unico que cambia
-    '620 987 654', 'https://www.magarinos.es', 'magarinos.es',
-    E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30', 'landing_site'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos', p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := 'B12345678', p_address := 'Calle Velazquez, 18',
+    p_postal_code := '28001', p_city := 'Madrid',
+    p_contact_email := 'info@magarinos.es',
+    p_phone_primary := '910 999 999',        -- lo unico que cambia
+    p_phone_secondary := '620 987 654',
+    p_website_url := 'https://www.magarinos.es', p_domain := 'magarinos.es',
+    p_opening_hours := E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30',
+    p_web_platform := 'landing_site'
   );
 
   if not v_cambio then
@@ -264,13 +275,16 @@ declare
   v_segundo text;
 begin
   perform public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001',
-    'Magarinos', 'Restauracion Magarinos, S.L.', 'B12345678',
-    'Calle Velazquez, 18', '28001', 'Madrid', 'info@magarinos.es',
-    '910 999 999',
-    '   ',                             -- el telefono secundario se borra
-    'https://www.magarinos.es', 'magarinos.es',
-    E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30', 'landing_site'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos', p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := 'B12345678', p_address := 'Calle Velazquez, 18',
+    p_postal_code := '28001', p_city := 'Madrid',
+    p_contact_email := 'info@magarinos.es',
+    p_phone_primary := '910 999 999',
+    p_phone_secondary := '   ',              -- se borra
+    p_website_url := 'https://www.magarinos.es', p_domain := 'magarinos.es',
+    p_opening_hours := E'Lunes a Domingo\n13:00 - 16:00\n20:00 - 23:30',
+    p_web_platform := 'landing_site'
   );
 
   select phone_secondary into v_segundo
@@ -296,8 +310,9 @@ begin
 
   begin
     perform public.set_establishment_data(
-      'da400000-0000-0000-0000-000000000001', 'Magarinos', null, null, null, null, null,
-      'esto-no-es-un-correo'
+      p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+      p_name := 'Magarinos',
+      p_contact_email := 'esto-no-es-un-correo'
     );
     v_error := v_error || ' / un correo sin arroba se ha aceptado';
   exception when others then
@@ -306,8 +321,9 @@ begin
 
   begin
     perform public.set_establishment_data(
-      'da400000-0000-0000-0000-000000000001', 'Magarinos', null, null, null, null, null,
-      null, null, null, null, null, null, 'wordpress'
+      p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+      p_name := 'Magarinos',
+      p_web_platform := 'wordpress'
     );
     v_error := v_error || ' / una plataforma web inventada se ha aceptado';
   exception when others then
@@ -399,8 +415,9 @@ set role authenticated;
 do $$
 begin
   if not public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001', 'Magarinos', 'Restauracion Magarinos, S.L.',
-    'B12345678', 'Calle Velazquez, 20'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos', p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := 'B12345678', p_address := 'Calle Velazquez, 20'
   ) then
     raise exception 'RN-EST-11 FALLIDO: el administrador no ha podido editar la ficha'
       using errcode = 'assert_failure';
@@ -444,8 +461,10 @@ begin
   end if;
 
   if not public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001', 'Magarinos', 'Restauracion Magarinos, S.L.',
-    'B12345678', 'Calle Velazquez, 18', '28001', 'Madrid', 'reservas@magarinos.es'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos', p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := 'B12345678', p_address := 'Calle Velazquez, 18',
+    p_postal_code := '28001', p_city := 'Madrid', p_contact_email := 'reservas@magarinos.es'
   ) then
     raise exception 'RN-EST-11 FALLIDO: el propietario global no ha podido guardar'
       using errcode = 'assert_failure';
@@ -459,8 +478,10 @@ set role authenticated;
 do $$
 begin
   if not public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001', 'Magarinos', 'Restauracion Magarinos, S.L.',
-    'B12345678', 'Calle Velazquez, 18', '28001', 'Madrid', 'hola@magarinos.es'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos', p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := 'B12345678', p_address := 'Calle Velazquez, 18',
+    p_postal_code := '28001', p_city := 'Madrid', p_contact_email := 'hola@magarinos.es'
   ) then
     raise exception 'RN-EST-11 FALLIDO: el propietario local no ha podido editar su ficha'
       using errcode = 'assert_failure';
@@ -475,8 +496,10 @@ set role authenticated;
 do $$
 begin
   if not public.set_establishment_data(
-    'da400000-0000-0000-0000-000000000001', 'Magarinos', 'Restauracion Magarinos, S.L.',
-    'B12345678', 'Calle Velazquez, 18', '28001', 'Madrid', 'editor@magarinos.es'
+    p_establishment_id := 'da400000-0000-0000-0000-000000000001',
+    p_name := 'Magarinos', p_legal_name := 'Restauracion Magarinos, S.L.',
+    p_tax_id := 'B12345678', p_address := 'Calle Velazquez, 18',
+    p_postal_code := '28001', p_city := 'Madrid', p_contact_email := 'editor@magarinos.es'
   ) then
     raise exception 'RN-EST-11 FALLIDO: el editor CON edit_establishment_data no ha podido editar'
       using errcode = 'assert_failure';
@@ -573,7 +596,7 @@ declare
   v_cerradas text := '';
 begin
   foreach v_fn in array array[
-    'public.set_establishment_data(uuid, text, text, text, text, text, text, text, text, text, text, text, text, text)',
+    'public.set_establishment_data(uuid, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text)',
     'public.client_can_edit_establishment_data(uuid)'
   ] loop
     if has_function_privilege('anon', v_fn, 'execute') then

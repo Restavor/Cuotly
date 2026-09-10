@@ -164,7 +164,7 @@ export default async function EstablishmentPage({
     // a él: el propietario de un restaurante corrige su propia razón
     // social y su propio teléfono. Enumeradas, como en todo el proyecto.
     .select(
-      "id, name, code, status, legal_name, tax_id, address, postal_code, city, contact_email, phone_primary, phone_secondary, website_url, domain, opening_hours, web_platform",
+      "id, name, code, status, legal_name, tax_id, address, postal_code, city, contact_name, contact_email, phone_primary, phone_secondary, website_url, instagram, facebook_url, domain, opening_hours, web_platform",
     )
     .eq("id", id)
     .maybeSingle();
@@ -339,10 +339,13 @@ export default async function EstablishmentPage({
               address: establishment.address,
               postalCode: establishment.postal_code,
               city: establishment.city,
+              contactName: establishment.contact_name,
               contactEmail: establishment.contact_email,
               phonePrimary: establishment.phone_primary,
               phoneSecondary: establishment.phone_secondary,
               websiteUrl: establishment.website_url,
+              instagram: establishment.instagram,
+              facebookUrl: establishment.facebook_url,
               domain: establishment.domain,
               openingHours: establishment.opening_hours,
               webPlatform: establishment.web_platform,

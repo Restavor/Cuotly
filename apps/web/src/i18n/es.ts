@@ -1755,6 +1755,7 @@ export const es = {
       financial: "Finanzas",
       establishment: "Restaurantes",
       establishment_access: "Acceso a restaurantes",
+      group: "Grupos de cliente",
       group_access: "Acceso a grupos",
       holiday: "Festivos",
       request: "Solicitudes",
@@ -1798,6 +1799,7 @@ export const es = {
       "correction.requested": "Corrección pedida",
       "correction.started": "Corrección comenzada",
       "correction.team_error_opened": "Corrección por error del equipo",
+      "establishment.created": "Restaurante dado de alta",
       "establishment.data_changed": "Datos del restaurante editados",
       "establishment.status_changed": "Estado del restaurante cambiado",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
@@ -1806,6 +1808,7 @@ export const es = {
       "file.registered": "Archivo registrado",
       "file.shared_with_client": "Archivo compartido con el restaurante",
       "file.version_added": "Nueva versión de un archivo",
+      "group.created": "Grupo de cliente creado",
       "group_access.revoked": "Acceso a un grupo revocado",
       "holiday.created": "Festivo añadido",
       "invitation.accepted": "Invitación aceptada",
@@ -1928,9 +1931,47 @@ export const es = {
    */
   newEstablishmentPage: {
     title: "Nuevo restaurante",
-    intro:
-      "El restaurante se crea dentro de un grupo. Si el grupo todavía no existe, se crea con él; si ya existe, se reutiliza.",
+    intro: "Completa los datos para crear el establecimiento",
     back: "Volver a Restaurantes",
+
+    generalTitle: "Datos generales",
+    nameLabel: "Nombre comercial",
+    nameHint: "Es el nombre con el que el restaurante aparece en toda la aplicación.",
+    groupLabel: "Grupo de cliente",
+    groupNewOption: "Crear un grupo nuevo…",
+    groupNameLabel: "Nombre del grupo nuevo",
+    groupNameHint:
+      "Si ya existe uno con ese nombre, se reutiliza: no se crean dos grupos para el mismo cliente.",
+    planLabel: "Plan",
+    planNoneOption: "Sin plan por ahora",
+    planNoneAvailable:
+      "Este espacio no tiene ningún plan definido todavía, así que no hay ninguno que asignar. Se puede contratar después desde la ficha.",
+    statusLabel: "Estado",
+    statusHint:
+      "El restaurante estará en fase de configuración hasta completar la puesta en marcha. El estado se cambia después, desde su ficha.",
+
+    fiscalTitle: "Datos fiscales",
+    taxIdLabel: "NIF",
+    legalNameLabel: "Razón social",
+    addressLabel: "Dirección fiscal",
+    postalCodeLabel: "Código postal",
+    cityLabel: "Ciudad",
+
+    contactTitle: "Contacto principal",
+    contactNameLabel: "Nombre",
+    contactNameHint: "Quién responde por el restaurante, del lado del cliente.",
+    contactEmailLabel: "Email",
+    phonePrimaryLabel: "Teléfono",
+
+    webTitle: "Web y redes",
+    websiteLabel: "Sitio web",
+    instagramLabel: "Instagram",
+    facebookLabel: "Facebook",
+    webNotice:
+      "Son los enlaces del restaurante, para tenerlos a mano. Darlo de alta aquí no publica ni modifica nada en esas webs (RN-EST-12).",
+
+    submit: "Guardar",
+    submitPending: "Creando…",
   },
 
   agent: {
@@ -2033,10 +2074,13 @@ export const es = {
       address: "Dirección",
       postalCode: "Código postal",
       city: "Ciudad",
+      contactName: "Persona de contacto",
       contactEmail: "Correo de contacto",
       phonePrimary: "Teléfono principal",
       phoneSecondary: "Teléfono secundario",
       websiteUrl: "Sitio web",
+      instagram: "Instagram",
+      facebookUrl: "Facebook",
       domain: "Dominio",
       webPlatform: "Plataforma web",
       openingHours: "Horario del establecimiento",
@@ -2057,11 +2101,17 @@ export const es = {
     dataAddressLabel: "Dirección",
     dataPostalCodeLabel: "Código postal",
     dataCityLabel: "Ciudad",
+    dataContactNameLabel: "Persona de contacto",
+    dataContactNameHint:
+      "Quién responde por el restaurante. Es alguien del cliente, no del equipo de mantenimiento.",
     dataContactEmailLabel: "Email de contacto",
     dataPhonePrimaryLabel: "Teléfono principal",
     dataPhoneSecondaryLabel: "Teléfono secundario",
     dataWebsiteLabel: "Sitio web",
     dataWebsiteHint: "Si se escribe sin https://, se guarda con él.",
+    dataInstagramLabel: "Instagram",
+    dataInstagramHint: "Se guarda como @usuario, aunque se pegue la dirección entera.",
+    dataFacebookLabel: "Facebook",
     dataDomainLabel: "Dominio",
     dataOpeningHoursLabel: "Horario del establecimiento",
     dataOpeningHoursHint:

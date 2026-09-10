@@ -1,19 +1,10 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 09/09/2026), con las 56 migraciones del
+// (generate_typescript_types, 10/09/2026), con las 58 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
 // aplica una migración nueva.
-//
-// SALVEDAD VIVA (migración 20260909000057_datos_del_establecimiento):
-// las trece columnas nuevas de `establishments`, `set_establishment_data`
-// y `client_can_edit_establishment_data` están escritas a mano, contra el
-// esquema que produce esa migración aplicada sobre un PostgreSQL local
-// (supabase/tests/bootstrap-postgres-local.sql). La migración todavía no
-// está aplicada al proyecto de Supabase, así que regenerar este archivo
-// AHORA borraría esos tipos y rompería la pantalla de la ficha. En cuanto
-// se aplique (docs/DESPLIEGUE-SUPABASE.md), se regenera y esta salvedad
-// desaparece.
+
 export type Json =
   | string
   | number
@@ -1113,10 +1104,14 @@ export type Database = {
           city: string | null
           code: string
           contact_email: string | null
+          contact_name: string | null
           created_at: string
           domain: string | null
+          facebook_url: string | null
           group_id: string
           id: string
+          idempotency_key: string | null
+          instagram: string | null
           legal_name: string | null
           name: string
           opening_hours: string | null
@@ -1134,10 +1129,14 @@ export type Database = {
           city?: string | null
           code?: string
           contact_email?: string | null
+          contact_name?: string | null
           created_at?: string
           domain?: string | null
+          facebook_url?: string | null
           group_id: string
           id?: string
+          idempotency_key?: string | null
+          instagram?: string | null
           legal_name?: string | null
           name: string
           opening_hours?: string | null
@@ -1155,10 +1154,14 @@ export type Database = {
           city?: string | null
           code?: string
           contact_email?: string | null
+          contact_name?: string | null
           created_at?: string
           domain?: string | null
+          facebook_url?: string | null
           group_id?: string
           id?: string
+          idempotency_key?: string | null
+          instagram?: string | null
           legal_name?: string | null
           name?: string
           opening_hours?: string | null
@@ -4018,6 +4021,28 @@ export type Database = {
         }
         Returns: string
       }
+      create_establishment_with_data: {
+        Args: {
+          p_address?: string
+          p_city?: string
+          p_contact_email?: string
+          p_contact_name?: string
+          p_facebook_url?: string
+          p_group_id?: string
+          p_group_name?: string
+          p_idempotency_key?: string
+          p_instagram?: string
+          p_legal_name?: string
+          p_name: string
+          p_phone_primary?: string
+          p_plan_id?: string
+          p_postal_code?: string
+          p_space_id: string
+          p_tax_id?: string
+          p_website_url?: string
+        }
+        Returns: string
+      }
       create_job_task: {
         Args: {
           p_assignee_id?: string
@@ -4600,17 +4625,16 @@ export type Database = {
         Args: { p_space_id: string; p_user_id: string; p_value: boolean }
         Returns: undefined
       }
-      set_establishment_nonpayment_status: {
-        Args: { p_cause: string; p_establishment_id: string; p_status: string }
-        Returns: undefined
-      }
       set_establishment_data: {
         Args: {
           p_address?: string
           p_city?: string
           p_contact_email?: string
+          p_contact_name?: string
           p_domain?: string
           p_establishment_id: string
+          p_facebook_url?: string
+          p_instagram?: string
           p_legal_name?: string
           p_name: string
           p_opening_hours?: string
@@ -4622,6 +4646,10 @@ export type Database = {
           p_website_url?: string
         }
         Returns: boolean
+      }
+      set_establishment_nonpayment_status: {
+        Args: { p_cause: string; p_establishment_id: string; p_status: string }
+        Returns: undefined
       }
       set_establishment_status: {
         Args: {

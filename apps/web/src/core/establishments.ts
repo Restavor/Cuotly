@@ -41,10 +41,13 @@ export const IDENTITY_FIELDS = [
   "address",
   "postalCode",
   "city",
+  "contactName",
   "contactEmail",
   "phonePrimary",
   "phoneSecondary",
   "websiteUrl",
+  "instagram",
+  "facebookUrl",
   "domain",
   "webPlatform",
   "openingHours",
@@ -54,7 +57,13 @@ export type IdentityField = (typeof IDENTITY_FIELDS)[number];
 
 /**
  * §15.2 · razón social, identificación fiscal, dirección, teléfonos,
- * correos, sitio web, dominio, horarios y plataforma web.
+ * correos, sitio web, dominio, horarios y plataforma web; y de la maqueta
+ * 02, el nombre del contacto principal y las dos redes.
+ *
+ * `contactName` es el contacto DEL CLIENTE —quien firma, a quien se llama
+ * cuando hay un impago—, nunca nadie del equipo de mantenimiento. Lo que
+ * CLAUDE.md prohíbe es enseñarle al cliente la identidad de quien le
+ * mantiene la web; su propio nombre lo escribe él.
  *
  * Todos pueden ser nulos y eso es información: un restaurante se da de
  * alta con su nombre y su código (RN-EST-06) y la ficha se rellena

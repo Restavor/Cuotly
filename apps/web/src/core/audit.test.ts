@@ -160,13 +160,23 @@ describe("HU-36 · el reparto por familias coincide con el de la migración", ()
    * filtros que no corresponden con lo que el servidor deja ver.
    */
   function repartoDeLaMigracion(): Readonly<Record<string, string | null>> {
-    const sql = readFileSync(
-      join(MIGRATIONS, "20260903000049_hu36_ajustes_auditoria.sql"),
-      "utf-8",
-    );
-    const desde = sql.indexOf("function public.audit_action_capability");
-    const hasta = sql.indexOf("$$;", desde);
-    const cuerpo = sql.slice(desde, hasta);
+    // La ÚLTIMA definición de la función, no la de la migración que la
+    // creó: `audit_action_capability()` se reescribe con
+    // `create or replace` cada vez que aparece una familia nueva (la 49 la
+    // creó, la 58 le añadió `group`), y leer solo la primera dejaría esta
+    // comprobación comparando contra un reparto viejo — que es justo el
+    // desfase que existe para impedir.
+    const cuerpos = readdirSync(MIGRATIONS)
+      .filter((archivo) => archivo.endsWith(".sql"))
+      .sort()
+      .flatMap((archivo) => {
+        const sql = readFileSync(join(MIGRATIONS, archivo), "utf-8");
+        const desde = sql.indexOf("function public.audit_action_capability");
+        if (desde === -1) return [];
+        return [sql.slice(desde, sql.indexOf("$$;", desde))];
+      });
+
+    const cuerpo = cuerpos[cuerpos.length - 1] ?? "";
 
     const reparto: Record<string, string | null> = {};
     for (const [, familia, capacidad] of cuerpo.matchAll(

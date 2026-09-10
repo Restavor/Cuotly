@@ -200,6 +200,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/datos_del_establecimiento.sql
 
+      - name: "Migración 58 — Verificar el alta de un restaurante (maqueta 02, RN-EST-06, idempotencia, auditoría)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/alta_del_restaurante.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -21,7 +21,7 @@ const t = es.establishmentSheet;
  * otra sesión falla igual (CLAUDE.md: ocultar un botón no es un control de
  * acceso).
  *
- * Los trece campos van en un único formulario con un solo botón, como en
+ * Los dieciséis campos van en un único formulario con un solo botón, como en
  * la maqueta, y se envían siempre todos: la función recibe la ficha
  * completa y un campo vacío vacía el dato. Guardar sin cambiar nada no
  * escribe ni fila ni auditoría, y la pantalla lo dice en vez de fingir un
@@ -79,6 +79,13 @@ export function EstablishmentDataForm({
           hint={t.dataTaxIdHint}
         />
         <Field
+          label={t.dataContactNameLabel}
+          name="contactName"
+          defaultValue={identity.contactName ?? ""}
+          maxLength={120}
+          hint={t.dataContactNameHint}
+        />
+        <Field
           label={t.dataContactEmailLabel}
           name="contactEmail"
           /*
@@ -129,6 +136,19 @@ export function EstablishmentDataForm({
           defaultValue={identity.websiteUrl ?? ""}
           maxLength={300}
           hint={t.dataWebsiteHint}
+        />
+        <Field
+          label={t.dataInstagramLabel}
+          name="instagram"
+          defaultValue={identity.instagram ?? ""}
+          maxLength={120}
+          hint={t.dataInstagramHint}
+        />
+        <Field
+          label={t.dataFacebookLabel}
+          name="facebookUrl"
+          defaultValue={identity.facebookUrl ?? ""}
+          maxLength={300}
         />
         <Field
           label={t.dataDomainLabel}

@@ -48,6 +48,10 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // Cartera de clientes.
   establishment: "manage_clients",
   establishment_access: "manage_clients",
+  // El alta de un restaurante crea el grupo si no existía (migración 58) y
+  // eso es un apunte propio: quién dio de alta a este cliente y cuándo.
+  // Misma capacidad que el establecimiento — es la misma cartera.
+  group: "manage_clients",
   group_access: "manage_clients",
   // Festivos y cierres (§125, HU-32).
   holiday: "manage_holidays",
@@ -92,6 +96,7 @@ export const AUDIT_ACTIONS = [
   "correction.requested",
   "correction.started",
   "correction.team_error_opened",
+  "establishment.created",
   "establishment.data_changed",
   "establishment.status_changed",
   "establishment_access.revoked",
@@ -100,6 +105,7 @@ export const AUDIT_ACTIONS = [
   "file.registered",
   "file.shared_with_client",
   "file.version_added",
+  "group.created",
   "group_access.revoked",
   "holiday.created",
   "invitation.accepted",

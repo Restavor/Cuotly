@@ -1561,14 +1561,103 @@ regenerar salió idéntica, así que no había desviación.
       están: la plataforma web se registra —es uno de los quince datos— y
       lo demás es de la Fase 2, cuando Menú Diario publique. No se inventan
       tres columnas para dejarlas vacías.
-    - **`database.types.ts` vuelve a tener una salvedad viva.** Las trece
-      columnas y las dos funciones están escritas a mano contra el esquema
-      que produce la migración sobre un PostgreSQL local, porque la
-      migración 57 todavía no está aplicada al proyecto de Supabase:
-      regenerar el archivo ahora borraría esos tipos. Está dicho en su
-      cabecera y desaparece al desplegar.
     - **Sin recorrido de Playwright ejecutado**, igual que las siete
       pantallas anteriores.
+
+    **Al día siguiente (10/09/2026): la salvedad de `database.types.ts` ya
+    no existe.** Las migraciones 56 y 57 están aplicadas al proyecto, el
+    archivo está regenerado contra el esquema real, y las trece columnas y
+    las dos funciones escritas a mano resultaron ser **idénticas** a lo que
+    devuelve el generador — el único cambio del diff fue el orden
+    alfabético de dos entradas y la cabecera de la salvedad.
+
+- [x] **Maqueta 02 · el alta de un restaurante** — migraciones 58 y 59,
+    `create_establishment_with_data()`, la pantalla `/restaurantes/nuevo`
+    entera y `alta_del_restaurante.sql`.
+
+    El alta era un modal de dos campos —nombre del grupo, nombre
+    comercial— con dos `insert` sueltos por PostgREST. La maqueta pide
+    cuatro bloques: datos generales, datos fiscales, contacto principal y
+    web y redes. Pero lo que había fallaba por tres motivos que no tienen
+    que ver con cuántos campos se piden:
+
+    1. **No era una transacción.** Si el segundo `insert` fallaba, quedaba
+       un grupo vacío que nadie había pedido.
+    2. **No dejaba rastro.** Crear un cliente es el cambio más grande que
+       existe en un espacio y no escribía ni una línea en `audit_log`.
+    3. **Pulsar dos veces creaba dos restaurantes**, con dos códigos, dos
+       fichas y dos conversaciones.
+
+    Los tres los cierra `create_establishment_with_data()`: una
+    transacción, `establishment.created` (más `group.created` si el grupo
+    es nuevo), y una clave de idempotencia que **genera la página en el
+    servidor** y viaja en un campo oculto — así sobrevive al reintento del
+    propio navegador, no solo al doble clic. Generarla en el cliente con
+    `useState` daría una en el HTML del servidor y otra al hidratar.
+
+    **La puerta lateral se cierra, y era la misma que la de la 57.**
+    Mientras `establishments` tuviera política de INSERT, cualquiera con
+    `create_establishment` podía crear un restaurante por `curl` sin actor
+    y sin apunte. Se retira. Reutiliza `set_establishment_data()` para la
+    ficha en vez de repetir las trescientas líneas de normalización, y eso
+    se ve en el libro: un alta con datos deja **dos** apuntes, porque son
+    dos hechos distintos y el segundo puede repetirse.
+
+    **El estado no es un parámetro.** La maqueta enseña "Configurando" en
+    un desplegable; aquí se pinta bloqueado con su motivo debajo. Un
+    restaurante nace `configuring` y se mueve con
+    `set_establishment_status()`, que tiene sus reglas y su apunte. Y el
+    asterisco de los campos fiscales es **del formulario, no del
+    servidor**: RN-EST-06 dice que un restaurante se da de alta con su
+    nombre y la ficha se rellena después.
+
+    **Tres columnas nuevas** —`contact_name`, `instagram`, `facebook_url`—
+    que entran en `IDENTITY_FIELDS` y por tanto en las cuatro copias que
+    `identity-fields.test.ts` vigila. Ese test dejó de leer una migración
+    escrita a mano: ahora recorre el directorio entero, así que una columna
+    futura sobre `establishments` entra sola y falla hasta que alguien la
+    enseñe.
+
+    **El fallo que apareció al comprobarlo en vivo, y por qué hay una 59.**
+    La normalización de Instagram de la 58 quitaba el prefijo
+    `https://instagram.com/` y **después** cortaba por la primera barra
+    siempre. Con la dirección entera funcionaba; escrita sin esquema —que
+    es como se escribe— guardaba el host: `instagram.com/magarinos` se
+    convertía en `@instagram.com`, en silencio y sin fallar nada. La 59 lo
+    corrige y los siete casos están en la suite. Se comprobó **con
+    mutación**: puesta de vuelta la versión de la 58, la suite falla.
+
+    Como la 58 ya estaba aplicada al proyecto, el arreglo va en una
+    migración nueva y no editando la 58 (CLAUDE.md). Cuesta repetir la
+    función entera —plpgsql no permite parchear un cuerpo— y el archivo lo
+    dice en su cabecera.
+
+    **Lo que rompió retirar la política de INSERT, encontrado ejecutando
+    las suites.** Tres sitios escribían `establishments` por PostgREST: la
+    acción del navegador (sustituida) y dos bloques de
+    `hito2_permisos.sql`. El negativo —"una trabajadora no puede crear un
+    restaurante"— habría seguido en verde **por el motivo equivocado**:
+    ahora nadie puede por esa vía. Se reapunta a la función y se añade un
+    bloque aparte para el INSERT directo. De paso, la comprobación de CA-16
+    dejó de exigir "queda exactamente 1 apunte" y pasa a exigir "quedan los
+    mismos que había": el número escrito a mano se rompía cada vez que una
+    migración añadía un apunte, y corregirlo a ojo acabaría escondiendo el
+    día en que sí desaparece una fila.
+
+    **Las 18 suites de `supabase/tests/` pasan** contra un PostgreSQL 16
+    reconstruido desde cero con las 59 migraciones, y el alta se comprobó
+    además contra el proyecto real con `rollback`: normalización, los tres
+    rechazos (trabajadora, cliente, INSERT directo), la idempotencia y los
+    cuatro apuntes de auditoría.
+
+    **Lo que NO entrega:**
+
+    - **Instagram y Facebook no se comprueban contra nada.** Se normalizan
+      y se guardan; que el perfil exista no lo sabe nadie.
+    - **El plan se asigna, pero su mensualidad no se emite.** Eso lo hace
+      `create_plan_subscription()` como siempre, con las reglas que ya
+      tenía.
+    - **Sin recorrido de Playwright ejecutado.**
 
 ## FASE 1 — Operación real de Restavor
 

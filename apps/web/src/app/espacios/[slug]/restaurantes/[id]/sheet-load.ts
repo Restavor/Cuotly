@@ -61,13 +61,13 @@ export async function loadSheetHeader(
 ): Promise<SheetHeader | null> {
   const { data: establishment } = await supabase
     .from("establishments")
-    // §15.2 · las trece columnas de la ficha vienen en esta misma fila, así
+    // §15.2 · las dieciséis columnas de la ficha vienen en esta misma fila, así
     // que se piden aquí y no en una segunda consulta. Enumeradas, como en
     // todo el proyecto: `establishments` no tiene privilegios de columna
     // hoy, pero la costumbre es la que evita que un `select *` se cuele en
     // una tabla que sí los tenga (CLAUDE.md).
     .select(
-      "id, name, code, status, group_id, legal_name, tax_id, address, postal_code, city, contact_email, phone_primary, phone_secondary, website_url, domain, opening_hours, web_platform",
+      "id, name, code, status, group_id, legal_name, tax_id, address, postal_code, city, contact_name, contact_email, phone_primary, phone_secondary, website_url, instagram, facebook_url, domain, opening_hours, web_platform",
     )
     .eq("id", establishmentId)
     .maybeSingle();
@@ -130,10 +130,13 @@ export async function loadSheetHeader(
       address: establishment.address,
       postalCode: establishment.postal_code,
       city: establishment.city,
+      contactName: establishment.contact_name,
       contactEmail: establishment.contact_email,
       phonePrimary: establishment.phone_primary,
       phoneSecondary: establishment.phone_secondary,
       websiteUrl: establishment.website_url,
+      instagram: establishment.instagram,
+      facebookUrl: establishment.facebook_url,
       domain: establishment.domain,
       openingHours: establishment.opening_hours,
       webPlatform: establishment.web_platform,

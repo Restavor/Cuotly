@@ -1,20 +1,27 @@
+import { randomUUID } from "node:crypto";
+
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { NewEstablishmentForm } from "@/components/NewEstablishmentForm";
-import { Card, NoPermissionState } from "@/components/ui";
+import { NewEstablishmentForm } from "@/components/establishment/NewForm";
+import { NoPermissionState } from "@/components/ui";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * §20.5 · la opción "Nuevo restaurante" del botón Crear llevaba a un 404
- * desde el Hito 8. El formulario es el mismo del Hito 2 que ya vive en el
- * inicio del espacio; lo que faltaba era la ruta.
+ * Maqueta 02 · el alta de un restaurante (§20.5, RN-EST-06).
  *
- * Que se pinte o no depende de `create_establishment`, pero eso es
- * presentación: quien llegue por URL sin el permiso ve el motivo, y si
- * enviara el formulario de todos modos, `create_establishment_with_group()`
- * se lo niega en el servidor (CLAUDE.md MUST).
+ * Que se pinte el formulario o no depende de `create_establishment`, pero
+ * eso es presentación: quien llegue por URL sin el permiso ve el motivo, y
+ * si enviara el formulario de todos modos,
+ * `create_establishment_with_data()` se lo niega en el servidor
+ * (CLAUDE.md MUST). Desde la migración 58 no hay otro camino:
+ * `establishments` se quedó sin política de INSERT.
+ *
+ * La clave de idempotencia se genera aquí, en el servidor, y viaja al
+ * formulario en un campo oculto. Es una por carga de la página —y la
+ * página es `force-dynamic`—, así que dos altas seguidas llevan claves
+ * distintas y un doble clic sobre la misma lleva la misma.
  */
 export const dynamic = "force-dynamic";
 
@@ -43,23 +50,37 @@ export default async function NewEstablishmentPage({
     p_capability: "create_establishment",
   });
 
+  // Los grupos y los planes que este espacio tiene de verdad. No hay
+  // ninguna opción de relleno: si no hay planes, el formulario lo dice y
+  // no ofrece un desplegable vacío (CLAUDE.md, CA-20).
+  const [{ data: groups }, { data: plans }] = puedeCrear
+    ? await Promise.all([
+        supabase.from("groups").select("id, name").eq("space_id", space.id).order("name"),
+        supabase.from("plans").select("id, name").eq("space_id", space.id).order("price_cents"),
+      ])
+    : [{ data: null }, { data: null }];
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-5xl space-y-6 p-8">
       <header>
         <h1 className="text-2xl font-bold text-primary-dark">{es.newEstablishmentPage.title}</h1>
         <p className="text-sm text-text-secondary">{es.newEstablishmentPage.intro}</p>
       </header>
 
-      <Card>
-        {puedeCrear ? (
-          <NewEstablishmentForm spaceId={space.id} spaceSlug={space.slug} />
-        ) : (
-          <NoPermissionState
-            title={es.states.noPermissionTitle}
-            description={es.states.noPermissionDescription}
-          />
-        )}
-      </Card>
+      {puedeCrear ? (
+        <NewEstablishmentForm
+          spaceId={space.id}
+          spaceSlug={space.slug}
+          groups={groups ?? []}
+          plans={plans ?? []}
+          idempotencyKey={randomUUID()}
+        />
+      ) : (
+        <NoPermissionState
+          title={es.states.noPermissionTitle}
+          description={es.states.noPermissionDescription}
+        />
+      )}
 
       <p className="text-sm">
         <Link href={`/espacios/${slug}/restaurantes`} className="text-cuotly-green underline">

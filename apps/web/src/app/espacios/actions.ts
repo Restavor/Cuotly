@@ -33,60 +33,6 @@ export async function createRestavorSpace(): Promise<ActionState> {
 }
 
 /**
- * Crea (o reutiliza) un grupo por nombre dentro del espacio, y un
- * establecimiento dentro de ese grupo (HU-06). RLS decide de verdad si el
- * usuario puede hacerlo — este código no comprueba el rol por su cuenta.
- */
-export async function createEstablishment(
-  spaceId: string,
-  spaceSlug: string,
-  _prevState: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const groupName = String(formData.get("groupName") ?? "").trim();
-  const establishmentName = String(formData.get("establishmentName") ?? "").trim();
-
-  if (!groupName || !establishmentName) {
-    return { error: es.actions.establishmentValidation };
-  }
-
-  const supabase = await createClient();
-
-  const { data: existingGroup } = await supabase
-    .from("groups")
-    .select("id")
-    .eq("space_id", spaceId)
-    .ilike("name", groupName)
-    .maybeSingle();
-
-  let groupId = existingGroup?.id as string | undefined;
-
-  if (!groupId) {
-    const { data: newGroup, error: groupError } = await supabase
-      .from("groups")
-      .insert({ space_id: spaceId, name: groupName })
-      .select("id")
-      .single();
-
-    if (groupError) {
-      return { error: groupError.message };
-    }
-    groupId = newGroup.id;
-  }
-
-  const { error: establishmentError } = await supabase
-    .from("establishments")
-    .insert({ space_id: spaceId, group_id: groupId, name: establishmentName });
-
-  if (establishmentError) {
-    return { error: establishmentError.message };
-  }
-
-  revalidatePath(`/espacios/${spaceSlug}`);
-  return emptyState;
-}
-
-/**
  * Invita a alguien al equipo (HU-03, HU-04). Si el correo ya está
  * registrado en Cuotly, se le añade directamente al espacio (PRD §7.4:
  * "Añadir al espacio"); si no, se crea una invitación con caducidad de

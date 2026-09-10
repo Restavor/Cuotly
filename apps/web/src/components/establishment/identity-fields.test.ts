@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -73,20 +73,38 @@ describe("§15.2 · los campos de la ficha del restaurante", () => {
     }
   });
 
-  it("RN-EST-11 · la migración guarda exactamente estos campos, ni uno más", () => {
+  it("RN-EST-11 · las migraciones guardan exactamente estos campos, ni uno más", () => {
     // Al revés que las anteriores: aquí lo que se busca es una columna que
-    // la base guarde y ninguna pantalla enseñe. Se lee la lista de
-    // `alter table` de la migración 57.
-    const migracion = readFileSync(
-      join(process.cwd(), "..", "..", "supabase", "migrations",
-        "20260909000057_datos_del_establecimiento.sql"),
-      "utf8",
-    );
-    const columnas = [...migracion.matchAll(/add column if not exists (\w+) text/g)].map(
-      (coincidencia) => coincidencia[1],
-    );
+    // la base guarde y ninguna pantalla enseñe. Se leen las listas de
+    // `add column` de las migraciones que amplían `establishments`: la 57
+    // trajo los trece de §15.2 y la 58 los tres de la maqueta 02.
+    //
+    // No es una lista escrita a mano: se recorre el directorio entero, así
+    // que una migración futura que añada una columna a esta tabla entra
+    // aquí sola y hace fallar el test hasta que la pantalla la enseñe.
+    const directorio = join(process.cwd(), "..", "..", "supabase", "migrations");
+    const columnas = readdirSync(directorio)
+      .filter((archivo) => archivo.endsWith(".sql"))
+      .sort()
+      .flatMap((archivo) => {
+        const sql = readFileSync(join(directorio, archivo), "utf8");
+        // Solo los `alter table public.establishments`, y solo hasta el
+        // punto y coma que los cierra: otras tablas de la misma migración
+        // no cuentan.
+        return [...sql.matchAll(/alter table public\.establishments\b([^;]*);/g)].flatMap(
+          (bloque) =>
+            [...bloque[1].matchAll(/add column if not exists (\w+) text/g)].map(
+              (coincidencia) => coincidencia[1],
+            ),
+        );
+      });
 
-    expect(columnas.sort()).toEqual(IDENTITY_FIELDS.map(aSerpiente).sort());
+    // `idempotency_key` no es un campo de la ficha: no se enseña, no se
+    // edita y no lo escribe nadie: lo pone `create_establishment_with_data()`
+    // para que un doble clic no cree dos restaurantes (migración 58).
+    const deLaFicha = columnas.filter((columna) => columna !== "idempotency_key");
+
+    expect(deLaFicha.sort()).toEqual(IDENTITY_FIELDS.map(aSerpiente).sort());
   });
 });
 

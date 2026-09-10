@@ -136,10 +136,16 @@ reset role;
 -- URL directa, ni por llamada a la API, ni manipulando el cliente."
 --
 -- Dos filas de la matriz de permisos: un Trabajador no puede crear un
--- establecimiento (RN-EST-02) ni invitar a nadie (PRD §4.2). Ambos INSERT
--- deben fallar con SQLSTATE 42501 (insufficient_privilege / RLS). Si en
--- vez de fallar se ejecutan, el bloque los detecta y lanza su propia
--- excepción con el motivo.
+-- establecimiento (RN-EST-02) ni invitar a nadie (PRD §4.2).
+--
+-- El del establecimiento va por `create_establishment_with_data()` desde
+-- la migración 58, que retiró la política de INSERT de `establishments`:
+-- ahora la tabla no la escribe nadie por PostgREST, ni la trabajadora ni
+-- el propietario. Comprobarlo con el INSERT directo seguiría dando verde,
+-- pero por el motivo equivocado —"nadie puede" en vez de "esta no
+-- puede"—, y un test que pasa por el motivo equivocado deja de avisar el
+-- día que el motivo cambia. Se prueba la puerta que la pantalla usa, y el
+-- INSERT directo se comprueba aparte, justo debajo.
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', false);
 set role authenticated;
@@ -147,9 +153,22 @@ set role authenticated;
 do $$
 begin
   begin
-    insert into public.establishments (space_id, group_id, name)
-    values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Intento no autorizado');
+    perform public.create_establishment_with_data(
+      p_space_id := 'b0000000-0000-0000-0000-000000000001',
+      p_name := 'Intento no autorizado',
+      p_group_id := 'c0000000-0000-0000-0000-000000000001');
     raise exception 'CA-01 FALLIDO: un Trabajador pudo crear un establecimiento sin permiso (RN-EST-02)' using errcode = 'assert_failure';
+  exception
+    when assert_failure then raise;
+    when others then null; -- esperado: la función comprueba create_establishment
+  end;
+
+  -- Y tampoco por la puerta de atrás: `establishments` se quedó sin
+  -- política de INSERT, así que el INSERT directo falla con 42501.
+  begin
+    insert into public.establishments (space_id, group_id, name)
+    values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Intento no autorizado por PostgREST');
+    raise exception 'MIGRACION 58 FALLIDA: se ha podido crear un establecimiento con un INSERT directo' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then
       null; -- esperado
@@ -168,18 +187,23 @@ end $$;
 reset role;
 
 -- Control positivo: el propietario SÍ puede crear un establecimiento, y
--- recibe un código EST-000N correlativo. Confirma que la política no
--- bloquea a quien sí tiene el permiso.
+-- recibe un código EST-000N correlativo (lo pone el disparador de la
+-- migración 3, no quien da de alta). Confirma que la función no bloquea a
+-- quien sí tiene el permiso.
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
 set role authenticated;
 
 do $$
 declare
+  v_id uuid;
   v_code text;
 begin
-  insert into public.establishments (space_id, group_id, name)
-  values ('b0000000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000001', 'Creado por el propietario')
-  returning code into v_code;
+  v_id := public.create_establishment_with_data(
+    p_space_id := 'b0000000-0000-0000-0000-000000000001',
+    p_name := 'Creado por el propietario',
+    p_group_id := 'c0000000-0000-0000-0000-000000000001');
+
+  select code into v_code from public.establishments where id = v_id;
 
   if v_code !~ '^EST-\d{4}$' then
     raise exception 'CA-01 control positivo FALLIDO: código inesperado "%"', v_code using errcode = 'assert_failure';
@@ -288,8 +312,22 @@ do $$
 declare
   v_updated int;
   v_deleted int;
+  v_before int;
   v_remaining int;
 begin
+  -- Cuántas hay ANTES, en vez de un número escrito a mano. Lo que CA-16
+  -- afirma es que el libro no se toca, no que tenga N filas: fijar el
+  -- número obliga a corregir este test cada vez que una migración añade
+  -- un apunte —la 58 añadió `establishment.created` y lo dejó en rojo—, y
+  -- corregirlo a ojo acaba escondiendo el día en que sí desaparece una.
+  select count(*) into v_before from public.audit_log
+  where space_id = 'b0000000-0000-0000-0000-000000000001';
+
+  if v_before = 0 then
+    raise exception 'CA-16 no comprueba nada: no hay ni un apunte de auditoria que intentar manipular'
+      using errcode = 'assert_failure';
+  end if;
+
   with intento_editar as (
     update public.audit_log
     set reason = 'manipulado'
@@ -307,8 +345,8 @@ begin
 
   select count(*) into v_remaining from public.audit_log where space_id = 'b0000000-0000-0000-0000-000000000001';
 
-  if v_updated <> 0 or v_deleted <> 0 or v_remaining <> 1 then
-    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0), restantes=% (esperado 1)', v_updated, v_deleted, v_remaining using errcode = 'assert_failure';
+  if v_updated <> 0 or v_deleted <> 0 or v_remaining <> v_before then
+    raise exception 'CA-16 FALLIDO: editadas=% (esperado 0), borradas=% (esperado 0), restantes=% (esperado %)', v_updated, v_deleted, v_remaining, v_before using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -370,12 +408,20 @@ reset role;
 
 -- "Y futuros": un establecimiento creado DESPUÉS en el mismo grupo queda
 -- cubierto sin tocar nada. Ese es todo el sentido de la regla.
+--
+-- Se crea por la misma puerta que la pantalla, `create_establishment_with_data()`
+-- (migración 58), y no con un INSERT: `establishments` ya no tiene política
+-- de INSERT. El id lo genera la función, así que se guarda en una tabla
+-- temporal en vez de escribirlo a mano.
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', false);
 set role authenticated;
 
-insert into public.establishments (id, space_id, group_id, name) values
-  ('d0000000-0000-0000-0000-000000000009', 'b0000000-0000-0000-0000-000000000001',
-   'c0000000-0000-0000-0000-000000000001', 'Restaurante Futuro');
+create temporary table t_futuro as
+select public.create_establishment_with_data(
+  p_space_id := 'b0000000-0000-0000-0000-000000000001',
+  p_name := 'Restaurante Futuro',
+  p_group_id := 'c0000000-0000-0000-0000-000000000001'
+) as id;
 
 reset role;
 
@@ -384,7 +430,7 @@ set role authenticated;
 
 do $$
 begin
-  if not public.can_write_establishment('d0000000-0000-0000-0000-000000000009') then
+  if not public.can_write_establishment((select id from t_futuro)) then
     raise exception 'RN-EST-04 FALLIDO: el Editor de grupo no alcanza a un establecimiento creado después'
       using errcode = 'assert_failure';
   end if;
