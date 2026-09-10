@@ -10,16 +10,16 @@ Actualizado el 10/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 60 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 61 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 60 migraciones del repositorio están aplicadas.** Las tres
+**Las 61 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
-54 el 08/09/2026, la 55 el 09/09/2026 y las 56 a 60 el 10/09/2026.
+54 el 08/09/2026, la 55 el 09/09/2026 y las 56 a 61 el 10/09/2026.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -295,6 +295,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 58 | `alta_del_restaurante` | `alta_del_restaurante_p1_columnas`, `_p2_set_data`, `_p3_create`, `_p4_auditoria_group` |
 | 59 | `instagram_del_restaurante` | `instagram_del_restaurante` |
 | 60 | `evidencia_de_publicacion` | `evidencia_de_publicacion` |
+| 61 | `acceso_revocado_en_la_ficha` | `acceso_revocado_en_la_ficha` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

@@ -206,6 +206,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/alta_del_restaurante.sql
 
+      - name: "Migraciones 55 y 61 — Verificar la pestaña Usuarios de la ficha (§15.2, RN-EST-01/03/05/11)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/ficha_del_restaurante.sql
+
       - name: "Migración 60 — Verificar la evidencia de publicación (maqueta 06, RN-JOB-10, RN-ARC-02)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -1360,11 +1360,12 @@ regenerar salió idéntica, así que no había desviación.
     - **Dejar de compartir no existe**, y no se ha inventado. El PRD no lo
       tiene, y "desandar lo compartido" no es lo mismo que no haberlo
       compartido.
-    - **`supabase/tests/ficha_del_restaurante.sql` sigue sin existir**,
-      aunque la cabecera de la migración 55 diga "se comprueba con". Es la
-      quinta vez que una garantía escrita en un comentario resulta no estar
-      implementada, y queda escrito aquí para que se decida qué se hace con
-      ella, no para taparlo.
+    - ~~**`supabase/tests/ficha_del_restaurante.sql` sigue sin existir**,
+      aunque la cabecera de la migración 55 diga "se comprueba con".~~
+      **Cerrado el 10/09/2026** (entrada de abajo): la suite se escribió y
+      su primera comprobación salió en rojo — la función no filtraba los
+      accesos revocados. El comentario decía que estaba comprobado; no lo
+      estaba, y por eso el fallo vivía.
 
 26. **Solicitudes: la pantalla de validación interna** (09/09/2026, sin
     migración). La maqueta 05 · "Solicitudes — Validación interna" puesta
@@ -2090,6 +2091,44 @@ regenerar salió idéntica, así que no había desviación.
     - **No se desenlaza.** CLAUDE.md prohíbe el borrado físico de registros
       de negocio y una evidencia enlazada es exactamente eso.
     - **Sin recorrido de Playwright ejecutado.**
+
+- [x] **Cerrar las promesas de las migraciones** — la suite que faltaba, el
+    fallo que escondía, y la guarda para que no haya una octava vez.
+
+    Siete veces ha pasado ya lo mismo: una migración termina su cabecera
+    con "se comprueba con `supabase/tests/X.sql`", el archivo no se
+    escribe, y nadie se entera porque **un comentario no falla**. La
+    séptima la iba a commitear yo (migración 60). Este punto lo cierra por
+    completo.
+
+    **Un barrido encontró una sola promesa rota**: la de la migración 55,
+    anotada en el ROADMAP desde el 09/09 como "la quinta vez... queda
+    escrito para que se decida qué se hace con ella".
+
+    **Y al escribirla, su PRIMERA comprobación salió en rojo.**
+    `establishment_client_users()` no filtraba `revoked_at` en ninguna de
+    sus dos ramas, así que la pestaña Usuarios de la ficha llevaba un día
+    enseñando a gente cuyo acceso se había retirado —con su nombre, su
+    correo y sus permisos, igual que a quien sí lo tiene—. RN-EST-05 dice
+    lo contrario: "al retirar un acceso desaparece de inmediato, pero la
+    actividad histórica permanece"; lo que permanece es la actividad, no la
+    fila de la lista de accesos.
+
+    No se podía tapar en la pantalla: la pantalla pinta lo que contesta el
+    servidor, y el servidor contestaba mal (CLAUDE.md: el cliente nunca es
+    la autoridad). Lo arregla la **migración 61**. Y es la variante peor de
+    "una función que no usa nadie": `revoke_establishment_access()` existe
+    desde la migración 37, sí la usaba alguien, y no servía de nada.
+
+    **La guarda, para que sea la última vez.**
+    `src/core/promesas-de-migracion.test.ts` comprueba dos cosas, y las dos
+    hacen falta: que todo archivo que una migración nombra exista, y que
+    **CI ejecute todas las suites escritas** — una comprobación que nadie
+    corre engaña más que no tenerla. Las dos comprobadas con mutación:
+    borrar la suite rompe la primera, y sacarla de CI rompe la segunda.
+
+    Hoy: 20 suites SQL, todas nombradas, todas escritas, todas en CI, todas
+    en verde contra un PostgreSQL 16 con las 61 migraciones desde cero.
 
 ## FASE 1 — Operación real de Restavor
 
