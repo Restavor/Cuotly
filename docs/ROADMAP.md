@@ -1654,10 +1654,64 @@ regenerar salió idéntica, así que no había desviación.
 
     - **Instagram y Facebook no se comprueban contra nada.** Se normalizan
       y se guardan; que el perfil exista no lo sabe nadie.
-    - **El plan se asigna, pero su mensualidad no se emite.** Eso lo hace
-      `create_plan_subscription()` como siempre, con las reglas que ya
-      tenía.
+    - **El plan se asigna llamando a `create_plan_subscription()`**, con
+      las reglas que ya tenía y sin repetir ninguna: permanencia, ciclo
+      **y la mensualidad de RN-FIN-01**, que desde la migración 52 la emite
+      esa función. Dicho aquí porque la primera redacción de este punto
+      decía que la mensualidad no se emitía, y sembrar "Casa Sol" lo
+      desmintió: un alta con plan Básico deja un cobro de 119,79 € sin
+      pagar.
     - **Sin recorrido de Playwright ejecutado.**
+
+- [x] **"Casa Sol": el restaurante ficticio que se da de alta por la puerta
+    del alta** — sembrado (`supabase/seed/espacio-demo.sql`) y un paso nuevo
+    de CI.
+
+    Un restaurante de mentira con los cuatro bloques de la maqueta 02
+    rellenos, para poder mirar la ficha del §15.2 con los datos puestos y
+    recién puestos. No entra con un INSERT como los otros tres: sale de
+    `create_establishment_with_data()`, que es lo que ejecuta
+    `/restaurantes/nuevo`, así que sembrarlo comprueba de paso que el alta
+    funciona — grupo creado por nombre, dos apuntes de auditoría, y la
+    clave de idempotencia probada llamando **dos veces**.
+
+    Cubre además los cuatro casos que a los otros tres restaurantes les
+    faltaban, y que las pantallas sí distinguen: plan **Básico** (un ciclo
+    cuya bolsa el plan no incluye, que no pinta barra), estado
+    **Configurando** (el filtro del §20.2 pasa a tener dos valores),
+    mensualidad **emitida y sin pagar** que ningún recorrido salda después,
+    y **cero accesos de cliente** ("no hay nadie", que no es "no se ha
+    podido comprobar"). Los datos se escriben sin normalizar a propósito
+    —CIF en minúsculas y con espacios, web y Facebook sin esquema,
+    Instagram con el `?hl=es` de la barra del navegador— y el propio
+    sembrado exige el resultado normalizado.
+
+    **Y de camino apareció que el sembrado llevaba un día roto.** La
+    migración 58 metió `p_contact_name` en medio de
+    `set_establishment_data()`; la llamada de Magariños iba **por
+    posición**, así que el teléfono pasó a llegar donde se esperaba el
+    correo y el archivo entero moría con `El correo de contacto no tiene
+    forma de correo: 910 123 456`. Tuvo suerte de morir: si el campo
+    corrido hubiera sido otro, habría sembrado los datos cambiados de sitio
+    sin quejarse. Ahora esa llamada va **por nombre**, y Magariños gana de
+    paso los tres campos de la maqueta 02 que no tenía (contacto,
+    Instagram y Facebook).
+
+    **Lo que hizo que no se viera: CI no ejecutaba el sembrado.** Ni una
+    sola vez, desde que existe. Ahora es un paso más del job `rls-tests`,
+    **dos veces seguidas**, porque su cabecera promete que es idempotente y
+    ejecutarlo una vez no comprueba esa promesa. Es además la única pieza
+    que recorre las funciones de verdad de punta a punta —alta, plan,
+    solicitudes, trabajos, cobros— con excepciones que se plantan cuando el
+    resultado no es el esperado.
+
+    **Comprobado:** las 18 suites de `supabase/tests/` y el sembrado
+    (dos pasadas) contra un PostgreSQL 16 reconstruido desde cero con las
+    59 migraciones.
+
+    **Lo que NO entrega:** el proyecto real sigue con el sembrado anterior;
+    volver a lanzarlo allí rehace el espacio de demostración entero y eso
+    se pregunta antes, no se hace por cuenta propia.
 
 ## FASE 1 — Operación real de Restavor
 

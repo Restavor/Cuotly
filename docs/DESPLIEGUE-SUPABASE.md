@@ -654,6 +654,26 @@ Premium con Menú Diario, 19 solicitudes en ocho estados, 15 trabajos, cinco
 archivos y su mensualidad pagada. La lista completa, con el porqué de cada
 uno, está en la cabecera del propio archivo.
 
+Desde el 10/09/2026 hay un cuarto, **Casa Sol** (`EST-0004`), y es el único
+que entra por `create_establishment_with_data()` —la función de la
+migración 58, la que ejecuta la pantalla `/restaurantes/nuevo`— en vez de
+por un INSERT. Está para tener los cuatro casos que a los otros tres les
+faltan: plan **Básico** (que no incluye ningún cambio, así que el Resumen
+enseña un ciclo sin barra), estado **Configurando**, la mensualidad
+**emitida y sin pagar**, y **ningún acceso de cliente** todavía. Sus datos
+se escriben sin normalizar a propósito —CIF en minúsculas, web y Facebook
+sin esquema, Instagram con el `?hl=es` pegado— para que el sembrado
+ejercite la normalización de la 58 y el arreglo de la 59.
+
+**Aviso, porque costó encontrarlo:** la migración 58 metió `p_contact_name`
+en medio de `set_establishment_data()`, y la llamada del sembrado iba por
+posición. A partir de esa migración el archivo entero moría en esa línea
+con `El correo de contacto no tiene forma de correo: 910 123 456`, así que
+**el sembrado estuvo roto un día entero sin que nada lo dijera**: CI no lo
+ejecutaba. Ahora la llamada va por nombre (`p_x := …`) y CI lo ejecuta dos
+veces al final del job `rls-tests`, que es además la única comprobación
+real de que sigue siendo idempotente.
+
 ### Entrar con info@restavor.com
 
 Es el correo con el que se usa Cuotly de verdad: el de `CUOTLY_OWNER_EMAIL`

@@ -217,6 +217,28 @@ jobs:
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             node scripts/hito7-concurrency-test.mjs
 
+      # El sembrado NO es un test, pero se ejecuta aquí por lo que le pasó:
+      # la migración 58 metió un parámetro en medio de
+      # `set_establishment_data()` y la llamada de `espacio-demo.sql`, que
+      # iba por posición, pasó a mandar el teléfono donde se esperaba el
+      # correo. El archivo entero murió en esa línea y nadie se enteró,
+      # porque hasta ahora CI no lo ejecutaba nunca. Es además la única
+      # pieza que recorre las funciones de verdad de punta a punta —alta,
+      # plan, solicitudes, trabajos, cobros— y que se planta con una
+      # excepción cuando el resultado no es el que dice esperar.
+      #
+      # Dos veces, y no una: su cabecera promete que es idempotente, y esa
+      # promesa es lo que hace que se pueda volver a lanzar sobre el
+      # proyecto real sin pensarlo. Ejecutarlo una sola vez no la comprueba.
+      - name: "El espacio de demostración se siembra entero, y dos veces (es idempotente)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/seed/espacio-demo.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/seed/espacio-demo.sql
+
       - name: Parar Supabase
         if: always()
         run: supabase stop

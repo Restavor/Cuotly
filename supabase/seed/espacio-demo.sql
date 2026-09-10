@@ -32,7 +32,7 @@
 -- registrado en la aplicación; si no, lo dice y no falla. El porqué de no
 -- crearla está ahí escrito.
 --
--- Tres restaurantes, y la separación es deliberada:
+-- Cuatro restaurantes, y la separación es deliberada:
 --
 --   "Bar Demo" ..... el de los tests que LEEN (cuentan solicitudes, miran
 --                    la bolsa). No lo toca nadie.
@@ -43,6 +43,12 @@
 --                    que no sirve para juzgar si está bien resuelta. Este
 --                    llena las cinco pestañas y los cinco bloques de
 --                    Gestión. Ver la sección 9.
+--   "Casa Sol" ..... el recién dado de alta, y el único que entra por
+--                    `create_establishment_with_data()` en vez de por un
+--                    INSERT. Plan Básico (sin cambios incluidos),
+--                    Configurando, mensualidad sin pagar y sin ningún
+--                    acceso de cliente: los cuatro casos que a los otros
+--                    tres les faltan. Ver la sección 10 bis.
 --
 -- Los flujos NO se fabrican metiendo filas a mano en `requests`, `jobs` y
 -- `timer_events`: se ejecutan llamando a las mismas funciones que llama la
@@ -705,21 +711,33 @@ values ('d4000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-0000000
 -- `magarinos.es`, correos @cuotly.test para las cuentas— y el sitio web se
 -- escribe sin esquema a propósito: así el sembrado ejercita la
 -- normalización y la ficha enseña un enlace que se puede pulsar.
+--
+-- Los argumentos van POR NOMBRE, y eso no es estilo. Esta llamada estaba
+-- escrita por posición y la migración 58 metió `p_contact_name` en medio:
+-- el correo pasó a ser el nombre de contacto, el teléfono pasó a ser el
+-- correo, y el sembrado entero murió en esta línea con "El correo de
+-- contacto no tiene forma de correo: 910 123 456". Tuvo suerte de morir
+-- —si el campo que se corría hubiera sido otro, habría sembrado datos
+-- cambiados de sitio sin quejarse—. Por nombre, la próxima columna que se
+-- añada en medio no toca nada de esto.
 select public.set_establishment_data(
-  'd4000000-0000-0000-0000-000000000003',
-  'Magariños',
-  'Restauración Magariños, S.L.',
-  'B12345678',
-  'Calle Velázquez, 18',
-  '28001',
-  'Madrid',
-  'info@magarinos.es',
-  '910 123 456',
-  '620 987 654',
-  'www.magarinos.es',
-  'magarinos.es',
-  E'Lunes a Domingo\n13:00 – 16:00\n20:00 – 23:30',
-  'landing_site'
+  p_establishment_id := 'd4000000-0000-0000-0000-000000000003',
+  p_name             := 'Magariños',
+  p_legal_name       := 'Restauración Magariños, S.L.',
+  p_tax_id           := 'B12345678',
+  p_address          := 'Calle Velázquez, 18',
+  p_postal_code      := '28001',
+  p_city             := 'Madrid',
+  p_contact_name     := 'Nuria Ferreiro',
+  p_contact_email    := 'info@magarinos.es',
+  p_phone_primary    := '910 123 456',
+  p_phone_secondary  := '620 987 654',
+  p_website_url      := 'www.magarinos.es',
+  p_instagram        := 'instagram.com/magarinos',
+  p_facebook_url     := 'facebook.com/magarinos',
+  p_domain           := 'magarinos.es',
+  p_opening_hours    := E'Lunes a Domingo\n13:00 – 16:00\n20:00 – 23:30',
+  p_web_platform     := 'landing_site'
 );
 
 -- Dos accesos con permisos distintos: la propietaria local lo ve todo, y
@@ -1204,6 +1222,182 @@ begin
   raise notice 'Magariños sembrado: % solicitudes (1 por validar, con adjunto y propuesta), % trabajos (% publicados), bolsas %/%/%/%, % archivos con % versiones, % usuarios, mensualidad sin deuda',
     v_solicitudes, v_trabajos, v_publicados, v_pequenos, v_fotos, v_medianos, v_grandes,
     v_archivos, v_versiones, v_usuarios;
+end $$;
+
+-- ============================================================
+-- 10 bis · "Casa Sol": el cuarto restaurante, dado de alta por la puerta
+-- del alta.
+--
+-- Los tres de arriba entran con un INSERT sobre `establishments` (las
+-- secciones 3, 5 bis y 9.3), porque son anteriores a que existiera una
+-- función de alta. Este no: sale de `create_establishment_with_data()`
+-- (migración 58), que es exactamente lo que ejecuta la pantalla
+-- `/restaurantes/nuevo`, y con los cuatro bloques de la maqueta 02
+-- rellenos — datos generales, datos fiscales, contacto principal, y web y
+-- redes.
+--
+-- Para qué hace falta un cuarto, habiendo tres:
+--
+--   · Es el único de plan **Básico**, que no incluye ningún cambio
+--     (CLAUDE.md). El Resumen tiene así el caso que ninguno de los otros
+--     tres enseña: un ciclo cuya bolsa el plan no incluye, que NO pinta
+--     barra porque una barra al 0 % diría "te quedan todos", que es lo
+--     contrario de lo que pasa.
+--   · Es el único en **Configurando**. Un restaurante nace así (RN-EST-06,
+--     valor por omisión de la columna) y solo se mueve con
+--     `set_establishment_status()`; dejarlo tal cual es lo que deja el
+--     alta de verdad, y el filtro de estado del listado (§20.2) pasa a
+--     tener dos valores que separar en vez de uno.
+--   · Es el único con la mensualidad **sin pagar y sin vencer**.
+--     `create_plan_subscription()` emite la de RN-FIN-01 con vencimiento a
+--     `spaces.payment_term_days` (RN-FIN-01b); la de Café Prueba está
+--     pendiente pero el recorrido de CA-19 le registra el pago encima, así
+--     que el panel financiero se quedaba sin una deuda estable que
+--     enseñar.
+--   · No tiene ningún acceso de cliente, que es como queda un restaurante
+--     recién dado de alta: los usuarios se invitan después. El bloque
+--     Usuarios de la ficha enseña entonces "no hay nadie", que la pantalla
+--     distingue a propósito de "no se ha podido comprobar".
+--
+-- Los datos se escriben **sin normalizar, a propósito**: el CIF en
+-- minúsculas y con espacios, el correo con mayúsculas, la web y el
+-- Facebook sin esquema, y el Instagram como se copia de la barra del
+-- navegador, con su `?hl=es` pegado. Así el sembrado ejercita la
+-- normalización de la 58 y el arreglo de la 59 — el que guardaba
+-- `@instagram.com`, el host en vez del usuario — y si alguna de las dos se
+-- rompe, esto falla aquí y no en una pantalla dentro de un mes.
+--
+-- Y se llama DOS veces con la misma clave de idempotencia, porque es la
+-- forma de comprobar aquí lo que la pantalla protege: el segundo clic
+-- devuelve el mismo restaurante y no crea ni un segundo grupo.
+-- ============================================================
+do $$
+declare
+  v_space constant uuid := 'd1000000-0000-0000-0000-000000000001';
+  v_basico constant uuid := 'd2000000-0000-0000-0000-000000000001';
+  v_est uuid;
+  v_segundo_clic uuid;
+  v_grupos integer;
+  v_ficha public.establishments;
+  v_apuntes integer;
+  v_grupo_apuntes integer;
+  v_incluidos integer;
+  v_cobros integer;
+  v_deuda integer;
+  v_usuarios integer;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                      'role', 'authenticated')::text, false);
+
+  v_est := public.create_establishment_with_data(
+    p_space_id        := v_space,
+    p_name            := 'Casa Sol',
+    -- Por nombre y no por id: el grupo no existe todavía, y ese es el
+    -- camino que toma la pantalla cuando se escribe uno nuevo en vez de
+    -- elegirlo del desplegable. La función lo crea con su `group.created`.
+    p_group_name      := 'Grupo Casa Sol',
+    p_plan_id         := v_basico,
+    p_legal_name      := 'Sol y Sombra Restauración, S.L.',
+    p_tax_id          := ' b 87654321 ',
+    p_address         := 'Avenida de la Constitución, 24',
+    p_postal_code     := '41004',
+    p_city            := 'Sevilla',
+    p_contact_name    := 'Marta Ibáñez',
+    p_contact_email   := 'Reservas@CasaSol.es',
+    p_phone_primary   := '954 210 330',
+    p_website_url     := 'casasol.es',
+    p_instagram       := 'instagram.com/casasol?hl=es',
+    p_facebook_url    := 'facebook.com/casasol',
+    p_idempotency_key := 'semilla-casa-sol'
+  );
+
+  -- El segundo clic, con la misma clave. Va con los campos mínimos a
+  -- propósito: lo que tiene que devolver el mismo restaurante es la clave,
+  -- no que los datos coincidan.
+  v_segundo_clic := public.create_establishment_with_data(
+    p_space_id        := v_space,
+    p_name            := 'Casa Sol',
+    p_group_name      := 'Grupo Casa Sol',
+    p_plan_id         := v_basico,
+    p_idempotency_key := 'semilla-casa-sol'
+  );
+  if v_segundo_clic is distinct from v_est then
+    raise exception 'La clave de idempotencia no sirvió de nada: el segundo alta devolvió % y no %',
+      v_segundo_clic, v_est;
+  end if;
+
+  select count(*) into v_grupos
+  from public.groups where space_id = v_space and name = 'Grupo Casa Sol';
+  if v_grupos <> 1 then
+    raise exception 'Tenía que quedar 1 "Grupo Casa Sol" y quedan %', v_grupos;
+  end if;
+
+  -- La normalización de los cuatro bloques, leída de la columna.
+  select * into v_ficha from public.establishments where id = v_est;
+  if v_ficha.status <> 'configuring' then
+    raise exception 'Un restaurante recién dado de alta tenía que quedar en "configuring" y está en %',
+      v_ficha.status;
+  end if;
+  if (v_ficha.tax_id, v_ficha.contact_email, v_ficha.website_url,
+      v_ficha.instagram, v_ficha.facebook_url) is distinct from
+     ('B87654321', 'reservas@casasol.es', 'https://casasol.es',
+      '@casasol', 'https://facebook.com/casasol') then
+    raise exception 'La ficha de Casa Sol no se normalizó: CIF %, correo %, web %, Instagram %, Facebook %',
+      v_ficha.tax_id, v_ficha.contact_email, v_ficha.website_url,
+      v_ficha.instagram, v_ficha.facebook_url;
+  end if;
+  if (v_ficha.legal_name, v_ficha.address, v_ficha.postal_code, v_ficha.city,
+      v_ficha.contact_name, v_ficha.phone_primary) is distinct from
+     ('Sol y Sombra Restauración, S.L.', 'Avenida de la Constitución, 24', '41004', 'Sevilla',
+      'Marta Ibáñez', '954 210 330') then
+    raise exception 'Los bloques fiscal y de contacto de Casa Sol no se sembraron enteros';
+  end if;
+
+  -- Dos apuntes y no uno: el alta y la ficha son dos hechos distintos
+  -- (migración 58), y el segundo puede repetirse. Más el del grupo nuevo.
+  select count(*) into v_apuntes
+  from public.audit_log
+  where space_id = v_space and entity_type = 'establishment' and entity_id = v_est
+    and action in ('establishment.created', 'establishment.data_changed');
+  if v_apuntes <> 2 then
+    raise exception 'El alta con datos tenía que dejar 2 apuntes y dejó %', v_apuntes;
+  end if;
+
+  select count(*) into v_grupo_apuntes
+  from public.audit_log a
+  join public.groups g on g.id = a.entity_id
+  where a.space_id = v_space and a.action = 'group.created' and g.name = 'Grupo Casa Sol';
+  if v_grupo_apuntes <> 1 then
+    raise exception 'Crear el grupo tenía que dejar 1 apunte y dejó %', v_grupo_apuntes;
+  end if;
+
+  -- El plan Básico, por donde se ve: la bolsa del ciclo. Cero incluidos no
+  -- es un fallo del sembrado, es lo que el plan da (CLAUDE.md).
+  select included into v_incluidos
+  from public.establishment_cycle_allowance(v_est) where category = 'small';
+  if v_incluidos is distinct from 0 then
+    raise exception 'El plan Básico no incluye ningún cambio pequeño y la bolsa dice %', v_incluidos;
+  end if;
+
+  -- Y la mensualidad: 99 € + 21 % = 119,79 €, sin pagar.
+  select count(*) into v_cobros from public.charges where establishment_id = v_est;
+  if v_cobros <> 1 then
+    raise exception 'Se esperaba 1 mensualidad emitida para Casa Sol y hay %', v_cobros;
+  end if;
+  select coalesce(public.charge_outstanding_cents(id), 0) into v_deuda
+  from public.charges where establishment_id = v_est;
+  if v_deuda <> 11979 then
+    raise exception 'La mensualidad del Básico tenía que quedar en 11979 céntimos sin pagar y está en %', v_deuda;
+  end if;
+
+  select count(*) into v_usuarios from public.establishment_client_users(v_est);
+  if v_usuarios <> 0 then
+    raise exception 'Un restaurante recién dado de alta no tiene accesos todavía, y tiene %', v_usuarios;
+  end if;
+
+  raise notice 'Casa Sol sembrado por create_establishment_with_data(): % (Básico, Configurando, mensualidad de % céntimos sin pagar, sin accesos de cliente)',
+    v_ficha.code, v_deuda;
 end $$;
 
 -- ============================================================
