@@ -319,6 +319,24 @@ export const es = {
       medium: "Cambio mediano",
       large: "Cambio grande",
     },
+    /**
+     * RN-ASG-01 · las siete especialidades de `SPECIALTIES`
+     * (src/core/assignment.ts), que es de donde salen los valores.
+     *
+     * Se llaman igual aquí que en el desplegable de asignación y que en el
+     * historial: es el mismo criterio CA-21 que las categorías de arriba, y
+     * `naming.test.ts` falla si aparece una especialidad sin nombre o un
+     * nombre huérfano.
+     */
+    specialties: {
+      web: "Web",
+      design: "Diseño",
+      copy: "Textos",
+      seo: "SEO",
+      daily_menu: "Menú Diario",
+      analytics: "Analítica",
+      general: "General",
+    },
     states: {
       request: {
         draft: "Borrador",
@@ -944,6 +962,71 @@ export const es = {
       chargesEmptyTitle: "No hay ningún cobro pendiente",
       chargesEmptyReason: "Este restaurante no tiene ahora mismo ninguna deuda viva.",
       chargesOutstandingColumn: "Deuda viva",
+
+      // ----------------------------------------------------------------
+      // Maqueta 06 · lo que la ficha de ejecución dice de un trabajo.
+      // ----------------------------------------------------------------
+
+      // La fecha en que el restaurante aceptó. Sale de `acceptances`, que
+      // es el registro de la aceptación (RN-CLS-08), no de una columna del
+      // trabajo: el trabajo nace DE ella.
+      acceptedOn: (fecha: string) => `Aceptado el ${fecha}`,
+
+      // RN-ASG-01 · qué especialidad pide el trabajo. Se llama
+      // "Especialidad" y no "Tipo" a propósito: es el mismo campo que el
+      // historial ya nombra "Especialidad requerida", y dos nombres para
+      // lo mismo es cómo aparecieron "Completada" y "Hecha" para el mismo
+      // estado (salvedad 18 del ROADMAP).
+      specialtyLabel: "Especialidad",
+      specialtyNone: "Sin especialidad requerida",
+      specialtyNoneHint: "Cualquiera del equipo con acceso a este restaurante puede llevarlo.",
+
+      startedAtLabel: "Fecha de inicio",
+      startedAtNone: "Todavía no ha comenzado",
+
+      // La fecha de fin, con sus seis casos. Los distingue `jobEnd()` en
+      // src/core/job-execution.ts; aquí solo se les pone nombre. Ninguno
+      // es un hueco en blanco: CA-20 exige decir el motivo.
+      endLabel: "Fecha estimada de fin",
+      endPublishedLabel: "Fecha de publicación",
+      endPaused: "En pausa: se recalculará al reanudar",
+      endPausedHint:
+        "Un bloqueo conserva el tiempo restante (RN-SLA-14), así que la fecha se moverá tanto como dure la pausa.",
+      endNotStarted: "Sin fecha: el trabajo no ha comenzado",
+      endNotStartedHint: "Se podrá estimar al pulsar Comenzar.",
+      endCancelled: "Sin fecha: el trabajo se canceló",
+      endCancelledHint: "Un trabajo cancelado no tiene fin que estimar.",
+      endUnknown: "Sin fecha todavía",
+      endUnknownHint: "Sin categoría validada no hay plazo de ejecución que calcular (RN-SLA-12).",
+      endEstimatedHint: "Proyección del plazo de ejecución en el reloj laborable del espacio.",
+
+      // §66.2 · los comentarios internos, dentro de la ficha. Es la misma
+      // conversación de la bandeja, no una segunda: se pinta aquí porque
+      // es donde está quien coordina el trabajo.
+      commentsTitle: "Comentarios internos",
+      commentsEmptyTitle: "Todavía no hay comentarios",
+      commentsEmptyReason: "Nadie del equipo ha escrito aún sobre este trabajo.",
+      commentsClosedTitle: "Los comentarios no están abiertos",
+      commentsClosedReason:
+        "La conversación interna de este trabajo se crea la primera vez que alguien la abre.",
+      commentsOpen: "Abrir los comentarios internos",
+      commentsOpenPending: "Abriendo…",
+
+      // RN-JOB-10 · lo que se publicó, archivado con el trabajo. Los
+      // archivos salen de `file_links` (RN-ARC-02, "elemento
+      // relacionado"), no de una columna de `jobs`.
+      evidenceTitle: "Evidencia de publicación",
+      evidenceHint:
+        "Lo que quede aquí queda archivado con el trabajo: es la prueba de qué se publicó y cuándo.",
+      evidenceEmptyTitle: "No hay ninguna evidencia",
+      evidenceEmptyReason: "Nadie ha adjuntado todavía una captura ni un archivo de lo publicado.",
+      evidenceEmptyBeforePublishing:
+        "Se adjunta al publicar o después: todavía no hay nada que enseñar.",
+      evidenceAddLabel: "Adjuntar una evidencia",
+      evidenceAddSubmit: "Adjuntar",
+      evidenceAddPending: "Adjuntando…",
+      evidenceMissingFile: "Elige un archivo antes de adjuntarlo.",
+      evidenceDownload: "Descargar",
     },
 
     /**
@@ -983,6 +1066,10 @@ export const es = {
       },
       // El desglose, dentro del detalle del trabajo.
       breakdownTitle: "Tareas de este trabajo",
+      // Maqueta 06 · "Tareas (2/4)". Lo cancelado no entra en ninguno de
+      // los dos números: lo cuenta `taskProgress()` en
+      // src/core/job-execution.ts.
+      breakdownProgress: (hechas: number, total: number) => `${hechas}/${total}`,
       breakdownHint:
         "Las tareas son opcionales en un trabajo pequeño y recomendables en uno grande. El peso lo deduce el servidor de la duración que estimes.",
       breakdownEmptyTitle: "Este trabajo no está desglosado",
@@ -1841,6 +1928,7 @@ export const es = {
       "job.assigned": "Trabajo asignado",
       "job.blocked": "Trabajo bloqueado",
       "job.completed": "Trabajo terminado",
+      "job.evidence_attached": "Evidencia de publicación adjuntada",
       "job.published": "Trabajo publicado",
       "job.reassigned": "Trabajo reasignado",
       "job.reassignment_requested": "Reasignación pedida",

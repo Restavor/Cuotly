@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 10/09/2026), con las 58 migraciones del
+// (generate_typescript_types, 10/09/2026), con las 60 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -3852,6 +3852,10 @@ export type Database = {
       }
       attach_invoice_to_charge: {
         Args: { p_charge_id: string; p_file_id: string }
+        Returns: undefined
+      }
+      attach_job_evidence: {
+        Args: { p_file_id: string; p_job_id: string }
         Returns: undefined
       }
       audit_action_capability: { Args: { p_action: string }; Returns: string }

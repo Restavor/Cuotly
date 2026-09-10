@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { es } from "@/i18n/es";
+import { SPECIALTIES } from "./assignment";
 import { ALLOWED_MIME_TYPES } from "./files";
 import { ENTITY_KINDS, STATE_CATALOGUE, type StatefulEntity } from "./naming";
 
@@ -42,6 +43,18 @@ describe("CA-21 · un solo juego de nombres", () => {
       for (const [valor, nombre] of Object.entries(nombres)) {
         expect(nombre, `"${entity}.${valor}" sigue mostrando el valor crudo`).not.toMatch(/^[a-z][a-z0-9_]*$/);
       }
+    }
+  });
+
+  it("RN-ASG-01 · cada especialidad tiene nombre, y ninguno sobra", () => {
+    // La ficha de un trabajo (maqueta 06) enseña la especialidad que pide.
+    // Sin nombre, la fila diría "daily_menu"; un nombre huérfano es casi
+    // siempre el resto de una especialidad renombrada a medias.
+    expect(Object.keys(es.naming.specialties).sort()).toEqual([...SPECIALTIES].sort());
+    for (const [valor, nombre] of Object.entries(es.naming.specialties)) {
+      expect(nombre, `la especialidad "${valor}" sigue mostrando el valor crudo`).not.toMatch(
+        /^[a-z][a-z0-9_]*$/,
+      );
     }
   });
 

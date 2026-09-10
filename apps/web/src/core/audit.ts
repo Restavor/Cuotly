@@ -112,6 +112,7 @@ export const AUDIT_ACTIONS = [
   "job.assigned",
   "job.blocked",
   "job.completed",
+  "job.evidence_attached",
   "job.published",
   "job.reassigned",
   "job.reassignment_requested",

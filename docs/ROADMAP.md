@@ -2043,6 +2043,54 @@ regenerar salió idéntica, así que no había desviación.
     pantalla que se vea vacía por su culpa, y queda escrito aquí en vez de
     darlo por hecho.
 
+- [x] **Maqueta 06 · la evidencia de publicación** — migración 60,
+    `attach_job_evidence()` y `src/core/job-execution.ts`.
+
+    La ficha de un trabajo enseña lo que se publicó: la captura, el PDF, lo
+    que sea. No hace falta tabla nueva —RN-ARC-02 ya modela el "elemento
+    relacionado" en `file_links`, y `entity_type` admite `'job'` desde el
+    Hito 7—: lo que faltaba era la **puerta**. La única función que
+    escribía ahí para un trabajo era `link_file()`, que recibe el actor por
+    parámetro y no comprueba nada, porque es un ayudante interno de
+    `service_role`. Ofrecérsela a una pantalla habría dejado que cualquiera
+    enlazara cualquier archivo a cualquier trabajo diciendo ser quien
+    quisiera.
+
+    `attach_job_evidence()` comprueba cuatro cosas, y cada una tapa un
+    agujero concreto: quién (el responsable o `assign_jobs` — al
+    restaurante no, porque `can_read_job()` le deja ver la ficha de SU
+    trabajo a propósito y sin esto se habría convertido en permiso de
+    escritura por la puerta de atrás, P7); qué archivo (`can_read_file()`,
+    o un trabajador enlazaría una factura que no puede abrir y la leería
+    después por la ficha); de qué restaurante (`file_links` no tiene
+    ninguna columna que lo impida, así que lo impide la función o nadie); y
+    que dos veces no duplique — ni el enlace ni el apunte, porque un
+    `insert` que no inserta y aun así audita es una auditoría que miente.
+
+    **La fecha estimada de fin no se dice cuando el contador está en
+    pausa.** Es una afirmación sobre el futuro que deja de ser cierta en
+    cuanto el trabajo se bloquea: el tiempo restante se conserva y la fecha
+    se desplaza sola (RN-JOB-08, RN-SLA-14). Y una tarea **cancelada no
+    cuenta en ninguno de los dos números** del desglose: si contara en el
+    total, un trabajo con dos hechas y dos canceladas se leería "2/4" y
+    parecería a medias cuando no queda nada por hacer.
+
+    **La suite que su cabecera prometía ahora existe.** La migración decía
+    "se comprueba con `supabase/tests/evidencia_de_publicacion.sql`" y el
+    archivo no estaba: habría sido la **séptima** vez en el proyecto que
+    una garantía escrita en un comentario resulta no estar implementada.
+    Cubre los seis casos —responsable sí, administrador sí, otro trabajador
+    no, restaurante no, archivo ajeno no, dos veces no duplica— más los
+    privilegios. Comprobada con mutación quirúrgica: quitarle a la función
+    solo la comprobación del restaurante hace fallar su aserción, y con la
+    auditoría fuera falla la de idempotencia.
+
+    **Lo que NO entrega:**
+
+    - **No se desenlaza.** CLAUDE.md prohíbe el borrado físico de registros
+      de negocio y una evidencia enlazada es exactamente eso.
+    - **Sin recorrido de Playwright ejecutado.**
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

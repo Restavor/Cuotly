@@ -1,9 +1,14 @@
-import { contractualCalendar, holidaysKnownAsOf, type HolidayRecord } from "@/core/business-clock";
+import {
+  addBusinessMinutes,
+  contractualCalendar,
+  holidaysKnownAsOf,
+  type HolidayRecord,
+} from "@/core/business-clock";
 import type { ChangeCategory } from "@/core/consumption-ledger";
 import { JOB_LOAD_POINTS } from "@/core/load-points";
 import { jobDeadlineCondition, t2Status, t3Status, type CounterStatus } from "@/core/sla-timers";
 import type { JobState } from "@/core/job-states";
-import type { TimerEvent, TimerEventType } from "@/core/timer-events";
+import { isCounterRunning, type TimerEvent, type TimerEventType } from "@/core/timer-events";
 import type { createClient } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -33,6 +38,20 @@ export interface JobTimers {
   readonly counter: "t2" | "t3" | null;
   /** RN-ASG-04 · lo que este trabajo pesa en la carga de quien lo lleva. */
   readonly loadPoints: number | null;
+  /** `true` si T3 llegó a arrancar alguna vez. Lo dice su libro de eventos, no el estado. */
+  readonly t3Started: boolean;
+  /**
+   * Maqueta 06 · cuándo vencería T3 si el contador siguiera corriendo,
+   * medido en el reloj laborable del espacio (no en horas naturales: 48 h
+   * laborables desde un viernes no son el domingo).
+   *
+   * Es `null` en cuanto el contador NO corre —en pausa, bloqueado o ya
+   * parado—, porque entonces la fecha se desplazaría sola y afirmarla
+   * sería mentir (RN-SLA-14). Quién traduce ese `null` a un motivo legible
+   * es `jobEnd()` en `src/core/job-execution.ts`, que distingue los seis
+   * casos; aquí solo se calcula el instante.
+   */
+  readonly t3DeadlineAt: Date | null;
 }
 
 function toTimerEvents(
@@ -124,6 +143,29 @@ export async function loadJobTimers(
     t3: t3 ?? undefined,
   });
 
+  // Maqueta 06 · "Fecha estimada de fin". Se proyecta desde AHORA con los
+  // minutos laborables que quedan, y solo mientras el contador corra: en
+  // pausa, `remainingMinutes` se conserva (RN-SLA-14) y sumárselo a "ahora"
+  // daría una fecha distinta en cada recarga.
+  //
+  // El calendario se construye con los festivos conocidos cuando arrancó
+  // T3, igual que el que usó `t3Status()` para medirlo: dos calendarios
+  // distintos para el mismo contador darían un plazo y una fecha que no
+  // coinciden (RN-CLK-10).
+  const t3StartedAt =
+    t3Events.length === 0
+      ? null
+      : t3Events.map((e) => e.occurredAt).reduce((a, b) => (a < b ? a : b));
+
+  const t3DeadlineAt =
+    t3 === null || t3StartedAt === null || !isCounterRunning(t3Events)
+      ? null
+      : addBusinessMinutes(
+          now,
+          t3.remainingMinutes,
+          contractualCalendar(timezone, holidaysKnownAsOf(holidays, t3StartedAt)),
+        );
+
   return {
     t2,
     // T2 se cierra al comenzar: a partir de ahí lo que corre es T3, y el
@@ -133,5 +175,7 @@ export async function loadJobTimers(
     outOfDeadline: condition.outOfDeadline,
     counter: condition.counter,
     loadPoints: job.category === null ? null : JOB_LOAD_POINTS[job.category as ChangeCategory],
+    t3Started: t3Events.length > 0,
+    t3DeadlineAt,
   };
 }

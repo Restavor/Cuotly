@@ -96,3 +96,23 @@ export function eventsSinceLastStart(events: readonly TimerEvent[]): readonly Ti
   const lastStartIndex = ordered.map((event) => event.type).lastIndexOf("started");
   return lastStartIndex === -1 ? [] : ordered.slice(lastStartIndex);
 }
+
+/**
+ * ¿Está el contador corriendo ahora mismo?
+ *
+ * Lo dice el último evento del libro: `started` y `resumed` dejan un tramo
+ * abierto; `paused` y `stopped` lo cierran. Sin eventos no hay contador
+ * que correr.
+ *
+ * Se necesita para no proyectar una fecha de fin sobre un contador
+ * detenido: `remainingMinutes` sigue teniendo un valor perfectamente
+ * calculado mientras el trabajo está bloqueado (RN-SLA-14 conserva el
+ * tiempo restante), así que sumárselo a "ahora" daría una fecha que se
+ * desplaza sola cada minuto que pasa la pausa.
+ */
+export function isCounterRunning(events: readonly TimerEvent[]): boolean {
+  const ordered = orderedEvents(events);
+  const last = ordered[ordered.length - 1];
+  if (!last) return false;
+  return last.type === "started" || last.type === "resumed";
+}

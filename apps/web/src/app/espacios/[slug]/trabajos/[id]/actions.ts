@@ -175,3 +175,52 @@ export async function openJobInternalConversation(
 
   redirect(`/espacios/${slug}/mensajes/${conversationId}`);
 }
+
+/**
+ * §66.2 · abrir los comentarios internos SIN salir de la ficha.
+ *
+ * Es la misma función y la misma conversación que
+ * `openJobInternalConversation`, con una diferencia: no redirige a la
+ * bandeja, revalida esta pantalla para que el hilo aparezca donde lo pone
+ * la maqueta 06, debajo del trabajo del que se habla.
+ *
+ * Sigue siendo un botón y no una creación al mirar la ficha: crear una
+ * conversación interna por cada trabajo que alguien abre de pasada
+ * llenaría la bandeja de hilos vacíos, y mirar no debería escribir nada.
+ */
+export async function openJobCommentsHere(
+  _prev: JobActionState,
+  formData: FormData,
+): Promise<JobActionState> {
+  const jobId = String(formData.get("jobId") ?? "");
+  if (!jobId) return { error: null, done: false };
+
+  return run((s) => s.rpc("get_or_create_job_conversation", { p_job_id: jobId }));
+}
+
+/**
+ * Maqueta 06 · adjuntar la evidencia de lo publicado (RN-JOB-10).
+ *
+ * El archivo ya está subido y registrado cuando esta acción corre:
+ * `FileUploadField` lo sube al bucket con una URL firmada y lo registra
+ * con `register_file()`, y por aquí solo viaja su identificador. Lo que
+ * hace falta todavía es enlazarlo al trabajo, y eso lo decide
+ * `attach_job_evidence()` (migración 60): que quien adjunta sea el
+ * responsable o un administrador, que pueda ver el archivo y que el
+ * archivo sea del mismo restaurante. Aquí no se comprueba ninguna de las
+ * tres (CLAUDE.md MUST).
+ */
+export async function attachJobEvidence(
+  _prev: JobActionState,
+  formData: FormData,
+): Promise<JobActionState> {
+  const jobId = String(formData.get("jobId") ?? "");
+  const fileId = String(formData.get("fileId") ?? "");
+
+  // Sin archivo no hay nada que adjuntar, y el motivo se dice: el campo
+  // llega vacío cuando la subida falló o cuando nadie eligió nada, y un
+  // formulario que no hace nada sin decir por qué parece roto.
+  if (!fileId) return { error: es.teamArea.jobs.evidenceMissingFile, done: false };
+
+  return run((s) => s.rpc("attach_job_evidence", { p_file_id: fileId, p_job_id: jobId }));
+}
