@@ -117,7 +117,7 @@ export default async function EstablishmentPage({
     const base = `/espacios/${slug}/restaurantes/${id}`;
     const [summary, operation, counts, payments, users, files, history] = await Promise.all([
       loadSheetSummary(supabase, space.id, slug, id),
-      loadSheetOperation(supabase, id),
+      loadSheetOperation(supabase, slug, id),
       loadSheetCounts(supabase, id),
       loadSheetPayments(supabase, id),
       loadSheetUsers(supabase, id),

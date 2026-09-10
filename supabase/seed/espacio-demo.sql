@@ -1054,6 +1054,78 @@ begin
     'image/jpeg', 2621440, 'published');
 end $$;
 
+-- 9.6 bis · Un trabajo desglosado en tareas (§11.2, HU-21).
+--
+-- Hasta aquí el sembrado no creaba ni una tarea, y eso dejaba dos cosas
+-- sin sembrar: la tarjeta "Tareas" de la Operación de la ficha (vista 04),
+-- que salía vacía en los cuatro restaurantes, y `create_job_task()`, que
+-- ninguna parte del recorrido llamaba — van cinco veces que una función
+-- del servidor resulta no tener a nadie que la use.
+--
+-- El trabajo elegido es el reportaje de las tapas: RN-JOB-02 recomienda
+-- desglosar los grandes, y un reportaje fotográfico se parte solo en
+-- seleccionar, retocar, subir y revisar.
+--
+-- Las seis tareas cubren los cuatro estados que la tarjeta distingue —una
+-- terminada que NO tiene que salir, una en curso, una bloqueada, tres
+-- pendientes— y son una más de las cuatro que la tarjeta enseña, para que
+-- la línea "y 1 más" tenga algo que contar. Ninguna se escribe con un
+-- INSERT: pasan por `create_job_task()` y `update_task_state()`, que son
+-- las que hacen cumplir RN-ASG-16 (más de 4 h se divide), RN-ASG-01 (no
+-- se reparte a quien no tiene el restaurante autorizado) y las
+-- transiciones de TASK_TRANSITIONS. Sembrar así comprueba de paso que las
+-- puertas funcionan.
+do $$
+declare
+  v_owner constant text := 'd0000000-0000-0000-0000-000000000001';
+  v_marta constant uuid := 'd0000000-0000-0000-0000-000000000002';
+  v_diego constant uuid := 'd0000000-0000-0000-0000-000000000007';
+  v_est   constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_job uuid;
+  v_task uuid;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_owner, 'role', 'authenticated')::text, false);
+
+  -- El trabajo se busca por la solicitud que lo originó y no por un uuid
+  -- escrito a mano: los códigos los reparte la base y cambian con cada
+  -- sembrado.
+  select j.id into v_job
+  from public.jobs j
+  join public.requests r on r.id = j.request_id
+  where j.establishment_id = v_est
+    and r.description = 'Reportaje de las tapas de temporada.'
+    and j.state = 'in_progress';
+
+  if v_job is null then
+    raise exception 'El reportaje de las tapas tenía que estar en curso para poder desglosarlo';
+  end if;
+
+  -- Terminada. Es la que demuestra que la tarjeta enseña lo que queda por
+  -- hacer y no el histórico: si apareciera, sobraría.
+  v_task := public.create_job_task(v_job, 'Seleccionar las fotografías del reportaje', 90, v_diego);
+  perform public.update_task_state(v_task, 'in_progress');
+  perform public.update_task_state(v_task, 'completed');
+
+  -- En curso. Es la que la tarjeta pone primero, por delante de las
+  -- pendientes, aunque sea la más antigua de las cinco vivas.
+  v_task := public.create_job_task(v_job, 'Retocar las fotografías seleccionadas', 120, v_diego);
+  perform public.update_task_state(v_task, 'in_progress');
+
+  -- Bloqueada: se empezó y hay alguien esperando, así que va por delante
+  -- de lo pendiente. Se llega a `blocked` desde `in_progress`, que es lo
+  -- único que TASK_TRANSITIONS admite.
+  v_task := public.create_job_task(v_job, 'Subir las fotografías a la galería', 60, v_marta);
+  perform public.update_task_state(v_task, 'in_progress');
+  perform public.update_task_state(v_task, 'blocked');
+
+  -- Pendientes. La última sin repartir, que es el caso que la fila enseña
+  -- como "Sin repartir" en vez de dejar el hueco.
+  perform public.create_job_task(v_job, 'Escribir los pies de foto', 45, v_marta);
+  perform public.create_job_task(v_job, 'Comprobar los enlaces de la galería', 30, v_diego);
+  perform public.create_job_task(v_job, 'Revisar el crédito del fotógrafo', 15, null);
+end $$;
+
 -- 9.7 · La mensualidad, pagada.
 --
 -- El cobro no se emite aquí: lo emitió `create_plan_subscription()` al dar
@@ -1110,6 +1182,9 @@ declare
   v_grandes integer;
   v_archivos integer;
   v_versiones integer;
+  v_tareas integer;
+  v_tareas_vivas integer;
+  v_estados_tarea integer;
   v_usuarios integer;
   v_deuda integer;
   v_por_validar integer;
@@ -1172,6 +1247,32 @@ begin
     raise exception 'La solicitud pendiente de validar tenía que tener 1 propuesta y tiene %', v_propuestas;
   end if;
 
+  -- Las tareas de la vista 04: seis en el reportaje, cinco vivas y una
+  -- terminada. La cuenta importa porque la tarjeta enseña cuatro y dice
+  -- "y 1 más": con cinco vivas esa línea tiene algo que contar, y con
+  -- cuatro se quedaría muda sin que fallara nada.
+  select count(*) into v_tareas from public.tasks where establishment_id = v_est;
+  if v_tareas <> 6 then
+    raise exception 'Se esperaban 6 tareas en Magariños y hay %', v_tareas;
+  end if;
+
+  select count(*) into v_tareas_vivas
+  from public.tasks
+  where establishment_id = v_est and state in ('pending', 'in_progress', 'blocked');
+  if v_tareas_vivas <> 5 then
+    raise exception 'Se esperaban 5 tareas abiertas y hay %', v_tareas_vivas;
+  end if;
+
+  -- Y que los tres estados abiertos estén representados: si las cinco
+  -- fueran pendientes, el orden de la tarjeta —lo avanzado primero— no lo
+  -- estaría comprobando nadie.
+  select count(distinct state) into v_estados_tarea
+  from public.tasks
+  where establishment_id = v_est and state in ('pending', 'in_progress', 'blocked');
+  if v_estados_tarea <> 3 then
+    raise exception 'Las tareas abiertas tenían que cubrir los 3 estados y cubren %', v_estados_tarea;
+  end if;
+
   -- §15.2 · la ficha, y en concreto la normalización de la sección 9.3.b:
   -- el sitio web se sembró sin esquema y tiene que haberse guardado con
   -- él, o el enlace de la pantalla no llevaría a ninguna parte.
@@ -1219,8 +1320,9 @@ begin
     raise exception 'La mensualidad de Magariños tenía que quedar pagada y quedan % céntimos', v_deuda;
   end if;
 
-  raise notice 'Magariños sembrado: % solicitudes (1 por validar, con adjunto y propuesta), % trabajos (% publicados), bolsas %/%/%/%, % archivos con % versiones, % usuarios, mensualidad sin deuda',
-    v_solicitudes, v_trabajos, v_publicados, v_pequenos, v_fotos, v_medianos, v_grandes,
+  raise notice 'Magariños sembrado: % solicitudes (1 por validar, con adjunto y propuesta), % trabajos (% publicados), % tareas (% abiertas), bolsas %/%/%/%, % archivos con % versiones, % usuarios, mensualidad sin deuda',
+    v_solicitudes, v_trabajos, v_publicados, v_tareas, v_tareas_vivas,
+    v_pequenos, v_fotos, v_medianos, v_grandes,
     v_archivos, v_versiones, v_usuarios;
 end $$;
 

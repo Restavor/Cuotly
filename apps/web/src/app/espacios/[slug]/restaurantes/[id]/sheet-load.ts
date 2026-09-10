@@ -1,6 +1,14 @@
 import type { CycleBag, EstablishmentIdentity } from "@/core/establishments";
 import type { AttentionItem } from "@/core/home";
-import { LIVE_JOB_STATES, groupAttentionByEstablishment, pickCurrentJob } from "@/core/establishments";
+import {
+  LIVE_JOB_STATES,
+  OPERATION_CARD_ROWS,
+  firstRows,
+  groupAttentionByEstablishment,
+  pickCurrentJob,
+  sortOpenTasks,
+  type CardRows,
+} from "@/core/establishments";
 import type { EstablishmentState } from "@/core/naming";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -351,49 +359,207 @@ export async function loadSheetSummary(
 }
 
 // ---------------------------------------------------------------------
-// Operación
+// Operación (vista 04)
 // ---------------------------------------------------------------------
 
+/**
+ * Una solicitud del restaurante, con quién la escribió y cuándo.
+ *
+ * El autor es el dato que la maqueta pone debajo del título ("Marta ·
+ * Hoy, 10:24") y no es decorativo: dos solicitudes del mismo día se
+ * distinguen por quién las pidió. Cuando no se puede resolver el nombre
+ * —RLS no deja ver ese perfil— viaja `null` y la fila enseña solo la
+ * fecha, nunca un uuid.
+ */
+export interface SheetOperationRequest {
+  readonly id: string;
+  readonly code: string;
+  readonly description: string;
+  readonly state: string;
+  readonly createdAt: string;
+  readonly authorName: string | null;
+  readonly deepLink: string;
+}
+
+/**
+ * Una tarea abierta del restaurante (§11.2, HU-21).
+ *
+ * `deepLink` lleva al trabajo del que cuelga, que es donde se opera con
+ * ella: no hay pantalla de detalle de tarea. Una actividad interna
+ * independiente (`job_id` nulo, §3) no lleva a ninguna parte, y entonces
+ * la fila no es un enlace en vez de ser un enlace roto.
+ */
+export interface SheetOperationTask {
+  readonly id: string;
+  readonly title: string;
+  readonly state: string;
+  readonly weight: string;
+  readonly estimatedMinutes: number;
+  readonly assigneeName: string | null;
+  readonly jobCode: string | null;
+  readonly deepLink: string | null;
+}
+
+/**
+ * Las tres listas de la vista 04, ya cortadas a lo que cabe en su tarjeta
+ * y con la cuenta de lo que queda detrás (`firstRows`, `src/core`).
+ *
+ * Se cortan **aquí** y no al pintar por un motivo que se ve en los
+ * trabajos: el plazo de cada uno se recalcula desde sus eventos con
+ * `loadJobTimers()`, y traerlo de los quince trabajos vivos para enseñar
+ * cuatro serían cuarenta consultas que nadie va a leer.
+ */
 export interface SheetOperation {
-  readonly requests: readonly {
-    readonly id: string;
-    readonly code: string;
-    readonly description: string;
-    readonly state: string;
-    readonly created_at: string;
-  }[];
-  readonly jobs: readonly {
-    readonly id: string;
-    readonly code: string;
-    readonly state: string;
-    readonly created_at: string;
-  }[];
+  readonly requests: CardRows<SheetOperationRequest>;
+  readonly jobs: CardRows<SheetCurrentJob>;
+  readonly tasks: CardRows<SheetOperationTask>;
 }
 
 /** Los estados que ya no están vivos: una solicitud cerrada no es "abierta". */
 const CLOSED_REQUEST_STATES = ["closed", "rejected", "cancelled_before_start", "cancelled_after_start"];
 const CLOSED_JOB_STATES = ["completed", "cancelled_before_start", "cancelled_after_start"];
 
-export async function loadSheetOperation(
+/**
+ * Los nombres de quienes aparecen en la Operación: autores de solicitudes
+ * y responsables de tareas.
+ *
+ * Hacen falta **dos** fuentes y no una, y es la misma asimetría que la
+ * pestaña Usuarios: `profiles_select` deja ver a quien comparte espacio
+ * —el equipo—, pero un cliente no es miembro del espacio, así que su
+ * nombre solo llega por `establishment_client_users()`, que comprueba el
+ * permiso por su cuenta. Sin la segunda consulta, "Marta · Hoy, 10:24"
+ * sería un hueco justo en las solicitudes que escribe el restaurante.
+ *
+ * Lo que no se resuelve **no se rellena con el uuid**: un identificador en
+ * la pantalla no le dice a nadie quién pidió el cambio (CA-20).
+ */
+async function loadPeopleNames(
   supabase: Supabase,
   establishmentId: string,
-): Promise<SheetOperation> {
-  const [{ data: requests }, { data: jobs }] = await Promise.all([
-    supabase
-      .from("requests")
-      .select("id, code, description, state, created_at")
-      .eq("establishment_id", establishmentId)
-      .not("state", "in", `(${CLOSED_REQUEST_STATES.join(",")})`)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("jobs")
-      .select("id, code, state, created_at")
-      .eq("establishment_id", establishmentId)
-      .not("state", "in", `(${CLOSED_JOB_STATES.join(",")})`)
-      .order("created_at", { ascending: false }),
+  ids: readonly string[],
+): Promise<ReadonlyMap<string, string>> {
+  const buscados = [...new Set(ids)];
+  if (buscados.length === 0) return new Map();
+
+  const [{ data: profiles }, { data: clientUsers }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, email").in("id", buscados),
+    supabase.rpc("establishment_client_users", { p_establishment_id: establishmentId }),
   ]);
 
-  return { requests: requests ?? [], jobs: jobs ?? [] };
+  const nombres = new Map<string, string>();
+  for (const person of profiles ?? []) {
+    const nombre = person.full_name?.trim() || person.email;
+    if (nombre) nombres.set(person.id, nombre);
+  }
+  for (const person of clientUsers ?? []) {
+    if (!buscados.includes(person.user_id)) continue;
+    const nombre = person.display_name?.trim() || person.email;
+    if (nombre) nombres.set(person.user_id, nombre);
+  }
+  return nombres;
+}
+
+export async function loadSheetOperation(
+  supabase: Supabase,
+  spaceSlug: string,
+  establishmentId: string,
+  now: Date = new Date(),
+): Promise<SheetOperation> {
+  // Las tres consultas ordenan por fecha y **desempatan por `id`**. El
+  // desempate no es adorno: `created_at` vale `now()`, que en PostgreSQL es
+  // la hora de la TRANSACCIÓN, así que todo lo que se crea de una vez
+  // —las seis tareas del reportaje sembradas en un mismo bloque, o dos
+  // solicitudes enviadas en la misma llamada— comparte fecha al segundo.
+  // Sin desempate, esas filas empatadas salen en el orden físico de la
+  // tabla y la tarjeta puede enseñar unas u otras entre dos recargas, con
+  // "y 1 más" escondiendo cada vez una distinta.
+  const [{ data: requests }, { data: jobs }, { data: tasks }] = await Promise.all([
+    supabase
+      .from("requests")
+      .select("id, code, description, state, created_by, created_at")
+      .eq("establishment_id", establishmentId)
+      .not("state", "in", `(${CLOSED_REQUEST_STATES.join(",")})`)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false }),
+    supabase
+      .from("jobs")
+      .select("id, code, space_id, state, category, request_id, created_at")
+      .eq("establishment_id", establishmentId)
+      .not("state", "in", `(${CLOSED_JOB_STATES.join(",")})`)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false }),
+    // Las tareas las filtra `tasks_select`: quien tiene 'assign_jobs' ve
+    // las del espacio y un trabajador solo las suyas y las de sus trabajos
+    // autorizados (§4.3). Aquí no se comprueba nada de eso, y por eso la
+    // tarjeta vacía dice "las que te dejan ver" y no "no hay ninguna".
+    supabase
+      .from("tasks")
+      .select("id, title, state, weight, estimated_minutes, assignee_id, job_id, created_at")
+      .eq("establishment_id", establishmentId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false }),
+  ]);
+
+  // El orden de las tareas lo decide `sortOpenTasks()` (src/core), no la
+  // consulta: lo avanzado va antes que lo que espera, y lo terminado no
+  // entra en la tarjeta.
+  const abiertas = sortOpenTasks(tasks ?? []);
+
+  const filasSolicitudes = firstRows(requests ?? [], OPERATION_CARD_ROWS);
+  const filasTrabajos = firstRows(jobs ?? [], OPERATION_CARD_ROWS);
+  const filasTareas = firstRows(abiertas, OPERATION_CARD_ROWS);
+
+  const jobIds = filasTareas.shown.map((task) => task.job_id).filter((id): id is string => id !== null);
+  const [nombres, { data: jobCodes }] = await Promise.all([
+    loadPeopleNames(supabase, establishmentId, [
+      ...filasSolicitudes.shown.map((request) => request.created_by),
+      ...filasTareas.shown.map((task) => task.assignee_id).filter((id): id is string => id !== null),
+    ]),
+    jobIds.length === 0
+      ? Promise.resolve({ data: [] as { id: string; code: string }[] })
+      : supabase.from("jobs").select("id, code").in("id", jobIds),
+  ]);
+
+  const codigoDelTrabajo = new Map((jobCodes ?? []).map((job) => [job.id, job.code]));
+
+  return {
+    requests: {
+      hidden: filasSolicitudes.hidden,
+      shown: filasSolicitudes.shown.map((request) => ({
+        id: request.id,
+        code: request.code,
+        description: request.description,
+        state: request.state,
+        createdAt: request.created_at,
+        authorName: nombres.get(request.created_by) ?? null,
+        deepLink: `/espacios/${spaceSlug}/solicitudes/${request.id}`,
+      })),
+    },
+    // El plazo de cada trabajo sale de `currentJobFrom()`, la misma función
+    // que usa el Resumen: dos pantallas de la misma ficha no pueden decir
+    // horas distintas del mismo contador (CA-10).
+    jobs: {
+      hidden: filasTrabajos.hidden,
+      shown: await Promise.all(
+        filasTrabajos.shown.map((job) =>
+          currentJobFrom(supabase, spaceSlug, establishmentId, job, now),
+        ),
+      ),
+    },
+    tasks: {
+      hidden: filasTareas.hidden,
+      shown: filasTareas.shown.map((task) => ({
+        id: task.id,
+        title: task.title,
+        state: task.state,
+        weight: task.weight,
+        estimatedMinutes: task.estimated_minutes,
+        assigneeName: task.assignee_id === null ? null : (nombres.get(task.assignee_id) ?? null),
+        jobCode: task.job_id === null ? null : (codigoDelTrabajo.get(task.job_id) ?? null),
+        deepLink: task.job_id === null ? null : `/espacios/${spaceSlug}/trabajos/${task.job_id}`,
+      })),
+    },
+  };
 }
 
 // ---------------------------------------------------------------------

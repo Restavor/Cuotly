@@ -5,9 +5,12 @@ import {
   currentJobDeadline,
   CYCLE_CATEGORY_ORDER,
   cycleUsage,
+  firstRows,
   groupAttentionByEstablishment,
   LIVE_JOB_STATES,
+  OPEN_TASK_STATES,
   pickCurrentJob,
+  sortOpenTasks,
   matchesFilters,
   NO_PLAN_FILTER,
   parseFilters,
@@ -18,7 +21,7 @@ import {
   type FilterableEstablishment,
 } from "./establishments";
 import { CHANGE_CATEGORIES } from "./classification-rules";
-import { JOB_STATES } from "./job-states";
+import { JOB_STATES, TASK_STATES } from "./job-states";
 import { ESTABLISHMENT_STATES } from "./naming";
 
 const item = (
@@ -258,5 +261,68 @@ describe("maqueta 03 · qué plazo enseña la tarjeta del trabajo", () => {
     expect(currentJobDeadline({ overdue: false, counter: "t2", remainingMinutes: null })).toEqual({
       kind: "none",
     });
+  });
+});
+
+describe("vista 04 · qué tareas enseña la Operación de la ficha", () => {
+  const task = (state: string, id: string) => ({ state, id });
+
+  it("la que ya está en curso va antes que la que espera", () => {
+    // Las filas llegan por fecha descendente, así que la pendiente recién
+    // creada llega primero. Lo que está pasando ahora es la otra.
+    const orden = sortOpenTasks([task("pending", "nueva"), task("in_progress", "en-curso")]);
+    expect(orden.map((t) => t.id)).toEqual(["en-curso", "nueva"]);
+  });
+
+  it("una tarea bloqueada pesa más que una pendiente", () => {
+    // Bloqueada quiere decir que ya se empezó y que hay alguien esperando;
+    // pendiente todavía no ha movido a nadie.
+    const orden = sortOpenTasks([task("pending", "p"), task("blocked", "b")]);
+    expect(orden.map((t) => t.id)).toEqual(["b", "p"]);
+  });
+
+  it("dentro del mismo estado se conserva el orden de la consulta", () => {
+    const orden = sortOpenTasks([task("pending", "a"), task("pending", "b")]);
+    expect(orden.map((t) => t.id)).toEqual(["a", "b"]);
+  });
+
+  it("lo terminado y lo cancelado no entra en la tarjeta", () => {
+    // La tarjeta enseña lo que queda por hacer. El histórico entero está
+    // en el destino "Tareas" del menú del espacio.
+    const orden = sortOpenTasks([
+      task("completed", "hecha"),
+      task("cancelled", "anulada"),
+      task("pending", "viva"),
+    ]);
+    expect(orden.map((t) => t.id)).toEqual(["viva"]);
+  });
+
+  it("todos los estados abiertos son estados de tarea de verdad", () => {
+    // Uno mal escrito no fallaría solo: la tarjeta se quedaría vacía para
+    // siempre y diría "no hay tareas abiertas" con la lista llena.
+    for (const state of OPEN_TASK_STATES) {
+      expect(TASK_STATES, `${state} no es un estado de tarea`).toContain(state);
+    }
+  });
+
+  it("ningún estado terminal se cuela entre los abiertos", () => {
+    for (const state of ["completed", "cancelled"]) {
+      expect(OPEN_TASK_STATES as readonly string[]).not.toContain(state);
+    }
+  });
+});
+
+describe("vista 04 · lo que cabe en una tarjeta y lo que queda detrás", () => {
+  it("cuenta lo que no enseña, para que la tarjeta pueda decirlo", () => {
+    // Enseñar uno de seis sin avisar es esconder cinco (CA-20).
+    expect(firstRows([1, 2, 3, 4, 5, 6], 4)).toEqual({ shown: [1, 2, 3, 4], hidden: 2 });
+  });
+
+  it("con menos filas que el límite no hay nada detrás", () => {
+    expect(firstRows([1, 2], 4)).toEqual({ shown: [1, 2], hidden: 0 });
+  });
+
+  it("sin filas, ni tarjeta ni resto", () => {
+    expect(firstRows([], 4)).toEqual({ shown: [], hidden: 0 });
   });
 });

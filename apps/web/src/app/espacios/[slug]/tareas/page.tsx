@@ -13,6 +13,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
 import { TASK_LOAD_POINTS, loadLevel, type TaskWeight } from "@/core/load-points";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -41,15 +42,34 @@ function taskTone(state: string): "success" | "warning" | "info" | "neutral" | "
   return "neutral";
 }
 
+/**
+ * La dirección de un filtro de esta pantalla, conservando el restaurante.
+ *
+ * Sin conservarlo, pulsar "Abiertas" con el filtro de un restaurante
+ * puesto devuelve las tareas de todos: quien llegó desde la ficha de
+ * Magariños se encuentra las de los demás restaurantes sin haber pedido
+ * nada.
+ */
+function tareasHref(slug: string, filtro: string | undefined, restaurante: string | undefined): string {
+  const params = new URLSearchParams();
+  if (filtro !== undefined) params.set("filtro", filtro);
+  if (restaurante !== undefined) params.set("restaurante", restaurante);
+  const query = params.toString();
+  return query === "" ? `/espacios/${slug}/tareas` : `/espacios/${slug}/tareas?${query}`;
+}
+
 export default async function TeamTasksPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ filtro?: string }>;
+  searchParams: Promise<{ filtro?: string; restaurante?: string }>;
 }) {
   const { slug } = await params;
-  const { filtro } = await searchParams;
+  // `restaurante` es a donde llega el enlace "Ver todas" de la Operación
+  // de la ficha (vista 04); convive con `filtro`, que es el de la propia
+  // pantalla. Los dos recortan filas que RLS ya dejó pasar.
+  const { filtro, restaurante } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -93,12 +113,15 @@ export default async function TeamTasksPage({
 
   // Los tres filtros son de presentación y se aplican sobre lo que RLS ya
   // dejó pasar: ninguno amplía lo que se ve.
+  const delRestaurante =
+    restaurante === undefined ? todas : todas.filter((t) => t.establishment_id === restaurante);
+
   const rows =
     filtro === "mias"
-      ? todas.filter((t) => t.assignee_id === user.id)
+      ? delRestaurante.filter((t) => t.assignee_id === user.id)
       : filtro === "abiertas"
-        ? todas.filter((t) => t.state !== "completed" && t.state !== "cancelled")
-        : todas;
+        ? delRestaurante.filter((t) => t.state !== "completed" && t.state !== "cancelled")
+        : delRestaurante;
 
   const jobIds = [...new Set(todas.map((t) => t.job_id).filter(Boolean))] as string[];
   const [{ data: jobs }, { data: establishments }, { data: people }] = await Promise.all([
@@ -139,7 +162,7 @@ export default async function TeamTasksPage({
           return (
             <Link
               key={f.label}
-              href={f.key ? `/espacios/${slug}/tareas?filtro=${f.key}` : `/espacios/${slug}/tareas`}
+              href={tareasHref(slug, f.key, restaurante)}
               aria-current={activo ? "page" : undefined}
               className={
                 activo
@@ -152,6 +175,15 @@ export default async function TeamTasksPage({
           );
         })}
       </nav>
+
+      {restaurante === undefined ? null : (
+        <div className="mb-4">
+          <ListFilterNotice
+            establishmentName={establishmentName.get(restaurante) ?? null}
+            allHref={tareasHref(slug, filtro, undefined)}
+          />
+        </div>
+      )}
 
       {misPuntos > 0 ? (
         <p className="mb-4 text-sm text-text-secondary">

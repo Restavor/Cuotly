@@ -13,6 +13,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
 import { requestHeadline, requestTone } from "@/core/requests";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -37,10 +38,16 @@ type CategoryKey = keyof typeof es.naming.categories;
 
 export default async function TeamRequestsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ restaurante?: string }>;
 }) {
   const { slug } = await params;
+  // §15.2 · a este filtro llega el enlace "Ver todas" de la Operación de
+  // la ficha. Recorta filas que RLS ya dejó pasar: no enseña ni esconde
+  // nada que no estuviera decidido antes (CLAUDE.md).
+  const { restaurante } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -84,8 +91,6 @@ export default async function TeamRequestsPage({
     .neq("state", "draft")
     .order("created_at", { ascending: false });
 
-  const rows = requests ?? [];
-
   const { data: establishments } = await supabase
     .from("establishments")
     .select("id, name")
@@ -93,12 +98,24 @@ export default async function TeamRequestsPage({
 
   const nameById = new Map((establishments ?? []).map((e) => [e.id, e.name]));
 
+  const rows =
+    restaurante === undefined
+      ? (requests ?? [])
+      : (requests ?? []).filter((request) => request.establishment_id === restaurante);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
         <h1 className="text-3xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
         <p className="mt-1 text-sm text-text-secondary">{es.teamArea.requests.subtitle}</p>
       </header>
+
+      {restaurante === undefined ? null : (
+        <ListFilterNotice
+          establishmentName={nameById.get(restaurante) ?? null}
+          allHref={`/espacios/${slug}/solicitudes`}
+        />
+      )}
 
       <Card>
         {rows.length === 0 ? (

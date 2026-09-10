@@ -397,3 +397,66 @@ export function currentJobDeadline(job: {
   if (job.counter === null || job.remainingMinutes === null) return { kind: "none" };
   return { kind: job.counter, remainingMinutes: job.remainingMinutes };
 }
+
+// ---------------------------------------------------------------------
+// La Operación de la ficha (vista 04).
+// ---------------------------------------------------------------------
+
+/**
+ * Los estados en los que una tarea sigue ABIERTA, **en orden de lo más
+ * avanzado a lo menos**, igual que `LIVE_JOB_STATES`.
+ *
+ * `completed` y `cancelled` no están: la tarjeta de la vista 04 enseña lo
+ * que queda por hacer, y una tarea terminada hace tres semanas ocuparía el
+ * sitio de una que espera. El histórico completo está en el destino
+ * "Tareas" del menú del espacio, que es donde se consulta.
+ *
+ * Que `blocked` vaya por delante de `pending` es deliberado y es lo que no
+ * se lee solo: una tarea bloqueada ya se empezó y hay alguien esperando,
+ * así que pesa más que una pendiente que todavía no ha movido a nadie.
+ */
+export const OPEN_TASK_STATES = ["in_progress", "blocked", "pending"] as const;
+
+export type OpenTaskState = (typeof OPEN_TASK_STATES)[number];
+
+/**
+ * Las tareas abiertas, ordenadas por lo avanzadas que están.
+ *
+ * Las filas llegan ya ordenadas por fecha desde la consulta, y ese orden
+ * se conserva **dentro** de cada estado: entre dos tareas en curso manda
+ * la más reciente, como en `pickCurrentJob()`.
+ *
+ * Lo que no sea un estado abierto se cae aquí, no en la consulta: así la
+ * lista de estados es un dato en un sitio y no una cadena repetida en cada
+ * `select`.
+ */
+export function sortOpenTasks<T extends { readonly state: string }>(
+  tasks: readonly T[],
+): readonly T[] {
+  return OPEN_TASK_STATES.flatMap((state) => tasks.filter((task) => task.state === state));
+}
+
+/**
+ * Lo que cabe en una tarjeta y lo que queda detrás.
+ *
+ * Existe porque enseñar uno de seis sin avisar es esconder cinco (CA-20):
+ * la tarjeta corta la lista, y `hidden` es lo que le permite decir cuántas
+ * no está enseñando en vez de dar a entender que no hay más. Es la misma
+ * cuenta en las cuatro tarjetas de la vista 04, así que se escribe una vez
+ * y no cuatro.
+ */
+export interface CardRows<T> {
+  readonly shown: readonly T[];
+  readonly hidden: number;
+}
+
+/**
+ * Cuántas filas enseña cada tarjeta de la Operación. Cuatro, que es lo que
+ * la vista 04 dibuja sin que la rejilla se descuadre entre las cuatro
+ * tarjetas; el resto se cuenta y se enlaza, no se esconde.
+ */
+export const OPERATION_CARD_ROWS = 4;
+
+export function firstRows<T>(rows: readonly T[], limit: number): CardRows<T> {
+  return { shown: rows.slice(0, limit), hidden: Math.max(0, rows.length - limit) };
+}

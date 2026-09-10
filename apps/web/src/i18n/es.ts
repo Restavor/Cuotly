@@ -624,6 +624,16 @@ export const es = {
 
   teamArea: {
     /**
+     * El filtro por restaurante de los tres listados, al que llevan los
+     * enlaces "Ver todas" de la Operación de la ficha (vista 04).
+     */
+    listFilter: {
+      only: (name: string) => `Solo las de ${name}.`,
+      unknown: "Ese restaurante no existe o no puedes verlo, así que la lista sale vacía.",
+      clear: "Ver todas",
+    },
+
+    /**
      * HU-25 · el libro de consumos de un establecimiento visto por el
      * equipo, que a diferencia del del cliente (`clientArea.ledger*`)
      * lleva **autor**: es lo que pide la historia.
@@ -2098,11 +2108,9 @@ export const es = {
     attentionEmptyTitle: "Nada pendiente en este restaurante",
     attentionEmptyReason:
       "Aquí aparecen sus solicitudes por validar y sus trabajos en riesgo de plazo, en cuanto haya alguno.",
-    identityTitle: "Datos fiscales y de contacto",
-    identityMissing: "Sin rellenar",
-    identityMissingReason:
-      "Este restaurante todavía no tiene razón social, identificación fiscal ni datos de contacto guardados. Se rellenan en Gestión · Datos.",
-    identityEditLink: "Rellenar los datos del restaurante",
+    // La tarjeta de identidad salió de Operación con la vista 04 (los
+    // mismos datos se leen enteros en Gestión · Ficha), y con ella sus
+    // textos. `identityFieldEmpty` se queda: lo usa la vista de lectura.
     identityFieldEmpty: "Sin rellenar",
     /**
      * Una etiqueta por campo de `IDENTITY_FIELDS` (src/core/establishments.ts),
@@ -2174,13 +2182,37 @@ export const es = {
     dataReadOnlyReason:
       "Los datos fiscales y de contacto los edita el propietario o un administrador del espacio (RN-EST-11). Un trabajador los consulta.",
 
-    // ---- Operación -----------------------------------------------
-    requestsTitle: "Solicitudes abiertas",
+    // ---- Operación · vista 04, las cuatro tarjetas ---------------
+    requestsTitle: "Solicitudes",
+    requestsLink: "Ver todas",
     requestsEmptyTitle: "Ninguna solicitud abierta",
     requestsEmptyReason: "Las solicitudes de este restaurante aparecerán aquí mientras estén en curso.",
-    jobsTitle: "Trabajos en curso",
+
+    jobsTitle: "Trabajos",
+    jobsLink: "Ver todos",
     jobsEmptyTitle: "Ningún trabajo en curso",
     jobsEmptyReason: "Cuando se acepte una solicitud y se cree su trabajo, aparecerá aquí.",
+
+    tasksTitle: "Tareas",
+    tasksLink: "Ver todas",
+    tasksEmptyTitle: "Ninguna tarea abierta",
+    tasksEmptyReason:
+      "Aquí aparecen las tareas de los trabajos de este restaurante que tu permiso te deja ver: con «Repartir trabajos» son todas, y un trabajador ve las suyas y las de sus trabajos autorizados.",
+    tasksUnassigned: "Sin repartir",
+    tasksMinutes: (minutes: number) => `${minutes} min`,
+    tasksNoJob: "Actividad interna",
+
+    dailyMenuTitle: "Menú Diario",
+    dailyMenuEmptyTitle: "Menú Diario llega con la Fase 2",
+    dailyMenuEmptyReason:
+      "Los menús, su solicitud de publicación y el contador de 30 actualizaciones (RN-CON-02) todavía no existen: son la Fase 2 entera. La maqueta enseña aquí tres menús de ejemplo con sus plazos; en su lugar va el motivo, porque no los está publicando nadie.",
+
+    /**
+     * Lo que la tarjeta no está enseñando. Enseñar cuatro de doce sin
+     * decirlo es esconder ocho (CA-20).
+     */
+    cardMore: (rest: number) => (rest === 1 ? "y 1 más" : `y ${rest} más`),
+
     conversationLink: "Abrir la conversación general",
     codeColumn: "Código",
     descriptionColumn: "Descripción",

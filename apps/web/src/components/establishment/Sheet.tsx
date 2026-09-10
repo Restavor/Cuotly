@@ -20,7 +20,6 @@ import {
   IDENTITY_FIELDS,
   MULTILINE_IDENTITY_FIELDS,
   currentJobDeadline,
-  identityIsEmpty,
   sortedCycleUsage,
   type CycleUsage,
 } from "@/core/establishments";
@@ -168,6 +167,107 @@ function statusTone(status: string): "success" | "warning" | "danger" | "neutral
   if (status === "suspended" || status === "archived") return "danger";
   if (status === "paused" || status === "ending" || status === "read_only") return "warning";
   return "neutral";
+}
+
+/**
+ * El color de la insignia de una solicitud, un trabajo y una tarea en las
+ * tarjetas de la vista 04.
+ *
+ * El tono acompaña al texto, nunca lo sustituye: la insignia escribe el
+ * estado en español y quien mira en blanco y negro lo lee igual (§21.4).
+ * Lo que el color añade es el vistazo — qué pide algo de mí (`warning`),
+ * qué ya está resuelto (`success`), qué se torció (`danger`).
+ */
+function requestTone(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
+  if (state === "pending_internal_validation" || state === "needs_information") return "warning";
+  if (state === "published" || state === "accepted" || state === "closed") return "success";
+  if (state === "rejected" || state.startsWith("cancelled")) return "danger";
+  if (state === "in_progress" || state === "in_correction") return "info";
+  return "neutral";
+}
+
+function jobTone(job: SheetCurrentJob): "success" | "warning" | "info" | "neutral" | "danger" {
+  // Fuera de plazo manda sobre el estado: es lo único de la fila que pide
+  // algo ahora mismo (RN-SLA-17).
+  if (job.overdue) return "danger";
+  if (job.state === "blocked_by_client" || job.state === "authorized_pause") return "warning";
+  return "info";
+}
+
+function taskTone(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
+  if (state === "blocked") return "warning";
+  if (state === "cancelled") return "danger";
+  if (state === "completed") return "success";
+  if (state === "in_progress") return "info";
+  return "neutral";
+}
+
+/**
+ * El recuadro de icono de cada fila, como en la vista 04. Es decorativo
+ * —lo que identifica la fila es su título—, así que va oculto para quien
+ * usa un lector de pantalla en vez de repetirle "solicitud" cuatro veces.
+ */
+function RowIcon({ name }: { name: "request" | "job" | "task" }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface text-text-secondary"
+    >
+      <Icon name={name} className="h-4 w-4" />
+    </span>
+  );
+}
+
+/**
+ * Lo que la tarjeta no está enseñando. Sin esta línea, cuatro de doce
+ * parecen doce de doce: enseñar cuatro y callar ocho es esconderlas
+ * (CA-20). El enlace "Ver todas" de la cabecera es a donde están.
+ */
+function CardMore({ hidden }: { hidden: number }) {
+  if (hidden === 0) return null;
+  return <p className="pt-3 text-sm text-text-secondary">{t.cardMore(hidden)}</p>;
+}
+
+/**
+ * Una fila de la tarjeta de tareas.
+ *
+ * Es la única de las tres que puede no ser un enlace: no hay pantalla de
+ * detalle de tarea —se opera con ella en su trabajo— y una actividad
+ * interna independiente (§3, glosario) no cuelga de ninguno. Un enlace que
+ * no lleva a ninguna parte es peor que su ausencia.
+ */
+function TaskRow({
+  deepLink,
+  title,
+  subtitle,
+  badge,
+}: {
+  deepLink: string | null;
+  title: string;
+  subtitle: string;
+  badge: React.ReactNode;
+}) {
+  const contenido = (
+    <>
+      <RowIcon name="task" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-medium text-text">{title}</span>
+        <span className="block truncate text-text-secondary">{subtitle}</span>
+      </span>
+      {badge}
+    </>
+  );
+
+  return deepLink === null ? (
+    <div className="flex items-center gap-3 py-3 text-sm">{contenido}</div>
+  ) : (
+    <Link
+      href={deepLink}
+      className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
+    >
+      {contenido}
+    </Link>
+  );
 }
 
 /**
@@ -727,106 +827,183 @@ export function EstablishmentSheet({
       ) : null}
 
       {tab.key === "operation" ? (
-        <>
-          {/*
-            §15.2 · razón social, identificación fiscal, dirección,
-            teléfonos, correos, sitio web, dominio y horarios. Aquí se LEEN;
-            se editan en Gestión · Datos, que es donde está el formulario y
-            el aviso de RN-EST-12.
+        /*
+          Vista 04 · la Operación son cuatro tarjetas en rejilla:
+          Solicitudes, Trabajos, Tareas y Menú Diario. Cada una enseña las
+          primeras filas, dice cuántas deja detrás y enlaza a su listado
+          filtrado por este restaurante.
 
-            Sin nada guardado se dice el motivo —"sin rellenar", con el
-            enlace para rellenarlo— en vez de enseñar una lista de guiones
-            (CA-20).
-          */}
-          <Card title={t.identityTitle}>
-            <IdentityFacts identity={header.identity} />
-            {identityIsEmpty(header.identity) ? (
-              <>
-                <EmptyState title={t.identityMissing} description={t.identityMissingReason} />
-                {canEditData ? (
-                  <p className="mt-3 text-sm">
-                    <Link
-                      href={sheetHref(base, MANAGEMENT_TAB, DATA_BLOCK)}
-                      className="text-cuotly-green underline"
-                    >
-                      {t.identityEditLink}
-                    </Link>
-                  </p>
-                ) : null}
-              </>
-            ) : null}
-          </Card>
-
-          <Card title={t.requestsTitle}>
-            {operation.requests.length === 0 ? (
+          La tarjeta de datos fiscales y de contacto que había aquí se ha
+          quitado: la maqueta no la tiene y los mismos quince datos se leen
+          enteros en Gestión · Ficha —en formulario para quien puede editar
+          y en lectura para quien no (RN-EST-11)—, así que no queda nada
+          inalcanzable. Repetirlos en dos pestañas era además la manera de
+          que un día dijeran cosas distintas.
+        */
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <Card
+            title={t.requestsTitle}
+            action={
+              <Link
+                href={`/espacios/${slug}/solicitudes?restaurante=${header.id}`}
+                className="shrink-0 text-sm text-cuotly-green underline"
+              >
+                {t.requestsLink}
+              </Link>
+            }
+          >
+            {operation.requests.shown.length === 0 ? (
               <EmptyState title={t.requestsEmptyTitle} description={t.requestsEmptyReason} />
             ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>{t.codeColumn}</TableHeaderCell>
-                    <TableHeaderCell>{t.descriptionColumn}</TableHeaderCell>
-                    <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
-                    <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {operation.requests.map((request) => (
-                    <TableRow key={request.id}>
-                      <TableCell>
-                        <Link
-                          href={`/espacios/${slug}/solicitudes/${request.id}`}
-                          className="text-cuotly-green underline"
-                        >
-                          {request.code}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{request.description}</TableCell>
-                      <TableCell>
-                        {es.naming.states.request[request.state as RequestStateKey] ?? request.state}
-                      </TableCell>
-                      <TableCell>{diaCorto(request.created_at)}</TableCell>
-                    </TableRow>
+              <>
+                <ul className="divide-y divide-border">
+                  {operation.requests.shown.map((request) => (
+                    <li key={request.id}>
+                      <Link
+                        href={request.deepLink}
+                        className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
+                      >
+                        <RowIcon name="request" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium text-text">
+                            {request.description}
+                          </span>
+                          {/*
+                            Quién la pidió y cuándo. Dos solicitudes del
+                            mismo día se distinguen por el autor, y cuando
+                            RLS no deja resolver ese nombre se queda solo
+                            la fecha: un uuid no le dice a nadie quién
+                            escribió (CA-20).
+                          */}
+                          <span className="block truncate text-text-secondary">
+                            {request.authorName === null
+                              ? momento(request.createdAt)
+                              : `${request.authorName} · ${momento(request.createdAt)}`}
+                          </span>
+                        </span>
+                        <StatusBadge tone={requestTone(request.state)}>
+                          {es.naming.states.request[request.state as RequestStateKey] ??
+                            request.state}
+                        </StatusBadge>
+                      </Link>
+                    </li>
                   ))}
-                </TableBody>
-              </Table>
+                </ul>
+                <CardMore hidden={operation.requests.hidden} />
+              </>
             )}
           </Card>
 
-          <Card title={t.jobsTitle}>
-            {operation.jobs.length === 0 ? (
+          <Card
+            title={t.jobsTitle}
+            action={
+              <Link
+                href={`/espacios/${slug}/trabajos?restaurante=${header.id}`}
+                className="shrink-0 text-sm text-cuotly-green underline"
+              >
+                {t.jobsLink}
+              </Link>
+            }
+          >
+            {operation.jobs.shown.length === 0 ? (
               <EmptyState title={t.jobsEmptyTitle} description={t.jobsEmptyReason} />
             ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>{t.codeColumn}</TableHeaderCell>
-                    <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
-                    <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {operation.jobs.map((job) => (
-                    <TableRow key={job.id}>
-                      <TableCell>
-                        <Link
-                          href={`/espacios/${slug}/trabajos/${job.id}`}
-                          className="text-cuotly-green underline"
-                        >
-                          {job.code}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        {es.naming.states.job[job.state as JobStateKey] ?? job.state}
-                      </TableCell>
-                      <TableCell>{diaCorto(job.created_at)}</TableCell>
-                    </TableRow>
+              <>
+                <ul className="divide-y divide-border">
+                  {operation.jobs.shown.map((job) => (
+                    <li key={job.id}>
+                      <Link
+                        href={job.deepLink}
+                        className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
+                      >
+                        <RowIcon name="job" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium text-text">{job.title}</span>
+                          {/*
+                            El estado, y no el nombre del restaurante que
+                            la maqueta pone debajo: en la ficha de
+                            Magariños todas estas filas son de Magariños, y
+                            repetirlo cuatro veces gasta la línea que sí
+                            dice algo.
+                          */}
+                          <span className="block truncate text-text-secondary">
+                            {job.code} ·{" "}
+                            {es.naming.states.job[job.state as JobStateKey] ?? job.state}
+                          </span>
+                        </span>
+                        {/*
+                          El mismo plazo que el Resumen, recalculado desde
+                          los eventos por la misma función (CA-10), y con
+                          su nombre: T2 es para comenzar y T3 para publicar
+                          (RN-SLA-05/11).
+                        */}
+                        <StatusBadge tone={jobTone(job)}>{plazoDelTrabajo(job)}</StatusBadge>
+                      </Link>
+                    </li>
                   ))}
-                </TableBody>
-              </Table>
+                </ul>
+                <CardMore hidden={operation.jobs.hidden} />
+              </>
             )}
           </Card>
-        </>
+
+          <Card
+            title={t.tasksTitle}
+            action={
+              <Link
+                href={`/espacios/${slug}/tareas?restaurante=${header.id}`}
+                className="shrink-0 text-sm text-cuotly-green underline"
+              >
+                {t.tasksLink}
+              </Link>
+            }
+          >
+            {operation.tasks.shown.length === 0 ? (
+              <EmptyState title={t.tasksEmptyTitle} description={t.tasksEmptyReason} />
+            ) : (
+              <>
+                <ul className="divide-y divide-border">
+                  {operation.tasks.shown.map((task) => (
+                    <li key={task.id}>
+                      {/*
+                        La fila lleva al trabajo del que cuelga, que es
+                        donde se opera con la tarea: no hay pantalla de
+                        detalle de tarea. Una actividad interna
+                        independiente (§3) no lleva a ninguna parte, y
+                        entonces no se pinta como enlace en vez de ser un
+                        enlace que no lleva a nada.
+                      */}
+                      <TaskRow
+                        deepLink={task.deepLink}
+                        title={task.title}
+                        subtitle={`${task.jobCode ?? t.tasksNoJob} · ${
+                          task.assigneeName ?? t.tasksUnassigned
+                        } · ${t.tasksMinutes(task.estimatedMinutes)}`}
+                        badge={
+                          <StatusBadge tone={taskTone(task.state)}>
+                            {es.naming.states.task[task.state as TaskStateKey] ?? task.state}
+                          </StatusBadge>
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+                <CardMore hidden={operation.tasks.hidden} />
+              </>
+            )}
+          </Card>
+
+          {/*
+            Menú Diario es la Fase 2 entera. La maqueta enseña aquí tres
+            menús con sus plazos y va marcada "Datos de ejemplo": no los
+            está publicando nadie, así que va el motivo (CLAUDE.md MUST
+            NOT). Tampoco el enlace "Ver menú" del dibujo, que no llevaría
+            a ninguna parte.
+          */}
+          <Card title={t.dailyMenuTitle}>
+            <EmptyState title={t.dailyMenuEmptyTitle} description={t.dailyMenuEmptyReason} />
+          </Card>
+        </div>
       ) : null}
 
       {tab.key === "data" ? (

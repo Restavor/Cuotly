@@ -13,6 +13,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,8 +40,17 @@ export function jobTone(state: string): "success" | "warning" | "info" | "neutra
   return "neutral";
 }
 
-export default async function TeamJobsPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function TeamJobsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ restaurante?: string }>;
+}) {
   const { slug } = await params;
+  // A este filtro llega el enlace "Ver todos" de la Operación de la ficha
+  // (vista 04). Recorta filas que RLS ya dejó pasar.
+  const { restaurante } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -78,8 +88,6 @@ export default async function TeamJobsPage({ params }: { params: Promise<{ slug:
     .eq("space_id", space.id)
     .order("created_at", { ascending: false });
 
-  const rows = jobs ?? [];
-
   const [{ data: establishments }, { data: people }] = await Promise.all([
     supabase.from("establishments").select("id, name").eq("space_id", space.id),
     supabase.from("profiles").select("id, full_name, email"),
@@ -90,10 +98,24 @@ export default async function TeamJobsPage({ params }: { params: Promise<{ slug:
     (people ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]),
   );
 
+  const rows =
+    restaurante === undefined
+      ? (jobs ?? [])
+      : (jobs ?? []).filter((job) => job.establishment_id === restaurante);
+
   return (
     <div className="mx-auto max-w-4xl p-8">
       <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.jobs.title}</h1>
       <p className="mb-6 text-sm text-text-secondary">{es.teamArea.jobs.subtitle}</p>
+
+      {restaurante === undefined ? null : (
+        <div className="mb-4">
+          <ListFilterNotice
+            establishmentName={establishmentName.get(restaurante) ?? null}
+            allHref={`/espacios/${slug}/trabajos`}
+          />
+        </div>
+      )}
 
       <Card>
         {rows.length === 0 ? (

@@ -1784,6 +1784,126 @@ regenerar salió idéntica, así que no había desviación.
       debajo. La maqueta solo tiene el caso "Al día".
     - **Sin recorrido de Playwright ejecutado.**
 
+- [x] **Vista 04 · la Operación de la ficha** — cuatro tarjetas
+    (Solicitudes, Trabajos, Tareas y Menú Diario), las tareas sembradas y
+    el primer test de componente del proyecto.
+
+    La Operación eran tres bloques apilados: los datos fiscales y de
+    contacto, una tabla de solicitudes y otra de trabajos, las dos con
+    columnas de código, estado y fecha. La vista 04 pide otra cosa: una
+    rejilla de cuatro tarjetas con filas de icono, titular, subtítulo e
+    insignia, y un "Ver todas" en cada cabecera.
+
+    **Lo que se quita.** La tarjeta de datos fiscales y de contacto: la
+    maqueta no la tiene y los quince datos de §15.2 se leen enteros en
+    Gestión · Ficha —formulario para quien puede editar, lectura para quien
+    no (RN-EST-11)—, así que no queda nada inalcanzable. Repetidos en dos
+    pestañas eran además la manera de que un día dijeran cosas distintas.
+    Con ella se van sus cuatro textos de `es.ts`, que ya no los usa nadie.
+
+    **Lo que se añade, y de dónde sale cada dato:**
+
+    - **Solicitudes** con su autor: "Nuria Ferreiro (Magariños) · Hoy,
+      10:24", como el dibujo. El nombre necesita **dos** fuentes y no una,
+      y es la misma asimetría que la pestaña Usuarios: `profiles_select`
+      deja ver a quien comparte espacio —el equipo—, pero un cliente no es
+      miembro del espacio, así que su nombre solo llega por
+      `establishment_client_users()`. Comprobado en vivo: con una sola
+      consulta, las diecinueve solicitudes de Magariños —todas suyas—
+      salían sin autor. Lo que no se resuelve **no se rellena con el
+      uuid**.
+    - **Trabajos** con su plazo, recalculado desde `timer_events` por
+      `loadJobTimers()`, la misma función del Resumen y del detalle: tres
+      pantallas no pueden decir horas distintas del mismo contador
+      (CA-10).
+    - **Tareas**, que es la tarjeta nueva (§11.2, HU-21).
+
+    **Dos decisiones en `src/core/`, con su prueba y comprobadas con
+    mutación:**
+
+    1. **Qué tarea va primero.** `OPEN_TASK_STATES` ordena de lo más
+       avanzado a lo menos, igual que `LIVE_JOB_STATES`, y lo que no se lee
+       solo es que **`blocked` va por delante de `pending`**: una tarea
+       bloqueada ya se empezó y hay alguien esperando; una pendiente
+       todavía no ha movido a nadie. Invertir el orden hace fallar dos
+       pruebas.
+    2. **Lo que la tarjeta esconde se cuenta.** `firstRows()` corta a
+       cuatro y devuelve cuántas quedan detrás, para las cuatro tarjetas a
+       la vez. Magariños tiene **diecinueve** solicitudes abiertas y la
+       tarjeta enseña cuatro: sin esa línea, cuatro de diecinueve se leen
+       como diecinueve de diecinueve (CA-20).
+
+    **"Ver todas" lleva al listado FILTRADO**, no al del espacio entero.
+    Los tres listados —solicitudes, trabajos y tareas— estrenan
+    `?restaurante=`, con su aviso de qué se está viendo y su camino de
+    vuelta. El filtro **no controla nada**: recorta filas que RLS ya dejó
+    pasar, y un uuid ajeno en la dirección deja la lista vacía porque esa
+    fila no llega hasta aquí — y como no llega, tampoco se puede resolver
+    su nombre, así que el aviso lo dice en vez de callar. En Tareas el
+    restaurante viaja además en los tres filtros de la propia pantalla:
+    sin eso, pulsar "Abiertas" devolvía las de todos.
+
+    **Un desempate que no es adorno.** Las tres consultas ordenan por fecha
+    y desempatan por `id`. `created_at` vale `now()`, que en PostgreSQL es
+    la hora de la **transacción**: las seis tareas del reportaje, sembradas
+    en un mismo bloque, comparten fecha al segundo, y también las
+    diecinueve solicitudes de Magariños. Sin desempate esas filas salen en
+    el orden físico de la tabla y "y 1 más" puede esconder una distinta en
+    cada recarga. Se vio en los datos, no en el código.
+
+    **El sembrado estrena tareas.** No había **ni una** en todo el
+    proyecto, así que la tarjeta nueva salía vacía en los cuatro
+    restaurantes y `create_job_task()` no la llamaba nadie —van cinco veces
+    que una función del servidor resulta no tener quien la use—. El
+    reportaje de las tapas se desglosa en seis (una terminada que no tiene
+    que salir, una en curso, una bloqueada y tres pendientes), por sus
+    funciones y no con INSERT: `create_job_task()` y `update_task_state()`
+    hacen cumplir RN-ASG-16, RN-ASG-01 y las transiciones de
+    `TASK_TRANSITIONS`, así que sembrar así comprueba de paso que las
+    puertas funcionan. Son cinco vivas y no cuatro a propósito: con cuatro,
+    la línea "y 1 más" no la comprobaría nadie.
+
+    **El primer test de componente del proyecto.** El entorno estaba
+    montado desde el Hito 1 —jsdom y `@testing-library/jest-dom` en
+    `vitest.setup.ts`— y no lo usaba ningún archivo. Lo que la vista 04
+    pide no es un cálculo sino una composición —cuántas tarjetas, qué fila
+    va primero, qué se dice cuando no hay nada—, y eso las pruebas de
+    `src/core` no lo ven. Nueve pruebas sobre la pestaña pintada; dos
+    mutaciones (callar el "y 1 más", convertir en enlace la tarea sin
+    trabajo) hacen fallar cinco. De paso se encontró que la limpieza de
+    Testing Library **no** es automática aquí: este proyecto no usa
+    `globals: true`, así que sin un `afterEach(cleanup)` escrito a mano el
+    segundo test se encuentra dos pantallas colgando del documento.
+
+    **Comprobado:** typecheck, lint, **633 pruebas** (18 nuevas), `next
+    build`, y la base entera reconstruida desde cero —bootstrap + las 59
+    migraciones + el sembrado **dos veces**— sobre un PostgreSQL 16 local,
+    con las tres consultas de la pestaña ejecutadas bajo RLS como
+    propietaria y como trabajadora.
+
+    **Lo que NO entrega:**
+
+    - **La maqueta pone un plazo a cada tarea** ("Hoy, 12:00", "Quedan
+      4 h") y `tasks` no tiene fecha de vencimiento ni contador: los tres
+      contadores del PRD (T1, T2, T3) son de solicitud y de trabajo. La
+      fila enseña lo que existe —trabajo, responsable y minutos
+      estimados—, no un plazo inventado.
+    - **La tarjeta de Menú Diario no distingue si el servicio está
+      contratado**: los servicios se identifican hoy por su nombre dentro
+      de cada espacio y no por una clave estable, y comparar cadenas para
+      afirmar "no lo tiene contratado" sería inventarse esa identidad.
+      Dice el motivo de Fase 2 y ya.
+    - **Sin recorrido de Playwright ejecutado**, y ahora se sabe por qué y
+      no por costumbre: este contenedor tiene la salida de red hacia el
+      proyecto de Supabase **denegada** por la política del entorno, así
+      que la aplicación arranca y el login contesta "correo o contraseña
+      incorrectos" sin haber podido preguntar. El test de componente cubre
+      lo que se puede afirmar sin navegador.
+    - **El proyecto real sigue con el sembrado anterior**, o sea **sin
+      tareas**: la tarjeta nueva se verá allí con su estado vacío hasta que
+      se vuelva a sembrar, y eso rehace el espacio de demostración entero,
+      así que se pregunta antes.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
