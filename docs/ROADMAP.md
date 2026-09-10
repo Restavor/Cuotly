@@ -2130,6 +2130,58 @@ regenerar salió idéntica, así que no había desviación.
     Hoy: 20 suites SQL, todas nombradas, todas escritas, todas en CI, todas
     en verde contra un PostgreSQL 16 con las 61 migraciones desde cero.
 
+- [x] **Los recorridos de Playwright: los que se pueden, y por qué los
+    otros no** — más el fallo de producto que destaparon.
+
+    "Sin recorrido de Playwright ejecutado" aparecía en **siete** entradas
+    de este documento sin que nadie dijera por qué. Ya está dicho, y era
+    comprobable en un minuto.
+
+    **Ejecutados y en verde: los 14 del armazón** (`smoke` y
+    `hito8-experiencia`), que incluyen los de CA-20 —los estados vacíos que
+    se acaban de rediseñar— y los cuatro de CA-22, navegación entera por
+    teclado.
+
+    **Los de datos NO se pueden ejecutar desde una sesión remota de Claude
+    Code, y no es un problema del proyecto.** La política de red de ese
+    entorno deniega la salida HTTPS al proyecto de Supabase:
+
+    ```
+    connect_rejected | <proyecto>.supabase.co:443
+    gateway answered 403 to CONNECT (policy denial)
+    ```
+
+    El acceso por MCP a la base sí funciona —va por otro camino—, y por eso
+    todo lo demás de esta sesión se ha podido comprobar contra el proyecto
+    real. Lo que no se puede es levantar la aplicación y entrar. Queda
+    escrito en la cabecera de `ca19-recorridos-movil.spec.ts` para que no
+    cueste otra tarde: se ejecutan en una máquina con salida a internet o
+    en CI.
+
+    **Y por el camino apareció un fallo de producto de verdad.** Con la red
+    bloqueada, la pantalla de entrar decía *"Correo o contraseña
+    incorrectos"* con la contraseña correcta. El mensaje mandó a revisar la
+    semilla, los hashes de bcrypt y las identidades de GoTrue —todo estaba
+    bien— cuando lo único que pasaba es que no había línea.
+
+    La causa: `signIn()` contestaba `invalidCredentials` a **cualquier**
+    error de `signInWithPassword()`. Servicio caído, red cortada,
+    demasiados intentos y correo sin confirmar, todos como "tu contraseña
+    está mal". Es afirmar algo que no se sabe —lo que CA-20 prohíbe en el
+    resto de la aplicación— y no había razón para que el login fuera la
+    excepción.
+
+    Lo arregla `src/core/auth-errors.ts`, lógica pura con sus tests: cinco
+    motivos distintos, y el de red dice explícitamente "es un problema
+    nuestro o de tu conexión, **no de tu contraseña**". A un cliente que no
+    puede entrar un martes por la mañana eso le ahorra llamar para que le
+    cambien una contraseña que no está mal.
+
+    El mensaje del servidor no se enseña tal cual, y eso no cambia: viene
+    en inglés y a veces distingue "este correo no existe" de "esta
+    contraseña no vale", que es justo lo que no conviene contarle a quien
+    prueba correos.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

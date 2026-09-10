@@ -67,6 +67,43 @@ describe("signIn", () => {
     expect(result.error).toBe("Correo o contraseña incorrectos.");
     expect(redirectMock).not.toHaveBeenCalled();
   });
+
+  it("NO culpa a la contraseña cuando no se ha podido conectar", () => {
+    // El caso que costó una tarde: con la salida de red bloqueada, la
+    // pantalla decía "Correo o contraseña incorrectos" con la contraseña
+    // correcta, y el mensaje mandó a mirar la semilla, los hashes y las
+    // identidades de GoTrue. Todo estaba bien; no había línea.
+    return (async () => {
+      signInWithPasswordMock.mockResolvedValue({
+        error: { name: "AuthRetryableFetchError", message: "Failed to fetch" },
+      });
+
+      const result = await signIn(
+        { error: null },
+        formData({ email: "bosco@restavor.com", password: "la-correcta" }),
+      );
+
+      expect(result.error).toContain("no de tu contraseña");
+      expect(result.error).not.toContain("incorrectos");
+      expect(redirectMock).not.toHaveBeenCalled();
+    })();
+  });
+
+  it("demasiados intentos se dice como lo que es, no como una clave mala", () => {
+    return (async () => {
+      signInWithPasswordMock.mockResolvedValue({
+        error: { status: 429, message: "too many requests" },
+      });
+
+      const result = await signIn(
+        { error: null },
+        formData({ email: "bosco@restavor.com", password: "la-correcta" }),
+      );
+
+      expect(result.error).toContain("Demasiados intentos");
+      expect(redirectMock).not.toHaveBeenCalled();
+    })();
+  });
 });
 
 describe("signUp", () => {

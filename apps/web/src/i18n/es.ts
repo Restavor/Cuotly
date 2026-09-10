@@ -46,6 +46,19 @@ export const es = {
       signupLink: "Regístrate",
       validationRequired: "Rellena correo y contraseña.",
       invalidCredentials: "Correo o contraseña incorrectos.",
+
+      // CA-20 aplicado al login: cuando NO se sabe que la contraseña esté
+      // mal, no se dice que lo esté. Un fallo de red contestado como
+      // "credenciales incorrectas" manda a cambiar una contraseña que
+      // estaba bien.
+      unreachable:
+        "No hemos podido conectar para comprobar tus datos. Es un problema nuestro o de tu conexión, no de tu contraseña. Vuelve a intentarlo en un momento.",
+      rateLimited:
+        "Demasiados intentos seguidos. Espera un minuto y vuelve a probar: no hace falta que cambies la contraseña.",
+      emailNotConfirmed:
+        "Tu correo todavía no está confirmado. Busca el mensaje de confirmación que te enviamos al registrarte.",
+      unknownError:
+        "No hemos podido entrar y no sabemos por qué. Vuelve a intentarlo; si sigue pasando, escríbenos.",
     },
     signup: {
       title: "Crea tu cuenta",

@@ -27,6 +27,25 @@ import { expect, test, type Page } from "@playwright/test";
  * comenzado. `test.step()` deja ver en qué paso falla, que es lo que se
  * pierde si se mete todo en un bloque sin marcar.
  *
+ * NO SE PUEDEN EJECUTAR DESDE UNA SESIÓN REMOTA DE CLAUDE CODE, y conviene
+ * saberlo antes de gastar una tarde. La política de red de ese entorno
+ * deniega la salida HTTPS al proyecto de Supabase:
+ *
+ *   connect_rejected | <proyecto>.supabase.co:443
+ *   gateway answered 403 to CONNECT (policy denial)
+ *
+ * (se ve con `curl -sS "$HTTPS_PROXY/__agentproxy/status"`). El acceso por
+ * MCP a la base sí funciona —va por otro camino—, así que la base se puede
+ * comprobar y sembrar desde allí; lo que no se puede es levantar la
+ * aplicación y entrar. Estos recorridos se ejecutan en una máquina con
+ * salida a internet o en CI.
+ *
+ * Y ojo con el síntoma, porque despista: hasta el 10/09/2026 el login
+ * contestaba "Correo o contraseña incorrectos" ante CUALQUIER fallo,
+ * incluido el de red, así que el bloqueo parecía un problema de la semilla.
+ * Ya no: `src/core/auth-errors.ts` distingue "no se ha podido conectar" de
+ * "la contraseña no vale".
+ *
  * Requisitos, además de los del otro archivo: `SUPABASE_SERVICE_ROLE_KEY`
  * en `apps/web/.env.local`. El envío graba lo que propuso el clasificador
  * con `record_classification()`, reservada a `service_role` porque
