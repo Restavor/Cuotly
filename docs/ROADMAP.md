@@ -1348,11 +1348,10 @@ regenerar salió idéntica, así que no había desviación.
 
     **Lo que NO entrega, y se dice en vez de fingirlo:**
 
-    - **La migración 56 no está aplicada al proyecto.** Es la primera vez
-      en varios hitos que el repositorio va por delante de la base, y es
-      deliberado: retirar privilegios en producción se hace mirando, no de
-      pasada. El detalle y el `grant` exacto que la deshace están en
-      `docs/DESPLIEGUE-SUPABASE.md`.
+    - ~~**La migración 56 no está aplicada al proyecto.**~~ **Aplicada el
+      10/09/2026**, junto con la 57. El repositorio y la base vuelven a ir
+      a la par; `docs/DESPLIEGUE-SUPABASE.md` lo lleva al día y sigue
+      teniendo el `grant` exacto que la deshace.
     - **Sin recorrido de Playwright con datos**, igual que las cinco
       pantallas anteriores: esos tests entran con sesión contra el proyecto
       real y desde aquí no se pueden ejecutar. Escribir uno sin haberlo
@@ -1448,7 +1447,7 @@ regenerar salió idéntica, así que no había desviación.
 
     **Lo que NO entrega, y se dice en vez de fingirlo:**
 
-    - **Sin recorrido de Playwright ejecutado**, igual que las seis
+    - **Sin recorrido de Playwright con datos**, igual que las seis
       pantallas anteriores: esos tests entran con sesión contra el proyecto
       real y desde aquí no se pueden ejecutar. El recorrido de CA-19 sí se
       ha **actualizado** al camino nuevo (pasa por "Corregir clasificación"
@@ -1562,7 +1561,7 @@ regenerar salió idéntica, así que no había desviación.
       están: la plataforma web se registra —es uno de los quince datos— y
       lo demás es de la Fase 2, cuando Menú Diario publique. No se inventan
       tres columnas para dejarlas vacías.
-    - **Sin recorrido de Playwright ejecutado**, igual que las siete
+    - **Sin recorrido de Playwright con datos**, igual que las siete
       pantallas anteriores.
 
     **Al día siguiente (10/09/2026): la salvedad de `database.types.ts` ya
@@ -1662,7 +1661,9 @@ regenerar salió idéntica, así que no había desviación.
       decía que la mensualidad no se emitía, y sembrar "Casa Sol" lo
       desmintió: un alta con plan Básico deja un cobro de 119,79 € sin
       pagar.
-    - **Sin recorrido de Playwright ejecutado.**
+    - **Sin recorrido de Playwright con datos** (ver la entrada "Los
+      recorridos de Playwright": desde una sesión remota la política de red
+      bloquea la salida a Supabase; los 14 del armazón sí se ejecutan).
 
 - [x] **"Casa Sol": el restaurante ficticio que se da de alta por la puerta
     del alta** — sembrado (`supabase/seed/espacio-demo.sql`) y un paso nuevo
@@ -1710,9 +1711,11 @@ regenerar salió idéntica, así que no había desviación.
     (dos pasadas) contra un PostgreSQL 16 reconstruido desde cero con las
     59 migraciones.
 
-    **Lo que NO entrega:** el proyecto real sigue con el sembrado anterior;
-    volver a lanzarlo allí rehace el espacio de demostración entero y eso
-    se pregunta antes, no se hace por cuenta propia.
+    **Lo que NO entregaba, y ya sí:** ~~el proyecto real sigue con el
+    sembrado anterior~~. **Cerrado el 10/09/2026**: se aplicó al proyecto
+    sin rehacer el espacio, porque cada bloque comprueba antes si su parte
+    ya está sembrada — que es lo que hace que volver a lanzarlo sea seguro
+    y no una decisión que haya que preguntar.
 
 - [x] **Maqueta 03 · el Resumen de la ficha** — las cuatro tarjetas del
     dibujo, con datos reales o con su motivo.
@@ -1783,7 +1786,9 @@ regenerar salió idéntica, así que no había desviación.
     - **El estado de pago no distingue "vencido" de "pendiente" en el
       titular**: dice cuánto se debe y cuántos cobros están vencidos
       debajo. La maqueta solo tiene el caso "Al día".
-    - **Sin recorrido de Playwright ejecutado.**
+    - **Sin recorrido de Playwright con datos** (ver la entrada "Los
+      recorridos de Playwright": desde una sesión remota la política de red
+      bloquea la salida a Supabase; los 14 del armazón sí se ejecutan).
 
 - [x] **Vista 04 · la Operación de la ficha** — cuatro tarjetas
     (Solicitudes, Trabajos, Tareas y Menú Diario), las tareas sembradas y
@@ -1900,10 +1905,13 @@ regenerar salió idéntica, así que no había desviación.
       que la aplicación arranca y el login contesta "correo o contraseña
       incorrectos" sin haber podido preguntar. El test de componente cubre
       lo que se puede afirmar sin navegador.
-    - **El proyecto real sigue con el sembrado anterior**, o sea **sin
-      tareas**: la tarjeta nueva se verá allí con su estado vacío hasta que
-      se vuelva a sembrar, y eso rehace el espacio de demostración entero,
-      así que se pregunta antes.
+    - ~~**El proyecto real sigue con el sembrado anterior**, o sea **sin
+      tareas**.~~ **Cerrado el 10/09/2026**: se sembraron las seis tareas
+      en el proyecto sin rehacer el espacio —el bloque comprueba antes si
+      ya hay tareas—, así que la tarjeta se ve con datos de verdad.
+      Aprovechando el viaje entraron también conversaciones, festivos,
+      ausencias, supervisión y una corrección (entrada "El espacio de
+      demostración deja de estar medio vacío").
 
 - [x] **Maqueta 05 · el estado de validación de una solicitud** — el panel
     de tres pasos que faltaba, derivado y no almacenado.
@@ -1953,10 +1961,18 @@ regenerar salió idéntica, así que no había desviación.
       el que se llegó. Se deja para cuando la navegación entre listado y
       detalle se toque entera, en vez de inventar aquí un orden que no
       coincida con el del listado.
-    - **Los dos caminos de rechazo no los ejercita la semilla**: el espacio
-      de demostración no tiene ninguna solicitud rechazada, así que esas
-      dos ramas solo están cubiertas por los tests unitarios.
-    - **Sin recorrido de Playwright ejecutado.**
+    - ~~**Los dos caminos de rechazo no los ejercita la semilla.**~~
+      **Cerrado el 10/09/2026**: la sección 12.8 siembra los dos, con dos
+      solicitudes NUEVAS —no se reutilizan las que llenan las pantallas de
+      las maquetas 04 y 05, que se quedarían sin caso—. Una la rechaza el
+      equipo antes de validar (`reject_request`, HU-14) y la otra el
+      restaurante con la propuesta ya en la mano (`decline_request`,
+      HU-12), así que la deducción por `validated_at` que hace el panel
+      tiene por fin datos detrás. De regalo, dos conversaciones más: las
+      dos funciones publican su motivo como mensaje.
+    - **Sin recorrido de Playwright con datos** (ver la entrada "Los
+      recorridos de Playwright": desde una sesión remota la política de red
+      bloquea la salida a Supabase; los 14 del armazón sí se ejecutan).
 
 - [x] **El espacio de demostración deja de estar medio vacío, y los huecos
     dejan de ser feos** — sección 12 del sembrado, y los cuatro estados de
@@ -2090,7 +2106,9 @@ regenerar salió idéntica, así que no había desviación.
 
     - **No se desenlaza.** CLAUDE.md prohíbe el borrado físico de registros
       de negocio y una evidencia enlazada es exactamente eso.
-    - **Sin recorrido de Playwright ejecutado.**
+    - **Sin recorrido de Playwright con datos** (ver la entrada "Los
+      recorridos de Playwright": desde una sesión remota la política de red
+      bloquea la salida a Supabase; los 14 del armazón sí se ejecutan).
 
 - [x] **Cerrar las promesas de las migraciones** — la suite que faltaba, el
     fallo que escondía, y la guarda para que no haya una octava vez.

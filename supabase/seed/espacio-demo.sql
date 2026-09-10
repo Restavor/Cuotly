@@ -1828,6 +1828,92 @@ begin
 end $$;
 
 -- ------------------------------------------------------------
+-- 12.8 · Los dos caminos de rechazo (HU-12, HU-14).
+--
+-- `rejected` es un solo estado con un solo nombre visible (RN-REQ-01), y
+-- aun así se llega por dos sitios que no significan lo mismo: el equipo
+-- rechaza una solicitud imposible antes de validarla (HU-14,
+-- `reject_request`), o el restaurante rechaza la propuesta que ya se le
+-- mandó (HU-12, `decline_request`). El panel de la maqueta 05 los
+-- distingue mirando `validated_at` —si nadie validó, murió en la
+-- validación interna— y hasta ahora esa deducción no la ejercitaba ningún
+-- dato: estaba probada en tests unitarios y no se veía en ninguna
+-- pantalla.
+--
+-- Se crean DOS solicitudes nuevas para esto. No se reutilizan las que ya
+-- hay: la que espera validación es la que llena la pantalla de la maqueta
+-- 05 y la que espera al cliente es la del caso "pendiente de aceptación";
+-- rechazarlas dejaría las dos pantallas sin su caso.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_est constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_nuria constant uuid := 'd0000000-0000-0000-0000-000000000005';
+  v_elena constant uuid := 'd0000000-0000-0000-0000-000000000001';
+  v_req_equipo uuid;
+  v_req_cliente uuid;
+begin
+  if exists (
+    select 1 from public.requests
+    where establishment_id = v_est and state = 'rejected'
+  ) then
+    return;
+  end if;
+
+  -- ---- HU-14 · la rechaza el equipo, antes de validar ----
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+  v_req_equipo := public.create_request_draft(
+    v_est,
+    'Montar una tienda online con pasarela de pago en la web.',
+    'Para vender los vinos de la carta.');
+  perform public.submit_request(v_req_equipo);
+  perform public.begin_request_analysis(v_req_equipo);
+
+  perform set_config('request.jwt.claims', '', false);
+  perform public.record_classification(
+    v_req_equipo, v_nuria, 'rules', 'large',
+    'Tienda online con pasarela de pago.',
+    array['tienda','pago'], null, null, null, null, 'Sin clave de IA configurada');
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_elena, 'role', 'authenticated')::text, false);
+  perform public.reject_request(v_req_equipo,
+    'Una tienda con pasarela de pago no entra en el mantenimiento web: es un proyecto aparte, con su presupuesto y sus plazos. Os pasamos propuesta si queréis seguir.');
+
+  -- ---- HU-12 · la rechaza el restaurante, ya validada ----
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+  v_req_cliente := public.create_request_draft(
+    v_est,
+    'Rehacer la página de contacto con un mapa interactivo.',
+    'Como la de la competencia.');
+  perform public.submit_request(v_req_cliente);
+  perform public.begin_request_analysis(v_req_cliente);
+
+  perform set_config('request.jwt.claims', '', false);
+  perform public.record_classification(
+    v_req_cliente, v_nuria, 'rules', 'medium',
+    'Rehacer la página de contacto con mapa interactivo.',
+    array['contacto','mapa'], null, null, null, null, 'Sin clave de IA configurada');
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_elena, 'role', 'authenticated')::text, false);
+  perform public.validate_classification(v_req_cliente, 'medium',
+    'Rehacer la página de contacto con mapa interactivo.');
+
+  -- Y el restaurante dice que no. Aquí `validated_at` YA está puesto, que
+  -- es lo que hace que el panel lo pinte en el paso del cliente y no en el
+  -- del equipo.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
+  perform public.decline_request(v_req_cliente,
+    'Lo dejamos para más adelante: este mes preferimos gastar el cambio mediano en la carta.');
+
+  perform set_config('request.jwt.claims', '', false);
+end $$;
+
+-- ------------------------------------------------------------
 -- 12.7 · Comprobación de la sección 12.
 --
 -- El mismo criterio que la comprobación de Magariños: si el sembrado se
@@ -1871,6 +1957,22 @@ begin
   -- pantalla de Mensajes tiene que enseñar.
   select count(distinct sender_role) into v_papeles
   from public.messages where space_id = v_espacio;
+
+  -- Los dos caminos de rechazo (12.8). Se distinguen por `validated_at`,
+  -- que es exactamente lo que mira el panel de la maqueta 05: si no
+  -- estuvieran los dos, esa deducción no la ejercitaría ningún dato.
+  if not exists (
+    select 1 from public.requests
+    where space_id = v_espacio and state = 'rejected' and validated_at is null
+  ) then
+    v_faltan := v_faltan || ' rechazo-del-equipo';
+  end if;
+  if not exists (
+    select 1 from public.requests
+    where space_id = v_espacio and state = 'rejected' and validated_at is not null
+  ) then
+    v_faltan := v_faltan || ' rechazo-del-cliente';
+  end if;
 
   if v_conv = 0 then v_faltan := v_faltan || ' conversaciones'; end if;
   if v_msg = 0 then v_faltan := v_faltan || ' mensajes'; end if;
