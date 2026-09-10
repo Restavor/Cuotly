@@ -37,6 +37,9 @@ export interface RequestDetailRow {
   readonly validated_category: string | null;
   readonly validated_summary: string | null;
   readonly validated_at: string | null;
+  /** Maqueta 05 · las dos fechas que cierran el panel de validación. */
+  readonly accepted_at: string | null;
+  readonly rejected_at: string | null;
   readonly rejected_reason: string | null;
   /** El plazo congelado al aceptar (RN-COM-15/17). `null` hasta entonces. */
   readonly accepted_start_sla_hours: number | null;
@@ -147,7 +150,7 @@ export async function loadRequestDetail(
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id",
+      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id",
     )
     .eq("id", requestId)
     .maybeSingle();

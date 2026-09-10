@@ -7,6 +7,7 @@ import {
   AfterValidateNote,
   ClassificationCard,
   ClientRequestCard,
+  ValidationStatusCard,
   RequestHeader,
   RequestHistoryCard,
 } from "@/components/request/Detail";
@@ -118,6 +119,13 @@ export default async function TeamRequestDetailPage({
         </div>
 
         <div className="space-y-6">
+          {/*
+            Maqueta 05 · el panel de los tres pasos va ENCIMA de la
+            clasificación y de los botones: dice dónde está la solicitud
+            antes de pedir que se decida sobre ella.
+          */}
+          <ValidationStatusCard request={request} proposal={proposal} />
+
           <ClassificationCard
             request={request}
             proposal={proposal}

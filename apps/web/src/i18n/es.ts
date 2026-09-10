@@ -794,6 +794,22 @@ export const es = {
 
       proposalTitle: "Propuesta de clasificación",
       validatedTitle: "Clasificación validada",
+
+      // Maqueta 05 · los tres pasos, derivados del estado (no hay columna
+      // de progreso: `validationSteps()` los calcula).
+      validationStatusTitle: "Estado de validación",
+      validationSteps: {
+        analysis: "Análisis completado",
+        internal: "Validación interna",
+        client: "Aceptación del cliente",
+      },
+      validationStepStatus: {
+        done: "Hecho",
+        current: "Pendiente",
+        pending: "Todavía no le toca",
+        rejected: "Rechazada aquí",
+        unknown: "No consta que se llegara a hacer",
+      },
       proposalCategoryLabel: "Categoría",
       proposalConsumptionLabel: "Consumo estimado",
       proposalScopeLabel: "Alcance",

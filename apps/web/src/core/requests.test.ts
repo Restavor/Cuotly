@@ -6,6 +6,10 @@ import {
   requestHeadline,
   requestTone,
   t1StopCause,
+  VALIDATION_STEPS,
+  validationSteps,
+  type ValidationStep,
+  type ValidationStepStatus,
 } from "./requests";
 import { REQUEST_STATES } from "./request-states";
 import type { TimerEvent } from "./timer-events";
@@ -166,5 +170,110 @@ describe("por qué está parado el reloj de primera atención (RN-SLA-03)", () =
     expect(t1StopCause("analyzing")).toBeNull();
     expect(t1StopCause("pending_internal_validation")).toBeNull();
     expect(t1StopCause("draft")).toBeNull();
+  });
+});
+
+describe("maqueta 05 · el estado de validación (RN-CLS-01/03, RN-REQ-02)", () => {
+  const solicitud = (over: Partial<Parameters<typeof validationSteps>[0]> = {}) =>
+    validationSteps({
+      state: "pending_internal_validation",
+      validatedAt: null,
+      acceptedAt: null,
+      rejectedAt: null,
+      proposedAt: "2026-09-10T08:26:00Z",
+      ...over,
+    });
+
+  const estado = (
+    pasos: readonly { step: ValidationStep; status: ValidationStepStatus }[],
+    paso: ValidationStep,
+  ) => pasos.find((p) => p.step === paso)!.status;
+
+  it("siempre devuelve los tres pasos, en orden", () => {
+    expect(solicitud().map((p) => p.step)).toEqual([...VALIDATION_STEPS]);
+  });
+
+  it("esperando validación: el análisis está hecho y la validación es la actual", () => {
+    const pasos = solicitud();
+    expect(estado(pasos, "analysis")).toBe("done");
+    expect(estado(pasos, "internal")).toBe("current");
+    expect(estado(pasos, "client")).toBe("pending");
+  });
+
+  it("validada: le toca al restaurante", () => {
+    const pasos = solicitud({
+      state: "pending_client_acceptance",
+      validatedAt: "2026-09-10T09:00:00Z",
+    });
+    expect(estado(pasos, "internal")).toBe("done");
+    expect(estado(pasos, "client")).toBe("current");
+  });
+
+  it("aceptada y todo lo que viene después: los tres hechos", () => {
+    for (const state of ["accepted", "in_progress", "published", "closed", "in_correction"]) {
+      const pasos = solicitud({ state, validatedAt: "2026-09-10T09:00:00Z" });
+      expect(pasos.map((p) => p.status), state).toEqual(["done", "done", "done"]);
+    }
+  });
+
+  it("cancelada por el cliente: la aceptación ocurrió, no se borra del panel", () => {
+    // RN-JOB-04 · cancelar después de aceptar no deshace la aceptación.
+    const pasos = solicitud({
+      state: "cancelled_after_start",
+      validatedAt: "2026-09-10T09:00:00Z",
+      acceptedAt: "2026-09-10T10:00:00Z",
+    });
+    expect(estado(pasos, "client")).toBe("done");
+  });
+
+  it("HU-14 · rechazada por el equipo: muere en la validación interna", () => {
+    // Y el paso del cliente NO se marca en rojo: el restaurante no ha
+    // rechazado nada, ni llegó a verlo.
+    const pasos = solicitud({ state: "rejected", rejectedAt: "2026-09-10T09:30:00Z" });
+    expect(estado(pasos, "internal")).toBe("rejected");
+    expect(estado(pasos, "client")).toBe("pending");
+  });
+
+  it("HU-12 · rechazada por el restaurante: muere en su paso, no en el del equipo", () => {
+    // La diferencia se deduce de `validatedAt`, porque RN-REQ-01 no admite
+    // dos estados "rechazada" distintos y el estado no lo dice.
+    const pasos = solicitud({
+      state: "rejected",
+      validatedAt: "2026-09-10T09:00:00Z",
+      rejectedAt: "2026-09-10T11:00:00Z",
+    });
+    expect(estado(pasos, "internal")).toBe("done");
+    expect(estado(pasos, "client")).toBe("rejected");
+  });
+
+  it("sin propuesta grabada el análisis no se afirma", () => {
+    // Puede que el clasificador fallara. Decir "completado" sin propuesta
+    // sería afirmar algo que no consta (CA-20).
+    expect(estado(solicitud({ proposedAt: null }), "analysis")).toBe("unknown");
+  });
+
+  it("recién enviada: el análisis es el paso actual, no uno fallido", () => {
+    for (const state of ["draft", "received"]) {
+      expect(estado(solicitud({ state, proposedAt: null }), "analysis"), state).toBe("current");
+    }
+  });
+
+  it("pedir información no retrocede la validación: sigue siendo el paso actual", () => {
+    // RN-SLA-03 · T1 se pausa y la solicitud vuelve a la cola del equipo.
+    expect(estado(solicitud({ state: "needs_information" }), "internal")).toBe("current");
+  });
+
+  it("ningún estado del catálogo deja los tres pasos sin decidir", () => {
+    // Una solicitud en cualquier estado tiene que poder pintar el panel:
+    // un `pending` en los tres significaría que la pantalla no sabe dónde
+    // está, y eso es un hueco en blanco.
+    for (const state of REQUEST_STATES) {
+      const pasos = solicitud({ state, proposedAt: "2026-09-10T08:26:00Z" });
+      expect(pasos, state).toHaveLength(3);
+      expect(
+        pasos.some((p) => p.status !== "pending"),
+        `${state} no sitúa la solicitud en ningún paso`,
+      ).toBe(true);
+    }
   });
 });

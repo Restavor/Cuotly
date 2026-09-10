@@ -6,8 +6,10 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 import {
   requestTone,
   t1StopCause,
+  validationSteps,
   type ConsumptionEstimate,
   type RequestTone,
+  type ValidationStepState,
 } from "@/core/requests";
 
 import { es } from "@/i18n/es";
@@ -131,15 +133,96 @@ export function RequestHeader({
         </div>
       </div>
 
+      {/*
+        Con su texto, como en la maqueta 05. Era un botón de solo icono con
+        el nombre en `aria-label`: quien ve la pantalla tenía que deducir a
+        dónde volvía por una flecha, y en móvil, sin `title` que se pueda
+        posar, no había manera de averiguarlo.
+      */}
       <Link
         href={backHref}
-        aria-label={t.back}
-        title={t.back}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+        className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
       >
-        <Icon name="arrowLeft" className="h-[18px] w-[18px]" />
+        <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
+        {t.back}
       </Link>
     </header>
+  );
+}
+
+// ---------------------------------------------------------------------
+// Estado de validación (maqueta 05)
+// ---------------------------------------------------------------------
+
+/**
+ * Los tres pasos de la maqueta 05, cada uno con su marca. Lo que decide
+ * cuál está en cuál es `validationSteps()` en `src/core/requests.ts`, con
+ * sus pruebas: aquí solo se elige el icono y el color.
+ *
+ * El paso actual lleva además `aria-current`: quien navega con lector de
+ * pantalla oye "paso actual" en vez de tener que deducirlo del color, que
+ * es lo único que lo distingue a la vista.
+ */
+const MARCA_DEL_PASO: Record<
+  ValidationStepState["status"],
+  { readonly icon: IconName; readonly clase: string }
+> = {
+  done: { icon: "check", clase: "bg-cuotly-green/10 text-cuotly-green" },
+  current: { icon: "alert", clase: "bg-warning/10 text-warning" },
+  rejected: { icon: "close", clase: "bg-danger/10 text-danger" },
+  pending: { icon: "clock", clase: "bg-soft-surface text-text-secondary" },
+  unknown: { icon: "clock", clase: "bg-soft-surface text-text-secondary" },
+};
+
+export function ValidationStatusCard({ request, proposal }: {
+  request: RequestDetailRow;
+  proposal: RequestProposal | null;
+}) {
+  const pasos = validationSteps({
+    state: request.state,
+    validatedAt: request.validated_at,
+    acceptedAt: request.accepted_at,
+    rejectedAt: request.rejected_at,
+    proposedAt: proposal?.createdAt ?? null,
+  });
+
+  return (
+    <Card title={t.validationStatusTitle}>
+      <ol className="space-y-4">
+        {pasos.map((paso) => {
+          const marca = MARCA_DEL_PASO[paso.status];
+          return (
+            <li
+              key={paso.step}
+              className="flex items-start gap-3"
+              aria-current={paso.status === "current" ? "step" : undefined}
+            >
+              <span
+                aria-hidden="true"
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${marca.clase}`}
+              >
+                <Icon name={marca.icon} className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-text">
+                  {t.validationSteps[paso.step]}
+                </span>
+                {/*
+                  Debajo, qué le pasa a ese paso. La fecha cuando la hay, y
+                  si no, el motivo: un paso "pendiente" sin nada debajo se
+                  lee igual que uno que falló.
+                */}
+                <span className="block text-sm text-text-secondary">
+                  {paso.at !== null
+                    ? fechaHora(paso.at)
+                    : t.validationStepStatus[paso.status]}
+                </span>
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </Card>
   );
 }
 

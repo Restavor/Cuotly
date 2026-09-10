@@ -1904,6 +1904,59 @@ regenerar salió idéntica, así que no había desviación.
       se vuelva a sembrar, y eso rehace el espacio de demostración entero,
       así que se pregunta antes.
 
+- [x] **Maqueta 05 · el estado de validación de una solicitud** — el panel
+    de tres pasos que faltaba, derivado y no almacenado.
+
+    La pantalla de validación interna ya estaba entera (entrada 26): lo que
+    pide el dibujo definitivo y no había era el panel de la derecha —
+    "Análisis completado · Validación interna · Aceptación del cliente"—
+    con la marca de cada paso.
+
+    **No es una columna de progreso, y esa es la decisión.** Los tres pasos
+    se derivan del estado y de las fechas que la solicitud ya guarda
+    (`validated_at`, `accepted_at`, `rejected_at`, y la fecha de la
+    propuesta). Una columna "paso actual" habría que mantenerla en
+    sincronía con la máquina de estados, y el día que se desincronizara la
+    pantalla mentiría sin que fallara nada (CLAUDE.md: los estados
+    derivados los calcula el servidor, no se almacenan).
+
+    **Quién rechazó se deduce, porque el estado no lo dice.** RN-REQ-01 no
+    admite dos estados "rechazada" distintos —el nombre visible es único—,
+    así que `rejected` puede ser el equipo antes de validar (HU-14) o el
+    restaurante rechazando la propuesta (HU-12). Lo separa `validated_at`:
+    si nadie llegó a validar, murió en la validación interna. Importa para
+    algo concreto: en el rechazo del equipo el paso del cliente **no** se
+    marca en rojo, porque el restaurante no rechazó nada — ni llegó a
+    verlo. Comprobado con mutación: tratar todo rechazo como del cliente
+    rompe el test.
+
+    **Sin propuesta grabada el análisis no se afirma.** Puede que el
+    clasificador fallara o que aún no haya corrido; decir "completado" sin
+    propuesta sería afirmar algo que no consta (CA-20). Se distingue de
+    "todavía no le toca": en `draft` y `received` el análisis es el paso
+    actual, no uno fallido.
+
+    Un test recorre **los quince estados del catálogo** y exige que ninguno
+    deje los tres pasos en "pendiente": eso significaría que la pantalla no
+    sabe dónde está la solicitud, y sería un hueco en blanco.
+
+    **De camino, el botón de volver deja de ser solo un icono.** Era una
+    flecha con el nombre en `aria-label`: quien ve la pantalla tenía que
+    deducir a dónde volvía, y en móvil, sin `title` que posar, no había
+    manera. Ahora lleva su texto, como en la maqueta.
+
+    **Lo que NO entrega:**
+
+    - **El paginador "1 de 3" no está.** Necesita saber de qué lista viene
+      esta solicitud y en qué posición, y esa lista depende del filtro con
+      el que se llegó. Se deja para cuando la navegación entre listado y
+      detalle se toque entera, en vez de inventar aquí un orden que no
+      coincida con el del listado.
+    - **Los dos caminos de rechazo no los ejercita la semilla**: el espacio
+      de demostración no tiene ninguna solicitud rechazada, así que esas
+      dos ramas solo están cubiertas por los tests unitarios.
+    - **Sin recorrido de Playwright ejecutado.**
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

@@ -156,3 +156,107 @@ export function t1StopCause(state: string): T1StopCause | null {
   }
   return null;
 }
+
+// ---------------------------------------------------------------------
+// El estado de validación (maqueta 05)
+// ---------------------------------------------------------------------
+
+/**
+ * Los tres pasos por los que pasa una solicitud antes de convertirse en
+ * trabajo, tal como los enumera la maqueta 05: el análisis que propone la
+ * clasificación (RN-CLS-01), la validación interna del equipo (RN-CLS-03)
+ * y la aceptación del restaurante (RN-REQ-02).
+ *
+ * No es una tabla nueva ni una columna de progreso: los tres se **derivan**
+ * del estado y de las fechas que la solicitud ya guarda. Una columna
+ * "paso actual" sería un dato que hay que mantener en sincronía con la
+ * máquina de estados, y el día que se desincronizara la pantalla mentiría
+ * sin que fallara nada (CLAUDE.md: los estados derivados los calcula el
+ * servidor, no se almacenan).
+ */
+export const VALIDATION_STEPS = ["analysis", "internal", "client"] as const;
+
+export type ValidationStep = (typeof VALIDATION_STEPS)[number];
+
+/**
+ * - `done`: el paso se completó, y `at` dice cuándo si se sabe.
+ * - `current`: es el paso en el que la solicitud está esperando ahora.
+ * - `pending`: todavía no le toca.
+ * - `rejected`: la solicitud murió **en este paso**.
+ * - `unknown`: el paso no se puede afirmar. Hoy solo el análisis, cuando
+ *   no hay propuesta grabada: puede que el clasificador fallara o que aún
+ *   no haya corrido, y decir "completado" sin propuesta sería mentir
+ *   (CA-20).
+ */
+export type ValidationStepStatus = "done" | "current" | "pending" | "rejected" | "unknown";
+
+export interface ValidationStepState {
+  readonly step: ValidationStep;
+  readonly status: ValidationStepStatus;
+  readonly at: string | null;
+}
+
+/** Estados en los que la solicitud ya pasó de la aceptación del cliente. */
+const PAST_ACCEPTANCE = [
+  "accepted",
+  "in_progress",
+  "published",
+  "correction_requested",
+  "in_correction",
+  "closed",
+  "cancelled_before_start",
+  "cancelled_after_start",
+];
+
+export function validationSteps(request: {
+  readonly state: string;
+  readonly validatedAt: string | null;
+  readonly acceptedAt: string | null;
+  readonly rejectedAt: string | null;
+  /** Cuándo grabó el clasificador su propuesta, si la grabó. */
+  readonly proposedAt: string | null;
+}): readonly ValidationStepState[] {
+  const { state, validatedAt, acceptedAt, rejectedAt, proposedAt } = request;
+  const pasadoAceptacion = PAST_ACCEPTANCE.includes(state);
+
+  // Quién rechazó, deducido de las fechas y no de una columna que no
+  // existe: RN-REQ-01 no admite dos estados "rechazada" distintos, así que
+  // el estado no lo dice. Si la solicitud está rechazada y nadie llegó a
+  // validarla, murió en la validación interna (HU-14); si sí se validó,
+  // fue el restaurante quien dijo que no (HU-12).
+  const rechazada = state === "rejected";
+  const rechazoInterno = rechazada && validatedAt === null;
+
+  // 1 · Análisis. La propuesta es la prueba de que corrió; sin ella no se
+  // afirma nada, ni siquiera cuando el estado ha seguido adelante.
+  const analisis: ValidationStepState =
+    proposedAt !== null
+      ? { step: "analysis", status: "done", at: proposedAt }
+      : state === "draft" || state === "received"
+        ? { step: "analysis", status: "current", at: null }
+        : { step: "analysis", status: "unknown", at: null };
+
+  // 2 · Validación interna.
+  const interna: ValidationStepState = rechazoInterno
+    ? { step: "internal", status: "rejected", at: rejectedAt }
+    : validatedAt !== null || acceptedAt !== null || pasadoAceptacion
+      ? { step: "internal", status: "done", at: validatedAt }
+      : state === "pending_internal_validation" || state === "needs_information"
+        ? { step: "internal", status: "current", at: null }
+        : { step: "internal", status: "pending", at: null };
+
+  // 3 · Aceptación del cliente.
+  const cliente: ValidationStepState = rechazada
+    ? rechazoInterno
+      ? // Murió antes: este paso no llegó a ocurrir y no se marca en rojo,
+        // porque el restaurante no rechazó nada.
+        { step: "client", status: "pending", at: null }
+      : { step: "client", status: "rejected", at: rejectedAt }
+    : acceptedAt !== null || pasadoAceptacion
+      ? { step: "client", status: "done", at: acceptedAt }
+      : state === "pending_client_acceptance"
+        ? { step: "client", status: "current", at: null }
+        : { step: "client", status: "pending", at: null };
+
+  return [analisis, interna, cliente];
+}
