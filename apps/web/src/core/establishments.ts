@@ -322,3 +322,78 @@ export function parseFilters(
 
 export type { AttentionItem, AttentionKind, ChangeCategory };
 export { CHANGE_CATEGORIES };
+
+// ---------------------------------------------------------------------
+// El Resumen de la ficha (maqueta 03).
+// ---------------------------------------------------------------------
+
+/**
+ * Los estados en los que un trabajo está VIVO para la tarjeta "Trabajo
+ * actual", **en orden de lo más avanzado a lo menos**.
+ *
+ * No es `ACTIVE_JOB_STATES` de `job-states.ts` y la diferencia importa:
+ * aquella lista mide carga de trabajo humano (RN-ASG-13) y por eso deja
+ * fuera lo bloqueado y lo pausado. Aquí se enseña qué está pasando con
+ * este restaurante, y un trabajo bloqueado esperándole a él es
+ * exactamente lo que quiere ver quien abre su ficha.
+ *
+ * El orden es el dato: `pickCurrentJob()` elige por él.
+ */
+export const LIVE_JOB_STATES = [
+  "in_progress",
+  "blocked_by_client",
+  "authorized_pause",
+  "reassignment_requested",
+  "assigned",
+  "pending_assignment",
+] as const;
+
+export type LiveJobState = (typeof LIVE_JOB_STATES)[number];
+
+/**
+ * Cuál de los trabajos vivos se enseña: el **más avanzado**, y entre dos
+ * del mismo estado, el más reciente.
+ *
+ * Por qué no simplemente el más reciente: un restaurante puede tener uno
+ * en curso y otro recién asignado, y lo que está pasando ahora es el
+ * primero. Ordenar por fecha enseñaría el que todavía no ha empezado y la
+ * tarjeta diría "quedan 2 h para comenzar" mientras hay otro a medio
+ * hacer.
+ *
+ * Las filas llegan ya ordenadas por fecha descendente desde la consulta;
+ * esta función solo decide entre estados, y por eso `find` basta.
+ */
+export function pickCurrentJob<T extends { readonly state: string }>(
+  jobs: readonly T[],
+): T | null {
+  for (const state of LIVE_JOB_STATES) {
+    const encontrado = jobs.find((job) => job.state === state);
+    if (encontrado !== undefined) return encontrado;
+  }
+  return null;
+}
+
+/**
+ * Qué plazo enseña la tarjeta del trabajo actual.
+ *
+ * `"overdue"` gana a todo: un trabajo fuera de plazo con dos horas
+ * "restantes" en el otro contador enseñaría las dos horas y diría lo
+ * contrario de lo que pasa. Y sin contador en marcha se dice eso —hay
+ * estados que no tienen ninguno, como `pending_assignment` antes de que
+ * T2 arranque (RN-SLA-05)— en vez de un cero que se leería como "se acaba
+ * el tiempo".
+ */
+export type CurrentJobDeadline =
+  | { readonly kind: "overdue" }
+  | { readonly kind: "none" }
+  | { readonly kind: "t2" | "t3"; readonly remainingMinutes: number };
+
+export function currentJobDeadline(job: {
+  readonly overdue: boolean;
+  readonly counter: "t2" | "t3" | null;
+  readonly remainingMinutes: number | null;
+}): CurrentJobDeadline {
+  if (job.overdue) return { kind: "overdue" };
+  if (job.counter === null || job.remainingMinutes === null) return { kind: "none" };
+  return { kind: job.counter, remainingMinutes: job.remainingMinutes };
+}

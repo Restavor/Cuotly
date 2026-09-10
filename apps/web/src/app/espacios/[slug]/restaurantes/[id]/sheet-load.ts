@@ -1,10 +1,11 @@
 import type { CycleBag, EstablishmentIdentity } from "@/core/establishments";
 import type { AttentionItem } from "@/core/home";
-import { groupAttentionByEstablishment } from "@/core/establishments";
+import { LIVE_JOB_STATES, groupAttentionByEstablishment, pickCurrentJob } from "@/core/establishments";
 import type { EstablishmentState } from "@/core/naming";
 import type { createClient } from "@/lib/supabase/server";
 
 import { loadSpaceAttention } from "../../home-load";
+import { loadJobTimers } from "../../trabajos/[id]/timers-load";
 
 /**
  * Lo que enseña la ficha del restaurante (PRD §15.2), leído del servidor.
@@ -148,9 +149,149 @@ export async function loadSheetHeader(
 // Resumen
 // ---------------------------------------------------------------------
 
+/** Una solicitud esperando la validación del equipo (RN-CLS-03). */
+export interface SheetPendingRequest {
+  readonly id: string;
+  readonly description: string;
+  readonly createdAt: string;
+  readonly deepLink: string;
+}
+
+/**
+ * El trabajo vivo del restaurante y el plazo que le corre, para la tarjeta
+ * "Trabajo actual" de la maqueta 03.
+ *
+ * `remainingMinutes` sale de recalcular el contador desde `timer_events`
+ * (CA-10), no de ningún campo: lo hace `loadJobTimers()`, la misma función
+ * que usa el detalle del trabajo, para que las dos pantallas no puedan
+ * decir horas distintas del mismo plazo.
+ */
+export interface SheetCurrentJob {
+  readonly id: string;
+  readonly code: string;
+  readonly title: string;
+  readonly state: string;
+  readonly deepLink: string;
+  /** `"t2"` es el plazo para comenzar y `"t3"` el de ejecución (RN-SLA). */
+  readonly counter: "t2" | "t3" | null;
+  readonly remainingMinutes: number | null;
+  readonly overdue: boolean;
+}
+
+/**
+ * El estado de pago del restaurante, para la tarjeta de la maqueta 03.
+ *
+ * `allowed` es `false` cuando quien mira no puede ver la facturación
+ * (RN-FIN-05/07: un trabajador solo ve la de sus restaurantes
+ * autorizados). Y entonces la tarjeta **no dice "al día"**: decir que no
+ * hay deuda sin haber podido mirar es afirmar algo que no se sabe (CA-20).
+ */
+export interface SheetPaymentStatus {
+  readonly allowed: boolean;
+  readonly outstandingCents: number;
+  /** Cobros vencidos y sin saldar. Es lo que convierte "debe" en "debe ya". */
+  readonly overdueCount: number;
+}
+
 export interface SheetSummary {
   readonly bags: readonly CycleBag[];
   readonly attention: readonly AttentionItem[];
+  readonly pendingValidation: readonly SheetPendingRequest[];
+  /** Solicitudes abiertas en total, no solo las que esperan validación. */
+  readonly openRequests: number;
+  readonly currentJob: SheetCurrentJob | null;
+  /**
+   * Cuántos trabajos vivos tiene en total. La tarjeta enseña UNO —el más
+   * avanzado— y con esto puede decir cuántos quedan detrás: enseñar uno de
+   * seis sin avisar es esconder cinco (CA-20).
+   */
+  readonly liveJobs: number;
+  readonly payment: SheetPaymentStatus;
+}
+
+/**
+ * La deuda viva del restaurante, derivada del libro (RN-FIN-02 +
+ * RN-DAT-05): aquí no se suma dinero, se pregunta al servidor cobro a
+ * cobro. Un contador de deuda en una columna sería justo lo que CLAUDE.md
+ * prohíbe.
+ */
+async function loadPaymentStatus(
+  supabase: Supabase,
+  establishmentId: string,
+  now: Date,
+): Promise<SheetPaymentStatus> {
+  const { data: allowed } = await supabase.rpc("can_read_establishment_finance", {
+    p_establishment_id: establishmentId,
+  });
+
+  if (allowed !== true) return { allowed: false, outstandingCents: 0, overdueCount: 0 };
+
+  const { data: charges } = await supabase
+    .from("charges")
+    .select("id, due_at")
+    .eq("establishment_id", establishmentId);
+
+  const pendientes = await Promise.all(
+    (charges ?? []).map(async (charge) => {
+      const { data: outstanding } = await supabase.rpc("charge_outstanding_cents", {
+        p_charge_id: charge.id,
+      });
+      return { outstanding: outstanding ?? 0, dueAt: charge.due_at };
+    }),
+  );
+
+  return {
+    allowed: true,
+    outstandingCents: pendientes.reduce((total, c) => total + Math.max(0, c.outstanding), 0),
+    overdueCount: pendientes.filter((c) => c.outstanding > 0 && new Date(c.dueAt) < now).length,
+  };
+}
+
+/**
+ * El trabajo vivo con su plazo. El contador se recalcula con
+ * `loadJobTimers()` —la misma función del detalle del trabajo— para que
+ * las dos pantallas no puedan discrepar sobre las horas que quedan.
+ */
+async function currentJobFrom(
+  supabase: Supabase,
+  spaceSlug: string,
+  establishmentId: string,
+  job: {
+    readonly id: string;
+    readonly code: string;
+    readonly space_id: string;
+    readonly state: string;
+    readonly category: string | null;
+    readonly request_id: string | null;
+  },
+  now: Date,
+): Promise<SheetCurrentJob> {
+  // El título que se enseña es el de la solicitud que lo originó, como en
+  // la maqueta ("Cambiar horario del sábado"): el código del trabajo no le
+  // dice nada a nadie de un vistazo. Si no hay solicitud detrás, se queda
+  // el código, que es verdad aunque sea seco.
+  const { data: request } =
+    job.request_id === null
+      ? { data: null }
+      : await supabase
+          .from("requests")
+          .select("description")
+          .eq("id", job.request_id)
+          .maybeSingle();
+
+  const timers = await loadJobTimers(supabase, job, now);
+  const status = timers.counter === "t2" ? timers.t2 : timers.counter === "t3" ? timers.t3 : null;
+
+  return {
+    id: job.id,
+    code: job.code,
+    title: request?.description ?? job.code,
+    state: job.state,
+    deepLink: `/espacios/${spaceSlug}/trabajos/${job.id}`,
+    counter: timers.counter,
+    remainingMinutes: status?.remainingMinutes ?? null,
+    overdue: timers.outOfDeadline,
+  };
 }
 
 export async function loadSheetSummary(
@@ -160,10 +301,29 @@ export async function loadSheetSummary(
   establishmentId: string,
   now: Date = new Date(),
 ): Promise<SheetSummary> {
-  const [{ data: allowance }, attention] = await Promise.all([
-    supabase.rpc("establishment_cycle_allowance", { p_establishment_id: establishmentId }),
-    loadSpaceAttention(supabase, spaceId, spaceSlug, now),
-  ]);
+  const [{ data: allowance }, attention, { data: requests }, { data: jobs }, payment] =
+    await Promise.all([
+      supabase.rpc("establishment_cycle_allowance", { p_establishment_id: establishmentId }),
+      loadSpaceAttention(supabase, spaceId, spaceSlug, now),
+      supabase
+        .from("requests")
+        .select("id, description, state, created_at")
+        .eq("establishment_id", establishmentId)
+        .not("state", "in", `(${CLOSED_REQUEST_STATES.join(",")})`)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("jobs")
+        .select("id, code, space_id, state, category, request_id, created_at")
+        .eq("establishment_id", establishmentId)
+        .in("state", [...LIVE_JOB_STATES])
+        .order("created_at", { ascending: false }),
+      loadPaymentStatus(supabase, establishmentId, now),
+    ]);
+
+  // El trabajo que se enseña es el MÁS AVANZADO de los vivos, no el más
+  // reciente. La decisión vive en `src/core/establishments.ts`, con su
+  // prueba: aquí solo se le pasan las filas.
+  const elegido = pickCurrentJob(jobs ?? []);
 
   return {
     bags: (allowance ?? []).map((line) => ({
@@ -172,6 +332,21 @@ export async function loadSheetSummary(
       remaining: line.remaining,
     })),
     attention: groupAttentionByEstablishment(attention.items).get(establishmentId) ?? [],
+    openRequests: (requests ?? []).length,
+    pendingValidation: (requests ?? [])
+      .filter((request) => request.state === "pending_internal_validation")
+      .map((request) => ({
+        id: request.id,
+        description: request.description,
+        createdAt: request.created_at,
+        deepLink: `/espacios/${spaceSlug}/solicitudes/${request.id}`,
+      })),
+    liveJobs: (jobs ?? []).length,
+    currentJob:
+      elegido === null
+        ? null
+        : await currentJobFrom(supabase, spaceSlug, establishmentId, elegido, now),
+    payment,
   };
 }
 

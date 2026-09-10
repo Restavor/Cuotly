@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
-import { splitRemaining } from "@/core/home";
+
 import {
   Card,
   EmptyState,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui";
 import { todayInTimeZone } from "@/core/finance";
 import { es } from "@/i18n/es";
+import { tiempoRestante } from "@/i18n/duration";
 import { createClient } from "@/lib/supabase/server";
 
 import { jobTone } from "../page";
@@ -49,14 +50,6 @@ type CategoryKey = keyof typeof es.naming.categories;
 
 function euros(cents: number): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
-}
-
-/** El tiempo restante, en horas y minutos laborables (RN-SLA-16). */
-function tiempoRestante(minutes: number): string {
-  const { hours, minutes: resto } = splitRemaining(minutes);
-  if (hours === 0) return es.spaceHome.attention.minutes(resto);
-  if (resto === 0) return es.spaceHome.attention.hours(hours);
-  return es.spaceHome.attention.hoursAndMinutes(hours, resto);
 }
 
 /**

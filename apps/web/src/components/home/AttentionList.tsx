@@ -1,9 +1,10 @@
 import Link from "next/link";
 
-import { splitRemaining, type AttentionItem, type AttentionKind } from "@/core/home";
+import type { AttentionItem, AttentionKind } from "@/core/home";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { StatusBadge } from "@/components/ui";
 import { es } from "@/i18n/es";
+import { tiempoRestante } from "@/i18n/duration";
 
 /**
  * "Necesita atención": la lista central del Inicio (§20.4, "solicitudes y
@@ -43,14 +44,6 @@ export const ATTENTION_ASPECT: Readonly<
 /** El día en que entró la fila, como se lee en la maqueta: "7 sep 2026". */
 function fecha(value: string): string {
   return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(value));
-}
-
-/** El tiempo restante, en horas y minutos laborables. */
-function tiempoRestante(minutes: number): string {
-  const { hours, minutes: resto } = splitRemaining(minutes);
-  if (hours === 0) return es.spaceHome.attention.minutes(resto);
-  if (resto === 0) return es.spaceHome.attention.hours(hours);
-  return es.spaceHome.attention.hoursAndMinutes(hours, resto);
 }
 
 function etiqueta(item: AttentionItem): string {

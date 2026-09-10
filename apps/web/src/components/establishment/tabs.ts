@@ -63,14 +63,17 @@ export const MANAGEMENT_BLOCKS: readonly ManagementBlock[] = [
 ];
 
 /**
- * Los dos que se nombran desde fuera de esta lista. Se buscan por su clave
+ * Los que se nombran desde fuera de esta lista. Se buscan por su clave
  * y no por su posición: `MANAGEMENT_BLOCKS[3]` era "archivos" hasta que la
  * ficha de datos se puso delante, y un índice a mano habría movido el
  * filtro del catálogo al bloque de usuarios sin que fallara ningún tipo.
  */
 export const MANAGEMENT_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "management")!;
+export const OPERATION_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "operation")!;
 export const FILES_BLOCK: ManagementBlock =
   MANAGEMENT_BLOCKS.find((block) => block.key === "files")!;
+export const PAYMENTS_BLOCK: ManagementBlock =
+  MANAGEMENT_BLOCKS.find((block) => block.key === "payments")!;
 
 /**
  * Qué pestaña pide la dirección. Lo que no se reconoce cae en la primera,

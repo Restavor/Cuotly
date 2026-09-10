@@ -1713,6 +1713,77 @@ regenerar salió idéntica, así que no había desviación.
     volver a lanzarlo allí rehace el espacio de demostración entero y eso
     se pregunta antes, no se hace por cuenta propia.
 
+- [x] **Maqueta 03 · el Resumen de la ficha** — las cuatro tarjetas del
+    dibujo, con datos reales o con su motivo.
+
+    El Resumen tenía tres tarjetas de plan/servicio/renovación y las
+    bolsas del ciclo. La maqueta pide otra cosa: consumo del plan,
+    solicitudes pendientes, trabajo actual, próximo menú y estado de pago.
+
+    **Lo que se quita.** Las tres tarjetas de plan, servicio y renovación:
+    la maqueta no las tiene, el plan ya se lee en la insignia del
+    encabezado y Gestión · Plan cuenta los tres datos enteros —plan,
+    servicios y permanencia— en vez de resumirlos a medias. No queda nada
+    inalcanzable.
+
+    **Lo que se añade, y de dónde sale cada número:**
+
+    - **Solicitudes pendientes**, contando las que esperan validación del
+      equipo (`pending_internal_validation`, RN-CLS-03). Con solicitudes
+      abiertas pero ninguna esperando, la tarjeta lo dice así en vez de
+      enseñar el estado vacío: "no hay ninguna" y "las hay, pero no te
+      esperan a ti" no son lo mismo (CA-20).
+    - **Trabajo actual**, con su plazo recalculado por `loadJobTimers()`
+      —la misma función del detalle del trabajo, para que las dos
+      pantallas no puedan decir horas distintas del mismo plazo (CA-10)—.
+    - **Estado de pago**, derivado del libro cobro a cobro (RN-FIN-02 +
+      RN-DAT-05). Nunca de un contador en columna.
+
+    **Dos decisiones que no se leen solas, y por eso están en `src/core/`
+    con su prueba:**
+
+    1. **Cuál es "el trabajo actual"**: el más avanzado de los vivos, no
+       el más reciente. Con uno en curso y otro recién asignado, lo que
+       está pasando ahora es el primero; ordenar por fecha enseñaría el
+       que aún no ha empezado y la tarjeta diría "quedan 2 h para
+       comenzar" con otro a medio hacer. `LIVE_JOB_STATES` es esa lista, y
+       **no** es `ACTIVE_JOB_STATES`: aquella mide carga de trabajo humano
+       (RN-ASG-13) y deja fuera lo bloqueado, que aquí sí cuenta — un
+       trabajo esperando a este restaurante es justo lo que quiere ver
+       quien abre su ficha. Comprobado con mutación.
+    2. **Qué plazo se enseña**: "fuera de plazo" gana a cualquier tiempo
+       restante, y sin contador en marcha se dice eso y no un cero, que se
+       leería como "se acaba el tiempo".
+
+    **Lo que no se copia del dibujo.** "Menú de mañana · Publicación
+    solicitada" son datos de ejemplo: Menú Diario es de la Fase 2, y ni el
+    próximo menú ni el contador de actualizaciones de RN-CON-02 existen.
+    La tarjeta dice eso (CLAUDE.md MUST NOT).
+
+    **Y una tarjeta que la maqueta no tiene y se queda**: "Necesita
+    atención". Cubre lo que las otras dos no miran —un trabajo fuera de
+    plazo, uno sin asignar, una corrección pedida— y es la misma lista,
+    con el mismo orden, que el Inicio del espacio. Quitarla para parecerse
+    más al dibujo escondería avisos reales.
+
+    **Enseñar uno de seis es esconder cinco.** Magariños tiene seis
+    trabajos vivos en la semilla y la tarjeta enseña uno, así que dice
+    cuántos quedan detrás. Se vio comprobando la pantalla contra los datos
+    reales, no leyendo el código.
+
+    **`tiempoRestante()` deja de estar copiado tres veces.** Vivía con el
+    mismo cuerpo exacto en el detalle de una solicitud, la lista de
+    atención y el detalle de un trabajo; esta pantalla pedía un cuarto.
+    Pasa a `src/i18n/duration.ts`, que es donde se eligen las palabras en
+    español, mientras `splitRemaining()` sigue siendo la parte de dominio.
+
+    **Lo que NO entrega:**
+
+    - **El estado de pago no distingue "vencido" de "pendiente" en el
+      titular**: dice cuánto se debe y cuántos cobros están vencidos
+      debajo. La maqueta solo tiene el caso "Al día".
+    - **Sin recorrido de Playwright ejecutado.**
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

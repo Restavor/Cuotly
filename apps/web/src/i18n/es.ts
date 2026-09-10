@@ -2048,10 +2048,52 @@ export const es = {
     cycleEmptyReason:
       "Los consumos se cuentan sobre el ciclo del plan. Sin plan contratado no hay bolsa que contar.",
     ledgerLink: "Ver el libro de consumos",
-    dailyMenuCounterTitle: "Actualizaciones de Menú Diario",
-    dailyMenuCounterEmptyTitle: "Todavía no se cuentan",
-    dailyMenuCounterEmptyReason:
-      "Menú Diario tiene su propio contador de actualizaciones, separado del de cambios (RN-CON-02). Se pone en marcha con la Fase 2, cuando el servicio empiece a publicar.",
+    today: (hora: string) => `Hoy, ${hora}`,
+    cycleThisMonth: "(este mes)",
+    editEstablishment: "Editar restaurante",
+
+    // Maqueta 03 · las cuatro tarjetas del Resumen.
+    pendingRequestsTitle: "Solicitudes pendientes",
+    pendingRequestsLink: "Ver todas",
+    pendingValidationCount: (count: number) =>
+      count === 1 ? "solicitud por validar" : "solicitudes por validar",
+    pendingRequestsOpen: (count: number) =>
+      count === 1 ? "1 solicitud abierta, ninguna esperando validación." : `${count} solicitudes abiertas, ninguna esperando validación.`,
+    pendingRequestsEmptyTitle: "Ninguna solicitud abierta",
+    pendingRequestsEmptyReason:
+      "Cuando este restaurante envíe una solicitud aparecerá aquí hasta que se cierre.",
+
+    currentJobTitle: "Trabajo actual",
+    currentJobLink: "Ver trabajos",
+    currentJobMore: (rest: number) =>
+      rest === 1 ? "y 1 más en marcha" : `y ${rest} más en marcha`,
+    currentJobToStart: (remaining: string) => `${remaining} para comenzar`,
+    currentJobToFinish: (remaining: string) => `${remaining} para publicar`,
+    currentJobOverdue: "Fuera de plazo",
+    currentJobNoCounter: "Sin plazo en marcha",
+    currentJobEmptyTitle: "Ningún trabajo en marcha",
+    currentJobEmptyReason:
+      "Aquí aparece el trabajo vivo de este restaurante con el plazo que le corre, en cuanto haya uno.",
+
+    nextMenuTitle: "Próximo menú",
+    nextMenuEmptyTitle: "Menú Diario llega con la Fase 2",
+    nextMenuEmptyReason:
+      "Ni el menú de mañana ni su estado de publicación existen todavía, y el contador de actualizaciones de Menú Diario es aparte del de cambios (RN-CON-02). Los dos se ponen en marcha cuando el servicio empiece a publicar.",
+
+    paymentStatusTitle: "Estado de pago",
+    paymentStatusLink: "Ver facturación",
+    paymentUpToDate: "Al día",
+    paymentUpToDateReason: "Sin cobros pendientes.",
+    paymentOwed: (amount: string) => `Debe ${amount}`,
+    paymentOwedReason: (overdue: number) =>
+      overdue === 0
+        ? "Pendiente de cobro, todavía dentro de plazo."
+        : overdue === 1
+          ? "1 cobro vencido y sin saldar."
+          : `${overdue} cobros vencidos y sin saldar.`,
+    paymentHiddenTitle: "No se puede mostrar",
+    paymentHiddenReason:
+      "La facturación de este restaurante no te corresponde (RN-FIN-05). No se dice si hay deuda o no: eso sería afirmar algo sin haber podido mirarlo.",
     attentionTitle: "Necesita atención",
     attentionEmptyTitle: "Nada pendiente en este restaurante",
     attentionEmptyReason:

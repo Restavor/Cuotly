@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   attentionHeadline,
+  currentJobDeadline,
   CYCLE_CATEGORY_ORDER,
   cycleUsage,
   groupAttentionByEstablishment,
+  LIVE_JOB_STATES,
+  pickCurrentJob,
   matchesFilters,
   NO_PLAN_FILTER,
   parseFilters,
@@ -15,6 +18,7 @@ import {
   type FilterableEstablishment,
 } from "./establishments";
 import { CHANGE_CATEGORIES } from "./classification-rules";
+import { JOB_STATES } from "./job-states";
 import { ESTABLISHMENT_STATES } from "./naming";
 
 const item = (
@@ -177,5 +181,82 @@ describe("los filtros del listado", () => {
       ESTABLISHMENT_STATES,
     );
     expect(leidos).toEqual({ search: "", groupId: "g1", planId: NO_PLAN_FILTER, status: "paused" });
+  });
+});
+
+describe("maqueta 03 · el trabajo actual de la ficha", () => {
+  const job = (state: string, id: string) => ({ state, id });
+
+  it("elige el más avanzado, no el más reciente", () => {
+    // Las filas llegan por fecha descendente: el recién asignado va
+    // primero. Lo que está pasando ahora, sin embargo, es el que está en
+    // curso — y es el que tiene que enseñar la tarjeta.
+    const elegido = pickCurrentJob([job("assigned", "nuevo"), job("in_progress", "en-curso")]);
+    expect(elegido?.id).toBe("en-curso");
+  });
+
+  it("entre dos del mismo estado, el primero de la lista (el más reciente)", () => {
+    const elegido = pickCurrentJob([job("in_progress", "a"), job("in_progress", "b")]);
+    expect(elegido?.id).toBe("a");
+  });
+
+  it("un trabajo bloqueado por el cliente cuenta como vivo", () => {
+    // Es la diferencia deliberada con ACTIVE_JOB_STATES (RN-ASG-13), que
+    // mide carga de trabajo humano: un trabajo esperando a ESTE
+    // restaurante es justo lo que quiere ver quien abre su ficha.
+    expect(pickCurrentJob([job("blocked_by_client", "x")])?.id).toBe("x");
+  });
+
+  it("sin trabajos vivos no elige ninguno", () => {
+    expect(pickCurrentJob([])).toBeNull();
+  });
+
+  it("todos los estados vivos son estados de trabajo de verdad", () => {
+    // Un estado mal escrito aquí no fallaría: la consulta no devolvería
+    // filas y la tarjeta diría "ningún trabajo en marcha" para siempre.
+    for (const state of LIVE_JOB_STATES) {
+      expect(JOB_STATES, `${state} no es un estado de trabajo`).toContain(state);
+    }
+  });
+
+  it("ningún estado terminal se cuela entre los vivos", () => {
+    for (const state of ["published", "completed", "cancelled_before_start", "cancelled_after_start"]) {
+      expect(LIVE_JOB_STATES as readonly string[]).not.toContain(state);
+    }
+  });
+});
+
+describe("maqueta 03 · qué plazo enseña la tarjeta del trabajo", () => {
+  it("RN-SLA-05 · el plazo para comenzar es T2", () => {
+    expect(currentJobDeadline({ overdue: false, counter: "t2", remainingMinutes: 120 })).toEqual({
+      kind: "t2",
+      remainingMinutes: 120,
+    });
+  });
+
+  it("RN-SLA-11 · el de ejecución es T3", () => {
+    expect(currentJobDeadline({ overdue: false, counter: "t3", remainingMinutes: 30 })).toEqual({
+      kind: "t3",
+      remainingMinutes: 30,
+    });
+  });
+
+  it("fuera de plazo gana a cualquier tiempo restante", () => {
+    // Si no ganara, un trabajo fuera de plazo enseñaría "quedan 2 h" y
+    // diría lo contrario de lo que pasa.
+    expect(currentJobDeadline({ overdue: true, counter: "t3", remainingMinutes: 120 })).toEqual({
+      kind: "overdue",
+    });
+  });
+
+  it("sin contador en marcha se dice eso, no un cero", () => {
+    // `pending_assignment` antes de que T2 arranque (RN-SLA-05): un cero
+    // se leería como "se acaba el tiempo".
+    expect(currentJobDeadline({ overdue: false, counter: null, remainingMinutes: null })).toEqual({
+      kind: "none",
+    });
+    expect(currentJobDeadline({ overdue: false, counter: "t2", remainingMinutes: null })).toEqual({
+      kind: "none",
+    });
   });
 });

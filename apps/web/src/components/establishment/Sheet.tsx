@@ -12,23 +12,27 @@ import {
   TableRow,
 } from "@/components/ui";
 import { AttentionList } from "@/components/home/AttentionList";
-import { Icon, type IconName } from "@/components/ui/Icon";
+import { Icon } from "@/components/ui/Icon";
 import { EstablishmentDataForm } from "./DataForm";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
 import {
   IDENTITY_FIELDS,
   MULTILINE_IDENTITY_FIELDS,
+  currentJobDeadline,
   identityIsEmpty,
   sortedCycleUsage,
   type CycleUsage,
 } from "@/core/establishments";
 import { es } from "@/i18n/es";
+import { tiempoRestante } from "@/i18n/duration";
 
 import {
   FILES_BLOCK,
   MANAGEMENT_BLOCKS,
   MANAGEMENT_TAB,
+  OPERATION_TAB,
+  PAYMENTS_BLOCK,
   SHEET_TABS,
   filesHref,
   managementBlockLabel,
@@ -39,6 +43,7 @@ import {
 } from "./tabs";
 import type {
   SheetCounts,
+  SheetCurrentJob,
   SheetFiles,
   SheetHeader,
   SheetIdentity,
@@ -111,6 +116,37 @@ function dia(value: string): string {
   return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(value));
 }
 
+/**
+ * "Hoy, 10:24" para lo de hoy y la fecha corta con su hora para lo demás,
+ * como en la maqueta 03. Una solicitud que llegó hace veinte minutos y
+ * otra de la semana pasada se distinguen de un vistazo, que es para lo que
+ * sirve la columna.
+ */
+function momento(value: string): string {
+  const fecha = new Date(value);
+  const hora = new Intl.DateTimeFormat("es-ES", { timeStyle: "short" }).format(fecha);
+  const hoy = new Date();
+  const mismoDia =
+    fecha.getFullYear() === hoy.getFullYear() &&
+    fecha.getMonth() === hoy.getMonth() &&
+    fecha.getDate() === hoy.getDate();
+  return mismoDia ? es.establishmentSheet.today(hora) : `${diaCorto(value)}, ${hora}`;
+}
+
+/**
+ * El plazo del trabajo vivo, con su nombre. Un "Quedan 2 h" a secas no
+ * dice para qué: T2 es el plazo para comenzar (RN-SLA-05) y T3 el de
+ * ejecución (RN-SLA-11), y la misma tarjeta enseña uno u otro según el
+ * estado. Sin contador en marcha se dice eso, no una hora inventada.
+ */
+function plazoDelTrabajo(job: SheetCurrentJob): string {
+  const plazo = currentJobDeadline(job);
+  if (plazo.kind === "overdue") return t.currentJobOverdue;
+  if (plazo.kind === "none") return t.currentJobNoCounter;
+  const restante = tiempoRestante(plazo.remainingMinutes);
+  return plazo.kind === "t2" ? t.currentJobToStart(restante) : t.currentJobToFinish(restante);
+}
+
 function diaCorto(value: string): string {
   return new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(new Date(value));
 }
@@ -132,45 +168,6 @@ function statusTone(status: string): "success" | "warning" | "danger" | "neutral
   if (status === "suspended" || status === "archived") return "danger";
   if (status === "paused" || status === "ending" || status === "read_only") return "warning";
   return "neutral";
-}
-
-/**
- * Una de las tres tarjetas de cabecera del Resumen: plan, Menú Diario y
- * renovación (maqueta §15.2).
- *
- * El recuadro del icono es decoración —va con `aria-hidden`— y el dato lo
- * lleva siempre el texto: quien no ve el icono no pierde nada (§21.4). El
- * pie es opcional porque no todas las tarjetas tienen segunda línea, y
- * cuando no la hay se queda sin ella en vez de rellenarla con un guion.
- */
-function FactCard({
-  icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: IconName;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="flex items-center gap-4 rounded-[20px] border border-border bg-surface p-5">
-      <span
-        aria-hidden="true"
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-cuotly-green/10 text-cuotly-green"
-      >
-        <Icon name={icon} className="h-6 w-6" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-xs text-text-secondary">{label}</span>
-        <span className="block truncate text-lg font-semibold text-primary-dark">{value}</span>
-        {hint === undefined ? null : (
-          <span className="block text-sm text-text-secondary">{hint}</span>
-        )}
-      </span>
-    </div>
-  );
 }
 
 /**
@@ -459,18 +456,41 @@ export function EstablishmentSheet({
             una pestaña nueva" va escrito para quien no ve el icono: un
             enlace que cambia de contexto sin avisar desorienta (§21.4).
           */}
-          {header.identity.websiteUrl === null ? null : (
-            <a
-              href={header.identity.websiteUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-            >
-              <Icon name="externalLink" aria-hidden="true" className="h-4 w-4" />
-              {t.websiteLink}
-              <span className="sr-only">{t.websiteLinkNewTab}</span>
-            </a>
-          )}
+          <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
+            {header.identity.websiteUrl === null ? null : (
+              <a
+                href={header.identity.websiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                <Icon name="externalLink" aria-hidden="true" className="h-4 w-4" />
+                {t.websiteLink}
+                <span className="sr-only">{t.websiteLinkNewTab}</span>
+              </a>
+            )}
+
+            {/*
+              Maqueta 03 · "Editar restaurante", arriba a la derecha. Es un
+              atajo al formulario que ya existe en Gestión · Datos, no un
+              segundo sitio donde editar: dos formularios para lo mismo
+              acaban divergiendo.
+
+              Solo se pinta a quien puede editar, y eso es cortesía:
+              `set_establishment_data()` comprueba RN-EST-11 por su cuenta
+              y desde la migración 57 es la única puerta, así que llegar a
+              esa dirección sin permiso enseña el motivo y no el formulario
+              (CLAUDE.md: ocultar un botón no es un control de acceso).
+            */}
+            {canEditData ? (
+              <Link
+                href={sheetHref(base, MANAGEMENT_TAB, DATA_BLOCK)}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                {t.editEstablishment}
+              </Link>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -478,85 +498,224 @@ export function EstablishmentSheet({
 
       {tab.key === "summary" ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <FactCard
-              icon="crown"
-              label={t.planTitle}
-              value={header.planName ?? t.planNone}
-              hint={
-                header.planName === null
-                  ? t.planNoneReason
-                  : header.planPriceCents === null
-                    ? undefined
-                    : t.planPrice(euros(header.planPriceCents))
-              }
-            />
-
-            <FactCard
-              icon="document"
-              label={t.serviceTitle}
-              value={header.services.length > 0 ? t.serviceContracted : t.serviceNotContracted}
-            />
-
-            <FactCard
-              icon="calendar"
-              label={t.renewalTitle}
-              value={header.cycleEnd === null ? t.renewalNone : dia(header.cycleEnd)}
-            />
-          </div>
-
           {/*
-            Las dos cuentas del ciclo van una al lado de la otra, como en
-            la maqueta: los cambios del plan a la izquierda y las
-            actualizaciones de Menú Diario a la derecha. Son contadores
-            distintos (RN-CON-02) y verlos juntos es justo lo que evita
-            confundirlos.
+            Maqueta 03 · el Resumen son cuatro bloques: el consumo del
+            plan, las solicitudes pendientes, el trabajo actual y el estado
+            de pago. Con el próximo menú en medio, que es de la Fase 2 y lo
+            dice.
+
+            Las tarjetas de plan, servicio y renovación que había aquí se
+            han quitado: la maqueta no las tiene, el plan ya se lee en la
+            insignia del encabezado y el bloque Gestión · Plan cuenta los
+            tres datos enteros —plan, servicios y permanencia— sin
+            resumirlos a medias.
           */}
-          <div className="grid items-start gap-4 lg:grid-cols-[2fr_1fr]">
+          <Card
+            title={t.cycleTitle}
+            action={
+              header.cycleStart !== null && header.cycleEnd !== null ? (
+                <span className="shrink-0 text-sm text-text-secondary">
+                  {t.cycleRange(dia(header.cycleStart), dia(header.cycleEnd))}
+                </span>
+              ) : undefined
+            }
+          >
+            {bolsas.length === 0 ? (
+              <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
+            ) : (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {bolsas.map((bag) => (
+                    <CycleBagCard key={bag.category} bag={bag} />
+                  ))}
+                </div>
+                <p className="mt-3 text-sm">
+                  <Link href={`${base}/consumos`} className="text-cuotly-green underline">
+                    {t.ledgerLink}
+                  </Link>
+                </p>
+              </>
+            )}
+          </Card>
+
+          <div className="grid items-start gap-4 lg:grid-cols-2">
             <Card
-              title={t.cycleTitle}
+              title={t.pendingRequestsTitle}
               action={
-                header.cycleStart !== null && header.cycleEnd !== null ? (
-                  <span className="shrink-0 text-sm text-text-secondary">
-                    {t.cycleRange(dia(header.cycleStart), dia(header.cycleEnd))}
-                  </span>
-                ) : undefined
+                <Link
+                  href={sheetHref(base, OPERATION_TAB)}
+                  className="shrink-0 text-sm text-cuotly-green underline"
+                >
+                  {t.pendingRequestsLink}
+                </Link>
               }
             >
-              {bolsas.length === 0 ? (
-                <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
+              {summary.openRequests === 0 ? (
+                <EmptyState
+                  title={t.pendingRequestsEmptyTitle}
+                  description={t.pendingRequestsEmptyReason}
+                />
+              ) : summary.pendingValidation.length === 0 ? (
+                /*
+                  Hay solicitudes abiertas pero ninguna esperando al equipo.
+                  No es lo mismo que "no hay ninguna", y enseñar el estado
+                  vacío aquí haría creer que este restaurante no ha pedido
+                  nada (CA-20).
+                */
+                <p className="text-sm text-text-secondary">
+                  {t.pendingRequestsOpen(summary.openRequests)}
+                </p>
               ) : (
                 <>
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {bolsas.map((bag) => (
-                      <CycleBagCard key={bag.category} bag={bag} />
-                    ))}
-                  </div>
-                  <p className="mt-3 text-sm">
-                    <Link href={`${base}/consumos`} className="text-cuotly-green underline">
-                      {t.ledgerLink}
-                    </Link>
+                  <p className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-primary-dark">
+                      {summary.pendingValidation.length}
+                    </span>
+                    <span className="text-sm text-text-secondary">
+                      {t.pendingValidationCount(summary.pendingValidation.length)}
+                    </span>
                   </p>
+
+                  <ul className="mt-3 divide-y divide-border border-t border-border">
+                    {summary.pendingValidation.map((request) => (
+                      <li key={request.id}>
+                        <Link
+                          href={request.deepLink}
+                          className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-medium text-text">
+                              {request.description}
+                            </span>
+                            <span className="block text-text-secondary">
+                              {momento(request.createdAt)}
+                            </span>
+                          </span>
+                          <Icon
+                            name="chevronRight"
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0 text-text-secondary"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
                 </>
               )}
             </Card>
 
-            {/*
-              RN-CON-02: Menú Diario cuenta sus actualizaciones aparte de
-              los cambios, y ese contador todavía no existe. La maqueta
-              enseña aquí "12 de 30 actualizaciones usadas" con su barra al
-              40 %, y va marcada como datos de ejemplo: ese número no lo
-              está contando nadie, así que aquí se dice el motivo en vez de
-              copiarlo (CLAUDE.md MUST NOT).
-            */}
-            <Card title={t.dailyMenuCounterTitle}>
-              <EmptyState
-                title={t.dailyMenuCounterEmptyTitle}
-                description={t.dailyMenuCounterEmptyReason}
-              />
+            <Card
+              title={t.currentJobTitle}
+              action={
+                <Link
+                  href={`/espacios/${slug}/trabajos`}
+                  className="shrink-0 text-sm text-cuotly-green underline"
+                >
+                  {t.currentJobLink}
+                </Link>
+              }
+            >
+              {summary.currentJob === null ? (
+                <EmptyState
+                  title={t.currentJobEmptyTitle}
+                  description={t.currentJobEmptyReason}
+                />
+              ) : (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <Link
+                    href={summary.currentJob.deepLink}
+                    className="min-w-0 text-sm transition-colors hover:text-cuotly-green"
+                  >
+                    <span className="block truncate font-semibold text-primary-dark">
+                      {summary.currentJob.title}
+                    </span>
+                    <span className="block text-text-secondary">
+                      {summary.currentJob.code} ·{" "}
+                      {es.naming.states.job[summary.currentJob.state as JobStateKey] ??
+                        summary.currentJob.state}
+                      {summary.liveJobs > 1 ? ` · ${t.currentJobMore(summary.liveJobs - 1)}` : ""}
+                    </span>
+                  </Link>
+
+                  {/*
+                    El plazo, con su nombre. "Quedan 2 h" a secas no dice
+                    para qué: T2 es el plazo para COMENZAR y T3 el de
+                    ejecución (RN-SLA-05/11), y son dos cosas distintas
+                    que la misma tarjeta enseña en momentos distintos.
+                  */}
+                  <StatusBadge tone={summary.currentJob.overdue ? "danger" : "info"}>
+                    {plazoDelTrabajo(summary.currentJob)}
+                  </StatusBadge>
+                </div>
+              )}
             </Card>
           </div>
 
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+            {/*
+              RN-CON-02 y el propio servicio son de la Fase 2. La maqueta
+              enseña aquí "Menú de mañana · Publicación solicitada" con
+              datos de ejemplo; eso no lo está publicando nadie, así que se
+              dice el motivo en vez de copiarlo (CLAUDE.md MUST NOT).
+            */}
+            <Card title={t.nextMenuTitle}>
+              <EmptyState title={t.nextMenuEmptyTitle} description={t.nextMenuEmptyReason} />
+            </Card>
+
+            <Card
+              title={t.paymentStatusTitle}
+              action={
+                summary.payment.allowed ? (
+                  <Link
+                    href={sheetHref(base, MANAGEMENT_TAB, PAYMENTS_BLOCK)}
+                    className="shrink-0 text-sm text-cuotly-green underline"
+                  >
+                    {t.paymentStatusLink}
+                  </Link>
+                ) : undefined
+              }
+            >
+              {!summary.payment.allowed ? (
+                <EmptyState title={t.paymentHiddenTitle} description={t.paymentHiddenReason} />
+              ) : (
+                <div className="flex items-center gap-4">
+                  <span
+                    aria-hidden="true"
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] ${
+                      summary.payment.outstandingCents === 0
+                        ? "bg-cuotly-green/10 text-cuotly-green"
+                        : "bg-danger/10 text-danger"
+                    }`}
+                  >
+                    <Icon
+                      name={summary.payment.outstandingCents === 0 ? "check" : "alert"}
+                      className="h-6 w-6"
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-lg font-semibold text-primary-dark">
+                      {summary.payment.outstandingCents === 0
+                        ? t.paymentUpToDate
+                        : t.paymentOwed(euros(summary.payment.outstandingCents))}
+                    </span>
+                    <span className="block text-sm text-text-secondary">
+                      {summary.payment.outstandingCents === 0
+                        ? t.paymentUpToDateReason
+                        : t.paymentOwedReason(summary.payment.overdueCount)}
+                    </span>
+                  </span>
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/*
+            No está en la maqueta, y se queda: cubre lo que las dos
+            tarjetas de arriba no miran —un trabajo fuera de plazo, uno sin
+            asignar, una corrección pedida— y es la misma lista, con el
+            mismo orden y los mismos motivos, que el Inicio del espacio.
+            Quitarla para parecerse más al dibujo escondería avisos reales.
+          */}
           <Card title={t.attentionTitle}>
             {summary.attention.length === 0 ? (
               <EmptyState title={t.attentionEmptyTitle} description={t.attentionEmptyReason} />
@@ -1158,7 +1317,6 @@ export function EstablishmentSheet({
               </Card>
             </>
           ) : null}
-
 
           {block.key === "integrations" ? (
             <Card

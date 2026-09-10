@@ -9,8 +9,9 @@ import {
   type ConsumptionEstimate,
   type RequestTone,
 } from "@/core/requests";
-import { splitRemaining } from "@/core/home";
+
 import { es } from "@/i18n/es";
+import { tiempoRestante } from "@/i18n/duration";
 
 import type {
   RequestAttachment,
@@ -66,14 +67,6 @@ function tamano(sizeBytes: number): string {
       maximumFractionDigits: 1,
     }).format(sizeBytes / 1_048_576),
   );
-}
-
-/** El tiempo restante, en horas y minutos laborables (RN-SLA-16). */
-function tiempoRestante(minutes: number): string {
-  const { hours, minutes: resto } = splitRemaining(minutes);
-  if (hours === 0) return es.spaceHome.attention.minutes(resto);
-  if (resto === 0) return es.spaceHome.attention.hours(hours);
-  return es.spaceHome.attention.hoursAndMinutes(hours, resto);
 }
 
 /**
