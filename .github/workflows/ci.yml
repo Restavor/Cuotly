@@ -260,6 +260,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/coordinacion_de_tareas.sql
 
+      - name: "Migración 71 — Verificar el aviso de una reasignación pedida (RN-ASG-07/08, RN-NOT-04, CA-17, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_aviso_de_la_reasignacion.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

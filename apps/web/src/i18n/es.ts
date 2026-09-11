@@ -705,6 +705,8 @@ export const es = {
       job_started: "Trabajo comenzado",
       job_published: "Trabajo publicado",
       correction_requested: "Corrección pedida",
+      job_reassignment_requested: "Reasignación de trabajo pedida",
+      task_reassignment_requested: "Reasignación de tarea pedida",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -1437,6 +1439,18 @@ export const es = {
         "Cuando pidas un cambio y esté esperando, aparecerá aquí para que digas cuánto te corre.",
       notAllowed:
         "Ordenar los cambios por importancia va incluido en el plan Premium. Con tu plan actual el equipo los atiende por orden de llegada.",
+      /*
+       * Decisión de Bosco (12/09/2026): "si un trabajo ya se está haciendo
+       * no se puede mover, no se puede reordenar".
+       *
+       * No se esconden: un cambio que el restaurante pidió y que
+       * desapareciera de esta pantalla se lee como "se ha perdido". Se
+       * enseñan aparte, sin flechas, y con el motivo escrito — que es lo
+       * que CLAUDE.md pide en lugar de un hueco.
+       */
+      inProgressTitle: "Ya se están haciendo",
+      inProgressReason:
+        "Estos cambios ya los ha comenzado el equipo, así que no se mueven de sitio: nadie va a parar un trabajo empezado para adelantar otro.",
       back: "Volver al restaurante",
     },
     title: "Tu restaurante",

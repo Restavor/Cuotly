@@ -2439,6 +2439,117 @@ regenerar salió idéntica, así que no había desviación.
       siempre y ya escrito: este contenedor tiene denegada la salida de
       red hacia el proyecto de Supabase.
 
+- [x] **Las cuatro decisiones del 12/09/2026** — migraciones 71, 72 y 73.
+
+    Bosco contestó a las cuatro preguntas que estaban abiertas desde el
+    cierre de las vistas. Tres se implementan aquí; la cuarta abre trabajo
+    y se explica al final.
+
+    **1 · El aviso de una reasignación llega a quien decide** (migración
+    71). *"Se avisa al propietario del mantenimiento y a los
+    administradores."* Pedir la reasignación de un trabajo existía desde el
+    Hito 6 y la de una tarea desde la 65, y ninguna de las dos avisaba a
+    nadie: quien puede aprobarla (RN-ASG-08) se enteraba si entraba a
+    mirar. Ahora emiten las dos, con dos tipos de evento —`job_` y `task_`—
+    porque el texto no se redacta igual y las preferencias de RN-NOT-02 se
+    guardan por tipo: con uno solo, apagar el de tareas apagaría el de
+    trabajos. `notifications` admite además `task` como tipo de entidad,
+    que es lo que hace que el enlace profundo de RN-NOT-04 abra la tarea y
+    no su trabajo.
+
+    Dos cosas que NO hace, ambas a propósito: no avisa a quien la pide —es
+    quien acaba de escribirla, y ese ruido es lo que acaba con alguien
+    apagando los avisos que importan— y no avisa al cliente: una
+    reasignación es organización interna del equipo (P7, CA-04).
+
+    La clave de deduplicación cuelga del **apunte de auditoría**, no del
+    trabajo. Con `job_reassignment_requested:<trabajo>`, una segunda
+    reasignación meses después no avisaría a nadie: CA-17 la tomaría por un
+    doble clic. El doble clic sigue sin duplicar nada porque las dos
+    funciones salen antes de escribir ese apunte.
+
+    **2 · Lo que ya se está haciendo no se reordena** (migración 72). *"Solo
+    los premium podrán ordenar sus tareas. Eso sí importante, si un trabajo
+    ya se está haciendo no se puede mover, no se puede reordenar."* La
+    primera mitad ya era así desde la migración 62 y no cambia. La segunda
+    saca `in_progress` de `request_is_rankable()`.
+
+    `accepted` **no** sale, y conviene que quede dicho por si no es lo que
+    quieres: un cambio aceptado tiene trabajo creado pero sin comenzar, y
+    ése es justo el momento en que el orden sirve para algo —decide cuál de
+    los aceptados se coge primero—. He leído "ya se está haciendo" como
+    comenzar, no como aceptar.
+
+    El compactado no hizo falta tocarlo: el disparador de la migración 64
+    pregunta por esa misma función, así que en cuanto un trabajo arranca su
+    cambio suelta el puesto y los que quedan se recolocan a 1..k
+    conservando el orden que puso el cliente. Había un único sitio donde
+    estaba escrito qué se ordena.
+
+    En la pantalla, los que ya se están haciendo **no desaparecen**: van a
+    su propio bloque, sin flechas y con el motivo escrito. Un cambio que el
+    restaurante pidió y que se esfuma de la lista se lee como que se ha
+    perdido.
+
+    **3 · El coste de la IA, en milicéntimos** (migración 73). Con Haiku
+    4.5 una clasificación cuesta ~0,01 céntimos, así que
+    `estimated_cost_cents` valía **0 en todas las llamadas**: la columna no
+    informaba de nada dentro de un libro inmutable. Se añade
+    `estimated_cost_millicents` y se rellena lo ya escrito con céntimos ×
+    1000 — ni una fila se reescribe con otro valor. La columna vieja se
+    queda, porque borrarla sería borrar una columna de un libro, pero deja
+    de ser un dato que alguien escribe: un CHECK la obliga a ser el
+    redondeo de la nueva. Dos columnas que dicen lo mismo se separan tarde
+    o temprano; con el CHECK es imposible.
+
+    `record_classification()` se **borra y se vuelve a crear** —el décimo
+    parámetro cambia de nombre y PostgreSQL no lo renombra sobre la
+    marcha—, lo que devuelve sus privilegios a los de por defecto de
+    Supabase. El `revoke` posterior no es decorativo: sin él, la función
+    que graba lo que dijo la IA queda abierta por RPC a cualquiera. Es el
+    mismo mecanismo de la migración 24.
+
+    **Comprobado:** las **28 suites SQL** desde cero sobre un PostgreSQL 16
+    con las 73 migraciones, typecheck, lint, **817 pruebas** unitarias y
+    `next build`. Tres mutaciones, todas hacen fallar su comprobación:
+    dejar `notify_reassignment_deciders()` sin emitir (la suite nueva dice
+    "ha recibido 0 avisos"), devolver `in_progress` a los estados
+    ordenables (la cola no compacta), y separar las dos listas compartidas
+    con TypeScript.
+
+    **Y un test que se prometía y no existía.** `src/core/notifications.ts`
+    lleva desde el Hito 8 diciendo que su catálogo de eventos "se compensa
+    con un test que compara los dos ficheros". No estaba escrito en ninguna
+    parte. Ahora está, en `listas-compartidas.test.ts`, que además lee la
+    **última** definición de cada regla en las migraciones y no la del
+    archivo donde nació: clavarlo a la migración 62 habría comparado contra
+    una versión que la 72 acababa de sustituir.
+
+    **Lo que la decisión 4 abre, y por qué no se toca todavía.** Dijiste
+    que la paleta es la de las fotos del PDF. Medida sobre el render de las
+    láminas, **no coincide con los tokens de hoy**:
+
+    | Elemento | En el PDF | Token actual |
+    |---|---|---|
+    | Fondo del menú lateral | `#002f26` | `--color-primary-dark: #0b2f2a` |
+    | Destino activo del menú | `#006754` | `--color-primary: #145c4e` |
+    | Botón "Crear" de la cabecera | `#005845` | — |
+    | Botón principal | `#014e3b` | `--color-primary: #145c4e` |
+    | Fondo de página | casi blanco (`#fdfdfd`) | `--color-background: #f5f7f4` |
+    | Fila resaltada | `#e4f6fc` | — |
+    | Fondo de etiqueta "Activo" | `#d0f8e7` | — |
+
+    Los verdes del PDF son más oscuros y más saturados. No lo cambio
+    todavía por dos motivos: los valores salen de imágenes comprimidas
+    (±2 por canal, y los tonos claros son los menos fiables), y **los
+    tokens son globales** — el menú, los botones y las etiquetas son el
+    mismo cromo en todas las secciones, así que cambiarlos "solo para
+    Restaurantes" no existe: o se cambian para todo o no se cambian. Como
+    dijiste que faltan las fotos del resto, lo suyo es hacerlo de una vez
+    cuando lleguen, y volver a pasar entonces el test de contraste de
+    CA-22, que es lo que hoy limita `success`, `warning` e `info` a
+    iconos, bordes y texto grande.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

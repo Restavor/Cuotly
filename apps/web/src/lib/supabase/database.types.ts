@@ -189,6 +189,7 @@ export type Database = {
           classification_id: string
           created_at: string
           estimated_cost_cents: number
+          estimated_cost_millicents: number
           id: string
           input_tokens: number
           model: string
@@ -200,6 +201,7 @@ export type Database = {
           classification_id: string
           created_at?: string
           estimated_cost_cents: number
+          estimated_cost_millicents?: number
           id?: string
           input_tokens: number
           model: string
@@ -211,6 +213,7 @@ export type Database = {
           classification_id?: string
           created_at?: string
           estimated_cost_cents?: number
+          estimated_cost_millicents?: number
           id?: string
           input_tokens?: number
           model?: string
@@ -4717,7 +4720,7 @@ export type Database = {
         Args: {
           p_actor_id: string
           p_category: string
-          p_estimated_cost_cents?: number
+          p_estimated_cost_millicents?: number
           p_fallback_reason?: string
           p_input_tokens?: number
           p_matched_keywords?: string[]

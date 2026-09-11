@@ -79,7 +79,7 @@ export async function clasificarSolicitud(
       p_model: propuesta.model,
       p_input_tokens: propuesta.usage?.inputTokens,
       p_output_tokens: propuesta.usage?.outputTokens,
-      p_estimated_cost_cents: propuesta.estimatedCostCents,
+      p_estimated_cost_millicents: propuesta.estimatedCostMillicents,
       p_fallback_reason: propuesta.fallbackReason,
     });
 

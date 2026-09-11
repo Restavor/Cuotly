@@ -28,15 +28,19 @@ const MAX_TOKENS = 512;
 const DEFAULT_TIMEOUT_MS = 8000;
 
 // Precio de claude-haiku-4-5: 1,00 $ / 1M tokens de entrada, 5,00 $ / 1M de
-// salida. En céntimos de dólar por token, para que ai_usage.estimated_cost_cents
-// (RN-CLS-05) sea un entero sin arrastrar redondeos de coma flotante en
-// cada llamada.
+// salida. En MILICÉNTIMOS de dólar por token (1 céntimo = 1000), que es la
+// unidad en la que `ai_usage` guarda el coste desde el 12/09/2026.
+//
+// Por qué milicéntimos y no céntimos: en céntimos, una clasificación de
+// este tamaño costaba ~0,01 y `Math.round` la dejaba en 0 SIEMPRE, así que
+// RN-CLS-05 guardaba un cero en un libro inmutable. Decisión de Bosco:
+// cambiar la unidad, no el redondeo.
 //
 // ESTAS CONSTANTES VAN ATADAS A `MODEL`. Cambiar uno sin el otro no rompe
 // nada visible: simplemente escribe un coste falso en `ai_usage`, que es un
 // libro inmutable, y nadie se entera hasta que alguien suma la columna.
-const INPUT_CENTS_PER_TOKEN = 100 / 1_000_000;
-const OUTPUT_CENTS_PER_TOKEN = 500 / 1_000_000;
+const INPUT_MILLICENTS_PER_TOKEN = 100_000 / 1_000_000;
+const OUTPUT_MILLICENTS_PER_TOKEN = 500_000 / 1_000_000;
 
 const SYSTEM_PROMPT = `Eres el clasificador de solicitudes de Cuotly, una plataforma de mantenimiento web para restaurantes.
 Dada la descripción de una solicitud de cambio en la web de un restaurante, debes proponer:
@@ -60,7 +64,8 @@ export type ClassificationProposal = {
   /** Solo cuando `source === "ai"`: modelo y consumo, para `ai_usage` (RN-CLS-05). */
   readonly model?: string;
   readonly usage?: { readonly inputTokens: number; readonly outputTokens: number };
-  readonly estimatedCostCents?: number;
+  /** Milicéntimos de dólar: 1 céntimo = 1000 (RN-CLS-05). */
+  readonly estimatedCostMillicents?: number;
   /** Solo cuando `source === "rules"`: por qué se cayó a reglas (RN-CLS-02). */
   readonly fallbackReason?: string;
 };
@@ -187,8 +192,9 @@ export async function classifyRequest(
     return toRuleProposal(requestText, "invalid_response");
   }
 
-  const estimatedCostCents = Math.round(
-    reply.usage.inputTokens * INPUT_CENTS_PER_TOKEN + reply.usage.outputTokens * OUTPUT_CENTS_PER_TOKEN,
+  const estimatedCostMillicents = Math.round(
+    reply.usage.inputTokens * INPUT_MILLICENTS_PER_TOKEN +
+      reply.usage.outputTokens * OUTPUT_MILLICENTS_PER_TOKEN,
   );
 
   return {
@@ -197,6 +203,6 @@ export async function classifyRequest(
     source: "ai",
     model: reply.model,
     usage: reply.usage,
-    estimatedCostCents,
+    estimatedCostMillicents,
   };
 }

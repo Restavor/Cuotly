@@ -972,6 +972,86 @@ end $$;
 reset role;
 
 -- ============================================================
+-- RN-CLS-05 · el coste se guarda en MILICÉNTIMOS (migración 73).
+--
+-- Decisión de Bosco (12/09/2026). En céntimos, una clasificación con Haiku
+-- costaba ~0,01 y el entero se quedaba en 0 SIEMPRE: la columna dejó de
+-- informar de nada en un libro inmutable. Aquí se comprueba lo único que
+-- no se puede comprobar desde TypeScript: que la fila que escribe la
+-- función lleva los milicéntimos que le dieron, que los céntimos son su
+-- redondeo, y que no hay forma de dejar las dos columnas diciendo cosas
+-- distintas.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000004', false);
+set role authenticated;
+
+do $$
+declare
+  v_request_id uuid;
+begin
+  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Carta de temporada con fotos nuevas.', null);
+  insert into h4_ctx values ('request_a5', v_request_id::text);
+  perform public.submit_request(v_request_id);
+  perform public.begin_request_analysis(v_request_id);
+end $$;
+
+set role service_role;
+
+do $$
+declare
+  v_request_id uuid := (select value::uuid from h4_ctx where key = 'request_a5');
+  v_classification_id uuid;
+  v_milicentimos integer;
+  v_centimos integer;
+begin
+  -- 50 tokens de entrada y 300 de salida con los precios de Haiku 4.5 son
+  -- 155 milicéntimos, que es exactamente lo que calcula el test de
+  -- `ai-classifier.test.ts`. Los dos lados dicen el mismo número a
+  -- propósito: es el caso real que motivó el cambio de unidad.
+  v_classification_id := public.record_classification(
+    v_request_id, 'f0000000-0000-0000-0000-000000000004'::uuid, 'ai', 'medium',
+    'Propuesta de la IA.', null, 'claude-haiku-4-5', 50, 300, 155, null
+  );
+
+  select estimated_cost_millicents, estimated_cost_cents
+  into v_milicentimos, v_centimos
+  from public.ai_usage where classification_id = v_classification_id;
+
+  if v_milicentimos is distinct from 155 then
+    raise exception 'RN-CLS-05 FALLIDO: se guardaron % milicéntimos en vez de 155', v_milicentimos
+      using errcode = 'assert_failure';
+  end if;
+
+  -- 155 milicéntimos son 0,155 céntimos: la columna vieja sigue diciendo
+  -- 0, y ése es justo el motivo por el que ya no es la buena.
+  if v_centimos is distinct from 0 then
+    raise exception 'FALLIDO: los céntimos derivados de 155 milicéntimos han salido %', v_centimos
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
+-- Y las dos columnas no pueden separarse ni escribiendo a mano en la
+-- tabla. Sin este CHECK, "los céntimos son el redondeo de los
+-- milicéntimos" sería un comentario, no una regla.
+do $$
+begin
+  begin
+    update public.ai_usage set estimated_cost_cents = 7
+    where classification_id = (
+      select id from public.classifications
+      where request_id = (select value::uuid from h4_ctx where key = 'request_a5')
+    );
+    raise exception 'FALLIDO: se pudo dejar los céntimos diciendo algo distinto de los milicéntimos'
+      using errcode = 'assert_failure';
+  exception
+    when assert_failure then raise;
+    when check_violation then null; -- esperado
+  end;
+end $$;
+
+-- ============================================================
 -- Limpieza: no deja nada de esto en la base de datos real.
 -- ============================================================
 delete from public.audit_log where space_id in ('f1000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000002');

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 
+import { Card } from "@/components/ui";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,6 +25,12 @@ import { PriorityList, type PriorityRow } from "./PriorityList";
  * escritos aquí porque `request_is_rankable()` es interna y no se puede
  * llamar por RPC.
  *
+ * `in_progress` NO está entre ellos desde la migración 72 (decisión de
+ * Bosco, 12/09/2026: "si un trabajo ya se está haciendo no se puede mover,
+ * no se puede reordenar"). Lo que ya arrancó se sigue enseñando —es un
+ * cambio que el restaurante pidió y hacerlo desaparecer se leería como que
+ * se ha perdido— pero en su propio bloque y sin flechas.
+ *
  * Que las dos listas coincidan lo comprueba `listas-compartidas.test.ts`,
  * que lee la migración y las compara. **No** lo comprueba
  * `prioridad_del_restaurante.sql`, como decía aquí antes: esa suite mira
@@ -41,8 +48,10 @@ const PENDIENTES = [
   "pending_internal_validation",
   "pending_client_acceptance",
   "accepted",
-  "in_progress",
 ];
+
+/** Lo que ya arrancó: se enseña, no se ordena. */
+const EN_CURSO = ["in_progress"];
 
 export default async function PriorityPage({
   params,
@@ -64,7 +73,7 @@ export default async function PriorityPage({
     .maybeSingle();
   if (!establishment) notFound();
 
-  const [{ data: puedeOrdenar }, { data: requests }] = await Promise.all([
+  const [{ data: puedeOrdenar }, { data: requests }, { data: enCurso }] = await Promise.all([
     supabase.rpc("client_can_set_priority", { p_establishment_id: id }),
     supabase
       .from("requests")
@@ -75,6 +84,12 @@ export default async function PriorityPage({
       // tiempo esperando va primero. No es una regla de negocio, es el
       // punto de partida antes de que el restaurante diga lo suyo.
       .order("priority_rank", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("requests")
+      .select("id, description, state, created_at")
+      .eq("establishment_id", id)
+      .in("state", EN_CURSO)
       .order("created_at", { ascending: true }),
   ]);
 
@@ -102,6 +117,28 @@ export default async function PriorityPage({
         canOrder={puedeOrdenar === true}
         reasonWhyNot={es.clientArea.priority.notAllowed}
       />
+
+      {(enCurso ?? []).length > 0 ? (
+        <Card title={es.clientArea.priority.inProgressTitle}>
+          <p className="mb-4 text-sm text-text-secondary">
+            {es.clientArea.priority.inProgressReason}
+          </p>
+          <ul className="divide-y divide-border border-y border-border">
+            {(enCurso ?? []).map((request) => (
+              <li key={request.id} className="py-3">
+                <span className="block truncate text-sm font-medium text-text">
+                  {request.description}
+                </span>
+                <span className="block text-xs text-text-secondary">
+                  {es.naming.states.request[
+                    request.state as keyof typeof es.naming.states.request
+                  ] ?? request.state}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       <p className="text-sm">
         <Link href={`/espacios/${slug}/restaurantes/${id}`} className="text-cuotly-green underline">

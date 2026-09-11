@@ -93,7 +93,15 @@ insert into public.requests
   -- Y uno del OTRO restaurante, para el caso de colar una ajena.
   ('bb600000-0000-0000-0000-000000000005', 'bb100000-0000-0000-0000-000000000001',
    'bb400000-0000-0000-0000-000000000002', 'SOL-PRI-5', 'received', 'Del otro restaurante',
-   'bb000000-0000-0000-0000-000000000003');
+   'bb000000-0000-0000-0000-000000000003'),
+  -- El tercero que SÍ se ordena. Antes ese papel lo hacía SOL-PRI-2, hasta
+  -- que la migración 72 sacó `in_progress` del conjunto ordenable
+  -- (decisión de Bosco, 12/09/2026: lo que ya se está haciendo no se
+  -- mueve). SOL-PRI-2 se queda en el fixture porque ahora es el caso
+  -- NEGATIVO: la prueba de que un trabajo empezado no se puede colocar.
+  ('bb600000-0000-0000-0000-000000000006', 'bb100000-0000-0000-0000-000000000001',
+   'bb400000-0000-0000-0000-000000000001', 'SOL-PRI-6', 'pending_client_acceptance',
+   'Menú de temporada', 'bb000000-0000-0000-0000-000000000002');
 
 -- ============================================================
 -- El restaurante con plan que lo concede: ordena, y el orden es 1..N.
@@ -114,7 +122,7 @@ begin
     'bb400000-0000-0000-0000-000000000001',
     array['bb600000-0000-0000-0000-000000000003',
           'bb600000-0000-0000-0000-000000000001',
-          'bb600000-0000-0000-0000-000000000002']::uuid[]);
+          'bb600000-0000-0000-0000-000000000006']::uuid[]);
 
   select string_agg(r.code || '=' || r.priority_rank, ' ' order by r.priority_rank)
   into v_rangos
@@ -123,7 +131,7 @@ begin
     and r.priority_rank is not null;
 
   -- El array fue [3, 1, 2], asi que ese es el orden que tiene que salir.
-  if v_rangos <> 'SOL-PRI-3=1 SOL-PRI-1=2 SOL-PRI-2=3' then
+  if v_rangos <> 'SOL-PRI-3=1 SOL-PRI-1=2 SOL-PRI-6=3' then
     raise exception 'FALLIDO: el orden ha quedado "%"', v_rangos using errcode = 'assert_failure';
   end if;
 
@@ -138,7 +146,7 @@ begin
   perform public.set_request_priority_order(
     'bb400000-0000-0000-0000-000000000001',
     array['bb600000-0000-0000-0000-000000000001',
-          'bb600000-0000-0000-0000-000000000002',
+          'bb600000-0000-0000-0000-000000000006',
           'bb600000-0000-0000-0000-000000000003']::uuid[]);
 
   select string_agg(r.code || '=' || r.priority_rank, ' ' order by r.priority_rank)
@@ -147,7 +155,7 @@ begin
   where r.establishment_id = 'bb400000-0000-0000-0000-000000000001'
     and r.priority_rank is not null;
 
-  if v_rangos <> 'SOL-PRI-1=1 SOL-PRI-2=2 SOL-PRI-3=3' then
+  if v_rangos <> 'SOL-PRI-1=1 SOL-PRI-6=2 SOL-PRI-3=3' then
     raise exception 'FALLIDO: al reordenar ha quedado "%"', v_rangos using errcode = 'assert_failure';
   end if;
 end $$;
@@ -161,7 +169,7 @@ begin
       'bb400000-0000-0000-0000-000000000001',
       array['bb600000-0000-0000-0000-000000000001',
             'bb600000-0000-0000-0000-000000000001',
-            'bb600000-0000-0000-0000-000000000002']::uuid[]);
+            'bb600000-0000-0000-0000-000000000006']::uuid[]);
     v_error := v_error || ' / una lista con repetidas se ha aceptado';
   exception when others then
       -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
@@ -177,7 +185,7 @@ begin
     perform public.set_request_priority_order(
       'bb400000-0000-0000-0000-000000000001',
       array['bb600000-0000-0000-0000-000000000001',
-            'bb600000-0000-0000-0000-000000000002',
+            'bb600000-0000-0000-0000-000000000006',
             'bb600000-0000-0000-0000-000000000005']::uuid[]);
     v_error := v_error || ' / una solicitud de otro restaurante se ha aceptado';
   exception when others then
@@ -194,7 +202,7 @@ begin
     perform public.set_request_priority_order(
       'bb400000-0000-0000-0000-000000000001',
       array['bb600000-0000-0000-0000-000000000001',
-            'bb600000-0000-0000-0000-000000000002',
+            'bb600000-0000-0000-0000-000000000006',
             'bb600000-0000-0000-0000-000000000004']::uuid[]);
     v_error := v_error || ' / una solicitud ya publicada se ha aceptado';
   exception when others then
@@ -207,11 +215,31 @@ begin
     end if;
   end;
 
+  begin  -- una que ya se esta haciendo (decision de Bosco, 12/09/2026)
+    perform public.set_request_priority_order(
+      'bb400000-0000-0000-0000-000000000001',
+      array['bb600000-0000-0000-0000-000000000001',
+            'bb600000-0000-0000-0000-000000000006',
+            'bb600000-0000-0000-0000-000000000003',
+            'bb600000-0000-0000-0000-000000000002']::uuid[]);
+    v_error := v_error || ' / un cambio ya en curso se ha podido colocar';
+  exception when others then
+    if sqlerrm not like '%ya no esta pendiente%' and sqlerrm not like '%ya no está pendiente%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
+
+  -- Y no tiene puesto ninguno, ni se lo ha dado nadie por el camino.
+  if (select priority_rank from public.requests
+      where id = 'bb600000-0000-0000-0000-000000000002') is not null then
+    v_error := v_error || ' / un cambio en curso tiene puesto en la cola';
+  end if;
+
   begin  -- incompleta
     perform public.set_request_priority_order(
       'bb400000-0000-0000-0000-000000000001',
       array['bb600000-0000-0000-0000-000000000001',
-            'bb600000-0000-0000-0000-000000000002']::uuid[]);
+            'bb600000-0000-0000-0000-000000000006']::uuid[]);
     v_error := v_error || ' / una lista incompleta se ha aceptado';
   exception when others then
       -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
@@ -233,7 +261,7 @@ begin
       from public.requests r
       where r.establishment_id = 'bb400000-0000-0000-0000-000000000001'
         and r.priority_rank is not null)
-     <> 'SOL-PRI-1=1 SOL-PRI-2=2 SOL-PRI-3=3' then
+     <> 'SOL-PRI-1=1 SOL-PRI-6=2 SOL-PRI-3=3' then
     raise exception 'FALLIDO: un intento rechazado ha dejado el orden a medias'
       using errcode = 'assert_failure';
   end if;

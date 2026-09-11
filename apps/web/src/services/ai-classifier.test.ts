@@ -136,8 +136,8 @@ describe("ai-classifier — RN-CLS-01/02, «la IA caída no bloquea el flujo» (
     expect(proposal.summary).toBe("Carta completa nueva con menú especial de Navidad.");
     expect(proposal.model).toBe("claude-opus-5");
     expect(proposal.usage).toEqual({ inputTokens: 120, outputTokens: 40 });
-    // 120 * 100/1e6 + 40 * 500/1e6 = 0,012 + 0,02 = 0,032 céntimos -> redondeado a 0.
-    expect(proposal.estimatedCostCents).toBe(0);
+    // 120 * 0,1 + 40 * 0,5 = 12 + 20 = 32 milicéntimos (0,032 céntimos).
+    expect(proposal.estimatedCostMillicents).toBe(32);
   });
 
   it("camino feliz: acepta el JSON envuelto en un bloque de código, tal y como a veces responde el modelo", async () => {
@@ -151,15 +151,15 @@ describe("ai-classifier — RN-CLS-01/02, «la IA caída no bloquea el flujo» (
 
     expect(proposal.source).toBe("ai");
     expect(proposal.category).toBe("small");
-    // 50 * 100/1e6 + 300 * 500/1e6 = 0,005 + 0,15 = 0,155 -> redondea a 0.
+    // 50 * 0,1 + 300 * 0,5 = 5 + 150 = 155 milicéntimos (0,155 céntimos).
     //
-    // Con los precios de Haiku 4.5 y `max_tokens` en 512, UNA clasificación
+    // Éste es el test que motivó el cambio de unidad del 12/09/2026. Con
+    // los precios de Haiku 4.5 y `max_tokens` en 512, UNA clasificación
     // suelta no llega nunca a un céntimo: harían falta ~2.000 tokens de
-    // salida. O sea que `ai_usage.estimated_cost_cents` valdrá 0 en todas
-    // las llamadas normales. No se maquilla con números imposibles para que
-    // el test enseñe otra cosa: es lo que va a pasar de verdad, y está
-    // dicho en el ROADMAP para que se decida si el céntimo es la unidad
-    // correcta.
-    expect(proposal.estimatedCostCents).toBe(0);
+    // salida. En céntimos, las dos llamadas de este archivo escribían 0 en
+    // `ai_usage`, que es un libro inmutable. En milicéntimos, las dos
+    // escriben lo que costaron.
+    expect(proposal.estimatedCostMillicents).toBe(155);
+    expect(proposal.estimatedCostMillicents).toBeGreaterThan(0);
   });
 });

@@ -6,10 +6,15 @@
  * puede desactivarse se decide aquí, con tests, y no en cada pantalla.
  *
  * El catálogo de eventos está duplicado a propósito entre este archivo y
- * el CHECK de `notifications.event_type` (migración 20260830000035). Son
- * dos sistemas distintos y ninguno puede importar del otro, así que la
- * duplicación se compensa con un test que compara los dos ficheros y falla
- * si se separan.
+ * el CHECK de `notifications.event_type` (lo fijó la migración
+ * 20260830000035 y lo ensanchó la 20260912000071). Son dos sistemas
+ * distintos y ninguno puede importar del otro, así que la duplicación se
+ * compensa con `listas-compartidas.test.ts`, que lee la última definición
+ * del CHECK en las migraciones y la compara con esta lista.
+ *
+ * Ese test no existía hasta el 12/09/2026: este comentario prometía desde
+ * el Hito 8 una comprobación que no estaba escrita en ninguna parte, y se
+ * vio al añadir los dos eventos de reasignación.
  */
 
 export const NOTIFICATION_EVENTS = [
@@ -19,6 +24,8 @@ export const NOTIFICATION_EVENTS = [
   "job_started",
   "job_published",
   "correction_requested",
+  "job_reassignment_requested",
+  "task_reassignment_requested",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",

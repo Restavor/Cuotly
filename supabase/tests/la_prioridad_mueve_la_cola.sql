@@ -161,6 +161,41 @@ begin
 end $$;
 
 -- ============================================================
+-- Y lo que EMPIEZA también sale, desde la migración 72: "si un trabajo ya
+-- se está haciendo no se puede mover, no se puede reordenar" (decisión de
+-- Bosco, 12/09/2026). El que quedó primero pasa a `in_progress` y suelta
+-- su puesto igual que uno publicado.
+--
+-- Esto no lo sostiene ningún código escrito para el caso: el disparador
+-- pregunta por `request_is_rankable()`, así que sacar un estado de esa
+-- función es lo único que hizo falta. El test está aquí para que quitar
+-- `in_progress` de la lista y olvidarse del compactado no pase inadvertido.
+-- ============================================================
+update public.requests set state = 'in_progress'
+where id = 'bc600000-0000-0000-0000-000000000004';
+
+do $$
+declare v_rangos text;
+begin
+  if (select priority_rank from public.requests
+      where id = 'bc600000-0000-0000-0000-000000000004') is not null then
+    raise exception 'FALLIDO: un cambio que ya se está haciendo conserva su puesto en la cola'
+      using errcode = 'assert_failure';
+  end if;
+
+  select string_agg(r.code || '=' || r.priority_rank, ' ' order by r.priority_rank)
+  into v_rangos
+  from public.requests r
+  where r.establishment_id = 'bc400000-0000-0000-0000-000000000001'
+    and r.priority_rank is not null;
+
+  if v_rangos <> 'SOL-COLA-1=1 SOL-COLA-2=2' then
+    raise exception 'FALLIDO: al comenzarse el primero, el orden ha quedado en "%"', v_rangos
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- ============================================================
 -- Y el otro restaurante sigue exactamente igual: compactar uno no toca al
 -- vecino.
 -- ============================================================
