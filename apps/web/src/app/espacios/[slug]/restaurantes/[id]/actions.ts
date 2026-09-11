@@ -97,3 +97,60 @@ export async function acceptRequest(
   revalidatePath(`/espacios`, "layout");
   return { error: null, accepted: true };
 }
+
+export type RevokeAccessState = { error: string | null; revoked: boolean };
+
+/**
+ * Maqueta 15 · retirar el acceso de un usuario del restaurante (RN-EST-05).
+ *
+ * La regla entera vive en `revoke_establishment_access()` y
+ * `revoke_group_access()`, que existen desde la revisión de Fase 1 y hasta
+ * hoy **no las llamaba ninguna pantalla** — el propio texto de la pestaña
+ * lo decía: "el botón todavía no está". Esta acción es ese botón.
+ *
+ * Qué NO decide esta acción: quién puede retirar (lo comprueba
+ * `has_capability(..., 'manage_clients')` dentro de la función), ni qué
+ * pasa con lo que esa persona hizo (RN-EST-05: el acceso desaparece de
+ * inmediato y la actividad histórica permanece; la fila se marca, no se
+ * borra). Ocultar el botón no es un control de acceso: quien no pueda,
+ * recibe la excepción del servidor aunque llame a la acción a mano
+ * (CLAUDE.md).
+ *
+ * El acceso de un **propietario global** no cuelga del restaurante sino de
+ * su grupo, así que se retira con la otra función. Mandar el uno al otro
+ * no fallaría ruidosamente: `revoke_establishment_access()` es idempotente
+ * y devolvería `false`, es decir, "no había nada que retirar" — y el
+ * propietario seguiría entrando. Por eso el origen viaja en el formulario.
+ */
+export async function revokeClientAccess(
+  _prev: RevokeAccessState,
+  formData: FormData,
+): Promise<RevokeAccessState> {
+  const userId = String(formData.get("userId") ?? "");
+  const source = String(formData.get("source") ?? "");
+  const establishmentId = String(formData.get("establishmentId") ?? "");
+  const groupId = String(formData.get("groupId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!userId) return { error: null, revoked: false };
+
+  const supabase = await createClient();
+
+  const { error } =
+    source === "group"
+      ? await supabase.rpc("revoke_group_access", {
+          p_group_id: groupId,
+          p_user_id: userId,
+          p_reason: reason || undefined,
+        })
+      : await supabase.rpc("revoke_establishment_access", {
+          p_establishment_id: establishmentId,
+          p_user_id: userId,
+          p_reason: reason || undefined,
+        });
+
+  if (error) return { error: error.message, revoked: false };
+
+  revalidatePath(`/espacios`, "layout");
+  return { error: null, revoked: true };
+}

@@ -2558,10 +2558,39 @@ export const es = {
     },
     permissionEditData: "Editar datos",
     permissionViewBilling: "Ver facturación",
-    permissionsNone: "Solo lectura",
+    // No es "Solo lectura": eso es el ALCANCE, y desde la maqueta 15 tiene
+    // su propia columna al lado. Aquí se dice que no tiene ninguno de los
+    // dos permisos finos, que es otra cosa — un Editor sin ellos no es un
+    // Consulta.
+    permissionsNone: "Ninguno",
     noName: "Sin nombre",
+    // Maqueta 15 · el alcance es lo que el rol SIGNIFICA (PRD §14), no un
+    // permiso guardado: lo deriva `accessScope()` en src/core.
+    scopeColumn: "Alcance de acceso",
+    accessScopes: {
+      full: "Acceso total",
+      operational: "Gestión operativa",
+      read_only: "Solo lectura",
+    },
+    actionsColumn: "Acciones",
+    revokeSubmit: (name: string) => `Retirar el acceso de ${name}`,
+    revokePending: "Retirando…",
+    revokeReasonLabel: "Motivo de la retirada",
+    revokeReasonPlaceholder: "Motivo (opcional)",
     revokeHint:
-      "Retirar un acceso se hace desde el servidor (RN-EST-05). El botón todavía no está en esta pantalla.",
+      "Retirar un acceso no borra nada: desaparece de inmediato y la actividad histórica permanece (RN-EST-05).",
+    usersPendingHint:
+      "No hay invitaciones pendientes que enseñar: en Cuotly se invita al espacio, no a un restaurante, y a un usuario del restaurante se le da acceso cuando ya existe. Darlo desde esta pantalla (RN-EST-04) todavía no está construido.",
+
+    // ---- Gestión · Usuarios · personal del equipo (maqueta 15) -----
+    staffTitle: "Personal operativo asignado",
+    staffHint:
+      "Quién del equipo tiene autorizado este restaurante (RN-ASG-01). Solo visible internamente: el cliente nunca ve esta lista.",
+    staffEmptyTitle: "Nadie asignado todavía",
+    staffEmptyReason:
+      "Ningún trabajador tiene autorizado este restaurante. Sin nadie autorizado, sus trabajos se quedan en «Pendiente de asignación» (RN-ASG-05).",
+    specialtyColumn: "Especialidad",
+    specialtyNone: "Sin especialidad declarada",
 
     // ---- Gestión · Archivos --------------------------------------
     filesTitle: (name: string) => `Archivos de ${name}`,

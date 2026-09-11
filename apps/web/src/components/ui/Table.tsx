@@ -14,10 +14,22 @@ export function Table({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * **`TableHead` NO pone la fila.** La pone `TableRow`, igual que en el
+ * cuerpo, y por eso todas las tablas se escriben
+ * `<TableHead><TableRow><TableHeaderCell>`.
+ *
+ * Antes ponía un `<tr>` por su cuenta y casi todas las llamadas envolvían
+ * además en `<TableRow>`: el resultado era un `<tr>` dentro de otro `<tr>`
+ * en veintiséis tablas. El navegador no se queja en voz alta, pero es
+ * marcado inválido —React sí avisa, "In HTML, <tr> cannot be a child of
+ * <tr>"— y rompe la semántica de la tabla para un lector de pantalla, que
+ * es justo a quien la cabecera le sirve para nombrar cada celda.
+ */
 export function TableHead({ children }: { children: ReactNode }) {
   return (
     <thead className="bg-soft-surface text-xs font-semibold uppercase tracking-wide text-text-secondary">
-      <tr>{children}</tr>
+      {children}
     </thead>
   );
 }

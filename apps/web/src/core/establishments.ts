@@ -460,3 +460,33 @@ export const OPERATION_CARD_ROWS = 4;
 export function firstRows<T>(rows: readonly T[], limit: number): CardRows<T> {
   return { shown: rows.slice(0, limit), hidden: Math.max(0, rows.length - limit) };
 }
+
+/**
+ * El **alcance de acceso** de un usuario del restaurante (maqueta 15).
+ *
+ * No es un dato guardado: es lo que el rol significa, dicho en una línea.
+ * Sale del PRD §14, que define los tres roles del lado cliente:
+ *
+ *   · **Propietario** (global o local): todo lo suyo — el grupo entero o su
+ *     establecimiento. "Acceso total".
+ *   · **Editor**: "los establecimientos que le asignen. Ve informes
+ *     siempre. Puede recibir permisos específicos." Es quien opera el día a
+ *     día sin ser dueño de nada: "Gestión operativa".
+ *   · **Consulta**: "solo lectura. No responde mensajes. No ve
+ *     facturación."
+ *
+ * Está aquí y no en la pantalla porque es una lectura de una regla escrita,
+ * y una regla con test no se desdibuja cuando alguien retoca una tabla. Lo
+ * que **no** hace es autorizar: el alcance lo hacen cumplir RLS y las
+ * funciones del servidor, no esta etiqueta (CLAUDE.md).
+ */
+export type AccessScope = "full" | "operational" | "read_only";
+
+export function accessScope(role: string): AccessScope {
+  if (role === "global_owner" || role === "local_owner") return "full";
+  if (role === "editor") return "operational";
+  // Un rol que no se reconozca se trata como el MENOS capaz. Equivocarse
+  // hacia "acceso total" pintaría en la ficha un poder que esa persona no
+  // tiene, y esta pantalla es justo donde alguien decide si retirarlo.
+  return "read_only";
+}

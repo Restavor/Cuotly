@@ -108,6 +108,8 @@ function sheetData(payments: SheetData["payments"]): SheetData {
     today: "2026-09-11",
     payments,
     users: { rows: [], failed: false },
+    canManageClients: false,
+    staff: [],
     files: { files: [], selected: null, categories: [], category: null },
     history: [],
   };

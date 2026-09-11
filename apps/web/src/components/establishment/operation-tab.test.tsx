@@ -86,6 +86,8 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     today: "2026-09-11",
     payments: { allowed: false, charges: [], payments: [] },
     users: { rows: [], failed: false },
+    canManageClients: false,
+    staff: [],
     files: { files: [], selected: null, categories: [], category: null },
     history: [],
   };

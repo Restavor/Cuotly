@@ -152,11 +152,13 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
           <div className="overflow-x-auto">
             <Table>
               <TableHead>
-                <TableHeaderCell>{es.teamPage.nameColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamPage.roleColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamPage.statusColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamPage.principalColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamPage.substituteColumn}</TableHeaderCell>
+                <TableRow>
+                  <TableHeaderCell>{es.teamPage.nameColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.teamPage.roleColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.teamPage.statusColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.teamPage.principalColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.teamPage.substituteColumn}</TableHeaderCell>
+                </TableRow>
               </TableHead>
               <TableBody>
                 {activos.map((miembro) => {

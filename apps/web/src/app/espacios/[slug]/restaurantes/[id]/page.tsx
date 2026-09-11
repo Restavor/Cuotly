@@ -34,6 +34,7 @@ import {
   loadSheetOperation,
   loadSheetPayments,
   loadSheetSummary,
+  loadSheetStaff,
   loadSheetUsers,
 } from "./sheet-load";
 
@@ -122,12 +123,13 @@ export default async function EstablishmentPage({
     const hoy = todayInTimeZone(new Date(), space.timezone);
 
     const base = `/espacios/${slug}/restaurantes/${id}`;
-    const [summary, operation, counts, payments, users, files, history] = await Promise.all([
+    const [summary, operation, counts, payments, users, staff, files, history] = await Promise.all([
       loadSheetSummary(supabase, space.id, slug, id),
       loadSheetOperation(supabase, slug, id),
       loadSheetCounts(supabase, id),
       loadSheetPayments(supabase, id),
       loadSheetUsers(supabase, id),
+      loadSheetStaff(supabase, space.id, id),
       loadSheetFiles(supabase, id, soloUno(query.archivo), soloUno(query.tipo)),
       loadSheetHistory(supabase, slug, id),
     ]);
@@ -153,12 +155,20 @@ export default async function EstablishmentPage({
             permiso concedido (CLAUDE.md).
           */
           canEditData: role === "owner" || role === "admin",
+          /*
+            Maqueta 15 · quién puede retirar un acceso: `manage_clients`,
+            que tienen el propietario y los administradores. Igual que
+            arriba, esto solo decide qué se pinta —
+            `revoke_establishment_access()` lo comprueba por su cuenta.
+          */
+          canManageClients: role === "owner" || role === "admin",
           summary,
           operation,
           counts,
           payments,
           today: hoy,
           users,
+          staff,
           files,
           history,
         }}

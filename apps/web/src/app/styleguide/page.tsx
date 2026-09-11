@@ -91,9 +91,11 @@ export default function StyleGuidePage() {
         <div data-testid="table">
           <Table>
             <TableHead>
-              <TableHeaderCell>Establecimiento</TableHeaderCell>
-              <TableHeaderCell>Plan</TableHeaderCell>
-              <TableHeaderCell>Estado</TableHeaderCell>
+              <TableRow>
+                <TableHeaderCell>Establecimiento</TableHeaderCell>
+                <TableHeaderCell>Plan</TableHeaderCell>
+                <TableHeaderCell>Estado</TableHeaderCell>
+              </TableRow>
             </TableHead>
             <TableBody>
               <TableRow>

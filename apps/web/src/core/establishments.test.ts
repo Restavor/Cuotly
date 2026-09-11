@@ -10,6 +10,7 @@ import {
   LIVE_JOB_STATES,
   OPEN_TASK_STATES,
   pickCurrentJob,
+  accessScope,
   sortOpenTasks,
   matchesFilters,
   NO_PLAN_FILTER,
@@ -324,5 +325,25 @@ describe("vista 04 · lo que cabe en una tarjeta y lo que queda detrás", () => 
 
   it("sin filas, ni tarjeta ni resto", () => {
     expect(firstRows([], 4)).toEqual({ shown: [], hidden: 0 });
+  });
+});
+
+describe("alcance de acceso de un usuario del restaurante (maqueta 15, PRD §14)", () => {
+  it("los dos propietarios tienen acceso total", () => {
+    expect(accessScope("global_owner")).toBe("full");
+    expect(accessScope("local_owner")).toBe("full");
+  });
+
+  it("el Editor es gestión operativa y Consulta, solo lectura", () => {
+    expect(accessScope("editor")).toBe("operational");
+    expect(accessScope("consulta")).toBe("read_only");
+  });
+
+  it("un rol desconocido cae en el MENOS capaz, no en el más", () => {
+    // Equivocarse hacia "acceso total" pintaría en la ficha un poder que
+    // esa persona no tiene, y esta pantalla es donde alguien decide si
+    // retirárselo.
+    expect(accessScope("lo_que_sea")).toBe("read_only");
+    expect(accessScope("")).toBe("read_only");
   });
 });

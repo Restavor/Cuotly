@@ -827,6 +827,89 @@ export async function loadSheetUsers(
   };
 }
 
+/**
+ * Maqueta 15 · "Personal operativo asignado": qué gente del equipo está
+ * autorizada a trabajar en este restaurante, con su especialidad.
+ *
+ * **Esto es organización interna y no sale nunca hacia el cliente.** No
+ * hace falta ninguna comprobación aquí: la ficha con sus cinco pestañas
+ * solo se pinta para quien es miembro del espacio (la pantalla se ramifica
+ * por la membresía real), y además `worker_establishments` y `profiles`
+ * los filtra RLS — un cliente no comparte espacio con el equipo, así que
+ * `profiles_select` no le devuelve ni una fila (P7).
+ *
+ * **Sin teléfono.** La maqueta enseña una columna de teléfonos y `profiles`
+ * no tiene esa columna: no la ha tenido nunca, en ninguna migración.
+ * Inventarse un número sería el dato de relleno que CLAUDE.md prohíbe, y
+ * añadir la columna es otra tarea — con su migración y su decisión sobre
+ * quién puede verlo.
+ */
+export interface SheetStaffMember {
+  readonly userId: string;
+  readonly displayName: string | null;
+  readonly email: string;
+  /** §4.6 · las siete especialidades, o vacío si no tiene ninguna declarada. */
+  readonly specialties: readonly string[];
+  /** El estado de su membresía en el espacio (`active`, `suspended`...). */
+  readonly membershipStatus: string | null;
+  readonly assignedAt: string;
+}
+
+export async function loadSheetStaff(
+  supabase: Supabase,
+  spaceId: string,
+  establishmentId: string,
+): Promise<readonly SheetStaffMember[]> {
+  const { data: asignaciones } = await supabase
+    .from("worker_establishments")
+    .select("user_id, created_at")
+    .eq("establishment_id", establishmentId)
+    .is("revoked_at", null)
+    .order("created_at", { ascending: true });
+
+  const ids = (asignaciones ?? []).map((fila) => fila.user_id);
+  if (ids.length === 0) return [];
+
+  const [{ data: perfiles }, { data: especialidades }, { data: membresias }] = await Promise.all([
+    supabase.from("profiles").select("id, full_name, email").in("id", ids),
+    supabase
+      .from("worker_specialties")
+      .select("user_id, specialty")
+      .eq("space_id", spaceId)
+      .in("user_id", ids)
+      .is("revoked_at", null),
+    supabase
+      .from("space_memberships")
+      .select("user_id, status")
+      .eq("space_id", spaceId)
+      .in("user_id", ids),
+  ]);
+
+  const perfil = new Map((perfiles ?? []).map((p) => [p.id, p]));
+  const estado = new Map((membresias ?? []).map((m) => [m.user_id, m.status]));
+  const porTrabajador = new Map<string, string[]>();
+  for (const fila of especialidades ?? []) {
+    porTrabajador.set(fila.user_id, [...(porTrabajador.get(fila.user_id) ?? []), fila.specialty]);
+  }
+
+  // Quien no tenga perfil legible NO se inventa: se cae de la lista. Una
+  // fila con un uuid por nombre no le dice a nadie quién es (CA-20).
+  return (asignaciones ?? []).flatMap((fila) => {
+    const datos = perfil.get(fila.user_id);
+    if (datos === undefined) return [];
+    return [
+      {
+        userId: fila.user_id,
+        displayName: datos.full_name?.trim() || null,
+        email: datos.email,
+        specialties: porTrabajador.get(fila.user_id) ?? [],
+        membershipStatus: estado.get(fila.user_id) ?? null,
+        assignedAt: fila.created_at,
+      },
+    ];
+  });
+}
+
 // ---------------------------------------------------------------------
 // Gestión · Archivos (RN-ARC-01 a RN-ARC-04)
 // ---------------------------------------------------------------------

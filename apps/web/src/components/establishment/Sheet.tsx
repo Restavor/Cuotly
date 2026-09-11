@@ -19,11 +19,13 @@ import { UploadFileForm } from "./UploadFileForm";
 import {
   IDENTITY_FIELDS,
   MULTILINE_IDENTITY_FIELDS,
+  accessScope,
   currentJobDeadline,
   sortedCycleUsage,
   type CycleUsage,
 } from "@/core/establishments";
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
+import { RevokeAccessButton } from "./RevokeAccessButton";
 import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
@@ -51,6 +53,7 @@ import type {
   SheetHistoryEntry,
   SheetOperation,
   SheetPayments,
+  SheetStaffMember,
   SheetSummary,
   SheetUsers,
 } from "@/app/espacios/[slug]/restaurantes/[id]/sheet-load";
@@ -93,6 +96,15 @@ export interface SheetData {
    */
   readonly today: string;
   readonly users: SheetUsers;
+  /**
+   * Maqueta 15 · si quien mira puede retirar accesos (`manage_clients`).
+   * Decide qué se PINTA y nada más: `revoke_establishment_access()` lo
+   * comprueba por su cuenta, así que un `true` de más aquí enseñaría un
+   * botón que el servidor rechaza, no un permiso concedido (CLAUDE.md).
+   */
+  readonly canManageClients: boolean;
+  /** Maqueta 15 · el equipo autorizado en este restaurante (interno, P7). */
+  readonly staff: readonly SheetStaffMember[];
   readonly files: SheetFiles;
   readonly history: readonly SheetHistoryEntry[];
 }
@@ -101,6 +113,7 @@ type StatusKey = keyof typeof es.space.statuses;
 type RequestStateKey = keyof typeof es.naming.states.request;
 type JobStateKey = keyof typeof es.naming.states.job;
 type PaymentMethodKey = keyof typeof es.teamArea.methods;
+type SpecialtyKey = keyof typeof es.naming.specialties;
 type TaskStateKey = keyof typeof es.naming.states.task;
 type CategoryKey = keyof typeof es.naming.categories;
 type FileCategoryKey = keyof typeof es.space.files.categories;
@@ -553,8 +566,20 @@ export function EstablishmentSheet({
   block: ManagementBlock;
   data: SheetData;
 }) {
-  const { header, canEditData, summary, operation, counts, payments, today, users, files, history } =
-    data;
+  const {
+    header,
+    canEditData,
+    canManageClients,
+    summary,
+    operation,
+    counts,
+    payments,
+    today,
+    users,
+    staff,
+    files,
+    history,
+  } = data;
   const bolsas = sortedCycleUsage(summary.bags);
   /*
     Maqueta 14 · las tarjetas de arriba son las cuotas que siguen debiendo
@@ -1496,7 +1521,19 @@ export function EstablishmentSheet({
             </div>
           ) : null}
 
+          {/*
+            Maqueta 15 · "Usuarios y accesos": dos tarjetas. Arriba quién
+            del lado CLIENTE puede entrar en este restaurante y con qué
+            alcance; abajo qué gente del EQUIPO lo tiene autorizado.
+
+            La segunda es organización interna y el dibujo lo dice con
+            todas las letras ("Solo visibles internamente"). No hay riesgo
+            de que se escape: esta ficha con sus cinco pestañas solo se
+            pinta para quien es miembro del espacio, y además `profiles`
+            no le devuelve al cliente ni una fila del equipo (P7).
+          */}
           {block.key === "users" ? (
+            <div className="space-y-4">
             <Card title={t.usersTitle}>
               {/*
                 Una consulta fallida y una lista vacía NO son lo mismo, y se
@@ -1515,8 +1552,12 @@ export function EstablishmentSheet({
                         <TableHeaderCell>{t.personColumn}</TableHeaderCell>
                         <TableHeaderCell>{t.accessColumn}</TableHeaderCell>
                         <TableHeaderCell>{t.roleColumn}</TableHeaderCell>
+                        <TableHeaderCell>{t.scopeColumn}</TableHeaderCell>
                         <TableHeaderCell>{t.permissionsColumn}</TableHeaderCell>
                         <TableHeaderCell>{t.sinceColumn}</TableHeaderCell>
+                        {canManageClients ? (
+                          <TableHeaderCell>{t.actionsColumn}</TableHeaderCell>
+                        ) : null}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1541,19 +1582,114 @@ export function EstablishmentSheet({
                             <TableCell>
                               {t.clientRoles[user.role as ClientRoleKey] ?? user.role}
                             </TableCell>
+                            {/*
+                              El alcance no es un dato guardado: es lo que
+                              el rol significa, leído del PRD §14 por
+                              `accessScope()` en `src/core`, con su test.
+                              Y es una etiqueta, no un permiso: quien lo
+                              hace cumplir es RLS.
+                            */}
+                            <TableCell>{t.accessScopes[accessScope(user.role)]}</TableCell>
                             <TableCell>
                               {permisos.length === 0 ? t.permissionsNone : permisos.join(" · ")}
                             </TableCell>
                             <TableCell>{diaCorto(user.grantedAt)}</TableCell>
+                            {canManageClients ? (
+                              <TableCell>
+                                <RevokeAccessButton
+                                  userId={user.userId}
+                                  source={user.source}
+                                  establishmentId={header.id}
+                                  groupId={header.groupId}
+                                  personName={user.displayName ?? user.email}
+                                />
+                              </TableCell>
+                            ) : null}
                           </TableRow>
                         );
                       })}
                     </TableBody>
                   </Table>
                   <p className="mt-3 text-sm text-text-secondary">{t.revokeHint}</p>
+                  {/*
+                    Tres cosas del dibujo que NO están, cada una por su
+                    motivo (CLAUDE.md MUST NOT):
+
+                      · El estado "Invitación pendiente · Expira en 7
+                        días". Las invitaciones de Cuotly son al ESPACIO
+                        (`space_invitations`, HU-03), no a un restaurante:
+                        a un usuario del lado cliente se le da acceso
+                        cuando ya existe. No hay invitación que esté
+                        pendiente, así que no hay estado que enseñar.
+                      · El permiso "Ver informes". No hay columna: los dos
+                        permisos finos que existen son `edit_establishment_data`
+                        y `view_billing` (RN-EST-11, RN-FIN-07). El PRD §14
+                        dice además que el Editor "ve informes siempre" y
+                        que Consulta "necesita permiso de su propietario",
+                        un permiso que no está modelado — y los informes
+                        son Fase 3.
+                      · El botón "Añadir usuario existente". Dar acceso es
+                        RN-EST-04 ("uno, varios, todos los actuales, o
+                        todos los actuales y futuros") y no hay función de
+                        servidor que lo haga: solo existen las de retirar.
+                  */}
+                  <p className="mt-1 text-sm text-text-secondary">{t.usersPendingHint}</p>
                 </>
               )}
             </Card>
+
+            <Card title={t.staffTitle}>
+              <p className="mb-3 text-sm text-text-secondary">{t.staffHint}</p>
+              {staff.length === 0 ? (
+                <EmptyState title={t.staffEmptyTitle} description={t.staffEmptyReason} />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>{t.personColumn}</TableHeaderCell>
+                      <TableHeaderCell>{t.specialtyColumn}</TableHeaderCell>
+                      <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
+                      <TableHeaderCell>{t.sinceColumn}</TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {staff.map((person) => (
+                      <TableRow key={person.userId}>
+                        <TableCell>
+                          <span className="block text-text">
+                            {person.displayName ?? t.noName}
+                          </span>
+                          <span className="block text-xs text-text-secondary">{person.email}</span>
+                        </TableCell>
+                        <TableCell>
+                          {/*
+                            Sin especialidad declarada se dice: un hueco
+                            aquí se lee como "no sabemos", y lo que pasa es
+                            que nadie se la ha puesto (§4.6).
+                          */}
+                          {person.specialties.length === 0
+                            ? t.specialtyNone
+                            : person.specialties
+                                .map(
+                                  (specialty) =>
+                                    es.naming.specialties[specialty as SpecialtyKey] ?? specialty,
+                                )
+                                .join(" · ")}
+                        </TableCell>
+                        <TableCell>
+                          {person.membershipStatus === null
+                            ? "—"
+                            : (es.space.statuses[person.membershipStatus as StatusKey] ??
+                              person.membershipStatus)}
+                        </TableCell>
+                        <TableCell>{diaCorto(person.assignedAt)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
+            </div>
           ) : null}
 
           {block.key === "files" ? (

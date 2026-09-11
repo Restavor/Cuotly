@@ -179,10 +179,12 @@ export default async function CalendarPage({
           <div className="overflow-x-auto">
             <Table>
               <TableHead>
-                <TableHeaderCell>{es.calendar.dateColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.calendar.kindColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.calendar.detailColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.calendar.stateColumn}</TableHeaderCell>
+                <TableRow>
+                  <TableHeaderCell>{es.calendar.dateColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.calendar.kindColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.calendar.detailColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.calendar.stateColumn}</TableHeaderCell>
+                </TableRow>
               </TableHead>
               <TableBody>
                 {eventos.map((evento, i) => (
@@ -280,8 +282,10 @@ export default async function CalendarPage({
               {misAusencias && misAusencias.length > 0 ? (
                 <Table>
                   <TableHead>
-                    <TableHeaderCell>{es.calendar.pendingRangeColumn}</TableHeaderCell>
-                    <TableHeaderCell>{es.calendar.stateColumn}</TableHeaderCell>
+                    <TableRow>
+                      <TableHeaderCell>{es.calendar.pendingRangeColumn}</TableHeaderCell>
+                      <TableHeaderCell>{es.calendar.stateColumn}</TableHeaderCell>
+                    </TableRow>
                   </TableHead>
                   <TableBody>
                     {misAusencias.map((ausencia) => (
