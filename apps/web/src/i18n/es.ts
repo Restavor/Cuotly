@@ -2440,6 +2440,9 @@ export const es = {
     tasksUnassigned: "Sin repartir",
     tasksMinutes: (minutes: number) => `${minutes} min`,
     tasksNoJob: "Actividad interna",
+    // Maqueta 07 · la columna "Fecha". Sin planificar se dice, no se deja
+    // el hueco (CA-20).
+    tasksNoDate: "Sin fecha",
 
     dailyMenuTitle: "Menú Diario",
     dailyMenuEmptyTitle: "Menú Diario llega con la Fase 2",

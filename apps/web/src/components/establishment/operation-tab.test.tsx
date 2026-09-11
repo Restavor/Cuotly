@@ -204,7 +204,8 @@ describe("vista 04 · lo que enseña cada fila", () => {
           estimatedMinutes: 120,
           assigneeName: "Diego Sanz",
           jobCode: "TRB-0014",
-          deepLink: "/espacios/demo/trabajos/j-3",
+          plannedDate: "2026-09-13",
+          deepLink: "/espacios/demo/trabajos/j-3/tareas?tarea=t-1",
         },
         {
           id: "t-2",
@@ -214,6 +215,7 @@ describe("vista 04 · lo que enseña cada fila", () => {
           estimatedMinutes: 15,
           assigneeName: null,
           jobCode: null,
+          plannedDate: null,
           deepLink: null,
         },
       ],
@@ -240,9 +242,27 @@ describe("vista 04 · lo que enseña cada fila", () => {
     const card = within(tarjeta(t.tasksTitle));
     expect(card.getByText(new RegExp(t.tasksUnassigned))).toBeInTheDocument();
     // La que no cuelga de ningún trabajo no puede ser un enlace: no hay
-    // pantalla de detalle de tarea a la que llevar.
+    // pantalla donde abrirla.
     expect(card.queryByRole("link", { name: /crédito del fotógrafo/ })).not.toBeInTheDocument();
     expect(card.getByRole("link", { name: /Retocar las fotografías/ })).toBeInTheDocument();
+  });
+
+  it("maqueta 07: la fila lleva a LA TAREA, no al trabajo entero", () => {
+    // Antes llevaba a `/trabajos/j-3` porque no había detalle de tarea.
+    // Ahora lo hay y la tarea elegida viaja en la dirección, así que
+    // pulsar una fila abre esa tarea y no obliga a buscarla entre las
+    // demás del trabajo.
+    pintar(conDatos);
+    expect(
+      within(tarjeta(t.tasksTitle)).getByRole("link", { name: /Retocar las fotografías/ }),
+    ).toHaveAttribute("href", "/espacios/demo/trabajos/j-3/tareas?tarea=t-1");
+  });
+
+  it("maqueta 07: la tarea enseña su fecha, y sin planificar lo dice", () => {
+    pintar(conDatos);
+    const card = within(tarjeta(t.tasksTitle));
+    expect(card.getByText(/13 sept/)).toBeInTheDocument();
+    expect(card.getByText(new RegExp(t.tasksNoDate))).toBeInTheDocument();
   });
 
   it("la tarjeta dice cuántas filas deja detrás, y calla cuando no deja ninguna", () => {

@@ -15,6 +15,7 @@ import {
 import { Icon } from "@/components/ui/Icon";
 import { TASK_LOAD_POINTS } from "@/core/load-points";
 import { taskPanelActions } from "@/core/task-coordination";
+import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -55,13 +56,6 @@ function taskTone(state: string): "success" | "warning" | "info" | "neutral" | "
   if (state === "cancelled") return "danger";
   if (state === "in_progress") return "info";
   return "neutral";
-}
-
-/** "13 sept", como en la maqueta. */
-function fechaCorta(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" }).format(
-    new Date(`${value}T00:00:00`),
-  );
 }
 
 export default async function JobTasksPage({

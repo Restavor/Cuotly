@@ -397,6 +397,12 @@ export interface SheetOperationTask {
   readonly estimatedMinutes: number;
   readonly assigneeName: string | null;
   readonly jobCode: string | null;
+  /**
+   * El día para el que está planificada (maqueta 07 · columna "Fecha"), o
+   * `null` si nadie la ha planificado todavía. Es un `date` sin hora: el
+   * día que alguien escribió, no un instante.
+   */
+  readonly plannedDate: string | null;
   readonly deepLink: string | null;
 }
 
@@ -494,7 +500,9 @@ export async function loadSheetOperation(
     // tarjeta vacía dice "las que te dejan ver" y no "no hay ninguna".
     supabase
       .from("tasks")
-      .select("id, title, state, weight, estimated_minutes, assignee_id, job_id, created_at")
+      .select(
+        "id, title, state, weight, estimated_minutes, assignee_id, job_id, planned_date, created_at",
+      )
       .eq("establishment_id", establishmentId)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false }),
@@ -556,7 +564,21 @@ export async function loadSheetOperation(
         estimatedMinutes: task.estimated_minutes,
         assigneeName: task.assignee_id === null ? null : (nombres.get(task.assignee_id) ?? null),
         jobCode: task.job_id === null ? null : (codigoDelTrabajo.get(task.job_id) ?? null),
-        deepLink: task.job_id === null ? null : `/espacios/${spaceSlug}/trabajos/${task.job_id}`,
+        plannedDate: task.planned_date,
+        // A la tarea, no al trabajo. Cuando se escribió esta tarjeta no
+        // había pantalla de detalle de tarea y la fila llevaba al trabajo
+        // entero, que era lo más cerca que se podía llegar; ahora la hay
+        // (maqueta 07) y la tarea elegida viaja en la dirección, así que
+        // la fila abre directamente la que se ha pulsado.
+        //
+        // Una actividad interna independiente (§3) sigue sin cuelgue: no
+        // cuelga de ningún trabajo, no hay pantalla donde abrirla, y por
+        // eso no se pinta como enlace en vez de ser un enlace que no lleva
+        // a ninguna parte.
+        deepLink:
+          task.job_id === null
+            ? null
+            : `/espacios/${spaceSlug}/trabajos/${task.job_id}/tareas?tarea=${task.id}`,
       })),
     },
   };

@@ -23,6 +23,7 @@ import {
   sortedCycleUsage,
   type CycleUsage,
 } from "@/core/establishments";
+import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
 
@@ -966,11 +967,20 @@ export function EstablishmentSheet({
                   {operation.tasks.shown.map((task) => (
                     <li key={task.id}>
                       {/*
-                        La fila lleva al trabajo del que cuelga, que es
-                        donde se opera con la tarea: no hay pantalla de
-                        detalle de tarea. Una actividad interna
-                        independiente (§3) no lleva a ninguna parte, y
-                        entonces no se pinta como enlace en vez de ser un
+                        Maqueta 07 · la fila lleva a LA TAREA, abierta en
+                        la pantalla de coordinación de su trabajo. Antes
+                        llevaba al trabajo entero porque no había detalle
+                        de tarea al que llegar; ahora lo hay.
+
+                        Y lleva los cuatro datos de la tabla del dibujo:
+                        tarea, responsable, estado (la insignia) y fecha.
+                        Una tarea sin planificar lo dice en vez de dejar
+                        el hueco: "sin fecha" es una respuesta, un guion
+                        no (CA-20).
+
+                        Una actividad interna independiente (§3) no cuelga
+                        de ningún trabajo y no hay pantalla donde abrirla,
+                        así que no se pinta como enlace en vez de ser un
                         enlace que no lleva a nada.
                       */}
                       <TaskRow
@@ -978,6 +988,10 @@ export function EstablishmentSheet({
                         title={task.title}
                         subtitle={`${task.jobCode ?? t.tasksNoJob} · ${
                           task.assigneeName ?? t.tasksUnassigned
+                        } · ${
+                          task.plannedDate === null
+                            ? t.tasksNoDate
+                            : fechaCorta(task.plannedDate)
                         } · ${t.tasksMinutes(task.estimatedMinutes)}`}
                         badge={
                           <StatusBadge tone={taskTone(task.state)}>
