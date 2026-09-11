@@ -2143,6 +2143,39 @@ begin
 end $$;
 
 -- ------------------------------------------------------------
+-- 12.11 · Notas internas de Magariños (RN-EST-13, maqueta 18).
+--
+-- Las dos clases, para que la columna derecha de la maqueta 18 enseñe de
+-- verdad lo que la regla distingue: dos operativas que ve todo el equipo y
+-- una reservada al propietario y a los administradores. Sin la reservada,
+-- el interruptor existiría y no se vería nunca.
+--
+-- Van por `create_establishment_note()`, no con un INSERT: así se ejercita
+-- la guarda de que reservar una nota exige `manage_clients`, y el apunte
+-- de auditoría queda escrito como en producción (CLAUDE.md).
+-- ------------------------------------------------------------
+do $$
+declare
+  v_est uuid := 'd4000000-0000-0000-0000-000000000003';
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                      'role', 'authenticated')::text, false);
+
+  perform public.create_establishment_note(v_est,
+    'El botón de la carta no abre en algunos navegadores antiguos. Revisar antes de publicar el próximo cambio.', true);
+
+  perform public.create_establishment_note(v_est,
+    'Prefieren que les escribamos por la mañana: por la tarde están en servicio y no contestan.', true);
+
+  -- La reservada: un trabajador NO la ve.
+  perform public.create_establishment_note(v_est,
+    'Renegociar el plan en la renovación de diciembre; han preguntado por Impulso.', false);
+
+  perform set_config('request.jwt.claims', '', false);
+end $$;
+
+-- ------------------------------------------------------------
 -- 12.7 · Comprobación de la sección 12.
 --
 -- El mismo criterio que la comprobación de Magariños: si el sembrado se

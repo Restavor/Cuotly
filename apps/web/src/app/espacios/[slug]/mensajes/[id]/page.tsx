@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
+import { NotesPanel } from "@/components/notes/NotesPanel";
+import { loadEstablishmentNotes } from "./notes-load";
 import { Card, EmptyState } from "@/components/ui";
 import { isClientVisibleConversation, type ConversationType } from "@/core/messages";
 import { es } from "@/i18n/es";
@@ -45,7 +47,7 @@ export default async function ConversationPage({
 
   const { data: conversation } = await supabase
     .from("conversations")
-    .select("id, type, request_id, job_id, establishment_id")
+    .select("id, type, space_id, request_id, job_id, establishment_id")
     .eq("id", id)
     .maybeSingle();
 
@@ -112,22 +114,46 @@ export default async function ConversationPage({
         ? es.teamArea.messages.establishmentNotice
         : undefined;
 
+  /*
+    Maqueta 18 · las notas internas del restaurante, al lado de la
+    conversación. Se cargan solo cuando la conversación cuelga de un
+    restaurante —las notas son de un restaurante, no de una solicitud— y
+    `loadEstablishmentNotes()` le pregunta al servidor si quien mira tiene
+    algo que ver con ellas: al cliente le devuelve `canRead: false` y el
+    panel no se pinta (RN-EST-13, RN-MSG-04).
+  */
+  const notes = establishmentId
+    ? await loadEstablishmentNotes(supabase, establishmentId, conversation.space_id, user.id)
+    : null;
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-5xl space-y-6 p-8">
       <header>
         <p className="text-sm text-text-secondary">{establishment?.name ?? "—"}</p>
         <h1 className="text-2xl font-bold text-primary-dark">{titulo}</h1>
       </header>
 
-      {establishmentId ? (
-        <Conversation
-          conversationId={id}
-          establishmentId={establishmentId}
-          messages={messages}
-          readOnly={readOnly}
-          notice={aviso}
-        />
-      ) : null}
+      <div
+        className={`grid items-start gap-6 ${
+          notes?.canRead ? "lg:grid-cols-[2fr_1fr]" : ""
+        }`}
+      >
+        <div className="space-y-6">
+          {establishmentId ? (
+            <Conversation
+              conversationId={id}
+              establishmentId={establishmentId}
+              messages={messages}
+              readOnly={readOnly}
+              notice={aviso}
+            />
+          ) : null}
+        </div>
+
+        {establishmentId && notes ? (
+          <NotesPanel establishmentId={establishmentId} notes={notes} />
+        ) : null}
+      </div>
 
       <Card>
         <ul className="space-y-2 text-sm">

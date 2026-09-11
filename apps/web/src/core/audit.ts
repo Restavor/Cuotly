@@ -48,6 +48,11 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // Cartera de clientes.
   establishment: "manage_clients",
   establishment_access: "manage_clients",
+  // Las notas internas del restaurante (RN-EST-13, migración 66). Quién
+  // escribió una y cuándo es de la misma cartera; el CUERPO de la nota no
+  // está en el apunte, y es a propósito: copiarlo aquí lo sacaría de la
+  // política que lo protege.
+  establishment_note: "manage_clients",
   // El alta de un restaurante crea el grupo si no existía (migración 58) y
   // eso es un apunte propio: quién dio de alta a este cliente y cuándo.
   // Misma capacidad que el establecimiento — es la misma cartera.
@@ -100,6 +105,8 @@ export const AUDIT_ACTIONS = [
   "establishment.data_changed",
   "establishment.status_changed",
   "establishment_access.revoked",
+  "establishment_note.archived",
+  "establishment_note.created",
   "file.archived",
   "file.deletion_requested",
   "file.registered",

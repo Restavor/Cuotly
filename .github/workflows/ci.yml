@@ -218,6 +218,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/la_prioridad_mueve_la_cola.sql
 
+      - name: "Migración 66 — Verificar las notas internas y las tres visibilidades de RN-EST-13"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/notas_internas.sql
+
       - name: "Migraciones 55 y 61 — Verificar la pestaña Usuarios de la ficha (§15.2, RN-EST-01/03/05/11)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

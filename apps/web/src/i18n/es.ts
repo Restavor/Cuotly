@@ -115,6 +115,28 @@ export const es = {
    * es el motivo concreto: "no se ha podido subir" no sirve para que
    * alguien sepa si tiene que cambiar el archivo o pedir permiso (P6).
    */
+  // ---- Notas internas del restaurante (RN-EST-13, maqueta 18) ------
+  notes: {
+    title: "Notas internas",
+    // RN-MSG-04 llama fallo grave a mezclar lo interno con lo que ve el
+    // cliente, y este panel vive al lado de una conversación que el
+    // restaurante sí lee. La insignia es para quien escribe.
+    teamOnly: "Solo equipo",
+    emptyTitle: "Sin notas todavía",
+    emptyReason:
+      "Aquí se apunta lo que el equipo necesita recordar de este restaurante. El cliente no ve ninguna nota, nunca.",
+    unknownAuthor: "Alguien del equipo",
+    restrictedBadge: "Solo propietario y administradores",
+    newLabel: "Escribe una nota interna",
+    newPlaceholder: "Lo que el equipo debería recordar de este restaurante…",
+    newSubmit: "Guardar la nota",
+    newPending: "Guardando…",
+    restrictLabel:
+      "Reservarla al propietario y a los administradores (los trabajadores no la verán).",
+    archiveSubmit: "Archivar",
+    archivePending: "Archivando…",
+  },
+
   files: {
     label: "Adjuntar un archivo",
     hint: "Imágenes, PDF, Word, Excel o texto. Hasta 25 MB.",
@@ -2046,6 +2068,8 @@ export const es = {
       "establishment.data_changed": "Datos del restaurante editados",
       "establishment.status_changed": "Estado del restaurante cambiado",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
+      "establishment_note.created": "Nota interna escrita",
+      "establishment_note.archived": "Nota interna archivada",
       "file.archived": "Archivo archivado",
       "file.deletion_requested": "Borrado de archivo solicitado",
       "file.registered": "Archivo registrado",

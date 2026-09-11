@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 11/09/2026), con las 64 migraciones del
+// (generate_typescript_types, 11/09/2026), con las 66 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -1068,6 +1068,74 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      establishment_notes: {
+        Row: {
+          archived_at: string | null
+          archived_by: string | null
+          archived_reason: string | null
+          body: string
+          created_at: string
+          created_by: string
+          establishment_id: string
+          id: string
+          operational: boolean
+          space_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
+          archived_reason?: string | null
+          body: string
+          created_at?: string
+          created_by: string
+          establishment_id: string
+          id?: string
+          operational?: boolean
+          space_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          archived_by?: string | null
+          archived_reason?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string
+          establishment_id?: string
+          id?: string
+          operational?: boolean
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_notes_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_notes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_notes_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_notes_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -3914,8 +3982,16 @@ export type Database = {
         Returns: undefined
       }
       approve_task_reassignment: {
-        Args: { p_new_assignee_id: string; p_reason?: string; p_task_id: string }
+        Args: {
+          p_new_assignee_id: string
+          p_reason?: string
+          p_task_id: string
+        }
         Returns: undefined
+      }
+      archive_establishment_note: {
+        Args: { p_note_id: string; p_reason?: string }
+        Returns: boolean
       }
       archive_file: {
         Args: { p_file_id: string; p_reason?: string }
@@ -3980,6 +4056,10 @@ export type Database = {
         Returns: boolean
       }
       can_read_establishment_finance: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
+      can_read_establishment_notes: {
         Args: { p_establishment_id: string }
         Returns: boolean
       }
@@ -4117,6 +4197,14 @@ export type Database = {
           p_counter_kind: string
           p_entity_id: string
           p_entity_type: string
+        }
+        Returns: string
+      }
+      create_establishment_note: {
+        Args: {
+          p_body: string
+          p_establishment_id: string
+          p_operational?: boolean
         }
         Returns: string
       }
@@ -4872,7 +4960,11 @@ export type Database = {
       start_job: { Args: { p_job_id: string }; Returns: undefined }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
       task_assignee_is_valid: {
-        Args: { p_assignee_id: string; p_establishment_id: string; p_space_id: string }
+        Args: {
+          p_assignee_id: string
+          p_establishment_id: string
+          p_space_id: string
+        }
         Returns: boolean
       }
       task_load_points: { Args: { p_weight: string }; Returns: number }
