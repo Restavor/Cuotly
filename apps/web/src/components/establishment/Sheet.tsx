@@ -1114,41 +1114,150 @@ export function EstablishmentSheet({
             </Card>
           ) : null}
 
+          {/*
+            Maqueta 13 · "Plan y servicios": dos tarjetas, no una lista de
+            tres líneas. La de la izquierda es el plan con su uso incluido;
+            la de la derecha, los servicios adicionales.
+
+            El uso son las MISMAS bolsas del Resumen y la MISMA tarjeta
+            (`CycleBagCard`), no una copia con otro aspecto: dos dibujos
+            del mismo consumo acaban enseñando números distintos en la
+            misma ficha (CA-10).
+          */}
           {block.key === "plan" ? (
-            <Card title={t.subscriptionTitle}>
-              <dl className="space-y-3 text-sm">
-                <div>
-                  <dt className="text-text-secondary">{t.planTitle}</dt>
-                  <dd className="font-semibold text-primary-dark">
-                    {header.planName ?? t.planNone}
-                    {header.planPriceCents === null
-                      ? ""
-                      : ` · ${t.planPrice(euros(header.planPriceCents))}`}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-secondary">{t.servicesTitle}</dt>
-                  <dd className="font-semibold text-primary-dark">
-                    {header.services.length === 0 ? t.servicesNone : header.services.join(" · ")}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-secondary">{t.commitmentTitle}</dt>
-                  <dd className="font-semibold text-primary-dark">
-                    {header.commitmentEndsAt === null
-                      ? t.commitmentNone
-                      : new Date(header.commitmentEndsAt) > new Date()
-                        ? t.commitmentUntil(dia(header.commitmentEndsAt))
-                        : t.commitmentOver}
-                  </dd>
-                </div>
-              </dl>
-              <p className="mt-4 text-sm">
-                <Link href={`/espacios/${slug}/planes`} className="text-cuotly-green underline">
-                  {t.manageplanLink}
-                </Link>
-              </p>
-            </Card>
+            <div className="grid items-start gap-4 lg:grid-cols-2">
+              <Card
+                title={t.planTitle}
+                action={
+                  header.planName === null ? null : (
+                    <StatusBadge tone="success">{es.space.statuses.active}</StatusBadge>
+                  )
+                }
+              >
+                {header.planName === null ? (
+                  <EmptyState title={t.planNone} description={t.planNoneReason} />
+                ) : (
+                  <>
+                    <p className="text-lg font-semibold text-primary-dark">{header.planName}</p>
+                    {header.planPriceCents === null ? null : (
+                      <p className="text-sm text-text-secondary">
+                        {t.planPrice(euros(header.planPriceCents))}
+                      </p>
+                    )}
+
+                    <p className="mt-4 mb-2 text-sm font-semibold text-text">{t.planUsageTitle}</p>
+                    {bolsas.length === 0 ? (
+                      <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
+                    ) : (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {bolsas.map((bag) => (
+                          <CycleBagCard key={bag.category} bag={bag} />
+                        ))}
+                      </div>
+                    )}
+
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                      <div className="rounded-lg bg-soft-surface p-3">
+                        <dt className="text-xs text-text-secondary">{t.renewalTitle}</dt>
+                        {/*
+                          La fecha sale del ciclo abierto, que es quien
+                          manda (RN-COM-06: los consumos se renuevan en la
+                          fecha de renovación y no se acumulan). Sin ciclo
+                          abierto se dice, no se calcula "dentro de un mes"
+                          a ojo.
+                        */}
+                        <dd className="font-semibold text-primary-dark">
+                          {header.cycleEnd === null ? t.renewalNone : dia(header.cycleEnd)}
+                        </dd>
+                        <dd className="text-xs text-text-secondary">
+                          {header.cycleEnd === null ? t.renewalNoneHint : t.renewalAutomatic}
+                        </dd>
+                      </div>
+                      <div className="rounded-lg bg-soft-surface p-3">
+                        <dt className="text-xs text-text-secondary">{t.commitmentTitle}</dt>
+                        <dd className="font-semibold text-primary-dark">
+                          {header.commitmentEndsAt === null
+                            ? t.commitmentNone
+                            : new Date(header.commitmentEndsAt) > new Date()
+                              ? t.commitmentUntil(dia(header.commitmentEndsAt))
+                              : t.commitmentOver}
+                        </dd>
+                        {header.commitmentStartedAt === null ? null : (
+                          <dd className="text-xs text-text-secondary">
+                            {t.commitmentSince(dia(header.commitmentStartedAt))}
+                          </dd>
+                        )}
+                      </div>
+                    </dl>
+
+                    <p className="mt-4 text-sm">
+                      <Link
+                        href={`/espacios/${slug}/planes`}
+                        className="text-cuotly-green underline"
+                      >
+                        {t.manageplanLink}
+                      </Link>
+                    </p>
+                  </>
+                )}
+              </Card>
+
+              <Card title={t.servicesTitle}>
+                {header.services.length === 0 ? (
+                  <EmptyState title={t.servicesNone} description={t.servicesNoneReason} />
+                ) : (
+                  <>
+                    <ul className="divide-y divide-border">
+                      {header.services.map((service) => (
+                        <li
+                          key={service.subscriptionId}
+                          className="flex flex-wrap items-baseline justify-between gap-2 py-3"
+                        >
+                          <span>
+                            <span className="block font-semibold text-primary-dark">
+                              {service.name}
+                            </span>
+                            <span className="block text-xs text-text-secondary">
+                              {t.serviceSince(dia(service.startedAt))}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-sm text-text-secondary">
+                            {service.priceCents === null
+                              ? "—"
+                              : t.planPrice(euros(service.priceCents))}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/*
+                      Maqueta 13 · lo que la tarjeta del servicio enseña y
+                      aquí NO se enseña, con su motivo en vez de un número
+                      inventado (CLAUDE.md MUST NOT):
+
+                        · "Actualizaciones 12/30". El uso de un servicio no
+                          se cuenta en ninguna parte: las bolsas del ciclo
+                          son las cuatro categorías del plan. Menú Diario
+                          es Fase 2.
+                        · El segundo precio. RN-COM-08 cobra 229 € o 199 €
+                          según el plan sea Premium, y cuál se aplica no lo
+                          decide todavía ninguna función — la mensualidad
+                          de un servicio ni siquiera se emite.
+                        · "Versión aceptada v2.1 · Ver condiciones". El
+                          bloque legal entero está aplazado en CLAUDE.md:
+                          términos, privacidad y jurisdicción. No hay
+                          versiones que aceptar ni condiciones que abrir.
+                    */}
+                    <div className="mt-4">
+                      <EmptyState
+                        title={t.serviceUsageEmptyTitle}
+                        description={t.serviceUsageEmptyReason}
+                      />
+                    </div>
+                  </>
+                )}
+              </Card>
+            </div>
           ) : null}
 
           {block.key === "payments" ? (

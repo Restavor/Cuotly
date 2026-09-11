@@ -2281,7 +2281,7 @@ export const es = {
     serviceTitle: "Menú Diario",
     serviceContracted: "Contratado",
     serviceNotContracted: "No contratado",
-    renewalTitle: "Renovación",
+    renewalTitle: "Próxima renovación",
     renewalNone: "Sin ciclo abierto",
     cycleTitle: "Consumos del ciclo",
     cycleRange: (from: string, to: string) => `${from} – ${to}`,
@@ -2476,12 +2476,25 @@ export const es = {
     digitalEmptyReason:
       "GA4, Search Console, Business Profile, Clarity y PageSpeed son la Fase 3. No hay ninguna integración conectada, así que no hay ningún dato que enseñar.",
 
-    // ---- Gestión · Plan ------------------------------------------
+    // ---- Gestión · Plan y servicios (maqueta 13) ------------------
     subscriptionTitle: "Lo contratado",
+    planUsageTitle: "Uso incluido en tu plan",
+    // RN-COM-04: facturación mensual con renovación automática. No es una
+    // promesa de la pantalla, es la regla escrita.
+    renewalAutomatic: "Renovación automática",
+    renewalNoneHint:
+      "El ciclo de consumos se abre al contratar el plan. Sin ciclo no hay fecha de renovación que dar.",
     servicesTitle: "Servicios adicionales",
     servicesNone: "Ninguno",
+    servicesNoneReason:
+      "Este restaurante no tiene contratado ningún servicio aparte del plan (RN-COM-11: el plan y los servicios son independientes).",
+    serviceSince: (day: string) => `Contratado el ${day}`,
+    serviceUsageEmptyTitle: "Sin uso que contar todavía",
+    serviceUsageEmptyReason:
+      "Las actualizaciones de Menú Diario son Fase 2: todavía no se publican desde Cuotly, así que no hay consumo del servicio ni mensualidad emitida.",
     commitmentTitle: "Permanencia",
     commitmentUntil: (day: string) => `Vigente hasta el ${day}`,
+    commitmentSince: (day: string) => `Desde el ${day}`,
     commitmentOver: "Cumplida",
     commitmentNone: "Sin permanencia registrada",
     manageplanLink: "Cambiar de plan o contratar servicios",

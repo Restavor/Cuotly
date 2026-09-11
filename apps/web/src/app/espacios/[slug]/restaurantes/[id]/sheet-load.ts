@@ -45,6 +45,25 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
  */
 export type SheetIdentity = EstablishmentIdentity;
 
+/**
+ * Un servicio adicional contratado, con lo que la maqueta 13 enseña de él.
+ *
+ * **El precio es el del catálogo, y solo ese.** `services` guarda dos
+ * —`price_cents` y `price_premium_cents`— porque RN-COM-08 cobra 229 € o
+ * 199 € según el establecimiento tenga plan Premium activo, y **cuál de
+ * los dos se aplica no lo decide nadie todavía**: la mensualidad de un
+ * servicio no se emite (lo dice `create_service_subscription()`, "eso es
+ * Menú Diario, Fase 2"). Enseñar aquí 199 € sería afirmar que se le cobra
+ * eso, que es justo lo que CLAUDE.md llama dato inventado. La condición se
+ * dice con palabras al lado del número, que es lo que sí es verdad.
+ */
+export interface SheetService {
+  readonly subscriptionId: string;
+  readonly name: string;
+  readonly priceCents: number | null;
+  readonly startedAt: string;
+}
+
 export interface SheetHeader {
   readonly id: string;
   readonly name: string;
@@ -56,8 +75,10 @@ export interface SheetHeader {
   readonly planName: string | null;
   readonly planPriceCents: number | null;
   /** Los servicios adicionales contratados (RN-COM-13: pueden ser varios). */
-  readonly services: readonly string[];
+  readonly services: readonly SheetService[];
   readonly commitmentEndsAt: string | null;
+  /** Desde cuándo corre la permanencia vigente (maqueta 13: "Desde 1 jul 2026"). */
+  readonly commitmentStartedAt: string | null;
   readonly cycleStart: string | null;
   readonly cycleEnd: string | null;
   /** §15.2 · la ficha de datos, que se lee en la misma fila. */
@@ -87,16 +108,22 @@ export async function loadSheetHeader(
     supabase.from("groups").select("id, name").eq("id", establishment.group_id).maybeSingle(),
     supabase
       .from("subscriptions")
-      .select("id, kind, plan_id, plans (name, price_cents), services (name)")
+      .select(
+        "id, kind, plan_id, started_at, plans (name, price_cents), services (id, name, price_cents)",
+      )
       .eq("establishment_id", establishmentId)
       .eq("status", "active"),
   ]);
 
   const plan = (subscriptions ?? []).find((s) => s.kind === "plan") ?? null;
   const services = (subscriptions ?? [])
-    .filter((s) => s.kind === "service")
-    .map((s) => s.services?.name)
-    .filter((name): name is string => Boolean(name));
+    .filter((s) => s.kind === "service" && s.services !== null)
+    .map((s) => ({
+      subscriptionId: s.id,
+      name: s.services!.name,
+      priceCents: s.services!.price_cents,
+      startedAt: s.started_at,
+    }));
 
   // La permanencia vigente y el ciclo abierto son los del plan, así que sin
   // plan no se preguntan (RN-COM-11: el plan es opcional).
@@ -104,7 +131,7 @@ export async function loadSheetHeader(
     ? await Promise.all([
         supabase
           .from("plan_commitments")
-          .select("subscription_id, ends_at")
+          .select("subscription_id, started_at, ends_at")
           .eq("subscription_id", plan.id)
           .order("started_at", { ascending: false })
           .limit(1),
@@ -131,6 +158,7 @@ export async function loadSheetHeader(
     planPriceCents: plan?.plans?.price_cents ?? null,
     services,
     commitmentEndsAt: commitments?.[0]?.ends_at ?? null,
+    commitmentStartedAt: commitments?.[0]?.started_at ?? null,
     cycleStart: cycle?.cycle_start ?? null,
     cycleEnd: cycle?.cycle_end ?? null,
     identity: {

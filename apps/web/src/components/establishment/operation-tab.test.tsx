@@ -50,6 +50,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
       planPriceCents: 59900,
       services: [],
       commitmentEndsAt: null,
+      commitmentStartedAt: null,
       cycleStart: null,
       cycleEnd: null,
       identity: {
