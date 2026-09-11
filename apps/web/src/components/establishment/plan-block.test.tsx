@@ -71,6 +71,7 @@ function sheetData(
       ...header,
     },
     canEditData: false,
+    statusReason: null,
     summary: {
       bags,
       attention: [],

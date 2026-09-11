@@ -86,6 +86,7 @@ function sheetData(audit: SheetData["audit"]): SheetData {
       },
     },
     canEditData: false,
+    statusReason: null,
     canManageClients: false,
     summary: {
       bags: [],

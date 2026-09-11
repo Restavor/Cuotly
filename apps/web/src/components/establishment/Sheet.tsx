@@ -27,6 +27,8 @@ import {
   type CycleUsage,
 } from "@/core/establishments";
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
+import { StatusLegend } from "./StatusLegend";
+import { StatusNotice } from "./StatusNotice";
 import { RevokeAccessButton } from "./RevokeAccessButton";
 import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -111,6 +113,12 @@ export interface SheetData {
   readonly files: SheetFiles;
   /** Maqueta 19 · la auditoría de este restaurante, ya filtrada y paginada. */
   readonly audit: SheetAudit;
+  /**
+   * RN-EST-08 · el motivo concreto del último cambio de estado, que se
+   * enseña junto al estado. `null` cuando nadie escribió ninguno: entonces
+   * se dice lo que el estado significa y no se inventa un porqué.
+   */
+  readonly statusReason: string | null;
 }
 
 type StatusKey = keyof typeof es.space.statuses;
@@ -736,6 +744,7 @@ export function EstablishmentSheet({
     staff,
     files,
     audit,
+    statusReason,
   } = data;
   const bolsas = sortedCycleUsage(summary.bags);
   /*
@@ -806,6 +815,33 @@ export function EstablishmentSheet({
           </div>
         </div>
       </header>
+
+      {/*
+        Maqueta 20 · el aviso de estado va aquí, antes de las pestañas: un
+        restaurante pausado lo está se mire la pestaña que se mire, y quien
+        entra a Gestión a cambiar un dato necesita saberlo antes de
+        escribirlo, no después de que el servidor se lo rechace.
+
+        La acción que lleva depende de lo que de verdad haya: solo se
+        ofrece registrar un pago cuando hay deuda vencida, y eso lo dice el
+        libro (`summary.payment`), no el estado. Un "Registrar pago" en un
+        restaurante pausado por otro motivo mandaría a alguien a pagar algo
+        que no debe.
+      */}
+      <StatusNotice
+        status={header.status}
+        reason={statusReason}
+        action={
+          summary.payment.allowed && summary.payment.overdueCount > 0 ? (
+            <Link
+              href={sheetHref(base, MANAGEMENT_TAB, PAYMENTS_BLOCK)}
+              className="inline-flex items-center justify-center rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-primary-dark"
+            >
+              {t.registerPaymentLink}
+            </Link>
+          ) : undefined
+        }
+      />
 
       <TabNav base={base} active={tab} />
 
@@ -1035,6 +1071,19 @@ export function EstablishmentSheet({
             ) : (
               <AttentionList items={summary.attention} />
             )}
+          </Card>
+          {/*
+            Maqueta 20 · la leyenda de estados. "Pausado" y "Solo lectura"
+            se parecen y no son lo mismo, y quien recibe uno de los dos
+            necesita saber cuál le ha tocado sin preguntar. Lo que dice
+            cada tarjeta sale de las reglas y de la guarda del servidor,
+            no del dibujo (`statusEffects`, con sus tests).
+          */}
+          <Card title={t.statusLegendTitle}>
+            <p className="mb-3 text-sm text-text-secondary">
+              {es.establishmentStatus.legendHint}
+            </p>
+            <StatusLegend current={header.status} />
           </Card>
         </>
       ) : null}

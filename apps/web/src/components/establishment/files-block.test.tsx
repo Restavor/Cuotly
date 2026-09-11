@@ -111,6 +111,7 @@ function sheetData(files: SheetData["files"]): SheetData {
       },
     },
     canEditData: false,
+    statusReason: null,
     canManageClients: false,
     summary: {
       bags: [],

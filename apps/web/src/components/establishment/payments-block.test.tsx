@@ -90,6 +90,7 @@ function sheetData(payments: SheetData["payments"]): SheetData {
       },
     },
     canEditData: false,
+    statusReason: null,
     summary: {
       bags: [],
       attention: [],

@@ -72,6 +72,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
       },
     },
     canEditData: false,
+    statusReason: null,
     summary: {
       bags: [],
       attention: [],

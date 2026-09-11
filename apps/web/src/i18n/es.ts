@@ -115,6 +115,63 @@ export const es = {
    * es el motivo concreto: "no se ha podido subir" no sirve para que
    * alguien sepa si tiene que cambiar el archivo o pedir permiso (P6).
    */
+  // ---- Estados del restaurante (maqueta 20, PRD §15.1) -------------
+  //
+  // Lo que dice cada uno sale de las reglas escritas —RN-EST-08, 09 y 10,
+  // RN-FIN-10/12— y de la guarda del servidor, no del dibujo: lo que la
+  // pantalla promete y lo que el servidor permite tienen que ser lo mismo.
+  establishmentStatus: {
+    legendTitle: "Estados del restaurante",
+    legendHint:
+      "Estos estados indican la disponibilidad de los servicios y funcionalidades de este restaurante.",
+    currentMark: "· ahora mismo",
+    serviceStoppedMark: "Servicio detenido",
+    reasonLabel: "Motivo:",
+    serviceStoppedHint:
+      "Con el servicio detenido no se crean ni se mueven trabajos, no se publica y los contadores no corren (RN-FIN-12): el plazo no avanza en contra de nadie.",
+    notices: {
+      configuring: {
+        title: "En configuración",
+        meaning:
+          "El restaurante se está dando de alta. Se puede consultar y completar su ficha; todavía no es el curso normal.",
+      },
+      active: {
+        title: "Activo",
+        meaning: "Todos los servicios disponibles.",
+      },
+      paused: {
+        title: "Pausado",
+        meaning:
+          "Consulta disponible. No se pueden crear solicitudes ni menús, y los trabajos y publicaciones están detenidos (RN-EST-08).",
+      },
+      ending: {
+        title: "En proceso de baja",
+        meaning:
+          "Se ha comunicado la baja y el servicio sigue activo hasta el final del periodo pagado o de la permanencia vigente (RN-EST-09).",
+      },
+      read_only: {
+        title: "Solo lectura",
+        meaning:
+          "Se puede consultar todo, pero no crear ni cambiar nada. Son las 24 horas previas a la suspensión (RN-EST-10).",
+      },
+      suspended: {
+        title: "Suspendido",
+        meaning:
+          "Acceso bloqueado para crear o cambiar. Los datos siguen estando: no se eliminan (RN-EST-10).",
+      },
+      archived: {
+        title: "Archivado",
+        meaning:
+          "El restaurante ya no está en la lista activa y no admite solicitudes ni trabajos nuevos. Sus datos se conservan.",
+      },
+      unknown: {
+        title: "Estado desconocido",
+        meaning:
+          "Este restaurante tiene un estado que esta pantalla no sabe explicar. Se trata como detenido hasta saber qué es.",
+      },
+    },
+  },
+
   // ---- Notas internas del restaurante (RN-EST-13, maqueta 18) ------
   notes: {
     title: "Notas internas",
@@ -1572,9 +1629,6 @@ export const es = {
     receiptNothingToSend: "No hay ningún cobro pendiente al que adjuntar un justificante.",
     receiptSentTitle: "Justificantes enviados",
     receiptSentEmpty: "Todavía no has enviado ninguno.",
-    serviceStoppedTitle: "El servicio de este restaurante está detenido",
-    serviceStoppedReason:
-      "Mientras esté detenido no se pueden enviar solicitudes nuevas. Si es por un impago, se reactiva al cobrar.",
   },
 
   sessions: {
@@ -2691,6 +2745,11 @@ export const es = {
     integrationsEmptyTitle: "No está construido",
     integrationsEmptyReason:
       "Las integraciones analíticas (GA4, Search Console, Business Profile, Clarity, PageSpeed) son la Fase 3, con OAuth y credenciales cifradas. No hay ninguna conectada y no existe el botón «Sincronizar ahora».",
+
+    // Maqueta 20 · la leyenda de estados vive en el Resumen, y el enlace
+    // de cobrar solo aparece cuando hay deuda vencida de verdad.
+    statusLegendTitle: "Estados del restaurante",
+    registerPaymentLink: "Registrar pago",
 
     // ---- Historial · actividad y auditoría (maqueta 19) -----------
     historyTitle: "Actividad y auditoría",

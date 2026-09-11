@@ -230,6 +230,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/historial_del_restaurante.sql
 
+      - name: "Migración 69 — Verificar que el motivo del estado es la frase de alguien, no un código (RN-EST-08)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_motivo_del_estado.sql
+
       - name: "Migraciones 55 y 61 — Verificar la pestaña Usuarios de la ficha (§15.2, RN-EST-01/03/05/11)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

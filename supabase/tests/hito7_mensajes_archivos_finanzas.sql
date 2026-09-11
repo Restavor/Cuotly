@@ -1318,9 +1318,25 @@ begin
     raise exception 'RN-FIN-10 FALLIDO: el establecimiento no quedó pausado (estado %)', v_status using errcode = 'assert_failure';
   end if;
 
-  -- RN-EST-08: el motivo concreto se puede mostrar junto al estado.
-  if public.establishment_status_reason('b4000000-0000-0000-0000-000000000001') <> 'nonpayment_pause' then
-    raise exception 'RN-EST-08 FALLIDO: el motivo del estado no es el impago' using errcode = 'assert_failure';
+  -- RN-EST-08: el motivo concreto se muestra junto al estado.
+  --
+  -- Esta comprobación esperaba `nonpayment_pause`, que es el CÓDIGO del
+  -- ciclo de impago, porque la función leía `state_events.cause`. La
+  -- migración 69 la corrigió para que lea `reason`, la frase que se
+  -- escribe al cambiar el estado: un identificador de programa enseñado a
+  -- un restaurante no es una explicación, y en todo cambio manual `cause`
+  -- venía vacío, así que la regla no se cumplía por ninguno de los dos
+  -- lados. Aquí se exige la frase Y que no sea un código.
+  if public.establishment_status_reason('b4000000-0000-0000-0000-000000000001') <> 'Ciclo de impago' then
+    raise exception 'RN-EST-08 FALLIDO: el motivo del estado no es la frase del ciclo de impago, es "%"',
+      coalesce(public.establishment_status_reason('b4000000-0000-0000-0000-000000000001'), '(nulo)')
+      using errcode = 'assert_failure';
+  end if;
+
+  if public.establishment_status_reason('b4000000-0000-0000-0000-000000000001')
+     like '%\_%' escape '\' then
+    raise exception 'RN-EST-08 FALLIDO: el motivo parece un codigo de programa, no una frase'
+      using errcode = 'assert_failure';
   end if;
 
   -- RN-FIN-12: los contadores se detienen, y queda escrito por qué.

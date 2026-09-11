@@ -12,6 +12,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { statusEffects } from "@/core/establishment-status";
 import { todayInTimeZone } from "@/core/finance";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -21,6 +22,7 @@ import { loadConversation } from "@/components/conversation/load";
 
 import { EstablishmentDataForm } from "@/components/establishment/DataForm";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
+import { StatusNotice } from "@/components/establishment/StatusNotice";
 import { parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
 import { resolveShellViewer } from "@/components/shell/viewer";
 
@@ -53,8 +55,6 @@ import {
  * equipo, así que `select *` devolvería 403 (CLAUDE.md).
  */
 export const dynamic = "force-dynamic";
-
-const SERVICE_STOPPED = ["paused", "suspended", "read_only", "archived"];
 
 type StatusKey = keyof typeof es.space.statuses;
 type RequestStateKey = keyof typeof es.naming.states.request;
@@ -149,6 +149,16 @@ export default async function EstablishmentPage({
       loadSheetAudit(supabase, id, space.timezone, filtrosAuditoria),
     ]);
 
+    /*
+      RN-EST-08 · "el motivo concreto se muestra junto al estado". La
+      función que lo sirve existe desde el Hito 7 y no la llamaba ninguna
+      pantalla: lo que se enseñaba era una frase genérica igual para las
+      cuatro maneras de tener el servicio detenido.
+    */
+    const { data: statusReason } = await supabase.rpc("establishment_status_reason", {
+      p_establishment_id: id,
+    });
+
     return (
       <EstablishmentSheet
         base={base}
@@ -186,6 +196,7 @@ export default async function EstablishmentPage({
           staff,
           files,
           audit,
+          statusReason: statusReason ?? null,
         }}
       />
     );
@@ -245,7 +256,14 @@ export default async function EstablishmentPage({
   const rows = requests ?? [];
   const archivos = sharedFiles ?? [];
   const pending = rows.filter((r) => r.state === "pending_client_acceptance");
-  const serviceStopped = SERVICE_STOPPED.includes(establishment.status);
+  /*
+    Qué estados detienen el servicio ya no se escribe aquí: lo dice
+    `statusEffects()` en `src/core`, que es la traducción con tests de la
+    guarda del servidor. Tenerlo en dos sitios era tener dos listas que un
+    día dicen cosas distintas — y esta pantalla es justo donde se decide si
+    ofrecerle a alguien un formulario que el servidor le va a rechazar.
+  */
+  const serviceStopped = !statusEffects(establishment.status).serviceRunning;
   const statusKey = establishment.status as StatusKey;
 
   // §66.3 · la conversación general del restaurante. Se crea al abrir la
@@ -260,6 +278,11 @@ export default async function EstablishmentPage({
   );
 
   const conversation = conversationId ? await loadConversation(supabase, conversationId) : null;
+
+  // RN-EST-08 · el motivo concreto, para el aviso de estado.
+  const { data: statusReasonCliente } = await supabase.rpc("establishment_status_reason", {
+    p_establishment_id: id,
+  });
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
@@ -282,11 +305,18 @@ export default async function EstablishmentPage({
         </p>
       </header>
 
-      {serviceStopped ? (
-        <Card title={es.clientArea.serviceStoppedTitle}>
-          <p className="text-sm text-text-secondary">{es.clientArea.serviceStoppedReason}</p>
-        </Card>
-      ) : null}
+      {/*
+        Maqueta 20 · el MISMO aviso que ve el equipo, con el motivo
+        concreto (RN-EST-08). Antes era una tarjeta genérica, igual para
+        las cuatro maneras de tener el servicio detenido: el restaurante
+        leía "el servicio está detenido" sin saber si era por impago, por
+        su propia baja o por las 24 horas de solo lectura, que son tres
+        cosas muy distintas de cara a qué hacer a continuación.
+
+        El motivo sale de `establishment_status_reason()`, que comprueba el
+        acceso por su cuenta y le devuelve nulo a quien no lo tenga.
+      */}
+      <StatusNotice status={establishment.status} reason={statusReasonCliente ?? null} />
 
       {pending.length > 0 ? (
         <Card title={es.clientArea.acceptTitle}>

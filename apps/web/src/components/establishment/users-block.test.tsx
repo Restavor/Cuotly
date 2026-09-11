@@ -121,6 +121,7 @@ function sheetData(
       },
     },
     canEditData: false,
+    statusReason: null,
     canManageClients,
     summary: {
       bags: [],
