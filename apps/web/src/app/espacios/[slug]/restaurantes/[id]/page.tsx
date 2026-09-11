@@ -12,6 +12,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { todayInTimeZone } from "@/core/finance";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -109,10 +110,16 @@ export default async function EstablishmentPage({
 
     const { data: space } = await supabase
       .from("spaces")
-      .select("id")
+      .select("id, timezone")
       .eq("slug", slug)
       .maybeSingle();
     if (!space) notFound();
+
+    // El día que propone el formulario de registrar un pago es hoy **en la
+    // zona del espacio**, calculado en el servidor: el navegador de quien
+    // lo registra puede estar en otro huso y quien manda es el espacio
+    // (CLAUDE.md MUST). Es el mismo criterio que en Finanzas.
+    const hoy = todayInTimeZone(new Date(), space.timezone);
 
     const base = `/espacios/${slug}/restaurantes/${id}`;
     const [summary, operation, counts, payments, users, files, history] = await Promise.all([
@@ -150,6 +157,7 @@ export default async function EstablishmentPage({
           operation,
           counts,
           payments,
+          today: hoy,
           users,
           files,
           history,

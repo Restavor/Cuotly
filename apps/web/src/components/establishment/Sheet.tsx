@@ -23,6 +23,7 @@ import {
   sortedCycleUsage,
   type CycleUsage,
 } from "@/core/establishments";
+import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
@@ -83,6 +84,14 @@ export interface SheetData {
   readonly operation: SheetOperation;
   readonly counts: SheetCounts;
   readonly payments: SheetPayments;
+  /**
+   * Hoy, en la zona del espacio y calculado en el SERVIDOR: es el día que
+   * propone el formulario de registrar un pago. El navegador de quien lo
+   * registra puede estar en otro huso y quien manda es el espacio
+   * (CLAUDE.md MUST). Formato `YYYY-MM-DD`, el que entiende `<input
+   * type="date">`.
+   */
+  readonly today: string;
   readonly users: SheetUsers;
   readonly files: SheetFiles;
   readonly history: readonly SheetHistoryEntry[];
@@ -91,12 +100,25 @@ export interface SheetData {
 type StatusKey = keyof typeof es.space.statuses;
 type RequestStateKey = keyof typeof es.naming.states.request;
 type JobStateKey = keyof typeof es.naming.states.job;
+type PaymentMethodKey = keyof typeof es.teamArea.methods;
 type TaskStateKey = keyof typeof es.naming.states.task;
 type CategoryKey = keyof typeof es.naming.categories;
 type FileCategoryKey = keyof typeof es.space.files.categories;
 type FileVariantKey = keyof typeof es.establishmentSheet.fileVariants;
 type ClientRoleKey = keyof typeof es.establishmentSheet.clientRoles;
 type ChargeStateKey = keyof typeof es.teamArea.chargeStates;
+
+/**
+ * El color del estado de un cobro. "Vencido" en rojo y "Pendiente" en
+ * ámbar no es decoración: es lo que distingue de un vistazo una cuota que
+ * todavía tiene plazo de una que ya lo pasó (RN-FIN-02).
+ */
+function chargeTone(status: string): "success" | "warning" | "danger" | "neutral" {
+  if (status === "paid" || status === "waived") return "success";
+  if (status === "overdue") return "danger";
+  if (status === "pending" || status === "partially_paid") return "warning";
+  return "neutral";
+}
 type WebPlatformKey = keyof typeof es.establishmentSheet.dataWebPlatforms;
 
 const t = es.establishmentSheet;
@@ -531,8 +553,16 @@ export function EstablishmentSheet({
   block: ManagementBlock;
   data: SheetData;
 }) {
-  const { header, canEditData, summary, operation, counts, payments, users, files, history } = data;
+  const { header, canEditData, summary, operation, counts, payments, today, users, files, history } =
+    data;
   const bolsas = sortedCycleUsage(summary.bags);
+  /*
+    Maqueta 14 · las tarjetas de arriba son las cuotas que siguen debiendo
+    algo. "Vivo" lo dice la deuda, no el estado: un cobro perdonado
+    (`waived`) tiene cero pendiente y no necesita tarjeta, y uno pagado en
+    parte sí, aunque su estado no sea "pendiente".
+  */
+  const cuotasVivas = payments.charges.filter((charge) => charge.outstandingCents > 0);
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-8">
@@ -1260,59 +1290,210 @@ export function EstablishmentSheet({
             </div>
           ) : null}
 
+          {/*
+            Maqueta 14 · "Pagos y presupuestos": las cuotas vivas como
+            tarjetas con su desglose, el historial de pagos debajo y los
+            presupuestos al lado.
+
+            El desglose —base imponible, IVA y total— se LEE del cobro, no
+            se calcula aquí. `charges` guarda los tres importes y el tipo
+            que regía al emitir (RN-FIN-08), justo para que cambiar el IVA
+            mañana no reescriba lo que se facturó ayer (P4). Un 21 %
+            multiplicado en la pantalla haría exactamente eso, y además
+            sería inventarse una regla fiscal de las que CLAUDE.md aplaza.
+          */}
           {block.key === "payments" ? (
-            <Card title={t.chargesTitle}>
-              {/*
-                RN-FIN-07 · quién ve la facturación lo decide el servidor.
-                `allowed` es lo que contestó, y a quien no le corresponde se
-                le dice el motivo en vez de enseñarle una tabla vacía que
-                parecería "no hay cobros".
-              */}
+            <div className="space-y-4">
               {!payments.allowed ? (
-                <EmptyState
-                  title={t.chargesNoAccessTitle}
-                  description={t.chargesNoAccessReason}
-                />
-              ) : payments.charges.length === 0 ? (
-                <EmptyState title={t.chargesEmptyTitle} description={t.chargesEmptyReason} />
+                /*
+                  RN-FIN-07 · quién ve la facturación lo decide el servidor.
+                  `allowed` es lo que contestó, y a quien no le corresponde
+                  se le dice el motivo en vez de enseñarle una tabla vacía
+                  que parecería "no hay cobros".
+                */
+                <Card title={t.chargesTitle}>
+                  <EmptyState
+                    title={t.chargesNoAccessTitle}
+                    description={t.chargesNoAccessReason}
+                  />
+                </Card>
               ) : (
                 <>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableHeaderCell>{t.conceptColumn}</TableHeaderCell>
-                        <TableHeaderCell>{t.amountColumn}</TableHeaderCell>
-                        <TableHeaderCell>{t.dueColumn}</TableHeaderCell>
-                        <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
-                        <TableHeaderCell>{t.outstandingColumn}</TableHeaderCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {payments.charges.map((charge) => (
-                        <TableRow key={charge.id}>
-                          <TableCell>{charge.concept}</TableCell>
-                          <TableCell>{euros(charge.totalCents)}</TableCell>
-                          <TableCell>{diaCorto(charge.dueAt)}</TableCell>
-                          <TableCell>
-                            {es.teamArea.chargeStates[charge.status as ChargeStateKey] ??
-                              charge.status}
-                          </TableCell>
-                          <TableCell>{euros(charge.outstandingCents)}</TableCell>
-                        </TableRow>
+                  {/*
+                    Las cuotas que siguen debiendo algo, cada una con su
+                    desglose y su formulario de registrar el pago. Un cobro
+                    saldado no necesita tarjeta: está en el historial.
+                  */}
+                  {cuotasVivas.length === 0 ? (
+                    <Card title={t.chargesTitle}>
+                      <EmptyState
+                        title={
+                          payments.charges.length === 0
+                            ? t.chargesEmptyTitle
+                            : t.chargesAllPaidTitle
+                        }
+                        description={
+                          payments.charges.length === 0
+                            ? t.chargesEmptyReason
+                            : t.chargesAllPaidReason
+                        }
+                      />
+                    </Card>
+                  ) : (
+                    <div className="grid items-start gap-4 lg:grid-cols-2">
+                      {cuotasVivas.map((charge) => (
+                        <Card
+                          key={charge.id}
+                          title={charge.concept}
+                          action={
+                            <StatusBadge tone={chargeTone(charge.status)}>
+                              {es.teamArea.chargeStates[charge.status as ChargeStateKey] ??
+                                charge.status}
+                            </StatusBadge>
+                          }
+                        >
+                          <dl className="space-y-2 text-sm">
+                            <div className="flex items-baseline justify-between gap-2">
+                              <dt className="text-text-secondary">{t.baseLabel}</dt>
+                              <dd className="font-semibold text-primary-dark">
+                                {euros(charge.baseCents)}
+                              </dd>
+                            </div>
+                            <div className="flex items-baseline justify-between gap-2">
+                              <dt className="text-text-secondary">
+                                {t.taxLabel(charge.taxRatePercent)}
+                              </dt>
+                              <dd className="font-semibold text-primary-dark">
+                                {euros(charge.taxCents)}
+                              </dd>
+                            </div>
+                            <div className="flex items-baseline justify-between gap-2 border-t border-border pt-2">
+                              <dt className="font-semibold text-text">{t.totalLabel}</dt>
+                              <dd className="text-lg font-bold text-primary-dark">
+                                {euros(charge.totalCents)}
+                              </dd>
+                            </div>
+                          </dl>
+
+                          <p className="mt-3 text-xs text-text-secondary">
+                            {t.billingPeriod(
+                              diaCorto(charge.periodStart),
+                              diaCorto(charge.periodEnd),
+                            )}
+                          </p>
+                          <p className="text-xs text-text-secondary">
+                            {t.dueOn(diaCorto(charge.dueAt))}
+                          </p>
+
+                          {/*
+                            HU-26 · el MISMO formulario de Finanzas y del
+                            detalle del trabajo, no una tercera copia: lo
+                            que cambia entre roles es lo que permite
+                            `register_payment()` en el servidor, no la
+                            pantalla.
+                          */}
+                          <div className="mt-4 border-t border-border pt-4">
+                            <RegisterPaymentForm
+                              chargeId={charge.id}
+                              establishmentId={header.id}
+                              outstandingEuros={(charge.outstandingCents / 100).toFixed(2)}
+                              defaultDay={today}
+                            />
+                          </div>
+                        </Card>
                       ))}
-                    </TableBody>
-                  </Table>
-                  <p className="mt-3 text-sm">
-                    <Link
-                      href={`/espacios/${slug}/finanzas`}
-                      className="text-cuotly-green underline"
-                    >
-                      {t.financeLink}
-                    </Link>
-                  </p>
+                    </div>
+                  )}
+
+                  <div className="grid items-start gap-4 lg:grid-cols-2">
+                    <Card title={t.paymentHistoryTitle}>
+                      {payments.payments.length === 0 ? (
+                        <EmptyState
+                          title={t.paymentHistoryEmptyTitle}
+                          description={t.paymentHistoryEmptyReason}
+                        />
+                      ) : (
+                        <>
+                          <Table>
+                            <TableHead>
+                              <TableRow>
+                                <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
+                                <TableHeaderCell>{t.conceptColumn}</TableHeaderCell>
+                                <TableHeaderCell>{t.amountColumn}</TableHeaderCell>
+                                <TableHeaderCell>{t.methodColumn}</TableHeaderCell>
+                                <TableHeaderCell>{t.receiptColumn}</TableHeaderCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {payments.payments.map((payment) => (
+                                <TableRow key={payment.id}>
+                                  <TableCell>{diaCorto(payment.paidAt)}</TableCell>
+                                  <TableCell>{payment.chargeConcept}</TableCell>
+                                  <TableCell>
+                                    {euros(payment.amountCents)}
+                                    {/*
+                                      RN-FIN-04 · un pago mal registrado no
+                                      se borra: se revierte y queda
+                                      marcado. Sin esta marca el historial
+                                      sumaría un dinero que ya no cuenta.
+                                    */}
+                                    {payment.reversedAt === null ? null : (
+                                      <span className="block text-xs text-text-secondary">
+                                        {t.paymentReversed}
+                                      </span>
+                                    )}
+                                  </TableCell>
+                                  <TableCell>
+                                    {es.teamArea.methods[payment.method as PaymentMethodKey] ??
+                                      payment.method}
+                                  </TableCell>
+                                  <TableCell>
+                                    {/*
+                                      La maqueta enseña aquí "FAC-2026-083".
+                                      Esa numeración es fiscal y CLAUDE.md
+                                      la deja aplazada, así que lo que se
+                                      enseña es lo que sí existe: si hay
+                                      justificante adjunto, se dice; si no,
+                                      que no lo hay.
+                                    */}
+                                    {payment.receiptFileId === null
+                                      ? t.receiptNone
+                                      : t.receiptAttached}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                          <p className="mt-3 text-sm">
+                            <Link
+                              href={`/espacios/${slug}/finanzas`}
+                              className="text-cuotly-green underline"
+                            >
+                              {t.financeLink}
+                            </Link>
+                          </p>
+                        </>
+                      )}
+                    </Card>
+
+                    {/*
+                      Maqueta 14 · "Presupuestos". No se inventa ni uno: el
+                      PRD §5.3 pone `quotes` entre las "entidades preparadas
+                      pero NO explotadas en Fase 1", y la tabla no existe en
+                      ninguna migración. Una tabla con tres presupuestos de
+                      ejemplo sería exactamente el dato de relleno que
+                      CLAUDE.md prohíbe.
+                    */}
+                    <Card title={t.quotesTitle}>
+                      <EmptyState
+                        title={t.quotesEmptyTitle}
+                        description={t.quotesEmptyReason}
+                      />
+                    </Card>
+                  </div>
                 </>
               )}
-            </Card>
+            </div>
           ) : null}
 
           {block.key === "users" ? (

@@ -2499,8 +2499,31 @@ export const es = {
     commitmentNone: "Sin permanencia registrada",
     manageplanLink: "Cambiar de plan o contratar servicios",
 
-    // ---- Gestión · Pagos -----------------------------------------
+    // ---- Gestión · Pagos y presupuestos (maqueta 14) --------------
     chargesTitle: "Cobros",
+    // RN-FIN-08 · los tres importes salen guardados del cobro, con el tipo
+    // que regía al emitirlo. La pantalla no multiplica nada.
+    baseLabel: "Base imponible",
+    taxLabel: (rate: number) => `IVA (${rate} %)`,
+    totalLabel: "Total",
+    billingPeriod: (from: string, to: string) => `Periodo de facturación: ${from} – ${to}`,
+    dueOn: (day: string) => `Vence el ${day}`,
+    chargesAllPaidTitle: "Nada pendiente de cobro",
+    chargesAllPaidReason:
+      "Todas las cuotas emitidas están saldadas. La siguiente se emite en la fecha de renovación del plan (RN-FIN-01).",
+    paymentHistoryTitle: "Historial de pagos",
+    paymentHistoryEmptyTitle: "Sin pagos registrados",
+    paymentHistoryEmptyReason:
+      "Aquí aparece cada pago en cuanto alguien lo registre. Los pagos se anotan a mano: no hay pasarela.",
+    methodColumn: "Método",
+    receiptColumn: "Justificante",
+    receiptAttached: "Adjunto",
+    receiptNone: "Sin justificante",
+    paymentReversed: "Revertido",
+    quotesTitle: "Presupuestos",
+    quotesEmptyTitle: "No están construidos",
+    quotesEmptyReason:
+      "Los presupuestos son una entidad preparada y no explotada en Fase 1 (PRD §5.3): todavía no se pueden crear ni enviar, así que no hay ninguno que enseñar.",
     chargesEmptyTitle: "Sin cobros emitidos",
     chargesEmptyReason: "La mensualidad se emite en la fecha de renovación del plan (RN-FIN-01).",
     chargesNoAccessTitle: "Sin acceso a la facturación",

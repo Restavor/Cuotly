@@ -663,16 +663,49 @@ export async function loadSheetCounts(
 export interface SheetCharge {
   readonly id: string;
   readonly concept: string;
+  /**
+   * RN-FIN-08 · los tres importes se guardan al emitir, con el tipo que
+   * regía ese día. La pantalla **no los calcula**: un 21 % escrito en el
+   * cliente reescribiría lo que se facturó el año pasado en cuanto
+   * cambiara el tipo (P4), y además sería inventarse una regla fiscal, que
+   * es justo el bloque que CLAUDE.md deja aplazado.
+   */
+  readonly baseCents: number;
+  readonly taxRatePercent: number;
+  readonly taxCents: number;
   readonly totalCents: number;
+  readonly periodStart: string;
+  readonly periodEnd: string;
   readonly dueAt: string;
   readonly status: string;
   readonly outstandingCents: number;
+}
+
+/**
+ * Un pago registrado, para el historial de la maqueta 14.
+ *
+ * **Sin `recorded_by`.** `payments` tiene el `select` revocado y concedido
+ * columna a columna para que el cliente no vea quién del equipo registró
+ * el cobro (CLAUDE.md), y pedir esa columna devolvería 403. Quién lo hizo
+ * sale de `audit_log`, no de aquí.
+ */
+export interface SheetPayment {
+  readonly id: string;
+  readonly chargeId: string;
+  readonly chargeConcept: string;
+  readonly amountCents: number;
+  readonly method: string;
+  readonly paidAt: string;
+  readonly receiptFileId: string | null;
+  /** RN-FIN-04: un pago mal registrado no se borra, se revierte y se marca. */
+  readonly reversedAt: string | null;
 }
 
 export interface SheetPayments {
   /** `false` cuando quien mira no puede ver la facturación (RN-FIN-07). */
   readonly allowed: boolean;
   readonly charges: readonly SheetCharge[];
+  readonly payments: readonly SheetPayment[];
 }
 
 export async function loadSheetPayments(
@@ -683,11 +716,13 @@ export async function loadSheetPayments(
     p_establishment_id: establishmentId,
   });
 
-  if (allowed !== true) return { allowed: false, charges: [] };
+  if (allowed !== true) return { allowed: false, charges: [], payments: [] };
 
   const { data: charges } = await supabase
     .from("charges")
-    .select("id, concept, total_cents, due_at")
+    .select(
+      "id, concept, base_cents, tax_rate_percent, tax_cents, total_cents, period_start, period_end, due_at",
+    )
     .eq("establishment_id", establishmentId)
     .order("due_at", { ascending: false });
 
@@ -702,7 +737,12 @@ export async function loadSheetPayments(
       return {
         id: charge.id,
         concept: charge.concept,
+        baseCents: charge.base_cents,
+        taxRatePercent: Number(charge.tax_rate_percent),
+        taxCents: charge.tax_cents,
         totalCents: charge.total_cents,
+        periodStart: charge.period_start,
+        periodEnd: charge.period_end,
         dueAt: charge.due_at,
         status: status ?? "pending",
         outstandingCents: outstanding ?? 0,
@@ -710,7 +750,31 @@ export async function loadSheetPayments(
     }),
   );
 
-  return { allowed: true, charges: rows };
+  // El historial de pagos (maqueta 14). Va después de los cobros porque
+  // cada pago se nombra por el concepto del suyo: un "724,79 € · 1 ago"
+  // suelto no dice de qué cuota es.
+  const { data: payments } = await supabase
+    .from("payments")
+    .select("id, charge_id, amount_cents, method, paid_at, receipt_file_id, reversed_at")
+    .eq("establishment_id", establishmentId)
+    .order("paid_at", { ascending: false });
+
+  const conceptoDelCobro = new Map(rows.map((charge) => [charge.id, charge.concept]));
+
+  return {
+    allowed: true,
+    charges: rows,
+    payments: (payments ?? []).map((payment) => ({
+      id: payment.id,
+      chargeId: payment.charge_id,
+      chargeConcept: conceptoDelCobro.get(payment.charge_id) ?? "—",
+      amountCents: payment.amount_cents,
+      method: payment.method,
+      paidAt: payment.paid_at,
+      receiptFileId: payment.receipt_file_id,
+      reversedAt: payment.reversed_at,
+    })),
+  };
 }
 
 // ---------------------------------------------------------------------
