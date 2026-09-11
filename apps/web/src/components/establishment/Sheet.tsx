@@ -16,6 +16,7 @@ import { Icon } from "@/components/ui/Icon";
 import { EstablishmentDataForm } from "./DataForm";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
+import { MAX_FILE_SIZE_BYTES, fileTypeLabel } from "@/core/files";
 import {
   IDENTITY_FIELDS,
   MULTILINE_IDENTITY_FIELDS,
@@ -31,7 +32,6 @@ import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
 
 import {
-  FILES_BLOCK,
   MANAGEMENT_BLOCKS,
   MANAGEMENT_TAB,
   OPERATION_TAB,
@@ -53,6 +53,7 @@ import type {
   SheetHistoryEntry,
   SheetOperation,
   SheetPayments,
+  SheetFileFolder,
   SheetStaffMember,
   SheetSummary,
   SheetUsers,
@@ -366,52 +367,66 @@ function CycleBagCard({ bag }: { bag: CycleUsage }) {
  * Solo se pinta cuando hay más de una categoría que elegir. Un filtro con
  * una única opción no filtra nada y solo estorba.
  */
-function CategoryFilter({
+/**
+ * Maqueta 16 · las carpetas, con lo que tiene cada una dentro.
+ *
+ * Enlaces, no botones: el filtro vive en la dirección (`?tipo=`), así que
+ * "los menús de Magariños" se pega en un mensaje y el botón de volver
+ * deshace el filtro. `aria-current` marca la carpeta abierta para quien no
+ * ve el fondo resaltado.
+ *
+ * El archivo abierto en el panel viaja con el filtro: cambiar de carpeta
+ * no debería cerrar lo que se estaba mirando.
+ */
+function FolderRail({
   base,
-  categories,
+  folders,
+  total,
   current,
   selectedFileId,
 }: {
   base: string;
-  categories: readonly string[];
+  folders: readonly SheetFileFolder[];
+  total: number;
   current: string | null;
   selectedFileId: string | null;
 }) {
-  return (
-    <form method="get" action={base} className="flex shrink-0 items-center gap-2">
-      {/*
-        La pestaña y el bloque viajan como campos ocultos: sin ellos,
-        filtrar devolvería a Resumen, que no es donde estaba quien filtra.
-      */}
-      <input type="hidden" name="vista" value={MANAGEMENT_TAB.slug} />
-      <input type="hidden" name="bloque" value={FILES_BLOCK.slug} />
-      {selectedFileId === null ? null : (
-        <input type="hidden" name="archivo" value={selectedFileId} />
-      )}
+  const clase = (activo: boolean) =>
+    `flex items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
+      activo
+        ? "bg-soft-surface font-semibold text-primary-dark"
+        : "text-text hover:bg-soft-surface"
+    }`;
 
-      <label htmlFor="filtro-tipo-archivo" className="text-sm text-text-secondary">
-        {t.filterLabel}
-      </label>
-      <select
-        id="filtro-tipo-archivo"
-        name="tipo"
-        defaultValue={current ?? ""}
-        className="rounded-field border border-border bg-surface px-3 py-1.5 text-sm text-text outline-none transition-colors focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-      >
-        <option value="">{t.filterAll}</option>
-        {categories.map((category) => (
-          <option key={category} value={category}>
-            {es.space.files.categories[category as FileCategoryKey] ?? category}
-          </option>
+  return (
+    <nav aria-label={t.foldersTitle}>
+      <ul className="space-y-1">
+        <li>
+          <Link
+            href={filesHref(base, { category: null, fileId: selectedFileId })}
+            aria-current={current === null ? "true" : undefined}
+            className={clase(current === null)}
+          >
+            <span>{t.foldersAll}</span>
+            <span className="shrink-0 text-xs text-text-secondary">{total}</span>
+          </Link>
+        </li>
+        {folders.map((folder) => (
+          <li key={folder.category}>
+            <Link
+              href={filesHref(base, { category: folder.category, fileId: selectedFileId })}
+              aria-current={current === folder.category ? "true" : undefined}
+              className={clase(current === folder.category)}
+            >
+              <span>
+                {es.space.files.categories[folder.category as FileCategoryKey] ?? folder.category}
+              </span>
+              <span className="shrink-0 text-xs text-text-secondary">{folder.count}</span>
+            </Link>
+          </li>
         ))}
-      </select>
-      <button
-        type="submit"
-        className="rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-      >
-        {t.filterSubmit}
-      </button>
-    </form>
+      </ul>
+    </nav>
   );
 }
 
@@ -1694,21 +1709,31 @@ export function EstablishmentSheet({
 
           {block.key === "files" ? (
             <>
-              <div className="grid items-start gap-4 lg:grid-cols-[2fr_1fr]">
-                <Card
-                  title={t.filesTitle(header.name)}
-                  action={
-                    files.categories.length > 1 ? (
-                      <CategoryFilter
-                        base={base}
-                        categories={files.categories}
-                        current={files.category}
-                        selectedFileId={files.selected?.file.id ?? null}
-                      />
-                    ) : undefined
-                  }
-                >
+              {/*
+                Maqueta 16 · las carpetas son una LISTA con su recuento, no
+                un desplegable. El recuento es la mitad del valor: "Menús 6"
+                dice que hay seis antes de entrar, y un desplegable obliga a
+                abrirlo para descubrir qué hay. Siguen siendo enlaces —el
+                filtro vive en la dirección (`?tipo=`)— así que se comparten
+                y el botón de volver los deshace (CA-22).
+              */}
+              <div className="grid items-start gap-4 lg:grid-cols-[1fr_3fr]">
+                <Card title={t.foldersTitle}>
+                  <FolderRail
+                    base={base}
+                    folders={files.folders}
+                    total={files.total}
+                    current={files.category}
+                    selectedFileId={files.selected?.file.id ?? null}
+                  />
+                </Card>
+
+                <Card title={t.filesTitle(header.name)}>
                   <UploadFileForm establishmentId={header.id} />
+                  {/* RN-ARC-06 · el límite, dicho antes de elegir el archivo. */}
+                  <p className="mt-2 text-xs text-text-secondary">
+                    {t.filesMaxSize(megabytes(MAX_FILE_SIZE_BYTES))}
+                  </p>
 
                   <div className="mt-4">
                     {files.files.length === 0 ? (
@@ -1719,7 +1744,10 @@ export function EstablishmentSheet({
                           <TableRow>
                             <TableHeaderCell>{t.fileNameColumn}</TableHeaderCell>
                             <TableHeaderCell>{t.fileCategoryColumn}</TableHeaderCell>
+                            <TableHeaderCell>{t.fileTypeColumn}</TableHeaderCell>
+                            <TableHeaderCell>{t.fileSizeColumn}</TableHeaderCell>
                             <TableHeaderCell>{t.fileVisibilityColumn}</TableHeaderCell>
+                            <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
                             <TableHeaderCell>{t.fileVersionColumn}</TableHeaderCell>
                           </TableRow>
                         </TableHead>
@@ -1750,9 +1778,29 @@ export function EstablishmentSheet({
                               <TableCell>
                                 {es.space.files.categories[file.category as FileCategoryKey] ?? file.category}
                               </TableCell>
+                              {/*
+                                Tipo y tamaño son de la versión VIGENTE: lo
+                                que pesa el archivo hoy, no lo que pesaba
+                                hace tres sustituciones (RN-ARC-03). Y el
+                                tipo sale del `mime_type` guardado, no de la
+                                extensión del nombre: un `.jpg` que en
+                                realidad es un PDF diría "JPG" y sería
+                                mentira.
+                              */}
+                              <TableCell>
+                                {file.mimeType === null
+                                  ? t.fileTypeUnknown
+                                  : fileTypeLabel(file.mimeType)}
+                              </TableCell>
+                              <TableCell>
+                                {file.sizeBytes === null
+                                  ? t.fileSizeUnknown
+                                  : t.fileSize(megabytes(file.sizeBytes))}
+                              </TableCell>
                               <TableCell>
                                 <VisibilityMark visibility={file.visibility} />
                               </TableCell>
+                              <TableCell>{diaCorto(file.createdAt)}</TableCell>
                               <TableCell>{t.fileVersion(file.lastVersion)}</TableCell>
                             </TableRow>
                           ))}
@@ -1929,6 +1977,19 @@ export function EstablishmentSheet({
                     <h3 className="text-base font-semibold text-primary-dark">{t.backupTitle}</h3>
                     <p className="mt-1 text-sm font-medium text-text">{t.backupEmptyTitle}</p>
                     <p className="mt-1 text-sm text-text-secondary">{t.backupEmptyReason}</p>
+                    {/*
+                      §5.5 de la especificación maestra, y es la frase más
+                      importante de la tarjeta: "si LandingSite u otra
+                      plataforma no permite exportar una web completa,
+                      Cuotly no afirmará que existe una copia completa
+                      restaurable". La maqueta también la escribe. Se dice
+                      aquí y no el día que haya integración, porque es
+                      justo antes de conectarla cuando alguien se hace la
+                      idea equivocada de lo que va a tener.
+                    */}
+                    <p className="mt-2 rounded-[10px] bg-soft-surface p-3 text-sm text-text-secondary">
+                      {t.backupLimitation}
+                    </p>
                   </div>
                 </div>
               </Card>

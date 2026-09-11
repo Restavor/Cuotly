@@ -141,7 +141,7 @@ function sheetData(
     today: "2026-09-11",
     users,
     staff,
-    files: { files: [], selected: null, categories: [], category: null },
+    files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
     history: [],
   };
 }

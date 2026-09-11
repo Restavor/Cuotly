@@ -936,6 +936,25 @@ export interface SheetFile {
   readonly visibility: string;
   readonly archivedAt: string | null;
   readonly lastVersion: number;
+  /**
+   * Tipo y tamaño de la versión VIGENTE (maqueta 16, columnas "Tipo" y
+   * "Tamaño"). Son de la versión y no del archivo: RN-ARC-03 dice que
+   * sustituir crea una versión nueva, así que el tamaño del archivo es el
+   * de la última — la de hace tres versiones pesaba otra cosa.
+   *
+   * `null` cuando el archivo no tiene ninguna versión registrada, que no
+   * debería pasar y aun así no se rellena con un cero: un "0 MB" se lee
+   * como un archivo vacío, no como "no consta".
+   */
+  readonly sizeBytes: number | null;
+  readonly mimeType: string | null;
+  readonly createdAt: string;
+}
+
+/** Una carpeta del panel izquierdo de la maqueta 16, con lo que tiene dentro. */
+export interface SheetFileFolder {
+  readonly category: string;
+  readonly count: number;
 }
 
 export interface SheetFiles {
@@ -953,6 +972,14 @@ export interface SheetFiles {
    * "Menús" como única opción y no habría forma de volver.
    */
   readonly categories: readonly string[];
+  /**
+   * Maqueta 16 · las carpetas con su recuento. Se cuentan sobre el
+   * catálogo ENTERO y no sobre lo filtrado: si se contaran después de
+   * filtrar, elegir "Menús" dejaría todas las demás carpetas a cero y
+   * parecería que los archivos han desaparecido.
+   */
+  readonly folders: readonly SheetFileFolder[];
+  readonly total: number;
   /** La categoría por la que se está filtrando, o `null` si no hay filtro. */
   readonly category: string | null;
 }
@@ -999,14 +1026,22 @@ export async function loadSheetFiles(
     porArchivo.set(version.file_id, suyas);
   }
 
-  const rows: SheetFile[] = (files ?? []).map((file) => ({
-    id: file.id,
-    name: file.name,
-    category: file.category,
-    visibility: file.visibility,
-    archivedAt: file.archived_at,
-    lastVersion: porArchivo.get(file.id)?.[0]?.versionNumber ?? 1,
-  }));
+  const rows: SheetFile[] = (files ?? []).map((file) => {
+    // Las versiones vienen ordenadas de mayor a menor, así que la primera
+    // es la vigente.
+    const vigente = porArchivo.get(file.id)?.[0] ?? null;
+    return {
+      id: file.id,
+      name: file.name,
+      category: file.category,
+      visibility: file.visibility,
+      archivedAt: file.archived_at,
+      lastVersion: vigente?.versionNumber ?? 1,
+      sizeBytes: vigente?.sizeBytes ?? null,
+      mimeType: vigente?.mimeType ?? null,
+      createdAt: file.created_at,
+    };
+  });
 
   const categories = [...new Set(rows.map((file) => file.category))].sort();
 
@@ -1021,9 +1056,16 @@ export async function loadSheetFiles(
   // debe seguir abriéndolo aunque el filtro lo esconda de la tabla.
   const elegido = rows.find((file) => file.id === selectedFileId) ?? null;
 
+  const carpetas = categories.map((category) => ({
+    category,
+    count: rows.filter((file) => file.category === category).length,
+  }));
+
   return {
     files: visibles,
     categories,
+    folders: carpetas,
+    total: rows.length,
     category: filtro,
     selected:
       elegido === null

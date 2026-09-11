@@ -6,6 +6,7 @@ import {
   ALLOWED_MIME_TYPES,
   FILE_CATEGORIES,
   MAX_FILE_SIZE_BYTES,
+  fileTypeLabel,
   canRequestPermanentDeletion,
   canViewFile,
   nextVersionNumber,
@@ -221,5 +222,32 @@ describe("RN-ARC-01 · las ocho categorías, nombradas una sola vez", () => {
     for (const nombre of Object.values(es.space.files.categories)) {
       expect(nombre.trim().length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("etiqueta del tipo de archivo (maqueta 16)", () => {
+  it("traduce cada tipo permitido a su etiqueta corta", () => {
+    expect(fileTypeLabel("image/png")).toBe("PNG");
+    expect(fileTypeLabel("image/jpeg")).toBe("JPG");
+    expect(fileTypeLabel("application/pdf")).toBe("PDF");
+    expect(
+      fileTypeLabel(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ),
+    ).toBe("Excel");
+  });
+
+  it("todos los tipos que se pueden subir tienen etiqueta", () => {
+    // Si mañana RN-ARC-06 admite uno más y nadie le pone etiqueta, la
+    // columna "Tipo" diría "no consta" para un archivo perfectamente
+    // normal. Esto lo caza aquí y no en producción.
+    for (const mime of ALLOWED_MIME_TYPES) {
+      expect(fileTypeLabel(mime)).not.toBeNull();
+    }
+  });
+
+  it("lo que no reconoce devuelve null, no una etiqueta inventada", () => {
+    expect(fileTypeLabel("video/mp4")).toBeNull();
+    expect(fileTypeLabel("")).toBeNull();
   });
 });

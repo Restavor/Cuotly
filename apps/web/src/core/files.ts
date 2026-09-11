@@ -215,3 +215,34 @@ export function canRequestPermanentDeletion(input: {
   if (input.linkedEntityTypes.length > 0) return err("linked_to_operational_record");
   return ok(undefined);
 }
+
+/**
+ * La etiqueta corta de un tipo de archivo para la columna "Tipo" de la
+ * maqueta 16: PNG, JPG, PDF, Word, Excel…
+ *
+ * Sale del `mime_type` **guardado al registrar la versión**, nunca de la
+ * extensión del nombre: un `.jpg` que en realidad es un PDF diría "JPG" y
+ * sería mentira justo en la columna que existe para no tener que abrirlo.
+ *
+ * Lo que no esté en la lista blanca de RN-ARC-06 no puede haberse subido,
+ * pero un archivo viejo o una fila tocada a mano podrían traer otra cosa:
+ * en ese caso se devuelve `null` y quien llama dice "no consta" en vez de
+ * inventarse una etiqueta.
+ */
+const MIME_LABELS: Readonly<Record<string, string>> = {
+  "image/jpeg": "JPG",
+  "image/png": "PNG",
+  "image/webp": "WEBP",
+  "image/gif": "GIF",
+  "application/pdf": "PDF",
+  "application/msword": "Word",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "Word",
+  "application/vnd.ms-excel": "Excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "Excel",
+  "text/plain": "TXT",
+  "text/csv": "CSV",
+};
+
+export function fileTypeLabel(mimeType: string): string | null {
+  return MIME_LABELS[mimeType] ?? null;
+}

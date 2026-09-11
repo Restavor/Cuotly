@@ -87,7 +87,7 @@ function sheetData(
     users: { rows: [], failed: false },
     canManageClients: false,
     staff: [],
-    files: { files: [], selected: null, categories: [], category: null },
+    files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
     history: [],
   };
 }

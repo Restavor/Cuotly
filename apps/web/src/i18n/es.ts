@@ -2597,8 +2597,18 @@ export const es = {
     filesEmptyTitle: "Sin archivos",
     filesEmptyReason:
       "Aquí aparece el catálogo del restaurante: logos, fotografías, menús, documentos e informes, con sus versiones.",
+    // Maqueta 16 · las carpetas del panel izquierdo, con su recuento.
+    foldersTitle: "Carpetas",
+    foldersAll: "Todos los archivos",
+    filesMaxSize: (mb: string) => `Tamaño máximo por archivo: ${mb} MB (RN-ARC-06).`,
     fileNameColumn: "Nombre",
-    fileCategoryColumn: "Tipo",
+    fileCategoryColumn: "Carpeta",
+    fileTypeColumn: "Tipo",
+    fileSizeColumn: "Tamaño",
+    // El tipo sale del `mime_type` guardado, no de la extensión: un .jpg
+    // que en realidad es un PDF diría "JPG" y sería mentira.
+    fileTypeUnknown: "No consta",
+    fileSizeUnknown: "No consta",
     fileVisibilityColumn: "Visibilidad",
     fileVersionColumn: "Versión",
     fileVersion: (n: number) => `v${n}`,
@@ -2638,13 +2648,18 @@ export const es = {
     uploadButton: "Subir archivo",
     uploadPending: "Subiendo…",
     uploadDone: (name: string) => `${name} está ya en el catálogo.`,
-    filterLabel: "Categoría",
-    filterAll: "Todas",
-    filterSubmit: "Filtrar",
-    backupTitle: "Backup de la web",
+    // §5.5 de la especificación maestra: "la palabra backup solo puede
+    // utilizarse para aquello que realmente sea recuperable". Llamar
+    // "Backup de la web" a una tarjeta donde no hay ninguna copia es justo
+    // lo que esa regla prohíbe, así que la tarjeta se llama por lo que es.
+    backupTitle: "Copias de seguridad web",
     backupEmptyTitle: "No conectado",
     backupEmptyReason:
       "Cuotly no hace copias de la web del restaurante todavía: no hay ninguna integración con el alojamiento, así que no hay fecha de último respaldo que enseñar.",
+    // La advertencia de §5.5, que se dice AUNQUE algún día haya copias:
+    // solo se respalda lo que la plataforma externa deje exportar.
+    backupLimitation:
+      "Aunque se conecte, Cuotly solo podrá guardar los contenidos y recursos que la plataforma de la web permita exportar. No afirmará nunca que existe una copia completa restaurable de la web.",
 
     // ---- Gestión · Integraciones ---------------------------------
     integrationsTitle: "Integraciones",
