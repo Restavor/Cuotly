@@ -111,7 +111,12 @@ function sheetData(payments: SheetData["payments"]): SheetData {
     canManageClients: false,
     staff: [],
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
-    history: [],
+    audit: {
+      rows: [],
+      actors: [],
+      filters: { from: null, to: null, family: null, actorId: null, page: 1 },
+      hasMore: false,
+    },
   };
 }
 

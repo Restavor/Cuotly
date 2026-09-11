@@ -132,7 +132,12 @@ function sheetData(files: SheetData["files"]): SheetData {
     users: { rows: [], failed: false },
     staff: [],
     files,
-    history: [],
+    audit: {
+      rows: [],
+      actors: [],
+      filters: { from: null, to: null, family: null, actorId: null, page: 1 },
+      hasMore: false,
+    },
   };
 }
 

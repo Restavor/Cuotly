@@ -224,6 +224,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/notas_internas.sql
 
+      - name: "Migración 68 — Verificar que el historial de un restaurante no es una puerta de atrás a la auditoría"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/historial_del_restaurante.sql
+
       - name: "Migraciones 55 y 61 — Verificar la pestaña Usuarios de la ficha (§15.2, RN-EST-01/03/05/11)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

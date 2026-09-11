@@ -1,4 +1,5 @@
 import type { CycleBag, EstablishmentIdentity } from "@/core/establishments";
+import { AUDIT_FAMILIES, auditChanges, auditDayWindow, type AuditChange } from "@/core/audit";
 import type { AttentionItem } from "@/core/home";
 import {
   LIVE_JOB_STATES,
@@ -1077,55 +1078,138 @@ export async function loadSheetFiles(
 // ---------------------------------------------------------------------
 // Historial
 // ---------------------------------------------------------------------
+//
+// La lista de cambios de estado que vivía aquí (`loadSheetHistory`, sobre
+// `state_events`) se ha ido con la maqueta 19: la pestaña lee ahora la
+// auditoría acotada al restaurante, que dice lo mismo y además quién lo
+// hizo. Dejarla habría sido un segundo historial que un día cuenta otra
+// cosa — y un cargador que no llama nadie.
 
-export interface SheetHistoryEntry {
+export interface SheetAuditRow {
   readonly id: string;
-  readonly entityType: "job" | "task";
-  readonly toState: string;
-  readonly occurredAt: string;
-  readonly jobCode: string | null;
-  readonly deepLink: string | null;
+  readonly createdAt: string;
+  readonly action: string;
+  readonly entityType: string;
+  readonly entityId: string | null;
+  /**
+   * Quién lo hizo, o `null` cuando **no lo hizo nadie**: los barridos y
+   * las emisiones automáticas escriben su apunte sin actor, y la pantalla
+   * dice "Sistema", que es la verdad.
+   *
+   * Ojo con la diferencia, que costó un rato ver con datos reales: "no hay
+   * actor" y "hay actor y no sé su nombre" NO son lo mismo. Un cambio que
+   * hizo el restaurante salía como "Sistema" porque `profiles_select` no
+   * le deja al equipo leer el perfil de un cliente —no comparten espacio—,
+   * y decir que lo hizo el sistema cuando lo hizo una persona es mentir en
+   * la pantalla que existe justo para saber quién hizo qué.
+   */
+  readonly actorId: string | null;
+  readonly actorName: string | null;
+  readonly changes: readonly AuditChange[];
+  readonly reason: string | null;
 }
 
+export interface SheetAuditActor {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface SheetAuditFilters {
+  readonly from: string | null;
+  readonly to: string | null;
+  readonly family: string | null;
+  readonly actorId: string | null;
+  readonly page: number;
+}
+
+export interface SheetAudit {
+  readonly rows: readonly SheetAuditRow[];
+  readonly actors: readonly SheetAuditActor[];
+  readonly filters: SheetAuditFilters;
+  readonly hasMore: boolean;
+}
+
+export const AUDIT_PAGE_SIZE = 25;
+
 /**
- * El historial de estados del restaurante, desde `state_events` (RN-DAT-05).
+ * Maqueta 19 · "todas las acciones realizadas en el restaurante".
  *
- * Solo los eventos de SUS trabajos: `state_events` es del espacio entero y
- * no tiene columna de establecimiento, así que se acota por los trabajos
- * que este restaurante tiene. Lo que no se dice es quién los hizo — la
- * identidad del equipo sale de la auditoría, no de una pantalla
- * (CLAUDE.md).
+ * **Aquí no se filtra por permisos, y es lo importante.** Las filas las
+ * decide la política de `audit_log` (§21.2): el propietario ve su espacio
+ * entero, un administrador la operativa, un trabajador sus propias
+ * acciones y las filas que ya puede ver, y un cliente no llega. Por eso
+ * `establishment_audit()` es SECURITY INVOKER — si fuera DEFINER, esta
+ * pantalla sería una puerta de atrás a la auditoría del espacio.
+ *
+ * El filtro de fechas viaja como día natural y se convierte a instantes en
+ * la zona del ESPACIO (`auditDayWindow`), no en la del navegador: "del 1 al
+ * 15 de septiembre" significa lo mismo para todo el equipo.
  */
-export async function loadSheetHistory(
+export async function loadSheetAudit(
   supabase: Supabase,
-  spaceSlug: string,
   establishmentId: string,
-  limit = 30,
-): Promise<readonly SheetHistoryEntry[]> {
-  const { data: jobs } = await supabase
-    .from("jobs")
-    .select("id, code")
-    .eq("establishment_id", establishmentId);
+  timeZone: string,
+  filters: SheetAuditFilters,
+): Promise<SheetAudit> {
+  const ventana = auditDayWindow(filters.from, filters.to, timeZone);
+  const familia =
+    filters.family !== null && AUDIT_FAMILIES.includes(filters.family) ? filters.family : null;
+  const pagina = Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1;
 
-  const jobIds = (jobs ?? []).map((job) => job.id);
-  if (jobIds.length === 0) return [];
+  // Se pide una fila de más: así se sabe si hay página siguiente sin
+  // contar la tabla entera, que crece para siempre (§20.7).
+  const [{ data: filas }, { data: actores }] = await Promise.all([
+    supabase.rpc("establishment_audit", {
+      p_establishment_id: establishmentId,
+      p_from: ventana.from ?? undefined,
+      p_to: ventana.to ?? undefined,
+      p_family: familia ?? undefined,
+      p_actor_id: filters.actorId ?? undefined,
+      p_limit: AUDIT_PAGE_SIZE + 1,
+      p_offset: (pagina - 1) * AUDIT_PAGE_SIZE,
+    }),
+    supabase.rpc("establishment_audit_actors", { p_establishment_id: establishmentId }),
+  ]);
 
-  const codigo = new Map((jobs ?? []).map((job) => [job.id, job.code]));
+  const traidas = filas ?? [];
+  const visibles = traidas.slice(0, AUDIT_PAGE_SIZE);
 
-  const { data: events } = await supabase
-    .from("state_events")
-    .select("id, entity_type, entity_id, to_state, occurred_at")
-    .in("entity_id", jobIds)
-    .eq("entity_type", "job")
-    .order("occurred_at", { ascending: false })
-    .limit(limit);
+  const ids = [
+    ...new Set([
+      ...visibles.map((fila) => fila.actor_id),
+      ...(actores ?? []).map((fila) => fila.actor_id),
+    ]),
+  ].filter((id): id is string => id !== null);
 
-  return (events ?? []).map((event) => ({
-    id: event.id,
-    entityType: "job" as const,
-    toState: event.to_state,
-    occurredAt: event.occurred_at,
-    jobCode: codigo.get(event.entity_id) ?? null,
-    deepLink: `/espacios/${spaceSlug}/trabajos/${event.entity_id}`,
-  }));
+  // Dos fuentes, la misma asimetría que en la Operación: `profiles_select`
+  // deja ver a quien comparte espacio —el equipo—, pero un cliente no es
+  // miembro del espacio y su nombre solo llega por
+  // `establishment_client_users()`, que comprueba el permiso por su cuenta.
+  // Sin la segunda, cada cosa que hace el restaurante saldría sin nombre.
+  const nombre = await loadPeopleNames(supabase, establishmentId, ids);
+
+  return {
+    rows: visibles.map((fila) => ({
+      id: fila.id,
+      createdAt: fila.created_at,
+      action: fila.action,
+      entityType: fila.entity_type,
+      entityId: fila.entity_id,
+      actorId: fila.actor_id,
+      actorName: fila.actor_id === null ? null : (nombre.get(fila.actor_id) ?? null),
+      changes: auditChanges(fila.old_value, fila.new_value),
+      reason: fila.reason,
+    })),
+    // Quien no tenga nombre legible no entra en el desplegable: un uuid no
+    // le dice a nadie por quién está filtrando (CA-20).
+    actors: (actores ?? [])
+      .flatMap((fila) =>
+        fila.actor_id === null || !nombre.has(fila.actor_id)
+          ? []
+          : [{ id: fila.actor_id, name: nombre.get(fila.actor_id)! }],
+      )
+      .sort((a, b) => a.name.localeCompare(b.name, "es")),
+    filters: { ...filters, family: familia, page: pagina },
+    hasMore: traidas.length > AUDIT_PAGE_SIZE,
+  };
 }

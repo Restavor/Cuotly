@@ -30,10 +30,10 @@ import {
   loadSheetCounts,
   loadSheetFiles,
   loadSheetHeader,
-  loadSheetHistory,
   loadSheetOperation,
   loadSheetPayments,
   loadSheetSummary,
+  loadSheetAudit,
   loadSheetStaff,
   loadSheetUsers,
 } from "./sheet-load";
@@ -123,7 +123,22 @@ export default async function EstablishmentPage({
     const hoy = todayInTimeZone(new Date(), space.timezone);
 
     const base = `/espacios/${slug}/restaurantes/${id}`;
-    const [summary, operation, counts, payments, users, staff, files, history] = await Promise.all([
+    /*
+      Maqueta 19 · los filtros del historial viven en la dirección, igual
+      que la pestaña y el bloque: así "el historial de Magariños en
+      septiembre" se comparte con un enlace y el botón de volver deshace el
+      filtro (CA-22).
+    */
+    const filtrosAuditoria = {
+      from: soloUno(query.desde) ?? null,
+      to: soloUno(query.hasta) ?? null,
+      family: soloUno(query.familia) ?? null,
+      actorId: soloUno(query.persona) ?? null,
+      page: Number(soloUno(query.pagina) ?? "1"),
+    };
+
+    const [summary, operation, counts, payments, users, staff, files, audit] =
+      await Promise.all([
       loadSheetSummary(supabase, space.id, slug, id),
       loadSheetOperation(supabase, slug, id),
       loadSheetCounts(supabase, id),
@@ -131,7 +146,7 @@ export default async function EstablishmentPage({
       loadSheetUsers(supabase, id),
       loadSheetStaff(supabase, space.id, id),
       loadSheetFiles(supabase, id, soloUno(query.archivo), soloUno(query.tipo)),
-      loadSheetHistory(supabase, slug, id),
+      loadSheetAudit(supabase, id, space.timezone, filtrosAuditoria),
     ]);
 
     return (
@@ -170,7 +185,7 @@ export default async function EstablishmentPage({
           users,
           staff,
           files,
-          history,
+          audit,
         }}
       />
     );

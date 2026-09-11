@@ -2020,6 +2020,7 @@ export const es = {
       financial: "Finanzas",
       establishment: "Restaurantes",
       establishment_access: "Acceso a restaurantes",
+      establishment_note: "Notas internas",
       group: "Grupos de cliente",
       group_access: "Acceso a grupos",
       holiday: "Festivos",
@@ -2691,12 +2692,40 @@ export const es = {
     integrationsEmptyReason:
       "Las integraciones analíticas (GA4, Search Console, Business Profile, Clarity, PageSpeed) son la Fase 3, con OAuth y credenciales cifradas. No hay ninguna conectada y no existe el botón «Sincronizar ahora».",
 
-    // ---- Historial -----------------------------------------------
-    historyTitle: "Historial de estados",
+    // ---- Historial · actividad y auditoría (maqueta 19) -----------
+    historyTitle: "Actividad y auditoría",
     historyHint:
-      "Sale de `state_events`, el libro inmutable de cambios de estado (RN-DAT-05). Dice qué pasó y cuándo; quién lo hizo está en la auditoría, que tiene su propio permiso.",
-    historyEmptyTitle: "Sin historial todavía",
-    historyEmptyReason: "El primer cambio de estado de un trabajo de este restaurante aparecerá aquí.",
+      "Todas las acciones realizadas en este restaurante. Qué acciones se ven aquí lo decide el servidor: cada quien ve las suyas y aquellas sobre las que tiene permiso (§21.2).",
+    historyEmptyTitle: "Sin actividad todavía",
+    historyEmptyReason:
+      "En cuanto alguien haga algo en este restaurante —un cambio en la ficha, una solicitud, un cobro— quedará aquí con su fecha y su autor.",
+    historyFilteredEmptyReason:
+      "No hay actividad que encaje con estos filtros. Prueba a ampliar el periodo o a quitar alguno.",
+    auditWhenColumn: "Fecha y hora",
+    auditActionColumn: "Tipo",
+    auditChangesColumn: "Cambios",
+    auditActorColumn: "Realizado por",
+    // Un apunte sin actor no es un hueco: lo escribió el servidor (un
+    // barrido, una emisión automática). Decirlo es más honesto que "—".
+    auditSystemActor: "Sistema",
+    // Hay actor, pero quien mira no puede resolver su nombre. No es el
+    // sistema, y decir "Sistema" aquí sería mentir.
+    auditUnknownActor: "Sin identificar",
+    auditNoValue: "(vacío)",
+    auditFromLabel: "Desde",
+    auditToLabel: "Hasta",
+    auditFamilyLabel: "Tipo de actividad",
+    auditActorLabel: "Persona",
+    auditAllOption: "Todas",
+    auditFilterSubmit: "Filtrar",
+    auditPagerLabel: "Moverse por el historial",
+    auditPrevious: "Anteriores",
+    auditNext: "Siguientes",
+    auditPage: (page: number) => `Página ${page}`,
+    // PRD §24.1: "exportación e importación masiva" está fuera del alcance
+    // de la Fase 1. Un botón que no exporta es peor que no tenerlo.
+    auditExportPending:
+      "Exportar el historial todavía no está: la exportación masiva queda fuera del alcance de la Fase 1 (PRD §24.1).",
     auditLink: "Ver la auditoría del espacio",
   },
 

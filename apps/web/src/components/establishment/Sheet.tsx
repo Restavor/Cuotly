@@ -16,6 +16,7 @@ import { Icon } from "@/components/ui/Icon";
 import { EstablishmentDataForm } from "./DataForm";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
+import { AUDIT_FAMILIES } from "@/core/audit";
 import { MAX_FILE_SIZE_BYTES, fileTypeLabel } from "@/core/files";
 import {
   IDENTITY_FIELDS,
@@ -33,6 +34,7 @@ import { tiempoRestante } from "@/i18n/duration";
 
 import {
   MANAGEMENT_BLOCKS,
+  HISTORY_TAB,
   MANAGEMENT_TAB,
   OPERATION_TAB,
   PAYMENTS_BLOCK,
@@ -50,10 +52,10 @@ import type {
   SheetFiles,
   SheetHeader,
   SheetIdentity,
-  SheetHistoryEntry,
   SheetOperation,
   SheetPayments,
   SheetFileFolder,
+  SheetAudit,
   SheetStaffMember,
   SheetSummary,
   SheetUsers,
@@ -107,7 +109,8 @@ export interface SheetData {
   /** Maqueta 15 · el equipo autorizado en este restaurante (interno, P7). */
   readonly staff: readonly SheetStaffMember[];
   readonly files: SheetFiles;
-  readonly history: readonly SheetHistoryEntry[];
+  /** Maqueta 19 · la auditoría de este restaurante, ya filtrada y paginada. */
+  readonly audit: SheetAudit;
 }
 
 type StatusKey = keyof typeof es.space.statuses;
@@ -192,6 +195,17 @@ function diaCorto(value: string): string {
  * escribe siempre un punto, así que "2.4 MB" se colaba en una pantalla que
  * en la línea de al lado escribe "599,00 €".
  */
+/** "15 sept 2026, 10:24", la columna "Fecha y hora" de la maqueta 19. */
+function fechaYHoraLarga(value: string): string {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
 function megabytes(sizeBytes: number): string {
   return new Intl.NumberFormat("es-ES", {
     minimumFractionDigits: 1,
@@ -568,6 +582,134 @@ function BlockNav({ base, active }: { base: string; active: ManagementBlock }) {
   );
 }
 
+/**
+ * Maqueta 19 · los tres filtros del historial: periodo, tipo de actividad
+ * y persona.
+ *
+ * Un formulario GET, no un componente de cliente: los filtros viven en la
+ * dirección, así que "el historial de Magariños en septiembre" se pega en
+ * un mensaje, el botón de volver deshace el filtro y la pantalla entera
+ * sigue funcionando sin JavaScript (CA-22).
+ *
+ * El desplegable de personas ofrece SOLO a quien aparece de verdad en este
+ * historial: un filtro que devuelve cero resultados se lee como un error
+ * de la pantalla, no como un filtro bien aplicado.
+ */
+function AuditFilters({ base, audit }: { base: string; audit: SheetAudit }) {
+  return (
+    <form method="get" action={base} className="flex flex-wrap items-end gap-3">
+      <input type="hidden" name="vista" value={HISTORY_TAB.slug} />
+
+      <div>
+        <label htmlFor="auditoria-desde" className="block text-xs text-text-secondary">
+          {t.auditFromLabel}
+        </label>
+        <input
+          id="auditoria-desde"
+          type="date"
+          name="desde"
+          defaultValue={audit.filters.from ?? ""}
+          className="rounded-field border border-border bg-surface px-3 py-1.5 text-sm text-text outline-none focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="auditoria-hasta" className="block text-xs text-text-secondary">
+          {t.auditToLabel}
+        </label>
+        <input
+          id="auditoria-hasta"
+          type="date"
+          name="hasta"
+          defaultValue={audit.filters.to ?? ""}
+          className="rounded-field border border-border bg-surface px-3 py-1.5 text-sm text-text outline-none focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="auditoria-familia" className="block text-xs text-text-secondary">
+          {t.auditFamilyLabel}
+        </label>
+        <select
+          id="auditoria-familia"
+          name="familia"
+          defaultValue={audit.filters.family ?? ""}
+          className="rounded-field border border-border bg-surface px-3 py-1.5 text-sm text-text outline-none focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+        >
+          <option value="">{t.auditAllOption}</option>
+          {AUDIT_FAMILIES.map((family) => (
+            <option key={family} value={family}>
+              {(es.settings.auditFamilies as Readonly<Record<string, string>>)[family] ?? family}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label htmlFor="auditoria-persona" className="block text-xs text-text-secondary">
+          {t.auditActorLabel}
+        </label>
+        <select
+          id="auditoria-persona"
+          name="persona"
+          defaultValue={audit.filters.actorId ?? ""}
+          className="rounded-field border border-border bg-surface px-3 py-1.5 text-sm text-text outline-none focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+        >
+          <option value="">{t.auditAllOption}</option>
+          {audit.actors.map((actor) => (
+            <option key={actor.id} value={actor.id}>
+              {actor.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        className="rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+      >
+        {t.auditFilterSubmit}
+      </button>
+    </form>
+  );
+}
+
+/**
+ * §20.7 · la auditoría crece para siempre, así que se pagina. No hay
+ * "página 7 de 43": contar el total exigiría recorrer la tabla entera cada
+ * vez. Se pide una fila de más y con eso se sabe si hay siguiente.
+ */
+function AuditPager({ base, audit }: { base: string; audit: SheetAudit }) {
+  const href = (pagina: number) => {
+    const params = new URLSearchParams({ vista: HISTORY_TAB.slug });
+    if (audit.filters.from !== null) params.set("desde", audit.filters.from);
+    if (audit.filters.to !== null) params.set("hasta", audit.filters.to);
+    if (audit.filters.family !== null) params.set("familia", audit.filters.family);
+    if (audit.filters.actorId !== null) params.set("persona", audit.filters.actorId);
+    if (pagina > 1) params.set("pagina", String(pagina));
+    return `${base}?${params.toString()}`;
+  };
+
+  const pagina = audit.filters.page;
+  if (pagina === 1 && !audit.hasMore) return null;
+
+  return (
+    <nav aria-label={t.auditPagerLabel} className="mt-3 flex items-center gap-3 text-sm">
+      {pagina > 1 ? (
+        <Link href={href(pagina - 1)} className="text-cuotly-green underline">
+          {t.auditPrevious}
+        </Link>
+      ) : null}
+      <span className="text-text-secondary">{t.auditPage(pagina)}</span>
+      {audit.hasMore ? (
+        <Link href={href(pagina + 1)} className="text-cuotly-green underline">
+          {t.auditNext}
+        </Link>
+      ) : null}
+    </nav>
+  );
+}
+
 export function EstablishmentSheet({
   base,
   slug,
@@ -593,7 +735,7 @@ export function EstablishmentSheet({
     users,
     staff,
     files,
-    history,
+    audit,
   } = data;
   const bolsas = sortedCycleUsage(summary.bags);
   /*
@@ -2010,41 +2152,130 @@ export function EstablishmentSheet({
         </>
       ) : null}
 
+      {/*
+        Maqueta 19 · "Actividad y auditoría": todas las acciones realizadas
+        en el restaurante, con sus filtros.
+
+        Antes esta pestaña enseñaba solo los cambios de estado de los
+        trabajos (`state_events`) y remitía a Ajustes para lo demás. Ahora
+        lee la auditoría acotada a este restaurante, que es lo que la
+        maqueta pide y lo que alguien viene a buscar aquí.
+
+        **Qué filas salen no lo decide esta pantalla.** `establishment_audit()`
+        es SECURITY INVOKER, así que la política de `audit_log` (§21.2)
+        sigue mandando fila a fila: el propietario ve su espacio entero, un
+        administrador la operativa, un trabajador lo suyo y lo que ya puede
+        ver, y un cliente no llega hasta aquí.
+      */}
       {tab.key === "history" ? (
         <Card title={t.historyTitle}>
           <p className="mb-3 text-sm text-text-secondary">{t.historyHint}</p>
-          {history.length === 0 ? (
-            <EmptyState title={t.historyEmptyTitle} description={t.historyEmptyReason} />
+
+          <AuditFilters base={base} audit={audit} />
+
+          {audit.rows.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title={t.historyEmptyTitle}
+                description={
+                  audit.filters.from !== null ||
+                  audit.filters.to !== null ||
+                  audit.filters.family !== null ||
+                  audit.filters.actorId !== null
+                    ? t.historyFilteredEmptyReason
+                    : t.historyEmptyReason
+                }
+              />
+            </div>
           ) : (
-            <>
-              <ul className="divide-y divide-border">
-                {history.map((entry) => (
-                  <li key={entry.id} className="py-2 text-sm">
-                    <span className="text-text-secondary">{diaCorto(entry.occurredAt)} · </span>
-                    {entry.deepLink === null ? (
-                      <span className="text-text">{entry.jobCode ?? entry.entityType}</span>
-                    ) : (
-                      <Link href={entry.deepLink} className="text-cuotly-green underline">
-                        {entry.jobCode ?? entry.entityType}
-                      </Link>
-                    )}
-                    <span className="text-text">
-                      {" · "}
-                      {entry.entityType === "job"
-                        ? (es.naming.states.job[entry.toState as JobStateKey] ?? entry.toState)
-                        : (es.naming.states.task[entry.toState as TaskStateKey] ??
-                          entry.toState)}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-sm">
-                <Link href={`/espacios/${slug}/ajustes`} className="text-cuotly-green underline">
-                  {t.auditLink}
-                </Link>
-              </p>
-            </>
+            <div className="mt-4">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableHeaderCell>{t.auditWhenColumn}</TableHeaderCell>
+                    <TableHeaderCell>{t.auditActionColumn}</TableHeaderCell>
+                    <TableHeaderCell>{t.auditChangesColumn}</TableHeaderCell>
+                    <TableHeaderCell>{t.auditActorColumn}</TableHeaderCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {audit.rows.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell>{fechaYHoraLarga(row.createdAt)}</TableCell>
+                      <TableCell>
+                        {/*
+                          El nombre en español sale del catálogo de
+                          `src/core/audit.ts`; una acción sin nombre se
+                          enseña cruda en vez de esconderse, igual que en la
+                          auditoría del espacio.
+                        */}
+                        <span className="block text-text">
+                          {(es.settings.auditActions as Readonly<Record<string, string>>)[
+                            row.action
+                          ] ?? row.action}
+                        </span>
+                        {row.reason === null ? null : (
+                          <span className="block text-xs text-text-secondary">{row.reason}</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {/*
+                          Los cambios se derivan comparando el valor anterior
+                          con el nuevo (`auditChanges`), y solo salen los
+                          campos que de verdad cambiaron: una lista con diez
+                          campos idénticos y uno distinto esconde el que
+                          importa.
+                        */}
+                        {row.changes.length === 0 ? (
+                          <span className="text-text-secondary">—</span>
+                        ) : (
+                          <ul className="space-y-0.5">
+                            {row.changes.map((change) => (
+                              <li key={change.field} className="text-xs">
+                                <span className="text-text-secondary">{change.field}: </span>
+                                <span className="text-text">
+                                  {change.before ?? t.auditNoValue}
+                                  {" → "}
+                                  {change.after ?? t.auditNoValue}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {/*
+                          Sin actor no es un hueco: es el servidor. Los
+                          barridos y las emisiones automáticas escriben su
+                          apunte sin nadie detrás, y decirlo es más honesto
+                          que un guion (CA-20).
+
+                          Y "no hay actor" no es lo mismo que "hay actor y
+                          no sé su nombre": lo segundo pasa cuando quien
+                          mira no puede resolver ese perfil, y llamarlo
+                          "Sistema" sería mentir en la pantalla que existe
+                          justo para saber quién hizo qué.
+                        */}
+                        {row.actorId === null
+                          ? t.auditSystemActor
+                          : (row.actorName ?? t.auditUnknownActor)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              <AuditPager base={base} audit={audit} />
+            </div>
           )}
+
+          {/*
+            Maqueta 19 · el botón "Exportar". No se construye, y no es un
+            olvido: el PRD §24.1 pone "exportación e importación masiva"
+            entre lo que queda FUERA del alcance de la Fase 1. Un botón que
+            no exporta es peor que no tenerlo.
+          */}
+          <p className="mt-4 text-xs text-text-secondary">{t.auditExportPending}</p>
         </Card>
       ) : null}
     </div>

@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 11/09/2026), con las 66 migraciones del
+// (generate_typescript_types, 11/09/2026), con las 68 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -4026,6 +4026,10 @@ export type Database = {
         Returns: undefined
       }
       audit_action_capability: { Args: { p_action: string }; Returns: string }
+      audit_entity_establishment: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: string
+      }
       audit_entity_is_visible: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
@@ -4318,6 +4322,34 @@ export type Database = {
           p_space_id: string
         }
         Returns: string
+      }
+      establishment_audit: {
+        Args: {
+          p_actor_id?: string
+          p_establishment_id: string
+          p_family?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_to?: string
+        }
+        Returns: {
+          action: string
+          actor_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          new_value: Json
+          old_value: Json
+          reason: string
+        }[]
+      }
+      establishment_audit_actors: {
+        Args: { p_establishment_id: string }
+        Returns: {
+          actor_id: string
+        }[]
       }
       establishment_client_users: {
         Args: { p_establishment_id: string }

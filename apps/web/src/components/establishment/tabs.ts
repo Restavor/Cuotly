@@ -70,6 +70,7 @@ export const MANAGEMENT_BLOCKS: readonly ManagementBlock[] = [
  */
 export const MANAGEMENT_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "management")!;
 export const OPERATION_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "operation")!;
+export const HISTORY_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "history")!;
 export const FILES_BLOCK: ManagementBlock =
   MANAGEMENT_BLOCKS.find((block) => block.key === "files")!;
 export const PAYMENTS_BLOCK: ManagementBlock =
