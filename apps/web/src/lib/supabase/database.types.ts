@@ -3331,6 +3331,84 @@ export type Database = {
           },
         ]
       }
+      task_reassignment_requests: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          id: string
+          new_assignee_id: string | null
+          reason: string
+          requested_at: string
+          requested_by: string
+          space_id: string
+          state: string
+          task_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          id?: string
+          new_assignee_id?: string | null
+          reason: string
+          requested_at?: string
+          requested_by: string
+          space_id: string
+          state?: string
+          task_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          id?: string
+          new_assignee_id?: string | null
+          reason?: string
+          requested_at?: string
+          requested_by?: string
+          space_id?: string
+          state?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_reassignment_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reassignment_requests_new_assignee_id_fkey"
+            columns: ["new_assignee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reassignment_requests_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reassignment_requests_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_reassignment_requests_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assignee_id: string | null
@@ -3345,6 +3423,7 @@ export type Database = {
           estimated_minutes: number
           id: string
           job_id: string | null
+          planned_date: string | null
           space_id: string
           started_at: string | null
           state: string
@@ -3364,6 +3443,7 @@ export type Database = {
           estimated_minutes: number
           id?: string
           job_id?: string | null
+          planned_date?: string | null
           space_id: string
           started_at?: string | null
           state?: string
@@ -3383,6 +3463,7 @@ export type Database = {
           estimated_minutes?: number
           id?: string
           job_id?: string | null
+          planned_date?: string | null
           space_id?: string
           started_at?: string | null
           state?: string
@@ -3830,6 +3911,10 @@ export type Database = {
       }
       approve_job_reassignment: {
         Args: { p_job_id: string; p_new_worker_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      approve_task_reassignment: {
+        Args: { p_new_assignee_id: string; p_reason?: string; p_task_id: string }
         Returns: undefined
       }
       archive_file: {
@@ -4550,6 +4635,10 @@ export type Database = {
         Args: { p_reason: string; p_request_id: string }
         Returns: undefined
       }
+      reject_task_reassignment: {
+        Args: { p_reason?: string; p_task_id: string }
+        Returns: undefined
+      }
       release_financial_holds: {
         Args: { p_establishment_id: string }
         Returns: number
@@ -4595,6 +4684,10 @@ export type Database = {
       }
       request_space_id: { Args: { p_request_id: string }; Returns: string }
       request_state: { Args: { p_request_id: string }; Returns: string }
+      request_task_reassignment: {
+        Args: { p_reason: string; p_task_id: string }
+        Returns: undefined
+      }
       reschedule_substitute_supervision: {
         Args: { p_ends_at: string; p_supervision_id: string }
         Returns: undefined
@@ -4717,6 +4810,10 @@ export type Database = {
         }
         Returns: string
       }
+      set_task_planned_date: {
+        Args: { p_planned_date?: string; p_task_id: string }
+        Returns: undefined
+      }
       share_file_with_client: {
         Args: { p_file_id: string }
         Returns: undefined
@@ -4774,6 +4871,10 @@ export type Database = {
       }
       start_job: { Args: { p_job_id: string }; Returns: undefined }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
+      task_assignee_is_valid: {
+        Args: { p_assignee_id: string; p_establishment_id: string; p_space_id: string }
+        Returns: boolean
+      }
       task_load_points: { Args: { p_weight: string }; Returns: number }
       task_weight_for_minutes: { Args: { p_minutes: number }; Returns: string }
       unblock_job: {

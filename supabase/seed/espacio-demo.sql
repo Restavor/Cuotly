@@ -1109,6 +1109,12 @@ begin
   -- Terminada. Es la que demuestra que la tarjeta enseña lo que queda por
   -- hacer y no el histórico: si apareciera, sobraría.
   v_task := public.create_job_task(v_job, 'Seleccionar las fotografías del reportaje', 90, v_diego);
+  -- La fecha se pone ANTES de cerrarla, porque `set_task_planned_date()`
+  -- no planifica lo ya hecho. Y se pone: en la maqueta 07 las tareas
+  -- terminadas también llevan su fecha, y son las que demuestran que la
+  -- lista se ordena por el plan y no por el estado — solo lo cancelado se
+  -- va al final.
+  perform public.set_task_planned_date(v_task, current_date - 1);
   perform public.update_task_state(v_task, 'in_progress');
   perform public.update_task_state(v_task, 'completed');
 
@@ -1129,6 +1135,87 @@ begin
   perform public.create_job_task(v_job, 'Escribir los pies de foto', 45, v_marta);
   perform public.create_job_task(v_job, 'Comprobar los enlaces de la galería', 30, v_diego);
   perform public.create_job_task(v_job, 'Revisar el crédito del fotógrafo', 15, null);
+end $$;
+
+-- 9.6 ter · La coordinación de esas tareas (maqueta 07, migración 65).
+--
+-- Dos cosas que la pantalla de coordinación enseña y que hasta ahora no
+-- tenían dato ninguno, así que salía entera con estados vacíos:
+--
+--   · **La fecha prevista de cada tarea.** Se ponen escalonadas, y una se
+--     queda a propósito SIN fecha: es el caso que la tabla tiene que
+--     saber decir ("Sin fecha prevista") en vez de dejar el hueco, y
+--     también el que ordena al final. Con todas fechadas, la regla de
+--     "las sin fecha van después" no la comprobaría nadie mirando.
+--   · **Una reasignación pendiente y una resuelta.** La pendiente es la
+--     que pone a prueba lo que de verdad decide esta pantalla: con ella
+--     abierta, la tarea deja de poder repartirse y solo la mueve quien
+--     aprueba (RN-ASG-08). La resuelta está para que se vea que una
+--     reasignación rechazada NO se borra: se conserva con su motivo y el
+--     de quien decidió (CLAUDE.md MUST NOT).
+--
+-- Ninguna se escribe con un UPDATE: pasan por `set_task_planned_date()`,
+-- `request_task_reassignment()` y `reject_task_reassignment()`, que son
+-- las que hacen cumplir quién puede hacer qué. Sembrar así comprueba de
+-- paso que las puertas funcionan.
+do $$
+declare
+  v_owner constant text := 'd0000000-0000-0000-0000-000000000001';
+  v_marta constant uuid := 'd0000000-0000-0000-0000-000000000002';
+  v_est   constant uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_pies uuid;
+  v_enlaces uuid;
+  v_credito uuid;
+  v_retocar uuid;
+  v_subir uuid;
+begin
+  select id into v_retocar from public.tasks
+   where establishment_id = v_est and title = 'Retocar las fotografías seleccionadas';
+  select id into v_subir from public.tasks
+   where establishment_id = v_est and title = 'Subir las fotografías a la galería';
+  select id into v_pies from public.tasks
+   where establishment_id = v_est and title = 'Escribir los pies de foto';
+  select id into v_enlaces from public.tasks
+   where establishment_id = v_est and title = 'Comprobar los enlaces de la galería';
+  select id into v_credito from public.tasks
+   where establishment_id = v_est and title = 'Revisar el crédito del fotógrafo';
+
+  if v_pies is null or v_enlaces is null or v_credito is null then
+    raise exception 'Las tareas del reportaje tenían que existir antes de planificarlas';
+  end if;
+
+  -- La planificación la pone el propietario, que tiene `assign_jobs`.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_owner, 'role', 'authenticated')::text, false);
+
+  perform public.set_task_planned_date(v_retocar, current_date);
+  perform public.set_task_planned_date(v_subir, current_date + 1);
+  perform public.set_task_planned_date(v_pies, current_date + 2);
+  perform public.set_task_planned_date(v_enlaces, current_date + 3);
+  -- `Revisar el crédito del fotógrafo` se queda sin fecha a propósito: es
+  -- además la única sin repartir, que es la que menos se planifica.
+
+  -- RN-ASG-07 · la pide quien tiene la tarea, y es Marta.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_marta::text, 'role', 'authenticated')::text, false);
+
+  perform public.request_task_reassignment(
+    v_pies,
+    'Estoy con la publicación del menú de esta semana y no llego a los pies de foto antes del jueves.');
+
+  -- Y una que ya se resolvió, para que el historial no esté vacío. Se pide
+  -- sobre la tarea bloqueada y se rechaza: la fila se queda con los dos
+  -- motivos, el de quien la pidió y el de quien decidió.
+  perform public.request_task_reassignment(
+    v_subir,
+    'La galería sigue sin responder y no sé cuándo podré subirlas.');
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_owner, 'role', 'authenticated')::text, false);
+
+  perform public.reject_task_reassignment(
+    v_subir,
+    'Esta semana no hay a quién pasarla. Cuando la galería responda, sigue siendo tuya.');
 end $$;
 
 -- 9.7 · La mensualidad, pagada.
@@ -1190,6 +1277,9 @@ declare
   v_tareas integer;
   v_tareas_vivas integer;
   v_estados_tarea integer;
+  v_planificadas integer;
+  v_reasign_abiertas integer;
+  v_reasign_resueltas integer;
   v_usuarios integer;
   v_deuda integer;
   v_por_validar integer;
@@ -1276,6 +1366,32 @@ begin
   where establishment_id = v_est and state in ('pending', 'in_progress', 'blocked');
   if v_estados_tarea <> 3 then
     raise exception 'Las tareas abiertas tenían que cubrir los 3 estados y cubren %', v_estados_tarea;
+  end if;
+
+  -- Maqueta 07 · la coordinación. Cinco de las seis planificadas —la
+  -- terminada incluida, como en el dibujo— y una a propósito SIN fecha: si
+  -- todas la tuvieran, el caso "Sin fecha prevista" —que es el que la
+  -- tabla tiene que saber decir, y el que va al final del orden— no lo
+  -- estaría sembrando nadie.
+  select count(*) into v_planificadas
+  from public.tasks
+  where establishment_id = v_est and planned_date is not null;
+  if v_planificadas <> 5 then
+    raise exception 'Se esperaban 5 tareas con fecha prevista y hay %', v_planificadas;
+  end if;
+
+  -- Una reasignación abierta y otra resuelta. La resuelta importa tanto
+  -- como la abierta: es la que demuestra que rechazar NO borra la fila.
+  select count(*) filter (where r.state = 'pending'),
+         count(*) filter (where r.state = 'rejected')
+    into v_reasign_abiertas, v_reasign_resueltas
+  from public.task_reassignment_requests r
+  join public.tasks t on t.id = r.task_id
+  where t.establishment_id = v_est;
+
+  if v_reasign_abiertas <> 1 or v_reasign_resueltas <> 1 then
+    raise exception 'Se esperaba 1 reasignación abierta y 1 rechazada, y hay % y %',
+      v_reasign_abiertas, v_reasign_resueltas;
   end if;
 
   -- §15.2 · la ficha, y en concreto la normalización de la sección 9.3.b:

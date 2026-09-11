@@ -157,6 +157,15 @@ export const AUDIT_ACTIONS = [
   "task.assigned",
   "task.cancelled",
   "task.created",
+  // Maqueta 07 · la planificación y las tres de la reasignación
+  // (RN-ASG-07/08/09). `task.reassigned` es la aprobada y
+  // `task.reassignment_rejected` la denegada: las dos se conservan, porque
+  // que alguien pidiera salirse de una tarea y se le dijera que no es
+  // información de la que un día hará falta acordarse.
+  "task.planned_date_set",
+  "task.reassigned",
+  "task.reassignment_rejected",
+  "task.reassignment_requested",
   "task.state_changed",
 ] as const;
 

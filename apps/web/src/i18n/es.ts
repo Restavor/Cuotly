@@ -1165,6 +1165,72 @@ export const es = {
       pointsColumnLabel: "Puntos de sus tareas",
       pointsUnassignedWarning:
         "Las tareas sin repartir no suman a nadie todavía. Sus puntos aparecerán cuando tengan responsable.",
+
+      /**
+       * Maqueta 07 · "Tareas — asignación y coordinación". La pantalla en
+       * la que se reparte y se planifica el desglose de un trabajo, y
+       * donde se piden y se resuelven las reasignaciones (RN-ASG-07/08/09).
+       */
+      coordination: {
+        link: "Repartir y coordinar",
+        linkHint: "Responsable, fecha prevista y reasignaciones, tarea a tarea.",
+        title: "Tareas del trabajo",
+        backToJob: "Volver al trabajo",
+        subtitle: (code: string, jobTitle: string) => `${jobTitle} · ${code}`,
+        dateColumn: "Fecha prevista",
+        detailTitle: "Detalle de la tarea",
+        detailEmptyTitle: "Ninguna tarea seleccionada",
+        detailEmptyReason: "Elige una tarea de la lista para ver su detalle y repartirla.",
+        closeDetail: "Cerrar el detalle",
+        descriptionTitle: "Descripción",
+        // CA-20: si no hay descripción se dice, no se deja el hueco.
+        descriptionEmpty: "Esta tarea no lleva descripción.",
+
+        // La fecha prevista. El texto explica qué NO es, porque una fecha
+        // en una pantalla de operación se lee como un plazo y ésta no lo
+        // es (RN-SLA-17 es una condición de trabajos).
+        plannedDateLabel: "Fecha prevista",
+        plannedDateHint:
+          "Es el día en que el equipo se propone hacerla, no un plazo con el cliente: no cuenta para el plazo de inicio ni para el de ejecución, y pasarse de ella no deja el trabajo fuera de plazo. Déjala vacía y guarda para quitarla.",
+        plannedDateEmpty: "Sin fecha prevista",
+        plannedDateSubmit: "Guardar la fecha",
+        plannedDatePending: "Guardando…",
+
+        // RN-ASG-07/08/09.
+        reassignRequest: "Solicitar reasignación",
+        reassignReasonLabel: "Motivo de la reasignación",
+        reassignReasonPlaceholder: "Describe el motivo de la reasignación…",
+        reassignSubmit: "Enviar solicitud",
+        reassignPending: "Enviando…",
+        reassignPendingTitle: "Reasignación pendiente",
+        reassignPendingBy: (quien: string, cuando: string) => `La pidió ${quien} · ${cuando}`,
+        // RN-ASG-08, dicho a quien no puede resolverla en vez de
+        // enseñarle unos botones que el servidor le va a negar.
+        reassignWaitingDecision:
+          "Está pendiente de que la resuelva el propietario o un administrador. Mientras tanto la tarea sigue siendo tuya y no cambia de manos.",
+        reassignApproveLabel: "Pasársela a",
+        reassignApproveSubmit: "Aprobar la reasignación",
+        reassignApprovePending: "Aprobando…",
+        reassignDecisionReasonLabel: "Motivo de la decisión",
+        reassignRejectSubmit: "Rechazar la reasignación",
+        reassignRejectPending: "Rechazando…",
+        // Por qué no se ofrece repartir mientras hay una solicitud abierta.
+        reassignBlocksAssign:
+          "Con una reasignación pendiente, la tarea solo cambia de manos aprobándola (RN-ASG-08).",
+        reassignHistoryTitle: "Reasignaciones anteriores",
+        reassignApprovedBadge: "Aprobada",
+        reassignRejectedBadge: "Rechazada",
+        reassignHistoryLine: (cuando: string, quien: string) => `${cuando} · la resolvió ${quien}`,
+
+        // Estados vacíos y motivos (CA-20).
+        emptyTitle: "Este trabajo no está desglosado",
+        emptyReason:
+          "No tiene ninguna tarea todavía. Se desglosa desde la ficha del trabajo, y mientras no lo esté, sus puntos son enteros del responsable.",
+        readOnlyReason:
+          "Sus tareas se conservan como historial de cómo se repartió el trabajo, pero ya no se reparten ni se replanifican.",
+        noActions:
+          "No puedes repartir ni planificar estas tareas: no eres el responsable del trabajo ni administras el espacio.",
+      },
     },
     /**
      * §66 · la bandeja del equipo y las dos conversaciones que hasta ahora
@@ -2037,6 +2103,10 @@ export const es = {
       "task.assigned": "Tarea repartida",
       "task.cancelled": "Tarea cancelada",
       "task.created": "Tarea creada",
+      "task.planned_date_set": "Fecha prevista de una tarea cambiada",
+      "task.reassigned": "Reasignación de tarea aprobada",
+      "task.reassignment_rejected": "Reasignación de tarea rechazada",
+      "task.reassignment_requested": "Reasignación de tarea solicitada",
       "task.state_changed": "Estado de una tarea cambiado",
     },
   },

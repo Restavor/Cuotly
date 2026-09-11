@@ -96,3 +96,81 @@ export async function cancelTask(
   const reason = String(formData.get("reason") ?? "").trim();
   return run((s) => s.rpc("cancel_task", { p_task_id: taskId, p_reason: reason || undefined }));
 }
+
+/**
+ * Maqueta 07 · "Fecha estimada". Planificación, no plazo: la casilla vacía
+ * QUITA la fecha, que es una respuesta legítima ("ya no sé cuándo") y
+ * mejor que dejar una que nadie sostiene.
+ *
+ * Por eso la cadena vacía viaja como `undefined` y no como `""`: el
+ * parámetro tiene `default null` en el servidor y es así como se le dice
+ * "ninguna".
+ */
+export async function setTaskPlannedDate(
+  _prev: TaskActionState,
+  formData: FormData,
+): Promise<TaskActionState> {
+  const taskId = String(formData.get("taskId") ?? "");
+  const plannedDate = String(formData.get("plannedDate") ?? "").trim();
+
+  return run((s) =>
+    s.rpc("set_task_planned_date", {
+      p_task_id: taskId,
+      p_planned_date: plannedDate || undefined,
+    }),
+  );
+}
+
+/**
+ * RN-ASG-07 · la pide el responsable de la tarea explicando el motivo. El
+ * motivo lo exige también el servidor (y un CHECK de la tabla): esto solo
+ * evita un viaje para decir lo que ya se sabe aquí.
+ */
+export async function requestTaskReassignment(
+  _prev: TaskActionState,
+  formData: FormData,
+): Promise<TaskActionState> {
+  const taskId = String(formData.get("taskId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!reason) {
+    return { error: "Explica por qué pides la reasignación.", done: false };
+  }
+
+  return run((s) => s.rpc("request_task_reassignment", { p_task_id: taskId, p_reason: reason }));
+}
+
+/**
+ * RN-ASG-08 · la aprueba el propietario o un administrador, y RN-ASG-09
+ * dice que no se reinicia ningún contador — de eso se encarga la función,
+ * que no escribe ni un `timer_event`.
+ */
+export async function approveTaskReassignment(
+  _prev: TaskActionState,
+  formData: FormData,
+): Promise<TaskActionState> {
+  const taskId = String(formData.get("taskId") ?? "");
+  const assigneeId = String(formData.get("assigneeId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  return run((s) =>
+    s.rpc("approve_task_reassignment", {
+      p_task_id: taskId,
+      p_new_assignee_id: assigneeId,
+      p_reason: reason || undefined,
+    }),
+  );
+}
+
+/** Rechazarla no la borra: la fila se queda con su motivo (CLAUDE.md MUST NOT). */
+export async function rejectTaskReassignment(
+  _prev: TaskActionState,
+  formData: FormData,
+): Promise<TaskActionState> {
+  const taskId = String(formData.get("taskId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  return run((s) =>
+    s.rpc("reject_task_reassignment", { p_task_id: taskId, p_reason: reason || undefined }),
+  );
+}

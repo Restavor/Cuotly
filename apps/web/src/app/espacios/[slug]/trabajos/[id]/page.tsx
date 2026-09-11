@@ -36,7 +36,8 @@ import {
   UnblockJobForm,
   type Candidate,
 } from "./JobActions";
-import { TaskBreakdown, type TaskCandidate, type TaskRow } from "./TaskBreakdown";
+import { TaskBreakdown } from "./TaskBreakdown";
+import { loadJobTasks } from "./tasks-load";
 
 /**
  * Detalle de un trabajo para el equipo (HU-17 a HU-20).
@@ -235,15 +236,14 @@ export default async function TeamJobDetailPage({
     }));
   }
 
-  // HU-21 · el desglose de este trabajo. Las filas las filtra
-  // `tasks_select`: un trabajador ve las de sus trabajos autorizados y las
-  // suyas, el cliente no ve ninguna (P7, las tareas son organización
-  // interna). Aquí no se comprueba nada de eso.
-  const { data: taskRows } = await supabase
-    .from("tasks")
-    .select("id, title, description, state, weight, estimated_minutes, assignee_id")
-    .eq("job_id", id)
-    .order("created_at", { ascending: true });
+  /*
+    HU-21 · el desglose de este trabajo. Sale de `loadJobTasks()`, que es el
+    ÚNICO sitio donde se decide qué tareas hay y en qué orden — de él lee
+    también la pantalla de coordinación (maqueta 07). Las filas las filtra
+    `tasks_select`: un trabajador ve las de sus trabajos autorizados y las
+    suyas, el cliente no ve ninguna (P7). Aquí no se comprueba nada de eso.
+  */
+  const { tasks } = await loadJobTasks(supabase, id);
 
   // Quién puede desglosar y repartir es lo mismo que comprueban
   // `create_job_task()` y `assign_task()`: el responsable del trabajo, o
@@ -267,48 +267,20 @@ export default async function TeamJobDetailPage({
     p_space_id: job.space_id,
   });
 
-  // Los candidatos de una tarea no son los del trabajo: `list_job_candidates()`
-  // filtra por la especialidad y la elegibilidad completa de RN-ASG-02, y
-  // una tarea es un paso interno que puede recaer en alguien que no sería
-  // candidato a llevarse el trabajo entero.
-  let taskCandidates: TaskCandidate[] = [];
-  if (puedeDesglosar) {
-    const { data: filas } = await supabase.rpc("list_task_candidates", {
-      p_job_id: id,
-    });
-    const ids = (filas ?? []).map((f) => f.worker_id);
-    const { data: personas } = ids.length
-      ? await supabase.from("profiles").select("id, full_name, email").in("id", ids)
-      : { data: [] };
-    const nombre = new Map((personas ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]));
-    taskCandidates = (filas ?? []).map((f) => ({
-      workerId: f.worker_id,
-      name: nombre.get(f.worker_id) ?? f.worker_id,
-      loadPoints: f.active_load_points,
-    }));
-  }
-
-  // El nombre del responsable de cada tarea sale de `profiles`. Es
-  // información interna del equipo y nunca llega al cliente: esta pantalla
-  // es del espacio, y `tasks_select` ya le ha negado las filas.
-  const assigneeIds = [...new Set((taskRows ?? []).map((t) => t.assignee_id).filter(Boolean))];
-  const { data: responsables } = assigneeIds.length
-    ? await supabase.from("profiles").select("id, full_name, email").in("id", assigneeIds as string[])
+  /*
+    El nombre del responsable del TRABAJO. Los de las tareas los resuelve
+    `loadJobTasks()`. Es información interna del equipo y nunca llega al
+    cliente: `profiles_select` solo deja ver a quien comparte espacio.
+  */
+  const { data: responsables } = job.assigned_to
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .in("id", [job.assigned_to])
     : { data: [] };
   const nombrePorId = new Map(
     (responsables ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]),
   );
-
-  const tasks: TaskRow[] = (taskRows ?? []).map((t) => ({
-    id: t.id,
-    title: t.title,
-    description: t.description,
-    state: t.state,
-    weight: t.weight as TaskRow["weight"],
-    estimatedMinutes: t.estimated_minutes,
-    assigneeId: t.assignee_id,
-    assigneeName: t.assignee_id ? (nombrePorId.get(t.assignee_id) ?? null) : null,
-  }));
 
   // CLAUDE.md MUST: la fecha que se propone es hoy en la zona del espacio.
   const hoy = todayInTimeZone(new Date(), space?.timezone ?? "Europe/Madrid");
@@ -740,19 +712,21 @@ export default async function TeamJobDetailPage({
       </Card>
 
       {/*
-        HU-21 · el desglose. Se enseña siempre que haya tareas, aunque el
-        trabajo ya esté terminado: en ese caso el servidor no admite altas
-        ni cambios y lo que queda es el historial de cómo se repartió
-        (RN-JOB-13, que las conserva). El alta solo aparece mientras el
-        trabajo sigue vivo, que es lo que admite `create_job_task()`.
+        Maqueta 06 · el desglose, para leerlo. Se enseña siempre que haya
+        tareas, aunque el trabajo ya esté terminado: lo que queda entonces
+        es el historial de cómo se repartió (RN-JOB-13, que las conserva).
+
+        Repartir, planificar y resolver reasignaciones es la maqueta 07 y
+        vive en su pantalla: aquí solo se enlaza, y solo a quien el
+        servidor va a dejar hacer algo allí. El enlace no autoriza nada
+        —`assign_task()` y compañía comprueban cada una lo suyo—, pero
+        ofrecer una puerta que se abre en un error no es ofrecer nada.
       */}
       {tasks.length > 0 || puedeDesglosar ? (
         <TaskBreakdown
-          jobId={id}
           tasks={tasks}
-          candidates={taskCandidates}
-          canAdd={puedeDesglosar && !terminado}
-          canCancel={Boolean(puedeAsignar)}
+          coordinationHref={`/espacios/${slug}/trabajos/${id}/tareas${sufijo}`}
+          canCoordinate={puedeDesglosar && !terminado}
         />
       ) : null}
 

@@ -2327,6 +2327,118 @@ regenerar salió idéntica, así que no había desviación.
     equipo ve; si además tiene que mover la cola de trabajo, es otra
     decisión y otra regla con su test.
 
+- [x] **Maqueta 07 · Tareas, asignación y coordinación** — migración 65,
+    `src/core/task-coordination.ts`, la pantalla
+    `/trabajos/<id>/tareas` y `coordinacion_de_tareas.sql`.
+
+    El reparto de tareas estaba entero desde HU-21 (migración 47). Del
+    panel "Detalle de la tarea" que pide el dibujo definitivo, solo un
+    campo de los tres era gratis.
+
+    **Lo que entra:**
+
+    - **La pantalla**, con la tabla de tareas del trabajo a la izquierda y
+      el detalle a la derecha. La tarea elegida viaja en la dirección
+      (`?tarea=<id>`) y no en un estado del navegador: "la tarea de los
+      enlaces" es un enlace que se le pasa a un compañero, el botón de
+      volver cierra el panel, y todo es de servidor, así que funciona sin
+      JavaScript (CA-22).
+    - **"Fecha estimada"**, que es la segunda vez que una maqueta pide
+      fecha por tarea. La 04 pedía "Hoy, 12:00" y "Quedan 4 h" y se dejó
+      fuera con motivo escrito, porque era un plazo inventado. **Ésta no
+      es lo mismo y por eso entra**: es una casilla que alguien rellena a
+      mano. Se guarda como `date` y no como `timestamptz` a propósito —una
+      hora invita a leerla como un vencimiento—, no alimenta T1, T2 ni T3,
+      no genera avisos, y pasarse de ella **no** deja el trabajo fuera de
+      plazo (RN-SLA-17 es de trabajos). La suite lo comprueba de la única
+      forma que se puede comprobar una ausencia: contando `timer_events`
+      antes y después.
+    - **"Solicitar reasignación" a nivel de tarea** (RN-ASG-07/08/09),
+      que hasta hoy solo existía para trabajos enteros.
+    - **Una sola definición de las tareas de un trabajo**: `loadJobTasks()`,
+      de la que leen tanto el "Tareas (2/4)" de la maqueta 06 como esta
+      pantalla. Es el mismo patrón que `loadTeamJobs()` — dos consultas
+      separadas discrepan primero en el orden y después en todo lo demás.
+    - **La tarjeta de la maqueta 06 pasa a ser de solo lectura**, con un
+      enlace aquí. Llevaba dentro los formularios de repartir, mover,
+      cancelar y dar de alta, apretados en una columna de tabla; el dibujo
+      06 no los tiene y el 07 sí, y así no hay dos sitios donde se hace lo
+      mismo.
+
+    **Por qué una tabla y no un sexto estado de tarea.** Un trabajo sí
+    tiene el estado `reassignment_requested` (§36) y para un trabajo está
+    bien: pedirla lo detiene. §37 enumera los estados de tarea y son
+    **cinco**; añadir un sexto contradiría la especificación, y además
+    sería peor producto — mientras alguien decide, la tarea sigue estando
+    Pendiente o En curso, que es la verdad. Lo que hay es una solicitud
+    colgando de ella, y eso es una fila. Hay un test de que pedirla no
+    cambia el estado ni escribe un `state_event` inventado.
+
+    **La aserción que sostiene RN-ASG-08.** "La aprueba el propietario o
+    el administrador" no significa nada si la tarea puede cambiar de manos
+    por la puerta de al lado: el responsable del trabajo reparte sus tareas
+    todos los días con `assign_task()`, y si además pudiera repartir ÉSTA,
+    la solicitud se quedaría abierta para siempre y bastaría con no llamar
+    a la función que aprueba. Así que `assign_task()` ahora lanza cuando
+    hay una reasignación pendiente. Comprobado con mutación: quitar esa
+    guarda rompe el test.
+
+    **Un agujero de verdad, encontrado al comprobar los privilegios.**
+    `anon` —sin sesión ninguna— podía cambiar el estado de una tarea sin
+    responsable. No es una sospecha de lectura: se reprodujo contra la
+    base, y la tarea pasó de `pending` a `in_progress`. El mecanismo es el
+    de la migración 32: la guarda de `update_task_state()` era
+    `v_assignee_id is distinct from auth.uid()`, y sobre una tarea **sin
+    repartir** y sin sesión eso es `null is distinct from null`, que es
+    FALSO — la guarda se da por satisfecha y `has_capability()` ni se
+    evalúa. Y una tarea sin repartir es el caso normal: nace así cuando el
+    responsable desglosa primero y reparte después. Se cierra por dentro
+    (una comprobación explícita de sesión) y por fuera (quitarle a `anon`
+    un EXECUTE que no necesita), y tiene su test, que falla si se deshacen
+    las dos cosas. Las hermanas de al lado se miraron una por una:
+    `cancel_task()` exige `has_capability()` de entrada, y
+    `create_job_task()` escribe `created_by` en una columna `not null`, así
+    que `anon` muere ahí — un tope afortunado, no una decisión, así que
+    también se les quita el EXECUTE.
+
+    **Comprobado:** las **23 suites SQL** desde cero sobre un PostgreSQL 16
+    con las 65 migraciones y el sembrado, typecheck, lint, **733 pruebas**
+    unitarias (30 nuevas, 10 de ellas de componente sobre el panel), `next
+    build`, y las consultas de la pantalla ejecutadas bajo RLS como
+    trabajadora y como restaurante — el restaurante ve **cero** tareas y
+    **cero** solicitudes de reasignación (P7). **Nueve mutaciones sobre la
+    migración y tres sobre el dominio**, todas hacen fallar su
+    comprobación.
+
+    **Lo que NO entra, y necesita una decisión tuya** (no lo invento,
+    CLAUDE.md):
+
+    - **"Prioridad: Media" en el panel.** El 10/09 decidiste que la
+      prioridad no es una etiqueta Alta/Media/Baja sino el **orden** que
+      pone el restaurante sobre sus cambios pendientes, y que *"los
+      clientes premium son los únicos que pueden indicarla"*. Una casilla
+      Alta/Media/Baja por tarea, editable por el equipo, es exactamente lo
+      que esa decisión quitó, una planta más abajo. No la he
+      reintroducido por la puerta de atrás. **Si lo que quieres es que el
+      equipo pueda ordenar las tareas DENTRO de un trabajo**, eso es otra
+      cosa y se puede hacer —sería un orden, como el del cliente, no una
+      etiqueta—, pero es una regla nueva y te la pregunto antes de
+      escribirla. Hoy lo que ordena la lista es la fecha prevista.
+
+    - **A quien tiene que aprobar una reasignación no le llega ningún
+      aviso.** Se ve en la pantalla —la fila lo marca y la tarjeta del
+      trabajo también—, pero no hay notificación. No es un olvido: el
+      `request_job_reassignment()` del Hito 6 tiene exactamente el mismo
+      hueco desde entonces, y `notifications` no admite ni la clase ni el
+      tipo de entidad `task`. Meterlo es ensanchar dos CHECK y decidir a
+      quién avisa, y prefiero que las dos —trabajo y tarea— se resuelvan
+      juntas y con tu criterio, en vez de dejar dos avisos distintos para
+      la misma regla.
+
+    - **Sin recorrido de Playwright con datos**, por el mismo motivo de
+      siempre y ya escrito: este contenedor tiene denegada la salida de
+      red hacia el proyecto de Supabase.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

@@ -230,6 +230,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/evidencia_de_publicacion.sql
 
+      - name: "Maqueta 07 — Verificar la coordinación de tareas (RN-ASG-01/07/08/09, P7, §37)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/coordinacion_de_tareas.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
