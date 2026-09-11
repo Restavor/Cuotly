@@ -154,3 +154,63 @@ export async function revokeClientAccess(
   revalidatePath(`/espacios`, "layout");
   return { error: null, revoked: true };
 }
+
+export type GrantAccessState = { error: string | null; granted: number };
+
+/**
+ * Maqueta 15 · "Añadir usuario existente" (RN-EST-04).
+ *
+ * **Existente es literal.** En Cuotly se invita al ESPACIO (HU-03), no a un
+ * restaurante: a quien todavía no tiene cuenta no se le puede dar acceso
+ * aquí, y `grant_establishment_access()` lo dice con esas palabras en vez
+ * de crear a medias algo que no existe.
+ *
+ * Lo que esta acción NO decide: el rol que de verdad queda, los permisos
+ * finos (RN-EST-11 y RN-FIN-07 los normalizan en el servidor: un Consulta
+ * no recibe ninguno por mucho que se marquen), ni quién puede dar acceso.
+ * Todo eso lo comprueba la función. Aquí solo se traduce el error.
+ */
+export async function grantClientAccess(
+  _prev: GrantAccessState,
+  formData: FormData,
+): Promise<GrantAccessState> {
+  const email = String(formData.get("email") ?? "").trim();
+  const role = String(formData.get("role") ?? "");
+  const establishmentId = String(formData.get("establishmentId") ?? "");
+  const groupId = String(formData.get("groupId") ?? "");
+  // "Todos los actuales" de RN-EST-04. Los futuros NO: esa parte de la
+  // regla necesita un modelo que no se ha decidido, y la pantalla lo dice.
+  const allCurrent = formData.get("allCurrent") !== null;
+  const editData = formData.get("editData") !== null;
+  const viewBilling = formData.get("viewBilling") !== null;
+
+  if (!email) return { error: null, granted: 0 };
+
+  const supabase = await createClient();
+
+  if (allCurrent) {
+    const { data, error } = await supabase.rpc("grant_group_current_establishments_access", {
+      p_group_id: groupId,
+      p_email: email,
+      p_role: role,
+      p_edit_establishment_data: editData,
+      p_view_billing: viewBilling,
+    });
+    if (error) return { error: error.message, granted: 0 };
+    revalidatePath("/espacios", "layout");
+    return { error: null, granted: data ?? 0 };
+  }
+
+  const { error } = await supabase.rpc("grant_establishment_access", {
+    p_establishment_id: establishmentId,
+    p_email: email,
+    p_role: role,
+    p_edit_establishment_data: editData,
+    p_view_billing: viewBilling,
+  });
+
+  if (error) return { error: error.message, granted: 0 };
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, granted: 1 };
+}

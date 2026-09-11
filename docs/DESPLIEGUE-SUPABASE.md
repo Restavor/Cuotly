@@ -10,16 +10,16 @@ Actualizado el 11/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 69 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 70 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 69 migraciones del repositorio están aplicadas.** Las tres
+**Las 70 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
-54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026 y las 64 a 69
+54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026 y las 64 a 70
 el 11/09/2026.
 
 - Las 01–24 se aplicaron el 30/08/2026.
@@ -305,6 +305,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 67 | `auditoria_de_las_notas` | `auditoria_de_las_notas` |
 | 68 | `historial_del_restaurante` | `historial_del_restaurante` |
 | 69 | `el_motivo_del_estado` | `el_motivo_del_estado` |
+| 70 | `dar_acceso_a_un_restaurante` | `dar_acceso_a_un_restaurante` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

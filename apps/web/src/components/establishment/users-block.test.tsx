@@ -27,6 +27,14 @@ const t = es.establishmentSheet;
 
 afterEach(cleanup);
 
+vi.mock("./GrantAccessForm", () => ({
+  GrantAccessForm: ({ establishmentId, groupId }: { establishmentId: string; groupId: string }) => (
+    <div data-testid="dar-acceso" data-est={establishmentId} data-group={groupId}>
+      dar acceso
+    </div>
+  ),
+}));
+
 vi.mock("./RevokeAccessButton", () => ({
   RevokeAccessButton: ({
     userId,
@@ -231,5 +239,22 @@ describe("vista 15 · el personal operativo asignado", () => {
   it("sin nadie asignado dice lo que eso significa: sus trabajos se quedan sin asignar", () => {
     pintar({ rows: [], failed: false }, true, []);
     expect(screen.getByText(t.staffEmptyReason)).toBeInTheDocument();
+  });
+});
+
+describe("vista 15 · dar acceso (RN-EST-04)", () => {
+  it("se le ofrece a quien gestiona clientes, con el grupo del restaurante", () => {
+    pintar({ rows: [propietariaLocal], failed: false }, true);
+    const form = screen.getByTestId("dar-acceso");
+    expect(form).toHaveAttribute("data-est", "est-1");
+    // El grupo hace falta para "todos los actuales" de RN-EST-04.
+    expect(form).toHaveAttribute("data-group", "grupo-1");
+  });
+
+  it("a quien no puede gestionarlos, ni se le pinta", () => {
+    // No autoriza nada —la función lo comprueba— pero ofrecer un
+    // formulario que el servidor va a rechazar es mentir.
+    pintar({ rows: [propietariaLocal], failed: false }, false);
+    expect(screen.queryByTestId("dar-acceso")).not.toBeInTheDocument();
   });
 });

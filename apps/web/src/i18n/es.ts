@@ -2122,6 +2122,7 @@ export const es = {
       "establishment.created": "Restaurante dado de alta",
       "establishment.data_changed": "Datos del restaurante editados",
       "establishment.status_changed": "Estado del restaurante cambiado",
+      "establishment_access.granted": "Acceso a un restaurante concedido",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
       "establishment_note.created": "Nota interna escrita",
       "establishment_note.archived": "Nota interna archivada",
@@ -2131,6 +2132,7 @@ export const es = {
       "file.shared_with_client": "Archivo compartido con el restaurante",
       "file.version_added": "Nueva versión de un archivo",
       "group.created": "Grupo de cliente creado",
+      "group_access.granted": "Acceso a un grupo concedido",
       "group_access.revoked": "Acceso a un grupo revocado",
       "holiday.created": "Festivo añadido",
       "invitation.accepted": "Invitación aceptada",
@@ -2643,6 +2645,25 @@ export const es = {
     // Consulta.
     permissionsNone: "Ninguno",
     noName: "Sin nombre",
+    // Maqueta 15 · "Añadir usuario existente" (RN-EST-04). Existente es
+    // literal: en Cuotly se invita al ESPACIO, no a un restaurante.
+    grantTitle: "Añadir usuario existente",
+    grantHint:
+      "Da acceso a este restaurante a alguien que ya tiene cuenta en Cuotly. Si todavía no la tiene, primero hay que invitarle al espacio.",
+    grantEmailLabel: "Correo de la persona",
+    grantEmailPlaceholder: "nombre@surestaurante.com",
+    grantRoleLabel: "Rol",
+    grantSubmit: "Dar acceso",
+    grantPending: "Dando acceso…",
+    grantEditDataLabel: "Puede editar los datos del restaurante (solo se aplica a un Editor).",
+    grantViewBillingLabel: "Puede ver la facturación (solo se aplica a un Editor).",
+    grantAllCurrentLabel:
+      "Dárselo a todos los restaurantes que este grupo tiene ahora mismo, no solo a éste.",
+    grantFuturePending:
+      "Los restaurantes que se den de alta más adelante NO quedan incluidos: esa parte de RN-EST-04 todavía no está construida.",
+    grantDone: (n: number) =>
+      n === 1 ? "Acceso concedido." : `Acceso concedido a ${n} restaurantes.`,
+
     // Maqueta 15 · el alcance es lo que el rol SIGNIFICA (PRD §14), no un
     // permiso guardado: lo deriva `accessScope()` en src/core.
     scopeColumn: "Alcance de acceso",

@@ -27,6 +27,7 @@ import {
   type CycleUsage,
 } from "@/core/establishments";
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
+import { GrantAccessForm } from "./GrantAccessForm";
 import { StatusLegend } from "./StatusLegend";
 import { StatusNotice } from "./StatusNotice";
 import { RevokeAccessButton } from "./RevokeAccessButton";
@@ -1741,6 +1742,22 @@ export function EstablishmentSheet({
           {block.key === "users" ? (
             <div className="space-y-4">
             <Card title={t.usersTitle}>
+              {/*
+                Maqueta 15 · "Añadir usuario existente" (RN-EST-04). Se le
+                ofrece a quien gestiona clientes; a los demás ni se pinta,
+                aunque quien mande la acción a mano recibe el "no" del
+                servidor igual (CLAUDE.md: ocultar no es controlar).
+              */}
+              {canManageClients ? (
+                <details className="mb-4 rounded-[10px] border border-border p-3">
+                  <summary className="cursor-pointer text-sm font-semibold text-primary-dark">
+                    {t.grantTitle}
+                  </summary>
+                  <p className="mb-3 mt-2 text-sm text-text-secondary">{t.grantHint}</p>
+                  <GrantAccessForm establishmentId={header.id} groupId={header.groupId} />
+                </details>
+              ) : null}
+
               {/*
                 Una consulta fallida y una lista vacía NO son lo mismo, y se
                 distinguen: "no hay nadie" frente a "no se ha podido

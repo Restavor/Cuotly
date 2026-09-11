@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 11/09/2026), con las 68 migraciones del
+// (generate_typescript_types, 11/09/2026), con las 70 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -4483,6 +4483,26 @@ export type Database = {
           subtitle: string
           title: string
         }[]
+      }
+      grant_establishment_access: {
+        Args: {
+          p_edit_establishment_data?: boolean
+          p_email: string
+          p_establishment_id: string
+          p_role: string
+          p_view_billing?: boolean
+        }
+        Returns: string
+      }
+      grant_group_current_establishments_access: {
+        Args: {
+          p_edit_establishment_data?: boolean
+          p_email: string
+          p_group_id: string
+          p_role: string
+          p_view_billing?: boolean
+        }
+        Returns: number
       }
       group_space_id: { Args: { p_group_id: string }; Returns: string }
       has_capability: {
