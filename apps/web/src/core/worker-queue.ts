@@ -12,12 +12,26 @@
  *      atención inmediata; §1: "¿qué necesita atención o una decisión?").
  *   2. Menor tiempo laborable restante en el contador vivo del trabajo
  *      (T2 si aún no ha comenzado, T3 si está en marcha — RN-SLA-05/11).
- *   3. Prioridad interna del plan: Premium por encima de Impulso
+ *   3. El orden que ha puesto el restaurante entre sus propios cambios
+ *      (encargo de Bosco del 11/09/2026; `compareClientRank` en
+ *      `priority.ts`, la misma definición que usa la bandeja).
+ *   4. Prioridad interna del plan: Premium por encima de Impulso
  *      (RN-COM-03). **El cliente nunca ve esa prioridad**, así que este
  *      dato no puede salir en ninguna pantalla de cliente.
- *   4. Asignación más antigua primero.
- *   5. `jobId`, para que el orden sea reproducible (desempate técnico, no
+ *   5. Asignación más antigua primero.
+ *   6. `jobId`, para que el orden sea reproducible (desempate técnico, no
  *      una regla de negocio — mismo criterio que `compareCandidates`).
+ *
+ * **Por qué el orden del cliente va el tercero y no el primero.** Porque
+ * un plazo contractual no es negociable y la preferencia del restaurante
+ * sí: si su cambio menos importante vence esta tarde y el más importante
+ * pasado mañana, lo que hay que hacer ahora es el que vence: incumplirlo
+ * no es algo que el cliente haya pedido al ordenar su lista, y el plazo se
+ * lo debe Cuotly igual (RN-SLA). Por debajo de los dos criterios de plazo,
+ * su orden manda — y ese es exactamente el caso para el que se inventó:
+ * cinco cambios enviados de una vez, aceptados a la vez y con el mismo
+ * contador, donde hasta ahora decidía la fecha de asignación y ahora
+ * decide él.
  *
  * Y sobre todo (PRD §20.4): **la recomendación no obliga** — el trabajador
  * puede empezar otro trabajo autorizado. Eso es `canStartQueuedJob`, que no
@@ -25,6 +39,7 @@
  */
 
 import type { JobState } from "./job-states";
+import { compareClientRank } from "./priority";
 
 /** RN-COM-03: prioridad interna, nunca visible para el cliente. */
 export type PlanPriority = "premium" | "impulso" | "other";
@@ -42,6 +57,12 @@ export type QueuedJob = {
   readonly outOfDeadline: boolean;
   /** Minutos laborables que le quedan al contador vivo (T2 o T3). */
   readonly remainingBusinessMinutes: number;
+  /**
+   * El puesto que le ha dado el restaurante entre sus cambios pendientes
+   * (1 = el más importante), o `null` si no lo ha ordenado o su plan no se
+   * lo concede. Sale de `requests.priority_rank`.
+   */
+  readonly priorityRank: number | null;
   readonly planPriority: PlanPriority;
   readonly assignedAt: Date;
 };
@@ -64,6 +85,8 @@ export function compareQueuedJobs(a: QueuedJob, b: QueuedJob): number {
   if (a.remainingBusinessMinutes !== b.remainingBusinessMinutes) {
     return a.remainingBusinessMinutes - b.remainingBusinessMinutes;
   }
+  const porOrdenDelCliente = compareClientRank(a.priorityRank, b.priorityRank);
+  if (porOrdenDelCliente !== 0) return porOrdenDelCliente;
   if (a.planPriority !== b.planPriority) return PLAN_PRIORITY_ORDER[a.planPriority] - PLAN_PRIORITY_ORDER[b.planPriority];
   if (a.assignedAt.getTime() !== b.assignedAt.getTime()) return a.assignedAt.getTime() - b.assignedAt.getTime();
   return a.jobId < b.jobId ? -1 : a.jobId > b.jobId ? 1 : 0;

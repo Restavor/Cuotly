@@ -918,6 +918,14 @@ export const es = {
       stateColumn: "Estado",
       assigneeColumn: "Responsable",
       categoryColumn: "Categoría",
+      // La bandeja va ordenada por esta columna, así que la columna tiene
+      // que estar: un orden que el equipo no pueda explicar mirando la
+      // tabla parece un fallo de la tabla.
+      priorityColumn: "Prioridad",
+      priorityShort: (rank: number) => `Nº ${rank}`,
+      priorityShortNone: "—",
+      orderHint:
+        "Primero lo que cada restaurante ha marcado como más importante; después, lo más reciente.",
       unassigned: "Sin asignar",
       openLink: "Abrir",
       detailTitle: "Trabajo",

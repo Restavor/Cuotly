@@ -7,6 +7,7 @@ function queued(overrides: Partial<QueuedJob> = {}): QueuedJob {
     state: "assigned",
     outOfDeadline: false,
     remainingBusinessMinutes: 600,
+    priorityRank: null,
     planPriority: "other",
     assignedAt: new Date("2026-08-31T07:00:00.000Z"),
     ...overrides,
@@ -40,6 +41,51 @@ describe("worker-queue — HU-17, PRD §20.4", () => {
     ];
 
     expect(orderWorkerQueue(cola).map((job) => job.jobId)).toEqual(["premium", "impulso", "sin-plan"]);
+  });
+
+  it("a igualdad de plazo, decide el orden que puso el restaurante", () => {
+    // El caso para el que se inventó: cinco cambios enviados de una vez,
+    // aceptados a la vez y con el mismo contador. Antes decidía la fecha
+    // de asignación; ahora decide el restaurante.
+    const cola = [
+      queued({ jobId: "el-tercero", priorityRank: 3 }),
+      queued({ jobId: "el-primero", priorityRank: 1 }),
+      queued({ jobId: "sin-ordenar" }),
+      queued({ jobId: "el-segundo", priorityRank: 2 }),
+    ];
+
+    expect(orderWorkerQueue(cola).map((job) => job.jobId)).toEqual([
+      "el-primero",
+      "el-segundo",
+      "el-tercero",
+      "sin-ordenar",
+    ]);
+  });
+
+  it("el orden del restaurante NO adelanta un plazo: el que vence antes sigue primero", () => {
+    // Si ordenar su lista pudiera hacer que Cuotly incumpliera el plazo
+    // del cambio que él puso el último, el cliente estaría renunciando a
+    // algo que no ha renunciado. El plazo se lo debe Cuotly igual.
+    const cola = [
+      queued({ jobId: "el-mas-importante", priorityRank: 1, remainingBusinessMinutes: 900 }),
+      queued({ jobId: "el-que-vence-hoy", priorityRank: 5, remainingBusinessMinutes: 60 }),
+    ];
+
+    expect(recommendedJobNow(cola)?.jobId).toBe("el-que-vence-hoy");
+  });
+
+  it("y tampoco adelanta a uno fuera de plazo, aunque sea de otro restaurante", () => {
+    const cola = [
+      queued({ jobId: "ordenado-el-primero", priorityRank: 1, remainingBusinessMinutes: 0 }),
+      queued({
+        jobId: "fuera-de-plazo",
+        priorityRank: null,
+        remainingBusinessMinutes: 0,
+        outOfDeadline: true,
+      }),
+    ];
+
+    expect(recommendedJobNow(cola)?.jobId).toBe("fuera-de-plazo");
   });
 
   it("el orden es determinista: la misma cola desordenada da siempre el mismo resultado", () => {

@@ -107,7 +107,16 @@ export default async function TeamJobsPage({
   return (
     <div className="mx-auto max-w-4xl p-8">
       <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.jobs.title}</h1>
-      <p className="mb-6 text-sm text-text-secondary">{es.teamArea.jobs.subtitle}</p>
+      {/*
+        Por qué la lista no va por fecha: el restaurante ordena sus cambios
+        por importancia y eso mueve la bandeja (encargo de Bosco,
+        11/09/2026). Se dice solo cuando hay algo ordenado, porque si no
+        estaría explicando un orden que no está pasando.
+      */}
+      <p className="mb-6 text-sm text-text-secondary">
+        {es.teamArea.jobs.subtitle}
+        {rows.some((job) => job.priority_rank !== null) ? ` ${es.teamArea.jobs.orderHint}` : null}
+      </p>
 
       {restaurante === undefined ? null : (
         <div className="mb-4">
@@ -133,6 +142,7 @@ export default async function TeamJobsPage({
                 <TableHeaderCell>{es.teamArea.jobs.stateColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.teamArea.jobs.assigneeColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.teamArea.jobs.categoryColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.teamArea.jobs.priorityColumn}</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -165,6 +175,11 @@ export default async function TeamJobsPage({
                     {job.category
                       ? (es.naming.categories[job.category as CategoryKey] ?? job.category)
                       : "—"}
+                  </TableCell>
+                  <TableCell>
+                    {job.priority_rank === null
+                      ? es.teamArea.jobs.priorityShortNone
+                      : es.teamArea.jobs.priorityShort(job.priority_rank)}
                   </TableCell>
                 </TableRow>
               ))}

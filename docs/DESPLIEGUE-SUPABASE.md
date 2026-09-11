@@ -6,20 +6,21 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 10/09/2026.
+Actualizado el 11/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 63 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 64 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 63 migraciones del repositorio están aplicadas.** Las tres
+**Las 64 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
-54 el 08/09/2026, la 55 el 09/09/2026 y las 56 a 63 el 10/09/2026.
+54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026 y la 64
+el 11/09/2026.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -298,6 +299,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 61 | `acceso_revocado_en_la_ficha` | `acceso_revocado_en_la_ficha` |
 | 62 | `prioridad_del_restaurante` | `prioridad_del_restaurante` |
 | 63 | `premium_concede_prioridad` | `premium_concede_prioridad` |
+| 64 | `la_prioridad_mueve_la_cola` | `la_prioridad_mueve_la_cola` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
