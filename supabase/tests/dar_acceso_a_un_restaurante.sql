@@ -145,7 +145,15 @@ begin
     perform public.grant_establishment_access(
       'c0400000-0000-0000-0000-000000000001', 'nadie@example.com', 'editor');
     v_error := 'se ha dado acceso a un correo sin cuenta';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%cuenta de Cuotly%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   if v_error <> '' then
     raise exception 'FALLIDO: %', v_error using errcode = 'assert_failure';
@@ -203,13 +211,29 @@ begin
     perform public.grant_establishment_access(
       'c0400000-0000-0000-0000-000000000002', 'acceso-nuevo@example.com', 'local_owner');
     v_error := 'un trabajador ha dado acceso a un restaurante';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%Solo el propietario o un administrador%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   begin
     perform public.grant_group_current_establishments_access(
       'c0300000-0000-0000-0000-000000000001', 'acceso-nuevo@example.com', 'consulta');
     v_error := v_error || ' / un trabajador ha dado acceso a un grupo entero';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%Solo el propietario o un administrador%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   if v_error <> '' then
     raise exception 'FALLIDO: %', v_error using errcode = 'assert_failure';

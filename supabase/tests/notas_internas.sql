@@ -125,7 +125,15 @@ begin
     perform public.create_establishment_note(
       'bd400000-0000-0000-0000-000000000001', 'Nota que no debería poder reservar', false);
     v_error := 'un trabajador ha podido marcar una nota como no operativa';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%Reservar una nota%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   if v_error <> '' then
     raise exception 'FALLIDO: %', v_error using errcode = 'assert_failure';
@@ -156,7 +164,15 @@ begin
     perform public.create_establishment_note(
       'bd400000-0000-0000-0000-000000000001', 'Nota de un restaurante que no es suyo', true);
     v_error := 'ha podido escribir una nota en un restaurante que no tiene autorizado';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%son del equipo de este restaurante%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   if v_error <> '' then
     raise exception 'FALLIDO: %', v_error using errcode = 'assert_failure';
@@ -189,7 +205,15 @@ begin
     perform public.create_establishment_note(
       'bd400000-0000-0000-0000-000000000001', 'Una nota escrita por el cliente', true);
     v_error := 'el cliente ha podido escribir una nota interna';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%son del equipo de este restaurante%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   if v_error <> '' then
     raise exception 'FALLIDO GRAVE: %', v_error using errcode = 'assert_failure';

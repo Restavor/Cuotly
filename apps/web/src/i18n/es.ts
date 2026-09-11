@@ -196,7 +196,11 @@ export const es = {
 
   files: {
     label: "Adjuntar un archivo",
-    hint: "Imágenes, PDF, Word, Excel o texto. Hasta 25 MB.",
+    // El límite NO se escribe aquí: sale de `MAX_FILE_SIZE_BYTES`
+    // (`src/core/files.ts`), que es lo que de verdad rechaza la subida. Un
+    // "25 MB" escrito a mano se queda mintiendo el día que RN-ARC-06
+    // cambie, y encima en el sitio donde alguien decide qué archivo elegir.
+    hint: (mb: string) => `Imágenes, PDF, Word, Excel o texto. Hasta ${mb} MB.`,
     choose: "Elegir archivo",
     uploading: "Subiendo…",
     uploaded: "Archivo subido.",
@@ -223,7 +227,7 @@ export const es = {
       "text/csv": "CSV",
     },
     rejectedType: "Ese tipo de archivo no se admite. Se aceptan imágenes, PDF, Word, Excel y texto.",
-    rejectedSize: "El archivo pasa de 25 MB, que es el máximo por archivo.",
+    rejectedSize: (mb: string) => `El archivo pasa de ${mb} MB, que es el máximo por archivo.`,
     rejectedEmpty: "El archivo está vacío.",
     rejectedCategory: "Esa categoría de archivo no existe.",
     rejectedVisibility: "Esa marca de visibilidad no existe.",

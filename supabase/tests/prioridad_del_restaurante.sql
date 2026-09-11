@@ -163,7 +163,15 @@ begin
             'bb600000-0000-0000-0000-000000000001',
             'bb600000-0000-0000-0000-000000000002']::uuid[]);
     v_error := v_error || ' / una lista con repetidas se ha aceptado';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%repetidas%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   begin  -- de otro restaurante
     perform public.set_request_priority_order(
@@ -172,7 +180,15 @@ begin
             'bb600000-0000-0000-0000-000000000002',
             'bb600000-0000-0000-0000-000000000005']::uuid[]);
     v_error := v_error || ' / una solicitud de otro restaurante se ha aceptado';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%no es de este restaurante%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   begin  -- una ya publicada
     perform public.set_request_priority_order(
@@ -181,7 +197,15 @@ begin
             'bb600000-0000-0000-0000-000000000002',
             'bb600000-0000-0000-0000-000000000004']::uuid[]);
     v_error := v_error || ' / una solicitud ya publicada se ha aceptado';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%no es de este restaurante%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   begin  -- incompleta
     perform public.set_request_priority_order(
@@ -189,7 +213,15 @@ begin
       array['bb600000-0000-0000-0000-000000000001',
             'bb600000-0000-0000-0000-000000000002']::uuid[]);
     v_error := v_error || ' / una lista incompleta se ha aceptado';
-  exception when others then null; end;
+  exception when others then
+      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
+      -- test pase también cuando la llamada revienta por un motivo
+      -- que no es el que se está probando — un uuid mal escrito, una
+      -- fila que no existe— y entonces no prueba nada.
+    if sqlerrm not like '%se ordenan todos o ninguno%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
 
   if v_error <> '' then
     raise exception 'FALLIDO: %', v_error using errcode = 'assert_failure';

@@ -20,18 +20,16 @@
  * permanencia vigente".
  */
 
-/** PRD §15.1 · los siete, en el orden en que se atraviesan. */
-export const ESTABLISHMENT_STATUSES = [
-  "configuring",
-  "active",
-  "paused",
-  "ending",
-  "read_only",
-  "suspended",
-  "archived",
-] as const;
+import { ESTABLISHMENT_STATES, type EstablishmentState } from "./naming";
 
-export type EstablishmentStatusKey = (typeof ESTABLISHMENT_STATUSES)[number];
+/**
+ * Los siete estados salen de `naming.ts`, que ya los tenía. Escribirlos
+ * aquí otra vez era tener dos listas de lo mismo, y el día que el PRD añada
+ * un octavo solo se acordaría de una.
+ */
+export const ESTABLISHMENT_STATUSES = ESTABLISHMENT_STATES;
+
+export type EstablishmentStatusKey = EstablishmentState;
 
 export interface StatusEffects {
   /**

@@ -246,3 +246,16 @@ const MIME_LABELS: Readonly<Record<string, string>> = {
 export function fileTypeLabel(mimeType: string): string | null {
   return MIME_LABELS[mimeType] ?? null;
 }
+
+/**
+ * El límite de RN-ARC-06 en megabytes, para decirlo en pantalla.
+ *
+ * Existe para que ni un texto ni un componente escriban "25": el número
+ * sale del mismo sitio que lo hace cumplir, así que el día que la regla
+ * cambie no queda ninguna frase mintiendo.
+ */
+export function megabytesMaximos(): string {
+  return new Intl.NumberFormat("es-ES", { maximumFractionDigits: 0 }).format(
+    MAX_FILE_SIZE_BYTES / 1_048_576,
+  );
+}

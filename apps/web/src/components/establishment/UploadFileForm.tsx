@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { megabytesMaximos } from "@/core/files";
 import { useId, useRef, useState } from "react";
 
 import { Icon } from "@/components/ui/Icon";
@@ -175,7 +176,7 @@ export function UploadFileForm({ establishmentId }: { establishmentId: string })
       </div>
 
       <p className="mt-2 text-xs text-text-secondary">
-        {es.files.hint} {t.uploadVisibilityHint}
+        {es.files.hint(megabytesMaximos())} {t.uploadVisibilityHint}
       </p>
 
       {error ? (

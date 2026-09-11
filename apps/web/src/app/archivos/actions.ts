@@ -1,6 +1,7 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { megabytesMaximos } from "@/core/files";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -52,7 +53,7 @@ function esVisibilidad(valor: string): valor is FileVisibility {
 /** RN-ARC-06: el motivo del rechazo se dice, no se devuelve un booleano. */
 function motivoDeRechazo(rechazo: "type_not_allowed" | "too_large" | "empty"): string {
   if (rechazo === "type_not_allowed") return es.files.rejectedType;
-  if (rechazo === "too_large") return es.files.rejectedSize;
+  if (rechazo === "too_large") return es.files.rejectedSize(megabytesMaximos());
   return es.files.rejectedEmpty;
 }
 

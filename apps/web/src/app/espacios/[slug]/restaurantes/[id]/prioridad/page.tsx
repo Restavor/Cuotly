@@ -22,8 +22,15 @@ import { PriorityList, type PriorityRow } from "./PriorityList";
  *
  * Los estados que se ordenan son los mismos que acepta la función. Están
  * escritos aquí porque `request_is_rankable()` es interna y no se puede
- * llamar por RPC; que las dos listas coincidan lo comprueba
- * `prioridad_del_restaurante.sql` al exigir que la lista venga entera.
+ * llamar por RPC.
+ *
+ * Que las dos listas coincidan lo comprueba `listas-compartidas.test.ts`,
+ * que lee la migración y las compara. **No** lo comprueba
+ * `prioridad_del_restaurante.sql`, como decía aquí antes: esa suite mira
+ * que la función sea coherente consigo misma y no toca el TypeScript. Si
+ * las dos listas se separaran, la pantalla mandaría una lista incompleta,
+ * la función la rechazaría, y el fallo lo vería un restaurante intentando
+ * ordenar sus cambios — no un test.
  */
 export const dynamic = "force-dynamic";
 

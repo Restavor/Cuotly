@@ -1,5 +1,6 @@
 import type { CycleBag, EstablishmentIdentity } from "@/core/establishments";
 import { AUDIT_FAMILIES, auditChanges, auditDayWindow, type AuditChange } from "@/core/audit";
+import { TERMINAL_REQUEST_STATES } from "@/core/request-states";
 import type { AttentionItem } from "@/core/home";
 import {
   LIVE_JOB_STATES,
@@ -450,8 +451,16 @@ export interface SheetOperation {
   readonly tasks: CardRows<SheetOperationTask>;
 }
 
-/** Los estados que ya no están vivos: una solicitud cerrada no es "abierta". */
-const CLOSED_REQUEST_STATES = ["closed", "rejected", "cancelled_before_start", "cancelled_after_start"];
+/*
+ * Los estados que ya no están vivos: una solicitud cerrada no es "abierta".
+ *
+ * La lista NO se escribe aquí: es `TERMINAL_REQUEST_STATES` de
+ * `src/core/request-states.ts`, donde vive el catálogo de estados con sus
+ * transiciones. Tenerla copiada era la tercera copia de la misma idea, y la
+ * copia de una pantalla es justo la que nadie actualiza cuando el PRD añade
+ * un estado.
+ */
+const CLOSED_REQUEST_STATES: readonly string[] = TERMINAL_REQUEST_STATES;
 const CLOSED_JOB_STATES = ["completed", "cancelled_before_start", "cancelled_after_start"];
 
 /**

@@ -7,6 +7,7 @@ import {
   FILE_CATEGORIES,
   MAX_FILE_SIZE_BYTES,
   fileTypeLabel,
+  megabytesMaximos,
   canRequestPermanentDeletion,
   canViewFile,
   nextVersionNumber,
@@ -249,5 +250,15 @@ describe("etiqueta del tipo de archivo (maqueta 16)", () => {
   it("lo que no reconoce devuelve null, no una etiqueta inventada", () => {
     expect(fileTypeLabel("video/mp4")).toBeNull();
     expect(fileTypeLabel("")).toBeNull();
+  });
+});
+
+describe("el límite de RN-ARC-06, dicho una sola vez", () => {
+  it("los megabytes que se enseñan salen del byte que se hace cumplir", () => {
+    // Ni un texto ni un componente escriben "25": si la regla cambiara,
+    // una frase suelta se quedaría mintiendo justo donde alguien decide
+    // qué archivo elegir.
+    expect(megabytesMaximos()).toBe("25");
+    expect(Number(megabytesMaximos()) * 1_048_576).toBe(MAX_FILE_SIZE_BYTES);
   });
 });

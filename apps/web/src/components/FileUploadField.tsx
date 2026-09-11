@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { megabytesMaximos } from "@/core/files";
 
 import { ALLOWED_MIME_TYPES } from "@/core/files";
 import { es } from "@/i18n/es";
@@ -111,7 +112,7 @@ export function FileUploadField({
       <label htmlFor={inputId} className="mb-1.5 block text-sm font-semibold text-text">
         {label}
       </label>
-      <p className="mb-1.5 text-sm text-text-secondary">{es.files.hint}</p>
+      <p className="mb-1.5 text-sm text-text-secondary">{es.files.hint(megabytesMaximos())}</p>
 
       {fileId ? (
         <p className="flex items-center gap-3 text-sm text-text">
