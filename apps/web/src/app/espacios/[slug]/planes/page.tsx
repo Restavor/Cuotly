@@ -201,6 +201,11 @@ export default async function PlansPage({ params }: { params: Promise<{ slug: st
 
       <Card>
         <p className="text-sm text-text-secondary">{es.plansPage.noPlanHint}</p>
+        <p className="mt-3 text-sm">
+          <Link href={`/espacios/${slug}/planes/condiciones`} className="text-cuotly-green underline">
+            {es.plansPage.terms.catalogueLink}
+          </Link>
+        </p>
       </Card>
     </div>
   );

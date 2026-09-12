@@ -13,7 +13,9 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { todayInTimeZone } from "@/core/finance";
 import { commitmentIsCurrent, planChangeOptions } from "@/core/plans";
+import { termsNeedAcceptance } from "@/core/terms";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,9 +23,11 @@ import {
   AssignPlanForm,
   CancelScheduledChangeForm,
   ContractServiceForm,
+  RecordExternalAcceptanceForm,
   SchedulePlanChangeForm,
   UpgradeNowForms,
 } from "../PlanForms";
+import { loadSubscriptionTerms, type SubscriptionTerms } from "../terms-load";
 
 /**
  * HU-07 · la ficha de planes y servicios de un restaurante: lo que tiene
@@ -65,7 +69,7 @@ export default async function EstablishmentPlanPage({
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name")
+    .select("id, name, timezone")
     .eq("slug", slug)
     .maybeSingle();
   if (!space) notFound();
@@ -190,6 +194,30 @@ export default async function EstablishmentPlanPage({
 
   const gestionar = Boolean(puedeGestionar);
   const bolsa = allowance ?? [];
+
+  /*
+    Maqueta 13 · las condiciones de cada suscripción viva, con su estado
+    (`subscription_terms()`, que es quien lo deriva), y los archivos del
+    restaurante para elegir el contrato de una aceptación externa. "Hoy"
+    es el del ESPACIO, no el del navegador de quien registra.
+  */
+  const [terminos, { data: archivos }] = await Promise.all([
+    Promise.all(
+      activas.map(async (s) => ({
+        subscription: s,
+        terms: await loadSubscriptionTerms(supabase, s.id),
+      })),
+    ),
+    // Columnas enumeradas: `files` tiene privilegios de columna.
+    supabase
+      .from("files")
+      .select("id, name")
+      .eq("establishment_id", establishment.id)
+      .is("archived_at", null)
+      .order("created_at", { ascending: false }),
+  ]);
+  const hoy = todayInTimeZone(new Date(), space.timezone);
+  const contratos = (archivos ?? []).map((f) => ({ id: f.id, name: f.name }));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-8">
@@ -388,6 +416,57 @@ export default async function EstablishmentPlanPage({
       </Card>
 
       {/*
+        Maqueta 13 · "Versión aceptada · Ver condiciones", por suscripción.
+        Decisión del 12/09/2026, opción (c): el restaurante acepta en su
+        pantalla, y aquí el equipo registra la aceptación de fuera con
+        fecha y contrato. Sin condiciones publicadas no hay nada que
+        registrar: se dice, con enlace a donde se publican.
+      */}
+      {terminos.length === 0 ? null : (
+        <Card title={es.plansPage.terms.statusTitle}>
+          <ul className="divide-y divide-border">
+            {terminos.map(({ subscription, terms }) => (
+              <li key={subscription.id} className="py-3">
+                <p className="font-semibold text-primary-dark">
+                  {subscription.kind === "plan"
+                    ? (subscription.plans?.name ?? "—")
+                    : (subscription.services?.name ?? "—")}
+                </p>
+                <TermsLine terms={terms} />
+                {terms?.current ? (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-sm text-cuotly-green underline">
+                      {es.plansPage.terms.readLink}
+                    </summary>
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-text">
+                      {terms.current.conditions}
+                    </p>
+                  </details>
+                ) : null}
+                {gestionar && terms?.current && termsNeedAcceptance(terms.status) ? (
+                  <div className="mt-3 rounded-lg bg-soft-surface p-3">
+                    <p className="text-sm font-semibold text-text">{es.plansPage.terms.recordTitle}</p>
+                    <p className="mb-2 text-xs text-text-secondary">{es.plansPage.terms.recordHint}</p>
+                    <RecordExternalAcceptanceForm
+                      subscriptionId={subscription.id}
+                      versionId={terms.current.versionId}
+                      today={hoy}
+                      files={contratos}
+                    />
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm">
+            <Link href={`/espacios/${slug}/planes/condiciones`} className="text-cuotly-green underline">
+              {es.plansPage.terms.catalogueLink}
+            </Link>
+          </p>
+        </Card>
+      )}
+
+      {/*
         P6 · las dos cosas que esta pantalla no hace, dichas con su motivo
         en vez de con un botón que no funcionaría.
       */}
@@ -399,5 +478,36 @@ export default async function EstablishmentPlanPage({
         <p className="text-sm text-text-secondary">{es.plansPage.terminationReason}</p>
       </Card>
     </div>
+  );
+}
+
+/**
+ * La línea de estado de las condiciones de una suscripción, en una frase.
+ * `null` (la función no contestó) se dice como tal: no es "sin
+ * condiciones", es que no se ha podido leer.
+ */
+function TermsLine({ terms }: { terms: SubscriptionTerms | null }) {
+  const t = es.plansPage.terms;
+  if (terms === null) {
+    return <p className="text-sm text-text-secondary">{es.establishmentSheet.termsUnknown}</p>;
+  }
+  if (terms.current === null) {
+    return <p className="text-sm text-text-secondary">{t.statusNoTerms}</p>;
+  }
+  if (terms.accepted === null) {
+    return <p className="text-sm text-text-secondary">{t.statusPending(terms.current.version)}</p>;
+  }
+  const canal = terms.accepted.channel === "external" ? t.channelExternal : t.channelInApp;
+  if (terms.status === "accepted") {
+    return (
+      <p className="text-sm text-text-secondary">
+        {t.statusAccepted(terms.accepted.version, dia(terms.accepted.acceptedAt))} ({canal})
+      </p>
+    );
+  }
+  return (
+    <p className="text-sm text-text-secondary">
+      {t.statusOutdated(terms.accepted.version, terms.current.version)} ({canal})
+    </p>
   );
 }

@@ -69,6 +69,8 @@ function sheetData(payments: SheetData["payments"]): SheetData {
       services: [],
       commitmentEndsAt: null,
       commitmentStartedAt: null,
+      planSubscriptionId: "sub-1",
+      planTerms: null,
       cycleStart: null,
       cycleEnd: null,
       identity: {

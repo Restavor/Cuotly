@@ -10,17 +10,17 @@ Actualizado el 12/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 74 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 75 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 74 migraciones del repositorio están aplicadas.** Las tres
+**Las 75 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
-el 11/09/2026 y las 71 a 74 el 12/09/2026.
+el 11/09/2026 y las 71 a 75 el 12/09/2026.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -118,6 +118,18 @@ el 11/09/2026 y las 71 a 74 el 12/09/2026.
   `EXECUTE` para `authenticated` y no para `anon`; no había ningún editor
   de grupo vivo (antes de la 74 no podía haberlo, porque nada escribía esa
   fila).
+- La **75** (`condiciones_versionadas_y_aceptadas`) el 12/09/2026, desde
+  el MCP, en dos partes —tablas y funciones— porque el archivo son 31 KB.
+  Solo crea: `plan_versions`, `service_versions` y `terms_acceptances`
+  con RLS y privilegios de columna, siete funciones, el tipo
+  `subscription` en el CHECK de `file_links`, y dos familias en
+  `audit_action_capability()`. No toca ninguna fila existente.
+
+  Comprobado en vivo después: `assert_terms_version_current()` cerrada a
+  `authenticated`; las de escribir cerradas a `anon` y abiertas al
+  equipo; `published_by` y `recorded_by` tapadas al cliente y
+  `conditions` legible; RLS activado en las tres tablas; `file_links`
+  admite `subscription`; `plan.*` clasificada como `manage_space`.
 
 ## La 49
 
@@ -334,6 +346,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 72 | `lo_que_ya_se_hace_no_se_reordena` | `lo_que_ya_se_hace_no_se_reordena` |
 | 73 | `el_coste_de_la_ia_en_milicentimos` | `el_coste_de_la_ia_en_milicentimos` |
 | 74 | `el_cuarto_caso_de_rn_est_04` | `el_cuarto_caso_de_rn_est_04` |
+| 75 | `condiciones_versionadas_y_aceptadas` | `condiciones_versionadas_y_aceptadas_p1`, `_p2` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

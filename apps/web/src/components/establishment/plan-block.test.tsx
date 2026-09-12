@@ -49,6 +49,8 @@ function sheetData(
       services: [],
       commitmentEndsAt: null,
       commitmentStartedAt: null,
+      planSubscriptionId: "sub-1",
+      planTerms: null,
       cycleStart: null,
       cycleEnd: null,
       identity: {
@@ -167,6 +169,7 @@ describe("vista 13 · los servicios", () => {
     name: "Menú Diario",
     priceCents: 22900,
     startedAt: "2026-07-01T00:00:00.000Z",
+    terms: null,
   };
 
   it("enseña el servicio contratado con su precio de catálogo", () => {

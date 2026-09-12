@@ -15,6 +15,7 @@ import type { EstablishmentState } from "@/core/naming";
 import type { createClient } from "@/lib/supabase/server";
 
 import { loadSpaceAttention } from "../../home-load";
+import { loadSubscriptionTerms, type SubscriptionTerms } from "../../planes/terms-load";
 import { loadJobTimers } from "../../trabajos/[id]/timers-load";
 
 /**
@@ -64,6 +65,8 @@ export interface SheetService {
   readonly name: string;
   readonly priceCents: number | null;
   readonly startedAt: string;
+  /** Maqueta 13 · "Versión aceptada · Ver condiciones". `null`: no se pudo leer. */
+  readonly terms: SubscriptionTerms | null;
 }
 
 export interface SheetHeader {
@@ -76,6 +79,10 @@ export interface SheetHeader {
   readonly planId: string | null;
   readonly planName: string | null;
   readonly planPriceCents: number | null;
+  /** La suscripción del plan, para enlazar a sus condiciones y aceptaciones. */
+  readonly planSubscriptionId: string | null;
+  /** Maqueta 13 · las condiciones del plan y su aceptación. `null`: sin plan o no se pudo leer. */
+  readonly planTerms: SubscriptionTerms | null;
   /** Los servicios adicionales contratados (RN-COM-13: pueden ser varios). */
   readonly services: readonly SheetService[];
   readonly commitmentEndsAt: string | null;
@@ -118,14 +125,20 @@ export async function loadSheetHeader(
   ]);
 
   const plan = (subscriptions ?? []).find((s) => s.kind === "plan") ?? null;
-  const services = (subscriptions ?? [])
-    .filter((s) => s.kind === "service" && s.services !== null)
-    .map((s) => ({
-      subscriptionId: s.id,
-      name: s.services!.name,
-      priceCents: s.services!.price_cents,
-      startedAt: s.started_at,
-    }));
+  // Maqueta 13 · el estado de las condiciones lo deriva el servidor, una
+  // llamada por suscripción viva (son pocas: un plan y algún servicio).
+  const services = await Promise.all(
+    (subscriptions ?? [])
+      .filter((s) => s.kind === "service" && s.services !== null)
+      .map(async (s) => ({
+        subscriptionId: s.id,
+        name: s.services!.name,
+        priceCents: s.services!.price_cents,
+        startedAt: s.started_at,
+        terms: await loadSubscriptionTerms(supabase, s.id),
+      })),
+  );
+  const planTerms = plan ? await loadSubscriptionTerms(supabase, plan.id) : null;
 
   // La permanencia vigente y el ciclo abierto son los del plan, así que sin
   // plan no se preguntan (RN-COM-11: el plan es opcional).
@@ -158,6 +171,8 @@ export async function loadSheetHeader(
     planId: plan?.plan_id ?? null,
     planName: plan?.plans?.name ?? null,
     planPriceCents: plan?.plans?.price_cents ?? null,
+    planSubscriptionId: plan?.id ?? null,
+    planTerms,
     services,
     commitmentEndsAt: commitments?.[0]?.ends_at ?? null,
     commitmentStartedAt: commitments?.[0]?.started_at ?? null,

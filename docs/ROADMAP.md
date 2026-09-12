@@ -2621,6 +2621,79 @@ regenerar salió idéntica, así que no había desviación.
     las 74 migraciones, typecheck, lint, 817 pruebas, `next build`, y la
     74 aplicada al proyecto real con sus privilegios verificados.
 
+- [x] **Condiciones versionadas y su aceptación** (maqueta 13) — migración 75.
+
+    Bosco contestó a la pregunta de la segunda ronda: **(c), las dos**.
+    El propietario del restaurante acepta en Cuotly con un botón, y el
+    equipo puede registrar una aceptación de fuera con la fecha y el
+    contrato adjunto. Y "sí" a que en los servicios contratados desde
+    Cuotly la aceptación vaya implícita — con una salvedad, abajo.
+
+    **Lo que hay.** `plan_versions` y `service_versions` (los nombres del
+    modelo de datos del PRD, §5), donde publicar es una fila más con
+    `version + 1` y la anterior no se toca: hay restaurantes que aceptaron
+    ésa (RN-DAT-07, P4, §104 de la maestra: "se conserva versión
+    aceptada"). `terms_acceptances` es un libro: qué versión aceptó cada
+    suscripción, cuándo y por qué canal —`in_app` con quién del
+    restaurante, `external` con quién del equipo la registró y el contrato
+    como archivo del restaurante, que queda vinculado a la suscripción y
+    con eso RN-ARC-07 le cierra el borrado definitivo—. Un CHECK obliga a
+    que cada canal lleve exactamente lo suyo: una aceptación externa sin
+    contrato es una afirmación sin prueba.
+
+    Cuatro estados, derivados en el SERVIDOR por `subscription_terms()`
+    (CLAUDE.md): `no_terms` · `pending` · `accepted` · `outdated`.
+    `outdated` no es `pending` a propósito: el restaurante SÍ aceptó la
+    v1, y decirle "pendiente" cuando sale la v2 borraría ese hecho. La
+    versión aceptada es la de número más alto, no la de fecha más
+    reciente: registrar hoy una aceptación externa de la v1 no le quita
+    a nadie la v2 que aceptó ayer.
+
+    Quién acepta por el restaurante: su propietario local o el global de
+    su grupo (`client_can_accept_terms()`). Un Editor escribe en el
+    restaurante pero no firma por él — es la misma línea que
+    `client_can_view_billing()` traza para las cuentas. Quién publica:
+    `manage_space`, porque son "configuración contractual, planes y
+    servicios" (§16.1). Quién registra la externa: `manage_clients`. Y
+    solo la versión VIGENTE se acepta, por cualquiera de los dos caminos:
+    aceptar una vieja se rechaza con su mensaje.
+
+    Tres pantallas leen el mismo dato: la ficha de planes del equipo
+    (`/planes/<restaurante>`, con el formulario de aceptación externa y
+    el contrato elegido entre los archivos del restaurante), las tarjetas
+    de la maqueta 13 en la ficha (una línea por plan y servicio), y la
+    pantalla del restaurante (leer, y el botón "Acepto la versión N" solo
+    al propietario; al Editor se le dice por qué no lo tiene). Las
+    condiciones se publican en `/planes/condiciones`.
+
+    **La salvedad sobre los servicios.** "Contratar desde Cuotly" lo hace
+    hoy el EQUIPO (`create_service_subscription()` exige
+    `manage_clients`), no el restaurante. No hay ningún acto del cliente
+    en el que apoyar una aceptación implícita, y escribirla sería
+    registrar que alguien aceptó algo que no ha visto. Así que un
+    servicio contratado por el equipo sigue la regla del plan: (a) o (b).
+    El día que exista un flujo en que el propio restaurante contrate, la
+    aceptación irá implícita ahí, y es un cambio de una línea en esa
+    función.
+
+    **Lo que NO se inventa.** El texto de las condiciones es del espacio.
+    Términos de uso de Cuotly, privacidad, retenciones, numeración fiscal
+    y jurisdicción siguen aplazados en CLAUDE.md, que ahora dice la
+    excepción con estas palabras. Y no se avisa (RN-NOT) al restaurante
+    cuando se publica una versión nueva: la pantalla de publicar lo dice.
+    Es un evento de aviso más y merece su decisión sobre a quién y cuándo.
+
+    **Comprobado:** `condiciones_versionadas.sql` (la 29ª suite) con los
+    cuatro estados en el orden en que le pasan a una suscripción, quién
+    puede y quién no por cada camino, CA-17 en los dos, la fecha externa
+    guardada como el inicio del día en la zona del espacio, y P7 —el
+    restaurante no lee `published_by` ni `recorded_by`, ni las condiciones
+    de un plan que no tiene—. Cinco mutaciones, las cinco detectadas:
+    saltarse `manage_space` al publicar, dar por aceptada una versión
+    vieja, dejar aceptar a un Editor, abrir `published_by` al cliente, y
+    no vincular el contrato. Las 29 suites desde cero con las 75
+    migraciones, typecheck, lint, 822 pruebas, `next build`.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

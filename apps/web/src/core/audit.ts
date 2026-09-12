@@ -39,6 +39,10 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   space: "manage_space",
   membership: "manage_space",
   supervision: "manage_space",
+  // Las condiciones de planes y servicios (migración 75): configuración
+  // contractual del espacio, del propietario (§16.1 de la maestra).
+  plan: "manage_space",
+  service: "manage_space",
   invitation: "invite_member",
   // Dinero (RN-FIN, RN-ARC-05): propietario y administradores.
   charge: "manage_finance",
@@ -131,6 +135,7 @@ export const AUDIT_ACTIONS = [
   "membership.perform_jobs_changed",
   "payment.registered",
   "payment.reversed",
+  "plan.conditions_published",
   "request.accepted",
   "request.accepted_again",
   "request.cancelled",
@@ -149,6 +154,7 @@ export const AUDIT_ACTIONS = [
   "request.priority_set",
   "request.rejected",
   "request.submitted",
+  "service.conditions_published",
   "session.revoked",
   "space.created",
   "space.payment_term_changed",
@@ -159,6 +165,11 @@ export const AUDIT_ACTIONS = [
   "subscription.plan_changed",
   "subscription.plan_created",
   "subscription.service_created",
+  // Maqueta 13 · las dos maneras de aceptar las condiciones (decisión del
+  // 12/09/2026, opción c): el restaurante en Cuotly, o el equipo
+  // registrando una aceptación de fuera con su contrato.
+  "subscription.terms_accepted",
+  "subscription.terms_recorded",
   "supervision.principal_set",
   "supervision.revoked",
   "supervision.substitute_rescheduled",

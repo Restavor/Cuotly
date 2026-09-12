@@ -90,6 +90,8 @@ function sheetData(files: SheetData["files"]): SheetData {
       services: [],
       commitmentEndsAt: null,
       commitmentStartedAt: null,
+      planSubscriptionId: "sub-1",
+      planTerms: null,
       cycleStart: null,
       cycleEnd: null,
       identity: {

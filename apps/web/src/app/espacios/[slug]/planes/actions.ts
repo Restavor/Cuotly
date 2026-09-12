@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 
-import type { PlansState } from "./action-state";
+import type { PlansState, TermsState } from "./action-state";
 
 function mensajeDeFallo(fallo: unknown): string {
   return fallo instanceof Error ? fallo.message : String(fallo);
@@ -237,4 +237,77 @@ export async function contractService(_prev: PlansState, formData: FormData): Pr
 
   revalidatePath("/espacios", "layout");
   return { error: null, done: true, preview: null };
+}
+
+/**
+ * Maqueta 13 · publicar una versión nueva de las condiciones de un plan o
+ * servicio (RN-DAT-07). `manage_space` lo comprueba la función; aquí solo
+ * se elige cuál de las dos llamar según el sujeto.
+ */
+export async function publishConditions(_prev: TermsState, formData: FormData): Promise<TermsState> {
+  const subjectType = String(formData.get("subjectType") ?? "");
+  const subjectId = String(formData.get("subjectId") ?? "");
+  const conditions = String(formData.get("conditions") ?? "");
+
+  try {
+    const supabase = await createClient();
+    const { error } =
+      subjectType === "service"
+        ? await supabase.rpc("publish_service_conditions", {
+            p_service_id: subjectId,
+            p_conditions: conditions,
+          })
+        : await supabase.rpc("publish_plan_conditions", {
+            p_plan_id: subjectId,
+            p_conditions: conditions,
+          });
+    if (error) {
+      console.error("[planes] publicar condiciones devolvió error", { subjectId, message: error.message });
+      return { error: error.message, done: false };
+    }
+  } catch (fallo) {
+    return { error: mensajeDeFallo(fallo), done: false };
+  }
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
+}
+
+/**
+ * Maqueta 13 · opción (b) de la decisión del 12/09/2026: el equipo
+ * registra que el restaurante aceptó fuera, con fecha y contrato. La
+ * fecha viaja como día (`YYYY-MM-DD`) y el servidor la fija en la zona del
+ * espacio; el contrato tiene que ser un archivo de ese restaurante, y eso
+ * también lo comprueba la función, no este formulario.
+ */
+export async function recordExternalAcceptance(
+  _prev: TermsState,
+  formData: FormData,
+): Promise<TermsState> {
+  const subscriptionId = String(formData.get("subscriptionId") ?? "");
+  const versionId = String(formData.get("versionId") ?? "");
+  const acceptedOn = String(formData.get("acceptedOn") ?? "");
+  const fileId = String(formData.get("fileId") ?? "");
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("record_external_terms_acceptance", {
+      p_subscription_id: subscriptionId,
+      p_version_id: versionId,
+      p_accepted_on: acceptedOn,
+      p_file_id: fileId,
+    });
+    if (error) {
+      console.error("[planes] record_external_terms_acceptance devolvió error", {
+        subscriptionId,
+        message: error.message,
+      });
+      return { error: error.message, done: false };
+    }
+  } catch (fallo) {
+    return { error: mensajeDeFallo(fallo), done: false };
+  }
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
 }

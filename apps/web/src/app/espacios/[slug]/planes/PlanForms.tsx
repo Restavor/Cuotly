@@ -2,15 +2,17 @@
 
 import { useActionState } from "react";
 
-import { Button, Field, Select } from "@/components/ui";
+import { Button, Field, Select, TextArea } from "@/components/ui";
 import { es } from "@/i18n/es";
 
-import { INITIAL_PLANS } from "./action-state";
+import { INITIAL_PLANS, INITIAL_TERMS } from "./action-state";
 import {
   assignPlan,
   cancelScheduledPlanChange,
   contractService,
   previewPlanChange,
+  publishConditions,
+  recordExternalAcceptance,
   schedulePlanChange,
   upgradePlanNow,
 } from "./actions";
@@ -217,6 +219,84 @@ export function ContractServiceForm({
         {pending ? es.plansPage.contractServicePending : es.plansPage.contractServiceSubmit}
       </Button>
       <Aviso error={state.error} done={state.done} hecho={es.plansPage.contractServiceDone} />
+    </form>
+  );
+}
+
+/**
+ * Maqueta 13 · publicar una versión nueva de las condiciones de un plan o
+ * servicio (RN-DAT-07). El texto se manda entero: no hay "editar la
+ * versión vigente", porque hay restaurantes que la aceptaron tal cual.
+ */
+export function PublishConditionsForm({
+  subjectType,
+  subjectId,
+}: {
+  subjectType: "plan" | "service";
+  subjectId: string;
+}) {
+  const [state, action, pending] = useActionState(publishConditions, INITIAL_TERMS);
+  const t = es.plansPage.terms;
+
+  return (
+    <form action={action} className="space-y-2">
+      <input type="hidden" name="subjectType" value={subjectType} />
+      <input type="hidden" name="subjectId" value={subjectId} />
+      <TextArea label={t.publishLabel} name="conditions" rows={8} required hint={t.publishHint} />
+      <Button type="submit" disabled={pending}>
+        {pending ? t.publishPending : t.publishSubmit}
+      </Button>
+      <Aviso error={state.error} done={state.done} hecho={t.publishDone} />
+    </form>
+  );
+}
+
+/**
+ * Maqueta 13 · opción (b): el equipo registra una aceptación de fuera.
+ * La fecha propuesta es "hoy" en la zona del ESPACIO, calculada en el
+ * servidor y recibida aquí — el navegador de quien registra puede estar
+ * en otro huso (CLAUDE.md MUST). El contrato se elige entre los archivos
+ * del restaurante: sin archivos no hay formulario, hay un motivo.
+ */
+export function RecordExternalAcceptanceForm({
+  subscriptionId,
+  versionId,
+  today,
+  files,
+}: {
+  subscriptionId: string;
+  versionId: string;
+  today: string;
+  files: readonly { readonly id: string; readonly name: string }[];
+}) {
+  const [state, action, pending] = useActionState(recordExternalAcceptance, INITIAL_TERMS);
+  const t = es.plansPage.terms;
+
+  if (files.length === 0) {
+    return <p className="text-sm text-text-secondary">{t.recordFileNone}</p>;
+  }
+
+  return (
+    <form action={action} className="space-y-2">
+      <input type="hidden" name="subscriptionId" value={subscriptionId} />
+      <input type="hidden" name="versionId" value={versionId} />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-48">
+          <Field label={t.recordDateLabel} name="acceptedOn" type="date" defaultValue={today} max={today} required />
+        </div>
+        <div className="w-72">
+          <Select
+            label={t.recordFileLabel}
+            name="fileId"
+            required
+            options={files.map((file) => ({ value: file.id, label: file.name }))}
+          />
+        </div>
+        <Button type="submit" disabled={pending}>
+          {pending ? t.recordPending : t.recordSubmit}
+        </Button>
+      </div>
+      <Aviso error={state.error} done={state.done} hecho={t.recordDone} />
     </form>
   );
 }

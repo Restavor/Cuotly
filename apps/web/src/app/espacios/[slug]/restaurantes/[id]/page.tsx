@@ -14,6 +14,7 @@ import {
 } from "@/components/ui";
 import { statusEffects } from "@/core/establishment-status";
 import { todayInTimeZone } from "@/core/finance";
+import { termsNeedAcceptance } from "@/core/terms";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,7 +28,9 @@ import { parseManagementBlock, parseSheetTab } from "@/components/establishment/
 import { resolveShellViewer } from "@/components/shell/viewer";
 
 import { AcceptRequestButton } from "./AcceptRequestButton";
+import { AcceptTermsButton } from "./AcceptTermsButton";
 import { NewRequestForm } from "./NewRequestForm";
+import { loadSubscriptionTerms } from "../../planes/terms-load";
 import {
   loadSheetCounts,
   loadSheetFiles,
@@ -284,6 +287,28 @@ export default async function EstablishmentPage({
     p_establishment_id: id,
   });
 
+  /*
+    Maqueta 13 · las condiciones de lo que tiene contratado, con su
+    estado, y si quien mira puede aceptarlas (el propietario: se le
+    PREGUNTA al servidor, `client_can_accept_terms()`, igual que con
+    editar los datos). Un Editor las lee y ve por qué no hay botón.
+  */
+  const [{ data: suscripciones }, { data: canAcceptTerms }] = await Promise.all([
+    supabase
+      .from("subscriptions")
+      .select("id, kind")
+      .eq("establishment_id", id)
+      .eq("status", "active")
+      .order("kind", { ascending: true }),
+    supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+  ]);
+  const condiciones = await Promise.all(
+    (suscripciones ?? []).map(async (s) => ({
+      subscriptionId: s.id,
+      terms: await loadSubscriptionTerms(supabase, s.id),
+    })),
+  );
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
       <header>
@@ -372,6 +397,67 @@ export default async function EstablishmentPage({
             title={es.clientArea.allowanceEmptyTitle}
             description={es.clientArea.allowanceEmptyReason}
           />
+        )}
+      </Card>
+
+      <Card title={es.clientArea.terms.title}>
+        <p className="mb-3 text-sm text-text-secondary">{es.clientArea.terms.hint}</p>
+        {condiciones.length === 0 ? (
+          <p className="text-sm text-text-secondary">{es.clientArea.terms.empty}</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {condiciones.map(({ subscriptionId, terms }) => (
+              <li key={subscriptionId} className="flex flex-wrap items-start justify-between gap-4 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-primary-dark">{terms?.subjectName ?? "—"}</p>
+                  {terms === null || terms.current === null ? (
+                    <>
+                      <p className="text-sm text-text-secondary">{es.clientArea.terms.noTerms}</p>
+                      <p className="text-xs text-text-secondary">{es.clientArea.terms.noTermsReason}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm text-text-secondary">
+                        {terms.accepted === null
+                          ? es.clientArea.terms.pending(terms.current.version)
+                          : terms.status === "accepted"
+                            ? es.clientArea.terms.accepted(
+                                terms.accepted.version,
+                                new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(
+                                  new Date(terms.accepted.acceptedAt),
+                                ),
+                              )
+                            : es.clientArea.terms.outdated(
+                                terms.accepted.version,
+                                terms.current.version,
+                              )}
+                      </p>
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-sm text-cuotly-green underline">
+                          {es.clientArea.terms.read(terms.current.version)}
+                        </summary>
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-text">
+                          {terms.current.conditions}
+                        </p>
+                      </details>
+                      {termsNeedAcceptance(terms.status) && canAcceptTerms !== true ? (
+                        <p className="mt-1 text-xs text-text-secondary">
+                          {es.clientArea.terms.onlyOwner}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
+                </div>
+                {terms?.current && termsNeedAcceptance(terms.status) && canAcceptTerms === true ? (
+                  <AcceptTermsButton
+                    subscriptionId={subscriptionId}
+                    versionId={terms.current.versionId}
+                    version={terms.current.version}
+                  />
+                ) : null}
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
 

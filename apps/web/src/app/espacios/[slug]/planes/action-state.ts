@@ -28,3 +28,12 @@ export type PlansState = {
 };
 
 export const INITIAL_PLANS: PlansState = { error: null, done: false, preview: null };
+
+/**
+ * Maqueta 13 · publicar condiciones y registrar una aceptación externa.
+ * Un estado propio, sin `preview`: ninguna de las dos tiene un paso de
+ * "ver qué costaría".
+ */
+export type TermsState = { readonly error: string | null; readonly done: boolean };
+
+export const INITIAL_TERMS: TermsState = { error: null, done: false };

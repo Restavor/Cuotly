@@ -1462,6 +1462,22 @@ export const es = {
     allowanceEmptyTitle: "Este restaurante no tiene plan con consumos incluidos",
     allowanceEmptyReason:
       "Con el plan Básico o sin plan de mantenimiento, cada cambio se presupuesta aparte.",
+    terms: {
+      title: "Condiciones de tu plan y servicios",
+      hint: "Lo que aceptas al contratar. Cuando se publique una versión nueva, aparecerá aquí para que la leas y la aceptes.",
+      pending: (n: number) => `Versión ${n}: pendiente de aceptar`,
+      accepted: (n: number, day: string) => `Versión ${n}: aceptada el ${day}`,
+      outdated: (accepted: number, current: number) =>
+        `Aceptaste la versión ${accepted}. Hay una nueva, la ${current}, pendiente de aceptar`,
+      noTerms: "Sin condiciones publicadas",
+      noTermsReason: "El equipo no ha publicado condiciones para esto todavía. No tienes nada que aceptar.",
+      read: (n: number) => `Leer la versión ${n}`,
+      acceptSubmit: (n: number) => `Acepto la versión ${n}`,
+      acceptPending: "Aceptando…",
+      acceptDone: "Condiciones aceptadas.",
+      onlyOwner: "Aceptar las condiciones es del propietario del restaurante.",
+      empty: "No tienes plan ni servicios contratados.",
+    },
     requestsTitle: "Tus solicitudes",
     requestsEmptyTitle: "Todavía no has pedido nada",
     requestsEmptyReason: "Cuando envíes tu primera solicitud, aparecerá aquí con su estado.",
@@ -1885,6 +1901,50 @@ export const es = {
     assignPlanPending: "Asignando…",
     assignPlanDone: "Plan asignado.",
 
+    // ---- Condiciones versionadas (maqueta 13, decisión del 12/09/2026) --
+    terms: {
+      catalogueLink: "Condiciones de los planes y servicios",
+      catalogueTitle: "Condiciones de los planes y servicios",
+      catalogueSubtitle:
+        "El texto que cada restaurante acepta al contratar. Publicar es crear una versión nueva: la anterior se conserva, porque hay restaurantes que aceptaron ésa (RN-DAT-07).",
+      catalogueNoAccessReason:
+        "Las condiciones las publica el propietario del espacio. Aquí se pueden leer; publicarlas no.",
+      subjectPlan: "Plan",
+      subjectService: "Servicio",
+      currentVersion: (n: number, day: string) => `Versión ${n} · publicada el ${day}`,
+      noVersion: "Sin condiciones publicadas",
+      noVersionReason:
+        "Este plan no tiene condiciones todavía. Hasta que se publiquen, ningún restaurante tiene nada que aceptar y su ficha lo dice así.",
+      readCurrent: "Leer la versión vigente",
+      publishTitle: "Publicar una versión nueva",
+      publishHint:
+        "Los restaurantes que aceptaron la versión anterior pasan a tener la nueva pendiente de aceptar. No se les avisa automáticamente todavía.",
+      publishLabel: "Texto de las condiciones",
+      publishSubmit: "Publicar como versión nueva",
+      publishPending: "Publicando…",
+      publishDone: "Versión publicada.",
+
+      statusTitle: "Condiciones",
+      statusNoTerms: "Sin condiciones publicadas para este plan",
+      statusPending: (n: number) => `Versión ${n} pendiente de aceptar`,
+      statusAccepted: (n: number, day: string) => `Versión ${n} aceptada el ${day}`,
+      statusOutdated: (accepted: number, current: number) =>
+        `Aceptada la versión ${accepted}; la ${current} está pendiente de aceptar`,
+      channelInApp: "en Cuotly",
+      channelExternal: "registrada por el equipo, con contrato",
+      readLink: "Ver condiciones",
+      recordTitle: "Registrar una aceptación de fuera",
+      recordHint:
+        "Cuando el restaurante ha aceptado estas condiciones por contrato firmado. Hace falta la fecha y el contrato como archivo de este restaurante: sin contrato no se registra.",
+      recordDateLabel: "Fecha de aceptación",
+      recordFileLabel: "Contrato",
+      recordFileNone: "Este restaurante no tiene ningún archivo: sube el contrato en su ficha, en Archivos, y vuelve aquí.",
+      recordSubmit: "Registrar la aceptación",
+      recordPending: "Registrando…",
+      recordDone: "Aceptación registrada.",
+      recordNotNeeded: "La versión vigente ya está aceptada.",
+    },
+
     changePlanTitle: "Cambiar de plan",
     changePlanHint:
       "Una mejora se puede cobrar prorrateada ahora mismo (RN-COM-15) o esperar a la renovación (RN-COM-16). Una reducción solo cabe en la renovación y tras cumplir la permanencia (RN-COM-17). En los tres casos empieza una permanencia nueva de 3 meses (RN-COM-05).",
@@ -2096,6 +2156,8 @@ export const es = {
       group: "Grupos de cliente",
       group_access: "Acceso a grupos",
       holiday: "Festivos",
+      plan: "Condiciones de planes",
+      service: "Condiciones de servicios",
       request: "Solicitudes",
       job: "Trabajos",
       task: "Tareas",
@@ -2120,6 +2182,8 @@ export const es = {
       correction: "Corrección",
       supervision: "Supervisión",
       holiday: "Festivo",
+      plan: "Plan",
+      service: "Servicio",
       session: "Sesión",
       space_invitation: "Invitación",
       space_membership: "Pertenencia al equipo",
@@ -2195,6 +2259,10 @@ export const es = {
       "subscription.plan_changed": "Plan cambiado",
       "subscription.plan_created": "Plan dado de alta",
       "subscription.service_created": "Servicio contratado",
+      "subscription.terms_accepted": "Condiciones aceptadas por el restaurante",
+      "subscription.terms_recorded": "Aceptación externa de condiciones registrada",
+      "plan.conditions_published": "Condiciones del plan publicadas",
+      "service.conditions_published": "Condiciones del servicio publicadas",
       "supervision.principal_set": "Supervisor principal asignado",
       "supervision.revoked": "Supervisión revocada",
       "supervision.substitute_rescheduled": "Sustituto reprogramado",
@@ -2597,6 +2665,13 @@ export const es = {
     commitmentOver: "Cumplida",
     commitmentNone: "Sin permanencia registrada",
     manageplanLink: "Cambiar de plan o contratar servicios",
+    termsLabel: "Condiciones",
+    termsNoTerms: "sin condiciones publicadas",
+    termsPending: (n: number) => `v${n} pendiente de aceptar`,
+    termsAccepted: (n: number, day: string) => `v${n} aceptada el ${day}`,
+    termsOutdated: (accepted: number, current: number) => `v${accepted} aceptada · v${current} pendiente`,
+    termsUnknown: "no se han podido leer",
+    termsLink: "Ver condiciones y aceptaciones",
 
     // ---- Gestión · Pagos y presupuestos (maqueta 14) --------------
     chargesTitle: "Cobros",

@@ -242,6 +242,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/dar_acceso_a_un_restaurante.sql
 
+      - name: "Migración 75 — Verificar las condiciones versionadas y su aceptación (maqueta 13, RN-DAT-07, §104)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/condiciones_versionadas.sql
+
       - name: "Migraciones 55 y 61 — Verificar la pestaña Usuarios de la ficha (§15.2, RN-EST-01/03/05/11)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

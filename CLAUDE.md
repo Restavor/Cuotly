@@ -56,7 +56,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - Fórmula ponderada de recomendación de trabajador (usa el orden determinista del PRD, no inventes porcentajes).
 - Categoría de puntos para tareas de más de 4 horas.
 - Umbrales concretos de detección de oportunidades y definición de impacto/esfuerzo.
-- Todo el bloque legal y fiscal: términos, privacidad, retenciones, numeración fiscal de facturas, jurisdicción.
+- El bloque legal y fiscal: términos de uso, privacidad, retenciones, numeración fiscal de facturas, jurisdicción. **Excepción desde el 12/09/2026:** las **condiciones de cada plan y servicio** sí existen (migración 75): las escribe el espacio para su propio plan, se versionan (RN-DAT-07) y el restaurante las acepta en Cuotly o el equipo registra la aceptación de fuera con fecha y contrato. Cuotly no redacta ninguna: el texto es del espacio.
 - API pública y webhooks.
 - Precio del almacenamiento adicional.
 - Cancelación/anulación/abono de un cobro. Reembolsar lo **reabre** (RN-FIN-04b, decisión 12): devolver el dinero dejando al cliente a cero es otra operación, y no existe. No la metas dentro de `refund_charge`.

@@ -2610,7 +2610,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2642,6 +2642,12 @@ begin
         -- `set_request_priority_order()`— sí queda cubierto por la
         -- heurística de arriba.
         'client_can_set_priority',
+        -- Migración 75, misma familia: contesta si quien pregunta es el
+        -- propietario del restaurante (local, o global de su grupo) y por
+        -- tanto puede aceptar las condiciones por él. Es el mecanismo;
+        -- `accept_subscription_terms()`, que la llama, sí queda cubierta
+        -- por la heurística.
+        'client_can_accept_terms',
         -- Estas cinco SÍ comprueban permisos, pero a mano: comparan
         -- `auth.uid()` con el dueño de la fila y lanzan excepción si no
         -- coincide (el responsable asignado, el autor del mensaje, el
@@ -3602,7 +3608,10 @@ begin
       ('requests','rejected_by'),
       ('subscriptions','created_by'),
       ('corrections','requested_by'),
-      ('corrections','completed_by')
+      ('corrections','completed_by'),
+      ('plan_versions','published_by'),
+      ('service_versions','published_by'),
+      ('terms_acceptances','recorded_by')
     ) as t(tabla, columna)
   loop
     if has_column_privilege('authenticated', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select')

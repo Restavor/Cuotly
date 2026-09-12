@@ -63,6 +63,7 @@ import type {
   SheetSummary,
   SheetUsers,
 } from "@/app/espacios/[slug]/restaurantes/[id]/sheet-load";
+import type { SubscriptionTerms } from "@/app/espacios/[slug]/planes/terms-load";
 
 /**
  * La ficha del restaurante para el equipo (PRD §15.2): cinco pestañas, y
@@ -158,6 +159,21 @@ const DATA_BLOCK = MANAGEMENT_BLOCKS.find((block) => block.key === "establishmen
 
 function euros(cents: number): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
+/**
+ * Maqueta 13 · la frase del estado de las condiciones. `null` no es "sin
+ * condiciones": es que la función no contestó, y se dice así.
+ */
+function termsLine(terms: SubscriptionTerms | null): string {
+  const t = es.establishmentSheet;
+  if (terms === null) return t.termsUnknown;
+  if (terms.current === null) return t.termsNoTerms;
+  if (terms.accepted === null) return t.termsPending(terms.current.version);
+  if (terms.status === "accepted") {
+    return t.termsAccepted(terms.accepted.version, dia(terms.accepted.acceptedAt));
+  }
+  return t.termsOutdated(terms.accepted.version, terms.current.version);
 }
 
 function dia(value: string): string {
@@ -1452,12 +1468,30 @@ export function EstablishmentSheet({
                       </div>
                     </dl>
 
+                    {/*
+                      Maqueta 13 · "Versión aceptada · Ver condiciones". El
+                      estado lo deriva el servidor (`subscription_terms()`)
+                      y la frase sale de una sola función para el plan y
+                      los servicios, que es lo que impide que las dos
+                      tarjetas digan lo mismo con palabras distintas.
+                    */}
+                    <p className="mt-3 text-sm text-text-secondary">
+                      {t.termsLabel}: {termsLine(header.planTerms)}
+                    </p>
+
                     <p className="mt-4 text-sm">
                       <Link
                         href={`/espacios/${slug}/planes`}
                         className="text-cuotly-green underline"
                       >
                         {t.manageplanLink}
+                      </Link>
+                      {" · "}
+                      <Link
+                        href={`/espacios/${slug}/planes/${header.id}`}
+                        className="text-cuotly-green underline"
+                      >
+                        {t.termsLink}
                       </Link>
                     </p>
                   </>
@@ -1481,6 +1515,9 @@ export function EstablishmentSheet({
                             </span>
                             <span className="block text-xs text-text-secondary">
                               {t.serviceSince(dia(service.startedAt))}
+                            </span>
+                            <span className="block text-xs text-text-secondary">
+                              {t.termsLabel}: {termsLine(service.terms)}
                             </span>
                           </span>
                           <span className="shrink-0 text-sm text-text-secondary">

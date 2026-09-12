@@ -4512,6 +4512,57 @@ export type Database = {
         Returns: string
       }
       group_space_id: { Args: { p_group_id: string }; Returns: string }
+      accept_subscription_terms: {
+        Args: { p_subscription_id: string; p_version_id: string }
+        Returns: string
+      }
+      client_can_accept_terms: { Args: { p_establishment_id: string }; Returns: boolean }
+      conditions_catalogue: {
+        Args: { p_space_id: string }
+        Returns: {
+          subject_type: string
+          subject_id: string
+          subject_name: string
+          version_id: string | null
+          version: number | null
+          published_at: string | null
+          conditions: string | null
+        }[]
+      }
+      publish_plan_conditions: {
+        Args: { p_plan_id: string; p_conditions: string }
+        Returns: string
+      }
+      publish_service_conditions: {
+        Args: { p_service_id: string; p_conditions: string }
+        Returns: string
+      }
+      record_external_terms_acceptance: {
+        Args: {
+          p_subscription_id: string
+          p_version_id: string
+          p_accepted_on: string
+          p_file_id: string
+        }
+        Returns: string
+      }
+      subscription_terms: {
+        Args: { p_subscription_id: string }
+        Returns: {
+          subject_type: string
+          subject_name: string | null
+          current_version_id: string | null
+          current_version: number | null
+          current_published_at: string | null
+          current_conditions: string | null
+          accepted_version_id: string | null
+          accepted_version: number | null
+          accepted_at: string | null
+          accepted_channel: string | null
+          evidence_file_id: string | null
+          status: string
+        }[]
+      }
       has_capability: {
         Args: { p_capability: string; p_space_id: string }
         Returns: boolean

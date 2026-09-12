@@ -585,4 +585,12 @@ begin
   end if;
 end $$;
 
+-- Limpieza. Faltaba: la suite pasaba y dejaba sus dos usuarios en
+-- `auth.users`, así que la segunda ejecución sobre la misma base chocaba
+-- con `users_pkey` en el fixture — un fallo que no es de la regla, y que
+-- en CI no se veía porque allí cada ejecución nace de cero.
+delete from public.audit_log where space_id = 'f2000000-0000-0000-0000-000000000001';
+delete from public.spaces where id = 'f2000000-0000-0000-0000-000000000001';
+delete from auth.users where id::text like 'f1000000-%';
+
 select 'cola_llena_y_vencimiento: OK' as resultado;

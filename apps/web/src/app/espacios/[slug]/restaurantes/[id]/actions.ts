@@ -233,3 +233,31 @@ export async function grantClientAccess(
   revalidatePath("/espacios", "layout");
   return { error: null, granted: 1, future: false };
 }
+
+export type AcceptTermsState = { error: string | null; accepted: boolean };
+
+/**
+ * Maqueta 13 · opción (a) de la decisión del 12/09/2026: el propietario
+ * del restaurante acepta la versión vigente de las condiciones. Quién
+ * puede (`client_can_accept_terms()`) y que la versión sea la vigente lo
+ * decide `accept_subscription_terms()`; pulsar dos veces devuelve la
+ * misma aceptación (CA-17).
+ */
+export async function acceptTerms(
+  _prev: AcceptTermsState,
+  formData: FormData,
+): Promise<AcceptTermsState> {
+  const subscriptionId = String(formData.get("subscriptionId") ?? "");
+  const versionId = String(formData.get("versionId") ?? "");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_subscription_terms", {
+    p_subscription_id: subscriptionId,
+    p_version_id: versionId,
+  });
+
+  if (error) return { error: error.message, accepted: false };
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, accepted: true };
+}
