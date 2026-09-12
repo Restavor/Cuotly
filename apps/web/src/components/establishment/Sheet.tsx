@@ -1851,10 +1851,6 @@ export function EstablishmentSheet({
                         que Consulta "necesita permiso de su propietario",
                         un permiso que no está modelado — y los informes
                         son Fase 3.
-                      · El botón "Añadir usuario existente". Dar acceso es
-                        RN-EST-04 ("uno, varios, todos los actuales, o
-                        todos los actuales y futuros") y no hay función de
-                        servidor que lo haga: solo existen las de retirar.
                   */}
                   <p className="mt-1 text-sm text-text-secondary">{t.usersPendingHint}</p>
                 </>

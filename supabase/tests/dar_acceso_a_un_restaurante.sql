@@ -11,6 +11,11 @@
 --     una fila nueva la dejaría huérfana, y además la tabla tiene
 --     `unique (establishment_id, user_id)`, así que el intento acabaría en
 --     un error de clave duplicada que no le dice nada a nadie.
+--   · Que "todos los actuales **y futuros**" (el cuarto caso de RN-EST-04,
+--     migración 74) alcance de verdad a un restaurante dado de alta
+--     DESPUÉS de conceder el acceso, sin escribir ninguna fila más; que
+--     solo exista para un Editor; que ese editor de grupo escriba y NO vea
+--     la facturación; y que no rebaje a un propietario global.
 --
 -- Cómo ejecutarlo: automáticamente en CI (.github/workflows/ci.yml, job
 -- "rls-tests"), o a mano con
@@ -178,10 +183,53 @@ end $$;
 
 reset role;
 
--- Un restaurante NUEVO no hereda el acceso: eso es el "y futuros" de
--- RN-EST-04, que NO está construido. Si algún día lo está, esta
--- comprobación es la que hay que cambiar a propósito.
+-- ============================================================
+-- "Todos los actuales y futuros": una membresía de grupo (migración 74).
+-- ============================================================
 --
+-- Primero se da el acceso; DESPUÉS se da de alta un restaurante; y se
+-- comprueba que la persona lo alcanza sin que nadie haya escrito nada más.
+-- Ese orden es la prueba: al revés solo demostraría "todos los actuales".
+select set_config('request.jwt.claim.sub', 'c0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare v_membresia uuid; v_otra uuid; v_error text := '';
+begin
+  v_membresia := public.grant_group_future_establishments_access(
+    'c0300000-0000-0000-0000-000000000001', 'acceso-nuevo@example.com', 'editor');
+
+  if (select role from public.group_memberships where id = v_membresia) <> 'editor' then
+    raise exception 'RN-EST-04 FALLIDO: la membresia de grupo no es de editor'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Idempotente (CA-17): la segunda llamada devuelve la misma fila.
+  v_otra := public.grant_group_future_establishments_access(
+    'c0300000-0000-0000-0000-000000000001', 'acceso-nuevo@example.com', 'editor');
+  if v_otra <> v_membresia then
+    raise exception 'RN-EST-04 FALLIDO: dar el acceso dos veces ha creado dos membresias de grupo'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Solo Editor: los demas roles no existen a nivel de grupo.
+  begin
+    perform public.grant_group_future_establishments_access(
+      'c0300000-0000-0000-0000-000000000001', 'acceso-vuelve@example.com', 'consulta');
+    v_error := 'se ha dado acceso de grupo con un rol que no es Editor';
+  exception when others then
+    if sqlerrm not like '%solo existe para un Editor%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
+
+  if v_error <> '' then
+    raise exception 'RN-EST-04 FALLIDO: %', v_error using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
+
 -- El alta va fuera de `set role authenticated` porque `establishments` se
 -- quedó sin política de INSERT en la migración 58: se da de alta con
 -- `create_establishment_with_data()`, y aquí solo hace falta la fila.
@@ -189,14 +237,126 @@ insert into public.establishments (id, space_id, group_id, code, name, status) v
   ('c0400000-0000-0000-0000-000000000004', 'c0100000-0000-0000-0000-000000000001',
    'c0300000-0000-0000-0000-000000000001', 'EST-ACC-D', 'Restaurante D', 'active');
 
+-- Sentado como la persona que recibió el acceso: alcanza al restaurante
+-- nuevo, puede escribir en el, y NO ve su facturacion.
+select set_config('request.jwt.claim.sub', 'c0000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+
 do $$
 begin
-  if (select count(*) from public.establishment_memberships
-      where establishment_id = 'c0400000-0000-0000-0000-000000000004') <> 0 then
-    raise exception 'FALLIDO: un restaurante nuevo ha heredado un acceso, y "y futuros" no esta construido'
+  if not public.can_read_establishment('c0400000-0000-0000-0000-000000000004') then
+    raise exception 'RN-EST-04 FALLIDO: el editor de grupo no alcanza a un restaurante dado de alta despues'
+      using errcode = 'assert_failure';
+  end if;
+
+  if not public.can_write_establishment('c0400000-0000-0000-0000-000000000004') then
+    raise exception 'RN-EST-04 FALLIDO: el editor de grupo no puede escribir en el restaurante nuevo'
+      using errcode = 'assert_failure';
+  end if;
+
+  if public.client_can_view_billing('c0400000-0000-0000-0000-000000000004') then
+    raise exception 'RN-FIN-07 FALLIDO: un editor de grupo ve la facturacion'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Y ninguna fila de restaurante: el alcance viene del grupo.
+  if exists (select 1 from public.establishment_memberships
+             where establishment_id = 'c0400000-0000-0000-0000-000000000004') then
+    raise exception 'RN-EST-04 FALLIDO: "y futuros" ha escrito filas por restaurante en vez de apoyarse en el grupo'
       using errcode = 'assert_failure';
   end if;
 end $$;
+
+reset role;
+
+-- La ficha lo lista con procedencia "grupo" y SIN facturacion: lo mismo
+-- que decide la guarda, no un `true` heredado del propietario global.
+select set_config('request.jwt.claim.sub', 'c0000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+
+do $$
+declare v_fila record;
+begin
+  select * into v_fila
+  from public.establishment_client_users('c0400000-0000-0000-0000-000000000004') u
+  where u.user_id = 'c0000000-0000-0000-0000-000000000003';
+
+  if v_fila.user_id is null then
+    raise exception 'RN-EST-04 FALLIDO: el editor de grupo no sale en la ficha del restaurante nuevo'
+      using errcode = 'assert_failure';
+  end if;
+
+  if v_fila.source <> 'group' or v_fila.role <> 'editor' then
+    raise exception 'RN-EST-04 FALLIDO: sale como % / %', v_fila.source, v_fila.role
+      using errcode = 'assert_failure';
+  end if;
+
+  if not v_fila.edit_establishment_data or v_fila.view_billing then
+    raise exception 'RN-FIN-07 FALLIDO: la ficha pinta al editor de grupo con editar=% facturacion=%',
+      v_fila.edit_establishment_data, v_fila.view_billing using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- A un propietario global NO se le rebaja a editor por esta via.
+insert into public.group_memberships (group_id, user_id, role) values
+  ('c0300000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000004', 'global_owner');
+
+do $$
+declare v_error text := '';
+begin
+  begin
+    perform public.grant_group_future_establishments_access(
+      'c0300000-0000-0000-0000-000000000001', 'acceso-vuelve@example.com', 'editor');
+    v_error := 'se ha rebajado a editor a un propietario global';
+  exception when others then
+    if sqlerrm not like '%Ya es propietario global%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
+
+  if v_error <> '' then
+    raise exception 'RN-EST-03 FALLIDO: %', v_error using errcode = 'assert_failure';
+  end if;
+
+  if (select role from public.group_memberships
+      where group_id = 'c0300000-0000-0000-0000-000000000001'
+        and user_id = 'c0000000-0000-0000-0000-000000000004' and revoked_at is null) <> 'global_owner' then
+    raise exception 'RN-EST-03 FALLIDO: el propietario global ha perdido su rol'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- RN-EST-05 · retirar y devolver el acceso de grupo reutiliza la fila.
+do $$
+declare v_antes uuid; v_despues uuid; v_cuantas integer;
+begin
+  select id into v_antes from public.group_memberships
+  where group_id = 'c0300000-0000-0000-0000-000000000001'
+    and user_id = 'c0000000-0000-0000-0000-000000000003' and revoked_at is null;
+
+  if not public.revoke_group_access('c0300000-0000-0000-0000-000000000001', 'c0000000-0000-0000-0000-000000000003') then
+    raise exception 'RN-EST-05 FALLIDO: no habia acceso de grupo que retirar'
+      using errcode = 'assert_failure';
+  end if;
+
+  v_despues := public.grant_group_future_establishments_access(
+    'c0300000-0000-0000-0000-000000000001', 'acceso-nuevo@example.com', 'editor');
+
+  if v_despues <> v_antes then
+    raise exception 'RN-EST-05 FALLIDO: devolver el acceso de grupo ha creado una membresia nueva'
+      using errcode = 'assert_failure';
+  end if;
+
+  select count(*) into v_cuantas from public.group_memberships
+  where group_id = 'c0300000-0000-0000-0000-000000000001'
+    and user_id = 'c0000000-0000-0000-0000-000000000003';
+  if v_cuantas <> 1 then
+    raise exception 'RN-EST-05 FALLIDO: hay % membresias de grupo para la misma persona', v_cuantas
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+reset role;
 
 -- ============================================================
 -- Un trabajador no da accesos.
@@ -235,6 +395,16 @@ begin
     end if;
   end;
 
+  begin
+    perform public.grant_group_future_establishments_access(
+      'c0300000-0000-0000-0000-000000000001', 'acceso-nuevo@example.com', 'editor');
+    v_error := v_error || ' / un trabajador ha dado acceso a un grupo entero, futuros incluidos';
+  exception when others then
+    if sqlerrm not like '%Solo el propietario o un administrador%' then
+      v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
+    end if;
+  end;
+
   if v_error <> '' then
     raise exception 'FALLIDO: %', v_error using errcode = 'assert_failure';
   end if;
@@ -248,7 +418,8 @@ reset role;
 do $$
 begin
   if has_function_privilege('anon', 'public.grant_establishment_access(uuid, text, text, boolean, boolean)', 'execute')
-     or has_function_privilege('anon', 'public.grant_group_current_establishments_access(uuid, text, text, boolean, boolean)', 'execute') then
+     or has_function_privilege('anon', 'public.grant_group_current_establishments_access(uuid, text, text, boolean, boolean)', 'execute')
+     or has_function_privilege('anon', 'public.grant_group_future_establishments_access(uuid, text, text)', 'execute') then
     raise exception 'CLAUDE.md FALLIDO: alguna funcion de dar acceso esta abierta a anon'
       using errcode = 'assert_failure';
   end if;

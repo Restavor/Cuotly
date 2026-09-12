@@ -155,7 +155,12 @@ export async function revokeClientAccess(
   return { error: null, revoked: true };
 }
 
-export type GrantAccessState = { error: string | null; granted: number };
+export type GrantAccessState = {
+  error: string | null;
+  granted: number;
+  /** `true` cuando lo concedido es el grupo entero, futuros incluidos. */
+  future: boolean;
+};
 
 /**
  * Maqueta 15 · "Añadir usuario existente" (RN-EST-04).
@@ -178,17 +183,31 @@ export async function grantClientAccess(
   const role = String(formData.get("role") ?? "");
   const establishmentId = String(formData.get("establishmentId") ?? "");
   const groupId = String(formData.get("groupId") ?? "");
-  // "Todos los actuales" de RN-EST-04. Los futuros NO: esa parte de la
-  // regla necesita un modelo que no se ha decidido, y la pantalla lo dice.
-  const allCurrent = formData.get("allCurrent") !== null;
+  // Los cuatro casos de RN-EST-04: uno (este), todos los actuales, o todos
+  // los actuales y futuros. "Varios" es repetir "uno".
+  const scope = String(formData.get("scope") ?? "this");
   const editData = formData.get("editData") !== null;
   const viewBilling = formData.get("viewBilling") !== null;
 
-  if (!email) return { error: null, granted: 0 };
+  if (!email) return { error: null, granted: 0, future: false };
 
   const supabase = await createClient();
 
-  if (allCurrent) {
+  if (scope === "allFuture") {
+    // Una membresía de grupo con rol editor (migración 74). El rol se
+    // manda tal cual: si no es Editor, la función lo rechaza con su
+    // mensaje — a nivel de grupo no existen los demás roles.
+    const { error } = await supabase.rpc("grant_group_future_establishments_access", {
+      p_group_id: groupId,
+      p_email: email,
+      p_role: role,
+    });
+    if (error) return { error: error.message, granted: 0, future: false };
+    revalidatePath("/espacios", "layout");
+    return { error: null, granted: 0, future: true };
+  }
+
+  if (scope === "allCurrent") {
     const { data, error } = await supabase.rpc("grant_group_current_establishments_access", {
       p_group_id: groupId,
       p_email: email,
@@ -196,9 +215,9 @@ export async function grantClientAccess(
       p_edit_establishment_data: editData,
       p_view_billing: viewBilling,
     });
-    if (error) return { error: error.message, granted: 0 };
+    if (error) return { error: error.message, granted: 0, future: false };
     revalidatePath("/espacios", "layout");
-    return { error: null, granted: data ?? 0 };
+    return { error: null, granted: data ?? 0, future: false };
   }
 
   const { error } = await supabase.rpc("grant_establishment_access", {
@@ -209,8 +228,8 @@ export async function grantClientAccess(
     p_view_billing: viewBilling,
   });
 
-  if (error) return { error: error.message, granted: 0 };
+  if (error) return { error: error.message, granted: 0, future: false };
 
   revalidatePath("/espacios", "layout");
-  return { error: null, granted: 1 };
+  return { error: null, granted: 1, future: false };
 }

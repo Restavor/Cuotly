@@ -2550,6 +2550,77 @@ regenerar salió idéntica, así que no había desviación.
     CA-22, que es lo que hoy limita `success`, `warning` e `info` a
     iconos, bordes y texto grande.
 
+- [x] **Las tres respuestas del 12/09/2026, segunda ronda** — migración 74.
+
+    Bosco contestó a lo que quedaba abierto tras cerrar las vistas. Una
+    abre trabajo que se hace aquí; otra confirma lo construido; la tercera
+    espera una decisión que se formula abajo con exactitud.
+
+    **2 · "Y futuros" no necesitaba ninguna decisión: ya estaba tomada.**
+    La migración 70 dejó el cuarto caso de RN-EST-04 fuera diciendo que
+    "necesita un modelo que no se ha decidido", y la pantalla avisaba de
+    que los restaurantes futuros no quedaban incluidos. Bosco preguntó "¿el
+    modelo a cuál te refieres?", y al ir a explicárselo resultó que la
+    migración 39 lo había decidido en agosto: una fila en
+    `group_memberships` con rol `editor` ES "todos los actuales y futuros"
+    — las guardas pasan por el grupo, así que un restaurante dado de alta
+    mañana queda cubierto sin escribir nada más. Lo que faltaba era la
+    función que escribe esa fila. Es el mismo error que con
+    `read_only`/`archived`: preguntar en vez de leer.
+
+    `grant_group_future_establishments_access()` la escribe. Solo Editor
+    —los demás roles no existen a nivel de grupo y el CHECK de la 39 no
+    los admite; ampliarlo sería inventar—, reutiliza la membresía retirada
+    si la hubo (RN-EST-05), no rebaja a un propietario global (dar acceso
+    no puede quitar) y es idempotente. El formulario cambia las dos
+    casillas por un alcance de tres opciones.
+
+    De paso, un dato que se enseñaba mal desde la vista 15:
+    `establishment_client_users()` pintaba a todo miembro de grupo con
+    "ve facturación" porque cuando se escribió solo existía el propietario
+    global. Un editor de grupo escribe y NO ve la facturación
+    (`client_can_view_billing()` exige `global_owner` por el grupo); ahora
+    la lista dice lo mismo que la guarda.
+
+    La suite `dar_acceso_a_un_restaurante.sql` prueba el caso en el orden
+    que lo demuestra: primero se da el acceso, DESPUÉS se da de alta el
+    restaurante, y se comprueba que la persona lo alcanza. Al revés solo
+    probaría "todos los actuales". Tres mutaciones, las tres detectadas:
+    devolver el `true` de facturación a la lista, saltarse la protección
+    del propietario global, y admitir cualquier rol a nivel de grupo.
+
+    **3 · Prioridad: confirma lo construido, sin cambios.** "Solo Premium
+    puede ordenar; si pide 3, las ordena: 1 = máxima, último = menor." Es
+    exactamente la migración 62: `plans.grants_priority`, y el orden es una
+    lista COMPLETA que la función numera por posición — no hay forma de
+    pedir dos "1", porque la API no admite un número por solicitud sino el
+    orden entero, y la suite ya rechaza una lista con repetidas. "Tareas"
+    en su frase son los cambios pedidos (`requests`); las `tasks` internas
+    del equipo no tienen prioridad propia y así se quedan.
+
+    **4 · Bloque legal: desbloqueado para las condiciones de la vista 13,
+    a falta de una decisión.** Lo que la maqueta enseña es "Versión
+    aceptada v2.1 · Ver condiciones" en la tarjeta del servicio. Sin
+    inventar nada eso es: condiciones VERSIONADAS por plan y servicio
+    (texto que escribe el espacio, no Cuotly), y en la suscripción qué
+    versión aceptó el restaurante y cuándo (§104 de la maestra: "se
+    conserva versión aceptada"; RN-DAT-07 lista `plan_versions` y
+    `service_versions`, que no existen). Lo que decide el diseño y se le
+    ha preguntado: **cómo acepta el restaurante las condiciones de un
+    plan**, dado que hoy la suscripción la da de alta el equipo — (a) el
+    propietario del restaurante acepta en Cuotly con un botón y hasta
+    entonces la ficha dice "pendiente de aceptar"; (b) el equipo registra
+    que se aceptó fuera, con fecha y el contrato adjunto; (c) las dos. Y
+    si en los servicios contratados desde Cuotly la aceptación va
+    implícita en contratar. Términos de uso, privacidad, retenciones,
+    numeración fiscal y jurisdicción siguen sin texto que se pueda
+    escribir aquí: lo trae Bosco o el profesional que exige "Antes de
+    lanzar".
+
+    **Comprobado:** las 28 suites SQL desde cero sobre PostgreSQL 16 con
+    las 74 migraciones, typecheck, lint, 817 pruebas, `next build`, y la
+    74 aplicada al proyecto real con sus privilegios verificados.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

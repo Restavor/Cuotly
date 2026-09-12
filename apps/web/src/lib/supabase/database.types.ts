@@ -4507,6 +4507,10 @@ export type Database = {
         }
         Returns: number
       }
+      grant_group_future_establishments_access: {
+        Args: { p_email: string; p_group_id: string; p_role?: string }
+        Returns: string
+      }
       group_space_id: { Args: { p_group_id: string }; Returns: string }
       has_capability: {
         Args: { p_capability: string; p_space_id: string }

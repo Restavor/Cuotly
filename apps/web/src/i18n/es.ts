@@ -2675,12 +2675,18 @@ export const es = {
     grantPending: "Dando acceso…",
     grantEditDataLabel: "Puede editar los datos del restaurante (solo se aplica a un Editor).",
     grantViewBillingLabel: "Puede ver la facturación (solo se aplica a un Editor).",
-    grantAllCurrentLabel:
-      "Dárselo a todos los restaurantes que este grupo tiene ahora mismo, no solo a éste.",
-    grantFuturePending:
-      "Los restaurantes que se den de alta más adelante NO quedan incluidos: esa parte de RN-EST-04 todavía no está construida.",
+    grantScopeLabel: "Alcance",
+    grantScopes: {
+      this: "Solo este restaurante",
+      allCurrent: "Todos los restaurantes que el grupo tiene ahora mismo",
+      allFuture: "Todos los del grupo, incluidos los que se den de alta más adelante (solo Editor)",
+    },
+    grantFutureHint:
+      "El acceso a todo el grupo, futuros incluidos, no lleva permisos finos: escribe en todos sus restaurantes y no ve la facturación.",
     grantDone: (n: number) =>
       n === 1 ? "Acceso concedido." : `Acceso concedido a ${n} restaurantes.`,
+    grantDoneFuture:
+      "Acceso concedido a todo el grupo, incluidos los restaurantes que se den de alta más adelante.",
 
     // Maqueta 15 · el alcance es lo que el rol SIGNIFICA (PRD §14), no un
     // permiso guardado: lo deriva `accessScope()` en src/core.
@@ -2698,7 +2704,7 @@ export const es = {
     revokeHint:
       "Retirar un acceso no borra nada: desaparece de inmediato y la actividad histórica permanece (RN-EST-05).",
     usersPendingHint:
-      "No hay invitaciones pendientes que enseñar: en Cuotly se invita al espacio, no a un restaurante, y a un usuario del restaurante se le da acceso cuando ya existe. Darlo desde esta pantalla (RN-EST-04) todavía no está construido.",
+      "No hay invitaciones pendientes que enseñar: en Cuotly se invita al espacio, no a un restaurante, y a un usuario del restaurante se le da acceso cuando ya existe, desde «Añadir usuario existente».",
 
     // ---- Gestión · Usuarios · personal del equipo (maqueta 15) -----
     staffTitle: "Personal operativo asignado",
