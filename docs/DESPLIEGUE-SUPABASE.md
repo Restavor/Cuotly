@@ -10,39 +10,17 @@ Actualizado el 12/09/2026.
 
 ## Pendiente de aplicar
 
-**Las migraciones 71, 72 y 73**, las tres del 12/09/2026:
-
-- **71 · `el_aviso_de_la_reasignacion`** — ensancha dos CHECK de
-  `notifications` (dos tipos de evento nuevos y `task` como tipo de
-  entidad) y hace que `request_job_reassignment()` y
-  `request_task_reassignment()` avisen a propietario y administradores.
-- **72 · `lo_que_ya_se_hace_no_se_reordena`** — saca `in_progress` de
-  `request_is_rankable()`. **No es solo aditiva**: al aplicarla, las
-  solicitudes en curso que tuvieran puesto en la cola lo sueltan y el resto
-  se compacta. Eso lo hace la propia migración, una vez, con las mismas dos
-  sentencias de la 64. Para deshacerla habría que volver a poner
-  `in_progress` en la función; los puestos soltados no se recuperan, y no
-  hace falta que se recuperen: se recalculan ordenando otra vez.
-- **73 · `el_coste_de_la_ia_en_milicentimos`** — añade
-  `ai_usage.estimated_cost_millicents`, rellena lo ya escrito con
-  céntimos × 1000, ata las dos columnas con un CHECK y **borra y recrea**
-  `record_classification()` con el parámetro renombrado. Al recrearla, los
-  privilegios vuelven a los de por defecto de Supabase: el `revoke` final
-  del archivo es imprescindible, y conviene comprobar después que ni `anon`
-  ni `authenticated` tienen EXECUTE sobre ella.
-
-Las tres se han aplicado desde cero sobre un PostgreSQL 16 local con el
-`bootstrap-postgres-local.sql` y las 28 suites en verde. En el proyecto
-real no las ha aplicado nadie todavía.
+**Ninguna.** Las 73 migraciones del repositorio están aplicadas en el
+proyecto.
 
 ## Aplicadas
 
-**Las 70 primeras migraciones del repositorio están aplicadas.** Las tres
+**Las 73 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
-54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026 y las 64 a 70
-el 11/09/2026.
+54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
+el 11/09/2026 y las 71 a 73 el 12/09/2026.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -116,6 +94,21 @@ el 11/09/2026.
   las **51 migraciones aplican desde cero** sobre un PostgreSQL 16 local y
   **las doce suites de `supabase/tests/` pasan**, con cuatro mutaciones que
   confirman que la nueva no es un adorno.
+- Las **71 a 73** (las tres decisiones del 12/09/2026) el 12/09/2026,
+  desde el MCP, en tres llamadas y en orden. Antes de aplicarlas se midió
+  lo que la 72 iba a tocar: **tres solicitudes en curso tenían puesto en
+  la cola**, y `ai_usage` estaba vacío, así que el relleno de la 73 no
+  tenía nada que rellenar.
+
+  Comprobado en vivo después: `record_classification()` recreada sin
+  `EXECUTE` para `anon` ni `authenticated` (el `revoke` final de la 73
+  hizo su trabajo); `notify_reassignment_deciders()` y
+  `request_is_rankable()` cerradas; `request_job_reassignment()` sigue
+  abierta al equipo; los dos CHECK de `notifications` admiten los dos
+  eventos nuevos y `task`; el CHECK `ai_usage_cost_units_agree` existe;
+  **ninguna solicitud en curso conserva puesto** y ninguna cola tiene
+  huecos ni repetidos. Los tres puestos soltados no se recuperan y no hace
+  falta: se recalculan ordenando otra vez.
 
 ## La 49
 
@@ -328,6 +321,9 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 68 | `historial_del_restaurante` | `historial_del_restaurante` |
 | 69 | `el_motivo_del_estado` | `el_motivo_del_estado` |
 | 70 | `dar_acceso_a_un_restaurante` | `dar_acceso_a_un_restaurante` |
+| 71 | `el_aviso_de_la_reasignacion` | `el_aviso_de_la_reasignacion` |
+| 72 | `lo_que_ya_se_hace_no_se_reordena` | `lo_que_ya_se_hace_no_se_reordena` |
+| 73 | `el_coste_de_la_ia_en_milicentimos` | `el_coste_de_la_ia_en_milicentimos` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
