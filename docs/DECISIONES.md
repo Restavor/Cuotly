@@ -175,6 +175,31 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    existe en su sitio de la maqueta y dice el motivo: "Menú Diario llega en la Fase 2". El
    día que la Fase 2 exista, el contador entra ahí y no hay que rediseñar nada.
 
+## 2026-09-12
+
+19. **Publicar condiciones nuevas avisa al restaurante** (12/09/2026). La migración 75 dejó
+   escrito que publicar una versión nueva de las condiciones de un plan o servicio no avisaba
+   a nadie, y la pantalla lo decía. Bosco decide: *"El equipo de mantenimiento pulsará un botón
+   cuando lo haya publicado y le llegará un push al restaurante"*.
+
+   Cómo se ha leído, y por qué:
+
+   - **El botón es el de publicar.** No se añade un segundo botón "Avisar": publicar es el único
+     acto que deja al restaurante con algo pendiente, y un aviso que hay que acordarse de mandar
+     es un aviso que un día no se manda (mismo criterio que la decisión 15 con la cola).
+   - **"Push" en Fase 1 son los dos canales del PRD §18**: el centro de avisos y el correo. El
+     push de verdad llega con la app móvil (Fase 4) y saldrá de la misma fila de
+     `notifications`; no hay que tocar nada entonces.
+   - **A quién.** A quien puede aceptarlas por el restaurante —propietario local y propietario
+     global del grupo, la misma lista que `client_can_accept_terms()`—, por cada restaurante con
+     suscripción **activa** a ese plan o servicio. No al Editor ni a Consulta (no firman), no a
+     quien se le retiró el acceso (RN-EST-05), no al equipo (es quien publica). Cada versión
+     avisa; la misma versión no avisa dos veces al mismo restaurante.
+
+   Es la migración `20260912000076` y el evento `terms_version_published`. El PRD §18 lleva la
+   fila. El equipo no tiene casilla de preferencia sobre él en Ajustes: es un aviso que nunca
+   recibe.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)

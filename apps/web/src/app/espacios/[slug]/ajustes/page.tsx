@@ -11,7 +11,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
-import { MANDATORY_EVENTS, NOTIFICATION_EVENTS, type NotificationEvent } from "@/core/notifications";
+import { MANDATORY_EVENTS, staffPreferenceEvents, type NotificationEvent } from "@/core/notifications";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -117,7 +117,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
 
   // Sin fila guardada, el aviso llega: son los valores por defecto de la
   // tabla (`in_app` y `email` a true), no una suposición de la pantalla.
-  const preferences: readonly NotificationPreference[] = NOTIFICATION_EVENTS.map(
+  // Solo los eventos que alguien del equipo puede recibir: los que son
+  // únicamente del cliente (migración 76) no tienen casilla aquí.
+  const preferences: readonly NotificationPreference[] = staffPreferenceEvents().map(
     (event: NotificationEvent) => {
       const guardada = guardadas.get(event);
       return {

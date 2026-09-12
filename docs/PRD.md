@@ -576,6 +576,7 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
 | Consumo de bolsa | Avisos al 80 % y 100 % |
 | T2 plazo de inicio | 50 %, 80 %, 100 %, más alerta a 2 h y sugerencia de reasignación a 1 h |
 | T3 ejecución | 75 %, 90 %, 100 % |
+| Condiciones nuevas de un plan o servicio (decisión 19, 12/09/2026) | Quien puede aceptarlas por cada restaurante con suscripción activa: propietario local y propietario global del grupo. En Cuotly y por correo; el push, con la app móvil |
 
 - **RN-NOT-01**: **no** se avisa a trabajadores que no estén asignados.
 - **RN-NOT-02**: los propietarios reciben todo por defecto y pueden desactivar avisos secundarios.

@@ -707,6 +707,7 @@ export const es = {
       correction_requested: "Corrección pedida",
       job_reassignment_requested: "Reasignación de trabajo pedida",
       task_reassignment_requested: "Reasignación de tarea pedida",
+      terms_version_published: "Condiciones nuevas pendientes de aceptar",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -1918,7 +1919,7 @@ export const es = {
       readCurrent: "Leer la versión vigente",
       publishTitle: "Publicar una versión nueva",
       publishHint:
-        "Los restaurantes que aceptaron la versión anterior pasan a tener la nueva pendiente de aceptar. No se les avisa automáticamente todavía.",
+        "Al publicar se avisa al propietario de cada restaurante con este plan o servicio, en Cuotly y por correo, para que lea la versión nueva y la acepte. Los que aceptaron la anterior pasan a tenerla pendiente.",
       publishLabel: "Texto de las condiciones",
       publishSubmit: "Publicar como versión nueva",
       publishPending: "Publicando…",

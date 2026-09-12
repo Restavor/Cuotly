@@ -2694,6 +2694,57 @@ regenerar salió idéntica, así que no había desviación.
     no vincular el contrato. Las 29 suites desde cero con las 75
     migraciones, typecheck, lint, 822 pruebas, `next build`.
 
+- [x] **El aviso de las condiciones nuevas** (decisión 19) — migración 76.
+
+    Bosco contestó a lo que la 75 dejó abierto: *"El equipo de
+    mantenimiento pulsará un botón cuando lo haya publicado y le llegará
+    un push al restaurante"*. El botón es el de publicar —no se añade
+    uno de "Avisar" que alguien tenga que acordarse de pulsar—, y "push"
+    en Fase 1 son los dos canales del §18: el centro de avisos y el
+    correo. El push de verdad llega con la app móvil (Fase 4) y saldrá
+    de la misma fila de `notifications`.
+
+    `notify_terms_version_published()` es interna, cerrada por RPC, y la
+    llaman `publish_plan_conditions()` y `publish_service_conditions()`
+    al final, después del apunte de auditoría. Avisa a quien puede
+    aceptar por cada restaurante con suscripción ACTIVA a ese plan o
+    servicio: propietario local y propietario global del grupo, la misma
+    lista que `client_can_accept_terms()`, porque el aviso pide una
+    acción y mandárselo a un Editor que no puede hacerla es ruido. No al
+    equipo, que es quien publica. La clave de deduplicación lleva la
+    versión y el restaurante: cada versión avisa, la misma no repite.
+    El enlace lleva a la ficha del restaurante, donde vive el botón
+    "Acepto la versión N" (RN-NOT-04).
+
+    En Ajustes, el equipo no ve casilla para este evento:
+    `staffPreferenceEvents()` deja fuera los que son solo del cliente.
+    Una preferencia sobre un aviso que nunca llega es una casilla sobre
+    nada. Y el texto de la pantalla de publicar deja de decir "no se les
+    avisa todavía".
+
+    **Y un fallo que llevaba un día en CI sin que nadie lo viera.** El
+    sembrado de demostración ordenaba los cambios de Magariños con una
+    lista de estados escrita a mano que incluía `in_progress`, y la
+    migración 72 sacó ese estado de lo ordenable el 12/09. Desde
+    entonces `set_request_priority_order()` rechazaba la lista y el paso
+    de CI que siembra dos veces estaba en rojo: el commit de la 72 dijo
+    "28 suites" y no corrió el sembrado. Ahora el sembrado pregunta a
+    `request_is_rankable()` qué se ordena en vez de copiar la lista,
+    que es la misma lección de `listas-compartidas.test.ts` una planta
+    más abajo.
+
+    **Comprobado:** `el_aviso_de_las_condiciones_nuevas.sql` (la 30ª
+    suite): llega a quien puede aceptar y a nadie más (Editor, acceso
+    retirado, otro plan, suscripción cancelada, equipo: cero), audiencia
+    y enlace, la cola de correo, la v2 avisa y la misma versión no, el
+    servicio igual que el plan, el restaurante lo lee desde su centro y
+    la interna está cerrada por RPC. **Cinco mutaciones, las cinco
+    detectadas**: publicar sin avisar, avisar a quien se le retiró el
+    acceso, avisar a suscripciones canceladas, dejar la interna abierta
+    y una clave sin versión. Las 30 suites desde cero sobre PostgreSQL
+    16 con las 76 migraciones, el sembrado dos veces, typecheck, lint,
+    825 pruebas y `next build`.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

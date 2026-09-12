@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { es } from "@/i18n/es";
 import {
+  CLIENT_ONLY_EVENTS,
   MAX_DELIVERY_ATTEMPTS,
   NOTIFICATION_EVENTS,
   canDisable,
@@ -15,6 +16,7 @@ import {
   requestSubmittedRecipients,
   shouldDeliver,
   shouldQueueEmail,
+  staffPreferenceEvents,
   type NotificationEvent,
   type SpaceMemberForNotification,
 } from "./notifications";
@@ -167,5 +169,27 @@ describe("§18 · el lado del cliente y el canal de cada fila", () => {
 
   it("§18/RN-NOT-01: una solicitud sin asignar va a propietario y administradores, no a los trabajadores", () => {
     expect([...requestSubmittedRecipients(equipo)].sort()).toEqual(["admin", "duena"]);
+  });
+});
+
+describe("Migración 76 · las condiciones nuevas son un aviso del cliente", () => {
+  it("el evento existe y no es obligatorio: el restaurante puede apagarlo (RN-NOT-02/03)", () => {
+    expect(NOTIFICATION_EVENTS).toContain("terms_version_published");
+    expect(isMandatoryEvent("terms_version_published")).toBe(false);
+    expect(canDisable("terms_version_published")).toBe(true);
+  });
+
+  it("sale por correo para el cliente (§18: centro y correo; el push es de la Fase 4)", () => {
+    expect(shouldQueueEmail("terms_version_published", "client")).toBe(true);
+  });
+
+  it("el equipo no tiene preferencia sobre un aviso que nunca recibe", () => {
+    expect(CLIENT_ONLY_EVENTS).toContain("terms_version_published");
+    expect(staffPreferenceEvents()).not.toContain("terms_version_published");
+    // Y no se lleva por delante ningún otro: el resto sigue entero.
+    expect(staffPreferenceEvents().length).toBe(NOTIFICATION_EVENTS.length - CLIENT_ONLY_EVENTS.length);
+    for (const event of CLIENT_ONLY_EVENTS) {
+      expect(NOTIFICATION_EVENTS).toContain(event);
+    }
   });
 });

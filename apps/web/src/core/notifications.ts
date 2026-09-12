@@ -7,7 +7,7 @@
  *
  * El catálogo de eventos está duplicado a propósito entre este archivo y
  * el CHECK de `notifications.event_type` (lo fijó la migración
- * 20260830000035 y lo ensanchó la 20260912000071). Son dos sistemas
+ * 20260830000035 y lo ensancharon la 20260912000071 y la 20260912000076). Son dos sistemas
  * distintos y ninguno puede importar del otro, así que la duplicación se
  * compensa con `listas-compartidas.test.ts`, que lee la última definición
  * del CHECK en las migraciones y la compara con esta lista.
@@ -26,6 +26,7 @@ export const NOTIFICATION_EVENTS = [
   "correction_requested",
   "job_reassignment_requested",
   "task_reassignment_requested",
+  "terms_version_published",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -212,6 +213,23 @@ export const CLIENT_VISIBLE_JOB_EVENTS: readonly NotificationEvent[] = [
   "job_started",
   "job_published",
 ];
+
+/**
+ * Eventos que solo cruzan al CLIENTE: nadie del equipo los recibe nunca.
+ *
+ * Hoy es uno: las condiciones nuevas de un plan o servicio (migración 76,
+ * decisión de Bosco del 12/09/2026) avisan a quien puede aceptarlas por
+ * el restaurante, y quien las publica es el equipo. Enseñarle a un
+ * trabajador una casilla para apagar un aviso que no va a recibir es
+ * una preferencia sobre nada, así que la pantalla de Ajustes los deja
+ * fuera con `staffPreferenceEvents()`.
+ */
+export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = ["terms_version_published"];
+
+/** Los eventos sobre los que alguien del equipo puede tener preferencia (RN-NOT-02). */
+export function staffPreferenceEvents(): readonly NotificationEvent[] {
+  return NOTIFICATION_EVENTS.filter((event) => !CLIENT_ONLY_EVENTS.includes(event));
+}
 
 export function jobEventClientRecipients(
   event: NotificationEvent,

@@ -2106,6 +2106,12 @@ end $$;
 -- Se manda la lista ENTERA de lo que está pendiente, que es lo único que
 -- `set_request_priority_order()` acepta: ordenar tres de cinco dejaría dos
 -- sin sitio, y "sin sitio" no es lo mismo que "las menos importantes".
+--
+-- Qué cuenta como "pendiente" lo dice `request_is_rankable()`, no una
+-- lista copiada aquí. Este bloque llevaba la lista escrita a mano, con
+-- `in_progress` dentro, y la migración 72 sacó ese estado: el sembrado
+-- se rompió en silencio ese mismo día y CI lo ejecuta dos veces. Aquí se
+-- corre como superusuario, así que la función interna se puede llamar.
 -- ------------------------------------------------------------
 do $$
 declare
@@ -2127,9 +2133,7 @@ begin
   into v_orden
   from public.requests r
   where r.establishment_id = v_est
-    and r.state in ('received', 'analyzing', 'needs_information',
-                    'pending_internal_validation', 'pending_client_acceptance',
-                    'accepted', 'in_progress');
+    and public.request_is_rankable(r.state);
 
   if v_orden is null then
     raise notice 'Magariños no tiene cambios pendientes que ordenar';
