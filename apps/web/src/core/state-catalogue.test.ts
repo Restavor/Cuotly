@@ -58,6 +58,7 @@ const COLUMNA: Readonly<Record<string, { tabla: string; columna: string }>> = {
  */
 const DERIVADOS: Readonly<Record<string, string>> = {
   charge: "RN-FIN-02: el estado de un cobro lo deriva el servidor del libro de apuntes (charge_outstanding_cents y su fecha de vencimiento), no hay columna `state` en `charges`.",
+  quote: "§84 / RN-QUO-01: `quotes.state` guarda draft, sent, accepted y rejected; los cinco visibles los deriva quote_status() porque pendiente de pago y pagado salen del libro del cobro (RN-DAT-05), y 'accepted' a secas no se enseña.",
 };
 
 /** El SQL de todas las migraciones, en el orden en que se aplican. */

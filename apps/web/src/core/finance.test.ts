@@ -16,6 +16,7 @@ import {
   nonpaymentStage,
   outstandingCents,
   paymentDayToTimestamp,
+  serviceMonthlyPrice,
   terminationSettlementCents,
   todayInTimeZone,
   type FinancialEntry,
@@ -456,5 +457,27 @@ describe("todayInTimeZone", () => {
     expect(todayInTimeZone(new Date("2026-09-04T02:00:00.000Z"), "America/Los_Angeles")).toBe(
       "2026-09-03",
     );
+  });
+});
+
+describe("RN-COM-08 · la mensualidad del servicio tiene dos precios (decisión 20)", () => {
+  const menuDiario = { priceCents: 22900, pricePremiumCents: 19900 };
+
+  it("con plan que concede prioridad (Premium) se cobra el segundo precio", () => {
+    expect(serviceMonthlyPrice(menuDiario, true)).toEqual({ baseCents: 19900, premiumApplied: true });
+  });
+
+  it("con otro plan, o sin plan (RN-COM-11), el precio normal", () => {
+    expect(serviceMonthlyPrice(menuDiario, false)).toEqual({ baseCents: 22900, premiumApplied: false });
+  });
+
+  it("un servicio sin segundo precio cobra siempre el normal, sea el plan el que sea", () => {
+    expect(serviceMonthlyPrice({ priceCents: 5000, pricePremiumCents: null }, true))
+      .toEqual({ baseCents: 5000, premiumApplied: false });
+  });
+
+  it("y con IVA: 199 € son 240,79 € y 229 € son 277,09 € (RN-FIN-08)", () => {
+    expect(chargeAmounts(serviceMonthlyPrice(menuDiario, true).baseCents, RESTAVOR_TAX_RATE_PERCENT).totalCents).toBe(24079);
+    expect(chargeAmounts(serviceMonthlyPrice(menuDiario, false).baseCents, RESTAVOR_TAX_RATE_PERCENT).totalCents).toBe(27709);
   });
 });

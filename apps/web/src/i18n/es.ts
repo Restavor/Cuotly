@@ -407,6 +407,7 @@ export const es = {
       absence: "Ausencia",
       conversation: "Conversación",
       menu: "Menú",
+      quote: "Presupuesto",
     },
     // CA-21: las cuatro categorías de cambio (RN-CLS), con un solo nombre
     // visible cada una.
@@ -528,6 +529,18 @@ export const es = {
         published: "Publicado",
         cancelled: "Cancelado",
         publication_error: "Error de publicación",
+      },
+      /**
+       * §84 · los cinco estados visibles de un presupuesto. "Aceptado" no
+       * está: aceptar es el instante en que nace el cobro, y desde ahí el
+       * presupuesto está pendiente de pago o pagado (RN-DAT-05).
+       */
+      quote: {
+        draft: "Borrador",
+        sent: "Enviado",
+        rejected: "Rechazado",
+        pending_payment: "Aceptado · Pendiente de pago",
+        paid: "Pagado",
       },
     },
   },
@@ -750,6 +763,9 @@ export const es = {
       menu_publication_error: "Error al publicar un menú",
       menu_not_prepared_reminder: "Mañana no tienes menú preparado",
       menu_publication_overdue: "Un menú garantizado sigue sin publicar pasadas las 08:00",
+      quote_sent: "Tienes un presupuesto pendiente de responder",
+      quote_accepted: "Presupuesto aceptado por el restaurante",
+      quote_rejected: "Presupuesto rechazado por el restaurante",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -928,6 +944,16 @@ export const es = {
       waitingClientReason:
         "Ya está validada y enviada. El siguiente paso es suyo: aceptar o rechazar el alcance.",
       jobLink: "Ver el trabajo",
+
+      // §84 · el presupuesto de la solicitud (Hito 12).
+      quoteTitle: "Presupuesto",
+      quoteNone:
+        "Sin presupuesto. Si el plan no incluye este cambio, o se cobra aparte, se presupuesta desde aquí.",
+      quoteCreateLink: "Presupuestar esta solicitud",
+      quoteOpenLink: "Ver el presupuesto",
+      quoteLine: (code: string, total: string) => `${code} · ${total}`,
+      quoteWaitingHint:
+        "Mientras haya un presupuesto abierto, la aceptación es la del presupuesto: el restaurante no puede aceptar el alcance por fuera.",
 
       // ---------------------------------------------------------------
       // El detalle de una solicitud (§20.4, HU-11): lo que pidió el
@@ -1115,6 +1141,15 @@ export const es = {
       loadPointsNone: "Sin puntos: el trabajo todavía no tiene categoría",
       noActionTitle: "Nada que hacer aquí ahora",
       noActionReason: "Este trabajo está en un estado que no admite acciones tuyas en este momento.",
+      // RN-JOB-06 / §84 · la puerta de un trabajo presupuestado (Hito 12).
+      quoteGateTitle: "Trabajo presupuestado aparte",
+      quoteGateCode: (code: string) => `Presupuesto ${code}. No consume la bolsa del plan (RN-CON-03).`,
+      quoteGatePaid: "Cobrado: se puede comenzar.",
+      quoteGateAuthorized: "Pago pendiente, pero el inicio está autorizado y registrado: se puede comenzar.",
+      quoteGateNoPaymentRequired: "No exige pago previo: se puede comenzar.",
+      quoteGateBlocked:
+        "Pago pendiente y pago previo exigido: Comenzar espera al cobro o a que el propietario o un administrador autorice el inicio desde el presupuesto.",
+      quoteGateLink: "Abrir el presupuesto",
       // HU-27 / RN-FIN-05: el trabajador marca pagado un cobro de su
       // restaurante sin pasar por Finanzas. Se habla del restaurante de
       // este trabajo, nunca de los ingresos del espacio.
@@ -1729,13 +1764,37 @@ export const es = {
   calendar: {
     title: "Calendario",
     emptyTitle: "Nada en este periodo",
-    emptyReason: "No hay festivos, ausencias ni vencimientos entre estas dos fechas.",
+    emptyReason:
+      "No hay festivos, ausencias, publicaciones, renovaciones ni vencimientos entre estas dos fechas con estos filtros.",
     kinds: {
       holiday: "Festivo",
       absence: "Ausencia",
       correction_window: "Fin de la ventana de corrección",
       charge_due: "Vencimiento de cobro",
+      // §76, desde el Hito 12.
+      menu_publication: "Publicación de Menú Diario",
+      renewal: "Renovación",
+      supervision_end: "Fin de sustitución",
     },
+    // §75 · los tres filtros que el servidor resuelve. Los demás (grupo,
+    // estado) salen de los mismos datos en la pantalla.
+    filtersTitle: "Filtrar",
+    filterEstablishment: "Restaurante",
+    filterWorker: "Trabajador",
+    filterKind: "Tipo de evento",
+    filterAny: "Todos",
+    filterApply: "Aplicar",
+    filterClear: "Quitar filtros",
+    renewalKinds: {
+      plan: "Plan",
+      service: "Servicio",
+    },
+    supervisionKinds: {
+      substitute: "Sustitución",
+    },
+    // §76 · lo que este calendario no enseña, dicho en vez de callado.
+    limitsNote:
+      "Los límites de comenzar y de ejecución de cada trabajo se ven en su ficha: se calculan con el reloj laboral y no como fechas de calendario.",
     months: [
       "enero",
       "febrero",
@@ -2033,9 +2092,15 @@ export const es = {
     serviceContractedOn: "Contratado el",
     // P6 · lo que falta se nombra. Las dos cosas que esta pantalla no hace
     // y por qué, en vez de un botón que no funcionaría.
-    servicePendingBillingTitle: "La mensualidad de un servicio todavía no se emite",
-    servicePendingBillingReason:
-      "RN-COM-08 fija dos precios para Menú Diario según el restaurante tenga o no plan Premium, y el sistema todavía no distingue cuál de los planes es Premium. El servicio queda contratado; su cobro mensual llega con Menú Diario (Fase 2).",
+    // RN-COM-08 · desde el Hito 12 el precio lo decide el servidor
+    // (decisión 20): aquí solo se dice cuál se aplica.
+    serviceBillingTitle: "Lo que se cobra por cada servicio",
+    serviceBillingHint:
+      "RN-COM-08: el servicio tiene dos precios y se aplica el segundo cuando el plan activo concede prioridad (Premium). Cambiar de plan cambia la siguiente mensualidad, nunca las ya emitidas.",
+    servicePriceApplied: (precio: string) => `${precio} + IVA / mes`,
+    servicePricePremiumReason: "Precio con plan Premium activo",
+    servicePriceStandardReason: "Precio sin plan Premium",
+    servicePriceUnknown: "No se ha podido leer el precio aplicado.",
     terminationTitle: "Dar de baja un plan o un servicio no se hace aquí",
     terminationReason:
       "La baja del PRD es del restaurante entero (RN-EST-09): se comunica, el servicio sigue hasta el final del periodo pagado o de la permanencia, y después queda 24 h en solo lectura. Qué pasa al cancelar un plan o un servicio sueltos con la permanencia viva no está definido, así que no se ofrece.",
@@ -2210,6 +2275,7 @@ export const es = {
       absence: "Ausencias",
       correction: "Correcciones",
       session: "Sesiones",
+      quote: "Presupuestos",
     },
 
     auditEntities: {
@@ -2234,6 +2300,7 @@ export const es = {
       session: "Sesión",
       space_invitation: "Invitación",
       space_membership: "Pertenencia al equipo",
+      quote: "Presupuesto",
     },
 
     auditActions: {
@@ -2307,6 +2374,7 @@ export const es = {
       "request.classified": "Solicitud clasificada",
       "request.converted_from_conversation": "Solicitud creada desde una conversación",
       "request.copied": "Solicitud copiada",
+      "request.created_from_quote": "Solicitud creada desde un presupuesto",
       "request.declined_by_client": "Solicitud no continuada por el restaurante",
       "request.draft_created": "Borrador de solicitud creado",
       "request.draft_file_attached": "Archivo añadido al borrador",
@@ -2331,6 +2399,12 @@ export const es = {
       "subscription.terms_accepted": "Condiciones aceptadas por el restaurante",
       "subscription.terms_recorded": "Aceptación externa de condiciones registrada",
       "plan.conditions_published": "Condiciones del plan publicadas",
+      "quote.created": "Presupuesto creado",
+      "quote.updated": "Presupuesto corregido",
+      "quote.sent": "Presupuesto enviado al restaurante",
+      "quote.accepted": "Presupuesto aceptado",
+      "quote.rejected": "Presupuesto rechazado",
+      "quote.start_authorized": "Inicio autorizado antes del pago",
       "service.conditions_published": "Condiciones del servicio publicadas",
       "supervision.principal_set": "Supervisor principal asignado",
       "supervision.revoked": "Supervisión revocada",
@@ -2970,9 +3044,12 @@ export const es = {
     servicesNoneReason:
       "Este restaurante no tiene contratado ningún servicio aparte del plan (RN-COM-11: el plan y los servicios son independientes).",
     serviceSince: (day: string) => `Contratado el ${day}`,
-    serviceUsageEmptyTitle: "Sin uso que contar todavía",
+    serviceUsageEmptyTitle: "El uso del servicio se ve en Menú Diario",
     serviceUsageEmptyReason:
-      "Las actualizaciones de Menú Diario son Fase 2: todavía no se publican desde Cuotly, así que no hay consumo del servicio ni mensualidad emitida.",
+      "Las actualizaciones consumidas y el saldo del ciclo (RN-CON-02) están en la pantalla de Menú Diario del restaurante, que es donde se piden.",
+    // RN-COM-08 · qué precio se le cobra, dicho por el servidor (decisión 20).
+    servicePricePremium: "Precio con plan Premium activo (RN-COM-08)",
+    servicePriceStandard: "Precio sin plan Premium (RN-COM-08)",
     commitmentTitle: "Permanencia",
     commitmentUntil: (day: string) => `Vigente hasta el ${day}`,
     commitmentSince: (day: string) => `Desde el ${day}`,
@@ -3234,6 +3311,136 @@ export const es = {
    */
   analyticsSync: {
     noSyncBadge: "Sin sincronización",
+  },
+
+  /**
+   * Fase 2 · Hito 12 · presupuestos adicionales (§84), lado del equipo:
+   * la lista en Finanzas, el formulario y la ficha.
+   */
+  quotesTeam: {
+    title: "Presupuestos",
+    subtitle: "Lo que se cobra aparte del plan: trabajos fuera de bolsa y plantillas de Menú Diario (§84).",
+    listEmptyTitle: "No hay presupuestos",
+    listEmptyReason: "Un presupuesto nace desde una solicitud que no entra en el plan, o desde aquí.",
+    newLink: "Nuevo presupuesto",
+    codeColumn: "Código",
+    establishmentColumn: "Restaurante",
+    conceptColumn: "Concepto",
+    totalColumn: "Total",
+    stateColumn: "Estado",
+    open: "Abrir",
+    backToFinance: "Volver a finanzas",
+
+    // El formulario (crear y corregir un borrador).
+    newTitle: "Nuevo presupuesto",
+    editTitle: "Corregir el borrador",
+    establishmentLabel: "Restaurante",
+    requestLabel: "Solicitud",
+    requestNone: "Sin solicitud: el presupuesto crea la solicitud y el trabajo al aceptarse",
+    conceptLabel: "Concepto",
+    descriptionLabel: "Alcance (lo que leerá el restaurante)",
+    baseLabel: "Base imponible (euros, sin IVA)",
+    outcomeLabel: "Qué se presupuesta",
+    outcomes: {
+      job: "Un trabajo (crea solicitud y trabajo, sin consumir bolsa)",
+      menu_template: "Una plantilla de Menú Diario (RN-MEN-11)",
+    },
+    categoryLabel: "Categoría del cambio",
+    categoryHint: "Un trabajo presupuestado necesita categoría: es lo que decide su plazo y sus puntos de carga.",
+    requiresPaymentLabel: "Exigir el pago antes de comenzar",
+    requiresPaymentHint:
+      "§84: con esto marcado, Comenzar espera al cobro o a una autorización registrada. Sin marcar, el trabajo puede empezar con el cobro pendiente.",
+    createSubmit: "Guardar el borrador",
+    createPending: "Guardando…",
+    saveSubmit: "Guardar los cambios",
+    savePending: "Guardando…",
+    saveDone: "Borrador guardado.",
+    baseInvalid: "Escribe la base imponible en euros, cero o más.",
+    conceptRequired: "Ponle concepto: es lo que verá el restaurante.",
+    establishmentRequired: "Elige el restaurante.",
+    noPermissionTitle: "Sin permiso para presupuestar",
+    noPermissionReason: "Presupuestar es del propietario y de los administradores (manage_requests).",
+
+    // La ficha.
+    detailTitle: (code: string) => `Presupuesto ${code}`,
+    amountsTitle: "Importes",
+    baseRow: "Base imponible",
+    taxRow: (rate: string) => `IVA (${rate} %)`,
+    totalRow: "Total",
+    taxFrozenHint: "El tipo se copió del espacio al crear el presupuesto y no cambia (P4).",
+    requestLink: "Ver la solicitud",
+    jobLink: "Ver el trabajo",
+    chargeTitle: "Cobro",
+    chargeNone: "Todavía no hay cobro: nace cuando el restaurante acepta.",
+    chargeLine: (total: string, due: string) => `${total} · vence el ${due}`,
+    chargeOutstanding: (outstanding: string) => `Deuda viva: ${outstanding}`,
+    chargePaidHint: "Cobrado: el pago se registró desde Finanzas.",
+    paymentTitle: "Pago e inicio",
+    paymentRequired: "Exige el pago antes de comenzar.",
+    paymentNotRequired: "No exige el pago antes de comenzar.",
+    startAuthorized: (day: string) => `Inicio autorizado antes del pago el ${day}.`,
+    startAuthorizedReason: (reason: string) => `Motivo: ${reason}`,
+    authorizeTitle: "Autorizar el inicio antes del pago",
+    authorizeHint:
+      "Queda registrado con tu nombre, la fecha y el motivo (§84). Solo el propietario y los administradores con finanzas.",
+    authorizeReasonLabel: "Motivo (opcional)",
+    authorizeSubmit: "Autorizar el inicio",
+    authorizePending: "Autorizando…",
+    authorizeDone: "Inicio autorizado.",
+    sendTitle: "Enviar al restaurante",
+    sendHint:
+      "Al enviarlo, el propietario del restaurante recibe un aviso y puede aceptarlo o rechazarlo. Un presupuesto enviado ya no se corrige.",
+    sendSubmit: "Enviar el presupuesto",
+    sendPending: "Enviando…",
+    sendDone: "Presupuesto enviado.",
+    decisionTitle: "Respuesta del restaurante",
+    decidedAt: (day: string) => `Respondido el ${day}.`,
+    decisionReason: (reason: string) => `Motivo: ${reason}`,
+    rejectedHint:
+      "Rechazado. La solicitud, si la hay, sigue donde estaba: puedes enviar otro presupuesto o el restaurante puede no continuarla.",
+    waitingHint: "Enviado. Esperando la respuesta del restaurante.",
+    templateHint: "Aceptado: la plantilla se crea desde Menú Diario del restaurante, colgando de este presupuesto.",
+    historyTitle: "Historial",
+    historyEmpty: "Sin apuntes todavía.",
+    notFoundTitle: "Presupuesto no encontrado",
+    notFoundReason: "No existe o no tienes acceso a él.",
+  },
+
+  /**
+   * §84, lado del restaurante: lo que ve en su facturación y en su
+   * solicitud, y los dos botones que son suyos.
+   */
+  quotesClient: {
+    title: "Presupuestos",
+    emptyTitle: "No tienes presupuestos",
+    emptyReason: "Cuando el equipo te presupueste algo aparte de tu plan, aparecerá aquí.",
+    codeColumn: "Código",
+    conceptColumn: "Concepto",
+    totalColumn: "Total (con IVA)",
+    stateColumn: "Estado",
+    preparingTitle: "El equipo está preparando un presupuesto",
+    preparingReason:
+      "Este cambio se cobra aparte de tu plan. Cuando te lo envíen podrás aceptarlo o rechazarlo aquí.",
+    quoteTitle: "Presupuesto",
+    amounts: (base: string, tax: string, total: string) => `${base} + IVA ${tax} = ${total}`,
+    paymentRequiredHint: "El trabajo empieza cuando se confirme el pago.",
+    paymentNotRequiredHint: "El trabajo puede empezar antes del pago.",
+    answerTitle: "Tu respuesta",
+    answerHint:
+      "Aceptar emite el cobro y, si es un trabajo, lo pone en marcha sin consumir tu bolsa de cambios. Rechazar no cuesta nada.",
+    acceptSubmit: "Aceptar el presupuesto",
+    acceptPending: "Aceptando…",
+    acceptDone: "Presupuesto aceptado.",
+    rejectReasonLabel: "Motivo (opcional)",
+    rejectSubmit: "Rechazar",
+    rejectPending: "Rechazando…",
+    rejectDone: "Presupuesto rechazado.",
+    onlyOwnerTitle: "Solo el propietario responde",
+    onlyOwnerReason:
+      "Un presupuesto compromete dinero del restaurante: lo acepta o rechaza el propietario local o el del grupo, como las condiciones.",
+    pendingPaymentHint: "Aceptado. El cobro está en tu facturación.",
+    paidHint: "Pagado.",
+    rejectedHint: "Rechazado.",
   },
 
   emptyReasons: {

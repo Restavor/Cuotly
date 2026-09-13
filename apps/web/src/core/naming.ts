@@ -31,9 +31,11 @@
 import { MENU_KINDS } from "./daily-menu";
 import { JOB_STATES, TASK_STATES } from "./job-states";
 import { MENU_STATES } from "./menu-states";
+import { QUOTE_STATES } from "./quotes";
 import { REQUEST_STATES } from "./request-states";
 
-export { JOB_STATES, TASK_STATES, REQUEST_STATES, MENU_STATES, MENU_KINDS };
+export { JOB_STATES, TASK_STATES, REQUEST_STATES, MENU_STATES, MENU_KINDS, QUOTE_STATES };
+export type { QuoteState } from "./quotes";
 export type { JobState, TaskState } from "./job-states";
 export type { MenuState } from "./menu-states";
 export type { MenuKind } from "./daily-menu";
@@ -53,6 +55,8 @@ export const ENTITY_KINDS = [
   "conversation",
   // Fase 2: un menú de Menú Diario (RN-MEN-01).
   "menu",
+  // Fase 2, Hito 12: un presupuesto adicional (§84).
+  "quote",
 ] as const;
 export type EntityKind = (typeof ENTITY_KINDS)[number];
 
@@ -95,6 +99,9 @@ export const STATE_CATALOGUE = {
   absence: ABSENCE_STATES,
   // §63, desde `menu-states.ts` (Fase 2, Hito 9).
   menu: MENU_STATES,
+  // §84, desde `quotes.ts` (Fase 2, Hito 12): los cinco visibles, dos de
+  // ellos derivados del cobro (RN-DAT-05).
+  quote: QUOTE_STATES,
 } as const;
 
 export type StatefulEntity = keyof typeof STATE_CATALOGUE;
