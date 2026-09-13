@@ -55,6 +55,19 @@ jobs:
         run: cd apps/web && npx playwright install --with-deps chromium
 
       - name: Tests end-to-end (Playwright)
+        # Este paso llevaba en rojo desde el 01/09/2026 sin que nadie lo
+        # leyera: `next dev` ejecuta `src/proxy.ts` en cada petición, y ese
+        # archivo crea el cliente de Supabase con las dos variables públicas
+        # — sin ellas revienta ("Your project's URL and Key are required") y
+        # Playwright agota el minuto esperando al servidor. La suite sin
+        # datos NO toca ninguna base: sin sesión, cada pantalla acaba en el
+        # login. Le bastan valores no vacíos, y se le dan los públicos del
+        # Supabase local de demostración (`supabase start` los imprime; no
+        # son un secreto). La suite con datos (`test:e2e:datos`) sigue
+        # necesitando el proyecto real y no corre aquí, como dice el ROADMAP.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
         run: cd apps/web && pnpm test:e2e
 
       - name: Compilar el bundle web de la app móvil (comprobación de que el código de Expo compila)
