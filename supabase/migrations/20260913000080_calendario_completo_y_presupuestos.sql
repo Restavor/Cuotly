@@ -45,10 +45,15 @@
 --     calendario: se calculan con el reloj laboral de
 --     `src/core/business-clock.ts`, que no existe en SQL. Copiarlo aquí
 --     sería el segundo reloj que CA-10 prohíbe.
---   · Quién acepta un presupuesto por el restaurante: la misma lista que
---     `client_can_accept_terms()` (propietario local y propietario global
---     del grupo), porque compromete dinero, como las condiciones. El
---     Editor no. Está anotado como pendiente en `docs/DECISIONES.md`.
+--   · Quién acepta un presupuesto (decisión 21, 13/09/2026): por el
+--     restaurante, la misma lista que `client_can_accept_terms()`
+--     (propietario local y propietario global del grupo), porque
+--     compromete dinero, como las condiciones; el Editor no. Y el
+--     propietario o un administrador del espacio (`manage_requests`)
+--     pueden REGISTRAR la respuesta en nombre del restaurante cuando la
+--     dio fuera de Cuotly, con motivo obligatorio: queda marcado en la
+--     fila (`decided_by_team`) y en la auditoría, y el restaurante recibe
+--     aviso de lo que se registró en su nombre.
 --   · Un presupuesto rechazado deja la solicitud donde estaba: el equipo
 --     puede enviar otro y el restaurante puede no continuarla. No se
 --     inventa un estado nuevo de solicitud.
@@ -709,6 +714,10 @@ create table public.quotes (
   decided_at timestamptz,
   decided_by uuid references public.profiles (id),
   decision_reason text,
+  -- Decisión 21 (13/09/2026): la respuesta la dio el restaurante fuera
+  -- de Cuotly y la registró el equipo en su nombre. Con eso marcado,
+  -- `decision_reason` es obligatorio (cómo y cuándo la dio).
+  decided_by_team boolean not null default false,
   start_authorized_at timestamptz,
   start_authorized_by uuid references public.profiles (id),
   start_authorization_reason text,
@@ -757,8 +766,8 @@ for select using (
 revoke select on public.quotes from anon, authenticated;
 grant select (id, space_id, establishment_id, request_id, code, concept, description, outcome, category,
               base_cents, tax_rate_percent, tax_cents, total_cents, requires_payment_before_start,
-              state, sent_at, decided_at, decision_reason, start_authorized_at, start_authorization_reason,
-              created_at, updated_at)
+              state, sent_at, decided_at, decision_reason, decided_by_team, start_authorized_at,
+              start_authorization_reason, created_at, updated_at)
   on public.quotes to authenticated;
 
 -- Las tres tablas que cuelgan de un presupuesto.
@@ -870,7 +879,11 @@ alter table public.notifications
 --     `client_can_accept_terms()`). Ni el Editor, ni Consulta, ni nadie
 --     con el acceso retirado (RN-EST-05).
 --   · quote_accepted, quote_rejected → propietario y administradores del
---     espacio. A un trabajador no: todavía no hay nada asignado.
+--     espacio. A un trabajador no: todavía no hay nada asignado. Y si la
+--     respuesta la registró el equipo en nombre del restaurante
+--     (`decided_by_team`), también a quien podía haberla dado —los mismos
+--     propietarios de `quote_sent`—, para que nadie se entere por el
+--     cobro de que se aceptó algo en su nombre.
 -- Interna: la llaman las funciones de abajo, que sí comprueban permisos.
 create or replace function public.notify_quote_event(p_quote_id uuid, p_event_type text)
 returns integer
@@ -891,7 +904,7 @@ begin
 
   v_slug := public.space_slug(v_quote.space_id);
 
-  if p_event_type = 'quote_sent' then
+  if p_event_type = 'quote_sent' or v_quote.decided_by_team then
     for v_recipient in
       select em.user_id
       from public.establishment_memberships em
@@ -915,7 +928,9 @@ begin
         v_sent := v_sent + 1;
       end if;
     end loop;
-  else
+  end if;
+
+  if p_event_type <> 'quote_sent' then
     for v_recipient in
       select sm.user_id
       from public.space_memberships sm
@@ -1220,7 +1235,19 @@ begin
     raise exception 'Solicitud no encontrada';
   end if;
 
-  if not public.can_write_establishment(v_establishment_id) then
+  -- §84 · el último presupuesto de la solicitud manda sobre cómo se acepta.
+  select q.id, q.state into v_quote_id, v_quote_state
+  from public.quotes q
+  where q.request_id = p_request_id
+  order by q.created_at desc
+  limit 1;
+
+  -- Acepta el restaurante. La única excepción es la que abre la decisión
+  -- 21: con el presupuesto ya aceptado (lo que `accept_quote()` acaba de
+  -- comprobar y registrar), el propietario o un administrador del espacio
+  -- llegan aquí en nombre del restaurante.
+  if not public.can_write_establishment(v_establishment_id)
+     and not (v_quote_state = 'accepted' and public.has_capability(v_space_id, 'manage_requests')) then
     raise exception 'No tienes acceso de escritura a este establecimiento';
   end if;
 
@@ -1237,13 +1264,6 @@ begin
   end if;
 
   perform public.assert_establishment_service_running(v_establishment_id);
-
-  -- §84 · el último presupuesto de la solicitud manda sobre cómo se acepta.
-  select q.id, q.state into v_quote_id, v_quote_state
-  from public.quotes q
-  where q.request_id = p_request_id
-  order by q.created_at desc
-  limit 1;
 
   if v_quote_id is not null and v_quote_state in ('draft', 'sent') then
     raise exception 'Esta solicitud se presupuesta aparte: la aceptación es la del presupuesto (§84)';
@@ -1345,7 +1365,59 @@ grant execute on function public.accept_request(uuid) to authenticated;
 -- ------------------------------------------------------------
 -- 3.5 · Aceptar y rechazar (el restaurante)
 -- ------------------------------------------------------------
-create or replace function public.accept_quote(p_quote_id uuid)
+-- `next_request_code()` (migración 17) exige escritura de CLIENTE sobre
+-- el restaurante, y con la decisión 21 quien acepta puede ser el equipo
+-- en su nombre, que ya pasó la comprobación de `accept_quote()`. La cuenta
+-- del código se separa en una interna cerrada por RPC, y la pública la
+-- envuelve con el mismo permiso de siempre: ningún camino nuevo se abre.
+create or replace function public.next_request_code_internal(p_establishment_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_space_id uuid;
+  v_value bigint;
+begin
+  select space_id into v_space_id from public.establishments where id = p_establishment_id;
+
+  if v_space_id is null then
+    raise exception 'Establecimiento no encontrado';
+  end if;
+
+  insert into public.space_sequences (space_id, sequence_name, next_value)
+  values (v_space_id, 'request', 2)
+  on conflict (space_id, sequence_name)
+  do update set next_value = public.space_sequences.next_value + 1
+  returning next_value - 1 into v_value;
+
+  return 'SOL-' || lpad(v_value::text, 4, '0');
+end;
+$$;
+
+revoke all on function public.next_request_code_internal(uuid) from public, anon, authenticated;
+
+create or replace function public.next_request_code(p_establishment_id uuid)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not exists (select 1 from public.establishments where id = p_establishment_id) then
+    raise exception 'Establecimiento no encontrado';
+  end if;
+
+  if not public.can_write_establishment(p_establishment_id) then
+    raise exception 'No tienes acceso de escritura a este establecimiento';
+  end if;
+
+  return public.next_request_code_internal(p_establishment_id);
+end;
+$$;
+
+create or replace function public.accept_quote(p_quote_id uuid, p_reason text default null)
 returns void
 language plpgsql
 security definer
@@ -1360,6 +1432,8 @@ declare
   v_charge_id uuid;
   v_job_id uuid;
   v_code text;
+  v_by_team boolean;
+  v_reason text := nullif(btrim(coalesce(p_reason, '')), '');
 begin
   select * into v_quote from public.quotes where id = p_quote_id for update;
   if v_quote.id is null then
@@ -1368,10 +1442,12 @@ begin
 
   -- Compromete dinero del restaurante: lo acepta quien lo representa
   -- (propietario local o propietario global del grupo), como las
-  -- condiciones. El Editor y Consulta, no. El equipo tampoco: no acepta
-  -- en nombre del cliente.
-  if not public.client_can_accept_terms(v_quote.establishment_id) then
-    raise exception 'Solo el propietario del restaurante puede aceptar un presupuesto';
+  -- condiciones. El Editor y Consulta, no. Decisión 21 (13/09/2026): el
+  -- propietario o un administrador del espacio pueden registrar que el
+  -- restaurante lo aceptó fuera de Cuotly, en su nombre y con motivo.
+  v_by_team := not public.client_can_accept_terms(v_quote.establishment_id);
+  if v_by_team and not public.has_capability(v_quote.space_id, 'manage_requests') then
+    raise exception 'Solo el propietario del restaurante, o el propietario o un administrador del espacio en su nombre, pueden aceptar un presupuesto';
   end if;
 
   if v_quote.state = 'accepted' then
@@ -1380,6 +1456,10 @@ begin
 
   if v_quote.state <> 'sent' then
     raise exception 'El presupuesto no está pendiente de respuesta';
+  end if;
+
+  if v_by_team and v_reason is null then
+    raise exception 'Para aceptar en nombre del restaurante hay que decir cómo y cuándo lo aceptó (motivo)';
   end if;
 
   perform public.assert_establishment_service_running(v_quote.establishment_id);
@@ -1392,7 +1472,8 @@ begin
   end if;
 
   update public.quotes
-  set state = 'accepted', decided_at = now(), decided_by = auth.uid(), updated_at = now()
+  set state = 'accepted', decided_at = now(), decided_by = auth.uid(),
+      decided_by_team = v_by_team, decision_reason = v_reason, updated_at = now()
   where id = p_quote_id;
 
   -- El cobro puntual (RN-FIN-01b para el plazo; RN-FIN-08 con el IVA
@@ -1425,7 +1506,7 @@ begin
     if v_quote.request_id is null then
       -- Sin solicitud previa: nace ya validada con el alcance del
       -- presupuesto, y la acepta quien acepta el presupuesto.
-      v_code := public.next_request_code(v_quote.establishment_id);
+      v_code := public.next_request_code_internal(v_quote.establishment_id);
       insert into public.requests
         (space_id, establishment_id, code, state, description, context, created_by,
          validated_category, validated_summary, validated_by, validated_at)
@@ -1450,17 +1531,21 @@ begin
     select id into v_job_id from public.jobs where request_id = v_request_id;
   end if;
 
-  insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, old_value, new_value)
+  -- Con actor, fecha y motivo, y dicho en claro si fue en nombre del
+  -- restaurante: es lo que después se le puede enseñar a quien pregunte.
+  insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, old_value, new_value, reason)
   values (v_quote.space_id, auth.uid(), 'quote.accepted', 'quote', p_quote_id,
           jsonb_build_object('state', 'sent'),
-          jsonb_build_object('state', 'accepted', 'charge_id', v_charge_id, 'request_id', v_request_id, 'job_id', v_job_id));
+          jsonb_build_object('state', 'accepted', 'charge_id', v_charge_id, 'request_id', v_request_id, 'job_id', v_job_id,
+                             'on_behalf_of_client', v_by_team),
+          v_reason);
 
   perform public.notify_quote_event(p_quote_id, 'quote_accepted');
 end;
 $$;
 
-revoke all on function public.accept_quote(uuid) from public, anon;
-grant execute on function public.accept_quote(uuid) to authenticated;
+revoke all on function public.accept_quote(uuid, text) from public, anon;
+grant execute on function public.accept_quote(uuid, text) to authenticated;
 
 create or replace function public.reject_quote(p_quote_id uuid, p_reason text default null)
 returns void
@@ -1470,14 +1555,18 @@ set search_path = public
 as $$
 declare
   v_quote public.quotes;
+  v_by_team boolean;
+  v_reason text := nullif(btrim(coalesce(p_reason, '')), '');
 begin
   select * into v_quote from public.quotes where id = p_quote_id for update;
   if v_quote.id is null then
     raise exception 'Presupuesto no encontrado';
   end if;
 
-  if not public.client_can_accept_terms(v_quote.establishment_id) then
-    raise exception 'Solo el propietario del restaurante puede rechazar un presupuesto';
+  -- La misma lista que para aceptar (decisión 21).
+  v_by_team := not public.client_can_accept_terms(v_quote.establishment_id);
+  if v_by_team and not public.has_capability(v_quote.space_id, 'manage_requests') then
+    raise exception 'Solo el propietario del restaurante, o el propietario o un administrador del espacio en su nombre, pueden rechazar un presupuesto';
   end if;
 
   if v_quote.state = 'rejected' then
@@ -1488,15 +1577,20 @@ begin
     raise exception 'El presupuesto no está pendiente de respuesta';
   end if;
 
+  if v_by_team and v_reason is null then
+    raise exception 'Para rechazar en nombre del restaurante hay que decir cómo y cuándo lo rechazó (motivo)';
+  end if;
+
   update public.quotes
   set state = 'rejected', decided_at = now(), decided_by = auth.uid(),
-      decision_reason = nullif(btrim(coalesce(p_reason, '')), ''), updated_at = now()
+      decided_by_team = v_by_team, decision_reason = v_reason, updated_at = now()
   where id = p_quote_id;
 
   insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, old_value, new_value, reason)
   values (v_quote.space_id, auth.uid(), 'quote.rejected', 'quote', p_quote_id,
-          jsonb_build_object('state', 'sent'), jsonb_build_object('state', 'rejected'),
-          nullif(btrim(coalesce(p_reason, '')), ''));
+          jsonb_build_object('state', 'sent'),
+          jsonb_build_object('state', 'rejected', 'on_behalf_of_client', v_by_team),
+          v_reason);
 
   perform public.notify_quote_event(p_quote_id, 'quote_rejected');
 end;
@@ -1689,6 +1783,8 @@ returns table (
   status text,
   requires_payment_before_start boolean,
   start_authorized boolean,
+  decided_by_team boolean,
+  decision_reason text,
   preparing boolean
 )
 language plpgsql
@@ -1723,6 +1819,8 @@ begin
     case when q.state = 'draft' then null else public.quote_status(q.id) end,
     case when q.state = 'draft' then null else q.requires_payment_before_start end,
     case when q.state = 'draft' then null else q.start_authorized_at is not null end,
+    case when q.state = 'draft' then null else q.decided_by_team end,
+    case when q.state = 'draft' then null else q.decision_reason end,
     q.state = 'draft'
   from public.quotes q
   where q.request_id = p_request_id

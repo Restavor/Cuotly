@@ -98,7 +98,7 @@ export default async function ClientBillingPage({
       supabase
         .from("quotes")
         .select(
-          "id, code, concept, description, base_cents, tax_cents, total_cents, requires_payment_before_start, state",
+          "id, code, concept, description, base_cents, tax_cents, total_cents, requires_payment_before_start, state, decided_by_team, decision_reason",
         )
         .eq("establishment_id", id)
         .order("created_at", { ascending: false }),
@@ -122,6 +122,8 @@ export default async function ClientBillingPage({
         // inventa un "enviado" que ofrecería botones de responder.
         status: status ?? quote.state,
         requiresPaymentBeforeStart: quote.requires_payment_before_start,
+        decidedByTeam: quote.decided_by_team,
+        decisionReason: quote.decision_reason,
       };
     }),
   );

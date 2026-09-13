@@ -7,7 +7,14 @@ import { QUOTE_OUTCOMES, type QuoteOutcome } from "@/core/quotes";
 import { es } from "@/i18n/es";
 
 import { INITIAL_QUOTE_ACTION } from "./action-state";
-import { authorizeQuoteStart, createQuote, sendQuote, updateQuoteDraft } from "./actions";
+import {
+  acceptQuoteForClient,
+  authorizeQuoteStart,
+  createQuote,
+  rejectQuoteForClient,
+  sendQuote,
+  updateQuoteDraft,
+} from "./actions";
 
 const t = es.quotesTeam;
 
@@ -162,6 +169,44 @@ export function SendQuoteForm({ quoteId }: { quoteId: string }) {
         <Notice error={state.error} notice={state.notice} />
         <Button type="submit" disabled={pending}>
           {pending ? t.sendPending : t.sendSubmit}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+/**
+ * Decisión 21 · el equipo registra la respuesta que el restaurante dio
+ * fuera de Cuotly. Dos formularios con el mismo motivo obligatorio: se
+ * pinta a quien gestiona solicitudes, pero el control es `accept_quote()`
+ * y `reject_quote()`, que comprueban quién y exigen el motivo.
+ */
+export function AnswerForClientForms({ quoteId }: { quoteId: string }) {
+  const [accept, acceptAction, accepting] = useActionState(
+    acceptQuoteForClient.bind(null, quoteId),
+    INITIAL_QUOTE_ACTION,
+  );
+  const [reject, rejectAction, rejecting] = useActionState(
+    rejectQuoteForClient.bind(null, quoteId),
+    INITIAL_QUOTE_ACTION,
+  );
+  const busy = accepting || rejecting;
+
+  return (
+    <Card title={t.answerForClientTitle}>
+      <p className="mb-3 text-sm text-text-secondary">{t.answerForClientHint}</p>
+      <form action={acceptAction} className="space-y-2">
+        <TextArea label={t.onBehalfReasonLabel} hint={t.onBehalfReasonHint} name="reason" rows={2} required />
+        <Notice error={accept.error} notice={accept.notice} />
+        <Button type="submit" disabled={busy}>
+          {accepting ? t.acceptForClientPending : t.acceptForClientSubmit}
+        </Button>
+      </form>
+      <form action={rejectAction} className="mt-4 space-y-2">
+        <TextArea label={t.onBehalfReasonLabel} hint={t.onBehalfReasonHint} name="reason" rows={2} required />
+        <Notice error={reject.error} notice={reject.notice} />
+        <Button type="submit" variant="secondary" disabled={busy}>
+          {rejecting ? t.rejectForClientPending : t.rejectForClientSubmit}
         </Button>
       </form>
     </Card>

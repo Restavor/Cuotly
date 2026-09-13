@@ -10,7 +10,10 @@
 --   · §84: el equipo crea y envía; el restaurante no ve un borrador ni
 --     puede aceptar la solicitud por fuera; el Editor no acepta; el
 --     propietario acepta y nace el cobro, el trabajo presupuestado sin
---     consumir bolsa (RN-CON-03) y los avisos a quien toca (§18). Con pago
+--     consumir bolsa (RN-CON-03) y los avisos a quien toca (§18). El
+--     propietario o un administrador del espacio registran la respuesta
+--     en nombre del restaurante, con motivo obligatorio, y el restaurante
+--     recibe aviso de lo registrado (decisión 21); la trabajadora no. Con pago
 --     previo exigido, Comenzar espera al pago o a la autorización
 --     registrada (RN-JOB-06). Rechazar deja la solicitud donde estaba. Un
 --     presupuesto sin solicitud crea solicitud y trabajo. La plantilla
@@ -702,6 +705,187 @@ end $$;
 reset role;
 
 -- ============================================================
+-- Decisión 21 · el equipo registra la respuesta del restaurante en su
+-- nombre: el propietario o un administrador del espacio, con motivo
+-- obligatorio; la trabajadora no. Queda marcado en la fila y en la
+-- auditoría, y el restaurante recibe el aviso de lo que se registró.
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'cc000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+do $$
+declare v_q uuid;
+begin
+  v_q := public.create_quote('cc400000-0000-0000-0000-000000000002', 'Logo nuevo', 12000, 'job', 'small', 'Un logo', null, true);
+  perform public.send_quote(v_q);
+  insert into pq_ids values ('q6', v_q);
+end $$;
+reset role;
+
+-- La trabajadora no registra nada.
+select set_config('request.jwt.claim.sub', 'cc000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+do $$
+begin
+  begin
+    perform public.accept_quote((select v from pq_ids where k = 'q6'), 'Por teléfono');
+    raise exception 'Decisión 21 FALLIDA: la trabajadora aceptó un presupuesto en nombre del restaurante' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm not like '%Solo el propietario%' then raise; end if;
+  end;
+end $$;
+reset role;
+
+-- El administrador sí, pero no sin decir cómo lo aceptó el restaurante.
+select set_config('request.jwt.claim.sub', 'cc000000-0000-0000-0000-000000000002', false);
+set role authenticated;
+do $$
+declare
+  v_q uuid := (select v from pq_ids where k = 'q6');
+  v_r uuid; v_n integer; v_total integer;
+begin
+  begin
+    perform public.accept_quote(v_q);
+    raise exception 'Decisión 21 FALLIDA: el administrador aceptó en nombre del restaurante sin motivo' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm not like '%motivo%' then raise; end if;
+  end;
+  begin
+    perform public.accept_quote(v_q, '   ');
+    raise exception 'Decisión 21 FALLIDA: un motivo en blanco valió para aceptar en nombre del restaurante' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm not like '%motivo%' then raise; end if;
+  end;
+  if (select state from public.quotes where id = v_q) <> 'sent' then
+    raise exception 'Decisión 21 FALLIDA: el intento sin motivo dejó huella' using errcode = 'assert_failure';
+  end if;
+
+  perform public.accept_quote(v_q, 'Aceptado por teléfono el 12/09 con la propietaria');
+  perform public.accept_quote(v_q, 'Aceptado por teléfono el 12/09 con la propietaria'); -- CA-17
+
+  if (select state from public.quotes where id = v_q) <> 'accepted'
+     or (select decided_by_team from public.quotes where id = v_q) is not true
+     or (select decision_reason from public.quotes where id = v_q) <> 'Aceptado por teléfono el 12/09 con la propietaria' then
+    raise exception 'Decisión 21 FALLIDA: la aceptación en nombre del restaurante no quedó marcada con su motivo' using errcode = 'assert_failure';
+  end if;
+  if public.quote_status(v_q) <> 'pending_payment' then
+    raise exception 'Decisión 21 FALLIDA: aceptado en nombre del restaurante debía estar "pending_payment"' using errcode = 'assert_failure';
+  end if;
+  select count(*), max(total_cents) into v_n, v_total from public.charges where quote_id = v_q;
+  if v_n <> 1 or v_total <> 14520 then
+    raise exception 'Decisión 21 FALLIDA: la aceptación registrada debía emitir 1 cobro de 14520 y hay % de %', v_n, v_total using errcode = 'assert_failure';
+  end if;
+  select request_id into v_r from public.quotes where id = v_q;
+  if v_r is null or (select state from public.requests where id = v_r) <> 'accepted' then
+    raise exception 'Decisión 21 FALLIDA: la aceptación registrada por el equipo no creó y aceptó la solicitud' using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.jobs where quote_id = v_q) <> 1 then
+    raise exception 'Decisión 21 FALLIDA: la aceptación registrada por el equipo no creó el trabajo' using errcode = 'assert_failure';
+  end if;
+  insert into pq_ids values ('req_q6', v_r);
+end $$;
+reset role;
+
+do $$
+declare v_q uuid := (select v from pq_ids where k = 'q6');
+begin
+  if (select count(*) from public.audit_log where action = 'quote.accepted' and entity_id = v_q
+        and (new_value ->> 'on_behalf_of_client')::boolean and reason = 'Aceptado por teléfono el 12/09 con la propietaria'
+        and actor_id = 'cc000000-0000-0000-0000-000000000002') <> 1 then
+    raise exception 'CA-15 FALLIDO: el apunte de la aceptación en nombre del restaurante no dice quién, que fue en su nombre y por qué' using errcode = 'assert_failure';
+  end if;
+  -- §18 · el restaurante se entera de lo que se registró en su nombre:
+  -- los dos propietarios (local y global), como con `quote_sent`; ni el
+  -- Editor ni Consulta. Y el equipo, como siempre.
+  if (select count(*) from public.notifications where event_type = 'quote_accepted' and entity_id = v_q and audience = 'client') <> 2
+     or not exists (select 1 from public.notifications where event_type = 'quote_accepted' and entity_id = v_q
+                    and recipient_id = 'cc000000-0000-0000-0000-000000000005' and audience = 'client')
+     or not exists (select 1 from public.notifications where event_type = 'quote_accepted' and entity_id = v_q
+                    and recipient_id = 'cc000000-0000-0000-0000-000000000010' and audience = 'client') then
+    raise exception '§18 FALLIDO: la aceptación registrada en nombre del restaurante debía avisar a sus dos propietarios' using errcode = 'assert_failure';
+  end if;
+  if exists (select 1 from public.notifications where event_type = 'quote_accepted' and entity_id = v_q
+             and recipient_id in ('cc000000-0000-0000-0000-000000000006', 'cc000000-0000-0000-0000-000000000007')) then
+    raise exception 'RN-NOT-01 FALLIDO: el Editor o Consulta recibieron el aviso de la aceptación registrada' using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.notifications where event_type = 'quote_accepted' and entity_id = v_q and audience = 'staff') <> 2 then
+    raise exception '§18 FALLIDO: la aceptación registrada debía avisar también a propietario y administrador del espacio' using errcode = 'assert_failure';
+  end if;
+  -- La aceptada por el propio restaurante (q1) no avisó al cliente: no
+  -- hay nada que contarle de lo que hizo él mismo.
+  if exists (select 1 from public.notifications where event_type = 'quote_accepted'
+             and entity_id = (select v from pq_ids where k = 'q1') and audience = 'client') then
+    raise exception '§18 FALLIDO: una aceptación del propio restaurante le avisó a él' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- El restaurante lo lee: sabe que se registró en su nombre y por qué, y
+-- sigue sin ver quién del equipo lo hizo (P7).
+select set_config('request.jwt.claim.sub', 'cc000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+do $$
+declare v_q uuid := (select v from pq_ids where k = 'q6'); v_row record;
+begin
+  if (select decided_by_team from public.quotes where id = v_q) is not true then
+    raise exception 'Decisión 21 FALLIDA: el restaurante no ve que la respuesta se registró en su nombre' using errcode = 'assert_failure';
+  end if;
+  select * into v_row from public.client_request_quote((select v from pq_ids where k = 'req_q6'));
+  if v_row.decided_by_team is not true or v_row.decision_reason <> 'Aceptado por teléfono el 12/09 con la propietaria'
+     or v_row.status <> 'pending_payment' then
+    raise exception 'Decisión 21 FALLIDA: client_request_quote no cuenta la respuesta registrada en nombre del restaurante' using errcode = 'assert_failure';
+  end if;
+  begin
+    perform (select decided_by from public.quotes where id = v_q);
+    raise exception 'P7 FALLIDO: el restaurante leyó decided_by del presupuesto' using errcode = 'assert_failure';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+reset role;
+
+-- Rechazar en nombre del restaurante: la misma lista y el mismo motivo
+-- obligatorio. No emite nada y avisa a los propietarios del restaurante.
+select set_config('request.jwt.claim.sub', 'cc000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+do $$
+declare v_q uuid;
+begin
+  v_q := public.create_quote('cc400000-0000-0000-0000-000000000002', 'Cartel de terraza', 4000, 'job', 'small', 'Un cartel', null, true);
+  perform public.send_quote(v_q);
+  insert into pq_ids values ('q7', v_q);
+  begin
+    perform public.reject_quote(v_q, null);
+    raise exception 'Decisión 21 FALLIDA: el propietario del espacio rechazó en nombre del restaurante sin motivo' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm not like '%motivo%' then raise; end if;
+  end;
+  perform public.reject_quote(v_q, 'Dijo que no por correo el 13/09');
+  perform public.reject_quote(v_q, 'Dijo que no por correo el 13/09'); -- CA-17
+  if (select state from public.quotes where id = v_q) <> 'rejected'
+     or (select decided_by_team from public.quotes where id = v_q) is not true then
+    raise exception 'Decisión 21 FALLIDA: el rechazo en nombre del restaurante no quedó marcado' using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.charges where quote_id = v_q) <> 0 then
+    raise exception '§84 FALLIDO: un rechazo registrado por el equipo emitió cobro' using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+
+do $$
+declare v_q uuid := (select v from pq_ids where k = 'q7');
+begin
+  if (select count(*) from public.notifications where event_type = 'quote_rejected' and entity_id = v_q and audience = 'client') <> 2 then
+    raise exception '§18 FALLIDO: el rechazo registrado en nombre del restaurante debía avisar a sus dos propietarios' using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.audit_log where action = 'quote.rejected' and entity_id = v_q
+        and (new_value ->> 'on_behalf_of_client')::boolean and reason = 'Dijo que no por correo el 13/09') <> 1 then
+    raise exception 'CA-15 FALLIDO: el apunte del rechazo registrado no dice que fue en nombre del restaurante ni por qué' using errcode = 'assert_failure';
+  end if;
+  -- El rechazo del propio restaurante (q2) no lleva la marca.
+  if (select decided_by_team from public.quotes where id = (select v from pq_ids where k = 'q2')) is not false then
+    raise exception 'Decisión 21 FALLIDA: un rechazo del propio restaurante quedó marcado como del equipo' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- ============================================================
 -- RN-MEN-11 · la plantilla presupuestada cuelga de un presupuesto de ESE
 -- restaurante y de plantilla.
 -- ============================================================
@@ -868,7 +1052,8 @@ declare v_fn text;
 begin
   foreach v_fn in array array[
     'service_monthly_price_internal(uuid)', 'subscription_current_period(uuid)',
-    'notify_quote_event(uuid, text)', 'run_monthly_charges(uuid)', 'generate_monthly_charge_internal(uuid, timestamptz)']
+    'notify_quote_event(uuid, text)', 'run_monthly_charges(uuid)', 'generate_monthly_charge_internal(uuid, timestamptz)',
+    'next_request_code_internal(uuid)']
   loop
     if has_function_privilege('anon', 'public.' || v_fn, 'execute')
        or has_function_privilege('authenticated', 'public.' || v_fn, 'execute') then
@@ -877,7 +1062,7 @@ begin
   end loop;
   foreach v_fn in array array[
     'service_monthly_price(uuid)', 'create_quote(uuid, text, integer, text, text, text, uuid, boolean)',
-    'update_quote_draft(uuid, text, integer, text, text, boolean)', 'send_quote(uuid)', 'accept_quote(uuid)',
+    'update_quote_draft(uuid, text, integer, text, text, boolean)', 'send_quote(uuid)', 'accept_quote(uuid, text)',
     'reject_quote(uuid, text)', 'authorize_quote_start(uuid, text)', 'quote_status(uuid)', 'job_quote_gate(uuid)',
     'client_request_quote(uuid)', 'space_calendar(uuid, date, date, uuid, uuid, text)',
     'create_menu_template(uuid, text, text, uuid)', 'upcoming_renewals(uuid, integer)']

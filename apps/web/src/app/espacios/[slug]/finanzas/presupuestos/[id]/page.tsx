@@ -3,13 +3,19 @@ import { redirect } from "next/navigation";
 
 import { RequestHistoryCard } from "@/components/request/Detail";
 import { Card, EmptyState, StatusBadge } from "@/components/ui";
-import { isQuoteState, quoteTone, type QuoteOutcome, type QuoteStoredState } from "@/core/quotes";
+import {
+  isQuoteState,
+  quoteTone,
+  teamCanAnswerQuoteForClient,
+  type QuoteOutcome,
+  type QuoteStoredState,
+} from "@/core/quotes";
 import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import type { RequestHistoryEntry } from "@/app/espacios/[slug]/solicitudes/[id]/detail-load";
 
-import { AuthorizeStartForm, QuoteForm, SendQuoteForm } from "../QuoteForms";
+import { AnswerForClientForms, AuthorizeStartForm, QuoteForm, SendQuoteForm } from "../QuoteForms";
 
 /**
  * La ficha de un presupuesto (§84), para el equipo: importes con el IVA
@@ -51,7 +57,7 @@ export default async function TeamQuoteDetailPage({
   const { data: quote } = await supabase
     .from("quotes")
     .select(
-      "id, space_id, establishment_id, request_id, code, concept, description, outcome, category, base_cents, tax_rate_percent, tax_cents, total_cents, requires_payment_before_start, state, sent_at, decided_at, decision_reason, start_authorized_at, start_authorization_reason, created_at",
+      "id, space_id, establishment_id, request_id, code, concept, description, outcome, category, base_cents, tax_rate_percent, tax_cents, total_cents, requires_payment_before_start, state, sent_at, decided_at, decision_reason, decided_by_team, start_authorized_at, start_authorization_reason, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -256,11 +262,21 @@ export default async function TeamQuoteDetailPage({
             </Card>
           ) : null}
 
+          {/*
+            Decisión 21 · registrar la respuesta que el restaurante dio
+            fuera de Cuotly. Solo sobre uno enviado y a quien gestiona;
+            el servidor lo vuelve a comprobar y exige el motivo.
+          */}
+          {isQuoteState(estado) && teamCanAnswerQuoteForClient(estado, gestionar) ? (
+            <AnswerForClientForms quoteId={id} />
+          ) : null}
+
           {stored === "rejected" ? (
             <Card title={t.decisionTitle}>
               {quote.decided_at ? (
                 <p className="text-sm text-text">{t.decidedAt(fechaCorta(quote.decided_at))}</p>
               ) : null}
+              {quote.decided_by_team ? <p className="text-sm text-text">{t.decidedByTeam}</p> : null}
               {quote.decision_reason ? (
                 <p className="text-sm text-text">{t.decisionReason(quote.decision_reason)}</p>
               ) : null}
@@ -272,6 +288,10 @@ export default async function TeamQuoteDetailPage({
             <Card title={t.decisionTitle}>
               {quote.decided_at ? (
                 <p className="text-sm text-text">{t.decidedAt(fechaCorta(quote.decided_at))}</p>
+              ) : null}
+              {quote.decided_by_team ? <p className="text-sm text-text">{t.decidedByTeam}</p> : null}
+              {quote.decision_reason ? (
+                <p className="text-sm text-text">{t.decisionReason(quote.decision_reason)}</p>
               ) : null}
               {outcome === "menu_template" ? (
                 <p className="mt-1 text-sm text-text-secondary">{t.templateHint}</p>

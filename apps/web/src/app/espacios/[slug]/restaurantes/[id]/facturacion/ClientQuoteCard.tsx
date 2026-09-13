@@ -21,6 +21,9 @@ export interface ClientQuote {
   /** Lo que derivó `quote_status()` (RN-DAT-05). */
   readonly status: string;
   readonly requiresPaymentBeforeStart: boolean;
+  /** Decisión 21 · la respuesta la registró el equipo en nombre del restaurante, con su motivo. */
+  readonly decidedByTeam: boolean;
+  readonly decisionReason: string | null;
 }
 
 /**
@@ -60,6 +63,9 @@ export function ClientQuoteCard({ quote, canAnswer }: { quote: ClientQuote; canA
             <p className="text-sm text-text-secondary">{t.onlyOwnerReason}</p>
           </div>
         )
+      ) : null}
+      {quote.decidedByTeam && estado !== "sent" ? (
+        <p className="mt-2 text-sm text-text">{t.decidedByTeamHint(quote.decisionReason ?? "—")}</p>
       ) : null}
       {estado === "pending_payment" ? (
         <p className="mt-2 text-sm text-text-secondary">{t.pendingPaymentHint}</p>

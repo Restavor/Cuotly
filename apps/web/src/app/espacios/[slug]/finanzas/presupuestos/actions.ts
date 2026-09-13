@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { onBehalfReasonIsValid } from "@/core/quotes";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -102,6 +103,38 @@ export async function sendQuote(quoteId: string): Promise<QuoteActionState> {
   const supabase = await createClient();
   const { error } = await supabase.rpc("send_quote", { p_quote_id: quoteId });
   return afterRpc(error, t.sendDone);
+}
+
+/**
+ * Decisión 21 · registrar que el restaurante aceptó fuera de Cuotly.
+ * `accept_quote()` decide quién (propietario o administrador del espacio,
+ * `manage_requests`) y exige el motivo; aquí solo se ahorra el viaje si
+ * va en blanco. Lo que pasa después es lo mismo que si aceptara el
+ * restaurante: el cobro, la solicitud y el trabajo.
+ */
+export async function acceptQuoteForClient(
+  quoteId: string,
+  _prev: QuoteActionState,
+  formData: FormData,
+): Promise<QuoteActionState> {
+  const reason = String(formData.get("reason") ?? "");
+  if (!onBehalfReasonIsValid(reason)) return { error: t.onBehalfReasonRequired, done: false, notice: null };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_quote", { p_quote_id: quoteId, p_reason: reason.trim() });
+  return afterRpc(error, t.acceptForClientDone);
+}
+
+/** Decisión 21 · registrar que el restaurante lo rechazó fuera de Cuotly. Mismo motivo obligatorio. */
+export async function rejectQuoteForClient(
+  quoteId: string,
+  _prev: QuoteActionState,
+  formData: FormData,
+): Promise<QuoteActionState> {
+  const reason = String(formData.get("reason") ?? "");
+  if (!onBehalfReasonIsValid(reason)) return { error: t.onBehalfReasonRequired, done: false, notice: null };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reject_quote", { p_quote_id: quoteId, p_reason: reason.trim() });
+  return afterRpc(error, t.rejectForClientDone);
 }
 
 /** §84 / RN-JOB-06 · autorizar el inicio antes del pago. Queda registrado. */

@@ -3201,7 +3201,11 @@ regenerar salió idéntica, así que no había desviación.
     no ve un borrador (solo sabe que "se está preparando",
     `client_request_quote()`), y acepta o rechaza quien acepta las
     condiciones (propietario local o global; el Editor ve y no responde;
-    Consulta no ve). Aceptar emite el cobro en el libro y, con
+    Consulta no ve), o el propietario o un administrador del espacio en
+    nombre del restaurante cuando respondió fuera de Cuotly (decisión 21:
+    motivo obligatorio, `decided_by_team` en la fila, `on_behalf_of_client`
+    en el apunte y aviso a los propietarios del restaurante). Aceptar
+    emite el cobro en el libro y, con
     solicitud, ES la aceptación de la solicitud: `accept_request()` ve
     el presupuesto aceptado, no mira la bolsa (RN-CON-03) y el trabajo
     nace con `quote_id`; sin solicitud, la crea ya validada y aceptada.
@@ -3230,10 +3234,10 @@ regenerar salió idéntica, así que no había desviación.
     calendario van por GET y funcionan sin JavaScript (CA-22).
 
     **Lecturas de §84 que no son reglas nuevas**, anotadas como
-    pendientes 11 y 12 de `docs/DECISIONES.md`: quién acepta (la lista de
-    las condiciones), el periodo del cobro (el día de la aceptación),
-    que rechazar no inventa estado de solicitud y que "aceptado" no se
-    enseña.
+    pendiente 12 de `docs/DECISIONES.md`: el periodo del cobro (el día
+    de la aceptación), que rechazar no inventa estado de solicitud y que
+    "aceptado" no se enseña. Quién acepta fue la pendiente 11 y Bosco la
+    cerró el mismo día como decisión 21 (arriba).
 
     **Lo que NO se inventa.** Los filtros de grupo y estado de §75 no
     están en la función: salen de los mismos datos y no hacía falta
@@ -3262,7 +3266,14 @@ regenerar salió idéntica, así que no había desviación.
     deja "paid"), rechazar (cobro 0, motivo, aceptar después no), sin
     solicitud (crea solicitud aceptada y trabajo con apunte, sin pago
     previo la puerta abierta), rechazado deja la solicitud pendiente y
-    no se acepta por fuera, la plantilla (no cuelga de solicitud, sin
+    no se acepta por fuera, la respuesta registrada por el equipo
+    (decisión 21: la trabajadora no, sin motivo no, un motivo en blanco
+    no y no deja huella, el administrador con motivo sí y una sola vez,
+    el cobro de 14520, la solicitud y el trabajo, el apunte con
+    `on_behalf_of_client` y motivo, aviso a los dos propietarios del
+    restaurante y no al Editor ni a Consulta, ninguno al restaurante
+    cuando aceptó él mismo, el restaurante lo lee sin `decided_by`, el
+    rechazo registrado igual y sin cobro), la plantilla (no cuelga de solicitud, sin
     aceptar no, de otro restaurante no, incluida con presupuesto no,
     aceptada sí), el calendario (1 publicación y el borrador no, 5
     renovaciones y 3 de servicio, el vencimiento del cobro, los tres
@@ -3271,7 +3282,7 @@ regenerar salió idéntica, así que no había desviación.
     `finance.test.ts` (RN-COM-08 con los dos precios), los tests de la
     ficha con el precio aplicado y la tarjeta de presupuestos. Las 34
     suites desde cero sobre PostgreSQL 16 con las 80 migraciones,
-    typecheck, lint, 902 pruebas y `next build`.
+    typecheck, lint, 904 pruebas y `next build`.
 
 ## FASE 1 — Operación real de Restavor
 

@@ -3396,6 +3396,7 @@ export type Database = {
           created_by: string
           decided_at: string | null
           decided_by: string | null
+          decided_by_team: boolean
           decision_reason: string | null
           description: string | null
           establishment_id: string
@@ -3424,6 +3425,7 @@ export type Database = {
           created_by: string
           decided_at?: string | null
           decided_by?: string | null
+          decided_by_team?: boolean
           decision_reason?: string | null
           description?: string | null
           establishment_id: string
@@ -3452,6 +3454,7 @@ export type Database = {
           created_by?: string
           decided_at?: string | null
           decided_by?: string | null
+          decided_by_team?: boolean
           decision_reason?: string | null
           description?: string | null
           establishment_id?: string
@@ -5134,7 +5137,10 @@ export type Database = {
       }
     }
     Functions: {
-      accept_quote: { Args: { p_quote_id: string }; Returns: undefined }
+      accept_quote: {
+        Args: { p_quote_id: string; p_reason?: string }
+        Returns: undefined
+      }
       accept_request: { Args: { p_request_id: string }; Returns: undefined }
       accept_revised_request: {
         Args: { p_request_id: string }
@@ -5401,6 +5407,8 @@ export type Database = {
           base_cents: number
           code: string
           concept: string
+          decided_by_team: boolean
+          decision_reason: string
           description: string
           preparing: boolean
           quote_id: string

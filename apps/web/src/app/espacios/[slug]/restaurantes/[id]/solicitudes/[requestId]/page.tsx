@@ -119,6 +119,8 @@ export default async function ClientRequestDetailPage({
           totalCents: quoteRow.total_cents ?? 0,
           status: quoteRow.status ?? "sent",
           requiresPaymentBeforeStart: quoteRow.requires_payment_before_start ?? true,
+          decidedByTeam: quoteRow.decided_by_team ?? false,
+          decisionReason: quoteRow.decision_reason,
         };
   const quotePreparing = quoteRow?.preparing === true;
 

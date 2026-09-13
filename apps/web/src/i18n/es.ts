@@ -764,8 +764,8 @@ export const es = {
       menu_not_prepared_reminder: "Mañana no tienes menú preparado",
       menu_publication_overdue: "Un menú garantizado sigue sin publicar pasadas las 08:00",
       quote_sent: "Tienes un presupuesto pendiente de responder",
-      quote_accepted: "Presupuesto aceptado por el restaurante",
-      quote_rejected: "Presupuesto rechazado por el restaurante",
+      quote_accepted: "Presupuesto aceptado",
+      quote_rejected: "Presupuesto rechazado",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -3402,9 +3402,25 @@ export const es = {
     decisionTitle: "Respuesta del restaurante",
     decidedAt: (day: string) => `Respondido el ${day}.`,
     decisionReason: (reason: string) => `Motivo: ${reason}`,
+    decidedByTeam:
+      "La respuesta la dio el restaurante fuera de Cuotly y la registró el equipo en su nombre. Quién, en el historial.",
     rejectedHint:
       "Rechazado. La solicitud, si la hay, sigue donde estaba: puedes enviar otro presupuesto o el restaurante puede no continuarla.",
     waitingHint: "Enviado. Esperando la respuesta del restaurante.",
+
+    // Decisión 21 · el equipo registra la respuesta en nombre del restaurante.
+    answerForClientTitle: "Registrar la respuesta del restaurante",
+    answerForClientHint:
+      "Si el restaurante te ha contestado fuera de Cuotly (por teléfono, por correo, en persona), regístralo aquí en su nombre. Solo el propietario y los administradores. Queda en el historial con tu nombre, la fecha y el motivo, y el restaurante recibe un aviso de lo registrado.",
+    onBehalfReasonLabel: "Cómo y cuándo respondió el restaurante",
+    onBehalfReasonHint: "Obligatorio: es lo único que cuenta cómo se dio la respuesta.",
+    onBehalfReasonRequired: "Di cómo y cuándo respondió el restaurante: sin motivo no se registra.",
+    acceptForClientSubmit: "Registrar que lo aceptó",
+    acceptForClientPending: "Registrando…",
+    acceptForClientDone: "Aceptación registrada en nombre del restaurante.",
+    rejectForClientSubmit: "Registrar que lo rechazó",
+    rejectForClientPending: "Registrando…",
+    rejectForClientDone: "Rechazo registrado en nombre del restaurante.",
     templateHint: "Aceptado: la plantilla se crea desde Menú Diario del restaurante, colgando de este presupuesto.",
     historyTitle: "Historial",
     historyEmpty: "Sin apuntes todavía.",
@@ -3443,7 +3459,9 @@ export const es = {
     rejectDone: "Presupuesto rechazado.",
     onlyOwnerTitle: "Solo el propietario responde",
     onlyOwnerReason:
-      "Un presupuesto compromete dinero del restaurante: lo acepta o rechaza el propietario local o el del grupo, como las condiciones.",
+      "Un presupuesto compromete dinero del restaurante: lo acepta o rechaza el propietario local o el del grupo, como las condiciones. Si ya lo habéis contestado fuera de Cuotly, el equipo puede registrarlo en vuestro nombre.",
+    decidedByTeamHint: (reason: string) =>
+      `Respuesta registrada por el equipo en nombre del restaurante: ${reason}. Si no es correcto, avisa al equipo por mensajes.`,
     pendingPaymentHint: "Aceptado. El cobro está en tu facturación.",
     paidHint: "Pagado.",
     rejectedHint: "Rechazado.",

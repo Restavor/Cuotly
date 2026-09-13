@@ -90,3 +90,23 @@ export function quoteTone(state: QuoteState): "success" | "warning" | "danger" |
 export function clientCanAnswerQuote(state: QuoteState, isEstablishmentOwner: boolean): boolean {
   return state === "sent" && isEstablishmentOwner;
 }
+
+/**
+ * Decisión 21 (13/09/2026) · el propietario o un administrador del espacio
+ * (`manage_requests`) pueden REGISTRAR la respuesta que el restaurante dio
+ * fuera de Cuotly, en su nombre y con motivo obligatorio. Solo sobre uno
+ * enviado, como el restaurante. El servidor lo vuelve a comprobar y es
+ * quien exige el motivo; aquí solo se decide si se enseña el formulario.
+ */
+export function teamCanAnswerQuoteForClient(state: QuoteState, canManageRequests: boolean): boolean {
+  return state === "sent" && canManageRequests;
+}
+
+/**
+ * El motivo de una respuesta registrada en nombre del restaurante no puede
+ * ir en blanco: es lo único que cuenta cómo y cuándo la dio. La misma
+ * regla que aplica `accept_quote()` / `reject_quote()` (`btrim` y nulo).
+ */
+export function onBehalfReasonIsValid(reason: string): boolean {
+  return reason.trim() !== "";
+}

@@ -212,6 +212,21 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    se añade ninguna columna nueva. Si algún día un espacio quisiera un plan con
    prioridad y sin descuento en el servicio, será una decisión nueva.
 
+21. **Quién acepta o rechaza un presupuesto** (13/09/2026, cierra la pendiente 11).
+   §84 no lo decía. Bosco decide: lo acepta **el propietario del restaurante** (local o
+   global del grupo, la misma lista que acepta las condiciones), **y el propietario y los
+   administradores del espacio también tienen permiso**, para registrar en nombre del
+   restaurante la respuesta que dio fuera de Cuotly (por teléfono, por correo, en persona),
+   como ya se registra de fuera la aceptación de las condiciones. Consecuencias en la
+   migración 80: `accept_quote()` y `reject_quote()` admiten a `manage_requests` además de
+   `client_can_accept_terms()`; cuando responde el equipo, el **motivo es obligatorio**
+   (cómo y cuándo respondió el restaurante), la fila queda marcada (`quotes.decided_by_team`),
+   el apunte de auditoría lleva `on_behalf_of_client` y el motivo, y el restaurante **recibe
+   el aviso** de lo que se registró en su nombre (sus dos propietarios, como `quote_sent`).
+   Lo que pasa después es idéntico: el cobro, la solicitud y el trabajo. El Editor y Consulta
+   siguen sin responder; un trabajador no registra nada. El restaurante ve que se registró
+   en su nombre y por qué, no quién del equipo lo hizo (P7).
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)
@@ -226,14 +241,7 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    pendiente de pago o pagado (RN-DAT-05). Cualquiera de las tres se cambia con una migración sobre
    `accept_quote()` / `quote_status()` y su test.
 
-11. **Quién acepta un presupuesto por el restaurante** (13/09/2026, Hito 12). §84 dice que tras la
-   aceptación se crea la solicitud o el trabajo, pero no quién acepta. Un presupuesto compromete
-   dinero del restaurante, como las condiciones de un plan (decisión del 12/09/2026, opción c), así
-   que se ha aplicado **la misma lista**: propietario local y propietario global del grupo
-   (`client_can_accept_terms()`). El Editor lo ve si ve la facturación (RN-FIN-07) y no lo acepta;
-   Consulta no lo ve; el equipo no acepta en nombre del cliente. Si Bosco quiere que el Editor pueda
-   aceptar, es un cambio en `accept_quote()` / `reject_quote()` y en `notify_quote_event()` (que
-   avisa a la misma lista), con su test.
+11. ~~Quién acepta un presupuesto por el restaurante~~ — resuelta el 13/09/2026 como decisión 21.
 
 10. **La ventana de la corrección mínima de Menú Diario** (13/09/2026, Hito 11). RN-COR-02
    mide la ventana en 72 h laborables con el reloj contractual; Menú Diario tiene su propio

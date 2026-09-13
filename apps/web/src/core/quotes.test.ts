@@ -6,9 +6,11 @@ import {
   QUOTE_STORED_STATES,
   clientCanAnswerQuote,
   isQuoteState,
+  onBehalfReasonIsValid,
   quoteDisplayState,
   quoteTone,
   quotedJobCanStart,
+  teamCanAnswerQuoteForClient,
 } from "./quotes";
 
 describe("RN-QUO-01 · los estados de un presupuesto (§84)", () => {
@@ -63,10 +65,24 @@ describe("RN-JOB-06 / RN-QUO-05 · la puerta de Comenzar de un trabajo presupues
 });
 
 describe("RN-QUO-03 · quién responde a un presupuesto por el restaurante", () => {
-  it("solo el propietario (local o global), y solo a uno enviado", () => {
+  it("el propietario (local o global), y solo a uno enviado", () => {
     expect(clientCanAnswerQuote("sent", true)).toBe(true);
     expect(clientCanAnswerQuote("sent", false)).toBe(false);
     expect(clientCanAnswerQuote("pending_payment", true)).toBe(false);
     expect(clientCanAnswerQuote("draft", true)).toBe(false);
+  });
+
+  it("decisión 21 · el propietario o un administrador del espacio registran la respuesta en su nombre, solo sobre uno enviado", () => {
+    expect(teamCanAnswerQuoteForClient("sent", true)).toBe(true);
+    expect(teamCanAnswerQuoteForClient("sent", false)).toBe(false);
+    expect(teamCanAnswerQuoteForClient("draft", true)).toBe(false);
+    expect(teamCanAnswerQuoteForClient("rejected", true)).toBe(false);
+    expect(teamCanAnswerQuoteForClient("pending_payment", true)).toBe(false);
+  });
+
+  it("decisión 21 · la respuesta registrada en nombre del restaurante lleva motivo, y en blanco no vale", () => {
+    expect(onBehalfReasonIsValid("Aceptado por teléfono el 12/09")).toBe(true);
+    expect(onBehalfReasonIsValid("")).toBe(false);
+    expect(onBehalfReasonIsValid("   ")).toBe(false);
   });
 });
