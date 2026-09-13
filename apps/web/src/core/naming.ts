@@ -28,11 +28,15 @@
  * `src/core/`, que es el que ya estaba bien.
  */
 
+import { MENU_KINDS } from "./daily-menu";
 import { JOB_STATES, TASK_STATES } from "./job-states";
+import { MENU_STATES } from "./menu-states";
 import { REQUEST_STATES } from "./request-states";
 
-export { JOB_STATES, TASK_STATES, REQUEST_STATES };
+export { JOB_STATES, TASK_STATES, REQUEST_STATES, MENU_STATES, MENU_KINDS };
 export type { JobState, TaskState } from "./job-states";
+export type { MenuState } from "./menu-states";
+export type { MenuKind } from "./daily-menu";
 export type { RequestState } from "./request-states";
 
 export const ENTITY_KINDS = [
@@ -47,6 +51,8 @@ export const ENTITY_KINDS = [
   "file",
   "absence",
   "conversation",
+  // Fase 2: un menú de Menú Diario (RN-MEN-01).
+  "menu",
 ] as const;
 export type EntityKind = (typeof ENTITY_KINDS)[number];
 
@@ -87,6 +93,8 @@ export const STATE_CATALOGUE = {
   charge: CHARGE_STATES,
   establishment: ESTABLISHMENT_STATES,
   absence: ABSENCE_STATES,
+  // §63, desde `menu-states.ts` (Fase 2, Hito 9).
+  menu: MENU_STATES,
 } as const;
 
 export type StatefulEntity = keyof typeof STATE_CATALOGUE;

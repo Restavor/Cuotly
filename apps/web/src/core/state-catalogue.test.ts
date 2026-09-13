@@ -48,6 +48,7 @@ const COLUMNA: Readonly<Record<string, { tabla: string; columna: string }>> = {
   task: { tabla: "tasks", columna: "state" },
   establishment: { tabla: "establishments", columna: "status" },
   absence: { tabla: "absences", columna: "state" },
+  menu: { tabla: "menus", columna: "state" },
 };
 
 /**

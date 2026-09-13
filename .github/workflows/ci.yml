@@ -291,6 +291,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_aviso_de_las_condiciones_nuevas.sql
 
+      - name: "Migración 77 — Verificar Menú Diario: menús, versiones, publicaciones y actualizaciones (RN-MEN-01 a 13, RN-CON-06/10, RN-COM-10, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/menu_diario_menus_y_actualizaciones.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -161,7 +161,7 @@ function offsetMinutes(date: Date, timeZone: string): number {
  * Algoritmo de dos pasadas estándar para resolver el desfase correcto
  * incluso alrededor de un cambio de horario de verano/invierno.
  */
-function zonedTimeToUtc(
+export function zonedTimeToUtc(
   year: number,
   month: number,
   day: number,

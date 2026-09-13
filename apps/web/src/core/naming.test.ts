@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { es } from "@/i18n/es";
 import { SPECIALTIES } from "./assignment";
 import { ALLOWED_MIME_TYPES } from "./files";
+import { MENU_KINDS } from "./daily-menu";
 import { ENTITY_KINDS, STATE_CATALOGUE, type StatefulEntity } from "./naming";
 
 /**
@@ -55,6 +56,13 @@ describe("CA-21 · un solo juego de nombres", () => {
       expect(nombre, `la especialidad "${valor}" sigue mostrando el valor crudo`).not.toMatch(
         /^[a-z][a-z0-9_]*$/,
       );
+    }
+  });
+
+  it("RN-MEN-01 · cada tipo de menú tiene nombre, y ninguno sobra", () => {
+    expect(Object.keys(es.naming.menuKinds).sort()).toEqual([...MENU_KINDS].sort());
+    for (const [valor, nombre] of Object.entries(es.naming.menuKinds)) {
+      expect(nombre, `el tipo de menú "${valor}" sigue mostrando el valor crudo`).not.toMatch(/^[a-z][a-z0-9_]*$/);
     }
   });
 

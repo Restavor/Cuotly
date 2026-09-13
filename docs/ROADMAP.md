@@ -10,7 +10,7 @@ de todo el proyecto** — es la rebanada vertical que el resto del código imita
 
 ## Estado de los hitos
 
-Actualizado el 02/09/2026.
+Actualizado el 13/09/2026.
 
 | Hito | Estado | Nota |
 |---|---|---|
@@ -22,6 +22,10 @@ Actualizado el 02/09/2026.
 | 6 · Trabajos, tareas, asignación y carga | Cerrado | Servidor y dominio; sin pantallas. |
 | 7 · Mensajes, archivos y finanzas | Cerrado el 31/08/2026 | Ver salvedades abajo. |
 | 8 · Inicio por rol, búsqueda, notificaciones y cierre | Servidor, dominio, armazón y pantallas | CA-19 cumplido el 02/09/2026. Ver salvedades abajo. |
+| 9 · Menú Diario: menús, versiones, estados y actualizaciones (Fase 2) | Servidor y dominio; sin pantallas | Migración 77, 13/09/2026. Ver la entrada de cierre abajo. |
+| 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Pendiente | |
+| 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Pendiente | |
+| 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Pendiente | |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -2745,6 +2749,106 @@ regenerar salió idéntica, así que no había desviación.
     16 con las 76 migraciones, el sembrado dos veces, typecheck, lint,
     825 pruebas y `next build`.
 
+### Fase 2 · Hito 9 · Menú Diario: menús, versiones, estados y actualizaciones
+
+- [x] **Menús, versiones, publicaciones y el contador de actualizaciones** — migración 77.
+
+    Primer hito de la Fase 2, con el mismo corte que los hitos 5 y 6 de la
+    Fase 1: **servidor y dominio, sin pantallas**. Las dos páginas de Menú
+    Diario siguen diciendo que la herramienta llega en la Fase 2, y es
+    verdad: llega en el Hito 10 (plantillas, PNG y PDF, pantallas del
+    restaurante) y el 11 (pantallas del equipo, cola). Lo que hay ahora es
+    todo lo que esas pantallas van a llamar, probado.
+
+    **La regla, con número.** §57 a §64 de la maestra no tenían RN en el
+    PRD, y CLAUDE.md pide un test por regla numerada. El PRD tiene ahora
+    el §25 con RN-MEN-01 a 13: es una transcripción, no añade nada. Donde
+    la maestra da ejemplos (los tipos de menú) el PRD dice que son los
+    cinco que nombra, y `menus.kind` admite esos cinco.
+
+    **Lo que hay.** `menu_templates` (RN-COM-10: tres incluidas, una sola
+    vez —archivar no libera la plaza—, la cuarta es `quoted`), `menus`
+    con sus once estados de §63 en el CHECK de la columna, `menu_versions`
+    (cada guardado es una versión inmutable, RN-DAT-07), `menu_publications`
+    (la petición: quién, qué versión, qué consumió, a quién se asignó,
+    quién publicó), `menu_events` (el historial, RN-MEN-10) y el contador
+    de actualizaciones **separado** del de cambios (RN-CON-02):
+    `menu_update_cycles` y `menu_update_entries`, el mismo molde que
+    `consumption_cycles` y `consumption_entries` —ciclo mensual desde el
+    alta en la zona del espacio, libro con signo, saldo = suma, bloqueo
+    de fila para el último crédito, crédito compensatorio si el ciclo ya
+    cerró— sin ensancharlos, porque toda pantalla que hoy lee "el ciclo del
+    restaurante" encontraría dos.
+
+    Qué servicio ES Menú Diario no se mira por el nombre: `services.kind`
+    y `services.included_updates` (30 en Restavor), sembrados por
+    `create_restavor_space()`, mismo criterio que `plans.grants_priority`.
+
+    **El flujo de §61, sin Comenzar.** `create_menu` → `save_menu_version`
+    (las que hagan falta) → `prepare_menu` → `request_menu_publication`
+    (consume 1 con `p_idempotency_key`; con un único candidato de Menú
+    Diario se asigna sola, RN-ASG-04; con varios queda pendiente y avisa
+    al equipo) → el trabajador asignado `request_menu_information` /
+    `mark_menu_ready_to_publish` / `report_menu_publication_error` /
+    `mark_menu_published`. El restaurante contesta guardando una versión
+    (pasa a "Revisando") o con `provide_menu_information`. `cancel_menu`
+    devuelve el consumo antes de Publicado y no después; `refund_menu_update`
+    es la devolución del equipo por error propio, con motivo y una sola
+    vez. `copy_menu` es "Copiar menú anterior". `assign_menu_publication`
+    para quien tiene `assign_jobs`.
+
+    **Las 21:00 (§62).** El corte es las 21:00 del día anterior a la
+    fecha objetivo en la zona del espacio; una versión guardada después
+    queda marcada (`after_cutoff`) y `menu_deadlines()` deriva en el
+    servidor si la publicación sigue garantizada antes de las 08:00.
+    `src/core/daily-menu.ts` calcula lo mismo para que la pantalla lo
+    diga antes de que el menú exista. El recordatorio de las 20:00 es del
+    Hito 11: va por la cola de barridos y merece su propio test.
+
+    **P7 y los privilegios de columna.** `menu_publications` es una fila
+    interna: el cliente queda fuera por RLS, no por columna (bloqueante
+    B2 de la cuarta revisión). En `menus`, `menu_versions`, `menu_events`,
+    `menu_templates` y `menu_update_entries`, la columna del actor va
+    revocada. Sin políticas de escritura en ninguna de las siete tablas:
+    todo pasa por funciones que auditan; diecisiete acciones nuevas en el
+    catálogo de auditoría, los menús clasificados por fila (como
+    solicitudes y trabajos) y las plantillas por `manage_clients`.
+
+    **Avisos (§18, cinco eventos nuevos):** publicación sin asignar y
+    error de publicación al propietario y administradores; asignación al
+    asignado y a ellos; falta información solo al restaurante; publicado
+    al restaurante y a ellos. La clave de deduplicación lleva la
+    publicación (y el asignado en la reasignación): cada publicación
+    avisa, la misma no repite. Y `notifications.entity_type` admite
+    `menu`: sin eso `emit_notification()` se tragaba el CHECK (RN-NOT-05)
+    y ningún aviso salía. Lo cazó la suite contando destinatarios, que es
+    la razón de contarlos.
+
+    **Lo que NO se inventa.** La mensualidad del servicio sigue sin
+    emitirse (RN-COM-08 tiene dos precios y el esquema no sabe cuál es el
+    plan Premium más allá de `grants_priority`; la migración 48 lo dejó
+    dicho y sigue igual: es del Hito 12). Los presupuestos de plantillas
+    `quoted` se registran como origen, sin flujo de presupuesto (Hito 12).
+    La corrección mínima de Menú Diario (RN-COR-10) es del Hito 11.
+    Conversación por menú, no existe todavía: pedir información lleva un
+    motivo que el restaurante lee en el historial.
+
+    **Comprobado:** `menu_diario_menus_y_actualizaciones.sql` (la 31ª
+    suite): las tres plantillas y la cuarta, versiones inmutables, los
+    estados en el orden de §63 con su historial, el consumo y su
+    idempotencia por clave y sin clave, el último crédito que no se
+    consume dos veces, la devolución al cancelar y la del equipo (una
+    sola vez), el crédito compensatorio con un ciclo viejo fabricado a
+    mano, las 21:00 en Europe/Madrid y la garantía perdida, el detenido
+    por impago, quién actúa y quién no, la asignación automática con una
+    candidata y la pendiente con dos, los destinatarios de los cinco
+    avisos, P7 en fila y en columna, y las once internas cerradas por
+    RPC. **Seis mutaciones, las seis detectadas**: pedir sin crédito,
+    abrir la publicación al cliente, cancelar sin devolver, no marcar el
+    corte, dejar publicar a cualquiera y enseñar el actor del historial.
+    Las 31 suites desde cero sobre PostgreSQL 16 con las 77 migraciones,
+    el sembrado dos veces, typecheck, lint, 856 pruebas y `next build`.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
@@ -2829,6 +2933,42 @@ Menús con sus tipos, versiones y estados · tres plantillas · generación de P
 publicación y consumo de actualizaciones · flujo manual de publicación en LandingSite con "Marcar como
 publicado" · garantía de las 21:00 y recordatorio de las 20:00 · calendario de todos los días del año ·
 corrección mínima con la salvedad de las 21:00 · calendario operativo completo · presupuestos adicionales.
+
+Troceado en hitos el 13/09/2026, con el mismo criterio que la Fase 1: cada hito se apoya en el
+anterior, termina en verde y con una parada para que Bosco lo revise. Las reglas están en el PRD §25
+(RN-MEN-01 a 13), transcritas de §57 a §64 de la maestra.
+
+### Hito 9 · Menús, versiones, estados y actualizaciones *(servidor y dominio)*
+- `menu_templates`, `menus`, `menu_versions`, `menu_publications`, `menu_events`, `menu_update_cycles`, `menu_update_entries`. RLS en todas, sin políticas de escritura.
+- Los once estados de §63 y su máquina en `src/core/menu-states.ts`; el flujo manual de §61 sin Comenzar; asignación automática con candidato único.
+- Consumo de una actualización al pedir (RN-CON-06/07/10), devolución al cancelar antes de Publicado, devolución del equipo con motivo.
+- Corte de las 21:00 y garantía de las 08:00 derivada en el servidor (`menu_deadlines()`) y en `src/core/daily-menu.ts`.
+- Cinco eventos de aviso, diecisiete acciones de auditoría, `services.kind` e `included_updates`.
+
+**Se verifica con:** `supabase/tests/menu_diario_menus_y_actualizaciones.sql` (RN-MEN-01 a 13 salvo 04 y 08), `menu-states.test.ts`, `daily-menu.test.ts`, el barrido de identidad del Hito 7 sobre las tablas nuevas.
+
+### Hito 10 · Plantillas, PNG y PDF, pantallas del restaurante
+- Diseño visual de las tres plantillas (columnas nuevas en `menu_templates`, migración nueva) y generación de PNG y PDF en el servidor a partir de una versión concreta.
+- Descargar registra la descarga (RN-MEN-10) y no consume (RN-MEN-04). La descarga del trabajador pone "Listo para publicar".
+- Pantallas del restaurante (`/restaurantes/<id>/menu-diario`): lista con estado y saldo del ciclo, editor con versiones, "Copiar menú anterior", pedir publicación, cancelar, historial. La barra de móvil ya lo ofrece (`client_daily_menu`).
+- Sembrado de demostración con plantillas y menús.
+
+**Se verifica con:** recorrido CA-19 en móvil del flujo del restaurante; test de que descargar no escribe en el libro; suite SQL de las descargas.
+
+### Hito 11 · Pantallas del equipo, la cola y la corrección
+- Pantallas del equipo (`/menu-diario`): cola de publicaciones por fecha objetivo y hora de corte, asignar (con candidatos y comprobación, como `list_job_candidates()`), pedir información, marcar publicado, error de publicación, devolver una actualización.
+- El recordatorio de las 20:00 (RN-MEN-08) y el aviso al equipo de las publicaciones pedidas antes del corte sin publicar a las 08:00, por la cola de barridos (`scheduled_jobs`, tipo nuevo).
+- Corrección mínima de Menú Diario (RN-COR-10) con la salvedad de las 21:00.
+- El contador de Menú Diario en el Inicio (decisión 18) y en la búsqueda global.
+
+**Se verifica con:** recorrido CA-19 en móvil del flujo del trabajador; suite SQL del barrido de las 20:00 con la hora fija.
+
+### Hito 12 · Calendario operativo completo y presupuestos adicionales
+- Eventos automáticos de Menú Diario en el calendario (§76: publicaciones) y renovaciones de planes y servicios.
+- Presupuestos adicionales (§84): `quotes` con su flujo completo (borrador, enviado, aceptado o rechazado, pendiente de pago, pagado), creación de solicitud o trabajo sin consumir bolsa, y las plantillas `quoted` colgando de un presupuesto.
+- La mensualidad del servicio (RN-COM-08): el precio Premium necesita que el esquema sepa qué plan lo es. **Decisión pendiente de Bosco**: si `grants_priority` ya identifica al Premium o hace falta una marca propia.
+
+**Se verifica con:** suite SQL de presupuestos; test del cobro mensual del servicio con los dos precios.
 
 ## FASE 3 — Datos e informes
 Integraciones GA4, Search Console, Business Profile, Clarity y PageSpeed con OAuth y credenciales

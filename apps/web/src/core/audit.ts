@@ -64,6 +64,9 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   group_access: "manage_clients",
   // Festivos y cierres (§125, HU-32).
   holiday: "manage_holidays",
+  // Las plantillas de Menú Diario (RN-COM-10, migración 77): quién las
+  // creó o archivó es de la misma cartera que contratar el servicio.
+  menu_template: "manage_clients",
   // Las que decide la fila.
   request: null,
   job: null,
@@ -72,6 +75,8 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   absence: null,
   correction: null,
   session: null,
+  // Los menús de Menú Diario (migración 77): operación, como los trabajos.
+  menu: null,
 };
 
 /**
@@ -87,6 +92,7 @@ export const AUDIT_ROW_VISIBLE_ENTITIES = [
   "file",
   "absence",
   "correction",
+  "menu",
 ] as const;
 
 /**
@@ -133,6 +139,24 @@ export const AUDIT_ACTIONS = [
   "job.started",
   "job.unblocked",
   "membership.perform_jobs_changed",
+  // Fase 2, Hito 9 · Menú Diario (migración 77).
+  "menu.assigned",
+  "menu.cancelled",
+  "menu.copied",
+  "menu.created",
+  "menu.details_updated",
+  "menu.information_provided",
+  "menu.information_requested",
+  "menu.prepared",
+  "menu.publication_error",
+  "menu.publication_requested",
+  "menu.published",
+  "menu.ready_to_publish",
+  "menu.reassigned",
+  "menu.update_refunded",
+  "menu.version_saved",
+  "menu_template.archived",
+  "menu_template.created",
   "payment.registered",
   "payment.reversed",
   "plan.conditions_published",

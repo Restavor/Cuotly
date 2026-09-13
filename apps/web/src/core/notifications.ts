@@ -7,7 +7,8 @@
  *
  * El catálogo de eventos está duplicado a propósito entre este archivo y
  * el CHECK de `notifications.event_type` (lo fijó la migración
- * 20260830000035 y lo ensancharon la 20260912000071 y la 20260912000076). Son dos sistemas
+ * 20260830000035 y lo ensancharon la 20260912000071, la 20260912000076 y
+ * la 20260913000077, que trajo los cinco eventos de Menú Diario). Son dos sistemas
  * distintos y ninguno puede importar del otro, así que la duplicación se
  * compensa con `listas-compartidas.test.ts`, que lee la última definición
  * del CHECK en las migraciones y la compara con esta lista.
@@ -27,6 +28,11 @@ export const NOTIFICATION_EVENTS = [
   "job_reassignment_requested",
   "task_reassignment_requested",
   "terms_version_published",
+  "menu_publication_requested",
+  "menu_assigned",
+  "menu_needs_information",
+  "menu_published",
+  "menu_publication_error",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -153,7 +159,7 @@ export function jobEventRecipients(context: JobNotificationContext): readonly st
  * autoriza nada por sí misma — por eso el enlace nunca lleva un token ni
  * un "ya validado".
  */
-export type DeepLinkEntity = "request" | "job" | "establishment" | "charge" | "absence";
+export type DeepLinkEntity = "request" | "job" | "establishment" | "charge" | "absence" | "menu";
 
 export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId: string): string {
   switch (entity) {
@@ -167,6 +173,8 @@ export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId:
       return `/espacios/${spaceSlug}/finanzas`;
     case "absence":
       return `/espacios/${spaceSlug}/calendario`;
+    case "menu":
+      return `/espacios/${spaceSlug}/menu-diario/${entityId}`;
   }
 }
 
@@ -224,7 +232,31 @@ export const CLIENT_VISIBLE_JOB_EVENTS: readonly NotificationEvent[] = [
  * una preferencia sobre nada, así que la pantalla de Ajustes los deja
  * fuera con `staffPreferenceEvents()`.
  */
-export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = ["terms_version_published"];
+export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = [
+  "terms_version_published",
+  // Migración 77: pedirle información al restaurante es pedírsela a él.
+  "menu_needs_information",
+];
+
+/**
+ * §18 aplicado a Menú Diario (migración 77, RN-MEN-06). De los cinco
+ * eventos de un menú, solo dos cruzan al cliente: que le falta
+ * información (es a él a quien se le pide) y que su menú está publicado
+ * ("Publicación → cliente y supervisión"). Que no hay nadie asignado, a
+ * quién se asignó o que LandingSite falló es organización interna (P7).
+ */
+export const CLIENT_VISIBLE_MENU_EVENTS: readonly NotificationEvent[] = [
+  "menu_needs_information",
+  "menu_published",
+];
+
+export function menuEventClientRecipients(
+  event: NotificationEvent,
+  establishmentMemberIds: readonly string[],
+): readonly string[] {
+  if (!CLIENT_VISIBLE_MENU_EVENTS.includes(event)) return [];
+  return [...new Set(establishmentMemberIds)];
+}
 
 /** Los eventos sobre los que alguien del equipo puede tener preferencia (RN-NOT-02). */
 export function staffPreferenceEvents(): readonly NotificationEvent[] {

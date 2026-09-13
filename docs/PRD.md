@@ -167,7 +167,10 @@ especialidades concretas además.
 **Sistema**
 `notifications` · `notification_preferences` · `calendar_events` · `holidays` · `space_working_hours` · `ai_usage`
 
-> Las entidades de Menú Diario, integraciones, métricas, informes y oportunidades se crean en sus fases.
+**Menú Diario** *(Fase 2, Hito 9, migración 77)*
+`menu_templates` · `menus` · `menu_versions` · `menu_publications` · `menu_events` · `menu_update_cycles` · `menu_update_entries`
+
+> Las entidades de integraciones, métricas, informes y oportunidades se crean en sus fases.
 > No las adelantes, pero no diseñes nada que impida añadirlas.
 
 ### 5.3 Entidades preparadas pero no explotadas en Fase 1
@@ -577,6 +580,11 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
 | T2 plazo de inicio | 50 %, 80 %, 100 %, más alerta a 2 h y sugerencia de reasignación a 1 h |
 | T3 ejecución | 75 %, 90 %, 100 % |
 | Condiciones nuevas de un plan o servicio (decisión 19, 12/09/2026) | Quien puede aceptarlas por cada restaurante con suscripción activa: propietario local y propietario global del grupo. En Cuotly y por correo; el push, con la app móvil |
+| Menú Diario · publicación pedida sin asignar (Fase 2) | Propietario y **todos** los administradores. Nunca el restaurante ni un trabajador no asignado |
+| Menú Diario · menú asignado o reasignado | Trabajador asignado, propietario y administradores |
+| Menú Diario · falta información para publicar | Solo el restaurante (todos sus miembros con acceso vigente). Es a él a quien se le pide |
+| Menú Diario · menú publicado | Restaurante, propietario y administradores. En Cuotly y por correo |
+| Menú Diario · error de publicación en LandingSite | Propietario y administradores. El restaurante no ve la organización interna (P7) |
 
 - **RN-NOT-01**: **no** se avisa a trabajadores que no estén asignados.
 - **RN-NOT-02**: los propietarios reciben todo por defecto y pueden desactivar avisos secundarios.
@@ -822,3 +830,30 @@ de 4 horas · umbrales de oportunidades y definición de impacto y esfuerzo · s
 de calendarios.
 
 **Si una tarea toca cualquiera de estos puntos: deja el placeholder documentado y pregunta.**
+
+---
+
+## 25. Menú Diario — Fase 2 (RN-MEN)
+
+Transcripción con número de §57 a §64 de la especificación maestra, para que cada regla tenga su test
+(CLAUDE.md, regla 3 del flujo). No añade ninguna regla nueva: donde la maestra da ejemplos, aquí se
+dice que son ejemplos. El servidor y el dominio están en la migración 77 (Hito 9); plantillas
+visuales, PNG y PDF, pantallas, recordatorio de las 20:00, calendario y presupuestos llegan en los
+hitos siguientes del ROADMAP.
+
+- **RN-MEN-01**: cada menú registra **nombre, tipo, fecha objetivo, plantilla, contenido, versión y estado**. Se pueden preparar varios menús futuros y varios para el mismo establecimiento y fecha. Los tipos son los cinco que nombra la maestra (`daily` · `christmas` · `kids` · `groups` · `special_event`); añadir uno es una decisión de producto, no un desplegable que se amplía.
+- **RN-MEN-02**: el contenido son **primeros, segundos, postres, bebida, precio y nota u observación** (§58).
+- **RN-MEN-03**: edición y guardado ilimitados antes de la publicación. **Cada guardado es una versión nueva e inmutable** (RN-DAT-07): ninguna se edita ni se borra. "Copiar menú anterior" crea un borrador con el contenido vigente como versión 1. Un menú publicado o cancelado no se edita: se copia.
+- **RN-MEN-04**: descargar el PNG o el PDF **no consume** actualización (§59). *(Hito 10.)*
+- **RN-MEN-05**: **pedir que el equipo publique consume 1 actualización**, en el momento de pedirlo; los menús especiales también consumen. Cancelar antes de "Publicado" la devuelve (RN-CON-08 aplicado); después no. Un error del equipo se devuelve o corrige sin perjuicio para el cliente: la devolución la registra el equipo con motivo (RN-CON-12) y **una sola vez** por publicación (CA-17). Se aplican RN-CON-06 (solo una petición consume el último crédito, con bloqueo de fila sobre el ciclo), RN-CON-07 (dos pulsaciones, un efecto), RN-CON-10 y RN-CON-11 (si el ciclo del consumo ya cerró, crédito compensatorio en el vigente, que caduca con él).
+- **RN-MEN-06**: el flujo es **manual** (§61): el restaurante prepara y pide, Cuotly asigna un trabajador de Menú Diario (con un único candidato válido, solo; con varios o ninguno, a mano por `assign_jobs`), el trabajador descarga la plantilla generada, la sube a LandingSite y pulsa **Marcar como publicado**. **No existe botón Comenzar**. Al marcar publicado se registran fecha y hora, usuario, versión publicada, plantilla y consumo, y se avisa al cliente. Sobre una publicación actúan el trabajador asignado, el propietario y los administradores; un trabajador no asignado, no.
+- **RN-MEN-07**: el contenido puede modificarse libremente **hasta las 21:00 del día anterior** a la fecha objetivo, en la zona horaria del espacio. Si la versión definitiva y la petición llegaron antes de esa hora, la publicación **se garantiza antes de las 08:00**. Los cambios posteriores se aceptan, quedan marcados y **no se garantiza** que entren. El trabajador ve los cambios de versión y su hora. La garantía es un estado derivado que calcula el servidor (RN-DAT-05).
+- **RN-MEN-08**: Menú Diario opera **todos los días del año, festivos incluidos**, con su propio calendario (RN-CLK-09). A las 20:00 se recuerda al propietario y a los Editores si no hay menú preparado para el día siguiente. *(El recordatorio va por la cola de barridos: Hito 11.)*
+- **RN-MEN-09**: los estados son los once de §63, con este nombre interno: `draft` · `prepared` · `publication_requested` · `pending_assignment` · `assigned` · `needs_information` · `reviewing` · `ready_to_publish` · `published` · `cancelled` · `publication_error`. "Publicación solicitada" y "Pendiente de asignación" son dos estados por los que pasa la misma petición: el primero deja constancia de que el restaurante pidió y consumió, el segundo de que el equipo aún no tiene a nadie. Guardar una versión mientras "Falta información" es la respuesta y pasa a "Revisando". La máquina vive en `src/core/menu-states.ts` y el servidor la hace cumplir.
+- **RN-MEN-10**: el historial conserva fechas, platos, precio, nota, plantilla, versiones, estados, solicitudes de publicación, consumo, cancelaciones y usuario publicador (§64): `menu_versions`, `menu_events`, `menu_publications` y `menu_update_entries` son libros inmutables. Las descargas se registran en el Hito 10.
+- **RN-MEN-11**: **tres plantillas personalizadas iniciales, incluidas una sola vez** (RN-COM-10). Archivar una incluida no libera su plaza. Sustituciones, nuevas plantillas y rediseños se presupuestan aparte (`origin = quoted`). Las crea el equipo (`manage_clients`) y el restaurante elige cualquiera de las suyas en cada menú.
+- **RN-MEN-12**: el restaurante **nunca ve quién es el trabajador** (P7, CLAUDE.md MUST NOT). La publicación (`menu_publications`) es una fila interna del equipo; lo que el cliente necesita saber (estado, fecha de publicación, versión y plantilla publicadas) está en `menus`. En las filas que sí son suyas, la columna con el actor va con privilegio de columna.
+- **RN-MEN-13**: con el servicio detenido por impago (RN-FIN-12), en solo lectura o archivado, **ni se pide ni se marca una publicación** (§85: "se detienen trabajos, publicaciones y contadores").
+
+Quién prepara menús por el restaurante: propietario local, Editor y propietario global del grupo (§4.3); Consulta no. El equipo con `manage_requests` puede prepararlos en su nombre. El módulo solo existe para un restaurante con suscripción activa a un servicio de tipo Menú Diario (`services.kind = 'daily_menu'`), que incluye `services.included_updates` actualizaciones por ciclo (30 en Restavor, RN-COM-09).
+
