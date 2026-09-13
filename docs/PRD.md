@@ -170,7 +170,10 @@ especialidades concretas además.
 **Menú Diario** *(Fase 2, Hito 9, migración 77)*
 `menu_templates` · `menus` · `menu_versions` · `menu_publications` · `menu_events` · `menu_update_cycles` · `menu_update_entries`
 
-> Las entidades de integraciones, métricas, informes y oportunidades se crean en sus fases.
+**Datos e informes** *(Fase 3, Hito 13, migración 81, §27)*
+`integrations` · `integration_credentials` · `sync_runs` · `metric_points`
+
+> Las entidades de informes y oportunidades se crean en sus hitos (15 y 16).
 > No las adelantes, pero no diseñes nada que impida añadirlas.
 
 ### 5.3 Entidades preparadas pero no explotadas en Fase 1
@@ -514,7 +517,7 @@ datos financieros operativos, notas internas y archivos principales.
 
 La ficha tiene cinco pestañas: **Resumen · Operación · Informes y datos · Gestión · Historial**.
 En Fase 1, "Informes y datos" muestra únicamente indicadores operativos propios; la analítica digital
-llega en la Fase 3.
+llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; las pantallas, Hito 14).
 
 ---
 
@@ -586,6 +589,8 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
 | Menú Diario · falta información para publicar | Solo el restaurante (todos sus miembros con acceso vigente). Es a él a quien se le pide |
 | Menú Diario · menú publicado | Restaurante, propietario y administradores. En Cuotly y por correo |
 | Menú Diario · error de publicación en LandingSite | Propietario y administradores. El restaurante no ve la organización interna (P7) |
+| Integración · sincronización fallida (Fase 3, RN-INT-04) | Propietario y administradores, una vez por racha de fallos. Nunca el restaurante ni un trabajador |
+| Integración · hace falta volver a autorizar (Fase 3, RN-INT-04) | Propietario y administradores, **y** los propietarios del restaurante (local y global del grupo): son quienes pueden autorizar de nuevo. No el Editor ni Consulta |
 
 - **RN-NOT-01**: **no** se avisa a trabajadores que no estén asignados.
 - **RN-NOT-02**: los propietarios reciben todo por defecto y pueden desactivar avisos secundarios.
@@ -879,3 +884,79 @@ el `select` concedido columna a columna, como `charges`, y quién envió, decidi
 `audit_log`. El calendario operativo de §75 y §76 no tiene reglas numeradas propias: `space_calendar()`
 deriva los eventos (RN-DAT-05) y RLS decide qué ve cada uno; los límites de comenzar y de ejecución no
 entran en él porque viven en el reloj laboral de `src/core/business-clock.ts` (CA-10).
+
+---
+
+## 27. Integraciones analíticas — Fase 3 (RN-INT)
+
+Transcripción con número de §115 a §122, §126, §94, §163 y §178 de la especificación maestra, con el
+mismo criterio que §25 y §26: cada regla con su test, ninguna regla nueva. Donde la maestra calla
+(frecuencia "adaptada", cadencia de reintentos, qué es "desactualizado", cuándo es "definitiva" la
+suspensión), la lectura aplicada se dice aquí y está anotada como pendiente 13 en `docs/DECISIONES.md`
+para que Bosco la confirme o la cambie. Servidor y dominio (`src/core/integrations.ts`) en la
+migración 81 (Fase 3, Hito 13); los adaptadores de cada fuente y las pantallas, en el Hito 14.
+
+- **RN-INT-01**: las integraciones son **por establecimiento** y son cinco: **GA4, Search Console,
+  Business Profile, Clarity y PageSpeed** (§115). Una fila por restaurante y fuente
+  (`integrations`, única por `establishment_id` y `provider`). Un propietario global puede autorizar
+  varios establecimientos del grupo. Las plataformas de reservas, pedidos y delivery **no** son
+  integraciones (§120): se anotan como herramientas y enlaces del restaurante, sin sección de control;
+  LandingSite tampoco (§121): se registra como plataforma web y la publicación de Menú Diario es manual.
+- **RN-INT-02**: la conexión es **OAuth cuando exista y clave API solo cuando sea necesaria** (§116):
+  GA4, Search Console y Business Profile van por OAuth con Google; Clarity y PageSpeed, por clave.
+  **Credenciales y tokens cifrados; contraseñas nunca visibles** (§135): el servidor de la aplicación
+  cifra con una clave que solo existe en su entorno (`INTEGRATIONS_VAULT_KEY`) y la base guarda
+  únicamente el texto cifrado en `integration_credentials`, una tabla cuya columna `ciphertext` no
+  tiene `select` para nadie y que solo lee `service_role`. Existe un **botón de comprobación** que
+  verifica la credencial sin importar datos. El propietario del restaurante puede autorizar una cuenta
+  que le pertenezca; el propietario del espacio gestiona la integración sin ver su contraseña.
+- **RN-INT-03**: los estados son los **siete** de §117, con este nombre interno: `not_connected` ·
+  `pending_authorization` · `connected` · `syncing` · `needs_attention` · `error` · `disconnected`.
+  "Requiere atención" es que hace falta una persona (volver a autorizar, o una propiedad que ya no
+  existe); "Error" es un fallo que Cuotly reintenta sola. De cada integración se enseña **cuenta,
+  establecimiento, última sincronización, siguiente intento y error**. **No existe botón "Sincronizar
+  ahora"** (§117, CLAUDE.md): la única forma de adelantar una sincronización es que la programe el
+  sistema.
+- **RN-INT-04**: las frecuencias son las de §118: **GA4 y Search Console, diaria; PageSpeed, semanal**
+  y cuando el sistema lo programe; las demás, "frecuencia adaptada" —Business Profile y Clarity van a
+  diario, pendiente 13—. Cuotly **conserva el último dato válido, lo marca como desactualizado si
+  falla y reintenta**: tras un fallo transitorio el siguiente intento espera 1 h, luego 4 h, 16 h y 24 h
+  como máximo; "desactualizado" es no tener una sincronización correcta en el doble de la frecuencia.
+  **El propietario y los administradores reciben aviso** del fallo (una vez por racha, no una por
+  intento); **el propietario del restaurante solo si debe autorizar de nuevo** (§18).
+- **RN-INT-05**: **propietario y administradores gestionan las conexiones; solo el propietario
+  introduce, sustituye o elimina credenciales sensibles; los trabajadores nunca las ven** (§119,
+  §126). Un trabajador autorizado consulta el estado y los datos del restaurante, y no conecta ni
+  desconecta. El propietario del restaurante (local o global del grupo, la misma lista que acepta las
+  condiciones) conecta y desconecta lo suyo por OAuth; el Editor y Consulta, no. Una clave API la
+  introduce solo el propietario del espacio.
+- **RN-INT-06**: **al suspenderse definitivamente el mantenimiento se revocan las autorizaciones
+  externas; los datos históricos importados permanecen** (§119). "Definitivamente" se ha leído como
+  **archivar** el restaurante (pendiente 13): archivar desconecta las cinco, marca las credenciales
+  como revocadas y deja pendiente la revocación remota del token, que hace el proceso de la cola;
+  suspendido por impago o al terminar la permanencia, la sincronización se detiene y las credenciales
+  se conservan para reactivar. **Toda conexión, desconexión y error queda auditado** (§21.2), con la
+  familia `integration` de la auditoría, visible para quien gestiona la cartera (`manage_clients`).
+- **RN-INT-07**: **los datos ya importados se conservan aunque cambie el plan o se desconecte la
+  fuente; se indica la fecha de última sincronización; nunca se presenta información desactualizada
+  como actual** (§94). Los puntos de métrica (`metric_points`) no se borran al desconectar ni al
+  cambiar de plan; cada uno lleva cuándo se obtuvo, y toda pantalla que los enseñe dice uno de los
+  cinco motivos de §178 cuando no hay dato: **integración no conectada, todavía no hay datos, última
+  sincronización (dato desactualizado), error o periodo insuficiente**.
+- **RN-INT-08**: ante un fallo de conexión (§163) Cuotly **indica si la acción se completó, reintenta
+  solo operaciones seguras** (leer datos, sí; una revocación remota, una vez), **conserva el último
+  dato externo válido con su antigüedad y registra el error sin secretos**: el texto del error se pasa
+  por un filtro que oculta lo que parezca un token o una clave antes de guardarlo, y nunca se guarda
+  una respuesta entera de la fuente.
+- **RN-INT-09**: una sincronización es una ejecución con estado (`sync_runs`: pendiente, en curso,
+  correcta o fallida), con inicio, fin, motivo del fallo y puntos escritos, que solo ejecuta el
+  proceso de la cola con `service_role`: la aplicación no sincroniza desde una pantalla. Dos procesos a
+  la vez no toman la misma ejecución (`for update skip locked`), y una ejecución no tumba a las demás.
+
+Qué métricas guarda cada fuente lo fija §92 para GA4 (usuarios, sesiones, páginas más visitadas,
+procedencia, dispositivos, ubicaciones aproximadas y conversiones configuradas) y para Search Console
+(clics, impresiones, CTR, posición media, búsquedas principales y páginas que aparecen). Para Business
+Profile, Clarity y PageSpeed la maestra solo nombra la fuente: su catálogo se fija con el adaptador de
+cada una en el Hito 14 y no se adelanta aquí. Las oportunidades (§96 a §101) y los informes (§89 a §95)
+son los hitos 15 y 16; **los umbrales de detección y la definición de impacto y esfuerzo siguen
+pendientes de Bosco** (§24.3) y no se inventan.
