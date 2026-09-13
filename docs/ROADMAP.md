@@ -3148,8 +3148,10 @@ regenerar salió idéntica, así que no había desviación.
     `daily-menu.test.ts` con RN-MEN-08, §62 y RN-COR-01/02/10. Las 33
     suites desde cero sobre PostgreSQL 16 con las 79 migraciones, el
     sembrado dos veces, typecheck, lint, 886 pruebas y `next build`.
-    `database.types.ts` escrito a mano para la tabla y las seis
-    funciones nuevas: la 79 NO está aplicada al proyecto real todavía.
+    La 79 aplicada al proyecto real en dos partes y verificada en vivo
+    (privilegios de las once funciones, RLS y privilegio de columna de
+    `menu_corrections`, el tipo nuevo de la cola, el índice único), y
+    `database.types.ts` regenerado desde él.
 
 ## FASE 1 — Operación real de Restavor
 

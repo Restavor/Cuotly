@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 13/09/2026), con las 78 migraciones del
+// (generate_typescript_types, 13/09/2026), con las 79 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -5762,6 +5762,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      lock_published_menu_publication: {
+        Args: { p_menu_id: string }
+        Returns: {
+          assigned_at: string | null
+          assigned_to: string | null
+          assignment_mode: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          cycle_id: string
+          debit_entry_id: string
+          establishment_id: string
+          id: string
+          idempotency_key: string | null
+          menu_id: string
+          published_at: string | null
+          published_by: string | null
+          published_template_id: string | null
+          published_version_id: string | null
+          requested_at: string
+          requested_before_cutoff: boolean
+          requested_by: string
+          requested_version_id: string
+          space_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "menu_publications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
@@ -5793,6 +5826,10 @@ export type Database = {
         Returns: boolean
       }
       menu_candidate_ids: { Args: { p_menu_id: string }; Returns: string[] }
+      menu_correction_window_ends_at: {
+        Args: { p_published_at: string }
+        Returns: string
+      }
       menu_cutoff_at: {
         Args: { p_space_id: string; p_target_date: string }
         Returns: string
@@ -6342,6 +6379,7 @@ export type Database = {
         Returns: boolean
       }
       task_load_points: { Args: { p_weight: string }; Returns: number }
+      task_weight_for_minutes: { Args: { p_minutes: number }; Returns: string }
       team_menu_queue: {
         Args: { p_space_id: string }
         Returns: {
@@ -6364,7 +6402,6 @@ export type Database = {
           updated_at: string
         }[]
       }
-      task_weight_for_minutes: { Args: { p_minutes: number }; Returns: string }
       unblock_job: {
         Args: { p_job_id: string; p_note?: string; p_reverted?: boolean }
         Returns: undefined
