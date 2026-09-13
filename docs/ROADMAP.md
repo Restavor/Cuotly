@@ -2938,6 +2938,50 @@ regenerar salió idéntica, así que no había desviación.
     proyecto real y verificada en vivo, y `database.types.ts` regenerado
     desde él.
 
+    **Revisión del hito (13/09/2026), dos huecos encontrados y cerrados.**
+    Se repasó el commit entero contra el PRD, el ROADMAP y CLAUDE.md, con
+    mutaciones sobre clones de la base. Lo que salió:
+
+    1. **El evento se vigilaba; el apunte, no.** CLAUDE.md pide las dos
+       cosas ante un cambio de estado: un evento y un registro de
+       auditoría con actor. La suite comprobaba `menu_events` y ninguna
+       de sus comprobaciones miraba `audit_log`, así que borrar los dos
+       `insert into public.audit_log` de `register_menu_download()` —uno
+       cada vez— la dejaba **en verde las dos veces**. El evento dice qué
+       le pasó al menú; el apunte dice quién lo hizo, y es lo que lee la
+       pestaña Historial. Se añaden tres comprobaciones, sentadas como la
+       propietaria porque `audit_log` tiene RLS y una trabajadora no ve
+       los apuntes de sus compañeros: un apunte de "listo por descarga" y
+       solo uno, tantos `menu.downloaded` como filas en `menu_downloads`,
+       y que cada apunte nombre su fila, su versión y su plantilla. Las
+       tres mutaciones —quitar cada apunte, y hacer que el apunte mienta
+       sobre la versión— ahora fallan con su mensaje.
+    2. **La ruta entregaba lo que releía, no lo que registró.**
+       `register_menu_download()` graba la versión y la plantilla con la
+       fila del menú bloqueada, pero suelta el bloqueo al devolver, y la
+       ruta volvía a leer `menus` para pintar. Un guardado del
+       restaurante entre las dos consultas entregaba un archivo que no
+       era el que consta en `menu_downloads` — y esa fila es justo lo que
+       RN-MEN-10 conserva como historial. Ahora la ruta usa el id que
+       devuelve la función y pinta la versión y la plantilla de esa fila.
+       Lo fija `descargar/route.test.ts`, que reproduce la carrera (el
+       menú cambia de versión DESPUÉS de registrar) y falla —"expected 4
+       to be 3"— con la ruta anterior.
+
+    Lo que la revisión miró y salió limpio, dicho para no repetirlo: RLS,
+    política y `space_id NOT NULL` en las ocho tablas `menu%`; ninguna
+    columna de identidad del equipo legible por el cliente; ninguna
+    función interna abierta por RPC; **ningún contador de consumo
+    actualizado con UPDATE** (inventario completo de los `update` de la
+    77 y la 78: estados, asignación y diseño, ninguna columna de saldo —
+    el saldo es `included_updates + sum(amount)`); y el alcance, con una
+    salvedad: la **decisión 20** (el precio Premium del servicio, que es
+    del Hito 12) se anotó dentro de este commit. Es de Bosco y no lleva
+    código, pero queda dicho que viajó fuera de su hito.
+
+    Tras la revisión: 32 suites desde cero, typecheck, lint, **875
+    pruebas** y `next build`.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

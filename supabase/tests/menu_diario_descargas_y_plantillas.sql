@@ -249,6 +249,66 @@ begin
   if (select available from public.menu_update_balance('de400000-0000-0000-0000-000000000001')) <> 29 then
     raise exception 'RN-MEN-04 FALLIDO: las descargas del equipo consumieron' using errcode = 'assert_failure';
   end if;
+
+end $$;
+reset role;
+
+-- ============================================================
+-- CLAUDE.md MUST · el EVENTO no es el APUNTE
+-- ============================================================
+--
+-- Lo de arriba comprueba `menu_events`: qué le pasó al menú. Esto
+-- comprueba `audit_log`: QUIÉN lo hizo, que es otra cosa y es lo que lee
+-- la pestaña Historial. Estaba sin vigilar, y no en teoría: la revisión
+-- del 13/09/2026 borró los dos `insert into public.audit_log` de
+-- `register_menu_download()` —uno cada vez— y la suite siguió en verde
+-- las dos veces.
+--
+-- Va sentado como la PROPIETARIA y no como Ana: `audit_log` tiene RLS
+-- (§21.2) y una trabajadora no ve los apuntes de sus compañeros, así que
+-- desde su sesión el recuento saldría filtrado y este test fallaría por
+-- un motivo que no es el suyo.
+select set_config('request.jwt.claim.sub', 'de000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+do $$
+declare v_m uuid := (select v from dl_ids where k = 'menu');
+begin
+  if (select count(*) from public.audit_log
+      where entity_type = 'menu' and entity_id = v_m
+        and action = 'menu.ready_to_publish'
+        and new_value ->> 'via' = 'download') <> 1 then
+    raise exception 'CLAUDE.md MUST FALLIDO: el paso a listo por descarga no dejó su apunte de auditoría (o lo dejó dos veces)'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Un apunte por descarga. Se compara contra las filas registradas y no
+  -- contra un número escrito a mano, que habría que corregir cada vez que
+  -- la suite añade una descarga.
+  if (select count(*) from public.audit_log
+      where entity_type = 'menu' and entity_id = v_m and action = 'menu.downloaded')
+     <> (select count(*) from public.menu_downloads where menu_id = v_m) then
+    raise exception 'RN-MEN-10 FALLIDO: hay % descargas registradas y % apuntes de auditoría',
+      (select count(*) from public.menu_downloads where menu_id = v_m),
+      (select count(*) from public.audit_log where entity_type = 'menu' and entity_id = v_m and action = 'menu.downloaded')
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Y cada apunte nombra su fila, su versión y su plantilla: sin eso solo
+  -- diría "alguien descargó algo".
+  if exists (
+    select 1 from public.audit_log a
+    where a.entity_type = 'menu' and a.entity_id = v_m and a.action = 'menu.downloaded'
+      and not exists (
+        select 1 from public.menu_downloads d
+        where d.id = (a.new_value ->> 'download_id')::uuid
+          and (a.new_value ->> 'version_id')::uuid = d.version_id
+          and (a.new_value ->> 'template_id')::uuid = d.template_id
+          and (a.new_value ->> 'format') = d.format
+      )
+  ) then
+    raise exception 'RN-MEN-10 FALLIDO: algún apunte de descarga no apunta a su fila, su versión y su plantilla'
+      using errcode = 'assert_failure';
+  end if;
 end $$;
 reset role;
 

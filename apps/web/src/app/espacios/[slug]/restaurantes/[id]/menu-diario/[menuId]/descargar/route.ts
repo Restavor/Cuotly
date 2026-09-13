@@ -14,9 +14,18 @@ import { renderMenuPdf, renderMenuPng } from "@/services/menu-image";
  * función contesta se pinta el archivo. A quien no puede se le responde
  * 404, como a los archivos: un 403 confirma que el menú existe.
  *
- * Lo que se pinta es la VERSIÓN VIGENTE con la PLANTILLA del menú, que es
- * exactamente lo que la función acaba de registrar. Las columnas se
- * enumeran porque las tres tablas tienen privilegios de columna (CLAUDE.md).
+ * **Se pinta lo que se REGISTRÓ, no lo que el menú tenga ahora.** La
+ * función devuelve el id de la descarga y de esa fila salen la versión y
+ * la plantilla. Releer `menus` después de llamarla parecía equivalente y
+ * no lo es: `register_menu_download()` bloquea la fila mientras corre,
+ * pero suelta el bloqueo al devolver, así que un guardado del restaurante
+ * entre las dos consultas entregaba un archivo que no era el que consta en
+ * `menu_downloads` — y esa fila es la que RN-MEN-10 conserva como historial
+ * ("la versión y la plantilla exactas que se llevó"). Lo encontró la
+ * revisión del Hito 10 (13/09/2026).
+ *
+ * Las columnas se enumeran porque las cuatro tablas tienen privilegios de
+ * columna (CLAUDE.md).
  */
 export const dynamic = "force-dynamic";
 
@@ -34,35 +43,44 @@ export async function GET(
   } = await supabase.auth.getUser();
   if (!user) return new NextResponse(null, { status: 404 });
 
-  const { error: registroError } = await supabase.rpc("register_menu_download", {
+  const { data: downloadId, error: registroError } = await supabase.rpc("register_menu_download", {
     p_menu_id: menuId,
     p_format: formato,
   });
-  if (registroError) return new NextResponse(null, { status: 404 });
+  if (registroError || !downloadId) return new NextResponse(null, { status: 404 });
+
+  // La fila que la función acaba de escribir manda sobre lo que se pinta.
+  const { data: download } = await supabase
+    .from("menu_downloads")
+    .select("menu_id, establishment_id, version_id, template_id")
+    .eq("id", downloadId)
+    .maybeSingle();
+  if (!download) return new NextResponse(null, { status: 404 });
 
   const { data: menu } = await supabase
     .from("menus")
-    .select("id, establishment_id, name, target_date, current_version_id, template_id")
-    .eq("id", menuId)
+    .select("name, target_date, template_id")
+    .eq("id", download.menu_id)
     .maybeSingle();
-  if (!menu || !menu.current_version_id || !menu.template_id) {
-    return new NextResponse(null, { status: 404 });
-  }
-
-  const [{ data: version }, { data: template }, { data: establishment }] = await Promise.all([
-    supabase
-      .from("menu_versions")
-      .select("version, starters, mains, desserts, drink, price_cents, note")
-      .eq("id", menu.current_version_id)
-      .maybeSingle(),
-    supabase
-      .from("menu_templates")
-      .select("layout, background_color, text_color, accent_color, heading_text, footer_text, show_prices")
-      .eq("id", menu.template_id)
-      .maybeSingle(),
-    supabase.from("establishments").select("name").eq("id", menu.establishment_id).maybeSingle(),
-  ]);
-  if (!version || !template || !establishment || !isMenuLayout(template.layout)) {
+  const [{ data: version }, { data: template }, { data: establishment }] =
+    await Promise.all([
+      supabase
+        .from("menu_versions")
+        .select("version, starters, mains, desserts, drink, price_cents, note")
+        .eq("id", download.version_id)
+        .maybeSingle(),
+      supabase
+        .from("menu_templates")
+        .select("layout, background_color, text_color, accent_color, heading_text, footer_text, show_prices")
+        .eq("id", (menu as { template_id?: string } | null)?.template_id ?? download.template_id)
+        .maybeSingle(),
+      supabase
+        .from("establishments")
+        .select("name")
+        .eq("id", download.establishment_id)
+        .maybeSingle(),
+    ]);
+  if (!menu || !version || !template || !establishment || !isMenuLayout(template.layout)) {
     return new NextResponse(null, { status: 404 });
   }
 
