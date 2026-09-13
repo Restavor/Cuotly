@@ -25,7 +25,7 @@ Actualizado el 13/09/2026.
 | 9 · Menú Diario: menús, versiones, estados y actualizaciones (Fase 2) | Servidor y dominio; sin pantallas | Migración 77, 13/09/2026. Ver la entrada de cierre abajo. |
 | 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Servidor, dominio y pantallas del restaurante | Migración 78, 13/09/2026. Ver la entrada de cierre abajo. |
 | 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Servidor, dominio y pantallas del equipo | Migración 79, 13/09/2026. Ver la entrada de cierre abajo. |
-| 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Servidor, dominio y pantallas | Migración 80, 13/09/2026. Pendiente de aplicar al proyecto real. Ver la entrada de cierre abajo. |
+| 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Servidor, dominio y pantallas | Migración 80, 13/09/2026, aplicada al proyecto real el mismo día. Ver la entrada de cierre abajo. |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -3244,8 +3244,10 @@ regenerar salió idéntica, así que no había desviación.
     decidir nada. "Fin de solo lectura" (§76) no existe como fecha
     guardada. No hay pantalla del equipo para diseñar plantillas (se
     crean por función, como en el Hito 10), ni cancelación o abono de un
-    presupuesto (CLAUDE.md lo aplaza con los cobros). La 80 NO está
-    aplicada al proyecto real: es un paso aparte, como con la 79.
+    presupuesto (CLAUDE.md lo aplaza con los cobros). La 80 se aplicó al
+    proyecto real el mismo día, en cuatro partes y después de la decisión
+    21, y se verificó en vivo: `docs/DESPLIEGUE-SUPABASE.md` lo cuenta,
+    junto con la 79, que se había aplicado sin dejar constancia allí.
 
     **Comprobado:** `presupuestos_y_calendario.sql` (la 34ª suite):
     los tres precios del servicio (Premium 199 + IVA = 240,79; Básico y

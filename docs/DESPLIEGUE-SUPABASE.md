@@ -10,17 +10,17 @@ Actualizado el 13/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 78 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 80 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 78 migraciones del repositorio están aplicadas.** Las tres
+**Las 80 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
-el 11/09/2026, las 71 a 76 el 12/09/2026 y la 77 y la 78 el 13/09/2026.
+el 11/09/2026, las 71 a 76 el 12/09/2026 y las 77 a 80 el 13/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -57,6 +57,39 @@ el 11/09/2026, las 71 a 76 el 12/09/2026 y la 77 y la 78 el 13/09/2026.
   `database.types.ts` desde el proyecto (78 migraciones), que es lo que
   permite que las pantallas del Hito 10 llamen a las funciones nuevas
   con tipos.
+- La **79** (`menu_diario_equipo_cola_y_correccion`, Fase 2 · Hito 11)
+  el 13/09/2026, desde el MCP, en dos partes (`p1_candidatos_cola_
+  correccion` y `p2_avisos_barrido_busqueda`), con `database.types.ts`
+  regenerado después. Esta nota se escribe a posteriori: el commit que
+  la aplicó (`4063a10`) no actualizó este archivo, y durante unas horas
+  aquí ponía "78 aplicadas" con la 79 ya en el proyecto. Lo que se
+  comprobó al aplicarla está en ese commit; lo que se comprobó DESPUÉS,
+  al escribir esto, es lo mismo que para la 80, abajo.
+- La **80** (`calendario_completo_y_presupuestos`, Fase 2 · Hito 12) el
+  13/09/2026, desde el MCP, en cuatro partes (`p1_mensualidad_del_
+  servicio`, `p2_calendario_quotes_y_avisos`, `p3_crear_enviar_aceptar_
+  rechazar` y `p4_inicio_cliente_plantillas_auditoria`), aplicadas
+  DESPUÉS del commit de la decisión 21 (`63ecfc7`), así que llevan
+  `accept_quote(uuid, text)` con el motivo y `decided_by_team`. **No es
+  solo aditiva**: borra y recrea `space_calendar()` (cambia de firma:
+  tres parámetros más) y `create_menu_template()` (un parámetro más,
+  el presupuesto), y `upcoming_renewals()` con la misma firma. Las
+  pantallas del repositorio ya llaman a las firmas nuevas; una
+  compilación anterior de la web contra este proyecto fallaría en el
+  calendario y al crear plantillas hasta desplegarse.
+
+  Comprobado en vivo, con una consulta que solo devuelve problemas y
+  devolvió ninguno: las cinco internas
+  (`next_request_code_internal`, `notify_quote_event`,
+  `run_monthly_charges`, `service_monthly_price_internal`,
+  `subscription_current_period`) sin EXECUTE para `anon` ni
+  `authenticated`; las diecisiete públicas de la migración con EXECUTE
+  para `authenticated` y no para `anon`; las firmas antiguas de
+  `space_calendar(uuid, date, date)` y `create_menu_template(uuid, text,
+  text)` ya no existen; `quotes` con RLS activado, política, `space_id
+  NOT NULL`, el SELECT de tabla revocado (privilegio de columna) y
+  `decided_by` no legible por `authenticated` (P7). 118 migraciones
+  registradas en el proyecto.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -395,6 +428,10 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 74 | `el_cuarto_caso_de_rn_est_04` | `el_cuarto_caso_de_rn_est_04` |
 | 75 | `condiciones_versionadas_y_aceptadas` | `condiciones_versionadas_y_aceptadas_p1`, `_p2` |
 | 76 | `el_aviso_de_las_condiciones_nuevas` | `el_aviso_de_las_condiciones_nuevas` |
+| 77 | `menu_diario_menus_versiones_y_actualizaciones` | `..._p1_servicio_plantillas_ciclos`, `_p2_menus_versiones_publicaciones`, `_p3_preparar_y_pedir`, `_p4_equipo_cancelar_auditoria` |
+| 78 | `menu_diario_plantillas_y_descargas` | `menu_diario_plantillas_y_descargas` |
+| 79 | `menu_diario_equipo_cola_y_correccion` | `..._p1_candidatos_cola_correccion`, `_p2_avisos_barrido_busqueda` |
+| 80 | `calendario_completo_y_presupuestos` | `..._p1_mensualidad_del_servicio`, `_p2_calendario_quotes_y_avisos`, `_p3_crear_enviar_aceptar_rechazar`, `_p4_inicio_cliente_plantillas_auditoria` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda
