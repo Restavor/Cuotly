@@ -59,14 +59,30 @@ una llave maestra pública.
 Ya está declarado en `apps/web/vercel.json`:
 
 ```json
-{ "crons": [{ "path": "/api/cola", "schedule": "0 6 * * *" }] }
+{
+  "crons": [
+    { "path": "/api/cola", "schedule": "0 7 * * *" },
+    { "path": "/api/cola", "schedule": "0 19 * * *" }
+  ]
+}
 ```
 
-Una vez al día, a las 06:00 UTC. El plan Hobby de Vercel solo admite
-crons diarios y rechaza `0 * * * *`; cuando el plan permita más
-frecuencia se puede subir sin tocar nada más, porque las funciones son
-idempotentes y los avisos esperan en cola. La ruta está protegida: sin
-la cabecera correcta responde 401, y si no hay ningún secreto
+Dos veces al día, a las 07:00 y a las 19:00 UTC. El plan Hobby de Vercel
+solo admite crons diarios (dos por proyecto) y rechaza `0 * * * *`;
+cuando el plan permita más frecuencia se puede subir sin tocar nada más,
+porque las funciones son idempotentes y los avisos esperan en cola.
+
+Por qué esas dos horas, desde el Hito 11: el barrido de Menú Diario
+(`run_daily_menu_sweep()`) recuerda al restaurante **a partir de las
+20:00** de su zona si no tiene menú para mañana (RN-MEN-08) y avisa al
+equipo **a partir de las 08:00** de las publicaciones garantizadas que
+siguen sin publicar (§62). Madrid es UTC+2 en verano y UTC+1 en invierno,
+así que `0 19` cae a las 21:00 o a las 20:00 locales (siempre después de
+las 20:00) y `0 7` a las 09:00 o a las 08:00 (siempre después de las
+08:00). El barrido mira la hora local y deduplica por día, así que da
+igual que llegue tarde o que se ejecute dos veces; lo que no puede es
+llegar ANTES, y por eso no valen `0 18` ni `0 6`. La ruta está protegida:
+sin la cabecera correcta responde 401, y si no hay ningún secreto
 configurado responde 503 en vez de quedarse abierta.
 
 **Por qué `CRON_SECRET` y no `QUEUE_RUNNER_SECRET`**: el cron de Vercel manda
@@ -86,10 +102,14 @@ se escribió esto, así que **estos tres puntos salen de lo que sé, no de la
 documentación de Vercel leída hoy**. Confírmalos al desplegar:
 
 1. **La frecuencia según el plan.** Ya confirmado: el plan Hobby rechaza
-   `0 * * * *` y solo admite crons diarios, por eso el archivo declara
-   `0 6 * * *`. Sube la frecuencia cuando el plan lo permita. Nada se
-   pierde por ir lento: las funciones son idempotentes y los avisos
-   esperan en cola.
+   `0 * * * *` y solo admite crons diarios, por eso el archivo declara dos
+   crons diarios (`0 7` y `0 19`, ver arriba). Que el plan admita DOS
+   crons en el mismo proyecto está escrito de memoria: si al desplegar
+   solo admite uno, deja el de las 19:00 UTC (el recordatorio de las
+   20:00 es el que no tiene sustituto) y el aviso de las 08:00 saldrá por
+   la tarde. Sube la frecuencia cuando el plan lo permita. Nada se pierde
+   por ir lento: las funciones son idempotentes y los avisos esperan en
+   cola.
 2. **`maxDuration`.** La ruta declara 60 segundos; si el plan permite
    menos, manda el plan. Una tanda procesa como mucho 10 tareas
    programadas y 20 correos, así que suele bastar con mucho menos.

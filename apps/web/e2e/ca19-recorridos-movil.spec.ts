@@ -505,4 +505,99 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     expect(archivo.suggestedFilename()).toMatch(/^menu-.*-v1\.png$/);
     await expect(page.getByText("1 descarga")).toBeVisible({ timeout: 20_000 });
   });
+
+  /**
+   * Fase 2 · Hito 11 · el flujo del EQUIPO en Menú Diario (RN-MEN-06, §61
+   * sin Comenzar; RN-ASG-02; RN-COR-10). El restaurante prepara un menú y
+   * pide la publicación; la propietaria lo asigna desde la cola; la
+   * trabajadora descarga la plantilla generada (paso 4: "Listo para
+   * publicar") y pulsa "Marcar como publicado"; el restaurante pide su
+   * corrección mínima. Todo a 390 px.
+   *
+   * Pedir la publicación consume 1 de las 30 actualizaciones del ciclo de
+   * Magariños por ejecución (RN-MEN-05): es lo que el recorrido del Hito 10
+   * evitaba a propósito, y aquí no se puede evitar porque sin petición no
+   * hay nada que el equipo publique. El sembrado vuelve a dejar el ciclo
+   * entero.
+   */
+  test("MENÚ DIARIO · el equipo asigna, publica y corrige, desde el teléfono", async ({ page }) => {
+    test.setTimeout(240_000);
+    const MAGARINOS_ID = "d4000000-0000-0000-0000-000000000003";
+    let menuUrl = "";
+
+    await test.step("PEDIR · el restaurante prepara y pide la publicación", async () => {
+      await entrar(page, "magarinos@cuotly.test", new RegExp(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`));
+      await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario`);
+      await page.getByLabel("Nombre").fill(`Equipo ${MARCA}`);
+      await page.getByLabel("Plantilla").selectOption({ label: "Pizarra" });
+      await page.getByRole("button", { name: "Crear menú" }).click();
+      await page.waitForURL(new RegExp(`/restaurantes/${MAGARINOS_ID}/menu-diario/[0-9a-f-]{36}$`), { timeout: 20_000 });
+      const menuId = page.url().split("/").pop() ?? "";
+      menuUrl = `/espacios/${ESPACIO}/menu-diario/${menuId}`;
+
+      await page.getByLabel("Primeros").fill("Caldo");
+      await page.getByLabel("Segundos").fill("Merluza");
+      await page.getByLabel("Precio (euros)").fill("14,50");
+      await page.getByRole("button", { name: "Guardar versión" }).click();
+      await expect(page.getByText("Versión guardada.")).toBeVisible({ timeout: 20_000 });
+      await page.getByRole("button", { name: "Marcar como preparado" }).click();
+      await expect(page.getByText("Preparado")).toBeVisible({ timeout: 20_000 });
+      await page.getByRole("button", { name: "Pedir la publicación" }).click();
+      await expect(async () => {
+        await sinErrores(page, "PEDIR LA PUBLICACIÓN");
+        // Dos candidatas en Magariños (RN-ASG-04): queda pendiente de asignar.
+        await expect(page.getByText("Pendiente de asignar").first()).toBeVisible();
+      }).toPass({ timeout: 15_000 });
+    });
+
+    await test.step("ASIGNAR · la propietaria, desde la cola", async () => {
+      await entrar(page, PROPIETARIA, new RegExp(`/espacios/${ESPACIO}$`));
+      await page.goto(`/espacios/${ESPACIO}/menu-diario`);
+      await cabeEnElTelefono(page, "la cola de Menú Diario");
+      await page.getByRole("link", { name: `Equipo ${MARCA}` }).click();
+      await page.waitForURL(new RegExp(menuUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"), { timeout: 30_000 });
+      await cabeEnElTelefono(page, "la ficha del menú para el equipo");
+
+      await page.getByLabel("Persona").selectOption({ label: "Marta Gil (trabajadora)" });
+      await page.getByRole("button", { name: "Asignar" }).click();
+      await expect(async () => {
+        await sinErrores(page, "ASIGNAR MENÚ");
+        await expect(page.getByText("Asignada a Marta Gil (trabajadora)")).toBeVisible();
+      }).toPass({ timeout: 15_000 });
+    });
+
+    await test.step("DESCARGAR y MARCAR PUBLICADO · la trabajadora, sin Comenzar", async () => {
+      await entrar(page, TRABAJADORA, new RegExp(`/espacios/${ESPACIO}$`));
+      await page.goto(menuUrl);
+      await cabeEnElTelefono(page, "el menú asignado a la trabajadora");
+      await expect(page.getByText("Asignada a ti")).toBeVisible();
+
+      // §61, paso 4: descargar la plantilla generada pone "Listo para publicar".
+      const descarga = page.waitForEvent("download");
+      await page.getByRole("link", { name: "Descargar PNG" }).click();
+      await descarga;
+      await page.reload();
+      await expect(page.getByText("Listo para publicar").first()).toBeVisible({ timeout: 20_000 });
+
+      await page.getByRole("button", { name: "Marcar como publicado" }).click();
+      await expect(async () => {
+        await sinErrores(page, "MARCAR PUBLICADO");
+        await expect(page.getByText("Publicado").first()).toBeVisible();
+      }).toPass({ timeout: 15_000 });
+    });
+
+    await test.step("CORREGIR · el restaurante pide su corrección mínima (RN-COR-10)", async () => {
+      await entrar(page, "magarinos@cuotly.test", new RegExp(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`));
+      await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/${menuUrl.split("/").pop()}`);
+      await cabeEnElTelefono(page, "el menú publicado del restaurante");
+      await expect(page.getByRole("heading", { name: "Pedir una corrección" })).toBeVisible();
+      await page.getByLabel("Qué hay que corregir").fill("El precio es 14,90.");
+      await page.getByRole("button", { name: "Pedir la corrección" }).click();
+      await expect(async () => {
+        await sinErrores(page, "PEDIR CORRECCIÓN");
+        // RN-COR-01: gastada la única, la pantalla lo dice en vez de ofrecerla otra vez.
+        await expect(page.getByText("Este menú ya usó su corrección mínima gratuita.")).toBeVisible();
+      }).toPass({ timeout: 15_000 });
+    });
+  });
 });

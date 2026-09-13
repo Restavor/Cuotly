@@ -24,7 +24,7 @@ Actualizado el 13/09/2026.
 | 8 · Inicio por rol, búsqueda, notificaciones y cierre | Servidor, dominio, armazón y pantallas | CA-19 cumplido el 02/09/2026. Ver salvedades abajo. |
 | 9 · Menú Diario: menús, versiones, estados y actualizaciones (Fase 2) | Servidor y dominio; sin pantallas | Migración 77, 13/09/2026. Ver la entrada de cierre abajo. |
 | 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Servidor, dominio y pantallas del restaurante | Migración 78, 13/09/2026. Ver la entrada de cierre abajo. |
-| 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Pendiente | |
+| 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Servidor, dominio y pantallas del equipo | Migración 79, 13/09/2026. Ver la entrada de cierre abajo. |
 | 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Pendiente | |
 
 ### Salvedades del Hito 7, dichas en claro
@@ -3000,6 +3000,156 @@ regenerar salió idéntica, así que no había desviación.
 
     Tras las dos vueltas: 32 suites desde cero, typecheck, lint, **876
     pruebas** y `next build`.
+
+### Fase 2 · Hito 11 · Menú Diario: pantallas del equipo, la cola y la corrección
+
+- [x] **La cola del equipo, el barrido de las 20:00 y las 08:00, la corrección mínima y el contador del Inicio** — migración 79.
+
+    Lo que el equipo ve y pulsa. `/espacios/<espacio>/menu-diario` ya
+    no dice que su turno es el Hito 11: es la cola. Y la Fase 2 queda a
+    falta del Hito 12.
+
+    **La cola (`team_menu_queue()`).** Las publicaciones vivas y los menús
+    publicados con una corrección abierta, por fecha objetivo y hora de
+    corte, con el corte, el límite y la garantía calculados en el
+    servidor con la misma expresión que `menu_deadlines()` (RN-MEN-07,
+    RN-DAT-05). Las filas las filtra `can_read_menu_establishment()`, la
+    misma función que las políticas: un trabajador ve los menús de sus
+    restaurantes autorizados y nada más (§4.2). Quién está asignado se
+    devuelve con el criterio de la política de `menu_publications`: quien
+    gestiona lo ve, un trabajador solo si es él, y a los demás se les
+    dice "asignado" sin nombre (RN-ASG-17). El cliente no es miembro y no
+    la llama. "Pasada de hora" (§62: garantizada antes de las 08:00 y
+    sin publicar) lo pone `isPublicationOverdue()` de
+    `src/core/daily-menu.ts`, porque depende de la hora en que se mira.
+
+    **La ficha del equipo (`/menu-diario/<menú>`).** Los plazos, la
+    publicación (a quién, cómo, quién publicó), asignar o reasignar con
+    los candidatos de `list_menu_candidates()` —hermana de
+    `list_job_candidates()`: exige `assign_jobs`, ordena por carga y
+    menús en curso (RN-ASG-02/06)—, pedir información, marcar publicado y
+    registrar el error (solo el asignado o quien gestiona; la función
+    lanza a los demás), descargar la plantilla generada por la misma ruta
+    del Hito 10 (paso 4 de §61: la del asignado pone "Listo para
+    publicar"), las versiones con su hora y marcadas si llegaron después
+    del corte o de la petición (RN-MEN-07: "el trabajador ve los cambios
+    de versión y su hora"), devolver la actualización con motivo y una
+    sola vez leyendo el libro para saber si ya se devolvió, las
+    correcciones y el historial. Los avisos enlazan aquí para todo el
+    mundo (RN-NOT-04); a un cliente, que no es miembro del espacio, la
+    ruta lo reenvía a la ficha de su restaurante (P7).
+
+    **El barrido de Menú Diario (`run_daily_menu_sweep()`, tipo
+    `daily_menu_sweep` de `scheduled_jobs`).** RN-MEN-08: a partir de las
+    20:00 en la zona del espacio (RN-CLK-06), todos los días del año
+    (RN-CLK-09), si un restaurante con el servicio en marcha no tiene
+    ningún menú para mañana que no sea borrador ni cancelado, se
+    recuerda al propietario local, a los Editores y al propietario global
+    del grupo; a Consulta no, y a un restaurante sin el servicio tampoco.
+    Y a partir de las 08:00, las publicaciones garantizadas (pedidas
+    antes del corte y sin versión tardía) que siguen sin publicar avisan
+    a quien gestiona y al asignado (§62). Las claves de deduplicación
+    llevan la fecha o la publicación: da igual a qué hora corra el cron o
+    cuántas veces (CA-17). Recibe la hora como parámetro, y por eso la
+    suite lo prueba con la hora fija: 19:59 no, 20:00 sí, 23:00 no
+    repite; 07:59 no, 08:00 sí, 09:00 no repite. Dos eventos nuevos en
+    el catálogo (`menu_not_prepared_reminder`, `menu_publication_overdue`),
+    en el CHECK y en `src/core/notifications.ts`, que
+    `listas-compartidas.test.ts` mantiene iguales. Lo encola
+    `enqueue_due_scheduled_jobs()` con los otros cuatro y lo despacha
+    `run_scheduled_job()`; `cola_llena_y_vencimiento.sql` cuenta ahora
+    cinco.
+
+    **El cron, dicho en claro.** Un solo cron diario a las 06:00 UTC no
+    puede llegar ni a las 20:00 ni a las 08:00 de Madrid. `vercel.json`
+    declara ahora dos crons diarios —`0 7` y `0 19` UTC, que caen siempre
+    DESPUÉS de las 08:00 y de las 20:00 locales, en verano y en
+    invierno— y `docs/DESPLIEGUE-VERCEL.md` explica por qué esas horas y
+    qué hacer si el plan Hobby solo admite un cron: quedarse con el de las
+    19:00 UTC. Que Hobby admita dos crones está escrito de memoria, como
+    el resto del contrato del cron; se confirma al desplegar.
+
+    **La corrección mínima de Menú Diario (`menu_corrections`,
+    RN-COR-10).** Un menú publicado no se edita (RN-MEN-03): la corrección
+    es una petición con texto que el equipo aplica en LandingSite y marca
+    hecha, y el menú sigue publicado con dos eventos en su historial. Se
+    aplican las reglas de §13 que tienen sentido en un menú: una por
+    publicación (RN-COR-01, índice único parcial: es la base quien lo
+    impide, y la mutación de quitar la comprobación de la función la caza
+    igual), la ventana posterior a la publicación (RN-COR-02), el error del
+    equipo se corrige sin consumir nada ni contar (RN-COR-07,
+    `team_error`), la cierra el asignado o quien gestiona (RN-COR-06). La
+    salvedad de RN-COR-10 es un hecho del momento de pedir
+    (`requested_before_cutoff`, como en la publicación): pedida antes de
+    las 21:00 del día anterior va garantizada; después, se acepta sin
+    garantía, y las dos pantallas lo dicen antes de pulsar. "Corrección
+    pedida" avisa a quien gestiona y al asignado (§18). El restaurante lee
+    sus correcciones sin `requested_by` ni `completed_by` (privilegio de
+    columna: quien pidió puede ser del equipo). El formulario del
+    restaurante calcula la disponibilidad con
+    `menuCorrectionAvailability()` a partir del corte que devuelve
+    `menu_deadlines()`, no de la zona horaria, que el cliente no lee.
+
+    **Una lectura que hay que confirmar, no una regla nueva.** RN-COR-02
+    mide la ventana en 72 h laborables con el reloj contractual; Menú
+    Diario opera todos los días del año con su propio calendario
+    (RN-CLK-09), así que en ese calendario 72 h laborables son 72 h de
+    reloj, y eso es lo que aplica `menu_correction_window_ends_at()`. Está
+    anotado como pendiente 10 en `docs/DECISIONES.md` por si Bosco prefiere
+    otra ventana.
+
+    **El Inicio (decisión 18) y la búsqueda.** La tarjeta de Menú Diario
+    que desde el Hito 8 decía "llega en la Fase 2" cuenta ahora las
+    publicaciones pendientes, con cuántas están sin asignar y cuántas
+    pasadas de hora, leídas de la misma `loadMenuQueue()` que pinta la
+    cola, para que el número y la lista no discrepen. Sin servicio de
+    Menú Diario en el espacio dice el motivo, y si la consulta falla
+    también (CA-20). `global_search()` encuentra menús por su nombre o el
+    del restaurante, con RLS como el resto; el enlace es la ficha del
+    equipo, que al cliente lo reenvía a la suya.
+
+    **El recorrido.** `ca19-recorridos-movil.spec.ts` tiene un test nuevo
+    a 390 px: Magariños crea un menú y pide la publicación, la propietaria
+    lo asigna desde la cola, la trabajadora descarga el PNG (queda "Listo
+    para publicar") y marca publicado, y el restaurante pide su
+    corrección y ve que la única ya está gastada. Consume una
+    actualización por ejecución, y está dicho en el test: sin petición no
+    hay nada que el equipo publique. No se ha podido ejecutar desde esta
+    sesión, por el mismo bloqueo de red de siempre.
+
+    **Lo que NO se inventa.** El diseño de las plantillas sigue sin
+    pantalla del equipo (se diseñan por función, como en el Hito 10). No
+    hay conversación por menú: la pregunta del equipo y la corrección van
+    por el historial. Los menús no entran en "Necesita atención" del
+    Inicio: el ROADMAP pedía el contador, y añadir motivos a esa lista es
+    otra decisión. El calendario y los presupuestos son del Hito 12.
+
+    **Comprobado:** `menu_diario_equipo_cola_y_correccion.sql` (la 33ª
+    suite): candidatos (Ana y Luis, Pepe no; el restaurante y una
+    trabajadora sin `assign_jobs` no los ven), la cola (el cliente no,
+    Pepe sin autorización nada, otro espacio nada, corte y límite en
+    Madrid, garantía derivada, orden por fecha, el asignado según quién
+    mira), el aviso de las 08:00 con la hora fija (07:59 no, 08:00 a
+    tres, la pedida después del corte no, la que perdió la garantía por
+    una versión tardía no, 09:00 no repite, el enlace a la ficha del
+    equipo), el recordatorio de las 20:00 con la hora fija (19:59 no,
+    20:00 a tres y no a Consulta ni al restaurante sin servicio, 23:00 no
+    repite, un borrador no cuenta, un preparado sí), la cola periódica
+    encola y despacha el tipo nuevo, la corrección (Consulta no, sobre un
+    borrador no, sin texto no, no consume, garantizada si es antes del
+    corte, la segunda no, evento y apunte, P7 en columna, el restaurante
+    no cierra, Luis no abre ni cierra, Ana abre dos por error sin límite
+    y cierra con nota e idempotente, el administrador cierra, la ventana
+    cerrada, la de hoy sin garantía), los menús en la búsqueda con RLS,
+    las internas cerradas por RPC y la tabla sin escritura directa.
+    **Cuatro mutaciones, las cuatro detectadas**: recordar antes de las
+    20:00, recordar también a Consulta, admitir la segunda corrección
+    (la caza el índice único) y repetir el aviso de las 08:00.
+    `daily-menu.test.ts` con RN-MEN-08, §62 y RN-COR-01/02/10. Las 33
+    suites desde cero sobre PostgreSQL 16 con las 79 migraciones, el
+    sembrado dos veces, typecheck, lint, 886 pruebas y `next build`.
+    `database.types.ts` escrito a mano para la tabla y las seis
+    funciones nuevas: la 79 NO está aplicada al proyecto real todavía.
 
 ## FASE 1 — Operación real de Restavor
 

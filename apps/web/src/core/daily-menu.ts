@@ -14,6 +14,7 @@
 
 import { zonedTimeToUtc } from "./business-clock";
 import { calculateConsumptionBalance, type LedgerEntry } from "./consumption-ledger";
+import type { MenuState } from "./menu-states";
 
 /** §57: "diario, Navidad, infantil, grupos o evento especial". Ni uno más. */
 export const MENU_KINDS = ["daily", "christmas", "kids", "groups", "special_event"] as const;
@@ -150,4 +151,144 @@ export function linesToItems(raw: string): readonly string[] {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
+}
+
+// ---------------------------------------------------------------------
+// Hito 11 · el recordatorio de las 20:00 (RN-MEN-08), el aviso de las
+// 08:00 (§62) y la corrección mínima de Menú Diario (RN-COR-10).
+// La migración 79 hace lo mismo en el servidor (`run_daily_menu_sweep()`,
+// `request_menu_correction()`); esto existe para que la pantalla lo diga
+// con las mismas reglas y para que las reglas tengan tests con su número.
+// ---------------------------------------------------------------------
+
+/** §62: "A las 20:00 se recuerda al propietario y Editores si no existe menú preparado para el día siguiente." */
+export const MENU_REMINDER_HOUR = 20;
+
+/**
+ * RN-MEN-08 · "menú preparado" es cualquier menú de mañana que no sea un
+ * borrador ni esté cancelado: preparado, pedido, asignado o publicado
+ * cuentan; un borrador a medias, no.
+ */
+export function countsAsPreparedForReminder(state: MenuState): boolean {
+  return state !== "draft" && state !== "cancelled";
+}
+
+function localParts(at: Date, timezone: string): { readonly date: string; readonly hour: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(at);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return { date: `${get("year")}-${get("month")}-${get("day")}`, hour: Number(get("hour")) };
+}
+
+function nextDay(date: string): string {
+  const { year, month, day } = parseDate(date);
+  const d = new Date(Date.UTC(year, month - 1, day + 1));
+  return d.toISOString().slice(0, 10);
+}
+
+export interface MenuReminderInput {
+  readonly now: Date;
+  readonly timezone: string;
+  /** Los estados de los menús cuya fecha objetivo es MAÑANA en la zona del espacio. */
+  readonly tomorrowMenuStates: readonly MenuState[];
+}
+
+export interface MenuReminderDecision {
+  /** Si a esta hora, en este día, toca recordar (RN-MEN-08). */
+  readonly due: boolean;
+  /** El día del que falta el menú, `AAAA-MM-DD` en la zona del espacio. */
+  readonly targetDate: string;
+}
+
+/**
+ * RN-MEN-08 · a partir de las 20:00 en la zona del espacio (RN-CLK-06),
+ * todos los días del año (RN-CLK-09: ningún festivo ni domingo lo apaga),
+ * si no hay ningún menú preparado para mañana. "A partir de" y no "a las":
+ * el barrido no sabe a qué hora lo van a ejecutar, y la clave de
+ * deduplicación lleva la fecha para que corra las veces que haga falta.
+ */
+export function menuReminderDecision(input: MenuReminderInput): MenuReminderDecision {
+  const { date, hour } = localParts(input.now, input.timezone);
+  const targetDate = nextDay(date);
+  const prepared = input.tomorrowMenuStates.some(countsAsPreparedForReminder);
+  return { due: hour >= MENU_REMINDER_HOUR && !prepared, targetDate };
+}
+
+/**
+ * §62 · una publicación garantizada (RN-MEN-07: pedida antes del corte y
+ * sin versión tardía) se publica antes de las 08:00 del día objetivo.
+ * Pasada esa hora sin publicar, es un incumplimiento y el equipo tiene
+ * que verlo.
+ */
+export function isPublicationOverdue(input: {
+  readonly now: Date;
+  readonly targetDate: string;
+  readonly timezone: string;
+  /** Lo que deriva `isPublicationGuaranteed()` / `menu_deadlines()`; null si no se pidió. */
+  readonly guaranteed: boolean | null;
+  readonly published: boolean;
+}): boolean {
+  if (input.published || input.guaranteed !== true) return false;
+  return input.now.getTime() >= menuPublishByAt(input.targetDate, input.timezone).getTime();
+}
+
+/**
+ * RN-COR-02 aplicada a Menú Diario: 72 h posteriores a la publicación.
+ * Son horas de reloj y no del calendario contractual porque Menú Diario
+ * tiene el suyo propio y opera todos los días del año (RN-CLK-09); en ese
+ * calendario no hay horas no laborables que descontar.
+ */
+export const MENU_CORRECTION_WINDOW_HOURS = 72;
+
+export function menuCorrectionWindowEndsAt(publishedAt: Date): Date {
+  return new Date(publishedAt.getTime() + MENU_CORRECTION_WINDOW_HOURS * 60 * 60 * 1000);
+}
+
+/**
+ * RN-COR-10 · la corrección existe, "pero no se garantiza su ejecución si
+ * la edición o la petición de cambio llega después de las 21:00 del día
+ * anterior". Es el mismo corte que la publicación (RN-MEN-07), y el corte
+ * lo da el servidor (`menu_deadlines()`, RN-DAT-05): el cliente no lee la
+ * zona del espacio, y no hace falta que la lea.
+ */
+export function isMenuCorrectionGuaranteed(requestedAt: Date, cutoffAt: Date): boolean {
+  return requestedAt.getTime() <= cutoffAt.getTime();
+}
+
+export type MenuCorrectionAvailability =
+  | { readonly available: true; readonly guaranteed: boolean }
+  | { readonly available: false; readonly reason: "not_published" | "already_used" | "window_closed" };
+
+export interface MenuCorrectionInput {
+  readonly state: MenuState;
+  readonly publishedAt: Date | null;
+  /** Si la publicación ya tiene su corrección mínima pedida (RN-COR-01). */
+  readonly alreadyRequested: boolean;
+  /** El corte de las 21:00 del día anterior, tal como lo deriva el servidor. */
+  readonly cutoffAt: Date;
+  readonly now: Date;
+}
+
+/**
+ * Si el restaurante puede pedir su corrección mínima, y si esta llegaría
+ * garantizada. Lo que entra o no en su alcance (RN-COR-03/04) lo juzga
+ * una persona al leerla: aquí no hay ninguna heurística.
+ */
+export function menuCorrectionAvailability(input: MenuCorrectionInput): MenuCorrectionAvailability {
+  if (input.state !== "published" || input.publishedAt === null) {
+    return { available: false, reason: "not_published" };
+  }
+  // RN-COR-01: una sola por publicación.
+  if (input.alreadyRequested) return { available: false, reason: "already_used" };
+  // RN-COR-02: la ventana posterior a la publicación.
+  if (input.now.getTime() > menuCorrectionWindowEndsAt(input.publishedAt).getTime()) {
+    return { available: false, reason: "window_closed" };
+  }
+  return { available: true, guaranteed: isMenuCorrectionGuaranteed(input.now, input.cutoffAt) };
 }

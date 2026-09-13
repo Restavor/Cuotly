@@ -14,6 +14,8 @@ import type { TimerEvent, TimerEventType } from "@/core/timer-events";
 import type { ChangeCategory } from "@/core/classification-rules";
 import type { createClient } from "@/lib/supabase/server";
 
+import { loadMenuQueue } from "./menu-diario/queue-load";
+
 /**
  * Lo que enseña el Inicio del espacio (§20.4), leído del servidor.
  *
@@ -65,6 +67,18 @@ export interface SpaceHome {
    */
   readonly teamLoadFailed: boolean;
   readonly activity: readonly ActivityEntry[];
+  /**
+   * Decisión 18 · el contador de Menú Diario, en la tarjeta que ya
+   * existía. `pending` es `null` si la consulta falló (CA-20: no es un
+   * cero) y `offered` dice si el espacio tiene un servicio de ese tipo,
+   * porque sin él no hay nada que contar y se dice el motivo.
+   */
+  readonly dailyMenu: {
+    readonly offered: boolean;
+    readonly pending: number | null;
+    readonly unassigned: number;
+    readonly overdue: number;
+  };
 }
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -296,11 +310,15 @@ export async function loadSpaceHome(
   spaceSlug: string,
   now: Date = new Date(),
 ): Promise<SpaceHome> {
+  const { data: spaceRow } = await supabase.from("spaces").select("timezone").eq("id", spaceId).maybeSingle();
+  const timeZone = spaceRow?.timezone ?? "Europe/Madrid";
+
   const [
     attention,
     { data: teamLoad, error: teamLoadError },
     { data: canAssignJobs },
     { data: events },
+    menuQueue,
   ] = await Promise.all([
     loadSpaceAttention(supabase, spaceId, spaceSlug, now),
     supabase.rpc("space_team_load", { p_space_id: spaceId }),
@@ -315,6 +333,7 @@ export async function loadSpaceHome(
       .eq("space_id", spaceId)
       .order("occurred_at", { ascending: false })
       .limit(8),
+    loadMenuQueue(supabase, spaceId, timeZone, now),
   ]);
 
   // ------------------------------------------------------------------
@@ -373,6 +392,12 @@ export async function loadSpaceHome(
     teamLoadAvailable: canAssignJobs === true,
     teamLoadFailed: teamLoadError !== null,
     activity,
+    dailyMenu: {
+      offered: menuQueue.offered,
+      pending: menuQueue.rows === null ? null : menuQueue.rows.length,
+      unassigned: (menuQueue.rows ?? []).filter((r) => r.state === "pending_assignment").length,
+      overdue: (menuQueue.rows ?? []).filter((r) => r.overdue).length,
+    },
   };
 }
 

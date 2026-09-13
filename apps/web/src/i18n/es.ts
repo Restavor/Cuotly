@@ -592,12 +592,21 @@ export const es = {
 
     dailyMenu: {
       title: "Menú Diario",
-      // CLAUDE.md MUST NOT: un contador a cero aquí parecería un dato real.
-      // Menú Diario es la Fase 2 entera y todavía no publica nada.
-      notBuiltTitle: "Todavía no está construido",
-      notBuiltReason:
-        "Menú Diario llega en la Fase 2. Cuando exista, sus publicaciones pendientes se contarán aquí.",
       openLink: "Ver Menú Diario",
+      // Decisión 18: el contador entra en la tarjeta que ya existía. Lo
+      // que cuenta son las publicaciones que el equipo tiene entre manos
+      // (RN-MEN-09: de "Publicación solicitada" a "Error de publicación")
+      // y las correcciones abiertas; sale de `team_menu_queue()`, que lo
+      // calcula en el servidor con RLS.
+      pending: (n: number) => (n === 1 ? "1 publicación pendiente" : `${n} publicaciones pendientes`),
+      pendingHint: "Pedidas por los restaurantes y todavía sin publicar, o publicadas con una corrección abierta.",
+      unassigned: (n: number) => (n === 1 ? "1 sin asignar" : `${n} sin asignar`),
+      overdue: (n: number) => (n === 1 ? "1 garantizada pasada de hora" : `${n} garantizadas pasadas de hora`),
+      // CA-20 · sin servicio no hay cero que enseñar: se dice el motivo.
+      noServiceTitle: "Este espacio no ofrece Menú Diario",
+      noServiceReason: "No hay ningún servicio de tipo Menú Diario en Planes y servicios.",
+      // CA-20 · la consulta falló: el sitio del número lo ocupa el motivo.
+      unavailable: "No se ha podido calcular",
     },
 
     activity: {
@@ -739,6 +748,8 @@ export const es = {
       menu_needs_information: "Tu menú necesita información",
       menu_published: "Menú publicado",
       menu_publication_error: "Error al publicar un menú",
+      menu_not_prepared_reminder: "Mañana no tienes menú preparado",
+      menu_publication_overdue: "Un menú garantizado sigue sin publicar pasadas las 08:00",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -2268,6 +2279,8 @@ export const es = {
       "menu.assigned": "Menú asignado",
       "menu.cancelled": "Menú cancelado",
       "menu.copied": "Menú copiado",
+      "menu.correction_completed": "Corrección del menú aplicada",
+      "menu.correction_requested": "Corrección del menú pedida",
       "menu.created": "Menú creado",
       "menu.details_updated": "Datos del menú cambiados",
       "menu.downloaded": "Menú descargado",
@@ -2279,6 +2292,7 @@ export const es = {
       "menu.published": "Menú publicado",
       "menu.ready_to_publish": "Menú listo para publicar",
       "menu.reassigned": "Menú reasignado",
+      "menu.team_error_correction_opened": "Corrección del menú por error del equipo",
       "menu.update_refunded": "Actualización devuelta",
       "menu.version_saved": "Versión del menú guardada",
       "menu_template.archived": "Plantilla archivada",
@@ -2377,22 +2391,135 @@ export const es = {
    * RN-COM-10, no invenciones — y se cuentan en prosa, no como contadores
    * a cero que parecerían un dato real.
    */
-  dailyMenuPage: {
+  /**
+   * Fase 2 · Hito 11 · Menú Diario visto por el equipo: la cola y la ficha
+   * (RN-MEN-06/07/09, RN-ASG-02/17, RN-COR-10, P7 al revés: aquí sí se ve
+   * quién). Los nombres de estado salen de `naming.states.menu` (CA-21).
+   */
+  dailyMenuTeam: {
     title: "Menú Diario",
-    subtitle: "La estructura de la Fase 2. Todavía no hay ningún menú.",
-    phaseTitle: "Por qué esta pantalla está vacía",
-    phaseReason:
-      "Menú Diario es el servicio de la Fase 2: 30 actualizaciones por ciclo (RN-COM-09) y tres plantillas iniciales (RN-COM-10), con generación de PNG y PDF y publicación manual en LandingSite. En la Fase 1 esta pantalla solo enseña su estructura, así que no hay menús, ni plantillas, ni calendario de publicación.",
-    menusTitle: "Menús",
-    menusEmpty: "Sin menús",
-    templatesTitle: "Plantillas",
-    templatesEmpty: "Sin plantillas",
-    calendarTitle: "Calendario de publicación",
-    calendarEmpty: "Sin calendario",
-    notBuiltReason: "No está construido. Llega en la Fase 2.",
-    clientSubtitle: "El Menú Diario de tu restaurante. Todavía no está disponible.",
-    clientPhaseReason:
-      "Menú Diario llega en la Fase 2. Cuando esté, aquí verás tus menús, pedirás su publicación y consumirás las actualizaciones del ciclo. De momento no hay nada que enseñar, y preferimos decirlo a enseñarte una pantalla que no hace nada.",
+    subtitle: "Las publicaciones que los restaurantes han pedido, por fecha y hora de corte.",
+    queueTitle: "Cola de publicaciones",
+    queueEmptyTitle: "No hay ninguna publicación pendiente",
+    queueEmptyReason:
+      "Cuando un restaurante pida la publicación de un menú, o pida una corrección de uno publicado, aparecerá aquí.",
+    noServiceTitle: "Este espacio no ofrece Menú Diario",
+    noServiceReason: "No hay ningún servicio de tipo Menú Diario en Planes y servicios, así que ningún restaurante puede pedir publicaciones.",
+    menuColumn: "Menú",
+    establishmentColumn: "Restaurante",
+    dateColumn: "Fecha",
+    cutoffColumn: "Corte",
+    stateColumn: "Estado",
+    assigneeColumn: "Asignado a",
+    unassigned: "Sin asignar",
+    assignedToSomeone: "Asignado",
+    guaranteedShort: "Garantizada",
+    notGuaranteedShort: "Sin garantía",
+    overdueShort: "Pasada de hora",
+    correctionsPending: (n: number) => (n === 1 ? "1 corrección pendiente" : `${n} correcciones pendientes`),
+    orderHint: "Primero la fecha más próxima; a igual fecha, el corte más cercano.",
+    openLink: "Abrir",
+
+    backToQueue: "Volver a la cola",
+    detailSubtitle: (establishment: string, kind: string, date: string) => `${establishment} · ${kind} · ${date}`,
+    detailTemplate: "Plantilla",
+    detailNoTemplate: "Sin plantilla",
+
+    deadlinesTitle: "Plazos",
+    cutoffLine: (when: string) => `Corte: ${when}. Hasta entonces el restaurante puede cambiar el contenido.`,
+    publishByLine: (when: string) => `Límite de publicación: ${when}.`,
+    requestedLine: (when: string) => `Publicación pedida el ${when}.`,
+    guaranteed: "Garantizada: la petición y la última versión llegaron antes del corte. Hay que publicar antes de las 08:00.",
+    notGuaranteed: "Sin garantía: la petición o alguna versión llegaron después del corte. Se publica cuando se pueda.",
+    overdue: "Pasada de hora: estaba garantizada antes de las 08:00 y sigue sin publicar.",
+    notRequested: "El restaurante todavía no ha pedido la publicación.",
+
+    publicationTitle: "Publicación",
+    assignedTo: (name: string) => `Asignada a ${name}`,
+    assignedToSelf: "Asignada a ti",
+    assignedMode: { auto: "asignación automática", manual: "asignación manual" },
+    noAssignee: "Nadie la ha asumido todavía.",
+    publishedBy: (name: string, when: string) => `Publicado por ${name} el ${when}.`,
+    publishedAt: (when: string) => `Publicado el ${when}.`,
+
+    contentTitle: (version: number | null) => (version === null ? "Contenido" : `Contenido · versión ${version} (la que se publica)`),
+    contentEmpty: "El restaurante no ha guardado contenido todavía.",
+    starters: "Primeros",
+    mains: "Segundos",
+    desserts: "Postres",
+    drink: "Bebida",
+    price: "Precio",
+    note: "Nota",
+    // RN-MEN-07: "el trabajador ve los cambios de versión y su hora".
+    versionsTitle: "Versiones y sus horas",
+    versionLine: (n: number, when: string) => `Versión ${n} · ${when}`,
+    versionAfterCutoff: "después del corte",
+    versionAfterRequest: "después de pedir la publicación",
+
+    downloadsTitle: "Descargar la plantilla generada",
+    downloadsHint:
+      "Paso 4 de §61: si eres quien tiene asignada la publicación, descargar pone el menú en «Listo para publicar». Descargar no consume nada.",
+    downloadPng: "Descargar PNG",
+    downloadPdf: "Descargar PDF",
+    downloadsNeedContent: "Para generarla hacen falta contenido guardado y una plantilla.",
+
+    actionsTitle: "Qué puedes hacer",
+    assignTitle: "Asignar",
+    reassignTitle: "Reasignar",
+    assignHint:
+      "Candidatos con la especialidad Menú Diario, autorizados en este restaurante y disponibles; el orden lo calcula el servidor por carga y menús en curso.",
+    assignEmptyTitle: "No hay ningún candidato",
+    assignEmptyReason:
+      "Nadie del equipo reúne ahora mismo la especialidad Menú Diario, la autorización en este restaurante y la disponibilidad.",
+    candidateColumn: "Persona",
+    loadColumn: "Carga",
+    menusColumn: "Menús en curso",
+    assignReasonLabel: "Motivo (opcional)",
+    assignSubmit: "Asignar",
+    assignPending: "Asignando…",
+
+    requestInfoTitle: "Pedir información",
+    requestInfoHint: "El menú pasa a «Falta información» y el restaurante lee tu pregunta en su historial.",
+    requestInfoLabel: "Qué falta",
+    requestInfoSubmit: "Pedir información",
+
+    publishTitle: "Marcar como publicado",
+    publishHint:
+      "Cuando ya lo has subido a LandingSite. Se registran fecha, hora, versión, plantilla y consumo, y se avisa al restaurante (§61).",
+    publishSubmit: "Marcar como publicado",
+
+    errorTitle: "Error de publicación",
+    errorHint: "LandingSite no lo ha admitido. Se avisa a quien gestiona; después se puede reintentar o reasignar.",
+    errorLabel: "Qué ha fallado",
+    errorSubmit: "Registrar el error",
+
+    refundTitle: "Devolver la actualización",
+    refundHint:
+      "Solo por un error del equipo (§60): devuelve al restaurante la actualización que consumió esta publicación, una sola vez y con motivo.",
+    refundLabel: "Motivo",
+    refundSubmit: "Devolver la actualización",
+    refundDone: "Esta publicación ya tiene su actualización devuelta.",
+
+    correctionsTitle: "Correcciones",
+    correctionsEmpty: "Ninguna corrección pedida.",
+    correctionKind: { client_request: "pedida por el restaurante", team_error: "por error del equipo" },
+    correctionRequested: (when: string) => `Pedida el ${when}`,
+    correctionGuaranteed: "garantizada",
+    correctionNotGuaranteed: "sin garantía: llegó después de las 21:00 del día anterior",
+    correctionCompleted: (when: string) => `Aplicada el ${when}`,
+    correctionCompleteNoteLabel: "Nota (opcional)",
+    correctionCompleteSubmit: "Marcar como aplicada",
+    teamErrorTitle: "Corregir por error del equipo",
+    teamErrorHint: "No consume la corrección mínima del restaurante ni ninguna actualización (RN-COR-07).",
+    teamErrorLabel: "Qué se corrige",
+    teamErrorSubmit: "Abrir la corrección",
+
+    historyTitle: "Historial",
+    historyEmpty: "Sin movimientos todavía.",
+    nothingToDo: "Este menú está cerrado.",
+    noPermissionHint: "Sobre esta publicación actúan quien la tiene asignada, el propietario y los administradores.",
+    pending: "Un momento…",
+    done: "Hecho.",
   },
 
   /**
@@ -2497,6 +2624,25 @@ export const es = {
     downloadsHint: "Descargar no consume ninguna actualización.",
     downloadsNeedContent: "Para descargarlo hace falta contenido guardado y una plantilla.",
     downloadsHistory: (n: number) => (n === 1 ? "1 descarga" : `${n} descargas`),
+
+    // RN-COR-10 · la corrección mínima de un menú publicado.
+    correctionTitle: "Pedir una corrección",
+    correctionHint:
+      "Una corrección mínima gratuita sobre el menú publicado: una errata, un precio, un plato mal escrito. Para cambiar el menú entero, cópialo para otro día.",
+    correctionGuaranteedHint: "Si la pides ahora, el equipo la aplica antes de las 08:00 del día del menú.",
+    correctionNotGuaranteedHint:
+      "Son más de las 21:00 del día anterior: el equipo la aplicará cuando pueda, sin garantía de hora (RN-COR-10).",
+    correctionLabel: "Qué hay que corregir",
+    correctionSubmit: "Pedir la corrección",
+    correctionUsed: "Este menú ya usó su corrección mínima gratuita.",
+    correctionWindowClosed: "La ventana de corrección de este menú ya se cerró: pasaron 72 horas desde que se publicó.",
+    correctionsListTitle: "Correcciones",
+    correctionLine: (when: string) => `Pedida el ${when}`,
+    correctionByTeam: "corrección por error del equipo de mantenimiento",
+    correctionGuaranteed: "garantizada antes de las 08:00",
+    correctionNotGuaranteed: "sin garantía de hora",
+    correctionCompleted: (when: string) => `aplicada el ${when}`,
+    correctionPending: "pendiente",
 
     historyTitle: "Historial",
     historyEmpty: "Sin movimientos todavía.",

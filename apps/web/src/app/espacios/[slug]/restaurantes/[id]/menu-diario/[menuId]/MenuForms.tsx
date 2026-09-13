@@ -13,10 +13,12 @@ import {
   copyMenu,
   prepareMenu,
   provideMenuInformation,
+  requestMenuCorrection,
   requestMenuPublication,
   saveMenuVersion,
   updateMenuDetails,
 } from "../actions";
+import type { MenuCorrectionAvailability } from "@/core/daily-menu";
 
 const t = es.dailyMenuClient;
 
@@ -236,6 +238,49 @@ export function ActionPanel({
           </Button>
         </form>
       </div>
+    </Card>
+  );
+}
+
+/**
+ * RN-COR-10 · pedir la corrección mínima de un menú publicado. La
+ * disponibilidad y la garantía las calcula `menuCorrectionAvailability()`
+ * para poder decir el motivo (CA-20); quien decide de verdad es
+ * `request_menu_correction()` al pulsar.
+ */
+export function CorrectionForm({
+  menuId,
+  availability,
+}: {
+  menuId: string;
+  availability: MenuCorrectionAvailability;
+}) {
+  const [state, formAction, pending] = useActionState(requestMenuCorrection.bind(null, menuId), INITIAL_MENU_ACTION);
+
+  if (!availability.available) {
+    if (availability.reason === "not_published") return null;
+    return (
+      <Card title={t.correctionTitle}>
+        <p className="text-sm text-text-secondary">
+          {availability.reason === "already_used" ? t.correctionUsed : t.correctionWindowClosed}
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card title={t.correctionTitle}>
+      <form action={formAction} className="space-y-3">
+        <p className="text-sm text-text-secondary">{t.correctionHint}</p>
+        <p className="text-sm text-text-secondary">
+          {availability.guaranteed ? t.correctionGuaranteedHint : t.correctionNotGuaranteedHint}
+        </p>
+        <TextArea label={t.correctionLabel} name="description" rows={2} required />
+        <Feedback state={state} />
+        <Button type="submit" disabled={pending}>
+          {pending ? t.pending : t.correctionSubmit}
+        </Button>
+      </form>
     </Card>
   );
 }

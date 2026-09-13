@@ -3,12 +3,13 @@ import { notFound, redirect } from "next/navigation";
 import { randomUUID } from "node:crypto";
 
 import { Card, StatusBadge } from "@/components/ui";
+import { menuCorrectionAvailability } from "@/core/daily-menu";
 import { isMenuEditable, isMenuState, menuTone } from "@/core/menu-states";
 import { es } from "@/i18n/es";
 import { fechaCorta } from "@/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 
-import { ActionPanel, DetailsForm, VersionEditor } from "./MenuForms";
+import { ActionPanel, CorrectionForm, DetailsForm, VersionEditor } from "./MenuForms";
 
 /**
  * Un menú, visto por el restaurante (Fase 2, Hito 10; RN-MEN-01 a 07,
@@ -59,8 +60,14 @@ export default async function ClientMenuPage({
 
   const base = `/espacios/${slug}/restaurantes/${id}/menu-diario`;
 
-  const [{ data: versions }, { data: templates }, { data: events }, { data: downloads }, { data: deadlineRows }] =
-    await Promise.all([
+  const [
+    { data: versions },
+    { data: templates },
+    { data: events },
+    { data: downloads },
+    { data: deadlineRows },
+    { data: corrections },
+  ] = await Promise.all([
       supabase
         .from("menu_versions")
         .select("id, version, starters, mains, desserts, drink, price_cents, note, after_cutoff, created_at")
@@ -83,10 +90,28 @@ export default async function ClientMenuPage({
         .eq("menu_id", menuId)
         .order("downloaded_at", { ascending: false }),
       supabase.rpc("menu_deadlines", { p_menu_id: menuId }),
+      // Sin quién la pidió ni quién la cerró (P7, privilegio de columna).
+      supabase
+        .from("menu_corrections")
+        .select("id, kind, description, requested_at, requested_before_cutoff, completed_at, completion_note")
+        .eq("menu_id", menuId)
+        .order("requested_at", { ascending: false }),
     ]);
 
   const current = versions?.find((v) => v.id === menu.current_version_id) ?? null;
   const deadlines = deadlineRows?.[0] ?? null;
+  // RN-COR-10 · el corte de las 21:00 lo deriva el servidor (RN-DAT-05);
+  // aquí solo se compara con la hora de ahora para decir si la corrección
+  // iría garantizada. Sin plazos no hay menú publicado que corregir.
+  const correctionAvailability = deadlines
+    ? menuCorrectionAvailability({
+        state: menu.state,
+        publishedAt: menu.published_at ? new Date(menu.published_at) : null,
+        alreadyRequested: (corrections ?? []).some((c) => c.kind === "client_request"),
+        cutoffAt: new Date(deadlines.cutoff_at),
+        now: new Date(),
+      })
+    : ({ available: false, reason: "not_published" } as const);
   const editable = isMenuEditable(menu.state);
   const templateName = templates?.find((tpl) => tpl.id === menu.template_id)?.name ?? null;
   const canDownload = current !== null && menu.template_id !== null;
@@ -125,6 +150,29 @@ export default async function ClientMenuPage({
         idempotencyKey={randomUUID()}
         defaultCopyDate={menu.target_date}
       />
+
+      <CorrectionForm menuId={menuId} availability={correctionAvailability} />
+
+      {corrections && corrections.length > 0 ? (
+        <Card title={t.correctionsListTitle}>
+          <ul className="space-y-2">
+            {corrections.map((c) => (
+              <li key={c.id} className="text-sm">
+                <p className="text-text">{c.description}</p>
+                <p className="text-text-secondary">
+                  {t.correctionLine(horaLocal(c.requested_at))}
+                  {c.kind === "team_error" ? ` · ${t.correctionByTeam}` : ""}
+                  {" · "}
+                  {c.requested_before_cutoff ? t.correctionGuaranteed : t.correctionNotGuaranteed}
+                  {" · "}
+                  {c.completed_at ? t.correctionCompleted(horaLocal(c.completed_at)) : t.correctionPending}
+                  {c.completed_at && c.completion_note ? ` · ${c.completion_note}` : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       <VersionEditor
         menuId={menuId}

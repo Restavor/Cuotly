@@ -139,10 +139,12 @@ export const AUDIT_ACTIONS = [
   "job.started",
   "job.unblocked",
   "membership.perform_jobs_changed",
-  // Fase 2, Hito 9 · Menú Diario (migración 77).
+  // Fase 2, Hito 9 · Menú Diario (migración 77); las correcciones, del Hito 11 (79).
   "menu.assigned",
   "menu.cancelled",
   "menu.copied",
+  "menu.correction_completed",
+  "menu.correction_requested",
   "menu.created",
   "menu.details_updated",
   "menu.downloaded",
@@ -154,6 +156,7 @@ export const AUDIT_ACTIONS = [
   "menu.published",
   "menu.ready_to_publish",
   "menu.reassigned",
+  "menu.team_error_correction_opened",
   "menu.update_refunded",
   "menu.version_saved",
   "menu_template.archived",

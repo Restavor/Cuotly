@@ -422,7 +422,7 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 - **RN-COR-07**: los errores imputables al equipo se corrigen **sin** consumir esta corrección ni créditos.
 - **RN-COR-08**: al terminar la ventana de corrección, la conversación de esa solicitud pasa a **solo lectura**. Una necesidad nueva exige una solicitud nueva.
 - **RN-COR-09**: no hay recordatorio automático de expiración de la corrección.
-- **RN-COR-10 (Menú Diario, enmienda 29/08/2026)**: la corrección mínima también existe en Menú Diario, pero **no se garantiza su ejecución** si la edición o la petición de cambio llega después de las 21:00 del día anterior.
+- **RN-COR-10 (Menú Diario, enmienda 29/08/2026)**: la corrección mínima también existe en Menú Diario, pero **no se garantiza su ejecución** si la edición o la petición de cambio llega después de las 21:00 del día anterior. *(Hito 11: `menu_corrections`; una por publicación, RN-COR-01; el error del equipo no la gasta, RN-COR-07; la ventana de RN-COR-02 son 72 h de reloj porque el calendario de Menú Diario no tiene días no laborables, RN-CLK-09.)*
 
 ---
 
@@ -837,9 +837,10 @@ de calendarios.
 
 Transcripción con número de §57 a §64 de la especificación maestra, para que cada regla tenga su test
 (CLAUDE.md, regla 3 del flujo). No añade ninguna regla nueva: donde la maestra da ejemplos, aquí se
-dice que son ejemplos. El servidor y el dominio están en la migración 77 (Hito 9); plantillas
-visuales, PNG y PDF, pantallas, recordatorio de las 20:00, calendario y presupuestos llegan en los
-hitos siguientes del ROADMAP.
+dice que son ejemplos. El servidor y el dominio están en la migración 77 (Hito 9); las plantillas
+visuales, el PNG y el PDF y las pantallas del restaurante en la 78 (Hito 10); las pantallas del
+equipo, el recordatorio de las 20:00 y la corrección mínima en la 79 (Hito 11). Calendario y
+presupuestos llegan en el Hito 12.
 
 - **RN-MEN-01**: cada menú registra **nombre, tipo, fecha objetivo, plantilla, contenido, versión y estado**. Se pueden preparar varios menús futuros y varios para el mismo establecimiento y fecha. Los tipos son los cinco que nombra la maestra (`daily` · `christmas` · `kids` · `groups` · `special_event`); añadir uno es una decisión de producto, no un desplegable que se amplía.
 - **RN-MEN-02**: el contenido son **primeros, segundos, postres, bebida, precio y nota u observación** (§58).
@@ -848,7 +849,7 @@ hitos siguientes del ROADMAP.
 - **RN-MEN-05**: **pedir que el equipo publique consume 1 actualización**, en el momento de pedirlo; los menús especiales también consumen. Cancelar antes de "Publicado" la devuelve (RN-CON-08 aplicado); después no. Un error del equipo se devuelve o corrige sin perjuicio para el cliente: la devolución la registra el equipo con motivo (RN-CON-12) y **una sola vez** por publicación (CA-17). Se aplican RN-CON-06 (solo una petición consume el último crédito, con bloqueo de fila sobre el ciclo), RN-CON-07 (dos pulsaciones, un efecto), RN-CON-10 y RN-CON-11 (si el ciclo del consumo ya cerró, crédito compensatorio en el vigente, que caduca con él).
 - **RN-MEN-06**: el flujo es **manual** (§61): el restaurante prepara y pide, Cuotly asigna un trabajador de Menú Diario (con un único candidato válido, solo; con varios o ninguno, a mano por `assign_jobs`), el trabajador descarga la plantilla generada, la sube a LandingSite y pulsa **Marcar como publicado**. **No existe botón Comenzar**. Al marcar publicado se registran fecha y hora, usuario, versión publicada, plantilla y consumo, y se avisa al cliente. Sobre una publicación actúan el trabajador asignado, el propietario y los administradores; un trabajador no asignado, no.
 - **RN-MEN-07**: el contenido puede modificarse libremente **hasta las 21:00 del día anterior** a la fecha objetivo, en la zona horaria del espacio. Si la versión definitiva y la petición llegaron antes de esa hora, la publicación **se garantiza antes de las 08:00**. Los cambios posteriores se aceptan, quedan marcados y **no se garantiza** que entren. El trabajador ve los cambios de versión y su hora. La garantía es un estado derivado que calcula el servidor (RN-DAT-05).
-- **RN-MEN-08**: Menú Diario opera **todos los días del año, festivos incluidos**, con su propio calendario (RN-CLK-09). A las 20:00 se recuerda al propietario y a los Editores si no hay menú preparado para el día siguiente. *(El recordatorio va por la cola de barridos: Hito 11.)*
+- **RN-MEN-08**: Menú Diario opera **todos los días del año, festivos incluidos**, con su propio calendario (RN-CLK-09). A las 20:00 se recuerda al propietario y a los Editores si no hay menú preparado para el día siguiente. *(Hito 11: `run_daily_menu_sweep()`, tipo `daily_menu_sweep` de la cola de barridos; "preparado" es cualquier menú de mañana que no sea borrador ni cancelado. El mismo barrido avisa al equipo a partir de las 08:00 de las publicaciones garantizadas sin publicar, §62.)*
 - **RN-MEN-09**: los estados son los once de §63, con este nombre interno: `draft` · `prepared` · `publication_requested` · `pending_assignment` · `assigned` · `needs_information` · `reviewing` · `ready_to_publish` · `published` · `cancelled` · `publication_error`. "Publicación solicitada" y "Pendiente de asignación" son dos estados por los que pasa la misma petición: el primero deja constancia de que el restaurante pidió y consumió, el segundo de que el equipo aún no tiene a nadie. Guardar una versión mientras "Falta información" es la respuesta y pasa a "Revisando". La máquina vive en `src/core/menu-states.ts` y el servidor la hace cumplir.
 - **RN-MEN-10**: el historial conserva fechas, platos, precio, nota, plantilla, versiones, estados, solicitudes de publicación, consumo, cancelaciones y usuario publicador (§64): `menu_versions`, `menu_events`, `menu_publications` y `menu_update_entries` son libros inmutables. Las descargas se registran en el Hito 10.
 - **RN-MEN-11**: **tres plantillas personalizadas iniciales, incluidas una sola vez** (RN-COM-10). Archivar una incluida no libera su plaza. Sustituciones, nuevas plantillas y rediseños se presupuestan aparte (`origin = quoted`). Las crea el equipo (`manage_clients`) y el restaurante elige cualquiera de las suyas en cada menú.

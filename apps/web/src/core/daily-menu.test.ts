@@ -2,15 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import {
   INCLUDED_TEMPLATE_LIMIT,
+  MENU_CORRECTION_WINDOW_HOURS,
   MENU_KINDS,
   canCreateIncludedTemplate,
   canRequestPublication,
+  countsAsPreparedForReminder,
   isAfterCutoff,
+  isMenuCorrectionGuaranteed,
   isPublicationGuaranteed,
+  isPublicationOverdue,
   linesToItems,
   menuCancellationOutcome,
+  menuCorrectionAvailability,
+  menuCorrectionWindowEndsAt,
   menuCutoffAt,
   menuPublishByAt,
+  menuReminderDecision,
   parsePriceToCents,
   updateBalance,
 } from "./daily-menu";
@@ -151,5 +158,96 @@ describe("el editor del restaurante (§58)", () => {
   it("un plato por línea, sin vacías ni espacios de más", () => {
     expect(linesToItems("Ensalada\n\n  Sopa  \r\nMerluza")).toEqual(["Ensalada", "Sopa", "Merluza"]);
     expect(linesToItems("   ")).toEqual([]);
+  });
+});
+
+describe("RN-MEN-08 · el recordatorio de las 20:00 (Hito 11)", () => {
+  // 15/07/2026 · verano, Madrid es UTC+2: las 20:00 locales son las 18:00Z.
+  it("a las 19:59 no toca; a las 20:00, sin menú para mañana, sí, y dice de qué día falta", () => {
+    expect(
+      menuReminderDecision({ now: new Date("2026-07-15T17:59:00Z"), timezone: TZ, tomorrowMenuStates: [] }),
+    ).toEqual({ due: false, targetDate: "2026-07-16" });
+    expect(
+      menuReminderDecision({ now: new Date("2026-07-15T18:00:00Z"), timezone: TZ, tomorrowMenuStates: [] }),
+    ).toEqual({ due: true, targetDate: "2026-07-16" });
+  });
+
+  it("un borrador no es un menú preparado; uno preparado, pedido o publicado, sí", () => {
+    const base = { now: new Date("2026-07-15T19:30:00Z"), timezone: TZ };
+    expect(menuReminderDecision({ ...base, tomorrowMenuStates: ["draft"] }).due).toBe(true);
+    expect(menuReminderDecision({ ...base, tomorrowMenuStates: ["cancelled"] }).due).toBe(true);
+    expect(menuReminderDecision({ ...base, tomorrowMenuStates: ["draft", "prepared"] }).due).toBe(false);
+    expect(menuReminderDecision({ ...base, tomorrowMenuStates: ["published"] }).due).toBe(false);
+    expect(countsAsPreparedForReminder("pending_assignment")).toBe(true);
+  });
+
+  it("se mira en la zona del espacio (RN-CLK-06): a las 21:30 de Madrid en invierno ya pasó la hora, aunque en UTC sean las 20:30", () => {
+    expect(
+      menuReminderDecision({ now: new Date("2026-12-24T20:30:00Z"), timezone: TZ, tomorrowMenuStates: [] }),
+    ).toEqual({ due: true, targetDate: "2026-12-25" });
+    // Y al filo de la medianoche local, "mañana" ya es otro día (RN-CLK-09: la Navidad no lo apaga).
+    expect(
+      menuReminderDecision({ now: new Date("2026-12-24T23:30:00Z"), timezone: TZ, tomorrowMenuStates: [] }).targetDate,
+    ).toBe("2026-12-26");
+  });
+});
+
+describe("§62 · el aviso de las 08:00 de una publicación garantizada sin publicar (Hito 11)", () => {
+  const base = { targetDate: "2026-07-15", timezone: TZ, guaranteed: true as boolean | null, published: false };
+  it("antes de las 08:00 no; a las 08:00, sí", () => {
+    expect(isPublicationOverdue({ ...base, now: new Date("2026-07-15T05:59:00Z") })).toBe(false);
+    expect(isPublicationOverdue({ ...base, now: new Date("2026-07-15T06:00:00Z") })).toBe(true);
+  });
+  it("una publicación sin garantía (pedida o cambiada después del corte) no debe hora, y una publicada ya no debe nada", () => {
+    expect(isPublicationOverdue({ ...base, now: new Date("2026-07-15T09:00:00Z"), guaranteed: false })).toBe(false);
+    expect(isPublicationOverdue({ ...base, now: new Date("2026-07-15T09:00:00Z"), guaranteed: null })).toBe(false);
+    expect(isPublicationOverdue({ ...base, now: new Date("2026-07-15T09:00:00Z"), published: true })).toBe(false);
+  });
+});
+
+describe("RN-COR-10 · la corrección mínima de Menú Diario (Hito 11)", () => {
+  const publishedAt = new Date("2026-07-14T10:00:00Z");
+  const base = {
+    state: "published" as const,
+    publishedAt,
+    alreadyRequested: false,
+    // El corte lo deriva el servidor: las 21:00 del 14/07 en Madrid (verano, UTC+2).
+    cutoffAt: menuCutoffAt("2026-07-15", TZ),
+  };
+
+  it("RN-COR-10 · pedida antes de las 21:00 del día anterior va garantizada; después, se acepta sin garantía", () => {
+    expect(menuCorrectionAvailability({ ...base, now: new Date("2026-07-14T18:59:00Z") })).toEqual({
+      available: true,
+      guaranteed: true,
+    });
+    expect(menuCorrectionAvailability({ ...base, now: new Date("2026-07-14T19:01:00Z") })).toEqual({
+      available: true,
+      guaranteed: false,
+    });
+    expect(isMenuCorrectionGuaranteed(new Date("2026-07-14T19:00:00Z"), menuCutoffAt("2026-07-15", TZ))).toBe(true);
+  });
+
+  it("RN-COR-01 · una sola por publicación", () => {
+    expect(menuCorrectionAvailability({ ...base, alreadyRequested: true, now: new Date("2026-07-14T12:00:00Z") })).toEqual({
+      available: false,
+      reason: "already_used",
+    });
+  });
+
+  it("RN-COR-02 · 72 h después de publicar se cierra la ventana (horas de reloj: Menú Diario opera todos los días, RN-CLK-09)", () => {
+    expect(MENU_CORRECTION_WINDOW_HOURS).toBe(72);
+    expect(menuCorrectionWindowEndsAt(publishedAt).toISOString()).toBe("2026-07-17T10:00:00.000Z");
+    expect(menuCorrectionAvailability({ ...base, now: new Date("2026-07-17T10:00:00Z") }).available).toBe(true);
+    expect(menuCorrectionAvailability({ ...base, now: new Date("2026-07-17T10:00:01Z") })).toEqual({
+      available: false,
+      reason: "window_closed",
+    });
+  });
+
+  it("RN-MEN-03 · antes de publicar no hay corrección: se guarda una versión nueva", () => {
+    expect(menuCorrectionAvailability({ ...base, state: "assigned", publishedAt: null, now: publishedAt })).toEqual({
+      available: false,
+      reason: "not_published",
+    });
   });
 });

@@ -202,3 +202,20 @@ export async function copyMenu(
   revalidatePath("/espacios", "layout");
   redirect(`/espacios/${slug}/restaurantes/${establishmentId}/menu-diario/${newId}`);
 }
+
+/**
+ * RN-COR-10 · la corrección mínima de un menú publicado. Una por
+ * publicación (RN-COR-01), dentro de la ventana (RN-COR-02), y garantizada
+ * solo si llega antes de las 21:00 del día anterior: todo lo decide
+ * `request_menu_correction()`.
+ */
+export async function requestMenuCorrection(
+  menuId: string,
+  _prev: MenuActionState,
+  formData: FormData,
+): Promise<MenuActionState> {
+  const description = String(formData.get("description") ?? "").trim();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("request_menu_correction", { p_menu_id: menuId, p_description: description });
+  return afterRpc(error);
+}

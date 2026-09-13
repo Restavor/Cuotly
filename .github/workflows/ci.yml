@@ -303,6 +303,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/menu_diario_descargas_y_plantillas.sql
 
+      - name: "Migración 79 — Verificar la cola del equipo, el barrido de las 20:00 y las 08:00 y la corrección mínima de Menú Diario (RN-MEN-07/08, RN-COR-01/02/06/07/10, RN-ASG-02/17, §18, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/menu_diario_equipo_cola_y_correccion.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

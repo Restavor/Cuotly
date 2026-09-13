@@ -1874,6 +1874,97 @@ export type Database = {
           },
         ]
       }
+      menu_corrections: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          completion_note: string | null
+          description: string
+          establishment_id: string
+          id: string
+          kind: string
+          menu_id: string
+          publication_id: string
+          requested_at: string
+          requested_before_cutoff: boolean
+          requested_by: string
+          space_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_note?: string | null
+          description: string
+          establishment_id: string
+          id?: string
+          kind: string
+          menu_id: string
+          publication_id: string
+          requested_at?: string
+          requested_before_cutoff: boolean
+          requested_by: string
+          space_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          completion_note?: string | null
+          description?: string
+          establishment_id?: string
+          id?: string
+          kind?: string
+          menu_id?: string
+          publication_id?: string
+          requested_at?: string
+          requested_before_cutoff?: boolean
+          requested_by?: string
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_corrections_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_corrections_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_corrections_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_corrections_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "menu_publications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_corrections_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_corrections_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_downloads: {
         Row: {
           by_team: boolean
@@ -5137,6 +5228,10 @@ export type Database = {
         Returns: undefined
       }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      complete_menu_correction: {
+        Args: { p_correction_id: string; p_note?: string }
+        Returns: undefined
+      }
       conditions_catalogue: {
         Args: { p_space_id: string }
         Returns: {
@@ -5618,6 +5713,15 @@ export type Database = {
           worker_id: string
         }[]
       }
+      list_menu_candidates: {
+        Args: { p_menu_id: string }
+        Returns: {
+          active_load_points: number
+          active_menu_count: number
+          last_assigned_at: string
+          worker_id: string
+        }[]
+      }
       list_task_candidates: {
         Args: { p_job_id: string }
         Returns: {
@@ -5787,6 +5891,10 @@ export type Database = {
           p_version_id: string
         }
         Returns: number
+      }
+      open_menu_team_error_correction: {
+        Args: { p_description: string; p_menu_id: string }
+        Returns: string
       }
       open_team_error_correction: {
         Args: { p_description: string; p_job_id: string }
@@ -5978,6 +6086,10 @@ export type Database = {
         Args: { p_job_id: string; p_reason: string }
         Returns: undefined
       }
+      request_menu_correction: {
+        Args: { p_description: string; p_menu_id: string }
+        Returns: string
+      }
       request_menu_information: {
         Args: { p_menu_id: string; p_reason: string }
         Returns: undefined
@@ -6036,6 +6148,10 @@ export type Database = {
       }
       run_consumption_thresholds: {
         Args: { p_space_id: string }
+        Returns: number
+      }
+      run_daily_menu_sweep: {
+        Args: { p_now?: string; p_space_id: string }
         Returns: number
       }
       run_dunning_sweep: { Args: { p_space_id: string }; Returns: number }
@@ -6226,6 +6342,28 @@ export type Database = {
         Returns: boolean
       }
       task_load_points: { Args: { p_weight: string }; Returns: number }
+      team_menu_queue: {
+        Args: { p_space_id: string }
+        Returns: {
+          assigned_to: string
+          assignment_mode: string
+          cutoff_at: string
+          establishment_id: string
+          establishment_name: string
+          guaranteed: boolean
+          is_assigned: boolean
+          kind: string
+          menu_id: string
+          name: string
+          pending_corrections: number
+          publication_id: string
+          publish_by_at: string
+          requested_at: string
+          state: string
+          target_date: string
+          updated_at: string
+        }[]
+      }
       task_weight_for_minutes: { Args: { p_minutes: number }; Returns: string }
       unblock_job: {
         Args: { p_job_id: string; p_note?: string; p_reverted?: boolean }

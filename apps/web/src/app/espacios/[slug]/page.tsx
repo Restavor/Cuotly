@@ -23,9 +23,10 @@ import { loadSpaceHome } from "./home-load";
  * `timer_events` con el reloj laboral de `src/core` — no hay ninguna
  * columna con el plazo guardado, y no la habrá (CA-10).
  *
- * Lo que NO se pinta es igual de importante: Menú Diario es la Fase 2 y
- * todavía no publica nada, así que su tarjeta dice el motivo en vez de
- * enseñar un contador a cero, que parecería un dato (CLAUDE.md MUST NOT,
+ * La tarjeta de Menú Diario (decisión 18) cuenta desde el Hito 11 las
+ * publicaciones que el equipo tiene entre manos, con `team_menu_queue()`.
+ * Si el espacio no ofrece el servicio o la consulta falla, dice el motivo
+ * en vez de enseñar un cero que parecería un dato (CLAUDE.md MUST NOT,
  * CA-20).
  */
 export const dynamic = "force-dynamic";
@@ -173,14 +174,36 @@ export default async function SpacePage({
             }
           >
             {/*
-              CLAUDE.md MUST NOT · Menú Diario llega en la Fase 2. Un "0
-              publicaciones pendientes" aquí sería un número inventado con
-              aspecto de dato real; lo que va es el motivo.
+              Decisión 18 · el contador entra en la tarjeta que ya estaba
+              en su sitio. Sale de `team_menu_queue()` (RLS y garantía en el
+              servidor). CA-20: sin servicio o sin poder calcularlo, lo que
+              va es el motivo, no un cero.
             */}
-            <EmptyState
-              title={es.spaceHome.dailyMenu.notBuiltTitle}
-              description={es.spaceHome.dailyMenu.notBuiltReason}
-            />
+            {!home.dailyMenu.offered && (home.dailyMenu.pending ?? 0) === 0 ? (
+              <EmptyState
+                title={es.spaceHome.dailyMenu.noServiceTitle}
+                description={es.spaceHome.dailyMenu.noServiceReason}
+              />
+            ) : home.dailyMenu.pending === null ? (
+              <ErrorState title={es.spaceHome.dailyMenu.unavailable} />
+            ) : (
+              <div data-testid="inicio-menu-diario">
+                <p className="text-2xl font-bold text-primary-dark">
+                  {es.spaceHome.dailyMenu.pending(home.dailyMenu.pending)}
+                </p>
+                <p className="text-sm text-text-secondary">{es.spaceHome.dailyMenu.pendingHint}</p>
+                {home.dailyMenu.unassigned > 0 || home.dailyMenu.overdue > 0 ? (
+                  <p className="mt-2 text-sm text-text">
+                    {[
+                      home.dailyMenu.unassigned > 0 ? es.spaceHome.dailyMenu.unassigned(home.dailyMenu.unassigned) : null,
+                      home.dailyMenu.overdue > 0 ? es.spaceHome.dailyMenu.overdue(home.dailyMenu.overdue) : null,
+                    ]
+                      .filter((x) => x !== null)
+                      .join(" · ")}
+                  </p>
+                ) : null}
+              </div>
+            )}
           </Card>
         </div>
       </div>

@@ -355,8 +355,8 @@ declare
   v_tipos text;
 begin
   v_encolados := public.enqueue_due_scheduled_jobs(v_momento);
-  if v_encolados < 4 then
-    raise exception 'FALLIDO: llenar la cola encoló % trabajos; esperaba al menos 4 (uno por barrido)', v_encolados
+  if v_encolados < 5 then
+    raise exception 'FALLIDO: llenar la cola encoló % trabajos; esperaba al menos 5 (uno por barrido)', v_encolados
       using errcode = 'assert_failure';
   end if;
 
@@ -364,8 +364,9 @@ begin
   from public.scheduled_jobs
   where space_id = 'f2000000-0000-0000-0000-000000000001' and status = 'pending';
 
-  if v_tipos is distinct from 'consumption_sweep,dunning_sweep,lifecycle_sweep,monthly_charges' then
-    raise exception 'FALLIDO: la cola de este espacio tiene "%"; esperaba los cuatro barridos de SQL', v_tipos
+  -- Los cuatro de la migración 52 y el de Menú Diario de la 79 (Hito 11).
+  if v_tipos is distinct from 'consumption_sweep,daily_menu_sweep,dunning_sweep,lifecycle_sweep,monthly_charges' then
+    raise exception 'FALLIDO: la cola de este espacio tiene "%"; esperaba los cinco barridos de SQL', v_tipos
       using errcode = 'assert_failure';
   end if;
 
@@ -389,20 +390,20 @@ begin
 
   select count(*) into v_mios from public.scheduled_jobs
   where space_id = 'f2000000-0000-0000-0000-000000000001';
-  if v_mios <> 4 then
-    raise exception 'CA-17 FALLIDO: el espacio tiene % trabajos encolados, esperaba 4', v_mios
+  if v_mios <> 5 then
+    raise exception 'CA-17 FALLIDO: el espacio tiene % trabajos encolados, esperaba 5', v_mios
       using errcode = 'assert_failure';
   end if;
 
   -- La hora siguiente sí es otra tanda: el ritmo lo pone quien llama.
   v_repetidos := public.enqueue_due_scheduled_jobs(v_momento + interval '1 hour');
-  if v_repetidos < 4 then
-    raise exception 'FALLIDO: la hora siguiente encoló % trabajos; esperaba al menos 4', v_repetidos
+  if v_repetidos < 5 then
+    raise exception 'FALLIDO: la hora siguiente encoló % trabajos; esperaba al menos 5', v_repetidos
       using errcode = 'assert_failure';
   end if;
 end $$;
 
--- Y los cuatro, reclamados y ejecutados, terminan bien: la cola llena
+-- Y los cinco, reclamados y ejecutados, terminan bien: la cola llena
 -- también se vacía.
 do $$
 declare
@@ -422,8 +423,8 @@ begin
     v_ejecutados := v_ejecutados + 1;
   end loop;
 
-  if v_ejecutados < 4 then
-    raise exception 'FALLIDO: se ejecutaron % barridos de este espacio, esperaba al menos 4', v_ejecutados
+  if v_ejecutados < 5 then
+    raise exception 'FALLIDO: se ejecutaron % barridos de este espacio, esperaba al menos 5', v_ejecutados
       using errcode = 'assert_failure';
   end if;
 

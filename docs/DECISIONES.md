@@ -216,6 +216,14 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
+10. **La ventana de la corrección mínima de Menú Diario** (13/09/2026, Hito 11). RN-COR-02
+   mide la ventana en 72 h laborables con el reloj contractual; Menú Diario tiene su propio
+   calendario y opera todos los días del año, festivos incluidos (RN-CLK-09, §62). Se ha
+   aplicado la regla con ese calendario: **72 h de reloj desde la publicación**
+   (`menu_correction_window_ends_at()`), con la salvedad de las 21:00 de RN-COR-10 aparte.
+   No es un umbral nuevo, pero es una lectura: si Bosco prefiere otra ventana (el propio día
+   del menú, por ejemplo), es una migración sobre esa función y su test.
+
 9. **Redondeo de consumos prorrateados — resuelto por el PRD** (01/09/2026). Este punto
    quedó abierto porque el dinero se redondea a 2 decimales (decisión 7) pero los consumos
    son unidades enteras. Al implementar el §6.4 se vio que **el PRD ya lo cierra**:
