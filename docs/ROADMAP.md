@@ -2979,7 +2979,26 @@ regenerar salió idéntica, así que no había desviación.
     del Hito 12) se anotó dentro de este commit. Es de Bosco y no lleva
     código, pero queda dicho que viajó fuera de su hito.
 
-    Tras la revisión: 32 suites desde cero, typecheck, lint, **875
+    **Segunda vuelta (el mismo día), un hueco más.** Se volvió a revisar
+    lo arreglado. Los dos huecos quedaron cerrados —las cinco mutaciones
+    del apunte fallan, incluidas dos que la primera vuelta no probó
+    (duplicar el apunte, y escribirlo solo en la primera descarga), y el
+    bloque nuevo no es vacuo: desde la sesión de la propietaria se ven 6
+    descargas y 6 apuntes, no 0 y 0—, pero el test de la ruta **solo
+    mordía en la versión**. El fixture daba al menú la misma plantilla que
+    la registrada, así que la regresión podía volver por la otra columna
+    que RN-MEN-10 manda conservar sin que fallara nada: probado, la
+    mutación de la plantilla pasaba en verde. El menú lleva ahora una
+    plantilla posterior distinta y una comprobación propia; la mutación
+    falla con "expected 'board' to be 'classic'".
+
+    Y se acotó el comentario de cabecera de la ruta, que prometía de más:
+    el nombre y la fecha objetivo salen del menú vigente porque
+    `menu_downloads` no los guarda. RN-MEN-10 solo manda conservar versión
+    y plantilla, así que no es incumplimiento, pero decir "se pinta lo que
+    se registró" a secas no era exacto.
+
+    Tras las dos vueltas: 32 suites desde cero, typecheck, lint, **876
     pruebas** y `next build`.
 
 ## FASE 1 — Operación real de Restavor

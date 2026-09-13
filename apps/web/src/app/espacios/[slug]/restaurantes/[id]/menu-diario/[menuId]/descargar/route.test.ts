@@ -12,9 +12,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * que consta en el historial. La revisión del Hito 10 (13/09/2026) lo
  * encontró leyendo el código; esto es lo que impide que vuelva.
  *
- * El test reproduce exactamente esa carrera: el menú cambia de versión
- * DESPUÉS de registrar. Si la ruta releyera `menus`, pintaría la versión
- * nueva; tiene que pintar la registrada.
+ * El test reproduce exactamente esa carrera: el menú cambia de versión Y
+ * de plantilla DESPUÉS de registrar. Si la ruta releyera `menus`,
+ * pintaría las nuevas; tiene que pintar las registradas. Son dos columnas
+ * y dos consultas distintas, así que hay una comprobación para cada una:
+ * la primera versión de este test solo movía la versión, y la regresión
+ * podía volver por la plantilla sin que fallara nada.
  *
  * Lo que NO se prueba aquí y ya está cubierto en el servidor
  * (`supabase/tests/menu_diario_descargas_y_plantillas.sql`): quién puede
@@ -53,6 +56,8 @@ const VERSION_REGISTRADA = "33333333-3333-3333-3333-333333333333";
 /** La que el restaurante guardó justo después: NO es la que se entrega. */
 const VERSION_POSTERIOR = "44444444-4444-4444-4444-444444444444";
 const PLANTILLA = "55555555-5555-5555-5555-555555555555";
+/** La plantilla que el menú tiene DESPUÉS: tampoco es la que se entrega. */
+const PLANTILLA_POSTERIOR = "66666666-6666-6666-6666-666666666666";
 
 /**
  * Una tabla falsa con el mínimo que la ruta encadena
@@ -94,8 +99,19 @@ beforeEach(() => {
       });
     }
     if (nombre === "menus") {
-      // El menú ya va por otra versión: es la carrera que se prueba.
-      return tabla({ [MENU]: { name: "Menú del día", target_date: "2026-09-20", current_version_id: VERSION_POSTERIOR, template_id: PLANTILLA } });
+      // El menú ya va por otra versión Y por otra plantilla: es la carrera
+      // que se prueba, y son las dos columnas que RN-MEN-10 manda
+      // conservar. Con la plantilla igual a la registrada, una regresión
+      // podría volver por esa columna sin que nada fallara (lo encontró la
+      // segunda vuelta de la revisión).
+      return tabla({
+        [MENU]: {
+          name: "Menú del día",
+          target_date: "2026-09-20",
+          current_version_id: VERSION_POSTERIOR,
+          template_id: PLANTILLA_POSTERIOR,
+        },
+      });
     }
     if (nombre === "menu_versions") {
       return tabla({
@@ -130,6 +146,17 @@ beforeEach(() => {
           footer_text: null,
           show_prices: true,
         },
+        // La posterior se distingue en todo lo que se puede distinguir:
+        // si la ruta la pintara, la aserción lo diría con exactitud.
+        [PLANTILLA_POSTERIOR]: {
+          layout: "board",
+          background_color: "#000000",
+          text_color: "#FFFFFF",
+          accent_color: "#FF0000",
+          heading_text: "Otra cabecera",
+          footer_text: null,
+          show_prices: false,
+        },
       });
     }
     return tabla({ "est-1": { name: "Magariños" } });
@@ -146,6 +173,21 @@ describe("RN-MEN-10 · descargar un menú entrega lo que quedó registrado", () 
     const documento = buildMenuDocumentMock.mock.calls[0][0];
     expect(documento.version).toBe(3);
     expect(documento.content.starters).toEqual(["Sopa"]);
+  });
+
+  it("y pinta la PLANTILLA que registró, que es la otra mitad de RN-MEN-10", async () => {
+    // La versión y la plantilla son dos columnas distintas de
+    // `menu_downloads` y se leen en dos consultas distintas: que una esté
+    // bien no dice nada de la otra. La primera versión de este test daba
+    // al menú la misma plantilla que la registrada, así que la regresión
+    // podía volver por aquí sin que fallara nada.
+    const respuesta = await GET(peticion(), { params });
+
+    expect(respuesta.status).toBe(200);
+    const documento = buildMenuDocumentMock.mock.calls[0][0];
+    expect(documento.design.layout).toBe("classic");
+    expect(documento.design.accentColor).toBe("#145C4E");
+    expect(documento.design.showPrices).toBe(true);
   });
 
   it("registra ANTES de pintar: si el registro falla, no se entrega nada", async () => {

@@ -14,7 +14,8 @@ import { renderMenuPdf, renderMenuPng } from "@/services/menu-image";
  * función contesta se pinta el archivo. A quien no puede se le responde
  * 404, como a los archivos: un 403 confirma que el menú existe.
  *
- * **Se pinta lo que se REGISTRÓ, no lo que el menú tenga ahora.** La
+ * **La versión y la plantilla son las que se REGISTRARON, no las que el
+ * menú tenga ahora.** La
  * función devuelve el id de la descarga y de esa fila salen la versión y
  * la plantilla. Releer `menus` después de llamarla parecía equivalente y
  * no lo es: `register_menu_download()` bloquea la fila mientras corre,
@@ -23,6 +24,13 @@ import { renderMenuPdf, renderMenuPng } from "@/services/menu-image";
  * `menu_downloads` — y esa fila es la que RN-MEN-10 conserva como historial
  * ("la versión y la plantilla exactas que se llevó"). Lo encontró la
  * revisión del Hito 10 (13/09/2026).
+ *
+ * El nombre y la fecha objetivo SÍ salen del menú vigente, y es lo único
+ * que se puede hacer hoy: `menu_downloads` no los guarda. RN-MEN-10 solo
+ * manda conservar la versión y la plantilla, así que no es un
+ * incumplimiento — pero conviene que esté dicho aquí y no dar a entender
+ * que la fila fija el documento entero. Fijarlos sería añadir dos
+ * columnas en una migración nueva.
  *
  * Las columnas se enumeran porque las cuatro tablas tienen privilegios de
  * columna (CLAUDE.md).
@@ -57,13 +65,9 @@ export async function GET(
     .maybeSingle();
   if (!download) return new NextResponse(null, { status: 404 });
 
-  const { data: menu } = await supabase
-    .from("menus")
-    .select("name, target_date, template_id")
-    .eq("id", download.menu_id)
-    .maybeSingle();
-  const [{ data: version }, { data: template }, { data: establishment }] =
+  const [{ data: menu }, { data: version }, { data: template }, { data: establishment }] =
     await Promise.all([
+      supabase.from("menus").select("name, target_date").eq("id", download.menu_id).maybeSingle(),
       supabase
         .from("menu_versions")
         .select("version, starters, mains, desserts, drink, price_cents, note")
@@ -72,7 +76,7 @@ export async function GET(
       supabase
         .from("menu_templates")
         .select("layout, background_color, text_color, accent_color, heading_text, footer_text, show_prices")
-        .eq("id", (menu as { template_id?: string } | null)?.template_id ?? download.template_id)
+        .eq("id", download.template_id)
         .maybeSingle(),
       supabase
         .from("establishments")
