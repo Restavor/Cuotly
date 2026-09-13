@@ -25,7 +25,7 @@ Actualizado el 13/09/2026.
 | 9 · Menú Diario: menús, versiones, estados y actualizaciones (Fase 2) | Servidor y dominio; sin pantallas | Migración 77, 13/09/2026. Ver la entrada de cierre abajo. |
 | 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Servidor, dominio y pantallas del restaurante | Migración 78, 13/09/2026. Ver la entrada de cierre abajo. |
 | 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Servidor, dominio y pantallas del equipo | Migración 79, 13/09/2026. Ver la entrada de cierre abajo. |
-| 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Pendiente | |
+| 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Servidor, dominio y pantallas | Migración 80, 13/09/2026. Pendiente de aplicar al proyecto real. Ver la entrada de cierre abajo. |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -3152,6 +3152,126 @@ regenerar salió idéntica, así que no había desviación.
     (privilegios de las once funciones, RLS y privilegio de columna de
     `menu_corrections`, el tipo nuevo de la cola, el índice único), y
     `database.types.ts` regenerado desde él.
+
+### Fase 2 · Hito 12 · Calendario operativo completo y presupuestos adicionales
+
+- [x] **La mensualidad del servicio con los dos precios, el calendario de §75 y §76, y los presupuestos de §84** — migración 80.
+
+    Con esto la Fase 2 queda cerrada: Menú Diario entero, el calendario
+    completo y lo que se cobra aparte del plan.
+
+    **La mensualidad del servicio (RN-COM-08, decisión 20).** Desde la
+    migración 48 `generate_monthly_charge_internal()` se paraba con un
+    servicio porque el esquema "no sabía cuál de los planes es Premium".
+    Bosco decidió que `plans.grants_priority` basta, y eso es lo que hace
+    `service_monthly_price_internal()`: `price_premium_cents` si el plan
+    activo lo tiene, `price_cents` si no o si no hay plan (RN-COM-11).
+    Contratar el servicio emite su primera mensualidad como el plan
+    desde la 52 (RN-FIN-01); `run_monthly_charges()` recorre también los
+    servicios, con el periodo en curso de cada uno calculado por
+    `subscription_current_period()` sin crear ciclos; el ingreso
+    recurrente del panel y las próximas renovaciones los cuentan con el
+    precio que se les cobra de verdad. `service_monthly_price()` es la
+    misma cuenta para las pantallas: la de planes del restaurante y la
+    ficha enseñan el precio APLICADO y su motivo, no el del catálogo, y
+    si el servidor no contesta lo dicen. `serviceMonthlyPrice()` en
+    `src/core/finance.ts` es la réplica probada sin Postgres.
+
+    **El calendario (§75, §76).** `space_calendar()` sigue derivando
+    (RN-DAT-05) y sigue siendo SECURITY INVOKER, y añade las
+    publicaciones de Menú Diario (todo menú con publicación pedida o
+    posterior, en su fecha objetivo; un borrador no), las renovaciones
+    de planes y servicios (cada mes natural desde el alta, en la zona
+    del espacio, la misma aritmética que los ciclos) y el final de las
+    sustituciones, con los tres filtros de §75 que se resuelven en SQL
+    —restaurante, trabajador y tipo— en la URL. Cambia la firma, así
+    que la antigua se borra: dos sobrecargas serían ambiguas por RPC. La
+    pantalla pone nombre y tono al estado según de qué sea cada evento y
+    enlaza a su ficha. Los límites de comenzar y de ejecución NO entran:
+    viven en `src/core/business-clock.ts` y copiarlos a SQL sería el
+    segundo reloj que CA-10 prohíbe; se dice en la pantalla.
+
+    **Los presupuestos (§84, PRD §26 nuevo, RN-QUO-01 a 05).** `quotes`
+    con RLS y sin política de escritura, código `PRE-0001` por secuencia
+    del espacio, importes con el IVA congelado (RN-FIN-08, P4), cuatro
+    estados guardados y los dos de pago DERIVADOS del cobro por
+    `quote_status()` (RN-DAT-05): "aceptado" a secas no se enseña, porque
+    aceptar es el instante en que nace el cobro. El equipo con
+    `manage_requests` crea, corrige el borrador y envía; el restaurante
+    no ve un borrador (solo sabe que "se está preparando",
+    `client_request_quote()`), y acepta o rechaza quien acepta las
+    condiciones (propietario local o global; el Editor ve y no responde;
+    Consulta no ve). Aceptar emite el cobro en el libro y, con
+    solicitud, ES la aceptación de la solicitud: `accept_request()` ve
+    el presupuesto aceptado, no mira la bolsa (RN-CON-03) y el trabajo
+    nace con `quote_id`; sin solicitud, la crea ya validada y aceptada.
+    Con presupuesto abierto o rechazado la solicitud no se acepta por
+    fuera: lo impide el servidor y la pantalla del restaurante retira el
+    botón. La base impide dos abiertos o dos aceptados por solicitud con
+    índices únicos parciales. Rechazar deja la solicitud donde estaba.
+    `requires_payment_before_start` y `authorize_quote_start()` (con
+    `manage_finance`, actor, fecha y motivo en auditoría) son la puerta
+    de RN-JOB-06: `start_job()` no deja Comenzar un trabajo presupuestado
+    con pago pendiente sin autorización, y `job_quote_gate()` se lo dice
+    al responsable antes de que el botón conteste con un error. Las
+    plantillas `quoted` de Menú Diario (RN-MEN-11) cuelgan de un
+    presupuesto aceptado de ESE restaurante y de tipo plantilla:
+    `create_menu_template()` cambia de firma y la suite del Hito 9 lo
+    recorre. Tres avisos nuevos (§18) y seis acciones de auditoría; la
+    familia `quote` la decide la fila, como las solicitudes.
+
+    **Las pantallas.** `/finanzas/presupuestos` (lista, alta y ficha con
+    enviar, corregir y autorizar el inicio), el enlace desde Finanzas y
+    desde la ficha del restaurante (maqueta 14, que ya no dice "no están
+    construidos"), "Presupuestar esta solicitud" en la solicitud del
+    equipo, la tarjeta del presupuesto con aceptar y rechazar en la
+    facturación y en la solicitud del restaurante (la misma, CA-21), y
+    la puerta del presupuesto en la ficha del trabajo. Los filtros del
+    calendario van por GET y funcionan sin JavaScript (CA-22).
+
+    **Lecturas de §84 que no son reglas nuevas**, anotadas como
+    pendientes 11 y 12 de `docs/DECISIONES.md`: quién acepta (la lista de
+    las condiciones), el periodo del cobro (el día de la aceptación),
+    que rechazar no inventa estado de solicitud y que "aceptado" no se
+    enseña.
+
+    **Lo que NO se inventa.** Los filtros de grupo y estado de §75 no
+    están en la función: salen de los mismos datos y no hacía falta
+    decidir nada. "Fin de solo lectura" (§76) no existe como fecha
+    guardada. No hay pantalla del equipo para diseñar plantillas (se
+    crean por función, como en el Hito 10), ni cancelación o abono de un
+    presupuesto (CLAUDE.md lo aplaza con los cobros). La 80 NO está
+    aplicada al proyecto real: es un paso aparte, como con la 79.
+
+    **Comprobado:** `presupuestos_y_calendario.sql` (la 34ª suite):
+    los tres precios del servicio (Premium 199 + IVA = 240,79; Básico y
+    sin plan 229; la segunda contratación no repite; el apunte dice qué
+    precio aplicó; el restaurante lo lee y otro espacio no), el barrido
+    con todo cobrado emite 0, con un periodo nuevo 1 y no repite, el
+    ingreso recurrente y las renovaciones con servicios; el presupuesto
+    sobre una solicitud (PRE-0001, 30000 → 6300 de IVA, corregir a 25000
+    → 30250, dos abiertos no, la trabajadora y el restaurante no crean,
+    el borrador invisible y "preparando", la aceptación por fuera
+    rechazada, enviar avisa a los dos propietarios y no al Editor ni a
+    Consulta, enviado no se corrige, el Editor no acepta, Consulta no ve,
+    P7 en `sent_by`, aceptar dos veces un cobro de 30250 y su apunte, la
+    solicitud aceptada y el trabajo sin consumo con `budgeted`, avisos a
+    propietario y administrador y no a la trabajadora), la puerta
+    (cerrada sin pago, Comenzar rechazado, la trabajadora no autoriza,
+    la autorización una vez con su motivo, después Comenzar sí, pagar
+    deja "paid"), rechazar (cobro 0, motivo, aceptar después no), sin
+    solicitud (crea solicitud aceptada y trabajo con apunte, sin pago
+    previo la puerta abierta), rechazado deja la solicitud pendiente y
+    no se acepta por fuera, la plantilla (no cuelga de solicitud, sin
+    aceptar no, de otro restaurante no, incluida con presupuesto no,
+    aceptada sí), el calendario (1 publicación y el borrador no, 5
+    renovaciones y 3 de servicio, el vencimiento del cobro, los tres
+    filtros, el restaurante sin ausencias y con su menú), privilegios y
+    sin escritura directa. `quotes.test.ts` (RN-QUO-01 a 05),
+    `finance.test.ts` (RN-COM-08 con los dos precios), los tests de la
+    ficha con el precio aplicado y la tarjeta de presupuestos. Las 34
+    suites desde cero sobre PostgreSQL 16 con las 80 migraciones,
+    typecheck, lint, 902 pruebas y `next build`.
 
 ## FASE 1 — Operación real de Restavor
 

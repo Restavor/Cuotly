@@ -153,7 +153,7 @@ especialidades concretas además.
 `groups` · `establishments` · `group_memberships` · `establishment_memberships` · `establishment_permissions`
 
 **Comercial**
-`plans` · `plan_versions` · `services` · `service_versions` · `subscriptions` · `consumption_cycles` · `consumption_entries` · `quotes`(estructura, sin flujo completo) · `acceptances`
+`plans` · `plan_versions` · `services` · `service_versions` · `subscriptions` · `consumption_cycles` · `consumption_entries` · `quotes` *(flujo completo desde la migración 80, Hito 12, §26)* · `acceptances`
 
 **Operación**
 `requests` · `request_versions` · `classifications` · `jobs` · `tasks` · `assignments` · `supervisions` · `state_events` · `timer_events` · `blocks` · `corrections`
@@ -175,8 +175,9 @@ especialidades concretas además.
 
 ### 5.3 Entidades preparadas pero no explotadas en Fase 1
 
-`platform_roles` (Administrador de Cuotly), `quotes` (presupuestos), `ai_usage` (medición del consumo
-de IA por espacio, que según el modelo comercial se facturará aparte al propietario del espacio).
+`platform_roles` (Administrador de Cuotly), `ai_usage` (medición del consumo de IA por espacio, que
+según el modelo comercial se facturará aparte al propietario del espacio). `quotes` salió de esta lista
+el 13/09/2026: su flujo completo es el §26 (Fase 2, Hito 12, migración 80).
 
 ---
 
@@ -202,7 +203,7 @@ Todos los precios son **más IVA** (Restavor: 21 %).
 
 ### 6.2 Servicio Menú Diario
 
-- **RN-COM-08**: 229 € + IVA al mes; 199 € + IVA si el establecimiento tiene plan Premium activo.
+- **RN-COM-08**: 229 € + IVA al mes; 199 € + IVA si el establecimiento tiene plan Premium activo. *(Hito 12, migración 80: la mensualidad del servicio se emite al contratar y en cada renovación con `generate_monthly_charge_internal()`; "Premium" es el plan activo con `plans.grants_priority`, decisión 20. `service_monthly_price()` dice a la pantalla cuál de los dos se aplica.)*
 - **RN-COM-09**: 30 actualizaciones por ciclo mensual, no acumulables. Permanencia mínima de 3 meses.
 - **RN-COM-10**: tres plantillas personalizadas iniciales incluidas una sola vez. Sustituciones y rediseños se presupuestan aparte.
 
@@ -369,7 +370,7 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 - **RN-JOB-03**: una vez asignado, el responsable debe pulsar **Comenzar** dentro del plazo T2.
 - **RN-JOB-04**: **antes** de pulsar Comenzar, si el cliente cancela, el consumo se devuelve. **Después** de Comenzar, la cancelación mantiene el consumo.
 - **RN-JOB-05**: un cambio incluido en el plan es una obligación contractual del espacio. El trabajador **no puede rechazarlo** por preferencia personal; si hay un impedimento real, lo escala internamente.
-- **RN-JOB-06**: un trabajo presupuestado aparte puede requerir una aceptación operativa específica.
+- **RN-JOB-06**: un trabajo presupuestado aparte puede requerir una aceptación operativa específica. *(Hito 12: con `quotes.requires_payment_before_start`, Comenzar espera al cobro o a la autorización registrada de `authorize_quote_start()`; RN-QUO-05.)*
 
 ### 11.4 Bloqueos y pausas
 
@@ -393,7 +394,7 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 
 - **RN-CON-01**: cada cambio consume **una unidad de su categoría**. Los puntos de carga no intervienen en el consumo.
 - **RN-CON-02**: Menú Diario usa un contador de **actualizaciones** separado del de cambios.
-- **RN-CON-03**: un trabajo presupuestado aparte **no consume** la bolsa del plan.
+- **RN-CON-03**: un trabajo presupuestado aparte **no consume** la bolsa del plan. *(Hito 12: `accept_request()` no mira la bolsa cuando la solicitud tiene presupuesto aceptado; la aceptación queda `budgeted` y el trabajo lleva `quote_id`; RN-QUO-02.)*
 - **RN-CON-04**: los consumos devueltos, corregidos o compensatorios se auditan con motivo y actor.
 - **RN-CON-05**: una renovación **no modifica** el periodo al que pertenece un consumo ya aceptado.
 - **RN-CON-06**: **solo una** solicitud puede consumir el último crédito disponible. Se garantiza con transacción y bloqueo de fila sobre el ciclo.
@@ -839,8 +840,8 @@ Transcripción con número de §57 a §64 de la especificación maestra, para qu
 (CLAUDE.md, regla 3 del flujo). No añade ninguna regla nueva: donde la maestra da ejemplos, aquí se
 dice que son ejemplos. El servidor y el dominio están en la migración 77 (Hito 9); las plantillas
 visuales, el PNG y el PDF y las pantallas del restaurante en la 78 (Hito 10); las pantallas del
-equipo, el recordatorio de las 20:00 y la corrección mínima en la 79 (Hito 11). Calendario y
-presupuestos llegan en el Hito 12.
+equipo, el recordatorio de las 20:00 y la corrección mínima en la 79 (Hito 11). El calendario operativo
+completo (§75, §76) y los presupuestos adicionales (§26) en la 80 (Hito 12).
 
 - **RN-MEN-01**: cada menú registra **nombre, tipo, fecha objetivo, plantilla, contenido, versión y estado**. Se pueden preparar varios menús futuros y varios para el mismo establecimiento y fecha. Los tipos son los cinco que nombra la maestra (`daily` · `christmas` · `kids` · `groups` · `special_event`); añadir uno es una decisión de producto, no un desplegable que se amplía.
 - **RN-MEN-02**: el contenido son **primeros, segundos, postres, bebida, precio y nota u observación** (§58).
@@ -852,9 +853,29 @@ presupuestos llegan en el Hito 12.
 - **RN-MEN-08**: Menú Diario opera **todos los días del año, festivos incluidos**, con su propio calendario (RN-CLK-09). A las 20:00 se recuerda al propietario y a los Editores si no hay menú preparado para el día siguiente. *(Hito 11: `run_daily_menu_sweep()`, tipo `daily_menu_sweep` de la cola de barridos; "preparado" es cualquier menú de mañana que no sea borrador ni cancelado. El mismo barrido avisa al equipo a partir de las 08:00 de las publicaciones garantizadas sin publicar, §62.)*
 - **RN-MEN-09**: los estados son los once de §63, con este nombre interno: `draft` · `prepared` · `publication_requested` · `pending_assignment` · `assigned` · `needs_information` · `reviewing` · `ready_to_publish` · `published` · `cancelled` · `publication_error`. "Publicación solicitada" y "Pendiente de asignación" son dos estados por los que pasa la misma petición: el primero deja constancia de que el restaurante pidió y consumió, el segundo de que el equipo aún no tiene a nadie. Guardar una versión mientras "Falta información" es la respuesta y pasa a "Revisando". La máquina vive en `src/core/menu-states.ts` y el servidor la hace cumplir.
 - **RN-MEN-10**: el historial conserva fechas, platos, precio, nota, plantilla, versiones, estados, solicitudes de publicación, consumo, cancelaciones y usuario publicador (§64): `menu_versions`, `menu_events`, `menu_publications` y `menu_update_entries` son libros inmutables. Las descargas se registran en el Hito 10.
-- **RN-MEN-11**: **tres plantillas personalizadas iniciales, incluidas una sola vez** (RN-COM-10). Archivar una incluida no libera su plaza. Sustituciones, nuevas plantillas y rediseños se presupuestan aparte (`origin = quoted`). Las crea el equipo (`manage_clients`) y el restaurante elige cualquiera de las suyas en cada menú.
+- **RN-MEN-11**: **tres plantillas personalizadas iniciales, incluidas una sola vez** (RN-COM-10). Archivar una incluida no libera su plaza. Sustituciones, nuevas plantillas y rediseños se presupuestan aparte (`origin = quoted`). Las crea el equipo (`manage_clients`) y el restaurante elige cualquiera de las suyas en cada menú. *(Hito 12: una plantilla `quoted` cuelga de un presupuesto aceptado de ese restaurante y de tipo plantilla, `menu_templates.quote_id`; sin él, `create_menu_template()` la rechaza.)*
 - **RN-MEN-12**: el restaurante **nunca ve quién es el trabajador** (P7, CLAUDE.md MUST NOT). La publicación (`menu_publications`) es una fila interna del equipo; lo que el cliente necesita saber (estado, fecha de publicación, versión y plantilla publicadas) está en `menus`. En las filas que sí son suyas, la columna con el actor va con privilegio de columna.
 - **RN-MEN-13**: con el servicio detenido por impago (RN-FIN-12), en solo lectura o archivado, **ni se pide ni se marca una publicación** (§85: "se detienen trabajos, publicaciones y contadores").
 
 Quién prepara menús por el restaurante: propietario local, Editor y propietario global del grupo (§4.3); Consulta no. El equipo con `manage_requests` puede prepararlos en su nombre. El módulo solo existe para un restaurante con suscripción activa a un servicio de tipo Menú Diario (`services.kind = 'daily_menu'`), que incluye `services.included_updates` actualizaciones por ciclo (30 en Restavor, RN-COM-09).
 
+---
+
+## 26. Presupuestos adicionales — Fase 2 (RN-QUO)
+
+Transcripción con número de §84 de la especificación maestra, con el mismo criterio que §25: cada regla
+con su test, ninguna regla nueva. Donde §84 calla, la lectura aplicada se dice aquí y está anotada en
+`docs/DECISIONES.md` (pendientes 11 y 12) para que Bosco la confirme o la cambie. Servidor, dominio
+(`src/core/quotes.ts`) y pantallas en la migración 80 (Fase 2, Hito 12).
+
+- **RN-QUO-01**: un presupuesto pasa por **borrador, enviado, aceptado o rechazado, pendiente de pago y pagado** (§84). Se guardan cuatro (`draft`, `sent`, `accepted`, `rejected`); **pendiente de pago y pagado se derivan** del cobro que emite la aceptación (RN-DAT-05, `quote_status()`), y "aceptado" a secas no se enseña: aceptar es el instante en que nace el cobro. Cada presupuesto lleva código propio del espacio (`PRE-0001`), concepto, alcance, base imponible, impuesto y total con el tipo del espacio **congelado al crearlo** (RN-FIN-08, P4). Un borrador se corrige; lo enviado no (el restaurante decide sobre lo que leyó).
+- **RN-QUO-02**: **tras la aceptación se crea solicitud o trabajo sin consumir bolsa** (§84, RN-CON-03). Con una solicitud presupuestada, la aceptación del presupuesto **es** la aceptación de la solicitud y el trabajo nace presupuestado (`jobs.quote_id`, `acceptances.budgeted`); sin solicitud, se crea una ya validada y aceptada con el alcance del presupuesto. Un presupuesto también puede pagar una **plantilla de Menú Diario** (RN-MEN-11): entonces no crea trabajo y la plantilla `quoted` cuelga de él. Una solicitud tiene como mucho un presupuesto abierto y uno aceptado, y mientras tenga uno abierto o rechazado **no se acepta por fuera**: el servidor lo impide, no el botón.
+- **RN-QUO-03**: presupuesta el equipo con `manage_requests` (propietario y administradores), entre la validación interna y la aceptación del restaurante. Lo **acepta o rechaza quien representa al restaurante** —propietario local o propietario global del grupo, la misma lista que acepta las condiciones (§4.3)—; el Editor lo ve si ve la facturación (RN-FIN-07) pero no responde; Consulta no lo ve; el equipo no acepta en nombre del cliente. Un borrador no ha salido del equipo: el restaurante solo sabe que "se está preparando". *(Lectura aplicada: §84 no dice quién acepta. Pendiente 11 de DECISIONES.)*
+- **RN-QUO-04**: aceptar **emite el cobro** con los importes del presupuesto en el libro inmutable (RN-FIN-02), con vencimiento a `payment_term_days` (RN-FIN-01b) y sin suscripción: es un cobro puntual. Pagarlo deja el presupuesto en "pagado" sin que nadie lo marque. Rechazar no emite nada y **deja la solicitud donde estaba**: el equipo puede enviar otro o el restaurante puede no continuarla. Cada paso avisa a quien toca (§18: enviado → quien puede aceptarlo; aceptado y rechazado → propietario y administradores) y deja apunte con actor, fecha y motivo (§21.2).
+- **RN-QUO-05**: **puede exigirse pago previo o autorizar el inicio antes del pago; la autorización queda registrada** (§84, RN-JOB-06). `requires_payment_before_start` lo fija el equipo al presupuestar. Con pago previo exigido, **Comenzar** espera al cobro o a que alguien con `manage_finance` autorice el inicio, y esa autorización lleva actor, fecha y motivo en auditoría. Sin pago previo exigido, el trabajo puede empezar con el cobro pendiente. Enviar, aceptar, rechazar y autorizar dos veces producen un solo efecto y un solo aviso (CA-17, RN-CON-07).
+
+Lo que el restaurante ve de un presupuesto no lleva ninguna identidad del equipo (P7): `quotes` tiene
+el `select` concedido columna a columna, como `charges`, y quién envió, decidió o autorizó sale de
+`audit_log`. El calendario operativo de §75 y §76 no tiene reglas numeradas propias: `space_calendar()`
+deriva los eventos (RN-DAT-05) y RLS decide qué ve cada uno; los límites de comenzar y de ejecución no
+entran en él porque viven en el reloj laboral de `src/core/business-clock.ts` (CA-10).

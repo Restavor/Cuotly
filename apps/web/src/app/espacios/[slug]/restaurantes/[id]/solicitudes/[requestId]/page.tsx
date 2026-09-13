@@ -9,6 +9,7 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import { AcceptRequestButton } from "../../AcceptRequestButton";
+import { ClientQuoteCard } from "../../facturacion/ClientQuoteCard";
 import {
   AcceptRevisedForm,
   DeclineRequestForm,
@@ -94,6 +95,33 @@ export default async function ClientRequestDetailPage({
   // del local aparecía firmado como "Tú".
   const conversation = conversationId ? await loadConversation(supabase, conversationId) : null;
 
+  // §84 · el presupuesto de esta solicitud, si lo hay, sin identidades.
+  // Un borrador solo se anuncia ("el equipo está preparando un
+  // presupuesto"); enviado, se responde desde aquí. Mientras exista uno,
+  // la aceptación de la solicitud ES la del presupuesto: el botón de
+  // aceptar el alcance no se ofrece porque `accept_request()` lo va a
+  // rechazar (CA-20: no se enseña una puerta que se abre en un error).
+  const [{ data: quoteRows }, { data: canAnswerQuotes }] = await Promise.all([
+    supabase.rpc("client_request_quote", { p_request_id: requestId }),
+    supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+  ]);
+  const quoteRow = quoteRows?.[0] ?? null;
+  const quote =
+    quoteRow === null || quoteRow.preparing || quoteRow.quote_id === null
+      ? null
+      : {
+          id: quoteRow.quote_id,
+          code: quoteRow.code ?? "",
+          concept: quoteRow.concept ?? "",
+          description: quoteRow.description,
+          baseCents: quoteRow.base_cents ?? 0,
+          taxCents: quoteRow.tax_cents ?? 0,
+          totalCents: quoteRow.total_cents ?? 0,
+          status: quoteRow.status ?? "sent",
+          requiresPaymentBeforeStart: quoteRow.requires_payment_before_start ?? true,
+        };
+  const quotePreparing = quoteRow?.preparing === true;
+
   const state = request.state;
   const correctionAvailable =
     job !== null && job.state === "published" && !job.free_correction_used;
@@ -153,9 +181,17 @@ export default async function ClientRequestDetailPage({
         aceptar"— habría dejado el botón inalcanzable: ese estado no
         existe en el servidor.
       */}
+      {quotePreparing ? (
+        <Card title={es.quotesClient.preparingTitle}>
+          <p className="text-sm text-text-secondary">{es.quotesClient.preparingReason}</p>
+        </Card>
+      ) : null}
+
+      {quote ? <ClientQuoteCard quote={quote} canAnswer={canAnswerQuotes === true} /> : null}
+
       {state === "pending_client_acceptance" ? (
         <>
-          {job === null ? (
+          {quoteRow !== null ? null : job === null ? (
             <Card title={es.clientArea.acceptTitle}>
               <AcceptRequestButton requestId={requestId} />
             </Card>

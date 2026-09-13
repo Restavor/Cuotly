@@ -11,8 +11,9 @@ import {
   RequestHeader,
   RequestHistoryCard,
 } from "@/components/request/Detail";
-import { Card, NoPermissionState } from "@/components/ui";
+import { Card, NoPermissionState, StatusBadge } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
+import { isQuoteState, quoteTone } from "@/core/quotes";
 import { listPosition, requestHeadline } from "@/core/requests";
 import { loadTeamRequests } from "../list-query";
 import { es } from "@/i18n/es";
@@ -67,8 +68,17 @@ export default async function TeamRequestDetailPage({
   const detail = await loadRequestDetail(supabase, id);
   if (detail === null) notFound();
 
-  const { request, establishment, proposal, counter, estimate, job, canManage } = detail;
+  const { request, establishment, proposal, counter, estimate, job, quote, canManage } = detail;
   const state = request.state;
+
+  // §84 · presupuestar se ofrece entre la validación interna y la
+  // aceptación del restaurante, que es donde `create_quote()` lo admite.
+  const sePuedePresupuestar =
+    canManage &&
+    quote === null &&
+    (state === "pending_internal_validation" || state === "pending_client_acceptance");
+  const euros = (cents: number) =>
+    new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
 
   // Un restaurante SÍ puede leer su propia solicitud (RLS se la deja), así
   // que puede llegar a esta dirección. No se le enseña esta pantalla: no
@@ -231,6 +241,45 @@ return (
               <RequestInformationForm requestId={id} />
               <RejectRequestForm requestId={id} />
             </>
+          ) : null}
+
+          {/*
+            §84 · el presupuesto de la solicitud. Solo a quien puede verlos:
+            a un trabajador `quotes_select` le devuelve nada, y decirle
+            "sin presupuesto" sería afirmar lo que no se sabe.
+          */}
+          {quote !== null ? (
+            <Card title={es.teamArea.requests.quoteTitle}>
+              <p className="flex flex-wrap items-center gap-2 text-sm text-text">
+                <span className="font-semibold">{es.teamArea.requests.quoteLine(quote.code, euros(quote.totalCents))}</span>
+                <StatusBadge tone={isQuoteState(quote.status) ? quoteTone(quote.status) : "neutral"}>
+                  {isQuoteState(quote.status) ? es.naming.states.quote[quote.status] : quote.status}
+                </StatusBadge>
+              </p>
+              {quote.status === "draft" || quote.status === "sent" ? (
+                <p className="mt-1 text-sm text-text-secondary">{es.teamArea.requests.quoteWaitingHint}</p>
+              ) : null}
+              <p className="mt-2 text-sm">
+                <Link
+                  href={`/espacios/${slug}/finanzas/presupuestos/${quote.id}`}
+                  className="text-cuotly-green underline"
+                >
+                  {es.teamArea.requests.quoteOpenLink}
+                </Link>
+              </p>
+            </Card>
+          ) : sePuedePresupuestar ? (
+            <Card title={es.teamArea.requests.quoteTitle}>
+              <p className="text-sm text-text-secondary">{es.teamArea.requests.quoteNone}</p>
+              <p className="mt-2 text-sm">
+                <Link
+                  href={`/espacios/${slug}/finanzas/presupuestos/nuevo?solicitud=${id}`}
+                  className="text-cuotly-green underline"
+                >
+                  {es.teamArea.requests.quoteCreateLink}
+                </Link>
+              </p>
+            </Card>
           ) : null}
 
           {state === "pending_client_acceptance" ? (

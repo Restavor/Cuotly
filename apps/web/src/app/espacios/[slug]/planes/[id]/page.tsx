@@ -146,6 +146,24 @@ export default async function EstablishmentPlanPage({
   const planSubscription = activas.find((s) => s.kind === "plan") ?? null;
   const serviceSubscriptions = activas.filter((s) => s.kind === "service");
 
+  // RN-COM-08 · qué precio se le cobra por cada servicio lo dice el
+  // servidor (decisión 20): `service_monthly_price()` es la misma cuenta
+  // con la que `generate_monthly_charge_internal()` emite la mensualidad.
+  // `null` cuando no contestó: se dice así, y no se enseña el del catálogo
+  // como si fuera el aplicado.
+  const preciosServicio = new Map<string, { baseCents: number; premiumApplied: boolean } | null>(
+    await Promise.all(
+      serviceSubscriptions.map(async (s) => {
+        const { data } = await supabase.rpc("service_monthly_price", { p_subscription_id: s.id });
+        const fila = data?.[0];
+        return [
+          s.id,
+          fila ? { baseCents: fila.base_cents, premiumApplied: fila.premium_applied } : null,
+        ] as const;
+      }),
+    ),
+  );
+
   const permanencia =
     planSubscription === null
       ? null
@@ -384,13 +402,29 @@ export default async function EstablishmentPlanPage({
               </TableRow>
             </TableHead>
             <TableBody>
-              {serviceSubscriptions.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>{s.services?.name ?? "—"}</TableCell>
-                  <TableCell>{euros(s.services?.price_cents ?? 0)}</TableCell>
-                  <TableCell>{dia(s.started_at)}</TableCell>
-                </TableRow>
-              ))}
+              {serviceSubscriptions.map((s) => {
+                const precio = preciosServicio.get(s.id) ?? null;
+                return (
+                  <TableRow key={s.id}>
+                    <TableCell>{s.services?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      {precio === null ? (
+                        <span className="text-text-secondary">{es.plansPage.servicePriceUnknown}</span>
+                      ) : (
+                        <>
+                          {es.plansPage.servicePriceApplied(euros(precio.baseCents))}
+                          <span className="block text-xs text-text-secondary">
+                            {precio.premiumApplied
+                              ? es.plansPage.servicePricePremiumReason
+                              : es.plansPage.servicePriceStandardReason}
+                          </span>
+                        </>
+                      )}
+                    </TableCell>
+                    <TableCell>{dia(s.started_at)}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -467,13 +501,20 @@ export default async function EstablishmentPlanPage({
       )}
 
       {/*
-        P6 · las dos cosas que esta pantalla no hace, dichas con su motivo
-        en vez de con un botón que no funcionaría.
+        RN-COM-08 · desde el Hito 12 la mensualidad del servicio sí se
+        emite, con el precio que decide el servidor (decisión 20). Aquí se
+        explica la regla; el número aplicado está en la tabla de arriba.
       */}
-      <Card title={es.plansPage.servicePendingBillingTitle}>
-        <p className="text-sm text-text-secondary">{es.plansPage.servicePendingBillingReason}</p>
-      </Card>
+      {serviceSubscriptions.length === 0 ? null : (
+        <Card title={es.plansPage.serviceBillingTitle}>
+          <p className="text-sm text-text-secondary">{es.plansPage.serviceBillingHint}</p>
+        </Card>
+      )}
 
+      {/*
+        P6 · lo que esta pantalla no hace, dicho con su motivo en vez de
+        con un botón que no funcionaría.
+      */}
       <Card title={es.plansPage.terminationTitle}>
         <p className="text-sm text-text-secondary">{es.plansPage.terminationReason}</p>
       </Card>

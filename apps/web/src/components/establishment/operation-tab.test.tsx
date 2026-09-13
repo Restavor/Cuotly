@@ -87,7 +87,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     operation,
     counts: { requestsByState: [], jobsByState: [], files: 0 },
     today: "2026-09-11",
-    payments: { allowed: false, charges: [], payments: [] },
+    payments: { allowed: false, charges: [], payments: [], quotes: [] },
     users: { rows: [], failed: false },
     canManageClients: false,
     staff: [],

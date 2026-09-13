@@ -103,6 +103,18 @@ export interface RequestDetail {
   readonly counter: RequestCounter;
   readonly estimate: ConsumptionEstimate | null;
   readonly job: { readonly id: string; readonly code: string; readonly state: string } | null;
+  /**
+   * §84 · el último presupuesto de la solicitud, con el estado que derivó
+   * `quote_status()`. `null` si no hay ninguno o si quien mira no puede
+   * verlos (`quotes_select`: un trabajador no los ve, y la pantalla no
+   * dice entonces "sin presupuesto", que sería mentira).
+   */
+  readonly quote: {
+    readonly id: string;
+    readonly code: string;
+    readonly status: string;
+    readonly totalCents: number;
+  } | null;
   readonly canManage: boolean;
 }
 
@@ -169,6 +181,7 @@ export async function loadRequestDetail(
     { data: canManage },
     { data: allowance },
     { data: subscriptions },
+    { data: quoteRow },
   ] = await Promise.all([
     supabase
       .from("establishments")
@@ -220,7 +233,19 @@ export async function loadRequestDetail(
       .select("kind, status, plans (start_sla_hours)")
       .eq("establishment_id", request.establishment_id)
       .eq("status", "active"),
+    // §84 · el último presupuesto. Columnas enumeradas (CLAUDE.md).
+    supabase
+      .from("quotes")
+      .select("id, code, total_cents")
+      .eq("request_id", requestId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
+  const { data: quoteStatus } = quoteRow
+    ? await supabase.rpc("quote_status", { p_quote_id: quoteRow.id })
+    : { data: null };
 
   // --------------------------------------------------------------
   // Adjuntos. `files` y `file_versions` tienen columnas revocadas
@@ -342,6 +367,10 @@ export async function loadRequestDetail(
     counter,
     estimate: categoria === null ? null : consumptionEstimate(categoria, bags),
     job: job ?? null,
+    quote:
+      quoteRow === null
+        ? null
+        : { id: quoteRow.id, code: quoteRow.code, status: quoteStatus ?? "draft", totalCents: quoteRow.total_cents },
     canManage: Boolean(canManage),
   };
 }

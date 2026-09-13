@@ -15,6 +15,7 @@ import {
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { ClientQuoteCard } from "./ClientQuoteCard";
 import { UploadReceiptForm } from "./UploadReceiptForm";
 
 /**
@@ -83,14 +84,47 @@ export default async function ClientBillingPage({
     );
   }
 
-  const [{ data: charges }, { data: ledger }] = await Promise.all([
-    supabase
-      .from("charges")
-      .select("id, concept, total_cents, due_at")
-      .eq("establishment_id", id)
-      .order("due_at", { ascending: false }),
-    supabase.rpc("establishment_consumption_ledger", { p_establishment_id: id }),
-  ]);
+  const [{ data: charges }, { data: ledger }, { data: quoteRows }, { data: canAnswerQuotes }] =
+    await Promise.all([
+      supabase
+        .from("charges")
+        .select("id, concept, total_cents, due_at")
+        .eq("establishment_id", id)
+        .order("due_at", { ascending: false }),
+      supabase.rpc("establishment_consumption_ledger", { p_establishment_id: id }),
+      // §84 · los presupuestos del restaurante. `quotes_select` no le deja
+      // ver borradores; las columnas se enumeran porque las de identidad
+      // están revocadas (P7).
+      supabase
+        .from("quotes")
+        .select(
+          "id, code, concept, description, base_cents, tax_cents, total_cents, requires_payment_before_start, state",
+        )
+        .eq("establishment_id", id)
+        .order("created_at", { ascending: false }),
+      // Quién responde a un presupuesto es quien acepta las condiciones:
+      // el propietario local o el del grupo. Se PREGUNTA al servidor.
+      supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+    ]);
+
+  const quotes = await Promise.all(
+    (quoteRows ?? []).map(async (quote) => {
+      const { data: status } = await supabase.rpc("quote_status", { p_quote_id: quote.id });
+      return {
+        id: quote.id,
+        code: quote.code,
+        concept: quote.concept,
+        description: quote.description,
+        baseCents: quote.base_cents,
+        taxCents: quote.tax_cents,
+        totalCents: quote.total_cents,
+        // Si la derivación no contestó, el estado guardado: nunca se
+        // inventa un "enviado" que ofrecería botones de responder.
+        status: status ?? quote.state,
+        requiresPaymentBeforeStart: quote.requires_payment_before_start,
+      };
+    }),
+  );
 
   // El estado y la deuda viva los deriva el servidor de los apuntes
   // (RN-FIN-02 + RN-DAT-05). Aquí no se suma dinero.
@@ -193,6 +227,22 @@ export default async function ClientBillingPage({
         )}
 
       </Card>
+
+      {/* §84 · los presupuestos, con sus dos botones cuando toca responder. */}
+      <section aria-labelledby="presupuestos" className="space-y-4">
+        <h2 id="presupuestos" className="text-lg font-semibold text-primary-dark">
+          {es.quotesClient.title}
+        </h2>
+        {quotes.length === 0 ? (
+          <Card>
+            <EmptyState title={es.quotesClient.emptyTitle} description={es.quotesClient.emptyReason} />
+          </Card>
+        ) : (
+          quotes.map((quote) => (
+            <ClientQuoteCard key={quote.id} quote={quote} canAnswer={canAnswerQuotes === true} />
+          ))
+        )}
+      </section>
 
       <Card title={es.clientArea.receiptTitle}>
         {chargesPendientes.length === 0 ? (

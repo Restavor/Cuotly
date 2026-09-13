@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
@@ -167,6 +168,16 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
           </dl>
         </Card>
       ) : null}
+
+      {/* §84 · los presupuestos, en su propia pantalla dentro de Finanzas. */}
+      <Card title={es.teamArea.finance.quotesLink}>
+        <p className="text-sm text-text-secondary">{es.teamArea.finance.quotesHint}</p>
+        <p className="mt-2 text-sm">
+          <Link href={`/espacios/${space.slug}/finanzas/presupuestos`} className="text-cuotly-green underline">
+            {es.quotesTeam.title} →
+          </Link>
+        </p>
+      </Card>
 
       <Card title={es.teamArea.finance.chargesTitle}>
         {chargeRows.length === 0 ? (

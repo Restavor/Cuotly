@@ -18,6 +18,7 @@ import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
 import { AUDIT_FAMILIES } from "@/core/audit";
 import { MAX_FILE_SIZE_BYTES, fileTypeLabel } from "@/core/files";
+import { isQuoteState, quoteTone } from "@/core/quotes";
 import {
   IDENTITY_FIELDS,
   MULTILINE_IDENTITY_FIELDS,
@@ -1520,32 +1521,34 @@ export function EstablishmentSheet({
                               {t.termsLabel}: {termsLine(service.terms)}
                             </span>
                           </span>
-                          <span className="shrink-0 text-sm text-text-secondary">
-                            {service.priceCents === null
-                              ? "—"
-                              : t.planPrice(euros(service.priceCents))}
+                          <span className="shrink-0 text-right text-sm text-text-secondary">
+                            {service.priceCents === null ? (
+                              es.plansPage.servicePriceUnknown
+                            ) : (
+                              <>
+                                {t.planPrice(euros(service.priceCents))}
+                                <span className="block text-xs">
+                                  {service.premiumApplied
+                                    ? t.servicePricePremium
+                                    : t.servicePriceStandard}
+                                </span>
+                              </>
+                            )}
                           </span>
                         </li>
                       ))}
                     </ul>
 
                     {/*
-                      Maqueta 13 · lo que la tarjeta del servicio enseña y
-                      aquí NO se enseña, con su motivo en vez de un número
-                      inventado (CLAUDE.md MUST NOT):
-
-                        · "Actualizaciones 12/30". El uso de un servicio no
-                          se cuenta en ninguna parte: las bolsas del ciclo
-                          son las cuatro categorías del plan. Menú Diario
-                          es Fase 2.
-                        · El segundo precio. RN-COM-08 cobra 229 € o 199 €
-                          según el plan sea Premium, y cuál se aplica no lo
-                          decide todavía ninguna función — la mensualidad
-                          de un servicio ni siquiera se emite.
-                        · "Versión aceptada v2.1 · Ver condiciones". El
-                          bloque legal entero está aplazado en CLAUDE.md:
-                          términos, privacidad y jurisdicción. No hay
-                          versiones que aceptar ni condiciones que abrir.
+                      Maqueta 13 · "Actualizaciones 12/30". El uso del
+                      servicio se cuenta en Menú Diario (RN-CON-02,
+                      `menu_update_cycles`), y es allí donde se enseña con
+                      su ciclo: aquí se enlaza con palabras en vez de
+                      copiar el contador a otra pantalla que podría
+                      discrepar. El segundo precio de RN-COM-08 ya no
+                      falta: el aplicado lo dice el servidor
+                      (`service_monthly_price()`, decisión 20) y va junto
+                      al número, arriba.
                     */}
                     <div className="mt-4">
                       <EmptyState
@@ -1746,18 +1749,63 @@ export function EstablishmentSheet({
                     </Card>
 
                     {/*
-                      Maqueta 14 · "Presupuestos". No se inventa ni uno: el
-                      PRD §5.3 pone `quotes` entre las "entidades preparadas
-                      pero NO explotadas en Fase 1", y la tabla no existe en
-                      ninguna migración. Una tabla con tres presupuestos de
-                      ejemplo sería exactamente el dato de relleno que
-                      CLAUDE.md prohíbe.
+                      Maqueta 14 · "Presupuestos" (§84, desde el Hito 12).
+                      Los que hay, con el estado que deriva el servidor del
+                      cobro (`quote_status()`, RN-DAT-05), y el enlace a
+                      Finanzas, que es donde se crean, se envían y se
+                      autoriza el inicio. Sin ninguno se dice por qué.
                     */}
                     <Card title={t.quotesTitle}>
-                      <EmptyState
-                        title={t.quotesEmptyTitle}
-                        description={t.quotesEmptyReason}
-                      />
+                      {payments.quotes.length === 0 ? (
+                        <EmptyState
+                          title={t.quotesEmptyTitle}
+                          description={t.quotesEmptyReason}
+                        />
+                      ) : (
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableHeaderCell>{es.quotesTeam.codeColumn}</TableHeaderCell>
+                              <TableHeaderCell>{es.quotesTeam.conceptColumn}</TableHeaderCell>
+                              <TableHeaderCell>{es.quotesTeam.totalColumn}</TableHeaderCell>
+                              <TableHeaderCell>{es.quotesTeam.stateColumn}</TableHeaderCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {payments.quotes.map((quote) => (
+                              <TableRow key={quote.id}>
+                                <TableCell>
+                                  <Link
+                                    href={`/espacios/${slug}/finanzas/presupuestos/${quote.id}`}
+                                    className="text-cuotly-green underline"
+                                  >
+                                    {quote.code}
+                                  </Link>
+                                </TableCell>
+                                <TableCell>{quote.concept}</TableCell>
+                                <TableCell>{euros(quote.totalCents)}</TableCell>
+                                <TableCell>
+                                  <StatusBadge
+                                    tone={isQuoteState(quote.status) ? quoteTone(quote.status) : "neutral"}
+                                  >
+                                    {isQuoteState(quote.status)
+                                      ? es.naming.states.quote[quote.status]
+                                      : quote.status}
+                                  </StatusBadge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                      <p className="mt-3 text-sm">
+                        <Link
+                          href={`/espacios/${slug}/finanzas/presupuestos?restaurante=${header.id}`}
+                          className="text-cuotly-green underline"
+                        >
+                          {t.quotesLink}
+                        </Link>
+                      </p>
                     </Card>
                   </div>
                 </>

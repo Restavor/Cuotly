@@ -54,7 +54,12 @@ const cobroPendiente = {
   outstandingCents: 65890,
 };
 
-function sheetData(payments: SheetData["payments"]): SheetData {
+/** `quotes` es opcional en los tests: la mayoría no mira la tarjeta de presupuestos. */
+type PaymentsProps = Omit<SheetData["payments"], "quotes"> & {
+  readonly quotes?: SheetData["payments"]["quotes"];
+};
+
+function sheetData(payments: PaymentsProps): SheetData {
   return {
     header: {
       id: "est-1",
@@ -109,7 +114,7 @@ function sheetData(payments: SheetData["payments"]): SheetData {
     },
     counts: { requestsByState: [], jobsByState: [], files: 0 },
     today: "2026-09-11",
-    payments,
+    payments: { ...payments, quotes: payments.quotes ?? [] },
     users: { rows: [], failed: false },
     canManageClients: false,
     staff: [],
@@ -123,7 +128,7 @@ function sheetData(payments: SheetData["payments"]): SheetData {
   };
 }
 
-function pintar(payments: SheetData["payments"]) {
+function pintar(payments: PaymentsProps) {
   return render(
     <EstablishmentSheet
       base="/espacios/demo/restaurantes/est-1"
@@ -228,11 +233,36 @@ describe("vista 14 · el historial de pagos", () => {
   });
 });
 
-describe("vista 14 · los presupuestos", () => {
-  it("no se inventa ninguno: se dice que no están construidos y por qué", () => {
+describe("vista 14 · los presupuestos (§84)", () => {
+  it("sin ninguno lo dice, con su motivo, y enlaza a Finanzas", () => {
     pintar({ allowed: true, charges: [cobroPendiente], payments: [] });
     const card = within(tarjeta(t.quotesTitle));
     expect(card.getByText(t.quotesEmptyTitle)).toBeInTheDocument();
     expect(card.getByText(t.quotesEmptyReason)).toBeInTheDocument();
+    expect(card.getByRole("link", { name: t.quotesLink })).toHaveAttribute(
+      "href",
+      "/espacios/demo/finanzas/presupuestos?restaurante=est-1",
+    );
+  });
+
+  it("RN-QUO-01 · enseña cada presupuesto con el estado que derivó el servidor, no uno calculado", () => {
+    pintar({
+      allowed: true,
+      charges: [cobroPendiente],
+      payments: [],
+      quotes: [
+        { id: "q-1", code: "PRE-0001", concept: "Carta completa", totalCents: 30250, status: "pending_payment" },
+        { id: "q-2", code: "PRE-0002", concept: "Banner", totalCents: 6050, status: "rejected" },
+      ],
+    });
+    const card = within(tarjeta(t.quotesTitle));
+    expect(card.getByRole("link", { name: "PRE-0001" })).toHaveAttribute(
+      "href",
+      "/espacios/demo/finanzas/presupuestos/q-1",
+    );
+    expect(card.getByText("302,50 €")).toBeInTheDocument();
+    expect(card.getByText(es.naming.states.quote.pending_payment)).toBeInTheDocument();
+    expect(card.getByText(es.naming.states.quote.rejected)).toBeInTheDocument();
+    expect(card.queryByText(t.quotesEmptyTitle)).not.toBeInTheDocument();
   });
 });

@@ -148,7 +148,7 @@ function sheetData(
       tasks: { shown: [], hidden: 0 },
     },
     counts: { requestsByState: [], jobsByState: [], files: 0 },
-    payments: { allowed: false, charges: [], payments: [] },
+    payments: { allowed: false, charges: [], payments: [], quotes: [] },
     today: "2026-09-11",
     users,
     staff,

@@ -12,11 +12,11 @@ import { MANAGEMENT_BLOCKS, SHEET_TABS } from "./tabs";
  * Lo que se comprueba aquí no es el aspecto: es qué se afirma. La maqueta
  * enseña un plan con sus barras de uso, una renovación, una permanencia y
  * una tarjeta de servicio con "Actualizaciones 12/30" y "Versión aceptada
- * v2.1". Tres de esos datos **no existen** en Cuotly —el uso de un
- * servicio, el segundo precio de RN-COM-08 y el bloque legal entero—, así
- * que lo que esta suite vigila es que la pantalla diga el motivo en vez de
- * rellenar el hueco con un número que nadie ha contado (CLAUDE.md MUST
- * NOT, CA-20).
+ * v2.1". Lo que esta suite vigila es que la pantalla afirme solo lo que
+ * el servidor dijo: el precio del servicio es el que aplica
+ * `service_monthly_price()` (RN-COM-08, decisión 20), el uso del servicio
+ * se cuenta en Menú Diario y no se copia aquí, y donde no hay dato se
+ * dice el motivo en vez de rellenar el hueco (CLAUDE.md MUST NOT, CA-20).
  */
 const t = es.establishmentSheet;
 
@@ -86,7 +86,7 @@ function sheetData(
     operation: sinOperacion,
     counts: { requestsByState: [], jobsByState: [], files: 0 },
     today: "2026-09-11",
-    payments: { allowed: false, charges: [], payments: [] },
+    payments: { allowed: false, charges: [], payments: [], quotes: [] },
     users: { rows: [], failed: false },
     canManageClients: false,
     staff: [],
@@ -168,36 +168,44 @@ describe("vista 13 · los servicios", () => {
     subscriptionId: "s-1",
     name: "Menú Diario",
     priceCents: 22900,
+    premiumApplied: false,
     startedAt: "2026-07-01T00:00:00.000Z",
     terms: null,
   };
 
-  it("enseña el servicio contratado con su precio de catálogo", () => {
+  it("RN-COM-08 · enseña el servicio contratado con el precio que le aplica el servidor", () => {
     pintar({ services: [menuDiario] });
     const card = within(tarjeta(t.servicesTitle));
     expect(card.getByText("Menú Diario")).toBeInTheDocument();
     expect(card.getByText("229,00 € + IVA / mes")).toBeInTheDocument();
+    expect(card.getByText(t.servicePriceStandard)).toBeInTheDocument();
   });
 
-  it("NO inventa el uso del servicio: dice por qué no hay ninguno", () => {
-    // La maqueta enseña "Actualizaciones 12/30". Ese contador no existe:
-    // las bolsas del ciclo son las cuatro categorías del plan y Menú
-    // Diario es Fase 2. Un 12 pintado aquí sería un dato inventado.
+  it("RN-COM-08 · con plan Premium activo, el segundo precio y su motivo (decisión 20)", () => {
+    pintar({ services: [{ ...menuDiario, priceCents: 19900, premiumApplied: true }] });
+    const card = within(tarjeta(t.servicesTitle));
+    expect(card.getByText("199,00 € + IVA / mes")).toBeInTheDocument();
+    expect(card.getByText(t.servicePricePremium)).toBeInTheDocument();
+    expect(card.queryByText(/229/)).not.toBeInTheDocument();
+  });
+
+  it("si el servidor no contestó el precio, lo dice en vez de enseñar el del catálogo", () => {
+    pintar({ services: [{ ...menuDiario, priceCents: null, premiumApplied: null }] });
+    const card = within(tarjeta(t.servicesTitle));
+    expect(card.getByText(es.plansPage.servicePriceUnknown)).toBeInTheDocument();
+    expect(card.queryByText(/229|199/)).not.toBeInTheDocument();
+  });
+
+  it("NO copia el uso del servicio: dice dónde se ve", () => {
+    // La maqueta enseña "Actualizaciones 12/30". Ese contador vive en
+    // Menú Diario, con su ciclo (RN-CON-02); pintarlo aquí también es
+    // tener dos sitios que pueden discrepar. Se dice dónde está.
     pintar({ services: [menuDiario] });
     const card = within(tarjeta(t.servicesTitle));
     expect(card.getByText(t.serviceUsageEmptyTitle)).toBeInTheDocument();
     expect(card.getByText(t.serviceUsageEmptyReason)).toBeInTheDocument();
     expect(card.queryByText(/12/)).not.toBeInTheDocument();
     expect(card.queryByText(/\/ 30/)).not.toBeInTheDocument();
-  });
-
-  it("NO enseña el segundo precio de RN-COM-08 como si se cobrara", () => {
-    // 199 € es el precio si el establecimiento tiene plan Premium activo,
-    // y cuál de los dos se aplica no lo decide todavía ninguna función:
-    // la mensualidad de un servicio ni siquiera se emite. Escribir 199
-    // aquí sería afirmar que se le cobra eso.
-    pintar({ services: [menuDiario] });
-    expect(within(tarjeta(t.servicesTitle)).queryByText(/199/)).not.toBeInTheDocument();
   });
 
   it("NO enseña versión aceptada ni condiciones: el bloque legal está aplazado", () => {

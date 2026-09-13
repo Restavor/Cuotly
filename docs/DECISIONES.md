@@ -216,6 +216,25 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
+12. **Lecturas menores de §84 al implementar los presupuestos** (13/09/2026, Hito 12). Tres cosas
+   que §84 no dice y que la migración 80 resuelve del modo más corto, sin inventar estado ni fórmula:
+   (a) el **periodo** del cobro de un presupuesto es el día de la aceptación, porque `charges` exige
+   periodo y un cobro puntual no tiene otro; (b) un presupuesto **rechazado deja la solicitud donde
+   estaba** (pendiente de aceptación del restaurante), sin estado nuevo de solicitud: el equipo puede
+   enviar otro y el restaurante puede no continuarla; (c) "aceptado" no se enseña como estado
+   visible, porque aceptar es el instante en que nace el cobro y desde ahí el presupuesto está
+   pendiente de pago o pagado (RN-DAT-05). Cualquiera de las tres se cambia con una migración sobre
+   `accept_quote()` / `quote_status()` y su test.
+
+11. **Quién acepta un presupuesto por el restaurante** (13/09/2026, Hito 12). §84 dice que tras la
+   aceptación se crea la solicitud o el trabajo, pero no quién acepta. Un presupuesto compromete
+   dinero del restaurante, como las condiciones de un plan (decisión del 12/09/2026, opción c), así
+   que se ha aplicado **la misma lista**: propietario local y propietario global del grupo
+   (`client_can_accept_terms()`). El Editor lo ve si ve la facturación (RN-FIN-07) y no lo acepta;
+   Consulta no lo ve; el equipo no acepta en nombre del cliente. Si Bosco quiere que el Editor pueda
+   aceptar, es un cambio en `accept_quote()` / `reject_quote()` y en `notify_quote_event()` (que
+   avisa a la misma lista), con su test.
+
 10. **La ventana de la corrección mínima de Menú Diario** (13/09/2026, Hito 11). RN-COR-02
    mide la ventana en 72 h laborables con el reloj contractual; Menú Diario tiene su propio
    calendario y opera todos los días del año, festivos incluidos (RN-CLK-09, §62). Se ha

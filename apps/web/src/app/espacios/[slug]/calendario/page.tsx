@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
+  Button,
   Card,
   EmptyState,
+  Select,
   StatusBadge,
   Table,
   TableBody,
@@ -13,20 +15,34 @@ import {
   TableRow,
 } from "@/components/ui";
 import { todayInTimeZone } from "@/core/finance";
+import { isMenuState, menuTone } from "@/core/menu-states";
 import { monthBounds, shiftMonth, spanDays } from "@/core/team-calendar";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { jobTone } from "../trabajos/page";
 import { AbsenceDecision, AvailabilityForm } from "./CalendarForms";
 
 /**
  * Calendario operativo del espacio: HU-30 (declarar disponibilidad y pedir
  * una ausencia), HU-31 (aprobarla y ver qué trabajos quedan sin cobertura)
- * y HU-32 (festivos y cierres, con auditoría).
+ * y HU-32 (festivos y cierres, con auditoría). Desde el Hito 12, el
+ * calendario completo de §75 y §76: publicaciones de Menú Diario,
+ * renovaciones de planes y servicios y final de sustituciones, con los
+ * filtros de restaurante, trabajador y tipo de evento.
  *
  * Los eventos se DERIVAN: `space_calendar()` los saca de `holidays`,
- * `absences`, `jobs` y `charges` en vez de mantener una tabla de eventos
- * que pudiera discrepar de los datos (RN-DAT-05).
+ * `absences`, `jobs`, `charges`, `menus`, `subscriptions` y
+ * `supervisions` en vez de mantener una tabla de eventos que pudiera
+ * discrepar de los datos (RN-DAT-05). Los filtros van en la URL
+ * (`?restaurante=&trabajador=&tipo=`) y los resuelve la función, no la
+ * pantalla: así el mismo enlace enseña lo mismo a quien lo abra, dentro
+ * de lo que RLS le deje ver.
+ *
+ * Los límites de comenzar y de ejecución de §76 NO están: se calculan con
+ * el reloj laboral de `src/core/business-clock.ts`, que no existe en SQL,
+ * y copiarlo sería el segundo reloj que CA-10 prohíbe. Se dice en la
+ * pantalla en vez de callarlo.
  *
  * Esta pantalla no autoriza nada. `space_calendar()` es SECURITY INVOKER,
  * de modo que lo que devuelve ya está filtrado por las políticas de RLS de
@@ -43,16 +59,96 @@ export const dynamic = "force-dynamic";
 
 type EventKind = keyof typeof es.calendar.kinds;
 type AbsenceStateKey = keyof typeof es.calendar.absenceStates;
+type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
-function kindLabel(kind: string): string {
-  return kind in es.calendar.kinds ? es.calendar.kinds[kind as EventKind] : kind;
+/** Los tipos de evento que la función devuelve, en el orden del filtro. */
+const EVENT_KINDS = Object.keys(es.calendar.kinds) as readonly EventKind[];
+
+function isEventKind(value: string): value is EventKind {
+  return value in es.calendar.kinds;
 }
 
-function absenceTone(state: string): "success" | "warning" | "danger" | "neutral" {
+function kindLabel(kind: string): string {
+  return isEventKind(kind) ? es.calendar.kinds[kind] : kind;
+}
+
+function absenceTone(state: string): Tone {
   if (state === "approved") return "success";
   if (state === "rejected" || state === "cancelled") return "danger";
   if (state === "requested") return "warning";
   return "neutral";
+}
+
+/**
+ * El nombre y el tono del estado de un evento, según de qué es. Cada tipo
+ * tiene su catálogo (§76): el de una ausencia, el de un menú (§63), el de
+ * un trabajo, el de un cobro (RN-FIN-02); en una renovación "estado" es
+ * si renueva un plan o un servicio, y en una sustitución, su clase.
+ */
+function stateOf(kind: string, state: string): { readonly label: string; readonly tone: Tone } {
+  switch (kind) {
+    case "absence":
+      return {
+        label: state in es.calendar.absenceStates ? es.calendar.absenceStates[state as AbsenceStateKey] : state,
+        tone: absenceTone(state),
+      };
+    case "menu_publication":
+      return isMenuState(state)
+        ? { label: es.naming.states.menu[state], tone: menuTone(state) }
+        : { label: state, tone: "neutral" };
+    case "correction_window":
+      return {
+        label: (es.naming.states.job as Readonly<Record<string, string>>)[state] ?? state,
+        tone: jobTone(state),
+      };
+    case "charge_due":
+      return {
+        label: (es.teamArea.chargeStates as Readonly<Record<string, string>>)[state] ?? state,
+        tone: state === "paid" || state === "waived" ? "success" : state === "overdue" ? "danger" : "neutral",
+      };
+    case "renewal":
+      return {
+        label: (es.calendar.renewalKinds as Readonly<Record<string, string>>)[state] ?? state,
+        tone: "info",
+      };
+    case "supervision_end":
+      return {
+        label: (es.calendar.supervisionKinds as Readonly<Record<string, string>>)[state] ?? state,
+        tone: "info",
+      };
+    default:
+      return { label: state, tone: "neutral" };
+  }
+}
+
+/**
+ * A dónde lleva cada evento: a la ficha de lo que es. Un festivo o una
+ * ausencia no tienen ficha propia (se gestionan desde aquí), y un cobro se
+ * ve en Finanzas.
+ */
+function eventHref(
+  base: string,
+  evento: { readonly entity_type: string; readonly entity_id: string; readonly establishment_id: string | null },
+): string | null {
+  switch (evento.entity_type) {
+    case "menu":
+      return `${base}/menu-diario/${evento.entity_id}`;
+    case "job":
+      return `${base}/trabajos/${evento.entity_id}`;
+    case "charge":
+      return `${base}/finanzas`;
+    case "subscription":
+      return evento.establishment_id === null ? null : `${base}/planes/${evento.establishment_id}`;
+    case "supervision":
+      return `${base}/equipo`;
+    default:
+      return null;
+  }
+}
+
+/** Un identificador de la URL, o nada: lo que no sea un uuid no se manda. */
+function uuidParam(value: string | undefined): string | undefined {
+  return value !== undefined && /^[0-9a-f-]{36}$/i.test(value) ? value : undefined;
 }
 
 /** El nombre visible de alguien del equipo, con el correo como respaldo. */
@@ -65,11 +161,20 @@ export default async function CalendarPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ dia?: string }>;
+  searchParams: Promise<{ dia?: string; restaurante?: string; trabajador?: string; tipo?: string }>;
 }) {
   const { slug } = await params;
-  const { dia } = await searchParams;
+  const { dia, restaurante, trabajador, tipo } = await searchParams;
   const supabase = await createClient();
+
+  // §75 · los tres filtros que resuelve el servidor. Un valor que no sea
+  // válido se ignora en vez de mandarse: la función lo rechazaría con un
+  // error de tipo que no dice nada a quien mira.
+  const filtroRestaurante = uuidParam(restaurante);
+  const filtroTrabajador = uuidParam(trabajador);
+  const filtroTipo = tipo !== undefined && isEventKind(tipo) ? tipo : undefined;
+  const hayFiltros =
+    filtroRestaurante !== undefined || filtroTrabajador !== undefined || filtroTipo !== undefined;
 
   const {
     data: { user },
@@ -99,8 +204,17 @@ export default async function CalendarPage({
     { data: disponibilidad },
     { data: pendientes },
     { data: misAusencias },
+    { data: restaurantes },
+    { data: miembros },
   ] = await Promise.all([
-    supabase.rpc("space_calendar", { p_space_id: space.id, p_from: from, p_to: to }),
+    supabase.rpc("space_calendar", {
+      p_space_id: space.id,
+      p_from: from,
+      p_to: to,
+      p_establishment_id: filtroRestaurante,
+      p_worker_id: filtroTrabajador,
+      p_kind: filtroTipo,
+    }),
     supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "manage_absences" }),
     supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "manage_holidays" }),
     supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "perform_jobs" }),
@@ -128,6 +242,16 @@ export default async function CalendarPage({
       .eq("user_id", user.id)
       .order("starts_on", { ascending: false })
       .limit(20),
+    // Las opciones de los filtros de §75: los restaurantes que quien mira
+    // puede ver (RLS) y la gente del equipo. Un cliente no llega aquí; si
+    // llegara, `space_memberships` le devuelve cero filas.
+    supabase.from("establishments").select("id, name").eq("space_id", space.id).order("name"),
+    supabase
+      .from("space_memberships")
+      .select("user_id, role, status, profiles (full_name, email)")
+      .eq("space_id", space.id)
+      .eq("status", "active")
+      .order("role"),
   ]);
 
   // HU-31 · "…y ver qué trabajos quedan sin cobertura". Se pregunta una vez
@@ -148,7 +272,30 @@ export default async function CalendarPage({
 
   const mesAnterior = shiftMonth(anclaje, -1);
   const mesSiguiente = shiftMonth(anclaje, 1);
-  const base = `/espacios/${space.slug}/calendario`;
+  const espacio = `/espacios/${space.slug}`;
+  const base = `${espacio}/calendario`;
+
+  // Los filtros viajan con el mes: cambiar de mes no los pierde.
+  const conFiltros = (dia: string): string => {
+    const q = new URLSearchParams({ dia });
+    if (filtroRestaurante) q.set("restaurante", filtroRestaurante);
+    if (filtroTrabajador) q.set("trabajador", filtroTrabajador);
+    if (filtroTipo) q.set("tipo", filtroTipo);
+    return `${base}?${q.toString()}`;
+  };
+
+  const opcionesRestaurante = [
+    { value: "", label: es.calendar.filterAny },
+    ...(restaurantes ?? []).map((r) => ({ value: r.id, label: r.name })),
+  ];
+  const opcionesTrabajador = [
+    { value: "", label: es.calendar.filterAny },
+    ...(miembros ?? []).map((m) => ({ value: m.user_id, label: personName(m.profiles) })),
+  ];
+  const opcionesTipo = [
+    { value: "", label: es.calendar.filterAny },
+    ...EVENT_KINDS.map((kind) => ({ value: kind, label: es.calendar.kinds[kind] })),
+  ];
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 p-6">
@@ -162,16 +309,55 @@ export default async function CalendarPage({
         className="space-y-4"
       >
         <nav aria-label={es.calendar.title} className="flex flex-wrap gap-3 text-sm">
-          <Link href={`${base}?dia=${mesAnterior}`} className="text-cuotly-green underline">
+          <Link href={conFiltros(mesAnterior)} className="text-cuotly-green underline">
             ← {es.calendar.previousMonth}
           </Link>
-          <Link href={`${base}?dia=${hoy}`} className="text-cuotly-green underline">
+          <Link href={conFiltros(hoy)} className="text-cuotly-green underline">
             {es.calendar.today}
           </Link>
-          <Link href={`${base}?dia=${mesSiguiente}`} className="text-cuotly-green underline">
+          <Link href={conFiltros(mesSiguiente)} className="text-cuotly-green underline">
             {es.calendar.nextMonth} →
           </Link>
         </nav>
+
+        {/*
+          §75 · los filtros, como formulario GET: la URL resultante es la
+          que se comparte y la que funciona sin JavaScript (CA-22).
+        */}
+        <form method="get" action={base} className="rounded-lg bg-soft-surface p-4">
+          <p className="mb-2 text-sm font-semibold text-text">{es.calendar.filtersTitle}</p>
+          <input type="hidden" name="dia" value={anclaje} />
+          <div className="grid gap-x-4 sm:grid-cols-3">
+            <Select
+              label={es.calendar.filterEstablishment}
+              name="restaurante"
+              defaultValue={filtroRestaurante ?? ""}
+              options={opcionesRestaurante}
+            />
+            <Select
+              label={es.calendar.filterWorker}
+              name="trabajador"
+              defaultValue={filtroTrabajador ?? ""}
+              options={opcionesTrabajador}
+            />
+            <Select
+              label={es.calendar.filterKind}
+              name="tipo"
+              defaultValue={filtroTipo ?? ""}
+              options={opcionesTipo}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <Button type="submit" variant="secondary">
+              {es.calendar.filterApply}
+            </Button>
+            {hayFiltros ? (
+              <Link href={`${base}?dia=${anclaje}`} className="text-sm text-cuotly-green underline">
+                {es.calendar.filterClear}
+              </Link>
+            ) : null}
+          </div>
+        </form>
 
         {eventosError ? (
           <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />
@@ -187,30 +373,38 @@ export default async function CalendarPage({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {eventos.map((evento, i) => (
-                  <TableRow key={`${evento.entity_id}-${evento.event_date}-${i}`}>
-                    <TableCell>{evento.event_date}</TableCell>
-                    <TableCell>{kindLabel(evento.kind)}</TableCell>
-                    <TableCell>{evento.title || es.calendar.noDetail}</TableCell>
-                    <TableCell>
-                      {evento.state ? (
-                        <StatusBadge tone={absenceTone(evento.state)}>
-                          {evento.kind === "absence" && evento.state in es.calendar.absenceStates
-                            ? es.calendar.absenceStates[evento.state as AbsenceStateKey]
-                            : evento.state}
-                        </StatusBadge>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {eventos.map((evento, i) => {
+                  const href = eventHref(espacio, evento);
+                  const estado = evento.state ? stateOf(evento.kind, evento.state) : null;
+                  const detalle = evento.title || es.calendar.noDetail;
+                  return (
+                    <TableRow key={`${evento.entity_id}-${evento.event_date}-${i}`}>
+                      <TableCell>{evento.event_date}</TableCell>
+                      <TableCell>{kindLabel(evento.kind)}</TableCell>
+                      <TableCell>
+                        {href === null ? (
+                          detalle
+                        ) : (
+                          <Link href={href} className="text-cuotly-green underline">
+                            {detalle}
+                          </Link>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {estado ? <StatusBadge tone={estado.tone}>{estado.label}</StatusBadge> : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         ) : (
           <EmptyState title={es.calendar.emptyTitle} description={es.calendar.emptyReason} />
         )}
+
+        {/* §76 · lo que este calendario no enseña, dicho en vez de callado. */}
+        <p className="text-xs text-text-secondary">{es.calendar.limitsNote}</p>
       </Card>
 
       {/* HU-31 · decidir las ausencias que esperan. */}

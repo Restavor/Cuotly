@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-import type { ReceiptState } from "./action-state";
+import type { QuoteAnswerState, ReceiptState } from "./action-state";
 
 /**
  * HU-26 / RN-FIN-06 · el restaurante envía un justificante de un cobro.
@@ -47,4 +47,35 @@ export async function uploadReceipt(
 
   revalidatePath("/espacios", "layout");
   return { error: null, done: true };
+}
+
+/**
+ * §84 · el restaurante acepta un presupuesto. Quién puede lo decide
+ * `accept_quote()` (el propietario local o el del grupo, como las
+ * condiciones); qué pasa después —el cobro, la solicitud y el trabajo
+ * sin consumir bolsa (RN-CON-03)— también. Idempotente (CA-17).
+ */
+export async function acceptQuote(quoteId: string): Promise<QuoteAnswerState> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_quote", { p_quote_id: quoteId });
+  if (error) return { error: error.message, done: false, notice: null };
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true, notice: es.quotesClient.acceptDone };
+}
+
+/** §84 · rechazarlo, con motivo opcional. La solicitud, si la hay, se queda donde estaba. */
+export async function rejectQuote(
+  quoteId: string,
+  _prev: QuoteAnswerState,
+  formData: FormData,
+): Promise<QuoteAnswerState> {
+  const reason = String(formData.get("reason") ?? "").trim();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reject_quote", {
+    p_quote_id: quoteId,
+    p_reason: reason === "" ? undefined : reason,
+  });
+  if (error) return { error: error.message, done: false, notice: null };
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true, notice: es.quotesClient.rejectDone };
 }

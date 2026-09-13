@@ -309,6 +309,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/menu_diario_equipo_cola_y_correccion.sql
 
+      - name: "Migración 80 — Verificar la mensualidad del servicio con los dos precios, el calendario completo y los presupuestos (RN-COM-08, §75, §76, §84, RN-CON-03, RN-JOB-06, RN-MEN-11, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/presupuestos_y_calendario.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

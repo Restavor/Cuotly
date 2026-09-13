@@ -170,7 +170,7 @@ export default async function TeamJobDetailPage({
   const { data: job } = await supabase
     .from("jobs")
     .select(
-      "id, space_id, code, state, category, assigned_to, establishment_id, request_id, started_at, published_at, correction_window_ends_at",
+      "id, space_id, code, state, category, assigned_to, establishment_id, request_id, quote_id, started_at, published_at, correction_window_ends_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -266,6 +266,15 @@ export default async function TeamJobDetailPage({
   const { data: esDelEquipo } = await supabase.rpc("is_space_member", {
     p_space_id: job.space_id,
   });
+
+  // §84 / RN-JOB-06 · la puerta de un trabajo presupuestado: si se puede
+  // Comenzar la decide el servidor (`job_quote_gate()`, sin importes ni
+  // identidades) y `start_job()` la vuelve a comprobar. Aquí solo se
+  // dice por qué, antes de que el botón conteste con un error.
+  const { data: gateRows } = job.quote_id
+    ? await supabase.rpc("job_quote_gate", { p_job_id: id })
+    : { data: null };
+  const gate = gateRows?.[0] ?? null;
 
   /*
     El nombre del responsable del TRABAJO. Los de las tareas los resuelve
@@ -764,6 +773,31 @@ export default async function TeamJobDetailPage({
 
       {job.state === "pending_assignment" ? (
         <AssignJobForm jobId={id} candidates={candidates} />
+      ) : null}
+
+      {gate ? (
+        <Card title={es.teamArea.jobs.quoteGateTitle}>
+          <p className="text-sm text-text">{es.teamArea.jobs.quoteGateCode(gate.quote_code)}</p>
+          <p className="mt-1 text-sm text-text-secondary">
+            {!gate.requires_payment_before_start
+              ? es.teamArea.jobs.quoteGateNoPaymentRequired
+              : gate.paid
+                ? es.teamArea.jobs.quoteGatePaid
+                : gate.start_authorized
+                  ? es.teamArea.jobs.quoteGateAuthorized
+                  : es.teamArea.jobs.quoteGateBlocked}
+          </p>
+          {esDelEquipo ? (
+            <p className="mt-2 text-sm">
+              <Link
+                href={`/espacios/${slug}/finanzas/presupuestos/${gate.quote_id}`}
+                className="text-cuotly-green underline"
+              >
+                {es.teamArea.jobs.quoteGateLink}
+              </Link>
+            </p>
+          ) : null}
+        </Card>
       ) : null}
 
       {job.state === "assigned" ? <StartJobForm jobId={id} /> : null}

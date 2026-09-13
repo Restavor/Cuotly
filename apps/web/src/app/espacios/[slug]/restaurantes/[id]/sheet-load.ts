@@ -51,19 +51,20 @@ export type SheetIdentity = EstablishmentIdentity;
 /**
  * Un servicio adicional contratado, con lo que la maqueta 13 enseña de él.
  *
- * **El precio es el del catálogo, y solo ese.** `services` guarda dos
- * —`price_cents` y `price_premium_cents`— porque RN-COM-08 cobra 229 € o
- * 199 € según el establecimiento tenga plan Premium activo, y **cuál de
- * los dos se aplica no lo decide nadie todavía**: la mensualidad de un
- * servicio no se emite (lo dice `create_service_subscription()`, "eso es
- * Menú Diario, Fase 2"). Enseñar aquí 199 € sería afirmar que se le cobra
- * eso, que es justo lo que CLAUDE.md llama dato inventado. La condición se
- * dice con palabras al lado del número, que es lo que sí es verdad.
+ * **El precio es el que se le cobra, y lo dice el servidor.** `services`
+ * guarda dos —`price_cents` y `price_premium_cents`— porque RN-COM-08
+ * cobra 229 € o 199 € según el establecimiento tenga plan Premium activo,
+ * y cuál se aplica lo decide `service_monthly_price()` (decisión 20,
+ * migración 80), la misma cuenta que emite la mensualidad. Si no contesta,
+ * `priceCents` es `null` y la ficha lo dice: enseñar el del catálogo como
+ * si fuera el aplicado sería el dato inventado que CLAUDE.md prohíbe.
  */
 export interface SheetService {
   readonly subscriptionId: string;
   readonly name: string;
   readonly priceCents: number | null;
+  /** RN-COM-08 · `true` si se aplica el precio con plan Premium. `null` con `priceCents` nulo. */
+  readonly premiumApplied: boolean | null;
   readonly startedAt: string;
   /** Maqueta 13 · "Versión aceptada · Ver condiciones". `null`: no se pudo leer. */
   readonly terms: SubscriptionTerms | null;
@@ -130,13 +131,21 @@ export async function loadSheetHeader(
   const services = await Promise.all(
     (subscriptions ?? [])
       .filter((s) => s.kind === "service" && s.services !== null)
-      .map(async (s) => ({
-        subscriptionId: s.id,
-        name: s.services!.name,
-        priceCents: s.services!.price_cents,
-        startedAt: s.started_at,
-        terms: await loadSubscriptionTerms(supabase, s.id),
-      })),
+      .map(async (s) => {
+        const [terms, { data: precio }] = await Promise.all([
+          loadSubscriptionTerms(supabase, s.id),
+          supabase.rpc("service_monthly_price", { p_subscription_id: s.id }),
+        ]);
+        const aplicado = precio?.[0] ?? null;
+        return {
+          subscriptionId: s.id,
+          name: s.services!.name,
+          priceCents: aplicado?.base_cents ?? null,
+          premiumApplied: aplicado?.premium_applied ?? null,
+          startedAt: s.started_at,
+          terms,
+        };
+      }),
   );
   const planTerms = plan ? await loadSubscriptionTerms(supabase, plan.id) : null;
 
@@ -726,11 +735,25 @@ export interface SheetPayment {
   readonly reversedAt: string | null;
 }
 
+/**
+ * Un presupuesto adicional (§84, migración 80) para la maqueta 14. Sin
+ * identidades: `quotes` tiene el `select` concedido columna a columna.
+ * El estado visible lo deriva `quote_status()` del cobro (RN-DAT-05).
+ */
+export interface SheetQuote {
+  readonly id: string;
+  readonly code: string;
+  readonly concept: string;
+  readonly totalCents: number;
+  readonly status: string;
+}
+
 export interface SheetPayments {
   /** `false` cuando quien mira no puede ver la facturación (RN-FIN-07). */
   readonly allowed: boolean;
   readonly charges: readonly SheetCharge[];
   readonly payments: readonly SheetPayment[];
+  readonly quotes: readonly SheetQuote[];
 }
 
 export async function loadSheetPayments(
@@ -741,15 +764,39 @@ export async function loadSheetPayments(
     p_establishment_id: establishmentId,
   });
 
-  if (allowed !== true) return { allowed: false, charges: [], payments: [] };
+  if (allowed !== true) return { allowed: false, charges: [], payments: [], quotes: [] };
 
-  const { data: charges } = await supabase
-    .from("charges")
-    .select(
-      "id, concept, base_cents, tax_rate_percent, tax_cents, total_cents, period_start, period_end, due_at",
-    )
-    .eq("establishment_id", establishmentId)
-    .order("due_at", { ascending: false });
+  const [{ data: charges }, { data: quoteRows }] = await Promise.all([
+    supabase
+      .from("charges")
+      .select(
+        "id, concept, base_cents, tax_rate_percent, tax_cents, total_cents, period_start, period_end, due_at",
+      )
+      .eq("establishment_id", establishmentId)
+      .order("due_at", { ascending: false }),
+    // §84 · los presupuestos del restaurante. Las filas las filtra
+    // `quotes_select` (quien gestiona solicitudes, o el cliente con
+    // facturación y sin borradores); las columnas se enumeran porque las
+    // de identidad están revocadas (CLAUDE.md).
+    supabase
+      .from("quotes")
+      .select("id, code, concept, total_cents")
+      .eq("establishment_id", establishmentId)
+      .order("created_at", { ascending: false }),
+  ]);
+
+  const quotes = await Promise.all(
+    (quoteRows ?? []).map(async (quote) => {
+      const { data: status } = await supabase.rpc("quote_status", { p_quote_id: quote.id });
+      return {
+        id: quote.id,
+        code: quote.code,
+        concept: quote.concept,
+        totalCents: quote.total_cents,
+        status: status ?? "draft",
+      };
+    }),
+  );
 
   // El estado y la deuda viva los deriva el servidor de los apuntes
   // (RN-FIN-02 + RN-DAT-05): aquí no se suma dinero.
@@ -789,6 +836,7 @@ export async function loadSheetPayments(
   return {
     allowed: true,
     charges: rows,
+    quotes,
     payments: (payments ?? []).map((payment) => ({
       id: payment.id,
       chargeId: payment.charge_id,

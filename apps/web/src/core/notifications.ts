@@ -10,7 +10,7 @@
  * 20260830000035 y lo ensancharon la 20260912000071, la 20260912000076 y
  * la 20260913000077, que trajo los cinco eventos de Menú Diario, y la
  * 20260913000079, con el recordatorio de las 20:00 y el aviso de las
- * 08:00). Son dos sistemas
+ * 08:00, y la 20260913000080, con los tres de un presupuesto). Son dos sistemas
  * distintos y ninguno puede importar del otro, así que la duplicación se
  * compensa con `listas-compartidas.test.ts`, que lee la última definición
  * del CHECK en las migraciones y la compara con esta lista.
@@ -37,6 +37,9 @@ export const NOTIFICATION_EVENTS = [
   "menu_publication_error",
   "menu_not_prepared_reminder",
   "menu_publication_overdue",
+  "quote_sent",
+  "quote_accepted",
+  "quote_rejected",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -163,7 +166,7 @@ export function jobEventRecipients(context: JobNotificationContext): readonly st
  * autoriza nada por sí misma — por eso el enlace nunca lleva un token ni
  * un "ya validado".
  */
-export type DeepLinkEntity = "request" | "job" | "establishment" | "charge" | "absence" | "menu";
+export type DeepLinkEntity = "request" | "job" | "establishment" | "charge" | "absence" | "menu" | "quote";
 
 export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId: string): string {
   switch (entity) {
@@ -179,6 +182,9 @@ export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId:
       return `/espacios/${spaceSlug}/calendario`;
     case "menu":
       return `/espacios/${spaceSlug}/menu-diario/${entityId}`;
+    case "quote":
+      // La ficha del equipo; al restaurante lo reenvía a su facturación.
+      return `/espacios/${spaceSlug}/finanzas/presupuestos/${entityId}`;
   }
 }
 

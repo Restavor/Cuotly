@@ -77,6 +77,10 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   session: null,
   // Los menús de Menú Diario (migración 77): operación, como los trabajos.
   menu: null,
+  // Los presupuestos (§84, migración 80): los decide la fila, como las
+  // solicitudes. El restaurante ve los apuntes de los suyos (los aceptó
+  // él) y el equipo que gestiona, todos.
+  quote: null,
 };
 
 /**
@@ -93,6 +97,7 @@ export const AUDIT_ROW_VISIBLE_ENTITIES = [
   "absence",
   "correction",
   "menu",
+  "quote",
 ] as const;
 
 /**
@@ -165,6 +170,13 @@ export const AUDIT_ACTIONS = [
   "payment.registered",
   "payment.reversed",
   "plan.conditions_published",
+  // Fase 2, Hito 12 · presupuestos adicionales (§84, migración 80).
+  "quote.accepted",
+  "quote.created",
+  "quote.rejected",
+  "quote.sent",
+  "quote.start_authorized",
+  "quote.updated",
   "request.accepted",
   "request.accepted_again",
   "request.cancelled",
@@ -172,6 +184,7 @@ export const AUDIT_ACTIONS = [
   "request.classified",
   "request.converted_from_conversation",
   "request.copied",
+  "request.created_from_quote",
   "request.declined_by_client",
   "request.draft_created",
   "request.draft_file_attached",
