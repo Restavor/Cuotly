@@ -187,8 +187,10 @@ values
   ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso', 39900, 16, 12, 3, 0, 24, false),
   ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium', 59900, 25, 24, 5, 1, 24, true);
 
-insert into public.services (space_id, name, price_cents, price_premium_cents)
-values ('d1000000-0000-0000-0000-000000000001', 'Menú Diario', 22900, 19900);
+-- `kind` e `included_updates` (migración 77): es lo que hace que el
+-- servicio SEA Menú Diario para las funciones; por el nombre no se mira.
+insert into public.services (space_id, name, price_cents, price_premium_cents, kind, included_updates)
+values ('d1000000-0000-0000-0000-000000000001', 'Menú Diario', 22900, 19900, 'daily_menu', 30);
 
 -- ============================================================
 -- 3 · El restaurante y su acceso de cliente.
@@ -2175,6 +2177,80 @@ begin
   -- La reservada: un trabajador NO la ve.
   perform public.create_establishment_note(v_est,
     'Renegociar el plan en la renovación de diciembre; han preguntado por Impulso.', false);
+
+  perform set_config('request.jwt.claims', '', false);
+end $$;
+
+-- ------------------------------------------------------------
+-- 12.12 · Menú Diario de Magariños (Fase 2, hitos 9 y 10).
+--
+-- Magariños tiene el servicio (sección 9.4). Aquí se le dan sus tres
+-- plantillas incluidas (RN-COM-10), cada una con una de las tres
+-- disposiciones de la migración 78 para que la descarga enseñe las
+-- tres, y dos menús del restaurante: un borrador con contenido para
+-- pasado mañana y uno de mañana ya pedido para publicar. Como Ana y la
+-- trabajadora de Casa Sol son las dos candidatas de Menú Diario
+-- autorizadas en Magariños, ese segundo menú queda "pendiente de
+-- asignar" (RN-ASG-04) y es lo que la cola del equipo (Hito 11) va a
+-- tener que atender.
+--
+-- Todo por las funciones de verdad, con la identidad que las llamaría
+-- en producción: las plantillas las crea el equipo, los menús los
+-- prepara la propietaria del restaurante. Pedir la publicación consume
+-- la primera de las 30 actualizaciones del ciclo.
+-- ------------------------------------------------------------
+do $$
+declare
+  v_est uuid := 'd4000000-0000-0000-0000-000000000003';
+  v_t1 uuid; v_t2 uuid; v_t3 uuid;
+  v_m1 uuid; v_m2 uuid;
+begin
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
+                      'role', 'authenticated')::text, false);
+
+  v_t1 := public.create_menu_template(v_est, 'Clásica');
+  v_t2 := public.create_menu_template(v_est, 'Pizarra');
+  v_t3 := public.create_menu_template(v_est, 'Elegante');
+
+  perform public.update_menu_template_design(v_t1, 'classic', '#FFFFFF', '#1F2937', '#145C4E',
+    'Magariños', 'IVA incluido · Pan y bebida incluidos', true);
+  perform public.update_menu_template_design(v_t2, 'board', '#0B2F2A', '#FFFFFF', '#D89524',
+    'Magariños · Menú del día', 'Calle Velázquez, 18 · 910 123 456', true);
+  perform public.update_menu_template_design(v_t3, 'elegant', '#FAF7F2', '#2B2118', '#8A5A2B',
+    'Restaurante Magariños', null, false);
+
+  -- La propietaria local prepara los menús.
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', 'd0000000-0000-0000-0000-000000000005',
+                      'role', 'authenticated')::text, false);
+
+  v_m1 := public.create_menu(v_est, 'Menú del día', 'daily', current_date + 1, v_t2);
+  perform public.save_menu_version(v_m1,
+    array['Ensalada de la huerta', 'Caldo gallego'],
+    array['Merluza a la gallega', 'Carrilleras al vino tinto'],
+    array['Tarta de Santiago', 'Fruta de temporada'],
+    'Vino de la casa o agua', 1450, 'Pan incluido');
+  perform public.prepare_menu(v_m1);
+  perform public.request_menu_publication(v_m1, 'seed-magarinos-manana');
+
+  v_m2 := public.create_menu(v_est, 'Menú del día', 'daily', current_date + 2, v_t1);
+  perform public.save_menu_version(v_m2,
+    array['Pulpo á feira', 'Empanada de zamburiñas'],
+    array['Lubina a la sal', 'Entrecot con pimientos'],
+    array['Filloas con crema'],
+    'Vino de la casa o agua', 1650, null);
+
+  -- Se comprueba lo que se acaba de sembrar, en voz alta, todavía con
+  -- la identidad de la propietaria: el saldo lo contesta una función que
+  -- comprueba el acceso, y sin sesión no contesta a nadie.
+  if (select state from public.menus where id = v_m1) <> 'pending_assignment' then
+    raise exception 'Sembrado de Menú Diario: el menú de mañana debía quedar pendiente de asignar y está %',
+      (select state from public.menus where id = v_m1);
+  end if;
+  if (select available from public.menu_update_balance(v_est)) <> 29 then
+    raise exception 'Sembrado de Menú Diario: pedir una publicación debía dejar 29 actualizaciones';
+  end if;
 
   perform set_config('request.jwt.claims', '', false);
 end $$;

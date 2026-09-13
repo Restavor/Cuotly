@@ -131,3 +131,21 @@ export function isMenuEditable(state: MenuState): boolean {
 export function isMenuInFlight(state: MenuState): boolean {
   return IN_FLIGHT_MENU_STATES.includes(state);
 }
+
+/** El color de la insignia de un estado de menú, con el mismo criterio que trabajos y solicitudes. */
+export function menuTone(state: MenuState): "success" | "warning" | "danger" | "info" | "neutral" {
+  switch (state) {
+    case "published":
+      return "success";
+    case "needs_information":
+    case "publication_error":
+      return "warning";
+    case "cancelled":
+      return "danger";
+    case "draft":
+    case "prepared":
+      return "neutral";
+    default:
+      return "info";
+  }
+}

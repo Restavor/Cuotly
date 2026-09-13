@@ -132,3 +132,22 @@ export function updateBalance(includedUpdates: number, entries: readonly LedgerE
 export function canRequestPublication(includedUpdates: number, entries: readonly LedgerEntry[]): boolean {
   return updateBalance(includedUpdates, entries) >= 1;
 }
+
+/** "14,50" o "14.50" o "14" → 1450. Vacío → null. Cualquier otra cosa → undefined (no se entiende). */
+export function parsePriceToCents(raw: string): number | null | undefined {
+  const text = raw.trim();
+  if (text === "") return null;
+  const match = /^(\d{1,5})(?:[,.](\d{1,2}))?\s*€?$/.exec(text);
+  if (!match) return undefined;
+  const euros = Number(match[1]);
+  const cents = match[2] === undefined ? 0 : Number(match[2].padEnd(2, "0"));
+  return euros * 100 + cents;
+}
+
+/** Un plato por línea (§58): se quitan las vacías y los espacios de los bordes. */
+export function linesToItems(raw: string): readonly string[] {
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}

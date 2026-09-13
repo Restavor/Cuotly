@@ -2270,6 +2270,7 @@ export const es = {
       "menu.copied": "Menú copiado",
       "menu.created": "Menú creado",
       "menu.details_updated": "Datos del menú cambiados",
+      "menu.downloaded": "Menú descargado",
       "menu.information_provided": "Información del menú aportada",
       "menu.information_requested": "Información del menú pedida",
       "menu.prepared": "Menú preparado",
@@ -2282,6 +2283,7 @@ export const es = {
       "menu.version_saved": "Versión del menú guardada",
       "menu_template.archived": "Plantilla archivada",
       "menu_template.created": "Plantilla creada",
+      "menu_template.design_updated": "Diseño de la plantilla cambiado",
       "payment.registered": "Pago registrado",
       "payment.reversed": "Pago revertido",
       "request.accepted": "Solicitud aceptada",
@@ -2391,6 +2393,119 @@ export const es = {
     clientSubtitle: "El Menú Diario de tu restaurante. Todavía no está disponible.",
     clientPhaseReason:
       "Menú Diario llega en la Fase 2. Cuando esté, aquí verás tus menús, pedirás su publicación y consumirás las actualizaciones del ciclo. De momento no hay nada que enseñar, y preferimos decirlo a enseñarte una pantalla que no hace nada.",
+  },
+
+  /**
+   * Fase 2 · Hito 10 · Menú Diario visto por el restaurante (RN-MEN-01 a
+   * 07, 09 a 12). Los nombres de estado NO están aquí: salen de
+   * `naming.states.menu` (CA-21). Los de los tipos, de `naming.menuKinds`.
+   */
+  dailyMenuClient: {
+    title: "Menú Diario",
+    subtitle: "Prepara tus menús, pide su publicación y descárgalos en PNG o PDF.",
+    back: "Volver al restaurante",
+    backToList: "Volver a Menú Diario",
+    noServiceTitle: "Tu restaurante no tiene contratado Menú Diario",
+    noServiceReason:
+      "Menú Diario es un servicio aparte del plan de mantenimiento. Si quieres contratarlo, habla con el equipo de mantenimiento.",
+
+    balanceTitle: "Actualizaciones de este ciclo",
+    balanceLine: (available: number, included: number) => `Te quedan ${available} de ${included}`,
+    balanceRenews: (day: string) => `Se renuevan el ${day}. No se acumulan.`,
+    balanceHint: "Cada menú que mandas a publicar consume una actualización. Descargar el PNG o el PDF no consume nada.",
+
+    templatesTitle: "Tus plantillas",
+    templatesEmptyTitle: "Sin plantillas todavía",
+    templatesEmptyReason:
+      "El equipo de mantenimiento todavía no ha creado tus plantillas. Puedes preparar menús, pero no pedir su publicación ni descargarlos hasta que haya una.",
+    templateOrigin: { included: "Incluida", quoted: "Presupuestada aparte" },
+
+    menusTitle: "Tus menús",
+    menusEmptyTitle: "Todavía no has preparado ningún menú",
+    menusEmptyReason: "Cuando crees el primero, aparecerá aquí con su fecha y su estado.",
+    menuLine: (kind: string, date: string) => `${kind} · ${date}`,
+
+    newTitle: "Nuevo menú",
+    newNameLabel: "Nombre",
+    newNameHint: "Cómo lo verás en tu lista: «Menú del día», «Menú de Navidad»…",
+    newKindLabel: "Tipo",
+    newDateLabel: "Fecha del menú",
+    newDateHint: "El día en que se sirve. Se puede cambiar hasta las 21:00 del día anterior.",
+    newTemplateLabel: "Plantilla",
+    newTemplateNone: "Sin plantilla",
+    newSubmit: "Crear menú",
+    newSubmitPending: "Creando…",
+    newValidation: "El nombre y la fecha son obligatorios.",
+
+    detailKind: "Tipo",
+    detailDate: "Fecha",
+    detailTemplate: "Plantilla",
+    detailNoTemplate: "Sin plantilla: elige una para poder prepararlo.",
+
+    deadlinesTitle: "Plazos",
+    cutoffLine: (when: string) => `Puedes cambiar el contenido hasta las ${when}.`,
+    publishByLine: (when: string) => `Si lo pides antes, se publica antes de las ${when}.`,
+    guaranteed: "Publicación garantizada: pediste la publicación y guardaste la última versión antes del corte.",
+    notGuaranteed:
+      "Publicación no garantizada: la petición o algún cambio llegaron después de las 21:00 del día anterior. El equipo lo intentará, pero no está garantizado que entre en la publicación prevista.",
+    notRequested: "Todavía no has pedido la publicación.",
+
+    editorTitle: (version: number | null) => (version === null ? "Contenido" : `Contenido · versión ${version}`),
+    editorLocked: "Un menú publicado o cancelado no se edita. Cópialo para crear un borrador nuevo.",
+    startersLabel: "Primeros",
+    mainsLabel: "Segundos",
+    dessertsLabel: "Postres",
+    linesHint: "Un plato por línea.",
+    drinkLabel: "Bebida",
+    priceLabel: "Precio (euros)",
+    priceHint: "Por ejemplo, 14,50",
+    noteLabel: "Nota u observación",
+    saveVersion: "Guardar versión",
+    saveVersionPending: "Guardando…",
+    savedVersion: "Versión guardada.",
+    savedAfterCutoff: "Versión guardada después de las 21:00: se acepta, pero no se garantiza que entre en la publicación prevista.",
+    priceInvalid: "El precio no se entiende. Escríbelo como 14,50.",
+
+    detailsTitle: "Datos del menú",
+    saveDetails: "Guardar datos",
+    saveDetailsPending: "Guardando…",
+    savedDetails: "Datos guardados.",
+
+    actionsTitle: "Qué puedes hacer",
+    prepare: "Marcar como preparado",
+    prepareHint: "Dice que el menú está completo. Necesita contenido guardado y plantilla.",
+    requestPublication: "Pedir la publicación",
+    requestPublicationHint: "Consume una actualización. El equipo lo publicará en tu web.",
+    cancel: "Cancelar el menú",
+    cancelReasonLabel: "Motivo",
+    cancelHint: "Si ya habías pedido la publicación, se te devuelve la actualización.",
+    cancelReasonRequired: "Di por qué lo cancelas.",
+    copy: "Copiar para otro día",
+    copyDateLabel: "Fecha del menú nuevo",
+    copyHint: "Crea un borrador con este mismo contenido.",
+    answerTitle: "El equipo necesita información",
+    answerHint: "Lo que te han preguntado está en el historial. Contesta aquí o guarda una versión nueva del menú.",
+    answerLabel: "Respuesta",
+    answer: "Enviar respuesta",
+    nothingToDo: "Este menú ya está cerrado. Puedes copiarlo para otro día.",
+    pending: "Un momento…",
+    done: "Hecho.",
+
+    downloadsTitle: "Descargar",
+    downloadPng: "Descargar PNG",
+    downloadPdf: "Descargar PDF",
+    downloadsHint: "Descargar no consume ninguna actualización.",
+    downloadsNeedContent: "Para descargarlo hace falta contenido guardado y una plantilla.",
+    downloadsHistory: (n: number) => (n === 1 ? "1 descarga" : `${n} descargas`),
+
+    historyTitle: "Historial",
+    historyEmpty: "Sin movimientos todavía.",
+    historyTeam: "Equipo de mantenimiento",
+    versionsTitle: "Versiones",
+    versionLine: (n: number, when: string) => `Versión ${n} · ${when}`,
+    versionAfterCutoff: "después del corte",
+    downloadLine: (format: string, when: string, byTeam: boolean) =>
+      `${format.toUpperCase()} · ${when} · ${byTeam ? "equipo de mantenimiento" : "restaurante"}`,
   },
 
   /**

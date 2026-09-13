@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 11/09/2026), con las 70 migraciones del
+// (generate_typescript_types, 13/09/2026), con las 78 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -1874,6 +1874,729 @@ export type Database = {
           },
         ]
       }
+      menu_downloads: {
+        Row: {
+          by_team: boolean
+          downloaded_at: string
+          downloaded_by: string
+          establishment_id: string
+          format: string
+          id: string
+          menu_id: string
+          space_id: string
+          template_id: string
+          version_id: string
+        }
+        Insert: {
+          by_team: boolean
+          downloaded_at?: string
+          downloaded_by: string
+          establishment_id: string
+          format: string
+          id?: string
+          menu_id: string
+          space_id: string
+          template_id: string
+          version_id: string
+        }
+        Update: {
+          by_team?: boolean
+          downloaded_at?: string
+          downloaded_by?: string
+          establishment_id?: string
+          format?: string
+          id?: string
+          menu_id?: string
+          space_id?: string
+          template_id?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_downloads_downloaded_by_fkey"
+            columns: ["downloaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_downloads_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_downloads_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_downloads_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_downloads_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "menu_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_downloads_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "menu_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_events: {
+        Row: {
+          actor_id: string | null
+          from_state: string | null
+          id: string
+          menu_id: string
+          occurred_at: string
+          publication_id: string | null
+          reason: string | null
+          space_id: string
+          to_state: string
+        }
+        Insert: {
+          actor_id?: string | null
+          from_state?: string | null
+          id?: string
+          menu_id: string
+          occurred_at?: string
+          publication_id?: string | null
+          reason?: string | null
+          space_id: string
+          to_state: string
+        }
+        Update: {
+          actor_id?: string | null
+          from_state?: string | null
+          id?: string
+          menu_id?: string
+          occurred_at?: string
+          publication_id?: string | null
+          reason?: string | null
+          space_id?: string
+          to_state?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_events_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_events_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "menu_publications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_events_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_publications: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          assignment_mode: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          cycle_id: string
+          debit_entry_id: string
+          establishment_id: string
+          id: string
+          idempotency_key: string | null
+          menu_id: string
+          published_at: string | null
+          published_by: string | null
+          published_template_id: string | null
+          published_version_id: string | null
+          requested_at: string
+          requested_before_cutoff: boolean
+          requested_by: string
+          requested_version_id: string
+          space_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          assignment_mode?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          cycle_id: string
+          debit_entry_id: string
+          establishment_id: string
+          id?: string
+          idempotency_key?: string | null
+          menu_id: string
+          published_at?: string | null
+          published_by?: string | null
+          published_template_id?: string | null
+          published_version_id?: string | null
+          requested_at?: string
+          requested_before_cutoff: boolean
+          requested_by: string
+          requested_version_id: string
+          space_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          assignment_mode?: string | null
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          created_at?: string
+          cycle_id?: string
+          debit_entry_id?: string
+          establishment_id?: string
+          id?: string
+          idempotency_key?: string | null
+          menu_id?: string
+          published_at?: string | null
+          published_by?: string | null
+          published_template_id?: string | null
+          published_version_id?: string | null
+          requested_at?: string
+          requested_before_cutoff?: boolean
+          requested_by?: string
+          requested_version_id?: string
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_publications_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_cancelled_by_fkey"
+            columns: ["cancelled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "menu_update_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_debit_entry_id_fkey"
+            columns: ["debit_entry_id"]
+            isOneToOne: false
+            referencedRelation: "menu_update_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_published_template_id_fkey"
+            columns: ["published_template_id"]
+            isOneToOne: false
+            referencedRelation: "menu_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_published_version_id_fkey"
+            columns: ["published_version_id"]
+            isOneToOne: false
+            referencedRelation: "menu_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_requested_version_id_fkey"
+            columns: ["requested_version_id"]
+            isOneToOne: false
+            referencedRelation: "menu_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_publications_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_templates: {
+        Row: {
+          accent_color: string
+          archived_at: string | null
+          archived_by: string | null
+          background_color: string
+          created_at: string
+          created_by: string
+          design_updated_at: string | null
+          establishment_id: string
+          footer_text: string | null
+          heading_text: string | null
+          id: string
+          layout: string
+          name: string
+          origin: string
+          show_prices: boolean
+          space_id: string
+          text_color: string
+        }
+        Insert: {
+          accent_color?: string
+          archived_at?: string | null
+          archived_by?: string | null
+          background_color?: string
+          created_at?: string
+          created_by: string
+          design_updated_at?: string | null
+          establishment_id: string
+          footer_text?: string | null
+          heading_text?: string | null
+          id?: string
+          layout?: string
+          name: string
+          origin: string
+          show_prices?: boolean
+          space_id: string
+          text_color?: string
+        }
+        Update: {
+          accent_color?: string
+          archived_at?: string | null
+          archived_by?: string | null
+          background_color?: string
+          created_at?: string
+          created_by?: string
+          design_updated_at?: string | null
+          establishment_id?: string
+          footer_text?: string | null
+          heading_text?: string | null
+          id?: string
+          layout?: string
+          name?: string
+          origin?: string
+          show_prices?: boolean
+          space_id?: string
+          text_color?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_templates_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_templates_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_templates_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_update_cycles: {
+        Row: {
+          created_at: string
+          cycle_end: string
+          cycle_start: string
+          establishment_id: string
+          id: string
+          included_updates: number
+          space_id: string
+          subscription_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_end: string
+          cycle_start: string
+          establishment_id: string
+          id?: string
+          included_updates: number
+          space_id: string
+          subscription_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_end?: string
+          cycle_start?: string
+          establishment_id?: string
+          id?: string
+          included_updates?: number
+          space_id?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_update_cycles_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_cycles_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_cycles_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_update_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          cycle_id: string
+          entry_type: string
+          establishment_id: string
+          id: string
+          menu_id: string | null
+          publication_id: string | null
+          reason: string | null
+          related_entry_id: string | null
+          space_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id: string
+          entry_type: string
+          establishment_id: string
+          id?: string
+          menu_id?: string | null
+          publication_id?: string | null
+          reason?: string | null
+          related_entry_id?: string | null
+          space_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          cycle_id?: string
+          entry_type?: string
+          establishment_id?: string
+          id?: string
+          menu_id?: string | null
+          publication_id?: string | null
+          reason?: string | null
+          related_entry_id?: string | null
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_update_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_entries_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "menu_update_cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_entries_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_entries_menu_fk"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_entries_publication_fk"
+            columns: ["publication_id"]
+            isOneToOne: false
+            referencedRelation: "menu_publications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_entries_related_entry_id_fkey"
+            columns: ["related_entry_id"]
+            isOneToOne: false
+            referencedRelation: "menu_update_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_update_entries_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menu_versions: {
+        Row: {
+          after_cutoff: boolean
+          created_at: string
+          created_by: string
+          desserts: string[]
+          drink: string | null
+          id: string
+          mains: string[]
+          menu_id: string
+          note: string | null
+          price_cents: number | null
+          space_id: string
+          starters: string[]
+          version: number
+        }
+        Insert: {
+          after_cutoff?: boolean
+          created_at?: string
+          created_by: string
+          desserts?: string[]
+          drink?: string | null
+          id?: string
+          mains?: string[]
+          menu_id: string
+          note?: string | null
+          price_cents?: number | null
+          space_id: string
+          starters?: string[]
+          version: number
+        }
+        Update: {
+          after_cutoff?: boolean
+          created_at?: string
+          created_by?: string
+          desserts?: string[]
+          drink?: string | null
+          id?: string
+          mains?: string[]
+          menu_id?: string
+          note?: string | null
+          price_cents?: number | null
+          space_id?: string
+          starters?: string[]
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_versions_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_versions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menus: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          created_by: string
+          current_version_id: string | null
+          establishment_id: string
+          id: string
+          kind: string
+          name: string
+          published_at: string | null
+          published_template_id: string | null
+          published_version_id: string | null
+          space_id: string
+          state: string
+          target_date: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          created_by: string
+          current_version_id?: string | null
+          establishment_id: string
+          id?: string
+          kind: string
+          name: string
+          published_at?: string | null
+          published_template_id?: string | null
+          published_version_id?: string | null
+          space_id: string
+          state?: string
+          target_date: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          created_by?: string
+          current_version_id?: string | null
+          establishment_id?: string
+          id?: string
+          kind?: string
+          name?: string
+          published_at?: string | null
+          published_template_id?: string | null
+          published_version_id?: string | null
+          space_id?: string
+          state?: string
+          target_date?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menus_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menus_current_version_fk"
+            columns: ["current_version_id"]
+            isOneToOne: false
+            referencedRelation: "menu_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menus_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menus_published_template_id_fkey"
+            columns: ["published_template_id"]
+            isOneToOne: false
+            referencedRelation: "menu_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menus_published_version_fk"
+            columns: ["published_version_id"]
+            isOneToOne: false
+            referencedRelation: "menu_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menus_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menus_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "menu_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_edits: {
         Row: {
           edited_at: string
@@ -2389,6 +3112,58 @@ export type Database = {
             columns: ["subscription_id"]
             isOneToOne: false
             referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plan_versions: {
+        Row: {
+          conditions: string
+          id: string
+          plan_id: string
+          published_at: string
+          published_by: string
+          space_id: string
+          version: number
+        }
+        Insert: {
+          conditions: string
+          id?: string
+          plan_id: string
+          published_at?: string
+          published_by: string
+          space_id: string
+          version: number
+        }
+        Update: {
+          conditions?: string
+          id?: string
+          plan_id?: string
+          published_at?: string
+          published_by?: string
+          space_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_versions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_versions_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plan_versions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2962,10 +3737,64 @@ export type Database = {
           },
         ]
       }
+      service_versions: {
+        Row: {
+          conditions: string
+          id: string
+          published_at: string
+          published_by: string
+          service_id: string
+          space_id: string
+          version: number
+        }
+        Insert: {
+          conditions: string
+          id?: string
+          published_at?: string
+          published_by: string
+          service_id: string
+          space_id: string
+          version: number
+        }
+        Update: {
+          conditions?: string
+          id?: string
+          published_at?: string
+          published_by?: string
+          service_id?: string
+          space_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_versions_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_versions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_versions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       services: {
         Row: {
           created_at: string
           id: string
+          included_updates: number
+          kind: string
           name: string
           price_cents: number
           price_premium_cents: number | null
@@ -2974,6 +3803,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          included_updates?: number
+          kind?: string
           name: string
           price_cents: number
           price_premium_cents?: number | null
@@ -2982,6 +3813,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          included_updates?: number
+          kind?: string
           name?: string
           price_cents?: number
           price_premium_cents?: number | null
@@ -3593,6 +4426,108 @@ export type Database = {
           },
         ]
       }
+      terms_acceptances: {
+        Row: {
+          accepted_at: string
+          accepted_by: string | null
+          channel: string
+          created_at: string
+          establishment_id: string
+          evidence_file_id: string | null
+          id: string
+          plan_version_id: string | null
+          recorded_by: string | null
+          service_version_id: string | null
+          space_id: string
+          subscription_id: string
+        }
+        Insert: {
+          accepted_at: string
+          accepted_by?: string | null
+          channel: string
+          created_at?: string
+          establishment_id: string
+          evidence_file_id?: string | null
+          id?: string
+          plan_version_id?: string | null
+          recorded_by?: string | null
+          service_version_id?: string | null
+          space_id: string
+          subscription_id: string
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by?: string | null
+          channel?: string
+          created_at?: string
+          establishment_id?: string
+          evidence_file_id?: string | null
+          id?: string
+          plan_version_id?: string | null
+          recorded_by?: string | null
+          service_version_id?: string | null
+          space_id?: string
+          subscription_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terms_acceptances_accepted_by_fkey"
+            columns: ["accepted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptances_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptances_evidence_file_id_fkey"
+            columns: ["evidence_file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptances_plan_version_id_fkey"
+            columns: ["plan_version_id"]
+            isOneToOne: false
+            referencedRelation: "plan_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptances_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptances_service_version_id_fkey"
+            columns: ["service_version_id"]
+            isOneToOne: false
+            referencedRelation: "service_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptances_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terms_acceptances_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timer_events: {
         Row: {
           actor_id: string | null
@@ -3947,6 +4882,10 @@ export type Database = {
         Returns: undefined
       }
       accept_space_invitation: { Args: { p_token: string }; Returns: string }
+      accept_subscription_terms: {
+        Args: { p_subscription_id: string; p_version_id: string }
+        Returns: string
+      }
       add_file_version: {
         Args: {
           p_checksum?: string
@@ -4000,12 +4939,31 @@ export type Database = {
         Args: { p_file_id: string; p_reason?: string }
         Returns: undefined
       }
+      archive_menu_template: {
+        Args: { p_reason?: string; p_template_id: string }
+        Returns: undefined
+      }
+      assert_can_write_menu_publication: {
+        Args: {
+          p_menu: Database["public"]["Tables"]["menus"]["Row"]
+          p_pub: Database["public"]["Tables"]["menu_publications"]["Row"]
+        }
+        Returns: undefined
+      }
       assert_establishment_service_running: {
         Args: { p_establishment_id: string }
         Returns: undefined
       }
+      assert_terms_version_current: {
+        Args: { p_subscription_id: string; p_version_id: string }
+        Returns: number
+      }
       assign_job: {
         Args: { p_job_id: string; p_reason?: string; p_worker_id: string }
+        Returns: undefined
+      }
+      assign_menu_publication: {
+        Args: { p_menu_id: string; p_reason?: string; p_worker_id: string }
         Returns: undefined
       }
       assign_task: {
@@ -4072,6 +5030,10 @@ export type Database = {
       }
       can_read_file: { Args: { p_file_id: string }; Returns: boolean }
       can_read_job: { Args: { p_job_id: string }; Returns: boolean }
+      can_read_menu_establishment: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
       can_read_task: { Args: { p_task_id: string }; Returns: boolean }
       can_write_conversation: {
         Args: { p_conversation_id: string }
@@ -4089,8 +5051,16 @@ export type Database = {
         Args: { p_category: string; p_establishment_id: string }
         Returns: boolean
       }
+      can_write_menus: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
       cancel_accepted_request: {
         Args: { p_reason?: string; p_request_id: string }
+        Returns: undefined
+      }
+      cancel_menu: {
+        Args: { p_menu_id: string; p_reason?: string }
         Returns: undefined
       }
       cancel_scheduled_plan_change: {
@@ -4137,6 +5107,10 @@ export type Database = {
           space_id: string
         }[]
       }
+      client_can_accept_terms: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
       client_can_edit_establishment_data: {
         Args: { p_establishment_id: string }
         Returns: boolean
@@ -4163,6 +5137,18 @@ export type Database = {
         Returns: undefined
       }
       complete_job: { Args: { p_job_id: string }; Returns: undefined }
+      conditions_catalogue: {
+        Args: { p_space_id: string }
+        Returns: {
+          conditions: string
+          published_at: string
+          subject_id: string
+          subject_name: string
+          subject_type: string
+          version: number
+          version_id: string
+        }[]
+      }
       conversation_establishment_id: {
         Args: { p_conversation_id: string }
         Returns: string
@@ -4185,6 +5171,10 @@ export type Database = {
           p_conversation_id: string
           p_message_ids: string[]
         }
+        Returns: string
+      }
+      copy_menu: {
+        Args: { p_menu_id: string; p_name?: string; p_target_date: string }
         Returns: string
       }
       copy_paste_request: {
@@ -4247,6 +5237,20 @@ export type Database = {
         }
         Returns: string
       }
+      create_menu: {
+        Args: {
+          p_establishment_id: string
+          p_kind: string
+          p_name: string
+          p_target_date: string
+          p_template_id?: string
+        }
+        Returns: string
+      }
+      create_menu_template: {
+        Args: { p_establishment_id: string; p_name: string; p_origin?: string }
+        Returns: string
+      }
       create_plan_subscription: {
         Args: { p_establishment_id: string; p_plan_id: string }
         Returns: string
@@ -4262,6 +5266,13 @@ export type Database = {
       create_restavor_space: { Args: never; Returns: string }
       create_service_subscription: {
         Args: { p_establishment_id: string; p_service_id: string }
+        Returns: string
+      }
+      credit_menu_update: {
+        Args: {
+          p_pub: Database["public"]["Tables"]["menu_publications"]["Row"]
+          p_reason: string
+        }
         Returns: string
       }
       current_space_id: { Args: never; Returns: string }
@@ -4390,6 +5401,10 @@ export type Database = {
           renews_at: string
         }[]
       }
+      establishment_daily_menu_subscription: {
+        Args: { p_establishment_id: string }
+        Returns: string
+      }
       establishment_has_overdue_debt: {
         Args: { p_establishment_id: string }
         Returns: boolean
@@ -4472,6 +5487,10 @@ export type Database = {
         Args: { p_job_id: string }
         Returns: string
       }
+      get_or_create_menu_update_cycle: {
+        Args: { p_subscription_id: string }
+        Returns: string
+      }
       get_or_create_request_conversation: {
         Args: { p_request_id: string }
         Returns: string
@@ -4512,57 +5531,6 @@ export type Database = {
         Returns: string
       }
       group_space_id: { Args: { p_group_id: string }; Returns: string }
-      accept_subscription_terms: {
-        Args: { p_subscription_id: string; p_version_id: string }
-        Returns: string
-      }
-      client_can_accept_terms: { Args: { p_establishment_id: string }; Returns: boolean }
-      conditions_catalogue: {
-        Args: { p_space_id: string }
-        Returns: {
-          subject_type: string
-          subject_id: string
-          subject_name: string
-          version_id: string | null
-          version: number | null
-          published_at: string | null
-          conditions: string | null
-        }[]
-      }
-      publish_plan_conditions: {
-        Args: { p_plan_id: string; p_conditions: string }
-        Returns: string
-      }
-      publish_service_conditions: {
-        Args: { p_service_id: string; p_conditions: string }
-        Returns: string
-      }
-      record_external_terms_acceptance: {
-        Args: {
-          p_subscription_id: string
-          p_version_id: string
-          p_accepted_on: string
-          p_file_id: string
-        }
-        Returns: string
-      }
-      subscription_terms: {
-        Args: { p_subscription_id: string }
-        Returns: {
-          subject_type: string
-          subject_name: string | null
-          current_version_id: string | null
-          current_version: number | null
-          current_published_at: string | null
-          current_conditions: string | null
-          accepted_version_id: string | null
-          accepted_version: number | null
-          accepted_at: string | null
-          accepted_channel: string | null
-          evidence_file_id: string | null
-          status: string
-        }[]
-      }
       has_capability: {
         Args: { p_capability: string; p_space_id: string }
         Returns: boolean
@@ -4657,6 +5625,39 @@ export type Database = {
           worker_id: string
         }[]
       }
+      lock_active_menu_publication: {
+        Args: { p_menu_id: string }
+        Returns: {
+          assigned_at: string | null
+          assigned_to: string | null
+          assignment_mode: string | null
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          created_at: string
+          cycle_id: string
+          debit_entry_id: string
+          establishment_id: string
+          id: string
+          idempotency_key: string | null
+          menu_id: string
+          published_at: string | null
+          published_by: string | null
+          published_template_id: string | null
+          published_version_id: string | null
+          requested_at: string
+          requested_before_cutoff: boolean
+          requested_by: string
+          requested_version_id: string
+          space_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "menu_publications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
@@ -4674,6 +5675,11 @@ export type Database = {
         Args: { p_delivery_id: string; p_provider_message_id?: string }
         Returns: undefined
       }
+      mark_menu_published: { Args: { p_menu_id: string }; Returns: undefined }
+      mark_menu_ready_to_publish: {
+        Args: { p_menu_id: string }
+        Returns: undefined
+      }
       mark_notification_read: {
         Args: { p_notification_id: string }
         Returns: undefined
@@ -4681,6 +5687,42 @@ export type Database = {
       member_can_perform_jobs: {
         Args: { p_space_id: string; p_user_id: string }
         Returns: boolean
+      }
+      menu_candidate_ids: { Args: { p_menu_id: string }; Returns: string[] }
+      menu_cutoff_at: {
+        Args: { p_space_id: string; p_target_date: string }
+        Returns: string
+      }
+      menu_deadlines: {
+        Args: { p_menu_id: string }
+        Returns: {
+          cutoff_at: string
+          guaranteed: boolean
+          publish_by_at: string
+          requested_at: string
+        }[]
+      }
+      menu_publish_by_at: {
+        Args: { p_space_id: string; p_target_date: string }
+        Returns: string
+      }
+      menu_update_balance: {
+        Args: { p_establishment_id: string }
+        Returns: {
+          available: number
+          consumed: number
+          cycle_end: string
+          cycle_id: string
+          cycle_start: string
+          included_updates: number
+        }[]
+      }
+      menu_update_cycle_window: {
+        Args: { p_at?: string; p_subscription_id: string }
+        Returns: {
+          cycle_end: string
+          cycle_start: string
+        }[]
       }
       message_conversation_id: {
         Args: { p_message_id: string }
@@ -4718,6 +5760,31 @@ export type Database = {
           p_event_type: string
           p_job_id: string
           p_threshold_percent?: number
+        }
+        Returns: number
+      }
+      notify_menu_event: {
+        Args: { p_event_type: string; p_menu_id: string }
+        Returns: number
+      }
+      notify_reassignment_deciders: {
+        Args: {
+          p_dedupe_key: string
+          p_deep_link: string
+          p_entity_id: string
+          p_entity_type: string
+          p_establishment_id?: string
+          p_event_type: string
+          p_space_id: string
+        }
+        Returns: number
+      }
+      notify_terms_version_published: {
+        Args: {
+          p_kind: string
+          p_space_id: string
+          p_subject_id: string
+          p_version_id: string
         }
         Returns: number
       }
@@ -4759,13 +5826,26 @@ export type Database = {
         }
         Returns: string
       }
+      prepare_menu: { Args: { p_menu_id: string }; Returns: undefined }
       provide_additional_information: {
         Args: { p_message: string; p_request_id: string }
+        Returns: undefined
+      }
+      provide_menu_information: {
+        Args: { p_answer?: string; p_menu_id: string }
         Returns: undefined
       }
       publish_job: {
         Args: { p_correction_window_ends_at: string; p_job_id: string }
         Returns: undefined
+      }
+      publish_plan_conditions: {
+        Args: { p_conditions: string; p_plan_id: string }
+        Returns: string
+      }
+      publish_service_conditions: {
+        Args: { p_conditions: string; p_service_id: string }
+        Returns: string
       }
       reactivate_establishment_after_payment: {
         Args: { p_establishment_id: string }
@@ -4787,6 +5867,25 @@ export type Database = {
         }
         Returns: string
       }
+      record_external_terms_acceptance: {
+        Args: {
+          p_accepted_on: string
+          p_file_id: string
+          p_subscription_id: string
+          p_version_id: string
+        }
+        Returns: string
+      }
+      record_menu_event: {
+        Args: {
+          p_from_state: string
+          p_menu_id: string
+          p_publication_id: string
+          p_reason?: string
+          p_to_state: string
+        }
+        Returns: undefined
+      }
       record_state_event: {
         Args: {
           p_entity_id: string
@@ -4802,6 +5901,10 @@ export type Database = {
         Args: { p_amount_cents: number; p_charge_id: string; p_reason: string }
         Returns: undefined
       }
+      refund_menu_update: {
+        Args: { p_publication_id: string; p_reason: string }
+        Returns: string
+      }
       register_file: {
         Args: {
           p_category: string
@@ -4815,6 +5918,10 @@ export type Database = {
           p_variant?: string
           p_visibility?: string
         }
+        Returns: string
+      }
+      register_menu_download: {
+        Args: { p_format: string; p_menu_id: string }
         Returns: string
       }
       register_payment: {
@@ -4841,6 +5948,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: number
       }
+      report_menu_publication_error: {
+        Args: { p_menu_id: string; p_reason: string }
+        Returns: undefined
+      }
       request_absence: {
         Args: {
           p_ends_on: string
@@ -4866,6 +5977,14 @@ export type Database = {
       request_job_reassignment: {
         Args: { p_job_id: string; p_reason: string }
         Returns: undefined
+      }
+      request_menu_information: {
+        Args: { p_menu_id: string; p_reason: string }
+        Returns: undefined
+      }
+      request_menu_publication: {
+        Args: { p_idempotency_key?: string; p_menu_id: string }
+        Returns: string
       }
       request_more_information: {
         Args: { p_message: string; p_request_id: string }
@@ -4923,6 +6042,18 @@ export type Database = {
       run_lifecycle_sweep: { Args: { p_space_id: string }; Returns: number }
       run_monthly_charges: { Args: { p_space_id: string }; Returns: number }
       run_scheduled_job: { Args: { p_job_id: string }; Returns: number }
+      save_menu_version: {
+        Args: {
+          p_desserts: string[]
+          p_drink?: string
+          p_mains: string[]
+          p_menu_id: string
+          p_note?: string
+          p_price_cents?: number
+          p_starters: string[]
+        }
+        Returns: string
+      }
       schedule_plan_change: {
         Args: { p_new_plan_id: string; p_subscription_id: string }
         Returns: string
@@ -5069,6 +6200,23 @@ export type Database = {
       }
       start_job: { Args: { p_job_id: string }; Returns: undefined }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
+      subscription_terms: {
+        Args: { p_subscription_id: string }
+        Returns: {
+          accepted_at: string
+          accepted_channel: string
+          accepted_version: number
+          accepted_version_id: string
+          current_conditions: string
+          current_published_at: string
+          current_version: number
+          current_version_id: string
+          evidence_file_id: string
+          status: string
+          subject_name: string
+          subject_type: string
+        }[]
+      }
       task_assignee_is_valid: {
         Args: {
           p_assignee_id: string
@@ -5101,6 +6249,29 @@ export type Database = {
           plan_name: string
           renews_at: string
         }[]
+      }
+      update_menu_details: {
+        Args: {
+          p_kind: string
+          p_menu_id: string
+          p_name: string
+          p_target_date: string
+          p_template_id: string
+        }
+        Returns: undefined
+      }
+      update_menu_template_design: {
+        Args: {
+          p_accent_color: string
+          p_background_color: string
+          p_footer_text?: string
+          p_heading_text?: string
+          p_layout: string
+          p_show_prices?: boolean
+          p_template_id: string
+          p_text_color: string
+        }
+        Returns: undefined
       }
       update_request_draft: {
         Args: {

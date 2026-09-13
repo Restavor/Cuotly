@@ -200,6 +200,18 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    fila. El equipo no tiene casilla de preferencia sobre él en Ajustes: es un aviso que nunca
    recibe.
 
+## 2026-09-13
+
+20. **`grants_priority` identifica al plan Premium también para el precio de Menú
+   Diario** (13/09/2026). RN-COM-08 fija dos precios para el servicio —229 € o 199 €
+   si el establecimiento tiene plan Premium activo— y el esquema solo distinguía al
+   Premium por `plans.grants_priority` (migración 62). La pregunta era si esa marca
+   bastaba o hacía falta una propia. Bosco decide: **sí, basta**. Consecuencia: la
+   mensualidad del servicio (Hito 12) cobra `services.price_premium_cents` cuando el
+   plan activo del establecimiento tiene `grants_priority`, y `price_cents` si no. No
+   se añade ninguna columna nueva. Si algún día un espacio quisiera un plan con
+   prioridad y sin descuento en el servicio, será una decisión nueva.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)

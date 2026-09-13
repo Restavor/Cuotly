@@ -7,9 +7,11 @@ import {
   canRequestPublication,
   isAfterCutoff,
   isPublicationGuaranteed,
+  linesToItems,
   menuCancellationOutcome,
   menuCutoffAt,
   menuPublishByAt,
+  parsePriceToCents,
   updateBalance,
 } from "./daily-menu";
 
@@ -132,5 +134,22 @@ describe("RN-COM-09 / RN-CON-02 · el saldo de actualizaciones es la suma del li
     expect(canRequestPublication(2, [{ amount: -1 }])).toBe(true);
     expect(canRequestPublication(2, [{ amount: -1 }, { amount: -1 }])).toBe(false);
     expect(canRequestPublication(2, [{ amount: -1 }, { amount: -1 }, { amount: 1 }])).toBe(true);
+  });
+});
+
+describe("el editor del restaurante (§58)", () => {
+  it("el precio en euros con coma o punto pasa a céntimos; vacío es sin precio; basura no se entiende", () => {
+    expect(parsePriceToCents("14,50")).toBe(1450);
+    expect(parsePriceToCents("14.5")).toBe(1450);
+    expect(parsePriceToCents("14")).toBe(1400);
+    expect(parsePriceToCents(" 9,00 € ")).toBe(900);
+    expect(parsePriceToCents("")).toBeNull();
+    expect(parsePriceToCents("catorce")).toBeUndefined();
+    expect(parsePriceToCents("14,505")).toBeUndefined();
+  });
+
+  it("un plato por línea, sin vacías ni espacios de más", () => {
+    expect(linesToItems("Ensalada\n\n  Sopa  \r\nMerluza")).toEqual(["Ensalada", "Sopa", "Merluza"]);
+    expect(linesToItems("   ")).toEqual([]);
   });
 });

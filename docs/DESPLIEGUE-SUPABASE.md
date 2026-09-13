@@ -10,17 +10,17 @@ Actualizado el 13/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 77 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 78 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 77 migraciones del repositorio están aplicadas.** Las tres
+**Las 78 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
-el 11/09/2026, las 71 a 76 el 12/09/2026 y la 77 el 13/09/2026.
+el 11/09/2026, las 71 a 76 el 12/09/2026 y la 77 y la 78 el 13/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -45,6 +45,18 @@ el 11/09/2026, las 71 a 76 el 12/09/2026 y la 77 el 13/09/2026.
   como `daily_menu` con 30 actualizaciones. `menu_publications` conserva
   el privilegio de tabla a propósito: al cliente lo deja fuera la
   política, que es como manda CLAUDE.md tapar una fila entera.
+- La **78** (`menu_diario_plantillas_y_descargas`, Fase 2 · Hito 10) el
+  13/09/2026, desde el MCP, en una sola llamada (12 KB). Solo aditiva:
+  ocho columnas de diseño en `menu_templates` (con su `grant select`,
+  porque el privilegio de columna de esa tabla se enumeró entero en la
+  77), `update_menu_template_design()`, la tabla `menu_downloads` y
+  `register_menu_download()`. Comprobado en vivo: las dos funciones con
+  EXECUTE para `authenticated` y no para `anon`, `downloaded_by`
+  revocada, el diseño legible por el restaurante, RLS y política en
+  `menu_downloads`. Después de aplicarla se regeneró
+  `database.types.ts` desde el proyecto (78 migraciones), que es lo que
+  permite que las pantallas del Hito 10 llamen a las funciones nuevas
+  con tipos.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de

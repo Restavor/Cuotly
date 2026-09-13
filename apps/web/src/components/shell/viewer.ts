@@ -57,12 +57,24 @@ export async function resolveShellViewer(
   // cuál si tiene exactamente uno: con varios, la navegación lo manda al
   // selector de contexto, que es donde elige.
   let establishmentId: string | null = null;
+  let resolvedRole: ShellRole = role;
   if (role === "client") {
     const { data: mine } = await supabase.from("establishments").select("id").limit(2);
     if (mine && mine.length === 1) {
       establishmentId = mine[0].id;
+
+      // §20.3 · "Restaurante con Menú Diario" es otra barra. Se sabe
+      // preguntando por el saldo del servicio: `menu_update_balance()`
+      // devuelve una fila si hay suscripción activa y ninguna si no, y es
+      // lo que el restaurante puede leer (Hito 9).
+      const { data: balance } = await supabase.rpc("menu_update_balance", {
+        p_establishment_id: establishmentId,
+      });
+      if (balance && balance.length > 0) {
+        resolvedRole = "client_daily_menu";
+      }
     }
   }
 
-  return { userId, spaceId, role, establishmentId };
+  return { userId, spaceId, role: resolvedRole, establishmentId };
 }

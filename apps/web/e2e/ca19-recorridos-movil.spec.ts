@@ -457,4 +457,52 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await expect(page.getByText("Marta Gil (trabajadora)")).toBeVisible();
     await expect(page.getByRole("button", { name: /Invitar/i })).toBeVisible();
   });
+
+  /**
+   * Fase 2 · Hito 10 · el flujo de Menú Diario del restaurante (RN-MEN-01,
+   * 03, 09; §20.3 "Restaurante con Menú Diario"). Magariños tiene el
+   * servicio y sus tres plantillas (sembrado, sección 12.12). Se crea un
+   * menú con marca irrepetible, se guarda su contenido, se marca preparado
+   * y se descarga el PNG: cuatro pulsaciones a 390 px. NO se pide la
+   * publicación: consumiría una actualización por ejecución.
+   */
+  test("MENÚ DIARIO · el restaurante prepara un menú y lo descarga, desde el teléfono", async ({ page }) => {
+    const MAGARINOS_ID = "d4000000-0000-0000-0000-000000000003";
+    await entrar(page, "magarinos@cuotly.test", new RegExp(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`));
+
+    await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario`);
+    await cabeEnElTelefono(page, "el Menú Diario del restaurante");
+
+    // El saldo sale del libro (RN-COM-09): 30 incluidas.
+    await expect(page.getByText(/de 30/)).toBeVisible();
+    // Las tres plantillas del sembrado.
+    await expect(page.getByText("Pizarra")).toBeVisible();
+
+    await page.getByLabel("Nombre").fill(`Menú ${MARCA}`);
+    await page.getByLabel("Plantilla").selectOption({ label: "Clásica" });
+    await page.getByRole("button", { name: "Crear menú" }).click();
+    await expect(page).toHaveURL(new RegExp(`/restaurantes/${MAGARINOS_ID}/menu-diario/[0-9a-f-]{36}$`), {
+      timeout: 20_000,
+    });
+    await cabeEnElTelefono(page, "la ficha del menú");
+    await expect(page.getByText("Borrador")).toBeVisible();
+
+    // RN-MEN-03: guardar es una versión nueva.
+    await page.getByLabel("Primeros").fill("Ensalada\nSopa");
+    await page.getByLabel("Segundos").fill("Merluza");
+    await page.getByLabel("Precio (euros)").fill("14,50");
+    await page.getByRole("button", { name: "Guardar versión" }).click();
+    await expect(page.getByText("Versión guardada.")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Contenido · versión 1")).toBeVisible();
+
+    // RN-MEN-09: preparado, y ya se puede descargar (RN-MEN-04: sin consumir).
+    await page.getByRole("button", { name: "Marcar como preparado" }).click();
+    await expect(page.getByText("Preparado")).toBeVisible({ timeout: 20_000 });
+
+    const descarga = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Descargar PNG" }).click();
+    const archivo = await descarga;
+    expect(archivo.suggestedFilename()).toMatch(/^menu-.*-v1\.png$/);
+    await expect(page.getByText("1 descarga")).toBeVisible({ timeout: 20_000 });
+  });
 });

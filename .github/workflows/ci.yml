@@ -297,6 +297,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/menu_diario_menus_y_actualizaciones.sql
 
+      - name: "Migración 78 — Verificar el diseño de las plantillas y las descargas de Menú Diario (RN-MEN-04/10/11, §61)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/menu_diario_descargas_y_plantillas.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

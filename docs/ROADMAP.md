@@ -23,7 +23,7 @@ Actualizado el 13/09/2026.
 | 7 · Mensajes, archivos y finanzas | Cerrado el 31/08/2026 | Ver salvedades abajo. |
 | 8 · Inicio por rol, búsqueda, notificaciones y cierre | Servidor, dominio, armazón y pantallas | CA-19 cumplido el 02/09/2026. Ver salvedades abajo. |
 | 9 · Menú Diario: menús, versiones, estados y actualizaciones (Fase 2) | Servidor y dominio; sin pantallas | Migración 77, 13/09/2026. Ver la entrada de cierre abajo. |
-| 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Pendiente | |
+| 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Servidor, dominio y pantallas del restaurante | Migración 78, 13/09/2026. Ver la entrada de cierre abajo. |
 | 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Pendiente | |
 | 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Pendiente | |
 
@@ -2849,6 +2849,95 @@ regenerar salió idéntica, así que no había desviación.
     Las 31 suites desde cero sobre PostgreSQL 16 con las 77 migraciones,
     el sembrado dos veces, typecheck, lint, 856 pruebas y `next build`.
 
+### Fase 2 · Hito 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante
+
+- [x] **El diseño de las plantillas, las descargas y las pantallas del restaurante** — migración 78.
+
+    Lo que el restaurante ve y pulsa. Las dos páginas que desde el Hito 8
+    decían "llega en la Fase 2" ya no lo dicen: la del restaurante es la
+    herramienta, y la del equipo sigue diciendo que su turno es el Hito 11.
+
+    **Las plantillas se pueden pintar.** La 78 da a `menu_templates` lo
+    que hace falta para convertir una versión en un archivo: una
+    disposición entre tres (`classic`, `board`, `elegant`), los tres
+    colores, la cabecera (o el nombre del local), un pie y si se enseñan
+    los precios. Las tres disposiciones son implementación de este hito,
+    no regla: la maestra dice "tres plantillas personalizadas" y no
+    describe ninguna. Los colores son hexadecimales a propósito: son la
+    marca del RESTAURANTE, y la regla de "solo tokens" es de los
+    componentes de Cuotly. Las diseña el equipo con `manage_clients`
+    (`update_menu_template_design()`), con apunte de auditoría con valor
+    anterior y nuevo, y una archivada no se rediseña.
+
+    **PNG y PDF sin ninguna dependencia nativa.** `src/core/menu-render.ts`
+    convierte versión y plantilla en un DOCUMENTO (secciones de §58 con
+    su nombre, precio "14,50 €", fecha en español, sección vacía fuera),
+    y `src/services/menu-image.tsx` lo pinta con el `ImageResponse` de
+    Next —el motor de las imágenes Open Graph, JSX → SVG → PNG con su
+    fuente incorporada— a A4 de 150 ppp. El PDF es una página A4 con ESE
+    PNG dentro (`pdf-lib`, la única dependencia nueva): lo que el
+    trabajador sube a LandingSite y lo que el restaurante imprime son la
+    misma imagen. Hay un test que pinta de verdad los tres diseños y
+    vuelve a abrir el PDF, para que "se genera" no sea una promesa.
+
+    **Descargar se registra y no consume (RN-MEN-04, RN-MEN-10).**
+    `register_menu_download()` deja la fila en `menu_downloads` (versión y
+    plantilla exactas, formato, si fue el equipo) y no toca el libro. Y
+    es el paso 4 de §61: si quien descarga es el trabajador ASIGNADO y el
+    menú está asignado o revisándose, pasa a "Listo para publicar". La
+    descarga del restaurante, la del administrador o la de otro
+    trabajador no cambian nada. La ruta
+    `/restaurantes/<id>/menu-diario/<menú>/descargar?formato=png|pdf`
+    llama primero a esa función —que es quien decide si puedes— y solo
+    entonces pinta; a quien no puede, 404.
+
+    **Las pantallas.** `/restaurantes/<id>/menu-diario`: el saldo del
+    ciclo desde `menu_update_balance()` (la suma del libro), el
+    formulario de menú nuevo (nombre, tipo de los cinco de §57, fecha,
+    plantilla), la lista con estado y fecha, y las plantillas; si no hay
+    servicio se dice el motivo, y si el equipo no ha creado plantillas
+    también. La ficha del menú: plazos y garantía desde
+    `menu_deadlines()`, los botones según estado (preparar, pedir la
+    publicación con clave de idempotencia generada al pintar, contestar,
+    cancelar con motivo, copiar para otro día), el editor por versiones
+    (un plato por línea, precio en euros con coma), los datos, las
+    descargas con su historial, las versiones (con la marca "después del
+    corte") y el historial de estados sin ningún actor (P7). Y la barra
+    de móvil: `resolveShellViewer()` pregunta por el saldo y, si hay
+    fila, el rol es `client_daily_menu` (§20.3), que hasta hoy no lo
+    ponía nadie.
+
+    **El sembrado y el recorrido.** Magariños tiene sus tres plantillas
+    con los tres diseños, un menú de mañana pedido para publicar (queda
+    pendiente de asignar: dos candidatas) y un borrador de pasado mañana.
+    `ca19-recorridos-movil.spec.ts` tiene un paso nuevo a 390 px: crear
+    el menú, guardar la versión, marcar preparado y descargar el PNG. No
+    pide la publicación: consumiría una actualización por ejecución.
+
+    **Lo que NO se inventa.** El logotipo del restaurante en el menú
+    (hay `files` de categoría `logos`, pero cargar una imagen dentro del
+    motor es otra pieza) queda para cuando alguien lo pida. Pedir
+    información y contestar van por el historial, no por una
+    conversación por menú, que sigue sin existir. Las pantallas del
+    equipo, el recordatorio de las 20:00 y la corrección son del Hito 11,
+    como estaba escrito.
+
+    **Comprobado:** `menu_diario_descargas_y_plantillas.sql` (la 32ª
+    suite): diseñar es del equipo y con valores válidos, una archivada
+    no se rediseña, el apunte con valor anterior y nuevo, descargar exige
+    contenido y plantilla y registra los tres datos, no escribe en el
+    libro ni crea ciclo, la descarga de la asignada pone "listo" y la del
+    administrador, la de otro trabajador y la del restaurante no, dos
+    descargas no duplican el evento, P7 en columna y otro espacio a
+    cero. **Cuatro mutaciones, las cuatro detectadas**: cualquiera del
+    equipo pone listo, descargar consume, `downloaded_by` visible y el
+    restaurante diseña. `menu-render.test.ts` y `menu-image.test.tsx`
+    (pinta los tres diseños y vuelve a abrir el PDF). Las 32 suites desde
+    cero sobre PostgreSQL 16 con las 78 migraciones, el sembrado dos
+    veces, typecheck, lint, 871 pruebas y `next build`. La 78 aplicada al
+    proyecto real y verificada en vivo, y `database.types.ts` regenerado
+    desde él.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
@@ -2966,7 +3055,7 @@ anterior, termina en verde y con una parada para que Bosco lo revise. Las reglas
 ### Hito 12 · Calendario operativo completo y presupuestos adicionales
 - Eventos automáticos de Menú Diario en el calendario (§76: publicaciones) y renovaciones de planes y servicios.
 - Presupuestos adicionales (§84): `quotes` con su flujo completo (borrador, enviado, aceptado o rechazado, pendiente de pago, pagado), creación de solicitud o trabajo sin consumir bolsa, y las plantillas `quoted` colgando de un presupuesto.
-- La mensualidad del servicio (RN-COM-08): el precio Premium necesita que el esquema sepa qué plan lo es. **Decisión pendiente de Bosco**: si `grants_priority` ya identifica al Premium o hace falta una marca propia.
+- La mensualidad del servicio (RN-COM-08): el precio Premium se aplica cuando el plan activo tiene `grants_priority` (decisión 20, 13/09/2026).
 
 **Se verifica con:** suite SQL de presupuestos; test del cobro mensual del servicio con los dos precios.
 

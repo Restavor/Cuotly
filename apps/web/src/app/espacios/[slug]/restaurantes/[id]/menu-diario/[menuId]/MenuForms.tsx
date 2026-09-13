@@ -1,0 +1,241 @@
+"use client";
+
+import { useActionState } from "react";
+
+import { Button, Card, Field, Select, TextArea } from "@/components/ui";
+import { MENU_KINDS } from "@/core/daily-menu";
+import type { MenuState } from "@/core/menu-states";
+import { es } from "@/i18n/es";
+
+import { INITIAL_MENU_ACTION, type MenuActionState } from "../action-state";
+import {
+  cancelMenu,
+  copyMenu,
+  prepareMenu,
+  provideMenuInformation,
+  requestMenuPublication,
+  saveMenuVersion,
+  updateMenuDetails,
+} from "../actions";
+
+const t = es.dailyMenuClient;
+
+function Feedback({ state }: { state: MenuActionState }) {
+  if (state.error) {
+    return (
+      <p role="alert" className="text-sm text-danger">
+        {state.error}
+      </p>
+    );
+  }
+  if (state.done && state.notice) {
+    return <p className="text-sm text-success">{state.notice}</p>;
+  }
+  return null;
+}
+
+export interface VersionContent {
+  readonly version: number;
+  readonly starters: readonly string[];
+  readonly mains: readonly string[];
+  readonly desserts: readonly string[];
+  readonly drink: string | null;
+  readonly priceCents: number | null;
+  readonly note: string | null;
+}
+
+/** RN-MEN-03 · cada guardado es una versión nueva. Los campos son los de §58. */
+export function VersionEditor({
+  menuId,
+  current,
+  editable,
+}: {
+  menuId: string;
+  current: VersionContent | null;
+  editable: boolean;
+}) {
+  const action = saveMenuVersion.bind(null, menuId);
+  const [state, formAction, pending] = useActionState(action, INITIAL_MENU_ACTION);
+  const precio =
+    current?.priceCents === null || current?.priceCents === undefined
+      ? ""
+      : `${Math.trunc(current.priceCents / 100)},${String(current.priceCents % 100).padStart(2, "0")}`;
+
+  return (
+    <Card title={t.editorTitle(current?.version ?? null)}>
+      {!editable ? (
+        <p className="text-sm text-text-secondary">{t.editorLocked}</p>
+      ) : (
+        <form action={formAction} className="space-y-4">
+          <TextArea label={t.startersLabel} name="starters" rows={3} hint={t.linesHint} defaultValue={current?.starters.join("\n") ?? ""} />
+          <TextArea label={t.mainsLabel} name="mains" rows={3} hint={t.linesHint} defaultValue={current?.mains.join("\n") ?? ""} />
+          <TextArea label={t.dessertsLabel} name="desserts" rows={2} hint={t.linesHint} defaultValue={current?.desserts.join("\n") ?? ""} />
+          <Field label={t.drinkLabel} name="drink" defaultValue={current?.drink ?? ""} />
+          <Field label={t.priceLabel} name="price" inputMode="decimal" hint={t.priceHint} defaultValue={precio} />
+          <Field label={t.noteLabel} name="note" defaultValue={current?.note ?? ""} />
+          <Feedback state={state} />
+          <Button type="submit" disabled={pending}>
+            {pending ? t.saveVersionPending : t.saveVersion}
+          </Button>
+        </form>
+      )}
+    </Card>
+  );
+}
+
+export interface TemplateOption {
+  readonly id: string;
+  readonly name: string;
+}
+
+export function DetailsForm({
+  menuId,
+  name,
+  kind,
+  targetDate,
+  templateId,
+  templates,
+  editable,
+}: {
+  menuId: string;
+  name: string;
+  kind: string;
+  targetDate: string;
+  templateId: string | null;
+  templates: readonly TemplateOption[];
+  editable: boolean;
+}) {
+  const action = updateMenuDetails.bind(null, menuId);
+  const [state, formAction, pending] = useActionState(action, INITIAL_MENU_ACTION);
+  if (!editable) return null;
+
+  return (
+    <Card title={t.detailsTitle}>
+      <form action={formAction} className="space-y-4">
+        <Field label={t.newNameLabel} name="name" required defaultValue={name} />
+        <Select
+          label={t.newKindLabel}
+          name="kind"
+          defaultValue={kind}
+          options={MENU_KINDS.map((k) => ({ value: k, label: es.naming.menuKinds[k] }))}
+        />
+        <Field label={t.newDateLabel} name="targetDate" type="date" required defaultValue={targetDate} hint={t.newDateHint} />
+        <Select
+          label={t.newTemplateLabel}
+          name="templateId"
+          defaultValue={templateId ?? ""}
+          options={[{ value: "", label: t.newTemplateNone }, ...templates.map((tpl) => ({ value: tpl.id, label: tpl.name }))]}
+        />
+        <Feedback state={state} />
+        <Button type="submit" variant="secondary" disabled={pending}>
+          {pending ? t.saveDetailsPending : t.saveDetails}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+/**
+ * Los botones según el estado (RN-MEN-09). La pantalla elige qué pintar;
+ * quién puede y en qué estado lo decide el servidor, que lanza si no.
+ */
+export function ActionPanel({
+  slug,
+  establishmentId,
+  menuId,
+  state,
+  idempotencyKey,
+  defaultCopyDate,
+}: {
+  slug: string;
+  establishmentId: string;
+  menuId: string;
+  state: MenuState;
+  idempotencyKey: string;
+  defaultCopyDate: string;
+}) {
+  const [prepareState, prepareAction, preparePending] = useActionState(
+    async () => prepareMenu(menuId),
+    INITIAL_MENU_ACTION,
+  );
+  const [requestState, requestAction, requestPending] = useActionState(
+    requestMenuPublication.bind(null, menuId),
+    INITIAL_MENU_ACTION,
+  );
+  const [cancelState, cancelAction, cancelPending] = useActionState(
+    cancelMenu.bind(null, menuId),
+    INITIAL_MENU_ACTION,
+  );
+  const [answerState, answerAction, answerPending] = useActionState(
+    provideMenuInformation.bind(null, menuId),
+    INITIAL_MENU_ACTION,
+  );
+  const [copyState, copyAction, copyPending] = useActionState(
+    copyMenu.bind(null, slug, establishmentId, menuId),
+    INITIAL_MENU_ACTION,
+  );
+
+  const closed = state === "published" || state === "cancelled";
+  const inFlight = !closed && state !== "draft" && state !== "prepared";
+
+  return (
+    <Card title={t.actionsTitle}>
+      <div className="space-y-6">
+        {state === "draft" ? (
+          <form action={prepareAction} className="space-y-2">
+            <p className="text-sm text-text-secondary">{t.prepareHint}</p>
+            <Feedback state={prepareState} />
+            <Button type="submit" disabled={preparePending}>
+              {preparePending ? t.pending : t.prepare}
+            </Button>
+          </form>
+        ) : null}
+
+        {state === "prepared" ? (
+          <form action={requestAction} className="space-y-2">
+            <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+            <p className="text-sm text-text-secondary">{t.requestPublicationHint}</p>
+            <Feedback state={requestState} />
+            <Button type="submit" disabled={requestPending}>
+              {requestPending ? t.pending : t.requestPublication}
+            </Button>
+          </form>
+        ) : null}
+
+        {state === "needs_information" ? (
+          <form action={answerAction} className="space-y-2">
+            <p className="font-medium text-text">{t.answerTitle}</p>
+            <p className="text-sm text-text-secondary">{t.answerHint}</p>
+            <TextArea label={t.answerLabel} name="answer" rows={2} />
+            <Feedback state={answerState} />
+            <Button type="submit" disabled={answerPending}>
+              {answerPending ? t.pending : t.answer}
+            </Button>
+          </form>
+        ) : null}
+
+        {!closed ? (
+          <form action={cancelAction} className="space-y-2">
+            <p className="text-sm text-text-secondary">{t.cancelHint}</p>
+            <Field label={t.cancelReasonLabel} name="reason" required={inFlight} />
+            <Feedback state={cancelState} />
+            <Button type="submit" variant="danger" disabled={cancelPending}>
+              {cancelPending ? t.pending : t.cancel}
+            </Button>
+          </form>
+        ) : (
+          <p className="text-sm text-text-secondary">{t.nothingToDo}</p>
+        )}
+
+        <form action={copyAction} className="space-y-2">
+          <p className="text-sm text-text-secondary">{t.copyHint}</p>
+          <Field label={t.copyDateLabel} name="targetDate" type="date" required defaultValue={defaultCopyDate} />
+          <Feedback state={copyState} />
+          <Button type="submit" variant="secondary" disabled={copyPending}>
+            {copyPending ? t.pending : t.copy}
+          </Button>
+        </form>
+      </div>
+    </Card>
+  );
+}
