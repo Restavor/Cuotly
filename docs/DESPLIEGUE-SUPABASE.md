@@ -6,21 +6,45 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 12/09/2026.
+Actualizado el 13/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 76 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 77 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 76 migraciones del repositorio están aplicadas.** Las tres
+**Las 77 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
-el 11/09/2026 y las 71 a 76 el 12/09/2026.
+el 11/09/2026, las 71 a 76 el 12/09/2026 y la 77 el 13/09/2026.
+
+- La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
+  Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
+  archivo son 80 KB: `p1` (servicio, plantillas y ciclo de
+  actualizaciones), `p2` (menús, versiones, publicaciones, historial,
+  corte de las 21:00 y helpers internos), `p3` (crear, versionar, copiar,
+  preparar y pedir la publicación) y `p4` (el equipo, cancelar y devolver,
+  auditoría). Solo aditiva: siete tablas nuevas, dos columnas en
+  `services` (`kind`, `included_updates`), los dos CHECK de
+  `notifications` ensanchados y `create_restavor_space()`,
+  `audit_action_capability()` y `audit_entity_is_visible()` redefinidas.
+
+  Comprobado en vivo justo después, con una consulta que se planta en
+  cualquiera de los cinco puntos: ninguna de las once internas tiene
+  EXECUTE para `anon` ni `authenticated`; las veinte públicas lo tienen
+  para `authenticated` y no para `anon`; las seis columnas de actor
+  (`menus.created_by`, `menu_versions.created_by`,
+  `menu_events.actor_id`, `menu_templates.created_by` y `archived_by`,
+  `menu_update_entries.created_by`) están revocadas; las siete tablas
+  tienen RLS activado y política; y los dos servicios "Menú Diario" del
+  proyecto (el de Restavor y el del espacio de demostración) quedaron
+  como `daily_menu` con 30 actualizaciones. `menu_publications` conserva
+  el privilegio de tabla a propósito: al cliente lo deja fuera la
+  política, que es como manda CLAUDE.md tapar una fila entera.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
