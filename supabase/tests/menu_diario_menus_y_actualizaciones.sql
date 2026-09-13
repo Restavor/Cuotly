@@ -129,8 +129,6 @@ begin
 end $$;
 
 reset role;
-create temp table md_quote (k text primary key, v uuid);
-grant select, insert on md_quote to authenticated;
 select set_config('request.jwt.claim.sub', 'dd000000-0000-0000-0000-000000000002', false);
 set role authenticated;
 
@@ -166,48 +164,15 @@ begin
     if sqlerrm not like '%tres plantillas incluidas ya se usaron%' then raise; end if;
   end;
 
-  -- La cuarta se presupuesta aparte (RN-MEN-11). Desde el Hito 12 "aparte"
-  -- es un presupuesto aceptado (migración 80): sin él, no hay plantilla.
-  begin
-    perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Navidad 2026', 'quoted');
-    raise exception 'RN-MEN-11 FALLIDO: se creó una plantilla presupuestada sin presupuesto' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%cuelga de un presupuesto aceptado%' then raise; end if;
-  end;
-
-  v_q := public.create_quote('dd400000-0000-0000-0000-000000000001', 'Plantilla Navidad 2026', 12000, 'menu_template');
-  perform public.send_quote(v_q);
-  insert into md_quote values ('q', v_q);
+  -- La cuarta se presupuesta aparte.
+  v_q := public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Navidad 2026', 'quoted');
+  if (select count(*) from public.menu_templates where establishment_id = 'dd400000-0000-0000-0000-000000000001') <> 4 then
+    raise exception 'RN-COM-10 FALLIDO: se esperaban 4 plantillas (3 incluidas + 1 presupuestada)' using errcode = 'assert_failure';
+  end if;
 
   if (select count(*) from public.audit_log where action = 'menu_template.archived' and entity_id = v_t3) <> 1 then
     raise exception 'CLAUDE.md MUST FALLIDO: archivar dos veces dejó % apuntes (esperado 1)',
       (select count(*) from public.audit_log where action = 'menu_template.archived' and entity_id = v_t3) using errcode = 'assert_failure';
-  end if;
-end $$;
-
-reset role;
-
--- El propietario local acepta el presupuesto de la plantilla...
-select set_config('request.jwt.claim.sub', 'dd000000-0000-0000-0000-000000000005', false);
-set role authenticated;
-do $$
-begin
-  perform public.accept_quote((select v from md_quote where k = 'q'));
-end $$;
-reset role;
-
--- ...y el equipo la crea colgando de él.
-select set_config('request.jwt.claim.sub', 'dd000000-0000-0000-0000-000000000002', false);
-set role authenticated;
-do $$
-begin
-  perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Navidad 2026', 'quoted',
-                                      (select v from md_quote where k = 'q'));
-  if (select count(*) from public.menu_templates where establishment_id = 'dd400000-0000-0000-0000-000000000001') <> 4 then
-    raise exception 'RN-COM-10 FALLIDO: se esperaban 4 plantillas (3 incluidas + 1 presupuestada)' using errcode = 'assert_failure';
-  end if;
-  if (select quote_id from public.menu_templates where name = 'Navidad 2026') is distinct from (select v from md_quote where k = 'q') then
-    raise exception 'RN-MEN-11 FALLIDO: la plantilla presupuestada no cuelga de su presupuesto' using errcode = 'assert_failure';
   end if;
 end $$;
 

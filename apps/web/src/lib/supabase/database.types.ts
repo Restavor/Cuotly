@@ -500,7 +500,6 @@ export type Database = {
           issued_by: string | null
           period_end: string
           period_start: string
-          quote_id: string | null
           space_id: string
           subscription_id: string | null
           tax_cents: number
@@ -518,7 +517,6 @@ export type Database = {
           issued_by?: string | null
           period_end: string
           period_start: string
-          quote_id?: string | null
           space_id: string
           subscription_id?: string | null
           tax_cents: number
@@ -536,7 +534,6 @@ export type Database = {
           issued_by?: string | null
           period_end?: string
           period_start?: string
-          quote_id?: string | null
           space_id?: string
           subscription_id?: string | null
           tax_cents?: number
@@ -544,13 +541,6 @@ export type Database = {
           total_cents?: number
         }
         Relationships: [
-          {
-            foreignKeyName: "charges_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "charges_establishment_id_fkey"
             columns: ["establishment_id"]
@@ -1779,7 +1769,6 @@ export type Database = {
           id: string
           published_at: string | null
           published_by: string | null
-          quote_id: string | null
           request_id: string
           required_specialty: string | null
           space_id: string
@@ -1803,7 +1792,6 @@ export type Database = {
           id?: string
           published_at?: string | null
           published_by?: string | null
-          quote_id?: string | null
           request_id: string
           required_specialty?: string | null
           space_id: string
@@ -1827,7 +1815,6 @@ export type Database = {
           id?: string
           published_at?: string | null
           published_by?: string | null
-          quote_id?: string | null
           request_id?: string
           required_specialty?: string | null
           space_id?: string
@@ -1836,13 +1823,6 @@ export type Database = {
           state?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "jobs_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "jobs_assigned_to_fkey"
             columns: ["assigned_to"]
@@ -2308,7 +2288,6 @@ export type Database = {
           layout: string
           name: string
           origin: string
-          quote_id: string | null
           show_prices: boolean
           space_id: string
           text_color: string
@@ -2328,7 +2307,6 @@ export type Database = {
           layout?: string
           name: string
           origin: string
-          quote_id?: string | null
           show_prices?: boolean
           space_id: string
           text_color?: string
@@ -2348,19 +2326,11 @@ export type Database = {
           layout?: string
           name?: string
           origin?: string
-          quote_id?: string | null
           show_prices?: boolean
           space_id?: string
           text_color?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "menu_templates_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "menu_templates_archived_by_fkey"
             columns: ["archived_by"]
@@ -3385,143 +3355,6 @@ export type Database = {
           id?: string
         }
         Relationships: []
-      }
-      quotes: {
-        Row: {
-          base_cents: number
-          category: string | null
-          code: string
-          concept: string
-          created_at: string
-          created_by: string
-          decided_at: string | null
-          decided_by: string | null
-          decision_reason: string | null
-          description: string | null
-          establishment_id: string
-          id: string
-          outcome: string
-          request_id: string | null
-          requires_payment_before_start: boolean
-          sent_at: string | null
-          sent_by: string | null
-          space_id: string
-          start_authorization_reason: string | null
-          start_authorized_at: string | null
-          start_authorized_by: string | null
-          state: string
-          tax_cents: number
-          tax_rate_percent: number
-          total_cents: number
-          updated_at: string
-        }
-        Insert: {
-          base_cents: number
-          category?: string | null
-          code: string
-          concept: string
-          created_at?: string
-          created_by: string
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_reason?: string | null
-          description?: string | null
-          establishment_id: string
-          id?: string
-          outcome: string
-          request_id?: string | null
-          requires_payment_before_start?: boolean
-          sent_at?: string | null
-          sent_by?: string | null
-          space_id: string
-          start_authorization_reason?: string | null
-          start_authorized_at?: string | null
-          start_authorized_by?: string | null
-          state?: string
-          tax_cents: number
-          tax_rate_percent: number
-          total_cents: number
-          updated_at?: string
-        }
-        Update: {
-          base_cents?: number
-          category?: string | null
-          code?: string
-          concept?: string
-          created_at?: string
-          created_by?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_reason?: string | null
-          description?: string | null
-          establishment_id?: string
-          id?: string
-          outcome?: string
-          request_id?: string | null
-          requires_payment_before_start?: boolean
-          sent_at?: string | null
-          sent_by?: string | null
-          space_id?: string
-          start_authorization_reason?: string | null
-          start_authorized_at?: string | null
-          start_authorized_by?: string | null
-          state?: string
-          tax_cents?: number
-          tax_rate_percent?: number
-          total_cents?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "quotes_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_decided_by_fkey"
-            columns: ["decided_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_establishment_id_fkey"
-            columns: ["establishment_id"]
-            isOneToOne: false
-            referencedRelation: "establishments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "requests"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_sent_by_fkey"
-            columns: ["sent_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_space_id_fkey"
-            columns: ["space_id"]
-            isOneToOne: false
-            referencedRelation: "spaces"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quotes_start_authorized_by_fkey"
-            columns: ["start_authorized_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       receipts: {
         Row: {
@@ -5134,7 +4967,6 @@ export type Database = {
       }
     }
     Functions: {
-      accept_quote: { Args: { p_quote_id: string }; Returns: undefined }
       accept_request: { Args: { p_request_id: string }; Returns: undefined }
       accept_revised_request: {
         Args: { p_request_id: string }
@@ -5253,10 +5085,6 @@ export type Database = {
       audit_entity_is_visible: {
         Args: { p_entity_id: string; p_entity_type: string }
         Returns: boolean
-      }
-      authorize_quote_start: {
-        Args: { p_quote_id: string; p_reason?: string }
-        Returns: undefined
       }
       auto_assign_job: { Args: { p_job_id: string }; Returns: string }
       begin_request_analysis: {
@@ -5395,23 +5223,6 @@ export type Database = {
           state: string
         }[]
       }
-      client_request_quote: {
-        Args: { p_request_id: string }
-        Returns: {
-          base_cents: number
-          code: string
-          concept: string
-          description: string
-          preparing: boolean
-          quote_id: string
-          requires_payment_before_start: boolean
-          start_authorized: boolean
-          status: string
-          tax_cents: number
-          tax_rate_percent: number
-          total_cents: number
-        }[]
-      }
       complete_correction: {
         Args: { p_correction_id: string; p_note?: string }
         Returns: undefined
@@ -5532,29 +5343,11 @@ export type Database = {
         Returns: string
       }
       create_menu_template: {
-        Args: {
-          p_establishment_id: string
-          p_name: string
-          p_origin?: string
-          p_quote_id?: string
-        }
+        Args: { p_establishment_id: string; p_name: string; p_origin?: string }
         Returns: string
       }
       create_plan_subscription: {
         Args: { p_establishment_id: string; p_plan_id: string }
-        Returns: string
-      }
-      create_quote: {
-        Args: {
-          p_base_cents: number
-          p_category?: string
-          p_concept: string
-          p_description?: string
-          p_establishment_id: string
-          p_outcome: string
-          p_request_id?: string
-          p_requires_payment_before_start?: boolean
-        }
         Returns: string
       }
       create_request_draft: {
@@ -5868,17 +5661,6 @@ export type Database = {
       job_candidate_ids: { Args: { p_job_id: string }; Returns: string[] }
       job_establishment_id: { Args: { p_job_id: string }; Returns: string }
       job_load_points: { Args: { p_category: string }; Returns: number }
-      job_quote_gate: {
-        Args: { p_job_id: string }
-        Returns: {
-          can_start: boolean
-          paid: boolean
-          quote_code: string
-          quote_id: string
-          requires_payment_before_start: boolean
-          start_authorized: boolean
-        }[]
-      }
       job_space_id: { Args: { p_job_id: string }; Returns: string }
       link_file: {
         Args: {
@@ -6210,7 +5992,6 @@ export type Database = {
         Args: { p_conditions: string; p_service_id: string }
         Returns: string
       }
-      quote_status: { Args: { p_quote_id: string }; Returns: string }
       reactivate_establishment_after_payment: {
         Args: { p_establishment_id: string }
         Returns: boolean
@@ -6299,10 +6080,6 @@ export type Database = {
           p_receipt_file_id?: string
         }
         Returns: string
-      }
-      reject_quote: {
-        Args: { p_quote_id: string; p_reason?: string }
-        Returns: undefined
       }
       reject_request: {
         Args: { p_reason: string; p_request_id: string }
@@ -6434,14 +6211,6 @@ export type Database = {
         Args: { p_new_plan_id: string; p_subscription_id: string }
         Returns: string
       }
-      send_quote: { Args: { p_quote_id: string }; Returns: undefined }
-      service_monthly_price: {
-        Args: { p_subscription_id: string }
-        Returns: {
-          base_cents: number
-          premium_applied: boolean
-        }[]
-      }
       set_admin_can_perform_jobs: {
         Args: { p_space_id: string; p_user_id: string; p_value: boolean }
         Returns: undefined
@@ -6545,18 +6314,10 @@ export type Database = {
         }[]
       }
       space_calendar: {
-        Args: {
-          p_establishment_id?: string
-          p_from: string
-          p_kind?: string
-          p_space_id: string
-          p_to: string
-          p_worker_id?: string
-        }
+        Args: { p_from: string; p_space_id: string; p_to: string }
         Returns: {
           entity_id: string
           entity_type: string
-          establishment_id: string
           event_date: string
           kind: string
           state: string
@@ -6659,7 +6420,6 @@ export type Database = {
         Returns: {
           establishment_id: string
           establishment_name: string
-          kind: string
           monthly_total_cents: number
           plan_name: string
           renews_at: string
@@ -6685,17 +6445,6 @@ export type Database = {
           p_show_prices?: boolean
           p_template_id: string
           p_text_color: string
-        }
-        Returns: undefined
-      }
-      update_quote_draft: {
-        Args: {
-          p_base_cents: number
-          p_category?: string
-          p_concept: string
-          p_description?: string
-          p_quote_id: string
-          p_requires_payment_before_start?: boolean
         }
         Returns: undefined
       }

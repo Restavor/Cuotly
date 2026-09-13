@@ -499,22 +499,3 @@ export function financialSummary(input: {
     recurringMonthly: { baseCents: recurringBase, totalCents: recurringTotal },
   };
 }
-
-/**
- * RN-COM-08 · el precio mensual de un servicio adicional: 229 € + IVA, o
- * 199 € + IVA si el establecimiento tiene plan Premium activo. Qué plan es
- * "Premium" lo dice `plans.grants_priority` (decisión 20, 13/09/2026): no
- * se compara ningún nombre. Un servicio sin segundo precio cobra siempre
- * el normal. Es la misma cuenta que `service_monthly_price_internal()` en
- * la migración 80, que es quien emite la mensualidad.
- */
-export function serviceMonthlyPrice(
-  service: { readonly priceCents: number; readonly pricePremiumCents: number | null },
-  activePlanGrantsPriority: boolean,
-): { readonly baseCents: number; readonly premiumApplied: boolean } {
-  const premiumApplied = activePlanGrantsPriority && service.pricePremiumCents !== null;
-  return {
-    baseCents: premiumApplied ? (service.pricePremiumCents as number) : service.priceCents,
-    premiumApplied,
-  };
-}
