@@ -385,62 +385,57 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    **(g) Y la 84 se aplica al proyecto real** el mismo día, por orden de Bosco, con
    `database.types.ts` regenerado detrás (`docs/DESPLIEGUE-SUPABASE.md`).
 
+
+28. **Las lecturas del Hito 16 sobre los informes, con tres cambios de Bosco** (14/09/2026,
+   cierra la pendiente 16). De lo que la maestra deja abierto en §89 a §95, Bosco confirma dos
+   cosas tal como estaban y **cambia otras dos**, una de ellas enmendando la maestra.
+
+   **Confirmado sin cambios.** (a) Las secciones que "requieren criterio" (§95.3) son las **dos
+   que escribe o elige una persona**: el resumen ejecutivo y las oportunidades. De ahí sale que un
+   informe con resumen ejecutivo dentro **pase por aprobación** y que solo quitándolo pueda
+   programarse sin aprobar, que es lo que dice la maqueta. (b) "Se acerca la fecha programada"
+   (§95) son **24 horas antes**, una sola vez por informe y fecha; cambiar la fecha vuelve a armar
+   el aviso. Se eligen 24 h y no una hora porque el aviso sirve para poder pararlo o corregirlo, y
+   eso necesita una jornada por delante.
+
+   **(c) Enmienda a §89: el informe lo pueden ver todos.** La maestra dice "Editor ve informes
+   siempre. Consulta necesita permiso de su propietario", y la migración 85 lo implementó con un
+   permiso fino por persona (`establishment_permissions.view_reports`) y su función para
+   concederlo. Bosco lo cambia: lo ve **cualquier persona del restaurante con el acceso vigente**,
+   sin distinguir rol. El permiso y su función **se han quitado enteros**, no desactivados. Al
+   hacerlo apareció un fallo que nadie había visto: `client_can_view_reports()` no miraba
+   `revoked_at`, así que a quien se le retiraba el acceso **seguía viendo los informes**
+   (RN-EST-05); ahora lo mira, y la suite lo comprueba.
+
+   **(d) A quién llega el informe: a todos los que trabajan en ese restaurante, por los dos
+   lados.** La primera versión lo mandaba solo al lado cliente. La segunda idea, de Bosco, fue
+   añadir `noti@restavor.com`; se le hizo notar que una dirección escrita en el código mandaría
+   los informes de otro espacio al buzón de Restavor —Cuotly es multiempresa, y eso no es un
+   detalle de estilo sino una fuga entre espacios, el mismo patrón que la migración 83 y el
+   barrido de las fechas del mismo día— y **cambió la regla por una mejor**: le llega a quien
+   trabaja ahí por el lado del restaurante (sus personas y su grupo) y por el de mantenimiento
+   (los trabajadores autorizados en ese restaurante y quien lleva la cartera). **No hay ninguna
+   dirección escrita en el código**, porque los destinatarios se calculan.
+
+   **(e) El informe se guarda y siempre es un PDF.** No hace falta cambiar nada: cada versión se
+   conserva (§95) y el PDF **se regenera desde la versión**, con sus cifras congeladas, así que
+   abrir el informe de hace cinco meses da el de hace cinco meses. Guardar además el archivo sería
+   un segundo original que puede dejar de coincidir.
+
+   Comprobado: `informes.sql` con los destinatarios verificados **persona a persona** y no por el
+   total —un número correcto por casualidad, uno de más y otro de menos, pasaría igual—; las 39
+   suites desde cero sobre las 85 migraciones; y dos mutaciones detectadas: quitar el lado de
+   mantenimiento de los destinatarios y quitar la comprobación de acceso retirado.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
-16. **Lecturas aplicadas al implementar los informes** (Hito 16, 14/09/2026). §89 a §95 dicen los
-   estados, el flujo y las salidas, pero callan en unas cuantas cosas. Las que **contesta el
-   diseño** ya no se preguntan —se han aplicado tal cual—; las que quedan abajo necesitan un sí o un
-   cambio tuyo. Ninguna inventa una regla nueva.
+**Ninguna abierta.** Las dieciséis están cerradas; quedan tachadas abajo con la decisión que
+resolvió cada una.
 
-   **Lo que ya NO hace falta decidir, porque lo dibuja la maqueta 10.04** (y por tanto se ha hecho
-   así): las **secciones de un informe** son cinco —resumen ejecutivo, operación, rendimiento
-   digital, oportunidades, anexos y evidencias— más **finanzas**, que esa vista no dibuja porque
-   dibuja un informe de operación pero que §89 da como familia. **No dependen de la familia**: la
-   propia maqueta dibuja un informe de operación con rendimiento digital dentro. Y entran marcadas
-   el resumen ejecutivo, la sección de la familia y los anexos; las **oportunidades nunca** (§99:
-   "Incluir en informe" se vuelve a decidir). La primera versión de este hito tenía diecinueve
-   secciones inventadas por mí: se han tirado.
-
-   **(a) Qué secciones "requieren criterio"** (§95.3 pide distinguirlas y no dice cuáles son): las
-   **dos** que una persona escribe o elige — el **resumen ejecutivo** y las **oportunidades**—; el
-   resto son cifras y no piden opinión de nadie. De esto depende algo concreto: §95 dice que "los
-   informes solo objetivos pueden enviarse automáticamente", así que un informe **con el resumen
-   ejecutivo dentro pasa por aprobación** —que es lo que dice la maqueta: "Requiere tu aprobación
-   para finalizar y programar el envío"— y solo quitándolo se puede programar sin aprobar.
-
-   **(b) A quién va el correo programado** (§93 dice "correo programado" y no dice a quién): a
-   **quien puede ver informes de ese restaurante** por §89 —propietario global, propietario local,
-   Editor siempre y Consulta con permiso—, calculado, no una lista escrita a mano que haya que
-   mantener. Un informe **consolidado** no se manda a ningún cliente: mezcla varios restaurantes y
-   no hay uno al que pertenezca, así que va al propietario y a los administradores.
-
-   **(c) Cuándo es "se acerca la fecha programada"** (§95): **24 horas antes**, una sola vez por
-   informe y fecha. Se eligen 24 h y no una hora porque el aviso sirve para poder pararlo o
-   corregirlo, y eso necesita una jornada por delante. Cambiar la fecha vuelve a armar el aviso.
-
-   **(d) El PDF y el CSV se generan desde la versión y no se guardan** (§93 pide las salidas y no
-   dice si se archivan). La versión es el original —§95: "cada versión se conserva"— y las dos
-   salidas son una representación suya, regenerable e idéntica. Guardar el PDF sería un segundo
-   original que puede dejar de coincidir con las cifras.
-
-   Y tres menores del mismo bloque: **"Consulta necesita permiso de su propietario"** (§89) se ha
-   implementado como un permiso fino por persona (`establishment_permissions.view_reports`), igual
-   que `view_billing` en RN-FIN-07; la **"duración bloqueada"** de §91 se cuenta en minutos de
-   **calendario** y no laborables, porque el tiempo bloqueado que no consume plazo ya lo dice T3
-   (RN-SLA-14) y lo que §91 pide aquí es cuánto tiempo estuvo parado el trabajo; y la maqueta 10.04
-   dibuja además **"Rendimiento digital" marcado en un informe de operación**, que se ha leído como
-   que esa persona lo añadió y no como el valor por omisión —encenderlo por omisión llenaría de
-   "fuente no conectada" (§178) los informes de quien no tenga integraciones—.
-
-   **Lo que NO se ha inventado**, por si la ausencia llama la atención: no hay informe redactado por
-   IA (§93 dice que no hace falta), no hay sección de "recomendaciones" (la maqueta no la tiene), no
-   hay plantilla configurable por espacio y no hay envío a una dirección escrita a mano.
-
----
-
-**Cerradas.** Las quince anteriores; quedan tachadas abajo con la decisión que las resolvió.
+16. ~~Lecturas aplicadas al implementar los informes~~ — cerradas el 14/09/2026 como decisión
+   28, con dos confirmadas y dos cambiadas por Bosco.
 
 15. ~~Lecturas aplicadas al implementar las oportunidades~~ — confirmadas el 14/09/2026 como
    decisión 27.

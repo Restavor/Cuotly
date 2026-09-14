@@ -67,7 +67,8 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
 insert into public.group_memberships (group_id, user_id, role) values
   ('ff300000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000008', 'global_owner');
 
--- Ana está autorizada en el restaurante: aun así, §89 no le da sus informes.
+-- Ana está autorizada en el restaurante, así que "trabaja ahí" por el lado
+-- de mantenimiento y el informe le llega (decisión de Bosco, 14/09/2026).
 insert into public.worker_establishments (space_id, user_id, establishment_id, created_by) values
   ('ff100000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000003',
    'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000001');
@@ -139,15 +140,23 @@ begin
 end $$;
 
 -- ============================================================
--- RN-REP-01 · quién puede ver informes por el lado cliente (§89)
+-- RN-REP-01 · quién puede ver informes por el lado cliente
+-- (§89, enmendado por Bosco el 14/09/2026: lo ven todos)
 -- ============================================================
+--
+-- §89 decía "Consulta necesita permiso de su propietario" y así se
+-- implementó primero, con un permiso por persona. Bosco lo cambió: el
+-- informe lo pueden ver todos los que trabajan en ese restaurante. Lo que
+-- esta suite defiende ahora es eso Y lo que no cambió: que el acceso
+-- retirado deja de ver (RN-EST-05), que antes NO se comprobaba.
 select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000006', false);
 set role authenticated;
 do $$
 begin
-  -- §89 · "Consulta necesita permiso de su propietario": sin él, no.
-  if public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
-    raise exception 'RN-REP-01 FALLIDO: Consulta ve informes sin el permiso de §89' using errcode = 'assert_failure';
+  -- Consulta, sin ningún permiso extra, ve los informes.
+  if not public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
+    raise exception 'RN-REP-01 FALLIDO: Consulta no ve los informes y ahora los ve todo el restaurante'
+      using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -156,9 +165,8 @@ select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000007
 set role authenticated;
 do $$
 begin
-  -- §89 · "Editor ve informes siempre".
   if not public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
-    raise exception 'RN-REP-01 FALLIDO: el Editor no ve informes, y §89 dice que siempre' using errcode = 'assert_failure';
+    raise exception 'RN-REP-01 FALLIDO: el Editor no ve informes' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -174,34 +182,29 @@ begin
 end $$;
 reset role;
 
--- El permiso lo concede el propietario del restaurante, y solo a Consulta.
-select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000005', false);
-set role authenticated;
-do $$
-begin
-  begin
-    perform public.set_client_report_permission(
-      'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000007', true);
-    raise exception 'RN-REP-01 FALLIDO: se le concede a un Editor un permiso que ya tiene por serlo' using errcode = 'assert_failure';
-  exception
-    when sqlstate 'P0001' then
-      if sqlerrm like 'RN-REP-01 FALLIDO%' then raise; end if;
-  end;
-
-  perform public.set_client_report_permission(
-    'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000006', true);
-end $$;
-reset role;
+-- Y el acceso RETIRADO deja de ver. Esto es lo que la primera versión de
+-- la función no miraba: `establishment_memberships.revoked_at` existía y
+-- no se consultaba, así que "todos" habría incluido a quien ya no está.
+update public.establishment_memberships
+   set revoked_at = now()
+ where establishment_id = 'ff400000-0000-0000-0000-000000000001'
+   and user_id = 'ff000000-0000-0000-0000-000000000006';
 
 select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000006', false);
 set role authenticated;
 do $$
 begin
-  if not public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
-    raise exception 'RN-REP-01 FALLIDO: Consulta con permiso sigue sin ver informes' using errcode = 'assert_failure';
+  if public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
+    raise exception 'RN-REP-01 FALLIDO: un acceso retirado sigue viendo los informes (RN-EST-05)'
+      using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
+
+update public.establishment_memberships
+   set revoked_at = null
+ where establishment_id = 'ff400000-0000-0000-0000-000000000001'
+   and user_id = 'ff000000-0000-0000-0000-000000000006';
 
 -- ============================================================
 -- RN-REP-08 · preparar: solo quien gestiona la cartera
@@ -506,10 +509,14 @@ begin
 
   v_enviados := public.send_report(v_id);
 
-  -- §93 · el correo va a quien puede ver informes de ese restaurante:
-  -- propietario local, Editor, Consulta CON permiso y propietario global.
-  if v_enviados <> 4 then
-    raise exception 'RN-REP-11 FALLIDO: el informe no llegó a quien §89 dice que puede verlo (llegó a %)', v_enviados
+  -- §93, decidido por Bosco el 14/09/2026 · el correo va a todos los que
+  -- trabajan en ese restaurante, por los dos lados: propietario local,
+  -- Consulta, Editor y propietario global por el del restaurante; Ana, que
+  -- está autorizada en él, y el propietario y los dos administradores del
+  -- espacio por el de mantenimiento. Quiénes son exactamente se comprueba
+  -- persona a persona más abajo; aquí solo que sean ocho y no cuatro.
+  if v_enviados <> 8 then
+    raise exception 'RN-REP-11 FALLIDO: el informe llegó a % y tiene que llegar a los ocho que trabajan en ese restaurante', v_enviados
       using errcode = 'assert_failure';
   end if;
   if (select status from public.reports where id = v_id) <> 'sent' then
@@ -519,7 +526,7 @@ begin
   if public.send_report(v_id) <> 0 then
     raise exception 'CA-17 FALLIDO: enviar dos veces el mismo informe vuelve a enviarlo' using errcode = 'assert_failure';
   end if;
-  if (select count(*) from public.report_deliveries where report_id = v_id) <> 4 then
+  if (select count(*) from public.report_deliveries where report_id = v_id) <> 8 then
     raise exception 'CA-17 FALLIDO: el segundo envío duplicó los apuntes de entrega' using errcode = 'assert_failure';
   end if;
 
@@ -543,20 +550,59 @@ reset role;
 
 -- Los avisos del envío se cuentan con `service_role` y no con la sesión
 -- del administrador: `notifications` solo deja ver a cada uno los suyos
--- (RN-NOT-01), y estos son de los usuarios del restaurante.
+-- (RN-NOT-01), y estos son de los dos lados.
+--
+-- **A quién llega el informe, decidido por Bosco el 14/09/2026**: a todos
+-- los que trabajan en ese restaurante, por los dos lados. Se comprueba
+-- persona a persona y no con un número: un total correcto por
+-- casualidad —uno de más y otro de menos— pasaría igual.
 set role service_role;
 do $$
 declare
   v_id uuid := (select v from rep_ids where k = 'operacion');
+  v_falta text;
 begin
-  if (select count(*) from public.notifications
-      where entity_type = 'report' and entity_id = v_id and event_type = 'report_sent') <> 4 then
-    raise exception 'RN-REP-11 FALLIDO: el envío no avisó a los cuatro destinatarios de §89' using errcode = 'assert_failure';
+  -- El lado del restaurante: propietario local, Consulta, Editor y el
+  -- propietario global del grupo.
+  -- El lado de mantenimiento: Ana, autorizada en ESE restaurante, y quien
+  -- lleva la cartera (propietario y los dos administradores).
+  select string_agg(esperado.quien::text || ' (' || esperado.lado || ')', ', ')
+    into v_falta
+  from (values
+    ('ff000000-0000-0000-0000-000000000005'::uuid, 'client'),
+    ('ff000000-0000-0000-0000-000000000006'::uuid, 'client'),
+    ('ff000000-0000-0000-0000-000000000007'::uuid, 'client'),
+    ('ff000000-0000-0000-0000-000000000008'::uuid, 'client'),
+    ('ff000000-0000-0000-0000-000000000003'::uuid, 'staff'),
+    ('ff000000-0000-0000-0000-000000000001'::uuid, 'staff'),
+    ('ff000000-0000-0000-0000-000000000002'::uuid, 'staff'),
+    ('ff000000-0000-0000-0000-000000000004'::uuid, 'staff')
+  ) as esperado(quien, lado)
+  where not exists (
+    select 1 from public.notifications n
+    where n.entity_type = 'report' and n.entity_id = v_id
+      and n.event_type = 'report_sent'
+      and n.recipient_id = esperado.quien
+      and n.audience = esperado.lado
+  );
+
+  if v_falta is not null then
+    raise exception 'RN-REP-11 FALLIDO: el envío no avisó a %; le llega a todos los que trabajan en ese restaurante, por los dos lados',
+      v_falta using errcode = 'assert_failure';
   end if;
-  -- Y el aviso es del lado cliente: es el "correo programado" de §93.
+
+  -- Y a nadie más: el de otro espacio no recibe nada.
   if exists (select 1 from public.notifications
-             where entity_type = 'report' and entity_id = v_id and audience <> 'client') then
-    raise exception 'RN-REP-11 FALLIDO: el aviso del envío no va dirigido al restaurante' using errcode = 'assert_failure';
+             where entity_type = 'report' and entity_id = v_id
+               and recipient_id = 'ff000000-0000-0000-0000-000000000009') then
+    raise exception 'RN-REP-11 FALLIDO: un extraño recibe el informe' using errcode = 'assert_failure';
+  end if;
+
+  -- Los dos lados están representados: si "staff" desapareciera, la lista
+  -- de arriba lo diría, pero esto lo dice más claro.
+  if (select count(distinct audience) from public.notifications
+      where entity_type = 'report' and entity_id = v_id and event_type = 'report_sent') <> 2 then
+    raise exception 'RN-REP-11 FALLIDO: el informe no llega a los dos lados' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;

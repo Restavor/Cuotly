@@ -2370,7 +2370,6 @@ export const es = {
       "establishment.status_changed": "Estado del restaurante cambiado",
       "establishment_access.granted": "Acceso a un restaurante concedido",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
-      "establishment_access.report_permission": "Permiso de informes cambiado a un usuario del restaurante",
       "establishment_note.created": "Nota interna escrita",
       "establishment_note.archived": "Nota interna archivada",
       "file.archived": "Archivo archivado",

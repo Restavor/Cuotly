@@ -29,7 +29,7 @@
 --     administradores del espacio; del lado cliente, propietario global,
 --     propietario local, Editor siempre y Consulta **solo con permiso de
 --     su propietario**, que es un permiso fino por persona
---     (`establishment_permissions.view_reports`), igual que `view_billing`
+--     todos los del restaurante lo ven (enmienda a §89, decisión de Bosco)
 --     en RN-FIN-07. El **trabajador no entra**: §89 no le da los informes
 --     de un restaurante; lo suyo es el informe personal de §90, que es
 --     otra función y otra cuenta.
@@ -69,16 +69,22 @@
 -- Se comprueba con `supabase/tests/informes.sql`.
 
 -- ============================================================
--- 1 · §89 · "Consulta necesita permiso de su propietario"
+-- 1 · Quién ve los informes de un restaurante
 -- ============================================================
-alter table public.establishment_permissions
-  add column if not exists view_reports boolean not null default false;
-
-comment on column public.establishment_permissions.view_reports is
-  '§89 · "Editor ve informes siempre. Consulta necesita permiso de su
-   propietario." Este es ese permiso, concedido persona a persona igual
-   que view_billing (RN-FIN-07). Solo se consulta para el rol consulta: el
-   propietario local y el Editor lo tienen por serlo.';
+--
+-- **Enmienda a §89, decidida por Bosco el 14/09/2026.** La maestra dice
+-- "Editor ve informes siempre. Consulta necesita permiso de su
+-- propietario", y la primera versión de esta migración lo implementó con
+-- un permiso por persona (`establishment_permissions.view_reports`) y su
+-- función para concederlo. Bosco lo cambia: **el informe lo pueden ver
+-- todos** los que trabajan en ese restaurante. El permiso fino se ha
+-- quitado entero, no desactivado: una columna que nadie lee y una función
+-- que nadie llama son una trampa para quien venga detrás.
+--
+-- Lo que sí se comprueba, y antes no, es que el acceso **siga vigente**:
+-- `establishment_memberships` tiene `revoked_at` y esta función lo
+-- ignoraba, así que a quien se le retiraba el acceso seguía viendo los
+-- informes (RN-EST-05).
 
 -- Quién puede ver los informes de un restaurante, **desde el lado
 -- cliente** (RN-REP-01). El equipo va por capacidad, no por aquí.
@@ -98,22 +104,20 @@ as $$
       where e.id = p_establishment_id and gm.user_id = auth.uid()
     )
     or exists (
+      -- Cualquier rol del restaurante, con el acceso vigente.
       select 1 from public.establishment_memberships em
-      left join public.establishment_permissions ep on ep.establishment_membership_id = em.id
       where em.establishment_id = p_establishment_id
         and em.user_id = auth.uid()
-        and (
-          em.role in ('local_owner', 'editor')
-          or (em.role = 'consulta' and coalesce(ep.view_reports, false))
-        )
+        and em.revoked_at is null
     );
 $$;
 
 comment on function public.client_can_view_reports(uuid) is
-  '§89 · quién ve los informes de un restaurante por el lado cliente:
-   propietario global, propietario local, Editor siempre y Consulta solo
-   con permiso. No mira el estado del informe: eso lo hace
-   report_is_visible_to_client() en la misma política.';
+  '§89, enmendado el 14/09/2026 · quién ve los informes de un restaurante
+   por el lado cliente: el propietario global del grupo y CUALQUIER
+   persona del restaurante con el acceso vigente, sin distinguir rol. No
+   mira el estado del informe: eso lo hace report_is_visible_to_client()
+   en la misma política.';
 
 -- Aparece dentro de la expresión de la política de `reports`, así que NO
 -- puede perder el EXECUTE de `authenticated` (CLAUDE.md: PostgreSQL evalúa
@@ -121,74 +125,6 @@ comment on function public.client_can_view_reports(uuid) is
 revoke all on function public.client_can_view_reports(uuid) from public, anon;
 grant execute on function public.client_can_view_reports(uuid) to authenticated;
 
--- El permiso fino lo concede quien gestiona la cartera o el propietario
--- del restaurante, igual que los otros dos de esa tabla.
-create or replace function public.set_client_report_permission(
-  p_establishment_id uuid,
-  p_user_id uuid,
-  p_value boolean
-)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_space_id uuid;
-  v_membership_id uuid;
-  v_role text;
-begin
-  v_space_id := public.establishment_space_id(p_establishment_id);
-  if v_space_id is null then
-    raise exception 'Restaurante no encontrado';
-  end if;
-
-  if not (
-    public.has_capability(v_space_id, 'manage_clients')
-    or exists (
-      select 1 from public.establishment_memberships em
-      where em.establishment_id = p_establishment_id
-        and em.user_id = auth.uid()
-        and em.role = 'local_owner'
-    )
-    or exists (
-      select 1 from public.group_memberships gm
-      join public.establishments e on e.group_id = gm.group_id
-      where e.id = p_establishment_id and gm.user_id = auth.uid()
-    )
-  ) then
-    raise exception 'No puedes cambiar los permisos de este restaurante';
-  end if;
-
-  select em.id, em.role into v_membership_id, v_role
-  from public.establishment_memberships em
-  where em.establishment_id = p_establishment_id
-    and em.user_id = p_user_id;
-
-  if v_membership_id is null then
-    raise exception 'Esa persona no tiene acceso a este restaurante';
-  end if;
-
-  if v_role <> 'consulta' then
-    -- §89 · el Editor "ve informes siempre" y el propietario local por
-    -- serlo: darles un permiso que ya tienen sería guardar una mentira.
-    raise exception 'Solo el rol Consulta necesita este permiso';
-  end if;
-
-  insert into public.establishment_permissions (establishment_membership_id, view_reports)
-  values (v_membership_id, coalesce(p_value, false))
-  on conflict (establishment_membership_id)
-  do update set view_reports = coalesce(p_value, false);
-
-  insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, new_value)
-  values (v_space_id, auth.uid(), 'establishment_access.report_permission', 'establishment',
-          p_establishment_id,
-          jsonb_build_object('user_id', p_user_id, 'view_reports', coalesce(p_value, false)));
-end;
-$$;
-
-revoke all on function public.set_client_report_permission(uuid, uuid, boolean) from public, anon;
-grant execute on function public.set_client_report_permission(uuid, uuid, boolean) to authenticated;
 
 -- ============================================================
 -- 2 · El catálogo: familias, secciones y transiciones
@@ -1007,9 +943,20 @@ $$;
 revoke all on function public.report_pending_opportunities(uuid) from public, anon;
 grant execute on function public.report_pending_opportunities(uuid) to authenticated;
 
--- A quién va el correo programado (§93, RN-REP-11): a quien puede ver
--- informes de ese restaurante, no a una lista escrita a mano. Un
--- consolidado no tiene cliente, así que va al equipo que lo gestiona.
+-- A quién va el correo programado (§93, RN-REP-11).
+--
+-- **Decidido por Bosco el 14/09/2026**: le llega a **todos los que
+-- trabajan en ese restaurante, por los dos lados** —los del restaurante y
+-- los de mantenimiento—. La primera versión lo mandaba solo al lado
+-- cliente y a quien tuviera permiso; la segunda idea fue añadir una
+-- dirección fija de Restavor, y se descartó por lo de siempre: Cuotly es
+-- multiempresa, y una dirección escrita en el código mandaría los
+-- informes de otro espacio al buzón de Restavor. Esto no tiene ese
+-- problema porque **no hay ninguna dirección escrita**: los destinatarios
+-- se calculan de quién trabaja ahí.
+--
+-- Un consolidado no tiene restaurante, así que no se manda a ningún
+-- cliente —mezcla varios— y va al equipo que lo gestiona.
 create or replace function public.report_recipients(p_report_id uuid)
 returns table (recipient_id uuid, audience text)
 language sql
@@ -1018,39 +965,54 @@ security definer
 set search_path = public
 as $$
   with report as (select * from public.reports where id = p_report_id)
+
+  -- El restaurante: cualquier persona suya con el acceso vigente, sin
+  -- distinguir rol (enmienda a §89).
   select em.user_id, 'client'::text
   from report r
   join public.establishment_memberships em on em.establishment_id = r.establishment_id
-  left join public.establishment_permissions ep on ep.establishment_membership_id = em.id
   where r.establishment_id is not null
-    and (
-      em.role in ('local_owner', 'editor')
-      or (em.role = 'consulta' and coalesce(ep.view_reports, false))
-    )
+    and em.revoked_at is null
 
   union
 
+  -- Y su grupo, que es quien ve el consolidado y el detalle de lo suyo.
   select gm.user_id, 'client'::text
   from report r
   join public.establishments e on e.id = r.establishment_id
   join public.group_memberships gm on gm.group_id = e.group_id
   where r.establishment_id is not null
+    and gm.revoked_at is null
 
   union
 
+  -- Mantenimiento: los trabajadores autorizados en ESE restaurante
+  -- (RN-ASG-01), que son los que "trabajan ahí".
+  select we.user_id, 'staff'::text
+  from report r
+  join public.worker_establishments we on we.establishment_id = r.establishment_id
+  where r.establishment_id is not null
+    and we.revoked_at is null
+
+  union
+
+  -- Y quien lleva la cartera: propietario y administradores del espacio.
+  -- Para un consolidado son los únicos, porque no hay restaurante.
   select sm.user_id, 'staff'::text
   from report r
   join public.space_memberships sm on sm.space_id = r.space_id
-  where r.establishment_id is null
-    and sm.status = 'active'
+  where sm.status = 'active'
     and sm.role in ('owner', 'admin');
 $$;
 
 comment on function public.report_recipients(uuid) is
-  '§93 · quién recibe el correo programado de un informe: los usuarios del
-   restaurante que pueden verlo (§89). Un consolidado no se manda a ningún
-   cliente —mezcla varios—, así que va a propietario y administradores.
-   Reservada: devuelve identidades del lado cliente.';
+  '§93 · quién recibe el correo programado de un informe: todos los que
+   trabajan en ese restaurante, por los dos lados —sus usuarios y su
+   grupo, los trabajadores autorizados y quien lleva la cartera—, con el
+   acceso vigente. Sin ninguna dirección escrita en el código: Cuotly es
+   multiempresa. Un consolidado no se manda a ningún cliente —mezcla
+   varios—, así que solo va al equipo. Reservada: devuelve identidades de
+   los dos lados.';
 
 revoke all on function public.report_recipients(uuid) from public, anon, authenticated;
 

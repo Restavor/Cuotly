@@ -3857,10 +3857,11 @@ regenerar salió idéntica, así que no había desviación.
     - **Enviado no es preparado** (RN-REP-13): el restaurante ve un informe
       cuando se le ha enviado, y `preparing`, `pending_review`, `approved` y
       `scheduled` son conversación interna. Lo sostiene la política de RLS.
-    - **Quién ve informes** (§89): propietario y administradores del espacio;
-      del lado cliente, propietario global, propietario local, Editor
-      siempre y Consulta **solo con permiso**, que es un permiso fino por
-      persona (`establishment_permissions.view_reports`), como `view_billing`.
+    - **Quién ve informes** (§89, enmendado por Bosco el 14/09/2026):
+      propietario y administradores del espacio; del lado cliente, el
+      propietario global del grupo y **cualquier persona del restaurante**
+      con el acceso vigente, sin distinguir rol. El permiso fino que la
+      primera versión dio a Consulta se quitó entero (decisión 28).
       El **trabajador no entra**: §89 no le da los informes de un
       restaurante, y lo que §90 le da es el suyo personal. Por eso
       `/informes` enseña dos pantallas distintas según quién entre, en vez
@@ -4123,7 +4124,7 @@ Hito 15 deja de estar bloqueado.
 **Se verifica con:** `supabase/tests/oportunidades.sql` (la 38ª suite; RN-OPP-01 a 10), `opportunities.test.ts` (los umbrales, uno a uno), `opportunity-detection.test.ts`, `opportunities.test.tsx`, `listas-compartidas.test.ts` (el catálogo de reglas, los estados y las transiciones a los dos lados) y `adapters.test.ts`.
 
 ### Hito 16 · Informes *(hecho el 14/09/2026; la 85 pendiente de aplicar al proyecto)*
-- **Migración 85**: `reports` (las tres familias de §89, los seis estados de §95, los filtros de §93), `report_sections` (qué entra, en qué orden y con qué texto), `report_versions` (**libro inmutable**: cada versión se conserva) y `report_deliveries` (a quién se envió qué versión). RLS con el privilegio de columna que tapa quién lo preparó, lo aprobó y lo envió; el permiso fino **`view_reports`** para Consulta (§89); y las funciones de preparar, editar, generar cifras, aprobar, programar, enviar y archivar.
+- **Migración 85**: `reports` (las tres familias de §89, los seis estados de §95, los filtros de §93), `report_sections` (qué entra, en qué orden y con qué texto), `report_versions` (**libro inmutable**: cada versión se conserva) y `report_deliveries` (a quién se envió qué versión). RLS con el privilegio de columna que tapa quién lo preparó, lo aprobó y lo envió; y las funciones de preparar, editar, generar cifras, aprobar, programar, enviar y archivar.
 - Los **diez indicadores de §91** en `src/core/reports.ts` (dominio puro), medidos con el **reloj contractual**; las filas las entregan `report_operation_dataset()` y `report_finance_dataset()`, reservadas a `service_role`.
 - El **informe personal del trabajador** (§90), sin finanzas, con los puntos históricos separados de la carga actual y las comparaciones segmentadas como manda §55.
 - Las **cuatro salidas** de §93: pantalla, **PDF** (`src/services/report-pdf.ts`, generado desde la versión y no guardado), **CSV** y **correo programado**, con el aviso de 24 h antes (§95) y el envío en la tanda de `/api/cola`, detrás de las oportunidades.

@@ -135,7 +135,6 @@ export const AUDIT_ACTIONS = [
   "establishment.status_changed",
   "establishment_access.granted",
   // §89 · el permiso fino de Consulta para ver informes (migración 85).
-  "establishment_access.report_permission",
   "establishment_access.revoked",
   "establishment_note.archived",
   "establishment_note.created",

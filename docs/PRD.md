@@ -1098,11 +1098,13 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   del espacio; §89 da las dos formas ("informes globales e individuales"). Quién ve qué: propietario y
   administradores del espacio, todo; el **propietario global** del grupo, el consolidado de su grupo y
   el detalle de cada establecimiento suyo; el **propietario local**, el de su establecimiento; el
-  **Editor** siempre; el **Consulta** solo con permiso de su propietario, que es un permiso fino por
-  persona (`establishment_permissions.view_reports`), igual que `view_billing` en RN-FIN-07. Un
-  informe **consolidado no se comparte con ningún restaurante**: mezcla datos de varios y no hay
-  cliente al que pertenezca. El **trabajador no aparece en esa lista** y por tanto no ve los informes
-  de un restaurante, ni siquiera de uno autorizado suyo: lo que tiene es el informe personal de §90.
+  **Editor** y el **Consulta**, igual: **lo ven todos los que trabajan en ese restaurante**, con el
+  acceso vigente. §89 decía que Consulta necesitaba permiso de su propietario y así se implementó
+  primero, con un permiso fino por persona; **Bosco lo enmendó el 14/09/2026** (decisión 28) y ese
+  permiso se quitó entero. Un informe **consolidado no se comparte con ningún restaurante**: mezcla
+  datos de varios y no hay cliente al que pertenezca. El **trabajador no ve la pantalla de informes
+  de un restaurante** —lo que §90 le da es el suyo personal—, pero si está autorizado en él **sí
+  recibe el informe enviado**, porque trabaja ahí (RN-REP-11).
 - **RN-REP-02**: el **informe personal del trabajador** (§90) lleva carga actual, trabajos realizados,
   pendientes, cumplimiento de plazos, tiempos medios, bloqueos, correcciones y **puntos históricos
   realizados separados de la carga actual**. **No lleva finanzas.** El trabajador ve el suyo; las
