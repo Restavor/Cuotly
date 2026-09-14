@@ -6,28 +6,22 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 13/09/2026.
+Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**La 81** (`integraciones_conexiones_y_sincronizacion`, Fase 3 · Hito 13),
-en el repositorio desde el 13/09/2026 y **sin aplicar a propósito**: es la
-primera migración de la Fase 3 y el PRD §27 en el que se apoya es un
-borrador pendiente de que Bosco lo revise (con las cuatro lecturas de la
-pendiente 13 de `docs/DECISIONES.md`). Aplica desde cero en local y su
-suite pasa; cuando Bosco confirme la Fase 3, se aplica y se anota aquí.
-Es solo aditiva (cuatro tablas y veinte funciones, dos eventos y un tipo
-de entidad más en los CHECK de `notifications`), así que aplicarla no
-toca ninguna fila.
+**Ninguna.** Las 81 migraciones del repositorio están aplicadas en el
+proyecto.
 
 ## Aplicadas
 
-**Las 80 primeras migraciones del repositorio están aplicadas.** Las tres
+**Las 81 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
-el 11/09/2026, las 71 a 76 el 12/09/2026 y las 77 a 80 el 13/09/2026.
+el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
+81 el 14/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -97,6 +91,65 @@ el 11/09/2026, las 71 a 76 el 12/09/2026 y las 77 a 80 el 13/09/2026.
   NOT NULL`, el SELECT de tabla revocado (privilegio de columna) y
   `decided_by` no legible por `authenticated` (P7). 118 migraciones
   registradas en el proyecto.
+- La **81** (`integraciones_conexiones_y_sincronizacion`, Fase 3 · Hito
+  13) el 14/09/2026, desde el MCP, en tres partes (`p1_cuentas_y_tablas`,
+  `p2_permisos_avisos_y_personas` y
+  `p3_credencial_cola_archivar_auditoria`), por orden de Bosco: estuvo un
+  día en el repositorio sin aplicar a propósito, porque el PRD §27 en el
+  que se apoya era un borrador. **Solo aditiva**: cuatro tablas
+  (`integrations`, `integration_credentials`, `sync_runs`,
+  `metric_points`), veinte funciones, un disparador sobre
+  `establishments` (archivar desconecta), los dos eventos y el tipo de
+  entidad `integration` en los CHECK de `notifications`, y
+  `audit_action_capability()` recreada con la familia `integration`. No
+  toca ninguna fila.
+
+  Lo que se comprobó ANTES, en local y sin Docker
+  (`bootstrap-postgres-local.sql`): las 81 migraciones aplican desde cero
+  sobre PostgreSQL 16 y pasan la suite de la 81, el barrido del Hito 7 y
+  la de auditoría. Y contra el proyecto, antes de tocarlo: 118
+  migraciones, ninguno de los objetos de la 81, las cinco funciones de
+  las que depende presentes y los dos CHECK de `notifications` con el
+  nombre que la migración borra.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve
+  problemas y devolvió ninguno: las diez internas
+  (`integration_client_owner_as`, `assert_can_manage_integrations`,
+  `notify_integration_event`, `disconnect_integration_internal`,
+  `store_integration_credential`, `read_integration_credential`,
+  `claim_integration_runs`, `finish_integration_run`,
+  `mark_integration_revocation_done`, `revoke_integrations_on_archive`)
+  sin EXECUTE para `anon` ni `authenticated`; las diez públicas con
+  EXECUTE para `authenticated` y no para `anon`; las cuatro tablas con
+  RLS, política y `space_id NOT NULL`; el SELECT de tabla revocado en
+  `integrations`, `integration_credentials` y `sync_runs`, y las seis
+  columnas tapadas (`connected_by`, `disconnected_by`, `created_by`,
+  `ciphertext`, `created_by`, `requested_by`) no legibles por
+  `authenticated`; el disparador de archivado; los dos CHECK con los
+  valores nuevos; `audit_action_capability('integration.connected')` =
+  `manage_clients`; la espera entre reintentos 1 h, 4 h, 16 h, 24 h,
+  24 h. 121 migraciones registradas en el proyecto.
+
+  `database.types.ts` regenerado desde el proyecto después (81
+  migraciones). Al regenerar salieron, además de lo de la 81, cuatro
+  funciones internas de la 80 que el archivo escrito a mano no tenía
+  (`next_request_code_internal`, `notify_quote_event`,
+  `service_monthly_price_internal`, `subscription_current_period`) y
+  tres claves ajenas a `quotes` en otro orden; nada de lo que las
+  pantallas usan cambió de firma.
+
+  Lo que añade al analizador de Supabase (`get_advisors`, seguridad):
+  cuatro `WARN` de `search_path` mutable sobre las cuatro cuentas puras
+  (`integration_auth_kind`, `integration_sync_frequency`,
+  `integration_retry_delay`, `integration_data_is_stale`), de la misma
+  familia que las de `job_load_points` (no tocan tablas; fijarles el
+  `search_path` es higiene pendiente); y cinco `WARN` de "función
+  SECURITY DEFINER ejecutable por `authenticated`" sobre las cinco
+  públicas que comprueban el permiso por su cuenta
+  (`begin_integration_connection`, `cancel_integration_connection`,
+  `disconnect_integration`, `request_integration_check`,
+  `establishment_integrations`), que es lo esperado. Ninguna de la 81
+  aparece como ejecutable por `anon`. Ningún `ERROR` nuevo.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
@@ -439,6 +492,7 @@ cuerpos entre `$$`. Los nombres con los que aparecen en el proyecto:
 | 78 | `menu_diario_plantillas_y_descargas` | `menu_diario_plantillas_y_descargas` |
 | 79 | `menu_diario_equipo_cola_y_correccion` | `..._p1_candidatos_cola_correccion`, `_p2_avisos_barrido_busqueda` |
 | 80 | `calendario_completo_y_presupuestos` | `..._p1_mensualidad_del_servicio`, `_p2_calendario_quotes_y_avisos`, `_p3_crear_enviar_aceptar_rechazar`, `_p4_inicio_cliente_plantillas_auditoria` |
+| 81 | `integraciones_conexiones_y_sincronizacion` | `..._p1_cuentas_y_tablas`, `_p2_permisos_avisos_y_personas`, `_p3_credencial_cola_archivar_auditoria` |
 
 La numeración del proyecto no coincide con la del repositorio porque el
 proyecto sella cada migración con la hora a la que se aplicó; lo que manda

@@ -26,7 +26,7 @@ Actualizado el 13/09/2026.
 | 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Servidor, dominio y pantallas del restaurante | Migración 78, 13/09/2026. Ver la entrada de cierre abajo. |
 | 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Servidor, dominio y pantallas del equipo | Migración 79, 13/09/2026. Ver la entrada de cierre abajo. |
 | 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Servidor, dominio y pantallas | Migración 80, 13/09/2026, aplicada al proyecto real el mismo día. Ver la entrada de cierre abajo. |
-| 13 · Integraciones analíticas: conexiones, credenciales, estados y sincronización (Fase 3) | Servidor y dominio; sin pantallas ni adaptadores | Migración 81, 13/09/2026, **sin aplicar**: la Fase 3 no está confirmada y el PRD §27 es un borrador. Ver la entrada de cierre abajo. |
+| 13 · Integraciones analíticas: conexiones, credenciales, estados y sincronización (Fase 3) | Servidor y dominio; sin pantallas ni adaptadores | Migración 81, 13/09/2026, aplicada al proyecto real el 14/09/2026 por orden de Bosco. Ver la entrada de cierre abajo. |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -3289,15 +3289,19 @@ regenerar salió idéntica, así que no había desviación.
 
 ### Fase 3 · Hito 13 · Integraciones: conexiones, credenciales cifradas, estados y sincronización
 
-- [x] **Servidor y dominio de las integraciones** — migración 81, **sin aplicar al proyecto real**.
+- [x] **Servidor y dominio de las integraciones** — migración 81, aplicada al proyecto real el 14/09/2026.
 
     Primer hito de la Fase 3, con el mismo corte que los hitos 5, 6 y 9:
     lo que las pantallas y los adaptadores del Hito 14 van a llamar, sin
     pantallas ni adaptadores. Se hizo sobre el **borrador** del PRD §27 y
-    se paró aquí: la Fase 3 no está confirmada, y una migración que crea
-    cuatro tablas sobre reglas que Bosco no ha revisado no se aplica al
-    proyecto real hasta que las revise. Las cuatro lecturas donde la
-    maestra calla están en la pendiente 13 de DECISIONES.
+    se paró aquí: la Fase 3 no estaba confirmada, y una migración que crea
+    cuatro tablas sobre reglas que Bosco no había revisado no se aplicaba
+    al proyecto real hasta que las revisara. **Se aplicó el 14/09/2026
+    por orden suya**, en tres partes desde el MCP, con la verificación
+    local desde cero antes y la comprobación en vivo después anotadas en
+    `docs/DESPLIEGUE-SUPABASE.md`. Las cuatro lecturas donde la maestra
+    calla siguen en la pendiente 13 de DECISIONES: aplicar la migración
+    no las confirma.
 
     **Lo que hay.** `integrations` (una fila por restaurante y fuente, los
     siete estados de §117 y lo que §117 manda enseñar), `integration_

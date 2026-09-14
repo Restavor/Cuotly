@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 13/09/2026), con las 79 migraciones del
+// (generate_typescript_types, 14/09/2026), con las 81 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -545,13 +545,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "charges_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "charges_establishment_id_fkey"
             columns: ["establishment_id"]
             isOneToOne: false
@@ -563,6 +556,13 @@ export type Database = {
             columns: ["issued_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "charges_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -1693,6 +1693,184 @@ export type Database = {
           },
         ]
       }
+      integration_credentials: {
+        Row: {
+          ciphertext: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          integration_id: string
+          key_version: number
+          kind: string
+          replaced_at: string | null
+          revoked_at: string | null
+          space_id: string
+        }
+        Insert: {
+          ciphertext: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          integration_id: string
+          key_version: number
+          kind: string
+          replaced_at?: string | null
+          revoked_at?: string | null
+          space_id: string
+        }
+        Update: {
+          ciphertext?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          integration_id?: string
+          key_version?: number
+          kind?: string
+          replaced_at?: string | null
+          revoked_at?: string | null
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_credentials_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_credentials_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_credentials_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integrations: {
+        Row: {
+          account_label: string | null
+          auth_kind: string
+          connected_at: string | null
+          connected_by: string | null
+          consecutive_failures: number
+          created_at: string
+          created_by: string | null
+          disconnect_reason: string | null
+          disconnected_at: string | null
+          disconnected_by: string | null
+          establishment_id: string
+          external_property_id: string | null
+          external_revocation_pending: boolean
+          id: string
+          last_error: string | null
+          last_failure_kind: string | null
+          last_success_at: string | null
+          last_sync_at: string | null
+          next_attempt_at: string | null
+          provider: string
+          space_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_label?: string | null
+          auth_kind: string
+          connected_at?: string | null
+          connected_by?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          created_by?: string | null
+          disconnect_reason?: string | null
+          disconnected_at?: string | null
+          disconnected_by?: string | null
+          establishment_id: string
+          external_property_id?: string | null
+          external_revocation_pending?: boolean
+          id?: string
+          last_error?: string | null
+          last_failure_kind?: string | null
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          next_attempt_at?: string | null
+          provider: string
+          space_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_label?: string | null
+          auth_kind?: string
+          connected_at?: string | null
+          connected_by?: string | null
+          consecutive_failures?: number
+          created_at?: string
+          created_by?: string | null
+          disconnect_reason?: string | null
+          disconnected_at?: string | null
+          disconnected_by?: string | null
+          establishment_id?: string
+          external_property_id?: string | null
+          external_revocation_pending?: boolean
+          id?: string
+          last_error?: string | null
+          last_failure_kind?: string | null
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          next_attempt_at?: string | null
+          provider?: string
+          space_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_connected_by_fkey"
+            columns: ["connected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrations_disconnected_by_fkey"
+            columns: ["disconnected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrations_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integrations_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internal_notes: {
         Row: {
           author_id: string
@@ -1837,13 +2015,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "jobs_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "jobs_assigned_to_fkey"
             columns: ["assigned_to"]
             isOneToOne: false
@@ -1869,6 +2040,13 @@ export type Database = {
             columns: ["published_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -2355,13 +2533,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "menu_templates_quote_id_fkey"
-            columns: ["quote_id"]
-            isOneToOne: false
-            referencedRelation: "quotes"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "menu_templates_archived_by_fkey"
             columns: ["archived_by"]
             isOneToOne: false
@@ -2380,6 +2551,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "menu_templates_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
             referencedColumns: ["id"]
           },
           {
@@ -2827,6 +3005,83 @@ export type Database = {
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      metric_points: {
+        Row: {
+          dimension: string
+          establishment_id: string
+          fetched_at: string
+          id: string
+          integration_id: string
+          metric: string
+          period_end: string
+          period_start: string
+          provider: string
+          space_id: string
+          sync_run_id: string | null
+          unit: string | null
+          value: number
+        }
+        Insert: {
+          dimension?: string
+          establishment_id: string
+          fetched_at?: string
+          id?: string
+          integration_id: string
+          metric: string
+          period_end: string
+          period_start: string
+          provider: string
+          space_id: string
+          sync_run_id?: string | null
+          unit?: string | null
+          value: number
+        }
+        Update: {
+          dimension?: string
+          establishment_id?: string
+          fetched_at?: string
+          id?: string
+          integration_id?: string
+          metric?: string
+          period_end?: string
+          period_start?: string
+          provider?: string
+          space_id?: string
+          sync_run_id?: string | null
+          unit?: string | null
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metric_points_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_points_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_points_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "metric_points_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "sync_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -4496,6 +4751,89 @@ export type Database = {
           },
         ]
       }
+      sync_runs: {
+        Row: {
+          created_at: string
+          error: string | null
+          establishment_id: string
+          failure_kind: string | null
+          finished_at: string | null
+          id: string
+          integration_id: string
+          kind: string
+          period_end: string | null
+          period_start: string | null
+          points_written: number
+          requested_by: string | null
+          space_id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          establishment_id: string
+          failure_kind?: string | null
+          finished_at?: string | null
+          id?: string
+          integration_id: string
+          kind: string
+          period_end?: string | null
+          period_start?: string | null
+          points_written?: number
+          requested_by?: string | null
+          space_id: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          establishment_id?: string
+          failure_kind?: string | null
+          finished_at?: string | null
+          id?: string
+          integration_id?: string
+          kind?: string
+          period_end?: string | null
+          period_start?: string | null
+          points_written?: number
+          requested_by?: string | null
+          space_id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sync_runs_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_runs_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_runs_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sync_runs_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       task_reassignment_requests: {
         Row: {
           decided_at: string | null
@@ -5208,6 +5546,10 @@ export type Database = {
         Args: { p_reason?: string; p_template_id: string }
         Returns: undefined
       }
+      assert_can_manage_integrations: {
+        Args: { p_establishment_id: string; p_space_id: string }
+        Returns: undefined
+      }
       assert_can_write_menu_publication: {
         Args: {
           p_menu: Database["public"]["Tables"]["menus"]["Row"]
@@ -5265,6 +5607,10 @@ export type Database = {
         Returns: undefined
       }
       auto_assign_job: { Args: { p_job_id: string }; Returns: string }
+      begin_integration_connection: {
+        Args: { p_establishment_id: string; p_provider: string }
+        Returns: string
+      }
       begin_request_analysis: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -5328,6 +5674,10 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
       }
+      cancel_integration_connection: {
+        Args: { p_integration_id: string }
+        Returns: undefined
+      }
       cancel_menu: {
         Args: { p_menu_id: string; p_reason?: string }
         Returns: undefined
@@ -5354,6 +5704,21 @@ export type Database = {
         Returns: number
       }
       charge_status: { Args: { p_charge_id: string }; Returns: string }
+      claim_integration_runs: {
+        Args: { p_limit?: number }
+        Returns: {
+          establishment_id: string
+          external_property_id: string
+          integration_id: string
+          kind: string
+          last_success_at: string
+          period_end: string
+          period_start: string
+          provider: string
+          run_id: string
+          space_id: string
+        }[]
+      }
       claim_notification_deliveries: {
         Args: { p_limit?: number }
         Returns: {
@@ -5605,6 +5970,14 @@ export type Database = {
         Args: { p_file_id: string; p_request_id: string }
         Returns: undefined
       }
+      disconnect_integration: {
+        Args: { p_integration_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      disconnect_integration_internal: {
+        Args: { p_actor_id: string; p_integration_id: string; p_reason: string }
+        Returns: boolean
+      }
       edit_message: {
         Args: { p_body: string; p_message_id: string }
         Returns: undefined
@@ -5719,6 +6092,26 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: boolean
       }
+      establishment_integrations: {
+        Args: { p_establishment_id: string }
+        Returns: {
+          account_label: string
+          auth_kind: string
+          check_pending: boolean
+          external_property_id: string
+          external_revocation_pending: boolean
+          integration_id: string
+          is_stale: boolean
+          last_error: string
+          last_failure_kind: string
+          last_success_at: string
+          last_sync_at: string
+          next_attempt_at: string
+          provider: string
+          status: string
+          sync_frequency: string
+        }[]
+      }
       establishment_space_id: {
         Args: { p_establishment_id: string }
         Returns: string
@@ -5768,6 +6161,17 @@ export type Database = {
           plan_name: string
           total_cents: number
         }[]
+      }
+      finish_integration_run: {
+        Args: {
+          p_account_label?: string
+          p_error?: string
+          p_failure_kind?: string
+          p_outcome: string
+          p_points?: Json
+          p_run_id: string
+        }
+        Returns: number
       }
       finish_scheduled_job: {
         Args: { p_error?: string; p_job_id: string; p_ok: boolean }
@@ -5848,6 +6252,23 @@ export type Database = {
       has_capability_as: {
         Args: { p_capability: string; p_space_id: string; p_user_id: string }
         Returns: boolean
+      }
+      integration_auth_kind: { Args: { p_provider: string }; Returns: string }
+      integration_client_owner_as: {
+        Args: { p_establishment_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      integration_data_is_stale: {
+        Args: { p_last_success_at: string; p_now?: string; p_provider: string }
+        Returns: boolean
+      }
+      integration_retry_delay: {
+        Args: { p_consecutive_failures: number }
+        Returns: string
+      }
+      integration_sync_frequency: {
+        Args: { p_provider: string }
+        Returns: string
       }
       is_authorized_for_establishment: {
         Args: { p_establishment_id: string; p_user_id: string }
@@ -6038,6 +6459,10 @@ export type Database = {
         Args: { p_delivery_id: string; p_provider_message_id?: string }
         Returns: undefined
       }
+      mark_integration_revocation_done: {
+        Args: { p_integration_id: string }
+        Returns: undefined
+      }
       mark_menu_published: { Args: { p_menu_id: string }; Returns: undefined }
       mark_menu_ready_to_publish: {
         Args: { p_menu_id: string }
@@ -6110,6 +6535,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: string
       }
+      next_request_code_internal: {
+        Args: { p_establishment_id: string }
+        Returns: string
+      }
       next_space_sequence: {
         Args: { p_sequence_name: string; p_space_id: string }
         Returns: number
@@ -6122,6 +6551,14 @@ export type Database = {
         Args: { p_establishment_id: string; p_event_type: string }
         Returns: number
       }
+      notify_integration_event: {
+        Args: {
+          p_event_type: string
+          p_integration_id: string
+          p_run_id: string
+        }
+        Returns: number
+      }
       notify_job_event: {
         Args: {
           p_event_type: string
@@ -6132,6 +6569,10 @@ export type Database = {
       }
       notify_menu_event: {
         Args: { p_event_type: string; p_menu_id: string }
+        Returns: number
+      }
+      notify_quote_event: {
+        Args: { p_event_type: string; p_quote_id: string }
         Returns: number
       }
       notify_reassignment_deciders: {
@@ -6222,6 +6663,15 @@ export type Database = {
       reactivate_establishment_after_payment: {
         Args: { p_establishment_id: string }
         Returns: boolean
+      }
+      read_integration_credential: {
+        Args: { p_integration_id: string }
+        Returns: {
+          ciphertext: string
+          expires_at: string
+          key_version: number
+          kind: string
+        }[]
       }
       record_classification: {
         Args: {
@@ -6349,6 +6799,10 @@ export type Database = {
         Args: { p_description: string; p_job_id: string }
         Returns: string
       }
+      request_integration_check: {
+        Args: { p_integration_id: string }
+        Returns: string
+      }
       request_is_rankable: { Args: { p_state: string }; Returns: boolean }
       request_job_reassignment: {
         Args: { p_job_id: string; p_reason: string }
@@ -6448,6 +6902,14 @@ export type Database = {
         Returns: {
           base_cents: number
           premium_applied: boolean
+        }[]
+      }
+      service_monthly_price_internal: {
+        Args: { p_subscription_id: string }
+        Returns: {
+          base_cents: number
+          premium_applied: boolean
+          service_name: string
         }[]
       }
       set_admin_can_perform_jobs: {
@@ -6599,7 +7061,27 @@ export type Database = {
         Returns: undefined
       }
       start_job: { Args: { p_job_id: string }; Returns: undefined }
+      store_integration_credential: {
+        Args: {
+          p_account_label?: string
+          p_actor_id: string
+          p_ciphertext: string
+          p_expires_at?: string
+          p_external_property_id?: string
+          p_integration_id: string
+          p_key_version: number
+          p_kind: string
+        }
+        Returns: string
+      }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
+      subscription_current_period: {
+        Args: { p_subscription_id: string }
+        Returns: {
+          period_end: string
+          period_start: string
+        }[]
+      }
       subscription_terms: {
         Args: { p_subscription_id: string }
         Returns: {
