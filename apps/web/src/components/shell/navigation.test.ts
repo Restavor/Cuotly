@@ -1,17 +1,60 @@
 import { describe, expect, it } from "vitest";
 
+import { es } from "@/i18n/es";
+
 import {
   activeDestination,
+  CLIENT_ROLES,
   createOptions,
   DESTINATION_ICONS,
   desktopMenu,
   desktopMenuGroups,
+  isClientRole,
+  isStaffRole,
   mobileNav,
   moreDestinations,
+  type ShellRole,
 } from "./navigation";
 
 const SLUG = "restavor";
 const REST = "84000000-0000-0000-0000-000000000001";
+
+/**
+ * Quién es del equipo y quién es el restaurante.
+ *
+ * No es una comprobación de permisos —eso es del servidor—, pero decide
+ * qué PANTALLA se sirve, y equivocarse le da a un restaurante la ficha
+ * interna del equipo o un 404 en la suya. Que es exactamente lo que
+ * pasaba: `role !== "client"` dejaba a `client_daily_menu` del lado del
+ * equipo, y el layout del espacio lo echaba con un 404 en todas sus
+ * pantallas porque un restaurante no puede leer `spaces`.
+ */
+describe("de qué lado está cada rol (§20.3)", () => {
+  it("el restaurante es cliente tenga o no Menú Diario contratado", () => {
+    expect(isClientRole("client")).toBe(true);
+    expect(isClientRole("client_daily_menu")).toBe(true);
+    // El que rompía: contratar Menú Diario no convierte a nadie en equipo.
+    expect(isStaffRole("client_daily_menu")).toBe(false);
+  });
+
+  it("el equipo es el equipo", () => {
+    for (const role of ["owner", "admin", "worker"] as const) {
+      expect(isStaffRole(role), role).toBe(true);
+      expect(isClientRole(role), role).toBe(false);
+    }
+  });
+
+  it("todo rol cae en un lado o en el otro: uno nuevo sin clasificar hace fallar esto", () => {
+    // `es.roles` tiene una entrada por rol porque el armazón pinta su
+    // nombre (`roleLabel`), así que sirve de lista de todos los que hay.
+    const todos = Object.keys(es.roles) as ShellRole[];
+    expect(todos.length).toBeGreaterThan(0);
+    for (const role of todos) {
+      expect(isClientRole(role) !== isStaffRole(role), role).toBe(true);
+    }
+    expect(todos.filter(isClientRole).sort()).toEqual([...CLIENT_ROLES].sort());
+  });
+});
 
 describe("§20.3 · la barra de móvil tiene cinco destinos, sean quien sean", () => {
   it("§20.3: cinco destinos exactos para cada rol", () => {

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { AppShell, type ShellNotification } from "@/components/shell/AppShell";
+import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -78,7 +79,11 @@ export default async function SpaceLayout({
     readAt: row.read_at,
   }));
 
-  if (!space && role !== "client") notFound();
+  // Un restaurante no es miembro del espacio y no puede leer `spaces`
+  // (`spaces_select`), así que llegar aquí sin espacio es lo normal para
+  // él y no un 404. Para el equipo sí lo es: si no lee su propio espacio,
+  // el slug no existe o no es suyo.
+  if (!space && isStaffRole(role)) notFound();
 
   return (
     <AppShell

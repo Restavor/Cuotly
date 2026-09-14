@@ -11,6 +11,46 @@ import { es } from "@/i18n/es";
  */
 export type ShellRole = "owner" | "admin" | "worker" | "client" | "client_daily_menu";
 
+/**
+ * Los roles que son del RESTAURANTE y no del equipo de mantenimiento.
+ *
+ * Existe porque comparar `role !== "client"` a mano se hizo dos veces y
+ * las dos estaban mal: el restaurante que tiene contratado Menú Diario
+ * resuelve a `client_daily_menu` (§20.3, otra barra de móvil), ese rol no
+ * era igual a `"client"` y caía del lado del equipo. En el layout del
+ * espacio eso era un 404 en TODAS sus pantallas —`spaces_select` exige ser
+ * miembro del espacio y un restaurante no lo es, así que `space` llega
+ * vacío y la guarda lo echaba—, y en la ficha del restaurante le servía la
+ * pantalla interna del equipo, que tampoco puede leer.
+ *
+ * Se enumera en una lista y no se pregunta `role.startsWith("client")`
+ * porque un rol nuevo llamado, por ejemplo, `client_manager` heredaría la
+ * respuesta sin que nadie lo decidiera. `navigation.test.ts` comprueba que
+ * todo `ShellRole` cae en un lado o en el otro: un rol nuevo sin clasificar
+ * hace fallar el test.
+ *
+ * **No autoriza nada.** Decide qué pantalla se sirve; quién puede leer qué
+ * lo siguen decidiendo RLS y las funciones del servidor (CLAUDE.md).
+ */
+export const CLIENT_ROLES = ["client", "client_daily_menu"] as const;
+
+export type ClientShellRole = (typeof CLIENT_ROLES)[number];
+export type StaffShellRole = Exclude<ShellRole, ClientShellRole>;
+
+/*
+ * Son predicados de tipo y no funciones que devuelven `boolean` a secas:
+ * así, dentro de un `if (isStaffRole(role))`, el rol ya ES uno de los tres
+ * del equipo y se puede pasar donde se espera eso, sin repetir la lista
+ * —que es como aparecieron las comparaciones a mano que estaban mal—.
+ */
+export function isClientRole(role: ShellRole): role is ClientShellRole {
+  return (CLIENT_ROLES as readonly ShellRole[]).includes(role);
+}
+
+export function isStaffRole(role: ShellRole): role is StaffShellRole {
+  return !isClientRole(role);
+}
+
 export interface NavDestination {
   readonly key: string;
   readonly label: string;

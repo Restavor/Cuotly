@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { IntegrationsBlock } from "@/components/establishment/IntegrationsBlock";
 import { loadIntegrationsView } from "@/components/establishment/integrations-load";
+import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -63,10 +64,9 @@ export default async function ClientSourcesPage({
 
   const view = await loadIntegrationsView(supabase, {
     establishmentId: id,
-    actor:
-      role === "owner" || role === "admin" || role === "worker"
-        ? { kind: "staff", role }
-        : { kind: "client", role: canAcceptTerms === true ? "local_owner" : "editor" },
+    actor: isStaffRole(role)
+      ? { kind: "staff", role }
+      : { kind: "client", role: canAcceptTerms === true ? "local_owner" : "editor" },
     establishmentStatus: establishment.status,
     websiteUrl: establishment.website_url,
     webPlatform: establishment.web_platform,

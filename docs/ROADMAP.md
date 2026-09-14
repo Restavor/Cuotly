@@ -69,6 +69,32 @@ no son un fallo, sino alcance:
 
 ### Salvedades del Hito 8, dichas en claro
 
+0. **El restaurante con Menú Diario tenía un 404 en todas sus pantallas
+   (arreglado el 14/09/2026).** `resolveShellViewer()` resuelve a
+   `client_daily_menu` el restaurante que tiene el servicio contratado
+   —§20.3 le da otra barra de móvil, y ese rol llegó con el Hito 11—, pero
+   dos guardas escritas antes comparaban `role !== "client"` a mano y lo
+   dejaban del lado del equipo. En el layout del espacio eso era un 404 en
+   **todas** sus pantallas (`spaces_select` exige ser miembro del espacio,
+   un restaurante no lo es, `space` llegaba vacío y la guarda lo echaba);
+   en la ficha del restaurante, la pantalla interna del equipo, que
+   tampoco puede leer. No lo vio nadie porque los recorridos de Playwright
+   no se ejecutan desde el contenedor (no se llega al proyecto de
+   Supabase) y ninguna prueba unitaria montaba esas dos páginas.
+
+   Arreglado con la partición `CLIENT_ROLES` / `isClientRole()` /
+   `isStaffRole()` junto a la definición de `ShellRole`
+   (`src/components/shell/navigation.ts`), que son predicados de tipo: en
+   los tres sitios que decidían a mano de qué lado cae un rol, ahora lo
+   decide una sola lista. `navigation.test.ts` comprueba los dos roles de
+   cliente, los tres del equipo, y que **todo** `ShellRole` cae en un lado
+   o en el otro —un rol nuevo sin clasificar hace fallar el test—. Se
+   comprobó que la prueba falla con el código de antes.
+
+   Lo que NO cambia: nada de esto autoriza. Quién lee qué lo siguen
+   diciendo RLS y las funciones del servidor (CLAUDE.md); esto decide qué
+   pantalla se sirve.
+
 1. **CA-19: CUMPLIDO el 02/09/2026.** Se deja debajo el historial de cómo
    se llegó, porque cada "al día" explica por qué antes no lo estaba y qué
    faltaba; el veredicto está al final del apartado. El

@@ -30,6 +30,7 @@ import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
 import { parseDataSection, parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
+import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 
 import { AcceptRequestButton } from "./AcceptRequestButton";
@@ -113,7 +114,9 @@ export default async function EstablishmentPage({
 
   const { role } = await resolveShellViewer(supabase, user.id, slug);
 
-  if (role !== "client") {
+  // La ficha interna de §15.2 es del equipo. El restaurante —con Menú
+  // Diario contratado o sin él— ve su propia pantalla, más abajo.
+  if (isStaffRole(role)) {
     const header = await loadSheetHeader(supabase, id);
     if (header === null) notFound();
 
