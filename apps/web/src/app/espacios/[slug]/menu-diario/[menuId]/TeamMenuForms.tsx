@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { Button, Card, EmptyState, Field, Select, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow, TextArea } from "@/components/ui";
 import type { MenuState } from "@/core/menu-states";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 
 import { INITIAL_TEAM_MENU_ACTION, type TeamMenuActionState } from "../action-state";
@@ -20,13 +21,12 @@ import {
 const t = es.dailyMenuTeam;
 
 function horaLocal(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("es-ES", {
+  return enZona(iso, timeZone, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone,
-  }).format(new Date(iso));
+  });
 }
 
 function Feedback({ state }: { state: TeamMenuActionState }) {

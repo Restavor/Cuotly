@@ -12,6 +12,7 @@ import {
   type ValidationStepState,
 } from "@/core/requests";
 
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
 
@@ -46,10 +47,8 @@ type AuditActionKey = keyof typeof es.settings.auditActions;
 
 const t = es.teamArea.requests;
 
-function fechaHora(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(value),
-  );
+function fechaHora(value: string, timeZone: string): string {
+  return enZona(value, timeZone, { dateStyle: "medium", timeStyle: "short" });
 }
 
 /**
@@ -245,9 +244,11 @@ const MARCA_DEL_PASO: Record<
   unknown: { icon: "clock", clase: "bg-soft-surface text-text-secondary" },
 };
 
-export function ValidationStatusCard({ request, proposal }: {
+export function ValidationStatusCard({ request, proposal, timeZone }: {
   request: RequestDetailRow;
   proposal: RequestProposal | null;
+  /** La zona del espacio: las fechas de esta tarjeta se pintan en ella. */
+  timeZone: string;
 }) {
   const pasos = validationSteps({
     state: request.state,
@@ -285,7 +286,7 @@ export function ValidationStatusCard({ request, proposal }: {
                 */}
                 <span className="block text-sm text-text-secondary">
                   {paso.at !== null
-                    ? fechaHora(paso.at)
+                    ? fechaHora(paso.at, timeZone)
                     : t.validationStepStatus[paso.status]}
                 </span>
               </span>
@@ -311,17 +312,20 @@ export function ClientRequestCard({
   establishmentName,
   attachments,
   attachmentsFailed,
+  timeZone,
 }: {
   request: RequestDetailRow;
   establishmentName: string | null;
   attachments: readonly RequestAttachment[];
   attachmentsFailed: boolean;
+  /** La zona del espacio: las fechas de esta tarjeta se pintan en ella. */
+  timeZone: string;
 }) {
   return (
     <Card title={t.clientCardTitle}>
       <dl className="divide-y divide-border">
         <Dato label={t.establishmentLabel}>{establishmentName ?? "—"}</Dato>
-        <Dato label={t.receivedAtLabel}>{fechaHora(request.created_at)}</Dato>
+        <Dato label={t.receivedAtLabel}>{fechaHora(request.created_at, timeZone)}</Dato>
         {/* "Dónde" solo si lo escribió: un guion en una fila vacía no dice
             nada que no diga no pintarla. */}
         {request.context ? <Dato label={t.contextLabel}>{request.context}</Dato> : null}
@@ -582,7 +586,14 @@ export function AfterValidateNote() {
  * función; el nombre de cada acción sale del mismo diccionario que la
  * pantalla de auditoría (CA-21).
  */
-export function RequestHistoryCard({ entries }: { entries: readonly RequestHistoryEntry[] }) {
+export function RequestHistoryCard({
+  entries,
+  timeZone,
+}: {
+  entries: readonly RequestHistoryEntry[];
+  /** La zona del espacio: las fechas de esta tarjeta se pintan en ella. */
+  timeZone: string;
+}) {
   if (entries.length === 0) {
     return (
       <Card title={t.historyTitle}>
@@ -614,7 +625,7 @@ export function RequestHistoryCard({ entries }: { entries: readonly RequestHisto
                   {es.settings.auditActions[entry.action as AuditActionKey] ?? entry.action}
                 </p>
                 <p className="text-xs text-text-secondary">
-                  {fechaHora(entry.occurredAt)} · {entry.actor ?? t.historySystemActor}
+                  {fechaHora(entry.occurredAt, timeZone)} · {entry.actor ?? t.historySystemActor}
                 </p>
                 {entry.reason ? (
                   <p className="mt-1 whitespace-pre-wrap text-xs text-text-secondary">

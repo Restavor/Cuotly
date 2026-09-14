@@ -6,7 +6,7 @@ import { Card, StatusBadge } from "@/components/ui";
 import { menuCorrectionAvailability } from "@/core/daily-menu";
 import { isMenuEditable, isMenuState, menuTone } from "@/core/menu-states";
 import { es } from "@/i18n/es";
-import { fechaCorta } from "@/i18n/dates";
+import { enZona, fechaCorta } from "@/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 
 import { loadEstablishmentTimezone } from "../../timezone-load";
@@ -34,13 +34,12 @@ type MenuKindKey = keyof typeof es.naming.menuKinds;
  * `spaces`: escrita a mano sería la de Restavor para todo el mundo.
  */
 function horaEnZona(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("es-ES", {
+  return enZona(iso, timeZone, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone,
-  }).format(new Date(iso));
+  });
 }
 
 export default async function ClientMenuPage({

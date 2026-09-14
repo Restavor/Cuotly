@@ -5,6 +5,7 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import { RevokeSessionButton } from "./RevokeSessionButton";
+import { SessionTime } from "./SessionTime";
 
 /**
  * HU-05 · "ver y cerrar mis sesiones activas".
@@ -15,14 +16,6 @@ import { RevokeSessionButton } from "./RevokeSessionButton";
  * filas devuelve.
  */
 export const dynamic = "force-dynamic";
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  return new Intl.DateTimeFormat("es-ES", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export default async function SessionsPage() {
   const supabase = await createClient();
@@ -62,7 +55,8 @@ export default async function SessionsPage() {
                   {session.user_agent ?? es.sessions.unknownDevice}
                 </p>
                 <p className="text-sm text-text-secondary">
-                  {es.sessions.lastUsed}: {formatDate(session.refreshed_at ?? session.created_at)}
+                  {es.sessions.lastUsed}:{" "}
+                  <SessionTime value={session.refreshed_at ?? session.created_at} />
                 </p>
                 <p className="text-sm text-text-secondary">
                   {es.sessions.ip}: {session.ip ?? "—"}

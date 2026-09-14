@@ -36,6 +36,7 @@ import { StatusLegend } from "./StatusLegend";
 import { StatusNotice } from "./StatusNotice";
 import { RevokeAccessButton } from "./RevokeAccessButton";
 import { fechaCorta } from "@/i18n/dates";
+import { enZona, instanteRelativo } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
 
@@ -136,6 +137,13 @@ export interface SheetData {
   readonly integrations: IntegrationsView | null;
   /** §178 · los datos de las fuentes para "Informes y datos" (maquetas 09 a 12). */
   readonly digital: DigitalDataView | null;
+  /**
+   * La zona horaria del espacio (CLAUDE.md: las fechas se calculan en
+   * ella). No es decorativa ni tiene valor por defecto: sin ella, `Intl`
+   * usaría la del servidor —UTC en Vercel— y un cobro registrado a las
+   * once de la noche aparecería con la fecha del día anterior.
+   */
+  readonly timeZone: string;
 }
 
 type StatusKey = keyof typeof es.space.statuses;
@@ -181,19 +189,19 @@ function euros(cents: number): string {
  * Maqueta 13 · la frase del estado de las condiciones. `null` no es "sin
  * condiciones": es que la función no contestó, y se dice así.
  */
-function termsLine(terms: SubscriptionTerms | null): string {
+function termsLine(terms: SubscriptionTerms | null, timeZone: string): string {
   const t = es.establishmentSheet;
   if (terms === null) return t.termsUnknown;
   if (terms.current === null) return t.termsNoTerms;
   if (terms.accepted === null) return t.termsPending(terms.current.version);
   if (terms.status === "accepted") {
-    return t.termsAccepted(terms.accepted.version, dia(terms.accepted.acceptedAt));
+    return t.termsAccepted(terms.accepted.version, dia(terms.accepted.acceptedAt, timeZone));
   }
   return t.termsOutdated(terms.accepted.version, terms.current.version);
 }
 
-function dia(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(value));
+function dia(value: string, timeZone: string): string {
+  return enZona(value, timeZone, { dateStyle: "medium" });
 }
 
 /**
@@ -202,15 +210,11 @@ function dia(value: string): string {
  * otra de la semana pasada se distinguen de un vistazo, que es para lo que
  * sirve la columna.
  */
-function momento(value: string): string {
-  const fecha = new Date(value);
-  const hora = new Intl.DateTimeFormat("es-ES", { timeStyle: "short" }).format(fecha);
-  const hoy = new Date();
-  const mismoDia =
-    fecha.getFullYear() === hoy.getFullYear() &&
-    fecha.getMonth() === hoy.getMonth() &&
-    fecha.getDate() === hoy.getDate();
-  return mismoDia ? es.establishmentSheet.today(hora) : `${diaCorto(value)}, ${hora}`;
+function momento(value: string, timeZone: string): string {
+  // Qué día es "hoy" también depende de la zona: la comparación se hacía
+  // con `getFullYear()` de la fecha del servidor, así que a partir de las
+  // 22:00 de Madrid lo de esta noche dejaba de ser "hoy".
+  return instanteRelativo(value, timeZone, new Date(), es.establishmentSheet.today);
 }
 
 /**
@@ -227,8 +231,8 @@ function plazoDelTrabajo(job: SheetCurrentJob): string {
   return plazo.kind === "t2" ? t.currentJobToStart(restante) : t.currentJobToFinish(restante);
 }
 
-function diaCorto(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(new Date(value));
+function diaCorto(value: string, timeZone: string): string {
+  return enZona(value, timeZone, { dateStyle: "short" });
 }
 
 /**
@@ -237,14 +241,14 @@ function diaCorto(value: string): string {
  * en la línea de al lado escribe "599,00 €".
  */
 /** "15 sept 2026, 10:24", la columna "Fecha y hora" de la maqueta 19. */
-function fechaYHoraLarga(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", {
+function fechaYHoraLarga(value: string, timeZone: string): string {
+  return enZona(value, timeZone, {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
+  });
 }
 
 function megabytes(sizeBytes: number): string {
@@ -783,6 +787,7 @@ export function EstablishmentSheet({
     statusReason,
     integrations,
     digital,
+    timeZone,
   } = data;
   const bolsas = sortedCycleUsage(summary.bags);
   /*
@@ -902,7 +907,7 @@ export function EstablishmentSheet({
             action={
               header.cycleStart !== null && header.cycleEnd !== null ? (
                 <span className="shrink-0 text-sm text-text-secondary">
-                  {t.cycleRange(dia(header.cycleStart), dia(header.cycleEnd))}
+                  {t.cycleRange(dia(header.cycleStart, timeZone), dia(header.cycleEnd, timeZone))}
                 </span>
               ) : undefined
             }
@@ -975,7 +980,7 @@ export function EstablishmentSheet({
                               {request.description}
                             </span>
                             <span className="block text-text-secondary">
-                              {momento(request.createdAt)}
+                              {momento(request.createdAt, timeZone)}
                             </span>
                           </span>
                           <Icon
@@ -1107,7 +1112,7 @@ export function EstablishmentSheet({
             {summary.attention.length === 0 ? (
               <EmptyState title={t.attentionEmptyTitle} description={t.attentionEmptyReason} />
             ) : (
-              <AttentionList items={summary.attention} />
+              <AttentionList timeZone={timeZone} items={summary.attention} />
             )}
           </Card>
           {/*
@@ -1177,8 +1182,8 @@ export function EstablishmentSheet({
                           */}
                           <span className="block truncate text-text-secondary">
                             {request.authorName === null
-                              ? momento(request.createdAt)
-                              : `${request.authorName} · ${momento(request.createdAt)}`}
+                              ? momento(request.createdAt, timeZone)
+                              : `${request.authorName} · ${momento(request.createdAt, timeZone)}`}
                           </span>
                         </span>
                         <StatusBadge tone={requestTone(request.state)}>
@@ -1500,7 +1505,7 @@ export function EstablishmentSheet({
                           a ojo.
                         */}
                         <dd className="font-semibold text-primary-dark">
-                          {header.cycleEnd === null ? t.renewalNone : dia(header.cycleEnd)}
+                          {header.cycleEnd === null ? t.renewalNone : dia(header.cycleEnd, timeZone)}
                         </dd>
                         <dd className="text-xs text-text-secondary">
                           {header.cycleEnd === null ? t.renewalNoneHint : t.renewalAutomatic}
@@ -1512,12 +1517,12 @@ export function EstablishmentSheet({
                           {header.commitmentEndsAt === null
                             ? t.commitmentNone
                             : new Date(header.commitmentEndsAt) > new Date()
-                              ? t.commitmentUntil(dia(header.commitmentEndsAt))
+                              ? t.commitmentUntil(dia(header.commitmentEndsAt, timeZone))
                               : t.commitmentOver}
                         </dd>
                         {header.commitmentStartedAt === null ? null : (
                           <dd className="text-xs text-text-secondary">
-                            {t.commitmentSince(dia(header.commitmentStartedAt))}
+                            {t.commitmentSince(dia(header.commitmentStartedAt, timeZone))}
                           </dd>
                         )}
                       </div>
@@ -1531,7 +1536,7 @@ export function EstablishmentSheet({
                       tarjetas digan lo mismo con palabras distintas.
                     */}
                     <p className="mt-3 text-sm text-text-secondary">
-                      {t.termsLabel}: {termsLine(header.planTerms)}
+                      {t.termsLabel}: {termsLine(header.planTerms, timeZone)}
                     </p>
 
                     <p className="mt-4 text-sm">
@@ -1569,10 +1574,10 @@ export function EstablishmentSheet({
                               {service.name}
                             </span>
                             <span className="block text-xs text-text-secondary">
-                              {t.serviceSince(dia(service.startedAt))}
+                              {t.serviceSince(dia(service.startedAt, timeZone))}
                             </span>
                             <span className="block text-xs text-text-secondary">
-                              {t.termsLabel}: {termsLine(service.terms)}
+                              {t.termsLabel}: {termsLine(service.terms, timeZone)}
                             </span>
                           </span>
                           <span className="shrink-0 text-right text-sm text-text-secondary">
@@ -1703,12 +1708,12 @@ export function EstablishmentSheet({
 
                           <p className="mt-3 text-xs text-text-secondary">
                             {t.billingPeriod(
-                              diaCorto(charge.periodStart),
-                              diaCorto(charge.periodEnd),
+                              diaCorto(charge.periodStart, timeZone),
+                              diaCorto(charge.periodEnd, timeZone),
                             )}
                           </p>
                           <p className="text-xs text-text-secondary">
-                            {t.dueOn(diaCorto(charge.dueAt))}
+                            {t.dueOn(diaCorto(charge.dueAt, timeZone))}
                           </p>
 
                           {/*
@@ -1753,7 +1758,7 @@ export function EstablishmentSheet({
                             <TableBody>
                               {payments.payments.map((payment) => (
                                 <TableRow key={payment.id}>
-                                  <TableCell>{diaCorto(payment.paidAt)}</TableCell>
+                                  <TableCell>{diaCorto(payment.paidAt, timeZone)}</TableCell>
                                   <TableCell>{payment.chargeConcept}</TableCell>
                                   <TableCell>
                                     {euros(payment.amountCents)}
@@ -1955,7 +1960,7 @@ export function EstablishmentSheet({
                             <TableCell>
                               {permisos.length === 0 ? t.permissionsNone : permisos.join(" · ")}
                             </TableCell>
-                            <TableCell>{diaCorto(user.grantedAt)}</TableCell>
+                            <TableCell>{diaCorto(user.grantedAt, timeZone)}</TableCell>
                             {canManageClients ? (
                               <TableCell>
                                 <RevokeAccessButton
@@ -2040,7 +2045,7 @@ export function EstablishmentSheet({
                             : (es.space.statuses[person.membershipStatus as StatusKey] ??
                               person.membershipStatus)}
                         </TableCell>
-                        <TableCell>{diaCorto(person.assignedAt)}</TableCell>
+                        <TableCell>{diaCorto(person.assignedAt, timeZone)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -2143,7 +2148,7 @@ export function EstablishmentSheet({
                               <TableCell>
                                 <VisibilityMark visibility={file.visibility} />
                               </TableCell>
-                              <TableCell>{diaCorto(file.createdAt)}</TableCell>
+                              <TableCell>{diaCorto(file.createdAt, timeZone)}</TableCell>
                               <TableCell>{t.fileVersion(file.lastVersion)}</TableCell>
                             </TableRow>
                           ))}
@@ -2283,7 +2288,7 @@ export function EstablishmentSheet({
                                     version.variant)}
                               </span>
                               <span className="block text-xs text-text-secondary">
-                                {dia(version.createdAt)} · {t.fileSize(megabytes(version.sizeBytes))}
+                                {dia(version.createdAt, timeZone)} · {t.fileSize(megabytes(version.sizeBytes))}
                               </span>
                               {/* RN-ARC-08: enlace privado y temporal, firmado tras
                                   comprobar el permiso. Cada versión descarga LA SUYA. */}
@@ -2412,7 +2417,7 @@ export function EstablishmentSheet({
                 <TableBody>
                   {audit.rows.map((row) => (
                     <TableRow key={row.id}>
-                      <TableCell>{fechaYHoraLarga(row.createdAt)}</TableCell>
+                      <TableCell>{fechaYHoraLarga(row.createdAt, timeZone)}</TableCell>
                       <TableCell>
                         {/*
                           El nombre en español sale del catálogo de

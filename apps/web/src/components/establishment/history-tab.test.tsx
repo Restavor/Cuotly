@@ -88,6 +88,7 @@ function sheetData(audit: SheetData["audit"]): SheetData {
       },
     },
     canEditData: false,
+    timeZone: "Europe/Madrid",
     statusReason: null,
     integrations: null,
     digital: null,

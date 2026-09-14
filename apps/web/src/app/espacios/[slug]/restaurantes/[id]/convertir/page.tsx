@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { Card, EmptyState } from "@/components/ui";
 import { resolveAuthorLabel } from "@/core/messages";
+import { enZona } from "@/i18n/dates";
+import { loadEstablishmentTimezone } from "../timezone-load";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -88,7 +90,8 @@ export default async function ConvertConversationPage({
     adjuntosPorMensaje.set(link.entity_id, (adjuntosPorMensaje.get(link.entity_id) ?? 0) + 1);
   }
 
-  const fecha = new Intl.DateTimeFormat("es-ES", { dateStyle: "short", timeStyle: "short" });
+  // CLAUDE.md · la hora de cada mensaje, en la zona del espacio.
+  const zona = await loadEstablishmentTimezone(supabase, id);
 
   // RN-MSG-02 · quién firma cada mensaje sale de la misma función del
   // dominio que usa la conversación, no de un `if` escrito aquí: al
@@ -115,7 +118,7 @@ export default async function ConvertConversationPage({
           : etiqueta === "establishment"
             ? es.space.messages.establishmentSide
             : es.clientArea.maintenanceTeam,
-      createdAt: fecha.format(new Date(message.created_at)),
+      createdAt: enZona(message.created_at, zona, { dateStyle: "short", timeStyle: "short" }),
       attachments: adjuntosPorMensaje.get(message.id) ?? 0,
     };
   });

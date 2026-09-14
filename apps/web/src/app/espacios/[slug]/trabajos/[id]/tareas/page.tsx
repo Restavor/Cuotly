@@ -15,7 +15,7 @@ import {
 import { Icon } from "@/components/ui/Icon";
 import { TASK_LOAD_POINTS } from "@/core/load-points";
 import { taskPanelActions } from "@/core/task-coordination";
-import { fechaCorta } from "@/i18n/dates";
+import { DEFAULT_TIMEZONE, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -82,10 +82,13 @@ export default async function JobTasksPage({
 
   if (!job) notFound();
 
-  const [{ data: request }, { data: puedeAsignar }, { data: esDelEquipo }] = await Promise.all([
+  const [{ data: request }, { data: puedeAsignar }, { data: esDelEquipo }, { data: space }] =
+    await Promise.all([
     supabase.from("requests").select("description").eq("id", job.request_id).maybeSingle(),
     supabase.rpc("has_capability", { p_space_id: job.space_id, p_capability: "assign_jobs" }),
     supabase.rpc("is_space_member", { p_space_id: job.space_id }),
+    // CLAUDE.md · las fechas de las reasignaciones, en la zona del espacio.
+    supabase.from("spaces").select("timezone").eq("id", job.space_id).maybeSingle(),
   ]);
 
   /*
@@ -282,6 +285,7 @@ export default async function JobTasksPage({
           </section>
         ) : (
           <TaskDetail
+            timeZone={space?.timezone ?? DEFAULT_TIMEZONE}
             task={seleccionada}
             actions={acciones}
             candidates={candidatos}

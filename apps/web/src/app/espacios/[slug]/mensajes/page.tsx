@@ -13,6 +13,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -56,7 +57,7 @@ export default async function TeamInboxPage({ params }: { params: Promise<{ slug
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name, slug")
+    .select("id, name, slug, timezone")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -140,10 +141,10 @@ export default async function TeamInboxPage({ params }: { params: Promise<{ slug
                   </TableCell>
                   <TableCell>
                     {conversation.last_message_at
-                      ? new Intl.DateTimeFormat("es-ES", {
+                      ? enZona(conversation.last_message_at, space.timezone, {
                           dateStyle: "short",
                           timeStyle: "short",
-                        }).format(new Date(conversation.last_message_at))
+                        })
                       : "—"}
                   </TableCell>
                   <TableCell>

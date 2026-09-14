@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { Button, Field, Select, StatusBadge, TextArea } from "@/components/ui";
 import { TASK_LOAD_POINTS, type TaskWeight } from "@/core/load-points";
 import type { TaskPanelActions } from "@/core/task-coordination";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 
 import { INITIAL_TASK_ACTION } from "../task-action-state";
@@ -80,10 +81,12 @@ function taskTone(state: string): "success" | "warning" | "info" | "neutral" | "
   return "neutral";
 }
 
-function fechaYHora(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium", timeStyle: "short" }).format(
-    new Date(value),
-  );
+/**
+ * La fecha con su hora, en la zona del espacio. Corre en el navegador, así
+ * que sin zona era la de quien mira y no la del espacio (CLAUDE.md).
+ */
+function fechaYHora(value: string, timeZone: string): string {
+  return enZona(value, timeZone, { dateStyle: "medium", timeStyle: "short" });
 }
 
 function Error({ message }: { message: string | null }) {
@@ -310,8 +313,11 @@ export function TaskDetail({
   pending,
   history,
   closeHref,
+  timeZone,
 }: {
   task: DetailTask;
+  /** La zona del espacio: las fechas de esta pantalla se pintan en ella. */
+  timeZone: string;
   actions: TaskPanelActions;
   candidates: readonly DetailCandidate[];
   /** La solicitud abierta, si la hay (RN-ASG-07). */
@@ -448,7 +454,7 @@ export function TaskDetail({
           <p className="mt-1 text-sm text-text-secondary">
             {es.teamArea.tasks.coordination.reassignPendingBy(
               pending.requestedByName ?? "—",
-              fechaYHora(pending.requestedAt),
+              fechaYHora(pending.requestedAt, timeZone),
             )}
           </p>
           <p className="mt-2 text-sm text-text">{pending.reason}</p>
@@ -499,7 +505,7 @@ export function TaskDetail({
                 {resolved.decidedAt !== null ? (
                   <p className="text-text-secondary">
                     {es.teamArea.tasks.coordination.reassignHistoryLine(
-                      fechaYHora(resolved.decidedAt),
+                      fechaYHora(resolved.decidedAt, timeZone),
                       resolved.decidedByName ?? "—",
                     )}
                   </p>

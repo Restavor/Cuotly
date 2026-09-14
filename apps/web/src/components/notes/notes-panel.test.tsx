@@ -56,7 +56,7 @@ const reservada = {
 };
 
 function pintar(notes: EstablishmentNotes) {
-  return render(<NotesPanel establishmentId="est-1" notes={notes} />);
+  return render(<NotesPanel establishmentId="est-1" notes={notes} timeZone="Europe/Madrid" />);
 }
 
 describe("maqueta 18 · el panel de notas internas", () => {

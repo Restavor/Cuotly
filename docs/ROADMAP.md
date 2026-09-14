@@ -3644,6 +3644,70 @@ regenerar salió idéntica, así que no había desviación.
     las pruebas unitarias y `next build`.
 
 
+
+### Transversal · Las fechas se calculan en la zona del espacio *(14/09/2026)*
+
+- [x] **Treinta llamadas que pintaban en la zona del servidor, y el barrido que impide la treinta y una.**
+
+    Sale del arreglo de la zona horaria del restaurante (migración 83): al
+    buscar más fallos de la misma clase aparecieron treinta llamadas a
+    `Intl.DateTimeFormat` **sin `timeZone`**, repartidas por casi todos los
+    hitos. Sin ese argumento, `Intl` usa la zona del entorno, y en una
+    pantalla de servidor el entorno es el servidor: en Vercel, UTC.
+
+    **Por qué no se vio en dos meses.** En España el desfase es de una o
+    dos horas, así que la fecha sale bien casi siempre. Solo falla en la
+    franja de las 22:00 a las 24:00: un cobro registrado a las once de la
+    noche aparecía con la fecha del día anterior, y "Hoy, 10:24" dejaba de
+    decir "Hoy". Es el mismo patrón que el `"Europe/Madrid"` escrito a mano
+    de la 83 y que el `role !== "client"` del 404: correcto por casualidad
+    mientras el mundo fue pequeño.
+
+    **Qué se ha hecho.**
+    - `src/i18n/dates.ts` pasa a ser el formateador de todas las pantallas.
+      `enZona(valor, zona, opciones)` **pide la zona como argumento y no
+      tiene valor por defecto**: olvidarla ya no es un descuido invisible,
+      es un error de compilación. Las opciones son las de `Intl` y se pasan
+      tal cual, así que ninguna pantalla cambia de aspecto.
+    - Distingue lo que antes se confundía: un **instante** (`timestamptz`)
+      se pinta en la zona del espacio; un **día suelto** (`date`) no tiene
+      zona, se ancla en UTC y se pinta en UTC. Pintar un día suelto en la
+      zona del espacio funciona en Madrid y corre un día al oeste de
+      Greenwich.
+    - `instanteRelativo()` reúne las dos copias de "Hoy, 10:24" (la ficha y
+      la evidencia de un trabajo), que además comparaban el día con
+      `getFullYear()` del servidor.
+    - La zona llega a cada pantalla desde donde ya estaba: `spaces.timezone`
+      en las del equipo —tres consultas que no la pedían ahora la piden— y
+      `establishment_timezone()` (migración 83) en las del restaurante.
+      Seis componentes compartidos (la ficha, la conversación, las notas, el
+      detalle de una solicitud, la lista de atención y los tres de un
+      trabajo) la reciben por propiedad, **obligatoria**; los tres que
+      corren en el navegador dejan de usar la del navegador de quien mira.
+    - Una excepción, dicha en voz alta: **"Mis sesiones"** (HU-05) no cuelga
+      de ningún espacio. Son las sesiones de una persona y la hora que
+      espera leer es la de su reloj, así que se pinta en el navegador
+      (`SessionTime.tsx`, con `zonaDelNavegador()`). En cualquier pantalla
+      dentro de un espacio eso sería el mismo fallo con otro disfraz.
+    - `DEFAULT_TIMEZONE` deja de estar bajo una ruta de restaurante y vive
+      con el resto de las fechas. Es el valor por defecto de la columna, no
+      "la de Restavor", y usarlo es siempre el último recurso.
+
+    **Lo que impide que vuelva.** Arreglar treinta no impide la treinta y
+    una. `src/i18n/dates.test.ts` barre todo `src/` y falla si aparece un
+    `Intl.DateTimeFormat` fuera de los ocho archivos que lo tienen por
+    oficio (el dominio de `src/core/`, el propio formateador y los dos que
+    agrupan por día), diciendo qué usar en su lugar. Un noveno archivo que
+    lo necesite tiene que justificarse en esa lista.
+
+    **Comprobado:** dos mutaciones, las dos detectadas. Devolver un
+    `Intl.DateTimeFormat` a una pantalla hace fallar el barrido con el
+    nombre del archivo; hacer que `enZona()` ignore la zona que le dan hace
+    fallar cuatro comprobaciones, con la hora y **con el día** (las 00:30 de
+    Madrid son las 22:30 UTC del día anterior, que es el fallo entero en una
+    línea). typecheck, lint, 1025 pruebas y `next build`.
+
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

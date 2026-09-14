@@ -14,6 +14,7 @@ import {
 import { TASK_LOAD_POINTS } from "@/core/load-points";
 import { taskProgress } from "@/core/job-execution";
 import { es } from "@/i18n/es";
+import { fechaCorta } from "@/i18n/dates";
 
 import type { JobTaskRow } from "./tasks-load";
 
@@ -44,12 +45,6 @@ function taskTone(state: string): "success" | "warning" | "info" | "neutral" | "
   if (state === "cancelled") return "danger";
   if (state === "in_progress") return "info";
   return "neutral";
-}
-
-function fechaCorta(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" }).format(
-    new Date(`${value}T00:00:00`),
-  );
 }
 
 /**

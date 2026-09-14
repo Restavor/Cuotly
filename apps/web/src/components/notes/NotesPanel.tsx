@@ -1,4 +1,5 @@
 import { Card, EmptyState, StatusBadge } from "@/components/ui";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import type { EstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 
@@ -21,9 +22,12 @@ import { NewNoteForm } from "./NewNoteForm";
 export function NotesPanel({
   establishmentId,
   notes,
+  timeZone,
 }: {
   establishmentId: string;
   notes: EstablishmentNotes;
+  /** La zona del espacio: la fecha de cada nota se pinta en ella. */
+  timeZone: string;
 }) {
   if (!notes.canRead) return null;
 
@@ -52,13 +56,13 @@ export function NotesPanel({
                     {note.authorName ?? t.unknownAuthor}
                   </span>
                   <span className="text-xs text-text-secondary">
-                    {new Intl.DateTimeFormat("es-ES", {
+                    {enZona(note.createdAt, timeZone, {
                       day: "numeric",
                       month: "short",
                       year: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
-                    }).format(new Date(note.createdAt))}
+                    })}
                   </span>
                 </div>
 

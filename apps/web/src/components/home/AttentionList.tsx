@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { AttentionItem, AttentionKind } from "@/core/home";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { StatusBadge } from "@/components/ui";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
 
@@ -41,9 +42,13 @@ export const ATTENTION_ASPECT: Readonly<
   job_blocked_by_client: { tone: "neutral", icon: "clock", entity: "job" },
 };
 
-/** El día en que entró la fila, como se lee en la maqueta: "7 sep 2026". */
-function fecha(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(value));
+/**
+ * El día en que entró la fila, como se lee en la maqueta: "7 sep 2026", en
+ * la zona del espacio (CLAUDE.md). Sin ella salía en la del servidor, así
+ * que lo que entró anoche aparecía con la fecha de ayer.
+ */
+function fecha(value: string, timeZone: string): string {
+  return enZona(value, timeZone, { dateStyle: "medium" });
 }
 
 function etiqueta(item: AttentionItem): string {
@@ -72,7 +77,14 @@ function etiqueta(item: AttentionItem): string {
   }
 }
 
-export function AttentionList({ items }: { items: readonly AttentionItem[] }) {
+export function AttentionList({
+  items,
+  timeZone,
+}: {
+  items: readonly AttentionItem[];
+  /** La zona del espacio: las fechas de la lista se pintan en ella. */
+  timeZone: string;
+}) {
   return (
     <ul className="flex flex-col">
       {items.map((item) => {
@@ -123,7 +135,7 @@ export function AttentionList({ items }: { items: readonly AttentionItem[] }) {
               */}
               {item.createdAt === null ? null : (
                 <span className="hidden shrink-0 text-xs text-text-secondary sm:inline">
-                  {fecha(item.createdAt)}
+                  {fecha(item.createdAt, timeZone)}
                 </span>
               )}
 

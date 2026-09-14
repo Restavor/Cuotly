@@ -16,6 +16,7 @@ import { Icon } from "@/components/ui/Icon";
 import { isQuoteState, quoteTone } from "@/core/quotes";
 import { listPosition, requestHeadline } from "@/core/requests";
 import { loadTeamRequests } from "../list-query";
+import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -121,6 +122,14 @@ export default async function TeamRequestDetailPage({
     excluye— no se pinta paginador: "1 de 1" fingiría un recorrido.
   */
   const hermanas = await loadTeamRequests(supabase, request.space_id, restaurante);
+
+  // CLAUDE.md · las fechas de la solicitud, en la zona del espacio.
+  const { data: space } = await supabase
+    .from("spaces")
+    .select("timezone")
+    .eq("id", request.space_id)
+    .maybeSingle();
+  const zona = space?.timezone ?? DEFAULT_TIMEZONE;
   const posicion = listPosition(
     hermanas.map((hermana) => hermana.id),
     id,
@@ -161,14 +170,14 @@ return (
 
       <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-start">
         <div className="space-y-6">
-          <ClientRequestCard
+          <ClientRequestCard timeZone={zona}
             request={request}
             establishmentName={establishment?.name ?? null}
             attachments={detail.attachments}
             attachmentsFailed={detail.attachmentsFailed}
           />
 
-          <RequestHistoryCard entries={detail.history} />
+          <RequestHistoryCard timeZone={zona} entries={detail.history} />
         </div>
 
         <div className="space-y-6">
@@ -177,7 +186,7 @@ return (
             clasificación y de los botones: dice dónde está la solicitud
             antes de pedir que se decida sobre ella.
           */}
-          <ValidationStatusCard request={request} proposal={proposal} />
+          <ValidationStatusCard timeZone={zona} request={request} proposal={proposal} />
 
           <ClassificationCard
             request={request}
@@ -312,6 +321,7 @@ return (
 
       {conversationId && conversation ? (
         <Conversation
+            timeZone={zona}
           conversationId={conversationId}
           establishmentId={request.establishment_id}
           messages={conversation.messages}

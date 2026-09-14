@@ -94,6 +94,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     canManageClients: false,
     staff: [],
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
+    timeZone: "Europe/Madrid",
     audit: {
       rows: [],
       actors: [],

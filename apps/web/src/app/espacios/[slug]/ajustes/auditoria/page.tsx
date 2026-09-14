@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui";
 import { AUDIT_FAMILIES, auditChanges, auditDayWindow } from "@/core/audit";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,11 +49,7 @@ type Fila = {
 };
 
 function cuando(instant: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("es-ES", {
-    timeZone,
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(instant));
+  return enZona(instant, timeZone, { dateStyle: "short", timeStyle: "short" });
 }
 
 function nombreDeAccion(action: string): string {

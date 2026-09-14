@@ -138,7 +138,7 @@ export default async function SpacePage({
               description={es.spaceHome.attention.emptyReason}
             />
           ) : (
-            <AttentionList items={home.attention} />
+            <AttentionList timeZone={space.timezone} items={home.attention} />
           )}
         </Card>
 

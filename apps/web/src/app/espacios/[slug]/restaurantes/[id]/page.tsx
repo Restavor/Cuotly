@@ -15,6 +15,7 @@ import {
 import { statusEffects } from "@/core/establishment-status";
 import { todayInTimeZone } from "@/core/finance";
 import { termsNeedAcceptance } from "@/core/terms";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,6 +37,7 @@ import { resolveShellViewer } from "@/components/shell/viewer";
 import { AcceptRequestButton } from "./AcceptRequestButton";
 import { AcceptTermsButton } from "./AcceptTermsButton";
 import { NewRequestForm } from "./NewRequestForm";
+import { loadEstablishmentTimezone } from "./timezone-load";
 import { loadSubscriptionTerms } from "../../planes/terms-load";
 import {
   loadSheetCounts,
@@ -245,6 +247,9 @@ export default async function EstablishmentPage({
           statusReason: statusReason ?? null,
           integrations,
           digital,
+          // CLAUDE.md · la zona del espacio, que esta pantalla ya lee para
+          // proponer el día del pago. La ficha entera pinta con ella.
+          timeZone: space.timezone,
         }}
       />
     );
@@ -338,7 +343,7 @@ export default async function EstablishmentPage({
     PREGUNTA al servidor, `client_can_accept_terms()`, igual que con
     editar los datos). Un Editor las lee y ve por qué no hay botón.
   */
-  const [{ data: suscripciones }, { data: canAcceptTerms }] = await Promise.all([
+  const [{ data: suscripciones }, { data: canAcceptTerms }, zonaDelEspacio] = await Promise.all([
     supabase
       .from("subscriptions")
       .select("id, kind")
@@ -346,6 +351,9 @@ export default async function EstablishmentPage({
       .eq("status", "active")
       .order("kind", { ascending: true }),
     supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+    // CLAUDE.md · la zona del espacio. El restaurante no puede leer
+    // `spaces`, así que sale de `establishment_timezone()` (migración 83).
+    loadEstablishmentTimezone(supabase, id),
   ]);
   const condiciones = await Promise.all(
     (suscripciones ?? []).map(async (s) => ({
@@ -431,9 +439,7 @@ export default async function EstablishmentPage({
             </ul>
             <p className="mt-3 text-sm text-text-secondary">
               {es.clientArea.allowanceRenews(
-                new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(
-                  new Date(allowance[0].renews_at),
-                ),
+                enZona(allowance[0].renews_at, zonaDelEspacio, { dateStyle: "long" }),
               )}
             </p>
           </>
@@ -468,9 +474,9 @@ export default async function EstablishmentPage({
                           : terms.status === "accepted"
                             ? es.clientArea.terms.accepted(
                                 terms.accepted.version,
-                                new Intl.DateTimeFormat("es-ES", { dateStyle: "long" }).format(
-                                  new Date(terms.accepted.acceptedAt),
-                                ),
+                                enZona(terms.accepted.acceptedAt, zonaDelEspacio, {
+                                  dateStyle: "long",
+                                }),
                               )
                             : es.clientArea.terms.outdated(
                                 terms.accepted.version,
@@ -601,9 +607,7 @@ export default async function EstablishmentPage({
                     </StatusBadge>
                   </TableCell>
                   <TableCell>
-                    {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                      new Date(request.created_at),
-                    )}
+                    {enZona(request.created_at, zonaDelEspacio, { dateStyle: "short" })}
                   </TableCell>
                 </TableRow>
               ))}
@@ -659,9 +663,7 @@ export default async function EstablishmentPage({
                       {es.space.files.categories[file.category as FileCategoryKey] ?? file.category}
                     </TableCell>
                     <TableCell>
-                      {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                        new Date(file.created_at),
-                      )}
+                      {enZona(file.created_at, zonaDelEspacio, { dateStyle: "short" })}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -684,6 +686,7 @@ export default async function EstablishmentPage({
       */}
       {conversationId && conversation ? (
         <Conversation
+          timeZone={zonaDelEspacio}
           conversationId={conversationId}
           establishmentId={id}
           messages={conversation.messages}

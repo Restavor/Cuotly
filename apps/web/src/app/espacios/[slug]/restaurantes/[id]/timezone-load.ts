@@ -1,15 +1,7 @@
+import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import type { createClient } from "@/lib/supabase/server";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
-
-/**
- * La zona horaria que se usa cuando el servidor no la puede decir, y que
- * es la misma que `spaces.timezone` pone por defecto al crear un espacio
- * (migración 2). No es "la de Restavor": es el valor por defecto de la
- * columna, y por eso coincide con lo que devolvería la función para un
- * espacio que nunca la cambió.
- */
-export const DEFAULT_TIMEZONE = "Europe/Madrid";
 
 /**
  * La zona horaria del espacio al que pertenece un restaurante, para las

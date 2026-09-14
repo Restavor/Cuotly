@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { Card, EmptyState, NoPermissionState } from "@/components/ui";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -23,8 +24,8 @@ import { PublishConditionsForm } from "../PlanForms";
  */
 export const dynamic = "force-dynamic";
 
-function dia(instant: string): string {
-  return new Intl.DateTimeFormat("es-ES", { dateStyle: "medium" }).format(new Date(instant));
+function dia(instant: string, timeZone: string): string {
+  return enZona(instant, timeZone, { dateStyle: "medium" });
 }
 
 export default async function ConditionsCataloguePage({
@@ -42,7 +43,7 @@ export default async function ConditionsCataloguePage({
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name")
+    .select("id, name, timezone")
     .eq("slug", slug)
     .maybeSingle();
   if (!space) notFound();
@@ -96,7 +97,7 @@ export default async function ConditionsCataloguePage({
             ) : (
               <details className="group">
                 <summary className="cursor-pointer text-sm font-semibold text-primary-dark">
-                  {t.currentVersion(fila.version, dia(fila.published_at))} · {t.readCurrent}
+                  {t.currentVersion(fila.version, dia(fila.published_at, space.timezone))} · {t.readCurrent}
                 </summary>
                 {/*
                   El texto se pinta tal cual lo escribió el espacio, con

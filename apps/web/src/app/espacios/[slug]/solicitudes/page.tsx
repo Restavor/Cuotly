@@ -16,6 +16,7 @@ import {
 import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
 import { requestHeadline, requestTone } from "@/core/requests";
 import { loadTeamRequests } from "./list-query";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -58,7 +59,7 @@ export default async function TeamRequestsPage({
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name, slug")
+    .select("id, name, slug, timezone")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -165,9 +166,7 @@ export default async function TeamRequestsPage({
                       : "—"}
                   </TableCell>
                   <TableCell>
-                    {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                      new Date(request.created_at),
-                    )}
+                    {enZona(request.created_at, space.timezone, { dateStyle: "short" })}
                   </TableCell>
                 </TableRow>
               ))}

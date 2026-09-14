@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { Button, Card, EmptyState } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import { FileUploadField } from "@/components/FileUploadField";
+import { instanteRelativo } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 
 import { INITIAL_JOB_ACTION } from "./action-state";
@@ -28,17 +29,16 @@ function tamaño(bytes: number | null): string | null {
   return `${mb.toFixed(1).replace(".", ",")} MB`;
 }
 
-function momento(value: string): string {
-  const fecha = new Date(value);
-  const hora = new Intl.DateTimeFormat("es-ES", { timeStyle: "short" }).format(fecha);
-  const hoy = new Date();
-  const mismoDia =
-    fecha.getFullYear() === hoy.getFullYear() &&
-    fecha.getMonth() === hoy.getMonth() &&
-    fecha.getDate() === hoy.getDate();
-  return mismoDia
-    ? es.establishmentSheet.today(hora)
-    : `${new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(fecha)}, ${hora}`;
+/**
+ * "Hoy, 10:24" o la fecha corta con su hora, en la zona del espacio.
+ *
+ * Este componente corre en el NAVEGADOR, así que sin zona pintaba la de
+ * quien mira: dos personas del mismo equipo en husos distintos veían horas
+ * distintas para la misma publicación. La zona llega por propiedad desde
+ * la pantalla, que la lee del espacio.
+ */
+function momento(value: string, timeZone: string): string {
+  return instanteRelativo(value, timeZone, new Date(), es.establishmentSheet.today);
 }
 
 /**
@@ -60,11 +60,14 @@ export function JobEvidence({
   files,
   canAttach,
   publicado,
+  timeZone,
 }: {
   jobId: string;
   establishmentId: string;
   files: readonly EvidenceFile[];
   canAttach: boolean;
+  /** La zona del espacio: las fechas de esta pantalla se pintan en ella. */
+  timeZone: string;
   /** Antes de publicar el hueco dice otra cosa: todavía no toca. */
   publicado: boolean;
 }) {
@@ -97,7 +100,7 @@ export function JobEvidence({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-text">{file.name}</span>
                 <span className="block text-xs text-text-secondary">
-                  {[tamaño(file.sizeBytes), momento(file.attachedAt)]
+                  {[tamaño(file.sizeBytes), momento(file.attachedAt, timeZone)]
                     .filter((parte) => parte !== null)
                     .join(" · ")}
                 </span>

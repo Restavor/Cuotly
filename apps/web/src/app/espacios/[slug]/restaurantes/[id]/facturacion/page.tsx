@@ -12,6 +12,8 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { enZona } from "@/i18n/dates";
+import { loadEstablishmentTimezone } from "../timezone-load";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -84,7 +86,7 @@ export default async function ClientBillingPage({
     );
   }
 
-  const [{ data: charges }, { data: ledger }, { data: quoteRows }, { data: canAnswerQuotes }] =
+  const [{ data: charges }, { data: ledger }, { data: quoteRows }, { data: canAnswerQuotes }, zona] =
     await Promise.all([
       supabase
         .from("charges")
@@ -105,6 +107,8 @@ export default async function ClientBillingPage({
       // Quién responde a un presupuesto es quien acepta las condiciones:
       // el propietario local o el del grupo. Se PREGUNTA al servidor.
       supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+      // CLAUDE.md · la zona del espacio; el restaurante no lee `spaces`.
+      loadEstablishmentTimezone(supabase, id),
     ]);
 
   const quotes = await Promise.all(
@@ -212,9 +216,7 @@ export default async function ClientBillingPage({
                   <TableCell>{charge.concept}</TableCell>
                   <TableCell>{euros(charge.total_cents)}</TableCell>
                   <TableCell>
-                    {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                      new Date(charge.due_at),
-                    )}
+                    {enZona(charge.due_at, zona, { dateStyle: "short" })}
                   </TableCell>
                   <TableCell>
                     <StatusBadge tone={chargeTone(charge.status)}>
@@ -302,9 +304,7 @@ export default async function ClientBillingPage({
               {ledgerRows.map((entry) => (
                 <TableRow key={entry.entry_id}>
                   <TableCell>
-                    {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                      new Date(entry.occurred_at),
-                    )}
+                    {enZona(entry.occurred_at, zona, { dateStyle: "short" })}
                   </TableCell>
                   <TableCell>
                     {es.naming.categories[entry.category as CategoryKey] ?? entry.category}

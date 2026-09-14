@@ -5,6 +5,7 @@ import { loadConversation } from "@/components/conversation/load";
 import { Card, StatusBadge } from "@/components/ui";
 import { isDraft } from "@/core/request-draft";
 import { requestTone } from "@/core/requests";
+import { loadEstablishmentTimezone } from "../../timezone-load";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -101,9 +102,12 @@ export default async function ClientRequestDetailPage({
   // la aceptación de la solicitud ES la del presupuesto: el botón de
   // aceptar el alcance no se ofrece porque `accept_request()` lo va a
   // rechazar (CA-20: no se enseña una puerta que se abre en un error).
-  const [{ data: quoteRows }, { data: canAnswerQuotes }] = await Promise.all([
+  const [{ data: quoteRows }, { data: canAnswerQuotes }, zona] = await Promise.all([
     supabase.rpc("client_request_quote", { p_request_id: requestId }),
     supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+    // El restaurante no puede leer `spaces`: la zona sale de
+    // `establishment_timezone()` (migración 83).
+    loadEstablishmentTimezone(supabase, id),
   ]);
   const quoteRow = quoteRows?.[0] ?? null;
   const quote =
@@ -214,6 +218,7 @@ export default async function ClientRequestDetailPage({
 
       {conversationId && conversation ? (
         <Conversation
+          timeZone={zona}
           conversationId={conversationId}
           establishmentId={id}
           messages={conversation.messages}

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_TIMEZONE, loadEstablishmentTimezone } from "./timezone-load";
+import { DEFAULT_TIMEZONE } from "@/i18n/dates";
+
+import { loadEstablishmentTimezone } from "./timezone-load";
 
 /**
  * CLAUDE.md · "las fechas se guardan en `timestamptz` y se calculan en la

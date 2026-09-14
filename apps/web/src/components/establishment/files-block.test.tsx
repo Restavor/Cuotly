@@ -137,6 +137,7 @@ function sheetData(files: SheetData["files"]): SheetData {
     users: { rows: [], failed: false },
     staff: [],
     files,
+    timeZone: "Europe/Madrid",
     audit: {
       rows: [],
       actors: [],

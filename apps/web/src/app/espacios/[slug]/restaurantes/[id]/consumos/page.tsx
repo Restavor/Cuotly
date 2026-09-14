@@ -11,6 +11,8 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { enZona } from "@/i18n/dates";
+import { loadEstablishmentTimezone } from "../timezone-load";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -53,6 +55,11 @@ export default async function TeamConsumptionLedgerPage({
     .maybeSingle();
 
   if (!establishment) notFound();
+
+  // CLAUDE.md · la zona del espacio. `establishment_timezone()` vale para
+  // el equipo y para el restaurante: su guarda es la misma
+  // `can_read_establishment()` que filtra el resto de esta pantalla.
+  const zona = await loadEstablishmentTimezone(supabase, id);
 
   // Esta pantalla es del equipo. Un cliente que llegue por URL no ve un
   // libro vacío ni un 404 mudo: se le dice cuál es el motivo (CA-20, P6).
@@ -139,9 +146,7 @@ export default async function TeamConsumptionLedgerPage({
               {rows.map((row) => (
                 <TableRow key={row.entry_id}>
                   <TableCell>
-                    {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                      new Date(row.occurred_at),
-                    )}
+                    {enZona(row.occurred_at, zona, { dateStyle: "short" })}
                   </TableCell>
                   <TableCell>
                     {es.naming.categories[row.category as CategoryKey] ?? row.category}

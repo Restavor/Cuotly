@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui";
 import { todayInTimeZone } from "@/core/finance";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -205,9 +206,7 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
                   <TableCell>{establishmentName.get(charge.establishment_id) ?? "—"}</TableCell>
                   <TableCell>{euros(charge.total_cents)}</TableCell>
                   <TableCell>
-                    {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                      new Date(charge.due_at),
-                    )}
+                    {enZona(charge.due_at, space.timezone, { dateStyle: "short" })}
                   </TableCell>
                   <TableCell>
                     <StatusBadge tone={chargeTone(charge.status)}>
@@ -274,9 +273,7 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
                 <TableRow key={row.establishment_id}>
                   <TableCell>{row.establishment_name}</TableCell>
                   <TableCell>
-                    {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                      new Date(row.oldest_due_at),
-                    )}
+                    {enZona(row.oldest_due_at, space.timezone, { dateStyle: "short" })}
                   </TableCell>
                   <TableCell>{euros(Number(row.outstanding_cents))}</TableCell>
                   <TableCell>

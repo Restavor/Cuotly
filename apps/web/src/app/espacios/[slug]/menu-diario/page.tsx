@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Card, EmptyState, ErrorState, NoPermissionState, StatusBadge } from "@/components/ui";
 import { menuTone } from "@/core/menu-states";
 import { es } from "@/i18n/es";
-import { fechaCorta } from "@/i18n/dates";
+import { enZona, fechaCorta } from "@/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 
 import { loadMenuQueue, type MenuQueueRow } from "./queue-load";
@@ -26,13 +26,12 @@ const t = es.dailyMenuTeam;
 type MenuKindKey = keyof typeof es.naming.menuKinds;
 
 function horaLocal(iso: string, timeZone: string): string {
-  return new Intl.DateTimeFormat("es-ES", {
+  return enZona(iso, timeZone, {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone,
-  }).format(new Date(iso));
+  });
 }
 
 export default async function TeamDailyMenuPage({ params }: { params: Promise<{ slug: string }> }) {

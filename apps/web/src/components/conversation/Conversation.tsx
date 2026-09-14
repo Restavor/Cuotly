@@ -1,5 +1,6 @@
 import { Card, EmptyState } from "@/components/ui";
 import { canEditMessage, resolveAuthorLabel } from "@/core/messages";
+import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -80,9 +81,16 @@ export async function Conversation({
   notice,
   emptyTitle,
   emptyReason,
+  timeZone,
 }: {
   conversationId: string;
   establishmentId: string;
+  /**
+   * La zona del espacio (CLAUDE.md). La hora de un mensaje es la del
+   * espacio, no la del servidor: quien escribe y quien lee tienen que ver
+   * la misma.
+   */
+  timeZone: string;
   messages: readonly ConversationMessage[];
   readOnly: boolean;
   /**
@@ -185,10 +193,10 @@ export async function Conversation({
                   <p className="text-xs font-semibold text-text-secondary">
                     {authorLabel(message)}
                     {" · "}
-                    {new Intl.DateTimeFormat("es-ES", {
+                    {enZona(message.createdAt, timeZone, {
                       dateStyle: "short",
                       timeStyle: "short",
-                    }).format(new Date(message.createdAt))}
+                    })}
                     {message.editCount > 0 ? ` · ${es.clientArea.edited}` : ""}
                   </p>
                   <p className="mt-1 whitespace-pre-wrap text-text">{message.body}</p>

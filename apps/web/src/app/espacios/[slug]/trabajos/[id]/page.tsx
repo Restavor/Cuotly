@@ -16,6 +16,7 @@ import {
 } from "@/components/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { todayInTimeZone } from "@/core/finance";
+import { DEFAULT_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
 import { createClient } from "@/lib/supabase/server";
@@ -105,11 +106,8 @@ const FIN_SIN_FECHA = {
 } as const;
 
 /** "11 sept 2026, 09:00", como en la maqueta 06. */
-function fechaYHora(value: string): string {
-  return new Intl.DateTimeFormat("es-ES", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+function fechaYHora(value: string, timeZone: string): string {
+  return enZona(value, timeZone, { dateStyle: "medium", timeStyle: "short" });
 }
 
 /**
@@ -292,7 +290,9 @@ export default async function TeamJobDetailPage({
   );
 
   // CLAUDE.md MUST: la fecha que se propone es hoy en la zona del espacio.
-  const hoy = todayInTimeZone(new Date(), space?.timezone ?? "Europe/Madrid");
+  // CLAUDE.md · la zona del espacio, una vez y para toda la pantalla.
+  const zona = space?.timezone ?? DEFAULT_TIMEZONE;
+  const hoy = todayInTimeZone(new Date(), zona);
 
   // Los cuatro estados en los que `create_job_task()` deja de admitir
   // altas. Se repite aquí solo para no pintar un formulario condenado; la
@@ -547,7 +547,7 @@ export default async function TeamJobDetailPage({
             <p className="text-sm font-semibold text-primary-dark">
               {job.started_at === null
                 ? es.teamArea.jobs.startedAtNone
-                : fechaYHora(job.started_at)}
+                : fechaYHora(job.started_at, zona)}
             </p>
           </div>
 
@@ -559,7 +559,7 @@ export default async function TeamJobDetailPage({
             </p>
             <p className="text-sm font-semibold text-primary-dark">
               {fin.kind === "published" || fin.kind === "estimated"
-                ? fechaYHora(fin.at.toISOString())
+                ? fechaYHora(fin.at.toISOString(), zona)
                 : FIN_SIN_FECHA[fin.kind].texto}
             </p>
             {/*
@@ -699,9 +699,7 @@ export default async function TeamJobDetailPage({
                   <TableRow key={charge.id}>
                     <TableCell>{charge.concept}</TableCell>
                     <TableCell>
-                      {new Intl.DateTimeFormat("es-ES", { dateStyle: "short" }).format(
-                        new Date(charge.due_at),
-                      )}
+                      {enZona(charge.due_at, zona, { dateStyle: "short" })}
                     </TableCell>
                     <TableCell>{euros(charge.outstanding)}</TableCell>
                     <TableCell>
@@ -754,7 +752,7 @@ export default async function TeamJobDetailPage({
         su trabajo y ni adjunta ni ve el catálogo interno (P7).
       */}
       {esDelEquipo ? (
-        <JobEvidence
+        <JobEvidence timeZone={zona}
           jobId={id}
           establishmentId={job.establishment_id}
           files={evidencia}

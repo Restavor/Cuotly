@@ -58,6 +58,7 @@ const CANDIDATOS = [
 function pintar(props: Partial<Parameters<typeof TaskDetail>[0]> = {}) {
   return render(
     <TaskDetail
+      timeZone="Europe/Madrid"
       task={TAREA}
       actions={acciones()}
       candidates={CANDIDATOS}

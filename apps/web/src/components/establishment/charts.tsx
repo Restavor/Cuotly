@@ -1,5 +1,6 @@
 import type { DailyPoint, SyncWindow } from "@/core/integrations";
 import { es } from "@/i18n/es";
+import { fechaCorta } from "@/i18n/dates";
 
 /**
  * Las dos gráficas de "Informes y datos" (maqueta 10): una línea por día y
@@ -60,10 +61,13 @@ function formatInt(value: number): string {
   return value.toLocaleString("es-ES", { maximumFractionDigits: 0 });
 }
 
+/**
+ * El día de un punto de la serie. Es un día suelto sin zona, así que lo
+ * ancla en UTC `fechaCorta()`: pintarlo en la del espacio correría un día
+ * al oeste de Greenwich.
+ */
 function shortDay(day: string): string {
-  return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", timeZone: "UTC" }).format(
-    new Date(`${day}T12:00:00Z`),
-  );
+  return fechaCorta(day);
 }
 
 /**

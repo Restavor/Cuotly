@@ -11,6 +11,7 @@ import {
   type QuoteStoredState,
 } from "@/core/quotes";
 import { fechaCorta } from "@/i18n/dates";
+import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import type { RequestHistoryEntry } from "@/app/espacios/[slug]/solicitudes/[id]/detail-load";
@@ -84,6 +85,7 @@ export default async function TeamQuoteDetailPage({
     { data: auditRows },
     { data: puedeGestionar },
     { data: puedeFinanzas },
+    { data: space },
   ] = await Promise.all([
     supabase.rpc("quote_status", { p_quote_id: id }),
     supabase.from("establishments").select("id, name").eq("id", quote.establishment_id).maybeSingle(),
@@ -104,6 +106,8 @@ export default async function TeamQuoteDetailPage({
       .order("created_at", { ascending: true }),
     supabase.rpc("has_capability", { p_space_id: quote.space_id, p_capability: "manage_requests" }),
     supabase.rpc("has_capability", { p_space_id: quote.space_id, p_capability: "manage_finance" }),
+    // CLAUDE.md · las fechas del historial se pintan en la zona del espacio.
+    supabase.from("spaces").select("timezone").eq("id", quote.space_id).maybeSingle(),
   ]);
 
   // La deuda viva del cobro la deriva el servidor (RN-FIN-02).
@@ -299,7 +303,7 @@ export default async function TeamQuoteDetailPage({
             </Card>
           ) : null}
 
-          <RequestHistoryCard entries={history} />
+          <RequestHistoryCard timeZone={space?.timezone ?? DEFAULT_TIMEZONE} entries={history} />
         </div>
       </div>
     </div>

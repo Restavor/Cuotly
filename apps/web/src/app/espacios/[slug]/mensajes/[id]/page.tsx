@@ -7,6 +7,7 @@ import { NotesPanel } from "@/components/notes/NotesPanel";
 import { loadEstablishmentNotes } from "./notes-load";
 import { Card, EmptyState } from "@/components/ui";
 import { isClientVisibleConversation, type ConversationType } from "@/core/messages";
+import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -126,6 +127,15 @@ export default async function ConversationPage({
     ? await loadEstablishmentNotes(supabase, establishmentId, conversation.space_id, user.id)
     : null;
 
+  // CLAUDE.md · la hora de un mensaje es la del espacio: quien escribe y
+  // quien lee tienen que ver la misma, y no la del servidor.
+  const { data: space } = await supabase
+    .from("spaces")
+    .select("timezone")
+    .eq("id", conversation.space_id)
+    .maybeSingle();
+  const zona = space?.timezone ?? DEFAULT_TIMEZONE;
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-8">
       <header>
@@ -141,6 +151,7 @@ export default async function ConversationPage({
         <div className="space-y-6">
           {establishmentId ? (
             <Conversation
+            timeZone={zona}
               conversationId={id}
               establishmentId={establishmentId}
               messages={messages}
@@ -151,7 +162,7 @@ export default async function ConversationPage({
         </div>
 
         {establishmentId && notes ? (
-          <NotesPanel establishmentId={establishmentId} notes={notes} />
+          <NotesPanel timeZone={zona} establishmentId={establishmentId} notes={notes} />
         ) : null}
       </div>
 
