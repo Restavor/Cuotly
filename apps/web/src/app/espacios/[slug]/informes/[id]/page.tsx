@@ -12,10 +12,11 @@ import {
 } from "@/components/report/ReportForms";
 import { ReportStateBadge, periodLabel } from "@/components/report/ReportsTable";
 import { loadReportDetail } from "@/components/report/reports-load";
+import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { Card, EmptyState } from "@/components/ui";
 import { isObjectiveOnly, orderedSections } from "@/core/reports";
-import { enZona, fechaCorta } from "@/i18n/dates";
+import { DEFAULT_TIMEZONE, enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -51,8 +52,11 @@ export default async function ReportDetailPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const viewer = await resolveShellViewer(supabase, user.id, slug);
-  const detail = await loadReportDetail(supabase, id);
+  const [viewer, detail, { data: space }] = await Promise.all([
+    resolveShellViewer(supabase, user.id, slug),
+    loadReportDetail(supabase, id),
+    supabase.from("spaces").select("timezone").eq("slug", slug).maybeSingle(),
+  ]);
   if (detail === null) notFound();
 
   const t = es.reportsPage;
@@ -61,7 +65,12 @@ export default async function ReportDetailPage({
   const ordenadas = orderedSections(sections);
   const objetivo = isObjectiveOnly(ordenadas);
   const cerrado = report.status === "sent" || report.status === "archived";
-  const timezone = "Europe/Madrid";
+  // CLAUDE.md · la zona del espacio, no una escrita a mano. Esta pantalla
+  // se quedó fuera del barrido del 14/09/2026: aquel solo prohibía
+  // construir un formateador por tu cuenta, y aquí la zona se le pasaba a
+  // `enZona()` como literal. La revisión del Hito 16 lo encontró y el
+  // barrido ahora también mira eso.
+  const timezone = space?.timezone ?? DEFAULT_TIMEZONE;
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-8">
@@ -201,16 +210,25 @@ export default async function ReportDetailPage({
             )}
           </Card>
 
-          <Card title={t.archive}>
-            <StatusButton
-              slug={slug}
-              reportId={report.id}
-              status="archived"
-              label={t.archive}
-              needsReason={report.status !== "sent"}
-              variant="secondary"
-            />
-          </Card>
+          {/*
+            Archivar es del equipo: `set_report_status()` se lo niega a
+            quien no gestiona la cartera. El restaurante llega aquí por su
+            propio informe enviado —la RLS se lo da, y debe—, y ofrecerle
+            un botón que siempre falla es justo lo que esta pantalla dice
+            evitar (CA-20).
+          */}
+          {isStaffRole(viewer.role) ? (
+            <Card title={t.archive}>
+              <StatusButton
+                slug={slug}
+                reportId={report.id}
+                status="archived"
+                label={t.archive}
+                needsReason={report.status !== "sent"}
+                variant="secondary"
+              />
+            </Card>
+          ) : null}
 
           {viewer.role === "worker" ? (
             <Card>

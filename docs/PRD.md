@@ -1177,7 +1177,10 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   (`report_schedule_due_soon`) sale **24 horas antes** de la fecha de envío, una sola vez por informe y
   fecha (CA-17), y va a quien puede pararlo: propietario y administradores con "Aprobar informes". El
   envío al restaurante es el segundo aviso (`report_sent`), que es lo que §93 llama "correo
-  programado", y va a **quien puede ver informes de ese restaurante** por RN-REP-01, no a una lista
+  programado", y va a **todos los que trabajan en ese restaurante, por los dos lados** —sus personas y
+  su grupo, los trabajadores autorizados en él y quien lleva la cartera— con el acceso vigente
+  (decisión 28d). **Ninguna dirección va escrita en el código**: los destinatarios se calculan, porque
+  Cuotly es multiempresa y una dirección fija mandaría los informes de otro espacio a Restavor. No es una lista
   escrita a mano.
 - **RN-REP-12**: §95 · **cada versión se conserva**. `report_versions` es un **libro inmutable**: cada
   generación escribe una fila con las cifras, las secciones y su orden, quién la generó y cuándo, y

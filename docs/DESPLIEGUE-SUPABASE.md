@@ -10,8 +10,12 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 85 migraciones del repositorio están aplicadas en el
-proyecto.
+**La 86** (`informes_enviar_pasa_por_el_flujo`), escrita el 14/09/2026 tras
+la revisión del Hito 16 y sin aplicar, a la espera de que Bosco lo ordene.
+Arregla dos cosas de la 85: que `send_report()` no pasaba por la tabla de
+transiciones —un borrador se podía enviar sin aprobar— y que el
+restaurante alcanzaba versiones que no se le habían enviado. Las otras 85
+están aplicadas.
 
 ## Aplicadas
 

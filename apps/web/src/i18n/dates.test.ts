@@ -68,7 +68,10 @@ describe("ninguna pantalla se inventa la zona horaria", () => {
     for (const ruta of archivos(RAIZ)) {
       const relativa = ruta.slice(RAIZ.length + 1).replaceAll("\\", "/");
       if (PERMITIDOS.has(relativa)) continue;
-      if (readFileSync(ruta, "utf8").includes("Intl.DateTimeFormat")) {
+      // `new Intl.…` y no el nombre suelto: un comentario que nombre la
+      // clase para explicar por qué NO se usa no es una infracción, y
+      // hacía saltar el barrido con un falso positivo.
+      if (/new\s+Intl\.DateTimeFormat/.test(readFileSync(ruta, "utf8"))) {
         culpables.push(relativa);
       }
     }
@@ -76,6 +79,50 @@ describe("ninguna pantalla se inventa la zona horaria", () => {
     expect(
       culpables,
       "una pantalla formatea una fecha por su cuenta: sin `timeZone` sale en la del servidor (UTC en Vercel), no en la del espacio. Usa `enZona(valor, zona, opciones)` de `@/i18n/dates`",
+    ).toEqual([]);
+  });
+
+  it("tampoco se le pasa a `enZona()` una zona escrita a mano", () => {
+    /*
+      El agujero que dejó pasar la pantalla de detalle de un informe: no
+      construía ningún formateador —así que el barrido de arriba la daba
+      por buena— pero hacía `const timezone = "Europe/Madrid"` y se lo
+      pasaba a `enZona()`. Lo encontró la revisión del Hito 16
+      (14/09/2026); esto es lo que impide que vuelva.
+
+      Se buscan literales con forma de zona IANA (`Region/Ciudad`) fuera
+      del formateador y de los tests: la zona sale de `spaces.timezone` o
+      de `establishment_timezone()`, nunca de una cadena en la pantalla.
+    */
+    const ZONA = /["'`][A-Z][a-z]+\/[A-Za-z_]+["'`]/;
+    const culpables: string[] = [];
+
+    for (const ruta of archivos(RAIZ)) {
+      const relativa = ruta.slice(RAIZ.length + 1).replaceAll("\\", "/");
+      if (relativa === "i18n/dates.ts") continue;
+
+      // Un respaldo (`space?.timezone ?? "Europe/Madrid"`) no es el fallo:
+      // ahí la zona del espacio manda y el literal solo cubre el hueco.
+      // Lo que se busca es la zona como ORIGEN, que es lo que hacía la
+      // pantalla del informe. Se quitan los respaldos y se mira lo que
+      // queda.
+      const codigo = readFileSync(ruta, "utf8")
+        // Los comentarios no son código: nombrar una zona para explicar
+        // qué es no la usa. Se quitan antes de mirar.
+        .replaceAll(/\/\*[\s\S]*?\*\//g, "")
+        .replaceAll(/\/\/.*$/gm, "")
+        // Un respaldo (`space?.timezone ?? "Europe/Madrid"`) tampoco: ahí
+        // la zona del espacio manda y el literal solo cubre el hueco. Lo
+        // que se busca es la zona como ORIGEN, que es lo que hacía la
+        // pantalla del informe.
+        .replaceAll(/\?\?\s*["'`][A-Z][a-z]+\/[A-Za-z_]+["'`]/g, "");
+
+      if (ZONA.test(codigo)) culpables.push(relativa);
+    }
+
+    expect(
+      culpables,
+      "una pantalla lleva una zona horaria escrita a mano. La zona la manda el espacio: `spaces.timezone` en las pantallas del equipo, `establishment_timezone()` en las del restaurante",
     ).toEqual([]);
   });
 

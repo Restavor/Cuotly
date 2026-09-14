@@ -3983,6 +3983,70 @@ regenerar salió idéntica, así que no había desviación.
     pantallas de informes.
 
 
+
+### Fase 3 · Revisión del Hito 16 *(14/09/2026)*
+
+- [x] **Diez hallazgos de un subagente, seis arreglados y dos para Bosco.** Bosco pidió la misma
+    revisión que se hizo del Hito 10. Lo que salió, por gravedad:
+
+    **Grave, y con reproducción.** `send_report()` comprobaba que quien llama puede aprobar y que
+    el informe no estaba ya enviado, y después escribía `status = 'sent'` **sin preguntarle nada a
+    `report_transition_allowed()`**, que es la tabla donde viven los seis estados de §95.
+    Reproducido en local: un propietario que llame la función por RPC sobre un **borrador recién
+    creado** lo envía al restaurante con el resumen ejecutivo en blanco, con sus entregas y sus
+    avisos, y deja en el libro un `preparing → sent` que las dos tablas del proyecto declaran
+    imposible. La pantalla solo ofrecía el botón en los estados correctos, que es exactamente lo
+    que CLAUDE.md dice que no es un control de acceso. **Migración 86.**
+
+    **Grave.** Las cifras digitales de un **periodo cerrado** se vaciaban si la fuente se
+    desconectaba después: `digitalFigures()` preguntaba por el estado de HOY de la integración. Un
+    restaurante que baja de plan en septiembre se quedaba sin las cifras de su informe de agosto,
+    que están enteras en `metric_points` y no necesitan ninguna API. Es el escenario que RN-REP-07
+    y §94 nombran por su nombre. Ahora el estado de hoy solo decide cuando el periodo **llega hasta
+    hoy**; para lo cerrado decide la cobertura. Un test fijaba la conducta con el fallo dentro y se
+    ha reescrito.
+
+    **Media.** El restaurante alcanzaba **todas** las versiones de su informe, no solo la que se le
+    envió, y con ellas las notas de secciones que el equipo había desmarcado —el resumen ejecutivo
+    que se quita para poder programar sin aprobación—. Arreglado por los dos lados: la política
+    solo le da la versión entregada (migración 86, con una función `SECURITY DEFINER` porque
+    `report_deliveries` es del equipo) y el `snapshot` deja fuera las notas de las secciones que no
+    entran.
+
+    **Media.** La pantalla de detalle de un informe tenía la **zona horaria escrita a mano**, justo
+    lo que el barrido transversal del mismo día decía haber cerrado. El barrido no la veía porque
+    solo prohibía construir un formateador, y aquí la zona se le pasaba a `enZona()` como literal.
+    Arreglada la pantalla **y el barrido**, que ahora también caza una zona usada como origen (un
+    respaldo `?? "Europe/Madrid"` sigue valiendo). Comprobado que el barrido nuevo caza el fallo
+    real: devolver el literal a esa pantalla lo hace fallar con su nombre.
+
+    **Media.** Dos mutaciones que `informes.sql` **no detectaba**: conceder al restaurante
+    `select (created_by)` sobre `reports` —y leer así el uuid de quien le preparó el informe— y
+    quitarle la auditoría a `set_report_status()`. La suite comprobaba `select *`, `approved_by` y
+    poco más. Añadidas las tres comprobaciones que faltaban, y las tres mutaciones ahora se
+    detectan por el motivo correcto.
+
+    **Baja.** La pantalla ofrecía "Archivar" al restaurante: el servidor lo rechaza, así que no
+    había agujero, pero era un botón que siempre falla (CA-20). Y tres textos que seguían contando
+    la regla de §89 anterior a la decisión 28, uno de ellos en la cabecera de la propia suite que
+    comprueba lo contrario.
+
+    **De paso, uno mío**: RN-REP-11 del PRD seguía describiendo el envío con la regla vieja. Al
+    aplicar la decisión 28 actualicé RN-REP-01, que es quién lo ve, y no RN-REP-11, que es a quién
+    le llega.
+
+    **Lo que NO se ha tocado, porque es de Bosco** (§24.3): que `reports.filters` se guarde y no se
+    aplique nunca (RN-REP-05), y que RN-REP-01 diga a la vez que el propietario global ve el
+    consolidado de su grupo y que un consolidado no se comparte con ningún restaurante. Lo segundo
+    es una contradicción dentro de la misma regla y CLAUDE.md prohíbe resolverla por cuenta propia.
+
+    **Comprobado:** las 39 suites desde cero con las 86 migraciones; cuatro mutaciones detectadas
+    por el motivo correcto (la transición de `send_report`, `created_by` legible, la auditoría del
+    cambio de estado y la zona escrita a mano); typecheck, lint, 1179 pruebas y `next build`. El
+    barrido en falso-cerrado del Hito 7 cazó la función nueva de la 86 y hubo que clasificarla,
+    que es para lo que está.
+
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos

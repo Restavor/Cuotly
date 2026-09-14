@@ -200,7 +200,7 @@ describe("§92 y §94 · las cifras digitales dicen su fecha y su motivo", () =>
     });
   }
 
-  it("con la fuente conectada y dato suficiente, sale la cifra y su último día", () => {
+  it("RN-REP-07 · con la fuente conectada y dato suficiente, sale la cifra y su fecha de última sincronización", () => {
     const estados: ProviderState[] = [
       { provider: "ga4", status: "connected", lastSuccessAt: "2026-08-29T06:00:00Z" },
     ];
@@ -209,23 +209,28 @@ describe("§92 y §94 · las cifras digitales dicen su fecha y su motivo", () =>
       estados,
       ventana,
       new Date("2026-08-29T08:00:00Z"),
+      "Europe/Madrid",
     );
 
     const sesiones = figuras.find((figura) => figura.metric === "sessions" && figura.dimension === "ga4");
     expect(sesiones?.value).toBe(1000);
-    expect(sesiones?.at).toBe("2026-08-10");
+    // §94 · "cada cifra dice su fecha de última sincronización". Antes
+    // decía `2026-08-10`, el último día que cubre el dato, que es otra
+    // cosa: dos cifras traídas con tres semanas de diferencia salían
+    // idénticas (revisión del Hito 16).
+    expect(sesiones?.at).toBe("2026-08-29T06:00:00Z");
     expect(sesiones?.noDataReason).toBeUndefined();
   });
 
   it("§178 · una fuente sin conectar no deja un hueco mudo: dice que no está conectada", () => {
-    const figuras = digitalFigures(new Map(), [], ventana, AHORA);
+    const figuras = digitalFigures(new Map(), [], ventana, AHORA, "Europe/Madrid");
     const sesiones = figuras.find((figura) => figura.metric === "sessions" && figura.dimension === "ga4");
 
     expect(sesiones?.value).toBeNull();
     expect(sesiones?.noDataReason).toBe("not_connected");
   });
 
-  it("RN-INT-07 · con el dato desactualizado no se enseña la cifra como actual", () => {
+  it("RN-INT-07 · en un periodo que llega hasta hoy, el dato desactualizado no se enseña como actual", () => {
     const estados: ProviderState[] = [
       // GA4 es diaria: una sincronización de hace cinco días es vieja.
       { provider: "ga4", status: "connected", lastSuccessAt: "2026-08-24T06:00:00Z" },
@@ -233,16 +238,62 @@ describe("§92 y §94 · las cifras digitales dicen su fecha y su motivo", () =>
     const figuras = digitalFigures(
       new Map([["ga4", puntos("sessions", 10)]]),
       estados,
-      ventana,
+      // El periodo llega hasta HOY: aquí "desactualizado" significa lo que
+      // dice, que puede faltar el dato del final.
+      { start: "2026-08-01", end: "2026-08-29" },
       new Date("2026-08-29T08:00:00Z"),
+      "Europe/Madrid",
     );
     const sesiones = figuras.find((figura) => figura.metric === "sessions" && figura.dimension === "ga4");
 
     expect(sesiones?.value).toBeNull();
     expect(sesiones?.noDataReason).toBe("stale");
-    // Pero la fecha del último dato sigue estando: §94 pide decir hasta
-    // cuándo llega, no borrarlo.
-    expect(sesiones?.at).toBe("2026-08-10");
+    // Pero la fecha de la última sincronización sigue estando: §94 pide
+    // decir hasta cuándo llega, no borrarlo.
+    expect(sesiones?.at).toBe("2026-08-24T06:00:00Z");
+  });
+
+  it("RN-REP-04 y §94 · un periodo CERRADO no depende del estado de hoy de la fuente", () => {
+    /*
+      Lo encontró la revisión del Hito 16 (14/09/2026), y es el escenario
+      que RN-REP-07 nombra por su nombre: un restaurante baja de plan en
+      septiembre y pierde GA4; en octubre el equipo prepara el informe de
+      agosto. Los puntos de agosto están enteros en `metric_points` y el
+      informe no llama a ninguna API, pero el estado de HOY de la
+      integración vaciaba todas las cifras con el motivo "no conectada".
+
+      Las dos mitades de la regla se comprueban aquí: desconectada y
+      desactualizada. Antes las dos daban `null`.
+    */
+    const desconectada: ProviderState[] = [
+      { provider: "ga4", status: "disconnected", lastSuccessAt: "2026-08-29T06:00:00Z" },
+    ];
+    const enOctubre = new Date("2026-10-05T08:00:00Z");
+
+    const figuras = digitalFigures(
+      new Map([["ga4", puntos("sessions", 10)]]),
+      desconectada,
+      ventana,
+      enOctubre,
+      "Europe/Madrid",
+    );
+    const sesiones = figuras.find((figura) => figura.metric === "sessions" && figura.dimension === "ga4");
+
+    expect(sesiones?.value).toBe(1000);
+    expect(sesiones?.noDataReason).toBeUndefined();
+
+    // Y una fuente que NUNCA sincronizó sigue diciendo que no hay dato:
+    // "cerrado" no significa inventarse cifras que nadie trajo.
+    const nunca = digitalFigures(
+      new Map(),
+      [{ provider: "ga4", status: "disconnected", lastSuccessAt: null }],
+      ventana,
+      enOctubre,
+      "Europe/Madrid",
+    );
+    const sinDato = nunca.find((figura) => figura.metric === "sessions" && figura.dimension === "ga4");
+    expect(sinDato?.value).toBeNull();
+    expect(sinDato?.noDataReason).toBe("no_data_yet");
   });
 
   it("§178 · con menos de una semana de dato, el motivo es «periodo insuficiente»", () => {
@@ -254,6 +305,7 @@ describe("§92 y §94 · las cifras digitales dicen su fecha y su motivo", () =>
       estados,
       ventana,
       new Date("2026-08-29T08:00:00Z"),
+      "Europe/Madrid",
     );
     const sesiones = figuras.find((figura) => figura.metric === "sessions" && figura.dimension === "ga4");
 
@@ -264,17 +316,51 @@ describe("§92 y §94 · las cifras digitales dicen su fecha y su motivo", () =>
 
 describe("la versión que se guarda (RN-REP-12)", () => {
   it("lleva las secciones, el periodo y las notas de las personas; nada redactado", async () => {
-    const deps = {
-      gateway: gateway({ report: vi.fn().mockResolvedValue(informe({ notes: { executive_summary: "Buen mes." } })) }),
-      now: () => AHORA,
-    };
+    const conResumen: readonly ReportSectionState[] = [
+      { key: "executive_summary", position: 1, included: true },
+      ...SECCIONES,
+    ];
+    const informeConNota = informe({
+      sections: conResumen,
+      notes: { executive_summary: "Buen mes." },
+    });
+    const deps = { gateway: gateway({ report: vi.fn().mockResolvedValue(informeConNota) }), now: () => AHORA };
 
-    const snapshot = await buildSnapshot(deps, informe({ notes: { executive_summary: "Buen mes." } }));
+    const snapshot = await buildSnapshot(deps, informeConNota);
 
     expect(snapshot.period).toEqual({ start: "2026-08-01", end: "2026-08-31" });
-    expect(snapshot.sections).toEqual(SECCIONES);
+    expect(snapshot.sections).toEqual(conResumen);
     expect(snapshot.notes.executive_summary).toBe("Buen mes.");
     expect(snapshot.generatedAt).toBe(AHORA.toISOString());
+  });
+
+  it("RN-REP-13 · la nota de una sección que NO entra se queda fuera de la versión", async () => {
+    /*
+      Lo encontró la revisión del Hito 16 (14/09/2026). El equipo escribe
+      el resumen ejecutivo y después lo desmarca para dejar el informe
+      "solo objetivo" y poder programarlo sin aprobación — el camino que
+      recorre la propia suite de SQL. El PDF y la pantalla filtran por
+      secciones incluidas y no lo pintaban, pero el texto viajaba dentro
+      del `snapshot`, y la versión enviada se le entrega al restaurante.
+
+      La primera versión de este test no lo veía porque ponía la nota en
+      una sección que ni siquiera figuraba en la lista: pasaba con la fuga
+      dentro.
+    */
+    const conResumenFuera: readonly ReportSectionState[] = [
+      { key: "executive_summary", position: 1, included: false },
+      ...SECCIONES,
+    ];
+    const informeConNota = informe({
+      sections: conResumenFuera,
+      notes: { executive_summary: "Nota interna que el cliente no debe leer." },
+    });
+    const deps = { gateway: gateway({ report: vi.fn().mockResolvedValue(informeConNota) }), now: () => AHORA };
+
+    const snapshot = await buildSnapshot(deps, informeConNota);
+
+    expect(snapshot.notes.executive_summary).toBeUndefined();
+    expect(JSON.stringify(snapshot)).not.toContain("Nota interna");
   });
 
   it("RN-REP-04 · la sección digital lee `metric_points` y no llama a ninguna API", async () => {

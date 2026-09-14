@@ -2648,9 +2648,21 @@ begin
         -- `accept_subscription_terms()`, que la llama, sí queda cubierta
         -- por la heurística.
         'client_can_accept_terms',
+        -- Migración 86 (revisión del Hito 16): contesta si una versión de
+        -- informe llegó a enviarse. No comprueba permisos **a propósito**:
+        -- vive dentro de la expresión de `report_versions_select`, que es
+        -- quien decide, y su único cometido es saltarse la RLS de
+        -- `report_deliveries` —que es del equipo— para poder preguntarlo.
+        -- Sin `SECURITY DEFINER` la subconsulta se evaluaría con los
+        -- privilegios del restaurante, devolvería cero filas y lo dejaría
+        -- sin ver ninguna versión de su propio informe. Lo único que
+        -- filtra es un booleano sobre un identificador que quien pregunta
+        -- ya tiene delante.
+        'report_version_was_delivered',
         -- Migración 85 (Fase 3, Hito 16), misma familia: contesta si quien
         -- pregunta puede ver los informes de ESE restaurante por el lado
-        -- cliente (§89: Editor siempre, Consulta con permiso). Es el
+        -- cliente (§89 enmendado por la decisión 28: cualquiera del
+        -- restaurante con el acceso vigente). Es el
         -- mecanismo, así que no se comprueba a sí misma; aparece además en
         -- la expresión de la política de `reports`, así que no puede
         -- perder el EXECUTE de `authenticated` (CLAUDE.md).

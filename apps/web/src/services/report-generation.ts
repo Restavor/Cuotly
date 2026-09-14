@@ -47,6 +47,7 @@ import {
   type ReportSnapshot,
   operationalIndicators,
 } from "@/core/reports";
+import { todayInTimeZone } from "@/core/finance";
 import type { TimerEvent } from "@/core/timer-events";
 
 import type { ProviderState, ReportGateway, ReportRow } from "./report-gateway";
@@ -210,6 +211,8 @@ export function digitalFigures(
   states: readonly ProviderState[],
   period: { readonly start: string; readonly end: string },
   now: Date,
+  /** La del espacio, para saber si el periodo ya está cerrado (CLAUDE.md). */
+  timezone: string,
 ): readonly ReportFigure[] {
   const byProvider = new Map<IntegrationProvider, ProviderState>();
   for (const state of states) {
@@ -219,9 +222,32 @@ export function digitalFigures(
   const window = { from: period.start, to: period.end };
   const figures: ReportFigure[] = [];
 
+  /*
+    RN-REP-04 y RN-REP-07 (§94) · **el estado de HOY de una integración no
+    decide sobre un periodo CERRADO.** "Un informe se puede generar de un
+    periodo cerrado meses después y sale lo mismo", y "los datos ya
+    importados se conservan aunque cambie el plan o se desconecte la
+    fuente".
+
+    Lo que hacía antes: preguntaba `noDataReason()` con el estado actual,
+    que devuelve "desactualizado" en cuanto la última sincronización pasa
+    del doble de la frecuencia, y "no conectada" si la fuente se
+    desconectó. Así, un restaurante que baja de plan en septiembre y pierde
+    GA4 se quedaba sin las cifras de su informe de AGOSTO, que están
+    enteras en `metric_points` y no necesitan ninguna API. Lo encontró la
+    revisión del Hito 16 (14/09/2026).
+
+    Cuándo sí importa el estado de hoy: cuando el periodo **llega hasta
+    hoy**. Ahí "desactualizado" significa lo que dice —el dato del final
+    del periodo puede no haber llegado— y es el caso que cubre RN-INT-07 en
+    la pantalla de "Informes y datos". Para lo cerrado, lo que decide es la
+    cobertura del periodo, que ya se calcula aparte.
+  */
+  const periodoCerrado = period.end < todayInTimeZone(now, timezone);
+
   for (const provider of INTEGRATION_PROVIDERS) {
     const state = byProvider.get(provider);
-    const reason =
+    const enVivo =
       state === undefined || !isIntegrationState(state.status)
         ? "not_connected"
         : noDataReason(
@@ -230,6 +256,10 @@ export function digitalFigures(
             state.lastSuccessAt ? new Date(state.lastSuccessAt) : null,
             now,
           );
+    // Nunca se conectó: no hay dato del periodo ni lo va a haber, y eso
+    // vale igual para un periodo cerrado.
+    const nuncaHuboDato = state === undefined || state.lastSuccessAt === null;
+    const reason = periodoCerrado && !nuncaHuboDato ? null : enVivo;
 
     const providerPoints = pointsByProvider.get(provider) ?? [];
 
@@ -243,7 +273,11 @@ export function digitalFigures(
         // lo dice su dimensión, que es lo que la pantalla enseña.
         figure("digital", headline.metric, reason === null && !insufficient ? value.value : null, {
           dimension: provider,
-          at: value.lastPeriodEnd ?? undefined,
+          // RN-REP-07 · "cada cifra dice su fecha de última
+          // sincronización". Era `lastPeriodEnd`, el último día que cubre
+          // el dato, que es otra cosa: dos cifras traídas con tres semanas
+          // de diferencia se pintaban idénticas.
+          at: state?.lastSuccessAt ?? value.lastPeriodEnd ?? undefined,
           noDataReason:
             reason ?? (insufficient ? "insufficient_period" : value.value === null ? "no_data_yet" : undefined),
         }),
@@ -302,7 +336,7 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
       deps.gateway.metricPoints(report.establishmentId, period.start, period.end),
       deps.gateway.providerStates(report.establishmentId),
     ]);
-    figures.push(...digitalFigures(points, states, period, now));
+    figures.push(...digitalFigures(points, states, period, now, report.timezone));
   }
 
   /*
@@ -323,7 +357,16 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     sections: report.sections,
     figures,
     opportunities,
-    notes: report.notes,
+    // RN-REP-13 · solo las notas de las secciones que ENTRAN. La versión
+    // se le envía al restaurante, y una nota de una sección que el equipo
+    // desmarcó es preparación interna: el PDF no la pinta, pero viajaba
+    // dentro del `snapshot` y desde ahí se leía. Lo encontró la revisión
+    // del Hito 16 (14/09/2026).
+    notes: Object.fromEntries(
+      Object.entries(report.notes).filter(([key]) =>
+        report.sections.some((section) => section.key === key && section.included),
+      ),
+    ),
   };
 }
 

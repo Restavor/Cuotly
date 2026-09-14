@@ -2,7 +2,7 @@
 -- §89 a §95 de la maestra; P7; §21.2).
 --
 --   · RN-REP-01: quién ve los informes de un restaurante — §89 — y quién
---     no: el trabajador no entra, y Consulta solo con permiso.
+--     no: el trabajador no entra, y, desde la enmienda de §89 (decisión 28), cualquiera del restaurante.
 --   · RN-REP-02: §90 · el informe personal es de cada uno; propietario y
 --     administradores ven el de cualquiera.
 --   · RN-REP-08: los seis estados de §95 y quién mueve cada uno. Un
@@ -800,5 +800,121 @@ begin
       using errcode = 'assert_failure';
   end if;
 end $$;
+
+
+-- ============================================================
+-- RN-REP-08 · enviar pasa por el flujo: un borrador NO se envía
+-- (migración 86; lo encontró la revisión del Hito 16, 14/09/2026)
+-- ============================================================
+--
+-- `send_report()` comprobaba que quien llama puede aprobar y que el
+-- informe no estaba ya enviado, y después escribía `status = 'sent'` sin
+-- preguntarle nada a `report_transition_allowed()`. Un propietario que
+-- llamara la función por RPC sobre un borrador recién creado lo enviaba al
+-- restaurante con el resumen ejecutivo en blanco. La pantalla solo ofrece
+-- el botón en los estados correctos, y eso es justo lo que CLAUDE.md dice
+-- que NO es un control de acceso.
+select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+do $$
+declare v_id uuid; v_estado text;
+begin
+  v_id := public.create_report_draft('ff100000-0000-0000-0000-000000000001', 'operation',
+            'Borrador que no debe salir', '2026-08-01', '2026-08-31',
+            'ff400000-0000-0000-0000-000000000001');
+  perform public.generate_report_version(v_id, '{"figures": []}'::jsonb);
+
+  select status into v_estado from public.reports where id = v_id;
+  if v_estado <> 'preparing' then
+    raise exception 'RN-REP-08 FALLIDO: el borrador no nace en preparing, sino en %', v_estado
+      using errcode = 'assert_failure';
+  end if;
+
+  begin
+    perform public.send_report(v_id);
+    raise exception 'RN-REP-08 FALLIDO: se ha enviado un informe desde preparing, sin aprobarlo'
+      using errcode = 'assert_failure';
+  exception
+    when sqlstate 'P0001' then
+      if sqlerrm like 'RN-REP-08 FALLIDO%' then raise; end if;
+  end;
+
+  if exists (select 1 from public.report_deliveries where report_id = v_id) then
+    raise exception 'RN-REP-08 FALLIDO: el envío rechazado dejó apuntes de entrega'
+      using errcode = 'assert_failure';
+  end if;
+  if (select status from public.reports where id = v_id) <> 'preparing' then
+    raise exception 'RN-REP-08 FALLIDO: el envío rechazado movió el estado'
+      using errcode = 'assert_failure';
+  end if;
+
+  perform public.set_report_status(v_id, 'archived', 'Limpieza de la prueba');
+end $$;
+reset role;
+
+-- ============================================================
+-- P7 · las columnas de actor de `reports`, tapadas al restaurante
+-- (mutación que la suite no detectaba: revisión del Hito 16)
+-- ============================================================
+--
+-- La suite comprobaba `select *`, `approved_by` y
+-- `report_versions.generated_by`, pero nunca `created_by` ni `updated_by`.
+-- Conceder `select (created_by)` a `authenticated` pasaba la suite entera,
+-- y el restaurante leía el uuid del administrador que le preparó el
+-- informe. El barrido del Hito 7 tampoco lo veía: su fixture no tiene
+-- informes, y sus pasadas solo ejercitan una columna si hay filas.
+do $$
+declare v_col text;
+begin
+  foreach v_col in array array['created_by', 'updated_by', 'approved_by'] loop
+    if has_column_privilege('authenticated', 'public.reports'::regclass, v_col, 'select') then
+      raise exception 'P7 FALLIDO: el restaurante puede leer reports.%, que es identidad del equipo', v_col
+        using errcode = 'assert_failure';
+    end if;
+  end loop;
+
+  if has_column_privilege('authenticated', 'public.report_versions'::regclass, 'generated_by', 'select') then
+    raise exception 'P7 FALLIDO: el restaurante puede leer quién generó una versión'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- ============================================================
+-- RN-REP-14 · el recorrido del informe deja auditoría
+-- (mutación que la suite no detectaba: revisión del Hito 16)
+-- ============================================================
+--
+-- Quitar el `insert into audit_log` de `set_report_status()` pasaba la
+-- suite: se comprobaban `report.created` y `report.send_blocked`, y
+-- ninguno de los que escriben las acciones del día a día. Sin ellos no se
+-- puede reconstruir quién aprobó, programó o envió un informe, que es lo
+-- que CLAUDE.md pide de todo cambio de estado relevante.
+set role service_role;
+do $$
+declare v_id uuid := (select v from rep_ids where k = 'operacion'); v_falta text;
+begin
+  select string_agg(esperada.accion, ', ') into v_falta
+  from (values ('report.status_changed'), ('report.scheduled'), ('report.sent'),
+               ('report.version_generated')) as esperada(accion)
+  where not exists (
+    select 1 from public.audit_log a
+    where a.entity_type = 'report' and a.entity_id = v_id and a.action = esperada.accion
+  );
+
+  if v_falta is not null then
+    raise exception 'RN-REP-14 FALLIDO: el recorrido del informe no deja en auditoría: %', v_falta
+      using errcode = 'assert_failure';
+  end if;
+
+  if exists (
+    select 1 from public.audit_log a
+    where a.entity_type = 'report' and a.entity_id = v_id
+      and a.action in ('report.status_changed', 'report.sent') and a.actor_id is null
+  ) then
+    raise exception 'RN-REP-14 FALLIDO: hay un apunte del informe sin actor'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
 
 select 'informes.sql OK' as resultado;
