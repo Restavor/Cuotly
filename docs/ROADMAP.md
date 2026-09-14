@@ -27,7 +27,13 @@ Actualizado el 14/09/2026.
 | 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Servidor, dominio y pantallas del equipo | Migración 79, 13/09/2026. Ver la entrada de cierre abajo. |
 | 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Servidor, dominio y pantallas | Migración 80, 13/09/2026, aplicada al proyecto real el mismo día. Ver la entrada de cierre abajo. |
 | 13 · Integraciones analíticas: conexiones, credenciales, estados y sincronización (Fase 3) | Servidor y dominio; sin pantallas ni adaptadores | Migración 81, 13/09/2026, aplicada al proyecto real el 14/09/2026 por orden de Bosco. Ver la entrada de cierre abajo. |
-| 14 · Adaptadores y pantallas de integraciones (Fase 3) | Servidor, adaptadores y pantallas | Migración 82, 14/09/2026, aplicada al proyecto real el mismo día. Pantallas ajustadas al diseño de `docs/diseno/` el 14/09/2026. Ver la entrada de cierre abajo. |
+| 14 · Adaptadores y pantallas de integraciones (Fase 3) | Servidor, adaptadores y pantallas | Migraciones 82 y 83, 14/09/2026, aplicadas al proyecto real el mismo día. Pantallas ajustadas al diseño de `docs/diseno/` el 14/09/2026; la 83 salió de ahí (la zona horaria del espacio, que cuatro pantallas del restaurante tenían escrita a mano). Ver la entrada de cierre abajo. |
+| 15 · Oportunidades por reglas deterministas (Fase 3) | Servidor, dominio y pantallas | Migración 84, 14/09/2026, aplicada al proyecto real el mismo día. Los umbrales los fijó Bosco ese día (decisión 26): ya no se inventan, se citan. Ver la entrada de cierre abajo. |
+| 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
+
+**La Fase 3 queda cerrada** con el Hito 16: las 86 migraciones del repositorio están aplicadas al
+proyecto real, no hay ninguna decisión abierta en `docs/DECISIONES.md` y la Fase 4 todavía no está
+desglosada en hitos — es el párrafo del final de este archivo.
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -4224,12 +4230,15 @@ Hito 15 deja de estar bloqueado.
 
 **Se verifica con:** `supabase/tests/oportunidades.sql` (la 38ª suite; RN-OPP-01 a 10), `opportunities.test.ts` (los umbrales, uno a uno), `opportunity-detection.test.ts`, `opportunities.test.tsx`, `listas-compartidas.test.ts` (el catálogo de reglas, los estados y las transiciones a los dos lados) y `adapters.test.ts`.
 
-### Hito 16 · Informes *(hecho y aplicado al proyecto el 14/09/2026)*
+### Hito 16 · Informes *(hecho y aplicado al proyecto el 14/09/2026; la 86, tras la revisión del mismo día)*
 - **Migración 85**: `reports` (las tres familias de §89, los seis estados de §95, los filtros de §93), `report_sections` (qué entra, en qué orden y con qué texto), `report_versions` (**libro inmutable**: cada versión se conserva) y `report_deliveries` (a quién se envió qué versión). RLS con el privilegio de columna que tapa quién lo preparó, lo aprobó y lo envió; y las funciones de preparar, editar, generar cifras, aprobar, programar, enviar y archivar.
 - Los **diez indicadores de §91** en `src/core/reports.ts` (dominio puro), medidos con el **reloj contractual**; las filas las entregan `report_operation_dataset()` y `report_finance_dataset()`, reservadas a `service_role`.
 - El **informe personal del trabajador** (§90), sin finanzas, con los puntos históricos separados de la carga actual y las comparaciones segmentadas como manda §55.
 - Las **cuatro salidas** de §93: pantalla, **PDF** (`src/services/report-pdf.ts`, generado desde la versión y no guardado), **CSV** y **correo programado**, con el aviso de 24 h antes (§95) y el envío en la tanda de `/api/cola`, detrás de las oportunidades.
 - La **biblioteca** (vista 10.01) con los seis filtros que dibuja —restaurante, grupo, plan, periodo, categoría y estado—, **revisar y programar** (vista 10.04) con las secciones de la maqueta, los "Informes generados" de la ficha (maqueta 09) y los **"Informes disponibles"** del restaurante (vista 22.01).
+
+- **Migración 86**, de la revisión del mismo día: `send_report()` no pasaba por la tabla de transiciones —un borrador se enviaba por RPC, con el resumen ejecutivo en blanco— y el restaurante alcanzaba versiones que no se le habían enviado. Las dos cosas las ofrecía bien la pantalla, que es exactamente lo que CLAUDE.md dice que no es un control de acceso.
+- Las **decisiones 29 y 30**, que cerraron los dos avisos de la revisión: la versión guarda las cifras de las tres familias y quien la mira elige qué ver; y un consolidado no se comparte con ningún restaurante, propietario global del grupo incluido.
 
 **Se verifica con:** `supabase/tests/informes.sql` (la 39ª suite; RN-REP-01 a 14), `reports.test.ts` (los estados, los diez indicadores con el reloj, el CSV y el periodo), `report-generation.test.ts`, `report-pdf.test.ts`, `reports.test.tsx` y `listas-compartidas.test.ts` (el catálogo y las transiciones a los dos lados).
 
