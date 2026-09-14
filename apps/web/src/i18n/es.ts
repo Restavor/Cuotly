@@ -2675,6 +2675,14 @@ export const es = {
     periodLabel: "Periodo",
     sectionsTitle: "Secciones del informe",
     previewTitle: "Vista previa",
+
+    // Decisión 29 · lo que el LECTOR enciende y apaga sobre la versión
+    // guardada. No tiene nada que ver con las casillas de arriba: aquellas
+    // son del equipo y se guardan; estas no salen de la pantalla.
+    viewSectionsTitle: "Qué se ve",
+    viewSectionsHint:
+      "La versión guarda las cifras de las seis secciones. Enciende o apaga las que quieras mirar; el PDF sale con las que eligió el equipo de mantenimiento.",
+    viewSectionExtra: "No va en el PDF",
     stateTitle: "Estado del informe",
     approvalTitle: "Aprobación",
     approve: "Aprobar informe",

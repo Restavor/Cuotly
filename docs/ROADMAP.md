@@ -3887,7 +3887,9 @@ regenerar salió idéntica, así que no había desviación.
     un informe de operación pero que §89 da como familia. Tres consecuencias
     que se ven en el código: las secciones **no dependen de la familia** —la
     maqueta dibuja un informe de operación con rendimiento digital dentro—,
-    así que las cifras se generan **por sección incluida**; requerir criterio
+    así que las cifras se generan **por familia de sección** y de las tres,
+    marcadas o no, y quien mira la versión elige qué ver (decisión 29);
+    requerir criterio
     **no** es entrar apagada —el resumen ejecutivo entra marcado y lo escribe
     quien revisa, y por eso un informe por omisión pasa por aprobación, que
     es lo que dice la maqueta—; y la sección de oportunidades lleva las
@@ -3904,6 +3906,17 @@ regenerar salió idéntica, así que no había desviación.
     por fecha—; y que el **PDF y el CSV se generan desde la versión y no se
     guardan**, porque un PDF archivado sería un segundo original que puede
     dejar de coincidir con las cifras.
+
+    **Y una quinta, la decisión 29**, que salió de revisar el hito: RN-REP-05
+    prometía que los ocho filtros de §93 "se vuelven a aplicar al
+    regenerarlo" y resultó que `filters` guardaba tres de los ocho y nadie
+    los volvía a leer nunca. Bosco lo resuelve al revés de como estaba
+    escrito: **el informe guarda las cifras de las tres familias**, marcadas
+    o no, y quien lo mira enciende y apaga secciones sobre la versión
+    guardada. El PDF y el CSV siguen saliendo con lo que eligió el equipo.
+    Lo que no se guarda entero es lo que el equipo **escribe o elige** —las
+    notas de una sección apagada y las oportunidades—, que es la línea que
+    sostiene P7: las cifras son datos del restaurante; el texto interno, no.
 
     **Lo que NO se ha hecho, dicho en claro.** No hay informe redactado por
     IA ni resumen generado: §93 dice que el informe automático por correo no

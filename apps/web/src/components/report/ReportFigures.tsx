@@ -1,6 +1,11 @@
+"use client";
+
+import { useState } from "react";
+
 import { Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui";
 import { EmptyReason } from "@/components/ui/EmptyReason";
 import {
+  type ReportSectionKey,
   type ReportSnapshot,
   figuresOfSection,
   orderedSections,
@@ -13,13 +18,32 @@ const t = es.reportsPage;
 
 /**
  * Las cifras de una versión, sección a sección. Es la "Vista previa" de
- * la vista 10.04 y lo mismo que pinta el PDF: una sola maquetación, para
- * que lo que se ve y lo que se descarga no puedan desfasarse.
+ * la vista 10.04.
  *
  * Una cifra sin valor **dice su motivo** (§178, CA-20): no conectado, sin
  * datos todavía, error, dato desactualizado o periodo insuficiente. Nunca
  * un guion mudo y nunca un dato viejo presentado como actual (RN-REP-07).
+ *
+ * **Decisión 29 · quién elige qué se ve.** La versión guarda las cifras de
+ * las seis secciones, las marcara el equipo o no, así que aquí hay dos
+ * elecciones distintas que conviene no confundir:
+ *
+ *   · La del **equipo**, que son las casillas de "Secciones del informe".
+ *     Se guardan en `report_sections`, deciden qué lleva el PDF y el CSV,
+ *     y son lo que §95.5 llama "selecciona, edita y ordena".
+ *   · La del **lector** —el equipo o el restaurante—, que es este
+ *     selector. Es estado de pantalla y no sale de ella: no escribe nada,
+ *     no cambia el PDF y no da acceso a nada que la versión no trajera ya
+ *     dentro. Por eso puede vivir en el cliente sin romper la regla de
+ *     CLAUDE.md: no es un control de acceso, y no hay nada que controlar.
+ *
+ * Lo que el selector NO ofrece es lo que la versión no trae: las **notas**
+ * del equipo de una sección que desmarcó no viajan dentro (RN-REP-13), y
+ * las **oportunidades** solo entran si el equipo incluyó su sección (§99).
+ * Encender una sección enseña sus cifras, que son datos del restaurante;
+ * nunca la redacción interna.
  */
+
 /**
  * §96 · las oportunidades aprobadas que lleva el informe. El título se
  * escribe aquí desde `es.ts` a partir de la regla y el sujeto que guardó
@@ -52,50 +76,102 @@ function OpportunityList({ snapshot }: { snapshot: ReportSnapshot }) {
   );
 }
 
+/** Si una sección trae algo dentro de la versión. Una que no trae nada y
+ *  que el equipo tampoco incluyó no se ofrece: encenderla solo enseñaría
+ *  un motivo de vacío, que es ruido y no información. */
+function tieneContenido(snapshot: ReportSnapshot, key: ReportSectionKey): boolean {
+  if (key === "opportunities") return snapshot.opportunities.length > 0;
+  return figuresOfSection(snapshot, key).length > 0;
+}
+
 export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
-  const sections = orderedSections(snapshot.sections).filter((section) => section.included);
+  const ordenadas = orderedSections(snapshot.sections);
+  // Lo que se puede mirar: lo que el equipo incluyó (aunque venga vacío,
+  // porque entonces el motivo del vacío ES la información) más lo que la
+  // versión trae aunque el equipo lo dejara fuera.
+  const disponibles = ordenadas.filter(
+    (section) => section.included || tieneContenido(snapshot, section.key),
+  );
+  // Al abrir se ve lo mismo que el PDF. El lector decide a partir de ahí.
+  const [visibles, setVisibles] = useState<readonly ReportSectionKey[]>(() =>
+    ordenadas.filter((section) => section.included).map((section) => section.key),
+  );
+
+  function alternar(key: ReportSectionKey): void {
+    setVisibles((previas) =>
+      previas.includes(key) ? previas.filter((otra) => otra !== key) : [...previas, key],
+    );
+  }
+
+  const extras = disponibles.filter((section) => !section.included).length > 0;
 
   return (
     <div className="space-y-6">
-      {sections.map((section) => {
-        const figures = figuresOfSection(snapshot, section.key);
-        const note = snapshot.notes[section.key];
+      {disponibles.length > 1 ? (
+        <div className="rounded-[10px] bg-soft-surface p-3">
+          <p className="text-xs font-semibold text-primary-dark">{t.viewSectionsTitle}</p>
+          {extras ? <p className="mt-1 text-xs text-text-secondary">{t.viewSectionsHint}</p> : null}
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+            {disponibles.map((section) => (
+              <li key={section.key}>
+                <label className="flex items-center gap-2 text-sm text-text">
+                  <input
+                    type="checkbox"
+                    checked={visibles.includes(section.key)}
+                    onChange={() => alternar(section.key)}
+                  />
+                  {t.sections[section.key]}
+                  {section.included ? null : (
+                    <span className="text-xs text-text-secondary">({t.viewSectionExtra})</span>
+                  )}
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
-        return (
-          <section key={section.key} className="space-y-2">
-            <h4 className="text-sm font-semibold text-primary-dark">{t.sections[section.key]}</h4>
-            {note ? <p className="text-sm text-text">{note}</p> : null}
+      {disponibles
+        .filter((section) => visibles.includes(section.key))
+        .map((section) => {
+          const figures = figuresOfSection(snapshot, section.key);
+          const note = snapshot.notes[section.key];
 
-            {section.key === "opportunities" ? (
-              <OpportunityList snapshot={snapshot} />
-            ) : figures.length === 0 ? (
-              <EmptyReason reason="no_data_yet" title={t.sections[section.key]} />
-            ) : (
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeaderCell>{t.columns.name}</TableHeaderCell>
-                    <TableHeaderCell>{t.columns.period}</TableHeaderCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {figures.map((figure, index) => (
-                    <TableRow key={`${figure.metric}-${figure.dimension ?? ""}-${index}`}>
-                      <TableCell>{figureLabel(figure, t)}</TableCell>
-                      <TableCell>
-                        <span className="font-semibold text-text">{figureText(figure, t)}</span>
-                        {figure.at ? (
-                          <span className="ml-2 text-xs text-text-secondary">{fechaCorta(figure.at)}</span>
-                        ) : null}
-                      </TableCell>
+          return (
+            <section key={section.key} className="space-y-2">
+              <h4 className="text-sm font-semibold text-primary-dark">{t.sections[section.key]}</h4>
+              {note ? <p className="text-sm text-text">{note}</p> : null}
+
+              {section.key === "opportunities" ? (
+                <OpportunityList snapshot={snapshot} />
+              ) : figures.length === 0 ? (
+                <EmptyReason reason="no_data_yet" title={t.sections[section.key]} />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>{t.columns.name}</TableHeaderCell>
+                      <TableHeaderCell>{t.columns.period}</TableHeaderCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </section>
-        );
-      })}
+                  </TableHead>
+                  <TableBody>
+                    {figures.map((figure, index) => (
+                      <TableRow key={`${figure.metric}-${figure.dimension ?? ""}-${index}`}>
+                        <TableCell>{figureLabel(figure, t)}</TableCell>
+                        <TableCell>
+                          <span className="font-semibold text-text">{figureText(figure, t)}</span>
+                          {figure.at ? (
+                            <span className="ml-2 text-xs text-text-secondary">{fechaCorta(figure.at)}</span>
+                          ) : null}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </section>
+          );
+        })}
     </div>
   );
 }

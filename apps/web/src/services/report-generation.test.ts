@@ -377,9 +377,29 @@ describe("la versión que se guarda (RN-REP-12)", () => {
     );
 
     expect(puertas.metricPoints).toHaveBeenCalledWith("est-1", "2026-08-01", "2026-08-31");
-    // Un informe de operación con la sección de operación apagada no pide
-    // sus filas: se genera lo que se va a enseñar y nada más.
-    expect(puertas.operationDataset).not.toHaveBeenCalled();
+  });
+
+  it("decisión 29 · la versión guarda las cifras de una sección que el equipo apagó", async () => {
+    const puertas = gateway();
+    const snapshot = await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({
+        category: "operation",
+        sections: [
+          { key: "operation", position: 1, included: false },
+          { key: "digital", position: 2, included: true },
+        ],
+      }),
+    );
+
+    // Apagar una sección es una decisión editorial —qué lleva el PDF—, no
+    // una orden de no calcular: si no se guardara, verla después exigiría
+    // regenerar, y regenerar es otra versión con otras cifras.
+    expect(puertas.operationDataset).toHaveBeenCalled();
+    expect(snapshot.figures.some((figure) => figure.section === "operation")).toBe(true);
+    // Y sigue constando que el equipo la dejó fuera, que es lo que el PDF
+    // y el CSV miran.
+    expect(snapshot.sections.find((section) => section.key === "operation")?.included).toBe(false);
   });
 
   it("un informe de operación con la sección digital dentro genera las dos", async () => {
@@ -409,7 +429,10 @@ describe("la versión que se guarda (RN-REP-12)", () => {
     );
 
     expect(puertas.metricPoints).not.toHaveBeenCalled();
-    expect(snapshot.figures).toEqual([]);
+    // Ni una cifra digital. Las de operación y finanzas sí están, porque
+    // un consolidado las tiene (decisión 29); lo que no hay es lo que
+    // habría que inventar.
+    expect(snapshot.figures.some((figure) => figure.section === "digital")).toBe(false);
   });
 
   it("§96 · solo entran las oportunidades APROBADAS, y solo si la sección está dentro", async () => {

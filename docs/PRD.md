@@ -1123,11 +1123,21 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
 - **RN-REP-04**: la **analítica digital** de un informe (§92) son las métricas que ya están importadas
   (RN-INT-07): un informe **no llama a ninguna API**, lee `metric_points`. Por eso un informe se puede
   generar de un periodo cerrado meses después y sale lo mismo.
-- **RN-REP-05**: los **filtros** son los **ocho** de §93 —periodo, restaurante, grupo, plan,
-  trabajador, tipo de cambio, estado y servicio—, se guardan **con el informe** (`reports.filters`) y
-  son lo que se vuelve a aplicar al regenerarlo. La **biblioteca** ofrece los **seis** que dibuja la
-  maqueta 10.01 (restaurante, grupo, plan, periodo, categoría y estado); trabajador, tipo de cambio y
-  servicio se guardan con el informe y todavía no tienen control propio en esa pantalla. El **periodo** de un informe es el que elige la
+- **RN-REP-05**: **el informe guarda las cifras de todas sus secciones y quien lo mira elige cuáles
+  ver** (decisión 29). Generar una versión calcula las cifras de las **tres familias**, las haya
+  marcado el equipo o no: apagar una sección es decidir qué lleva el PDF, no ordenar que no se
+  calcule, y si no se guardara, verla después obligaría a regenerar —que es otra versión con otras
+  cifras—. Lo que **sí** depende de lo que marque el equipo es lo que el equipo escribe o elige: las
+  **notas** de una sección apagada no viajan dentro de la versión (RN-REP-13) y las **oportunidades**
+  solo entran si su sección está incluida (§99). Quien abre un informe —el equipo o el restaurante—
+  **enciende y apaga secciones** sobre la versión guardada, y se abre con lo que decidió el equipo;
+  es estado de pantalla, no escribe nada y no alcanza nada que la versión no trajera dentro. **El PDF
+  y el CSV salen con lo que eligió el equipo**, que es lo que se envió. Los **filtros** de §93 son
+  ocho —periodo, restaurante, grupo, plan, trabajador, tipo de cambio, estado y servicio— y son de la
+  **biblioteca**, que ofrece los **seis** de la maqueta 10.01 (restaurante, grupo, plan, periodo,
+  categoría y estado); **no se "vuelven a aplicar" al regenerar un informe**, porque un informe ya no
+  se genera filtrado. El filtro por **trabajador** no se le ofrece nunca al restaurante: le diría
+  quién del equipo hizo qué (CLAUDE.md). El **periodo** de un informe es el que elige la
   persona; por omisión, el **último mes natural cerrado** (que es lo que dibuja la vista 10.01), no la
   ventana de 28 días de la analítica (decisión 25b): dentro de un informe, las cifras digitales son
   las **del periodo del informe**.
@@ -1156,8 +1166,8 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   que esa maqueta no dibuja porque dibuja un informe de operación pero que §89 da como familia. **No
   dependen de la familia**: la misma maqueta dibuja un informe de operación con rendimiento digital
   dentro, así que la familia dice de qué va el informe y las secciones dicen qué lleva. El **flujo**
-  son los siete pasos de §95, en este orden: (1) Cuotly genera los datos objetivos **de las secciones
-  incluidas**, (2) prepara el borrador —con el resumen ejecutivo, la sección de su familia y los
+  son los siete pasos de §95, en este orden: (1) Cuotly genera los datos objetivos **de las tres
+  familias**, marcadas o no (RN-REP-05, decisión 29), (2) prepara el borrador —con el resumen ejecutivo, la sección de su familia y los
   anexos marcados, y las oportunidades **nunca** marcadas (§99)—, (3) **marca las secciones que
   requieren criterio** —resumen ejecutivo y oportunidades: lo que una persona escribe o elige; las
   demás son cifras y no piden opinión—, (4) revisa quien tiene "Aprobar informes", (5) **selecciona,
@@ -1193,6 +1203,10 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   enviado**: `preparing`, `pending_review`, `approved` y `scheduled` son conversación interna del
   equipo, y lo sostiene la política de RLS, no que la pantalla no lo pinte. Las **secciones en
   edición** (`report_sections`) no las ve nunca: ahí se le deja fuera de la **fila**, como en `tasks`.
+  Y **dentro de la versión** que sí se le envía no viajan las **notas** de las secciones que el
+  equipo apagó: son su preparación, el PDF no las pinta, pero estaban dentro del `snapshot` y desde
+  ahí se leían. Las **cifras** de esas secciones sí viajan y el restaurante puede encenderlas
+  (RN-REP-05): son datos suyos, no redacción del equipo.
 - **RN-REP-14**: toda decisión sobre un informe deja **evento de estado y apunte de auditoría** con
   actor, fecha, valor anterior, valor nuevo y motivo cuando proceda (familia `report`, visible con
   `manage_clients`, §21.2). Lo que escribe el proceso de la cola —el envío programado y el aviso de

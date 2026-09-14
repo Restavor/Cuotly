@@ -67,6 +67,28 @@ describe("el PDF del informe", () => {
     expect(Buffer.from(bytes).subarray(0, 4).toString()).toBe("%PDF");
   });
 
+  it("decisión 29 · la versión trae la sección que el equipo apagó, y el PDF no la pinta", async () => {
+    // Desde la decisión 29 la versión guarda las cifras de las secciones
+    // que el equipo dejó fuera, para que quien la mira pueda encenderlas.
+    // El PDF es la otra mitad del trato: sale con lo que decidió el
+    // equipo. Se compara con el mismo informe SIN esas cifras dentro: si
+    // el PDF las pintara, ocuparía más.
+    const meta = {
+      name: "Informe mensual",
+      establishmentName: "Casa Magariños",
+      generatedAtLabel: "1 sept",
+      periodLabel: { from: "1 ago", to: "31 ago" },
+    };
+
+    const conLaApagada = await renderReportPdf(SNAPSHOT, meta);
+    const sinElla = await renderReportPdf(
+      { ...SNAPSHOT, figures: SNAPSHOT.figures.filter((figure) => figure.section !== "digital") },
+      meta,
+    );
+
+    expect(conLaApagada.byteLength).toBe(sinElla.byteLength);
+  });
+
   it("un consolidado lo dice en la portada en vez de dejar el restaurante en blanco", async () => {
     const bytes = await renderReportPdf(SNAPSHOT, {
       name: "Consolidado",

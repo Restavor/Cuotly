@@ -73,6 +73,11 @@ export async function createReport(
       // opcionales, no anulables, y pasar `null` era un desajuste que la
       // frontera con `any` tapaba.
       p_establishment_id: establishmentId === "" ? undefined : establishmentId,
+      // Queda como **registro de lo que se pidió**, no como algo que se
+      // vuelva a aplicar: desde la decisión 29 un informe no se genera
+      // filtrado —guarda las cifras de las tres familias y quien lo mira
+      // elige qué ver—, así que esto es historia del borrador y nada más.
+      // RN-REP-05 lo dice con esas palabras desde la misma fecha.
       p_filters: {
         period_start: texto(formData, "periodStart"),
         period_end: texto(formData, "periodEnd"),

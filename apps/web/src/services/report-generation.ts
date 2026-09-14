@@ -301,13 +301,27 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
   const figures: ReportFigure[] = [];
 
   /*
-    Las cifras se generan **por sección incluida**, no por familia: la
-    maqueta 10.04 dibuja un informe con Operación y Rendimiento digital a
-    la vez, así que la familia dice de qué va el informe y las secciones
-    dicen qué lleva dentro. Generar por familia habría dejado esa sección
-    vacía sin que nadie entendiera por qué.
+    **Decisión 29 (14/09/2026) · la versión guarda las cifras de las tres
+    familias, las marcara el equipo o no.** Antes se generaban solo las de
+    las secciones incluidas, y eso convertía una decisión editorial en una
+    pérdida de datos: si el equipo desmarcaba "Rendimiento digital", esa
+    versión se quedaba sin una sola cifra digital para siempre, y verlas
+    exigía regenerar —que es otra versión, con otras cifras, porque las
+    fuentes se siguen sincronizando—. Ahora la versión trae el periodo
+    entero y quien la mira elige qué mirar (`ReportFigures`).
+
+    Lo que **no** se guarda entero, y es lo que separa un dato de una
+    opinión: las **notas** del equipo, que se filtran abajo por sección
+    incluida (RN-REP-13), y las **oportunidades**, que §99 manda decidir
+    una a una. Las cifras son datos del propio restaurante y guardarlas
+    enteras no le enseña nada del equipo; el texto interno, sí.
+
+    Las cifras se generan **por familia de sección** y no por la familia
+    del informe: la maqueta 10.04 dibuja un informe con Operación y
+    Rendimiento digital a la vez, así que la familia dice de qué va el
+    informe y las secciones dicen qué lleva dentro.
   */
-  if (incluidas.has("operation")) {
+  {
     const [raw, holidayRecords] = await Promise.all([
       deps.gateway.operationDataset(report.spaceId, report.establishmentId, period.start, period.end),
       deps.gateway.holidays(report.spaceId),
@@ -319,7 +333,7 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     figures.push(...operationFigures(parseOperationDataset(raw), report.timezone, holidays, now));
   }
 
-  if (incluidas.has("finance")) {
+  {
     const raw = await deps.gateway.financeDataset(
       report.spaceId,
       report.establishmentId,
@@ -331,7 +345,7 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
 
   // Lo digital es por restaurante: un consolidado mezcla cinco fuentes de
   // varios y no hay una cifra que decir, así que no se inventa ninguna.
-  if (incluidas.has("digital") && report.establishmentId !== null) {
+  if (report.establishmentId !== null) {
     const [points, states] = await Promise.all([
       deps.gateway.metricPoints(report.establishmentId, period.start, period.end),
       deps.gateway.providerStates(report.establishmentId),

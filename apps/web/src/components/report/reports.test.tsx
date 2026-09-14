@@ -1,8 +1,9 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { ReportSnapshot, WorkerPersonalReport } from "@/core/reports";
 import { es } from "@/i18n/es";
+import { figureLabel } from "@/services/report-pdf";
 
 import { AvailableReports } from "./AvailableReports";
 import { PersonalReport } from "./PersonalReport";
@@ -16,8 +17,10 @@ import type { ReportRow } from "./reports-load";
  *
  *   · Que una cifra que no existe DICE SU MOTIVO y no un guion mudo
  *     (CA-20, §178).
- *   · Que una sección apagada no viaja a la vista previa: lo que se ve es
- *     lo que se manda.
+ *   · Que la vista previa se abre con lo que decidió el equipo, y que el
+ *     lector puede encender lo que la versión trae dentro y el equipo
+ *     dejó fuera (decisión 29), marcado como lo que es: algo que no va en
+ *     el PDF.
  *   · Que al restaurante no se le enseña la cocina —ni el estado interno
  *     ni quién lo aprobó— y que lo que ve es su informe (P7, RN-REP-13).
  *   · Que el informe personal dice que la carga no es una nota y que las
@@ -122,17 +125,51 @@ describe("la vista previa de las cifras (§94, CA-20)", () => {
     notes: { executive_summary: "Agosto flojo, como todos los agostos." },
   };
 
+  /** La cifra digital tal y como la escribe la pantalla, con su fuente. */
+  const cifraDigital = figureLabel({ section: "digital", metric: "sessions", value: 3, dimension: "ga4" }, t);
+
   it("una cifra sin valor dice su motivo y no un guion", () => {
     render(<ReportFigures snapshot={snapshot} />);
 
     expect(screen.getByText(es.emptyReasons.stale)).toBeInTheDocument();
   });
 
-  it("una sección apagada no se pinta: lo que se ve es lo que se manda", () => {
+  it("decisión 29 · al abrir se ve lo que decidió el equipo: la sección que apagó no sale", () => {
     render(<ReportFigures snapshot={snapshot} />);
 
+    // "Rendimiento digital" aparece una sola vez, en el selector, y no
+    // como encabezado de una sección pintada: su cifra no está a la vista.
+    expect(screen.getAllByText(t.sections.digital)).toHaveLength(1);
+    expect(screen.queryByText(cifraDigital)).not.toBeInTheDocument();
+    // "Operación" sale dos veces: en el selector y como encabezado de su
+    // sección, que es lo que dice que está pintada.
+    expect(screen.getAllByText(t.sections.operation)).toHaveLength(2);
+  });
+
+  it("decisión 29 · el lector enciende la sección que el equipo dejó fuera y la ve, marcada como fuera del PDF", () => {
+    render(<ReportFigures snapshot={snapshot} />);
+
+    const casilla = screen.getByRole("checkbox", { name: new RegExp(t.sections.digital) });
+    expect(casilla).not.toBeChecked();
+    expect(screen.getByText(`(${t.viewSectionExtra})`)).toBeInTheDocument();
+
+    fireEvent.click(casilla);
+
+    expect(screen.getByText(cifraDigital)).toBeInTheDocument();
+  });
+
+  it("decisión 29 · el selector no ofrece una sección que la versión no trae", () => {
+    render(
+      <ReportFigures
+        snapshot={{
+          ...snapshot,
+          figures: [{ section: "operation", metric: "jobs_completed", value: 10 }],
+        }}
+      />,
+    );
+
+    // Sin cifra digital dentro, encenderla solo enseñaría un vacío.
     expect(screen.queryByText(t.sections.digital)).not.toBeInTheDocument();
-    expect(screen.getByText(t.sections.operation)).toBeInTheDocument();
   });
 
   it("el texto que escribió una persona se enseña tal cual: Cuotly no redacta nada", () => {

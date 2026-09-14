@@ -427,6 +427,46 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    suites desde cero sobre las 85 migraciones; y dos mutaciones detectadas: quitar el lado de
    mantenimiento de los destinatarios y quitar la comprobación de acceso retirado.
 
+29. **El informe guarda las cifras de todas sus secciones, y quien lo mira elige cuáles ver**
+   (14/09/2026, cierra el aviso que dejó la revisión del Hito 16 sobre RN-REP-05).
+
+   **De dónde venía.** RN-REP-05 prometía que los ocho filtros de §93 se guardaban con el informe
+   y eran "lo que se vuelve a aplicar al regenerarlo". Al revisar el hito se vio que `filters`
+   guardaba tres de los ocho y **nadie los volvía a leer nunca**: una columna que decía una cosa y
+   hacía otra. Se le planteó a Bosco como decisión de producto y no se resolvió por cuenta propia.
+
+   **Lo que decide Bosco.** "Todo se tiene que guardar dentro del informe y luego ya el
+   restaurante elige qué aplicar". De ahí salen dos reglas:
+
+   **(a) Al generar una versión se calculan las cifras de las tres familias**, las haya marcado el
+   equipo o no. Antes solo se generaban las de las secciones incluidas, y eso convertía una
+   decisión editorial en una pérdida de datos: desmarcar "Rendimiento digital" dejaba esa versión
+   sin una sola cifra digital **para siempre**, y verlas después obligaba a regenerar, que es otra
+   versión con otras cifras porque las fuentes siguen sincronizándose.
+
+   **(b) Lo que NO se guarda entero es lo que el equipo escribe o elige**: las **notas** de una
+   sección desmarcada no viajan dentro de la versión (RN-REP-13, arreglado en la misma revisión) y
+   las **oportunidades** solo entran si el equipo incluyó su sección (§99). La línea es esa y es
+   la que sostiene P7: las cifras son datos del propio restaurante y guardarlas enteras no le
+   enseña nada del equipo; el texto interno, sí.
+
+   **(c) Quien mira el informe enciende y apaga secciones** sobre la versión guardada, y se abre
+   con lo que decidió el equipo. Es estado de pantalla: no escribe nada, no cambia el PDF y no da
+   acceso a nada que la versión no trajera ya dentro, así que puede vivir en el cliente sin
+   chocar con CLAUDE.md —no es un control de acceso porque no hay nada que controlar—. **El PDF y
+   el CSV siguen saliendo con lo que eligió el equipo**, que es lo que §95 llama el informe y lo
+   que se envió.
+
+   **Lo que se descarta con esto:** que los filtros se "vuelvan a aplicar al regenerar". No se
+   aplican y no van a aplicarse; RN-REP-05 se reescribe para decir lo que pasa. Y el filtro por
+   **trabajador** de §93 no se le ofrece nunca al restaurante: le diría quién del equipo hizo qué,
+   y CLAUDE.md lo prohíbe sin excepción.
+
+   Comprobado: dos tests nuevos de generación (una sección apagada se guarda igual; un
+   consolidado sigue sin cifras digitales), tres de pantalla (se abre con lo del equipo, el lector
+   enciende la que sobra y sale marcada como fuera del PDF, y no se ofrece lo que la versión no
+   trae) y uno del PDF que **muerde**: mutando el filtro de secciones del PDF, el test falla.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)
