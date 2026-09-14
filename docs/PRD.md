@@ -1086,9 +1086,10 @@ vuelve a decidir (§99), son el Hito 16.
 Transcripción con número de §89 a §95 de la especificación maestra, con el mismo criterio que §25,
 §26, §27 y §28: cada regla con su test, ninguna regla nueva. La diferencia con las oportunidades:
 aquí la maestra **sí** dice los estados, el flujo y las salidas; lo que no dice es **quién recibe el
-correo**, **qué secciones "requieren criterio"**, **cuándo es "se acerca la fecha"** y **qué ve el
-restaurante de un informe que todavía no se le ha enviado**. Esas cuatro cosas se leen aquí y se
-anotan como lectura aplicada (pendiente 16 de `docs/DECISIONES.md`), no se inventan reglas nuevas.
+correo**, **cuándo es "se acerca la fecha"**, **qué ve el restaurante de un informe que todavía no se
+le ha enviado** y **si el PDF se archiva**. Esas cuatro se leen aquí y se anotan como lectura
+aplicada (pendiente 16 de `docs/DECISIONES.md`), no se inventan reglas nuevas. **Cuáles son las
+secciones** no hace falta leerlo: lo dibuja la maqueta 10.04 de `docs/diseno/`, y son las suyas.
 Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 16).
 
 - **RN-REP-01**: hay **tres familias de informe** (§89): **operación** (solicitudes, trabajos, tareas,
@@ -1122,7 +1123,9 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   generar de un periodo cerrado meses después y sale lo mismo.
 - **RN-REP-05**: los **filtros** son los **ocho** de §93 —periodo, restaurante, grupo, plan,
   trabajador, tipo de cambio, estado y servicio—, se guardan **con el informe** (`reports.filters`) y
-  son lo que se vuelve a aplicar al regenerarlo. El **periodo** de un informe es el que elige la
+  son lo que se vuelve a aplicar al regenerarlo. La **biblioteca** ofrece los **seis** que dibuja la
+  maqueta 10.01 (restaurante, grupo, plan, periodo, categoría y estado); trabajador, tipo de cambio y
+  servicio se guardan con el informe y todavía no tienen control propio en esa pantalla. El **periodo** de un informe es el que elige la
   persona; por omisión, el **último mes natural cerrado** (que es lo que dibuja la vista 10.01), no la
   ventana de 28 días de la analítica (decisión 25b): dentro de un informe, las cifras digitales son
   las **del periodo del informe**.
@@ -1146,14 +1149,21 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   estados. Mover al mismo estado dos
   veces no escribe dos apuntes (RN-DAT-09), y aprobar, programar o enviar dos veces produce **un solo
   efecto** (CA-17).
-- **RN-REP-09**: el **flujo** son los siete pasos de §95, en este orden: (1) Cuotly genera los datos
-  objetivos, (2) prepara el borrador con sus secciones, (3) **marca las secciones que requieren
-  criterio** —resumen ejecutivo, oportunidades y recomendaciones; las demás son cifras y no piden
-  opinión—, (4) revisa quien tiene "Aprobar informes", (5) **selecciona, edita y ordena** las
-  secciones, (6) lo aprobado se inserta, y (7) se genera el PDF y se programa o se envía. Las
-  secciones se guardan con su **orden** y su **inclusión**, y editarlas después de aprobar **devuelve
-  el informe a revisión**: un informe aprobado es un texto concreto, no una carpeta que sigue
-  cambiando.
+- **RN-REP-09**: las **secciones** de un informe son las **cinco de la maqueta 10.04** —resumen
+  ejecutivo, operación, rendimiento digital, oportunidades y anexos y evidencias— más **finanzas**,
+  que esa maqueta no dibuja porque dibuja un informe de operación pero que §89 da como familia. **No
+  dependen de la familia**: la misma maqueta dibuja un informe de operación con rendimiento digital
+  dentro, así que la familia dice de qué va el informe y las secciones dicen qué lleva. El **flujo**
+  son los siete pasos de §95, en este orden: (1) Cuotly genera los datos objetivos **de las secciones
+  incluidas**, (2) prepara el borrador —con el resumen ejecutivo, la sección de su familia y los
+  anexos marcados, y las oportunidades **nunca** marcadas (§99)—, (3) **marca las secciones que
+  requieren criterio** —resumen ejecutivo y oportunidades: lo que una persona escribe o elige; las
+  demás son cifras y no piden opinión—, (4) revisa quien tiene "Aprobar informes", (5) **selecciona,
+  edita y ordena** las secciones, (6) lo aprobado se inserta, y (7) se genera el PDF y se programa o
+  se envía. Requerir criterio **no** es entrar apagada: el resumen ejecutivo entra marcado y lo
+  escribe quien revisa. Las secciones se guardan con su **orden** y su **inclusión**, y editarlas
+  después de aprobar **devuelve el informe a revisión**: un informe aprobado es un texto concreto, no
+  una carpeta que sigue cambiando.
 - **RN-REP-10**: §95 · **un informe solo objetivo puede enviarse automáticamente** —si ninguna sección
   incluida requiere criterio, se puede programar sin aprobación—, y **si hay oportunidades
   pendientes, no se envía hasta que se aprueben**: un informe que incluye la sección de oportunidades

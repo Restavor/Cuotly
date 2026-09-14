@@ -32,6 +32,7 @@ function gateway(overrides: Partial<ReportGateway> = {}): ReportGateway {
     financeDataset: vi.fn().mockResolvedValue({}),
     metricPoints: vi.fn().mockResolvedValue(new Map()),
     providerStates: vi.fn().mockResolvedValue([]),
+    approvedOpportunities: vi.fn().mockResolvedValue([]),
     holidays: vi.fn().mockResolvedValue([]),
     storeVersion: vi.fn().mockResolvedValue("version-1"),
     reportsDueForSend: vi.fn().mockResolvedValue([]),
@@ -43,7 +44,7 @@ function gateway(overrides: Partial<ReportGateway> = {}): ReportGateway {
 }
 
 const SECCIONES: readonly ReportSectionState[] = [
-  { key: "operation_jobs", position: 1, included: true },
+  { key: "operation", position: 1, included: true },
 ];
 
 function informe(overrides: Partial<ReportRow> = {}): ReportRow {
@@ -276,23 +277,71 @@ describe("la versión que se guarda (RN-REP-12)", () => {
     expect(snapshot.generatedAt).toBe(AHORA.toISOString());
   });
 
-  it("RN-REP-04 · un informe digital lee `metric_points` y no llama a ninguna API", async () => {
+  it("RN-REP-04 · la sección digital lee `metric_points` y no llama a ninguna API", async () => {
     const puertas = gateway();
-    await buildSnapshot({ gateway: puertas, now: () => AHORA }, informe({ category: "digital" }));
+    await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({
+        category: "operation",
+        sections: [
+          { key: "operation", position: 1, included: false },
+          { key: "digital", position: 2, included: true },
+        ],
+      }),
+    );
 
     expect(puertas.metricPoints).toHaveBeenCalledWith("est-1", "2026-08-01", "2026-08-31");
+    // Un informe de operación con la sección de operación apagada no pide
+    // sus filas: se genera lo que se va a enseñar y nada más.
     expect(puertas.operationDataset).not.toHaveBeenCalled();
   });
 
-  it("un consolidado digital no tiene restaurante del que leer, y no inventa cifras", async () => {
+  it("un informe de operación con la sección digital dentro genera las dos", async () => {
+    const puertas = gateway();
+    await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({
+        sections: [
+          { key: "operation", position: 1, included: true },
+          { key: "digital", position: 2, included: true },
+        ],
+      }),
+    );
+
+    expect(puertas.operationDataset).toHaveBeenCalled();
+    expect(puertas.metricPoints).toHaveBeenCalled();
+  });
+
+  it("un consolidado no tiene restaurante del que leer lo digital, y no inventa cifras", async () => {
     const puertas = gateway();
     const snapshot = await buildSnapshot(
       { gateway: puertas, now: () => AHORA },
-      informe({ category: "digital", establishmentId: null }),
+      informe({
+        establishmentId: null,
+        sections: [{ key: "digital", position: 1, included: true }],
+      }),
     );
 
     expect(puertas.metricPoints).not.toHaveBeenCalled();
     expect(snapshot.figures).toEqual([]);
+  });
+
+  it("§96 · solo entran las oportunidades APROBADAS, y solo si la sección está dentro", async () => {
+    const aprobadas = vi.fn().mockResolvedValue([
+      { id: "opp-1", rule: "low_ctr", subject: "menú", title: null, impact: "low", effortCategory: "small" },
+    ]);
+    const puertas = gateway({ approvedOpportunities: aprobadas });
+
+    const sin = await buildSnapshot({ gateway: puertas, now: () => AHORA }, informe());
+    expect(sin.opportunities).toEqual([]);
+    expect(aprobadas).not.toHaveBeenCalled();
+
+    const con = await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({ sections: [{ key: "opportunities", position: 1, included: true }] }),
+    );
+    expect(con.opportunities).toHaveLength(1);
+    expect(aprobadas).toHaveBeenCalledWith("est-1", "2026-08-01", "2026-08-31");
   });
 
   it("RN-CLK-10 · el calendario se arma con los festivos conocidos al empezar el periodo", async () => {

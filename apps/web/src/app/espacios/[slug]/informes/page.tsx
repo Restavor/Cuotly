@@ -90,15 +90,25 @@ export default async function ReportsPage({
   const categoria = solo("categoria");
   const estado = solo("estado");
   const restaurante = solo("restaurante");
+  const grupo = solo("grupo");
+  const plan = solo("plan");
+  const desde = solo("desde");
+  const hasta = solo("hasta");
 
-  const [{ data: establishments }, reports] = await Promise.all([
+  // Los seis filtros que dibuja la maqueta 10.01 y que §93 enumera:
+  // restaurante, grupo, plan, periodo, categoría y estado.
+  const [{ data: establishments }, { data: groups }, { data: plans }, reports] = await Promise.all([
     supabase.from("establishments").select("id, name").eq("space_id", viewer.spaceId).order("name"),
+    supabase.from("groups").select("id, name").eq("space_id", viewer.spaceId).order("name"),
+    supabase.from("plans").select("id, name").eq("space_id", viewer.spaceId).order("name"),
     loadReports(supabase, viewer.spaceId, {
       establishmentId: restaurante,
+      groupId: grupo,
+      planId: plan,
       category: categoria !== null && isReportCategory(categoria) ? categoria : null,
       status: estado !== null && isReportState(estado) ? estado : null,
-      periodStart: solo("desde"),
-      periodEnd: solo("hasta"),
+      periodStart: desde,
+      periodEnd: hasta,
     }).catch(() => null),
   ]);
 
@@ -116,7 +126,17 @@ export default async function ReportsPage({
         <ReportFilters
           base={base}
           establishments={(establishments ?? []).map((row) => ({ id: row.id, name: row.name }))}
-          selected={{ establishmentId: restaurante, category: categoria, status: estado }}
+          groups={(groups ?? []).map((row) => ({ id: row.id, name: row.name }))}
+          plans={(plans ?? []).map((row) => ({ id: row.id, name: row.name }))}
+          selected={{
+            establishmentId: restaurante,
+            groupId: grupo,
+            planId: plan,
+            category: categoria,
+            status: estado,
+            from: desde,
+            to: hasta,
+          }}
         />
       </Card>
 

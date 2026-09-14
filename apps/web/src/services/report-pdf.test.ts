@@ -22,17 +22,18 @@ const SNAPSHOT: ReportSnapshot = {
   generatedAt: "2026-09-01T08:00:00Z",
   sections: [
     { key: "executive_summary", position: 1, included: true },
-    { key: "operation_jobs", position: 2, included: true },
-    { key: "operation_menus", position: 3, included: false },
+    { key: "operation", position: 2, included: true },
+    { key: "digital", position: 3, included: false },
   ],
   figures: [
-    { section: "operation_jobs", metric: "jobs_completed", value: 10 },
-    { section: "operation_jobs", metric: "average_start", value: 180, unit: "business_minutes" },
-    { section: "operation_jobs", metric: "start_compliance", value: null, noDataReason: "stale" },
-    { section: "operation_menus", metric: "menus_published", value: 3 },
+    { section: "operation", metric: "jobs_completed", value: 10 },
+    { section: "operation", metric: "average_start", value: 180, unit: "business_minutes" },
+    { section: "operation", metric: "start_compliance", value: null, noDataReason: "stale" },
+    { section: "digital", metric: "sessions", value: 3, dimension: "ga4" },
   ],
   // Con guiones largos, comillas tipográficas y acentos: es lo que escribe
   // una persona de verdad en el resumen ejecutivo.
+  opportunities: [],
   notes: { executive_summary: "Agosto —como todos— flojo: “menú del día” cayó un 12 %…" },
 };
 
@@ -78,26 +79,26 @@ describe("el PDF del informe", () => {
   });
 
   it("una cifra sin valor se escribe con su motivo, no con un hueco", () => {
-    expect(figureText({ section: "operation_jobs", metric: "start_compliance", value: null, noDataReason: "stale" }, t))
+    expect(figureText({ section: "operation", metric: "start_compliance", value: null, noDataReason: "stale" }, t))
       .toBe(es.emptyReasons.stale);
     // Y sin motivo conocido, se dice "Sin dato" — nunca un cero, que sería
     // una cifra inventada (CLAUDE.md MUST NOT).
-    expect(figureText({ section: "operation_jobs", metric: "jobs_completed", value: null }, t)).toBe(t.pdf.noValue);
+    expect(figureText({ section: "operation", metric: "jobs_completed", value: null }, t)).toBe(t.pdf.noValue);
   });
 
   it("las unidades se escriben en palabras: un porcentaje no es lo mismo que un minuto", () => {
-    expect(figureText({ section: "operation_deadlines", metric: "start_compliance", value: 86, unit: "percent" }, t))
+    expect(figureText({ section: "operation", metric: "start_compliance", value: 86, unit: "percent" }, t))
       .toBe("86 %");
-    expect(figureText({ section: "operation_deadlines", metric: "average_start", value: 180, unit: "business_minutes" }, t))
+    expect(figureText({ section: "operation", metric: "average_start", value: 180, unit: "business_minutes" }, t))
       .toBe("3 h laborables");
-    expect(figureText({ section: "finance_income", metric: "income_total", value: 48279, unit: "cents" }, t))
+    expect(figureText({ section: "finance", metric: "income_total", value: 48279, unit: "cents" }, t))
       .toContain("482,79");
   });
 
   it("el nombre de una cifra con dimensión lleva las dos cosas", () => {
-    expect(figureLabel({ section: "operation_consumption", metric: "consumption", value: 2, dimension: "photo" }, t))
+    expect(figureLabel({ section: "operation", metric: "consumption", value: 2, dimension: "photo" }, t))
       .toBe(`${t.metrics.consumption} · ${es.naming.categories.photo}`);
-    expect(figureLabel({ section: "digital_traffic", metric: "sessions", value: 100, dimension: "ga4" }, t))
+    expect(figureLabel({ section: "digital", metric: "sessions", value: 100, dimension: "ga4" }, t))
       .toBe(`${t.metrics.sessions} · ${es.integrations.providers.ga4.name}`);
   });
 });

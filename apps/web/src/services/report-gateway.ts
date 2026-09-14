@@ -10,7 +10,7 @@
 
 import type { HolidayRecord } from "@/core/business-clock";
 import type { MetricPoint } from "@/core/integrations";
-import type { ReportCategory, ReportSectionState } from "@/core/reports";
+import type { ReportCategory, ReportOpportunity, ReportSectionState } from "@/core/reports";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -68,6 +68,12 @@ export interface ReportGateway {
     to: string,
   ): Promise<ReadonlyMap<string, readonly MetricPoint[]>>;
   providerStates(establishmentId: string): Promise<readonly ProviderState[]>;
+  /** §96 · las oportunidades APROBADAS del periodo, que son las que entran. */
+  approvedOpportunities(
+    establishmentId: string,
+    from: string,
+    to: string,
+  ): Promise<readonly ReportOpportunity[]>;
   holidays(spaceId: string): Promise<readonly HolidayRecord[]>;
   storeVersion(reportId: string, snapshot: unknown): Promise<string>;
   /** §95 · los informes cuya fecha ya llegó y los que la tienen a menos de 24 h. */
@@ -191,6 +197,28 @@ export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
         provider: row.provider,
         status: row.status,
         lastSuccessAt: row.last_success_at,
+      }));
+    },
+
+    async approvedOpportunities(establishmentId, from, to) {
+      // Columna a columna: `opportunities` tiene el `select` concedido así
+      // y un `select *` devuelve 403 (CLAUDE.md).
+      const { data, error } = await client
+        .from("opportunities")
+        .select("id, rule_key, subject, title, impact, effort_category, period_start, period_end, status")
+        .eq("establishment_id", establishmentId)
+        .eq("status", "approved_for_report")
+        .lte("period_start", to)
+        .gte("period_end", from)
+        .order("priority");
+      if (error) throw new Error(`opportunities: ${error.message}`);
+      return (data ?? []).map((row: any) => ({
+        id: String(row.id),
+        rule: row.rule_key ?? null,
+        subject: String(row.subject ?? ""),
+        title: row.title ?? null,
+        impact: String(row.impact),
+        effortCategory: row.effort_category ?? null,
       }));
     },
 

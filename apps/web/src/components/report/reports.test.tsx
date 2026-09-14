@@ -109,15 +109,16 @@ describe("la vista previa de las cifras (§94, CA-20)", () => {
     period: { start: "2026-08-01", end: "2026-08-31" },
     generatedAt: "2026-09-01T08:00:00Z",
     sections: [
-      { key: "operation_jobs", position: 1, included: true },
-      { key: "operation_menus", position: 2, included: false },
-      { key: "executive_summary", position: 3, included: true },
+      { key: "executive_summary", position: 1, included: true },
+      { key: "operation", position: 2, included: true },
+      { key: "digital", position: 3, included: false },
     ],
     figures: [
-      { section: "operation_jobs", metric: "jobs_completed", value: 10 },
-      { section: "operation_jobs", metric: "start_compliance", value: null, unit: "percent", noDataReason: "stale" },
-      { section: "operation_menus", metric: "menus_published", value: 3 },
+      { section: "operation", metric: "jobs_completed", value: 10 },
+      { section: "operation", metric: "start_compliance", value: null, unit: "percent", noDataReason: "stale" },
+      { section: "digital", metric: "sessions", value: 3, dimension: "ga4" },
     ],
+    opportunities: [],
     notes: { executive_summary: "Agosto flojo, como todos los agostos." },
   };
 
@@ -130,8 +131,8 @@ describe("la vista previa de las cifras (§94, CA-20)", () => {
   it("una sección apagada no se pinta: lo que se ve es lo que se manda", () => {
     render(<ReportFigures snapshot={snapshot} />);
 
-    expect(screen.queryByText(t.sections.operation_menus)).not.toBeInTheDocument();
-    expect(screen.getByText(t.sections.operation_jobs)).toBeInTheDocument();
+    expect(screen.queryByText(t.sections.digital)).not.toBeInTheDocument();
+    expect(screen.getByText(t.sections.operation)).toBeInTheDocument();
   });
 
   it("el texto que escribió una persona se enseña tal cual: Cuotly no redacta nada", () => {
@@ -147,12 +148,36 @@ describe("la vista previa de las cifras (§94, CA-20)", () => {
           ...snapshot,
           figures: [],
           notes: {},
-          sections: [{ key: "operation_jobs", position: 1, included: true }],
+          sections: [{ key: "operation", position: 1, included: true }],
         }}
       />,
     );
 
     expect(screen.getByText(es.emptyReasons.no_data_yet)).toBeInTheDocument();
+  });
+
+  it("§96 · una oportunidad del informe se titula desde su regla, no desde una frase guardada", () => {
+    render(
+      <ReportFigures
+        snapshot={{
+          ...snapshot,
+          sections: [{ key: "opportunities", position: 1, included: true }],
+          opportunities: [
+            {
+              id: "opp-1",
+              rule: "low_ctr",
+              subject: "menú del día",
+              title: null,
+              impact: "low",
+              effortCategory: "small",
+            },
+          ],
+        }}
+      />,
+    );
+
+    expect(screen.getByText(es.opportunities.ruleTitles.low_ctr("menú del día"))).toBeInTheDocument();
+    expect(screen.getByText(es.opportunities.impacts.low)).toBeInTheDocument();
   });
 });
 

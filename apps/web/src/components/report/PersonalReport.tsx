@@ -61,7 +61,7 @@ export function PersonalReport({
             </div>
           </Card>
 
-          <Card title={t.sections.operation_deadlines}>
+          <Card title={t.personalDeadlines}>
             <div className="grid gap-4 sm:grid-cols-2">
               <Cifra
                 label={t.personalMetrics.startCompliancePercent}

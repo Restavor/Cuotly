@@ -57,47 +57,36 @@ export function isReportCategory(value: string): value is ReportCategory {
 }
 
 /**
- * Las secciones que puede llevar un informe. `requiresJudgement` es §95.3
- * ("muestra las secciones que requieren criterio"): lo que es una cifra
- * sacada de un libro no pide opinión de nadie; lo que es una lectura de
- * esas cifras, sí.
+ * Las secciones que puede llevar un informe. **Son las de la maqueta
+ * 10.04**, no una lista inventada: "Resumen ejecutivo · Operación ·
+ * Rendimiento digital · Oportunidades · Anexos y evidencias", más
+ * **Finanzas**, que la maqueta no dibuja porque dibuja un informe de
+ * operación pero que §89 da como una de las tres familias.
  *
- * Es **lectura aplicada** (pendiente 16 de `docs/DECISIONES.md`): §95 pide
- * distinguirlas y no dice cuáles son. El criterio usado: requiere criterio
- * lo que una persona tiene que **escribir o elegir** —el resumen
- * ejecutivo, las oportunidades que se incluyen y las recomendaciones—, y
- * no lo requiere lo que sale calculado.
+ * La primera versión de este archivo tenía diecinueve secciones —una por
+ * cada bloque de cifras— y eso era una invención: la maqueta ofrece cinco
+ * casillas y el índice del PDF lista cinco entradas. Lo fino no se pierde,
+ * se mueve: cada sección agrupa sus cifras dentro.
+ *
+ * `requiresJudgement` es §95.3 ("muestra las secciones que requieren
+ * criterio"): lo que una persona tiene que **escribir o elegir**. Son dos
+ * —el resumen ejecutivo, que lo escribe alguien, y las oportunidades, que
+ * §99 vuelve a decidir una a una—; el resto son cifras y no piden opinión
+ * de nadie. Requerir criterio **no** es lo mismo que entrar apagada: la
+ * maqueta dibuja el resumen ejecutivo marcado y las oportunidades sin
+ * marcar, y eso es lo que se hace.
  */
 export interface ReportSectionDefinition {
   readonly key: ReportSectionKey;
-  readonly category: ReportCategory;
   readonly requiresJudgement: boolean;
 }
 
 export const REPORT_SECTION_KEYS = [
-  // Común a las tres familias.
   "executive_summary",
-  // Operación (§91).
-  "operation_requests",
-  "operation_jobs",
-  "operation_deadlines",
-  "operation_blocks",
-  "operation_consumption",
-  "operation_menus",
-  "operation_workers",
-  // Finanzas (§89.2, §86).
-  "finance_income",
-  "finance_charges",
-  "finance_nonpayment",
-  "finance_renewals",
-  // Rendimiento digital (§92).
-  "digital_traffic",
-  "digital_search",
-  "digital_behaviour",
-  "digital_performance",
-  "digital_opportunities",
-  // Cierre.
-  "recommendations",
+  "operation",
+  "finance",
+  "digital",
+  "opportunities",
   "annexes",
 ] as const;
 export type ReportSectionKey = (typeof REPORT_SECTION_KEYS)[number];
@@ -106,66 +95,39 @@ export function isReportSectionKey(value: string): value is ReportSectionKey {
   return (REPORT_SECTION_KEYS as readonly string[]).includes(value);
 }
 
-/**
- * Las tres que requieren criterio. El resumen ejecutivo y las
- * recomendaciones los escribe una persona; qué oportunidades entran lo
- * decide quien aprueba (§99: "Incluir en informe" se vuelve a decidir).
- */
-export const JUDGEMENT_SECTIONS: readonly ReportSectionKey[] = [
-  "executive_summary",
-  "digital_opportunities",
-  "recommendations",
-];
+/** Las dos que requieren criterio (§95.3). */
+export const JUDGEMENT_SECTIONS: readonly ReportSectionKey[] = ["executive_summary", "opportunities"];
 
 export function sectionRequiresJudgement(key: ReportSectionKey): boolean {
   return JUDGEMENT_SECTIONS.includes(key);
 }
 
-/**
- * Qué secciones trae por omisión el borrador de cada familia, en su orden
- * (§95.2). "Anexos y evidencias" va al final en las tres, que es lo que
- * dibuja la vista 10.04.
- */
-export const SECTIONS_BY_CATEGORY: Readonly<Record<ReportCategory, readonly ReportSectionKey[]>> = {
-  operation: [
-    "executive_summary",
-    "operation_requests",
-    "operation_jobs",
-    "operation_deadlines",
-    "operation_blocks",
-    "operation_consumption",
-    "operation_menus",
-    "operation_workers",
-    "recommendations",
-    "annexes",
-  ],
-  finance: [
-    "executive_summary",
-    "finance_income",
-    "finance_charges",
-    "finance_nonpayment",
-    "finance_renewals",
-    "recommendations",
-    "annexes",
-  ],
-  digital: [
-    "executive_summary",
-    "digital_traffic",
-    "digital_search",
-    "digital_behaviour",
-    "digital_performance",
-    "digital_opportunities",
-    "recommendations",
-    "annexes",
-  ],
+/** Qué sección trae las cifras de cada familia (§89). */
+export const SECTION_OF_CATEGORY: Readonly<Record<ReportCategory, ReportSectionKey>> = {
+  operation: "operation",
+  finance: "finance",
+  digital: "digital",
 };
 
-export function reportSectionCatalogue(category: ReportCategory): readonly ReportSectionDefinition[] {
-  return SECTIONS_BY_CATEGORY[category].map((key) => ({
-    key,
-    category,
-    requiresJudgement: sectionRequiresJudgement(key),
-  }));
+/**
+ * Qué entra marcado al preparar el borrador: el **resumen ejecutivo**, la
+ * sección de **su familia** y los **anexos**; las demás se añaden a mano,
+ * y las **oportunidades** nunca entran solas (§99: "Incluir en informe" se
+ * vuelve a decidir).
+ *
+ * La maqueta 10.04 dibuja además "Rendimiento digital" marcado en un
+ * informe que lleva operación. Se ha leído como que esa persona lo añadió
+ * y no como el valor por omisión: encender por omisión una sección que
+ * puede no tener ninguna fuente conectada llenaría el informe de motivos
+ * de "no conectado" (§178) en vez de cifras. Es una lectura aplicada
+ * (pendiente 16 de `docs/DECISIONES.md`) y se cambia en una línea.
+ */
+export function defaultIncluded(category: ReportCategory, key: ReportSectionKey): boolean {
+  return key === "executive_summary" || key === "annexes" || key === SECTION_OF_CATEGORY[category];
+}
+
+export function reportSectionCatalogue(): readonly ReportSectionDefinition[] {
+  return REPORT_SECTION_KEYS.map((key) => ({ key, requiresJudgement: sectionRequiresJudgement(key) }));
 }
 
 /** Una sección tal y como se guarda: incluida o no, y en qué orden. */
@@ -176,13 +138,10 @@ export interface ReportSectionState {
 }
 
 export function defaultSections(category: ReportCategory): readonly ReportSectionState[] {
-  return SECTIONS_BY_CATEGORY[category].map((key, index) => ({
+  return REPORT_SECTION_KEYS.map((key, index) => ({
     key,
     position: index + 1,
-    // El resumen ejecutivo y las recomendaciones entran apagados: son
-    // texto que alguien tiene que escribir, y un informe no se manda con
-    // un hueco dentro (§161 del mismo principio: no se rellena solo).
-    included: !sectionRequiresJudgement(key),
+    included: defaultIncluded(category, key),
   }));
 }
 
@@ -342,7 +301,7 @@ export function sendGate(input: {
   readonly pendingOpportunityCount: number;
 }): SendGate {
   const includesOpportunities = input.sections.some(
-    (section) => section.key === "digital_opportunities" && section.included,
+    (section) => section.key === "opportunities" && section.included,
   );
   if (!includesOpportunities || input.pendingOpportunityCount === 0) {
     return { canSend: true };
@@ -810,6 +769,21 @@ export interface ReportFigure {
   readonly noDataReason?: string;
 }
 
+/**
+ * Una oportunidad aprobada que entra en el informe (§96, §99). Se guarda
+ * su **regla y su sujeto**, no su título: la frase la escribe la pantalla
+ * desde `src/i18n/es.ts`, igual que en el Hito 15 — así una aprobada hace
+ * dos meses no sigue diciendo una frase que se corrigió después.
+ */
+export interface ReportOpportunity {
+  readonly id: string;
+  readonly rule: string | null;
+  readonly subject: string;
+  readonly title: string | null;
+  readonly impact: string;
+  readonly effortCategory: string | null;
+}
+
 /** Lo que se guarda como versión: cifras y secciones, nada redactado. */
 export interface ReportSnapshot {
   readonly category: ReportCategory;
@@ -817,6 +791,8 @@ export interface ReportSnapshot {
   readonly generatedAt: string;
   readonly sections: readonly ReportSectionState[];
   readonly figures: readonly ReportFigure[];
+  /** §96 · las oportunidades aprobadas que lleva, si lleva la sección. */
+  readonly opportunities: readonly ReportOpportunity[];
   /** Texto que escribió una persona, por sección (§95.5). Nunca generado. */
   readonly notes: Readonly<Record<string, string>>;
 }

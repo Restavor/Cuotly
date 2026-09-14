@@ -86,12 +86,52 @@ function fila(row: any, establishmentName: string | null): ReportRow | null {
   };
 }
 
+/**
+ * §93 · los filtros que la pantalla aplica. El **grupo** y el **plan** no
+ * son columnas de `reports`: se resuelven antes a la lista de
+ * restaurantes que cumplen, y se filtra por ella. Hacerlo así —y no con
+ * un `join` en la consulta— mantiene enumeradas las columnas de `reports`,
+ * que es obligatorio porque su `select` está concedido columna a columna.
+ */
 export interface ReportListFilters {
   readonly establishmentId?: string | null;
+  readonly groupId?: string | null;
+  readonly planId?: string | null;
   readonly category?: ReportCategory | null;
   readonly status?: ReportState | null;
   readonly periodStart?: string | null;
   readonly periodEnd?: string | null;
+}
+
+/** Los restaurantes de un grupo o de un plan, para filtrar por ellos. */
+async function establishmentsMatching(
+  supabase: ReportsClient,
+  spaceId: string,
+  filters: ReportListFilters,
+): Promise<readonly string[] | null> {
+  if (!filters.groupId && !filters.planId) return null;
+
+  let query = supabase.from("establishments").select("id").eq("space_id", spaceId);
+  if (filters.groupId) query = query.eq("group_id", filters.groupId);
+
+  const { data, error } = await query;
+  if (error) throw new Error(`establishments: ${error.message}`);
+  let ids = (data ?? []).map((row: any) => String(row.id));
+
+  if (filters.planId) {
+    const { data: subs, error: subsError } = await supabase
+      .from("subscriptions")
+      .select("establishment_id")
+      .eq("space_id", spaceId)
+      .eq("kind", "plan")
+      .eq("status", "active")
+      .eq("plan_id", filters.planId);
+    if (subsError) throw new Error(`subscriptions: ${subsError.message}`);
+    const conPlan = new Set((subs ?? []).map((row: any) => String(row.establishment_id)));
+    ids = ids.filter((id) => conPlan.has(id));
+  }
+
+  return ids;
 }
 
 export async function loadReports(
@@ -102,6 +142,13 @@ export async function loadReports(
   const supabase: ReportsClient = reportsClient(client);
 
   let query = supabase.from("reports").select(REPORT_COLUMNS).eq("space_id", spaceId);
+
+  const porGrupoOPlan = await establishmentsMatching(supabase, spaceId, filters);
+  if (porGrupoOPlan !== null) {
+    // Ningún restaurante cumple: la lista es vacía, no "todos".
+    if (porGrupoOPlan.length === 0) return [];
+    query = query.in("establishment_id", porGrupoOPlan);
+  }
 
   if (filters.establishmentId) query = query.eq("establishment_id", filters.establishmentId);
   if (filters.category) query = query.eq("category", filters.category);

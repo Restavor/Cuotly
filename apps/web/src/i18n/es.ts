@@ -2564,27 +2564,23 @@ export const es = {
       archived: "Archivado. Se conserva y deja de aparecer en la lista activa.",
     },
 
-    // §95 · las secciones y cuáles requieren criterio.
+    // §95 · las cinco secciones de la maqueta 10.04, más Finanzas (§89).
     sections: {
       executive_summary: "Resumen ejecutivo",
-      operation_requests: "Solicitudes",
-      operation_jobs: "Trabajos",
-      operation_deadlines: "Plazos",
-      operation_blocks: "Bloqueos y correcciones",
-      operation_consumption: "Consumos",
-      operation_menus: "Menú Diario",
-      operation_workers: "Rendimiento por trabajador",
-      finance_income: "Ingresos",
-      finance_charges: "Cobros",
-      finance_nonpayment: "Impagos",
-      finance_renewals: "Renovaciones",
-      digital_traffic: "Analítica web",
-      digital_search: "Visibilidad en buscadores",
-      digital_behaviour: "Comportamiento",
-      digital_performance: "Rendimiento técnico",
-      digital_opportunities: "Oportunidades",
-      recommendations: "Recomendaciones",
+      operation: "Operación",
+      finance: "Finanzas",
+      digital: "Rendimiento digital",
+      opportunities: "Oportunidades",
       annexes: "Anexos y evidencias",
+    },
+    // Lo que la maqueta escribe en pequeño junto a cada casilla.
+    sectionHints: {
+      executive_summary: "Lo escribe una persona. Cuotly no lo redacta.",
+      operation: "Solicitudes, trabajos, plazos, bloqueos, consumos y menús.",
+      finance: "Ingresos, cobros, impagos y renovaciones.",
+      digital: "Web, Google y fuentes conectadas, con la fecha de cada dato.",
+      opportunities: "Solo las aprobadas. Las pendientes impiden el envío.",
+      annexes: "Evidencias y detalle de apoyo.",
     },
     judgementBadge: "Requiere criterio",
     judgementHint:
@@ -2654,6 +2650,8 @@ export const es = {
       service: "Servicio",
       allServices: "Todos",
       period: "Periodo",
+      from: "Desde",
+      to: "Hasta",
       apply: "Aplicar",
     },
 
@@ -2719,6 +2717,7 @@ export const es = {
     // §90 · el informe personal del trabajador.
     personalTitle: "Mi informe personal",
     personalSubtitle: "Tu carga, tus trabajos y tu cumplimiento de plazos. No incluye finanzas.",
+    personalDeadlines: "Plazos",
     personalMetrics: {
       currentLoadPoints: "Carga actual",
       historicalPoints: "Puntos históricos realizados",

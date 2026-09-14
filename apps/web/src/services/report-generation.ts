@@ -159,55 +159,45 @@ export function operationFigures(dataset: OperationDataset, timezone: string, ho
   const indicators = operationalIndicators(dataset, calendar, now);
 
   return [
-    figure("operation_requests", "requests_received", indicators.requestsReceived),
-    figure("operation_requests", "requests_accepted", indicators.requestsAccepted),
-    figure("operation_requests", "requests_rejected", indicators.requestsRejected),
-    figure("operation_requests", "requests_cancelled", indicators.requestsCancelled),
-    figure("operation_jobs", "jobs_started", indicators.jobsStarted),
-    figure("operation_jobs", "jobs_completed", indicators.jobsCompleted),
-    figure("operation_jobs", "jobs_pending", indicators.jobsPending),
-    figure("operation_deadlines", "start_compliance", indicators.startCompliancePercent, { unit: "percent" }),
-    figure("operation_deadlines", "execution_compliance", indicators.executionCompliancePercent, { unit: "percent" }),
-    figure("operation_deadlines", "average_start", indicators.averageStartMinutes, { unit: "business_minutes" }),
-    figure("operation_deadlines", "average_completion", indicators.averageCompletionMinutes, { unit: "business_minutes" }),
-    figure("operation_blocks", "jobs_blocked", indicators.jobsBlocked),
-    figure("operation_blocks", "blocked_time", indicators.blockedMinutes, { unit: "minutes" }),
-    figure("operation_blocks", "corrections_requested", indicators.correctionsRequested),
+    figure("operation", "requests_received", indicators.requestsReceived),
+    figure("operation", "requests_accepted", indicators.requestsAccepted),
+    figure("operation", "requests_rejected", indicators.requestsRejected),
+    figure("operation", "requests_cancelled", indicators.requestsCancelled),
+    figure("operation", "jobs_started", indicators.jobsStarted),
+    figure("operation", "jobs_completed", indicators.jobsCompleted),
+    figure("operation", "jobs_pending", indicators.jobsPending),
+    figure("operation", "start_compliance", indicators.startCompliancePercent, { unit: "percent" }),
+    figure("operation", "execution_compliance", indicators.executionCompliancePercent, { unit: "percent" }),
+    figure("operation", "average_start", indicators.averageStartMinutes, { unit: "business_minutes" }),
+    figure("operation", "average_completion", indicators.averageCompletionMinutes, { unit: "business_minutes" }),
+    figure("operation", "jobs_blocked", indicators.jobsBlocked),
+    figure("operation", "blocked_time", indicators.blockedMinutes, { unit: "minutes" }),
+    figure("operation", "corrections_requested", indicators.correctionsRequested),
     ...(["small", "photo", "medium", "large"] as const).map((category) =>
-      figure("operation_consumption", "consumption", indicators.consumptionByCategory[category], {
+      figure("operation", "consumption", indicators.consumptionByCategory[category], {
         dimension: category,
         unit: "changes",
       }),
     ),
-    figure("operation_menus", "menu_updates_used", indicators.menuUpdatesUsed, { unit: "updates" }),
-    figure("operation_menus", "menus_published", indicators.menusPublished),
-    figure("operation_menus", "menus_out_of_guarantee", indicators.menusOutOfGuarantee),
+    figure("operation", "menu_updates_used", indicators.menuUpdatesUsed, { unit: "updates" }),
+    figure("operation", "menus_published", indicators.menusPublished),
+    figure("operation", "menus_out_of_guarantee", indicators.menusOutOfGuarantee),
   ];
 }
 
 /** §89.2 · ingresos, cobros, impagos y renovaciones. */
 export function financeFigures(raw: Record<string, unknown>): readonly ReportFigure[] {
   return [
-    figure("finance_income", "income_base", asNumber(raw.income_base_cents), { unit: "cents" }),
-    figure("finance_income", "income_total", asNumber(raw.income_total_cents), { unit: "cents" }),
-    figure("finance_charges", "charges_issued", asNumber(raw.charges_issued)),
-    figure("finance_charges", "collected", asNumber(raw.collected_cents), { unit: "cents" }),
-    figure("finance_charges", "outstanding", asNumber(raw.outstanding_cents), { unit: "cents" }),
-    figure("finance_nonpayment", "charges_overdue", asNumber(raw.charges_overdue)),
-    figure("finance_nonpayment", "establishments_with_debt", asNumber(raw.establishments_with_debt)),
-    figure("finance_renewals", "renewals_due", asNumber(raw.renewals_due)),
+    figure("finance", "income_base", asNumber(raw.income_base_cents), { unit: "cents" }),
+    figure("finance", "income_total", asNumber(raw.income_total_cents), { unit: "cents" }),
+    figure("finance", "charges_issued", asNumber(raw.charges_issued)),
+    figure("finance", "collected", asNumber(raw.collected_cents), { unit: "cents" }),
+    figure("finance", "outstanding", asNumber(raw.outstanding_cents), { unit: "cents" }),
+    figure("finance", "charges_overdue", asNumber(raw.charges_overdue)),
+    figure("finance", "establishments_with_debt", asNumber(raw.establishments_with_debt)),
+    figure("finance", "renewals_due", asNumber(raw.renewals_due)),
   ];
 }
-
-const SECTION_BY_PROVIDER: Readonly<Record<IntegrationProvider, ReportSectionKey>> = {
-  ga4: "digital_traffic",
-  // Business Profile va con Search Console: lo que mide es visibilidad en
-  // Google, igual que el buscador (decisión 25h).
-  search_console: "digital_search",
-  business_profile: "digital_search",
-  clarity: "digital_behaviour",
-  pagespeed: "digital_performance",
-};
 
 /**
  * §92 + §94 · las cifras digitales del periodo del informe, cada una con
@@ -230,7 +220,6 @@ export function digitalFigures(
   const figures: ReportFigure[] = [];
 
   for (const provider of INTEGRATION_PROVIDERS) {
-    const section = SECTION_BY_PROVIDER[provider];
     const state = byProvider.get(provider);
     const reason =
       state === undefined || !isIntegrationState(state.status)
@@ -249,7 +238,10 @@ export function digitalFigures(
       const insufficient = value.coveredDays > 0 && value.coveredDays < minimumCoveredDays(provider);
 
       figures.push(
-        figure(section, headline.metric, reason === null && !insufficient ? value.value : null, {
+        // Las cinco fuentes caen en la misma sección del informe
+        // ("Rendimiento digital", maqueta 10.04); de cuál viene cada cifra
+        // lo dice su dimensión, que es lo que la pantalla enseña.
+        figure("digital", headline.metric, reason === null && !insufficient ? value.value : null, {
           dimension: provider,
           at: value.lastPeriodEnd ?? undefined,
           noDataReason:
@@ -269,34 +261,60 @@ export function digitalFigures(
 export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRow): Promise<ReportSnapshot> {
   const now = deps.now();
   const period = { start: report.periodStart, end: report.periodEnd };
-  let figures: readonly ReportFigure[] = [];
+  const incluidas = new Set(
+    report.sections.filter((section) => section.included).map((section) => section.key),
+  );
+  const figures: ReportFigure[] = [];
 
-  if (report.category === "operation") {
+  /*
+    Las cifras se generan **por sección incluida**, no por familia: la
+    maqueta 10.04 dibuja un informe con Operación y Rendimiento digital a
+    la vez, así que la familia dice de qué va el informe y las secciones
+    dicen qué lleva dentro. Generar por familia habría dejado esa sección
+    vacía sin que nadie entendiera por qué.
+  */
+  if (incluidas.has("operation")) {
     const [raw, holidayRecords] = await Promise.all([
       deps.gateway.operationDataset(report.spaceId, report.establishmentId, period.start, period.end),
       deps.gateway.holidays(report.spaceId),
     ]);
-    const dataset = parseOperationDataset(raw);
     // RN-CLK-10 · el calendario con los festivos que se conocían al
     // empezar el periodo, no con los de hoy: un festivo dado de alta la
     // semana pasada no reescribe el cumplimiento de hace dos meses.
     const holidays = holidaysKnownAsOf(holidayRecords, new Date(`${period.start}T00:00:00Z`));
-    figures = operationFigures(dataset, report.timezone, holidays, now);
-  } else if (report.category === "finance") {
+    figures.push(...operationFigures(parseOperationDataset(raw), report.timezone, holidays, now));
+  }
+
+  if (incluidas.has("finance")) {
     const raw = await deps.gateway.financeDataset(
       report.spaceId,
       report.establishmentId,
       period.start,
       period.end,
     );
-    figures = financeFigures(raw);
-  } else if (report.establishmentId !== null) {
+    figures.push(...financeFigures(raw));
+  }
+
+  // Lo digital es por restaurante: un consolidado mezcla cinco fuentes de
+  // varios y no hay una cifra que decir, así que no se inventa ninguna.
+  if (incluidas.has("digital") && report.establishmentId !== null) {
     const [points, states] = await Promise.all([
       deps.gateway.metricPoints(report.establishmentId, period.start, period.end),
       deps.gateway.providerStates(report.establishmentId),
     ]);
-    figures = digitalFigures(points, states, period, now);
+    figures.push(...digitalFigures(points, states, period, now));
   }
+
+  /*
+    §96 y §99 · las oportunidades que entran son las **aprobadas** de ese
+    periodo, y se guardan con su regla y su sujeto, nunca con una frase: el
+    título lo escribe la pantalla desde `es.ts`, igual que en el Hito 15.
+    Las pendientes no entran — y además impiden el envío (§95, RN-REP-10).
+  */
+  const opportunities =
+    incluidas.has("opportunities") && report.establishmentId !== null
+      ? await deps.gateway.approvedOpportunities(report.establishmentId, period.start, period.end)
+      : [];
 
   return {
     category: report.category,
@@ -304,6 +322,7 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     generatedAt: now.toISOString(),
     sections: report.sections,
     figures,
+    opportunities,
     notes: report.notes,
   };
 }

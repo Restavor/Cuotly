@@ -319,13 +319,14 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   (`bootstrap-postgres-local.sql`): las **85 migraciones aplican desde
   cero** sobre PostgreSQL 16 y pasan las **39 suites** de `supabase/tests/`
   en el orden de CI, la suya (`informes.sql`) y el barrido de identidad y
-  de funciones internas del Hito 7 incluidos. **Seis mutaciones sobre la
-  suya, las seis detectadas**: dejar que el restaurante vea un informe
+  de funciones internas del Hito 7 incluidos. **Ocho mutaciones sobre la
+  suya, las ocho detectadas**: dejar que el restaurante vea un informe
   aprobado, cegar la cuenta de oportunidades pendientes, devolverle a
   `reports` el `select` entero, permitir cualquier transición a cualquiera
-  y mandar el aviso de la fecha a todo el equipo, y dejar a la cola fuera
-  de la comprobación de oportunidades pendientes (ese último fue un fallo
-  real del propio hito, contado en el ROADMAP).
+  y mandar el aviso de la fecha a todo el equipo, dejar a la cola fuera de
+  la comprobación de oportunidades pendientes (ese fue un fallo real del
+  propio hito, contado en el ROADMAP), encender las oportunidades por
+  omisión y quitarle el criterio al resumen ejecutivo.
 
   **Al aplicarla, dos cosas seguidas.** Regenerar `database.types.ts`, y
   quitar la frontera con `any` de `src/lib/supabase/reports-client.ts` —un

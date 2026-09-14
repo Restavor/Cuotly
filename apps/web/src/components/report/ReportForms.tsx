@@ -57,18 +57,31 @@ function Aviso({ state }: { state: ReportActionState }) {
   ) : null;
 }
 
-/** §93 · los filtros. Van por la dirección, así que se comparten y se vuelven. */
+/**
+ * §93 · los seis filtros de la maqueta 10.01: restaurante, grupo, plan,
+ * periodo, categoría y estado. Van por la dirección y no por estado del
+ * componente, así que una búsqueda se comparte con un enlace y el botón
+ * "atrás" hace lo que se espera.
+ */
 export function ReportFilters({
   base,
   establishments,
+  groups,
+  plans,
   selected,
 }: {
   base: string;
   establishments: readonly EstablishmentOption[];
+  groups: readonly EstablishmentOption[];
+  plans: readonly EstablishmentOption[];
   selected: {
     readonly establishmentId: string | null;
+    readonly groupId: string | null;
+    readonly planId: string | null;
     readonly category: string | null;
     readonly status: string | null;
+    readonly from: string | null;
+    readonly to: string | null;
   };
 }) {
   return (
@@ -80,6 +93,24 @@ export function ReportFilters({
         options={[
           { value: "", label: t.filters.allEstablishments },
           ...establishments.map((row) => ({ value: row.id, label: row.name })),
+        ]}
+      />
+      <Select
+        name="grupo"
+        label={t.filters.group}
+        defaultValue={selected.groupId ?? ""}
+        options={[
+          { value: "", label: t.filters.allGroups },
+          ...groups.map((row) => ({ value: row.id, label: row.name })),
+        ]}
+      />
+      <Select
+        name="plan"
+        label={t.filters.plan}
+        defaultValue={selected.planId ?? ""}
+        options={[
+          { value: "", label: t.filters.allPlans },
+          ...plans.map((row) => ({ value: row.id, label: row.name })),
         ]}
       />
       <Select
@@ -103,6 +134,10 @@ export function ReportFilters({
           })),
         ]}
       />
+      <div className="grid grid-cols-2 gap-3">
+        <Field name="desde" type="date" label={t.filters.from} defaultValue={selected.from ?? ""} />
+        <Field name="hasta" type="date" label={t.filters.to} defaultValue={selected.to ?? ""} />
+      </div>
       <div className="sm:col-span-3">
         <Button type="submit" variant="secondary">
           {t.filters.apply}
@@ -195,16 +230,20 @@ export function SectionsForm({
             ) : null}
           </label>
 
+          <p className="mt-1 text-xs text-text-secondary">{t.sectionHints[section.key]}</p>
+
           {sectionRequiresJudgement(section.key) ? (
             <>
               <p className="mt-2 text-xs text-text-secondary">{t.judgementHint}</p>
-              <TextArea
-                name={`note:${section.key}`}
-                label={t.sections[section.key]}
-                defaultValue={section.note ?? ""}
-                rows={3}
-                disabled={readOnly}
-              />
+              {section.key === "executive_summary" ? (
+                <TextArea
+                  name={`note:${section.key}`}
+                  label={t.sections[section.key]}
+                  defaultValue={section.note ?? ""}
+                  rows={3}
+                  disabled={readOnly}
+                />
+              ) : null}
             </>
           ) : null}
         </div>

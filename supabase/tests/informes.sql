@@ -80,25 +80,37 @@ grant select, insert, update on rep_ids to authenticated, service_role;
 -- ============================================================
 do $$
 begin
-  -- §95.3 · las tres que requieren criterio, y ninguna más.
+  -- §95.3 · las dos que requieren criterio, y ninguna más.
   if not public.report_section_requires_judgement('executive_summary')
-     or not public.report_section_requires_judgement('digital_opportunities')
-     or not public.report_section_requires_judgement('recommendations') then
+     or not public.report_section_requires_judgement('opportunities') then
     raise exception 'RN-REP-09 FALLIDO: una sección que requiere criterio no lo dice' using errcode = 'assert_failure';
   end if;
-  if public.report_section_requires_judgement('operation_requests')
-     or public.report_section_requires_judgement('finance_income') then
+  if public.report_section_requires_judgement('operation')
+     or public.report_section_requires_judgement('finance')
+     or public.report_section_requires_judgement('digital')
+     or public.report_section_requires_judgement('annexes') then
     raise exception 'RN-REP-09 FALLIDO: una sección de cifras pide criterio' using errcode = 'assert_failure';
   end if;
 
+  -- Las secciones son las de la maqueta 10.04, más Finanzas (§89).
+  if public.report_sections_catalogue() <> array[
+       'executive_summary', 'operation', 'finance', 'digital', 'opportunities', 'annexes'] then
+    raise exception 'RN-REP-09 FALLIDO: el catálogo de secciones no es el de la maqueta' using errcode = 'assert_failure';
+  end if;
+
   -- §89 · las tres familias, y ninguna más.
-  if public.report_default_sections('operation') is null
-     or public.report_default_sections('finance') is null
-     or public.report_default_sections('digital') is null then
+  if public.report_section_default_included('operation', 'operation') is distinct from true
+     or public.report_section_default_included('finance', 'finance') is distinct from true
+     or public.report_section_default_included('digital', 'digital') is distinct from true then
     raise exception 'RN-REP-01 FALLIDO: falta una de las tres familias de §89' using errcode = 'assert_failure';
   end if;
-  if public.report_default_sections('marketing') is not null then
+  if public.report_section_default_included('marketing', 'operation') is not null then
     raise exception 'RN-REP-01 FALLIDO: hay una familia de informe que §89 no da' using errcode = 'assert_failure';
+  end if;
+  -- §99 · las oportunidades nunca entran solas.
+  if public.report_section_default_included('operation', 'opportunities')
+     or public.report_section_default_included('digital', 'opportunities') then
+    raise exception 'RN-REP-10 FALLIDO: las oportunidades entran en el informe sin que nadie las elija' using errcode = 'assert_failure';
   end if;
 
   -- RN-REP-08 · quién mueve cada transición.
@@ -236,15 +248,19 @@ begin
     raise exception 'RN-REP-08 FALLIDO: un informe recién preparado no nace "Preparando"' using errcode = 'assert_failure';
   end if;
 
-  -- §95.2 · el borrador nace con sus secciones, y las de criterio apagadas.
-  if (select count(*) from public.report_sections where report_id = v_id) <> 10 then
-    raise exception 'RN-REP-09 FALLIDO: el borrador no trae las secciones de su familia' using errcode = 'assert_failure';
+  -- §95.2 · el borrador nace con las seis secciones y con tres marcadas:
+  -- el resumen ejecutivo, la de su familia y los anexos (maqueta 10.04).
+  if (select count(*) from public.report_sections where report_id = v_id) <> 6 then
+    raise exception 'RN-REP-09 FALLIDO: el borrador no trae las seis secciones' using errcode = 'assert_failure';
   end if;
-  if (select included from public.report_sections where report_id = v_id and section_key = 'executive_summary') then
-    raise exception 'RN-REP-09 FALLIDO: una sección que requiere criterio entra encendida y sin texto' using errcode = 'assert_failure';
+  if not (select included from public.report_sections where report_id = v_id and section_key = 'executive_summary') then
+    raise exception 'RN-REP-09 FALLIDO: el resumen ejecutivo no entra marcado, y la maqueta lo dibuja marcado' using errcode = 'assert_failure';
   end if;
-  if not (select included from public.report_sections where report_id = v_id and section_key = 'operation_requests') then
-    raise exception 'RN-REP-09 FALLIDO: una sección de cifras entra apagada' using errcode = 'assert_failure';
+  if not (select included from public.report_sections where report_id = v_id and section_key = 'operation') then
+    raise exception 'RN-REP-09 FALLIDO: la sección de la familia del informe entra apagada' using errcode = 'assert_failure';
+  end if;
+  if (select included from public.report_sections where report_id = v_id and section_key = 'opportunities') then
+    raise exception 'RN-REP-10 FALLIDO: las oportunidades entran marcadas sin que nadie las elija' using errcode = 'assert_failure';
   end if;
 
   if (select count(*) from public.audit_log where entity_id = v_id and action = 'report.created') <> 1 then
@@ -343,17 +359,29 @@ begin
   insert into rep_ids values ('digital', v_id);
   perform public.generate_report_version(v_id, '{"figures": []}'::jsonb);
 
-  -- Nace objetivo (las de criterio entran apagadas): se puede programar
-  -- sin pasar por aprobación. Se programa con `schedule_report()`, que es
-  -- la única puerta: un informe "Programado" sin fecha no existe, y la
-  -- restricción de la tabla lo impide.
+  -- Nace CON el resumen ejecutivo dentro (maqueta 10.04), así que no es
+  -- "solo objetivo" y no se puede programar sin aprobar.
+  begin
+    perform public.schedule_report(v_id, now() + interval '2 days', 'email', false);
+    raise exception 'RN-REP-10 FALLIDO: se programa sin aprobar un informe con resumen ejecutivo dentro'
+      using errcode = 'assert_failure';
+  exception
+    when sqlstate 'P0001' then
+      if sqlerrm like 'RN-REP-10 FALLIDO%' then raise; end if;
+  end;
+
+  -- Quitando lo que pide criterio, sí: eso es "informes solo objetivos
+  -- pueden enviarse automáticamente" (§95). Se programa con
+  -- `schedule_report()`, que es la única puerta: un informe "Programado"
+  -- sin fecha no existe, y la restricción de la tabla lo impide.
+  perform public.set_report_sections(v_id, '[{"key": "executive_summary", "included": false}]'::jsonb);
   perform public.schedule_report(v_id, now() + interval '2 days', 'email', false);
   if (select status from public.reports where id = v_id) <> 'scheduled' then
     raise exception 'RN-REP-10 FALLIDO: un informe solo objetivo no se puede programar sin aprobación' using errcode = 'assert_failure';
   end if;
 
   -- Y con una sección de criterio encendida, ya no.
-  perform public.set_report_sections(v_id, '[{"key": "digital_opportunities", "included": true}]'::jsonb);
+  perform public.set_report_sections(v_id, '[{"key": "opportunities", "included": true}]'::jsonb);
   if (select status from public.reports where id = v_id) <> 'pending_review' then
     raise exception 'RN-REP-09 FALLIDO: editar las secciones de un informe programado no lo devolvió a revisión' using errcode = 'assert_failure';
   end if;
@@ -497,7 +525,7 @@ begin
 
   -- RN-REP-09 · lo enviado no se edita ni se regenera.
   begin
-    perform public.set_report_sections(v_id, '[{"key": "operation_jobs", "included": false}]'::jsonb);
+    perform public.set_report_sections(v_id, '[{"key": "operation", "included": false}]'::jsonb);
     raise exception 'RN-REP-09 FALLIDO: se editan las secciones de un informe ya enviado' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then

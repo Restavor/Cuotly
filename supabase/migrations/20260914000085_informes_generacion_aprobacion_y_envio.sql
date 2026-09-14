@@ -199,42 +199,76 @@ grant execute on function public.set_client_report_permission(uuid, uuid, boolea
 -- ============================================================
 
 -- §95.3 · "muestra las secciones que requieren criterio". Requiere
--- criterio lo que una persona tiene que escribir o elegir; lo calculado,
--- no. Lectura aplicada (pendiente 16 de `docs/DECISIONES.md`).
+-- criterio lo que una persona tiene que escribir o elegir: el resumen
+-- ejecutivo, que lo escribe alguien, y las oportunidades, que §99 vuelve
+-- a decidir una a una. Lectura aplicada (pendiente 16 de
+-- `docs/DECISIONES.md`).
 create or replace function public.report_section_requires_judgement(p_section text)
 returns boolean
 language sql
 immutable
 as $$
-  select p_section in ('executive_summary', 'digital_opportunities', 'recommendations');
+  select p_section in ('executive_summary', 'opportunities');
 $$;
 
 revoke all on function public.report_section_requires_judgement(text) from public, anon;
 grant execute on function public.report_section_requires_judgement(text) to authenticated;
 
--- Las secciones por omisión de cada familia, en su orden (§95.2).
-create or replace function public.report_default_sections(p_category text)
+-- Las secciones de un informe, en su orden. Son **las cinco de la maqueta
+-- 10.04** —"Resumen ejecutivo · Operación · Rendimiento digital ·
+-- Oportunidades · Anexos y evidencias"— más **Finanzas**, que esa maqueta
+-- no dibuja porque dibuja un informe de operación, pero que §89 da como
+-- una de las tres familias.
+--
+-- No dependen de la familia: la maqueta dibuja un informe con Operación y
+-- Rendimiento digital a la vez. La familia dice de qué va el informe; las
+-- secciones, qué lleva dentro.
+create or replace function public.report_sections_catalogue()
 returns text[]
 language sql
 immutable
 as $$
-  select case p_category
-    when 'operation' then array[
-      'executive_summary', 'operation_requests', 'operation_jobs', 'operation_deadlines',
-      'operation_blocks', 'operation_consumption', 'operation_menus', 'operation_workers',
-      'recommendations', 'annexes']
-    when 'finance' then array[
-      'executive_summary', 'finance_income', 'finance_charges', 'finance_nonpayment',
-      'finance_renewals', 'recommendations', 'annexes']
-    when 'digital' then array[
-      'executive_summary', 'digital_traffic', 'digital_search', 'digital_behaviour',
-      'digital_performance', 'digital_opportunities', 'recommendations', 'annexes']
+  select array['executive_summary', 'operation', 'finance', 'digital', 'opportunities', 'annexes'];
+$$;
+
+revoke all on function public.report_sections_catalogue() from public, anon;
+grant execute on function public.report_sections_catalogue() to authenticated;
+
+-- Qué entra marcado al preparar: el resumen ejecutivo, la sección de su
+-- familia y los anexos. Las oportunidades **nunca** entran solas (§99).
+create or replace function public.report_section_default_included(
+  p_category text,
+  p_section text
+)
+returns boolean
+language sql
+immutable
+as $$
+  select case
+    when p_category = 'operation' and p_section = 'executive_summary' then true
+    when p_category = 'operation' and p_section = 'operation' then true
+    when p_category = 'operation' and p_section = 'finance' then false
+    when p_category = 'operation' and p_section = 'digital' then false
+    when p_category = 'operation' and p_section = 'opportunities' then false
+    when p_category = 'operation' and p_section = 'annexes' then true
+    when p_category = 'finance' and p_section = 'executive_summary' then true
+    when p_category = 'finance' and p_section = 'operation' then false
+    when p_category = 'finance' and p_section = 'finance' then true
+    when p_category = 'finance' and p_section = 'digital' then false
+    when p_category = 'finance' and p_section = 'opportunities' then false
+    when p_category = 'finance' and p_section = 'annexes' then true
+    when p_category = 'digital' and p_section = 'executive_summary' then true
+    when p_category = 'digital' and p_section = 'operation' then false
+    when p_category = 'digital' and p_section = 'finance' then false
+    when p_category = 'digital' and p_section = 'digital' then true
+    when p_category = 'digital' and p_section = 'opportunities' then false
+    when p_category = 'digital' and p_section = 'annexes' then true
     else null
   end;
 $$;
 
-revoke all on function public.report_default_sections(text) from public, anon;
-grant execute on function public.report_default_sections(text) to authenticated;
+revoke all on function public.report_section_default_included(text, text) from public, anon;
+grant execute on function public.report_section_default_included(text, text) to authenticated;
 
 -- Los seis estados de §95 y quién mueve cada transición (RN-REP-08).
 -- `editor` es quien gestiona la cartera; `approver`, quien además tiene
@@ -496,10 +530,10 @@ begin
     raise exception 'Solo quien gestiona la cartera prepara informes';
   end if;
 
-  v_sections := public.report_default_sections(p_category);
-  if v_sections is null then
+  if p_category not in ('operation', 'finance', 'digital') then
     raise exception 'Familia de informe desconocida: %', p_category;
   end if;
+  v_sections := public.report_sections_catalogue();
 
   if p_period_end < p_period_start then
     raise exception 'El periodo del informe está al revés';
@@ -537,9 +571,10 @@ begin
     insert into public.report_sections (space_id, report_id, section_key, position, included, updated_by)
     values (
       p_space_id, v_report_id, v_section, v_position,
-      -- Lo que requiere criterio entra apagado: un informe no se manda
-      -- con un hueco dentro, y rellenarlo solo sería inventar (§161).
-      not public.report_section_requires_judgement(v_section),
+      -- El resumen ejecutivo, la sección de su familia y los anexos, que
+      -- es lo que dibuja la maqueta 10.04. Requerir criterio no es entrar
+      -- apagado: el resumen entra marcado y lo escribe quien revisa.
+      public.report_section_default_included(p_category, v_section),
       auth.uid()
     );
   end loop;
@@ -576,13 +611,12 @@ as $$
 declare
   v_space_id uuid;
   v_status text;
-  v_category text;
   v_allowed text[];
   v_item jsonb;
   v_key text;
   v_position integer := 0;
 begin
-  select space_id, status, category into v_space_id, v_status, v_category
+  select space_id, status into v_space_id, v_status
   from public.reports where id = p_report_id for update;
 
   if v_space_id is null then
@@ -599,12 +633,14 @@ begin
     raise exception 'Un informe % no se edita', v_status;
   end if;
 
-  v_allowed := public.report_default_sections(v_category);
+  -- Cualquier sección del catálogo vale para cualquier informe: la
+  -- maqueta dibuja uno de operación con "Rendimiento digital" dentro.
+  v_allowed := public.report_sections_catalogue();
 
   for v_item in select * from jsonb_array_elements(coalesce(p_sections, '[]'::jsonb)) loop
     v_key := v_item ->> 'key';
     if not (v_key = any (v_allowed)) then
-      raise exception 'La sección % no es de un informe de %', v_key, v_category;
+      raise exception 'La sección % no existe', v_key;
     end if;
     v_position := v_position + 1;
 
@@ -954,7 +990,7 @@ as $$
     ) then 0
     when not exists (
       select 1 from public.report_sections s
-      where s.report_id = p_report_id and s.section_key = 'digital_opportunities' and s.included
+      where s.report_id = p_report_id and s.section_key = 'opportunities' and s.included
     ) then 0
     else (
       select count(*)::integer

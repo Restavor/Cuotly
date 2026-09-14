@@ -390,15 +390,25 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 ### Pendiente de completar (no bloquea la Fase 1)
 
 16. **Lecturas aplicadas al implementar los informes** (Hito 16, 14/09/2026). §89 a §95 dicen los
-   estados, el flujo y las salidas, pero callan en cuatro cosas que hubo que resolver para que el
-   hito existiera. Se aplicaron del modo más corto y se anotan aquí para que Bosco las confirme o
-   las cambie; ninguna inventa una regla nueva.
+   estados, el flujo y las salidas, pero callan en unas cuantas cosas. Las que **contesta el
+   diseño** ya no se preguntan —se han aplicado tal cual—; las que quedan abajo necesitan un sí o un
+   cambio tuyo. Ninguna inventa una regla nueva.
+
+   **Lo que ya NO hace falta decidir, porque lo dibuja la maqueta 10.04** (y por tanto se ha hecho
+   así): las **secciones de un informe** son cinco —resumen ejecutivo, operación, rendimiento
+   digital, oportunidades, anexos y evidencias— más **finanzas**, que esa vista no dibuja porque
+   dibuja un informe de operación pero que §89 da como familia. **No dependen de la familia**: la
+   propia maqueta dibuja un informe de operación con rendimiento digital dentro. Y entran marcadas
+   el resumen ejecutivo, la sección de la familia y los anexos; las **oportunidades nunca** (§99:
+   "Incluir en informe" se vuelve a decidir). La primera versión de este hito tenía diecinueve
+   secciones inventadas por mí: se han tirado.
 
    **(a) Qué secciones "requieren criterio"** (§95.3 pide distinguirlas y no dice cuáles son): las
-   tres que una persona **escribe o elige** —resumen ejecutivo, oportunidades y recomendaciones—;
-   las demás son cifras y no piden opinión de nadie. De esto depende algo concreto: §95 dice que
-   "los informes solo objetivos pueden enviarse automáticamente", así que un informe sin ninguna de
-   esas tres encendidas se puede programar **sin pasar por aprobación**.
+   **dos** que una persona escribe o elige — el **resumen ejecutivo** y las **oportunidades**—; el
+   resto son cifras y no piden opinión de nadie. De esto depende algo concreto: §95 dice que "los
+   informes solo objetivos pueden enviarse automáticamente", así que un informe **con el resumen
+   ejecutivo dentro pasa por aprobación** —que es lo que dice la maqueta: "Requiere tu aprobación
+   para finalizar y programar el envío"— y solo quitándolo se puede programar sin aprobar.
 
    **(b) A quién va el correo programado** (§93 dice "correo programado" y no dice a quién): a
    **quien puede ver informes de ese restaurante** por §89 —propietario global, propietario local,
@@ -415,15 +425,18 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    salidas son una representación suya, regenerable e idéntica. Guardar el PDF sería un segundo
    original que puede dejar de coincidir con las cifras.
 
-   Y dos menores del mismo bloque: **"Consulta necesita permiso de su propietario"** (§89) se ha
+   Y tres menores del mismo bloque: **"Consulta necesita permiso de su propietario"** (§89) se ha
    implementado como un permiso fino por persona (`establishment_permissions.view_reports`), igual
-   que `view_billing` en RN-FIN-07; y la **"duración bloqueada"** de §91 se cuenta en minutos de
+   que `view_billing` en RN-FIN-07; la **"duración bloqueada"** de §91 se cuenta en minutos de
    **calendario** y no laborables, porque el tiempo bloqueado que no consume plazo ya lo dice T3
-   (RN-SLA-14) y lo que §91 pide aquí es cuánto tiempo estuvo parado el trabajo.
+   (RN-SLA-14) y lo que §91 pide aquí es cuánto tiempo estuvo parado el trabajo; y la maqueta 10.04
+   dibuja además **"Rendimiento digital" marcado en un informe de operación**, que se ha leído como
+   que esa persona lo añadió y no como el valor por omisión —encenderlo por omisión llenaría de
+   "fuente no conectada" (§178) los informes de quien no tenga integraciones—.
 
    **Lo que NO se ha inventado**, por si la ausencia llama la atención: no hay informe redactado por
-   IA (§93 dice que no hace falta), no hay plantilla configurable por espacio y no hay envío a una
-   dirección escrita a mano.
+   IA (§93 dice que no hace falta), no hay sección de "recomendaciones" (la maqueta no la tiene), no
+   hay plantilla configurable por espacio y no hay envío a una dirección escrita a mano.
 
 ---
 

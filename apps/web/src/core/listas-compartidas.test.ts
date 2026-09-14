@@ -14,8 +14,9 @@ import { NOTIFICATION_EVENTS } from "./notifications";
 import {
   JUDGEMENT_SECTIONS,
   REPORT_CATEGORIES,
+  REPORT_SECTION_KEYS,
   REPORT_STATES,
-  SECTIONS_BY_CATEGORY,
+  defaultIncluded,
   reportIsVisibleToClient,
   reportTransitionAllowed,
 } from "./reports";
@@ -351,19 +352,24 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     expect([...enSql].sort()).toEqual([...JUDGEMENT_SECTIONS].sort());
   });
 
-  it("las secciones por omisión de cada familia son las mismas, y EN EL MISMO ORDEN", () => {
-    const fn = ultimaDefinicion("create or replace function public.report_default_sections", "$$;");
+  it("las secciones son las mismas, en el mismo orden, y entran marcadas igual", () => {
+    const catalogo = ultimaDefinicion("create or replace function public.report_sections_catalogue", "$$;");
+    // El orden importa: es el de la maqueta 10.04 y el del índice del PDF.
+    const desde = catalogo.indexOf("array[");
+    expect(desde >= 0, "no está el array del catálogo de secciones").toBe(true);
+    expect(entrecomillados(catalogo.slice(desde, catalogo.indexOf("]", desde)))).toEqual([
+      ...REPORT_SECTION_KEYS,
+    ]);
+
+    const porOmision = ultimaDefinicion("create or replace function public.report_section_default_included", "$$;");
     for (const category of REPORT_CATEGORIES) {
-      // El array de cada familia ocupa varias líneas, así que se corta por
-      // el corchete y no por el salto de línea (`casoDe` mira una sola).
-      const desde = fn.indexOf(`when '${category}' then array[`);
-      expect(desde >= 0, `${category} no está en report_default_sections()`).toBe(true);
-      const inicio = desde + `when '${category}' then`.length;
-      const hasta = fn.indexOf("]", inicio);
-      // El orden importa: es el del informe, y §95.5 dice que se ordena.
-      expect(entrecomillados(fn.slice(inicio, hasta)), category).toEqual([
-        ...SECTIONS_BY_CATEGORY[category],
-      ]);
+      for (const key of REPORT_SECTION_KEYS) {
+        const rama = new RegExp(`when p_category = '${category}' and p_section = '${key}' then (true|false)`).exec(
+          porOmision,
+        );
+        expect(rama, `${category}/${key} no está en report_section_default_included()`).not.toBeNull();
+        expect(rama![1] === "true", `${category}/${key}`).toBe(defaultIncluded(category, key));
+      }
     }
   });
 

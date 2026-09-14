@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { contractualCalendar } from "./business-clock";
 import {
-  JUDGEMENT_SECTIONS,
   REPORT_CATEGORIES,
   REPORT_SECTION_KEYS,
   REPORT_STATES,
@@ -85,37 +84,60 @@ function conjunto(overrides: Partial<OperationDataset> = {}): OperationDataset {
   };
 }
 
-describe("§89 · las tres familias y sus secciones", () => {
-  it("son tres, ni una más", () => {
+describe("§89 · las tres familias y las secciones de la maqueta 10.04", () => {
+  it("las familias son tres, ni una más", () => {
     expect([...REPORT_CATEGORIES]).toEqual(["operation", "finance", "digital"]);
   });
 
-  it("§95.3 · requieren criterio el resumen, las oportunidades y las recomendaciones, y nada más", () => {
-    const conCriterio = REPORT_SECTION_KEYS.filter(sectionRequiresJudgement);
-    expect([...conCriterio].sort()).toEqual([...JUDGEMENT_SECTIONS].sort());
+  it("las secciones son las cinco de la maqueta más Finanzas", () => {
+    expect([...REPORT_SECTION_KEYS]).toEqual([
+      "executive_summary",
+      "operation",
+      "finance",
+      "digital",
+      "opportunities",
+      "annexes",
+    ]);
   });
 
-  it("el borrador nace con las de criterio APAGADAS: un informe no se manda con un hueco dentro", () => {
+  it("§95.3 · requieren criterio el resumen ejecutivo y las oportunidades, y nada más", () => {
+    const conCriterio = REPORT_SECTION_KEYS.filter(sectionRequiresJudgement);
+    expect([...conCriterio]).toEqual(["executive_summary", "opportunities"]);
+  });
+
+  it("el borrador nace con el resumen, su familia y los anexos; las oportunidades nunca", () => {
+    // Requerir criterio NO es entrar apagada: la maqueta dibuja el resumen
+    // ejecutivo marcado y las oportunidades sin marcar (§99: "Incluir en
+    // informe" se vuelve a decidir).
+    const operacion = defaultSections("operation");
+    const incluidas = operacion.filter((section) => section.included).map((section) => section.key);
+    expect(incluidas).toEqual(["executive_summary", "operation", "annexes"]);
+
+    const finanzas = defaultSections("finance").filter((s) => s.included).map((s) => s.key);
+    expect(finanzas).toEqual(["executive_summary", "finance", "annexes"]);
+
     for (const category of REPORT_CATEGORIES) {
-      for (const section of defaultSections(category)) {
-        expect(section.included).toBe(!sectionRequiresJudgement(section.key));
-      }
+      expect(defaultSections(category).find((s) => s.key === "opportunities")?.included).toBe(false);
     }
   });
 
-  it("§95 · un informe es objetivo mientras ninguna sección INCLUIDA requiera criterio", () => {
+  it("§95 · un informe con el resumen ejecutivo dentro NO es solo objetivo", () => {
+    // Y por tanto el informe por omisión pasa por aprobación, que es lo
+    // que dice la maqueta ("Requiere tu aprobación para finalizar").
     const secciones = defaultSections("digital");
-    expect(isObjectiveOnly(secciones)).toBe(true);
-    expect(canScheduleWithoutApproval(secciones)).toEqual({ allowed: true });
-
-    const conOportunidades = secciones.map((section) =>
-      section.key === "digital_opportunities" ? { ...section, included: true } : section,
-    );
-    expect(isObjectiveOnly(conOportunidades)).toBe(false);
-    expect(canScheduleWithoutApproval(conOportunidades)).toEqual({
+    expect(isObjectiveOnly(secciones)).toBe(false);
+    expect(canScheduleWithoutApproval(secciones)).toEqual({
       allowed: false,
       reason: "needs_judgement",
     });
+  });
+
+  it("§95 · quitando lo que pide criterio, sí se puede programar sin aprobar", () => {
+    const soloCifras = defaultSections("digital").map((section) =>
+      sectionRequiresJudgement(section.key) ? { ...section, included: false } : section,
+    );
+    expect(isObjectiveOnly(soloCifras)).toBe(true);
+    expect(canScheduleWithoutApproval(soloCifras)).toEqual({ allowed: true });
   });
 });
 
@@ -162,7 +184,7 @@ describe("§95 · los seis estados y quién los mueve (RN-REP-08)", () => {
 
 describe("§95 · el freno de las oportunidades pendientes (RN-REP-10)", () => {
   const conOportunidades: readonly ReportSectionState[] = [
-    { key: "digital_opportunities", position: 1, included: true },
+    { key: "opportunities", position: 1, included: true },
   ];
 
   it("un informe que las incluye no sale mientras haya pendientes", () => {
@@ -175,8 +197,8 @@ describe("§95 · el freno de las oportunidades pendientes (RN-REP-10)", () => {
 
   it("uno que no habla de oportunidades sale igual, aunque las haya", () => {
     const sinOportunidades: readonly ReportSectionState[] = [
-      { key: "operation_jobs", position: 1, included: true },
-      { key: "digital_opportunities", position: 2, included: false },
+      { key: "operation", position: 1, included: true },
+      { key: "opportunities", position: 2, included: false },
     ];
     expect(sendGate({ sections: sinOportunidades, pendingOpportunityCount: 5 })).toEqual({
       canSend: true,
@@ -408,14 +430,15 @@ describe("§93 · periodo, filtros y salidas", () => {
       period: { start: "2026-08-01", end: "2026-08-31" },
       generatedAt: "2026-09-01T08:00:00Z",
       sections: [
-        { key: "operation_jobs", position: 1, included: true },
-        { key: "operation_menus", position: 2, included: false },
+        { key: "operation", position: 1, included: true },
+        { key: "digital", position: 2, included: false },
       ],
       figures: [
-        { section: "operation_jobs", metric: "jobs_completed", value: 10 },
-        { section: "operation_jobs", metric: "start_compliance", value: null, noDataReason: "no_data_yet" },
-        { section: "operation_menus", metric: "menus_published", value: 3 },
+        { section: "operation", metric: "jobs_completed", value: 10 },
+        { section: "operation", metric: "start_compliance", value: null, noDataReason: "no_data_yet" },
+        { section: "digital", metric: "sessions", value: 3 },
       ],
+      opportunities: [],
       notes: {},
     };
 
@@ -423,10 +446,10 @@ describe("§93 · periodo, filtros y salidas", () => {
     const lineas = csv.split("\r\n");
 
     expect(lineas[0]).toBe("section,metric,dimension,value,unit,at,no_data_reason");
-    expect(lineas[1]).toBe("operation_jobs,jobs_completed,,10,,,");
-    expect(lineas[2]).toBe("operation_jobs,start_compliance,,,,,no_data_yet");
+    expect(lineas[1]).toBe("operation,jobs_completed,,10,,,");
+    expect(lineas[2]).toBe("operation,start_compliance,,,,,no_data_yet");
     // La sección apagada no viaja: el CSV es lo que el informe dice.
-    expect(csv).not.toContain("menus_published");
+    expect(csv).not.toContain("sessions");
   });
 
   it("el CSV entrecomilla lo que lleva coma o comilla, en vez de partir la fila", () => {
@@ -434,10 +457,11 @@ describe("§93 · periodo, filtros y salidas", () => {
       category: "digital",
       period: { start: "2026-08-01", end: "2026-08-31" },
       generatedAt: "2026-09-01T08:00:00Z",
-      sections: [{ key: "digital_search", position: 1, included: true }],
+      sections: [{ key: "digital", position: 1, included: true }],
       figures: [
-        { section: "digital_search", metric: "clicks", value: 12, dimension: 'menú, del "día"' },
+        { section: "digital", metric: "clicks", value: 12, dimension: 'menú, del "día"' },
       ],
+      opportunities: [],
       notes: {},
     };
 
@@ -448,21 +472,24 @@ describe("§93 · periodo, filtros y salidas", () => {
 describe("§95.5 · seleccionar, editar y ordenar", () => {
   it("reordenar reescribe las posiciones de 1 a n, sin huecos ni empates", () => {
     const secciones = defaultSections("finance");
-    const nuevo = reorderSections(secciones, ["annexes", "finance_income"]);
+    const nuevo = reorderSections(secciones, ["annexes", "finance"]);
 
     expect(nuevo[0].key).toBe("annexes");
-    expect(nuevo[1].key).toBe("finance_income");
+    expect(nuevo[1].key).toBe("finance");
     expect(nuevo.map((section) => section.position)).toEqual(
       Array.from({ length: secciones.length }, (_, index) => index + 1),
     );
   });
 
-  it("una clave que no es de ese informe se ignora en vez de colarse", () => {
+  it("una clave que no existe se ignora en vez de colarse", () => {
     const secciones = defaultSections("finance");
-    const nuevo = reorderSections(secciones, ["digital_traffic", "finance_charges"]);
+    // `marketing` no es una sección: se cae, y las que sí lo son se
+    // colocan en el orden pedido.
+    const nuevo = reorderSections(secciones, ["marketing" as never, "digital", "finance"]);
 
-    expect(nuevo.map((section) => section.key)).not.toContain("digital_traffic");
-    expect(nuevo[0].key).toBe("finance_charges");
+    expect(nuevo.map((section) => section.key)).not.toContain("marketing");
+    expect(nuevo[0].key).toBe("digital");
+    expect(nuevo[1].key).toBe("finance");
   });
 
   it("ordenar no cambia qué entra: son dos decisiones distintas", () => {

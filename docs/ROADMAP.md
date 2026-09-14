@@ -3877,15 +3877,31 @@ regenerar salió idéntica, así que no había desviación.
       edita ni se regenera: una corrección es una versión nueva, no un
       cambio retroactivo de lo que el cliente ya leyó.
 
-    **Cuatro lecturas aplicadas** donde §89 a §95 callan, anotadas como
-    pendiente 16 de `docs/DECISIONES.md`: qué secciones "requieren criterio"
-    (§95.3) —el resumen ejecutivo, las oportunidades y las recomendaciones,
-    que son lo que una persona escribe o elige—; **a quién va el correo
-    programado** (§93) —a quien puede ver informes de ese restaurante por
-    §89, no a una lista escrita a mano—; **cuándo es "se acerca la fecha"**
-    (§95) —24 horas antes, una sola vez por fecha—; y que el **PDF y el CSV
-    se generan desde la versión y no se guardan**, porque un PDF archivado
-    sería un segundo original que puede dejar de coincidir con las cifras.
+    **Las secciones son las de la maqueta 10.04**, no una lista inventada.
+    La primera versión de este hito tenía diecinueve —una por cada bloque de
+    cifras— y eso era una invención: la maqueta ofrece cinco casillas
+    (resumen ejecutivo, operación, rendimiento digital, oportunidades,
+    anexos y evidencias) y el índice del PDF lista cinco entradas. Se tiró y
+    se puso la suya, más **finanzas**, que esa vista no dibuja porque dibuja
+    un informe de operación pero que §89 da como familia. Tres consecuencias
+    que se ven en el código: las secciones **no dependen de la familia** —la
+    maqueta dibuja un informe de operación con rendimiento digital dentro—,
+    así que las cifras se generan **por sección incluida**; requerir criterio
+    **no** es entrar apagada —el resumen ejecutivo entra marcado y lo escribe
+    quien revisa, y por eso un informe por omisión pasa por aprobación, que
+    es lo que dice la maqueta—; y la sección de oportunidades lleva las
+    **aprobadas** de verdad, guardadas por regla y sujeto, con el título
+    escrito por la pantalla como en el Hito 15.
+
+    **Cuatro lecturas aplicadas** donde §89 a §95 callan y el diseño tampoco
+    contesta, anotadas como pendiente 16 de `docs/DECISIONES.md`: qué
+    secciones "requieren criterio" (§95.3) —el resumen ejecutivo y las
+    oportunidades—; **a quién va el correo programado** (§93) —a quien puede
+    ver informes de ese restaurante por §89, no a una lista escrita a mano—;
+    **cuándo es "se acerca la fecha"** (§95) —24 horas antes, una sola vez
+    por fecha—; y que el **PDF y el CSV se generan desde la versión y no se
+    guardan**, porque un PDF archivado sería un segundo original que puede
+    dejar de coincidir con las cifras.
 
     **Lo que NO se ha hecho, dicho en claro.** No hay informe redactado por
     IA ni resumen generado: §93 dice que el informe automático por correo no
@@ -3922,18 +3938,19 @@ regenerar salió idéntica, así que no había desviación.
     14, los seis estados, el permiso de §89, el freno de las oportunidades
     con su vuelta a revisión **por los dos caminos —el botón y la cola—**,
     el aviso de las 24 h, la idempotencia del envío y el privilegio de
-    columna), **con seis mutaciones, las seis detectadas**: dejar que el
+    columna), **con ocho mutaciones, las ocho detectadas**: dejar que el
     restaurante vea un informe aprobado, cegar la cuenta de oportunidades
     pendientes, devolverle a `reports` el `select` entero, permitir
     cualquier transición a cualquiera, mandar el aviso de la fecha a todo el
-    equipo y dejar fuera a la cola de la comprobación de oportunidades
-    pendientes. Las 39 suites desde cero sobre PostgreSQL 16
-    con las 85 migraciones; `reports.test.ts` (30 pruebas: los estados, los
-    diez indicadores con el reloj contractual, el periodo en la zona del
+    equipo, dejar fuera a la cola de la comprobación de oportunidades
+    pendientes, encender las oportunidades por omisión y quitarle el
+    criterio al resumen ejecutivo. Las 39 suites desde cero sobre PostgreSQL
+    16 con las 85 migraciones; `reports.test.ts` (32 pruebas: los estados,
+    los diez indicadores con el reloj contractual, el periodo en la zona del
     espacio, el CSV y el orden de las secciones), `report-generation.test.ts`
-    (16), `report-pdf.test.ts` (6, generando el PDF de verdad),
-    `reports.test.tsx` (13) y `listas-compartidas.test.ts`; typecheck, lint,
-    1171 pruebas y `next build`. Los recorridos de Playwright no se
+    (18), `report-pdf.test.ts` (6, generando el PDF de verdad),
+    `reports.test.tsx` (14) y `listas-compartidas.test.ts`; typecheck, lint,
+    1176 pruebas y `next build`. Los recorridos de Playwright no se
     ejecutaron: desde el contenedor no se llega al proyecto de Supabase
     (`docs/DESPLIEGUE-SUPABASE.md`).
 
@@ -4110,7 +4127,7 @@ Hito 15 deja de estar bloqueado.
 - Los **diez indicadores de §91** en `src/core/reports.ts` (dominio puro), medidos con el **reloj contractual**; las filas las entregan `report_operation_dataset()` y `report_finance_dataset()`, reservadas a `service_role`.
 - El **informe personal del trabajador** (§90), sin finanzas, con los puntos históricos separados de la carga actual y las comparaciones segmentadas como manda §55.
 - Las **cuatro salidas** de §93: pantalla, **PDF** (`src/services/report-pdf.ts`, generado desde la versión y no guardado), **CSV** y **correo programado**, con el aviso de 24 h antes (§95) y el envío en la tanda de `/api/cola`, detrás de las oportunidades.
-- La **biblioteca** (vista 10.01), **revisar y programar** (vista 10.04), los "Informes generados" de la ficha (maqueta 09) y los **"Informes disponibles"** del restaurante (vista 22.01).
+- La **biblioteca** (vista 10.01) con los seis filtros que dibuja —restaurante, grupo, plan, periodo, categoría y estado—, **revisar y programar** (vista 10.04) con las secciones de la maqueta, los "Informes generados" de la ficha (maqueta 09) y los **"Informes disponibles"** del restaurante (vista 22.01).
 
 **Se verifica con:** `supabase/tests/informes.sql` (la 39ª suite; RN-REP-01 a 14), `reports.test.ts` (los estados, los diez indicadores con el reloj, el CSV y el periodo), `report-generation.test.ts`, `report-pdf.test.ts`, `reports.test.tsx` y `listas-compartidas.test.ts` (el catálogo y las transiciones a los dos lados).
 
