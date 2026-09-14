@@ -3894,11 +3894,12 @@ regenerar salió idéntica, así que no había desviación.
     **aprobadas** de verdad, guardadas por regla y sujeto, con el título
     escrito por la pantalla como en el Hito 15.
 
-    **Cuatro lecturas aplicadas** donde §89 a §95 callan y el diseño tampoco
-    contesta, anotadas como pendiente 16 de `docs/DECISIONES.md`: qué
-    secciones "requieren criterio" (§95.3) —el resumen ejecutivo y las
-    oportunidades—; **a quién va el correo programado** (§93) —a quien puede
-    ver informes de ese restaurante por §89, no a una lista escrita a mano—;
+    **Cuatro lecturas** donde §89 a §95 callan y el diseño tampoco contesta,
+    cerradas por Bosco el mismo día como **decisión 28**: qué secciones
+    "requieren criterio" (§95.3) —el resumen ejecutivo y las oportunidades,
+    confirmado—; **a quién va el correo programado** (§93) —cambiado por
+    Bosco: a **todos los que trabajan en ese restaurante, por los dos
+    lados**, sin ninguna dirección escrita en el código—;
     **cuándo es "se acerca la fecha"** (§95) —24 horas antes, una sola vez
     por fecha—; y que el **PDF y el CSV se generan desde la versión y no se
     guardan**, porque un PDF archivado sería un segundo original que puede
@@ -3955,11 +3956,31 @@ regenerar salió idéntica, así que no había desviación.
     ejecutaron: desde el contenedor no se llega al proyecto de Supabase
     (`docs/DESPLIEGUE-SUPABASE.md`).
 
-    **Pendiente de aplicar al proyecto real.** La migración 85 no se ha
-    aplicado: hasta que se aplique y se regeneren los tipos, las pantallas
-    llevan una frontera con `any` aislada en un solo archivo
-    (`src/lib/supabase/reports-client.ts`), y quitarla es lo primero que hay
-    que hacer después — en el Hito 15 eso destapó dos fallos reales.
+    **Aplicada al proyecto real el 14/09/2026**, por orden de Bosco, en
+    cinco partes, con los tipos regenerados
+    (`docs/DESPLIEGUE-SUPABASE.md`). No era solo aditiva: reescribe la
+    política `state_events_select` entera y ensancha los dos CHECK de
+    `notifications`.
+
+    **La frontera con `any` se quitó a continuación**, que es lo que este
+    apartado decía que había que hacer, y volvió a pasar lo del Hito 15:
+    al pasar las pantallas al cliente tipado, el compilador destapó **tres
+    cosas que estaban mal y nadie veía**.
+
+    - `fila()` comprobaba `isReportCategory(String(row.category))`. Una
+      guarda sobre una **copia** no estrecha el original, así que lo que se
+      asignaba a `category` seguía siendo `string`: la comprobación pasaba
+      y no servía de nada. Ahora se estrechan las variables.
+    - `REPORT_COLUMNS` era **dos cadenas sumadas**, y el cliente tipado no
+      puede comparar eso con el esquema: devolvía `GenericStringError[]`,
+      es decir, ninguna columna reconocida. Con `any` puesto, nadie se
+      enteraba. Ahora es una sola cadena literal.
+    - `snapshot` se convertía con `as ReportSnapshot` desde `Json`, que es
+      más ancho. Ahora pasa por `unknown` y dice en el comentario por qué
+      es deliberada.
+
+    Y `reports-client.ts` se ha borrado: ya no hay ningún `any` en las
+    pantallas de informes.
 
 
 ## FASE 1 — Operación real de Restavor
@@ -4123,7 +4144,7 @@ Hito 15 deja de estar bloqueado.
 
 **Se verifica con:** `supabase/tests/oportunidades.sql` (la 38ª suite; RN-OPP-01 a 10), `opportunities.test.ts` (los umbrales, uno a uno), `opportunity-detection.test.ts`, `opportunities.test.tsx`, `listas-compartidas.test.ts` (el catálogo de reglas, los estados y las transiciones a los dos lados) y `adapters.test.ts`.
 
-### Hito 16 · Informes *(hecho el 14/09/2026; la 85 pendiente de aplicar al proyecto)*
+### Hito 16 · Informes *(hecho y aplicado al proyecto el 14/09/2026)*
 - **Migración 85**: `reports` (las tres familias de §89, los seis estados de §95, los filtros de §93), `report_sections` (qué entra, en qué orden y con qué texto), `report_versions` (**libro inmutable**: cada versión se conserva) y `report_deliveries` (a quién se envió qué versión). RLS con el privilegio de columna que tapa quién lo preparó, lo aprobó y lo envió; y las funciones de preparar, editar, generar cifras, aprobar, programar, enviar y archivar.
 - Los **diez indicadores de §91** en `src/core/reports.ts` (dominio puro), medidos con el **reloj contractual**; las filas las entregan `report_operation_dataset()` y `report_finance_dataset()`, reservadas a `service_role`.
 - El **informe personal del trabajador** (§90), sin finanzas, con los puntos históricos separados de la carga actual y las comparaciones segmentadas como manda §55.

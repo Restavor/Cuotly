@@ -120,7 +120,7 @@ export const SECTION_OF_CATEGORY: Readonly<Record<ReportCategory, ReportSectionK
  * y no como el valor por omisión: encender por omisión una sección que
  * puede no tener ninguna fuente conectada llenaría el informe de motivos
  * de "no conectado" (§178) en vez de cifras. Es una lectura aplicada
- * (pendiente 16 de `docs/DECISIONES.md`) y se cambia en una línea.
+ * (decisión 28a de `docs/DECISIONES.md`) y se cambia en una línea.
  */
 export function defaultIncluded(category: ReportCategory, key: ReportSectionKey): boolean {
   return key === "executive_summary" || key === "annexes" || key === SECTION_OF_CATEGORY[category];
@@ -312,7 +312,7 @@ export function sendGate(input: {
 /**
  * §95 · "Cuotly avisa cuando se acerca la fecha programada". Cuánto es
  * "se acerca" no lo dice la maestra: **24 horas antes** es lectura
- * aplicada (pendiente 16). Se eligen 24 h y no 1 h porque el aviso sirve
+ * confirmada por Bosco (decisión 28b). Se eligen 24 h y no 1 h porque el aviso sirve
  * para poder pararlo o corregirlo, y eso necesita una jornada por delante.
  */
 export const SCHEDULE_REMINDER_HOURS = 24;
@@ -560,7 +560,7 @@ const FINISHED_JOB_STATES = ["published", "completed"];
  *     laborables. El tiempo bloqueado que no consume plazo ya lo dice
  *     T3 (RN-SLA-14); lo que §91 pide aquí es cuánto tiempo estuvo
  *     parado el trabajo, que es un hecho del calendario. Es lectura
- *     aplicada (pendiente 16).
+ *     confirmada por Bosco (decisión 28).
  */
 export function operationalIndicators(
   dataset: OperationDataset,

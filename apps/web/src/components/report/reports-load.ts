@@ -11,6 +11,7 @@
 
 import {
   type ReportCategory,
+  type ReportSectionKey,
   type ReportSectionState,
   type ReportSnapshot,
   type ReportState,
@@ -18,12 +19,26 @@ import {
   isReportSectionKey,
   isReportState,
 } from "@/core/reports";
-import { type ReportsClient, reportsClient } from "@/lib/supabase/reports-client";
+
+import type { Database } from "@/lib/supabase/database.types";
+import type { createClient } from "@/lib/supabase/server";
+
+/** El cliente tipado de siempre: la frontera con `any` que tenía este
+ * archivo mientras la migración 85 estaba sin aplicar desapareció al
+ * aplicarla y regenerar los tipos (14/09/2026). */
+type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 /** Las columnas que el `grant` deja leer. Ni una más: el resto es 403. */
+/**
+ * Las columnas que pinta la lista. **Una sola cadena literal y sin
+ * concatenar**: el cliente tipado la compara con el esquema en tiempo de
+ * compilación, y una suma de dos trozos no la puede leer —devolvía
+ * `GenericStringError[]` y, con la frontera puesta, nadie se enteraba—.
+ * `select *` no vale aquí: `reports` tiene columnas de actor tapadas al
+ * cliente y devolvería 403 (CLAUDE.md).
+ */
 const REPORT_COLUMNS =
-  "id, space_id, establishment_id, category, name, period_start, period_end, status, status_reason, " +
-  "delivery_channel, include_csv, scheduled_for, sent_at, approved_at, created_at, updated_at";
+  "id, space_id, establishment_id, category, name, period_start, period_end, status, status_reason, delivery_channel, include_csv, scheduled_for, sent_at, approved_at, created_at, updated_at" as const;
 
 export interface ReportRow {
   readonly id: string;
@@ -57,25 +72,55 @@ export interface ReportDetail {
   readonly pendingOpportunities: number;
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any --
-   Las filas llegan del cliente sin tipar de `reports-client.ts`; se
-   estrechan con guardas aquí mismo, que es donde se sabe qué son. */
+/**
+ * La fila tal y como la devuelve `REPORT_COLUMNS`, sacada de los tipos
+ * generados en vez de escrita a mano. Mientras la migración 85 estuvo sin
+ * aplicar esto era `any`, porque `database.types.ts` no conocía la tabla;
+ * al aplicarla y regenerar (14/09/2026) esa frontera desapareció. La
+ * ventaja de que sea un `Pick` y no una interfaz copiada: si una columna
+ * cambia de nombre o de tipo en la base, esto deja de compilar.
+ */
+type ReportDbRow = Pick<
+  Database["public"]["Tables"]["reports"]["Row"],
+  | "id"
+  | "space_id"
+  | "establishment_id"
+  | "category"
+  | "name"
+  | "period_start"
+  | "period_end"
+  | "status"
+  | "status_reason"
+  | "delivery_channel"
+  | "include_csv"
+  | "scheduled_for"
+  | "sent_at"
+  | "approved_at"
+  | "created_at"
+  | "updated_at"
+>;
 
-function fila(row: any, establishmentName: string | null): ReportRow | null {
+function fila(row: ReportDbRow, establishmentName: string | null): ReportRow | null {
   // Guardas y no aserciones: un CHECK de la base es `text` para
   // TypeScript, y una fila imposible se deja fuera en vez de inventarle
   // una categoría para poder pintarla (lección del Hito 15).
-  if (!isReportCategory(String(row.category)) || !isReportState(String(row.status))) return null;
+  //
+  // Se estrechan las VARIABLES y no `String(row.category)`: una guarda
+  // sobre una copia no estrecha el original, así que lo que se asignaba
+  // abajo seguía siendo `string`. Con `any` eso no se notaba; al quitar la
+  // frontera, el compilador lo dijo.
+  const { category, status } = row;
+  if (!isReportCategory(category) || !isReportState(status)) return null;
 
   return {
     id: String(row.id),
     establishmentId: row.establishment_id ?? null,
     establishmentName,
-    category: row.category,
+    category,
     name: String(row.name),
     periodStart: String(row.period_start),
     periodEnd: String(row.period_end),
-    status: row.status,
+    status,
     statusReason: row.status_reason ?? null,
     deliveryChannel: String(row.delivery_channel ?? "none"),
     includeCsv: row.include_csv === true,
@@ -105,7 +150,7 @@ export interface ReportListFilters {
 
 /** Los restaurantes de un grupo o de un plan, para filtrar por ellos. */
 async function establishmentsMatching(
-  supabase: ReportsClient,
+  supabase: Supabase,
   spaceId: string,
   filters: ReportListFilters,
 ): Promise<readonly string[] | null> {
@@ -116,7 +161,7 @@ async function establishmentsMatching(
 
   const { data, error } = await query;
   if (error) throw new Error(`establishments: ${error.message}`);
-  let ids = (data ?? []).map((row: any) => String(row.id));
+  let ids = (data ?? []).map((row) => String(row.id));
 
   if (filters.planId) {
     const { data: subs, error: subsError } = await supabase
@@ -127,7 +172,7 @@ async function establishmentsMatching(
       .eq("status", "active")
       .eq("plan_id", filters.planId);
     if (subsError) throw new Error(`subscriptions: ${subsError.message}`);
-    const conPlan = new Set((subs ?? []).map((row: any) => String(row.establishment_id)));
+    const conPlan = new Set((subs ?? []).map((row) => String(row.establishment_id)));
     ids = ids.filter((id) => conPlan.has(id));
   }
 
@@ -135,11 +180,11 @@ async function establishmentsMatching(
 }
 
 export async function loadReports(
-  client: unknown,
+  client: Supabase,
   spaceId: string,
   filters: ReportListFilters = {},
 ): Promise<readonly ReportRow[]> {
-  const supabase: ReportsClient = reportsClient(client);
+  const supabase = client;
 
   let query = supabase.from("reports").select(REPORT_COLUMNS).eq("space_id", spaceId);
 
@@ -168,10 +213,10 @@ export async function loadReports(
  * cliente—: la RLS es la que decide cuáles devuelve a cada uno.
  */
 export async function loadEstablishmentReports(
-  client: unknown,
+  client: Supabase,
   establishmentId: string,
 ): Promise<readonly ReportRow[]> {
-  const supabase: ReportsClient = reportsClient(client);
+  const supabase = client;
   const { data, error } = await supabase
     .from("reports")
     .select(REPORT_COLUMNS)
@@ -182,7 +227,7 @@ export async function loadEstablishmentReports(
   return await conNombres(supabase, data ?? []);
 }
 
-async function conNombres(supabase: ReportsClient, rows: readonly any[]): Promise<readonly ReportRow[]> {
+async function conNombres(supabase: Supabase, rows: readonly ReportDbRow[]): Promise<readonly ReportRow[]> {
   const ids = [...new Set(rows.map((row) => row.establishment_id).filter(Boolean))] as string[];
   const nombres = new Map<string, string>();
 
@@ -196,8 +241,8 @@ async function conNombres(supabase: ReportsClient, rows: readonly any[]): Promis
     .filter((row): row is ReportRow => row !== null);
 }
 
-export async function loadReportDetail(client: unknown, reportId: string): Promise<ReportDetail | null> {
-  const supabase: ReportsClient = reportsClient(client);
+export async function loadReportDetail(client: Supabase, reportId: string): Promise<ReportDetail | null> {
+  const supabase = client;
 
   const { data, error } = await supabase
     .from("reports")
@@ -229,18 +274,23 @@ export async function loadReportDetail(client: unknown, reportId: string): Promi
   return {
     report: detalle,
     sections: (sections ?? [])
-      .filter((row: any) => isReportSectionKey(String(row.section_key)))
-      .map((row: any) => ({
-        key: row.section_key,
+      .filter((row) => isReportSectionKey(row.section_key))
+      .map((row) => ({
+        key: row.section_key as ReportSectionKey,
         position: Number(row.position),
         included: row.included === true,
         note: row.note ?? null,
       })),
-    versions: (versions ?? []).map((row: any) => ({
+    versions: (versions ?? []).map((row) => ({
       id: String(row.id),
       versionNumber: Number(row.version_number),
       generatedAt: String(row.generated_at),
-      snapshot: row.snapshot as ReportSnapshot,
+      // `snapshot` es `jsonb` y por tanto `Json`, más ancho que
+      // `ReportSnapshot`. La conversión pasa por `unknown` a propósito:
+      // lo escribió `generate_report_version()` con la forma que
+      // `report-generation.ts` produce, y no hay guarda que lo demuestre
+      // aquí. Antes era `any` y no se veía que fuera una conversión.
+      snapshot: row.snapshot as unknown as ReportSnapshot,
     })),
     pendingOpportunities: typeof pending === "number" ? pending : 0,
   };

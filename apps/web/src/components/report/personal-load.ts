@@ -14,8 +14,14 @@ import {
   type WorkerPersonalReport,
   workerPersonalReport,
 } from "@/core/reports";
-import { reportsClient } from "@/lib/supabase/reports-client";
 import { parseOperationDataset } from "@/services/report-generation";
+
+import type { createClient } from "@/lib/supabase/server";
+
+/** El cliente tipado de siempre: la frontera con `any` que tenía este
+ * archivo mientras la migración 85 estaba sin aplicar desapareció al
+ * aplicarla y regenerar los tipos (14/09/2026). */
+type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 export interface PersonalReportInput {
   readonly spaceId: string;
@@ -25,10 +31,10 @@ export interface PersonalReportInput {
 }
 
 export async function loadPersonalReport(
-  client: unknown,
+  client: Supabase,
   input: PersonalReportInput,
 ): Promise<WorkerPersonalReport | null> {
-  const supabase = reportsClient(client);
+  const supabase = client;
 
   const { data, error } = await supabase.rpc("worker_report_dataset", {
     p_space_id: input.spaceId,

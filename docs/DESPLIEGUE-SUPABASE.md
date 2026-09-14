@@ -10,12 +10,12 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 84 migraciones del repositorio están aplicadas en el
+**Ninguna.** Las 85 migraciones del repositorio están aplicadas en el
 proyecto.
 
 ## Aplicadas
 
-**Las 84 migraciones del repositorio están aplicadas.** Las tres
+**Las 85 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
@@ -453,6 +453,44 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   Comprobado en vivo después: la interna sin `EXECUTE` para `anon` ni
   `authenticated`; las dos de publicar cerradas a `anon` y abiertas al
   equipo; el CHECK admite el evento; cero versiones y cero avisos.
+
+- La **85** (`informes_generacion_aprobacion_y_envio`, Fase 3 · Hito 16) el
+  14/09/2026, por orden de Bosco, **en cinco partes** (el archivo son 70 KB:
+  p1 quién ve, el catálogo y `reports`; p2 el resto de las tablas con sus
+  políticas y privilegios de columna, crear y editar; p3 los seis estados,
+  programar, los destinatarios y el envío; p4 el aviso de las 24 h, la cola
+  y los conjuntos de datos; p5 eventos, avisos y auditoría).
+
+  **No es solo aditiva**, y por eso se dice: reescribe la política
+  `state_events_select` entera —hay que copiar la vigente y añadirle la rama
+  de `report`— y ensancha los dos CHECK de `notifications`. Cuatro tablas
+  nuevas, veintitrés funciones y ninguna fila tocada.
+
+  Lleva dentro los dos cambios de la **decisión 28**: el informe lo ven
+  todos los del restaurante con el acceso vigente —el permiso fino
+  `view_reports` y su función no llegaron a existir en el proyecto— y el
+  correo va a los dos lados, sin ninguna dirección escrita en el código.
+
+  Lo que se comprobó ANTES, en local y sin Docker
+  (`bootstrap-postgres-local.sql`): las 85 migraciones aplican desde cero
+  sobre PostgreSQL 16 y pasan las 39 suites en el orden de CI; y las cinco
+  partes, por separado y en orden, sobre una base con las 84 anteriores.
+  Dos mutaciones de la suya detectadas por el motivo correcto: quitar el
+  lado de mantenimiento de los destinatarios deja el envío en 4 de 8, y
+  quitar la comprobación de acceso retirado deja ver los informes a quien
+  ya no está.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: las siete internas sin EXECUTE para `anon` ni
+  `authenticated`; las dieciséis públicas con EXECUTE para `authenticated`
+  y sin él para `anon`; las cuatro tablas con RLS, política y `space_id NOT
+  NULL`; el SELECT de tabla revocado en `reports` y `report_versions` y las
+  tres columnas de actor (`created_by`, `updated_by`, `approved_by`)
+  tapadas al cliente; los dos avisos de informe dentro del CHECK de
+  `notifications`; la familia `report` en `audit_action_capability()`; y
+  que `view_reports` y `set_client_report_permission()` **no existen**.
+
+  `database.types.ts` regenerado desde el proyecto (85 migraciones).
 
 ## La 49
 

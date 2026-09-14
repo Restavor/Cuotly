@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 
 import { isReportCategory, isReportSectionKey } from "@/core/reports";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { reportsClient } from "@/lib/supabase/reports-client";
 import { createClient } from "@/lib/supabase/server";
 import { generateReportVersion } from "@/services/report-generation";
 import { createSupabaseReportGateway } from "@/services/report-gateway";
@@ -59,7 +58,7 @@ export async function createReport(
   }
 
   try {
-    const supabase = reportsClient(await createClient());
+    const supabase = await createClient();
     const { data: space } = await supabase.from("spaces").select("id").eq("slug", slug).maybeSingle();
     if (!space) return fallo(new Error("Espacio no encontrado"));
 
@@ -69,8 +68,11 @@ export async function createReport(
       p_name: texto(formData, "name"),
       p_period_start: texto(formData, "periodStart"),
       p_period_end: texto(formData, "periodEnd"),
-      p_establishment_id: establishmentId === "" ? null : establishmentId,
-      p_group_id: null,
+      // Omitir vale el `default null` de la función: un informe sin
+      // restaurante es el consolidado. Los tipos generados los declaran
+      // opcionales, no anulables, y pasar `null` era un desajuste que la
+      // frontera con `any` tapaba.
+      p_establishment_id: establishmentId === "" ? undefined : establishmentId,
       p_filters: {
         period_start: texto(formData, "periodStart"),
         period_end: texto(formData, "periodEnd"),
@@ -124,7 +126,7 @@ export async function saveReportSections(
   }));
 
   try {
-    const supabase = reportsClient(await createClient());
+    const supabase = await createClient();
     const { error } = await supabase.rpc("set_report_sections", {
       p_report_id: reportId,
       p_sections: sections,
@@ -148,11 +150,11 @@ export async function setReportStatus(
   const reason = texto(formData, "reason");
 
   try {
-    const supabase = reportsClient(await createClient());
+    const supabase = await createClient();
     const { error } = await supabase.rpc("set_report_status", {
       p_report_id: reportId,
       p_status: status,
-      p_reason: reason === "" ? null : reason,
+      p_reason: reason === "" ? undefined : reason,
     });
     if (error) return fallo(new Error(error.message));
     revalidar(slug);
@@ -174,7 +176,7 @@ export async function scheduleReport(
   if (fecha === "") return fallo(new Error("Programar un envío necesita una fecha"));
 
   try {
-    const supabase = reportsClient(await createClient());
+    const supabase = await createClient();
     const { error } = await supabase.rpc("schedule_report", {
       p_report_id: reportId,
       // El campo del formulario es una fecha local; se manda como
@@ -206,7 +208,7 @@ export async function sendReport(
   const reportId = texto(formData, "reportId");
 
   try {
-    const supabase = reportsClient(await createClient());
+    const supabase = await createClient();
     const { data, error } = await supabase.rpc("send_report", { p_report_id: reportId });
     if (error) return fallo(new Error(error.message));
 
@@ -237,7 +239,7 @@ export async function renameReport(
   const slug = texto(formData, "slug");
 
   try {
-    const supabase = reportsClient(await createClient());
+    const supabase = await createClient();
     const { error } = await supabase.rpc("rename_report", {
       p_report_id: texto(formData, "reportId"),
       p_name: texto(formData, "name"),
@@ -256,7 +258,7 @@ export async function renameReport(
  * clave de servicio— sirva para tocar un informe de otro espacio.
  */
 async function asegurarVisible(reportId: string): Promise<void> {
-  const supabase = reportsClient(await createClient());
+  const supabase = await createClient();
   const { data } = await supabase.from("reports").select("id").eq("id", reportId).maybeSingle();
   if (!data) throw new Error("Informe no encontrado");
 }

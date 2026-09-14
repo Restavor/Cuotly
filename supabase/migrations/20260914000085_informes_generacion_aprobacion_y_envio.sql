@@ -26,13 +26,15 @@
 -- Lo que decide el servidor y no la pantalla:
 --
 --   · **Quién ve un informe** (§89, RN-REP-01): propietario y
---     administradores del espacio; del lado cliente, propietario global,
---     propietario local, Editor siempre y Consulta **solo con permiso de
---     su propietario**, que es un permiso fino por persona
---     todos los del restaurante lo ven (enmienda a §89, decisión de Bosco)
---     en RN-FIN-07. El **trabajador no entra**: §89 no le da los informes
---     de un restaurante; lo suyo es el informe personal de §90, que es
---     otra función y otra cuenta.
+--     administradores del espacio; del lado cliente, el propietario
+--     global del grupo y **cualquier persona del restaurante** con el
+--     acceso vigente, sin distinguir rol. §89 decía que Consulta
+--     necesitaba permiso de su propietario y esta migración lo implementó
+--     así; **Bosco lo enmendó el 14/09/2026** (decisión 28) y ese permiso
+--     se quitó entero. El **trabajador no ve esa pantalla**: lo suyo es el
+--     informe personal de §90, que es otra función y otra cuenta; pero si
+--     está autorizado en el restaurante **sí recibe el informe enviado**,
+--     porque trabaja ahí (RN-REP-11).
 --   · **Qué ve el restaurante y cuándo** (RN-REP-13): un informe
 --     **enviado**. `preparing`, `pending_review`, `approved` y
 --     `scheduled` son conversación interna, y lo sostiene la política de
@@ -137,7 +139,7 @@ grant execute on function public.client_can_view_reports(uuid) to authenticated;
 -- §95.3 · "muestra las secciones que requieren criterio". Requiere
 -- criterio lo que una persona tiene que escribir o elegir: el resumen
 -- ejecutivo, que lo escribe alguien, y las oportunidades, que §99 vuelve
--- a decidir una a una. Lectura aplicada (pendiente 16 de
+-- a decidir una a una. Confirmado por Bosco (decisión 28a de
 -- `docs/DECISIONES.md`).
 create or replace function public.report_section_requires_judgement(p_section text)
 returns boolean
@@ -1133,7 +1135,7 @@ revoke all on function public.send_report(uuid) from public, anon;
 grant execute on function public.send_report(uuid) to authenticated;
 
 -- §95 · "Cuotly avisa cuando se acerca la fecha programada": 24 h antes,
--- una sola vez por fecha (lectura aplicada, pendiente 16). Va a quien
+-- una sola vez por fecha (decisión 28b, confirmada por Bosco). Va a quien
 -- puede pararlo.
 create or replace function public.notify_report_schedule_due_soon(p_report_id uuid)
 returns integer

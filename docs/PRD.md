@@ -1088,7 +1088,7 @@ Transcripción con número de §89 a §95 de la especificación maestra, con el 
 aquí la maestra **sí** dice los estados, el flujo y las salidas; lo que no dice es **quién recibe el
 correo**, **cuándo es "se acerca la fecha"**, **qué ve el restaurante de un informe que todavía no se
 le ha enviado** y **si el PDF se archiva**. Esas cuatro se leen aquí y se anotan como lectura
-aplicada (pendiente 16 de `docs/DECISIONES.md`), no se inventan reglas nuevas. **Cuáles son las
+confirmada por Bosco (decisión 28 de `docs/DECISIONES.md`), no se inventan reglas nuevas. **Cuáles son las
 secciones** no hace falta leerlo: lo dibuja la maqueta 10.04 de `docs/diseno/`, y son las suyas.
 Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 16).
 

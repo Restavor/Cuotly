@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 14/09/2026), con las 84 migraciones del
+// (generate_typescript_types, 14/09/2026), con las 85 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -4169,6 +4169,299 @@ export type Database = {
           },
         ]
       }
+      report_deliveries: {
+        Row: {
+          channel: string
+          id: string
+          recipient_id: string
+          report_id: string
+          sent_at: string
+          space_id: string
+          version_id: string
+        }
+        Insert: {
+          channel: string
+          id?: string
+          recipient_id: string
+          report_id: string
+          sent_at?: string
+          space_id: string
+          version_id: string
+        }
+        Update: {
+          channel?: string
+          id?: string
+          recipient_id?: string
+          report_id?: string
+          sent_at?: string
+          space_id?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_deliveries_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_deliveries_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_deliveries_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_deliveries_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "report_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_sections: {
+        Row: {
+          id: string
+          included: boolean
+          note: string | null
+          position: number
+          report_id: string
+          section_key: string
+          space_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          included?: boolean
+          note?: string | null
+          position: number
+          report_id: string
+          section_key: string
+          space_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          included?: boolean
+          note?: string | null
+          position?: number
+          report_id?: string
+          section_key?: string
+          space_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_sections_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_sections_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_sections_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_versions: {
+        Row: {
+          generated_at: string
+          generated_by: string | null
+          id: string
+          report_id: string
+          snapshot: Json
+          space_id: string
+          version_number: number
+        }
+        Insert: {
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          report_id: string
+          snapshot: Json
+          space_id: string
+          version_number: number
+        }
+        Update: {
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          report_id?: string
+          snapshot?: Json
+          space_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_versions_generated_by_fkey"
+            columns: ["generated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_versions_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_versions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          archived_at: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          delivery_channel: string
+          establishment_id: string | null
+          filters: Json
+          group_id: string | null
+          id: string
+          idempotency_key: string | null
+          include_csv: boolean
+          name: string
+          period_end: string
+          period_start: string
+          reminder_sent_at: string | null
+          scheduled_for: string | null
+          sent_at: string | null
+          space_id: string
+          status: string
+          status_reason: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          delivery_channel?: string
+          establishment_id?: string | null
+          filters?: Json
+          group_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          include_csv?: boolean
+          name: string
+          period_end: string
+          period_start: string
+          reminder_sent_at?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          space_id: string
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          archived_at?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          delivery_channel?: string
+          establishment_id?: string | null
+          filters?: Json
+          group_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          include_csv?: boolean
+          name?: string
+          period_end?: string
+          period_start?: string
+          reminder_sent_at?: string | null
+          scheduled_for?: string | null
+          sent_at?: string | null
+          space_id?: string
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       request_attachments: {
         Row: {
           created_at: string
@@ -6100,6 +6393,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: boolean
       }
+      client_can_view_reports: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
       client_opportunity_access: {
         Args: { p_establishment_id: string }
         Returns: string
@@ -6278,6 +6575,20 @@ export type Database = {
           p_outcome: string
           p_request_id?: string
           p_requires_payment_before_start?: boolean
+        }
+        Returns: string
+      }
+      create_report_draft: {
+        Args: {
+          p_category: string
+          p_establishment_id?: string
+          p_filters?: Json
+          p_group_id?: string
+          p_idempotency_key?: string
+          p_name: string
+          p_period_end: string
+          p_period_start: string
+          p_space_id: string
         }
         Returns: string
       }
@@ -6546,6 +6857,10 @@ export type Database = {
       }
       generate_monthly_charge_internal: {
         Args: { p_due_at?: string; p_subscription_id: string }
+        Returns: string
+      }
+      generate_report_version: {
+        Args: { p_report_id: string; p_snapshot: Json }
         Returns: string
       }
       get_or_create_consumption_cycle: {
@@ -6950,6 +7265,10 @@ export type Database = {
         }
         Returns: number
       }
+      notify_report_schedule_due_soon: {
+        Args: { p_report_id: string }
+        Returns: number
+      }
       notify_terms_version_published: {
         Args: {
           p_kind: string
@@ -7177,9 +7496,74 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: number
       }
+      rename_report: {
+        Args: { p_name: string; p_report_id: string }
+        Returns: undefined
+      }
+      report_actor_role: { Args: { p_space_id: string }; Returns: string }
+      report_finance_dataset: {
+        Args: {
+          p_establishment_id: string
+          p_from: string
+          p_space_id: string
+          p_to: string
+        }
+        Returns: Json
+      }
+      report_is_visible_to_client: {
+        Args: { p_status: string }
+        Returns: boolean
+      }
       report_menu_publication_error: {
         Args: { p_menu_id: string; p_reason: string }
         Returns: undefined
+      }
+      report_operation_dataset: {
+        Args: {
+          p_establishment_id: string
+          p_from: string
+          p_space_id: string
+          p_to: string
+        }
+        Returns: Json
+      }
+      report_pending_opportunities: {
+        Args: { p_report_id: string }
+        Returns: number
+      }
+      report_recipients: {
+        Args: { p_report_id: string }
+        Returns: {
+          audience: string
+          recipient_id: string
+        }[]
+      }
+      report_section_default_included: {
+        Args: { p_category: string; p_section: string }
+        Returns: boolean
+      }
+      report_section_requires_judgement: {
+        Args: { p_section: string }
+        Returns: boolean
+      }
+      report_sections_catalogue: { Args: never; Returns: string[] }
+      report_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string }
+        Returns: boolean
+      }
+      reports_due_for_reminder: {
+        Args: { p_limit?: number }
+        Returns: {
+          report_id: string
+          space_id: string
+        }[]
+      }
+      reports_due_for_send: {
+        Args: { p_limit?: number }
+        Returns: {
+          report_id: string
+          space_id: string
+        }[]
       }
       request_absence: {
         Args: {
@@ -7299,7 +7683,17 @@ export type Database = {
         Args: { p_new_plan_id: string; p_subscription_id: string }
         Returns: string
       }
+      schedule_report: {
+        Args: {
+          p_channel?: string
+          p_include_csv?: boolean
+          p_report_id: string
+          p_scheduled_for: string
+        }
+        Returns: undefined
+      }
       send_quote: { Args: { p_quote_id: string }; Returns: undefined }
+      send_report: { Args: { p_report_id: string }; Returns: number }
       service_monthly_price: {
         Args: { p_subscription_id: string }
         Returns: {
@@ -7377,6 +7771,14 @@ export type Database = {
       set_principal_supervisor: {
         Args: { p_admin_id: string; p_space_id: string; p_worker_id: string }
         Returns: string
+      }
+      set_report_sections: {
+        Args: { p_report_id: string; p_sections: Json }
+        Returns: undefined
+      }
+      set_report_status: {
+        Args: { p_reason?: string; p_report_id: string; p_status: string }
+        Returns: undefined
       }
       set_request_priority_order: {
         Args: { p_establishment_id: string; p_request_ids: string[] }
@@ -7658,6 +8060,15 @@ export type Database = {
       worker_load: {
         Args: { p_space_id: string; p_user_id: string }
         Returns: number
+      }
+      worker_report_dataset: {
+        Args: {
+          p_from: string
+          p_space_id: string
+          p_to: string
+          p_user_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
