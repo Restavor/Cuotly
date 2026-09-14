@@ -10,34 +10,18 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**La 84** (`20260914000084_oportunidades_por_reglas_deterministas.sql`,
-Fase 3, Hito 15). Escrita y probada desde cero contra PostgreSQL 16 local
-con las 38 suites de `supabase/tests/`, **sin aplicar al proyecto real**:
-aplicarla es decisión de Bosco, como las anteriores.
-
-Lo que hay que hacer cuando se aplique, en este orden:
-
-1. Aplicarla. Crea tres tablas (`opportunities`, `opportunity_detections`,
-   `opportunity_notes`), añade dos columnas a `requests`
-   (`opportunity_id`, `opportunity_action`) y una a `space_memberships`
-   (`can_approve_reports`), amplía el CHECK de `state_events.entity_type`
-   y **reescribe su política** (ojo: la vigente es la de la migración 30,
-   no la de la 25 ni la de la 26 — la cabecera de la 84 lo explica).
-2. **Regenerar `apps/web/src/lib/supabase/database.types.ts`**. Mientras no
-   se regenere, el cargador y las acciones de las pantallas de
-   oportunidades aíslan ese hueco en una frontera con `any` y lo dicen en
-   su cabecera; con los tipos regenerados, ese `any` sobra y se quita.
-3. Comprobar en el proyecto que `supabase/tests/oportunidades.sql` pasa.
+**Ninguna.** Las 84 migraciones del repositorio están aplicadas en el
+proyecto.
 
 ## Aplicadas
 
-**Las 83 migraciones del repositorio están aplicadas.** Las tres
+**Las 84 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81, la 82 y la 83 el 14/09/2026.
+81, la 82, la 83 y la 84 el 14/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -248,6 +232,74 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   nada. Ninguna de las tres funciones aparece como ejecutable por `anon`
   ni por `authenticated` (están cerradas a las dos), y todas fijan el
   `search_path`. Ningún `ERROR` nuevo.
+
+- La **84** (`oportunidades_por_reglas_deterministas`, Fase 3 · Hito 15)
+  el 14/09/2026, desde el MCP, en **tres partes** porque el archivo son
+  56 KB: `p1_capacidad_catalogo_y_tablas` (la capacidad "Aprobar
+  informes", el catálogo de las nueve reglas, qué deja ver cada plan, las
+  tres tablas, las dos columnas de `requests` y el CHECK y la política de
+  `state_events`), `p2_deteccion_y_estados` (la detección de §99 y las
+  funciones de estado y de propuesta) y
+  `p3_accion_del_cliente_y_auditoria` (§100 y la familia `opportunity`).
+
+  **Casi toda aditiva, con dos excepciones que hay que tener presentes**:
+  redefine `has_capability_as()` (una capacidad más, `approve_reports`) y
+  **reescribe la política `state_events_select`**. Esa política se copió
+  de la migración **30**, que es la vigente, y no de la 25 ni de la 26: la
+  rama de `task` lleva `is_space_member(space_id)` ADEMÁS de
+  `can_read_task()`, porque esa incluye al cliente a través de
+  `can_read_job()`, y la 25 tenía una rama de `establishment` que la 26
+  quitó a propósito. Las dos cosas se comprobaron después, una a una.
+
+  Lo que se comprobó ANTES, en local y sin Docker
+  (`bootstrap-postgres-local.sql`): las 84 migraciones aplican desde cero
+  sobre PostgreSQL 16 y pasan las 38 suites de `supabase/tests/` en el
+  orden de CI, la suya (`oportunidades.sql`) y el barrido de identidad del
+  Hito 7 incluidos. Dos mutaciones sobre la suya, las dos detectadas:
+  dejar que el restaurante vea una oportunidad "detectada" (RN-OPP-07) y
+  quitar el índice único que hace cumplir §99.
+
+  Comprobado en vivo DESPUÉS, con una consulta de catorce comprobaciones
+  que solo devuelve problemas y devolvió ninguno: las dos internas
+  (`upsert_detected_opportunity`, `establishments_for_opportunity_detection`)
+  sin EXECUTE para `anon` ni `authenticated`; las quince públicas con
+  EXECUTE para `authenticated` y no para `anon`; `has_capability_as()`
+  sigue cerrada a las dos después de redefinirla; las tres tablas con RLS
+  activado, política y `space_id NOT NULL`; las cinco columnas de
+  identidad de `opportunities` revocadas y las que el restaurante sí debe
+  leer, legibles; el índice único de §99 existe y es UNIQUE; las nueve
+  reglas responden y una inventada no; los ocho estados dicen quién los ve
+  y el trabajador no aprueba; las tres columnas nuevas están; el CHECK de
+  `state_events` acepta `opportunity`, su política conserva
+  `is_space_member` en la rama de tarea y NO ha vuelto la rama de
+  `establishment`; y la familia `opportunity` de la auditoría es de
+  `manage_clients`. 126 migraciones registradas.
+
+  `database.types.ts` regenerado desde el proyecto después (84
+  migraciones). Con los tipos ya en su sitio, el cargador y las acciones
+  de las pantallas dejan de necesitar la frontera con `any` que llevaban
+  mientras la migración estaba sin aplicar: `opportunities-load.ts` vuelve
+  a `SupabaseClient<Database>` y `opportunity-actions.ts` llama por RPC
+  con los nombres y los argumentos tipados. Al hacerlo aparecieron dos
+  cosas que el `any` tapaba y que ahora están resueltas: los CHECK de la
+  tabla son `text` para TypeScript, así que la fila se estrecha con
+  guardas de tipo (una fila imposible se deja fuera y se registra, en vez
+  de inventarle un impacto para poder pintarla), y un parámetro que no se
+  quiere cambiar se **omite** en vez de mandarse nulo, que es lo que el
+  `coalesce` de cada función lee como "déjalo como estaba".
+
+  Lo que añade al analizador de Supabase (`get_advisors`, seguridad):
+  ningún `ERROR` nuevo. Las ocho funciones que comprueban permisos por su
+  cuenta entran en "Signed-In Users Can Execute SECURITY DEFINER
+  Function", que es donde están ya casi todas las del proyecto y es el
+  diseño. Las siete del catálogo de reglas entran en "Function Search Path
+  Mutable", junto a once que ya estaban (las cuatro de `integration_*`,
+  `audit_action_capability`, `job_load_points`,
+  `menu_correction_window_ends_at`…): son `SECURITY INVOKER` puras —un
+  `case` sobre su argumento, sin tablas y con la única llamada interna
+  cualificada con `public.`—, así que no hay nada que secuestrar por
+  `search_path`. Uniformarlas es un cambio de dieciocho funciones y una
+  decisión aparte, no algo que colar en un despliegue.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de

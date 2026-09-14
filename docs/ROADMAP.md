@@ -3770,13 +3770,15 @@ regenerar salió idéntica, así que no había desviación.
       impacto, la prioridad o el esfuerzo, una detección posterior
       actualiza las cifras y respeta la decisión de la persona (§96).
 
-    **Dos lecturas que hubo que aplicar y están anotadas** (pendiente 15 de
-    `docs/DECISIONES.md`, para que Bosco las confirme o las cambie): qué es
-    "otro periodo" cuando §99 dice que una descartada puede reaparecer —se
-    lee como una ventana que ya no se solapa con la descartada, porque si
-    no, descartar no significaría nada al día siguiente—; y el suelo de la
-    regla 9b, que la decisión 26c no fija y aquí se hereda de la 6, que
-    divide entre las mismas sesiones de Clarity.
+    **Cinco lecturas que hubo que aplicar** donde §96 a §101 callan, y que
+    Bosco confirmó el mismo día (decisión 27): la "categoría" de §96 como
+    las cinco áreas en que caen las nueve reglas; la prioridad propuesta
+    derivada del impacto; qué impacto propone cada regla; qué es "otro
+    periodo" cuando §99 dice que una descartada puede reaparecer —una
+    ventana que ya no se solapa con la descartada, porque si no, descartar
+    no significaría nada al día siguiente—; y el suelo de la regla 9b, que
+    la decisión 26c no fija y aquí se hereda de la 6, que divide entre las
+    mismas sesiones de Clarity.
 
     **Lo que NO se ha hecho, dicho en claro.** No se ha inventado ningún
     aviso: §18 no tiene ninguno de oportunidad, así que el equipo las ve en
@@ -3818,12 +3820,22 @@ regenerar salió idéntica, así que no había desviación.
     Los recorridos de Playwright no se ejecutaron: desde el contenedor no
     se llega al proyecto de Supabase (`docs/DESPLIEGUE-SUPABASE.md`).
 
-    **Sin aplicar al proyecto real.** La migración 84 está escrita y
-    probada contra PostgreSQL 16 local, y `database.types.ts` sigue siendo
-    el de las 83: ese archivo se regenera contra el proyecto, y aplicar la
-    84 es decisión de Bosco. Mientras tanto, el cargador y las acciones de
-    las pantallas aíslan ese hueco en una frontera con `any`, como
-    `integration-gateway.ts`, y lo dicen en su cabecera.
+    **Aplicada al proyecto real el mismo día**, por orden de Bosco, en tres
+    partes desde el MCP, con la comprobación en vivo de catorce puntos que
+    cuenta `docs/DESPLIEGUE-SUPABASE.md` y `database.types.ts` regenerado
+    después (126 migraciones registradas).
+
+    Y con los tipos ya en su sitio se quitó la frontera con `any` que las
+    pantallas llevaban mientras la migración estaba sin aplicar. Eso
+    destapó dos cosas que el `any` tapaba, y las dos están resueltas: los
+    CHECK de la tabla son `text` para TypeScript, así que la fila se
+    estrecha con **guardas de tipo** —una fila imposible se deja fuera y se
+    registra, en vez de inventarle un impacto para poder pintarla—, y un
+    parámetro que no se quiere cambiar se **omite** en vez de mandarse
+    nulo, que es lo que el `coalesce` de cada función lee como "déjalo como
+    estaba"; mandar cadena vacía habría borrado el valor anterior. Es la
+    tercera vez en el proyecto que devolver un `any` a su tipo real
+    encuentra un fallo que nadie habría visto hasta tenerlo en pantalla.
 
 
 ## FASE 1 — Operación real de Restavor
@@ -3978,7 +3990,7 @@ Hito 15 deja de estar bloqueado.
 
 **Se verifica con:** `supabase/tests/integraciones_revocacion_remota.sql`, `credential-vault.test.ts`, `google-oauth.test.ts`, `integrations/adapters.test.ts`, `integration-sync.test.ts`, `api/integraciones/oauth/callback/route.test.ts`, `integrations-block.test.tsx` y `digital-sections.test.tsx`.
 
-### Hito 15 · Oportunidades por reglas deterministas *(hecho el 14/09/2026; la 84 sin aplicar al proyecto)*
+### Hito 15 · Oportunidades por reglas deterministas *(hecho el 14/09/2026; la 84 aplicada al proyecto el mismo día)*
 - Las **nueve reglas** de §96 con los umbrales de la decisión 26 en `src/core/opportunities.ts` (dominio puro), sobre la ventana de 28 días de la decisión 25b, con su suelo de ruido y sin disparar nada desde una fuente que no esté viva.
 - **Migración 84**: `opportunities` (los campos de §96 y los ocho estados de §98), `opportunity_detections` (libro inmutable) y `opportunity_notes` (interno del equipo); RLS con el privilegio de columna que tapa quién aprobó o descartó; la capacidad **`approve_reports`** concedida persona a persona; y las funciones de detectar, mover de estado, editar la propuesta, añadir a mano, anotar y actuar desde el restaurante (§100).
 - El **barrido** (`src/services/opportunity-detection.ts`) dentro de la tanda de `/api/cola`, detrás de las sincronizaciones, con la ventana en la zona horaria de cada espacio.

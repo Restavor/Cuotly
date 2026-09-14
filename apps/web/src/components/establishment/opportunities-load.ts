@@ -15,6 +15,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { type ChangeCategory, calculateConsumptionBalance } from "@/core/consumption-ledger";
+import { isChangeCategory } from "@/core/classification-rules";
 import {
   type EvidenceMeasurement,
   type OpportunityImpact,
@@ -22,26 +23,16 @@ import {
   type OpportunityState,
   type PlanOpportunityAccess,
   type PlanShape,
+  isOpportunityImpact,
+  isOpportunityOrigin,
   isOpportunityRule,
+  isOpportunityScope,
   isOpportunityState,
 } from "@/core/opportunities";
 
-/* eslint-disable @typescript-eslint/no-explicit-any --
-   Las tablas y funciones de la migración 84 todavía no están en
-   `database.types.ts`: ese archivo se regenera CONTRA EL PROYECTO REAL
-   cada vez que se aplica una migración (dice de sí mismo que no se edita
-   a mano), y la 84 la aplica Bosco cuando lo decide. Hasta entonces el
-   cliente tipado no las conoce y el `any` se queda aquí, en la frontera,
-   como en `integration-gateway.ts`. Cuando la 84 esté aplicada y los
-   tipos regenerados, esto vuelve a `SupabaseClient<Database>` y las
-   conversiones de abajo sobran. */
-type Client = SupabaseClient<any, any, any>;
+import type { Database, Json } from "@/lib/supabase/database.types";
 
-const COLUMNAS =
-  "id, origin, rule_key, subject, category, scope, title, description, recommended_action, " +
-  "impact, priority, effort_category, include_in_report, status, status_reason, evidence, " +
-  "period_start, period_end, detection_count, first_detected_at, last_detected_at, approved_at, " +
-  "discarded_at, discard_reason, reopened_at";
+type Client = SupabaseClient<Database>;
 
 export interface OpportunityRow {
   readonly id: string;
@@ -85,9 +76,15 @@ export interface OpportunitiesView {
 
 const CATEGORIES: readonly ChangeCategory[] = ["small", "photo", "medium", "large"];
 
-/** `evidence` es `jsonb`: lo que guarda es lo que escribió `src/core/opportunities.ts`. */
-function medidas(evidence: any): readonly EvidenceMeasurement[] {
-  return Array.isArray(evidence) ? (evidence as EvidenceMeasurement[]) : [];
+/**
+ * `evidence` es `jsonb`, así que los tipos generados lo dan como `Json`:
+ * lo que guarda es exactamente lo que escribió `src/core/opportunities.ts`,
+ * y esta es la única conversión del archivo. Si llegara otra cosa —una
+ * fila escrita a mano en el SQL Editor— se enseña vacío en vez de romper
+ * la pantalla.
+ */
+function medidas(evidence: Json): readonly EvidenceMeasurement[] {
+  return Array.isArray(evidence) ? (evidence as unknown as EvidenceMeasurement[]) : [];
 }
 
 export async function loadOpportunities(
@@ -97,7 +94,12 @@ export async function loadOpportunities(
   const [{ data, error }, { data: access }] = await Promise.all([
     supabase
       .from("opportunities")
-      .select(COLUMNAS)
+      // Enumeradas y en una sola cadena, no concatenadas: es como el
+      // cliente tipado deduce la forma de la fila. `select *` sobre esta
+      // tabla devolvería 403 (las columnas de identidad están revocadas).
+      .select(
+        "id, origin, rule_key, subject, category, scope, title, description, recommended_action, impact, priority, effort_category, include_in_report, status, status_reason, evidence, period_start, period_end, detection_count, first_detected_at, last_detected_at, approved_at, discarded_at, discard_reason, reopened_at",
+      )
       .eq("establishment_id", establishmentId)
       .order("priority", { ascending: true })
       .order("last_detected_at", { ascending: false, nullsFirst: false }),
@@ -105,33 +107,67 @@ export async function loadOpportunities(
   ]);
   if (error) throw new Error(`opportunities: ${error.message}`);
 
-  const rows = (data ?? []).map((row: any): OpportunityRow => ({
-    id: row.id,
-    origin: row.origin,
-    rule: isOpportunityRule(row.rule_key ?? "") ? (row.rule_key as OpportunityRule) : null,
-    subject: row.subject ?? "",
-    category: row.category,
-    scope: row.scope,
-    title: row.title,
-    description: row.description,
-    recommendedAction: row.recommended_action,
-    impact: row.impact,
-    priority: row.priority,
-    effortCategory: row.effort_category,
-    includeInReport: row.include_in_report,
-    status: isOpportunityState(row.status ?? "") ? (row.status as OpportunityState) : "detected",
-    statusReason: row.status_reason,
-    evidence: medidas(row.evidence),
-    periodStart: row.period_start,
-    periodEnd: row.period_end,
-    detectionCount: row.detection_count,
-    firstDetectedAt: row.first_detected_at,
-    lastDetectedAt: row.last_detected_at,
-    approvedAt: row.approved_at,
-    discardedAt: row.discarded_at,
-    discardReason: row.discard_reason,
-    reopenedAt: row.reopened_at,
-  }));
+  /*
+   * Los CHECK de la tabla ya garantizan que `origin`, `scope`, `impact`,
+   * `status` y `effort_category` son de su lista, pero los tipos
+   * generados los dan como `text`, que es lo que la columna ES. Se
+   * comprueban aquí en vez de forzarlos con un `as`: una fila que no
+   * cumpliera su propio CHECK no puede existir, y si existiera —escrita
+   * a mano en el SQL Editor— es mejor dejarla fuera y decirlo en el
+   * registro del servidor que inventarle un impacto para poder pintarla.
+   */
+  const descartadas: string[] = [];
+  const rows = (data ?? [])
+    .map((row): OpportunityRow | null => {
+      const status = row.status ?? "";
+      const origin = row.origin ?? "";
+      const scope = row.scope ?? "";
+      const impact = row.impact ?? "";
+      const effort = row.effort_category;
+      if (
+        !isOpportunityState(status) ||
+        !isOpportunityOrigin(origin) ||
+        !isOpportunityScope(scope) ||
+        !isOpportunityImpact(impact) ||
+        (effort !== null && !isChangeCategory(effort))
+      ) {
+        descartadas.push(row.id);
+        return null;
+      }
+
+      return {
+        id: row.id,
+        origin,
+        rule: isOpportunityRule(row.rule_key ?? "") ? (row.rule_key as OpportunityRule) : null,
+        subject: row.subject ?? "",
+        category: row.category,
+        scope,
+        title: row.title,
+        description: row.description,
+        recommendedAction: row.recommended_action,
+        impact,
+        priority: row.priority,
+        effortCategory: effort,
+        includeInReport: row.include_in_report,
+        status,
+        statusReason: row.status_reason,
+        evidence: medidas(row.evidence),
+        periodStart: row.period_start,
+        periodEnd: row.period_end,
+        detectionCount: row.detection_count,
+        firstDetectedAt: row.first_detected_at,
+        lastDetectedAt: row.last_detected_at,
+        approvedAt: row.approved_at,
+        discardedAt: row.discarded_at,
+        discardReason: row.discard_reason,
+        reopenedAt: row.reopened_at,
+      };
+    })
+    .filter((row): row is OpportunityRow => row !== null);
+
+  if (descartadas.length > 0) {
+    console.error("[oportunidades] filas con un valor fuera de su lista", { establishmentId, descartadas });
+  }
 
   const { plan, remaining } = await loadPlanAndBalance(supabase, establishmentId);
 
@@ -164,7 +200,7 @@ async function loadPlanAndBalance(
 
   const sub = subs?.[0];
   // La relación llega como objeto o como lista de uno según la consulta.
-  const planRow: any = Array.isArray(sub?.plans) ? sub?.plans[0] : sub?.plans;
+  const planRow = Array.isArray(sub?.plans) ? sub?.plans[0] : sub?.plans;
   if (!sub || !planRow) return { plan: null, remaining: null };
 
   const plan: PlanShape = {

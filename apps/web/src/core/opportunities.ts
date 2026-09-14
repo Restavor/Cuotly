@@ -91,7 +91,7 @@ export const RULE_PROVIDERS: Readonly<Record<OpportunityRule, readonly Integrati
 /**
  * La categoría de §96. La maestra la pide como campo y no la enumera, así
  * que son las cinco áreas en que caen las nueve reglas, y ninguna más.
- * Es una lectura aplicada (pendiente 15 de `docs/DECISIONES.md`).
+ * Confirmada por Bosco como decisión 27 de `docs/DECISIONES.md`.
  */
 export const OPPORTUNITY_CATEGORIES = ["traffic", "search", "performance", "technical", "conversion"] as const;
 export type OpportunityCategory = (typeof OPPORTUNITY_CATEGORIES)[number];
@@ -119,6 +119,17 @@ export const RULE_CATEGORY: Readonly<Record<OpportunityRule, OpportunityCategory
  * mire una fuente más se vuelve avanzada sola y nadie tiene que acordarse.
  */
 export type OpportunityScope = "basic" | "advanced";
+
+export function isOpportunityScope(value: string): value is OpportunityScope {
+  return value === "basic" || value === "advanced";
+}
+
+/** §96 la detecta sola; §97 la añade una persona. */
+export type OpportunityOrigin = "automatic" | "manual";
+
+export function isOpportunityOrigin(value: string): value is OpportunityOrigin {
+  return value === "automatic" || value === "manual";
+}
 
 export function ruleScope(rule: OpportunityRule): OpportunityScope {
   return RULE_PROVIDERS[rule].length > 1 ? "advanced" : "basic";
@@ -181,6 +192,10 @@ export function planSees(access: PlanOpportunityAccess, scope: OpportunityScope)
  */
 export const OPPORTUNITY_IMPACTS = ["high", "medium", "low"] as const;
 export type OpportunityImpact = (typeof OPPORTUNITY_IMPACTS)[number];
+
+export function isOpportunityImpact(value: string): value is OpportunityImpact {
+  return (OPPORTUNITY_IMPACTS as readonly string[]).includes(value);
+}
 
 // ---------------------------------------------------------------------
 // 4 · Esfuerzo: la categoría del cambio, sin escala nueva (decisión 26b)
@@ -415,7 +430,7 @@ export const OPPORTUNITY_THRESHOLDS = {
    * El suelo de 9b. La decisión 26c no le pone uno (sí a 6, que divide
    * entre las mismas sesiones de Clarity), así que se aplica el mismo:
    * un tanto por ciento sobre doce sesiones no es una señal. Lectura
-   * aplicada, pendiente 15 de `docs/DECISIONES.md`.
+   * aplicada y confirmada: decisión 27 de `docs/DECISIONES.md`.
    */
   frictionSessions: 100,
 } as const;
@@ -914,7 +929,7 @@ export function detectOpportunities(input: DetectionInput): readonly Opportunity
  * "Otro periodo" se lee como una ventana que ya no se solapa con la que
  * se descartó: si no, una descartada volvería al día siguiente con el
  * mismo dato y descartar no significaría nada durante 28 días. Es una
- * lectura aplicada (pendiente 15 de `docs/DECISIONES.md`).
+ * decisión 27 de `docs/DECISIONES.md`, confirmada por Bosco.
  */
 export function reopensAfterDiscard(
   detection: OpportunityDetection,

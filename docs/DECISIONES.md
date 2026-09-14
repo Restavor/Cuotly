@@ -342,49 +342,58 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    **(e) Básicas y avanzadas** (§101): **avanzadas** son las que cruzan dos fuentes y **básicas**
    las que salen de una sola. Impulso ve las básicas aprobadas y Premium también las avanzadas.
 
+27. **Las cinco lecturas del Hito 15, y las tres métricas por consulta** (14/09/2026, cierra la
+   pendiente 15). Bosco confirma las cinco lecturas que el Hito 15 aplicó donde §96 a §101 callan,
+   y aprueba la ampliación del catálogo que hicieron falta para cumplir la decisión 26. No cambia
+   nada: el código ya dice esto; lo que cambia es que deja de llamarlo "pendiente" y cita esta
+   decisión.
+
+   **(a) La "categoría" de §96** son las **cinco áreas** en que caen las nueve reglas: tráfico,
+   búsqueda, rendimiento, técnico y conversión. La maestra pide el campo y no lo enumera.
+
+   **(b) La "prioridad propuesta"** sale del impacto —alto 1, medio 2, bajo 3, y 1 es lo primero— y
+   es editable como el impacto y el esfuerzo (§96). Ordenar la lista es cambiarla.
+
+   **(c) Qué impacto propone cada regla**, aplicando la definición de la decisión 26a regla a
+   regla: **alto** para el error técnico (es la única que dice que algo está roto, y lo roto puede
+   ser el formulario o la reserva), para la baja conversión móvil (convertir **es** el camino de
+   contacto) y para los botones de la ficha de Google (son el teléfono, cómo llegar y la web);
+   **alto** también para un descenso de tráfico del 50 % o más ("más de la mitad del tráfico"),
+   **medio** por debajo; **medio** para la lentitud, las imágenes pesadas y los clics que no
+   responden; **bajo** para las tres reglas que hablan de una sola consulta.
+
+   **(d) "Otro periodo" en §99** —"puede reaparecer si empeora o vuelve a cumplirse en otro
+   periodo"— es una ventana que **ya no se solapa** con la que se descartó. La lectura literal
+   (cualquier detección posterior la reabre) haría que descartar no significara nada al día
+   siguiente, porque la regla vuelve a saltar cada día con el mismo dato. Empeorar sí la reabre de
+   inmediato, y al volver se indica el descarte anterior, que por eso no se borra.
+
+   **(e) El suelo de ruido de la regla 9b** (clics muertos o de rabia sobre el 5 % de las sesiones)
+   son **100 sesiones** de Clarity, heredado de la regla 6, que divide entre exactamente lo mismo.
+   La decisión 26c le pone suelo a las demás y a esta no.
+
+   **(f) Tres métricas más en el catálogo, y la decisión 25c queda ampliada otra vez.** Las tres
+   reglas "por consulta" de la decisión 26 necesitan el CTR y la posición **de cada consulta**, y
+   el catálogo solo guardaba los clics de las diez consultas con **más clics** de cada día — justo
+   las que esas reglas no buscan, porque lo que detectan es la consulta con impresiones y sin
+   clics. Con aquel catálogo no habría saltado ninguna de las tres, nunca, y nada lo habría dicho.
+   Se añaden `impressions_by_query`, `ctr_by_query` y `position_by_query`, que salen de la
+   respuesta de Search Console que ya se pedía —sin llamada nueva— y se quedan con las diez mayores
+   **por impresiones**. `clicks_by_query` no se toca: es lo que "búsquedas principales" enseña, y
+   ahí lo principal son los clics.
+
+   **(g) Y la 84 se aplica al proyecto real** el mismo día, por orden de Bosco, con
+   `database.types.ts` regenerado detrás (`docs/DESPLIEGUE-SUPABASE.md`).
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
-**Una abierta**, la 15. Las catorce anteriores están cerradas y quedan tachadas abajo con la decisión
-que las resolvió.
+**Ninguna abierta.** Las quince se han cerrado; quedan tachadas abajo con la decisión que las
+resolvió.
 
-15. **Lecturas aplicadas al implementar las oportunidades (Hito 15, 14/09/2026).** La decisión 26
-   fijó los umbrales, el impacto y el esfuerzo, que era lo que bloqueaba el hito. Al escribirlo
-   aparecieron cinco huecos más pequeños que §96 a §101 no cubren y que se han resuelto del modo más
-   corto, con su motivo al lado. **No hace falta hacer nada**: las cinco están implementadas y con
-   test; lo que se pide es que Bosco las confirme o diga otra cosa, como con las pendientes 13 y 14.
-
-   (a) **La "categoría" de §96** (un campo que la maestra pide y no enumera) son las **cinco áreas**
-   en que caen las nueve reglas: tráfico, búsqueda, rendimiento, técnico y conversión. Ninguna más.
-
-   (b) **La "prioridad propuesta" de §96** sale del impacto: alto 1, medio 2, bajo 3, y 1 es lo
-   primero. Como el impacto y el esfuerzo, es editable (§96), y ordenar la lista es cambiarla.
-
-   (c) **Qué impacto propone cada regla.** La decisión 26a define los tres niveles por lo que toca el
-   problema; aplicarlos regla a regla es esto: alto para el error técnico (es la única que dice que
-   algo está **roto**, y lo roto puede ser el formulario o la reserva), para la baja conversión móvil
-   (convertir **es** el camino de contacto) y para los botones de la ficha de Google (son literalmente
-   el teléfono, cómo llegar y la web); alto también para un descenso de tráfico **del 50 % o más**
-   ("más de la mitad del tráfico"), medio por debajo; medio para la lentitud, las imágenes pesadas y
-   los clics que no responden; bajo para las tres reglas que hablan de **una consulta**.
-
-   (d) **"Otro periodo" en §99** —"puede reaparecer si empeora o vuelve a cumplirse en otro
-   periodo"— se lee como una ventana que **ya no se solapa** con la que se descartó. La alternativa
-   literal (cualquier detección posterior la reabre) haría que descartar no significara nada al día
-   siguiente, porque la regla vuelve a saltar cada día con el mismo dato. Empeorar sí la reabre de
-   inmediato, y al volver se indica el descarte anterior, que por eso no se borra.
-
-   (e) **El suelo de ruido de la regla 9b** (clics muertos o de rabia sobre el 5 % de las sesiones).
-   La decisión 26c le pone suelo a las demás y a esta no; se hereda el de la regla 6 —**100 sesiones**
-   de Clarity—, que divide entre exactamente lo mismo. Un tanto por ciento sobre doce sesiones no es
-   una señal.
-
-   Y una consecuencia de la decisión 26 que **no** es una lectura sino un hueco de datos, dicha aquí
-   porque amplía la 25c igual que lo hizo la 26d: las tres reglas "por consulta" necesitaban el CTR y
-   la posición **de cada consulta**, y el catálogo solo guardaba los clics de las diez consultas con
-   más clics de cada día. Se han añadido `impressions_by_query`, `ctr_by_query` y `position_by_query`,
-   que salen de la misma respuesta de Search Console que ya se pedía.
+15. ~~Lecturas aplicadas al implementar las oportunidades~~ — confirmadas el 14/09/2026 como
+   decisión 27.
 
 14. ~~Lecturas aplicadas al implementar los adaptadores y las pantallas de integraciones~~ —
    confirmadas el 14/09/2026 como decisión 25.

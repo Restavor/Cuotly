@@ -13,19 +13,33 @@
 import { revalidatePath } from "next/cache";
 
 import { es } from "@/i18n/es";
+import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
 import type { OpportunityFormState } from "./opportunity-action-state";
 
 export type { OpportunityFormState } from "./opportunity-action-state";
 
-/* eslint-disable @typescript-eslint/no-explicit-any --
-   Mismo motivo que en `opportunities-load.ts`: las funciones de la
-   migración 84 no están todavía en `database.types.ts`, que se regenera
-   contra el proyecto real cuando la migración se aplica. */
-async function llamar(fn: string, args: Record<string, unknown>): Promise<string | null> {
+/**
+ * Una llamada a una función de la migración 84. El nombre y los
+ * argumentos vienen tipados de `database.types.ts`, así que equivocarse
+ * en un parámetro es un error de compilación y no un 500 en la pantalla.
+ */
+type OpportunityRpc = Extract<
+  keyof Database["public"]["Functions"],
+  | "set_opportunity_status"
+  | "update_opportunity_proposal"
+  | "add_manual_opportunity"
+  | "add_opportunity_note"
+  | "act_on_opportunity"
+>;
+
+async function llamar<F extends OpportunityRpc>(
+  fn: F,
+  args: Database["public"]["Functions"][F]["Args"],
+): Promise<string | null> {
   const supabase = await createClient();
-  const { error } = await (supabase as any).rpc(fn, args);
+  const { error } = await supabase.rpc(fn, args);
   return error ? error.message : null;
 }
 
@@ -48,7 +62,9 @@ export async function changeOpportunityStatus(
   const error = await llamar("set_opportunity_status", {
     p_opportunity_id: String(formData.get("opportunityId") ?? ""),
     p_status: status,
-    p_reason: reason || null,
+    // Omitir un parámetro es lo que la función de SQL lee como "sin
+    // motivo"; `null` explícito no lo aceptan los tipos generados.
+    p_reason: reason || undefined,
   });
   if (error) return { error, done: false };
 
@@ -61,20 +77,27 @@ export async function editOpportunityProposal(
   _prev: OpportunityFormState,
   formData: FormData,
 ): Promise<OpportunityFormState> {
+  /*
+   * Un campo vacío se OMITE en vez de mandarse nulo: la función de SQL
+   * hace `coalesce(p_x, x)`, así que omitirlo es exactamente "deja esto
+   * como estaba", que es lo que un formulario a medio rellenar quiere
+   * decir. Mandar cadena vacía borraría el valor anterior.
+   */
   const texto = (campo: string) => {
     const valor = String(formData.get(campo) ?? "").trim();
-    return valor === "" ? null : valor;
+    return valor === "" ? undefined : valor;
   };
   const prioridad = texto("priority");
 
   const error = await llamar("update_opportunity_proposal", {
     p_opportunity_id: String(formData.get("opportunityId") ?? ""),
     p_impact: texto("impact"),
-    p_priority: prioridad === null ? null : Number(prioridad),
+    p_priority: prioridad === undefined ? undefined : Number(prioridad),
     p_effort_category: texto("effortCategory"),
-    p_include_in_report: formData.get("includeInReport") === null ? null : formData.get("includeInReport") === "on",
+    p_include_in_report:
+      formData.get("includeInReport") === null ? undefined : formData.get("includeInReport") === "on",
     p_recommended_action: texto("recommendedAction"),
-    p_potential_service_id: null,
+    p_potential_service_id: undefined,
     p_title: texto("title"),
     p_description: texto("description"),
   });
@@ -98,10 +121,10 @@ export async function addManualOpportunity(
     p_title: title,
     p_category: String(formData.get("category") ?? "traffic"),
     p_impact: String(formData.get("impact") ?? "medium"),
-    p_description: String(formData.get("description") ?? "").trim() || null,
-    p_effort_category: efuerzo || null,
-    p_recommended_action: String(formData.get("recommendedAction") ?? "").trim() || null,
-    p_potential_service_id: null,
+    p_description: String(formData.get("description") ?? "").trim() || undefined,
+    p_effort_category: efuerzo || undefined,
+    p_recommended_action: String(formData.get("recommendedAction") ?? "").trim() || undefined,
+    p_potential_service_id: undefined,
   });
   if (error) return { error, done: false };
 

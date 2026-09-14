@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 14/09/2026), con las 83 migraciones del
+// (generate_typescript_types, 14/09/2026), con las 84 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -3261,6 +3261,309 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          detection_count: number
+          discard_reason: string | null
+          discarded_at: string | null
+          discarded_by: string | null
+          discarded_period_end: string | null
+          discarded_severity: number | null
+          effort_category: string | null
+          establishment_id: string
+          evidence: Json
+          first_detected_at: string | null
+          id: string
+          impact: string
+          include_in_report: boolean
+          last_detected_at: string | null
+          origin: string
+          period_end: string | null
+          period_start: string | null
+          potential_service_id: string | null
+          priority: number
+          proposal_edited_at: string | null
+          proposal_edited_by: string | null
+          recommended_action: string | null
+          reopened_at: string | null
+          rule_key: string | null
+          scope: string
+          severity: number
+          space_id: string
+          status: string
+          status_reason: string | null
+          subject: string
+          title: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          detection_count?: number
+          discard_reason?: string | null
+          discarded_at?: string | null
+          discarded_by?: string | null
+          discarded_period_end?: string | null
+          discarded_severity?: number | null
+          effort_category?: string | null
+          establishment_id: string
+          evidence?: Json
+          first_detected_at?: string | null
+          id?: string
+          impact: string
+          include_in_report?: boolean
+          last_detected_at?: string | null
+          origin: string
+          period_end?: string | null
+          period_start?: string | null
+          potential_service_id?: string | null
+          priority?: number
+          proposal_edited_at?: string | null
+          proposal_edited_by?: string | null
+          recommended_action?: string | null
+          reopened_at?: string | null
+          rule_key?: string | null
+          scope: string
+          severity?: number
+          space_id: string
+          status?: string
+          status_reason?: string | null
+          subject?: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          detection_count?: number
+          discard_reason?: string | null
+          discarded_at?: string | null
+          discarded_by?: string | null
+          discarded_period_end?: string | null
+          discarded_severity?: number | null
+          effort_category?: string | null
+          establishment_id?: string
+          evidence?: Json
+          first_detected_at?: string | null
+          id?: string
+          impact?: string
+          include_in_report?: boolean
+          last_detected_at?: string | null
+          origin?: string
+          period_end?: string | null
+          period_start?: string | null
+          potential_service_id?: string | null
+          priority?: number
+          proposal_edited_at?: string | null
+          proposal_edited_by?: string | null
+          recommended_action?: string | null
+          reopened_at?: string | null
+          rule_key?: string | null
+          scope?: string
+          severity?: number
+          space_id?: string
+          status?: string
+          status_reason?: string | null
+          subject?: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_discarded_by_fkey"
+            columns: ["discarded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_potential_service_id_fkey"
+            columns: ["potential_service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_proposal_edited_by_fkey"
+            columns: ["proposal_edited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_detections: {
+        Row: {
+          detected_at: string
+          establishment_id: string
+          evidence: Json
+          id: string
+          opportunity_id: string
+          period_end: string
+          period_start: string
+          severity: number
+          space_id: string
+        }
+        Insert: {
+          detected_at?: string
+          establishment_id: string
+          evidence: Json
+          id?: string
+          opportunity_id: string
+          period_end: string
+          period_start: string
+          severity: number
+          space_id: string
+        }
+        Update: {
+          detected_at?: string
+          establishment_id?: string
+          evidence?: Json
+          id?: string
+          opportunity_id?: string
+          period_end?: string
+          period_start?: string
+          severity?: number
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_detections_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_detections_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_detections_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_notes: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          establishment_id: string
+          id: string
+          kind: string
+          opportunity_id: string
+          space_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          establishment_id: string
+          id?: string
+          kind: string
+          opportunity_id: string
+          space_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          establishment_id?: string
+          id?: string
+          kind?: string
+          opportunity_id?: string
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_notes_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_notes_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_notes_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_notes_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payment_confirmations: {
         Row: {
           confirmed_at: string
@@ -4002,6 +4305,8 @@ export type Database = {
           description: string
           establishment_id: string
           id: string
+          opportunity_action: string | null
+          opportunity_id: string | null
           priority_rank: number | null
           rejected_at: string | null
           rejected_by: string | null
@@ -4026,6 +4331,8 @@ export type Database = {
           description: string
           establishment_id: string
           id?: string
+          opportunity_action?: string | null
+          opportunity_id?: string | null
           priority_rank?: number | null
           rejected_at?: string | null
           rejected_by?: string | null
@@ -4050,6 +4357,8 @@ export type Database = {
           description?: string
           establishment_id?: string
           id?: string
+          opportunity_action?: string | null
+          opportunity_id?: string | null
           priority_rank?: number | null
           rejected_at?: string | null
           rejected_by?: string | null
@@ -4089,6 +4398,13 @@ export type Database = {
             columns: ["establishment_id"]
             isOneToOne: false
             referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "requests_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
             referencedColumns: ["id"]
           },
           {
@@ -4402,6 +4718,7 @@ export type Database = {
       }
       space_memberships: {
         Row: {
+          can_approve_reports: boolean
           can_perform_jobs: boolean
           created_at: string
           id: string
@@ -4411,6 +4728,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          can_approve_reports?: boolean
           can_perform_jobs?: boolean
           created_at?: string
           id?: string
@@ -4420,6 +4738,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          can_approve_reports?: boolean
           can_perform_jobs?: boolean
           created_at?: string
           id?: string
@@ -5492,6 +5811,10 @@ export type Database = {
         Args: { p_subscription_id: string; p_version_id: string }
         Returns: string
       }
+      act_on_opportunity: {
+        Args: { p_action: string; p_message: string; p_opportunity_id: string }
+        Returns: string
+      }
       add_file_version: {
         Args: {
           p_checksum?: string
@@ -5503,6 +5826,23 @@ export type Database = {
           p_variant?: string
         }
         Returns: number
+      }
+      add_manual_opportunity: {
+        Args: {
+          p_category: string
+          p_description?: string
+          p_effort_category?: string
+          p_establishment_id: string
+          p_impact: string
+          p_potential_service_id?: string
+          p_recommended_action?: string
+          p_title: string
+        }
+        Returns: string
+      }
+      add_opportunity_note: {
+        Args: { p_body: string; p_kind: string; p_opportunity_id: string }
+        Returns: string
       }
       apply_financial_hold_on_jobs: {
         Args: { p_establishment_id: string }
@@ -5760,6 +6100,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: boolean
       }
+      client_opportunity_access: {
+        Args: { p_establishment_id: string }
+        Returns: string
+      }
       client_request_job: {
         Args: { p_request_id: string }
         Returns: {
@@ -5787,6 +6131,10 @@ export type Database = {
           tax_rate_percent: number
           total_cents: number
         }[]
+      }
+      client_sees_opportunity: {
+        Args: { p_establishment_id: string; p_scope: string }
+        Returns: boolean
       }
       complete_correction: {
         Args: { p_correction_id: string; p_note?: string }
@@ -6126,6 +6474,14 @@ export type Database = {
       establishment_timezone: {
         Args: { p_establishment_id: string }
         Returns: string
+      }
+      establishments_for_opportunity_detection: {
+        Args: { p_limit?: number }
+        Returns: {
+          establishment_id: string
+          space_id: string
+          timezone: string
+        }[]
       }
       establishments_with_nonpayment: {
         Args: { p_space_id: string }
@@ -6611,6 +6967,25 @@ export type Database = {
         Args: { p_description: string; p_job_id: string }
         Returns: string
       }
+      opportunity_default_priority: {
+        Args: { p_impact: string }
+        Returns: number
+      }
+      opportunity_is_visible_to_client: {
+        Args: { p_status: string }
+        Returns: boolean
+      }
+      opportunity_rule_category: { Args: { p_rule: string }; Returns: string }
+      opportunity_rule_effort: { Args: { p_rule: string }; Returns: string }
+      opportunity_rule_providers: {
+        Args: { p_rule: string }
+        Returns: string[]
+      }
+      opportunity_rule_scope: { Args: { p_rule: string }; Returns: string }
+      opportunity_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string }
+        Returns: boolean
+      }
       pause_establishment_counters: {
         Args: { p_establishment_id: string }
         Returns: number
@@ -6940,6 +7315,10 @@ export type Database = {
           service_name: string
         }[]
       }
+      set_admin_can_approve_reports: {
+        Args: { p_space_id: string; p_user_id: string; p_value: boolean }
+        Returns: undefined
+      }
       set_admin_can_perform_jobs: {
         Args: { p_space_id: string; p_user_id: string; p_value: boolean }
         Returns: undefined
@@ -6989,6 +7368,10 @@ export type Database = {
           p_in_app: boolean
           p_space_id: string
         }
+        Returns: undefined
+      }
+      set_opportunity_status: {
+        Args: { p_opportunity_id: string; p_reason?: string; p_status: string }
         Returns: undefined
       }
       set_principal_supervisor: {
@@ -7206,6 +7589,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_opportunity_proposal: {
+        Args: {
+          p_description?: string
+          p_effort_category?: string
+          p_impact?: string
+          p_include_in_report?: boolean
+          p_opportunity_id: string
+          p_potential_service_id?: string
+          p_priority?: number
+          p_recommended_action?: string
+          p_title?: string
+        }
+        Returns: undefined
+      }
       update_quote_draft: {
         Args: {
           p_base_cents: number
@@ -7231,6 +7628,19 @@ export type Database = {
       }
       upload_payment_receipt: {
         Args: { p_charge_id: string; p_file_id: string; p_note?: string }
+        Returns: string
+      }
+      upsert_detected_opportunity: {
+        Args: {
+          p_establishment_id: string
+          p_evidence: Json
+          p_impact: string
+          p_period_end: string
+          p_period_start: string
+          p_rule: string
+          p_severity: number
+          p_subject: string
+        }
         Returns: string
       }
       validate_classification: {
