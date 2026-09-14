@@ -3552,7 +3552,7 @@ export const es = {
     reservationsTitle: "Reservas",
     deliveryTitle: "Delivery",
     externalPlatformNote: "Plataforma externa utilizada",
-    externalPlatformNone: "Sin plataforma registrada: la ficha no tiene ese campo todavía (§120, pendiente 14).",
+    externalPlatformNone: "Sin plataforma registrada: la ficha no tiene ese campo todavía (§120).",
 
     // Las seis secciones de "Informes y datos" (maquetas 09 a 12 y las
     // seis vistas "sin datos"), con las palabras del diseño.

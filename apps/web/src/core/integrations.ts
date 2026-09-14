@@ -380,7 +380,7 @@ export const SUMMARY_WINDOW_DAYS = 28;
  * dice "periodo insuficiente" (§178) y no dice cuánto es suficiente:
  * aquí se lee como una semana de datos para una fuente diaria y una sola
  * medición para una semanal. Es una lectura aplicada y está anotada como
- * pendiente 14 en `docs/DECISIONES.md`; no es una regla del PRD.
+ * decisión 25a en `docs/DECISIONES.md`, confirmada por Bosco el 14/09/2026.
  */
 export function minimumCoveredDays(provider: IntegrationProvider): number {
   return integrationSyncFrequency(provider) === "weekly" ? 1 : 7;
@@ -642,7 +642,7 @@ export interface DimensionTotal {
  * de `dimension` a lo largo de los días, ordenada de mayor a menor y
  * recortada. Es lo que "páginas más visitadas", "búsquedas principales" y
  * "dispositivos" significan en §92 sobre lo que el adaptador guardó (los
- * diez mayores de cada día, pendiente 14f).
+ * diez mayores de cada día, decisión 25f).
  */
 export function topDimensions(
   points: readonly MetricPoint[],

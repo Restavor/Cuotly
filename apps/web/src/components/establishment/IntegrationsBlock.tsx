@@ -335,7 +335,7 @@ function IntegrationRowView({
  * Vista 17, abajo · LandingSite con su proyecto y su última publicación
  * (la de Menú Diario, que es manual, §121), y Reservas y Delivery como
  * "plataforma externa utilizada". Las dos últimas no tienen campo en la
- * ficha todavía (§120, pendiente 14g): se dice en vez de pintar "Abrir
+ * ficha todavía (§120, decisión 25g): se dice en vez de pintar "Abrir
  * enlace" sin enlace.
  */
 function ExternalPlatforms({ view }: { view: IntegrationsView }) {

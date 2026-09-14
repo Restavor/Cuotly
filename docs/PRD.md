@@ -959,7 +959,7 @@ procedencia, dispositivos, ubicaciones aproximadas y conversiones configuradas) 
 (clics, impresiones, CTR, posición media, búsquedas principales y páginas que aparecen). Para Business
 Profile, Clarity y PageSpeed la maestra solo nombra la fuente: su catálogo lo fijó el adaptador de
 cada una en el Hito 14 con lo que su API devuelve, sin nada por encima (`METRICS_BY_PROVIDER` en
-`src/core/integrations.ts`; pendiente 14 de `docs/DECISIONES.md`): Business Profile, las impresiones
+`src/core/integrations.ts`; decisión 25c de `docs/DECISIONES.md`): Business Profile, las impresiones
 por superficie (Maps y Búsqueda, escritorio y móvil) y las acciones sobre la ficha (clics a la web,
 llamadas, cómo llegar, conversaciones y reservas); Clarity, tráfico (sesiones, sesiones de robots,
 usuarios distintos, páginas por sesión), comportamiento (profundidad de scroll, tiempo de interacción)
@@ -968,6 +968,6 @@ script, clics con error); PageSpeed, la puntuación de rendimiento y LCP, CLS, T
 por estrategia (móvil y escritorio), más el INP de campo cuando Chrome tiene datos de esa URL. Lo
 que la pantalla de "Informes y datos" enseña de cada fuente son los 28 últimos días completos con su
 antigüedad, y "periodo insuficiente" (§178) se lee como menos de una semana con dato (una medición,
-en PageSpeed): es una lectura aplicada, no una regla, y está anotada como pendiente 14. Las
+en PageSpeed): es una lectura aplicada y confirmada, anotada como decisión 25a. Las
 oportunidades (§96 a §101) y los informes (§89 a §95) son los hitos 15 y 16; **los umbrales de
 detección y la definición de impacto y esfuerzo siguen pendientes de Bosco** (§24.3) y no se inventan.

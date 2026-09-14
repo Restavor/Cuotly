@@ -3473,7 +3473,7 @@ regenerar salió idéntica, así que no había desviación.
       la ventana de 28 días, `headlineValue()` (suma, media o última
       medición por desglose) y `summaryReason()` (los cinco motivos en su
       orden). "Periodo insuficiente" es menos de 7 días con dato (una
-      medición en PageSpeed) y es una lectura, no una regla: pendiente 14.
+      medición en PageSpeed): lectura confirmada por Bosco como decisión 25a.
 
     **Lo que NO hace, dicho en claro:** cuando esto se escribió, la 82 no
     estaba aplicada al proyecto real; Bosco lo ordenó ese mismo día y lo

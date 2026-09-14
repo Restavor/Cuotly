@@ -259,48 +259,45 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    cuatro funciones de cuenta de la 81 y `src/core/integrations.ts` ya dicen esto, y
    `listas-compartidas.test.ts` vigila que sigan diciendo lo mismo.
 
+25. **Lecturas del Hito 14 sobre los adaptadores y las pantallas de integraciones,
+   confirmadas** (14/09/2026, cierra la pendiente 14). Las ocho lecturas que el Hito 14 aplicó
+   donde la maestra calla quedan como reglas. Cuatro eran elecciones con alternativa real:
+   (a) **"periodo insuficiente"** (§178) es tener menos de **7 días con dato** en la ventana
+   para una fuente diaria, y **ninguna medición** para PageSpeed, que es semanal
+   (`minimumCoveredDays()`); (b) la **ventana del resumen** son los **28 últimos días
+   completos**, hasta ayer, que es la que GA4 y Search Console enseñan por defecto, y no el mes
+   natural; (e) **"una revocación remota, una vez"** (RN-INT-08) son **dos intentos en total**,
+   es decir, un reintento: el primer fallo pasajero se repite en la siguiente tanda y el segundo
+   cierra la pendiente con el motivo en la auditoría, y un token que Google ya no reconoce cuenta
+   como revocado; (f) de los **desgloses** (páginas, procedencia, búsquedas) se guardan los
+   **diez mayores de cada día** (`TOP_PER_DAY`), no la cola larga entera.
+
+   Las otras cuatro no eran elecciones, sino lo que imponen las API o lo ya decidido:
+   (c) el **catálogo de métricas** de Business Profile, Clarity y PageSpeed (§92.3) es lo que
+   devuelve la API de cada una, y está en `METRICS_BY_PROVIDER` y en PRD §27; (d) **Clarity** no
+   acepta rangos de fechas, así que cada punto se guarda con el día de la consulta y un día sin
+   sincronizar no se recupera; (g) **reservas y delivery** (§120) no tienen todavía campo en la
+   ficha, así que la tarjeta lo dice en vez de enseñar un enlace vacío, y añadirlos es un dato de
+   §15.2, no una integración; (h) al ajustar las pantallas a los PDF de `docs/diseno/`:
+   **Business Profile va en la sección "Búsqueda"** con Search Console porque lo que mide es
+   visibilidad de la ficha en Google, la **variación** de cada cifra es frente a los **28 días
+   anteriores** a la ventana y se dice así aunque las maquetas escriban "vs. mes anterior", el
+   **color de la puntuación de PageSpeed** son las bandas de Lighthouse y no un umbral de
+   Cuotly, y las **marcas de cada fuente** son iconos del sistema y no los logotipos de los
+   productos.
+
+   Bosco confirma las ocho. No cambia nada: `src/core/integrations.ts`, la migración 82 y las
+   pantallas ya dicen esto; lo que cambia es que dejan de llamarlo "pendiente" y citan esta
+   decisión. Con esto **no queda ninguna pendiente abierta** en este documento.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
-14. **Lecturas aplicadas al implementar los adaptadores y las pantallas de integraciones**
-   (14/09/2026, Hito 14). Donde la maestra calla, se aplicó esto y se dice para que Bosco lo
-   confirme o lo corrija; ninguna es una regla del PRD:
-   (a) **"periodo insuficiente"** (§178) en el resumen de "Informes y datos" es tener menos de
-   **7 días con dato** en la ventana de 28 días para una fuente diaria, y **ninguna medición**
-   para PageSpeed (semanal). `minimumCoveredDays()` en `src/core/integrations.ts`.
-   (b) La **ventana del resumen** son los **28 últimos días completos** (hasta ayer), que es la
-   que enseñan GA4 y Search Console por defecto; no es un informe (Hito 16).
-   (c) El **catálogo de métricas** de Business Profile, Clarity y PageSpeed (§92.3, donde la
-   maestra solo da el nombre) es lo que la API de cada una devuelve: impresiones por
-   superficie y acciones sobre la ficha; tráfico, comportamiento y señales de fricción;
-   puntuación y métricas de laboratorio por estrategia (móvil y escritorio). Está en
-   `METRICS_BY_PROVIDER` y en PRD §27.
-   (d) **Clarity** no da rangos de fechas (solo "los últimos 1 a 3 días desde ahora"), así que
-   cada punto se guarda con el **día de la consulta** y la serie se forma pasada a pasada; un
-   día sin sincronizar no se recupera. Su límite de diez llamadas al día hace que una
-   comprobación (§116) cueste una.
-   (e) **"Una revocación remota, una vez"** (RN-INT-08) se lee como **dos intentos en total**:
-   el primer fallo pasajero se repite en la siguiente tanda y el segundo cierra la pendiente
-   con el motivo en la auditoría (migración 82). Un token que Google ya no reconoce cuenta
-   como revocado.
-   (f) De los **desgloses** (páginas, procedencia, búsquedas…) se guardan los **diez mayores de
-   cada día** (`TOP_PER_DAY`): es lo que "páginas más visitadas" y "búsquedas principales"
-   significan en §92, y evita miles de filas de cola larga por restaurante y día.
-   (g) Las **plataformas de reservas y delivery** (§120) no tienen todavía campo en la ficha:
-   la tarjeta de "Plataformas externas" lo dice en vez de enseñar un enlace vacío. Añadirlas
-   es un dato de §15.2 pendiente, no una integración.
-   (h) Al ajustar las pantallas a los PDF de `docs/diseno/` (14/09/2026): **Business Profile va
-   en la sección "Búsqueda"** con Search Console, no en "Rendimiento" donde la maqueta 11 lo
-   pinta debajo de PageSpeed, porque lo que enseña es visibilidad de la ficha en Google
-   (`DATA_SECTION_PROVIDERS`); la **variación** de cada cifra es frente a los **28 días
-   anteriores** a la ventana, y se dice así (las maquetas escriben "vs. mes anterior"); el
-   **color de la puntuación de PageSpeed** son las bandas de Lighthouse (0-49, 50-89, 90-100),
-   no un umbral de Cuotly; las **marcas de cada fuente** son iconos del sistema y no los
-   logotipos de los productos; y "Interpretación rápida" (22.02), la duración media de la sesión
-   y las puntuaciones de accesibilidad, buenas prácticas y SEO de PageSpeed (11) **no se
-   construyeron**: la primera es un texto que nadie genera y las otras no están en el catálogo de
-   §27.
+**Ninguna abierta.** Las catorce se han cerrado; quedan tachadas abajo con la decisión que las resolvió.
+
+14. ~~Lecturas aplicadas al implementar los adaptadores y las pantallas de integraciones~~ —
+   confirmadas el 14/09/2026 como decisión 25.
 
 13. ~~Lecturas aplicadas de §115 a §122 al implementar las integraciones~~ — confirmadas el
    14/09/2026 como decisión 24.

@@ -356,7 +356,7 @@ describe("integraciones analíticas (PRD §27)", () => {
       expect(value.coveredDays).toBe(2);
     });
 
-    it("«periodo insuficiente» es una semana para una fuente diaria y una medición para una semanal (pendiente 14)", () => {
+    it("«periodo insuficiente» es una semana para una fuente diaria y una medición para una semanal (decisión 25a)", () => {
       expect(minimumCoveredDays("ga4")).toBe(7);
       expect(minimumCoveredDays("clarity")).toBe(7);
       expect(minimumCoveredDays("pagespeed")).toBe(1);
@@ -422,7 +422,7 @@ describe("integraciones analíticas (PRD §27)", () => {
       ]);
     });
 
-    it("los desgloses mayores suman cada valor a lo largo de los días y se recortan (pendiente 14f)", () => {
+    it("los desgloses mayores suman cada valor a lo largo de los días y se recortan (decisión 25f)", () => {
       const points = [
         punto("page_views_by_page", "2026-09-12", 30, "/carta"),
         punto("page_views_by_page", "2026-09-13", 40, "/carta"),
