@@ -10,7 +10,8 @@
  * 20260830000035 y lo ensancharon la 20260912000071, la 20260912000076 y
  * la 20260913000077, que trajo los cinco eventos de Menú Diario, y la
  * 20260913000079, con el recordatorio de las 20:00 y el aviso de las
- * 08:00, y la 20260913000080, con los tres de un presupuesto). Son dos sistemas
+ * 08:00, la 20260913000080, con los tres de un presupuesto, y la
+ * 20260913000081, con los dos de una integración). Son dos sistemas
  * distintos y ninguno puede importar del otro, así que la duplicación se
  * compensa con `listas-compartidas.test.ts`, que lee la última definición
  * del CHECK en las migraciones y la compara con esta lista.
@@ -40,6 +41,10 @@ export const NOTIFICATION_EVENTS = [
   "quote_sent",
   "quote_accepted",
   "quote_rejected",
+  // Migración 81 (RN-INT-04): el fallo va al equipo, una vez por racha; la
+  // reautorización también a los propietarios del restaurante.
+  "integration_sync_failed",
+  "integration_reauthorization_required",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",

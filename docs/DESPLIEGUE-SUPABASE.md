@@ -10,12 +10,19 @@ Actualizado el 13/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 80 migraciones del repositorio están aplicadas en el
-proyecto.
+**La 81** (`integraciones_conexiones_y_sincronizacion`, Fase 3 · Hito 13),
+en el repositorio desde el 13/09/2026 y **sin aplicar a propósito**: es la
+primera migración de la Fase 3 y el PRD §27 en el que se apoya es un
+borrador pendiente de que Bosco lo revise (con las cuatro lecturas de la
+pendiente 13 de `docs/DECISIONES.md`). Aplica desde cero en local y su
+suite pasa; cuando Bosco confirme la Fase 3, se aplica y se anota aquí.
+Es solo aditiva (cuatro tablas y veinte funciones, dos eventos y un tipo
+de entidad más en los CHECK de `notifications`), así que aplicarla no
+toca ninguna fila.
 
 ## Aplicadas
 
-**Las 80 migraciones del repositorio están aplicadas.** Las tres
+**Las 80 primeras migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a

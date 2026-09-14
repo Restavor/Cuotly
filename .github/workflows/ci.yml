@@ -315,6 +315,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/presupuestos_y_calendario.sql
 
+      - name: "Migración 81 — Verificar las integraciones analíticas: conexiones, credenciales cifradas, estados y sincronización (RN-INT-01 a 09, P7, §18, §21.2)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/integraciones_conexiones_y_sincronizacion.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

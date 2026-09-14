@@ -2610,7 +2610,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|assert_can_manage_integrations|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2648,6 +2648,14 @@ begin
         -- `accept_subscription_terms()`, que la llama, sí queda cubierta
         -- por la heurística.
         'client_can_accept_terms',
+        -- Migración 81 (Fase 3, Hito 13): `assert_can_manage_integrations()`
+        -- es LA comprobación de RN-INT-05 —`manage_clients` o el propietario
+        -- del restaurante— y lanza si no. Está cerrada por RPC (no se
+        -- barre), pero su NOMBRE entra en la heurística de arriba para que
+        -- las cuatro públicas que la llaman (`begin_integration_connection`,
+        -- `cancel_integration_connection`, `disconnect_integration`,
+        -- `request_integration_check`) cuenten como comprobadas. Si alguien
+        -- le quita el `raise`, la suite de la 81 lo caza (RN-INT-05).
         -- Estas cinco SÍ comprueban permisos, pero a mano: comparan
         -- `auth.uid()` con el dueño de la fila y lanzan excepción si no
         -- coincide (el responsable asignado, el autor del mensaje, el
@@ -3611,7 +3619,16 @@ begin
       ('corrections','completed_by'),
       ('plan_versions','published_by'),
       ('service_versions','published_by'),
-      ('terms_acceptances','recorded_by')
+      ('terms_acceptances','recorded_by'),
+      -- Migración 81 (Fase 3, Hito 13): la fila de una integración es del
+      -- restaurante; quién la conectó o desconectó, no. Y el texto cifrado
+      -- de una credencial no lo lee nadie por SELECT (RN-INT-02).
+      ('integrations','connected_by'),
+      ('integrations','disconnected_by'),
+      ('integrations','created_by'),
+      ('integration_credentials','created_by'),
+      ('integration_credentials','ciphertext'),
+      ('sync_runs','requested_by')
     ) as t(tabla, columna)
   loop
     if has_column_privilege('authenticated', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select')

@@ -766,6 +766,8 @@ export const es = {
       quote_sent: "Tienes un presupuesto pendiente de responder",
       quote_accepted: "Presupuesto aceptado",
       quote_rejected: "Presupuesto rechazado",
+      integration_sync_failed: "Una integración ha dejado de sincronizar",
+      integration_reauthorization_required: "Una integración necesita que vuelvas a autorizarla",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -2279,6 +2281,7 @@ export const es = {
       correction: "Correcciones",
       session: "Sesiones",
       quote: "Presupuestos",
+      integration: "Integraciones",
     },
 
     auditEntities: {
@@ -2304,6 +2307,7 @@ export const es = {
       space_invitation: "Invitación",
       space_membership: "Pertenencia al equipo",
       quote: "Presupuesto",
+      integration: "Integración",
     },
 
     auditActions: {
@@ -2334,6 +2338,15 @@ export const es = {
       "group_access.granted": "Acceso a un grupo concedido",
       "group_access.revoked": "Acceso a un grupo revocado",
       "holiday.created": "Festivo añadido",
+      "integration.check_requested": "Comprobación de una integración pedida",
+      "integration.checked": "Integración comprobada",
+      "integration.connected": "Integración conectada",
+      "integration.connection_cancelled": "Conexión de una integración cancelada",
+      "integration.connection_started": "Conexión de una integración iniciada",
+      "integration.credential_replaced": "Credencial de una integración sustituida",
+      "integration.disconnected": "Integración desconectada",
+      "integration.reauthorization_required": "Integración pendiente de volver a autorizar",
+      "integration.sync_failed": "Sincronización de una integración fallida",
       "invitation.accepted": "Invitación aceptada",
       "job.assigned": "Trabajo asignado",
       "job.blocked": "Trabajo bloqueado",

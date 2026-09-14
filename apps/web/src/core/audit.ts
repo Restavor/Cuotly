@@ -64,6 +64,10 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   group_access: "manage_clients",
   // Festivos y cierres (§125, HU-32).
   holiday: "manage_holidays",
+  // Las integraciones analíticas (RN-INT-06, migración 81): conectar,
+  // desconectar y sus fallos son de la cartera de clientes, como el
+  // establecimiento al que pertenecen.
+  integration: "manage_clients",
   // Las plantillas de Menú Diario (RN-COM-10, migración 77): quién las
   // creó o archivó es de la misma cartera que contratar el servicio.
   menu_template: "manage_clients",
@@ -132,6 +136,15 @@ export const AUDIT_ACTIONS = [
   "group_access.granted",
   "group_access.revoked",
   "holiday.created",
+  "integration.check_requested",
+  "integration.checked",
+  "integration.connected",
+  "integration.connection_cancelled",
+  "integration.connection_started",
+  "integration.credential_replaced",
+  "integration.disconnected",
+  "integration.reauthorization_required",
+  "integration.sync_failed",
   "invitation.accepted",
   "job.assigned",
   "job.blocked",

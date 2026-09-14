@@ -26,6 +26,7 @@ Actualizado el 13/09/2026.
 | 10 · Menú Diario: plantillas, PNG y PDF, pantallas del restaurante (Fase 2) | Servidor, dominio y pantallas del restaurante | Migración 78, 13/09/2026. Ver la entrada de cierre abajo. |
 | 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Servidor, dominio y pantallas del equipo | Migración 79, 13/09/2026. Ver la entrada de cierre abajo. |
 | 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Servidor, dominio y pantallas | Migración 80, 13/09/2026, aplicada al proyecto real el mismo día. Ver la entrada de cierre abajo. |
+| 13 · Integraciones analíticas: conexiones, credenciales, estados y sincronización (Fase 3) | Servidor y dominio; sin pantallas ni adaptadores | Migración 81, 13/09/2026, **sin aplicar**: la Fase 3 no está confirmada y el PRD §27 es un borrador. Ver la entrada de cierre abajo. |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -3286,6 +3287,60 @@ regenerar salió idéntica, así que no había desviación.
     suites desde cero sobre PostgreSQL 16 con las 80 migraciones,
     typecheck, lint, 904 pruebas y `next build`.
 
+### Fase 3 · Hito 13 · Integraciones: conexiones, credenciales cifradas, estados y sincronización
+
+- [x] **Servidor y dominio de las integraciones** — migración 81, **sin aplicar al proyecto real**.
+
+    Primer hito de la Fase 3, con el mismo corte que los hitos 5, 6 y 9:
+    lo que las pantallas y los adaptadores del Hito 14 van a llamar, sin
+    pantallas ni adaptadores. Se hizo sobre el **borrador** del PRD §27 y
+    se paró aquí: la Fase 3 no está confirmada, y una migración que crea
+    cuatro tablas sobre reglas que Bosco no ha revisado no se aplica al
+    proyecto real hasta que las revise. Las cuatro lecturas donde la
+    maestra calla están en la pendiente 13 de DECISIONES.
+
+    **Lo que hay.** `integrations` (una fila por restaurante y fuente, los
+    siete estados de §117 y lo que §117 manda enseñar), `integration_
+    credentials` (el texto CIFRADO; la base nunca ve la clave, cifra el
+    servidor de la aplicación, y `ciphertext` no tiene `select` para
+    nadie: solo `read_integration_credential()`, reservada a
+    `service_role`), `sync_runs` (cada ejecución con estado, inicio, fin,
+    motivo y puntos escritos) y `metric_points` (las series importadas por
+    clave natural; una pasada posterior sustituye el mismo periodo porque
+    GA4 y Search Console revisan los últimos días — no es un libro a
+    propósito: la regla del libro es para consumos y dinero, y lo
+    inmutable aquí es `sync_runs`). Quién conecta: `manage_clients` y el
+    propietario del restaurante, la misma lista que acepta las
+    condiciones; una clave API, solo el propietario del espacio (§126);
+    un trabajador consulta y no toca. Archivar desconecta las cinco,
+    revoca y deja pendiente la revocación remota. `claim_integration_
+    runs()` con `for update skip locked` para que dos procesos no tomen
+    la misma ejecución; un restaurante suspendido o archivado no se
+    programa. Dos avisos (§18) y nueve acciones de auditoría, familia
+    `integration` con `manage_clients`.
+
+    **Lo que NO hace, dicho en claro:** no habla con Google, Clarity ni
+    PageSpeed (adaptadores, Hito 14); no existe "Sincronizar ahora"
+    (RN-INT-03, CLAUDE.md); no fija el catálogo de métricas de las tres
+    fuentes para las que la maestra solo da el nombre; no toca
+    oportunidades ni informes.
+
+    **Cómo se cerró.** El hito quedó a medias en disco cuando el turno que
+    lo escribía se cortó, y se completó el 14/09/2026: faltaban los dos
+    eventos en el catálogo de avisos y las nueve acciones en el de
+    auditoría (con sus nombres en español), el registro de la suite en
+    CI, los tests del módulo de dominio (`integrations.test.ts`, regla
+    por regla), las cuatro listas compartidas que la migración prometía
+    vigilar en `listas-compartidas.test.ts` (fuentes, estados, forma de
+    conectar, frecuencias y espera entre reintentos, leídas de la última
+    definición en las migraciones), la pendiente 13 que el PRD citaba y
+    no existía, y esta entrada.
+
+    **Comprobado:** `integraciones_conexiones_y_sincronizacion.sql` (la
+    35ª suite) con RN-INT-01 a 09 nombradas; las 35 suites desde cero
+    sobre PostgreSQL 16 con las 81 migraciones; typecheck, lint, las
+    pruebas unitarias y `next build`.
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
@@ -3412,6 +3467,33 @@ Integraciones GA4, Search Console, Business Profile, Clarity y PageSpeed con OAu
 cifradas · sincronización programada con estados y sin botón "Sincronizar ahora" · series de métricas ·
 oportunidades **por reglas deterministas** con su ciclo de estados · informes de operación, finanzas y
 rendimiento digital con flujo de aprobación, versiones, PDF, CSV y envío programado.
+
+Troceado en hitos el 13/09/2026 con el mismo criterio que las dos fases anteriores. **La Fase 3 no
+está confirmada por Bosco**: el Hito 13 se construyó sobre el borrador del PRD §27 (RN-INT-01 a 09,
+transcripción de §115 a §122, §126, §94, §163 y §178 de la maestra), con las lecturas donde la maestra
+calla anotadas como pendiente 13 de `docs/DECISIONES.md`. Hasta que Bosco revise el §27 y la
+pendiente 13, la migración 81 no se aplica al proyecto real y no se empieza el Hito 14. Los umbrales de
+oportunidades y la definición de impacto y esfuerzo siguen aplazados en CLAUDE.md: los hitos 15 y 16
+no se empiezan sin ellos.
+
+### Hito 13 · Integraciones: conexiones, credenciales cifradas, estados y sincronización *(servidor y dominio)*
+- `integrations`, `integration_credentials` (el texto cifrado sin `select` para nadie), `sync_runs` y `metric_points`. RLS en todas, sin políticas de escritura.
+- Las cinco fuentes y los siete estados de §117; quién conecta, quién guarda una clave y quién solo mira (RN-INT-05); desconectar revoca y archivar desconecta (RN-INT-06).
+- La cola de sincronización: reclamar sin pisarse, cerrar con estado, frecuencias, reintentos crecientes y "desactualizado" (RN-INT-04, RN-INT-07, RN-INT-09); el error sin secretos (RN-INT-08).
+- Dos avisos (§18) y la familia `integration` de la auditoría (§21.2).
+
+**Se verifica con:** `supabase/tests/integraciones_conexiones_y_sincronizacion.sql` (RN-INT-01 a 09), `integrations.test.ts` y las cuatro listas compartidas en `listas-compartidas.test.ts`.
+
+### Hito 14 · Adaptadores y pantallas de integraciones
+- `src/services/credential-vault.ts` (cifrado con `INTEGRATIONS_VAULT_KEY`), el flujo OAuth con Google y los cinco adaptadores en `src/services/`, cada uno con su catálogo de métricas.
+- El proceso de la cola que ejecuta `claim_integration_runs()` / `finish_integration_run()` y la revocación remota pendiente (RN-INT-06).
+- Ajustes › Integraciones, el bloque de la ficha (maqueta 17) y "Informes y datos", con los cinco motivos de §178 cuando no hay dato.
+
+### Hito 15 · Oportunidades por reglas deterministas
+- Bloqueado por CLAUDE.md hasta que Bosco fije los umbrales de detección y la definición de impacto y esfuerzo (§96 a §101).
+
+### Hito 16 · Informes
+- Operación, finanzas y rendimiento digital (§89 a §95) con flujo de aprobación, versiones, PDF, CSV y envío programado.
 
 ## FASE 4 — Plataforma y móvil
 App React Native + Expo reutilizando la misma API y el mismo dominio · push con Expo sobre FCM y APNs ·

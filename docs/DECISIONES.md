@@ -231,6 +231,22 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
+13. **Lecturas aplicadas de §115 a §122 al implementar las integraciones** (13/09/2026, Hito 13,
+   migración 81). El PRD §27 es un borrador transcrito de la maestra, y donde la maestra calla la
+   migración resuelve del modo más corto, sin inventar nada que no haga falta para que el servidor
+   funcione. Las cuatro lecturas, para que Bosco las confirme o las cambie: (a) **"frecuencia
+   adaptada"** (§118) para Business Profile y Clarity se lee como **diaria**; (b) **"reintenta"**
+   (§118) se lee como espera creciente **1 h, 4 h, 16 h y 24 h como máximo**, y "desactualizado"
+   como no tener una sincronización correcta en **el doble de la frecuencia**; (c) **"suspenderse
+   definitivamente"** (§119) se lee como **archivar** el restaurante: archivar desconecta las cinco
+   fuentes y revoca; suspendido por impago o al acabar la permanencia, la sincronización se detiene y
+   las credenciales se conservan para reactivar; (d) la primera sincronización trae **90 días** hacia
+   atrás y cada pasada repite los **3 últimos días** para recoger las revisiones tardías de GA4 y
+   Search Console. Cualquiera de las cuatro se cambia con una migración sobre las cuatro funciones de
+   cuenta de la 81 (`integration_sync_frequency()`, `integration_retry_delay()`,
+   `integration_data_is_stale()` y `claim_integration_runs()`) y su réplica en
+   `src/core/integrations.ts`, que `listas-compartidas.test.ts` obliga a mover a la vez.
+
 12. **Lecturas menores de §84 al implementar los presupuestos** (13/09/2026, Hito 12). Tres cosas
    que §84 no dice y que la migración 80 resuelve del modo más corto, sin inventar estado ni fórmula:
    (a) el **periodo** del cobro de un presupuesto es el día de la aceptación, porque `charges` exige
