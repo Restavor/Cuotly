@@ -6123,6 +6123,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: string
       }
+      establishment_timezone: {
+        Args: { p_establishment_id: string }
+        Returns: string
+      }
       establishments_with_nonpayment: {
         Args: { p_space_id: string }
         Returns: {

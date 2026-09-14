@@ -3475,8 +3475,9 @@ regenerar salió idéntica, así que no había desviación.
       orden). "Periodo insuficiente" es menos de 7 días con dato (una
       medición en PageSpeed) y es una lectura, no una regla: pendiente 14.
 
-    **Lo que NO hace, dicho en claro:** no aplica la 82 al proyecto real
-    (Bosco lo ordena); no hay "Sincronizar ahora"; no hay oportunidades ni
+    **Lo que NO hace, dicho en claro:** cuando esto se escribió, la 82 no
+    estaba aplicada al proyecto real; Bosco lo ordenó ese mismo día y lo
+    está (`docs/DESPLIEGUE-SUPABASE.md`); no hay "Sincronizar ahora"; no hay oportunidades ni
     informes (hitos 15 y 16, bloqueados por CLAUDE.md); las plataformas de
     reservas y delivery no tienen campo en la ficha; la zona horaria del
     cliente en su tarjeta es la de Restavor porque el restaurante no lee
@@ -3597,6 +3598,51 @@ regenerar salió idéntica, así que no había desviación.
     ventana anterior); typecheck, lint, 1013 pruebas y `next build`. Los
     recorridos de Playwright no se ejecutaron: desde el contenedor no se
     llega al proyecto de Supabase (`docs/DESPLIEGUE-SUPABASE.md`).
+
+
+    **La zona horaria del restaurante (14/09/2026, tercera pasada).**
+    Repasando lo que el hito dejó dicho de sí mismo apareció una frase que
+    era una confesión: "la zona horaria del cliente en su tarjeta es la de
+    Restavor porque el restaurante no lee `spaces`". No era una salvedad
+    de alcance: era un incumplimiento de CLAUDE.md ("las fechas se
+    calculan en la zona horaria del espacio") y de que Cuotly sea
+    multiempresa. Y no estaba solo en las dos pantallas nuevas del hito:
+    las cuatro que tiene el restaurante llevaban `"Europe/Madrid"` escrito
+    en el código, las dos de Menú Diario desde el Hito 10.
+
+    Es de la clase de fallo que no se ve. Con un solo espacio, y ese en
+    Madrid, la hora sale bien. Con un espacio en Canarias, su restaurante
+    ve el corte de las 21:00 y los plazos de RN-MEN-07 corridos una hora,
+    y nada falla.
+
+    - **Migración 83** (sin aplicar al proyecto real, a la espera de que
+      Bosco lo ordene, como la 81 y la 82): `establishment_timezone()`,
+      que devuelve la zona del espacio de un restaurante **y nada más de
+      `spaces`**. Abrirle la tabla le daría el nombre, el slug, el plan y
+      el resto de la organización del espacio, que no le incumbe (P7);
+      para pintar una fecha le basta el identificador de la zona. La
+      guarda es `can_read_establishment()`, la misma de
+      `establishment_integrations()`. No es interna —comprueba permisos y
+      la llama una persona—, así que conserva `authenticated` y pierde
+      `public` y `anon`.
+    - `timezone-load.ts` la envuelve para las cuatro pantallas. Si la
+      llamada falla se usa el valor por defecto de la columna y se deja
+      dicho en el registro del servidor: una fecha hay que pintarla, pero
+      callarse devolvería el fallo a ser invisible.
+    - `horaLocal()` de la ficha de un menú pasa a ser `horaEnZona(iso,
+      timeZone)`: la zona deja de vivir dentro de la función.
+
+    **Comprobado:** `zona_horaria_del_restaurante.sql` (la 37ª suite), con
+    el espacio del fixture en **Atlantic/Canary** a propósito —sobre un
+    espacio en Europe/Madrid, devolver el valor por defecto de la columna
+    habría pasado por correcto y el fallo habría seguido dentro—. Tres
+    mutaciones, las tres detectadas: devolver la zona por defecto en vez
+    de la del espacio, quitar la comprobación de permisos (un espacio
+    ajeno saca entonces la zona de un restaurante que no es suyo) y abrir
+    la función a `anon`. Las 37 suites desde cero sobre PostgreSQL 16 con
+    las 83 migraciones, el barrido del Hito 7 incluido; typecheck, lint,
+    las pruebas unitarias y `next build`.
+
 
 ## FASE 1 — Operación real de Restavor
 

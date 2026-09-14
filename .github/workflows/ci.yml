@@ -327,6 +327,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/integraciones_revocacion_remota.sql
 
+      - name: "Migración 83 — Verificar que el restaurante lee la zona horaria de SU espacio y nada más de spaces (CLAUDE.md, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/zona_horaria_del_restaurante.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

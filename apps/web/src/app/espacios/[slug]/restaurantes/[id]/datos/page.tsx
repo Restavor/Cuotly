@@ -8,6 +8,8 @@ import { todayInTimeZone } from "@/core/finance";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { loadEstablishmentTimezone } from "../timezone-load";
+
 /**
  * Vista 22 · "Informes y datos" del panel del restaurante: las mismas
  * seis secciones que la pestaña de la ficha del equipo, con las mismas
@@ -17,12 +19,10 @@ import { createClient } from "@/lib/supabase/server";
  * Quién ve qué no se decide aquí: `establishment_integrations()` y la
  * política de `metric_points` devuelven cero filas a quien no lee el
  * restaurante, y esta página enseña un 404. La zona horaria es la del
- * espacio de Restavor, como en el resto del panel del restaurante (no
- * puede leer `spaces`).
+ * espacio, que aquí no sale de `spaces` —el restaurante no puede leer esa
+ * tabla— sino de `establishment_timezone()` (migración 83).
  */
 export const dynamic = "force-dynamic";
-
-const CLIENT_TIMEZONE = "Europe/Madrid";
 
 export default async function ClientDataPage({
   params,
@@ -55,9 +55,10 @@ export default async function ClientDataPage({
   // RN-INT-05 · quien puede autorizar es quien acepta las condiciones; a
   // quien no, no se le ofrece un botón a una pantalla en la que no puede
   // hacer nada. El servidor lo vuelve a comprobar en esa pantalla.
-  const [{ role }, { data: canAcceptTerms }] = await Promise.all([
+  const [{ role }, { data: canAcceptTerms }, timezone] = await Promise.all([
     resolveShellViewer(supabase, user.id, slug),
     supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+    loadEstablishmentTimezone(supabase, id),
   ]);
   const gestiona = role === "owner" || role === "admin" || canAcceptTerms === true;
 
@@ -66,8 +67,8 @@ export default async function ClientDataPage({
       loadDigitalData(supabase, {
         establishmentId: id,
         rows,
-        todayIso: todayInTimeZone(new Date(), CLIENT_TIMEZONE),
-        timezone: CLIENT_TIMEZONE,
+        todayIso: todayInTimeZone(new Date(), timezone),
+        timezone,
         now: new Date(),
       }),
     )

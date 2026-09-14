@@ -8,6 +8,8 @@ import { es } from "@/i18n/es";
 import { fechaCorta } from "@/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 
+import { loadEstablishmentTimezone } from "../timezone-load";
+
 import { NewMenuForm } from "./NewMenuForm";
 
 /**
@@ -77,7 +79,10 @@ export default async function ClientDailyMenuPage({
       .limit(60),
   ]);
 
-  const hoy = todayInTimeZone(new Date(), "Europe/Madrid");
+  // En la zona del espacio (CLAUDE.md): "mañana" para un restaurante de
+  // un espacio en otra zona no es el mañana de Restavor.
+  const timezone = await loadEstablishmentTimezone(supabase, id);
+  const hoy = todayInTimeZone(new Date(), timezone);
   const manana = new Date(`${hoy}T00:00:00Z`);
   manana.setUTCDate(manana.getUTCDate() + 1);
   const fechaPorDefecto = manana.toISOString().slice(0, 10);

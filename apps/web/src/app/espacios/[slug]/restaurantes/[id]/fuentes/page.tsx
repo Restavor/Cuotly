@@ -9,6 +9,7 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import { INTEGRATION_FLASH_PARAM } from "../integraciones/action-state";
+import { loadEstablishmentTimezone } from "../timezone-load";
 
 /**
  * Vista 25.03 · "Autorizar fuentes y exportar", sin la exportación (Fase
@@ -26,8 +27,6 @@ import { INTEGRATION_FLASH_PARAM } from "../integraciones/action-state";
  * un enlace pegado en un mensaje no tiene por qué darle un 404.
  */
 export const dynamic = "force-dynamic";
-
-const CLIENT_TIMEZONE = "Europe/Madrid";
 
 export default async function ClientSourcesPage({
   params,
@@ -52,9 +51,10 @@ export default async function ClientSourcesPage({
     .maybeSingle();
   if (!establishment) notFound();
 
-  const [{ role }, { data: canAcceptTerms }] = await Promise.all([
+  const [{ role }, { data: canAcceptTerms }, timezone] = await Promise.all([
     resolveShellViewer(supabase, user.id, slug),
     supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+    loadEstablishmentTimezone(supabase, id),
   ]);
 
   const flash = Array.isArray(query[INTEGRATION_FLASH_PARAM])
@@ -71,7 +71,7 @@ export default async function ClientSourcesPage({
     websiteUrl: establishment.website_url,
     webPlatform: establishment.web_platform,
     domain: establishment.domain,
-    timezone: CLIENT_TIMEZONE,
+    timezone,
     flash,
   }).catch((fallo: unknown) => {
     console.error("[restaurante] no se pudieron leer las integraciones", { id, message: String(fallo) });

@@ -10,12 +10,16 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 82 migraciones del repositorio están aplicadas en el
-proyecto.
+**La 83** (`zona_horaria_del_espacio_para_el_restaurante`), escrita el
+14/09/2026 y sin aplicar a propósito, a la espera de que Bosco lo ordene,
+como se hizo con la 81 y la 82. Es una sola función nueva
+(`establishment_timezone()`), solo aditiva, y no toca ninguna fila ni
+ninguna firma que ya se use. Las otras 82 están aplicadas.
 
 ## Aplicadas
 
-**Las 82 migraciones del repositorio están aplicadas.** Las tres
+**Las 82 primeras migraciones del repositorio están aplicadas** (la 83 no,
+y es a propósito: ver arriba). Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a

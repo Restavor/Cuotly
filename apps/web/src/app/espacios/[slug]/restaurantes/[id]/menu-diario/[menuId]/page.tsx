@@ -9,6 +9,7 @@ import { es } from "@/i18n/es";
 import { fechaCorta } from "@/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 
+import { loadEstablishmentTimezone } from "../../timezone-load";
 import { ActionPanel, CorrectionForm, DetailsForm, VersionEditor } from "./MenuForms";
 
 /**
@@ -27,13 +28,18 @@ const t = es.dailyMenuClient;
 
 type MenuKindKey = keyof typeof es.naming.menuKinds;
 
-function horaLocal(iso: string): string {
+/**
+ * La hora, en la zona del espacio (CLAUDE.md). La zona llega de
+ * `establishment_timezone()` porque el restaurante no puede leer
+ * `spaces`: escrita a mano sería la de Restavor para todo el mundo.
+ */
+function horaEnZona(iso: string, timeZone: string): string {
   return new Intl.DateTimeFormat("es-ES", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Europe/Madrid",
+    timeZone,
   }).format(new Date(iso));
 }
 
@@ -67,6 +73,7 @@ export default async function ClientMenuPage({
     { data: downloads },
     { data: deadlineRows },
     { data: corrections },
+    timezone,
   ] = await Promise.all([
       supabase
         .from("menu_versions")
@@ -96,6 +103,9 @@ export default async function ClientMenuPage({
         .select("id, kind, description, requested_at, requested_before_cutoff, completed_at, completion_note")
         .eq("menu_id", menuId)
         .order("requested_at", { ascending: false }),
+      // La zona horaria del espacio: el restaurante no puede leer `spaces`
+      // y las horas de esta pantalla son plazos contractuales (RN-MEN-07).
+      loadEstablishmentTimezone(supabase, id),
     ]);
 
   const current = versions?.find((v) => v.id === menu.current_version_id) ?? null;
@@ -134,8 +144,8 @@ export default async function ClientMenuPage({
 
       {deadlines ? (
         <Card title={t.deadlinesTitle}>
-          <p className="text-sm text-text">{t.cutoffLine(horaLocal(deadlines.cutoff_at))}</p>
-          <p className="text-sm text-text">{t.publishByLine(horaLocal(deadlines.publish_by_at))}</p>
+          <p className="text-sm text-text">{t.cutoffLine(horaEnZona(deadlines.cutoff_at, timezone))}</p>
+          <p className="text-sm text-text">{t.publishByLine(horaEnZona(deadlines.publish_by_at, timezone))}</p>
           <p className="mt-2 text-sm text-text-secondary">
             {deadlines.guaranteed === null ? t.notRequested : deadlines.guaranteed ? t.guaranteed : t.notGuaranteed}
           </p>
@@ -160,12 +170,12 @@ export default async function ClientMenuPage({
               <li key={c.id} className="text-sm">
                 <p className="text-text">{c.description}</p>
                 <p className="text-text-secondary">
-                  {t.correctionLine(horaLocal(c.requested_at))}
+                  {t.correctionLine(horaEnZona(c.requested_at, timezone))}
                   {c.kind === "team_error" ? ` · ${t.correctionByTeam}` : ""}
                   {" · "}
                   {c.requested_before_cutoff ? t.correctionGuaranteed : t.correctionNotGuaranteed}
                   {" · "}
-                  {c.completed_at ? t.correctionCompleted(horaLocal(c.completed_at)) : t.correctionPending}
+                  {c.completed_at ? t.correctionCompleted(horaEnZona(c.completed_at, timezone)) : t.correctionPending}
                   {c.completed_at && c.completion_note ? ` · ${c.completion_note}` : ""}
                 </p>
               </li>
@@ -220,7 +230,7 @@ export default async function ClientMenuPage({
           <ul className="mt-3 space-y-1 text-sm text-text-secondary">
             <li className="font-medium text-text">{t.downloadsHistory(downloads.length)}</li>
             {downloads.slice(0, 10).map((d) => (
-              <li key={d.id}>{t.downloadLine(d.format, horaLocal(d.downloaded_at), d.by_team)}</li>
+              <li key={d.id}>{t.downloadLine(d.format, horaEnZona(d.downloaded_at, timezone), d.by_team)}</li>
             ))}
           </ul>
         ) : null}
@@ -230,7 +240,7 @@ export default async function ClientMenuPage({
         <ul className="space-y-1 text-sm text-text-secondary">
           {(versions ?? []).map((v) => (
             <li key={v.id}>
-              {t.versionLine(v.version, horaLocal(v.created_at))}
+              {t.versionLine(v.version, horaEnZona(v.created_at, timezone))}
               {v.after_cutoff ? ` · ${t.versionAfterCutoff}` : ""}
             </li>
           ))}
@@ -244,7 +254,7 @@ export default async function ClientMenuPage({
           <ol className="space-y-2">
             {events.map((event) => (
               <li key={event.id} className="text-sm">
-                <span className="text-text-secondary">{horaLocal(event.occurred_at)} · </span>
+                <span className="text-text-secondary">{horaEnZona(event.occurred_at, timezone)} · </span>
                 <span className="font-medium text-text">
                   {isMenuState(event.to_state) ? es.naming.states.menu[event.to_state] : event.to_state}
                 </span>
