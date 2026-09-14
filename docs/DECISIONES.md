@@ -227,45 +227,52 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    siguen sin responder; un trabajador no registra nada. El restaurante ve que se registró
    en su nombre y por qué, no quién del equipo lo hizo (P7).
 
+## 2026-09-14
+
+22. **La ventana de la corrección mínima de Menú Diario son 72 h de reloj** (14/09/2026,
+   cierra la pendiente 10). RN-COR-02 mide la ventana en 72 h laborables con el reloj
+   contractual; Menú Diario opera todos los días del año con su propio calendario (RN-CLK-09,
+   §62), así que el Hito 11 la aplicó como **72 h de reloj desde la publicación**
+   (`menu_correction_window_ends_at()`), con las 21:00 de RN-COR-10 aparte. Bosco confirma:
+   **se queda en 72 h**. No cambia nada.
+
+23. **Lecturas de §84 sobre los presupuestos, confirmadas** (14/09/2026, cierra la pendiente
+   12). Las tres cosas que §84 no decía y que la migración 80 resolvió del modo más corto quedan
+   como están: (a) el **periodo** del cobro de un presupuesto es el día de la aceptación; (b) un
+   presupuesto **rechazado deja la solicitud donde estaba** (pendiente de aceptación del
+   restaurante), sin estado nuevo de solicitud, y el equipo puede enviar otro; (c) "aceptado" no
+   se enseña como estado visible, porque aceptar es el instante en que nace el cobro y desde ahí
+   el presupuesto está pendiente de pago o pagado (RN-DAT-05). Bosco confirma las tres. No
+   cambia nada.
+
+24. **Lecturas de §115 a §122 sobre las integraciones, confirmadas** (14/09/2026, cierra la
+   pendiente 13). Las cuatro lecturas de la migración 81 donde la maestra calla quedan como
+   reglas: (a) **"frecuencia adaptada"** (§118) para Business Profile y Clarity es **diaria**;
+   (b) **"reintenta"** (§118) es una espera creciente de **1 h, 4 h, 16 h y 24 h como máximo**,
+   y "desactualizado" es no tener una sincronización correcta en **el doble de la frecuencia**;
+   (c) **"suspenderse definitivamente"** (§119) es **archivar** el restaurante: archivar
+   desconecta las cinco fuentes y revoca las credenciales; suspendido por impago o al acabar la
+   permanencia, la sincronización se detiene y las credenciales se conservan para reactivar;
+   (d) la primera sincronización trae **90 días** hacia atrás y cada pasada repite los **3
+   últimos días** para recoger las revisiones tardías de GA4 y Search Console. Bosco confirma
+   las cuatro el mismo día en que ordena aplicar la 81 al proyecto real. No cambia nada: las
+   cuatro funciones de cuenta de la 81 y `src/core/integrations.ts` ya dicen esto, y
+   `listas-compartidas.test.ts` vigila que sigan diciendo lo mismo.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
-13. **Lecturas aplicadas de §115 a §122 al implementar las integraciones** (13/09/2026, Hito 13,
-   migración 81). El PRD §27 es un borrador transcrito de la maestra, y donde la maestra calla la
-   migración resuelve del modo más corto, sin inventar nada que no haga falta para que el servidor
-   funcione. Las cuatro lecturas, para que Bosco las confirme o las cambie: (a) **"frecuencia
-   adaptada"** (§118) para Business Profile y Clarity se lee como **diaria**; (b) **"reintenta"**
-   (§118) se lee como espera creciente **1 h, 4 h, 16 h y 24 h como máximo**, y "desactualizado"
-   como no tener una sincronización correcta en **el doble de la frecuencia**; (c) **"suspenderse
-   definitivamente"** (§119) se lee como **archivar** el restaurante: archivar desconecta las cinco
-   fuentes y revoca; suspendido por impago o al acabar la permanencia, la sincronización se detiene y
-   las credenciales se conservan para reactivar; (d) la primera sincronización trae **90 días** hacia
-   atrás y cada pasada repite los **3 últimos días** para recoger las revisiones tardías de GA4 y
-   Search Console. Cualquiera de las cuatro se cambia con una migración sobre las cuatro funciones de
-   cuenta de la 81 (`integration_sync_frequency()`, `integration_retry_delay()`,
-   `integration_data_is_stale()` y `claim_integration_runs()`) y su réplica en
-   `src/core/integrations.ts`, que `listas-compartidas.test.ts` obliga a mover a la vez.
+13. ~~Lecturas aplicadas de §115 a §122 al implementar las integraciones~~ — confirmadas el
+   14/09/2026 como decisión 24.
 
-12. **Lecturas menores de §84 al implementar los presupuestos** (13/09/2026, Hito 12). Tres cosas
-   que §84 no dice y que la migración 80 resuelve del modo más corto, sin inventar estado ni fórmula:
-   (a) el **periodo** del cobro de un presupuesto es el día de la aceptación, porque `charges` exige
-   periodo y un cobro puntual no tiene otro; (b) un presupuesto **rechazado deja la solicitud donde
-   estaba** (pendiente de aceptación del restaurante), sin estado nuevo de solicitud: el equipo puede
-   enviar otro y el restaurante puede no continuarla; (c) "aceptado" no se enseña como estado
-   visible, porque aceptar es el instante en que nace el cobro y desde ahí el presupuesto está
-   pendiente de pago o pagado (RN-DAT-05). Cualquiera de las tres se cambia con una migración sobre
-   `accept_quote()` / `quote_status()` y su test.
+12. ~~Lecturas menores de §84 al implementar los presupuestos~~ — confirmadas el 13/09/2026
+   como decisión 23 (14/09/2026).
 
 11. ~~Quién acepta un presupuesto por el restaurante~~ — resuelta el 13/09/2026 como decisión 21.
 
-10. **La ventana de la corrección mínima de Menú Diario** (13/09/2026, Hito 11). RN-COR-02
-   mide la ventana en 72 h laborables con el reloj contractual; Menú Diario tiene su propio
-   calendario y opera todos los días del año, festivos incluidos (RN-CLK-09, §62). Se ha
-   aplicado la regla con ese calendario: **72 h de reloj desde la publicación**
-   (`menu_correction_window_ends_at()`), con la salvedad de las 21:00 de RN-COR-10 aparte.
-   No es un umbral nuevo, pero es una lectura: si Bosco prefiere otra ventana (el propio día
-   del menú, por ejemplo), es una migración sobre esa función y su test.
+10. ~~La ventana de la corrección mínima de Menú Diario~~ — confirmada en 72 h de reloj el
+   14/09/2026 como decisión 22.
 
 9. **Redondeo de consumos prorrateados — resuelto por el PRD** (01/09/2026). Este punto
    quedó abierto porque el dinero se redondea a 2 decimales (decisión 7) pero los consumos

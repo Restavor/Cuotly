@@ -3096,8 +3096,8 @@ regenerar salió idéntica, así que no había desviación.
     Diario opera todos los días del año con su propio calendario
     (RN-CLK-09), así que en ese calendario 72 h laborables son 72 h de
     reloj, y eso es lo que aplica `menu_correction_window_ends_at()`. Está
-    anotado como pendiente 10 en `docs/DECISIONES.md` por si Bosco prefiere
-    otra ventana.
+    anotado como pendiente 10 en `docs/DECISIONES.md` por si Bosco prefería
+    otra ventana; la confirmó el 14/09/2026 (decisión 22).
 
     **El Inicio (decisión 18) y la búsqueda.** La tarjeta de Menú Diario
     que desde el Hito 8 decía "llega en la Fase 2" cuenta ahora las
@@ -3235,8 +3235,9 @@ regenerar salió idéntica, así que no había desviación.
     calendario van por GET y funcionan sin JavaScript (CA-22).
 
     **Lecturas de §84 que no son reglas nuevas**, anotadas como
-    pendiente 12 de `docs/DECISIONES.md`: el periodo del cobro (el día
-    de la aceptación), que rechazar no inventa estado de solicitud y que
+    pendiente 12 de `docs/DECISIONES.md` y confirmadas por Bosco el
+    14/09/2026 (decisión 23): el periodo del cobro (el día de la
+    aceptación), que rechazar no inventa estado de solicitud y que
     "aceptado" no se enseña. Quién acepta fue la pendiente 11 y Bosco la
     cerró el mismo día como decisión 21 (arriba).
 
@@ -3300,8 +3301,8 @@ regenerar salió idéntica, así que no había desviación.
     por orden suya**, en tres partes desde el MCP, con la verificación
     local desde cero antes y la comprobación en vivo después anotadas en
     `docs/DESPLIEGUE-SUPABASE.md`. Las cuatro lecturas donde la maestra
-    calla siguen en la pendiente 13 de DECISIONES: aplicar la migración
-    no las confirma.
+    calla las confirmó Bosco el mismo día (decisión 24, que cierra la
+    pendiente 13).
 
     **Lo que hay.** `integrations` (una fila por restaurante y fuente, los
     siete estados de §117 y lo que §117 manda enseñar), `integration_
@@ -3475,8 +3476,9 @@ rendimiento digital con flujo de aprobación, versiones, PDF, CSV y envío progr
 Troceado en hitos el 13/09/2026 con el mismo criterio que las dos fases anteriores. **La Fase 3 no
 está confirmada por Bosco**: el Hito 13 se construyó sobre el borrador del PRD §27 (RN-INT-01 a 09,
 transcripción de §115 a §122, §126, §94, §163 y §178 de la maestra), con las lecturas donde la maestra
-calla anotadas como pendiente 13 de `docs/DECISIONES.md`. Hasta que Bosco revise el §27 y la
-pendiente 13, la migración 81 no se aplica al proyecto real y no se empieza el Hito 14. Los umbrales de
+calla anotadas como pendiente 13 de `docs/DECISIONES.md`. El 14/09/2026 Bosco ordenó aplicar la 81
+al proyecto real y confirmó las cuatro lecturas (decisión 24); el §27 sigue siendo una transcripción de
+la maestra sin regla nueva, y el Hito 14 se empieza cuando Bosco lo diga, no antes. Los umbrales de
 oportunidades y la definición de impacto y esfuerzo siguen aplazados en CLAUDE.md: los hitos 15 y 16
 no se empiezan sin ellos.
 

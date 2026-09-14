@@ -107,7 +107,7 @@ describe("integraciones analíticas (PRD §27)", () => {
     expect(retriesAutomatically("configuration")).toBe(false);
   });
 
-  it("RN-INT-04 · GA4 y Search Console a diario, PageSpeed semanal; las demás a diario (pendiente 13)", () => {
+  it("RN-INT-04 · GA4 y Search Console a diario, PageSpeed semanal; las demás a diario (decisión 24)", () => {
     expect(integrationSyncFrequency("ga4")).toBe("daily");
     expect(integrationSyncFrequency("search_console")).toBe("daily");
     expect(integrationSyncFrequency("pagespeed")).toBe("weekly");

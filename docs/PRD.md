@@ -870,7 +870,7 @@ Quién prepara menús por el restaurante: propietario local, Editor y propietari
 
 Transcripción con número de §84 de la especificación maestra, con el mismo criterio que §25: cada regla
 con su test, ninguna regla nueva. Donde §84 calla, la lectura aplicada se dice aquí y está anotada en
-`docs/DECISIONES.md` (pendiente 12; la 11 quedó resuelta como decisión 21) para que Bosco la confirme o la cambie. Servidor, dominio
+`docs/DECISIONES.md` (la 11 quedó resuelta como decisión 21; la pendiente 12, confirmada por Bosco el 14/09/2026 como decisión 23). Servidor, dominio
 (`src/core/quotes.ts`) y pantallas en la migración 80 (Fase 2, Hito 12).
 
 - **RN-QUO-01**: un presupuesto pasa por **borrador, enviado, aceptado o rechazado, pendiente de pago y pagado** (§84). Se guardan cuatro (`draft`, `sent`, `accepted`, `rejected`); **pendiente de pago y pagado se derivan** del cobro que emite la aceptación (RN-DAT-05, `quote_status()`), y "aceptado" a secas no se enseña: aceptar es el instante en que nace el cobro. Cada presupuesto lleva código propio del espacio (`PRE-0001`), concepto, alcance, base imponible, impuesto y total con el tipo del espacio **congelado al crearlo** (RN-FIN-08, P4). Un borrador se corrige; lo enviado no (el restaurante decide sobre lo que leyó).
@@ -892,8 +892,8 @@ entran en él porque viven en el reloj laboral de `src/core/business-clock.ts` (
 Transcripción con número de §115 a §122, §126, §94, §163 y §178 de la especificación maestra, con el
 mismo criterio que §25 y §26: cada regla con su test, ninguna regla nueva. Donde la maestra calla
 (frecuencia "adaptada", cadencia de reintentos, qué es "desactualizado", cuándo es "definitiva" la
-suspensión), la lectura aplicada se dice aquí y está anotada como pendiente 13 en `docs/DECISIONES.md`
-para que Bosco la confirme o la cambie. Servidor y dominio (`src/core/integrations.ts`) en la
+suspensión), la lectura aplicada se dice aquí; Bosco la confirmó el 14/09/2026 como decisión 24 de
+`docs/DECISIONES.md`. Servidor y dominio (`src/core/integrations.ts`) en la
 migración 81 (Fase 3, Hito 13); los adaptadores de cada fuente y las pantallas, en el Hito 14.
 
 - **RN-INT-01**: las integraciones son **por establecimiento** y son cinco: **GA4, Search Console,
@@ -919,7 +919,7 @@ migración 81 (Fase 3, Hito 13); los adaptadores de cada fuente y las pantallas,
   sistema.
 - **RN-INT-04**: las frecuencias son las de §118: **GA4 y Search Console, diaria; PageSpeed, semanal**
   y cuando el sistema lo programe; las demás, "frecuencia adaptada" —Business Profile y Clarity van a
-  diario, pendiente 13—. Cuotly **conserva el último dato válido, lo marca como desactualizado si
+  diario, decisión 24—. Cuotly **conserva el último dato válido, lo marca como desactualizado si
   falla y reintenta**: tras un fallo transitorio el siguiente intento espera 1 h, luego 4 h, 16 h y 24 h
   como máximo; "desactualizado" es no tener una sincronización correcta en el doble de la frecuencia.
   **El propietario y los administradores reciben aviso** del fallo (una vez por racha, no una por
@@ -932,7 +932,7 @@ migración 81 (Fase 3, Hito 13); los adaptadores de cada fuente y las pantallas,
   introduce solo el propietario del espacio.
 - **RN-INT-06**: **al suspenderse definitivamente el mantenimiento se revocan las autorizaciones
   externas; los datos históricos importados permanecen** (§119). "Definitivamente" se ha leído como
-  **archivar** el restaurante (pendiente 13): archivar desconecta las cinco, marca las credenciales
+  **archivar** el restaurante (decisión 24): archivar desconecta las cinco, marca las credenciales
   como revocadas y deja pendiente la revocación remota del token, que hace el proceso de la cola;
   suspendido por impago o al terminar la permanencia, la sincronización se detiene y las credenciales
   se conservan para reactivar. **Toda conexión, desconexión y error queda auditado** (§21.2), con la

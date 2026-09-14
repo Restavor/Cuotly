@@ -69,7 +69,7 @@ export function credentialKindFor(authKind: IntegrationAuthKind): "oauth_refresh
   return authKind === "oauth" ? "oauth_refresh_token" : "api_key";
 }
 
-/** RN-INT-04 · §118: GA4 y Search Console a diario, PageSpeed semanal; las demás, a diario (pendiente 13). */
+/** RN-INT-04 · §118: GA4 y Search Console a diario, PageSpeed semanal; las demás, a diario (decisión 24). */
 export type SyncFrequency = "daily" | "weekly";
 
 export function integrationSyncFrequency(provider: IntegrationProvider): SyncFrequency {
