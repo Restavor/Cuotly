@@ -21,12 +21,18 @@ import { expect, test, type Page } from "@playwright/test";
  *      en PowerShell: `E2E_DATOS=1 playwright test` a secas es sintaxis
  *      POSIX y en Windows falla con "no se reconoce como un comando".
  *
- * NO se puede ejecutar desde el contenedor de Claude Code: su política de
- * salida bloquea el dominio del proyecto (403 al CONNECT), así que la
- * aplicación no llega a Supabase aunque el sembrado sí esté puesto — los
- * nueve fallan en el login con "Correo o contraseña incorrectos.", que es
- * lo que devuelve `signIn` cuando no puede hablar con Supabase, y no un
- * problema de credenciales. Está explicado en docs/DESPLIEGUE-SUPABASE.md.
+ * **Desde el 14/09/2026 los ejecuta CI** (job `e2e-datos`), y sin ningún
+ * secreto: no hace falta el proyecto real, hace falta *un* Supabase con
+ * las migraciones y este sembrado, y eso es lo que `supabase start`
+ * levanta en el runner.
+ *
+ * Lo que sigue sin poder hacerse es lanzarlos desde el contenedor de
+ * Claude Code: su política de salida bloquea el dominio del proyecto (403
+ * al CONNECT), así que la aplicación no llega a Supabase aunque el
+ * sembrado sí esté puesto. Fallan en el login diciendo "No hemos podido
+ * conectar… no de tu contraseña", que es `src/core/auth-errors.ts`
+ * separando un fallo de red de una credencial mala. Está explicado en
+ * docs/DESPLIEGUE-SUPABASE.md.
  *
  * En una máquina con salida al dominio pasan los nueve (comprobado en
  * Windows el 02/09/2026). Al ejecutarse por primera vez encontraron tres

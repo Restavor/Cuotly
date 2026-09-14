@@ -88,6 +88,17 @@ no son un fallo, sino alcance:
    no se ejecutan desde el contenedor (no se llega al proyecto de
    Supabase) y ninguna prueba unitaria montaba esas dos páginas.
 
+   **Esa segunda causa está cerrada desde el 14/09/2026.** El job
+   `e2e-datos` de CI ejecuta los recorridos con datos en cada push, contra
+   el Supabase que `supabase start` levanta en el runner y con el espacio
+   de demostración sembrado. No necesitan el proyecto real ni **ningún
+   secreto**, que es lo que los tenía parados: dependían de una máquina
+   concreta con salida al dominio del proyecto, así que en la práctica los
+   ejecutaba nadie. Lo que se pudo verificar desde el contenedor antes de
+   subirlo es todo menos la base: que la suite no se salta sola con
+   `E2E_DATOS=1`, que el servidor de producción arranca, y que el único
+   fallo es el de red y con su mensaje propio.
+
    Arreglado con la partición `CLIENT_ROLES` / `isClientRole()` /
    `isStaffRole()` junto a la definición de `ShellRole`
    (`src/components/shell/navigation.ts`), que son predicados de tipo: en

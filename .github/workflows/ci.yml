@@ -63,8 +63,9 @@ jobs:
         # datos NO toca ninguna base: sin sesión, cada pantalla acaba en el
         # login. Le bastan valores no vacíos, y se le dan los públicos del
         # Supabase local de demostración (`supabase start` los imprime; no
-        # son un secreto). La suite con datos (`test:e2e:datos`) sigue
-        # necesitando el proyecto real y no corre aquí, como dice el ROADMAP.
+        # son un secreto). La suite con datos (`test:e2e:datos`) no corre en
+        # este job: tiene el suyo, `e2e-datos`, que levanta un Supabase de
+        # verdad y lo siembra. Ya no necesita el proyecto real.
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
@@ -377,6 +378,121 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
             -f supabase/seed/espacio-demo.sql
+
+      - name: Parar Supabase
+        if: always()
+        run: supabase stop
+
+  e2e-datos:
+    # Los recorridos CON DATOS (`flujos-espacio-demo` y
+    # `ca19-recorridos-movil`), que entran con usuarios de verdad y leen lo
+    # que RLS le deja leer a cada uno.
+    #
+    # Llevaban desde el 02/09/2026 ejecutándose UNA sola vez, a mano, en
+    # Windows. Desde el contenedor de Claude Code no se pueden lanzar —su
+    # política de salida bloquea el dominio del proyecto—, así que en la
+    # práctica no los ejecutaba nadie. Eso costó un fallo real: el
+    # restaurante con Menú Diario tenía un 404 en TODAS sus pantallas
+    # durante días, porque dos guardas comparaban `role !== "client"` a
+    # mano y el rol `client_daily_menu` caía del lado del equipo. Ninguna
+    # prueba unitaria montaba esas dos páginas, y los recorridos, que sí lo
+    # habrían visto, no corrían.
+    #
+    # La clave para poder correrlos aquí es que NO necesitan el proyecto
+    # real: necesitan *un* Supabase con las migraciones y el espacio de
+    # demostración sembrado, y eso es exactamente lo que `supabase start`
+    # levanta en el runner. Por tanto **este job no usa ningún secreto**,
+    # igual que `rls-tests`. Las claves del Supabase local las imprime el
+    # propio CLI y no son un secreto.
+    #
+    # Job aparte y no un paso más de `rls-tests`, aunque allí ya esté todo
+    # en pie, por una razón práctica: cuando esto se ponga rojo, el nombre
+    # del check es lo primero que se lee. "e2e-datos en rojo" dice dónde
+    # mirar; "rls-tests en rojo" mandaría a buscar una política de RLS que
+    # no tiene nada que ver.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "pnpm"
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Levantar Supabase en local (aplica las migraciones)
+        run: supabase start
+
+      # `supabase start` aplica las migraciones pero NO este archivo:
+      # `config.toml` solo siembra `./seed.sql`, que no existe. El espacio
+      # de demostración se siembra aquí, y es el que los recorridos dan por
+      # hecho (el espacio `demo`, sus cuatro restaurantes y sus siete
+      # identidades con la contraseña que la cabecera del archivo dice).
+      - name: Sembrar el espacio de demostración
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/seed/espacio-demo.sql
+
+      # Las tres públicas hacen falta en tiempo de COMPILACIÓN (`next
+      # build` las incrusta), así que se ponen antes de compilar y no
+      # justo antes de Playwright. `SUPABASE_SERVICE_ROLE_KEY` es de
+      # servidor y la necesita `record_classification()`: sin ella la
+      # solicitud se queda en "Recibida" y CA-19 para en el segundo paso
+      # —el propio test lo comprueba contra `/api/diagnostico` y lo dice
+      # con esas palabras—.
+      #
+      # `${VAR:?}` a propósito: si el CLI cambiara el nombre de una de
+      # estas variables, este paso se planta diciendo cuál falta en vez de
+      # escribir una cadena vacía y dejar que el fallo aparezca doce
+      # minutos después como "Correo o contraseña incorrectos".
+      - name: Leer las claves del Supabase local
+        run: |
+          echo "Variables que imprime el CLI:"
+          supabase status -o env | cut -d= -f1
+          eval "$(supabase status -o env)"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=${API_URL:?supabase status no imprimió API_URL}"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY:?supabase status no imprimió ANON_KEY}"
+            echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
+            echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY:?supabase status no imprimió SERVICE_ROLE_KEY}"
+          } >> "$GITHUB_ENV"
+
+      - name: Instalar navegador de Playwright
+        run: cd apps/web && npx playwright install --with-deps chromium
+
+      # `test:e2e:datos` compila ANTES de llamar a Playwright y a
+      # propósito: lo que imprime el proceso del WebServer sale recortado,
+      # así que un fallo de compilación aparecía como "[WebServer] Failed
+      # to type check." y punto. Compilando fuera, el error se lee entero.
+      # Pone además E2E_DATOS=1 (sin ella las dos suites se saltan solas y
+      # el job quedaría verde sin haber probado nada) y E2E_DIAGNOSTICO=1,
+      # que es lo que enciende `/api/diagnostico`.
+      - name: "Recorridos con datos (Playwright contra el Supabase local)"
+        run: cd apps/web && pnpm test:e2e:datos
+
+      # Un recorrido que falla sin su traza obliga a adivinar. La
+      # configuración guarda traza `on-first-retry` y en CI hay un
+      # reintento, así que cuando esto se suba habrá traza del segundo
+      # intento.
+      - name: Guardar las trazas si algo falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trazas
+          path: apps/web/test-results
+          retention-days: 7
+          if-no-files-found: ignore
 
       - name: Parar Supabase
         if: always()

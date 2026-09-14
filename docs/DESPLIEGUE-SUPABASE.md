@@ -1235,7 +1235,7 @@ existente en la ejecución con datos, precisamente por esto: Next.js lee
 añadir la clave sigue sin verla y el fallo aparece donde no está la
 avería. Si el puerto está ocupado, Playwright lo dirá.
 
-## Estado: los doce pasan
+## Estado: los doce pasan, y ahora los ejecuta CI
 
 **12 passed**, en Windows, el 02/09/2026 — los nueve de lectura y los
 tres del recorrido de CA-19 a 390 px. Se cerraron desde una máquina con
@@ -1250,10 +1250,38 @@ connect_rejected — gateway answered 403 to CONNECT
 
 El conector MCP sí llega, por otra ruta permitida, y por eso desde el
 contenedor se pueden aplicar migraciones y sembrar datos, pero no correr
-estos tests. Quien los toque desde ahí verá los nueve fallar en el login,
-con la página mostrando "Correo o contraseña incorrectos." — que es lo que
-devuelve `signIn` cuando no puede hablar con Supabase, y no un problema de
-credenciales.
+estos tests. Quien los toque desde ahí los verá fallar en el login, con la
+página mostrando "No hemos podido conectar para comprobar tus datos. Es un
+problema nuestro o de tu conexión, no de tu contraseña." Ese mensaje es
+`src/core/auth-errors.ts` distinguiendo un fallo de red de una contraseña
+mala; hasta el 10/09/2026 decía "Correo o contraseña incorrectos" ante
+cualquier fallo y el bloqueo parecía un problema de la semilla.
+
+### Desde el 14/09/2026 los ejecuta CI, y no necesitan el proyecto real
+
+Que dependieran de una máquina concreta de Bosco era el hueco más grande
+de la red de seguridad, y costó un fallo real: el restaurante con Menú
+Diario tuvo un 404 en **todas** sus pantallas durante días porque dos
+guardas comparaban `role !== "client"` a mano. Ninguna prueba unitaria
+montaba esas dos páginas; los recorridos, que sí lo habrían visto, no
+corrían.
+
+El job **`e2e-datos`** de `.github/workflows/ci.yml` los ejecuta en cada
+push. La clave es que **no necesitan el proyecto real**: necesitan *un*
+Supabase con las migraciones y el espacio de demostración sembrado, y eso
+es lo que `supabase start` levanta en el runner — lo mismo que ya hacía
+`rls-tests`. Por tanto el job **no usa ningún secreto**: las claves del
+Supabase local las imprime `supabase status -o env` y no son un secreto, y
+`SUPABASE_SERVICE_ROLE_KEY` sale de ahí igual. Tampoco hace falta
+`ANTHROPIC_API_KEY`: sin ella el clasificador cae a las reglas
+(`toRuleProposal(..., "no_api_key")`), que es justo lo que el Hito 4 pedía
+comprobar.
+
+Lo que se verificó desde el contenedor antes de subirlo, que es todo menos
+la base de datos: que la suite **no se salta** con `E2E_DATOS=1` (una
+suite que se salta sola dejaría el job verde sin haber probado nada), que
+`next build` y `next start` levantan el servidor de producción, y que el
+único fallo es el de red, con ese mensaje y no otro.
 
 ### Lo que encontraron al ejecutarse por primera vez
 
