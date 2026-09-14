@@ -3348,7 +3348,7 @@ regenerar salió idéntica, así que no había desviación.
 
 ### Fase 3 · Hito 14 · Adaptadores y pantallas de integraciones
 
-- [x] **La bóveda, OAuth con Google, los cinco adaptadores, el proceso de la cola y las tres pantallas** — migración 82 (sin aplicar al proyecto real), 14/09/2026.
+- [x] **La bóveda, OAuth con Google, los cinco adaptadores, el proceso de la cola y las tres pantallas** — migración 82 (aplicada al proyecto real el mismo día), 14/09/2026.
 
     Lo que el Hito 13 dejó dicho que llamarían las pantallas y los
     adaptadores, hecho. Bosco lo ordenó el 14/09/2026 ("vamos con el hito
@@ -3617,7 +3617,7 @@ no se empiezan sin ellos.
 
 **Se verifica con:** `supabase/tests/integraciones_conexiones_y_sincronizacion.sql` (RN-INT-01 a 09), `integrations.test.ts` y las cuatro listas compartidas en `listas-compartidas.test.ts`.
 
-### Hito 14 · Adaptadores y pantallas de integraciones *(hecho el 14/09/2026; la 82 sin aplicar)*
+### Hito 14 · Adaptadores y pantallas de integraciones *(hecho el 14/09/2026; la 82 aplicada al proyecto el mismo día)*
 - `src/services/credential-vault.ts` (cifrado con `INTEGRATIONS_VAULT_KEY`), el flujo OAuth con Google y los cinco adaptadores en `src/services/integrations/`, cada uno con su catálogo de métricas.
 - El proceso de la cola que ejecuta `claim_integration_runs()` / `finish_integration_run()` dentro de la tanda de `/api/cola`, y la revocación remota pendiente (RN-INT-06, migración 82).
 - Ajustes › Integraciones, el bloque de la ficha (maqueta 17) y "Informes y datos", con los cinco motivos de §178 cuando no hay dato.

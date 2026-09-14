@@ -10,34 +10,18 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-- La **82** (`integraciones_revocacion_remota`, Fase 3 · Hito 14). Es
-  aditiva: una columna nueva en `integrations`
-  (`external_revocation_attempts`, sin `select` para nadie con sesión) y
-  tres funciones reservadas a `service_role` con las que el proceso de la
-  cola revoca en Google el token de una integración desconectada
-  (RN-INT-06) y anota el resultado, dos intentos como máximo (RN-INT-08).
-  **No se ha aplicado al proyecto real**: el Hito 14 se cerró en el
-  contenedor y la aplicación al proyecto la ordena Bosco, como con la 81.
-  Comprobada desde cero en local (`bootstrap-postgres-local.sql`): las 82
-  migraciones aplican sobre PostgreSQL 16 y pasan las 36 suites, la suya
-  (`integraciones_revocacion_remota.sql`) incluida. Hasta que se aplique,
-  el proceso de la cola falla en `pending_integration_revocations()` con
-  "function does not exist" en cada tanda —solo ese paso, la
-  sincronización y el resto de la tanda siguen— y las desconexiones con
-  OAuth se quedan con `external_revocation_pending = true`. No hace falta
-  regenerar `database.types.ts`: las tres funciones no las llama ninguna
-  sesión de usuario y el gateway las invoca sin tipos generados, como las
-  de la 81.
+**Ninguna.** Las 82 migraciones del repositorio están aplicadas en el
+proyecto.
 
 ## Aplicadas
 
-**Las 81 migraciones del repositorio están aplicadas.** Las tres
+**Las 82 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81 el 14/09/2026.
+81 y la 82 el 14/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -166,6 +150,49 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   `disconnect_integration`, `request_integration_check`,
   `establishment_integrations`), que es lo esperado. Ninguna de la 81
   aparece como ejecutable por `anon`. Ningún `ERROR` nuevo.
+
+- La **82** (`integraciones_revocacion_remota`, Fase 3 · Hito 14) el
+  14/09/2026, desde el MCP, de una sola pieza (6 KB, no hace falta
+  trocearla), por orden de Bosco: el Hito 14 se cerró en el contenedor el
+  mismo día y la aplicación al proyecto se dejó a su orden, como con la
+  81. **Solo aditiva**: una columna en `integrations`
+  (`external_revocation_attempts`, `integer not null default 0` con
+  `CHECK >= 0`) y tres funciones reservadas a `service_role`
+  (`pending_integration_revocations`, `read_revoked_integration_token`,
+  `record_integration_revocation_attempt`) con las que el proceso de la
+  cola revoca en Google el token de una integración desconectada
+  (RN-INT-06) y anota el resultado, dos intentos como máximo (RN-INT-08).
+  No toca ninguna fila: `integrations` tenía 0 filas.
+
+  Lo que se comprobó ANTES, en local y sin Docker
+  (`bootstrap-postgres-local.sql`): las 82 migraciones aplican desde cero
+  sobre PostgreSQL 16 y pasan las 36 suites de `supabase/tests/` en el
+  orden de CI, la suya (`integraciones_revocacion_remota.sql`) incluida.
+  Y contra el proyecto, antes de tocarlo: 121 migraciones, ninguno de los
+  objetos de la 82, y presentes las dependencias
+  (`integrations.external_revocation_pending`,
+  `integrations.disconnected_at`, `integration_credentials`,
+  `read_integration_credential`, `mark_integration_revocation_done`).
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve
+  problemas y devolvió ninguno: las tres funciones existen, son `SECURITY
+  DEFINER`, sin EXECUTE para `anon` ni `authenticated` y con EXECUTE para
+  `service_role`; la columna nueva es `NOT NULL` con su `default 0` y su
+  `CHECK`, y no la lee `anon` ni `authenticated` (no entra en el `grant
+  select` de la 81); `authenticated` sigue leyendo las columnas de la 81
+  y sigue sin SELECT de tabla sobre `integrations`; 122 migraciones
+  registradas y la última es la 82.
+
+  `database.types.ts` regenerado desde el proyecto después (82
+  migraciones). La diferencia con el anterior es exactamente lo de la
+  82: la columna en `integrations` y las tres funciones. Ninguna firma
+  que usen las pantallas cambia. El proceso de la cola deja de fallar en
+  `pending_integration_revocations()` con "function does not exist".
+
+  Lo que añade al analizador de Supabase (`get_advisors`, seguridad):
+  nada. Ninguna de las tres funciones aparece como ejecutable por `anon`
+  ni por `authenticated` (están cerradas a las dos), y todas fijan el
+  `search_path`. Ningún `ERROR` nuevo.
 
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de

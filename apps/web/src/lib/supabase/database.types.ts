@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 14/09/2026), con las 81 migraciones del
+// (generate_typescript_types, 14/09/2026), con las 82 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -1771,6 +1771,7 @@ export type Database = {
           disconnected_by: string | null
           establishment_id: string
           external_property_id: string | null
+          external_revocation_attempts: number
           external_revocation_pending: boolean
           id: string
           last_error: string | null
@@ -1796,6 +1797,7 @@ export type Database = {
           disconnected_by?: string | null
           establishment_id: string
           external_property_id?: string | null
+          external_revocation_attempts?: number
           external_revocation_pending?: boolean
           id?: string
           last_error?: string | null
@@ -1821,6 +1823,7 @@ export type Database = {
           disconnected_by?: string | null
           establishment_id?: string
           external_property_id?: string | null
+          external_revocation_attempts?: number
           external_revocation_pending?: boolean
           id?: string
           last_error?: string | null
@@ -6608,6 +6611,16 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: number
       }
+      pending_integration_revocations: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          establishment_id: string
+          integration_id: string
+          provider: string
+          space_id: string
+        }[]
+      }
       plan_change_preview: {
         Args: { p_new_plan_id: string; p_subscription_id: string }
         Returns: {
@@ -6673,6 +6686,13 @@ export type Database = {
           kind: string
         }[]
       }
+      read_revoked_integration_token: {
+        Args: { p_integration_id: string }
+        Returns: {
+          ciphertext: string
+          key_version: number
+        }[]
+      }
       record_classification: {
         Args: {
           p_actor_id: string
@@ -6697,6 +6717,10 @@ export type Database = {
           p_version_id: string
         }
         Returns: string
+      }
+      record_integration_revocation_attempt: {
+        Args: { p_error?: string; p_integration_id: string; p_ok: boolean }
+        Returns: boolean
       }
       record_menu_event: {
         Args: {
