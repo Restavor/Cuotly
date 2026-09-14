@@ -32,6 +32,19 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ from: fromMock }),
 }));
 
+// Fase 3 · las integraciones entran en la misma tanda. Aquí solo se
+// vigila que se llamen (y que no, cuando la puerta está cerrada); el
+// proceso se prueba entero en `integration-sync.test.ts`.
+const runIntegrationSyncsMock = vi.hoisted(() => vi.fn());
+const runPendingRevocationsMock = vi.hoisted(() => vi.fn());
+vi.mock("@/services/integration-sync", () => ({
+  runIntegrationSyncs: runIntegrationSyncsMock,
+  runPendingRevocations: runPendingRevocationsMock,
+}));
+vi.mock("@/services/integration-gateway", () => ({
+  createSupabaseIntegrationGateway: vi.fn(),
+}));
+
 import { GET, POST } from "./route";
 
 const SECRETO = "un-secreto-largo-de-verdad";
@@ -49,6 +62,8 @@ beforeEach(() => {
 
   runScheduledJobsMock.mockResolvedValue({ ran: 0 });
   drainEmailQueueMock.mockResolvedValue({ sent: 0 });
+  runIntegrationSyncsMock.mockResolvedValue({ claimed: 0, skipped: "vault_not_configured" });
+  runPendingRevocationsMock.mockResolvedValue({ attempted: 0, skipped: "vault_not_configured" });
   fromMock.mockReturnValue({ select: vi.fn().mockResolvedValue({ data: [], error: null }) });
 });
 
@@ -80,6 +95,24 @@ describe("POST /api/cola", () => {
 
     expect(respuesta.status).toBe(200);
     expect(runScheduledJobsMock).toHaveBeenCalledOnce();
+  });
+
+  it("RN-INT-09 · la tanda ejecuta también las integraciones y la revocación pendiente, y dice si se saltaron", async () => {
+    process.env.QUEUE_RUNNER_SECRET = SECRETO;
+
+    const respuesta = await POST(peticion(`Bearer ${SECRETO}`));
+    const cuerpo = (await respuesta.json()) as { integrations: { sync: { skipped: string }; revocations: unknown } };
+
+    expect(runIntegrationSyncsMock).toHaveBeenCalledOnce();
+    expect(runPendingRevocationsMock).toHaveBeenCalledOnce();
+    // Sin bóveda en el entorno de prueba, el proceso lo dice en vez de reclamar.
+    expect(runIntegrationSyncsMock.mock.calls[0][0]).toMatchObject({ vault: null, oauth: null });
+    expect(cuerpo.integrations.sync.skipped).toBe("vault_not_configured");
+  });
+
+  it("sin secreto, las integraciones tampoco se tocan", async () => {
+    await POST(peticion(`Bearer ${SECRETO}`));
+    expect(runIntegrationSyncsMock).not.toHaveBeenCalled();
   });
 
   it("con CRON_SECRET también, que es la variable que usa el cron de Vercel", async () => {

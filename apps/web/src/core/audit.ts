@@ -145,6 +145,8 @@ export const AUDIT_ACTIONS = [
   "integration.disconnected",
   "integration.reauthorization_required",
   "integration.sync_failed",
+  "integration.revocation_done",
+  "integration.revocation_failed",
   "invitation.accepted",
   "job.assigned",
   "job.blocked",

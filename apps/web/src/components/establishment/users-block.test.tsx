@@ -132,6 +132,8 @@ function sheetData(
     },
     canEditData: false,
     statusReason: null,
+    integrations: null,
+    digital: null,
     canManageClients,
     summary: {
       bags: [],

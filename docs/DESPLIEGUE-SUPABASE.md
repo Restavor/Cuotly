@@ -10,8 +10,24 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 81 migraciones del repositorio están aplicadas en el
-proyecto.
+- La **82** (`integraciones_revocacion_remota`, Fase 3 · Hito 14). Es
+  aditiva: una columna nueva en `integrations`
+  (`external_revocation_attempts`, sin `select` para nadie con sesión) y
+  tres funciones reservadas a `service_role` con las que el proceso de la
+  cola revoca en Google el token de una integración desconectada
+  (RN-INT-06) y anota el resultado, dos intentos como máximo (RN-INT-08).
+  **No se ha aplicado al proyecto real**: el Hito 14 se cerró en el
+  contenedor y la aplicación al proyecto la ordena Bosco, como con la 81.
+  Comprobada desde cero en local (`bootstrap-postgres-local.sql`): las 82
+  migraciones aplican sobre PostgreSQL 16 y pasan las 36 suites, la suya
+  (`integraciones_revocacion_remota.sql`) incluida. Hasta que se aplique,
+  el proceso de la cola falla en `pending_integration_revocations()` con
+  "function does not exist" en cada tanda —solo ese paso, la
+  sincronización y el resto de la tanda siguen— y las desconexiones con
+  OAuth se quedan con `external_revocation_pending = true`. No hace falta
+  regenerar `database.types.ts`: las tres funciones no las llama ninguna
+  sesión de usuario y el gateway las invoca sin tipos generados, como las
+  de la 81.
 
 ## Aplicadas
 

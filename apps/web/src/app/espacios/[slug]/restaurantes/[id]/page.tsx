@@ -22,6 +22,13 @@ import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 
 import { EstablishmentDataForm } from "@/components/establishment/DataForm";
+import { DigitalSummary } from "@/components/establishment/DigitalSummary";
+import { IntegrationsBlock } from "@/components/establishment/IntegrationsBlock";
+import {
+  loadDigitalSummary,
+  loadIntegrationsView,
+} from "@/components/establishment/integrations-load";
+import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
 import { parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
@@ -162,6 +169,39 @@ export default async function EstablishmentPage({
       p_establishment_id: id,
     });
 
+    /*
+      Maqueta 17 · las integraciones y el resumen de analítica digital
+      (Fase 3, Hito 14). El actor se dice para decidir qué botones se
+      PINTAN (RN-INT-05); quién puede de verdad lo comprueba cada función
+      de la base con la sesión. Si la lectura falla se pasa `null` y la
+      ficha dice que no pudo leerlas, en vez de enseñar "ninguna conectada".
+    */
+    const integrations = await loadIntegrationsView(supabase, {
+      establishmentId: id,
+      actor: { kind: "staff", role: role === "owner" ? "owner" : role === "admin" ? "admin" : "worker" },
+      establishmentStatus: header.status,
+      websiteUrl: header.identity.websiteUrl,
+      webPlatform: header.identity.webPlatform,
+      timezone: space.timezone,
+      flash: soloUno(query[INTEGRATION_FLASH_PARAM]),
+    }).catch((fallo: unknown) => {
+      console.error("[ficha] no se pudieron leer las integraciones", { id, message: String(fallo) });
+      return null;
+    });
+    const digital =
+      integrations === null
+        ? null
+        : await loadDigitalSummary(supabase, {
+            establishmentId: id,
+            rows: integrations.rows,
+            todayIso: hoy,
+            timezone: space.timezone,
+            now: new Date(),
+          }).catch((fallo: unknown) => {
+            console.error("[ficha] no se pudo leer la analítica digital", { id, message: String(fallo) });
+            return null;
+          });
+
     return (
       <EstablishmentSheet
         base={base}
@@ -200,6 +240,8 @@ export default async function EstablishmentPage({
           files,
           audit,
           statusReason: statusReason ?? null,
+          integrations,
+          digital,
         }}
       />
     );
@@ -308,6 +350,42 @@ export default async function EstablishmentPage({
       terms: await loadSubscriptionTerms(supabase, s.id),
     })),
   );
+
+  /*
+    RN-INT-05 · el propietario del restaurante (la misma lista que acepta
+    las condiciones, y por eso se reutiliza `canAcceptTerms`) autoriza su
+    cuenta de Google; el Editor y Consulta ven el estado. Es lo que se
+    PINTA: `assert_can_manage_integrations()` y
+    `store_integration_credential()` lo vuelven a comprobar.
+
+    La zona horaria: el restaurante no puede leer `spaces` (RLS), así que
+    las horas se pintan en la del espacio de Restavor, igual que en su
+    pantalla de Menú Diario. Cuando haya un segundo espacio hará falta
+    una función que la devuelva al cliente.
+  */
+  const clientTimezone = "Europe/Madrid";
+  const integrationsCliente = await loadIntegrationsView(supabase, {
+    establishmentId: id,
+    actor: { kind: "client", role: canAcceptTerms === true ? "local_owner" : "editor" },
+    establishmentStatus: establishment.status,
+    websiteUrl: establishment.website_url,
+    webPlatform: establishment.web_platform,
+    timezone: clientTimezone,
+    flash: soloUno(query[INTEGRATION_FLASH_PARAM]),
+  }).catch((fallo: unknown) => {
+    console.error("[restaurante] no se pudieron leer las integraciones", { id, message: String(fallo) });
+    return null;
+  });
+  const digitalCliente =
+    integrationsCliente === null
+      ? null
+      : await loadDigitalSummary(supabase, {
+          establishmentId: id,
+          rows: integrationsCliente.rows,
+          todayIso: todayInTimeZone(new Date(), clientTimezone),
+          timezone: clientTimezone,
+          now: new Date(),
+        }).catch(() => null);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
@@ -504,6 +582,29 @@ export default async function EstablishmentPage({
       ) : null}
 
       {serviceStopped ? null : <NewRequestForm establishmentId={id} />}
+
+      {/*
+        Fase 3 · Hito 14 · las integraciones del restaurante y lo que
+        traen (§117, §178). El cliente ve las cinco fuentes con su estado;
+        el propietario, además, conecta las de Google.
+      */}
+      {integrationsCliente === null ? null : (
+        <IntegrationsBlock
+          view={integrationsCliente}
+          establishmentId={id}
+          slug={slug}
+          returnTo={`/espacios/${slug}/restaurantes/${id}`}
+          title={es.establishmentSheet.integrationsTitle}
+          hint={es.establishmentSheet.integrationsHint}
+        />
+      )}
+      {digitalCliente === null ? null : (
+        <DigitalSummary
+          view={digitalCliente}
+          title={es.establishmentSheet.digitalTitle}
+          hint={es.establishmentSheet.digitalHint}
+        />
+      )}
 
       <Card title={es.clientArea.requestsTitle}>
         {rows.length === 0 ? (

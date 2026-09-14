@@ -894,7 +894,8 @@ mismo criterio que §25 y §26: cada regla con su test, ninguna regla nueva. Don
 (frecuencia "adaptada", cadencia de reintentos, qué es "desactualizado", cuándo es "definitiva" la
 suspensión), la lectura aplicada se dice aquí; Bosco la confirmó el 14/09/2026 como decisión 24 de
 `docs/DECISIONES.md`. Servidor y dominio (`src/core/integrations.ts`) en la
-migración 81 (Fase 3, Hito 13); los adaptadores de cada fuente y las pantallas, en el Hito 14.
+migración 81 (Fase 3, Hito 13); los adaptadores de cada fuente, el proceso de la cola, la revocación
+remota (migración 82) y las pantallas, en el Hito 14 (14/09/2026).
 
 - **RN-INT-01**: las integraciones son **por establecimiento** y son cinco: **GA4, Search Console,
   Business Profile, Clarity y PageSpeed** (§115). Una fila por restaurante y fuente
@@ -956,7 +957,17 @@ migración 81 (Fase 3, Hito 13); los adaptadores de cada fuente y las pantallas,
 Qué métricas guarda cada fuente lo fija §92 para GA4 (usuarios, sesiones, páginas más visitadas,
 procedencia, dispositivos, ubicaciones aproximadas y conversiones configuradas) y para Search Console
 (clics, impresiones, CTR, posición media, búsquedas principales y páginas que aparecen). Para Business
-Profile, Clarity y PageSpeed la maestra solo nombra la fuente: su catálogo se fija con el adaptador de
-cada una en el Hito 14 y no se adelanta aquí. Las oportunidades (§96 a §101) y los informes (§89 a §95)
-son los hitos 15 y 16; **los umbrales de detección y la definición de impacto y esfuerzo siguen
-pendientes de Bosco** (§24.3) y no se inventan.
+Profile, Clarity y PageSpeed la maestra solo nombra la fuente: su catálogo lo fijó el adaptador de
+cada una en el Hito 14 con lo que su API devuelve, sin nada por encima (`METRICS_BY_PROVIDER` en
+`src/core/integrations.ts`; pendiente 14 de `docs/DECISIONES.md`): Business Profile, las impresiones
+por superficie (Maps y Búsqueda, escritorio y móvil) y las acciones sobre la ficha (clics a la web,
+llamadas, cómo llegar, conversaciones y reservas); Clarity, tráfico (sesiones, sesiones de robots,
+usuarios distintos, páginas por sesión), comportamiento (profundidad de scroll, tiempo de interacción)
+y señales de fricción (clics muertos, clics de rabia, vueltas rápidas, scroll excesivo, errores de
+script, clics con error); PageSpeed, la puntuación de rendimiento y LCP, CLS, TBT, FCP y Speed Index
+por estrategia (móvil y escritorio), más el INP de campo cuando Chrome tiene datos de esa URL. Lo
+que la pantalla de "Informes y datos" enseña de cada fuente son los 28 últimos días completos con su
+antigüedad, y "periodo insuficiente" (§178) se lee como menos de una semana con dato (una medición,
+en PageSpeed): es una lectura aplicada, no una regla, y está anotada como pendiente 14. Las
+oportunidades (§96 a §101) y los informes (§89 a §95) son los hitos 15 y 16; **los umbrales de
+detección y la definición de impacto y esfuerzo siguen pendientes de Bosco** (§24.3) y no se inventan.

@@ -2213,7 +2213,6 @@ export const es = {
     pending: [
       "Apariencia: no habrá selector. Un único modo claro y una única densidad, por decisión de producto (§124).",
       "Facturación e impuestos: depende del bloque legal y fiscal, que revisa un profesional antes de lanzar.",
-      "Integraciones: Fase 3, con sus credenciales cifradas.",
       "Suscripción a Cuotly, exportación y conservación: Fase 4.",
       "Propiedad y eliminación del espacio (§127): archivado, transferencia y borrado programado, sin construir.",
       "Auditoría del restaurante: §21.2 dice que el propietario de un restaurante ve la de su establecimiento. Necesita una proyección sin identidad del equipo, como la del libro de consumos, y todavía no existe.",
@@ -2347,6 +2346,8 @@ export const es = {
       "integration.disconnected": "Integración desconectada",
       "integration.reauthorization_required": "Integración pendiente de volver a autorizar",
       "integration.sync_failed": "Sincronización de una integración fallida",
+      "integration.revocation_done": "Autorización revocada en Google",
+      "integration.revocation_failed": "Revocación en Google fallida",
       "invitation.accepted": "Invitación aceptada",
       "job.assigned": "Trabajo asignado",
       "job.blocked": "Trabajo bloqueado",
@@ -3043,9 +3044,8 @@ export const es = {
     countsEmptyTitle: "Sin actividad todavía",
     countsEmptyReason: "En cuanto este restaurante tenga solicitudes o trabajos, se contarán aquí.",
     digitalTitle: "Analítica digital",
-    digitalEmptyTitle: "No está construida",
-    digitalEmptyReason:
-      "GA4, Search Console, Business Profile, Clarity y PageSpeed son la Fase 3. No hay ninguna integración conectada, así que no hay ningún dato que enseñar.",
+    digitalHint:
+      "Lo que cada fuente conectada ha traído en los 28 últimos días completos, con su antigüedad. No es un informe: los informes (§89 a §95) llegan en el Hito 16.",
 
     // ---- Gestión · Plan y servicios (maqueta 13) ------------------
     subscriptionTitle: "Lo contratado",
@@ -3270,11 +3270,9 @@ export const es = {
     backupLimitation:
       "Aunque se conecte, Cuotly solo podrá guardar los contenidos y recursos que la plataforma de la web permita exportar. No afirmará nunca que existe una copia completa restaurable de la web.",
 
-    // ---- Gestión · Integraciones ---------------------------------
+    // ---- Gestión · Integraciones (maqueta 17) ---------------------
     integrationsTitle: "Integraciones",
-    integrationsEmptyTitle: "No está construido",
-    integrationsEmptyReason:
-      "Las integraciones analíticas (GA4, Search Console, Business Profile, Clarity, PageSpeed) son la Fase 3, con OAuth y credenciales cifradas. No hay ninguna conectada y no existe el botón «Sincronizar ahora».",
+    integrationsHint: "Consulta las fuentes de datos conectadas a este restaurante.",
 
     // Maqueta 20 · la leyenda de estados vive en el Resumen, y el enlace
     // de cobrar solo aparece cuando hay deuda vencida de verdad.
@@ -3330,6 +3328,178 @@ export const es = {
    */
   analyticsSync: {
     noSyncBadge: "Sin sincronización",
+  },
+
+  /**
+   * Fase 3 · Hito 14 · integraciones analíticas (PRD §27, RN-INT): el
+   * bloque de la ficha (maqueta 17), la tarjeta del restaurante, el resumen
+   * de "Informes y datos" y la sección de Ajustes.
+   */
+  integrations: {
+    providers: {
+      ga4: { name: "Google Analytics 4", description: "Analítica web del restaurante." },
+      search_console: { name: "Google Search Console", description: "Rendimiento en buscadores." },
+      business_profile: { name: "Google Business Profile", description: "Ficha del restaurante." },
+      clarity: { name: "Microsoft Clarity", description: "Mapas de calor y grabaciones." },
+      pagespeed: { name: "PageSpeed Insights", description: "Rendimiento y velocidad web." },
+    },
+    // RN-INT-03 · los siete estados de §117, con su nombre.
+    states: {
+      not_connected: "No conectada",
+      pending_authorization: "Pendiente de autorización",
+      connected: "Conectada",
+      syncing: "Sincronizando",
+      needs_attention: "Requiere atención",
+      error: "Error",
+      disconnected: "Desconectada",
+    },
+    failureKinds: {
+      transient: "Fallo pasajero: Cuotly vuelve a intentarlo sola.",
+      authorization: "Hace falta volver a autorizar la cuenta.",
+      configuration: "Hay que revisar la configuración: la propiedad, el sitio o la clave.",
+    },
+    // §117 · lo que se enseña de cada integración.
+    accountLabel: "Cuenta de origen",
+    accountNone: "No conectada",
+    propertyLabel: "Propiedad",
+    lastSyncLabel: "Última sincronización",
+    lastSuccessLabel: "Última correcta",
+    nextAttemptLabel: "Próximo intento",
+    nextAttemptNone: "—",
+    nextAttemptWaitingPerson: "Cuando alguien vuelva a autorizar",
+    errorLabel: "Error",
+    staleBadge: "Dato desactualizado",
+    checkPendingBadge: "Comprobación en cola",
+    revocationPendingNote: "La autorización se revocará en Google en la próxima tanda de la cola.",
+    frequency: { daily: "Se sincroniza a diario", weekly: "Se sincroniza cada semana" },
+    noSyncNowNote:
+      "No existe «Sincronizar ahora»: la sincronización la programa el sistema (§117). Al conectar, la primera pasada entra en la siguiente tanda de la cola.",
+
+    // Acciones (RN-INT-05: solo quien gestiona conexiones las ve; el servidor las vuelve a comprobar).
+    connectOAuth: "Conectar con Google",
+    connectApiKey: "Introducir clave",
+    replaceApiKey: "Sustituir clave",
+    reauthorize: "Volver a autorizar",
+    check: "Comprobar conexión",
+    checkPending: "Pidiendo comprobación…",
+    checkRequested: "Comprobación pedida: la hace la cola y el resultado se verá aquí.",
+    disconnect: "Desconectar",
+    disconnectPending: "Desconectando…",
+    disconnectReasonLabel: "Motivo (opcional)",
+    disconnectConfirm: "Se revocará la autorización y dejará de sincronizarse. Los datos ya importados se conservan (RN-INT-07).",
+    cancel: "Cancelar autorización",
+    cancelPending: "Cancelando…",
+
+    // El formulario de conectar.
+    propertyField: {
+      ga4: "Identificador de la propiedad de GA4 (por ejemplo, 123456789)",
+      search_console: "Sitio en Search Console (por ejemplo, https://restaurante.es/ o sc-domain:restaurante.es)",
+      business_profile: "Identificador de la ubicación de Business Profile (por ejemplo, locations/123456789)",
+      clarity: "Nombre del proyecto de Clarity (para reconocerlo; el token ya es del proyecto)",
+      pagespeed: "URL que mide PageSpeed (por defecto, la web del restaurante)",
+    },
+    propertyRequired: "Indica la propiedad antes de conectar.",
+    apiKeyField: {
+      clarity: "Token de exportación de datos de Clarity (Settings › Data Export)",
+      pagespeed: "Clave de API de Google Cloud con PageSpeed Insights habilitada",
+    },
+    apiKeyRequired: "Pega la clave antes de guardar.",
+    apiKeyHint:
+      "La clave se cifra en el servidor antes de guardarse y nadie la vuelve a ver, ni siquiera tú (§126). Para cambiarla, sustitúyela.",
+    apiKeySaved: "Clave guardada y cifrada. La primera sincronización entra en la siguiente tanda de la cola.",
+    connectPending: "Conectando…",
+    savePending: "Guardando…",
+    saveApiKey: "Guardar clave",
+    oauthRedirectNote: "Se abrirá Google para elegir la cuenta y aceptar el permiso de lectura. Al volver, la integración quedará conectada.",
+
+    // Quién puede (RN-INT-05, §126), dicho cuando no se puede.
+    onlySpaceOwnerKeys: "Solo el propietario del espacio introduce o sustituye una clave (§126).",
+    onlyOwnersAuthorize:
+      "La autorización de Google la concede el propietario del espacio o el del restaurante con su cuenta (RN-INT-05); un administrador la comprueba, la cancela o la desconecta.",
+    workerReadOnly: "Consultas el estado y los datos; conectar y desconectar es de quien gestiona la cartera (RN-INT-05).",
+    clientReadOnly: "Puedes ver el estado de las integraciones. Conectarlas es del propietario del restaurante o del equipo de mantenimiento.",
+    clientOwnerHint:
+      "Como propietario puedes autorizar tu cuenta de Google para GA4, Search Console y Business Profile. Clarity y PageSpeed las conecta el equipo con su clave.",
+
+    // Por qué no se puede conectar (§178: el motivo, no un botón que falla).
+    vaultNotConfigured:
+      "No se pueden guardar credenciales en este entorno: falta la clave de cifrado del servidor (INTEGRATIONS_VAULT_KEY).",
+    oauthNotConfigured:
+      "La conexión con Google no está configurada en este entorno (GOOGLE_OAUTH_CLIENT_ID). Clarity y PageSpeed sí se pueden conectar con su clave.",
+    archivedNote: "Un restaurante archivado no conecta integraciones: al archivarlo se revocaron todas (RN-INT-06).",
+
+    // Lo que dice la vuelta de Google.
+    flash: {
+      connected: "Integración conectada. La primera sincronización entra en la siguiente tanda de la cola.",
+      denied: "Google no concedió el permiso. La integración sigue pendiente de autorización; puedes intentarlo otra vez o cancelarla.",
+      state_invalid: "La vuelta de Google no coincide con ninguna conexión empezada desde aquí (enlace caducado o de otra sesión). Empieza de nuevo.",
+      wrong_user: "La autorización la empezó otra persona. Inicia sesión con tu cuenta y empieza de nuevo.",
+      exchange_failed: "Google no devolvió la autorización completa. Inténtalo otra vez.",
+      store_failed: "La autorización llegó pero no se pudo guardar. El motivo está en el registro del servidor.",
+      not_configured: "La conexión con Google no está configurada en este entorno.",
+    },
+
+    // Plataformas externas (§120, §121): no son integraciones y se dice.
+    platformsTitle: "Plataformas externas",
+    platformsHint:
+      "No son integraciones monitorizadas (§120): se anotan como herramientas del restaurante y no tienen sección de control.",
+    webPlatformLabel: "Web del restaurante",
+    webPlatformNone: "Sin plataforma web registrada en la ficha.",
+    openSite: "Ver sitio",
+    reservationsLabel: "Reservas y delivery",
+    reservationsNone: "Sin plataformas de reservas o delivery registradas todavía: la ficha no tiene ese campo (§120, pendiente).",
+    landingSiteNote: "La publicación de Menú Diario en LandingSite es manual (§121).",
+
+    // El resumen de "Informes y datos" (§178).
+    summaryWindow: "Últimos 28 días completos",
+    dataUntil: (day: string) => `Datos hasta ${day}`,
+    syncedAt: (moment: string) => `Sincronizado el ${moment}`,
+    coveredDays: (n: number, total: number) => `${n} de ${total} días con dato`,
+    insufficientTitle: "Periodo insuficiente",
+    staleTitle: "Última sincronización",
+    errorTitle: "Error en la última sincronización",
+    noDataTitle: "Todavía no hay datos",
+    notConnectedTitle: "Integración no conectada",
+    strategies: { mobile: "Móvil", desktop: "Escritorio" },
+    metrics: {
+      users: "Usuarios",
+      sessions: "Sesiones",
+      clicks: "Clics",
+      impressions: "Impresiones",
+      position: "Posición media",
+      profile_impressions: "Veces que apareció la ficha",
+      website_clicks: "Clics a la web",
+      call_clicks: "Llamadas",
+      direction_requests: "Cómo llegar",
+      dead_clicks: "Clics muertos",
+      rage_clicks: "Clics de rabia",
+      performance_score_by_strategy: "Puntuación de rendimiento",
+    },
+
+    // Ajustes › Integraciones.
+    settingsTitle: "Integraciones",
+    settingsHint:
+      "El estado de las cinco fuentes en todos los restaurantes del espacio. Se conectan desde la ficha de cada restaurante (Gestión › Integraciones).",
+    settingsEnvTitle: "Configuración del servidor",
+    settingsVaultOk: "Clave de cifrado de credenciales: configurada.",
+    settingsVaultMissing: "Clave de cifrado de credenciales: falta INTEGRATIONS_VAULT_KEY. Sin ella no se puede conectar ninguna fuente.",
+    settingsOAuthOk: "Cliente OAuth de Google: configurado.",
+    settingsOAuthMissing: "Cliente OAuth de Google: falta GOOGLE_OAUTH_CLIENT_ID o GOOGLE_OAUTH_CLIENT_SECRET. GA4, Search Console y Business Profile no se pueden conectar hasta configurarlo.",
+    settingsEmpty: "Ningún restaurante tiene una integración empezada todavía.",
+    settingsEstablishmentColumn: "Restaurante",
+    settingsProviderColumn: "Fuente",
+    settingsStateColumn: "Estado",
+    settingsLastSyncColumn: "Última sincronización",
+    settingsNextColumn: "Próximo intento",
+    settingsOpen: "Abrir",
+    credentialsTitle: "Credenciales guardadas",
+    credentialsHint:
+      "Solo el propietario ve que existen: tipo, versión de la clave de cifrado y caducidad. El valor no lo ve nadie (§126).",
+    credentialKinds: { oauth_refresh_token: "Autorización de Google", api_key: "Clave API" },
+    credentialKeyVersion: (v: number) => `Cifrada con la clave v${v}`,
+    credentialReplaced: "Sustituida",
+    credentialRevoked: "Revocada",
+    credentialActive: "Vigente",
   },
 
   /**
@@ -3484,6 +3654,9 @@ export const es = {
     not_connected: "No conectado. Falta enlazar el servicio para ver este dato.",
     no_data_yet: "Sin datos todavía. Aparecerán en cuanto haya actividad.",
     error: "No se ha podido cargar. Vuelve a intentarlo.",
+    // §178 · "última sincronización": el dato existe pero es viejo, y se
+    // dice en vez de enseñarlo como actual (RN-INT-07).
+    stale: "Dato desactualizado. La última sincronización correcta es antigua; se enseña la fecha, no una cifra actual.",
     insufficient_period: "Periodo insuficiente. Hace falta más historial para calcular esto.",
   },
 } as const;

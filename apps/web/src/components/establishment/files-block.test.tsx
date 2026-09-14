@@ -114,6 +114,8 @@ function sheetData(files: SheetData["files"]): SheetData {
     },
     canEditData: false,
     statusReason: null,
+    integrations: null,
+    digital: null,
     canManageClients: false,
     summary: {
       bags: [],

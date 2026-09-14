@@ -49,6 +49,29 @@ En Vercel → Settings → Environment Variables. Las que llevan
 | `ANTHROPIC_API_KEY` | Clasificación con IA | Cae al motor de reglas (RN-CLS-02), no es un fallo |
 | `RESEND_API_KEY` | Enviar los correos | Se encolan y salen cuando se configure; nunca se pierden |
 | `RESEND_FROM` | Remitente | Usa `Cuotly <avisos@cuotly.com>` |
+| `INTEGRATIONS_VAULT_KEY` | Cifrar las credenciales de las integraciones (RN-INT-02): 32 bytes en base64, `openssl rand -base64 32` | **No se puede conectar ninguna fuente** y la cola no reclama sincronizaciones; la pantalla lo dice |
+| `INTEGRATIONS_VAULT_KEY_VERSION` | La versión de la clave actual (para rotarla) | Vale `1` |
+| `INTEGRATIONS_VAULT_KEY_PREVIOUS` | La clave anterior, solo para descifrar lo guardado con ella durante una rotación | Lo cifrado con la versión anterior deja de leerse hasta volver a autorizar |
+| `GOOGLE_OAUTH_CLIENT_ID` | El cliente OAuth de Google Cloud (GA4, Search Console, Business Profile) | Esas tres no se pueden conectar; Clarity y PageSpeed sí |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Su secreto | Igual que arriba |
+
+El cliente OAuth se crea en Google Cloud (APIs y servicios › Credenciales,
+tipo "aplicación web") con `https://<dominio>/api/integraciones/oauth/callback`
+como URI de redirección autorizada, y con las API habilitadas: Google
+Analytics Data API, Google Search Console API, Business Profile
+Performance API y My Business Business Information API (esta última pide
+acceso a la API de Business Profile, que Google concede por formulario).
+PageSpeed Insights API se habilita en el mismo proyecto y su clave de API
+la pega el propietario del espacio en la ficha del restaurante.
+
+**La cadencia.** La cola entra dos veces al día (07:00 y 19:00 UTC), así
+que las esperas de reintento de RN-INT-04 (1 h, 4 h, 16 h, 24 h) son un
+mínimo: una sincronización marcada para dentro de una hora se ejecuta en
+la siguiente entrada del cron. Cada tanda reclama como máximo cinco
+ejecuciones de integraciones (`RUNS_PER_BATCH`) para caber en el minuto
+de `maxDuration`; con más restaurantes conectados que eso, las que quedan
+esperan a la siguiente tanda, que es lo que "la programa el sistema" (§117)
+significa hoy.
 
 `SUPABASE_SERVICE_ROLE_KEY` **nunca** lleva el prefijo `NEXT_PUBLIC_`: salta
 todas las reglas de seguridad de la base de datos, y en el navegador sería

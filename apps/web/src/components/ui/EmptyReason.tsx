@@ -10,7 +10,7 @@ import { es } from "@/i18n/es";
  * sabe por qué no tiene datos no compila. Es la diferencia entre cumplir
  * el criterio y acordarse de cumplirlo.
  *
- * Los cuatro motivos no son el mismo hueco, y ahora se distinguen a la
+ * Los cinco motivos de §178 no son el mismo hueco, y ahora se distinguen a la
  * vista: "no conectado" pide una acción de alguien, "sin datos todavía" es
  * el curso normal de las cosas, "error" ha fallado y "periodo
  * insuficiente" solo necesita que pase el tiempo. Pintarlos los cuatro
@@ -29,6 +29,9 @@ const MOTIVO: Readonly<
   // El curso normal: todavía no ha pasado nada. En neutro, sin alarma.
   no_data_yet: { icon: "document", clase: "bg-soft-surface text-text-secondary" },
   error: { icon: "alert", clase: "bg-danger/10 text-danger" },
+  // §178 · "última sincronización": hay dato, pero viejo. En ámbar-info
+  // como el reloj: no ha fallado nada hoy, pero no se puede dar por actual.
+  stale: { icon: "clock", clase: "bg-info/10 text-info" },
   // Hace falta más historial: es cuestión de tiempo, y el reloj lo dice
   // mejor que cualquier frase.
   insufficient_period: { icon: "clock", clase: "bg-info/10 text-info" },

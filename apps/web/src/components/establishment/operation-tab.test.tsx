@@ -75,6 +75,8 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     },
     canEditData: false,
     statusReason: null,
+    integrations: null,
+    digital: null,
     summary: {
       bags: [],
       attention: [],

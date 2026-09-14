@@ -3346,6 +3346,133 @@ regenerar salió idéntica, así que no había desviación.
     sobre PostgreSQL 16 con las 81 migraciones; typecheck, lint, las
     pruebas unitarias y `next build`.
 
+### Fase 3 · Hito 14 · Adaptadores y pantallas de integraciones
+
+- [x] **La bóveda, OAuth con Google, los cinco adaptadores, el proceso de la cola y las tres pantallas** — migración 82 (sin aplicar al proyecto real), 14/09/2026.
+
+    Lo que el Hito 13 dejó dicho que llamarían las pantallas y los
+    adaptadores, hecho. Bosco lo ordenó el 14/09/2026 ("vamos con el hito
+    14"). El diseño que citó (`/docs/diseño`, tres carpetas de PDF) **no
+    está en el repositorio ni llegó al contenedor**: el bloque de la ficha
+    se hizo sobre la vista 17 del PDF de maquetas que sí había ("Gestión —
+    Integraciones": las cinco filas con cuenta de origen, última
+    sincronización, próximo intento y "Comprobar conexión", y debajo
+    LandingSite, Reservas y Delivery), y la pantalla de Ajustes y el
+    resumen de "Informes y datos" sin maqueta, con los componentes base.
+    Si en esas carpetas hay otra cosa, esto se ajusta a lo que digan.
+
+    **Lo que hay.**
+    - `src/services/credential-vault.ts`: AES-256-GCM con
+      `INTEGRATIONS_VAULT_KEY` (32 bytes en base64), vector nuevo por
+      credencial, formato `cv1.<versión>.<iv>.<tag>.<datos>` que nunca
+      empieza como un token de Google (la 81 lo rechazaría), y rotación
+      con `INTEGRATIONS_VAULT_KEY_VERSION` y `_PREVIOUS`. Sin clave no se
+      cifra "en claro por defecto": no se conecta nada y se dice.
+    - `src/services/google-oauth.ts`: los permisos mínimos por fuente
+      (`analytics.readonly`, `webmasters.readonly`, `business.manage` que
+      no tiene solo lectura), `access_type=offline` + `prompt=consent`
+      para que llegue el token de refresco, el canje, el refresco, la
+      revocación y el `state` firmado con HMAC (integración, restaurante,
+      quién lo empezó, la propiedad, un nonce y diez minutos). La vuelta
+      (`/api/integraciones/oauth/callback`) comprueba la firma, el nonce
+      contra la cookie que se puso al salir, que la sesión sea la de
+      quien salió, y solo entonces canjea, cifra y guarda con
+      `store_integration_credential()` y el actor de la sesión (RN-INT-05).
+    - Los cinco adaptadores en `src/services/integrations/` con el
+      contrato común de `adapter.ts` (comprobar sin importar datos;
+      sincronizar una ventana a puntos con clave natural; 401/403 =
+      autorización, 400/404 = configuración, 429/5xx/red = pasajero; el
+      texto del error recortado). GA4 (Data API: usuarios y sesiones por
+      día, y los desgloses de §92.1 con los diez mayores de cada día;
+      las conversiones son los `keyEvents` de la propiedad), Search
+      Console (`searchAnalytics/query` por día, búsquedas y páginas),
+      Business Profile (Performance API: impresiones por superficie y
+      acciones sobre la ficha), Clarity (Data Export: agregados del día
+      de la consulta, porque la API no da rangos) y PageSpeed (un
+      análisis en móvil y otro en escritorio, con el día de la medición).
+      El catálogo de las tres que la maestra solo nombra está en
+      `METRICS_BY_PROVIDER` y en PRD §27.
+    - `src/services/integration-sync.ts` + `integration-gateway.ts`: el
+      proceso, dentro de la misma tanda de `/api/cola` (antes del correo,
+      porque un fallo encola avisos que la tanda envía). Reclama con
+      `claim_integration_runs()`, descifra, refresca el token de acceso
+      si es OAuth, llama al adaptador, filtra los puntos fuera del
+      catálogo y cierra con `finish_integration_run()` con el motivo de
+      RN-INT-08 y el error pasado por `sanitizeSyncError()`. Sin bóveda
+      no reclama nada (un problema de despliegue no deja a nadie en
+      "Requiere atención"). Un fallo no tumba a los demás, ni un fallo al
+      cerrar. Cinco ejecuciones por tanda (`RUNS_PER_BATCH`), para caber
+      en el minuto.
+    - **Migración 82**: la revocación remota que la 81 dejó pendiente no
+      tenía puerta al token —`read_integration_credential()` solo da la
+      vigente y desconectar la revoca antes—. Tres funciones de
+      `service_role`: `pending_integration_revocations()`,
+      `read_revoked_integration_token()` (solo mientras la revocación
+      siga pendiente) y `record_integration_revocation_attempt()`:
+      correcta o segundo fallo cierran la pendiente, con
+      `integration.revocation_done` / `revocation_failed` en la auditoría
+      ("una revocación remota, una vez", RN-INT-08, leído como dos
+      intentos en total). Un token que Google ya no reconoce cuenta como
+      revocado.
+    - **Las pantallas.** Ficha › Gestión › Integraciones (maqueta 17):
+      las cinco fuentes siempre, con estado, cuenta, propiedad, última
+      sincronización, próximo intento (o "cuando alguien vuelva a
+      autorizar"), el error con su clase, "dato desactualizado",
+      "comprobación en cola" y "se revocará en Google"; los botones según
+      quién mira (`src/core/integrations.ts`, RN-INT-05): el propietario
+      del espacio conecta todo, un administrador comprueba, cancela y
+      desconecta y se le dice por qué no autoriza, un trabajador mira; y
+      sin "Sincronizar ahora", con la nota de por qué. Conectar por OAuth
+      pide la propiedad (el id de GA4, el sitio de Search Console, la
+      ubicación de Business Profile) antes de ir a Google; una clave se
+      escribe a ciegas, se cifra en el servidor y nadie la vuelve a ver;
+      el propietario del espacio ve que las credenciales existen (tipo,
+      versión de la clave, vigente/sustituida/revocada), no su valor
+      (§126). Debajo, "Plataformas externas": la web del restaurante con
+      "Ver sitio", y reservas/delivery diciendo que la ficha no tiene ese
+      campo todavía (§120) en vez de un enlace vacío. La misma tarjeta en
+      la pantalla del restaurante: el propietario autoriza su cuenta de
+      Google (la misma lista que acepta las condiciones), el Editor y
+      Consulta ven el estado. Ficha › Informes y datos › Analítica
+      digital: por fuente, o uno de los **cinco motivos de §178** con su
+      nombre (`EmptyReason` tiene ahora `stale`, "última sincronización")
+      o las cifras de los 28 últimos días completos con "datos hasta",
+      "N de 28 días con dato" y "sincronizado el". Ajustes ›
+      Integraciones: el estado de todas las fuentes de todos los
+      restaurantes con enlace a cada ficha, y para el propietario si el
+      servidor tiene la bóveda y el cliente OAuth configurados.
+    - Lo que decide el dominio y no la pantalla, en `src/core/integrations.ts`:
+      el catálogo completo, `HEADLINE_METRICS` (lo que el resumen enseña),
+      la ventana de 28 días, `headlineValue()` (suma, media o última
+      medición por desglose) y `summaryReason()` (los cinco motivos en su
+      orden). "Periodo insuficiente" es menos de 7 días con dato (una
+      medición en PageSpeed) y es una lectura, no una regla: pendiente 14.
+
+    **Lo que NO hace, dicho en claro:** no aplica la 82 al proyecto real
+    (Bosco lo ordena); no hay "Sincronizar ahora"; no hay oportunidades ni
+    informes (hitos 15 y 16, bloqueados por CLAUDE.md); las plataformas de
+    reservas y delivery no tienen campo en la ficha; la zona horaria del
+    cliente en su tarjeta es la de Restavor porque el restaurante no lee
+    `spaces` (igual que en su Menú Diario); las esperas de reintento son
+    un mínimo, porque el cron entra dos veces al día
+    (`docs/DESPLIEGUE-VERCEL.md`). Nada de esto se ha probado contra
+    Google de verdad: los adaptadores se probaron con las respuestas que
+    documentan sus API, y la primera conexión real la tiene que hacer
+    alguien con el cliente OAuth creado en Google Cloud.
+
+    **Comprobado:** `integraciones_revocacion_remota.sql` (la 36ª suite;
+    RN-INT-06, RN-INT-08, CA-17, funciones cerradas por RPC y la columna
+    tapada); las 36 suites desde cero sobre PostgreSQL 16 con las 82
+    migraciones; `credential-vault.test.ts`, `google-oauth.test.ts`,
+    `adapters.test.ts` (los cinco con `fetch` falso), `integration-sync.test.ts`
+    (el proceso entero sin red ni base), la vuelta de OAuth
+    (`callback/route.test.ts`: firma, nonce, sesión, permiso denegado,
+    sin bóveda), la tanda de `/api/cola`, `integrations-block.test.tsx`
+    (los cinco actores, los estados, los cinco motivos de §178) y los
+    tests del dominio; typecheck, lint, 996 pruebas y `next build`. Los
+    recorridos de Playwright no se ejecutaron: desde el contenedor no se
+    llega al proyecto de Supabase (`docs/DESPLIEGUE-SUPABASE.md`).
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
@@ -3490,10 +3617,12 @@ no se empiezan sin ellos.
 
 **Se verifica con:** `supabase/tests/integraciones_conexiones_y_sincronizacion.sql` (RN-INT-01 a 09), `integrations.test.ts` y las cuatro listas compartidas en `listas-compartidas.test.ts`.
 
-### Hito 14 · Adaptadores y pantallas de integraciones
-- `src/services/credential-vault.ts` (cifrado con `INTEGRATIONS_VAULT_KEY`), el flujo OAuth con Google y los cinco adaptadores en `src/services/`, cada uno con su catálogo de métricas.
-- El proceso de la cola que ejecuta `claim_integration_runs()` / `finish_integration_run()` y la revocación remota pendiente (RN-INT-06).
+### Hito 14 · Adaptadores y pantallas de integraciones *(hecho el 14/09/2026; la 82 sin aplicar)*
+- `src/services/credential-vault.ts` (cifrado con `INTEGRATIONS_VAULT_KEY`), el flujo OAuth con Google y los cinco adaptadores en `src/services/integrations/`, cada uno con su catálogo de métricas.
+- El proceso de la cola que ejecuta `claim_integration_runs()` / `finish_integration_run()` dentro de la tanda de `/api/cola`, y la revocación remota pendiente (RN-INT-06, migración 82).
 - Ajustes › Integraciones, el bloque de la ficha (maqueta 17) y "Informes y datos", con los cinco motivos de §178 cuando no hay dato.
+
+**Se verifica con:** `supabase/tests/integraciones_revocacion_remota.sql`, `credential-vault.test.ts`, `google-oauth.test.ts`, `integrations/adapters.test.ts`, `integration-sync.test.ts`, `api/integraciones/oauth/callback/route.test.ts` e `integrations-block.test.tsx`.
 
 ### Hito 15 · Oportunidades por reglas deterministas
 - Bloqueado por CLAUDE.md hasta que Bosco fije los umbrales de detección y la definición de impacto y esfuerzo (§96 a §101).

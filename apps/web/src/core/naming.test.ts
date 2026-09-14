@@ -74,9 +74,11 @@ describe("CA-21 · un solo juego de nombres", () => {
     expect(Object.keys(es.files.types).sort()).toEqual([...ALLOWED_MIME_TYPES].sort());
   });
 
-  it("CA-20: los cuatro motivos de pantalla vacía del PRD, y ninguno más", () => {
+  it("CA-20 / §178: los cinco motivos de pantalla vacía, y ninguno más", () => {
+    // CA-20 nombra cuatro; §178 añade "última sincronización" (el dato
+    // existe pero es viejo), que las integraciones necesitan (RN-INT-07).
     expect(Object.keys(es.emptyReasons).sort()).toEqual(
-      ["error", "insufficient_period", "no_data_yet", "not_connected"].sort(),
+      ["error", "insufficient_period", "no_data_yet", "not_connected", "stale"].sort(),
     );
     for (const texto of Object.values(es.emptyReasons)) {
       expect(texto.length).toBeGreaterThan(20); // un motivo, no una etiqueta

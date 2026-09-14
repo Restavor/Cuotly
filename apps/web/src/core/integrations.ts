@@ -276,13 +276,17 @@ export function sanitizeSyncError(message: string): string {
 }
 
 /**
- * §92 · las métricas que nombra la maestra para las dos fuentes de las que
- * habla. Para Business Profile, Clarity y PageSpeed solo nombra la fuente:
- * su catálogo se fija con el adaptador (Hito 14) y no se adelanta aquí.
- * El nombre de la métrica lleva el desglose (`_by_source`) y la columna
- * `dimension` de `metric_points` lleva el valor del desglose.
+ * §92 · las métricas que guarda cada fuente. Para GA4 y Search Console las
+ * nombra la maestra; para Business Profile, Clarity y PageSpeed solo
+ * nombra la fuente, así que su catálogo lo fija el adaptador de cada una
+ * (Hito 14) y es lo que aquí se enumera: lo que la API de cada fuente da
+ * sin inventar nada por encima. El nombre de la métrica lleva el desglose
+ * (`_by_source`) y la columna `dimension` de `metric_points` lleva el
+ * valor del desglose. `adapters.test.ts` comprueba que cada adaptador
+ * escribe solo métricas de su lista, y el proceso (`integration-sync.ts`)
+ * descarta y cuenta las que no lo sean antes de guardarlas.
  */
-export const METRICS_BY_PROVIDER: Readonly<Partial<Record<IntegrationProvider, readonly string[]>>> = {
+export const METRICS_BY_PROVIDER: Readonly<Record<IntegrationProvider, readonly string[]>> = {
   ga4: [
     "users",
     "sessions",
@@ -300,7 +304,209 @@ export const METRICS_BY_PROVIDER: Readonly<Partial<Record<IntegrationProvider, r
     "clicks_by_query",
     "clicks_by_page",
   ],
+  // Business Profile Performance API: las impresiones por superficie
+  // (Maps y Búsqueda, escritorio y móvil) y las acciones sobre la ficha.
+  business_profile: [
+    "profile_impressions",
+    "impressions_by_surface",
+    "website_clicks",
+    "call_clicks",
+    "direction_requests",
+    "conversations",
+    "bookings",
+  ],
+  // Clarity Data Export API: tráfico, comportamiento y las señales de
+  // fricción (clics muertos, clics de rabia, vueltas rápidas).
+  clarity: [
+    "sessions",
+    "bot_sessions",
+    "distinct_users",
+    "pages_per_session",
+    "scroll_depth",
+    "engagement_time_seconds",
+    "dead_clicks",
+    "rage_clicks",
+    "quick_backs",
+    "excessive_scroll",
+    "script_errors",
+    "error_clicks",
+  ],
+  // PageSpeed Insights: la puntuación de rendimiento y las métricas de
+  // laboratorio, por estrategia (móvil o escritorio); INP solo llega
+  // cuando Chrome tiene datos de campo de esa URL.
+  pagespeed: [
+    "performance_score_by_strategy",
+    "lcp_ms_by_strategy",
+    "cls_by_strategy",
+    "tbt_ms_by_strategy",
+    "fcp_ms_by_strategy",
+    "speed_index_ms_by_strategy",
+    "inp_ms_by_strategy",
+  ],
 };
+
+export function isMetricOf(provider: IntegrationProvider, metric: string): boolean {
+  return METRICS_BY_PROVIDER[provider].includes(metric);
+}
+
+/**
+ * Un punto de métrica tal como lo escribe un adaptador y lo guarda
+ * `finish_integration_run()`: por clave natural (métrica, dimensión y
+ * periodo), sin identificadores de la base.
+ */
+export interface MetricPoint {
+  readonly metric: string;
+  readonly dimension: string;
+  readonly period_start: string;
+  readonly period_end: string;
+  readonly value: number;
+  readonly unit: string | null;
+}
+
+// ---------------------------------------------------------------------
+// §178 / RN-INT-07 · el resumen de "Informes y datos"
+// ---------------------------------------------------------------------
+
+/**
+ * La ventana del resumen: los 28 últimos días completos (hasta ayer),
+ * que es lo que enseñan las propias fuentes por defecto. No es un
+ * informe (§89 a §95, Hito 16): es la comprobación de que la integración
+ * trae datos y de qué antigüedad son.
+ */
+export const SUMMARY_WINDOW_DAYS = 28;
+
+/**
+ * Cuántos días de la ventana hacen falta para dar una cifra. La maestra
+ * dice "periodo insuficiente" (§178) y no dice cuánto es suficiente:
+ * aquí se lee como una semana de datos para una fuente diaria y una sola
+ * medición para una semanal. Es una lectura aplicada y está anotada como
+ * pendiente 14 en `docs/DECISIONES.md`; no es una regla del PRD.
+ */
+export function minimumCoveredDays(provider: IntegrationProvider): number {
+  return integrationSyncFrequency(provider) === "weekly" ? 1 : 7;
+}
+
+export type SummaryAggregate = "sum" | "mean" | "latest";
+
+export interface HeadlineMetric {
+  readonly metric: string;
+  readonly aggregate: SummaryAggregate;
+}
+
+/** Lo que el resumen enseña de cada fuente: pocas cifras y las de la maestra. */
+export const HEADLINE_METRICS: Readonly<Record<IntegrationProvider, readonly HeadlineMetric[]>> = {
+  ga4: [
+    { metric: "users", aggregate: "sum" },
+    { metric: "sessions", aggregate: "sum" },
+  ],
+  search_console: [
+    { metric: "clicks", aggregate: "sum" },
+    { metric: "impressions", aggregate: "sum" },
+    { metric: "position", aggregate: "mean" },
+  ],
+  business_profile: [
+    { metric: "profile_impressions", aggregate: "sum" },
+    { metric: "website_clicks", aggregate: "sum" },
+    { metric: "call_clicks", aggregate: "sum" },
+    { metric: "direction_requests", aggregate: "sum" },
+  ],
+  clarity: [
+    { metric: "sessions", aggregate: "sum" },
+    { metric: "dead_clicks", aggregate: "sum" },
+    { metric: "rage_clicks", aggregate: "sum" },
+  ],
+  pagespeed: [{ metric: "performance_score_by_strategy", aggregate: "latest" }],
+};
+
+export function summaryWindow(todayIso: string): SyncWindow {
+  return {
+    from: isoDate(addDays(todayIso, -SUMMARY_WINDOW_DAYS)),
+    to: isoDate(addDays(todayIso, -1)),
+  };
+}
+
+/** Los puntos de un total (sin dimensión) que caen dentro de la ventana. */
+function inWindow(points: readonly MetricPoint[], metric: string, window: SyncWindow): MetricPoint[] {
+  return points.filter(
+    (p) => p.metric === metric && p.period_start >= window.from && p.period_end <= window.to,
+  );
+}
+
+/** Cuántos días distintos de la ventana tienen algún punto de la métrica. */
+export function coveredDays(points: readonly MetricPoint[], metric: string, window: SyncWindow): number {
+  return new Set(inWindow(points, metric, window).map((p) => p.period_start)).size;
+}
+
+export interface HeadlineValue {
+  readonly metric: string;
+  readonly aggregate: SummaryAggregate;
+  /** `null` cuando no hay ningún punto en la ventana. */
+  readonly value: number | null;
+  /** Solo para `latest`: el desglose de cada valor (la estrategia de PageSpeed). */
+  readonly byDimension: readonly { readonly dimension: string; readonly value: number }[];
+  readonly coveredDays: number;
+  /** El último día con dato, para decir "datos hasta". */
+  readonly lastPeriodEnd: string | null;
+}
+
+export function headlineValue(
+  points: readonly MetricPoint[],
+  headline: HeadlineMetric,
+  window: SyncWindow,
+): HeadlineValue {
+  const dentro = inWindow(points, headline.metric, window);
+  const days = new Set(dentro.map((p) => p.period_start)).size;
+  const lastPeriodEnd = dentro.reduce<string | null>(
+    (max, p) => (max === null || p.period_end > max ? p.period_end : max),
+    null,
+  );
+
+  if (headline.aggregate === "latest") {
+    const porDimension = new Map<string, MetricPoint>();
+    for (const p of dentro) {
+      const actual = porDimension.get(p.dimension);
+      if (actual === undefined || p.period_end > actual.period_end) porDimension.set(p.dimension, p);
+    }
+    const byDimension = [...porDimension.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([dimension, p]) => ({ dimension, value: p.value }));
+    return {
+      metric: headline.metric,
+      aggregate: headline.aggregate,
+      value: byDimension.length === 0 ? null : byDimension[0].value,
+      byDimension,
+      coveredDays: days,
+      lastPeriodEnd,
+    };
+  }
+
+  const totales = dentro.filter((p) => p.dimension === "");
+  if (totales.length === 0) {
+    return { metric: headline.metric, aggregate: headline.aggregate, value: null, byDimension: [], coveredDays: days, lastPeriodEnd };
+  }
+  const suma = totales.reduce((acc, p) => acc + p.value, 0);
+  const value = headline.aggregate === "sum" ? suma : suma / totales.length;
+  return { metric: headline.metric, aggregate: headline.aggregate, value, byDimension: [], coveredDays: days, lastPeriodEnd };
+}
+
+export type SummaryReason = NoDataReason | "insufficient_period";
+
+/**
+ * §178 · los cinco motivos, en el orden en que se deciden: los cuatro de
+ * `noDataReason()` y, con dato actual pero poco, "periodo insuficiente".
+ * `null` es "hay cifra y es actual".
+ */
+export function summaryReason(
+  provider: IntegrationProvider,
+  state: IntegrationState,
+  lastSuccessAt: Date | null,
+  now: Date,
+  covered: number,
+): SummaryReason | null {
+  const base = noDataReason(provider, state, lastSuccessAt, now);
+  if (base !== null) return base;
+  return covered < minimumCoveredDays(provider) ? "insufficient_period" : null;
+}
 
 /** El tono de la insignia de una integración, uno por estado (CA-21, §21.4: estado con texto e icono, no solo color). */
 export function integrationTone(state: IntegrationState): "success" | "warning" | "danger" | "neutral" | "info" {

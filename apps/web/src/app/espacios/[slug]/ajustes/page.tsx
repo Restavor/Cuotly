@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import {
   Card,
   NoPermissionState,
+  StatusBadge,
   Table,
   TableBody,
   TableCell,
@@ -11,9 +12,13 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { formatMoment, loadSpaceIntegrations } from "@/components/establishment/integrations-load";
+import { integrationTone } from "@/core/integrations";
 import { MANDATORY_EVENTS, staffPreferenceEvents, type NotificationEvent } from "@/core/notifications";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { vaultIsConfigured } from "@/services/credential-vault";
+import { googleOAuthIsConfigured } from "@/services/google-oauth";
 
 import {
   NotificationPreferencesForm,
@@ -111,6 +116,17 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
       });
     }
   }
+
+  /*
+    §123 · Ajustes › Integraciones (Fase 3, Hito 14): el estado de las
+    cinco fuentes en todos los restaurantes, y si el servidor tiene lo que
+    hace falta para conectarlas. Lo que sale lo filtra RLS
+    (`integrations_select`): quien no lee un restaurante no ve sus filas.
+  */
+  const integraciones = await loadSpaceIntegrations(supabase, space.id).catch((fallo: unknown) => {
+    console.error("[ajustes] no se pudieron leer las integraciones", { message: String(fallo) });
+    return null;
+  });
 
   const guardadas = new Map((prefRows ?? []).map((p) => [p.event_type, p]));
   const obligatorios = new Set<string>(MANDATORY_EVENTS);
@@ -256,6 +272,68 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           {es.settings.notificationsTitle}
         </h2>
         <NotificationPreferencesForm spaceId={space.id} preferences={preferences} />
+      </Card>
+
+      <Card>
+        <h2 className="mb-3 text-lg font-semibold text-primary-dark">
+          {es.integrations.settingsTitle}
+        </h2>
+        <p className="mb-3 text-sm text-text-secondary">{es.integrations.settingsHint}</p>
+
+        {canManageSpace ? (
+          <div className="mb-4 rounded-lg bg-soft-surface p-3 text-sm">
+            <p className="mb-1 font-semibold text-text">{es.integrations.settingsEnvTitle}</p>
+            <p className={vaultIsConfigured() ? "text-text" : "text-danger"}>
+              {vaultIsConfigured() ? es.integrations.settingsVaultOk : es.integrations.settingsVaultMissing}
+            </p>
+            <p className={googleOAuthIsConfigured() ? "text-text" : "text-danger"}>
+              {googleOAuthIsConfigured() ? es.integrations.settingsOAuthOk : es.integrations.settingsOAuthMissing}
+            </p>
+          </div>
+        ) : null}
+
+        {integraciones === null ? (
+          <p className="text-sm text-danger">{es.emptyReasons.error}</p>
+        ) : integraciones.length === 0 ? (
+          <p className="text-sm text-text-secondary">{es.integrations.settingsEmpty}</p>
+        ) : (
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>{es.integrations.settingsEstablishmentColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.integrations.settingsProviderColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.integrations.settingsStateColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.integrations.settingsLastSyncColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.integrations.settingsNextColumn}</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {integraciones.map((fila) => (
+                <TableRow key={fila.integrationId}>
+                  <TableCell>
+                    <Link
+                      href={`/espacios/${slug}/restaurantes/${fila.establishmentId}?vista=gestion&bloque=integraciones`}
+                      className="text-cuotly-green underline"
+                    >
+                      {fila.establishmentName}
+                    </Link>
+                  </TableCell>
+                  <TableCell>{es.integrations.providers[fila.provider].name}</TableCell>
+                  <TableCell>
+                    <StatusBadge tone={integrationTone(fila.status)}>
+                      {es.integrations.states[fila.status]}
+                    </StatusBadge>
+                    {fila.lastError ? (
+                      <span className="block text-xs text-text-secondary">{fila.lastError}</span>
+                    ) : null}
+                  </TableCell>
+                  <TableCell>{formatMoment(fila.lastSyncAt, space.timezone)}</TableCell>
+                  <TableCell>{formatMoment(fila.nextAttemptAt, space.timezone)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
 
       <Card>

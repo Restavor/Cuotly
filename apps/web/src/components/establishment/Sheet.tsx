@@ -14,6 +14,9 @@ import {
 import { AttentionList } from "@/components/home/AttentionList";
 import { Icon } from "@/components/ui/Icon";
 import { EstablishmentDataForm } from "./DataForm";
+import { DigitalSummary } from "./DigitalSummary";
+import { IntegrationsBlock } from "./IntegrationsBlock";
+import type { DigitalSummaryView, IntegrationsView } from "./integrations-load";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
 import { AUDIT_FAMILIES } from "@/core/audit";
@@ -122,6 +125,14 @@ export interface SheetData {
    * se dice lo que el estado significa y no se inventa un porqué.
    */
   readonly statusReason: string | null;
+  /**
+   * Maqueta 17 · las integraciones del restaurante (Fase 3, Hito 14).
+   * `null` cuando no se pudieron leer: entonces se dice, no se pinta un
+   * bloque vacío que parezca "ninguna conectada".
+   */
+  readonly integrations: IntegrationsView | null;
+  /** §178 · el resumen de analítica digital de "Informes y datos". */
+  readonly digital: DigitalSummaryView | null;
 }
 
 type StatusKey = keyof typeof es.space.statuses;
@@ -157,6 +168,7 @@ const t = es.establishmentSheet;
  * "rellenar los datos".
  */
 const DATA_BLOCK = MANAGEMENT_BLOCKS.find((block) => block.key === "establishmentData")!;
+const INTEGRATIONS_BLOCK = MANAGEMENT_BLOCKS.find((block) => block.key === "integrations")!;
 
 function euros(cents: number): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
@@ -763,6 +775,8 @@ export function EstablishmentSheet({
     files,
     audit,
     statusReason,
+    integrations,
+    digital,
   } = data;
   const bolsas = sortedCycleUsage(summary.bags);
   /*
@@ -1345,12 +1359,19 @@ export function EstablishmentSheet({
             )}
           </Card>
 
-          <Card
-            title={t.digitalTitle}
-            action={<StatusBadge tone="danger" icon="alert">{es.analyticsSync.noSyncBadge}</StatusBadge>}
-          >
-            <EmptyState title={t.digitalEmptyTitle} description={t.digitalEmptyReason} />
-          </Card>
+          {/*
+            §178 · Analítica digital: por fuente, o el motivo de no tener
+            cifra o las cifras de la ventana con su antigüedad. Los
+            informes (§89 a §95) son el Hito 16; esto es la comprobación de
+            que la integración trae datos.
+          */}
+          {digital === null ? (
+            <Card title={t.digitalTitle}>
+              <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />
+            </Card>
+          ) : (
+            <DigitalSummary view={digital} title={t.digitalTitle} hint={t.digitalHint} />
+          )}
         </>
       ) : null}
 
@@ -2285,16 +2306,26 @@ export function EstablishmentSheet({
             </>
           ) : null}
 
+          {/*
+            Maqueta 17 · "Gestión — Integraciones" (Fase 3, Hito 14). Las
+            cinco fuentes con lo que §117 manda enseñar y las acciones de
+            quien mira; sin "Sincronizar ahora" (RN-INT-03).
+          */}
           {block.key === "integrations" ? (
-            <Card
-              title={t.integrationsTitle}
-              action={<StatusBadge tone="danger" icon="alert">{es.analyticsSync.noSyncBadge}</StatusBadge>}
-            >
-              <EmptyState
-                title={t.integrationsEmptyTitle}
-                description={t.integrationsEmptyReason}
+            integrations === null ? (
+              <Card title={t.integrationsTitle}>
+                <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />
+              </Card>
+            ) : (
+              <IntegrationsBlock
+                view={integrations}
+                establishmentId={header.id}
+                slug={slug}
+                returnTo={sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK)}
+                title={t.integrationsTitle}
+                hint={t.integrationsHint}
               />
-            </Card>
+            )
           ) : null}
         </>
       ) : null}

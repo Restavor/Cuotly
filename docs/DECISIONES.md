@@ -263,6 +263,34 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
+14. **Lecturas aplicadas al implementar los adaptadores y las pantallas de integraciones**
+   (14/09/2026, Hito 14). Donde la maestra calla, se aplicó esto y se dice para que Bosco lo
+   confirme o lo corrija; ninguna es una regla del PRD:
+   (a) **"periodo insuficiente"** (§178) en el resumen de "Informes y datos" es tener menos de
+   **7 días con dato** en la ventana de 28 días para una fuente diaria, y **ninguna medición**
+   para PageSpeed (semanal). `minimumCoveredDays()` en `src/core/integrations.ts`.
+   (b) La **ventana del resumen** son los **28 últimos días completos** (hasta ayer), que es la
+   que enseñan GA4 y Search Console por defecto; no es un informe (Hito 16).
+   (c) El **catálogo de métricas** de Business Profile, Clarity y PageSpeed (§92.3, donde la
+   maestra solo da el nombre) es lo que la API de cada una devuelve: impresiones por
+   superficie y acciones sobre la ficha; tráfico, comportamiento y señales de fricción;
+   puntuación y métricas de laboratorio por estrategia (móvil y escritorio). Está en
+   `METRICS_BY_PROVIDER` y en PRD §27.
+   (d) **Clarity** no da rangos de fechas (solo "los últimos 1 a 3 días desde ahora"), así que
+   cada punto se guarda con el **día de la consulta** y la serie se forma pasada a pasada; un
+   día sin sincronizar no se recupera. Su límite de diez llamadas al día hace que una
+   comprobación (§116) cueste una.
+   (e) **"Una revocación remota, una vez"** (RN-INT-08) se lee como **dos intentos en total**:
+   el primer fallo pasajero se repite en la siguiente tanda y el segundo cierra la pendiente
+   con el motivo en la auditoría (migración 82). Un token que Google ya no reconoce cuenta
+   como revocado.
+   (f) De los **desgloses** (páginas, procedencia, búsquedas…) se guardan los **diez mayores de
+   cada día** (`TOP_PER_DAY`): es lo que "páginas más visitadas" y "búsquedas principales"
+   significan en §92, y evita miles de filas de cola larga por restaurante y día.
+   (g) Las **plataformas de reservas y delivery** (§120) no tienen todavía campo en la ficha:
+   la tarjeta de "Plataformas externas" lo dice en vez de enseñar un enlace vacío. Añadirlas
+   es un dato de §15.2 pendiente, no una integración.
+
 13. ~~Lecturas aplicadas de §115 a §122 al implementar las integraciones~~ — confirmadas el
    14/09/2026 como decisión 24.
 

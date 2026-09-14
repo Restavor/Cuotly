@@ -98,6 +98,8 @@ function sheetData(payments: PaymentsProps): SheetData {
     },
     canEditData: false,
     statusReason: null,
+    integrations: null,
+    digital: null,
     summary: {
       bags: [],
       attention: [],

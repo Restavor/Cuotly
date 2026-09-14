@@ -21,6 +21,11 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createCredentialVault, vaultIsConfigured } from "@/services/credential-vault";
+import { googleOAuthIsConfigured, refreshAccessToken, revokeToken } from "@/services/google-oauth";
+import { createSupabaseIntegrationGateway } from "@/services/integration-gateway";
+import { runIntegrationSyncs, runPendingRevocations, type SyncDeps } from "@/services/integration-sync";
+import { adapterFor } from "@/services/integrations";
 import {
   createMailComposer,
   createResendTransport,
@@ -103,6 +108,16 @@ async function ejecutarTanda(request: Request) {
     emitted += result.emitted;
   }
 
+  /*
+    Fase 3 · las integraciones (RN-INT-09): las comprobaciones pedidas y
+    las sincronizaciones vencidas que `claim_integration_runs()` reparta,
+    y la revocación remota pendiente (RN-INT-06). Van ANTES del correo
+    porque un fallo de sincronización encola avisos que esta misma tanda
+    puede enviar. Sin bóveda configurada no se reclama nada y la
+    respuesta lo dice (`skipped`).
+  */
+  const integraciones = await ejecutarIntegraciones(client);
+
   const mail = await drainEmailQueue(
     gateway,
     createResendTransport(
@@ -112,7 +127,32 @@ async function ejecutarTanda(request: Request) {
     createMailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
   );
 
-  return NextResponse.json({ scheduled, slaNotifications: emitted, mail });
+  return NextResponse.json({ scheduled, slaNotifications: emitted, integrations: integraciones, mail });
+}
+
+async function ejecutarIntegraciones(client: ReturnType<typeof createAdminClient>) {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
+  const oauth: SyncDeps["oauth"] =
+    googleOAuthIsConfigured() && clientId && clientSecret
+      ? {
+          refresh: (refreshToken) => refreshAccessToken({ clientId, clientSecret }, refreshToken),
+          revoke: (token) => revokeToken(token),
+        }
+      : null;
+
+  const deps: SyncDeps = {
+    gateway: createSupabaseIntegrationGateway(client),
+    vault: vaultIsConfigured() ? createCredentialVault() : null,
+    adapterFor,
+    oauth,
+    fetchImpl: fetch,
+    now: () => new Date(),
+  };
+
+  const sync = await runIntegrationSyncs(deps);
+  const revocations = await runPendingRevocations(deps);
+  return { sync, revocations };
 }
 
 export async function POST(request: Request) {

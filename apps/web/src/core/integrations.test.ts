@@ -30,6 +30,15 @@ import {
   sanitizeSyncError,
   stateAfterSync,
   syncWindow,
+  HEADLINE_METRICS,
+  SUMMARY_WINDOW_DAYS,
+  coveredDays,
+  headlineValue,
+  isMetricOf,
+  minimumCoveredDays,
+  summaryReason,
+  summaryWindow,
+  type MetricPoint,
 } from "./integrations";
 
 /**
@@ -244,11 +253,110 @@ describe("integraciones analíticas (PRD §27)", () => {
     expect(syncWindow("2026-09-14", "2026-01-01")).toEqual({ from: "2026-06-16", to: "2026-09-13" });
   });
 
-  it("§92 · las métricas nombradas para GA4 y Search Console, y ninguna inventada para las otras tres", () => {
-    expect(METRICS_BY_PROVIDER.ga4).toContain("sessions");
-    expect(METRICS_BY_PROVIDER.search_console).toContain("clicks");
-    expect(METRICS_BY_PROVIDER.business_profile).toBeUndefined();
-    expect(METRICS_BY_PROVIDER.clarity).toBeUndefined();
-    expect(METRICS_BY_PROVIDER.pagespeed).toBeUndefined();
+  it("§92 · las métricas nombradas para GA4 y Search Console, y el catálogo de las otras tres fijado con su adaptador (Hito 14)", () => {
+    expect(METRICS_BY_PROVIDER.ga4).toEqual([
+      "users",
+      "sessions",
+      "page_views_by_page",
+      "sessions_by_source",
+      "sessions_by_device",
+      "sessions_by_location",
+      "conversions_by_event",
+    ]);
+    expect(METRICS_BY_PROVIDER.search_console).toEqual([
+      "clicks",
+      "impressions",
+      "ctr",
+      "position",
+      "clicks_by_query",
+      "clicks_by_page",
+    ]);
+    for (const provider of INTEGRATION_PROVIDERS) {
+      expect(METRICS_BY_PROVIDER[provider].length).toBeGreaterThan(0);
+      // Sin repetidas y con nombre: cada métrica es una clave natural.
+      expect(new Set(METRICS_BY_PROVIDER[provider]).size).toBe(METRICS_BY_PROVIDER[provider].length);
+    }
+    expect(isMetricOf("ga4", "sessions")).toBe(true);
+    expect(isMetricOf("ga4", "clicks")).toBe(false);
+    // Lo que el resumen enseña de cada fuente está en su catálogo.
+    for (const provider of INTEGRATION_PROVIDERS) {
+      for (const headline of HEADLINE_METRICS[provider]) {
+        expect(isMetricOf(provider, headline.metric)).toBe(true);
+      }
+    }
+  });
+
+  describe("§178 / RN-INT-07 · el resumen de «Informes y datos»", () => {
+    const punto = (metric: string, day: string, value: number, dimension = ""): MetricPoint => ({
+      metric,
+      dimension,
+      period_start: day,
+      period_end: day,
+      value,
+      unit: null,
+    });
+
+    it("la ventana son los 28 últimos días completos, hasta ayer", () => {
+      expect(SUMMARY_WINDOW_DAYS).toBe(28);
+      expect(summaryWindow("2026-09-14")).toEqual({ from: "2026-08-17", to: "2026-09-13" });
+    });
+
+    it("una suma suma los totales de la ventana, una media promedia, y lo de fuera de la ventana no cuenta", () => {
+      const window = summaryWindow("2026-09-14");
+      const points = [
+        punto("sessions", "2026-09-12", 10),
+        punto("sessions", "2026-09-13", 20),
+        punto("sessions", "2026-09-14", 999), // hoy: fuera
+        punto("sessions", "2026-08-01", 999), // viejo: fuera
+        punto("sessions", "2026-09-13", 500, "google"), // un desglose no entra en el total
+        punto("position", "2026-09-12", 8),
+        punto("position", "2026-09-13", 10),
+      ];
+      expect(headlineValue(points, { metric: "sessions", aggregate: "sum" }, window)).toEqual({
+        metric: "sessions",
+        aggregate: "sum",
+        value: 30,
+        byDimension: [],
+        coveredDays: 2,
+        lastPeriodEnd: "2026-09-13",
+      });
+      expect(headlineValue(points, { metric: "position", aggregate: "mean" }, window).value).toBe(9);
+      expect(headlineValue(points, { metric: "clicks", aggregate: "sum" }, window)).toMatchObject({ value: null, coveredDays: 0, lastPeriodEnd: null });
+      expect(coveredDays(points, "sessions", window)).toBe(2);
+    });
+
+    it("«latest» es la última medición de cada desglose: la puntuación de PageSpeed por estrategia", () => {
+      const window = summaryWindow("2026-09-14");
+      const points = [
+        punto("performance_score_by_strategy", "2026-09-01", 70, "mobile"),
+        punto("performance_score_by_strategy", "2026-09-08", 82, "mobile"),
+        punto("performance_score_by_strategy", "2026-09-08", 95, "desktop"),
+      ];
+      const value = headlineValue(points, { metric: "performance_score_by_strategy", aggregate: "latest" }, window);
+      expect(value.byDimension).toEqual([
+        { dimension: "desktop", value: 95 },
+        { dimension: "mobile", value: 82 },
+      ]);
+      expect(value.coveredDays).toBe(2);
+    });
+
+    it("«periodo insuficiente» es una semana para una fuente diaria y una medición para una semanal (pendiente 14)", () => {
+      expect(minimumCoveredDays("ga4")).toBe(7);
+      expect(minimumCoveredDays("clarity")).toBe(7);
+      expect(minimumCoveredDays("pagespeed")).toBe(1);
+    });
+
+    it("los cinco motivos de §178, en su orden: no conectada, sin datos, error, desactualizado, periodo insuficiente; y con dato bastante, ninguno", () => {
+      const now = new Date("2026-09-14T09:00:00Z");
+      const reciente = new Date("2026-09-14T03:00:00Z");
+      const viejo = new Date("2026-09-01T03:00:00Z");
+      expect(summaryReason("ga4", "not_connected", null, now, 0)).toBe("not_connected");
+      expect(summaryReason("ga4", "connected", null, now, 0)).toBe("no_data_yet");
+      expect(summaryReason("ga4", "error", reciente, now, 20)).toBe("error");
+      expect(summaryReason("ga4", "connected", viejo, now, 20)).toBe("stale");
+      expect(summaryReason("ga4", "connected", reciente, now, 3)).toBe("insufficient_period");
+      expect(summaryReason("ga4", "connected", reciente, now, 7)).toBeNull();
+      expect(summaryReason("pagespeed", "connected", reciente, now, 1)).toBeNull();
+    });
   });
 });
