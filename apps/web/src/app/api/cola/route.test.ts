@@ -45,6 +45,18 @@ vi.mock("@/services/integration-gateway", () => ({
   createSupabaseIntegrationGateway: vi.fn(),
 }));
 
+// Hito 15 · el barrido de oportunidades va en la misma tanda, detrás de
+// las sincronizaciones. Aquí solo se vigila que se llame; las nueve
+// reglas se prueban en `opportunities.test.ts` y el barrido entero en
+// `opportunity-detection.test.ts`.
+const runOpportunityDetectionMock = vi.hoisted(() => vi.fn());
+vi.mock("@/services/opportunity-detection", () => ({
+  runOpportunityDetection: runOpportunityDetectionMock,
+}));
+vi.mock("@/services/opportunity-gateway", () => ({
+  createSupabaseOpportunityGateway: vi.fn(),
+}));
+
 import { GET, POST } from "./route";
 
 const SECRETO = "un-secreto-largo-de-verdad";
@@ -64,6 +76,7 @@ beforeEach(() => {
   drainEmailQueueMock.mockResolvedValue({ sent: 0 });
   runIntegrationSyncsMock.mockResolvedValue({ claimed: 0, skipped: "vault_not_configured" });
   runPendingRevocationsMock.mockResolvedValue({ attempted: 0, skipped: "vault_not_configured" });
+  runOpportunityDetectionMock.mockResolvedValue({ scanned: 0, detections: 0, failed: 0 });
   fromMock.mockReturnValue({ select: vi.fn().mockResolvedValue({ data: [], error: null }) });
 });
 
@@ -113,6 +126,30 @@ describe("POST /api/cola", () => {
   it("sin secreto, las integraciones tampoco se tocan", async () => {
     await POST(peticion(`Bearer ${SECRETO}`));
     expect(runIntegrationSyncsMock).not.toHaveBeenCalled();
+  });
+
+  it("RN-OPP-02 · la tanda pasa las reglas de oportunidad DESPUÉS de sincronizar", async () => {
+    process.env.QUEUE_RUNNER_SECRET = SECRETO;
+    const orden: string[] = [];
+    runIntegrationSyncsMock.mockImplementation(async () => {
+      orden.push("sincronizar");
+      return { claimed: 0, skipped: "vault_not_configured" };
+    });
+    runOpportunityDetectionMock.mockImplementation(async () => {
+      orden.push("detectar");
+      return { scanned: 2, detections: 3, failed: 0 };
+    });
+
+    const respuesta = await POST(peticion(`Bearer ${SECRETO}`));
+    const cuerpo = (await respuesta.json()) as { opportunities: { detections: number } };
+
+    expect(orden).toEqual(["sincronizar", "detectar"]);
+    expect(cuerpo.opportunities.detections).toBe(3);
+  });
+
+  it("sin secreto, las oportunidades tampoco se detectan", async () => {
+    await POST(peticion(`Bearer ${SECRETO}`));
+    expect(runOpportunityDetectionMock).not.toHaveBeenCalled();
   });
 
   it("con CRON_SECRET también, que es la variable que usa el cron de Vercel", async () => {

@@ -3628,7 +3628,17 @@ begin
       ('integrations','created_by'),
       ('integration_credentials','created_by'),
       ('integration_credentials','ciphertext'),
-      ('sync_runs','requested_by')
+      ('sync_runs','requested_by'),
+      -- Migración 84 (Fase 3, Hito 15): la oportunidad aprobada SÍ es del
+      -- restaurante —la ve, y actúa sobre ella—, pero quién la aprobó,
+      -- quién la descartó y quién editó la propuesta no. Las notas y el
+      -- libro de detecciones no están en esta lista porque ahí se le deja
+      -- fuera de la FILA entera, como en `tasks` (P7).
+      ('opportunities','created_by'),
+      ('opportunities','updated_by'),
+      ('opportunities','approved_by'),
+      ('opportunities','discarded_by'),
+      ('opportunities','proposal_edited_by')
     ) as t(tabla, columna)
   loop
     if has_column_privilege('authenticated', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select')

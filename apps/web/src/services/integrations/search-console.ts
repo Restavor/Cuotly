@@ -20,6 +20,7 @@ import {
   isoDay,
   point,
   requireProperty,
+  TOP_PER_DAY,
   topPerDay,
 } from "./adapter";
 
@@ -68,6 +69,57 @@ function breakdown(response: QueryResponse, metric: string): MetricPoint[] {
   return topPerDay(puntos);
 }
 
+/**
+ * Decisión 26 · las tres reglas de oportunidad que se calculan "por
+ * consulta" (CTR bajo, pérdida de posición y búsquedas que salen muy
+ * abajo) necesitan impresiones, CTR y posición de CADA consulta, y el
+ * catálogo solo guardaba sus clics.
+ *
+ * Por qué no vale `breakdown()` para esto, que es lo que hace falta
+ * entender antes de tocarlo: ahí se descarta la fila sin clics y se
+ * guardan las diez mayores POR CLICS de cada día (decisión 25f). Las
+ * consultas que disparan estas tres reglas son justamente las que tienen
+ * impresiones y **no** tienen clics —esa es la avería que la regla
+ * detecta—, así que con aquel criterio no se guardaría ninguna. Estas
+ * tres métricas se quedan con las diez mayores POR IMPRESIONES, y las
+ * tres comparten esa misma selección para que la regla pueda cruzarlas
+ * por la consulta sin quedarse coja.
+ *
+ * `clicks_by_query` no se toca: es lo que "búsquedas principales" enseña
+ * en la pantalla y ahí lo principal son los clics.
+ */
+const QUERY_FIELDS: readonly [string, "impressions" | "ctr" | "position", string | null][] = [
+  ["impressions_by_query", "impressions", null],
+  ["ctr_by_query", "ctr", "ratio"],
+  ["position_by_query", "position", null],
+];
+
+function queryBreakdown(response: QueryResponse): MetricPoint[] {
+  const porDia = new Map<string, { dimension: string; impressions: number; ctr: number | null; position: number | null }[]>();
+  for (const row of response.rows ?? []) {
+    const day = isoDay(row.keys?.[0] ?? "");
+    const dimension = row.keys?.[1] ?? "";
+    const impressions = asNumber(row.impressions);
+    if (day === null || dimension === "" || impressions === null || impressions <= 0) continue;
+    const lista = porDia.get(day) ?? [];
+    lista.push({ dimension, impressions, ctr: asNumber(row.ctr), position: asNumber(row.position) });
+    porDia.set(day, lista);
+  }
+
+  const puntos: MetricPoint[] = [];
+  for (const [day, lista] of porDia) {
+    const mayores = [...lista].sort((a, b) => b.impressions - a.impressions).slice(0, TOP_PER_DAY);
+    for (const fila of mayores) {
+      for (const [metric, campo, unit] of QUERY_FIELDS) {
+        const value = campo === "impressions" ? fila.impressions : fila[campo];
+        if (value === null) continue;
+        puntos.push(point(metric, day, value, fila.dimension, unit));
+      }
+    }
+  }
+  return puntos;
+}
+
 export const searchConsoleAdapter: IntegrationAdapter = {
   provider: "search_console",
 
@@ -103,7 +155,9 @@ export const searchConsoleAdapter: IntegrationAdapter = {
       if (position !== null) points.push(point("position", day, position));
     }
 
-    points.push(...breakdown(await query(ctx, ["date", "query"], 5000), "clicks_by_query"));
+    const porConsulta = await query(ctx, ["date", "query"], 5000);
+    points.push(...breakdown(porConsulta, "clicks_by_query"));
+    points.push(...queryBreakdown(porConsulta));
     points.push(...breakdown(await query(ctx, ["date", "page"], 5000), "clicks_by_page"));
 
     return { points, accountLabel: null };

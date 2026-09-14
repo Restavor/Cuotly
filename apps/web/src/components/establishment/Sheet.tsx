@@ -17,6 +17,8 @@ import { EstablishmentDataForm } from "./DataForm";
 import { DataSectionNav, DigitalSection } from "./DigitalSections";
 import { IntegrationsBlock } from "./IntegrationsBlock";
 import type { DigitalDataView, IntegrationsView } from "./integrations-load";
+import { OpportunitiesSection, type OpportunityViewer } from "./Opportunities";
+import type { OpportunitiesView } from "./opportunities-load";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
 import { AUDIT_FAMILIES } from "@/core/audit";
@@ -137,6 +139,14 @@ export interface SheetData {
   readonly integrations: IntegrationsView | null;
   /** §178 · los datos de las fuentes para "Informes y datos" (maquetas 09 a 12). */
   readonly digital: DigitalDataView | null;
+  /**
+   * §96 a §101 · las oportunidades de este restaurante (Hito 15). `null`
+   * cuando no se pudieron leer: se dice, no se enseña una lista vacía que
+   * parezca "ninguna detectada".
+   */
+  readonly opportunities: OpportunitiesView | null;
+  /** Quién mira, para saber qué se le ofrece: aprobar es de §97. */
+  readonly opportunityViewer: OpportunityViewer;
   /**
    * La zona horaria del espacio (CLAUDE.md: las fechas se calculan en
    * ella). No es decorativa ni tiene valor por defecto: sin ella, `Intl`
@@ -787,6 +797,8 @@ export function EstablishmentSheet({
     statusReason,
     integrations,
     digital,
+    opportunities,
+    opportunityViewer,
     timeZone,
   } = data;
   const bolsas = sortedCycleUsage(summary.bags);
@@ -1341,6 +1353,14 @@ export function EstablishmentSheet({
               section={section.key}
               view={digital}
               manageHref={canManageClients ? sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK) : null}
+              opportunities={
+                <OpportunitiesSection
+                  view={opportunities}
+                  viewer={opportunityViewer}
+                  establishmentId={header.id}
+                  path={base}
+                />
+              }
             />
           ) : null}
         </>

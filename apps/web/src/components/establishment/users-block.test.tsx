@@ -134,6 +134,8 @@ function sheetData(
     statusReason: null,
     integrations: null,
     digital: null,
+    opportunities: null,
+    opportunityViewer: "approver",
     canManageClients,
     summary: {
       bags: [],

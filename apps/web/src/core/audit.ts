@@ -71,6 +71,11 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // Las plantillas de Menú Diario (RN-COM-10, migración 77): quién las
   // creó o archivó es de la misma cartera que contratar el servicio.
   menu_template: "manage_clients",
+  // Las oportunidades (§96 a §101, migración 84): quién detectó, aprobó,
+  // descartó o editó una es de la cartera, como el establecimiento. No se
+  // decide por la fila aunque el restaurante vea la oportunidad aprobada:
+  // lo que el apunte cuenta es la decisión del equipo (P7).
+  opportunity: "manage_clients",
   // Las que decide la fila.
   request: null,
   job: null,
@@ -158,6 +163,9 @@ export const AUDIT_ACTIONS = [
   "job.required_specialty_changed",
   "job.started",
   "job.unblocked",
+  // Fase 3, Hito 15 · "Aprobar informes", concedida persona a persona
+  // (§97, migración 84), igual que `perform_jobs` en el Hito 6.
+  "membership.approve_reports_changed",
   "membership.perform_jobs_changed",
   // Fase 2, Hito 9 · Menú Diario (migración 77); las correcciones, del Hito 11 (79).
   "menu.assigned",
@@ -182,6 +190,16 @@ export const AUDIT_ACTIONS = [
   "menu_template.archived",
   "menu_template.created",
   "menu_template.design_updated",
+  // Fase 3, Hito 15 · oportunidades (§96 a §101, migración 84). Detectar
+  // y reabrir no llevan actor: las escribe el barrido de la cola, no una
+  // persona, y el apunte lo dice dejando `actor_id` nulo.
+  "opportunity.added_manually",
+  "opportunity.client_action",
+  "opportunity.detected",
+  "opportunity.note_added",
+  "opportunity.proposal_edited",
+  "opportunity.reopened",
+  "opportunity.status_changed",
   "payment.registered",
   "payment.reversed",
   "plan.conditions_published",

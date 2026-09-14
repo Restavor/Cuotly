@@ -77,6 +77,8 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     statusReason: null,
     integrations: null,
     digital: null,
+    opportunities: null,
+    opportunityViewer: "approver",
     summary: {
       bags: [],
       attention: [],

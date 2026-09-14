@@ -981,3 +981,100 @@ sobre `docs/PROPUESTA-OPORTUNIDADES.md`): impacto es alto, medio o bajo según l
 problema —nunca euros, porque Cuotly no sabe lo que vale una reserva— y esfuerzo **es la categoría
 del cambio** (Pequeño, Fotográfico, Mediano o Grande), que ya trae su duración de RN-SLA-12 y lo que
 gasta de la bolsa del plan.
+
+---
+
+## 28. Oportunidades por reglas deterministas — Fase 3 (RN-OPP)
+
+Transcripción con número de §96 a §101 de la especificación maestra, con el mismo criterio que §25,
+§26 y §27. La diferencia con esos tres: la maestra da los nueve ejemplos de oportunidad y los campos
+de cada una, pero **no dice cuándo salta ninguna**, ni qué es impacto, ni qué es esfuerzo. Eso lo
+prohibía inventar CLAUDE.md y lo fijó Bosco el 14/09/2026 (**decisión 26** de `docs/DECISIONES.md`,
+razonada en `docs/PROPUESTA-OPORTUNIDADES.md`), que es de donde sale **todo número** de este
+apartado. Servidor, dominio y pantallas en la migración 84 y en `src/core/opportunities.ts` (Fase 3,
+Hito 15).
+
+- **RN-OPP-01**: una oportunidad pertenece a un **restaurante** y nace de una de las **nueve reglas
+  deterministas** de §96 sobre los datos importados, o la **añade el equipo a mano** (§97). No usa IA
+  (RN-CLS-06): la misma entrada da la misma salida, que es lo que permite que una detección repetida
+  actualice en vez de duplicar. **Sin evidencia no hay oportunidad** (§96, "no debe afirmarse algo sin
+  evidencia suficiente"): `upsert_detected_opportunity()` rechaza una automática con la evidencia
+  vacía. Una oportunidad automática guarda su **regla, su sujeto y sus cifras**, nunca una frase: el
+  título y la acción recomendada los escribe la pantalla desde `src/i18n/es.ts` (CLAUDE.md).
+- **RN-OPP-02**: los **umbrales** son los de la decisión 26c, sobre la ventana de los **28 últimos
+  días completos** comparada con los 28 anteriores (la misma de "Informes y datos", decisión 25b), y
+  cada uno con su **suelo de ruido**: descenso de tráfico, 30 % o más con 100 sesiones o más antes ·
+  CTR bajo, consulta con 100 impresiones o más en posición 10 o mejor y CTR bajo el 2 % · pérdida de
+  posición, 50 impresiones o más, 3 puestos o más y acabar peor del 10 · lentitud, puntuación móvil
+  bajo 50 o LCP móvil sobre 4 s **en dos análisis seguidos** · imágenes pesadas, 500 KB o más
+  ahorrables en móvil · error técnico, errores de script en el 5 % o más de las sesiones con 100
+  sesiones o más · baja conversión móvil, el móvil convierte la mitad o menos que el escritorio con
+  100 sesiones móviles o más · búsquedas que salen muy abajo, consulta con 100 impresiones o más en
+  posición peor que 20 · poco uso de botones, ficha de Google con 500 impresiones o más y acciones
+  bajo el 2 %, o clics muertos y de rabia sobre el 5 % de las sesiones. **Ninguna salta si su fuente
+  está desconectada, sin autorizar, con error o con el dato desactualizado** (P6, RN-INT-07), y la
+  ventana se calcula en la **zona horaria del espacio** (CLAUDE.md). Las reglas las pasa el proceso de
+  la cola (`/api/cola`) después de sincronizar, nunca una pantalla.
+- **RN-OPP-03**: el **impacto** es alto, medio o bajo según **lo que toca el problema** (decisión
+  26a): alto si rompe o estorba el camino por el que un cliente contacta —teléfono, cómo llegar,
+  reserva, formulario— o afecta a más de la mitad del tráfico; medio si afecta a una parte visible o a
+  una entrada de tráfico importante; bajo si afecta a una página, una consulta o un detalle suelto.
+  **No se dice en euros**: Cuotly no sabe lo que vale una reserva ni cuántas visitas acaban en cena, y
+  un número inventado en una pantalla de producción es lo que CLAUDE.md prohíbe. La **prioridad
+  propuesta** sale del impacto (1 es lo primero). Impacto, prioridad y esfuerzo son **propuestas
+  editables** (§96): en cuanto el equipo edita una, una detección posterior ya no la pisa.
+- **RN-OPP-04**: el **esfuerzo es la categoría del cambio** —pequeño, fotográfico, mediano o grande—,
+  sin escala nueva (decisión 26b): la categoría ya trae su duración —**1 a 3 días laborables**, 3 a 5 el
+  grande: es el rango que se le dice al cliente (RN-SLA-16); la decisión 26b lo cita como RN-SLA-12,
+  que es la misma tabla vista por dentro— y lo que gasta (una unidad de su bolsa, RN-CON-01). La pantalla dice "mediano, 1 a
+  3 días laborables, gasta 1 de los 3 que te quedan"; y si el plan no incluye esa categoría o la bolsa
+  está agotada, dice que **va a presupuesto** (RN-CON-03) en vez de fingir que está incluida.
+- **RN-OPP-05**: los estados son los **ocho** de §98: `detected` · `recommended` · `under_review` ·
+  `approved_for_report` · `discarded` · `in_progress` · `implemented` · `no_longer_applicable`. Quién
+  mueve cada transición es §97: el **trabajador asignado** ve las automáticas, añade una a mano,
+  aporta evidencia, recomienda y observa, y **no aprueba**; **aprobar, descartar, editar y ordenar**
+  son del propietario y de los administradores **con "Aprobar informes"**, una capacidad concedida
+  persona a persona (`space_memberships.can_approve_reports`, como `can_perform_jobs` del Hito 6).
+  Descartar **exige motivo**. Mover al mismo estado dos veces no escribe dos apuntes (RN-DAT-09).
+- **RN-OPP-06**: §99 · una **detección repetida actualiza la oportunidad existente** y no crea otra:
+  la clave natural de una automática es (restaurante, regla, sujeto) y es la base la que lo impide,
+  con un índice único. Cada detección queda además en el **libro inmutable** `opportunity_detections`
+  con su evidencia y su periodo. Una **descartada conserva historial** y **reaparece si empeora**
+  (severidad mayor que la que tenía al descartarla) **o si vuelve a cumplirse en un periodo que ya no
+  se solapa** con el descartado, **indicando el descarte anterior**, que por eso no se borra.
+- **RN-OPP-07**: **se detectan solas pero no se enseñan solas**: hasta que alguien no la aprueba, el
+  restaurante no la ve —ni por pantalla ni por llamada directa—. Lo sostiene la política de RLS de
+  `opportunities`, no que la pantalla no la pinte (CLAUDE.md). "Detectada", "recomendada" y "en
+  revisión" son conversación interna del equipo; "descartada" no la ve nunca. Las notas del equipo y
+  el libro de detecciones tampoco los ve: ahí se le deja fuera de la **fila**, como en `tasks` (P7).
+- **RN-OPP-08**: §101 · **Básico ninguna** ("detección interna"), **Impulso las básicas aprobadas**,
+  **Premium también las avanzadas**. **Avanzada** es la que **cruza dos fuentes** y **básica** la que
+  sale de una sola (decisión 26e); hoy la única avanzada es "poco uso de botones", que mira la ficha de
+  Google y la fricción de Clarity. Qué plan es cuál se decide por lo que el plan **es** y no por su
+  nombre —Cuotly es multiempresa—: sin ningún cambio incluido es el de entrada, y el que concede
+  prioridad (`plans.grants_priority`) es el alto, el mismo criterio de la decisión 20.
+- **RN-OPP-09**: §100 · el restaurante puede **solicitar la mejora, pedir presupuesto o preguntar al
+  equipo**. Las tres crean un **borrador de solicitud** con la oportunidad enganchada
+  (`requests.opportunity_id`), que es lo que "con evidencia adjunta" significa, y desde ahí sigue el
+  camino normal: enviar, análisis, aceptación, consumo o presupuesto. **No consume nada**: el consumo
+  nace al aceptar (RN-CON-06). Pulsarlo dos veces devuelve el mismo borrador. Solo actúa quien escribe
+  en el restaurante (Consulta no, §4.3) y solo sobre una oportunidad que puede ver.
+- **RN-OPP-10**: toda decisión sobre una oportunidad deja **evento de estado y apunte de auditoría**
+  con actor, fecha, valor anterior, valor nuevo y motivo (familia `opportunity`, visible con
+  `manage_clients`, §21.2). Detectar y reabrir los escribe el barrido de la cola y su apunte lo dice
+  dejando el actor nulo. La **evidencia no se edita**: son las cifras que dispararon la regla.
+
+Dos métricas del catálogo de §27 existen solo porque estas reglas las necesitan, y se dicen aquí para
+que no parezcan gratuitas: las **conversiones por dispositivo** de GA4 y los **kilobytes ahorrables de
+las imágenes** de PageSpeed (decisión 26d). El Hito 15 añadió tres más por el mismo motivo —
+`impressions_by_query`, `ctr_by_query` y `position_by_query`—: la decisión 26 escribe tres reglas "por
+consulta" con el CTR y la posición de cada una, y el catálogo solo guardaba los **clics** de las diez
+consultas con **más clics** de cada día; justamente las consultas que estas reglas buscan son las que
+tienen impresiones y **no** tienen clics, así que con aquello no habría saltado ninguna. Las tres
+salen de la respuesta de Search Console que ya se pedía, sin llamada nueva, y se quedan con las diez
+mayores **por impresiones** de cada día.
+
+Lo que el restaurante ve de una oportunidad no lleva ninguna identidad del equipo (P7): `opportunities`
+tiene el `select` concedido columna a columna, como `charges` y `quotes`, y quién la detectó, aprobó,
+descartó o editó sale de `audit_log`. Los **informes** (§89 a §95), donde "Incluir en informe" se
+vuelve a decidir (§99), son el Hito 16.

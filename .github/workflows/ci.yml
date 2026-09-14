@@ -333,6 +333,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/zona_horaria_del_restaurante.sql
 
+      - name: "Hito 15 — Verificar las oportunidades por reglas deterministas (RN-OPP-01 a 10, §96 a §101)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/oportunidades.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

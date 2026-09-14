@@ -208,6 +208,56 @@ describe("adaptadores (RN-INT-01, RN-INT-08)", () => {
       expect(points.every((p) => isMetricOf("search_console", p.metric))).toBe(true);
     });
 
+    it("guarda impresiones, CTR y posición POR CONSULTA, incluida la consulta sin un solo clic (decisión 26)", async () => {
+      const fetchImpl = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(json({ rows: [{ keys: ["2026-09-13"], clicks: 12, impressions: 300, ctr: 0.04, position: 8.2 }] }))
+        .mockResolvedValueOnce(
+          json({
+            rows: [
+              { keys: ["2026-09-13", "menú del día pontevedra"], clicks: 0, impressions: 220, ctr: 0, position: 24.5 },
+              { keys: ["2026-09-13", "restaurante magariños"], clicks: 9, impressions: 20, ctr: 0.45, position: 1.1 },
+            ],
+          }),
+        )
+        .mockResolvedValueOnce(json({ rows: [] }));
+
+      const { points } = await ADAPTERS.search_console.sync(
+        ctx("search_console", { propertyId: "https://magarinos.es/", fetchImpl }),
+      );
+
+      // La consulta de 220 impresiones y CERO clics es la que disparan
+      // "CTR bajo" y "búsquedas sin contenido adecuado": `clicks_by_query`
+      // la tira (no tiene clics) y estas tres la guardan.
+      expect(points).toContainEqual({ metric: "impressions_by_query", dimension: "menú del día pontevedra", period_start: "2026-09-13", period_end: "2026-09-13", value: 220, unit: null });
+      expect(points).toContainEqual({ metric: "ctr_by_query", dimension: "menú del día pontevedra", period_start: "2026-09-13", period_end: "2026-09-13", value: 0, unit: "ratio" });
+      expect(points).toContainEqual({ metric: "position_by_query", dimension: "menú del día pontevedra", period_start: "2026-09-13", period_end: "2026-09-13", value: 24.5, unit: null });
+      expect(points.filter((p) => p.metric === "clicks_by_query").map((p) => p.dimension)).toEqual(["restaurante magariños"]);
+      expect(points.every((p) => isMetricOf("search_console", p.metric))).toBe(true);
+    });
+
+    it("de las consultas de un día se guardan las diez con más impresiones, no las de más clics (decisión 25f)", async () => {
+      const filas = Array.from({ length: 14 }, (_, i) => ({
+        keys: ["2026-09-13", `consulta ${i}`],
+        clicks: i,
+        impressions: 500 - i * 10,
+        ctr: 0.01,
+        position: 12,
+      }));
+      const fetchImpl = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(json({ rows: [] }))
+        .mockResolvedValueOnce(json({ rows: filas }))
+        .mockResolvedValueOnce(json({ rows: [] }));
+
+      const { points } = await ADAPTERS.search_console.sync(ctx("search_console", { fetchImpl }));
+
+      const porImpresiones = points.filter((p) => p.metric === "impressions_by_query");
+      expect(porImpresiones).toHaveLength(10);
+      expect(porImpresiones.map((p) => p.dimension)).toContain("consulta 0");
+      expect(porImpresiones.map((p) => p.dimension)).not.toContain("consulta 13");
+    });
+
     it("comprueba leyendo la ficha del sitio; un sitio sin verificar es configuración", async () => {
       const fetchImpl = vi.fn<typeof fetch>().mockResolvedValueOnce(json({ siteUrl: "sc-domain:magarinos.es", permissionLevel: "siteOwner" }));
       await ADAPTERS.search_console.check(ctx("search_console", { propertyId: "sc-domain:magarinos.es", fetchImpl }));

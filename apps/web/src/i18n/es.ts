@@ -2324,6 +2324,7 @@ export const es = {
       space_membership: "Pertenencia al equipo",
       quote: "Presupuesto",
       integration: "Integración",
+      opportunity: "Oportunidad",
     },
 
     auditActions: {
@@ -2376,6 +2377,7 @@ export const es = {
       "job.required_specialty_changed": "Especialidad requerida cambiada",
       "job.started": "Trabajo comenzado",
       "job.unblocked": "Trabajo desbloqueado",
+      "membership.approve_reports_changed": "Permiso de aprobar informes cambiado",
       "membership.perform_jobs_changed": "Permiso de ejecutar trabajos cambiado",
       "menu.assigned": "Menú asignado",
       "menu.cancelled": "Menú cancelado",
@@ -2399,6 +2401,13 @@ export const es = {
       "menu_template.archived": "Plantilla archivada",
       "menu_template.created": "Plantilla creada",
       "menu_template.design_updated": "Diseño de la plantilla cambiado",
+      "opportunity.added_manually": "Oportunidad añadida a mano",
+      "opportunity.client_action": "El restaurante actuó sobre una oportunidad",
+      "opportunity.detected": "Oportunidad detectada",
+      "opportunity.note_added": "Nota añadida a una oportunidad",
+      "opportunity.proposal_edited": "Propuesta de una oportunidad editada",
+      "opportunity.reopened": "Oportunidad descartada que vuelve a cumplirse",
+      "opportunity.status_changed": "Estado de una oportunidad cambiado",
       "payment.registered": "Pago registrado",
       "payment.reversed": "Pago revertido",
       "request.accepted": "Solicitud aceptada",
@@ -3518,6 +3527,9 @@ export const es = {
       position: "Posición media",
       clicks_by_query: "Clics por consulta",
       clicks_by_page: "Clics por página",
+      impressions_by_query: "Impresiones por consulta",
+      ctr_by_query: "CTR por consulta",
+      position_by_query: "Posición por consulta",
       profile_impressions: "Veces que apareció la ficha",
       impressions_by_surface: "Impresiones por superficie",
       website_clicks: "Clics a la web",
@@ -3590,15 +3602,14 @@ export const es = {
         emptyTitle: "Todavía no hay datos de rendimiento",
         emptyHint: "Los resultados aparecerán cuando esté disponible el primer análisis de PageSpeed Insights.",
       },
-      // Hito 15, bloqueado por CLAUDE.md: sin umbrales no se detecta nada,
-      // ni por reglas ni a mano. La maqueta ofrece "Añadir oportunidad" y
-      // no se ofrece: sería una oportunidad sin impacto ni esfuerzo que
-      // decir.
+      // Hito 15 · las nueve reglas de §96 con los umbrales de la decisión
+      // 26. El hueco ya no dice "pendiente de decisión": dice que no ha
+      // saltado ninguna, que es otra cosa y es buena noticia.
       opportunities: {
         title: "Oportunidades",
         hint: "Mejoras basadas en los datos de tu restaurante.",
-        emptyTitle: "Las oportunidades llegan con el Hito 15",
-        emptyHint: "Los umbrales de detección y la definición de impacto y esfuerzo (§96 a §101) están pendientes de decisión. Hasta que existan no se detecta ni se anota ninguna.",
+        emptyTitle: "Ninguna oportunidad abierta",
+        emptyHint: "Cuotly revisa cada día los datos de las fuentes conectadas. Cuando una regla salte, la oportunidad aparecerá aquí con las cifras que la dispararon.",
       },
     },
     manageIntegrations: "Gestionar integraciones",
@@ -3855,6 +3866,211 @@ export const es = {
     pendingPaymentHint: "Aceptado. El cobro está en tu facturación.",
     paidHint: "Pagado.",
     rejectedHint: "Rechazado.",
+  },
+
+  /**
+   * Fase 3 · Hito 15 · oportunidades por reglas deterministas (§96 a
+   * §101; umbrales, impacto y esfuerzo de la decisión 26).
+   *
+   * El título y la acción recomendada de una oportunidad automática se
+   * escriben AQUÍ y no se guardan en la base: la base guarda la regla, el
+   * sujeto y las cifras. Es lo que manda CLAUDE.md —nada de literales de
+   * interfaz fuera del sistema de i18n— y además evita que una
+   * oportunidad detectada hace dos meses siga diciendo una frase que
+   * después se corrigió.
+   */
+  opportunities: {
+    title: "Oportunidades",
+    teamHint:
+      "Detectadas por reglas sobre los datos de las fuentes conectadas, sin IA. El restaurante no ve ninguna hasta que alguien la aprueba.",
+    clientHint: "Mejoras que Cuotly ha detectado en los datos de tu restaurante.",
+
+    // El título de cada regla. Lleva el sujeto cuando la regla habla de
+    // una consulta concreta: "CTR bajo en «menú del día»".
+    ruleTitles: {
+      traffic_drop: () => "Descenso de tráfico",
+      low_ctr: (subject: string) => `Nadie entra desde «${subject}»`,
+      position_loss: (subject: string) => `Pérdida de posición en «${subject}»`,
+      slowness: () => "La web va lenta en el móvil",
+      heavy_images: () => "Las imágenes pesan de más",
+      technical_error: () => "Hay errores técnicos en la web",
+      low_mobile_conversion: () => "En el móvil casi nadie termina",
+      queries_without_content: (subject: string) => `«${subject}» sale muy abajo en Google`,
+      low_button_use: (subject: string) =>
+        subject === "friction"
+          ? "Se pulsa algo que no responde"
+          : "La ficha de Google se ve y no se usa",
+    },
+
+    // Qué significa cada una, en una frase, y qué se propone hacer. La
+    // acción recomendada es una propuesta: el equipo la puede reescribir.
+    ruleExplanations: {
+      traffic_drop: "Las visitas han caído respecto a los 28 días anteriores.",
+      low_ctr: "La consulta está en la primera página de Google y casi nadie entra: el problema suele ser el título o la descripción.",
+      position_loss: "La consulta ha bajado varios puestos y ya no está en la primera página.",
+      slowness: "La puntuación de rendimiento en móvil está en la banda roja, o la página tarda más de cuatro segundos en pintar lo principal.",
+      heavy_images: "PageSpeed calcula que se ahorraría medio megabyte o más comprimiendo las imágenes o sirviéndolas al tamaño en que se ven.",
+      technical_error: "Una parte de las sesiones tiene errores de script. Un error puede romper el formulario o la reserva.",
+      low_mobile_conversion: "El móvil convierte la mitad o menos que el escritorio, con suficientes sesiones para que no sea casualidad.",
+      queries_without_content: "Google enseña el sitio para esa búsqueda, pero muy abajo. Detecta que sale abajo, no que el contenido sea malo: Cuotly no lee la web.",
+      low_button_use: "Las acciones sobre la ficha de Google (web, llamada, cómo llegar) son muy pocas para las veces que se ve, o hay clics que no responden.",
+    },
+
+    ruleActions: {
+      traffic_drop: "Revisar qué cambió en el periodo y recuperar lo que se perdió.",
+      low_ctr: "Reescribir el título y la descripción de la página que responde a esa búsqueda.",
+      position_loss: "Revisar el contenido de esa página y lo que ha cambiado desde el periodo anterior.",
+      slowness: "Optimizar la carga: imágenes, scripts y lo que bloquea el pintado.",
+      heavy_images: "Comprimir y redimensionar las imágenes de la web.",
+      technical_error: "Localizar y corregir el error de script.",
+      low_mobile_conversion: "Revisar el formulario y la reserva en móvil, de principio a fin.",
+      queries_without_content: "Crear o mejorar el contenido que responde a esa búsqueda.",
+      low_button_use: "Completar la ficha de Google y revisar que los botones de la web respondan.",
+    },
+
+    categories: {
+      traffic: "Tráfico",
+      search: "Búsqueda",
+      performance: "Rendimiento",
+      technical: "Técnico",
+      conversion: "Conversión",
+    },
+
+    // §98 · los ocho estados.
+    states: {
+      detected: "Detectada",
+      recommended: "Recomendada",
+      under_review: "En revisión",
+      approved_for_report: "Aprobada para informe",
+      discarded: "Descartada",
+      in_progress: "En ejecución",
+      implemented: "Implementada",
+      no_longer_applicable: "Ya no aplicable",
+    },
+
+    // Decisión 26a · qué significa cada nivel de impacto, dicho entero:
+    // sin la explicación, "alto" es una etiqueta sin contenido.
+    impacts: { high: "Impacto alto", medium: "Impacto medio", low: "Impacto bajo" },
+    impactHints: {
+      high: "Afecta al camino por el que un cliente contacta —teléfono, cómo llegar, reserva o formulario— o a más de la mitad del tráfico.",
+      medium: "Afecta a una parte visible del sitio o a una entrada de tráfico importante, pero no al camino de contacto.",
+      low: "Afecta a una página, una consulta o un detalle suelto.",
+    },
+    impactNotMoney:
+      "El impacto no se dice en euros: Cuotly no sabe lo que vale una reserva ni cuántas visitas acaban en cena, y no va a inventarlo.",
+
+    scopes: { basic: "Básica", advanced: "Avanzada" },
+    scopeHint: {
+      basic: "Sale de una sola fuente.",
+      advanced: "Cruza dos fuentes. Solo la ven los planes que las incluyen.",
+    },
+
+    priorityLabel: (n: number) => `Prioridad ${n}`,
+    origins: { automatic: "Detectada por Cuotly", manual: "Añadida por el equipo" },
+
+    // Decisión 26b · el esfuerzo ES la categoría del cambio: se dice lo
+    // que se tarda y lo que gasta, no "esfuerzo: medio".
+    effortTitle: "Esfuerzo estimado",
+    effortDuration: {
+      small: "1 a 3 días laborables",
+      photo: "1 a 3 días laborables",
+      medium: "1 a 3 días laborables",
+      large: "3 a 5 días laborables",
+    },
+    effortSpends: (categoria: string, quedan: number) =>
+      `Gasta 1 cambio ${categoria.toLowerCase()} de los ${quedan} que te quedan este mes.`,
+    effortNotIncluded:
+      "Tu plan no incluye este tipo de cambio, o la bolsa de este mes está agotada: iría a presupuesto.",
+    effortUnknownBalance: "No se ha podido leer el saldo del ciclo, así que no se dice cuánto queda.",
+    effortNone: "Sin esfuerzo propuesto todavía.",
+
+    // La evidencia (§96: "no debe afirmarse algo sin evidencia suficiente").
+    evidenceTitle: "Evidencia",
+    evidenceHint: "Las cifras que dispararon la regla. No se editan.",
+    evidenceMetricColumn: "Métrica",
+    evidenceValueColumn: "En la ventana",
+    evidencePreviousColumn: "28 días anteriores",
+    evidenceNoPrevious: "—",
+    period: (desde: string, hasta: string) => `Periodo: ${desde} a ${hasta}`,
+    detectedTimes: (n: number) =>
+      n === 1 ? "Detectada una vez." : `Detectada ${n} veces; se actualiza, no se duplica.`,
+    reopenedAfterDiscard: (motivo: string) =>
+      `Estuvo descartada («${motivo}») y ha vuelto a cumplirse.`,
+
+    // Acciones del equipo (§97, §98).
+    recommend: "Recomendar",
+    review: "Pasar a revisión",
+    approve: "Aprobar para informe",
+    discard: "Descartar",
+    markInProgress: "Marcar en ejecución",
+    markImplemented: "Marcar implementada",
+    markNotApplicable: "Ya no aplicable",
+    reasonLabel: "Motivo",
+    discardReasonRequired: "Descartar una oportunidad exige un motivo: queda en el historial.",
+    cannotApproveHint:
+      "Recomendar sí, aprobar no: aprobar o descartar es del propietario y de los administradores con «Aprobar informes» (§97).",
+    includeInReport: "Incluir en informe",
+    includedInReport: "Se incluirá en el informe",
+    notIncludedInReport: "No se incluye en el informe",
+
+    editTitle: "Editar la propuesta",
+    editHint: "Impacto, prioridad, esfuerzo y acción recomendada son propuestas: cámbialas antes de enseñárselas al restaurante. La evidencia no se toca.",
+    impactLabel: "Impacto",
+    priorityField: "Prioridad (1 es lo primero)",
+    effortLabel: "Esfuerzo (categoría del cambio)",
+    recommendedActionLabel: "Acción recomendada",
+    save: "Guardar la propuesta",
+    saving: "Guardando…",
+
+    addTitle: "Añadir oportunidad",
+    addHint: "Lo que el equipo ve y las reglas no: una foto vieja, una carta desactualizada, un dato que falta.",
+    titleLabel: "Título",
+    titleRequired: "Una oportunidad añadida a mano necesita título.",
+    descriptionLabel: "Descripción",
+    categoryLabel: "Categoría",
+    add: "Añadir",
+    adding: "Añadiendo…",
+
+    notesTitle: "Evidencia y observaciones del equipo",
+    notesHint: "Interno: el restaurante no lo ve.",
+    noteKinds: { evidence: "Evidencia", observation: "Observación" },
+    noteLabel: "Añadir una nota",
+    noteRequired: "La nota no puede estar vacía.",
+    addNote: "Añadir nota",
+
+    // §100 · lo que el restaurante puede hacer.
+    clientActionsTitle: "¿Qué quieres hacer?",
+    clientActions: {
+      request_change: "Solicitar esta mejora",
+      request_quote: "Pedir presupuesto",
+      ask_question: "Hacer una pregunta al equipo",
+    },
+    clientActionHint:
+      "Se crea un borrador de solicitud con esta oportunidad enganchada. No se envía ni gasta nada hasta que tú lo envíes.",
+    messageLabel: "Cuéntaselo al equipo",
+    messageRequired: "Escribe lo que quieres pedir.",
+    messagePrefill: (titulo: string) => `Sobre la oportunidad «${titulo}»: `,
+    send: "Crear el borrador",
+    sending: "Creando…",
+    draftCreated: "Borrador creado. Está en tus solicitudes, listo para enviar.",
+
+    // §101 · por qué un restaurante no ve ninguna.
+    clientEmptyNone:
+      "Tu plan no incluye las oportunidades detectadas sobre tus datos. El equipo las sigue viendo y puede contártelas.",
+    clientEmptyBasic:
+      "No hay ninguna oportunidad aprobada ahora mismo. Cuando el equipo apruebe una, aparecerá aquí.",
+    teamEmpty: "Ninguna regla ha saltado con los datos de este restaurante.",
+    teamEmptyHint:
+      "Las reglas se pasan una vez al día sobre las fuentes conectadas y con dato actual. Una fuente desconectada o desactualizada no dispara ninguna.",
+    clientVisibilityNote: (visible: boolean) =>
+      visible
+        ? "El restaurante ve esta oportunidad."
+        : "El restaurante NO ve esta oportunidad todavía.",
+    clientPlanNote: {
+      none: "El plan de este restaurante no incluye ver oportunidades (§101).",
+      basic: "Su plan le deja ver las oportunidades básicas aprobadas.",
+      advanced: "Su plan le deja ver también las avanzadas.",
+    },
   },
 
   emptyReasons: {

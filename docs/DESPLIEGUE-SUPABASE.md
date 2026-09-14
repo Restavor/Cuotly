@@ -10,8 +10,24 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 83 migraciones del repositorio están aplicadas en el
-proyecto.
+**La 84** (`20260914000084_oportunidades_por_reglas_deterministas.sql`,
+Fase 3, Hito 15). Escrita y probada desde cero contra PostgreSQL 16 local
+con las 38 suites de `supabase/tests/`, **sin aplicar al proyecto real**:
+aplicarla es decisión de Bosco, como las anteriores.
+
+Lo que hay que hacer cuando se aplique, en este orden:
+
+1. Aplicarla. Crea tres tablas (`opportunities`, `opportunity_detections`,
+   `opportunity_notes`), añade dos columnas a `requests`
+   (`opportunity_id`, `opportunity_action`) y una a `space_memberships`
+   (`can_approve_reports`), amplía el CHECK de `state_events.entity_type`
+   y **reescribe su política** (ojo: la vigente es la de la migración 30,
+   no la de la 25 ni la de la 26 — la cabecera de la 84 lo explica).
+2. **Regenerar `apps/web/src/lib/supabase/database.types.ts`**. Mientras no
+   se regenere, el cargador y las acciones de las pantallas de
+   oportunidades aíslan ese hueco en una frontera con `any` y lo dicen en
+   su cabecera; con los tipos regenerados, ese `any` sobra y se quita.
+3. Comprobar en el proyecto que `supabase/tests/oportunidades.sql` pasa.
 
 ## Aplicadas
 

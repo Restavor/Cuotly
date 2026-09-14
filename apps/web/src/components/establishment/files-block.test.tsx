@@ -116,6 +116,8 @@ function sheetData(files: SheetData["files"]): SheetData {
     statusReason: null,
     integrations: null,
     digital: null,
+    opportunities: null,
+    opportunityViewer: "approver",
     canManageClients: false,
     summary: {
       bags: [],

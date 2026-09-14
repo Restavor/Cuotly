@@ -25,6 +25,8 @@ import { createCredentialVault, vaultIsConfigured } from "@/services/credential-
 import { googleOAuthIsConfigured, refreshAccessToken, revokeToken } from "@/services/google-oauth";
 import { createSupabaseIntegrationGateway } from "@/services/integration-gateway";
 import { runIntegrationSyncs, runPendingRevocations, type SyncDeps } from "@/services/integration-sync";
+import { runOpportunityDetection } from "@/services/opportunity-detection";
+import { createSupabaseOpportunityGateway } from "@/services/opportunity-gateway";
 import { adapterFor } from "@/services/integrations";
 import {
   createMailComposer,
@@ -118,6 +120,17 @@ async function ejecutarTanda(request: Request) {
   */
   const integraciones = await ejecutarIntegraciones(client);
 
+  /*
+    Fase 3 · Hito 15 · las nueve reglas de §96 sobre lo que la
+    sincronización de arriba acaba de traer (RN-OPP-02). Va DESPUÉS de
+    ella a propósito: aplicar las reglas antes sería mirar los datos de
+    ayer teniendo los de hoy a un paso.
+  */
+  const oportunidades = await runOpportunityDetection({
+    gateway: createSupabaseOpportunityGateway(client),
+    now: () => new Date(),
+  });
+
   const mail = await drainEmailQueue(
     gateway,
     createResendTransport(
@@ -127,7 +140,13 @@ async function ejecutarTanda(request: Request) {
     createMailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
   );
 
-  return NextResponse.json({ scheduled, slaNotifications: emitted, integrations: integraciones, mail });
+  return NextResponse.json({
+    scheduled,
+    slaNotifications: emitted,
+    integrations: integraciones,
+    opportunities: oportunidades,
+    mail,
+  });
 }
 
 async function ejecutarIntegraciones(client: ReturnType<typeof createAdminClient>) {

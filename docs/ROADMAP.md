@@ -3708,6 +3708,124 @@ regenerar salió idéntica, así que no había desviación.
     línea). typecheck, lint, 1025 pruebas y `next build`.
 
 
+
+### Fase 3 · Hito 15 · Oportunidades por reglas deterministas
+
+- [x] **Las nueve reglas de §96, con los números de Bosco y no con los míos.**
+
+    Este hito llevaba bloqueado desde que se escribió el ROADMAP, y el
+    bloqueo era de CLAUDE.md: "umbrales concretos de detección y definición
+    de impacto/esfuerzo" estaban en la lista de lo que no se inventa. Los
+    fijó Bosco el 14/09/2026 (decisión 26, sobre
+    `docs/PROPUESTA-OPORTUNIDADES.md`), así que lo que hay en el código son
+    **citas**: `OPPORTUNITY_THRESHOLDS` en `src/core/opportunities.ts` es
+    literalmente la tabla de la decisión, y el test la vuelve a escribir
+    número a número para que cambiar uno sin pasar por la decisión ponga la
+    suite en rojo.
+
+    **El reparto.** Los umbrales y la ventana, en `src/core/` (dominio
+    puro, sin base ni red). Lo que se hace con una detección —crear,
+    actualizar la que ya existe, reabrir una descartada—, en la migración
+    84, porque es donde §99 se puede hacer cumplir con un índice único y no
+    con buena voluntad. El barrido que junta las dos mitades corre con
+    `service_role` dentro de la tanda de `/api/cola`, **detrás** de las
+    sincronizaciones: aplicar las reglas antes sería mirar los datos de
+    ayer teniendo los de hoy a un paso.
+
+    **Tres métricas que faltaban, y no se vio hasta escribir las reglas.**
+    La decisión 26 escribe tres de sus nueve reglas "por consulta" —CTR
+    bajo, pérdida de posición y búsquedas que salen muy abajo— con el CTR y
+    la posición de cada consulta. El catálogo del Hito 14 guardaba de cada
+    día los **clics** de las **diez consultas con más clics**, y nada más.
+    Y las consultas que estas tres reglas buscan son justo las que tienen
+    impresiones y **no** tienen clics: con aquel catálogo no habría saltado
+    ninguna de las tres, nunca, y no lo habría dicho nadie. Se añaden
+    `impressions_by_query`, `ctr_by_query` y `position_by_query`, que salen
+    de la respuesta de Search Console que ya se pedía (sin llamada nueva) y
+    se quedan con las diez mayores **por impresiones**. `clicks_by_query`
+    no se toca: es lo que "búsquedas principales" enseña, y ahí lo
+    principal son los clics. Es la misma clase de hueco que la decisión 26d
+    encontró en GA4 y PageSpeed, una capa más abajo.
+
+    **Lo que la migración 84 decide y la pantalla no.**
+    - **Detectar no es enseñar** (§96, §295): hasta que alguien no aprueba
+      una oportunidad, el restaurante no la ve. Lo sostiene la política de
+      RLS, no que la pantalla no la pinte.
+    - **Qué ve cada plan** (§101): Básico ninguna, Impulso las básicas,
+      Premium también las avanzadas. "Avanzada" no es una etiqueta escrita
+      a mano regla por regla: se **cuenta** el número de fuentes de la
+      regla (decisión 26e), así que una regla que mañana mire una fuente
+      más se vuelve avanzada sola.
+    - **Quién aprueba**: propietario y administradores **con "Aprobar
+      informes"** (§97), que es una capacidad concedida persona a persona
+      (`space_memberships.can_approve_reports`), como `can_perform_jobs` en
+      el Hito 6. Un administrador sin ella recomienda, igual que un
+      trabajador. Un administrador que "casi siempre" puede aprobar no es
+      lo que dice §97.
+    - **§99 con un índice único**: la clave natural de una automática es
+      (restaurante, regla, sujeto), y una detección repetida actualiza esa
+      fila. Que no dependa de acordarse de buscar antes de insertar es la
+      diferencia entre cumplir la regla y prometerla.
+    - **La propuesta editada no se pisa**: en cuanto alguien cambia el
+      impacto, la prioridad o el esfuerzo, una detección posterior
+      actualiza las cifras y respeta la decisión de la persona (§96).
+
+    **Dos lecturas que hubo que aplicar y están anotadas** (pendiente 15 de
+    `docs/DECISIONES.md`, para que Bosco las confirme o las cambie): qué es
+    "otro periodo" cuando §99 dice que una descartada puede reaparecer —se
+    lee como una ventana que ya no se solapa con la descartada, porque si
+    no, descartar no significaría nada al día siguiente—; y el suelo de la
+    regla 9b, que la decisión 26c no fija y aquí se hereda de la 6, que
+    divide entre las mismas sesiones de Clarity.
+
+    **Lo que NO se ha hecho, dicho en claro.** No se ha inventado ningún
+    aviso: §18 no tiene ninguno de oportunidad, así que el equipo las ve en
+    su pantalla y punto. No se guarda una sola frase en español en la base:
+    una oportunidad automática guarda su regla, su sujeto y sus cifras, y
+    el título lo escribe la pantalla desde `es.ts` — así una detectada hace
+    dos meses no sigue diciendo una frase que se corrigió después. Y los
+    informes (§89 a §95), donde "Incluir en informe" se vuelve a decidir,
+    siguen siendo el Hito 16.
+
+    **Dos fallos reales que cazaron los tests de otros hitos**, y merece la
+    pena contarlos porque los dos habrían pasado inadvertidos: al reescribir
+    la política de `state_events` para añadir la entidad `opportunity` se
+    copió la versión de la migración 26 en vez de la vigente (la 30), y con
+    eso el restaurante volvía a alcanzar los eventos de las **tareas**
+    internas —y con ellos `actor_id`—; el barrido de identidad del Hito 7 lo
+    dijo con nombre y apellidos. Y `client_opportunity_access()` nació
+    abierta: cualquiera con sesión podía preguntar de qué plan es cualquier
+    restaurante de cualquier espacio. La cazó la cuarta pasada del mismo
+    barrido (toda función `SECURITY DEFINER` abierta por RPC cuyo cuerpo no
+    comprueba permisos), que es exactamente para lo que está.
+
+    **Comprobado:** `supabase/tests/oportunidades.sql` (la 38ª suite;
+    RN-OPP-01 a 10, los ocho estados, §99 con su reapertura, §101 con los
+    tres planes, §100 con la idempotencia del borrador, y el barrido de
+    funciones internas), las 38 suites desde cero sobre PostgreSQL 16 con
+    las 84 migraciones; `opportunities.test.ts` (43 pruebas: los umbrales
+    uno a uno, cada regla con su caso que salta y su caso que no, el suelo
+    de ruido, la fuente no viva y el determinismo),
+    `opportunity-detection.test.ts` (la ventana en la zona del espacio, la
+    fuente desconectada que no dispara, el restaurante que falla sin tumbar
+    a los demás), `opportunities.test.tsx` (la evidencia a la vista, el
+    esfuerzo con su bolsa, lo que el trabajador no puede y lo que el
+    restaurante no ve), `listas-compartidas.test.ts` (el catálogo de
+    reglas, los ocho estados y **las transiciones** a los dos lados, con su
+    mutación comprobada), `adapters.test.ts` (las tres métricas nuevas, con
+    la consulta de 220 impresiones y cero clics que era el caso perdido) y
+    la tanda de `/api/cola`; typecheck, lint, 1099 pruebas y `next build`.
+    Los recorridos de Playwright no se ejecutaron: desde el contenedor no
+    se llega al proyecto de Supabase (`docs/DESPLIEGUE-SUPABASE.md`).
+
+    **Sin aplicar al proyecto real.** La migración 84 está escrita y
+    probada contra PostgreSQL 16 local, y `database.types.ts` sigue siendo
+    el de las 83: ese archivo se regenera contra el proyecto, y aplicar la
+    84 es decisión de Bosco. Mientras tanto, el cargador y las acciones de
+    las pantallas aíslan ese hueco en una frontera con `any`, como
+    `integration-gateway.ts`, y lo dicen en su cabecera.
+
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
@@ -3860,8 +3978,14 @@ Hito 15 deja de estar bloqueado.
 
 **Se verifica con:** `supabase/tests/integraciones_revocacion_remota.sql`, `credential-vault.test.ts`, `google-oauth.test.ts`, `integrations/adapters.test.ts`, `integration-sync.test.ts`, `api/integraciones/oauth/callback/route.test.ts`, `integrations-block.test.tsx` y `digital-sections.test.tsx`.
 
-### Hito 15 · Oportunidades por reglas deterministas
-- Bloqueado por CLAUDE.md hasta que Bosco fije los umbrales de detección y la definición de impacto y esfuerzo (§96 a §101).
+### Hito 15 · Oportunidades por reglas deterministas *(hecho el 14/09/2026; la 84 sin aplicar al proyecto)*
+- Las **nueve reglas** de §96 con los umbrales de la decisión 26 en `src/core/opportunities.ts` (dominio puro), sobre la ventana de 28 días de la decisión 25b, con su suelo de ruido y sin disparar nada desde una fuente que no esté viva.
+- **Migración 84**: `opportunities` (los campos de §96 y los ocho estados de §98), `opportunity_detections` (libro inmutable) y `opportunity_notes` (interno del equipo); RLS con el privilegio de columna que tapa quién aprobó o descartó; la capacidad **`approve_reports`** concedida persona a persona; y las funciones de detectar, mover de estado, editar la propuesta, añadir a mano, anotar y actuar desde el restaurante (§100).
+- El **barrido** (`src/services/opportunity-detection.ts`) dentro de la tanda de `/api/cola`, detrás de las sincronizaciones, con la ventana en la zona horaria de cada espacio.
+- La sección **Oportunidades** de "Informes y datos", con la evidencia siempre a la vista, el esfuerzo dicho en lo que se tarda y lo que gasta, y las tres acciones de §100 para el restaurante.
+- Tres métricas nuevas de Search Console (`impressions_by_query`, `ctr_by_query`, `position_by_query`), sin las cuales tres de las nueve reglas no se podían calcular.
+
+**Se verifica con:** `supabase/tests/oportunidades.sql` (la 38ª suite; RN-OPP-01 a 10), `opportunities.test.ts` (los umbrales, uno a uno), `opportunity-detection.test.ts`, `opportunities.test.tsx`, `listas-compartidas.test.ts` (el catálogo de reglas, los estados y las transiciones a los dos lados) y `adapters.test.ts`.
 
 ### Hito 16 · Informes
 - Operación, finanzas y rendimiento digital (§89 a §95) con flujo de aprobación, versiones, PDF, CSV y envío programado.

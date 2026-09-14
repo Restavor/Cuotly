@@ -27,6 +27,7 @@ import {
   loadDigitalData,
   loadIntegrationsView,
 } from "@/components/establishment/integrations-load";
+import { loadOpportunities } from "@/components/establishment/opportunities-load";
 import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
@@ -206,13 +207,38 @@ export default async function EstablishmentPage({
             return null;
           });
 
+    /*
+      §96 a §101 · las oportunidades (Hito 15). Se leen solo cuando se está
+      mirando esa sección: son tres consultas y las otras cinco secciones
+      de la pestaña no las necesitan.
+
+      Quién ve cuáles no se decide aquí: la política de `opportunities` ya
+      filtra. Lo que sí se decide aquí es qué se le OFRECE a quien mira, y
+      aprobar o descartar es del propietario y de los administradores con
+      "Aprobar informes" (§97). Se pregunta por la CAPACIDAD, no por el
+      rol: un administrador sin ella recomienda, como un trabajador.
+    */
+    const vista = parseSheetTab(soloUno(query.vista));
+    const seccion = parseDataSection(soloUno(query.seccion));
+    const mirandoOportunidades = vista.key === "data" && seccion.key === "opportunities";
+
+    const { data: puedeAprobar } = mirandoOportunidades
+      ? await supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "approve_reports" })
+      : { data: false };
+    const opportunities = mirandoOportunidades
+      ? await loadOpportunities(supabase, id).catch((fallo: unknown) => {
+          console.error("[ficha] no se pudieron leer las oportunidades", { id, message: String(fallo) });
+          return null;
+        })
+      : null;
+
     return (
       <EstablishmentSheet
         base={base}
         slug={slug}
-        tab={parseSheetTab(soloUno(query.vista))}
+        tab={vista}
         block={parseManagementBlock(soloUno(query.bloque))}
-        section={parseDataSection(soloUno(query.seccion))}
+        section={seccion}
         data={{
           header,
           /*
@@ -247,6 +273,8 @@ export default async function EstablishmentPage({
           statusReason: statusReason ?? null,
           integrations,
           digital,
+          opportunities,
+          opportunityViewer: puedeAprobar === true ? "approver" : "worker",
           // CLAUDE.md · la zona del espacio, que esta pantalla ya lee para
           // proponer el día del pago. La ficha entera pinta con ella.
           timeZone: space.timezone,

@@ -307,6 +307,16 @@ export const METRICS_BY_PROVIDER: Readonly<Record<IntegrationProvider, readonly 
     "position",
     "clicks_by_query",
     "clicks_by_page",
+    // Hito 15 · las mismas tres cifras que arriba pero POR CONSULTA, que
+    // es como la decisión 26 escribe tres de sus nueve reglas ("una
+    // consulta con 100 impresiones o más…"). Con `clicks_by_query` sola
+    // no se pueden: guarda los clics de las diez consultas con más
+    // clics, y lo que estas reglas buscan es la consulta que tiene
+    // impresiones y NO tiene clics. Las tres salen de la misma respuesta
+    // de la API que ya se pedía (`date`, `query`), sin llamada nueva.
+    "impressions_by_query",
+    "ctr_by_query",
+    "position_by_query",
   ],
   // Business Profile Performance API: las impresiones por superficie
   // (Maps y Búsqueda, escritorio y móvil) y las acciones sobre la ficha.

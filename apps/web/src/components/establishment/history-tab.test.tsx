@@ -92,6 +92,8 @@ function sheetData(audit: SheetData["audit"]): SheetData {
     statusReason: null,
     integrations: null,
     digital: null,
+    opportunities: null,
+    opportunityViewer: "approver",
     canManageClients: false,
     summary: {
       bags: [],

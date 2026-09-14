@@ -11,6 +11,16 @@ import {
   retryDelayHours,
 } from "./integrations";
 import { NOTIFICATION_EVENTS } from "./notifications";
+import {
+  OPPORTUNITY_RULES,
+  OPPORTUNITY_STATES,
+  RULE_CATEGORY,
+  RULE_EFFORT,
+  RULE_PROVIDERS,
+  canTransition,
+  ruleScope,
+  visibleToClient,
+} from "./opportunities";
 
 /**
  * Listas que están escritas a los dos lados de la frontera SQL/TypeScript.
@@ -70,6 +80,19 @@ function ultimaDefinicion(inicio: string, fin: string): string {
 
   expect(encontrado, `no se ha encontrado "${inicio}" en ninguna migración`).not.toBeNull();
   return encontrado!;
+}
+
+/** Los valores entrecomillados de un trozo de SQL, en su orden. */
+function entrecomillados(sql: string): string[] {
+  return [...sql.matchAll(/'([a-z_0-9]+)'/g)].map((m) => m[1]);
+}
+
+/** La rama `when '<clave>' then ...` de un CASE, hasta el salto de línea. */
+function casoDe(sql: string, clave: string): string | null {
+  const desde = sql.indexOf(`when '${clave}' then`);
+  if (desde < 0) return null;
+  const hasta = sql.indexOf("\n", desde);
+  return sql.slice(desde + `when '${clave}'`.length, hasta < 0 ? undefined : hasta);
 }
 
 /** Los valores entrecomillados de un `in ('a', 'b', ...)`. */
@@ -189,6 +212,102 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     for (const n of [0, 1, 2, 3, 4, 5, 10]) {
       const enSql = Math.min(techo, base ** (Math.max(n, 1) - 1));
       expect(retryDelayHours(n), `con ${n} fallos`).toBe(enSql);
+    }
+  });
+
+  /*
+   * Migración 84 (Fase 3, Hito 15). El catálogo de las nueve reglas está
+   * a los dos lados porque de él dependen cosas distintas en cada uno: en
+   * SQL, lo que se guarda al detectar y qué ve cada plan; en TypeScript,
+   * los umbrales y lo que la pantalla enseña. Una regla que cambiara de
+   * fuentes en un solo lado cambiaría de alcance en un solo lado — y con
+   * él, quién la ve.
+   */
+  it("las fuentes de cada regla (§96) las dicen igual SQL y `src/core`", () => {
+    const fn = ultimaDefinicion("create or replace function public.opportunity_rule_providers", "$$;");
+    for (const rule of OPPORTUNITY_RULES) {
+      const fila = casoDe(fn, rule);
+      expect(fila, `${rule} no está en opportunity_rule_providers()`).not.toBeNull();
+      expect([...entrecomillados(fila!)].sort(), rule).toEqual([...RULE_PROVIDERS[rule]].sort());
+    }
+    // Y ninguna de más: el CHECK de la tabla es la otra mitad de la lista.
+    const tabla = ultimaDefinicion("create table public.opportunities (", "constraint opportunities_shape");
+    const check = /rule_key text check \(rule_key is null or rule_key in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de rule_key").not.toBeNull();
+    expect(entrecomillados(check![1]).slice().sort()).toEqual([...OPPORTUNITY_RULES].sort());
+  });
+
+  it("la categoría y el esfuerzo propuesto de cada regla los dicen igual SQL y `src/core`", () => {
+    const categorias = ultimaDefinicion("create or replace function public.opportunity_rule_category", "$$;");
+    const esfuerzos = ultimaDefinicion("create or replace function public.opportunity_rule_effort", "$$;");
+    for (const rule of OPPORTUNITY_RULES) {
+      expect(entrecomillados(casoDe(categorias, rule) ?? ""), rule).toEqual([RULE_CATEGORY[rule]]);
+      expect(entrecomillados(casoDe(esfuerzos, rule) ?? ""), rule).toEqual([RULE_EFFORT[rule]]);
+    }
+  });
+
+  it("básica o avanzada (§101) sale de contar fuentes, y sale igual en los dos lados", () => {
+    // La función de SQL no enumera alcances: cuenta el array de fuentes,
+    // igual que `ruleScope()`. Lo que se comprueba es que la forma de la
+    // cuenta siga siendo esa, porque una lista escrita a mano se
+    // desincronizaría en silencio.
+    const fn = ultimaDefinicion("create or replace function public.opportunity_rule_scope", "$$;");
+    expect(fn).toContain("array_length(public.opportunity_rule_providers(p_rule), 1) > 1");
+    expect(fn).toContain("'advanced'");
+    for (const rule of OPPORTUNITY_RULES) {
+      expect(ruleScope(rule), rule).toBe(RULE_PROVIDERS[rule].length > 1 ? "advanced" : "basic");
+    }
+  });
+
+  it("los ocho estados de §98 son los mismos en el CHECK y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.opportunities (", "constraint opportunities_shape");
+    const check = /status text not null default '[a-z_]+' check \(status in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de status").not.toBeNull();
+
+    // El orden también: es el de §98 y el de la pantalla.
+    expect(entrecomillados(check![1])).toEqual([...OPPORTUNITY_STATES]);
+  });
+
+  it("quién ve qué estado (RN-OPP-07) lo dicen igual los dos lados", () => {
+    const visibles = ultimaDefinicion("create or replace function public.opportunity_is_visible_to_client", "$$;");
+    const enSql = entrecomillados(visibles.slice(visibles.indexOf("select p_status in")));
+    expect([...OPPORTUNITY_STATES].filter(visibleToClient).sort()).toEqual([...enSql].sort());
+  });
+
+  it("quién mueve cada transición (§97, §98) lo dicen igual los dos lados", () => {
+    const fn = ultimaDefinicion("create or replace function public.opportunity_transition_allowed", "$$;");
+
+    /*
+     * Cada rama de la función tiene la forma `when p_from = 'x' and p_to
+     * in ('a','b') then p_actor in ('worker','approver')`, así que se
+     * parte por `when ` y de cada trozo se leen los entrecomillados: el
+     * primero es el origen, los de antes de `then` los destinos y los de
+     * después los actores. Comparar así —y no rama a rama escrita a
+     * mano— es lo que hace que una transición añadida en un solo lado
+     * ponga esto en rojo.
+     */
+    const permitidasEnSql = new Set<string>();
+    for (const rama of fn.split("when ").slice(1)) {
+      const corte = rama.indexOf(" then ");
+      if (corte < 0) continue;
+      const izquierda = entrecomillados(rama.slice(0, corte));
+      const derecha = entrecomillados(rama.slice(corte));
+      if (izquierda.length < 2 || derecha.length === 0) continue;
+      const [origen, ...destinos] = izquierda;
+      for (const destino of destinos) {
+        for (const actor of derecha) permitidasEnSql.add(`${origen}->${destino}:${actor}`);
+      }
+    }
+    expect(permitidasEnSql.size).toBeGreaterThan(0);
+
+    for (const from of OPPORTUNITY_STATES) {
+      for (const to of OPPORTUNITY_STATES) {
+        for (const actor of ["worker", "approver"] as const) {
+          expect(canTransition(from, to, actor), `${from} -> ${to} como ${actor}`).toBe(
+            permitidasEnSql.has(`${from}->${to}:${actor}`),
+          );
+        }
+      }
     }
   });
 });

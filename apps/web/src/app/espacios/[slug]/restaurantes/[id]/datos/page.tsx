@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 
 import { DataSectionNav, DigitalSection } from "@/components/establishment/DigitalSections";
 import { loadDigitalData, loadIntegrationRows } from "@/components/establishment/integrations-load";
+import { OpportunitiesSection } from "@/components/establishment/Opportunities";
+import { loadOpportunities } from "@/components/establishment/opportunities-load";
 import { type DataSectionTab, parseDataSection } from "@/components/establishment/tabs";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { todayInTimeZone } from "@/core/finance";
@@ -77,6 +79,24 @@ export default async function ClientDataPage({
       return null;
     });
 
+  /*
+    §96 a §101 · las oportunidades del restaurante. Se leen solo cuando se
+    está mirando esa sección: las otras cinco no las necesitan y son dos
+    consultas de más en cada carga.
+
+    Aquí NO se decide qué ve: la política de `opportunities` le devuelve
+    solo las aprobadas y, de esas, las que su plan le deja ver (§101). Si
+    su plan no incluye ninguna, la lista llega vacía y la pantalla dice
+    por qué, que es lo que pide P6.
+  */
+  const opportunities =
+    section.key === "opportunities"
+      ? await loadOpportunities(supabase, id).catch((fallo: unknown) => {
+          console.error("[restaurante] no se pudieron leer las oportunidades", { id, message: String(fallo) });
+          return null;
+        })
+      : null;
+
   const words = es.integrations.sections[section.key];
 
   return (
@@ -91,7 +111,19 @@ export default async function ClientDataPage({
 
       <DataSectionNav active={section} hrefFor={hrefFor} />
 
-      <DigitalSection section={section.key} view={digital} manageHref={gestiona ? `${base}/fuentes` : null} />
+      <DigitalSection
+        section={section.key}
+        view={digital}
+        manageHref={gestiona ? `${base}/fuentes` : null}
+        opportunities={
+          <OpportunitiesSection
+            view={opportunities}
+            viewer="client"
+            establishmentId={id}
+            path={`${base}/datos`}
+          />
+        }
+      />
     </div>
   );
 }

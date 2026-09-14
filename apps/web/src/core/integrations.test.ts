@@ -282,6 +282,12 @@ describe("integraciones analíticas (PRD §27)", () => {
       "position",
       "clicks_by_query",
       "clicks_by_page",
+      // Hito 15 · las tres por consulta, sin las cuales tres de las nueve
+      // reglas de la decisión 26 ("una consulta con 100 impresiones o
+      // más…") no se pueden calcular.
+      "impressions_by_query",
+      "ctr_by_query",
+      "position_by_query",
     ]);
     for (const provider of INTEGRATION_PROVIDERS) {
       expect(METRICS_BY_PROVIDER[provider].length).toBeGreaterThan(0);

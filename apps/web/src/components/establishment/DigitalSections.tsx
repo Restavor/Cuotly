@@ -369,10 +369,18 @@ export function DigitalSection({
   section,
   view,
   manageHref,
+  opportunities,
 }: {
   section: DataSection;
   view: DigitalDataView | null;
   manageHref: string | null;
+  /**
+   * Hito 15 · lo que se pinta en la sexta sección. Se pasa hecho desde la
+   * pantalla (`OpportunitiesSection`) en vez de leerlo aquí: esta sección
+   * no sale de `metric_points` como las otras cuatro, sino de
+   * `opportunities`, que tiene su propia política y su propio permiso.
+   */
+  opportunities?: ReactNode;
 }) {
   const words = t.sections[section];
 
@@ -385,7 +393,7 @@ export function DigitalSection({
   }
 
   if (section === "opportunities") {
-    return <SectionEmpty section={section} manageHref={null} />;
+    return <>{opportunities ?? <SectionEmpty section={section} manageHref={null} />}</>;
   }
 
   const providers = DATA_SECTION_PROVIDERS[section];
