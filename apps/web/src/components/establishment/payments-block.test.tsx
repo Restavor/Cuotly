@@ -102,6 +102,7 @@ function sheetData(payments: PaymentsProps): SheetData {
     digital: null,
     opportunities: null,
     opportunityViewer: "approver",
+    reports: [],
     summary: {
       bags: [],
       attention: [],

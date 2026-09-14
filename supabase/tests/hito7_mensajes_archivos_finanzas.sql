@@ -2610,7 +2610,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|assert_can_manage_integrations|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2648,6 +2648,19 @@ begin
         -- `accept_subscription_terms()`, que la llama, sí queda cubierta
         -- por la heurística.
         'client_can_accept_terms',
+        -- Migración 85 (Fase 3, Hito 16), misma familia: contesta si quien
+        -- pregunta puede ver los informes de ESE restaurante por el lado
+        -- cliente (§89: Editor siempre, Consulta con permiso). Es el
+        -- mecanismo, así que no se comprueba a sí misma; aparece además en
+        -- la expresión de la política de `reports`, así que no puede
+        -- perder el EXECUTE de `authenticated` (CLAUDE.md).
+        --
+        -- `report_actor_role()` es la otra mitad —quién puede mover un
+        -- informe de estado— y NO está aquí porque está cerrada por RPC;
+        -- su nombre entra en la heurística de arriba para que las tres que
+        -- la llaman (`set_report_status`, `schedule_report`, `send_report`)
+        -- cuenten como comprobadas.
+        'client_can_view_reports',
         -- Migración 81 (Fase 3, Hito 13): `assert_can_manage_integrations()`
         -- es LA comprobación de RN-INT-05 —`manage_clients` o el propietario
         -- del restaurante— y lanza si no. Está cerrada por RPC (no se

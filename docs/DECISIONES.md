@@ -389,8 +389,45 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar (no bloquea la Fase 1)
 
-**Ninguna abierta.** Las quince se han cerrado; quedan tachadas abajo con la decisión que las
-resolvió.
+16. **Lecturas aplicadas al implementar los informes** (Hito 16, 14/09/2026). §89 a §95 dicen los
+   estados, el flujo y las salidas, pero callan en cuatro cosas que hubo que resolver para que el
+   hito existiera. Se aplicaron del modo más corto y se anotan aquí para que Bosco las confirme o
+   las cambie; ninguna inventa una regla nueva.
+
+   **(a) Qué secciones "requieren criterio"** (§95.3 pide distinguirlas y no dice cuáles son): las
+   tres que una persona **escribe o elige** —resumen ejecutivo, oportunidades y recomendaciones—;
+   las demás son cifras y no piden opinión de nadie. De esto depende algo concreto: §95 dice que
+   "los informes solo objetivos pueden enviarse automáticamente", así que un informe sin ninguna de
+   esas tres encendidas se puede programar **sin pasar por aprobación**.
+
+   **(b) A quién va el correo programado** (§93 dice "correo programado" y no dice a quién): a
+   **quien puede ver informes de ese restaurante** por §89 —propietario global, propietario local,
+   Editor siempre y Consulta con permiso—, calculado, no una lista escrita a mano que haya que
+   mantener. Un informe **consolidado** no se manda a ningún cliente: mezcla varios restaurantes y
+   no hay uno al que pertenezca, así que va al propietario y a los administradores.
+
+   **(c) Cuándo es "se acerca la fecha programada"** (§95): **24 horas antes**, una sola vez por
+   informe y fecha. Se eligen 24 h y no una hora porque el aviso sirve para poder pararlo o
+   corregirlo, y eso necesita una jornada por delante. Cambiar la fecha vuelve a armar el aviso.
+
+   **(d) El PDF y el CSV se generan desde la versión y no se guardan** (§93 pide las salidas y no
+   dice si se archivan). La versión es el original —§95: "cada versión se conserva"— y las dos
+   salidas son una representación suya, regenerable e idéntica. Guardar el PDF sería un segundo
+   original que puede dejar de coincidir con las cifras.
+
+   Y dos menores del mismo bloque: **"Consulta necesita permiso de su propietario"** (§89) se ha
+   implementado como un permiso fino por persona (`establishment_permissions.view_reports`), igual
+   que `view_billing` en RN-FIN-07; y la **"duración bloqueada"** de §91 se cuenta en minutos de
+   **calendario** y no laborables, porque el tiempo bloqueado que no consume plazo ya lo dice T3
+   (RN-SLA-14) y lo que §91 pide aquí es cuánto tiempo estuvo parado el trabajo.
+
+   **Lo que NO se ha inventado**, por si la ausencia llama la atención: no hay informe redactado por
+   IA (§93 dice que no hace falta), no hay plantilla configurable por espacio y no hay envío a una
+   dirección escrita a mano.
+
+---
+
+**Cerradas.** Las quince anteriores; quedan tachadas abajo con la decisión que las resolvió.
 
 15. ~~Lecturas aplicadas al implementar las oportunidades~~ — confirmadas el 14/09/2026 como
    decisión 27.

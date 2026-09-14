@@ -45,6 +45,10 @@ export const NOTIFICATION_EVENTS = [
   // reautorización también a los propietarios del restaurante.
   "integration_sync_failed",
   "integration_reauthorization_required",
+  // Migración 85 · los dos avisos de §95 y §93: el que avisa de que la
+  // fecha programada se acerca y el envío del informe al restaurante.
+  "report_schedule_due_soon",
+  "report_sent",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",

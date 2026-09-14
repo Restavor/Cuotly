@@ -79,6 +79,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     digital: null,
     opportunities: null,
     opportunityViewer: "approver",
+    reports: [],
     summary: {
       bags: [],
       attention: [],

@@ -3838,6 +3838,112 @@ regenerar salió idéntica, así que no había desviación.
     encuentra un fallo que nadie habría visto hasta tenerlo en pantalla.
 
 
+### Fase 3 · Hito 16 · Informes
+
+- [x] **§89 a §95 enteros: preparar, revisar, aprobar, programar y enviar.**
+
+    **El reparto.** Los **diez indicadores de §91** en `src/core/reports.ts`
+    (dominio puro, sin base y sin red), porque el cumplimiento de plazos y
+    los tiempos medios se miden con el **reloj contractual** y CLAUDE.md
+    prohíbe duplicarlo en SQL — es la misma razón por la que los umbrales de
+    T2 y T3 los calcula el proceso de la cola. Lo que la base entrega son
+    **filas**: `report_operation_dataset()` y `report_finance_dataset()`,
+    reservadas a `service_role`. Lo que la base **decide** —quién ve un
+    informe, cuándo lo ve el restaurante, quién puede aprobarlo y qué lo
+    detiene— está en la migración 85, que es la única puerta: `reports` no
+    tiene política de escritura.
+
+    **Lo que la migración 85 decide y la pantalla no.**
+    - **Enviado no es preparado** (RN-REP-13): el restaurante ve un informe
+      cuando se le ha enviado, y `preparing`, `pending_review`, `approved` y
+      `scheduled` son conversación interna. Lo sostiene la política de RLS.
+    - **Quién ve informes** (§89): propietario y administradores del espacio;
+      del lado cliente, propietario global, propietario local, Editor
+      siempre y Consulta **solo con permiso**, que es un permiso fino por
+      persona (`establishment_permissions.view_reports`), como `view_billing`.
+      El **trabajador no entra**: §89 no le da los informes de un
+      restaurante, y lo que §90 le da es el suyo personal. Por eso
+      `/informes` enseña dos pantallas distintas según quién entre, en vez
+      de un destino del menú que a un trabajador le conteste "sin permiso".
+    - **Quién aprueba** (§95.4): propietario y administradores **con
+      "Aprobar informes"**, la misma capacidad del Hito 15. Un administrador
+      sin ella prepara y edita, y no aprueba.
+    - **El freno de §95**: un informe con **oportunidades pendientes** no
+      sale. Se comprueba **al enviar** y no al aprobar, porque una
+      oportunidad puede detectarse después; el envío se detiene, el informe
+      vuelve a revisión con el motivo y queda en auditoría.
+    - **Cada versión se conserva** (§95): `report_versions` es un libro
+      inmutable y regenerar **añade**; no pisa. Un informe enviado no se
+      edita ni se regenera: una corrección es una versión nueva, no un
+      cambio retroactivo de lo que el cliente ya leyó.
+
+    **Cuatro lecturas aplicadas** donde §89 a §95 callan, anotadas como
+    pendiente 16 de `docs/DECISIONES.md`: qué secciones "requieren criterio"
+    (§95.3) —el resumen ejecutivo, las oportunidades y las recomendaciones,
+    que son lo que una persona escribe o elige—; **a quién va el correo
+    programado** (§93) —a quien puede ver informes de ese restaurante por
+    §89, no a una lista escrita a mano—; **cuándo es "se acerca la fecha"**
+    (§95) —24 horas antes, una sola vez por fecha—; y que el **PDF y el CSV
+    se generan desde la versión y no se guardan**, porque un PDF archivado
+    sería un segundo original que puede dejar de coincidir con las cifras.
+
+    **Lo que NO se ha hecho, dicho en claro.** No hay informe redactado por
+    IA ni resumen generado: §93 dice que el informe automático por correo no
+    necesita IA, y aquí no hay ninguna llamada al clasificador — el resumen
+    ejecutivo y las recomendaciones los escribe una persona o el informe sale
+    sin ellos. No hay plantilla de informe configurable por espacio. No hay
+    envío a una dirección escrita a mano: el correo va a usuarios de Cuotly,
+    que es de quien se sabe si puede ver el informe. Y la numeración fiscal,
+    la exportación masiva y la conservación legal siguen siendo del bloque
+    legal aplazado.
+
+    **Tres fallos reales, y los tres merecen contarse.** Dos los cazaron
+    los tests de otros hitos: el barrido de funciones internas del Hito 7
+    encontró `report_pending_opportunities()` abierta por RPC sin comprobar
+    nada —con ella, cualquiera con sesión sabía cuántas oportunidades
+    pendientes tiene cualquier restaurante de cualquier espacio—, y
+    `listas-compartidas.test.ts` no veía la mitad del catálogo de avisos
+    porque un **paréntesis dentro de un comentario** de la migración cortaba
+    la expresión que lo lee: la lista quedaba a medias y el test habría
+    pasado en verde con veinte eventos de menos.
+
+    El tercero lo introdujo **el arreglo del primero**, y es el que más
+    enseña. Cerrar `report_pending_opportunities()` con
+    `has_capability(...)` dejaba fuera al proceso de la cola —que envía sin
+    sesión, con `service_role`—, así que devolvía 0 y **el freno de §95 no
+    habría saltado nunca en el envío automático**, que es justo donde no hay
+    nadie mirando. La primera prueba que se escribió para ello no lo veía:
+    ponía `set role service_role` pero dejaba puesto el claim de sesión del
+    administrador, así que `auth.uid()` seguía contestando y el permiso
+    decía que sí. Con el claim vaciado —que es como llega la cola de
+    verdad— la prueba falla con la versión mala y pasa con la buena.
+
+    **Comprobado:** `supabase/tests/informes.sql` (la 39ª suite; RN-REP-01 a
+    14, los seis estados, el permiso de §89, el freno de las oportunidades
+    con su vuelta a revisión **por los dos caminos —el botón y la cola—**,
+    el aviso de las 24 h, la idempotencia del envío y el privilegio de
+    columna), **con seis mutaciones, las seis detectadas**: dejar que el
+    restaurante vea un informe aprobado, cegar la cuenta de oportunidades
+    pendientes, devolverle a `reports` el `select` entero, permitir
+    cualquier transición a cualquiera, mandar el aviso de la fecha a todo el
+    equipo y dejar fuera a la cola de la comprobación de oportunidades
+    pendientes. Las 39 suites desde cero sobre PostgreSQL 16
+    con las 85 migraciones; `reports.test.ts` (30 pruebas: los estados, los
+    diez indicadores con el reloj contractual, el periodo en la zona del
+    espacio, el CSV y el orden de las secciones), `report-generation.test.ts`
+    (16), `report-pdf.test.ts` (6, generando el PDF de verdad),
+    `reports.test.tsx` (13) y `listas-compartidas.test.ts`; typecheck, lint,
+    1171 pruebas y `next build`. Los recorridos de Playwright no se
+    ejecutaron: desde el contenedor no se llega al proyecto de Supabase
+    (`docs/DESPLIEGUE-SUPABASE.md`).
+
+    **Pendiente de aplicar al proyecto real.** La migración 85 no se ha
+    aplicado: hasta que se aplique y se regeneren los tipos, las pantallas
+    llevan una frontera con `any` aislada en un solo archivo
+    (`src/lib/supabase/reports-client.ts`), y quitarla es lo primero que hay
+    que hacer después — en el Hito 15 eso destapó dos fallos reales.
+
+
 ## FASE 1 — Operación real de Restavor
 
 ### Hito 1 · Cimientos
@@ -3999,8 +4105,14 @@ Hito 15 deja de estar bloqueado.
 
 **Se verifica con:** `supabase/tests/oportunidades.sql` (la 38ª suite; RN-OPP-01 a 10), `opportunities.test.ts` (los umbrales, uno a uno), `opportunity-detection.test.ts`, `opportunities.test.tsx`, `listas-compartidas.test.ts` (el catálogo de reglas, los estados y las transiciones a los dos lados) y `adapters.test.ts`.
 
-### Hito 16 · Informes
-- Operación, finanzas y rendimiento digital (§89 a §95) con flujo de aprobación, versiones, PDF, CSV y envío programado.
+### Hito 16 · Informes *(hecho el 14/09/2026; la 85 pendiente de aplicar al proyecto)*
+- **Migración 85**: `reports` (las tres familias de §89, los seis estados de §95, los filtros de §93), `report_sections` (qué entra, en qué orden y con qué texto), `report_versions` (**libro inmutable**: cada versión se conserva) y `report_deliveries` (a quién se envió qué versión). RLS con el privilegio de columna que tapa quién lo preparó, lo aprobó y lo envió; el permiso fino **`view_reports`** para Consulta (§89); y las funciones de preparar, editar, generar cifras, aprobar, programar, enviar y archivar.
+- Los **diez indicadores de §91** en `src/core/reports.ts` (dominio puro), medidos con el **reloj contractual**; las filas las entregan `report_operation_dataset()` y `report_finance_dataset()`, reservadas a `service_role`.
+- El **informe personal del trabajador** (§90), sin finanzas, con los puntos históricos separados de la carga actual y las comparaciones segmentadas como manda §55.
+- Las **cuatro salidas** de §93: pantalla, **PDF** (`src/services/report-pdf.ts`, generado desde la versión y no guardado), **CSV** y **correo programado**, con el aviso de 24 h antes (§95) y el envío en la tanda de `/api/cola`, detrás de las oportunidades.
+- La **biblioteca** (vista 10.01), **revisar y programar** (vista 10.04), los "Informes generados" de la ficha (maqueta 09) y los **"Informes disponibles"** del restaurante (vista 22.01).
+
+**Se verifica con:** `supabase/tests/informes.sql` (la 39ª suite; RN-REP-01 a 14), `reports.test.ts` (los estados, los diez indicadores con el reloj, el CSV y el periodo), `report-generation.test.ts`, `report-pdf.test.ts`, `reports.test.tsx` y `listas-compartidas.test.ts` (el catálogo y las transiciones a los dos lados).
 
 ## FASE 4 — Plataforma y móvil
 App React Native + Expo reutilizando la misma API y el mismo dominio · push con Expo sobre FCM y APNs ·

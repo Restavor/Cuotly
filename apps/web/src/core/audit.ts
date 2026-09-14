@@ -76,6 +76,11 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // decide por la fila aunque el restaurante vea la oportunidad aprobada:
   // lo que el apunte cuenta es la decisión del equipo (P7).
   opportunity: "manage_clients",
+  // Los informes (§89 a §95, migración 85): quién lo preparó, lo aprobó,
+  // lo programó o lo envió es de la cartera. No se decide por la fila
+  // aunque el restaurante vea el informe enviado: lo que el apunte cuenta
+  // es la decisión del equipo (P7, RN-REP-13).
+  report: "manage_clients",
   // Las que decide la fila.
   request: null,
   job: null,
@@ -129,6 +134,8 @@ export const AUDIT_ACTIONS = [
   "establishment.data_changed",
   "establishment.status_changed",
   "establishment_access.granted",
+  // §89 · el permiso fino de Consulta para ver informes (migración 85).
+  "establishment_access.report_permission",
   "establishment_access.revoked",
   "establishment_note.archived",
   "establishment_note.created",
@@ -210,6 +217,17 @@ export const AUDIT_ACTIONS = [
   "quote.sent",
   "quote.start_authorized",
   "quote.updated",
+  // Fase 3, Hito 16 · informes (§89 a §95, migración 85). El envío
+  // programado y el aviso los escribe la cola, no una persona: su apunte
+  // lo dice dejando `actor_id` nulo, como el de la detección.
+  "report.created",
+  "report.renamed",
+  "report.scheduled",
+  "report.sections_changed",
+  "report.send_blocked",
+  "report.sent",
+  "report.status_changed",
+  "report.version_generated",
   "request.accepted",
   "request.accepted_again",
   "request.cancelled",

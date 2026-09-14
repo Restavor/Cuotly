@@ -1078,3 +1078,113 @@ Lo que el restaurante ve de una oportunidad no lleva ninguna identidad del equip
 tiene el `select` concedido columna a columna, como `charges` y `quotes`, y quién la detectó, aprobó,
 descartó o editó sale de `audit_log`. Los **informes** (§89 a §95), donde "Incluir en informe" se
 vuelve a decidir (§99), son el Hito 16.
+
+---
+
+## 29. Informes — Fase 3 (RN-REP)
+
+Transcripción con número de §89 a §95 de la especificación maestra, con el mismo criterio que §25,
+§26, §27 y §28: cada regla con su test, ninguna regla nueva. La diferencia con las oportunidades:
+aquí la maestra **sí** dice los estados, el flujo y las salidas; lo que no dice es **quién recibe el
+correo**, **qué secciones "requieren criterio"**, **cuándo es "se acerca la fecha"** y **qué ve el
+restaurante de un informe que todavía no se le ha enviado**. Esas cuatro cosas se leen aquí y se
+anotan como lectura aplicada (pendiente 16 de `docs/DECISIONES.md`), no se inventan reglas nuevas.
+Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 16).
+
+- **RN-REP-01**: hay **tres familias de informe** (§89): **operación** (solicitudes, trabajos, tareas,
+  tiempos, consumos y menús), **finanzas** (ingresos, cobros, impagos y renovaciones) y **rendimiento
+  digital** (web, Google y fuentes conectadas). Un informe es de **un restaurante** o **consolidado**
+  del espacio; §89 da las dos formas ("informes globales e individuales"). Quién ve qué: propietario y
+  administradores del espacio, todo; el **propietario global** del grupo, el consolidado de su grupo y
+  el detalle de cada establecimiento suyo; el **propietario local**, el de su establecimiento; el
+  **Editor** siempre; el **Consulta** solo con permiso de su propietario, que es un permiso fino por
+  persona (`establishment_permissions.view_reports`), igual que `view_billing` en RN-FIN-07. Un
+  informe **consolidado no se comparte con ningún restaurante**: mezcla datos de varios y no hay
+  cliente al que pertenezca. El **trabajador no aparece en esa lista** y por tanto no ve los informes
+  de un restaurante, ni siquiera de uno autorizado suyo: lo que tiene es el informe personal de §90.
+- **RN-REP-02**: el **informe personal del trabajador** (§90) lleva carga actual, trabajos realizados,
+  pendientes, cumplimiento de plazos, tiempos medios, bloqueos, correcciones y **puntos históricos
+  realizados separados de la carga actual**. **No lleva finanzas.** El trabajador ve el suyo; las
+  **comparaciones** entre trabajadores solo las ven propietario y administradores y se **segmentan**
+  como manda §55 (RN-ASG-17) —plan, tipo de cambio, volumen, dificultad, cumplimiento de plazos,
+  correcciones atribuibles y periodo comparable—, y **no existe ranking público**. No es una tabla:
+  se calcula de los libros inmutables cuando se pide.
+- **RN-REP-03**: los **indicadores operativos** son los **diez** de §91, ni uno más: solicitudes
+  recibidas/aceptadas/rechazadas/canceladas · trabajos iniciados/completados/pendientes · cumplimiento
+  de inicio · cumplimiento de ejecución · tiempo medio de inicio y de finalización · trabajos
+  bloqueados y duración bloqueada · correcciones solicitadas · consumo de cambios, fotografías y
+  actualizaciones · menús publicados · menús fuera de garantía. Se calculan **en el servidor**
+  (CLAUDE.md) y sobre los libros inmutables, no sobre contadores: el cumplimiento y los tiempos medios
+  usan el **reloj contractual** (`src/core/business-clock.ts`, RN-CLK), así que los calcula
+  `src/core/reports.ts` y no SQL, igual que los umbrales de T2 y T3 en la cola.
+- **RN-REP-04**: la **analítica digital** de un informe (§92) son las métricas que ya están importadas
+  (RN-INT-07): un informe **no llama a ninguna API**, lee `metric_points`. Por eso un informe se puede
+  generar de un periodo cerrado meses después y sale lo mismo.
+- **RN-REP-05**: los **filtros** son los **ocho** de §93 —periodo, restaurante, grupo, plan,
+  trabajador, tipo de cambio, estado y servicio—, se guardan **con el informe** (`reports.filters`) y
+  son lo que se vuelve a aplicar al regenerarlo. El **periodo** de un informe es el que elige la
+  persona; por omisión, el **último mes natural cerrado** (que es lo que dibuja la vista 10.01), no la
+  ventana de 28 días de la analítica (decisión 25b): dentro de un informe, las cifras digitales son
+  las **del periodo del informe**.
+- **RN-REP-06**: las **salidas** son las **cuatro** de §93: **pantalla, PDF, CSV y correo programado**.
+  PDF y CSV se generan **desde la versión** del informe y no se guardan como archivo aparte: la
+  versión es el original y las dos salidas son una representación suya, así que dos descargas del
+  mismo informe dan lo mismo. **El informe automático por correo no necesita IA** (§93): ninguna de
+  las cuatro salidas llama al clasificador.
+- **RN-REP-07**: **conservación histórica** (§94, RN-INT-07): los datos ya importados se conservan
+  aunque cambie el plan o se desconecte la fuente, cada cifra dice **su fecha de última
+  sincronización** y **nunca se presenta información desactualizada como actual**. Dentro de un
+  informe eso se sostiene con la **versión**: una vez generada, guarda las cifras y su antigüedad, y
+  desconectar la fuente después no la cambia. Cuando una sección no tiene dato, dice **cuál de los
+  cinco motivos de §178** es, igual que las pantallas del Hito 14.
+- **RN-REP-08**: los estados son los **seis** de §95: `preparing` · `pending_review` · `approved` ·
+  `scheduled` · `sent` · `archived`. Quién mueve cada uno: preparar y editar, cualquiera del equipo
+  con acceso al restaurante; **aprobar, programar, enviar y archivar**, el propietario y los
+  administradores **con "Aprobar informes"** (`space_memberships.can_approve_reports`, la misma
+  capacidad del Hito 15 y de §97). El **trabajador no entra en los informes de un restaurante**: §89
+  no se los da, y lo que §90 le da es su informe personal, que es otra cosa y no pasa por estos
+  estados. Mover al mismo estado dos
+  veces no escribe dos apuntes (RN-DAT-09), y aprobar, programar o enviar dos veces produce **un solo
+  efecto** (CA-17).
+- **RN-REP-09**: el **flujo** son los siete pasos de §95, en este orden: (1) Cuotly genera los datos
+  objetivos, (2) prepara el borrador con sus secciones, (3) **marca las secciones que requieren
+  criterio** —resumen ejecutivo, oportunidades y recomendaciones; las demás son cifras y no piden
+  opinión—, (4) revisa quien tiene "Aprobar informes", (5) **selecciona, edita y ordena** las
+  secciones, (6) lo aprobado se inserta, y (7) se genera el PDF y se programa o se envía. Las
+  secciones se guardan con su **orden** y su **inclusión**, y editarlas después de aprobar **devuelve
+  el informe a revisión**: un informe aprobado es un texto concreto, no una carpeta que sigue
+  cambiando.
+- **RN-REP-10**: §95 · **un informe solo objetivo puede enviarse automáticamente** —si ninguna sección
+  incluida requiere criterio, se puede programar sin aprobación—, y **si hay oportunidades
+  pendientes, no se envía hasta que se aprueben**: un informe que incluye la sección de oportunidades
+  y cuyo restaurante tiene oportunidades de ese periodo en `detected`, `recommended` o `under_review`
+  **no sale**; el envío se detiene y el informe vuelve a `pending_review` con el motivo. Esto lo
+  comprueba el servidor en el momento de enviar, no la pantalla al pintar el botón: una oportunidad
+  puede detectarse **después** de aprobar el informe.
+- **RN-REP-11**: §95 · **Cuotly avisa cuando se acerca la fecha programada**. El aviso
+  (`report_schedule_due_soon`) sale **24 horas antes** de la fecha de envío, una sola vez por informe y
+  fecha (CA-17), y va a quien puede pararlo: propietario y administradores con "Aprobar informes". El
+  envío al restaurante es el segundo aviso (`report_sent`), que es lo que §93 llama "correo
+  programado", y va a **quien puede ver informes de ese restaurante** por RN-REP-01, no a una lista
+  escrita a mano.
+- **RN-REP-12**: §95 · **cada versión se conserva**. `report_versions` es un **libro inmutable**: cada
+  generación escribe una fila con las cifras, las secciones y su orden, quién la generó y cuándo, y
+  nadie la edita ni la borra (CLAUDE.md). Lo que se envía es **una versión concreta**, y el envío
+  queda en `report_deliveries` con su destinatario y su fecha. Regenerar un informe **no pisa** la
+  versión anterior: añade la siguiente.
+- **RN-REP-13**: lo que el restaurante ve de un informe **no lleva ninguna identidad del equipo** (P7):
+  `reports` y `report_versions` tienen el `select` concedido **columna a columna**, y quién lo
+  preparó, aprobó o envió sale de `audit_log`. El restaurante ve un informe **cuando se le ha
+  enviado**: `preparing`, `pending_review`, `approved` y `scheduled` son conversación interna del
+  equipo, y lo sostiene la política de RLS, no que la pantalla no lo pinte. Las **secciones en
+  edición** (`report_sections`) no las ve nunca: ahí se le deja fuera de la **fila**, como en `tasks`.
+- **RN-REP-14**: toda decisión sobre un informe deja **evento de estado y apunte de auditoría** con
+  actor, fecha, valor anterior, valor nuevo y motivo cuando proceda (familia `report`, visible con
+  `manage_clients`, §21.2). Lo que escribe el proceso de la cola —el envío programado y el aviso de
+  las 24 h— deja el actor nulo, como la detección de oportunidades.
+
+Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
+redactado (§93: "el informe automático por correo no necesita IA"), no hay plantilla de informe
+configurable por espacio, y no hay envío a una dirección escrita a mano —el correo va a usuarios de
+Cuotly, que es de quien se sabe si puede ver el informe—. La **numeración fiscal**, la exportación
+masiva y la conservación legal siguen siendo del bloque legal aplazado (CLAUDE.md).

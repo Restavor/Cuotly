@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { DataSectionNav, DigitalSection } from "@/components/establishment/DigitalSections";
 import { loadDigitalData, loadIntegrationRows } from "@/components/establishment/integrations-load";
 import { OpportunitiesSection } from "@/components/establishment/Opportunities";
+import { AvailableReports } from "@/components/report/AvailableReports";
+import { loadEstablishmentReports } from "@/components/report/reports-load";
 import { loadOpportunities } from "@/components/establishment/opportunities-load";
 import { type DataSectionTab, parseDataSection } from "@/components/establishment/tabs";
 import { resolveShellViewer } from "@/components/shell/viewer";
@@ -97,6 +99,23 @@ export default async function ClientDataPage({
         })
       : null;
 
+  /*
+    Vista 22.01 · "Informes disponibles" (§89, RN-REP-13). Solo en el
+    Resumen, que es donde la maqueta los pone, y solo se leen ahí: las
+    otras cinco secciones no los necesitan.
+
+    Lo que llega son los informes **enviados**: la política de `reports`
+    no le devuelve al restaurante ninguno que esté preparándose, en
+    revisión, aprobado o programado. Esta pantalla no filtra nada.
+  */
+  const reports =
+    section.key === "summary"
+      ? await loadEstablishmentReports(supabase, id).catch((fallo: unknown) => {
+          console.error("[restaurante] no se pudieron leer los informes", { id, message: String(fallo) });
+          return [];
+        })
+      : [];
+
   const words = es.integrations.sections[section.key];
 
   return (
@@ -124,6 +143,10 @@ export default async function ClientDataPage({
           />
         }
       />
+
+      {section.key === "summary" ? (
+        <AvailableReports reports={reports} base={`/espacios/${slug}/informes`} />
+      ) : null}
     </div>
   );
 }

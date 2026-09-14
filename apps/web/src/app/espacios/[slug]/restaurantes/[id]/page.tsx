@@ -28,6 +28,7 @@ import {
   loadIntegrationsView,
 } from "@/components/establishment/integrations-load";
 import { loadOpportunities } from "@/components/establishment/opportunities-load";
+import { loadEstablishmentReports } from "@/components/report/reports-load";
 import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
@@ -232,6 +233,19 @@ export default async function EstablishmentPage({
         })
       : null;
 
+    /*
+      Maqueta 09 · "Informes generados" (§89, Hito 16). Como las
+      oportunidades, solo cuando se mira el Resumen de la pestaña de datos:
+      es donde la maqueta los pone.
+    */
+    const reports =
+      vista.key === "data" && seccion.key === "summary"
+        ? await loadEstablishmentReports(supabase, id).catch((fallo: unknown) => {
+            console.error("[ficha] no se pudieron leer los informes", { id, message: String(fallo) });
+            return [];
+          })
+        : [];
+
     return (
       <EstablishmentSheet
         base={base}
@@ -275,6 +289,7 @@ export default async function EstablishmentPage({
           digital,
           opportunities,
           opportunityViewer: puedeAprobar === true ? "approver" : "worker",
+          reports,
           // CLAUDE.md · la zona del espacio, que esta pantalla ya lee para
           // proponer el día del pago. La ficha entera pinta con ella.
           timeZone: space.timezone,

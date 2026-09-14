@@ -57,6 +57,18 @@ vi.mock("@/services/opportunity-gateway", () => ({
   createSupabaseOpportunityGateway: vi.fn(),
 }));
 
+// Hito 16 · los informes programados van en la misma tanda, detrás de las
+// oportunidades (§95 no deja salir un informe con oportunidades
+// pendientes). El envío y el aviso se prueban enteros en
+// `report-generation.test.ts`; aquí solo se vigila que se llamen.
+const runReportQueueMock = vi.hoisted(() => vi.fn());
+vi.mock("@/services/report-generation", () => ({
+  runReportQueue: runReportQueueMock,
+}));
+vi.mock("@/services/report-gateway", () => ({
+  createSupabaseReportGateway: vi.fn(),
+}));
+
 import { GET, POST } from "./route";
 
 const SECRETO = "un-secreto-largo-de-verdad";
@@ -77,6 +89,7 @@ beforeEach(() => {
   runIntegrationSyncsMock.mockResolvedValue({ claimed: 0, skipped: "vault_not_configured" });
   runPendingRevocationsMock.mockResolvedValue({ attempted: 0, skipped: "vault_not_configured" });
   runOpportunityDetectionMock.mockResolvedValue({ scanned: 0, detections: 0, failed: 0 });
+  runReportQueueMock.mockResolvedValue({ reminded: 0, sent: 0, blocked: 0, failed: 0 });
   fromMock.mockReturnValue({ select: vi.fn().mockResolvedValue({ data: [], error: null }) });
 });
 
@@ -140,11 +153,24 @@ describe("POST /api/cola", () => {
       return { scanned: 2, detections: 3, failed: 0 };
     });
 
-    const respuesta = await POST(peticion(`Bearer ${SECRETO}`));
-    const cuerpo = (await respuesta.json()) as { opportunities: { detections: number } };
+    // Hito 16 · y los informes van detrás de las dos: §95 no deja salir un
+    // informe con oportunidades pendientes, y las que esta misma tanda
+    // acaba de detectar cuentan. Si el orden se invirtiera, un informe
+    // podría salir el día en que la regla iba a saltar.
+    runReportQueueMock.mockImplementation(async () => {
+      orden.push("informes");
+      return { reminded: 0, sent: 1, blocked: 0, failed: 0 };
+    });
 
-    expect(orden).toEqual(["sincronizar", "detectar"]);
+    const respuesta = await POST(peticion(`Bearer ${SECRETO}`));
+    const cuerpo = (await respuesta.json()) as {
+      opportunities: { detections: number };
+      reports: { sent: number };
+    };
+
+    expect(orden).toEqual(["sincronizar", "detectar", "informes"]);
     expect(cuerpo.opportunities.detections).toBe(3);
+    expect(cuerpo.reports.sent).toBe(1);
   });
 
   it("sin secreto, las oportunidades tampoco se detectan", async () => {

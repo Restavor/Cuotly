@@ -118,6 +118,7 @@ function sheetData(files: SheetData["files"]): SheetData {
     digital: null,
     opportunities: null,
     opportunityViewer: "approver",
+    reports: [],
     canManageClients: false,
     summary: {
       bags: [],

@@ -12,6 +12,14 @@ import {
 } from "./integrations";
 import { NOTIFICATION_EVENTS } from "./notifications";
 import {
+  JUDGEMENT_SECTIONS,
+  REPORT_CATEGORIES,
+  REPORT_STATES,
+  SECTIONS_BY_CATEGORY,
+  reportIsVisibleToClient,
+  reportTransitionAllowed,
+} from "./reports";
+import {
   OPPORTUNITY_RULES,
   OPPORTUNITY_STATES,
   RULE_CATEGORY,
@@ -304,6 +312,88 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
       for (const to of OPPORTUNITY_STATES) {
         for (const actor of ["worker", "approver"] as const) {
           expect(canTransition(from, to, actor), `${from} -> ${to} como ${actor}`).toBe(
+            permitidasEnSql.has(`${from}->${to}:${actor}`),
+          );
+        }
+      }
+    }
+  });
+
+  /*
+   * Migración 85 (Fase 3, Hito 16). El catálogo de los informes está a los
+   * dos lados por lo mismo: en SQL vive lo que se puede guardar y quién
+   * puede moverlo; en TypeScript, lo que la pantalla ofrece. Una sección
+   * que dejara de requerir criterio en un solo lado haría que un informe
+   * se pudiera programar sin aprobar en la pantalla y no en el servidor —
+   * o al revés, que es peor: un botón que siempre falla.
+   */
+  it("las tres familias de §89 son las mismas en el CHECK y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.reports (", "constraint reports_period");
+    const check = /category text not null check \(category in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de category").not.toBeNull();
+    expect(entrecomillados(check![1])).toEqual([...REPORT_CATEGORIES]);
+  });
+
+  it("los seis estados de §95 son los mismos en el CHECK y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.reports (", "constraint reports_period");
+    const check = /status text not null default '[a-z_]+' check \(status in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de status").not.toBeNull();
+    // El orden también: es el de §95 y el de la pantalla.
+    expect(entrecomillados(check![1])).toEqual([...REPORT_STATES]);
+  });
+
+  it("qué secciones requieren criterio (§95.3) lo dicen igual los dos lados", () => {
+    const fn = ultimaDefinicion(
+      "create or replace function public.report_section_requires_judgement",
+      "$$;",
+    );
+    const enSql = entrecomillados(fn.slice(fn.indexOf("select p_section in")));
+    expect([...enSql].sort()).toEqual([...JUDGEMENT_SECTIONS].sort());
+  });
+
+  it("las secciones por omisión de cada familia son las mismas, y EN EL MISMO ORDEN", () => {
+    const fn = ultimaDefinicion("create or replace function public.report_default_sections", "$$;");
+    for (const category of REPORT_CATEGORIES) {
+      // El array de cada familia ocupa varias líneas, así que se corta por
+      // el corchete y no por el salto de línea (`casoDe` mira una sola).
+      const desde = fn.indexOf(`when '${category}' then array[`);
+      expect(desde >= 0, `${category} no está en report_default_sections()`).toBe(true);
+      const inicio = desde + `when '${category}' then`.length;
+      const hasta = fn.indexOf("]", inicio);
+      // El orden importa: es el del informe, y §95.5 dice que se ordena.
+      expect(entrecomillados(fn.slice(inicio, hasta)), category).toEqual([
+        ...SECTIONS_BY_CATEGORY[category],
+      ]);
+    }
+  });
+
+  it("qué estados ve el restaurante (RN-REP-13) lo dicen igual los dos lados", () => {
+    const fn = ultimaDefinicion("create or replace function public.report_is_visible_to_client", "$$;");
+    const enSql = entrecomillados(fn.slice(fn.indexOf("select p_status in")));
+    expect([...REPORT_STATES].filter(reportIsVisibleToClient).sort()).toEqual([...enSql].sort());
+  });
+
+  it("quién mueve cada transición de un informe (§95) lo dicen igual los dos lados", () => {
+    const fn = ultimaDefinicion("create or replace function public.report_transition_allowed", "$$;");
+
+    const permitidasEnSql = new Set<string>();
+    for (const rama of fn.split("when ").slice(1)) {
+      const corte = rama.indexOf(" then ");
+      if (corte < 0) continue;
+      const izquierda = entrecomillados(rama.slice(0, corte));
+      const derecha = entrecomillados(rama.slice(corte));
+      if (izquierda.length < 2 || derecha.length === 0) continue;
+      const [origen, ...destinos] = izquierda;
+      for (const destino of destinos) {
+        for (const actor of derecha) permitidasEnSql.add(`${origen}->${destino}:${actor}`);
+      }
+    }
+    expect(permitidasEnSql.size).toBeGreaterThan(0);
+
+    for (const from of REPORT_STATES) {
+      for (const to of REPORT_STATES) {
+        for (const actor of ["editor", "approver"] as const) {
+          expect(reportTransitionAllowed(from, to, actor), `${from} -> ${to} como ${actor}`).toBe(
             permitidasEnSql.has(`${from}->${to}:${actor}`),
           );
         }

@@ -28,6 +28,8 @@ import { runIntegrationSyncs, runPendingRevocations, type SyncDeps } from "@/ser
 import { runOpportunityDetection } from "@/services/opportunity-detection";
 import { createSupabaseOpportunityGateway } from "@/services/opportunity-gateway";
 import { adapterFor } from "@/services/integrations";
+import { runReportQueue } from "@/services/report-generation";
+import { createSupabaseReportGateway } from "@/services/report-gateway";
 import {
   createMailComposer,
   createResendTransport,
@@ -131,6 +133,18 @@ async function ejecutarTanda(request: Request) {
     now: () => new Date(),
   });
 
+  /*
+    Fase 3 · Hito 16 · los informes programados (§95, RN-REP-10/11): el
+    aviso de las 24 h y el envío de los que vencieron. Va DESPUÉS de las
+    oportunidades a propósito: §95 no deja salir un informe con
+    oportunidades pendientes, y las de esta misma tanda cuentan. Y ANTES
+    del correo, porque el envío encola avisos que esta tanda puede sacar.
+  */
+  const informes = await runReportQueue({
+    gateway: createSupabaseReportGateway(client),
+    now: () => new Date(),
+  });
+
   const mail = await drainEmailQueue(
     gateway,
     createResendTransport(
@@ -145,6 +159,7 @@ async function ejecutarTanda(request: Request) {
     slaNotifications: emitted,
     integrations: integraciones,
     opportunities: oportunidades,
+    reports: informes,
     mail,
   });
 }

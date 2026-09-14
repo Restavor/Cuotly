@@ -12,6 +12,8 @@ import {
   TableRow,
 } from "@/components/ui";
 import { AttentionList } from "@/components/home/AttentionList";
+import { ReportsTable } from "@/components/report/ReportsTable";
+import type { ReportRow } from "@/components/report/reports-load";
 import { Icon } from "@/components/ui/Icon";
 import { EstablishmentDataForm } from "./DataForm";
 import { DataSectionNav, DigitalSection } from "./DigitalSections";
@@ -147,6 +149,11 @@ export interface SheetData {
   readonly opportunities: OpportunitiesView | null;
   /** Quién mira, para saber qué se le ofrece: aprobar es de §97. */
   readonly opportunityViewer: OpportunityViewer;
+  /**
+   * Maqueta 09 · los informes de este restaurante (§89, Hito 16). Lista
+   * vacía cuando no se está mirando el Resumen: no se leen si no se ven.
+   */
+  readonly reports: readonly ReportRow[];
   /**
    * La zona horaria del espacio (CLAUDE.md: las fechas se calculan en
    * ella). No es decorativa ni tiene valor por defecto: sin ella, `Intl`
@@ -799,6 +806,7 @@ export function EstablishmentSheet({
     digital,
     opportunities,
     opportunityViewer,
+    reports,
     timeZone,
   } = data;
   const bolsas = sortedCycleUsage(summary.bags);
@@ -1423,12 +1431,24 @@ export function EstablishmentSheet({
           />
 
           {/*
-            Maqueta 09 · "Informes generados" con "Ver PDF", "Aprobar
-            informe" y "Programar envío". Son el Hito 16: va el motivo, no
-            una lista vacía ni botones que no llevan a nada.
+            Maqueta 09 · "Informes generados" (§89 a §95). Cada uno enlaza
+            a "Revisar y programar" (vista 10.04), que es donde se aprueba
+            y se programa: aquí no se repiten esos botones, porque la
+            decisión se toma con el informe delante.
           */}
-          <Card title={t.reportsTitle}>
-            <EmptyState icon="document" title={t.reportsEmptyTitle} description={t.reportsEmptyReason} />
+          <Card
+            title={t.reportsTitle}
+            action={
+              <Link className="text-sm underline" href={`/espacios/${slug}/informes`}>
+                {t.reportsLink}
+              </Link>
+            }
+          >
+            {reports.length === 0 ? (
+              <EmptyState icon="document" title={t.reportsEmptyTitle} description={t.reportsEmptyReason} />
+            ) : (
+              <ReportsTable rows={reports} base={`/espacios/${slug}/informes`} />
+            )}
           </Card>
         </>
       ) : null}

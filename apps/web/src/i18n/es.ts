@@ -8,6 +8,29 @@
  * y un selector de idioma decidirá cuál usar. Hasta entonces, español es el
  * único idioma y se importa directamente.
  */
+/**
+ * Tres formatos que solo usan los informes y que viven aquí porque son
+ * texto: "3 h 20 min" es una frase en español, no un número.
+ */
+function formatoEuros(cents: number): string {
+  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
+function formatoHoras(minutos: number): string {
+  const horas = Math.floor(minutos / 60);
+  const resto = minutos % 60;
+  if (horas === 0) return `${resto} min`;
+  return resto === 0 ? `${horas} h` : `${horas} h ${resto} min`;
+}
+
+/**
+ * Las medias de plazos son minutos **laborables** (RN-CLK): decir "3 h"
+ * a secas induciría a leerlas como horas de reloj, y no lo son.
+ */
+function formatoHorasLaborables(minutos: number): string {
+  return `${formatoHoras(minutos)} laborables`;
+}
+
 export const es = {
   common: {
     appName: "Cuotly",
@@ -772,6 +795,8 @@ export const es = {
       quote_rejected: "Presupuesto rechazado",
       integration_sync_failed: "Una integración ha dejado de sincronizar",
       integration_reauthorization_required: "Una integración necesita que vuelvas a autorizarla",
+      report_schedule_due_soon: "Un informe se envía mañana",
+      report_sent: "Tienes un informe nuevo",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -2325,6 +2350,7 @@ export const es = {
       quote: "Presupuesto",
       integration: "Integración",
       opportunity: "Oportunidad",
+      report: "Informe",
     },
 
     auditActions: {
@@ -2344,6 +2370,7 @@ export const es = {
       "establishment.status_changed": "Estado del restaurante cambiado",
       "establishment_access.granted": "Acceso a un restaurante concedido",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
+      "establishment_access.report_permission": "Permiso de informes cambiado a un usuario del restaurante",
       "establishment_note.created": "Nota interna escrita",
       "establishment_note.archived": "Nota interna archivada",
       "file.archived": "Archivo archivado",
@@ -2447,6 +2474,15 @@ export const es = {
       "quote.sent": "Presupuesto enviado al restaurante",
       "quote.accepted": "Presupuesto aceptado",
       "quote.rejected": "Presupuesto rechazado",
+      // Fase 3, Hito 16 · informes (§89 a §95).
+      "report.created": "Informe preparado",
+      "report.renamed": "Informe renombrado",
+      "report.scheduled": "Envío de informe programado",
+      "report.sections_changed": "Secciones del informe cambiadas",
+      "report.send_blocked": "Envío detenido: hay oportunidades pendientes",
+      "report.sent": "Informe enviado",
+      "report.status_changed": "Estado del informe cambiado",
+      "report.version_generated": "Cifras del informe generadas",
       "quote.start_authorized": "Inicio autorizado antes del pago",
       "service.conditions_published": "Condiciones del servicio publicadas",
       "supervision.principal_set": "Supervisor principal asignado",
@@ -2484,21 +2520,244 @@ export const es = {
    * construido, y decir lo primero sería mentir sobre el motivo (CA-20).
    * Ni una cifra de ejemplo, ni una gráfica de relleno (CLAUDE.md MUST NOT).
    */
+  /**
+   * Fase 3 · Hito 16 · informes (§89 a §95, RN-REP). Todo el texto que ve
+   * una persona sale de aquí, incluido el del PDF: la base guarda cifras y
+   * claves, nunca frases (CLAUDE.md).
+   */
   reportsPage: {
-    title: "Informes",
-    subtitle: "La estructura de la Fase 3. Todavía no se genera ningún informe.",
-    phaseTitle: "Por qué esta pantalla está vacía",
-    phaseReason:
-      "Los informes son de la Fase 3: llegarán con flujo de aprobación, versiones, PDF, CSV y envío programado. En la Fase 1 esta pantalla solo enseña su estructura, así que aquí no hay ningún informe que abrir ni ninguna cifra que leer.",
-    operationTitle: "Operación",
-    operationEmpty: "Sin informes de operación",
-    financeTitle: "Finanzas",
-    financeEmpty: "Sin informes de finanzas",
-    digitalTitle: "Rendimiento digital",
-    digitalEmpty: "Sin informes de rendimiento digital",
-    notBuiltReason: "No está construido. Llega en la Fase 3.",
-    digitalNotBuiltReason:
-      "No está construido. Llega en la Fase 3 y depende de las integraciones analíticas, que tampoco existen todavía (PRD §24.1).",
+    title: "Biblioteca de informes",
+    subtitle: "Consulta, filtra y gestiona todos los informes de tus restaurantes.",
+    empty: "Todavía no hay informes",
+    emptyReason:
+      "Ninguno se ha preparado con estos filtros. Un informe se prepara desde aquí: se eligen la familia, el restaurante y el periodo, y Cuotly genera las cifras.",
+    create: "Preparar informe",
+    detail: "Revisar y programar",
+
+    // §89 · las tres familias.
+    categories: {
+      operation: "Operación",
+      finance: "Finanzas",
+      digital: "Rendimiento digital",
+    },
+    categoryHints: {
+      operation: "Solicitudes, trabajos, tareas, tiempos, consumos y menús.",
+      finance: "Ingresos, cobros, impagos y renovaciones.",
+      digital: "Web, Google y fuentes conectadas.",
+    },
+
+    // §95 · los seis estados.
+    states: {
+      preparing: "Preparando",
+      pending_review: "Pendiente de revisión",
+      approved: "Aprobado",
+      scheduled: "Programado",
+      sent: "Enviado",
+      archived: "Archivado",
+    },
+    stateHints: {
+      preparing: "Revisa las secciones y aprueba para programar el envío.",
+      pending_review: "Requiere aprobación para finalizar y programar el envío.",
+      approved: "Aprobado. Se puede programar o enviar.",
+      scheduled: "Programado. Cuotly avisa 24 horas antes de la fecha.",
+      sent: "Enviado al restaurante. Lo enviado no se edita: una corrección es una versión nueva.",
+      archived: "Archivado. Se conserva y deja de aparecer en la lista activa.",
+    },
+
+    // §95 · las secciones y cuáles requieren criterio.
+    sections: {
+      executive_summary: "Resumen ejecutivo",
+      operation_requests: "Solicitudes",
+      operation_jobs: "Trabajos",
+      operation_deadlines: "Plazos",
+      operation_blocks: "Bloqueos y correcciones",
+      operation_consumption: "Consumos",
+      operation_menus: "Menú Diario",
+      operation_workers: "Rendimiento por trabajador",
+      finance_income: "Ingresos",
+      finance_charges: "Cobros",
+      finance_nonpayment: "Impagos",
+      finance_renewals: "Renovaciones",
+      digital_traffic: "Analítica web",
+      digital_search: "Visibilidad en buscadores",
+      digital_behaviour: "Comportamiento",
+      digital_performance: "Rendimiento técnico",
+      digital_opportunities: "Oportunidades",
+      recommendations: "Recomendaciones",
+      annexes: "Anexos y evidencias",
+    },
+    judgementBadge: "Requiere criterio",
+    judgementHint:
+      "Esta sección la escribe o la elige una persona. Cuotly no la redacta: no hay ninguna regla que genere ese texto.",
+    objectiveOnly:
+      "Solo lleva secciones objetivas, así que puede programarse sin aprobación (§95).",
+    needsApproval:
+      "Lleva una sección que requiere criterio, así que hay que aprobarlo antes de programar el envío.",
+
+    // Los nombres de cada cifra. Son claves en la base y frases aquí.
+    metrics: {
+      requests_received: "Solicitudes recibidas",
+      requests_accepted: "Solicitudes aceptadas",
+      requests_rejected: "Solicitudes rechazadas",
+      requests_cancelled: "Solicitudes canceladas",
+      jobs_started: "Trabajos iniciados",
+      jobs_completed: "Trabajos completados",
+      jobs_pending: "Trabajos pendientes",
+      start_compliance: "Cumplimiento de inicio",
+      execution_compliance: "Cumplimiento de ejecución",
+      average_start: "Tiempo medio de inicio",
+      average_completion: "Tiempo medio de finalización",
+      jobs_blocked: "Trabajos bloqueados",
+      blocked_time: "Duración bloqueada",
+      corrections_requested: "Correcciones solicitadas",
+      consumption: "Consumo",
+      menu_updates_used: "Actualizaciones de Menú Diario",
+      menus_published: "Menús publicados",
+      menus_out_of_guarantee: "Menús fuera de garantía",
+      income_base: "Ingresos (base)",
+      income_total: "Ingresos (con IVA)",
+      charges_issued: "Cobros emitidos",
+      collected: "Cobrado",
+      outstanding: "Pendiente de cobro",
+      charges_overdue: "Cobros vencidos",
+      establishments_with_debt: "Restaurantes con deuda",
+      renewals_due: "Renovaciones del periodo",
+      users: "Usuarios",
+      sessions: "Sesiones",
+      clicks: "Clics desde Google",
+      impressions: "Impresiones",
+      position: "Posición media",
+      profile_impressions: "Impresiones de la ficha",
+      website_clicks: "Clics a la web",
+      call_clicks: "Llamadas",
+      direction_requests: "Cómo llegar",
+      dead_clicks: "Clics muertos",
+      rage_clicks: "Clics de rabia",
+      performance_score_by_strategy: "Puntuación de rendimiento",
+    },
+
+    // Filtros de §93.
+    filters: {
+      title: "Filtros",
+      establishment: "Restaurante",
+      allEstablishments: "Todos los restaurantes",
+      group: "Grupo",
+      allGroups: "Todos",
+      plan: "Plan",
+      allPlans: "Todos",
+      worker: "Trabajador",
+      allWorkers: "Todos",
+      category: "Categoría",
+      allCategories: "Todas",
+      state: "Estado",
+      allStates: "Todos",
+      service: "Servicio",
+      allServices: "Todos",
+      period: "Periodo",
+      apply: "Aplicar",
+    },
+
+    // Columnas de la vista 10.01.
+    columns: {
+      name: "Nombre del informe",
+      establishment: "Restaurante",
+      category: "Categoría",
+      period: "Periodo",
+      state: "Estado",
+      createdAt: "Fecha de creación",
+      sentAt: "Fecha de compartición",
+      format: "Formato",
+      actions: "Acciones",
+    },
+
+    // Vista 10.04 · revisar y programar.
+    detailTitle: "Revisar y programar informe",
+    detailSubtitle: "Revisa el contenido, selecciona las secciones y programa el envío del informe.",
+    infoTitle: "Información del informe",
+    nameLabel: "Nombre",
+    periodLabel: "Periodo",
+    sectionsTitle: "Secciones del informe",
+    previewTitle: "Vista previa",
+    stateTitle: "Estado del informe",
+    approvalTitle: "Aprobación",
+    approve: "Aprobar informe",
+    approveHint: "Requiere tu aprobación para finalizar y programar el envío.",
+    scheduleTitle: "Programar envío",
+    scheduleDate: "Fecha de envío",
+    scheduleChannel: "Enviar por email",
+    scheduleNoChannel: "No enviar: solo dejarlo disponible",
+    includeCsv: "Incluir CSV con los datos",
+    schedule: "Programar envío",
+    sendNow: "Enviar ahora",
+    sendToReview: "Devolver a revisión",
+    archive: "Archivar",
+    archiveReason: "Motivo",
+    regenerate: "Regenerar cifras",
+    versionsTitle: "Versiones",
+    versionLabel: (n: number) => `Versión ${n}`,
+    noVersion: "Todavía no se han generado cifras de este periodo.",
+    downloadPdf: "Descargar PDF",
+    downloadCsv: "Descargar CSV",
+    historicalHint:
+      "Si una fuente está desconectada, el informe conserva el histórico con la fecha del último dato disponible: nunca se presenta un dato viejo como actual.",
+    blockedByOpportunities: (n: number) =>
+      `No se ha enviado: hay ${n} ${n === 1 ? "oportunidad pendiente" : "oportunidades pendientes"} de aprobar de este periodo. El informe ha vuelto a revisión.`,
+    pendingOpportunities:
+      "Hay oportunidades pendientes de este periodo. Mientras lo estén, el informe no sale.",
+    sentTo: (n: number) => `Enviado a ${n} ${n === 1 ? "destinatario" : "destinatarios"}.`,
+    noRecipients: "Nadie del restaurante puede ver informes todavía, así que el envío no llegaría a nadie.",
+    workerNotAllowed:
+      "Los informes de un restaurante son del propietario y de los administradores (§89). Tu informe personal está en tu ficha.",
+
+    // Lo que ve el restaurante (vista 22.01).
+    clientTitle: "Informes disponibles",
+    clientSubtitle: "Consulta y descarga los informes compartidos por el equipo de mantenimiento.",
+    clientEmpty: "Todavía no hay informes compartidos",
+    clientEmptyReason:
+      "El equipo de mantenimiento comparte aquí los informes cuando los envía. No hay ninguno de este periodo.",
+
+    // §90 · el informe personal del trabajador.
+    personalTitle: "Mi informe personal",
+    personalSubtitle: "Tu carga, tus trabajos y tu cumplimiento de plazos. No incluye finanzas.",
+    personalMetrics: {
+      currentLoadPoints: "Carga actual",
+      historicalPoints: "Puntos históricos realizados",
+      jobsCompleted: "Trabajos realizados",
+      jobsPending: "Pendientes",
+      startCompliancePercent: "Cumplimiento de inicio",
+      executionCompliancePercent: "Cumplimiento de ejecución",
+      averageStartMinutes: "Tiempo medio de inicio",
+      averageCompletionMinutes: "Tiempo medio de finalización",
+      jobsBlocked: "Bloqueos",
+      correctionsRequested: "Correcciones",
+    },
+    loadIsNotAScore:
+      "La carga no es una nota de rendimiento (§55). Los puntos históricos van aparte de la carga actual a propósito.",
+    comparisonsOnlyForManagers:
+      "Las comparaciones entre trabajadores solo las ven propietario y administradores, y se segmentan por plan, categoría y periodo. No hay ranking.",
+
+    // El PDF (§93). Su texto también es de aquí.
+    pdf: {
+      brand: "Cuotly",
+      brandSuffix: "by Restavor",
+      contents: "Contenido",
+      generatedAt: (fecha: string) => `Generado el ${fecha}`,
+      periodLine: (desde: string, hasta: string) => `Periodo: ${desde} – ${hasta}`,
+      establishmentLine: (nombre: string) => `Restaurante: ${nombre}`,
+      consolidated: "Consolidado de todos los restaurantes",
+      noValue: "Sin dato",
+      page: (n: number, total: number) => `Página ${n} de ${total}`,
+    },
+
+    // Unidades de las cifras, para no escribirlas en cada pantalla.
+    units: {
+      percent: (valor: number) => `${valor} %`,
+      business_minutes: (valor: number) => formatoHorasLaborables(valor),
+      minutes: (valor: number) => formatoHoras(valor),
+      changes: (valor: number) => `${valor}`,
+      updates: (valor: number) => `${valor}`,
+      cents: (valor: number) => formatoEuros(valor),
+    },
   },
 
   /**
@@ -2865,11 +3124,12 @@ export const es = {
       performance: "Rendimiento",
       opportunities: "Oportunidades",
     },
-    // Maqueta 09 · "Informes generados". Son el Hito 16 y se dice.
+    // Maqueta 09 · "Informes generados" (§89 a §95, Hito 16).
     reportsTitle: "Informes generados",
-    reportsEmptyTitle: "Los informes llegan con el Hito 16",
+    reportsEmptyTitle: "Todavía no hay informes de este restaurante",
     reportsEmptyReason:
-      "Operación, finanzas y rendimiento digital, con flujo de aprobación, versiones, PDF y envío programado (§89 a §95). Hasta entonces aquí no hay ningún informe que abrir.",
+      "Los informes se preparan desde la biblioteca: se eligen la familia, el periodo y las secciones, y Cuotly genera las cifras. Aquí aparecerán los de este restaurante.",
+    reportsLink: "Ir a la biblioteca de informes",
     blocks: {
       establishmentData: "Datos",
       plan: "Plan",

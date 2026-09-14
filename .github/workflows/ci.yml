@@ -339,6 +339,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/oportunidades.sql
 
+      - name: "Hito 16 — Verificar los informes: estados, aprobación, versiones y envío (RN-REP-01 a 14, §89 a §95)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/informes.sql
+
       - name: "Maqueta 05 — Verificar la validación interna de una solicitud (HU-11, RN-CLS-03, RN-CLS-04, RN-SLA-03)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

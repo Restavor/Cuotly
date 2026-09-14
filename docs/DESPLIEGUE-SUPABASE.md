@@ -301,6 +301,38 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   `search_path`. Uniformarlas es un cambio de dieciocho funciones y una
   decisión aparte, no algo que colar en un despliegue.
 
+- La **85** (`informes_generacion_aprobacion_y_envio`, Fase 3 · Hito 16)
+  está escrita y **NO se ha aplicado todavía**: queda pendiente de que
+  Bosco lo ordene, como todas. Lo que hay que saber antes de aplicarla:
+
+  **Casi toda aditiva, con tres excepciones que hay que tener presentes.**
+  Reescribe la política `state_events_select` para añadirle la rama de
+  `report` —copiada de la **84**, que es la vigente, con la rama de `task`
+  y su `is_space_member(space_id)` intactos y sin devolverle la rama de
+  `establishment`—; rehace los dos CHECK de `notifications` (`event_type`
+  con los dos avisos nuevos, `entity_type` con `report`); y redefine
+  `audit_action_capability()` y `audit_entity_is_visible()` con una
+  familia y una entidad más. Cuatro tablas nuevas, una columna nueva en
+  `establishment_permissions` y ninguna columna retirada.
+
+  Lo que se comprobó ANTES, en local y sin Docker
+  (`bootstrap-postgres-local.sql`): las **85 migraciones aplican desde
+  cero** sobre PostgreSQL 16 y pasan las **39 suites** de `supabase/tests/`
+  en el orden de CI, la suya (`informes.sql`) y el barrido de identidad y
+  de funciones internas del Hito 7 incluidos. **Seis mutaciones sobre la
+  suya, las seis detectadas**: dejar que el restaurante vea un informe
+  aprobado, cegar la cuenta de oportunidades pendientes, devolverle a
+  `reports` el `select` entero, permitir cualquier transición a cualquiera
+  y mandar el aviso de la fecha a todo el equipo, y dejar a la cola fuera
+  de la comprobación de oportunidades pendientes (ese último fue un fallo
+  real del propio hito, contado en el ROADMAP).
+
+  **Al aplicarla, dos cosas seguidas.** Regenerar `database.types.ts`, y
+  quitar la frontera con `any` de `src/lib/supabase/reports-client.ts` —un
+  archivo de cuatro líneas, escrito para que la frontera esté en un solo
+  sitio—, devolviendo `reports-load.ts` y `informes/actions.ts` al cliente
+  tipado. En el Hito 15 ese mismo paso destapó dos fallos reales.
+
 - Las 01–24 se aplicaron el 30/08/2026.
 - Las 25 y 26 (Hito 7: mensajes, archivos y finanzas, más sus arreglos de
   revisión) el 01/09/2026 — la 25 en seis partes, porque el archivo son
