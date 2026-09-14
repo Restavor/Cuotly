@@ -10,22 +10,17 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**La 86** (`informes_enviar_pasa_por_el_flujo`), escrita el 14/09/2026 tras
-la revisión del Hito 16 y sin aplicar, a la espera de que Bosco lo ordene.
-Arregla dos cosas de la 85: que `send_report()` no pasaba por la tabla de
-transiciones —un borrador se podía enviar sin aprobar— y que el
-restaurante alcanzaba versiones que no se le habían enviado. Las otras 85
-están aplicadas.
+**Ninguna.**
 
 ## Aplicadas
 
-**Las 85 migraciones del repositorio están aplicadas.** Las tres
+**Las 86 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81, la 82, la 83 y la 84 el 14/09/2026.
+81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -495,6 +490,47 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   que `view_reports` y `set_client_report_permission()` **no existen**.
 
   `database.types.ts` regenerado desde el proyecto (85 migraciones).
+
+- La **86** (`informes_enviar_pasa_por_el_flujo`, Fase 3 · Hito 16) el
+  14/09/2026, por orden de Bosco, de una sola pieza (9 KB). Arregla los dos
+  agujeros que encontró la revisión del hito y que la 85 ya tenía dentro.
+
+  **No es solo aditiva**: sustituye el cuerpo de `send_report()` y
+  **reescribe la política `report_versions_select`**. No crea tablas ni
+  columnas y no toca ninguna fila. Orden de despliegue: da igual, porque
+  las dos cosas que cambia solo restan —un envío que antes salía ahora se
+  rechaza, y unas versiones que antes se veían ahora no—, así que aplicarla
+  antes del código no rompe ninguna pantalla.
+
+  Qué cierra. Primero, `send_report()` nunca preguntaba a
+  `report_transition_allowed()`: comprobaba quién llamaba y si ya estaba
+  enviado, y escribía `status = 'sent'`. Un propietario que la llamara por
+  RPC sobre un **borrador recién creado** lo enviaba, con el resumen
+  ejecutivo en blanco y un `preparing → sent` que las dos tablas de estados
+  declaran imposible. La pantalla solo ofrece "Enviar ahora" en los estados
+  correctos, y eso es justo lo que CLAUDE.md dice que no es un control de
+  acceso. Segundo, `report_versions_select` le daba al restaurante
+  **cualquier** versión de un informe que pudiera ver, `snapshot` incluido,
+  cuando lo que se le envía es **una** (RN-REP-12) y las anteriores son la
+  preparación del equipo (RN-REP-13).
+
+  Lo que se comprobó ANTES, en local y sin Docker
+  (`bootstrap-postgres-local.sql`): las 86 migraciones aplican desde cero
+  sobre PostgreSQL 16 y pasan las 39 suites en el orden de CI. Cuatro
+  mutaciones detectadas por el motivo correcto, dos de ellas de esta
+  migración: quitar la comprobación de transición deja enviar un borrador,
+  y quitar el filtro por entrega devuelve al restaurante las versiones
+  intermedias.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: el cuerpo de `send_report()` menciona
+  `report_transition_allowed`; la política `report_versions_select` cita
+  `report_version_was_delivered`; la función existe; ninguna de las dos
+  tiene EXECUTE para `anon`; y `report_version_was_delivered` **conserva**
+  el de `authenticated`, que es obligatorio porque aparece dentro de la
+  expresión de una política y revocárselo rompería la tabla entera
+  (CLAUDE.md). 132 migraciones registradas (el proyecto cuenta partes; el
+  repositorio son 86 archivos).
 
 ## La 49
 

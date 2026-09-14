@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 14/09/2026), con las 85 migraciones del
+// (generate_typescript_types, 14/09/2026), con las 86 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -7549,6 +7549,10 @@ export type Database = {
       report_sections_catalogue: { Args: never; Returns: string[] }
       report_transition_allowed: {
         Args: { p_actor: string; p_from: string; p_to: string }
+        Returns: boolean
+      }
+      report_version_was_delivered: {
+        Args: { p_version_id: string }
         Returns: boolean
       }
       reports_due_for_reminder: {
