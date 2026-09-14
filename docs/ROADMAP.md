@@ -3615,8 +3615,8 @@ regenerar salió idéntica, así que no había desviación.
     ve el corte de las 21:00 y los plazos de RN-MEN-07 corridos una hora,
     y nada falla.
 
-    - **Migración 83** (sin aplicar al proyecto real, a la espera de que
-      Bosco lo ordene, como la 81 y la 82): `establishment_timezone()`,
+    - **Migración 83** (aplicada al proyecto real el mismo día, por orden
+      de Bosco): `establishment_timezone()`,
       que devuelve la zona del espacio de un restaurante **y nada más de
       `spaces`**. Abrirle la tabla le daría el nombre, el slug, el plan y
       el resto de la organización del espacio, que no le incumbe (P7);

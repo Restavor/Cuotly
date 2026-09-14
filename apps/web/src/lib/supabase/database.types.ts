@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 14/09/2026), con las 82 migraciones del
+// (generate_typescript_types, 14/09/2026), con las 83 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se

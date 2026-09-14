@@ -10,22 +10,18 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**La 83** (`zona_horaria_del_espacio_para_el_restaurante`), escrita el
-14/09/2026 y sin aplicar a propósito, a la espera de que Bosco lo ordene,
-como se hizo con la 81 y la 82. Es una sola función nueva
-(`establishment_timezone()`), solo aditiva, y no toca ninguna fila ni
-ninguna firma que ya se use. Las otras 82 están aplicadas.
+**Ninguna.** Las 83 migraciones del repositorio están aplicadas en el
+proyecto.
 
 ## Aplicadas
 
-**Las 82 primeras migraciones del repositorio están aplicadas** (la 83 no,
-y es a propósito: ver arriba). Las tres
+**Las 83 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81 y la 82 el 14/09/2026.
+81, la 82 y la 83 el 14/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -192,6 +188,45 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   82: la columna en `integrations` y las tres funciones. Ninguna firma
   que usen las pantallas cambia. El proceso de la cola deja de fallar en
   `pending_integration_revocations()` con "function does not exist".
+
+- La **83** (`zona_horaria_del_espacio_para_el_restaurante`, Fase 3 ·
+  Hito 14) el 14/09/2026, de una sola pieza (3 KB), por orden de Bosco.
+  **Solo aditiva**: una función nueva, `establishment_timezone()`, que
+  devuelve la zona horaria del espacio de un restaurante y nada más de
+  `spaces`, guardada por `can_read_establishment()`. No crea tablas ni
+  columnas, no toca ninguna fila y no cambia ninguna firma existente:
+  ninguna pantalla deja de funcionar si se aplica antes de desplegar el
+  código, ni al revés.
+
+  Para qué: las cuatro pantallas del restaurante calculaban las fechas con
+  `"Europe/Madrid"` escrito en el código, porque un restaurante no puede
+  leer `spaces` (`spaces_select` exige ser miembro del espacio). Con un
+  solo espacio, y ese en Madrid, la hora salía bien; con un espacio en otra
+  zona, sus plazos aparecían corridos y nada fallaba. CLAUDE.md manda
+  calcularlas en la zona del espacio.
+
+  Lo que se comprobó ANTES, en local y sin Docker
+  (`bootstrap-postgres-local.sql`): las 83 migraciones aplican desde cero
+  sobre PostgreSQL 16 y pasan las 37 suites de `supabase/tests/` en el
+  orden de CI, la suya (`zona_horaria_del_restaurante.sql`) y el barrido
+  del Hito 7 incluidos. Tres mutaciones sobre la suya, las tres
+  detectadas: devolver la zona por defecto de la columna en vez de la del
+  espacio, quitar la comprobación de permisos y abrir la función a `anon`.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: la función existe con su firma, es `SECURITY
+  DEFINER`, `STABLE` y con `search_path` fijado; sin EXECUTE para `anon`
+  ni para `PUBLIC` y con EXECUTE para `authenticated` (la llaman las
+  pantallas, así que revocársela la dejaría inservible en vez de cerrada);
+  su cuerpo comprueba `can_read_establishment()`; tiene su comentario; y
+  `spaces` sigue con RLS activado y la política `spaces_select ::
+  is_space_member(id)`, que es lo que mantiene fuera al restaurante y la
+  razón de que la función exista. 123 migraciones registradas.
+
+  `database.types.ts` regenerado desde el proyecto después (83
+  migraciones). La única diferencia con el archivo del repositorio era la
+  cabecera: la entrada de `establishment_timezone` que se había escrito a
+  mano coincide exactamente, colocación alfabética incluida.
 
   Lo que añade al analizador de Supabase (`get_advisors`, seguridad):
   nada. Ninguna de las tres funciones aparece como ejecutable por `anon`
