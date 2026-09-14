@@ -22,16 +22,14 @@ import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 
 import { EstablishmentDataForm } from "@/components/establishment/DataForm";
-import { DigitalSummary } from "@/components/establishment/DigitalSummary";
-import { IntegrationsBlock } from "@/components/establishment/IntegrationsBlock";
 import {
-  loadDigitalSummary,
+  loadDigitalData,
   loadIntegrationsView,
 } from "@/components/establishment/integrations-load";
 import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
-import { parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
+import { parseDataSection, parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
 import { resolveShellViewer } from "@/components/shell/viewer";
 
 import { AcceptRequestButton } from "./AcceptRequestButton";
@@ -182,6 +180,7 @@ export default async function EstablishmentPage({
       establishmentStatus: header.status,
       websiteUrl: header.identity.websiteUrl,
       webPlatform: header.identity.webPlatform,
+      domain: header.identity.domain,
       timezone: space.timezone,
       flash: soloUno(query[INTEGRATION_FLASH_PARAM]),
     }).catch((fallo: unknown) => {
@@ -191,7 +190,7 @@ export default async function EstablishmentPage({
     const digital =
       integrations === null
         ? null
-        : await loadDigitalSummary(supabase, {
+        : await loadDigitalData(supabase, {
             establishmentId: id,
             rows: integrations.rows,
             todayIso: hoy,
@@ -208,6 +207,7 @@ export default async function EstablishmentPage({
         slug={slug}
         tab={parseSheetTab(soloUno(query.vista))}
         block={parseManagementBlock(soloUno(query.bloque))}
+        section={parseDataSection(soloUno(query.seccion))}
         data={{
           header,
           /*
@@ -350,42 +350,6 @@ export default async function EstablishmentPage({
       terms: await loadSubscriptionTerms(supabase, s.id),
     })),
   );
-
-  /*
-    RN-INT-05 · el propietario del restaurante (la misma lista que acepta
-    las condiciones, y por eso se reutiliza `canAcceptTerms`) autoriza su
-    cuenta de Google; el Editor y Consulta ven el estado. Es lo que se
-    PINTA: `assert_can_manage_integrations()` y
-    `store_integration_credential()` lo vuelven a comprobar.
-
-    La zona horaria: el restaurante no puede leer `spaces` (RLS), así que
-    las horas se pintan en la del espacio de Restavor, igual que en su
-    pantalla de Menú Diario. Cuando haya un segundo espacio hará falta
-    una función que la devuelva al cliente.
-  */
-  const clientTimezone = "Europe/Madrid";
-  const integrationsCliente = await loadIntegrationsView(supabase, {
-    establishmentId: id,
-    actor: { kind: "client", role: canAcceptTerms === true ? "local_owner" : "editor" },
-    establishmentStatus: establishment.status,
-    websiteUrl: establishment.website_url,
-    webPlatform: establishment.web_platform,
-    timezone: clientTimezone,
-    flash: soloUno(query[INTEGRATION_FLASH_PARAM]),
-  }).catch((fallo: unknown) => {
-    console.error("[restaurante] no se pudieron leer las integraciones", { id, message: String(fallo) });
-    return null;
-  });
-  const digitalCliente =
-    integrationsCliente === null
-      ? null
-      : await loadDigitalSummary(supabase, {
-          establishmentId: id,
-          rows: integrationsCliente.rows,
-          todayIso: todayInTimeZone(new Date(), clientTimezone),
-          timezone: clientTimezone,
-          now: new Date(),
-        }).catch(() => null);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
@@ -556,7 +520,7 @@ export default async function EstablishmentPage({
         web.
       */}
       {canEditData === true ? (
-        <Card title={es.clientArea.dataTitle}>
+        <Card title={es.clientArea.dataCardTitle}>
           <EstablishmentDataForm
             establishmentId={id}
             name={establishment.name}
@@ -584,27 +548,21 @@ export default async function EstablishmentPage({
       {serviceStopped ? null : <NewRequestForm establishmentId={id} />}
 
       {/*
-        Fase 3 · Hito 14 · las integraciones del restaurante y lo que
-        traen (§117, §178). El cliente ve las cinco fuentes con su estado;
-        el propietario, además, conecta las de Google.
+        Fase 3 · Hito 14 · los datos del restaurante y la autorización de
+        sus fuentes son dos pantallas propias (vistas 22 y 25.03), no dos
+        bloques de su inicio. Desde aquí solo se llega a ellas.
       */}
-      {integrationsCliente === null ? null : (
-        <IntegrationsBlock
-          view={integrationsCliente}
-          establishmentId={id}
-          slug={slug}
-          returnTo={`/espacios/${slug}/restaurantes/${id}`}
-          title={es.establishmentSheet.integrationsTitle}
-          hint={es.establishmentSheet.integrationsHint}
-        />
-      )}
-      {digitalCliente === null ? null : (
-        <DigitalSummary
-          view={digitalCliente}
-          title={es.establishmentSheet.digitalTitle}
-          hint={es.establishmentSheet.digitalHint}
-        />
-      )}
+      <Card title={es.clientArea.dataCardTitle}>
+        <p className="mb-3 text-sm text-text-secondary">{es.clientArea.dataCardHint}</p>
+        <p className="flex flex-wrap gap-4 text-sm">
+          <Link href={`/espacios/${slug}/restaurantes/${id}/datos`} className="text-cuotly-green underline">
+            {es.clientArea.dataLink}
+          </Link>
+          <Link href={`/espacios/${slug}/restaurantes/${id}/fuentes`} className="text-cuotly-green underline">
+            {es.clientArea.sourcesLink}
+          </Link>
+        </p>
+      </Card>
 
       <Card title={es.clientArea.requestsTitle}>
         {rows.length === 0 ? (

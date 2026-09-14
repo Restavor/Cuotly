@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { es } from "@/i18n/es";
+
 import {
   INITIAL_BACKFILL_DAYS,
   INTEGRATION_PROVIDERS,
@@ -38,6 +40,13 @@ import {
   minimumCoveredDays,
   summaryReason,
   summaryWindow,
+  DATA_SECTIONS,
+  DATA_SECTION_PROVIDERS,
+  dailySeries,
+  latestByDimension,
+  percentChange,
+  previousWindow,
+  topDimensions,
   type MetricPoint,
 } from "./integrations";
 
@@ -276,6 +285,13 @@ describe("integraciones analíticas (PRD §27)", () => {
       // Sin repetidas y con nombre: cada métrica es una clave natural.
       expect(new Set(METRICS_BY_PROVIDER[provider]).size).toBe(METRICS_BY_PROVIDER[provider].length);
     }
+    // Toda métrica del catálogo tiene nombre en español: la pantalla no
+    // enseña `dead_clicks` a nadie (CLAUDE.md, i18n).
+    for (const provider of INTEGRATION_PROVIDERS) {
+      for (const metric of METRICS_BY_PROVIDER[provider]) {
+        expect(es.integrations.metrics, `${provider}.${metric} sin nombre`).toHaveProperty(metric);
+      }
+    }
     expect(isMetricOf("ga4", "sessions")).toBe(true);
     expect(isMetricOf("ga4", "clicks")).toBe(false);
     // Lo que el resumen enseña de cada fuente está en su catálogo.
@@ -357,6 +373,81 @@ describe("integraciones analíticas (PRD §27)", () => {
       expect(summaryReason("ga4", "connected", reciente, now, 3)).toBe("insufficient_period");
       expect(summaryReason("ga4", "connected", reciente, now, 7)).toBeNull();
       expect(summaryReason("pagespeed", "connected", reciente, now, 1)).toBeNull();
+    });
+  });
+
+  describe("las secciones de «Informes y datos» (maquetas 09 a 12 y vistas sin datos)", () => {
+    const punto = (metric: string, day: string, value: number, dimension = ""): MetricPoint => ({
+      metric,
+      dimension,
+      period_start: day,
+      period_end: day,
+      value,
+      unit: null,
+    });
+    const window = summaryWindow("2026-09-14");
+
+    it("son seis, en el orden del diseño, y entre todas cubren las cinco fuentes exactamente una vez", () => {
+      expect(DATA_SECTIONS).toEqual(["summary", "analytics", "search", "behavior", "performance", "opportunities"]);
+      const sinResumen = DATA_SECTIONS.filter((s) => s !== "summary").flatMap((s) => DATA_SECTION_PROVIDERS[s]);
+      expect([...sinResumen].sort()).toEqual([...INTEGRATION_PROVIDERS].sort());
+      expect(DATA_SECTION_PROVIDERS.summary).toEqual(INTEGRATION_PROVIDERS);
+      // Hito 15: no hay fuente porque no hay reglas (CLAUDE.md).
+      expect(DATA_SECTION_PROVIDERS.opportunities).toEqual([]);
+    });
+
+    it("la ventana anterior mide lo mismo y termina el día antes", () => {
+      expect(previousWindow(window)).toEqual({ from: "2026-07-20", to: "2026-08-16" });
+      expect(previousWindow({ from: "2026-09-01", to: "2026-09-01" })).toEqual({ from: "2026-08-31", to: "2026-08-31" });
+    });
+
+    it("RN-INT-07 · la variación se calcula solo con dos cifras reales; sin anterior (o a cero) no se inventa", () => {
+      expect(percentChange(120, 100)).toBe(20);
+      expect(percentChange(80, 100)).toBe(-20);
+      expect(percentChange(100, null)).toBeNull();
+      expect(percentChange(null, 100)).toBeNull();
+      expect(percentChange(5, 0)).toBeNull();
+    });
+
+    it("la serie diaria son los totales de la ventana en orden, y un día sin dato es un hueco, no un cero", () => {
+      const points = [
+        punto("sessions", "2026-09-13", 20),
+        punto("sessions", "2026-09-11", 10),
+        punto("sessions", "2026-09-12", 500, "google"),
+        punto("sessions", "2026-09-14", 999),
+      ];
+      expect(dailySeries(points, "sessions", window)).toEqual([
+        { day: "2026-09-11", value: 10 },
+        { day: "2026-09-13", value: 20 },
+      ]);
+    });
+
+    it("los desgloses mayores suman cada valor a lo largo de los días y se recortan (pendiente 14f)", () => {
+      const points = [
+        punto("page_views_by_page", "2026-09-12", 30, "/carta"),
+        punto("page_views_by_page", "2026-09-13", 40, "/carta"),
+        punto("page_views_by_page", "2026-09-13", 50, "/"),
+        punto("page_views_by_page", "2026-09-13", 1, "/contacto"),
+        punto("page_views_by_page", "2026-08-01", 999, "/vieja"),
+        punto("page_views_by_page", "2026-09-13", 999),
+      ];
+      expect(topDimensions(points, "page_views_by_page", window, 2)).toEqual([
+        { dimension: "/carta", value: 70 },
+        { dimension: "/", value: 50 },
+      ]);
+      expect(topDimensions(points, "position_by_query", window, 5)).toEqual([]);
+    });
+
+    it("la última medición de cada desglose lleva su día: PageSpeed dice de cuándo es el análisis", () => {
+      const points = [
+        punto("lcp_ms_by_strategy", "2026-09-01", 3000, "mobile"),
+        punto("lcp_ms_by_strategy", "2026-09-08", 2800, "mobile"),
+        punto("lcp_ms_by_strategy", "2026-09-08", 1400, "desktop"),
+      ];
+      expect(latestByDimension(points, "lcp_ms_by_strategy", window)).toEqual([
+        { dimension: "desktop", value: 1400, day: "2026-09-08" },
+        { dimension: "mobile", value: 2800, day: "2026-09-08" },
+      ]);
     });
   });
 });

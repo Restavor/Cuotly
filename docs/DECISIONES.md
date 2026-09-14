@@ -290,6 +290,17 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    (g) Las **plataformas de reservas y delivery** (§120) no tienen todavía campo en la ficha:
    la tarjeta de "Plataformas externas" lo dice en vez de enseñar un enlace vacío. Añadirlas
    es un dato de §15.2 pendiente, no una integración.
+   (h) Al ajustar las pantallas a los PDF de `docs/diseno/` (14/09/2026): **Business Profile va
+   en la sección "Búsqueda"** con Search Console, no en "Rendimiento" donde la maqueta 11 lo
+   pinta debajo de PageSpeed, porque lo que enseña es visibilidad de la ficha en Google
+   (`DATA_SECTION_PROVIDERS`); la **variación** de cada cifra es frente a los **28 días
+   anteriores** a la ventana, y se dice así (las maquetas escriben "vs. mes anterior"); el
+   **color de la puntuación de PageSpeed** son las bandas de Lighthouse (0-49, 50-89, 90-100),
+   no un umbral de Cuotly; las **marcas de cada fuente** son iconos del sistema y no los
+   logotipos de los productos; y "Interpretación rápida" (22.02), la duración media de la sesión
+   y las puntuaciones de accesibilidad, buenas prácticas y SEO de PageSpeed (11) **no se
+   construyeron**: la primera es un texto que nadie genera y las otras no están en el catálogo de
+   §27.
 
 13. ~~Lecturas aplicadas de §115 a §122 al implementar las integraciones~~ — confirmadas el
    14/09/2026 como decisión 24.

@@ -1,3 +1,4 @@
+import { DATA_SECTIONS, type DataSection } from "@/core/integrations";
 import { es } from "@/i18n/es";
 
 /**
@@ -69,6 +70,7 @@ export const MANAGEMENT_BLOCKS: readonly ManagementBlock[] = [
  * filtro del catálogo al bloque de usuarios sin que fallara ningún tipo.
  */
 export const MANAGEMENT_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "management")!;
+export const DATA_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "data")!;
 export const OPERATION_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "operation")!;
 export const HISTORY_TAB: SheetTab = SHEET_TABS.find((tab) => tab.key === "history")!;
 export const FILES_BLOCK: ManagementBlock =
@@ -87,6 +89,47 @@ export function parseSheetTab(value: string | undefined): SheetTab {
 
 export function parseManagementBlock(value: string | undefined): ManagementBlock {
   return MANAGEMENT_BLOCKS.find((block) => block.slug === value) ?? MANAGEMENT_BLOCKS[0];
+}
+
+/**
+ * Las seis secciones de "Informes y datos" (maquetas 09 a 12 y las seis
+ * vistas "sin datos"), con su hueco en la dirección
+ * (`?vista=datos&seccion=analitica`). Qué fuente va en cada una lo dice el
+ * dominio (`DATA_SECTION_PROVIDERS`); aquí solo se les da dirección y
+ * nombre, por lo mismo que a las pestañas: un enlace a "la analítica de
+ * Magariños" se pega en un mensaje y el botón de volver lo deshace.
+ */
+export interface DataSectionTab {
+  readonly key: DataSection;
+  readonly slug: string;
+}
+
+const DATA_SECTION_SLUGS: Readonly<Record<DataSection, string>> = {
+  summary: "resumen",
+  analytics: "analitica",
+  search: "busqueda",
+  behavior: "comportamiento",
+  performance: "rendimiento",
+  opportunities: "oportunidades",
+};
+
+export const DATA_SECTION_TABS: readonly DataSectionTab[] = DATA_SECTIONS.map((key) => ({
+  key,
+  slug: DATA_SECTION_SLUGS[key],
+}));
+
+/** Una sección desconocida cae en el Resumen, igual que una pestaña desconocida. */
+export function parseDataSection(value: string | undefined): DataSectionTab {
+  return DATA_SECTION_TABS.find((section) => section.slug === value) ?? DATA_SECTION_TABS[0];
+}
+
+export function dataSectionHref(base: string, section: DataSectionTab): string {
+  const params = new URLSearchParams({ vista: DATA_TAB.slug, seccion: section.slug });
+  return `${base}?${params.toString()}`;
+}
+
+export function dataSectionLabel(section: DataSectionTab): string {
+  return es.establishmentSheet.dataSections[section.key];
 }
 
 /**

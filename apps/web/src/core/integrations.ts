@@ -547,3 +547,145 @@ export function noDataReason(
   if (state === "error" || state === "needs_attention") return "error";
   return freshness === "stale" ? "stale" : null;
 }
+
+// ---------------------------------------------------------------------
+// Las secciones de "Informes y datos" (maquetas 09 a 12 y las seis vistas
+// "sin datos" del PDF de Restaurantes)
+// ---------------------------------------------------------------------
+
+/**
+ * Las seis secciones que el diseño pone bajo "Informes y datos", en su
+ * orden: Resumen · Analítica · Búsqueda · Comportamiento · Rendimiento ·
+ * Oportunidades. Cada una es de una o dos fuentes; el Resumen las enseña
+ * todas (la tabla "Estado de las fuentes") y Oportunidades no tiene fuente
+ * porque es el Hito 15, bloqueado por CLAUDE.md hasta que Bosco fije los
+ * umbrales.
+ *
+ * Business Profile va con Búsqueda y no con Rendimiento: la maqueta 11 lo
+ * pinta debajo de PageSpeed por sitio, pero lo que enseña es "Visibilidad"
+ * —cuántas veces apareció la ficha en Google y qué hizo quien la vio—, que
+ * es lo mismo que mide Search Console para la web ("Visibilidad de tu web
+ * en Google", vista sin datos 3/6). Rendimiento es "velocidad y experiencia
+ * de uso de tu web" (vista 5/6), y ahí la ficha de Google no pinta nada.
+ */
+export const DATA_SECTIONS = [
+  "summary",
+  "analytics",
+  "search",
+  "behavior",
+  "performance",
+  "opportunities",
+] as const;
+export type DataSection = (typeof DATA_SECTIONS)[number];
+
+export const DATA_SECTION_PROVIDERS: Readonly<Record<DataSection, readonly IntegrationProvider[]>> = {
+  summary: INTEGRATION_PROVIDERS,
+  analytics: ["ga4"],
+  search: ["search_console", "business_profile"],
+  behavior: ["clarity"],
+  performance: ["pagespeed"],
+  opportunities: [],
+};
+
+/**
+ * La ventana anterior a una dada, del mismo tamaño y pegada a ella: es
+ * contra lo que se dice "variación" (maquetas 10, 11 y 22.02 escriben "vs.
+ * mes anterior"; aquí la ventana son 28 días, así que es "frente a los 28
+ * días anteriores", y se dice así).
+ */
+export function previousWindow(window: SyncWindow): SyncWindow {
+  const from = new Date(`${window.from}T00:00:00Z`);
+  const to = new Date(`${window.to}T00:00:00Z`);
+  const days = Math.round((to.getTime() - from.getTime()) / (24 * HOUR_MS)) + 1;
+  return {
+    from: isoDate(addDays(window.from, -days)),
+    to: isoDate(addDays(window.from, -1)),
+  };
+}
+
+/**
+ * La variación en tanto por ciento entre dos cifras. `null` cuando no se
+ * puede decir: sin cifra actual, sin cifra anterior o con la anterior a
+ * cero (una subida "infinita" no es un dato, es una división). La pantalla
+ * enseña entonces "sin periodo anterior", no un guion ni un 0 %.
+ */
+export function percentChange(current: number | null, previous: number | null): number | null {
+  if (current === null || previous === null || previous === 0) return null;
+  return ((current - previous) / Math.abs(previous)) * 100;
+}
+
+export interface DailyPoint {
+  readonly day: string;
+  readonly value: number;
+}
+
+/**
+ * La serie diaria de un total (sin desglose) dentro de la ventana, en
+ * orden de fecha. Solo los días con dato: un día sin punto no es un cero,
+ * es un hueco, y la gráfica lo deja como hueco (RN-INT-07: nunca un dato
+ * de relleno).
+ */
+export function dailySeries(points: readonly MetricPoint[], metric: string, window: SyncWindow): DailyPoint[] {
+  return inWindow(points, metric, window)
+    .filter((p) => p.dimension === "")
+    .map((p) => ({ day: p.period_start, value: p.value }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+}
+
+export interface DimensionTotal {
+  readonly dimension: string;
+  readonly value: number;
+}
+
+/**
+ * Los desgloses mayores de la ventana: la suma (o la media) de cada valor
+ * de `dimension` a lo largo de los días, ordenada de mayor a menor y
+ * recortada. Es lo que "páginas más visitadas", "búsquedas principales" y
+ * "dispositivos" significan en §92 sobre lo que el adaptador guardó (los
+ * diez mayores de cada día, pendiente 14f).
+ */
+export function topDimensions(
+  points: readonly MetricPoint[],
+  metric: string,
+  window: SyncWindow,
+  limit: number,
+  aggregate: "sum" | "mean" = "sum",
+): DimensionTotal[] {
+  const sumas = new Map<string, { total: number; n: number }>();
+  for (const p of inWindow(points, metric, window)) {
+    if (p.dimension === "") continue;
+    const actual = sumas.get(p.dimension) ?? { total: 0, n: 0 };
+    sumas.set(p.dimension, { total: actual.total + p.value, n: actual.n + 1 });
+  }
+  return [...sumas.entries()]
+    .map(([dimension, { total, n }]) => ({ dimension, value: aggregate === "sum" ? total : total / n }))
+    .sort((a, b) => b.value - a.value || a.dimension.localeCompare(b.dimension))
+    .slice(0, limit);
+}
+
+/**
+ * La última medición de cada desglose dentro de la ventana, con su día:
+ * las métricas de PageSpeed por estrategia (móvil y escritorio). La misma
+ * cuenta que `headlineValue()` con `latest`, pero con la fecha, que la
+ * maqueta 11 escribe ("Datos del 10 sept 2026").
+ */
+export interface LatestMeasurement {
+  readonly dimension: string;
+  readonly value: number;
+  readonly day: string;
+}
+
+export function latestByDimension(
+  points: readonly MetricPoint[],
+  metric: string,
+  window: SyncWindow,
+): LatestMeasurement[] {
+  const porDimension = new Map<string, MetricPoint>();
+  for (const p of inWindow(points, metric, window)) {
+    const actual = porDimension.get(p.dimension);
+    if (actual === undefined || p.period_end > actual.period_end) porDimension.set(p.dimension, p);
+  }
+  return [...porDimension.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([dimension, p]) => ({ dimension, value: p.value, day: p.period_end }));
+}

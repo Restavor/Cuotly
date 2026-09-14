@@ -1,20 +1,20 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { INTEGRATION_PROVIDERS, summaryWindow, type IntegrationActor } from "@/core/integrations";
+import { INTEGRATION_PROVIDERS, type IntegrationActor } from "@/core/integrations";
 import { es } from "@/i18n/es";
 
-import { DigitalSummary } from "./DigitalSummary";
 import { IntegrationsBlock } from "./IntegrationsBlock";
-import type { DigitalSummaryView, IntegrationRow, IntegrationsView } from "./integrations-load";
+import type { IntegrationRow, IntegrationsView } from "./integrations-load";
 
 /**
- * Maqueta 17 · "Gestión — Integraciones", y el resumen de "Informes y
- * datos" (§178). Lo que se vigila no es el aspecto: es qué se afirma y qué
- * se ofrece. Cinco filas siempre (RN-INT-03: la que no tiene fila está
- * "No conectada"); los botones según quién mira (RN-INT-05), y ninguno
- * que diga "Sincronizar ahora" (RN-INT-03); los cinco motivos de §178 con
- * su nombre, y nunca una cifra vieja como actual (RN-INT-07).
+ * Vista 17 · "Gestión — Integraciones". Lo que se vigila no es el
+ * aspecto: es qué se afirma y qué se ofrece. Cinco filas siempre
+ * (RN-INT-03: la que no tiene fila está "No conectada"); los botones según
+ * quién mira (RN-INT-05), y ninguno que diga "Sincronizar ahora"
+ * (RN-INT-03); y las tres tarjetas de abajo diciendo lo que hay y lo que
+ * falta (§120, §121). Las secciones de "Informes y datos" tienen su propio
+ * test (`digital-sections.test.tsx`).
  */
 vi.mock("@/app/espacios/[slug]/restaurantes/[id]/integraciones/actions", () => ({
   startOAuthConnection: vi.fn(),
@@ -57,6 +57,8 @@ function vista(actor: IntegrationActor, rows: Partial<Record<IntegrationRow["pro
     establishmentArchived: false,
     websiteUrl: "https://magarinos.es/",
     webPlatform: "LandingSite",
+    domain: "magarinos.es",
+    lastWebPublication: { kind: "published", at: "2026-09-05T12:32:00Z" },
     timezone: "Europe/Madrid",
     flash: null,
     ...extra,
@@ -235,106 +237,33 @@ describe("Maqueta 17 · Gestión — Integraciones", () => {
     expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 
-  it("la vuelta de Google se cuenta con sus palabras, y las plataformas externas se dice que no son integraciones (§120)", () => {
+  it("la vuelta de Google se cuenta con sus palabras, y las tres tarjetas de plataformas dicen lo que hay y lo que falta (§120, §121)", () => {
     pintar(vista(OWNER, {}, { flash: "denied" }));
     expect(screen.getByTestId("integration-flash")).toHaveTextContent(t.flash.denied);
     expect(screen.getByText(t.platformsHint)).toBeInTheDocument();
+    // LandingSite: proyecto, última publicación (la de Menú Diario) y "Ver sitio".
     expect(screen.getByText("LandingSite")).toBeInTheDocument();
+    expect(screen.getByText("magarinos.es")).toBeInTheDocument();
+    expect(screen.getByText(/5 sept 2026/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: new RegExp(t.openSite) })).toHaveAttribute("href", "https://magarinos.es/");
-    expect(screen.getByText(t.reservationsNone)).toBeInTheDocument();
-  });
-});
+    // Reservas y Delivery: dos tarjetas, y ninguna con "Abrir enlace" hacia la nada.
+    expect(screen.getByText(t.reservationsTitle)).toBeInTheDocument();
+    expect(screen.getByText(t.deliveryTitle)).toBeInTheDocument();
+    expect(screen.getAllByText(t.externalPlatformNone)).toHaveLength(2);
+    expect(screen.queryByRole("link", { name: /abrir enlace/i })).toBeNull();
+    cleanup();
 
-describe("§178 · Informes y datos › Analítica digital", () => {
-  const window = summaryWindow("2026-09-14");
+    // Sin publicación ni dominio se dice, no se deja el hueco.
+    pintar(vista(OWNER, {}, { domain: null, websiteUrl: null, lastWebPublication: { kind: "none" } }));
+    expect(screen.getByText(t.webPlatformLastPublicationNone)).toBeInTheDocument();
+    expect(screen.getByText(t.webPlatformNone)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: new RegExp(t.openSite) })).toBeNull();
+    cleanup();
 
-  function resumen(overrides: Partial<DigitalSummaryView["providers"][number]> & { provider: IntegrationRow["provider"] }): DigitalSummaryView["providers"][number] {
-    return {
-      status: "connected",
-      reason: null,
-      lastSuccessAt: "2026-09-14T03:00:00Z",
-      lastSyncAt: "2026-09-14T03:00:00Z",
-      lastError: null,
-      coveredDays: 28,
-      values: [],
-      ...overrides,
-    };
-  }
-
-  function pintarResumen(providers: DigitalSummaryView["providers"]) {
-    return render(
-      <DigitalSummary
-        view={{ window, timezone: "Europe/Madrid", providers }}
-        title={es.establishmentSheet.digitalTitle}
-        hint={es.establishmentSheet.digitalHint}
-      />,
-    );
-  }
-
-  it("los cinco motivos de §178, cada uno con su nombre, y ninguna cifra de relleno", () => {
-    pintarResumen([
-      resumen({ provider: "ga4", status: "not_connected", reason: "not_connected", lastSuccessAt: null }),
-      resumen({ provider: "search_console", reason: "no_data_yet", lastSuccessAt: null }),
-      resumen({ provider: "business_profile", status: "error", reason: "error", lastError: "HTTP 503" }),
-      resumen({ provider: "clarity", reason: "stale", lastSuccessAt: "2026-09-01T03:00:00Z" }),
-      resumen({ provider: "pagespeed", reason: "insufficient_period", coveredDays: 0 }),
-    ]);
-
-    expect(screen.getByTestId("digital-ga4")).toHaveAttribute("data-reason", "not_connected");
-    expect(within(screen.getByTestId("digital-ga4")).getByText(es.emptyReasons.not_connected)).toBeInTheDocument();
-    expect(within(screen.getByTestId("digital-search_console")).getByText(es.emptyReasons.no_data_yet)).toBeInTheDocument();
-    const bp = screen.getByTestId("digital-business_profile");
-    expect(within(bp).getByText(es.emptyReasons.error)).toBeInTheDocument();
-    expect(within(bp).getByText("HTTP 503")).toBeInTheDocument();
-    const clarity = screen.getByTestId("digital-clarity");
-    expect(within(clarity).getByText(es.emptyReasons.stale)).toBeInTheDocument();
-    // El dato viejo lleva su fecha, no una cifra.
-    expect(within(clarity).getByText(/Sincronizado el 1 sept 2026/)).toBeInTheDocument();
-    expect(within(clarity).queryByText(/^\d+$/)).toBeNull();
-    expect(within(screen.getByTestId("digital-pagespeed")).getByText(es.emptyReasons.insufficient_period)).toBeInTheDocument();
-  });
-
-  it("con dato actual, las cifras de la ventana con «datos hasta» y «sincronizado el»", () => {
-    pintarResumen([
-      resumen({
-        provider: "ga4",
-        coveredDays: 28,
-        values: [
-          { metric: "users", aggregate: "sum", value: 1234, byDimension: [], coveredDays: 28, lastPeriodEnd: "2026-09-13" },
-          { metric: "sessions", aggregate: "sum", value: 2345.4, byDimension: [], coveredDays: 28, lastPeriodEnd: "2026-09-13" },
-        ],
-      }),
-      resumen({
-        provider: "pagespeed",
-        coveredDays: 1,
-        values: [
-          {
-            metric: "performance_score_by_strategy",
-            aggregate: "latest",
-            value: 62,
-            byDimension: [
-              { dimension: "desktop", value: 91 },
-              { dimension: "mobile", value: 62 },
-            ],
-            coveredDays: 1,
-            lastPeriodEnd: "2026-09-10",
-          },
-        ],
-      }),
-    ]);
-
-    const ga4 = screen.getByTestId("digital-ga4");
-    expect(ga4).toHaveAttribute("data-reason", "ok");
-    expect(within(ga4).getByText(t.metrics.users)).toBeInTheDocument();
-    expect(within(ga4).getByText("1234")).toBeInTheDocument();
-    expect(within(ga4).getByText("2345")).toBeInTheDocument();
-    expect(within(ga4).getByText(/Datos hasta 13 sept 2026/)).toBeInTheDocument();
-    expect(within(ga4).getByText(/28 de 28 días con dato/)).toBeInTheDocument();
-    expect(within(ga4).getByText(/Sincronizado el 14 sept 2026/)).toBeInTheDocument();
-
-    const ps = screen.getByTestId("digital-pagespeed");
-    expect(within(ps).getByText(/Escritorio/)).toBeInTheDocument();
-    expect(within(ps).getByText("91")).toBeInTheDocument();
-    expect(within(ps).getByText("62")).toBeInTheDocument();
+    // Y si la lectura falló, se dice el motivo: "sin publicaciones" sería
+    // una afirmación que en ese momento nadie puede hacer (CA-20).
+    pintar(vista(OWNER, {}, { lastWebPublication: { kind: "unavailable" } }));
+    expect(screen.getByText(es.emptyReasons.error)).toBeInTheDocument();
+    expect(screen.queryByText(t.webPlatformLastPublicationNone)).toBeNull();
   });
 });

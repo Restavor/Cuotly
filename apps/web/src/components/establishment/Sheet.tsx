@@ -14,9 +14,9 @@ import {
 import { AttentionList } from "@/components/home/AttentionList";
 import { Icon } from "@/components/ui/Icon";
 import { EstablishmentDataForm } from "./DataForm";
-import { DigitalSummary } from "./DigitalSummary";
+import { DataSectionNav, DigitalSection } from "./DigitalSections";
 import { IntegrationsBlock } from "./IntegrationsBlock";
-import type { DigitalSummaryView, IntegrationsView } from "./integrations-load";
+import type { DigitalDataView, IntegrationsView } from "./integrations-load";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
 import { AUDIT_FAMILIES } from "@/core/audit";
@@ -52,6 +52,9 @@ import {
   sheetTabLabel,
   type ManagementBlock,
   type SheetTab,
+  DATA_SECTION_TABS,
+  dataSectionHref,
+  type DataSectionTab,
 } from "./tabs";
 import type {
   SheetCounts,
@@ -131,8 +134,8 @@ export interface SheetData {
    * bloque vacío que parezca "ninguna conectada".
    */
   readonly integrations: IntegrationsView | null;
-  /** §178 · el resumen de analítica digital de "Informes y datos". */
-  readonly digital: DigitalSummaryView | null;
+  /** §178 · los datos de las fuentes para "Informes y datos" (maquetas 09 a 12). */
+  readonly digital: DigitalDataView | null;
 }
 
 type StatusKey = keyof typeof es.space.statuses;
@@ -753,12 +756,15 @@ export function EstablishmentSheet({
   slug,
   tab,
   block,
+  section = DATA_SECTION_TABS[0],
   data,
 }: {
   base: string;
   slug: string;
   tab: SheetTab;
   block: ManagementBlock;
+  /** La sección de "Informes y datos" (`?seccion=`); sin ella, el Resumen. */
+  section?: DataSectionTab;
   data: SheetData;
 }) {
   const {
@@ -1315,6 +1321,28 @@ export function EstablishmentSheet({
 
       {tab.key === "data" ? (
         <>
+          {/*
+            Maquetas 09 a 12 y las seis vistas "sin datos": la pestaña se
+            divide en seis secciones que viajan en la dirección
+            (`?vista=datos&seccion=analitica`), como las pestañas y los
+            bloques. El Resumen lleva los indicadores operativos, el estado
+            de las fuentes y el hueco de los informes (Hito 16); las otras
+            cuatro, lo que cada fuente trajo o el motivo de §178; la sexta,
+            Oportunidades, es el Hito 15 y lo dice.
+          */}
+          <DataSectionNav active={section} hrefFor={(s) => dataSectionHref(base, s)} />
+          {section.key !== "summary" ? (
+            <DigitalSection
+              section={section.key}
+              view={digital}
+              manageHref={canManageClients ? sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK) : null}
+            />
+          ) : null}
+        </>
+      ) : null}
+
+      {tab.key === "data" && section.key === "summary" ? (
+        <>
           <Card title={t.countsTitle}>
             <p className="mb-3 text-sm text-text-secondary">{t.countsHint}</p>
             {counts.requestsByState.length === 0 && counts.jobsByState.length === 0 ? (
@@ -1360,18 +1388,23 @@ export function EstablishmentSheet({
           </Card>
 
           {/*
-            §178 · Analítica digital: por fuente, o el motivo de no tener
-            cifra o las cifras de la ventana con su antigüedad. Los
-            informes (§89 a §95) son el Hito 16; esto es la comprobación de
-            que la integración trae datos.
+            Vista sin datos 1/6 · "Estado de las fuentes", y el hueco de
+            "Todavía no hay datos disponibles" cuando ninguna trae cifra.
           */}
-          {digital === null ? (
-            <Card title={t.digitalTitle}>
-              <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />
-            </Card>
-          ) : (
-            <DigitalSummary view={digital} title={t.digitalTitle} hint={t.digitalHint} />
-          )}
+          <DigitalSection
+            section="summary"
+            view={digital}
+            manageHref={canManageClients ? sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK) : null}
+          />
+
+          {/*
+            Maqueta 09 · "Informes generados" con "Ver PDF", "Aprobar
+            informe" y "Programar envío". Son el Hito 16: va el motivo, no
+            una lista vacía ni botones que no llevan a nada.
+          */}
+          <Card title={t.reportsTitle}>
+            <EmptyState icon="document" title={t.reportsEmptyTitle} description={t.reportsEmptyReason} />
+          </Card>
         </>
       ) : null}
 

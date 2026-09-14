@@ -681,6 +681,10 @@ export const es = {
     settings: "Ajustes",
     more: "Más",
     newRequest: "+ Nueva solicitud",
+    // Fase 3 · Hito 14 · los dos destinos del restaurante que el diseño
+    // del panel (vistas 22 y 25.03) separa de su inicio.
+    data: "Informes y datos",
+    sources: "Autorizar fuentes",
     // §20.1 y HU-05 · dos destinos que no son del espacio sino de la
     // cuenta. Viven en "Más" porque en móvil no hay menú lateral donde
     // ponerlos.
@@ -1538,6 +1542,19 @@ export const es = {
     },
     title: "Tu restaurante",
     statusLabel: "Estado del servicio",
+    // Vista 22 · "Informes y datos" del panel del restaurante.
+    dataCardTitle: "Informes y datos",
+    dataCardHint: "Consulta los datos de tu restaurante cuando las fuentes estén disponibles.",
+    dataLink: "Ver informes y datos",
+    // Vista 25.03 · "Autorizar fuentes y exportar". La exportación es de
+    // la Fase 4, así que aquí solo se autoriza.
+    sourcesTitle: "Autorizar fuentes",
+    sourcesHint:
+      "Conecta tus cuentas para que el equipo de mantenimiento pueda leer los datos de tu web. Usamos tu propia cuenta mediante OAuth; Cuotly no guarda tu contraseña.",
+    sourcesConnectedTitle: "Cuentas conectadas",
+    sourcesLink: "Autorizar fuentes",
+    sourcesExportNote:
+      "Exportar tus datos («Descargar mis datos») es de la Fase 4 y todavía no existe.",
     allowanceTitle: "Lo que incluye tu plan este ciclo",
     allowanceRenews: (fecha: string) => `Se renueva el ${fecha}`,
     allowanceRemaining: "disponibles",
@@ -2828,6 +2845,22 @@ export const es = {
     },
     tabsLabel: "Secciones de la ficha",
     blocksLabel: "Bloques de gestión",
+    // Maquetas 09 a 12 y las seis vistas "sin datos": las secciones de
+    // "Informes y datos". Las mismas para el equipo y para el restaurante.
+    dataSectionsLabel: "Secciones de Informes y datos",
+    dataSections: {
+      summary: "Resumen",
+      analytics: "Analítica",
+      search: "Búsqueda",
+      behavior: "Comportamiento",
+      performance: "Rendimiento",
+      opportunities: "Oportunidades",
+    },
+    // Maqueta 09 · "Informes generados". Son el Hito 16 y se dice.
+    reportsTitle: "Informes generados",
+    reportsEmptyTitle: "Los informes llegan con el Hito 16",
+    reportsEmptyReason:
+      "Operación, finanzas y rendimiento digital, con flujo de aprobación, versiones, PDF y envío programado (§89 a §95). Hasta entonces aquí no hay ningún informe que abrir.",
     blocks: {
       establishmentData: "Datos",
       plan: "Plan",
@@ -3461,20 +3494,191 @@ export const es = {
     noDataTitle: "Todavía no hay datos",
     notConnectedTitle: "Integración no conectada",
     strategies: { mobile: "Móvil", desktop: "Escritorio" },
+    // Maqueta 10 · los dispositivos que nombra GA4, en español. Lo que no
+    // esté en esta lista se enseña como lo manda la fuente: es un dato
+    // suyo, no una etiqueta de Cuotly.
+    devices: { mobile: "Móvil", desktop: "Ordenador", tablet: "Tablet", smart_tv: "Televisión" } as Record<string, string | undefined>,
+    // El botón que despliega el formulario de conectar (la maqueta dibuja
+    // las cinco conectadas, así que el formulario no aparece en ella).
+    connectToggle: "Conectar esta fuente",
+    // El nombre de cada métrica del catálogo (`METRICS_BY_PROVIDER`).
+    // `integrations.test.ts` comprueba que ninguna se queda sin él.
     metrics: {
       users: "Usuarios",
       sessions: "Sesiones",
+      page_views_by_page: "Visualizaciones por página",
+      sessions_by_source: "Sesiones por procedencia",
+      sessions_by_device: "Sesiones por dispositivo",
+      sessions_by_location: "Sesiones por ubicación",
+      conversions_by_event: "Eventos clave",
       clicks: "Clics",
       impressions: "Impresiones",
+      ctr: "CTR medio",
       position: "Posición media",
+      clicks_by_query: "Clics por consulta",
+      clicks_by_page: "Clics por página",
       profile_impressions: "Veces que apareció la ficha",
+      impressions_by_surface: "Impresiones por superficie",
       website_clicks: "Clics a la web",
       call_clicks: "Llamadas",
       direction_requests: "Cómo llegar",
+      conversations: "Conversaciones",
+      bookings: "Reservas",
+      bot_sessions: "Sesiones de robots",
+      distinct_users: "Usuarios distintos",
+      pages_per_session: "Páginas por sesión",
+      scroll_depth: "Profundidad de scroll media",
+      engagement_time_seconds: "Tiempo de interacción",
       dead_clicks: "Clics muertos",
       rage_clicks: "Clics de rabia",
+      quick_backs: "Vueltas rápidas",
+      excessive_scroll: "Scroll excesivo",
+      script_errors: "Errores de script",
+      error_clicks: "Clics con error",
       performance_score_by_strategy: "Puntuación de rendimiento",
+      lcp_ms_by_strategy: "LCP (Largest Contentful Paint)",
+      cls_by_strategy: "CLS (Cumulative Layout Shift)",
+      tbt_ms_by_strategy: "TBT (Total Blocking Time)",
+      fcp_ms_by_strategy: "FCP (First Contentful Paint)",
+      speed_index_ms_by_strategy: "Speed Index",
+      inp_ms_by_strategy: "INP (Interaction to Next Paint)",
     },
+
+    // Vista 17 · las tres tarjetas de abajo, con sus palabras.
+    webPlatformProject: "Proyecto",
+    webPlatformLastPublication: "Última publicación",
+    webPlatformLastPublicationNone: "Sin publicaciones de Menú Diario todavía",
+    webPlatformNote: "Web del restaurante en el ecosistema Cuotly.",
+    reservationsTitle: "Reservas",
+    deliveryTitle: "Delivery",
+    externalPlatformNote: "Plataforma externa utilizada",
+    externalPlatformNone: "Sin plataforma registrada: la ficha no tiene ese campo todavía (§120, pendiente 14).",
+
+    // Las seis secciones de "Informes y datos" (maquetas 09 a 12 y las
+    // seis vistas "sin datos"), con las palabras del diseño.
+    sections: {
+      summary: {
+        title: "Informes y datos",
+        hint: "Consulta los datos de tu restaurante cuando las fuentes estén disponibles.",
+        emptyTitle: "Todavía no hay datos disponibles",
+        emptyHint: "Conecta una fuente de datos o espera a que termine su primera sincronización. Los datos aparecerán aquí cuando estén disponibles.",
+      },
+      analytics: {
+        title: "Analítica",
+        hint: "Datos de visitas y uso de tu web.",
+        emptyTitle: "Todavía no hay datos de analítica",
+        emptyHint: "Conecta Google Analytics 4 o espera a que termine la primera sincronización.",
+      },
+      search: {
+        title: "Búsqueda",
+        hint: "Visibilidad de tu web y de tu ficha en Google.",
+        emptyTitle: "Todavía no hay datos de búsqueda",
+        emptyHint: "Conecta Google Search Console o Google Business Profile, o espera a que termine la primera sincronización.",
+      },
+      behavior: {
+        title: "Comportamiento",
+        hint: "Cómo interactúan los visitantes con tu web.",
+        emptyTitle: "Todavía no hay datos de comportamiento",
+        emptyHint: "Conecta Microsoft Clarity o espera a que termine la primera sincronización.",
+      },
+      performance: {
+        title: "Rendimiento",
+        hint: "Velocidad y experiencia de uso de tu web.",
+        emptyTitle: "Todavía no hay datos de rendimiento",
+        emptyHint: "Los resultados aparecerán cuando esté disponible el primer análisis de PageSpeed Insights.",
+      },
+      // Hito 15, bloqueado por CLAUDE.md: sin umbrales no se detecta nada,
+      // ni por reglas ni a mano. La maqueta ofrece "Añadir oportunidad" y
+      // no se ofrece: sería una oportunidad sin impacto ni esfuerzo que
+      // decir.
+      opportunities: {
+        title: "Oportunidades",
+        hint: "Mejoras basadas en los datos de tu restaurante.",
+        emptyTitle: "Las oportunidades llegan con el Hito 15",
+        emptyHint: "Los umbrales de detección y la definición de impacto y esfuerzo (§96 a §101) están pendientes de decisión. Hasta que existan no se detecta ni se anota ninguna.",
+      },
+    },
+    manageIntegrations: "Gestionar integraciones",
+    sourcesStatusTitle: "Estado de las fuentes",
+    sourceOfDataTitle: "Fuente de datos",
+    sourceColumn: "Fuente",
+    stateColumn: "Estado",
+    updatedColumn: "Última actualización",
+    infoColumn: "Información",
+    // Lo que se enseña como estado en la tabla cuando la conexión está
+    // hecha y no ha traído nada todavía (vistas sin datos 1/6 y 3/6).
+    waitingFirstSync: "Esperando primera sincronización",
+    waitingFirstAnalysis: "Esperando primer análisis",
+    // La columna "Información": los cinco motivos de §178 con las
+    // palabras del diseño, y con dato, hasta cuándo llega.
+    sourceInfo: {
+      not_connected: "Conecta una cuenta para empezar.",
+      pending_authorization: "Falta autorizar el acceso.",
+      disconnected: "Desconectada. Los datos ya importados se conservan (RN-INT-07).",
+      no_data_yet: "Conexión completada. Aún no hay datos importados.",
+      no_analysis_yet: "Todavía no hay resultados disponibles.",
+      error: "La última sincronización falló. Cuotly vuelve a intentarlo sola.",
+      needs_attention: "Hace falta una persona: volver a autorizar o revisar la configuración.",
+      stale: "Dato desactualizado: la última sincronización correcta es antigua.",
+      insufficient_period: "Hay datos, pero todavía de pocos días.",
+      ok: (day: string) => `Datos hasta el ${day}.`,
+    },
+    sourcesFootnote: "Si ya está conectada, los datos aparecerán tras la primera sincronización.",
+    // Las cifras con su variación (maquetas 10, 11 y 22.02).
+    changeVsPrevious: "vs. 28 días anteriores",
+    changeNoPrevious: "sin periodo anterior con dato",
+    changeUp: "sube",
+    changeDown: "baja",
+    changeFlat: "igual",
+    sourceOfData: "Fuente de datos",
+    lastDays: (n: number) => `Últimos ${n} días`,
+    measuredOn: (day: string) => `Datos del ${day}`,
+    metricColumn: "Métrica",
+    valueColumn: "Valor",
+    changeColumn: "Variación",
+    // Analítica (maqueta 10).
+    usersSessionsTitle: "GA4 — Usuarios y sesiones",
+    devicesTitle: "Dispositivos",
+    topPagesTitle: "Páginas más visitadas",
+    pageColumn: "Página",
+    viewsColumn: "Visualizaciones",
+    trafficSourcesTitle: "Procedencia de las sesiones",
+    trafficSourceColumn: "Procedencia",
+    sessionsColumn: "Sesiones",
+    locationsTitle: "Ubicaciones aproximadas",
+    locationColumn: "Ubicación",
+    conversionsTitle: "Eventos clave",
+    conversionColumn: "Evento",
+    conversionsColumn: "Conversiones",
+    // Búsqueda (maqueta 10 y 11).
+    searchPerformanceTitle: "Search Console — Rendimiento",
+    topQueriesTitle: "Consultas principales",
+    queryColumn: "Consulta",
+    clicksColumn: "Clics",
+    searchPagesTitle: "Páginas que aparecen en Google",
+    businessProfileTitle: "Google Business Profile — Visibilidad",
+    surfacesTitle: "Dónde apareció la ficha",
+    surfaceColumn: "Superficie",
+    impressionsColumn: "Impresiones",
+    surfaces: {
+      maps_desktop: "Maps (escritorio)",
+      maps_mobile: "Maps (móvil)",
+      search_desktop: "Búsqueda (escritorio)",
+      search_mobile: "Búsqueda (móvil)",
+    },
+    // Comportamiento (maqueta 11).
+    clarityTitle: "Microsoft Clarity — Comportamiento",
+    frictionTitle: "Señales de fricción",
+    // Rendimiento (maqueta 11 y 22.03).
+    pagespeedTitle: "PageSpeed Insights — Rendimiento",
+    pagespeedScoreTitle: "Puntuación de rendimiento",
+    pagespeedNoStrategy: "Sin medición en la ventana.",
+    // Las dos gráficas: lo que se dice en la leyenda y en la tabla de datos.
+    chartTableToggle: "Ver los datos en tabla",
+    chartDayColumn: "Día",
+    chartNoDays: "Ningún día con dato en la ventana.",
+    // Lo que las gráficas necesitan decir cuando la serie no está completa.
+    devicesOther: "Otros",
 
     // Ajustes › Integraciones.
     settingsTitle: "Integraciones",
@@ -3489,9 +3693,9 @@ export const es = {
     settingsEstablishmentColumn: "Restaurante",
     settingsProviderColumn: "Fuente",
     settingsStateColumn: "Estado",
+    settingsAccountColumn: "Cuenta conectada",
     settingsLastSyncColumn: "Última sincronización",
-    settingsNextColumn: "Próximo intento",
-    settingsOpen: "Abrir",
+    settingsOpen: "Abrir en la ficha",
     credentialsTitle: "Credenciales guardadas",
     credentialsHint:
       "Solo el propietario ve que existen: tipo, versión de la clave de cifrado y caducidad. El valor no lo ve nadie (§126).",

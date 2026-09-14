@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   HEADLINE_METRICS,
-  type HeadlineValue,
   type IntegrationActor,
   type IntegrationAuthKind,
   type IntegrationProvider,
@@ -12,9 +11,9 @@ import {
   type SyncFailureKind,
   type SyncWindow,
   coveredDays,
-  headlineValue,
   isIntegrationProvider,
   isIntegrationState,
+  previousWindow,
   summaryReason,
   summaryWindow,
 } from "@/core/integrations";
@@ -66,6 +65,11 @@ export interface IntegrationRow {
   readonly credentials: readonly CredentialMeta[];
 }
 
+export type LastPublication =
+  | { readonly kind: "published"; readonly at: string }
+  | { readonly kind: "none" }
+  | { readonly kind: "unavailable" };
+
 export interface IntegrationsView {
   readonly rows: readonly IntegrationRow[];
   /** RN-INT-05 · quién mira, para decidir qué botones tiene sentido pintar. El servidor lo vuelve a comprobar. */
@@ -75,6 +79,19 @@ export interface IntegrationsView {
   readonly establishmentArchived: boolean;
   readonly websiteUrl: string | null;
   readonly webPlatform: string | null;
+  /** Vista 17 · "Proyecto": el dominio de la ficha, o la web si no hay dominio. */
+  readonly domain: string | null;
+  /**
+   * Vista 17 · "Última publicación" de la tarjeta de LandingSite: la
+   * última vez que un menú de este restaurante se marcó como publicado
+   * (§121: la publicación es manual y se registra al marcarla).
+   *
+   * Es un resultado de tres casos y no una fecha anulable a propósito
+   * (CLAUDE.md: "errores de negocio como tipos de resultado explícitos"):
+   * "no hay ninguna" y "no se pudo leer" son cosas distintas, y pintar la
+   * segunda como la primera sería afirmar algo que nadie sabe (CA-20).
+   */
+  readonly lastWebPublication: LastPublication;
   readonly timezone: string;
   /** Lo que la vuelta de Google (o una acción) dejó en la dirección. */
   readonly flash: IntegrationFlash | null;
@@ -155,11 +172,30 @@ export async function loadIntegrationsView(
     readonly establishmentStatus: string;
     readonly websiteUrl: string | null;
     readonly webPlatform: string | null;
+    readonly domain: string | null;
     readonly timezone: string;
     readonly flash: string | undefined;
   },
 ): Promise<IntegrationsView> {
-  const rows = await loadIntegrationRows(supabase, input.establishmentId);
+  const [rows, { data: ultimoMenu, error: falloMenu }] = await Promise.all([
+    loadIntegrationRows(supabase, input.establishmentId),
+    // `menus` la lee también el restaurante (es suya). Columnas
+    // enumeradas: la 77 le revocó el `select` entero para taparle el
+    // actor, así que `select *` devolvería 403 (CLAUDE.md).
+    supabase
+      .from("menus")
+      .select("published_at")
+      .eq("establishment_id", input.establishmentId)
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const lastWebPublication: LastPublication = falloMenu
+    ? { kind: "unavailable" }
+    : ultimoMenu?.published_at
+      ? { kind: "published", at: ultimoMenu.published_at }
+      : { kind: "none" };
   return {
     rows,
     actor: input.actor,
@@ -168,38 +204,101 @@ export async function loadIntegrationsView(
     establishmentArchived: input.establishmentStatus === "archived",
     websiteUrl: input.websiteUrl,
     webPlatform: input.webPlatform,
+    domain: input.domain,
+    lastWebPublication,
     timezone: input.timezone,
     flash: parseIntegrationFlash(input.flash),
   };
 }
 
 // ---------------------------------------------------------------------
-// El resumen de "Informes y datos" (§178, RN-INT-07)
+// "Informes y datos" (§178, RN-INT-07; maquetas 09 a 12 y las vistas sin datos)
 // ---------------------------------------------------------------------
 
-export interface ProviderSummary {
+export interface ProviderData {
   readonly provider: IntegrationProvider;
   readonly status: IntegrationState;
+  /** §178 · por qué no hay cifra; `null` es "hay cifra y es actual". */
   readonly reason: SummaryReason | null;
   readonly lastSuccessAt: string | null;
   readonly lastSyncAt: string | null;
   readonly lastError: string | null;
   readonly coveredDays: number;
-  readonly values: readonly HeadlineValue[];
+  /**
+   * Todos los puntos de la fuente en la ventana y en la anterior. Las
+   * secciones calculan sobre ellos (series, desgloses, variación) con las
+   * funciones de `src/core/integrations.ts`, sin volver a la base.
+   */
+  readonly points: readonly MetricPoint[];
 }
 
-export interface DigitalSummaryView {
+export interface DigitalDataView {
   readonly window: SyncWindow;
+  readonly previousWindow: SyncWindow;
   readonly timezone: string;
-  readonly providers: readonly ProviderSummary[];
+  readonly providers: readonly ProviderData[];
 }
 
 /**
- * Los puntos de la ventana de resumen, por fuente. Se piden solo los de
- * las métricas que el resumen enseña y solo la ventana: no hace falta
- * traer noventa días de desgloses para sumar sesiones.
+ * Los puntos de un restaurante entre dos fechas, agrupados por fuente.
+ *
+ * Se pide por páginas porque PostgREST corta en 1000 filas (`max_rows` de
+ * `supabase/config.toml`) y 56 días de una fuente con desgloses pasan de
+ * ahí: sin paginar, la sección enseñaría una serie recortada sin decirlo,
+ * que es justo lo que RN-INT-07 prohíbe. Ordenado por clave natural para
+ * que las páginas no se solapen ni se salten filas.
+ *
+ * `provider` no es parte de `MetricPoint` —esa es la clave natural que
+ * escribe el adaptador, que ya sabe de quién es—, así que se usa para
+ * agrupar aquí y no viaja dentro de cada punto.
  */
-export async function loadDigitalSummary(
+const PAGE = 1000;
+
+async function fetchPointsByProvider(
+  supabase: Client,
+  establishmentId: string,
+  from: string,
+  to: string,
+): Promise<Map<string, MetricPoint[]>> {
+  const byProvider = new Map<string, MetricPoint[]>();
+  for (let offset = 0; ; offset += PAGE) {
+    const { data, error } = await supabase
+      .from("metric_points")
+      .select("provider, metric, dimension, period_start, period_end, value, unit")
+      .eq("establishment_id", establishmentId)
+      .gte("period_start", from)
+      .lte("period_end", to)
+      .order("provider", { ascending: true })
+      .order("metric", { ascending: true })
+      .order("dimension", { ascending: true })
+      .order("period_start", { ascending: true })
+      .range(offset, offset + PAGE - 1);
+    if (error) throw new Error(`metric_points: ${error.message}`);
+    for (const p of data ?? []) {
+      const lista = byProvider.get(p.provider) ?? [];
+      lista.push({
+        metric: p.metric,
+        dimension: p.dimension,
+        period_start: p.period_start,
+        period_end: p.period_end,
+        value: Number(p.value),
+        unit: p.unit,
+      });
+      byProvider.set(p.provider, lista);
+    }
+    if ((data ?? []).length < PAGE) break;
+  }
+  return byProvider;
+}
+
+/**
+ * Lo que "Informes y datos" enseña: por fuente, el motivo de no tener
+ * cifra (§178) o los puntos de la ventana de 28 días y de los 28
+ * anteriores, para decir la variación. Se traen enteros porque las
+ * secciones (maquetas 10 y 11) enseñan series, desgloses y últimas
+ * mediciones, no solo dos totales.
+ */
+export async function loadDigitalData(
   supabase: Client,
   input: {
     readonly establishmentId: string;
@@ -208,40 +307,14 @@ export async function loadDigitalSummary(
     readonly timezone: string;
     readonly now: Date;
   },
-): Promise<DigitalSummaryView> {
+): Promise<DigitalDataView> {
   const window = summaryWindow(input.todayIso);
-  const metrics = new Set<string>();
-  for (const provider of Object.keys(HEADLINE_METRICS) as IntegrationProvider[]) {
-    for (const h of HEADLINE_METRICS[provider]) metrics.add(h.metric);
-  }
+  const anterior = previousWindow(window);
+  const byProvider = await fetchPointsByProvider(supabase, input.establishmentId, anterior.from, window.to);
 
-  const { data, error } = await supabase
-    .from("metric_points")
-    .select("provider, metric, dimension, period_start, period_end, value, unit")
-    .eq("establishment_id", input.establishmentId)
-    .in("metric", [...metrics])
-    .gte("period_start", window.from)
-    .lte("period_end", window.to);
-  if (error) throw new Error(`metric_points: ${error.message}`);
-
-  const byProvider = new Map<string, MetricPoint[]>();
-  for (const p of data ?? []) {
-    const lista = byProvider.get(p.provider) ?? [];
-    lista.push({
-      metric: p.metric,
-      dimension: p.dimension,
-      period_start: p.period_start,
-      period_end: p.period_end,
-      value: Number(p.value),
-      unit: p.unit,
-    });
-    byProvider.set(p.provider, lista);
-  }
-
-  const providers = input.rows.map((row): ProviderSummary => {
+  const providers = input.rows.map((row): ProviderData => {
     const points = byProvider.get(row.provider) ?? [];
     const headlines = HEADLINE_METRICS[row.provider];
-    const values = headlines.map((h) => headlineValue(points, h, window));
     const covered = headlines.length === 0 ? 0 : coveredDays(points, headlines[0].metric, window);
     const lastSuccessAt = row.lastSuccessAt === null ? null : new Date(row.lastSuccessAt);
     return {
@@ -252,11 +325,11 @@ export async function loadDigitalSummary(
       lastSyncAt: row.lastSyncAt,
       lastError: row.lastError,
       coveredDays: covered,
-      values,
+      points,
     };
   });
 
-  return { window, timezone: input.timezone, providers };
+  return { window, previousWindow: anterior, timezone: input.timezone, providers };
 }
 
 // ---------------------------------------------------------------------

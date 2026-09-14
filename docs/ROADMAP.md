@@ -10,7 +10,7 @@ de todo el proyecto** — es la rebanada vertical que el resto del código imita
 
 ## Estado de los hitos
 
-Actualizado el 13/09/2026.
+Actualizado el 14/09/2026.
 
 | Hito | Estado | Nota |
 |---|---|---|
@@ -27,6 +27,7 @@ Actualizado el 13/09/2026.
 | 11 · Menú Diario: pantallas del equipo, 21:00/20:00 por la cola, corrección (Fase 2) | Servidor, dominio y pantallas del equipo | Migración 79, 13/09/2026. Ver la entrada de cierre abajo. |
 | 12 · Calendario operativo completo y presupuestos adicionales (Fase 2) | Servidor, dominio y pantallas | Migración 80, 13/09/2026, aplicada al proyecto real el mismo día. Ver la entrada de cierre abajo. |
 | 13 · Integraciones analíticas: conexiones, credenciales, estados y sincronización (Fase 3) | Servidor y dominio; sin pantallas ni adaptadores | Migración 81, 13/09/2026, aplicada al proyecto real el 14/09/2026 por orden de Bosco. Ver la entrada de cierre abajo. |
+| 14 · Adaptadores y pantallas de integraciones (Fase 3) | Servidor, adaptadores y pantallas | Migración 82, 14/09/2026, aplicada al proyecto real el mismo día. Pantallas ajustadas al diseño de `docs/diseno/` el 14/09/2026. Ver la entrada de cierre abajo. |
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -3460,6 +3461,99 @@ regenerar salió idéntica, así que no había desviación.
     documentan sus API, y la primera conexión real la tiene que hacer
     alguien con el cliente OAuth creado en Google Cloud.
 
+    **Ajuste al diseño (14/09/2026, el mismo día, segunda pasada).** Los
+    PDF de `docs/diseno/Cuotly_PDFs_por_Seccion/` llegaron al repositorio
+    después de cerrarse el hito, y Bosco pidió comparar lo hecho con ellos
+    y cambiar lo que no coincidiera. Lo que coincidía se dejó (la bóveda,
+    OAuth, los adaptadores, la cola, la revocación); lo que no, se rehízo:
+
+    - **Vista 17 (Gestión — Integraciones).** La fila de cada fuente es
+      ahora la de la maqueta: marca, nombre y de qué trata, insignia,
+      "Cuenta de origen", "Última sincronización", "Próximo intento" y
+      "Comprobar conexión" a la derecha; lo que la maqueta no dibuja
+      (propiedad, error con su clase, credenciales, formularios) va
+      debajo, solo cuando hace falta. Debajo, las **tres** tarjetas:
+      LandingSite con "Proyecto" (el dominio de la ficha) y "Última
+      publicación" (el último menú marcado como publicado, §121), y
+      Reservas y Delivery cada una en la suya, diciendo que la ficha no
+      tiene ese campo (§120) en vez de "Abrir enlace" hacia nada. Las
+      marcas son iconos del sistema, no los logotipos de cada producto
+      (`ProviderMark.tsx` dice por qué).
+    - **"Informes y datos" por secciones** (maquetas 09 a 12 y las seis
+      vistas "sin datos"): Resumen · Analítica · Búsqueda · Comportamiento
+      · Rendimiento · Oportunidades, en la dirección
+      (`?vista=datos&seccion=analitica`), en la ficha del equipo y en la
+      pantalla nueva del restaurante (`/restaurantes/<id>/datos`, vista
+      22). El Resumen lleva los indicadores operativos, la tabla **"Estado
+      de las fuentes"** (Fuente · Estado · Última actualización ·
+      Información, con las palabras del diseño: "Esperando primera
+      sincronización", "Esperando primer análisis", "Conecta una cuenta
+      para empezar"…) y el hueco de "Informes generados" (Hito 16). Cada
+      sección sin cifra enseña el hueco de su vista —"Todavía no hay datos
+      de analítica"— con **"Gestionar integraciones"** (solo a quien
+      gestiona: a la ficha para el equipo, a "Autorizar fuentes" para el
+      restaurante) y la tabla con su fuente. Con cifra: las cifras de los
+      28 últimos días **con su variación frente a los 28 anteriores**
+      (maquetas 10, 11 y 22.02 dicen "vs. mes anterior"; aquí la ventana
+      son 28 días y se dice así), la gráfica de usuarios y sesiones por
+      día, el anillo de dispositivos, páginas más visitadas, procedencia,
+      ubicaciones y eventos clave (GA4); clics, impresiones, CTR y
+      posición media con consultas y páginas (Search Console); la
+      visibilidad de la ficha (Business Profile, en Búsqueda: es lo mismo
+      que mide Search Console para la web); tráfico, comportamiento y
+      fricción (Clarity); y la puntuación por estrategia con el día del
+      análisis y LCP, INP, CLS, TBT, FCP y Speed Index (PageSpeed, con
+      las bandas de color de Lighthouse); los nombres de dispositivo que
+      devuelve GA4 se enseñan en español (`integrations.devices`), que es
+      lo que faltaba cuando se miraron las pantallas pintadas. Las
+      gráficas son SVG de servidor
+      (`charts.tsx`), sin librería, con un solo eje, leyenda, etiqueta
+      directa, hueco donde no hay dato y tabla debajo; la paleta (verde,
+      `info`, ámbar) se pasó por el comprobador de paletas y el ámbar solo
+      se usa donde hay etiqueta y tabla. Oportunidades dice que es el Hito
+      15 y no ofrece "Añadir oportunidad" (sin umbrales no hay nada que
+      anotar). El cálculo (`previousWindow`, `percentChange`,
+      `dailySeries`, `topDimensions`, `latestByDimension`,
+      `DATA_SECTION_PROVIDERS`) es de `src/core/integrations.ts`.
+    - **El restaurante** tiene dos destinos nuevos en su navegación
+      (vistas 22 y 25.03): "Informes y datos" y **"Autorizar fuentes"**
+      (`/restaurantes/<id>/fuentes`: las cuentas conectadas y, para el
+      propietario, autorizar con su cuenta de Google). Su inicio ya no
+      lleva los dos bloques incrustados: enlaza a las dos pantallas. La
+      exportación ("Descargar mis datos") es de la Fase 4 y se dice.
+    - **Ajustes › Integraciones** (vista 14.03): Fuente · Estado · Cuenta
+      conectada · Última sincronización y "Abrir en la ficha", con la
+      columna de restaurante que la maqueta no dibuja porque dibuja un
+      espacio con uno (RN-INT-01: son por restaurante).
+    - Los puntos de métrica se leen **por páginas** de 1000
+      (`max_rows` de PostgREST): 56 días de una fuente con desgloses
+      pasan de ahí, y antes solo se pedían dos totales.
+
+    Lo que el diseño pinta y aquí no está, dicho: "Interpretación
+    rápida" (22.02) es un texto generado y no hay regla que lo genere;
+    "Mejoras aprobadas" (22.03), "Optimización de imágenes — análisis
+    interno Cuotly" (11) y todo lo de oportunidades son el Hito 15; los
+    informes (09, 22.01) el Hito 16; accesibilidad, buenas prácticas y
+    SEO de PageSpeed (11) no están en el catálogo de §27 y no se
+    añadieron sin decirlo; la duración media de la sesión de GA4 (22.02)
+    tampoco. La estructura por pestañas de Ajustes (14.01 a 14.04) y el
+    resto de las vistas del PDF son de sus propios hitos.
+
+    **Cómo se comprobó el parecido.** No de memoria: las pantallas se
+    pintaron a HTML con los componentes reales y la hoja de estilos
+    compilada, se abrieron en Chromium y se compararon con el PDF. Salieron
+    cuatro defectos que ninguna prueba unitaria ve y que están corregidos:
+    la fila de cada fuente partía los nombres y recortaba las fechas ("15
+    sept 2026, 1…") porque seis columnas no caben en el ancho de la ficha
+    —ahora son tres, con la insignia bajo el nombre y los tres datos de
+    §117 en su propio grid, y las cinco filas quedan alineadas—; el anillo
+    de dispositivos decía "mobile / desktop / tablet"; el nombre de la
+    fuente salía dos veces en cada tarjeta ("PageSpeed Insights" y
+    "PageSpeed Insights — Rendimiento"), y la fecha del análisis, tres; y
+    los formularios de conectar se pintaban desplegados, con lo que una
+    lista de cinco filas se convertía en una pantalla de scroll (ahora van
+    en un `<details>`, que sigue funcionando sin JavaScript).
+
     **Comprobado:** `integraciones_revocacion_remota.sql` (la 36ª suite;
     RN-INT-06, RN-INT-08, CA-17, funciones cerradas por RPC y la columna
     tapada); las 36 suites desde cero sobre PostgreSQL 16 con las 82
@@ -3468,8 +3562,13 @@ regenerar salió idéntica, así que no había desviación.
     (el proceso entero sin red ni base), la vuelta de OAuth
     (`callback/route.test.ts`: firma, nonce, sesión, permiso denegado,
     sin bóveda), la tanda de `/api/cola`, `integrations-block.test.tsx`
-    (los cinco actores, los estados, los cinco motivos de §178) y los
-    tests del dominio; typecheck, lint, 996 pruebas y `next build`. Los
+    (los cinco actores, los estados, las tres tarjetas de plataformas),
+    `digital-sections.test.tsx` (la tabla de fuentes con los cinco
+    motivos de §178, los huecos de cada sección con su botón, las cifras
+    con su variación, la gráfica con su tabla, PageSpeed por estrategia y
+    Oportunidades sin "Añadir"), `tabs.test.ts` (las seis secciones en la
+    dirección) y los tests del dominio (variación, series, desgloses,
+    ventana anterior); typecheck, lint, 1013 pruebas y `next build`. Los
     recorridos de Playwright no se ejecutaron: desde el contenedor no se
     llega al proyecto de Supabase (`docs/DESPLIEGUE-SUPABASE.md`).
 
@@ -3620,9 +3719,9 @@ no se empiezan sin ellos.
 ### Hito 14 · Adaptadores y pantallas de integraciones *(hecho el 14/09/2026; la 82 aplicada al proyecto el mismo día)*
 - `src/services/credential-vault.ts` (cifrado con `INTEGRATIONS_VAULT_KEY`), el flujo OAuth con Google y los cinco adaptadores en `src/services/integrations/`, cada uno con su catálogo de métricas.
 - El proceso de la cola que ejecuta `claim_integration_runs()` / `finish_integration_run()` dentro de la tanda de `/api/cola`, y la revocación remota pendiente (RN-INT-06, migración 82).
-- Ajustes › Integraciones, el bloque de la ficha (maqueta 17) y "Informes y datos", con los cinco motivos de §178 cuando no hay dato.
+- Ajustes › Integraciones (vista 14.03), el bloque de la ficha (vista 17) y "Informes y datos" por secciones (maquetas 09 a 12 y las seis vistas "sin datos"), con los cinco motivos de §178 cuando no hay dato; y para el restaurante, "Informes y datos" (vista 22) y "Autorizar fuentes" (vista 25.03). Ajustado a los PDF de `docs/diseno/` el 14/09/2026.
 
-**Se verifica con:** `supabase/tests/integraciones_revocacion_remota.sql`, `credential-vault.test.ts`, `google-oauth.test.ts`, `integrations/adapters.test.ts`, `integration-sync.test.ts`, `api/integraciones/oauth/callback/route.test.ts` e `integrations-block.test.tsx`.
+**Se verifica con:** `supabase/tests/integraciones_revocacion_remota.sql`, `credential-vault.test.ts`, `google-oauth.test.ts`, `integrations/adapters.test.ts`, `integration-sync.test.ts`, `api/integraciones/oauth/callback/route.test.ts`, `integrations-block.test.tsx` y `digital-sections.test.tsx`.
 
 ### Hito 15 · Oportunidades por reglas deterministas
 - Bloqueado por CLAUDE.md hasta que Bosco fije los umbrales de detección y la definición de impacto y esfuerzo (§96 a §101).

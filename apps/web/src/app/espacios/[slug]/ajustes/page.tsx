@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui";
 import { formatMoment, loadSpaceIntegrations } from "@/components/establishment/integrations-load";
+import { ProviderMark } from "@/components/establishment/ProviderMark";
 import { integrationTone } from "@/core/integrations";
 import { MANDATORY_EVENTS, staffPreferenceEvents, type NotificationEvent } from "@/core/notifications";
 import { es } from "@/i18n/es";
@@ -300,25 +301,33 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           <Table>
             <TableHead>
               <TableRow>
+                {/*
+                  Vista 14.03 · Fuente · Estado · Cuenta conectada · Última
+                  sincronización, y a la derecha la acción. La maqueta no
+                  lleva columna de restaurante porque dibuja un espacio con
+                  uno; las integraciones son por restaurante (RN-INT-01) y
+                  sin decir cuál la fila no significa nada.
+                */}
                 <TableHeaderCell>{es.integrations.settingsEstablishmentColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.integrations.settingsProviderColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.integrations.settingsStateColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.integrations.settingsAccountColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.integrations.settingsLastSyncColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.integrations.settingsNextColumn}</TableHeaderCell>
+                <TableHeaderCell>
+                  <span className="sr-only">{es.integrations.settingsOpen}</span>
+                </TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {integraciones.map((fila) => (
                 <TableRow key={fila.integrationId}>
+                  <TableCell>{fila.establishmentName}</TableCell>
                   <TableCell>
-                    <Link
-                      href={`/espacios/${slug}/restaurantes/${fila.establishmentId}?vista=gestion&bloque=integraciones`}
-                      className="text-cuotly-green underline"
-                    >
-                      {fila.establishmentName}
-                    </Link>
+                    <span className="flex items-center gap-2">
+                      <ProviderMark provider={fila.provider} size="sm" />
+                      {es.integrations.providers[fila.provider].name}
+                    </span>
                   </TableCell>
-                  <TableCell>{es.integrations.providers[fila.provider].name}</TableCell>
                   <TableCell>
                     <StatusBadge tone={integrationTone(fila.status)}>
                       {es.integrations.states[fila.status]}
@@ -327,8 +336,16 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
                       <span className="block text-xs text-text-secondary">{fila.lastError}</span>
                     ) : null}
                   </TableCell>
+                  <TableCell>{fila.accountLabel ?? es.integrations.accountNone}</TableCell>
                   <TableCell>{formatMoment(fila.lastSyncAt, space.timezone)}</TableCell>
-                  <TableCell>{formatMoment(fila.nextAttemptAt, space.timezone)}</TableCell>
+                  <TableCell>
+                    <Link
+                      href={`/espacios/${slug}/restaurantes/${fila.establishmentId}?vista=gestion&bloque=integraciones`}
+                      className="whitespace-nowrap text-cuotly-green underline"
+                    >
+                      {es.integrations.settingsOpen}
+                    </Link>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

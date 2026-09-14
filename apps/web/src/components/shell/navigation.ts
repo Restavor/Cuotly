@@ -167,6 +167,9 @@ function fullNav(
     case "admin":
     case "worker":
       return desktopMenu(spaceSlug);
+    // Fase 3 · Hito 14 · "Informes y datos" y "Autorizar fuentes" son dos
+    // destinos del panel del restaurante (vistas 22 y 25.03), no dos
+    // bloques de su inicio.
     case "client":
       return [
         D("home", es.nav.home, mine ?? "/"),
@@ -174,6 +177,8 @@ function fullNav(
         D("newRequest", es.nav.newRequest, mine ?? "/"),
         D("messages", es.nav.messages, mine ?? "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
+        D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
+        D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
       ];
     case "client_daily_menu":
       return [
@@ -183,6 +188,8 @@ function fullNav(
         D("dailyMenu", es.nav.dailyMenu, mine ? `${mine}/menu-diario` : "/"),
         D("messages", es.nav.messages, mine ?? "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
+        D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
+        D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
       ];
   }
 }
@@ -243,6 +250,8 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   more: "plus",
   newRequest: "plus",
   billing: "finance",
+  data: "reports",
+  sources: "database",
   switchSpace: "switchSpace",
   sessions: "person",
 };

@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import { es } from "@/i18n/es";
 import {
+  DATA_SECTION_TABS,
+  DATA_TAB,
+  dataSectionHref,
+  parseDataSection,
   FILES_BLOCK,
   MANAGEMENT_BLOCKS,
   MANAGEMENT_TAB,
@@ -63,6 +67,32 @@ describe("las cinco pestañas de la ficha (PRD §15.2)", () => {
     expect(sheetHref("/r/1", MANAGEMENT_TAB, FILES_BLOCK)).toBe(
       "/r/1?vista=gestion&bloque=archivos",
     );
+  });
+});
+
+describe("las seis secciones de «Informes y datos» (maquetas 09 a 12)", () => {
+  it("son las del diseño, en su orden, cada una con nombre en español y dirección propia", () => {
+    expect(DATA_SECTION_TABS.map((s) => s.key)).toEqual([
+      "summary",
+      "analytics",
+      "search",
+      "behavior",
+      "performance",
+      "opportunities",
+    ]);
+    expect(DATA_SECTION_TABS.map((s) => s.key).sort()).toEqual(
+      Object.keys(es.establishmentSheet.dataSections).sort(),
+    );
+    expect(new Set(DATA_SECTION_TABS.map((s) => s.slug)).size).toBe(DATA_SECTION_TABS.length);
+  });
+
+  it("una sección desconocida enseña el Resumen; la dirección lleva pestaña y sección (CA-22)", () => {
+    expect(parseDataSection(undefined).key).toBe("summary");
+    expect(parseDataSection("inventada").key).toBe("summary");
+    expect(parseDataSection("analitica").key).toBe("analytics");
+    expect(parseDataSection("rendimiento").key).toBe("performance");
+    expect(DATA_TAB.slug).toBe("datos");
+    expect(dataSectionHref("/r/1", parseDataSection("busqueda"))).toBe("/r/1?vista=datos&seccion=busqueda");
   });
 });
 
