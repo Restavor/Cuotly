@@ -965,9 +965,19 @@ llamadas, cómo llegar, conversaciones y reservas); Clarity, tráfico (sesiones,
 usuarios distintos, páginas por sesión), comportamiento (profundidad de scroll, tiempo de interacción)
 y señales de fricción (clics muertos, clics de rabia, vueltas rápidas, scroll excesivo, errores de
 script, clics con error); PageSpeed, la puntuación de rendimiento y LCP, CLS, TBT, FCP y Speed Index
-por estrategia (móvil y escritorio), más el INP de campo cuando Chrome tiene datos de esa URL. Lo
+por estrategia (móvil y escritorio), más el INP de campo cuando Chrome tiene datos de esa URL. La
+**decisión 26** añadió dos métricas a ese catálogo, las dos porque sin ellas dos de las nueve
+oportunidades de §96 no se podían detectar: las **conversiones por dispositivo** de GA4
+(`conversions_by_device`; las conversiones por evento no vienen cruzadas con el dispositivo, así que
+sin esto no se puede comparar cómo convierte el móvil) y los **kilobytes ahorrables de las imágenes**
+de PageSpeed (`uses-optimized-images` y `uses-responsive-images`, leídos de
+`details.overallSavingsBytes`, que es donde Lighthouse pone los bytes). Lo
 que la pantalla de "Informes y datos" enseña de cada fuente son los 28 últimos días completos con su
 antigüedad, y "periodo insuficiente" (§178) se lee como menos de una semana con dato (una medición,
 en PageSpeed): es una lectura aplicada y confirmada, anotada como decisión 25a. Las
-oportunidades (§96 a §101) y los informes (§89 a §95) son los hitos 15 y 16; **los umbrales de
-detección y la definición de impacto y esfuerzo siguen pendientes de Bosco** (§24.3) y no se inventan.
+oportunidades (§96 a §101) y los informes (§89 a §95) son los hitos 15 y 16. **Los umbrales de
+detección, la definición de impacto y la de esfuerzo los fijó Bosco el 14/09/2026** (decisión 26,
+sobre `docs/PROPUESTA-OPORTUNIDADES.md`): impacto es alto, medio o bajo según lo que toque el
+problema —nunca euros, porque Cuotly no sabe lo que vale una reserva— y esfuerzo **es la categoría
+del cambio** (Pequeño, Fotográfico, Mediano o Grande), que ya trae su duración de RN-SLA-12 y lo que
+gasta de la bolsa del plan.

@@ -103,6 +103,10 @@ export const ga4Adapter: IntegrationAdapter = {
       ["sessions_by_device", "deviceCategory", "sessions"],
       ["sessions_by_location", "city", "sessions"],
       ["conversions_by_event", "eventName", "keyEvents"],
+      // Decisión 26 · los mismos eventos clave, pero por dispositivo: es el
+      // dato que "baja conversión móvil" necesita y que no se puede sacar
+      // cruzando los dos desgloses de arriba.
+      ["conversions_by_device", "deviceCategory", "keyEvents"],
     ];
     for (const [metric, dimension, ga4Metric] of desgloses) {
       const response = await runReport(ctx, property, ["date", dimension], [ga4Metric], 10000);

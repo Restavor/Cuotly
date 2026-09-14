@@ -3511,6 +3511,7 @@ export const es = {
       sessions_by_device: "Sesiones por dispositivo",
       sessions_by_location: "Sesiones por ubicación",
       conversions_by_event: "Eventos clave",
+      conversions_by_device: "Eventos clave por dispositivo",
       clicks: "Clics",
       impressions: "Impresiones",
       ctr: "CTR medio",
@@ -3542,6 +3543,8 @@ export const es = {
       fcp_ms_by_strategy: "FCP (First Contentful Paint)",
       speed_index_ms_by_strategy: "Speed Index",
       inp_ms_by_strategy: "INP (Interaction to Next Paint)",
+      optimized_images_savings_kb_by_strategy: "Ahorro comprimiendo imágenes",
+      responsive_images_savings_kb_by_strategy: "Ahorro sirviendo imágenes a su tamaño",
     },
 
     // Vista 17 · las tres tarjetas de abajo, con sus palabras.

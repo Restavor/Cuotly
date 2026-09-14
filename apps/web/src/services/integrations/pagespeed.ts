@@ -24,12 +24,27 @@ export const STRATEGIES = ["mobile", "desktop"] as const;
 interface PagespeedResponse {
   lighthouseResult?: {
     categories?: { performance?: { score?: number } };
-    audits?: Record<string, { numericValue?: number }>;
+    audits?: Record<
+      string,
+      { numericValue?: number; details?: { overallSavingsBytes?: number } }
+    >;
   };
   loadingExperience?: {
     metrics?: Record<string, { percentile?: number }>;
   };
 }
+
+/**
+ * Decisión 26 · las dos auditorías de imágenes, que se leen distinto que
+ * las de arriba: en una auditoría de oportunidad, `numericValue` son los
+ * milisegundos que se ganarían, y los BYTES están en
+ * `details.overallSavingsBytes`. Lo que la regla de "imágenes pesadas"
+ * mira son los kilobytes, así que es ese campo y no el otro.
+ */
+const SAVINGS_AUDITS: readonly [string, string][] = [
+  ["uses-optimized-images", "optimized_images_savings_kb_by_strategy"],
+  ["uses-responsive-images", "responsive_images_savings_kb_by_strategy"],
+];
 
 /** Auditoría de Lighthouse → métrica de Cuotly y unidad. */
 const AUDITS: readonly [string, string, string][] = [
@@ -64,6 +79,14 @@ export function pointsFromRun(
     if (value === null) continue;
     points.push(point(metric, day, unit === "ms" ? Math.round(value) : value, strategy, unit));
   }
+  for (const [audit, metric] of SAVINGS_AUDITS) {
+    const bytes = asNumber(response.lighthouseResult?.audits?.[audit]?.details?.overallSavingsBytes);
+    // Cero es un dato: "no hay nada que ahorrar aquí". Se guarda, porque
+    // si no, una web ya optimizada no se distinguiría de una sin medir.
+    if (bytes === null) continue;
+    points.push(point(metric, day, Math.round(bytes / 1024), strategy, "kb"));
+  }
+
   const inp = asNumber(response.loadingExperience?.metrics?.INTERACTION_TO_NEXT_PAINT?.percentile);
   if (inp !== null) points.push(point("inp_ms_by_strategy", day, inp, strategy, "ms"));
   return points;

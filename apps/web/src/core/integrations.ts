@@ -295,6 +295,10 @@ export const METRICS_BY_PROVIDER: Readonly<Record<IntegrationProvider, readonly 
     "sessions_by_device",
     "sessions_by_location",
     "conversions_by_event",
+    // Decisión 26 · las conversiones POR DISPOSITIVO, que es lo que falta
+    // para saber si el móvil convierte peor que el escritorio. Con
+    // `conversions_by_event` sola no se puede: no está cruzada.
+    "conversions_by_device",
   ],
   search_console: [
     "clicks",
@@ -342,6 +346,12 @@ export const METRICS_BY_PROVIDER: Readonly<Record<IntegrationProvider, readonly 
     "fcp_ms_by_strategy",
     "speed_index_ms_by_strategy",
     "inp_ms_by_strategy",
+    // Decisión 26 · los kilobytes que Lighthouse dice que se ahorrarían
+    // recomprimiendo (`uses-optimized-images`) y sirviendo las imágenes a
+    // su tamaño (`uses-responsive-images`). Sin esto, "imágenes pesadas"
+    // no se puede detectar: la puntuación sola no dice de qué es la culpa.
+    "optimized_images_savings_kb_by_strategy",
+    "responsive_images_savings_kb_by_strategy",
   ],
 };
 

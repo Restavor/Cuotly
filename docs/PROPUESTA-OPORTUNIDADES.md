@@ -1,10 +1,12 @@
 # Propuesta · umbrales de oportunidades, impacto y esfuerzo
 
-**Estado: borrador para que Bosco corrija.** Nada de esto está implementado ni es una regla
-todavía. CLAUDE.md prohíbe inventar estos umbrales, así que esto es una propuesta con un número
-concreto en cada sitio para que sea fácil cambiarlo: es más rápido tachar un 30 y escribir un 40
-que redactarlo desde cero. Cuando lo confirmes pasa a `docs/DECISIONES.md` y al PRD, y el Hito 15
-se construye sobre eso.
+**Estado: confirmado entero por Bosco el 14/09/2026 y recogido como decisión 26 en
+`docs/DECISIONES.md`, que es donde manda.** Este archivo se conserva porque explica **por qué**
+cada número es ese, que la decisión resume; si los dos dicen cosas distintas, vale la decisión.
+Las dos métricas del apartado 4 están añadidas y funcionando desde ese mismo día.
+
+Lo que sigue es el texto tal como se le presentó, con un número concreto en cada sitio para que
+cambiarlo fuera tachar y escribir otro. No cambió ninguno.
 
 Escrito el 14/09/2026 a partir de §96 a §101 de la Especificación Maestra, que da los nueve
 ejemplos de oportunidad y los campos de cada una, pero **no dice cuándo salta ninguna**.

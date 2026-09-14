@@ -3538,8 +3538,8 @@ regenerar salió idéntica, así que no había desviación.
       directa, hueco donde no hay dato y tabla debajo; la paleta (verde,
       `info`, ámbar) se pasó por el comprobador de paletas y el ámbar solo
       se usa donde hay etiqueta y tabla. Oportunidades dice que es el Hito
-      15 y no ofrece "Añadir oportunidad" (sin umbrales no hay nada que
-      anotar). El cálculo (`previousWindow`, `percentChange`,
+      15 y no ofrece "Añadir oportunidad": cuando se escribió no había
+      umbrales que anotar. Los fijó Bosco el mismo día (decisión 26). El cálculo (`previousWindow`, `percentChange`,
       `dailySeries`, `topDimensions`, `latestByDimension`,
       `DATA_SECTION_PROVIDERS`) es de `src/core/integrations.ts`.
     - **El restaurante** tiene dos destinos nuevos en su navegación
@@ -3841,8 +3841,9 @@ transcripción de §115 a §122, §126, §94, §163 y §178 de la maestra), con 
 calla anotadas como pendiente 13 de `docs/DECISIONES.md`. El 14/09/2026 Bosco ordenó aplicar la 81
 al proyecto real y confirmó las cuatro lecturas (decisión 24); el §27 sigue siendo una transcripción de
 la maestra sin regla nueva, y el Hito 14 se empieza cuando Bosco lo diga, no antes. Los umbrales de
-oportunidades y la definición de impacto y esfuerzo siguen aplazados en CLAUDE.md: los hitos 15 y 16
-no se empiezan sin ellos.
+oportunidades y la definición de impacto y esfuerzo estuvieron aplazados en CLAUDE.md hasta que
+Bosco los fijó el 14/09/2026 (decisión 26, sobre `docs/PROPUESTA-OPORTUNIDADES.md`): con eso el
+Hito 15 deja de estar bloqueado.
 
 ### Hito 13 · Integraciones: conexiones, credenciales cifradas, estados y sincronización *(servidor y dominio)*
 - `integrations`, `integration_credentials` (el texto cifrado sin `select` para nadie), `sync_runs` y `metric_points`. RLS en todas, sin políticas de escritura.

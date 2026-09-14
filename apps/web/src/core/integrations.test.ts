@@ -271,6 +271,9 @@ describe("integraciones analíticas (PRD §27)", () => {
       "sessions_by_device",
       "sessions_by_location",
       "conversions_by_event",
+      // Decisión 26 · las conversiones por dispositivo, sin las cuales
+      // "baja conversión móvil" (§96) no se puede detectar.
+      "conversions_by_device",
     ]);
     expect(METRICS_BY_PROVIDER.search_console).toEqual([
       "clicks",

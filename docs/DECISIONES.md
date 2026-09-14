@@ -290,6 +290,58 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    pantallas ya dicen esto; lo que cambia es que dejan de llamarlo "pendiente" y citan esta
    decisión. Con esto **no queda ninguna pendiente abierta** en este documento.
 
+26. **Los umbrales de las oportunidades, impacto y esfuerzo** (14/09/2026, desbloquea el Hito
+   15). Bosco pidió que los escribiera yo y él corrigiera; la propuesta está en
+   `docs/PROPUESTA-OPORTUNIDADES.md` y la confirma entera. Es la decisión que CLAUDE.md tenía
+   como prohibida de inventar, así que a partir de aquí **son reglas suyas, no lecturas mías**.
+
+   **(a) Impacto** es cuánto gana el restaurante si se arregla, y sirve para ordenar la lista.
+   Tres niveles, definidos por lo que toca el problema: **alto** si rompe o estorba el camino por
+   el que un cliente contacta (teléfono, cómo llegar, reserva, formulario) o afecta a más de la
+   mitad del tráfico; **medio** si afecta a una parte visible o a una entrada de tráfico
+   importante pero no al camino de contacto; **bajo** si afecta a una página, una consulta o un
+   detalle suelto. **No son euros**: Cuotly no sabe lo que vale una reserva ni cuántas visitas
+   acaban en cena, y un euro inventado en una pantalla de producción es lo que CLAUDE.md prohíbe.
+   El nivel lo propone Cuotly y el equipo lo puede cambiar antes de enseñarlo (§96).
+
+   **(b) Esfuerzo es la categoría del cambio** —Pequeño, Fotográfico, Mediano o Grande—, sin
+   escala nueva. Bosco lo definió como "lo que se tarda en hacer y los cambios que gasta", y eso
+   es exactamente lo que la categoría ya lleva dentro: su duración (RN-SLA-12) y una unidad de su
+   bolsa. Así la pantalla dice "Mediano: 1 a 3 días laborables, y te gasta 1 de los 3 medianos que
+   te quedan" en vez de "esfuerzo: medio". En Básico, o con la bolsa agotada, la oportunidad dice
+   que va a presupuesto en vez de fingir que está incluida.
+
+   **(c) Los umbrales**, sobre la ventana de 28 días completos de la decisión 25b, comparada con
+   los 28 anteriores, y ninguno salta si su fuente está desconectada, sin autorizar o
+   desactualizada:
+
+   | Oportunidad (§96) | Salta cuando |
+   |---|---|
+   | Descenso de tráfico | Las sesiones caen **30 %** o más, con **100** sesiones o más en el periodo anterior |
+   | CTR bajo | Consulta con **100** impresiones o más, en posición 10 o mejor, con CTR bajo el **2 %** |
+   | Pérdida de posición | Consulta con 50 impresiones o más que empeora **3** puestos o más y acaba peor del 10 |
+   | Lentitud | Puntuación móvil bajo **50** (banda roja de Lighthouse) o LCP móvil sobre **4 s**, en dos análisis seguidos |
+   | Imágenes pesadas | **500 KB** o más ahorrables en móvil |
+   | Error técnico | Errores de script en el **5 %** o más de las sesiones, con 100 sesiones o más |
+   | Baja conversión móvil | El móvil convierte **la mitad** o menos que el escritorio, con 100 sesiones móviles o más |
+   | Búsquedas sin contenido adecuado | Consulta con 100 impresiones o más en posición media peor que **20** |
+   | Poco uso de botones | Ficha de Google con **500** impresiones o más y acciones bajo el **2 %**; o clics muertos o de rabia sobre el **5 %** de las sesiones |
+
+   Dos matices que quedan dichos: "búsquedas sin contenido adecuado" detecta **"sale muy abajo"**,
+   no que el contenido sea inadecuado, porque juzgar eso exigiría leer la web y Cuotly no la lee;
+   y la lentitud pide **dos análisis seguidos** para que un mal día no genere trabajo.
+
+   **(d) Dos oportunidades necesitaban datos que no recogíamos**, y Bosco aprueba añadirlos, con
+   lo que **la decisión 25c queda ampliada**: `conversions_by_device` en GA4 (las conversiones por
+   evento no vienen cruzadas con el dispositivo, así que "baja conversión móvil" era indetectable)
+   y los kilobytes ahorrables de las imágenes en PageSpeed (`uses-optimized-images` y
+   `uses-responsive-images`, leídos de `details.overallSavingsBytes`, que es donde Lighthouse pone
+   los bytes; `numericValue` son milisegundos). Implementadas el mismo día en los dos adaptadores,
+   con sus tests y dos mutaciones que los verifican.
+
+   **(e) Básicas y avanzadas** (§101): **avanzadas** son las que cruzan dos fuentes y **básicas**
+   las que salen de una sola. Impulso ve las básicas aprobadas y Premium también las avanzadas.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)

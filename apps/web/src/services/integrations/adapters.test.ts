@@ -130,7 +130,13 @@ describe("adaptadores (RN-INT-01, RN-INT-08)", () => {
         .mockResolvedValueOnce(json(vacio))
         .mockResolvedValueOnce(json(vacio))
         .mockResolvedValueOnce(json(vacio))
-        .mockResolvedValueOnce(json({ rows: [{ dimensionValues: [{ value: "20260913" }, { value: "reserva" }], metricValues: [{ value: "2" }] }] }));
+        .mockResolvedValueOnce(json({ rows: [{ dimensionValues: [{ value: "20260913" }, { value: "reserva" }], metricValues: [{ value: "2" }] }] }))
+        // Decisión 26 · el séptimo desglose: los mismos eventos clave, por
+        // dispositivo. Sin él no se puede comparar cómo convierte el móvil.
+        .mockResolvedValueOnce(json({ rows: [
+          { dimensionValues: [{ value: "20260913" }, { value: "mobile" }], metricValues: [{ value: "1" }] },
+          { dimensionValues: [{ value: "20260913" }, { value: "desktop" }], metricValues: [{ value: "5" }] },
+        ] }));
       const c = ctx("ga4", { propertyId: "123", fetchImpl });
 
       const { points } = await ADAPTERS.ga4.sync(c);
@@ -149,6 +155,19 @@ describe("adaptadores (RN-INT-01, RN-INT-08)", () => {
       // Las conversiones son los eventos clave de la propiedad, no un evento inventado.
       const conversiones = JSON.parse(String(vi.mocked(fetchImpl).mock.calls[5][1]?.body)) as { metrics: { name: string }[] };
       expect(conversiones.metrics).toEqual([{ name: "keyEvents" }]);
+
+      // Decisión 26 · y las mismas conversiones por dispositivo, que son
+      // otra consulta: GA4 no las devuelve cruzadas con el desglose de
+      // eventos, y es justo el dato que faltaba para "baja conversión
+      // móvil".
+      expect(points).toContainEqual({ metric: "conversions_by_device", dimension: "mobile", period_start: "2026-09-13", period_end: "2026-09-13", value: 1, unit: null });
+      expect(points).toContainEqual({ metric: "conversions_by_device", dimension: "desktop", period_start: "2026-09-13", period_end: "2026-09-13", value: 5, unit: null });
+      const porDispositivo = JSON.parse(String(vi.mocked(fetchImpl).mock.calls[6][1]?.body)) as {
+        dimensions: { name: string }[];
+        metrics: { name: string }[];
+      };
+      expect(porDispositivo.dimensions).toEqual([{ name: "date" }, { name: "deviceCategory" }]);
+      expect(porDispositivo.metrics).toEqual([{ name: "keyEvents" }]);
     });
 
     it("comprueba leyendo los metadatos de la propiedad, sin pedir ningún informe", async () => {
@@ -294,6 +313,17 @@ describe("adaptadores (RN-INT-01, RN-INT-08)", () => {
           "total-blocking-time": { numericValue: 150.2 },
           "first-contentful-paint": { numericValue: 1200 },
           "speed-index": { numericValue: 3100 },
+          // Decisión 26 · en una auditoría de oportunidad los bytes están
+          // en `details`, no en `numericValue`: ahí van los milisegundos.
+          // Leer el campo equivocado daría "2340 KB" cuando son 320.
+          "uses-optimized-images": {
+            numericValue: 2340,
+            details: { overallSavingsBytes: 327_680 },
+          },
+          "uses-responsive-images": {
+            numericValue: 880,
+            details: { overallSavingsBytes: 102_400 },
+          },
         },
       },
       loadingExperience: { metrics: { INTERACTION_TO_NEXT_PAINT: { percentile: 180 } } },
@@ -308,6 +338,46 @@ describe("adaptadores (RN-INT-01, RN-INT-08)", () => {
       expect(points.every((p) => isMetricOf("pagespeed", p.metric))).toBe(true);
       // Sin datos de campo, sin INP.
       expect(pointsFromRun({ lighthouseResult: analisis.lighthouseResult }, "desktop", "2026-09-14").find((p) => p.metric === "inp_ms_by_strategy")).toBeUndefined();
+    });
+
+    it("trae los kilobytes ahorrables de las imágenes, que es lo que «imágenes pesadas» necesita (decisión 26)", () => {
+      const points = pointsFromRun(analisis, "mobile", "2026-09-14");
+
+      // 327 680 bytes son 320 KB. Si se leyera `numericValue` saldría
+      // 2340, que son milisegundos: el fixture los distingue a propósito.
+      expect(points).toContainEqual({
+        metric: "optimized_images_savings_kb_by_strategy",
+        dimension: "mobile",
+        period_start: "2026-09-14",
+        period_end: "2026-09-14",
+        value: 320,
+        unit: "kb",
+      });
+      expect(points).toContainEqual({
+        metric: "responsive_images_savings_kb_by_strategy",
+        dimension: "mobile",
+        period_start: "2026-09-14",
+        period_end: "2026-09-14",
+        value: 100,
+        unit: "kb",
+      });
+      expect(points.every((p) => isMetricOf("pagespeed", p.metric))).toBe(true);
+    });
+
+    it("una web ya optimizada da cero, que es un dato distinto de no haberla medido", () => {
+      const optimizada = {
+        lighthouseResult: {
+          categories: { performance: { score: 0.99 } },
+          audits: { "uses-optimized-images": { details: { overallSavingsBytes: 0 } } },
+        },
+      };
+
+      const points = pointsFromRun(optimizada, "mobile", "2026-09-14");
+      const ahorro = points.find((p) => p.metric === "optimized_images_savings_kb_by_strategy");
+
+      expect(ahorro?.value).toBe(0);
+      // Y la que no viene en la respuesta no se inventa como cero.
+      expect(points.find((p) => p.metric === "responsive_images_savings_kb_by_strategy")).toBeUndefined();
     });
 
     it("sincroniza midiendo en móvil y en escritorio con la clave en la URL", async () => {

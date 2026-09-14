@@ -55,7 +55,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - Agente Cuotly: solo existe la entrada de menú con la etiqueta "Próximamente". Sin funcionalidad simulada.
 - Fórmula ponderada de recomendación de trabajador (usa el orden determinista del PRD, no inventes porcentajes).
 - Categoría de puntos para tareas de más de 4 horas.
-- Umbrales concretos de detección de oportunidades y definición de impacto/esfuerzo.
+- ~~Umbrales concretos de detección de oportunidades y definición de impacto/esfuerzo~~ — los fijó Bosco el 14/09/2026 (decisión 26 de `docs/DECISIONES.md`, razonada en `docs/PROPUESTA-OPORTUNIDADES.md`). Ya no se inventan: se citan.
 - El bloque legal y fiscal: términos de uso, privacidad, retenciones, numeración fiscal de facturas, jurisdicción. **Excepción desde el 12/09/2026:** las **condiciones de cada plan y servicio** sí existen (migración 75): las escribe el espacio para su propio plan, se versionan (RN-DAT-07) y el restaurante las acepta en Cuotly o el equipo registra la aceptación de fuera con fecha y contrato. Cuotly no redacta ninguna: el texto es del espacio.
 - API pública y webhooks.
 - Precio del almacenamiento adicional.
