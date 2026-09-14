@@ -175,7 +175,9 @@ select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000008
 set role authenticated;
 do $$
 begin
-  -- §14.1 · el propietario global ve el consolidado y el detalle.
+  -- §14.1 · el propietario global ve el informe de cada establecimiento
+  -- suyo. El CONSOLIDADO no: lo dice el bloque de RN-REP-01 de más abajo
+  -- (decisión 30).
   if not public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
     raise exception 'RN-REP-01 FALLIDO: el propietario global no ve los informes de su grupo' using errcode = 'assert_failure';
   end if;
@@ -205,6 +207,77 @@ update public.establishment_memberships
    set revoked_at = null
  where establishment_id = 'ff400000-0000-0000-0000-000000000001'
    and user_id = 'ff000000-0000-0000-0000-000000000006';
+
+-- ============================================================
+-- RN-REP-01 · un informe CONSOLIDADO no llega a ningún restaurante
+-- ============================================================
+--
+-- RN-REP-01 se contradecía: decía que el propietario global de un grupo ve
+-- "el consolidado de su grupo" y, tres líneas después, que "un informe
+-- consolidado no se comparte con ningún restaurante". Bosco resolvió la
+-- contradicción el 14/09/2026 (decisión 30): vale la segunda. Un
+-- consolidado mezcla datos de varios restaurantes y no hay cliente al que
+-- pertenezca; lo que el propietario global ve es el informe de cada
+-- establecimiento suyo.
+--
+-- La política ya lo hacía (`establishment_id is not null` en la rama del
+-- cliente), pero nada lo comprobaba, y una rama que nadie prueba es una
+-- rama que el siguiente que toque la política puede quitar sin enterarse.
+--
+-- Nota sobre la forma: el CHECK `reports_scope` de la migración 85 dice
+-- `establishment_id is not null or group_id is null`, o sea que un informe
+-- sin restaurante tampoco tiene grupo. Un consolidado es **del espacio**;
+-- "el consolidado de su grupo" que prometía RN-REP-01 no es solo algo que
+-- nadie puede ver: no existe como fila. Por eso el `group_id` va a null,
+-- y no por descuido.
+--
+-- Se deja en "Enviado", que es el estado MÁS visible que existe para un
+-- cliente: si se le escapara en alguno, sería en ese.
+insert into public.reports (id, space_id, establishment_id, group_id, category, name,
+                            period_start, period_end, status, created_by, updated_by)
+values ('ff600000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001',
+        null, null, 'operation', 'Consolidado del espacio',
+        '2026-08-01', '2026-08-31', 'sent',
+        'ff000000-0000-0000-0000-000000000002', 'ff000000-0000-0000-0000-000000000002');
+
+set role authenticated;
+do $$
+declare
+  v_persona record;
+  v_ve integer;
+begin
+  -- Persona a persona y no "algún cliente": los cuatro lados por los que
+  -- alguien mira desde el restaurante.
+  for v_persona in
+    select * from (values
+      ('ff000000-0000-0000-0000-000000000005'::uuid, 'el propietario local'),
+      ('ff000000-0000-0000-0000-000000000006'::uuid, 'el Consulta'),
+      ('ff000000-0000-0000-0000-000000000007'::uuid, 'el Editor'),
+      ('ff000000-0000-0000-0000-000000000008'::uuid, 'el propietario global del grupo')
+    ) as t(id, quien)
+  loop
+    perform set_config('request.jwt.claim.sub', v_persona.id::text, false);
+    select count(*) into v_ve from public.reports
+     where id = 'ff600000-0000-0000-0000-000000000001';
+
+    if v_ve <> 0 then
+      raise exception 'RN-REP-01 FALLIDO: % alcanza un informe consolidado, y un consolidado no se comparte con ningún restaurante (decisión 30)',
+        v_persona.quien using errcode = 'assert_failure';
+    end if;
+  end loop;
+
+  -- Y en falso-cerrado: que lo vea quien lleva la cartera. Sin esto, una
+  -- fila que no existiera haría pasar el bucle de arriba en verde.
+  perform set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000002', false);
+  select count(*) into v_ve from public.reports
+   where id = 'ff600000-0000-0000-0000-000000000001';
+
+  if v_ve <> 1 then
+    raise exception 'RN-REP-01 FALLIDO: el consolidado no lo ve ni quien gestiona la cartera, así que la comprobación de arriba no probaba nada'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
 
 -- ============================================================
 -- RN-REP-08 · preparar: solo quien gestiona la cartera

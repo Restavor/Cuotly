@@ -4048,10 +4048,13 @@ regenerar salió idéntica, así que no había desviación.
     aplicar la decisión 28 actualicé RN-REP-01, que es quién lo ve, y no RN-REP-11, que es a quién
     le llega.
 
-    **Lo que NO se ha tocado, porque es de Bosco** (§24.3): que `reports.filters` se guarde y no se
-    aplique nunca (RN-REP-05), y que RN-REP-01 diga a la vez que el propietario global ve el
-    consolidado de su grupo y que un consolidado no se comparte con ningún restaurante. Lo segundo
-    es una contradicción dentro de la misma regla y CLAUDE.md prohíbe resolverla por cuenta propia.
+    **Los dos avisos que dejó la revisión los cerró Bosco el mismo día** (§24.3), y ninguno se
+    resolvió por cuenta propia. El primero, que `reports.filters` se guardara y no se aplicara
+    nunca (RN-REP-05), es la **decisión 29**: el informe guarda las cifras de las tres familias y
+    quien lo mira elige qué ver. El segundo era una contradicción dentro de RN-REP-01 —decía a la
+    vez que el propietario global ve el consolidado de su grupo y que un consolidado no se comparte
+    con ningún restaurante—, y es la **decisión 30**: vale la segunda, el propietario global
+    incluido.
 
     **Comprobado:** las 39 suites desde cero con las 86 migraciones; cuatro mutaciones detectadas
     por el motivo correcto (la transición de `send_report`, `created_by` legible, la auditoría del

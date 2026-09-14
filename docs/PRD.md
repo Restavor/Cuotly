@@ -1094,15 +1094,20 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
 
 - **RN-REP-01**: hay **tres familias de informe** (§89): **operación** (solicitudes, trabajos, tareas,
   tiempos, consumos y menús), **finanzas** (ingresos, cobros, impagos y renovaciones) y **rendimiento
-  digital** (web, Google y fuentes conectadas). Un informe es de **un restaurante** o **consolidado**
-  del espacio; §89 da las dos formas ("informes globales e individuales"). Quién ve qué: propietario y
-  administradores del espacio, todo; el **propietario global** del grupo, el consolidado de su grupo y
-  el detalle de cada establecimiento suyo; el **propietario local**, el de su establecimiento; el
+  digital** (web, Google y fuentes conectadas). Un informe es de **un restaurante** o **consolidado
+  del espacio**; §89 da las dos formas ("informes globales e individuales"). Quién ve qué: propietario y
+  administradores del espacio, todo; el **propietario global** del grupo, el informe de **cada
+  establecimiento suyo**; el **propietario local**, el de su establecimiento; el
   **Editor** y el **Consulta**, igual: **lo ven todos los que trabajan en ese restaurante**, con el
   acceso vigente. §89 decía que Consulta necesitaba permiso de su propietario y así se implementó
   primero, con un permiso fino por persona; **Bosco lo enmendó el 14/09/2026** (decisión 28) y ese
-  permiso se quitó entero. Un informe **consolidado no se comparte con ningún restaurante**: mezcla
-  datos de varios y no hay cliente al que pertenezca. El **trabajador no ve la pantalla de informes
+  permiso se quitó entero. Un informe **consolidado no se comparte con ningún restaurante**, y eso
+  **incluye al propietario global del grupo**: mezcla datos de varios y no hay cliente al que
+  pertenezca. Esta regla decía las dos cosas a la vez —que el propietario global veía "el
+  consolidado de su grupo" y que un consolidado no se comparte con nadie— y **Bosco resolvió la
+  contradicción el 14/09/2026** (decisión 30) a favor de la segunda. Un consolidado es **del
+  espacio**, no de un grupo: el CHECK `reports_scope` de la migración 85 no admite un informe sin
+  restaurante que tenga grupo, así que "el consolidado de su grupo" tampoco existía como fila. El **trabajador no ve la pantalla de informes
   de un restaurante** —lo que §90 le da es el suyo personal—, pero si está autorizado en él **sí
   recibe el informe enviado**, porque trabaja ahí (RN-REP-11).
 - **RN-REP-02**: el **informe personal del trabajador** (§90) lleva carga actual, trabajos realizados,

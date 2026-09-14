@@ -467,6 +467,43 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    enciende la que sobra y sale marcada como fuera del PDF, y no se ofrece lo que la versión no
    trae) y uno del PDF que **muerde**: mutando el filtro de secciones del PDF, el test falla.
 
+30. **Un informe consolidado no se comparte con ningún restaurante, propietario global incluido**
+   (14/09/2026, resuelve la contradicción dentro de RN-REP-01 que dejó abierta la revisión del
+   Hito 16).
+
+   **La contradicción.** RN-REP-01 decía, con tres líneas de separación, que el **propietario
+   global** del grupo ve "el consolidado de su grupo" y que "un informe **consolidado no se
+   comparte con ningún restaurante**". Las dos no pueden ser verdad. CLAUDE.md prohíbe resolver
+   una contradicción entre documentos por cuenta propia, así que se dejó marcada y se preguntó.
+
+   **Lo que decide Bosco:** "El informe consolidado no se comparte con ningún restaurante". Vale
+   la segunda frase. El propietario global ve el informe de **cada establecimiento suyo**, que es
+   lo que tiene cliente al que pertenecer; el consolidado, no.
+
+   **Lo que ya era así sin que nadie lo hubiera comprobado.** La política `reports_select` de la
+   migración 85 exige `establishment_id is not null` en la rama del cliente, y
+   `client_can_view_reports(null)` devuelve falso, así que un consolidado no llegaba a nadie del
+   restaurante. Además, el CHECK `reports_scope` no admite un informe sin restaurante que tenga
+   grupo: **"el consolidado de su grupo" no existía ni como fila** — un consolidado es del
+   espacio. Lo que faltaba era que algo lo comprobara: una rama que nadie prueba es una rama que
+   el siguiente que toque la política puede quitar sin enterarse.
+
+   **Aviso para quien lea la migración 85.** El cuerpo de `client_can_view_reports()` lleva dentro
+   un comentario que dice "§14.1 · el propietario global del grupo ve el consolidado y el detalle
+   de lo suyo". Esa frase es de antes de esta decisión y **ya no es la regla**; no se edita porque
+   la 85 está aplicada y CLAUDE.md prohíbe modificar una migración existente. Lo que manda es esta
+   decisión, RN-REP-01 y el bloque de `supabase/tests/informes.sql` que lo comprueba.
+
+   Comprobado: un bloque nuevo en `informes.sql` que deja un consolidado en **"Enviado"** —el
+   estado más visible que hay para un cliente— y comprueba **persona a persona** que no lo
+   alcanzan ni el propietario local, ni el Consulta, ni el Editor, ni el propietario global, con
+   una comprobación en falso-cerrado de que quien lleva la cartera **sí** lo ve (sin ella, una
+   fila que no existiera haría pasar el bucle en verde). Las 39 suites desde cero sobre las 86
+   migraciones. Y una mutación **detectada**, elegida para modelar el error que esta decisión
+   prohíbe y no un borrado cualquiera: añadir a la política la rama que da el consolidado del
+   espacio a quien pertenece a un grupo suyo —es decir, implementar la mitad de RN-REP-01 que
+   Bosco acaba de descartar— hace fallar la suite.
+
 ---
 
 ### Pendiente de completar (no bloquea la Fase 1)
