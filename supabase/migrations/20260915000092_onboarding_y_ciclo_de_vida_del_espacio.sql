@@ -343,6 +343,110 @@ revoke all on function public.confirm_onboarding_step(uuid, text) from public, a
 grant execute on function public.confirm_onboarding_step(uuid, text) to authenticated;
 
 -- ============================================================
+-- 5 bis · Dónde se hacen los pasos 1 y 2, que no tenían sitio
+-- ============================================================
+--
+-- `spaces` no tiene política de UPDATE desde la migración 49 —para que no
+-- haya una segunda puerta sin auditoría—, así que los datos del espacio y
+-- su logotipo se tocan por función, como el nombre y la zona horaria.
+create or replace function public.set_space_details(
+  p_space_id uuid,
+  p_legal_name text,
+  p_tax_id text,
+  p_address text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_old record;
+begin
+  if not public.has_capability(p_space_id, 'manage_space') then
+    raise exception 'Solo el propietario cambia los datos del espacio (§125)';
+  end if;
+
+  select legal_name, tax_id, address into v_old from public.spaces where id = p_space_id;
+
+  -- Como `set_space_name()`: si no cambia nada, no se escribe un apunte
+  -- que diría "de X a X".
+  if v_old.legal_name is not distinct from nullif(btrim(p_legal_name), '')
+     and v_old.tax_id is not distinct from nullif(btrim(p_tax_id), '')
+     and v_old.address is not distinct from nullif(btrim(p_address), '') then
+    return false;
+  end if;
+
+  update public.spaces
+  set legal_name = nullif(btrim(p_legal_name), ''),
+      tax_id = nullif(btrim(p_tax_id), ''),
+      address = nullif(btrim(p_address), '')
+  where id = p_space_id;
+
+  insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, old_value, new_value, reason)
+  values (p_space_id, auth.uid(), 'space.details_changed', 'space', p_space_id,
+          jsonb_build_object('legal_name', v_old.legal_name, 'tax_id', v_old.tax_id, 'address', v_old.address),
+          jsonb_build_object('legal_name', nullif(btrim(p_legal_name), ''),
+                             'tax_id', nullif(btrim(p_tax_id), ''),
+                             'address', nullif(btrim(p_address), '')),
+          null);
+  return true;
+end;
+$$;
+
+comment on function public.set_space_details(uuid, text, text, text) is
+  '§9 paso 1, §125 · razón social, identificador fiscal y dirección del
+   espacio. **Sin validar ninguno**: el bloque legal sigue aplazado
+   (§170.1), igual que en `space_requests` (RN-PLA-01).';
+
+revoke all on function public.set_space_details(uuid, text, text, text) from public, anon;
+grant execute on function public.set_space_details(uuid, text, text, text) to authenticated;
+
+-- El logotipo (§9 paso 2, §124). Guarda la RUTA, no los bytes: los bytes
+-- van al mismo bucket privado que los archivos, y quien los sube es el
+-- servidor tras comprobar este permiso.
+create or replace function public.set_space_logo(
+  p_space_id uuid,
+  p_storage_path text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_old text;
+begin
+  if not public.has_capability(p_space_id, 'manage_space') then
+    raise exception 'Solo el propietario cambia el logotipo del espacio (§124)';
+  end if;
+
+  select logo_storage_path into v_old from public.spaces where id = p_space_id;
+  if v_old is not distinct from nullif(btrim(p_storage_path), '') then
+    return false;
+  end if;
+
+  update public.spaces
+  set logo_storage_path = nullif(btrim(p_storage_path), '')
+  where id = p_space_id;
+
+  insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, old_value, new_value, reason)
+  values (p_space_id, auth.uid(), 'space.logo_changed', 'space', p_space_id,
+          jsonb_build_object('logo_storage_path', v_old),
+          jsonb_build_object('logo_storage_path', nullif(btrim(p_storage_path), '')),
+          null);
+  return true;
+end;
+$$;
+
+comment on function public.set_space_logo(uuid, text) is
+  '§9 paso 2, §124 · "puede cambiar nombre y logotipo". La ruta, no los
+   bytes. §124 no deja cambiar nada más de la identidad visual.';
+
+revoke all on function public.set_space_logo(uuid, text) from public, anon;
+grant execute on function public.set_space_logo(uuid, text) to authenticated;
+
+-- ============================================================
 -- 6 · El archivado del propietario es un modo más (RN-CIC-07)
 -- ============================================================
 --

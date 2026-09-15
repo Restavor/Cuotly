@@ -24,6 +24,8 @@ import { googleOAuthIsConfigured } from "@/services/google-oauth";
 import {
   NotificationPreferencesForm,
   PaymentTermForm,
+  SpaceDetailsForm,
+  SpaceLogoForm,
   SpaceNameForm,
   TimezoneForm,
   type NotificationPreference,
@@ -74,7 +76,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name, slug, timezone, payment_term_days")
+    .select(
+      "id, name, slug, timezone, payment_term_days, legal_name, tax_id, address, logo_storage_path",
+    )
     .eq("slug", slug)
     .maybeSingle();
   if (!space) notFound();
@@ -181,13 +185,62 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
               {es.settings.brandValue} · {es.settings.brandHint}
             </dd>
           </div>
-          <div>
-            <dt className="font-semibold text-text">{es.settings.logoLabel}</dt>
-            {/* P6 · un botón que no guardaría nada es peor que decir por qué no está. */}
-            <dd className="text-text-secondary">{es.settings.logoPending}</dd>
-          </div>
         </dl>
+
+        {/* §9 pasos 1 y 2 · desde el Hito 20 el espacio tiene dónde guardar
+            sus datos fiscales y su logotipo, así que aquí ya hay algo que
+            pulsar en vez de un motivo por el que no lo hay. */}
+        {canManageSpace ? (
+          <div className="mt-4 border-t border-border pt-4">
+            <SpaceDetailsForm
+              spaceId={space.id}
+              legalName={space.legal_name}
+              taxId={space.tax_id}
+              address={space.address}
+            />
+            <SpaceLogoForm spaceId={space.id} hasLogo={space.logo_storage_path !== null} />
+          </div>
+        ) : null}
       </Card>
+
+      {/* §123 · las tres secciones del Hito 20, que son pantallas propias
+          porque cada una trae una decisión seria detrás. */}
+      {canManageSpace ? (
+        <Card>
+          <h2 className="mb-3 text-lg font-semibold text-primary-dark">
+            {es.settings.spaceSectionsTitle}
+          </h2>
+          <ul className="space-y-3 text-sm">
+            <li>
+              <Link
+                href={`/espacios/${slug}/puesta-en-marcha`}
+                className="font-medium text-primary underline"
+              >
+                {es.settings.onboardingLink}
+              </Link>
+              <p className="text-text-secondary">{es.settings.onboardingHint}</p>
+            </li>
+            <li>
+              <Link
+                href={`/espacios/${slug}/ajustes/propiedad`}
+                className="font-medium text-primary underline"
+              >
+                {es.settings.ownershipLink}
+              </Link>
+              <p className="text-text-secondary">{es.settings.ownershipHint}</p>
+            </li>
+            <li>
+              <Link
+                href={`/espacios/${slug}/ajustes/exportacion`}
+                className="font-medium text-primary underline"
+              >
+                {es.settings.exportLink}
+              </Link>
+              <p className="text-text-secondary">{es.settings.exportHint}</p>
+            </li>
+          </ul>
+        </Card>
+      ) : null}
 
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">

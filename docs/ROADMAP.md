@@ -34,7 +34,7 @@ Actualizado el 15/09/2026.
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
-| 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
+| 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita el 15/09/2026. **Sin aplicar todavía al proyecto real**: lo decide Bosco. PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, **a la espera de que las confirme** (pendiente 23). Ver la entrada de cierre abajo. |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
 
@@ -4527,6 +4527,74 @@ columna por vuelta.
 - **Exportación** (§141) en lo que no depende del bloque legal: el propietario exporta su espacio; el
   del restaurante, su grupo o sus establecimientos; y nadie borra su cuenta si es el único
   propietario de algo.
+
+### Hito 20 · Onboarding del espacio nuevo y ciclo de vida del espacio *(hecho el 15/09/2026; la 92 SIN aplicar al proyecto)*
+- **PRD §33 escrito primero**, como manda el desglose. §9, §127 y §141 son los tres apartados más
+  escuetos de la maestra —diez palabras sueltas, siete líneas y cuatro— y callan en **trece** sitios,
+  así que este hito lleva más lecturas que los tres anteriores juntos. Están escritas como quince
+  reglas `RN-CIC` y **preguntadas, no confirmadas**: son la **pendiente 23**. Ninguna es un umbral ni
+  un plazo; los dos únicos números del apartado, los diez pasos y los 30 días, los dan §9 y §127.
+  La familia es `RN-CIC` y no `RN-ESP` a propósito: `RN-EST` ya existe y dos familias a una letra se
+  confunden en el primer `grep`.
+- **El asistente de §9**, con sus diez pasos, sin IA y **sin bloquear nada**: §9 dice "completa
+  progresivamente". **Seis pasos se saben por el dato y cuatro no se fingen**: zona horaria,
+  impuestos, notificaciones y seguridad ya tienen un valor de partida (`Europe/Madrid`, 21 %, todos
+  los avisos activados, 2FA opcional) y en la base nada distingue el valor por omisión de una
+  decisión. Se completan con la confirmación del propietario, que es un hecho con actor y fecha, y el
+  **origen se guarda y se enseña**: un espacio sin logotipo dice "confirmado por el propietario", no
+  "hecho". Los pasos 1 y 2 no tenían dónde hacerse y ahora lo tienen: los datos fiscales del espacio
+  —heredados de la solicitud aprobada— y el logotipo, que desde la 92 es una ruta en `spaces` porque
+  `files` exige `establishment_id` y §9 pide el logotipo antes del primer establecimiento.
+- **§127 entero.** Transferir la propiedad la **mueve**: quien la recibe pasa a propietario y quien la
+  da se queda de administrador. "Siempre al menos un propietario" lo sostiene un **disparador** y no
+  una comprobación dentro de una función, porque la política de `space_memberships` deja al
+  propietario escribir esa tabla por PostgREST y una comprobación en la función la esquiva un
+  `update` de una línea. Archivar es un **modo más del espacio** (`archived_by_owner`), no un estado
+  paralelo, así que hereda tal cual la solo lectura que la 90 instaló en toda tabla con `space_id`.
+- **"Después se programa eliminación" hace exactamente eso.** Se guarda la fecha, se enseña y **no se
+  borra nada**, ni al día 31 ni nunca en esta versión (pendiente 20, bloque legal). La suite lo
+  comprueba en falso-cerrado: si alguien añade un barrido que borre, salta.
+- **La exportación de §141 sin ninguna lista escrita a mano**, ni de tablas ni de columnas. Se ejecuta
+  con la **identidad de quien exporta** (`security invoker`), así que la RLS decide las filas y el
+  privilegio de columna decide las columnas — que es justo lo que CLAUDE.md dice que no se sostiene
+  con una lista, porque se escapó tres veces en el Hito 7. El restaurante se lleva sus mensajes **sin
+  `sender_id`** por construcción, no por acordarse.
+- **La comprobación de §141 sobre cerrar la cuenta**, que dice **qué lo impide y qué hacer con cada
+  cosa**. El cierre en sí no se implementa: es del bloque legal, y se dice en vez de fingirse.
+- **Modo soporte no transfiere la propiedad ni archiva**, ni en nivel `owner`: son las dos cosas que
+  sobreviven a la sesión, que es exactamente por lo que RN-ADM-07 le quita invitar.
+- **Las pantallas**, que este hito sí trae: el asistente (`/espacios/[slug]/puesta-en-marcha`, con
+  aviso en el Inicio mientras quede algo), propiedad y fin (`/ajustes/propiedad`), exportación
+  (`/ajustes/exportacion` y la ruta de descarga `/api/exportacion`), la exportación del restaurante en
+  su propia ficha, los datos fiscales y el logotipo en Ajustes —donde hasta hoy había un motivo
+  escrito por el que no se podía subir— y el cierre de cuenta (`/cuenta/cerrar`).
+- **Lo que el hito NO trae, y se dice:** no borra nada a los 30 días ni cierra ninguna cuenta
+  (pendiente 20), **no** valida ni numera los datos fiscales que guarda, **no** trae las incidencias
+  de §131 ni el centro de ayuda de §133 (Hito 21) y **no** toca la app móvil (Hito 22).
+
+**La suite 43 cazó dos errores antes de que llegaran a ninguna parte.** El primero: la clave de
+idempotencia se miraba **después** del permiso, así que el segundo clic de una transferencia se
+encontraba con "solo el propietario transfiere" —porque el primero ya le había quitado el rol— en vez
+de con la misma respuesta. Es el caso que una clave de idempotencia existe para evitar, y pasaba en
+las tres operaciones críticas del hito. El segundo: la exportación del restaurante se dejaba fuera sus
+propios mensajes, porque `messages` no cuelga del establecimiento sino de la conversación; el
+enlazador pasó de dos vínculos a cuatro, y con eso el barrido de P7 dejó de ser vacuo —recorría dos
+tablas— y pasó a mirar las cuatro que llevan identidad del equipo en una columna revocada.
+
+**Y un barrido ajeno disparó, como en todos los hitos de esta fase:** el de tablas de espacio sin el
+disparador de modo lectura exigió justificar `space_exports` y `space_lifecycle_operations`. Las dos
+están exentas con su motivo escrito, y el de `space_exports` lo da la propia RN-SUB-08: dice con todas
+las letras que un espacio archivado "se puede pagar, **exportar** y contactar con soporte", así que
+ponerle el disparador habría impedido al propietario llevarse sus datos justo cuando más falta le
+hace.
+
+**Se verifica con:** `supabase/tests/onboarding_y_ciclo_de_vida_del_espacio.sql` (la 43ª suite;
+RN-CIC-01 a 15, con el barrido de P7 sobre lo exportado y el borrado del último propietario intentado
+también **sin RLS**, que es donde solo protege el disparador), `space-lifecycle.test.ts`,
+`listas-compartidas.test.ts` (los diez pasos y cuál se deriva, los tres alcances, las tres operaciones
+del libro y los tres modos archivados, iguales a los dos lados), `cuotly-subscription.test.ts`,
+`audit.test.ts` y `notifications.test.ts`. Las 43 suites pasan desde cero sobre las 92 migraciones en
+local, y los 1282 tests unitarios.
 
 ### Hito 21 · Soporte, centro de ayuda y página de estado *(servidor y pantallas)*
 - **Incidencias de Cuotly** (§131) con sus seis estados y sus campos, abiertas solo por propietario y

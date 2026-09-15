@@ -5295,6 +5295,102 @@ export type Database = {
           },
         ]
       }
+      space_exports: {
+        Row: {
+          establishment_id: string | null
+          group_id: string | null
+          id: string
+          requested_at: string
+          requested_by: string
+          row_count: number
+          scope: string
+          space_id: string
+          table_count: number
+        }
+        Insert: {
+          establishment_id?: string | null
+          group_id?: string | null
+          id?: string
+          requested_at?: string
+          requested_by: string
+          row_count?: number
+          scope: string
+          space_id: string
+          table_count?: number
+        }
+        Update: {
+          establishment_id?: string | null
+          group_id?: string | null
+          id?: string
+          requested_at?: string
+          requested_by?: string
+          row_count?: number
+          scope?: string
+          space_id?: string
+          table_count?: number
+        }
+        Relationships: []
+      }
+      space_lifecycle_operations: {
+        Row: {
+          actor_id: string
+          from_owner_id: string | null
+          id: string
+          idempotency_key: string | null
+          kind: string
+          occurred_at: string
+          reason: string | null
+          space_id: string
+          to_owner_id: string | null
+        }
+        Insert: {
+          actor_id: string
+          from_owner_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind: string
+          occurred_at?: string
+          reason?: string | null
+          space_id: string
+          to_owner_id?: string | null
+        }
+        Update: {
+          actor_id?: string
+          from_owner_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind?: string
+          occurred_at?: string
+          reason?: string | null
+          space_id?: string
+          to_owner_id?: string | null
+        }
+        Relationships: []
+      }
+      space_onboarding_confirmations: {
+        Row: {
+          confirmed_at: string
+          confirmed_by: string
+          id: string
+          space_id: string
+          step: string
+        }
+        Insert: {
+          confirmed_at?: string
+          confirmed_by: string
+          id?: string
+          space_id: string
+          step: string
+        }
+        Update: {
+          confirmed_at?: string
+          confirmed_by?: string
+          id?: string
+          space_id?: string
+          step?: string
+        }
+        Relationships: []
+      }
       space_invitations: {
         Row: {
           created_at: string
@@ -5609,50 +5705,68 @@ export type Database = {
       }
       spaces: {
         Row: {
+          address: string | null
           created_at: string
           created_by: string
           cuotly_archived_at: string | null
+          cuotly_deletion_scheduled_at: string | null
           cuotly_plan: string | null
           cuotly_reactivation_deadline_at: string | null
           cuotly_status: string | null
           cuotly_status_changed_at: string | null
           cuotly_trial_ends_at: string | null
           id: string
+          legal_name: string | null
+          logo_storage_path: string | null
           name: string
+          onboarding_completed_at: string | null
           payment_term_days: number
           slug: string
+          tax_id: string | null
           tax_rate_percent: number
           timezone: string
         }
         Insert: {
+          address?: string | null
           created_at?: string
           created_by: string
           cuotly_archived_at?: string | null
+          cuotly_deletion_scheduled_at?: string | null
           cuotly_plan?: string | null
           cuotly_reactivation_deadline_at?: string | null
           cuotly_status?: string | null
           cuotly_status_changed_at?: string | null
           cuotly_trial_ends_at?: string | null
           id?: string
+          legal_name?: string | null
+          logo_storage_path?: string | null
           name: string
+          onboarding_completed_at?: string | null
           payment_term_days?: number
           slug: string
+          tax_id?: string | null
           tax_rate_percent?: number
           timezone?: string
         }
         Update: {
+          address?: string | null
           created_at?: string
           created_by?: string
           cuotly_archived_at?: string | null
+          cuotly_deletion_scheduled_at?: string | null
           cuotly_plan?: string | null
           cuotly_reactivation_deadline_at?: string | null
           cuotly_status?: string | null
           cuotly_status_changed_at?: string | null
           cuotly_trial_ends_at?: string | null
           id?: string
+          legal_name?: string | null
+          logo_storage_path?: string | null
           name?: string
+          onboarding_completed_at?: string | null
           payment_term_days?: number
           slug?: string
+          tax_id?: string | null
           tax_rate_percent?: number
           timezone?: string
         }
@@ -7268,6 +7382,89 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string; p_status: string }
         Returns: undefined
       }
+      account_deletion_blockers: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          entity_id: string
+          entity_name: string
+          kind: string
+          remedy: string
+        }[]
+      }
+      archive_space_by_owner: {
+        Args: { p_idempotency_key?: string; p_reason: string; p_space_id: string }
+        Returns: string
+      }
+      build_export_payload: {
+        Args: {
+          p_establishment_id?: string
+          p_group_id?: string
+          p_scope: string
+          p_space_id: string
+        }
+        Returns: Json
+      }
+      can_export_scope: {
+        Args: {
+          p_establishment_id: string
+          p_group_id: string
+          p_scope: string
+          p_space_id: string
+        }
+        Returns: boolean
+      }
+      confirm_onboarding_step: {
+        Args: { p_space_id: string; p_step: string }
+        Returns: boolean
+      }
+      export_space: {
+        Args: {
+          p_establishment_id?: string
+          p_group_id?: string
+          p_scope?: string
+          p_space_id: string
+        }
+        Returns: Json
+      }
+      exportable_columns: {
+        Args: { p_table: string }
+        Returns: string[]
+      }
+      onboarding_steps: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          derivable: boolean
+          ordinal: number
+          step: string
+        }[]
+      }
+      restore_space_by_owner: {
+        Args: { p_idempotency_key?: string; p_reason?: string; p_space_id: string }
+        Returns: string
+      }
+      space_onboarding_progress: {
+        Args: { p_space_id: string }
+        Returns: {
+          confirmed_at: string
+          done: boolean
+          ordinal: number
+          source: string
+          step: string
+        }[]
+      }
+      space_status_is_archived: {
+        Args: { p_status: string }
+        Returns: boolean
+      }
+      transfer_space_ownership: {
+        Args: {
+          p_idempotency_key?: string
+          p_reason?: string
+          p_space_id: string
+          p_to_user_id: string
+        }
+        Returns: string
+      }
       declare_cuotly_payment: {
         Args: {
           p_amount_cents: number
@@ -8691,6 +8888,19 @@ export type Database = {
           p_status: string
         }
         Returns: undefined
+      }
+      set_space_details: {
+        Args: {
+          p_address: string
+          p_legal_name: string
+          p_space_id: string
+          p_tax_id: string
+        }
+        Returns: boolean
+      }
+      set_space_logo: {
+        Args: { p_space_id: string; p_storage_path: string }
+        Returns: boolean
       }
       set_space_name: {
         Args: { p_name: string; p_space_id: string }

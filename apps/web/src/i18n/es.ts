@@ -2208,8 +2208,37 @@ export const es = {
     brandHint:
       "El sistema visual, la paleta y la firma no se personalizan (§124): un único modo claro y una única densidad.",
     logoLabel: "Logotipo",
-    logoPending:
-      "Todavía no se puede subir. El catálogo de archivos cuelga siempre de un restaurante (files.establishment_id), así que hoy no existe un archivo que sea del espacio; hace falta esa pieza antes de que este botón haga algo.",
+    logoHint:
+      "JPG, PNG o WebP, hasta 2 MB. El resto de la identidad visual no se personaliza.",
+    logoPresent: "Hay un logotipo guardado; si subes otro, lo sustituye.",
+    logoAbsent: "Todavía no hay logotipo.",
+    logoSubmit: "Guardar el logotipo",
+    logoPendingLabel: "Subiendo…",
+    logoDone: "Logotipo guardado.",
+    logoMissing: "Elige un archivo de imagen.",
+    logoWrongType: "El logotipo tiene que ser una imagen JPG, PNG o WebP.",
+    logoTooBig: "El logotipo no puede pasar de 2 MB.",
+    logoUploadFailed:
+      "No se ha podido guardar la imagen. No se ha cambiado nada: vuelve a intentarlo.",
+
+    legalNameLabel: "Razón social",
+    taxIdLabel: "Identificador fiscal",
+    addressLabel: "Dirección fiscal",
+    detailsHint:
+      "Se copiaron de la solicitud con la que pediste el espacio. No se validan: se guardan tal como los escribas.",
+    detailsSubmit: "Guardar los datos",
+    detailsPending: "Guardando…",
+    detailsDone: "Datos del espacio guardados.",
+    detailsUnchanged: "No había nada que cambiar: no se ha registrado ningún cambio.",
+
+    spaceSectionsTitle: "El espacio, de principio a fin",
+    ownershipLink: "Propiedad y fin del espacio",
+    ownershipHint:
+      "Transferir la propiedad a otra persona del equipo, archivar el espacio y recuperarlo.",
+    exportLink: "Exportación y conservación",
+    exportHint: "Llevarte los datos del espacio en un archivo.",
+    onboardingLink: "Puesta en marcha",
+    onboardingHint: "Los diez pasos para dejar el espacio listo.",
 
     contractTitle: "Configuración contractual",
     contractHint:
@@ -2511,6 +2540,8 @@ export const es = {
       "space_request.rejected": "Solicitud de espacio rechazada",
       "space.payment_term_changed": "Plazo de pago cambiado",
       "space.renamed": "Espacio renombrado",
+      "space.details_changed": "Datos del espacio cambiados",
+      "space.logo_changed": "Logotipo del espacio cambiado",
       "space.onboarding_completed": "Puesta en marcha completada",
       "space.ownership_transferred": "Propiedad del espacio transferida",
       "space.archived_by_owner": "Espacio archivado por su propietario",
@@ -4566,6 +4597,7 @@ export const es = {
         active: "Activo",
         archived_trial_ended: "Archivado · prueba sin pago",
         archived_nonpayment: "Archivado · impago",
+        archived_by_owner: "Archivado por su propietario",
       },
       supportActive: "Soporte abierto",
       declaredPending: "Pago declarado",
@@ -4787,6 +4819,204 @@ export const es = {
    * Fase 4, Hito 19 · la suscripción de Cuotly vista por el propietario del
    * espacio (PRD §31 y §32, RN-ADM-10, RN-SUB-06).
    */
+  /**
+   * §9 · el asistente de puesta en marcha (RN-CIC-01 a 04). Los diez
+   * pasos tienen nombre y una frase que dice qué se hace en cada uno: la
+   * maestra los enumera en diez palabras sueltas y una lista de diez
+   * palabras no es una pantalla.
+   */
+  onboarding: {
+    title: "Puesta en marcha",
+    subtitle:
+      "Los diez pasos para dejar el espacio listo. No hay prisa y no bloquean nada: el espacio ya funciona entero.",
+    noAccessTitle: "Sin acceso a la puesta en marcha",
+    noAccessReason:
+      "La puesta en marcha del espacio la ve y la completa su propietario.",
+    neverBlocks:
+      "Se pueden hacer en cualquier orden, y mientras tanto el espacio funciona con normalidad.",
+    pendingCount: (n: number) =>
+      n === 1 ? "Queda 1 paso por hacer." : `Quedan ${n} pasos por hacer.`,
+    completedOn: "Puesta en marcha completada el",
+    completedHint:
+      "Queda como está: es un hecho con fecha y no se vuelve a abrir aunque algo cambie después.",
+    pending: "Pendiente",
+    doneByData: "Hecho",
+    doneByConfirmation: "Confirmado por el propietario",
+    confirmedOn: "Dado por bueno el",
+    confirmSubmit: "Doy este paso por bueno",
+    confirmPending: "Guardando…",
+    unknownStep: "Ese paso no es ninguno de los diez de la puesta en marcha.",
+    noAiNote:
+      "La puesta en marcha no usa inteligencia artificial: es una secuencia de formularios y tareas pendientes.",
+    steps: {
+      space_details: {
+        title: "Datos del espacio",
+        hint: "Razón social, identificador fiscal y dirección. Se copian de la solicitud con la que pediste el espacio, y aquí se corrigen.",
+        action: "Ir a Ajustes",
+      },
+      logo: {
+        title: "Logotipo",
+        hint: "La imagen que acompaña al nombre del espacio. El resto de la identidad visual no se cambia.",
+        action: "Subir el logotipo",
+      },
+      timezone: {
+        title: "Zona horaria",
+        hint: "El reloj con el que se cuentan todos los plazos del espacio. Viene puesta en Europa/Madrid: confírmala o cámbiala.",
+        action: "Ir a Ajustes",
+      },
+      working_hours: {
+        title: "Horario operativo",
+        hint: "Los días y las horas en los que corren los plazos contractuales, y los festivos y cierres del espacio.",
+        action: "Ir al calendario",
+      },
+      taxes: {
+        title: "Impuestos",
+        hint: "El tipo impositivo con el que se emiten los cobros a los restaurantes. Viene puesto al 21 %.",
+        action: "Ir a Ajustes",
+      },
+      plans_and_services: {
+        title: "Planes y servicios",
+        hint: "Lo que este espacio le vende a sus restaurantes: al menos un plan de mantenimiento o un servicio.",
+        action: "Ir a Planes",
+      },
+      first_establishment: {
+        title: "Primer establecimiento",
+        hint: "El primer restaurante al que le das servicio, con su grupo.",
+        action: "Dar de alta un restaurante",
+      },
+      first_worker: {
+        title: "Primer trabajador",
+        hint: "Quien va a hacer el trabajo. Basta con invitarle: el paso no depende de que conteste.",
+        action: "Invitar a alguien",
+      },
+      notifications: {
+        title: "Notificaciones",
+        hint: "Qué avisos quieres recibir. De partida están todos activados, salvo los que no se pueden desactivar.",
+        action: "Ir a Ajustes",
+      },
+      security: {
+        title: "Seguridad",
+        hint: "La verificación en dos pasos de tu cuenta y las sesiones abiertas. Para un propietario de espacio es opcional.",
+        action: "Ir a mi seguridad",
+      },
+    },
+  },
+
+  /** §127 · propiedad y fin de un espacio (RN-CIC-05 a 09). */
+  spaceOwnership: {
+    title: "Propiedad y fin del espacio",
+    subtitle:
+      "Quién manda en este espacio, y qué pasa cuando deja de hacer falta.",
+    noAccessTitle: "Sin acceso a la propiedad del espacio",
+    noAccessReason:
+      "Transferir la propiedad y archivar el espacio son cosa de su propietario (§127).",
+    stateTitle: "Estado del espacio",
+    stateUnknown: "Sin suscripción de Cuotly",
+    archivedOn: "Archivado el",
+    recoverableUntil: "Recuperable hasta el",
+    deletionScheduledFor: "Eliminación programada para el",
+    roles: { owner: "Propietario", admin: "Administrador", worker: "Trabajador" },
+
+    transferTitle: "Transferir la propiedad",
+    transferHint:
+      "La propiedad se mueve, no se duplica: quien la recibe pasa a ser propietario y tú te quedas como administrador del espacio. Solo puedes dársela a alguien que ya esté en el equipo.",
+    transferTo: "Nuevo propietario",
+    transferReason: "Motivo (opcional)",
+    transferSubmit: "Transferir la propiedad",
+    transferPending: "Transfiriendo…",
+    transferDone: "Propiedad transferida. Ahora eres administrador de este espacio.",
+    transferValidation: "Elige a quién le transfieres la propiedad.",
+    noCandidates:
+      "No hay nadie más en el equipo. Invita antes a la persona que va a recibir el espacio.",
+
+    confirmationLabel: (nombre: string) => `Escribe «${nombre}» para confirmar`,
+    confirmationMismatch:
+      "El nombre escrito no coincide con el del espacio. No se ha hecho nada.",
+
+    archiveTitle: "Archivar el espacio",
+    archiveHint:
+      "El espacio queda en modo lectura: nadie puede escribir en él, y se conserva entero. Lo puedes recuperar durante 30 días. Pasado ese plazo, recuperarlo deja de estar en tu mano.",
+    archiveReason: "Motivo (obligatorio)",
+    archiveSubmit: "Archivar el espacio",
+    archivePending: "Archivando…",
+    archiveDone: "Espacio archivado. Sigue entero y lo puedes recuperar durante 30 días.",
+    archiveValidation: "Archivar un espacio exige un motivo escrito.",
+
+    restoreTitle: "Recuperar el espacio",
+    restoreHint:
+      "Vuelve al modo que tenía y deja de estar en cuenta atrás. Se puede escribir en él otra vez.",
+    restoreTooLate:
+      "Han pasado los 30 días, así que recuperarlo ya no está en tu mano: escríbenos y lo hacemos nosotros.",
+    restoreReason: "Motivo (opcional)",
+    restoreSubmit: "Recuperar el espacio",
+    restorePending: "Recuperando…",
+    restoreDone: "Espacio recuperado.",
+
+    deletionTitle: "Eliminación",
+    deletionPending:
+      "La fecha de eliminación está programada y guardada, pero **todavía no se elimina nada**: qué se borra de verdad, qué hay que conservar por obligación legal y durante cuánto tiempo está pendiente de la revisión jurídica. Hasta entonces el espacio se conserva entero.",
+
+    exportFirst: "Antes de archivar, puedes llevarte todo:",
+    exportLink: "exportar el espacio",
+  },
+
+  /** §141, §123 · exportación (RN-CIC-10/11). */
+  spaceExport: {
+    title: "Exportación y conservación",
+    subtitle: "Llévate los datos de este espacio en un archivo.",
+    noAccessTitle: "Sin acceso a la exportación",
+    noAccessReason: "Exportar el espacio entero es cosa de su propietario (§141).",
+    spaceTitle: "Exportar el espacio",
+    spaceHint:
+      "Un único archivo JSON con lo que hay en este espacio: restaurantes, solicitudes, trabajos, mensajes, finanzas y la auditoría. Se prepara en el servidor y se descarga en tu navegador.",
+    clientTitle: "Exportar los datos de este restaurante",
+    clientHint:
+      "Un único archivo JSON con lo que es de este restaurante: sus solicitudes, sus mensajes, sus archivos y sus cobros.",
+    submit: "Descargar la exportación",
+    downloadHint:
+      "Se prepara en el momento y se descarga como un archivo JSON. Si no se descarga nada, es que no tienes permiso para exportar esto.",
+    scopeLabel: "Qué exportar",
+    scopes: {
+      space: "Espacio completo",
+      group: "Grupo de restaurantes",
+      establishment: "Un restaurante",
+    },
+    historyTitle: "Exportaciones anteriores",
+    historyEmptyTitle: "Todavía no se ha exportado nada",
+    historyEmptyReason: "Cuando alguien exporte, aparecerá aquí con la fecha y el alcance.",
+    historyWhen: "Cuándo",
+    historyScope: "Alcance",
+    historySize: "Contenido",
+    historyCounts: (tablas: number, filas: number) =>
+      `${tablas} ${tablas === 1 ? "tabla" : "tablas"} · ${filas} ${filas === 1 ? "fila" : "filas"}`,
+    retentionTitle: "Conservación",
+    retentionPending:
+      "Cuánto tiempo se conserva cada cosa y qué hay que guardar por obligación legal está pendiente de la revisión jurídica. Mientras tanto no se borra nada.",
+  },
+
+  /** §141 · cerrar la cuenta personal (RN-CIC-12). */
+  closeAccount: {
+    title: "Cerrar mi cuenta",
+    subtitle: "Qué hay que resolver antes, y qué falta por decidir.",
+    blockersTitle: "Lo que hay que resolver antes",
+    blockersHint:
+      "Eres la única persona propietaria de esto. Si cerraras la cuenta se quedaría sin dueño, así que primero hay que darle uno o cerrarlo.",
+    noBlockersTitle: "No hay nada que te lo impida",
+    noBlockersReason:
+      "No eres la única persona propietaria de ningún espacio ni de ningún grupo.",
+    kinds: { space: "Espacio de mantenimiento", group: "Grupo de restaurantes" },
+    remedies: {
+      transfer_ownership:
+        "Transfiere la propiedad a alguien del equipo desde los ajustes del espacio.",
+      transfer_or_close_group:
+        "Pásale el grupo a otra persona, o pide que se cierre, antes de cerrar tu cuenta.",
+    },
+    deletionTitle: "El cierre en sí",
+    deletionPending:
+      "Todavía no se puede cerrar la cuenta desde aquí: qué se borra, de qué se guarda una copia sin nombre y qué hay que conservar por obligación legal está pendiente de la revisión jurídica. Preferimos decirlo a poner un botón que no hace lo que promete.",
+    backToSecurity: "Volver a la seguridad de mi cuenta",
+  },
+
   cuotlySubscription: {
     title: "Suscripción de Cuotly",
     subtitle: "Lo que este espacio le paga a Cuotly: el modo, el plan, los cobros y cómo declarar un pago.",
@@ -4803,6 +5033,7 @@ export const es = {
       active: "Activo",
       archived_trial_ended: "Archivado en modo lectura: la prueba terminó sin pago",
       archived_nonpayment: "Archivado en modo lectura por impago",
+      archived_by_owner: "Archivado en modo lectura por decisión de su propietario",
     },
     planLabel: "Plan",
     plans: { pro: "Pro", agency: "Agency" },

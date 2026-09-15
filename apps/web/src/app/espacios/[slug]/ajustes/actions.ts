@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { es } from "@/i18n/es";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 import type { SettingsState } from "./action-state";
@@ -181,4 +183,99 @@ export async function saveNotificationPreferences(
 
   revalidatePath("/espacios", "layout");
   return { error: null, done: true, unchanged: false };
+}
+
+/**
+ * §9 paso 1, §125 · los datos fiscales del espacio. Como el nombre y la
+ * zona horaria, pasan por función: `spaces` no tiene política de UPDATE.
+ *
+ * **No se valida ningún identificador fiscal**, y es a propósito: el
+ * bloque legal sigue aplazado (§170.1) y una validación inventada sería
+ * peor que ninguna. Se guardan como los escribe quien los escribe, igual
+ * que en la solicitud de espacio (RN-PLA-01).
+ */
+export async function saveSpaceDetails(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("set_space_details", {
+      p_space_id: spaceId,
+      p_legal_name: String(formData.get("legalName") ?? ""),
+      p_tax_id: String(formData.get("taxId") ?? ""),
+      p_address: String(formData.get("address") ?? ""),
+    });
+    if (error) return { error: error.message, done: false, unchanged: false };
+
+    revalidatePath("/espacios", "layout");
+    return { error: null, done: data === true, unchanged: data === false };
+  } catch (fallo) {
+    return { error: mensajeDeFallo(fallo), done: false, unchanged: false };
+  }
+}
+
+/**
+ * §9 paso 2, §124 · el logotipo del espacio. Los bytes van al mismo bucket
+ * privado que los archivos y la fila solo guarda la ruta.
+ *
+ * La subida la hace el servidor con la clave de servicio, y **no antes de
+ * comprobar el permiso**: primero `set_space_logo()` —que exige
+ * `manage_space` y deja auditoría— y solo si acepta se suben los bytes.
+ * Al revés, cualquiera con sesión podría dejar archivos en el bucket.
+ *
+ * El tipo y el tamaño se comprueban aquí contra lo que el bucket admite
+ * para un logotipo: imágenes, y de las pequeñas.
+ */
+const LOGO_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+
+export async function saveSpaceLogo(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const file = formData.get("logo");
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: es.settings.logoMissing, done: false, unchanged: false };
+  }
+  if (!LOGO_MIME.has(file.type)) {
+    return { error: es.settings.logoWrongType, done: false, unchanged: false };
+  }
+  if (file.size > LOGO_MAX_BYTES) {
+    return { error: es.settings.logoTooBig, done: false, unchanged: false };
+  }
+
+  const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const ruta = `spaces/${spaceId}/logo-${Date.now()}.${extension}`;
+
+  try {
+    const supabase = await createClient();
+    // Primero el permiso y la auditoría; después los bytes.
+    const { error } = await supabase.rpc("set_space_logo", {
+      p_space_id: spaceId,
+      p_storage_path: ruta,
+    });
+    if (error) return { error: error.message, done: false, unchanged: false };
+
+    const admin = createAdminClient();
+    const subida = await admin.storage
+      .from("files")
+      .upload(ruta, file, { contentType: file.type, upsert: false });
+
+    if (subida.error) {
+      // La fila apunta a una ruta que no existe. Se deshace en vez de
+      // dejar un logotipo roto: es una ruta, no un registro de negocio.
+      await supabase.rpc("set_space_logo", { p_space_id: spaceId, p_storage_path: "" });
+      return { error: es.settings.logoUploadFailed, done: false, unchanged: false };
+    }
+
+    revalidatePath("/espacios", "layout");
+    return { error: null, done: true, unchanged: false };
+  } catch (fallo) {
+    return { error: mensajeDeFallo(fallo), done: false, unchanged: false };
+  }
 }

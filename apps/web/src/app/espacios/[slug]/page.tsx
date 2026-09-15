@@ -87,6 +87,15 @@ export default async function SpacePage({
   const home = await loadSpaceHome(supabase, space.id, space.slug, now);
   const base = `/espacios/${space.slug}`;
 
+  // §9 · cuántos pasos quedan. La función comprueba el permiso por su
+  // cuenta (RN-CIC-03) y devuelve error a quien no es el propietario, así
+  // que un fallo aquí significa "no es para ti" y se trata como tal: no
+  // se pinta el aviso.
+  const { data: pasos } = await supabase.rpc("space_onboarding_progress", {
+    p_space_id: space.id,
+  });
+  const onboardingPendiente = pasos === null ? null : pasos.filter((p) => !p.done).length;
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
@@ -97,6 +106,23 @@ export default async function SpacePage({
             : es.spaceHome.subtitleClear}
         </p>
       </header>
+
+      {/*
+        §9 · RN-CIC-01 · el asistente de puesta en marcha, mientras quede
+        algo por hacer. Es un aviso, no una puerta: §9 dice "completa
+        progresivamente" y el espacio funciona entero desde el primer
+        minuto. Se pregunta a la misma función que pinta el asistente, así
+        que quien no sea el propietario no ve nada — la función contesta
+        que no, y aquí no hay ninguna regla de permiso escrita aparte.
+      */}
+      {onboardingPendiente !== null && onboardingPendiente > 0 ? (
+        <Card>
+          <p className="text-sm text-text">
+            <strong>{es.onboarding.pendingCount(onboardingPendiente)}</strong>{" "}
+            <PanelLink href={`${base}/puesta-en-marcha`}>{es.onboarding.title}</PanelLink>
+          </p>
+        </Card>
+      ) : null}
 
       <section aria-label={es.spaceHome.title} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <KpiCard

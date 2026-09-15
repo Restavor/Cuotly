@@ -59,6 +59,11 @@ export default async function SecurityPage() {
         <Link href="/cuenta/sesiones" className="text-cuotly-green underline">
           {es.twoFactor.sessionsLink}
         </Link>
+        {" · "}
+        {/* §141 · RN-CIC-12 · qué impide cerrar la cuenta. */}
+        <Link href="/cuenta/cerrar" className="text-cuotly-green underline">
+          {es.closeAccount.title}
+        </Link>
       </p>
       <header>
         <h1 className="text-2xl font-bold text-primary-dark">{es.twoFactor.title}</h1>

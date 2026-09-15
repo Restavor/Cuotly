@@ -10,6 +10,8 @@ import {
   changeSpacePaymentTerm,
   changeSpaceTimezone,
   saveNotificationPreferences,
+  saveSpaceDetails,
+  saveSpaceLogo,
   saveSpaceName,
 } from "./actions";
 
@@ -269,6 +271,91 @@ export function NotificationPreferencesForm({
         unchanged={false}
         hecho={es.settings.notificationsDone}
       />
+    </form>
+  );
+}
+
+/**
+ * §9 paso 1, §125 · los datos fiscales del espacio. Sin validación de
+ * identificador: el bloque legal sigue aplazado (§170.1), y validar por
+ * nuestra cuenta sería inventarnos una regla fiscal.
+ */
+export function SpaceDetailsForm({
+  spaceId,
+  legalName,
+  taxId,
+  address,
+}: {
+  spaceId: string;
+  legalName: string | null;
+  taxId: string | null;
+  address: string | null;
+}) {
+  const [state, action, pending] = useActionState(saveSpaceDetails, INITIAL_SETTINGS);
+
+  return (
+    <form action={action} className="mb-4">
+      <input type="hidden" name="spaceId" value={spaceId} />
+      <Field name="legalName" label={es.settings.legalNameLabel} defaultValue={legalName ?? ""} />
+      <Field name="taxId" label={es.settings.taxIdLabel} defaultValue={taxId ?? ""} />
+      <Field name="address" label={es.settings.addressLabel} defaultValue={address ?? ""} />
+      <p className="mb-3 text-sm text-text-secondary">{es.settings.detailsHint}</p>
+      <Button type="submit" variant="primary" disabled={pending}>
+        {pending ? es.settings.detailsPending : es.settings.detailsSubmit}
+      </Button>
+      {state.error ? (
+        <p role="alert" className="mt-3 text-sm text-danger">
+          {state.error}
+        </p>
+      ) : null}
+      {state.done ? (
+        <p role="status" className="mt-3 text-sm text-success">
+          {es.settings.detailsDone}
+        </p>
+      ) : null}
+      {state.unchanged ? (
+        <p role="status" className="mt-3 text-sm text-text-secondary">
+          {es.settings.detailsUnchanged}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+/** §9 paso 2, §124 · el logotipo. Lo demás de la identidad visual no se toca. */
+export function SpaceLogoForm({ spaceId, hasLogo }: { spaceId: string; hasLogo: boolean }) {
+  const [state, action, pending] = useActionState(saveSpaceLogo, INITIAL_SETTINGS);
+
+  return (
+    <form action={action} className="mb-2">
+      <input type="hidden" name="spaceId" value={spaceId} />
+      <label className="mb-1 block text-sm font-semibold text-text" htmlFor={`logo-${spaceId}`}>
+        {es.settings.logoLabel}
+      </label>
+      <input
+        id={`logo-${spaceId}`}
+        type="file"
+        name="logo"
+        accept="image/jpeg,image/png,image/webp"
+        className="mb-3 block w-full text-sm text-text-secondary"
+        required
+      />
+      <p className="mb-3 text-sm text-text-secondary">
+        {hasLogo ? es.settings.logoPresent : es.settings.logoAbsent} {es.settings.logoHint}
+      </p>
+      <Button type="submit" variant="secondary" disabled={pending}>
+        {pending ? es.settings.logoPendingLabel : es.settings.logoSubmit}
+      </Button>
+      {state.error ? (
+        <p role="alert" className="mt-3 text-sm text-danger">
+          {state.error}
+        </p>
+      ) : null}
+      {state.done ? (
+        <p role="status" className="mt-3 text-sm text-success">
+          {es.settings.logoDone}
+        </p>
+      ) : null}
     </form>
   );
 }

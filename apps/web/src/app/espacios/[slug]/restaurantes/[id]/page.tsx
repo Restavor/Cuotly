@@ -17,6 +17,7 @@ import { todayInTimeZone } from "@/core/finance";
 import { termsNeedAcceptance } from "@/core/terms";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
+import { ExportForm } from "../../ajustes/exportacion/ExportForm";
 import { createClient } from "@/lib/supabase/server";
 
 import { Conversation } from "@/components/conversation/Conversation";
@@ -303,8 +304,11 @@ export default async function EstablishmentPage({
     // Las columnas de §15.2 vienen aquí porque RN-EST-11 le deja editarlas
     // a él: el propietario de un restaurante corrige su propia razón
     // social y su propio teléfono. Enumeradas, como en todo el proyecto.
+    // `space_id` viene para la exportación de §141 (RN-CIC-11): el
+    // restaurante no puede leer `spaces`, pero su propia ficha sí dice a
+    // qué espacio pertenece.
     .select(
-      "id, name, code, status, legal_name, tax_id, address, postal_code, city, contact_name, contact_email, phone_primary, phone_secondary, website_url, instagram, facebook_url, domain, opening_hours, web_platform",
+      "id, space_id, name, code, status, legal_name, tax_id, address, postal_code, city, contact_name, contact_email, phone_primary, phone_secondary, website_url, instagram, facebook_url, domain, opening_hours, web_platform",
     )
     .eq("id", id)
     .maybeSingle();
@@ -761,6 +765,26 @@ export default async function EstablishmentPage({
           </Link>
         </p>
       ) : null}
+
+      {/*
+        §141 · RN-CIC-11 · "Propietario de restaurante exporta grupo o
+        establecimientos propios". Se ofrece aquí porque es donde el
+        restaurante está mirando lo suyo.
+
+        Quién puede lo decide `can_export_scope()` en el servidor —solo el
+        propietario local o el global del grupo; Editor y Consulta no—, y
+        qué se lleva lo deciden su RLS y sus privilegios de columna: la
+        identidad del equipo no sale, ni aquí ni en el archivo (P7).
+      */}
+      <Card title={es.spaceExport.clientTitle}>
+        <p className="mb-4 text-sm text-text-secondary">{es.spaceExport.clientHint}</p>
+        <ExportForm
+          spaceId={establishment.space_id}
+          scope="establishment"
+          establishmentId={id}
+          label={es.spaceExport.submit}
+        />
+      </Card>
     </div>
   );
 }
