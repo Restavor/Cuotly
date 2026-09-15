@@ -10,20 +10,17 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**La 88** (`el_comentario_de_client_can_view_reports`), escrita el
-15/09/2026 y sin aplicar. **No cambia ningún comportamiento**: corrige un
-comentario dentro de la función que decía la regla que la decisión 30
-descartó. Las otras 87 están aplicadas.
+**Ninguna.**
 
 ## Aplicadas
 
-**Las 87 primeras migraciones del repositorio están aplicadas.** Las tres
+**Las 88 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87 el
+81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87 y la 88 el
 15/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
@@ -576,6 +573,36 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
 
   `database.types.ts` regenerado desde el proyecto (87 migraciones). La
   única diferencia con el anterior es la entrada de `space_timezone`.
+
+- La **88** (`el_comentario_de_client_can_view_reports`, Fase 3) el
+  15/09/2026, por orden de Bosco. **No cambia ningún comportamiento**: el
+  cuerpo de `client_can_view_reports()` llevaba dentro una frase de antes
+  de la decisión 30 —"el propietario global del grupo ve el consolidado y
+  el detalle de lo suyo"—, y la función nunca hizo eso: lo del consolidado
+  lo deciden la política `reports_select` y el CHECK `reports_scope`.
+
+  Se hace porque un comentario que dice la regla contraria dentro de la
+  función que decide quién ve los informes es la clase de trampa con la
+  que este proyecto ya ha tropezado: alguien lo lee, lo implementa, y la
+  fuga entra por ahí.
+
+  Lo que se comprobó ANTES: que el cuerpo del archivo, **sin contar
+  comentarios y normalizando espacios, es idéntico al que estaba vivo en
+  el proyecto**. La consulta se lanzó contra el proyecto real antes de
+  aplicar nada.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: el cuerpo sin comentarios sigue siendo exactamente
+  el mismo; el comentario viejo ya no está; la función **conserva el
+  EXECUTE de `authenticated`** —obligatorio, porque aparece dentro de la
+  expresión de `reports_select` y revocárselo rompería la política entera
+  en vez de cerrarla (CLAUDE.md)— y sigue sin él para `anon`; y
+  `reports_select` sigue exigiendo `establishment_id is not null` en la
+  rama del cliente, que es lo que de verdad deja fuera al consolidado.
+
+  `database.types.ts` **no cambia**, y se comprobó regenerándolo y
+  comparándolo, no dándolo por hecho: `create or replace` de una función
+  que ya existía, con la misma firma.
 
 ## La 49
 
