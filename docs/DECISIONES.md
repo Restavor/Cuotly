@@ -527,6 +527,24 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    solicitante y la pantalla en la que Bosco acepta son **pantallas**, y el Hito 17 no las trae. Las
    dos son las dos caras del mismo flujo y van juntas con el panel del **Hito 19**.
 
+32. **Las doce lecturas del Hito 18, confirmadas** (15/09/2026). Al escribir la suscripción de
+   Cuotly (PRD §31, migración 90), §4.1 a §4.7 callaban en doce sitios y en los doce se eligió lo
+   más defendible, se escribió como regla y se preguntó (pendiente 21). Bosco confirma las doce tal
+   cual, sin cambiar ninguna: qué cuenta como establecimiento activo y usuario interno; los
+   adicionales de Pro explícitos y enteros; subir un adicional en proporción al periodo restante y
+   bajar sin devolución ni por debajo del uso; la primera mensualidad emitida al aprobar y vencida
+   al acabar la prueba; la siguiente emitida 7 días antes de la renovación; el quinto aviso a las
+   60 h; el pago declarado y pendiente detiene el corte; en la prueba no se cambia de plan ni se
+   contratan adicionales; pasados los 30 días la reactivación es de la plataforma con motivo; el
+   IVA al 21 % congelado en cada cobro y una referencia bancaria en vez de factura; el modo lectura
+   congela a las personas y no a los procesos; y con un cambio a Pro programado rigen ya los
+   límites de Pro para crecer.
+
+   **Lo que esta decisión NO cierra:** las cuatro pendientes que §31 deja con placeholder siguen
+   abiertas —"uso razonable" (17), el precio del almacenamiento adicional (18), qué identifica a un
+   negocio (19) y el bloque legal (20)—. Confirmar el 21 % y la referencia bancaria es confirmar el
+   placeholder, no el bloque legal.
+
 ---
 
 ### Pendiente de completar
@@ -536,32 +554,8 @@ tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desgl
 15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. La quinta son las
 lecturas del Hito 18, que esperan confirmación como esperaron las de los hitos anteriores.
 
-21. **Lecturas aplicadas al implementar la suscripción de Cuotly** (15/09/2026, Hito 18, PRD §31,
-   migración 90). §4.1 a §4.7 callan en doce sitios y en los doce se eligió lo más defendible, se
-   escribió como regla en el PRD y se pregunta aquí. Ninguna es un umbral inventado que la maestra
-   sí diera; todas son huecos.
-
-   **(1)** Cuenta como **establecimiento activo** todo el que no está archivado (§4.1 solo distingue
-   activos de archivados), y como **usuario interno** todo miembro activo del espacio, propietario
-   incluido. **(2)** Los **adicionales de Pro son explícitos**: los contrata el propietario como
-   enteros, y el sexto establecimiento sin adicional falla en el servidor; no se añaden solos a la
-   factura. **(3)** Subir un adicional se cobra **en proporción al periodo restante** (la misma
-   cuenta que RN-COM-18); bajar es inmediato para el límite, nunca por debajo del uso, y sin
-   devolución. **(4)** La **primera mensualidad se emite al aprobar** y vence al acabar la prueba:
-   así hay importe, concepto y referencia desde el día uno. **(5)** La mensualidad siguiente se
-   emite **7 días antes** de la renovación y vence el día de la renovación. **(6)** El quinto aviso,
-   "antes de las 72 h", va a las **60 h**: 12 h de margen antes del corte. **(7)** Un **pago declarado
-   y pendiente de confirmar detiene el corte** hasta que Cuotly lo confirme o lo rechace: cortar a
-   quien dice "ya he pagado" sería bloquear sin comunicación (§4.3). **(8)** **Durante la prueba no
-   se cambia de plan ni se contratan adicionales**: §4.4 dice que el plan se elige antes de empezar,
-   y el tope de la prueba es otro. **(9)** Pasado el plazo de 30 días, el pago se registra igual pero
-   **la reactivación es de la plataforma**, con motivo; la eliminación operativa no se implementa
-   (pendiente 20). **(10)** "+ IVA" se aplica al **21 %**, congelado en cada cobro; lo emitido es un
-   cobro con referencia bancaria, no una factura (pendiente 20). **(11)** El **modo lectura congela a
-   las personas, no a los procesos**: la cola sigue emitiendo, avisando y cortando a los restaurantes
-   del espacio archivado, porque sus contratos son con el espacio y no con Cuotly. **(12)** Con un
-   cambio a Pro programado, **rigen ya los límites de Pro para crecer**, para que en la renovación no
-   haya exceso que resolver (§4.7). **Bosco confirma, cambia o rechaza cada una.**
+21. ~~Lecturas aplicadas al implementar la suscripción de Cuotly~~ — confirmadas las doce el
+   15/09/2026 como decisión 32.
 
 20. **Los cuatro puntos del bloque legal que toca la Fase 4** (§170.1). La eliminación de datos a
    los 30 días tras el archivado, qué son los "registros que deban conservarse por obligaciones

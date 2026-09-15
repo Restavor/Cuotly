@@ -1303,8 +1303,8 @@ Cuotly** por usarlo (§4.2.1 de la maestra: "los propietarios de espacios pagan 
 mismo problema con otro pagador, y se resuelve con las mismas piezas: un libro inmutable de apuntes,
 un estado derivado y ninguna autoridad en el cliente.
 
-Sale de §4.1 a §4.7 de la maestra. Donde §4 calla, las lecturas están anotadas como **pendiente 21**
-de `docs/DECISIONES.md` y esperan a Bosco; ninguna se ha inventado como regla nueva. Cuatro puntos
+Sale de §4.1 a §4.7 de la maestra. Donde §4 calla, las lecturas las confirmó Bosco el 15/09/2026
+como **decisión 32** de `docs/DECISIONES.md`; ninguna se ha inventado como regla nueva. Cuatro puntos
 siguen **aplazados a propósito** y aquí solo tienen placeholder: "uso razonable" (pendiente 17), el
 precio del almacenamiento adicional (18), qué identifica a un negocio (19) y el bloque legal (20).
 
@@ -1356,7 +1356,7 @@ precio del almacenamiento adicional (18), qué identifica a un negocio (19) y el
 - **RN-SUB-07**: los **cinco avisos** de §4.5 van a los **propietarios** del espacio, una sola vez
   cada uno por cobro (CA-17, clave de deduplicación): **3 días antes** del vencimiento, **el día**
   del vencimiento, a las **24 h**, a las **48 h**, y el último **antes de las 72 h**, que aquí se
-  manda a las **60 h** para que queden 12 h de margen antes del corte (lectura, pendiente 21). El
+  manda a las **60 h** para que queden 12 h de margen antes del corte (lectura confirmada, decisión 32). El
   último aviso y el de archivado son **obligatorios** (RN-NOT-03: impago grave y pérdida de acceso);
   los demás se pueden desactivar.
 - **RN-SUB-08**: **impago** (§4.6): desde el vencimiento hasta **+72 h naturales** es periodo de
@@ -1369,7 +1369,7 @@ precio del almacenamiento adicional (18), qué identifica a un negocio (19) y el
   auditoría y los eventos que esas operaciones dejan—. **Exportar** y **contactar con soporte** son
   los Hitos 20 y 21 y llegarán ya exentos. Los procesos del sistema (la cola, sin identidad de
   persona) no quedan congelados: los restaurantes del espacio siguen teniendo sus contratos con él y
-  sus relojes no se paran por la deuda de su proveedor con Cuotly (lectura, pendiente 21).
+  sus relojes no se paran por la deuda de su proveedor con Cuotly (lectura confirmada, decisión 32).
 - **RN-SUB-09**: **reactivación**: al confirmarse un pago, si no queda ningún cobro vencido y no han
   pasado los **30 días** desde el archivado, el espacio vuelve a `active` **con sus datos** (§4.6). Un
   espacio archivado **no emite mensualidades nuevas** mientras lo está. Pasado el plazo, el pago se
@@ -1382,7 +1382,7 @@ precio del almacenamiento adicional (18), qué identifica a un negocio (19) y el
   adicionales que se contraten al programarlo (§4.7: "antes de bajar a Pro se deben resolver
   excesos"), y **desde que se programa rigen los límites de Pro para crecer**, para que en la
   renovación no haya exceso que resolver. Se puede anular mientras no llegue la renovación. Durante
-  la prueba no se cambia de plan: §4.4 dice que se elige antes de empezar (lectura, pendiente 21).
+  la prueba no se cambia de plan: §4.4 dice que se elige antes de empezar (lectura confirmada, decisión 32).
 - **RN-SUB-11**: el **periodo es un mes** desde el final de la prueba, y cada renovación empieza
   donde acabó la anterior. La mensualidad del periodo siguiente se **emite 7 días antes** de la
   renovación —el aviso de "3 días antes" necesita un cobro al que apuntar— y **vence el día de la

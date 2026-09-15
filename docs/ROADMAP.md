@@ -32,7 +32,7 @@ Actualizado el 15/09/2026.
 | 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
 
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
-| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Doce lecturas esperan confirmación (pendiente 21). Ver la entrada de cierre abajo. |
+| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | No empezado | El punto más delicado de seguridad del producto. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
@@ -4370,9 +4370,9 @@ motivo.
 
 ### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(hecho el 15/09/2026; la 90 aplicada ese mismo día)*
 - **PRD §31 escrito primero**, como manda el desglose: §4.1 a §4.7 convertidos en trece reglas
-  `RN-SUB`. Doce lecturas donde la maestra calla quedan escritas como regla y anotadas como
-  **pendiente 21** de `docs/DECISIONES.md` para que Bosco las confirme o las cambie; ninguna es un
-  umbral que la maestra sí diera.
+  `RN-SUB`. Doce lecturas donde la maestra calla quedan escritas como regla; Bosco las confirmó
+  las doce el 15/09/2026 (**decisión 32** de `docs/DECISIONES.md`). Ninguna es un umbral que la
+  maestra sí diera.
 - **Migración 90**: `cuotly_subscriptions`, `cuotly_charges`, `cuotly_payments` y
   `cuotly_ledger_entries` —el libro inmutable de apuntes con signo, el mismo del Hito 7 con otro
   pagador—, más `spaces.cuotly_status` con sus cuatro modos y el segundo permiso fino de §167,
