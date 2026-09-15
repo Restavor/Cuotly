@@ -111,7 +111,16 @@ describe("RN-NOT-04 · enlace profundo", () => {
   });
 
   it("todas las entidades tienen enlace dentro del espacio", () => {
-    for (const entidad of ["request", "job", "establishment", "charge", "absence", "menu", "quote"] as const) {
+    for (const entidad of [
+      "request",
+      "job",
+      "establishment",
+      "charge",
+      "absence",
+      "menu",
+      "quote",
+      "cuotly_charge",
+    ] as const) {
       expect(deepLinkFor("restavor", entidad, "x")).toMatch(/^\/espacios\/restavor\//);
     }
   });

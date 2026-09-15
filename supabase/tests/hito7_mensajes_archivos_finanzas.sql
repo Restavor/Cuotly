@@ -2610,7 +2610,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2711,6 +2711,16 @@ begin
         -- `space_requests`, así que no puede perder el EXECUTE de
         -- `authenticated` (CLAUDE.md).
         'is_platform_approver',
+        -- Migración 90 (Fase 4, Hito 18). `is_platform_subscription_manager()`
+        -- es LA comprobación de "gestionar suscripciones" de §167 —Bosco, o
+        -- un Administrador de Cuotly con el permiso— y por eso no puede
+        -- comprobarse a sí misma; su nombre entra en la heurística para que
+        -- las cinco que la llaman (`confirm_cuotly_payment`,
+        -- `record_cuotly_payment`, `reject_cuotly_payment`,
+        -- `reverse_cuotly_payment`, `platform_reactivate_space`) cuenten
+        -- como comprobadas. Vive dentro de las políticas de `cuotly_*`, así
+        -- que conserva el EXECUTE de `authenticated` (CLAUDE.md).
+        'is_platform_subscription_manager',
         -- Misma familia que `my_active_sessions` y `edit_message`: las dos
         -- son la propia persona tocando lo suyo y el filtro por
         -- `auth.uid()` ES la barrera. `save_space_request_draft` solo crea
@@ -3691,7 +3701,14 @@ begin
       ('opportunities','updated_by'),
       ('opportunities','approved_by'),
       ('opportunities','discarded_by'),
-      ('opportunities','proposal_edited_by')
+      ('opportunities','proposal_edited_by'),
+      -- Migración 90 (Fase 4, Hito 18): la fila de un pago a Cuotly es del
+      -- propietario del espacio; quién en Cuotly lo confirmó, rechazó o
+      -- revirtió, no (RN-SUB-12, el mismo principio que RN-PLA-07).
+      ('cuotly_payments','confirmed_by'),
+      ('cuotly_payments','rejected_by'),
+      ('cuotly_payments','reversed_by'),
+      ('cuotly_ledger_entries','created_by')
     ) as t(tabla, columna)
   loop
     if has_column_privilege('authenticated', ('public.' || v_col.tabla)::regclass, v_col.columna, 'select')

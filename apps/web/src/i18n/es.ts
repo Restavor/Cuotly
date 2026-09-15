@@ -797,6 +797,13 @@ export const es = {
       integration_reauthorization_required: "Una integración necesita que vuelvas a autorizarla",
       report_schedule_due_soon: "Un informe se envía mañana",
       report_sent: "Tienes un informe nuevo",
+      cuotly_payment_due_soon: "Tu mensualidad de Cuotly vence en 3 días",
+      cuotly_payment_due_today: "Tu mensualidad de Cuotly vence hoy",
+      cuotly_payment_overdue_24h: "Tu mensualidad de Cuotly lleva 24 h vencida",
+      cuotly_payment_overdue_48h: "Tu mensualidad de Cuotly lleva 48 h vencida",
+      cuotly_payment_final_notice: "Último aviso: tu espacio se archivará por impago",
+      cuotly_space_archived: "Tu espacio está archivado en modo lectura",
+      cuotly_space_reactivated: "Tu espacio vuelve a estar activo",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -2352,6 +2359,8 @@ export const es = {
       integration: "Integración",
       opportunity: "Oportunidad",
       report: "Informe",
+      cuotly_charge: "Cobro de Cuotly",
+      cuotly_payment: "Pago a Cuotly",
     },
 
     auditActions: {
@@ -2458,6 +2467,20 @@ export const es = {
       "request.submitted": "Solicitud enviada",
       "session.revoked": "Sesión cerrada",
       "space.created": "Espacio creado",
+      // Hito 18 · el modo del espacio respecto a Cuotly, y su plan.
+      "space.activated": "Suscripción de Cuotly activada",
+      "space.archived_trial_ended": "Espacio archivado: la prueba terminó sin pago",
+      "space.archived_nonpayment": "Espacio archivado por impago",
+      "space.reactivated": "Espacio reactivado",
+      "space.plan_changed": "Plan de Cuotly cambiado",
+      "space.plan_change_scheduled": "Cambio de plan de Cuotly programado",
+      "space.plan_change_cancelled": "Cambio de plan de Cuotly anulado",
+      "space.extras_changed": "Adicionales de Cuotly cambiados",
+      "cuotly_charge.issued": "Cobro de Cuotly emitido",
+      "cuotly_payment.declared": "Pago a Cuotly declarado",
+      "cuotly_payment.confirmed": "Pago a Cuotly confirmado",
+      "cuotly_payment.rejected": "Pago a Cuotly rechazado",
+      "cuotly_payment.reversed": "Pago a Cuotly revertido",
       // Hito 17 · el recorrido de una solicitud de creación de espacio.
       // "Enviada" la escribe quien la pide; las otras cuatro, Cuotly.
       "space_request.submitted": "Solicitud de espacio enviada",

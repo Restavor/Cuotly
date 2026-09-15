@@ -100,6 +100,12 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // exención en `audit.test.ts` — que además comprueba que esa rama de la
   // política sigue existiendo, para que la exención no sea una promesa.
   space_request: null,
+  // Fase 4, Hito 18 · lo que el espacio le paga a Cuotly (migración 90).
+  // Del propietario, como `space`: §4.2.1 dice que es él quien paga. No
+  // `manage_finance`, que es el dinero de los restaurantes y lo tienen los
+  // administradores.
+  cuotly_charge: "manage_space",
+  cuotly_payment: "manage_space",
   // Los menús de Menú Diario (migración 77): operación, como los trabajos.
   menu: null,
   // Los presupuestos (§84, migración 80): los decide la fila, como las
@@ -138,6 +144,12 @@ export const AUDIT_ACTIONS = [
   "charge.refunded",
   "charge.waived",
   "correction.completed",
+  // Hito 18 · los cobros y los pagos a Cuotly (migración 90).
+  "cuotly_charge.issued",
+  "cuotly_payment.confirmed",
+  "cuotly_payment.declared",
+  "cuotly_payment.rejected",
+  "cuotly_payment.reversed",
   "correction.requested",
   "correction.started",
   "correction.team_error_opened",
@@ -258,16 +270,24 @@ export const AUDIT_ACTIONS = [
   "request.submitted",
   "service.conditions_published",
   "session.revoked",
+  // Hito 18 · el modo del espacio respecto a Cuotly (migración 90):
+  // activarse con el primer pago, archivarse por prueba sin pago o por
+  // impago, reactivarse, y los cambios de plan y de adicionales.
+  "space.activated",
+  "space.archived_nonpayment",
+  "space.archived_trial_ended",
   "space.created",
+  "space.extras_changed",
   "space.payment_term_changed",
+  "space.plan_change_cancelled",
+  "space.plan_change_scheduled",
+  "space.plan_changed",
+  "space.reactivated",
   "space.renamed",
   "space.timezone_changed",
-  // Las cinco de la solicitud de espacio (migración 89). Tres de ellas las
-  // escribe `decide_space_request()` componiendo el nombre —
-  // `'space_request.' || p_status`—, así que el barrido que lee las
-  // migraciones solo encuentra dos; las otras se enumeran aquí a mano
-  // porque existen igual, y si no estuvieran, el filtro del panel del Hito
-  // 19 no las ofrecería.
+  // Las cinco de la solicitud de espacio (migración 89), con el nombre
+  // literal en cada INSERT para que el barrido que lee las migraciones las
+  // encuentre.
   "space_request.approved",
   "space_request.in_review",
   "space_request.needs_information",

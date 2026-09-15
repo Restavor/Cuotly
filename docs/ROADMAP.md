@@ -10,7 +10,7 @@ de todo el proyecto** — es la rebanada vertical que el resto del código imita
 
 ## Estado de los hitos
 
-Actualizado el 14/09/2026.
+Actualizado el 15/09/2026.
 
 | Hito | Estado | Nota |
 |---|---|---|
@@ -32,7 +32,7 @@ Actualizado el 14/09/2026.
 | 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
 
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
-| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | No empezado | |
+| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita el 15/09/2026; **pendiente de aplicar al proyecto real** hasta que Bosco lo diga. PRD §31 (RN-SUB-01 a 13) escrito antes del código. Doce lecturas esperan confirmación (pendiente 21). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | No empezado | El punto más delicado de seguridad del producto. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
@@ -4367,6 +4367,60 @@ motivo.
   siguiente y solo tras resolver los excesos.
 - Todo como **libro inmutable de apuntes**, igual que las finanzas del espacio. Es el mismo problema
   con otro pagador.
+
+### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(hecho el 15/09/2026; la 90 escrita, NO aplicada al proyecto real)*
+- **PRD §31 escrito primero**, como manda el desglose: §4.1 a §4.7 convertidos en trece reglas
+  `RN-SUB`. Doce lecturas donde la maestra calla quedan escritas como regla y anotadas como
+  **pendiente 21** de `docs/DECISIONES.md` para que Bosco las confirme o las cambie; ninguna es un
+  umbral que la maestra sí diera.
+- **Migración 90**: `cuotly_subscriptions`, `cuotly_charges`, `cuotly_payments` y
+  `cuotly_ledger_entries` —el libro inmutable de apuntes con signo, el mismo del Hito 7 con otro
+  pagador—, más `spaces.cuotly_status` con sus cuatro modos y el segundo permiso fino de §167,
+  `can_manage_subscriptions`. El estado del cobro **se deriva** (`cuotly_charge_status()`), no se
+  guarda.
+- **Los límites se comprueban en el servidor** (RN-SUB-03): un disparador en `establishments` y otro
+  en `space_memberships`. El sexto establecimiento en Pro sin adicional falla al insertarse, venga de
+  donde venga; en la prueba, el tercero. Agency no tiene límite: "uso razonable" sigue sin umbral
+  (pendiente 17) y no se mide.
+- **El modo lectura lo sostiene un disparador en 73 de las 82 tablas con `space_id`** (RN-SUB-08),
+  con nueve exentas justificadas —los libros, los avisos, la solicitud de espacio y las cuatro de la
+  suscripción, porque "en ese modo se puede pagar"— y un barrido en la suite que exige que toda tabla
+  futura lo lleve o se justifique. Congela a las personas, no a la cola: los restaurantes del espacio
+  archivado siguen con sus contratos.
+- **Cobro manual** (RN-SUB-06): el propietario declara; Bosco o un Administrador con permiso
+  confirma, registra, rechaza con motivo o revierte con motivo. Todo con clave de idempotencia. Un
+  pago declarado y pendiente **detiene el corte** hasta que se decida.
+- **Los cinco avisos** de §4.5 a los propietarios, una vez cada uno por cobro; el último y el de
+  archivado son obligatorios (RN-NOT-03). **Impago**: 72 h de gracia y archivado en solo lectura; la
+  prueba, sin gracia. **Reactivación** al confirmar el pago dentro de los 30 días; pasado el plazo,
+  de la plataforma con motivo. **No se elimina nada** a los 30 días: bloque legal (pendiente 20).
+- **Cambio de plan** (RN-SUB-10): Pro → Agency inmediato con cobro proporcional; Agency → Pro
+  programado a la renovación, solo si el uso cabe, y desde que se programa rigen los límites de Pro.
+  **Adicionales** de Pro explícitos, con parte proporcional al subir y sin devolución al bajar.
+- **La cola** tiene un barrido más (`cuotly_billing_sweep`), solo para los espacios con
+  suscripción, que renueva, emite 7 días antes, avisa y corta. Toma `p_now` para que la suite mueva
+  el reloj.
+- **Lo que el hito NO trae, y se dice:** sin pantallas —el propietario declara por función y la
+  pantalla llega con el panel del Hito 19—, sin exportación ni contacto con soporte desde el modo
+  lectura (Hitos 20 y 21), sin eliminación a los 30 días (pendiente 20), sin medir el uso razonable
+  (17), sin cobrar el almacenamiento (18, se mide y nada más) y sin comprobar "una prueba por
+  negocio" (19).
+- **La 90 no está aplicada al proyecto real.** Aplicarla es una decisión de Bosco, como las
+  anteriores; cuando se aplique hay que regenerar `database.types.ts` como se hizo con la 89.
+
+**Los barridos dispararon otra vez.** El de funciones internas abiertas por RPC cazó las cinco de la
+plataforma hasta que `is_platform_subscription_manager()` entró en su heurística; el de auditoría
+obligó a poner el nombre de la acción **dentro** del INSERT y no en una variable tres líneas antes,
+que es lo mismo que la 89 aprendió con `|| p_status`; y `next_space_sequence()` resultó exigir ser
+miembro del espacio, cosa que ni la cola ni Bosco son, así que la referencia de un cobro se
+construye sin ella.
+
+**Se verifica con:** `supabase/tests/plataforma_suscripcion_de_cuotly.sql` (la 41ª suite; RN-SUB-01
+a 13, con el reloj movido por `p_now`), `cuotly-subscription.test.ts` (catálogo, límites, avisos,
+corte y prorrateo), `listas-compartidas.test.ts` (catálogo, constantes, avisos, modos y obligatorios
+iguales a los dos lados), `audit.test.ts` y `notifications.test.ts`. Cuatro mutaciones detectadas:
+quitar el disparador del límite de establecimientos, cortar sin mirar el pago declarado, dejar
+pasar a todos en modo lectura y confirmar pagos sin ser de Cuotly.
 
 ### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(servidor y pantallas)*
 - **Las dos pantallas del flujo del Hito 17**, que aquel no trajo por ser de servidor y dominio: el

@@ -10,7 +10,13 @@ import {
   integrationSyncFrequency,
   retryDelayHours,
 } from "./integrations";
-import { NOTIFICATION_EVENTS } from "./notifications";
+import {
+  CUOTLY_CONSTANTS,
+  CUOTLY_PAYMENT_REMINDERS,
+  CUOTLY_PLAN_TERMS,
+  SPACE_CUOTLY_STATES,
+} from "./cuotly-subscription";
+import { MANDATORY_EVENTS, NOTIFICATION_EVENTS } from "./notifications";
 import {
   JUDGEMENT_SECTIONS,
   REPORT_CATEGORIES,
@@ -413,6 +419,74 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
         }
       }
     }
+  });
+
+  /*
+   * Migración 90 (Fase 4, Hito 18). El catálogo de los dos planes de
+   * Cuotly, las constantes del apartado y los cinco avisos están a los dos
+   * lados: en SQL cobran, limitan y cortan; en TypeScript la pantalla
+   * enseña lo que va a pasar. Un precio cambiado en un solo lado cobraría
+   * una cosa y enseñaría otra.
+   */
+  it("los dos planes de Cuotly (RN-SUB-01) son los mismos en SQL y en `src/core`", () => {
+    const fn = ultimaDefinicion("create or replace function public.cuotly_plan_terms", "$$;");
+    for (const plan of ["pro", "agency"] as const) {
+      const fila = new RegExp(`\\('${plan}', ([^)]*)\\)`).exec(fn);
+      expect(fila, `${plan} no está en cuotly_plan_terms()`).not.toBeNull();
+      const valores = fila![1].split(",").map((v) => {
+        const limpio = v.trim();
+        return limpio.startsWith("null") ? null : Number(limpio);
+      });
+      const t = CUOTLY_PLAN_TERMS[plan];
+      expect(valores, plan).toEqual([
+        t.priceCents,
+        t.includedEstablishments,
+        t.includedUsers,
+        t.storageGb,
+        t.extraEstablishmentCents,
+        t.extraUserCents,
+      ]);
+    }
+  });
+
+  it("las constantes del apartado (RN-SUB) son las mismas en SQL y en `src/core`", () => {
+    const fn = ultimaDefinicion("create or replace function public.cuotly_constant", "$$;");
+    for (const [nombre, valor] of Object.entries(CUOTLY_CONSTANTS)) {
+      const fila = new RegExp(`when '${nombre}' then (\\d+)`).exec(fn);
+      expect(fila, `${nombre} no está en cuotly_constant()`).not.toBeNull();
+      expect(Number(fila![1]), nombre).toBe(valor);
+    }
+    // Y ninguna de más en SQL.
+    expect(entrecomillados(fn.slice(fn.indexOf("select case"))).sort()).toEqual(
+      Object.keys(CUOTLY_CONSTANTS).sort(),
+    );
+  });
+
+  it("los cinco avisos de §4.5 (RN-SUB-07) tienen las mismas horas en SQL y en `src/core`", () => {
+    const fn = ultimaDefinicion("create or replace function public.cuotly_reminder_offset_hours", "$$;");
+    for (const recordatorio of CUOTLY_PAYMENT_REMINDERS) {
+      const fila = new RegExp(`when '${recordatorio.event}' then (-?\\d+)`).exec(fn);
+      expect(fila, `${recordatorio.event} no está en cuotly_reminder_offset_hours()`).not.toBeNull();
+      expect(Number(fila![1]), recordatorio.event).toBe(recordatorio.offsetHours);
+    }
+    expect(entrecomillados(fn.slice(fn.indexOf("select case")))).toEqual(
+      CUOTLY_PAYMENT_REMINDERS.map((r) => r.event),
+    );
+  });
+
+  it("los cuatro modos del espacio (RN-SUB-02) son los mismos en el CHECK y en `src/core`", () => {
+    const columna = ultimaDefinicion("alter table public.spaces add column if not exists cuotly_status text", "));");
+    const check = /cuotly_status in \(([^)]*)\)/.exec(columna);
+    expect(check, "no está el CHECK de cuotly_status").not.toBeNull();
+    expect(entrecomillados(check![1])).toEqual([...SPACE_CUOTLY_STATES]);
+  });
+
+  it("qué avisos no se pueden desactivar (RN-NOT-03) lo dicen igual los dos lados", () => {
+    // `notification_event_is_mandatory()` la reescribió la 90 al añadir los
+    // dos de la suscripción; se lee la última definición.
+    const fn = ultimaDefinicion("create or replace function public.notification_event_is_mandatory", "$$;");
+    const enSql = entrecomillados(fn.slice(fn.indexOf("select p_event_type in")));
+    expect([...MANDATORY_EVENTS].sort()).toEqual([...enSql].sort());
   });
 
   it("quién mueve cada transición de un informe (§95) lo dicen igual los dos lados", () => {

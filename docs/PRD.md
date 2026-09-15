@@ -1294,3 +1294,112 @@ propietario, y el asistente que lo rellena viene después. **No** trae el panel 
 Cuotly** del selector de contexto (§8), que aquí no tendría adónde llevar. Y **no** trae nada del bloque legal: los datos
 fiscales se guardan como los escribe quien los escribe, sin validación fiscal ni numeración, que
 siguen aplazadas (§170.1).
+
+## 31. La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago — Fase 4 (RN-SUB)
+
+Todo lo que el PRD dice de dinero hasta aquí es lo que un espacio le cobra a **sus** restaurantes
+(§17, RN-FIN). Este apartado es la otra cara: lo que el **propietario del espacio le paga a
+Cuotly** por usarlo (§4.2.1 de la maestra: "los propietarios de espacios pagan a Bosco"). Es el
+mismo problema con otro pagador, y se resuelve con las mismas piezas: un libro inmutable de apuntes,
+un estado derivado y ninguna autoridad en el cliente.
+
+Sale de §4.1 a §4.7 de la maestra. Donde §4 calla, las lecturas están anotadas como **pendiente 21**
+de `docs/DECISIONES.md` y esperan a Bosco; ninguna se ha inventado como regla nueva. Cuatro puntos
+siguen **aplazados a propósito** y aquí solo tienen placeholder: "uso razonable" (pendiente 17), el
+precio del almacenamiento adicional (18), qué identifica a un negocio (19) y el bloque legal (20).
+
+- **RN-SUB-01**: los **dos planes** son los de §4.1 y §4.2, y su catálogo vive **una sola vez** a
+  cada lado de la frontera —`cuotly_plan_terms()` en SQL y `CUOTLY_PLAN_TERMS` en `src/core`—
+  vigilado por `listas-compartidas.test.ts`: **Pro**, 149 € + IVA al mes, 5 establecimientos activos
+  y 5 usuarios internos incluidos, 20 GB, establecimiento activo adicional 25 € + IVA y usuario
+  interno adicional 15 € + IVA; **Agency**, 499 € + IVA al mes, establecimientos y usuarios
+  ilimitados bajo uso razonable, 100 GB. Los usuarios de restaurantes y los establecimientos
+  archivados no cuentan ni se cobran en ningún plan. "+ IVA" se aplica al 21 % (el general español, el
+  mismo que `RESTAVOR_TAX_RATE_PERCENT`), y se guarda congelado en cada cobro como manda RN-FIN-08.
+  Lo que Cuotly emite es un **cobro con referencia bancaria**, no una factura: la numeración fiscal
+  sigue en el bloque legal (§170.1, pendiente 20).
+- **RN-SUB-02**: **una suscripción cubre un espacio** (§4.2.1) y el espacio lleva su **modo** en
+  `spaces.cuotly_status`, con cuatro valores: `trial` · `active` · `archived_trial_ended` ·
+  `archived_nonpayment`. Los dos últimos son **solo lectura**. Es un estado guardado y no derivado,
+  como `establishments.status`, porque un disparador tiene que leerlo en cada escritura y lo mueven
+  solo las funciones que dejan evento y auditoría (RN-SUB-12); un `UPDATE` suelto lo rechaza un
+  disparador, igual que en los establecimientos. Es **nulo** en los espacios anteriores al Hito 17
+  —Restavor y los de prueba—: Cuotly no se cobra a sí misma, y ponerles un contrato sería
+  inventarlo.
+- **RN-SUB-03**: los **límites se comprueban en el servidor**, con un disparador en
+  `establishments` y otro en `space_memberships`, no en la pantalla. Cuentan como **establecimiento
+  activo** todos los que no están archivados (§4.1 distingue solo "activos" de "archivados"), y como
+  **usuario interno** todo miembro activo del espacio, propietario incluido. En Pro el límite es lo
+  incluido más los adicionales contratados; en Agency no hay límite ("uso razonable" no tiene umbral:
+  pendiente 17, no se mide); durante la prueba, **2 establecimientos activos** (§4.4). Crear el
+  sexto establecimiento en Pro sin haber contratado el adicional falla con un error de negocio, no
+  con un botón escondido.
+- **RN-SUB-04**: los **adicionales de Pro** los contrata el propietario como números enteros. **Subir**
+  es inmediato y se cobra la **parte proporcional** del periodo en curso, con la misma cuenta que la
+  mejora de plan de RN-COM-18. **Bajar** es inmediato para el límite, **nunca por debajo del uso**, y
+  sin devolución: la mensualidad siguiente ya sale con la cifra nueva. Solo en Pro y solo con la
+  suscripción activa: en prueba no hay nada que cobrar todavía y el tope de la prueba es otro.
+- **RN-SUB-05**: la **prueba dura 7 días** desde el instante de aprobar (RN-PLA-05) y **la primera
+  mensualidad se emite al aprobar**, con vencimiento al final de la prueba: así el propietario tiene
+  importe, concepto y referencia desde el primer día y decide cuándo pagar. Pagarla **activa** el
+  espacio. Si la prueba **termina sin pago**, el espacio queda **archivado en modo lectura** en ese
+  momento, sin la gracia de 72 h —§4.4 no la da— y con **30 días** para pagar y reactivarse.
+- **RN-SUB-06**: el **cobro es manual** (§4.5; sin Stripe, decisión de CLAUDE.md): **transferencia o
+  Bizum**. Cuotly genera importe, concepto y referencia. El propietario **declara** el pago (método,
+  fecha e importe, con justificante opcional) y **Bosco, o un Administrador de Cuotly con
+  `can_manage_subscriptions`** (§167, "gestionar suscripciones"), lo **confirma**, lo **registra**
+  directamente si lo ve en el banco sin declaración, lo **rechaza con motivo** si no llegó, o lo
+  **revierte con motivo** si se confirmó por error (RN-FIN-04, "corregir"). El dinero es un **libro
+  inmutable de apuntes con signo** —`cuotly_ledger_entries`— y el estado del cobro (`pending` ·
+  `declared` · `paid` · `overdue`) **se deriva** de ese libro y del vencimiento (RN-DAT-05); no
+  existe ningún contador que se actualice.
+- **RN-SUB-07**: los **cinco avisos** de §4.5 van a los **propietarios** del espacio, una sola vez
+  cada uno por cobro (CA-17, clave de deduplicación): **3 días antes** del vencimiento, **el día**
+  del vencimiento, a las **24 h**, a las **48 h**, y el último **antes de las 72 h**, que aquí se
+  manda a las **60 h** para que queden 12 h de margen antes del corte (lectura, pendiente 21). El
+  último aviso y el de archivado son **obligatorios** (RN-NOT-03: impago grave y pérdida de acceso);
+  los demás se pueden desactivar.
+- **RN-SUB-08**: **impago** (§4.6): desde el vencimiento hasta **+72 h naturales** es periodo de
+  gracia; a las 72 h el espacio pasa a **`archived_nonpayment`**, solo lectura. Un pago **declarado y
+  pendiente de confirmar** detiene el corte hasta que se confirme o se rechace: cortar a quien dice
+  "ya he pagado, aquí está el justificante" sería bloquear sin comunicación (§4.3). El modo lectura lo
+  sostiene **un disparador en toda tabla que lleve `space_id`**, no una lista de pantallas: cualquier
+  escritura hecha con identidad de persona en un espacio archivado falla, salvo en las tablas que
+  hacen posible lo que §4.6 permite —**pagar** (las de la suscripción de Cuotly), y los avisos, la
+  auditoría y los eventos que esas operaciones dejan—. **Exportar** y **contactar con soporte** son
+  los Hitos 20 y 21 y llegarán ya exentos. Los procesos del sistema (la cola, sin identidad de
+  persona) no quedan congelados: los restaurantes del espacio siguen teniendo sus contratos con él y
+  sus relojes no se paran por la deuda de su proveedor con Cuotly (lectura, pendiente 21).
+- **RN-SUB-09**: **reactivación**: al confirmarse un pago, si no queda ningún cobro vencido y no han
+  pasado los **30 días** desde el archivado, el espacio vuelve a `active` **con sus datos** (§4.6). Un
+  espacio archivado **no emite mensualidades nuevas** mientras lo está. Pasado el plazo, el pago se
+  registra igual pero la reactivación es una decisión de la plataforma (`platform_reactivate_space`,
+  con motivo). La **eliminación operativa a los 30 días NO se implementa**: es el bloque legal
+  (pendiente 20) y aquí solo queda escrita la fecha límite.
+- **RN-SUB-10**: **cambio de plan** (§4.7). **Pro → Agency** es inmediato y se cobra la **diferencia
+  proporcional** al periodo restante; los adicionales de Pro dejan de aplicarse. **Agency → Pro** se
+  aplica **en la siguiente renovación**: se programa solo si el uso actual **cabe en Pro** con los
+  adicionales que se contraten al programarlo (§4.7: "antes de bajar a Pro se deben resolver
+  excesos"), y **desde que se programa rigen los límites de Pro para crecer**, para que en la
+  renovación no haya exceso que resolver. Se puede anular mientras no llegue la renovación. Durante
+  la prueba no se cambia de plan: §4.4 dice que se elige antes de empezar (lectura, pendiente 21).
+- **RN-SUB-11**: el **periodo es un mes** desde el final de la prueba, y cada renovación empieza
+  donde acabó la anterior. La mensualidad del periodo siguiente se **emite 7 días antes** de la
+  renovación —el aviso de "3 días antes" necesita un cobro al que apuntar— y **vence el día de la
+  renovación**. Si hay un cambio a Pro programado, esa mensualidad ya sale con el precio de Pro.
+- **RN-SUB-12**: **todo cambio de modo del espacio** deja `state_events` (entidad `space`) y
+  `audit_log` con actor, fecha, valor anterior, valor nuevo y motivo; emitir un cobro y declarar,
+  confirmar, rechazar o revertir un pago también dejan apunte. Quién en Cuotly confirmó o rechazó
+  **no lo ve el propietario** desde la tabla (privilegio de columna, como en RN-PLA-07): lo ve la
+  auditoría.
+- **RN-SUB-13**: el **almacenamiento** incluido (20 GB y 100 GB) se **mide** —`cuotly_space_usage()`
+  suma los bytes de las versiones de archivo del espacio— pero **no se limita ni se cobra**: qué pasa
+  al pasar de 20 GB es la pendiente 18. Y "uso razonable" (§4.3) no tiene umbral: no se mide ninguna
+  actividad ni se bloquea nada (pendiente 17).
+
+Lo que este apartado **no** trae, dicho en claro: **no** trae pantallas —el propietario declara el
+pago y ve sus cobros por las funciones y las tablas, y la pantalla llega con el panel del Hito 19—,
+**no** trae la exportación ni el contacto con soporte desde el modo lectura (Hitos 20 y 21), **no**
+elimina nada a los 30 días (pendiente 20), **no** mide el uso razonable (17), **no** cobra el
+almacenamiento (18) y **no** comprueba "una prueba por negocio" (19), que sigue como la dejó
+RN-PLA-09.

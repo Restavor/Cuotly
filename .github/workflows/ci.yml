@@ -358,6 +358,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/plataforma_solicitud_de_espacio.sql
 
+      - name: "Hito 18 — Verificar la suscripción de Cuotly: límites, prueba, cobro manual, modo lectura, impago y cambio de plan (RN-SUB-01 a 13, §4.1 a §4.7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/plataforma_suscripcion_de_cuotly.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

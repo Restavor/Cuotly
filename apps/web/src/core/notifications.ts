@@ -49,6 +49,15 @@ export const NOTIFICATION_EVENTS = [
   // fecha programada se acerca y el envío del informe al restaurante.
   "report_schedule_due_soon",
   "report_sent",
+  // Migración 90 (Fase 4, Hito 18) · los cinco avisos de §4.5 a los
+  // propietarios del espacio, y los dos del modo del espacio (RN-SUB-07).
+  "cuotly_payment_due_soon",
+  "cuotly_payment_due_today",
+  "cuotly_payment_overdue_24h",
+  "cuotly_payment_overdue_48h",
+  "cuotly_payment_final_notice",
+  "cuotly_space_archived",
+  "cuotly_space_reactivated",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -85,6 +94,11 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   "t3_threshold_100",
   "establishment_paused_nonpayment",
   "establishment_suspended_nonpayment",
+  // RN-SUB-07: el último aviso antes del corte es un impago grave, y el
+  // archivado es una pérdida de acceso. Los otros cuatro son
+  // recordatorios y se pueden apagar.
+  "cuotly_payment_final_notice",
+  "cuotly_space_archived",
 ];
 
 export function isMandatoryEvent(event: NotificationEvent): boolean {
@@ -175,7 +189,15 @@ export function jobEventRecipients(context: JobNotificationContext): readonly st
  * autoriza nada por sí misma — por eso el enlace nunca lleva un token ni
  * un "ya validado".
  */
-export type DeepLinkEntity = "request" | "job" | "establishment" | "charge" | "absence" | "menu" | "quote";
+export type DeepLinkEntity =
+  | "request"
+  | "job"
+  | "establishment"
+  | "charge"
+  | "absence"
+  | "menu"
+  | "quote"
+  | "cuotly_charge";
 
 export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId: string): string {
   switch (entity) {
@@ -194,6 +216,10 @@ export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId:
     case "quote":
       // La ficha del equipo; al restaurante lo reenvía a su facturación.
       return `/espacios/${spaceSlug}/finanzas/presupuestos/${entityId}`;
+    case "cuotly_charge":
+      // La suscripción de Cuotly del espacio, en sus ajustes (Hito 18). La
+      // pantalla llega con el panel del Hito 19.
+      return `/espacios/${spaceSlug}/ajustes/suscripcion`;
   }
 }
 

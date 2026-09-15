@@ -531,32 +531,65 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar
 
-**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
-tachadas abajo con la decisión que resolvió cada una. Las cuatro nuevas salieron al desglosar la
-Fase 4 el 15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito.
+**Cinco abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
+tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desglosar la Fase 4 el
+15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. La quinta son las
+lecturas del Hito 18, que esperan confirmación como esperaron las de los hitos anteriores.
+
+21. **Lecturas aplicadas al implementar la suscripción de Cuotly** (15/09/2026, Hito 18, PRD §31,
+   migración 90). §4.1 a §4.7 callan en doce sitios y en los doce se eligió lo más defendible, se
+   escribió como regla en el PRD y se pregunta aquí. Ninguna es un umbral inventado que la maestra
+   sí diera; todas son huecos.
+
+   **(1)** Cuenta como **establecimiento activo** todo el que no está archivado (§4.1 solo distingue
+   activos de archivados), y como **usuario interno** todo miembro activo del espacio, propietario
+   incluido. **(2)** Los **adicionales de Pro son explícitos**: los contrata el propietario como
+   enteros, y el sexto establecimiento sin adicional falla en el servidor; no se añaden solos a la
+   factura. **(3)** Subir un adicional se cobra **en proporción al periodo restante** (la misma
+   cuenta que RN-COM-18); bajar es inmediato para el límite, nunca por debajo del uso, y sin
+   devolución. **(4)** La **primera mensualidad se emite al aprobar** y vence al acabar la prueba:
+   así hay importe, concepto y referencia desde el día uno. **(5)** La mensualidad siguiente se
+   emite **7 días antes** de la renovación y vence el día de la renovación. **(6)** El quinto aviso,
+   "antes de las 72 h", va a las **60 h**: 12 h de margen antes del corte. **(7)** Un **pago declarado
+   y pendiente de confirmar detiene el corte** hasta que Cuotly lo confirme o lo rechace: cortar a
+   quien dice "ya he pagado" sería bloquear sin comunicación (§4.3). **(8)** **Durante la prueba no
+   se cambia de plan ni se contratan adicionales**: §4.4 dice que el plan se elige antes de empezar,
+   y el tope de la prueba es otro. **(9)** Pasado el plazo de 30 días, el pago se registra igual pero
+   **la reactivación es de la plataforma**, con motivo; la eliminación operativa no se implementa
+   (pendiente 20). **(10)** "+ IVA" se aplica al **21 %**, congelado en cada cobro; lo emitido es un
+   cobro con referencia bancaria, no una factura (pendiente 20). **(11)** El **modo lectura congela a
+   las personas, no a los procesos**: la cola sigue emitiendo, avisando y cortando a los restaurantes
+   del espacio archivado, porque sus contratos son con el espacio y no con Cuotly. **(12)** Con un
+   cambio a Pro programado, **rigen ya los límites de Pro para crecer**, para que en la renovación no
+   haya exceso que resolver (§4.7). **Bosco confirma, cambia o rechaza cada una.**
 
 20. **Los cuatro puntos del bloque legal que toca la Fase 4** (§170.1). La eliminación de datos a
    los 30 días tras el archivado, qué son los "registros que deban conservarse por obligaciones
    legales" y dónde quedan aislados, el procedimiento ante un incidente de seguridad (§142) y la
    numeración fiscal de lo que Cuotly le cobra a un espacio. Los cuatro siguen necesitando la
-   revisión profesional que CLAUDE.md exige. **Hitos 18 y 20.**
+   revisión profesional que CLAUDE.md exige. **Hitos 18 y 20.** *El Hito 18 dejó el placeholder
+   dicho: guarda la fecha límite de los 30 días y no elimina nada; emite una referencia bancaria y
+   ninguna factura.*
 
 19. **Cómo se identifica un "negocio"** para "una sola prueba gratuita por persona o negocio"
    (§4.4). Persona se sabe identificar; negocio no: ¿por los datos fiscales de la solicitud, por el
    dominio del correo, a mano al aprobar? Sin una respuesta, la regla antiabuso no se puede
    comprobar en el servidor — y las reglas que solo viven en la pantalla se saltan solas, que es lo
-   que CLAUDE.md dice con "ocultar un botón no es un control de acceso". **Hito 18.**
+   que CLAUDE.md dice con "ocultar un botón no es un control de acceso". **Hito 18.** *El Hito 18
+   no la tocó: la comprobación por negocio sigue sin fingirse (RN-PLA-09).*
 
 18. **El precio del almacenamiento adicional.** Ya estaba aplazado en CLAUDE.md y ahora tiene fecha:
    Pro incluye 20 GB y Agency 100 GB (§113), y qué pasa al llegar a 21 no está escrito en ninguna
-   parte. **Hito 18.**
+   parte. **Hito 18.** *El Hito 18 lo mide (`cuotly_space_usage()`) y no lo limita ni lo cobra
+   (RN-SUB-13).*
 
 17. **Qué es "uso razonable"** en Agency (§4.3). La maestra describe bien el procedimiento ante un
    uso anormal —se informa, Bosco revisa, se plantea ampliación o plan específico, no se bloquea sin
    comunicación— pero **no da ningún umbral**, y "ilimitado bajo uso razonable" sin número no se
    puede medir. Es exactamente la situación de los umbrales de oportunidades antes de la decisión
    26, y se resolverá igual: los escribe quien esto redacta, los confirma o los cambia Bosco.
-   **Hito 18.**
+   **Hito 18.** *El Hito 18 no mide ninguna actividad: Agency no tiene límite en el servidor
+   (RN-SUB-03, RN-SUB-13). El procedimiento de §4.3 es material del panel del Hito 19.*
 
 16. ~~Lecturas aplicadas al implementar los informes~~ — cerradas el 14/09/2026 como decisión
    28, con dos confirmadas y dos cambiadas por Bosco.
