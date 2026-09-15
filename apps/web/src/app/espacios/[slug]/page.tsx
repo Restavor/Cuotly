@@ -123,9 +123,19 @@ export default async function SpacePage({
         />
       </section>
 
+      {/*
+        `min-w-0` en los dos hijos, y no es cosmético: CA-19 se rompía por
+        aquí. Un elemento de grid tiene `min-width: auto`, así que se niega
+        a encoger por debajo del ancho mínimo de su contenido; en un
+        teléfono de 390 px estos dos medían **931 px** y sacaban la página
+        entera fuera de la pantalla. Con `min-w-0` el elemento sí encoge y
+        los `truncate` de dentro (AttentionList, TeamLoad, ActivityFeed)
+        pueden hacer su trabajo, que hasta ahora no servía de nada.
+        Lo encontró el job `e2e-datos` la primera vez que CI lo ejecutó.
+      */}
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <Card
-          className="lg:col-span-2"
+          className="min-w-0 lg:col-span-2"
           title={es.spaceHome.attention.title}
           action={<PanelLink href={`${base}/solicitudes`}>{es.spaceHome.attention.seeAll}</PanelLink>}
         >
@@ -142,7 +152,7 @@ export default async function SpacePage({
           )}
         </Card>
 
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
           <Card
             title={es.spaceHome.teamLoad.title}
             action={<PanelLink href={`${base}/equipo`}>{es.spaceHome.teamLoad.seeAll}</PanelLink>}

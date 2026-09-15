@@ -163,14 +163,18 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
       await expect(page.getByText("Demo Cuotly").first()).toBeVisible();
 
-      // El restaurante del sembrado, con su código y su estado.
+      // Y el equipo, con los dos miembros por su nombre visible: eso sí
+      // sigue en el Inicio, en la tarjeta "Carga del equipo".
+      await expect(page.getByText(EQUIPO.propietaria.nombre)).toBeVisible();
+      await expect(page.getByText(EQUIPO.trabajadora.nombre)).toBeVisible();
+
+      // El restaurante del sembrado, con su código y su estado. Ya no está
+      // en el Inicio —el rediseño lo dejó con indicadores, atención, carga
+      // del equipo, Menú Diario y actividad—, así que se mira donde vive.
+      await page.goto(`/espacios/${ESPACIO}/restaurantes`);
       await expect(page.getByText("EST-0001")).toBeVisible();
       await expect(page.getByText("Bar Demo")).toBeVisible();
       await expect(page.getByText("Activo").first()).toBeVisible();
-
-      // Y el equipo, con los dos miembros por su nombre visible.
-      await expect(page.getByText(EQUIPO.propietaria.nombre)).toBeVisible();
-      await expect(page.getByText(EQUIPO.trabajadora.nombre)).toBeVisible();
     });
 
     test("la bandeja de solicitudes enseña las enviadas y NO el borrador del cliente", async ({

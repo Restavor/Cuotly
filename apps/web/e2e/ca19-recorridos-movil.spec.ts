@@ -520,7 +520,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       timeout: 20_000,
     });
     await cabeEnElTelefono(page, "la ficha del menú");
-    await expect(page.getByText("Borrador")).toBeVisible();
+    // El estado de la cabecera. "Borrador" aparece TRES veces en esta
+    // pantalla: aquí, en el libro de estados y dentro de la frase "Crea un
+    // borrador con este mismo contenido".
+    await expect(page.getByTestId("estado-del-menu")).toHaveText("Borrador");
 
     // RN-MEN-03: guardar es una versión nueva.
     await page.getByLabel("Primeros").fill("Ensalada\nSopa");
