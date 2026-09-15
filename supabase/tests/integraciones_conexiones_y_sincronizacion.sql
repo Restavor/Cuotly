@@ -526,6 +526,7 @@ do $$
 declare v_run uuid := (select v from it_ids where k = 'run_ga4_1');
         v_ga4 uuid := (select v from it_ids where k = 'ga4');
         v_n integer; v_next timestamptz; v_value numeric; v_fetched timestamptz; v_run2 uuid;
+        v_esperado date; v_start date;
 begin
   v_n := public.finish_integration_run(v_run, 'succeeded', null, null, jsonb_build_array(
            jsonb_build_object('metric', 'sessions', 'period_start', '2026-09-10', 'period_end', '2026-09-10', 'value', 120),
@@ -580,11 +581,48 @@ begin
   end if;
 
   -- Y la segunda pasada empieza tres días antes del último éxito, no 90.
-  update public.integrations set next_attempt_at = now() where id = v_ga4;
-  if (select period_start from public.claim_integration_runs(10) where integration_id = v_ga4)
-     <> (now() at time zone 'Europe/Madrid')::date - 3 then
-    raise exception 'RN-INT-09 FALLIDO: la pasada siguiente no solapa tres días con el último éxito' using errcode = 'assert_failure';
+  --
+  -- **El día se cuenta en la zona del ESPACIO, no en la de la sesión.**
+  -- Esta comprobación existía y solo mordía entre las 22:00 y las 24:00
+  -- UTC: el resto del día, la zona de la sesión (UTC) y la de Madrid dan
+  -- el mismo día y `last_success_at::date` acertaba por casualidad. Así
+  -- pasó meses, hasta que CI ejecutó la suite a las 22:03 UTC del
+  -- 14/09/2026 —las 00:03 del 15 en Madrid— y se puso en rojo. Lo arregló
+  -- la migración 87.
+  --
+  -- Ahora muerde a cualquier hora, y sin tocar el reloj: el último éxito
+  -- se fija en la **medianoche de hoy en la zona del espacio**, que es un
+  -- instante que en UTC cae SIEMPRE en el día anterior (Madrid va por
+  -- delante de UTC todo el año). Si alguien vuelve a contar el día en la
+  -- zona de la sesión, sale un día de menos y esto falla siempre, no una
+  -- noche de cada tres.
+  update public.integrations
+     set last_success_at = ((now() at time zone 'Europe/Madrid')::date::timestamp) at time zone 'Europe/Madrid',
+         next_attempt_at = now()
+   where id = v_ga4;
+
+  select (i.last_success_at at time zone s.timezone)::date - 3
+    into v_esperado
+    from public.integrations i
+    join public.spaces s on s.id = i.space_id
+   where i.id = v_ga4;
+
+  select period_start into v_start
+    from public.claim_integration_runs(10) where integration_id = v_ga4;
+
+  if v_start <> v_esperado then
+    raise exception 'RN-INT-09 FALLIDO: la pasada siguiente empieza el % y en la zona del espacio debía empezar el % (¿un `::date` sin zona?)',
+      v_start, v_esperado using errcode = 'assert_failure';
   end if;
+
+  -- En falso-cerrado: que el día de la sesión y el del espacio sean
+  -- DISTINTOS. Si un día dejaran de serlo, la comprobación de arriba
+  -- pasaría sin probar nada y nadie se enteraría.
+  if v_esperado = (select (i.last_success_at)::date - 3 from public.integrations i where i.id = v_ga4) then
+    raise exception 'RN-INT-09 FALLIDO: el montaje no separa la zona de la sesión de la del espacio, así que la comprobación de arriba no prueba nada'
+      using errcode = 'assert_failure';
+  end if;
+
   perform public.finish_integration_run((select id from public.sync_runs where integration_id = v_ga4 and status = 'running'), 'succeeded');
 end $$;
 

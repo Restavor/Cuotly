@@ -3738,4 +3738,49 @@ begin
   end if;
 end $$;
 
+-- ============================================================
+-- BARRIDO · un `timestamptz` no se convierte a día sin decir la zona
+-- ============================================================
+--
+-- CLAUDE.md: "las fechas se guardan en `timestamptz` y se calculan en la
+-- zona horaria del espacio". `x::date` sobre un `timestamptz` lo convierte
+-- con el `TimeZone` de la SESIÓN, que en Supabase es UTC siempre. Para un
+-- espacio en Madrid eso da el día de ayer entre las 22:00 y las 24:00 UTC
+-- —las 23:00 y las 24:00 en invierno—, y el resto del día acierta por
+-- casualidad.
+--
+-- Por eso este barrido existe y no una lista escrita a mano: el fallo no
+-- se ve leyendo el código, se ve a la hora justa. Estuvo meses en
+-- `claim_integration_runs()` (el solape de RN-INT-09 salía de dos días en
+-- vez de tres) y en `space_calendar()` (el cobro que vence a las 00:30 se
+-- pintaba el día anterior, y no salía en la semana que el usuario pedía).
+-- Lo encontró CI al ejecutar las suites a las 22:03 UTC del 14/09/2026 —
+-- las 00:03 del 15 en Madrid—, no una revisión. Lo arregló la migración 87.
+--
+-- La expresión NO señala `(x at time zone z)::date`, que es la forma
+-- correcta: entre el nombre de la columna y el `::date` va la zona.
+do $$
+declare v_malas text := '';
+        v_fn text;
+begin
+  for v_fn in
+    select p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')'
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.prosrc ~ '[a-z_]+_at[[:space:]]*::[[:space:]]*date'
+    order by 1
+  loop
+    -- Si alguna vez hay un caso legítimo, se clasifica aquí con su motivo
+    -- escrito. Vacío a propósito: hoy no hay ninguno.
+    if v_fn not in ('') then
+      v_malas := v_malas || E'\n  · ' || v_fn;
+    end if;
+  end loop;
+
+  if v_malas <> '' then
+    raise exception 'CLAUDE.md FALLIDO · convierten un `timestamptz` a día con la zona de la SESIÓN, no con la del espacio:%', v_malas;
+  end if;
+end $$;
+
 select 'hito7_mensajes_archivos_finanzas.sql: HU-24 a HU-28, HU-35 y RN-FIN-13 cumplidos, base de datos limpia' as resultado;

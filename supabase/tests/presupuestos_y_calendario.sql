@@ -1030,6 +1030,54 @@ begin
 end $$;
 reset role;
 
+-- ============================================================
+-- §76 · el día de un vencimiento lo decide la zona del ESPACIO
+-- ============================================================
+--
+-- `space_calendar()` sacaba el día de un cobro con `due_at::date`, que
+-- convierte el instante con el `TimeZone` de la SESIÓN — UTC en Supabase.
+-- Un cobro que vence a las 00:30 del día 15 en Madrid se guarda como las
+-- 22:30Z del 14, y el calendario lo ponía el 14. No es solo el día que
+-- enseña: decide si el evento CAE DENTRO del rango pedido, así que quien
+-- miraba la semana del 15 no lo veía. Lo arregló la migración 87.
+--
+-- Esta comprobación muerde **a cualquier hora**, que es justo lo que le
+-- faltaba a la de RN-INT-09: el cobro se mueve a la medianoche de dentro
+-- de cinco días *en la zona del espacio*, un instante que en UTC cae
+-- siempre en el día anterior porque Madrid va por delante de UTC todo el
+-- año.
+update public.charges
+   set due_at = ((current_date + 5)::timestamp) at time zone
+                (select s.timezone from public.spaces s where s.id = 'cc100000-0000-0000-0000-000000000001')
+ where id = (select v from pq_ids where k = 'charge_q1');
+
+select set_config('request.jwt.claim.sub', 'cc000000-0000-0000-0000-000000000001', false);
+set role authenticated;
+do $$
+begin
+  if (select count(*) from public.space_calendar('cc100000-0000-0000-0000-000000000001',
+                                                 current_date + 5, current_date + 5)
+      where kind = 'charge_due' and entity_id = (select v from pq_ids where k = 'charge_q1')) <> 1 then
+    raise exception '§76 FALLIDO: un cobro que vence a medianoche en la zona del espacio no sale ese día en el calendario (¿un `::date` sin la zona?)'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+
+-- En falso-cerrado: que el día en UTC y el día en la zona del espacio sean
+-- DISTINTOS. Si un día dejaran de serlo —porque alguien cambie la zona del
+-- espacio de la prueba—, lo de arriba pasaría sin probar nada.
+do $$
+begin
+  if ((select due_at at time zone 'UTC' from public.charges where id = (select v from pq_ids where k = 'charge_q1'))::date)
+     = (select (due_at at time zone s.timezone)::date
+          from public.charges c join public.spaces s on s.id = c.space_id
+         where c.id = (select v from pq_ids where k = 'charge_q1')) then
+    raise exception '§76 FALLIDO: el montaje no separa la zona de la sesión de la del espacio, así que la comprobación anterior no prueba nada'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
 -- P7 · el restaurante no ve ausencias ni renovaciones ajenas; sí su menú.
 select set_config('request.jwt.claim.sub', 'cc000000-0000-0000-0000-000000000005', false);
 set role authenticated;
