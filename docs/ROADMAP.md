@@ -4500,6 +4500,17 @@ niveles, la duración, quién es plataforma y qué le falta, y para quién es ob
 lados; el aviso obligatorio nuevo), `audit.test.ts` y `notifications.test.ts`. Las 42 suites pasan
 desde cero sobre las 91 migraciones en local.
 
+**Y aun así la 42 salió roja en CI, con la emulación local en verde.** El fixture de 2FA insertaba en
+`auth.mfa_factors` sin `id`, y funcionaba porque `bootstrap-postgres-local.sql` le había puesto un
+`default gen_random_uuid()` que Supabase **no** tiene: la columna allí es `not null` y sin valor por
+omisión. La emulación era más permisiva que el proyecto real, que es exactamente la clase de red que
+no sirve de nada. Se arregló por los dos lados —el fixture pone el `id` y el bootstrap perdió el
+`default`—, y lo segundo es lo que importa: ahora ese INSERT falla en local igual que fallaba allí.
+Comprobado a mano en los dos sentidos antes de dar por buena la corrección, y las 42 suites vueltas
+a pasar sobre una base construida desde cero con el bootstrap corregido. **Regla que queda:** cuando
+`bootstrap-postgres-local.sql` describa una tabla de `auth` o de `storage`, se copia lo que el
+proyecto real tiene; inventarle una comodidad convierte la suite en un sello de goma.
+
 ### Hito 20 · Onboarding del espacio nuevo y ciclo de vida del espacio *(servidor y pantallas)*
 - El **asistente de §9** con sus diez pasos y **sin IA**: datos, logotipo, zona horaria, horario,
   impuestos, planes y servicios, primer establecimiento, primer trabajador, notificaciones y

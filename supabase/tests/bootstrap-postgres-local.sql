@@ -149,7 +149,12 @@ create table auth.sessions (
 -- enum en el proyecto real y aquí texto, y la comparación con el literal
 -- funciona igual en los dos.
 create table auth.mfa_factors (
-  id uuid primary key default gen_random_uuid(),
+  -- SIN `default`, a propósito y aunque incomode: en Supabase real esta
+  -- columna no lo tiene, y ponerlo aquí convertía la emulación en más
+  -- permisiva que el proyecto. Un INSERT que omita el `id` tiene que
+  -- fallar en local exactamente igual que falla allí; se descubrió al
+  -- revés, con la suite 42 en verde en local y roja en CI.
+  id uuid primary key,
   user_id uuid not null references auth.users (id) on delete cascade,
   friendly_name text,
   factor_type text not null default 'totp',

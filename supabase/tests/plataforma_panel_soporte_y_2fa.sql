@@ -671,9 +671,12 @@ end $$;
 -- ============================================================
 -- RN-ADM-04 · el panel: los doce bloques, con la identidad que Bosco sí ve
 -- ============================================================
-insert into auth.mfa_factors (user_id, friendly_name, factor_type, status) values
-  ('ffb00000-0000-0000-0000-000000000002', 'Móvil', 'totp', 'verified'),
-  ('ffb00000-0000-0000-0000-000000000003', 'Móvil', 'totp', 'unverified');
+-- `auth.mfa_factors.id` NO tiene valor por omisión en Supabase: se pone a
+-- mano. Omitirlo pasaba en local y fallaba en el proyecto real, hasta que
+-- `bootstrap-postgres-local.sql` dejó de inventarse el `default`.
+insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status) values
+  ('ffb20000-0000-0000-0000-000000000002', 'ffb00000-0000-0000-0000-000000000002', 'Móvil', 'totp', 'verified'),
+  ('ffb20000-0000-0000-0000-000000000003', 'ffb00000-0000-0000-0000-000000000003', 'Móvil', 'totp', 'unverified');
 
 select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', false);
 set role authenticated;
