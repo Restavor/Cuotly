@@ -10,25 +10,18 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-**La 93** (`soporte_centro_de_ayuda_y_estado`, Fase 4 · Hito 21), escrita el 15/09/2026 y sin
-aplicar, a la espera de que Bosco lo ordene. Son 80 KB: irá en cinco o seis partes. **No es solo
-aditiva**, y conviene saberlo antes: redefine `has_capability_as()` con una rama más, reescribe los
-tres CHECK de `notifications` (tipos de evento, tipos de entidad y la raíz de los enlaces, que pasa a
-admitir `/administracion/`), redefine `audit_entity_is_visible()`, `platform_panel_summary()` y
-`platform_audit()`, y abre `platform_status_snapshot()` a `anon` a propósito. Nada de lo desplegado
-hoy la lee, así que aplicarla antes que el código no rompe ninguna pantalla. Las otras 92 están
-aplicadas.
+Ninguna: las 93 migraciones del repositorio están aplicadas.
 
 ## Aplicadas
 
-**Las 92 migraciones del repositorio están aplicadas.** Las tres
+**Las 93 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
 81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88, la 89 y
-la 90 el 15/09/2026, y la 91 y la 92 ese mismo día, por orden de Bosco.
+la 90 el 15/09/2026, y la 91, la 92 y la 93 ese mismo día, por orden de Bosco.
 
 - La **91** (`panel_modo_soporte_y_2fa`, Fase 4 · Hito 19) el 15/09/2026,
   desde el MCP, en **cuatro partes** porque el archivo son 55 KB: `p1`
@@ -743,6 +736,51 @@ la 90 el 15/09/2026, y la 91 y la 92 ese mismo día, por orden de Bosco.
 
   `database.types.ts` regenerado y comparado: solo añade —las cuatro
   tablas, las cinco columnas y las funciones nuevas—. El typecheck pasa.
+
+- La **93** (`soporte_centro_de_ayuda_y_estado`, Fase 4 · Hito 21) el
+  15/09/2026, por orden de Bosco, desde el MCP y en **siete partes**
+  porque el archivo son 80 KB: `parte_1` (la capacidad `contact_cuotly`,
+  los tres catálogos y los festivos de Cuotly), `parte_2` (el reloj
+  humano, las cuatro tablas de incidencias, los dos avisos y
+  `open_incident`), `parte_3` (el lado de quien llama, mover, contestar,
+  adjuntar, lo derivado y la bandeja), `parte_4` (el hilo para Cuotly,
+  `help_articles` y el buscador), `parte_5` (las dieciséis guías),
+  `parte_6` (la página de estado, la instantánea pública y los tres CHECK
+  de `notifications`) y `parte_7` (`audit_entity_is_visible`, el panel, la
+  auditoría de plataforma y los cuatro disparadores). Las partes se
+  cortaron en límites de sentencia con los `$$` emparejados, y el texto es
+  el del archivo sin cambiar nada más que los comentarios largos. Antes se
+  había pasado entera en local sobre una copia de la 92, con las 44 suites
+  en el orden de CI en verde, y el CI la aplica en cada ejecución.
+
+  **No es solo aditiva**, y por eso se dice lo que toca a lo que ya
+  existía: `has_capability_as()` redefinida con la rama `contact_cuotly`
+  y ninguna otra diferencia; los tres CHECK de `notifications` reescritos
+  (tres tipos de evento más, el tipo de entidad `incident`, y la raíz
+  `/administracion/` admitida en los enlaces); `audit_entity_is_visible()`,
+  `platform_panel_summary()` y `platform_audit()` redefinidas con la misma
+  firma para conocer `incident`; y `platform_status_snapshot()` abierta a
+  `anon` a propósito, la única función del proyecto que lo está. Ninguna
+  fila existente tocada: las únicas filas nuevas son las dieciséis guías.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: las siete tablas con RLS y su política de lectura;
+  las cinco columnas de identidad (`actor_id`, `author_id`, `uploaded_by`,
+  `created_by` y `removed_by`) sin SELECT para `authenticated`; los cuatro
+  disparadores de solo lectura en soporte; las tres internas cerradas a
+  `anon` y `authenticated`; las dieciocho RPC cerradas a `anon`;
+  `platform_status_snapshot()` abierta a `anon`; dieciséis guías; los tres
+  CHECK con lo nuevo; `has_capability_as()` con `contact_cuotly`;
+  `support_minutes_between()` y `search_help_articles()` como `SECURITY
+  INVOKER`; un lunes de 14:00 a 24:00 UTC da 480 minutos de atención; la
+  instantánea responde; y 158 migraciones registradas (151 más las siete
+  partes).
+
+  `database.types.ts` regenerado contra el proyecto y **sustituido
+  entero**, como con la 92. Esta vez el escrito a mano difería solo en el
+  formato de diez firmas y en la columna `search` de `help_articles`
+  (generada: `unknown`, no `unknown | null`). Typecheck, lint y los 1312
+  tests en verde con el generado.
 
 - La **92** (`onboarding_y_ciclo_de_vida_del_espacio`, Fase 4 · Hito 20)
   el 15/09/2026, por orden de Bosco, desde el MCP y en **cinco partes**

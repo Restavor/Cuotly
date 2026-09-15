@@ -1,8 +1,6 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 15/09/2026), con las 92 migraciones del
-// repositorio aplicadas. Las siete tablas y las veintidós funciones de la
-// 93 están escritas a mano con el mismo formato, hasta que se aplique y se
-// regenere contra el proyecto, como se hizo con la 92.
+// (generate_typescript_types, 15/09/2026), con las 93 migraciones del
+// repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
 // aplica una migración nueva.
@@ -1987,7 +1985,7 @@ export type Database = {
           body: string
           id: string
           published: boolean
-          search: unknown | null
+          search: unknown
           slug: string
           title: string
           topic: string
@@ -1999,7 +1997,7 @@ export type Database = {
           body: string
           id?: string
           published?: boolean
-          search?: unknown | null
+          search?: unknown
           slug: string
           title: string
           topic: string
@@ -2011,7 +2009,7 @@ export type Database = {
           body?: string
           id?: string
           published?: boolean
-          search?: unknown | null
+          search?: unknown
           slug?: string
           title?: string
           topic?: string
@@ -7295,7 +7293,10 @@ export type Database = {
         Args: { p_body: string; p_kind: string; p_opportunity_id: string }
         Returns: string
       }
-      add_platform_holiday: { Args: { p_date: string; p_name: string }; Returns: string }
+      add_platform_holiday: {
+        Args: { p_date: string; p_name: string }
+        Returns: string
+      }
       apply_financial_hold_on_jobs: {
         Args: { p_establishment_id: string }
         Returns: number
@@ -8254,13 +8255,19 @@ export type Database = {
           resolution_minutes: number
         }[]
       }
-      incident_needs_reason: { Args: { p_from: string; p_to: string }; Returns: boolean }
+      incident_needs_reason: {
+        Args: { p_from: string; p_to: string }
+        Returns: boolean
+      }
       incident_priority: { Args: { p_incident_id: string }; Returns: string }
       incident_priority_for: {
         Args: { p_impact: string; p_kind: string; p_plan: string }
         Returns: string
       }
-      incident_side_of_caller: { Args: { p_incident_id: string }; Returns: string }
+      incident_side_of_caller: {
+        Args: { p_incident_id: string }
+        Returns: string
+      }
       incident_transition_allowed: {
         Args: { p_actor: string; p_from: string; p_to: string }
         Returns: boolean
@@ -8612,7 +8619,11 @@ export type Database = {
         Returns: number
       }
       notify_incident_opener: {
-        Args: { p_dedupe_key: string; p_event_type: string; p_incident_id: string }
+        Args: {
+          p_dedupe_key: string
+          p_event_type: string
+          p_incident_id: string
+        }
         Returns: number
       }
       notify_integration_event: {
@@ -8636,7 +8647,11 @@ export type Database = {
         Returns: number
       }
       notify_platform_incident: {
-        Args: { p_dedupe_key: string; p_event_type: string; p_incident_id: string }
+        Args: {
+          p_dedupe_key: string
+          p_event_type: string
+          p_incident_id: string
+        }
         Returns: number
       }
       notify_quote_event: {
@@ -8931,7 +8946,10 @@ export type Database = {
         }[]
       }
       platform_status_snapshot: { Args: never; Returns: Json }
-      post_incident_message: { Args: { p_body: string; p_incident_id: string }; Returns: string }
+      post_incident_message: {
+        Args: { p_body: string; p_incident_id: string }
+        Returns: string
+      }
       post_message: {
         Args: {
           p_body: string
@@ -9251,7 +9269,10 @@ export type Database = {
         Args: { p_ends_at: string; p_supervision_id: string }
         Returns: undefined
       }
-      resolve_platform_status_event: { Args: { p_id: string; p_note?: string }; Returns: undefined }
+      resolve_platform_status_event: {
+        Args: { p_id: string; p_note?: string }
+        Returns: undefined
+      }
       restore_space_by_owner: {
         Args: {
           p_idempotency_key?: string
@@ -9264,7 +9285,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: number
       }
-      retire_platform_holiday: { Args: { p_id: string; p_reason: string }; Returns: undefined }
+      retire_platform_holiday: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
       reverse_cuotly_payment: {
         Args: { p_payment_id: string; p_reason: string }
         Returns: undefined
@@ -9659,7 +9683,10 @@ export type Database = {
       }
       support_access_level: { Args: { p_space_id: string }; Returns: string }
       support_is_open_at: { Args: { p_at?: string }; Returns: boolean }
-      support_minutes_between: { Args: { p_from: string; p_to: string }; Returns: number }
+      support_minutes_between: {
+        Args: { p_from: string; p_to: string }
+        Returns: number
+      }
       support_session_actions: {
         Args: { p_session_id: string }
         Returns: {

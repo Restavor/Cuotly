@@ -35,7 +35,7 @@ Actualizado el 15/09/2026.
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita y aplicada al proyecto real el 15/09/2026 (en cinco partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, confirmadas por Bosco (decisión 34). Ver la entrada de cierre abajo. |
-| 21 · Soporte, centro de ayuda y página de estado (Fase 4) | Servidor, dominio y pantallas | Migración 93, escrita el 15/09/2026. **Sin aplicar todavía al proyecto real**: lo decide Bosco. PRD §34 (RN-SOP-01 a 15) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 35). Ver la entrada de cierre abajo. |
+| 21 · Soporte, centro de ayuda y página de estado (Fase 4) | Servidor, dominio y pantallas | Migración 93, escrita y aplicada al proyecto real el 15/09/2026 (en siete partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §34 (RN-SOP-01 a 15) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 35). Ver la entrada de cierre abajo. |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
 
 **La Fase 3 queda cerrada** con el Hito 16: las 86 migraciones del repositorio están aplicadas al
@@ -4604,7 +4604,7 @@ local, y los 1282 tests unitarios.
   en incidencia conservando el contexto, y las sugerencias separadas de los errores.
 - **Página de estado** de aplicación, autenticación, archivos, notificaciones e integraciones.
 
-### Hito 21 · Soporte, centro de ayuda y página de estado *(hecho el 15/09/2026; la 93 SIN aplicar al proyecto)*
+### Hito 21 · Soporte, centro de ayuda y página de estado *(hecho el 15/09/2026; la 93 aplicada ese mismo día)*
 - **PRD §34 escrito primero**, como manda el desglose: §131, §132, §133 y §157 convertidos en quince
   reglas `RN-SOP`. Catorce lecturas donde la maestra calla quedan escritas como regla; Bosco las
   confirmó las catorce el 15/09/2026 (**decisión 35** de `docs/DECISIONES.md`). **Ninguna es un
@@ -4640,9 +4640,9 @@ local, y los 1282 tests unitarios.
 - **Lo que el hito NO trae, y se dice:** ningún tiempo de respuesta (§131), ningún cierre automático,
   ningún editor de guías, ninguna medición de autenticación ni de archivos, ninguna monitorización
   automática propia (§157, la del proveedor no se finge) y nada de la app móvil (Hito 22).
-- **La 93 no está aplicada al proyecto real.** Aplicarla es una decisión de Bosco; cuando se aplique
-  hay que regenerar `database.types.ts`: la parte de la 93 va escrita a mano hasta entonces, como
-  pasó con la 92.
+- **La 93 aplicada al proyecto real** el 15/09/2026 por orden de Bosco, en siete partes, con la
+  verificación en vivo y `database.types.ts` regenerado y sustituido entero (ver
+  `docs/DESPLIEGUE-SUPABASE.md`).
 
 **Dos barridos dispararon, como en todos los hitos de esta fase.** El de funciones internas abiertas
 por RPC cazó las tres que delegan el permiso en `incident_side_of_caller()` hasta que esa entró en su
