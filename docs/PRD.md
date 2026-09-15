@@ -1668,9 +1668,9 @@ espacio (§32).
 Sale de §131 (soporte de Cuotly), §132 (horario humano), §133 (centro de ayuda y estado), §157 (la
 página de estado pública y la alerta crítica), §128 (el bloque "incidencias" del panel, que §32 dejó
 vacío con su motivo) y §20.4 (el Inicio del propietario nombra "incidencias"). Donde la maestra
-calla, las lecturas quedan escritas como regla y anotadas como **pendiente 24** de
-`docs/DECISIONES.md`, **a la espera de que Bosco las confirme**, como estuvieron las de los hitos 18
-a 20 antes de las decisiones 32, 33 y 34. Ninguna inventa un umbral ni un plazo: §131 dice con todas
+calla, las lecturas quedan escritas como regla, todas marcadas como tales; Bosco las confirmó las
+catorce el 15/09/2026 como **decisión 35** de `docs/DECISIONES.md`, igual que las de los hitos 18 a
+20 en las decisiones 32, 33 y 34. Ninguna inventa un umbral ni un plazo: §131 dice con todas
 las letras que **"no existe inicialmente un tiempo contractual de respuesta público"**, y aquí no se
 promete ninguno.
 

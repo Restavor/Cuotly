@@ -582,18 +582,38 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    20—. Confirmar que a los 30 días no se borra nada y que el cierre de cuenta no se implementa es
    confirmar el placeholder del bloque legal, no el bloque legal.
 
+35. **Las catorce lecturas del Hito 21, confirmadas** (15/09/2026). Al escribir el soporte de
+   Cuotly, el centro de ayuda y la página de estado (PRD §34, migración 93), §131, §132, §133 y §157
+   callaban en catorce sitios y en los catorce se eligió lo más defendible, se escribió como regla
+   `RN-SOP` y se preguntó (pendiente 24). Bosco confirma las catorce tal cual, sin cambiar ninguna:
+   Modo soporte no abre incidencias ni en nivel `owner` y el espacio ve todas las suyas; una
+   sugerencia es una incidencia de tipo sugerencia, aparte y sin prioridad ni tiempo de atención; las
+   categorías son los ocho temas de §133 más "otra"; el impacto tiene cuatro niveles; la tabla de
+   transiciones es la de RN-SOP-04, nadie cierra sola y el motivo es obligatorio en "necesita
+   información" y al cerrar sin resolver; un espacio sin plan tiene prioridad estándar; los festivos
+   del horario humano son los de Cuotly, en una lista que nace vacía; atienden Bosco y los
+   Administradores de Cuotly sin permiso fino; el espacio ve "Cuotly" y no quién contestó, con el
+   lado visible; los adjuntos no van a `files`; las guías son contenido versionado por migración, sin
+   editor, para cualquiera con sesión; a quien no puede abrir una incidencia se le dice con quién
+   hablar; en la página de estado se miden notificaciones e integraciones, la aplicación porque
+   responde, y autenticación y archivos no, y se dice; y ningún aviso de incidencias es obligatorio.
+   Sigue sin haber ningún tiempo contractual de respuesta: §131 dice que no existe y no se inventa.
+
+   **Lo que esta decisión NO cierra:** las mismas cuatro pendientes de la 32 a la 34 —17, 18, 19 y
+   20—, ni la aplicación de la migración 93 al proyecto real, que es una orden aparte.
+
 ---
 
 ### Pendiente de completar
 
-**Cinco abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
-tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desglosar la Fase 4 el
-15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. La quinta, la 23, es la
-del Hito 20 y **está a la espera de respuesta**. Las lecturas de los hitos 18 y 19 ya están
-confirmadas (decisiones 32 y 33).
+**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
+tachadas abajo con la decisión que resolvió cada una. Las cuatro salieron al desglosar la Fase 4 el
+15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. Las lecturas de los
+hitos 18 a 21 ya están confirmadas (decisiones 32, 33, 34 y 35).
 
-24. **Lecturas aplicadas al implementar el soporte de Cuotly, el centro de ayuda y la página de
-   estado** (Hito 21, PRD §34, migración 93). §131, §132, §133 y §157 dicen qué y no cómo, y callan
+24. ~~Lecturas aplicadas al implementar el soporte de Cuotly, el centro de ayuda y la página de
+   estado~~ — confirmadas las catorce el 15/09/2026 como decisión 35. Se conservan abajo tal como se
+   preguntaron (Hito 21, PRD §34, migración 93). §131, §132, §133 y §157 dicen qué y no cómo, y callan
    en **catorce** sitios. En los catorce se ha elegido lo más defendible, se ha escrito como regla
    `RN-SOP` y se pregunta aquí. **Ninguna es un plazo**: §131 dice que no hay tiempo contractual de
    respuesta público y aquí no se ha puesto ninguno.

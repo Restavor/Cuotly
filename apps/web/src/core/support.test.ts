@@ -137,7 +137,7 @@ describe("la prioridad se deriva (RN-SOP-05)", () => {
     expect(incidentPriorityFor("error", "critical", "pro")).toBe("critical");
     expect(incidentPriorityFor("error", "low", "agency")).toBe("high");
     expect(incidentPriorityFor("error", "high", "pro")).toBe("standard");
-    // Lectura 6 de la pendiente 24: Restavor y el espacio de demostración
+    // Lectura 6 de la decisión 35: Restavor y el espacio de demostración
     // no tienen plan de Cuotly.
     expect(incidentPriorityFor("error", "high", null)).toBe("standard");
   });
