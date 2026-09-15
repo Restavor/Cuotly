@@ -10,11 +10,26 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.**
+**La 87 y la 88**, escritas el 15/09/2026 y sin aplicar, a la espera de que
+Bosco lo ordene.
+
+- La **87** (`las_fechas_en_la_zona_del_espacio`) arregla un fallo **vivo en
+  el proyecto real**: `claim_integration_runs()` y `space_calendar()`
+  convertían un `timestamptz` a día con la zona de la SESIÓN —UTC en
+  Supabase— en vez de con la del espacio. Entre las 22:00 y las 24:00 UTC,
+  el solape de RN-INT-09 sale de dos días en vez de tres, y un cobro que
+  vence pasada la medianoche de Madrid se pinta en el calendario el día
+  anterior y no aparece al pedir su semana. **No es solo aditiva**: sustituye
+  el cuerpo de las dos funciones y añade `space_timezone()`.
+- La **88** (`el_comentario_de_client_can_view_reports`) **no cambia ningún
+  comportamiento**: corrige un comentario dentro de la función que decía la
+  regla que la decisión 30 descartó.
+
+Las otras 86 están aplicadas.
 
 ## Aplicadas
 
-**Las 86 migraciones del repositorio están aplicadas.** Las tres
+**Las 86 primeras migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
