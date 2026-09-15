@@ -10,18 +10,18 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 91 migraciones del repositorio están aplicadas.
+**Ninguna.** Las 92 migraciones del repositorio están aplicadas.
 
 ## Aplicadas
 
-**Las 91 migraciones del repositorio están aplicadas.** Las tres
+**Las 92 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
 81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88, la 89 y
-la 90 el 15/09/2026, y la 91 ese mismo día, por orden de Bosco.
+la 90 el 15/09/2026, y la 91 y la 92 ese mismo día, por orden de Bosco.
 
 - La **91** (`panel_modo_soporte_y_2fa`, Fase 4 · Hito 19) el 15/09/2026,
   desde el MCP, en **cuatro partes** porque el archivo son 55 KB: `p1`
@@ -736,6 +736,52 @@ la 90 el 15/09/2026, y la 91 ese mismo día, por orden de Bosco.
 
   `database.types.ts` regenerado y comparado: solo añade —las cuatro
   tablas, las cinco columnas y las funciones nuevas—. El typecheck pasa.
+
+- La **92** (`onboarding_y_ciclo_de_vida_del_espacio`, Fase 4 · Hito 20)
+  el 15/09/2026, por orden de Bosco, desde el MCP y en **cinco partes**
+  porque el archivo son 72 KB: `p1` (los datos fiscales y el logotipo del
+  espacio, el relleno desde la solicitud, los diez pasos, las
+  confirmaciones y el progreso), `p2` (datos y logotipo por función, el
+  modo `archived_by_owner`, `space_status_is_archived()`, las dos guardas
+  de la 90 redefinidas, el último propietario y el libro del ciclo de
+  vida), `p3` (el libro con su índice y política, los avisos, transferir y
+  archivar), `p4` (restaurar y la exportación: tabla, columnas
+  exportables y el JSON) y `p5` (quién exporta qué, la puerta, el apunte
+  de auditoría, el cierre de cuenta, el catálogo de avisos, la auditoría y
+  los disparadores de las tres tablas). Antes se aplicó entera sobre una
+  copia local de la 91 y se pasaron las suites 43, 42, 41, 40 y la de
+  barridos del Hito 7, todas en verde.
+
+  **No es solo aditiva**, y por eso se dice lo que toca a lo que ya
+  existía: un `UPDATE` de relleno sobre `spaces` que copia los datos
+  fiscales de la solicitud aprobada (en el proyecto no tocó ninguna fila:
+  los dos espacios no nacieron de una solicitud); `spaces_cuotly_status_check`
+  reescrito con el quinto modo; `notifications_event_type_check` con dos
+  avisos más; y cinco funciones redefinidas con la misma firma
+  (`guard_space_cuotly_columns`, `guard_space_read_only`,
+  `set_space_cuotly_status_internal`, `notification_event_is_mandatory` y
+  `audit_entity_is_visible`). El único cambio de comportamiento sobre la
+  90 es el que el archivo declara: el ciclo de impago ya no mueve un
+  espacio que su dueño archivó.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: las tres tablas con RLS y sus cuatro políticas; los
+  siete disparadores nuevos presentes y los dos que NO deben estar
+  (`*_cuotly_read_only` en el libro y en las exportaciones) ausentes; las
+  seis columnas de `spaces`; los tres CHECK con sus valores nuevos; las
+  siete internas cerradas a `anon` y `authenticated`; las trece RPC
+  abiertas a `authenticated` y cerradas a `anon`; `export_space`,
+  `build_export_payload` y `exportable_columns` son `SECURITY INVOKER`,
+  que es lo que hace que quien exporta se lleve exactamente lo que ve;
+  `onboarding_steps()` devuelve diez; `space_status_is_archived` y
+  `notification_event_is_mandatory` reconocen lo nuevo; y 151
+  migraciones registradas (146 más las cinco partes).
+
+  `database.types.ts` regenerado contra el proyecto y **sustituido
+  entero**: el que dejó el hito 20 se había escrito a mano y difería del
+  generado en el formato, en las claves ajenas de las tres tablas y en la
+  firma de archivar y restaurar. El typecheck pasa con el generado, que
+  es el que manda.
 
 ## La 49
 

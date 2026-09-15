@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 15/09/2026), con las 91 migraciones del
+// (generate_typescript_types, 15/09/2026), con las 92 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -5329,67 +5329,36 @@ export type Database = {
           space_id?: string
           table_count?: number
         }
-        Relationships: []
-      }
-      space_lifecycle_operations: {
-        Row: {
-          actor_id: string
-          from_owner_id: string | null
-          id: string
-          idempotency_key: string | null
-          kind: string
-          occurred_at: string
-          reason: string | null
-          space_id: string
-          to_owner_id: string | null
-        }
-        Insert: {
-          actor_id: string
-          from_owner_id?: string | null
-          id?: string
-          idempotency_key?: string | null
-          kind: string
-          occurred_at?: string
-          reason?: string | null
-          space_id: string
-          to_owner_id?: string | null
-        }
-        Update: {
-          actor_id?: string
-          from_owner_id?: string | null
-          id?: string
-          idempotency_key?: string | null
-          kind?: string
-          occurred_at?: string
-          reason?: string | null
-          space_id?: string
-          to_owner_id?: string | null
-        }
-        Relationships: []
-      }
-      space_onboarding_confirmations: {
-        Row: {
-          confirmed_at: string
-          confirmed_by: string
-          id: string
-          space_id: string
-          step: string
-        }
-        Insert: {
-          confirmed_at?: string
-          confirmed_by: string
-          id?: string
-          space_id: string
-          step: string
-        }
-        Update: {
-          confirmed_at?: string
-          confirmed_by?: string
-          id?: string
-          space_id?: string
-          step?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "space_exports_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_exports_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_exports_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_exports_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       space_invitations: {
         Row: {
@@ -5442,6 +5411,71 @@ export type Database = {
           },
         ]
       }
+      space_lifecycle_operations: {
+        Row: {
+          actor_id: string
+          from_owner_id: string | null
+          id: string
+          idempotency_key: string | null
+          kind: string
+          occurred_at: string
+          reason: string | null
+          space_id: string
+          to_owner_id: string | null
+        }
+        Insert: {
+          actor_id: string
+          from_owner_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind: string
+          occurred_at?: string
+          reason?: string | null
+          space_id: string
+          to_owner_id?: string | null
+        }
+        Update: {
+          actor_id?: string
+          from_owner_id?: string | null
+          id?: string
+          idempotency_key?: string | null
+          kind?: string
+          occurred_at?: string
+          reason?: string | null
+          space_id?: string
+          to_owner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_lifecycle_operations_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_lifecycle_operations_from_owner_id_fkey"
+            columns: ["from_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_lifecycle_operations_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_lifecycle_operations_to_owner_id_fkey"
+            columns: ["to_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_memberships: {
         Row: {
           can_approve_reports: boolean
@@ -5486,6 +5520,45 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_onboarding_confirmations: {
+        Row: {
+          confirmed_at: string
+          confirmed_by: string
+          id: string
+          space_id: string
+          step: string
+        }
+        Insert: {
+          confirmed_at?: string
+          confirmed_by: string
+          id?: string
+          space_id: string
+          step: string
+        }
+        Update: {
+          confirmed_at?: string
+          confirmed_by?: string
+          id?: string
+          space_id?: string
+          step?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_onboarding_confirmations_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_onboarding_confirmations_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -6772,6 +6845,15 @@ export type Database = {
         Args: { p_subscription_id: string; p_version_id: string }
         Returns: string
       }
+      account_deletion_blockers: {
+        Args: never
+        Returns: {
+          entity_id: string
+          entity_name: string
+          kind: string
+          remedy: string
+        }[]
+      }
       act_on_opportunity: {
         Args: { p_action: string; p_message: string; p_opportunity_id: string }
         Returns: string
@@ -6854,6 +6936,14 @@ export type Database = {
         Args: { p_reason?: string; p_template_id: string }
         Returns: undefined
       }
+      archive_space_by_owner: {
+        Args: {
+          p_idempotency_key?: string
+          p_reason: string
+          p_space_id: string
+        }
+        Returns: string
+      }
       assert_can_manage_integrations: {
         Args: { p_establishment_id: string; p_space_id: string }
         Returns: undefined
@@ -6926,6 +7016,24 @@ export type Database = {
       block_job: {
         Args: { p_job_id: string; p_note?: string; p_reason_type: string }
         Returns: string
+      }
+      build_export_payload: {
+        Args: {
+          p_establishment_id?: string
+          p_group_id?: string
+          p_scope: string
+          p_space_id: string
+        }
+        Returns: Json
+      }
+      can_export_scope: {
+        Args: {
+          p_establishment_id: string
+          p_group_id: string
+          p_scope: string
+          p_space_id: string
+        }
+        Returns: boolean
       }
       can_read_billing: {
         Args: { p_establishment_id: string }
@@ -7143,6 +7251,10 @@ export type Database = {
       confirm_cuotly_payment: {
         Args: { p_note?: string; p_payment_id: string }
         Returns: string
+      }
+      confirm_onboarding_step: {
+        Args: { p_space_id: string; p_step: string }
+        Returns: boolean
       }
       conversation_establishment_id: {
         Args: { p_conversation_id: string }
@@ -7382,89 +7494,6 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string; p_status: string }
         Returns: undefined
       }
-      account_deletion_blockers: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          entity_id: string
-          entity_name: string
-          kind: string
-          remedy: string
-        }[]
-      }
-      archive_space_by_owner: {
-        Args: { p_idempotency_key?: string; p_reason: string; p_space_id: string }
-        Returns: string
-      }
-      build_export_payload: {
-        Args: {
-          p_establishment_id?: string
-          p_group_id?: string
-          p_scope: string
-          p_space_id: string
-        }
-        Returns: Json
-      }
-      can_export_scope: {
-        Args: {
-          p_establishment_id: string
-          p_group_id: string
-          p_scope: string
-          p_space_id: string
-        }
-        Returns: boolean
-      }
-      confirm_onboarding_step: {
-        Args: { p_space_id: string; p_step: string }
-        Returns: boolean
-      }
-      export_space: {
-        Args: {
-          p_establishment_id?: string
-          p_group_id?: string
-          p_scope?: string
-          p_space_id: string
-        }
-        Returns: Json
-      }
-      exportable_columns: {
-        Args: { p_table: string }
-        Returns: string[]
-      }
-      onboarding_steps: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          derivable: boolean
-          ordinal: number
-          step: string
-        }[]
-      }
-      restore_space_by_owner: {
-        Args: { p_idempotency_key?: string; p_reason?: string; p_space_id: string }
-        Returns: string
-      }
-      space_onboarding_progress: {
-        Args: { p_space_id: string }
-        Returns: {
-          confirmed_at: string
-          done: boolean
-          ordinal: number
-          source: string
-          step: string
-        }[]
-      }
-      space_status_is_archived: {
-        Args: { p_status: string }
-        Returns: boolean
-      }
-      transfer_space_ownership: {
-        Args: {
-          p_idempotency_key?: string
-          p_reason?: string
-          p_space_id: string
-          p_to_user_id: string
-        }
-        Returns: string
-      }
       declare_cuotly_payment: {
         Args: {
           p_amount_cents: number
@@ -7671,6 +7700,16 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: string
       }
+      export_space: {
+        Args: {
+          p_establishment_id?: string
+          p_group_id?: string
+          p_scope?: string
+          p_space_id: string
+        }
+        Returns: Json
+      }
+      exportable_columns: { Args: { p_table: string }; Returns: string[] }
       file_current_version: { Args: { p_file_id: string }; Returns: number }
       financial_dashboard: {
         Args: { p_from: string; p_space_id: string; p_to: string }
@@ -8175,6 +8214,10 @@ export type Database = {
         Args: { p_report_id: string }
         Returns: number
       }
+      notify_space_lifecycle_event: {
+        Args: { p_dedupe_key: string; p_event_type: string; p_space_id: string }
+        Returns: number
+      }
       notify_terms_version_published: {
         Args: {
           p_kind: string
@@ -8183,6 +8226,14 @@ export type Database = {
           p_version_id: string
         }
         Returns: number
+      }
+      onboarding_steps: {
+        Args: never
+        Returns: {
+          derivable: boolean
+          ordinal: number
+          step: string
+        }[]
       }
       open_menu_team_error_correction: {
         Args: { p_description: string; p_menu_id: string }
@@ -8682,6 +8733,14 @@ export type Database = {
         Args: { p_ends_at: string; p_supervision_id: string }
         Returns: undefined
       }
+      restore_space_by_owner: {
+        Args: {
+          p_idempotency_key?: string
+          p_reason?: string
+          p_space_id: string
+        }
+        Returns: string
+      }
       resume_establishment_counters: {
         Args: { p_establishment_id: string }
         Returns: number
@@ -8978,12 +9037,23 @@ export type Database = {
           timezone: string
         }[]
       }
+      space_onboarding_progress: {
+        Args: { p_space_id: string }
+        Returns: {
+          confirmed_at: string
+          done: boolean
+          ordinal: number
+          source: string
+          step: string
+        }[]
+      }
       space_request_transition_allowed: {
         Args: { p_actor: string; p_from: string; p_to: string }
         Returns: boolean
       }
       space_slug: { Args: { p_space_id: string }; Returns: string }
       space_slug_from_name: { Args: { p_name: string }; Returns: string }
+      space_status_is_archived: { Args: { p_status: string }; Returns: boolean }
       space_team_load: {
         Args: { p_space_id: string }
         Returns: {
@@ -9095,6 +9165,15 @@ export type Database = {
           target_date: string
           updated_at: string
         }[]
+      }
+      transfer_space_ownership: {
+        Args: {
+          p_idempotency_key?: string
+          p_reason?: string
+          p_space_id: string
+          p_to_user_id: string
+        }
+        Returns: string
       }
       unblock_job: {
         Args: { p_job_id: string; p_note?: string; p_reverted?: boolean }
