@@ -4260,10 +4260,115 @@ Hito 15 deja de estar bloqueado.
 **Se verifica con:** `supabase/tests/informes.sql` (la 39ª suite; RN-REP-01 a 14), `reports.test.ts` (los estados, los diez indicadores con el reloj, el CSV y el periodo), `report-generation.test.ts`, `report-pdf.test.ts`, `reports.test.tsx` y `listas-compartidas.test.ts` (el catálogo y las transiciones a los dos lados).
 
 ## FASE 4 — Plataforma y móvil
-App React Native + Expo reutilizando la misma API y el mismo dominio · push con Expo sobre FCM y APNs ·
-panel de Administración de Cuotly · solicitudes de creación de espacio y su aprobación · onboarding de
-espacio nuevo · suscripciones Pro y Agency con su ciclo de pago manual, impago y archivado · prueba
-gratuita de 7 días · Modo soporte · centro de ayuda y página de estado · exportación y conservación.
+
+**Propuesta de desglose, sin confirmar** (15/09/2026). Las fases 1 a 3 se trabajaron con hitos que
+entregaban primero servidor y dominio y después pantallas, con una migración por hito. Esto mantiene
+esa forma. **Hasta que Bosco lo confirme, esto no es el plan: es la propuesta.**
+
+### Lo que hay que saber antes de empezar
+
+**El PRD no cubre la Fase 4.** Termina en RN-REP-14, y CLAUDE.md manda leer las secciones del PRD que
+cubren una tarea antes de escribir código. Para las tres fases anteriores existían sus familias de
+reglas (RN-COM, RN-CLK, RN-MEN, RN-INT, RN-OPP, RN-REP…); aquí no hay ninguna. La maestra **sí** trae
+el material —§4 (Pro, Agency, prueba y cobro), §9 (onboarding), §10 (solicitud de espacio), §127 a
+§133 (propiedad, panel, Modo soporte, soporte y ayuda), §136 a §138 (2FA, protección, copias), §141
+(exportación), §144 a §145 y §176 (móvil)—, así que **cada hito empieza escribiendo su apartado del
+PRD** a partir de ella. No es papeleo: es donde se decide qué es una regla y qué es una lectura, y
+las tres fases anteriores demostraron que el PRD es lo que impide inventar.
+
+**Tablas que no pertenecen a un espacio.** Casi todo lo de esta fase —solicitudes de alta,
+suscripciones de Cuotly, incidencias, sesiones de Modo soporte— está **por encima** del espacio y no
+lleva `space_id`. CLAUDE.md exige `space_id NOT NULL` y RLS a "toda tabla que pertenezca a un
+espacio": estas no le pertenecen, pero el barrido de invariantes de RLS las va a señalar y habrá que
+**clasificarlas con su motivo escrito**, como se hizo con las excepciones del Hito 7. No se relaja el
+barrido.
+
+**El bloque legal sigue aplazado** (§170.1, CLAUDE.md) y toca esta fase por cuatro sitios: la
+eliminación de datos a los 30 días, los "registros que deban conservarse por obligaciones legales",
+el procedimiento ante incidentes y la numeración fiscal de lo que Cuotly le cobra a un espacio. En
+esos cuatro puntos se deja el placeholder documentado y se pregunta. No se inventa.
+
+### Hito 17 · La plataforma: solicitud de espacio, aprobación y alta *(servidor y dominio)*
+- La **solicitud de creación de espacio** de §10 con sus nueve campos y sus **seis estados**
+  (Borrador · Enviada · En revisión · Necesita información · Aprobada · Rechazada con motivo).
+- **Quién aprueba** (§167): Bosco siempre; un Administrador de Cuotly, si recibe el permiso. El rol
+  Administrador de Cuotly no existe todavía; `CUOTLY_OWNER_EMAIL` sí.
+- **Aprobar crea el espacio y arranca la prueba** (§4.4: "la prueba comienza cuando Bosco aprueba").
+  Operación crítica: transacción y clave de idempotencia, como aceptar o publicar.
+- El **selector de contexto** de §8 para Bosco, que ya existe pero sin la entrada de Administración.
+
+### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(servidor y dominio)*
+- **Los dos planes** de §4.1 y §4.2 con sus límites: Pro 149 €, 5 establecimientos activos y 5
+  usuarios internos, 20 GB, adicionales a 25 € y 15 €; Agency 499 €, 100 GB. Los límites se
+  **comprueban en el servidor**: crear el sexto establecimiento en Pro sin pagar el adicional no es
+  un botón escondido.
+- La **prueba de 7 días** (§4.4): máximo 2 establecimientos activos, una sola por persona o negocio,
+  y al terminar sin pago el espacio queda **archivado en modo lectura**.
+- **Cobro manual** (§4.5, sin Stripe: transferencia o Bizum, con justificante y confirmación humana) y
+  los **cinco avisos**: 3 días antes, el día del vencimiento, a las 24 h, a las 48 h y antes de las 72 h.
+- **Impago** (§4.6): gracia de 72 h, archivado por impago en solo lectura —donde todavía se puede
+  pagar, exportar y contactar—, 30 días para reactivar.
+- **Cambio de plan** (§4.7): Pro → Agency inmediato y proporcional; Agency → Pro en la renovación
+  siguiente y solo tras resolver los excesos.
+- Todo como **libro inmutable de apuntes**, igual que las finanzas del espacio. Es el mismo problema
+  con otro pagador.
+
+### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(servidor y pantallas)*
+- El **panel** de §128 con sus doce bloques: usuarios, espacios, solicitudes de alta, suscripciones,
+  ingresos, pruebas activas, impagos, almacenamiento, actividad, incidencias, soporte y auditoría.
+- **Modo soporte** (§129): la única vía por la que alguien entra en un espacio ajeno, con motivo
+  obligatorio, identidad visible en auditoría, fecha, hora, duración, acciones realizadas y mínimo
+  privilegio. **Es el punto más delicado de seguridad de todo el producto**: aquí se abre a propósito
+  la puerta que el aislamiento multiempresa (§134) cierra en todas las demás, y por eso el hito no
+  termina sin una suite que la ataque.
+- **2FA** (§136) en el mismo hito y no más tarde, porque es **obligatoria** para Bosco y para los
+  Administradores de Cuotly: entregar Modo soporte sin ella sería entregar la llave sin la cerradura.
+  Lo de §137 está a medias —"Mis sesiones" y el cierre remoto existen desde HU-05—; falta el resto.
+
+### Hito 20 · Onboarding del espacio nuevo y ciclo de vida del espacio *(servidor y pantallas)*
+- El **asistente de §9** con sus diez pasos y **sin IA**: datos, logotipo, zona horaria, horario,
+  impuestos, planes y servicios, primer establecimiento, primer trabajador, notificaciones y
+  seguridad. Es una secuencia de formularios y tareas pendientes, no un tutorial.
+- **Propiedad y fin de un espacio** (§127): transferir propiedad, que siempre quede al menos un
+  propietario, archivar, 30 días recuperable y después eliminación programada.
+- **Exportación** (§141) en lo que no depende del bloque legal: el propietario exporta su espacio; el
+  del restaurante, su grupo o sus establecimientos; y nadie borra su cuenta si es el único
+  propietario de algo.
+
+### Hito 21 · Soporte, centro de ayuda y página de estado *(servidor y pantallas)*
+- **Incidencias de Cuotly** (§131) con sus seis estados y sus campos, abiertas solo por propietario y
+  administradores del espacio; Agency con prioridad superior y las críticas por encima del plan.
+- El **horario humano** de §132 —un tercer reloj, que no toca ni el contractual ni el de Menú Diario—.
+- **Centro de ayuda** (§133) con buscador y guías por rol, una búsqueda sin solución que se convierte
+  en incidencia conservando el contexto, y las sugerencias separadas de los errores.
+- **Página de estado** de aplicación, autenticación, archivos, notificaciones e integraciones.
+
+### Hito 22 · App móvil (React Native + Expo) y push *(cliente móvil)*
+- Los **once flujos de §176** completos en el teléfono. `apps/mobile` ya existe y compila en CI, pero
+  hoy es un esqueleto; el dominio de `src/core/` y la API se reutilizan tal cual.
+- **Push** con Expo sobre FCM y APNs, sobre el catálogo de avisos que ya existe.
+- **Permisos** (§145): cámara, fotografías, escaneo y biometría tras iniciar sesión. **No** ubicación,
+  **no** micrófono, **no** contactos, **no** vídeos.
+- **Sin conexión** (§144): se consulta lo reciente y se redactan borradores; pagar, aceptar, consumir,
+  publicar y completar exigen servidor, se pide confirmación al volver la conexión y **nunca se
+  duplica una acción** — que es la misma regla de idempotencia de siempre, ahora con el añadido de
+  que el cliente puede haber estado horas desconectado.
+
+### Lo que esta fase NO trae, dicho en claro
+**API pública y webhooks** siguen aplazados (CLAUDE.md), y que §4.2 los mencione como "posibilidad
+futura" para Agency no los convierte en alcance. Tampoco hay IA nueva: el onboarding de §9 dice
+expresamente que no la usa.
+
+### Cuatro huecos que hay que cerrar con Bosco, y que no se inventan
+1. **"Uso razonable"** (§4.3). Agency es ilimitado "bajo uso razonable" y la maestra describe el
+   procedimiento ante un uso anormal, pero **no da ningún umbral**. Es exactamente la situación de
+   los umbrales de oportunidades antes de la decisión 26.
+2. **El precio del almacenamiento adicional**, que CLAUDE.md ya lista como aplazado. Pro incluye
+   20 GB: qué pasa al llegar a 21 no está escrito.
+3. **"Una sola prueba gratuita por persona o negocio"** (§4.4). Persona se sabe identificar; **negocio
+   no**: ¿por datos fiscales, por dominio de correo, a mano? Sin eso, la regla antiabuso no se puede
+   comprobar en el servidor, y es de las que se saltan solas.
+4. **Los cuatro puntos del bloque legal** dichos arriba.
 
 ---
 
