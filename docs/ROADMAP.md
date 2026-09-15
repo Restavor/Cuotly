@@ -31,7 +31,7 @@ Actualizado el 14/09/2026.
 | 15 · Oportunidades por reglas deterministas (Fase 3) | Servidor, dominio y pantallas | Migración 84, 14/09/2026, aplicada al proyecto real el mismo día. Los umbrales los fijó Bosco ese día (decisión 26): ya no se inventan, se citan. Ver la entrada de cierre abajo. |
 | 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
 
-| 17 · Solicitud de espacio, aprobación y alta (Fase 4) | No empezado | Desglosada el 15/09/2026. Empieza escribiendo su apartado del PRD. |
+| 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, 15/09/2026, **sin aplicar** al proyecto real. PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | No empezado | |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | No empezado | El punto más delicado de seguridad del producto. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
@@ -4313,6 +4313,44 @@ esos cuatro puntos se deja el placeholder documentado y se pregunta. No se inven
 - **Aprobar crea el espacio y arranca la prueba** (§4.4: "la prueba comienza cuando Bosco aprueba").
   Operación crítica: transacción y clave de idempotencia, como aceptar o publicar.
 - El **selector de contexto** de §8 para Bosco, que ya existe pero sin la entrada de Administración.
+
+### Hito 17 · La plataforma: solicitud de espacio, aprobación y alta *(hecho el 15/09/2026; la 89 SIN aplicar)*
+- **PRD §30 escrito primero**, que era la condición del desglose: diez lecturas de §10, §167 y §4.4
+  convertidas en nueve reglas `RN-PLA`. Dos de ellas se marcan como **lecturas** porque la maestra
+  calla: quién envía la solicitud y que el solicitante no vea quién la revisó.
+- **Migración 89**: `space_requests` (los nueve campos de §10 y los seis estados) y
+  `space_request_events` (libro inmutable del recorrido). **Las dos primeras tablas del proyecto sin
+  `space_id`**, y clasificadas como tales en el barrido de invariantes con su motivo escrito: una
+  solicitud nace antes que el espacio. Lo que no se les perdona —y el barrido lo sigue exigiendo— es
+  la RLS con política explícita.
+- El **permiso fino de plataforma** de §167 (`can_approve_spaces`), y solo ese: los de suscripciones y
+  Modo soporte llegan con sus hitos. Una columna que nadie lee todavía es el error de
+  `reports.filters`.
+- **Aprobar es una sola operación** (RN-PLA-05): crea el espacio, hace propietario al solicitante,
+  arranca la prueba de 7 días de §4.4 y deja evento y auditoría. Con clave de idempotencia: pulsarlo
+  dos veces devuelve el mismo espacio.
+- Los **seis estados** en `src/core/space-requests.ts`, duplicados a propósito con
+  `space_request_transition_allowed()` y vigilados por `listas-compartidas.test.ts`, como los informes
+  y las oportunidades.
+- **Lo que el hito NO trae, y se dice:** sin pantallas —es un hito de servidor y dominio—, sin cobro
+  ni límites de Pro y Agency (Hito 18), sin onboarding (Hito 20), sin panel ni Modo soporte (Hito 19)
+  y sin nada del bloque legal: los datos fiscales se guardan tal cual, sin validar ni numerar.
+- **La comprobación de "una prueba por negocio" NO se finge.** Por persona se hace; por negocio no,
+  porque la maestra no dice qué identifica a un negocio (pendiente 19). Y eso no está solo en un
+  comentario: hay un test que **aprueba** a otra persona con el mismo nombre de negocio, para que el
+  día que se cierre la pendiente haya que darle la vuelta a propósito.
+
+**Tres barridos dispararon al escribirlo, que es exactamente para lo que están.** El de funciones
+internas abiertas por RPC cazó las cuatro nuevas; el de invariantes de RLS, las dos tablas sin
+`space_id`; y el de auditoría, que el catálogo no conocía las acciones nuevas — y de paso obligó a
+escribir los nombres de acción **literales** en vez de componerlos con `'space_request.' || p_status`,
+que no se pueden leer desde el test ni encontrar con grep.
+
+**Se verifica con:** `supabase/tests/plataforma_solicitud_de_espacio.sql` (la 40ª suite; RN-PLA-01 a
+09), `space-requests.test.ts` (los estados y la tabla de transiciones), `listas-compartidas.test.ts`
+(que los dos lados dicen lo mismo) y `audit.test.ts`. Tres mutaciones detectadas: quitar la
+comprobación de permiso al aprobar, enseñarle los borradores a la plataforma y dejar rechazar sin
+motivo.
 
 ### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(servidor y dominio)*
 - **Los dos planes** de §4.1 y §4.2 con sus límites: Pro 149 €, 5 establecimientos activos y 5

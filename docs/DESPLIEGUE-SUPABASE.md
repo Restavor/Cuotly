@@ -10,7 +10,11 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.**
+**La 89** (`plataforma_solicitud_de_espacio`, Fase 4 · Hito 17), escrita el 15/09/2026 y sin
+aplicar, a la espera de que Bosco lo ordene. **No es solo aditiva**: crea dos tablas y añade dos
+columnas a `spaces` y una a `platform_roles`, todas anulables o con valor por omisión, así que
+aplicarla antes de desplegar el código no rompe ninguna pantalla —nada de lo que hay hoy las lee—.
+Las otras 88 están aplicadas.
 
 ## Aplicadas
 

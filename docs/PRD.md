@@ -3,7 +3,9 @@
 **Producto:** Cuotly · by Restavor
 **Propietario:** Bosco Núñez (Restavor)
 **Versión del documento:** 1.0 — 29 de agosto de 2026
-**Alcance de este PRD:** Fase 1. Las fases 2 a 4 están en `ROADMAP.md`.
+**Alcance de este PRD:** nació para la Fase 1 y hoy cubre también las fases 2 y 3 —Menú Diario,
+presupuestos, integraciones, oportunidades e informes— y, desde el 15/09/2026, la Fase 4 a medida que
+se hace cada hito. El **plan** de las fases sigue en `ROADMAP.md`; las **reglas**, aquí.
 
 > Este PRD es la fuente autoritativa para la Fase 1. Incorpora las enmiendas acordadas el 29/08/2026
 > sobre la especificación maestra. Donde este PRD y `ESPECIFICACION-MAESTRA.md` difieran, manda este PRD.
@@ -1222,3 +1224,71 @@ redactado (§93: "el informe automático por correo no necesita IA"), no hay pla
 configurable por espacio, y no hay envío a una dirección escrita a mano —el correo va a usuarios de
 Cuotly, que es de quien se sabe si puede ver el informe—. La **numeración fiscal**, la exportación
 masiva y la conservación legal siguen siendo del bloque legal aplazado (CLAUDE.md).
+
+---
+
+## 30. La plataforma: solicitud de espacio, aprobación y alta — Fase 4 (RN-PLA)
+
+Hasta aquí, todo el PRD ocurre **dentro** de un espacio de mantenimiento. Este apartado es el primero
+que ocurre **antes** de que el espacio exista: alguien pide uno, Cuotly lo revisa y, si lo aprueba, lo
+crea. Es lo que convierte a Cuotly en multiempresa de verdad — hoy los espacios se crean a mano.
+
+Sale de §10 (solicitud de creación de espacio), §167 (quién decide en la plataforma), §4.4 (la prueba
+empieza al aprobar) y §8 (el selector de contexto).
+
+- **RN-PLA-01**: una **solicitud de creación de espacio** lleva los **nueve campos** de §10 —nombre del
+  negocio, responsable, correo, teléfono, número estimado de establecimientos, número estimado de
+  usuarios internos, uso previsto, plan **Pro o Agency**, y datos fiscales básicos— y **seis estados**:
+  `draft` · `submitted` · `in_review` · `needs_information` · `approved` · `rejected`. Es la **primera
+  tabla del proyecto que no pertenece a ningún espacio**: nace antes que él, así que no lleva
+  `space_id`. El barrido de invariantes de RLS la va a señalar por eso, y se **clasifica con su motivo
+  escrito** — no se relaja el barrido. Sí lleva RLS: quien la escribió ve la suya, y la plataforma las
+  ve todas.
+- **RN-PLA-02**: la envía **una persona ya registrada en Cuotly**, no un formulario público. §7.2 deja
+  que cualquiera se registre —correo verificado, Google o Apple—, así que no hace falta abrir un
+  `insert` a `anon`; abrirlo sería una superficie de abuso sin dueño y dejaría la solicitud sin
+  persona a la que entregarle el espacio al aprobarla. El **borrador es suyo y solo suyo**: nadie de
+  la plataforma lo ve hasta que se envía, igual que el borrador de solicitud del restaurante
+  (RN-MSG-10). *(La maestra no dice quién la envía: es una lectura, y está en la lista de lo que hay
+  que confirmar.)*
+- **RN-PLA-03**: los seis estados se mueven por una **tabla de transiciones**, como los informes
+  (RN-REP-08) y las oportunidades (RN-OPP-05), y no por comparaciones sueltas: `draft → submitted` y
+  `needs_information → submitted` los mueve **el solicitante**; `submitted → in_review`,
+  `→ needs_information`, `→ approved` y `→ rejected` los mueve **la plataforma**. `approved` y
+  `rejected` son **finales**. Lo comprueba el servidor: que la pantalla solo pinte el botón correcto
+  no es un control de acceso.
+- **RN-PLA-04**: quién decide, según §167: **Bosco siempre**; un **Administrador de Cuotly, solo si
+  recibe el permiso**. La tabla `platform_roles` existe desde la Fase 1 con `role = 'cuotly_admin'` y
+  **sin permisos finos**, y §167 los concede por separado —aprobar espacios, gestionar suscripciones,
+  Modo soporte—, así que se añaden como **capacidades de plataforma**, igual que
+  `space_memberships.can_approve_reports` hace dentro de un espacio. Nombrar Administrador de Cuotly
+  es de Bosco y de nadie más (§167).
+- **RN-PLA-05**: **aprobar es una sola operación**, y hace cuatro cosas: crea el espacio, hace
+  **propietario** al solicitante, **arranca la prueba de 7 días** del plan que eligió (§4.4: "la
+  prueba comienza cuando Bosco aprueba y se crea el espacio") y deja evento y auditoría. Va en
+  **transacción con clave de idempotencia** (CLAUDE.md): pulsar dos veces no crea dos espacios.
+- **RN-PLA-06**: **rechazar exige motivo** (§10 dice "Rechazada con motivo") y **"Necesita
+  información" exige decir qué falta**. Las dos son frases que escribe una persona, así que se
+  guardan y se le enseñan al solicitante — un estado sin motivo deja a alguien mirando una pared.
+- **RN-PLA-07**: el solicitante ve **el estado de su solicitud y el motivo**, y **no ve quién la
+  revisó**. Es el mismo principio que P7 aplicado un piso más arriba: lo que importa es la decisión,
+  no qué persona de Cuotly la tomó. Quién decidió sale de `audit_log`, como siempre. *(Lectura: §10 no
+  lo dice.)*
+- **RN-PLA-08**: toda decisión sobre una solicitud deja **evento de estado y apunte de auditoría** con
+  actor, fecha, valor anterior, valor nuevo y motivo (CLAUDE.md). `audit_log.space_id` **ya es
+  anulable**, así que los apuntes anteriores a la aprobación lo llevan a `null`; el de la creación del
+  espacio ya lleva el espacio nuevo.
+- **RN-PLA-09**: la regla antiabuso de §4.4 —**una sola prueba gratuita por persona o negocio**— se
+  cumple **a medias en este hito y a propósito**. Por **persona** se puede comprobar ya, porque una
+  cuenta es un correo (§7.1). Por **negocio** no: la maestra no dice qué identifica a un negocio, y
+  eso es la **pendiente 19**. Hasta que se cierre, la comprobación por persona se hace y la de negocio
+  **no se finge**: no se inventa un criterio por datos fiscales ni por dominio de correo.
+
+Lo que este apartado **no** trae, dicho en claro: **no** trae el cobro, ni los límites de Pro y
+Agency, ni el impago, ni el cambio de plan — eso es el Hito 18 (§4.1 a §4.7). **No** trae el
+asistente de onboarding de §9, que es el Hito 20: aprobar crea el espacio vacío y con su
+propietario, y el asistente que lo rellena viene después. **No** trae el panel de Administración de
+§128 ni Modo soporte de §129, que son el Hito 19 — y con ellos llega la entrada **Administración de
+Cuotly** del selector de contexto (§8), que aquí no tendría adónde llevar. Y **no** trae nada del bloque legal: los datos
+fiscales se guardan como los escribe quien los escribe, sin validación fiscal ni numeración, que
+siguen aplazadas (§170.1).

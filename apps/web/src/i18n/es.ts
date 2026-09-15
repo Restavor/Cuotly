@@ -2327,6 +2327,7 @@ export const es = {
 
     auditEntities: {
       space: "Espacio",
+      space_request: "Solicitud de espacio",
       establishment: "Restaurante",
       group: "Grupo",
       request: "Solicitud",
@@ -2457,6 +2458,13 @@ export const es = {
       "request.submitted": "Solicitud enviada",
       "session.revoked": "Sesión cerrada",
       "space.created": "Espacio creado",
+      // Hito 17 · el recorrido de una solicitud de creación de espacio.
+      // "Enviada" la escribe quien la pide; las otras cuatro, Cuotly.
+      "space_request.submitted": "Solicitud de espacio enviada",
+      "space_request.in_review": "Solicitud de espacio en revisión",
+      "space_request.needs_information": "Se pidió más información sobre la solicitud",
+      "space_request.approved": "Solicitud de espacio aprobada",
+      "space_request.rejected": "Solicitud de espacio rechazada",
       "space.payment_term_changed": "Plazo de pago cambiado",
       "space.renamed": "Espacio renombrado",
       "space.timezone_changed": "Zona horaria cambiada",

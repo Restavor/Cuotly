@@ -128,12 +128,37 @@ describe("HU-36 · el catálogo de acciones de auditoría cubre lo que la base e
     ).toEqual([]);
   });
 
+  it("los apuntes sin espacio solo los ven el propietario de la plataforma y quien los hizo", () => {
+    // Es lo que sostiene la exención de `session` y `space_request` en el
+    // test de abajo. Si alguien ensancha esta rama —por ejemplo quitando
+    // el `actor_id = auth.uid()`—, los apuntes de plataforma pasarían a
+    // verse desde fuera y este test lo dice.
+    const sql = sqlDeLasMigraciones();
+    const desde = sql.lastIndexOf("create policy audit_log_select");
+    expect(desde, "no se encuentra la política audit_log_select").toBeGreaterThan(-1);
+    const sinEspacios = sql.slice(desde, sql.indexOf(";", desde)).replace(/\s+/g, " ");
+    expect(
+      sinEspacios.includes("space_id is null and actor_id = auth.uid()"),
+      "audit_log_select ya no restringe los apuntes sin espacio a su propio actor",
+    ).toBe(true);
+    expect(
+      sinEspacios.includes("is_platform_owner()"),
+      "audit_log_select ya no deja al propietario de la plataforma ver los apuntes sin espacio",
+    ).toBe(true);
+  });
+
   it("las familias decididas por la fila apuntan a una entidad que la base sabe resolver", () => {
     // Una familia con capacidad `null` cuya entidad no esté en
     // `audit_entity_is_visible()` no la ve nadie salvo el propietario y
     // quien la ejecutó — en silencio, que es lo peligroso.
+    // `session` y `space_request` no las decide la fila: las decide la
+    // rama de plataforma de `audit_log_select` —`space_id is null and
+    // actor_id = auth.uid()`— más el propietario de la plataforma. El test
+    // de abajo comprueba que esa rama existe de verdad, para que esta
+    // exención no sea una promesa escrita en un comentario.
+    const deLaPlataforma = new Set(["session", "space_request"]);
     const porFila = Object.entries(AUDIT_FAMILY_CAPABILITY)
-      .filter(([familia, capacidad]) => capacidad === null && familia !== "session")
+      .filter(([familia, capacidad]) => capacidad === null && !deLaPlataforma.has(familia))
       .map(([familia]) => familia);
 
     const resolubles = new Set<string>(AUDIT_ROW_VISIBLE_ENTITIES);

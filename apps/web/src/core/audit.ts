@@ -37,6 +37,7 @@ export type AuditCapability =
 export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | null>> = {
   // Configuración del espacio y composición del equipo: del propietario.
   space: "manage_space",
+
   membership: "manage_space",
   supervision: "manage_space",
   // Las condiciones de planes y servicios (migración 75): configuración
@@ -89,6 +90,16 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   absence: null,
   correction: null,
   session: null,
+  // Fase 4, Hito 17 · la solicitud de creación de espacio ocurre ANTES de
+  // que el espacio exista, así que sus apuntes llevan `space_id` nulo y
+  // **ninguna capacidad de espacio los alcanza**. Tampoco los decide la
+  // fila: los decide la TERCERA rama de `audit_log_select`, la que dice
+  // `space_id is null and actor_id = auth.uid()`, más el propietario de la
+  // plataforma. O sea, hoy los ven Bosco y quien hizo la acción, y nadie
+  // más. Es la misma situación que `session`, y por eso comparte su
+  // exención en `audit.test.ts` — que además comprueba que esa rama de la
+  // política sigue existiendo, para que la exención no sea una promesa.
+  space_request: null,
   // Los menús de Menú Diario (migración 77): operación, como los trabajos.
   menu: null,
   // Los presupuestos (§84, migración 80): los decide la fila, como las
@@ -251,6 +262,17 @@ export const AUDIT_ACTIONS = [
   "space.payment_term_changed",
   "space.renamed",
   "space.timezone_changed",
+  // Las cinco de la solicitud de espacio (migración 89). Tres de ellas las
+  // escribe `decide_space_request()` componiendo el nombre —
+  // `'space_request.' || p_status`—, así que el barrido que lee las
+  // migraciones solo encuentra dos; las otras se enumeran aquí a mano
+  // porque existen igual, y si no estuvieran, el filtro del panel del Hito
+  // 19 no las ofrecería.
+  "space_request.approved",
+  "space_request.in_review",
+  "space_request.needs_information",
+  "space_request.rejected",
+  "space_request.submitted",
   "subscription.plan_change_cancelled",
   "subscription.plan_change_scheduled",
   "subscription.plan_changed",

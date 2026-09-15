@@ -352,6 +352,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/validacion_interna.sql
 
+      - name: "Hito 17 — Verificar la solicitud de creación de espacio (RN-PLA-01 a 09, §10, §167, §4.4)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/plataforma_solicitud_de_espacio.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

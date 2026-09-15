@@ -21,6 +21,11 @@ import {
   reportTransitionAllowed,
 } from "./reports";
 import {
+  SPACE_REQUEST_ACTORS,
+  SPACE_REQUEST_STATES,
+  spaceRequestTransitionAllowed,
+} from "./space-requests";
+import {
   OPPORTUNITY_RULES,
   OPPORTUNITY_STATES,
   RULE_CATEGORY,
@@ -377,6 +382,37 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     const fn = ultimaDefinicion("create or replace function public.report_is_visible_to_client", "$$;");
     const enSql = entrecomillados(fn.slice(fn.indexOf("select p_status in")));
     expect([...REPORT_STATES].filter(reportIsVisibleToClient).sort()).toEqual([...enSql].sort());
+  });
+
+  it("quién mueve cada transición de una solicitud de espacio (RN-PLA-03) lo dicen igual los dos lados", () => {
+    const fn = ultimaDefinicion("create or replace function public.space_request_transition_allowed", "$$;");
+
+    const permitidasEnSql = new Set<string>();
+    for (const rama of fn.split("when ").slice(1)) {
+      const corte = rama.indexOf(" then ");
+      if (corte < 0) continue;
+      const izquierda = entrecomillados(rama.slice(0, corte));
+      const derecha = entrecomillados(rama.slice(corte));
+      if (izquierda.length < 2 || derecha.length === 0) continue;
+      const [origen, ...destinos] = izquierda;
+      for (const destino of destinos) {
+        for (const actor of derecha) permitidasEnSql.add(`${origen}->${destino}:${actor}`);
+      }
+    }
+    // En falso-cerrado: si la expresión deja de reconocer la forma de la
+    // función, esto se queda a cero y el bucle de abajo pasaría en verde
+    // comparando "nada" con "nada".
+    expect(permitidasEnSql.size).toBeGreaterThan(0);
+
+    for (const from of SPACE_REQUEST_STATES) {
+      for (const to of SPACE_REQUEST_STATES) {
+        for (const actor of SPACE_REQUEST_ACTORS) {
+          expect(spaceRequestTransitionAllowed(from, to, actor), `${from} -> ${to} como ${actor}`).toBe(
+            permitidasEnSql.has(`${from}->${to}:${actor}`),
+          );
+        }
+      }
+    }
   });
 
   it("quién mueve cada transición de un informe (§95) lo dicen igual los dos lados", () => {

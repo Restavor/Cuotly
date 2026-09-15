@@ -2610,7 +2610,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2702,6 +2702,24 @@ begin
         -- están revocadas a `anon`, y hay test de que uno no puede cerrar
         -- la sesión de otro.
         'my_active_sessions', 'revoke_my_session',
+        -- Migración 89 (Fase 4, Hito 17). `is_platform_approver()` es LA
+        -- comprobación de §167 —Bosco, o un Administrador de Cuotly con el
+        -- permiso—, así que no puede comprobarse a sí misma; su nombre
+        -- entra en la heurística de arriba para que las dos que la llaman
+        -- (`decide_space_request`, `approve_space_request`) cuenten como
+        -- comprobadas. Aparece además dentro de la política de
+        -- `space_requests`, así que no puede perder el EXECUTE de
+        -- `authenticated` (CLAUDE.md).
+        'is_platform_approver',
+        -- Misma familia que `my_active_sessions` y `edit_message`: las dos
+        -- son la propia persona tocando lo suyo y el filtro por
+        -- `auth.uid()` ES la barrera. `save_space_request_draft` solo crea
+        -- o actualiza el borrador de quien llama —no admite un id ajeno—, y
+        -- `submit_space_request` compara `requester_id` con `auth.uid()` y
+        -- lanza excepción si no coincide. Las dos tienen que seguir
+        -- abiertas a `authenticated`: pedir un espacio es precisamente lo
+        -- que hace alguien que todavía no tiene ninguno.
+        'save_space_request_draft', 'submit_space_request',
         -- `space_slug` no comprueba nada, y no debe: devuelve el segmento
         -- de URL del espacio, que no es un dato sensible —el restaurante
         -- ya navega por él— y la necesita `global_search()`, que es
@@ -3549,10 +3567,20 @@ begin
 
     -- `space_id NOT NULL`. Las excepciones son tablas que no pertenecen a
     -- un espacio (son de plataforma, de identidad, o el espacio mismo).
+    --
+    -- Las dos últimas llegaron con la migración 89 (Fase 4, Hito 17) y son
+    -- el caso más claro de todos: una **solicitud de creación de espacio**
+    -- nace ANTES de que el espacio exista, así que no puede pertenecer a
+    -- ninguno — solo lo apunta cuando la aprobación lo crea, y por eso su
+    -- `space_id` es anulable y no obligatorio. Su libro de estados va
+    -- detrás por la misma razón. Lo que NO se les perdona, y el barrido lo
+    -- sigue exigiendo tres líneas más arriba, es la RLS con política
+    -- explícita: las dos la llevan.
     if not v_t.tiene_space_id and v_t.tabla not in (
          'spaces', 'profiles', 'platform_roles', 'space_memberships',
          'group_memberships', 'establishment_memberships',
-         'establishment_permissions', 'space_sequences', 'audit_log'
+         'establishment_permissions', 'space_sequences', 'audit_log',
+         'space_requests', 'space_request_events'
        ) then
       v_sin_space := v_sin_space || ' ' || v_t.tabla;
     end if;
