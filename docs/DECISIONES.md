@@ -504,6 +504,29 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    espacio a quien pertenece a un grupo suyo —es decir, implementar la mitad de RN-REP-01 que
    Bosco acaba de descartar— hace fallar la suite.
 
+31. **Las diez lecturas del Hito 17, confirmadas** (15/09/2026). Al escribir la solicitud de
+   creación de espacio (PRD §30, migración 89), §10 callaba en diez sitios y en los diez se eligió lo
+   más defendible y se preguntó. Bosco confirma las diez; la primera, con sus palabras.
+
+   **(1) Quién pide un espacio.** "Cuando se registran, después rellenan un formulario básico y tienen
+   que esperar a que info@restavor.com, que es el dueño global de Cuotly, les acepte." Es decir:
+   **primero la cuenta, luego la solicitud, luego la aprobación**. No hay formulario público sin
+   cuenta. Un matiz que conviene dejar dicho: §167 permite además que un Administrador de Cuotly
+   apruebe **si Bosco le da el permiso** (`can_approve_spaces`), y la 89 lo implementa así; como
+   conceder ese permiso es solo de Bosco, la decisión sigue siendo suya en cualquier caso.
+
+   **(2) a (10), confirmadas tal cual:** el solicitante ve el estado y el motivo pero no quién revisó
+   (P7 un piso más arriba); se puede aprobar directamente desde "Enviada"; "Aprobada" y "Rechazada"
+   son finales; un borrador por persona; para enviar bastan nombre del negocio, responsable y correo;
+   los datos fiscales básicos son tres campos de texto libre sin validar; el espacio nace con el
+   nombre del negocio y un slug automático numerado en caso de choque; la prueba dura 7 días exactos
+   desde el instante de aprobar; y "una prueba por persona" se comprueba por cuenta, que es lo que
+   §7.1 dice que es una persona.
+
+   **Lo que esta decisión deja claro para los hitos siguientes:** el formulario básico del
+   solicitante y la pantalla en la que Bosco acepta son **pantallas**, y el Hito 17 no las trae. Las
+   dos son las dos caras del mismo flujo y van juntas con el panel del **Hito 19**.
+
 ---
 
 ### Pendiente de completar

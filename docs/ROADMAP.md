@@ -4369,6 +4369,11 @@ motivo.
   con otro pagador.
 
 ### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(servidor y pantallas)*
+- **Las dos pantallas del flujo del Hito 17**, que aquel no trajo por ser de servidor y dominio: el
+  **formulario básico** con el que alguien recién registrado pide su espacio y ve en qué estado está,
+  y la pantalla en la que **Bosco acepta**, pide información o rechaza (decisión 31). Van aquí y no
+  sueltas porque son la primera cosa que el panel tiene que enseñar: "solicitudes de alta" es uno de
+  sus doce bloques.
 - El **panel** de §128 con sus doce bloques: usuarios, espacios, solicitudes de alta, suscripciones,
   ingresos, pruebas activas, impagos, almacenamiento, actividad, incidencias, soporte y auditoría.
 - **Modo soporte** (§129): la única vía por la que alguien entra en un espacio ajeno, con motivo

@@ -1233,8 +1233,9 @@ Hasta aquí, todo el PRD ocurre **dentro** de un espacio de mantenimiento. Este 
 que ocurre **antes** de que el espacio exista: alguien pide uno, Cuotly lo revisa y, si lo aprueba, lo
 crea. Es lo que convierte a Cuotly en multiempresa de verdad — hoy los espacios se crean a mano.
 
-Sale de §10 (solicitud de creación de espacio), §167 (quién decide en la plataforma), §4.4 (la prueba
-empieza al aprobar) y §8 (el selector de contexto).
+Sale de §10 (solicitud de creación de espacio), §167 (quién decide en la plataforma) y §4.4 (la
+prueba empieza al aprobar). Donde §10 calla, las lecturas están confirmadas por Bosco como
+**decisión 31**.
 
 - **RN-PLA-01**: una **solicitud de creación de espacio** lleva los **nueve campos** de §10 —nombre del
   negocio, responsable, correo, teléfono, número estimado de establecimientos, número estimado de
@@ -1249,8 +1250,9 @@ empieza al aprobar) y §8 (el selector de contexto).
   `insert` a `anon`; abrirlo sería una superficie de abuso sin dueño y dejaría la solicitud sin
   persona a la que entregarle el espacio al aprobarla. El **borrador es suyo y solo suyo**: nadie de
   la plataforma lo ve hasta que se envía, igual que el borrador de solicitud del restaurante
-  (RN-MSG-10). *(La maestra no dice quién la envía: es una lectura, y está en la lista de lo que hay
-  que confirmar.)*
+  (RN-MSG-10). La maestra no decía quién la envía; **Bosco lo fijó el 15/09/2026** (decisión 31):
+  "cuando se registran, después rellenan un formulario básico y tienen que esperar a que
+  info@restavor.com les acepte". Primero la cuenta, luego la solicitud, luego la aprobación.
 - **RN-PLA-03**: los seis estados se mueven por una **tabla de transiciones**, como los informes
   (RN-REP-08) y las oportunidades (RN-OPP-05), y no por comparaciones sueltas: `draft → submitted` y
   `needs_information → submitted` los mueve **el solicitante**; `submitted → in_review`,
@@ -1272,8 +1274,8 @@ empieza al aprobar) y §8 (el selector de contexto).
   guardan y se le enseñan al solicitante — un estado sin motivo deja a alguien mirando una pared.
 - **RN-PLA-07**: el solicitante ve **el estado de su solicitud y el motivo**, y **no ve quién la
   revisó**. Es el mismo principio que P7 aplicado un piso más arriba: lo que importa es la decisión,
-  no qué persona de Cuotly la tomó. Quién decidió sale de `audit_log`, como siempre. *(Lectura: §10 no
-  lo dice.)*
+  no qué persona de Cuotly la tomó. Quién decidió sale de `audit_log`, como siempre. §10 no lo
+  decía; confirmado por Bosco (decisión 31).
 - **RN-PLA-08**: toda decisión sobre una solicitud deja **evento de estado y apunte de auditoría** con
   actor, fecha, valor anterior, valor nuevo y motivo (CLAUDE.md). `audit_log.space_id` **ya es
   anulable**, así que los apuntes anteriores a la aprobación lo llevan a `null`; el de la creación del
