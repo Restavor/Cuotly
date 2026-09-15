@@ -31,9 +31,16 @@ Actualizado el 14/09/2026.
 | 15 · Oportunidades por reglas deterministas (Fase 3) | Servidor, dominio y pantallas | Migración 84, 14/09/2026, aplicada al proyecto real el mismo día. Los umbrales los fijó Bosco ese día (decisión 26): ya no se inventan, se citan. Ver la entrada de cierre abajo. |
 | 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
 
+| 17 · Solicitud de espacio, aprobación y alta (Fase 4) | No empezado | Desglosada el 15/09/2026. Empieza escribiendo su apartado del PRD. |
+| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | No empezado | |
+| 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | No empezado | El punto más delicado de seguridad del producto. |
+| 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
+| 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
+| 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
+
 **La Fase 3 queda cerrada** con el Hito 16: las 86 migraciones del repositorio están aplicadas al
 proyecto real, no hay ninguna decisión abierta en `docs/DECISIONES.md` y la Fase 4 todavía no está
-desglosada en hitos — es el párrafo del final de este archivo.
+desglosada en seis hitos (15/09/2026), sin empezar.
 
 ### Salvedades del Hito 7, dichas en claro
 
@@ -4261,9 +4268,19 @@ Hito 15 deja de estar bloqueado.
 
 ## FASE 4 — Plataforma y móvil
 
-**Propuesta de desglose, sin confirmar** (15/09/2026). Las fases 1 a 3 se trabajaron con hitos que
-entregaban primero servidor y dominio y después pantallas, con una migración por hito. Esto mantiene
-esa forma. **Hasta que Bosco lo confirme, esto no es el plan: es la propuesta.**
+**Desglosada el 15/09/2026, con el orden y la cadencia confirmados por Bosco.** Las fases 1 a 3 se
+trabajaron con hitos que entregaban primero servidor y dominio y después pantallas, con una migración
+por hito; esto mantiene esa forma.
+
+**El orden es 17 → 22, la plataforma primero.** La app móvil es independiente de las otras cinco —no
+depende de ellas ni ellas de ella— y va al final: lo primero es que Cuotly sea multiempresa de
+verdad, que alguien pueda pedir un espacio, que se apruebe, que pague y que se le corte si no paga.
+Hoy nada de eso existe, y sin ello la plataforma no se puede vender a nadie que no sea Bosco.
+
+**Las reglas RN- se escriben una por hito, al empezarlo**, con la maestra delante, como en las fases
+anteriores. Es más lento de arrancar y es lo que ha impedido inventar hasta ahora: el apartado del
+PRD es donde salen las preguntas que hay que hacerle a Bosco, y escribirlos todos de golpe produciría
+reglas para código que no se toca en semanas.
 
 ### Lo que hay que saber antes de empezar
 
@@ -4360,6 +4377,9 @@ futura" para Agency no los convierte en alcance. Tampoco hay IA nueva: el onboar
 expresamente que no la usa.
 
 ### Cuatro huecos que hay que cerrar con Bosco, y que no se inventan
+
+Están también en la lista de pendientes de `docs/DECISIONES.md` (17 a 20), que es el sitio donde
+este proyecto no ha perdido todavía ninguno.
 1. **"Uso razonable"** (§4.3). Agency es ilimitado "bajo uso razonable" y la maestra describe el
    procedimiento ante un uso anormal, pero **no da ningún umbral**. Es exactamente la situación de
    los umbrales de oportunidades antes de la decisión 26.

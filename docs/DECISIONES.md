@@ -506,10 +506,34 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ---
 
-### Pendiente de completar (no bloquea la Fase 1)
+### Pendiente de completar
 
-**Ninguna abierta.** Las dieciséis están cerradas; quedan tachadas abajo con la decisión que
-resolvió cada una.
+**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
+tachadas abajo con la decisión que resolvió cada una. Las cuatro nuevas salieron al desglosar la
+Fase 4 el 15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito.
+
+20. **Los cuatro puntos del bloque legal que toca la Fase 4** (§170.1). La eliminación de datos a
+   los 30 días tras el archivado, qué son los "registros que deban conservarse por obligaciones
+   legales" y dónde quedan aislados, el procedimiento ante un incidente de seguridad (§142) y la
+   numeración fiscal de lo que Cuotly le cobra a un espacio. Los cuatro siguen necesitando la
+   revisión profesional que CLAUDE.md exige. **Hitos 18 y 20.**
+
+19. **Cómo se identifica un "negocio"** para "una sola prueba gratuita por persona o negocio"
+   (§4.4). Persona se sabe identificar; negocio no: ¿por los datos fiscales de la solicitud, por el
+   dominio del correo, a mano al aprobar? Sin una respuesta, la regla antiabuso no se puede
+   comprobar en el servidor — y las reglas que solo viven en la pantalla se saltan solas, que es lo
+   que CLAUDE.md dice con "ocultar un botón no es un control de acceso". **Hito 18.**
+
+18. **El precio del almacenamiento adicional.** Ya estaba aplazado en CLAUDE.md y ahora tiene fecha:
+   Pro incluye 20 GB y Agency 100 GB (§113), y qué pasa al llegar a 21 no está escrito en ninguna
+   parte. **Hito 18.**
+
+17. **Qué es "uso razonable"** en Agency (§4.3). La maestra describe bien el procedimiento ante un
+   uso anormal —se informa, Bosco revisa, se plantea ampliación o plan específico, no se bloquea sin
+   comunicación— pero **no da ningún umbral**, y "ilimitado bajo uso razonable" sin número no se
+   puede medir. Es exactamente la situación de los umbrales de oportunidades antes de la decisión
+   26, y se resolverá igual: los escribe quien esto redacta, los confirma o los cambia Bosco.
+   **Hito 18.**
 
 16. ~~Lecturas aplicadas al implementar los informes~~ — cerradas el 14/09/2026 como decisión
    28, con dos confirmadas y dos cambiadas por Bosco.
