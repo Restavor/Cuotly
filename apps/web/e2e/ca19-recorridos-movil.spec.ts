@@ -478,15 +478,23 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await cabeEnElTelefono(page, "el inicio del espacio");
 
     // Consultar: los dos restaurantes del espacio, con su código y estado.
+    // Están en su pantalla, no en el Inicio: el rediseño dejó el Inicio con
+    // indicadores, atención, carga del equipo, Menú Diario y actividad.
+    await page.goto(`/espacios/${ESPACIO}/restaurantes`);
+    await cabeEnElTelefono(page, "la lista de restaurantes");
     await expect(page.getByText("EST-0001")).toBeVisible();
     await expect(page.getByText("EST-0002")).toBeVisible();
 
     // Gestionar equipo: la lista y la acción de invitar, disponibles en
     // móvil. No se envía la invitación —crearía filas en cada ejecución—,
-    // se comprueba que el flujo está disponible y cabe.
+    // se comprueba que el flujo está disponible y cabe. "Invitar a
+    // alguien" es un ENLACE a la pantalla de invitación, no un botón que
+    // envíe nada, y el recorrido no lo sigue a propósito.
+    await page.goto(`/espacios/${ESPACIO}/equipo`);
+    await cabeEnElTelefono(page, "la pantalla de equipo");
     await expect(page.getByText("Elena Ruiz (propietaria)")).toBeVisible();
     await expect(page.getByText("Marta Gil (trabajadora)")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Invitar/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Invitar/i })).toBeVisible();
   });
 
   /**
@@ -543,6 +551,14 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.getByRole("link", { name: "Descargar PNG" }).click();
     const archivo = await descarga;
     expect(archivo.suggestedFilename()).toMatch(/^menu-.*-v1\.png$/);
+
+    // Recargar, y no por capricho. Descargar es un GET a una ruta, no una
+    // acción de servidor: la página no se vuelve a pintar y el contador
+    // sigue enseñando el número de antes. Recargar es además lo que
+    // comprueba lo que de verdad importa de RN-MEN-11 — que la descarga
+    // quedó REGISTRADA en el servidor—, y no solo que el navegador
+    // recibió un archivo, que es lo que ya dice la línea de arriba.
+    await page.reload();
     await expect(page.getByText("1 descarga")).toBeVisible({ timeout: 20_000 });
   });
 
