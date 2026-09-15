@@ -1250,8 +1250,9 @@ existente en la ejecución con datos, precisamente por esto: Next.js lee
 añadir la clave sigue sin verla y el fallo aparece donde no está la
 avería. Si el puerto está ocupado, Playwright lo dirá.
 
-## Estado: los doce pasan, y ahora los ejecuta CI
+## Estado: los quince pasan, y los ejecuta CI en cada push
 
+**15 passed** en CI el 15/09/2026, con el job `e2e-datos`. Antes de eso:
 **12 passed**, en Windows, el 02/09/2026 — los nueve de lectura y los
 tres del recorrido de CA-19 a 390 px. Se cerraron desde una máquina con
 salida al dominio del proyecto, no desde el contenedor de Claude Code: la
@@ -1297,6 +1298,35 @@ la base de datos: que la suite **no se salta** con `E2E_DATOS=1` (una
 suite que se salta sola dejaría el job verde sin haber probado nada), que
 `next build` y `next start` levantan el servidor de producción, y que el
 único fallo es el de red, con ese mensaje y no otro.
+
+### Lo que encontró la primera vez que se ejecutó
+
+Seis vueltas de CI, de 11 recorridos en verde a 15. Lo que salió:
+
+1. **Un fallo horario vivo en el proyecto real.** La primera ejecución
+   coincidió con las 22:03 UTC —las 00:03 del día siguiente en Madrid— y
+   puso en rojo `rls-tests`, que había pasado veinte minutos antes.
+   `claim_integration_runs()` y `space_calendar()` convertían un
+   `timestamptz` a día con la zona de la **sesión**. Lo arregla la
+   migración 87, y un barrido nuevo impide que la clase vuelva.
+
+2. **Un incumplimiento de CA-19** que llevaba ahí desde el rediseño del
+   Inicio: sus dos tarjetas medían **931 px** en una pantalla de 390,
+   porque un elemento de grid tiene `min-width: auto` y no encoge por
+   debajo de su contenido. `min-w-0` lo cierra, y de paso hace que sirvan
+   para algo los `truncate` de las tres listas.
+
+3. **Seis expectativas de test caducadas**, todas del mismo tipo: un
+   titular que cambió al rediseñar la pantalla, cuatro `getByText` que
+   encontraban más de un elemento —hasta **siete**, en la pantalla de
+   equipo— y un contador de descargas que no se refresca porque descargar
+   es un GET y no una acción de servidor. Ninguna era un fallo del
+   producto; todas fingían estar verdes porque nadie las ejecutaba.
+
+El primer fallo de todos no se pudo diagnosticar con lo que el test
+decía —"se desborda" y nada más—, así que la comprobación de CA-19 nombra
+ahora los cinco elementos que se salen, con sus clases y cuántos píxeles
+se pasan. Dio el culpable en la vuelta siguiente.
 
 ### Lo que encontraron al ejecutarse por primera vez
 

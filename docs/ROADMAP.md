@@ -93,11 +93,17 @@ no son un fallo, sino alcance:
    el Supabase que `supabase start` levanta en el runner y con el espacio
    de demostración sembrado. No necesitan el proyecto real ni **ningún
    secreto**, que es lo que los tenía parados: dependían de una máquina
-   concreta con salida al dominio del proyecto, así que en la práctica los
-   ejecutaba nadie. Lo que se pudo verificar desde el contenedor antes de
-   subirlo es todo menos la base: que la suite no se salta sola con
-   `E2E_DATOS=1`, que el servidor de producción arranca, y que el único
-   fallo es el de red y con su mensaje propio.
+   concreta con salida al dominio del proyecto, así que en la práctica no
+   los ejecutaba nadie.
+
+   **Los 15 pasan en CI desde el 15/09/2026**, y llegar ahí costó seis
+   vueltas que valieron la pena. Encontró un **fallo horario vivo en el
+   proyecto real** (migración 87: dos funciones contaban el día con la
+   zona de la sesión, no con la del espacio), **un incumplimiento de
+   CA-19** que llevaba desde el rediseño del Inicio —sus dos tarjetas
+   medían 931 px en una pantalla de 390— y **seis expectativas de test
+   caducadas** que fingían estar verdes porque nadie las ejecutaba. El
+   detalle está en `docs/DESPLIEGUE-SUPABASE.md`.
 
    Arreglado con la partición `CLIENT_ROLES` / `isClientRole()` /
    `isStaffRole()` junto a la definición de `ShellRole`
