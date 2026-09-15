@@ -492,8 +492,9 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // envíe nada, y el recorrido no lo sigue a propósito.
     await page.goto(`/espacios/${ESPACIO}/equipo`);
     await cabeEnElTelefono(page, "la pantalla de equipo");
-    await expect(page.getByText("Elena Ruiz (propietaria)")).toBeVisible();
-    await expect(page.getByText("Marta Gil (trabajadora)")).toBeVisible();
+    const miembros = page.getByTestId("equipo-miembros");
+    await expect(miembros.getByText("Elena Ruiz (propietaria)")).toBeVisible();
+    await expect(miembros.getByText("Marta Gil (trabajadora)")).toBeVisible();
     await expect(page.getByRole("link", { name: /Invitar/i })).toBeVisible();
   });
 

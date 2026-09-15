@@ -149,7 +149,14 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         ) : null}
 
         {activos.length > 0 ? (
-          <div className="overflow-x-auto">
+          /*
+            El testid es para los recorridos. El nombre de una persona del
+            equipo aparece SIETE veces en esta pantalla —la tabla de
+            miembros, las de sustituciones, los desplegables de los
+            formularios y las tarjetas de cada sustitución—, así que un
+            `getByText` suelto no puede decir "está en la lista".
+          */
+          <div className="overflow-x-auto" data-testid="equipo-miembros">
             <Table>
               <TableHead>
                 <TableRow>
