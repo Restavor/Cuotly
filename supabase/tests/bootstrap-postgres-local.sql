@@ -91,8 +91,15 @@ grant usage on schema auth to anon, authenticated, service_role;
 -- Solo las columnas que tocan las migraciones o las suites. `role` y `aud`
 -- las escriben los fixtures; `raw_user_meta_data` la lee handle_new_user()
 -- en el proyecto real.
+-- **Ninguna de estas tablas de `auth` regala un `default` que el proyecto
+-- real no tenga.** Comprobado el 15/09/2026 contra el proyecto con una
+-- consulta a `information_schema.columns`: las obligatorias sin valor por
+-- omisión son `users.id`; `sessions.id` y `sessions.user_id`; y las seis
+-- de `mfa_factors`. Un fixture que omita cualquiera de ellas tiene que
+-- fallar aquí igual que falla allí: al revés, la suite es un sello de
+-- goma y el fallo aparece en CI una columna por vuelta.
 create table auth.users (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key,  -- sin `default`: en el proyecto real tampoco lo tiene
   email text,
   role text default 'authenticated',
   aud text default 'authenticated',
@@ -133,7 +140,7 @@ create table auth.identities (
 
 -- HU-05 lee de aquí las sesiones abiertas de cada persona.
 create table auth.sessions (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key,  -- sin `default`: en el proyecto real tampoco lo tiene
   user_id uuid not null references auth.users (id) on delete cascade,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -145,22 +152,30 @@ create table auth.sessions (
 
 -- Hito 19 · el segundo factor. Supabase Auth guarda aquí cada factor
 -- registrado; el panel (`platform_list_users()`) lee si una cuenta tiene
--- uno verificado. Las columnas que importan y nada más; `status` es un
--- enum en el proyecto real y aquí texto, y la comparación con el literal
--- funciona igual en los dos.
+-- uno verificado.
+--
+-- **Ni un `default` que el proyecto real no tenga.** Las cinco columnas
+-- obligatorias de GoTrue —`id`, `user_id`, `factor_type`, `status`,
+-- `created_at` y `updated_at`— son `not null` y **sin valor por omisión**:
+-- allí los pone quien inserta. Aquí también, aunque escribir el fixture
+-- salga más largo. Regalarles un `default` hacía la emulación más
+-- permisiva que el proyecto, y eso se pagó dos veces seguidas con la
+-- suite 42 verde en local y roja en CI, una columna por vuelta.
+--
+-- `factor_type` y `status` son enums en el proyecto real y texto aquí: la
+-- comparación con el literal funciona igual en los dos. Las columnas
+-- anulables que GoTrue tiene además (`secret`, `phone`,
+-- `last_challenged_at`, `web_authn_credential`, `web_authn_aaguid`) se
+-- dejan fuera a propósito: nada de Cuotly las lee, y una columna que no
+-- existe falla más ruidosamente que una que miente.
 create table auth.mfa_factors (
-  -- SIN `default`, a propósito y aunque incomode: en Supabase real esta
-  -- columna no lo tiene, y ponerlo aquí convertía la emulación en más
-  -- permisiva que el proyecto. Un INSERT que omita el `id` tiene que
-  -- fallar en local exactamente igual que falla allí; se descubrió al
-  -- revés, con la suite 42 en verde en local y roja en CI.
   id uuid primary key,
   user_id uuid not null references auth.users (id) on delete cascade,
   friendly_name text,
-  factor_type text not null default 'totp',
-  status text not null default 'unverified',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  factor_type text not null,
+  status text not null,
+  created_at timestamptz not null,
+  updated_at timestamptz not null
 );
 
 -- La identidad de quien consulta. En Supabase sale del JWT; aquí, del

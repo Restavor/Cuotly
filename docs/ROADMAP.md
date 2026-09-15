@@ -4506,10 +4506,17 @@ desde cero sobre las 91 migraciones en local.
 omisión. La emulación era más permisiva que el proyecto real, que es exactamente la clase de red que
 no sirve de nada. Se arregló por los dos lados —el fixture pone el `id` y el bootstrap perdió el
 `default`—, y lo segundo es lo que importa: ahora ese INSERT falla en local igual que fallaba allí.
-Comprobado a mano en los dos sentidos antes de dar por buena la corrección, y las 42 suites vueltas
-a pasar sobre una base construida desde cero con el bootstrap corregido. **Regla que queda:** cuando
-`bootstrap-postgres-local.sql` describa una tabla de `auth` o de `storage`, se copia lo que el
-proyecto real tiene; inventarle una comodidad convierte la suite en un sello de goma.
+La primera corrección se quedó corta —se puso el `id` y CI volvió rojo en `created_at`, la columna
+siguiente—, así que la segunda dejó de adivinar: se le preguntó al proyecto real con una consulta a
+`information_schema.columns`, que dice que las obligatorias sin valor por omisión de `mfa_factors`
+son seis (`id`, `user_id`, `factor_type`, `status`, `created_at`, `updated_at`) y que en `users` y
+`sessions` lo es el `id`. El bootstrap perdió los tres `default` que se había inventado y las 42
+suites volvieron a pasar sobre una base construida desde cero con él.
+
+**Regla que queda:** cuando `bootstrap-postgres-local.sql` describa una tabla de `auth` o de
+`storage`, se copia lo que el proyecto real tiene, y si hay duda se le pregunta, que se puede.
+Inventarle una comodidad convierte la suite en un sello de goma, y el precio se paga en CI una
+columna por vuelta.
 
 ### Hito 20 · Onboarding del espacio nuevo y ciclo de vida del espacio *(servidor y pantallas)*
 - El **asistente de §9** con sus diez pasos y **sin IA**: datos, logotipo, zona horaria, horario,
