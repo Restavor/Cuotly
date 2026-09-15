@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 14/09/2026), con las 86 migraciones del
+// (generate_typescript_types, 15/09/2026), con las 87 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -7873,6 +7873,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      space_timezone: { Args: { p_space_id: string }; Returns: string }
       start_correction: {
         Args: { p_correction_id: string }
         Returns: undefined

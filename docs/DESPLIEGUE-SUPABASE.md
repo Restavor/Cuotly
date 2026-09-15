@@ -10,32 +10,21 @@ Actualizado el 14/09/2026.
 
 ## Pendiente de aplicar
 
-**La 87 y la 88**, escritas el 15/09/2026 y sin aplicar, a la espera de que
-Bosco lo ordene.
-
-- La **87** (`las_fechas_en_la_zona_del_espacio`) arregla un fallo **vivo en
-  el proyecto real**: `claim_integration_runs()` y `space_calendar()`
-  convertían un `timestamptz` a día con la zona de la SESIÓN —UTC en
-  Supabase— en vez de con la del espacio. Entre las 22:00 y las 24:00 UTC,
-  el solape de RN-INT-09 sale de dos días en vez de tres, y un cobro que
-  vence pasada la medianoche de Madrid se pinta en el calendario el día
-  anterior y no aparece al pedir su semana. **No es solo aditiva**: sustituye
-  el cuerpo de las dos funciones y añade `space_timezone()`.
-- La **88** (`el_comentario_de_client_can_view_reports`) **no cambia ningún
-  comportamiento**: corrige un comentario dentro de la función que decía la
-  regla que la decisión 30 descartó.
-
-Las otras 86 están aplicadas.
+**La 88** (`el_comentario_de_client_can_view_reports`), escrita el
+15/09/2026 y sin aplicar. **No cambia ningún comportamiento**: corrige un
+comentario dentro de la función que decía la regla que la decisión 30
+descartó. Las otras 87 están aplicadas.
 
 ## Aplicadas
 
-**Las 86 primeras migraciones del repositorio están aplicadas.** Las tres
+**Las 87 primeras migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026.
+81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87 el
+15/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -546,6 +535,47 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   expresión de una política y revocárselo rompería la tabla entera
   (CLAUDE.md). 132 migraciones registradas (el proyecto cuenta partes; el
   repositorio son 86 archivos).
+
+- La **87** (`las_fechas_en_la_zona_del_espacio`, Fase 3) el 15/09/2026, por
+  orden de Bosco, de una sola pieza (14 KB). Arregla un fallo que **estaba
+  vivo en el proyecto** y que encontró el job `e2e-datos` la primera vez
+  que CI lo ejecutó, a las 22:03 UTC — las 00:03 del día siguiente en
+  Madrid.
+
+  `x::date` sobre un `timestamptz` lo convierte con el `TimeZone` de la
+  SESIÓN, que aquí es UTC siempre. CLAUDE.md manda calcular las fechas en
+  la zona del espacio. Dos funciones no lo hacían:
+  `claim_integration_runs()` —el solape de RN-INT-09 salía de dos días en
+  vez de tres entre las 22:00 y las 24:00 UTC— y `space_calendar()` —un
+  cobro que vence pasada la medianoche de Madrid se pintaba el día
+  anterior, y no salía al pedir su semana—.
+
+  **No es solo aditiva**: sustituye el cuerpo de las dos funciones y añade
+  `space_timezone()`, que hace por el espacio lo que `establishment_timezone()`
+  (migración 83) hace por el restaurante. Orden de despliegue: da igual.
+  Ninguna pantalla llama a `space_timezone()` directamente —solo la usa
+  `space_calendar()` por dentro— y las dos firmas existentes no cambian.
+
+  Lo que se comprobó ANTES, en local y sin Docker: las 87 migraciones
+  aplican desde cero sobre PostgreSQL 16 y pasan las 39 suites en el orden
+  de CI; y las dos comprobaciones nuevas, verificadas en los dos sentidos
+  —fallan sin la 87 y pasan con ella—, escritas para morder **a cualquier
+  hora** y no solo en la ventana en la que se descubrió el fallo.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: el barrido de CLAUDE.md no encuentra ya ninguna
+  función que convierta un `*_at` a día sin zona; las tres funciones
+  existen; `space_calendar()` conserva sus **siete ramas** y
+  `claim_integration_runs()` su bucle de comprobaciones pedidas (las dos
+  cosas que la primera versión del arreglo se dejó por el camino);
+  `claim_integration_runs` sigue cerrada por RPC y las otras dos abiertas
+  a `authenticated` y no a `anon`; `space_timezone` es SECURITY DEFINER
+  con `search_path` fijado y `space_calendar` **sigue siendo INVOKER**, que
+  es lo que hace que la RLS de cada tabla la filtre. 133 migraciones
+  registradas.
+
+  `database.types.ts` regenerado desde el proyecto (87 migraciones). La
+  única diferencia con el anterior es la entrada de `space_timezone`.
 
 ## La 49
 
