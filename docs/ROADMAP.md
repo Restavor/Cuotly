@@ -34,7 +34,7 @@ Actualizado el 15/09/2026.
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
-| 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita el 15/09/2026. **Sin aplicar todavía al proyecto real**: lo decide Bosco. PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, **a la espera de que las confirme** (pendiente 23). Ver la entrada de cierre abajo. |
+| 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita el 15/09/2026. **Sin aplicar todavía al proyecto real**: lo decide Bosco. PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, confirmadas por Bosco (decisión 34). Ver la entrada de cierre abajo. |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
 
@@ -4532,8 +4532,8 @@ columna por vuelta.
 - **PRD §33 escrito primero**, como manda el desglose. §9, §127 y §141 son los tres apartados más
   escuetos de la maestra —diez palabras sueltas, siete líneas y cuatro— y callan en **trece** sitios,
   así que este hito lleva más lecturas que los tres anteriores juntos. Están escritas como quince
-  reglas `RN-CIC` y **preguntadas, no confirmadas**: son la **pendiente 23**. Ninguna es un umbral ni
-  un plazo; los dos únicos números del apartado, los diez pasos y los 30 días, los dan §9 y §127.
+  reglas `RN-CIC`; Bosco las confirmó las trece el 15/09/2026 (**decisión 34** de
+  `docs/DECISIONES.md`). Ninguna es un umbral ni un plazo; los dos únicos números del apartado, los diez pasos y los 30 días, los dan §9 y §127.
   La familia es `RN-CIC` y no `RN-ESP` a propósito: `RN-EST` ya existe y dos familias a una letra se
   confunden en el primer `grep`.
 - **El asistente de §9**, con sus diez pasos, sin IA y **sin bloquear nada**: §9 dice "completa

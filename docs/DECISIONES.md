@@ -564,6 +564,24 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    legal. **Y la 91 sigue sin aplicar al proyecto real**: Bosco decide cuándo, y ese día registra
    el segundo factor antes de nada.
 
+34. **Las trece lecturas del Hito 20, confirmadas** (15/09/2026). Al escribir el onboarding y el
+   ciclo de vida del espacio (PRD §33, migración 92), §9, §127 y §141 callaban en trece sitios y en
+   los trece se eligió lo más defendible, se escribió como regla `RN-CIC` y se preguntó (pendiente
+   23). Bosco confirma las trece tal cual, sin cambiar ninguna: el asistente no bloquea nada; seis
+   pasos se saben por el dato y cuatro se completan con una confirmación del propietario; los seis
+   derivados también se pueden confirmar y el origen se enseña; solo el propietario ve y confirma el
+   asistente; terminar el onboarding se sella una vez; transferir la propiedad la mueve y quien la da
+   queda como administrador; el destinatario tiene que ser miembro activo; "al menos un propietario"
+   lo sostiene un disparador; el archivado del propietario es un modo más del espacio sin
+   reactivación por pago; dentro de los 30 días restaura el propietario y pasados, la plataforma; la
+   exportación es un único JSON del servidor entregado como descarga firmada y caducable; las
+   confirmaciones de pasos no van a la auditoría una por una; y los dos avisos nuevos son
+   obligatorios.
+
+   **Lo que esta decisión NO cierra:** las mismas cuatro pendientes de la 32 y la 33 —17, 18, 19 y
+   20—. Confirmar que a los 30 días no se borra nada y que el cierre de cuenta no se implementa es
+   confirmar el placeholder del bloque legal, no el bloque legal.
+
 ---
 
 ### Pendiente de completar
@@ -574,8 +592,9 @@ tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desgl
 del Hito 20 y **está a la espera de respuesta**. Las lecturas de los hitos 18 y 19 ya están
 confirmadas (decisiones 32 y 33).
 
-23. **Lecturas aplicadas al implementar el onboarding y el ciclo de vida del espacio** (Hito 20,
-   PRD §33, migración 92). §9, §127 y §141 son los tres apartados más escuetos de la maestra —diez
+23. ~~Lecturas aplicadas al implementar el onboarding y el ciclo de vida del espacio~~ —
+   confirmadas las trece el 15/09/2026 como decisión 34. Se conservan abajo tal como se
+   preguntaron (Hito 20, PRD §33, migración 92). §9, §127 y §141 son los tres apartados más escuetos de la maestra —diez
    palabras sueltas, siete líneas y cuatro— y callan en **trece** sitios. En los trece se ha elegido
    lo más defendible, se ha escrito como regla `RN-CIC` y se pregunta aquí. **Ninguna es un umbral
    ni un plazo**: los dos únicos números del apartado, los diez pasos y los 30 días, los dan §9 y

@@ -1533,8 +1533,8 @@ eliminaciones) y §140 (propiedad y eliminación piden confirmación adicional).
 **Aquí la maestra está más callada que en ningún otro apartado del PRD**: §9 son diez palabras
 sueltas y una frase, §127 siete líneas y §141 cuatro. Las tres dicen **qué** con claridad y **cómo**
 en ninguna parte. Por eso este apartado lleva más lecturas que los tres anteriores juntos, todas
-marcadas como tales y recogidas en la **pendiente 23** de `docs/DECISIONES.md`, **a la espera de que
-Bosco las confirme**, como estuvieron las de los hitos 18 y 19 antes de las decisiones 32 y 33.
+marcadas como tales; Bosco las confirmó las trece el 15/09/2026 como **decisión 34** de
+`docs/DECISIONES.md`, igual que las de los hitos 18 y 19 en las decisiones 32 y 33.
 Ninguna inventa un umbral, un precio ni un plazo: los dos únicos números del apartado —los diez pasos
 y los 30 días— los dan §9 y §127.
 
