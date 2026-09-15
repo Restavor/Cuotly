@@ -31,7 +31,7 @@ Actualizado el 14/09/2026.
 | 15 · Oportunidades por reglas deterministas (Fase 3) | Servidor, dominio y pantallas | Migración 84, 14/09/2026, aplicada al proyecto real el mismo día. Los umbrales los fijó Bosco ese día (decisión 26): ya no se inventan, se citan. Ver la entrada de cierre abajo. |
 | 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
 
-| 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, 15/09/2026, **sin aplicar** al proyecto real. PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
+| 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | No empezado | |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | No empezado | El punto más delicado de seguridad del producto. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
@@ -4314,7 +4314,7 @@ esos cuatro puntos se deja el placeholder documentado y se pregunta. No se inven
   Operación crítica: transacción y clave de idempotencia, como aceptar o publicar.
 - El **selector de contexto** de §8 para Bosco, que ya existe pero sin la entrada de Administración.
 
-### Hito 17 · La plataforma: solicitud de espacio, aprobación y alta *(hecho el 15/09/2026; la 89 SIN aplicar)*
+### Hito 17 · La plataforma: solicitud de espacio, aprobación y alta *(hecho el 15/09/2026; la 89 aplicada ese mismo día)*
 - **PRD §30 escrito primero**, que era la condición del desglose: diez lecturas de §10, §167 y §4.4
   convertidas en nueve reglas `RN-PLA`. Dos de ellas se marcan como **lecturas** porque la maestra
   calla: quién envía la solicitud y que el solicitante no vea quién la revisó.

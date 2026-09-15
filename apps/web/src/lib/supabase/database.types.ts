@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 15/09/2026), con las 87 migraciones del
+// (generate_typescript_types, 15/09/2026), con las 89 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -3902,16 +3902,19 @@ export type Database = {
       }
       platform_roles: {
         Row: {
+          can_approve_spaces: boolean
           created_at: string
           role: string
           user_id: string
         }
         Insert: {
+          can_approve_spaces?: boolean
           created_at?: string
           role: string
           user_id: string
         }
         Update: {
+          can_approve_spaces?: boolean
           created_at?: string
           role?: string
           user_id?: string
@@ -5057,6 +5060,148 @@ export type Database = {
           },
         ]
       }
+      space_request_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          request_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_request_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "space_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      space_requests: {
+        Row: {
+          business_name: string
+          contact_name: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          email: string
+          estimated_establishments: number | null
+          estimated_users: number | null
+          id: string
+          idempotency_key: string | null
+          intended_use: string | null
+          phone: string | null
+          plan: string
+          requester_id: string
+          space_id: string | null
+          status: string
+          status_reason: string | null
+          submitted_at: string | null
+          tax_address: string | null
+          tax_id: string | null
+          tax_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_name: string
+          contact_name: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email: string
+          estimated_establishments?: number | null
+          estimated_users?: number | null
+          id?: string
+          idempotency_key?: string | null
+          intended_use?: string | null
+          phone?: string | null
+          plan: string
+          requester_id: string
+          space_id?: string | null
+          status?: string
+          status_reason?: string | null
+          submitted_at?: string | null
+          tax_address?: string | null
+          tax_id?: string | null
+          tax_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          contact_name?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email?: string
+          estimated_establishments?: number | null
+          estimated_users?: number | null
+          id?: string
+          idempotency_key?: string | null
+          intended_use?: string | null
+          phone?: string | null
+          plan?: string
+          requester_id?: string
+          space_id?: string | null
+          status?: string
+          status_reason?: string | null
+          submitted_at?: string | null
+          tax_address?: string | null
+          tax_id?: string | null
+          tax_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "space_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "space_requests_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       space_sequences: {
         Row: {
           next_value: number
@@ -5132,6 +5277,8 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          cuotly_plan: string | null
+          cuotly_trial_ends_at: string | null
           id: string
           name: string
           payment_term_days: number
@@ -5142,6 +5289,8 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          cuotly_plan?: string | null
+          cuotly_trial_ends_at?: string | null
           id?: string
           name: string
           payment_term_days?: number
@@ -5152,6 +5301,8 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          cuotly_plan?: string | null
+          cuotly_trial_ends_at?: string | null
           id?: string
           name?: string
           payment_term_days?: number
@@ -6162,6 +6313,10 @@ export type Database = {
         Args: { p_job_id: string; p_new_worker_id: string; p_reason?: string }
         Returns: undefined
       }
+      approve_space_request: {
+        Args: { p_idempotency_key?: string; p_request_id: string }
+        Returns: string
+      }
       approve_task_reassignment: {
         Args: {
           p_new_assignee_id: string
@@ -6624,6 +6779,10 @@ export type Database = {
         Args: { p_absence_id: string; p_approve: boolean; p_note?: string }
         Returns: undefined
       }
+      decide_space_request: {
+        Args: { p_reason?: string; p_request_id: string; p_status: string }
+        Returns: undefined
+      }
       decline_request: {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
@@ -6969,6 +7128,7 @@ export type Database = {
         Returns: boolean
       }
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
+      is_platform_approver: { Args: never; Returns: boolean }
       is_platform_owner: { Args: never; Returns: boolean }
       is_space_member: { Args: { p_space_id: string }; Returns: boolean }
       job_assignee: { Args: { p_job_id: string }; Returns: string }
@@ -7683,6 +7843,22 @@ export type Database = {
         }
         Returns: string
       }
+      save_space_request_draft: {
+        Args: {
+          p_business_name: string
+          p_contact_name: string
+          p_email: string
+          p_estimated_establishments?: number
+          p_estimated_users?: number
+          p_intended_use?: string
+          p_phone?: string
+          p_plan: string
+          p_tax_address?: string
+          p_tax_id?: string
+          p_tax_name?: string
+        }
+        Returns: string
+      }
       schedule_plan_change: {
         Args: { p_new_plan_id: string; p_subscription_id: string }
         Returns: string
@@ -7864,7 +8040,12 @@ export type Database = {
           timezone: string
         }[]
       }
+      space_request_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string }
+        Returns: boolean
+      }
       space_slug: { Args: { p_space_id: string }; Returns: string }
+      space_slug_from_name: { Args: { p_name: string }; Returns: string }
       space_team_load: {
         Args: { p_space_id: string }
         Returns: {
@@ -7893,6 +8074,10 @@ export type Database = {
         Returns: string
       }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
+      submit_space_request: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
       subscription_current_period: {
         Args: { p_subscription_id: string }
         Returns: {

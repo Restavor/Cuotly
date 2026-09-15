@@ -1,5 +1,5 @@
 -- Fase 4 · Hito 17 · la solicitud de creación de espacio, su aprobación y
--- el alta (PRD §30, RN-PLA-01 a 10; §10, §167 y §4.4 de la maestra).
+-- el alta (PRD §30, RN-PLA-01 a 09; §10, §167 y §4.4 de la maestra).
 --
 -- **Lo que hace distinta a esta migración.** Todo lo anterior ocurre dentro
 -- de un espacio. Esto ocurre ANTES de que exista: alguien lo pide, Cuotly
@@ -566,7 +566,7 @@ begin
     raise exception 'Una solicitud en % no se aprueba', v_req.status;
   end if;
 
-  -- RN-PLA-10 · "una sola prueba gratuita por persona o negocio" (§4.4).
+  -- RN-PLA-09 · "una sola prueba gratuita por persona o negocio" (§4.4).
   -- Por PERSONA se puede comprobar, porque una cuenta es un correo (§7.1).
   -- Por NEGOCIO **no se finge**: la maestra no dice qué identifica a un
   -- negocio y eso es la pendiente 19 de docs/DECISIONES.md. Inventar aquí

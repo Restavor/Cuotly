@@ -6,26 +6,22 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 14/09/2026.
+Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-**La 89** (`plataforma_solicitud_de_espacio`, Fase 4 · Hito 17), escrita el 15/09/2026 y sin
-aplicar, a la espera de que Bosco lo ordene. **No es solo aditiva**: crea dos tablas y añade dos
-columnas a `spaces` y una a `platform_roles`, todas anulables o con valor por omisión, así que
-aplicarla antes de desplegar el código no rompe ninguna pantalla —nada de lo que hay hoy las lee—.
-Las otras 88 están aplicadas.
+**Ninguna.** Las 89 migraciones del repositorio están aplicadas.
 
 ## Aplicadas
 
-**Las 88 migraciones del repositorio están aplicadas.** Las tres
+**Las 89 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87 y la 88 el
-15/09/2026.
+81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88 y la 89
+el 15/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -607,6 +603,40 @@ el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
   `database.types.ts` **no cambia**, y se comprobó regenerándolo y
   comparándolo, no dándolo por hecho: `create or replace` de una función
   que ya existía, con la misma firma.
+
+- La **89** (`plataforma_solicitud_de_espacio`, Fase 4 · Hito 17) el
+  15/09/2026, por orden de Bosco, desde el MCP y en **dos partes** porque
+  el archivo son 27 KB: `p1` (el permiso `can_approve_spaces`,
+  `is_platform_approver()`, la tabla de transiciones y las dos tablas) y
+  `p2` (las columnas de plan y prueba en `spaces`, `space_slug_from_name()`
+  y las cuatro funciones de negocio). Quedaron selladas como
+  `20260915085855 · ..._p1_permiso_transiciones_y_tablas` y
+  `20260915121256 · ..._p2_plan_slug_y_funciones`. Solo aditiva: dos
+  tablas nuevas, dos columnas anulables en `spaces` (`cuotly_plan`,
+  `cuotly_trial_ends_at`), una con valor por omisión en `platform_roles`
+  y ninguna función redefinida. Nada de lo desplegado hoy las lee, así que
+  aplicarla antes que el código no rompe ninguna pantalla.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: `space_requests` y `space_request_events` existen
+  con RLS activado; `space_requests.space_id` es anulable, que es la
+  excepción documentada (una solicitud nace antes que el espacio);
+  `decided_by` y `actor_id` están revocadas a `authenticated` mientras
+  `business_name`, `status` y `to_status` sí se leen (RN-PLA-08);
+  `is_platform_approver()` conserva el EXECUTE de `authenticated` —está
+  dentro de `space_requests_select`— y no lo tiene `anon`;
+  `space_slug_from_name()` está cerrada a `anon` y `authenticated`; las
+  cuatro RPC de negocio están abiertas a `authenticated` y cerradas a
+  `anon`; los dos CHECK (`space_requests_decision`,
+  `space_requests_space`) y el índice único parcial de un borrador por
+  solicitante existen; y la política de selección menciona
+  `is_platform_approver()` y deja fuera el borrador. Único aviso de la
+  consulta: el recuento de migraciones dio 136 y yo había escrito 135;
+  el error era mío (133 tras la 87, más la 88, más las dos partes).
+
+  `database.types.ts` regenerado y comparado: 187 líneas añadidas y
+  ninguna quitada —las dos tablas con sus cinco claves ajenas, las tres
+  columnas y las siete funciones—. El typecheck pasa.
 
 ## La 49
 
