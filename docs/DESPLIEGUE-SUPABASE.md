@@ -10,18 +10,68 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 90 migraciones del repositorio están aplicadas.
+**Ninguna.** Las 91 migraciones del repositorio están aplicadas.
 
 ## Aplicadas
 
-**Las 90 migraciones del repositorio están aplicadas.** Las tres
+**Las 91 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
 81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88, la 89 y
-la 90 el 15/09/2026.
+la 90 el 15/09/2026, y la 91 ese mismo día, por orden de Bosco.
+
+- La **91** (`panel_modo_soporte_y_2fa`, Fase 4 · Hito 19) el 15/09/2026,
+  desde el MCP, en **cuatro partes** porque el archivo son 55 KB: `p1`
+  (la 2FA, el tercer permiso fino y nombrar Administradores de Cuotly),
+  `p2` (la sesión de Modo soporte y la puerta), `p3` (los dos
+  disparadores, el aviso obligatorio y las familias de auditoría) y `p4`
+  (las nueve funciones del panel). **NO es solo aditiva, y por eso se
+  dice:** redefine `is_platform_owner()` —desde ese momento exige el
+  reclamo `aal2` del token—, `is_space_member()` y `has_capability_as()`,
+  que son las dos funciones por las que pasan todas las políticas; y quita
+  la política `platform_roles_write` de la Fase 1. Una tabla nueva
+  (`support_sessions`), una columna en `platform_roles` (`can_support`) y
+  otra en `audit_log` (`support_session_id`), los dos CHECK de
+  `notifications` ensanchados, 77 disparadores de solo lectura en soporte
+  (las 83 tablas con `space_id` menos las seis exentas), el sello en
+  `audit_log` y 23 funciones. Ninguna fila tocada.
+
+  Comprobado en vivo justo después, con una consulta que se planta en
+  cualquiera de los puntos: las 27 funciones existen; las cuatro internas
+  (`support_access_level`, `has_capability_as`, `guard_support_read_only`,
+  `stamp_support_session`) sin EXECUTE para `authenticated`; las públicas
+  con EXECUTE para `authenticated` y no para `anon`; los 77 disparadores;
+  el sello; `platform_roles` solo con `platform_roles_select`;
+  `support_sessions` con RLS y su política; el aviso
+  `support_session_started` en el CHECK y obligatorio; la familia
+  `support` en `manage_space`. Y **la cerradura, con la identidad de Bosco
+  emulada en la sesión SQL**: con `aal1`, `is_platform_owner()` es falso y
+  `my_platform_access()` dice `is_owner: true, two_factor: false`; con
+  `aal2`, es verdadero y `platform_panel_summary()` responde. Después se
+  regeneró `database.types.ts` (91 migraciones) y
+  `src/services/platform-gateway.ts` dejó la frontera con `any`.
+
+  **Lo que el analizador dice y por qué se acepta.** Las 18 funciones
+  nuevas abiertas a `authenticated` aparecen en
+  `authenticated_security_definer_function_executable`, como todas las
+  públicas del proyecto: cada una comprueba permiso por dentro, y la
+  suite 42 lo demuestra desde los dos lados. Ninguna aparece en la de
+  `anon`. `session_is_two_factor()` sale en `function_search_path_mutable`:
+  no es `SECURITY DEFINER` y solo lee un ajuste de sesión, así que no hay
+  nada que un `search_path` pudiera desviar; se fijará en la siguiente
+  migración por limpieza, no por riesgo. Un dato que **no** es de la 91 y
+  que conviene saber: `is_platform_owner` e `is_space_member` tienen
+  EXECUTE para `anon` desde la Fase 1 (igual en local). No cambia nada
+  —las dos devuelven falso sin `auth.uid()`— y se cierra cuando se toque
+  esa capa.
+
+  **Lo que cambia para Bosco desde este momento:** la administración de
+  Cuotly no responde hasta que registre el segundo factor en
+  `/cuenta/seguridad` (Authentication → Multi-Factor con TOTP habilitado en
+  el proyecto). En Restavor entra con normalidad.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el

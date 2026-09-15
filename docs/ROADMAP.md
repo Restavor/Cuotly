@@ -33,7 +33,7 @@ Actualizado el 15/09/2026.
 
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
-| 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita el 15/09/2026; **pendiente de aplicar al proyecto real** hasta que Bosco lo ordene, como la 85. PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
+| 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
@@ -4440,7 +4440,7 @@ pasar a todos en modo lectura y confirmar pagos sin ser de Cuotly.
   Administradores de Cuotly: entregar Modo soporte sin ella sería entregar la llave sin la cerradura.
   Lo de §137 está a medias —"Mis sesiones" y el cierre remoto existen desde HU-05—; falta el resto.
 
-### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(hecho el 15/09/2026; la 91 sin aplicar todavía)*
+### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(hecho el 15/09/2026; la 91 aplicada ese mismo día)*
 - **PRD §32 escrito primero**, como manda el desglose: §128, §129, §136, §137 y §167 convertidos en
   doce reglas `RN-ADM`. Catorce lecturas donde la maestra calla quedan escritas como regla; Bosco las
   confirmó las catorce el 15/09/2026 (**decisión 33** de `docs/DECISIONES.md`). Ninguna es un umbral
@@ -4479,10 +4479,11 @@ pasar a todos en modo lectura y confirmar pagos sin ser de Cuotly.
   (`/ajustes/suscripcion`, el enlace al que los avisos del Hito 18 ya apuntaban).
 - **Lo que el hito NO trae, y se dice:** sin incidencias ni horario humano (Hito 21), sin onboarding ni
   propiedad y fin del espacio (Hito 20), sin exportación, sin avisos por dispositivo nuevo (RN-ADM-12,
-  hace falta decidir qué es un dispositivo) y sin medir el uso razonable (pendiente 17). **La 91 no se
-  ha aplicado al proyecto real**: se espera la orden de Bosco, y `database.types.ts` se regenera
-  entonces; hasta ese momento las funciones nuevas pasan por `src/services/platform-gateway.ts`, la
-  frontera con `any` que ya usó el Hito 16 y se quitó al regenerar.
+  hace falta decidir qué es un dispositivo) y sin medir el uso razonable (pendiente 17).
+- **La 91 se aplicó al proyecto real el 15/09/2026**, por orden de Bosco, en cuatro partes y tras
+  pasar entera en local sobre una copia de la 90. `database.types.ts` regenerado y la frontera con
+  `any` de `src/services/platform-gateway.ts` retirada, como hizo el Hito 16. Lo comprobado en vivo
+  —la cerradura incluida, con la identidad de Bosco emulada— está en `docs/DESPLIEGUE-SUPABASE.md`.
 
 **Los barridos dispararon otra vez, tres veces.** El de funciones internas abiertas por RPC cazó las
 del panel hasta que `is_platform_member()` entró en su heurística, y las dos primitivas nuevas

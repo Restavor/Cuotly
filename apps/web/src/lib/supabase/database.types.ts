@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 15/09/2026), con las 90 migraciones del
+// (generate_typescript_types, 15/09/2026), con las 91 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -371,6 +371,7 @@ export type Database = {
           old_value: Json | null
           reason: string | null
           space_id: string | null
+          support_session_id: string | null
         }
         Insert: {
           action: string
@@ -383,6 +384,7 @@ export type Database = {
           old_value?: Json | null
           reason?: string | null
           space_id?: string | null
+          support_session_id?: string | null
         }
         Update: {
           action?: string
@@ -395,6 +397,7 @@ export type Database = {
           old_value?: Json | null
           reason?: string | null
           space_id?: string | null
+          support_session_id?: string | null
         }
         Relationships: [
           {
@@ -409,6 +412,13 @@ export type Database = {
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_log_support_session_id_fkey"
+            columns: ["support_session_id"]
+            isOneToOne: false
+            referencedRelation: "support_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -4222,6 +4232,7 @@ export type Database = {
         Row: {
           can_approve_spaces: boolean
           can_manage_subscriptions: boolean
+          can_support: boolean
           created_at: string
           role: string
           user_id: string
@@ -4229,6 +4240,7 @@ export type Database = {
         Insert: {
           can_approve_spaces?: boolean
           can_manage_subscriptions?: boolean
+          can_support?: boolean
           created_at?: string
           role: string
           user_id: string
@@ -4236,6 +4248,7 @@ export type Database = {
         Update: {
           can_approve_spaces?: boolean
           can_manage_subscriptions?: boolean
+          can_support?: boolean
           created_at?: string
           role?: string
           user_id?: string
@@ -5850,6 +5863,63 @@ export type Database = {
           },
         ]
       }
+      support_sessions: {
+        Row: {
+          access_level: string
+          actor_id: string
+          created_at: string
+          end_note: string | null
+          ended_at: string | null
+          expires_at: string
+          id: string
+          idempotency_key: string | null
+          reason: string
+          space_id: string
+          started_at: string
+        }
+        Insert: {
+          access_level: string
+          actor_id: string
+          created_at?: string
+          end_note?: string | null
+          ended_at?: string | null
+          expires_at: string
+          id?: string
+          idempotency_key?: string | null
+          reason: string
+          space_id: string
+          started_at?: string
+        }
+        Update: {
+          access_level?: string
+          actor_id?: string
+          created_at?: string
+          end_note?: string | null
+          ended_at?: string | null
+          expires_at?: string
+          id?: string
+          idempotency_key?: string | null
+          reason?: string
+          space_id?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_sessions_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_sessions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sync_runs: {
         Row: {
           created_at: string
@@ -7256,6 +7326,10 @@ export type Database = {
         }
         Returns: number
       }
+      end_support_session: {
+        Args: { p_note?: string; p_session_id: string }
+        Returns: boolean
+      }
       enqueue_due_scheduled_jobs: {
         Args: { p_run_after?: string }
         Returns: number
@@ -7556,9 +7630,12 @@ export type Database = {
         Returns: boolean
       }
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
       is_platform_approver: { Args: never; Returns: boolean }
+      is_platform_member: { Args: never; Returns: boolean }
       is_platform_owner: { Args: never; Returns: boolean }
       is_platform_subscription_manager: { Args: never; Returns: boolean }
+      is_platform_supporter: { Args: never; Returns: boolean }
       is_space_member: { Args: { p_space_id: string }; Returns: boolean }
       issue_cuotly_charge_internal: {
         Args: {
@@ -7819,6 +7896,17 @@ export type Database = {
           user_agent: string
         }[]
       }
+      my_platform_access: { Args: never; Returns: Json }
+      my_support_session: {
+        Args: { p_space_id: string }
+        Returns: {
+          access_level: string
+          expires_at: string
+          id: string
+          reason: string
+          started_at: string
+        }[]
+      }
       next_request_code: {
         Args: { p_establishment_id: string }
         Returns: string
@@ -7962,9 +8050,132 @@ export type Database = {
           fraction: number
         }[]
       }
+      platform_audit: {
+        Args: { p_limit?: number; p_offset?: number; p_scope?: string }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          new_value: Json
+          old_value: Json
+          reason: string
+          space_id: string
+          space_name: string
+          support_session_id: string
+        }[]
+      }
+      platform_list_charges: {
+        Args: { p_open_only?: boolean }
+        Returns: {
+          concept: string
+          due_at: string
+          id: string
+          issued_at: string
+          kind: string
+          outstanding_cents: number
+          period_end: string
+          period_start: string
+          reference: string
+          space_id: string
+          space_name: string
+          space_slug: string
+          status: string
+          total_cents: number
+        }[]
+      }
+      platform_list_pending_payments: {
+        Args: never
+        Returns: {
+          amount_cents: number
+          charge_id: string
+          charge_reference: string
+          declared_at: string
+          declared_by_email: string
+          declared_side: string
+          id: string
+          method: string
+          note: string
+          paid_at: string
+          receipt_reference: string
+          space_id: string
+          space_name: string
+        }[]
+      }
+      platform_list_spaces: {
+        Args: never
+        Returns: {
+          active_establishments: number
+          created_at: string
+          cuotly_archived_at: string
+          cuotly_plan: string
+          cuotly_reactivation_deadline_at: string
+          cuotly_status: string
+          cuotly_trial_ends_at: string
+          current_period_end: string
+          has_pending_declaration: boolean
+          id: string
+          internal_users: number
+          name: string
+          outstanding_cents: number
+          overdue_cents: number
+          owner_emails: string
+          pending_plan: string
+          slug: string
+          storage_bytes: number
+          support_active: boolean
+        }[]
+      }
+      platform_list_support_sessions: {
+        Args: { p_limit?: number }
+        Returns: {
+          access_level: string
+          actions_count: number
+          actor_email: string
+          actor_id: string
+          end_note: string
+          ended_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          reason: string
+          space_id: string
+          space_name: string
+          space_slug: string
+          started_at: string
+        }[]
+      }
+      platform_list_users: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          can_approve_spaces: boolean
+          can_manage_subscriptions: boolean
+          can_support: boolean
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          is_admin: boolean
+          is_owner: boolean
+          spaces_count: number
+          two_factor_enrolled: boolean
+        }[]
+      }
+      platform_panel_summary: { Args: never; Returns: Json }
       platform_reactivate_space: {
         Args: { p_reason: string; p_space_id: string }
         Returns: undefined
+      }
+      platform_revenue_by_month: {
+        Args: { p_months?: number }
+        Returns: {
+          month: string
+          paid_cents: number
+          payments: number
+        }[]
       }
       post_message: {
         Args: {
@@ -8299,6 +8510,7 @@ export type Database = {
         Returns: boolean
       }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
+      revoke_platform_admin: { Args: { p_user_id: string }; Returns: boolean }
       revoke_supervision: {
         Args: { p_reason?: string; p_supervision_id: string }
         Returns: undefined
@@ -8377,6 +8589,7 @@ export type Database = {
           service_name: string
         }[]
       }
+      session_is_two_factor: { Args: never; Returns: boolean }
       set_admin_can_approve_reports: {
         Args: { p_space_id: string; p_user_id: string; p_value: boolean }
         Returns: undefined
@@ -8443,6 +8656,15 @@ export type Database = {
       }
       set_opportunity_status: {
         Args: { p_opportunity_id: string; p_reason?: string; p_status: string }
+        Returns: undefined
+      }
+      set_platform_admin: {
+        Args: {
+          p_can_approve_spaces?: boolean
+          p_can_manage_subscriptions?: boolean
+          p_can_support?: boolean
+          p_user_id: string
+        }
         Returns: undefined
       }
       set_principal_supervisor: {
@@ -8566,6 +8788,16 @@ export type Database = {
         Returns: undefined
       }
       start_job: { Args: { p_job_id: string }; Returns: undefined }
+      start_support_session: {
+        Args: {
+          p_access_level?: string
+          p_idempotency_key?: string
+          p_minutes?: number
+          p_reason: string
+          p_space_id: string
+        }
+        Returns: string
+      }
       store_integration_credential: {
         Args: {
           p_account_label?: string
@@ -8606,6 +8838,20 @@ export type Database = {
           status: string
           subject_name: string
           subject_type: string
+        }[]
+      }
+      support_access_level: { Args: { p_space_id: string }; Returns: string }
+      support_session_actions: {
+        Args: { p_session_id: string }
+        Returns: {
+          action: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          new_value: Json
+          old_value: Json
+          reason: string
         }[]
       }
       task_assignee_is_valid: {

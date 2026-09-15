@@ -6,29 +6,29 @@
  * pregunta y con qué sesión (`is_platform_member()`, `is_platform_supporter()`,
  * la 2FA por `session_is_two_factor()`), y esto solo traduce.
  *
- * **Sobre `any`.** `database.types.ts` se regenera contra el proyecto real
- * cuando se aplica cada migración, y la 91 está en el repositorio sin
- * aplicar, a la espera de la orden de Bosco (como estuvo la 85). Hasta
- * entonces las funciones nuevas no existen en `Database` y el `any` se
- * aísla en esta frontera, igual que hizo `report-gateway.ts` en el Hito 16
- * — y se quita al regenerar los tipos, como se hizo entonces.
+ * Los tipos son los de `Database`, regenerados contra el proyecto real con
+ * la 91 aplicada (15/09/2026). Cada función devuelve lo que la base dice
+ * que devuelve; las interfaces de abajo son la misma forma con nombre, para
+ * que las pantallas no dependan de la generación.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { PlatformAccess, SupportAccessLevel } from "@/core/platform-admin";
+import type { Database } from "@/lib/supabase/database.types";
 
-/* eslint-disable @typescript-eslint/no-explicit-any --
-   Frontera con las funciones de la migración 91 hasta que se regeneren los
-   tipos contra el proyecto real (ver la cabecera). */
-type AnyClient = SupabaseClient<any, any, any>;
+type Client = SupabaseClient<Database>;
+type Functions = Database["public"]["Functions"];
 
-async function rpc<T>(client: AnyClient, fn: string, args: Record<string, unknown> = {}): Promise<T> {
+async function rpc<F extends keyof Functions>(
+  client: Client,
+  fn: F,
+  args: Functions[F]["Args"],
+): Promise<Functions[F]["Returns"]> {
   const { data, error } = await client.rpc(fn, args);
   if (error) throw new Error(error.message);
-  return data as T;
+  return data as Functions[F]["Returns"];
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export interface PanelSummary {
   readonly users_total: number;
@@ -181,8 +181,8 @@ export interface MySupportSession {
 }
 
 /** `my_platform_access()`, en las claves del dominio. */
-export async function myPlatformAccess(client: AnyClient): Promise<PlatformAccess> {
-  const raw = await rpc<Record<string, boolean> | null>(client, "my_platform_access");
+export async function myPlatformAccess(client: Client): Promise<PlatformAccess> {
+  const raw = (await rpc(client, "my_platform_access", undefined as never)) as Record<string, boolean> | null;
   return {
     isOwner: raw?.is_owner === true,
     isAdmin: raw?.is_admin === true,
@@ -193,58 +193,58 @@ export async function myPlatformAccess(client: AnyClient): Promise<PlatformAcces
   };
 }
 
-export function panelSummary(client: AnyClient): Promise<PanelSummary> {
-  return rpc<PanelSummary>(client, "platform_panel_summary");
+export function panelSummary(client: Client): Promise<PanelSummary> {
+  return rpc(client, "platform_panel_summary", undefined as never) as Promise<unknown> as Promise<PanelSummary>;
 }
 
-export function listUsers(client: AnyClient, limit = 200, offset = 0): Promise<readonly PlatformUserRow[]> {
-  return rpc<PlatformUserRow[]>(client, "platform_list_users", { p_limit: limit, p_offset: offset });
+export function listUsers(client: Client, limit = 200, offset = 0): Promise<readonly PlatformUserRow[]> {
+  return rpc(client, "platform_list_users", { p_limit: limit, p_offset: offset });
 }
 
-export function listSpaces(client: AnyClient): Promise<readonly PlatformSpaceRow[]> {
-  return rpc<PlatformSpaceRow[]>(client, "platform_list_spaces");
+export function listSpaces(client: Client): Promise<readonly PlatformSpaceRow[]> {
+  return rpc(client, "platform_list_spaces", undefined as never);
 }
 
-export function listCharges(client: AnyClient, openOnly = true): Promise<readonly PlatformChargeRow[]> {
-  return rpc<PlatformChargeRow[]>(client, "platform_list_charges", { p_open_only: openOnly });
+export function listCharges(client: Client, openOnly = true): Promise<readonly PlatformChargeRow[]> {
+  return rpc(client, "platform_list_charges", { p_open_only: openOnly });
 }
 
-export function listPendingPayments(client: AnyClient): Promise<readonly PendingPaymentRow[]> {
-  return rpc<PendingPaymentRow[]>(client, "platform_list_pending_payments");
+export function listPendingPayments(client: Client): Promise<readonly PendingPaymentRow[]> {
+  return rpc(client, "platform_list_pending_payments", undefined as never);
 }
 
-export function revenueByMonth(client: AnyClient, months = 12): Promise<readonly RevenueMonthRow[]> {
-  return rpc<RevenueMonthRow[]>(client, "platform_revenue_by_month", { p_months: months });
+export function revenueByMonth(client: Client, months = 12): Promise<readonly RevenueMonthRow[]> {
+  return rpc(client, "platform_revenue_by_month", { p_months: months });
 }
 
 export function platformAudit(
-  client: AnyClient,
+  client: Client,
   scope: "platform" | "all",
   limit = 50,
   offset = 0,
 ): Promise<readonly PlatformAuditRow[]> {
-  return rpc<PlatformAuditRow[]>(client, "platform_audit", {
+  return rpc(client, "platform_audit", {
     p_scope: scope,
     p_limit: limit,
     p_offset: offset,
   });
 }
 
-export function listSupportSessions(client: AnyClient, limit = 100): Promise<readonly SupportSessionRow[]> {
-  return rpc<SupportSessionRow[]>(client, "platform_list_support_sessions", { p_limit: limit });
+export function listSupportSessions(client: Client, limit = 100): Promise<readonly SupportSessionRow[]> {
+  return rpc(client, "platform_list_support_sessions", { p_limit: limit }) as Promise<unknown> as Promise<readonly SupportSessionRow[]>;
 }
 
-export function supportSessionActions(client: AnyClient, sessionId: string): Promise<readonly SupportActionRow[]> {
-  return rpc<SupportActionRow[]>(client, "support_session_actions", { p_session_id: sessionId });
+export function supportSessionActions(client: Client, sessionId: string): Promise<readonly SupportActionRow[]> {
+  return rpc(client, "support_session_actions", { p_session_id: sessionId });
 }
 
-export async function mySupportSession(client: AnyClient, spaceId: string): Promise<MySupportSession | null> {
-  const rows = await rpc<MySupportSession[]>(client, "my_support_session", { p_space_id: spaceId });
+export async function mySupportSession(client: Client, spaceId: string): Promise<MySupportSession | null> {
+  const rows = (await rpc(client, "my_support_session", { p_space_id: spaceId })) as unknown as MySupportSession[];
   return rows.length > 0 ? rows[0] : null;
 }
 
 export function startSupportSession(
-  client: AnyClient,
+  client: Client,
   input: {
     spaceId: string;
     reason: string;
@@ -253,7 +253,7 @@ export function startSupportSession(
     idempotencyKey: string;
   },
 ): Promise<string> {
-  return rpc<string>(client, "start_support_session", {
+  return rpc(client, "start_support_session", {
     p_space_id: input.spaceId,
     p_reason: input.reason,
     p_access_level: input.accessLevel,
@@ -262,12 +262,12 @@ export function startSupportSession(
   });
 }
 
-export function endSupportSession(client: AnyClient, sessionId: string, note: string | null): Promise<boolean> {
-  return rpc<boolean>(client, "end_support_session", { p_session_id: sessionId, p_note: note });
+export function endSupportSession(client: Client, sessionId: string, note: string | null): Promise<boolean> {
+  return rpc(client, "end_support_session", { p_session_id: sessionId, p_note: note ?? undefined });
 }
 
 export function setPlatformAdmin(
-  client: AnyClient,
+  client: Client,
   input: {
     userId: string;
     canApproveSpaces: boolean;
@@ -275,7 +275,7 @@ export function setPlatformAdmin(
     canSupport: boolean;
   },
 ): Promise<void> {
-  return rpc<void>(client, "set_platform_admin", {
+  return rpc(client, "set_platform_admin", {
     p_user_id: input.userId,
     p_can_approve_spaces: input.canApproveSpaces,
     p_can_manage_subscriptions: input.canManageSubscriptions,
@@ -283,6 +283,6 @@ export function setPlatformAdmin(
   });
 }
 
-export function revokePlatformAdmin(client: AnyClient, userId: string): Promise<boolean> {
-  return rpc<boolean>(client, "revoke_platform_admin", { p_user_id: userId });
+export function revokePlatformAdmin(client: Client, userId: string): Promise<boolean> {
+  return rpc(client, "revoke_platform_admin", { p_user_id: userId });
 }
