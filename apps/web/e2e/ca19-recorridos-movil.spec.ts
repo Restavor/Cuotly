@@ -492,9 +492,15 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // envíe nada, y el recorrido no lo sigue a propósito.
     await page.goto(`/espacios/${ESPACIO}/equipo`);
     await cabeEnElTelefono(page, "la pantalla de equipo");
-    const miembros = page.getByTestId("equipo-miembros");
-    await expect(miembros.getByText("Elena Ruiz (propietaria)")).toBeVisible();
-    await expect(miembros.getByText("Marta Gil (trabajadora)")).toBeVisible();
+    // La COLUMNA DE NOMBRES de la lista de miembros, no "aparece por algún
+    // sitio". El nombre de quien supervisa a un trabajador se repite en la
+    // columna "Principal" de su fila —Elena supervisa a los dos—, así que
+    // buscar el texto suelto encontraba tres celdas. Y "exactamente una"
+    // dice además lo que se quiere decir: cada persona sale una vez en la
+    // lista del equipo.
+    const nombres = page.getByTestId("equipo-miembros").locator("tbody tr > td:first-child");
+    await expect(nombres.filter({ hasText: "Elena Ruiz (propietaria)" })).toHaveCount(1);
+    await expect(nombres.filter({ hasText: "Marta Gil (trabajadora)" })).toHaveCount(1);
     await expect(page.getByRole("link", { name: /Invitar/i })).toBeVisible();
   });
 

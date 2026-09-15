@@ -154,7 +154,11 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
             equipo aparece SIETE veces en esta pantalla —la tabla de
             miembros, las de sustituciones, los desplegables de los
             formularios y las tarjetas de cada sustitución—, así que un
-            `getByText` suelto no puede decir "está en la lista".
+            `getByText` suelto no puede decir "está en la lista". Y dentro
+            de ESTA tabla vuelve a repetirse, con razón: quien supervisa a
+            un trabajador sale en la columna "Principal" de su fila. Lo
+            que dice que alguien está en el equipo es la columna de
+            nombres, que es lo que mira el recorrido.
           */
           <div className="overflow-x-auto" data-testid="equipo-miembros">
             <Table>
