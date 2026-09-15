@@ -4662,6 +4662,18 @@ gravedades y la tabla de transiciones iguales a los dos lados), `audit.test.ts` 
 exigir nunca motivo y leer la bandeja sin ser plataforma. Las 44 suites pasan desde cero sobre las 93
 migraciones en local, y los 1309 tests unitarios.
 
+**Un rojo de CI que no era del hito, y la regla que deja.** Las cuatro ejecuciones de la tarde del
+15/09 fallaron en `e2e-datos` en los dos recorridos de Menú Diario, desde un commit que solo tocaba
+documentos. La causa era la hora: el menú nuevo es para mañana, el corte de RN-MEN-07 son las 21:00
+del día anterior en la zona del espacio, y las cuatro cayeron después de las 21:00 de Madrid, cuando
+la pantalla dice —como debe— "Versión guardada después de las 21:00" y los recorridos exigían
+"Versión guardada." a secas. Antes de tocar nada se reprodujo en local con la 93 y el sembrado que
+`save_menu_version()` funcionaba como cliente, para no arreglar el hito por un fallo que no era suyo.
+El recorrido calcula ahora qué aviso toca según la hora de Madrid y exige ese. **Regla:** un
+recorrido que pase por una regla con hora de corte (RN-MEN-07, el reloj laboral, el reloj humano) no
+puede dar por hecho un lado del corte; calcula en qué lado está y comprueba lo que toca en ese lado,
+sin aflojar la comprobación para que valgan los dos.
+
 ### Hito 22 · App móvil (React Native + Expo) y push *(cliente móvil)*
 - Los **once flujos de §176** completos en el teléfono. `apps/mobile` ya existe y compila en CI, pero
   hoy es un esqueleto; el dominio de `src/core/` y la API se reutilizan tal cual.
