@@ -10,18 +10,18 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 89 migraciones del repositorio están aplicadas.
+**Ninguna.** Las 90 migraciones del repositorio están aplicadas.
 
 ## Aplicadas
 
-**Las 89 migraciones del repositorio están aplicadas.** Las tres
+**Las 90 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
-81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88 y la 89
-el 15/09/2026.
+81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88, la 89 y
+la 90 el 15/09/2026.
 
 - La **77** (`menu_diario_menus_versiones_y_actualizaciones`, Fase 2 ·
   Hito 9) el 13/09/2026, desde el MCP, en **cuatro partes** porque el
@@ -637,6 +637,55 @@ el 15/09/2026.
   `database.types.ts` regenerado y comparado: 187 líneas añadidas y
   ninguna quitada —las dos tablas con sus cinco claves ajenas, las tres
   columnas y las siete funciones—. El typecheck pasa.
+
+- La **90** (`suscripcion_de_cuotly`, Fase 4 · Hito 18) el 15/09/2026, por
+  orden de Bosco, desde el MCP y en **seis partes** porque el archivo son
+  89 KB: `p1` (el permiso `can_manage_subscriptions`, el catálogo y las
+  constantes, el modo del espacio con su guarda, `cuotly_subscriptions` y
+  `cuotly_charges`), `p2` (`cuotly_payments`, el libro, lo derivado, los
+  límites por disparador y la función del modo lectura), `p3` (el
+  disparador de modo lectura sobre toda tabla con `space_id`, los CHECK de
+  eventos y avisos, los avisos, mover el modo y emitir cobros), `p4`
+  (`approve_space_request()` con suscripción, el relleno de espacios ya
+  aprobados y el cobro manual: declarar, confirmar y registrar), `p5`
+  (rechazar, revertir, adicionales y cambio de plan) y `p6` (anular el
+  cambio, reactivar desde la plataforma, el barrido, la cola y la
+  auditoría). Se troceó en límites de sentencia, con paridad de `$$` en
+  cada parte, y antes se aplicó entera sobre una copia local de la 89 y
+  se pasaron las suites 41, 40 y la de barridos del Hito 7, las tres en
+  verde.
+
+  **No es solo aditiva**, y por eso se dice lo que toca a lo que ya
+  existía: reescribe `state_events_entity_type_check`,
+  `notifications_event_type_check`, `notifications_entity_type_check` y
+  `scheduled_jobs_kind_check` (los cuatro solo AÑADEN valores); redefine
+  `approve_space_request()`, `run_scheduled_job()`,
+  `enqueue_due_scheduled_jobs()`, `notification_event_is_mandatory()` y
+  `audit_action_capability()` con la misma firma; y cuelga un disparador
+  de modo lectura de 73 tablas. Ese disparador **no hace nada** en un
+  espacio con `cuotly_status` nulo, que son los dos que hay (Restavor y el
+  de demostración): el relleno de la parte 4 solo toca espacios con
+  `cuotly_plan`, y no había ninguno.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: las cuatro tablas con RLS; las 73 tablas con
+  `space_id` no exentas llevan su `*_cuotly_read_only` y ninguna de las
+  nueve exentas lo lleva; `confirmed_by`, `rejected_by` y `reversed_by` de
+  `cuotly_payments` y `created_by` del libro revocadas a `authenticated`
+  mientras las de negocio sí se leen (RN-SUB-12);
+  `is_platform_subscription_manager()` conserva el EXECUTE de
+  `authenticated` —está en las cuatro políticas— y no lo tiene `anon`; las
+  quince internas cerradas a `anon` y `authenticated`; las diez RPC
+  abiertas a `authenticated` y cerradas a `anon`; las cinco columnas y los
+  tres disparadores de guarda presentes; los cuatro CHECK con sus valores
+  nuevos; `audit_action_capability('cuotly_charge.issued')` devuelve
+  `manage_space`; `notification_event_is_mandatory('cuotly_space_archived')`
+  es verdadero; ningún espacio anterior al Hito 17 tiene `cuotly_status`;
+  ningún espacio con plan está sin suscripción; y 142 migraciones
+  registradas (136 más las seis partes).
+
+  `database.types.ts` regenerado y comparado: solo añade —las cuatro
+  tablas, las cinco columnas y las funciones nuevas—. El typecheck pasa.
 
 ## La 49
 

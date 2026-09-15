@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 15/09/2026), con las 89 migraciones del
+// (generate_typescript_types, 15/09/2026), con las 90 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -1028,6 +1028,324 @@ export type Database = {
             foreignKeyName: "corrections_space_id_fkey"
             columns: ["space_id"]
             isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuotly_charges: {
+        Row: {
+          base_cents: number
+          breakdown: Json
+          concept: string
+          created_at: string
+          due_at: string
+          id: string
+          issued_at: string
+          kind: string
+          period_end: string
+          period_start: string
+          reference: string
+          space_id: string
+          subscription_id: string
+          tax_cents: number
+          tax_rate_percent: number
+          total_cents: number
+        }
+        Insert: {
+          base_cents: number
+          breakdown?: Json
+          concept: string
+          created_at?: string
+          due_at: string
+          id?: string
+          issued_at?: string
+          kind: string
+          period_end: string
+          period_start: string
+          reference: string
+          space_id: string
+          subscription_id: string
+          tax_cents: number
+          tax_rate_percent: number
+          total_cents: number
+        }
+        Update: {
+          base_cents?: number
+          breakdown?: Json
+          concept?: string
+          created_at?: string
+          due_at?: string
+          id?: string
+          issued_at?: string
+          kind?: string
+          period_end?: string
+          period_start?: string
+          reference?: string
+          space_id?: string
+          subscription_id?: string
+          tax_cents?: number
+          tax_rate_percent?: number
+          total_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuotly_charges_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_charges_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "cuotly_subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuotly_ledger_entries: {
+        Row: {
+          amount_cents: number
+          charge_id: string
+          created_at: string
+          created_by: string | null
+          entry_type: string
+          id: string
+          payment_id: string | null
+          reason: string | null
+          space_id: string
+        }
+        Insert: {
+          amount_cents: number
+          charge_id: string
+          created_at?: string
+          created_by?: string | null
+          entry_type: string
+          id?: string
+          payment_id?: string | null
+          reason?: string | null
+          space_id: string
+        }
+        Update: {
+          amount_cents?: number
+          charge_id?: string
+          created_at?: string
+          created_by?: string | null
+          entry_type?: string
+          id?: string
+          payment_id?: string | null
+          reason?: string | null
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuotly_ledger_entries_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "cuotly_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_ledger_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_ledger_entries_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "cuotly_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_ledger_entries_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuotly_payments: {
+        Row: {
+          amount_cents: number
+          charge_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          created_at: string
+          declared_at: string
+          declared_by: string
+          declared_side: string
+          id: string
+          idempotency_key: string | null
+          method: string
+          note: string | null
+          paid_at: string
+          receipt_file_id: string | null
+          receipt_reference: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          reversal_reason: string | null
+          reversed_at: string | null
+          reversed_by: string | null
+          space_id: string
+        }
+        Insert: {
+          amount_cents: number
+          charge_id: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          declared_at?: string
+          declared_by: string
+          declared_side: string
+          id?: string
+          idempotency_key?: string | null
+          method: string
+          note?: string | null
+          paid_at: string
+          receipt_file_id?: string | null
+          receipt_reference?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          space_id: string
+        }
+        Update: {
+          amount_cents?: number
+          charge_id?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          created_at?: string
+          declared_at?: string
+          declared_by?: string
+          declared_side?: string
+          id?: string
+          idempotency_key?: string | null
+          method?: string
+          note?: string | null
+          paid_at?: string
+          receipt_file_id?: string | null
+          receipt_reference?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          reversal_reason?: string | null
+          reversed_at?: string | null
+          reversed_by?: string | null
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuotly_payments_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "cuotly_charges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_payments_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_payments_declared_by_fkey"
+            columns: ["declared_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_payments_receipt_file_id_fkey"
+            columns: ["receipt_file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_payments_rejected_by_fkey"
+            columns: ["rejected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_payments_reversed_by_fkey"
+            columns: ["reversed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cuotly_payments_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cuotly_subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          extra_establishments: number
+          extra_users: number
+          id: string
+          pending_extra_establishments: number
+          pending_extra_users: number
+          pending_plan: string | null
+          pending_requested_at: string | null
+          plan: string
+          space_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end: string
+          current_period_start: string
+          extra_establishments?: number
+          extra_users?: number
+          id?: string
+          pending_extra_establishments?: number
+          pending_extra_users?: number
+          pending_plan?: string | null
+          pending_requested_at?: string | null
+          plan: string
+          space_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          extra_establishments?: number
+          extra_users?: number
+          id?: string
+          pending_extra_establishments?: number
+          pending_extra_users?: number
+          pending_plan?: string | null
+          pending_requested_at?: string | null
+          plan?: string
+          space_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cuotly_subscriptions_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: true
             referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
@@ -3903,18 +4221,21 @@ export type Database = {
       platform_roles: {
         Row: {
           can_approve_spaces: boolean
+          can_manage_subscriptions: boolean
           created_at: string
           role: string
           user_id: string
         }
         Insert: {
           can_approve_spaces?: boolean
+          can_manage_subscriptions?: boolean
           created_at?: string
           role: string
           user_id: string
         }
         Update: {
           can_approve_spaces?: boolean
+          can_manage_subscriptions?: boolean
           created_at?: string
           role?: string
           user_id?: string
@@ -5277,7 +5598,11 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string
+          cuotly_archived_at: string | null
           cuotly_plan: string | null
+          cuotly_reactivation_deadline_at: string | null
+          cuotly_status: string | null
+          cuotly_status_changed_at: string | null
           cuotly_trial_ends_at: string | null
           id: string
           name: string
@@ -5289,7 +5614,11 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by: string
+          cuotly_archived_at?: string | null
           cuotly_plan?: string | null
+          cuotly_reactivation_deadline_at?: string | null
+          cuotly_status?: string | null
+          cuotly_status_changed_at?: string | null
           cuotly_trial_ends_at?: string | null
           id?: string
           name: string
@@ -5301,7 +5630,11 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string
+          cuotly_archived_at?: string | null
           cuotly_plan?: string | null
+          cuotly_reactivation_deadline_at?: string | null
+          cuotly_status?: string | null
+          cuotly_status_changed_at?: string | null
           cuotly_trial_ends_at?: string | null
           id?: string
           name?: string
@@ -6465,6 +6798,10 @@ export type Database = {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
       }
+      cancel_cuotly_plan_change: {
+        Args: { p_space_id: string }
+        Returns: undefined
+      }
       cancel_integration_connection: {
         Args: { p_integration_id: string }
         Returns: undefined
@@ -6480,6 +6817,16 @@ export type Database = {
       cancel_task: {
         Args: { p_reason?: string; p_task_id: string }
         Returns: undefined
+      }
+      change_cuotly_plan: {
+        Args: {
+          p_extra_establishments?: number
+          p_extra_users?: number
+          p_idempotency_key?: string
+          p_new_plan: string
+          p_space_id: string
+        }
+        Returns: string
       }
       change_plan_immediately: {
         Args: {
@@ -6608,6 +6955,10 @@ export type Database = {
           version: number
           version_id: string
         }[]
+      }
+      confirm_cuotly_payment: {
+        Args: { p_note?: string; p_payment_id: string }
+        Returns: string
       }
       conversation_establishment_id: {
         Args: { p_conversation_id: string }
@@ -6767,6 +7118,70 @@ export type Database = {
         }
         Returns: string
       }
+      cuotly_after_payment_internal: {
+        Args: { p_space_id: string }
+        Returns: string
+      }
+      cuotly_charge_has_pending_declaration: {
+        Args: { p_charge_id: string }
+        Returns: boolean
+      }
+      cuotly_charge_outstanding_cents: {
+        Args: { p_charge_id: string }
+        Returns: number
+      }
+      cuotly_charge_reference: { Args: { p_space_id: string }; Returns: string }
+      cuotly_charge_status: {
+        Args: { p_charge_id: string; p_now?: string }
+        Returns: string
+      }
+      cuotly_confirm_payment_internal: {
+        Args: { p_note: string; p_payment_id: string }
+        Returns: string
+      }
+      cuotly_constant: { Args: { p_name: string }; Returns: number }
+      cuotly_monthly_base_cents: {
+        Args: {
+          p_extra_establishments: number
+          p_extra_users: number
+          p_plan: string
+        }
+        Returns: number
+      }
+      cuotly_plan_terms: {
+        Args: { p_plan: string }
+        Returns: {
+          extra_establishment_cents: number
+          extra_user_cents: number
+          included_establishments: number
+          included_users: number
+          price_cents: number
+          storage_gb: number
+        }[]
+      }
+      cuotly_remaining_fraction: {
+        Args: { p_end: string; p_now: string; p_start: string }
+        Returns: number
+      }
+      cuotly_reminder_offset_hours: {
+        Args: { p_event_type: string }
+        Returns: number
+      }
+      cuotly_space_limits: {
+        Args: { p_space_id: string }
+        Returns: {
+          max_establishments: number
+          max_users: number
+        }[]
+      }
+      cuotly_space_usage: {
+        Args: { p_space_id: string }
+        Returns: {
+          active_establishments: number
+          internal_users: number
+          storage_bytes: number
+        }[]
+      }
       current_space_id: { Args: never; Returns: string }
       current_supervisors: {
         Args: { p_worker_id: string }
@@ -6782,6 +7197,19 @@ export type Database = {
       decide_space_request: {
         Args: { p_reason?: string; p_request_id: string; p_status: string }
         Returns: undefined
+      }
+      declare_cuotly_payment: {
+        Args: {
+          p_amount_cents: number
+          p_charge_id: string
+          p_idempotency_key?: string
+          p_method: string
+          p_note?: string
+          p_paid_at?: string
+          p_receipt_file_id?: string
+          p_receipt_reference?: string
+        }
+        Returns: string
       }
       decline_request: {
         Args: { p_reason?: string; p_request_id: string }
@@ -7130,7 +7558,29 @@ export type Database = {
       is_group_member: { Args: { p_group_id: string }; Returns: boolean }
       is_platform_approver: { Args: never; Returns: boolean }
       is_platform_owner: { Args: never; Returns: boolean }
+      is_platform_subscription_manager: { Args: never; Returns: boolean }
       is_space_member: { Args: { p_space_id: string }; Returns: boolean }
+      issue_cuotly_charge_internal: {
+        Args: {
+          p_base_cents: number
+          p_breakdown: Json
+          p_concept: string
+          p_due_at: string
+          p_kind: string
+          p_period_end: string
+          p_period_start: string
+          p_subscription_id: string
+        }
+        Returns: string
+      }
+      issue_cuotly_period_charge_internal: {
+        Args: {
+          p_period_end: string
+          p_period_start: string
+          p_subscription_id: string
+        }
+        Returns: string
+      }
       job_assignee: { Args: { p_job_id: string }; Returns: string }
       job_candidate_ids: { Args: { p_job_id: string }; Returns: string[] }
       job_establishment_id: { Args: { p_job_id: string }; Returns: string }
@@ -7385,6 +7835,17 @@ export type Database = {
         Args: { p_event_type: string }
         Returns: boolean
       }
+      notify_cuotly_event: {
+        Args: {
+          p_amount_cents?: number
+          p_dedupe_key: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_space_id: string
+        }
+        Returns: number
+      }
       notify_establishment_event: {
         Args: { p_establishment_id: string; p_event_type: string }
         Returns: number
@@ -7501,6 +7962,10 @@ export type Database = {
           fraction: number
         }[]
       }
+      platform_reactivate_space: {
+        Args: { p_reason: string; p_space_id: string }
+        Returns: undefined
+      }
       post_message: {
         Args: {
           p_body: string
@@ -7564,6 +8029,17 @@ export type Database = {
           p_request_id: string
           p_source: string
           p_summary: string
+        }
+        Returns: string
+      }
+      record_cuotly_payment: {
+        Args: {
+          p_amount_cents: number
+          p_charge_id: string
+          p_idempotency_key?: string
+          p_method: string
+          p_note?: string
+          p_paid_at?: string
         }
         Returns: string
       }
@@ -7639,6 +8115,10 @@ export type Database = {
           p_receipt_file_id?: string
         }
         Returns: string
+      }
+      reject_cuotly_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: undefined
       }
       reject_quote: {
         Args: { p_quote_id: string; p_reason?: string }
@@ -7798,6 +8278,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: number
       }
+      reverse_cuotly_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: undefined
+      }
       reverse_payment: {
         Args: { p_payment_id: string; p_reason: string }
         Returns: undefined
@@ -7821,6 +8305,10 @@ export type Database = {
       }
       run_consumption_thresholds: {
         Args: { p_space_id: string }
+        Returns: number
+      }
+      run_cuotly_billing_sweep: {
+        Args: { p_now?: string; p_space_id: string }
         Returns: number
       }
       run_daily_menu_sweep: {
@@ -7897,6 +8385,15 @@ export type Database = {
         Args: { p_space_id: string; p_user_id: string; p_value: boolean }
         Returns: undefined
       }
+      set_cuotly_extras: {
+        Args: {
+          p_extra_establishments: number
+          p_extra_users: number
+          p_idempotency_key?: string
+          p_space_id: string
+        }
+        Returns: string
+      }
       set_establishment_data: {
         Args: {
           p_address?: string
@@ -7962,6 +8459,15 @@ export type Database = {
       }
       set_request_priority_order: {
         Args: { p_establishment_id: string; p_request_ids: string[] }
+        Returns: undefined
+      }
+      set_space_cuotly_status_internal: {
+        Args: {
+          p_cause: string
+          p_reason: string
+          p_space_id: string
+          p_status: string
+        }
         Returns: undefined
       }
       set_space_name: {

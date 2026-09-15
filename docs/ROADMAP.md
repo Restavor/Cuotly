@@ -32,7 +32,7 @@ Actualizado el 15/09/2026.
 | 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
 
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
-| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita el 15/09/2026; **pendiente de aplicar al proyecto real** hasta que Bosco lo diga. PRD §31 (RN-SUB-01 a 13) escrito antes del código. Doce lecturas esperan confirmación (pendiente 21). Ver la entrada de cierre abajo. |
+| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Doce lecturas esperan confirmación (pendiente 21). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | No empezado | El punto más delicado de seguridad del producto. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
@@ -4368,7 +4368,7 @@ motivo.
 - Todo como **libro inmutable de apuntes**, igual que las finanzas del espacio. Es el mismo problema
   con otro pagador.
 
-### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(hecho el 15/09/2026; la 90 escrita, NO aplicada al proyecto real)*
+### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(hecho el 15/09/2026; la 90 aplicada ese mismo día)*
 - **PRD §31 escrito primero**, como manda el desglose: §4.1 a §4.7 convertidos en trece reglas
   `RN-SUB`. Doce lecturas donde la maestra calla quedan escritas como regla y anotadas como
   **pendiente 21** de `docs/DECISIONES.md` para que Bosco las confirme o las cambie; ninguna es un
@@ -4405,8 +4405,9 @@ motivo.
   lectura (Hitos 20 y 21), sin eliminación a los 30 días (pendiente 20), sin medir el uso razonable
   (17), sin cobrar el almacenamiento (18, se mide y nada más) y sin comprobar "una prueba por
   negocio" (19).
-- **La 90 no está aplicada al proyecto real.** Aplicarla es una decisión de Bosco, como las
-  anteriores; cuando se aplique hay que regenerar `database.types.ts` como se hizo con la 89.
+- **La 90 se aplicó al proyecto real el 15/09/2026**, por orden de Bosco, en seis partes y tras
+  pasar entera en local sobre una copia de la 89. `database.types.ts` regenerado. Lo comprobado en
+  vivo está en `docs/DESPLIEGUE-SUPABASE.md`.
 
 **Los barridos dispararon otra vez.** El de funciones internas abiertas por RPC cazó las cinco de la
 plataforma hasta que `is_platform_subscription_manager()` entró en su heurística; el de auditoría
