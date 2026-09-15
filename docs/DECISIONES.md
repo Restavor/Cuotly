@@ -545,20 +545,36 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    negocio (19) y el bloque legal (20)—. Confirmar el 21 % y la referencia bancaria es confirmar el
    placeholder, no el bloque legal.
 
+33. **Las catorce lecturas del Hito 19, confirmadas** (15/09/2026). Al escribir el panel de
+   Administración, Modo soporte y la 2FA (PRD §32, migración 91), §128, §129, §136, §137 y §167
+   callaban en catorce sitios y en los catorce se eligió lo más defendible, se escribió como regla y
+   se preguntó (pendiente 22). Bosco confirma las catorce tal cual, sin cambiar ninguna: la 2FA se
+   impone cerrando la plataforma y no el login; un Administrador de Cuotly lee el panel entero sin
+   permiso fino; "soporte" en §128 es Modo soporte y no las incidencias; los tres niveles `read` ·
+   `admin` · `owner`, y que `owner` no invita; la duración de 15 a 240 minutos con 60 por defecto;
+   no hay soporte sobre un espacio propio; una sesión activa por persona y espacio; caducar no
+   escribe apunte; el propietario ve la identidad de quien entró y recibe un aviso obligatorio; los
+   administradores y trabajadores del espacio no ven las sesiones; los ingresos son una cifra de
+   libro por mes y no una factura; en un espacio archivado el soporte también es solo lectura; los
+   avisos por dispositivo nuevo no se implementan; y la escritura directa sobre `platform_roles` se
+   retira.
+
+   **Lo que esta decisión NO cierra:** las mismas cuatro pendientes de la 32 —17, 18, 19 y 20—.
+   Confirmar que los ingresos se cuentan por el libro es confirmar el placeholder, no el bloque
+   legal. **Y la 91 sigue sin aplicar al proyecto real**: Bosco decide cuándo, y ese día registra
+   el segundo factor antes de nada.
+
 ---
 
 ### Pendiente de completar
 
-**Cinco abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
-tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desglosar la Fase 4 el
-15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. La quinta son las
-lecturas del Hito 19, que esperan confirmación como esperaron las de los hitos anteriores (las del
-18 ya están confirmadas: decisión 32).
+**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
+tachadas abajo con la decisión que resolvió cada una. Las cuatro salieron al desglosar la Fase 4 el
+15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. Las lecturas de los
+hitos 18 y 19 ya están confirmadas (decisiones 32 y 33).
 
-22. **Lecturas aplicadas al implementar el panel, Modo soporte y la 2FA** (Hito 19, 15/09/2026).
-   Al escribir el PRD §32 y la migración 91, §128, §129, §136 y §167 callaban en catorce sitios y en
-   los catorce se eligió lo más defendible, se escribió como regla y se pregunta aquí. Ninguna es un
-   umbral que la maestra sí diera.
+22. ~~Lecturas aplicadas al implementar el panel, Modo soporte y la 2FA~~ — confirmadas las
+   catorce el 15/09/2026 como decisión 33. Se conservan abajo tal como se preguntaron.
 
    1. **Cómo se hace obligatoria la 2FA** (RN-ADM-02): cerrando la plataforma, no el login. Sin
       sesión `aal2`, Bosco entra en Restavor como un propietario cualquiera y ninguna función de

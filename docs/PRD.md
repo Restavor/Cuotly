@@ -1416,8 +1416,8 @@ evalúan todas las políticas— y no con una excepción en cada tabla.
 
 Sale de §128 (los doce bloques del panel), §129 (Modo soporte), §136 (2FA), §137 (protección de
 cuenta), §167 (quién decide en la plataforma) y §8 (la entrada "Administración de Cuotly" del selector).
-Donde la maestra calla, las lecturas quedan escritas como regla y se preguntan como **pendiente 22**
-de `docs/DECISIONES.md`; ninguna es un umbral que la maestra sí diera.
+Donde la maestra calla, las lecturas quedan escritas como regla y Bosco las confirmó las catorce el
+15/09/2026 como **decisión 33** de `docs/DECISIONES.md`; ninguna es un umbral que la maestra sí diera.
 
 - **RN-ADM-01**: **quién es la plataforma**: Bosco (`CUOTLY_OWNER_EMAIL`) y los **Administradores de
   Cuotly** (`platform_roles`). Los dos ven la entrada **Administración de Cuotly** en el selector de
