@@ -72,18 +72,24 @@ describe("los dos planes de Cuotly (RN-SUB-01)", () => {
 });
 
 describe("el modo del espacio (RN-SUB-02, RN-SUB-08)", () => {
-  it("RN-SUB-02 · son los cuatro modos y ni uno más", () => {
+  it("RN-SUB-02 · son los cinco modos y ni uno más", () => {
+    // Eran cuatro hasta el Hito 20. El quinto es el archivado que §127 le
+    // deja hacer al propietario (RN-CIC-07): un modo más, y no un estado
+    // paralelo, para que herede la solo lectura de RN-SUB-08 sin que haya
+    // que acordarse de nada.
     expect([...SPACE_CUOTLY_STATES]).toEqual([
       "trial",
       "active",
       "archived_trial_ended",
       "archived_nonpayment",
+      "archived_by_owner",
     ]);
   });
 
-  it("RN-SUB-08 · los dos archivados son de solo lectura; sin suscripción no hay nada que congelar", () => {
+  it("RN-SUB-08 · los tres archivados son de solo lectura; sin suscripción no hay nada que congelar", () => {
     expect(isSpaceReadOnly("archived_trial_ended")).toBe(true);
     expect(isSpaceReadOnly("archived_nonpayment")).toBe(true);
+    expect(isSpaceReadOnly("archived_by_owner")).toBe(true);
     expect(isSpaceReadOnly("active")).toBe(false);
     expect(isSpaceReadOnly("trial")).toBe(false);
     expect(isSpaceReadOnly(null)).toBe(false);

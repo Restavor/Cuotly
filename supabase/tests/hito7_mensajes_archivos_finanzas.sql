@@ -2711,6 +2711,14 @@ begin
         -- están revocadas a `anon`, y hay test de que uno no puede cerrar
         -- la sesión de otro.
         'my_active_sessions', 'revoke_my_session',
+        -- Migración 92 (Fase 4, Hito 20). Misma familia: `auth.uid()` no
+        -- es un filtro más, ES la barrera. `account_deletion_blockers()`
+        -- no admite ningún argumento a propósito —no se puede preguntar
+        -- por otra persona— y solo enumera los espacios y grupos de los
+        -- que quien llama es el único propietario (§141, RN-CIC-12).
+        -- Tiene que seguir abierta a `authenticated`: es la propia
+        -- persona mirando qué le impide cerrar su cuenta.
+        'account_deletion_blockers',
         -- Migración 89 (Fase 4, Hito 17). `is_platform_approver()` es LA
         -- comprobación de §167 —Bosco, o un Administrador de Cuotly con el
         -- permiso—, así que no puede comprobarse a sí misma; su nombre

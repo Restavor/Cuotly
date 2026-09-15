@@ -79,18 +79,31 @@ export const CUOTLY_CONSTANTS = {
   tax_rate_percent: 21,
 } as const;
 
-/** RN-SUB-02 · los cuatro modos de `spaces.cuotly_status`. */
+/**
+ * RN-SUB-02 · los modos de `spaces.cuotly_status`. Eran cuatro hasta el
+ * Hito 20, que añadió el quinto: §127 deja a un propietario terminar su
+ * espacio, y eso es un modo más y no un estado paralelo (RN-CIC-07). Así
+ * hereda sin tocar nada la solo lectura de RN-SUB-08.
+ */
 export const SPACE_CUOTLY_STATES = [
   "trial",
   "active",
   "archived_trial_ended",
   "archived_nonpayment",
+  "archived_by_owner",
 ] as const;
 export type SpaceCuotlyState = (typeof SPACE_CUOTLY_STATES)[number];
 
-/** RN-SUB-08 · los dos modos de solo lectura. */
+/**
+ * RN-SUB-08 + RN-CIC-07 · los tres modos de solo lectura. Espejo de
+ * `space_status_is_archived()`; lo vigila `listas-compartidas.test.ts`.
+ */
 export function isSpaceReadOnly(state: SpaceCuotlyState | null): boolean {
-  return state === "archived_trial_ended" || state === "archived_nonpayment";
+  return (
+    state === "archived_trial_ended" ||
+    state === "archived_nonpayment" ||
+    state === "archived_by_owner"
+  );
 }
 
 export interface SubscriptionShape {

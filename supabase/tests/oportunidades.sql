@@ -728,7 +728,10 @@ delete from public.establishment_memberships where establishment_id in
 delete from public.establishments where space_id = 'ee100000-0000-0000-0000-000000000001';
 delete from public.plans where space_id = 'ee100000-0000-0000-0000-000000000001';
 delete from public.groups where space_id = 'ee100000-0000-0000-0000-000000000001';
-delete from public.space_memberships where space_id = 'ee100000-0000-0000-0000-000000000001';
+-- Sin borrar `space_memberships` a mano: la clave ajena en cascada se las
+-- lleva al borrar el espacio, y hacerlo antes deja al espacio sin
+-- propietario un instante, que es exactamente lo que el disparador de
+-- RN-CIC-06 (migración 92) impide. El desmontaje era redundante.
 delete from public.spaces where id = 'ee100000-0000-0000-0000-000000000001';
 delete from auth.users where email like 'op-%@example.com';
 drop table op_ids;

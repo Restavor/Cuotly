@@ -15,7 +15,13 @@ import {
   CUOTLY_PAYMENT_REMINDERS,
   CUOTLY_PLAN_TERMS,
   SPACE_CUOTLY_STATES,
+  isSpaceReadOnly,
 } from "./cuotly-subscription";
+import {
+  EXPORT_SCOPES,
+  ONBOARDING_STEPS,
+  SPACE_LIFECYCLE_OPERATIONS,
+} from "./space-lifecycle";
 import { MANDATORY_EVENTS, NOTIFICATION_EVENTS } from "./notifications";
 import { SUPPORT_ACCESS_LEVELS, SUPPORT_SESSION_MINUTES } from "./platform-admin";
 import {
@@ -475,11 +481,32 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     );
   });
 
-  it("los cuatro modos del espacio (RN-SUB-02) son los mismos en el CHECK y en `src/core`", () => {
-    const columna = ultimaDefinicion("alter table public.spaces add column if not exists cuotly_status text", "));");
-    const check = /cuotly_status in \(([^)]*)\)/.exec(columna);
+  it("los cinco modos del espacio (RN-SUB-02, RN-CIC-07) son los mismos en el CHECK y en `src/core`", () => {
+    // La 90 lo escribió pegado al `add column`; la 92 lo sacó a una
+    // restricción con nombre para poder ensancharlo con el quinto modo.
+    // Se busca la última, que es la que tiene la base.
+    const restriccion = ultimaDefinicion(
+      "add constraint spaces_cuotly_status_check",
+      "));",
+    );
+    const check = /cuotly_status in \(([^)]*)\)/.exec(restriccion);
     expect(check, "no está el CHECK de cuotly_status").not.toBeNull();
     expect(entrecomillados(check![1])).toEqual([...SPACE_CUOTLY_STATES]);
+  });
+
+  it("los tres modos archivados son los mismos en `space_status_is_archived` y en `src/core`", () => {
+    // RN-SUB-08 + RN-CIC-07. `isSpaceReadOnly()` decide qué botones pinta
+    // la pantalla y la función SQL decide qué escrituras rechaza el
+    // servidor: si se separan, la pantalla ofrece lo que la base rechaza.
+    const fn = ultimaDefinicion(
+      "create or replace function public.space_status_is_archived",
+      "$$;",
+    );
+    const enSql = entrecomillados(fn.slice(fn.indexOf("select p_status in")));
+
+    expect(enSql.sort()).toEqual(
+      SPACE_CUOTLY_STATES.filter((estado) => isSpaceReadOnly(estado)).slice().sort(),
+    );
   });
 
   it("qué avisos no se pueden desactivar (RN-NOT-03) lo dicen igual los dos lados", () => {
@@ -515,6 +542,65 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     expect(Number(porDefecto![1])).toBe(SUPPORT_SESSION_MINUTES.default);
     expect(Number(limites![1])).toBe(SUPPORT_SESSION_MINUTES.min);
     expect(Number(limites![2])).toBe(SUPPORT_SESSION_MINUTES.max);
+  });
+
+  /*
+   * Migración 92 (Fase 4, Hito 20). Los diez pasos de §9, los tres
+   * alcances de una exportación y las tres operaciones del libro del
+   * ciclo de vida están a los dos lados: en SQL deciden qué acepta el
+   * servidor, en TypeScript qué pinta la pantalla. Un paso que existiera
+   * en un solo lado sería una casilla que nadie puede marcar, o un
+   * asistente que nunca termina.
+   */
+  it("los diez pasos de §9 (RN-CIC-01) son los mismos en `onboarding_steps` y en `src/core`", () => {
+    const fn = ultimaDefinicion("create or replace function public.onboarding_steps", "$$;");
+    const enSql = entrecomillados(fn.slice(fn.indexOf("select * from (values")));
+
+    // El ORDEN importa: §9 los enumera del 1 al 10 y el asistente los
+    // enseña en ese orden.
+    expect(enSql).toEqual(ONBOARDING_STEPS.map((paso) => paso.step));
+  });
+
+  it("qué paso se deriva de un dato (RN-CIC-02) lo dicen igual los dos lados", () => {
+    // Es la diferencia entre "hecho" y "confirmado por el propietario", y
+    // si los dos lados no coinciden la pantalla pediría una confirmación
+    // que el servidor ya da por hecha, o al revés.
+    const fn = ultimaDefinicion("create or replace function public.onboarding_steps", "$$;");
+    const cuerpo = fn.slice(fn.indexOf("select * from (values"));
+
+    for (const paso of ONBOARDING_STEPS) {
+      const fila = new RegExp(`'${paso.step}'\\s*,\\s*(true|false)`).exec(cuerpo);
+      expect(fila, `${paso.step} no está en onboarding_steps()`).not.toBeNull();
+      expect(fila![1] === "true", paso.step).toBe(paso.derivable);
+    }
+  });
+
+  it("los pasos del CHECK son los mismos diez de `onboarding_steps`", () => {
+    // El CHECK de la tabla va literal porque una restricción no admite
+    // subconsultas; esta es la comprobación que lo sostiene.
+    const tabla = ultimaDefinicion(
+      "create table public.space_onboarding_confirmations (",
+      "confirmed_by",
+    );
+    const check = /step text not null check \(step in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de step").not.toBeNull();
+    expect(entrecomillados(check![1]).slice().sort()).toEqual(
+      ONBOARDING_STEPS.map((paso) => paso.step).slice().sort(),
+    );
+  });
+
+  it("los tres alcances de una exportación (§141) son los mismos en el CHECK y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.space_exports (", "requested_by");
+    const check = /scope text not null check \(scope in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de scope").not.toBeNull();
+    expect(entrecomillados(check![1])).toEqual([...EXPORT_SCOPES]);
+  });
+
+  it("las tres operaciones del ciclo de vida (RN-CIC-14) son las mismas en el CHECK y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.space_lifecycle_operations (", "actor_id");
+    const check = /kind text not null check \(kind in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de kind").not.toBeNull();
+    expect(entrecomillados(check![1])).toEqual([...SPACE_LIFECYCLE_OPERATIONS]);
   });
 
   it("quién mueve cada transición de un informe (§95) lo dicen igual los dos lados", () => {

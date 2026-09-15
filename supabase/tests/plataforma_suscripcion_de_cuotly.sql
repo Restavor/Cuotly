@@ -373,7 +373,20 @@ begin
          -- archivado, para poder mirar por qué; lo que la sesión toque
          -- dentro sigue congelado, porque las tablas del espacio sí llevan
          -- el disparador. La sesión misma no es un dato del espacio.
-         'support_sessions'
+         'support_sessions',
+         -- Hito 20 (RN-CIC-08) · archivar y restaurar escriben aquí justo
+         -- cuando el espacio está archivado: con el disparador puesto,
+         -- restaurar un espacio sería imposible. Solo lo escriben
+         -- `archive_space_by_owner()` y `restore_space_by_owner()`, que
+         -- comprueban el permiso por su cuenta y no tienen política de
+         -- INSERT.
+         'space_lifecycle_operations',
+         -- Hito 20 (RN-CIC-10) · esta misma regla, RN-SUB-08, dice con
+         -- todas las letras que un espacio archivado "se puede pagar,
+         -- **exportar** y contactar con soporte". Con el disparador
+         -- puesto, el propietario no podría llevarse sus datos justo
+         -- cuando más falta le hace.
+         'space_exports'
        ) then
       v_sin := v_sin || ' ' || v_t.tabla;
     end if;

@@ -1518,3 +1518,138 @@ onboarding de §9 ni la propiedad y el fin de un espacio de §127 (Hito 20), **n
 (§141, Hito 20), **no** elimina nada a los 30 días ni numera nada fiscalmente (pendiente 20), **no**
 avisa de dispositivos nuevos (RN-ADM-12) y **no** mide el "uso razonable" (pendiente 17): el panel
 enseña el uso de cada espacio y la decisión de §4.3 sigue siendo de Bosco a mano.
+
+## 33. Onboarding del espacio nuevo y ciclo de vida del espacio — Fase 4 (RN-CIC)
+
+Los tres apartados anteriores traen el espacio al mundo (§30), le cobran (§31) y le dan a Cuotly un
+sitio desde el que mirarlo (§32). Este es el **espacio visto desde dentro y a lo largo del tiempo**:
+cómo se rellena recién nacido (§9), cómo cambia de dueño y cómo se termina (§127), y qué puede
+llevarse quien se va (§141).
+
+Sale de §9 (onboarding), §127 (propiedad y eliminación), §141 (exportación y cuenta personal), §123
+(las secciones de Ajustes, donde esto se usa), §139 (la auditoría registra exportaciones y
+eliminaciones) y §140 (propiedad y eliminación piden confirmación adicional).
+
+**Aquí la maestra está más callada que en ningún otro apartado del PRD**: §9 son diez palabras
+sueltas y una frase, §127 siete líneas y §141 cuatro. Las tres dicen **qué** con claridad y **cómo**
+en ninguna parte. Por eso este apartado lleva más lecturas que los tres anteriores juntos, todas
+marcadas como tales y recogidas en la **pendiente 23** de `docs/DECISIONES.md`, **a la espera de que
+Bosco las confirme**, como estuvieron las de los hitos 18 y 19 antes de las decisiones 32 y 33.
+Ninguna inventa un umbral, un precio ni un plazo: los dos únicos números del apartado —los diez pasos
+y los 30 días— los dan §9 y §127.
+
+La familia es **`RN-CIC`** y no `RN-ESP` a propósito: `RN-EST` ya es la de establecimientos (§15) y
+dos familias a una letra de distancia se confunden en el primer `grep`.
+
+- **RN-CIC-01**: el asistente son **los diez pasos de §9**, en ese orden y sin ninguno más: datos del
+  espacio, logotipo, zona horaria, horario operativo, impuestos, planes y servicios, primer
+  establecimiento, primer trabajador, notificaciones y seguridad. **No usa IA** (§9, dicho allí con
+  todas las letras) y **no bloquea nada**: §9 dice "completa **progresivamente**", así que el espacio
+  es utilizable desde el minuto uno y esto es una **lista de tareas pendientes**, no una puerta ni un
+  tutorial. Lectura: que no bloquee. La maestra no dice que bloquee, y hacerlo bloqueante dejaría a un
+  espacio recién aprobado sin poder ni recibir una solicitud hasta subir un logotipo.
+- **RN-CIC-02**: un paso está hecho **porque un dato lo dice o porque el propietario lo confirmó**, y
+  la respuesta del servidor **dice cuál de las dos**. Seis se saben por el dato: los **datos del
+  espacio** (razón social, identificador fiscal y dirección, no vacíos), el **logotipo** (lo hay), el
+  **horario operativo** (hay una versión del calendario contractual), los **planes y servicios** (hay
+  al menos uno), el **primer establecimiento** (lo hay) y el **primer trabajador** (hay un trabajador
+  activo o una invitación de trabajador en marcha). Los otros cuatro —**zona horaria**, **impuestos**,
+  **notificaciones** y **seguridad**— **no se pueden derivar y no se fingen**: los cuatro tienen ya un
+  valor de partida (`Europe/Madrid`, 21 %, "todos los avisos activados" por RN-NOT-02, y la 2FA, que
+  para el propietario de un espacio es **opcional** por RN-ADM-02), y nada distingue en la base "el
+  valor por omisión" de "mirado y decidido". Lo que sí distingue las dos cosas es **una persona
+  diciéndolo**, y eso es un hecho con actor y fecha, no un dato de relleno (P6, CLAUDE.md "MUST NOT
+  mostrar datos ficticios"). Los seis derivados **también** se pueden confirmar, y por eso el origen
+  se guarda y se enseña: un espacio que no quiere logotipo marca el paso y la pantalla dice
+  "confirmado por el propietario", no "hecho".
+- **RN-CIC-03**: el asistente **lo ve y lo confirma el propietario** (`manage_space`): §9 dice "el
+  propietario completa". **No se inventa ningún permiso nuevo para los pasos**: el trabajo de cada
+  paso lo hace quien ya podía hacerlo —crear un establecimiento sigue siendo `manage_clients`,
+  invitar sigue siendo `invite_member`, publicar un plan sigue siendo lo que era—, y el asistente
+  solo mira el resultado. Lectura: que solo el propietario confirme; la maestra no nombra a nadie más.
+- **RN-CIC-04**: el asistente **termina** cuando los diez pasos están hechos, y esa fecha se sella
+  **una vez**. Que después alguien archive el único establecimiento no devuelve el espacio al
+  onboarding: "terminado" es un hecho del pasado y los hechos del pasado no se reescriben (§3.4).
+  Lectura.
+- **RN-CIC-05**: **transferir la propiedad es del propietario y de nadie más** (§127), y el
+  destinatario es **un miembro activo del espacio**, no un correo suelto: dárselo a quien todavía no
+  está dentro es invitar, e invitar ya tiene su camino (HU-03). Transferir hace **dos** cosas en una:
+  el destinatario pasa a **propietario** y quien transfiere pasa a **administrador de mantenimiento**.
+  Lectura, y de las importantes: "transferir" en castellano es que la cosa **cambia de sitio**, no que
+  se duplique; si lo que se quiere es un segundo propietario, eso es cambiar el rol de un miembro y se
+  hace por donde se cambian los roles. Quien transfiere **no se queda fuera del espacio**: se queda
+  como administrador, porque echarse a sí mismo no es lo que pidió. **Modo soporte no transfiere la
+  propiedad**, ni siquiera en nivel `owner`: RN-ADM-07 le quita `invite_member` porque es "lo único
+  que dejaría un acceso vivo después de la sesión", y transferir la propiedad hace exactamente eso y
+  peor —deja al espacio con otro dueño cuando la sesión ya ha caducado—.
+- **RN-CIC-06**: **siempre debe existir al menos un propietario** (§127), y eso **lo sostiene un
+  disparador sobre `space_memberships`**, no una comprobación dentro de una función. El motivo es
+  concreto: `invite_member` es del propietario, y la política de `space_memberships` deja que un
+  propietario escriba esa tabla **directamente por PostgREST**, así que una comprobación metida en una
+  función la esquiva un `update` de una línea. Un `CHECK` tampoco vale: la condición es sobre el
+  **conjunto** de filas del espacio, no sobre una. Ni bajar de rol, ni desactivar, ni borrar al último
+  propietario, venga por donde venga.
+- **RN-CIC-07**: **archivar es del propietario** (§127) y es el **primer paso de terminar**: §127 dice
+  "primero se archiva". Un espacio archivado por su dueño **es un modo más del espacio** (RN-SUB-02),
+  `archived_by_owner`, y **no** un estado nuevo en paralelo: hereda tal cual la **solo lectura** que
+  RN-SUB-08 ya instaló en toda tabla con `space_id`, y no hay que acordarse de nada. Lo que **no**
+  hereda es la reactivación por pago de RN-SUB-09: aquí no hay deuda que saldar, así que pagar no
+  resucita nada. Lo restaura su propietario, que es quien lo archivó. Y el **ciclo de impago tampoco
+  lo mueve**: un espacio que su dueño ya terminó no se vuelve a archivar por deuda, porque hacerlo
+  borraría su plazo de 30 días y cambiaría el motivo por el que está cerrado. **Modo soporte tampoco
+  archiva**, por lo mismo que no transfiere (RN-CIC-05): la sesión dura horas y el archivado dura
+  treinta días.
+- **RN-CIC-08**: **recuperable durante 30 días** (§127). Al archivar se apunta la fecha límite
+  —archivado más 30 días—, y **dentro del plazo lo restaura el propietario él solo**, al modo que
+  tenía antes. Pasado el plazo, restaurar **es de la plataforma**, exactamente como la reactivación
+  tardía de RN-SUB-09: el plazo es el que separa "me he arrepentido" de "esto ya estaba decidido".
+- **RN-CIC-09**: **"después se programa eliminación"** (§127) significa eso y **nada más**: se
+  **programa**. **Cuotly no borra**, ni al día 31 ni nunca en esta versión. Qué se elimina de verdad,
+  qué son los "registros que deban conservarse por obligaciones legales", dónde quedan aislados y con
+  qué plazo es del **bloque legal** (§170.1), sigue siendo la **pendiente 20**, y aquí queda el
+  placeholder escrito: la fecha se guarda, se enseña y **no dispara ningún borrado**. Coincide además
+  con lo que CLAUDE.md exige siempre ("MUST NOT: borrar físicamente registros de negocio").
+- **RN-CIC-10**: **el propietario del espacio exporta todo su espacio** (§141). Una exportación se
+  **pide**, se **genera en el servidor** y **queda registrada** con quién, cuándo y qué alcance —§139
+  nombra las "exportaciones" entre lo que la auditoría registra como mínimo—. **Nunca se arma en el
+  cliente**: el cliente no es la autoridad (CLAUDE.md) y armar allí una exportación sería pedirle al
+  navegador que decida qué le toca leer. Lectura: el **formato** (un único JSON, que es lo que
+  convierte una base entera en un archivo sin inventarle columnas a nadie) y la **entrega** (descarga
+  firmada y caducable del mismo bucket privado que los archivos, RN-ARC-08).
+- **RN-CIC-11**: **el propietario de un restaurante exporta su grupo o sus establecimientos propios**
+  (§141), por la misma puerta y con otro alcance. **Aquí está la trampa del apartado**: una
+  exportación es el `select` más grande del producto, y P7 dice que el cliente no ve la identidad
+  individual del equipo. La exportación del restaurante **enumera columnas** y **no incluye ninguna de
+  las revocadas** —que es además la única forma de que funcione, porque `select *` sobre esas tablas
+  devuelve 403 (CLAUDE.md)—. Y esto **no se sostiene con una lista escrita a mano**: se escapó tres
+  veces en el Hito 7 y se sostiene igual que allí, con un barrido que recorre lo exportado buscando el
+  uuid de alguien del equipo.
+- **RN-CIC-12**: **nadie cierra su cuenta si es único propietario** de un espacio o de un grupo
+  (§141): "primero transfiere propiedad o cierra entidades". Lo que este apartado entrega es **la
+  comprobación y su respuesta útil**: una función dice si la cuenta se puede cerrar y, si no, **qué lo
+  impide, cuántos son y qué hay que hacer con cada uno** —transferir este espacio, cerrar este
+  grupo—, porque un "no puedes" sin la lista deja a alguien buscando a ciegas. **El cierre de la
+  cuenta en sí no se implementa**: cuánto se conserva, de qué se anonimiza y qué se le entrega antes
+  es del bloque legal (§170.1, pendiente 20). El placeholder queda dicho, no fingido.
+- **RN-CIC-13**: **transferir, archivar, restaurar y exportar dejan apunte en el libro del espacio y
+  en la auditoría**, con actor, fecha, valor anterior, valor nuevo y motivo cuando lo haya (CLAUDE.md,
+  §139), y **terminar el onboarding** deja el suyo. Los dos que cambian el **modo** del espacio
+  —archivar y restaurar— dejan además el **evento de estado** de RN-SUB-12; transferir **no**, porque
+  ese libro es el de los modos del espacio y meterle la propiedad serían dos libros dentro de uno. Las
+  **diez confirmaciones de pasos no se copian a la auditoría** una por una: viven en su propia tabla, inmutable y con actor y fecha, que es
+  exactamente el registro que CLAUDE.md pide, y duplicarlas ahogaría la auditoría del espacio en
+  ruido de lista de tareas. Lectura.
+- **RN-CIC-14**: transferir la propiedad y archivar son **operaciones críticas**: transacción y
+  **clave de idempotencia** (CLAUDE.md), y **confirmación adicional en la pantalla**, que §140 pide
+  por su nombre para "propiedad y eliminación". La confirmación de la pantalla es un requisito de
+  interfaz **además** del control del servidor, nunca en su lugar.
+- **RN-CIC-15**: los dos cambios de este apartado que le quitan algo a alguien **avisan**, y los dos
+  son **obligatorios** por RN-NOT-03 (seguridad y pérdida de acceso): **`space_ownership_transferred`**
+  a los propietarios y administradores del espacio —quien deja de mandar y quien empieza— y
+  **`space_archived_by_owner`** a todo el equipo del espacio, que se encuentra con todo en solo
+  lectura y merece saber por qué y hasta cuándo.
+
+Lo que este apartado **no** trae, dicho en claro: **no** borra nada a los 30 días ni cierra ninguna
+cuenta (pendiente 20, bloque legal), **no** valida ni numera los datos fiscales que guarda (§170.1,
+como en RN-PLA-01), **no** trae las incidencias de §131 ni el centro de ayuda de §133 (Hito 21),
+**no** toca la app móvil (Hito 22) y **no** añade ninguna sección de Ajustes que §123 no nombre.

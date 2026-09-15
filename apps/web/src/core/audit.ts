@@ -114,6 +114,15 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // espacio, como `space_request`: lo ven Bosco y quien hizo la acción por
   // la tercera rama de `audit_log_select`.
   platform: null,
+  // Fase 4, Hito 20 · las exportaciones de §139 (migración 92). La decide
+  // la FILA, y no una capacidad fija, porque §141 las reparte entre dos
+  // audiencias: el propietario del espacio exporta el espacio y el
+  // propietario de un restaurante exporta lo suyo. Con `manage_space` el
+  // restaurante no vería la exportación que él mismo pidió; con
+  // `manage_clients` el propietario no vería las suyas. Quién ve el
+  // apunte es quién ve la fila de `space_exports`, y eso ya lo decide su
+  // política.
+  export: null,
   // Los menús de Menú Diario (migración 77): operación, como los trabajos.
   menu: null,
   // Los presupuestos (§84, migración 80): los decide la fila, como las
@@ -137,6 +146,10 @@ export const AUDIT_ROW_VISIBLE_ENTITIES = [
   "correction",
   "menu",
   "quote",
+  // Fase 4, Hito 20 · `audit_entity_is_visible()` resuelve `export`
+  // contra `space_exports`, cuya política ya reparte las dos audiencias
+  // de §141.
+  "export",
 ] as const;
 
 /**
@@ -282,10 +295,15 @@ export const AUDIT_ACTIONS = [
   "request.submitted",
   "service.conditions_published",
   "session.revoked",
+  // Hito 20 · la exportación de §141 (migración 92).
+  "export.requested",
   // Hito 18 · el modo del espacio respecto a Cuotly (migración 90):
   // activarse con el primer pago, archivarse por prueba sin pago o por
   // impago, reactivarse, y los cambios de plan y de adicionales.
+  // Hito 20 · y el archivado, la restauración, el cambio de dueño y el
+  // final del asistente de §9 (migración 92).
   "space.activated",
+  "space.archived_by_owner",
   "space.archived_nonpayment",
   "space.archived_trial_ended",
   "space.created",
@@ -293,9 +311,12 @@ export const AUDIT_ACTIONS = [
   "space.payment_term_changed",
   "space.plan_change_cancelled",
   "space.plan_change_scheduled",
+  "space.onboarding_completed",
+  "space.ownership_transferred",
   "space.plan_changed",
   "space.reactivated",
   "space.renamed",
+  "space.restored_by_owner",
   "space.timezone_changed",
   // Las cinco de la solicitud de espacio (migración 89), con el nombre
   // literal en cada INSERT para que el barrido que lee las migraciones las

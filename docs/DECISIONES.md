@@ -568,10 +568,65 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar
 
-**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
-tachadas abajo con la decisión que resolvió cada una. Las cuatro salieron al desglosar la Fase 4 el
-15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. Las lecturas de los
-hitos 18 y 19 ya están confirmadas (decisiones 32 y 33).
+**Cinco abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
+tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desglosar la Fase 4 el
+15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. La quinta, la 23, es la
+del Hito 20 y **está a la espera de respuesta**. Las lecturas de los hitos 18 y 19 ya están
+confirmadas (decisiones 32 y 33).
+
+23. **Lecturas aplicadas al implementar el onboarding y el ciclo de vida del espacio** (Hito 20,
+   PRD §33, migración 92). §9, §127 y §141 son los tres apartados más escuetos de la maestra —diez
+   palabras sueltas, siete líneas y cuatro— y callan en **trece** sitios. En los trece se ha elegido
+   lo más defendible, se ha escrito como regla `RN-CIC` y se pregunta aquí. **Ninguna es un umbral
+   ni un plazo**: los dos únicos números del apartado, los diez pasos y los 30 días, los dan §9 y
+   §127 y no hay nada que decidir sobre ellos.
+
+   1. **El asistente no bloquea nada** (RN-CIC-01). §9 dice "completa progresivamente", así que un
+      espacio recién aprobado funciona entero desde el primer minuto y los diez pasos son una lista
+      de tareas pendientes. La alternativa —no dejar recibir una solicitud hasta subir un
+      logotipo— no la pide la maestra en ninguna parte.
+   2. **Seis pasos se saben por el dato y cuatro no** (RN-CIC-02). Zona horaria, impuestos,
+      notificaciones y seguridad tienen ya un valor de partida (`Europe/Madrid`, 21 %, todos los
+      avisos activados, 2FA opcional), y en la base no hay nada que distinga "el valor por
+      omisión" de "mirado y decidido". Se completan con **una confirmación del propietario**, que
+      es un hecho con actor y fecha; dar por hecho el valor por omisión sería exactamente el dato
+      de relleno que CLAUDE.md prohíbe.
+   3. **Los seis derivados también se pueden confirmar**, y el origen se guarda y se enseña. Un
+      espacio que no quiere logotipo marca el paso, y la pantalla dice "confirmado por el
+      propietario", no "hecho".
+   4. **Solo el propietario ve y confirma el asistente** (RN-CIC-03). §9 no nombra a nadie más. El
+      trabajo de cada paso lo sigue haciendo quien ya podía hacerlo: no se inventa ningún permiso.
+   5. **Terminar el onboarding se sella una vez** (RN-CIC-04). Archivar después el único
+      establecimiento no devuelve el espacio al asistente: es un hecho del pasado (§3.4).
+   6. **Transferir la propiedad la mueve, no la duplica** (RN-CIC-05): el destinatario pasa a
+      propietario y **quien transfiere pasa a administrador de mantenimiento**, dentro del espacio.
+      Si lo que se quiere es un segundo propietario, eso es cambiar el rol de un miembro y se hace
+      por donde se cambian los roles. **Es la lectura más discutible de las trece** y la que más
+      conviene confirmar o cambiar.
+   7. **El destinatario tiene que ser un miembro activo del espacio** (RN-CIC-05). Dársela a quien
+      todavía no está dentro es invitar, e invitar ya tiene su camino (HU-03).
+   8. **"Al menos un propietario" lo sostiene un disparador** y no una función (RN-CIC-06): la
+      política de `space_memberships` deja al propietario escribir esa tabla directamente por
+      PostgREST, así que una comprobación dentro de una función la esquiva un `update` de una línea.
+   9. **El archivado del propietario es un modo más del espacio** (RN-CIC-07), `archived_by_owner`,
+      y hereda la solo lectura de RN-SUB-08 sin tocar nada. Lo que **no** hereda es la reactivación
+      por pago: aquí no hay deuda, así que pagar no resucita nada.
+   10. **Dentro de los 30 días restaura el propietario; pasados, la plataforma** (RN-CIC-08), igual
+      que la reactivación tardía de RN-SUB-09.
+   11. **La exportación es un único JSON, generado en el servidor y entregado como descarga firmada
+      y caducable** del bucket privado de los archivos (RN-CIC-10). La maestra no dice ni formato
+      ni entrega. Lo que no es una lectura es dónde se arma: en el cliente, nunca.
+   12. **Las diez confirmaciones de pasos no se copian a la auditoría** una por una (RN-CIC-13).
+      Viven en su propia tabla inmutable con actor y fecha; duplicarlas ahogaría la auditoría del
+      espacio en ruido de lista de tareas. Transferir, archivar, restaurar, exportar y terminar el
+      onboarding sí dejan apunte.
+   13. **Los dos avisos nuevos son obligatorios** (RN-CIC-15): `space_ownership_transferred` y
+      `space_archived_by_owner`. Uno es un cambio sensible (§137) y el otro es una pérdida de
+      acceso para todo el equipo, y RN-NOT-03 dice que ninguna de las dos cosas se puede apagar.
+
+   **Lo que esta pendiente NO incluye**, porque no es una lectura sino un placeholder de la
+   pendiente 20: que a los 30 días **no se borre nada** y que **el cierre de cuenta no se
+   implemente**. Las dos son del bloque legal y se dicen en RN-CIC-09 y RN-CIC-12 tal cual.
 
 22. ~~Lecturas aplicadas al implementar el panel, Modo soporte y la 2FA~~ — confirmadas las
    catorce el 15/09/2026 como decisión 33. Se conservan abajo tal como se preguntaron.
@@ -615,7 +670,10 @@ hitos 18 y 19 ya están confirmadas (decisiones 32 y 33).
    numeración fiscal de lo que Cuotly le cobra a un espacio. Los cuatro siguen necesitando la
    revisión profesional que CLAUDE.md exige. **Hitos 18 y 20.** *El Hito 18 dejó el placeholder
    dicho: guarda la fecha límite de los 30 días y no elimina nada; emite una referencia bancaria y
-   ninguna factura.*
+   ninguna factura. El Hito 20 dejó los otros dos: al archivar un espacio se **programa** la
+   eliminación —fecha guardada y enseñada, ningún borrado— y el cierre de una cuenta personal
+   **no se implementa**; lo que sí entrega es la comprobación de §141, que dice qué lo impide
+   (RN-CIC-09 y RN-CIC-12).*
 
 19. **Cómo se identifica un "negocio"** para "una sola prueba gratuita por persona o negocio"
    (§4.4). Persona se sabe identificar; negocio no: ¿por los datos fiscales de la solicitud, por el

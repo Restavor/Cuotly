@@ -61,6 +61,10 @@ export const NOTIFICATION_EVENTS = [
   // Migración 91 (Fase 4, Hito 19) · alguien de Cuotly ha entrado en el
   // espacio en Modo soporte (RN-ADM-08). A los propietarios, obligatorio.
   "support_session_started",
+  // Migración 92 (Fase 4, Hito 20) · el espacio cambia de dueño, o su
+  // dueño lo archiva (RN-CIC-15). Los dos, obligatorios.
+  "space_ownership_transferred",
+  "space_archived_by_owner",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -105,6 +109,11 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   // RN-ADM-08: que alguien de Cuotly haya entrado en tu espacio es
   // seguridad (§137, "cambios sensibles").
   "support_session_started",
+  // RN-CIC-15: cambiar de dueño es un cambio sensible de §137, y el
+  // archivado del propietario deja a todo el equipo sin poder escribir,
+  // que es una pérdida de acceso. Ninguna de las dos se puede apagar.
+  "space_ownership_transferred",
+  "space_archived_by_owner",
 ];
 
 export function isMandatoryEvent(event: NotificationEvent): boolean {
