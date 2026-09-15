@@ -154,7 +154,14 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // Pertenece a un solo espacio, así que la raíz redirige sola
       // (app/page.tsx: `if (spaces.length === 1) redirect(...)`).
       await expect(page).toHaveURL(new RegExp(`/espacios/${ESPACIO}$`));
-      await expect(page.getByRole("heading", { name: "Demo Cuotly" })).toBeVisible();
+      // El Inicio del espacio se rediseñó (commit cfd094a) y su titular pasó
+      // a ser "Inicio": el nombre del espacio vive ahora en el armazón —el
+      // selector de espacio en escritorio, la miga de pan en móvil—. Este
+      // test se quedó anclado al diseño anterior y nadie se enteró porque
+      // los recorridos con datos no los ejecutaba nadie desde el 02/09.
+      // Se comprueban las dos cosas: que es el Inicio y que es SU espacio.
+      await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
+      await expect(page.getByText("Demo Cuotly").first()).toBeVisible();
 
       // El restaurante del sembrado, con su código y su estado.
       await expect(page.getByText("EST-0001")).toBeVisible();

@@ -120,10 +120,41 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
    * una tabla o un formulario concreto, no en el armazón.
    */
   async function cabeEnElTelefono(page: Page, donde: string) {
-    const desborda = await page.evaluate(
-      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
-    );
-    expect(desborda, `${donde} se desborda a lo ancho en un teléfono`).toBe(false);
+    // Decía "se desborda" y nada más. Cuando CI lo puso en rojo por
+    // primera vez (14/09/2026) eso no bastaba para arreglarlo: hay que
+    // saber QUÉ elemento se sale, y desde el contenedor de desarrollo no
+    // se puede reproducir la pantalla porque no se llega a Supabase. Así
+    // que el fallo ahora nombra a los culpables, de más ancho a menos,
+    // con su etiqueta, sus clases y cuánto se pasan.
+    const culpables = await page.evaluate(() => {
+      const limite = document.documentElement.clientWidth;
+      if (document.documentElement.scrollWidth <= limite + 1) return [];
+
+      return [...document.querySelectorAll<HTMLElement>("body *")]
+        .map((el) => {
+          const caja = el.getBoundingClientRect();
+          return { el, exceso: Math.round(caja.right - limite), ancho: Math.round(caja.width) };
+        })
+        .filter(({ exceso, el }) => exceso > 1 && el.offsetParent !== null)
+        // Solo los que se salen POR SÍ MISMOS: si un padre ya se sale, sus
+        // hijos también, y la lista se llenaría de ruido.
+        .filter(({ el }) => {
+          const padre = el.parentElement;
+          if (!padre) return true;
+          return Math.round(padre.getBoundingClientRect().right) <= limite + 1;
+        })
+        .sort((a, b) => b.exceso - a.exceso)
+        .slice(0, 5)
+        .map(({ el, exceso, ancho }) =>
+          `<${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""} class="${el.className}"> ` +
+          `se pasa ${exceso}px (ancho ${ancho}px): ${(el.textContent ?? "").trim().slice(0, 60)}`,
+        );
+    });
+
+    expect(
+      culpables,
+      `${donde} se desborda a lo ancho en un teléfono. Lo que se sale:\n  · ${culpables.join("\n  · ")}`,
+    ).toEqual([]);
   }
 
   /**
@@ -475,8 +506,12 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
 
     // El saldo sale del libro (RN-COM-09): 30 incluidas.
     await expect(page.getByText(/de 30/)).toBeVisible();
-    // Las tres plantillas del sembrado.
-    await expect(page.getByText("Pizarra")).toBeVisible();
+    // Las tres plantillas del sembrado, en el desplegable que las ofrece.
+    // Antes era un `getByText("Pizarra")` suelto y encontraba DOS: la
+    // opción del desplegable y el nombre de la plantilla en la lista de
+    // menús. Lo que este paso quiere comprobar es que la plantilla se
+    // puede elegir, así que se mira donde se elige.
+    await expect(page.getByLabel("Plantilla")).toContainText("Pizarra");
 
     await page.getByLabel("Nombre").fill(`Menú ${MARCA}`);
     await page.getByLabel("Plantilla").selectOption({ label: "Clásica" });
@@ -497,7 +532,9 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
 
     // RN-MEN-09: preparado, y ya se puede descargar (RN-MEN-04: sin consumir).
     await page.getByRole("button", { name: "Marcar como preparado" }).click();
-    await expect(page.getByText("Preparado")).toBeVisible({ timeout: 20_000 });
+    // El estado de la cabecera, no el apunte del libro de estados: los dos
+    // dicen "Preparado" y un `getByText` suelto encontraba los dos.
+    await expect(page.getByTestId("estado-del-menu")).toHaveText("Preparado", { timeout: 20_000 });
 
     const descarga = page.waitForEvent("download");
     await page.getByRole("link", { name: "Descargar PNG" }).click();
@@ -541,7 +578,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await page.getByRole("button", { name: "Guardar versión" }).click();
       await expect(page.getByText("Versión guardada.")).toBeVisible({ timeout: 20_000 });
       await page.getByRole("button", { name: "Marcar como preparado" }).click();
-      await expect(page.getByText("Preparado")).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByTestId("estado-del-menu")).toHaveText("Preparado", { timeout: 20_000 });
       await page.getByRole("button", { name: "Pedir la publicación" }).click();
       await expect(async () => {
         await sinErrores(page, "PEDIR LA PUBLICACIÓN");

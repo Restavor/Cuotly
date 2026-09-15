@@ -136,7 +136,14 @@ export default async function ClientMenuPage({
           {t.detailKind}: {es.naming.menuKinds[menu.kind as MenuKindKey] ?? menu.kind} · {t.detailDate}:{" "}
           {fechaCorta(menu.target_date)} · {t.detailTemplate}: {templateName ?? t.detailNoTemplate}
         </p>
-        <div className="mt-2">
+        {/*
+          El testid existe para los recorridos: "Preparado" aparece dos
+          veces en esta pantalla —aquí, como estado, y en el libro de
+          estados de abajo— y un `getByText` suelto encontraba las dos.
+          El estado de la cabecera es el que dice en qué punto está el
+          menú; el de la lista es su historia.
+        */}
+        <div className="mt-2" data-testid="estado-del-menu">
           <StatusBadge tone={menuTone(menu.state)}>{es.naming.states.menu[menu.state]}</StatusBadge>
         </div>
       </header>
