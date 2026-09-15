@@ -4,9 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { supportRemainingMinutes, type SupportAccessLevel } from "@/core/platform-admin";
 import { es } from "@/i18n/es";
 import { EmptyReason } from "@/components/ui/EmptyReason";
 import { Icon } from "@/components/ui/Icon";
+import { leaveSupportSession } from "@/app/administracion/actions";
 import {
   activeDestination,
   createOptions,
@@ -24,6 +26,14 @@ export interface SearchResult {
   readonly subtitle: string | null;
   readonly state: string | null;
   readonly deepLink: string;
+}
+
+/** Hito 19 (§129) · la sesión de Modo soporte de quien mira, si la hay. */
+export interface ShellSupportSession {
+  readonly id: string;
+  readonly accessLevel: SupportAccessLevel;
+  readonly reason: string;
+  readonly expiresAt: string;
 }
 
 export interface ShellNotification {
@@ -58,6 +68,7 @@ export function AppShell({
   notifications,
   onSearch,
   establishmentId = null,
+  supportSession = null,
   children,
 }: {
   spaceSlug: string;
@@ -77,6 +88,12 @@ export function AppShell({
    * contexto en vez de a rutas del equipo (ver `navigation.ts`).
    */
   establishmentId?: string | null;
+  /**
+   * Hito 19 (§129, RN-ADM-07) · si quien mira es de Cuotly y está dentro en
+   * Modo soporte, se pinta una banda que lo dice —nivel, tiempo que queda,
+   * salir— para que no se le olvide que está en casa ajena.
+   */
+  supportSession?: ShellSupportSession | null;
   children: React.ReactNode;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -357,6 +374,37 @@ export function AppShell({
               <span aria-hidden="true">{userInitial}</span>
             </Link>
           </header>
+
+          {supportSession ? (
+            <div
+              role="status"
+              data-testid="support-banner"
+              className="flex flex-wrap items-center gap-3 border-b border-border bg-info/10 px-4 py-2 text-sm text-text lg:px-6"
+            >
+              <Icon name="lock" className="h-4 w-4 shrink-0 text-info" />
+              <span className="font-semibold">{es.platformAdmin.support.bannerTitle}</span>
+              <span className="text-text-secondary">
+                {es.platformAdmin.support.bannerBody(
+                  es.platformAdmin.support.levels[supportSession.accessLevel],
+                  supportRemainingMinutes(supportSession.expiresAt, new Date()),
+                )}
+                {" · "}
+                {supportSession.reason}
+              </span>
+              {supportSession.accessLevel === "read" ? (
+                <span className="text-text-secondary">{es.platformAdmin.support.bannerReadOnly}</span>
+              ) : null}
+              <form action={leaveSupportSession} className="ml-auto">
+                <input type="hidden" name="sessionId" value={supportSession.id} />
+                <button
+                  type="submit"
+                  className="rounded-field border border-border bg-surface px-3 py-1 text-xs font-semibold hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+                >
+                  {es.platformAdmin.support.bannerLeave}
+                </button>
+              </form>
+            </div>
+          ) : null}
 
           <main
             id="contenido"

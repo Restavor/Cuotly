@@ -58,6 +58,9 @@ export const NOTIFICATION_EVENTS = [
   "cuotly_payment_final_notice",
   "cuotly_space_archived",
   "cuotly_space_reactivated",
+  // Migración 91 (Fase 4, Hito 19) · alguien de Cuotly ha entrado en el
+  // espacio en Modo soporte (RN-ADM-08). A los propietarios, obligatorio.
+  "support_session_started",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -99,6 +102,9 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   // recordatorios y se pueden apagar.
   "cuotly_payment_final_notice",
   "cuotly_space_archived",
+  // RN-ADM-08: que alguien de Cuotly haya entrado en tu espacio es
+  // seguridad (§137, "cambios sensibles").
+  "support_session_started",
 ];
 
 export function isMandatoryEvent(event: NotificationEvent): boolean {

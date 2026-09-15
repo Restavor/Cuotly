@@ -30,6 +30,11 @@ insert into public.platform_roles (user_id, role, can_approve_spaces) values
   ('ff900000-0000-0000-0000-000000000003', 'cuotly_admin', true),
   ('ff900000-0000-0000-0000-000000000004', 'cuotly_admin', false);
 
+-- Hito 19 (RN-ADM-02) · la plataforma solo existe en una sesión verificada
+-- en dos pasos: sin este reclamo, Bosco y los Administradores de Cuotly
+-- de esta suite serían usuarios normales y nada de lo de abajo pasaría.
+select set_config('request.jwt.claim.aal', 'aal2', false);
+
 create temp table pla_ids (k text primary key, v uuid);
 grant select, insert, update on pla_ids to authenticated, service_role;
 

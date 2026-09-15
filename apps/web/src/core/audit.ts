@@ -106,6 +106,14 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // administradores.
   cuotly_charge: "manage_space",
   cuotly_payment: "manage_space",
+  // Fase 4, Hito 19 · Modo soporte (migración 91). Quién de Cuotly entró
+  // en el espacio, con qué nivel y qué hizo es del propietario, como la
+  // composición de su equipo (§129: "identidad visible en auditoría").
+  support: "manage_space",
+  // Fase 4, Hito 19 · nombrar y retirar Administradores de Cuotly. Sin
+  // espacio, como `space_request`: lo ven Bosco y quien hizo la acción por
+  // la tercera rama de `audit_log_select`.
+  platform: null,
   // Los menús de Menú Diario (migración 77): operación, como los trabajos.
   menu: null,
   // Los presupuestos (§84, migración 80): los decide la fila, como las
@@ -230,6 +238,10 @@ export const AUDIT_ACTIONS = [
   "opportunity.status_changed",
   "payment.registered",
   "payment.reversed",
+  // Fase 4, Hito 19 · Administradores de Cuotly (migración 91).
+  "platform.admin_granted",
+  "platform.admin_revoked",
+  "platform.admin_updated",
   "plan.conditions_published",
   // Fase 2, Hito 12 · presupuestos adicionales (§84, migración 80).
   "quote.accepted",
@@ -303,6 +315,11 @@ export const AUDIT_ACTIONS = [
   // registrando una aceptación de fuera con su contrato.
   "subscription.terms_accepted",
   "subscription.terms_recorded",
+  // Fase 4, Hito 19 · Modo soporte (migración 91): abrir y cerrar. Las
+  // acciones hechas DENTRO no son una familia: son los apuntes de siempre
+  // con `support_session_id` estampado.
+  "support.session_ended",
+  "support.session_started",
   "supervision.principal_set",
   "supervision.revoked",
   "supervision.substitute_rescheduled",

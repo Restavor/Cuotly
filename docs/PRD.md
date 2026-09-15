@@ -1403,3 +1403,118 @@ pago y ve sus cobros por las funciones y las tablas, y la pantalla llega con el 
 elimina nada a los 30 días (pendiente 20), **no** mide el uso razonable (17), **no** cobra el
 almacenamiento (18) y **no** comprueba "una prueba por negocio" (19), que sigue como la dejó
 RN-PLA-09.
+
+## 32. Panel de Administración de Cuotly, Modo soporte y 2FA — Fase 4 (RN-ADM)
+
+Los dos apartados anteriores dan a la plataforma cosas que decidir —aprobar un espacio, confirmar un
+pago— y ninguna pantalla desde la que decidirlas. Este apartado es esa pantalla, y las dos puertas que
+la acompañan: **Modo soporte** (§129), la única vía por la que alguien de Cuotly entra en un espacio
+ajeno, y **2FA** (§136), sin la cual esa puerta no se entrega. Es el punto más delicado de seguridad
+del producto: aquí se abre a propósito lo que el aislamiento multiempresa (§134) cierra en todas las
+demás partes, y por eso se abre con el mismo mecanismo que lo cierra —las funciones de pertenencia que
+evalúan todas las políticas— y no con una excepción en cada tabla.
+
+Sale de §128 (los doce bloques del panel), §129 (Modo soporte), §136 (2FA), §137 (protección de
+cuenta), §167 (quién decide en la plataforma) y §8 (la entrada "Administración de Cuotly" del selector).
+Donde la maestra calla, las lecturas quedan escritas como regla y se preguntan como **pendiente 22**
+de `docs/DECISIONES.md`; ninguna es un umbral que la maestra sí diera.
+
+- **RN-ADM-01**: **quién es la plataforma**: Bosco (`CUOTLY_OWNER_EMAIL`) y los **Administradores de
+  Cuotly** (`platform_roles`). Los dos ven la entrada **Administración de Cuotly** en el selector de
+  contexto (§8); Bosco ve el selector siempre, aunque tenga un solo espacio. Un Administrador de Cuotly
+  **lee el panel entero** y **actúa solo con el permiso fino** que §167 le haya dado —aprobar
+  espacios, gestionar suscripciones, Modo soporte—; leer no está en la tabla de §167 porque es lo que
+  hace útil el rol (lectura). Los tres permisos son columnas de `platform_roles`; la tercera,
+  `can_support`, llega aquí.
+- **RN-ADM-02**: la **2FA es obligatoria** para Bosco y para los Administradores de Cuotly (§136), y
+  se hace cumplir en el servidor de una sola forma: **el sombrero de plataforma solo existe en una
+  sesión verificada en dos pasos**. `is_platform_owner()` —el único punto de verdad de "¿es Bosco?"—
+  exige desde este hito que el token de la sesión lleve el nivel `aal2` de Supabase Auth, y todo lo que
+  cuelga de ella (`is_platform_approver()`, `is_platform_subscription_manager()`, las funciones del
+  panel, Modo soporte) lo hereda sin tener que acordarse. Sin 2FA verificada, Bosco entra en Cuotly
+  como un usuario cualquiera en sus espacios y **ninguna** función de plataforma le responde: la
+  pantalla lo manda a registrarla. Quien la tiene registrada —sea quien sea— pasa el segundo paso en
+  **cada inicio de sesión**, y hasta pasarlo no ve ninguna pantalla. Para propietarios,
+  administradores de espacio, trabajadores y clientes es **opcional** (§136) y se ofrece en la misma
+  pantalla de seguridad. Lectura: "obligatoria" se cumple cerrando la plataforma, no cerrando el
+  login: Bosco es también propietario de Restavor y dejarlo fuera de su espacio por no haber
+  registrado todavía el código sería castigar a Restavor por una regla de Cuotly.
+- **RN-ADM-03**: **nombrar Administrador de Cuotly es de Bosco y de nadie más** (§167), y conceder o
+  retirar cada uno de los tres permisos también. Se hace por función —`set_platform_admin()`,
+  `revoke_platform_admin()`— con apunte de auditoría sin espacio (`platform.*`), como los de la
+  solicitud de espacio. La política de escritura directa sobre `platform_roles` que había desde la
+  Fase 1 **se retira**: era una segunda puerta sin auditoría. A Bosco no se le nombra ni se le retira:
+  lo identifica su correo.
+- **RN-ADM-04**: el **panel** tiene los **doce bloques de §128** y cada uno sale de una función que
+  comprueba `is_platform_member()`, nunca de una consulta directa a tablas de otros espacios: la
+  plataforma no es miembro de ningún espacio y las políticas no la dejan pasar; la función que sí lo
+  hace comprueba primero quién pregunta. Lo que enseña cada bloque: **usuarios** (cuentas, espacios a
+  los que pertenecen y si tienen 2FA), **espacios** (modo, plan, propietario, uso y deuda),
+  **solicitudes de alta** (las de §30, pendientes primero), **suscripciones** (plan y periodo de cada
+  espacio), **ingresos** (lo cobrado según el libro: apuntes de pago menos reversiones, por mes; una
+  cifra de libro, no una factura —pendiente 20—), **pruebas activas**, **impagos** (cobros vencidos y
+  los pagos declarados que esperan confirmación), **almacenamiento** (lo que mide `cuotly_space_usage()`,
+  RN-SUB-13: se mide, no se limita), **actividad** (los últimos apuntes de auditoría de todos los
+  espacios), **incidencias** (**vacío con su motivo**: son el Hito 21, y no se pinta nada), **soporte**
+  (las sesiones de Modo soporte, abiertas y pasadas —lectura: "soporte" en §128 es §129, no las
+  incidencias de §131—) y **auditoría** (los apuntes de plataforma: solicitudes, cobros, permisos y
+  soporte).
+- **RN-ADM-05**: las **dos pantallas del flujo de §30** que el Hito 17 no trajo (decisión 31): el
+  **formulario** con el que una persona recién registrada pide su espacio, guarda el borrador, lo envía
+  y ve **en qué estado está y el motivo** (RN-PLA-06, RN-PLA-07), y la pantalla desde la que la
+  plataforma **revisa, pide información, aprueba o rechaza** (RN-PLA-03). No traen ninguna regla nueva:
+  las de §30 ya están en el servidor y aquí solo se pintan los botones que ese servidor va a aceptar.
+- **RN-ADM-06**: **Modo soporte es una sesión** (`support_sessions`) sobre un espacio, con **motivo
+  obligatorio** escrito por la persona, **nivel de acceso** —`read` · `admin` · `owner`, el mínimo
+  necesario (§129)—, **duración** en minutos entre 15 y 240, 60 si no se dice (lectura), y quién,
+  cuándo empezó y cuándo acaba. La abre **Bosco siempre, o un Administrador de Cuotly con
+  `can_support`** (§167), con 2FA verificada (RN-ADM-02). **No se abre sobre un espacio del que ya se
+  es miembro**: ahí no hace falta soporte, hace falta entrar como quien se es. Una persona tiene
+  **como mucho una sesión activa por espacio**. Termina **al agotarse el tiempo o al cerrarla** quien
+  la abrió (o Bosco); cerrarla deja apunte; agotarse no escribe nada, porque en ese instante no ocurrió
+  nada que auditar (lectura).
+- **RN-ADM-07**: **cómo abre la puerta**, que es lo que hay que leer dos veces: `is_space_member()` y
+  `has_capability()` —las dos funciones que evalúan **todas** las políticas del proyecto— reconocen una
+  sesión de soporte activa como si fuera una pertenencia, y con ese reconocimiento entra por RLS en las
+  tablas del espacio. Con `read` se ve como un miembro **sin ninguna capacidad**, y un disparador en
+  **toda tabla con `space_id`** —el mismo barrido que el modo lectura de RN-SUB-08— rechaza cualquier
+  escritura suya, venga por donde venga. Con `admin` se opera como un administrador sin permisos
+  concedidos. Con `owner` se opera como el propietario **salvo invitar o añadir personas al equipo**
+  (`invite_member`): es lo único que dejaría un acceso vivo después de la sesión, y es exactamente lo
+  que Modo soporte no puede dejar. **Nada se escribe en `space_memberships`**: la persona de Cuotly
+  nunca figura como miembro. Retirar el permiso, o que se agote el tiempo, cierra la puerta en la
+  siguiente consulta sin que nadie tenga que hacer nada.
+- **RN-ADM-08**: **el rastro** de §129: abrir y cerrar dejan `support.session_started` y
+  `support.session_ended` en la auditoría **del espacio**, familia `support` → `manage_space`: **el
+  propietario del espacio ve quién entró, con su nombre**. Aquí P7 no aplica: quien entra no es el
+  equipo de mantenimiento del espacio, es Cuotly, y §129 dice "identidad visible en auditoría". Cada
+  apunte que esa persona deje mientras dura la sesión lleva estampado `support_session_id` por un
+  disparador de `audit_log`, y eso son las **"acciones realizadas"**: la sesión las enseña y el panel
+  las cuenta. Además, al abrirse, los **propietarios del espacio reciben el aviso
+  `support_session_started`**, **obligatorio** (RN-NOT-03: es seguridad) y con enlace a su auditoría.
+- **RN-ADM-09**: un espacio **archivado en modo lectura** (RN-SUB-08) sigue siéndolo **también para
+  el soporte**: el disparador de la 90 mira si hay identidad de persona, y la hay. Lo que en ese modo
+  se puede hacer —pagar— lo hace su propietario, no Cuotly por él.
+- **RN-ADM-10**: la **suscripción, vista por el propietario del espacio**: la pantalla
+  `/ajustes/suscripcion` a la que los avisos del Hito 18 ya apuntaban (RN-NOT-04). Enseña el modo del
+  espacio, el plan y el periodo, cada cobro con su **estado derivado** (RN-SUB-06), y el formulario para
+  **declarar un pago** —método, fecha, importe, referencia— con la función que ya existe. Solo el
+  propietario (`manage_space`); ningún administrador del espacio (§4.2.1).
+- **RN-ADM-11**: todo lo que la plataforma **hace** desde el panel ya tenía función con permiso desde
+  los Hitos 17 y 18 —decidir y aprobar solicitudes, confirmar, registrar, rechazar y revertir pagos,
+  reactivar un espacio— y lo nuevo de aquí —nombrar administradores, abrir y cerrar soporte— llega
+  igual: por función, con transacción, comprobación de permiso en el servidor y auditoría. El panel no
+  añade ninguna vía por PostgREST.
+- **RN-ADM-12**: de **§137** quedan hechos, con esto, "sesiones y dispositivos visibles" y "cierre
+  remoto" (HU-05), la **verificación adicional** (el segundo paso de la 2FA en cada inicio de sesión) y
+  los avisos por **cambios sensibles** en lo que toca a la plataforma (el aviso de soporte). Los
+  **límites temporales ante intentos fallidos** los aplica Supabase Auth con su configuración, no este
+  código. **No** se implementan los **avisos por dispositivo nuevo**: hace falta decidir qué es "un
+  dispositivo" y se dice en la lista de lo que falta, no se finge.
+
+Lo que este apartado **no** trae, dicho en claro: **no** trae las incidencias de §131 ni el horario
+humano de §132 (Hito 21: el bloque "incidencias" del panel está vacío con su motivo), **no** trae el
+onboarding de §9 ni la propiedad y el fin de un espacio de §127 (Hito 20), **no** trae exportación
+(§141, Hito 20), **no** elimina nada a los 30 días ni numera nada fiscalmente (pendiente 20), **no**
+avisa de dispositivos nuevos (RN-ADM-12) y **no** mide el "uso razonable" (pendiente 17): el panel
+enseña el uso de cada espacio y la decisión de §4.3 sigue siendo de Bosco a mano.

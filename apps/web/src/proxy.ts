@@ -33,13 +33,31 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // Refresca la sesión si hace falta. No usamos aquí el resultado para
-  // proteger rutas todavía (eso llega con las pantallas del Hito 1); de
-  // momento solo mantiene la cookie de sesión al día.
-  await supabase.auth.getUser();
+  // Refresca la sesión si hace falta y mantiene la cookie al día.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // §137, RN-ADM-02 · el segundo paso en cada inicio de sesión. Quien tiene
+  // la 2FA activada y todavía no ha pasado el código (`aal1` con `aal2`
+  // disponible) no ve ninguna pantalla hasta pasarlo. Es una comodidad, no
+  // el control: las funciones de plataforma exigen `aal2` por su cuenta en
+  // la base, y un usuario normal sin 2FA no cambia de sitio.
+  if (user && !SIN_SEGUNDO_PASO.some((prefijo) => request.nextUrl.pathname.startsWith(prefijo))) {
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal && aal.currentLevel === "aal1" && aal.nextLevel === "aal2") {
+      const destino = request.nextUrl.clone();
+      destino.pathname = "/cuenta/verificar";
+      destino.search = "";
+      return NextResponse.redirect(destino);
+    }
+  }
 
   return response;
 }
+
+/** Las rutas que no piden el segundo paso: la que lo pide, y salir. */
+const SIN_SEGUNDO_PASO = ["/cuenta/verificar", "/login", "/signup", "/auth/", "/api/"];
 
 export const config = {
   matcher: [

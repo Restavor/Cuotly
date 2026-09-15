@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Card, EmptyState, ErrorState, StatusBadge } from "@/components/ui";
@@ -44,7 +45,12 @@ export default async function SessionsPage() {
   return (
     <main className="mx-auto max-w-2xl p-8">
       <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.sessions.title}</h1>
-      <p className="mb-6 text-sm text-text-secondary">{es.sessions.subtitle}</p>
+      <p className="mb-2 text-sm text-text-secondary">{es.sessions.subtitle}</p>
+      <p className="mb-6 text-sm">
+        <Link href="/cuenta/seguridad" className="text-cuotly-green underline">
+          {es.sessions.securityLink}
+        </Link>
+      </p>
 
       <div className="space-y-3">
         {sessions.map((session) => (

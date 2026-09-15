@@ -143,6 +143,21 @@ create table auth.sessions (
   not_after timestamptz
 );
 
+-- Hito 19 · el segundo factor. Supabase Auth guarda aquí cada factor
+-- registrado; el panel (`platform_list_users()`) lee si una cuenta tiene
+-- uno verificado. Las columnas que importan y nada más; `status` es un
+-- enum en el proyecto real y aquí texto, y la comparación con el literal
+-- funciona igual en los dos.
+create table auth.mfa_factors (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  friendly_name text,
+  factor_type text not null default 'totp',
+  status text not null default 'unverified',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- La identidad de quien consulta. En Supabase sale del JWT; aquí, del
 -- mismo ajuste de sesión que usan los fixtures
 -- (`set_config('request.jwt.claim.sub', …)`), que es como lo hace también

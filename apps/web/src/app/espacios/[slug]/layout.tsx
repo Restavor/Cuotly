@@ -50,7 +50,7 @@ export default async function SpaceLayout({
   // El rol y el restaurante salen de `resolveShellViewer()`, compartido con
   // la pantalla "Más": las dos tienen que responder lo mismo o la barra de
   // móvil y su desbordamiento acabarían discrepando.
-  const { role, establishmentId } = await resolveShellViewer(supabase, user.id, slug);
+  const { role, establishmentId, supportSession } = await resolveShellViewer(supabase, user.id, slug);
 
   const { data: rows } = await supabase
     .from("notifications")
@@ -96,6 +96,16 @@ export default async function SpaceLayout({
       notifications={notifications}
       onSearch={searchEverything}
       establishmentId={establishmentId}
+      supportSession={
+        supportSession
+          ? {
+              id: supportSession.id,
+              accessLevel: supportSession.access_level,
+              reason: supportSession.reason,
+              expiresAt: supportSession.expires_at,
+            }
+          : null
+      }
     >
       {children}
     </AppShell>

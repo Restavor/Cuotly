@@ -3,7 +3,10 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button, Card, ErrorState } from "@/components/ui";
 import { CreateRestavorCard } from "@/components/CreateRestavorCard";
+import { isPlatformPerson, platformNeedsTwoFactor } from "@/core/platform-admin";
+import { isSpaceRequestFinal, type SpaceRequestState } from "@/core/space-requests";
 import { es } from "@/i18n/es";
+import { myPlatformAccess } from "@/services/platform-gateway";
 import { signOut } from "./(auth)/actions";
 
 /**
@@ -50,6 +53,14 @@ export default async function HomePage() {
   // espacio" y pintaba el selector con el mismo nombre dos veces. Se
   // dispara con cualquier espacio real; no se vio antes porque el
   // proyecto no tenía datos.
+  // Hito 19 (§8, RN-ADM-01) · quien es de Cuotly ve SIEMPRE el selector,
+  // con la entrada "Administración de Cuotly" la primera. Se pregunta por
+  // la identidad sin la cerradura de la 2FA: si le falta, se le dice aquí.
+  // Si la consulta falla, no se bloquea la entrada de nadie: se sigue
+  // como un usuario normal.
+  const platform = await myPlatformAccess(supabase).catch(() => null);
+  const esPlataforma = platform !== null && isPlatformPerson(platform);
+
   const { data: memberships, error: membershipsError } = await supabase
     .from("space_memberships")
     .select("role, spaces(name, slug)")
@@ -89,16 +100,33 @@ export default async function HomePage() {
     );
   }
 
-  if (spaces.length === 1) {
+  if (spaces.length === 1 && !esPlataforma) {
     redirect(`/espacios/${spaces[0].slug}`);
   }
 
-  if (spaces.length > 1) {
+  if (spaces.length > 1 || esPlataforma) {
     return (
       <main className="mx-auto max-w-lg p-8">
         <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.contextSelector.title}</h1>
         <p className="mb-6 text-sm text-text-secondary">{es.contextSelector.subtitle}</p>
         <div className="space-y-3">
+          {esPlataforma && platform ? (
+            <Link href="/administracion">
+              <Card className="cursor-pointer border-primary hover:border-cuotly-green">
+                <span className="block font-semibold text-primary-dark">
+                  {es.contextSelector.platformTitle}
+                </span>
+                <span className="block text-sm text-text-secondary">
+                  {es.contextSelector.platformSubtitle}
+                </span>
+                {platformNeedsTwoFactor(platform) ? (
+                  <span className="mt-2 block text-sm text-danger">
+                    {es.contextSelector.platformNeedsTwoFactor}
+                  </span>
+                ) : null}
+              </Card>
+            </Link>
+          ) : null}
           {spaces.map((space) => (
             <Link key={space.slug} href={`/espacios/${space.slug}`}>
               <Card className="cursor-pointer hover:border-cuotly-green">{space.name}</Card>
@@ -190,6 +218,19 @@ export default async function HomePage() {
 
   const { data: isPlatformOwner } = await supabase.rpc("is_platform_owner");
 
+  // Hito 19 (RN-ADM-05) · sin ningún contexto, se ofrece pedir un espacio,
+  // y si ya lo pidió, en qué estado está. Cada uno lee solo la suya.
+  const { data: requests } = await supabase
+    .from("space_requests")
+    .select("id, status, updated_at")
+    .eq("requester_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(5);
+  const solicitud =
+    (requests ?? []).find((r) => !isSpaceRequestFinal(r.status as SpaceRequestState)) ??
+    (requests ?? [])[0] ??
+    null;
+
   return (
     <main className="mx-auto max-w-xl p-8">
       <div className="mb-6 flex items-center justify-between">
@@ -206,9 +247,26 @@ export default async function HomePage() {
       {isPlatformOwner ? (
         <CreateRestavorCard />
       ) : (
-        <Card title={es.platform.noSpaceYet.title} className="mt-16 text-center">
-          <p className="text-sm text-text-secondary">{es.platform.noSpaceYet.description}</p>
-        </Card>
+        <>
+          <Card title={es.platform.noSpaceYet.title} className="mt-16 text-center">
+            <p className="text-sm text-text-secondary">{es.platform.noSpaceYet.description}</p>
+          </Card>
+          <Card
+            title={solicitud ? es.contextSelector.requestSpaceStatus : es.contextSelector.requestSpaceTitle}
+            className="mt-4"
+          >
+            {solicitud ? (
+              <p className="mb-3 text-sm text-text-secondary">
+                {es.spaceRequestForm.states[solicitud.status as SpaceRequestState]}
+              </p>
+            ) : (
+              <p className="mb-3 text-sm text-text-secondary">{es.contextSelector.requestSpaceBody}</p>
+            )}
+            <Link href="/solicitar-espacio" className="inline-flex items-center justify-center rounded-[10px] border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green">
+              {solicitud ? es.contextSelector.requestSpaceOpen : es.contextSelector.requestSpaceAction}
+            </Link>
+          </Card>
+        </>
       )}
     </main>
   );

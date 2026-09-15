@@ -2610,7 +2610,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2626,6 +2626,15 @@ begin
         -- Las primitivas de permisos: son el mecanismo con el que se
         -- comprueba, no pueden comprobarse a sí mismas.
         'has_capability', 'is_space_member', 'is_platform_owner',
+        -- Migración 91 (Fase 4, Hito 19), misma familia: `is_platform_admin`
+        -- es la primitiva "¿es un Administrador de Cuotly con 2FA?" y no
+        -- puede comprobarse a sí misma; `is_platform_member` e
+        -- `is_platform_supporter` la llaman junto a `is_platform_owner`,
+        -- así que sí caen en la heurística. `my_platform_access` contesta
+        -- SOLO sobre quien pregunta —su identidad de plataforma, sin la
+        -- cerradura de la 2FA— y no autoriza nada: es `my_active_sessions`
+        -- otra vez.
+        'is_platform_admin', 'my_platform_access',
         'is_group_member', 'is_establishment_member',
         'is_authorized_worker_establishment', 'can_write_establishment',
         'client_can_view_billing',

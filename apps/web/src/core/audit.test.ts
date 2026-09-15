@@ -156,7 +156,7 @@ describe("HU-36 · el catálogo de acciones de auditoría cubre lo que la base e
     // actor_id = auth.uid()`— más el propietario de la plataforma. El test
     // de abajo comprueba que esa rama existe de verdad, para que esta
     // exención no sea una promesa escrita en un comentario.
-    const deLaPlataforma = new Set(["session", "space_request"]);
+    const deLaPlataforma = new Set(["session", "space_request", "platform"]);
     const porFila = Object.entries(AUDIT_FAMILY_CAPABILITY)
       .filter(([familia, capacidad]) => capacidad === null && !deLaPlataforma.has(familia))
       .map(([familia]) => familia);

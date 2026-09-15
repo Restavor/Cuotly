@@ -33,7 +33,7 @@ Actualizado el 15/09/2026.
 
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
-| 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | No empezado | El punto más delicado de seguridad del producto. |
+| 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita el 15/09/2026; **pendiente de aplicar al proyecto real** hasta que Bosco lo ordene, como la 85. PRD §32 (RN-ADM-01 a 12) escrito antes del código. Catorce lecturas esperan confirmación (pendiente 22). Ver la entrada de cierre abajo. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | No empezado | |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
@@ -4439,6 +4439,64 @@ pasar a todos en modo lectura y confirmar pagos sin ser de Cuotly.
 - **2FA** (§136) en el mismo hito y no más tarde, porque es **obligatoria** para Bosco y para los
   Administradores de Cuotly: entregar Modo soporte sin ella sería entregar la llave sin la cerradura.
   Lo de §137 está a medias —"Mis sesiones" y el cierre remoto existen desde HU-05—; falta el resto.
+
+### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(hecho el 15/09/2026; la 91 sin aplicar todavía)*
+- **PRD §32 escrito primero**, como manda el desglose: §128, §129, §136, §137 y §167 convertidos en
+  doce reglas `RN-ADM`. Catorce lecturas donde la maestra calla quedan escritas como regla y se
+  preguntan como **pendiente 22** de `docs/DECISIONES.md`. Ninguna es un umbral que la maestra diera.
+- **La 2FA se hace cumplir en la raíz** (RN-ADM-02): `is_platform_owner()` —el único punto de verdad
+  de "¿es Bosco?"— exige desde la 91 el nivel `aal2` del token de Supabase Auth, y todo lo que cuelga
+  de ella lo hereda: aprobar, gestionar suscripciones, Modo soporte, el panel. Sin 2FA, Bosco es un
+  usuario normal en Restavor y ninguna función de plataforma responde. **Consecuencia práctica que hay
+  que saber al aplicarla:** desde ese momento Bosco tiene que registrar el segundo factor en
+  `/cuenta/seguridad` antes de poder aprobar nada. Las suites 40 y 41 lo declaran con
+  `set_config('request.jwt.claim.aal', 'aal2')`; cualquier suite futura que actúe como plataforma
+  tiene que hacer lo mismo.
+- **Modo soporte** (RN-ADM-06/07/08): `support_sessions` con motivo obligatorio, nivel (`read` ·
+  `admin` · `owner`), duración de 15 a 240 minutos y quién, cuándo y hasta cuándo. **La puerta se abre
+  por el mismo sitio por el que se cierra**: `is_space_member()` y `has_capability_as()` reconocen la
+  sesión activa, así que no hay una excepción por tabla que pueda faltar. `read` tiene un disparador
+  de solo lectura en toda tabla con `space_id`, como el modo lectura de la 90; `owner` no puede
+  invitar. Nada se escribe en `space_memberships`. Retirar el permiso, perder la 2FA o agotar el
+  tiempo cierra la puerta en la siguiente consulta.
+- **El rastro** (RN-ADM-08): apuntes `support.session_started` y `support.session_ended` en la
+  auditoría **del espacio**, con la identidad —el propietario ve quién entró; §129 lo pide y P7 no
+  aplica a Cuotly—, un disparador que estampa `support_session_id` en cada apunte que la persona
+  deje mientras dura la sesión (eso son las "acciones realizadas"), y el aviso **obligatorio**
+  `support_session_started` a los propietarios del espacio.
+- **El panel** (RN-ADM-04): los doce bloques de §128, cada uno desde una función que comprueba
+  `is_platform_member()`. Incidencias está vacío con su motivo (Hito 21), no con un cero. Ingresos es
+  una cifra de libro, no una factura (pendiente 20).
+- **Nombrar Administradores de Cuotly** es de Bosco por función y con auditoría (RN-ADM-03); la
+  política de escritura directa sobre `platform_roles` de la Fase 1 se retira: era una segunda puerta
+  sin rastro.
+- **Las pantallas**, que este hito sí trae: el formulario de solicitud de espacio y su estado
+  (`/solicitar-espacio`), el panel entero (`/administracion` y sus seis pantallas), la banda de Modo
+  soporte en el armazón del espacio, la 2FA (`/cuenta/seguridad` y el segundo paso en cada inicio de
+  sesión, `/cuenta/verificar`, que impone `proxy.ts`), la entrada **Administración de Cuotly** del
+  selector (§8: Bosco ve siempre el selector) y la suscripción vista por el propietario
+  (`/ajustes/suscripcion`, el enlace al que los avisos del Hito 18 ya apuntaban).
+- **Lo que el hito NO trae, y se dice:** sin incidencias ni horario humano (Hito 21), sin onboarding ni
+  propiedad y fin del espacio (Hito 20), sin exportación, sin avisos por dispositivo nuevo (RN-ADM-12,
+  hace falta decidir qué es un dispositivo) y sin medir el uso razonable (pendiente 17). **La 91 no se
+  ha aplicado al proyecto real**: se espera la orden de Bosco, y `database.types.ts` se regenera
+  entonces; hasta ese momento las funciones nuevas pasan por `src/services/platform-gateway.ts`, la
+  frontera con `any` que ya usó el Hito 16 y se quitó al regenerar.
+
+**Los barridos dispararon otra vez, tres veces.** El de funciones internas abiertas por RPC cazó las
+del panel hasta que `is_platform_member()` entró en su heurística, y las dos primitivas nuevas
+(`is_platform_admin`, `my_platform_access`) se clasificaron con su motivo; el de modo lectura exigió
+justificar `support_sessions` (se abre soporte también sobre un espacio archivado); y el de auditoría
+pidió nombre en español a las dos familias y las dos entidades nuevas. La propia suite 42 cazó dos
+errores míos antes de que llegaran a ningún sitio: una columna ambigua en `support_session_actions()`
+y que esa función contaba abrir y cerrar como "acciones realizadas" mientras el panel no.
+
+**Se verifica con:** `supabase/tests/plataforma_panel_soporte_y_2fa.sql` (la 42ª suite; RN-ADM-01 a
+09, con la sesión movida entre `aal1` y `aal2`), `platform-admin.test.ts` (los doce bloques, los
+niveles, la duración, quién es plataforma y qué le falta, y para quién es obligatoria la 2FA),
+`listas-compartidas.test.ts` (los tres niveles y los tres números de la duración iguales a los dos
+lados; el aviso obligatorio nuevo), `audit.test.ts` y `notifications.test.ts`. Las 42 suites pasan
+desde cero sobre las 91 migraciones en local.
 
 ### Hito 20 · Onboarding del espacio nuevo y ciclo de vida del espacio *(servidor y pantallas)*
 - El **asistente de §9** con sus diez pasos y **sin IA**: datos, logotipo, zona horaria, horario,

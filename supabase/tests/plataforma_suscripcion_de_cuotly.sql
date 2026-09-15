@@ -34,6 +34,11 @@ insert into public.platform_roles (user_id, role, can_approve_spaces, can_manage
   ('ffa00000-0000-0000-0000-000000000002', 'cuotly_admin', true, true),
   ('ffa00000-0000-0000-0000-000000000003', 'cuotly_admin', false, false);
 
+-- Hito 19 (RN-ADM-02) · la plataforma solo existe en una sesión verificada
+-- en dos pasos: sin este reclamo, Bosco y los Administradores de Cuotly
+-- de esta suite serían usuarios normales y nada de lo de abajo pasaría.
+select set_config('request.jwt.claim.aal', 'aal2', false);
+
 create temp table sub_ids (k text primary key, v uuid);
 grant select, insert, update on sub_ids to authenticated, service_role;
 
@@ -363,7 +368,12 @@ begin
          -- De plataforma: su `space_id` es anulable.
          'space_requests',
          -- "En ese modo se puede pagar" (§4.6).
-         'cuotly_subscriptions', 'cuotly_charges', 'cuotly_payments', 'cuotly_ledger_entries'
+         'cuotly_subscriptions', 'cuotly_charges', 'cuotly_payments', 'cuotly_ledger_entries',
+         -- Hito 19 (RN-ADM-09) · Modo soporte se abre también sobre un espacio
+         -- archivado, para poder mirar por qué; lo que la sesión toque
+         -- dentro sigue congelado, porque las tablas del espacio sí llevan
+         -- el disparador. La sesión misma no es un dato del espacio.
+         'support_sessions'
        ) then
       v_sin := v_sin || ' ' || v_t.tabla;
     end if;

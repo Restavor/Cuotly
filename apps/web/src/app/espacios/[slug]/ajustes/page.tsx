@@ -363,6 +363,22 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         </p>
       </Card>
 
+      {/* Hito 19 (RN-ADM-10) · la suscripción de Cuotly, solo al propietario:
+          la pantalla vuelve a comprobarlo, esto es cortesía. */}
+      {canManageSpace ? (
+        <Card>
+          <h2 className="mb-3 text-lg font-semibold text-primary-dark">
+            {es.cuotlySubscription.title}
+          </h2>
+          <p className="mb-3 text-sm text-text-secondary">{es.cuotlySubscription.settingsHint}</p>
+          <p className="text-sm">
+            <Link href={`/espacios/${slug}/ajustes/suscripcion`} className="text-cuotly-green underline">
+              {es.cuotlySubscription.settingsLink}
+            </Link>
+          </p>
+        </Card>
+      ) : null}
+
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">
           {es.settings.accountTitle}
@@ -371,6 +387,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         <p className="text-sm">
           <Link href="/cuenta/sesiones" className="text-cuotly-green underline">
             {es.settings.sessionsLink}
+          </Link>
+          {" · "}
+          <Link href="/cuenta/seguridad" className="text-cuotly-green underline">
+            {es.sessions.securityLink}
           </Link>
         </p>
       </Card>

@@ -364,6 +364,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/plataforma_suscripcion_de_cuotly.sql
 
+      - name: "Hito 19 — Verificar el panel de Administración de Cuotly, Modo soporte y 2FA (RN-ADM-01 a 12, §128, §129, §134, §136, §167)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/plataforma_panel_soporte_y_2fa.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

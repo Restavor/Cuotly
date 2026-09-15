@@ -17,6 +17,7 @@ import {
   SPACE_CUOTLY_STATES,
 } from "./cuotly-subscription";
 import { MANDATORY_EVENTS, NOTIFICATION_EVENTS } from "./notifications";
+import { SUPPORT_ACCESS_LEVELS, SUPPORT_SESSION_MINUTES } from "./platform-admin";
 import {
   JUDGEMENT_SECTIONS,
   REPORT_CATEGORIES,
@@ -487,6 +488,33 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     const fn = ultimaDefinicion("create or replace function public.notification_event_is_mandatory", "$$;");
     const enSql = entrecomillados(fn.slice(fn.indexOf("select p_event_type in")));
     expect([...MANDATORY_EVENTS].sort()).toEqual([...enSql].sort());
+  });
+
+  /*
+   * Migración 91 (Fase 4, Hito 19). Los tres niveles de Modo soporte y la
+   * duración que admite una sesión están a los dos lados: en SQL abren la
+   * puerta y rechazan lo que no cabe; en TypeScript el formulario ofrece
+   * lo que el servidor va a aceptar. Un nivel que existiera en un solo
+   * lado sería un botón que devuelve un error, o un privilegio que nadie
+   * puede pedir.
+   */
+  it("los tres niveles de Modo soporte (RN-ADM-06) son los mismos en el CHECK y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.support_sessions (", "constraint support_sessions_window");
+    const check = /access_level text not null check \(access_level in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de access_level").not.toBeNull();
+    // El ORDEN también importa: es del menor al mayor privilegio (§129).
+    expect(entrecomillados(check![1])).toEqual([...SUPPORT_ACCESS_LEVELS]);
+  });
+
+  it("la duración de una sesión de Modo soporte (RN-ADM-06) es la misma cuenta en SQL y en `src/core`", () => {
+    const fn = ultimaDefinicion("create or replace function public.start_support_session", "$$;");
+    const porDefecto = /p_minutes integer default (\d+)/.exec(fn);
+    const limites = /p_minutes < (\d+) or p_minutes > (\d+)/.exec(fn);
+    expect(porDefecto, "no está el valor por defecto de p_minutes").not.toBeNull();
+    expect(limites, "no están los límites de p_minutes").not.toBeNull();
+    expect(Number(porDefecto![1])).toBe(SUPPORT_SESSION_MINUTES.default);
+    expect(Number(limites![1])).toBe(SUPPORT_SESSION_MINUTES.min);
+    expect(Number(limites![2])).toBe(SUPPORT_SESSION_MINUTES.max);
   });
 
   it("quién mueve cada transición de un informe (§95) lo dicen igual los dos lados", () => {

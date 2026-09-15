@@ -34,6 +34,15 @@
  */
 export const DEFAULT_TIMEZONE = "Europe/Madrid";
 
+/**
+ * La zona de Cuotly como plataforma (Hito 19). El panel de Administración
+ * no está en ningún espacio y no tiene `spaces.timezone` que leer: Cuotly
+ * vive en Madrid, y `platform_revenue_by_month()` agrupa los meses en esa
+ * misma zona. Solo la usan las pantallas de `/administracion` y la de la
+ * solicitud de espacio, que ocurre antes de que exista el espacio.
+ */
+export const CUOTLY_TIMEZONE = "Europe/Madrid";
+
 /** Un día sin hora, como lo guarda un `date` de PostgreSQL: `2026-09-13`. */
 const SOLO_DIA = /^\d{4}-\d{2}-\d{2}$/;
 

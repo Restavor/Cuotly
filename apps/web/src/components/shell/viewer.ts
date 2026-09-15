@@ -1,4 +1,6 @@
+import { supportShellRole } from "@/core/platform-admin";
 import { createClient } from "@/lib/supabase/server";
+import { mySupportSession, type MySupportSession } from "@/services/platform-gateway";
 
 import type { ShellRole } from "./navigation";
 
@@ -23,6 +25,12 @@ export type ShellViewer = {
   readonly spaceId: string | null;
   readonly role: ShellRole;
   readonly establishmentId: string | null;
+  /**
+   * Hito 19 (§129, RN-ADM-07) · si quien mira está dentro en Modo soporte,
+   * su sesión: el armazón pinta la banda y los destinos según el nivel.
+   * Nulo para todo el mundo salvo la plataforma con una sesión activa.
+   */
+  readonly supportSession: MySupportSession | null;
 };
 
 export async function resolveShellViewer(
@@ -51,7 +59,18 @@ export async function resolveShellViewer(
         .maybeSingle()
     : { data: null };
 
-  const role: ShellRole = (membership?.role as ShellRole | undefined) ?? "client";
+  // Sin pertenencia real, la única otra forma de estar dentro de un espacio
+  // ajeno es Modo soporte (§134). Se pregunta solo entonces, y con el
+  // espacio ya leído: si `spaces_select` lo dejó pasar, es porque
+  // `is_space_member()` reconoció la sesión.
+  let supportSession: MySupportSession | null = null;
+  if (!membership && spaceId) {
+    supportSession = await mySupportSession(supabase, spaceId).catch(() => null);
+  }
+
+  const role: ShellRole =
+    (membership?.role as ShellRole | undefined) ??
+    (supportSession ? supportShellRole(supportSession.access_level) : "client");
 
   // Para un cliente los destinos cuelgan de su restaurante, y solo se sabe
   // cuál si tiene exactamente uno: con varios, la navegación lo manda al
@@ -76,5 +95,5 @@ export async function resolveShellViewer(
     }
   }
 
-  return { userId, spaceId, role: resolvedRole, establishmentId };
+  return { userId, spaceId, role: resolvedRole, establishmentId, supportSession };
 }

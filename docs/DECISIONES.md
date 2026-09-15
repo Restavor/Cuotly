@@ -552,7 +552,43 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 **Cinco abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
 tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desglosar la Fase 4 el
 15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. La quinta son las
-lecturas del Hito 18, que esperan confirmación como esperaron las de los hitos anteriores.
+lecturas del Hito 19, que esperan confirmación como esperaron las de los hitos anteriores (las del
+18 ya están confirmadas: decisión 32).
+
+22. **Lecturas aplicadas al implementar el panel, Modo soporte y la 2FA** (Hito 19, 15/09/2026).
+   Al escribir el PRD §32 y la migración 91, §128, §129, §136 y §167 callaban en catorce sitios y en
+   los catorce se eligió lo más defendible, se escribió como regla y se pregunta aquí. Ninguna es un
+   umbral que la maestra sí diera.
+
+   1. **Cómo se hace obligatoria la 2FA** (RN-ADM-02): cerrando la plataforma, no el login. Sin
+      sesión `aal2`, Bosco entra en Restavor como un propietario cualquiera y ninguna función de
+      plataforma responde; la alternativa —no dejarle entrar en nada— castigaría a Restavor por
+      una regla de Cuotly.
+   2. **Un Administrador de Cuotly lee el panel entero** aunque no tenga ningún permiso fino; §167
+      solo reparte tres acciones y leer no es ninguna de ellas.
+   3. **"Soporte" en los doce bloques de §128 es Modo soporte (§129)**, no las incidencias de
+      §131, que son el bloque "incidencias" y llegan con el Hito 21.
+   4. **Los tres niveles de acceso**: `read` (ver sin escribir nada), `admin` (como un administrador
+      sin permisos concedidos) y `owner` (como el propietario **salvo invitar o añadir personas**,
+      que es lo único que dejaría un acceso vivo después de la sesión).
+   5. **La duración**: de 15 a 240 minutos, 60 si no se dice. Un número que la maestra no da.
+   6. **No se abre soporte sobre un espacio del que ya se es miembro**: se entra como quien se es.
+   7. **Una sesión activa por persona y espacio.** Pulsar dos veces devuelve la misma.
+   8. **Caducar no escribe apunte**: en ese instante no ocurrió nada. Abrir y cerrar sí lo dejan,
+      y el cierre lleva la duración.
+   9. **El propietario del espacio ve la identidad de quien entró** y recibe un aviso que no puede
+      desactivar. §129 dice "identidad visible en auditoría" y P7 no aplica: Cuotly no es el
+      equipo de mantenimiento del espacio.
+   10. **Los administradores y trabajadores del espacio NO ven las sesiones ni sus apuntes**: la
+      familia `support` va a `manage_space`, como la composición del equipo.
+   11. **Ingresos es una cifra de libro por mes** —pagos confirmados menos reversiones—, no una
+      factura. Confirmar esto es confirmar el placeholder, no el bloque legal (pendiente 20).
+   12. **En un espacio archivado el soporte también es solo lectura**: el disparador de la 90 mira
+      si hay identidad de persona, y la hay.
+   13. **Los avisos por dispositivo nuevo de §137 no se implementan** hasta decidir qué es "un
+      dispositivo". Los límites por intentos fallidos los aplica Supabase Auth con su configuración.
+   14. **La política de escritura directa sobre `platform_roles` de la Fase 1 se retira**: nombrar
+      y retirar Administradores de Cuotly pasa por función, con auditoría.
 
 21. ~~Lecturas aplicadas al implementar la suscripción de Cuotly~~ — confirmadas las doce el
    15/09/2026 como decisión 32.
