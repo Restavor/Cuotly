@@ -32,6 +32,8 @@ const NAV = [
   { key: "charges", href: "/administracion/cobros", label: es.platformAdmin.nav.charges },
   { key: "users", href: "/administracion/usuarios", label: es.platformAdmin.nav.users },
   { key: "support", href: "/administracion/soporte", label: es.platformAdmin.nav.support },
+  { key: "incidents", href: "/administracion/incidencias", label: es.platformAdmin.nav.incidents },
+  { key: "status", href: "/administracion/estado", label: es.platformAdmin.nav.status },
   { key: "audit", href: "/administracion/auditoria", label: es.platformAdmin.nav.audit },
 ] as const;
 

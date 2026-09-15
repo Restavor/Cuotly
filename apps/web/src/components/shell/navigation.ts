@@ -74,6 +74,8 @@ export function desktopMenu(spaceSlug: string): readonly NavDestination[] {
     D("reports", es.nav.reports, `${base}/informes`),
     D("team", es.nav.team, `${base}/equipo`),
     D("plans", es.nav.plans, `${base}/planes`),
+    // Fase 4 · Hito 21 · el centro de ayuda de §133 (RN-SOP-10).
+    D("help", es.nav.help, `${base}/ayuda`),
     D("agent", es.nav.agent, `${base}/agente`),
     D("settings", es.nav.settings, `${base}/ajustes`),
   ];
@@ -219,6 +221,8 @@ function fullNav(
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
+        // §131 · el restaurante consulta las guías; las incidencias, no.
+        D("help", es.nav.help, mine ? `${mine}/ayuda` : "/"),
       ];
     case "client_daily_menu":
       return [
@@ -230,6 +234,7 @@ function fullNav(
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
+        D("help", es.nav.help, mine ? `${mine}/ayuda` : "/"),
       ];
   }
 }
@@ -284,6 +289,7 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   reports: "reports",
   team: "team",
   plans: "plans",
+  help: "help",
   agent: "agent",
   settings: "settings",
   // Destinos que solo existen en móvil o en el botón Crear.

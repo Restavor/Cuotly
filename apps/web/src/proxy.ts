@@ -57,7 +57,8 @@ export async function proxy(request: NextRequest) {
 }
 
 /** Las rutas que no piden el segundo paso: la que lo pide, y salir. */
-const SIN_SEGUNDO_PASO = ["/cuenta/verificar", "/login", "/signup", "/auth/", "/api/"];
+// `/estado` es pública (§157): se lee sin sesión y también a medio segundo paso.
+const SIN_SEGUNDO_PASO = ["/cuenta/verificar", "/login", "/signup", "/auth/", "/api/", "/estado"];
 
 export const config = {
   matcher: [

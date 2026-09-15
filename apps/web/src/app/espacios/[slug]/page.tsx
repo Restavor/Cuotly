@@ -96,6 +96,16 @@ export default async function SpacePage({
   });
   const onboardingPendiente = pasos === null ? null : pasos.filter((p) => !p.done).length;
 
+  // §20.4, RN-SOP-15 · las incidencias a Cuotly que esperan algo del
+  // espacio: contestar a "necesita información" o dar por buena una
+  // resolución. La RLS de `incidents` decide quién las ve: un trabajador
+  // recibe cero y no ve la tarjeta, sin ninguna regla de permiso aquí.
+  const { count: incidenciasEsperan } = await supabase
+    .from("incidents")
+    .select("id", { count: "exact", head: true })
+    .eq("space_id", space.id)
+    .in("status", ["needs_information", "resolved"]);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <header>
@@ -120,6 +130,15 @@ export default async function SpacePage({
           <p className="text-sm text-text">
             <strong>{es.onboarding.pendingCount(onboardingPendiente)}</strong>{" "}
             <PanelLink href={`${base}/puesta-en-marcha`}>{es.onboarding.title}</PanelLink>
+          </p>
+        </Card>
+      ) : null}
+
+      {incidenciasEsperan !== null && incidenciasEsperan > 0 ? (
+        <Card>
+          <p className="text-sm text-text">
+            <strong>{es.spaceHome.incidentsAwaiting(incidenciasEsperan)}</strong>{" "}
+            <PanelLink href={`${base}/ayuda/incidencias`}>{es.help.incidents.title}</PanelLink>
           </p>
         </Card>
       ) : null}

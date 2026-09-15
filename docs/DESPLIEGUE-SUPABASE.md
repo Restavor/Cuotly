@@ -10,7 +10,14 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 92 migraciones del repositorio están aplicadas.
+**La 93** (`soporte_centro_de_ayuda_y_estado`, Fase 4 · Hito 21), escrita el 15/09/2026 y sin
+aplicar, a la espera de que Bosco lo ordene. Son 80 KB: irá en cinco o seis partes. **No es solo
+aditiva**, y conviene saberlo antes: redefine `has_capability_as()` con una rama más, reescribe los
+tres CHECK de `notifications` (tipos de evento, tipos de entidad y la raíz de los enlaces, que pasa a
+admitir `/administracion/`), redefine `audit_entity_is_visible()`, `platform_panel_summary()` y
+`platform_audit()`, y abre `platform_status_snapshot()` a `anon` a propósito. Nada de lo desplegado
+hoy la lee, así que aplicarla antes que el código no rompe ninguna pantalla. Las otras 92 están
+aplicadas.
 
 ## Aplicadas
 

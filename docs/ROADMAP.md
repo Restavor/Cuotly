@@ -35,7 +35,7 @@ Actualizado el 15/09/2026.
 | 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita y aplicada al proyecto real el 15/09/2026 (en cinco partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, confirmadas por Bosco (decisión 34). Ver la entrada de cierre abajo. |
-| 21 · Soporte, centro de ayuda y página de estado (Fase 4) | No empezado | |
+| 21 · Soporte, centro de ayuda y página de estado (Fase 4) | Servidor, dominio y pantallas | Migración 93, escrita el 15/09/2026. **Sin aplicar todavía al proyecto real**: lo decide Bosco. PRD §34 (RN-SOP-01 a 15) escrito antes del código. Las catorce lecturas, **a la espera de que las confirme** (pendiente 24). Ver la entrada de cierre abajo. |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
 
 **La Fase 3 queda cerrada** con el Hito 16: las 86 migraciones del repositorio están aplicadas al
@@ -4603,6 +4603,64 @@ local, y los 1282 tests unitarios.
 - **Centro de ayuda** (§133) con buscador y guías por rol, una búsqueda sin solución que se convierte
   en incidencia conservando el contexto, y las sugerencias separadas de los errores.
 - **Página de estado** de aplicación, autenticación, archivos, notificaciones e integraciones.
+
+### Hito 21 · Soporte, centro de ayuda y página de estado *(hecho el 15/09/2026; la 93 SIN aplicar al proyecto)*
+- **PRD §34 escrito primero**, como manda el desglose: §131, §132, §133 y §157 convertidos en quince
+  reglas `RN-SOP`. Catorce lecturas donde la maestra calla quedan escritas como regla y anotadas como
+  **pendiente 24** de `docs/DECISIONES.md` para que Bosco las confirme o las cambie. **Ninguna es un
+  plazo**: §131 dice que no hay tiempo contractual de respuesta público, y no se ha puesto ninguno.
+  La familia es `RN-SOP` y no `RN-INC` a propósito: "incidencia" es también la de seguridad de §142 y
+  la de la página de estado de §157.
+- **Migración 93**: la capacidad `contact_cuotly` (propietario y administrador, **nunca Modo
+  soporte** ni en nivel `owner`); `incidents`, su libro de estados, su hilo y sus adjuntos, con el
+  autor y el actor **tapados por privilegio de columna** y un `*_side` visible: el espacio ve
+  "Cuotly", no quién (RN-SOP-07, la misma lectura que RN-PLA-07); los seis estados de §131 con la
+  tabla de transiciones por lado; la **prioridad derivada** del impacto y del plan (RN-DAT-05); el
+  **reloj humano de §132 en SQL**, la misma cuenta que `supportCalendar()` de la Fase 1, con los
+  festivos de Cuotly en una lista de plataforma que **nace vacía**; abrir, contestar, mover y
+  adjuntar con evento, auditoría y aviso; la bandeja de Cuotly; **dieciséis guías** del centro de
+  ayuda, contenido versionado por migración y buscable a texto completo en español; y la **página de
+  estado pública**, que de cada componente dice si se mide o solo se declara.
+- **`platform_status_snapshot()` es la única función del proyecto abierta a `anon`**, a propósito y
+  clasificada en el barrido del Hito 7: sin argumentos, sin datos de ningún espacio, solo recuentos
+  agregados y lo declarado sin quién lo declaró. La suite 44 comprueba las tres cosas.
+- **Lo que no se mide no se finge** (RN-SOP-12): notificaciones e integraciones se miden desde la
+  base; la aplicación, porque responde; autenticación y archivos **no**, y la página lo dice con
+  todas las letras en vez de suponer un "operativo".
+- **En un espacio archivado se habla con soporte** (RN-SOP-09): las cuatro tablas están exentas del
+  disparador de modo lectura, porque RN-SUB-08 lo dice con esas palabras, y sí llevan el de Modo
+  soporte.
+- **Las pantallas**, que este hito sí trae: el centro de ayuda (`/espacios/[slug]/ayuda`, con
+  buscador, guías por rol y el paso a incidencia cuando no hay solución), las incidencias del
+  espacio (`/ayuda/incidencias`, `/nueva`, `/[id]`), el contexto técnico **enseñado antes de
+  enviar** (§131, "informando al usuario"), la bandeja y el detalle del panel
+  (`/administracion/incidencias`), el estado y los festivos (`/administracion/estado`), la página
+  pública (`/estado`), el destino "Ayuda" en el menú para equipo y restaurante, la tarjeta del
+  Inicio del propietario (§20.4) y la descarga de adjuntos por enlace firmado.
+- **Lo que el hito NO trae, y se dice:** ningún tiempo de respuesta (§131), ningún cierre automático,
+  ningún editor de guías, ninguna medición de autenticación ni de archivos, ninguna monitorización
+  automática propia (§157, la del proveedor no se finge) y nada de la app móvil (Hito 22).
+- **La 93 no está aplicada al proyecto real.** Aplicarla es una decisión de Bosco; cuando se aplique
+  hay que regenerar `database.types.ts`: la parte de la 93 va escrita a mano hasta entonces, como
+  pasó con la 92.
+
+**Dos barridos dispararon, como en todos los hitos de esta fase.** El de funciones internas abiertas
+por RPC cazó las tres que delegan el permiso en `incident_side_of_caller()` hasta que esa entró en su
+heurística, y a la instantánea pública hasta que se clasificó con su motivo; el de invariantes de RLS
+exigió justificar las tres tablas de plataforma sin `space_id`. Y uno propio: el CHECK de tipos de
+entidad de los avisos se regeneró desde la 90 en vez de desde la última migración que lo define, y
+perdió `support_session` de la 91; lo cazó la suite 44 al no encontrar los avisos de apertura, y el
+generador pasó a leer **la última definición de todas las migraciones**, que es la misma lección de
+`listas-compartidas.test.ts`.
+
+**Se verifica con:** `supabase/tests/soporte_centro_de_ayuda_y_estado.sql` (la 44ª suite;
+RN-SOP-01 a 15, con Modo soporte intentando abrir en nivel `owner`, el privilegio de columna
+comprobado como el espacio, el reloj movido a fechas fijas y la instantánea leída como `anon`),
+`support.test.ts`, `listas-compartidas.test.ts` (estados, categorías, temas, impactos, componentes,
+gravedades y la tabla de transiciones iguales a los dos lados), `audit.test.ts` y
+`platform-admin.test.ts`. Tres mutaciones detectadas: dejar a Modo soporte abrir incidencias, no
+exigir nunca motivo y leer la bandeja sin ser plataforma. Las 44 suites pasan desde cero sobre las 93
+migraciones en local, y los 1309 tests unitarios.
 
 ### Hito 22 · App móvil (React Native + Expo) y push *(cliente móvil)*
 - Los **once flujos de §176** completos en el teléfono. `apps/mobile` ya existe y compila en CI, pero

@@ -22,6 +22,8 @@ import type { SVGProps } from "react";
  */
 const PATHS = {
   home: "M3 10.5 12 3l9 7.5M5.25 9.75V20a1 1 0 0 0 1 1h3.5v-5.5h4.5V21h3.5a1 1 0 0 0 1-1V9.75",
+  // Fase 4 · Hito 21 · el centro de ayuda (§133): un interrogante en su círculo.
+  help: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9.5 9.5a2.5 2.5 0 1 1 3.6 2.25c-.7.35-1.1.9-1.1 1.6v.4M12 17h.01",
   building:
     "M4 21V5.5A1.5 1.5 0 0 1 5.5 4h6A1.5 1.5 0 0 1 13 5.5V21M13 10h5.5A1.5 1.5 0 0 1 20 11.5V21M3 21h18M7 8h2M7 12h2M7 16h2M16 14h1M16 17.5h1",
   request:
