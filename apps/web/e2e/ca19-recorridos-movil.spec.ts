@@ -69,6 +69,25 @@ const CON_DATOS = process.env.E2E_DATOS === "1";
 /** Un texto irrepetible por ejecución, para reencontrar la solicitud creada. */
 const MARCA = `E2E ${Date.now().toString(36)}`;
 
+/**
+ * Lo que la pantalla dice al guardar una versión de Menú Diario depende
+ * de la hora (RN-MEN-07): el menú nuevo es para mañana y el corte es a las
+ * 21:00 del día anterior en la zona del espacio, que en el sembrado es
+ * Europe/Madrid. Antes de esa hora dice "Versión guardada."; después,
+ * "Versión guardada después de las 21:00: …". Los recorridos esperaban
+ * siempre la primera frase y por eso el CI se ponía rojo en cuanto la
+ * ejecución caía después de las 21:00 de Madrid, sin que nada hubiera
+ * cambiado en el código. Se calcula aquí cuál toca, en vez de aceptar las
+ * dos con una expresión laxa: así el recorrido sigue comprobando que la
+ * marca de después del corte sale cuando debe.
+ */
+function avisoDeVersionGuardada(): string {
+  const hora = Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", hourCycle: "h23" }).format(new Date()),
+  );
+  return hora >= 21 ? "Versión guardada después de las 21:00" : "Versión guardada.";
+}
+
 test.describe("CA-19 · cada flujo principal se completa en un teléfono", () => {
   test.skip(
     !CON_DATOS,
@@ -545,7 +564,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.getByLabel("Segundos").fill("Merluza");
     await page.getByLabel("Precio (euros)").fill("14,50");
     await page.getByRole("button", { name: "Guardar versión" }).click();
-    await expect(page.getByText("Versión guardada.")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(avisoDeVersionGuardada())).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("Contenido · versión 1")).toBeVisible();
 
     // RN-MEN-09: preparado, y ya se puede descargar (RN-MEN-04: sin consumir).
@@ -602,7 +621,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await page.getByLabel("Segundos").fill("Merluza");
       await page.getByLabel("Precio (euros)").fill("14,50");
       await page.getByRole("button", { name: "Guardar versión" }).click();
-      await expect(page.getByText("Versión guardada.")).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText(avisoDeVersionGuardada())).toBeVisible({ timeout: 20_000 });
       await page.getByRole("button", { name: "Marcar como preparado" }).click();
       await expect(page.getByTestId("estado-del-menu")).toHaveText("Preparado", { timeout: 20_000 });
       await page.getByRole("button", { name: "Pedir la publicación" }).click();
