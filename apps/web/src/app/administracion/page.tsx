@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { EmptyReason } from "@/components/ui/EmptyReason";
 import { ErrorState } from "@/components/ui";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { PANEL_BLOCKS, panelBlockHref, type PanelBlock } from "@/core/platform-admin";
@@ -12,8 +11,8 @@ import { panelSummary, type PanelSummary } from "@/services/platform-gateway";
 /**
  * El resumen del panel: los doce bloques de §128 (RN-ADM-04), cada uno con
  * su cifra real calculada por `platform_panel_summary()` y un enlace a la
- * pantalla que lo desarrolla. Las incidencias no tienen cifra ni enlace:
- * son el Hito 21 y se dice (CA-20).
+ * pantalla que lo desarrolla. Desde el Hito 21 las incidencias también:
+ * las que no están cerradas, con las críticas aparte (RN-SOP-15).
  */
 export const dynamic = "force-dynamic";
 
@@ -53,7 +52,7 @@ function cifra(block: PanelBlock, s: PanelSummary): string {
     case "activity":
       return String(s.activity_24h);
     case "incidents":
-      return "";
+      return String(s.incidents ?? 0);
     case "support":
       return String(s.support_sessions_active);
     case "audit":
@@ -71,6 +70,8 @@ function detalle(block: PanelBlock, s: PanelSummary): string | null {
       return `${euros(s.revenue_total_cents)} en total`;
     case "support":
       return `${s.support_sessions_total} en total`;
+    case "incidents":
+      return es.platformAdmin.incidentsCritical(s.incidents_critical ?? 0);
     default:
       return null;
   }
@@ -104,15 +105,6 @@ export default async function AdminOverviewPage() {
           const label = es.platformAdmin.blocks[block];
           const hint = es.platformAdmin.blockHints[block];
           const extra = detalle(block, summary);
-
-          if (href === null) {
-            return (
-              <li key={block} className="rounded-[20px] border border-border bg-surface p-5">
-                <p className="mb-2 text-sm font-semibold text-text">{label}</p>
-                <EmptyReason reason="no_data_yet" title={es.platformAdmin.incidentsPending} />
-              </li>
-            );
-          }
 
           return (
             <li key={block}>

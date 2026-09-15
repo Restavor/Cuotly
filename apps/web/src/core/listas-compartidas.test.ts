@@ -23,6 +23,18 @@ import {
   SPACE_LIFECYCLE_OPERATIONS,
 } from "./space-lifecycle";
 import { MANDATORY_EVENTS, NOTIFICATION_EVENTS } from "./notifications";
+import {
+  HELP_TOPICS,
+  INCIDENT_CATEGORIES,
+  INCIDENT_IMPACTS,
+  INCIDENT_SIDES,
+  INCIDENT_STATES,
+  STATUS_COMPONENTS,
+  STATUS_SEVERITIES,
+  incidentNeedsReason,
+  incidentPriorityFor,
+  incidentTransitionAllowed,
+} from "./support";
 import { SUPPORT_ACCESS_LEVELS, SUPPORT_SESSION_MINUTES } from "./platform-admin";
 import {
   JUDGEMENT_SECTIONS,
@@ -629,5 +641,99 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
         }
       }
     }
+  });
+
+  /*
+   * Migración 93 (Fase 4, Hito 21). Los catálogos de una incidencia, los
+   * ocho temas del centro de ayuda, los cinco componentes de la página de
+   * estado y la tabla de transiciones están a los dos lados: en SQL
+   * deciden qué acepta el servidor, en TypeScript qué pinta la pantalla.
+   */
+  it("los seis estados de una incidencia (RN-SOP-04) son los mismos en el CHECK y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.incidents (", "constraint incidents_impact_shape");
+    const check = /status text not null default 'open' check \(status in \(([^)]*)\)\)/.exec(tabla);
+    expect(check, "no está el CHECK de status").not.toBeNull();
+    expect(entrecomillados(check![1])).toEqual([...INCIDENT_STATES]);
+  });
+
+  it("las categorías de una incidencia (RN-SOP-03) y los temas de ayuda (§133) son los mismos a los dos lados", () => {
+    const incidentes = ultimaDefinicion("create table public.incidents (", "constraint incidents_impact_shape");
+    const cat = /category text not null check \(category in \(([^)]*)\)\)/.exec(incidentes);
+    expect(cat, "no está el CHECK de category").not.toBeNull();
+    expect(entrecomillados(cat![1])).toEqual([...INCIDENT_CATEGORIES]);
+
+    const guias = ultimaDefinicion("create table public.help_articles (", "search tsvector");
+    const topic = /topic text not null check \(topic in \(([^)]*)\)\)/.exec(guias);
+    expect(topic, "no está el CHECK de topic").not.toBeNull();
+    expect(entrecomillados(topic![1])).toEqual([...HELP_TOPICS]);
+
+    const impact = /impact text check \(impact is null or impact in \(([^)]*)\)\)/.exec(incidentes);
+    expect(impact, "no está el CHECK de impact").not.toBeNull();
+    expect(entrecomillados(impact![1])).toEqual([...INCIDENT_IMPACTS]);
+  });
+
+  it("quién mueve cada transición de una incidencia (RN-SOP-04) lo dicen igual los dos lados", () => {
+    const fn = ultimaDefinicion("create or replace function public.incident_transition_allowed", "$$;");
+
+    // La función tiene una rama por actor; dentro, cada `p_from in (...)
+    // and p_to in (...)` o `p_from = 'x' and p_to in (...)` es un bloque
+    // de transiciones permitidas.
+    const permitidasEnSql = new Set<string>();
+    for (const actor of INCIDENT_SIDES) {
+      const desde = fn.indexOf(`when p_actor = '${actor}' then`);
+      expect(desde, `no está la rama de ${actor}`).toBeGreaterThan(-1);
+      const hastaCandidatos = [fn.indexOf("when p_actor", desde + 1), fn.indexOf("else false", desde)].filter(
+        (i) => i > -1,
+      );
+      const rama = fn.slice(desde, Math.min(...hastaCandidatos));
+      for (const bloque of rama.split("or (").slice(0)) {
+        const origenes = /p_from (?:in \(([^)]*)\)|= '([a-z_]+)')/.exec(bloque);
+        const destinos = /p_to (?:in \(([^)]*)\)|= '([a-z_]+)')/.exec(bloque);
+        if (!origenes || !destinos) continue;
+        const from = origenes[1] ? entrecomillados(origenes[1]) : [origenes[2]!];
+        for (const f of from) {
+          const tos = destinos[1] ? entrecomillados(destinos[1]) : [destinos[2]!];
+          for (const t of tos) permitidasEnSql.add(`${f}->${t}:${actor}`);
+        }
+      }
+    }
+    expect(permitidasEnSql.size).toBeGreaterThan(0);
+
+    for (const from of INCIDENT_STATES) {
+      for (const to of INCIDENT_STATES) {
+        for (const actor of INCIDENT_SIDES) {
+          // La función descarta `p_from = p_to` antes de mirar la tabla.
+          const enSql = from !== to && permitidasEnSql.has(`${from}->${to}:${actor}`);
+          expect(incidentTransitionAllowed(from, to, actor), `${from} -> ${to} como ${actor}`).toBe(enSql);
+        }
+      }
+    }
+  });
+
+  it("qué transiciones exigen motivo (RN-SOP-04) y cómo se deriva la prioridad (RN-SOP-05) lo dicen igual los dos lados", () => {
+    const motivo = ultimaDefinicion("create or replace function public.incident_needs_reason", "$$;");
+    expect(motivo).toContain("p_to = 'needs_information' or (p_to = 'closed' and p_from <> 'resolved')");
+    expect(incidentNeedsReason("open", "needs_information")).toBe(true);
+    expect(incidentNeedsReason("in_review", "closed")).toBe(true);
+    expect(incidentNeedsReason("resolved", "closed")).toBe(false);
+
+    const prioridad = ultimaDefinicion("create or replace function public.incident_priority_for", "$$;");
+    expect(prioridad).toContain("when p_impact = 'critical' then 'critical'");
+    expect(prioridad).toContain("when p_plan = 'agency' then 'high'");
+    expect(prioridad).toContain("else 'standard'");
+    expect(incidentPriorityFor("error", "critical", "agency")).toBe("critical");
+    expect(incidentPriorityFor("error", "low", "agency")).toBe("high");
+    expect(incidentPriorityFor("error", "low", "pro")).toBe("standard");
+    expect(incidentPriorityFor("suggestion", null, "agency")).toBeNull();
+  });
+
+  it("los cinco componentes y las tres gravedades de la página de estado (RN-SOP-12/13) son los mismos a los dos lados", () => {
+    const tabla = ultimaDefinicion("create table public.platform_status_events (", "constraint platform_status_events_window");
+    const comp = /component text not null check \(component in \(([^)]*)\)\)/.exec(tabla);
+    const sev = /severity text not null check \(severity in \(([^)]*)\)\)/.exec(tabla);
+    expect(comp, "no está el CHECK de component").not.toBeNull();
+    expect(sev, "no está el CHECK de severity").not.toBeNull();
+    expect(entrecomillados(comp![1])).toEqual([...STATUS_COMPONENTS]);
+    expect(entrecomillados(sev![1])).toEqual([...STATUS_SEVERITIES]);
   });
 });

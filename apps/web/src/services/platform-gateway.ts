@@ -47,7 +47,8 @@ export interface PanelSummary {
   readonly declared_payments_pending: number;
   readonly storage_bytes_total: number;
   readonly activity_24h: number;
-  readonly incidents: null;
+  readonly incidents: number;
+  readonly incidents_critical: number;
   readonly support_sessions_active: number;
   readonly support_sessions_total: number;
   readonly platform_audit_total: number;

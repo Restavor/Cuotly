@@ -694,9 +694,11 @@ begin
      or (v_summary ->> 'support_sessions_active')::integer <> 0 then
     raise exception 'RN-ADM-04 FALLIDO: el resumen del panel no cuenta lo que hay: %', v_summary using errcode = 'assert_failure';
   end if;
-  -- Las incidencias son el Hito 21: nulo, no cero (CA-20).
-  if v_summary ? 'incidents' and v_summary -> 'incidents' <> 'null'::jsonb then
-    raise exception 'RN-ADM-04 FALLIDO: el panel inventa una cifra de incidencias' using errcode = 'assert_failure';
+  -- Las incidencias llegaron con el Hito 21 (migración 93): ya no es nulo,
+  -- es el recuento de las que no están cerradas. Qué cuenta lo comprueba
+  -- la suite 44; aquí, que sea una cifra y no un hueco (CA-20).
+  if jsonb_typeof(v_summary -> 'incidents') <> 'number' or (v_summary ->> 'incidents')::integer < 0 then
+    raise exception 'RN-ADM-04 FALLIDO: el bloque de incidencias del panel no trae una cifra: %', v_summary -> 'incidents' using errcode = 'assert_failure';
   end if;
 
   select * into v_row from public.platform_list_spaces() where slug = 'espacio-soporte-test';

@@ -376,6 +376,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/onboarding_y_ciclo_de_vida_del_espacio.sql
 
+      - name: "Hito 21 — Verificar el soporte de Cuotly, el centro de ayuda y la página de estado (RN-SOP-01 a 15, §131, §132, §133, §157)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/soporte_centro_de_ayuda_y_estado.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

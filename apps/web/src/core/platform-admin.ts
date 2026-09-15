@@ -46,10 +46,9 @@ export type PanelBlock = (typeof PANEL_BLOCKS)[number];
  * A qué pantalla del panel lleva cada bloque. Varios comparten pantalla a
  * propósito: suscripciones, pruebas activas, impagos y almacenamiento son
  * la misma fila de espacio mirada desde cuatro sitios (RN-ADM-04).
- * `incidents` no lleva a ninguna: es el Hito 21 y el bloque lo dice con su
- * motivo, no con una ruta que acabe en 404.
+ * `incidents` lleva a la bandeja desde el Hito 21 (RN-SOP-15).
  */
-export function panelBlockHref(block: PanelBlock): string | null {
+export function panelBlockHref(block: PanelBlock): string {
   switch (block) {
     case "users":
       return "/administracion/usuarios";
@@ -69,7 +68,8 @@ export function panelBlockHref(block: PanelBlock): string | null {
     case "support":
       return "/administracion/soporte";
     case "incidents":
-      return null;
+      // Hito 21 · la bandeja de incidencias (RN-SOP-15).
+      return "/administracion/incidencias";
   }
 }
 

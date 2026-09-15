@@ -386,7 +386,12 @@ begin
          -- **exportar** y contactar con soporte". Con el disparador
          -- puesto, el propietario no podría llevarse sus datos justo
          -- cuando más falta le hace.
-         'space_exports'
+         'space_exports',
+         -- Hito 21 (RN-SOP-09) · esta misma regla dice "contactar con
+         -- soporte". Con el disparador puesto, un espacio archivado no
+         -- podría abrir la incidencia que dice "no puedo entrar". Las cuatro
+         -- sí llevan el de Modo soporte (RN-SOP-01), y la suite 44 lo exige.
+         'incidents', 'incident_events', 'incident_messages', 'incident_attachments'
        ) then
       v_sin := v_sin || ' ' || v_t.tabla;
     end if;

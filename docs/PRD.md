@@ -1653,3 +1653,134 @@ Lo que este apartado **no** trae, dicho en claro: **no** borra nada a los 30 dí
 cuenta (pendiente 20, bloque legal), **no** valida ni numera los datos fiscales que guarda (§170.1,
 como en RN-PLA-01), **no** trae las incidencias de §131 ni el centro de ayuda de §133 (Hito 21),
 **no** toca la app móvil (Hito 22) y **no** añade ninguna sección de Ajustes que §123 no nombre.
+
+
+## 34. Soporte de Cuotly, centro de ayuda y página de estado — Fase 4 (RN-SOP)
+
+Los cuatro apartados anteriores construyen la plataforma y el espacio; este es **el canal entre los
+dos cuando algo no va**: las incidencias que un espacio le abre a Cuotly (§131), el reloj humano con
+el que Cuotly las atiende (§132), el centro de ayuda que evita muchas de ellas y la página de estado
+que dice si el problema es de Cuotly o no (§133, §157). No confundir con el soporte **al
+restaurante** de §130 —"Contactar con el equipo de mantenimiento"—, que es la conversación de una
+solicitud y ya existe desde el Hito 7, ni con **Modo soporte** de §129, que es Cuotly entrando en un
+espacio (§32).
+
+Sale de §131 (soporte de Cuotly), §132 (horario humano), §133 (centro de ayuda y estado), §157 (la
+página de estado pública y la alerta crítica), §128 (el bloque "incidencias" del panel, que §32 dejó
+vacío con su motivo) y §20.4 (el Inicio del propietario nombra "incidencias"). Donde la maestra
+calla, las lecturas quedan escritas como regla y anotadas como **pendiente 24** de
+`docs/DECISIONES.md`, **a la espera de que Bosco las confirme**, como estuvieron las de los hitos 18
+a 20 antes de las decisiones 32, 33 y 34. Ninguna inventa un umbral ni un plazo: §131 dice con todas
+las letras que **"no existe inicialmente un tiempo contractual de respuesta público"**, y aquí no se
+promete ninguno.
+
+La familia es **`RN-SOP`** (soporte). No `RN-INC`: "incidencia" aquí es la de §131, y la maestra
+llama también incidencia a la de seguridad (§142) y a la de la página de estado (§157); una letra
+que las mezclara sería el primer `grep` equivocado.
+
+- **RN-SOP-01**: **una incidencia de Cuotly la abre el propietario o un administrador del espacio**
+  (§131), y nadie más: trabajadores y clientes **consultan artículos** pero no contactan con Bosco.
+  Es una **capacidad nueva**, `contact_cuotly`, propietario y administrador, y **Modo soporte no la
+  tiene ni en nivel `owner`** (lectura): abrir una incidencia en nombre de un espacio ajeno es
+  hablar con Cuotly haciéndose pasar por el espacio, y RN-ADM-07 ya dice que soporte no deja nada
+  vivo en nombre de otro. El espacio ve **todas sus incidencias**, las abriera quien las abriera de
+  su equipo (lectura).
+- **RN-SOP-02**: **dos tipos y separados** (§133, "sugerencias de funciones separadas de errores"):
+  `error` y `suggestion`. Lectura: una sugerencia **es una incidencia de tipo sugerencia**, con los
+  mismos seis estados y el mismo hilo, y **sin prioridad ni tiempo de atención**: §131 habla de
+  prioridad y de críticas para lo que está roto, no para lo que se pide. Se listan aparte a los dos
+  lados.
+- **RN-SOP-03**: **los siete campos de §131**: **categoría** (lectura: **los ocho temas de §133**
+  —primeros pasos, solicitudes, trabajos, menús, pagos, usuarios, integraciones y seguridad— más
+  "otra", para que la incidencia y la guía hablen el mismo idioma), **descripción**, **capturas** y
+  **archivos** (adjuntos, RN-SOP-08), **dispositivo** y **versión** (texto libre), e **impacto**
+  (lectura: **cuatro niveles**, bajo · medio · alto · **crítico**, porque §131 solo nombra el crítico
+  y sin escalón por debajo "impacto" sería una casilla sí/no). Y lo que **"Cuotly puede recoger
+  informando al usuario"**: navegador, sistema, pantalla y error no sensible se guardan como
+  **contexto técnico** aparte, la pantalla dice **qué se va a enviar antes de enviarlo**, y nunca va
+  dentro nada que no sea eso.
+- **RN-SOP-04**: **los seis estados de §131** —abierta, en revisión, necesita información, en
+  proceso, resuelta, cerrada— y **quién mueve cada transición** (lectura, escrita entera): Cuotly
+  lleva una incidencia de abierta a en revisión, a necesita información, a en proceso, a resuelta o
+  a cerrada; **necesita información devuelve la pelota al espacio**, que al contestar la deja **en
+  revisión**; de **resuelta** el espacio la **cierra** (conforme) o la **reabre** a en revisión
+  (lectura: "resuelta" lo dice Cuotly y "cerrada" lo confirma el espacio, o Cuotly pasado un tiempo
+  que este apartado **no fija**: sin barrido que cierre solo, porque §131 no da plazo); **cerrada es
+  final**. Exigen **motivo** necesita información y cerrar sin resolver (lectura, como RN-PLA-06).
+  Una incidencia **no se borra**: se cierra.
+- **RN-SOP-05**: **la prioridad se deriva, no se guarda** (RN-DAT-05): **crítica** si el impacto es
+  crítico, "independientemente del plan"; si no, **alta** en Agency y **estándar** en Pro (§131).
+  Lectura: un espacio **sin plan de Cuotly** —Restavor y el de demostración— es **estándar**. Y como
+  §131 dice que no hay tiempo contractual de respuesta, **no se enseña ningún plazo ni promesa**: la
+  prioridad ordena la cola de Cuotly y nada más.
+- **RN-SOP-06**: **el horario humano de §132 es el tercer reloj** (RN-CLK-08): Europa/Madrid,
+  lunes a viernes 14:00–22:00, sábados y domingos 09:00–14:30 y 16:30–21:30, festivos con horario de
+  fin de semana. Las incidencias **se envían a cualquier hora** y el **tiempo de atención** —de la
+  apertura a la primera respuesta de Cuotly, y a la resolución— **solo cuenta dentro de las
+  franjas**. Es la **misma cuenta** que `supportCalendar()` de `src/core/business-clock.ts`, escrita
+  también en SQL para que la cifra que ve Cuotly salga del servidor. **No toca el reloj
+  contractual** (§132, RN-CLK-08). Lectura: **los festivos de este reloj son los de Cuotly**, no los
+  de cada espacio —§132 es el horario de Bosco—, y viven en una lista de plataforma que **nace
+  vacía**: hasta que Bosco la rellene no hay festivos, y la página lo dice en vez de suponer un
+  calendario.
+- **RN-SOP-07**: **atienden Bosco y los Administradores de Cuotly** (lectura: sin permiso fino
+  —§167 reparte tres y atender incidencias no es ninguno— y con la 2FA que RN-ADM-02 exige a todo
+  lo de plataforma). El espacio ve **"Cuotly"** y no la identidad de quien contestó (lectura, la
+  misma de RN-PLA-07: quién revisó es organización interna de la plataforma), y eso se sostiene con
+  **privilegio de columna** sobre el autor de los mensajes y el actor de los cambios, con un
+  `author_side` que sí se ve para distinguir "lo escribí yo" de "lo escribió Cuotly". Cuotly sí ve
+  quién abrió y quién escribió por el espacio.
+- **RN-SOP-08**: el **hilo** de una incidencia son **mensajes inmutables** (no se editan ni se
+  borran, como los de §26) y **adjuntos** en el **mismo bucket privado** que los archivos, con
+  **enlace firmado y caducable** (RN-ARC-08), **25 MB** por archivo y los mismos formatos que
+  RN-ARC-06. No van a `files`: esa tabla exige establecimiento y una incidencia es del espacio
+  (lectura, la misma que el logotipo en RN-CIC-02). Los bytes se suben **después** de que el
+  servidor acepte la fila, nunca antes.
+- **RN-SOP-09**: en un **espacio archivado** —por prueba, por impago o por su dueño— **se pueden
+  abrir incidencias y escribir en ellas**: RN-SUB-08 dice que en ese modo "se puede pagar, exportar y
+  **contactar con soporte**". Las tres tablas quedan **exentas del disparador de modo lectura** con
+  ese motivo, y **no** del de Modo soporte (RN-SOP-01).
+- **RN-SOP-10**: el **centro de ayuda** (§133) es **buscador y guías por rol**, sobre los **ocho
+  temas** de §133. Las guías son **contenido de Cuotly**, en español, **versionado por migración**
+  y **sin editor en pantalla** (lectura: escribirlas es de Bosco y cambiarlas deja rastro en el
+  repositorio, que es donde se revisan; un editor sin revisión sería la clase de puerta que §140
+  pide confirmar). Las **ve cualquiera con sesión** —equipo y restaurante—, cada uno las de **su
+  rol** primero. La búsqueda es **de texto completo en español, en el servidor**, y no devuelve
+  nada que no sea una guía publicada.
+- **RN-SOP-11**: **una búsqueda sin solución se convierte en incidencia conservando el contexto**
+  (§133): la incidencia nace con **la consulta que no encontró respuesta** guardada, y quien puede
+  abrirla (RN-SOP-01) llega al formulario con ese contexto ya puesto. A quien **no** puede abrirla
+  —trabajador, cliente— se le dice **con quién hablar** de su espacio (lectura), no se le esconde
+  el botón sin más.
+- **RN-SOP-12**: la **página de estado es pública** (§157) y tiene los **cinco componentes de
+  §133**: aplicación, autenticación, archivos, notificaciones e integraciones. El estado de cada uno
+  sale de **dos fuentes, y la página dice cuál**: lo que Cuotly **declara** (un evento de estado con
+  componente, gravedad —degradado, caída, mantenimiento—, inicio y fin) y lo que **se mide**
+  cuando se puede medir. Lectura de qué se mide: **notificaciones**, por las entregas de correo
+  muertas o atascadas en las últimas 24 h; **integraciones**, por la proporción de conexiones en
+  error con fallos consecutivos; **aplicación**, porque la propia página responde. **Autenticación y
+  archivos no se miden** desde la base y la página lo dice: "sin medición automática, solo lo que
+  Cuotly declare". **No se inventa un "todo operativo"** que no se haya comprobado (CLAUDE.md, P6).
+  El **historial** son los eventos declarados ya resueltos. **Ni un nombre ni una cifra de ningún
+  espacio** sale por ahí: solo recuentos agregados de la plataforma.
+- **RN-SOP-13**: **declarar y resolver un evento de estado es de la plataforma** (RN-SOP-07), con
+  apunte de auditoría sin espacio (`platform_status.*`), como los de §32. La **alerta crítica** de
+  §157 —"a Bosco y Administradores de Cuotly"— es el aviso `incident_opened` cuando el impacto es
+  crítico; la monitorización "automática y permanente" de §157 que dispare sola es del proveedor de
+  infraestructura y **no se finge aquí**: queda dicho.
+- **RN-SOP-14**: **todo cambio deja rastro**: abrir, cambiar de estado, contestar y adjuntar escriben
+  en el **libro de eventos** de la incidencia y en `audit_log` (familia `incident`, **decidida por
+  la fila**: quien ve la incidencia ve sus apuntes, sea del espacio o de Cuotly). Abrir es una
+  **operación con clave de idempotencia**: pulsar dos veces no abre dos.
+- **RN-SOP-15**: **avisos**: `incident_opened` a Bosco y a los Administradores de Cuotly (lectura:
+  es su bandeja; crítica o no), `incident_updated` a quien abrió cuando Cuotly la mueve de estado, y
+  `incident_replied` al otro lado cuando alguien escribe. **Ninguno es obligatorio** (lectura): no
+  son seguridad ni pérdida de acceso (RN-NOT-03). El **bloque "incidencias" del panel** (RN-ADM-04)
+  deja de estar vacío y enseña las abiertas por prioridad; el **Inicio del propietario** (§20.4)
+  enseña las de su espacio que esperan algo de él.
+
+Lo que este apartado **no** trae, dicho en claro: **no** fija ningún tiempo de respuesta ni lo
+enseña (§131), **no** cierra incidencias solas, **no** trae un editor de guías, **no** mide la
+autenticación ni los archivos, **no** tiene monitorización automática propia (§157, la del
+proveedor no se finge), **no** trae el chat privado cliente–trabajador (§171, fuera de alcance) y
+**no** toca la app móvil (Hito 22).

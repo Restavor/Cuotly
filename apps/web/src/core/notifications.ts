@@ -65,6 +65,12 @@ export const NOTIFICATION_EVENTS = [
   // dueño lo archiva (RN-CIC-15). Los dos, obligatorios.
   "space_ownership_transferred",
   "space_archived_by_owner",
+  // Migración 93 (Fase 4, Hito 21) · una incidencia a Cuotly abierta,
+  // movida de estado o contestada (RN-SOP-15). Ninguno obligatorio: no
+  // son seguridad ni pérdida de acceso.
+  "incident_opened",
+  "incident_updated",
+  "incident_replied",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -212,7 +218,8 @@ export type DeepLinkEntity =
   | "absence"
   | "menu"
   | "quote"
-  | "cuotly_charge";
+  | "cuotly_charge"
+  | "incident";
 
 export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId: string): string {
   switch (entity) {
@@ -235,6 +242,10 @@ export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId:
       // La suscripción de Cuotly del espacio, en sus ajustes (Hito 18). La
       // pantalla llega con el panel del Hito 19.
       return `/espacios/${spaceSlug}/ajustes/suscripcion`;
+    case "incident":
+      // La incidencia en el centro de ayuda del espacio (Hito 21). A la
+      // plataforma le llega con su propio enlace, al panel.
+      return `/espacios/${spaceSlug}/ayuda/incidencias/${entityId}`;
   }
 }
 

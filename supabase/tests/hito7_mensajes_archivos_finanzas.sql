@@ -2610,7 +2610,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2728,6 +2728,20 @@ begin
         -- `space_requests`, así que no puede perder el EXECUTE de
         -- `authenticated` (CLAUDE.md).
         'is_platform_approver',
+        -- Migración 93 (Fase 4, Hito 21). `incident_side_of_caller()` es LA
+        -- comprobación de RN-SOP-01/07 —de qué lado habla quien llama sobre
+        -- esta incidencia, o excepción— y está cerrada por RPC (no se
+        -- barre); su NOMBRE entra en la heurística de arriba para que las
+        -- tres públicas que la llaman (`set_incident_status`,
+        -- `post_incident_message`, `register_incident_attachment`) cuenten
+        -- como comprobadas. Misma familia que `assert_can_manage_integrations`.
+        -- Migración 93 (Fase 4, Hito 21). `platform_status_snapshot()` es
+        -- la página de estado PÚBLICA de §157: abierta a `anon` a propósito
+        -- y la única del proyecto que lo está. No recibe argumentos, no lee
+        -- nada de ningún espacio y devuelve solo recuentos agregados de la
+        -- plataforma y lo declarado, sin quién lo declaró. La suite 44
+        -- comprueba las tres cosas (RN-SOP-12).
+        'platform_status_snapshot',
         -- Migración 90 (Fase 4, Hito 18). `is_platform_subscription_manager()`
         -- es LA comprobación de "gestionar suscripciones" de §167 —Bosco, o
         -- un Administrador de Cuotly con el permiso— y por eso no puede
@@ -3607,7 +3621,13 @@ begin
          'spaces', 'profiles', 'platform_roles', 'space_memberships',
          'group_memberships', 'establishment_memberships',
          'establishment_permissions', 'space_sequences', 'audit_log',
-         'space_requests', 'space_request_events'
+         'space_requests', 'space_request_events',
+         -- Migración 93 (Fase 4, Hito 21): de plataforma. Los festivos del
+         -- horario humano de Cuotly, las guías del centro de ayuda y lo que
+         -- Cuotly declara sobre su propio estado no pertenecen a ningún
+         -- espacio (RN-SOP-06, RN-SOP-10, RN-SOP-13). Las tres llevan RLS
+         -- con política, que es lo que el barrido sigue exigiendo.
+         'platform_holidays', 'help_articles', 'platform_status_events'
        ) then
       v_sin_space := v_sin_space || ' ' || v_t.tabla;
     end if;

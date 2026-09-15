@@ -1,6 +1,8 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
 // (generate_typescript_types, 15/09/2026), con las 92 migraciones del
-// repositorio aplicadas.
+// repositorio aplicadas. Las siete tablas y las veintidós funciones de la
+// 93 están escritas a mano con el mismo formato, hasta que se aplique y se
+// regenere contra el proyecto, como se hizo con la 92.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
 // aplica una migración nueva.
@@ -1979,6 +1981,45 @@ export type Database = {
           },
         ]
       }
+      help_articles: {
+        Row: {
+          audience: string[]
+          body: string
+          id: string
+          published: boolean
+          search: unknown | null
+          slug: string
+          title: string
+          topic: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          audience: string[]
+          body: string
+          id?: string
+          published?: boolean
+          search?: unknown | null
+          slug: string
+          title: string
+          topic: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          audience?: string[]
+          body?: string
+          id?: string
+          published?: boolean
+          search?: unknown | null
+          slug?: string
+          title?: string
+          topic?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       holidays: {
         Row: {
           created_at: string
@@ -2014,6 +2055,268 @@ export type Database = {
           },
           {
             foreignKeyName: "holidays_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_attachments: {
+        Row: {
+          content_type: string
+          created_at: string
+          id: string
+          incident_id: string
+          message_id: string | null
+          name: string
+          size_bytes: number
+          space_id: string
+          storage_path: string
+          uploaded_by: string
+          uploader_side: string
+        }
+        Insert: {
+          content_type: string
+          created_at?: string
+          id?: string
+          incident_id: string
+          message_id?: string | null
+          name: string
+          size_bytes: number
+          space_id: string
+          storage_path: string
+          uploaded_by: string
+          uploader_side: string
+        }
+        Update: {
+          content_type?: string
+          created_at?: string
+          id?: string
+          incident_id?: string
+          message_id?: string | null
+          name?: string
+          size_bytes?: number
+          space_id?: string
+          storage_path?: string
+          uploaded_by?: string
+          uploader_side?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_attachments_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "incident_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_attachments_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_attachments_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_events: {
+        Row: {
+          actor_id: string
+          actor_side: string
+          from_status: string | null
+          id: string
+          incident_id: string
+          occurred_at: string
+          reason: string | null
+          space_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id: string
+          actor_side: string
+          from_status?: string | null
+          id?: string
+          incident_id: string
+          occurred_at?: string
+          reason?: string | null
+          space_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string
+          actor_side?: string
+          from_status?: string | null
+          id?: string
+          incident_id?: string
+          occurred_at?: string
+          reason?: string | null
+          space_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_events_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_events_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incident_messages: {
+        Row: {
+          author_id: string
+          author_side: string
+          body: string
+          created_at: string
+          id: string
+          incident_id: string
+          space_id: string
+        }
+        Insert: {
+          author_id: string
+          author_side: string
+          body: string
+          created_at?: string
+          id?: string
+          incident_id: string
+          space_id: string
+        }
+        Update: {
+          author_id?: string
+          author_side?: string
+          body?: string
+          created_at?: string
+          id?: string
+          incident_id?: string
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_messages_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incident_messages_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          app_version: string | null
+          category: string
+          client_context: Json
+          closed_at: string | null
+          description: string
+          device: string | null
+          first_platform_response_at: string | null
+          help_query: string | null
+          id: string
+          idempotency_key: string | null
+          impact: string | null
+          kind: string
+          last_activity_at: string
+          opened_at: string
+          opened_by: string
+          resolved_at: string | null
+          space_id: string
+          status: string
+          status_reason: string | null
+        }
+        Insert: {
+          app_version?: string | null
+          category: string
+          client_context?: Json
+          closed_at?: string | null
+          description: string
+          device?: string | null
+          first_platform_response_at?: string | null
+          help_query?: string | null
+          id?: string
+          idempotency_key?: string | null
+          impact?: string | null
+          kind: string
+          last_activity_at?: string
+          opened_at?: string
+          opened_by: string
+          resolved_at?: string | null
+          space_id: string
+          status?: string
+          status_reason?: string | null
+        }
+        Update: {
+          app_version?: string | null
+          category?: string
+          client_context?: Json
+          closed_at?: string | null
+          description?: string
+          device?: string | null
+          first_platform_response_at?: string | null
+          help_query?: string | null
+          id?: string
+          idempotency_key?: string | null
+          impact?: string | null
+          kind?: string
+          last_activity_at?: string
+          opened_at?: string
+          opened_by?: string
+          resolved_at?: string | null
+          space_id?: string
+          status?: string
+          status_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_opened_by_fkey"
+            columns: ["opened_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_space_id_fkey"
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "spaces"
@@ -4228,6 +4531,54 @@ export type Database = {
           },
         ]
       }
+      platform_holidays: {
+        Row: {
+          created_at: string
+          created_by: string
+          holiday_date: string
+          id: string
+          name: string
+          removal_reason: string | null
+          removed_at: string | null
+          removed_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          holiday_date: string
+          id?: string
+          name: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          holiday_date?: string
+          id?: string
+          name?: string
+          removal_reason?: string | null
+          removed_at?: string | null
+          removed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_holidays_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_holidays_removed_by_fkey"
+            columns: ["removed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_roles: {
         Row: {
           can_approve_spaces: boolean
@@ -4258,6 +4609,63 @@ export type Database = {
             foreignKeyName: "platform_roles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_status_events: {
+        Row: {
+          body: string | null
+          component: string
+          created_at: string
+          created_by: string
+          id: string
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          started_at: string
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          component: string
+          created_at?: string
+          created_by: string
+          id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          started_at?: string
+          title: string
+        }
+        Update: {
+          body?: string | null
+          component?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          started_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_status_events_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_status_events_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -6887,6 +7295,7 @@ export type Database = {
         Args: { p_body: string; p_kind: string; p_opportunity_id: string }
         Returns: string
       }
+      add_platform_holiday: { Args: { p_date: string; p_name: string }; Returns: string }
       apply_financial_hold_on_jobs: {
         Args: { p_establishment_id: string }
         Returns: number
@@ -7507,6 +7916,16 @@ export type Database = {
         }
         Returns: string
       }
+      declare_platform_status_event: {
+        Args: {
+          p_body?: string
+          p_component: string
+          p_severity: string
+          p_started_at?: string
+          p_title: string
+        }
+        Returns: string
+      }
       decline_request: {
         Args: { p_reason?: string; p_request_id: string }
         Returns: undefined
@@ -7826,6 +8245,24 @@ export type Database = {
       }
       has_capability_as: {
         Args: { p_capability: string; p_space_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      incident_attention: {
+        Args: { p_incident_id: string }
+        Returns: {
+          first_response_minutes: number
+          resolution_minutes: number
+        }[]
+      }
+      incident_needs_reason: { Args: { p_from: string; p_to: string }; Returns: boolean }
+      incident_priority: { Args: { p_incident_id: string }; Returns: string }
+      incident_priority_for: {
+        Args: { p_impact: string; p_kind: string; p_plan: string }
+        Returns: string
+      }
+      incident_side_of_caller: { Args: { p_incident_id: string }; Returns: string }
+      incident_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string }
         Returns: boolean
       }
       integration_auth_kind: { Args: { p_provider: string }; Returns: string }
@@ -8174,6 +8611,10 @@ export type Database = {
         Args: { p_establishment_id: string; p_event_type: string }
         Returns: number
       }
+      notify_incident_opener: {
+        Args: { p_dedupe_key: string; p_event_type: string; p_incident_id: string }
+        Returns: number
+      }
       notify_integration_event: {
         Args: {
           p_event_type: string
@@ -8192,6 +8633,10 @@ export type Database = {
       }
       notify_menu_event: {
         Args: { p_event_type: string; p_menu_id: string }
+        Returns: number
+      }
+      notify_platform_incident: {
+        Args: { p_dedupe_key: string; p_event_type: string; p_incident_id: string }
         Returns: number
       }
       notify_quote_event: {
@@ -8234,6 +8679,21 @@ export type Database = {
           ordinal: number
           step: string
         }[]
+      }
+      open_incident: {
+        Args: {
+          p_app_version?: string
+          p_category: string
+          p_client_context?: Json
+          p_description: string
+          p_device?: string
+          p_help_query?: string
+          p_idempotency_key?: string
+          p_impact?: string
+          p_kind: string
+          p_space_id: string
+        }
+        Returns: string
       }
       open_menu_team_error_correction: {
         Args: { p_description: string; p_menu_id: string }
@@ -8316,6 +8776,18 @@ export type Database = {
           support_session_id: string
         }[]
       }
+      platform_incident_messages: {
+        Args: { p_incident_id: string }
+        Returns: {
+          author_email: string
+          author_id: string
+          author_name: string
+          author_side: string
+          body: string
+          created_at: string
+          id: string
+        }[]
+      }
       platform_list_charges: {
         Args: { p_open_only?: boolean }
         Returns: {
@@ -8333,6 +8805,39 @@ export type Database = {
           space_slug: string
           status: string
           total_cents: number
+        }[]
+      }
+      platform_list_incidents: {
+        Args: { p_incident_id?: string; p_open_only?: boolean }
+        Returns: {
+          app_version: string
+          attachment_count: number
+          category: string
+          client_context: Json
+          closed_at: string
+          description: string
+          device: string
+          first_platform_response_at: string
+          first_response_minutes: number
+          help_query: string
+          id: string
+          impact: string
+          kind: string
+          last_activity_at: string
+          message_count: number
+          opened_at: string
+          opened_by: string
+          opened_by_email: string
+          opened_by_name: string
+          priority: string
+          resolution_minutes: number
+          resolved_at: string
+          space_id: string
+          space_name: string
+          space_plan: string
+          space_slug: string
+          status: string
+          status_reason: string
         }[]
       }
       platform_list_pending_payments: {
@@ -8425,6 +8930,8 @@ export type Database = {
           payments: number
         }[]
       }
+      platform_status_snapshot: { Args: never; Returns: Json }
+      post_incident_message: { Args: { p_body: string; p_incident_id: string }; Returns: string }
       post_message: {
         Args: {
           p_body: string
@@ -8556,6 +9063,17 @@ export type Database = {
           p_storage_path: string
           p_variant?: string
           p_visibility?: string
+        }
+        Returns: string
+      }
+      register_incident_attachment: {
+        Args: {
+          p_content_type: string
+          p_incident_id: string
+          p_message_id?: string
+          p_name: string
+          p_size_bytes: number
+          p_storage_path: string
         }
         Returns: string
       }
@@ -8733,6 +9251,7 @@ export type Database = {
         Args: { p_ends_at: string; p_supervision_id: string }
         Returns: undefined
       }
+      resolve_platform_status_event: { Args: { p_id: string; p_note?: string }; Returns: undefined }
       restore_space_by_owner: {
         Args: {
           p_idempotency_key?: string
@@ -8745,6 +9264,7 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: number
       }
+      retire_platform_holiday: { Args: { p_id: string; p_reason: string }; Returns: undefined }
       reverse_cuotly_payment: {
         Args: { p_payment_id: string; p_reason: string }
         Returns: undefined
@@ -8828,6 +9348,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      search_help_articles: {
+        Args: { p_limit?: number; p_query: string; p_role?: string }
+        Returns: {
+          audience: string[]
+          excerpt: string
+          for_my_role: boolean
+          id: string
+          rank: number
+          slug: string
+          title: string
+          topic: string
+        }[]
+      }
       send_quote: { Args: { p_quote_id: string }; Returns: undefined }
       send_report: { Args: { p_report_id: string }; Returns: number }
       service_monthly_price: {
@@ -8895,6 +9428,10 @@ export type Database = {
           p_reason?: string
           p_status: string
         }
+        Returns: undefined
+      }
+      set_incident_status: {
+        Args: { p_incident_id: string; p_reason?: string; p_status: string }
         Returns: undefined
       }
       set_job_required_specialty: {
@@ -9121,6 +9658,8 @@ export type Database = {
         }[]
       }
       support_access_level: { Args: { p_space_id: string }; Returns: string }
+      support_is_open_at: { Args: { p_at?: string }; Returns: boolean }
+      support_minutes_between: { Args: { p_from: string; p_to: string }; Returns: number }
       support_session_actions: {
         Args: { p_session_id: string }
         Returns: {

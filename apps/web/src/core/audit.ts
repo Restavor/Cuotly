@@ -123,6 +123,16 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // apunte es quién ve la fila de `space_exports`, y eso ya lo decide su
   // política.
   export: null,
+  // Fase 4, Hito 21 · las incidencias a Cuotly (migración 93). La decide
+  // la FILA (RN-SOP-14): quien ve la incidencia ve sus apuntes, sea el
+  // espacio que la abrió o Cuotly, que atiende. Una capacidad fija
+  // dejaría fuera a uno de los dos lados.
+  incident: null,
+  // Fase 4, Hito 21 · los festivos de Cuotly y lo que declara sobre su
+  // estado (migración 93). Sin espacio, como `platform`: los ven Bosco y
+  // quien hizo la acción por la tercera rama de `audit_log_select`.
+  platform_holiday: null,
+  platform_status: null,
   // Los menús de Menú Diario (migración 77): operación, como los trabajos.
   menu: null,
   // Los presupuestos (§84, migración 80): los decide la fila, como las
@@ -150,6 +160,9 @@ export const AUDIT_ROW_VISIBLE_ENTITIES = [
   // contra `space_exports`, cuya política ya reparte las dos audiencias
   // de §141.
   "export",
+  // Fase 4, Hito 21 · `audit_entity_is_visible()` resuelve `incident`
+  // contra `incidents`, cuya política reparte los dos lados (RN-SOP-14).
+  "incident",
 ] as const;
 
 /**
@@ -190,6 +203,11 @@ export const AUDIT_ACTIONS = [
   "group_access.granted",
   "group_access.revoked",
   "holiday.created",
+  // Fase 4, Hito 21 · las incidencias a Cuotly (migración 93).
+  "incident.attachment_added",
+  "incident.opened",
+  "incident.replied",
+  "incident.status_changed",
   "integration.check_requested",
   "integration.checked",
   "integration.connected",
@@ -255,6 +273,11 @@ export const AUDIT_ACTIONS = [
   "platform.admin_granted",
   "platform.admin_revoked",
   "platform.admin_updated",
+  // Fase 4, Hito 21 · festivos y estado de la plataforma (migración 93).
+  "platform_holiday.added",
+  "platform_holiday.retired",
+  "platform_status.declared",
+  "platform_status.resolved",
   "plan.conditions_published",
   // Fase 2, Hito 12 · presupuestos adicionales (§84, migración 80).
   "quote.accepted",

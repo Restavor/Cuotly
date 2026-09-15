@@ -65,15 +65,11 @@ describe("los doce bloques del panel (RN-ADM-04, §128)", () => {
     ]);
   });
 
-  it("RN-ADM-04 · todos llevan a una pantalla del panel salvo las incidencias, que son el Hito 21", () => {
+  it("RN-ADM-04 · los doce llevan a una pantalla del panel; las incidencias, a su bandeja desde el Hito 21 (RN-SOP-15)", () => {
     for (const block of PANEL_BLOCKS) {
-      const href = panelBlockHref(block);
-      if (block === "incidents") {
-        expect(href).toBeNull();
-      } else {
-        expect(href, block).toMatch(/^\/administracion\//);
-      }
+      expect(panelBlockHref(block), block).toMatch(/^\/administracion\//);
     }
+    expect(panelBlockHref("incidents")).toBe("/administracion/incidencias");
   });
 });
 

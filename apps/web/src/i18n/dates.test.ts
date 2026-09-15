@@ -43,6 +43,10 @@ const PERMITIDOS = new Set([
   "core/finance.ts",
   "core/home.ts",
   "core/menu-render.ts",
+  // §132 es el horario humano de Cuotly, en Europa/Madrid: la zona es de
+  // la plataforma y no de ningún espacio, así que aquí sí va escrita
+  // (RN-SOP-06). Ninguna pantalla la copia: le llega por el servidor.
+  "core/support.ts",
   "components/home/ActivityFeed.tsx",
   "components/establishment/integrations-load.ts",
 ]);
@@ -100,6 +104,11 @@ describe("ninguna pantalla se inventa la zona horaria", () => {
     for (const ruta of archivos(RAIZ)) {
       const relativa = ruta.slice(RAIZ.length + 1).replaceAll("\\", "/");
       if (relativa === "i18n/dates.ts") continue;
+      // §132 es el horario humano de CUOTLY, en Europa/Madrid: esa zona es
+      // de la plataforma y no de ningún espacio, así que `core/support.ts`
+      // la lleva escrita a propósito (RN-SOP-06). Ninguna pantalla la
+      // copia: el servidor la aplica y devuelve minutos.
+      if (relativa === "core/support.ts") continue;
 
       // Un respaldo (`space?.timezone ?? "Europe/Madrid"`) no es el fallo:
       // ahí la zona del espacio manda y el literal solo cubre el hueco.

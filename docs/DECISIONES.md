@@ -592,6 +592,49 @@ tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desgl
 del Hito 20 y **está a la espera de respuesta**. Las lecturas de los hitos 18 y 19 ya están
 confirmadas (decisiones 32 y 33).
 
+24. **Lecturas aplicadas al implementar el soporte de Cuotly, el centro de ayuda y la página de
+   estado** (Hito 21, PRD §34, migración 93). §131, §132, §133 y §157 dicen qué y no cómo, y callan
+   en **catorce** sitios. En los catorce se ha elegido lo más defendible, se ha escrito como regla
+   `RN-SOP` y se pregunta aquí. **Ninguna es un plazo**: §131 dice que no hay tiempo contractual de
+   respuesta público y aquí no se ha puesto ninguno.
+
+   1. **Modo soporte no abre incidencias ni en nivel `owner`** (RN-SOP-01): hablar con Cuotly en
+      nombre de un espacio ajeno es lo que RN-ADM-07 prohíbe con invitar, un piso más arriba. Y el
+      espacio ve **todas** sus incidencias, las abriera quien las abriera de su equipo.
+   2. **Una sugerencia es una incidencia de tipo sugerencia** (RN-SOP-02), con los mismos estados y
+      el mismo hilo, listada aparte y **sin prioridad ni tiempo de atención**.
+   3. **Las categorías son los ocho temas de §133 más "otra"** (RN-SOP-03), para que la guía y la
+      incidencia hablen el mismo idioma.
+   4. **El impacto tiene cuatro niveles** (RN-SOP-03): bajo, medio, alto y crítico. §131 solo
+      nombra el crítico; sin escalones por debajo sería una casilla sí/no.
+   5. **La tabla de transiciones** (RN-SOP-04): Cuotly mueve; "necesita información" devuelve la
+      pelota al espacio, que al contestar la deja en revisión; de "resuelta" el espacio cierra o
+      reabre; "cerrada" es final; **nadie cierra sola**, porque §131 no da plazo. Motivo obligatorio
+      en "necesita información" y al cerrar sin resolver.
+   6. **Un espacio sin plan de Cuotly tiene prioridad estándar** (RN-SOP-05): Restavor y el de
+      demostración.
+   7. **Los festivos del horario humano son los de Cuotly**, en una lista de plataforma que nace
+      vacía (RN-SOP-06). §132 es el horario de Bosco, no el de cada espacio, y no se supone ningún
+      calendario.
+   8. **Atienden Bosco y los Administradores de Cuotly sin permiso fino** (RN-SOP-07), como leer el
+      panel (decisión 33, lectura 2).
+   9. **El espacio ve "Cuotly", no quién contestó** (RN-SOP-07), como en RN-PLA-07: privilegio de
+      columna sobre el autor, con un `author_side` visible para distinguir los dos lados.
+   10. **Los adjuntos no van a `files`** (RN-SOP-08): esa tabla exige establecimiento y una
+      incidencia es del espacio. La misma lectura que el logotipo (decisión 34).
+   11. **Las guías son contenido de Cuotly versionado por migración, sin editor** (RN-SOP-10), y las
+      ve cualquiera con sesión, cada rol las suyas primero.
+   12. **A quien no puede abrir una incidencia se le dice con quién hablar** (RN-SOP-11), no se le
+      esconde el botón.
+   13. **Qué se mide en la página de estado y qué no** (RN-SOP-12): notificaciones e integraciones se
+      miden; aplicación, porque responde; autenticación y archivos **no**, y la página lo dice.
+   14. **Ningún aviso de incidencias es obligatorio** (RN-SOP-15): no son seguridad ni pérdida de
+      acceso. `incident_opened` va a toda la plataforma, crítica o no.
+
+   **Lo que esta pendiente NO incluye**, porque no es una lectura sino lo que la maestra deja fuera:
+   la monitorización automática de §157 (es del proveedor y no se finge) y el cierre automático de
+   incidencias (sin plazo en §131, sin barrido).
+
 23. ~~Lecturas aplicadas al implementar el onboarding y el ciclo de vida del espacio~~ —
    confirmadas las trece el 15/09/2026 como decisión 34. Se conservan abajo tal como se
    preguntaron (Hito 20, PRD §33, migración 92). §9, §127 y §141 son los tres apartados más escuetos de la maestra —diez
