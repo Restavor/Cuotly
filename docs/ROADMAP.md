@@ -10,7 +10,7 @@ de todo el proyecto** — es la rebanada vertical que el resto del código imita
 
 ## Estado de los hitos
 
-Actualizado el 15/09/2026.
+Actualizado el 16/09/2026.
 
 | Hito | Estado | Nota |
 |---|---|---|
