@@ -6,22 +6,9 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 15/09/2026.
+Actualizado el 16/09/2026.
 
 ## Pendiente de aplicar
-
-- La **96** (`20260916000096_los_cuatro_planes_de_restavor.sql`, 16/09/2026, decisión 39). Con
-  datos que migrar, y a propósito: en los espacios `restavor` y `demo` **renombra** el plan Impulso
-  (399 €) a **Impulso+** y el Premium (599 €) a **Premium+** —las mismas filas, así que las
-  suscripciones, permanencias y ciclos que apuntan a ellas no cambian— y **crea** los planes nuevos
-  **Impulso** (299 €, 6/6/1/0, 48 h) y **Premium** (499 €, 10/12/2/0, 24 h). Básico no se toca. La
-  lógica está en `upgrade_restavor_plan_catalogue(uuid)` (interna, idempotente), y la migración la
-  aplica a los dos espacios. Redefine `create_restavor_space()` con los cinco planes y sube a la
-  versión 2 la guía "Cobros a tus restaurantes y tu suscripción a Cuotly" del centro de ayuda. Son
-  10 KB: cabe en una parte. Antes de aplicarla conviene mirar `select name, price_cents from plans`
-  de los dos espacios; después, que haya cinco por espacio y que `grants_priority` lo tenga solo
-  Premium+. Comprobada en local con `supabase/tests/planes_de_restavor.sql` (la 47ª suite).
-  **La aplica Bosco cuando diga.**
 
 - La **95** (`20260916000095_pendientes_de_la_fase_4.sql`, después del Hito 22 · paso 1 del
   orden acordado, decisión 38). Aditiva y sin datos que migrar: una columna nueva con valor por
@@ -34,19 +21,23 @@ Actualizado el 15/09/2026.
   `platform_list_spaces`, que se borra y se vuelve a crear porque cambia su forma de retorno. Son 35
   KB: por el MCP irá en **dos partes** (corte entre la sección 2 y la 3, en un límite de sentencia).
   Después hay que regenerar `database.types.ts` (hoy lleva las entradas de la 95 escritas a mano).
-  Comprobada en local: las 46 suites en verde sobre bootstrap + 95 migraciones. **La aplica Bosco
-  cuando diga.**
+  Comprobada en local: las 46 suites en verde sobre bootstrap + 95 migraciones. La 96 ya está
+  aplicada y no depende de esta; al aplicarla quedará registrada después de la 96. **La aplica
+  Bosco cuando diga.**
 
 ## Aplicadas
 
-**Las 94 migraciones del repositorio están aplicadas.** Las tres
+**Están aplicadas 95 de las 96 migraciones del repositorio: todas menos la 95.** La 96 se
+aplicó el 16/09/2026 **antes** que la 95, por orden de Bosco ("Aplica la 96"); no depende de ella
+y el orden de aplicación no cambia el resultado, pero conviene saberlo al leer
+`schema_migrations`: la 95 quedará registrada después. Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
 81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88, la 89 y
-la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 el 16/09/2026, por orden de Bosco.
+la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 y la 96 el 16/09/2026, por orden de Bosco.
 
 - La **91** (`panel_modo_soporte_y_2fa`, Fase 4 · Hito 19) el 15/09/2026,
   desde el MCP, en **cuatro partes** porque el archivo son 55 KB: `p1`
@@ -761,6 +752,33 @@ la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 el 16/09/2026,
 
   `database.types.ts` regenerado y comparado: solo añade —las cuatro
   tablas, las cinco columnas y las funciones nuevas—. El typecheck pasa.
+
+- La **96** (`los_cuatro_planes_de_restavor`, decisión 39) el 16/09/2026, por
+  orden de Bosco ("Aplica la 96"), desde el MCP y en **una parte** (11 KB),
+  con la cabecera explicativa resumida y el resto del texto idéntico al
+  archivo. Quedó registrada como la migración 161 del proyecto, **antes que
+  la 95**, que sigue pendiente: la 96 no la necesita.
+
+  **Con datos que migrar**, y por eso se miró antes y después. ANTES: los
+  dos espacios (`restavor` y `demo`) tenían el catálogo del Hito 2, tres
+  planes cada uno, con una suscripción en el Impulso de 399 € de cada
+  espacio y otra en el Premium de 599 € de `demo`. DESPUÉS: cinco planes
+  por espacio; el Impulso de 399 € y el Premium de 599 € conservan su
+  `id` y sus suscripciones y ahora se llaman **Impulso+** y **Premium+**;
+  los nuevos **Impulso** (299 €, 6/6/1/0, 48 h) y **Premium** (499 €,
+  10/12/2/0, 24 h) nacen sin suscripciones; Básico no se tocó;
+  `grants_priority` lo tiene solo Premium+ en los dos espacios. La guía
+  "Cobros a tus restaurantes y tu suscripción a Cuotly" pasó a la versión
+  2 y nombra los cinco planes. `upgrade_restavor_plan_catalogue(uuid)` no
+  tiene EXECUTE ni para `anon` ni para `authenticated`. Los tipos ya
+  llevaban la función (se añadió a mano con la 96); no se regeneran hasta
+  aplicar la 95, porque la regeneración borraría las entradas de la 95
+  escritas a mano.
+
+  Lo que la 96 **no** hizo, a propósito: no publica las condiciones de
+  cada plan (RN-DAT-07); eso lo hace Bosco desde la pantalla de
+  Condiciones, porque publicar avisa a los restaurantes con suscripción
+  activa.
 
 - La **94** (`app_movil_y_push`, Fase 4 · Hito 22) el 16/09/2026, por orden
   de Bosco, desde el MCP y en **dos partes** porque el archivo son 21 KB:
