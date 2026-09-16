@@ -36,7 +36,7 @@ Actualizado el 15/09/2026.
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita y aplicada al proyecto real el 15/09/2026 (en cinco partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, confirmadas por Bosco (decisión 34). Ver la entrada de cierre abajo. |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | Servidor, dominio y pantallas | Migración 93, escrita y aplicada al proyecto real el 15/09/2026 (en siete partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §34 (RN-SOP-01 a 15) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 35). Ver la entrada de cierre abajo. |
-| 22 · App móvil (React Native + Expo) y push (Fase 4) | Servidor, dominio y app móvil | Migración 94, escrita el 15/09/2026. **Sin aplicar todavía al proyecto real**: lo decide Bosco. PRD §35 (RN-MOV-01 a 11) escrito antes del código. Las diez lecturas: nueve confirmadas y la del texto del push cambiada por Bosco (decisión 36). Ver la entrada de cierre abajo. |
+| 22 · App móvil (React Native + Expo) y push (Fase 4) | Servidor, dominio y app móvil | Migración 94, escrita el 15/09/2026 y aplicada al proyecto real el 16/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §35 (RN-MOV-01 a 11) escrito antes del código. Las diez lecturas: nueve confirmadas y la del texto del push cambiada por Bosco (decisión 36). Ver la entrada de cierre abajo. |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
 
 **La Fase 3 queda cerrada** con el Hito 16: las 86 migraciones del repositorio están aplicadas al
@@ -4686,7 +4686,7 @@ sin aflojar la comprobación para que valgan los dos.
   duplica una acción** — que es la misma regla de idempotencia de siempre, ahora con el añadido de
   que el cliente puede haber estado horas desconectado.
 
-### Hito 22 · App móvil (React Native + Expo) y push *(hecho el 16/09/2026; la 94 SIN aplicar al proyecto)*
+### Hito 22 · App móvil (React Native + Expo) y push *(hecho el 16/09/2026; la 94 aplicada ese mismo día)*
 - **PRD §35 escrito primero**, como manda el desglose: §21, §70, §144, §145, §176 y §179 convertidos
   en once reglas `RN-MOV`. Diez lecturas donde la maestra calla quedan escritas como regla; Bosco
   confirmó nueve y cambió la del texto del push el 16/09/2026 (**decisión 36** de
@@ -4736,10 +4736,11 @@ sin aflojar la comprobación para que valgan los dos.
   Apple y Google que no existen todavía; el token de push exige además un proyecto de Expo con
   `extra.eas.projectId` en `app.json`, y la app lo dice en Ajustes cuando falta), ningún OCR, ninguna
   acción crítica encolada, ni calendarios ni API pública (aplazados).
-- **La 94 no está aplicada al proyecto real.** Aplicarla es una decisión de Bosco; cuando se aplique
-  hay que desplegar la web del Hito 22 el mismo día (la cola desplegada lee
-  `claim_notification_deliveries`, que cambia de forma) y regenerar `database.types.ts`: la parte de
-  la 94 va escrita a mano hasta entonces, como pasó con la 92 y la 93.
+- **La 94 aplicada al proyecto real** el 16/09/2026 por orden de Bosco, en dos partes, con la
+  verificación en vivo y `database.types.ts` regenerado y sustituido entero (ver
+  `docs/DESPLIEGUE-SUPABASE.md`). La web del Hito 22 tiene que estar desplegada antes de que exista
+  el primer teléfono registrado: hasta entonces no hay ninguna entrega push que la cola anterior no
+  entienda.
 
 **Se verifica con:** `supabase/tests/app_movil_y_push.sql` (la 45ª suite; RN-MOV-04, 05, 06 y 10:
 el token que pasa a quien entra, la baja al cerrar sesión, el cierre por el proveedor solo desde la

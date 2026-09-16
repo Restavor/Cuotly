@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 15/09/2026), con las 93 migraciones del
+// (generate_typescript_types, 16/09/2026), con las 94 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -7612,21 +7612,21 @@ export type Database = {
       claim_notification_deliveries: {
         Args: { p_limit?: number }
         Returns: {
+          amount_cents: number
           attempts: number
           audience: string
+          channel: string
           deep_link: string
           delivery_id: string
-          event_type: string
-          notification_id: string
-          recipient_email: string
-          space_name: string
           entity_type: string
           establishment_name: string
-          amount_cents: number
-          threshold_percent: number
-          subject: string
-          channel: string
+          event_type: string
+          notification_id: string
           push_tokens: string[]
+          recipient_email: string
+          space_name: string
+          subject: string
+          threshold_percent: number
         }[]
       }
       claim_scheduled_jobs: {
@@ -8660,6 +8660,13 @@ export type Database = {
         Args: { p_event_type: string }
         Returns: boolean
       }
+      notification_push_context: {
+        Args: { p_notification_id: string }
+        Returns: {
+          establishment_name: string
+          subject: string
+        }[]
+      }
       notify_cuotly_event: {
         Args: {
           p_amount_cents?: number
@@ -8702,10 +8709,6 @@ export type Database = {
       notify_menu_event: {
         Args: { p_event_type: string; p_menu_id: string }
         Returns: number
-      }
-      notification_push_context: {
-        Args: { p_notification_id: string }
-        Returns: { establishment_name: string; subject: string }[]
       }
       notify_platform_incident: {
         Args: {
@@ -9145,15 +9148,6 @@ export type Database = {
         }
         Returns: string
       }
-      register_push_device: {
-        Args: {
-          p_app_version?: string
-          p_device_name?: string
-          p_expo_push_token: string
-          p_platform: string
-        }
-        Returns: string
-      }
       register_incident_attachment: {
         Args: {
           p_content_type: string
@@ -9178,6 +9172,15 @@ export type Database = {
           p_note?: string
           p_paid_at?: string
           p_receipt_file_id?: string
+        }
+        Returns: string
+      }
+      register_push_device: {
+        Args: {
+          p_app_version?: string
+          p_device_name?: string
+          p_expo_push_token: string
+          p_platform: string
         }
         Returns: string
       }
@@ -9381,6 +9384,10 @@ export type Database = {
       }
       revoke_my_session: { Args: { p_session_id: string }; Returns: boolean }
       revoke_platform_admin: { Args: { p_user_id: string }; Returns: boolean }
+      revoke_push_token: {
+        Args: { p_expo_push_token: string; p_reason?: string }
+        Returns: boolean
+      }
       revoke_supervision: {
         Args: { p_reason?: string; p_supervision_id: string }
         Returns: undefined
@@ -9825,6 +9832,10 @@ export type Database = {
           state: string
         }[]
       }
+      unregister_push_device: {
+        Args: { p_expo_push_token: string }
+        Returns: boolean
+      }
       upcoming_renewals: {
         Args: { p_days?: number; p_space_id: string }
         Returns: {
@@ -9835,10 +9846,6 @@ export type Database = {
           plan_name: string
           renews_at: string
         }[]
-      }
-      unregister_push_device: {
-        Args: { p_expo_push_token: string }
-        Returns: boolean
       }
       update_menu_details: {
         Args: {

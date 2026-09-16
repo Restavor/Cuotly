@@ -10,31 +10,18 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-**La 94** (`app_movil_y_push`, Fase 4 · Hito 22), escrita el 15/09/2026 y sin aplicar, a la espera
-de que Bosco lo ordene. Son 19 KB: cabe en una o dos partes. **No es solo aditiva**, y conviene
-saberlo antes: añade la tabla `push_devices` (sin `space_id`: identidad, como `profiles`) y sus tres
-funciones; añade la columna `push` a `notification_preferences` y **retira la firma de cuatro
-parámetros de `set_notification_preference()`** a favor de una de cinco con el último por omisión
-(la web sigue llamando con cuatro y funciona); ensancha el CHECK de `notification_deliveries.channel`
-a `('email', 'push')`; redefine `emit_notification()` con el tercer canal; y **retira y vuelve a
-crear `claim_notification_deliveries()`** porque cambia la forma de la tabla que devuelve (canal,
-tokens y el contexto que el push dice: restaurante, cifra, umbral y la frase de lo que se pide,
-resuelto por `notification_push_context()`, solo para la cola; decisión 36), con su revocación justo
-detrás (CLAUDE.md). La cola desplegada en Vercel lee esa función:
-**hay que desplegar la web del Hito 22 el mismo día que se aplique la 94**, o antes, porque la web
-del Hito 22 ya entiende las dos formas y la anterior no entiende la nueva. Las otras 93 están
-aplicadas.
+Ninguna: las 94 migraciones del repositorio están aplicadas.
 
 ## Aplicadas
 
-**Las 93 migraciones del repositorio están aplicadas.** Las tres
+**Las 94 migraciones del repositorio están aplicadas.** Las tres
 de la 49 a la 51 se aplicaron el 04/09/2026 —el
 apartado "La 49" de más abajo cuenta lo que se comprobó antes y después de
 la que no era solo aditiva, y cómo se deshace si hiciera falta—, las 52 a
 54 el 08/09/2026, la 55 el 09/09/2026, las 56 a 63 el 10/09/2026, las 64 a 70
 el 11/09/2026, las 71 a 76 el 12/09/2026, las 77 a 80 el 13/09/2026 y la
 81, la 82, la 83, la 84, la 85 y la 86 el 14/09/2026, y la 87, la 88, la 89 y
-la 90 el 15/09/2026, y la 91, la 92 y la 93 ese mismo día, por orden de Bosco.
+la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 el 16/09/2026, por orden de Bosco.
 
 - La **91** (`panel_modo_soporte_y_2fa`, Fase 4 · Hito 19) el 15/09/2026,
   desde el MCP, en **cuatro partes** porque el archivo son 55 KB: `p1`
@@ -749,6 +736,48 @@ la 90 el 15/09/2026, y la 91, la 92 y la 93 ese mismo día, por orden de Bosco.
 
   `database.types.ts` regenerado y comparado: solo añade —las cuatro
   tablas, las cinco columnas y las funciones nuevas—. El typecheck pasa.
+
+- La **94** (`app_movil_y_push`, Fase 4 · Hito 22) el 16/09/2026, por orden
+  de Bosco, desde el MCP y en **dos partes** porque el archivo son 21 KB:
+  `parte_1` (`push_devices` con su política, registrar, dar de baja y el
+  cierre por el proveedor, y la columna `push` de las preferencias) y
+  `parte_2` (la firma de cinco de `set_notification_preference`, el canal
+  `push` en la cola, `emit_notification` con el tercer canal,
+  `notification_push_context` y el reclamo nuevo). Cortada en un límite
+  de sentencia con los `$$` emparejados; el texto es el del archivo sin
+  más cambio que los comentarios largos. Antes había pasado entera en
+  local sobre una base construida desde cero, con las 45 suites en el
+  orden de CI en verde, y el CI la aplica en cada ejecución.
+
+  **No es solo aditiva**, y por eso se dice lo que toca a lo que ya
+  existía: la firma de cuatro parámetros de `set_notification_preference()`
+  se retira (la de cinco, con el último por omisión, la sustituye; la web
+  sigue llamando con cuatro y funciona); el CHECK de
+  `notification_deliveries.channel` admite `push`; `emit_notification()`
+  redefinida con la misma firma y el tercer canal, que solo encola si el
+  destinatario tiene un teléfono vigente; y `claim_notification_deliveries()`
+  retirada y creada de nuevo porque cambia la forma que devuelve (canal,
+  tokens y el contexto del push, decisión 36), con su revocación justo
+  detrás. Ninguna fila tocada: la columna `push` nace a `true` en las
+  filas existentes (RN-NOT-02), y sin teléfonos registrados no existe
+  todavía ninguna entrega push, así que la cola desplegada antes del Hito
+  22 no encuentra nada que no entienda; en cuanto se despliegue la web
+  del Hito 22, el push sale por su transporte.
+
+  Comprobado en vivo DESPUÉS, con una consulta que solo devuelve problemas
+  y devolvió ninguno: `push_devices` con RLS, su política de lectura y
+  ninguna de escritura; la columna `push`, a `true` en todas las filas;
+  una sola firma de `set_notification_preference`, con `p_push`; el CHECK
+  del canal con `push`; el reclamo con `push_tokens` y `subject`;
+  `emit_notification` mirando `push_devices`; las cuatro internas
+  (`revoke_push_token`, `notification_push_context`,
+  `claim_notification_deliveries`, `emit_notification`) cerradas a `anon`
+  y `authenticated`; las tres RPC abiertas a `authenticated` y cerradas a
+  `anon`; y 160 migraciones registradas (158 más las dos partes).
+
+  `database.types.ts` regenerado contra el proyecto y **sustituido
+  entero**, como con la 92 y la 93. Typecheck, lint y los tests de la web
+  y de la app en verde con el generado.
 
 - La **93** (`soporte_centro_de_ayuda_y_estado`, Fase 4 · Hito 21) el
   15/09/2026, por orden de Bosco, desde el MCP y en **siete partes**
