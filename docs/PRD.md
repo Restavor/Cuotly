@@ -742,7 +742,7 @@ otra zona.
 Cada historia es atómica y verificable. `HU-xx` identifica la historia.
 
 ### Identidad y acceso
-- **HU-01** · Como persona, quiero registrarme con correo y contraseña con verificación obligatoria, o con Google, para acceder a Cuotly.
+- **HU-01** · Como persona, quiero entrar en Cuotly con correo y contraseña y verificación obligatoria, por la única puerta que me corresponda —una solicitud de acceso aprobada o una invitación—, para acceder a Cuotly. *(Reescrita el 16/09/2026 por la decisión 41: RN-ACC-01 retira el registro abierto y RN-ACC-10 el inicio de sesión con Google.)*
 - **HU-02** · Como usuario con varios contextos, quiero un selector al entrar para elegir en cuál trabajo.
 - **HU-03** · Como propietario del espacio, quiero invitar a un trabajador por correo, con caducidad de 7 días, para que se una a mi equipo.
 - **HU-04** · Como propietario, al invitar un correo ya registrado quiero ver "Este usuario ya está registrado en Cuotly" y la acción **Añadir al espacio**, para no duplicar cuentas.
@@ -1263,10 +1263,14 @@ prueba empieza al aprobar). Donde §10 calla, las lecturas están confirmadas po
   `space_id`. El barrido de invariantes de RLS la va a señalar por eso, y se **clasifica con su motivo
   escrito** — no se relaja el barrido. Sí lleva RLS: quien la escribió ve la suya, y la plataforma las
   ve todas.
-- **RN-PLA-02**: la envía **una persona ya registrada en Cuotly**, no un formulario público. §7.2 deja
-  que cualquiera se registre —correo verificado, Google o Apple—, así que no hace falta abrir un
-  `insert` a `anon`; abrirlo sería una superficie de abuso sin dueño y dejaría la solicitud sin
-  persona a la que entregarle el espacio al aprobarla. El **borrador es suyo y solo suyo**: nadie de
+- **RN-PLA-02**: la envía **una persona ya registrada en Cuotly**, no un formulario público, así que
+  no hace falta abrir un `insert` a `anon`; abrirlo sería una superficie de abuso sin dueño y
+  dejaría la solicitud sin persona a la que entregarle el espacio al aprobarla. El argumento se
+  escribió cuando §7.2 de la maestra dejaba que cualquiera se registrara —correo verificado, Google
+  o Apple—; desde la **decisión 41** ya no se puede (RN-ACC-01), y quien envía esta solicitud ha
+  entrado por una de las dos puertas de §37. No cambia de sentido: se refuerza, porque ahora el
+  formulario público de acceso es el único sitio del producto donde escribe alguien sin sesión, y es
+  otro (RN-ACC-12). El **borrador es suyo y solo suyo**: nadie de
   la plataforma lo ve hasta que se envía, igual que el borrador de solicitud del restaurante
   (RN-MSG-10). La maestra no decía quién la envía; **Bosco lo fijó el 15/09/2026** (decisión 31):
   "cuando se registran, después rellenan un formulario básico y tienen que esperar a que
@@ -2004,49 +2008,101 @@ datos —todo lo que se ve aquí se puede ver ya dentro de su espacio o su panel
 Agente Cuotly (sigue siendo la entrada con "Próximamente"), **no** cambia ninguna política de RLS y
 **no** toca la app móvil, cuya navegación es la de §21 (RN-MOV-02).
 
-## 37. La solicitud de acceso a Cuotly — después del Hito 22 (RN-ACC)
+## 37. Cómo se entra en Cuotly: la solicitud de acceso y la invitación — después del Hito 22 (RN-ACC)
 
 El diseño definitivo dibuja una puerta que hoy no existe (vistas F01, A01 a A04 y A09 a A12):
-**solicitar acceso a Cuotly** antes de tener cuenta. No se confunde con la solicitud de **creación de
-espacio** de §10 y RN-PLA: aquella la escribe alguien que **ya** ha entrado, y al aprobarse **crea**
-un espacio con su prueba de siete días. Esta es anterior, más corta, y la vista A03 lo dice con
-todas las letras: **aprobarla no crea espacio ni panel**.
+**solicitar acceso a Cuotly** antes de tener cuenta. Al escribirla, Bosco decidió algo más grande
+(**decisión 41**, 16/09/2026): esa solicitud **ocupa el lugar del registro**. Se acabó el registro
+abierto. Quien va a registrarse encuentra el formulario de solicitud, y la cuenta **se crea al
+aprobarla**, no antes.
+
+Esto **deroga** dos cosas escritas antes, y hay que decirlo en voz alta para que nadie las
+reimplante: el punto 7.2 de la maestra ("inicio de sesión con Google", "inicio de sesión con Apple
+en iOS") y la mitad de HU-01 que dejaba registrarse "o con Google". Manda este apartado
+(`CLAUDE.md` > `docs/PRD.md` > `docs/ESPECIFICACION-MAESTRA.md`). Lo que sigue vivo de 7.2 —correo
+verificado, recuperación por enlace temporal, sesiones consultables y cerrables, segundo factor en
+lo sensible— no se toca.
+
+No se confunde con la solicitud de **creación de espacio** de §10 y RN-PLA: aquella la escribe
+alguien que **ya** ha entrado, y al aprobarse **crea** un espacio con su prueba de siete días. Esta
+es anterior, más corta, y la vista A03 lo dice con todas las letras: **aprobarla no crea espacio ni
+panel**. Son, por tanto, **dos puertas seguidas** para quien quiere su propio espacio de
+mantenimiento: primero la cuenta, después el espacio. Es a propósito —la cuenta se le da a una
+persona y el espacio a un negocio, y no siempre son la misma decisión— y las revisa el mismo permiso
+(RN-ACC-06), así que quien aprueba las ve juntas en una pantalla.
 
 La familia es **`RN-ACC`** (acceso).
 
-- **RN-ACC-01**: **los cinco campos** de F01: nombre y apellidos, nombre del restaurante o empresa,
+- **RN-ACC-01**: **dos puertas y ninguna más**. A Cuotly se entra por una **solicitud de acceso que
+  Cuotly aprueba** (RN-ACC-02) o por una **invitación de un propietario** (RN-ACC-09), que ya es la
+  autorización de alguien que responde por el invitado. **No existe el registro abierto**: no hay
+  ninguna pantalla donde alguien se cree una cuenta por su cuenta y quede dentro. El servidor es
+  quien lo sostiene, no la pantalla: crear una cuenta es una operación de servidor que exige una
+  solicitud aprobada o una invitación viva, y sin ninguna de las dos falla, se llame desde donde se
+  llame (`CLAUDE.md`: esconder un botón no es un control de acceso).
+- **RN-ACC-02**: **los cinco campos** de F01: nombre y apellidos, nombre del restaurante o empresa,
   teléfono, correo electrónico y comentarios (opcional). Los cuatro primeros son obligatorios. Es
-  deliberadamente corta: quien la escribe todavía no conoce el producto.
-- **RN-ACC-02**: **aprobarla no crea nada**: ni espacio, ni panel, ni suscripción, ni cobro. Lo que
-  hace es **habilitar el acceso** y enviar por correo las instrucciones para continuar. Lo demás —el
-  espacio y su prueba— sigue pasando por RN-PLA-05, con sus comprobaciones, incluida la de una sola
-  prueba gratuita por persona o negocio (RN-PLA-09).
-- **RN-ACC-03**: **cuatro estados y una transición por cada uno**: enviada (en revisión), necesita
+  deliberadamente corta: quien la escribe todavía no conoce el producto. Si ese correo **ya tiene
+  cuenta**, el formulario lo dice y lleva a iniciar sesión, en vez de abrir una segunda solicitud
+  que nadie va a poder aprobar (una persona, una cuenta, un correo: maestra §7.1).
+- **RN-ACC-03**: **aprobarla crea la cuenta, y nada más**: ni espacio, ni panel, ni suscripción, ni
+  cobro. La cuenta nace con el correo y el nombre de la solicitud, sin pertenecer a ningún espacio,
+  y lo primero que ve esa persona al entrar es el contexto global de §36 vacío con su motivo escrito
+  (RN-GLO-03). El espacio y su prueba siguen pasando por RN-PLA-05, con todas sus comprobaciones,
+  incluida la de una sola prueba gratuita por persona o negocio (RN-PLA-09).
+- **RN-ACC-04**: **la contraseña no viaja por correo**. El aviso de aprobación lleva un **enlace de
+  un solo uso y con caducidad** donde la persona pone su contraseña la primera vez; usado una vez o
+  pasada la caducidad, deja de valer y hay que pedir otro. Bosco propuso enviar la contraseña en el
+  propio correo y lo cambió al explicarle por qué no: un correo se queda guardado en el buzón y pasa
+  por servidores por el camino, de modo que una contraseña enviada así queda escrita para siempre en
+  un sitio que no controlamos. El enlace es igual de sencillo para quien lo recibe.
+- **RN-ACC-05**: **cuatro estados y una transición por cada uno**: enviada (en revisión), necesita
   información, aprobada y no aprobada. "Necesita información" lleva **el mensaje del equipo** y la
   **respuesta** de quien solicita, que la devuelve a revisión. "No aprobada" lleva **motivo
   obligatorio**, y el solicitante lo lee. La tabla de transiciones manda en el servidor, como en
-  RN-PLA-03: la pantalla no decide nada.
-- **RN-ACC-04**: **la revisa Cuotly, con la sesión verificada en dos pasos** (RN-ADM-02), y queda en
-  el panel de Administración junto a las solicitudes de espacio. *(Lectura: el permiso es el mismo
-  **"Aprobar espacios"** de §167 que ya decide sobre las de creación, porque es la misma puerta y
-  partirla obligaría a mantener dos listas de a quién se la das. Si Bosco prefiere un permiso
-  propio, se separa.)*
-- **RN-ACC-05**: **el solicitante no ve quién la revisó** (como RN-PLA-07): ve el estado, el mensaje
+  RN-PLA-03: la pantalla no decide nada. Una solicitud no aprobada **no se borra** (`CLAUDE.md`): se
+  queda con su motivo y su rastro.
+- **RN-ACC-06**: **la revisa Cuotly, con la sesión verificada en dos pasos** (RN-ADM-02), y queda en
+  el panel de Administración junto a las solicitudes de espacio. El permiso es el mismo **"Aprobar
+  espacios"** de §167 que ya decide sobre las de creación: *"me parece bien lo de aprobar espacios y
+  solo lo llevo yo con el correo info@restavor.com"* (decisión 41). Hoy no lo tiene nadie más; el
+  permiso existe por si algún día se delega, y ese día se delegan las dos a la vez, que es justo lo
+  que se quiere.
+- **RN-ACC-07**: **el solicitante no ve quién la revisó** (como RN-PLA-07): ve el estado, el mensaje
   y el motivo, nunca el nombre de quien decidió. Eso sale de la auditoría de plataforma.
-- **RN-ACC-06**: **cada cambio de estado deja evento y auditoría** con actor, fecha, valor anterior,
-  valor nuevo y motivo cuando lo hay (CLAUDE.md MUST), con `space_id` nulo porque todavía no hay
-  espacio, igual que en RN-PLA-08.
-- **RN-ACC-07**: **el formulario se comporta** (A09 a A12): los campos mal rellenados se señalan uno
+- **RN-ACC-08**: **cada cambio de estado deja evento y auditoría** con actor, fecha, valor anterior,
+  valor nuevo y motivo cuando lo hay (`CLAUDE.md` MUST), con `space_id` nulo porque todavía no hay
+  espacio, igual que en RN-PLA-08. La **creación de la cuenta** al aprobar es uno de esos apuntes, y
+  se hace en **una transacción con clave de idempotencia**: aprobar dos veces no crea dos cuentas ni
+  manda dos enlaces (`CLAUDE.md` MUST).
+- **RN-ACC-09**: **la invitación es la otra puerta, y también crea la cuenta**. *"Si invito,
+  directamente le doy acceso a crearse una cuenta, ese enlace que le envío ya es para que se cree una
+  cuenta"* (decisión 41). El enlace de invitación de HU-03, que hoy caduca a los siete días, lleva a
+  una pantalla con **el correo prefijado y bloqueado**, contraseña y repetición, y nada más. El
+  correo no se puede cambiar ahí porque `accept_space_invitation()` exige desde la migración 7 que
+  coincida con el de la invitación: dejarlo escribir a mano solo produce un rechazo que quien lo
+  recibe no entiende. Creada la cuenta, la invitación se acepta en el mismo paso y la persona entra
+  ya dentro de su espacio. Si el correo **ya tiene cuenta**, no hay pantalla de contraseña: la
+  invitación se acepta iniciando sesión, que es HU-04 vista desde el otro lado.
+- **RN-ACC-10**: **se retira "entrar con Google"**, y con él "entrar con Apple" en iOS: *"vamos a
+  quitar lo de entrar con Google directamente, mejor que cada uno rellene correo y contraseña así no
+  hay líos"* (decisión 41). Queda **una sola forma de entrar**: correo y contraseña, con la
+  verificación en dos pasos donde ya la exige RN-ADM-02. No es solo quitar un botón: un proveedor de
+  identidad externo es una tercera puerta que crea cuentas sin pasar por RN-ACC-01, así que se
+  retira también del lado del servidor.
+- **RN-ACC-11**: **el formulario se comporta** (A09 a A12): los campos mal rellenados se señalan uno
   a uno y el botón dice qué revisar; si el envío falla, **lo escrito no se pierde** y se puede
   reintentar; salir con cambios sin enviar avisa antes; y sin conexión se dice, se deja el texto
   donde está y no se finge un envío. Ninguna de las cuatro inventa nada: son la misma cortesía que
   el resto del producto.
-- **RN-ACC-08** *(lectura)*: **una solicitud de acceso no es pública del todo**: quien la escribe
-  **no tiene cuenta**, así que no hay `auth.uid()` con el que atarla. Se escribe desde el formulario
-  público y se lee **solo** desde la plataforma; el solicitante hace su seguimiento por el **enlace
-  con clave** que recibe en el correo, no entrando en la aplicación. Así no hace falta crear una
-  cuenta para poder ser rechazado.
+- **RN-ACC-12** *(lectura)*: **una solicitud de acceso se escribe sin cuenta**, así que no hay
+  `auth.uid()` con el que atarla. Se escribe desde el formulario público y se lee **solo** desde la
+  plataforma; el solicitante hace su seguimiento por el **enlace con clave** que recibe en el correo,
+  que es también por donde aporta lo que se le pida en "necesita información". Es el único tramo del
+  producto donde alguien hace algo sin sesión, y por eso el formulario público **escribe y no lee**:
+  no devuelve nunca si un correo existe, ni cuántas solicitudes hay, ni el estado de ninguna.
 
 Lo que este apartado **no** trae, dicho en claro: **no** sustituye a la solicitud de creación de
-espacio (RN-PLA), **no** crea cuentas ni espacios al aprobarse (RN-ACC-02), **no** cobra nada y
-**no** toca el bloque legal, que sigue en el paso 4 del orden acordado.
+espacio (RN-PLA), **no** crea espacios, paneles ni suscripciones al aprobarse (RN-ACC-03), **no**
+cobra nada, **no** deja ninguna vía de alta que no sean las dos de RN-ACC-01 y **no** toca el bloque
+legal, que sigue en el paso 4 del orden acordado.

@@ -37,11 +37,11 @@ Actualizado el 16/09/2026.
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita y aplicada al proyecto real el 15/09/2026 (en cinco partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, confirmadas por Bosco (decisión 34). Ver la entrada de cierre abajo. |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | Servidor, dominio y pantallas | Migración 93, escrita y aplicada al proyecto real el 15/09/2026 (en siete partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §34 (RN-SOP-01 a 15) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 35). Ver la entrada de cierre abajo. |
 | 22 · App móvil (React Native + Expo) y push (Fase 4) | Servidor, dominio y app móvil | Migración 94, escrita el 15/09/2026 y aplicada al proyecto real el 16/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §35 (RN-MOV-01 a 11) escrito antes del código. Las diez lecturas: nueve confirmadas y la del texto del push cambiada por Bosco (decisión 36). Ver la entrada de cierre abajo. |
-| 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
 
-**La Fase 3 queda cerrada** con el Hito 16: las 86 migraciones del repositorio están aplicadas al
-proyecto real, no hay ninguna decisión abierta en `docs/DECISIONES.md` y la Fase 4 todavía no está
-desglosada en seis hitos (15/09/2026), sin empezar.
+**La Fase 3 quedó cerrada** con el Hito 16 (15/09/2026): las 86 migraciones que había entonces en el
+repositorio aplicadas al proyecto real y ninguna decisión abierta en `docs/DECISIONES.md`. **La Fase
+4 está cerrada** con los hitos 17 a 22 y el paso 1 del orden acordado (decisión 37). Lo que queda
+después no son hitos: es la lista de ocho pasos del final de este documento.
 
 ### Salvedades del Hito 7, dichas en claro
 
