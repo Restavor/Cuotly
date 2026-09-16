@@ -25,9 +25,30 @@ Actualizado el 16/09/2026.
   aplicada y no depende de esta; al aplicarla quedará registrada después de la 96. **La aplica
   Bosco cuando diga.**
 
+- La **97** (`20260916000097_como_se_entra_en_cuotly.sql`, paso 2 del orden acordado, decisión 41).
+  Aditiva: cuatro tablas nuevas (`access_requests`, `access_request_events`,
+  `account_setup_tokens`, `platform_emails`) con su RLS, catorce funciones nuevas y **una
+  redefinida**, `accept_space_invitation()`, cuyo cuerpo pasa a `accept_space_invitation_as()` sin
+  cambiar ninguna comprobación —el correo tiene que seguir coincidiendo—, solo de dónde sale la
+  persona. No toca ninguna tabla existente y no hay datos que migrar.
+
+  **Lo que sí hay que hacer a mano, y es lo importante de esta migración:** en el panel del
+  proyecto real, **apagar el alta pública** (Authentication → Sign In / Providers: "Allow new
+  users to sign up" a `false`) y dejar **sin activar** cualquier proveedor externo. El repositorio
+  ya lo lleva así en `supabase/config.toml` para el entorno local, pero el proyecto alojado tiene
+  su propia configuración y una migración no la cambia. Mientras eso no se apague, RN-ACC-01 no
+  se cumple en producción por mucho que las pantallas hayan dejado de ofrecerlo: cualquiera podría
+  crearse una cuenta llamando a la API de Auth directamente. También hace falta `RESEND_API_KEY`
+  en el servidor para que la cola de `platform_emails` salga de verdad; sin ella los correos se
+  quedan encolados con su motivo escrito (no se pierden, pero nadie recibe el enlace de alta).
+
+  Después hay que regenerar `database.types.ts` (hoy lleva las entradas de la 97 escritas a mano,
+  igual que las de la 95). Comprobada en local: **las 48 suites en verde sobre bootstrap + 97
+  migraciones**. **La aplica Bosco cuando diga.**
+
 ## Aplicadas
 
-**Están aplicadas 95 de las 96 migraciones del repositorio: todas menos la 95.** La 96 se
+**Están aplicadas 95 de las 97 migraciones del repositorio: todas menos la 95 y la 97.** La 96 se
 aplicó el 16/09/2026 **antes** que la 95, por orden de Bosco ("Aplica la 96"); no depende de ella
 y el orden de aplicación no cambia el resultado, pero conviene saberlo al leer
 `schema_migrations`: la 95 quedará registrada después. Las tres

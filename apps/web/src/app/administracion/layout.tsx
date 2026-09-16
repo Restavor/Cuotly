@@ -27,6 +27,7 @@ export const dynamic = "force-dynamic";
 
 const NAV = [
   { key: "overview", href: "/administracion", label: es.platformAdmin.nav.overview },
+  { key: "access", href: "/administracion/accesos", label: es.platformAdmin.nav.access },
   { key: "requests", href: "/administracion/solicitudes", label: es.platformAdmin.nav.requests },
   { key: "spaces", href: "/administracion/espacios", label: es.platformAdmin.nav.spaces },
   { key: "charges", href: "/administracion/cobros", label: es.platformAdmin.nav.charges },

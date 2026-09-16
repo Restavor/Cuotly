@@ -2778,7 +2778,33 @@ begin
         -- SECURITY INVOKER, para construir el enlace de cada resultado sin
         -- unirse a `spaces` (a la que el cliente no tiene acceso). Está
         -- revocada a `anon`.
-        'space_slug'
+        'space_slug',
+        -- Migración 97 (paso 2, decisión 41). Las cinco de la puerta de
+        -- entrada, y la única familia del proyecto abierta a `anon` además
+        -- de `platform_status_snapshot`. No comprueban permisos porque
+        -- quien las llama todavía no tiene cuenta, que es su razón de ser;
+        -- lo que las cierra es otra cosa, y cada una la suya:
+        --
+        --   · `submit_access_request` devuelve `void`. No admite id ajeno,
+        --     no lee nada y no contesta distinto según el correo: por eso
+        --     no es un oráculo (RN-ACC-12). Lo único que puede hacer quien
+        --     la llama es escribir una solicitud a su nombre.
+        --   · `access_request_follow_up` y `reply_to_access_request` piden
+        --     una CLAVE (`follow_up_token`, un uuid aleatorio que solo
+        --     viaja en el correo de su dueño) y filtran por ella. La clave
+        --     ES la barrera, igual que en `my_active_sessions` lo es
+        --     `auth.uid()`; ninguna de las dos acepta un id de solicitud.
+        --   · `account_setup_details` e `invitation_signup_details` piden
+        --     también una clave y, cuando no vale, devuelven el motivo y
+        --     NADA más: ni correo, ni espacio, ni de quién era.
+        --
+        -- Lo que de verdad crea una cuenta —`consume_account_setup_token`
+        -- y `accept_space_invitation_as`— no está aquí: esas dos están
+        -- reservadas a `service_role`, y que lo sigan estando lo comprueba
+        -- la suite 48.
+        'submit_access_request', 'access_request_follow_up',
+        'reply_to_access_request', 'account_setup_details',
+        'invitation_signup_details'
       )
       -- Los ayudantes del propio fixture (`h7_make_job` y compañía), que
       -- este archivo crea y borra: son andamiaje del test, no producto.
@@ -3613,7 +3639,13 @@ begin
     -- no se toca desde la aplicación, solo desde next_space_sequence()
     -- (SECURITY DEFINER), y la migración 34 le quitó los privilegios de
     -- tabla en vez de darle una política que nadie usaría.
-    if v_t.politicas = 0 and v_t.tabla not in ('space_sequences') then
+    -- Migración 97 · `account_setup_tokens` y `platform_emails` se cierran
+    -- por privilegio como `space_sequences`, y por el mismo motivo: llevan
+    -- credenciales dentro (el enlace de alta), así que no hay política que
+    -- darles que no sea "nadie", y una política "nadie" se relaja sin que
+    -- nadie lo note. Que el privilegio siga cerrado lo comprueba la suite 48.
+    if v_t.politicas = 0 and v_t.tabla not in (
+         'space_sequences', 'account_setup_tokens', 'platform_emails') then
       v_sin_politica := v_sin_politica || ' ' || v_t.tabla;
     end if;
 
@@ -3633,6 +3665,15 @@ begin
          'group_memberships', 'establishment_memberships',
          'establishment_permissions', 'space_sequences', 'audit_log',
          'space_requests', 'space_request_events',
+         -- Migración 97 (paso 2, decisión 41): la puerta de entrada. Una
+         -- solicitud de ACCESO nace antes que la cuenta, no ya antes que
+         -- el espacio, así que no tiene ni `space_id` ni dueño; su libro
+         -- de estados va detrás por la misma razón. El enlace de un solo
+         -- uso y la cola de correo cuelgan de ella y tampoco pertenecen a
+         -- ningún espacio. Las cuatro llevan RLS, que es lo que el barrido
+         -- sigue exigiendo tres líneas más arriba.
+         'access_requests', 'access_request_events',
+         'account_setup_tokens', 'platform_emails',
          -- Migración 93 (Fase 4, Hito 21): de plataforma. Los festivos del
          -- horario humano de Cuotly, las guías del centro de ayuda y lo que
          -- Cuotly declara sobre su propio estado no pertenecen a ningún

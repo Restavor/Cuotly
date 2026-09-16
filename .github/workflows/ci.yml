@@ -400,6 +400,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/planes_de_restavor.sql
 
+      - name: "Paso 2 — Verificar cómo se entra en Cuotly: solicitud de acceso, enlace de un solo uso e invitación que crea cuenta (RN-ACC-01 a 12, decisión 41)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/como_se_entra_en_cuotly.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

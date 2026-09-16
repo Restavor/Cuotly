@@ -4,17 +4,18 @@ const redirectMock = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({ redirect: redirectMock }));
 
 const signInWithPasswordMock = vi.hoisted(() => vi.fn());
-const signUpMock = vi.hoisted(() => vi.fn());
+const rpcMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue({
     auth: {
       signInWithPassword: signInWithPasswordMock,
-      signUp: signUpMock,
     },
+    rpc: rpcMock,
   }),
 }));
 
-import { signIn, signUp } from "./actions";
+import { requestAccess, signIn } from "./actions";
+import { accessRequestInitialState } from "./form-states";
 
 function formData(fields: Record<string, string>) {
   const data = new FormData();
@@ -106,43 +107,101 @@ describe("signIn", () => {
   });
 });
 
-describe("signUp", () => {
-  it("no llama a Supabase si falta el correo o la contraseña", async () => {
-    const result = await signUp(
-      { error: null },
-      formData({ email: "bosco@restavor.com", password: "" }),
+/*
+ * PRD §37 (RN-ACC) · aquí había `signUp`. Ya no existe: desde la decisión
+ * 41 nadie se crea una cuenta por su cuenta, y lo que ocupa su sitio es la
+ * solicitud de acceso. Que no vuelva a aparecer lo vigila
+ * `src/core/registro-cerrado.test.ts` por el lado de la configuración.
+ */
+describe("requestAccess", () => {
+  it("RN-ACC-02: señala uno a uno los obligatorios que faltan y no llama a la base", async () => {
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({ contact_name: "Nuria", business_name: "", phone: "", email: "" }),
     );
 
-    expect(result.error).toBe("Rellena correo y contraseña.");
-    expect(signUpMock).not.toHaveBeenCalled();
+    expect(result.fields).toEqual(["business_name", "phone", "email"]);
+    expect(result.done).toBe(false);
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 
-  it("redirige a la página principal cuando el registro funciona", async () => {
-    signUpMock.mockResolvedValue({ error: null });
-
-    await signUp(
-      { error: null },
-      formData({ email: "nuevo@restavor.com", password: "supersegura123" }),
+  it("RN-ACC-02: un correo mal escrito se señala como tal, no como campo vacío", async () => {
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({
+        contact_name: "Nuria",
+        business_name: "Bar Nuevo",
+        phone: "600111222",
+        email: "esto-no-es-un-correo",
+      }),
     );
 
-    expect(signUpMock).toHaveBeenCalledWith({
-      email: "nuevo@restavor.com",
-      password: "supersegura123",
-    });
-    expect(redirectMock).toHaveBeenCalledWith("/");
+    expect(result.fields).toEqual(["email"]);
+    expect(result.error).toContain("correo");
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 
-  it("propaga el mensaje de error de Supabase (por ejemplo, correo ya registrado)", async () => {
-    signUpMock.mockResolvedValue({
-      error: { message: "User already registered" },
-    });
+  it("RN-ACC-02: envía los cinco campos y deja los comentarios sin mandar si están vacíos", async () => {
+    rpcMock.mockResolvedValue({ error: null });
 
-    const result = await signUp(
-      { error: null },
-      formData({ email: "bosco@restavor.com", password: "supersegura123" }),
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({
+        contact_name: "  Nuria Vela  ",
+        business_name: "Bar Nuevo",
+        phone: "600111222",
+        email: "nuria@bar-nuevo.test",
+        comments: "",
+      }),
     );
 
-    expect(result.error).toBe("User already registered");
+    expect(rpcMock).toHaveBeenCalledWith("submit_access_request", {
+      p_contact_name: "Nuria Vela",
+      p_business_name: "Bar Nuevo",
+      p_phone: "600111222",
+      p_email: "nuria@bar-nuevo.test",
+      p_comments: undefined,
+    });
+    expect(result.done).toBe(true);
+    expect(result.error).toBeNull();
+  });
+
+  it("RN-ACC-12: termina igual pase lo que pase por detrás, y no redirige nunca", async () => {
+    // La función de la base devuelve `void` a propósito, así que esta
+    // acción no tiene nada distinto que contar. Si algún día alguien le
+    // hace decir "ese correo ya existe", el formulario se convierte en un
+    // oráculo de direcciones y este test se pone rojo.
+    rpcMock.mockResolvedValue({ error: null });
+
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({
+        contact_name: "Intrusa",
+        business_name: "Lo que sea",
+        phone: "600000000",
+        email: "info@restavor.com",
+      }),
+    );
+
+    expect(result).toEqual({ error: null, fields: [], done: true });
+    expect(redirectMock).not.toHaveBeenCalled();
+  });
+
+  it("A11: si el envío falla, lo dice y no pierde lo escrito (no redirige)", async () => {
+    rpcMock.mockResolvedValue({ error: { message: "network error" } });
+
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({
+        contact_name: "Nuria",
+        business_name: "Bar Nuevo",
+        phone: "600111222",
+        email: "nuria@bar-nuevo.test",
+      }),
+    );
+
+    expect(result.done).toBe(false);
+    expect(result.error).toContain("No hemos podido enviar");
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });

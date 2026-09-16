@@ -4838,9 +4838,40 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
 - **La respuesta a "¿queda algún hito?" es que sí**: el contexto global entero (Inicio, Mis
   solicitudes, bandeja de mensajes, Mi cuenta y Ayuda fuera del espacio) y el flujo de solicitud de
   acceso a Cuotly no existen, además de una lista de piezas sueltas que el mapa enumera.
-- **Pendiente de Bosco**: la vista R27 enseña una factura emitida por Cuotly con numeración fiscal,
-  y RN-FIN-09 y la decisión 38 dicen que Cuotly no emite facturas. CLAUDE.md manda parar ante una
-  contradicción, así que está preguntado y no se construye nada de eso hasta que responda.
+- **La contradicción de las facturas, resuelta** (decisión 40): la vista R27 enseña una factura
+  emitida por Cuotly y RN-FIN-09 decía que Cuotly no emite facturas. Preguntado, Bosco aclaró que
+  el agente que las prepara vivirá **dentro** de Cuotly, así que el diseño enseña el estado final.
+  La numeración fiscal sigue en el bloque legal (paso 4), y hasta entonces no se inventa ninguna.
+
+#### Hecho · Cómo se entra en Cuotly (§37, RN-ACC-01 a 12; migración 97, suite 48)
+- **Decisión 41**: se acabó el registro abierto. Quedan **dos puertas y ninguna más**: una solicitud
+  de acceso que aprueba `info@restavor.com` con el permiso "Aprobar espacios", o una invitación de
+  un propietario. El formulario de solicitud ocupa el lugar del registro y la cuenta se crea al
+  aprobarla; la contraseña **no viaja por correo** (enlace de un solo uso y con caducidad); la
+  invitación también crea cuenta, con el correo prefijado y bloqueado; y se retira "entrar con
+  Google".
+- **PRD primero**: §37 reescrito antes de tocar código, con las derogaciones dichas en voz alta
+  (§7.2 de la maestra y la mitad de HU-01).
+- **Servidor** (migración 97): `access_requests` y su libro de estados, `account_setup_tokens` (el
+  enlace) y `platform_emails` (la cola de correo hacia direcciones sin cuenta, que
+  `notification_deliveries` no puede servir porque exige `space_id`). Las dos funciones que
+  materializan una cuenta están reservadas a `service_role` y fallan cerradas.
+- **Dónde se cierra el alta abierta**: en `supabase/config.toml` (`enable_signup = false`), porque
+  quien crea filas en `auth.users` es GoTrue. Lo vigila `src/core/registro-cerrado.test.ts`, que
+  además comprueba que no queda ningún proveedor externo ni ningún botón de Google.
+- **Pantallas**: formulario público con sus cuatro estados (A09 a A12), seguimiento por enlace con
+  clave, pantalla de alta, pantalla de invitación y la bandeja de revisión en Administración.
+- **Verde**: 48 suites SQL sobre bootstrap + 97 migraciones, `pnpm typecheck && pnpm lint &&
+  pnpm test` (1358 tests) en web y los 14 de móvil.
+- **Pendiente de Bosco**: aplicar la 97 al proyecto real **y apagar el alta pública en el panel de
+  Supabase** — eso último no lo hace ninguna migración.
+
+#### Lo que queda del paso 2
+- El **contexto global** entero (§36, RN-GLO): Inicio con "Necesita tu atención", Mis solicitudes,
+  bandeja de mensajes global, Mi cuenta y Ayuda, fuera de todo espacio.
+- Las **piezas sueltas** que enumera `docs/diseno/MAPA-DEL-DISENO.md`.
+- La **reorganización de la navegación** que el diseño pide: cinco pestañas en la ficha del
+  restaurante y el panel del restaurante como contexto propio.
 
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional

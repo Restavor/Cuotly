@@ -104,6 +104,14 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // exención en `audit.test.ts` — que además comprueba que esa rama de la
   // política sigue existiendo, para que la exención no sea una promesa.
   space_request: null,
+  // Paso 2 · la solicitud de acceso (migración 97, §37). Sin espacio, como
+  // `space_request`, y con un matiz suyo: tres de sus seis apuntes los
+  // escribe alguien SIN cuenta desde el formulario público, así que su
+  // `actor_id` es nulo y ni siquiera la tercera rama de `audit_log_select`
+  // se los enseña a nadie salvo a Bosco. Es lo correcto: quien solicita
+  // hace su seguimiento por el enlace con clave (RN-ACC-12), no por la
+  // auditoría.
+  access_request: null,
   // Fase 4, Hito 18 · lo que el espacio le paga a Cuotly (migración 90).
   // Del propietario, como `space`: §4.2.1 dice que es él quien paga. No
   // `manage_finance`, que es el dinero de los restaurantes y lo tienen los
@@ -176,6 +184,17 @@ export const AUDIT_ROW_VISIBLE_ENTITIES = [
 export const AUDIT_ACTIONS = [
   "absence.decided",
   "absence.requested",
+  // Las seis de la solicitud de acceso (migración 97, §37, decisión 41).
+  // Las tres primeras las escribe alguien SIN cuenta desde el formulario
+  // público, así que van con `actor_id` nulo: no hay a quién apuntar. Las
+  // tres siguen el mismo nombre literal en cada INSERT para que el barrido
+  // que lee las migraciones las encuentre.
+  "access_request.account_created",
+  "access_request.approved",
+  "access_request.needs_information",
+  "access_request.rejected",
+  "access_request.replied",
+  "access_request.submitted",
   "charge.invoice_attached",
   "charge.issued",
   "charge.receipt_uploaded",

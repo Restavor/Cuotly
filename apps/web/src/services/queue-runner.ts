@@ -444,6 +444,90 @@ export async function drainDeliveryQueue(
   return result;
 }
 
+// ---------------------------------------------------------------------
+// RN-ACC-04 · la cola de correo hacia direcciones que todavía no son de
+// nadie (migración 97).
+//
+// No cabe en `notification_deliveries`: aquella exige `space_id` y una
+// fila de `notifications`, y aquí no hay ni espacio ni destinatario
+// registrado —el caso entero es "alguien que no tiene cuenta"—. Lo que sí
+// se copia es la disciplina: mismo techo de intentos y misma espera
+// creciente de `src/core/notifications.ts`, mismo transporte de correo.
+// ---------------------------------------------------------------------
+
+export interface PlatformEmailRow {
+  readonly email_id: string;
+  readonly kind: string;
+  readonly to_email: string;
+  readonly payload: Record<string, unknown>;
+  readonly attempts: number;
+}
+
+export interface PlatformEmailGateway {
+  claimPlatformEmails(limit: number): Promise<readonly PlatformEmailRow[]>;
+  markPlatformEmailSent(emailId: string, providerMessageId: string | null): Promise<void>;
+  markPlatformEmailFailed(
+    emailId: string,
+    error: string,
+    nextAttemptAt: Date,
+    dead: boolean,
+  ): Promise<void>;
+}
+
+export interface PlatformEmailComposer {
+  /** `null` cuando no hay nada que mandar: se cierra, no se reintenta. */
+  compose(row: PlatformEmailRow): MailMessage | null;
+}
+
+/**
+ * Vacía la cola de correo de plataforma. Un correo que no se puede
+ * componer —un `kind` que este proceso no conoce, o un enlace que falta—
+ * se cierra como muerto en vez de reintentarse cinco veces contra nada
+ * (CA-18), y el motivo queda escrito en la fila.
+ */
+export async function drainPlatformEmailQueue(
+  gateway: PlatformEmailGateway,
+  transport: MailTransport,
+  composer: PlatformEmailComposer,
+  limit = 20,
+  now: Date = new Date(),
+): Promise<DrainResult> {
+  const filas = await gateway.claimPlatformEmails(limit);
+  const result = { sent: 0, retried: 0, dead: 0 };
+
+  for (const fila of filas) {
+    const message = composer.compose(fila);
+    if (message === null) {
+      await gateway.markPlatformEmailFailed(
+        fila.email_id,
+        `No se sabe componer un correo de tipo "${fila.kind}"`,
+        now,
+        true,
+      );
+      result.dead += 1;
+      continue;
+    }
+
+    try {
+      const providerId = await transport.send(message);
+      await gateway.markPlatformEmailSent(fila.email_id, providerId);
+      result.sent += 1;
+    } catch (error) {
+      const status = deliveryStatusAfterFailure(fila.attempts);
+      const delayMinutes = nextRetryDelayMinutes(fila.attempts);
+      await gateway.markPlatformEmailFailed(
+        fila.email_id,
+        error instanceof Error ? error.message : String(error),
+        new Date(now.getTime() + delayMinutes * 60_000),
+        status === "dead",
+      );
+      result[status === "dead" ? "dead" : "retried"] += 1;
+    }
+  }
+
+  return result;
+}
+
 /**
  * La forma de antes de la migración 94: solo correo. Se conserva porque
  * es lo que prueban los tests de la Fase 1 y lo que llama cualquier

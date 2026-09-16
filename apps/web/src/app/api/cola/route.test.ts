@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const runScheduledJobsMock = vi.hoisted(() => vi.fn());
 const runSlaSweepMock = vi.hoisted(() => vi.fn());
 const drainEmailQueueMock = vi.hoisted(() => vi.fn());
+const drainPlatformEmailQueueMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/services/queue-runner", () => ({
   runScheduledJobs: runScheduledJobsMock,
@@ -21,6 +22,9 @@ vi.mock("@/services/queue-runner", () => ({
   // Migración 94 (RN-MOV-04): correo y push salen de la misma cola por
   // `drainDeliveryQueue`; el nombre del doble se conserva.
   drainDeliveryQueue: drainEmailQueueMock,
+  // Migración 97 (RN-ACC-04): la cola de correo hacia direcciones sin
+  // cuenta, que la tanda vacía después de la de avisos.
+  drainPlatformEmailQueue: drainPlatformEmailQueueMock,
 }));
 
 vi.mock("@/services/queue-gateway", () => ({
@@ -29,6 +33,8 @@ vi.mock("@/services/queue-gateway", () => ({
   createMailComposer: vi.fn(),
   createExpoPushTransport: vi.fn(),
   createPushComposer: vi.fn(),
+  createPlatformEmailGateway: vi.fn(),
+  createPlatformEmailComposer: vi.fn(),
 }));
 
 const fromMock = vi.hoisted(() => vi.fn());

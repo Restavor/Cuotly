@@ -63,10 +63,10 @@ export const es = {
       passwordLabel: "Contraseña",
       submit: "Entrar en Cuotly",
       submitPending: "Entrando…",
-      googleSubmit: "Continuar con Google",
-      divider: "o",
+      // RN-ACC-10 · se retiró "entrar con Google" (decisión 41). Una sola
+      // forma de entrar: correo y contraseña.
       noAccount: "¿No tienes cuenta?",
-      signupLink: "Regístrate",
+      signupLink: "Solicita acceso",
       validationRequired: "Rellena correo y contraseña.",
       invalidCredentials: "Correo o contraseña incorrectos.",
 
@@ -83,18 +83,115 @@ export const es = {
       unknownError:
         "No hemos podido entrar y no sabemos por qué. Vuelve a intentarlo; si sigue pasando, escríbenos.",
     },
+    // PRD §37 (RN-ACC) · el formulario de solicitud ocupa el lugar del
+    // registro (decisión 41). No hay pantalla donde alguien se cree una
+    // cuenta por su cuenta: se pide acceso, y la cuenta llega al aprobarlo.
     signup: {
-      title: "Crea tu cuenta",
-      subtitle: "Regístrate para empezar a gestionar tu mantenimiento en Cuotly.",
+      title: "Solicita acceso a Cuotly",
+      subtitle:
+        "Cuéntanos quién eres y qué negocio llevas. Revisamos cada solicitud a mano y te contestamos por correo.",
+      contactNameLabel: "Nombre y apellidos",
+      businessNameLabel: "Nombre del restaurante o empresa",
+      phoneLabel: "Teléfono",
       emailLabel: "Correo electrónico",
-      passwordLabel: "Contraseña",
-      submit: "Crear cuenta",
-      submitPending: "Creando cuenta…",
-      googleSubmit: "Continuar con Google",
-      divider: "o",
+      emailHelp: "Ahí te escribiremos, y será el correo de tu cuenta si te damos acceso.",
+      commentsLabel: "Comentarios (opcional)",
+      commentsHelp: "Qué tienes hoy y qué necesitas. Cuanto más concreto, antes te contestamos.",
+      submit: "Enviar solicitud",
+      submitPending: "Enviando…",
       hasAccount: "¿Ya tienes cuenta?",
       loginLink: "Entra",
-      validationRequired: "Rellena correo y contraseña.",
+      // A09 · los campos mal rellenados se señalan uno a uno.
+      validationRequired: "Faltan datos: revisa los campos marcados.",
+      validationEmail: "Ese correo no tiene buena pinta. Revísalo.",
+      // A11 · si el envío falla, lo escrito no se pierde.
+      unreachable:
+        "No hemos podido enviar tu solicitud. Es un problema nuestro o de tu conexión, no de lo que has escrito: sigue aquí y puedes volver a enviarlo.",
+      unknownError:
+        "No hemos podido enviar tu solicitud y no sabemos por qué. Lo que has escrito sigue aquí; vuelve a intentarlo.",
+      // A12 · salir con cambios sin enviar avisa antes.
+      leaveWarning: "Has escrito datos que todavía no se han enviado. ¿Seguro que quieres salir?",
+      // RN-ACC-12 · la misma respuesta pase lo que pase por detrás.
+      doneTitle: "Hemos recibido tu solicitud",
+      doneBody:
+        "Te escribiremos a ese correo con la respuesta. Guarda el mensaje que acabas de recibir: lleva el enlace donde puedes consultar cómo va.",
+      doneBack: "Volver a entrar",
+    },
+    // RN-ACC-12 · el seguimiento de quien todavía no tiene cuenta, por el
+    // enlace con clave que recibió por correo.
+    followUp: {
+      title: "Tu solicitud de acceso",
+      notFound: "Este enlace no vale",
+      notFoundBody:
+        "O se ha copiado a medias, o la solicitud ya no existe. Si crees que es un error, vuelve a solicitar acceso.",
+      statusLabel: "Estado",
+      sentOn: "Enviada el",
+      decidedOn: "Contestada el",
+      states: {
+        submitted: "En revisión",
+        needs_information: "Necesitamos que nos cuentes algo más",
+        approved: "Aprobada",
+        rejected: "No aprobada",
+      },
+      submittedBody: "La estamos revisando. Te escribiremos en cuanto haya respuesta.",
+      needsInformationBody: "Esto es lo que necesitamos saber:",
+      approvedBody:
+        "Te hemos enviado por correo un enlace para poner tu contraseña y entrar. Es de un solo uso y caduca.",
+      rejectedBody: "No hemos podido darte acceso. El motivo:",
+      yourReply: "Tu respuesta",
+      replyLabel: "Responde aquí",
+      replySubmit: "Enviar respuesta",
+      replySubmitPending: "Enviando…",
+      replyRequired: "Escribe la respuesta antes de enviarla.",
+      replyDone: "Gracias. Tu solicitud vuelve a la cola de revisión.",
+    },
+    // RN-ACC-04 · el enlace de un solo uso donde se pone la contraseña.
+    setup: {
+      title: "Pon tu contraseña",
+      subtitle: "Tu acceso a Cuotly está aprobado. Elige una contraseña y entra.",
+      emailLabel: "Tu correo",
+      emailLocked: "Es el correo que aprobamos. No se puede cambiar aquí.",
+      passwordLabel: "Contraseña",
+      repeatLabel: "Repite la contraseña",
+      submit: "Crear mi cuenta y entrar",
+      submitPending: "Creando la cuenta…",
+      mismatch: "Las dos contraseñas no coinciden.",
+      tooShort: "La contraseña tiene que tener al menos 8 caracteres.",
+      usedTitle: "Este enlace ya se ha usado",
+      usedBody: "Tu cuenta ya existe. Entra con tu correo y tu contraseña.",
+      expiredTitle: "Este enlace ha caducado",
+      expiredBody:
+        "Por seguridad dura poco. Escríbenos al mismo correo por el que te contestamos y te enviamos uno nuevo.",
+      unknownTitle: "Este enlace no vale",
+      unknownBody: "O se ha copiado a medias, o nunca existió.",
+      goToLogin: "Ir a entrar",
+      unknownError:
+        "No hemos podido crear tu cuenta y no sabemos por qué. Vuelve a intentarlo; el enlace sigue sirviendo.",
+    },
+    // RN-ACC-09 · la otra puerta: la invitación de un propietario.
+    invitation: {
+      title: "Te han invitado a Cuotly",
+      subtitleSpace: "Vas a entrar en",
+      emailLabel: "Tu correo",
+      emailLocked: "Es el correo al que te invitaron. No se puede cambiar aquí.",
+      passwordLabel: "Contraseña",
+      repeatLabel: "Repite la contraseña",
+      submit: "Crear mi cuenta y entrar",
+      submitPending: "Creando la cuenta…",
+      hasAccountTitle: "Ya tienes cuenta en Cuotly",
+      hasAccountBody: "Entra con tu correo y tu contraseña y te añadimos al espacio.",
+      signIn: "Entrar y aceptar",
+      expiredTitle: "Esta invitación ha caducado",
+      expiredBody: "Pídele a quien te invitó que te mande otra.",
+      acceptedTitle: "Esta invitación ya se ha usado",
+      acceptedBody: "Entra con tu correo y tu contraseña.",
+      cancelledTitle: "Esta invitación se ha cancelado",
+      cancelledBody: "Pregunta a quien te invitó.",
+      unknownTitle: "Esta invitación no vale",
+      unknownBody: "O se ha copiado a medias, o nunca existió.",
+      goToLogin: "Ir a entrar",
+      unknownError:
+        "No hemos podido crear tu cuenta y no sabemos por qué. Vuelve a intentarlo.",
     },
   },
 
@@ -2411,6 +2508,7 @@ export const es = {
     auditEntities: {
       space: "Espacio",
       space_request: "Solicitud de espacio",
+      access_request: "Solicitud de acceso",
       export: "Exportación",
       establishment: "Restaurante",
       group: "Grupo",
@@ -2575,6 +2673,12 @@ export const es = {
       "space_request.needs_information": "Se pidió más información sobre la solicitud",
       "space_request.approved": "Solicitud de espacio aprobada",
       "space_request.rejected": "Solicitud de espacio rechazada",
+      "access_request.submitted": "Solicitud de acceso enviada",
+      "access_request.replied": "Respuesta a la solicitud de acceso",
+      "access_request.needs_information": "Se pidió más información sobre la solicitud de acceso",
+      "access_request.approved": "Solicitud de acceso aprobada",
+      "access_request.rejected": "Solicitud de acceso no aprobada",
+      "access_request.account_created": "Cuenta creada desde una solicitud de acceso",
       "space.payment_term_changed": "Plazo de pago cambiado",
       "space.renamed": "Espacio renombrado",
       "space.details_changed": "Datos del espacio cambiados",
@@ -4536,6 +4640,63 @@ export const es = {
    * Fase 4, Hito 19 · el panel de Administración de Cuotly (PRD §32,
    * RN-ADM-01 a 04, §128).
    */
+  /**
+   * RN-ACC-04 · los cinco correos de la puerta de entrada (migración 97).
+   * Van a direcciones que todavía no son de nadie, así que no pueden
+   * apoyarse en ninguna pantalla: el texto se basta solo y los enlaces son
+   * absolutos.
+   */
+  platformEmails: {
+    received: {
+      subject: "Hemos recibido tu solicitud de acceso a Cuotly",
+      body: (nombre: string | null, enlace: string) =>
+        `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
+        "Hemos recibido tu solicitud de acceso a Cuotly. La revisamos a mano y te " +
+        "escribiremos a esta dirección con la respuesta.\n\n" +
+        `Puedes consultar cómo va aquí: ${enlace}\n\n` +
+        "Guarda este mensaje: ese enlace es el único sitio donde seguirla mientras " +
+        "todavía no tienes cuenta.",
+    },
+    needsInformation: {
+      subject: "Necesitamos un dato más sobre tu solicitud de Cuotly",
+      body: (nombre: string | null, motivo: string, enlace: string) =>
+        `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
+        "Para seguir con tu solicitud necesitamos que nos cuentes esto:\n\n" +
+        `${motivo}\n\n` +
+        `Puedes contestarnos aquí mismo: ${enlace}`,
+    },
+    approved: {
+      subject: "Ya tienes acceso a Cuotly",
+      body: (nombre: string | null, enlace: string) =>
+        `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
+        "Hemos aprobado tu acceso a Cuotly. Entra por este enlace y elige tu " +
+        `contraseña:\n\n${enlace}\n\n` +
+        "El enlace sirve una sola vez y caduca en siete días. No te mandamos ninguna " +
+        "contraseña por correo a propósito: la eliges tú ahí y no queda escrita en " +
+        "ningún buzón.\n\n" +
+        "Entrar no crea todavía ningún espacio de mantenimiento: eso se pide desde " +
+        "dentro, cuando ya estés.",
+    },
+    rejected: {
+      subject: "Sobre tu solicitud de acceso a Cuotly",
+      body: (nombre: string | null, motivo: string) =>
+        `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
+        "Esta vez no hemos podido darte acceso a Cuotly. El motivo:\n\n" +
+        `${motivo}\n\n` +
+        "Si crees que es un malentendido o cambia algo, puedes volver a escribirnos.",
+    },
+    alreadyRegistered: {
+      subject: "Ya tienes cuenta en Cuotly",
+      body: (nombre: string | null, enlace: string) =>
+        `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
+        "Alguien ha pedido acceso a Cuotly con esta dirección, y esta dirección ya " +
+        "tiene cuenta. No hemos abierto ninguna solicitud nueva.\n\n" +
+        `Si has sido tú, entra por aquí: ${enlace}\n\n` +
+        "Si no reconoces esta petición, puedes ignorar este mensaje: no se ha " +
+        "cambiado nada de tu cuenta.",
+    },
+  },
+
   platformAdmin: {
     title: "Administración de Cuotly",
     subtitle: "Los doce bloques de §128. Solo Cuotly, con la sesión verificada en dos pasos.",
@@ -4552,6 +4713,7 @@ export const es = {
       overview: "Resumen",
       users: "Usuarios",
       spaces: "Espacios",
+      access: "Solicitudes de acceso",
       requests: "Solicitudes de alta",
       charges: "Cobros e impagos",
       support: "Modo soporte",
@@ -4756,6 +4918,50 @@ export const es = {
       emptyReason: "Todavía no se ha aprobado ninguna solicitud.",
     },
 
+    // PRD §37 (RN-ACC) · la puerta de entrada, que no es la solicitud de
+    // creación de espacio y no debe confundirse con ella.
+    access: {
+      title: "Solicitudes de acceso",
+      subtitle:
+        "Quién pide entrar en Cuotly (§37). Aprobar crea la cuenta y nada más: ni espacio, ni panel, ni suscripción.",
+      business: "Negocio",
+      contact: "Quién escribe",
+      phone: "Teléfono",
+      email: "Correo",
+      status: "Estado",
+      createdAt: "Enviada",
+      open: "Revisar",
+      emptyTitle: "No hay solicitudes de acceso",
+      emptyReason: "Cuando alguien pida entrar, aparecerá aquí.",
+      detailTitle: "Solicitud de acceso",
+      back: "Volver a las solicitudes de acceso",
+      fields: "Lo que ha escrito",
+      comments: "Comentarios",
+      applicantReply: "Lo que contestó después",
+      decisionTitle: "Decidir",
+      decisionHint:
+        "Aprobar crea la cuenta y le manda por correo un enlace de un solo uso para poner su contraseña; la contraseña no viaja por correo. No crea espacio ni panel: eso sigue siendo una solicitud de creación de espacio. Pedir información y no aprobar exigen un motivo que el solicitante va a leer.",
+      needsInformation: "Pedir información",
+      reject: "No aprobar",
+      approve: "Aprobar y crear la cuenta",
+      reasonLabel: "Motivo (lo lee el solicitante)",
+      reasonRequired: "Escribe qué falta o por qué no se aprueba.",
+      pending: "Guardando…",
+      decided: "Decisión registrada.",
+      approved: "Cuenta aprobada. Le hemos enviado el enlace para poner su contraseña.",
+      finalHint: "Esta solicitud ya está decidida y no se mueve más.",
+      noPermissionHint: "Decidir sobre solicitudes exige el permiso «Aprobar espacios» (§167).",
+      requesterHidden:
+        "Quién la revisó no se enseña al solicitante: está en la auditoría de plataforma.",
+      accountCreated: "Cuenta creada",
+      accountPending: "Aprobada. Todavía no ha puesto su contraseña.",
+      states: {
+        submitted: "En revisión",
+        needs_information: "Esperando información",
+        approved: "Aprobada",
+        rejected: "No aprobada",
+      },
+    },
     requests: {
       title: "Solicitudes de alta",
       subtitle: "Las solicitudes de creación de espacio (§10). Primero las que esperan una decisión.",

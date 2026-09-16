@@ -18,6 +18,9 @@ import type {
   DeliveryRow,
   MailComposer,
   MailTransport,
+  PlatformEmailComposer,
+  PlatformEmailGateway,
+  PlatformEmailRow,
   PushComposer,
   PushTicket,
   PushTransport,
@@ -100,6 +103,103 @@ export function createSupabaseQueueGateway(client: AnyClient): QueueGateway {
     // Migración 94 (RN-MOV-05): reservada a service_role, como el resto.
     revokePushToken: (token, reason) =>
       rpc<boolean>(client, "revoke_push_token", { p_expo_push_token: token, p_reason: reason }),
+  };
+}
+
+/**
+ * RN-ACC-04 · la cola de correo hacia direcciones sin cuenta (migración
+ * 97). Las tres funciones están reservadas a `service_role`, como el resto
+ * de la cola: llevan dentro el enlace de alta, que es una credencial.
+ */
+export function createPlatformEmailGateway(client: AnyClient): PlatformEmailGateway {
+  return {
+    claimPlatformEmails: (limit) =>
+      rpc<readonly PlatformEmailRow[]>(client, "claim_platform_emails", { p_limit: limit }),
+
+    markPlatformEmailSent: (emailId, providerMessageId) =>
+      rpc<void>(client, "mark_platform_email_sent", {
+        p_email_id: emailId,
+        p_provider_message_id: providerMessageId,
+      }),
+
+    markPlatformEmailFailed: (emailId, error, nextAttemptAt, dead) =>
+      rpc<void>(client, "mark_platform_email_failed", {
+        p_email_id: emailId,
+        p_error: error,
+        p_next_attempt_at: nextAttemptAt.toISOString(),
+        p_dead: dead,
+      }),
+  };
+}
+
+/**
+ * RN-ACC-04 · el texto de los cinco correos de la puerta de entrada, desde
+ * i18n como todo lo demás (CLAUDE.md: nunca literales de UI).
+ *
+ * Los enlaces son absolutos porque un correo no tiene origen desde el que
+ * resolver una ruta, y llevan dentro la clave: el de seguimiento
+ * (`follow_up_token`) y el de alta (`setup_token`). Un `kind` que este
+ * proceso no conozca devuelve `null` y el correo se cierra como muerto con
+ * su motivo escrito, en vez de reintentarse cinco veces contra nada.
+ */
+export function createPlatformEmailComposer(baseUrl: string): PlatformEmailComposer {
+  const raiz = baseUrl.replace(/\/$/, "");
+
+  return {
+    compose(row: PlatformEmailRow) {
+      const t = es.platformEmails;
+      const nombre = typeof row.payload.contact_name === "string" ? row.payload.contact_name : null;
+      const motivo = typeof row.payload.reason === "string" ? row.payload.reason : null;
+      const seguimiento =
+        typeof row.payload.follow_up_token === "string"
+          ? `${raiz}/solicitud/${row.payload.follow_up_token}`
+          : null;
+      const alta =
+        typeof row.payload.setup_token === "string"
+          ? `${raiz}/alta/${row.payload.setup_token}`
+          : null;
+
+      switch (row.kind) {
+        case "access_request_received":
+          if (!seguimiento) return null;
+          return {
+            to: row.to_email,
+            subject: t.received.subject,
+            body: t.received.body(nombre, seguimiento),
+          };
+        case "access_request_needs_information":
+          if (!seguimiento || !motivo) return null;
+          return {
+            to: row.to_email,
+            subject: t.needsInformation.subject,
+            body: t.needsInformation.body(nombre, motivo, seguimiento),
+          };
+        case "access_request_approved":
+          // Sin enlace no hay nada que mandar: un "ya puedes entrar" sin
+          // por dónde es peor que no escribir.
+          if (!alta) return null;
+          return {
+            to: row.to_email,
+            subject: t.approved.subject,
+            body: t.approved.body(nombre, alta),
+          };
+        case "access_request_rejected":
+          if (!motivo) return null;
+          return {
+            to: row.to_email,
+            subject: t.rejected.subject,
+            body: t.rejected.body(nombre, motivo),
+          };
+        case "access_request_already_registered":
+          return {
+            to: row.to_email,
+            subject: t.alreadyRegistered.subject,
+            body: t.alreadyRegistered.body(nombre, `${raiz}/login`),
+          };
+        default:
+          return null;
+      }
+    },
   };
 }
 

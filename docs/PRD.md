@@ -2042,9 +2042,12 @@ La familia es **`RN-ACC`** (acceso).
   llame (`CLAUDE.md`: esconder un botón no es un control de acceso).
 - **RN-ACC-02**: **los cinco campos** de F01: nombre y apellidos, nombre del restaurante o empresa,
   teléfono, correo electrónico y comentarios (opcional). Los cuatro primeros son obligatorios. Es
-  deliberadamente corta: quien la escribe todavía no conoce el producto. Si ese correo **ya tiene
-  cuenta**, el formulario lo dice y lleva a iniciar sesión, en vez de abrir una segunda solicitud
-  que nadie va a poder aprobar (una persona, una cuenta, un correo: maestra §7.1).
+  deliberadamente corta: quien la escribe todavía no conoce el producto. La pantalla contesta
+  **siempre lo mismo** —"hemos recibido tu solicitud"— haya pasado lo que haya pasado por detrás:
+  si ese correo **ya tiene cuenta**, o ya tiene una solicitud abierta, no se abre otra y quien
+  recibe el aviso por correo es **la dirección**, no la pantalla. Así nadie averigua quién está en
+  Cuotly escribiendo correos en un formulario público, que es lo que RN-ACC-12 exige y lo que la
+  pantalla de entrar ya hace con sus mensajes de fallo.
 - **RN-ACC-03**: **aprobarla crea la cuenta, y nada más**: ni espacio, ni panel, ni suscripción, ni
   cobro. La cuenta nace con el correo y el nombre de la solicitud, sin pertenecer a ningún espacio,
   y lo primero que ve esa persona al entrar es el contexto global de §36 vacío con su motivo escrito
@@ -2052,7 +2055,10 @@ La familia es **`RN-ACC`** (acceso).
   incluida la de una sola prueba gratuita por persona o negocio (RN-PLA-09).
 - **RN-ACC-04**: **la contraseña no viaja por correo**. El aviso de aprobación lleva un **enlace de
   un solo uso y con caducidad** donde la persona pone su contraseña la primera vez; usado una vez o
-  pasada la caducidad, deja de valer y hay que pedir otro. Bosco propuso enviar la contraseña en el
+  pasada la caducidad, deja de valer y hay que pedir otro. Ese correo **no lo escribe una pantalla**:
+  se encola como el resto del producto, con reintentos e idempotencia, en una cola propia —la de
+  RN-NOT-05 cuelga de un espacio y de una notificación, y aquí no hay ni lo uno ni lo otro— y la
+  vacía el mismo proceso que ya envía los demás. Bosco propuso enviar la contraseña en el
   propio correo y lo cambió al explicarle por qué no: un correo se queda guardado en el buzón y pasa
   por servidores por el camino, de modo que una contraseña enviada así queda escrita para siempre en
   un sitio que no controlamos. El enlace es igual de sencillo para quien lo recibe.

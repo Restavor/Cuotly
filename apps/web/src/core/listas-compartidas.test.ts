@@ -51,6 +51,12 @@ import {
   spaceRequestTransitionAllowed,
 } from "./space-requests";
 import {
+  ACCESS_REQUEST_ACTORS,
+  ACCESS_REQUEST_STATES,
+  PLATFORM_EMAIL_KINDS,
+  accessRequestTransitionAllowed,
+} from "./access-requests";
+import {
   OPPORTUNITY_RULES,
   OPPORTUNITY_STATES,
   RULE_CATEGORY,
@@ -407,6 +413,51 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     const fn = ultimaDefinicion("create or replace function public.report_is_visible_to_client", "$$;");
     const enSql = entrecomillados(fn.slice(fn.indexOf("select p_status in")));
     expect([...REPORT_STATES].filter(reportIsVisibleToClient).sort()).toEqual([...enSql].sort());
+  });
+
+  /*
+   * Migración 97 (paso 2, decisión 41). La solicitud de acceso es la
+   * puerta por la que se entra en Cuotly, y su tabla de transiciones está
+   * a los dos lados por la misma razón que la de la solicitud de espacio:
+   * en SQL decide y en TypeScript la pantalla dibuja. Separadas, la
+   * pantalla ofrecería un botón que el servidor rechaza.
+   */
+  it("quién mueve cada transición de una solicitud de acceso (RN-ACC-05) lo dicen igual los dos lados", () => {
+    const fn = ultimaDefinicion("create or replace function public.access_request_transition_allowed", "$$;");
+
+    const permitidasEnSql = new Set<string>();
+    for (const rama of fn.split("when ").slice(1)) {
+      const corte = rama.indexOf(" then ");
+      if (corte < 0) continue;
+      const izquierda = entrecomillados(rama.slice(0, corte));
+      const derecha = entrecomillados(rama.slice(corte));
+      if (izquierda.length < 2 || derecha.length === 0) continue;
+      const [origen, ...destinos] = izquierda;
+      for (const destino of destinos) {
+        for (const actor of derecha) permitidasEnSql.add(`${origen}->${destino}:${actor}`);
+      }
+    }
+    // En falso-cerrado, igual que arriba.
+    expect(permitidasEnSql.size).toBeGreaterThan(0);
+
+    for (const from of ACCESS_REQUEST_STATES) {
+      for (const to of ACCESS_REQUEST_STATES) {
+        for (const actor of ACCESS_REQUEST_ACTORS) {
+          expect(
+            accessRequestTransitionAllowed(from, to, actor),
+            `${from} -> ${to} como ${actor}`,
+          ).toBe(permitidasEnSql.has(`${from}->${to}:${actor}`));
+        }
+      }
+    }
+  });
+
+  it("los cinco correos a direcciones sin cuenta (RN-ACC-04) son los mismos en SQL y en `src/core`", () => {
+    const tabla = ultimaDefinicion("create table public.platform_emails", ");");
+    const check = tabla.slice(tabla.indexOf("kind text not null check"));
+    const enSql = entrecomillados(check.slice(0, check.indexOf("))") + 2));
+    expect(enSql.length).toBeGreaterThan(0);
+    expect([...enSql].sort()).toEqual([...PLATFORM_EMAIL_KINDS].sort());
   });
 
   it("quién mueve cada transición de una solicitud de espacio (RN-PLA-03) lo dicen igual los dos lados", () => {

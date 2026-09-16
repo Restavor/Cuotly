@@ -21,6 +21,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          account_id: string | null
+          business_name: string
+          comments: string | null
+          contact_name: string
+          created_at: string
+          decided_at: string | null
+          email: string
+          id: string
+          phone: string
+          applicant_reply: string | null
+          status: string
+          status_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          business_name: string
+          comments?: string | null
+          contact_name: string
+          created_at?: string
+          decided_at?: string | null
+          email: string
+          id?: string
+          phone: string
+          applicant_reply?: string | null
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          business_name?: string
+          comments?: string | null
+          contact_name?: string
+          created_at?: string
+          decided_at?: string | null
+          email?: string
+          id?: string
+          phone?: string
+          applicant_reply?: string | null
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      access_request_events: {
+        Row: {
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          request_id: string
+          to_status: string
+        }
+        Insert: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id: string
+          to_status: string
+        }
+        Update: {
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
       absences: {
         Row: {
           created_at: string
@@ -7373,6 +7448,70 @@ export type Database = {
       }
       approve_job_reassignment: {
         Args: { p_job_id: string; p_new_worker_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      access_request_follow_up: {
+        Args: { p_token: string }
+        Returns: {
+          applicant_reply: string | null
+          business_name: string
+          can_reply: boolean
+          contact_name: string
+          created_at: string
+          decided_at: string | null
+          status: string
+          status_reason: string | null
+        }[]
+      }
+      access_request_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string }
+        Returns: boolean
+      }
+      accept_space_invitation_as: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: string
+      }
+      account_setup_details: {
+        Args: { p_token: string }
+        Returns: {
+          contact_name: string | null
+          email: string | null
+          state: string
+        }[]
+      }
+      approve_access_request: {
+        Args: { p_idempotency_key?: string; p_request_id: string }
+        Returns: string
+      }
+      consume_account_setup_token: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: string
+      }
+      decide_access_request: {
+        Args: { p_reason?: string; p_request_id: string; p_status: string }
+        Returns: undefined
+      }
+      invitation_signup_details: {
+        Args: { p_token: string }
+        Returns: {
+          email: string | null
+          has_account: boolean
+          space_name: string | null
+          state: string
+        }[]
+      }
+      reply_to_access_request: {
+        Args: { p_reply: string; p_token: string }
+        Returns: undefined
+      }
+      submit_access_request: {
+        Args: {
+          p_business_name: string
+          p_comments?: string
+          p_contact_name: string
+          p_email: string
+          p_phone: string
+        }
         Returns: undefined
       }
       approve_space_request: {

@@ -166,6 +166,12 @@ describe("HU-36 · el catálogo de acciones de auditoría cubre lo que la base e
       // Hito 22 · el teléfono con push: sin espacio, como `session`; lo ve
       // quien lo registró o lo perdió (RN-MOV-05).
       "push_device",
+      // Paso 2 · la solicitud de acceso (migración 97): sin espacio, como
+      // `space_request`. Tres de sus seis apuntes van con `actor_id` nulo
+      // porque quien los provoca no tiene cuenta, así que ni siquiera la
+      // rama del propio actor se los enseña: los ve Bosco y nadie más, que
+      // es lo que RN-ACC-07 quiere.
+      "access_request",
     ]);
     const porFila = Object.entries(AUDIT_FAMILY_CAPABILITY)
       .filter(([familia, capacidad]) => capacidad === null && !deLaPlataforma.has(familia))

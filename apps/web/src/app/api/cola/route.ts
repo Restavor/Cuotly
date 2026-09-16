@@ -33,11 +33,18 @@ import { createSupabaseReportGateway } from "@/services/report-gateway";
 import {
   createExpoPushTransport,
   createMailComposer,
+  createPlatformEmailComposer,
+  createPlatformEmailGateway,
   createPushComposer,
   createResendTransport,
   createSupabaseQueueGateway,
 } from "@/services/queue-gateway";
-import { drainDeliveryQueue, runScheduledJobs, runSlaSweep } from "@/services/queue-runner";
+import {
+  drainDeliveryQueue,
+  drainPlatformEmailQueue,
+  runScheduledJobs,
+  runSlaSweep,
+} from "@/services/queue-runner";
 
 export const dynamic = "force-dynamic";
 
@@ -161,6 +168,23 @@ async function ejecutarTanda(request: Request) {
     pushComposer: createPushComposer(),
   });
 
+  /*
+    Paso 2 · RN-ACC-04 · la cola de correo hacia direcciones que todavía no
+    son de nadie (migración 97): el acuse de una solicitud de acceso, lo
+    que se le pide, el enlace de alta de una aprobada y el aviso a quien ya
+    tiene cuenta. Va aparte de la de arriba porque aquella cuelga de un
+    espacio y de una notificación, y aquí no hay ni lo uno ni lo otro.
+    Mismo transporte y misma disciplina de reintentos.
+  */
+  const accesos = await drainPlatformEmailQueue(
+    createPlatformEmailGateway(client),
+    createResendTransport(
+      process.env.RESEND_API_KEY,
+      process.env.RESEND_FROM ?? "Cuotly <avisos@cuotly.com>",
+    ),
+    createPlatformEmailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
+  );
+
   return NextResponse.json({
     scheduled,
     slaNotifications: emitted,
@@ -168,6 +192,7 @@ async function ejecutarTanda(request: Request) {
     opportunities: oportunidades,
     reports: informes,
     mail,
+    accessEmails: accesos,
   });
 }
 

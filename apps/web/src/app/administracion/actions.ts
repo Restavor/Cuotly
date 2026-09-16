@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { isSupportAccessLevel, supportDurationIsValid } from "@/core/platform-admin";
+import { accessRequestNeedsReason, isAccessRequestState } from "@/core/access-requests";
 import { isSpaceRequestState, spaceRequestNeedsReason } from "@/core/space-requests";
 import { isCuotlyPaymentMethod } from "@/core/cuotly-subscription";
 import { es } from "@/i18n/es";
@@ -70,6 +71,62 @@ export async function approveSpaceRequest(
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("approve_space_request", {
+    p_request_id: requestId,
+    p_idempotency_key: idempotencyKey || undefined,
+  });
+  if (error) return { error: error.message, done: false };
+
+  revalidatePath("/administracion", "layout");
+  return { error: null, done: true };
+}
+
+/**
+ * RN-ACC-05/06 · pedir información o no aprobar una solicitud de ACCESO.
+ * Aprobar no pasa por aquí: hace más cosas y tiene su propia función con
+ * clave de idempotencia, igual que en las de creación de espacio.
+ */
+export async function decideAccessRequest(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const requestId = texto(formData, "requestId");
+  const status = texto(formData, "status");
+  const reason = texto(formData, "reason");
+
+  if (!isAccessRequestState(status)) {
+    return { error: es.platformAdmin.access.reasonRequired, done: false };
+  }
+  if (accessRequestNeedsReason(status) && reason === "") {
+    return { error: es.platformAdmin.access.reasonRequired, done: false };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("decide_access_request", {
+    p_request_id: requestId,
+    p_status: status,
+    p_reason: reason || undefined,
+  });
+  if (error) return { error: error.message, done: false };
+
+  revalidatePath("/administracion", "layout");
+  return { error: null, done: true };
+}
+
+/**
+ * RN-ACC-03/04/08 · aprobar crea el derecho a la cuenta y encola el correo
+ * con el enlace de un solo uso. El enlace que devuelve la función **no se
+ * enseña en pantalla**: es una credencial, y su sitio es el buzón de quien
+ * la pidió, no el navegador de quien aprueba.
+ */
+export async function approveAccessRequest(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const requestId = texto(formData, "requestId");
+  const idempotencyKey = texto(formData, "idempotencyKey");
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("approve_access_request", {
     p_request_id: requestId,
     p_idempotency_key: idempotencyKey || undefined,
   });
