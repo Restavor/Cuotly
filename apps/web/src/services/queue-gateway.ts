@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { HolidayRecord } from "@/core/business-clock";
 import { es } from "@/i18n/es";
+import { euros } from "@/i18n/money";
 import type {
   DeliveryRow,
   MailComposer,
@@ -167,9 +168,12 @@ export function createResendTransport(
 }
 
 /**
- * RN-MOV-04 · el push dice el evento y el espacio, y nada más: se lee en
- * la pantalla de bloqueo de un teléfono que puede estar sobre una barra.
- * El detalle está a un toque, detrás de la sesión, en el enlace profundo.
+ * RN-MOV-04 (decisión 36) · el push dice qué ha pasado y dónde: el nombre
+ * del evento y el restaurante en el título; el espacio, la cifra o el
+ * umbral si los hay, y una frase de lo que se pide («Quiero cambiar el
+ * precio…») en el cuerpo. Todo sale de la fila del reclamo, que lo
+ * resuelve el servidor desde la entidad del aviso; aquí no se consulta
+ * nada más. Nunca el nombre de nadie del equipo: la fila no lo trae.
  */
 export function createPushComposer(): PushComposer {
   return {
@@ -182,8 +186,13 @@ export function createPushComposer(): PushComposer {
 
       return {
         to: tokens,
-        title: es.notifications.push.title(label),
-        body: es.notifications.push.body(delivery.space_name),
+        title: es.notifications.push.title(label, delivery.establishment_name),
+        body: es.notifications.push.body({
+          espacio: delivery.space_name,
+          importe: delivery.amount_cents !== null ? euros(delivery.amount_cents) : null,
+          umbral: delivery.threshold_percent,
+          asunto: delivery.subject,
+        }),
         deepLink: delivery.deep_link,
       };
     },

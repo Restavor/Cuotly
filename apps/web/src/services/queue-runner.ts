@@ -81,6 +81,17 @@ export interface DeliveryRow {
   readonly audience: string;
   readonly deep_link: string;
   readonly space_name: string;
+  /**
+   * Migración 94 (RN-MOV-04, decisión 36): lo que el push dice además del
+   * evento y el espacio. El restaurante y la frase de lo que se pide los
+   * resuelve el reclamo desde la entidad del aviso; la cifra y el umbral
+   * son los del propio aviso. Nunca el nombre de nadie del equipo.
+   */
+  readonly entity_type: string;
+  readonly establishment_name: string | null;
+  readonly amount_cents: number | null;
+  readonly threshold_percent: number | null;
+  readonly subject: string | null;
 }
 
 export interface QueueGateway {

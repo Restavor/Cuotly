@@ -394,8 +394,77 @@ $$;
 revoke all on function public.emit_notification(uuid, uuid, text, text, text, uuid, text, text, uuid, integer, bigint, boolean)
   from public, anon, authenticated;
 
+-- Lo que el push dice (RN-MOV-04, decisión 36): el restaurante, el espacio,
+-- la cifra si la hay y una frase de lo que se pide. Ni el correo ni el
+-- push guardan texto: el contexto se resuelve en el momento del envío,
+-- desde la entidad del aviso, con lo que ese aviso ya apunta. Nunca el
+-- nombre de nadie del equipo: aquí no hay ninguna columna de persona.
+create or replace function public.notification_push_context(p_notification_id uuid)
+returns table (establishment_name text, subject text)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_n public.notifications%rowtype;
+  v_est uuid;
+  v_subject text;
+begin
+  select * into v_n from public.notifications where id = p_notification_id;
+  if v_n.id is null then
+    return;
+  end if;
+
+  v_est := v_n.establishment_id;
+
+  case v_n.entity_type
+    when 'request' then
+      select r.establishment_id, r.description into v_est, v_subject
+      from public.requests r where r.id = v_n.entity_id;
+    when 'job' then
+      select j.establishment_id, r.description into v_est, v_subject
+      from public.jobs j left join public.requests r on r.id = j.request_id
+      where j.id = v_n.entity_id;
+    when 'task' then
+      select t.establishment_id, t.title into v_est, v_subject
+      from public.tasks t where t.id = v_n.entity_id;
+    when 'menu' then
+      select m.establishment_id, m.name into v_est, v_subject
+      from public.menus m where m.id = v_n.entity_id;
+    when 'charge' then
+      select c.establishment_id, c.concept into v_est, v_subject
+      from public.charges c where c.id = v_n.entity_id;
+    when 'quote' then
+      select q.establishment_id, q.concept into v_est, v_subject
+      from public.quotes q where q.id = v_n.entity_id;
+    when 'absence' then
+      select a.reason into v_subject from public.absences a where a.id = v_n.entity_id;
+    when 'report' then
+      select rp.establishment_id, rp.name into v_est, v_subject
+      from public.reports rp where rp.id = v_n.entity_id;
+    when 'incident' then
+      select i.description into v_subject from public.incidents i where i.id = v_n.entity_id;
+    when 'establishment' then
+      v_est := coalesce(v_est, v_n.entity_id);
+    else
+      null;
+  end case;
+
+  -- El aviso manda si ya traía restaurante; lo de la entidad solo rellena.
+  v_est := coalesce(v_n.establishment_id, v_est);
+
+  return query select
+    (select e.name from public.establishments e where e.id = v_est),
+    nullif(left(regexp_replace(coalesce(v_subject, ''), '\s+', ' ', 'g'), 140), '');
+end;
+$$;
+
+revoke all on function public.notification_push_context(uuid) from public, anon, authenticated;
+
 -- El reclamo devuelve ahora el canal y, para el push, los tokens vigentes
--- del destinatario. Cambia la forma de la tabla devuelta, y eso obliga a
+-- del destinatario y su contexto (restaurante, cifra, umbral y la frase
+-- de lo que se pide). Cambia la forma de la tabla devuelta, y eso obliga a
 -- retirar la función y crearla de nuevo; al crearla, los privilegios por
 -- omisión de Supabase la abrirían a `anon` y `authenticated`, así que la
 -- revocación va justo detrás (CLAUDE.md).
@@ -412,7 +481,12 @@ returns table (
   event_type text,
   audience text,
   deep_link text,
-  space_name text
+  space_name text,
+  entity_type text,
+  establishment_name text,
+  amount_cents bigint,
+  threshold_percent integer,
+  subject text
 )
 language plpgsql
 security definer
@@ -443,11 +517,17 @@ begin
              where pd.user_id = n.recipient_id and pd.revoked_at is null
            ), '{}'::text[])
          else null end,
-         n.event_type, n.audience, n.deep_link, s.name
+         n.event_type, n.audience, n.deep_link, s.name,
+         n.entity_type,
+         ctx.establishment_name,
+         n.amount_cents,
+         n.threshold_percent,
+         ctx.subject
   from marcados m
   join public.notifications n on n.id = m.notification_id
   join public.profiles p on p.id = n.recipient_id
-  join public.spaces s on s.id = n.space_id;
+  join public.spaces s on s.id = n.space_id
+  left join lateral public.notification_push_context(n.id) ctx on true;
 end;
 $$;
 

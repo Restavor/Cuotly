@@ -845,10 +845,22 @@ export const es = {
       absence_decided: "Ausencia resuelta",
       absence_uncovered_jobs: "Trabajos sin cobertura",
     },
-    // RN-MOV-04 · el push dice el evento y el espacio, y nada más.
+    // RN-MOV-04 (decisión 36) · el push dice qué ha pasado y dónde: el
+    // evento, el restaurante y el espacio, la cifra si la hay y una frase
+    // de lo que se pide. Nunca el nombre de nadie del equipo.
     push: {
-      title: (evento: string) => evento,
-      body: (espacio: string) => `Espacio: ${espacio}. Toca para abrirlo en Cuotly.`,
+      title: (evento: string, restaurante: string | null) => (restaurante ? `${evento} · ${restaurante}` : evento),
+      body: (partes: {
+        readonly espacio: string;
+        readonly importe: string | null;
+        readonly umbral: number | null;
+        readonly asunto: string | null;
+      }) => {
+        const cabecera = [partes.espacio, partes.importe, partes.umbral !== null ? `${partes.umbral} %` : null]
+          .filter((x): x is string => x !== null)
+          .join(" · ");
+        return partes.asunto ? `${cabecera}\n«${partes.asunto}»` : cabecera;
+      },
     },
     email: {
       subject: (evento: string, espacio: string) => `${evento} · ${espacio}`,

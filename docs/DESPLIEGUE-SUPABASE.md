@@ -17,8 +17,10 @@ funciones; añade la columna `push` a `notification_preferences` y **retira la f
 parámetros de `set_notification_preference()`** a favor de una de cinco con el último por omisión
 (la web sigue llamando con cuatro y funciona); ensancha el CHECK de `notification_deliveries.channel`
 a `('email', 'push')`; redefine `emit_notification()` con el tercer canal; y **retira y vuelve a
-crear `claim_notification_deliveries()`** porque cambia la forma de la tabla que devuelve (canal y
-tokens), con su revocación justo detrás (CLAUDE.md). La cola desplegada en Vercel lee esa función:
+crear `claim_notification_deliveries()`** porque cambia la forma de la tabla que devuelve (canal,
+tokens y el contexto que el push dice: restaurante, cifra, umbral y la frase de lo que se pide,
+resuelto por `notification_push_context()`, solo para la cola; decisión 36), con su revocación justo
+detrás (CLAUDE.md). La cola desplegada en Vercel lee esa función:
 **hay que desplegar la web del Hito 22 el mismo día que se aplique la 94**, o antes, porque la web
 del Hito 22 ya entiende las dos formas y la anterior no entiende la nueva. Las otras 93 están
 aplicadas.

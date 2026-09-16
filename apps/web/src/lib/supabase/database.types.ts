@@ -7620,6 +7620,13 @@ export type Database = {
           notification_id: string
           recipient_email: string
           space_name: string
+          entity_type: string
+          establishment_name: string
+          amount_cents: number
+          threshold_percent: number
+          subject: string
+          channel: string
+          push_tokens: string[]
         }[]
       }
       claim_scheduled_jobs: {
@@ -8695,6 +8702,10 @@ export type Database = {
       notify_menu_event: {
         Args: { p_event_type: string; p_menu_id: string }
         Returns: number
+      }
+      notification_push_context: {
+        Args: { p_notification_id: string }
+        Returns: { establishment_name: string; subject: string }[]
       }
       notify_platform_incident: {
         Args: {

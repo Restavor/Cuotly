@@ -14,7 +14,8 @@
 --     y los obligatorios de RN-NOT-03 no se apagan tampoco por push.
 --   · RN-MOV-04: el push es una entrega más de la cola de §18, solo si hay
 --     un teléfono vigente, una por notificación y canal, y el reclamo
---     devuelve el canal y los tokens del momento.
+--     devuelve el canal, los tokens del momento y el contexto que el push
+--     dice (restaurante, cifra y la frase de lo que se pide, decisión 36).
 --   · RN-MOV-10: nunca se duplica una acción desde un teléfono que ha
 --     estado horas sin conexión: la clave de idempotencia de `post_message`
 --     y el estado de `submit_request`.
@@ -461,6 +462,12 @@ begin
   if v_push.recipient_email <> 'h22-ana@example.com' or v_push.event_type <> 'job_published' or v_push.space_name <> 'Espacio H22' then
     raise exception 'RN-MOV-04 FALLIDO: el reclamo de un push pierde el resto de columnas' using errcode = 'assert_failure';
   end if;
+  -- Decisión 36 · el contexto del push viaja en la fila: aquí el aviso de
+  -- prueba apunta a un trabajo inventado, así que no hay restaurante ni
+  -- frase, y tampoco se inventan.
+  if v_push.establishment_name is not null or v_push.subject is not null or v_push.entity_type <> 'job' then
+    raise exception 'RN-MOV-04 FALLIDO: el reclamo inventa contexto para un aviso sin entidad real' using errcode = 'assert_failure';
+  end if;
 
   select * into v_mail from h22_claimed where notification_id = (select v from h22_ids where k = 'n-push') and channel = 'email';
   if v_mail.delivery_id is null or v_mail.push_tokens is not null then
@@ -554,6 +561,43 @@ begin
   end if;
 end $$;
 reset role;
+
+-- Decisión 36 · el reclamo trae la frase de lo que se pide: en una
+-- ausencia, su motivo; en una solicitud, su descripción con el restaurante;
+-- y la cifra cuando el aviso la lleva. Sin nombres de nadie del equipo.
+do $$
+declare
+  v_abs uuid := (select v from h22_ids where k = 'ausencia');
+  v_row record;
+  v_n uuid;
+begin
+  select * into v_row from public.claim_notification_deliveries(10000) c
+  where c.channel = 'push' and c.notification_id = (
+    select n.id from public.notifications n where n.entity_id = v_abs and n.recipient_id = 'e2000000-0000-0000-0000-000000000001');
+  if v_row.subject is distinct from 'Viaje' or v_row.entity_type <> 'absence' then
+    raise exception 'RN-MOV-04 FALLIDO: el push de una ausencia no lleva su motivo (lleva %)', v_row.subject using errcode = 'assert_failure';
+  end if;
+
+  -- Un aviso sobre una solicitud real, con cifra: restaurante, frase y cifra.
+  v_n := public.emit_notification('e2100000-0000-0000-0000-000000000001', 'e2000000-0000-0000-0000-000000000001',
+    'request_submitted', 'staff', 'request', (select v from h22_ids where k = 'solicitud'),
+    '/espacios/espacio-h22-test/solicitudes', 'h22:contexto', null, null, 12950);
+  select * into v_row from public.claim_notification_deliveries(10000) c where c.notification_id = v_n and c.channel = 'push';
+  if v_row.establishment_name is distinct from 'Restaurante Veintidós'
+     or v_row.subject is distinct from 'Cambiar la carta de otoño'
+     or v_row.amount_cents is distinct from 12950 then
+    raise exception 'RN-MOV-04 FALLIDO: el push de una solicitud no lleva restaurante, frase y cifra (lleva %, %, %)',
+      v_row.establishment_name, v_row.subject, v_row.amount_cents using errcode = 'assert_failure';
+  end if;
+  if v_row.subject ~ 'h22-' or v_row.establishment_name ~ 'h22-' then
+    raise exception 'RN-MOV-04 FALLIDO: el push lleva el correo de alguien' using errcode = 'assert_failure';
+  end if;
+  -- Y la función de contexto es de la cola, no de nadie con sesión.
+  if has_function_privilege('authenticated', 'public.notification_push_context(uuid)', 'execute')
+     or has_function_privilege('anon', 'public.notification_push_context(uuid)', 'execute') then
+    raise exception 'RN-MOV-04 FALLIDO: notification_push_context está abierta por RPC' using errcode = 'assert_failure';
+  end if;
+end $$;
 
 -- El reintento tampoco dejó un segundo apunte de envío (la auditoría del
 -- espacio no la lee el restaurante: se mira desde fuera).

@@ -218,6 +218,11 @@ describe("RN-NOT-05 · la cola de correo, con reintentos e idempotencia", () => 
       audience: "staff",
       deep_link: "/espacios/x/trabajos/1",
       space_name: "Restavor",
+      entity_type: "job",
+      establishment_name: "Casa Sol",
+      amount_cents: null,
+      threshold_percent: null,
+      subject: "Quiero cambiar el precio del menú del día",
       ...over,
     };
   }
@@ -303,6 +308,11 @@ describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el corr
       audience: "staff",
       deep_link: "/espacios/x/trabajos/1",
       space_name: "Restavor",
+      entity_type: "job",
+      establishment_name: "Casa Sol",
+      amount_cents: null,
+      threshold_percent: null,
+      subject: "Quiero cambiar el precio del menú del día",
       ...over,
     };
   }

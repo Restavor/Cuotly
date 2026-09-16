@@ -1792,8 +1792,8 @@ Sale de §21 (navegación móvil), §70 (limitación del push), §71 y §72 (pre
 operativas, que ya viven en §18), §144 (trabajo sin conexión), §145 (permisos móviles), §176
 (experiencia móvil: los once flujos) y §179 (coherencia de lenguaje). La maestra dice **qué** hace
 la app y calla en el **cómo** en diez sitios; en los diez se ha elegido lo más defendible, se ha
-escrito como regla marcada como lectura y se pregunta en la pendiente 25 de `docs/DECISIONES.md`.
-**Ninguna inventa un umbral ni un plazo.**
+escrito como regla marcada como lectura; Bosco confirmó nueve el 16/09/2026 y cambió la del texto
+del push (**decisión 36** de `docs/DECISIONES.md`). **Ninguna inventa un umbral ni un plazo.**
 
 La familia es **`RN-MOV`** (móvil). No `RN-APP`, que se leería como "aplicación" a secas, ni
 `RN-PUSH`, porque el push es una parte de la app y no al revés.
@@ -1831,10 +1831,15 @@ La familia es **`RN-MOV`** (móvil). No `RN-APP`, que se leería como "aplicaci�
   con espera creciente y la misma clave de deduplicación. Lo emite `emit_notification()` cuando el
   destinatario tiene **al menos un dispositivo registrado y vigente**, y lo envía el mismo proceso
   de la cola por un **transporte inyectable** (Expo sobre FCM y APNs; falso en los tests). Un evento
-  que §18 marca "visible dentro de Cuotly, sin correo ni push" tampoco va por push. Lectura: el
-  texto del push es **el nombre del evento y el espacio, y nada más** —ni el restaurante, ni una
-  cifra, ni quién—: se lee en la pantalla de bloqueo de un teléfono que puede estar sobre una
-  barra, y el detalle está a un toque, detrás de la sesión.
+  que §18 marca "visible dentro de Cuotly, sin correo ni push" tampoco va por push. Decisión de
+  Bosco (16/09/2026, decisión 36, que cambia la lectura que se le propuso): el push dice **qué ha
+  pasado, dónde y qué se pide**: el nombre del evento y el **restaurante** en el título; el
+  **espacio**, la **cifra** o el umbral si el aviso los lleva, y **una frase de lo que se pide**
+  («Quiero cambiar el precio…», la descripción de la solicitud, el motivo de la ausencia, el
+  concepto del cobro) en el cuerpo. Lo resuelve el servidor desde la entidad del aviso en el momento
+  del envío (`notification_push_context()`, solo para la cola); **nunca el nombre de nadie del
+  equipo**, que no está en ninguna columna que el push lea. El detalle sigue a un toque, detrás de la
+  sesión.
 - **RN-MOV-05**: **un dispositivo es de una persona** (lectura). Se registra con su token al iniciar
   sesión con el permiso concedido, se **da de baja al cerrar sesión**, y si **otra persona entra en
   el mismo teléfono el token pasa a ella**: el aviso nunca llega a quien ya no está dentro. Un token

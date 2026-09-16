@@ -602,18 +602,40 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    **Lo que esta decisión NO cierra:** las mismas cuatro pendientes de la 32 a la 34 —17, 18, 19 y
    20—, ni la aplicación de la migración 93 al proyecto real, que es una orden aparte.
 
+36. **Las diez lecturas del Hito 22: nueve confirmadas y una cambiada** (16/09/2026). Al escribir
+   la app móvil y el push (PRD §35, migración 94), §21, §70, §144, §145 y §176 callaban en diez
+   sitios; en los diez se eligió lo más defendible, se escribió como regla `RN-MOV` y se preguntó
+   (pendiente 25). Bosco confirma nueve tal cual: las rutas de la app son las de la web; la barra
+   sale de la misma función que la web; un dispositivo es de una persona y el token pasa a quien
+   entra; la explicación del push va antes del diálogo del sistema y el push tiene su preferencia
+   por evento con los obligatorios bloqueados; escanear es fotografiar con la cámara y los permisos
+   se piden al usarlos; la biometría es un cerrojo local y el panel de Cuotly no está en la app; sin
+   conexión no se encola ninguna acción crítica; la caché es de quien mira y se borra al cerrar
+   sesión; y la clave de idempotencia nace con el borrador.
+
+   **Y cambia la tercera.** Se había propuesto que el push dijera solo el evento y el espacio. Bosco
+   decide que **el push tiene que dar más información**: el **restaurante**, el **espacio**, la
+   **cifra** si la hay y **una frase de lo que se pide** —«Quiero cambiar el precio…»—. Queda así en
+   RN-MOV-04: el título lleva el evento y el restaurante; el cuerpo, el espacio, la cifra o el umbral
+   y la frase, resueltos por el servidor desde la entidad del aviso en el momento del envío
+   (`notification_push_context()`, solo para la cola). Lo que no cambia: nunca el nombre de nadie
+   del equipo, que no está en ninguna columna que el push lea.
+
+   **Lo que esta decisión NO cierra:** las mismas cuatro pendientes de la 32 a la 35 —17, 18, 19 y
+   20—, ni la aplicación de la migración 94 al proyecto real, ni la publicación en las tiendas.
+
 ---
 
 ### Pendiente de completar
 
-**Cinco abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
-tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desglosar la Fase 4 el
+**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
+tachadas abajo con la decisión que resolvió cada una. Las cuatro salieron al desglosar la Fase 4 el
 15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. Las lecturas de los
-hitos 18 a 21 ya están confirmadas (decisiones 32, 33, 34 y 35); las del Hito 22 se preguntan en
-la 25.
+hitos 18 a 22 ya están confirmadas (decisiones 32, 33, 34, 35 y 36).
 
-25. **Lecturas aplicadas al implementar la app móvil y el push** (Hito 22, PRD §35, migración
-   94). §21, §70, §144, §145 y §176 dicen qué hace la app y callan en **diez** sitios sobre el cómo.
+25. ~~Lecturas aplicadas al implementar la app móvil y el push~~ — confirmadas nueve y cambiada
+   la tercera el 16/09/2026 como decisión 36. Se conservan abajo tal como se preguntaron (Hito 22,
+   PRD §35, migración 94). §21, §70, §144, §145 y §176 dicen qué hace la app y callan en **diez** sitios sobre el cómo.
    En los diez se ha elegido lo más defendible, se ha escrito como regla `RN-MOV` marcada como
    lectura y se pregunta aquí. **Ninguna es un umbral ni un plazo.** Se pide confirmarlas, o
    cambiarlas, antes de publicar la app en las tiendas.
