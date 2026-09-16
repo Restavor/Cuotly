@@ -31,6 +31,14 @@ export type SignInFailure =
   | "rate_limited"
   /** No se ha podido hablar con el servicio de autenticación. */
   | "unreachable"
+  /**
+   * El proveedor de correo está apagado en el proyecto, así que **nadie**
+   * puede entrar con correo y contraseña. No es la contraseña de quien lo
+   * intenta: es una casilla mal puesta en la configuración, y decirlo
+   * ahorra el viaje entero (pasó el 16/09/2026 con `[auth.email]
+   * enable_signup`, y la pantalla solo sabía decir "no sabemos por qué").
+   */
+  | "email_provider_disabled"
   /** Ha fallado algo más, y no se disfraza de credenciales. */
   | "unknown";
 
@@ -81,6 +89,17 @@ export function classifySignInError(error: AuthErrorLike | null | undefined): Si
 
   if (code === "invalid_credentials" || message.includes("invalid login credentials")) {
     return "invalid_credentials";
+  }
+
+  // Se mira ANTES del 400/422 genérico: GoTrue lo contesta con un código
+  // de estado que abajo se leería como "credenciales", y mandaría a toda
+  // la casa a cambiar contraseñas que están bien.
+  if (
+    code === "email_provider_disabled" ||
+    message.includes("email logins are disabled") ||
+    message.includes("email signups are disabled")
+  ) {
+    return "email_provider_disabled";
   }
 
   // 5xx es del servidor, nunca de quien escribe la contraseña.

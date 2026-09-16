@@ -11,10 +11,11 @@ import { describe, expect, it } from "vitest";
  * cierre que **no** vive en una migración es la que este archivo vigila,
  * porque es la que se puede revertir sin que nadie lo note:
  *
- *   1. `supabase/config.toml` con el alta pública apagada, por los dos
- *      sitios donde GoTrue la lee. Un `true` ahí devuelve la tercera
- *      puerta entera y ninguna política de RLS se entera: las cuentas
- *      nacerían igual, solo que sin permiso de nadie.
+ *   1. `supabase/config.toml` con el alta pública apagada: `enable_signup`
+ *      de `[auth]`, que es la clave y la única. Un `true` ahí devuelve la
+ *      tercera puerta entera y ninguna política de RLS se entera: las
+ *      cuentas nacerían igual, solo que sin permiso de nadie. La de
+ *      `[auth.email]` **no** es su hermana y tiene su propio test abajo.
  *   2. Ningún proveedor de identidad externo encendido (RN-ACC-10). No es
  *      solo quitar un botón: un proveedor crea cuentas sin pasar por
  *      ninguna de las dos puertas.
@@ -59,18 +60,36 @@ function archivosDeCodigo(dir: string): string[] {
 }
 
 describe("RN-ACC-01 · el registro abierto sigue cerrado", () => {
-  it("RN-ACC-01: el alta pública está apagada en las dos claves que GoTrue lee", () => {
+  it("RN-ACC-01: el alta pública está apagada", () => {
     const toml = readFileSync(CONFIG, "utf8");
     expect(valorEnSeccion(toml, "auth", "enable_signup"), "[auth] enable_signup").toBe("false");
-    expect(
-      valorEnSeccion(toml, "auth.email", "enable_signup"),
-      "[auth.email] enable_signup",
-    ).toBe("false");
     // Una sesión anónima es una cuenta sin puerta ninguna.
     expect(
       valorEnSeccion(toml, "auth", "enable_anonymous_sign_ins"),
       "[auth] enable_anonymous_sign_ins",
     ).toBe("false");
+  });
+
+  it("RN-ACC-01: y el proveedor de correo sigue ENCENDIDO, que no es lo mismo", () => {
+    /*
+      Este test existe por un fallo real del 16/09/2026. `[auth.email]
+      enable_signup` trae el comentario "allow/disallow new user signups
+      via email", parece el hermano de la clave de arriba, y no lo es: se
+      traduce a `GOTRUE_EXTERNAL_EMAIL_ENABLED`. Ponerla en `false` no
+      cierra ninguna puerta de alta —esa ya está cerrada— y en cambio
+      **apaga el inicio de sesión con correo y contraseña**, que desde la
+      decisión 41 es la única forma de entrar que queda.
+
+      Se puso en `false` "por coherencia" y los quince recorridos de
+      Playwright cayeron de golpe, todos con el mismo síntoma: nadie podía
+      entrar. Así que aquí se exige lo contrario de lo que el instinto
+      pide, y con el motivo escrito para que nadie lo "arregle".
+    */
+    const toml = readFileSync(CONFIG, "utf8");
+    expect(
+      valorEnSeccion(toml, "auth.email", "enable_signup"),
+      "[auth.email] enable_signup apaga el LOGIN con correo, no el alta",
+    ).toBe("true");
   });
 
   it("RN-ACC-10: ningún proveedor de identidad externo está encendido", () => {

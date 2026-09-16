@@ -180,6 +180,9 @@ refresh_token_reuse_interval = 10
 # administracion con la clave de `service_role` —que solo tiene el
 # servidor de Cuotly— detras de las dos funciones reservadas de la
 # migracion 97. Lo vigila `registro-cerrado.test.ts`.
+#
+# Esta es LA clave, y la unica: `[auth.email] enable_signup` de mas abajo
+# parece la misma y no lo es (ver el comentario que lleva alli).
 enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
@@ -225,8 +228,19 @@ web3 = 30
 
 [auth.email]
 # Allow/disallow new user signups via email to your project.
-# RN-ACC-01 · la misma puerta que arriba, cerrada tambien por su lado.
-enable_signup = false
+#
+# OJO: esta clave NO es la de arriba por su lado. El comentario que trae el
+# CLI engaña: se traduce a `GOTRUE_EXTERNAL_EMAIL_ENABLED`, o sea "el
+# proveedor de correo está activado", y ponerla en `false` no cierra el
+# alta: **apaga también el inicio de sesión con correo y contraseña**, que
+# desde la decisión 41 es la única forma de entrar que queda.
+#
+# Se puso en `false` el 16/09/2026 creyendo que reforzaba RN-ACC-01 y
+# tumbó los quince recorridos de Playwright de golpe: todos los inicios de
+# sesión empezaron a fallar con "Email logins are disabled". El alta
+# pública se cierra con `enable_signup` de `[auth]` y con nada más; esta
+# se queda en `true` y `registro-cerrado.test.ts` comprueba que siga así.
+enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
 double_confirm_changes = true

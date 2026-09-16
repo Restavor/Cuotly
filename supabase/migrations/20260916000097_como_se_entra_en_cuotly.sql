@@ -32,15 +32,19 @@
 -- **1 · Dónde se cierra el registro abierto.** No aquí dentro. Quien crea
 -- de verdad una fila en `auth.users` es GoTrue, y a GoTrue no se le pone
 -- un disparador: se le quita el alta pública (`enable_signup = false` en
--- `supabase/config.toml`, en `[auth]` y en `[auth.email]`, y ningún
--- proveedor externo activado). A partir de ahí la **única** vía que queda
+-- `[auth]` de `supabase/config.toml`, y ningún proveedor externo
+-- activado). Cuidado con `[auth.email] enable_signup`, que parece la misma
+-- clave y no lo es: apagarla tumba el **inicio de sesión** con correo y
+-- contraseña, así que se queda encendida. A partir de ahí la **única** vía
 -- es la API de administración con la clave de `service_role`, que solo
 -- tiene el servidor de Cuotly, y el servidor solo la usa detrás de una de
 -- las dos funciones de abajo —`consume_account_setup_token()` y
 -- `accept_space_invitation_as()`—, las dos reservadas a `service_role` y
 -- las dos en falso-cerrado: sin token vivo no devuelven nada y la cuenta
 -- no llega a crearse. Eso es RN-ACC-01, y no es esconder un botón: es que
--- no hay ninguna puerta detrás del botón.
+-- no hay ninguna puerta detrás del botón. Que las dos claves de
+-- `config.toml` sigan como tienen que estar —una apagada y la otra
+-- encendida— lo comprueba `apps/web/src/core/registro-cerrado.test.ts`.
 --
 -- **2 · La cuenta se materializa cuando la persona pone la contraseña.**
 -- RN-ACC-03 dice que aprobar crea la cuenta y RN-ACC-04 que la contraseña

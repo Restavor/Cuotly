@@ -60,6 +60,7 @@ const MENSAJE_DE_FALLO: Readonly<Record<SignInFailure, string>> = {
   email_not_confirmed: es.auth.login.emailNotConfirmed,
   rate_limited: es.auth.login.rateLimited,
   unreachable: es.auth.login.unreachable,
+  email_provider_disabled: es.auth.login.emailProviderDisabled,
   unknown: es.auth.login.unknownError,
 };
 
@@ -76,9 +77,11 @@ export async function signOut() {
 // crea una cuenta por su cuenta: se solicita acceso y la cuenta llega al
 // aprobarlo (RN-ACC-03), o se recibe una invitación, que ya es la
 // autorización (RN-ACC-09). El cierre de verdad no está en este archivo
-// —quien crea filas en `auth.users` es GoTrue— sino en
-// `supabase/config.toml` con `enable_signup = false`, y lo vigila
-// `src/core/registro-cerrado.test.ts`.
+// —quien crea filas en `auth.users` es GoTrue— sino en `[auth]
+// enable_signup = false` de `supabase/config.toml`, y lo vigila
+// `src/core/registro-cerrado.test.ts`, que además exige que el proveedor
+// de correo siga ENCENDIDO: apagarlo no cierra ninguna puerta y deja a
+// todo el mundo fuera.
 // ---------------------------------------------------------------------
 
 /**

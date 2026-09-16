@@ -33,14 +33,23 @@ Actualizado el 16/09/2026.
   persona. No toca ninguna tabla existente y no hay datos que migrar.
 
   **Lo que sí hay que hacer a mano, y es lo importante de esta migración:** en el panel del
-  proyecto real, **apagar el alta pública** (Authentication → Sign In / Providers: "Allow new
-  users to sign up" a `false`) y dejar **sin activar** cualquier proveedor externo. El repositorio
-  ya lo lleva así en `supabase/config.toml` para el entorno local, pero el proyecto alojado tiene
-  su propia configuración y una migración no la cambia. Mientras eso no se apague, RN-ACC-01 no
-  se cumple en producción por mucho que las pantallas hayan dejado de ofrecerlo: cualquiera podría
-  crearse una cuenta llamando a la API de Auth directamente. También hace falta `RESEND_API_KEY`
-  en el servidor para que la cola de `platform_emails` salga de verdad; sin ella los correos se
-  quedan encolados con su motivo escrito (no se pierden, pero nadie recibe el enlace de alta).
+  proyecto real, **apagar el alta pública** —Authentication → Sign In / Providers → **"Allow new
+  users to sign up"** a `false`— y dejar **sin activar** cualquier proveedor externo. El
+  repositorio ya lo lleva así en `supabase/config.toml` para el entorno local, pero el proyecto
+  alojado tiene su propia configuración y una migración no la cambia. Mientras eso no se apague,
+  RN-ACC-01 no se cumple en producción por mucho que las pantallas hayan dejado de ofrecerlo:
+  cualquiera podría crearse una cuenta llamando a la API de Auth directamente.
+
+  **Y una que NO hay que tocar, porque parece la misma y no lo es:** el interruptor del
+  **proveedor Email** (en `config.toml`, `[auth.email] enable_signup`) se queda **encendido**. Su
+  nombre dice "signups" pero lo que controla es si el proveedor de correo existe: apagarlo tumba
+  el **inicio de sesión** con correo y contraseña, que desde la decisión 41 es la única forma de
+  entrar que queda. Se probó apagarlo el 16/09/2026 y cayeron los quince recorridos de Playwright
+  de golpe. Lo vigila `registro-cerrado.test.ts`, que ahora exige que siga en `true`.
+
+  También hace falta `RESEND_API_KEY` en el servidor para que la cola de `platform_emails` salga
+  de verdad; sin ella los correos se quedan encolados con su motivo escrito (no se pierden, pero
+  nadie recibe el enlace de alta).
 
   Después hay que regenerar `database.types.ts` (hoy lleva las entradas de la 97 escritas a mano,
   igual que las de la 95). Comprobada en local: **las 48 suites en verde sobre bootstrap + 97

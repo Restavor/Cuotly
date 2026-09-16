@@ -52,4 +52,20 @@ describe("por qué no se ha podido entrar (CA-20 aplicado al login)", () => {
   it("lo que no se reconoce no se disfraza de credenciales", () => {
     expect(clasificar({ status: 418, message: "soy una tetera" })).toBe("unknown");
   });
+
+  it("el proveedor de correo apagado no se disfraza de contraseña mala", () => {
+    // 16/09/2026: `[auth.email] enable_signup = false` apagó el LOGIN con
+    // correo, no el alta, y los quince recorridos de Playwright fallaron
+    // con "no sabemos por qué". Ahora se dice lo que pasa.
+    expect(
+      classifySignInError({ message: "Email logins are disabled", status: 422 }),
+    ).toBe("email_provider_disabled");
+    expect(
+      classifySignInError({ code: "email_provider_disabled", status: 400 }),
+    ).toBe("email_provider_disabled");
+    // Y no se traga una contraseña mala de verdad.
+    expect(
+      classifySignInError({ message: "Invalid login credentials", status: 400 }),
+    ).toBe("invalid_credentials");
+  });
 });

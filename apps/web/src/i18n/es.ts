@@ -80,6 +80,11 @@ export const es = {
         "Demasiados intentos seguidos. Espera un minuto y vuelve a probar: no hace falta que cambies la contraseña.",
       emailNotConfirmed:
         "Tu correo todavía no está confirmado. Busca el mensaje de confirmación que te enviamos al registrarte.",
+      // El proveedor de correo apagado en el proyecto: nadie puede entrar,
+      // y no es la contraseña de quien lo intenta. Decirlo ahorra que
+      // media plantilla se ponga a cambiar contraseñas que están bien.
+      emailProviderDisabled:
+        "Ahora mismo no se puede entrar con correo y contraseña: es una configuración nuestra, no tu contraseña. Escríbenos y lo arreglamos.",
       unknownError:
         "No hemos podido entrar y no sabemos por qué. Vuelve a intentarlo; si sigue pasando, escríbenos.",
     },
