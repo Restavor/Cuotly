@@ -1941,3 +1941,112 @@ escritorio, y el bloque legal sigue aplazado), **no** reconoce texto en los docu
 fotografiados (RN-MOV-07), **no** encola acciones críticas para ejecutarlas solas al volver la
 conexión (RN-MOV-09), **no** sincroniza calendarios (aplazado en CLAUDE.md) y **no** trae API
 pública ni webhooks (aplazados).
+
+## 36. El contexto global: Inicio, Mis solicitudes, Mensajes, Mi cuenta y Ayuda — después del Hito 22 (RN-GLO)
+
+Los treinta y cinco apartados anteriores ocurren **dentro** de un espacio de mantenimiento o de un
+panel de restaurante. Este es el primero que ocurre **fuera de los dos**: la zona de la aplicación
+que una persona ve por lo que **es** —su cuenta— y no por dónde está. Sale del diseño definitivo
+del 16/09/2026 (vistas G01 a G08), que lo dibuja con barra lateral propia: Inicio, Mis solicitudes,
+Mensajes, Mi cuenta y Ayuda.
+
+Hoy la raíz de la aplicación es un **selector de contexto** y nada más (HU-02, §20.1). El diseño la
+convierte en un lugar donde se trabaja: lo que necesita tu atención en todos tus contextos a la vez,
+tus conversaciones de todas partes, tus solicitudes de alta y tu cuenta.
+
+La familia es **`RN-GLO`** (global). No `RN-HOME`, porque el Inicio es solo una de las cinco
+pantallas, ni `RN-USR`, que se confundiría con los usuarios de un espacio (RN-EST-01 y siguientes).
+
+- **RN-GLO-01**: **el contexto global no es un espacio**, y por eso no tiene `space_id` ni membresía:
+  es la vista de una persona sobre **todos** sus contextos. Nada de lo que enseña sale de una
+  consulta nueva y privilegiada: sale de **las mismas políticas de RLS** que ya deciden qué ve esa
+  persona en cada sitio. Si alguien pierde el acceso a un espacio, deja de verlo aquí en la misma
+  consulta, sin que haya que acordarse de nada. El equipo de mantenimiento sigue sin ser visible
+  para el cliente (CLAUDE.md): las conversaciones compartidas se muestran con "Equipo de
+  mantenimiento", igual que dentro del espacio.
+- **RN-GLO-02**: **el Inicio dice qué necesita tu atención, en todos tus contextos a la vez** (G01).
+  Cada fila lleva **qué es** (un trabajo asignado, una solicitud pendiente de tu revisión, un menú
+  por publicar, un pago por confirmar), **de dónde es** (espacio o restaurante) y **qué acción**
+  abre, y el filtro deja mirar un solo contexto. Lo calcula el **servidor** en una sola función,
+  nunca el navegador sumando pantallas: el cliente no es la autoridad de nada (CLAUDE.md). La lista
+  **no inventa urgencia**: el orden es el del vencimiento real, y lo vencido se marca como tal con
+  el reloj laborable de `src/core/`, no con el reloj del navegador.
+- **RN-GLO-03**: **debajo están tus contextos**: los espacios de mantenimiento donde eres miembro,
+  con tu rol, y los paneles de restaurante a los que tienes acceso, con el tuyo. Es el selector de
+  HU-02 de siempre, que **no desaparece**: cambia de sitio y gana compañía. Quien no tenga ninguno
+  de los dos ve el motivo y qué puede hacer, nunca una pantalla vacía sin explicación (CLAUDE.md).
+- **RN-GLO-04**: **Mis solicitudes son las de creación de espacio** (G04), las de §10 y RN-PLA-01:
+  su estado, el plan pedido, la fecha y **la acción que toca ahora** —continuar el borrador, aportar
+  la información que Cuotly pidió, ver las instrucciones de pago de una aprobada—. La pantalla dice
+  **en su propio texto** que las solicitudes de trabajo están dentro de cada espacio o panel, para
+  que nadie las busque aquí. No enseña quién la revisó (RN-PLA-07).
+- **RN-GLO-05**: **Mensajes reúne las conversaciones de todas partes** (G07 y G08), en dos pestañas:
+  **Mantenimiento** (las de los espacios donde trabajas) y **Restaurantes** (las de los paneles donde
+  eres cliente), cada una con su selector y un filtro de no leídas. No hay conversación nueva aquí:
+  son **las mismas** de RN-MSG, con las mismas políticas, los mismos diez minutos de edición y la
+  misma imposibilidad de borrar. Reúne, no duplica.
+- **RN-GLO-06**: **Mi cuenta es de la persona, no del espacio** (G05): perfil (nombre, apellidos,
+  correo, teléfono, idioma, zona horaria y foto), seguridad (contraseña, verificación en dos pasos y
+  sesiones, que ya existen) y preferencias de notificación. La **zona horaria de aquí sirve para
+  enseñar fechas**, y **no sustituye a la del espacio**, que es la que manda en todo cálculo de
+  plazos y vencimientos (CLAUDE.md MUST, RN-CLK). Los avisos obligatorios de RN-NOT-03 siguen sin
+  poder apagarse también desde aquí.
+- **RN-GLO-07**: **la Ayuda global es el centro de ayuda de RN-SOP visto desde fuera** (G06):
+  buscador, categorías, preguntas frecuentes y contacto con soporte. Los artículos son los mismos
+  (`help_articles`), y una consulta abierta desde aquí es una **incidencia** de RN-SOP-03 como
+  cualquier otra, con su prioridad y su rastro.
+- **RN-GLO-08** *(lectura)*: **la cabecera global lleva buscador, avisos y avatar**, como en el
+  resto del producto, y el buscador busca **en lo que la persona ya puede ver**, sin una vía nueva.
+  El diseño dibuja el atajo de teclado; el atajo es comodidad, no una regla de negocio.
+
+Lo que este apartado **no** trae, dicho en claro: **no** trae ninguna capacidad nueva sobre los
+datos —todo lo que se ve aquí se puede ver ya dentro de su espacio o su panel—, **no** trae el
+Agente Cuotly (sigue siendo la entrada con "Próximamente"), **no** cambia ninguna política de RLS y
+**no** toca la app móvil, cuya navegación es la de §21 (RN-MOV-02).
+
+## 37. La solicitud de acceso a Cuotly — después del Hito 22 (RN-ACC)
+
+El diseño definitivo dibuja una puerta que hoy no existe (vistas F01, A01 a A04 y A09 a A12):
+**solicitar acceso a Cuotly** antes de tener cuenta. No se confunde con la solicitud de **creación de
+espacio** de §10 y RN-PLA: aquella la escribe alguien que **ya** ha entrado, y al aprobarse **crea**
+un espacio con su prueba de siete días. Esta es anterior, más corta, y la vista A03 lo dice con
+todas las letras: **aprobarla no crea espacio ni panel**.
+
+La familia es **`RN-ACC`** (acceso).
+
+- **RN-ACC-01**: **los cinco campos** de F01: nombre y apellidos, nombre del restaurante o empresa,
+  teléfono, correo electrónico y comentarios (opcional). Los cuatro primeros son obligatorios. Es
+  deliberadamente corta: quien la escribe todavía no conoce el producto.
+- **RN-ACC-02**: **aprobarla no crea nada**: ni espacio, ni panel, ni suscripción, ni cobro. Lo que
+  hace es **habilitar el acceso** y enviar por correo las instrucciones para continuar. Lo demás —el
+  espacio y su prueba— sigue pasando por RN-PLA-05, con sus comprobaciones, incluida la de una sola
+  prueba gratuita por persona o negocio (RN-PLA-09).
+- **RN-ACC-03**: **cuatro estados y una transición por cada uno**: enviada (en revisión), necesita
+  información, aprobada y no aprobada. "Necesita información" lleva **el mensaje del equipo** y la
+  **respuesta** de quien solicita, que la devuelve a revisión. "No aprobada" lleva **motivo
+  obligatorio**, y el solicitante lo lee. La tabla de transiciones manda en el servidor, como en
+  RN-PLA-03: la pantalla no decide nada.
+- **RN-ACC-04**: **la revisa Cuotly, con la sesión verificada en dos pasos** (RN-ADM-02), y queda en
+  el panel de Administración junto a las solicitudes de espacio. *(Lectura: el permiso es el mismo
+  **"Aprobar espacios"** de §167 que ya decide sobre las de creación, porque es la misma puerta y
+  partirla obligaría a mantener dos listas de a quién se la das. Si Bosco prefiere un permiso
+  propio, se separa.)*
+- **RN-ACC-05**: **el solicitante no ve quién la revisó** (como RN-PLA-07): ve el estado, el mensaje
+  y el motivo, nunca el nombre de quien decidió. Eso sale de la auditoría de plataforma.
+- **RN-ACC-06**: **cada cambio de estado deja evento y auditoría** con actor, fecha, valor anterior,
+  valor nuevo y motivo cuando lo hay (CLAUDE.md MUST), con `space_id` nulo porque todavía no hay
+  espacio, igual que en RN-PLA-08.
+- **RN-ACC-07**: **el formulario se comporta** (A09 a A12): los campos mal rellenados se señalan uno
+  a uno y el botón dice qué revisar; si el envío falla, **lo escrito no se pierde** y se puede
+  reintentar; salir con cambios sin enviar avisa antes; y sin conexión se dice, se deja el texto
+  donde está y no se finge un envío. Ninguna de las cuatro inventa nada: son la misma cortesía que
+  el resto del producto.
+- **RN-ACC-08** *(lectura)*: **una solicitud de acceso no es pública del todo**: quien la escribe
+  **no tiene cuenta**, así que no hay `auth.uid()` con el que atarla. Se escribe desde el formulario
+  público y se lee **solo** desde la plataforma; el solicitante hace su seguimiento por el **enlace
+  con clave** que recibe en el correo, no entrando en la aplicación. Así no hace falta crear una
+  cuenta para poder ser rechazado.
+
+Lo que este apartado **no** trae, dicho en claro: **no** sustituye a la solicitud de creación de
+espacio (RN-PLA), **no** crea cuentas ni espacios al aprobarse (RN-ACC-02), **no** cobra nada y
+**no** toca el bloque legal, que sigue en el paso 4 del orden acordado.
