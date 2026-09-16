@@ -718,6 +718,32 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    - **Orden**: primero el paso 2 (el diseño de escritorio, con el hueco preparado), después el
      paso 4 (legal y fiscal, con el profesional), y con él el agente dentro.
 
+41. **Cómo se entra en Cuotly: se acabó el registro abierto** (16/09/2026). Al escribir el PRD de
+   la solicitud de acceso (§37) salieron dos preguntas, y Bosco las cerró así:
+   - **Quién revisa**: el permiso **"Aprobar espacios"** de §167, el mismo que decide sobre las
+     solicitudes de creación de espacio. *"Me parece bien lo de aprobar espacios y solo lo llevo yo
+     con el correo info@restavor.com"*: hoy nadie más lo tiene, y el permiso existe por si algún día
+     lo delega.
+   - **Cómo se entra**: *"el que solicita acceso se registra y cuando se va a registrar le sale un
+     espacio para el correo y el resto de datos. Si info@restavor.com lo acepta le llega al correo
+     que puso su cuenta creada"*. Es decir, **el formulario de solicitud ocupa el lugar del
+     registro**: quien va a registrarse encuentra la solicitud, y la cuenta **se crea al aprobarla**,
+     no antes.
+   - **La contraseña no viaja por correo.** Bosco propuso enviarla junto con el aviso de cuenta
+     creada; se le explicó que un correo se queda guardado en el buzón y pasa por servidores por el
+     camino, y aceptó la alternativa: **un enlace de un solo uso y con caducidad** donde la persona
+     pone su contraseña al entrar. Misma sencillez para quien lo recibe y sin contraseña escrita en
+     ningún buzón.
+   - **La invitación también crea cuenta**: *"si invito, directamente le doy acceso a crearse una
+     cuenta, ese enlace que le envío ya es para que se cree una cuenta"*. Quedan **dos puertas y
+     ninguna más**: una solicitud que aprueba Bosco, o una invitación de un propietario, que ya es
+     la autorización. Matiz añadido al escribirlo: el **correo viene prefijado y no se puede
+     cambiar** en esa pantalla, porque `accept_space_invitation()` exige desde la migración 7 que
+     coincida con el de la invitación; dejarlo escribir a mano solo produce un rechazo que nadie
+     entiende. Se ponen contraseña y repetición, y nada más.
+   - **Se retira "entrar con Google"**: *"vamos a quitar lo de entrar con Google directamente, mejor
+     que cada uno rellene correo y contraseña así no hay líos"*. Una sola forma de entrar.
+
 ---
 
 ### Pendiente de completar
