@@ -202,7 +202,14 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(
         page.getByRole("heading", { name: "Mis espacios de mantenimiento" }),
       ).toBeVisible();
-      await expect(page.getByRole("link", { name: "Demo Cuotly" })).toBeVisible();
+      // `exact` no es cosmético: cada fila de "Necesita tu atención" lleva
+      // dentro el nombre de su contexto, así que sin él este localizador
+      // encuentra media pantalla y Playwright se planta por ambigüedad. El
+      // enlace del selector es el único cuyo nombre accesible es EXACTAMENTE
+      // el del espacio.
+      await expect(
+        page.getByRole("link", { name: "Demo Cuotly", exact: true }),
+      ).toBeVisible();
     });
 
     test("la bandeja de solicitudes enseña las enviadas y NO el borrador del cliente", async ({
@@ -293,7 +300,9 @@ test.describe("Flujos sobre el espacio de demostración", () => {
         page.getByRole("heading", { name: "Mis espacios de mantenimiento" }),
       ).toHaveCount(0);
 
-      await page.getByRole("link", { name: "Bar Demo" }).first().click();
+      // Exacto, y por el mismo motivo: el enlace del selector, no una fila
+      // de "Necesita tu atención" que también lleve el nombre dentro.
+      await page.getByRole("link", { name: "Bar Demo", exact: true }).click();
 
       await expect(page).toHaveURL(
         new RegExp(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`),
