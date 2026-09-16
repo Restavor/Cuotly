@@ -41,7 +41,7 @@ export default async function GlobalLayout({ children }: { children: React.React
 
   const t = es.globalContext.nav;
   const items: readonly GlobalNavItem[] = [
-    { href: "/inicio", label: t.home },
+    { href: "/", label: t.home },
     { href: "/mis-solicitudes", label: t.requests },
     {
       href: "/mensajes",
@@ -57,7 +57,7 @@ export default async function GlobalLayout({ children }: { children: React.React
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-4 sm:p-6 lg:flex-row">
         <aside className="lg:w-60 lg:shrink-0">
           <div className="rounded-[16px] border border-border bg-surface p-4">
-            <Link href="/inicio" className="mb-4 block">
+            <Link href="/" className="mb-4 block">
               <Logo />
             </Link>
             <GlobalNav items={items} />

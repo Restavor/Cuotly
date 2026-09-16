@@ -4889,10 +4889,14 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
   tampoco desde aquí.
 - **Lo que no trae, dicho con su motivo**: la foto de perfil (el almacenamiento es por espacio y una
   foto no es de ningún espacio) y el selector de idioma (hoy solo hay uno).
-- **Pendiente de Bosco, y por eso construido sin tocarlo**: §20.1 dice "con un solo contexto se entra
-  directamente" y §36 dice que la raíz pasa a ser un sitio donde se trabaja. La raíz **no se ha
-  tocado**: el Inicio global vive en `/inicio` y se llega por "Volver al inicio de Cuotly". Falta
-  decidir si la raíz debe pasar a ser el Inicio global para todo el mundo.
+- **La raíz es el Inicio global** (decisión 42, el mismo día). §20.1 decía "con un solo contexto se
+  entra directamente" y §36 dice que la raíz pasa a ser un sitio donde se trabaja; se construyó sin
+  tocar la raíz, se preguntó, y Bosco decidió que se entre **siempre** al Inicio global. Se retira
+  la redirección automática y con ella la pantalla de selector de contexto —el selector sigue, como
+  parte de abajo del Inicio—, y se conserva lo que aquella portada traía: la entrada a
+  Administración de Cuotly con su aviso de 2FA y la tarjeta de crear el espacio de Restavor.
+  Quince recorridos de Playwright entran ahora al Inicio y van a lo suyo desde ahí, y hay uno nuevo
+  que se pone rojo si alguien devuelve la redirección.
 - **Verde**: 49 suites SQL sobre bootstrap + 98 migraciones, typecheck, lint, 1371 tests de web,
   la compilación de Next y los 14 de móvil.
 

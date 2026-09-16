@@ -635,18 +635,18 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
 ## 20. Navegación e interfaz
 
 ### 20.1 Selector de contexto
-Con un solo contexto accesible se entra directamente. Con varios, aparece un selector con nombre,
-logotipo, tipo, rol y alertas rápidas; al pulsar una alerta se abre el elemento exacto tras comprobar
-permisos. Bosco **siempre** ve el selector. Existe una acción persistente "Cambiar de espacio".
+**Se entra siempre al Inicio global** (§36), se tenga un contexto o diez: la raíz **es** esa
+pantalla. El selector de contexto no desaparece por eso —es la parte de abajo del Inicio
+(RN-GLO-03)—, y sigue enseñando nombre, tipo, rol y la acción que toca. Bosco ve además la entrada
+a Administración de Cuotly, la primera. Existe una acción persistente "Cambiar de espacio", y desde
+dentro de cualquier contexto se vuelve con "Volver al inicio de Cuotly".
 
-> **Pendiente de decidir, y por eso construido sin tocar esto** (16/09/2026). El §36 dice que el
-> diseño "convierte la raíz en un lugar donde se trabaja", y eso choca de frente con "con un solo
-> contexto accesible se entra directamente": quien tiene un espacio y nada más no llegaría nunca a
-> ver el Inicio global. Se ha implementado **sin cambiar este apartado**: la raíz sigue entrando
-> directa a tu único contexto y el Inicio global vive en `/inicio`, al que se llega desde "Volver al
-> inicio de Cuotly", que el diseño pide en todos los contextos. Falta que Bosco decida si la raíz
-> debe pasar a ser el Inicio global para todo el mundo; el día que lo diga, es una línea de rutas y
-> los recorridos de Playwright que hoy comprueban la entrada directa.
+> **Esto se reescribió el 16/09/2026 (decisión 42).** Hasta ese día decía "con un solo contexto
+> accesible se entra directamente", y esa frase es incompatible con §36: quien tiene un solo espacio
+> —que es casi todo el mundo— no vería nunca el Inicio global, donde están sus mensajes de todas
+> partes, sus solicitudes, su cuenta y la ayuda. Se construyó sin tocar la raíz, se preguntó, y
+> Bosco decidió que se entre siempre al Inicio global. El coste, asumido: un clic más para quien
+> tiene un solo contexto.
 
 ### 20.2 Menú del espacio (escritorio)
 Inicio · Restaurantes · Solicitudes · Trabajos · Tareas · Menú Diario · Mensajes · Calendario ·
@@ -1963,7 +1963,8 @@ que una persona ve por lo que **es** —su cuenta— y no por dónde está. Sale
 del 16/09/2026 (vistas G01 a G08), que lo dibuja con barra lateral propia: Inicio, Mis solicitudes,
 Mensajes, Mi cuenta y Ayuda.
 
-Hoy la raíz de la aplicación es un **selector de contexto** y nada más (HU-02, §20.1). El diseño la
+Hasta el 16/09/2026 la raíz de la aplicación era un **selector de contexto** y nada más (HU-02,
+§20.1), y además redirigía sola cuando solo tenías un contexto. El diseño la
 convierte en un lugar donde se trabaja: lo que necesita tu atención en todos tus contextos a la vez,
 tus conversaciones de todas partes, tus solicitudes de alta y tu cuenta.
 
@@ -1986,7 +1987,9 @@ pantallas, ni `RN-USR`, que se confundiría con los usuarios de un espacio (RN-E
   el reloj laborable de `src/core/`, no con el reloj del navegador.
 - **RN-GLO-03**: **debajo están tus contextos**: los espacios de mantenimiento donde eres miembro,
   con tu rol, y los paneles de restaurante a los que tienes acceso, con el tuyo. Es el selector de
-  HU-02 de siempre, que **no desaparece**: cambia de sitio y gana compañía. Quien no tenga ninguno
+  HU-02 de siempre, que **no desaparece**: cambia de sitio y gana compañía. Y aquí se entra
+  **siempre**, aunque solo tengas un contexto (decisión 42): la raíz es esta pantalla y no una
+  redirección. Quien no tenga ninguno
   de los dos ve el motivo y qué puede hacer, nunca una pantalla vacía sin explicación (CLAUDE.md).
 - **RN-GLO-04**: **Mis solicitudes son las de creación de espacio** (G04), las de §10 y RN-PLA-01:
   su estado, el plan pedido, la fecha y **la acción que toca ahora** —continuar el borrador, aportar

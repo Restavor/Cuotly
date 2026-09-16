@@ -97,24 +97,32 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
 
   test.use({ viewport: TELEFONO });
 
-  async function entrar(page: Page, email: string, destino: RegExp) {
+  /**
+   * Entrar y ponerse donde el test necesita.
+   *
+   * Desde la **decisión 42** (16/09/2026) entrar lleva SIEMPRE al Inicio
+   * global: la raíz dejó de redirigir sola a tu único contexto. Así que
+   * esto son dos pasos, y los dos importan — que se llegue a la portada, y
+   * que desde la portada se pueda ir a lo tuyo—. Antes era uno solo porque
+   * la raíz decidía por ti.
+   *
+   * El margen es holgado, y no el de 5 s por defecto, porque el aterrizaje
+   * encadena varias consultas a Supabase por la red. No enmascara nada: si
+   * no llega, el test sigue fallando, y ahora además dice dónde se quedó y
+   * qué ponía en la pantalla.
+   */
+  async function entrar(page: Page, email: string, ruta?: string) {
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
-    // Cuarenta y cinco segundos, y no los cinco de serie: el primer
-    // aterrizaje de cada papel encadena varias consultas a Supabase por
-    // la red. Cabe dentro del límite del test (120 s en esta suite) — un
-    // margen interior mayor que el exterior no es un margen, es un
-    // mensaje de error peor.
+
     try {
-      await page.waitForURL(destino, { timeout: 45_000 });
+      await page.waitForURL(/\/$/, { timeout: 45_000 });
     } catch (fallo) {
       // Si no llega, decir DÓNDE se quedó y QUÉ ponía ahí. Un
       // "waitForURL: Timeout" a secas obliga a adivinar, y ya hemos
-      // adivinado bastante: la portada decide a dónde entra cada papel, y
-      // cuando esa decisión sale mal lo que se ve es otra pantalla, no un
-      // error del navegador.
+      // adivinado bastante.
       const titulo = await page
         .getByRole("heading")
         .first()
@@ -124,12 +132,14 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
         .locator('[role="alert"]:visible:not(#__next-route-announcer__)')
         .allInnerTexts();
       throw new Error(
-        `Entrando como ${email} no se llegó a ${destino}. Se quedó en ${page.url()}, ` +
+        `Entrando como ${email} no se llegó al Inicio de Cuotly. Se quedó en ${page.url()}, ` +
           `con el titular "${titulo.trim()}"` +
           (alertas.length ? ` y este error en pantalla: ${alertas.join(" / ")}` : " y sin error en pantalla") +
           `. Causa original: ${fallo instanceof Error ? fallo.message.split("\n")[0] : String(fallo)}`,
       );
     }
+
+    if (ruta !== undefined) await page.goto(ruta);
   }
 
   /**
@@ -239,7 +249,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     let trabajoUrl = "";
 
     await test.step("SOLICITAR · el restaurante pide un cambio", async () => {
-      await entrar(page, CLIENTE_CAFE, new RegExp(`/restaurantes/${CAFE_ID}`));
+      await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}`);
       await cabeEnElTelefono(page, "la ficha del restaurante");
 
       await expect(page.getByRole("heading", { name: "Pedir un cambio" })).toBeVisible();
@@ -264,7 +274,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("VALIDAR · el equipo confirma la clasificación", async () => {
-      await entrar(page, PROPIETARIA, new RegExp(`/espacios/${ESPACIO}$`));
+      await entrar(page, PROPIETARIA, `/espacios/${ESPACIO}`);
       await page.goto(`/espacios/${ESPACIO}/solicitudes`);
       await cabeEnElTelefono(page, "la bandeja de solicitudes");
 
@@ -306,7 +316,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("ACEPTAR · el restaurante da el visto bueno", async () => {
-      await entrar(page, CLIENTE_CAFE, new RegExp(`/restaurantes/${CAFE_ID}`));
+      await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}`);
       await cabeEnElTelefono(page, "la ficha con la aceptación pendiente");
 
       const pendiente = page
@@ -327,7 +337,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("ASIGNAR · el equipo elige responsable", async () => {
-      await entrar(page, PROPIETARIA, new RegExp(`/espacios/${ESPACIO}$`));
+      await entrar(page, PROPIETARIA, `/espacios/${ESPACIO}`);
       await page.goto(`/espacios/${ESPACIO}/trabajos`);
       await cabeEnElTelefono(page, "el tablero de trabajos");
 
@@ -353,7 +363,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("COMENZAR, BLOQUEAR y DESBLOQUEAR · la trabajadora", async () => {
-      await entrar(page, TRABAJADORA, new RegExp(`/espacios/${ESPACIO}$`));
+      await entrar(page, TRABAJADORA, `/espacios/${ESPACIO}`);
       await page.goto(trabajoUrl);
       await cabeEnElTelefono(page, "el trabajo asignado");
 
@@ -394,7 +404,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("CORREGIR · el restaurante pide su corrección gratuita", async () => {
-      await entrar(page, CLIENTE_CAFE, new RegExp(`/restaurantes/${CAFE_ID}`));
+      await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}`);
 
       await page.locator("tbody tr").filter({ hasText: MARCA }).getByRole("link").first().click();
       await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 30_000 });
@@ -420,7 +430,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
   test("PAGAR · el equipo registra un pago desde el teléfono", async ({ page }) => {
     test.setTimeout(90_000);
 
-    await entrar(page, PROPIETARIA, new RegExp(`/espacios/${ESPACIO}$`));
+    await entrar(page, PROPIETARIA, `/espacios/${ESPACIO}`);
     await page.goto(`/espacios/${ESPACIO}/finanzas`);
     await cabeEnElTelefono(page, "el panel financiero");
 
@@ -493,7 +503,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
   });
 
   test("CONSULTAR y GESTIONAR EQUIPO · desde el teléfono", async ({ page }) => {
-    await entrar(page, PROPIETARIA, new RegExp(`/espacios/${ESPACIO}$`));
+    await entrar(page, PROPIETARIA, `/espacios/${ESPACIO}`);
     await cabeEnElTelefono(page, "el inicio del espacio");
 
     // Consultar: los dos restaurantes del espacio, con su código y estado.
@@ -533,7 +543,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
    */
   test("MENÚ DIARIO · el restaurante prepara un menú y lo descarga, desde el teléfono", async ({ page }) => {
     const MAGARINOS_ID = "d4000000-0000-0000-0000-000000000003";
-    await entrar(page, "magarinos@cuotly.test", new RegExp(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`));
+    await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
 
     await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario`);
     await cabeEnElTelefono(page, "el Menú Diario del restaurante");
@@ -608,7 +618,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     let menuUrl = "";
 
     await test.step("PEDIR · el restaurante prepara y pide la publicación", async () => {
-      await entrar(page, "magarinos@cuotly.test", new RegExp(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`));
+      await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
       await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario`);
       await page.getByLabel("Nombre").fill(`Equipo ${MARCA}`);
       await page.getByLabel("Plantilla").selectOption({ label: "Pizarra" });
@@ -633,7 +643,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("ASIGNAR · la propietaria, desde la cola", async () => {
-      await entrar(page, PROPIETARIA, new RegExp(`/espacios/${ESPACIO}$`));
+      await entrar(page, PROPIETARIA, `/espacios/${ESPACIO}`);
       await page.goto(`/espacios/${ESPACIO}/menu-diario`);
       await cabeEnElTelefono(page, "la cola de Menú Diario");
       await page.getByRole("link", { name: `Equipo ${MARCA}` }).click();
@@ -649,7 +659,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("DESCARGAR y MARCAR PUBLICADO · la trabajadora, sin Comenzar", async () => {
-      await entrar(page, TRABAJADORA, new RegExp(`/espacios/${ESPACIO}$`));
+      await entrar(page, TRABAJADORA, `/espacios/${ESPACIO}`);
       await page.goto(menuUrl);
       await cabeEnElTelefono(page, "el menú asignado a la trabajadora");
       await expect(page.getByText("Asignada a ti")).toBeVisible();
@@ -669,7 +679,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("CORREGIR · el restaurante pide su corrección mínima (RN-COR-10)", async () => {
-      await entrar(page, "magarinos@cuotly.test", new RegExp(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`));
+      await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
       await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/${menuUrl.split("/").pop()}`);
       await cabeEnElTelefono(page, "el menú publicado del restaurante");
       await expect(page.getByRole("heading", { name: "Pedir una corrección" })).toBeVisible();

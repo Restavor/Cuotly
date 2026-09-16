@@ -744,6 +744,29 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    - **Se retira "entrar con Google"**: *"vamos a quitar lo de entrar con Google directamente, mejor
      que cada uno rellene correo y contraseña así no hay líos"*. Una sola forma de entrar.
 
+42. **Se entra siempre al Inicio global** (16/09/2026). Al construir el contexto global (§36) salió
+   una incompatibilidad con algo escrito desde la Fase 1: §20.1 dice *"con un solo contexto
+   accesible se entra directamente"*, y §36 dice que el diseño *"convierte la raíz en un lugar donde
+   se trabaja"*. Las dos a la vez no caben: quien tiene un solo espacio —que es casi todo el
+   mundo— no vería nunca el Inicio global, y ahí es donde están sus mensajes de todas partes, sus
+   solicitudes, su cuenta y la ayuda.
+   Se construyó **sin tocar la raíz** y se preguntó. Bosco: *"mi decisión es que siempre se entre al
+   inicio global"*. Se aplica tal cual, y lo que eso implica:
+   - **La raíz ES el Inicio global.** Entrar lleva siempre ahí, tengas un contexto o diez. Se retira
+     la redirección automática de `app/page.tsx`, y con ella la pantalla de selector de contexto:
+     el selector de HU-02 **no desaparece**, es la parte de abajo del Inicio (RN-GLO-03).
+   - **Lo que traía la portada anterior sigue**: la entrada a Administración de Cuotly con su aviso
+     de 2FA (§8, RN-ADM-01) y la tarjeta de crear el espacio de Restavor para el Propietario de
+     Cuotly. Cambia dónde se lee, no qué se lee.
+   - **§20.1 queda reescrito**, no interpretado: la frase de la entrada directa ya no vale para la
+     raíz. Se mantiene "Existe una acción persistente «Cambiar de espacio»", que sigue siendo cierta.
+   - **Los recorridos de Playwright cambian con ello.** Quince pruebas daban por hecha la
+     redirección; ahora entran al Inicio y van a lo suyo desde ahí, que es lo que hará una persona.
+     Y hay una prueba nueva que se pone roja si alguien devuelve la redirección: el fallo que esta
+     decisión evita es precisamente que vuelva sin que nadie lo note.
+   - Coste asumido a sabiendas: un clic más cada mañana para quien tiene un solo contexto. Se
+     preguntó con esa recomendación en contra y Bosco decidió lo contrario, que es su decisión.
+
 ---
 
 ### Pendiente de completar

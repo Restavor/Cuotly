@@ -23,7 +23,12 @@ export function GlobalNav({ items }: { items: readonly GlobalNavItem[] }) {
   return (
     <nav aria-label="Cuotly" className="flex flex-col gap-1">
       {items.map((item) => {
-        const activo = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        // "Inicio" es `/`, y `startsWith("/")` es cierto para todo: sin el
+        // caso aparte, la barra marcaría Inicio en las cinco pantallas.
+        const activo =
+          item.href === "/"
+            ? pathname === "/"
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (
           <Link
             key={item.href}

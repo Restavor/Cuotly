@@ -212,7 +212,7 @@ export function AppShell({
               que uno de los dos no se encontrara nunca.
             */}
             <Link
-              href="/inicio"
+              href="/"
               className="mt-2 block px-1 text-xs font-medium text-sidebar-text underline hover:text-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
               {es.globalContext.backToCuotly}

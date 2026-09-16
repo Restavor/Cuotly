@@ -109,24 +109,32 @@ test.describe("Flujos sobre el espacio de demostración", () => {
    * enmascara nada: si la redirección no llega, el test sigue fallando, y
    * ahora además dice dónde se quedó y qué ponía en la pantalla.
    */
-  async function entrar(page: Page, email: string, destino: RegExp) {
+  /**
+   * Entrar y ponerse donde el test necesita.
+   *
+   * Desde la **decisión 42** (16/09/2026) entrar lleva SIEMPRE al Inicio
+   * global: la raíz dejó de redirigir sola a tu único contexto. Así que
+   * esto son dos pasos, y los dos importan — que se llegue a la portada, y
+   * que desde la portada se pueda ir a lo tuyo—. Antes era uno solo porque
+   * la raíz decidía por ti.
+   *
+   * El margen es holgado, y no el de 5 s por defecto, porque el aterrizaje
+   * encadena varias consultas a Supabase por la red. No enmascara nada: si
+   * no llega, el test sigue fallando, y ahora además dice dónde se quedó y
+   * qué ponía en la pantalla.
+   */
+  async function entrar(page: Page, email: string, ruta?: string) {
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
     await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
-    // Cuarenta y cinco segundos, y no los cinco de serie: el primer
-    // aterrizaje de cada papel encadena varias consultas a Supabase por
-    // la red. Cabe dentro del límite del test (120 s en esta suite) — un
-    // margen interior mayor que el exterior no es un margen, es un
-    // mensaje de error peor.
+
     try {
-      await page.waitForURL(destino, { timeout: 45_000 });
+      await page.waitForURL(/\/$/, { timeout: 45_000 });
     } catch (fallo) {
       // Si no llega, decir DÓNDE se quedó y QUÉ ponía ahí. Un
       // "waitForURL: Timeout" a secas obliga a adivinar, y ya hemos
-      // adivinado bastante: la portada decide a dónde entra cada papel, y
-      // cuando esa decisión sale mal lo que se ve es otra pantalla, no un
-      // error del navegador.
+      // adivinado bastante.
       const titulo = await page
         .getByRole("heading")
         .first()
@@ -136,23 +144,26 @@ test.describe("Flujos sobre el espacio de demostración", () => {
         .locator('[role="alert"]:visible:not(#__next-route-announcer__)')
         .allInnerTexts();
       throw new Error(
-        `Entrando como ${email} no se llegó a ${destino}. Se quedó en ${page.url()}, ` +
+        `Entrando como ${email} no se llegó al Inicio de Cuotly. Se quedó en ${page.url()}, ` +
           `con el titular "${titulo.trim()}"` +
           (alertas.length ? ` y este error en pantalla: ${alertas.join(" / ")}` : " y sin error en pantalla") +
           `. Causa original: ${fallo instanceof Error ? fallo.message.split("\n")[0] : String(fallo)}`,
       );
     }
+
+    if (ruta !== undefined) await page.goto(ruta);
   }
 
-  const ESPACIO_URL = new RegExp(`/espacios/${ESPACIO}$`);
-  const RESTAURANTE_URL = new RegExp(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
+  const ESPACIO_URL = `/espacios/${ESPACIO}`;
+  const RESTAURANTE_URL = `/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`;
 
   test.describe("El equipo", () => {
-    test("la propietaria aterriza en su espacio, con el restaurante sembrado", async ({ page }) => {
+    test("la propietaria entra al Inicio de Cuotly y llega a su espacio, con el restaurante sembrado", async ({ page }) => {
       await entrar(page, EQUIPO.propietaria.email, ESPACIO_URL);
 
-      // Pertenece a un solo espacio, así que la raíz redirige sola
-      // (app/page.tsx: `if (spaces.length === 1) redirect(...)`).
+      // Decisión 42 · la raíz ya no redirige: se entra SIEMPRE al Inicio
+      // global (§36), y el espacio se elige desde ahí. `entrar()` hace los
+      // dos pasos; aquí se comprueba que el segundo ha llegado a su sitio.
       await expect(page).toHaveURL(new RegExp(`/espacios/${ESPACIO}$`));
       // El Inicio del espacio se rediseñó (commit cfd094a) y su titular pasó
       // a ser "Inicio": el nombre del espacio vive ahora en el armazón —el
@@ -175,6 +186,23 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(page.getByText("EST-0001")).toBeVisible();
       await expect(page.getByText("Bar Demo")).toBeVisible();
       await expect(page.getByText("Activo").first()).toBeVisible();
+    });
+
+    test("decisión 42 · la raíz es el Inicio de Cuotly, también con un solo espacio", async ({
+      page,
+    }) => {
+      // Este test existe por lo que cambió: hasta el 16/09/2026 la raíz
+      // redirigía sola cuando solo tenías un contexto (§20.1), y por eso
+      // quien tiene un solo espacio no veía nunca el Inicio global. Si
+      // alguien devuelve aquella redirección, esto se pone rojo.
+      await entrar(page, EQUIPO.propietaria.email);
+
+      await expect(page).toHaveURL(/\/$/);
+      await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Mis espacios de mantenimiento" }),
+      ).toBeVisible();
+      await expect(page.getByRole("link", { name: "Demo Cuotly" })).toBeVisible();
     });
 
     test("la bandeja de solicitudes enseña las enviadas y NO el borrador del cliente", async ({
@@ -246,15 +274,27 @@ test.describe("Flujos sobre el espacio de demostración", () => {
   });
 
   test.describe("El cliente", () => {
-    test("aterriza en su restaurante, no en un espacio de mantenimiento", async ({ page }) => {
-      await entrar(page, CLIENTE.email, RESTAURANTE_URL);
+    test("entra al Inicio de Cuotly y desde ahí a su restaurante, no a un espacio", async ({ page }) => {
+      await entrar(page, CLIENTE.email);
 
-      // El otro lado de HU-02: no pertenece a ningún espacio, así que sus
-      // contextos son sus restaurantes (app/page.tsx). Y como solo tiene
-      // uno, entra directamente — PRD §20.1: "Con un solo contexto
-      // accesible se entra directamente. Con varios, aparece un selector".
-      // El selector es para el cliente con varios restaurantes, y su
-      // subtítulo lo dice: "Tienes acceso a más de un restaurante".
+      // Decisión 42 · el cliente también entra al Inicio global, y desde
+      // ahí a lo suyo. Lo que se comprueba aquí es el otro lado de HU-02
+      // y de RN-GLO-03: no pertenece a ningún espacio, así que su contexto
+      // es su restaurante, y tiene que verlo listado y poder entrar.
+      await expect(page).toHaveURL(/\/$/);
+      await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
+
+      // Y NO ve el espacio de mantenimiento como contexto suyo: el
+      // restaurante es lo único que le pertenece (P7).
+      await expect(
+        page.getByRole("heading", { name: "Mis paneles de restaurante" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Mis espacios de mantenimiento" }),
+      ).toHaveCount(0);
+
+      await page.getByRole("link", { name: "Bar Demo" }).first().click();
+
       await expect(page).toHaveURL(
         new RegExp(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`),
       );

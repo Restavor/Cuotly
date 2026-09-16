@@ -361,30 +361,6 @@ export const es = {
     transferFailed: "La subida se ha cortado. Vuelve a intentarlo.",
   },
 
-  contextSelector: {
-    loadErrorTitle: "No se han podido cargar tus contextos",
-    loadErrorReason:
-      "La consulta al servidor falló. Vuelve a cargar la página; si sigue igual, es un problema de conexión con la base de datos, no de tu cuenta.",
-    title: "Elige un espacio",
-    subtitle: "Perteneces a más de un espacio de mantenimiento.",
-    // HU-02 desde el otro lado: un cliente no pertenece a ningún espacio
-    // de mantenimiento, sus contextos son sus restaurantes.
-    clientTitle: "Elige un restaurante",
-    clientSubtitle: "Tienes acceso a más de un restaurante.",
-    sessionsLink: "Mis sesiones",
-    securityLink: "Verificación en dos pasos",
-    // Hito 19 · la entrada "Administración de Cuotly" de §8, y el aviso a
-    // quien es de Cuotly y todavía no ha pasado el segundo paso.
-    platformTitle: "Administración de Cuotly",
-    platformSubtitle: "El panel de la plataforma: usuarios, espacios, solicitudes, cobros y soporte.",
-    platformNeedsTwoFactor: "Para entrar en la administración hace falta la verificación en dos pasos.",
-    platformNeedsChallenge: "Esta sesión todavía no ha pasado el segundo paso.",
-    requestSpaceTitle: "¿Quieres tu propio espacio de mantenimiento?",
-    requestSpaceBody: "Pide uno: Cuotly lo revisa y, al aprobarlo, se crea con una prueba de 7 días.",
-    requestSpaceAction: "Pedir un espacio",
-    requestSpaceStatus: "Tu solicitud de espacio",
-    requestSpaceOpen: "Ver mi solicitud",
-  },
 
   space: {
     establishments: {
@@ -4660,6 +4636,12 @@ export const es = {
       help: "Ayuda",
     },
     home: {
+      // §8 y RN-ADM-01 · la entrada a Administración de Cuotly, que vivía en
+      // el selector de contexto hasta que el Inicio global ocupó su sitio
+      // (decisión 42). Es el mismo texto: lo que cambió es dónde se lee.
+      platformTitle: "Administración de Cuotly",
+      platformSubtitle: "El panel de la plataforma: usuarios, espacios, solicitudes, cobros y soporte.",
+      platformNeedsTwoFactor: "Para entrar en la administración hace falta la verificación en dos pasos.",
       title: "Inicio",
       subtitle: "Lo que tienes entre manos, en todos tus contextos a la vez.",
       attentionTitle: "Necesita tu atención",
