@@ -7,7 +7,7 @@ import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import { requestTone } from "../administracion/solicitudes/request-tone";
+import { requestTone } from "../../administracion/solicitudes/request-tone";
 import { SpaceRequestForm } from "./SpaceRequestForm";
 
 /**

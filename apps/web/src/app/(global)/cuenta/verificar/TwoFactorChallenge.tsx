@@ -7,7 +7,7 @@ import { Button, Field } from "@/components/ui";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/client";
 
-import { signOut } from "../../(auth)/actions";
+import { signOut } from "@/app/(auth)/actions";
 
 /**
  * El código de seis cifras contra el primer factor verificado de la

@@ -4866,9 +4866,37 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
 - **Pendiente de Bosco**: aplicar la 97 al proyecto real **y apagar el alta pública en el panel de
   Supabase** — eso último no lo hace ninguna migración.
 
+#### Hecho · El contexto global (§36, RN-GLO-01 a 08; migración 98, suite 49)
+- **Cinco pantallas fuera de todo espacio**, con su armazón propio: Inicio (`/inicio`), Mis
+  solicitudes, Mensajes, Mi cuenta y Ayuda. `Solicitar espacio` y las pantallas de cuenta que ya
+  existían pasan a colgar del mismo armazón.
+- **Aquí no nace ninguna capacidad nueva** (RN-GLO-01), y la suite lo comprueba: `my_contexts()` es
+  SECURITY INVOKER —si alguien se la pone DEFINER "para que vaya más rápido", el test se pone rojo—
+  y lo demás se apoya en `can_read_conversation()`, `is_space_member()` y
+  `is_establishment_client()`, las de siempre.
+- **"Necesita tu atención" no tiene una segunda definición de urgente.** El lado del equipo se lo
+  pregunta a `loadSpaceAttention()`, la misma que alimenta el Inicio de cada espacio, con el reloj
+  laborable de `src/core`; el lado del restaurante sale de `my_client_attention()`, que es estado y
+  no reloj. El orden: lo vencido primero, luego por vencimiento, luego por antigüedad, y al final lo
+  que ni siquiera tiene fecha de entrada —a lo que no se le inventa una (CA-20)—.
+- **La bandeja reúne y no duplica** (RN-GLO-05): son las mismas conversaciones, con las mismas
+  políticas. Al cliente no le llega el nombre del espacio ni sus propios mensajes cuentan como sin
+  leer.
+- **Mi cuenta es de la persona** (RN-GLO-06): nombre y apellidos separados con `full_name`
+  recompuesto para que el resto de la aplicación siga leyendo lo mismo, teléfono, y una zona horaria
+  **para leer fechas** que no toca la del espacio. Las preferencias de aviso valen en todos tus
+  contextos y la del espacio manda sobre ellas; un aviso obligatorio de RN-NOT-03 no se apaga
+  tampoco desde aquí.
+- **Lo que no trae, dicho con su motivo**: la foto de perfil (el almacenamiento es por espacio y una
+  foto no es de ningún espacio) y el selector de idioma (hoy solo hay uno).
+- **Pendiente de Bosco, y por eso construido sin tocarlo**: §20.1 dice "con un solo contexto se entra
+  directamente" y §36 dice que la raíz pasa a ser un sitio donde se trabaja. La raíz **no se ha
+  tocado**: el Inicio global vive en `/inicio` y se llega por "Volver al inicio de Cuotly". Falta
+  decidir si la raíz debe pasar a ser el Inicio global para todo el mundo.
+- **Verde**: 49 suites SQL sobre bootstrap + 98 migraciones, typecheck, lint, 1371 tests de web,
+  la compilación de Next y los 14 de móvil.
+
 #### Lo que queda del paso 2
-- El **contexto global** entero (§36, RN-GLO): Inicio con "Necesita tu atención", Mis solicitudes,
-  bandeja de mensajes global, Mi cuenta y Ayuda, fuera de todo espacio.
 - Las **piezas sueltas** que enumera `docs/diseno/MAPA-DEL-DISENO.md`.
 - La **reorganización de la navegación** que el diseño pide: cinco pestañas en la ficha del
   restaurante y el panel del restaurante como contexto propio.

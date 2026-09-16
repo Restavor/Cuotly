@@ -55,9 +55,25 @@ Actualizado el 16/09/2026.
   igual que las de la 95). Comprobada en local: **las 48 suites en verde sobre bootstrap + 97
   migraciones**. **La aplica Bosco cuando diga.**
 
+- La **98** (`20260916000098_el_contexto_global.sql`, paso 2 del orden acordado, §36). Aditiva:
+  cuatro columnas nuevas en `profiles` (`given_name`, `family_name`, `phone`,
+  `display_timezone`), una tabla nueva (`profile_notification_preferences`, de identidad y sin
+  `space_id`, como `push_devices`), siete funciones nuevas y **una redefinida**,
+  `emit_notification()`, que pasa a preguntar por `effective_notification_preference()` en vez de
+  hacer el `left join` a mano. Es lo mismo que hacía con una segunda capa detrás —la preferencia
+  del espacio manda, y si no hay, la de la persona—; el resto del cuerpo no cambia ni una línea.
+
+  **Ojo con el orden**: redefine `emit_notification()`, que es la función por la que pasan TODOS
+  los avisos del producto. Si algo saliera mal ahí, nadie recibiría nada. Comprobada en local con
+  las 49 suites, y la 49 (`el_contexto_global.sql`) cubre las tres ramas del dictamen: espacio,
+  persona y nada.
+
+  No hay nada que hacer a mano en el panel. Después hay que regenerar `database.types.ts` (hoy
+  lleva a mano las entradas de la 95, la 97 y la 98). **La aplica Bosco cuando diga.**
+
 ## Aplicadas
 
-**Están aplicadas 95 de las 97 migraciones del repositorio: todas menos la 95 y la 97.** La 96 se
+**Están aplicadas 95 de las 98 migraciones del repositorio: todas menos la 95, la 97 y la 98.** La 96 se
 aplicó el 16/09/2026 **antes** que la 95, por orden de Bosco ("Aplica la 96"); no depende de ella
 y el orden de aplicación no cambia el resultado, pero conviene saberlo al leer
 `schema_migrations`: la 95 quedará registrada después. Las tres

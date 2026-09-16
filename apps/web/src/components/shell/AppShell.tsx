@@ -203,6 +203,20 @@ export function AppShell({
                 {es.nav.switchSpace}
               </span>
             </Link>
+
+            {/*
+              §36 · la salida al contexto global, que el diseño pide con
+              este nombre en todos los contextos. Es un enlace aparte y no
+              otra fila de la caja de arriba: "cambiar de espacio" y "salir
+              de los espacios" son dos sitios distintos, y fundirlos haría
+              que uno de los dos no se encontrara nunca.
+            */}
+            <Link
+              href="/inicio"
+              className="mt-2 block px-1 text-xs font-medium text-sidebar-text underline hover:text-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+            >
+              {es.globalContext.backToCuotly}
+            </Link>
           </div>
 
           <nav

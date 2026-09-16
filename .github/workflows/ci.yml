@@ -406,6 +406,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/como_se_entra_en_cuotly.sql
 
+      - name: "Paso 2 — Verificar el contexto global: mis contextos, la bandeja global y Mi cuenta (RN-GLO-01 a 08)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_contexto_global.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

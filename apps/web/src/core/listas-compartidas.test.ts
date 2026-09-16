@@ -56,6 +56,7 @@ import {
   PLATFORM_EMAIL_KINDS,
   accessRequestTransitionAllowed,
 } from "./access-requests";
+import { CLIENT_ATTENTION_KINDS } from "./global-home";
 import {
   OPPORTUNITY_RULES,
   OPPORTUNITY_STATES,
@@ -450,6 +451,31 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
         }
       }
     }
+  });
+
+  /*
+   * Migración 98 (paso 2, §36). Los motivos por los que una fila entra en
+   * "Necesita tu atención" por el lado del restaurante los produce
+   * `my_client_attention()` y los pinta la pantalla desde `src/core`. Un
+   * motivo nuevo en SQL que la pantalla no conozca se pintaría sin nombre;
+   * uno retirado en SQL dejaría un nombre que no sale nunca.
+   */
+  it("los seis motivos del restaurante (RN-GLO-02) son los mismos en SQL y en `src/core`", () => {
+    const fn = ultimaDefinicion("create or replace function public.my_client_attention", "$$;");
+
+    // El motivo es SIEMPRE la primera columna proyectada de cada rama del
+    // UNION, así que se lee por la forma y no por una lista escrita a mano:
+    // una rama nueva aparece aquí sola.
+    const enSql = new Set<string>([
+      ...[...fn.matchAll(/^\s*select '([a-z_]+)',$/gm)].map((m) => m[1]),
+      ...[...fn.matchAll(/^\s*(?:when '[a-z_]+' )?then '([a-z_]+)'$/gm)].map((m) => m[1]),
+      ...[...fn.matchAll(/^\s*else '([a-z_]+)'$/gm)].map((m) => m[1]),
+    ]);
+
+    // En falso-cerrado: si la expresión deja de reconocer la forma de la
+    // función, esto se queda a cero en vez de comparar "nada" con "nada".
+    expect(enSql.size).toBeGreaterThan(0);
+    expect([...enSql].sort()).toEqual([...CLIENT_ATTENTION_KINDS].sort());
   });
 
   it("los cinco correos a direcciones sin cuenta (RN-ACC-04) son los mismos en SQL y en `src/core`", () => {

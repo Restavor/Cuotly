@@ -4750,24 +4750,66 @@ export type Database = {
           },
         ]
       }
+      profile_notification_preferences: {
+        Row: {
+          email: boolean
+          event_type: string
+          id: string
+          in_app: boolean
+          profile_id: string
+          push: boolean
+          updated_at: string
+        }
+        Insert: {
+          email?: boolean
+          event_type: string
+          id?: string
+          in_app?: boolean
+          profile_id: string
+          push?: boolean
+          updated_at?: string
+        }
+        Update: {
+          email?: boolean
+          event_type?: string
+          id?: string
+          in_app?: boolean
+          profile_id?: string
+          push?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
+          display_timezone: string | null
           email: string
+          family_name: string | null
           full_name: string | null
+          given_name: string | null
           id: string
+          phone: string | null
         }
         Insert: {
           created_at?: string
+          display_timezone?: string | null
           email: string
+          family_name?: string | null
           full_name?: string | null
+          given_name?: string | null
           id: string
+          phone?: string | null
         }
         Update: {
           created_at?: string
+          display_timezone?: string | null
           email?: string
+          family_name?: string | null
           full_name?: string | null
+          given_name?: string | null
           id?: string
+          phone?: string | null
         }
         Relationships: []
       }
@@ -7502,6 +7544,84 @@ export type Database = {
       }
       reply_to_access_request: {
         Args: { p_reply: string; p_token: string }
+        Returns: undefined
+      }
+      list_my_conversations: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          establishment_id: string | null
+          establishment_name: string | null
+          id: string
+          is_read_only: boolean
+          job_code: string | null
+          job_id: string | null
+          last_message_at: string | null
+          last_message_preview: string | null
+          last_sender_role: string | null
+          request_code: string | null
+          request_id: string | null
+          side: string
+          space_id: string
+          space_name: string | null
+          space_slug: string | null
+          type: string
+          unread_count: number | null
+        }[]
+      }
+      my_client_attention: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          due_at: string | null
+          entity_id: string
+          entity_type: string
+          establishment_id: string
+          establishment_name: string
+          kind: string
+          space_id: string
+          space_slug: string | null
+          title: string | null
+        }[]
+      }
+      my_contexts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          establishment_id: string | null
+          establishment_name: string | null
+          kind: string
+          role: string | null
+          space_id: string
+          space_name: string | null
+          space_slug: string | null
+          space_timezone: string | null
+        }[]
+      }
+      my_notification_preferences: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          email: boolean
+          event_type: string
+          in_app: boolean
+          mandatory: boolean
+          push: boolean
+        }[]
+      }
+      set_my_notification_preference: {
+        Args: {
+          p_email: boolean
+          p_event_type: string
+          p_in_app: boolean
+          p_push?: boolean
+        }
+        Returns: undefined
+      }
+      set_my_profile: {
+        Args: {
+          p_display_timezone?: string
+          p_family_name: string
+          p_given_name: string
+          p_phone?: string
+        }
         Returns: undefined
       }
       submit_access_request: {

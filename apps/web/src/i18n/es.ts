@@ -4647,6 +4647,164 @@ export const es = {
    * apoyarse en ninguna pantalla: el texto se basta solo y los enlaces son
    * absolutos.
    */
+  /**
+   * PRD §36 (RN-GLO) · el contexto global: la zona de Cuotly que una
+   * persona ve por lo que ES —su cuenta— y no por dónde está.
+   */
+  globalContext: {
+    nav: {
+      home: "Inicio",
+      requests: "Mis solicitudes",
+      messages: "Mensajes",
+      account: "Mi cuenta",
+      help: "Ayuda",
+    },
+    home: {
+      title: "Inicio",
+      subtitle: "Lo que tienes entre manos, en todos tus contextos a la vez.",
+      attentionTitle: "Necesita tu atención",
+      attentionEmpty: "No tienes nada pendiente",
+      attentionEmptyReason:
+        "Ni trabajos con el plazo en riesgo, ni solicitudes esperándote, ni cobros abiertos. Cuando aparezca algo, estará aquí.",
+      attentionFailed: "No hemos podido reunir todo",
+      attentionFailedReason:
+        "Falta al menos un contexto por leer, así que esta lista puede estar incompleta. Vuelve a cargar en un momento.",
+      allContexts: "Todos",
+      overdue: "Fuera de plazo",
+      dueOn: "Vence el",
+      since: "Desde el",
+      noDate: "Sin fecha de entrada",
+      spacesTitle: "Mis espacios de mantenimiento",
+      restaurantsTitle: "Mis paneles de restaurante",
+      contextsFailed: "No hemos podido leer tus contextos",
+      contextsFailedReason:
+        "Es un problema nuestro o de tu conexión, no de tu cuenta. Vuelve a cargar en un momento.",
+      noneTitle: "Todavía no tienes ningún contexto",
+      noneReason:
+        "Tu cuenta existe, pero aún no perteneces a ningún espacio de mantenimiento ni tienes acceso a ningún restaurante. Si has pedido un espacio, abajo verás en qué estado está; si te van a invitar, te llegará por correo.",
+      requestSpace: "Solicitar un espacio",
+      unreadTitle: "Mensajes sin leer",
+      unreadNone: "Nada sin leer",
+      openMessages: "Ir a la bandeja",
+      requestsTitle: "Mis solicitudes de espacio",
+      openRequests: "Ver todas",
+      /** RN-GLO-04 · esta pantalla NO es donde viven las de trabajo. */
+      requestsElsewhere:
+        "Las solicitudes de trabajo viven dentro de cada espacio o de cada panel de restaurante, no aquí.",
+    },
+    requests: {
+      title: "Mis solicitudes",
+      subtitle: "Las solicitudes de creación de espacio que has enviado.",
+      emptyTitle: "No has enviado ninguna solicitud",
+      emptyReason: "Cuando pidas un espacio de mantenimiento, aparecerá aquí con su estado.",
+      business: "Negocio",
+      plan: "Plan",
+      status: "Estado",
+      updated: "Última novedad",
+      action: "Acción",
+      /** La acción que toca AHORA en cada estado (RN-GLO-04). */
+      actions: {
+        draft: "Continuar el borrador",
+        submitted: "Esperando respuesta",
+        in_review: "En revisión",
+        needs_information: "Aportar la información",
+        approved: "Ver las instrucciones de pago",
+        rejected: "Ver el motivo",
+      },
+      reviewerHidden: "Quién la revisó no se enseña: eso queda en la auditoría de Cuotly.",
+      newRequest: "Solicitar otro espacio",
+    },
+    messages: {
+      title: "Mensajes",
+      subtitle: "Tus conversaciones de todas partes, reunidas.",
+      tabMaintenance: "Mantenimiento",
+      tabRestaurants: "Restaurantes",
+      allContexts: "Todos",
+      onlyUnread: "Solo sin leer",
+      showAll: "Ver todas",
+      emptyTitle: "No hay conversaciones",
+      emptyReason: "Cuando se abra una en cualquiera de tus contextos, la verás aquí.",
+      emptyUnread: "No te queda nada sin leer en esta pestaña.",
+      failedTitle: "No hemos podido leer tu bandeja",
+      failedReason:
+        "Es un problema nuestro o de tu conexión. Vuelve a cargar en un momento; no se ha perdido ningún mensaje.",
+      unreadOne: "sin leer",
+      readOnly: "Cerrada",
+      noMessagesYet: "Todavía sin mensajes",
+      /** RN-GLO-05 · reúne, no duplica. */
+      sameConversations:
+        "Son las mismas conversaciones que ves dentro de cada espacio y de cada panel: aquí están juntas.",
+    },
+    account: {
+      title: "Mi cuenta",
+      subtitle: "Tus datos, tu seguridad y tus avisos. Es de la persona, no del espacio.",
+      profileTitle: "Perfil",
+      givenName: "Nombre",
+      familyName: "Apellidos",
+      email: "Correo electrónico",
+      emailLocked: "El correo es la identidad de tu cuenta y se cambia desde Seguridad.",
+      phone: "Teléfono",
+      timezone: "Zona horaria para leer las fechas",
+      /** CLAUDE.md MUST · la del espacio manda en los cálculos. */
+      timezoneHelp:
+        "Solo cambia cómo se te enseñan las fechas. Los plazos y los vencimientos se siguen calculando en la zona horaria de cada espacio.",
+      timezonePlaceholder: "La del espacio",
+      save: "Guardar",
+      savePending: "Guardando…",
+      saved: "Guardado.",
+      nameRequired: "El nombre no puede quedar en blanco.",
+      /** Lo que no está, con su motivo (CLAUDE.md). */
+      photoTitle: "Foto",
+      photoReason:
+        "Todavía no se puede subir una foto de perfil: el almacenamiento de archivos de Cuotly es por espacio y una foto tuya no es de ningún espacio. Necesita su propio sitio y llegará con él.",
+      securityTitle: "Seguridad",
+      securityBody: "Contraseña, verificación en dos pasos y sesiones abiertas.",
+      securityLink: "Contraseña y verificación",
+      sessionsLink: "Mis sesiones",
+      verifyLink: "Verificar mi correo",
+      closeLink: "Cerrar mi cuenta",
+      notificationsTitle: "Avisos",
+      notificationsBody:
+        "Lo que eliges aquí vale en todos tus contextos, también en los que entres mañana. Dentro de un espacio puedes afinarlo, y lo que decidas allí manda sobre esto.",
+      channelInApp: "En Cuotly",
+      channelEmail: "Correo",
+      channelPush: "Móvil",
+      mandatory: "No se puede desactivar",
+      mandatoryReason:
+        "Seguridad, pérdida de acceso, impagos graves y vencimientos críticos llegan siempre.",
+      notificationsFailed: "No hemos podido leer tus avisos",
+      notificationsFailedReason: "Vuelve a cargar en un momento; no se ha cambiado nada.",
+    },
+    help: {
+      title: "Ayuda",
+      subtitle: "El centro de ayuda de Cuotly, desde fuera de tus espacios.",
+      /** RN-GLO-07 · abrir una incidencia necesita un espacio detrás. */
+      incidentNeedsSpace:
+        "Para abrir una incidencia a Cuotly hace falta entrar desde un espacio: una incidencia es de un espacio y va con su prioridad. Entra en el tuyo y ábrela desde su Ayuda.",
+    },
+    backToCuotly: "Volver al inicio de Cuotly",
+    /**
+     * Por qué está cada fila en "Necesita tu atención". Los seis primeros
+     * son los del Inicio del espacio, dichos en singular porque aquí cada
+     * fila es una cosa y no un recuento; los seis siguientes son los del
+     * lado del restaurante (RN-GLO-02).
+     */
+    kinds: {
+      job_out_of_deadline: "Fuera de plazo",
+      job_about_to_expire: "A punto de vencer",
+      job_pending_assignment: "Por asignar",
+      request_pending_validation: "Por validar",
+      request_correction_requested: "Corrección pedida",
+      job_blocked_by_client: "Esperando al restaurante",
+      request_needs_information: "Te piden información",
+      request_pending_acceptance: "Esperando tu aceptación",
+      quote_to_decide: "Presupuesto por decidir",
+      charge_to_pay: "Cobro pendiente",
+      menu_to_prepare: "Menú por preparar",
+      terms_to_accept: "Condiciones por aceptar",
+    },
+  },
+
   platformEmails: {
     received: {
       subject: "Hemos recibido tu solicitud de acceso a Cuotly",

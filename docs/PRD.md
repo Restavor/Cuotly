@@ -639,6 +639,15 @@ Con un solo contexto accesible se entra directamente. Con varios, aparece un sel
 logotipo, tipo, rol y alertas rápidas; al pulsar una alerta se abre el elemento exacto tras comprobar
 permisos. Bosco **siempre** ve el selector. Existe una acción persistente "Cambiar de espacio".
 
+> **Pendiente de decidir, y por eso construido sin tocar esto** (16/09/2026). El §36 dice que el
+> diseño "convierte la raíz en un lugar donde se trabaja", y eso choca de frente con "con un solo
+> contexto accesible se entra directamente": quien tiene un espacio y nada más no llegaría nunca a
+> ver el Inicio global. Se ha implementado **sin cambiar este apartado**: la raíz sigue entrando
+> directa a tu único contexto y el Inicio global vive en `/inicio`, al que se llega desde "Volver al
+> inicio de Cuotly", que el diseño pide en todos los contextos. Falta que Bosco decida si la raíz
+> debe pasar a ser el Inicio global para todo el mundo; el día que lo diga, es una línea de rutas y
+> los recorridos de Playwright que hoy comprueban la entrada directa.
+
 ### 20.2 Menú del espacio (escritorio)
 Inicio · Restaurantes · Solicitudes · Trabajos · Tareas · Menú Diario · Mensajes · Calendario ·
 Finanzas · Informes · Equipo · Planes y servicios · **Agente Cuotly (Próximamente)** · Ajustes.
@@ -1991,7 +2000,13 @@ pantallas, ni `RN-USR`, que se confundiría con los usuarios de un espacio (RN-E
   misma imposibilidad de borrar. Reúne, no duplica.
 - **RN-GLO-06**: **Mi cuenta es de la persona, no del espacio** (G05): perfil (nombre, apellidos,
   correo, teléfono, idioma, zona horaria y foto), seguridad (contraseña, verificación en dos pasos y
-  sesiones, que ya existen) y preferencias de notificación. La **zona horaria de aquí sirve para
+  sesiones, que ya existen) y preferencias de notificación. Dos precisiones de lo construido el
+  16/09/2026: **la foto no está todavía**, y la pantalla dice por qué —el almacenamiento de archivos
+  de Cuotly es por espacio (`files.space_id NOT NULL`) y una foto de perfil no es de ningún espacio,
+  así que necesita su propio sitio—; y **el idioma tampoco**, porque hoy solo hay uno y un selector
+  de un solo elemento es un adorno. Las preferencias de aviso de aquí son **de la persona** y valen
+  en todos sus contextos, también en el que entre mañana; la preferencia que alguien ponga **dentro**
+  de un espacio es más específica y manda sobre esta. La **zona horaria de aquí sirve para
   enseñar fechas**, y **no sustituye a la del espacio**, que es la que manda en todo cálculo de
   plazos y vencimientos (CLAUDE.md MUST, RN-CLK). Los avisos obligatorios de RN-NOT-03 siguen sin
   poder apagarse también desde aquí.

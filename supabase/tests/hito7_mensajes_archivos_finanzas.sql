@@ -2804,7 +2804,17 @@ begin
         -- la suite 48.
         'submit_access_request', 'access_request_follow_up',
         'reply_to_access_request', 'account_setup_details',
-        'invitation_signup_details'
+        'invitation_signup_details',
+        -- Migración 98 (paso 2, §36, RN-GLO-06). Misma familia que
+        -- `my_active_sessions` y `edit_message`: es la propia persona
+        -- tocando lo suyo, y el filtro por `auth.uid()` ES la barrera.
+        -- Ninguna de las tres admite un id ajeno —no reciben ninguno—, así
+        -- que no hay nada que comprobar más allá de tener sesión, y eso lo
+        -- comprueban. `set_my_notification_preference` además hace LA
+        -- comprobación que importa aquí, la de RN-NOT-03: un aviso
+        -- obligatorio no se apaga tampoco desde la cuenta.
+        'set_my_profile', 'set_my_notification_preference',
+        'my_notification_preferences'
       )
       -- Los ayudantes del propio fixture (`h7_make_job` y compañía), que
       -- este archivo crea y borra: son andamiaje del test, no producto.
@@ -3685,7 +3695,15 @@ begin
          -- o en ninguno (un restaurante), así que no puede llevar
          -- `space_id` (RN-MOV-05). Lleva RLS con política: cada uno ve los
          -- suyos y nadie escribe por PostgREST.
-         'push_devices'
+         'push_devices',
+         -- Migración 98 (paso 2, §36): las preferencias de aviso de la
+         -- PERSONA (RN-GLO-06). Identidad, como `push_devices`: valen en
+         -- todos sus contextos y también en el que entre mañana, así que
+         -- no pueden colgar de ninguno. La del par (persona, espacio) sigue
+         -- siendo `notification_preferences`, que sí lleva `space_id NOT
+         -- NULL` y manda sobre esta. Lleva RLS con política: cada uno ve
+         -- las suyas y nadie escribe por PostgREST.
+         'profile_notification_preferences'
        ) then
       v_sin_space := v_sin_space || ' ' || v_t.tabla;
     end if;

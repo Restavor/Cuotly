@@ -134,6 +134,11 @@ export default async function HomePage() {
           ))}
         </div>
         <p className="mt-6 text-center text-sm">
+          <Link href="/inicio" className="text-cuotly-green underline">
+            {es.globalContext.backToCuotly}
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm">
           <Link href="/cuenta/sesiones" className="text-cuotly-green underline">
             {es.contextSelector.sessionsLink}
           </Link>
@@ -208,6 +213,11 @@ export default async function HomePage() {
           ))}
         </div>
         <p className="mt-6 text-center text-sm">
+          <Link href="/inicio" className="text-cuotly-green underline">
+            {es.globalContext.backToCuotly}
+          </Link>
+        </p>
+        <p className="mt-2 text-center text-sm">
           <Link href="/cuenta/sesiones" className="text-cuotly-green underline">
             {es.contextSelector.sessionsLink}
           </Link>
