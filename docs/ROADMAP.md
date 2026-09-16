@@ -4827,6 +4827,21 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
   orden sobre una base limpia con las 95 migraciones. La 95 **no está aplicada** al proyecto real:
   la aplica Bosco cuando diga (`docs/DESPLIEGUE-SUPABASE.md`).
 
+### Paso 2 · El diseño definitivo de escritorio *(en curso desde el 16/09/2026)*
+- **La referencia es `docs/diseno/Cuotly_definitivo_diseno.pdf`**, que Bosco subió el 16/09/2026 y
+  declaró la única válida: manda sobre los 26 PDF por sección, que quedan como material anterior.
+  Son 157 vistas con código (G global, F y A acceso y estados, M mantenimiento, R panel del
+  restaurante).
+- **Leído entero y cruzado con las 76 rutas de `apps/web/src/app`**: el mapa está en
+  `docs/diseno/MAPA-DEL-DISENO.md`, con lo que ya existe y solo cambia de forma, lo que no existe
+  todavía y lo que hay que decidir antes de construir.
+- **La respuesta a "¿queda algún hito?" es que sí**: el contexto global entero (Inicio, Mis
+  solicitudes, bandeja de mensajes, Mi cuenta y Ayuda fuera del espacio) y el flujo de solicitud de
+  acceso a Cuotly no existen, además de una lista de piezas sueltas que el mapa enumera.
+- **Pendiente de Bosco**: la vista R27 enseña una factura emitida por Cuotly con numeración fiscal,
+  y RN-FIN-09 y la decisión 38 dicen que Cuotly no emite facturas. CLAUDE.md manda parar ante una
+  contradicción, así que está preguntado y no se construye nada de eso hasta que responda.
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.
