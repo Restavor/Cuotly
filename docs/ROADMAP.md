@@ -4774,6 +4774,27 @@ este proyecto no ha perdido todavía ninguno.
 
 ---
 
+## Después del Hito 22 · el orden acordado con Bosco (16/09/2026)
+
+El Hito 22 cierra la Fase 4 y el desglose por hitos. Lo que queda no es un hito más: es una lista de
+pasos que Bosco fijó el 16/09/2026 (decisión 37), **en este orden y con una pausa entre cada uno**:
+se termina uno, se para, y solo entonces se empieza el siguiente.
+
+1. **Las cuatro pendientes de la Fase 4** (17 a 20 de `docs/DECISIONES.md`): uso razonable en
+   Agency, precio del almacenamiento adicional, cómo se identifica un negocio para la prueba única,
+   y los cuatro puntos del bloque legal que toca el producto. Se le ponen delante con su contexto y
+   las decide él; no se inventan.
+2. **El diseño definitivo de escritorio**, si no queda ningún hito de la web; si al revisarlo faltara
+   alguno, se hace en este paso.
+3. **El diseño definitivo móvil**, que Bosco entrega, y con él se termina la versión móvil.
+4. **La parte legal y fiscal** (§170.1), con la revisión profesional que "Antes de lanzar" exige.
+5. **Desplegar todo en Vercel**.
+6. **Lo aplazado** en CLAUDE.md: API pública y webhooks, cancelación o abono de un cobro,
+   sincronización bidireccional de calendarios y el Agente Cuotly.
+7. **Poner la app en las tiendas** (cuentas de desarrollador de Apple y Google, proyecto de Expo con
+   su `projectId`, compilaciones nativas).
+8. **Desplegar todo en Vercel** otra vez, con lo anterior.
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

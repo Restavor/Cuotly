@@ -624,6 +624,15 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    **Lo que esta decisión NO cierra:** las mismas cuatro pendientes de la 32 a la 35 —17, 18, 19 y
    20—, ni la aplicación de la migración 94 al proyecto real, ni la publicación en las tiendas.
 
+37. **El orden de lo que viene después del Hito 22** (16/09/2026). Bosco fija ocho pasos, en este
+   orden y con una pausa entre cada uno —se termina uno, se para, y solo entonces se empieza el
+   siguiente—: (1) las cuatro pendientes de la Fase 4 (17 a 20); (2) el diseño definitivo de
+   escritorio, si no queda ningún hito de la web, y si falta alguno se hace entonces; (3) el diseño
+   definitivo móvil, que él entrega, y con él se termina la versión móvil; (4) la parte legal y
+   fiscal; (5) desplegar todo en Vercel; (6) lo aplazado en CLAUDE.md; (7) poner la app en las
+   tiendas; (8) desplegar todo en Vercel otra vez. Está copiado en el ROADMAP, en "Después del
+   Hito 22".
+
 ---
 
 ### Pendiente de completar
