@@ -90,6 +90,10 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   absence: null,
   correction: null,
   session: null,
+  // Fase 4, Hito 22 · el teléfono con push de una persona (migración 94,
+  // RN-MOV-05): sin espacio, como `session`, y por la misma rama de
+  // `audit_log_select` lo ve quien lo registró o lo perdió, y nadie más.
+  push_device: null,
   // Fase 4, Hito 17 · la solicitud de creación de espacio ocurre ANTES de
   // que el espacio exista, así que sus apuntes llevan `space_id` nulo y
   // **ninguna capacidad de espacio los alcanza**. Tampoco los decide la
@@ -318,6 +322,9 @@ export const AUDIT_ACTIONS = [
   "request.submitted",
   "service.conditions_published",
   "session.revoked",
+  // Hito 22 · el teléfono con push (migración 94, RN-MOV-05).
+  "push_device.registered",
+  "push_device.revoked",
   // Hito 20 · la exportación de §141 (migración 92).
   "export.requested",
   // Hito 18 · el modo del espacio respecto a Cuotly (migración 90):

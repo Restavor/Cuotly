@@ -129,10 +129,17 @@ export function isMandatoryEvent(event: NotificationEvent): boolean {
 /** Audiencia del aviso: el texto no se redacta igual para un lado que para el otro. */
 export type NotificationAudience = "staff" | "client";
 
+export type NotificationChannel = "in_app" | "email" | "push";
+
 export interface NotificationPreference {
   readonly event: NotificationEvent;
   readonly inApp: boolean;
   readonly email: boolean;
+  /**
+   * Migración 94 (RN-MOV-06): el tercer canal. Opcional porque las filas
+   * anteriores a la app móvil no lo tenían; ausente significa activado.
+   */
+  readonly push?: boolean;
 }
 
 /**
@@ -142,12 +149,19 @@ export interface NotificationPreference {
  */
 export function shouldDeliver(
   event: NotificationEvent,
-  channel: "in_app" | "email",
+  channel: NotificationChannel,
   preference: NotificationPreference | undefined,
 ): boolean {
   if (isMandatoryEvent(event)) return true;
   if (!preference) return true;
-  return channel === "in_app" ? preference.inApp : preference.email;
+  switch (channel) {
+    case "in_app":
+      return preference.inApp;
+    case "email":
+      return preference.email;
+    case "push":
+      return preference.push ?? true;
+  }
 }
 
 /**

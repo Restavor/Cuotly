@@ -202,3 +202,24 @@ describe("Migración 76 · las condiciones nuevas son un aviso del cliente", () 
     }
   });
 });
+
+describe("RN-MOV-06 · el push es el tercer canal de las preferencias", () => {
+  it("sin preferencia, o con una anterior a la app móvil (sin campo push), el push va", () => {
+    expect(shouldDeliver("job_assigned", "push", undefined)).toBe(true);
+    expect(
+      shouldDeliver("job_assigned", "push", { event: "job_assigned", inApp: true, email: false }),
+    ).toBe(true);
+  });
+
+  it("una preferencia con push apagado lo apaga solo a él", () => {
+    const pref = { event: "job_assigned", inApp: true, email: true, push: false } as const;
+    expect(shouldDeliver("job_assigned", "push", pref)).toBe(false);
+    expect(shouldDeliver("job_assigned", "email", pref)).toBe(true);
+    expect(shouldDeliver("job_assigned", "in_app", pref)).toBe(true);
+  });
+
+  it("RN-NOT-03: un aviso obligatorio no se apaga tampoco por push", () => {
+    const pref = { event: "t3_threshold_100", inApp: false, email: false, push: false } as const;
+    expect(shouldDeliver("t3_threshold_100", "push", pref)).toBe(true);
+  });
+});

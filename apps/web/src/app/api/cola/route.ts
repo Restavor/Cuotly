@@ -31,11 +31,13 @@ import { adapterFor } from "@/services/integrations";
 import { runReportQueue } from "@/services/report-generation";
 import { createSupabaseReportGateway } from "@/services/report-gateway";
 import {
+  createExpoPushTransport,
   createMailComposer,
+  createPushComposer,
   createResendTransport,
   createSupabaseQueueGateway,
 } from "@/services/queue-gateway";
-import { drainEmailQueue, runScheduledJobs, runSlaSweep } from "@/services/queue-runner";
+import { drainDeliveryQueue, runScheduledJobs, runSlaSweep } from "@/services/queue-runner";
 
 export const dynamic = "force-dynamic";
 
@@ -145,14 +147,19 @@ async function ejecutarTanda(request: Request) {
     now: () => new Date(),
   });
 
-  const mail = await drainEmailQueue(
-    gateway,
-    createResendTransport(
+  // Correo y push salen de la misma cola, cada uno por su transporte
+  // (RN-NOT-05, RN-MOV-04). El de push no necesita clave: el servicio de
+  // Expo es público, y el token de acceso solo hace falta si el proyecto
+  // activa la seguridad de push.
+  const mail = await drainDeliveryQueue(gateway, {
+    mail: createResendTransport(
       process.env.RESEND_API_KEY,
       process.env.RESEND_FROM ?? "Cuotly <avisos@cuotly.com>",
     ),
-    createMailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
-  );
+    mailComposer: createMailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
+    push: createExpoPushTransport(process.env.EXPO_PUSH_ACCESS_TOKEN),
+    pushComposer: createPushComposer(),
+  });
 
   return NextResponse.json({
     scheduled,

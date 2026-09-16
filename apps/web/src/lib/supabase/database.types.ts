@@ -3779,6 +3779,7 @@ export type Database = {
           id: string
           in_app: boolean
           profile_id: string
+          push: boolean
           space_id: string
           updated_at: string
         }
@@ -3788,6 +3789,7 @@ export type Database = {
           id?: string
           in_app?: boolean
           profile_id: string
+          push?: boolean
           space_id: string
           updated_at?: string
         }
@@ -3797,6 +3799,7 @@ export type Database = {
           id?: string
           in_app?: boolean
           profile_id?: string
+          push?: boolean
           space_id?: string
           updated_at?: string
         }
@@ -4689,6 +4692,53 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      push_devices: {
+        Row: {
+          app_version: string | null
+          created_at: string
+          device_name: string | null
+          expo_push_token: string
+          id: string
+          last_seen_at: string
+          platform: string
+          revoked_at: string | null
+          revoked_reason: string | null
+          user_id: string
+        }
+        Insert: {
+          app_version?: string | null
+          created_at?: string
+          device_name?: string | null
+          expo_push_token: string
+          id?: string
+          last_seen_at?: string
+          platform: string
+          revoked_at?: string | null
+          revoked_reason?: string | null
+          user_id: string
+        }
+        Update: {
+          app_version?: string | null
+          created_at?: string
+          device_name?: string | null
+          expo_push_token?: string
+          id?: string
+          last_seen_at?: string
+          platform?: string
+          revoked_at?: string | null
+          revoked_reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_devices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quotes: {
         Row: {
@@ -9084,6 +9134,15 @@ export type Database = {
         }
         Returns: string
       }
+      register_push_device: {
+        Args: {
+          p_app_version?: string
+          p_device_name?: string
+          p_expo_push_token: string
+          p_platform: string
+        }
+        Returns: string
+      }
       register_incident_attachment: {
         Args: {
           p_content_type: string
@@ -9467,6 +9526,7 @@ export type Database = {
           p_email: boolean
           p_event_type: string
           p_in_app: boolean
+          p_push?: boolean
           p_space_id: string
         }
         Returns: undefined
@@ -9764,6 +9824,10 @@ export type Database = {
           plan_name: string
           renews_at: string
         }[]
+      }
+      unregister_push_device: {
+        Args: { p_expo_push_token: string }
+        Returns: boolean
       }
       update_menu_details: {
         Args: {

@@ -61,11 +61,22 @@ export interface SlaCounterRow {
   readonly events: readonly { readonly event_type: TimerEventType; readonly occurred_at: string }[];
 }
 
+export type DeliveryChannel = "email" | "push";
+
 export interface DeliveryRow {
   readonly delivery_id: string;
   readonly notification_id: string;
   readonly attempts: number;
+  /** Migración 94 (RN-MOV-04): correo o push. */
+  readonly channel: DeliveryChannel;
   readonly recipient_email: string | null;
+  /**
+   * Los tokens vigentes del destinatario cuando el canal es push; nulo en
+   * el correo. Los resuelve el reclamo en el momento del envío
+   * (RN-MOV-05): un teléfono dado de baja entre el encolado y el envío ya
+   * no aparece.
+   */
+  readonly push_tokens: readonly string[] | null;
   readonly event_type: string;
   readonly audience: string;
   readonly deep_link: string;
@@ -93,6 +104,11 @@ export interface QueueGateway {
     nextAttemptAt: Date,
     dead: boolean,
   ): Promise<void>;
+  /**
+   * RN-MOV-05 · el proveedor dice que el token ya no existe: se cierra con
+   * su motivo y no se vuelve a intentar contra él.
+   */
+  revokePushToken(token: string, reason: "provider_rejected"): Promise<boolean>;
 }
 
 export interface MailMessage {
@@ -104,6 +120,41 @@ export interface MailMessage {
 export interface MailTransport {
   /** Devuelve el identificador del proveedor, o lanza si el envío falla. */
   send(message: MailMessage): Promise<string | null>;
+}
+
+// ---------------------------------------------------------------------
+// Push (RN-MOV-04). El mismo esquema que el correo: un mensaje compuesto
+// desde i18n y un transporte inyectable. El de verdad es Expo, sobre FCM
+// y APNs; en los tests es uno falso.
+// ---------------------------------------------------------------------
+
+export interface PushMessage {
+  /** Todos los teléfonos vigentes del destinatario (RN-MOV-05). */
+  readonly to: readonly string[];
+  readonly title: string;
+  readonly body: string;
+  /** El enlace profundo del aviso (RN-NOT-04), que la app abre al tocarlo. */
+  readonly deepLink: string;
+}
+
+/**
+ * Lo que el proveedor contesta por cada token. `unregistered` es el único
+ * fallo que no se reintenta: el teléfono ya no existe para el proveedor y
+ * se da de baja (RN-MOV-05). Cualquier otro error es un fallo de envío
+ * normal, con su espera creciente.
+ */
+export type PushTicket =
+  | { readonly token: string; readonly status: "ok"; readonly providerId: string | null }
+  | { readonly token: string; readonly status: "unregistered" }
+  | { readonly token: string; readonly status: "error"; readonly message: string };
+
+export interface PushTransport {
+  /** Un ticket por token. Lanza solo si el proveedor entero no responde. */
+  send(message: PushMessage): Promise<readonly PushTicket[]>;
+}
+
+export interface PushComposer {
+  compose(delivery: DeliveryRow): PushMessage | null;
 }
 
 // ---------------------------------------------------------------------
@@ -268,6 +319,126 @@ export interface DrainResult {
   readonly dead: number;
 }
 
+export interface DeliveryTransports {
+  readonly mail: MailTransport;
+  readonly mailComposer: MailComposer;
+  /** Sin transporte de push, las entregas push se reprograman: no se pierden ni se fingen. */
+  readonly push: PushTransport | null;
+  readonly pushComposer: PushComposer;
+}
+
+type Outcome = "sent" | "retried" | "dead";
+
+/**
+ * Una entrega, un resultado. Devuelve qué pasó para que el contador de la
+ * tanda lo sume; escribir en la base lo hace aquí mismo, para que un fallo
+ * a mitad de tanda no deje una fila reclamada y sin marcar.
+ */
+async function deliverOne(
+  gateway: QueueGateway,
+  transports: DeliveryTransports,
+  delivery: DeliveryRow,
+  now: Date,
+): Promise<Outcome> {
+  const fail = async (message: string): Promise<Outcome> => {
+    // RN-NOT-05: espera creciente y techo de intentos, los de
+    // src/core/notifications.ts, que es donde están sus tests.
+    const status = deliveryStatusAfterFailure(delivery.attempts);
+    const delayMinutes = nextRetryDelayMinutes(delivery.attempts);
+    const nextAttemptAt = new Date(now.getTime() + delayMinutes * 60_000);
+    await gateway.markDeliveryFailed(delivery.delivery_id, message, nextAttemptAt, status === "dead");
+    return status === "dead" ? "dead" : "retried";
+  };
+
+  const dead = async (message: string): Promise<Outcome> => {
+    await gateway.markDeliveryFailed(delivery.delivery_id, message, now, true);
+    return "dead";
+  };
+
+  if (delivery.channel === "push") {
+    const message = transports.pushComposer.compose(delivery);
+    if (message === null) {
+      // Sin teléfono vigente no hay a quién mandarlo: se cierra como
+      // muerta, igual que un correo sin dirección (CA-18).
+      return dead("El destinatario no tiene ningún dispositivo con push");
+    }
+    if (transports.push === null) {
+      return fail("El transporte de push no está configurado: el aviso queda en cola");
+    }
+
+    let tickets: readonly PushTicket[];
+    try {
+      tickets = await transports.push.send(message);
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : String(error));
+    }
+
+    // RN-MOV-05 · los tokens que el proveedor da por inexistentes se
+    // cierran ya, con o sin éxito en los demás: no hay nada que reintentar
+    // contra ellos.
+    for (const ticket of tickets) {
+      if (ticket.status === "unregistered") {
+        await gateway.revokePushToken(ticket.token, "provider_rejected");
+      }
+    }
+
+    const ok = tickets.find((t): t is Extract<PushTicket, { status: "ok" }> => t.status === "ok");
+    if (ok) {
+      await gateway.markDeliverySent(delivery.delivery_id, ok.providerId);
+      return "sent";
+    }
+
+    const errors = tickets.filter((t): t is Extract<PushTicket, { status: "error" }> => t.status === "error");
+    if (errors.length > 0) {
+      return fail(errors.map((t) => t.message).join("; "));
+    }
+    // Todos dados de baja por el proveedor: ya no queda ningún teléfono.
+    return dead("Ningún dispositivo del destinatario existe ya para el proveedor de push");
+  }
+
+  const message = transports.mailComposer.compose(delivery);
+  if (message === null) {
+    // Sin destinatario no hay envío posible: se cierra como muerta en
+    // vez de reintentarla cinco veces contra nada.
+    return dead("El destinatario no tiene dirección de correo");
+  }
+
+  try {
+    const providerId = await transports.mail.send(message);
+    await gateway.markDeliverySent(delivery.delivery_id, providerId);
+    return "sent";
+  } catch (error) {
+    return fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
+/**
+ * Vacía la cola de envíos, correo y push mezclados en el orden en que
+ * vencen (RN-NOT-05, RN-MOV-04). Cada canal sale por su transporte.
+ */
+export async function drainDeliveryQueue(
+  gateway: QueueGateway,
+  transports: DeliveryTransports,
+  limit = 20,
+  now: Date = new Date(),
+): Promise<DrainResult> {
+  const deliveries = await gateway.claimDeliveries(limit);
+  const result = { sent: 0, retried: 0, dead: 0 };
+
+  for (const delivery of deliveries) {
+    const outcome = await deliverOne(gateway, transports, delivery, now);
+    result[outcome] += 1;
+  }
+
+  return result;
+}
+
+/**
+ * La forma de antes de la migración 94: solo correo. Se conserva porque
+ * es lo que prueban los tests de la Fase 1 y lo que llama cualquier
+ * script que solo tenga transporte de correo; una entrega push que llegue
+ * aquí se reprograma, no se pierde.
+ */
 export async function drainEmailQueue(
   gateway: QueueGateway,
   transport: MailTransport,
@@ -275,52 +446,10 @@ export async function drainEmailQueue(
   limit = 20,
   now: Date = new Date(),
 ): Promise<DrainResult> {
-  const deliveries = await gateway.claimDeliveries(limit);
-  let sent = 0;
-  let retried = 0;
-  let dead = 0;
-
-  for (const delivery of deliveries) {
-    const message = composer.compose(delivery);
-
-    if (message === null) {
-      // Sin destinatario no hay envío posible: se cierra como muerta en
-      // vez de reintentarla cinco veces contra nada.
-      dead += 1;
-      await gateway.markDeliveryFailed(
-        delivery.delivery_id,
-        "El destinatario no tiene dirección de correo",
-        now,
-        true,
-      );
-      continue;
-    }
-
-    try {
-      const providerId = await transport.send(message);
-      sent += 1;
-      await gateway.markDeliverySent(delivery.delivery_id, providerId);
-    } catch (error) {
-      // RN-NOT-05: espera creciente y techo de intentos, los de
-      // src/core/notifications.ts, que es donde están sus tests.
-      const status = deliveryStatusAfterFailure(delivery.attempts);
-      const delayMinutes = nextRetryDelayMinutes(delivery.attempts);
-      const nextAttemptAt = new Date(now.getTime() + delayMinutes * 60_000);
-
-      if (status === "dead") {
-        dead += 1;
-      } else {
-        retried += 1;
-      }
-
-      await gateway.markDeliveryFailed(
-        delivery.delivery_id,
-        error instanceof Error ? error.message : String(error),
-        nextAttemptAt,
-        status === "dead",
-      );
-    }
-  }
-
-  return { sent, retried, dead };
+  return drainDeliveryQueue(
+    gateway,
+    { mail: transport, mailComposer: composer, push: null, pushComposer: { compose: () => null } },
+    limit,
+    now,
+  );
 }

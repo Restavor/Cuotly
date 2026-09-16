@@ -163,6 +163,9 @@ describe("HU-36 · el catálogo de acciones de auditoría cubre lo que la base e
       // Hito 21 · festivos y estado de Cuotly: sin espacio, como `platform`.
       "platform_holiday",
       "platform_status",
+      // Hito 22 · el teléfono con push: sin espacio, como `session`; lo ve
+      // quien lo registró o lo perdió (RN-MOV-05).
+      "push_device",
     ]);
     const porFila = Object.entries(AUDIT_FAMILY_CAPABILITY)
       .filter(([familia, capacidad]) => capacidad === null && !deLaPlataforma.has(familia))

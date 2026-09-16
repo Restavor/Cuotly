@@ -382,6 +382,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/soporte_centro_de_ayuda_y_estado.sql
 
+      - name: "Hito 22 — Verificar la app móvil y el push del lado del servidor (RN-MOV-04, 05, 06 y 10, §70, §144, §176)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/app_movil_y_push.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

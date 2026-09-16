@@ -10,7 +10,18 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-Ninguna: las 93 migraciones del repositorio están aplicadas.
+**La 94** (`app_movil_y_push`, Fase 4 · Hito 22), escrita el 15/09/2026 y sin aplicar, a la espera
+de que Bosco lo ordene. Son 19 KB: cabe en una o dos partes. **No es solo aditiva**, y conviene
+saberlo antes: añade la tabla `push_devices` (sin `space_id`: identidad, como `profiles`) y sus tres
+funciones; añade la columna `push` a `notification_preferences` y **retira la firma de cuatro
+parámetros de `set_notification_preference()`** a favor de una de cinco con el último por omisión
+(la web sigue llamando con cuatro y funciona); ensancha el CHECK de `notification_deliveries.channel`
+a `('email', 'push')`; redefine `emit_notification()` con el tercer canal; y **retira y vuelve a
+crear `claim_notification_deliveries()`** porque cambia la forma de la tabla que devuelve (canal y
+tokens), con su revocación justo detrás (CLAUDE.md). La cola desplegada en Vercel lee esa función:
+**hay que desplegar la web del Hito 22 el mismo día que se aplique la 94**, o antes, porque la web
+del Hito 22 ya entiende las dos formas y la anterior no entiende la nueva. Las otras 93 están
+aplicadas.
 
 ## Aplicadas
 

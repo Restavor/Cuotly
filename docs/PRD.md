@@ -1784,3 +1784,112 @@ enseña (§131), **no** cierra incidencias solas, **no** trae un editor de guía
 autenticación ni los archivos, **no** tiene monitorización automática propia (§157, la del
 proveedor no se finge), **no** trae el chat privado cliente–trabajador (§171, fuera de alcance) y
 **no** toca la app móvil (Hito 22).
+
+## 35. La app móvil y el push — Fase 4 (RN-MOV)
+
+Los cinco apartados anteriores construyen la plataforma; este pone el producto **en el teléfono**.
+Sale de §21 (navegación móvil), §70 (limitación del push), §71 y §72 (preferencias y reglas
+operativas, que ya viven en §18), §144 (trabajo sin conexión), §145 (permisos móviles), §176
+(experiencia móvil: los once flujos) y §179 (coherencia de lenguaje). La maestra dice **qué** hace
+la app y calla en el **cómo** en diez sitios; en los diez se ha elegido lo más defendible, se ha
+escrito como regla marcada como lectura y se pregunta en la pendiente 25 de `docs/DECISIONES.md`.
+**Ninguna inventa un umbral ni un plazo.**
+
+La familia es **`RN-MOV`** (móvil). No `RN-APP`, que se leería como "aplicación" a secas, ni
+`RN-PUSH`, porque el push es una parte de la app y no al revés.
+
+- **RN-MOV-01**: **la app móvil es el mismo producto, no otro.** Reutiliza **tal cual** el dominio
+  de `src/core/` y la **misma API** que la web: las funciones del servidor, llamadas con la sesión
+  de quien mira, y las políticas de RLS. El teléfono **no es la autoridad de nada** (CLAUDE.md):
+  no calcula un consumo, no decide un permiso, no cambia un estado por su cuenta. Lectura: **las
+  rutas de la app son las mismas rutas que las de la web** (`/espacios/<slug>/…`), de modo que el
+  **enlace profundo** de cada aviso (RN-NOT-04) abre el elemento exacto también en el teléfono,
+  cambiando de espacio o de restaurante si hace falta, y **verificando el acceso antes** con las
+  mismas políticas: la ruta guardada no autoriza nada por sí misma.
+- **RN-MOV-02**: **la navegación es la de §21**: exactamente **cinco destinos y "Más"**, con las
+  cuatro barras (propietario y administrador; trabajador; restaurante con Menú Diario; restaurante
+  sin él). Lectura: la barra sale de **`mobileNav()` de `src/components/shell/navigation.ts`**, la
+  misma función que ya alimenta la barra de móvil de la web, y **no** de una copia: un destino que
+  entre o salga de la barra cambia en las dos superficies a la vez (CA-21). "Más" es lo que no cabe,
+  derivado, como en la web. El rol sale de la **membresía real** del espacio, no de nada que mande
+  el teléfono.
+- **RN-MOV-03**: **los once flujos de §176 se completan en el teléfono sin depender del
+  escritorio**, cada uno con la **misma función de servidor** que la web: solicitar
+  (`create_request_draft` + `submit_request`), aceptar (`accept_request`), asignar (`assign_job`),
+  comenzar (`start_job`), bloquear (`block_job` y `unblock_job`), publicar (`publish_job`, con la
+  ventana de corrección calculada con el reloj laborable de `src/core/business-clock.ts` y validada
+  por el servidor), corregir (`request_free_correction`), pagar o confirmar (`register_payment` por
+  el equipo, `upload_payment_receipt` y `accept_quote` por el restaurante), preparar menú
+  (`create_menu`, `save_menu_version`, `prepare_menu`, `request_menu_publication`), consultar
+  informe (lectura de `reports`) y gestionar equipo y ajustes permitidos (`set_principal_supervisor`,
+  `set_notification_preference`). Lo que un rol no puede hacer **no se esconde: se dice** con quién
+  hablar, y aunque se llamara a la función igual, el servidor se niega (CLAUDE.md MUST). Lo que la
+  app **no trae** se enseña como pantalla que dice **dónde está** (en la web), nunca como pantalla
+  vacía ni como dato fingido.
+- **RN-MOV-04**: **el push es un canal más de la cola de §18** (RN-NOT-05): `notification_deliveries`
+  admite el canal `push` junto al correo, con **una entrega por notificación y canal**, reintentos
+  con espera creciente y la misma clave de deduplicación. Lo emite `emit_notification()` cuando el
+  destinatario tiene **al menos un dispositivo registrado y vigente**, y lo envía el mismo proceso
+  de la cola por un **transporte inyectable** (Expo sobre FCM y APNs; falso en los tests). Un evento
+  que §18 marca "visible dentro de Cuotly, sin correo ni push" tampoco va por push. Lectura: el
+  texto del push es **el nombre del evento y el espacio, y nada más** —ni el restaurante, ni una
+  cifra, ni quién—: se lee en la pantalla de bloqueo de un teléfono que puede estar sobre una
+  barra, y el detalle está a un toque, detrás de la sesión.
+- **RN-MOV-05**: **un dispositivo es de una persona** (lectura). Se registra con su token al iniciar
+  sesión con el permiso concedido, se **da de baja al cerrar sesión**, y si **otra persona entra en
+  el mismo teléfono el token pasa a ella**: el aviso nunca llega a quien ya no está dentro. Un token
+  que el proveedor devuelve como **inexistente** (`DeviceNotRegistered`) se da de baja con su
+  motivo y **no se reintenta**: no hay nada que reintentar. Registrar y dar de baja dejan **apunte
+  de auditoría** sin espacio (`push_device.*`), con actor, valor anterior y nuevo; lo ve el
+  interesado y nadie más.
+- **RN-MOV-06**: **push respeta las preferencias de §18**: una preferencia más por evento (`push`),
+  **activada por defecto** (RN-NOT-02), y los avisos de RN-NOT-03 **no se pueden desactivar
+  tampoco por push**; el servidor lo rechaza. §70 entero: la app **pide y recomienda** el push
+  explicando antes para qué sirve (lectura: la explicación va **antes** del diálogo del sistema,
+  porque ese diálogo solo se puede enseñar una vez); si se rechaza, **aviso persistente** en la app
+  con cómo activarlo desde los ajustes del teléfono; **la app funciona sin push**; **el correo es el
+  respaldo**, que ya existe; y **el sistema operativo conserva el control final**: Cuotly no puede
+  saltárselo y no lo finge.
+- **RN-MOV-07**: **permisos de §145, ni uno más**: **cámara** y **selección de fotografías**, y
+  **escaneo de documentos**, que es —lectura— **una fotografía del documento con la cámara**, sin
+  librería de escaneo ni OCR: la app no reconoce texto. **No ubicación, no micrófono, no contactos,
+  no vídeos**: la app **no declara** esos permisos en su manifiesto y el selector **solo admite
+  imágenes**. Lectura: cada permiso se pide **en el momento de usarlo** (adjuntar una evidencia, un
+  justificante, una foto a una solicitud), nunca al arrancar; y lo que se sube pasa por el **mismo
+  registro** que en la web (`register_file()`, `attach_job_evidence()`,
+  `attach_file_to_request_draft()`): el teléfono no tiene una puerta propia.
+- **RN-MOV-08**: **la biometría es un cerrojo local, después de iniciar sesión** (§145). Lectura: se
+  **ofrece** tras entrar, es **opcional**, y si está activada la app pide el desbloqueo al volver a
+  primer plano; **no autentica contra el servidor** ni sustituye a la contraseña, y **no es la
+  2FA** de RN-ADM-02: el sombrero de plataforma sigue exigiendo la sesión verificada en dos pasos, y
+  —lectura— **el panel de Administración de Cuotly y Modo soporte no están en la app**: son de
+  escritorio. Si el teléfono no tiene biometría o se rechaza, la app sigue funcionando sin cerrojo.
+- **RN-MOV-09**: **sin conexión, §144 tal cual**: se **consulta lo reciente** —lo último que el
+  servidor devolvió a esta sesión, guardado en el dispositivo y **marcado con su hora** y el motivo
+  "sin conexión"— y se **redactan borradores de solicitudes y mensajes**. Al volver la conexión
+  **se pide confirmación antes de enviar cada borrador**. Pagos, aceptaciones, consumos,
+  publicaciones y completados **exigen servidor**: sin conexión el botón se deshabilita **con el
+  motivo** y —lectura— **no se encola nada**: una aceptación que se ejecutara sola horas después
+  contra un estado que ya cambió es exactamente lo que §144 prohíbe. Lectura: la caché es de
+  **quien mira** (no contiene nada que el servidor no le haya devuelto a su sesión, así que no
+  puede filtrar identidad del equipo al restaurante) y **se borra al cerrar sesión**.
+- **RN-MOV-10**: **nunca se duplica una acción** (§144, CA-17), con el añadido de que el teléfono
+  puede haber estado horas desconectado. Cada borrador nace con su **clave de idempotencia en el
+  momento de crearse, no al pulsar**: enviarlo dos veces, o reintentarlo tras un corte, produce un
+  solo mensaje (`post_message`) o una sola solicitud. Lectura: una solicitud se envía en dos pasos
+  y el identificador que devuelve el primero (`create_request_draft`) **se guarda en el borrador**
+  antes de dar el segundo (`submit_request`), así que un corte entre los dos no crea una segunda
+  solicitud al reintentar. Donde la función del servidor no lleva clave —`accept_request`,
+  `start_job`, `publish_job`— la protege el **estado**: la segunda llamada falla con su motivo y la
+  app lo enseña como "ya hecho", nunca como error de red que invite a insistir.
+- **RN-MOV-11**: **el mismo lenguaje** (§179): las entidades y los estados se nombran en la app con
+  el **mismo catálogo** que la web (`src/i18n/es.ts`, importado, no copiado), y la app solo añade
+  los textos que la web no tiene (push, biometría, sin conexión, permisos). Colores, espaciados y
+  tipografía, los de Emerald Control (§146). **Sin modo oscuro** (§147).
+
+Lo que este apartado **no** trae, dicho en claro: **no** trae el panel de Administración de Cuotly
+ni Modo soporte (RN-MOV-08), **no** trae la exportación de §141 ni el cierre de cuenta (son de
+escritorio, y el bloque legal sigue aplazado), **no** reconoce texto en los documentos
+fotografiados (RN-MOV-07), **no** encola acciones críticas para ejecutarlas solas al volver la
+conexión (RN-MOV-09), **no** sincroniza calendarios (aplazado en CLAUDE.md) y **no** trae API
+pública ni webhooks (aplazados).

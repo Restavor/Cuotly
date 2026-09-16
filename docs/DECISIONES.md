@@ -606,10 +606,49 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
 ### Pendiente de completar
 
-**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
-tachadas abajo con la decisión que resolvió cada una. Las cuatro salieron al desglosar la Fase 4 el
+**Cinco abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
+tachadas abajo con la decisión que resolvió cada una. Cuatro salieron al desglosar la Fase 4 el
 15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. Las lecturas de los
-hitos 18 a 21 ya están confirmadas (decisiones 32, 33, 34 y 35).
+hitos 18 a 21 ya están confirmadas (decisiones 32, 33, 34 y 35); las del Hito 22 se preguntan en
+la 25.
+
+25. **Lecturas aplicadas al implementar la app móvil y el push** (Hito 22, PRD §35, migración
+   94). §21, §70, §144, §145 y §176 dicen qué hace la app y callan en **diez** sitios sobre el cómo.
+   En los diez se ha elegido lo más defendible, se ha escrito como regla `RN-MOV` marcada como
+   lectura y se pregunta aquí. **Ninguna es un umbral ni un plazo.** Se pide confirmarlas, o
+   cambiarlas, antes de publicar la app en las tiendas.
+
+   1. **Las rutas de la app son las de la web** (RN-MOV-01): `/espacios/<slug>/…`, para que el
+      enlace profundo de cada aviso (RN-NOT-04) abra lo mismo en los dos sitios y el acceso lo
+      verifiquen las mismas políticas.
+   2. **La barra de §21 sale de `mobileNav()`**, la función que ya la calcula para la web
+      (RN-MOV-02), y no de una copia. "Más" se deriva.
+   3. **El push dice el evento y el espacio, y nada más** (RN-MOV-04): ni restaurante, ni cifra,
+      ni quién. Se lee en una pantalla bloqueada; el detalle está detrás de la sesión.
+   4. **Un dispositivo es de una persona** (RN-MOV-05): el token pasa a quien entra, se da de
+      baja al cerrar sesión, y uno que el proveedor devuelve como inexistente se cierra con su
+      motivo sin reintentos. Registrar y dar de baja dejan auditoría sin espacio, que ve el
+      interesado.
+   5. **La explicación del push va antes del diálogo del sistema** (RN-MOV-06), porque ese diálogo
+      solo se puede enseñar una vez; y el push tiene su propia preferencia por evento, activada
+      por defecto, con los obligatorios de RN-NOT-03 bloqueados también en ese canal.
+   6. **"Escaneo de documentos" es una fotografía con la cámara** (RN-MOV-07): sin librería de
+      escaneo ni OCR. Los permisos se piden al usarlos, nunca al arrancar, y lo subido pasa por
+      el mismo registro que en la web.
+   7. **La biometría es un cerrojo local y opcional** (RN-MOV-08): no autentica contra el
+      servidor, no es la 2FA, y el panel de Cuotly y Modo soporte no están en la app.
+   8. **Sin conexión no se encola ninguna acción crítica** (RN-MOV-09): el botón se deshabilita
+      con el motivo. Solo se guardan borradores de solicitudes y mensajes, que se confirman uno a
+      uno al volver la conexión.
+   9. **La caché es de quien mira y se borra al cerrar sesión** (RN-MOV-09).
+   10. **La clave de idempotencia nace con el borrador** (RN-MOV-10), y el identificador que
+      devuelve `create_request_draft` se guarda antes de llamar a `submit_request`, para que un
+      corte entre los dos no cree una segunda solicitud.
+
+   **Lo que esta pendiente NO incluye**, porque no es una lectura sino lo que la maestra deja
+   fuera: la sincronización de calendarios y la API pública (aplazadas en CLAUDE.md), y la
+   publicación en las tiendas, que es una operación con cuentas de desarrollador de Apple y de
+   Google que no existen todavía en el repositorio.
 
 24. ~~Lecturas aplicadas al implementar el soporte de Cuotly, el centro de ayuda y la página de
    estado~~ — confirmadas las catorce el 15/09/2026 como decisión 35. Se conservan abajo tal como se

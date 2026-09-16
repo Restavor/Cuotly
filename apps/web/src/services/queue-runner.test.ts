@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  drainDeliveryQueue,
   drainEmailQueue,
   runScheduledJobs,
   runSlaSweep,
   type DeliveryRow,
   type MailComposer,
   type MailTransport,
+  type PushComposer,
+  type PushTransport,
   type QueueGateway,
   type ScheduledJobRow,
   type SlaCounterRow,
@@ -24,6 +27,7 @@ function gateway(overrides: Partial<QueueGateway> = {}): QueueGateway {
     claimDeliveries: async () => [],
     markDeliverySent: async () => {},
     markDeliveryFailed: async () => {},
+    revokePushToken: async () => true,
     ...overrides,
   };
 }
@@ -207,7 +211,9 @@ describe("RN-NOT-05 · la cola de correo, con reintentos e idempotencia", () => 
       delivery_id: "d1",
       notification_id: "n1",
       attempts: 1,
+      channel: "email",
       recipient_email: "ana@example.com",
+      push_tokens: null,
       event_type: "job_published",
       audience: "staff",
       deep_link: "/espacios/x/trabajos/1",
@@ -281,5 +287,154 @@ describe("RN-NOT-05 · la cola de correo, con reintentos e idempotencia", () => 
     expect(enviar).not.toHaveBeenCalled();
     expect(result.dead).toBe(1);
     expect(fallar.mock.calls[0]?.[3]).toBe(true);
+  });
+});
+
+describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el correo", () => {
+  function entregaPush(over: Partial<DeliveryRow> = {}): DeliveryRow {
+    return {
+      delivery_id: "d-push",
+      notification_id: "n1",
+      attempts: 1,
+      channel: "push",
+      recipient_email: "ana@example.com",
+      push_tokens: ["ExponentPushToken[aaa]", "ExponentPushToken[bbb]"],
+      event_type: "job_published",
+      audience: "staff",
+      deep_link: "/espacios/x/trabajos/1",
+      space_name: "Restavor",
+      ...over,
+    };
+  }
+
+  const pushComposer: PushComposer = {
+    compose: (d) =>
+      d.push_tokens && d.push_tokens.length > 0
+        ? { to: d.push_tokens, title: "Trabajo publicado", body: "Restavor", deepLink: d.deep_link }
+        : null,
+  };
+  const mailComposer: MailComposer = { compose: () => null };
+  const mailOk: MailTransport = { send: async () => "mail-1" };
+
+  function transportes(push: PushTransport | null) {
+    return { mail: mailOk, mailComposer, push, pushComposer };
+  }
+
+  it("RN-MOV-04: una entrega push sale por el transporte de push y se marca enviada", async () => {
+    const sent = vi.fn<QueueGateway["markDeliverySent"]>(async () => {});
+    const push: PushTransport = {
+      send: async (m) => m.to.map((token) => ({ token, status: "ok" as const, providerId: `t-${token}` })),
+    };
+    const r = await drainDeliveryQueue(
+      gateway({ claimDeliveries: async () => [entregaPush()], markDeliverySent: sent }),
+      transportes(push),
+    );
+    expect(r).toEqual({ sent: 1, retried: 0, dead: 0 });
+    expect(sent).toHaveBeenCalledWith("d-push", "t-ExponentPushToken[aaa]");
+  });
+
+  it("RN-MOV-04: correo y push conviven en la misma tanda, cada uno por su transporte", async () => {
+    const mailSend = vi.fn<MailTransport["send"]>(async () => "m");
+    const pushSend = vi.fn<PushTransport["send"]>(async (m) =>
+      m.to.map((token) => ({ token, status: "ok" as const, providerId: null })),
+    );
+    const r = await drainDeliveryQueue(
+      gateway({
+        claimDeliveries: async () => [
+          entregaPush(),
+          entregaPush({ delivery_id: "d-mail", channel: "email", push_tokens: null }),
+        ],
+      }),
+      {
+        mail: { send: mailSend },
+        mailComposer: { compose: (d) => ({ to: d.recipient_email ?? "", subject: "s", body: "b" }) },
+        push: { send: pushSend },
+        pushComposer,
+      },
+    );
+    expect(r.sent).toBe(2);
+    expect(mailSend).toHaveBeenCalledTimes(1);
+    expect(pushSend).toHaveBeenCalledTimes(1);
+  });
+
+  it("RN-MOV-05: un token que el proveedor da por inexistente se da de baja y no se reintenta", async () => {
+    const revoke = vi.fn<QueueGateway["revokePushToken"]>(async () => true);
+    const failed = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const push: PushTransport = {
+      send: async (m) => m.to.map((token) => ({ token, status: "unregistered" as const })),
+    };
+    const r = await drainDeliveryQueue(
+      gateway({ claimDeliveries: async () => [entregaPush()], revokePushToken: revoke, markDeliveryFailed: failed }),
+      transportes(push),
+    );
+    expect(revoke).toHaveBeenCalledTimes(2);
+    expect(revoke).toHaveBeenCalledWith("ExponentPushToken[aaa]", "provider_rejected");
+    // Ningún teléfono vivo: muerta, no reprogramada.
+    expect(r).toEqual({ sent: 0, retried: 0, dead: 1 });
+    expect(failed.mock.calls[0][3]).toBe(true);
+  });
+
+  it("RN-MOV-05: si un teléfono recibe y otro ya no existe, la entrega es enviada y el muerto se cierra", async () => {
+    const revoke = vi.fn<QueueGateway["revokePushToken"]>(async () => true);
+    const sent = vi.fn<QueueGateway["markDeliverySent"]>(async () => {});
+    const push: PushTransport = {
+      send: async (m) => [
+        { token: m.to[0], status: "unregistered" as const },
+        { token: m.to[1], status: "ok" as const, providerId: "t-2" },
+      ],
+    };
+    const r = await drainDeliveryQueue(
+      gateway({ claimDeliveries: async () => [entregaPush()], revokePushToken: revoke, markDeliverySent: sent }),
+      transportes(push),
+    );
+    expect(r.sent).toBe(1);
+    expect(revoke).toHaveBeenCalledWith("ExponentPushToken[aaa]", "provider_rejected");
+    expect(sent).toHaveBeenCalledWith("d-push", "t-2");
+  });
+
+  it("RN-NOT-05: un fallo del proveedor de push reprograma con espera creciente, como el correo", async () => {
+    const failed = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const push: PushTransport = {
+      send: async () => {
+        throw new Error("Expo no responde");
+      },
+    };
+    const r = await drainDeliveryQueue(
+      gateway({ claimDeliveries: async () => [entregaPush()], markDeliveryFailed: failed }),
+      transportes(push),
+    );
+    expect(r).toEqual({ sent: 0, retried: 1, dead: 0 });
+    expect(failed.mock.calls[0][3]).toBe(false);
+  });
+
+  it("RN-MOV-04: sin transporte de push la entrega se reprograma, no se pierde ni se finge enviada", async () => {
+    const failed = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const sent = vi.fn<QueueGateway["markDeliverySent"]>(async () => {});
+    const r = await drainDeliveryQueue(
+      gateway({ claimDeliveries: async () => [entregaPush()], markDeliveryFailed: failed, markDeliverySent: sent }),
+      transportes(null),
+    );
+    expect(r.retried).toBe(1);
+    expect(sent).not.toHaveBeenCalled();
+  });
+
+  it("CA-18: una entrega push sin ningún teléfono vigente muere en vez de reintentarse contra nada", async () => {
+    const failed = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const r = await drainDeliveryQueue(
+      gateway({ claimDeliveries: async () => [entregaPush({ push_tokens: [] })], markDeliveryFailed: failed }),
+      transportes({ send: async () => [] }),
+    );
+    expect(r.dead).toBe(1);
+    expect(failed.mock.calls[0][3]).toBe(true);
+  });
+
+  it("RN-MOV-04: `drainEmailQueue` (solo correo) no pierde una entrega push: la deja en cola", async () => {
+    const failed = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const r = await drainEmailQueue(
+      gateway({ claimDeliveries: async () => [entregaPush()], markDeliveryFailed: failed }),
+      mailOk,
+      mailComposer,
+    );
+    expect(r).toEqual({ sent: 0, retried: 0, dead: 1 });
   });
 });

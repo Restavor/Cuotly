@@ -18,13 +18,17 @@ const drainEmailQueueMock = vi.hoisted(() => vi.fn());
 vi.mock("@/services/queue-runner", () => ({
   runScheduledJobs: runScheduledJobsMock,
   runSlaSweep: runSlaSweepMock,
-  drainEmailQueue: drainEmailQueueMock,
+  // Migración 94 (RN-MOV-04): correo y push salen de la misma cola por
+  // `drainDeliveryQueue`; el nombre del doble se conserva.
+  drainDeliveryQueue: drainEmailQueueMock,
 }));
 
 vi.mock("@/services/queue-gateway", () => ({
   createSupabaseQueueGateway: vi.fn(),
   createResendTransport: vi.fn(),
   createMailComposer: vi.fn(),
+  createExpoPushTransport: vi.fn(),
+  createPushComposer: vi.fn(),
 }));
 
 const fromMock = vi.hoisted(() => vi.fn());

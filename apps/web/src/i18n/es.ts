@@ -845,6 +845,11 @@ export const es = {
       absence_decided: "Ausencia resuelta",
       absence_uncovered_jobs: "Trabajos sin cobertura",
     },
+    // RN-MOV-04 · el push dice el evento y el espacio, y nada más.
+    push: {
+      title: (evento: string) => evento,
+      body: (espacio: string) => `Espacio: ${espacio}. Toca para abrirlo en Cuotly.`,
+    },
     email: {
       subject: (evento: string, espacio: string) => `${evento} · ${espacio}`,
       body: (evento: string, espacio: string, enlace: string) =>
@@ -2423,6 +2428,8 @@ export const es = {
       incident: "Incidencia a Cuotly",
       platform_holiday: "Festivo de Cuotly",
       platform_status_event: "Evento de estado de Cuotly",
+      // Hito 22 · el teléfono con push de una persona (RN-MOV-05).
+      push_device: "Teléfono con avisos",
     },
 
     auditActions: {
@@ -2528,6 +2535,9 @@ export const es = {
       "request.rejected": "Solicitud rechazada",
       "request.submitted": "Solicitud enviada",
       "session.revoked": "Sesión cerrada",
+      // Hito 22 · el teléfono con push (RN-MOV-05).
+      "push_device.registered": "Teléfono registrado para avisos",
+      "push_device.revoked": "Teléfono dado de baja de los avisos",
       "space.created": "Espacio creado",
       // Hito 18 · el modo del espacio respecto a Cuotly, y su plan.
       "space.activated": "Suscripción de Cuotly activada",

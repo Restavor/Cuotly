@@ -2711,6 +2711,16 @@ begin
         -- están revocadas a `anon`, y hay test de que uno no puede cerrar
         -- la sesión de otro.
         'my_active_sessions', 'revoke_my_session',
+        -- Migración 94 (Fase 4, Hito 22), misma familia: `auth.uid()` ES la
+        -- barrera. `register_push_device()` solo toca la fila del propio
+        -- token —la suya, o la de otra persona que usó ese mismo teléfono,
+        -- que pasa a ser suya (RN-MOV-05)— y no lee nada de nadie;
+        -- `unregister_push_device()` filtra por `user_id = auth.uid()` y
+        -- devuelve false sin distinguir "no es tuyo" de "no existe". Las
+        -- dos tienen que seguir abiertas a `authenticated`: es la propia
+        -- persona con su teléfono. Las dos revocadas a `anon`, y la suite
+        -- 45 comprueba que uno no da de baja el teléfono de otro.
+        'register_push_device', 'unregister_push_device',
         -- Migración 92 (Fase 4, Hito 20). Misma familia: `auth.uid()` no
         -- es un filtro más, ES la barrera. `account_deletion_blockers()`
         -- no admite ningún argumento a propósito —no se puede preguntar
@@ -3627,7 +3637,13 @@ begin
          -- Cuotly declara sobre su propio estado no pertenecen a ningún
          -- espacio (RN-SOP-06, RN-SOP-10, RN-SOP-13). Las tres llevan RLS
          -- con política, que es lo que el barrido sigue exigiendo.
-         'platform_holidays', 'help_articles', 'platform_status_events'
+         'platform_holidays', 'help_articles', 'platform_status_events',
+         -- Migración 94 (Fase 4, Hito 22): identidad, como `profiles`. Un
+         -- teléfono es de una persona, que puede estar en varios espacios
+         -- o en ninguno (un restaurante), así que no puede llevar
+         -- `space_id` (RN-MOV-05). Lleva RLS con política: cada uno ve los
+         -- suyos y nadie escribe por PostgREST.
+         'push_devices'
        ) then
       v_sin_space := v_sin_space || ' ' || v_t.tabla;
     end if;

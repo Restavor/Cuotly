@@ -17,6 +17,9 @@ import type {
   DeliveryRow,
   MailComposer,
   MailTransport,
+  PushComposer,
+  PushTicket,
+  PushTransport,
   QueueGateway,
   ScheduledJobRow,
   SlaCounterRow,
@@ -92,6 +95,10 @@ export function createSupabaseQueueGateway(client: AnyClient): QueueGateway {
         p_next_attempt_at: nextAttemptAt.toISOString(),
         p_dead: dead,
       }),
+
+    // Migración 94 (RN-MOV-05): reservada a service_role, como el resto.
+    revokePushToken: (token, reason) =>
+      rpc<boolean>(client, "revoke_push_token", { p_expo_push_token: token, p_reason: reason }),
   };
 }
 
@@ -155,6 +162,95 @@ export function createResendTransport(
 
       const payload = (await response.json()) as { id?: string };
       return payload.id ?? null;
+    },
+  };
+}
+
+/**
+ * RN-MOV-04 · el push dice el evento y el espacio, y nada más: se lee en
+ * la pantalla de bloqueo de un teléfono que puede estar sobre una barra.
+ * El detalle está a un toque, detrás de la sesión, en el enlace profundo.
+ */
+export function createPushComposer(): PushComposer {
+  return {
+    compose(delivery: DeliveryRow) {
+      const tokens = delivery.push_tokens ?? [];
+      if (tokens.length === 0) return null;
+
+      const events = es.notifications.events as Record<string, string | undefined>;
+      const label = events[delivery.event_type] ?? es.notifications.title;
+
+      return {
+        to: tokens,
+        title: es.notifications.push.title(label),
+        body: es.notifications.push.body(delivery.space_name),
+        deepLink: delivery.deep_link,
+      };
+    },
+  };
+}
+
+/**
+ * La respuesta del servicio de push de Expo: un ticket por mensaje, en el
+ * mismo orden. El único error que se trata aparte es `DeviceNotRegistered`
+ * (RN-MOV-05); el resto se reintenta como cualquier fallo.
+ */
+interface ExpoTicket {
+  readonly status: "ok" | "error";
+  readonly id?: string;
+  readonly message?: string;
+  readonly details?: { readonly error?: string };
+}
+
+export const EXPO_PUSH_ENDPOINT = "https://exp.host/--/api/v2/push/send";
+
+/**
+ * Transporte de Expo sobre FCM y APNs. No necesita clave para funcionar;
+ * el token de acceso es opcional y solo hace falta si el proyecto de Expo
+ * activa la seguridad de push. A diferencia del correo, no lanza por
+ * falta de configuración: el servicio es público.
+ */
+export function createExpoPushTransport(
+  accessToken: string | undefined,
+  fetchImpl: typeof fetch = fetch,
+): PushTransport {
+  return {
+    async send(message) {
+      const headers: Record<string, string> = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      };
+      if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+
+      const response = await fetchImpl(EXPO_PUSH_ENDPOINT, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(
+          message.to.map((token) => ({
+            to: token,
+            title: message.title,
+            body: message.body,
+            data: { deepLink: message.deepLink },
+            sound: "default",
+            priority: "high",
+          })),
+        ),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Expo push respondió ${response.status}: ${await response.text()}`);
+      }
+
+      const payload = (await response.json()) as { data?: ExpoTicket[] };
+      const tickets = payload.data ?? [];
+
+      return message.to.map((token, index): PushTicket => {
+        const ticket = tickets[index];
+        if (!ticket) return { token, status: "error", message: "Expo no devolvió ticket para este token" };
+        if (ticket.status === "ok") return { token, status: "ok", providerId: ticket.id ?? null };
+        if (ticket.details?.error === "DeviceNotRegistered") return { token, status: "unregistered" };
+        return { token, status: "error", message: ticket.message ?? ticket.details?.error ?? "Expo devolvió un error" };
+      });
     },
   };
 }
