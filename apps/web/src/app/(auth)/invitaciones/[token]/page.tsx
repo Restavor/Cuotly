@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { invitationSignupStep } from "@/core/access-requests";
 import { createClient } from "@/lib/supabase/server";
@@ -24,6 +25,33 @@ export default async function InvitacionPage({
 }) {
   const { token } = await params;
   const supabase = await createClient();
+
+  /*
+    Quien ya ha entrado no pasa por ninguna pantalla: la acepta y se va a
+    su espacio, que es lo que hacía esta ruta desde HU-03 y sigue siendo
+    lo correcto. Lo que cambia con la decisión 41 es lo de abajo: antes,
+    quien NO había entrado se mandaba a `/signup` a registrarse solo, y
+    eso ya no existe.
+  */
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    const { data: spaceId, error } = await supabase.rpc("accept_space_invitation", {
+      p_token: token,
+    });
+
+    if (!error && spaceId) {
+      const { data: space } = await supabase
+        .from("spaces")
+        .select("slug")
+        .eq("id", spaceId)
+        .maybeSingle();
+      redirect(`/espacios/${space?.slug ?? ""}`);
+    }
+  }
+
   const { data } = await supabase
     .rpc("invitation_signup_details", { p_token: token })
     .maybeSingle();

@@ -220,10 +220,6 @@ export const es = {
     },
   },
 
-  invitations: {
-    invalid: "Esta invitación no es válida, ya se usó, o ha caducado.",
-  },
-
   actions: {
     establishmentValidation: "Rellena el grupo y el nombre del establecimiento.",
     inviteValidation: "Indica un correo y un rol válidos.",
