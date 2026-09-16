@@ -225,7 +225,7 @@ export async function runSlaSweep(
 
     let status;
     if (row.counter_kind === "t2") {
-      // RN-SLA-02 y RN-COM-12: sin plan, 48 h; con Impulso o Premium, 24 h.
+      // RN-SLA-02 y RN-COM-12: sin plan, Básico o Impulso, 48 h; con Impulso+, Premium o Premium+, 24 h.
       // El número sale de la suscripción o del que se congeló al aceptar
       // (RN-COM-15), nunca de una suposición del cliente.
       status = t2Status(events, calendar, now, row.start_sla_hours === 24);

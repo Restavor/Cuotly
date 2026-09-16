@@ -6,11 +6,11 @@ import type { TimerEvent } from "./timer-events";
 const MADRID = "Europe/Madrid";
 
 describe("sla-timers — RN-SLA-01 a 04, RN-SLA-10", () => {
-  it("RN-SLA-02: 48 h laborables para Básico o un establecimiento sin plan (RN-COM-12)", () => {
+  it("RN-SLA-02: 48 h laborables para Básico, Impulso o un establecimiento sin plan (RN-COM-12)", () => {
     expect(t1DurationHours(false)).toBe(48);
   });
 
-  it("RN-SLA-02: 24 h laborables para Impulso y Premium", () => {
+  it("RN-SLA-02: 24 h laborables para Impulso+, Premium y Premium+", () => {
     expect(t1DurationHours(true)).toBe(24);
   });
 
@@ -40,7 +40,7 @@ describe("sla-timers — RN-SLA-01 a 04, RN-SLA-10", () => {
     const calendar = contractualCalendar(MADRID);
     const started = new Date("2026-08-31T07:00:00.000Z"); // lunes 09:00
     const events: TimerEvent[] = [{ type: "started", occurredAt: started }];
-    // Impulso/Premium: 24h. Avanzamos varios días laborables para superarlas de sobra.
+    // Impulso+/Premium/Premium+: 24h. Avanzamos varios días laborables para superarlas de sobra.
     const measuredAt = new Date("2026-09-03T07:00:00.000Z"); // jueves 09:00
 
     const status = t1Status(events, calendar, measuredAt, true);

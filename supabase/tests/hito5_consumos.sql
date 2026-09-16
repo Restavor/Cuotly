@@ -730,7 +730,7 @@ grant select, insert on h5_plan_ctx to authenticated;
 -- lo dejó fuera del alcance del Hito 5 y ningún hito posterior lo recogió.
 -- ============================================================
 insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours) values
-  ('92000000-0000-0000-0000-000000000010', '91000000-0000-0000-0000-000000000001', 'Premium H5', 59900, 25, 24, 5, 1, 24),
+  ('92000000-0000-0000-0000-000000000010', '91000000-0000-0000-0000-000000000001', 'Premium+ H5', 59900, 25, 24, 5, 1, 24),
   ('92000000-0000-0000-0000-000000000011', '91000000-0000-0000-0000-000000000001', 'Básico H5', 9900, 0, 0, 0, 0, 48);
 
 insert into public.establishments (id, space_id, group_id, code, name) values
@@ -786,7 +786,7 @@ begin
       using errcode = 'assert_failure';
   end if;
 
-  -- Impulso H5 incluye (1,0,0,0) y Premium H5 (25,24,5,1). Al alza.
+  -- Impulso H5 incluye (1,0,0,0) y Premium+ H5 (25,24,5,1). Al alza.
   if v_pro.extra_small <> 24 or v_pro.extra_photo <> 24 or v_pro.extra_medium <> 5 or v_pro.extra_large <> 1 then
     raise exception 'RN-COM-18 FALLIDO: las unidades extra no se redondean al alza: %/%/%/%',
       v_pro.extra_small, v_pro.extra_photo, v_pro.extra_medium, v_pro.extra_large
@@ -878,7 +878,7 @@ begin
       using errcode = 'assert_failure';
   end if;
 
-  -- Y se deja en Premium, que es donde la dejó la mejora de verdad.
+  -- Y se deja en Premium+, que es donde la dejó la mejora de verdad.
   perform public.change_plan_immediately(v_sub, '92000000-0000-0000-0000-000000000010', 'mejora-2');
 end $$;
 
@@ -918,7 +918,7 @@ declare
   v_sub uuid := (select value::uuid from h5_plan_ctx where key = 'sub');
   v_id uuid;
 begin
-  -- Se vuelve a Impulso primero para que Premium sea otra vez una mejora.
+  -- Se vuelve a Impulso primero para que Premium+ sea otra vez una mejora.
   update public.subscriptions set plan_id = '92000000-0000-0000-0000-000000000001' where id = v_sub;
 
   v_id := public.schedule_plan_change(v_sub, '92000000-0000-0000-0000-000000000010');

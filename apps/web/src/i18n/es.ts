@@ -1268,7 +1268,7 @@ export const es = {
       priorityHint: "Lo ha ordenado así el propio restaurante, incluido en su plan.",
       priorityNone: "Sin ordenar",
       priorityNoneHint:
-        "Ordenar los cambios por importancia va incluido en el plan Premium. Este restaurante no lo ha hecho, o su plan no lo incluye.",
+        "Ordenar los cambios por importancia va incluido en el plan Premium+. Este restaurante no lo ha hecho, o su plan no lo incluye.",
 
       startedAtLabel: "Fecha de inicio",
       startedAtNone: "Todavía no ha comenzado",
@@ -1601,7 +1601,7 @@ export const es = {
       emptyReason:
         "Cuando pidas un cambio y esté esperando, aparecerá aquí para que digas cuánto te corre.",
       notAllowed:
-        "Ordenar los cambios por importancia va incluido en el plan Premium. Con tu plan actual el equipo los atiende por orden de llegada.",
+        "Ordenar los cambios por importancia va incluido en el plan Premium+. Con tu plan actual el equipo los atiende por orden de llegada.",
       /*
        * Decisión de Bosco (12/09/2026): "si un trabajo ya se está haciendo
        * no se puede mover, no se puede reordenar".
@@ -2195,10 +2195,10 @@ export const es = {
     // (decisión 20): aquí solo se dice cuál se aplica.
     serviceBillingTitle: "Lo que se cobra por cada servicio",
     serviceBillingHint:
-      "RN-COM-08: el servicio tiene dos precios y se aplica el segundo cuando el plan activo concede prioridad (Premium). Cambiar de plan cambia la siguiente mensualidad, nunca las ya emitidas.",
+      "RN-COM-08: el servicio tiene dos precios y se aplica el segundo cuando el plan activo concede prioridad (Premium+). Cambiar de plan cambia la siguiente mensualidad, nunca las ya emitidas.",
     servicePriceApplied: (precio: string) => `${precio} + IVA / mes`,
-    servicePricePremiumReason: "Precio con plan Premium activo",
-    servicePriceStandardReason: "Precio sin plan Premium",
+    servicePricePremiumReason: "Precio con plan Premium+ activo",
+    servicePriceStandardReason: "Precio sin plan Premium+",
     servicePriceUnknown: "No se ha podido leer el precio aplicado.",
     terminationTitle: "Dar de baja un plan o un servicio no se hace aquí",
     terminationReason:
@@ -3510,8 +3510,8 @@ export const es = {
     serviceUsageEmptyReason:
       "Las actualizaciones consumidas y el saldo del ciclo (RN-CON-02) están en la pantalla de Menú Diario del restaurante, que es donde se piden.",
     // RN-COM-08 · qué precio se le cobra, dicho por el servidor (decisión 20).
-    servicePricePremium: "Precio con plan Premium activo (RN-COM-08)",
-    servicePriceStandard: "Precio sin plan Premium (RN-COM-08)",
+    servicePricePremium: "Precio con plan Premium+ activo (RN-COM-08)",
+    servicePriceStandard: "Precio sin plan Premium+ (RN-COM-08)",
     commitmentTitle: "Permanencia",
     commitmentUntil: (day: string) => `Vigente hasta el ${day}`,
     commitmentSince: (day: string) => `Desde el ${day}`,

@@ -71,7 +71,7 @@ en los correos y en el historial. **Nunca se usan como sinónimos.**
 | Espacio de mantenimiento | space | Un proveedor de mantenimiento (Restavor es uno). Unidad de aislamiento de datos. |
 | Grupo | group | Empresa o grupo cliente. Contiene establecimientos. |
 | Establecimiento | establishment | Un restaurante concreto. Tiene plan, consumos, pagos y trabajos propios. |
-| Plan de mantenimiento | plan | Producto que el espacio vende a un establecimiento (Básico, Impulso, Premium). |
+| Plan de mantenimiento | plan | Producto que el espacio vende a un establecimiento (en Restavor: Básico, Impulso, Impulso+, Premium, Premium+). |
 | Servicio | service | Producto adicional con sus propias reglas y consumos (Menú Diario). |
 | Suscripción del establecimiento | subscription | Contrato vigente de un establecimiento con un plan o un servicio. |
 | Ciclo de consumo | consumption_cycle | Periodo mensual de una suscripción; define qué bolsa de consumos aplica. |
@@ -190,17 +190,33 @@ el 13/09/2026: su flujo completo es el §26 (Fase 2, Hito 12, migración 80).
 
 ### 6.1 Planes de mantenimiento de Restavor
 
-Todos los precios son **más IVA** (Restavor: 21 %).
+Todos los precios son **más IVA** (Restavor: 21 %). Los cuatro planes con cambios incluidos son los de
+las fichas de Restavor del 16/09/2026 (decisión 39, migración 96); Básico se mantiene tal como estaba.
 
-| Plan | Precio/mes | Pequeños | Fotográficos | Medianos | Grandes | Plazo de inicio |
-|---|---:|---:|---:|---:|---:|---:|
-| Básico | 99 € | 0 | 0 | 0 | 0 | 48 h laborables |
-| Impulso | 399 € | 16 | 12 | 3 | 0 | 24 h laborables |
-| Premium | 599 € | 25 | 24 | 5 | 1 | 24 h laborables |
+| Plan | Precio/mes | Pequeños | Fotográficos | Medianos | Grandes | Plazo de inicio | Prioridad |
+|---|---:|---:|---:|---:|---:|---:|---|
+| Básico | 99 € | 0 | 0 | 0 | 0 | 48 h laborables | — |
+| Impulso | 299 € | 6 | 6 | 1 | 0 | 48 h laborables | Estándar |
+| Impulso+ | 399 € | 16 | 12 | 3 | 0 | 24 h laborables | Alta |
+| Premium | 499 € | 10 | 12 | 2 | 0 | 24 h laborables | Alta |
+| Premium+ | 599 € | 25 | 24 | 5 | 1 | 24 h laborables | Máxima, superior en la cola |
+
+Premium incluye **menos** cambios pequeños que Impulso+ (10 frente a 16) y es intencionado: es lo que
+dice su ficha. Lo que cada ficha añade además de la bolsa, y que Cuotly recoge como **descripción
+comercial del plan** sin construir ninguna restricción nueva (decisión 39, punto 5):
+
+| Plan | Analítica | Informe | SEO | Oportunidades | Copias de seguridad |
+|---|---|---|---|---|---|
+| Impulso | GA4 con las métricas principales; Clarity con las señales principales | Resumen mensual + análisis completo trimestral | — | 1 oportunidad priorizada por ciclo | — |
+| Impulso+ | GA4 detallado; Clarity con mapas, sesiones y fricciones | Completo mensual | — | Varias oportunidades | Mensual, cuando la plataforma lo permita |
+| Premium | Avanzada con resumen mensual | Resumen mensual + comparativa completa trimestral | Revisión y detección | Hasta 2 prioridades por ciclo | — |
+| Premium+ | Avanzada con análisis completo | Avanzado con comparativa mensual | Revisión y optimizaciones periódicas | Detección avanzada y priorización | Semanal, cuando la plataforma lo permita |
+
+Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanzadas), no esta tabla.
 
 - **RN-COM-01**: en Básico **cualquier** modificación se presupuesta aparte. No hay consumos incluidos.
-- **RN-COM-02**: Impulso no incluye cambios grandes; se presupuestan aparte.
-- **RN-COM-03**: Premium tiene prioridad interna superior a Impulso. **El cliente nunca ve esa prioridad.**
+- **RN-COM-02**: Impulso, Impulso+ y Premium no incluyen cambios grandes; se presupuestan aparte. Solo Premium+ incluye uno al mes.
+- **RN-COM-03**: Premium+ tiene prioridad interna superior al resto de planes (`plans.grants_priority`, el único que la concede). Impulso+ y Premium tienen las 24 h de inicio pero no esa prioridad. **El cliente nunca ve esa prioridad.**
 - **RN-COM-04**: facturación mensual. Permanencia mínima inicial de 3 meses; después, renovación mensual automática.
 - **RN-COM-05**: un cambio voluntario de plan inicia una nueva permanencia de 3 meses.
 - **RN-COM-06**: los consumos se renuevan en la fecha de renovación del establecimiento y **no se acumulan**.
@@ -208,7 +224,7 @@ Todos los precios son **más IVA** (Restavor: 21 %).
 
 ### 6.2 Servicio Menú Diario
 
-- **RN-COM-08**: 229 € + IVA al mes; 199 € + IVA si el establecimiento tiene plan Premium activo. *(Hito 12, migración 80: la mensualidad del servicio se emite al contratar y en cada renovación con `generate_monthly_charge_internal()`; "Premium" es el plan activo con `plans.grants_priority`, decisión 20. `service_monthly_price()` dice a la pantalla cuál de los dos se aplica.)*
+- **RN-COM-08**: 229 € + IVA al mes; 199 € + IVA **solo** si el establecimiento tiene plan Premium+ activo. Impulso, Impulso+ y Premium **no** tienen descuento en Menú Diario (decisión 39). *(Hito 12, migración 80: la mensualidad del servicio se emite al contratar y en cada renovación con `generate_monthly_charge_internal()`; "Premium+" es el plan activo con `plans.grants_priority`, decisión 20. `service_monthly_price()` dice a la pantalla cuál de los dos se aplica.)*
 - **RN-COM-09**: 30 actualizaciones por ciclo mensual, no acumulables. Permanencia mínima de 3 meses.
 - **RN-COM-10**: tres plantillas personalizadas iniciales incluidas una sola vez. Sustituciones y rediseños se presupuestan aparte.
 
@@ -272,7 +288,7 @@ isWithinBusinessWindow(at: Date, calendar: WorkCalendar): boolean
 
 ### T1 — Primera atención interna
 - **RN-SLA-01**: arranca cuando la solicitud se envía y entra en el espacio (estado `received`).
-- **RN-SLA-02**: duración = 48 h laborables (Básico o establecimiento sin plan) / 24 h laborables (Impulso y Premium).
+- **RN-SLA-02**: duración = 48 h laborables (Básico, Impulso o establecimiento sin plan) / 24 h laborables (Impulso+, Premium y Premium+). Sale de `plans.start_sla_hours`.
 - **RN-SLA-03**: se detiene cuando la solicitud pasa a `pending_client_acceptance`, `needs_information` o `rejected`.
 - **RN-SLA-04**: reciben aviso el propietario y **todos** los administradores. Un trabajador solo recibe aviso cuando ya existe una asignación válida.
 
@@ -1049,8 +1065,10 @@ Hito 15).
   `opportunities`, no que la pantalla no la pinte (CLAUDE.md). "Detectada", "recomendada" y "en
   revisión" son conversación interna del equipo; "descartada" no la ve nunca. Las notas del equipo y
   el libro de detecciones tampoco los ve: ahí se le deja fuera de la **fila**, como en `tasks` (P7).
-- **RN-OPP-08**: §101 · **Básico ninguna** ("detección interna"), **Impulso las básicas aprobadas**,
-  **Premium también las avanzadas**. **Avanzada** es la que **cruza dos fuentes** y **básica** la que
+- **RN-OPP-08**: §101 · **Básico ninguna** ("detección interna"), **Impulso, Impulso+ y Premium las
+  básicas aprobadas**, **Premium+ también las avanzadas** (decisión 39, punto 4: las cantidades por
+  ciclo de las fichas son descripción comercial, no un tope que el servidor cuente). **Avanzada** es la
+  que **cruza dos fuentes** y **básica** la que
   sale de una sola (decisión 26e); hoy la única avanzada es "poco uso de botones", que mira la ficha de
   Google y la fricción de Clarity. Qué plan es cuál se decide por lo que el plan **es** y no por su
   nombre —Cuotly es multiempresa—: sin ningún cambio incluido es el de entrada, y el que concede

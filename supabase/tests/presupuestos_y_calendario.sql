@@ -47,9 +47,9 @@ insert into public.space_memberships (space_id, user_id, role, status) values
   ('cc100000-0000-0000-0000-000000000001', 'cc000000-0000-0000-0000-000000000003', 'worker', 'active'),
   ('cc100000-0000-0000-0000-000000000002', 'cc000000-0000-0000-0000-000000000008', 'owner', 'active');
 
--- Premium concede prioridad (migración 62/63); Básico no incluye nada.
+-- Premium+ concede prioridad (migraciones 62/63 y 96); Básico no incluye nada.
 insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority) values
-  ('cc200000-0000-0000-0000-000000000001', 'cc100000-0000-0000-0000-000000000001', 'Premium P', 59900, 25, 24, 5, 1, 24, true),
+  ('cc200000-0000-0000-0000-000000000001', 'cc100000-0000-0000-0000-000000000001', 'Premium+ P', 59900, 25, 24, 5, 1, 24, true),
   ('cc200000-0000-0000-0000-000000000002', 'cc100000-0000-0000-0000-000000000001', 'Básico P', 9900, 0, 0, 0, 0, 48, false);
 
 insert into public.services (id, space_id, name, price_cents, price_premium_cents, kind, included_updates) values
@@ -99,7 +99,7 @@ begin
   perform public.create_plan_subscription('cc400000-0000-0000-0000-000000000001', 'cc200000-0000-0000-0000-000000000001');
   perform public.create_plan_subscription('cc400000-0000-0000-0000-000000000002', 'cc200000-0000-0000-0000-000000000002');
 
-  -- Premium → 199 €.
+  -- Premium+ → 199 €.
   v_sub := public.create_service_subscription('cc400000-0000-0000-0000-000000000001', 'cc250000-0000-0000-0000-000000000001');
   insert into pq_ids values ('svc_premium', v_sub);
   select base_cents, total_cents into v_base, v_total from public.charges where subscription_id = v_sub;
@@ -107,11 +107,11 @@ begin
     raise exception 'RN-FIN-01 FALLIDO: contratar el servicio no emitió su primera mensualidad' using errcode = 'assert_failure';
   end if;
   if v_base <> 19900 or v_total <> 24079 then
-    raise exception 'RN-COM-08 FALLIDO: con plan Premium activo el servicio debía costar 19900 + IVA = 24079, y es % / %', v_base, v_total using errcode = 'assert_failure';
+    raise exception 'RN-COM-08 FALLIDO: con plan Premium+ activo el servicio debía costar 19900 + IVA = 24079, y es % / %', v_base, v_total using errcode = 'assert_failure';
   end if;
   select premium_applied into v_premium from public.service_monthly_price(v_sub);
   if not v_premium then
-    raise exception 'RN-COM-08 FALLIDO: service_monthly_price no dice que aplica el precio Premium' using errcode = 'assert_failure';
+    raise exception 'RN-COM-08 FALLIDO: service_monthly_price no dice que aplica el precio Premium+' using errcode = 'assert_failure';
   end if;
 
   -- Básico → 229 €.
@@ -141,7 +141,7 @@ begin
   if (select count(*) from public.audit_log a join public.charges c on c.id = a.entity_id
       where a.action = 'charge.issued' and c.subscription_id = (select v from pq_ids where k = 'svc_premium')
         and (a.new_value ->> 'premium_price')::boolean) <> 1 then
-    raise exception 'CA-15 FALLIDO: el cobro del servicio Premium no deja escrito que aplicó el precio Premium' using errcode = 'assert_failure';
+    raise exception 'CA-15 FALLIDO: el cobro del servicio de Casa Premium no deja escrito que aplicó el precio Premium+' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -220,7 +220,7 @@ begin
   end if;
   if (select monthly_total_cents from public.upcoming_renewals('cc100000-0000-0000-0000-000000000001', 40)
       where kind = 'service' and establishment_id = 'cc400000-0000-0000-0000-000000000001') <> 24079 then
-    raise exception 'RN-COM-08 FALLIDO: la renovación del servicio Premium no lleva el precio Premium con IVA' using errcode = 'assert_failure';
+    raise exception 'RN-COM-08 FALLIDO: la renovación del servicio de Casa Premium no lleva el precio Premium+ con IVA' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -441,7 +441,7 @@ begin
   end if;
   insert into pq_ids values ('job_q1', v_job);
 
-  -- RN-CON-03: Premium incluye 5 medianos y no se ha tocado ninguno.
+  -- RN-CON-03: Premium+ incluye 5 medianos y no se ha tocado ninguno.
   if (select count(*) from public.consumption_entries where establishment_id = 'cc400000-0000-0000-0000-000000000001') <> 0 then
     raise exception 'RN-CON-03 FALLIDO: un trabajo presupuestado consumió bolsa' using errcode = 'assert_failure';
   end if;

@@ -270,7 +270,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
         page.getByRole("heading", { name: "Lo que incluye tu plan este ciclo" }),
       ).toBeVisible();
 
-      // Impulso incluye 16 cambios pequeños. El sembrado aceptó dos
+      // Impulso+ incluye 16 cambios pequeños. El sembrado aceptó dos
       // solicitudes de esa categoría, así que quedan 14. El número no sale
       // de un contador: sale de sumar el libro de apuntes
       // (`establishment_cycle_allowance`), que es lo que manda CLAUDE.md.

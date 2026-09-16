@@ -7,8 +7,10 @@ import {
   planChangeOptions,
 } from "./plans";
 
-const IMPULSO = { id: "impulso", price: 39900 };
-const PREMIUM = { id: "premium", price: 59900 };
+// Precios de PRD §6.1 (fichas de Restavor del 16/09/2026): Impulso+
+// (399 €), Premium+ (599 €) y Básico (99 €), el de entrada.
+const IMPULSO = { id: "impulso-plus", price: 39900 };
+const PREMIUM = { id: "premium-plus", price: 59900 };
 const BASICO = { id: "basico", price: 9900 };
 
 describe("RN-COM-15 y RN-COM-17 · un cambio de plan es mejora o reducción según el precio", () => {

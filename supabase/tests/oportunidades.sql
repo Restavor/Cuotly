@@ -13,8 +13,8 @@
 --   · RN-OPP-07: detectar no es enseñar. El restaurante no ve una
 --     oportunidad hasta que alguien la aprueba, ni por pantalla ni por
 --     llamada directa.
---   · RN-OPP-08: §101 · Básico ninguna, Impulso las básicas, Premium
---     también las avanzadas.
+--   · RN-OPP-08: §101 · Básico ninguna; Impulso, Impulso+ y Premium las
+--     básicas; Premium+ (el que concede prioridad) también las avanzadas.
 --   · RN-OPP-09: §100 · las tres acciones crean un borrador de solicitud
 --     con la oportunidad enganchada, y pulsar dos veces no crea dos.
 --   · RN-OPP-10: auditoría de la familia `opportunity`, y las columnas con
@@ -49,8 +49,8 @@ insert into public.space_memberships (space_id, user_id, role, status, can_appro
 
 insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority) values
   ('ee200000-0000-0000-0000-000000000001', 'ee100000-0000-0000-0000-000000000001', 'Básico', 9900, 0, 0, 0, 0, 24, false),
-  ('ee200000-0000-0000-0000-000000000002', 'ee100000-0000-0000-0000-000000000001', 'Impulso', 39900, 16, 12, 3, 0, 8, false),
-  ('ee200000-0000-0000-0000-000000000003', 'ee100000-0000-0000-0000-000000000001', 'Premium', 59900, 25, 24, 5, 1, 4, true);
+  ('ee200000-0000-0000-0000-000000000002', 'ee100000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 8, false),
+  ('ee200000-0000-0000-0000-000000000003', 'ee100000-0000-0000-0000-000000000001', 'Premium+', 59900, 25, 24, 5, 1, 4, true);
 
 insert into public.groups (id, space_id, name) values
   ('ee300000-0000-0000-0000-000000000001', 'ee100000-0000-0000-0000-000000000001', 'Grupo O');
@@ -137,10 +137,10 @@ begin
     raise exception 'RN-OPP-08 FALLIDO: Básico (sin ningún cambio incluido) deja ver oportunidades' using errcode = 'assert_failure';
   end if;
   if public.client_opportunity_access('ee400000-0000-0000-0000-000000000001') <> 'basic' then
-    raise exception 'RN-OPP-08 FALLIDO: Impulso no deja ver las básicas' using errcode = 'assert_failure';
+    raise exception 'RN-OPP-08 FALLIDO: Impulso+ no deja ver las básicas' using errcode = 'assert_failure';
   end if;
   if public.client_opportunity_access('ee400000-0000-0000-0000-000000000003') <> 'advanced' then
-    raise exception 'RN-OPP-08 FALLIDO: Premium (el que concede prioridad) no deja ver las avanzadas' using errcode = 'assert_failure';
+    raise exception 'RN-OPP-08 FALLIDO: Premium+ (el que concede prioridad) no deja ver las avanzadas' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -460,16 +460,16 @@ reset role;
 -- ============================================================
 -- RN-OPP-08 · §101 · qué ve cada plan
 -- ============================================================
--- Impulso: la básica aprobada sí, la avanzada no.
+-- Impulso+: la básica aprobada sí, la avanzada no.
 select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000005', false);
 set role authenticated;
 do $$
 begin
   if (select count(*) from public.opportunities where id = (select v from op_ids where k = 'traffic')) <> 1 then
-    raise exception 'RN-OPP-08 FALLIDO: Impulso no ve una oportunidad básica aprobada' using errcode = 'assert_failure';
+    raise exception 'RN-OPP-08 FALLIDO: Impulso+ no ve una oportunidad básica aprobada' using errcode = 'assert_failure';
   end if;
   if (select count(*) from public.opportunities where id = (select v from op_ids where k = 'avanzada_impulso')) <> 0 then
-    raise exception 'RN-OPP-08 FALLIDO: Impulso ve una oportunidad avanzada' using errcode = 'assert_failure';
+    raise exception 'RN-OPP-08 FALLIDO: Impulso+ ve una oportunidad avanzada' using errcode = 'assert_failure';
   end if;
   -- Y no ve las de otros restaurantes, aprobadas o no.
   if (select count(*) from public.opportunities where establishment_id <> 'ee400000-0000-0000-0000-000000000001') <> 0 then
@@ -489,13 +489,13 @@ begin
 end $$;
 reset role;
 
--- Premium: también las avanzadas.
+-- Premium+: también las avanzadas.
 select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000008', false);
 set role authenticated;
 do $$
 begin
   if (select count(*) from public.opportunities where id = (select v from op_ids where k = 'avanzada_premium')) <> 1 then
-    raise exception 'RN-OPP-08 FALLIDO: Premium no ve una oportunidad avanzada aprobada' using errcode = 'assert_failure';
+    raise exception 'RN-OPP-08 FALLIDO: Premium+ no ve una oportunidad avanzada aprobada' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;

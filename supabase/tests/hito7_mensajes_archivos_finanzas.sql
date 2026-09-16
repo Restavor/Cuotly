@@ -48,9 +48,10 @@ insert into public.space_memberships (space_id, user_id, role, status) values
   ('b1000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000003', 'worker', 'active'),
   ('b1000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000004', 'worker', 'active');
 
--- Impulso, con los mismos números que la semilla de Restavor (Hito 2).
+-- Impulso+, con los mismos números que la semilla de Restavor (el Impulso
+-- del Hito 2, renombrado en la migración 96).
 insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours) values
-  ('b2000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', 'Impulso H7', 39900, 16, 12, 3, 0, 24);
+  ('b2000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', 'Impulso+ H7', 39900, 16, 12, 3, 0, 24);
 
 insert into public.groups (id, space_id, name) values
   ('b3000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', 'Grupo H7');
@@ -980,7 +981,7 @@ begin
     raise exception 'RN-FIN-01 FALLIDO: se generó una segunda mensualidad para el mismo periodo' using errcode = 'assert_failure';
   end if;
 
-  -- RN-FIN-08: Impulso 399 € + 21 % = 482,79 €.
+  -- RN-FIN-08: Impulso+ 399 € + 21 % = 482,79 €.
   select base_cents, tax_cents, total_cents into v_base, v_tax, v_total
   from public.charges where id = v_charge_a;
   if v_base <> 39900 or v_tax <> 8379 or v_total <> 48279 then
@@ -1075,7 +1076,7 @@ begin
   from public.establishment_cycle_allowance('b4000000-0000-0000-0000-000000000001')
   where category = 'large';
   if v_large_incluido <> 0 then
-    raise exception 'HU-24/RN-COM-02 FALLIDO: Impulso no incluye cambios grandes, y aquí incluye %', v_large_incluido using errcode = 'assert_failure';
+    raise exception 'HU-24/RN-COM-02 FALLIDO: Impulso+ no incluye cambios grandes, y aquí incluye %', v_large_incluido using errcode = 'assert_failure';
   end if;
 
   -- HU-25 desde el lado cliente: ve su libro, pero el apunte del equipo

@@ -53,7 +53,8 @@ export type SheetIdentity = EstablishmentIdentity;
  *
  * **El precio es el que se le cobra, y lo dice el servidor.** `services`
  * guarda dos —`price_cents` y `price_premium_cents`— porque RN-COM-08
- * cobra 229 € o 199 € según el establecimiento tenga plan Premium activo,
+ * cobra 229 € o 199 € según el establecimiento tenga activo el plan que
+ * concede prioridad (Premium+ en Restavor),
  * y cuál se aplica lo decide `service_monthly_price()` (decisión 20,
  * migración 80), la misma cuenta que emite la mensualidad. Si no contesta,
  * `priceCents` es `null` y la ficha lo dice: enseñar el del catálogo como
@@ -63,7 +64,7 @@ export interface SheetService {
   readonly subscriptionId: string;
   readonly name: string;
   readonly priceCents: number | null;
-  /** RN-COM-08 · `true` si se aplica el precio con plan Premium. `null` con `priceCents` nulo. */
+  /** RN-COM-08 · `true` si se aplica el precio con el plan que concede prioridad (Premium+). `null` con `priceCents` nulo. */
   readonly premiumApplied: boolean | null;
   readonly startedAt: string;
   /** Maqueta 13 · "Versión aceptada · Ver condiciones". `null`: no se pudo leer. */

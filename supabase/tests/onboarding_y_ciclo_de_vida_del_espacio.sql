@@ -108,7 +108,7 @@ declare
   v_file uuid;
 begin
   insert into public.plans (space_id, name, price_cents, start_sla_hours)
-  values (v_space, 'Impulso', 39900, 24) returning id into v_plan;
+  values (v_space, 'Impulso+', 39900, 24) returning id into v_plan;
 
   insert into public.subscriptions (space_id, establishment_id, kind, plan_id, created_by)
   values (v_space, v_est, 'plan', v_plan, 'c1c00000-0000-0000-0000-000000000001')
@@ -117,7 +117,7 @@ begin
   insert into public.charges
     (space_id, establishment_id, subscription_id, concept, period_start, period_end,
      base_cents, tax_rate_percent, tax_cents, total_cents, due_at, issued_by)
-  values (v_space, v_est, v_sub, 'Impulso · septiembre',
+  values (v_space, v_est, v_sub, 'Impulso+ · septiembre',
           now(), now() + interval '30 days', 39900, 21, 8379, 48279, now() + interval '7 days',
           'c1c00000-0000-0000-0000-000000000001');
 

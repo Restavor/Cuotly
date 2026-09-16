@@ -44,7 +44,8 @@ export type PlanAllowance = {
 
 /**
  * RN-COM-01/02/12: ¿este plan incluye la categoría del cambio? Básico y
- * "sin plan" no incluyen nada; Impulso no incluye "large" (RN-COM-02).
+ * "sin plan" no incluyen nada; Impulso, Impulso+ y Premium no incluyen
+ * "large" (RN-COM-02): solo Premium+ lo incluye.
  * Cuando la respuesta es `false`, el cambio se presupuesta aparte
  * (RN-CON-03: no consume la bolsa) — no es un error, es una decisión de
  * negocio explícita, no un umbral inventado.
@@ -151,8 +152,8 @@ export type CycleAllowance = {
  * ciclo, una sola vez.
  *
  * Una categoría que el plan no incluye vale 0 y no es un error: en Básico
- * todo se presupuesta aparte (RN-COM-01) y en Impulso los cambios grandes
- * también (RN-COM-02). "0 restantes" y "no incluido en tu plan" son cosas
+ * todo se presupuesta aparte (RN-COM-01) y en Impulso, Impulso+ y Premium
+ * los cambios grandes también (RN-COM-02). "0 restantes" y "no incluido en tu plan" son cosas
  * distintas — `included` viaja al lado de `remaining` precisamente para
  * que la pantalla pueda decir cuál de las dos es (P6, no inventar datos).
  */

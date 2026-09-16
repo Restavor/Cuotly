@@ -33,15 +33,17 @@ describe("consumption-ledger — RN-CON, PRD §12", () => {
   });
 
   describe("RN-COM-01/02/12: si el plan incluye la categoría del cambio", () => {
+    // Impulso+ (16/12/3/0). Impulso (6/6/1/0) y Premium (10/12/2/0) tienen
+    // la misma forma: incluyen las tres primeras categorías y ningún grande.
     const impulso: PlanAllowance = { includedSmall: 16, includedPhoto: 12, includedMedium: 3, includedLarge: 0 };
 
-    it("Impulso incluye pequeño, fotográfico y mediano", () => {
+    it("Impulso, Impulso+ y Premium incluyen pequeño, fotográfico y mediano", () => {
       expect(isCategoryIncludedInPlan(impulso, "small")).toBe(true);
       expect(isCategoryIncludedInPlan(impulso, "photo")).toBe(true);
       expect(isCategoryIncludedInPlan(impulso, "medium")).toBe(true);
     });
 
-    it("RN-COM-02: Impulso no incluye \"grande\" — se presupuesta aparte", () => {
+    it("RN-COM-02: Impulso, Impulso+ y Premium no incluyen \"grande\" — se presupuesta aparte; solo Premium+ lo incluye", () => {
       expect(isCategoryIncludedInPlan(impulso, "large")).toBe(false);
     });
 
@@ -105,8 +107,8 @@ describe("consumption-ledger — RN-CON, PRD §12", () => {
 });
 
 describe("consumption-ledger — HU-24 y HU-25 (Hito 7)", () => {
-  // Impulso, tal como lo siembra el Hito 2: 16 pequeños, 12 fotográficos,
-  // 3 medianos y ningún grande (RN-COM-02).
+  // Impulso+, tal como lo siembra la migración 96 (el Impulso del Hito 2):
+  // 16 pequeños, 12 fotográficos, 3 medianos y ningún grande (RN-COM-02).
   const cicloImpulso = {
     includedSmall: 16,
     includedPhoto: 12,
@@ -139,7 +141,7 @@ describe("consumption-ledger — HU-24 y HU-25 (Hito 7)", () => {
       expect(allowance.remaining.photo).toBe(12);
     });
 
-    it("'0 restantes' y 'no incluido en tu plan' se distinguen: Impulso no incluye cambios grandes (RN-COM-02)", () => {
+    it("'0 restantes' y 'no incluido en tu plan' se distinguen: Impulso+ no incluye cambios grandes (RN-COM-02)", () => {
       const allowance = cycleAllowance(cicloImpulso, [{ category: "medium", amount: DEBIT_AMOUNT * 3 }]);
       expect(allowance.remaining.medium).toBe(0);
       expect(allowance.included.medium).toBe(3);

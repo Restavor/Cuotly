@@ -129,7 +129,7 @@ function counterStatuses(
 
     const actual = porTrabajo.get(row.job_id) ?? {};
     if (row.counter_kind === "t2") {
-      // RN-SLA-02 y RN-COM-12: sin plan, 48 h; con Impulso o Premium, 24 h.
+      // RN-SLA-02 y RN-COM-12: sin plan, Básico o Impulso, 48 h; con Impulso+, Premium o Premium+, 24 h.
       actual.t2 = t2Status(events, calendar, now, row.start_sla_hours === 24);
     } else if (row.category !== null) {
       actual.t3 = t3Status(events, calendar, now, row.category as ChangeCategory);

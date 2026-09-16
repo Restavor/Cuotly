@@ -50,11 +50,11 @@ insert into public.space_memberships (space_id, user_id, role, status) values
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002', 'admin', 'active'),
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000003', 'worker', 'active');
 
--- Los números son los del PRD §6.1 (Impulso y Premium), porque el
+-- Los números son los del PRD §6.1 (Impulso+ y Premium+), porque el
 -- prorrateo de RN-COM-18 se comprueba con ellos.
 insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours) values
-  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Impulso HU07', 39900, 16, 12, 3, 0, 24),
-  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Premium HU07', 59900, 25, 24, 5, 1, 24);
+  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Impulso+ HU07', 39900, 16, 12, 3, 0, 24),
+  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Premium+ HU07', 59900, 25, 24, 5, 1, 24);
 
 insert into public.services (id, space_id, name, price_cents, price_premium_cents) values
   ('d5000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Menu Diario HU07', 22900, 19900),
@@ -358,14 +358,14 @@ begin
       using errcode = 'assert_failure';
   end if;
 
-  -- Impulso (399 €) → Premium (599 €), recién abierto el ciclo: la
+  -- Impulso+ (399 €) → Premium+ (599 €), recién abierto el ciclo: la
   -- diferencia prorrateada tiene que ser positiva y como mucho la entera.
   if v_preview.difference_cents <= 0 or v_preview.difference_cents > 20000 then
     raise exception 'RN-COM-18 FALLIDO: diferencia prorrateada inesperada (%)', v_preview.difference_cents
       using errcode = 'assert_failure';
   end if;
 
-  -- "Si unidades_extra sale negativo se trata como 0": Premium incluye
+  -- "Si unidades_extra sale negativo se trata como 0": Premium+ incluye
   -- más de todo, así que aquí ninguna puede ser negativa.
   if v_preview.extra_small < 0 or v_preview.extra_photo < 0
      or v_preview.extra_medium < 0 or v_preview.extra_large < 0 then

@@ -502,9 +502,10 @@ export function financialSummary(input: {
 
 /**
  * RN-COM-08 · el precio mensual de un servicio adicional: 229 € + IVA, o
- * 199 € + IVA si el establecimiento tiene plan Premium activo. Qué plan es
- * "Premium" lo dice `plans.grants_priority` (decisión 20, 13/09/2026): no
- * se compara ningún nombre. Un servicio sin segundo precio cobra siempre
+ * 199 € + IVA si el establecimiento tiene activo el plan que concede
+ * prioridad (Premium+ en Restavor, decisión 39). Qué plan es ese lo dice
+ * `plans.grants_priority` (decisión 20, 13/09/2026): no se compara ningún
+ * nombre. Un servicio sin segundo precio cobra siempre
  * el normal. Es la misma cuenta que `service_monthly_price_internal()` en
  * la migración 80, que es quien emite la mensualidad.
  */

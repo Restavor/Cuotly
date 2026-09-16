@@ -409,24 +409,31 @@ describe("RN-OPP-08 · básicas, avanzadas y qué deja ver cada plan (§101, dec
     }
   });
 
-  it("Básico no ve ninguna, Impulso las básicas, Premium también las avanzadas", () => {
+  it("RN-OPP-08: Básico no ve ninguna; Impulso, Impulso+ y Premium las básicas; Premium+ también las avanzadas (decisión 39)", () => {
     const basico = { includedSmall: 0, includedPhoto: 0, includedMedium: 0, includedLarge: 0, grantsPriority: false };
-    const impulso = { includedSmall: 16, includedPhoto: 12, includedMedium: 3, includedLarge: 0, grantsPriority: false };
-    const premium = { includedSmall: 25, includedPhoto: 24, includedMedium: 5, includedLarge: 1, grantsPriority: true };
+    const impulso = { includedSmall: 6, includedPhoto: 6, includedMedium: 1, includedLarge: 0, grantsPriority: false };
+    const impulsoPlus = { includedSmall: 16, includedPhoto: 12, includedMedium: 3, includedLarge: 0, grantsPriority: false };
+    const premium = { includedSmall: 10, includedPhoto: 12, includedMedium: 2, includedLarge: 0, grantsPriority: false };
+    const premiumPlus = { includedSmall: 25, includedPhoto: 24, includedMedium: 5, includedLarge: 1, grantsPriority: true };
 
     expect(planOpportunityAccess(null)).toBe("none");
     expect(planOpportunityAccess(basico)).toBe("none");
     expect(planOpportunityAccess(impulso)).toBe("basic");
-    expect(planOpportunityAccess(premium)).toBe("advanced");
+    expect(planOpportunityAccess(impulsoPlus)).toBe("basic");
+    expect(planOpportunityAccess(premium)).toBe("basic");
+    expect(planOpportunityAccess(premiumPlus)).toBe("advanced");
 
     expect(planSees(planOpportunityAccess(basico), "basic")).toBe(false);
     expect(planSees(planOpportunityAccess(impulso), "basic")).toBe(true);
-    expect(planSees(planOpportunityAccess(impulso), "advanced")).toBe(false);
-    expect(planSees(planOpportunityAccess(premium), "advanced")).toBe(true);
+    expect(planSees(planOpportunityAccess(impulsoPlus), "basic")).toBe(true);
+    expect(planSees(planOpportunityAccess(premium), "basic")).toBe(true);
+    expect(planSees(planOpportunityAccess(premium), "advanced")).toBe(false);
+    expect(planSees(planOpportunityAccess(premiumPlus), "advanced")).toBe(true);
   });
 });
 
 describe("RN-OPP-04 · el esfuerzo es la categoría del cambio (decisión 26b)", () => {
+  // Impulso+: 16/12/3/0.
   const impulso = { includedSmall: 16, includedPhoto: 12, includedMedium: 3, includedLarge: 0, grantsPriority: false };
 
   it("dice lo que gasta y de cuánto saldo, y gasta siempre una unidad", () => {
@@ -440,7 +447,7 @@ describe("RN-OPP-04 · el esfuerzo es la categoría del cambio (decisión 26b)",
 
   it("sin plan, con la categoría fuera del plan o con la bolsa agotada, va a presupuesto (RN-CON-03)", () => {
     expect(describeEffort("medium", null, 0).includedInPlan).toBe(false);
-    // Impulso no incluye grandes (RN-COM-02).
+    // Impulso+ no incluye grandes (RN-COM-02).
     expect(describeEffort("large", impulso, 0).includedInPlan).toBe(false);
     expect(describeEffort("medium", impulso, 0).includedInPlan).toBe(false);
   });

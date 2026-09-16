@@ -10,6 +10,19 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
+- La **96** (`20260916000096_los_cuatro_planes_de_restavor.sql`, 16/09/2026, decisión 39). Con
+  datos que migrar, y a propósito: en los espacios `restavor` y `demo` **renombra** el plan Impulso
+  (399 €) a **Impulso+** y el Premium (599 €) a **Premium+** —las mismas filas, así que las
+  suscripciones, permanencias y ciclos que apuntan a ellas no cambian— y **crea** los planes nuevos
+  **Impulso** (299 €, 6/6/1/0, 48 h) y **Premium** (499 €, 10/12/2/0, 24 h). Básico no se toca. La
+  lógica está en `upgrade_restavor_plan_catalogue(uuid)` (interna, idempotente), y la migración la
+  aplica a los dos espacios. Redefine `create_restavor_space()` con los cinco planes y sube a la
+  versión 2 la guía "Cobros a tus restaurantes y tu suscripción a Cuotly" del centro de ayuda. Son
+  10 KB: cabe en una parte. Antes de aplicarla conviene mirar `select name, price_cents from plans`
+  de los dos espacios; después, que haya cinco por espacio y que `grants_priority` lo tenga solo
+  Premium+. Comprobada en local con `supabase/tests/planes_de_restavor.sql` (la 47ª suite).
+  **La aplica Bosco cuando diga.**
+
 - La **95** (`20260916000095_pendientes_de_la_fase_4.sql`, después del Hito 22 · paso 1 del
   orden acordado, decisión 38). Aditiva y sin datos que migrar: una columna nueva con valor por
   defecto (`platform_status_events.security`), tres eventos nuevos en el CHECK de `notifications`,
@@ -1442,7 +1455,8 @@ contraseña `Cuotly-demo-2026`:
 | `restaurante@cuotly.test` | Propietario local del restaurante (cliente) |
 
 Espacio `demo` ("Demo Cuotly", Europe/Madrid, IVA 21 %), restaurante
-`EST-0001` ("Bar Demo") con plan Impulso, y cuatro solicitudes dejadas a
+`EST-0001` ("Bar Demo") con plan Impulso+ (el Impulso de entonces, renombrado por la
+migración 96), y cuatro solicitudes dejadas a
 propósito en cuatro estados distintos para que ninguna pantalla se quede
 sin caso que enseñar:
 
@@ -1460,7 +1474,7 @@ El sembrado ha crecido desde entonces: hay tres identidades más
 (`trabajador2@`, `magarinos@` y `sala.magarinos@`), un segundo restaurante
 para los recorridos que ESCRIBEN (`EST-0002`, "Café Prueba") y un tercero,
 **Magariños** (`EST-0003`), que es el que llena las pantallas: plan
-Premium con Menú Diario, 19 solicitudes en ocho estados, 15 trabajos, cinco
+Premium+ con Menú Diario, 19 solicitudes en ocho estados, 15 trabajos, cinco
 archivos y su mensualidad pagada. La lista completa, con el porqué de cada
 uno, está en la cabecera del propio archivo.
 

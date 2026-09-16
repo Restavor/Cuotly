@@ -19,11 +19,12 @@ import type { ChangeCategory } from "./consumption-ledger";
 import type { JobState } from "./job-states";
 
 /**
- * RN-SLA-02: 48 h laborables para Básico o un establecimiento sin plan de
- * mantenimiento (RN-COM-12); 24 h laborables para Impulso y Premium.
+ * RN-SLA-02: 48 h laborables para Básico, Impulso o un establecimiento sin
+ * plan de mantenimiento (RN-COM-12); 24 h laborables para Impulso+,
+ * Premium y Premium+ (fichas de Restavor del 16/09/2026, decisión 39).
  *
  * La tabla `plans` guarda `start_sla_hours` con estos mismos números
- * (semilla de Restavor, Hito 2) y `subscriptions` (Hito 5) dice qué plan
+ * (semilla de Restavor, migración 96) y `subscriptions` (Hito 5) dice qué plan
  * tiene vigente cada establecimiento: quien llame a esta función en el
  * servidor debe leer ese valor de la suscripción activa del
  * establecimiento — nunca decidirlo en el cliente ni suponerlo. Sin

@@ -37,11 +37,11 @@ insert into public.spaces (id, name, slug, created_by) values
 insert into public.space_memberships (space_id, user_id, role, status) values
   ('f2000000-0000-0000-0000-000000000001', 'f1000000-0000-0000-0000-000000000001', 'owner', 'active');
 
--- Básico e Impulso con sus precios reales: la aritmética del cobro
+-- Básico e Impulso+ con sus precios reales: la aritmética del cobro
 -- duplicado solo se ve con los dos.
 insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours) values
   ('f3000000-0000-0000-0000-000000000001', 'f2000000-0000-0000-0000-000000000001', 'Básico', 9900, 0, 0, 0, 0, 48),
-  ('f3000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'Impulso', 39900, 8, 4, 2, 0, 24);
+  ('f3000000-0000-0000-0000-000000000002', 'f2000000-0000-0000-0000-000000000001', 'Impulso+', 39900, 8, 4, 2, 0, 24);
 
 insert into public.groups (id, space_id, name) values
   ('f4000000-0000-0000-0000-000000000001', 'f2000000-0000-0000-0000-000000000001', 'Grupo Cola Llena');
@@ -206,7 +206,7 @@ begin
   -- diferencia: 99 € de base + la parte proporcional ≈ 399 €.
   select sum(base_cents) into v_total from public.charges where subscription_id = v_sub;
   if v_total < 39000 or v_total > 39900 then
-    raise exception 'RN-COM-15 FALLIDO: el ciclo suma % céntimos de base; esperaba ~39900 (Impulso)', v_total
+    raise exception 'RN-COM-15 FALLIDO: el ciclo suma % céntimos de base; esperaba ~39900 (Impulso+)', v_total
       using errcode = 'assert_failure';
   end if;
 end $$;

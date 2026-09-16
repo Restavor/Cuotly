@@ -9946,6 +9946,7 @@ export type Database = {
         Args: { p_state: string; p_task_id: string }
         Returns: undefined
       }
+      upgrade_restavor_plan_catalogue: { Args: { p_space_id: string }; Returns: undefined }
       upload_payment_receipt: {
         Args: { p_charge_id: string; p_file_id: string; p_note?: string }
         Returns: string

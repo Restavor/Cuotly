@@ -664,6 +664,42 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
      fiscal** no se hace aquí: Bosco instalará un agente aparte para preparar las facturas, y Cuotly
      sigue emitiendo referencia bancaria y ninguna factura (RN-SUB-05).
 
+39. **Los cuatro planes de mantenimiento de Restavor** (16/09/2026). Bosco entregó las cuatro
+   fichas definitivas —Impulso, Impulso+, Premium y Premium+— y pidió que Cuotly las refleje tal
+   cual, sustituyendo lo que las contradiga. Los números, en PRD §6.1: Impulso 299 € (6/6/1/0, 48 h,
+   prioridad estándar), Impulso+ 399 € (16/12/3/0, 24 h, alta), Premium 499 € (10/12/2/0, 24 h,
+   alta), Premium+ 599 € (25/24/5/1, 24 h, máxima con prioridad superior en la cola), todos + IVA.
+   Premium incluye menos cambios pequeños que Impulso+ y es intencionado. Se le plantearon siete
+   puntos y los cerró así:
+   - **1 · Básico se mantiene y no se toca** (99 €, sin cambios incluidos). Las fichas no lo
+     mencionan; RN-COM-01 y RN-COM-12 siguen apoyándose en él.
+   - **2 · Los datos vivos se renombran, no se duplican.** El Impulso del Hito 2 (399 €, 16/12/3/0)
+     es exactamente Impulso+, y el Premium (599 €, 25/24/5/1, con prioridad) es exactamente
+     Premium+: la migración 96 renombra esas dos filas y crea Impulso y Premium nuevos. Las
+     suscripciones existentes conservan sus condiciones sin cambio.
+   - **3 · `grants_priority` lo concede solo Premium+.** De él siguen colgando las cuatro cosas de
+     siempre: ordenar los cambios (migración 62), ir por delante en la cola (RN-COM-03), el precio
+     de 199 € de Menú Diario (RN-COM-08, decisión 20) y las oportunidades avanzadas (RN-OPP-08).
+     Impulso+ y Premium tienen las 24 h de inicio pero no la prioridad: sus fichas dicen "alta" y
+     solo la de Premium+ dice "superior en la cola". Bosco subrayó como **muy importante** que el
+     descuento de Menú Diario es exclusivo de Premium+.
+   - **4 · Oportunidades: se mantiene el modelo básicas/avanzadas** (opción A). Impulso, Impulso+ y
+     Premium ven las básicas aprobadas; Premium+ también las avanzadas. Las cantidades por ciclo
+     de las fichas ("1 priorizada", "varias", "hasta 2", "detección avanzada") se recogen como
+     descripción comercial y **no** se construyen topes por ciclo.
+   - **5 · Analítica, informes, SEO y copias de seguridad**: descripción del plan en PRD §6.1 y en
+     la maestra §5, sin construir restricciones nuevas por plan.
+   - **6 · Las condiciones del plan (RN-DAT-07) las publica Bosco desde la pantalla**, no la
+     migración: publicar dispara el aviso de condiciones nuevas a los restaurantes con suscripción
+     activa (migración 76).
+   - **7 · Se actualiza todo**: CLAUDE.md, PRD, la maestra (§5, §6, §33.1, §45, §101 y §172), la
+     guía del centro de ayuda (versión 2), las semillas, los textos de pantalla y los tests.
+   Consecuencias: migración 96 (`create_restavor_space()` con cinco planes,
+   `upgrade_restavor_plan_catalogue()` para los espacios que ya existen), suite
+   `planes_de_restavor.sql`, y RN-COM-02, RN-COM-03, RN-COM-08, RN-SLA-02 y RN-OPP-08 reescritas
+   en el PRD. Sale de "Decisiones que NO deben reaparecer" en CLAUDE.md la lista de tres planes y
+   entra la de cinco.
+
 ---
 
 ### Pendiente de completar

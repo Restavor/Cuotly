@@ -71,7 +71,9 @@ export default function StyleGuidePage() {
             options={[
               { value: "basico", label: "Básico" },
               { value: "impulso", label: "Impulso" },
+              { value: "impulso-plus", label: "Impulso+" },
               { value: "premium", label: "Premium" },
+              { value: "premium-plus", label: "Premium+" },
             ]}
           />
         </div>
@@ -100,7 +102,7 @@ export default function StyleGuidePage() {
             <TableBody>
               <TableRow>
                 <TableCell>Magariños</TableCell>
-                <TableCell>Premium</TableCell>
+                <TableCell>Premium+</TableCell>
                 <TableCell>
                   <StatusBadge tone="success">Activo</StatusBadge>
                 </TableCell>

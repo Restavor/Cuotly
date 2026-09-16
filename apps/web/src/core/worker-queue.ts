@@ -15,7 +15,9 @@
  *   3. El orden que ha puesto el restaurante entre sus propios cambios
  *      (encargo de Bosco del 11/09/2026; `compareClientRank` en
  *      `priority.ts`, la misma definición que usa la bandeja).
- *   4. Prioridad interna del plan: Premium por encima de Impulso
+ *   4. Prioridad interna del plan: el que concede prioridad (Premium+ en
+ *      Restavor, `plans.grants_priority`) por encima del resto de planes
+ *      con cambios incluidos, y estos por encima de Básico o sin plan
  *      (RN-COM-03). **El cliente nunca ve esa prioridad**, así que este
  *      dato no puede salir en ninguna pantalla de cliente.
  *   5. Asignación más antigua primero.
@@ -41,7 +43,14 @@
 import type { JobState } from "./job-states";
 import { compareClientRank } from "./priority";
 
-/** RN-COM-03: prioridad interna, nunca visible para el cliente. */
+/**
+ * RN-COM-03: prioridad interna, nunca visible para el cliente. `premium`
+ * es el plan que concede prioridad (`plans.grants_priority`: Premium+ en
+ * Restavor); `impulso` es cualquier otro plan con cambios incluidos
+ * (Impulso, Impulso+ y Premium); `other` es Básico o sin plan. Los nombres
+ * son los del Hito 2 y se conservan para no romper a quien los usa: lo que
+ * cuenta es la cualidad, no el nombre del plan.
+ */
 export type PlanPriority = "premium" | "impulso" | "other";
 
 const PLAN_PRIORITY_ORDER: Readonly<Record<PlanPriority, number>> = {

@@ -67,8 +67,8 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 ## Decisiones que NO deben reaparecer
 
 - Cuotly es multiempresa, no solo el espacio de Restavor.
-- Menú Diario: 30 actualizaciones (no 25). 229 € + IVA, o 199 € + IVA si el establecimiento es Premium.
-- Planes: Básico 99 €, Impulso 399 €, Premium 599 €, todos + IVA. Básico NO incluye ningún cambio ni fotografía.
+- Menú Diario: 30 actualizaciones (no 25). 229 € + IVA, o 199 € + IVA **solo** si el establecimiento tiene Premium+ activo. Impulso, Impulso+ y Premium pagan 229 €.
+- Planes (fichas de Restavor del 16/09/2026, decisión 39, migración 96): Básico 99 €, Impulso 299 €, Impulso+ 399 €, Premium 499 €, Premium+ 599 €, todos + IVA. Básico NO incluye ningún cambio ni fotografía. Solo Premium+ incluye un cambio grande y solo Premium+ concede la prioridad (`plans.grants_priority`). Impulso arranca a 48 h laborables; Impulso+, Premium y Premium+ a 24 h. Premium (499 €) incluye menos cambios pequeños que Impulso+ y es intencionado.
 - Permanencia de mantenimiento: 3 meses. No existen bolsas de horas.
 - "Supervisor" no es un rol: es una relación Administrador–Trabajador.
 - El supervisor NO aprueba antes de publicar. El trabajador publica directamente.

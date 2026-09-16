@@ -31,7 +31,7 @@ function madrid(date: string, time: string): Date {
 const VENCIMIENTO = new Date("2026-09-01T08:00:00.000Z");
 const horasDespues = (hours: number) => new Date(VENCIMIENTO.getTime() + hours * 3_600_000);
 
-/** Impulso: 399 € + IVA (RN-COM-04, semilla del Hito 2). */
+/** Impulso+: 399 € + IVA (RN-COM-04; el Impulso del Hito 2, renombrado en la migración 96). */
 const IMPULSO_BASE = 39_900;
 const IMPULSO_TOTAL = 48_279;
 
@@ -463,7 +463,7 @@ describe("todayInTimeZone", () => {
 describe("RN-COM-08 · la mensualidad del servicio tiene dos precios (decisión 20)", () => {
   const menuDiario = { priceCents: 22900, pricePremiumCents: 19900 };
 
-  it("con plan que concede prioridad (Premium) se cobra el segundo precio", () => {
+  it("con plan que concede prioridad (Premium+) se cobra el segundo precio", () => {
     expect(serviceMonthlyPrice(menuDiario, true)).toEqual({ baseCents: 19900, premiumApplied: true });
   });
 

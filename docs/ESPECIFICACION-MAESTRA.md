@@ -296,30 +296,61 @@ Todos los precios son más IVA. Cada establecimiento contrata su propio plan, in
 
 ### 5.3 Impulso
 
+*(Fichas de Restavor del 16/09/2026, decisión 39. Los cuatro planes con cambios incluidos son estos; Básico, §5.2, se mantiene.)*
+
+- **Precio:** 299 € al mes + IVA.
+- **6 cambios pequeños al mes.**
+- **1 cambio mediano al mes.**
+- **6 cambios fotográficos al mes.**
+- No incluye cambios grandes; se presupuestan aparte.
+- Tiempo máximo para comenzar: 48 horas laborables. Prioridad estándar.
+- Google Analytics: seguimiento de las métricas principales. Microsoft Clarity: señales principales de comportamiento.
+- Informe: resumen mensual + análisis completo trimestral.
+- Oportunidades: 1 oportunidad priorizada por ciclo.
+- Menú Diario a 229 € + IVA, sin descuento.
+
+### 5.3 bis Impulso+
+
 - **Precio:** 399 € al mes + IVA.
 - **16 cambios pequeños al mes.**
 - **3 cambios medianos al mes.**
 - **12 cambios fotográficos al mes.**
 - No incluye cambios grandes; se presupuestan aparte.
-- Tiempo máximo para comenzar: 24 horas laborables.
-- Analítica detallada.
-- Informe mensual completo.
-- Oportunidades básicas aprobadas.
-- Backup mensual dentro de lo técnicamente disponible.
+- Tiempo máximo para comenzar: 24 horas laborables. Prioridad alta.
+- Google Analytics: análisis detallado. Microsoft Clarity: mapas, sesiones y análisis de fricciones.
+- Informe: completo mensual.
+- Oportunidades: detección de varias oportunidades de mejora.
+- Backup mensual, cuando la plataforma utilizada lo permita.
+- Menú Diario a 229 € + IVA, sin descuento.
 
 ### 5.4 Premium
+
+- **Precio:** 499 € al mes + IVA.
+- **10 cambios pequeños al mes.**
+- **2 cambios medianos al mes.**
+- **12 cambios fotográficos al mes.**
+- No incluye cambios grandes; se presupuestan aparte.
+- Tiempo máximo para comenzar: 24 horas laborables. Prioridad alta.
+- Analytics: avanzado con resumen mensual.
+- Informe: resumen mensual + comparativa completa trimestral.
+- SEO: revisión y detección.
+- Oportunidades: hasta 2 prioridades por ciclo.
+- Menú Diario a 229 € + IVA, sin descuento.
+
+### 5.4 bis Premium+
 
 - **Precio:** 599 € al mes + IVA.
 - **25 cambios pequeños al mes.**
 - **5 cambios medianos al mes.**
 - **1 cambio grande al mes.**
 - **24 cambios fotográficos al mes.**
-- Tiempo máximo para comenzar: 24 horas laborables.
-- Prioridad interna superior a Impulso.
-- Analítica avanzada.
-- Informe mensual avanzado.
-- Oportunidades avanzadas aprobadas.
-- Backup semanal dentro de lo técnicamente disponible.
+- Tiempo máximo para comenzar: 24 horas laborables. Máxima prioridad dentro de los planes de mantenimiento, con prioridad superior en la cola. Es el único plan que concede la prioridad interna (`plans.grants_priority`).
+- Analytics: avanzado con análisis completo.
+- Informe: avanzado con comparativa mensual.
+- SEO: revisión y optimizaciones periódicas.
+- Oportunidades: detección avanzada y priorización.
+- Backup semanal, cuando la plataforma utilizada lo permita.
+- Ventaja exclusiva: Menú Diario por 199 € + IVA en lugar de 229 € + IVA.
 
 ### 5.5 Backups de las webs
 
@@ -334,7 +365,7 @@ La palabra “backup” solo puede utilizarse para aquello que realmente sea rec
 Menú Diario es un servicio independiente de los planes de mantenimiento.
 
 - **Precio general:** 229 € + IVA al mes.
-- **Precio para establecimientos Premium:** 199 € + IVA al mes.
+- **Precio para establecimientos Premium+:** 199 € + IVA al mes. Es exclusivo de Premium+: Impulso, Impulso+ y Premium pagan el precio general.
 - **Permanencia mínima:** 3 meses.
 - **Actualizaciones incluidas:** 30 por ciclo mensual.
 - No se acumulan.
@@ -891,7 +922,7 @@ Flujo base:
 
 Cuotly no debe mezclar:
 
-1. **Primera atención interna:** comienza cuando la solicitud llega al espacio y utiliza 48 horas laborables en Básico o en un establecimiento sin plan de mantenimiento, aunque tenga Menú Diario; utiliza 24 horas laborables en Impulso/Premium. Reciben aviso propietario y administradores; un trabajador solo cuando ya exista asignación válida.
+1. **Primera atención interna:** comienza cuando la solicitud llega al espacio y utiliza 48 horas laborables en Básico, en Impulso o en un establecimiento sin plan de mantenimiento, aunque tenga Menú Diario; utiliza 24 horas laborables en Impulso+, Premium y Premium+. Reciben aviso propietario y administradores; un trabajador solo cuando ya exista asignación válida.
 2. **Inicio operativo:** después de la aceptación final y la asignación, mide el tiempo disponible para pulsar Comenzar.
 3. **Ejecución:** comienza al pulsar Comenzar y utiliza el plazo de 72 o 120 horas laborables según categoría.
 
@@ -1087,10 +1118,12 @@ Este reloj contractual **no se aplica a Menú Diario**. Menú Diario utiliza un 
 ## 45. Plazo para comenzar
 
 - Básico: máximo 48 horas laborables.
-- Impulso: máximo 24 horas laborables.
-- Premium: máximo 24 horas laborables, con prioridad superior.
+- Impulso: máximo 48 horas laborables.
+- Impulso+: máximo 24 horas laborables.
+- Premium: máximo 24 horas laborables.
+- Premium+: máximo 24 horas laborables, con prioridad superior en la cola.
 
-El cliente no ve que Premium se coloque internamente por delante de Impulso.
+El cliente no ve que Premium+ se coloque internamente por delante del resto.
 
 Además de los avisos porcentuales generales, cuando queden 2 horas laborables se genera una alerta importante para responsable, supervisor y propietario. Cuando quede 1 hora, Cuotly puede sugerir reasignación. Al vencer, exige intervención.
 
@@ -1886,8 +1919,8 @@ La acción crea borrador de solicitud con evidencia adjunta. Después sigue aná
 ## 101. Oportunidades según plan Restavor
 
 - Básico: detección interna; no inclusión automática en informe.
-- Impulso: oportunidades básicas aprobadas.
-- Premium: oportunidades avanzadas aprobadas.
+- Impulso, Impulso+ y Premium: oportunidades básicas aprobadas.
+- Premium+: también las oportunidades avanzadas aprobadas.
 
 Un futuro Agente Cuotly podrá resumir o explicar oportunidades consumiendo IA, pero no forma parte del sistema actual de reglas.
 
@@ -2864,9 +2897,9 @@ Se admite como futuro extra, pero su precio no está fijado.
 - Cuotly no es solo el espacio de Restavor: es multiempresa.
 - Se habla de espacios de mantenimiento en general.
 - Menú Diario tiene 30 actualizaciones, no 25.
-- Menú Diario cuesta 229 € + IVA; Premium paga 199 € + IVA.
+- Menú Diario cuesta 229 € + IVA; solo Premium+ paga 199 € + IVA.
 - Permanencia de mantenimiento: 3 meses.
-- Básico 99 €, Impulso 399 €, Premium 599 € + IVA.
+- Básico 99 €, Impulso 299 €, Impulso+ 399 €, Premium 499 €, Premium+ 599 € + IVA (fichas del 16/09/2026).
 - Básico no incluye ningún cambio ni fotografía.
 - No hay bolsas de horas.
 - Supervisor no es rol; es relación Admin–Trabajador.

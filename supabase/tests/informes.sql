@@ -46,7 +46,7 @@ insert into public.space_memberships (space_id, user_id, role, status, can_appro
   ('ff100000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000003', 'worker', 'active', false);
 
 insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority) values
-  ('ff200000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001', 'Impulso', 39900, 16, 12, 3, 0, 24, false);
+  ('ff200000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false);
 
 insert into public.groups (id, space_id, name) values
   ('ff300000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001', 'Grupo R');

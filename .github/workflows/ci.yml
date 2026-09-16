@@ -394,6 +394,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/pendientes_de_la_fase_4.sql
 
+      - name: "Planes de Restavor — Verificar §6.1, RN-COM-01/02/03/08, RN-SLA-02, RN-OPP-08 y la migración 96"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/planes_de_restavor.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

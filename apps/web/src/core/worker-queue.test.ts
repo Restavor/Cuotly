@@ -33,7 +33,7 @@ describe("worker-queue — HU-17, PRD §20.4", () => {
     expect(recommendedJobNow(cola)?.jobId).toBe("fuera-de-plazo");
   });
 
-  it("RN-COM-03: a igualdad de urgencia, Premium tiene prioridad interna sobre Impulso", () => {
+  it("RN-COM-03: a igualdad de urgencia, el plan que concede prioridad (Premium+) va por delante del resto", () => {
     const cola = [
       queued({ jobId: "impulso", planPriority: "impulso" }),
       queued({ jobId: "premium", planPriority: "premium" }),

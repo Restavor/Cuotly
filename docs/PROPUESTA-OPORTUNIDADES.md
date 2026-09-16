@@ -40,7 +40,7 @@ cambia es la evidencia: los números que dispararon la oportunidad se guardan y 
 Dijiste "lo que se tarda en hacer y los cambios que gasta". Eso ya existe en Cuotly y tiene
 nombre: **la categoría del cambio**. Propongo usarla tal cual y no inventar una escala paralela.
 
-| Esfuerzo | Se tarda (RN-SLA-12) | Gasta | En Impulso quedan | En Premium quedan |
+| Esfuerzo | Se tarda (RN-SLA-12) | Gasta | En Impulso+ quedan | En Premium+ quedan |
 |---|---|---|---:|---:|
 | Pequeño | 1–3 días laborables | 1 pequeño | 16 al mes | 25 al mes |
 | Fotográfico | 1–3 días laborables | 1 fotográfico | 12 | 24 |
@@ -113,7 +113,7 @@ Para que se vea qué parte del Hito 15 no depende de esto:
   restaurante no la ve (§295, §1806).
 - Una detección repetida **actualiza la que ya existe**, no crea otra (§99).
 - El equipo puede añadirlas a mano (§97) y el restaurante puede actuar sobre ellas (§100).
-- Qué ve cada plan: Básico ninguna, Impulso las básicas aprobadas, Premium las avanzadas (§101).
+- Qué ve cada plan: Básico ninguna, Impulso las básicas aprobadas, Premium las avanzadas (§101). *(Desde el 16/09/2026, decisión 39: Impulso, Impulso+ y Premium las básicas; Premium+ las avanzadas. La tabla de arriba habla de Impulso+ y Premium+, que son el Impulso y el Premium de entonces.)*
   "Básica" y "avanzada" tampoco están definidas en la maestra; si las nueve reglas te parecen
   bien, propongo que **avanzadas** sean las que cruzan dos fuentes y **básicas** las que salen de
   una sola, pero es otra decisión tuya.

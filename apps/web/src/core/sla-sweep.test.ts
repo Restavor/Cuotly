@@ -14,7 +14,7 @@ function status(elapsedMinutes: number, totalMinutes: number): CounterStatus {
   };
 }
 
-// T2 de Impulso/Premium: 24 h laborables = 1440 minutos.
+// T2 de Impulso+/Premium/Premium+: 24 h laborables = 1440 minutos.
 const T2_TOTAL = 24 * 60;
 // T3 de un cambio pequeño: 72 h laborables.
 const T3_TOTAL = 72 * 60;
@@ -48,7 +48,7 @@ describe("RN-SLA-10 · avisos del plazo de inicio (T2)", () => {
   });
 
   it("RN-SLA-10: la alerta de 2 h y el 100 % no son el mismo momento", () => {
-    // 48 h laborables (Básico): al 100 % faltan 0 minutos, pero la alerta
+    // 48 h laborables (Básico o Impulso): al 100 % faltan 0 minutos, pero la alerta
     // de 2 h entró mucho antes. Con un plazo corto podrían solaparse; el
     // aviso es de tiempo restante, no de porcentaje.
     const largo = status(48 * 60 - 120, 48 * 60);

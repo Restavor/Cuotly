@@ -161,8 +161,9 @@ where u.id = p.id and u.email like '%@cuotly.test';
 -- ============================================================
 -- 2 · El espacio, su equipo y su catálogo.
 --
--- Los precios son los de CLAUDE.md ("Planes: Básico 99 €, Impulso 399 €,
--- Premium 599 €, todos + IVA") y los mismos que siembra
+-- Los precios son los de CLAUDE.md ("Planes: Básico 99 €, Impulso 299 €,
+-- Impulso+ 399 €, Premium 499 €, Premium+ 599 €, todos + IVA"; fichas de
+-- Restavor del 16/09/2026, decisión 39) y los mismos que siembra
 -- create_restavor_space(). No se usa esa función porque es de Restavor y
 -- Cuotly es multiempresa: este es otro espacio.
 -- ============================================================
@@ -175,17 +176,24 @@ values
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'owner',  'active', true),
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002', 'worker', 'active', true);
 
--- `grants_priority`: Premium es el único que deja al restaurante ordenar
+-- `grants_priority`: Premium+ es el único que deja al restaurante ordenar
 -- sus cambios por importancia (migración 62). Se marca aquí y no con un
--- `update ... where name = 'Premium'` porque este archivo ES quien crea
+-- `update ... where name = 'Premium+'` porque este archivo ES quien crea
 -- estos planes: dejarlo para después haría que el sembrado dependiera del
 -- orden en que se ejecutan sus propias secciones.
+--
+-- Los identificadores 2 y 3 son los de siempre: Impulso+ y Premium+ son lo
+-- que hasta el 16/09/2026 se llamaba Impulso y Premium, con las mismas
+-- condiciones (migración 96). Impulso y Premium, los nuevos, son el 4 y
+-- el 5.
 insert into public.plans
   (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority)
 values
-  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',   9900,  0,  0, 0, 0, 48, false),
-  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso', 39900, 16, 12, 3, 0, 24, false),
-  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium', 59900, 25, 24, 5, 1, 24, true);
+  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',    9900,  0,  0, 0, 0, 48, false),
+  ('d2000000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'Impulso',  29900,  6,  6, 1, 0, 48, false),
+  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false),
+  ('d2000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'Premium',  49900, 10, 12, 2, 0, 24, false),
+  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium+', 59900, 25, 24, 5, 1, 24, true);
 
 -- `kind` e `included_updates` (migración 77): es lo que hace que el
 -- servicio SEA Menú Diario para las funciones; por el nombre no se mira.
@@ -245,7 +253,7 @@ values ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-0000000
         'd4000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001');
 
 -- ============================================================
--- 5 · La suscripción al plan Impulso, con su permanencia (RN-COM-04).
+-- 5 · La suscripción al plan Impulso+, con su permanencia (RN-COM-04).
 --
 -- A mano y no con create_plan_subscription() porque esa función exige
 -- `manage_clients` de quien llama y aquí todavía no se ha suplantado a
@@ -280,7 +288,7 @@ values
 -- cambio (CLAUDE.md), así que `accept_request()` marca la aceptación como
 -- presupuestada y NO escribe ningún apunte de consumo. El recorrido se
 -- puede repetir tantas veces como haga falta sin agotar una bolsa — con
--- Impulso, a la dieciseisava ejecución empezaría a fallar por falta de
+-- Impulso+, a la dieciseisava ejecución empezaría a fallar por falta de
 -- crédito. Y de paso es un caso de producto real, no un apaño: un cambio
 -- en Básico se presupuesta aparte.
 --
@@ -440,7 +448,7 @@ begin
 
   ----------------------------------------------------------------
   -- 6.4 · El cliente acepta. Cada aceptación gasta un consumo de la bolsa
-  -- del plan Impulso y crea el trabajo.
+  -- del plan Impulso+ y crea el trabajo.
   ----------------------------------------------------------------
   perform set_config('request.jwt.claims',
     json_build_object('sub', v_cliente, 'role', 'authenticated')::text, false);
@@ -483,7 +491,7 @@ end $$;
 -- registra con la función real: escribe el apunte con signo en el libro
 -- inmutable, en vez de tocar un contador (CLAUDE.md).
 --
--- Impulso son 399 € + 21 % de IVA = 482,79 €.
+-- Impulso+ son 399 € + 21 % de IVA = 482,79 €.
 -- ============================================================
 do $$
 declare v_charge uuid;
@@ -771,7 +779,7 @@ values
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000007',
    'd4000000-0000-0000-0000-000000000003', 'd0000000-0000-0000-0000-000000000001');
 
--- 9.4 · Plan Premium y Menú Diario, con las funciones de verdad y no a
+-- 9.4 · Plan Premium+ y Menú Diario, con las funciones de verdad y no a
 -- mano como en la sección 5: `create_plan_subscription()` crea además la
 -- permanencia de RN-COM-04, el ciclo de RN-COM-06 y la mensualidad de
 -- RN-FIN-01, que es lo que hace falta para que la ficha tenga ciclo,
@@ -790,8 +798,8 @@ begin
   -- entero es Fase 2; lo que existe hoy es la contratación, y con ella la
   -- ficha puede decir "Contratado" sin inventarse nada. Su mensualidad NO
   -- se emite: `generate_monthly_charge()` se para a propósito ante un
-  -- servicio porque el precio de RN-COM-08 depende de si el plan es
-  -- Premium y el esquema todavía no sabe cuál lo es.
+  -- servicio porque el precio de RN-COM-08 depende de si el plan es el
+  -- que concede prioridad (Premium+) y el esquema todavía no sabe cuál lo es.
   perform public.create_service_subscription(
     'd4000000-0000-0000-0000-000000000003'::uuid,
     (select id from public.services
@@ -822,7 +830,7 @@ end $$;
 --
 -- El consumo se gasta al ACEPTAR, así que las cuatro primeras no tocan la
 -- bolsa y las cuatro últimas sí. La cuenta que sale, sobre las bolsas del
--- plan Premium (25 pequeños, 24 fotográficos, 5 medianos, 1 grande):
+-- plan Premium+ (25 pequeños, 24 fotográficos, 5 medianos, 1 grande):
 -- ocho pequeños, seis fotográficos y un mediano usados, y el grande
 -- entero sin tocar — que es una bolsa a cero muy a propósito, porque el
 -- Resumen tiene que saber pintar también la que no se ha usado.
@@ -1226,7 +1234,7 @@ end $$;
 -- de alta el plan (RN-FIN-01), que es como ocurre de verdad. Lo que falta
 -- es el pago, y va con `register_payment()` para que quede el apunte con
 -- signo en el libro inmutable en vez de un estado escrito a mano
--- (CLAUDE.md). Premium son 599 € + 21 % de IVA = 724,79 €.
+-- (CLAUDE.md). Premium+ son 599 € + 21 % de IVA = 724,79 €.
 do $$
 declare v_charge uuid;
 begin
@@ -1238,7 +1246,7 @@ begin
   where establishment_id = 'd4000000-0000-0000-0000-000000000003';
 
   if v_charge is null then
-    raise exception 'El alta del plan Premium tenía que haber emitido su mensualidad';
+    raise exception 'El alta del plan Premium+ tenía que haber emitido su mensualidad';
   end if;
 
   perform public.register_payment(
@@ -2100,7 +2108,7 @@ end $$;
 -- ------------------------------------------------------------
 -- 12.10 · Magariños ordena sus cambios (decisión de Bosco, 10/09/2026).
 --
--- Magariños tiene plan Premium, que es el que concede la prioridad, así
+-- Magariños tiene plan Premium+, que es el que concede la prioridad, así
 -- que puede ordenar sus cambios pendientes por importancia. Lo hace SU
 -- propietaria —Nuria—, no el equipo: "los clientes premium son los únicos
 -- que pueden indicar la prioridad".

@@ -187,7 +187,7 @@ describe("vista 13 · los servicios", () => {
     expect(card.getByText(t.servicePriceStandard)).toBeInTheDocument();
   });
 
-  it("RN-COM-08 · con plan Premium activo, el segundo precio y su motivo (decisión 20)", () => {
+  it("RN-COM-08 · con plan Premium+ activo, el segundo precio y su motivo (decisión 20)", () => {
     pintar({ services: [{ ...menuDiario, priceCents: 19900, premiumApplied: true }] });
     const card = within(tarjeta(t.servicesTitle));
     expect(card.getByText("199,00 € + IVA / mes")).toBeInTheDocument();

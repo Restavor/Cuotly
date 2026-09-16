@@ -137,8 +137,8 @@ export function ruleScope(rule: OpportunityRule): OpportunityScope {
 
 /**
  * Qué oportunidades deja ver el plan vigente (§101): Básico ninguna
- * ("detección interna"), Impulso las básicas aprobadas, Premium también
- * las avanzadas.
+ * ("detección interna"), Impulso, Impulso+ y Premium las básicas
+ * aprobadas, Premium+ también las avanzadas (decisión 39).
  *
  * Se decide por lo que el plan ES, no por cómo se llama: Cuotly es
  * multiempresa (CLAUDE.md) y otro espacio llamará "Total" a su plan alto.

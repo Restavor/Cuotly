@@ -85,7 +85,7 @@ export interface RequestHistoryEntry {
 export interface RequestCounter {
   readonly status: CounterStatus | null;
   readonly running: boolean;
-  /** 24 h con Impulso o Premium, 48 h sin plan o con Básico (RN-SLA-02, RN-COM-12). */
+  /** 24 h con Impulso+, Premium o Premium+; 48 h sin plan, con Básico o con Impulso (RN-SLA-02, RN-COM-12). */
   readonly acceleratedSla: boolean;
 }
 
