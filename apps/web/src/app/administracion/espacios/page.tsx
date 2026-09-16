@@ -157,7 +157,20 @@ export default async function AdminSpacesPage({
                   <TableCell>{row.owner_emails ?? "—"}</TableCell>
                   <TableCell>{t.usageValue(row.active_establishments, row.internal_users)}</TableCell>
                   <TableCell>
-                    {gigabytes(row.storage_bytes)} {es.platformAdmin.unitsGb}
+                    {row.storage_limit_bytes === null ? (
+                      <span title={t.storageNoLimit}>
+                        {gigabytes(row.storage_bytes)} {es.platformAdmin.unitsGb}
+                      </span>
+                    ) : (
+                      <>
+                        {t.storageOf(gigabytes(row.storage_bytes), gigabytes(row.storage_limit_bytes))}
+                        {row.storage_bytes >= row.storage_limit_bytes ? (
+                          <StatusBadge tone="danger">{t.storageAt100}</StatusBadge>
+                        ) : row.storage_bytes * 100 >= row.storage_limit_bytes * 80 ? (
+                          <StatusBadge tone="warning">{t.storageAt80}</StatusBadge>
+                        ) : null}
+                      </>
+                    )}
                   </TableCell>
                   <TableCell>
                     {row.outstanding_cents > 0 ? euros(row.outstanding_cents) : "—"}

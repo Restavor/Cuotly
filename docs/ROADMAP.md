@@ -4795,6 +4795,38 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
    su `projectId`, compilaciones nativas).
 8. **Desplegar todo en Vercel** otra vez, con lo anterior.
 
+### Paso 1 · Las cuatro pendientes de la Fase 4 *(hecho el 16/09/2026; la 95 pendiente de aplicar)*
+- **Bosco las decidió** el 16/09/2026 (**decisión 38** de `docs/DECISIONES.md`, con sus palabras):
+  "uso razonable" sin umbral (lo controla él desde el panel); pasarse del almacenamiento **se
+  presupuesta aparte**; un negocio es el mismo NIF **o** el mismo dominio de correo no público; y del
+  bloque legal, la eliminación a los 30 días y lo que se conserva quedan tal cual, el incidente de
+  seguridad se hace como se propuso y las facturas las preparará un agente aparte.
+- **PRD**: RN-SUB-13 y RN-PLA-09 reescritas y RN-ADM-13 nueva en §32. CLAUDE.md tacha "Precio del
+  almacenamiento adicional".
+- **Migración 95** (`pendientes_de_la_fase_4`): el barrido `cuotly_storage_sweep` de la cola (avisos
+  `storage_threshold_80` y `storage_threshold_100` al propietario, una vez al mes por umbral; al 100 %
+  también a Bosco y a quien gestiona suscripciones); `space_request_trial_conflicts()` y
+  `approve_space_request()` que rechaza el mismo NIF o el mismo dominio propio (los públicos y los
+  `example.*` reservados no cuentan); `declare_security_incident()` con
+  `platform_status_events.security`, el aviso obligatorio `security_incident` y la instantánea pública
+  marcada; `platform_list_spaces()` con `storage_limit_bytes` y `platform_panel_summary()` con
+  `storage_over_limit`.
+- **Suite 46** (`supabase/tests/pendientes_de_la_fase_4.sql`, en CI): NIF normalizado, dominio propio
+  y dominio público que sí pasa, 656 y 820 versiones de 25 MB para el 80 % y el 100 %, sin repetir
+  dentro del mes y recordando al siguiente, el despachador, el panel, el incidente para todos y para
+  algunos, el aviso que el propietario no puede apagar, sin segundo paso no se declara, y los
+  privilegios. El bloque de la suite 43 que decía "otra persona con el mismo negocio sí pasa" se dio
+  la vuelta.
+- **Web**: los tres eventos en `src/core/notifications.ts` (`security_incident` obligatorio) y sus
+  nombres; el formulario "Declarar un incidente de seguridad" en Administración › Estado, con los
+  espacios afectados por slug; la marca "Incidente de seguridad" en el panel y en `/estado`; la tabla
+  de espacios con "usado de incluido" y las marcas del 80 % y del 100 %; el bloque de almacenamiento
+  del resumen con cuántos están al 100 %; y la ficha de solicitud con la tarjeta "Prueba gratuita:
+  ¿ya la tuvo?" antes de decidir.
+- **Verificación**: typecheck, lint y 1335 tests de la web, 14 de la app móvil, y las 46 suites SQL en
+  orden sobre una base limpia con las 95 migraciones. La 95 **no está aplicada** al proyecto real:
+  la aplica Bosco cuando diga (`docs/DESPLIEGUE-SUPABASE.md`).
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

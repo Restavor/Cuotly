@@ -199,6 +199,8 @@ export interface StatusComponentSnapshot {
     readonly title: string;
     readonly body: string | null;
     readonly started_at: string;
+    /** RN-ADM-13 · un incidente de seguridad de §142 (migración 95). */
+    readonly security: boolean;
   }[] | null;
 }
 
@@ -209,6 +211,7 @@ export interface StatusEventSnapshot {
   readonly title: string;
   readonly body: string | null;
   readonly started_at: string;
+  readonly security: boolean;
   readonly resolved_at?: string | null;
   readonly resolution_note?: string | null;
 }
@@ -237,6 +240,31 @@ export function declareStatusEvent(
     p_severity: input.severity,
     p_title: input.title,
     p_body: input.body ?? undefined,
+  });
+}
+
+/**
+ * RN-ADM-13 (§142, decisión 38) · declarar un incidente de seguridad: un
+ * evento de estado marcado como tal y el aviso obligatorio a los
+ * propietarios de los espacios afectados (todos si no se dice cuáles). El
+ * texto lo escribe quien declara; la plantilla la fijará el bloque legal.
+ */
+export function declareSecurityIncident(
+  client: Client,
+  input: {
+    readonly title: string;
+    readonly body: string | null;
+    readonly severity: StatusSeverity;
+    readonly component: StatusComponent;
+    readonly spaceIds: readonly string[] | null;
+  },
+): Promise<string> {
+  return rpc(client, "declare_security_incident", {
+    p_title: input.title,
+    p_body: input.body ?? undefined,
+    p_severity: input.severity,
+    p_component: input.component,
+    p_space_ids: input.spaceIds ? [...input.spaceIds] : undefined,
   });
 }
 

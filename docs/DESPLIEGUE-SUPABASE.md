@@ -10,7 +10,19 @@ Actualizado el 15/09/2026.
 
 ## Pendiente de aplicar
 
-Ninguna: las 94 migraciones del repositorio están aplicadas.
+- La **95** (`20260916000095_pendientes_de_la_fase_4.sql`, después del Hito 22 · paso 1 del
+  orden acordado, decisión 38). Aditiva y sin datos que migrar: una columna nueva con valor por
+  defecto (`platform_status_events.security`), tres eventos nuevos en el CHECK de `notifications`,
+  un tipo de trabajo nuevo en `scheduled_jobs`, funciones nuevas (`cuotly_storage_limit_bytes`,
+  `notify_platform_storage`, `run_cuotly_storage_sweep`, `normalized_tax_id`, `email_domain`,
+  `is_public_email_domain`, `space_request_trial_conflicts`, `declare_security_incident`) y cinco
+  redefinidas (`run_scheduled_job`, `enqueue_due_scheduled_jobs`, `notification_event_is_mandatory`,
+  `approve_space_request`, `platform_status_snapshot`, `platform_panel_summary`) más
+  `platform_list_spaces`, que se borra y se vuelve a crear porque cambia su forma de retorno. Son 35
+  KB: por el MCP irá en **dos partes** (corte entre la sección 2 y la 3, en un límite de sentencia).
+  Después hay que regenerar `database.types.ts` (hoy lleva las entradas de la 95 escritas a mano).
+  Comprobada en local: las 46 suites en verde sobre bootstrap + 95 migraciones. **La aplica Bosco
+  cuando diga.**
 
 ## Aplicadas
 

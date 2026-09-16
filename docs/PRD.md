@@ -1281,10 +1281,16 @@ prueba empieza al aprobar). Donde §10 calla, las lecturas están confirmadas po
   anulable**, así que los apuntes anteriores a la aprobación lo llevan a `null`; el de la creación del
   espacio ya lleva el espacio nuevo.
 - **RN-PLA-09**: la regla antiabuso de §4.4 —**una sola prueba gratuita por persona o negocio**— se
-  cumple **a medias en este hito y a propósito**. Por **persona** se puede comprobar ya, porque una
-  cuenta es un correo (§7.1). Por **negocio** no: la maestra no dice qué identifica a un negocio, y
-  eso es la **pendiente 19**. Hasta que se cierre, la comprobación por persona se hace y la de negocio
-  **no se finge**: no se inventa un criterio por datos fiscales ni por dominio de correo.
+  comprueba **en el servidor, por los dos lados**. Por **persona**: la misma cuenta (§7.1). Por
+  **negocio**, desde la decisión 38 (16/09/2026, migración 95): el **mismo NIF** —comparado sin
+  espacios, guiones ni mayúsculas— **o el mismo dominio de correo**, del correo de la solicitud o del
+  de la cuenta que la escribe, **salvo los dominios públicos** (Gmail, Hotmail, Outlook…, y los
+  `example.*` reservados), que no identifican a ningún negocio. `approve_space_request()` rechaza el
+  choque con un motivo que dice cuál es (persona, NIF o dominio) y con qué solicitud aprobada, y la
+  solicitud **no cambia de estado sola**: rechazarla, con su motivo, sigue siendo de Cuotly
+  (RN-PLA-06). El panel enseña los choques **antes** de aprobar (`space_request_trial_conflicts()`,
+  solo plataforma). Hasta la migración 95 la comprobación por negocio no existía y no se fingía:
+  era la pendiente 19.
 
 Lo que este apartado **no** trae, dicho en claro: **no** trae el cobro, ni los límites de Pro y
 Agency, ni el impago, ni el cambio de plan — eso es el Hito 18 (§4.1 a §4.7). **No** trae el
@@ -1392,17 +1398,23 @@ precio del almacenamiento adicional (18), qué identifica a un negocio (19) y el
   confirmar, rechazar o revertir un pago también dejan apunte. Quién en Cuotly confirmó o rechazó
   **no lo ve el propietario** desde la tabla (privilegio de columna, como en RN-PLA-07): lo ve la
   auditoría.
-- **RN-SUB-13**: el **almacenamiento** incluido (20 GB y 100 GB) se **mide** —`cuotly_space_usage()`
-  suma los bytes de las versiones de archivo del espacio— pero **no se limita ni se cobra**: qué pasa
-  al pasar de 20 GB es la pendiente 18. Y "uso razonable" (§4.3) no tiene umbral: no se mide ninguna
-  actividad ni se bloquea nada (pendiente 17).
+- **RN-SUB-13**: el **almacenamiento** incluido (20 GB Pro, 100 GB Agency; §113) se **mide**
+  —`cuotly_space_usage()` suma los bytes de las versiones de archivo del espacio— y se **avisa**,
+  desde la decisión 38 (16/09/2026, migración 95): al **80 %** y al **100 %** de lo incluido, al
+  propietario del espacio (`storage_threshold_80` y `storage_threshold_100`, con enlace a su
+  suscripción), como mucho una vez al mes por umbral mientras siga por encima; y al 100 %, **también a
+  Cuotly** (Bosco y quien gestiona suscripciones), porque **lo que pasa de lo incluido se presupuesta
+  aparte**: ni precio por GB, ni bloqueo, ni límite duro. Los dos avisos se pueden apagar (no son
+  seguridad ni pérdida de acceso). Lo hace el barrido `cuotly_storage_sweep` de la cola, solo para
+  espacios con plan de Cuotly. Y "uso razonable" (§4.3) **no tiene umbral**: lo controla Bosco a mano
+  desde el panel, que enseña el uso de cada espacio; no se mide ninguna actividad ni se bloquea nada.
 
 Lo que este apartado **no** trae, dicho en claro: **no** trae pantallas —el propietario declara el
 pago y ve sus cobros por las funciones y las tablas, y la pantalla llega con el panel del Hito 19—,
 **no** trae la exportación ni el contacto con soporte desde el modo lectura (Hitos 20 y 21), **no**
-elimina nada a los 30 días (pendiente 20), **no** mide el uso razonable (17), **no** cobra el
-almacenamiento (18) y **no** comprueba "una prueba por negocio" (19), que sigue como la dejó
-RN-PLA-09.
+elimina nada a los 30 días (decisión 38: queda tal cual) y **no** mide el uso razonable (sin umbral,
+decisión 38). El aviso de almacenamiento (RN-SUB-13) y "una prueba por negocio" (RN-PLA-09) llegaron
+después del Hito 22 con la migración 95.
 
 ## 32. Panel de Administración de Cuotly, Modo soporte y 2FA — Fase 4 (RN-ADM)
 
@@ -1511,13 +1523,26 @@ Donde la maestra calla, las lecturas quedan escritas como regla y Bosco las conf
   **límites temporales ante intentos fallidos** los aplica Supabase Auth con su configuración, no este
   código. **No** se implementan los **avisos por dispositivo nuevo**: hace falta decidir qué es "un
   dispositivo" y se dice en la lista de lo que falta, no se finge.
+- **RN-ADM-13**: el **incidente de seguridad** de §142 (decisión 38, 16/09/2026, migración 95). Cuotly
+  lo declara desde el panel de estado (`declare_security_incident()`, solo con `is_platform_member()`
+  y la sesión en dos pasos): es un **evento de estado** de §157 **marcado como de seguridad**
+  (`platform_status_events.security`), y **todos los propietarios de los espacios afectados** —todos
+  los espacios si no se dice cuáles— reciben el aviso `security_incident`, que es **obligatorio**
+  (RN-NOT-03: "seguridad" es su primera palabra) y enlaza a la página pública `/estado`, que marca
+  el evento como incidente de seguridad. Queda auditoría con actor, si fue para todos o para algunos
+  y cuántos propietarios se avisó. Un evento de estado corriente **no** avisa a nadie. El **texto**
+  del aviso lo redacta quien declara; la plantilla la fijará el profesional del bloque legal (paso 4
+  del orden acordado). Los otros tres puntos legales de la pendiente 20 quedan **como están**: nada se
+  elimina a los 30 días, se conserva todo el historial, los archivos y los datos del restaurante, y
+  las facturas las preparará un agente aparte (RN-SUB-05 sigue: referencia bancaria, ninguna factura).
 
 Lo que este apartado **no** trae, dicho en claro: **no** trae las incidencias de §131 ni el horario
 humano de §132 (Hito 21: el bloque "incidencias" del panel está vacío con su motivo), **no** trae el
 onboarding de §9 ni la propiedad y el fin de un espacio de §127 (Hito 20), **no** trae exportación
-(§141, Hito 20), **no** elimina nada a los 30 días ni numera nada fiscalmente (pendiente 20), **no**
-avisa de dispositivos nuevos (RN-ADM-12) y **no** mide el "uso razonable" (pendiente 17): el panel
-enseña el uso de cada espacio y la decisión de §4.3 sigue siendo de Bosco a mano.
+(§141, Hito 20), **no** elimina nada a los 30 días ni numera nada fiscalmente (decisión 38: queda tal
+cual y las facturas las preparará un agente aparte), **no** avisa de dispositivos nuevos (RN-ADM-12)
+y **no** mide el "uso razonable" (sin umbral, decisión 38): el panel enseña el uso de cada espacio
+frente a lo incluido en su plan y la decisión de §4.3 es de Bosco a mano.
 
 ## 33. Onboarding del espacio nuevo y ciclo de vida del espacio — Fase 4 (RN-CIC)
 
@@ -1650,7 +1675,7 @@ dos familias a una letra de distancia se confunden en el primer `grep`.
   lectura y merece saber por qué y hasta cuándo.
 
 Lo que este apartado **no** trae, dicho en claro: **no** borra nada a los 30 días ni cierra ninguna
-cuenta (pendiente 20, bloque legal), **no** valida ni numera los datos fiscales que guarda (§170.1,
+cuenta (decisión 38: queda tal cual hasta la revisión del bloque legal), **no** valida ni numera los datos fiscales que guarda (§170.1,
 como en RN-PLA-01), **no** trae las incidencias de §131 ni el centro de ayuda de §133 (Hito 21),
 **no** toca la app móvil (Hito 22) y **no** añade ninguna sección de Ajustes que §123 no nombre.
 

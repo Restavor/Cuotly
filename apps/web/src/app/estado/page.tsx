@@ -95,7 +95,8 @@ export default async function PublicStatusPage() {
                   </p>
                   {(c.declared ?? []).map((d) => (
                     <p key={d.started_at} className="mt-2 rounded-[10px] bg-soft-surface p-2 text-sm">
-                      <span className="font-semibold">{t.sourceDeclared}</span> · {t.severities[d.severity]} · {d.title}
+                      <span className="font-semibold">{t.sourceDeclared}</span> · {t.severities[d.severity]}
+                      {d.security ? <> · <span className="font-semibold text-danger">{t.securityLabel}</span></> : null} · {d.title}
                       {d.body ? ` — ${d.body}` : ""} <span className="text-xs text-text-secondary">({t.since} {cuando(d.started_at)})</span>
                     </p>
                   ))}
@@ -120,7 +121,8 @@ export default async function PublicStatusPage() {
                     <span className="text-text-secondary">
                       {cuando(e.started_at)} → {cuando(e.resolved_at)}
                     </span>{" "}
-                    <span className="font-semibold">{t.components[e.component]}</span> · {t.severities[e.severity]} · {e.title}
+                    <span className="font-semibold">{t.components[e.component]}</span> · {t.severities[e.severity]}
+                    {e.security ? <> · <span className="font-semibold text-danger">{t.securityLabel}</span></> : null} · {e.title}
                     {e.resolution_note ? <span className="text-text-secondary"> ({e.resolution_note})</span> : null}
                   </li>
                 ))}

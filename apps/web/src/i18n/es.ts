@@ -828,6 +828,9 @@ export const es = {
       incident_opened: "Nueva incidencia a Cuotly",
       incident_updated: "Tu incidencia ha cambiado de estado",
       incident_replied: "Hay un mensaje nuevo en una incidencia",
+      storage_threshold_80: "Has usado el 80 % del almacenamiento incluido en tu plan",
+      storage_threshold_100: "Has llegado al 100 % del almacenamiento incluido en tu plan",
+      security_incident: "Incidente de seguridad en Cuotly",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -4578,13 +4581,16 @@ export const es = {
       revenue: "Cobrado este mes según el libro. Una cifra de libro, no una factura.",
       active_trials: "Espacios en su prueba de 7 días.",
       nonpayment: "Cobros vencidos sin pagar.",
-      storage: "Lo que ocupan todos los espacios. Se mide, no se limita.",
+      storage: "Lo que ocupan todos los espacios. Se mide, no se limita: al 100 % de lo incluido se presupuesta aparte.",
       activity: "Apuntes de auditoría de todos los espacios en las últimas 24 h.",
       incidents: "Incidencias abiertas a Cuotly que no están cerradas.",
       support: "Sesiones de Modo soporte abiertas ahora mismo.",
       audit: "Apuntes de plataforma: solicitudes, cobros, permisos y soporte.",
     },
     incidentsCritical: (n: number) => `${n} crítica${n === 1 ? "" : "s"}`,
+    /** RN-SUB-13 (decisión 38) · espacios al 100 % de lo incluido: presupuestos que preparar. */
+    storageOverLimit: (n: number) =>
+      n === 0 ? "Ningún espacio ha llegado al 100 % de lo incluido." : `${n} espacio${n === 1 ? "" : "s"} al 100 % de lo incluido: presupuestar aparte`,
 
     /** §131, RN-SOP-07 · la bandeja de incidencias de Cuotly. */
     incidents: {
@@ -4665,6 +4671,16 @@ export const es = {
       holidayRetireReason: "Motivo para retirarlo",
       holidayRetired: "Festivo retirado.",
       retiredLabel: "retirado",
+      /** RN-ADM-13 (§142, decisión 38) · declarar un incidente de seguridad. */
+      securityTitle: "Declarar un incidente de seguridad",
+      securityHint:
+        "Un evento de estado marcado como de seguridad, y un aviso obligatorio a los propietarios de los espacios afectados: todos si no se dice cuáles. El texto lo escribes tú; la plantilla legal llegará con el bloque legal.",
+      securityAffected: "Espacios afectados (opcional)",
+      securityAffectedHint: "Los slugs de los espacios afectados, uno por línea. Vacío: todos los espacios.",
+      securitySubmit: "Declarar el incidente y avisar",
+      securityDeclared: "Incidente declarado. Los propietarios afectados tienen el aviso.",
+      securityBadge: "Incidente de seguridad",
+      unknownSlug: (slug: string) => `No existe ningún espacio con el slug «${slug}»`,
     },
     declaredPending: (n: number) => `${n} pago${n === 1 ? "" : "s"} declarado${n === 1 ? "" : "s"} pendiente${n === 1 ? "" : "s"} de confirmar`,
     overdueAmount: "vencidos",
@@ -4711,6 +4727,10 @@ export const es = {
       usage: "Uso",
       usageValue: (est: number, users: number) => `${est} rest. · ${users} pers.`,
       storage: "Almacenamiento",
+      storageOf: (used: string, included: string) => `${used} de ${included} GB`,
+      storageNoLimit: "Sin plan de Cuotly: nada que vigilar.",
+      storageAt80: "Al 80 %",
+      storageAt100: "Al 100 %: presupuestar aparte",
       debt: "Deuda",
       period: "Periodo hasta",
       trialEnds: "Prueba hasta",
@@ -4766,6 +4786,18 @@ export const es = {
       noPermissionHint: "Decidir sobre solicitudes exige el permiso «Aprobar espacios» (§167).",
       createdSpace: "Espacio creado",
       requesterHidden: "Quién la revisó no se enseña al solicitante: está en la auditoría de plataforma.",
+      /** RN-PLA-09 (decisión 38) · con qué solicitud ya aprobada choca esta. */
+      conflictsTitle: "Prueba gratuita: ¿ya la tuvo?",
+      conflictsHint:
+        "Una sola prueba gratuita por persona o negocio (§4.4). Un negocio es el mismo NIF o el mismo dominio de correo propio; los dominios públicos (Gmail, Hotmail…) no identifican a nadie. Aprobar con un choque falla en el servidor.",
+      conflictsNone: "No choca con ninguna solicitud aprobada.",
+      conflictsUnavailable: "No se ha podido comprobar: el servidor no ha respondido.",
+      conflictKinds: {
+        person: "La misma persona",
+        tax_id: "El mismo NIF",
+        email_domain: "El mismo dominio de correo",
+      },
+      conflictWith: (matched: string | null, business: string) => `${matched ? `${matched} · ` : ""}solicitud aprobada «${business}»`,
     },
 
     charges: {
@@ -5352,6 +5384,7 @@ export const es = {
     },
     sourceMeasured: "Medido",
     sourceDeclared: "Declarado por Cuotly",
+    securityLabel: "Incidente de seguridad",
     sourceUnmeasured: "Sin medición automática: solo lo que Cuotly declare.",
     measuredDetails: {
       responds: "La aplicación responde.",

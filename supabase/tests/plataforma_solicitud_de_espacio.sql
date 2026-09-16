@@ -13,7 +13,8 @@
 --   · RN-PLA-06: rechazar y pedir información exigen motivo.
 --   · RN-PLA-07: el solicitante no ve quién la revisó.
 --   · RN-PLA-08: auditoría, con `space_id` nulo antes del espacio.
---   · RN-PLA-09: una prueba por persona; por negocio NO se finge.
+--   · RN-PLA-09: una prueba por persona y, desde la migración 95, por
+--     negocio (mismo NIF o mismo dominio de correo no público; decisión 38).
 --
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/plataforma_solicitud_de_espacio.sql
 
@@ -385,7 +386,7 @@ begin
 end $$;
 
 -- ============================================================
--- RN-PLA-09 · una prueba por persona; por negocio, no se finge
+-- RN-PLA-09 · una prueba por persona, y una por negocio (decisión 38)
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'ff900000-0000-0000-0000-000000000001', false);
 set role authenticated;
@@ -412,11 +413,14 @@ begin
 end $$;
 reset role;
 
--- Y lo que HOY no se comprueba, dicho en una prueba y no en un comentario:
--- otra persona con el MISMO negocio sí pasa. No es un descuido, es la
--- pendiente 19 de docs/DECISIONES.md — la maestra no dice qué identifica a
--- un negocio, y CLAUDE.md prohíbe inventarlo. Cuando se cierre, este
--- bloque se da la vuelta y pasa a exigir el rechazo.
+-- Y por negocio: hasta la migración 95 este bloque decía lo contrario
+-- —"otra persona con el MISMO negocio sí pasa"— porque la maestra no decía
+-- qué identifica a un negocio y CLAUDE.md prohíbe inventarlo. Bosco lo
+-- cerró el 16/09/2026 (pendiente 19, decisión 38): el mismo NIF o el mismo
+-- dominio de correo no público. Esta segunda solicitud es de otra persona
+-- y no lleva NIF, pero comparte el dominio: se rechaza. El detalle (NIF,
+-- dominio propio, dominio público que sí pasa) está en
+-- `pendientes_de_la_fase_4.sql`.
 select set_config('request.jwt.claim.sub', 'ff900000-0000-0000-0000-000000000005', false);
 set role authenticated;
 do $$
@@ -430,18 +434,27 @@ reset role;
 select set_config('request.jwt.claim.sub', 'ff900000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
-declare v_espacio uuid;
 begin
-  v_espacio := public.approve_space_request((select v from pla_ids where k = 'mismo_negocio'));
-  if v_espacio is null then
-    raise exception 'RN-PLA-09 FALLIDO: se está fingiendo una comprobación por negocio que no existe'
+  if not exists (select 1 from public.space_request_trial_conflicts((select v from pla_ids where k = 'mismo_negocio'))
+                 where kind = 'email_domain') then
+    raise exception 'RN-PLA-09 FALLIDO: el panel no ve que el mismo dominio de correo ya tuvo su prueba'
       using errcode = 'assert_failure';
   end if;
-
-  -- Dos negocios con el mismo nombre no chocan: el slug se numera.
-  if (select slug from public.spaces where id = v_espacio)
-     = (select slug from public.spaces where id = (select v from pla_ids where k = 'espacio')) then
-    raise exception 'RN-PLA-05 FALLIDO: dos espacios con el mismo nombre comparten slug' using errcode = 'assert_failure';
+  begin
+    perform public.approve_space_request((select v from pla_ids where k = 'mismo_negocio'));
+    raise exception 'RN-PLA-09 FALLIDO: el mismo negocio (mismo dominio de correo) consigue una segunda prueba gratuita (§4.4)'
+      using errcode = 'assert_failure';
+  exception
+    when sqlstate 'P0001' then
+      if sqlerrm like 'RN-PLA%' then raise; end if;
+      if sqlerrm not like '%dominio%' then
+        raise exception 'RN-PLA-09 FALLIDO: el rechazo no dice que es por el dominio: %', sqlerrm
+          using errcode = 'assert_failure';
+      end if;
+  end;
+  -- Sigue enviada: el choque no decide por Cuotly, que puede rechazarla con su motivo.
+  if (select status from public.space_requests where id = (select v from pla_ids where k = 'mismo_negocio')) <> 'submitted' then
+    raise exception 'RN-PLA-09 FALLIDO: la solicitud que choca cambió de estado sola' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;

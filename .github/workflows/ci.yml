@@ -388,6 +388,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/app_movil_y_push.sql
 
+      - name: "Después del Hito 22 — Verificar las cuatro pendientes de la Fase 4: almacenamiento, prueba única por negocio e incidente de seguridad (RN-SUB-13, RN-PLA-09, RN-ADM-13, decisión 38)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/pendientes_de_la_fase_4.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

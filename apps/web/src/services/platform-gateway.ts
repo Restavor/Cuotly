@@ -46,6 +46,8 @@ export interface PanelSummary {
   readonly overdue_cents: number;
   readonly declared_payments_pending: number;
   readonly storage_bytes_total: number;
+  /** RN-SUB-13 (decisión 38) · espacios que han llegado al 100 % de lo incluido: presupuestos que preparar. */
+  readonly storage_over_limit: number;
   readonly activity_24h: number;
   readonly incidents: number;
   readonly incidents_critical: number;
@@ -84,10 +86,22 @@ export interface PlatformSpaceRow {
   readonly active_establishments: number;
   readonly internal_users: number;
   readonly storage_bytes: number;
+  /** Lo incluido en su plan de Cuotly, en bytes; `null` sin plan (RN-SUB-13). */
+  readonly storage_limit_bytes: number | null;
   readonly outstanding_cents: number;
   readonly overdue_cents: number;
   readonly has_pending_declaration: boolean;
   readonly support_active: boolean;
+}
+
+/** RN-PLA-09 (decisión 38) · con qué solicitud ya aprobada choca una solicitud. */
+export type TrialConflictKind = "person" | "tax_id" | "email_domain";
+export interface TrialConflict {
+  readonly kind: TrialConflictKind;
+  readonly matched: string | null;
+  readonly request_id: string;
+  readonly business_name: string;
+  readonly decided_at: string | null;
 }
 
 export interface PlatformChargeRow {
@@ -203,7 +217,7 @@ export function listUsers(client: Client, limit = 200, offset = 0): Promise<read
 }
 
 export function listSpaces(client: Client): Promise<readonly PlatformSpaceRow[]> {
-  return rpc(client, "platform_list_spaces", undefined as never);
+  return rpc(client, "platform_list_spaces", undefined as never) as Promise<unknown> as Promise<readonly PlatformSpaceRow[]>;
 }
 
 export function listCharges(client: Client, openOnly = true): Promise<readonly PlatformChargeRow[]> {
@@ -286,4 +300,15 @@ export function setPlatformAdmin(
 
 export function revokePlatformAdmin(client: Client, userId: string): Promise<boolean> {
   return rpc(client, "revoke_platform_admin", { p_user_id: userId });
+}
+
+/**
+ * RN-PLA-09 (decisión 38) · lo que el panel enseña ANTES de aprobar: la
+ * misma persona, el mismo NIF o el mismo dominio de correo no público.
+ * `approve_space_request()` lo vuelve a comprobar y rechaza.
+ */
+export function spaceRequestTrialConflicts(client: Client, requestId: string): Promise<readonly TrialConflict[]> {
+  return rpc(client, "space_request_trial_conflicts", { p_request_id: requestId }) as Promise<unknown> as Promise<
+    readonly TrialConflict[]
+  >;
 }

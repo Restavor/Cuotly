@@ -60,7 +60,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - ~~Umbrales concretos de detección de oportunidades y definición de impacto/esfuerzo~~ — los fijó Bosco el 14/09/2026 (decisión 26 de `docs/DECISIONES.md`, razonada en `docs/PROPUESTA-OPORTUNIDADES.md`). Ya no se inventan: se citan.
 - El bloque legal y fiscal: términos de uso, privacidad, retenciones, numeración fiscal de facturas, jurisdicción. **Excepción desde el 12/09/2026:** las **condiciones de cada plan y servicio** sí existen (migración 75): las escribe el espacio para su propio plan, se versionan (RN-DAT-07) y el restaurante las acepta en Cuotly o el equipo registra la aceptación de fuera con fecha y contrato. Cuotly no redacta ninguna: el texto es del espacio.
 - API pública y webhooks.
-- Precio del almacenamiento adicional.
+- ~~Precio del almacenamiento adicional~~ — no hay precio: pasarse de lo incluido **se presupuesta aparte** (decisión 38 del 16/09/2026; RN-SUB-13, migración 95). Se avisa al 80 % y al 100 %, y al 100 % también a Cuotly. Nada se bloquea. No inventes un precio por GB.
 - Cancelación/anulación/abono de un cobro. Reembolsar lo **reabre** (RN-FIN-04b, decisión 12): devolver el dinero dejando al cliente a cero es otra operación, y no existe. No la metas dentro de `refund_charge`.
 - Sincronización bidireccional de calendarios.
 

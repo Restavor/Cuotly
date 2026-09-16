@@ -72,6 +72,9 @@ function detalle(block: PanelBlock, s: PanelSummary): string | null {
       return `${s.support_sessions_total} en total`;
     case "incidents":
       return es.platformAdmin.incidentsCritical(s.incidents_critical ?? 0);
+    case "storage":
+      // RN-SUB-13 (decisión 38): los que han llegado al 100 % de lo incluido.
+      return es.platformAdmin.storageOverLimit(s.storage_over_limit ?? 0);
     default:
       return null;
   }

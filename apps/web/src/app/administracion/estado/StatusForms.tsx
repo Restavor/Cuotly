@@ -7,7 +7,7 @@ import { STATUS_COMPONENTS, STATUS_SEVERITIES } from "@/core/support";
 import { es } from "@/i18n/es";
 
 import { INITIAL_ADMIN_STATE } from "../action-state";
-import { addHoliday, declareEvent, resolveEvent, retireHoliday } from "./actions";
+import { addHoliday, declareEvent, declareSecurityIncident, resolveEvent, retireHoliday } from "./actions";
 
 const t = es.platformAdmin.status;
 
@@ -51,6 +51,40 @@ export function DeclareEventForm() {
         {t.declareSubmit}
       </Button>
       <Mensajes state={state} done={t.declared} />
+    </form>
+  );
+}
+
+/**
+ * RN-ADM-13 (§142, decisión 38) · declarar un incidente de seguridad. El
+ * servidor marca el evento y manda el aviso obligatorio a los
+ * propietarios afectados; aquí solo se recoge el texto y, si se quiere,
+ * qué espacios.
+ */
+export function DeclareSecurityIncidentForm() {
+  const [state, action, pending] = useActionState(declareSecurityIncident, INITIAL_ADMIN_STATE);
+  return (
+    <form action={action} className="space-y-3">
+      <Select
+        name="component"
+        label={t.component}
+        options={STATUS_COMPONENTS.map((c) => ({ value: c, label: es.statusPage.components[c] }))}
+        required
+      />
+      <Select
+        name="severity"
+        label={t.severity}
+        options={STATUS_SEVERITIES.map((s) => ({ value: s, label: es.statusPage.severities[s] }))}
+        required
+      />
+      <Field name="title" label={t.eventTitle} required maxLength={160} />
+      <TextArea name="body" label={t.eventBody} rows={4} />
+      <TextArea name="slugs" label={t.securityAffected} rows={2} />
+      <p className="text-xs text-text-secondary">{t.securityAffectedHint}</p>
+      <Button type="submit" variant="danger" pending={pending}>
+        {t.securitySubmit}
+      </Button>
+      <Mensajes state={state} done={t.securityDeclared} />
     </form>
   );
 }

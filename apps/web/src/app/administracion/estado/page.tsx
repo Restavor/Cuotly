@@ -6,7 +6,7 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { statusSnapshot } from "@/services/support-gateway";
 
-import { AddHolidayForm, DeclareEventForm, ResolveEventForm, RetireHolidayForm } from "./StatusForms";
+import { AddHolidayForm, DeclareEventForm, DeclareSecurityIncidentForm, ResolveEventForm, RetireHolidayForm } from "./StatusForms";
 
 /**
  * El estado de Cuotly visto desde dentro (RN-SOP-13): declarar y resolver
@@ -70,6 +70,11 @@ export default async function AdminStatusPage() {
                       {es.statusPage.severities[e.severity]}
                     </StatusBadge>
                     <span className="text-sm font-semibold">{es.statusPage.components[e.component]}</span>
+                    {e.security ? (
+                      <StatusBadge tone="danger" icon="lock">
+                        {t.securityBadge}
+                      </StatusBadge>
+                    ) : null}
                     <span className="text-xs text-text-secondary">
                       {es.statusPage.since} {cuando(e.started_at)}
                     </span>
@@ -84,6 +89,11 @@ export default async function AdminStatusPage() {
         </Card>
       </div>
 
+      <Card title={t.securityTitle}>
+        <p className="mb-3 text-sm text-text-secondary">{t.securityHint}</p>
+        <DeclareSecurityIncidentForm />
+      </Card>
+
       <Card title={t.historyTitle}>
         {snapshot.history.length === 0 ? (
           <EmptyState title={t.historyEmpty} />
@@ -96,6 +106,7 @@ export default async function AdminStatusPage() {
                 </span>
                 <span className="font-semibold">{es.statusPage.components[e.component]}</span>
                 <span>{es.statusPage.severities[e.severity]}</span>
+                {e.security ? <span className="font-semibold text-danger">{t.securityBadge}</span> : null}
                 <span>· {e.title}</span>
                 {e.resolution_note ? <span className="text-text-secondary">({e.resolution_note})</span> : null}
               </li>

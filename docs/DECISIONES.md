@@ -633,14 +633,45 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    tiendas; (8) desplegar todo en Vercel otra vez. Está copiado en el ROADMAP, en "Después del
    Hito 22".
 
+38. **Las cuatro pendientes de la Fase 4, cerradas** (16/09/2026; paso 1 del orden de la decisión
+   37). Se le pusieron delante a Bosco con su contexto y las decidió así, en sus palabras:
+   *"17. Eso lo controlo yo tú tienes que estar pendiente de lo que hablamos del almacenamiento
+   18. Vamos a dejar que si se pasen se presupuesta aparte 19. Las 2 cosas 20. Si esa revisión la
+   haré cuando toque en el orden 1. Tal cual está 2. Todo el historial, archivos subidos y datos del
+   restaurante yo creo que así está bien 3. Me parece bien 4. Si, ya instalaré un agente para
+   preparar las facturas"*. Lo que eso fija, punto por punto:
+   - **17 · "Uso razonable" en Agency (§4.3): sin umbral.** Lo controla Bosco a mano desde el
+     panel, que ya enseña el uso de cada espacio (RN-ADM-04). No se mide ninguna actividad ni se
+     bloquea nada, y no se inventa ningún número. Lo que sí hay que vigilar es el **almacenamiento**
+     de §113: los avisos al **80 %** y al **100 %** de lo incluido en el plan (20 GB Pro, 100 GB
+     Agency), al propietario del espacio y, al 100 %, también a Cuotly (RN-SUB-13, migración 95).
+   - **18 · Precio del almacenamiento adicional: no hay.** Pasarse de lo incluido **se presupuesta
+     aparte**: ni precio por GB, ni bloqueo, ni límite duro. El aviso del 100 % a Cuotly es el
+     "hay un presupuesto que preparar". Sale de la lista de aplazados de CLAUDE.md.
+   - **19 · Un "negocio" es el mismo NIF o el mismo dominio de correo** ("las 2 cosas"). El NIF se
+     compara sin espacios, guiones ni mayúsculas; el dominio, del correo de la solicitud y del de la
+     cuenta que la escribe, **salvo los dominios públicos** (Gmail, Hotmail, Outlook…, y los
+     `example.*` reservados), que no identifican a nadie. `approve_space_request()` rechaza el
+     choque en el servidor y el panel lo enseña antes (RN-PLA-09, migración 95).
+   - **20 · Los cuatro puntos del bloque legal**: la revisión profesional la hará Bosco cuando
+     toque en el orden (paso 4). Mientras tanto: (1) la eliminación a los 30 días **queda tal cual
+     está** —fecha guardada y enseñada, nada se borra—; (2) lo que se conserva es **todo el
+     historial, los archivos subidos y los datos del restaurante**, que es lo que ya se conserva;
+     (3) el procedimiento ante un **incidente de seguridad** (§142) **le parece bien** como se
+     propuso: Cuotly lo declara como evento de estado marcado como de seguridad, todos los
+     propietarios afectados reciben un aviso **obligatorio** y la página pública lo marca; el texto
+     lo fijará el profesional del bloque legal (RN-ADM-13, migración 95); (4) la **numeración
+     fiscal** no se hace aquí: Bosco instalará un agente aparte para preparar las facturas, y Cuotly
+     sigue emitiendo referencia bancaria y ninguna factura (RN-SUB-05).
+
 ---
 
 ### Pendiente de completar
 
-**Cuatro abiertas, todas de la Fase 4.** Las dieciséis de las fases 1 a 3 están cerradas; quedan
-tachadas abajo con la decisión que resolvió cada una. Las cuatro salieron al desglosar la Fase 4 el
-15/09/2026 y **no se inventan**: cada una se pregunta cuando llegue su hito. Las lecturas de los
-hitos 18 a 22 ya están confirmadas (decisiones 32, 33, 34, 35 y 36).
+**Ninguna abierta.** Las dieciséis de las fases 1 a 3 y las cuatro de la Fase 4 están cerradas;
+quedan tachadas abajo con la decisión que resolvió cada una. Las cuatro de la Fase 4 se cerraron el
+16/09/2026 como decisión 38, en el paso 1 del orden acordado. Las lecturas de los hitos 18 a 22
+están confirmadas (decisiones 32, 33, 34, 35 y 36).
 
 25. ~~Lecturas aplicadas al implementar la app móvil y el push~~ — confirmadas nueve y cambiada
    la tercera el 16/09/2026 como decisión 36. Se conservan abajo tal como se preguntaron (Hito 22,
@@ -816,7 +847,10 @@ hitos 18 a 22 ya están confirmadas (decisiones 32, 33, 34, 35 y 36).
 21. ~~Lecturas aplicadas al implementar la suscripción de Cuotly~~ — confirmadas las doce el
    15/09/2026 como decisión 32.
 
-20. **Los cuatro puntos del bloque legal que toca la Fase 4** (§170.1). La eliminación de datos a
+20. ~~Los cuatro puntos del bloque legal que toca la Fase 4~~ — cerrada el 16/09/2026 como
+   decisión 38: nada se elimina a los 30 días, se conserva todo, el incidente de seguridad es un
+   evento de estado con aviso obligatorio (RN-ADM-13) y las facturas las preparará un agente aparte.
+   Se conserva abajo tal como se preguntó. (§170.1). La eliminación de datos a
    los 30 días tras el archivado, qué son los "registros que deban conservarse por obligaciones
    legales" y dónde quedan aislados, el procedimiento ante un incidente de seguridad (§142) y la
    numeración fiscal de lo que Cuotly le cobra a un espacio. Los cuatro siguen necesitando la
@@ -827,19 +861,25 @@ hitos 18 a 22 ya están confirmadas (decisiones 32, 33, 34, 35 y 36).
    **no se implementa**; lo que sí entrega es la comprobación de §141, que dice qué lo impide
    (RN-CIC-09 y RN-CIC-12).*
 
-19. **Cómo se identifica un "negocio"** para "una sola prueba gratuita por persona o negocio"
+19. ~~Cómo se identifica un "negocio"~~ — cerrada el 16/09/2026 como decisión 38: el mismo NIF o el
+   mismo dominio de correo no público (RN-PLA-09, migración 95). Se conserva abajo tal como se
+   preguntó. Para "una sola prueba gratuita por persona o negocio"
    (§4.4). Persona se sabe identificar; negocio no: ¿por los datos fiscales de la solicitud, por el
    dominio del correo, a mano al aprobar? Sin una respuesta, la regla antiabuso no se puede
    comprobar en el servidor — y las reglas que solo viven en la pantalla se saltan solas, que es lo
    que CLAUDE.md dice con "ocultar un botón no es un control de acceso". **Hito 18.** *El Hito 18
    no la tocó: la comprobación por negocio sigue sin fingirse (RN-PLA-09).*
 
-18. **El precio del almacenamiento adicional.** Ya estaba aplazado en CLAUDE.md y ahora tiene fecha:
+18. ~~El precio del almacenamiento adicional~~ — cerrada el 16/09/2026 como decisión 38: no hay
+   precio; pasarse se presupuesta aparte, y el 100 % avisa a Cuotly (RN-SUB-13, migración 95). Se
+   conserva abajo tal como se preguntó. Ya estaba aplazado en CLAUDE.md y ahora tiene fecha:
    Pro incluye 20 GB y Agency 100 GB (§113), y qué pasa al llegar a 21 no está escrito en ninguna
    parte. **Hito 18.** *El Hito 18 lo mide (`cuotly_space_usage()`) y no lo limita ni lo cobra
    (RN-SUB-13).*
 
-17. **Qué es "uso razonable"** en Agency (§4.3). La maestra describe bien el procedimiento ante un
+17. ~~Qué es "uso razonable"~~ — cerrada el 16/09/2026 como decisión 38: sin umbral, lo controla
+   Bosco desde el panel; lo que se vigila es el almacenamiento (80 % y 100 %). Se conserva abajo tal
+   como se preguntó. En Agency (§4.3). La maestra describe bien el procedimiento ante un
    uso anormal —se informa, Bosco revisa, se plantea ampliación o plan específico, no se bloquea sin
    comunicación— pero **no da ningún umbral**, y "ilimitado bajo uso razonable" sin número no se
    puede medir. Es exactamente la situación de los umbrales de oportunidades antes de la decisión

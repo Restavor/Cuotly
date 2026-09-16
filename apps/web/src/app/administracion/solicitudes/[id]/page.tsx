@@ -7,7 +7,7 @@ import { isSpaceRequestFinal, type SpaceRequestState } from "@/core/space-reques
 import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-import { myPlatformAccess } from "@/services/platform-gateway";
+import { myPlatformAccess, spaceRequestTrialConflicts, type TrialConflict } from "@/services/platform-gateway";
 
 import { requestTone } from "../request-tone";
 import { DecisionForms } from "./DecisionForms";
@@ -52,6 +52,18 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
   const f = es.spaceRequestForm;
   const state = row.status as SpaceRequestState;
   const final = isSpaceRequestFinal(state);
+
+  // RN-PLA-09 (decisión 38) · con qué solicitud aprobada choca, ANTES de
+  // aprobar. Solo la plataforma puede preguntarlo; si el servidor no
+  // responde se dice, no se enseña "sin conflictos".
+  let conflictos: readonly TrialConflict[] | null = null;
+  if (puedeDecidir && !final) {
+    try {
+      conflictos = await spaceRequestTrialConflicts(supabase, row.id);
+    } catch {
+      conflictos = null;
+    }
+  }
 
   const { data: space } = row.space_id
     ? await supabase.from("spaces").select("slug, name").eq("id", row.space_id).maybeSingle()
@@ -118,6 +130,28 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
           ))}
         </dl>
       </Card>
+
+      {puedeDecidir && !final ? (
+        <Card title={t.conflictsTitle}>
+          <p className="mb-3 text-sm text-text-secondary">{t.conflictsHint}</p>
+          {conflictos === null ? (
+            <p className="text-sm text-text-secondary">{t.conflictsUnavailable}</p>
+          ) : conflictos.length === 0 ? (
+            <p className="text-sm text-text">{t.conflictsNone}</p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {conflictos.map((c) => (
+                <li key={`${c.kind}:${c.request_id}:${c.matched ?? ""}`} className="flex flex-wrap items-center gap-2">
+                  <StatusBadge tone="danger">{t.conflictKinds[c.kind]}</StatusBadge>
+                  <Link href={`/administracion/solicitudes/${c.request_id}`} className="text-cuotly-green underline">
+                    {t.conflictWith(c.matched, c.business_name)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      ) : null}
 
       <Card title={t.decisionTitle}>
         <p className="mb-4 text-sm text-text-secondary">{t.decisionHint}</p>

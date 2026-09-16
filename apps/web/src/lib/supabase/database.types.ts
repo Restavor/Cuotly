@@ -4625,6 +4625,7 @@ export type Database = {
           resolution_note: string | null
           resolved_at: string | null
           resolved_by: string | null
+          security: boolean
           severity: string
           started_at: string
           title: string
@@ -4638,6 +4639,7 @@ export type Database = {
           resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          security?: boolean
           severity: string
           started_at?: string
           title: string
@@ -4651,6 +4653,7 @@ export type Database = {
           resolution_note?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          security?: boolean
           severity?: string
           started_at?: string
           title?: string
@@ -7937,6 +7940,10 @@ export type Database = {
           max_users: number
         }[]
       }
+      cuotly_storage_limit_bytes: {
+        Args: { p_space_id: string }
+        Returns: number
+      }
       cuotly_space_usage: {
         Args: { p_space_id: string }
         Returns: {
@@ -7980,6 +7987,16 @@ export type Database = {
           p_component: string
           p_severity: string
           p_started_at?: string
+          p_title: string
+        }
+        Returns: string
+      }
+      declare_security_incident: {
+        Args: {
+          p_body?: string
+          p_component?: string
+          p_severity?: string
+          p_space_ids?: string[]
           p_title: string
         }
         Returns: string
@@ -8370,6 +8387,13 @@ export type Database = {
       is_platform_admin: { Args: never; Returns: boolean }
       is_platform_approver: { Args: never; Returns: boolean }
       is_platform_member: { Args: never; Returns: boolean }
+      is_public_email_domain: { Args: { p_domain: string }; Returns: boolean }
+      email_domain: { Args: { p_email: string }; Returns: string }
+      normalized_tax_id: { Args: { p_tax_id: string }; Returns: string }
+      notify_platform_storage: {
+        Args: { p_dedupe_key: string; p_space_id: string }
+        Returns: number
+      }
       is_platform_owner: { Args: never; Returns: boolean }
       is_platform_subscription_manager: { Args: never; Returns: boolean }
       is_platform_supporter: { Args: never; Returns: boolean }
@@ -8958,6 +8982,7 @@ export type Database = {
           pending_plan: string
           slug: string
           storage_bytes: number
+          storage_limit_bytes: number
           support_active: boolean
         }[]
       }
@@ -9396,6 +9421,10 @@ export type Database = {
         Args: { p_space_id: string }
         Returns: number
       }
+      run_cuotly_storage_sweep: {
+        Args: { p_now?: string; p_space_id: string }
+        Returns: number
+      }
       run_cuotly_billing_sweep: {
         Args: { p_now?: string; p_space_id: string }
         Returns: number
@@ -9684,6 +9713,16 @@ export type Database = {
           ordinal: number
           source: string
           step: string
+        }[]
+      }
+      space_request_trial_conflicts: {
+        Args: { p_request_id: string }
+        Returns: {
+          business_name: string
+          decided_at: string
+          kind: string
+          matched: string
+          request_id: string
         }[]
       }
       space_request_transition_allowed: {

@@ -91,10 +91,18 @@ describe("RN-NOT-02 y RN-NOT-03 · qué se puede desactivar y qué no", () => {
       "t3_threshold_100",
       "establishment_paused_nonpayment",
       "establishment_suspended_nonpayment",
+      // RN-ADM-13 (decisión 38): "seguridad" es la primera palabra de RN-NOT-03.
+      "security_incident",
     ] as const) {
       expect(isMandatoryEvent(evento), `${evento} debería ser obligatorio`).toBe(true);
       expect(canDisable(evento)).toBe(false);
     }
+  });
+
+  it("RN-SUB-13 (decisión 38): pasarse del almacenamiento no bloquea nada, así que sus avisos se pueden apagar", () => {
+    expect(isMandatoryEvent("storage_threshold_80")).toBe(false);
+    expect(isMandatoryEvent("storage_threshold_100")).toBe(false);
+    expect(canDisable("storage_threshold_100")).toBe(true);
   });
 
   it("los obligatorios son pocos: si no, RN-NOT-02 se queda sin contenido", () => {

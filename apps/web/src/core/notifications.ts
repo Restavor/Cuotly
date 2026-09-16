@@ -71,6 +71,14 @@ export const NOTIFICATION_EVENTS = [
   "incident_opened",
   "incident_updated",
   "incident_replied",
+  // Migración 95 (Fase 4, después del Hito 22; decisión 38) · el
+  // almacenamiento incluido en el plan de Cuotly al 80 % y al 100 %
+  // (RN-SUB-13; al 100 % también a Cuotly, porque lo que pasa de lo
+  // incluido se presupuesta aparte), y el incidente de seguridad de §142
+  // (RN-ADM-13), obligatorio.
+  "storage_threshold_80",
+  "storage_threshold_100",
+  "security_incident",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -120,6 +128,10 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   // que es una pérdida de acceso. Ninguna de las dos se puede apagar.
   "space_ownership_transferred",
   "space_archived_by_owner",
+  // RN-ADM-13: un incidente de seguridad de §142 es, literalmente, la
+  // primera palabra de RN-NOT-03. Los dos avisos de almacenamiento no:
+  // pasarse no bloquea nada (decisión 38).
+  "security_incident",
 ];
 
 export function isMandatoryEvent(event: NotificationEvent): boolean {
