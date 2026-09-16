@@ -36,6 +36,7 @@ Actualizado el 15/09/2026.
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita y aplicada al proyecto real el 15/09/2026 (en cinco partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, confirmadas por Bosco (decisión 34). Ver la entrada de cierre abajo. |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | Servidor, dominio y pantallas | Migración 93, escrita y aplicada al proyecto real el 15/09/2026 (en siete partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §34 (RN-SOP-01 a 15) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 35). Ver la entrada de cierre abajo. |
+| 22 · App móvil (React Native + Expo) y push (Fase 4) | Servidor, dominio y app móvil | Migración 94, escrita el 15/09/2026. **Sin aplicar todavía al proyecto real**: lo decide Bosco. PRD §35 (RN-MOV-01 a 11) escrito antes del código. Las diez lecturas, **a la espera de que las confirme** (pendiente 25). Ver la entrada de cierre abajo. |
 | 22 · App móvil y push (Fase 4) | No empezado | Independiente de los cinco anteriores; va al final por orden de Bosco. |
 
 **La Fase 3 queda cerrada** con el Hito 16: las 86 migraciones del repositorio están aplicadas al
@@ -4684,6 +4685,69 @@ sin aflojar la comprobación para que valgan los dos.
   publicar y completar exigen servidor, se pide confirmación al volver la conexión y **nunca se
   duplica una acción** — que es la misma regla de idempotencia de siempre, ahora con el añadido de
   que el cliente puede haber estado horas desconectado.
+
+### Hito 22 · App móvil (React Native + Expo) y push *(hecho el 16/09/2026; la 94 SIN aplicar al proyecto)*
+- **PRD §35 escrito primero**, como manda el desglose: §21, §70, §144, §145, §176 y §179 convertidos
+  en once reglas `RN-MOV`. Diez lecturas donde la maestra calla quedan escritas como regla y anotadas
+  como **pendiente 25** de `docs/DECISIONES.md` para que Bosco las confirme o las cambie. **Ninguna es
+  un umbral ni un plazo.** La familia es `RN-MOV` y no `RN-APP` ni `RN-PUSH` a propósito.
+- **Migración 94**, la mitad de servidor y la única que hace falta: `push_devices` (un teléfono es de
+  una persona, RN-MOV-05, sin `space_id` y clasificada como identidad en el barrido de invariantes),
+  `register_push_device` / `unregister_push_device` para quien tiene sesión y `revoke_push_token`
+  solo para la cola; la columna `push` en `notification_preferences` con la firma de cinco de
+  `set_notification_preference` (la de cuatro se retira: sería ambigua); el canal `push` en
+  `notification_deliveries`, `emit_notification` con el tercer canal solo si hay teléfono vigente, y
+  `claim_notification_deliveries` devolviendo canal y tokens del momento. Los once flujos de §176 no
+  necesitan ni una línea de SQL: la app llama a las mismas funciones que la web con la sesión de
+  quien mira (RN-MOV-01).
+- **La cola envía el push** con el mismo proceso que el correo (`drainDeliveryQueue`, un transporte
+  por canal): Expo sobre FCM y APNs, un ticket por token, `DeviceNotRegistered` da de baja el
+  teléfono sin reintentos y cualquier otro fallo espera creciente como siempre. Sin transporte de
+  push la entrega se reprograma: ni se pierde ni se finge enviada. El texto del push es el nombre del
+  evento y el espacio, y nada más (RN-MOV-04).
+- **La app** (`apps/mobile`) deja de ser un esqueleto. Importa **tal cual** el dominio, el catálogo de
+  textos y la navegación de la web por el alias `@/` → `apps/web/src` (tsconfig, Metro y Jest lo
+  resuelven igual): la barra de cinco destinos y "Más" es `mobileNav()` de la web, y las rutas de
+  `app/` son las de la web, así que el enlace profundo de un aviso abre el mismo elemento
+  (RN-MOV-01/02). Pantallas de los once flujos: solicitar (con borrador que nace con su clave y guarda
+  el id del servidor entre los dos pasos, RN-MOV-10), validar y aceptar, asignar, comenzar, bloquear,
+  publicar con evidencia fotográfica y la ventana de corrección calculada con el reloj laborable del
+  core, corregir, pagar (registrar un pago) y confirmar (justificante y presupuesto), preparar menú
+  (guardar versión, preparado, pedir publicación), consultar informe, y gestionar equipo (supervisor
+  principal) y ajustes (avisos por evento con el tercer canal, estado del push, cerrojo biométrico,
+  sesiones). Lo que la app no trae dice dónde está (RN-MOV-03); el panel de Cuotly y Modo soporte no
+  están (RN-MOV-08).
+- **Push en el teléfono** (RN-MOV-05/06): la explicación va antes del diálogo del sistema, que solo
+  se puede enseñar una vez; con permiso, el token se registra al entrar y se da de baja **antes** de
+  cerrar sesión; si se rechaza, banda persistente con el atajo a Ajustes del sistema; tocar un aviso
+  abre su enlace profundo y el acceso lo verifica cada pantalla con el servidor, no la ruta.
+- **Permisos, biometría y sin conexión** (RN-MOV-07/08/09): cámara y galería pedidas al usarlas y
+  solo imágenes; "escanear" es fotografiar con la cámara; la subida pasa por la web
+  (`/api/movil/archivos`, con el token de la sesión como Bearer) y por **el mismo código** que las
+  acciones del navegador (`src/services/file-upload.ts`), así que `can_write_file()` y
+  `register_file()` deciden igual desde el teléfono. El cerrojo biométrico es local y opcional. Sin
+  conexión se enseña lo último que se cargó con su hora, se guardan borradores de solicitudes y
+  mensajes que se envían uno a uno al confirmar, y toda acción crítica se deshabilita **con motivo**
+  sin encolar nada (`offline-rules.ts`, con test).
+- **Lo que el hito NO trae, y se dice:** la publicación en las tiendas (cuentas de desarrollador de
+  Apple y Google que no existen todavía; el token de push exige además un proyecto de Expo con
+  `extra.eas.projectId` en `app.json`, y la app lo dice en Ajustes cuando falta), ningún OCR, ninguna
+  acción crítica encolada, ni calendarios ni API pública (aplazados).
+- **La 94 no está aplicada al proyecto real.** Aplicarla es una decisión de Bosco; cuando se aplique
+  hay que desplegar la web del Hito 22 el mismo día (la cola desplegada lee
+  `claim_notification_deliveries`, que cambia de forma) y regenerar `database.types.ts`: la parte de
+  la 94 va escrita a mano hasta entonces, como pasó con la 92 y la 93.
+
+**Se verifica con:** `supabase/tests/app_movil_y_push.sql` (la 45ª suite; RN-MOV-04, 05, 06 y 10:
+el token que pasa a quien entra, la baja al cerrar sesión, el cierre por el proveedor solo desde la
+cola, la preferencia de push y los obligatorios, una entrega por canal solo con teléfono vigente, el
+reclamo con los tokens del momento, el flujo real de la ausencia, y el reintento de una solicitud y
+de un mensaje sin duplicar), `queue-runner.test.ts` y `queue-gateway.test.ts` (el drenado por canal,
+los tickets de Expo, el texto del push), `notifications.test.ts` (el tercer canal en las
+preferencias), `bearer.test.ts` (la sesión del teléfono), y en `apps/mobile` `offline-rules.test.ts`,
+`drafts.test.ts`, `BottomBar.test.ts` (la barra es la de la web), `api.test.ts` y `format.test.ts`.
+Las 45 suites pasan desde cero sobre las 94 migraciones en local; typecheck, lint y tests de la web
+y de la app, y `expo export --platform web`, en verde.
 
 ### Lo que esta fase NO trae, dicho en claro
 **API pública y webhooks** siguen aplazados (CLAUDE.md), y que §4.2 los mencione como "posibilidad
