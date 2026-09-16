@@ -700,6 +700,24 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    en el PRD. Sale de "Decisiones que NO deben reaparecer" en CLAUDE.md la lista de tres planes y
    entra la de cinco.
 
+40. **Las facturas las emitirá Cuotly, porque el agente vivirá dentro** (16/09/2026). Al revisar el
+   diseño definitivo apareció una contradicción: la vista R27 enseña una factura emitida por Cuotly
+   con número `FAC-2026-010` y los datos fiscales de las dos partes, y RN-FIN-09 dice que Cuotly
+   **no** emite facturas. Preguntado, Bosco aclaró: *"en este diseño sale que las facturas las emite
+   Cuotly y todo eso porque tengo pensado instalar el agente dentro de Cuotly"*. O sea que no es un
+   error del diseño ni un cambio de la regla: es el **estado final**. El agente que prepara las
+   facturas, que la decisión 38 dejaba "aparte", va **dentro** del producto.
+   Lo que eso fija, y lo que no:
+   - **Sí**: las pantallas de facturas del diseño (R25, R26, R27, M42, M52 y la pestaña de impuestos
+     M58) se construyen con su sitio hecho, porque van a usarse.
+   - **No todavía**: la **numeración fiscal** sigue en el bloque legal, que es el paso 4 del orden
+     acordado y necesita la revisión profesional que CLAUDE.md exige. Hasta que llegue, ninguna
+     pantalla inventa un número de factura ni una serie: donde no haya factura se dice el motivo
+     (CLAUDE.md prohíbe el dato de relleno), y lo que Cuotly emite sigue siendo el **cobro con
+     referencia bancaria** de RN-SUB-05.
+   - **Orden**: primero el paso 2 (el diseño de escritorio, con el hueco preparado), después el
+     paso 4 (legal y fiscal, con el profesional), y con él el agente dentro.
+
 ---
 
 ### Pendiente de completar

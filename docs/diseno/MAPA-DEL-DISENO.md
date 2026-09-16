@@ -108,20 +108,22 @@ revisión.
 
 ## Lo que hay que decidir antes de construir
 
-### Facturas: el diseño contradice una regla vigente
+### Facturas: aclarado, con el hueco preparado
 
 La vista **R27** enseña una factura emitida por Cuotly, con número `FAC-2026-010`,
 emisor y cliente con CIF, base, IVA y botón de descarga. **M42** dice que "las
 facturas y recibos se generan automáticamente tras la confirmación del pago", y
 **M58** configura "la información fiscal que se incluirá en tus facturas".
 
-El PRD dice lo contrario en RN-FIN-09: Cuotly **no emite facturas**, solo permite
-adjuntar la factura emitida fuera para descargarla, y la numeración fiscal está en
-el bloque legal pendiente. La decisión 38, de este mismo mes, lo confirmó: las
-facturas las preparará un agente aparte.
+Eso chocaba con RN-FIN-09 ("Cuotly no emite facturas") y con la decisión 38 ("las
+facturas las preparará un agente aparte"). Preguntado, Bosco lo aclaró el mismo
+día: el agente **vivirá dentro de Cuotly**, así que el diseño enseña el estado
+final y no un error (**decisión 40**).
 
-CLAUDE.md manda parar y preguntar ante una contradicción así, en vez de
-resolverla por cuenta propia. **Está preguntado y pendiente de respuesta.**
+Cómo se construye entonces: las pantallas se hacen con su sitio hecho, y **no se
+inventa numeración fiscal**. Mientras el bloque legal no llegue (paso 4 del orden
+acordado, con revisión profesional), donde no haya factura se dice el motivo, y lo
+que Cuotly emite sigue siendo el cobro con referencia bancaria de RN-SUB-05.
 
 ### Detalles menores de las maquetas que no se copian
 

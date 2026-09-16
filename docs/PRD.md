@@ -570,7 +570,7 @@ Cuotly es un **control financiero operativo**. No procesa pagos ni sustituye a u
 - **RN-FIN-06**: el restaurante puede subir un justificante, pero la confirmación siempre corresponde al equipo.
 - **RN-FIN-07**: visibilidad: propietario global ve el grupo completo; propietario local, su establecimiento; Editor solo con el permiso `view_billing`; Consulta, nada.
 - **RN-FIN-08**: se muestran base imponible, impuesto y total. Restavor usa IVA 21 %; otros espacios configuran el suyo.
-- **RN-FIN-09**: en Fase 1 Cuotly **no emite facturas**: permite adjuntar la factura oficial emitida externamente para su descarga. La numeración fiscal está en el bloque legal pendiente.
+- **RN-FIN-09**: en Fase 1 Cuotly **no emite facturas**: permite adjuntar la factura oficial emitida externamente para su descarga. La numeración fiscal está en el bloque legal pendiente. *(Aclarado el 16/09/2026, decisión 40: el diseño definitivo enseña facturas emitidas por Cuotly porque el agente que las prepara vivirá **dentro** del producto. Eso es el estado final, no un cambio de esta regla: las pantallas se construyen con su sitio hecho, pero hasta que llegue el bloque legal —paso 4 del orden acordado— ninguna inventa número ni serie, y lo emitido sigue siendo el cobro con referencia bancaria de RN-SUB-05.)*
 
 ### 17.1 Impago del restaurante
 
