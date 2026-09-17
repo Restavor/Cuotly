@@ -71,9 +71,57 @@ Actualizado el 16/09/2026.
   No hay nada que hacer a mano en el panel. Después hay que regenerar `database.types.ts` (hoy
   lleva a mano las entradas de la 95, la 97 y la 98). **La aplica Bosco cuando diga.**
 
+- La **99** (`20260917000099_piezas_sueltas_del_diseno.sql`, paso 2, las piezas sueltas del
+  diseño). Aditiva salvo en un punto: **cambia la firma de `save_menu_version()`**, que pasa de
+  siete argumentos a ocho con `p_expected_version` opcional, y **borra la de siete**. Sin ese
+  borrado PostgreSQL trataría las dos como sobrecargas y PostgREST elegiría cualquiera según los
+  parámetros que le llegaran, que es justo la ambigüedad que este cambio viene a evitar. El octavo
+  tiene valor por omisión, así que **quien siga llamando con siete se comporta exactamente igual
+  que antes** — la app móvil lo hace y no cambia.
+
+  Parte además `set_establishment_status()` en cuerpo y puerta, como ya hacían
+  `evaluate_establishment_dunning` y `generate_monthly_charge`: la guarda de la deuda vencida
+  (RN-FIN-13) queda **dentro del cuerpo**, donde protege a las dos puertas. Lo demás es nuevo:
+  `set_space_tax_rate`, `cancel_request` y `request_service_termination`.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local con las 50 suites.
+  **La aplica Bosco cuando diga.**
+
+- La **100** (`20260917000100_las_cuatro_del_grupo_c.sql`, paso 2, §38: las cuatro del grupo C).
+  Es la más grande de las cuatro pendientes y la que más conviene leer antes de aplicar.
+
+  **Lo aditivo**: cuatro tablas (`establishment_transfers`, `establishment_backups`,
+  `establishment_backup_downloads`, `channel_members`), tres columnas nuevas en `conversations`
+  (`name`, `archived_at`, `archived_by`) y un puñado de funciones nuevas.
+
+  **Lo que redefine, y por qué hay que mirarlo**:
+
+  - `can_read_conversation()` y `can_write_conversation()` — las dos funciones por las que pasa
+    **quién lee cada mensaje del producto**. El cambio es un `if` al principio para el cuarto
+    tipo; las tres ramas de antes no se tocan. La suite 51 comprueba de paso que un cliente sigue
+    leyendo y escribiendo en la conversación de su solicitud.
+  - `enqueue_due_scheduled_jobs()` y `run_scheduled_job()`, que crecen con dos barridos: la copia
+    diaria y el aviso del vencimiento. Cuidado al leer el diff: esta pareja se reescribe **entera**
+    cada vez que la lista crece, y copiar una versión vieja pierde en silencio lo que añadió la
+    anterior. Pasó al escribirla —se perdió el barrido de almacenamiento de la 95— y lo pilló la
+    suite 46.
+  - `audit_action_capability()`, que aprende las dos familias nuevas.
+
+  **Amplía el CHECK de `notifications.event_type`** con `charge_due_today` y el de
+  `scheduled_jobs.kind` con los dos barridos. Y **crea los cuatro canales de fábrica en todos los
+  espacios que ya existen**, con un `select` al final: son cuatro filas por espacio, sin miembros.
+
+  **La única fila que este producto borra de verdad** está aquí: la copia de seguridad número
+  treinta y uno (RN-BCK-03). Se puede porque una copia no es un registro de negocio, es una foto
+  de él.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local: **las 51 suites en verde sobre
+  bootstrap + 100 migraciones**. Después hay que regenerar `database.types.ts` (hoy lleva a mano
+  las entradas de la 95, la 97, la 98 y la 100). **La aplica Bosco cuando diga.**
+
 ## Aplicadas
 
-**Están aplicadas 95 de las 98 migraciones del repositorio: todas menos la 95, la 97 y la 98.** La 96 se
+**Están aplicadas 95 de las 100 migraciones del repositorio: todas menos la 95, la 97, la 98, la 99 y la 100.** La 96 se
 aplicó el 16/09/2026 **antes** que la 95, por orden de Bosco ("Aplica la 96"); no depende de ella
 y el orden de aplicación no cambia el resultado, pero conviene saberlo al leer
 `schema_migrations`: la 95 quedará registrada después. Las tres

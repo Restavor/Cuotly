@@ -75,11 +75,23 @@ encoladas fallando al salir.
 | Edición simultánea del menú | A17 | El número de versión ya distingue una edición de otra. | El aviso de "alguien guardó mientras escribías" y la comparación de las dos. |
 | Solicitar la baja del servicio | R24, M47 | **RN-EST-09** lo dice entero: "el restaurante ha comunicado la baja pero el servicio sigue activo hasta el final del periodo pagado o de la permanencia vigente", y después 24 h en solo lectura (RN-EST-10). El estado `ending` existe. | Que el restaurante pueda comunicarla, y que el equipo pueda registrar la que llegó por fuera. |
 
-## C · Necesitan una decisión, y por eso no se construyen (cinco) — **pendientes**
+## C · Necesitaban una decisión — **cuatro hechas el 17/09/2026, una abierta**
 
-Cuatro están decididas desde el 17/09/2026 (decisión 43) y **no construidas
-todavía**: les falta su sección de PRD escrita antes que el código, su
-migración y su suite. La quinta —los alérgenos— sigue sin decidir.
+Las cuatro se decidieron en dos tandas: la **43** el qué y la **44** el cómo.
+Están escritas como reglas en el **§38 del PRD** (RN-TRA, RN-BCK, RN-CAN y
+RN-REC), construidas en la **migración 100** y comprobadas por la **suite
+51**. La quinta —los alérgenos— sigue sin decidir y va con el paso 4.
+
+Dos cosas que salieron al construirlas y que no estaban en ninguna decisión:
+
+- **El libro de auditoría no viaja con el restaurante** (RN-TRA-11), aunque
+  la decisión 43 dijera "y auditoría". `CLAUDE.md` manda sobre el PRD y dice
+  que un registro de auditoría no se edita desde la aplicación; cambiarle el
+  espacio a una fila es cambiar quién puede leerla, que es peor.
+- **Ver que un canal existe no es leerlo** (RN-CAN-08). Sin esa distinción,
+  los cuatro canales de fábrica nacían sin miembros y por tanto invisibles
+  para todo el mundo: el propietario no veía el canal al que tenía que
+  añadirse.
 
 
 Ninguna de estas cinco tiene reglas en el PRD ni en la maestra. Construirlas

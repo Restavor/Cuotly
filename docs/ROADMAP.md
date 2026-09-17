@@ -4925,11 +4925,37 @@ necesitaban una decisión que CLAUDE.md prohíbe inventar.
   de `ESTABLISHMENT_STATES`). Lo que faltaba en los dos casos era poder llegar a esos estados.
 - **Verde**: typecheck, lint, 1390 tests de web y la compilación de Next.
 
+#### Hecho · Las cuatro del grupo C (decisión 44, PRD §38, migración 100, suite 51)
+La decisión 43 decidió el **qué** de cuatro piezas y dejó dentro cuatro preguntas de **cómo**. La
+**decisión 44** las contesta, el **§38 del PRD** las escribe como reglas antes del código —RN-TRA,
+RN-BCK, RN-CAN y RN-REC— y la migración 100 las hace servidor.
+
+- **Transferir entre espacios (RN-TRA)**: dos firmas —el origen propone, el destino acepta— y
+  mientras tanto el restaurante sigue entero en el origen. Viaja su trabajo; se quedan el dinero
+  del origen y **su libro de auditoría**. Esto último contradice la decisión 43 y se resolvió por
+  jerarquía: `CLAUDE.md` dice que un registro de auditoría no se edita desde la aplicación, y
+  cambiarle el espacio a una fila es cambiar quién puede leerla. Queda escrito como RN-TRA-11.
+- **Qué tabla viaja y cuál se queda no se decide de memoria** (RN-TRA-13): las dos listas se
+  declaran en la migración y la suite barre `information_schema` buscando tablas sin clasificar.
+  El barrido hizo su trabajo antes de existir la primera transferencia: encontró una tabla de la
+  propia migración 100 sin clasificar.
+- **Copias de seguridad (RN-BCK)**: una al día, treinta guardadas, y la 31 se borra de verdad —el
+  único borrado físico que el producto admite, y se admite porque una copia no es un registro de
+  negocio, es una foto de él—. **Restaurar es descargar**, y la pantalla lo dice con esas palabras:
+  reponer los datos de otra fecha machacaría auditoría, consumos y cobros posteriores.
+- **Canales internos (RN-CAN)**: el cuarto tipo de conversación, del espacio, con miembros a mano.
+  Al montarlo salió RN-CAN-08, que no estaba en el PRD: **ver que un canal existe no es leerlo**.
+  Sin esa distinción los cuatro canales de fábrica nacían invisibles y nadie podía entrar en ellos.
+- **Recordatorios de cobro (RN-REC)**: los tres avisos son el vencimiento, las +24 h y las +72 h.
+  El único nuevo es el primero, y no es obligatorio: avisa, no corta.
+- **Tres fallos de verdad que el trabajo destapó**, los tres de la misma familia —funciones que
+  exigen sesión llamadas desde donde no hay ninguna—: `space_timezone()`,
+  `charge_outstanding_cents()` y `establishment_has_overdue_debt()`. El segundo fallaba **en
+  silencio**, porque el barrido se traga los errores para que un aviso roto no deje sin avisar a
+  los demás.
+- **Verde**: 51 suites sobre 100 migraciones, typecheck, lint, 1392 tests y la compilación de Next.
+
 #### Lo que queda del paso 2
-- **Las tres piezas del grupo C que Bosco decidió el 17/09/2026** (decisión 43) y que todavía no se
-  han construido: la transferencia de un restaurante entre espacios, las copias de seguridad del
-  contenido y los canales de mensajería interna, más los recordatorios de cobro. Necesitan su
-  sección de PRD escrita antes que el código, su migración y su suite.
 - **Los alérgenos del editor del menú (R14) siguen sin decidir**, y van con el paso 4: es la única
   de las catorce que toca materia legal.
 - La **reorganización de la navegación** que el diseño pide: cinco pestañas en la ficha del
