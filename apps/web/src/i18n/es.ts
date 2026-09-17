@@ -1637,6 +1637,14 @@ export const es = {
       registerReceiptLabel: "Justificante (opcional)",
       receiptColumn: "Justificante",
       receiptNone: "Sin justificante",
+
+      // M51 · el historial de cobros parciales. Los pagos parciales ya
+      // funcionaban; lo que faltaba era poder leerlos uno a uno.
+      paymentsTitle: "Pagos registrados",
+      paymentsEmptyReason: "Todavía no se ha registrado ningún pago de este cobro.",
+      paymentLine: (importe: string, metodo: string, fecha: string) =>
+        `${importe} · ${metodo} · ${fecha}`,
+      paymentReversed: (fecha: string) => `Revertido el ${fecha}`,
       registerMethodLabel: "Método",
       registerSubmit: "Registrar el pago",
       registerPending: "Registrando…",

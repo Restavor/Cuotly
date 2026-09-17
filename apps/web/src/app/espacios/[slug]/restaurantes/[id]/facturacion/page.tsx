@@ -13,6 +13,9 @@ import {
   TableRow,
 } from "@/components/ui";
 import { enZona } from "@/i18n/dates";
+import { PaymentHistory } from "@/components/finance/PaymentHistory";
+import { loadChargePayments } from "@/services/charge-payments";
+
 import { loadEstablishmentTimezone } from "../timezone-load";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -136,11 +139,15 @@ export default async function ClientBillingPage({
   // (RN-FIN-02 + RN-DAT-05). Aquí no se suma dinero.
   const chargeRows = await Promise.all(
     (charges ?? []).map(async (charge) => {
-      const [{ data: status }, { data: outstanding }] = await Promise.all([
+      // M51 · con el estado y la deuda viene el libro de apuntes: el
+      // restaurante que paga a plazos necesita ver qué se le ha apuntado,
+      // no solo cuánto le falta.
+      const [{ data: status }, { data: outstanding }, payments] = await Promise.all([
         supabase.rpc("charge_status", { p_charge_id: charge.id }),
         supabase.rpc("charge_outstanding_cents", { p_charge_id: charge.id }),
+        loadChargePayments(supabase, charge.id),
       ]);
-      return { ...charge, status: status ?? "pending", outstanding: outstanding ?? 0 };
+      return { ...charge, status: status ?? "pending", outstanding: outstanding ?? 0, payments };
     }),
   );
 
@@ -231,6 +238,24 @@ export default async function ClientBillingPage({
         )}
 
       </Card>
+
+      {/* M51 · los pagos parciales, uno a uno. Va aparte de la tabla y no
+          dentro de ella porque lo que se lee aquí es una conversación sobre
+          dinero —"el 12 te apunté 200 por Bizum"— y eso no cabe en una
+          celda. Solo aparece si hay cobros: sin cobros no hay pagos de los
+          que hablar, y la tabla de arriba ya dice por qué no los hay. */}
+      {chargeRows.length === 0 ? null : (
+        <Card title={es.teamArea.finance.paymentsTitle}>
+          <ul className="space-y-4">
+            {chargeRows.map((charge) => (
+              <li key={charge.id}>
+                <p className="mb-1 text-sm font-semibold text-text">{charge.concept}</p>
+                <PaymentHistory payments={charge.payments} timezone={zona} />
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {/* §84 · los presupuestos, con sus dos botones cuando toca responder. */}
       <section aria-labelledby="presupuestos" className="space-y-4">

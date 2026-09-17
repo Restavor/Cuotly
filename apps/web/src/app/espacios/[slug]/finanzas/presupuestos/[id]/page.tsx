@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { PaymentHistory } from "@/components/finance/PaymentHistory";
 import { RequestHistoryCard } from "@/components/request/Detail";
 import { Card, EmptyState, StatusBadge } from "@/components/ui";
 import {
@@ -14,6 +15,7 @@ import { fechaCorta } from "@/i18n/dates";
 import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadChargePayments } from "@/services/charge-payments";
 import type { RequestHistoryEntry } from "@/app/espacios/[slug]/solicitudes/[id]/detail-load";
 
 import { AnswerForClientForms, AuthorizeStartForm, QuoteForm, SendQuoteForm } from "../QuoteForms";
@@ -115,6 +117,11 @@ export default async function TeamQuoteDetailPage({
     ? await supabase.rpc("charge_outstanding_cents", { p_charge_id: charge.id })
     : { data: null };
 
+  // M51 · los apuntes del cobro, no solo el resultado. "Quedan 300 €" dice
+  // cuánto falta y nada más; quien tiene que decir "el 12 me pagaste 200 por
+  // Bizum" necesita la lista.
+  const pagos = charge ? await loadChargePayments(supabase, charge.id) : [];
+
   // El historial, como el de una solicitud: actor de `profiles`, nunca de
   // una columna del presupuesto (CA-04).
   const actorIds = [...new Set((auditRows ?? []).map((row) => row.actor_id).filter(Boolean))] as string[];
@@ -204,6 +211,12 @@ export default async function TeamQuoteDetailPage({
                 <p className="text-sm text-text-secondary">
                   {deuda > 0 ? t.chargeOutstanding(euros(deuda)) : t.chargePaidHint}
                 </p>
+                <div className="mt-3">
+                  <p className="mb-2 text-sm font-semibold text-text">
+                    {es.teamArea.finance.paymentsTitle}
+                  </p>
+                  <PaymentHistory payments={pagos} timezone={space?.timezone ?? DEFAULT_TIMEZONE} />
+                </div>
               </>
             )}
           </Card>
