@@ -218,6 +218,41 @@ export async function saveSpaceDetails(
 }
 
 /**
+ * M58 · el IVA por defecto del espacio (migración 99).
+ *
+ * RN-FIN-08 lo congela en cada cobro al emitirlo, así que esto mueve los
+ * cobros **futuros** y ninguno de los ya emitidos. La pantalla lo dice: un
+ * cambio de tipo impositivo que pareciera retroactivo sería una corrección
+ * contable que nadie ha pedido.
+ */
+export async function saveSpaceTaxRate(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const bruto = String(formData.get("taxRate") ?? "").trim().replace(",", ".");
+  const percent = Number(bruto);
+
+  if (bruto === "" || !Number.isFinite(percent)) {
+    return { error: es.settings.taxRateInvalid, done: false, unchanged: false };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("set_space_tax_rate", {
+      p_space_id: spaceId,
+      p_percent: percent,
+    });
+    if (error) return { error: error.message, done: false, unchanged: false };
+
+    revalidatePath("/espacios", "layout");
+    return { error: null, done: true, unchanged: false };
+  } catch (fallo) {
+    return { error: mensajeDeFallo(fallo), done: false, unchanged: false };
+  }
+}
+
+/**
  * §9 paso 2, §124 · el logotipo del espacio. Los bytes van al mismo bucket
  * privado que los archivos y la fila solo guarda la ruta.
  *

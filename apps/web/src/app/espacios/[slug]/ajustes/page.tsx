@@ -27,6 +27,7 @@ import {
   SpaceDetailsForm,
   SpaceLogoForm,
   SpaceNameForm,
+  TaxRateForm,
   TimezoneForm,
   type NotificationPreference,
 } from "./SettingsForms";
@@ -77,7 +78,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
   const { data: space } = await supabase
     .from("spaces")
     .select(
-      "id, name, slug, timezone, payment_term_days, legal_name, tax_id, address, logo_storage_path",
+      "id, name, slug, timezone, payment_term_days, tax_rate_percent, legal_name, tax_id, address, logo_storage_path",
     )
     .eq("slug", slug)
     .maybeSingle();
@@ -258,6 +259,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
             {/* RN-FIN-01b · el plazo de pago, que el PRD no fija y por eso
                 es un dato del espacio y no una constante escondida. */}
             <PaymentTermForm spaceId={space.id} days={space.payment_term_days} />
+            {/* M58 · el IVA por defecto del espacio. RN-FIN-08 congela el tipo
+                dentro de cada cobro ya emitido, asi que cambiarlo aqui solo
+                mira hacia delante; la pantalla lo dice. */}
+            <TaxRateForm spaceId={space.id} percent={space.tax_rate_percent} />
           </>
         ) : (
           <>
@@ -268,8 +273,29 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
               <span className="font-semibold">{es.settings.paymentTermLabel}:</span>{" "}
               {space.payment_term_days}
             </p>
+            <p className="mb-4 text-sm text-text">
+              <span className="font-semibold">{es.settings.taxRateLabel}:</span>{" "}
+              {space.tax_rate_percent} %
+            </p>
           </>
         )}
+
+        {/* M58 · lo que no es una eleccion no se pinta como si lo fuera: ni la
+            moneda ni los metodos de pago son preferencias del espacio, y un
+            desplegable de un solo elemento seria un adorno. Se dicen con su
+            motivo. */}
+        <dl className="mt-4 space-y-2 text-sm">
+          <div>
+            <dt className="font-semibold text-text">{es.settings.currencyLabel}</dt>
+            <dd className="text-text">{es.settings.currencyValue}</dd>
+            <dd className="text-text-secondary">{es.settings.currencyReason}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-text">{es.settings.paymentMethodsLabel}</dt>
+            <dd className="text-text">{es.settings.paymentMethodsValue}</dd>
+            <dd className="text-text-secondary">{es.settings.paymentMethodsReason}</dd>
+          </div>
+        </dl>
 
         <h3 className="mt-4 mb-2 text-sm font-semibold text-text">
           {es.settings.fixedRulesTitle}

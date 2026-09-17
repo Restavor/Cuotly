@@ -2356,6 +2356,23 @@ export const es = {
     timezoneWarning:
       "Afecta al reloj contractual y al de Menú Diario. El reloj de soporte no se mueve: su zona es Europa/Madrid y es un reloj distinto (§132).",
 
+    // M58 · el IVA por defecto del espacio (migración 99).
+    taxRateLabel: "IVA por defecto (%)",
+    taxRateHint:
+      "Es el tipo con el que se emiten las mensualidades y los cobros nuevos. Los cobros ya emitidos NO cambian: cada uno se queda con el tipo que tenía el día que se emitió.",
+    taxRateSubmit: "Guardar el IVA",
+    taxRatePending: "Guardando…",
+    taxRateDone: "IVA guardado. Afecta a los cobros que se emitan a partir de ahora.",
+    taxRateInvalid: "Escribe un porcentaje entre 0 y 100.",
+    // La moneda y los métodos de pago no son una preferencia del espacio:
+    // se dicen, no se eligen (ver `docs/diseno/LAS-CATORCE-PIEZAS.md`).
+    currencyLabel: "Moneda",
+    currencyValue: "Euro (€)",
+    currencyReason: "Cuotly trabaja en euros. No hay otra moneda que elegir.",
+    paymentMethodsLabel: "Métodos de pago que se pueden registrar",
+    paymentMethodsValue: "Transferencia y Bizum",
+    paymentMethodsReason:
+      "Los pagos se registran a mano: no hay pasarela. Esto no es una preferencia del espacio, es lo que Cuotly acepta.",
     paymentTermLabel: "Plazo de pago de las mensualidades (días naturales)",
     paymentTermHint:
       "Días desde que se emite una mensualidad hasta que vence. Pasadas 24 h del vencimiento el restaurante queda pausado por impago, y a las 72 h suspendido (RN-FIN-10 y RN-FIN-11).",

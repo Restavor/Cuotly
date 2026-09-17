@@ -11,6 +11,7 @@ import {
   changeSpaceTimezone,
   saveNotificationPreferences,
   saveSpaceDetails,
+  saveSpaceTaxRate,
   saveSpaceLogo,
   saveSpaceName,
 } from "./actions";
@@ -316,6 +317,47 @@ export function SpaceDetailsForm({
       {state.unchanged ? (
         <p role="status" className="mt-3 text-sm text-text-secondary">
           {es.settings.detailsUnchanged}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+/**
+ * M58 · el IVA por defecto del espacio.
+ *
+ * El texto de ayuda no es decorativo: dice que cambiarlo **no toca los
+ * cobros ya emitidos** (RN-FIN-08 congela el tipo en cada uno). Sin esa
+ * frase, quien lo cambia para corregir un error se queda creyendo que ha
+ * corregido las facturas de atrás, y no.
+ */
+export function TaxRateForm({ spaceId, percent }: { spaceId: string; percent: number }) {
+  const [state, action, pending] = useActionState(saveSpaceTaxRate, INITIAL_SETTINGS);
+
+  return (
+    <form action={action} className="mb-4">
+      <input type="hidden" name="spaceId" value={spaceId} />
+      <Field
+        name="taxRate"
+        label={es.settings.taxRateLabel}
+        type="number"
+        min={0}
+        max={100}
+        step="0.01"
+        defaultValue={String(percent)}
+        hint={es.settings.taxRateHint}
+      />
+      <Button type="submit" variant="primary" disabled={pending}>
+        {pending ? es.settings.taxRatePending : es.settings.taxRateSubmit}
+      </Button>
+      {state.error ? (
+        <p role="alert" className="mt-3 text-sm text-danger">
+          {state.error}
+        </p>
+      ) : null}
+      {state.done ? (
+        <p role="status" className="mt-3 text-sm text-success">
+          {es.settings.taxRateDone}
         </p>
       ) : null}
     </form>
