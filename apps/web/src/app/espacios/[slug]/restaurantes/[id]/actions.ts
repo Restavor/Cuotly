@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { clasificarSolicitud } from "@/services/request-classification";
 import { es } from "@/i18n/es";
 
+import type { ServiceStatusState } from "@/components/establishment/service-status-action-state";
+
 export type RequestFormState = { error: string | null; created: boolean };
 
 /**
@@ -260,4 +262,38 @@ export async function acceptTerms(
 
   revalidatePath("/espacios", "layout");
   return { error: null, accepted: true };
+}
+
+/**
+ * R24 · RN-EST-09 — el restaurante comunica su propia baja.
+ *
+ * `request_service_termination()` comprueba que quien llama pueda escribir
+ * en el restaurante y que siga teniendo servicio. Aquí no se comprueba
+ * nada de eso, y `p_requested_by_client` va en `true` porque lo está
+ * pidiendo el restaurante: la función rechaza un `false` a quien no sea del
+ * equipo, así que el parámetro no es una promesa del navegador.
+ */
+export async function requestOwnTermination(
+  _prev: ServiceStatusState,
+  formData: FormData,
+): Promise<ServiceStatusState> {
+  const establishmentId = String(formData.get("establishmentId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!reason) return { error: es.clientArea.termination.reasonRequired, done: false };
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("request_service_termination", {
+      p_establishment_id: establishmentId,
+      p_reason: reason,
+      p_requested_by_client: true,
+    });
+    if (error) return { error: error.message, done: false };
+
+    revalidatePath("/espacios", "layout");
+    return { error: null, done: true };
+  } catch (fallo) {
+    console.error("[restaurante] la baja no se pudo comunicar", { message: String(fallo) });
+    return { error: es.states.errorDescription, done: false };
+  }
 }

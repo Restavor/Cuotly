@@ -61,6 +61,11 @@ export const MANAGEMENT_BLOCKS: readonly ManagementBlock[] = [
   { key: "users", slug: "usuarios" },
   { key: "files", slug: "archivos" },
   { key: "integrations", slug: "integraciones" },
+  // M84 y M47 · el estado de servicio del restaurante: archivar, reactivar
+  // y registrar la baja que llegó por teléfono. Va el último a propósito:
+  // son las tres acciones que no se hacen todos los días, y ponerlas antes
+  // de los datos o del plan las convertiría en un tropiezo.
+  { key: "serviceStatus", slug: "estado" },
 ];
 
 /**

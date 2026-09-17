@@ -36,6 +36,7 @@ import {
 } from "@/core/establishments";
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { GrantAccessForm } from "./GrantAccessForm";
+import { ServiceStatusForms } from "./ServiceStatusForms";
 import { StatusLegend } from "./StatusLegend";
 import { StatusNotice } from "./StatusNotice";
 import { RevokeAccessButton } from "./RevokeAccessButton";
@@ -2389,6 +2390,34 @@ export function EstablishmentSheet({
             cinco fuentes con lo que §117 manda enseñar y las acciones de
             quien mira; sin "Sincronizar ahora" (RN-INT-03).
           */}
+          {/*
+            M84 y M47 · el estado de servicio. Solo a quien puede gestionar
+            clientes: a los demás, el estado en lectura y el motivo de que
+            no haya formularios. Que no se vean no es el control —
+            `set_establishment_status()` exige `manage_clients` y
+            `request_service_termination()` comprueba lo suyo—: es no
+            ofrecer botones que van a decir que no.
+          */}
+          {block.key === "serviceStatus" ? (
+            <>
+              <Card title={t.serviceStatusTitle}>
+                <p className="mb-3 text-sm text-text-secondary">{t.serviceStatusHint}</p>
+                <StatusLegend current={header.status} />
+              </Card>
+
+              {canManageClients ? (
+                <ServiceStatusForms establishmentId={header.id} status={header.status} />
+              ) : (
+                <Card title={t.serviceStatusTitle}>
+                  <EmptyState
+                    title={t.dataReadOnlyTitle}
+                    description={t.dataReadOnlyReason}
+                  />
+                </Card>
+              )}
+            </>
+          ) : null}
+
           {block.key === "integrations" ? (
             integrations === null ? (
               <Card title={t.integrationsTitle}>

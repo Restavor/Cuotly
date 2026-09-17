@@ -40,6 +40,7 @@ import { resolveShellViewer } from "@/components/shell/viewer";
 import { AcceptRequestButton } from "./AcceptRequestButton";
 import { AcceptTermsButton } from "./AcceptTermsButton";
 import { NewRequestForm } from "./NewRequestForm";
+import { TerminationForm } from "./TerminationForm";
 import { loadEstablishmentTimezone } from "./timezone-load";
 import { loadSubscriptionTerms } from "../../planes/terms-load";
 import {
@@ -390,18 +391,24 @@ export default async function EstablishmentPage({
     PREGUNTA al servidor, `client_can_accept_terms()`, igual que con
     editar los datos). Un Editor las lee y ve por qué no hay botón.
   */
-  const [{ data: suscripciones }, { data: canAcceptTerms }, zonaDelEspacio] = await Promise.all([
-    supabase
-      .from("subscriptions")
-      .select("id, kind")
-      .eq("establishment_id", id)
-      .eq("status", "active")
-      .order("kind", { ascending: true }),
-    supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
-    // CLAUDE.md · la zona del espacio. El restaurante no puede leer
-    // `spaces`, así que sale de `establishment_timezone()` (migración 83).
-    loadEstablishmentTimezone(supabase, id),
-  ]);
+  const [{ data: suscripciones }, { data: canAcceptTerms }, { data: canWrite }, zonaDelEspacio] =
+    await Promise.all([
+      supabase
+        .from("subscriptions")
+        .select("id, kind")
+        .eq("establishment_id", id)
+        .eq("status", "active")
+        .order("kind", { ascending: true }),
+      supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
+      // R24 · quién puede comunicar la baja es quien puede escribir en el
+      // restaurante, y se le PREGUNTA al servidor en vez de deducirlo de un
+      // rol leído aquí. `request_service_termination()` lo vuelve a
+      // comprobar; esto solo elige entre el formulario y el motivo.
+      supabase.rpc("can_write_establishment", { p_establishment_id: id }),
+      // CLAUDE.md · la zona del espacio. El restaurante no puede leer
+      // `spaces`, así que sale de `establishment_timezone()` (migración 83).
+      loadEstablishmentTimezone(supabase, id),
+    ]);
   const condiciones = await Promise.all(
     (suscripciones ?? []).map(async (s) => ({
       subscriptionId: s.id,
@@ -497,6 +504,17 @@ export default async function EstablishmentPage({
           />
         )}
       </Card>
+
+      {/*
+        R24 · RN-EST-09 — comunicar la baja. Va al final del panel, después
+        del plan y de las condiciones, porque es lo último que alguien hace
+        y no lo primero que tiene que ver al entrar.
+      */}
+      <TerminationForm
+        establishmentId={id}
+        status={establishment.status}
+        canWrite={canWrite === true}
+      />
 
       <Card title={es.clientArea.terms.title}>
         <p className="mb-3 text-sm text-text-secondary">{es.clientArea.terms.hint}</p>

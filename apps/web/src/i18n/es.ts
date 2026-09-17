@@ -1823,6 +1823,21 @@ export const es = {
     edited: "Editado",
     proposalTitle: "Lo que propone el equipo",
     proposalCategory: "Tamaño del cambio",
+    // R24 · RN-EST-09, el restaurante comunica la baja del servicio.
+    termination: {
+      title: "Darse de baja del servicio",
+      hint: "Comunicar la baja NO corta el servicio hoy: el restaurante pasa a Finalizando, que quiere decir que no se renueva. Hasta cuándo tienes servicio lo marcan el periodo que ya has pagado y la permanencia que tengas en vigor.",
+      reasonLabel: "Motivo",
+      reasonRequired: "Cuéntanos el motivo antes de comunicar la baja.",
+      submit: "Comunicar la baja",
+      pending: "Comunicando…",
+      done: "Baja comunicada. El equipo la ve y te dirá hasta cuándo tienes servicio.",
+      already: "Ya has comunicado la baja: este restaurante está en Finalizando y no se renueva.",
+      noService: "Este restaurante ya no tiene servicio activo, así que no hay baja que comunicar.",
+      onlyOwner:
+        "La baja la comunica quien puede escribir en este restaurante. Si crees que deberías poder, pídeselo a su propietario.",
+    },
+
     // R12, A14 · cancelar la solicitud mientras no sea un trabajo.
     cancelTitle: "Cancelar esta solicitud",
     cancelHint:
@@ -3472,10 +3487,35 @@ export const es = {
       users: "Usuarios",
       files: "Archivos",
       integrations: "Integraciones",
+      serviceStatus: "Estado del servicio",
     },
     // Maqueta 06 · el enlace del encabezado. Solo aparece cuando hay sitio
     // web guardado: un botón que no lleva a ninguna parte es peor que no
     // tenerlo.
+    // M84 y M47 · el bloque "Estado del servicio".
+    serviceStatusTitle: "Estado del servicio",
+    serviceStatusHint:
+      "Lo que decide una persona: archivar, reactivar y registrar la baja que llegó por teléfono. Lo demás lo mueve el servidor solo —pausado y suspendido por impago, solo lectura al vencer el periodo— y no se toca a mano.",
+    serviceReasonLabel: "Motivo",
+    serviceReasonRequired: "Escribe el motivo: dentro de seis meses alguien va a preguntar por qué.",
+    servicePending: "Guardando…",
+    serviceDone: "Hecho. Queda en el historial del restaurante con su motivo.",
+    serviceArchiveTitle: "Archivar el restaurante",
+    serviceArchiveHint:
+      "Sale de la lista del día a día y deja de darse servicio. No se borra nada: su historial, sus archivos y sus cobros siguen donde están, y se puede reactivar.",
+    serviceArchiveSubmit: "Archivar",
+    serviceReactivateTitle: "Reactivar el restaurante",
+    serviceReactivateHint:
+      "Vuelve a estar activo y a darse servicio. Si tiene deuda vencida, no se reactiva desde aquí: se reactiva al cobrar.",
+    serviceReactivateSubmit: "Reactivar",
+    serviceTerminationTitle: "Baja comunicada por fuera de Cuotly",
+    serviceTerminationHint:
+      "Para la baja que llegó por teléfono o por correo. El servicio NO se corta ahora: pasa a Finalizando, que quiere decir que no se renueva. Cuándo acaba lo marcan el periodo pagado y la permanencia.",
+    serviceTerminationSubmit: "Registrar la baja",
+    serviceTerminationAlready:
+      "Este restaurante ya ha comunicado la baja: está en Finalizando y no se renueva.",
+    serviceTerminationNoService:
+      "Este restaurante ya no tiene servicio activo, así que no hay baja que registrar.",
     websiteLink: "Ver sitio web",
     websiteLinkNewTab: "(se abre en una pestaña nueva)",
     noAccessTitle: "Esta ficha no es tuya",
