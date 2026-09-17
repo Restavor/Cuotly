@@ -1,9 +1,19 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button, Card, Field, Select, TextArea } from "@/components/ui";
 import { MenuDiffView } from "@/components/menu/MenuDiffView";
+import {
+  dishNames,
+  resizeDeclarations,
+  undeclaredCount,
+  EMPTY_MENU_ALLERGENS,
+  type AllergenCourse,
+  type DishAllergens,
+  type MenuAllergens,
+} from "@/core/allergens";
+import { CourseAllergens, DishAllergenFields } from "./AllergenEditor";
 import { MENU_KINDS } from "@/core/daily-menu";
 import { diffMenuVersions } from "@/core/menu-diff";
 import type { MenuState } from "@/core/menu-states";
@@ -46,9 +56,19 @@ export interface VersionContent {
   readonly drink: string | null;
   readonly priceCents: number | null;
   readonly note: string | null;
+  /** §39 · lo declarado, o `null` en una versión anterior a los alérgenos. */
+  readonly allergens: MenuAllergens | null;
 }
 
-/** RN-MEN-03 · cada guardado es una versión nueva. Los campos son los de §58. */
+/**
+ * RN-MEN-03 · cada guardado es una versión nueva. Los campos son los de §58,
+ * y desde §39 cada plato lleva además su declaración de alérgenos.
+ *
+ * Los tres cuadros de platos pasan a ser **controlados**, y no es un
+ * capricho de React: las casillas de alérgenos van una por plato, así que
+ * la pantalla tiene que saber cuántos platos hay escritos AHORA, no cuando
+ * se cargó. Escribir una línea nueva hace aparecer su bloque de casillas.
+ */
 export function VersionEditor({
   menuId,
   current,
@@ -64,6 +84,43 @@ export function VersionEditor({
     current?.priceCents === null || current?.priceCents === undefined
       ? ""
       : `${Math.trunc(current.priceCents / 100)},${String(current.priceCents % 100).padStart(2, "0")}`;
+
+  const [textos, setTextos] = useState({
+    starters: current?.starters.join("\n") ?? "",
+    mains: current?.mains.join("\n") ?? "",
+    desserts: current?.desserts.join("\n") ?? "",
+    drink: current?.drink ?? "",
+  });
+  const [declarado, setDeclarado] = useState<MenuAllergens>(
+    current?.allergens ?? EMPTY_MENU_ALLERGENS,
+  );
+
+  const platos = {
+    starters: dishNames(textos.starters),
+    mains: dishNames(textos.mains),
+    desserts: dishNames(textos.desserts),
+  };
+
+  // Las declaraciones siguen a los platos por posición mientras se escribe.
+  const ajustado: MenuAllergens = {
+    starters: resizeDeclarations(declarado.starters, platos.starters.length),
+    mains: resizeDeclarations(declarado.mains, platos.mains.length),
+    desserts: resizeDeclarations(declarado.desserts, platos.desserts.length),
+    drink: textos.drink.trim() === "" ? null : declarado.drink,
+  };
+
+  const sinDeclarar = undeclaredCount(
+    { ...platos, drink: textos.drink.trim() === "" ? null : textos.drink },
+    ajustado,
+  );
+
+  const cambiarCurso = (curso: AllergenCourse, indice: number, valor: DishAllergens | null) => {
+    setDeclarado((previo) => {
+      const lista = [...resizeDeclarations(previo[curso], platos[curso].length)];
+      lista[indice] = valor;
+      return { ...previo, [curso]: lista };
+    });
+  };
 
   return (
     <Card title={t.editorTitle(current?.version ?? null)}>
@@ -82,10 +139,85 @@ export function VersionEditor({
             name="expectedVersion"
             value={state.conflict?.version ?? current?.version ?? ""}
           />
-          <TextArea label={t.startersLabel} name="starters" rows={3} hint={t.linesHint} defaultValue={current?.starters.join("\n") ?? ""} />
-          <TextArea label={t.mainsLabel} name="mains" rows={3} hint={t.linesHint} defaultValue={current?.mains.join("\n") ?? ""} />
-          <TextArea label={t.dessertsLabel} name="desserts" rows={2} hint={t.linesHint} defaultValue={current?.desserts.join("\n") ?? ""} />
-          <Field label={t.drinkLabel} name="drink" defaultValue={current?.drink ?? ""} />
+          <TextArea
+            label={t.startersLabel}
+            name="starters"
+            rows={3}
+            hint={t.linesHint}
+            value={textos.starters}
+            onChange={(e) => setTextos({ ...textos, starters: e.target.value })}
+          />
+          <CourseAllergens
+            course="starters"
+            dishes={platos.starters}
+            declared={ajustado.starters}
+            onChange={cambiarCurso}
+          />
+
+          <TextArea
+            label={t.mainsLabel}
+            name="mains"
+            rows={3}
+            hint={t.linesHint}
+            value={textos.mains}
+            onChange={(e) => setTextos({ ...textos, mains: e.target.value })}
+          />
+          <CourseAllergens
+            course="mains"
+            dishes={platos.mains}
+            declared={ajustado.mains}
+            onChange={cambiarCurso}
+          />
+
+          <TextArea
+            label={t.dessertsLabel}
+            name="desserts"
+            rows={2}
+            hint={t.linesHint}
+            value={textos.desserts}
+            onChange={(e) => setTextos({ ...textos, desserts: e.target.value })}
+          />
+          <CourseAllergens
+            course="desserts"
+            dishes={platos.desserts}
+            declared={ajustado.desserts}
+            onChange={cambiarCurso}
+          />
+
+          <Field
+            label={t.drinkLabel}
+            name="drink"
+            value={textos.drink}
+            onChange={(e) => setTextos({ ...textos, drink: e.target.value })}
+          />
+          {textos.drink.trim() === "" ? null : (
+            <DishAllergenFields
+              dishName={textos.drink.trim()}
+              value={ajustado.drink}
+              onChange={(valor) => setDeclarado((previo) => ({ ...previo, drink: valor }))}
+            />
+          )}
+
+          {/*
+            §39 · la declaración viaja en el formulario como un solo campo.
+            El servidor la vuelve a validar entera —que cuadre con los
+            platos y que los códigos sean de los catorce— y rechaza la
+            versión si no (RN-ALE-09).
+          */}
+          <input type="hidden" name="allergens" value={JSON.stringify(ajustado)} />
+
+          {/*
+            RN-ALE-05 · se avisa y no se bloquea. Quien responde de esta
+            información es el restaurante, y pararle el menú del día por una
+            casilla sin marcar es un daño cierto por un riesgo que Cuotly no
+            está en condiciones de juzgar.
+          */}
+          {sinDeclarar > 0 ? (
+            <p className="rounded-[10px] bg-soft-surface p-3 text-sm text-text">
+              {es.allergens.undeclaredWarning(sinDeclarar)}
+            </p>
+          ) : null}
+          <p className="text-sm text-text-secondary">{es.allergens.whoseResponsibility}</p>
           <Field label={t.priceLabel} name="price" inputMode="decimal" hint={t.priceHint} defaultValue={precio} />
           <Field label={t.noteLabel} name="note" defaultValue={current?.note ?? ""} />
 

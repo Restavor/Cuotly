@@ -63,6 +63,40 @@ export function MenuDiffView({ diff }: { diff: MenuDiff }) {
           {t.note(texto(diff.note.before), texto(diff.note.after))}
         </p>
       ) : null}
+
+      {/* RN-ALE-07 · lo que cambió en la declaración de alérgenos, por el
+          NOMBRE del plato. "En Merluza se ha quitado leche" es lo que
+          alguien querrá rastrear; "posición 1 de segundos" no lo es. */}
+      {diff.allergens.length === 0 ? null : (
+        <div>
+          <p className="font-medium text-text">{es.allergens.title}</p>
+          {diff.allergens.map((cambio, i) => (
+            <p key={`${cambio.course}-${i}`} className="text-text-secondary">
+              <span className="text-text">
+                {cambio.dishAfter ?? cambio.dishBefore ?? t.courses.starters}
+              </span>
+              {cambio.dishBefore !== null &&
+              cambio.dishAfter !== null &&
+              cambio.dishBefore !== cambio.dishAfter
+                ? ` (${t.dishRenamed(cambio.dishBefore)})`
+                : ""}
+              {": "}
+              {cambio.declarationChanged === "declared"
+                ? t.allergensDeclared
+                : cambio.declarationChanged === "undeclared"
+                  ? t.allergensUndeclared
+                  : ""}
+              {cambio.removed.length > 0
+                ? ` ${t.allergensRemoved(cambio.removed.map((a) => es.allergens.names[a]).join(", "))}`
+                : ""}
+              {cambio.added.length > 0
+                ? ` ${t.allergensAdded(cambio.added.map((a) => es.allergens.names[a]).join(", "))}`
+                : ""}
+              {cambio.noteChanged ? ` ${t.allergenNoteChanged}` : ""}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

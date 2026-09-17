@@ -4955,11 +4955,35 @@ RN-BCK, RN-CAN y RN-REC— y la migración 100 las hace servidor.
   los demás.
 - **Verde**: 51 suites sobre 100 migraciones, typecheck, lint, 1392 tests y la compilación de Next.
 
+#### Hecho · Los alérgenos del menú (decisión 45, PRD §39, migración 101, suite 52)
+La última de las catorce, y la única que tocaba materia legal. Construir la pantalla **no es
+redactar nada**: lo que se guarda lo escribe el restaurante, y el aviso legal que la acompañe sigue
+en el paso 4, sin redactar, hasta que lo escriba el profesional que `CLAUDE.md` exige.
+
+- **Plato a plato** (RN-ALE-01), que es lo que pide el Reglamento UE 1169/2011. Se eligió sabiendo
+  el precio: un plato era una línea de texto suelta y ahora tiene estructura.
+- **Los catorce con casillas, más una nota libre** (RN-ALE-02, RN-ALE-03). La lista vive una vez en
+  `src/core/allergens.ts`, el servidor la repite para poder validar sin preguntarle al navegador, y
+  `listas-compartidas.test.ts` compara las dos —incluido el orden, que es el del reglamento y no el
+  alfabético—.
+- **No bloquea la publicación** (RN-ALE-05): se avisa de los platos sin declarar y el menú sale.
+- **"Sin alérgenos" y "sin declarar" no son lo mismo** (RN-ALE-06), y ninguna pantalla los confunde.
+  Declarar que un plato no lleva ninguno de los catorce es un acto, con su botón; un plato del que
+  nadie ha dicho nada es un hueco.
+- **La declaración va atada a la posición** (RN-ALE-09), que se puede porque una versión de menú es
+  inmutable. De ahí sale lo que la pantalla enseña siempre: el nombre del plato al lado de su
+  declaración, para que quien reordene las líneas vea que la declaración no se ha movido con ellas.
+- **Lo que NO cambia**: la plantilla que se publica (el PNG y el PDF). La maqueta pide los alérgenos
+  en el editor, y cómo se imprimen catorce iconos en las tres disposiciones es una decisión de
+  diseño que nadie ha tomado.
+- **Un fallo real que destapó**: la columna nueva de `menu_versions` nacía sin privilegio de
+  columna, así que la declaración se guardaba y no la leía nadie. El error sonaba a problema de la
+  tabla entera.
+- **Verde**: 52 suites sobre 101 migraciones, typecheck, lint, 1426 tests y la compilación de Next.
+
 #### Lo que queda del paso 2
-- **Los alérgenos del editor del menú (R14) siguen sin decidir**, y van con el paso 4: es la única
-  de las catorce que toca materia legal.
 - La **reorganización de la navegación** que el diseño pide: cinco pestañas en la ficha del
-  restaurante y el panel del restaurante como contexto propio.
+  restaurante y el panel del restaurante como contexto propio. Es lo único que queda.
 
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional

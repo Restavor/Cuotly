@@ -824,6 +824,26 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
      restauración automática sería la única operación de Cuotly capaz de romper esa promesa. La
      pantalla lo dice con esas palabras en vez de ofrecer un botón que promete más de lo que hace.
 
+45. **Los alérgenos del editor de menú** (17/09/2026). La última de las catorce piezas, y la única
+   que toca materia legal. Se decidió con el coste de cada respuesta escrito delante.
+   - **Se declaran plato a plato**, que es lo que pide el Reglamento UE 1169/2011: la información
+     va referida a cada plato, no al menú. Se eligió sabiendo el precio: hasta ahora un plato era
+     una línea de texto suelta dentro de una lista de textos, y esto le da estructura. Toca el
+     editor, la comparación de versiones y la manera de guardar una versión.
+   - **Los catorce del reglamento, con casillas, más una nota libre por plato.** Las casillas son
+     una lista cerrada: se pueden pintar con icono, buscar y contar. La nota existe para lo que las
+     casillas no saben decir —"puede contener trazas", "consultar al personal"—, que es información
+     real y que sin ella acabaría metida dentro del nombre del plato.
+   - **No bloquea la publicación.** Se avisa de los platos sin declarar y el menú publicado dice
+     cuáles no la llevan, pero el menú sale. El motivo, dicho al preguntarlo: quien responde de esa
+     información es el restaurante, y pararle el menú del día por una casilla sin marcar es un daño
+     cierto por un riesgo que Cuotly no está en condiciones de juzgar.
+
+   **Lo que sigue siendo del paso 4:** el **aviso legal** que acompaña a la declaración. Lo que la
+   pantalla dice hoy —de quién es la información y que Cuotly no la comprueba— es un hecho sobre
+   cómo funciona el producto, no un texto legal; el texto legal lo escribe el profesional que
+   CLAUDE.md exige, y hasta entonces no se redacta ninguno.
+
 ---
 
 ### Pendiente de completar

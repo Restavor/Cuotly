@@ -424,6 +424,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/las_cuatro_del_grupo_c.sql
 
+      - name: "Paso 2 — Verificar los alérgenos del menú: la lista cerrada de los catorce, que no declarar no impide publicar y que «sin declarar» no es «sin alérgenos» (§39, RN-ALE)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/alergenos_del_menu.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

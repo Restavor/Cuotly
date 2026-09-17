@@ -3570,6 +3570,7 @@ export type Database = {
       menu_versions: {
         Row: {
           after_cutoff: boolean
+          allergens: Json | null
           created_at: string
           created_by: string
           desserts: string[]
@@ -3585,6 +3586,7 @@ export type Database = {
         }
         Insert: {
           after_cutoff?: boolean
+          allergens?: Json | null
           created_at?: string
           created_by: string
           desserts?: string[]
@@ -3600,6 +3602,7 @@ export type Database = {
         }
         Update: {
           after_cutoff?: boolean
+          allergens?: Json | null
           created_at?: string
           created_by?: string
           desserts?: string[]
@@ -7825,6 +7828,7 @@ export type Database = {
           unread_count: number | null
         }[]
       }
+      allergen_codes: { Args: Record<string, never>; Returns: string[] }
       set_space_tax_rate: {
         Args: { p_percent: number; p_space_id: string }
         Returns: undefined
@@ -9903,6 +9907,8 @@ export type Database = {
       run_scheduled_job: { Args: { p_job_id: string }; Returns: number }
       save_menu_version: {
         Args: {
+          /** §39 · lo declarado plato a plato. Opcional: no declarar no impide guardar. */
+          p_allergens?: unknown
           p_desserts: string[]
           p_drink?: string
           /** A17 · contra qué versión se empezó a escribir. Sin él, como siempre. */

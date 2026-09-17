@@ -25,6 +25,13 @@
  *     Lo que se ENSEÑA es el texto tal cual se escribió.
  */
 
+import {
+  dishAllergenState,
+  type Allergen,
+  type DishAllergens,
+  type MenuAllergens,
+} from "./allergens";
+
 /** Lo que una versión de menú tiene, en lo que a comparar importa. */
 export interface MenuVersionContent {
   readonly starters: readonly string[];
@@ -33,6 +40,8 @@ export interface MenuVersionContent {
   readonly drink: string | null;
   readonly priceCents: number | null;
   readonly note: string | null;
+  /** §39 · lo declarado, o `null` en una versión anterior a los alérgenos. */
+  readonly allergens?: MenuAllergens | null;
 }
 
 /** Las tres listas de platos. El orden es el que se lee en el menú. */
@@ -52,13 +61,101 @@ export interface FieldDiff<T> {
   readonly after: T;
 }
 
+/**
+ * RN-ALE-07 · un alérgeno que cambia entre dos versiones.
+ *
+ * Se dice con el NOMBRE del plato y no con su posición: "en Merluza se ha
+ * quitado leche" es lo que alguien quiere poder rastrear después, y
+ * "posición 1 de segundos" no lo es. Cuando el plato cambió de nombre a la
+ * vez, se dan los dos.
+ */
+export interface DishAllergenDiff {
+  readonly course: MenuCourse | "drink";
+  readonly dishBefore: string | null;
+  readonly dishAfter: string | null;
+  readonly added: readonly Allergen[];
+  readonly removed: readonly Allergen[];
+  readonly noteChanged: boolean;
+  /** Pasó de no tener declaración a tenerla, o al revés (RN-ALE-06). */
+  readonly declarationChanged: "declared" | "undeclared" | null;
+}
+
 export interface MenuDiff {
   readonly courses: readonly CourseDiff[];
+  readonly allergens: readonly DishAllergenDiff[];
   readonly drink: FieldDiff<string | null> | null;
   readonly price: FieldDiff<number | null> | null;
   readonly note: FieldDiff<string | null> | null;
   /** `true` cuando las dos versiones dicen lo mismo. */
   readonly identical: boolean;
+}
+
+/**
+ * RN-ALE-07 · qué cambió en la declaración de alérgenos, plato a plato.
+ *
+ * Se compara **por posición**, que es como está guardada (RN-ALE-09), y se
+ * cuenta **por nombre**, que es como se lee. Un menú sin declaración en
+ * ninguna de las dos versiones no aporta nada; uno que la gana o la pierde
+ * entera aporta un cambio por plato, que es exactamente lo que pasó.
+ */
+function diffAllergens(
+  antes: MenuVersionContent,
+  despues: MenuVersionContent,
+): readonly DishAllergenDiff[] {
+  const a = antes.allergens ?? null;
+  const b = despues.allergens ?? null;
+  if (a === null && b === null) return [];
+
+  const cambios: DishAllergenDiff[] = [];
+
+  const comparar = (
+    course: MenuCourse | "drink",
+    dishBefore: string | null,
+    dishAfter: string | null,
+    dAntes: DishAllergens | null,
+    dDespues: DishAllergens | null,
+  ) => {
+    const estadoAntes = dishAllergenState(dAntes);
+    const estadoDespues = dishAllergenState(dDespues);
+
+    const listaAntes = new Set(dAntes?.allergens ?? []);
+    const listaDespues = new Set(dDespues?.allergens ?? []);
+    const added = [...listaDespues].filter((x) => !listaAntes.has(x));
+    const removed = [...listaAntes].filter((x) => !listaDespues.has(x));
+    const noteChanged = (dAntes?.note ?? "") !== (dDespues?.note ?? "");
+
+    const declarationChanged =
+      estadoAntes.kind === "undeclared" && estadoDespues.kind !== "undeclared"
+        ? ("declared" as const)
+        : estadoAntes.kind !== "undeclared" && estadoDespues.kind === "undeclared"
+          ? ("undeclared" as const)
+          : null;
+
+    if (added.length === 0 && removed.length === 0 && !noteChanged && declarationChanged === null) {
+      return;
+    }
+
+    cambios.push({ course, dishBefore, dishAfter, added, removed, noteChanged, declarationChanged });
+  };
+
+  for (const course of MENU_COURSES) {
+    const platosAntes = antes[course];
+    const platosDespues = despues[course];
+    const total = Math.max(platosAntes.length, platosDespues.length);
+    for (let i = 0; i < total; i += 1) {
+      comparar(
+        course,
+        platosAntes[i] ?? null,
+        platosDespues[i] ?? null,
+        a?.[course][i] ?? null,
+        b?.[course][i] ?? null,
+      );
+    }
+  }
+
+  comparar("drink", antes.drink, despues.drink, a?.drink ?? null, b?.drink ?? null);
+
+  return cambios;
 }
 
 /** La clave con la que se compara: sin espacios de sobra y sin mayúsculas. */
@@ -117,13 +214,16 @@ export function diffMenuVersions(
     ? null
     : { before: antes.note, after: despues.note };
 
+  const allergens = diffAllergens(antes, despues);
+
   const identical =
     drink === null &&
     price === null &&
     note === null &&
+    allergens.length === 0 &&
     courses.every((c) => c.added.length === 0 && c.removed.length === 0 && !c.reordered);
 
-  return { courses, drink, price, note, identical };
+  return { courses, allergens, drink, price, note, identical };
 }
 
 /**
@@ -138,7 +238,16 @@ export function countMenuChanges(diff: MenuDiff): number {
     (total, c) => total + c.added.length + c.removed.length + (c.reordered ? 1 : 0),
     0,
   );
-  return enPlatos + (diff.drink ? 1 : 0) + (diff.price ? 1 : 0) + (diff.note ? 1 : 0);
+  // Un plato con la declaración cambiada cuenta como UNO, aunque le hayan
+  // movido tres casillas: es un solo hecho que contar, igual que el
+  // reordenamiento.
+  return (
+    enPlatos +
+    diff.allergens.length +
+    (diff.drink ? 1 : 0) +
+    (diff.price ? 1 : 0) +
+    (diff.note ? 1 : 0)
+  );
 }
 
 /**

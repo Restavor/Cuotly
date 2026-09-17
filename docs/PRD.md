@@ -2308,3 +2308,59 @@ Lo que este apartado **no** trae, dicho en claro: **no** hay restauración autom
 (RN-BCK-04), **no** hay transferencia sin que el destino la acepte (RN-TRA-02), **no** viaja ninguna
 deuda entre espacios (RN-TRA-04), **no** entra ningún cliente en un canal (RN-CAN-02) y **no** se
 inventa ningún plazo de cobro que no estuviera ya escrito (RN-REC-01).
+
+## 39. Alérgenos en el menú — después del Hito 22 (RN-ALE)
+
+La última de las catorce piezas sueltas del diseño (vista R14), y la única que toca materia legal:
+la información de alérgenos de una carta es una obligación del restaurante, y Cuotly publica lo que
+el restaurante declara. Se decidió el 17/09/2026 (**decisión 45**) con el coste de cada respuesta
+escrito delante.
+
+Construir esta pantalla **no es redactar nada legal**: lo que se guarda lo escribe el restaurante y
+lo que la pantalla dice sobre ello —de quién es la información y que Cuotly no la comprueba— es un
+hecho sobre cómo funciona el producto. El **aviso legal** que acompañe a la declaración sigue en el
+paso 4, y hasta que lo escriba el profesional que `CLAUDE.md` exige, no se redacta ninguno.
+
+- **RN-ALE-01**: los alérgenos se declaran **plato a plato**, no para el menú entero. Es lo que pide
+  el Reglamento UE 1169/2011: la información va referida a cada plato.
+- **RN-ALE-02**: la lista es la de los **catorce** del reglamento y es **cerrada**: cereales con
+  gluten, crustáceos, huevos, pescado, cacahuetes, soja, leche, frutos de cáscara, apio, mostaza,
+  granos de sésamo, dióxido de azufre y sulfitos, altramuces y moluscos. No se añade ni se quita
+  ninguno desde la aplicación, y el servidor rechaza cualquier código que no sea uno de los catorce.
+  La lista vive **una sola vez** —en `src/core/allergens.ts`— y el servidor la repite; un test
+  compara las dos y se pone rojo si discrepan, como ya hace con las demás listas compartidas.
+- **RN-ALE-03**: además de las casillas, cada plato puede llevar una **nota libre** para lo que las
+  casillas no saben decir: "puede contener trazas", "consultar al personal". Sin ella, esa
+  información acabaría metida dentro del nombre del plato, que es donde nadie la busca.
+- **RN-ALE-04**: **la declaración es del restaurante.** Cuotly la guarda y la publica, y no la
+  comprueba ni la corrige. La pantalla donde se declara lo dice, y el menú que se lee también.
+- **RN-ALE-05**: **no bloquea la publicación** (decisión 45). Se avisa de los platos sin declarar, y
+  el menú publicado dice cuáles no la llevan; pero el menú sale. Quien responde de esa información
+  es el restaurante, y pararle el menú del día por una casilla sin marcar es un daño cierto por un
+  riesgo que Cuotly no está en condiciones de juzgar.
+- **RN-ALE-06**: **"sin alérgenos" y "sin declarar" NO son lo mismo**, y ninguna pantalla los
+  confunde. Un plato del que nadie ha dicho nada no es un plato del que se ha dicho que no lleva
+  ninguno de los catorce: lo segundo es un acto de alguien y lo primero es un hueco. La diferencia
+  se guarda —un plato declarado existe en el dato aunque su lista esté vacía— y se enseña distinta.
+- **RN-ALE-07**: la declaración **viaja con la versión** del menú, como el resto del contenido.
+  Cambiar un alérgeno es una versión nueva (RN-MEN-03) y la comparación de versiones (R18) lo
+  enseña: "en el segundo plato se ha quitado «leche»" es exactamente el cambio que alguien querrá
+  poder rastrear después.
+- **RN-ALE-08**: el resumen del menú entero —"este menú contiene gluten, leche y sulfitos"— **se
+  deriva** de los platos, no se escribe. Escribirlo aparte sería un segundo sitio donde decir lo
+  mismo, y dos sitios acaban diciendo cosas distintas.
+- **RN-ALE-09**: la declaración de un plato va **atada a su posición dentro de su categoría** en esa
+  versión. Se puede hacer así porque una versión de menú es **inmutable**: se escribe entera de una
+  vez y no se edita nunca (RN-MEN-03), así que las posiciones no pueden moverse por debajo. El
+  servidor comprueba que llegan tantas declaraciones como platos y rechaza la versión si no cuadran,
+  en vez de guardar una correspondencia torcida que nadie notaría hasta que alguien leyera el menú.
+
+Lo que este apartado **no** trae, dicho en claro:
+
+- **No cambia la plantilla que se publica** (el PNG y el PDF de §59). La maqueta pide los alérgenos
+  **en el editor**, y cómo se imprimen catorce iconos en las tres disposiciones de la plantilla es
+  una decisión de diseño que nadie ha tomado. Se declara, se lee en Cuotly y se compara entre
+  versiones; lo que sale dibujado no cambia hasta que se decida.
+- **No los declara nadie por el restaurante**, ni el equipo de mantenimiento ni una lista de platos
+  conocidos. Un plato que se llama igual que otro no tiene por qué llevar lo mismo.
+- **No redacta ningún aviso legal** (paso 4).

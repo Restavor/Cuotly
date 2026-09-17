@@ -75,6 +75,18 @@ export async function saveMenuVersion(
   // llevaba el menú sin que la primera se enterara.
   const esperada = Number(formData.get("expectedVersion") ?? "");
 
+  // La declaración llega como texto desde un campo oculto. Si viniera rota
+  // se manda `undefined` —que es "sin declarar", válido por RN-ALE-05— en
+  // vez de reventar: lo que no puede pasar es que un fallo de la pantalla
+  // impida guardar el menú del día.
+  let declaracion: unknown;
+  try {
+    const crudo = String(formData.get("allergens") ?? "").trim();
+    declaracion = crudo === "" ? undefined : JSON.parse(crudo);
+  } catch {
+    declaracion = undefined;
+  }
+
   const supabase = await createClient();
   const { data: versionId, error } = await supabase.rpc("save_menu_version", {
     p_menu_id: menuId,
@@ -85,6 +97,12 @@ export async function saveMenuVersion(
     p_price_cents: priceCents ?? undefined,
     p_note: String(formData.get("note") ?? "").trim() || undefined,
     p_expected_version: Number.isFinite(esperada) && esperada > 0 ? esperada : undefined,
+    // §39 · la declaración de alérgenos, plato a plato. Va tal cual: aquí
+    // no se valida nada, y es deliberado. `save_menu_version()` comprueba
+    // que cuadre con los platos y que los códigos sean de los catorce, y
+    // rechaza la versión entera si no (RN-ALE-09). Una validación aquí
+    // sería una segunda regla que un día diría otra cosa.
+    p_allergens: declaracion,
   });
 
   if (error || !versionId) {

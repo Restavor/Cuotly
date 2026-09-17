@@ -3305,6 +3305,59 @@ export const es = {
    * 07, 09 a 12). Los nombres de estado NO están aquí: salen de
    * `naming.states.menu` (CA-21). Los de los tipos, de `naming.menuKinds`.
    */
+  // §39, RN-ALE · los alérgenos del menú (R14). Los nombres son los del
+  // Anexo II del Reglamento UE 1169/2011; los identificadores, en inglés
+  // como todo lo demás, están en `src/core/allergens.ts`.
+  allergens: {
+    names: {
+      gluten: "Cereales con gluten",
+      crustaceans: "Crustáceos",
+      eggs: "Huevos",
+      fish: "Pescado",
+      peanuts: "Cacahuetes",
+      soy: "Soja",
+      milk: "Leche",
+      nuts: "Frutos de cáscara",
+      celery: "Apio",
+      mustard: "Mostaza",
+      sesame: "Granos de sésamo",
+      sulphites: "Dióxido de azufre y sulfitos",
+      lupin: "Altramuces",
+      molluscs: "Moluscos",
+    },
+    courseTitle: {
+      starters: "Alérgenos de los primeros",
+      mains: "Alérgenos de los segundos",
+      desserts: "Alérgenos de los postres",
+    },
+    title: "Alérgenos",
+    // RN-ALE-06 · los tres estados de un plato, dichos distinto porque son
+    // distintos. "Sin declarar" no es "sin alérgenos".
+    undeclared: "Sin declarar",
+    declaredNone: "Ninguno de los catorce",
+    onlyNote: "Solo con una nota",
+    pickLegend: "Marca los que lleva este plato:",
+    noteLabel: "Nota de este plato (opcional)",
+    noteHint: "Para lo que las casillas no dicen: «puede contener trazas de soja», «consultar al personal».",
+    markNone: "Este plato no lleva ninguno de los catorce",
+    clearDeclaration: "Dejarlo sin declarar",
+    undeclaredWarning: (n: number) =>
+      n === 1
+        ? "Queda 1 plato sin declarar. El menú se puede guardar y publicar igual; quien lo lea verá que ese plato no la lleva."
+        : `Quedan ${n} platos sin declarar. El menú se puede guardar y publicar igual; quien lo lea verá cuáles no la llevan.`,
+    whoseResponsibility:
+      "Esta información la declara el restaurante. Cuotly la guarda y la publica tal cual: no la comprueba ni la corrige.",
+    // Lo que se lee en la ficha del menú, no en el editor.
+    summaryTitle: "Alérgenos del menú",
+    summaryLine: (lista: string) => `Este menú contiene: ${lista}.`,
+    summaryNone: "Ningún plato declarado lleva ninguno de los catorce alérgenos del reglamento.",
+    notDeclaredTitle: "Este menú no tiene declaración de alérgenos",
+    notDeclaredReason:
+      "Nadie la ha escrito todavía. No es lo mismo que decir que los platos no llevan ninguno: es que no se sabe.",
+    someUndeclared: (n: number) =>
+      n === 1 ? "1 plato sigue sin declarar." : `${n} platos siguen sin declarar.`,
+  },
+
   // R18 y A17 · comparar dos versiones de un menú. El cálculo vive en
   // `src/core/menu-diff.ts`; esto solo lo dice en palabras.
   menuDiff: {
@@ -3322,6 +3375,14 @@ export const es = {
     price: (antes: string, despues: string) => `Precio: ${antes} → ${despues}.`,
     note: (antes: string, despues: string) => `Nota: ${antes} → ${despues}.`,
     none: "sin poner",
+
+    // RN-ALE-07 · el cambio de alérgenos, dicho por el nombre del plato.
+    dishRenamed: (antes: string) => `antes «${antes}»`,
+    allergensDeclared: "pasa a estar declarado.",
+    allergensUndeclared: "se queda sin declarar.",
+    allergensAdded: (lista: string) => `Se añade: ${lista}.`,
+    allergensRemoved: (lista: string) => `Se quita: ${lista}.`,
+    allergenNoteChanged: "Cambia su nota.",
 
     // R18 · los textos de la pantalla que compara.
     compareTitle: "Comparar versiones",

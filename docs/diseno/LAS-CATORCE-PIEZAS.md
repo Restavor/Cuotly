@@ -75,12 +75,14 @@ encoladas fallando al salir.
 | Edición simultánea del menú | A17 | El número de versión ya distingue una edición de otra. | El aviso de "alguien guardó mientras escribías" y la comparación de las dos. |
 | Solicitar la baja del servicio | R24, M47 | **RN-EST-09** lo dice entero: "el restaurante ha comunicado la baja pero el servicio sigue activo hasta el final del periodo pagado o de la permanencia vigente", y después 24 h en solo lectura (RN-EST-10). El estado `ending` existe. | Que el restaurante pueda comunicarla, y que el equipo pueda registrar la que llegó por fuera. |
 
-## C · Necesitaban una decisión — **cuatro hechas el 17/09/2026, una abierta**
+## C · Necesitaban una decisión — **las cinco hechas el 17/09/2026**
 
 Las cuatro se decidieron en dos tandas: la **43** el qué y la **44** el cómo.
 Están escritas como reglas en el **§38 del PRD** (RN-TRA, RN-BCK, RN-CAN y
 RN-REC), construidas en la **migración 100** y comprobadas por la **suite
-51**. La quinta —los alérgenos— sigue sin decidir y va con el paso 4.
+51**. La quinta, los **alérgenos**, se decidió el mismo día (**decisión 45**), se escribió como
+§39 del PRD y se construyó en la **migración 101** con la **suite 52**. Lo único suyo que sigue en
+el paso 4 es el **aviso legal**, que no se redacta hasta que lo escriba un profesional.
 
 Dos cosas que salieron al construirlas y que no estaban en ninguna decisión:
 
@@ -159,7 +161,15 @@ cuarta cosa, con su propia lista de miembros.
    los que el equipo puede crear?
 3. ¿Se pueden archivar? (Borrar no: CLAUDE.md no lo permite.)
 
-### C4 · Alérgenos en el editor del menú (R14) — **sigue abierta**
+### C4 · Alérgenos en el editor del menú (R14) — **decidido**
+
+> **Plato a plato, los catorce del reglamento con casillas más una nota libre,
+> y sin bloquear la publicación** (decisión 45). Escrito como §39 del PRD
+> (RN-ALE) y construido en la migración 101.
+>
+> Lo suyo que sigue en el paso 4 es el **aviso legal**. Lo que la pantalla
+> dice hoy —de quién es la información y que Cuotly no la comprueba— es un
+> hecho sobre cómo funciona el producto, no un texto legal.
 
 **No aparece en el PRD ni en la especificación maestra.** Es la única de las
 catorce que toca materia legal: la información de alérgenos en la carta es

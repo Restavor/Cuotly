@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { ALLERGENS } from "./allergens";
 import {
   INTEGRATION_PROVIDERS,
   INTEGRATION_STATES,
@@ -802,6 +803,19 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     expect(incidentPriorityFor("error", "low", "agency")).toBe("high");
     expect(incidentPriorityFor("error", "low", "pro")).toBe("standard");
     expect(incidentPriorityFor("suggestion", null, "agency")).toBeNull();
+  });
+
+  it("RN-ALE-02 · los catorce alérgenos son los mismos, y en el mismo orden, en SQL y en `src/core`", () => {
+    // La lista está escrita dos veces a propósito: el servidor tiene que
+    // validar sin preguntarle al navegador. Dos copias de una lista acaban
+    // discrepando, y esta no puede: un alérgeno que el servidor no conozca
+    // haría fallar el guardado de un menú entero, y uno que falte en la
+    // pantalla es información que el restaurante no puede declarar.
+    //
+    // El ORDEN también se compara: es el del Anexo II del reglamento, que
+    // es el que usan las cartas impresas, no el alfabético.
+    const fn = ultimaDefinicion("create or replace function public.allergen_codes", "$$;");
+    expect(entrecomillados(fn)).toEqual([...ALLERGENS]);
   });
 
   it("los cinco componentes y las tres gravedades de la página de estado (RN-SOP-12/13) son los mismos a los dos lados", () => {

@@ -119,9 +119,30 @@ Actualizado el 16/09/2026.
   bootstrap + 100 migraciones**. Después hay que regenerar `database.types.ts` (hoy lleva a mano
   las entradas de la 95, la 97, la 98 y la 100). **La aplica Bosco cuando diga.**
 
+- La **101** (`20260917000101_alergenos_del_menu.sql`, paso 2, §39: los alérgenos del menú). Aditiva
+  salvo en la firma, otra vez: **`save_menu_version()` pasa de ocho argumentos a nueve** con
+  `p_allergens` opcional, y se borra la de ocho, por el mismo motivo que la 99 borró la de siete.
+  Quien llame con siete —la app móvil— se comporta exactamente igual que antes.
+
+  Redefine también `copy_menu()`, y conviene saber por qué: llamaba a la de ocho por posición y se
+  habría quedado sin función. De paso copia la declaración, que es lo que tenía que hacer: un menú
+  copiado con sus platos y **sin** sus alérgenos sería la manera más silenciosa de publicar un menú
+  sin declarar creyendo que la llevaba.
+
+  **Lo que hay que mirar al leer el diff**: la columna nueva de `menu_versions` viene con su
+  `grant select (allergens)`. `menu_versions` tiene los privilegios revocados y las columnas
+  concedidas una a una (CLAUDE.md), así que una columna nueva nace **sin permiso para nadie**: sin
+  esa línea la declaración se guarda bien y no la lee ni quien la escribió, y el error que da
+  —"permission denied for table menu_versions"— suena a un problema de la tabla entera. Pasó al
+  escribirla y lo pilló la suite 52.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local: **las 52 suites en verde sobre
+  bootstrap + 101 migraciones**. Después hay que regenerar `database.types.ts` (hoy lleva a mano las
+  entradas de la 95, la 97, la 98, la 100 y la 101). **La aplica Bosco cuando diga.**
+
 ## Aplicadas
 
-**Están aplicadas 95 de las 100 migraciones del repositorio: todas menos la 95, la 97, la 98, la 99 y la 100.** La 96 se
+**Están aplicadas 95 de las 101 migraciones del repositorio: todas menos la 95, la 97, la 98, la 99, la 100 y la 101.** La 96 se
 aplicó el 16/09/2026 **antes** que la 95, por orden de Bosco ("Aplica la 96"); no depende de ella
 y el orden de aplicación no cambia el resultado, pero conviene saberlo al leer
 `schema_migrations`: la 95 quedará registrada después. Las tres
