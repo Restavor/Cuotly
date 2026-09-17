@@ -8,6 +8,7 @@ import { es } from "@/i18n/es";
 
 import { INITIAL_REQUEST_ACTION } from "./action-state";
 import {
+  cancelRequestForClient,
   retryAnalysis,
   rejectRequest,
   requestMoreInformation,
@@ -192,6 +193,28 @@ export function RejectRequestForm({ requestId }: { requestId: string }) {
         <Error message={state.error} />
         <Button type="submit" variant="secondary" disabled={pending}>
           {pending ? t.rejectPending : t.rejectSubmit}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+/**
+ * R12 · cancelar por el restaurante. Solo aparece mientras la solicitud no
+ * sea un trabajo: a partir de ahí la cancelación es la otra, la que
+ * devuelve el consumo, y vive en la ficha del trabajo.
+ */
+export function CancelRequestForClientForm({ requestId }: { requestId: string }) {
+  const [state, action, pending] = useActionState(cancelRequestForClient, INITIAL_REQUEST_ACTION);
+  return (
+    <Card title={t.cancelTitle}>
+      <form action={action} className="space-y-3">
+        <input type="hidden" name="requestId" value={requestId} />
+        <p className="text-sm text-text-secondary">{t.cancelHint}</p>
+        <TextArea label={t.cancelLabel} name="reason" rows={2} />
+        <Error message={state.error} />
+        <Button type="submit" variant="danger" disabled={pending}>
+          {pending ? t.cancelPending : t.cancelSubmit}
         </Button>
       </form>
     </Card>

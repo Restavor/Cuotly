@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  cancelRequestAvailability,
   consumptionEstimate,
   counterIsRunning,
   requestHeadline,
@@ -319,5 +320,44 @@ describe("maqueta 05 · moverse por la lista desde el detalle", () => {
     const alReves = ["c", "b", "a"];
     expect(listPosition(alReves, "c")?.index).toBe(1);
     expect(listPosition(alReves, "c")?.nextId).toBe("b");
+  });
+});
+
+describe("cancelRequestAvailability · R12, cancelar antes de que sea un trabajo", () => {
+  it("se puede mientras la solicitud está en marcha y no tiene trabajo", () => {
+    for (const state of ["received", "analyzing", "pending_internal_validation", "needs_information", "pending_client_acceptance"]) {
+      expect(cancelRequestAvailability({ state, hasJob: false })).toEqual({ available: true });
+    }
+  });
+
+  it("una solicitud ya cancelada no se vuelve a cancelar", () => {
+    expect(cancelRequestAvailability({ state: "cancelled_before_start", hasJob: false })).toEqual({
+      available: false,
+      reason: "already_cancelled",
+    });
+    expect(cancelRequestAvailability({ state: "cancelled_after_start", hasJob: true })).toEqual({
+      available: false,
+      reason: "already_cancelled",
+    });
+  });
+
+  it("lo que ya terminó no se cancela: se cancela lo que está en marcha", () => {
+    for (const state of ["closed", "rejected", "published"]) {
+      expect(cancelRequestAvailability({ state, hasJob: false })).toEqual({
+        available: false,
+        reason: "finished",
+      });
+    }
+  });
+
+  it("con trabajo ya creado, la cancelación es la otra: la que devuelve el consumo", () => {
+    expect(cancelRequestAvailability({ state: "accepted", hasJob: true })).toEqual({
+      available: false,
+      reason: "has_job",
+    });
+    expect(cancelRequestAvailability({ state: "in_progress", hasJob: true })).toEqual({
+      available: false,
+      reason: "has_job",
+    });
   });
 });

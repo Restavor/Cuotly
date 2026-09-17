@@ -64,3 +64,22 @@ export async function requestCorrection(
   const description = String(formData.get("description") ?? "").trim();
   return run((s) => s.rpc("request_free_correction", { p_job_id: jobId, p_description: description }));
 }
+
+/**
+ * R12 · el restaurante cancela una solicitud que todavía no es un trabajo.
+ *
+ * Aquí no se comprueba en qué estado está ni si ya tiene trabajo:
+ * `cancel_request()` lo hace, y si ya hay trabajo lanza diciendo que esa
+ * es otra operación —la que además devuelve el consumo—. La pantalla usa
+ * `cancelRequestAvailability()` solo para decir el motivo antes de pulsar.
+ */
+export async function cancelRequest(
+  _prev: ClientRequestState,
+  formData: FormData,
+): Promise<ClientRequestState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  return run((s) =>
+    s.rpc("cancel_request", { p_request_id: requestId, p_reason: reason || undefined }),
+  );
+}

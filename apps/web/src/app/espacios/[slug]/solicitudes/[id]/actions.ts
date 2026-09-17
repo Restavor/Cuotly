@@ -125,3 +125,22 @@ export async function rejectRequest(
   const reason = String(formData.get("reason") ?? "").trim();
   return run((s) => s.rpc("reject_request", { p_request_id: requestId, p_reason: reason }));
 }
+
+/**
+ * R12 · el equipo cancela por el restaurante una solicitud que todavía no
+ * es un trabajo. Es la misma función que usa el restaurante
+ * (`cancel_request()`), porque es la misma operación: quien llama por
+ * teléfono para arrepentirse no hace una cosa distinta de quien pulsa el
+ * botón. La que ya tiene trabajo se cancela con la otra, que además
+ * devuelve el consumo.
+ */
+export async function cancelRequestForClient(
+  _prev: RequestActionState,
+  formData: FormData,
+): Promise<RequestActionState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  return run((s) =>
+    s.rpc("cancel_request", { p_request_id: requestId, p_reason: reason || undefined }),
+  );
+}

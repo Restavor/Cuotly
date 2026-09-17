@@ -303,3 +303,41 @@ export function listPosition(
     nextId: posicion < ids.length - 1 ? ids[posicion + 1] : null,
   };
 }
+
+/**
+ * R12 · si el restaurante puede cancelar esta solicitud, y si no, por qué.
+ *
+ * La regla la impone `cancel_request()` en el servidor; esto es la copia
+ * que sirve para **decir el motivo** en la pantalla en vez de ofrecer un
+ * botón que va a fallar (CA-20). No autoriza nada: quien decide es la
+ * función.
+ *
+ * Las tres razones por las que no se puede son distintas y se dicen
+ * distintas, porque lo que hay que hacer en cada caso es otra cosa:
+ *
+ *   · `already_cancelled` — ya está cancelada. No hay nada que pulsar.
+ *   · `finished` — cerrada, rechazada o publicada. Lo que terminó no se
+ *     cancela; si hay que deshacer algo, es una corrección.
+ *   · `has_job` — ya es un trabajo. Cancelarlo devuelve el consumo y mueve
+ *     el trabajo, y eso lo hace `cancel_accepted_request()`, que es del
+ *     equipo: el restaurante lo pide por la conversación.
+ */
+export type CancelRequestBlock = "already_cancelled" | "finished" | "has_job";
+
+export type CancelRequestAvailability =
+  | { readonly available: true }
+  | { readonly available: false; readonly reason: CancelRequestBlock };
+
+export function cancelRequestAvailability(request: {
+  readonly state: string;
+  readonly hasJob: boolean;
+}): CancelRequestAvailability {
+  if (request.state.startsWith("cancelled")) {
+    return { available: false, reason: "already_cancelled" };
+  }
+  if (request.hasJob) return { available: false, reason: "has_job" };
+  if (request.state === "closed" || request.state === "rejected" || request.state === "published") {
+    return { available: false, reason: "finished" };
+  }
+  return { available: true };
+}

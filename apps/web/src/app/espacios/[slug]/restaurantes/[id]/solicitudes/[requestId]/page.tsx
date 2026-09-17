@@ -4,7 +4,7 @@ import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 import { Card, StatusBadge } from "@/components/ui";
 import { isDraft } from "@/core/request-draft";
-import { requestTone } from "@/core/requests";
+import { cancelRequestAvailability, requestTone } from "@/core/requests";
 import { loadEstablishmentTimezone } from "../../timezone-load";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +13,7 @@ import { AcceptRequestButton } from "../../AcceptRequestButton";
 import { ClientQuoteCard } from "../../facturacion/ClientQuoteCard";
 import {
   AcceptRevisedForm,
+  CancelRequestForm,
   DeclineRequestForm,
   ProvideInformationForm,
   RequestCorrectionForm,
@@ -129,6 +130,10 @@ export default async function ClientRequestDetailPage({
   const quotePreparing = quoteRow?.preparing === true;
 
   const state = request.state;
+  // R12 · si se puede cancelar, y si no, cuál de los tres motivos es. Lo
+  // decide `cancel_request()`; esto solo sirve para decirlo antes de
+  // pulsar en vez de ofrecer un botón que va a fallar (CA-20).
+  const cancelacion = cancelRequestAvailability({ state, hasJob: job !== null });
   const correctionAvailable =
     job !== null && job.state === "published" && !job.free_correction_used;
 
@@ -207,6 +212,10 @@ export default async function ClientRequestDetailPage({
           <DeclineRequestForm requestId={requestId} />
         </>
       ) : null}
+
+      {/* R12, A14 · cancelar. No se esconde cuando no se puede: dice por
+          qué, que es lo que deja saber qué hacer en su lugar. */}
+      <CancelRequestForm requestId={requestId} availability={cancelacion} />
 
       {correctionAvailable ? <RequestCorrectionForm jobId={job.job_id} /> : null}
 

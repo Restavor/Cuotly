@@ -1121,6 +1121,13 @@ export const es = {
       infoLabel: "Qué necesitas saber",
       infoSubmit: "Pedir información",
       infoPending: "Pidiendo…",
+      // R12 · cancelar por el restaurante, mientras no sea un trabajo.
+      cancelTitle: "Cancelar por el restaurante",
+      cancelHint:
+        "Para cuando el restaurante llama y se arrepiente. Solo mientras no sea un trabajo: después, la cancelación es la del trabajo, que devuelve lo consumido.",
+      cancelLabel: "Motivo (opcional)",
+      cancelSubmit: "Cancelar la solicitud",
+      cancelPending: "Cancelando…",
       rejectTitle: "Rechazar",
       rejectHint: "Hay que explicar por qué. El restaurante lee este motivo.",
       rejectLabel: "Motivo",
@@ -1816,6 +1823,18 @@ export const es = {
     edited: "Editado",
     proposalTitle: "Lo que propone el equipo",
     proposalCategory: "Tamaño del cambio",
+    // R12, A14 · cancelar la solicitud mientras no sea un trabajo.
+    cancelTitle: "Cancelar esta solicitud",
+    cancelHint:
+      "Mientras el equipo no haya empezado a trabajar en ella, puedes cancelarla. No gasta nada de tu plan.",
+    cancelLabel: "Motivo (opcional)",
+    cancelSubmit: "Cancelar la solicitud",
+    cancelPending: "Cancelando…",
+    cancelAlready: "Esta solicitud ya está cancelada.",
+    cancelFinished:
+      "Esta solicitud ya terminó, así que no hay nada que cancelar. Si hay algo que corregir, dilo por la conversación.",
+    cancelHasJob:
+      "El equipo ya está trabajando en ella. Cancelarla ahora devuelve lo que se haya consumido de tu plan, y eso lo registra el equipo: pídelo por la conversación y te dirán cómo queda.",
     declineTitle: "No seguir adelante",
     declineHint: "Puedes decir por qué, y así el equipo sabe qué revisar.",
     declineLabel: "Motivo (opcional)",

@@ -14,7 +14,7 @@ import {
 import { Card, NoPermissionState, StatusBadge } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import { isQuoteState, quoteTone } from "@/core/quotes";
-import { listPosition, requestHeadline } from "@/core/requests";
+import { cancelRequestAvailability, listPosition, requestHeadline } from "@/core/requests";
 import { loadTeamRequests } from "../list-query";
 import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -24,6 +24,7 @@ import { loadRequestDetail } from "./detail-load";
 import {
   CorrectClassificationForm,
   RetryAnalysisForm,
+  CancelRequestForClientForm,
   RejectRequestForm,
   RequestInformationForm,
   ValidateProposalForm,
@@ -250,6 +251,17 @@ return (
               <RequestInformationForm requestId={id} />
               <RejectRequestForm requestId={id} />
             </>
+          ) : null}
+
+          {/*
+            R12 · cancelar por el restaurante, que llama y se arrepiente.
+            Solo mientras no haya trabajo: a partir de ahí la cancelación es
+            la del trabajo, la que devuelve el consumo, y vive en su ficha.
+            `cancel_request()` lo vuelve a comprobar; esto es no ofrecer un
+            botón que iba a decir que no (CA-20).
+          */}
+          {canManage && cancelRequestAvailability({ state, hasJob: job !== null }).available ? (
+            <CancelRequestForClientForm requestId={id} />
           ) : null}
 
           {/*
