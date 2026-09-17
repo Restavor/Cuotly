@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { loadEstablishmentTimezone } from "../../timezone-load";
 import { ActionPanel, CorrectionForm, DetailsForm, VersionEditor } from "./MenuForms";
+import { VersionComparison } from "./VersionComparison";
 
 /**
  * Un menú, visto por el restaurante (Fase 2, Hito 10; RN-MEN-01 a 07,
@@ -241,6 +242,24 @@ export default async function ClientMenuPage({
           </ul>
         ) : null}
       </Card>
+
+      {/*
+        R18 · comparar dos versiones. No pide nada al servidor: las
+        versiones ya están aquí con su contenido, y comparar es cálculo
+        (`src/core/menu-diff.ts`, con sus tests).
+      */}
+      <VersionComparison
+        versions={(versions ?? []).map((v) => ({
+          id: v.id,
+          version: v.version,
+          starters: v.starters ?? [],
+          mains: v.mains ?? [],
+          desserts: v.desserts ?? [],
+          drink: v.drink,
+          priceCents: v.price_cents,
+          note: v.note,
+        }))}
+      />
 
       <Card title={t.versionsTitle}>
         <ul className="space-y-1 text-sm text-text-secondary">

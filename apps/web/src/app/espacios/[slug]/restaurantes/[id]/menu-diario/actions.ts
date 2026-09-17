@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { linesToItems, parsePriceToCents } from "@/core/daily-menu";
+import { parseSimultaneousEditVersion } from "@/core/menu-diff";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -67,6 +68,13 @@ export async function saveMenuVersion(
     return { error: t.priceInvalid, done: false, notice: null };
   }
 
+  // A17 · contra qué versión se empezó a escribir. Viaja en el formulario
+  // porque es lo que la pantalla tenía delante cuando se pintó; el servidor
+  // lo compara con la que hay ahora y rechaza si no coinciden. Sin esto, dos
+  // personas guardando a la vez producían dos versiones y la segunda se
+  // llevaba el menú sin que la primera se enterara.
+  const esperada = Number(formData.get("expectedVersion") ?? "");
+
   const supabase = await createClient();
   const { data: versionId, error } = await supabase.rpc("save_menu_version", {
     p_menu_id: menuId,
@@ -76,9 +84,43 @@ export async function saveMenuVersion(
     p_drink: String(formData.get("drink") ?? "").trim() || undefined,
     p_price_cents: priceCents ?? undefined,
     p_note: String(formData.get("note") ?? "").trim() || undefined,
+    p_expected_version: Number.isFinite(esperada) && esperada > 0 ? esperada : undefined,
   });
 
   if (error || !versionId) {
+    // A17 · si el rechazo es porque alguien se adelantó, la pantalla puede
+    // enseñar QUÉ cambió en vez de un mensaje seco. Para eso hace falta la
+    // versión nueva, que se creó después de pintarse esta pantalla y el
+    // navegador no tiene. Lo escrito no se pierde: sigue en el formulario.
+    const conflicto = error ? parseSimultaneousEditVersion(error.message) : null;
+    if (conflicto !== null) {
+      const { data: nueva } = await supabase
+        .from("menu_versions")
+        .select("starters, mains, desserts, drink, price_cents, note")
+        .eq("menu_id", menuId)
+        .eq("version", conflicto)
+        .maybeSingle();
+
+      if (nueva) {
+        return {
+          error: error?.message ?? es.states.errorDescription,
+          done: false,
+          notice: null,
+          conflict: {
+            version: conflicto,
+            content: {
+              starters: nueva.starters ?? [],
+              mains: nueva.mains ?? [],
+              desserts: nueva.desserts ?? [],
+              drink: nueva.drink,
+              priceCents: nueva.price_cents,
+              note: nueva.note,
+            },
+          },
+        };
+      }
+    }
+
     return { error: error?.message ?? es.states.errorDescription, done: false, notice: null };
   }
 

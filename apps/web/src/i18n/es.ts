@@ -3244,6 +3244,42 @@ export const es = {
    * 07, 09 a 12). Los nombres de estado NO están aquí: salen de
    * `naming.states.menu` (CA-21). Los de los tipos, de `naming.menuKinds`.
    */
+  // R18 y A17 · comparar dos versiones de un menú. El cálculo vive en
+  // `src/core/menu-diff.ts`; esto solo lo dice en palabras.
+  menuDiff: {
+    identical: "Las dos versiones dicen lo mismo.",
+    changes: (n: number) => (n === 1 ? "Ha cambiado 1 cosa:" : `Han cambiado ${n} cosas:`),
+    courses: {
+      starters: "Primeros",
+      mains: "Segundos",
+      desserts: "Postres",
+    },
+    added: (platos: string) => `Se añade: ${platos}.`,
+    removed: (platos: string) => `Se quita: ${platos}.`,
+    reordered: "Los mismos platos, en otro orden.",
+    drink: (antes: string, despues: string) => `Bebida: ${antes} → ${despues}.`,
+    price: (antes: string, despues: string) => `Precio: ${antes} → ${despues}.`,
+    note: (antes: string, despues: string) => `Nota: ${antes} → ${despues}.`,
+    none: "sin poner",
+
+    // R18 · los textos de la pantalla que compara.
+    compareTitle: "Comparar versiones",
+    compareHint:
+      "Qué cambió de una versión a otra. Empieza por las dos últimas, que es lo que casi siempre se quiere saber.",
+    compareFrom: "De la versión",
+    compareTo: "A la versión",
+    compareOption: (n: number) => `Versión ${n}`,
+    compareSameVersion: "Elige dos versiones distintas.",
+    compareNeedTwo:
+      "Todavía no hay dos versiones que comparar: este menú solo se ha guardado una vez.",
+
+    // A17 · el aviso de que alguien se adelantó, con la MISMA comparación.
+    conflictTitle: "Alguien guardó mientras escribías",
+    conflictHint: (n: number) =>
+      `Mientras tenías esta pantalla abierta, alguien guardó la versión ${n}. Tu texto sigue aquí y no se ha perdido: mira qué cambió y, si quieres que valga lo tuyo, vuelve a guardar.`,
+    conflictChanges: "Esto es lo que cambió respecto de la versión que tenías delante:",
+  },
+
   dailyMenuClient: {
     title: "Menú Diario",
     subtitle: "Prepara tus menús, pide su publicación y descárgalos en PNG o PDF.",

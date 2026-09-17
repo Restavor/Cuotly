@@ -3,7 +3,9 @@
 import { useActionState } from "react";
 
 import { Button, Card, Field, Select, TextArea } from "@/components/ui";
+import { MenuDiffView } from "@/components/menu/MenuDiffView";
 import { MENU_KINDS } from "@/core/daily-menu";
+import { diffMenuVersions } from "@/core/menu-diff";
 import type { MenuState } from "@/core/menu-states";
 import { es } from "@/i18n/es";
 
@@ -69,12 +71,41 @@ export function VersionEditor({
         <p className="text-sm text-text-secondary">{t.editorLocked}</p>
       ) : (
         <form action={formAction} className="space-y-4">
+          {/*
+            A17 · contra qué versión se está escribiendo. Después de un
+            choque pasa a ser la que se adelantó, para que el segundo
+            "Guardar" sea un "sí, quiero que valga lo mío" y no el mismo
+            rechazo otra vez.
+          */}
+          <input
+            type="hidden"
+            name="expectedVersion"
+            value={state.conflict?.version ?? current?.version ?? ""}
+          />
           <TextArea label={t.startersLabel} name="starters" rows={3} hint={t.linesHint} defaultValue={current?.starters.join("\n") ?? ""} />
           <TextArea label={t.mainsLabel} name="mains" rows={3} hint={t.linesHint} defaultValue={current?.mains.join("\n") ?? ""} />
           <TextArea label={t.dessertsLabel} name="desserts" rows={2} hint={t.linesHint} defaultValue={current?.desserts.join("\n") ?? ""} />
           <Field label={t.drinkLabel} name="drink" defaultValue={current?.drink ?? ""} />
           <Field label={t.priceLabel} name="price" inputMode="decimal" hint={t.priceHint} defaultValue={precio} />
           <Field label={t.noteLabel} name="note" defaultValue={current?.note ?? ""} />
+
+          {/*
+            A17 · alguien guardó mientras escribías. No se pierde lo
+            escrito —sigue en los cuadros de arriba— y en vez de un mensaje
+            seco se enseña QUÉ cambió, que es lo que deja decidir si vale
+            la pena volver a guardar. Es la misma comparación de R18.
+          */}
+          {state.conflict && current ? (
+            <div className="rounded-[10px] border border-border bg-soft-surface p-3">
+              <p className="mb-1 font-semibold text-text">{es.menuDiff.conflictTitle}</p>
+              <p className="mb-2 text-sm text-text-secondary">
+                {es.menuDiff.conflictHint(state.conflict.version)}
+              </p>
+              <p className="mb-2 text-sm text-text-secondary">{es.menuDiff.conflictChanges}</p>
+              <MenuDiffView diff={diffMenuVersions(current, state.conflict.content)} />
+            </div>
+          ) : null}
+
           <Feedback state={state} />
           <Button type="submit" disabled={pending}>
             {pending ? t.saveVersionPending : t.saveVersion}
