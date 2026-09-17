@@ -969,6 +969,36 @@ export const es = {
      * equipo, que a diferencia del del cliente (`clientArea.ledger*`)
      * lleva **autor**: es lo que pide la historia.
      */
+    // M82 · los grupos de restaurantes, que existían en la base desde el
+    // principio y se veían solo de refilón: como una columna del listado y
+    // como un desplegable del filtro.
+    groups: {
+      title: "Grupos de restaurantes",
+      subtitle:
+        "Un grupo es la empresa cliente: el mismo dueño con varios locales. Quien tiene acceso al grupo lo tiene a todos sus restaurantes.",
+      count: (n: number) => (n === 1 ? "1 restaurante" : `${n} restaurantes`),
+      accessTitle: "Quién tiene acceso a todo el grupo",
+      accessNone:
+        "Nadie tiene acceso al grupo entero. Puede haber quien lo tenga a un restaurante suelto: eso se ve en la ficha de cada uno.",
+      personUnknown: "Cuenta sin nombre",
+      roles: {
+        global_owner: "Propietario del grupo",
+        editor: "Editor de todos, también de los futuros",
+      },
+      establishmentsTitle: "Restaurantes del grupo",
+      establishmentsNone:
+        "Este grupo no tiene ningún restaurante que puedas ver. Si tienes restaurantes autorizados, son de otros grupos.",
+      emptyTitle: "Todavía no hay ningún grupo",
+      emptyReason:
+        "Un grupo nace con su primer restaurante. Cuando des de alta uno y le pongas un nombre de grupo nuevo, aparecerá aquí.",
+      howTitle: "Cómo se manejan los grupos",
+      howBorn:
+        "No se crea un grupo por su cuenta: nace al dar de alta el primer restaurante que lo tiene, escribiendo su nombre. Un grupo vacío no serviría de nada.",
+      howAccess:
+        "Dar acceso a alguien —a un restaurante, a todos los de hoy, o a todos incluidos los futuros— se hace desde la ficha de cualquier restaurante del grupo, donde están los cuatro casos juntos.",
+      backToList: "Volver a la lista de restaurantes",
+    },
+
     establishments: {
       title: "Restaurantes",
       subtitle: "Los restaurantes de este espacio.",

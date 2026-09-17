@@ -124,13 +124,21 @@ export default async function TeamEstablishmentsPage({
           Que se vea no autoriza nada: `create_establishment` lo comprueba
           el servidor (CLAUDE.md — ocultar un botón no es un control).
         */}
-        <Link
-          href={`${base}/nuevo`}
-          className="flex items-center gap-2 rounded-field bg-primary px-4 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-        >
-          <Icon name="plus" className="h-4 w-4" />
-          {es.teamArea.establishments.createButton}
-        </Link>
+        <div className="flex flex-wrap items-center gap-4">
+          {/* M82 · la vista del grupo entero, que es como se mira un cliente
+              con siete locales. Desde aquí, porque es donde está quien los
+              mira uno a uno y descubre que son del mismo dueño. */}
+          <Link href={`${base}/grupos`} className="text-sm text-cuotly-green underline">
+            {es.teamArea.groups.title}
+          </Link>
+          <Link
+            href={`${base}/nuevo`}
+            className="flex items-center gap-2 rounded-field bg-primary px-4 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+          >
+            <Icon name="plus" className="h-4 w-4" />
+            {es.teamArea.establishments.createButton}
+          </Link>
+        </div>
       </header>
 
       {list.rows.length === 0 ? null : (
