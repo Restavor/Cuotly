@@ -6,9 +6,16 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 16/09/2026.
+Actualizado el 17/09/2026.
 
 ## Pendiente de aplicar
+
+**Ninguna.** Las 101 migraciones del repositorio están aplicadas en el proyecto desde el
+17/09/2026. Lo que sigue es lo que se escribió sobre las seis últimas antes de aplicarlas —qué
+hacía cada una y qué había que mirar al leer el diff—, que se conserva porque es lo que se
+comprobó y no envejece.
+
+## Las seis del 17/09/2026, una a una
 
 - La **95** (`20260916000095_pendientes_de_la_fase_4.sql`, después del Hito 22 · paso 1 del
   orden acordado, decisión 38). Aditiva y sin datos que migrar: una columna nueva con valor por
@@ -20,7 +27,7 @@ Actualizado el 16/09/2026.
   `approve_space_request`, `platform_status_snapshot`, `platform_panel_summary`) más
   `platform_list_spaces`, que se borra y se vuelve a crear porque cambia su forma de retorno. Son 35
   KB: por el MCP irá en **dos partes** (corte entre la sección 2 y la 3, en un límite de sentencia).
-  Después hay que regenerar `database.types.ts` (hoy lleva las entradas de la 95 escritas a mano).
+  `database.types.ts` se regeneró después, contra el proyecto.
   Comprobada en local: las 46 suites en verde sobre bootstrap + 95 migraciones. La 96 ya está
   aplicada y no depende de esta; al aplicarla quedará registrada después de la 96. **La aplica
   Bosco cuando diga.**
@@ -51,9 +58,9 @@ Actualizado el 16/09/2026.
   de verdad; sin ella los correos se quedan encolados con su motivo escrito (no se pierden, pero
   nadie recibe el enlace de alta).
 
-  Después hay que regenerar `database.types.ts` (hoy lleva las entradas de la 97 escritas a mano,
+  `database.types.ts` se regeneró después, contra el proyecto (llevaba a mano las entradas de la 97,
   igual que las de la 95). Comprobada en local: **las 48 suites en verde sobre bootstrap + 97
-  migraciones**. **La aplica Bosco cuando diga.**
+  migraciones**. **Aplicada el 17/09/2026.**
 
 - La **98** (`20260916000098_el_contexto_global.sql`, paso 2 del orden acordado, §36). Aditiva:
   cuatro columnas nuevas en `profiles` (`given_name`, `family_name`, `phone`,
@@ -68,8 +75,8 @@ Actualizado el 16/09/2026.
   las 49 suites, y la 49 (`el_contexto_global.sql`) cubre las tres ramas del dictamen: espacio,
   persona y nada.
 
-  No hay nada que hacer a mano en el panel. Después hay que regenerar `database.types.ts` (hoy
-  lleva a mano las entradas de la 95, la 97 y la 98). **La aplica Bosco cuando diga.**
+  No hay nada que hacer a mano en el panel. `database.types.ts` se regeneró después (llevaba
+  lleva a mano las entradas de la 95, la 97 y la 98). **Aplicada el 17/09/2026.**
 
 - La **99** (`20260917000099_piezas_sueltas_del_diseno.sql`, paso 2, las piezas sueltas del
   diseño). Aditiva salvo en un punto: **cambia la firma de `save_menu_version()`**, que pasa de
@@ -85,7 +92,7 @@ Actualizado el 16/09/2026.
   `set_space_tax_rate`, `cancel_request` y `request_service_termination`.
 
   No hay nada que hacer a mano en el panel. Comprobada en local con las 50 suites.
-  **La aplica Bosco cuando diga.**
+  **Aplicada el 17/09/2026.**
 
 - La **100** (`20260917000100_las_cuatro_del_grupo_c.sql`, paso 2, §38: las cuatro del grupo C).
   Es la más grande de las cuatro pendientes y la que más conviene leer antes de aplicar.
@@ -111,13 +118,22 @@ Actualizado el 16/09/2026.
   `scheduled_jobs.kind` con los dos barridos. Y **crea los cuatro canales de fábrica en todos los
   espacios que ya existen**, con un `select` al final: son cuatro filas por espacio, sin miembros.
 
+  **Al aplicarla quedaron cuatro filas en `schema_migrations` donde el repositorio tiene un
+  archivo**: son 72 KB y el MCP recibe la migración como texto, así que fue en cuatro partes por
+  secciones —`grupo_c_1_transferencia_entre_espacios`, `grupo_c_2_copias_de_seguridad`,
+  `grupo_c_3_canales_internos` y `grupo_c_4_recordatorios_cola_auditoria_y_guardas`—, cada una
+  cerrada en un límite de sentencia. El registro de migraciones del proyecto ya no coincidía con
+  los nombres de los archivos (las versiones las pone el MCP con su propia marca de tiempo), así
+  que esto no estrena el desajuste; el esquema resultante se comprobó pieza a pieza, que es lo que
+  importa.
+
   **La única fila que este producto borra de verdad** está aquí: la copia de seguridad número
   treinta y uno (RN-BCK-03). Se puede porque una copia no es un registro de negocio, es una foto
   de él.
 
   No hay nada que hacer a mano en el panel. Comprobada en local: **las 51 suites en verde sobre
-  bootstrap + 100 migraciones**. Después hay que regenerar `database.types.ts` (hoy lleva a mano
-  las entradas de la 95, la 97, la 98 y la 100). **La aplica Bosco cuando diga.**
+  bootstrap + 100 migraciones**. `database.types.ts` se regeneró después,
+  contra el proyecto. **Aplicada el 17/09/2026.**
 
 - La **101** (`20260917000101_alergenos_del_menu.sql`, paso 2, §39: los alérgenos del menú). Aditiva
   salvo en la firma, otra vez: **`save_menu_version()` pasa de ocho argumentos a nueve** con
@@ -137,12 +153,48 @@ Actualizado el 16/09/2026.
   escribirla y lo pilló la suite 52.
 
   No hay nada que hacer a mano en el panel. Comprobada en local: **las 52 suites en verde sobre
-  bootstrap + 101 migraciones**. Después hay que regenerar `database.types.ts` (hoy lleva a mano las
-  entradas de la 95, la 97, la 98, la 100 y la 101). **La aplica Bosco cuando diga.**
+  bootstrap + 101 migraciones**. `database.types.ts` se regeneró después, contra el
+  proyecto. **Aplicada el 17/09/2026.**
+
+## Cómo se comprobó que las seis se aplicaron bien (17/09/2026)
+
+Después de cada una se hizo una consulta de comprobación —que existan sus tablas, sus funciones,
+sus políticas, sus disparadores y sus privilegios—, pero eso no es lo que de verdad lo garantiza.
+Lo que lo garantiza es la comparación **del esquema entero** contra una base local que tiene los
+101 archivos aplicados tal cual, sin intermediarios (`al4`, PostgreSQL 16 con
+`supabase/tests/bootstrap-postgres-local.sql`). Se compararon, en once familias: columnas con su
+tipo, su `not null` y su valor por defecto; restricciones; índices; políticas de RLS con su `using`
+y su `with check`; si cada tabla tiene RLS; disparadores; firmas de función con su volatilidad y su
+`security definer`; cuerpos de función; comentarios; privilegios de tabla, de columna y de función.
+
+**Resultado: 20 973 piezas, la misma huella (`f8891dfe…`) en los dos lados.**
+
+El motivo de hacerlo es que las migraciones se aplican **pegando el SQL por el MCP** —el proyecto
+no expone una conexión directa de PostgreSQL a esta sesión, solo la clave anónima—, y pegar es
+transcribir. La comparación encontró exactamente eso, y no de estas seis sino arrastrado de
+sesiones anteriores:
+
+- **Cuatro funciones con un literal sin acento**: `'Suscripcion de plan activa no encontrada'` en
+  `plan_change_preview()`, `'... que ya no esta pendiente'` en `set_request_priority_order()` y
+  `'El nombre comercial no puede quedar vacio'` en `create_establishment_with_data()` y en
+  `set_establishment_data()`. Son mensajes que lee una persona. Se arreglaron sin volver a
+  transcribir nada: PostgreSQL devuelve su propia definición con `pg_get_functiondef()`, se
+  corrigen solo esas cadenas y se vuelve a ejecutar, así que es imposible que se cuele otra cosa.
+- **Treinta y dos comentarios** que faltaban o estaban desactualizados, entre ellos los de
+  `is_group_member()`, `is_establishment_member()`, `group_space_id()` y
+  `establishment_space_id()`, que no estaban. Se regeneraron desde el local con `quote_literal()`.
+
+Ninguno de los dos afectaba al comportamiento, pero los dos eran el proyecto contando algo
+distinto de lo que dice el repositorio, que es justo lo que este archivo existe para evitar. La
+huella de arriba es reproducible: la consulta está en el historial de la sesión y se puede volver a
+lanzar contra el proyecto y contra `al4` cuando haga falta.
 
 ## Aplicadas
 
-**Están aplicadas 95 de las 101 migraciones del repositorio: todas menos la 95, la 97, la 98, la 99, la 100 y la 101.** La 96 se
+**Están aplicadas las 101 migraciones del repositorio.** Las seis últimas —la 95, la 97, la 98,
+la 99, la 100 y la 101— se aplicaron el 17/09/2026, una a una y comprobando cada una antes de
+pasar a la siguiente, por orden de Bosco ("Aplica las migraciones de una en una para asegurarnos
+de que se van a aplicar correctamente"). La 96 se
 aplicó el 16/09/2026 **antes** que la 95, por orden de Bosco ("Aplica la 96"); no depende de ella
 y el orden de aplicación no cambia el resultado, pero conviene saberlo al leer
 `schema_migrations`: la 95 quedará registrada después. Las tres

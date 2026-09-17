@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 16/09/2026), con las 94 migraciones del
+// (generate_typescript_types, 17/09/2026), con las 101 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -21,81 +21,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      access_requests: {
-        Row: {
-          account_id: string | null
-          business_name: string
-          comments: string | null
-          contact_name: string
-          created_at: string
-          decided_at: string | null
-          email: string
-          id: string
-          phone: string
-          applicant_reply: string | null
-          status: string
-          status_reason: string | null
-          updated_at: string
-        }
-        Insert: {
-          account_id?: string | null
-          business_name: string
-          comments?: string | null
-          contact_name: string
-          created_at?: string
-          decided_at?: string | null
-          email: string
-          id?: string
-          phone: string
-          applicant_reply?: string | null
-          status?: string
-          status_reason?: string | null
-          updated_at?: string
-        }
-        Update: {
-          account_id?: string | null
-          business_name?: string
-          comments?: string | null
-          contact_name?: string
-          created_at?: string
-          decided_at?: string | null
-          email?: string
-          id?: string
-          phone?: string
-          applicant_reply?: string | null
-          status?: string
-          status_reason?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      access_request_events: {
-        Row: {
-          created_at: string
-          from_status: string | null
-          id: string
-          reason: string | null
-          request_id: string
-          to_status: string
-        }
-        Insert: {
-          created_at?: string
-          from_status?: string | null
-          id?: string
-          reason?: string | null
-          request_id: string
-          to_status: string
-        }
-        Update: {
-          created_at?: string
-          from_status?: string | null
-          id?: string
-          reason?: string | null
-          request_id?: string
-          to_status?: string
-        }
-        Relationships: []
-      }
       absences: {
         Row: {
           created_at: string
@@ -255,6 +180,171 @@ export type Database = {
             columns: ["space_id"]
             isOneToOne: false
             referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      access_request_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          request_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id?: string
+          to_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_request_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "access_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      access_requests: {
+        Row: {
+          account_id: string | null
+          applicant_reply: string | null
+          business_name: string
+          comments: string | null
+          contact_name: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          email: string
+          follow_up_token: string
+          id: string
+          idempotency_key: string | null
+          phone: string
+          status: string
+          status_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          applicant_reply?: string | null
+          business_name: string
+          comments?: string | null
+          contact_name: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email: string
+          follow_up_token?: string
+          id?: string
+          idempotency_key?: string | null
+          phone: string
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          applicant_reply?: string | null
+          business_name?: string
+          comments?: string | null
+          contact_name?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          email?: string
+          follow_up_token?: string
+          id?: string
+          idempotency_key?: string | null
+          phone?: string
+          status?: string
+          status_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_requests_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_requests_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      account_setup_tokens: {
+        Row: {
+          access_request_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          token: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          access_request_id: string
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          access_request_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_setup_tokens_access_request_id_fkey"
+            columns: ["access_request_id"]
+            isOneToOne: false
+            referencedRelation: "access_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_setup_tokens_used_by_fkey"
+            columns: ["used_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -567,6 +657,75 @@ export type Database = {
           {
             foreignKeyName: "blocks_started_by_fkey"
             columns: ["started_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channel_members: {
+        Row: {
+          added_by: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          space_id: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          space_id: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          space_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_members_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_members_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_members_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "channel_members_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -957,138 +1116,6 @@ export type Database = {
           },
         ]
       }
-      channel_members: {
-        Row: {
-          added_by: string | null
-          conversation_id: string
-          created_at: string
-          id: string
-          revoked_at: string | null
-          revoked_by: string | null
-          space_id: string
-          user_id: string
-        }
-        Insert: {
-          added_by?: string | null
-          conversation_id: string
-          created_at?: string
-          id?: string
-          revoked_at?: string | null
-          revoked_by?: string | null
-          space_id: string
-          user_id: string
-        }
-        Update: {
-          added_by?: string | null
-          conversation_id?: string
-          created_at?: string
-          id?: string
-          revoked_at?: string | null
-          revoked_by?: string | null
-          space_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      establishment_backup_downloads: {
-        Row: {
-          backup_id: string
-          downloaded_at: string
-          downloaded_by: string
-          id: string
-          space_id: string
-        }
-        Insert: {
-          backup_id: string
-          downloaded_at?: string
-          downloaded_by: string
-          id?: string
-          space_id: string
-        }
-        Update: {
-          backup_id?: string
-          downloaded_at?: string
-          downloaded_by?: string
-          id?: string
-          space_id?: string
-        }
-        Relationships: []
-      }
-      establishment_backups: {
-        Row: {
-          content: Json
-          created_by: string | null
-          establishment_id: string
-          id: string
-          item_counts: Json
-          size_bytes: number
-          space_id: string
-          taken_at: string
-        }
-        Insert: {
-          content: Json
-          created_by?: string | null
-          establishment_id: string
-          id?: string
-          item_counts?: Json
-          size_bytes: number
-          space_id: string
-          taken_at?: string
-        }
-        Update: {
-          content?: Json
-          created_by?: string | null
-          establishment_id?: string
-          id?: string
-          item_counts?: Json
-          size_bytes?: number
-          space_id?: string
-          taken_at?: string
-        }
-        Relationships: []
-      }
-      establishment_transfers: {
-        Row: {
-          decided_at: string | null
-          decided_by: string | null
-          decision_reason: string | null
-          establishment_id: string
-          from_space_id: string
-          id: string
-          proposed_at: string
-          proposed_by: string
-          reason: string | null
-          state: string
-          to_space_id: string
-        }
-        Insert: {
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_reason?: string | null
-          establishment_id: string
-          from_space_id: string
-          id?: string
-          proposed_at?: string
-          proposed_by: string
-          reason?: string | null
-          state?: string
-          to_space_id: string
-        }
-        Update: {
-          decided_at?: string | null
-          decided_by?: string | null
-          decision_reason?: string | null
-          establishment_id?: string
-          from_space_id?: string
-          id?: string
-          proposed_at?: string
-          proposed_by?: string
-          reason?: string | null
-          state?: string
-          to_space_id?: string
-        }
-        Relationships: []
-      }
       conversations: {
         Row: {
           archived_at: string | null
@@ -1127,6 +1154,13 @@ export type Database = {
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_archived_by_fkey"
+            columns: ["archived_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_establishment_id_fkey"
             columns: ["establishment_id"]
@@ -1577,6 +1611,107 @@ export type Database = {
           },
         ]
       }
+      establishment_backup_downloads: {
+        Row: {
+          backup_id: string
+          downloaded_at: string
+          downloaded_by: string
+          id: string
+          space_id: string
+        }
+        Insert: {
+          backup_id: string
+          downloaded_at?: string
+          downloaded_by: string
+          id?: string
+          space_id: string
+        }
+        Update: {
+          backup_id?: string
+          downloaded_at?: string
+          downloaded_by?: string
+          id?: string
+          space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_backup_downloads_backup_id_fkey"
+            columns: ["backup_id"]
+            isOneToOne: false
+            referencedRelation: "establishment_backups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_backup_downloads_downloaded_by_fkey"
+            columns: ["downloaded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_backup_downloads_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      establishment_backups: {
+        Row: {
+          content: Json
+          created_by: string | null
+          establishment_id: string
+          id: string
+          item_counts: Json
+          size_bytes: number
+          space_id: string
+          taken_at: string
+        }
+        Insert: {
+          content: Json
+          created_by?: string | null
+          establishment_id: string
+          id?: string
+          item_counts?: Json
+          size_bytes: number
+          space_id: string
+          taken_at?: string
+        }
+        Update: {
+          content?: Json
+          created_by?: string | null
+          establishment_id?: string
+          id?: string
+          item_counts?: Json
+          size_bytes?: number
+          space_id?: string
+          taken_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_backups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_backups_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_backups_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       establishment_memberships: {
         Row: {
           created_at: string
@@ -1719,6 +1854,84 @@ export type Database = {
             columns: ["establishment_membership_id"]
             isOneToOne: true
             referencedRelation: "establishment_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      establishment_transfers: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          establishment_id: string
+          from_space_id: string
+          id: string
+          proposed_at: string
+          proposed_by: string
+          reason: string | null
+          state: string
+          to_space_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          establishment_id: string
+          from_space_id: string
+          id?: string
+          proposed_at?: string
+          proposed_by: string
+          reason?: string | null
+          state?: string
+          to_space_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          establishment_id?: string
+          from_space_id?: string
+          id?: string
+          proposed_at?: string
+          proposed_by?: string
+          reason?: string | null
+          state?: string
+          to_space_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "establishment_transfers_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_transfers_establishment_id_fkey"
+            columns: ["establishment_id"]
+            isOneToOne: false
+            referencedRelation: "establishments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_transfers_from_space_id_fkey"
+            columns: ["from_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_transfers_proposed_by_fkey"
+            columns: ["proposed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "establishment_transfers_to_space_id_fkey"
+            columns: ["to_space_id"]
+            isOneToOne: false
+            referencedRelation: "spaces"
             referencedColumns: ["id"]
           },
         ]
@@ -4751,6 +4964,51 @@ export type Database = {
           },
         ]
       }
+      platform_emails: {
+        Row: {
+          attempts: number
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          kind: string
+          last_error: string | null
+          next_attempt_at: string
+          payload: Json
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          to_email: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          to_email: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          kind?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          to_email?: string
+        }
+        Relationships: []
+      }
       platform_holidays: {
         Row: {
           created_at: string
@@ -4922,7 +5180,15 @@ export type Database = {
           push?: boolean
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profile_notification_preferences_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -7551,6 +7817,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_establishment_transfer: {
+        Args: { p_transfer_id: string }
+        Returns: undefined
+      }
       accept_quote: {
         Args: { p_quote_id: string; p_reason?: string }
         Returns: undefined
@@ -7561,9 +7831,30 @@ export type Database = {
         Returns: undefined
       }
       accept_space_invitation: { Args: { p_token: string }; Returns: string }
+      accept_space_invitation_as: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: string
+      }
       accept_subscription_terms: {
         Args: { p_subscription_id: string; p_version_id: string }
         Returns: string
+      }
+      access_request_follow_up: {
+        Args: { p_token: string }
+        Returns: {
+          applicant_reply: string
+          business_name: string
+          can_reply: boolean
+          contact_name: string
+          created_at: string
+          decided_at: string
+          status: string
+          status_reason: string
+        }[]
+      }
+      access_request_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string }
+        Returns: boolean
       }
       account_deletion_blockers: {
         Args: never
@@ -7574,8 +7865,20 @@ export type Database = {
           remedy: string
         }[]
       }
+      account_setup_details: {
+        Args: { p_token: string }
+        Returns: {
+          contact_name: string
+          email: string
+          state: string
+        }[]
+      }
       act_on_opportunity: {
         Args: { p_action: string; p_message: string; p_opportunity_id: string }
+        Returns: string
+      }
+      add_channel_member: {
+        Args: { p_conversation_id: string; p_user_id: string }
         Returns: string
       }
       add_file_version: {
@@ -7611,6 +7914,7 @@ export type Database = {
         Args: { p_date: string; p_name: string }
         Returns: string
       }
+      allergen_codes: { Args: never; Returns: string[] }
       apply_financial_hold_on_jobs: {
         Args: { p_establishment_id: string }
         Returns: number
@@ -7632,215 +7936,12 @@ export type Database = {
         Args: { p_subscription_id: string }
         Returns: boolean
       }
-      approve_job_reassignment: {
-        Args: { p_job_id: string; p_new_worker_id: string; p_reason?: string }
-        Returns: undefined
-      }
-      access_request_follow_up: {
-        Args: { p_token: string }
-        Returns: {
-          applicant_reply: string | null
-          business_name: string
-          can_reply: boolean
-          contact_name: string
-          created_at: string
-          decided_at: string | null
-          status: string
-          status_reason: string | null
-        }[]
-      }
-      access_request_transition_allowed: {
-        Args: { p_actor: string; p_from: string; p_to: string }
-        Returns: boolean
-      }
-      accept_space_invitation_as: {
-        Args: { p_token: string; p_user_id: string }
-        Returns: string
-      }
-      account_setup_details: {
-        Args: { p_token: string }
-        Returns: {
-          contact_name: string | null
-          email: string | null
-          state: string
-        }[]
-      }
       approve_access_request: {
         Args: { p_idempotency_key?: string; p_request_id: string }
         Returns: string
       }
-      consume_account_setup_token: {
-        Args: { p_token: string; p_user_id: string }
-        Returns: string
-      }
-      decide_access_request: {
-        Args: { p_reason?: string; p_request_id: string; p_status: string }
-        Returns: undefined
-      }
-      invitation_signup_details: {
-        Args: { p_token: string }
-        Returns: {
-          email: string | null
-          has_account: boolean
-          space_name: string | null
-          state: string
-        }[]
-      }
-      reply_to_access_request: {
-        Args: { p_reply: string; p_token: string }
-        Returns: undefined
-      }
-      list_my_conversations: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          establishment_id: string | null
-          establishment_name: string | null
-          id: string
-          is_read_only: boolean
-          job_code: string | null
-          job_id: string | null
-          last_message_at: string | null
-          last_message_preview: string | null
-          last_sender_role: string | null
-          request_code: string | null
-          request_id: string | null
-          side: string
-          space_id: string
-          space_name: string | null
-          space_slug: string | null
-          type: string
-          unread_count: number | null
-        }[]
-      }
-      my_client_attention: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          created_at: string
-          due_at: string | null
-          entity_id: string
-          entity_type: string
-          establishment_id: string
-          establishment_name: string
-          kind: string
-          space_id: string
-          space_slug: string | null
-          title: string | null
-        }[]
-      }
-      my_contexts: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          establishment_id: string | null
-          establishment_name: string | null
-          kind: string
-          role: string | null
-          space_id: string
-          space_name: string | null
-          space_slug: string | null
-          space_timezone: string | null
-        }[]
-      }
-      my_notification_preferences: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          email: boolean
-          event_type: string
-          in_app: boolean
-          mandatory: boolean
-          push: boolean
-        }[]
-      }
-      set_my_notification_preference: {
-        Args: {
-          p_email: boolean
-          p_event_type: string
-          p_in_app: boolean
-          p_push?: boolean
-        }
-        Returns: undefined
-      }
-      set_my_profile: {
-        Args: {
-          p_display_timezone?: string
-          p_family_name: string
-          p_given_name: string
-          p_phone?: string
-        }
-        Returns: undefined
-      }
-      cancel_request: {
-        Args: { p_reason?: string; p_request_id: string }
-        Returns: undefined
-      }
-      request_service_termination: {
-        Args: {
-          p_establishment_id: string
-          p_reason?: string
-          p_requested_by_client?: boolean
-        }
-        Returns: undefined
-      }
-      propose_establishment_transfer: {
-        Args: { p_establishment_id: string; p_reason?: string; p_to_space_id: string }
-        Returns: string
-      }
-      withdraw_establishment_transfer: {
-        Args: { p_reason?: string; p_transfer_id: string }
-        Returns: undefined
-      }
-      reject_establishment_transfer: {
-        Args: { p_reason?: string; p_transfer_id: string }
-        Returns: undefined
-      }
-      accept_establishment_transfer: {
-        Args: { p_transfer_id: string }
-        Returns: undefined
-      }
-      space_owner_is_me: { Args: { p_space_id: string }; Returns: boolean }
-      create_establishment_backup: {
-        Args: { p_establishment_id: string }
-        Returns: string
-      }
-      download_establishment_backup: { Args: { p_backup_id: string }; Returns: Json }
-      create_channel: { Args: { p_name: string; p_space_id: string }; Returns: string }
-      add_channel_member: {
-        Args: { p_conversation_id: string; p_user_id: string }
-        Returns: string
-      }
-      remove_channel_member: {
-        Args: { p_conversation_id: string; p_user_id: string }
-        Returns: undefined
-      }
-      archive_channel: {
-        Args: { p_archived?: boolean; p_conversation_id: string }
-        Returns: undefined
-      }
-      is_channel_member: { Args: { p_conversation_id: string }; Returns: boolean }
-      my_channels: {
-        Args: { p_space_id: string }
-        Returns: {
-          archived_at: string | null
-          i_am_member: boolean
-          id: string
-          last_message_at: string | null
-          member_count: number
-          name: string | null
-          unread_count: number | null
-        }[]
-      }
-      allergen_codes: { Args: Record<string, never>; Returns: string[] }
-      set_space_tax_rate: {
-        Args: { p_percent: number; p_space_id: string }
-        Returns: undefined
-      }
-      submit_access_request: {
-        Args: {
-          p_business_name: string
-          p_comments?: string
-          p_contact_name: string
-          p_email: string
-          p_phone: string
-        }
+      approve_job_reassignment: {
+        Args: { p_job_id: string; p_new_worker_id: string; p_reason?: string }
         Returns: undefined
       }
       approve_space_request: {
@@ -7853,6 +7954,10 @@ export type Database = {
           p_reason?: string
           p_task_id: string
         }
+        Returns: undefined
+      }
+      archive_channel: {
+        Args: { p_archived?: boolean; p_conversation_id: string }
         Returns: undefined
       }
       archive_establishment_note: {
@@ -8033,6 +8138,10 @@ export type Database = {
         Args: { p_menu_id: string; p_reason?: string }
         Returns: undefined
       }
+      cancel_request: {
+        Args: { p_reason?: string; p_request_id: string }
+        Returns: undefined
+      }
       cancel_scheduled_plan_change: {
         Args: { p_reason?: string; p_subscription_id: string }
         Returns: boolean
@@ -8098,6 +8207,16 @@ export type Database = {
           space_name: string
           subject: string
           threshold_percent: number
+        }[]
+      }
+      claim_platform_emails: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          email_id: string
+          kind: string
+          payload: Json
+          to_email: string
         }[]
       }
       claim_scheduled_jobs: {
@@ -8194,6 +8313,10 @@ export type Database = {
         Args: { p_space_id: string; p_step: string }
         Returns: boolean
       }
+      consume_account_setup_token: {
+        Args: { p_token: string; p_user_id: string }
+        Returns: string
+      }
       conversation_establishment_id: {
         Args: { p_conversation_id: string }
         Returns: string
@@ -8240,6 +8363,18 @@ export type Database = {
           p_entity_id: string
           p_entity_type: string
         }
+        Returns: string
+      }
+      create_channel: {
+        Args: { p_name: string; p_space_id: string }
+        Returns: string
+      }
+      create_establishment_backup: {
+        Args: { p_establishment_id: string }
+        Returns: string
+      }
+      create_establishment_backup_internal: {
+        Args: { p_created_by?: string; p_establishment_id: string }
         Returns: string
       }
       create_establishment_note: {
@@ -8408,10 +8543,6 @@ export type Database = {
           max_users: number
         }[]
       }
-      cuotly_storage_limit_bytes: {
-        Args: { p_space_id: string }
-        Returns: number
-      }
       cuotly_space_usage: {
         Args: { p_space_id: string }
         Returns: {
@@ -8419,6 +8550,10 @@ export type Database = {
           internal_users: number
           storage_bytes: number
         }[]
+      }
+      cuotly_storage_limit_bytes: {
+        Args: { p_space_id: string }
+        Returns: number
       }
       current_space_id: { Args: never; Returns: string }
       current_supervisors: {
@@ -8430,6 +8565,10 @@ export type Database = {
       }
       decide_absence: {
         Args: { p_absence_id: string; p_approve: boolean; p_note?: string }
+        Returns: undefined
+      }
+      decide_access_request: {
+        Args: { p_reason?: string; p_request_id: string; p_status: string }
         Returns: undefined
       }
       decide_space_request: {
@@ -8485,10 +8624,23 @@ export type Database = {
         Args: { p_actor_id: string; p_integration_id: string; p_reason: string }
         Returns: boolean
       }
+      download_establishment_backup: {
+        Args: { p_backup_id: string }
+        Returns: Json
+      }
       edit_message: {
         Args: { p_body: string; p_message_id: string }
         Returns: undefined
       }
+      effective_notification_preference: {
+        Args: { p_event_type: string; p_profile_id: string; p_space_id: string }
+        Returns: {
+          email: boolean
+          in_app: boolean
+          push: boolean
+        }[]
+      }
+      email_domain: { Args: { p_email: string }; Returns: string }
       emit_notification: {
         Args: {
           p_amount_cents?: number
@@ -8603,6 +8755,10 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: boolean
       }
+      establishment_has_overdue_debt_internal: {
+        Args: { p_establishment_id: string }
+        Returns: boolean
+      }
       establishment_integrations: {
         Args: { p_establishment_id: string }
         Returns: {
@@ -8634,6 +8790,27 @@ export type Database = {
       establishment_timezone: {
         Args: { p_establishment_id: string }
         Returns: string
+      }
+      establishment_transfer_child_tables: {
+        Args: never
+        Returns: {
+          parent_column: string
+          parent_table: string
+          table_name: string
+        }[]
+      }
+      establishment_transfer_entity_tables: {
+        Args: never
+        Returns: {
+          table_name: string
+        }[]
+      }
+      establishment_transfer_tables: {
+        Args: never
+        Returns: {
+          table_name: string
+          travels: boolean
+        }[]
       }
       establishments_for_opportunity_detection: {
         Args: { p_limit?: number }
@@ -8831,12 +9008,25 @@ export type Database = {
         Args: { p_provider: string }
         Returns: string
       }
+      invitation_signup_details: {
+        Args: { p_token: string }
+        Returns: {
+          email: string
+          has_account: boolean
+          space_name: string
+          state: string
+        }[]
+      }
       is_authorized_for_establishment: {
         Args: { p_establishment_id: string; p_user_id: string }
         Returns: boolean
       }
       is_authorized_worker_establishment: {
         Args: { p_establishment_id: string }
+        Returns: boolean
+      }
+      is_channel_member: {
+        Args: { p_conversation_id: string }
         Returns: boolean
       }
       is_eligible_job_candidate: {
@@ -8855,16 +9045,10 @@ export type Database = {
       is_platform_admin: { Args: never; Returns: boolean }
       is_platform_approver: { Args: never; Returns: boolean }
       is_platform_member: { Args: never; Returns: boolean }
-      is_public_email_domain: { Args: { p_domain: string }; Returns: boolean }
-      email_domain: { Args: { p_email: string }; Returns: string }
-      normalized_tax_id: { Args: { p_tax_id: string }; Returns: string }
-      notify_platform_storage: {
-        Args: { p_dedupe_key: string; p_space_id: string }
-        Returns: number
-      }
       is_platform_owner: { Args: never; Returns: boolean }
       is_platform_subscription_manager: { Args: never; Returns: boolean }
       is_platform_supporter: { Args: never; Returns: boolean }
+      is_public_email_domain: { Args: { p_domain: string }; Returns: boolean }
       is_space_member: { Args: { p_space_id: string }; Returns: boolean }
       issue_cuotly_charge_internal: {
         Args: {
@@ -8961,6 +9145,28 @@ export type Database = {
           active_menu_count: number
           last_assigned_at: string
           worker_id: string
+        }[]
+      }
+      list_my_conversations: {
+        Args: never
+        Returns: {
+          establishment_id: string
+          establishment_name: string
+          id: string
+          is_read_only: boolean
+          job_code: string
+          job_id: string
+          last_message_at: string
+          last_message_preview: string
+          last_sender_role: string
+          request_code: string
+          request_id: string
+          side: string
+          space_id: string
+          space_name: string
+          space_slug: string
+          type: string
+          unread_count: number
         }[]
       }
       list_task_candidates: {
@@ -9066,6 +9272,19 @@ export type Database = {
         Args: { p_notification_id: string }
         Returns: undefined
       }
+      mark_platform_email_failed: {
+        Args: {
+          p_dead: boolean
+          p_email_id: string
+          p_error: string
+          p_next_attempt_at: string
+        }
+        Returns: undefined
+      }
+      mark_platform_email_sent: {
+        Args: { p_email_id: string; p_provider_message_id?: string }
+        Returns: undefined
+      }
       member_can_perform_jobs: {
         Args: { p_space_id: string; p_user_id: string }
         Returns: boolean
@@ -9125,6 +9344,56 @@ export type Database = {
           user_agent: string
         }[]
       }
+      my_channels: {
+        Args: { p_space_id: string }
+        Returns: {
+          archived_at: string
+          i_am_member: boolean
+          id: string
+          last_message_at: string
+          member_count: number
+          name: string
+          unread_count: number
+        }[]
+      }
+      my_client_attention: {
+        Args: never
+        Returns: {
+          created_at: string
+          due_at: string
+          entity_id: string
+          entity_type: string
+          establishment_id: string
+          establishment_name: string
+          kind: string
+          space_id: string
+          space_slug: string
+          title: string
+        }[]
+      }
+      my_contexts: {
+        Args: never
+        Returns: {
+          establishment_id: string
+          establishment_name: string
+          kind: string
+          role: string
+          space_id: string
+          space_name: string
+          space_slug: string
+          space_timezone: string
+        }[]
+      }
+      my_notification_preferences: {
+        Args: never
+        Returns: {
+          email: boolean
+          event_type: string
+          in_app: boolean
+          mandatory: boolean
+          push: boolean
+        }[]
+      }
       my_platform_access: { Args: never; Returns: Json }
       my_support_session: {
         Args: { p_space_id: string }
@@ -9148,6 +9417,7 @@ export type Database = {
         Args: { p_sequence_name: string; p_space_id: string }
         Returns: number
       }
+      normalized_tax_id: { Args: { p_tax_id: string }; Returns: string }
       notification_event_is_mandatory: {
         Args: { p_event_type: string }
         Returns: boolean
@@ -9158,6 +9428,10 @@ export type Database = {
           establishment_name: string
           subject: string
         }[]
+      }
+      notify_charge_due_today: {
+        Args: { p_charge_id: string }
+        Returns: number
       }
       notify_cuotly_event: {
         Args: {
@@ -9208,6 +9482,10 @@ export type Database = {
           p_event_type: string
           p_incident_id: string
         }
+        Returns: number
+      }
+      notify_platform_storage: {
+        Args: { p_dedupe_key: string; p_space_id: string }
         Returns: number
       }
       notify_quote_event: {
@@ -9516,6 +9794,14 @@ export type Database = {
         Returns: string
       }
       prepare_menu: { Args: { p_menu_id: string }; Returns: undefined }
+      propose_establishment_transfer: {
+        Args: {
+          p_establishment_id: string
+          p_reason?: string
+          p_to_space_id: string
+        }
+        Returns: string
+      }
       provide_additional_information: {
         Args: { p_message: string; p_request_id: string }
         Returns: undefined
@@ -9534,6 +9820,15 @@ export type Database = {
       }
       publish_service_conditions: {
         Args: { p_conditions: string; p_service_id: string }
+        Returns: string
+      }
+      queue_platform_email: {
+        Args: {
+          p_dedupe_key?: string
+          p_kind: string
+          p_payload?: Json
+          p_to_email: string
+        }
         Returns: string
       }
       quote_status: { Args: { p_quote_id: string }; Returns: string }
@@ -9681,6 +9976,10 @@ export type Database = {
         Args: { p_payment_id: string; p_reason: string }
         Returns: undefined
       }
+      reject_establishment_transfer: {
+        Args: { p_reason?: string; p_transfer_id: string }
+        Returns: undefined
+      }
       reject_quote: {
         Args: { p_quote_id: string; p_reason?: string }
         Returns: undefined
@@ -9697,8 +9996,16 @@ export type Database = {
         Args: { p_establishment_id: string }
         Returns: number
       }
+      remove_channel_member: {
+        Args: { p_conversation_id: string; p_user_id: string }
+        Returns: undefined
+      }
       rename_report: {
         Args: { p_name: string; p_report_id: string }
+        Returns: undefined
+      }
+      reply_to_access_request: {
+        Args: { p_reply: string; p_token: string }
         Returns: undefined
       }
       report_actor_role: { Args: { p_space_id: string }; Returns: string }
@@ -9825,6 +10132,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      request_service_termination: {
+        Args: {
+          p_establishment_id: string
+          p_reason?: string
+          p_requested_by_client?: boolean
+        }
+        Returns: undefined
+      }
       request_space_id: { Args: { p_request_id: string }; Returns: string }
       request_state: { Args: { p_request_id: string }; Returns: string }
       request_task_reassignment: {
@@ -9885,15 +10200,17 @@ export type Database = {
         Args: { p_reason?: string; p_supervision_id: string }
         Returns: undefined
       }
+      run_backup_sweep: { Args: { p_space_id: string }; Returns: number }
+      run_charge_reminders: { Args: { p_space_id: string }; Returns: number }
       run_consumption_thresholds: {
         Args: { p_space_id: string }
         Returns: number
       }
-      run_cuotly_storage_sweep: {
+      run_cuotly_billing_sweep: {
         Args: { p_now?: string; p_space_id: string }
         Returns: number
       }
-      run_cuotly_billing_sweep: {
+      run_cuotly_storage_sweep: {
         Args: { p_now?: string; p_space_id: string }
         Returns: number
       }
@@ -9907,11 +10224,9 @@ export type Database = {
       run_scheduled_job: { Args: { p_job_id: string }; Returns: number }
       save_menu_version: {
         Args: {
-          /** §39 · lo declarado plato a plato. Opcional: no declarar no impide guardar. */
-          p_allergens?: unknown
+          p_allergens?: Json
           p_desserts: string[]
           p_drink?: string
-          /** A17 · contra qué versión se empezó a escribir. Sin él, como siempre. */
           p_expected_version?: number
           p_mains: string[]
           p_menu_id: string
@@ -9963,6 +10278,7 @@ export type Database = {
           topic: string
         }[]
       }
+      seed_default_channels: { Args: { p_space_id: string }; Returns: number }
       send_quote: { Args: { p_quote_id: string }; Returns: undefined }
       send_report: { Args: { p_report_id: string }; Returns: number }
       service_monthly_price: {
@@ -10032,12 +10348,38 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_establishment_status_internal: {
+        Args: {
+          p_establishment_id: string
+          p_reason?: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       set_incident_status: {
         Args: { p_incident_id: string; p_reason?: string; p_status: string }
         Returns: undefined
       }
       set_job_required_specialty: {
         Args: { p_job_id: string; p_specialty: string }
+        Returns: undefined
+      }
+      set_my_notification_preference: {
+        Args: {
+          p_email: boolean
+          p_event_type: string
+          p_in_app: boolean
+          p_push?: boolean
+        }
+        Returns: undefined
+      }
+      set_my_profile: {
+        Args: {
+          p_display_timezone?: string
+          p_family_name: string
+          p_given_name: string
+          p_phone?: string
+        }
         Returns: undefined
       }
       set_notification_preference: {
@@ -10108,6 +10450,10 @@ export type Database = {
       set_space_payment_term: {
         Args: { p_days: number; p_space_id: string }
         Returns: boolean
+      }
+      set_space_tax_rate: {
+        Args: { p_percent: number; p_space_id: string }
+        Returns: undefined
       }
       set_space_timezone: {
         Args: { p_reason: string; p_space_id: string; p_timezone: string }
@@ -10187,6 +10533,11 @@ export type Database = {
           step: string
         }[]
       }
+      space_owner_is_me: { Args: { p_space_id: string }; Returns: boolean }
+      space_request_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string }
+        Returns: boolean
+      }
       space_request_trial_conflicts: {
         Args: { p_request_id: string }
         Returns: {
@@ -10196,10 +10547,6 @@ export type Database = {
           matched: string
           request_id: string
         }[]
-      }
-      space_request_transition_allowed: {
-        Args: { p_actor: string; p_from: string; p_to: string }
-        Returns: boolean
       }
       space_slug: { Args: { p_space_id: string }; Returns: string }
       space_slug_from_name: { Args: { p_name: string }; Returns: string }
@@ -10240,6 +10587,16 @@ export type Database = {
           p_kind: string
         }
         Returns: string
+      }
+      submit_access_request: {
+        Args: {
+          p_business_name: string
+          p_comments?: string
+          p_contact_name: string
+          p_email: string
+          p_phone: string
+        }
+        Returns: undefined
       }
       submit_request: { Args: { p_request_id: string }; Returns: undefined }
       submit_space_request: {
@@ -10418,7 +10775,10 @@ export type Database = {
         Args: { p_state: string; p_task_id: string }
         Returns: undefined
       }
-      upgrade_restavor_plan_catalogue: { Args: { p_space_id: string }; Returns: undefined }
+      upgrade_restavor_plan_catalogue: {
+        Args: { p_space_id: string }
+        Returns: undefined
+      }
       upload_payment_receipt: {
         Args: { p_charge_id: string; p_file_id: string; p_note?: string }
         Returns: string
@@ -10440,8 +10800,23 @@ export type Database = {
         Args: { p_category: string; p_request_id: string; p_summary: string }
         Returns: undefined
       }
+      validate_dish_allergens: { Args: { p_dish: Json }; Returns: undefined }
+      validate_menu_allergens: {
+        Args: {
+          p_allergens: Json
+          p_desserts: string[]
+          p_drink: string
+          p_mains: string[]
+          p_starters: string[]
+        }
+        Returns: undefined
+      }
       waive_charge: {
         Args: { p_charge_id: string; p_reason: string }
+        Returns: undefined
+      }
+      withdraw_establishment_transfer: {
+        Args: { p_reason?: string; p_transfer_id: string }
         Returns: undefined
       }
       worker_active_load_points: {

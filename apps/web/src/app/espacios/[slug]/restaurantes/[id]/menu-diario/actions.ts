@@ -8,6 +8,7 @@ import { parseSimultaneousEditVersion } from "@/core/menu-diff";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import type { Json } from "@/lib/supabase/database.types";
 import type { MenuActionState } from "./action-state";
 
 const t = es.dailyMenuClient;
@@ -79,10 +80,10 @@ export async function saveMenuVersion(
   // se manda `undefined` —que es "sin declarar", válido por RN-ALE-05— en
   // vez de reventar: lo que no puede pasar es que un fallo de la pantalla
   // impida guardar el menú del día.
-  let declaracion: unknown;
+  let declaracion: Json | undefined;
   try {
     const crudo = String(formData.get("allergens") ?? "").trim();
-    declaracion = crudo === "" ? undefined : JSON.parse(crudo);
+    declaracion = crudo === "" ? undefined : (JSON.parse(crudo) as Json);
   } catch {
     declaracion = undefined;
   }
