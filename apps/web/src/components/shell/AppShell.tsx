@@ -13,8 +13,9 @@ import {
   activeDestination,
   createOptions,
   DESTINATION_ICONS,
-  desktopMenuGroups,
+  isClientRole,
   mobileNav,
+  sidebarGroups,
   type NavDestination,
   type ShellRole,
 } from "./navigation";
@@ -58,6 +59,18 @@ export interface ShellNotification {
  * en cada destino lo siguen decidiendo RLS y las funciones del servidor
  * (CLAUDE.md: ocultar un botón no es un control de acceso).
  */
+/**
+ * RN-PAN-04 · un restaurante del selector del panel. Lleva el espacio
+ * porque cambiar de local puede cambiar de espacio de mantenimiento, y la
+ * dirección lo necesita: la frontera entre espacios es del equipo, no del
+ * cliente, pero sigue estando en la ruta (RN-PAN-01).
+ */
+export interface PanelEstablishment {
+  readonly id: string;
+  readonly name: string;
+  readonly spaceSlug: string;
+}
+
 export function AppShell({
   spaceSlug,
   spaceName,
@@ -68,6 +81,8 @@ export function AppShell({
   notifications,
   onSearch,
   establishmentId = null,
+  establishmentName = null,
+  establishments = [],
   supportSession = null,
   children,
 }: {
@@ -89,6 +104,17 @@ export function AppShell({
    */
   establishmentId?: string | null;
   /**
+   * RN-PAN-03 · el nombre del restaurante, que es lo que el panel enseña
+   * arriba. Nulo para el equipo, que ve el nombre de su espacio.
+   */
+  establishmentName?: string | null;
+  /**
+   * RN-PAN-04 · todos los restaurantes de quien mira, para el selector del
+   * panel. Salen de `my_contexts()`, así que están en el espacio de
+   * mantenimiento que estén. Con uno solo no se pinta selector (RN-PAN-05).
+   */
+  establishments?: readonly PanelEstablishment[];
+  /**
    * Hito 19 (§129, RN-ADM-07) · si quien mira es de Cuotly y está dentro en
    * Modo soporte, se pinta una banda que lo dice —nivel, tiempo que queda,
    * salir— para que no se le olvide que está en casa ajena.
@@ -101,7 +127,21 @@ export function AppShell({
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
 
-  const menu = useMemo(() => desktopMenuGroups(spaceSlug), [spaceSlug]);
+  const esPanel = isClientRole(role);
+  const menu = useMemo(
+    () => sidebarGroups(spaceSlug, role, establishmentId),
+    [spaceSlug, role, establishmentId],
+  );
+  /**
+   * RN-PAN-01 · la raíz del contexto. Para el equipo es su espacio; para
+   * el restaurante, SU panel. El logotipo y la casita de la miga de pan
+   * llevan ahí, no a una pantalla del espacio que él no puede abrir.
+   */
+  const contextHome = esPanel && establishmentId !== null
+    ? `/espacios/${spaceSlug}/restaurantes/${establishmentId}`
+    : `/espacios/${spaceSlug}`;
+  /** RN-PAN-03 · el nombre de arriba: el del local, nunca el del espacio. */
+  const contextName = esPanel ? establishmentName ?? es.restaurantPanel.label : spaceName;
   const mobile = useMemo(
     () => mobileNav(spaceSlug, role, establishmentId),
     [spaceSlug, role, establishmentId],
@@ -111,8 +151,8 @@ export function AppShell({
     [spaceSlug, role, establishmentId],
   );
   const active = useMemo(
-    () => activeDestination(spaceSlug, pathname ?? ""),
-    [spaceSlug, pathname],
+    () => activeDestination(spaceSlug, pathname ?? "", role, establishmentId),
+    [spaceSlug, pathname, role, establishmentId],
   );
   const unread = notifications.filter((n) => n.readAt === null).length;
 
@@ -166,7 +206,7 @@ export function AppShell({
         <aside className="hidden w-[240px] shrink-0 flex-col bg-primary-dark lg:flex">
           <div className="px-5 pb-5 pt-6">
             <Link
-              href={`/espacios/${spaceSlug}`}
+              href={contextHome}
               className="block rounded-lg focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
               <span className="block text-2xl font-bold leading-none tracking-tight text-surface">
@@ -183,26 +223,34 @@ export function AppShell({
             quien navega con teclado y dos veces lo mismo para quien escucha.
           */}
           <div className="px-3">
-            <Link
-              href="/"
-              aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
-              className="block rounded-field border border-sidebar-border bg-sidebar-raised transition-colors hover:border-accent-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-            >
-              <span className="flex items-center gap-2 px-3 py-2.5">
-                <span aria-hidden="true" className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-semibold text-surface">{spaceName}</span>
-                  <span className="block truncate text-xs text-sidebar-text">{roleLabel}</span>
-                </span>
-                <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-sidebar-text" />
-              </span>
-              <span
-                aria-hidden="true"
-                className="flex items-center justify-center gap-1.5 border-t border-sidebar-border px-3 py-2 text-xs font-medium text-sidebar-text"
+            {esPanel ? (
+              <PanelContextBox
+                name={contextName}
+                current={establishmentId}
+                establishments={establishments}
+              />
+            ) : (
+              <Link
+                href="/"
+                aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
+                className="block rounded-field border border-sidebar-border bg-sidebar-raised transition-colors hover:border-accent-green focus:outline focus:outline-2 focus:outline-cuotly-green"
               >
-                <Icon name="switchSpace" className="h-3.5 w-3.5" />
-                {es.nav.switchSpace}
-              </span>
-            </Link>
+                <span className="flex items-center gap-2 px-3 py-2.5">
+                  <span aria-hidden="true" className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-surface">{spaceName}</span>
+                    <span className="block truncate text-xs text-sidebar-text">{roleLabel}</span>
+                  </span>
+                  <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-sidebar-text" />
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="flex items-center justify-center gap-1.5 border-t border-sidebar-border px-3 py-2 text-xs font-medium text-sidebar-text"
+                >
+                  <Icon name="switchSpace" className="h-3.5 w-3.5" />
+                  {es.nav.switchSpace}
+                </span>
+              </Link>
+            )}
 
             {/*
               §36 · la salida al contexto global, que el diseño pide con
@@ -220,7 +268,7 @@ export function AppShell({
           </div>
 
           <nav
-            aria-label={es.nav.menuLabel}
+            aria-label={esPanel ? es.restaurantPanel.menuLabel : es.nav.menuLabel}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-5 pt-5"
           >
             <ul className="flex flex-col gap-0.5">
@@ -253,7 +301,7 @@ export function AppShell({
             */}
             <nav aria-label={es.nav.breadcrumbLabel} className="flex min-w-0 items-center gap-2">
               <Link
-                href={`/espacios/${spaceSlug}`}
+                href={contextHome}
                 className="rounded p-1 text-text-secondary hover:text-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
               >
                 <Icon name="home" className="h-4 w-4" title={es.nav.home} />
@@ -261,7 +309,7 @@ export function AppShell({
               <span aria-hidden="true" className="text-border lg:hidden">
                 /
               </span>
-              <span className="truncate text-sm font-medium lg:hidden">{spaceName}</span>
+              <span className="truncate text-sm font-medium lg:hidden">{contextName}</span>
               {active === null ? null : (
                 <>
                   <Icon name="chevronRight" className="hidden h-3.5 w-3.5 text-text-secondary lg:block" />
@@ -456,6 +504,99 @@ export function AppShell({
  * y peso a la vez, no solo con color (PRD §21.4), y con `aria-current`
  * para quien no ve ninguno de los tres.
  */
+/**
+ * RN-PAN-03, RN-PAN-04 y RN-PAN-05 · la caja de contexto del panel del
+ * restaurante, que ocupa el sitio de la del espacio.
+ *
+ * Tres cosas que la diferencian de aquella y que no son de estilo:
+ *
+ *   · **dice de qué local es, no de qué espacio.** El espacio de
+ *     mantenimiento es organización interna del equipo y al cliente no se
+ *     le enseña (P7, RN-PAN-03);
+ *   · **con un solo restaurante no hay desplegable** (RN-PAN-05). Un
+ *     `<details>` de un elemento es una promesa de que hay más, y quien lo
+ *     abre y encuentra lo que ya estaba mirando ha perdido un gesto;
+ *   · **no es "Cambiar de espacio".** Salir de aquí es "Volver al inicio de
+ *     Cuotly", que está justo debajo y es el enlace de siempre.
+ *
+ * Es un `<details>` y no un menú con estado de React a propósito: funciona
+ * sin hidratación, se abre y se cierra con teclado sin que nadie escriba
+ * un manejador, y `Escape` lo cierra solo. La misma razón por la que el
+ * resto del armazón navega con enlaces de verdad (CA-22).
+ */
+function PanelContextBox({
+  name,
+  current,
+  establishments,
+}: {
+  name: string;
+  current: string | null;
+  establishments: readonly PanelEstablishment[];
+}) {
+  const otros = establishments.filter((e) => e.id !== current);
+
+  const identidad = (
+    <span className="flex items-center gap-2 px-3 py-2.5">
+      <span aria-hidden="true" className="min-w-0 flex-1 text-left">
+        <span className="block truncate text-sm font-semibold text-surface">{name}</span>
+        <span className="block truncate text-xs text-sidebar-text">
+          {es.restaurantPanel.label}
+        </span>
+      </span>
+      {otros.length === 0 ? null : (
+        <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-sidebar-text" />
+      )}
+    </span>
+  );
+
+  // RN-PAN-05 · uno solo: se enseña y ya está.
+  if (otros.length === 0) {
+    return (
+      <div
+        className="rounded-field border border-sidebar-border bg-sidebar-raised"
+        aria-label={es.restaurantPanel.singleLabel(name)}
+      >
+        {identidad}
+      </div>
+    );
+  }
+
+  return (
+    <details className="group rounded-field border border-sidebar-border bg-sidebar-raised [&[open]]:border-accent-green">
+      <summary
+        className="cursor-pointer list-none rounded-field transition-colors hover:border-accent-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+        aria-label={`${name} · ${es.restaurantPanel.switchLabel}`}
+      >
+        {identidad}
+        <span
+          aria-hidden="true"
+          className="flex items-center justify-center gap-1.5 border-t border-sidebar-border px-3 py-2 text-xs font-medium text-sidebar-text"
+        >
+          <Icon name="switchSpace" className="h-3.5 w-3.5" />
+          {es.restaurantPanel.switchLabel}
+        </span>
+      </summary>
+      <div className="border-t border-sidebar-border px-2 py-2">
+        <p className="px-1 pb-1 text-xs font-medium text-sidebar-text">
+          {es.restaurantPanel.pickerTitle}
+        </p>
+        <ul className="flex flex-col gap-0.5">
+          {otros.map((e) => (
+            <li key={e.id}>
+              <Link
+                href={`/espacios/${e.spaceSlug}/restaurantes/${e.id}`}
+                className="block truncate rounded-field px-2 py-1.5 text-sm text-sidebar-text transition-colors hover:bg-primary hover:text-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                {e.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
+  );
+}
+
 function SidebarLink({
   destination,
   active,

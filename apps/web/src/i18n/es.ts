@@ -813,6 +813,31 @@ export const es = {
   },
 
   /**
+   * §40 (RN-PAN) · el panel del restaurante como contexto propio.
+   *
+   * El nombre que el restaurante ve arriba es el de SU local, nunca el del
+   * espacio de mantenimiento (RN-PAN-03): el espacio es organización
+   * interna del equipo y a él no le dice nada. "Panel de restaurante" es la
+   * etiqueta que le dice en qué contexto está, igual que al equipo se lo
+   * dice el nombre de su espacio.
+   */
+  restaurantPanel: {
+    label: "Panel de restaurante",
+    menuLabel: "Menú del panel de restaurante",
+    /** RN-PAN-04 · el selector, cuando hay más de uno al que ir. */
+    switchLabel: "Cambiar de restaurante",
+    switchHint: (cuantos: number) =>
+      cuantos === 2 ? "Tienes otro restaurante" : `Tienes ${cuantos} restaurantes`,
+    pickerTitle: "Tus restaurantes",
+    /**
+     * RN-PAN-05 · con uno solo no hay selector. No hay texto que enseñar
+     * aquí: se ve el nombre y ya está. La clave existe para el nombre
+     * accesible de la caja, que sí tiene que decir qué es.
+     */
+    singleLabel: (nombre: string) => `${nombre} · Panel de restaurante`,
+  },
+
+  /**
    * El rol, con el nombre que ve la persona. §20.1: el selector de
    * contexto enseña "nombre, logotipo, tipo, rol y alertas rápidas", y el
    * menú lateral repite ese mismo par para que quien mira sepa siempre con

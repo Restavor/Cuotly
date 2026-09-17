@@ -632,7 +632,17 @@ export default async function EstablishmentPage({
         </Card>
       ) : null}
 
-      {serviceStopped ? null : <NewRequestForm establishmentId={id} />}
+      {/*
+        RN-PAN-07 · el ancla de "Nueva solicitud" en la barra del panel. La
+        envoltura se pinta siempre aunque el formulario no: si el ancla
+        desapareciera con el servicio detenido, el enlace de la barra no
+        llevaría a ninguna parte y el navegador se quedaría donde estaba
+        sin decir por qué. Vacía, lleva al sitio donde el formulario
+        estaría, que es justo encima del aviso que explica su ausencia.
+      */}
+      <section id="nueva-solicitud" className="scroll-mt-20">
+        {serviceStopped ? null : <NewRequestForm establishmentId={id} />}
+      </section>
 
       {/*
         Fase 3 · Hito 14 · los datos del restaurante y la autorización de
@@ -651,6 +661,8 @@ export default async function EstablishmentPage({
         </p>
       </Card>
 
+      {/* RN-PAN-07 · el ancla de "Solicitudes" de la barra del panel. */}
+      <section id="solicitudes" className="scroll-mt-20">
       <Card title={es.clientArea.requestsTitle}>
         {rows.length === 0 ? (
           <EmptyState
@@ -693,6 +705,7 @@ export default async function EstablishmentPage({
           </Table>
         )}
       </Card>
+      </section>
 
       {/*
         RN-ARC-04, el otro extremo del botón "Compartir con el
@@ -762,19 +775,22 @@ export default async function EstablishmentPage({
         (RN-MSG-05). Esta pantalla no lo comprueba — si lo hiciera, sería
         una segunda regla que podría discrepar de la del servidor.
       */}
-      {conversationId && conversation ? (
-        <Conversation
-          timeZone={zonaDelEspacio}
-          conversationId={conversationId}
-          establishmentId={id}
-          messages={conversation.messages}
-          readOnly={conversation.readOnly}
-          title={es.clientArea.establishmentConversationTitle}
-          notice={es.clientArea.establishmentConversationHint}
-          emptyTitle={es.clientArea.establishmentConversationEmptyTitle}
-          emptyReason={es.clientArea.establishmentConversationEmptyReason}
-        />
-      ) : null}
+      {/* RN-PAN-07 · el ancla de "Mensajes" de la barra del panel. */}
+      <section id="mensajes" className="scroll-mt-20">
+        {conversationId && conversation ? (
+          <Conversation
+            timeZone={zonaDelEspacio}
+            conversationId={conversationId}
+            establishmentId={id}
+            messages={conversation.messages}
+            readOnly={conversation.readOnly}
+            title={es.clientArea.establishmentConversationTitle}
+            notice={es.clientArea.establishmentConversationHint}
+            emptyTitle={es.clientArea.establishmentConversationEmptyTitle}
+            emptyReason={es.clientArea.establishmentConversationEmptyReason}
+          />
+        ) : null}
+      </section>
 
       {/*
         §68 · RN-MSG-10 · "Convertir en solicitud". Cuelga de la

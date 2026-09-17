@@ -844,6 +844,40 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    cómo funciona el producto, no un texto legal; el texto legal lo escribe el profesional que
    CLAUDE.md exige, y hasta entonces no se redacta ninguno.
 
+46. **El panel del restaurante como contexto propio** (17/09/2026). Lo último que quedaba del paso 2.
+   El diseño dice que "el panel del restaurante **se presenta** como un contexto propio ('Panel de
+   restaurante'), con su selector de restaurante y un 'Volver al inicio de Cuotly'"
+   (`docs/diseno/MAPA-DEL-DISENO.md`), y esa frase se puede leer de dos maneras: como armazón o
+   como dirección. Se preguntó con el coste de cada una delante.
+   - **Cambia el armazón, no la dirección.** El panel sigue viviendo en
+     `/espacios/<espacio>/restaurantes/<id>/…`. Lo que cambia es lo que se ve: cabecera "Panel de
+     restaurante", selector de restaurante, "Volver al inicio de Cuotly" y su propia barra lateral
+     en vez de la del espacio.
+
+     El motivo no es solo el coste —mudarla obligaba a una migración que reescribiera los **51**
+     enlaces profundos construidos en SQL, a una redirección permanente para que los avisos ya
+     guardados siguieran llevando a alguna parte, y a tocar 40 sitios de TypeScript—, sino que
+     conserva algo que el código ya defendía y que no se quiso perder: **un restaurante es un
+     restaurante, y su enlace debería ser el mismo lo mire quien lo mire.** Hoy la misma dirección
+     sirve a los dos lados y lo que cambia es qué se enseña, decidido por la membresía real del
+     espacio y no por un parámetro.
+
+     La objeción a favor de mudarla, que es real y queda escrita por si algún día pesa más: el
+     cliente **no es miembro** del espacio y lleva su identificador en la dirección sin necesidad
+     —`establishment_id` basta para saber de qué espacio es—. Si alguna vez se muda, esto ya está
+     pensado y lo que falta es la migración de los enlaces y la redirección.
+   - **El selector lista todos los restaurantes de esa persona**, estén en el espacio de
+     mantenimiento que estén. Sale de `my_contexts()` (migración 98), que ya decide eso con la RLS
+     de siempre y no estrena ninguna capacidad (RN-GLO-01). Cambiar a un restaurante de otro
+     espacio cambia también el espacio de la dirección, que es exactamente lo que tiene que pasar.
+     Lo contrario —listar solo los de este espacio— obligaría a una cadena con restaurantes en dos
+     espacios a salir al Inicio global para cambiar de local, que es dar un rodeo por una frontera
+     que al cliente no le importa.
+
+   **Lo que esta decisión NO cambia:** las cinco pestañas de la ficha del restaurante (§15.2), que
+   el ROADMAP daba por pendientes y llevaban hechas desde el Hito 7 —`SHEET_TABS`, `Sheet.tsx` y
+   una docena de tests por bloque—. La entrada del ROADMAP estaba desactualizada y se corrige.
+
 ---
 
 ### Pendiente de completar

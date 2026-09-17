@@ -102,6 +102,31 @@ function clientBase(spaceSlug: string, establishmentId: string | null): string |
   return establishmentId === null ? null : `/espacios/${spaceSlug}/restaurantes/${establishmentId}`;
 }
 
+/**
+ * RN-PAN-07 · los tres destinos del panel que **son secciones de la misma
+ * página**, con su ancla.
+ *
+ * El panel del restaurante es hoy una pantalla larga con todos sus
+ * bloques, así que "Solicitudes", "Nueva solicitud" y "Mensajes" apuntaban
+ * los tres a la misma dirección. En la barra de móvil eso pasaba
+ * desapercibido —son iconos y se pulsan de uno en uno—, pero una barra
+ * lateral con tres filas seguidas que van al mismo sitio sin decir a qué
+ * parte es una barra que miente.
+ *
+ * El ancla es lo honesto **mientras la página sea una**: no inventa rutas
+ * que no existen, y el día que cada bloque sea su propia pantalla, estas
+ * tres constantes se cambian por rutas y no hay que tocar nada más. Los
+ * identificadores tienen que existir en la página del restaurante:
+ * `panel-anclas.test.tsx` falla si alguno no está.
+ */
+export const PANEL_ANCHORS = {
+  requests: "#solicitudes",
+  newRequest: "#nueva-solicitud",
+  messages: "#mensajes",
+} as const;
+
+export type PanelAnchorKey = keyof typeof PANEL_ANCHORS;
+
 export function mobileNav(
   spaceSlug: string,
   role: ShellRole,
@@ -197,10 +222,10 @@ export function createOptions(
  * (`client_daily_menu`). Ofrecérselo a un restaurante sin el servicio
  * sería enseñarle una puerta que no es suya.
  */
-function fullNav(
+export function fullNav(
   spaceSlug: string,
   role: ShellRole,
-  establishmentId: string | null,
+  establishmentId: string | null = null,
 ): readonly NavDestination[] {
   const mine = clientBase(spaceSlug, establishmentId);
 
@@ -215,9 +240,9 @@ function fullNav(
     case "client":
       return [
         D("home", es.nav.home, mine ?? "/"),
-        D("requests", es.nav.requests, mine ?? "/"),
-        D("newRequest", es.nav.newRequest, mine ?? "/"),
-        D("messages", es.nav.messages, mine ?? "/"),
+        D("requests", es.nav.requests, mine ? `${mine}${PANEL_ANCHORS.requests}` : "/"),
+        D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ANCHORS.newRequest}` : "/"),
+        D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
@@ -227,10 +252,10 @@ function fullNav(
     case "client_daily_menu":
       return [
         D("home", es.nav.home, mine ?? "/"),
-        D("requests", es.nav.requests, mine ?? "/"),
-        D("newRequest", es.nav.newRequest, mine ?? "/"),
+        D("requests", es.nav.requests, mine ? `${mine}${PANEL_ANCHORS.requests}` : "/"),
+        D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ANCHORS.newRequest}` : "/"),
         D("dailyMenu", es.nav.dailyMenu, mine ? `${mine}/menu-diario` : "/"),
-        D("messages", es.nav.messages, mine ?? "/"),
+        D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
@@ -326,6 +351,46 @@ export function desktopMenuGroups(spaceSlug: string): {
 }
 
 /**
+ * RN-PAN-07 · la barra lateral de escritorio, según de quién sea el
+ * armazón.
+ *
+ * Hasta el 17/09/2026 esta función no existía y el armazón pintaba
+ * `desktopMenuGroups()` **siempre**, también para un restaurante. El
+ * resultado era que un cliente veía en su barra lateral los catorce
+ * destinos del equipo —Trabajos, Tareas, Equipo, Finanzas del espacio,
+ * Planes, Ajustes— y cada uno le daba una pantalla sin permiso o un 404.
+ * No era un agujero de seguridad (RLS no se entera de lo que se pinta),
+ * pero sí catorce puertas que no son suyas ofrecidas por su nombre.
+ *
+ * Para el equipo devuelve exactamente lo de antes. Para el restaurante,
+ * sus destinos —los de `fullNav()`, que ya los tenía bien— con Ayuda
+ * abajo, que es el único que hace de pie: no hay Ajustes del espacio ni
+ * Agente en un panel de restaurante.
+ */
+export function sidebarGroups(
+  spaceSlug: string,
+  role: ShellRole,
+  establishmentId: string | null = null,
+): {
+  readonly main: readonly NavDestination[];
+  readonly footer: readonly NavDestination[];
+} {
+  if (isStaffRole(role)) return desktopMenuGroups(spaceSlug);
+
+  const todos = fullNav(spaceSlug, role, establishmentId);
+  return {
+    main: todos.filter((d) => !PANEL_FOOTER_KEYS.has(d.key)),
+    footer: todos.filter((d) => PANEL_FOOTER_KEYS.has(d.key)),
+  };
+}
+
+/**
+ * El pie de la barra del panel. Solo Ayuda: §131 dice que el restaurante
+ * consulta las guías, y no hay nada más que vaya abajo en su contexto.
+ */
+const PANEL_FOOTER_KEYS = new Set(["help"]);
+
+/**
  * Qué destino del menú corresponde a la dirección que se está mirando.
  * Sirve para dos cosas que en la captura son la misma: marcar el destino
  * activo en el menú lateral y poner el nombre de la pantalla en la miga
@@ -339,13 +404,33 @@ export function desktopMenuGroups(spaceSlug: string): {
 export function activeDestination(
   spaceSlug: string,
   pathname: string,
+  role: ShellRole = "owner",
+  establishmentId: string | null = null,
 ): NavDestination | null {
   const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
 
-  return desktopMenu(spaceSlug)
-    .filter((d) => limpio === d.href || limpio.startsWith(`${d.href}/`))
+  /*
+   * RN-PAN-07 · contra qué lista se compara depende de quién mira.
+   *
+   * Sin esto, un restaurante en `/espacios/x/restaurantes/<id>/facturacion`
+   * casaba con "Restaurantes" del menú del EQUIPO —`/espacios/x/restaurantes`
+   * es prefijo suyo— y su miga de pan decía "Restaurantes", que es una
+   * pantalla que él no puede abrir. El ancla se quita antes de comparar:
+   * `#mensajes` es la misma pantalla que su Inicio.
+   */
+  const sinAncla = (href: string) => href.split("#")[0].replace(/\/+$/, "");
+  const lista = isStaffRole(role)
+    ? desktopMenu(spaceSlug)
+    : fullNav(spaceSlug, role, establishmentId);
+
+  return lista
+    .filter((d) => {
+      const href = sinAncla(d.href);
+      return limpio === href || limpio.startsWith(`${href}/`);
+    })
     .reduce<NavDestination | null>(
-      (mejor, d) => (mejor === null || d.href.length > mejor.href.length ? d : mejor),
+      (mejor, d) =>
+        mejor === null || sinAncla(d.href).length > sinAncla(mejor.href).length ? d : mejor,
       null,
     );
 }

@@ -2364,3 +2364,63 @@ Lo que este apartado **no** trae, dicho en claro:
 - **No los declara nadie por el restaurante**, ni el equipo de mantenimiento ni una lista de platos
   conocidos. Un plato que se llama igual que otro no tiene por qué llevar lo mismo.
 - **No redacta ningún aviso legal** (paso 4).
+
+---
+
+## 40. El panel del restaurante como contexto propio — después del Hito 22 (RN-PAN)
+
+Lo último que quedaba del paso 2 del orden acordado. El diseño definitivo dibuja el panel del
+restaurante (vistas R01 a R44) como **un contexto**, no como una pantalla dentro del espacio de
+mantenimiento: con su cabecera "Panel de restaurante", su selector de restaurante y su "Volver al
+inicio de Cuotly".
+
+Hasta ahora el restaurante entraba por la misma dirección que el equipo y se le servía su pantalla;
+lo que veía alrededor era el armazón del espacio, con el nombre del espacio en la cabecera. Es
+correcto en permisos —lo que ve lo decide la RLS— y equivocado en lectura: le dice que está de
+visita en casa de otro, cuando el sitio es suyo.
+
+La familia es **`RN-PAN`** (panel). No `RN-GLO`, que es lo que ocurre **fuera** de todo contexto
+(§36), ni `RN-EST`, que es el establecimiento como ficha que mira el equipo (§15).
+
+- **RN-PAN-01**: **el panel es un contexto, no una dirección nueva.** Vive donde vivía,
+  `/espacios/<espacio>/restaurantes/<id>/…`, y lo que cambia es el armazón. La razón, decidida el
+  17/09/2026 (decisión 46): un restaurante es un restaurante, y su enlace debe ser el mismo lo mire
+  quien lo mire. La misma dirección sirve a los dos lados y lo que decide qué se enseña es la
+  **membresía real del espacio**, nunca un parámetro de la dirección: quien fuerce a mano la vista
+  del equipo sigue viendo la suya, y aunque no se ramificara, RLS le devolvería cero filas de todo
+  lo interno (CLAUDE.md: ocultar no es controlar).
+- **RN-PAN-02**: **el panel no estrena ninguna capacidad.** Es la misma regla que RN-GLO-01 y por el
+  mismo motivo: todo lo que enseña sale de las políticas que ya deciden qué ve ese restaurante.
+  Cambiar el armazón no puede abrir ni una fila más.
+- **RN-PAN-03**: **la cabecera dice "Panel de restaurante" y el nombre del restaurante**, no el del
+  espacio de mantenimiento. El espacio es organización interna del equipo y al cliente no le dice
+  nada (P7); el nombre que le orienta es el de su local. El nombre de su espacio de mantenimiento
+  **no se le enseña en el armazón**, igual que no se le enseña quién del equipo hace su trabajo.
+- **RN-PAN-04**: **el selector lista todos los restaurantes de esa persona**, estén en el espacio de
+  mantenimiento que estén. Sale de `my_contexts()` (§36, migración 98) y por tanto de la RLS de
+  siempre. Cambiar a uno de otro espacio cambia también el espacio de la dirección, que es lo que
+  tiene que pasar: la frontera entre espacios de mantenimiento es del equipo, no del cliente, y
+  obligarle a salir al Inicio global para cambiar de local sería un rodeo por una frontera que a él
+  no le importa.
+- **RN-PAN-05**: **con un solo restaurante no hay selector**, se enseña su nombre y ya está. Un
+  desplegable de un elemento es una promesa de que hay más.
+- **RN-PAN-06**: **"Volver al inicio de Cuotly" está siempre**, y lleva al Inicio global (§36,
+  RN-GLO-03). Es la contrapartida de entrar siempre por ahí (decisión 42): si la raíz es el Inicio
+  global, desde dentro de cualquier contexto tiene que haber una puerta de vuelta.
+- **RN-PAN-07**: **los destinos del panel son los suyos y solo los suyos**: Inicio, Solicitudes,
+  Mensajes, Facturación, Informes y datos, Autorizar fuentes y Ayuda, más Menú Diario **solo** si lo
+  tiene contratado (§20.3). Ninguna ruta del equipo aparece en su barra: ahí no tiene nada que
+  hacer y ofrecérsela sería enseñarle una puerta que no es suya.
+- **RN-PAN-08**: **el equipo no ve el armazón del panel.** Quien es miembro del espacio sigue viendo
+  la ficha interna de §15.2 con sus cinco pestañas y la barra del espacio, en la misma dirección.
+  Son dos lecturas de la misma cosa y cada una tiene su sitio.
+
+Lo que este apartado **no** trae, dicho en claro:
+
+- **No mueve ninguna dirección.** Los 51 enlaces profundos que construye el servidor y los avisos ya
+  guardados siguen valiendo tal cual. Si algún día se decide mudarlo a `/restaurantes/<id>/…`, hará
+  falta una migración que los reescriba y una redirección permanente desde la ruta vieja; queda
+  escrito en la decisión 46 por si esa lectura vuelve.
+- **No cambia las cinco pestañas de la ficha** (§15.2), que son del equipo y llevan hechas desde el
+  Hito 7.
+- **No toca la app móvil**: su navegación es la de §35 (RN-MOV) y no usa estas rutas.

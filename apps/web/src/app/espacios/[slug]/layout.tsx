@@ -1,7 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 
-import { AppShell, type ShellNotification } from "@/components/shell/AppShell";
-import { isStaffRole } from "@/components/shell/navigation";
+import {
+  AppShell,
+  type PanelEstablishment,
+  type ShellNotification,
+} from "@/components/shell/AppShell";
+import { isClientRole, isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -72,6 +76,36 @@ export default async function SpaceLayout({
   const userLabel = profile?.full_name?.trim() || profile?.email || user.email || "";
   const userInitial = (userLabel.trim()[0] ?? "·").toUpperCase();
 
+  /*
+   * RN-PAN-03 y RN-PAN-04 · lo que el panel del restaurante necesita para
+   * su cabecera: el nombre de SU local y la lista de los suyos.
+   *
+   * Sale de `my_contexts()` (§36, migración 98) y no de una consulta
+   * nueva: esa función ya devuelve los paneles a los que esta persona
+   * tiene acceso, con la RLS de siempre, y el contexto global la usa para
+   * lo mismo. Preguntarlo aquí de otra manera sería un segundo criterio de
+   * "mis restaurantes" que un día diría otra cosa (RN-PAN-02: el panel no
+   * estrena ninguna capacidad).
+   *
+   * Solo se pregunta cuando quien mira es del lado cliente. Para el equipo
+   * no hace falta y sería una consulta por pantalla que nadie usa.
+   */
+  let establishments: readonly PanelEstablishment[] = [];
+  let establishmentName: string | null = null;
+
+  if (isClientRole(role)) {
+    const { data: contextos } = await supabase.rpc("my_contexts");
+    establishments = (contextos ?? [])
+      .filter((c) => c.kind === "establishment" && c.establishment_id !== null)
+      .map((c) => ({
+        id: c.establishment_id as string,
+        name: c.establishment_name ?? "",
+        spaceSlug: c.space_slug ?? slug,
+      }));
+    establishmentName =
+      establishments.find((e) => e.id === establishmentId)?.name ?? null;
+  }
+
   const notifications: ShellNotification[] = (rows ?? []).map((row) => ({
     id: row.id,
     eventType: row.event_type as EventKey,
@@ -96,6 +130,8 @@ export default async function SpaceLayout({
       notifications={notifications}
       onSearch={searchEverything}
       establishmentId={establishmentId}
+      establishmentName={establishmentName}
+      establishments={establishments}
       supportSession={
         supportSession
           ? {

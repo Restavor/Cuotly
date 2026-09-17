@@ -4984,9 +4984,35 @@ en el paso 4, sin redactar, hasta que lo escriba el profesional que `CLAUDE.md` 
   tabla entera.
 - **Verde**: 52 suites sobre 101 migraciones, typecheck, lint, 1426 tests y la compilación de Next.
 
-#### Lo que queda del paso 2
-- La **reorganización de la navegación** que el diseño pide: cinco pestañas en la ficha del
-  restaurante y el panel del restaurante como contexto propio. Es lo único que queda.
+#### Hecho · El panel del restaurante como contexto propio (§40, RN-PAN-01 a 08; decisión 46)
+Lo último del paso 2. **La mitad de esta entrada estaba mal**: decía que faltaban las cinco pestañas
+de la ficha del restaurante, y llevaban hechas desde el Hito 7 —`SHEET_TABS`, `Sheet.tsx` y una
+docena de tests por bloque—. Lo que sí faltaba era el panel.
+
+- **Un defecto real, y visible**: el armazón pintaba **siempre** el menú del equipo en la barra
+  lateral de escritorio, también para un restaurante. Un cliente veía ahí los catorce destinos del
+  espacio —Trabajos, Tareas, Equipo, Finanzas, Planes, Ajustes— y cada uno le daba una pantalla sin
+  permiso. No era un agujero (RLS no se entera de lo que se pinta), pero sí catorce puertas que no
+  son suyas ofrecidas por su nombre.
+- **Cambia el armazón, no la dirección** (RN-PAN-01, decisión 46). El panel sigue en
+  `/espacios/<espacio>/restaurantes/<id>/…`: mudarlo obligaba a una migración que reescribiera los
+  51 enlaces profundos de SQL y a una redirección permanente, y rompía algo que el código ya
+  defendía — un restaurante es un restaurante y su enlace es el mismo lo mire quien lo mire.
+- **Cabecera, selector y salida**: "Panel de restaurante" con el nombre del local y no el del
+  espacio (RN-PAN-03, que es la misma frontera que tapa la identidad del equipo), selector con
+  todos sus restaurantes estén en el espacio que estén (RN-PAN-04, desde `my_contexts()` de la
+  migración 98, sin estrenar ninguna capacidad) y "Volver al inicio de Cuotly" siempre (RN-PAN-06).
+  Con un solo restaurante **no hay selector** (RN-PAN-05): un desplegable de un elemento es una
+  promesa de que hay más.
+- **Las tres filas que iban al mismo sitio**: el panel es una pantalla larga con todos sus bloques,
+  así que "Solicitudes", "Nueva solicitud" y "Mensajes" apuntaban los tres a la misma dirección
+  exacta. En la barra de móvil no se notaba; en una barra lateral son tres filas seguidas que no
+  dicen a qué parte llevan. Se les da **ancla** dentro de su página, que es lo honesto mientras la
+  página sea una: no inventa rutas que no existen, y el día que cada bloque sea su propia pantalla
+  se cambian tres constantes. Un test lee la página y falla si algún identificador no está.
+- **El selector es un `<details>`**, no un menú con estado: funciona sin hidratación, se abre y
+  cierra con teclado sin manejadores y `Escape` lo cierra solo (CA-22).
+- **Verde**: typecheck, lint, 1437 tests de web (11 nuevos), 14 de móvil y la compilación de Next.
 
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
