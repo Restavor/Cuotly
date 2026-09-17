@@ -4863,8 +4863,11 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
   clave, pantalla de alta, pantalla de invitación y la bandeja de revisión en Administración.
 - **Verde**: 48 suites SQL sobre bootstrap + 97 migraciones, `pnpm typecheck && pnpm lint &&
   pnpm test` (1358 tests) en web y los 14 de móvil.
-- **Pendiente de Bosco**: aplicar la 97 al proyecto real **y apagar el alta pública en el panel de
-  Supabase** — eso último no lo hace ninguna migración.
+- **Cerrado el 17/09/2026**: la 97 aplicada al proyecto real, y el alta pública **apagada en el
+  panel de Supabase** por Bosco —eso último no lo hace ninguna migración—, dejando el proveedor
+  Email encendido y sin ningún proveedor externo. Con el registro cerrado,
+  `SUPABASE_SERVICE_ROLE_KEY` deja de ser un extra: es la única forma que queda de que nazca una
+  fila en `auth.users`. Los detalles y cómo comprobarlo, en `docs/DESPLIEGUE-SUPABASE.md`.
 
 #### Hecho · El contexto global (§36, RN-GLO-01 a 08; migración 98, suite 49)
 - **Cinco pantallas fuera de todo espacio**, con su armazón propio: Inicio (`/inicio`), Mis

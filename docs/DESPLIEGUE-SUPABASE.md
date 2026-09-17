@@ -39,9 +39,10 @@ comprobó y no envejece.
   cambiar ninguna comprobación —el correo tiene que seguir coincidiendo—, solo de dónde sale la
   persona. No toca ninguna tabla existente y no hay datos que migrar.
 
-  **Lo que sí hay que hacer a mano, y es lo importante de esta migración:** en el panel del
-  proyecto real, **apagar el alta pública** —Authentication → Sign In / Providers → **"Allow new
-  users to sign up"** a `false`— y dejar **sin activar** cualquier proveedor externo. El
+  **Lo que había que hacer a mano, y es lo importante de esta migración — HECHO el 17/09/2026
+  por Bosco:** en el panel del proyecto real, **apagar el alta pública** —Authentication → Sign In
+  / Providers → **"Allow new users to sign up"** a `false`— y dejar **sin activar** cualquier
+  proveedor externo. El
   repositorio ya lo lleva así en `supabase/config.toml` para el entorno local, pero el proyecto
   alojado tiene su propia configuración y una migración no la cambia. Mientras eso no se apague,
   RN-ACC-01 no se cumple en producción por mucho que las pantallas hayan dejado de ofrecerlo:
@@ -57,6 +58,31 @@ comprobó y no envejece.
   También hace falta `RESEND_API_KEY` en el servidor para que la cola de `platform_emails` salga
   de verdad; sin ella los correos se quedan encolados con su motivo escrito (no se pierden, pero
   nadie recibe el enlace de alta).
+
+  **Y `SUPABASE_SERVICE_ROLE_KEY`, que con el registro cerrado deja de ser un extra.** Es la
+  única forma que queda de que nazca una fila en `auth.users`: el alta la crea
+  `admin.auth.admin.createUser()` desde el servidor (`apps/web/src/app/(auth)/actions.ts`), y las
+  llamadas de administración no pasan por el interruptor que se acaba de apagar —por eso apagarlo
+  no rompe el alta, que es lo que se comprobó antes de tocarlo—. Sin la clave, el enlace de alta
+  contesta un error con su motivo en vez de fingir un fallo de contraseña, y nadie puede entrar
+  por primera vez.
+
+  Las dos claves las puso Bosco el 17/09/2026 en `apps/web/.env.local` y en las variables de
+  entorno de Vercel. **No se pueden comprobar desde una sesión de Claude Code**, y conviene que
+  quede escrito para no darlo por verificado: `.env.local` está en `.gitignore` —comprobado, y
+  nunca ha estado en el historial— así que no viaja al contenedor de la sesión, y el proxy de
+  salida de esas sesiones solo deja pasar el MCP de Supabase, que no expone la configuración de
+  Auth. Lo que sí se puede comprobar, desde la máquina de quien lo tenga delante:
+
+  ```bash
+  set -a && . apps/web/.env.local && set +a
+  curl -s -H "apikey: $NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+    "$NEXT_PUBLIC_SUPABASE_URL/auth/v1/settings" | jq '{disable_signup, external}'
+  ```
+
+  Tiene que decir `"disable_signup": true` y, en `external`, todo a `false` salvo `email: true`.
+  No expone ningún secreto: la clave anónima es pública por diseño y el endpoint es de solo
+  lectura.
 
   `database.types.ts` se regeneró después, contra el proyecto (llevaba a mano las entradas de la 97,
   igual que las de la 95). Comprobada en local: **las 48 suites en verde sobre bootstrap + 97
