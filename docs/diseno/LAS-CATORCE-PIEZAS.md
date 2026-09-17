@@ -20,9 +20,10 @@ alérgenos— sigue abierta y dice por qué.
 
 ---
 
-## A · Solo falta la pantalla (seis)
+## A · Solo falta la pantalla (seis) — **hechas el 17/09/2026**
 
-El servidor ya existe y se ha comprobado contra la base, no de memoria.
+El servidor ya existía y se comprobó contra la base, no de memoria. Las seis
+pantallas están construidas.
 
 | Pieza | Vista | Lo que ya hay |
 |---|---|---|
@@ -42,10 +43,29 @@ elección:
   CHECK de `payments.method` por la decisión de no usar Stripe. Tampoco es
   una preferencia del espacio: es lo que Cuotly acepta.
 
-## B · Falta servidor, pero las reglas ya están en el PRD (cinco)
+## B · Falta servidor, pero las reglas ya están en el PRD (cinco) — **hechas el 17/09/2026**
 
-Aquí no hay nada que decidir: el PRD dice qué tiene que pasar y lo que falta
-es escribirlo.
+Aquí no había nada que decidir: el PRD decía qué tenía que pasar y lo que
+faltaba era escribirlo. El servidor llegó con la **migración 99** y las cinco
+pantallas están construidas.
+
+Dos cosas que se dieron por pendientes y ya estaban, y conviene que queden
+escritas para no volver a "arreglarlas":
+
+- **El estado "Cancelada" en los filtros de solicitudes.** Los dos estados de
+  cancelación llevan desde siempre en `TERMINAL_REQUEST_STATES`, que es de
+  donde la ficha saca qué es una solicitud abierta, y el desglose por estado
+  de la pestaña Datos las cuenta todas. No faltaba un filtro: faltaba que
+  hubiera solicitudes canceladas que contar.
+- **El filtro de archivados del listado de restaurantes.** `archived` es uno
+  de los siete de `ESTABLISHMENT_STATES` y el filtro de estado los recorre.
+  Lo que faltaba era poder archivar.
+
+Y una que se dejó fuera a propósito: la **app móvil** sigue guardando menús
+sin versión esperada (A17). El parámetro es opcional y ese es el
+comportamiento de antes; encajar el control optimista con la cola de acciones
+sin conexión es otra conversación, y hacerlo a medias dejaría acciones
+encoladas fallando al salir.
 
 | Pieza | Vista | La regla que manda | Lo que falta |
 |---|---|---|---|
@@ -55,7 +75,12 @@ es escribirlo.
 | Edición simultánea del menú | A17 | El número de versión ya distingue una edición de otra. | El aviso de "alguien guardó mientras escribías" y la comparación de las dos. |
 | Solicitar la baja del servicio | R24, M47 | **RN-EST-09** lo dice entero: "el restaurante ha comunicado la baja pero el servicio sigue activo hasta el final del periodo pagado o de la permanencia vigente", y después 24 h en solo lectura (RN-EST-10). El estado `ending` existe. | Que el restaurante pueda comunicarla, y que el equipo pueda registrar la que llegó por fuera. |
 
-## C · Necesitan una decisión, y por eso no se construyen (cinco)
+## C · Necesitan una decisión, y por eso no se construyen (cinco) — **pendientes**
+
+Cuatro están decididas desde el 17/09/2026 (decisión 43) y **no construidas
+todavía**: les falta su sección de PRD escrita antes que el código, su
+migración y su suite. La quinta —los alérgenos— sigue sin decidir.
+
 
 Ninguna de estas cinco tiene reglas en el PRD ni en la maestra. Construirlas
 significaría inventarlas, que es justo lo que CLAUDE.md prohíbe. Cada una va

@@ -4900,8 +4900,38 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
 - **Verde**: 49 suites SQL sobre bootstrap + 98 migraciones, typecheck, lint, 1371 tests de web,
   la compilación de Next y los 14 de móvil.
 
+#### Hecho · Once de las catorce piezas sueltas (migración 99, suite 50)
+El triaje está en `docs/diseno/LAS-CATORCE-PIEZAS.md`, escrito antes de tocar código y contra el
+esquema real. Contestaba una sola pregunta: **de dónde salen las reglas de cada pieza**. Seis solo
+necesitaban pantalla, cinco necesitaban servidor pero tenían sus reglas en el PRD, y cinco
+necesitaban una decisión que CLAUDE.md prohíbe inventar.
+
+- **Grupo A, las seis que solo necesitaban pantalla**: los grupos de restaurantes (M82), la vista de
+  tablero en Trabajos (M09), el IVA por defecto del espacio (M58), copiar un borrador a otro
+  restaurante del grupo (R07), copiar el menú anterior desde el listado (R13) y el historial de
+  pagos parciales de un cobro (M51).
+- **Grupo B, las cinco con servidor de la migración 99**: archivar y reactivar un restaurante
+  (M84), cancelar una solicitud que todavía no es un trabajo (R12, A14), comparar dos versiones del
+  menú (R18), el aviso de edición simultánea (A17) y comunicar o registrar la baja del servicio
+  (R24, M47).
+- **Lo que NO se ofrece, y es la decisión que más importa de la tanda**: los siete estados de un
+  restaurante no se pintan como un desplegable. `paused` y `suspended` los mueve el barrido de
+  impago, `read_only` lo pone RN-EST-10 y `configuring` es de la puesta en marcha; ponerlos a mano
+  sería invitar al equipo a pelearse con un cálculo del servidor. Quedan los tres que sí decide una
+  persona: archivar, reactivar y registrar la baja.
+- **Dos "pendientes" que ya estaban hechos** y quedan escritos para no volver a "arreglarlos": el
+  estado Cancelada en los filtros de solicitudes (los dos estados llevan desde siempre en
+  `TERMINAL_REQUEST_STATES`) y el filtro de archivados del listado (`archived` es uno de los siete
+  de `ESTABLISHMENT_STATES`). Lo que faltaba en los dos casos era poder llegar a esos estados.
+- **Verde**: typecheck, lint, 1390 tests de web y la compilación de Next.
+
 #### Lo que queda del paso 2
-- Las **piezas sueltas** que enumera `docs/diseno/MAPA-DEL-DISENO.md`.
+- **Las tres piezas del grupo C que Bosco decidió el 17/09/2026** (decisión 43) y que todavía no se
+  han construido: la transferencia de un restaurante entre espacios, las copias de seguridad del
+  contenido y los canales de mensajería interna, más los recordatorios de cobro. Necesitan su
+  sección de PRD escrita antes que el código, su migración y su suite.
+- **Los alérgenos del editor del menú (R14) siguen sin decidir**, y van con el paso 4: es la única
+  de las catorce que toca materia legal.
 - La **reorganización de la navegación** que el diseño pide: cinco pestañas en la ficha del
   restaurante y el panel del restaurante como contexto propio.
 
