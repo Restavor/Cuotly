@@ -2611,7 +2611,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2814,7 +2814,20 @@ begin
         -- comprobación que importa aquí, la de RN-NOT-03: un aviso
         -- obligatorio no se apaga tampoco desde la cuenta.
         'set_my_profile', 'set_my_notification_preference',
-        'my_notification_preferences'
+        'my_notification_preferences',
+        -- Migración 100 (paso 2, §38). Las dos primitivas nuevas, que no
+        -- pueden comprobarse a sí mismas y cuyos nombres entran en la
+        -- heurística de arriba para que cuenten las que las llaman:
+        --
+        --   · `space_owner_is_me` es LA comprobación de RN-TRA-02 —quién
+        --     propone y quién acepta una transferencia— y la usan las
+        --     cuatro funciones de `establishment_transfers`.
+        --   · `is_channel_member` es LA llave de un canal (RN-CAN-02 y
+        --     RN-CAN-07). Aparece dentro de `can_read_conversation()`, que
+        --     está en la política de `conversations`, así que **no puede
+        --     perder el EXECUTE de `authenticated`**: revocárselo no la
+        --     cierra, rompe la política entera (CLAUDE.md, la excepción).
+        'space_owner_is_me', 'is_channel_member'
       )
       -- Los ayudantes del propio fixture (`h7_make_job` y compañía), que
       -- este archivo crea y borra: son andamiaje del test, no producto.
@@ -3703,7 +3716,15 @@ begin
          -- siendo `notification_preferences`, que sí lleva `space_id NOT
          -- NULL` y manda sobre esta. Lleva RLS con política: cada uno ve
          -- las suyas y nadie escribe por PostgREST.
-         'profile_notification_preferences'
+         'profile_notification_preferences',
+         -- Migración 100 (§38, RN-TRA). Una transferencia no es de UN
+         -- espacio: es de dos, y por eso lleva `from_space_id` y
+         -- `to_space_id`, los dos NOT NULL. Ponerle un `space_id` obligaría
+         -- a elegir uno y sería mentir sobre a quién pertenece la fila —y
+         -- dejaría fuera al otro, que es precisamente quien tiene que
+         -- decidir—. Su política la lee cualquiera de los dos espacios y
+         -- nadie la escribe por PostgREST: solo las cuatro funciones.
+         'establishment_transfers'
        ) then
       v_sin_space := v_sin_space || ' ' || v_t.tabla;
     end if;

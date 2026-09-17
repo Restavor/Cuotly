@@ -63,6 +63,14 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // Misma capacidad que el establecimiento — es la misma cartera.
   group: "manage_clients",
   group_access: "manage_clients",
+  // La transferencia de un restaurante a otro espacio (§38, RN-TRA,
+  // migración 100). De la cartera, como todo lo que pasa con un
+  // restaurante — aunque la decidan los dos propietarios, lo que el apunte
+  // cuenta es que un cliente cambió de casa.
+  establishment_transfer: "manage_clients",
+  // Los canales internos (§38, RN-CAN, migración 100): organización del
+  // ESPACIO, no de un cliente, así que van con `manage_space`.
+  channel: "manage_space",
   // Festivos y cierres (§125, HU-32).
   holiday: "manage_holidays",
   // Las integraciones analíticas (RN-INT-06, migración 81): conectar,
@@ -207,6 +215,12 @@ export const AUDIT_ACTIONS = [
   "cuotly_payment.declared",
   "cuotly_payment.rejected",
   "cuotly_payment.reversed",
+  // Migración 100 (§38, RN-CAN) · los canales internos del espacio.
+  "channel.archived",
+  "channel.created",
+  "channel.member_added",
+  "channel.member_removed",
+  "channel.unarchived",
   "correction.requested",
   "correction.started",
   "correction.team_error_opened",
@@ -218,6 +232,13 @@ export const AUDIT_ACTIONS = [
   "establishment.termination_requested",
   "establishment_access.granted",
   "establishment_access.revoked",
+  // Migración 100 (§38, RN-TRA) · las cuatro de la transferencia. Cada una
+  // deja apunte en los DOS espacios (RN-TRA-09): el de origen y el de
+  // destino cuentan la misma historia desde su lado.
+  "establishment_transfer.accepted",
+  "establishment_transfer.proposed",
+  "establishment_transfer.rejected",
+  "establishment_transfer.withdrawn",
   "establishment_note.archived",
   "establishment_note.created",
   "file.archived",

@@ -2183,6 +2183,28 @@ delicada de las cuatro, porque mueve la organización interna de un equipo a la 
   Queda quién la propuso, quién la aceptó, cuándo y con qué motivo. No es un `update` de la columna
   `space_id` y no se puede hacer con uno: si algún día alguien mueve un restaurante escribiendo esa
   columna a mano, lo que se pierde es justamente la explicación.
+- **RN-TRA-11** *(lectura, y una contradicción resuelta)*: **el libro de auditoría NO viaja**. La
+  decisión 43 dijo "solicitudes, trabajos, cobros, conversaciones y auditoría", y la decisión 44 ya
+  sacó los cobros de esa lista. La auditoría sale por una razón distinta y más dura: `CLAUDE.md`
+  dice que **los registros de auditoría no se editan ni se borran desde la aplicación**, y cambiarle
+  el espacio a una fila de auditoría es cambiar quién puede leerla, que es peor que editarla. La
+  jerarquía de autoridad es `CLAUDE.md` > `docs/PRD.md`, así que manda la regla dura. Lo que se lleva
+  el restaurante es su **trabajo** —solicitudes, trabajos, tareas, menús, archivos, conversaciones,
+  informes, oportunidades—; lo que se queda en cada espacio es **su propio libro**: el de dinero
+  (RN-TRA-04) y el de auditoría. El destino empieza su libro con el apunte de la transferencia
+  (RN-TRA-09), que dice de dónde vino y con qué motivo.
+- **RN-TRA-12** *(lectura)*: **lo que queda en el origen apuntando a lo que se fue no es un error**.
+  Un apunte de consumo del origen puede referirse a un trabajo que ahora vive en el destino, y el
+  origen verá el apunte sin poder abrir el trabajo. Es la consecuencia correcta de que el trabajo
+  viaje y el plan se quede: "este cambio nos consumió una unidad del ciclo, y el restaurante se ha
+  ido después". La alternativa —mover también el consumo— sería mover la contabilidad del plan que
+  el origen cobró.
+- **RN-TRA-13**: **qué tabla viaja y cuál se queda no se decide de memoria**. Las dos listas se
+  declaran en la migración y hay un barrido en la suite que recorre **todas** las tablas que tienen
+  a la vez `space_id` y `establishment_id` y falla si alguna no está clasificada en una de las dos.
+  Una tabla nueva rompe el test hasta que alguien decida de qué lado está, que es lo contrario de
+  descubrirlo el día que un restaurante se transfiera.
+
 - **RN-TRA-10**: **un grupo no se parte**. Un restaurante que pertenece a un grupo con más
   restaurantes en el espacio de origen se lleva consigo la pertenencia a un grupo **del destino**,
   que se crea con el mismo nombre si no existía. El grupo de origen se queda con los que no se
@@ -2218,6 +2240,12 @@ existía nada: ni tabla, ni proceso, ni una línea escrita.
 - **RN-BCK-07**: **quien puede descargar una copia es el equipo con `manage_clients`**, no el
   restaurante. Una copia es una herramienta de administración y lleva dentro material del espacio;
   el restaurante tiene su propia exportación (§141) para llevarse lo suyo.
+- **RN-BCK-09**: **la copia lleva el inventario de los archivos, no los archivos**. De cada archivo
+  guarda su nombre, su tamaño, su categoría, cuándo se subió y a qué cuelga; los bytes se siguen
+  descargando uno a uno con su enlace firmado (RN-ARC-08). Duplicar los bytes dentro de la copia
+  haría dos cosas malas a la vez: doblaría el almacenamiento que el espacio paga (RN-SUB-13) y
+  crearía copias de material privado **fuera** de la comprobación de `can_read_file()`. La pantalla
+  lo dice así, sin llamar "copia de seguridad completa" a lo que no lo es.
 - **RN-BCK-08** *(lectura)*: **una copia que no se ha generado no se anuncia**. Hasta que exista la
   primera, la pantalla dice que todavía no hay copias y por qué, no un historial vacío que parece
   que se llenará solo (CA-20).
@@ -2244,6 +2272,12 @@ canal no cuelga de ninguno de los tres: es una cuarta cosa.
   de aparecer en la lista y sigue siendo legible por sus miembros: lo que se dijo dentro se dijo.
 - **RN-CAN-06**: **los mensajes de un canal son mensajes** y se comportan como tales: se editan
   durante 10 minutos, no se eliminan nunca (RN-MSG), y su historial de ediciones se conserva.
+- **RN-CAN-08**: **ver que un canal existe no es leerlo**. Quien administra el espacio ve la
+  **lista** de todos sus canales —nombre, cuántos miembros tiene y si está archivado— aunque no sea
+  miembro de ninguno; lo que **se dice dentro** solo lo lee un miembro. Sin esta distinción, los
+  cuatro canales de fábrica nacerían invisibles para todo el mundo y nadie podría entrar en ellos:
+  el propietario no vería el canal para añadirse. La regla separa dos cosas que parecen una, y la
+  que importa —quién lee los mensajes— sigue siendo solo la lista de miembros.
 - **RN-CAN-07**: **un canal sin miembros no lo lee nadie**, ni siquiera quien lo creó. No es un caso
   raro que haya que evitar: es la consecuencia correcta de que la lista de miembros sea la única
   llave. Quien crea un canal entra en él en el mismo acto.

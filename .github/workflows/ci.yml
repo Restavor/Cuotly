@@ -418,6 +418,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/piezas_sueltas_del_diseno.sql
 
+      - name: "Paso 2 — Verificar las cuatro del grupo C: transferencia entre espacios, copias de seguridad, canales internos y aviso de vencimiento (RN-TRA, RN-BCK, RN-CAN, RN-REC)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/las_cuatro_del_grupo_c.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

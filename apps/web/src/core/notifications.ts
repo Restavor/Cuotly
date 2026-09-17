@@ -92,6 +92,10 @@ export const NOTIFICATION_EVENTS = [
   "establishment_paused_nonpayment",
   "establishment_suspended_nonpayment",
   "establishment_reactivated",
+  // Migración 100 (§38, RN-REC-02) · el primero de los tres avisos de
+  // cobro de M52, y el único nuevo: los otros dos son los que ya emiten la
+  // pausa y la suspensión por impago.
+  "charge_due_today",
   "absence_requested",
   "absence_decided",
   "absence_uncovered_jobs",
@@ -333,6 +337,10 @@ export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = [
   "terms_version_published",
   // Migración 77: pedirle información al restaurante es pedírsela a él.
   "menu_needs_information",
+  // Migración 100 (RN-REC-05): quien tiene que pagar es quien tiene que
+  // saber que hoy vence. Los dos avisos de impago que SÍ van al equipo son
+  // los otros, los que cuentan que el servicio se ha parado.
+  "charge_due_today",
 ];
 
 /**

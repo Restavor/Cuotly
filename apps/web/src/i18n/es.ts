@@ -918,6 +918,10 @@ export const es = {
       establishment_paused_nonpayment: "Restaurante pausado por impago",
       establishment_suspended_nonpayment: "Restaurante suspendido por impago",
       establishment_reactivated: "Restaurante reactivado",
+      // §38, RN-REC-02 · el aviso del día del vencimiento. Dice lo que
+      // pasa hoy y no amenaza con lo de pasado mañana: quien no paga ya
+      // recibe los otros dos avisos cuando toca.
+      charge_due_today: "Hoy vence un cobro tuyo",
       absence_requested: "Ausencia pedida",
       absence_decided: "Ausencia resuelta",
       absence_uncovered_jobs: "Trabajos sin cobertura",
@@ -2634,6 +2638,8 @@ export const es = {
       platform_status_event: "Evento de estado de Cuotly",
       // Hito 22 · el teléfono con push de una persona (RN-MOV-05).
       push_device: "Teléfono con avisos",
+      // Migración 100 (§38, RN-CAN) · un canal interno es una conversación.
+      conversation: "Canal interno",
     },
 
     auditActions: {
@@ -2651,6 +2657,19 @@ export const es = {
       "establishment.created": "Restaurante dado de alta",
       "establishment.data_changed": "Datos del restaurante editados",
       "establishment.status_changed": "Estado del restaurante cambiado",
+      // §38, RN-TRA · la transferencia entre espacios. Los dos espacios ven
+      // el mismo apunte desde su lado, así que el texto no dice "nuestro"
+      // ni "suyo": dice qué pasó.
+      "establishment_transfer.proposed": "Transferencia del restaurante propuesta",
+      "establishment_transfer.accepted": "Transferencia del restaurante aceptada",
+      "establishment_transfer.rejected": "Transferencia del restaurante rechazada",
+      "establishment_transfer.withdrawn": "Transferencia del restaurante retirada",
+      // §38, RN-CAN · los canales internos del espacio.
+      "channel.created": "Canal creado",
+      "channel.archived": "Canal archivado",
+      "channel.unarchived": "Canal desarchivado",
+      "channel.member_added": "Alguien entró en un canal",
+      "channel.member_removed": "Alguien salió de un canal",
       "establishment_access.granted": "Acceso a un restaurante concedido",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
       "establishment_note.created": "Nota interna escrita",
