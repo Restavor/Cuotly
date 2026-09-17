@@ -8,11 +8,13 @@ import {
   PLATFORM_EMAIL_KINDS,
   SETUP_LINK_STATES,
   accessRequestNeedsReason,
+  accessRequestSubmitFailure,
   accessRequestTransitionAllowed,
   invitationSignupStep,
   isAccessRequestFinal,
   isAccessRequestState,
   setupLinkAcceptsPassword,
+  validateAccessRequest,
 } from "./access-requests";
 
 describe("cómo se entra en Cuotly (PRD §37, RN-ACC)", () => {
@@ -101,5 +103,57 @@ describe("cómo se entra en Cuotly (PRD §37, RN-ACC)", () => {
     // que conteste el servidor, el formulario se convierte en un oráculo
     // de correos. El test está aquí para que ese cambio duela.
     expect(ACCESS_REQUEST_SUBMIT_OUTCOME).toBe("received");
+  });
+});
+
+describe("A09 · el formulario público señala los campos uno a uno", () => {
+  const lleno = {
+    contactName: "Bosco",
+    businessName: "Restavor",
+    phone: "600000000",
+    email: "bosco@restavor.com",
+  };
+
+  it("los cuatro obligatorios se devuelven por su nombre, no como un cartel", () => {
+    const r = validateAccessRequest({ contactName: "", businessName: "", phone: "", email: "" });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.problem).toBe("missing");
+    expect([...r.fields]).toEqual(["contact_name", "business_name", "phone", "email"]);
+  });
+
+  it("solo el que falta se señala", () => {
+    const r = validateAccessRequest({ ...lleno, phone: "   " });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect([...r.fields]).toEqual(["phone"]);
+  });
+
+  it("un correo sin forma de correo es su propio problema, distinto de faltar", () => {
+    const r = validateAccessRequest({ ...lleno, email: "bosco@restavor" });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.problem).toBe("email");
+    expect([...r.fields]).toEqual(["email"]);
+  });
+
+  it("los cuatro rellenos y el correo con forma pasan", () => {
+    expect(validateAccessRequest(lleno).ok).toBe(true);
+    // Los comentarios son opcionales (RN-ACC-02): no entran en la revisión.
+    expect(validateAccessRequest({ ...lleno, email: " bosco@restavor.com " }).ok).toBe(true);
+  });
+});
+
+describe("A11 · un envío que no llega no se cuenta como un dato mal escrito", () => {
+  it("la falta de red se dice como falta de red", () => {
+    for (const mensaje of ["", "Failed to fetch", "network request failed", "timeout of 5000ms"]) {
+      expect(accessRequestSubmitFailure(mensaje)).toBe("unreachable");
+    }
+  });
+
+  it("lo demás no se adivina", () => {
+    expect(accessRequestSubmitFailure("Faltan el nombre, el negocio, el teléfono o el correo")).toBe(
+      "unknown",
+    );
   });
 });

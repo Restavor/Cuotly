@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { classifySignInError, type SignInFailure } from "./auth-errors";
+import { classifySignInError, signInFailureMessage, type SignInFailure } from "./auth-errors";
 
 describe("por qué no se ha podido entrar (CA-20 aplicado al login)", () => {
   const clasificar = (e: Parameters<typeof classifySignInError>[0]): SignInFailure | null =>
@@ -69,3 +69,35 @@ describe("por qué no se ha podido entrar (CA-20 aplicado al login)", () => {
     ).toBe("invalid_credentials");
   });
 });
+
+describe("El motivo se dice una sola vez y desde el mismo catálogo", () => {
+  it("cada motivo tiene su frase, y ninguna dos", () => {
+    const frases = SIGN_IN_FAILURES.map((motivo) => signInFailureMessage(motivo));
+    expect(new Set(frases).size).toBe(SIGN_IN_FAILURES.length);
+    for (const frase of frases) expect(frase.length).toBeGreaterThan(0);
+  });
+
+  it("solo `invalid_credentials` habla de la contraseña", () => {
+    // Es la regla entera de este módulo: el resto de motivos NO pueden
+    // sugerir que la contraseña esté mal, porque no se sabe.
+    for (const motivo of SIGN_IN_FAILURES) {
+      if (motivo === "invalid_credentials") continue;
+      expect(signInFailureMessage(motivo).toLowerCase()).not.toMatch(
+        /correo o contraseña incorrect/,
+      );
+    }
+  });
+
+  it("la frase de red no culpa a quien escribe", () => {
+    expect(signInFailureMessage("unreachable").toLowerCase()).toContain("conexión");
+  });
+});
+
+const SIGN_IN_FAILURES: readonly SignInFailure[] = [
+  "invalid_credentials",
+  "email_not_confirmed",
+  "rate_limited",
+  "unreachable",
+  "email_provider_disabled",
+  "unknown",
+];

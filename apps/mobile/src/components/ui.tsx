@@ -143,16 +143,32 @@ export function Button({
   );
 }
 
-export function Field({ label, ...props }: { label: string } & TextInputProps) {
+/**
+ * `help` es la frase de debajo que explica para qué se pide el campo;
+ * `error` es lo que le pasa a ESTE campo, señalado donde está y no en un
+ * cartel genérico arriba (A09 del diseño definitivo).
+ */
+export function Field({
+  label,
+  help,
+  error,
+  ...props
+}: { label: string; help?: string; error?: string } & TextInputProps) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
       <TextInput
-        style={[styles.input, props.multiline && styles.inputMultiline]}
+        style={[styles.input, props.multiline && styles.inputMultiline, error ? styles.inputError : null]}
         placeholderTextColor={colors.textSecondary}
         accessibilityLabel={label}
         {...props}
       />
+      {help && !error ? <Text style={styles.fieldHelp}>{help}</Text> : null}
+      {error ? (
+        <Text style={styles.fieldError} accessibilityRole="alert">
+          {error}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -274,6 +290,9 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, color: colors.textSecondary },
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 12, fontSize: 16, backgroundColor: colors.surface, color: colors.text, minHeight: 48 },
   inputMultiline: { minHeight: 96, textAlignVertical: "top" },
+  inputError: { borderColor: colors.danger },
+  fieldHelp: { fontSize: 13, color: colors.textSecondary },
+  fieldError: { fontSize: 13, color: colors.danger },
   choices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   choice: { borderWidth: 1, borderColor: colors.border, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8, backgroundColor: colors.surface },
   choiceSelected: { borderColor: colors.cuotlyGreen, backgroundColor: colors.softSurface },

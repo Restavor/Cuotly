@@ -19,8 +19,11 @@
  * cliente que no puede entrar un martes por la mañana le ahorra llamar
  * para que le cambien una contraseña que no está mal.
  *
- * Lógica pura: sin Supabase, sin React (CLAUDE.md).
+ * Lógica pura: sin Supabase, sin React (CLAUDE.md). El catálogo de
+ * textos sí entra, como en los otros módulos de `core/` que nombran algo.
  */
+
+import { es } from "@/i18n/es";
 
 export type SignInFailure =
   /** Las credenciales no valen. El único caso que el mensaje viejo acertaba. */
@@ -113,3 +116,29 @@ export function classifySignInError(error: AuthErrorLike | null | undefined): Si
 
   return error.status === undefined ? "unreachable" : "unknown";
 }
+
+/**
+ * El motivo, dicho en español y una sola vez.
+ *
+ * Vivía dentro de `app/(auth)/actions.ts`, que es un módulo `"use server"`:
+ * la app del teléfono no puede importarlo ni aunque comparta el alias
+ * `@/`, así que `login.tsx` de `apps/mobile` tenía su propia respuesta a
+ * cualquier fallo —"Correo o contraseña incorrectos"— y repetía en el
+ * teléfono el error que la web arregló arriba. En un móvil es además donde
+ * más se nota: la red se cae sola y el mensaje culpaba a la contraseña.
+ *
+ * Aquí es donde tiene que estar, junto a la clasificación y con el mismo
+ * catálogo de textos (RN-MOV-11).
+ */
+export function signInFailureMessage(failure: SignInFailure): string {
+  return SIGN_IN_FAILURE_MESSAGE[failure];
+}
+
+const SIGN_IN_FAILURE_MESSAGE: Readonly<Record<SignInFailure, string>> = {
+  invalid_credentials: es.auth.login.invalidCredentials,
+  email_not_confirmed: es.auth.login.emailNotConfirmed,
+  rate_limited: es.auth.login.rateLimited,
+  unreachable: es.auth.login.unreachable,
+  email_provider_disabled: es.auth.login.emailProviderDisabled,
+  unknown: es.auth.login.unknownError,
+};

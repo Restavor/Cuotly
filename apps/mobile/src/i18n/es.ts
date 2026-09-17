@@ -11,25 +11,18 @@ import { es as esWeb } from "@/i18n/es";
 export const web = esWeb;
 
 export const es = {
-  auth: {
-    emailLabel: "Correo electrónico",
-    passwordLabel: "Contraseña",
-    validationRequired: "Rellena correo y contraseña.",
-    login: {
-      title: "Entrar en Cuotly",
-      submit: "Entrar",
-      submitPending: "Entrando…",
-      invalidCredentials: "Correo o contraseña incorrectos.",
-      noAccount: "¿No tienes cuenta?",
-      signupLink: "Regístrate",
-    },
-    signup: {
-      title: "Crear cuenta en Cuotly",
-      submit: "Crear cuenta",
-      submitPending: "Creando cuenta…",
-      hasAccount: "¿Ya tienes cuenta?",
-      loginLink: "Entra",
-    },
+  /*
+   * El bloque `auth` que había aquí se ha ido entero al catálogo de la web
+   * (`web.auth.login` y `web.auth.signup`), que es donde manda RN-MOV-11.
+   * Eran textos repetidos, y repetidos se quedaron atrás: seguían diciendo
+   * "Crear cuenta en Cuotly" y "Regístrate" después de que la decisión 41
+   * cerrara el registro abierto (§37).
+   */
+
+  /** Lo que le pasa a la sesión **en el teléfono**, que la web no tiene. */
+  session: {
+    expired:
+      "Tu sesión ya no vale. Vuelve a entrar y repite lo que estabas haciendo: no se ha enviado nada.",
   },
 
   common: {

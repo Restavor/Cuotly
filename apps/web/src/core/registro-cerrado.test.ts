@@ -22,6 +22,15 @@ import { describe, expect, it } from "vitest";
  *   3. Ninguna pantalla con "entrar con Google". El botón sin el proveedor
  *      no crea cuentas, pero ofrece una forma de entrar que no existe, y
  *      eso es peor que no ofrecerla.
+ *   4. Ninguna pantalla que cree una cuenta por su cuenta, **ni en la web
+ *      ni en la app del teléfono**. Este cuarto barrido llegó el
+ *      17/09/2026 porque el archivo miraba solo `apps/web/src`: la app se
+ *      quedó un día entero con `supabase.auth.signUp()` en `signup.tsx` y
+ *      un "Regístrate" en el login que llevaba allí. No era un agujero
+ *      —`enable_signup = false` cierra la puerta de verdad y GoTrue
+ *      contestaba que no—, pero sí una pantalla que pedía una contraseña
+ *      para una cuenta que no se iba a crear, y lo que falló no fue el
+ *      cambio: fue que nadie barriera la otra superficie.
  *
  * Es el mismo patrón que `promesas-de-migracion.test.ts`: leer el archivo
  * de verdad y fallar si dice otra cosa, en vez de confiar en que alguien
@@ -30,6 +39,8 @@ import { describe, expect, it } from "vitest";
 const RAIZ = join(process.cwd(), "..", "..");
 const CONFIG = join(RAIZ, "supabase", "config.toml");
 const SRC = join(process.cwd(), "src");
+/** La app del teléfono es la otra superficie, y entra en los mismos barridos. */
+const MOVIL = join(RAIZ, "apps", "mobile");
 
 /** El valor de una clave dentro de una sección `[x.y]` del TOML. */
 function valorEnSeccion(toml: string, seccion: string, clave: string): string | null {
@@ -111,11 +122,53 @@ describe("RN-ACC-01 · el registro abierto sigue cerrado", () => {
   });
 
   it("RN-ACC-10: no queda ninguna pantalla que ofrezca entrar con Google", () => {
-    const culpables = archivosDeCodigo(SRC)
-      .filter((ruta) => !ruta.endsWith("registro-cerrado.test.ts"))
-      .filter((ruta) => /GoogleButton|signInWithOAuth/.test(readFileSync(ruta, "utf8")))
-      .map((ruta) => ruta.slice(SRC.length + 1));
+    const culpables = pantallas()
+      .filter((ruta) => /GoogleButton|signInWithOAuth/.test(codigo(ruta)))
+      .map(nombreCorto);
 
     expect(culpables, "pantallas que todavía ofrecen entrar con un proveedor externo").toEqual([]);
   });
+
+  it("RN-ACC-01: ninguna pantalla crea una cuenta por su cuenta, tampoco en el teléfono", () => {
+    /*
+      `signUp()` es la tercera puerta escrita en una pantalla. Aunque el
+      proyecto la tenga cerrada, ofrecerla es prometer una cuenta que no va
+      a existir — y el día que alguien encienda `enable_signup` "para
+      probar", la promesa se cumple sin que nadie la apruebe.
+
+      El barrido mira las DOS superficies: `apps/web/src` y `apps/mobile`.
+      La app se quedó fuera un día entero y fue exactamente lo que se
+      escapó.
+    */
+    const culpables = pantallas()
+      .filter((ruta) => /\bauth\s*\.\s*signUp\b/.test(codigo(ruta)))
+      .map(nombreCorto);
+
+    expect(culpables, "pantallas que crean una cuenta sin pasar por las dos puertas").toEqual([]);
+  });
+
+  it("RN-ACC-02: la pantalla de la app pide acceso por la función pública del servidor", () => {
+    // La contrapartida del barrido de arriba: que lo que hay en su sitio
+    // sea el formulario de solicitud, y no un hueco. La cuenta nace al
+    // aprobar (RN-ACC-03), no al enviar.
+    const solicitud = readFileSync(join(MOVIL, "app", "signup.tsx"), "utf8");
+    expect(solicitud).toContain("submit_access_request");
+  });
 });
+
+/** Las pantallas de las dos superficies, sin este propio archivo. */
+function pantallas(): readonly string[] {
+  return [...archivosDeCodigo(SRC), ...archivosDeCodigo(join(MOVIL, "app")), ...archivosDeCodigo(join(MOVIL, "src"))]
+    .filter((ruta) => !ruta.endsWith("registro-cerrado.test.ts"));
+}
+
+function nombreCorto(ruta: string): string {
+  return ruta.startsWith(SRC) ? ruta.slice(SRC.length + 1) : `movil/${ruta.slice(MOVIL.length + 1)}`;
+}
+
+/** El código, sin comentarios: una puerta contada no es una puerta abierta. */
+function codigo(ruta: string): string {
+  return readFileSync(ruta, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+}

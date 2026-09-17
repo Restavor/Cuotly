@@ -5014,6 +5014,46 @@ docena de tests por bloque—. Lo que sí faltaba era el panel.
   cierra con teclado sin manejadores y `Escape` lo cierra solo (CA-22).
 - **Verde**: typecheck, lint, 1437 tests de web (11 nuevos), 14 de móvil y la compilación de Next.
 
+### Paso 3 · El diseño definitivo móvil *(a la espera del PDF desde el 17/09/2026)*
+- **Falta la referencia.** El paso dice "el diseño definitivo móvil, **que Bosco entrega**", y ese
+  PDF no está en el repositorio: `docs/diseno/` solo tiene el de escritorio y los 26 por sección.
+  Sin él no se construye ninguna pantalla nueva del teléfono, que es justo lo que este paso pide.
+- **Lo que sí se ha hecho es la mitad que no depende del PDF**: `docs/diseno/ESTADO-DE-LA-APP-MOVIL.md`,
+  el equivalente móvil de `MAPA-DEL-DISENO.md`. Qué tiene hoy `apps/mobile`, qué se le quedó atrás
+  mientras el paso 2 rehacía la web (el contexto global entero, el panel como contexto propio, la
+  solicitud de espacio, las catorce piezas y los alérgenos) y qué hay que decidir antes de tocar nada.
+- **Cuatro defectos reales que la auditoría destapó, y arreglados**, porque son defectos y no diseño:
+  - **La app ofrecía una tercera puerta.** `app/signup.tsx` llamaba a `supabase.auth.signUp()` y el
+    login decía "Regístrate". La decisión 41 cerró el registro abierto el 16/09/2026 y la web puso
+    ahí el formulario de solicitud de acceso; el teléfono se quedó con la puerta pintada. **No era un
+    agujero** —`enable_signup = false` en `config.toml` la cierra de verdad y GoTrue contestaba que
+    no—, pero sí una pantalla que pedía una contraseña para una cuenta que no se iba a crear. Ahora
+    es el formulario de RN-ACC-02, con la validación campo a campo de la web y el final único de
+    RN-ACC-12. Lo que impide que vuelva a pasar es `registro-cerrado.test.ts`, que ya barría las
+    pantallas buscando la tercera puerta y **miraba solo `apps/web/src`**: ese era el hueco por el
+    que se coló. Ahora barre las dos superficies, y se ha comprobado que falla nombrando el archivo.
+  - **El login culpaba a la contraseña de cualquier fallo**, incluido "sin red", que es el frecuente
+    en un teléfono: el mismo error que la web arregló con `core/auth-errors.ts`. El mapa de motivos
+    vivía dentro de un módulo `"use server"` que la app no puede importar; ahora está en `core/`
+    (`signInFailureMessage()`) y lo usan las dos superficies.
+  - **Los tres destinos con ancla de RN-PAN-07 no llegaban a ninguna parte.** Un restaurante que
+    abriera "Más" y tocara Solicitudes, Nueva solicitud o Mensajes caía en "esto está en la web"
+    **con la pantalla delante**: `expo-router` casa rutas de ficheros y no sabe de fragmentos. Se
+    navega por `navigableHref()` y un barrido comprueba que ningún destino llegue al router con `#`.
+    Que la app pueda ir **a la parte** de la pantalla lo dirá el diseño; no se inventan tres rutas.
+  - **El selector de contexto se armaba a mano**, con una llamada a `space_slug()` por restaurante y
+    la regla de "de quién es cada contexto" escrita por segunda vez —"no está en mis espacios" en vez
+    de `is_establishment_client()`, que dejan de coincidir en cuanto alguien del equipo es además
+    cliente de otro espacio—. Ahora sale de `my_contexts()` (RN-GLO-03), la misma función que la web,
+    por el mismo módulo de servicio.
+- **Dos de limpieza que salieron con ellos**: el bloque `auth` del catálogo del teléfono era una copia
+  del de la web y se había quedado atrás (seguía diciendo "Crear cuenta en Cuotly"), así que se ha ido
+  entero a `web.auth`; y subir un archivo sin sesión decía "Correo o contraseña incorrectos".
+- **Ninguna migración.** Nada de esto es servidor: las dos funciones que hacían falta —`my_contexts()`
+  y `submit_access_request()`— llegaron con las migraciones 98 y 97 del paso 2.
+- **Verde**: typecheck, lint, 1448 tests de web (11 nuevos), 17 de móvil (3 nuevos), la compilación
+  de Next y `expo export --platform web`.
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { es } from "@/i18n/es";
-import { classifySignInError, type SignInFailure } from "@/core/auth-errors";
+import { accessRequestSubmitFailure, validateAccessRequest } from "@/core/access-requests";
+import { classifySignInError, signInFailureMessage } from "@/core/auth-errors";
 
 import type {
   AccessRequestFormState,
@@ -49,20 +50,11 @@ export async function signIn(
       veces distingue "este correo no existe" de "esta contraseña no vale",
       que es justo lo que no conviene contarle a quien prueba correos.
     */
-    return { error: MENSAJE_DE_FALLO[motivo] };
+    return { error: signInFailureMessage(motivo) };
   }
 
   redirect("/");
 }
-
-const MENSAJE_DE_FALLO: Readonly<Record<SignInFailure, string>> = {
-  invalid_credentials: es.auth.login.invalidCredentials,
-  email_not_confirmed: es.auth.login.emailNotConfirmed,
-  rate_limited: es.auth.login.rateLimited,
-  unreachable: es.auth.login.unreachable,
-  email_provider_disabled: es.auth.login.emailProviderDisabled,
-  unknown: es.auth.login.unknownError,
-};
 
 export async function signOut() {
   const supabase = await createClient();
@@ -103,22 +95,14 @@ export async function requestAccess(
   const email = String(formData.get("email") ?? "").trim();
   const comments = String(formData.get("comments") ?? "").trim();
 
-  // A09 · los campos mal rellenados se señalan uno a uno.
-  const vacios = [
-    ["contact_name", contactName],
-    ["business_name", businessName],
-    ["phone", phone],
-    ["email", email],
-  ]
-    .filter(([, valor]) => valor === "")
-    .map(([campo]) => campo as string);
-
-  if (vacios.length > 0) {
-    return { error: es.auth.signup.validationRequired, fields: vacios, done: false };
-  }
-
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    return { error: es.auth.signup.validationEmail, fields: ["email"], done: false };
+  // A09 · los campos mal rellenados se señalan uno a uno. La comprobación
+  // es la de `core/access-requests.ts`, la misma que usa la pantalla del
+  // teléfono: escrita dos veces se separaría.
+  const revision = validateAccessRequest({ contactName, businessName, phone, email });
+  if (!revision.ok) {
+    const texto =
+      revision.problem === "missing" ? es.auth.signup.validationRequired : es.auth.signup.validationEmail;
+    return { error: texto, fields: [...revision.fields], done: false };
   }
 
   const supabase = await createClient();
@@ -134,9 +118,9 @@ export async function requestAccess(
     // A11 · si el envío falla, lo escrito no se pierde y se puede
     // reintentar. La acción no redirige, así que el formulario conserva
     // sus valores y la persona vuelve a pulsar.
-    const sinRed = error.message === "" || /fetch|network|timeout/i.test(error.message);
+    const motivo = accessRequestSubmitFailure(error.message);
     return {
-      error: sinRed ? es.auth.signup.unreachable : es.auth.signup.unknownError,
+      error: motivo === "unreachable" ? es.auth.signup.unreachable : es.auth.signup.unknownError,
       fields: [],
       done: false,
     };

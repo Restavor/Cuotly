@@ -71,7 +71,7 @@ export async function uploadImage(input: {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session) return { ok: false, error: es.auth.login.invalidCredentials };
+  if (!session) return { ok: false, error: es.session.expired };
 
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` };
 

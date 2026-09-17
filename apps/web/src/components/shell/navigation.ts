@@ -127,6 +127,22 @@ export const PANEL_ANCHORS = {
 
 export type PanelAnchorKey = keyof typeof PANEL_ANCHORS;
 
+/**
+ * El destino **sin el ancla**, que es lo que hay que comparar y lo que hay
+ * que navegar fuera del navegador.
+ *
+ * En la web el ancla es del navegador y no hace falta quitarla para ir:
+ * basta para comparar. En la app del teléfono sí hace falta para las dos
+ * cosas — `expo-router` casa rutas de ficheros y no sabe de fragmentos, así
+ * que `/espacios/x/restaurantes/y#solicitudes` no es ninguna de sus rutas y
+ * acababa en la pantalla de "esto está en la web". Un restaurante que
+ * abriera "Más" y tocara Solicitudes, Nueva solicitud o Mensajes se
+ * encontraba con que sus tres destinos no estaban en la app, y sí estaban.
+ */
+export function hrefWithoutAnchor(href: string): string {
+  return href.split("#")[0].replace(/\/+$/, "") || "/";
+}
+
 export function mobileNav(
   spaceSlug: string,
   role: ShellRole,
@@ -418,19 +434,18 @@ export function activeDestination(
    * pantalla que él no puede abrir. El ancla se quita antes de comparar:
    * `#mensajes` es la misma pantalla que su Inicio.
    */
-  const sinAncla = (href: string) => href.split("#")[0].replace(/\/+$/, "");
   const lista = isStaffRole(role)
     ? desktopMenu(spaceSlug)
     : fullNav(spaceSlug, role, establishmentId);
 
   return lista
     .filter((d) => {
-      const href = sinAncla(d.href);
+      const href = hrefWithoutAnchor(d.href);
       return limpio === href || limpio.startsWith(`${href}/`);
     })
     .reduce<NavDestination | null>(
       (mejor, d) =>
-        mejor === null || sinAncla(d.href).length > sinAncla(mejor.href).length ? d : mejor,
+        mejor === null || hrefWithoutAnchor(d.href).length > hrefWithoutAnchor(mejor.href).length ? d : mejor,
       null,
     );
 }

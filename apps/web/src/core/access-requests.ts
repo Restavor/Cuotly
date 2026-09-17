@@ -195,3 +195,65 @@ export function invitationSignupStep(
  * sale, no lo que se ve.
  */
 export const ACCESS_REQUEST_SUBMIT_OUTCOME = "received" as const;
+
+/**
+ * A09 · qué falta o qué está mal en el formulario público, campo a campo.
+ *
+ * Estaba escrito dentro de `app/(auth)/actions.ts`, un módulo
+ * `"use server"` que la app del teléfono no puede importar. Con la
+ * pantalla de solicitud también en el móvil, dejarlo allí obligaba a
+ * escribir la misma comprobación dos veces, y dos comprobaciones de lo
+ * mismo se separan: la del teléfono habría aceptado lo que la web rechaza
+ * —o al revés— sin que nadie se enterara hasta verlo.
+ *
+ * Devuelve **claves de campo**, no frases: el texto lo pone cada pantalla
+ * desde `src/i18n/es.ts` (CLAUDE.md). Los nombres son los del formulario
+ * de la web, que es lo que esa pantalla usa para marcar cada campo.
+ *
+ * Esto no es el control: `submit_access_request()` vuelve a exigir los
+ * cuatro campos y el arroba del lado del servidor, y es la que manda. Lo
+ * de aquí evita el viaje y señala dónde está el problema.
+ */
+export interface AccessRequestInput {
+  readonly contactName: string;
+  readonly businessName: string;
+  readonly phone: string;
+  readonly email: string;
+}
+
+export type AccessRequestValidation =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly problem: "missing" | "email"; readonly fields: readonly string[] };
+
+export function validateAccessRequest(input: AccessRequestInput): AccessRequestValidation {
+  const vacios = (
+    [
+      ["contact_name", input.contactName],
+      ["business_name", input.businessName],
+      ["phone", input.phone],
+      ["email", input.email],
+    ] as const
+  )
+    .filter(([, valor]) => valor.trim() === "")
+    .map(([campo]) => campo);
+
+  if (vacios.length > 0) return { ok: false, problem: "missing", fields: vacios };
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.email.trim())) {
+    return { ok: false, problem: "email", fields: ["email"] };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * A11 · un envío que no llega no se cuenta como un dato mal escrito. El
+ * mismo reparto que `classifySignInError()` hace para entrar, con el
+ * mínimo que este formulario necesita: o no hubo línea, o falló y no se
+ * sabe por qué. En ninguno de los dos casos se pierde lo escrito.
+ */
+export function accessRequestSubmitFailure(message: string): "unreachable" | "unknown" {
+  return message === "" || /fetch|network|timeout|econnrefused|enotfound/i.test(message)
+    ? "unreachable"
+    : "unknown";
+}

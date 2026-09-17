@@ -2,7 +2,9 @@ import { usePathname, useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { mobileNav, type NavDestination, type ShellRole } from "@/components/shell/navigation";
+import { hrefWithoutAnchor, mobileNav, type NavDestination, type ShellRole } from "@/components/shell/navigation";
+
+import { navigableHref } from "../lib/routes";
 
 import { colors } from "../lib/theme";
 
@@ -19,10 +21,13 @@ export function barDestinations(slug: string, role: ShellRole, establishmentId: 
 }
 
 function isActive(pathname: string, href: string, all: readonly NavDestination[]): boolean {
-  const clean = pathname.replace(/\/+$/, "") || "/";
-  const matches = all.filter((d) => clean === d.href || clean.startsWith(`${d.href}/`));
+  const clean = hrefWithoutAnchor(pathname);
+  const matches = all.filter((d) => {
+    const limpio = navigableHref(d.href);
+    return clean === limpio || clean.startsWith(`${limpio}/`);
+  });
   if (matches.length === 0) return false;
-  const best = matches.reduce((a, b) => (b.href.length > a.href.length ? b : a));
+  const best = matches.reduce((a, b) => (navigableHref(b.href).length > navigableHref(a.href).length ? b : a));
   return best.href === href;
 }
 
@@ -39,7 +44,7 @@ export function BottomBar({ slug, role, establishmentId }: { slug: string; role:
         return (
           <Pressable
             key={d.key}
-            onPress={() => router.push(d.href as never)}
+            onPress={() => router.push(navigableHref(d.href) as never)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
             style={styles.item}

@@ -5,11 +5,18 @@ import { moreDestinations } from "@/components/shell/navigation";
 import { Body, Button, Card, Loading, Screen, Title } from "../../../src/components/ui";
 import { es } from "../../../src/i18n/es";
 import { useAuth } from "../../../src/lib/auth-context";
+import { navigableHref } from "../../../src/lib/routes";
 import { useSpace } from "../../../src/lib/space-context";
 
 /**
  * §21 · "Más" es lo que no cabe en los cinco: se deriva de la misma
  * función que en la web (RN-MOV-02), y no se escribe a mano.
+ *
+ * Se navega por `navigableHref()` y no por el `href` tal cual: desde
+ * RN-PAN-07 los tres destinos del panel del restaurante llevan ancla
+ * (`#solicitudes`, `#nueva-solicitud`, `#mensajes`) y `expo-router` no sabe
+ * de fragmentos, así que un restaurante que tocara cualquiera de los tres
+ * aterrizaba en "esto está en la web" con la pantalla delante.
  */
 export default function MoreScreen() {
   const { viewer } = useSpace();
@@ -21,7 +28,7 @@ export default function MoreScreen() {
   return (
     <Screen title={es.more.title}>
       {destinations.map((d) => (
-        <Card key={d.key} onPress={() => router.push(d.href as never)} testID={`mas-${d.key}`}>
+        <Card key={d.key} onPress={() => router.push(navigableHref(d.href) as never)} testID={`mas-${d.key}`}>
           <Title>{d.label}</Title>
         </Card>
       ))}

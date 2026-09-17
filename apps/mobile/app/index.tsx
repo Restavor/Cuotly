@@ -1,7 +1,8 @@
 import { Redirect, useRouter } from "expo-router";
 
+import { myContexts } from "@/services/global-gateway";
+
 import { es, web } from "../src/i18n/es";
-import { must } from "../src/lib/api";
 import { useAuth } from "../src/lib/auth-context";
 import { supabase } from "../src/lib/supabase";
 import { useLoader } from "../src/lib/use-loader";
@@ -9,44 +10,42 @@ import { Body, Button, CacheNotice, Card, Empty, ErrorBox, Loading, Screen, Titl
 
 type Contexts = {
   spaces: readonly { id: string; name: string; slug: string; role: string }[];
-  establishments: readonly { id: string; name: string; slug: string; spaceName: string }[];
+  establishments: readonly { id: string; name: string; slug: string }[];
 };
 
 /**
  * §20.1 · el selector de contexto: los espacios donde esta persona es del
  * equipo y los restaurantes a los que tiene acceso. Con uno solo se entra
  * directamente. El rol sale de la membresía real (RN-MOV-02).
+ *
+ * Sale de `my_contexts()` (RN-GLO-03, migración 98), la **misma** función
+ * que usa la web, por el mismo módulo de servicio. Antes esta pantalla lo
+ * armaba a mano: leía `space_memberships`, leía `establishments`, se
+ * quedaba con los que no fueran de sus espacios y pedía `space_slug()`
+ * **uno por uno** —una llamada por restaurante— para poder construir el
+ * enlace. Eso es la regla de "de quién es cada contexto" escrita por
+ * segunda vez, y la segunda copia se separa de la primera: la condición de
+ * verdad es `is_establishment_client()`, no "no está en mis espacios", y
+ * las dos dejan de coincidir en cuanto alguien del equipo es además
+ * cliente de otro espacio.
  */
-async function loadContexts(userId: string): Promise<Contexts> {
-  const { data: rows, error } = await supabase
-    .from("space_memberships")
-    .select("role, spaces (id, name, slug)")
-    .eq("user_id", userId)
-    .eq("status", "active");
-  const memberships = must(rows, error);
-  const spaces = memberships
-    .map((m) => {
-      const s = m.spaces as unknown as { id: string; name: string; slug: string } | null;
-      return s ? { id: s.id, name: s.name, slug: s.slug, role: m.role } : null;
-    })
-    .filter((s): s is NonNullable<typeof s> => s !== null);
-
-  const spaceIds = new Set(spaces.map((s) => s.id));
-  const { data: ests } = await supabase.from("establishments").select("id, name, space_id");
-  const clientEsts = (ests ?? []).filter((e) => !spaceIds.has(e.space_id));
-  const establishments: { id: string; name: string; slug: string; spaceName: string }[] = [];
-  for (const e of clientEsts) {
-    const { data: slug } = await supabase.rpc("space_slug", { p_space_id: e.space_id });
-    if (slug) establishments.push({ id: e.id, name: e.name, slug, spaceName: "" });
-  }
-  return { spaces, establishments };
+async function loadContexts(): Promise<Contexts> {
+  const filas = await myContexts(supabase);
+  return {
+    spaces: filas
+      .filter((f) => f.kind === "space")
+      .map((f) => ({ id: f.space_id, name: f.space_name, slug: f.space_slug, role: f.role })),
+    establishments: filas
+      .filter((f) => f.kind === "establishment")
+      .map((f) => ({ id: f.establishment_id, name: f.establishment_name, slug: f.space_slug })),
+  };
 }
 
 export default function HomeScreen() {
   const { session, loading, signOut } = useAuth();
   const router = useRouter();
   const userId = session?.user.id ?? null;
-  const contexts = useLoader(userId, "contexts", () => loadContexts(userId as string), []);
+  const contexts = useLoader(userId, "contexts", loadContexts, []);
 
   if (loading) return <Loading />;
   if (!session) return <Redirect href="/login" />;
