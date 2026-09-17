@@ -2130,3 +2130,147 @@ Lo que este apartado **no** trae, dicho en claro: **no** sustituye a la solicitu
 espacio (RN-PLA), **no** crea espacios, paneles ni suscripciones al aprobarse (RN-ACC-03), **no**
 cobra nada, **no** deja ninguna vía de alta que no sean las dos de RN-ACC-01 y **no** toca el bloque
 legal, que sigue en el paso 4 del orden acordado.
+
+## 38. Las cuatro del grupo C: transferencia, copias, canales y recordatorios — después del Hito 22 (RN-TRA, RN-BCK, RN-CAN, RN-REC)
+
+Las catorce piezas sueltas del diseño (`docs/diseno/LAS-CATORCE-PIEZAS.md`) se triaron el
+17/09/2026 en tres grupos. Once se construyeron ese mismo día porque sus reglas ya existían. Estas
+cuatro no las tenían **en ninguna parte**, ni en el PRD ni en la maestra: construirlas antes de
+decidirlas habría sido inventarlas, que es lo que `CLAUDE.md` prohíbe. Bosco las decidió en dos
+tandas —**decisión 43** el qué, **decisión 44** el cómo—, y esto es lo que decidió, escrito como
+reglas antes de tocar código.
+
+La quinta del grupo, los **alérgenos** del editor de menú (R14), sigue sin decidir y **no se
+construye**: es la única de las catorce que toca materia legal, y va con el paso 4.
+
+### 38.1 Transferir un restaurante a otro espacio (RN-TRA)
+
+La vista M84 enseña mover un establecimiento a otro espacio de mantenimiento. Es la operación más
+delicada de las cuatro, porque mueve la organización interna de un equipo a la casa de otro.
+
+- **RN-TRA-01**: **el historial viaja con el restaurante** (decisión 43). El espacio de destino
+  hereda solicitudes, trabajos, tareas, menús, archivos, conversaciones, consumos y auditoría. Se
+  decidió con la consecuencia escrita delante: el equipo nuevo pasará a ver trabajos y
+  conversaciones internas del equipo anterior. Lo que el principio P7 protege sigue protegido hacia
+  el **cliente**; entre equipos, manda esta regla.
+- **RN-TRA-02**: **hacen falta dos firmas** (decisión 44). El propietario del espacio de origen la
+  **propone** y el propietario del espacio de destino la **acepta**. Un restaurante no cambia de
+  espacio porque alguien pulse un botón en el suyo: el destino recibe historial ajeno y tiene que
+  decir que sí. Es la misma forma que la solicitud de acceso de §37: se pide, y otro concede.
+- **RN-TRA-03**: **mientras la propuesta está abierta, el restaurante sigue entero en el origen**.
+  No hay ningún estado intermedio en el que no sea de nadie: se sigue trabajando en él con
+  normalidad, y lo único que existe de más es una propuesta pendiente que se ve por los dos lados.
+- **RN-TRA-04**: **los cobros abiertos y la permanencia se quedan en el origen** (decisión 44). La
+  deuda es de quien la emitió, igual que RN-FIN-14 dice de la baja. El destino empieza a facturar
+  desde cero, con el plan y la permanencia que acuerde. Los cobros pagados tampoco viajan: son
+  historia contable del espacio que los cobró.
+- **RN-TRA-05**: **con deuda vencida no se transfiere** (decisión 44). La propuesta se rechaza en el
+  servidor si el restaurante tiene deuda vencida, y el motivo se dice. Sin esta regla, mover un
+  restaurante a otro espacio sería una manera de escapar de la deuda cambiando de sitio, y ya existe
+  la guarda contraria: de una parada por impago se sale cobrando (RN-FIN-13).
+- **RN-TRA-06**: **una propuesta viva por restaurante**. Proponer dos veces el mismo restaurante a
+  dos espacios distintos dejaría dos aceptaciones posibles y una carrera por quién pulsa antes.
+  Mientras haya una propuesta pendiente no se crea otra; se retira la que hay y se hace la nueva.
+- **RN-TRA-07**: **quien propone puede retirarla y el destino puede rechazarla**, en los dos casos
+  con motivo. Nada se borra: la propuesta queda con su desenlace, porque "nos ofrecieron un
+  restaurante y dijimos que no" es un hecho que se consulta después.
+- **RN-TRA-08**: **el acceso del cliente viaja y el del equipo no**. Quien tenía acceso al
+  restaurante **como cliente** —su propietario local, sus editores— lo sigue teniendo: es su
+  restaurante, no el del equipo. Los accesos del **equipo de origen** (autorizaciones de trabajador
+  sobre ese establecimiento) se quedan atrás: son permisos de un espacio y no significan nada en
+  otro.
+- **RN-TRA-09**: **la transferencia es un acto con nombre y auditoría propia**, en los dos espacios.
+  Queda quién la propuso, quién la aceptó, cuándo y con qué motivo. No es un `update` de la columna
+  `space_id` y no se puede hacer con uno: si algún día alguien mueve un restaurante escribiendo esa
+  columna a mano, lo que se pierde es justamente la explicación.
+- **RN-TRA-10**: **un grupo no se parte**. Un restaurante que pertenece a un grupo con más
+  restaurantes en el espacio de origen se lleva consigo la pertenencia a un grupo **del destino**,
+  que se crea con el mismo nombre si no existía. El grupo de origen se queda con los que no se
+  movieron. Partir un grupo entre dos espacios dejaría un "todos los del grupo" que significa cosas
+  distintas según quién lo mire.
+
+### 38.2 Copias de seguridad del contenido del restaurante (RN-BCK)
+
+La vista M83 enseña un historial de respaldos, una descarga y una revisión de restauración. No
+existía nada: ni tabla, ni proceso, ni una línea escrita.
+
+- **RN-BCK-01**: **se respalda lo que hay dentro de Cuotly** (decisión 43): los datos del
+  restaurante, sus solicitudes, sus menús y sus versiones, sus archivos y sus conversaciones. **No
+  la web del restaurante**, que Cuotly no aloja: respaldarla habría significado conectarse a donde
+  esté alojada, que es otra cosa y no está decidida.
+- **RN-BCK-02**: **una copia al día y se guardan treinta** (decisión 44). Un mes de vuelta atrás con
+  resolución de un día.
+- **RN-BCK-03**: **la copia número treinta y uno desaparece**, y es **el único borrado físico que
+  este producto admite**. Se admite porque una copia no es un registro de negocio: es una foto de
+  él, y el registro sigue donde estaba. `CLAUDE.md` prohíbe borrar registros de negocio, no fotos
+  de ellos.
+- **RN-BCK-04**: **restaurar es descargar, y lo aplica el equipo a mano** (decisión 44). Cuotly no
+  deshace nada. El motivo es el mismo que sostiene el producto entero: reponer los datos de una
+  fecha anterior machacaría apuntes de auditoría, consumos y cobros posteriores, y todo esto está
+  construido sobre libros que no se reescriben. Una restauración automática sería la única operación
+  de Cuotly capaz de romper esa promesa. **La pantalla lo dice con esas palabras** en vez de ofrecer
+  un botón que promete más de lo que hace.
+- **RN-BCK-05**: **una copia se descarga con las mismas reglas que un archivo** (RN-ARC-08): enlace
+  privado, temporal y firmado después de comprobar el permiso, nunca una dirección pública.
+- **RN-BCK-06**: **descargar una copia queda registrado**, con quién y cuándo. Una copia lleva
+  dentro todo lo del restaurante, así que quién se la llevó es exactamente el dato que hará falta el
+  día que haya que preguntarlo.
+- **RN-BCK-07**: **quien puede descargar una copia es el equipo con `manage_clients`**, no el
+  restaurante. Una copia es una herramienta de administración y lleva dentro material del espacio;
+  el restaurante tiene su propia exportación (§141) para llevarse lo suyo.
+- **RN-BCK-08** *(lectura)*: **una copia que no se ha generado no se anuncia**. Hasta que exista la
+  primera, la pantalla dice que todavía no hay copias y por qué, no un historial vacío que parece
+  que se llenará solo (CA-20).
+
+### 38.3 Canales de mensajería interna del espacio (RN-CAN)
+
+La vista M76 enseña General, Proyectos web, Menú diario, Redes sociales y los que el equipo cree,
+con miembros por canal. Hasta ahora `conversations.type` era un CHECK cerrado de tres valores
+—solicitud, interna de trabajo y establecimiento— y quién lee cada una lo decidía
+`can_read_conversation()` a partir de la solicitud, el trabajo o el restaurante del que cuelga. Un
+canal no cuelga de ninguno de los tres: es una cuarta cosa.
+
+- **RN-CAN-01**: **un canal es del espacio** (decisión 43), no de un restaurante ni de un trabajo.
+  Lleva `space_id` y su lista de miembros se elige **a mano**: no hereda de ningún permiso existente.
+- **RN-CAN-02**: **el cliente no entra en un canal, nunca**. Es organización interna del equipo, que
+  es el principio P7 en su forma más simple: aquí no hay una columna que tapar, hay una fila que el
+  cliente no puede ver. Lo sostiene RLS, no la pantalla.
+- **RN-CAN-03**: **los cuatro nombres de la maqueta vienen de fábrica** (decisión 43) —General,
+  Proyectos web, Menú diario, Redes sociales— y se crean con el espacio. No son una lista cerrada:
+  el propietario o un administrador crea los que quiera.
+- **RN-CAN-04**: **quien crea un canal y gestiona sus miembros es el propietario o un administrador
+  del espacio**. Un trabajador escribe en los canales de los que es miembro y no añade a nadie.
+- **RN-CAN-05**: **un canal se archiva, no se borra**, como todo lo demás. Un canal archivado deja
+  de aparecer en la lista y sigue siendo legible por sus miembros: lo que se dijo dentro se dijo.
+- **RN-CAN-06**: **los mensajes de un canal son mensajes** y se comportan como tales: se editan
+  durante 10 minutos, no se eliminan nunca (RN-MSG), y su historial de ediciones se conserva.
+- **RN-CAN-07**: **un canal sin miembros no lo lee nadie**, ni siquiera quien lo creó. No es un caso
+  raro que haya que evitar: es la consecuencia correcta de que la lista de miembros sea la única
+  llave. Quien crea un canal entra en él en el mismo acto.
+
+### 38.4 Recordatorios de cobro (RN-REC)
+
+La vista M52 enseña tres avisos. El PRD tenía **dos umbrales** —RN-FIN-10 a las +24 h del
+vencimiento y RN-FIN-11 a las +72 h— y un tercero inventado habría sido exactamente lo que
+`CLAUDE.md` prohíbe.
+
+- **RN-REC-01**: **los tres avisos son el vencimiento, las +24 h y las +72 h** (decisión 43). No se
+  añade ningún plazo nuevo: los dos últimos son los que ya existen, y el primero sale de una fecha
+  que ya se guarda, `charges.due_at`.
+- **RN-REC-02**: **el aviso del vencimiento es lo único nuevo**. Los otros dos ya se emiten al
+  pausar y al suspender por impago. El del vencimiento se emite **el día que vence** un cobro que
+  sigue con deuda viva, y no pausa nada ni cambia ningún estado: avisa.
+- **RN-REC-03**: **cada cobro avisa una sola vez por umbral**, y lo garantiza una clave de
+  idempotencia, no un contador. Que el barrido se ejecute dos veces el mismo día no manda dos
+  correos.
+- **RN-REC-04**: **un cobro sin deuda viva no avisa**, aunque llegue su fecha. Lo que decide es el
+  libro de apuntes (RN-FIN-02), no el estado guardado: un cobro pagado ayer no recuerda nada hoy.
+- **RN-REC-05**: **el aviso va al restaurante y queda en su historial de avisos**, con las mismas
+  preferencias de notificación que todo lo demás (RN-NOT). No es un aviso obligatorio de RN-NOT-03:
+  el restaurante puede apagarlo, y las dos consecuencias de no pagar —la pausa y la suspensión— le
+  llegan igual porque aquellas sí lo son.
+
+Lo que este apartado **no** trae, dicho en claro: **no** hay restauración automática de una copia
+(RN-BCK-04), **no** hay transferencia sin que el destino la acepte (RN-TRA-02), **no** viaja ninguna
+deuda entre espacios (RN-TRA-04), **no** entra ningún cliente en un canal (RN-CAN-02) y **no** se
+inventa ningún plazo de cobro que no estuviera ya escrito (RN-REC-01).

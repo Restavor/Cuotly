@@ -796,6 +796,34 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    CLAUDE.md manda que revise un profesional. No se construye hasta que Bosco diga si es texto libre
    por plato o la lista de los catorce alérgenos de la normativa europea con casillas.
 
+44. **Los cuatro flecos que la decisión 43 dejó sin contestar** (17/09/2026). La 43 decidió el
+   *qué* de cuatro piezas y dejó dentro cuatro preguntas de *cómo* que seguían sin respuesta y que
+   CLAUDE.md prohíbe inventar. Se preguntaron con la recomendación escrita delante y Bosco eligió
+   las cuatro recomendadas.
+   - **La transferencia la ACEPTA el espacio de destino.** El propietario del origen la propone y el
+     del destino la acepta; hasta entonces no se mueve nada. Dos firmas, como la solicitud de
+     acceso. El motivo es el que la decisión 43 dejó escrito: si el historial viaja, el destino
+     recibe trabajos y conversaciones internas de otro equipo, y eso no se le puede meter en casa
+     sin que diga que sí. Mientras la propuesta está abierta, el restaurante **sigue entero en el
+     origen**: no hay un limbo en el que no sea de nadie.
+   - **Los cobros y la permanencia se quedan en el origen, y con deuda vencida no se transfiere.**
+     La deuda es de quien la emitió, que es lo mismo que RN-FIN-14 ya dice de la baja. El destino
+     empieza a facturar desde cero, con su plan y su permanencia nuevos. Y si hay deuda vencida, la
+     transferencia se para: mover a un moroso a otro espacio sería una manera de borrar la deuda
+     cambiando de sitio, y ya existe la guarda de RN-FIN-13 que dice que de una parada por impago se
+     sale cobrando.
+   - **Copias de seguridad: una al día, se guardan 30.** Un mes de vuelta atrás con resolución de
+     un día. Es lo que espera quien mira el historial de respaldos de la maqueta, y lo que Cuotly
+     guarda de un restaurante —menús, solicitudes, archivos, datos— no pesa lo bastante como para
+     que treinta copias sean un problema. La número 31 desaparece: **es el único borrado físico que
+     el producto admite**, y se admite porque una copia no es un registro de negocio, es una foto
+     de él.
+   - **"Restaurar" es descargar, y lo aplica el equipo a mano.** Cuotly no deshace nada. No es
+     pereza: reponer los datos de hace tres días machacaría apuntes de auditoría, consumos y cobros
+     posteriores, y el producto entero está construido sobre libros que no se reescriben. Una
+     restauración automática sería la única operación de Cuotly capaz de romper esa promesa. La
+     pantalla lo dice con esas palabras en vez de ofrecer un botón que promete más de lo que hace.
+
 ---
 
 ### Pendiente de completar
