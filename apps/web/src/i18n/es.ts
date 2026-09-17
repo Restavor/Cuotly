@@ -2635,6 +2635,8 @@ export const es = {
       "space.archived_nonpayment": "Espacio archivado por impago",
       "space.reactivated": "Espacio reactivado",
       "space.plan_changed": "Plan de Cuotly cambiado",
+      "space.tax_rate_changed": "Cambió el IVA por defecto del espacio",
+      "establishment.termination_requested": "El restaurante comunicó la baja del servicio",
       "space.plan_change_scheduled": "Cambio de plan de Cuotly programado",
       "space.plan_change_cancelled": "Cambio de plan de Cuotly anulado",
       "space.extras_changed": "Adicionales de Cuotly cambiados",

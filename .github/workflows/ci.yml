@@ -412,6 +412,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_contexto_global.sql
 
+      - name: "Paso 2 — Verificar las piezas sueltas del diseño: IVA del espacio, cancelar solicitud, edición simultánea del menú y baja del servicio (M58, R12, A17, R24/M47)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/piezas_sueltas_del_diseno.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

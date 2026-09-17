@@ -7624,6 +7624,22 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_request: {
+        Args: { p_reason?: string; p_request_id: string }
+        Returns: undefined
+      }
+      request_service_termination: {
+        Args: {
+          p_establishment_id: string
+          p_reason?: string
+          p_requested_by_client?: boolean
+        }
+        Returns: undefined
+      }
+      set_space_tax_rate: {
+        Args: { p_percent: number; p_space_id: string }
+        Returns: undefined
+      }
       submit_access_request: {
         Args: {
           p_business_name: string
@@ -9700,6 +9716,8 @@ export type Database = {
         Args: {
           p_desserts: string[]
           p_drink?: string
+          /** A17 · contra qué versión se empezó a escribir. Sin él, como siempre. */
+          p_expected_version?: number
           p_mains: string[]
           p_menu_id: string
           p_note?: string

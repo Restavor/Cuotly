@@ -213,6 +213,9 @@ export const AUDIT_ACTIONS = [
   "establishment.created",
   "establishment.data_changed",
   "establishment.status_changed",
+  // Migración 99 (R24, M47, RN-EST-09) · el restaurante comunica la baja, o
+  // el equipo registra la que llegó por fuera.
+  "establishment.termination_requested",
   "establishment_access.granted",
   "establishment_access.revoked",
   "establishment_note.archived",
@@ -362,6 +365,9 @@ export const AUDIT_ACTIONS = [
   "space.payment_term_changed",
   "space.plan_change_cancelled",
   "space.plan_change_scheduled",
+  // Migración 99 (M58) · el IVA por defecto del espacio. RN-FIN-08 lo
+  // congela en cada cobro al emitirlo, así que esto mueve los futuros.
+  "space.tax_rate_changed",
   "space.onboarding_completed",
   "space.ownership_transferred",
   "space.plan_changed",
