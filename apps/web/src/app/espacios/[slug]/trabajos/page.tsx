@@ -14,6 +14,7 @@ import {
   TableRow,
 } from "@/components/ui";
 import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
+import { groupJobsByState } from "@/core/job-board";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { loadTeamJobs } from "./list-query";
@@ -46,12 +47,16 @@ export default async function TeamJobsPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ restaurante?: string }>;
+  searchParams: Promise<{ restaurante?: string; vista?: string }>;
 }) {
   const { slug } = await params;
   // A este filtro llega el enlace "Ver todos" de la Operación de la ficha
   // (vista 04). Recorta filas que RLS ya dejó pasar.
-  const { restaurante } = await searchParams;
+  const { restaurante, vista } = await searchParams;
+  // M09 · el tablero es la misma bandeja agrupada por estado, no otra
+  // pantalla ni otra consulta. Por eso vive en la misma ruta y solo
+  // cambia cómo se pinta lo que ya se ha leído.
+  const enTablero = vista === "tablero";
   const supabase = await createClient();
 
   const {
@@ -104,6 +109,21 @@ export default async function TeamJobsPage({
       ? (jobs ?? [])
       : (jobs ?? []).filter((job) => job.establishment_id === restaurante);
 
+  const hrefTrabajo = (id: string) =>
+    restaurante === undefined
+      ? `/espacios/${slug}/trabajos/${id}`
+      : `/espacios/${slug}/trabajos/${id}?restaurante=${restaurante}`;
+
+  const hrefVista = (destino: "lista" | "tablero") => {
+    const query = new URLSearchParams();
+    if (restaurante !== undefined) query.set("restaurante", restaurante);
+    if (destino === "tablero") query.set("vista", "tablero");
+    const cola = query.toString();
+    return cola === "" ? `/espacios/${slug}/trabajos` : `/espacios/${slug}/trabajos?${cola}`;
+  };
+
+  const { columns, unknown } = groupJobsByState(rows);
+
   return (
     <div className="mx-auto max-w-4xl p-8">
       <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.jobs.title}</h1>
@@ -127,12 +147,113 @@ export default async function TeamJobsPage({
         </div>
       )}
 
+      {/* M09 · lista y tablero son la misma bandeja; el conmutador no
+          recarga otra consulta, solo cambia cómo se pinta lo leído. Por eso
+          conserva el filtro de restaurante si lo había. */}
+      <div className="mb-4 flex items-center gap-3 text-sm">
+        <span className="font-semibold text-text">{es.teamArea.jobs.viewLabel}:</span>
+        <Link
+          href={hrefVista("lista")}
+          aria-current={enTablero ? undefined : "page"}
+          className={
+            enTablero ? "text-cuotly-green underline" : "font-semibold text-primary-dark"
+          }
+        >
+          {es.teamArea.jobs.viewList}
+        </Link>
+        <Link
+          href={hrefVista("tablero")}
+          aria-current={enTablero ? "page" : undefined}
+          className={
+            enTablero ? "font-semibold text-primary-dark" : "text-cuotly-green underline"
+          }
+        >
+          {es.teamArea.jobs.viewBoard}
+        </Link>
+      </div>
+
+      {enTablero ? <p className="mb-4 text-sm text-text-secondary">{es.teamArea.jobs.boardHint}</p> : null}
+
       <Card>
         {rows.length === 0 ? (
           <EmptyState
             title={es.teamArea.jobs.emptyTitle}
             description={es.teamArea.jobs.emptyReason}
           />
+        ) : enTablero ? (
+          <div className="flex gap-4 overflow-x-auto pb-2">
+            {columns.map((columna) => (
+              <section key={columna.state} className="w-64 shrink-0">
+                <header className="mb-2">
+                  <StatusBadge tone={jobTone(columna.state)}>
+                    {es.naming.states.job[columna.state]}
+                  </StatusBadge>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {es.teamArea.jobs.boardColumnCount(columna.jobs.length)}
+                  </p>
+                </header>
+                {columna.jobs.length === 0 ? (
+                  <p className="rounded-[10px] border border-dashed border-border p-3 text-xs text-text-secondary">
+                    {es.teamArea.jobs.boardColumnEmpty}
+                  </p>
+                ) : (
+                  <ul className="space-y-2">
+                    {columna.jobs.map((job) => (
+                      <li
+                        key={job.id}
+                        className="rounded-[10px] border border-border bg-surface p-3"
+                      >
+                        <Link href={hrefTrabajo(job.id)} className="text-cuotly-green underline">
+                          {job.code}
+                        </Link>
+                        <p className="mt-1 text-xs text-text">
+                          {establishmentName.get(job.establishment_id) ?? "—"}
+                        </p>
+                        <p className="text-xs text-text-secondary">
+                          {job.assigned_to
+                            ? (personName.get(job.assigned_to) ?? "—")
+                            : es.teamArea.jobs.unassigned}
+                        </p>
+                        {job.priority_rank === null ? null : (
+                          <p className="text-xs text-text-secondary">
+                            {es.teamArea.jobs.priorityColumn}:{" "}
+                            {es.teamArea.jobs.priorityShort(job.priority_rank)}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            ))}
+
+            {/* Un trabajo con un estado fuera de los once no debería existir
+                —la base lo impide con un CHECK—, pero si existiera, esconderlo
+                sería hacerlo desaparecer de la bandeja del equipo. */}
+            {unknown.length === 0 ? null : (
+              <section className="w-64 shrink-0">
+                <header className="mb-2">
+                  <StatusBadge tone="danger">{es.teamArea.jobs.boardUnknownTitle}</StatusBadge>
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {es.teamArea.jobs.boardUnknownHint}
+                  </p>
+                </header>
+                <ul className="space-y-2">
+                  {unknown.map((job) => (
+                    <li
+                      key={job.id}
+                      className="rounded-[10px] border border-border bg-surface p-3"
+                    >
+                      <Link href={hrefTrabajo(job.id)} className="text-cuotly-green underline">
+                        {job.code}
+                      </Link>
+                      <p className="mt-1 text-xs text-text-secondary">{job.state}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
         ) : (
           <Table>
             <TableHead>
@@ -149,14 +270,7 @@ export default async function TeamJobsPage({
               {rows.map((job) => (
                 <TableRow key={job.id}>
                   <TableCell>
-                    <Link
-                      href={
-                        restaurante === undefined
-                          ? `/espacios/${slug}/trabajos/${job.id}`
-                          : `/espacios/${slug}/trabajos/${job.id}?restaurante=${restaurante}`
-                      }
-                      className="text-cuotly-green underline"
-                    >
+                    <Link href={hrefTrabajo(job.id)} className="text-cuotly-green underline">
                       {job.code}
                     </Link>
                   </TableCell>

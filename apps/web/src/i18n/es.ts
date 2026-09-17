@@ -1238,6 +1238,20 @@ export const es = {
         "Primero lo que cada restaurante ha marcado como más importante; después, lo más reciente.",
       unassigned: "Sin asignar",
       openLink: "Abrir",
+
+      // M09 · la misma bandeja vista por estado. No hay dato nuevo: son los
+      // mismos trabajos, agrupados por la columna "Estado" de la tabla.
+      viewLabel: "Cómo verlo",
+      viewList: "Lista",
+      viewBoard: "Tablero",
+      boardHint:
+        "Los mismos trabajos, agrupados por su estado. Las columnas van en el orden en que un trabajo recorre su vida.",
+      boardColumnCount: (total: number) =>
+        total === 1 ? "1 trabajo" : `${total} trabajos`,
+      boardColumnEmpty: "Ninguno en este estado.",
+      boardUnknownTitle: "Estado no reconocido",
+      boardUnknownHint:
+        "Estos trabajos tienen un estado que no está en los once del PRD. Se enseñan aquí para no hacerlos desaparecer de la bandeja.",
       detailTitle: "Trabajo",
       assignTitle: "Asignar",
       assignHint:
