@@ -957,30 +957,171 @@ export type Database = {
           },
         ]
       }
+      channel_members: {
+        Row: {
+          added_by: string | null
+          conversation_id: string
+          created_at: string
+          id: string
+          revoked_at: string | null
+          revoked_by: string | null
+          space_id: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          space_id: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          space_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      establishment_backup_downloads: {
+        Row: {
+          backup_id: string
+          downloaded_at: string
+          downloaded_by: string
+          id: string
+          space_id: string
+        }
+        Insert: {
+          backup_id: string
+          downloaded_at?: string
+          downloaded_by: string
+          id?: string
+          space_id: string
+        }
+        Update: {
+          backup_id?: string
+          downloaded_at?: string
+          downloaded_by?: string
+          id?: string
+          space_id?: string
+        }
+        Relationships: []
+      }
+      establishment_backups: {
+        Row: {
+          content: Json
+          created_by: string | null
+          establishment_id: string
+          id: string
+          item_counts: Json
+          size_bytes: number
+          space_id: string
+          taken_at: string
+        }
+        Insert: {
+          content: Json
+          created_by?: string | null
+          establishment_id: string
+          id?: string
+          item_counts?: Json
+          size_bytes: number
+          space_id: string
+          taken_at?: string
+        }
+        Update: {
+          content?: Json
+          created_by?: string | null
+          establishment_id?: string
+          id?: string
+          item_counts?: Json
+          size_bytes?: number
+          space_id?: string
+          taken_at?: string
+        }
+        Relationships: []
+      }
+      establishment_transfers: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          decision_reason: string | null
+          establishment_id: string
+          from_space_id: string
+          id: string
+          proposed_at: string
+          proposed_by: string
+          reason: string | null
+          state: string
+          to_space_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          establishment_id: string
+          from_space_id: string
+          id?: string
+          proposed_at?: string
+          proposed_by: string
+          reason?: string | null
+          state?: string
+          to_space_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_reason?: string | null
+          establishment_id?: string
+          from_space_id?: string
+          id?: string
+          proposed_at?: string
+          proposed_by?: string
+          reason?: string | null
+          state?: string
+          to_space_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
+          archived_at: string | null
+          archived_by: string | null
           created_at: string
           establishment_id: string | null
           id: string
           job_id: string | null
+          name: string | null
           request_id: string | null
           space_id: string
           type: string
         }
         Insert: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string
           establishment_id?: string | null
           id?: string
           job_id?: string | null
+          name?: string | null
           request_id?: string | null
           space_id: string
           type: string
         }
         Update: {
+          archived_at?: string | null
+          archived_by?: string | null
           created_at?: string
           establishment_id?: string | null
           id?: string
           job_id?: string | null
+          name?: string | null
           request_id?: string | null
           space_id?: string
           type?: string
@@ -7635,6 +7776,54 @@ export type Database = {
           p_requested_by_client?: boolean
         }
         Returns: undefined
+      }
+      propose_establishment_transfer: {
+        Args: { p_establishment_id: string; p_reason?: string; p_to_space_id: string }
+        Returns: string
+      }
+      withdraw_establishment_transfer: {
+        Args: { p_reason?: string; p_transfer_id: string }
+        Returns: undefined
+      }
+      reject_establishment_transfer: {
+        Args: { p_reason?: string; p_transfer_id: string }
+        Returns: undefined
+      }
+      accept_establishment_transfer: {
+        Args: { p_transfer_id: string }
+        Returns: undefined
+      }
+      space_owner_is_me: { Args: { p_space_id: string }; Returns: boolean }
+      create_establishment_backup: {
+        Args: { p_establishment_id: string }
+        Returns: string
+      }
+      download_establishment_backup: { Args: { p_backup_id: string }; Returns: Json }
+      create_channel: { Args: { p_name: string; p_space_id: string }; Returns: string }
+      add_channel_member: {
+        Args: { p_conversation_id: string; p_user_id: string }
+        Returns: string
+      }
+      remove_channel_member: {
+        Args: { p_conversation_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      archive_channel: {
+        Args: { p_archived?: boolean; p_conversation_id: string }
+        Returns: undefined
+      }
+      is_channel_member: { Args: { p_conversation_id: string }; Returns: boolean }
+      my_channels: {
+        Args: { p_space_id: string }
+        Returns: {
+          archived_at: string | null
+          i_am_member: boolean
+          id: string
+          last_message_at: string | null
+          member_count: number
+          name: string | null
+          unread_count: number | null
+        }[]
       }
       set_space_tax_rate: {
         Args: { p_percent: number; p_space_id: string }

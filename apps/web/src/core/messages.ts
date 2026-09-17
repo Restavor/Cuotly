@@ -17,7 +17,12 @@
 import { err, ok, type Result } from "./result";
 
 /** §66: los tres tipos de conversación, sin ninguno más. */
-export type ConversationType = "request" | "job_internal" | "establishment";
+/**
+ * §66 daba tres tipos; §38 (RN-CAN) añade el cuarto. Un canal no cuelga de
+ * una solicitud, ni de un trabajo, ni de un restaurante: es del espacio, y
+ * quién lo lee lo decide su lista de miembros.
+ */
+export type ConversationType = "request" | "job_internal" | "establishment" | "channel";
 
 /** Quién escribe. El cliente nunca ve más granularidad que esto (RN-MSG-02). */
 export type SenderRole = "staff" | "client";
@@ -34,6 +39,10 @@ export type Audience = "staff" | "client";
  * el cliente en ningún caso.
  */
 export function isClientVisibleConversation(type: ConversationType): boolean {
+  // Un canal NO está aquí, y es lo mismo que pasa con la interna de
+  // trabajo: RN-CAN-02 dice que el cliente no entra en un canal nunca. La
+  // lista se escribe en positivo —los que SÍ ve— para que un tipo nuevo
+  // caiga del lado seguro mientras nadie decida lo contrario.
   return type === "request" || type === "establishment";
 }
 

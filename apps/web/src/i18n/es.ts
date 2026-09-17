@@ -1611,6 +1611,48 @@ export const es = {
      * no tenían pantalla: la interna de un trabajo (§66.2) y la general de
      * un restaurante (§66.3).
      */
+    // §38, RN-CAN · los canales internos del espacio (M76).
+    channels: {
+      title: "Canales internos",
+      subtitle:
+        "Conversaciones del equipo que no cuelgan de ningún restaurante. Entra quien esté en la lista de miembros del canal, y nadie más.",
+      spaceChannel: "Canal del equipo",
+      notice:
+        "Esto es un canal interno del equipo. El restaurante no lo ve ni lo verá nunca.",
+      untitled: "Canal sin nombre",
+      unknownPerson: "Cuenta sin nombre",
+      archived: "Archivado",
+      memberCount: (n: number) => (n === 1 ? "1 miembro" : `${n} miembros`),
+      lastMessage: (fecha: string) => `Último mensaje el ${fecha}`,
+      noMessages: "Todavía no se ha escrito nada aquí.",
+      open: "Abrir el canal",
+      unread: (n: number) => (n === 1 ? "1 sin leer" : `${n} sin leer`),
+      notMember:
+        "No eres miembro de este canal, así que no puedes leer lo que se dice dentro. Ver que existe y entrar en él son dos cosas distintas.",
+      membersTitle: "Quién está dentro",
+      membersEmpty:
+        "Este canal no tiene miembros, así que no lo lee nadie. Añade a alguien para que sirva de algo.",
+      noCandidates: "Ya está todo el equipo dentro de este canal.",
+      addLabel: "Añadir a alguien del equipo",
+      addChoose: "Elige a quién",
+      add: "Añadir al canal",
+      remove: "Sacar",
+      memberRequired: "Elige a quién quieres añadir.",
+      archive: "Archivar el canal",
+      unarchive: "Desarchivar",
+      createTitle: "Crear un canal",
+      createHint:
+        "General, Proyectos web, Menú diario y Redes sociales vienen de fábrica. Crea los que necesites: nadie entra en uno sin que lo añadas.",
+      nameLabel: "Nombre del canal",
+      nameRequired: "Ponle un nombre al canal.",
+      createSubmit: "Crear el canal",
+      pending: "Guardando…",
+      done: "Hecho.",
+      emptyTitle: "No ves ningún canal",
+      emptyReason:
+        "O este espacio no tiene canales todavía, o no eres miembro de ninguno. Quien administra el espacio puede añadirte.",
+    },
+
     messages: {
       title: "Mensajes",
       subtitle: "Tus conversaciones del espacio, de la del último mensaje a la más antigua.",
@@ -3547,6 +3589,52 @@ export const es = {
     // Maqueta 06 · el enlace del encabezado. Solo aparece cuando hay sitio
     // web guardado: un botón que no lleva a ninguna parte es peor que no
     // tenerlo.
+    // §38, RN-TRA · transferir el restaurante a otro espacio.
+    transferTitle: "Transferir a otro espacio",
+    transferHint:
+      "Mueve el restaurante a otro espacio de mantenimiento. No es inmediato: el otro espacio tiene que aceptarlo, y hasta entonces todo sigue igual aquí.",
+    transferWhatTravels:
+      "Viaja con él todo su trabajo: solicitudes, trabajos, menús, archivos y conversaciones. El equipo del otro espacio los verá, también las conversaciones internas.",
+    transferWhatStays:
+      "Se quedan aquí los cobros, los pagos, el plan y el consumo del ciclo. La deuda es de quien la emitió, y el espacio nuevo empieza a facturar desde cero.",
+    transferNeedsAccept: "Con deuda vencida no se transfiere: primero se cobra.",
+    transferSpaceLabel: "Identificador del espacio de destino",
+    transferSpaceHint:
+      "Te lo da el otro espacio. No hay lista donde elegirlo: Cuotly no enseña los espacios de nadie más.",
+    transferSpaceRequired: "Escribe el identificador del espacio de destino.",
+    transferSubmit: "Proponer la transferencia",
+    transferOnlyOwner:
+      "Solo el propietario del espacio puede transferir un restaurante: esto lo saca del espacio entero, no lo cambia dentro.",
+    transferWaiting:
+      "Has propuesto transferir este restaurante. Está esperando a que el otro espacio lo acepte; mientras tanto, aquí no ha cambiado nada.",
+    transferWithdraw: "Retirar la propuesta",
+    transferWithdrawReason: "Motivo de la retirada (opcional)",
+    transferOfferedTitle: "Te ofrecen este restaurante",
+    transferOfferedHint:
+      "Otro espacio quiere transferirte este restaurante. Si aceptas, pasa a ser tuyo con todo su trabajo dentro.",
+    transferNoUndo:
+      "No hay deshacer. Para devolverlo haría falta otra transferencia en sentido contrario, y el otro espacio tendría que aceptarla.",
+    transferAccept: "Aceptar y traerlo a mi espacio",
+    transferReject: "Rechazar",
+    transferRejectReason: "Motivo del rechazo",
+
+    // §38, RN-BCK · las copias de seguridad del contenido.
+    backupsTitle: "Copias de seguridad",
+    backupsHint:
+      "Una copia diaria de lo que Cuotly guarda de este restaurante: sus datos, sus solicitudes, sus menús y sus conversaciones. Se guardan las treinta últimas.",
+    backupsNoRestore:
+      "Restaurar es descargar la copia y volver a poner a mano lo que haga falta. Cuotly no deshace nada: reponer los datos de otra fecha machacaría la auditoría, los consumos y los cobros posteriores, y todo esto está construido sobre libros que no se reescriben.",
+    backupsInventory:
+      "La copia lleva el listado de los archivos —nombre, tamaño y fecha—, no los archivos en sí: esos se descargan uno a uno desde donde están.",
+    backupsContents: (solicitudes: number, menus: number, archivos: number) =>
+      `${solicitudes} solicitudes · ${menus} menús · ${archivos} archivos`,
+    backupsDownload: "Descargar",
+    backupsCreate: "Generar una copia ahora",
+    backupsDone: "Copia generada.",
+    backupsEmptyTitle: "Todavía no hay ninguna copia",
+    backupsEmptyReason:
+      "La primera se genera con el barrido diario. Si la necesitas antes, puedes generarla ahora.",
+
     // M84 y M47 · el bloque "Estado del servicio".
     serviceStatusTitle: "Estado del servicio",
     serviceStatusHint:

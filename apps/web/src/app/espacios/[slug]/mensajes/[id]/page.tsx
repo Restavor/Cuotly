@@ -48,7 +48,7 @@ export default async function ConversationPage({
 
   const { data: conversation } = await supabase
     .from("conversations")
-    .select("id, type, space_id, request_id, job_id, establishment_id")
+    .select("id, type, space_id, request_id, job_id, establishment_id, name, archived_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -101,19 +101,26 @@ export default async function ConversationPage({
   // PRD llama "un fallo aquí es un fallo grave".
   const loLeeElCliente = isClientVisibleConversation(type);
 
+  // §38, RN-CAN · el nombre de un canal ES su título: es lo único que lo
+  // distingue de los demás, y llamarlo "Conversación" sería quitarle lo
+  // único que dice de qué va.
   const titulo =
-    type === "job_internal"
-      ? es.teamArea.messages.internalTitle
-      : type === "establishment"
-        ? es.teamArea.messages.establishmentTitle
-        : es.clientArea.conversationTitle;
+    type === "channel"
+      ? (conversation.name ?? es.teamArea.channels.untitled)
+      : type === "job_internal"
+        ? es.teamArea.messages.internalTitle
+        : type === "establishment"
+          ? es.teamArea.messages.establishmentTitle
+          : es.clientArea.conversationTitle;
 
   const aviso =
-    type === "job_internal"
-      ? es.teamArea.messages.internalNotice
-      : loLeeElCliente
-        ? es.teamArea.messages.establishmentNotice
-        : undefined;
+    type === "channel"
+      ? es.teamArea.channels.notice
+      : type === "job_internal"
+        ? es.teamArea.messages.internalNotice
+        : loLeeElCliente
+          ? es.teamArea.messages.establishmentNotice
+          : undefined;
 
   /*
     Maqueta 18 · las notas internas del restaurante, al lado de la
@@ -139,7 +146,11 @@ export default async function ConversationPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-8">
       <header>
-        <p className="text-sm text-text-secondary">{establishment?.name ?? "—"}</p>
+        <p className="text-sm text-text-secondary">
+          {type === "channel"
+            ? es.teamArea.channels.spaceChannel
+            : (establishment?.name ?? "—")}
+        </p>
         <h1 className="text-2xl font-bold text-primary-dark">{titulo}</h1>
       </header>
 

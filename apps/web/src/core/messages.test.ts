@@ -84,6 +84,10 @@ describe("messages — RN-MSG, HU-35", () => {
     it("la conversación interna de trabajo no lo es", () => {
       expect(isClientVisibleConversation("job_internal")).toBe(false);
     });
+
+    it("RN-CAN-02 · un canal del equipo tampoco: el cliente no entra en uno nunca", () => {
+      expect(isClientVisibleConversation("channel")).toBe(false);
+    });
   });
 
   describe("RN-MSG-05: Consulta lee pero no responde", () => {

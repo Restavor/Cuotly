@@ -93,7 +93,17 @@ export default async function TeamInboxPage({ params }: { params: Promise<{ slug
   return (
     <div className="mx-auto max-w-4xl p-8">
       <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.messages.title}</h1>
-      <p className="mb-6 text-sm text-text-secondary">{es.teamArea.messages.subtitle}</p>
+      <p className="mb-2 text-sm text-text-secondary">{es.teamArea.messages.subtitle}</p>
+
+      {/* §38, RN-CAN · los canales viven aparte y no en esta tabla: aquí
+          cada fila tiene su restaurante y su código, y un canal no tiene ni
+          lo uno ni lo otro. Mezclarlos habría dejado media tabla vacía la
+          mitad de las veces. */}
+      <p className="mb-6 text-sm">
+        <Link href={`/espacios/${slug}/mensajes/canales`} className="text-cuotly-green underline">
+          {es.teamArea.channels.title}
+        </Link>
+      </p>
 
       <Card>
         {rows.length === 0 ? (

@@ -36,7 +36,9 @@ import {
 } from "@/core/establishments";
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { GrantAccessForm } from "./GrantAccessForm";
+import { BackupsBlock, type BackupRow } from "./BackupsBlock";
 import { ServiceStatusForms } from "./ServiceStatusForms";
+import { TransferBlock, type PendingTransfer } from "./TransferForms";
 import { StatusLegend } from "./StatusLegend";
 import { StatusNotice } from "./StatusNotice";
 import { RevokeAccessButton } from "./RevokeAccessButton";
@@ -134,6 +136,11 @@ export interface SheetData {
    * se dice lo que el estado significa y no se inventa un porqué.
    */
   readonly statusReason: string | null;
+  // §38 · la propuesta de transferencia abierta (RN-TRA) y las copias de
+  // seguridad (RN-BCK). Las dos viven en el bloque "Estado del servicio".
+  readonly transfer: PendingTransfer | null;
+  readonly backups: readonly BackupRow[];
+  readonly canProposeTransfer: boolean;
   /**
    * Maqueta 17 · las integraciones del restaurante (Fase 3, Hito 14).
    * `null` cuando no se pudieron leer: entonces se dice, no se pinta un
@@ -803,6 +810,9 @@ export function EstablishmentSheet({
     files,
     audit,
     statusReason,
+    transfer,
+    backups,
+    canProposeTransfer,
     integrations,
     digital,
     opportunities,
@@ -2404,6 +2414,23 @@ export function EstablishmentSheet({
                 <p className="mb-3 text-sm text-text-secondary">{t.serviceStatusHint}</p>
                 <StatusLegend current={header.status} />
               </Card>
+
+              {/* §38 · la transferencia entre espacios. Va aquí, con el
+                  estado del servicio, porque es la otra manera de que un
+                  restaurante deje de ser de este espacio — la primera es
+                  archivarlo, y las dos se miran juntas. */}
+              <TransferBlock
+                establishmentId={header.id}
+                pending={transfer}
+                canPropose={canProposeTransfer}
+              />
+
+              <BackupsBlock
+                establishmentId={header.id}
+                backups={backups}
+                timezone={timeZone}
+                canManage={canManageClients}
+              />
 
               {canManageClients ? (
                 <ServiceStatusForms establishmentId={header.id} status={header.status} />

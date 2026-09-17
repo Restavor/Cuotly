@@ -33,6 +33,7 @@ import { loadEstablishmentReports } from "@/components/report/reports-load";
 import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
+import { loadBackups, loadPendingTransfer } from "./transfer-load";
 import { parseDataSection, parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
 import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
@@ -176,6 +177,15 @@ export default async function EstablishmentPage({
       p_establishment_id: id,
     });
 
+    // §38 · la propuesta de transferencia abierta, si la hay, y las copias
+    // de seguridad. Las dos las filtra su política: si vuelven vacías es
+    // que no había nada que enseñarle a quien preguntó.
+    const [transfer, backups, { data: soyPropietario }] = await Promise.all([
+      loadPendingTransfer(supabase, id, space.id),
+      loadBackups(supabase, id),
+      supabase.rpc("space_owner_is_me", { p_space_id: space.id }),
+    ]);
+
     /*
       Maqueta 17 · las integraciones y el resumen de analítica digital
       (Fase 3, Hito 14). El actor se dice para decidir qué botones se
@@ -287,6 +297,9 @@ export default async function EstablishmentPage({
           files,
           audit,
           statusReason: statusReason ?? null,
+          transfer,
+          backups,
+          canProposeTransfer: soyPropietario === true,
           integrations,
           digital,
           opportunities,

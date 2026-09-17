@@ -1,7 +1,9 @@
 "use server";
 
 /**
- * M84 y M47 · las acciones del bloque "Estado del servicio" de la ficha.
+ * M84, M47 y M83/M84 del §38 · las acciones del bloque "Estado del
+ * servicio" de la ficha: archivar, reactivar, la baja, la transferencia
+ * entre espacios y las copias de seguridad.
  *
  * Ninguna decide nada. `set_establishment_status()` exige `manage_clients`
  * y, dentro, la guarda de RN-FIN-13: de una parada por impago se sale
@@ -110,4 +112,102 @@ export async function registerTerminationFromOutside(
       p_requested_by_client: false,
     }),
   );
+}
+
+/**
+ * RN-TRA-02 · el propietario del origen propone la transferencia.
+ *
+ * `propose_establishment_transfer()` comprueba que quien llama sea el
+ * propietario —no `manage_clients`: esto saca al restaurante del espacio
+ * entero, no lo administra dentro—, que no haya deuda vencida (RN-TRA-05) y
+ * que no haya otra propuesta abierta (RN-TRA-06). Aquí no se repite nada de
+ * eso.
+ *
+ * El espacio de destino se escribe por su identificador y no se elige de una
+ * lista, y es deliberado: **no existe ninguna pantalla que enseñe los
+ * espacios ajenos**, y hacer una para esto sería abrir un directorio de
+ * clientes de la competencia. Quien transfiere lo hace hablando con el otro
+ * espacio, que es como pasa de verdad.
+ */
+export async function proposeEstablishmentTransfer(
+  _prev: ServiceStatusState,
+  formData: FormData,
+): Promise<ServiceStatusState> {
+  const establishmentId = String(formData.get("establishmentId") ?? "");
+  const toSpaceId = String(formData.get("toSpaceId") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!toSpaceId) return { error: es.establishmentSheet.transferSpaceRequired, done: false };
+  if (!reason) return { error: es.establishmentSheet.serviceReasonRequired, done: false };
+
+  return run((s) =>
+    s.rpc("propose_establishment_transfer", {
+      p_establishment_id: establishmentId,
+      p_to_space_id: toSpaceId,
+      p_reason: reason,
+    }),
+  );
+}
+
+/** RN-TRA-07 · quien la propuso puede retirarla, con motivo. */
+export async function withdrawEstablishmentTransfer(
+  _prev: ServiceStatusState,
+  formData: FormData,
+): Promise<ServiceStatusState> {
+  const transferId = String(formData.get("transferId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  return run((s) =>
+    s.rpc("withdraw_establishment_transfer", {
+      p_transfer_id: transferId,
+      p_reason: reason || undefined,
+    }),
+  );
+}
+
+/** RN-TRA-07 · el destino puede rechazarla, con motivo. */
+export async function rejectEstablishmentTransfer(
+  _prev: ServiceStatusState,
+  formData: FormData,
+): Promise<ServiceStatusState> {
+  const transferId = String(formData.get("transferId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!reason) return { error: es.establishmentSheet.serviceReasonRequired, done: false };
+
+  return run((s) =>
+    s.rpc("reject_establishment_transfer", {
+      p_transfer_id: transferId,
+      p_reason: reason,
+    }),
+  );
+}
+
+/**
+ * RN-TRA-02 · el destino acepta, y entonces sí se mueve todo.
+ *
+ * Es la operación menos reversible del producto: mueve un restaurante
+ * entero con su historial de un espacio a otro. No hay "deshacer", y la
+ * pantalla lo dice antes del botón — lo que hay es otra transferencia en
+ * sentido contrario, que el otro espacio tendría que aceptar.
+ */
+export async function acceptEstablishmentTransfer(
+  _prev: ServiceStatusState,
+  formData: FormData,
+): Promise<ServiceStatusState> {
+  const transferId = String(formData.get("transferId") ?? "");
+  return run((s) => s.rpc("accept_establishment_transfer", { p_transfer_id: transferId }));
+}
+
+/**
+ * RN-BCK · generar una copia a mano, además de la diaria del barrido.
+ *
+ * `create_establishment_backup()` exige `manage_clients` (RN-BCK-07).
+ */
+export async function createEstablishmentBackup(
+  _prev: ServiceStatusState,
+  formData: FormData,
+): Promise<ServiceStatusState> {
+  const establishmentId = String(formData.get("establishmentId") ?? "");
+  return run((s) => s.rpc("create_establishment_backup", { p_establishment_id: establishmentId }));
 }
