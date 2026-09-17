@@ -8,7 +8,12 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { clasificarSolicitud } from "@/services/request-classification";
 
-import type { DraftFileState, DraftScopeState, DraftSubmitState } from "./action-state";
+import type {
+  DraftCopyState,
+  DraftFileState,
+  DraftScopeState,
+  DraftSubmitState,
+} from "./action-state";
 
 /**
  * §68 · "antes de enviar se revisa el ALCANCE".
@@ -179,4 +184,41 @@ export async function submitDraft(
 
   revalidatePath("/espacios", "layout");
   redirect(`/espacios/${slug}/restaurantes/${establishmentId}/solicitudes/${requestId}`);
+}
+
+/**
+ * R07 · RN-REQ-04 — copiar este borrador a otro restaurante **del mismo
+ * grupo**.
+ *
+ * Aquí no se comprueba ni el grupo ni el permiso, y es deliberado:
+ * `copy_paste_request()` exige leer el origen, escribir en el destino y que
+ * los dos cuelguen del mismo grupo, y lanza con su motivo si algo falta.
+ * Repetir la regla en el navegador sería una segunda copia que un día diría
+ * otra cosa (CLAUDE.md: el cliente nunca es la autoridad).
+ *
+ * El borrador nuevo nace en `draft` con sus adjuntos copiados y **no se
+ * envía solo**: RN-REQ-04 pide que se revisen antes. Por eso se lleva a la
+ * pantalla de revisión del nuevo, que es donde se revisan.
+ */
+export async function copyDraftToEstablishment(
+  _prev: DraftCopyState,
+  formData: FormData,
+): Promise<DraftCopyState> {
+  const slug = String(formData.get("slug") ?? "");
+  const requestId = String(formData.get("requestId") ?? "");
+  const targetId = String(formData.get("targetEstablishmentId") ?? "");
+
+  if (!targetId) return { error: es.clientArea.draftCopyChoose };
+
+  const supabase = await createClient();
+  const { data: nuevo, error } = await supabase.rpc("copy_paste_request", {
+    p_source_request_id: requestId,
+    p_target_establishment_id: targetId,
+  });
+
+  if (error) return { error: error.message };
+  if (typeof nuevo !== "string") return { error: es.clientArea.draftCopyFailed };
+
+  revalidatePath("/espacios", "layout");
+  redirect(`/espacios/${slug}/restaurantes/${targetId}/solicitudes/${nuevo}/borrador`);
 }

@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { loadEstablishmentTimezone } from "../timezone-load";
 
+import { CopyPreviousMenuForm } from "./CopyPreviousMenuForm";
 import { NewMenuForm } from "./NewMenuForm";
 
 /**
@@ -87,6 +88,14 @@ export default async function ClientDailyMenuPage({
   manana.setUTCDate(manana.getUTCDate() + 1);
   const fechaPorDefecto = manana.toISOString().slice(0, 10);
 
+  // R13 · cuál es "el menú anterior": el más reciente con fecha ANTERIOR a
+  // la que se va a preparar. No es simplemente el primero de la lista,
+  // porque la lista puede tener menús futuros ya hechos, y copiar uno de
+  // ellos llamándolo "el anterior" sería mentir. Se enseña con su nombre y
+  // su fecha para que quien copia vea qué está copiando.
+  const menuAnterior =
+    (menus ?? []).find((menu) => menu.target_date < fechaPorDefecto) ?? null;
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
       <Header establishment={establishment} base={base} />
@@ -103,6 +112,21 @@ export default async function ClientDailyMenuPage({
         slug={slug}
         establishmentId={id}
         templates={(templates ?? []).map((tpl) => ({ id: tpl.id, name: tpl.name }))}
+        defaultDate={fechaPorDefecto}
+      />
+
+      <CopyPreviousMenuForm
+        slug={slug}
+        establishmentId={id}
+        previous={
+          menuAnterior === null
+            ? null
+            : {
+                id: menuAnterior.id,
+                name: menuAnterior.name,
+                target_date: menuAnterior.target_date,
+              }
+        }
         defaultDate={fechaPorDefecto}
       />
 

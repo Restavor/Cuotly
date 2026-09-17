@@ -1878,6 +1878,17 @@ export const es = {
     draftFileRemoving: "Quitando…",
     draftFileAdd: "Añadir un archivo",
     draftFileAdding: "Añadiendo…",
+    // R07 · RN-REQ-04, copiar y pegar dentro del mismo grupo.
+    draftCopyTitle: "Copiar este borrador a otro restaurante",
+    draftCopyHint:
+      "Se crea un borrador nuevo en el restaurante que elijas, con el mismo texto y los mismos archivos. No se envía: nace como borrador para que lo revises allí. Solo se puede dentro del mismo grupo.",
+    draftCopyLabel: "¿A cuál?",
+    draftCopyChoose: "Elige un restaurante",
+    draftCopySubmit: "Copiar el borrador",
+    draftCopyPending: "Copiando…",
+    draftCopyNoSiblings:
+      "Este restaurante no comparte grupo con ningún otro al que puedas escribir, así que no hay a dónde copiarlo.",
+    draftCopyFailed: "No se ha podido copiar el borrador. Vuelve a intentarlo.",
     draftSubmitTitle: "Enviar la solicitud",
     draftSubmitHint:
       "Al enviarla, el equipo la recibe, la clasifica y te dirá de qué tamaño es antes de empezar nada.",
@@ -3244,6 +3255,15 @@ export const es = {
     copy: "Copiar para otro día",
     copyDateLabel: "Fecha del menú nuevo",
     copyHint: "Crea un borrador con este mismo contenido.",
+
+    // R13 · copiar el anterior desde el listado, sin tener que abrirlo.
+    copyPreviousTitle: "Copiar el menú anterior",
+    copyPreviousHint: (nombre: string, fecha: string) =>
+      `El último que hiciste antes de esa fecha es «${nombre}», del ${fecha}. Se copia su contenido a un borrador nuevo con el mismo nombre; lo cambias allí si quieres.`,
+    copyPreviousSubmit: "Copiar el anterior",
+    copyPreviousNoneTitle: "Todavía no hay un menú anterior que copiar",
+    copyPreviousNoneReason:
+      "No hay ningún menú con fecha anterior a mañana. Cuando hagas el primero, podrás copiarlo desde aquí.",
     answerTitle: "El equipo necesita información",
     answerHint: "Lo que te han preguntado está en el historial. Contesta aquí o guarda una versión nueva del menú.",
     answerLabel: "Respuesta",

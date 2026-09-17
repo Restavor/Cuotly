@@ -15,3 +15,8 @@ export const INITIAL_FILE: DraftFileState = { error: null, done: false };
 export type DraftSubmitState = { error: string | null };
 
 export const INITIAL_SUBMIT: DraftSubmitState = { error: null };
+
+/** R07 · copiar el borrador a otro restaurante del grupo (RN-REQ-04). */
+export type DraftCopyState = { error: string | null };
+
+export const INITIAL_COPY: DraftCopyState = { error: null };

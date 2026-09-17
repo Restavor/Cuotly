@@ -6,6 +6,7 @@ import { isDraft } from "@/core/request-draft";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { CopyDraftForm } from "./CopyDraftForm";
 import { AddDraftFileForm, RemoveDraftFileButton } from "./DraftFileForms";
 import { DraftScopeForm } from "./DraftScopeForm";
 import { SubmitDraftForm } from "./SubmitDraftForm";
@@ -86,7 +87,11 @@ export default async function RequestDraftPage({
   }
 
   const [{ data: establishment }, { data: versions }, { data: links }] = await Promise.all([
-    supabase.from("establishments").select("id, name").eq("id", request.establishment_id).maybeSingle(),
+    supabase
+      .from("establishments")
+      .select("id, name, group_id")
+      .eq("id", request.establishment_id)
+      .maybeSingle(),
     supabase
       .from("request_versions")
       .select("version_number")
@@ -112,6 +117,20 @@ export default async function RequestDraftPage({
     : { data: [] };
 
   const version = versions?.[0]?.version_number ?? 1;
+
+  // R07 · a dónde se puede copiar. RN-REQ-04 lo limita al mismo grupo, así
+  // que un restaurante sin grupo no tiene hermanos y la tarjeta lo dirá.
+  // Lo que vuelve de aquí ya viene filtrado por RLS: solo los que esta
+  // persona puede ver. Que además pueda ESCRIBIR en ellos lo decide
+  // `copy_paste_request()`, que es quien manda.
+  const { data: hermanos } = establishment?.group_id
+    ? await supabase
+        .from("establishments")
+        .select("id, name")
+        .eq("group_id", establishment.group_id)
+        .neq("id", request.establishment_id)
+        .order("name")
+    : { data: [] };
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-8">
@@ -178,6 +197,10 @@ export default async function RequestDraftPage({
 
         <AddDraftFileForm requestId={requestId} establishmentId={id} />
       </Card>
+
+      {/* R07 · RN-REQ-04. Va antes de enviar porque copiar un borrador ya
+          enviado no es esta operación: lo que se copia es el borrador. */}
+      <CopyDraftForm slug={slug} requestId={requestId} siblings={hermanos ?? []} />
 
       <SubmitDraftForm slug={slug} establishmentId={id} requestId={requestId} />
 
