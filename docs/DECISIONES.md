@@ -767,6 +767,35 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    - Coste asumido a sabiendas: un clic más cada mañana para quien tiene un solo contexto. Se
      preguntó con esa recomendación en contra y Bosco decidió lo contrario, que es su decisión.
 
+43. **Las cuatro que faltaban de las piezas sueltas** (17/09/2026). Al triar las catorce piezas del
+   diseño (`docs/diseno/LAS-CATORCE-PIEZAS.md`) cinco no tenían reglas en ninguna parte. Bosco
+   contestó cuatro; la quinta —los alérgenos— sigue abierta y se explica abajo.
+   - **Transferir un restaurante a otro espacio: el historial VIAJA con él.** El espacio de destino
+     hereda solicitudes, trabajos, cobros, conversaciones y auditoría. Se preguntó con la
+     consecuencia escrita delante —*"el equipo nuevo pasaría a ver trabajos, presupuestos y
+     conversaciones internas de un equipo que no es el suyo"*— y se eligió así de todas formas. Se
+     construye tal cual, y se deja constancia: **la transferencia es un acto con nombre y auditoría
+     propia**, no un cambio de columna, precisamente porque mueve la organización interna de un
+     equipo a otro. Lo que P7 protege sigue protegido hacia el **cliente**; entre equipos, manda
+     esta decisión.
+   - **Copias de seguridad: lo que hay dentro de Cuotly.** Menús, archivos, solicitudes y datos del
+     restaurante que Cuotly guarda, descargable. **No** la web, que Cuotly no aloja y que habría
+     significado conectarse a donde esté alojada.
+   - **Canales internos: del espacio, con miembros elegidos a mano.** El propietario o un
+     administrador crea el canal y elige quién entra. Los cuatro nombres de la maqueta —General,
+     Proyectos web, Menú diario, Redes sociales— son los que vienen **de fábrica**, no una lista
+     cerrada.
+   - **Recordatorios de cobro: vencimiento, +24 h y +72 h.** Los tres avisos de la maqueta salen de
+     fechas que ya existen: la de `charges.due_at` y los dos umbrales de RN-FIN-10 y RN-FIN-11. **No
+     se inventa ningún plazo nuevo**; lo único que se añade es el aviso del día del vencimiento,
+     que hoy no existe.
+
+   **Sigue abierta: los alérgenos del editor de menú (R14).** No aparece en el PRD ni en la maestra,
+   y es la única de las catorce que toca materia legal —la información de alérgenos de una carta es
+   una obligación del restaurante—. Encaja con el **paso 4** del orden acordado, el bloque legal que
+   CLAUDE.md manda que revise un profesional. No se construye hasta que Bosco diga si es texto libre
+   por plato o la lista de los catorce alérgenos de la normativa europea con casillas.
+
 ---
 
 ### Pendiente de completar

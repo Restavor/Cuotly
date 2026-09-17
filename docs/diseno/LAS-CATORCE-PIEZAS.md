@@ -14,8 +14,9 @@ desde una maqueta:
 - las que necesitan una **decisión** que no está escrita en ninguna parte, y
   que CLAUDE.md prohíbe inventar.
 
-Cinco de las catorce son del tercer grupo. Están al final, cada una con la
-pregunta concreta.
+Cinco de las catorce eran del tercer grupo. Bosco contestó cuatro el mismo
+día (**decisión 43**) y siguen abajo con la respuesta escrita; la quinta —los
+alérgenos— sigue abierta y dice por qué.
 
 ---
 
@@ -60,7 +61,13 @@ Ninguna de estas cinco tiene reglas en el PRD ni en la maestra. Construirlas
 significaría inventarlas, que es justo lo que CLAUDE.md prohíbe. Cada una va
 con la pregunta que hace falta contestar.
 
-### C1 · Transferir un restaurante a otro espacio (M84)
+### C1 · Transferir un restaurante a otro espacio (M84) — **decidido**
+
+> **El historial viaja con el restaurante** (decisión 43). El espacio de
+> destino hereda todo. Se preguntó con la consecuencia delante —el equipo
+> nuevo verá trabajos y conversaciones internas de otro equipo— y se eligió
+> así. Por eso la transferencia es un acto con nombre y auditoría propia, no
+> un cambio de columna.
 
 La maqueta enseña mover un establecimiento a otro espacio de mantenimiento,
 con el aviso de que solo puede estar activo en uno.
@@ -75,7 +82,11 @@ conversaciones y auditoría. Las preguntas son tres:
    falta que el de destino lo acepte, o lo hace Cuotly?
 3. ¿Qué pasa con los **cobros abiertos** y con la permanencia en curso?
 
-### C2 · Copias de seguridad del contenido del restaurante (M83)
+### C2 · Copias de seguridad del contenido del restaurante (M83) — **decidido**
+
+> **Se respalda lo que hay dentro de Cuotly** (decisión 43): menús, archivos,
+> solicitudes y datos del restaurante, descargable. La web no: Cuotly no la
+> aloja.
 
 No existe nada: ni tabla, ni proceso, ni una línea en el PRD. La maqueta
 enseña un historial de respaldos, una descarga y una revisión de
@@ -91,7 +102,10 @@ Mientras no haya respuesta, esta es la más fácil de dejar bien dicha: una
 pantalla que explique que todavía no hay copias y por qué es mejor que una
 que enseñe un historial vacío como si fuera a llenarse solo.
 
-### C3 · Canales de mensajería interna (M76)
+### C3 · Canales de mensajería interna (M76) — **decidido**
+
+> **Del espacio, con miembros elegidos a mano** (decisión 43). Los cuatro
+> nombres de la maqueta vienen de fábrica; el equipo puede crear más.
 
 La maqueta enseña General, Proyectos web, Menú diario, Redes sociales y los
 que el equipo cree, con miembros por canal.
@@ -108,7 +122,7 @@ cuarta cosa, con su propia lista de miembros.
    los que el equipo puede crear?
 3. ¿Se pueden archivar? (Borrar no: CLAUDE.md no lo permite.)
 
-### C4 · Alérgenos en el editor del menú (R14)
+### C4 · Alérgenos en el editor del menú (R14) — **sigue abierta**
 
 **No aparece en el PRD ni en la especificación maestra.** Es la única de las
 catorce que toca materia legal: la información de alérgenos en la carta es
@@ -124,7 +138,10 @@ Esto encaja mejor con el **paso 4** del orden acordado —el bloque legal, que
 CLAUDE.md manda que revise un profesional— que con esta tanda. Se puede
 construir antes si lo decides, pero conviene saber que va con ese paquete.
 
-### C5 · Recordatorios de cobro, primero, segundo y tercero (M52)
+### C5 · Recordatorios de cobro, primero, segundo y tercero (M52) — **decidido**
+
+> **Vencimiento, +24 h y +72 h** (decisión 43), que es la propuesta de abajo:
+> ningún plazo nuevo.
 
 La maqueta enseña tres avisos. El PRD tiene **dos umbrales**: RN-FIN-10 a las
 +24 h del vencimiento (pausa) y RN-FIN-11 a las +72 h (suspensión). Un tercer
