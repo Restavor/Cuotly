@@ -181,7 +181,8 @@ export default async function EstablishmentPage({
     // §38 · la propuesta de transferencia abierta, si la hay, y las copias
     // de seguridad. Las dos las filtra su política: si vuelven vacías es
     // que no había nada que enseñarle a quien preguntó.
-    const [transfer, backups, notes, { data: soyPropietario }] = await Promise.all([
+    const [transfer, backups, notes, { data: soyPropietario }, { data: bytesOcupados }] =
+      await Promise.all([
       loadPendingTransfer(supabase, id, space.id),
       loadBackups(supabase, id),
       // RN-EST-14 · las notas internas, que desde el diseño definitivo son
@@ -190,6 +191,11 @@ export default async function EstablishmentPage({
       // pantalla (RN-EST-13).
       loadEstablishmentNotes(supabase, id, space.id, user.id),
       supabase.rpc("space_owner_is_me", { p_space_id: space.id }),
+      // RN-ARC-10 · cuánto ocupa este restaurante. La función devuelve
+      // `null` a quien no puede ver todos sus archivos, y ese `null` se
+      // pasa tal cual: la pantalla dice el motivo en vez de pintar un cero
+      // (CLAUDE.md MUST NOT).
+      supabase.rpc("establishment_storage_bytes", { p_establishment_id: id }),
     ]);
 
     /*
@@ -306,6 +312,7 @@ export default async function EstablishmentPage({
           transfer,
           backups,
           notes,
+          storageBytes: bytesOcupados ?? null,
           canProposeTransfer: soyPropietario === true,
           integrations,
           digital,

@@ -5000,6 +5000,35 @@ diseño (**decisión 47**). Lo construido se retiró.
   sonaba a problema de la tabla entera. La 102 tropezaba con lo mismo y por eso lo lleva escrito.
 - **Verde**: 52 suites sobre 102 migraciones, typecheck, lint, 1422 tests y la compilación de Next.
 
+#### Hecho · Cuánto ocupa un restaurante (RN-ARC-10, migración 103, suite 53)
+Segundo del orden de `docs/PROPUESTA-DISENO-MOVIL.md`. El diseño enseña "Almacenamiento
+(Magariños) 6,4 GB" en los archivos del restaurante (página 50), y el trabajo de verdad no fue la
+suma: fue impedir que esa cifra mienta de las tres maneras en que podía.
+
+- **No es una cuota.** El almacenamiento incluido sigue siendo **del espacio** y no se reparte
+  (RN-SUB-13, decisión 38): ningún restaurante se queda sin sitio, y la pantalla lo dice con esas
+  palabras al lado del número. Un test comprueba que **no repite el total del espacio**, que vive
+  en la suscripción: dos copias del mismo número acaban discrepando, y aquí la copia sería la que
+  alguien mira primero. Y la suite 53 falla si aparece una columna de almacenamiento en
+  `establishments`.
+- **La suma es entera o no es nada.** La RLS de `files` enseña a cada quien lo suyo —un trabajador
+  no ve la facturación (RN-ARC-05)—, así que un `sum()` desde la pantalla le habría dado un número
+  más pequeño **llamándolo "lo que ocupa el restaurante"**. Solo recibe la cifra quien puede ver
+  todos los archivos del establecimiento.
+- **`null` no es cero, y son lo contrario.** A quien no puede verla se le dice el motivo, no se le
+  pinta un cero; y un restaurante que de verdad ocupa cero **sí** ve "0 KB". Es la distinción que
+  el `null` existe para no perder, y tiene su test.
+- **Un restaurante pequeño no aparece como "0 GB".** `gigabytes()` servía donde el número siempre
+  es grande; junto al nombre de un restaurante, "0 GB" se lee como "no tiene archivos". Se añadió
+  `readableSize()`, que elige la unidad, con sus tests.
+- **Una mutación no se dejó cazar, y eso cambió el texto.** Se probó pasando la función a
+  `security invoker`: la suite **no** se puso roja, porque con este guarda quien llega a la suma ve
+  todos los archivos igualmente. El comentario de la migración decía que el `definer` era lo que
+  hacía entero el número, y era falso: lo hace el guarda. Se corrigió el texto y se añadió un test
+  que afirma `prosecdef`, porque el día que el guarda se ablande `invoker` empezaría a devolver
+  sumas parciales en silencio.
+- **Verde**: 53 suites sobre 103 migraciones, typecheck, lint, 1439 tests y la compilación de Next.
+
 #### Hecho · Gestión, con los nueve bloques del diseño (RN-EST-14, decisión 48)
 Primero del orden de `docs/PROPUESTA-DISENO-MOVIL.md`, y el que menos toca: **es disposición, no
 reglas**. El diseño definitivo se contradice a sí mismo —la página 27 enumera Gestión entera y la

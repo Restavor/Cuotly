@@ -77,6 +77,7 @@ function sheetData(
     transfer: null,
     backups: [],
     notes: { canRead: false, canRestrict: false, notes: [] },
+    storageBytes: null,
     canProposeTransfer: false,
     integrations: null,
     digital: null,

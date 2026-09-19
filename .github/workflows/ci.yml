@@ -430,6 +430,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/alergenos_del_menu.sql
 
+      - name: "Diseño móvil — Verificar el almacenamiento por restaurante: que la suma es entera y de ese restaurante, y que a quien no puede ver todos sus archivos no se le da un número (RN-ARC-10)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/almacenamiento_por_restaurante.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

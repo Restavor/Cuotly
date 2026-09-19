@@ -93,6 +93,7 @@ function sheetData(audit: SheetData["audit"]): SheetData {
     transfer: null,
     backups: [],
     notes: { canRead: false, canRestrict: false, notes: [] },
+    storageBytes: null,
     canProposeTransfer: false,
     integrations: null,
     digital: null,

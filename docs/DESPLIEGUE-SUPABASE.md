@@ -212,6 +212,23 @@ comprobó y no envejece.
   —`40f34c4936d5966991aa32808b8e8622`— coincide con la de la base local construida desde los
   archivos del repositorio.
 
+- La **103** (`20260919000103_almacenamiento_por_restaurante.sql`, RN-ARC-10, decisión 48: cuánto
+  ocupa un restaurante). **Puramente aditiva**: una función nueva,
+  `establishment_storage_bytes(uuid)`, y nada más. No toca ninguna tabla, ninguna política ni
+  ninguna función existente, así que no hay nada que pueda romperse al aplicarla.
+
+  **Lo que hay que mirar al leer el diff**: que el guarda sea `has_capability(…, 'manage_requests')`
+  y no `is_space_member()`. Con el segundo, un trabajador recibiría la suma **incluida la
+  facturación** que RN-ARC-05 le prohíbe ver — no el detalle, pero sí su tamaño, y de un tamaño se
+  deduce más de lo que parece.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local: **las 53 suites en verde sobre
+  bootstrap + 103 migraciones**. `database.types.ts` se regeneró después, contra el proyecto.
+  **Aplicada el 19/09/2026**, de una vez. Comprobado después contra el proyecto: sigue siendo
+  `security definer`, `anon` no la ejecuta y `authenticated` sí, y su huella
+  —`8ad1ef959790e6a01a04bbefe4d0c60c`— coincide con la de la base local construida desde el
+  archivo del repositorio.
+
 ## Cómo se comprobó que las seis se aplicaron bien (17/09/2026)
 
 Después de cada una se hizo una consulta de comprobación —que existan sus tablas, sus funciones,

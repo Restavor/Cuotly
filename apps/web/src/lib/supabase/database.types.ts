@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 19/09/2026), con las 102 migraciones del
+// (generate_typescript_types, 19/09/2026), con las 103 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -8805,6 +8805,10 @@ export type Database = {
       establishment_status_reason: {
         Args: { p_establishment_id: string };
         Returns: string;
+      };
+      establishment_storage_bytes: {
+        Args: { p_establishment_id: string };
+        Returns: number;
       };
       establishment_timezone: {
         Args: { p_establishment_id: string };

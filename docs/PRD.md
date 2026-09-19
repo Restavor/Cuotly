@@ -654,6 +654,26 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
 - **RN-ARC-07**: los adjuntos de mensajes no se eliminan. El resto se archiva, no se borra. Solo el propietario puede solicitar borrado definitivo, y únicamente si el archivo no está vinculado a operación, factura, aceptación o registro obligatorio.
 - **RN-ARC-08**: enlaces privados y temporales para la descarga. Se optimiza la versión visual conservando el original.
 - **RN-ARC-09**: almacenamiento incluido: 20 GB en Pro, 100 GB en Agency. Avisos al 80 % y 100 %.
+- **RN-ARC-10 (añadida 19/09/2026, decisión 48)**: la ficha del restaurante dice **cuánto ocupa ese
+  restaurante**, en el bloque Archivos de Gestión, donde lo pone el diseño definitivo móvil (página
+  50: *"Almacenamiento (Magariños) 6,4 GB"*). Tres cosas, todas deliberadas:
+
+  1. **Es informativo, no una cuota.** El límite sigue siendo **uno y del espacio** (RN-SUB-13,
+     RN-ARC-09): no hay almacenamiento incluido por restaurante, no hay umbral por restaurante y
+     pasarse no lo decide este número. Un restaurante **no se queda sin sitio**, y la pantalla lo
+     dice al lado con esas palabras. **No repite ahí el total del espacio**: ese número vive en la
+     suscripción (`cuotly_space_usage()`, que solo puede leer quien gestiona el espacio) y la ficha
+     enlaza allí en vez de traerse una segunda copia que un día diría otra cosa.
+  2. **Es la suma entera del restaurante, o no es nada.** Se calcula en el servidor sumando los
+     bytes de todas las versiones de sus archivos, **sin filtrar por quién mira**. La RLS de
+     `files` enseña a cada persona lo que le toca —un trabajador no ve la facturación (RN-ARC-05)—
+     y una suma filtrada le daría un número más pequeño **llamándolo "lo que ocupa el
+     restaurante"**, que es una cifra falsa dicha con seguridad. Por eso el número **solo lo
+     recibe quien puede ver todos los archivos del establecimiento** (`manage_requests`), y a
+     quien no, **no se le enseña un número**: ni parcial ni cero, se le dice el motivo (CLAUDE.md
+     MUST NOT). El cliente tampoco lo ve: es un dato del equipo, donde el diseño lo pone.
+  3. **No se inventa ningún precio.** Pasarse de lo incluido se presupuesta aparte (decisión 38);
+     aquí no hay precio por GB ni lo habrá por esta vía.
 
 ---
 

@@ -3675,6 +3675,19 @@ export const es = {
     transferRejectReason: "Motivo del rechazo",
 
     // §38, RN-BCK · las copias de seguridad del contenido.
+    // RN-ARC-10 · cuánto ocupa este restaurante (página 50 del diseño
+    // definitivo móvil). Informativo: el límite es del espacio.
+    storageTitle: "Almacenamiento",
+    storageValue: (restaurante: string, tamano: string) => `${restaurante}: ${tamano}`,
+    storageNotAQuota:
+      "Es lo que ocupan los archivos de este restaurante. No es una cuota suya: el almacenamiento incluido es del espacio y no se reparte por restaurante, así que ninguno se queda sin sitio.",
+    storageSpaceLink: "Ver el almacenamiento del espacio",
+    // CLAUDE.md · si no hay dato, se dice el motivo. Aquí el motivo es un
+    // permiso, y decirlo entero es mejor que un cero: un número parcial
+    // llamado "lo que ocupa el restaurante" sería mentira.
+    storageHiddenTitle: "No podemos darte esta cifra",
+    storageHiddenReason:
+      "Sumarla exige ver todos los archivos del restaurante, incluidos los de facturación, y tu permiso no llega ahí. Un total con solo los que ves sería más pequeño de lo que ocupa de verdad.",
     backupsTitle: "Copias de seguridad",
     backupsHint:
       "Una copia diaria de lo que Cuotly guarda de este restaurante: sus datos, sus solicitudes, sus menús y sus conversaciones. Se guardan las treinta últimas.",

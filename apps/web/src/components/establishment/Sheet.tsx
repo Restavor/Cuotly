@@ -47,6 +47,7 @@ import { RevokeAccessButton } from "./RevokeAccessButton";
 import { fechaCorta } from "@/i18n/dates";
 import { enZona, instanteRelativo } from "@/i18n/dates";
 import { es } from "@/i18n/es";
+import { readableSize } from "@/i18n/money";
 import { tiempoRestante } from "@/i18n/duration";
 
 import {
@@ -144,6 +145,13 @@ export interface SheetData {
   readonly backups: readonly BackupRow[];
   /** RN-EST-14 · las notas internas, ahora un bloque de Gestión. */
   readonly notes: EstablishmentNotes;
+  /**
+   * RN-ARC-10 · lo que ocupan los archivos de este restaurante, o `null`
+   * cuando quien mira no puede ver todos. `null` NO es cero: la pantalla
+   * dice el motivo, porque un total parcial llamado "lo que ocupa el
+   * restaurante" sería más pequeño de lo que ocupa de verdad.
+   */
+  readonly storageBytes: number | null;
   readonly canProposeTransfer: boolean;
   /**
    * Maqueta 17 · las integraciones del restaurante (Fase 3, Hito 14).
@@ -817,6 +825,7 @@ export function EstablishmentSheet({
     transfer,
     backups,
     notes,
+    storageBytes,
     canProposeTransfer,
     integrations,
     digital,
@@ -2130,6 +2139,39 @@ export function EstablishmentSheet({
                     current={files.category}
                     selectedFileId={files.selected?.file.id ?? null}
                   />
+                </Card>
+
+                {/*
+                  RN-ARC-10 · cuánto ocupa este restaurante (página 50 del
+                  diseño definitivo móvil).
+
+                  Va con la frase de que NO es una cuota, y esa frase no es
+                  relleno: un número junto al nombre de un restaurante se
+                  lee como su límite, y aquí el límite es del espacio y no
+                  se reparte (RN-SUB-13). El total del espacio no se repite
+                  aquí —vive en la suscripción— y se enlaza: dos copias del
+                  mismo número acaban discrepando.
+                */}
+                <Card title={t.storageTitle}>
+                  {storageBytes === null ? (
+                    <EmptyState
+                      title={t.storageHiddenTitle}
+                      description={t.storageHiddenReason}
+                    />
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-text">
+                        {t.storageValue(header.name, readableSize(storageBytes))}
+                      </p>
+                      <p className="mt-1 text-sm text-text-secondary">{t.storageNotAQuota}</p>
+                      <Link
+                        href={`/espacios/${slug}/ajustes/suscripcion`}
+                        className="mt-2 inline-block text-sm text-cuotly-green underline"
+                      >
+                        {t.storageSpaceLink}
+                      </Link>
+                    </>
+                  )}
                 </Card>
 
                 <Card title={t.filesTitle(header.name)}>
