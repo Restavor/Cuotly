@@ -944,9 +944,9 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
      Mientras tanto, el punto 10 de la propuesta —los atributos de plan— **sigue sin construirse**,
      igual que "Informes: Estándar / Avanzado", que nadie ha definido.
 
-   **Sigue sin contestar**: los dos canales de fábrica que faltan (el diseño enseña seis en su
-   página 74; la migración 100 siembra cuatro: General, Proyectos web, Menú diario, Redes
-   sociales). Hace falta antes del punto 3 del orden acordado.
+   **Los dos canales que faltaban salen del propio diseño** (contestado el 19/09/2026): la página
+   74 enumera seis y los dos que no estaban son **Diseño y creatividad** y **Soporte interno**. No
+   hizo falta proponer ninguno: se leyó la página. RN-CAN-03 pasa de cuatro a seis (migración 104).
 
    **El orden de construcción queda confirmado** tal como lo propone `PROPUESTA-DISENO-MOVIL.md`:
    Gestión → almacenamiento por restaurante → canales → crear panel → orden interno con motivo →

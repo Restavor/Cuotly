@@ -2326,7 +2326,8 @@ existía nada: ni tabla, ni proceso, ni una línea escrita.
 ### 38.3 Canales de mensajería interna del espacio (RN-CAN)
 
 La vista M76 enseña General, Proyectos web, Menú diario, Redes sociales y los que el equipo cree,
-con miembros por canal. Hasta ahora `conversations.type` era un CHECK cerrado de tres valores
+con miembros por canal. El diseño definitivo móvil (página 74) enseña esos cuatro más **Diseño y
+creatividad** y **Soporte interno**. Hasta ahora `conversations.type` era un CHECK cerrado de tres valores
 —solicitud, interna de trabajo y establecimiento— y quién lee cada una lo decidía
 `can_read_conversation()` a partir de la solicitud, el trabajo o el restaurante del que cuelga. Un
 canal no cuelga de ninguno de los tres: es una cuarta cosa.
@@ -2336,9 +2337,16 @@ canal no cuelga de ninguno de los tres: es una cuarta cosa.
 - **RN-CAN-02**: **el cliente no entra en un canal, nunca**. Es organización interna del equipo, que
   es el principio P7 en su forma más simple: aquí no hay una columna que tapar, hay una fila que el
   cliente no puede ver. Lo sostiene RLS, no la pantalla.
-- **RN-CAN-03**: **los cuatro nombres de la maqueta vienen de fábrica** (decisión 43) —General,
-  Proyectos web, Menú diario, Redes sociales— y se crean con el espacio. No son una lista cerrada:
-  el propietario o un administrador crea los que quiera.
+- **RN-CAN-03** *(ampliada el 19/09/2026, decisión 48)*: **los seis nombres del diseño vienen de
+  fábrica** —General, Proyectos web, Menú diario, Redes sociales, **Diseño y creatividad** y
+  **Soporte interno**— y se crean con el espacio. Eran cuatro desde la decisión 43, que salían de la
+  maqueta M76; el diseño definitivo móvil (página 74) enseña los seis, y los dos nuevos son suyos:
+  **no se inventó ninguno**.
+
+  No son una lista cerrada: el propietario o un administrador crea los que quiera. Y **sembrar es
+  idempotente y no resucita nada**: el espacio que ya tenga un canal con ese nombre no recibe otro,
+  y el que lo haya **archivado** (RN-CAN-05) tampoco lo ve volver — un canal archivado sigue
+  existiendo, y la comprobación cuenta también los archivados.
 - **RN-CAN-04**: **quien crea un canal y gestiona sus miembros es el propietario o un administrador
   del espacio**. Un trabajador escribe en los canales de los que es miembro y no añade a nadie.
 - **RN-CAN-05**: **un canal se archiva, no se borra**, como todo lo demás. Un canal archivado deja

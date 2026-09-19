@@ -5000,6 +5000,22 @@ diseño (**decisión 47**). Lo construido se retiró.
   sonaba a problema de la tabla entera. La 102 tropezaba con lo mismo y por eso lo lleva escrito.
 - **Verde**: 52 suites sobre 102 migraciones, typecheck, lint, 1422 tests y la compilación de Next.
 
+#### Hecho · Los seis canales de fábrica (RN-CAN-03, migración 104)
+Tercero del orden. Estaba parado porque faltaban dos nombres y `CLAUDE.md` prohíbe inventarlos.
+**Salieron del propio diseño**: la página 74 enumera seis, y los que no estaban son **Diseño y
+creatividad** y **Soporte interno**. No hubo que proponer nada; hubo que ir a mirar.
+
+- **Se resiembra sobre los espacios que ya existen**, como hizo la 100. Dos propiedades sostienen
+  que eso sea seguro, y las dos tienen test: **es idempotente** (resembrar crea cero) y **no
+  resucita un canal archivado** —la comprobación por nombre no filtra por `archived_at`, a
+  propósito: filtrar le devolvería a un equipo el canal que archivó, y encima vacío—.
+- **Un `4` escrito a mano en la suite 51 se quedó viejo**, y falló por el número en vez de por la
+  regla, que es la peor manera de fallar. Se cambió por la comparación que RN-CAN-08 de verdad
+  dice: el propietario ve **todos** los canales de su espacio sin ser miembro de ninguno, contando
+  los que hay en vez de un literal. De paso el bloque falla si el espacio no tiene ninguno, para
+  que "los ve todos" no se cumpla por vacío.
+- **Verde**: 53 suites sobre 104 migraciones, typecheck, lint, 1439 tests y la compilación de Next.
+
 #### Hecho · Cuánto ocupa un restaurante (RN-ARC-10, migración 103, suite 53)
 Segundo del orden de `docs/PROPUESTA-DISENO-MOVIL.md`. El diseño enseña "Almacenamiento
 (Magariños) 6,4 GB" en los archivos del restaurante (página 50), y el trabajo de verdad no fue la

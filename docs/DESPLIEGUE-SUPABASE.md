@@ -229,6 +229,22 @@ comprobó y no envejece.
   —`8ad1ef959790e6a01a04bbefe4d0c60c`— coincide con la de la base local construida desde el
   archivo del repositorio.
 
+- La **104** (`20260919000104_los_seis_canales_de_fabrica.sql`, RN-CAN-03, decisión 48). Redefine
+  `seed_default_channels()` con los seis nombres del diseño —los cuatro de la 100 más **Diseño y
+  creatividad** y **Soporte interno**— y la vuelve a pasar por los espacios que ya existen, igual
+  que hizo la 100 al nacer.
+
+  **Lo que hay que mirar al leer el diff**: que la comprobación por nombre **no filtre por
+  `archived_at`**. Si filtrara, resembrar le devolvería a un equipo el canal que decidió archivar
+  (RN-CAN-05), y encima vacío. La suite 51 lo comprueba archivando uno y resembrando.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local: **las 53 suites en verde sobre
+  bootstrap + 104 migraciones**. **Aplicada el 19/09/2026.** Comprobado después contra el
+  proyecto: los dos espacios (`demo` y `restavor`) tienen **seis** canales vivos cada uno y
+  ninguno duplicado, la función sigue cerrada a `anon` y `authenticated`, y su huella
+  —`585105cae7abee50b564c91e392638a3`— coincide con la de la base local construida desde el
+  archivo del repositorio. `database.types.ts` **no cambia**: la firma es la misma.
+
 ## Cómo se comprobó que las seis se aplicaron bien (17/09/2026)
 
 Después de cada una se hizo una consulta de comprobación —que existan sus tablas, sus funciones,

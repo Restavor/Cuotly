@@ -709,23 +709,41 @@ reset role;
 -- RN-CAN · los canales internos del espacio
 -- ============================================================
 --
--- RN-CAN-03 · los cuatro de fábrica nacen con el espacio.
+-- RN-CAN-03 · los SEIS de fábrica nacen con el espacio.
+--
+-- Eran cuatro hasta el 19/09/2026 (decisión 43, maqueta M76). El diseño
+-- definitivo móvil (página 74) enseña dos más y la migración 104 los
+-- siembra. Se comprueban por nombre y no por número: "son seis" pasaría
+-- igual si alguien cambiara "Menú diario" por otra cosa.
 set role postgres;
 do $$
-declare v_espacio uuid := (select v from gc_ids where k = 'origen');
+declare
+  v_espacio uuid := (select v from gc_ids where k = 'origen');
+  v_esperados text[] := array[
+    'General', 'Proyectos web', 'Menú diario', 'Redes sociales',
+    'Diseño y creatividad', 'Soporte interno'
+  ];
+  v_faltan text;
+  v_sobran text;
 begin
-  if (select count(*) from public.conversations
-      where space_id = v_espacio and type = 'channel') <> 4 then
-    raise exception 'RN-CAN-03 FALLIDO: el espacio no nació con los cuatro canales de fábrica'
+  select string_agg(e, ', ') into v_faltan
+  from unnest(v_esperados) e
+  where not exists (
+    select 1 from public.conversations c
+    where c.space_id = v_espacio and c.type = 'channel' and c.name = e
+  );
+
+  if v_faltan is not null then
+    raise exception 'RN-CAN-03 FALLIDO: al espacio le faltan canales de fábrica: %', v_faltan
       using errcode = 'assert_failure';
   end if;
 
-  if not exists (
-    select 1 from public.conversations
-    where space_id = (select v from gc_ids where k = 'origen')
-      and type = 'channel' and name = 'Menú diario'
-  ) then
-    raise exception 'RN-CAN-03 FALLIDO: falta alguno de los cuatro nombres de la maqueta'
+  select string_agg(c.name, ', ') into v_sobran
+  from public.conversations c
+  where c.space_id = v_espacio and c.type = 'channel' and not (c.name = any(v_esperados));
+
+  if v_sobran is not null then
+    raise exception 'RN-CAN-03 FALLIDO: el espacio nació con canales que no son de fábrica: %', v_sobran
       using errcode = 'assert_failure';
   end if;
 
@@ -742,6 +760,57 @@ begin
 end $$;
 reset role;
 
+-- RN-CAN-03 · sembrar dos veces NO duplica, y NO resucita lo archivado.
+--
+-- Las dos propiedades que la migración 104 promete, y que son fáciles de
+-- romper al editarla: basta con añadir `and archived_at is null` a la
+-- comprobación por nombre para que resembrar le devuelva a un equipo el
+-- canal que decidió archivar, encima vacío.
+set role postgres;
+do $$
+declare
+  v_espacio uuid := (select v from gc_ids where k = 'origen');
+  v_antes integer;
+  v_creados integer;
+  v_archivado uuid;
+begin
+  select count(*) into v_antes from public.conversations
+  where space_id = v_espacio and type = 'channel';
+
+  v_creados := public.seed_default_channels(v_espacio);
+
+  if v_creados <> 0 then
+    raise exception 'RN-CAN-03 FALLIDO: resembrar creó % canales; es idempotente o no lo es', v_creados
+      using errcode = 'assert_failure';
+  end if;
+
+  if (select count(*) from public.conversations
+      where space_id = v_espacio and type = 'channel') <> v_antes then
+    raise exception 'RN-CAN-03 FALLIDO: resembrar cambió el número de canales'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Se archiva uno (RN-CAN-05: se archiva, no se borra) y se resiembra.
+  select id into v_archivado from public.conversations
+  where space_id = v_espacio and type = 'channel' and name = 'Soporte interno';
+
+  update public.conversations set archived_at = now() where id = v_archivado;
+
+  if public.seed_default_channels(v_espacio) <> 0 then
+    raise exception 'RN-CAN-03 FALLIDO: resembrar resucitó un canal archivado. Un equipo que archiva "Soporte interno" lo vería volver, y vacío'
+      using errcode = 'assert_failure';
+  end if;
+
+  if (select count(*) from public.conversations
+      where space_id = v_espacio and type = 'channel' and name = 'Soporte interno') <> 1 then
+    raise exception 'RN-CAN-03 FALLIDO: hay dos "Soporte interno", uno archivado y otro no'
+      using errcode = 'assert_failure';
+  end if;
+
+  update public.conversations set archived_at = null where id = v_archivado;
+end $$;
+reset role;
+
 -- RN-CAN-08 · ver que un canal existe no es leerlo. El propietario los ve
 -- en la lista sin ser miembro; si no, los cuatro de fábrica nacerían
 -- invisibles y nadie podría entrar en ellos.
@@ -750,9 +819,29 @@ set role authenticated;
 do $$
 declare v_espacio uuid := (select v from gc_ids where k = 'origen');
         v_canal uuid;
+        v_ve integer;
+        v_hay integer;
 begin
-  if (select count(*) from public.my_channels(v_espacio)) <> 4 then
-    raise exception 'RN-CAN-08 FALLIDO: el propietario no ve la lista de canales de su espacio'
+  -- Contra el número REAL de canales del espacio y no contra un literal.
+  -- Aquí había un `4` escrito a mano y se quedó viejo el día que los
+  -- canales de fábrica pasaron a seis (migración 104): el test falló por
+  -- el número, no por la regla, que es la peor manera de fallar. Lo que
+  -- RN-CAN-08 dice es "los ve TODOS sin ser miembro de ninguno", y eso se
+  -- comprueba comparando las dos cuentas.
+  select count(*) into v_ve from public.my_channels(v_espacio);
+
+  set local role postgres;
+  select count(*) into v_hay from public.conversations
+  where space_id = v_espacio and type = 'channel' and archived_at is null;
+  set local role authenticated;
+
+  if v_ve <> v_hay then
+    raise exception 'RN-CAN-08 FALLIDO: el propietario ve % canales de los % que tiene su espacio', v_ve, v_hay
+      using errcode = 'assert_failure';
+  end if;
+
+  if v_hay = 0 then
+    raise exception 'RN-CAN-08 FALLIDO: el espacio no tiene canales, así que esto no comprueba nada'
       using errcode = 'assert_failure';
   end if;
 

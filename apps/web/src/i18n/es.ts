@@ -1667,7 +1667,7 @@ export const es = {
       unarchive: "Desarchivar",
       createTitle: "Crear un canal",
       createHint:
-        "General, Proyectos web, Menú diario y Redes sociales vienen de fábrica. Crea los que necesites: nadie entra en uno sin que lo añadas.",
+        "General, Proyectos web, Menú diario, Redes sociales, Diseño y creatividad y Soporte interno vienen de fábrica. Crea los que necesites: nadie entra en uno sin que lo añadas.",
       nameLabel: "Nombre del canal",
       nameRequired: "Ponle un nombre al canal.",
       createSubmit: "Crear el canal",
