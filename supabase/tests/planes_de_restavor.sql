@@ -85,10 +85,46 @@ begin
     raise exception 'RN-COM-02 FALLIDO: un plan distinto de Premium+ incluye cambios grandes' using errcode = 'assert_failure';
   end if;
 
-  -- RN-COM-03 · solo Premium+ concede la prioridad (decisión 39, punto 3).
+  -- RN-COM-03 · las TRES cosas que el plan decide, desde la decisión 55
+  -- (19/09/2026). Hasta entonces salían de un solo booleano y por eso se
+  -- comprueban juntas: separarlas mal es lo que le daría a Premium el
+  -- precio rebajado de Menú Diario sin que nadie lo decidiera.
+
+  -- 1 · El plan alto sigue siendo solo Premium+. De aquí cuelgan el precio
+  --     de Menú Diario (RN-COM-08) y las oportunidades avanzadas (RN-OPP),
+  --     que Bosco fijó en la decisión 39 y que CLAUDE.md enumera.
   if (select string_agg(name, ',' order by name) from public.plans
       where space_id = v_space and grants_priority) <> 'Premium+' then
     raise exception 'RN-COM-03 FALLIDO: la prioridad la concede un plan que no es Premium+' using errcode = 'assert_failure';
+  end if;
+
+  -- 2 · Ordenar los cambios propios: Premium y Premium+ (19/09/2026).
+  if (select string_agg(name, ',' order by name) from public.plans
+      where space_id = v_space and can_order_requests) <> 'Premium,Premium+' then
+    raise exception 'RN-COM-03 FALLIDO: ordenar los cambios propios no es exactamente de Premium y Premium+'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- 3 · El turno: Premium+ por delante de Premium, y Premium del resto.
+  --     Bosco, 19/09/2026: "si hay una solicitud de Premium+ y otra de
+  --     Premium, se contestaría primero la de Premium+".
+  if (select queue_rank from public.plans where space_id = v_space and name = 'Premium+')
+     <= (select queue_rank from public.plans where space_id = v_space and name = 'Premium') then
+    raise exception 'RN-COM-03 FALLIDO: Premium+ no se atiende antes que Premium' using errcode = 'assert_failure';
+  end if;
+
+  if (select queue_rank from public.plans where space_id = v_space and name = 'Premium')
+     <= (select max(queue_rank) from public.plans
+         where space_id = v_space and name in ('Básico', 'Impulso', 'Impulso+')) then
+    raise exception 'RN-COM-03 FALLIDO: Premium no se atiende antes que los planes de abajo' using errcode = 'assert_failure';
+  end if;
+
+  -- Y el turno NO es un plazo más corto: Impulso+, Premium y Premium+
+  -- arrancan los tres a 24 h. Bosco: "todos tienen de máximo 24 h".
+  if (select count(distinct start_sla_hours) from public.plans
+      where space_id = v_space and name in ('Impulso+', 'Premium', 'Premium+')) <> 1 then
+    raise exception 'RN-SLA-02 FALLIDO: el turno del plan se ha colado como un plazo distinto'
+      using errcode = 'assert_failure';
   end if;
 
   -- RN-SLA-02 · Impulso a 48 h; los otros tres con cambios a 24.

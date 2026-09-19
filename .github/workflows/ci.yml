@@ -454,6 +454,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/los_siete_permisos_del_cliente.sql
 
+      - name: "Planes — Verificar que el plan decide TRES cosas distintas: ordenar los cambios propios, el turno dentro del mismo plazo y el plan alto, y que ninguna arrastra a otra (RN-COM-03, decisión 55)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_plan_manda_tres_cosas.sql
+
       - name: "Diseño móvil — Verificar la foto de perfil: bucket privado y solo imágenes, cada quien cambia solo la suya y bajo su propia carpeta, y el cliente NO ve la cara de nadie del equipo (RN-GLO-09, CLAUDE.md)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -35,11 +35,16 @@ insert into public.spaces (id, name, slug, created_by) values
 insert into public.space_memberships (space_id, user_id, role, status) values
   ('bc100000-0000-0000-0000-000000000001', 'bc000000-0000-0000-0000-000000000001', 'owner', 'active');
 
+-- RN-COM-03 (migración 110, decisión 55) · ordenar los cambios propios ya
+-- no sale de `grants_priority` sino de `can_order_requests`: son columnas
+-- distintas porque Premium puede ordenar sin llevarse el precio de Menú
+-- Diario ni las oportunidades avanzadas. El plan alto de esta suite tiene
+-- las dos, que es lo que era antes de separarlas.
 insert into public.plans
   (id, space_id, name, price_cents, included_small, included_photo, included_medium,
-   included_large, start_sla_hours, grants_priority) values
+   included_large, start_sla_hours, grants_priority, can_order_requests) values
   ('bc200000-0000-0000-0000-000000000001', 'bc100000-0000-0000-0000-000000000001',
-   'Con prioridad', 59900, 25, 24, 5, 1, 24, true);
+   'Con prioridad', 59900, 25, 24, 5, 1, 24, true, true);
 
 insert into public.groups (id, space_id, name) values
   ('bc300000-0000-0000-0000-000000000001', 'bc100000-0000-0000-0000-000000000001', 'Grupo Cola');

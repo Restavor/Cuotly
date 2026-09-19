@@ -173,8 +173,15 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   obligatorio, y el orden 1..N de la migración 62 se queda vivo y aparte.
 - ~~**Seis canales** de fábrica (página 74) frente a los cuatro que siembra
   la migración 100~~ — hecho el 19/09/2026 (RN-CAN-03, migración 104).
-- Atributos de plan **"Prioridad: Alta/Superior"** e **"Informes:
-  Estándar/Avanzado"** (páginas 96-97). Hoy solo existe `grants_priority`.
+- **"Prioridad: Alta/Superior"** (páginas 96-97) — resuelto el 19/09/2026
+  (decisión 55, migración 110): es `plans.can_order_requests`, que desde ese
+  día tienen Premium y Premium+. El **turno** frente a otros restaurantes es
+  otra columna (`queue_rank`) y ese sí sigue sin verlo el cliente.
+- **"Informes: Estándar/Avanzado"** (páginas 96-97) — **sigue abierto**.
+  Bosco dio la dirección el 19/09/2026 —"más completo, con más información y
+  más oportunidades; cuanto mejor sea el plan, más profundidad"— pero no el
+  reparto concreto, y sin saber qué secciones lleva cada plan no se
+  construye.
 
 ### 5.6 · La barra inferior contradice §20.3
 

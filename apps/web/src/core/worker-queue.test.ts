@@ -8,7 +8,7 @@ function queued(overrides: Partial<QueuedJob> = {}): QueuedJob {
     outOfDeadline: false,
     remainingBusinessMinutes: 600,
     priorityRank: null,
-    planPriority: "other",
+    planQueueRank: 0,
     assignedAt: new Date("2026-08-31T07:00:00.000Z"),
     ...overrides,
   };
@@ -35,9 +35,9 @@ describe("worker-queue — HU-17, PRD §20.4", () => {
 
   it("RN-COM-03: a igualdad de urgencia, el plan que concede prioridad (Premium+) va por delante del resto", () => {
     const cola = [
-      queued({ jobId: "impulso", planPriority: "impulso" }),
-      queued({ jobId: "premium", planPriority: "premium" }),
-      queued({ jobId: "sin-plan", planPriority: "other" }),
+      queued({ jobId: "impulso", planQueueRank: 1 }),
+      queued({ jobId: "premium", planQueueRank: 2 }),
+      queued({ jobId: "sin-plan", planQueueRank: 0 }),
     ];
 
     expect(orderWorkerQueue(cola).map((job) => job.jobId)).toEqual(["premium", "impulso", "sin-plan"]);

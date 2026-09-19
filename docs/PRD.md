@@ -216,7 +216,29 @@ Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanz
 
 - **RN-COM-01**: en Básico **cualquier** modificación se presupuesta aparte. No hay consumos incluidos.
 - **RN-COM-02**: Impulso, Impulso+ y Premium no incluyen cambios grandes; se presupuestan aparte. Solo Premium+ incluye uno al mes.
-- **RN-COM-03**: Premium+ tiene prioridad interna superior al resto de planes (`plans.grants_priority`, el único que la concede). Impulso+ y Premium tienen las 24 h de inicio pero no esa prioridad. **El cliente nunca ve esa prioridad.**
+- **RN-COM-03 (reescrita 19/09/2026, decisión 55)**: el plan decide **tres cosas distintas** que
+  hasta hoy colgaban del mismo booleano `plans.grants_priority`, y separarlas es la regla:
+
+  1. **El plazo de inicio** (`plans.start_sla_hours`, RN-SLA-02) **no lo decide el plan alto**: son
+     48 h laborables en Básico e Impulso y 24 h en Impulso+, Premium y Premium+. **Premium+ no
+     responde antes de 24 h**; Bosco lo confirmó el 19/09/2026 —"todos tienen de máximo 24 h"— y no
+     hay ningún plazo más corto que inventar.
+  2. **El turno dentro de ese plazo** (`plans.queue_rank`): a igualdad de todo lo demás se atiende
+     primero al plan más alto. Bosco, 19/09/2026: *"si hay una solicitud de Premium+ y otra de
+     Premium, se contestaría primero la de Premium+"*. En Restavor: Premium+ (2), Premium (1), el
+     resto (0). **Esto el cliente no lo ve**: es el orden de trabajo del equipo, y enseñarle en qué
+     puesto va frente a otros restaurantes no le sirve de nada y compromete a otros.
+  3. **Si puede ordenar sus propias solicitudes** 1..N (`plans.can_order_requests`, RN-PRI): **Premium
+     y Premium+**, decidido el 19/09/2026 —hasta entonces solo Premium+—. Esto **sí es visible**: es
+     lo que la ficha de plan del diseño (páginas 96 y 97) llama "Prioridad: Alta / Superior", y es una
+     capacidad que el restaurante compra, no la posición de nadie en una cola. Ahí no hay
+     contradicción con el punto 2.
+
+  **`plans.grants_priority` no cambia y sigue siendo solo de Premium+.** Es lo que decide el precio
+  de Menú Diario (199 € en vez de 229 €, RN-COM-08) y el acceso a las oportunidades **avanzadas**
+  (RN-OPP), las dos cosas que Bosco fijó el 16/09/2026 en la decisión 39 y que CLAUDE.md enumera. Dar
+  esas dos a Premium por reutilizar el booleano habría sido deshacer una decisión suya sin que nadie
+  lo pidiera.
 - **RN-COM-04**: facturación mensual. Permanencia mínima inicial de 3 meses; después, renovación mensual automática.
 - **RN-COM-05**: un cambio voluntario de plan inicia una nueva permanencia de 3 meses.
 - **RN-COM-06**: los consumos se renuevan en la fecha de renovación del establecimiento y **no se acumulan**.

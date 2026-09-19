@@ -10,7 +10,7 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 109 migraciones del repositorio están aplicadas en el proyecto.
+**Ninguna.** Las 110 migraciones del repositorio están aplicadas en el proyecto.
 Las ocho del diseño definitivo móvil —de la 102 a la 109— se aplicaron el
 19/09/2026; abajo, en "Las ocho del 19/09/2026", está qué hacía cada una y cómo
 se comprobó. Lo que sigue es lo que se escribió sobre las seis últimas antes de aplicarlas —qué
@@ -106,6 +106,24 @@ pasar a la siguiente.
   poner el bucket en público hacen fallar la suite 57 nombrando la regla.
   `database.types.ts` regenerado contra el proyecto, y su diff es exactamente
   la columna y las dos funciones.
+
+- La **110** (`el_plan_manda_tres_cosas_distintas`, RN-COM-03, decisión 55).
+  En **dos partes**: columnas, relleno y las dos puertas; y las dos funciones
+  que crean el catálogo de un espacio.
+
+  **No es solo aditiva** y su relleno es el que importa: `plans.grants_priority`
+  estaba sobrecargado —decidía ordenar los cambios propios, el turno de la
+  cola, el precio de Menú Diario y las oportunidades avanzadas— y darle ese
+  booleano a Premium le habría dado el precio rebajado y las oportunidades en
+  silencio. Así que el booleano **no se toca** y las otras dos
+  responsabilidades salen a columnas propias.
+
+  Comprobado antes: 58 suites en verde y una **mutación** —darle a Premium el
+  booleano del plan alto hace fallar `planes_de_restavor.sql`—. Después, sobre
+  el proyecto: Premium+ con turno 2, Premium con 1, el resto a 0, los dos
+  primeros pudiendo ordenar, `grants_priority` solo en Premium+ y los plazos
+  sin mover. `database.types.ts` regenerado: su diff son las dos columnas y
+  `establishment_queue_rank`.
 
 ## Las seis del 17/09/2026, una a una
 
@@ -414,8 +432,9 @@ lanzar contra el proyecto y contra `al4` cuando haga falta.
 
 ## Aplicadas
 
-**Están aplicadas las 109 migraciones del repositorio.** Las ocho del diseño
-definitivo móvil —de la 102 a la 109— el 19/09/2026. Las seis últimas —la 95, la 97, la 98,
+**Están aplicadas las 110 migraciones del repositorio.** Las nueve del
+19/09/2026 van de la 102 a la 110: las ocho del diseño definitivo móvil y la
+110, que cierra los cabos que quedaban abiertos sobre la prioridad del plan. Las seis últimas —la 95, la 97, la 98,
 la 99, la 100 y la 101— se aplicaron el 17/09/2026, una a una y comprobando cada una antes de
 pasar a la siguiente, por orden de Bosco ("Aplica las migraciones de una en una para asegurarnos
 de que se van a aplicar correctamente"). La 96 se

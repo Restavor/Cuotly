@@ -15,11 +15,13 @@
  *   3. El orden que ha puesto el restaurante entre sus propios cambios
  *      (encargo de Bosco del 11/09/2026; `compareClientRank` en
  *      `priority.ts`, la misma definición que usa la bandeja).
- *   4. Prioridad interna del plan: el que concede prioridad (Premium+ en
- *      Restavor, `plans.grants_priority`) por encima del resto de planes
- *      con cambios incluidos, y estos por encima de Básico o sin plan
- *      (RN-COM-03). **El cliente nunca ve esa prioridad**, así que este
- *      dato no puede salir en ninguna pantalla de cliente.
+ *   4. Turno del plan: `plans.queue_rank`, mayor primero (RN-COM-03,
+ *      decisión 55). En Restavor, Premium+ por delante de Premium y
+ *      Premium por delante del resto — que es exactamente lo que pidió
+ *      Bosco el 19/09/2026: "si hay una solicitud de Premium+ y otra de
+ *      Premium, se contestaría primero la de Premium+". **El cliente nunca
+ *      ve ese turno**, así que este dato no puede salir en ninguna
+ *      pantalla de cliente.
  *   5. Asignación más antigua primero.
  *   6. `jobId`, para que el orden sea reproducible (desempate técnico, no
  *      una regla de negocio — mismo criterio que `compareCandidates`).
@@ -44,20 +46,24 @@ import type { JobState } from "./job-states";
 import { compareClientRank } from "./priority";
 
 /**
- * RN-COM-03: prioridad interna, nunca visible para el cliente. `premium`
- * es el plan que concede prioridad (`plans.grants_priority`: Premium+ en
- * Restavor); `impulso` es cualquier otro plan con cambios incluidos
- * (Impulso, Impulso+ y Premium); `other` es Básico o sin plan. Los nombres
- * son los del Hito 2 y se conservan para no romper a quien los usa: lo que
- * cuenta es la cualidad, no el nombre del plan.
+ * RN-COM-03: el **turno** del plan, nunca visible para el cliente.
+ *
+ * Desde la decisión 55 (19/09/2026) no sale de `plans.grants_priority`
+ * sino de **`plans.queue_rank`**, y el motivo importa: aquel booleano
+ * decidía cuatro cosas a la vez y no podía decir que Premium+ se atiende
+ * antes que Premium **y** que los dos pueden ordenar sus cambios. Son
+ * cosas distintas y ahora son columnas distintas.
+ *
+ * El número es el de la base: **mayor va primero**. En Restavor, Premium+
+ * (2), Premium (1) y el resto (0). No se traduce a nombres de plan porque
+ * Cuotly es multiempresa (CLAUDE.md): otro espacio llamará "Total" al
+ * suyo, y lo que cuenta es el número que su catálogo le haya puesto.
+ *
+ * **Esto no es un plazo más corto.** El plazo es `start_sla_hours`
+ * (RN-SLA-02) y no lo decide el turno: Impulso+, Premium y Premium+
+ * arrancan los tres a 24 h.
  */
-export type PlanPriority = "premium" | "impulso" | "other";
-
-const PLAN_PRIORITY_ORDER: Readonly<Record<PlanPriority, number>> = {
-  premium: 0,
-  impulso: 1,
-  other: 2,
-};
+export type PlanQueueRank = number;
 
 export type QueuedJob = {
   readonly jobId: string;
@@ -72,7 +78,12 @@ export type QueuedJob = {
    * lo concede. Sale de `requests.priority_rank`.
    */
   readonly priorityRank: number | null;
-  readonly planPriority: PlanPriority;
+  /**
+   * RN-COM-03 · `plans.queue_rank` del plan vigente de su restaurante, o 0
+   * sin plan. Lo sirve `establishment_queue_rank()`, que devuelve 0 a
+   * quien no es del espacio: el turno no viaja hacia el cliente.
+   */
+  readonly planQueueRank: PlanQueueRank;
   readonly assignedAt: Date;
 };
 
@@ -96,7 +107,9 @@ export function compareQueuedJobs(a: QueuedJob, b: QueuedJob): number {
   }
   const porOrdenDelCliente = compareClientRank(a.priorityRank, b.priorityRank);
   if (porOrdenDelCliente !== 0) return porOrdenDelCliente;
-  if (a.planPriority !== b.planPriority) return PLAN_PRIORITY_ORDER[a.planPriority] - PLAN_PRIORITY_ORDER[b.planPriority];
+  // Mayor turno primero, así que se resta al revés que en los demás
+  // criterios: aquí el número grande es el que manda.
+  if (a.planQueueRank !== b.planQueueRank) return b.planQueueRank - a.planQueueRank;
   if (a.assignedAt.getTime() !== b.assignedAt.getTime()) return a.assignedAt.getTime() - b.assignedAt.getTime();
   return a.jobId < b.jobId ? -1 : a.jobId > b.jobId ? 1 : 0;
 }

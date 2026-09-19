@@ -1147,6 +1147,62 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    fuentes de esa sección**, no de todas: el resumen de Búsqueda no puede fecharse con lo que trajo
    Clarity.
 
+55. **El plan manda tres cosas distintas, y hasta hoy eran un solo booleano** (19/09/2026). Bosco
+   cierra los dos cabos que la decisión 48 había dejado abiertos sobre la prioridad del plan. Sus
+   dos respuestas, literales:
+
+   - *"Todos tienen de máximo 24 h, pero el Premium+ siempre recibirá respuesta frente al resto de
+     planes. Ej: hay una solicitud de Premium+ y de Premium, pues se contestaría primero la de
+     Premium+."*
+   - *"Solo pueden organizar por prioridad sus solicitudes los de Premium y Premium+."*
+
+   **La primera cierra el plazo sin inventar nada.** "El menor tiempo de respuesta" no era un plazo
+   más corto: era el **turno** dentro del mismo plazo. `start_sla_hours` se queda como está —48 h en
+   Básico e Impulso, 24 h en Impulso+, Premium y Premium+— y no hay ningún número que fijar.
+
+   **Lo que las dos juntas destaparon.** Con un solo booleano no se pueden decir a la vez: darle
+   `grants_priority` a Premium para que ordene le quitaría a Premium+ la manera de ir delante. Y al
+   ir a hacerlo apareció algo peor: **`plans.grants_priority` estaba sobrecargado y decidía CUATRO
+   cosas**, dos de ellas fijadas por Bosco el 16/09/2026 en la decisión 39 y enumeradas en
+   CLAUDE.md:
+
+   1. Ordenar las solicitudes propias (migración 62).
+   2. El turno interno de la cola.
+   3. **Menú Diario a 199 € en vez de 229 €** (RN-COM-08).
+   4. **Las oportunidades avanzadas** (RN-OPP).
+
+   Poner ese booleano a `true` en Premium le habría dado **también la 3 y la 4, en silencio**:
+   Premium habría empezado a pagar el Menú Diario más barato y a ver oportunidades que no le
+   corresponden, deshaciendo dos decisiones suyas sin que nadie lo pidiera. Es exactamente la clase
+   de cosa que CLAUDE.md pone en "decisiones que NO deben reaparecer".
+
+   **Lo construido** (migración 110, RN-COM-03 reescrita): `grants_priority` **no se toca** y sigue
+   siendo solo de Premium+ para el precio y las oportunidades. A su lado, dos columnas con nombre
+   propio: `queue_rank` (el turno: Premium+ 2, Premium 1, el resto 0) y `can_order_requests` (ordenar
+   lo propio: Premium y Premium+). `client_can_set_priority()` deja de leer el booleano y lee la
+   columna que le toca.
+
+   **Un espacio nuevo también nace bien.** Los planes no los crea ninguna migración sino
+   `create_restavor_space()`, así que rellenar los existentes no bastaba: sin tocar esa función,
+   cada espacio nuevo habría nacido con Premium sin poder ordenar y todo el catálogo empatado a
+   turno 0. Se vio al ejecutar las suites sobre una base limpia, donde no hay ni un plan.
+
+   **Sobre la ficha de plan del diseño** (páginas 96-97, "Prioridad: Alta / Superior"): la lectura
+   aplicada es que esa línea es **`can_order_requests`** —una capacidad que el restaurante compra, y
+   por eso visible—, y que lo que RN-COM-03 sigue sin enseñarle es el **turno** frente a otros
+   restaurantes. Con eso las dos cosas caben. Es una lectura, no una respuesta literal: si no es lo
+   que querías decir, se cambia.
+
+   **Lo que sigue sin definirse:** "Informes: Estándar / Avanzado". Bosco dio la dirección —"más
+   completo, con más información y más oportunidades; cuanto mejor sea el plan, más profundidad"—
+   pero no el reparto concreto, y sin saber qué secciones lleva cada plan no se construye (CLAUDE.md).
+
+   Comprobado: suite 58 `el_plan_manda_tres_cosas.sql` —dos planes que son el caso entero, uno alto
+   y otro que **ordena sin ser el alto**, con el mismo plazo, el turno correcto y `grants_priority`
+   intacto— y el bloque ampliado de `planes_de_restavor.sql`, que guarda los números de Restavor.
+   Mutación probada: darle a Premium el booleano del plan alto hace fallar `planes_de_restavor.sql`
+   nombrando el plan.
+
 ---
 
 ### Pendiente de completar

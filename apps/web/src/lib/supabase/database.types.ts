@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 19/09/2026), con las 109 migraciones del
+// (generate_typescript_types, 19/09/2026), con las 110 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -4937,6 +4937,7 @@ export type Database = {
       };
       plans: {
         Row: {
+          can_order_requests: boolean;
           created_at: string;
           grants_priority: boolean;
           id: string;
@@ -4946,10 +4947,12 @@ export type Database = {
           included_small: number;
           name: string;
           price_cents: number;
+          queue_rank: number;
           space_id: string;
           start_sla_hours: number;
         };
         Insert: {
+          can_order_requests?: boolean;
           created_at?: string;
           grants_priority?: boolean;
           id?: string;
@@ -4959,10 +4962,12 @@ export type Database = {
           included_small?: number;
           name: string;
           price_cents: number;
+          queue_rank?: number;
           space_id: string;
           start_sla_hours: number;
         };
         Update: {
+          can_order_requests?: boolean;
           created_at?: string;
           grants_priority?: boolean;
           id?: string;
@@ -4972,6 +4977,7 @@ export type Database = {
           included_small?: number;
           name?: string;
           price_cents?: number;
+          queue_rank?: number;
           space_id?: string;
           start_sla_hours?: number;
         };
@@ -8857,6 +8863,10 @@ export type Database = {
           view_billing: boolean;
           view_reports: boolean;
         }[];
+      };
+      establishment_queue_rank: {
+        Args: { p_establishment_id: string };
+        Returns: number;
       };
       establishment_space_id: {
         Args: { p_establishment_id: string };

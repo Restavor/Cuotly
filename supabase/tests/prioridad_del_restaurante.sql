@@ -45,11 +45,11 @@ insert into public.space_memberships (space_id, user_id, role, status) values
 -- estuviera escrita como `name = 'Premium'`, este test la cazaría.
 insert into public.plans
   (id, space_id, name, price_cents, included_small, included_photo, included_medium,
-   included_large, start_sla_hours, grants_priority) values
+   included_large, start_sla_hours, grants_priority, can_order_requests) values
   ('bb200000-0000-0000-0000-000000000001', 'bb100000-0000-0000-0000-000000000001',
-   'Total', 59900, 25, 24, 5, 1, 24, true),
+   'Total', 59900, 25, 24, 5, 1, 24, true, true),
   ('bb200000-0000-0000-0000-000000000002', 'bb100000-0000-0000-0000-000000000001',
-   'Sencillo', 9900, 0, 0, 0, 0, 48, false);
+   'Sencillo', 9900, 0, 0, 0, 0, 48, false, false);
 
 insert into public.groups (id, space_id, name) values
   ('bb300000-0000-0000-0000-000000000001', 'bb100000-0000-0000-0000-000000000001', 'Grupo Prioridad');

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { es } from "@/i18n/es";
 
 import { SourcesStatusTable, insightsSince } from "./DigitalSections";
-import type { DigitalDataView } from "./DigitalSections";
+import type { DigitalDataView } from "./integrations-load";
 
 /**
  * RN-INT-09 (decisión 48) · "Cuotly Insights" es el nombre del resumen
