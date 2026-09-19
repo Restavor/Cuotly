@@ -1,308 +1,328 @@
--- Alérgenos en el menú (migración 101, PRD §39, RN-ALE; decisión 45).
+-- ============================================================
+-- Suite 52 · La nota de alérgenos del menú (PRD §39, RN-ALE-01 a 06)
+-- ============================================================
 --
---   · RN-ALE-02: los catorce del reglamento, lista cerrada.
---   · RN-ALE-05: no declarar NO impide guardar ni publicar.
---   · RN-ALE-06: "sin alérgenos" y "sin declarar" no son lo mismo.
---   · RN-ALE-07: la declaración viaja con la versión.
---   · RN-ALE-09: tantas declaraciones como platos, o no se guarda.
+-- Reescrita el 19/09/2026 (decisión 47). Hasta ese día comprobaba la
+-- declaración plato a plato de la decisión 45: los catorce del reglamento
+-- por posición, la distinción entre "sin declarar" y "sin alérgenos", y el
+-- rechazo de una declaración que no cuadrara con los platos.
 --
---   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/alergenos_del_menu.sql
+-- El diseño definitivo móvil los puso como **una sola nota de texto libre
+-- para todo el menú**, y eso es lo que se comprueba ahora.
+--
+-- Prefijo de esta suite: cc100000-.
 
+begin;
+
+set local role postgres;
+
+-- ------------------------------------------------------------
+-- Montaje
+-- ------------------------------------------------------------
 insert into auth.users (id, email, role, aud) values
-  ('ffb00000-0000-0000-0000-000000000001', 'info@restavor.com', 'authenticated', 'authenticated')
+  ('cc100000-0000-0000-0000-000000000001', 'duena@suite52.test', 'authenticated', 'authenticated'),
+  ('cc100000-0000-0000-0000-000000000002', 'cliente@suite52.test', 'authenticated', 'authenticated');
+
+insert into public.profiles (id, email, full_name) values
+  ('cc100000-0000-0000-0000-000000000001', 'duena@suite52.test', 'Dueña 52'),
+  ('cc100000-0000-0000-0000-000000000002', 'cliente@suite52.test', 'Cliente 52')
 on conflict (id) do nothing;
 
-insert into auth.users (id, email, role, aud) values
-  ('cc100000-0000-0000-0000-000000000001', 'al-duena@example.com', 'authenticated', 'authenticated'),
-  ('cc100000-0000-0000-0000-000000000002', 'al-cliente@bar-alergenos.test', 'authenticated', 'authenticated');
+insert into public.spaces (id, name, slug, timezone, created_by)
+values ('cc100000-0000-0000-0000-000000000010', 'Espacio 52', 'espacio-52', 'Europe/Madrid',
+        'cc100000-0000-0000-0000-000000000001');
 
-select set_config('request.jwt.claim.aal', 'aal2', false);
+insert into public.space_memberships (space_id, user_id, role, status)
+values ('cc100000-0000-0000-0000-000000000010', 'cc100000-0000-0000-0000-000000000001', 'owner', 'active');
 
-create temp table al_ids (k text primary key, v uuid);
-grant select, insert, update on al_ids to anon, authenticated, service_role;
+insert into public.groups (id, space_id, name)
+values ('cc100000-0000-0000-0000-000000000015', 'cc100000-0000-0000-0000-000000000010', 'Grupo 52');
 
--- ============================================================
--- Fixtures · un espacio con su restaurante y su Menú Diario
--- ============================================================
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000001', false);
-set role authenticated;
+-- Con `code` puesto a mano: el disparador que lo genera pide sesión de
+-- alguien del espacio, y aquí seguimos montando como `postgres`.
+insert into public.establishments (id, space_id, group_id, code, name, status)
+values ('cc100000-0000-0000-0000-000000000020', 'cc100000-0000-0000-0000-000000000010',
+        'cc100000-0000-0000-0000-000000000015', 'R52', 'Restaurante 52', 'active');
+
+insert into public.establishment_memberships (establishment_id, user_id, role)
+values ('cc100000-0000-0000-0000-000000000020', 'cc100000-0000-0000-0000-000000000002', 'local_owner');
+
+-- Menú Diario contratado: sin la suscripción `create_menu()` no deja ni
+-- empezar, y esta suite va de lo que se escribe DENTRO del menú.
+insert into public.services (id, space_id, name, price_cents, price_premium_cents, kind, included_updates)
+values ('cc100000-0000-0000-0000-000000000030', 'cc100000-0000-0000-0000-000000000010',
+        'Menú Diario', 22900, 19900, 'daily_menu', 30);
+
+insert into public.subscriptions (id, space_id, establishment_id, kind, service_id, status, started_at, created_by)
+values ('cc100000-0000-0000-0000-000000000040', 'cc100000-0000-0000-0000-000000000010',
+        'cc100000-0000-0000-0000-000000000020', 'service', 'cc100000-0000-0000-0000-000000000030',
+        'active', now() - interval '10 days', 'cc100000-0000-0000-0000-000000000001');
+
+-- ------------------------------------------------------------
+-- RN-ALE-01 · la nota existe, es del menú entero y cabe en 200
+-- ------------------------------------------------------------
+set local role authenticated;
+set local "request.jwt.claim.sub" = 'cc100000-0000-0000-0000-000000000002';
+
 do $$
-declare v_id uuid;
+declare
+  v_menu uuid;
+  v_version uuid;
+  v_nota text;
 begin
-  v_id := public.save_space_request_draft(
-    'Alergenos SL', 'Dueña Alergenos', 'al-duena@example.com', 'pro', '600111555');
-  perform public.submit_space_request(v_id);
-  insert into al_ids values ('sol', v_id);
-end $$;
-reset role;
+  v_menu := public.create_menu(
+    'cc100000-0000-0000-0000-000000000020', 'Menú de prueba', 'daily',
+    (now() + interval '3 days')::date, null);
 
-select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', false);
-set role authenticated;
-do $$
-begin
-  insert into al_ids values ('espacio',
-    public.approve_space_request((select v from al_ids where k = 'sol'), 'al-espacio'));
-end $$;
-reset role;
-
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000001', false);
-set role authenticated;
-do $$
-declare v_est uuid;
-begin
-  v_est := public.create_establishment_with_data(
-    (select v from al_ids where k = 'espacio'), 'Bar Alergenos', null, 'Grupo Alergenos');
-  insert into al_ids values ('rest', v_est);
-
-  perform public.grant_establishment_access(
-    v_est, 'al-cliente@bar-alergenos.test', 'local_owner', false, true);
-end $$;
-reset role;
-
--- El servicio de Menú Diario, que `create_menu()` exige.
-set role postgres;
-do $$
-declare v_serv uuid;
-begin
-  -- Un servicio de Menú Diario necesita sus actualizaciones incluidas: son
-  -- las treinta de la decisión que no debe reaparecer.
-  insert into public.services (space_id, kind, name, price_cents, price_premium_cents, included_updates)
-  values ((select v from al_ids where k = 'espacio'), 'daily_menu', 'Menú Diario', 22900, 19900, 30)
-  returning id into v_serv;
-
-  insert into public.subscriptions
-    (space_id, establishment_id, kind, service_id, status, started_at, created_by)
-  values ((select v from al_ids where k = 'espacio'), (select v from al_ids where k = 'rest'),
-          'service', v_serv, 'active', now() - interval '10 days',
-          'cc100000-0000-0000-0000-000000000001');
-end $$;
-reset role;
-
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000001', false);
-set role authenticated;
-do $$
-begin
-  insert into al_ids values ('menu', public.create_menu(
-    (select v from al_ids where k = 'rest'), 'Menú del martes', 'daily',
-    (current_date + 1)::date, null));
-end $$;
-reset role;
-
--- ============================================================
--- RN-ALE-02 · la lista es cerrada, y es la misma de los catorce
--- ============================================================
-do $$
-begin
-  if array_length(public.allergen_codes(), 1) <> 14 then
-    raise exception 'RN-ALE-02 FALLIDO: la lista no tiene catorce alérgenos, tiene %',
-      array_length(public.allergen_codes(), 1) using errcode = 'assert_failure';
-  end if;
-
-  -- El orden es el del reglamento, no el alfabético: el primero y el último
-  -- lo fijan, y que no esté ordenado alfabéticamente lo confirma.
-  if (public.allergen_codes())[1] <> 'gluten' or (public.allergen_codes())[14] <> 'molluscs' then
-    raise exception 'RN-ALE-02 FALLIDO: la lista no va en el orden del reglamento'
-      using errcode = 'assert_failure';
-  end if;
-
-  if (select array_agg(c order by c) from unnest(public.allergen_codes()) as t(c))
-     = public.allergen_codes() then
-    raise exception 'RN-ALE-02 FALLIDO: la lista está en orden alfabético, no en el del reglamento'
-      using errcode = 'assert_failure';
-  end if;
-end $$;
-
--- ============================================================
--- RN-ALE-05 · no declarar no impide guardar
--- ============================================================
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000001', false);
-set role authenticated;
-do $$
-declare v_v uuid;
-begin
-  v_v := public.save_menu_version(
-    (select v from al_ids where k = 'menu'),
-    array['Crema de calabaza', 'Ensalada'], array['Merluza'], array['Flan'],
-    'Vino de la casa', 1450, null);
-
-  if (select allergens from public.menu_versions where id = v_v) is not null then
-    raise exception 'RN-ALE-05 FALLIDO: se inventó una declaración que nadie escribió'
-      using errcode = 'assert_failure';
-  end if;
-end $$;
-reset role;
-
--- ============================================================
--- RN-ALE-09 · tantas declaraciones como platos, o no se guarda
--- ============================================================
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000001', false);
-set role authenticated;
-do $$
-declare v_menu uuid := (select v from al_ids where k = 'menu');
-begin
-  -- Dos primeros y UNA declaración: la correspondencia por posición sería
-  -- mentira, y lo que se leería después serían los alérgenos de otro plato.
-  begin
-    perform public.save_menu_version(
-      v_menu, array['Crema', 'Ensalada'], array['Merluza'], array['Flan'], 'Vino', 1450, null, null,
-      '{"starters": [{"allergens": ["milk"], "note": null}]}'::jsonb);
-    raise exception 'RN-ALE-09 FALLIDO: se guardó una declaración que no cuadra con los platos'
-      using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm like 'RN-ALE-09 FALLIDO%' then raise; end if;
-  end;
-
-  -- RN-ALE-02 · un código que no es del reglamento se rechaza. Un alérgeno
-  -- inventado se leería como uno de verdad.
-  begin
-    perform public.save_menu_version(
-      v_menu, array['Crema'], array[]::text[], array[]::text[], null, null, null, null,
-      '{"starters": [{"allergens": ["tomate"], "note": null}]}'::jsonb);
-    raise exception 'RN-ALE-02 FALLIDO: se guardó un alérgeno que no es del reglamento'
-      using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm like 'RN-ALE-02 FALLIDO%' then raise; end if;
-  end;
-
-  -- Una categoría que no existe tampoco cuela: se tragaría media
-  -- declaración y quedaría guardada como si estuviera entera.
-  begin
-    perform public.save_menu_version(
-      v_menu, array['Crema'], array[]::text[], array[]::text[], null, null, null, null,
-      '{"starters": [null], "entrantes": []}'::jsonb);
-    raise exception 'RN-ALE FALLIDO: se guardó una categoría inventada'
-      using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm like 'RN-ALE FALLIDO%' then raise; end if;
-  end;
-
-  -- Y una declaración de bebida sin bebida: alguien se dejó el vino y no la
-  -- declaración, y lo que quedaría es un alérgeno colgando de nada.
-  begin
-    perform public.save_menu_version(
-      v_menu, array[]::text[], array[]::text[], array[]::text[], null, null, null, null,
-      '{"drink": {"allergens": ["sulphites"], "note": null}}'::jsonb);
-    raise exception 'RN-ALE FALLIDO: se guardó la declaración de una bebida que no existe'
-      using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm like 'RN-ALE FALLIDO%' then raise; end if;
-  end;
-end $$;
-reset role;
-
--- ============================================================
--- RN-ALE-06 · "sin alérgenos" y "sin declarar" no son lo mismo
--- ============================================================
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000001', false);
-set role authenticated;
-do $$
-declare v_menu uuid := (select v from al_ids where k = 'menu');
-        v_v uuid;
-        v_decl jsonb;
-begin
-  v_v := public.save_menu_version(
+  v_version := public.save_menu_version(
     v_menu,
-    array['Crema de calabaza', 'Ensalada'], array['Merluza'], array['Flan'],
-    'Vino de la casa', 1450, null, null,
-    jsonb_build_object(
-      -- El primero declarado con leche; el segundo, sin declarar.
-      'starters', jsonb_build_array(
-        jsonb_build_object('allergens', jsonb_build_array('milk'), 'note', 'puede contener trazas'),
-        null),
-      -- Declarado que NO lleva ninguno de los catorce: es un acto, no un hueco.
-      'mains', jsonb_build_array(jsonb_build_object('allergens', jsonb_build_array(), 'note', null)),
-      'desserts', jsonb_build_array(
-        jsonb_build_object('allergens', jsonb_build_array('eggs', 'milk'), 'note', null)),
-      'drink', jsonb_build_object('allergens', jsonb_build_array('sulphites'), 'note', null)));
+    array['Ensalada', 'Crema'],
+    array['Merluza'],
+    array['Tarta'],
+    null, 1650, null, null,
+    'Contiene gluten, lácteos y frutos secos.');
 
-  insert into al_ids values ('version_con', v_v);
+  select allergen_note into v_nota from public.menu_versions where id = v_version;
 
-  select allergens into v_decl from public.menu_versions where id = v_v;
-
-  if v_decl is null then
-    raise exception 'RN-ALE-07 FALLIDO: la declaración no se guardó con la versión'
-      using errcode = 'assert_failure';
+  if v_nota is distinct from 'Contiene gluten, lácteos y frutos secos.' then
+    raise exception 'RN-ALE-01 FALLA: la nota no se guardó tal cual, llegó "%"', v_nota;
   end if;
+end;
+$$;
 
-  -- El hueco se guarda COMO hueco, no como lista vacía.
-  if jsonb_typeof(v_decl -> 'starters' -> 1) <> 'null' then
-    raise exception 'RN-ALE-06 FALLIDO: el plato sin declarar se guardó como declarado'
-      using errcode = 'assert_failure';
-  end if;
-
-  -- Y el "ninguno" se guarda como declaración con lista vacía, no como hueco.
-  if jsonb_typeof(v_decl -> 'mains' -> 0) <> 'object'
-     or jsonb_array_length(v_decl -> 'mains' -> 0 -> 'allergens') <> 0 then
-    raise exception 'RN-ALE-06 FALLIDO: el plato declarado sin alérgenos no se guardó como declarado'
-      using errcode = 'assert_failure';
-  end if;
-
-  if v_decl -> 'starters' -> 0 ->> 'note' is distinct from 'puede contener trazas' then
-    raise exception 'RN-ALE-03 FALLIDO: la nota libre del plato no se guardó'
-      using errcode = 'assert_failure';
-  end if;
-end $$;
-reset role;
-
--- ============================================================
--- RN-ALE-07 · la declaración viaja con la versión, y la copia del menú
--- se la lleva
--- ============================================================
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000001', false);
-set role authenticated;
+-- RN-ALE-01 · el límite de 200 lo impone el SERVIDOR, no la pantalla.
 do $$
-declare v_copia uuid;
-        v_decl jsonb;
+declare
+  v_menu uuid;
 begin
-  v_copia := public.copy_menu(
-    (select v from al_ids where k = 'menu'), (current_date + 8)::date, 'Menú copiado');
+  v_menu := public.create_menu(
+    'cc100000-0000-0000-0000-000000000020', 'Menú largo', 'daily',
+    (now() + interval '4 days')::date, null);
 
-  select mv.allergens into v_decl
+  begin
+    perform public.save_menu_version(
+      v_menu, array['Uno'], array['Dos'], array['Tres'], null, 1000, null, null,
+      repeat('x', 201));
+    raise exception 'RN-ALE-01 FALLA: se aceptó una nota de 201 caracteres';
+  exception
+    when others then
+      if sqlerrm like 'RN-ALE-01 FALLA%' then raise; end if;
+  end;
+end;
+$$;
+
+-- ------------------------------------------------------------
+-- RN-ALE-04 · no declarar no impide guardar ni publicar
+-- ------------------------------------------------------------
+do $$
+declare
+  v_menu uuid;
+  v_version uuid;
+  v_nota text;
+begin
+  v_menu := public.create_menu(
+    'cc100000-0000-0000-0000-000000000020', 'Menú sin nota', 'daily',
+    (now() + interval '5 days')::date, null);
+
+  -- Con siete argumentos, como llama la app móvil: ni se menciona la nota.
+  v_version := public.save_menu_version(
+    v_menu, array['Uno'], array['Dos'], array['Tres'], null, 1200, null);
+
+  select allergen_note into v_nota from public.menu_versions where id = v_version;
+  if v_nota is not null then
+    raise exception 'RN-ALE-04 FALLA: sin declarar debería quedar nulo, quedó "%"', v_nota;
+  end if;
+end;
+$$;
+
+-- La nota en blanco es lo mismo que no declarar: no se guarda una cadena
+-- vacía que luego se lea como "declarado sin alérgenos".
+do $$
+declare
+  v_menu uuid;
+  v_version uuid;
+  v_nota text;
+begin
+  v_menu := public.create_menu(
+    'cc100000-0000-0000-0000-000000000020', 'Menú con blancos', 'daily',
+    (now() + interval '6 days')::date, null);
+
+  v_version := public.save_menu_version(
+    v_menu, array['Uno'], array['Dos'], array['Tres'], null, 1200, null, null, '   ');
+
+  select allergen_note into v_nota from public.menu_versions where id = v_version;
+  if v_nota is not null then
+    raise exception 'FALLA: una nota de solo espacios debería quedar nula, quedó "%"', v_nota;
+  end if;
+end;
+$$;
+
+-- ------------------------------------------------------------
+-- RN-ALE-05 · la nota viaja con la versión al copiar el menú
+-- ------------------------------------------------------------
+do $$
+declare
+  v_menu uuid;
+  v_copia uuid;
+  v_nota text;
+begin
+  v_menu := public.create_menu(
+    'cc100000-0000-0000-0000-000000000020', 'Menú que se copia', 'daily',
+    (now() + interval '7 days')::date, null);
+
+  perform public.save_menu_version(
+    v_menu, array['Uno'], array['Dos'], array['Tres'], null, 1400, null, null,
+    'Contiene apio.');
+
+  v_copia := public.copy_menu(v_menu, (now() + interval '8 days')::date, null);
+
+  select mv.allergen_note into v_nota
   from public.menus m
   join public.menu_versions mv on mv.id = m.current_version_id
   where m.id = v_copia;
 
-  if v_decl is null then
-    raise exception 'RN-ALE-07 FALLIDO: copiar el menú perdió la declaración de alérgenos. Un menú copiado con sus platos y sin sus alérgenos es la manera más silenciosa de publicar un menú sin declarar creyendo que la llevaba'
-      using errcode = 'assert_failure';
+  if v_nota is distinct from 'Contiene apio.' then
+    raise exception 'RN-ALE-05 FALLA: la copia perdió la nota, llegó "%"', v_nota;
+  end if;
+end;
+$$;
+
+-- ------------------------------------------------------------
+-- RN-ALE-02 · la escribe quien edita el menú, y solo quien puede
+-- ------------------------------------------------------------
+--
+-- El equipo también: la nota es una línea más del contenido y pasa por la
+-- misma puerta que el resto (`can_write_menus()`).
+set local "request.jwt.claim.sub" = 'cc100000-0000-0000-0000-000000000001';
+
+do $$
+declare
+  v_menu uuid;
+  v_version uuid;
+begin
+  v_menu := public.create_menu(
+    'cc100000-0000-0000-0000-000000000020', 'Menú del equipo', 'daily',
+    (now() + interval '9 days')::date, null);
+
+  v_version := public.save_menu_version(
+    v_menu, array['Uno'], array['Dos'], array['Tres'], null, 1500, null, null,
+    'Contiene mostaza.');
+
+  if v_version is null then
+    raise exception 'RN-ALE-02 FALLA: el equipo no pudo escribir la nota';
+  end if;
+end;
+$$;
+
+-- Y quien no tiene nada que ver con el restaurante, no.
+set local role postgres;
+insert into auth.users (id, email, role, aud) values
+  ('cc100000-0000-0000-0000-000000000003', 'ajena@suite52.test', 'authenticated', 'authenticated');
+insert into public.profiles (id, email, full_name) values
+  ('cc100000-0000-0000-0000-000000000003', 'ajena@suite52.test', 'Ajena 52')
+on conflict (id) do nothing;
+
+set local role authenticated;
+set local "request.jwt.claim.sub" = 'cc100000-0000-0000-0000-000000000003';
+
+do $$
+declare
+  v_existente uuid;
+begin
+  set local role postgres;
+  select id into v_existente from public.menus
+  where establishment_id = 'cc100000-0000-0000-0000-000000000020'
+    and state not in ('published', 'cancelled')
+  limit 1;
+  set local role authenticated;
+
+  begin
+    perform public.save_menu_version(
+      v_existente, array['Uno'], array['Dos'], array['Tres'], null, 1000, null, null, 'Contiene soja.');
+    raise exception 'RN-ALE-02 FALLA: una persona ajena escribió la nota';
+  exception
+    when others then
+      if sqlerrm like 'RN-ALE-02 FALLA%' then raise; end if;
+  end;
+end;
+$$;
+
+-- ------------------------------------------------------------
+-- Privilegio de columna · la nota se LEE
+-- ------------------------------------------------------------
+--
+-- `menu_versions` tiene los privilegios revocados y las columnas
+-- concedidas una a una: una columna nueva nace sin permiso para nadie y el
+-- error suena a problema de la tabla entera. Es el fallo que la suite de
+-- la 101 encontró, y por eso se vuelve a comprobar aquí.
+set local role postgres;
+do $$
+begin
+  if not has_column_privilege('authenticated', 'public.menu_versions', 'allergen_note', 'select') then
+    raise exception 'FALLA: `authenticated` no puede leer `allergen_note` (falta el grant de columna)';
   end if;
 
-  if v_decl -> 'desserts' -> 0 -> 'allergens' <> '["eggs", "milk"]'::jsonb then
-    raise exception 'RN-ALE-07 FALLIDO: la copia no se llevó los alérgenos de los postres'
-      using errcode = 'assert_failure';
+  -- Y la identidad del equipo sigue tapada, que es lo que el privilegio de
+  -- columna existe para sostener (CLAUDE.md).
+  if has_column_privilege('authenticated', 'public.menu_versions', 'created_by', 'select') then
+    raise exception 'FALLA: `created_by` de menu_versions dejó de estar tapada';
   end if;
-end $$;
-reset role;
+end;
+$$;
 
--- ============================================================
--- La versión anterior a §39 sigue leyéndose: `allergens` es nulo y eso
--- quiere decir "esta versión es de antes", no "este menú no lleva nada".
--- ============================================================
+-- ------------------------------------------------------------
+-- Decisión 47 · lo que la 101 trajo ya no está
+-- ------------------------------------------------------------
+--
+-- Falso-cerrado: si alguien vuelve a crear las validadoras del documento
+-- por plato sin reescribir §39, esto se pone rojo y hay que venir a
+-- explicarlo.
+do $$
+declare
+  v_resto text;
+begin
+  select string_agg(p.proname, ', ')
+  into v_resto
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+  where n.nspname = 'public'
+    and p.proname in ('allergen_codes', 'allergen_label', 'validate_dish_allergens', 'validate_menu_allergens');
+
+  if v_resto is not null then
+    raise exception 'FALLA: la decisión 47 quitó estas funciones y siguen ahí: %', v_resto;
+  end if;
+
+  -- `save_menu_version` tiene UNA sola firma, y la novena es la nota.
+  if (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname = 'save_menu_version') <> 1 then
+    raise exception 'FALLA: hay más de una `save_menu_version`, y PostgREST elegiría cualquiera';
+  end if;
+
+  if (select pg_get_function_identity_arguments(p.oid)
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname = 'save_menu_version') not like '%p_allergen_note text' then
+    raise exception 'FALLA: la última firma de `save_menu_version` no termina en la nota';
+  end if;
+end;
+$$;
+
+-- La columna de la 101 sigue existiendo, sin uso y con su motivo escrito:
+-- no se borra porque lleva lo que algún restaurante llegara a declarar.
 do $$
 begin
   if not exists (
-    select 1 from public.menu_versions
-    where menu_id = (select v from al_ids where k = 'menu') and version = 1 and allergens is null
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'menu_versions' and column_name = 'allergens'
   ) then
-    raise exception 'RN-ALE FALLIDO: la primera versión, guardada sin declaración, no quedó nula'
-      using errcode = 'assert_failure';
+    raise exception 'FALLA: se borró `menu_versions.allergens`, que la decisión 47 dijo de conservar';
   end if;
-end $$;
 
--- ============================================================
--- El cliente lee la declaración de su menú; quien no es de este
--- restaurante no lee ni el menú
--- ============================================================
-select set_config('request.jwt.claim.sub', 'cc100000-0000-0000-0000-000000000002', false);
-set role authenticated;
-do $$
-begin
-  if not exists (
-    select 1 from public.menu_versions
-    where id = (select v from al_ids where k = 'version_con') and allergens is not null
-  ) then
-    raise exception 'RN-ALE FALLIDO: el restaurante no lee la declaración de su propio menú'
-      using errcode = 'assert_failure';
+  if coalesce(col_description('public.menu_versions'::regclass,
+       (select ordinal_position from information_schema.columns
+        where table_schema = 'public' and table_name = 'menu_versions' and column_name = 'allergens')::int), '')
+     not like 'SIN USO%' then
+    raise exception 'FALLA: `allergens` no dice que está sin uso, y alguien la escribirá por error';
   end if;
-end $$;
-reset role;
+end;
+$$;
+
+rollback;

@@ -424,7 +424,7 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/las_cuatro_del_grupo_c.sql
 
-      - name: "Paso 2 — Verificar los alérgenos del menú: la lista cerrada de los catorce, que no declarar no impide publicar y que «sin declarar» no es «sin alérgenos» (§39, RN-ALE)"
+      - name: "Paso 2 — Verificar la nota de alérgenos del menú: que se guarda tal cual con su límite de 200, que no declarar no impide publicar, que viaja al copiar el menú y que lo de la 101 ya no está (§39, RN-ALE)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \

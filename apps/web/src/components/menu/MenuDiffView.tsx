@@ -64,39 +64,13 @@ export function MenuDiffView({ diff }: { diff: MenuDiff }) {
         </p>
       ) : null}
 
-      {/* RN-ALE-07 · lo que cambió en la declaración de alérgenos, por el
-          NOMBRE del plato. "En Merluza se ha quitado leche" es lo que
-          alguien querrá rastrear; "posición 1 de segundos" no lo es. */}
-      {diff.allergens.length === 0 ? null : (
-        <div>
-          <p className="font-medium text-text">{es.allergens.title}</p>
-          {diff.allergens.map((cambio, i) => (
-            <p key={`${cambio.course}-${i}`} className="text-text-secondary">
-              <span className="text-text">
-                {cambio.dishAfter ?? cambio.dishBefore ?? t.courses.starters}
-              </span>
-              {cambio.dishBefore !== null &&
-              cambio.dishAfter !== null &&
-              cambio.dishBefore !== cambio.dishAfter
-                ? ` (${t.dishRenamed(cambio.dishBefore)})`
-                : ""}
-              {": "}
-              {cambio.declarationChanged === "declared"
-                ? t.allergensDeclared
-                : cambio.declarationChanged === "undeclared"
-                  ? t.allergensUndeclared
-                  : ""}
-              {cambio.removed.length > 0
-                ? ` ${t.allergensRemoved(cambio.removed.map((a) => es.allergens.names[a]).join(", "))}`
-                : ""}
-              {cambio.added.length > 0
-                ? ` ${t.allergensAdded(cambio.added.map((a) => es.allergens.names[a]).join(", "))}`
-                : ""}
-              {cambio.noteChanged ? ` ${t.allergenNoteChanged}` : ""}
-            </p>
-          ))}
-        </div>
-      )}
+      {/* RN-ALE-06 · la nota de alérgenos se dice como el resto de campos
+          sueltos: qué había antes y qué hay ahora. */}
+      {diff.allergenNote ? (
+        <p className="text-text-secondary">
+          {t.allergenNote(texto(diff.allergenNote.before), texto(diff.allergenNote.after))}
+        </p>
+      ) : null}
     </div>
   );
 }

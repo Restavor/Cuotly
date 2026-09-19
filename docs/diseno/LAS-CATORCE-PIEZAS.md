@@ -81,8 +81,10 @@ Las cuatro se decidieron en dos tandas: la **43** el qué y la **44** el cómo.
 Están escritas como reglas en el **§38 del PRD** (RN-TRA, RN-BCK, RN-CAN y
 RN-REC), construidas en la **migración 100** y comprobadas por la **suite
 51**. La quinta, los **alérgenos**, se decidió el mismo día (**decisión 45**), se escribió como
-§39 del PRD y se construyó en la **migración 101** con la **suite 52**. Lo único suyo que sigue en
-el paso 4 es el **aviso legal**, que no se redacta hasta que lo escriba un profesional.
+§39 del PRD y se construyó en la **migración 101** con la **suite 52** — y dos días después el
+diseño definitivo móvil la cambió entera (**decisión 47**, §39 reescrito, **migración 102**): una
+sola nota de texto libre para todo el menú. Lo único suyo que sigue en el paso 4 es el **aviso
+legal**, que no se redacta hasta que lo escriba un profesional.
 
 Dos cosas que salieron al construirlas y que no estaban en ninguna decisión:
 
@@ -163,9 +165,14 @@ cuarta cosa, con su propia lista de miembros.
 
 ### C4 · Alérgenos en el editor del menú (R14) — **decidido**
 
-> **Plato a plato, los catorce del reglamento con casillas más una nota libre,
-> y sin bloquear la publicación** (decisión 45). Escrito como §39 del PRD
-> (RN-ALE) y construido en la migración 101.
+> **Decidido dos veces.** El 17/09/2026: plato a plato, los catorce del
+> reglamento con casillas más una nota libre, sin bloquear la publicación
+> (decisión 45), escrito como §39 del PRD y construido en la migración 101.
+>
+> El 19/09/2026, con el diseño definitivo móvil delante (página 125):
+> **una sola nota de texto libre para todo el menú**, de 200 caracteres
+> (**decisión 47**). Manda el diseño. §39 reescrito, migración 102, y lo
+> declarado con la 101 convertido en esa nota.
 >
 > Lo suyo que sigue en el paso 4 es el **aviso legal**. Lo que la pantalla
 > dice hoy —de quién es la información y que Cuotly no la comprueba— es un

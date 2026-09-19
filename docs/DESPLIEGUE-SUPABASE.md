@@ -182,6 +182,36 @@ comprobó y no envejece.
   bootstrap + 101 migraciones**. `database.types.ts` se regeneró después, contra el
   proyecto. **Aplicada el 17/09/2026.**
 
+- La **102** (`20260919000102_la_nota_de_alergenos.sql`, §39 reescrito, decisión 47: los alérgenos
+  vuelven a ser una nota). Deshace la 101 **sin editarla**, que es lo que `CLAUDE.md` exige de una
+  migración ya aplicada: su columna `allergens` se queda donde está, marcada `SIN USO` en su
+  comentario, y al lado nace `allergen_note`, de 200 caracteres con la restricción en la base.
+
+  **`save_menu_version()` cambia de firma otra vez**: sigue teniendo nueve argumentos, pero el
+  noveno pasa de `p_allergens jsonb` a `p_allergen_note text`, y la de `jsonb` se borra. Quien llame
+  con siete —la app móvil— se comporta exactamente igual que antes. `copy_menu()` se redefine
+  detrás, por el mismo motivo de siempre: llamaba a la anterior por posición.
+
+  **Lleva una conversión de datos**, y es la única parte que no se puede volver a ejecutar sin
+  pensar: recorre las versiones con declaración de la 101 y escribe una frase (`Contiene …`, más las
+  notas por plato detrás), cortada a 200. Lo que un restaurante escribiera no se tira.
+
+  **Lo que hay que mirar al leer el diff**: otra vez el `grant select (allergen_note)`. Es el mismo
+  tropiezo que la 101 y por eso lleva el comentario escrito encima.
+
+  Al final borra `allergen_codes()`, `allergen_label()`, `validate_dish_allergens()` y
+  `validate_menu_allergens()`: una función interna viva que no llama nadie es una puerta que algún
+  día alguien abre por error.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local: **las 52 suites en verde sobre
+  bootstrap + 102 migraciones**. `database.types.ts` se regeneró después, contra el proyecto.
+  **Aplicada el 19/09/2026**, en tres trozos (`_1_columna_y_conversion`, `_2_save_menu_version`,
+  `_3_copy_menu_y_limpieza`). Comprobado después contra el proyecto: la columna, su privilegio, su
+  restricción, el comentario `SIN USO`, que `save_menu_version` tiene **una sola** firma y que las
+  cuatro funciones de la 101 ya no existen; y la huella de `save_menu_version` + `copy_menu`
+  —`40f34c4936d5966991aa32808b8e8622`— coincide con la de la base local construida desde los
+  archivos del repositorio.
+
 ## Cómo se comprobó que las seis se aplicaron bien (17/09/2026)
 
 Después de cada una se hizo una consulta de comprobación —que existan sus tablas, sus funciones,

@@ -4958,31 +4958,47 @@ RN-BCK, RN-CAN y RN-REC— y la migración 100 las hace servidor.
   los demás.
 - **Verde**: 51 suites sobre 100 migraciones, typecheck, lint, 1392 tests y la compilación de Next.
 
-#### Hecho · Los alérgenos del menú (decisión 45, PRD §39, migración 101, suite 52)
+#### Hecho · Los alérgenos del menú (§39, migraciones 101 y 102, suite 52)
 La última de las catorce, y la única que tocaba materia legal. Construir la pantalla **no es
 redactar nada**: lo que se guarda lo escribe el restaurante, y el aviso legal que la acompañe sigue
 en el paso 4, sin redactar, hasta que lo escriba el profesional que `CLAUDE.md` exige.
 
-- **Plato a plato** (RN-ALE-01), que es lo que pide el Reglamento UE 1169/2011. Se eligió sabiendo
-  el precio: un plato era una línea de texto suelta y ahora tiene estructura.
-- **Los catorce con casillas, más una nota libre** (RN-ALE-02, RN-ALE-03). La lista vive una vez en
-  `src/core/allergens.ts`, el servidor la repite para poder validar sin preguntarle al navegador, y
-  `listas-compartidas.test.ts` compara las dos —incluido el orden, que es el del reglamento y no el
-  alfabético—.
-- **No bloquea la publicación** (RN-ALE-05): se avisa de los platos sin declarar y el menú sale.
-- **"Sin alérgenos" y "sin declarar" no son lo mismo** (RN-ALE-06), y ninguna pantalla los confunde.
-  Declarar que un plato no lleva ninguno de los catorce es un acto, con su botón; un plato del que
-  nadie ha dicho nada es un hueco.
-- **La declaración va atada a la posición** (RN-ALE-09), que se puede porque una versión de menú es
-  inmutable. De ahí sale lo que la pantalla enseña siempre: el nombre del plato al lado de su
-  declaración, para que quien reordene las líneas vea que la declaración no se ha movido con ellas.
-- **Lo que NO cambia**: la plantilla que se publica (el PNG y el PDF). La maqueta pide los alérgenos
-  en el editor, y cómo se imprimen catorce iconos en las tres disposiciones es una decisión de
-  diseño que nadie ha tomado.
-- **Un fallo real que destapó**: la columna nueva de `menu_versions` nacía sin privilegio de
-  columna, así que la declaración se guardaba y no la leía nadie. El error sonaba a problema de la
-  tabla entera.
-- **Verde**: 52 suites sobre 101 migraciones, typecheck, lint, 1426 tests y la compilación de Next.
+**Se hizo dos veces, y la segunda deshace la primera.** El 17/09/2026 se construyó la decisión 45:
+la declaración **plato a plato**, con los catorce del Anexo II del Reglamento UE 1169/2011 en
+casillas, una nota libre por plato y la distinción entre un plato *sin declarar* y uno *sin
+alérgenos*. Migración 101, `src/core/allergens.ts`, editor de casillas, tarjeta de lectura y
+comparación de declaraciones. Todo eso se aplicó a producción.
+
+El 19/09/2026 llegó el diseño definitivo móvil (`Cuotly_movil.pdf`, página 125) y los pone de otra
+manera: **una sola nota de texto libre para todo el menú**, de 200 caracteres, titulada "Alérgenos
+(según la información proporcionada)". Se preguntó con el coste delante y Bosco decidió que manda el
+diseño (**decisión 47**). Lo construido se retiró.
+
+- **Una nota, del menú entero** (RN-ALE-01), máximo 200 caracteres, límite en la base y no solo en
+  la pantalla. La escribe quien edita el menú, con la misma puerta que el resto del contenido
+  (RN-ALE-02): no hace falta permiso nuevo.
+- **Cuotly no la comprueba** (RN-ALE-03) y **no bloquea la publicación** (RN-ALE-04). Un menú sin
+  nota se publica igual; pararle el menú del día a un restaurante por un campo vacío es un daño
+  cierto por un riesgo que Cuotly no está en condiciones de juzgar.
+- **Viaja con la versión** (RN-ALE-05), que es inmutable, y **copiar un menú copia su nota**: un
+  menú copiado con sus platos y sin su nota sería la manera más silenciosa de publicar un menú sin
+  declarar creyendo que la llevaba.
+- **La comparación de versiones dice si cambió** (RN-ALE-06), como dice si cambió un plato o el
+  precio.
+- **Lo guardado no se tiró.** La migración 102 no edita la 101 —ya estaba aplicada, y `CLAUDE.md` lo
+  prohíbe—: deja su columna `allergens` donde está, con un comentario que dice `SIN USO` y por qué,
+  y **convierte** lo declarado en una frase (`Contiene …`, más las notas por plato detrás). Lo que
+  no cabe en 200 se corta, porque la restricción es la que manda.
+- **Lo que se perdió, dicho en claro porque se decidió sabiéndolo**: la distinción entre "sin
+  declarar" y "sin alérgenos" —que son lo contrario para quien tiene una alergia—, el dato por
+  plato, y poder buscar, contar o pintar un alérgeno concreto. Queda escrito en §39 por si hay que
+  volver.
+- **Lo que NO cambia**: la plantilla que se publica (el PNG y el PDF). Las tres previsualizaciones
+  del diseño no imprimen la nota.
+- **Un fallo real que destapó la primera vuelta**: la columna nueva de `menu_versions` nacía sin
+  privilegio de columna, así que lo declarado se guardaba y no lo leía nadie, con un error que
+  sonaba a problema de la tabla entera. La 102 tropezaba con lo mismo y por eso lo lleva escrito.
+- **Verde**: 52 suites sobre 102 migraciones, typecheck, lint, 1422 tests y la compilación de Next.
 
 #### Hecho · El panel del restaurante como contexto propio (§40, RN-PAN-01 a 08; decisión 46)
 Lo último del paso 2. **La mitad de esta entrada estaba mal**: decía que faltaban las cinco pestañas

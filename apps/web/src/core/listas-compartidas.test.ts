@@ -3,7 +3,6 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { ALLERGENS } from "./allergens";
 import {
   INTEGRATION_PROVIDERS,
   INTEGRATION_STATES,
@@ -805,17 +804,38 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     expect(incidentPriorityFor("suggestion", null, "agency")).toBeNull();
   });
 
-  it("RN-ALE-02 · los catorce alérgenos son los mismos, y en el mismo orden, en SQL y en `src/core`", () => {
-    // La lista está escrita dos veces a propósito: el servidor tiene que
-    // validar sin preguntarle al navegador. Dos copias de una lista acaban
-    // discrepando, y esta no puede: un alérgeno que el servidor no conozca
-    // haría fallar el guardado de un menú entero, y uno que falte en la
-    // pantalla es información que el restaurante no puede declarar.
+  it("decisión 47 · la lista de los catorce alérgenos ya no está a ningún lado", () => {
+    // Entre el 17 y el 19/09/2026 esta lista estaba escrita dos veces —en
+    // `allergen_codes()` y en `src/core/allergens.ts`— y este test las
+    // comparaba, orden incluido. La decisión 47 la retiró de los dos
+    // sitios: los alérgenos son ahora una nota de texto libre (§39).
     //
-    // El ORDEN también se compara: es el del Anexo II del reglamento, que
-    // es el que usan las cartas impresas, no el alfabético.
-    const fn = ultimaDefinicion("create or replace function public.allergen_codes", "$$;");
-    expect(entrecomillados(fn)).toEqual([...ALLERGENS]);
+    // El test se da la vuelta en vez de borrarse, y eso es el falso-cerrado:
+    // si alguien vuelve a traer la lista a SQL sin reescribir §39, esto se
+    // pone rojo y hay que venir a explicarlo.
+    //
+    // Se mira el ESTADO FINAL, no si la palabra aparece: la migración 101
+    // crea `allergen_codes()` y no se edita (CLAUDE.md), la 102 la borra.
+    // Lo que tiene que valer es que la última palabra sea el `drop`.
+    for (const nombre of [
+      "allergen_codes",
+      "allergen_label",
+      "validate_dish_allergens",
+      "validate_menu_allergens",
+    ]) {
+      const mencionan = migracionesEnOrden().filter((sql) =>
+        sql.includes(`public.${nombre}(`),
+      );
+      expect(mencionan.length, `nadie nombra ya \`${nombre}()\``).toBeGreaterThan(0);
+      const ultima = mencionan[mencionan.length - 1];
+      const trozos = ultima.split(`public.${nombre}(`);
+      const antesDelUltimo = trozos[trozos.length - 2] ?? "";
+      expect(
+        /drop function\s+(if exists\s+)?$/i.test(antesDelUltimo.trimEnd() + " "),
+        `lo último que las migraciones hacen con \`${nombre}()\` no es borrarla: ` +
+          "si volvió a propósito, reescribe §39 y este test",
+      ).toBe(true);
+    }
   });
 
   it("los cinco componentes y las tres gravedades de la página de estado (RN-SOP-12/13) son los mismos a los dos lados", () => {

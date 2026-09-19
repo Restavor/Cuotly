@@ -408,11 +408,12 @@ begin
   if has_function_privilege('anon', 'public.set_space_tax_rate(uuid, numeric)', 'execute')
      or has_function_privilege('anon', 'public.cancel_request(uuid, text)', 'execute')
      or has_function_privilege('anon', 'public.request_service_termination(uuid, text, boolean)', 'execute')
-     -- La firma creció con la migración 101: el noveno argumento son los
-     -- alérgenos (§39). Se nombra entera porque comprobar el privilegio de
+     -- La firma creció con la 101 y cambió con la 102: el noveno argumento
+     -- es la NOTA de alérgenos (§39 reescrito, decisión 47), no el documento
+     -- por plato. Se nombra entera porque comprobar el privilegio de
      -- "alguna save_menu_version" no comprueba nada: lo que importa es que
      -- la que EXISTE esté cerrada.
-     or has_function_privilege('anon', 'public.save_menu_version(uuid, text[], text[], text[], text, integer, text, integer, jsonb)', 'execute') then
+     or has_function_privilege('anon', 'public.save_menu_version(uuid, text[], text[], text[], text, integer, text, integer, text)', 'execute') then
     raise exception 'CLAUDE.md MUST FALLIDO: una función de la migración 99 está abierta a anon'
       using errcode = 'assert_failure';
   end if;

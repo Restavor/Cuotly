@@ -8,7 +8,6 @@ import { parseSimultaneousEditVersion } from "@/core/menu-diff";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import type { Json } from "@/lib/supabase/database.types";
 import type { MenuActionState } from "./action-state";
 
 const t = es.dailyMenuClient;
@@ -76,17 +75,11 @@ export async function saveMenuVersion(
   // llevaba el menú sin que la primera se enterara.
   const esperada = Number(formData.get("expectedVersion") ?? "");
 
-  // La declaración llega como texto desde un campo oculto. Si viniera rota
-  // se manda `undefined` —que es "sin declarar", válido por RN-ALE-05— en
-  // vez de reventar: lo que no puede pasar es que un fallo de la pantalla
-  // impida guardar el menú del día.
-  let declaracion: Json | undefined;
-  try {
-    const crudo = String(formData.get("allergens") ?? "").trim();
-    declaracion = crudo === "" ? undefined : (JSON.parse(crudo) as Json);
-  } catch {
-    declaracion = undefined;
-  }
+  // §39 · la nota de alérgenos del menú entero (RN-ALE-01). En blanco es
+  // `undefined`, que es "sin declarar": no se guarda una cadena vacía que
+  // luego alguien lea como "declarado sin alérgenos". El límite de 200 lo
+  // impone el servidor; aquí no se recorta.
+  const notaAlergenos = String(formData.get("allergen_note") ?? "").trim() || undefined;
 
   const supabase = await createClient();
   const { data: versionId, error } = await supabase.rpc("save_menu_version", {
@@ -98,12 +91,7 @@ export async function saveMenuVersion(
     p_price_cents: priceCents ?? undefined,
     p_note: String(formData.get("note") ?? "").trim() || undefined,
     p_expected_version: Number.isFinite(esperada) && esperada > 0 ? esperada : undefined,
-    // §39 · la declaración de alérgenos, plato a plato. Va tal cual: aquí
-    // no se valida nada, y es deliberado. `save_menu_version()` comprueba
-    // que cuadre con los platos y que los códigos sean de los catorce, y
-    // rechaza la versión entera si no (RN-ALE-09). Una validación aquí
-    // sería una segunda regla que un día diría otra cosa.
-    p_allergens: declaracion,
+    p_allergen_note: notaAlergenos,
   });
 
   if (error || !versionId) {
@@ -115,7 +103,7 @@ export async function saveMenuVersion(
     if (conflicto !== null) {
       const { data: nueva } = await supabase
         .from("menu_versions")
-        .select("starters, mains, desserts, drink, price_cents, note")
+        .select("starters, mains, desserts, drink, price_cents, note, allergen_note")
         .eq("menu_id", menuId)
         .eq("version", conflicto)
         .maybeSingle();
@@ -134,6 +122,7 @@ export async function saveMenuVersion(
               drink: nueva.drink,
               priceCents: nueva.price_cents,
               note: nueva.note,
+              allergenNote: nueva.allergen_note,
             },
           },
         };

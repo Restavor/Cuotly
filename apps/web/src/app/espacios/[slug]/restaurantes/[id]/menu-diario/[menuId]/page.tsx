@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 
 import { Card, StatusBadge } from "@/components/ui";
 import { MenuAllergensCard } from "@/components/menu/MenuAllergensCard";
-import { parseMenuAllergens } from "@/core/allergens";
 import { menuCorrectionAvailability } from "@/core/daily-menu";
 import { isMenuEditable, isMenuState, menuTone } from "@/core/menu-states";
 import { es } from "@/i18n/es";
@@ -79,7 +78,9 @@ export default async function ClientMenuPage({
   ] = await Promise.all([
       supabase
         .from("menu_versions")
-        .select("id, version, starters, mains, desserts, drink, price_cents, note, allergens, after_cutoff, created_at")
+        .select(
+          "id, version, starters, mains, desserts, drink, price_cents, note, allergen_note, after_cutoff, created_at",
+        )
         .eq("menu_id", menuId)
         .order("version", { ascending: false }),
       supabase
@@ -193,19 +194,9 @@ export default async function ClientMenuPage({
         </Card>
       ) : null}
 
-      {/* §39 · lo declarado, para leerlo. Solo cuando hay una versión que
-          leer: un menú recién creado no tiene ni platos. */}
-      {current ? (
-        <MenuAllergensCard
-          content={{
-            starters: current.starters,
-            mains: current.mains,
-            desserts: current.desserts,
-            drink: current.drink,
-          }}
-          declared={parseMenuAllergens(current.allergens)}
-        />
-      ) : null}
+      {/* §39 · la nota de alérgenos, para leerla. Solo cuando hay una
+          versión que leer: un menú recién creado no tiene ni platos. */}
+      {current ? <MenuAllergensCard note={current.allergen_note} /> : null}
 
       <VersionEditor
         menuId={menuId}
@@ -219,10 +210,10 @@ export default async function ClientMenuPage({
                 desserts: current.desserts,
                 drink: current.drink,
                 priceCents: current.price_cents,
-                // §39 · lo declarado. `null` es una versión anterior a los
+                // §39 · la nota. `null` es una versión anterior a los
                 // alérgenos, y el editor arranca en blanco: no se inventa
-                // una declaración que nadie escribió.
-                allergens: parseMenuAllergens(current.allergens),
+                // una nota que nadie escribió.
+                allergenNote: current.allergen_note,
                 note: current.note,
               }
             : null

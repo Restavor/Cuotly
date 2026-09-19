@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import type { Allergen } from "./allergens";
-
 import {
   countMenuChanges,
   diffMenuVersions,
@@ -95,118 +93,44 @@ describe("comparar dos versiones de un menú (R18, A17)", () => {
   });
 });
 
-describe("RN-ALE-07 · la comparación enseña qué cambió en los alérgenos", () => {
-  const base = {
-    starters: ["Crema", "Ensalada"],
-    mains: ["Merluza"],
-    desserts: ["Flan"],
-    drink: "Vino",
-    priceCents: 1450,
-    note: null,
-  };
-
-  const decl = (allergens: Allergen[], note: string | null = null) => ({ allergens, note });
-
-  it("dos versiones sin declaración no tienen nada que decir de alérgenos", () => {
-    expect(diffMenuVersions(base, base).allergens).toEqual([]);
-    expect(diffMenuVersions(base, base).identical).toBe(true);
+describe("RN-ALE-06 · la comparación dice si cambió la nota de alérgenos", () => {
+  it("dos versiones sin nota no tienen nada que decir", () => {
+    expect(diffMenuVersions(version(), version()).allergenNote).toBeNull();
+    expect(diffMenuVersions(version(), version()).identical).toBe(true);
   });
 
-  it("dice el plato por su NOMBRE, no por su posición", () => {
-    const antes = {
-      ...base,
-      allergens: { starters: [decl(["milk"]), null], mains: [null], desserts: [null], drink: null },
-    };
-    const despues = {
-      ...base,
-      allergens: { starters: [decl([]), null], mains: [null], desserts: [null], drink: null },
-    };
-    const cambios = diffMenuVersions(antes, despues).allergens;
-    expect(cambios).toHaveLength(1);
-    expect(cambios[0].dishAfter).toBe("Crema");
-    expect(cambios[0].removed).toEqual(["milk"]);
-    expect(cambios[0].added).toEqual([]);
+  it("escribirla por primera vez es un cambio, y se dice de qué a qué", () => {
+    const diff = diffMenuVersions(
+      version(),
+      version({ allergenNote: "Contiene gluten y lácteos." }),
+    );
+    expect(diff.allergenNote).toEqual({ before: null, after: "Contiene gluten y lácteos." });
+    expect(diff.identical).toBe(false);
+    expect(countMenuChanges(diff)).toBe(1);
   });
 
-  it("RN-ALE-06 · pasar de sin declarar a declarado es un cambio, aunque no lleve ninguno", () => {
-    const antes = {
-      ...base,
-      allergens: { starters: [null, null], mains: [null], desserts: [null], drink: null },
-    };
-    const despues = {
-      ...base,
-      allergens: { starters: [decl([]), null], mains: [null], desserts: [null], drink: null },
-    };
-    const cambios = diffMenuVersions(antes, despues).allergens;
-    expect(cambios).toHaveLength(1);
-    expect(cambios[0].declarationChanged).toBe("declared");
+  it("quitarla también lo es: un menú que deja de declarar no es un menú igual", () => {
+    const diff = diffMenuVersions(
+      version({ allergenNote: "Contiene apio." }),
+      version({ allergenNote: null }),
+    );
+    expect(diff.allergenNote).toEqual({ before: "Contiene apio.", after: null });
   });
 
-  it("y quitar la declaración también lo es", () => {
-    const antes = {
-      ...base,
-      allergens: { starters: [decl(["milk"]), null], mains: [null], desserts: [null], drink: null },
-    };
-    const despues = {
-      ...base,
-      allergens: { starters: [null, null], mains: [null], desserts: [null], drink: null },
-    };
-    expect(diffMenuVersions(antes, despues).allergens[0].declarationChanged).toBe("undeclared");
+  it("los espacios de sobra no son un cambio, igual que en los platos", () => {
+    const diff = diffMenuVersions(
+      version({ allergenNote: "Contiene apio." }),
+      version({ allergenNote: "  Contiene apio.  " }),
+    );
+    expect(diff.allergenNote).toBeNull();
+    expect(diff.identical).toBe(true);
   });
 
-  it("la nota de un plato cuenta como cambio", () => {
-    const antes = {
-      ...base,
-      allergens: { starters: [decl(["milk"]), null], mains: [null], desserts: [null], drink: null },
-    };
-    const despues = {
-      ...base,
-      allergens: {
-        starters: [decl(["milk"], "puede contener trazas"), null],
-        mains: [null],
-        desserts: [null],
-        drink: null,
-      },
-    };
-    const cambios = diffMenuVersions(antes, despues).allergens;
-    expect(cambios).toHaveLength(1);
-    expect(cambios[0].noteChanged).toBe(true);
-  });
-
-  it("la bebida se compara igual que un plato", () => {
-    const antes = {
-      ...base,
-      allergens: { starters: [null, null], mains: [null], desserts: [null], drink: null },
-    };
-    const despues = {
-      ...base,
-      allergens: {
-        starters: [null, null],
-        mains: [null],
-        desserts: [null],
-        drink: decl(["sulphites"]),
-      },
-    };
-    const cambios = diffMenuVersions(antes, despues).allergens;
-    expect(cambios).toHaveLength(1);
-    expect(cambios[0].course).toBe("drink");
-    expect(cambios[0].added).toEqual(["sulphites"]);
-  });
-
-  it("un plato con la declaración cambiada cuenta como UN cambio, no como tres casillas", () => {
-    const antes = {
-      ...base,
-      allergens: { starters: [decl([]), null], mains: [null], desserts: [null], drink: null },
-    };
-    const despues = {
-      ...base,
-      allergens: {
-        starters: [decl(["gluten", "milk", "eggs"]), null],
-        mains: [null],
-        desserts: [null],
-        drink: null,
-      },
-    };
-    expect(countMenuChanges(diffMenuVersions(antes, despues))).toBe(1);
+  it("cuenta como UN cambio, no como uno por alérgeno nombrado", () => {
+    const diff = diffMenuVersions(
+      version({ allergenNote: "Contiene gluten." }),
+      version({ allergenNote: "Contiene gluten, lácteos, huevo y apio." }),
+    );
+    expect(countMenuChanges(diff)).toBe(1);
   });
 });
