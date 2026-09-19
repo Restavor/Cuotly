@@ -64,13 +64,31 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
   ('b5000000-0000-0000-0000-000000000001', 'b4000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000005', 'local_owner'),
   ('b5000000-0000-0000-0000-000000000002', 'b4000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000006', 'editor'),
   ('b5000000-0000-0000-0000-000000000003', 'b4000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000007', 'editor'),
-  ('b5000000-0000-0000-0000-000000000004', 'b4000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000008', 'consulta'),
+  ('b5000000-0000-0000-0000-000000000004', 'b4000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000008', 'editor'),
   ('b5000000-0000-0000-0000-000000000005', 'b4000000-0000-0000-0000-000000000002', 'b0000000-0000-0000-0000-000000000005', 'local_owner');
-
 -- RN-FIN-07: solo uno de los dos editores tiene `view_billing`.
 insert into public.establishment_permissions (establishment_membership_id, edit_establishment_data, view_billing) values
   ('b5000000-0000-0000-0000-000000000002', true, false),
   ('b5000000-0000-0000-0000-000000000003', true, true);
+
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
+-- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
+-- apagado, que es justo lo que esta suite espera de él.
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('b0000000-0000-0000-0000-000000000008')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
+
 
 -- RN-ASG-01: Ana está asignada al establecimiento A; Luis, a ninguno.
 insert into public.worker_establishments (space_id, user_id, establishment_id, created_by) values
@@ -2611,7 +2629,7 @@ begin
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2627,6 +2645,11 @@ begin
         -- Las primitivas de permisos: son el mecanismo con el que se
         -- comprueba, no pueden comprobarse a sí mismas.
         'has_capability', 'is_space_member', 'is_platform_owner',
+        -- Migración 107 (RN-EST-15) · la puerta única de los siete
+        -- permisos del cliente. Es el mecanismo, como `has_capability`: no
+        -- puede comprobarse a sí misma. `client_can_manage_users` es su
+        -- envoltorio de una línea y cae en el mismo caso.
+        'client_permission', 'client_can_manage_users',
         -- Migración 91 (Fase 4, Hito 19), misma familia: `is_platform_admin`
         -- es la primitiva "¿es un Administrador de Cuotly con 2FA?" y no
         -- puede comprobarse a sí misma; `is_platform_member` e

@@ -61,8 +61,28 @@ insert into public.subscriptions (space_id, establishment_id, kind, plan_id, sta
 
 insert into public.establishment_memberships (id, establishment_id, user_id, role) values
   ('ff500000-0000-0000-0000-000000000001', 'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000005', 'local_owner'),
-  ('ff500000-0000-0000-0000-000000000002', 'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000006', 'consulta'),
+  ('ff500000-0000-0000-0000-000000000002', 'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000006', 'editor'),
   ('ff500000-0000-0000-0000-000000000003', 'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000007', 'editor');
+
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
+-- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
+-- apagado. Que siga viendo los informes es justo lo que esta suite
+-- defiende: ver informes NO es uno de los permisos que se configuran
+-- (decisión 28c), y la migración 107 no lo tocó.
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('ff000000-0000-0000-0000-000000000006')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
 
 insert into public.group_memberships (group_id, user_id, role) values
   ('ff300000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000008', 'global_owner');
@@ -149,13 +169,19 @@ end $$;
 -- informe lo pueden ver todos los que trabajan en ese restaurante. Lo que
 -- esta suite defiende ahora es eso Y lo que no cambió: que el acceso
 -- retirado deja de ver (RN-EST-05), que antes NO se comprobaba.
+--
+-- Este bloque es además el que impide que los siete permisos de la
+-- migración 107 se lleven el informe por delante: el diseño móvil dibuja
+-- una casilla "Consultar informes" y la decisión 28c dice que no la hay.
+-- Mientras Bosco no resuelva esa contradicción, manda la decisión.
 select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000006', false);
 set role authenticated;
 do $$
 begin
-  -- Consulta, sin ningún permiso extra, ve los informes.
+  -- Un Editor SIN ningún permiso encendido —lo que antes del 19/09/2026
+  -- era un Consulta— ve los informes igual: no dependen de permiso.
   if not public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
-    raise exception 'RN-REP-01 FALLIDO: Consulta no ve los informes y ahora los ve todo el restaurante'
+    raise exception 'RN-REP-01 FALLIDO: un Editor sin permisos no ve los informes y los ve todo el restaurante'
       using errcode = 'assert_failure';
   end if;
 end $$;

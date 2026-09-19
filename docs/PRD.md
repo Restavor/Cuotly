@@ -563,6 +563,54 @@ La ficha tiene cinco pestañas: **Resumen · Operación · Informes y datos · G
 En Fase 1, "Informes y datos" muestra únicamente indicadores operativos propios; la analítica digital
 llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; las pantallas, Hito 14).
 
+- **RN-EST-15 (añadida 19/09/2026, decisión 51)**: **el lado cliente tiene dos roles y siete
+  permisos.** Los roles son **Propietario** y **Editor** (páginas 152 y 153 del diseño definitivo
+  móvil). Los siete permisos, con el nombre que el diseño les da:
+
+  | Permiso | Qué deja hacer | Columna |
+  |---|---|---|
+  | Crear solicitudes | Enviar solicitudes al equipo de mantenimiento | `create_requests` |
+  | Editar menús | Pedir cambios en el menú diario | `edit_menus` |
+  | Mensajes | Leer y enviar mensajes | `use_messages` |
+  | Subir archivos | Adjuntar archivos en solicitudes y mensajes | `upload_files` |
+  | Consultar informes | Ver los informes y datos del restaurante | **parado, ver abajo** |
+  | Pagos y facturas | Ver pagos y facturas | `view_billing` *(ya existía)* |
+  | Usuarios y accesos | Gestionar usuarios y permisos del restaurante | `manage_users` |
+
+  **De los siete, la migración 107 cablea SEIS.** "Consultar informes" está **parado a la espera de
+  Bosco** y hasta entonces **no existe como permiso**: `client_permission()` ni lo reconoce. El
+  motivo es que ese permiso **ya existió** —columna `establishment_permissions.view_reports` y su
+  función, migración 85— y **Bosco lo quitó entero el 14/09/2026** (decisión 28c): el informe lo ve
+  cualquier persona del restaurante con el acceso vigente, sin distinguir rol ni permiso, y así lo
+  dice RN-REP-01. El diseño móvil dibuja la casilla; la decisión dice que no la hay. **CLAUDE.md
+  prohíbe resolver una contradicción por cuenta propia**, así que manda lo decidido y nadie deja de
+  ver un informe que hoy ve. Cuando Bosco elija, se añade en los tres sitios a la vez: la lista de
+  `client_permission()`, `client_can_view_reports()` y esta tabla.
+
+  **Afinan hacia abajo, nunca hacia arriba.** El **Propietario los tiene todos y no se le pueden
+  quitar** —"Acceso completo a todos los módulos", dice el diseño—, porque un restaurante cuyo
+  propietario se quedara sin `manage_users` no podría volver a tocar sus accesos nunca. El que se
+  configura es el **Editor**. Un permiso nuevo nace en `false`.
+
+  **Una sola puerta**: `client_permission(establecimiento, permiso)` decide, y las funciones de
+  negocio la llaman. Siete copias de la misma regla acabarían diciendo siete cosas.
+
+- **RN-EST-16 (añadida 19/09/2026, decisión 51)**: **el rol Consulta desaparece del catálogo** y
+  quien lo tuviera pasa a **Editor con todos los permisos apagados**, que hace exactamente lo mismo:
+  leer —los informes incluidos, que no dependen de permiso (RN-REP-01)—. No se borra ninguna fila —CLAUDE.md no destruye registros de negocio— y nadie pierde acceso:
+  cambia el nombre del rol y la manera de expresar lo que ya podía hacer.
+
+- **RN-EST-17 (añadida 19/09/2026, decisión 51)**: **quién gestiona los accesos de un restaurante**:
+  el **equipo de mantenimiento** (`manage_clients`, que es como se crea el panel — RN-PAN-10) y,
+  dentro del panel, el **Propietario del restaurante**. Un Editor **no**, ni siquiera con permisos:
+  `manage_users` le deja ver la pantalla y gestionar a los demás Editores, pero **no tocar al
+  Propietario** — si pudiera, el permiso sería una manera de quedarse con el restaurante.
+
+  El aviso del diseño —*"Solo el propietario puede invitar o retirar usuarios"*— está **dentro del
+  panel del cliente** y habla de sus propios usuarios, no del equipo. Leerlo como que el equipo
+  tampoco puede dejaría el panel sin poder crearse nunca: no habría nadie que pudiera ser el
+  primero.
+
 - **RN-EST-14 (añadida 19/09/2026, decisión 48)**: **Gestión tiene nueve bloques**, en este orden:
   **Datos · Plan y servicios · Pagos · Usuarios · Archivos · Integraciones · Notas internas ·
   Copias de seguridad · Estado del servicio**.
@@ -1246,7 +1294,10 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   **Editor** y el **Consulta**, igual: **lo ven todos los que trabajan en ese restaurante**, con el
   acceso vigente. §89 decía que Consulta necesitaba permiso de su propietario y así se implementó
   primero, con un permiso fino por persona; **Bosco lo enmendó el 14/09/2026** (decisión 28) y ese
-  permiso se quitó entero. Un informe **consolidado no se comparte con ningún restaurante**, y eso
+  permiso se quitó entero. El **diseño definitivo móvil** (página 153) vuelve a dibujar una casilla
+  "Consultar informes" entre los permisos del Editor, lo que **contradice esta regla**; mientras
+  Bosco no lo resuelva manda lo decidido y la migración 107 dejó esa casilla sin cablear
+  (RN-EST-15). Un informe **consolidado no se comparte con ningún restaurante**, y eso
   **incluye al propietario global del grupo**: mezcla datos de varios y no hay cliente al que
   pertenezca. Esta regla decía las dos cosas a la vez —que el propietario global veía "el
   consolidado de su grupo" y que un consolidado no se comparte con nadie— y **Bosco resolvió la

@@ -72,7 +72,25 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
   ('bb500000-0000-0000-0000-000000000002', 'bb400000-0000-0000-0000-000000000002',
    'bb000000-0000-0000-0000-000000000003', 'local_owner'),
   ('bb500000-0000-0000-0000-000000000003', 'bb400000-0000-0000-0000-000000000001',
-   'bb000000-0000-0000-0000-000000000004', 'consulta');
+   'bb000000-0000-0000-0000-000000000004', 'editor');
+
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
+-- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
+-- apagado, que es justo lo que esta suite espera de él.
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('bb000000-0000-0000-0000-000000000004')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
 
 -- Tres cambios pendientes en el restaurante con plan Total, y uno ya
 -- publicado que NO se ordena.
@@ -306,7 +324,7 @@ set role authenticated;
 do $$
 begin
   if public.client_can_set_priority('bb400000-0000-0000-0000-000000000001') then
-    raise exception 'FALLIDO: el rol Consulta puede ordenar los cambios'
+    raise exception 'FALLIDO: un Editor sin «Crear solicitudes» puede ordenar los cambios'
       using errcode = 'assert_failure';
   end if;
 end $$;

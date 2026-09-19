@@ -77,15 +77,33 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
   ('da500000-0000-0000-0000-000000000001', 'da400000-0000-0000-0000-000000000001', 'da000000-0000-0000-0000-000000000005', 'local_owner'),
   ('da500000-0000-0000-0000-000000000002', 'da400000-0000-0000-0000-000000000001', 'da000000-0000-0000-0000-000000000006', 'editor'),
   ('da500000-0000-0000-0000-000000000003', 'da400000-0000-0000-0000-000000000001', 'da000000-0000-0000-0000-000000000007', 'editor'),
-  ('da500000-0000-0000-0000-000000000004', 'da400000-0000-0000-0000-000000000001', 'da000000-0000-0000-0000-000000000008', 'consulta'),
+  ('da500000-0000-0000-0000-000000000004', 'da400000-0000-0000-0000-000000000001', 'da000000-0000-0000-0000-000000000008', 'editor'),
   -- El ajeno es propietario local del restaurante de al lado: tiene el
   -- permiso, pero no aquí.
   ('da500000-0000-0000-0000-000000000005', 'da400000-0000-0000-0000-000000000002', 'da000000-0000-0000-0000-000000000009', 'local_owner');
-
 -- RN-EST-11 · el permiso fino: uno de los dos editores lo tiene.
 insert into public.establishment_permissions (establishment_membership_id, edit_establishment_data, view_billing) values
   ('da500000-0000-0000-0000-000000000002', true, false),
   ('da500000-0000-0000-0000-000000000003', false, false);
+
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
+-- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
+-- apagado, que es justo lo que esta suite espera de él.
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('da000000-0000-0000-0000-000000000008')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
+
 
 insert into public.group_memberships (group_id, user_id, role) values
   ('da300000-0000-0000-0000-000000000001', 'da000000-0000-0000-0000-000000000004', 'global_owner');

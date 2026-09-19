@@ -60,8 +60,9 @@ export function GrantAccessForm({
             name="role"
             required
             options={[
+              // RN-EST-16 · `consulta` se retiró el 19/09/2026: era un
+              // Editor con todos los permisos apagados.
               { value: "editor", label: t.clientRoles.editor },
-              { value: "consulta", label: t.clientRoles.consulta },
               { value: "local_owner", label: t.clientRoles.local_owner },
             ]}
           />

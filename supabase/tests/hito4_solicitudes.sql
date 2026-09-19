@@ -71,12 +71,30 @@ insert into public.establishments (id, space_id, group_id, code, name) values
 insert into public.establishment_memberships (id, establishment_id, user_id, role) values
   ('f4000000-0000-0000-0000-000000000001', 'f3000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000004', 'local_owner'),
   ('f4000000-0000-0000-0000-000000000002', 'f3000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000005', 'editor'),
-  ('f4000000-0000-0000-0000-000000000003', 'f3000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000006', 'consulta');
+  ('f4000000-0000-0000-0000-000000000003', 'f3000000-0000-0000-0000-000000000001', 'f0000000-0000-0000-0000-000000000006', 'editor');
 
 -- El Propietario local también es dueño de EST-H4-B (mismo grupo), para
 -- poder pegar ahí en HU-15 sin depender de group_memberships.
 insert into public.establishment_memberships (id, establishment_id, user_id, role) values
   ('f4000000-0000-0000-0000-000000000004', 'f3000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000004', 'local_owner');
+
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
+-- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
+-- apagado, que es justo lo que esta suite espera de él.
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('f0000000-0000-0000-0000-000000000006')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
 
 insert into public.group_memberships (group_id, user_id) values
   ('f2000000-0000-0000-0000-000000000002', 'f0000000-0000-0000-0000-000000000007');

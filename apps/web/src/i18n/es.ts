@@ -2781,6 +2781,7 @@ export const es = {
       "channel.member_removed": "Alguien salió de un canal",
       "establishment_access.granted": "Acceso a un restaurante concedido",
       "establishment_access.revoked": "Acceso a un restaurante revocado",
+      "establishment_permissions.set": "Permisos de un acceso cambiados",
       "establishment_note.created": "Nota interna escrita",
       "establishment_note.archived": "Nota interna archivada",
       "file.archived": "Archivo archivado",
@@ -4103,11 +4104,15 @@ export const es = {
     sinceColumn: "Desde",
     sourceGroup: "Propietario global del grupo",
     sourceEstablishment: "Acceso al restaurante",
+    // RN-EST-15/16 · dos roles del lado cliente. `consulta` se retiró el
+    // 19/09/2026 —era un Editor con todos los permisos apagados— pero su
+    // nombre se queda aquí para que una fila antigua no se pinte con el
+    // identificador en crudo.
     clientRoles: {
       global_owner: "Propietario global",
-      local_owner: "Propietario local",
+      local_owner: "Propietario del restaurante",
       editor: "Editor",
-      consulta: "Consulta",
+      consulta: "Consulta (retirado)",
     },
     permissionEditData: "Editar datos",
     permissionViewBilling: "Ver facturación",

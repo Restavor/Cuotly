@@ -24,7 +24,7 @@
 --   restaurante@cuotly.test    Propietario local de "Bar Demo" (cliente)
 --   cliente2@cuotly.test       Propietario local de "Café Prueba" (cliente)
 --   magarinos@cuotly.test      Propietaria local de "Magariños" (cliente)
---   sala.magarinos@cuotly.test Acceso de solo consulta a "Magariños"
+--   sala.magarinos@cuotly.test Editor sin casillas en "Magariños": solo lee
 --
 -- Y una octava que NO es de mentira ni la crea este archivo:
 -- info@restavor.com, el correo con el que se usa Cuotly de verdad. La
@@ -752,20 +752,41 @@ select public.set_establishment_data(
 );
 
 -- Dos accesos con permisos distintos: la propietaria local lo ve todo, y
--- la persona de sala entra en modo Consulta —lee y no responde
--- (RN-MSG-05)— y sin facturación (RN-FIN-07). El bloque Usuarios de la
--- ficha enseña justo esa diferencia, y con un solo usuario no se ve.
+-- la persona de sala es un **Editor con las casillas apagadas** —lee y no
+-- responde (RN-MSG-05), y sin facturación (RN-FIN-07)—. Hasta el
+-- 19/09/2026 esto se decía con el rol `consulta`, que se retiró
+-- (RN-EST-16). El bloque Usuarios de la ficha enseña justo esa diferencia,
+-- y con un solo usuario no se ve.
 insert into public.establishment_memberships (id, establishment_id, user_id, role)
 values
   ('d5000000-0000-0000-0000-000000000003', 'd4000000-0000-0000-0000-000000000003',
    'd0000000-0000-0000-0000-000000000005', 'local_owner'),
   ('d5000000-0000-0000-0000-000000000004', 'd4000000-0000-0000-0000-000000000003',
-   'd0000000-0000-0000-0000-000000000006', 'consulta');
-
+   'd0000000-0000-0000-0000-000000000006', 'editor');
 insert into public.establishment_permissions (establishment_membership_id, edit_establishment_data, view_billing)
 values
   ('d5000000-0000-0000-0000-000000000003', true, true),
   ('d5000000-0000-0000-0000-000000000004', false, false);
+
+-- RN-EST-15 (migración 107) · los Editores del sembrado reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a la persona de sala, que hasta el 19/09/2026 era
+-- **Consulta**: ese rol se retiró (RN-EST-16) y su equivalente exacto es
+-- un Editor con todo apagado, que es lo que el bloque Usuarios de la ficha
+-- tiene que seguir enseñando. Los informes sí los ve: no dependen de
+-- permiso (RN-REP-01, decisión 28c).
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('d0000000-0000-0000-0000-000000000006')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
 
 -- Los dos trabajadores autorizados aquí, o no serían candidatos.
 insert into public.worker_establishments (space_id, user_id, establishment_id, created_by)

@@ -50,8 +50,26 @@ insert into public.establishments (id, space_id, group_id, code, name, status) v
 -- Alguien que tuvo acceso y se le retiró.
 insert into public.establishment_memberships (id, establishment_id, user_id, role, revoked_at, revoked_by) values
   ('c0500000-0000-0000-0000-000000000001', 'c0400000-0000-0000-0000-000000000001',
-   'c0000000-0000-0000-0000-000000000004', 'consulta', now() - interval '1 day',
+   'c0000000-0000-0000-0000-000000000004', 'editor', now() - interval '1 day',
    'c0000000-0000-0000-0000-000000000001');
+
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
+-- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
+-- apagado, que es justo lo que esta suite espera de él.
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('c0000000-0000-0000-0000-000000000004', 'c0300000-0000-0000-0000-000000000001', 'c0400000-0000-0000-0000-000000000002')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
 
 -- ============================================================
 -- La propietaria da acceso. El correo NO distingue mayúsculas.
@@ -93,11 +111,18 @@ end $$;
 -- ============================================================
 -- Los permisos finos se NORMALIZAN: no vale pedirlos para un Consulta.
 -- ============================================================
+--
+-- Este bloque comprobaba que un **Consulta** no recibía permisos finos por
+-- mucho que se los pidieran: su rol los apagaba. El rol se retiró el
+-- 19/09/2026 (RN-EST-16) y lo que se comprueba ahora es lo contrario y
+-- también importa: a un **Editor** sí se le conceden, que es de lo que va
+-- el rol — y al **Propietario** no se le pueden tocar, porque los tiene
+-- todos por serlo (RN-EST-15).
 do $$
 declare v_edit boolean; v_billing boolean;
 begin
   perform public.grant_establishment_access(
-    'c0400000-0000-0000-0000-000000000002', 'acceso-nuevo@example.com', 'consulta', true, true);
+    'c0400000-0000-0000-0000-000000000002', 'acceso-nuevo@example.com', 'editor', true, true);
 
   select ep.edit_establishment_data, ep.view_billing into v_edit, v_billing
   from public.establishment_memberships em
@@ -105,10 +130,11 @@ begin
   where em.establishment_id = 'c0400000-0000-0000-0000-000000000002'
     and em.user_id = 'c0000000-0000-0000-0000-000000000003';
 
-  if v_edit or v_billing then
-    raise exception 'FALLIDO: un Consulta ha recibido permisos finos (editar=% facturacion=%) — RN-FIN-07',
+  if not v_edit or not v_billing then
+    raise exception 'RN-EST-15 FALLIDO: a un Editor no se le concedieron los permisos pedidos (editar=% facturacion=%)',
       v_edit, v_billing using errcode = 'assert_failure';
   end if;
+
 end $$;
 
 -- ============================================================
@@ -155,6 +181,12 @@ begin
       -- test pase también cuando la llamada revienta por un motivo
       -- que no es el que se está probando — un uuid mal escrito, una
       -- fila que no existe— y entonces no prueba nada.
+      --
+      -- El mensaje cambió con la migración 107: dar y retirar acceso a un
+      -- RESTAURANTE pasan por `assert_can_manage_access()`, que sirve a
+      -- las dos puertas —el equipo y el propietario del panel— y por eso
+      -- no nombra al propietario del espacio. El de GRUPO sigue siendo
+      -- solo del equipo y conserva el suyo.
     if sqlerrm not like '%cuenta de Cuotly%' then
       v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
     end if;
@@ -172,7 +204,7 @@ do $$
 declare v_cuantos integer;
 begin
   v_cuantos := public.grant_group_current_establishments_access(
-    'c0300000-0000-0000-0000-000000000001', 'acceso-vuelve@example.com', 'consulta');
+    'c0300000-0000-0000-0000-000000000001', 'acceso-vuelve@example.com', 'editor');
 
   if v_cuantos <> 2 then
     raise exception 'FALLIDO: "todos los actuales" ha tocado % restaurantes y hay 2 sin archivar', v_cuantos
@@ -214,8 +246,12 @@ begin
 
   -- Solo Editor: los demas roles no existen a nivel de grupo.
   begin
+    -- Un rol que NO es Editor. Hasta el 19/09/2026 aquí iba `consulta`;
+    -- el rol se retiró (RN-EST-16) y el único otro que queda es el
+    -- propietario del restaurante, que tampoco vale para un acceso de
+    -- grupo a futuros establecimientos.
     perform public.grant_group_future_establishments_access(
-      'c0300000-0000-0000-0000-000000000001', 'acceso-vuelve@example.com', 'consulta');
+      'c0300000-0000-0000-0000-000000000001', 'acceso-vuelve@example.com', 'local_owner');
     v_error := 'se ha dado acceso de grupo con un rol que no es Editor';
   exception when others then
     if sqlerrm not like '%solo existe para un Editor%' then
@@ -376,20 +412,19 @@ begin
       -- test pase también cuando la llamada revienta por un motivo
       -- que no es el que se está probando — un uuid mal escrito, una
       -- fila que no existe— y entonces no prueba nada.
-    if sqlerrm not like '%Solo el propietario o un administrador%' then
+    if sqlerrm not like '%No tienes permiso para gestionar los accesos%' then
       v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
     end if;
   end;
 
   begin
     perform public.grant_group_current_establishments_access(
-      'c0300000-0000-0000-0000-000000000001', 'acceso-nuevo@example.com', 'consulta');
+      'c0300000-0000-0000-0000-000000000001', 'acceso-nuevo@example.com', 'editor');
     v_error := v_error || ' / un trabajador ha dado acceso a un grupo entero';
   exception when others then
-      -- Comprobar POR QUÉ falló. Tragarse cualquier error hace que el
-      -- test pase también cuando la llamada revienta por un motivo
-      -- que no es el que se está probando — un uuid mal escrito, una
-      -- fila que no existe— y entonces no prueba nada.
+      -- El acceso de GRUPO sigue siendo solo del equipo y conserva su
+      -- mensaje: la migración 107 solo abrió la puerta del panel para un
+      -- restaurante suelto.
     if sqlerrm not like '%Solo el propietario o un administrador%' then
       v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
     end if;

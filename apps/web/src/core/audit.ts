@@ -53,6 +53,12 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // Cartera de clientes.
   establishment: "manage_clients",
   establishment_access: "manage_clients",
+  // RN-EST-15 (migración 107) · quién cambió los permisos de un acceso es
+  // cartera de clientes, igual que el acceso en sí. La familia nació sin
+  // clasificar y `audit_action_capability()` devolvía null, que NO es "la
+  // ve cualquiera": es "lo decide la fila". Para unos permisos se queda
+  // corto.
+  establishment_permissions: "manage_clients",
   // Las notas internas del restaurante (RN-EST-13, migración 66). Quién
   // escribió una y cuándo es de la misma cartera; el CUERPO de la nota no
   // está en el apunte, y es a propósito: copiarlo aquí lo sacaría de la
@@ -232,6 +238,9 @@ export const AUDIT_ACTIONS = [
   "establishment.termination_requested",
   "establishment_access.granted",
   "establishment_access.revoked",
+  // Migración 107 (RN-EST-15) · el Propietario del restaurante, o el
+  // equipo, configura las casillas de un Editor.
+  "establishment_permissions.set",
   // Migración 100 (§38, RN-TRA) · las cuatro de la transferencia. Cada una
   // deja apunte en los DOS espacios (RN-TRA-09): el de origen y el de
   // destino cuentan la misma historia desde su lado.

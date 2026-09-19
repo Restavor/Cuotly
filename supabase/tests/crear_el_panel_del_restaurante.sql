@@ -217,7 +217,7 @@ declare
 begin
   -- Se añade un segundo y se quita: con uno vivo, sigue habiendo panel.
   perform public.grant_establishment_access(
-    'ce100000-0000-0000-0000-000000000020', 'segundo@suite54.test', 'consulta');
+    'ce100000-0000-0000-0000-000000000020', 'segundo@suite54.test', 'editor');
   perform public.revoke_establishment_access(
     'ce100000-0000-0000-0000-000000000020', 'ce100000-0000-0000-0000-000000000003', 'prueba');
 

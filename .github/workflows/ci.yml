@@ -448,6 +448,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/prioridad_de_la_solicitud.sql
 
+      - name: "Diseño móvil — Verificar los permisos del cliente: el Propietario los tiene todos, un Editor nuevo ninguno, cada casilla abre solo lo suyo y los informes NO dependen de permiso (RN-EST-15/16/17, RN-REP-01)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/los_siete_permisos_del_cliente.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

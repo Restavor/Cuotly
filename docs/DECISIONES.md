@@ -1005,11 +1005,74 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    - **El horario de recepción y el resumen diario siguen sin construirse**, y ahora con su motivo
      escrito en §18: piden una hora por defecto, una zona y una regla de qué se salta el silencio.
 
+51. **Los permisos del cliente: dos roles, seis casillas cableadas y una parada** (19/09/2026).
+   Punto 7 del orden. Las páginas **152 y 153** del diseño definitivo móvil dibujan "Usuarios y
+   accesos" del panel del restaurante con **dos roles** —Propietario y Editor— y **siete permisos**
+   con casilla sobre el Editor. Hasta hoy había **tres roles** (`local_owner`, `editor`, `consulta`)
+   y **dos** permisos finos; todo lo demás salía del rol.
+
+   **Lo que decidió Bosco**, preguntado antes de tocar nada:
+
+   - **`consulta` "se convierte en Editor sin permisos"**. No se borra ninguna fila: cambia el rol y
+     nacen las casillas apagadas, que es exactamente lo que un Consulta podía hacer (RN-EST-16).
+   - **A los accesos del restaurante "los invito yo"**, el equipo de mantenimiento; dentro del panel
+     manda el Propietario. Un Editor con `manage_users` gestiona a los demás Editores pero **no
+     puede tocar al Propietario** (RN-EST-17). Sin ese último cerrojo, un Editor podía degradar a
+     quien le dio acceso.
+
+   **Lo que esto destapó.** Retirar `consulta` funcionó como sonda: **cinco funciones decidían por
+   ROL y no por permiso** —editar un borrador, enviarlo, el orden 1..N, el recordatorio de Menú
+   Diario y actuar sobre una oportunidad—. Todas pasan ahora por `client_permission()`, la puerta
+   única: siete copias de la misma regla acaban diciendo siete cosas.
+
+   **La séptima casilla está parada, y es lo importante de esta entrada.** El diseño llama al
+   séptimo permiso "Consultar informes". Ese permiso **ya existió** —columna
+   `establishment_permissions.view_reports` y su función, migración 85— y **Bosco lo quitó entero
+   cinco días antes**, el 14/09/2026, en la **decisión 28c**: el informe lo ve cualquier persona del
+   restaurante con el acceso vigente, sin distinguir rol. La primera versión de la migración 107 lo
+   reinstauró sin darse cuenta; lo cazó `informes.sql`, que defiende la decisión 28c con una
+   afirmación literal.
+
+   No se resuelve por cuenta propia —CLAUDE.md lo prohíbe— así que **manda lo decidido**: la
+   migración 107 cablea **seis** de los siete, `client_permission()` **no reconoce** el nombre
+   `view_reports`, `client_can_view_reports()` **no se ha tocado** y **nadie deja de ver un informe
+   que hoy ve**. La pregunta a Bosco queda abierta abajo. El día que elija, se añade en tres sitios
+   a la vez: la lista de `client_permission()`, `client_can_view_reports()` y la tabla de RN-EST-15.
+
+   Comprobado: suite 56 `los_siete_permisos_del_cliente.sql` —el CHECK rechaza `consulta`, el
+   Propietario los tiene todos, un Editor nuevo ninguno, **cada casilla abre solo lo suyo** (el
+   fallo que busca es el de copiar y pegar la puerta equivocada), los permisos del Propietario no se
+   pueden guardar, un Editor con `manage_users` no revoca ni asciende al Propietario y el equipo
+   sí— y las 56 suites en verde.
+
 ---
 
 ### Pendiente de completar
 
-**Ninguna abierta.** Las dieciséis de las fases 1 a 3 y las cuatro de la Fase 4 están cerradas;
+**Una abierta: la 26.**
+
+26. **¿"Consultar informes" es un permiso del Editor, o lo ven todos?** (abierta el 19/09/2026 al
+   construir la decisión 51). El **diseño definitivo móvil**, página 153, dibuja una casilla
+   "Consultar informes" entre los permisos del Editor. La **decisión 28c**, tuya, del 14/09/2026,
+   dice lo contrario: ese permiso existió, lo quitaste entero y el informe lo ve **cualquier persona
+   del restaurante con el acceso vigente**, sin distinguir rol. No caben las dos.
+
+   Mientras no lo resuelvas manda la decisión, que es lo que hay funcionando: **la conducta de hoy
+   no cambia en ningún sentido** y nadie deja de ver un informe. Lo que hay parado es la casilla:
+   seis permisos cableados de siete.
+
+   Las dos salidas, para que elijas:
+
+   - **(a) Manda el diseño.** Se añade `view_reports` a `client_permission()` y a
+     `client_can_view_reports()`. Ojo a la consecuencia: los Editores de hoy **sí lo reciben en el
+     relleno** —nadie pierde acceso al aplicar—, pero **cada Editor nuevo nace sin ver informes**
+     hasta que su Propietario le encienda la casilla, y eso es justo lo que quitaste.
+   - **(b) Manda la decisión 28c.** La casilla desaparece de la pantalla "Usuarios y accesos" y son
+     **seis** permisos, no siete. Es lo que está construido hoy; no habría que tocar nada.
+
+   Sin esto no está terminado el punto 7 del orden, aunque todo lo demás de ese punto sí lo está.
+
+Las dieciséis de las fases 1 a 3 y las cuatro de la Fase 4 están cerradas;
 quedan tachadas abajo con la decisión que resolvió cada una. Las cuatro de la Fase 4 se cerraron el
 16/09/2026 como decisión 38, en el paso 1 del orden acordado. Las lecturas de los hitos 18 a 22
 están confirmadas (decisiones 32, 33, 34, 35 y 36).

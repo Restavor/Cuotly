@@ -70,9 +70,27 @@ insert into public.subscriptions (space_id, establishment_id, kind, plan_id, sta
 
 insert into public.establishment_memberships (establishment_id, user_id, role) values
   ('ee400000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000005', 'local_owner'),
-  ('ee400000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000006', 'consulta'),
+  ('ee400000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000006', 'editor'),
   ('ee400000-0000-0000-0000-000000000002', 'ee000000-0000-0000-0000-000000000007', 'local_owner'),
   ('ee400000-0000-0000-0000-000000000003', 'ee000000-0000-0000-0000-000000000008', 'local_owner');
+
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- permisos de contenido, que es lo que `grant_establishment_access()` les
+-- habría dado al crearlos: aquí las membresías se insertan a mano y una
+-- membresía sin fila de permisos no puede nada.
+--
+-- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
+-- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
+-- apagado, que es justo lo que esta suite espera de él.
+insert into public.establishment_permissions
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
+select em.id, true, true, true, true
+from public.establishment_memberships em
+where em.role = 'editor'
+  and em.user_id not in ('ee000000-0000-0000-0000-000000000006')
+on conflict (establishment_membership_id) do update set
+  create_requests = true, edit_menus = true, use_messages = true,
+  upload_files = true;
 
 -- Ana está autorizada en Casa Impulso; Luis no (§97: "el trabajador asignado").
 insert into public.worker_establishments (space_id, user_id, establishment_id, created_by) values
@@ -548,17 +566,23 @@ begin
 end $$;
 reset role;
 
--- Consulta mira y no pide (§4.3).
+-- Quien solo mira, no pide (§4.3).
+--
+-- Hasta el 19/09/2026 esta persona era un **Consulta**. El rol se retiró
+-- (RN-EST-16) y su equivalente es un Editor sin "Crear solicitudes", que
+-- es lo que ahora rechaza `act_on_opportunity()`: actuar sobre una
+-- oportunidad crea una solicitud o pide un presupuesto.
 select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000006', false);
 set role authenticated;
 do $$
 begin
   begin
     perform public.act_on_opportunity((select v from op_ids where k = 'traffic'), 'ask_question', '¿Qué pasó?');
-    raise exception '§4.3 FALLIDO: un usuario de Consulta creó una solicitud desde una oportunidad' using errcode = 'assert_failure';
+    raise exception '§4.3 FALLIDO: quien solo mira creó una solicitud desde una oportunidad' using errcode = 'assert_failure';
   exception
     when raise_exception then
-      if sqlerrm not like '%escritura%' then raise; end if;
+      if sqlerrm not like '%escritura%'
+         and sqlerrm not like '%permiso para crear solicitudes%' then raise; end if;
   end;
 end $$;
 reset role;
