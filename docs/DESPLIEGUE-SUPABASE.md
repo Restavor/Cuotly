@@ -6,14 +6,66 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 17/09/2026.
+Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 101 migraciones del repositorio están aplicadas en el proyecto desde el
-17/09/2026. Lo que sigue es lo que se escribió sobre las seis últimas antes de aplicarlas —qué
+**Ninguna.** Las 107 migraciones del repositorio están aplicadas en el proyecto.
+Las seis del diseño definitivo móvil —de la 102 a la 107— se aplicaron el
+19/09/2026; abajo, en "Las seis del 19/09/2026", está qué hacía cada una y cómo
+se comprobó. Lo que sigue es lo que se escribió sobre las seis últimas antes de aplicarlas —qué
 hacía cada una y qué había que mirar al leer el diff—, que se conserva porque es lo que se
 comprobó y no envejece.
+
+## Las seis del 19/09/2026, una a una
+
+Los seis puntos del orden acordado con Bosco para el diseño definitivo móvil
+(decisiones 47 a 51). Se aplicaron por el MCP, cada una comprobada antes de
+pasar a la siguiente.
+
+- La **102** (`la_nota_de_alergenos`, decisión 47). En **tres partes**. Da la
+  vuelta a los alérgenos: la lista deja de estar en dos sitios y el menú
+  guarda una nota de texto. Lleva conversión de datos, así que no es solo
+  aditiva.
+- La **103** (`almacenamiento_por_restaurante`, RN-ARC-10). Una parte,
+  aditiva: `establishment_storage_bytes()`. Al comprobarla se descubrió que
+  su comentario decía `security definer` y la función no lo era; se corrigió
+  el comentario y se añadió una comprobación de `prosecdef` a la suite, en vez
+  de cambiar la función, porque la puerta ya limita a quien puede llamarla.
+- La **104** (`los_seis_canales_de_fabrica`, RN-CAN-03). Una parte.
+- La **105** (`crear_el_panel`, §40.1, RN-PAN-09 a 13). En **dos partes**. Su
+  aviso se dedujo mal dos veces: con una clave estable, a quien se le
+  revocaba el acceso y se le devolvía no se le avisaba; con la clave a
+  `null`, el aviso no se creaba y **nadie daba error**, porque `dedupe_key`
+  es NOT NULL y `emit_notification()` se traga el fallo. La versión buena usa
+  `gen_random_uuid()` y deja la idempotencia donde de verdad está: el
+  `for update` de la membresía.
+- La **106** (`prioridad_solicitud`, RN-REQ-05/06). En **cuatro partes**.
+  Rompió 17 suites y el sembrado al exigir prioridad en `submit_request()`;
+  se arregló en el punto donde se crea el borrador, y el sembrado recibió
+  motivos de verdad, no texto de test.
+- La **107** (`permisos_del_cliente`, RN-EST-15/16/17, decisión 51). En
+  **cinco partes**: columnas, puerta y conversión de `consulta`; las puertas
+  de cada permiso; Usuarios y accesos; borrador, envío, orden y barrido de
+  menú; oportunidad y familia de auditoría. **No es solo aditiva**: convierte
+  los `consulta` en Editores y estrecha el CHECK del rol. Antes de aplicarla
+  se contó qué había en producción: **un solo `consulta`, sin ningún permiso
+  fino**, así que la conversión no le quitó nada. Lleva un relleno
+  obligatorio —los Editores de hoy conservan lo que podían hacer— sin el cual
+  se habrían quedado sin poder nada de un día para otro.
+
+  **Cablea seis de los siete permisos del diseño.** El séptimo, "Consultar
+  informes", está parado a la espera de Bosco: ese permiso existió y él lo
+  quitó entero el 14/09/2026 (decisión 28c). Es la pregunta 26 de
+  `docs/DECISIONES.md`. Mientras no se resuelva, `client_can_view_reports()`
+  se queda como estaba y nadie deja de ver un informe que hoy ve.
+
+  Comprobado después de aplicarla: **las 18 huellas** de las funciones que
+  toca —md5 de `pg_get_functiondef` sin comentarios ni espacios— coinciden
+  una a una entre el proyecto real y una base local construida desde los
+  archivos del repositorio, `client_can_view_reports()` incluida. Después se
+  regeneró `database.types.ts` contra el proyecto, y su diff es exactamente
+  las cinco columnas nuevas y las cuatro funciones nuevas: nada más.
 
 ## Las seis del 17/09/2026, una a una
 
@@ -322,7 +374,8 @@ lanzar contra el proyecto y contra `al4` cuando haga falta.
 
 ## Aplicadas
 
-**Están aplicadas las 101 migraciones del repositorio.** Las seis últimas —la 95, la 97, la 98,
+**Están aplicadas las 107 migraciones del repositorio.** Las seis del diseño
+definitivo móvil —de la 102 a la 107— el 19/09/2026. Las seis últimas —la 95, la 97, la 98,
 la 99, la 100 y la 101— se aplicaron el 17/09/2026, una a una y comprobando cada una antes de
 pasar a la siguiente, por orden de Bosco ("Aplica las migraciones de una en una para asegurarnos
 de que se van a aplicar correctamente"). La 96 se

@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 19/09/2026), con las 106 migraciones del
+// (generate_typescript_types, 19/09/2026), con las 107 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -1834,18 +1834,33 @@ export type Database = {
       };
       establishment_permissions: {
         Row: {
+          create_requests: boolean;
           edit_establishment_data: boolean;
+          edit_menus: boolean;
           establishment_membership_id: string;
+          manage_users: boolean;
+          upload_files: boolean;
+          use_messages: boolean;
           view_billing: boolean;
         };
         Insert: {
+          create_requests?: boolean;
           edit_establishment_data?: boolean;
+          edit_menus?: boolean;
           establishment_membership_id: string;
+          manage_users?: boolean;
+          upload_files?: boolean;
+          use_messages?: boolean;
           view_billing?: boolean;
         };
         Update: {
+          create_requests?: boolean;
           edit_establishment_data?: boolean;
+          edit_menus?: boolean;
           establishment_membership_id?: string;
+          manage_users?: boolean;
+          upload_files?: boolean;
+          use_messages?: boolean;
           view_billing?: boolean;
         };
         Relationships: [
@@ -7988,6 +8003,10 @@ export type Database = {
         };
         Returns: string;
       };
+      assert_can_manage_access: {
+        Args: { p_establishment_id: string; p_target_role: string };
+        Returns: undefined;
+      };
       assert_can_manage_integrations: {
         Args: { p_establishment_id: string; p_space_id: string };
         Returns: undefined;
@@ -8247,6 +8266,10 @@ export type Database = {
         Args: { p_establishment_id: string };
         Returns: boolean;
       };
+      client_can_manage_users: {
+        Args: { p_establishment_id: string };
+        Returns: boolean;
+      };
       client_can_set_priority: {
         Args: { p_establishment_id: string };
         Returns: boolean;
@@ -8262,6 +8285,10 @@ export type Database = {
       client_opportunity_access: {
         Args: { p_establishment_id: string };
         Returns: string;
+      };
+      client_permission: {
+        Args: { p_establishment_id: string; p_permission: string };
+        Returns: boolean;
       };
       client_request_job: {
         Args: { p_request_id: string };
@@ -10373,6 +10400,14 @@ export type Database = {
       };
       set_establishment_nonpayment_status: {
         Args: { p_cause: string; p_establishment_id: string; p_status: string };
+        Returns: undefined;
+      };
+      set_establishment_permissions: {
+        Args: {
+          p_establishment_id: string;
+          p_permissions: Json;
+          p_user_id: string;
+        };
         Returns: undefined;
       };
       set_establishment_status: {

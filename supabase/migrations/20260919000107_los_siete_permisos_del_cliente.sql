@@ -464,7 +464,7 @@ grant execute on function public.create_request_draft(uuid, text, text, text, te
 -- 6 · Usuarios y accesos (RN-EST-17)
 -- ------------------------------------------------------------
 --
--- El séptimo permiso. Quién puede tocar los accesos de un restaurante: el
+-- "Usuarios y accesos". Quién puede tocar los accesos de un restaurante: el
 -- **equipo** con `manage_clients` —que es como se crea el panel
 -- (RN-PAN-10)— y, dentro del panel, el **Propietario del restaurante**.
 --
@@ -485,7 +485,7 @@ $$;
 revoke all on function public.client_can_manage_users(uuid) from public, anon;
 grant execute on function public.client_can_manage_users(uuid) to authenticated;
 
--- Los siete permisos de una persona, en una llamada. Se escriben juntos
+-- Los permisos de una persona, en una llamada. Se escriben juntos
 -- porque juntos se eligen en la pantalla, y porque así no hay un instante
 -- con la mitad puestos.
 create or replace function public.set_establishment_permissions(
@@ -571,7 +571,7 @@ end;
 $$;
 
 comment on function public.set_establishment_permissions(uuid, uuid, jsonb) is
-  'RN-EST-15/17 · los siete permisos de un Editor, de una vez. Los cambia
+  'RN-EST-15/17 · los permisos de un Editor, de una vez. Los cambia
    el equipo (`manage_clients`) o quien tenga "Usuarios y accesos" dentro
    del panel. Al Propietario no: los tiene todos por su rol.';
 
@@ -671,9 +671,6 @@ begin
   if p_role = 'local_owner' then
     v_edit := true;
     v_billing := true;
-  elsif p_role = 'consulta' then
-    v_edit := false;
-    v_billing := false;
   else
     v_edit := coalesce(p_edit_establishment_data, false);
     v_billing := coalesce(p_view_billing, false);

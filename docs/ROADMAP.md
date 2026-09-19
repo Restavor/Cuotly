@@ -5217,6 +5217,39 @@ docena de tests por bloque—. Lo que sí faltaba era el panel.
 - **Verde**: typecheck, lint, 1448 tests de web (11 nuevos), 17 de móvil (3 nuevos), la compilación
   de Next y `expo export --platform web`.
 
+### Paso 3 (continuación) · Los ocho puntos del diseño definitivo móvil *(19/09/2026)*
+
+El PDF llegó el 19/09/2026 (`docs/diseno/Cuotly_movil.pdf`, 157 páginas). Bosco pidió plantear
+primero los puntos abiertos y construirlos uno a uno ("Los planteamos y luego los creamos punto por
+punto"). El razonamiento de los diez está en `docs/PROPUESTA-DISENO-MOVIL.md`; las decisiones, de la
+47 a la 51 de `docs/DECISIONES.md`. El orden acordado y cómo va:
+
+- [x] **1 · Gestión** — los nueve bloques de la página de gestión (RN-EST-14).
+- [x] **2 · Almacenamiento por restaurante** — migración 103, RN-ARC-10.
+- [x] **3 · Los seis canales de fábrica** — migración 104, RN-CAN-03 reescrita.
+- [x] **4 · Crear el panel del restaurante** — migración 105, §40.1, RN-PAN-09 a 13. Crear el panel
+      es **dar el primer acceso**: no crea espacio ni suscripción, y avisa una sola vez.
+- [x] **5 · La prioridad de la solicitud, con motivo** — migración 106, RN-REQ-05/06. Tres niveles,
+      motivo obligatorio **al enviar**, y el orden 1..N de RN-PRI sigue vivo y aparte.
+- [x] **6 · Ajustes del espacio en ocho pestañas** — decisión 50. La página de preferencias de
+      notificaciones no está en el PDF y Bosco dijo que la diseñara yo sobre las demás fotos; lo que
+      faltaba no eran reglas sino las ocho pestañas.
+- [ ] **7 · Los permisos del cliente** — migración 107, RN-EST-15/16/17, decisión 51. **Servidor
+      hecho y aplicado; falta la pantalla, y falta una respuesta.** Dos roles, seis de los siete
+      permisos cableados y `consulta` retirado. Retirarlo funcionó como sonda: destapó **cinco**
+      funciones que decidían por rol y no por permiso. El séptimo permiso, "Consultar informes",
+      está parado porque contradice la decisión 28c del 14/09/2026 —es la **pregunta 26** de
+      `docs/DECISIONES.md`—, y la pantalla "Usuarios y accesos" depende de esa respuesta: son seis
+      casillas o son siete.
+- [ ] **8 · La foto de perfil** — sin empezar.
+
+Queda además, fuera del orden de los ocho: las **invitaciones al panel del restaurante** con alta de
+cuenta (Bosco, 19/09/2026: "a los miembros del restaurante los invito yo… lo único que tienen que
+hacer es registrarse con correo y contraseña y rellenar… todo lo que hay que rellenar para la
+cuenta"), y los **tres cabos de la decisión 48**: qué significan "Prioridad: Alta/Superior" e
+"Informes: Estándar/Avanzado" en las fichas de plan, si Premium+ lleva un plazo por debajo de 24 h, y
+el choque de RN-COM-03 (el cliente no ve la prioridad de su plan, pero el diseño se la enseña).
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.
