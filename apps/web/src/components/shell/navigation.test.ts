@@ -4,6 +4,7 @@ import { es } from "@/i18n/es";
 
 import {
   activeDestination,
+  BAR_KEYS,
   CLIENT_ROLES,
   createOptions,
   DESTINATION_ICONS,
@@ -56,10 +57,35 @@ describe("de qué lado está cada rol (§20.3)", () => {
   });
 });
 
-describe("§20.3 · la barra de móvil tiene cinco destinos, sean quien sean", () => {
-  it("§20.3: cinco destinos exactos para cada rol", () => {
+/**
+ * §20.3, reescrito el 19/09/2026 (decisión 47): **una sola barra**, la
+ * misma para todos los roles — Inicio · Restaurantes · Crear · Mensajes ·
+ * Más—, con el Crear central que NO es un destino.
+ *
+ * Hasta ese día había cuatro barras distintas, una por rol, y estos tests
+ * las vigilaban. Se reescriben porque la regla cambió, no porque estorbaran.
+ */
+describe("§20.3 · una sola barra, la misma para todos", () => {
+  it("§20.3: los mismos cuatro destinos, en el mismo orden, para cada rol", () => {
     for (const role of ["owner", "admin", "worker", "client", "client_daily_menu"] as const) {
-      expect(mobileNav(SLUG, role).length, role).toBe(5);
+      expect(mobileNav(SLUG, role, REST).map((d) => d.key), role).toEqual([...BAR_KEYS]);
+    }
+  });
+
+  it("§20.3: son cuatro y no cinco porque el Crear central no es un destino", () => {
+    // Si estuviera aquí con un `href` falso, `activeDestination()` podría
+    // marcarlo como activo, y una acción no está nunca "activa".
+    for (const role of ["owner", "admin", "worker", "client", "client_daily_menu"] as const) {
+      expect(mobileNav(SLUG, role, REST).some((d) => d.key === "create"), role).toBe(false);
+      // Y sigue existiendo como acción, que es donde le toca.
+      expect(createOptions(SLUG, role, REST).length, role).toBeGreaterThan(0);
+    }
+  });
+
+  it("§20.3: Más sigue siendo el último, que es el que desborda", () => {
+    for (const role of ["owner", "admin", "worker", "client", "client_daily_menu"] as const) {
+      const bar = mobileNav(SLUG, role, REST);
+      expect(bar[bar.length - 1]?.key, role).toBe("more");
     }
   });
 });
@@ -80,9 +106,16 @@ describe("CA-21 · el mismo destino se llama igual en las dos superficies", () =
 
 describe("Los destinos del cliente son SUYOS, no los del equipo", () => {
   it("un cliente con su restaurante identificado navega dentro de él", () => {
-    const destinos = mobileNav(SLUG, "client", REST);
-    const dentro = destinos.filter((d) => d.href.includes(`/restaurantes/${REST}`));
-    expect(dentro.length).toBeGreaterThanOrEqual(4);
+    const destinos = new Map(mobileNav(SLUG, "client", REST).map((d) => [d.key, d.href]));
+    // Inicio y Mensajes son de SU panel.
+    expect(destinos.get("home")).toBe(`/espacios/${SLUG}/restaurantes/${REST}`);
+    expect(destinos.get("messages")).toBe(`/espacios/${SLUG}/restaurantes/${REST}#mensajes`);
+    // "Restaurantes" va al Inicio global a propósito: los suyos pueden estar
+    // en varios espacios de mantenimiento y esa lista solo existe allí
+    // (RN-GLO-03). No se inventa una ruta nueva.
+    expect(destinos.get("establishments")).toBe("/inicio");
+    // "Más" es la misma ruta para todos: decide su contenido por rol.
+    expect(destinos.get("more")).toBe(`/espacios/${SLUG}/mas`);
   });
 
   it("ningún destino de cliente cae en una ruta del equipo", () => {
@@ -102,9 +135,14 @@ describe("Los destinos del cliente son SUYOS, no los del equipo", () => {
     }
   });
 
-  it("sin restaurante identificado, el cliente va al selector de contexto", () => {
+  it("sin restaurante identificado, el cliente va al Inicio global y no a una ruta del equipo", () => {
+    // Antes iba a "/", que era el selector de contexto. Desde la decisión 42
+    // la raíz ES el Inicio global, y desde la 47 la barra lo nombra. Lo que
+    // no puede pasar es que caiga en una pantalla del equipo.
     for (const destino of mobileNav(SLUG, "client")) {
-      expect(destino.href === "/" || destino.href.endsWith("/mas")).toBe(true);
+      const esGlobal = destino.href === "/inicio";
+      const esMas = destino.href === `/espacios/${SLUG}/mas`;
+      expect(esGlobal || esMas, `${destino.key} → ${destino.href}`).toBe(true);
     }
     expect(createOptions(SLUG, "client")[0]?.href).toBe("/");
   });

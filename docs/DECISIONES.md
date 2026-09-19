@@ -878,6 +878,47 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    el ROADMAP daba por pendientes y llevaban hechas desde el Hito 7 —`SHEET_TABS`, `Sheet.tsx` y
    una docena de tests por bloque—. La entrada del ROADMAP estaba desactualizada y se corrige.
 
+47. **Las tres del diseño móvil** (19/09/2026). Al leer entero `Cuotly_movil.pdf` (157 páginas,
+   `docs/diseno/MAPA-DEL-DISENO-MOVIL.md`) salieron siete diferencias con lo decidido. Tres se
+   resolvieron al empezar; las otras cuatro siguen abiertas.
+
+   - **Los alérgenos vuelven a ser una nota de texto libre por menú.** El diseño los pone así
+     (página 125, campo de 200 caracteres: *"Contiene gluten, lácteos y frutos secos"*), y manda el
+     diseño sobre la **decisión 45**, que era de dos días antes y los había puesto plato a plato
+     con los catorce del Reglamento UE 1169/2011.
+
+     **Queda escrito lo que esto cuesta, porque se preguntó con el coste delante y la respuesta
+     fue esta:** se deshace §39 entero —nueve reglas RN-ALE—, el editor de casillas por plato, la
+     comparación de declaraciones y la distinción entre "sin declarar" y "sin alérgenos", que era
+     justamente lo que separaba un plato del que nadie ha dicho nada de uno del que se ha dicho que
+     no lleva ninguno. La migración 101 **no se edita** (CLAUDE.md): una migración nueva deja su
+     columna sin uso y añade la nota. La suite 52 se reescribe.
+
+     Lo que **no** cambia es de quién es la información: la escribe el restaurante, Cuotly no la
+     comprueba, y el aviso legal que la acompañe sigue siendo del paso 4.
+
+   - **Un plato sigue siendo una línea de texto**, porque es como se ve en la plantilla que se
+     publica. Las tres previsualizaciones del diseño (páginas 125, 126 y 127) enseñan los platos
+     como líneas de texto bajo PRIMEROS/SEGUNDOS/POSTRES y **un solo precio fijo** al pie
+     ("16,50 € · Incluye pan · Bebida no incluida"). Las fotos y los precios por plato de las
+     páginas 129 y 131 son de una **carta**, no del menú del día, y no cambian este modelo. Se
+     evita así una migración grande de `menu_versions` y dar identidad propia a cada plato.
+
+   - **La barra inferior de móvil pasa a ser la misma para todos los roles**: Inicio ·
+     Restaurantes · **Crear (+)** · Mensajes · Más, con el botón central elevado. Es lo único
+     verdaderamente nuevo de móvil en las 157 páginas, y **contradice §20.3**, que fijaba cinco
+     destinos distintos por rol. Se reescribe §20.3 con su motivo.
+
+     El "Crear" central **no es un destino**: es la acción de §20.5, cuyas opciones dependen del rol
+     y del contexto, y que el servidor vuelve a comprobar al ejecutar (CLAUDE.md: ocultar un botón
+     no es un control de acceso).
+
+   **Lo que sigue abierto** y no se construye hasta decidirlo (apartado 5 del mapa): crear el panel
+   del restaurante como acto explícito, los permisos finos del cliente, la foto de perfil, el estado
+   "Configurando", "Cuotly Insights", el almacenamiento por restaurante, la frecuencia de aviso, la
+   prioridad con motivo, los seis canales de fábrica y qué subpestañas tiene Gestión —el diseño se
+   contradice a sí mismo entre sus páginas 27 y 58—.
+
 ---
 
 ### Pendiente de completar

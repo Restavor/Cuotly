@@ -143,51 +143,71 @@ export function hrefWithoutAnchor(href: string): string {
   return href.split("#")[0].replace(/\/+$/, "") || "/";
 }
 
+/**
+ * §20.3 (reescrito el 19/09/2026, decisión 47) · **una sola barra, la
+ * misma para todos los roles y en todos los contextos**:
+ *
+ *     Inicio · Restaurantes · Crear (+) · Mensajes · Más
+ *
+ * Hasta ese día había cuatro barras distintas, una por rol. El diseño
+ * definitivo móvil pone la misma en las 157 vistas, y el motivo que lo hace
+ * defendible es que **una barra que cambia de forma según quién entra no se
+ * aprende**: con la misma en todas partes, el pulgar sabe dónde está
+ * Mensajes sin mirar, y lo que cambia es a dónde lleva.
+ *
+ * El **Crear** central no sale de aquí: no es un destino, es la acción de
+ * §20.5 (`createOptions`), y por eso esta función devuelve **cuatro**
+ * destinos y el armazón pone el botón en medio. Meterlo aquí como un quinto
+ * con un `href` falso habría hecho que `activeDestination()` lo pudiera
+ * marcar como activo, y una acción no está nunca "activa".
+ *
+ * A dónde lleva cada uno depende del contexto, que es lo que sustituye a la
+ * barra por rol:
+ *
+ *   · **Inicio** — el del espacio, el del panel, o el global;
+ *   · **Restaurantes** — los del espacio si eres del equipo; los tuyos, en
+ *     el Inicio global, si eres restaurante. No se inventa una ruta nueva:
+ *     el Inicio global ya los lista (RN-GLO-03);
+ *   · **Mensajes** — la bandeja del espacio, la del panel o la global;
+ *   · **Más** — el resto de su superficie.
+ */
+export const BAR_KEYS = ["home", "establishments", "messages", "more"] as const;
+
 export function mobileNav(
   spaceSlug: string,
   role: ShellRole,
   establishmentId: string | null = null,
 ): readonly NavDestination[] {
   const base = `/espacios/${spaceSlug}`;
-  const more = D("more", es.nav.more, `${base}/mas`);
   const mine = clientBase(spaceSlug, establishmentId);
 
-  switch (role) {
-    case "owner":
-    case "admin":
-      return [
-        D("home", es.nav.home, base),
-        D("requests", es.nav.requests, `${base}/solicitudes`),
-        D("jobs", es.nav.jobs, `${base}/trabajos`),
-        D("messages", es.nav.messages, `${base}/mensajes`),
-        more,
-      ];
-    case "worker":
-      return [
-        D("home", es.nav.home, base),
-        D("jobs", es.nav.jobs, `${base}/trabajos`),
-        D("tasks", es.nav.tasks, `${base}/tareas`),
-        D("messages", es.nav.messages, `${base}/mensajes`),
-        more,
-      ];
-    case "client_daily_menu":
-      return [
-        D("home", es.nav.home, mine ?? "/"),
-        D("requests", es.nav.requests, mine ?? "/"),
-        D("dailyMenu", es.nav.dailyMenu, mine ? `${mine}/menu-diario` : "/"),
-        D("messages", es.nav.messages, mine ?? "/"),
-        more,
-      ];
-    case "client":
-      return [
-        D("home", es.nav.home, mine ?? "/"),
-        D("requests", es.nav.requests, mine ?? "/"),
-        D("newRequest", es.nav.newRequest, mine ?? "/"),
-        D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
-        more,
-      ];
+  // El restaurante: su inicio es su panel, y sus restaurantes son los suyos,
+  // que están en el Inicio global. Sin panel identificado —tiene varios, o
+  // el armazón se pinta fuera de contexto— todo va al Inicio global, que es
+  // donde elige, y nunca a una ruta del equipo.
+  if (isClientRole(role)) {
+    return [
+      D("home", es.nav.home, mine ?? GLOBAL_HOME),
+      D("establishments", es.nav.establishments, GLOBAL_HOME),
+      D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : GLOBAL_HOME),
+      // "Más" es la MISMA ruta para todos: `/espacios/<slug>/mas` ya
+      // decide su contenido por rol con `moreDestinations()`. Una ruta
+      // propia bajo el restaurante habría sido una pantalla más que
+      // mantener diciendo lo mismo.
+      D("more", es.nav.more, `${base}/mas`),
+    ];
   }
+
+  return [
+    D("home", es.nav.home, base),
+    D("establishments", es.nav.establishments, `${base}/restaurantes`),
+    D("messages", es.nav.messages, `${base}/mensajes`),
+    D("more", es.nav.more, `${base}/mas`),
+  ];
 }
+
+/** §36 · el Inicio global, la raíz de quien no está en ningún contexto. */
+const GLOBAL_HOME = "/inicio";
 
 /**
  * §20.5 · "Botón global **Crear** cuyas opciones dependen del contexto y

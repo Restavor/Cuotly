@@ -654,11 +654,39 @@ Finanzas · Informes · Equipo · Planes y servicios · **Agente Cuotly (Próxim
 
 En Fase 1, Menú Diario e Informes muestran su estructura con el estado vacío correspondiente.
 
-### 20.3 Navegación móvil (5 destinos + Más)
-- Propietario y administrador: Inicio · Solicitudes · Trabajos · Mensajes · Más
-- Trabajador: Inicio · Trabajos · Tareas · Mensajes · Más
-- Restaurante con Menú Diario: Inicio · Solicitudes · Menú Diario · Mensajes · Más
-- Restaurante sin Menú Diario: Inicio · Solicitudes · **+ Nueva solicitud** · Mensajes · Más
+### 20.3 Navegación móvil (5 destinos, con Crear en el centro)
+
+**Una sola barra, la misma para todos los roles y en todos los contextos:**
+
+**Inicio · Restaurantes · Crear (+) · Mensajes · Más**
+
+El **Crear** central va elevado y **no es un destino**: es la acción de §20.5, cuyas opciones
+dependen del rol y del contexto. Como cualquier otra puerta, el servidor vuelve a comprobar el
+permiso al ejecutar (CLAUDE.md: ocultar un botón no es un control de acceso).
+
+Los otros cuatro sí son destinos, y **a dónde llevan depende de dónde estés**, que es lo que
+sustituye a la barra por rol:
+
+| Destino | En un espacio de mantenimiento | En un panel de restaurante | Fuera de los dos |
+| --- | --- | --- | --- |
+| Inicio | el inicio del espacio | el inicio del panel | el Inicio global (§36) |
+| Restaurantes | los restaurantes del espacio | los suyos, en el Inicio global | los suyos, en el Inicio global |
+| Mensajes | la bandeja del espacio | la del panel | la bandeja global (§36) |
+| Más | el resto de su superficie | el resto de la suya | el resto de la global |
+
+> **Esto se reescribió el 19/09/2026 (decisión 47).** Hasta ese día había **cuatro barras
+> distintas**, una por rol, y era lo único que el diseño definitivo móvil (`Cuotly_movil.pdf`,
+> 157 páginas) cambia de verdad respecto al de escritorio: pone la misma barra en las 157 vistas,
+> sea quien sea quien mira y esté donde esté.
+>
+> El motivo que lo hace defendible, y no solo una preferencia visual: **una barra que cambia de
+> forma según quién entra no se aprende**. Con la misma en todas partes, el pulgar sabe dónde está
+> Mensajes sin mirar, y lo que cambia es a dónde lleva, que es lo que de verdad depende del
+> contexto. El coste, asumido: un trabajador pierde el acceso directo a Tareas desde la barra y lo
+> alcanza por Más.
+>
+> **Lo que NO cambia:** que son cinco y no seis. Una barra inferior con más de cinco deja de ser
+> pulsable con el pulgar, y eso ya estaba fijado.
 
 ### 20.4 Inicio según rol
 - **Propietario del espacio**: resumen general, restaurantes y estados, solicitudes y trabajos críticos, carga del equipo, ingresos y pendientes, incidencias, actividad reciente.

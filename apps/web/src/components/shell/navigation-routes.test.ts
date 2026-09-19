@@ -1,9 +1,15 @@
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { createOptions, desktopMenu, mobileNav, type ShellRole } from "./navigation";
+import {
+  createOptions,
+  desktopMenu,
+  hrefWithoutAnchor,
+  mobileNav,
+  type ShellRole,
+} from "./navigation";
 
 const SLUG = "restavor";
 const REST = "84000000-0000-0000-0000-000000000001";
@@ -50,14 +56,28 @@ const PENDIENTES: Readonly<Record<string, string>> = {};
  * el nombre de la carpeta que los recoge.
  */
 function routePathOf(href: string): string {
-  return href
-    .split("?")[0]
+  // El ancla no es una ruta: `…/restaurantes/<id>#mensajes` lo sirve la
+  // misma página que `…/restaurantes/<id>` (RN-PAN-07).
+  return hrefWithoutAnchor(href.split("?")[0])
     .replace(`/espacios/${SLUG}`, "/espacios/[slug]")
     .replace(`/restaurantes/${REST}`, "/restaurantes/[id]");
 }
 
+/**
+ * Los **grupos de rutas** de Next —las carpetas entre paréntesis, como
+ * `(global)`— organizan el código y no aparecen en la dirección, así que
+ * `/inicio` lo sirve `src/app/(global)/inicio/page.tsx`. Buscar solo la
+ * ruta literal daba por roto un destino que funciona: lo enseñó este test
+ * el 19/09/2026, cuando la barra de la decisión 47 empezó a nombrar el
+ * Inicio global.
+ */
 function routeExists(href: string): boolean {
-  return existsSync(join(process.cwd(), "src/app", routePathOf(href), "page.tsx"));
+  const ruta = routePathOf(href);
+  const raiz = join(process.cwd(), "src/app");
+  if (existsSync(join(raiz, ruta, "page.tsx"))) return true;
+  return readdirSync(raiz, { withFileTypes: true }).some(
+    (e) => e.isDirectory() && e.name.startsWith("(") && existsSync(join(raiz, e.name, ruta, "page.tsx")),
+  );
 }
 
 function destinosDeLaAplicacion() {
