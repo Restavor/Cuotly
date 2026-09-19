@@ -983,6 +983,28 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    sin prioridad ni motivo, así que **diecisiete suites y el sembrado** tuvieron que empezar a
    ponerlos — y eso es la señal de que la regla muerde de verdad, no un efecto colateral.
 
+50. **Ajustes del espacio: la pantalla la diseño yo, las reglas ya están** (19/09/2026). El punto 6
+   del orden era el "horario de recepción", y al ir a construirlo **no se encontró la página**: la
+   nota del mapa decía "página 109" y ahí está "Ajustes del espacio · General". Se miraron la 110,
+   111, 112, 114, 116 y la 8 y la pantalla de preferencias de notificaciones no aparece en ninguna.
+   Es la **tercera** nota del mapa que apunta mal —ya pasó con la 63 y con la 46—, porque se tomaron
+   leyendo las 157 páginas de corrido y la numeración se desplazó.
+
+   Se preguntó en vez de inventar, y Bosco contestó: **"la página diséñala tú basándote en las otras
+   fotos que tienes del diseño, y cómo funciona esa página es igual que en ordenador: las normas y
+   todo es lo que ya está definido"**.
+
+   Leído así, lo que faltaba no eran reglas —`NotificationPreferencesForm` existe desde el Hito 8—
+   sino **las ocho pestañas** que la página 109 sí dibuja: General · Horarios · Impuestos ·
+   Integraciones · Suscripción · Seguridad · Auditoría · Notificaciones. Ajustes era una sola
+   columna de casi quinientas líneas.
+
+   - **Suscripción y Auditoría conservan su dirección.** Ya eran páginas propias y hay avisos
+     emitidos que apuntan ahí (RN-NOT-04). Su "pestaña" es un enlace; las otras seis van en
+     `?vista=`.
+   - **El horario de recepción y el resumen diario siguen sin construirse**, y ahora con su motivo
+     escrito en §18: piden una hora por defecto, una zona y una regla de qué se salta el silencio.
+
 ---
 
 ### Pendiente de completar

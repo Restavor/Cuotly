@@ -5000,6 +5000,30 @@ diseño (**decisión 47**). Lo construido se retiró.
   sonaba a problema de la tabla entera. La 102 tropezaba con lo mismo y por eso lo lleva escrito.
 - **Verde**: 52 suites sobre 102 migraciones, typecheck, lint, 1422 tests y la compilación de Next.
 
+#### Hecho · Ajustes del espacio, con sus ocho pestañas (decisión 50)
+Sexto del orden, y el que menos código nuevo tiene: **no hay migración ni regla nueva**. Es
+disposición.
+
+- **Empezó parándose.** El punto era el "horario de recepción" y la página no se encontraba: la nota
+  del mapa decía 109 y ahí está "Ajustes · General". Se miraron seis páginas más y nada. En vez de
+  reconstruirlo de memoria —haría falta una hora por defecto, una zona y una regla de qué se salta
+  el silencio— se preguntó, y Bosco dijo que la pantalla la diseñara yo con el sistema que ya usa el
+  resto y que **las reglas son las que ya están**.
+- **Leído así, lo que faltaba eran las pestañas.** El formulario de preferencias existe desde el
+  Hito 8; lo que la 109 dibuja son ocho pestañas sobre una pantalla que era **una columna de casi
+  quinientas líneas**.
+- **Suscripción y Auditoría conservan su dirección.** Ya eran páginas propias y hay avisos emitidos
+  que apuntan ahí (RN-NOT-04): un enlace profundo que deja de funcionar es un aviso roto. Su
+  "pestaña" es un enlace; las otras seis van en `?vista=`, y hay test de las dos cosas.
+- **Un falso-cerrado para el propio refactor**: cada bloque se envolvió a mano en su condición, y
+  olvidarse de una dejaría la tarjeta visible en **todas** las pestañas — que tiene exactamente el
+  aspecto de que no se ha roto nada. El test lee la página y falla si aparece una condición que no
+  es una pestaña o si una pestaña no pinta nada. Comprobado rompiéndolo.
+- **Lo que sigue sin construirse**, ahora con su motivo escrito en §18 del PRD: la frecuencia de
+  aviso y el horario de recepción.
+- **Verde**: typecheck, lint, 1459 tests y la compilación de Next, con las cuatro rutas hijas de
+  ajustes intactas.
+
 #### Hecho · La prioridad de la solicitud (RN-REQ-05/06, migración 106, suite 55)
 Quinto del orden, anunciado como "pequeño" y no lo era: es un cambio de modelo en las solicitudes.
 

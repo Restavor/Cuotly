@@ -16,6 +16,7 @@ import { formatMoment, loadSpaceIntegrations } from "@/components/establishment/
 import { ProviderMark } from "@/components/establishment/ProviderMark";
 import { integrationTone } from "@/core/integrations";
 import { MANDATORY_EVENTS, staffPreferenceEvents, type NotificationEvent } from "@/core/notifications";
+import { SETTINGS_TABS, parseSettingsTab, settingsTabHref } from "./tabs";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { vaultIsConfigured } from "@/services/credential-vault";
@@ -66,8 +67,19 @@ function dia(instant: string | null): string {
   return instant === null ? "—" : instant.slice(0, 10);
 }
 
-export default async function SettingsPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function SettingsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const query = await searchParams;
+  // Una vista desconocida cae en General, no en un hueco: un enlace viejo
+  // o escrito a mano enseña los ajustes.
+  const crudo = query.vista;
+  const vista = parseSettingsTab(Array.isArray(crudo) ? crudo[0] : crudo);
   const supabase = await createClient();
 
   const {
@@ -160,6 +172,42 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         <p className="text-sm text-text-secondary">{es.settings.subtitle}</p>
       </header>
 
+      {/*
+        Página 109 del diseño · las ocho pestañas. La vista viaja en la
+        dirección y no en un estado del navegador: así se comparte el
+        enlace de "los horarios de Restavor", el botón de volver deshace el
+        cambio de pestaña, y la pantalla entera sigue siendo de servidor
+        (CA-22).
+
+        Suscripción y Auditoría son enlaces a sus páginas, que ya existían
+        y conservan su dirección: hay avisos emitidos que apuntan ahí
+        (RN-NOT-04).
+      */}
+      <nav aria-label={es.settings.title} className="border-b border-border">
+        <ul className="-mb-px flex flex-wrap gap-1">
+          {SETTINGS_TABS.map((tab) => {
+            const seleccionada = tab.route === null && tab.key === vista.key;
+            return (
+              <li key={tab.key}>
+                <Link
+                  href={settingsTabHref(slug, tab)}
+                  aria-current={seleccionada ? "page" : undefined}
+                  className={`-mb-px inline-block border-b-2 px-3 py-2 text-sm ${
+                    seleccionada
+                      ? "border-cuotly-green font-semibold text-primary-dark"
+                      : "border-transparent text-text-secondary hover:text-text"
+                  }`}
+                >
+                  {es.settings.tabs[tab.key]}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {vista.key === "general" ? (
+      <>
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">
           {es.settings.identityTitle}
@@ -243,6 +291,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         </Card>
       ) : null}
 
+      </>
+      ) : null}
+
+      {vista.key === "taxes" ? (
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">
           {es.settings.contractTitle}
@@ -307,6 +359,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         </ul>
       </Card>
 
+      ) : null}
+
+      {vista.key === "schedule" ? (
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">
           {es.settings.calendarTitle}
@@ -347,13 +402,18 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         </p>
       </Card>
 
+      ) : null}
+
+      {vista.key === "notifications" ? (
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">
           {es.settings.notificationsTitle}
         </h2>
         <NotificationPreferencesForm spaceId={space.id} preferences={preferences} />
       </Card>
+      ) : null}
 
+      {vista.key === "integrations" ? (
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">
           {es.integrations.settingsTitle}
@@ -432,6 +492,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         )}
       </Card>
 
+      ) : null}
+
+      {vista.key === "security" ? (
+      <>
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">{es.settings.auditTitle}</h2>
         <p className="mb-3 text-sm text-text-secondary">{es.settings.auditSubtitle}</p>
@@ -474,6 +538,10 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
         </p>
       </Card>
 
+      </>
+      ) : null}
+
+      {vista.key === "general" ? (
       <Card>
         <h2 className="mb-3 text-lg font-semibold text-primary-dark">{es.settings.pendingTitle}</h2>
         <p className="mb-3 text-sm text-text-secondary">{es.settings.pendingHint}</p>
@@ -483,6 +551,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ slug:
           ))}
         </ul>
       </Card>
+      ) : null}
     </div>
   );
 }

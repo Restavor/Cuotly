@@ -667,6 +667,23 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
 - **RN-NOT-04**: cada aviso lleva un enlace profundo que abre el elemento exacto, cambiando de espacio o establecimiento si hace falta y **verificando el acceso antes**.
 - **RN-NOT-05**: los envíos van por cola con reintentos e idempotencia. **El fallo de una notificación nunca revierte la operación principal.**
 
+**Ajustes del espacio tiene ocho pestañas** (añadido 19/09/2026, decisión 50): **General · Horarios ·
+Impuestos · Integraciones · Suscripción · Seguridad · Auditoría · Notificaciones**, como las dibuja
+el diseño definitivo móvil. Antes era una sola columna con todas las secciones seguidas.
+
+**No cambia ninguna regla**: las preferencias de aviso siguen siendo RN-NOT-02 y RN-NOT-03, el
+calendario RN-CLK, el IVA RN-FIN-08. Cambia por dónde se llega a cada cosa.
+
+**Suscripción y Auditoría conservan su dirección** (`/ajustes/suscripcion` y `/ajustes/auditoria`),
+que ya eran páginas propias: hay avisos **ya emitidos** que apuntan ahí —el de almacenamiento al
+100 %, entre otros— y RN-NOT-04 dice que un aviso abre el elemento exacto. Un enlace profundo que
+deja de funcionar es un aviso roto, no un detalle de navegación. Las otras seis viajan en `?vista=`.
+
+**Lo que este apartado NO trae**, y sigue sin construirse porque no está definido: la **frecuencia
+de aviso** ("Instantáneo / Resumen diario") y el **horario de recepción**. Harían falta una hora por
+defecto, una zona horaria y una regla de qué se salta el silencio por urgente, y `CLAUDE.md` prohíbe
+inventarlos.
+
 ---
 
 ## 19. Archivos (RN-ARC)

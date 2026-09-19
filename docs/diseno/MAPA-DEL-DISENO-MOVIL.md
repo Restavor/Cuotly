@@ -141,8 +141,13 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
 - **"Cuotly Insights"** como fuente de datos propia (páginas 41, 44).
 - **Almacenamiento por restaurante** (página 50: "6,4 GB"). Hoy es por
   espacio (RN-SUB-13).
-- **Frecuencia de aviso** "Instantáneo / Resumen diario" y **horario de
-  recepción** (página 109).
+- ~~**Frecuencia de aviso** "Instantáneo / Resumen diario" y **horario de
+  recepción** (página 109)~~ — **la página no es esa**: la 109 es "Ajustes
+  del espacio · General", y la pantalla de preferencias de notificaciones
+  no aparece en las contiguas (110-112, 114, 116) ni junto a "Mi cuenta"
+  (8). Tercera nota de este mapa que apunta mal, después de la 63 y la 46.
+  De la 109 se construyeron **las ocho pestañas** (decisión 50); la
+  frecuencia y el horario siguen sin definir y no se inventan.
 - ~~**Prioridad con motivo obligatorio** en la solicitud del equipo (página 63)~~ — **la lectura
   estaba mal**: la página 63 es "Nueva solicitud", la del **cliente**, no la del equipo. Resuelto
   como decisión 49 (RN-REQ-05/06, migración 106): nivel Alta/Media/Baja al crear, motivo

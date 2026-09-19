@@ -2491,6 +2491,20 @@ export const es = {
     noAccessTitle: "Sin acceso a los ajustes de este espacio",
     noAccessReason: "Los ajustes del espacio los ve el equipo que trabaja en él.",
 
+    // Página 109 del diseño definitivo móvil · las ocho pestañas de
+    // Ajustes. Las dos que ya eran páginas propias —Suscripción y
+    // Auditoría— conservan su dirección: hay avisos emitidos que apuntan
+    // ahí (RN-NOT-04).
+    tabs: {
+      general: "General",
+      schedule: "Horarios",
+      taxes: "Impuestos",
+      integrations: "Integraciones",
+      subscription: "Suscripción",
+      security: "Seguridad",
+      audit: "Auditoría",
+      notifications: "Notificaciones",
+    },
     identityTitle: "Espacio de mantenimiento",
     identityHint:
       "El nombre es lo que ven el equipo y los restaurantes en toda la aplicación. Cambiarlo queda registrado en la auditoría con quién lo hizo y qué decía antes.",
