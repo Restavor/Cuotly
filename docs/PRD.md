@@ -573,19 +573,17 @@ llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; la
   | Editar menús | Pedir cambios en el menú diario | `edit_menus` |
   | Mensajes | Leer y enviar mensajes | `use_messages` |
   | Subir archivos | Adjuntar archivos en solicitudes y mensajes | `upload_files` |
-  | Consultar informes | Ver los informes y datos del restaurante | **parado, ver abajo** |
+  | Consultar informes | Ver los informes y datos del restaurante | `view_reports` |
   | Pagos y facturas | Ver pagos y facturas | `view_billing` *(ya existía)* |
   | Usuarios y accesos | Gestionar usuarios y permisos del restaurante | `manage_users` |
 
-  **De los siete, la migración 107 cablea SEIS.** "Consultar informes" está **parado a la espera de
-  Bosco** y hasta entonces **no existe como permiso**: `client_permission()` ni lo reconoce. El
-  motivo es que ese permiso **ya existió** —columna `establishment_permissions.view_reports` y su
-  función, migración 85— y **Bosco lo quitó entero el 14/09/2026** (decisión 28c): el informe lo ve
-  cualquier persona del restaurante con el acceso vigente, sin distinguir rol ni permiso, y así lo
-  dice RN-REP-01. El diseño móvil dibuja la casilla; la decisión dice que no la hay. **CLAUDE.md
-  prohíbe resolver una contradicción por cuenta propia**, así que manda lo decidido y nadie deja de
-  ver un informe que hoy ve. Cuando Bosco elija, se añade en los tres sitios a la vez: la lista de
-  `client_permission()`, `client_can_view_reports()` y esta tabla.
+  **"Consultar informes" tiene historia y conviene saberla**, o alguien lo deshará: ese permiso
+  **existió** —columna `establishment_permissions.view_reports` y su función, migración 85—, **Bosco
+  lo quitó entero el 14/09/2026** (decisión 28c) y **lo devolvió el 19/09/2026** (decisión 52,
+  migración 108) al elegir el diseño frente a su propia decisión anterior. Consecuencia que se puso
+  por escrito antes de preguntarle y que es la parte que hay que tener presente: **un Editor nuevo
+  nace sin ver informes** hasta que su Propietario le encienda la casilla. Al aplicar la 108 **nadie
+  perdió un informe que ya veía**: se encendió a todos los Editores con acceso vivo.
 
   **Afinan hacia abajo, nunca hacia arriba.** El **Propietario los tiene todos y no se le pueden
   quitar** —"Acceso completo a todos los módulos", dice el diseño—, porque un restaurante cuyo
@@ -1294,10 +1292,13 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   **Editor** y el **Consulta**, igual: **lo ven todos los que trabajan en ese restaurante**, con el
   acceso vigente. §89 decía que Consulta necesitaba permiso de su propietario y así se implementó
   primero, con un permiso fino por persona; **Bosco lo enmendó el 14/09/2026** (decisión 28) y ese
-  permiso se quitó entero. El **diseño definitivo móvil** (página 153) vuelve a dibujar una casilla
-  "Consultar informes" entre los permisos del Editor, lo que **contradice esta regla**; mientras
-  Bosco no lo resuelva manda lo decidido y la migración 107 dejó esa casilla sin cablear
-  (RN-EST-15). Un informe **consolidado no se comparte con ningún restaurante**, y eso
+  permiso se quitó entero. El **diseño definitivo móvil** (página 153) volvió a dibujar la casilla
+  "Consultar informes", y **Bosco resolvió la contradicción el 19/09/2026 a favor del diseño**
+  (decisión 52, migración 108): el permiso vuelve y es el séptimo de RN-EST-15. Así que la regla de
+  hoy es **el acceso vigente Y la casilla**, con el Propietario y el grupo (§14.1) siempre dentro.
+  Un Editor nuevo nace sin ella. Lo que sigue intacto de la decisión 28 es todo lo demás: a quién
+  **llega** el informe (28d), la aprobación (28a), los avisos de §95 (28b) y el PDF guardado
+  (28e). Un informe **consolidado no se comparte con ningún restaurante**, y eso
   **incluye al propietario global del grupo**: mezcla datos de varios y no hay cliente al que
   pertenezca. Esta regla decía las dos cosas a la vez —que el propietario global veía "el
   consolidado de su grupo" y que un consolidado no se comparte con nadie— y **Bosco resolvió la

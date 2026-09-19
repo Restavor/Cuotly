@@ -66,7 +66,7 @@ insert into public.establishment_memberships (establishment_id, user_id, role) v
   ('dd400000-0000-0000-0000-000000000001', 'dd000000-0000-0000-0000-000000000006', 'editor'),
   ('dd400000-0000-0000-0000-000000000001', 'dd000000-0000-0000-0000-000000000007', 'editor');
 
--- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cinco
 -- permisos de contenido, que es lo que `grant_establishment_access()` les
 -- habría dado al crearlos: aquí las membresías se insertan a mano y una
 -- membresía sin fila de permisos no puede nada.
@@ -75,14 +75,14 @@ insert into public.establishment_memberships (establishment_id, user_id, role) v
 -- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
 -- apagado, que es justo lo que esta suite espera de él.
 insert into public.establishment_permissions
-  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
-select em.id, true, true, true, true
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files, view_reports)
+select em.id, true, true, true, true, true
 from public.establishment_memberships em
 where em.role = 'editor'
   and em.user_id not in ('dd000000-0000-0000-0000-000000000007')
 on conflict (establishment_membership_id) do update set
   create_requests = true, edit_menus = true, use_messages = true,
-  upload_files = true;
+  upload_files = true, view_reports = true;
 
 -- Ana: analítica, autorizada en Casa Analítica. Luis: sin autorizar.
 insert into public.worker_specialties (space_id, user_id, specialty, created_by) values

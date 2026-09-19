@@ -53,7 +53,7 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
    'c0000000-0000-0000-0000-000000000004', 'editor', now() - interval '1 day',
    'c0000000-0000-0000-0000-000000000001');
 
--- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cinco
 -- permisos de contenido, que es lo que `grant_establishment_access()` les
 -- habría dado al crearlos: aquí las membresías se insertan a mano y una
 -- membresía sin fila de permisos no puede nada.
@@ -62,14 +62,14 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
 -- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
 -- apagado, que es justo lo que esta suite espera de él.
 insert into public.establishment_permissions
-  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
-select em.id, true, true, true, true
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files, view_reports)
+select em.id, true, true, true, true, true
 from public.establishment_memberships em
 where em.role = 'editor'
   and em.user_id not in ('c0000000-0000-0000-0000-000000000004', 'c0300000-0000-0000-0000-000000000001', 'c0400000-0000-0000-0000-000000000002')
 on conflict (establishment_membership_id) do update set
   create_requests = true, edit_menus = true, use_messages = true,
-  upload_files = true;
+  upload_files = true, view_reports = true;
 
 -- ============================================================
 -- La propietaria da acceso. El correo NO distingue mayúsculas.

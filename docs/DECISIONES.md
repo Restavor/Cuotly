@@ -1045,32 +1045,50 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    pueden guardar, un Editor con `manage_users` no revoca ni asciende al Propietario y el equipo
    sí— y las 56 suites en verde.
 
+52. **"Consultar informes" vuelve a ser un permiso: manda el diseño** (19/09/2026). Bosco: **"La
+   a"**. Cierra la pregunta 26 y completa el punto 7 del orden.
+
+   **La contradicción.** El diseño definitivo móvil, página 153, dibuja "Consultar informes" entre
+   los permisos del Editor. La **decisión 28c**, del propio Bosco cinco días antes (14/09/2026),
+   decía lo contrario: ese permiso existió —columna `establishment_permissions.view_reports` y su
+   función, migración 85—, lo quitó entero, y el informe pasó a verlo **cualquier persona del
+   restaurante con el acceso vigente**. No cabían las dos.
+
+   **Cómo se encontró**, que es lo que merece la pena recordar: la primera versión de la migración
+   107 reinstauró el permiso **sin que nadie se diera cuenta**, simplemente porque el diseño lo
+   dibujaba. Lo tumbó `informes.sql`, que defiende la decisión 28c con una afirmación literal. Sin
+   ese bloque, una decisión de Bosco se habría deshecho sola y en silencio.
+
+   **Lo que decide Bosco:** la (a), el diseño. El permiso vuelve (migración 108) y es el séptimo de
+   RN-EST-15.
+
+   **La consecuencia, que se le puso por escrito antes de preguntarle:** a partir de ahora **un
+   Editor nuevo nace sin ver informes** hasta que su Propietario le encienda la casilla. Eso es
+   exactamente lo que la 28c quitaba, y es lo que se acepta al elegir el diseño.
+
+   **Lo que NO pasa:** nadie perdió un informe que ya veía. La migración 108 enciende la casilla a
+   **todos** los Editores con acceso vivo, incluidos los que la 107 convirtió desde `consulta` —que
+   también los veían—. A quien tiene el acceso **retirado** no se le enciende: no los ve hoy
+   (RN-EST-05) y encendérsela sería devolverle algo por la puerta de atrás.
+
+   **Alcance de la enmienda:** la 28c queda enmendada **en ese punto y solo en ese**. A quién LLEGA
+   el informe (28d), la aprobación (28a), los avisos de §95 (28b) y que el informe se guarda como
+   PDF (28e) siguen exactamente igual. La rama de grupo de `client_can_view_reports()` tampoco
+   cambia: el propietario global ve el informe de cada establecimiento suyo (§14.1) y el consolidado
+   no (decisión 30).
+
+   Comprobado: el bloque de RN-REP-01 de `informes.sql` **dado la vuelta** —un Editor sin la casilla
+   no ve los informes, uno con ella sí—, y en la suite 56 un bloque nuevo que prueba la casilla
+   entera: que abre los informes y que **no** abre los menús ni la facturación.
+
 ---
 
 ### Pendiente de completar
 
-**Una abierta: la 26.**
+**Ninguna abierta.** La 26 se cerró el 19/09/2026 como decisión 52.
 
-26. **¿"Consultar informes" es un permiso del Editor, o lo ven todos?** (abierta el 19/09/2026 al
-   construir la decisión 51). El **diseño definitivo móvil**, página 153, dibuja una casilla
-   "Consultar informes" entre los permisos del Editor. La **decisión 28c**, tuya, del 14/09/2026,
-   dice lo contrario: ese permiso existió, lo quitaste entero y el informe lo ve **cualquier persona
-   del restaurante con el acceso vigente**, sin distinguir rol. No caben las dos.
-
-   Mientras no lo resuelvas manda la decisión, que es lo que hay funcionando: **la conducta de hoy
-   no cambia en ningún sentido** y nadie deja de ver un informe. Lo que hay parado es la casilla:
-   seis permisos cableados de siete.
-
-   Las dos salidas, para que elijas:
-
-   - **(a) Manda el diseño.** Se añade `view_reports` a `client_permission()` y a
-     `client_can_view_reports()`. Ojo a la consecuencia: los Editores de hoy **sí lo reciben en el
-     relleno** —nadie pierde acceso al aplicar—, pero **cada Editor nuevo nace sin ver informes**
-     hasta que su Propietario le encienda la casilla, y eso es justo lo que quitaste.
-   - **(b) Manda la decisión 28c.** La casilla desaparece de la pantalla "Usuarios y accesos" y son
-     **seis** permisos, no siete. Es lo que está construido hoy; no habría que tocar nada.
-
-   Sin esto no está terminado el punto 7 del orden, aunque todo lo demás de ese punto sí lo está.
+26. ~~¿"Consultar informes" es un permiso del Editor, o lo ven todos?~~ — resuelta el 19/09/2026
+   como **decisión 52**, a favor del diseño.
 
 Las dieciséis de las fases 1 a 3 y las cuatro de la Fase 4 están cerradas;
 quedan tachadas abajo con la decisión que resolvió cada una. Las cuatro de la Fase 4 se cerraron el

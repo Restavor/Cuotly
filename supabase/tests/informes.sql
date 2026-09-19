@@ -64,25 +64,27 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
   ('ff500000-0000-0000-0000-000000000002', 'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000006', 'editor'),
   ('ff500000-0000-0000-0000-000000000003', 'ff400000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000007', 'editor');
 
--- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cuatro
+-- RN-EST-15 (migración 107) · los Editores de esta suite reciben los cinco
 -- permisos de contenido, que es lo que `grant_establishment_access()` les
 -- habría dado al crearlos: aquí las membresías se insertan a mano y una
 -- membresía sin fila de permisos no puede nada.
 --
--- Se excluye a quien hasta el 19/09/2026 era **Consulta**: ese rol se
--- retiró (RN-EST-16) y su equivalente exacto es un Editor con todo
--- apagado. Que siga viendo los informes es justo lo que esta suite
--- defiende: ver informes NO es uno de los permisos que se configuran
--- (decisión 28c), y la migración 107 no lo tocó.
+-- Se excluye al ...006, que hasta el 19/09/2026 era **Consulta**: ese rol
+-- se retiró (RN-EST-16) y su equivalente es un Editor con todo apagado.
+-- Aquí sirve para probar el caso que trae la decisión 52: un Editor **sin**
+-- la casilla "Consultar informes" no los ve. Ojo, eso NO es lo que le pasó
+-- a nadie al aplicar la migración 108: allí la casilla se encendió a todos
+-- los Editores con acceso vivo, este incluido. Lo que se prueba aquí es el
+-- Editor nuevo, el que nace con las siete apagadas.
 insert into public.establishment_permissions
-  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
-select em.id, true, true, true, true
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files, view_reports)
+select em.id, true, true, true, true, true
 from public.establishment_memberships em
 where em.role = 'editor'
   and em.user_id not in ('ff000000-0000-0000-0000-000000000006')
 on conflict (establishment_membership_id) do update set
   create_requests = true, edit_menus = true, use_messages = true,
-  upload_files = true;
+  upload_files = true, view_reports = true;
 
 insert into public.group_memberships (group_id, user_id, role) values
   ('ff300000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000008', 'global_owner');
@@ -161,27 +163,40 @@ end $$;
 
 -- ============================================================
 -- RN-REP-01 · quién puede ver informes por el lado cliente
--- (§89, enmendado por Bosco el 14/09/2026: lo ven todos)
+-- (§89; decisión 28c del 14/09/2026, enmendada por la 52 del 19/09/2026)
 -- ============================================================
 --
--- §89 decía "Consulta necesita permiso de su propietario" y así se
--- implementó primero, con un permiso por persona. Bosco lo cambió: el
--- informe lo pueden ver todos los que trabajan en ese restaurante. Lo que
--- esta suite defiende ahora es eso Y lo que no cambió: que el acceso
--- retirado deja de ver (RN-EST-05), que antes NO se comprobaba.
+-- Esta regla ha cambiado dos veces y conviene saber por qué, o alguien la
+-- devolverá a la versión de en medio:
 --
--- Este bloque es además el que impide que los siete permisos de la
--- migración 107 se lleven el informe por delante: el diseño móvil dibuja
--- una casilla "Consultar informes" y la decisión 28c dice que no la hay.
--- Mientras Bosco no resuelva esa contradicción, manda la decisión.
+--   1. §89 decía "Consulta necesita permiso de su propietario", y así se
+--      implementó: un permiso fino por persona (migración 85).
+--   2. **Decisión 28c** (14/09/2026): Bosco lo quitó entero. El informe lo
+--      veía cualquiera del restaurante con el acceso vigente.
+--   3. **Decisión 52** (19/09/2026): el diseño definitivo móvil, página
+--      153, dibuja la casilla "Consultar informes", y Bosco elige el
+--      diseño. El permiso vuelve (migración 108), y con él la
+--      consecuencia que se le puso por escrito antes de preguntar: **un
+--      Editor nuevo nace sin ver informes** hasta que se la enciendan.
+--
+-- Lo que NO cambió en ninguna de las tres y esta suite sigue defendiendo:
+-- el acceso **retirado** deja de ver (RN-EST-05), que antes de la 28c no
+-- se comprobaba, y el **propietario global** ve el de cada
+-- establecimiento suyo pero no el consolidado (decisión 30).
+--
+-- La migración 108 no le quitó el informe a nadie: rellenó la casilla a
+-- todos los Editores con acceso vivo. Aquí eso se representa con la
+-- fixture de arriba, que enciende los cinco permisos de contenido a todo
+-- Editor **menos** al ...006, que es quien prueba el caso nuevo.
 select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000006', false);
 set role authenticated;
 do $$
 begin
-  -- Un Editor SIN ningún permiso encendido —lo que antes del 19/09/2026
-  -- era un Consulta— ve los informes igual: no dependen de permiso.
-  if not public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
-    raise exception 'RN-REP-01 FALLIDO: un Editor sin permisos no ve los informes y los ve todo el restaurante'
+  -- Decisión 52 · un Editor SIN la casilla NO ve los informes. Este es el
+  -- bloque que se daría la vuelta si alguien volviera a la 28c, y por eso
+  -- el mensaje dice de dónde sale la regla.
+  if public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
+    raise exception 'RN-REP-01 FALLIDO: un Editor sin "Consultar informes" los ve (decisión 52)'
       using errcode = 'assert_failure';
   end if;
 end $$;
@@ -191,8 +206,10 @@ select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000007
 set role authenticated;
 do $$
 begin
+  -- Y con la casilla, sí.
   if not public.client_can_view_reports('ff400000-0000-0000-0000-000000000001') then
-    raise exception 'RN-REP-01 FALLIDO: el Editor no ve informes' using errcode = 'assert_failure';
+    raise exception 'RN-REP-01 FALLIDO: un Editor con "Consultar informes" no los ve'
+      using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;

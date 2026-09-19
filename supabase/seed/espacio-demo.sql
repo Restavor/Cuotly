@@ -768,25 +768,26 @@ values
   ('d5000000-0000-0000-0000-000000000003', true, true),
   ('d5000000-0000-0000-0000-000000000004', false, false);
 
--- RN-EST-15 (migración 107) · los Editores del sembrado reciben los cuatro
--- permisos de contenido, que es lo que `grant_establishment_access()` les
--- habría dado al crearlos: aquí las membresías se insertan a mano y una
--- membresía sin fila de permisos no puede nada.
+-- RN-EST-15 (migraciones 107 y 108) · los Editores del sembrado reciben
+-- los cinco permisos de contenido, que es lo que
+-- `grant_establishment_access()` les habría dado al crearlos: aquí las
+-- membresías se insertan a mano y una membresía sin fila de permisos no
+-- puede nada.
 --
 -- Se excluye a la persona de sala, que hasta el 19/09/2026 era
 -- **Consulta**: ese rol se retiró (RN-EST-16) y su equivalente exacto es
--- un Editor con todo apagado, que es lo que el bloque Usuarios de la ficha
--- tiene que seguir enseñando. Los informes sí los ve: no dependen de
--- permiso (RN-REP-01, decisión 28c).
+-- un Editor con las siete casillas apagadas, que es lo que el bloque
+-- Usuarios de la ficha tiene que seguir enseñando —los informes incluidos,
+-- que desde la decisión 52 sí dependen de permiso—.
 insert into public.establishment_permissions
-  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files)
-select em.id, true, true, true, true
+  (establishment_membership_id, create_requests, edit_menus, use_messages, upload_files, view_reports)
+select em.id, true, true, true, true, true
 from public.establishment_memberships em
 where em.role = 'editor'
   and em.user_id not in ('d0000000-0000-0000-0000-000000000006')
 on conflict (establishment_membership_id) do update set
   create_requests = true, edit_menus = true, use_messages = true,
-  upload_files = true;
+  upload_files = true, view_reports = true;
 
 -- Los dos trabajadores autorizados aquí, o no serían candidatos.
 insert into public.worker_establishments (space_id, user_id, establishment_id, created_by)

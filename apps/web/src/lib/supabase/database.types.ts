@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 19/09/2026), con las 107 migraciones del
+// (generate_typescript_types, 19/09/2026), con las 108 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -1842,6 +1842,7 @@ export type Database = {
           upload_files: boolean;
           use_messages: boolean;
           view_billing: boolean;
+          view_reports: boolean;
         };
         Insert: {
           create_requests?: boolean;
@@ -1852,6 +1853,7 @@ export type Database = {
           upload_files?: boolean;
           use_messages?: boolean;
           view_billing?: boolean;
+          view_reports?: boolean;
         };
         Update: {
           create_requests?: boolean;
@@ -1862,6 +1864,7 @@ export type Database = {
           upload_files?: boolean;
           use_messages?: boolean;
           view_billing?: boolean;
+          view_reports?: boolean;
         };
         Relationships: [
           {
@@ -8831,6 +8834,24 @@ export type Database = {
           provider: string;
           status: string;
           sync_frequency: string;
+        }[];
+      };
+      establishment_panel_users: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          create_requests: boolean;
+          display_name: string;
+          edit_menus: boolean;
+          email: string;
+          granted_at: string;
+          manage_users: boolean;
+          role: string;
+          source: string;
+          upload_files: boolean;
+          use_messages: boolean;
+          user_id: string;
+          view_billing: boolean;
+          view_reports: boolean;
         }[];
       };
       establishment_space_id: {

@@ -10,17 +10,17 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 107 migraciones del repositorio están aplicadas en el proyecto.
-Las seis del diseño definitivo móvil —de la 102 a la 107— se aplicaron el
-19/09/2026; abajo, en "Las seis del 19/09/2026", está qué hacía cada una y cómo
+**Ninguna.** Las 108 migraciones del repositorio están aplicadas en el proyecto.
+Las siete del diseño definitivo móvil —de la 102 a la 108— se aplicaron el
+19/09/2026; abajo, en "Las siete del 19/09/2026", está qué hacía cada una y cómo
 se comprobó. Lo que sigue es lo que se escribió sobre las seis últimas antes de aplicarlas —qué
 hacía cada una y qué había que mirar al leer el diff—, que se conserva porque es lo que se
 comprobó y no envejece.
 
-## Las seis del 19/09/2026, una a una
+## Las siete del 19/09/2026, una a una
 
-Los seis puntos del orden acordado con Bosco para el diseño definitivo móvil
-(decisiones 47 a 51). Se aplicaron por el MCP, cada una comprobada antes de
+Los puntos del orden acordado con Bosco para el diseño definitivo móvil
+(decisiones 47 a 52). Se aplicaron por el MCP, cada una comprobada antes de
 pasar a la siguiente.
 
 - La **102** (`la_nota_de_alergenos`, decisión 47). En **tres partes**. Da la
@@ -66,6 +66,27 @@ pasar a la siguiente.
   archivos del repositorio, `client_can_view_reports()` incluida. Después se
   regeneró `database.types.ts` contra el proyecto, y su diff es exactamente
   las cinco columnas nuevas y las cuatro funciones nuevas: nada más.
+
+- La **108** (`el_septimo_permiso_consultar_informes`, decisión 52). En **tres
+  partes**: columna, puerta y relleno más la puerta del informe;
+  `set_establishment_permissions()`; y `establishment_panel_users()`.
+  Devuelve "Consultar informes" como séptimo permiso, que es lo que Bosco
+  contestó a la pregunta 26 ("La a": manda el diseño).
+
+  **No es solo aditiva** y la parte delicada es el relleno: enciende la
+  casilla a **todos** los Editores con acceso vivo, porque hasta hoy los
+  informes los veía cualquiera con el acceso vigente y aplicar esto sin
+  rellenar se los habría quitado de un día para otro. A quien tiene el
+  acceso **retirado** no se le enciende: no los ve hoy (RN-EST-05) y
+  encendérsela sería devolverle algo por la puerta de atrás.
+
+  Comprobado antes de aplicarla: las 56 suites en verde con la 108 dentro, y
+  una **prueba de mutación** — se devolvió `client_can_view_reports()` a la
+  forma de la decisión 28c sobre una base limpia y `informes.sql` la cazó,
+  nombrando la regla. Ese bloque es el que ya había impedido una vez que la
+  28c se deshiciera sola y en silencio. Después se regeneró
+  `database.types.ts`, y su diff es exactamente la columna `view_reports` y
+  la función `establishment_panel_users`: nada más.
 
 ## Las seis del 17/09/2026, una a una
 

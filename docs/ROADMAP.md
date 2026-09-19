@@ -5234,13 +5234,18 @@ punto"). El razonamiento de los diez está en `docs/PROPUESTA-DISENO-MOVIL.md`; 
 - [x] **6 · Ajustes del espacio en ocho pestañas** — decisión 50. La página de preferencias de
       notificaciones no está en el PDF y Bosco dijo que la diseñara yo sobre las demás fotos; lo que
       faltaba no eran reglas sino las ocho pestañas.
-- [ ] **7 · Los permisos del cliente** — migración 107, RN-EST-15/16/17, decisión 51. **Servidor
-      hecho y aplicado; falta la pantalla, y falta una respuesta.** Dos roles, seis de los siete
-      permisos cableados y `consulta` retirado. Retirarlo funcionó como sonda: destapó **cinco**
-      funciones que decidían por rol y no por permiso. El séptimo permiso, "Consultar informes",
-      está parado porque contradice la decisión 28c del 14/09/2026 —es la **pregunta 26** de
-      `docs/DECISIONES.md`—, y la pantalla "Usuarios y accesos" depende de esa respuesta: son seis
-      casillas o son siete.
+- [x] **7 · Los permisos del cliente** — migraciones 107 y 108, RN-EST-15/16/17, decisiones 51 y
+      52. Dos roles, **siete** permisos y `consulta` retirado. Retirarlo funcionó como sonda:
+      destapó **cinco** funciones que decidían por rol y no por permiso. El séptimo, "Consultar
+      informes", estuvo parado dos migraciones porque contradecía la decisión 28c del 14/09/2026;
+      Bosco lo resolvió a favor del diseño (decisión 52) y la 108 lo devuelve, encendiéndolo a
+      todos los Editores con acceso vivo para que nadie pierda un informe que ya veía. La pantalla
+      "Usuarios y accesos" del panel está construida con su lista, su editor de las siete casillas
+      y el botón de retirar.
+
+      **Lo que queda de este punto**: la pestaña "Invitar usuario" de la página 153, que crea una
+      CUENTA nueva. Eso es el hito de invitaciones de más abajo, y la pantalla lo dice en vez de
+      dejar un hueco.
 - [ ] **8 · La foto de perfil** — sin empezar.
 
 Queda además, fuera del orden de los ocho: las **invitaciones al panel del restaurante** con alta de

@@ -672,6 +672,22 @@ export default async function EstablishmentPage({
           <Link href={`/espacios/${slug}/restaurantes/${id}/fuentes`} className="text-cuotly-green underline">
             {es.clientArea.sourcesLink}
           </Link>
+          {/*
+            Páginas 152 y 153 del diseño móvil · "Usuarios y accesos"
+            (RN-EST-15/16/17). El enlace se enseña a todo el que entra en
+            el panel: la pantalla se LEE sin "Usuarios y accesos" —ver
+            quién más entra en tu restaurante no es gestionarlo— y quien
+            no pueda cambiar nada no verá los botones. Esconder el enlace
+            tampoco sería un control: la barrera está en
+            `establishment_panel_users()` y en las tres funciones que
+            escriben (CLAUDE.md).
+          */}
+          <Link
+            href={`/espacios/${slug}/restaurantes/${id}/usuarios`}
+            className="text-cuotly-green underline"
+          >
+            {es.panelUsers.title}
+          </Link>
         </p>
       </Card>
 

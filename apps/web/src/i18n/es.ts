@@ -6202,6 +6202,81 @@ export const es = {
     backToApp: "Volver a Cuotly",
   },
 
+  /**
+   * Páginas 152 y 153 del diseño definitivo móvil · "Usuarios y accesos"
+   * del panel del restaurante (RN-EST-15/16/17, decisiones 51 y 52).
+   *
+   * Los nombres de los siete permisos y sus explicaciones salen de la
+   * página 153 tal cual: son los que el restaurante lee, y cambiarlos por
+   * los nombres de las columnas (`create_requests`…) sería enseñarle el
+   * esquema.
+   */
+  panelUsers: {
+    title: "Usuarios y accesos",
+    hint: "Gestiona quién puede acceder a tu restaurante en Cuotly y qué permisos tiene.",
+    listTitle: "Usuarios del restaurante",
+    roleLabel: "Rol",
+    emailLabel: "Correo electrónico",
+    scopeLabel: "Ámbito",
+    permissionsLabel: "Permisos",
+    /** El Propietario no se configura: los tiene por su rol (RN-EST-15). */
+    ownerAll: "Acceso completo a todos los módulos",
+    /** Un Editor recién creado no tiene ninguno: nacen apagados. */
+    noneYet: "Sin ningún permiso todavía",
+    scopeGroup: "Todos los restaurantes del grupo",
+    active: "Activo",
+    /**
+     * §20.7 · una lista vacía por un error afirmaría que el restaurante no
+     * tiene usuarios, y eso, sin haber podido mirar, no lo sabe nadie.
+     */
+    failed: "No se ha podido cargar quién tiene acceso. Vuelve a intentarlo.",
+    permissions: {
+      create_requests: "Crear solicitudes",
+      edit_menus: "Editar menús",
+      use_messages: "Mensajes",
+      upload_files: "Subir archivos",
+      view_reports: "Consultar informes",
+      view_billing: "Pagos y facturas",
+      manage_users: "Usuarios y accesos",
+    },
+    permissionHints: {
+      create_requests: "Puede enviar solicitudes al equipo de mantenimiento.",
+      edit_menus: "Puede solicitar cambios en el menú diario.",
+      use_messages: "Puede leer y enviar mensajes.",
+      upload_files: "Puede adjuntar archivos en solicitudes y mensajes.",
+      view_reports: "Puede ver los informes y datos del restaurante.",
+      view_billing: "Puede ver los pagos y las facturas.",
+      manage_users: "Puede gestionar usuarios y permisos.",
+    },
+    edit: "Editar permisos",
+    editTitle: (who: string) => `Permisos de ${who}`,
+    save: "Guardar permisos",
+    saving: "Guardando…",
+    saved: "Permisos guardados.",
+    cancel: "Cancelar",
+    /**
+     * Página 152 · el aviso que el diseño pone bajo la lista. Lo dice la
+     * pantalla porque es lo que el restaurante necesita saber; quien lo
+     * hace cumplir es `assert_can_manage_access()` en el servidor.
+     */
+    onlyOwnerTitle: "Solo el propietario puede invitar o retirar usuarios",
+    onlyOwnerHint:
+      "Por motivos de seguridad, solo el propietario del restaurante puede invitar nuevos usuarios, editar permisos o retirar accesos.",
+    ownerNotEditable:
+      "Al propietario del restaurante no se le configuran los permisos: los tiene todos por su rol.",
+    groupNotEditable:
+      "Este acceso viene del grupo, no de este restaurante, así que sus permisos no se cambian desde aquí.",
+    /**
+     * CLAUDE.md · no se pinta un hueco ni un dato de relleno: se dice qué
+     * falta y por qué. La pestaña "Invitar usuario" de la página 153 crea
+     * una CUENTA nueva, y eso todavía no existe: hoy solo se puede dar
+     * acceso a quien ya tiene cuenta en Cuotly, desde la ficha del equipo.
+     */
+    inviteTitle: "Invitar usuario",
+    inviteNotBuilt:
+      "Invitar a alguien que todavía no tiene cuenta en Cuotly no está construido. De momento el acceso lo da el equipo de mantenimiento a quien ya tiene cuenta.",
+  },
+
   emptyReasons: {
     not_connected: "No conectado. Falta enlazar el servicio para ver este dato.",
     no_data_yet: "Sin datos todavía. Aparecerán en cuanto haya actividad.",
