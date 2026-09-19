@@ -1124,6 +1124,29 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    con dos mutaciones probadas: quitar la comprobación del prefijo y poner el bucket en público hacen
    fallar la suite nombrando la regla.
 
+54. **"Cuotly Insights" construido: es el resumen, y la pantalla lo dice** (19/09/2026). No es una
+   decisión nueva —Bosco ya la tomó el 19/09 como parte de la **48**—, sino la parte que faltaba por
+   construir de aquella, y se anota porque **lo que se hizo no es copiar el diseño literal**.
+
+   Las páginas 41 y 44 pintan "Cuotly Insights" como una tarjeta más entre Google Analytics 4 y
+   Search Console, siempre en **"Activa"** y con el pie "Datos internos del sitio". Copiado tal cual
+   sería (a) prometer una fuente de datos propia que no existe —no hay recogida, ni retención, ni
+   aviso legal— y (b) afirmar que hay un resumen cuando puede no haber ni un dato detrás.
+
+   Lo construido (RN-INT-09): aparece **donde el diseño lo pone**, entre las fuentes, y la columna
+   Información dice lo que es —"no es una conexión: es la lectura propia de Cuotly sobre las fuentes
+   que tengas conectadas"—. Su estado **se deriva** (RN-DAT-05): activo si alguna fuente ha traído
+   datos alguna vez, "sin nada que resumir" si ninguna. Y su fecha es la **del dato más reciente que
+   resume**, porque no sincroniza nada y una fecha propia sería inventada.
+
+   No hizo falta ninguna migración: la sección `summary` existe desde el Hito 14 y esto es ponerle
+   el nombre que el diseño le da.
+
+   Comprobado: `cuotly-insights.test.tsx` —aparece con datos y sin ellos, el estado cambia con
+   ellos, dice que no es una conexión en los dos casos, y la fecha es la más reciente de **las
+   fuentes de esa sección**, no de todas: el resumen de Búsqueda no puede fecharse con lo que trajo
+   Clarity.
+
 ---
 
 ### Pendiente de completar

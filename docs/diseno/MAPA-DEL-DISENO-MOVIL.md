@@ -151,9 +151,14 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   enseña en "Estado por restaurante". Esa sí es del espacio y cabe en
   `files`.
 - **Estado "Configurando"** de un restaurante (página 54).
-- **"Cuotly Insights"** como fuente de datos propia (páginas 41, 44).
-- **Almacenamiento por restaurante** (página 50: "6,4 GB"). Hoy es por
-  espacio (RN-SUB-13).
+- ~~**"Cuotly Insights"** como fuente de datos propia (páginas 41, 44)~~ —
+  **no es una fuente**: Bosco decidió el 19/09/2026 que es el nombre del
+  resumen que Cuotly ya calcula (decisión 48), y se construyó ese mismo día
+  (decisión 54, RN-INT-09). Aparece entre las fuentes, como en el diseño,
+  pero diciendo que no es una conexión y con el estado derivado en vez del
+  "Activa" fijo que pinta el PDF.
+- ~~**Almacenamiento por restaurante** (página 50: "6,4 GB")~~ — hecho el
+  19/09/2026 (RN-ARC-10, migración 103).
 - ~~**Frecuencia de aviso** "Instantáneo / Resumen diario" y **horario de
   recepción** (página 109)~~ — **la página no es esa**: la 109 es "Ajustes
   del espacio · General", y la pantalla de preferencias de notificaciones
@@ -166,8 +171,8 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   estaba mal**: la página 63 es "Nueva solicitud", la del **cliente**, no la del equipo. Resuelto
   como decisión 49 (RN-REQ-05/06, migración 106): nivel Alta/Media/Baja al crear, motivo
   obligatorio, y el orden 1..N de la migración 62 se queda vivo y aparte.
-- **Seis canales** de fábrica (página 74) frente a los cuatro que siembra la
-  migración 100.
+- ~~**Seis canales** de fábrica (página 74) frente a los cuatro que siembra
+  la migración 100~~ — hecho el 19/09/2026 (RN-CAN-03, migración 104).
 - Atributos de plan **"Prioridad: Alta/Superior"** e **"Informes:
   Estándar/Avanzado"** (páginas 96-97). Hoy solo existe `grants_priority`.
 

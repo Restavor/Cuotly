@@ -4546,6 +4546,21 @@ export const es = {
     },
     manageIntegrations: "Gestionar integraciones",
     sourcesStatusTitle: "Estado de las fuentes",
+    /**
+     * RN-INT-09 (decisión 48) · "Cuotly Insights" es el nombre que el
+     * diseño (páginas 41 y 44) le da al resumen que Cuotly ya calcula a
+     * partir de las fuentes conectadas. NO es una conexión: no se
+     * autoriza, no sincroniza y no tiene cuenta. La fila lo dice, porque
+     * ponerlo entre las demás sin decirlo prometería una fuente que no
+     * existe.
+     */
+    insightsName: "Cuotly Insights",
+    insightsActive: "Activo",
+    insightsNothingYet: "Sin nada que resumir",
+    insightsInfo:
+      "No es una conexión: es la lectura propia de Cuotly sobre las fuentes que tengas conectadas.",
+    insightsInfoEmpty:
+      "No es una conexión. Cuando alguna fuente traiga datos, Cuotly los resumirá aquí.",
     sourceOfDataTitle: "Fuente de datos",
     sourceColumn: "Fuente",
     stateColumn: "Estado",

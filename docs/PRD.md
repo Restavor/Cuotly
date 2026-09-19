@@ -1204,6 +1204,23 @@ Hito 15).
   está desconectada, sin autorizar, con error o con el dato desactualizado** (P6, RN-INT-07), y la
   ventana se calcula en la **zona horaria del espacio** (CLAUDE.md). Las reglas las pasa el proceso de
   la cola (`/api/cola`) después de sincronizar, nunca una pantalla.
+- **RN-INT-09 (añadida 19/09/2026, decisión 48)**: **"Cuotly Insights" es el nombre del resumen
+  propio, no una fuente**. Las páginas 41 y 44 del diseño definitivo móvil lo dibujan como una
+  tarjeta más junto a Google Analytics 4 y Search Console, y Bosco lo decidió el 19/09/2026: es el
+  nombre que el diseño le da a **lo que Cuotly ya calcula** a partir de las fuentes conectadas —la
+  sección `summary`, que existe desde el Hito 14—. **No hay recogida propia**, ni telemetría, ni
+  retención nueva, ni aviso legal que redactar; entenderlo de la otra manera sería inventarse un
+  producto entero a partir de una etiqueta en una pantalla.
+
+  Consecuencias de que no sea una conexión, y son las que hay que respetar al pintarlo:
+
+  - **No tiene cuenta que autorizar ni botón de conectar.** Aparece donde el diseño lo pone —entre
+    las fuentes— pero diciendo lo que es: la lectura propia de Cuotly sobre lo demás.
+  - **Su estado se deriva** (RN-DAT-05): está **activo** cuando alguna fuente ha traído datos alguna
+    vez, y **sin nada que resumir** cuando ninguna lo ha hecho. Pintarlo siempre "Activa", como
+    sugiere el diseño, afirmaría que hay un resumen cuando puede no haber ni un dato detrás
+    (CLAUDE.md MUST NOT).
+  - **Su fecha es la del dato más reciente que resume**, no una suya: no sincroniza nada.
 - **RN-OPP-03**: el **impacto** es alto, medio o bajo según **lo que toca el problema** (decisión
   26a): alto si rompe o estorba el camino por el que un cliente contacta —teléfono, cómo llegar,
   reserva, formulario— o afecta a más de la mitad del tráfico; medio si afecta a una parte visible o a

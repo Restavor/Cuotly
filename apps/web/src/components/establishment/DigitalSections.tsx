@@ -314,11 +314,61 @@ export function SourcesStatusTable({
               </TableRow>
             );
           })}
+          {/*
+            RN-INT-09 (decisión 48) · "Cuotly Insights", donde el diseño lo
+            pone —entre las fuentes, páginas 41 y 44— pero diciendo lo que
+            es: la lectura propia de Cuotly, no una conexión.
+
+            Su estado **se deriva** (RN-DAT-05). El diseño lo pinta siempre
+            "Activa"; pintarlo así afirmaría que hay un resumen cuando
+            puede no haber ni un dato detrás, y eso es el dato de relleno
+            que CLAUDE.md prohíbe. Su fecha tampoco es suya: es la del dato
+            más reciente que resume, porque no sincroniza nada.
+          */}
+          <TableRow>
+            <TableCell>
+              <span data-testid="source-cuotly-insights" className="flex items-center gap-2">
+                <span className="font-medium">{t.insightsName}</span>
+              </span>
+            </TableCell>
+            <TableCell>
+              <StatusBadge
+                tone={insightsSince(view, providers) === null ? "info" : "success"}
+                icon={insightsSince(view, providers) === null ? "clock" : "check"}
+              >
+                {insightsSince(view, providers) === null ? t.insightsNothingYet : t.insightsActive}
+              </StatusBadge>
+            </TableCell>
+            <TableCell>{formatMoment(insightsSince(view, providers), view.timezone)}</TableCell>
+            <TableCell>
+              <span className="text-text-secondary">
+                {insightsSince(view, providers) === null ? t.insightsInfoEmpty : t.insightsInfo}
+              </span>
+            </TableCell>
+          </TableRow>
         </TableBody>
       </Table>
       {footnote ? <p className="mt-3 text-center text-xs text-text-secondary">{footnote}</p> : null}
     </Card>
   );
+}
+
+/**
+ * RN-INT-09 · el momento del dato más reciente que el resumen resume, o
+ * `null` si no hay ninguno. Es lo que decide el estado de "Cuotly
+ * Insights" y también lo que se enseña como su fecha: no sincroniza nada,
+ * así que una fecha propia sería inventada.
+ */
+export function insightsSince(
+  view: DigitalDataView,
+  providers: readonly IntegrationProvider[],
+): string | null {
+  const fechas = providers
+    .map((provider) => view.providers.find((p) => p.provider === provider)?.lastSuccessAt ?? null)
+    .filter((fecha): fecha is string => fecha !== null);
+
+  if (fechas.length === 0) return null;
+  return fechas.reduce((mayor, fecha) => (fecha > mayor ? fecha : mayor));
 }
 
 // ---------------------------------------------------------------------
