@@ -63,7 +63,7 @@ declare
   v_request_id uuid;
 begin
   perform set_config('request.jwt.claim.sub', p_client::text, false);
-  v_request_id := public.create_request_draft(p_establishment_id, p_description, null);
+  v_request_id := public.create_request_draft(p_establishment_id, p_description, null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
   perform public.record_classification(
@@ -1283,7 +1283,7 @@ begin
     raise exception 'FIXTURE H1: el establecimiento debería estar en `ending` aquí' using errcode = 'assert_failure';
   end if;
 
-  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H1: en ending sí se puede', null);
+  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H1: en ending sí se puede', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_draft);
   if (select state from public.requests where id = v_draft) <> 'received' then
     raise exception 'RN-EST-09 FALLIDO: en `ending` el servicio debe seguir activo' using errcode = 'assert_failure';
@@ -1309,7 +1309,7 @@ do $$
 declare
   v_draft uuid;
 begin
-  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H2: en solo lectura no', null);
+  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H2: en solo lectura no', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   begin
     perform public.submit_request(v_draft);
     raise exception 'RN-EST-10 FALLIDO: en `read_only` se envió una solicitud; "solo lectura" no significaba nada'
@@ -1346,7 +1346,7 @@ declare
 begin
   select count(*) into v_antes from public.timer_events where counter_kind = 't1' and event_type = 'started';
 
-  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H1: archivado tampoco', null);
+  v_draft := public.create_request_draft('84000000-0000-0000-0000-000000000001', 'H1: archivado tampoco', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   begin
     perform public.submit_request(v_draft);
     raise exception 'H1 FALLIDO: un establecimiento archivado admitió una solicitud nueva'

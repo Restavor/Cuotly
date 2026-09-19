@@ -144,8 +144,7 @@ set role authenticated;
 do $$
 declare v_req uuid;
 begin
-  v_req := public.create_request_draft(
-    (select v from pz_ids where k = 'rest'), 'Cambiar la foto de portada');
+  v_req := public.create_request_draft((select v from pz_ids where k = 'rest'), 'Cambiar la foto de portada', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_req);
   insert into pz_ids values ('sol_cancelar', v_req);
 
@@ -219,8 +218,7 @@ set role authenticated;
 do $$
 declare v_req uuid;
 begin
-  v_req := public.create_request_draft(
-    (select v from pz_ids where k = 'rest'), 'Otra cosa distinta');
+  v_req := public.create_request_draft((select v from pz_ids where k = 'rest'), 'Otra cosa distinta', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_req);
   insert into pz_ids values ('sol_viva', v_req);
 end $$;

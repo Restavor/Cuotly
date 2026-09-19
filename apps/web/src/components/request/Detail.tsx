@@ -329,6 +329,26 @@ export function ClientRequestCard({
         {/* "Dónde" solo si lo escribió: un guion en una fila vacía no dice
             nada que no diga no pintarla. */}
         {request.context ? <Dato label={t.contextLabel}>{request.context}</Dato> : null}
+        {/*
+          RN-REQ-05 · cuánto le corre al cliente, y por qué. Es la mitad de
+          la regla: si el equipo no lo lee, pedirlo no sirve de nada.
+
+          Se pinta tal cual y sin traducirlo a un color ni a un icono: lo
+          que decide qué va antes lo sigue decidiendo el equipo, y un
+          rótulo rojo diciendo "Alta" empuja a leerlo como una orden
+          (RN-REQ-06). Las solicitudes de antes de la migración 106 no lo
+          traen, y entonces no se pinta la fila.
+        */}
+        {request.priority ? (
+          <Dato label={t.priorityLabel}>
+            {t.priorityLevels[request.priority as "high" | "medium" | "low"] ?? request.priority}
+            {request.priority_reason ? (
+              <span className="mt-1 block text-sm text-text-secondary">
+                {request.priority_reason}
+              </span>
+            ) : null}
+          </Dato>
+        ) : null}
       </dl>
 
       <p className="mb-2 mt-4 text-sm text-text-secondary">{t.messageLabel}</p>

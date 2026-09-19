@@ -234,7 +234,7 @@ set role authenticated;
 do $$
 declare v_r uuid;
 begin
-  v_r := public.create_request_draft('cc400000-0000-0000-0000-000000000001', 'Rehacer la carta entera con fotos nuevas', null);
+  v_r := public.create_request_draft('cc400000-0000-0000-0000-000000000001', 'Rehacer la carta entera con fotos nuevas', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into pq_ids values ('req', v_r);
   perform public.submit_request(v_r);
   perform public.begin_request_analysis(v_r);
@@ -660,7 +660,7 @@ set role authenticated;
 do $$
 declare v_r uuid;
 begin
-  v_r := public.create_request_draft('cc400000-0000-0000-0000-000000000002', 'Cambiar el horario', null);
+  v_r := public.create_request_draft('cc400000-0000-0000-0000-000000000002', 'Cambiar el horario', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into pq_ids values ('req2', v_r);
   perform public.submit_request(v_r);
   perform public.begin_request_analysis(v_r);

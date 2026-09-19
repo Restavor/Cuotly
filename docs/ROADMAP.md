@@ -5000,6 +5000,36 @@ diseño (**decisión 47**). Lo construido se retiró.
   sonaba a problema de la tabla entera. La 102 tropezaba con lo mismo y por eso lo lleva escrito.
 - **Verde**: 52 suites sobre 102 migraciones, typecheck, lint, 1422 tests y la compilación de Next.
 
+#### Hecho · La prioridad de la solicitud (RN-REQ-05/06, migración 106, suite 55)
+Quinto del orden, anunciado como "pequeño" y no lo era: es un cambio de modelo en las solicitudes.
+
+- **La página 63 no era lo que el mapa decía.** Estaba anotada como la pantalla de clasificación
+  **del equipo**, y es **"Nueva solicitud"**, la del **cliente**. Leerla bien cambió el trabajo
+  entero: no era un orden de trabajo interno, era la prioridad que pone quien pide.
+- **Y contradecía una decisión razonada de Bosco** (10/09/2026, migración 62): la prioridad era un
+  **orden 1..N** y solo del plan que la concede, precisamente porque una etiqueta no dice cuál va
+  antes entre dos "Media". Se paró, se puso delante con las tres diferencias, y Bosco decidió que
+  manda el diseño (**decisión 49**): nivel **Alta · Media · Baja**, al crear, para todos, con motivo
+  obligatorio de 200 caracteres. **Los niveles se preguntaron**: en el PDF solo se ve "Alta".
+- **El orden 1..N se queda vivo y aparte**, no sin uso. Son dos datos distintos, así que se les puso
+  nombre distinto: "Prioridad" es el nivel y al 1..N se le llama "Orden de importancia" —que ya era
+  el título de su pantalla—; las dos etiquetas de la ficha del equipo que decían "Prioridad"
+  hablando del orden se renombraron. Un falso-cerrado de la suite falla si alguien retira
+  `priority_rank` dando por hecho que el nivel lo sustituye.
+- **Se exige al ENVIAR, no al guardar.** El diseño tiene los dos botones, y a medio escribir todavía
+  no se sabe cuánto corre; lo que no puede pasar es que llegue al equipo sin decirlo.
+- **Diecisiete suites y el sembrado tuvieron que empezar a poner prioridad**, y eso no es un efecto
+  colateral: es la prueba de que la regla muerde. Al sembrado se le escribieron motivos reales —"El
+  número que aparece ya no es nuestro y nos llaman a otro sitio"— en vez del texto de prueba, que en
+  un espacio de demostración habría sido relleno (CLAUDE.md).
+- **Un `null` en `update_request_draft()` significa NO TOCAR**, no borrar: la pantalla de alcance no
+  trae estos campos, y un null que borrara dejaría una solicitud sin prioridad —y sin poder
+  enviarse— por editarle la descripción. Tiene su test.
+- **El equipo la lee**, que es la otra mitad de la regla: aparece en la ficha de la solicitud, sin
+  color ni icono, porque un rótulo rojo diciendo "Alta" se lee como una orden y la prioridad del
+  cliente no lo es (RN-REQ-06).
+- **Verde**: 55 suites sobre 106 migraciones, typecheck, lint, 1452 tests y la compilación de Next.
+
 #### Hecho · Crear el panel del restaurante (§40.1, RN-PAN-09 a 13, migración 105, suite 54)
 Cuarto del orden, y el primero que cambia algo que se ve. El diseño dibuja el panel como algo que
 **se crea**: "Panel del restaurante · No creado" y un formulario (página 56). Hasta ahora el panel

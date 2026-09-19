@@ -952,6 +952,37 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    Gestión → almacenamiento por restaurante → canales → crear panel → orden interno con motivo →
    horario de recepción → permisos finos del cliente → foto de perfil.
 
+49. **La prioridad de la solicitud: manda el diseño, y se dice lo que cuesta** (19/09/2026). La
+   página 63 del diseño definitivo móvil resultó **no ser** la pantalla del equipo, como se había
+   anotado en el mapa, sino **"Nueva solicitud"**: la del cliente. Y trae dos campos con asterisco,
+   "Prioridad" con el valor "Alta" y "Motivo de la prioridad".
+
+   Eso contradice una decisión de Bosco del **10/09/2026**, razonada en la migración 62 y literal:
+   *"los clientes premium son los únicos que pueden indicar la prioridad, y lo hacen organizando sus
+   cambios por cuál es más importante: 5 cambios, pues ponerlos en orden del 1 más importante al 5
+   menos importante"*. Ahí se argumenta expresamente que **no es una etiqueta Alta/Media/Baja**,
+   porque una etiqueta no dice cuál va antes entre dos "Media".
+
+   Se preguntó con las tres diferencias delante —nivel frente a orden, todos frente a solo el plan
+   que la concede, al crear frente a reordenando lo pendiente— y Bosco decidió:
+
+   - **Manda el diseño**: la prioridad es un **nivel** —**Alta · Media · Baja**— que elige el
+     cliente **al crear** la solicitud, y lo elige **cualquier** restaurante, no solo el plan que
+     concede prioridad.
+   - **El motivo es obligatorio siempre**, en 200 caracteres, como dibuja la página.
+   - **El orden 1..N de la migración 62 se queda vivo y aparte.** No se borra ni se marca sin uso:
+     son dos datos distintos. Para que no se confundan, en pantalla se llaman distinto — "Prioridad"
+     es el nivel, y al 1..N se le llama **"Orden de importancia"**, que ya era el título de su propia
+     pantalla. Las dos etiquetas de la ficha del equipo que decían "Prioridad" refiriéndose al orden
+     se renombraron.
+
+   Los niveles **no se inventaron**: en el PDF solo se ve "Alta", se preguntó y Bosco eligió los
+   tres. Escrito como RN-REQ-05 y RN-REQ-06; migración 106; suite 55.
+
+   **Lo que esto cuesta, dicho porque se decidió sabiéndolo**: una solicitud ya no se puede enviar
+   sin prioridad ni motivo, así que **diecisiete suites y el sembrado** tuvieron que empezar a
+   ponerlos — y eso es la señal de que la regla muerde de verdad, no un efecto colateral.
+
 ---
 
 ### Pendiente de completar

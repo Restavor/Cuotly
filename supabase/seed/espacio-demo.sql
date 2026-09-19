@@ -399,24 +399,20 @@ begin
     json_build_object('sub', v_cliente, 'role', 'authenticated')::text, false);
 
   -- Se queda en borrador: el cliente la empezó y no la ha enviado.
-  v_req_borrador := public.create_request_draft(
-    v_est, 'Cambiar el horario de apertura de los domingos en la web.',
-    'Ahora pone 12:00 y abrimos a las 13:00.');
+  v_req_borrador := public.create_request_draft(v_est, 'Cambiar el horario de apertura de los domingos en la web.', 'Ahora pone 12:00 y abrimos a las 13:00.', 'medium', 'La gente se planta a las 12:00 y se encuentra cerrado.');
 
   -- Enviada y sin tocar: el equipo la tiene esperando, con T1 corriendo.
-  v_req_enviada := public.create_request_draft(
-    v_est, 'Añadir tres fotografías nuevas de los postres a la carta.',
-    'Se las paso por el chat en cuanto las tenga.');
+  v_req_enviada := public.create_request_draft(v_est, 'Añadir tres fotografías nuevas de los postres a la carta.', 'Se las paso por el chat en cuanto las tenga.', 'low', 'No corre prisa, es para cuando podáis.');
   perform public.submit_request(v_req_enviada);
 
   -- Las dos que van a recorrer el flujo entero.
   v_req_curso := public.create_request_draft(
-    v_est, 'Actualizar los precios de los menús del mediodía.', 'Suben 0,50 € todos.');
+    v_est, 'Actualizar los precios de los menús del mediodía.', 'Suben 0,50 € todos.',
+    'high', 'Los precios nuevos entran en vigor el lunes y la web diría otra cosa.');
   perform public.submit_request(v_req_curso);
   perform public.begin_request_analysis(v_req_curso);
 
-  v_req_publica := public.create_request_draft(
-    v_est, 'Corregir el teléfono de contacto del pie de página.', null);
+  v_req_publica := public.create_request_draft(v_est, 'Corregir el teléfono de contacto del pie de página.', null, 'high', 'El número que aparece ya no es nuestro y nos llaman a otro sitio.');
   perform public.submit_request(v_req_publica);
   perform public.begin_request_analysis(v_req_publica);
 
@@ -900,7 +896,7 @@ begin
     perform set_config('request.jwt.claims',
       json_build_object('sub', v_cli, 'role', 'authenticated')::text, false);
 
-    v_req := public.create_request_draft(v_est, r.descripcion, null);
+    v_req := public.create_request_draft(v_est, r.descripcion, null, 'medium', 'Lo hablamos en la última reunión y quedó pendiente.');
 
     ------------------------------------------------------------------
     -- El adjunto de la maqueta 05 ("Carta actual.pdf", 320 KB). Va
@@ -1994,10 +1990,7 @@ begin
   -- ---- HU-14 · la rechaza el equipo, antes de validar ----
   perform set_config('request.jwt.claims',
     json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
-  v_req_equipo := public.create_request_draft(
-    v_est,
-    'Montar una tienda online con pasarela de pago en la web.',
-    'Para vender los vinos de la carta.');
+  v_req_equipo := public.create_request_draft(v_est, 'Montar una tienda online con pasarela de pago en la web.', 'Para vender los vinos de la carta.', 'low', 'Es una idea para más adelante, primero quiero saber qué cuesta.');
   perform public.submit_request(v_req_equipo);
   perform public.begin_request_analysis(v_req_equipo);
 
@@ -2015,10 +2008,7 @@ begin
   -- ---- HU-12 · la rechaza el restaurante, ya validada ----
   perform set_config('request.jwt.claims',
     json_build_object('sub', v_nuria, 'role', 'authenticated')::text, false);
-  v_req_cliente := public.create_request_draft(
-    v_est,
-    'Rehacer la página de contacto con un mapa interactivo.',
-    'Como la de la competencia.');
+  v_req_cliente := public.create_request_draft(v_est, 'Rehacer la página de contacto con un mapa interactivo.', 'Como la de la competencia.', 'medium', 'Nos preguntan mucho cómo llegar y el plano de ahora no se entiende.');
   perform public.submit_request(v_req_cliente);
   perform public.begin_request_analysis(v_req_cliente);
 

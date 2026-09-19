@@ -539,7 +539,7 @@ declare
 begin
   -- El borrador nace en el servidor y su id se guarda antes de enviar:
   -- el reintento envía el MISMO borrador.
-  v_req := public.create_request_draft('e2400000-0000-0000-0000-000000000001', 'Cambiar la carta de otoño', 'Desde el teléfono');
+  v_req := public.create_request_draft('e2400000-0000-0000-0000-000000000001', 'Cambiar la carta de otoño', 'Desde el teléfono', 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_req);
   -- El reintento tras el corte: el estado lo para (`submit_request` es
   -- idempotente: "ya se envió" no es un error), y sigue habiendo UNA.

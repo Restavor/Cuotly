@@ -27,6 +27,13 @@ export async function submitNewRequest(
   const establishmentId = String(formData.get("establishmentId") ?? "");
   const description = String(formData.get("description") ?? "").trim();
   const context = String(formData.get("context") ?? "").trim();
+  // RN-REQ-05 · los dos van al servidor tal cual. Que el nivel sea uno de
+  // los tres y que el motivo quepa en 200 lo comprueba
+  // `create_request_draft()`, y que no falten, `submit_request()`: aquí no
+  // se repite ninguna de las dos reglas, porque una segunda copia acaba
+  // diciendo otra cosa.
+  const priority = String(formData.get("priority") ?? "").trim();
+  const priorityReason = String(formData.get("priorityReason") ?? "").trim();
 
   if (!description) {
     return { error: es.clientArea.newValidationRequired, created: false };
@@ -38,6 +45,8 @@ export async function submitNewRequest(
     p_establishment_id: establishmentId,
     p_description: description,
     p_context: context || undefined,
+    p_priority: priority || undefined,
+    p_priority_reason: priorityReason || undefined,
   });
 
   if (draftError || !requestId) {

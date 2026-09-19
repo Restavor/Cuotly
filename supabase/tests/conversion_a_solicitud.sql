@@ -518,6 +518,14 @@ declare
   v_file_plano uuid := (select value::uuid from conv_ctx where key = 'file_plano');
   v_state text;
 begin
+  -- RN-REQ-05 · una solicitud nacida de una conversación tampoco sale sin
+  -- decir cuánto corre: `convert_conversation_to_request()` deja un
+  -- BORRADOR, y el cliente lo completa antes de enviarlo.
+  perform public.update_request_draft(
+    v_request_id,
+    (select description from public.requests where id = v_request_id),
+    null, 'medium', 'Lo hablamos por mensaje y quedó en esto.');
+
   perform public.submit_request(v_request_id);
 
   select state into v_state from public.requests where id = v_request_id;
@@ -590,7 +598,9 @@ begin
     -- La cuarta es la del Hito 7: nació abierta a `anon` y la migración
     -- 20260904000051 se lo quita. Sin esta línea, nadie se habría enterado.
     'convert_conversation_to_request(uuid, uuid[], text)',
-    'update_request_draft(uuid, text, text)',
+    -- La firma creció con la 106: los dos últimos son la prioridad y su
+    -- motivo (RN-REQ-05).
+    'update_request_draft(uuid, text, text, text, text)',
     'attach_file_to_request_draft(uuid, uuid)',
     'detach_file_from_request_draft(uuid, uuid)']
   loop

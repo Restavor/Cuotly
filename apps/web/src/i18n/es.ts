@@ -1130,6 +1130,14 @@ export const es = {
       filterMine: "Pendientes de mí",
       detailTitle: "Solicitud",
       contextLabel: "Dónde",
+      // RN-REQ-05 · lo que el cliente dijo que le corre. No es el "Orden
+      // de importancia" del plan (RN-PRI): aquí se lee cuánto corre ESTA.
+      priorityLabel: "Prioridad que pidió",
+      priorityLevels: {
+        high: "Alta",
+        medium: "Media",
+        low: "Baja",
+      },
       // El análisis se intenta solo al enviarse la solicitud (RN-CLS-01).
       // Esto es la red de seguridad para cuando aquel intento falló, y por
       // eso el texto no dice "empezar": dice lo que pasó y lo que se puede
@@ -1298,7 +1306,7 @@ export const es = {
       // La bandeja va ordenada por esta columna, así que la columna tiene
       // que estar: un orden que el equipo no pueda explicar mirando la
       // tabla parece un fallo de la tabla.
-      priorityColumn: "Prioridad",
+      priorityColumn: "Orden de importancia",
       priorityShort: (rank: number) => `Nº ${rank}`,
       priorityShortNone: "—",
       orderHint:
@@ -1418,7 +1426,7 @@ export const es = {
       // Maqueta 06 · la prioridad es el PUESTO que le da el restaurante
       // entre sus cambios pendientes, no una etiqueta. La mayoría de los
       // trabajos no la tienen, y eso se dice.
-      priorityLabel: "Prioridad del restaurante",
+      priorityLabel: "Orden de importancia del restaurante",
       priorityValue: (rank: number) => `Nº ${rank} de sus cambios pendientes`,
       priorityHint: "Lo ha ordenado así el propio restaurante, incluido en su plan.",
       priorityNone: "Sin ordenar",
@@ -1875,6 +1883,25 @@ export const es = {
     newSubmit: "Enviar solicitud",
     newSubmitPending: "Enviando…",
     newValidationRequired: "Escribe qué quieres cambiar.",
+    // RN-REQ-05 · la prioridad de la solicitud (página 63 del diseño
+    // definitivo móvil). NO es el "Orden de importancia" (RN-PRI), que es
+    // otra cosa y tiene su propia pantalla: aquí se dice cuánto corre
+    // ESTA, y allí cuál va antes que cuál.
+    newPriorityLabel: "Prioridad",
+    newPriorityHelp: "Cuánto te corre este cambio.",
+    priorityLevels: {
+      high: "Alta",
+      medium: "Media",
+      low: "Baja",
+    },
+    newPriorityReasonLabel: "Motivo de la prioridad",
+    newPriorityReasonHelp: "Por qué te corre. Máximo 200 caracteres.",
+    newPriorityReasonPlaceholder: "Es importante publicarlo antes del 1 de octubre.",
+    // RN-REQ-06 · lo que la prioridad NO es. Sin esta línea, marcar "Alta"
+    // se lee como que el trabajo se adelanta, y eso no lo decide el
+    // cliente.
+    newPriorityNotAPromise:
+      "Nos dice cuánto te corre a ti. No cambia los plazos de tu plan ni adelanta el trabajo: sirve para que el equipo sepa por dónde empezar.",
     acceptTitle: "Pendiente de tu aceptación",
     acceptSubmit: "Aceptar y que empiecen",
     acceptPending: "Aceptando…",

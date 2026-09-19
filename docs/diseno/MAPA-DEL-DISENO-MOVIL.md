@@ -143,8 +143,10 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   espacio (RN-SUB-13).
 - **Frecuencia de aviso** "Instantáneo / Resumen diario" y **horario de
   recepción** (página 109).
-- **Prioridad con motivo obligatorio** en la solicitud del equipo (página 63).
-  Hoy la prioridad es la ordenación del cliente, y la concede el plan.
+- ~~**Prioridad con motivo obligatorio** en la solicitud del equipo (página 63)~~ — **la lectura
+  estaba mal**: la página 63 es "Nueva solicitud", la del **cliente**, no la del equipo. Resuelto
+  como decisión 49 (RN-REQ-05/06, migración 106): nivel Alta/Media/Baja al crear, motivo
+  obligatorio, y el orden 1..N de la migración 62 se queda vivo y aparte.
 - **Seis canales** de fábrica (página 74) frente a los cuatro que siembra la
   migración 100.
 - Atributos de plan **"Prioridad: Alta/Superior"** e **"Informes:

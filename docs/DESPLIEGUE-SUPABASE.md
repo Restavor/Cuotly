@@ -267,6 +267,26 @@ comprobó y no envejece.
   (`816cec9411b757dbf35997c6e2cb0b1b`) y la del CHECK (`f47cc64d03099cf6050bef51c5c9b942`)—
   coinciden con las de la base local construida desde el archivo.
 
+- La **106** (`20260919000106_prioridad_de_la_solicitud.sql`, RN-REQ-05/06, decisión 49). Dos
+  columnas en `requests` —`priority` y `priority_reason`— y tres funciones redefinidas:
+  `create_request_draft()` y `update_request_draft()` crecen dos argumentos, y `submit_request()`
+  **deja de aceptar** una solicitud sin prioridad ni motivo.
+
+  **Es la primera migración de esta tanda que puede romper algo en marcha**, y conviene saberlo: un
+  borrador guardado antes de aplicarla no tiene prioridad, así que **no se podrá enviar hasta que
+  alguien se la ponga**. Las solicitudes ya enviadas no se tocan.
+
+  **Lo que hay que mirar al leer el diff**: que en `update_request_draft()` un `null` signifique
+  **no tocar** y no "borrar". La pantalla de alcance no trae estos campos, y un null que borrara
+  dejaría sin prioridad —y sin poder enviarse— una solicitud por editarle la descripción.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local: **las 55 suites en verde sobre
+  bootstrap + 106 migraciones**. `database.types.ts` se regeneró después, contra el proyecto.
+  **Aplicada el 19/09/2026**, en cuatro trozos (`_1_columnas`, `_2_update_request_draft`,
+  `_3_create_request_draft`, `_4_submit_request`). Comprobado después contra el proyecto: la huella
+  de las tres funciones —`689c45647f3c38a1765322c9fbc7445f`— coincide con la de la base local
+  construida desde el archivo.
+
 ## Cómo se comprobó que las seis se aplicaron bien (17/09/2026)
 
 Después de cada una se hizo una consulta de comprobación —que existan sus tablas, sus funciones,

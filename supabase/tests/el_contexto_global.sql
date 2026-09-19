@@ -208,8 +208,7 @@ set role authenticated;
 do $$
 declare v_req uuid;
 begin
-  v_req := public.create_request_draft(
-    (select v from glo_ids where k = 'rest'), 'Cambiar el teléfono de la web');
+  v_req := public.create_request_draft((select v from glo_ids where k = 'rest'), 'Cambiar el teléfono de la web', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_req);
   insert into glo_ids values ('sol_trabajo', v_req);
 end $$;

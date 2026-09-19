@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 19/09/2026), con las 103 migraciones del
+// (generate_typescript_types, 19/09/2026), con las 106 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -5926,7 +5926,9 @@ export type Database = {
           id: string;
           opportunity_action: string | null;
           opportunity_id: string | null;
+          priority: string | null;
           priority_rank: number | null;
+          priority_reason: string | null;
           rejected_at: string | null;
           rejected_by: string | null;
           rejected_reason: string | null;
@@ -5952,7 +5954,9 @@ export type Database = {
           id?: string;
           opportunity_action?: string | null;
           opportunity_id?: string | null;
+          priority?: string | null;
           priority_rank?: number | null;
+          priority_reason?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejected_reason?: string | null;
@@ -5978,7 +5982,9 @@ export type Database = {
           id?: string;
           opportunity_action?: string | null;
           opportunity_id?: string | null;
+          priority?: string | null;
           priority_rank?: number | null;
+          priority_reason?: string | null;
           rejected_at?: string | null;
           rejected_by?: string | null;
           rejected_reason?: string | null;
@@ -8480,6 +8486,8 @@ export type Database = {
           p_context?: string;
           p_description: string;
           p_establishment_id: string;
+          p_priority?: string;
+          p_priority_reason?: string;
         };
         Returns: string;
       };
@@ -10797,6 +10805,8 @@ export type Database = {
         Args: {
           p_context?: string;
           p_description: string;
+          p_priority?: string;
+          p_priority_reason?: string;
           p_request_id: string;
         };
         Returns: number;

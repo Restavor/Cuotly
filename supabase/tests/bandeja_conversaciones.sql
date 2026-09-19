@@ -102,7 +102,7 @@ declare
   v_job_id uuid;
 begin
   perform set_config('request.jwt.claim.sub', p_client::text, false);
-  v_request_id := public.create_request_draft(p_establishment_id, p_description, null);
+  v_request_id := public.create_request_draft(p_establishment_id, p_description, null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
 

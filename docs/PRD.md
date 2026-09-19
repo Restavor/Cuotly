@@ -344,6 +344,32 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 - **RN-REQ-01**: las etiquetas visibles pueden ser más amables que el nombre interno, pero el mapeo es 1 a 1 y **el mismo nombre visible se usa en web, correo, PDF e historial**.
 - **RN-REQ-02**: un trabajo **solo** puede crearse desde una solicitud en estado `accepted`.
 - **RN-REQ-03**: el equipo puede **rechazar** una petición imposible, no prestada o fuera de servicio. Se explica el motivo al cliente, **no consume cambios**, queda en historial y puede ofrecerse alternativa o presupuesto.
+- **RN-REQ-05 (añadida 19/09/2026, decisión 49)**: al crear una solicitud, el restaurante elige su
+  **prioridad** —**Alta · Media · Baja**— y **escribe por qué**. Los dos campos son **obligatorios**:
+  así los dibuja el diseño definitivo móvil (página 63, "Nueva solicitud", los dos con asterisco), y
+  el motivo cabe en **200 caracteres**.
+
+  **Esto convive con el "Orden de importancia" (§ RN-PRI, migración 62) y no lo sustituye.** Son dos
+  cosas distintas y hay que llamarlas distinto en pantalla, porque confundirlas es fácil:
+
+  | | Prioridad (RN-REQ-05) | Orden de importancia (RN-PRI) |
+  |---|---|---|
+  | Qué es | Alta / Media / Baja | Un orden 1..N |
+  | Cuándo se pone | Al crear la solicitud | Después, sobre lo que está pendiente |
+  | Quién | **Cualquier** restaurante | Solo el plan que concede prioridad |
+  | Qué dice | Cuánto le corre **esta** | Cuál va **antes que cuál** |
+
+  Una etiqueta no dice cuál va antes entre dos "Media" —eso lo razonó Bosco el 10/09/2026 y sigue
+  siendo verdad—; lo que el diseño añade es que el cliente pueda decir **cuánto le corre** cada
+  solicitud, y **por qué**, sin depender del plan. La palabra "Prioridad" en las pantallas del equipo
+  pasa a ser esta; al orden 1..N se le llama por su nombre, que ya es el que usa su propia pantalla.
+
+- **RN-REQ-06 (añadida 19/09/2026, decisión 49)**: **la prioridad la pone el cliente y no es un
+  compromiso de Cuotly.** No cambia plazos, no reordena la cola del equipo y no tiene nada que ver
+  con la prioridad que concede el plan (RN-COM-03, que el cliente no ve). Es lo que el restaurante
+  dice que le corre, y el equipo lo lee. Decirlo así en la pantalla evita la lectura de que marcar
+  "Alta" adelanta el trabajo.
+
 - **RN-REQ-04 (copiar/pegar)**: "Copiar solicitud" y "Pegar solicitud" funcionan **solo dentro del mismo grupo**. Copiar no crea nada por sí solo; al pegar se crea un **borrador** para el establecimiento destino, se vuelve a analizar el contenido, el consumo pertenece al destino y los adjuntos copiados se muestran para revisión sin enviarse automáticamente.
 
 ---

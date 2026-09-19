@@ -104,10 +104,7 @@ do $$
 declare
   v_req uuid;
 begin
-  v_req := public.create_request_draft(
-    'a3000000-0000-0000-0000-000000000001',
-    'Actualizar los precios de la carta. Cambiar el precio del menú de 18 € a 19 € en la carta.',
-    null);
+  v_req := public.create_request_draft('a3000000-0000-0000-0000-000000000001', 'Actualizar los precios de la carta. Cambiar el precio del menú de 18 € a 19 € en la carta.', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
 
   -- El adjunto entra con la solicitud en borrador, que es cuando la
   -- política de `request_attachments` lo permite. El disparador de la

@@ -32,6 +32,13 @@ export interface RequestDetailRow {
   readonly code: string;
   readonly description: string;
   readonly context: string | null;
+  /**
+   * RN-REQ-05 · cuánto le corre al restaurante, y por qué. Lo escribe el
+   * cliente al pedirla; el equipo lo lee. No es un compromiso de Cuotly
+   * (RN-REQ-06) ni el "Orden de importancia" del plan (RN-PRI).
+   */
+  readonly priority: string | null;
+  readonly priority_reason: string | null;
   readonly state: string;
   readonly created_at: string;
   readonly validated_category: string | null;
@@ -162,7 +169,7 @@ export async function loadRequestDetail(
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id",
+      "id, code, description, context, priority, priority_reason, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id",
     )
     .eq("id", requestId)
     .maybeSingle();

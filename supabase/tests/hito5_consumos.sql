@@ -161,7 +161,7 @@ do $$
 declare
   v_request_id uuid;
 begin
-  v_request_id := public.create_request_draft('94000000-0000-0000-0000-000000000001', 'CA-17: cambiar el titulo de la home', null);
+  v_request_id := public.create_request_draft('94000000-0000-0000-0000-000000000001', 'CA-17: cambiar el titulo de la home', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into h5_ctx values ('request_ca17', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
@@ -396,7 +396,7 @@ do $$
 declare
   v_request_id uuid;
 begin
-  v_request_id := public.create_request_draft('94000000-0000-0000-0000-000000000001', 'CA-06 (después de Comenzar): sustituir el logo', null);
+  v_request_id := public.create_request_draft('94000000-0000-0000-0000-000000000001', 'CA-06 (después de Comenzar): sustituir el logo', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into h5_ctx values ('request_ca06b', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
@@ -507,7 +507,7 @@ do $$
 declare
   v_request_id uuid;
 begin
-  v_request_id := public.create_request_draft('94000000-0000-0000-0000-000000000001', 'CA-07: cambiar el telefono de contacto', null);
+  v_request_id := public.create_request_draft('94000000-0000-0000-0000-000000000001', 'CA-07: cambiar el telefono de contacto', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into h5_ctx values ('request_ca07', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);

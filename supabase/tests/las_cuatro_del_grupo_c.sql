@@ -92,8 +92,7 @@ set role authenticated;
 do $$
 declare v_req uuid;
 begin
-  v_req := public.create_request_draft(
-    (select v from gc_ids where k = 'rest'), 'Cambiar el teléfono de la web', null);
+  v_req := public.create_request_draft((select v from gc_ids where k = 'rest'), 'Cambiar el teléfono de la web', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_req);
   insert into gc_ids values ('sol_rest', v_req);
 end $$;

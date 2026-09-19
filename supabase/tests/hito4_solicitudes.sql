@@ -97,7 +97,8 @@ begin
   v_request_id := public.create_request_draft(
     'f3000000-0000-0000-0000-000000000001',
     'Cambiar el precio de la ensalada César a 9,50 euros.',
-    'Es el plato 4 de la carta de entrantes.'
+    'Es el plato 4 de la carta de entrantes.',
+    'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.'
   );
 
   select code, state into v_code, v_state from public.requests where id = v_request_id;
@@ -167,7 +168,7 @@ select set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000006
 do $$
 begin
   begin
-    perform public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Intento no autorizado', null);
+    perform public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Intento no autorizado', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
     raise exception 'CA-01 FALLIDO: Consulta pudo crear una solicitud (RN-EST §4.3)' using errcode = 'assert_failure';
   exception
     when raise_exception then null; -- esperado: can_write_establishment() lo rechaza
@@ -451,7 +452,7 @@ do $$
 declare
   v_request_id uuid;
 begin
-  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Sustituir la fotografía de portada.', null);
+  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Sustituir la fotografía de portada.', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into h4_ctx values ('request_a2', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
@@ -517,7 +518,7 @@ do $$
 declare
   v_request_id uuid;
 begin
-  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Cambiar el horario de un día concreto.', null);
+  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Cambiar el horario de un día concreto.', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into h4_ctx values ('request_a3', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
@@ -899,8 +900,7 @@ set role authenticated;
 do $$
 declare v_request_id uuid;
 begin
-  v_request_id := public.create_request_draft(
-    'f3000000-0000-0000-0000-000000000001', 'Cambiar el teléfono del pie.', null);
+  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Cambiar el teléfono del pie.', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into h4_ctx values ('request_a4', v_request_id::text);
   perform public.submit_request(v_request_id);
   -- Y NO se llama a begin_request_analysis: se simula que el análisis
@@ -989,7 +989,7 @@ do $$
 declare
   v_request_id uuid;
 begin
-  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Carta de temporada con fotos nuevas.', null);
+  v_request_id := public.create_request_draft('f3000000-0000-0000-0000-000000000001', 'Carta de temporada con fotos nuevas.', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   insert into h4_ctx values ('request_a5', v_request_id::text);
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);

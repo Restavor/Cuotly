@@ -442,6 +442,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/crear_el_panel_del_restaurante.sql
 
+      - name: "Diseño móvil — Verificar la prioridad de la solicitud: los tres niveles, que el motivo es obligatorio al ENVIAR y que no sustituye al orden 1..N (RN-REQ-05/06)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/prioridad_de_la_solicitud.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

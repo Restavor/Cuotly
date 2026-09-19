@@ -113,7 +113,7 @@ declare
   v_job_id uuid;
 begin
   perform set_config('request.jwt.claim.sub', p_client::text, false);
-  v_request_id := public.create_request_draft(p_establishment_id, p_description, null);
+  v_request_id := public.create_request_draft(p_establishment_id, p_description, null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
 
@@ -151,7 +151,7 @@ declare
   v_request_id uuid;
 begin
   perform set_config('request.jwt.claim.sub', p_client::text, false);
-  v_request_id := public.create_request_draft(p_establishment_id, p_description, null);
+  v_request_id := public.create_request_draft(p_establishment_id, p_description, null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
 
@@ -181,7 +181,7 @@ declare
   v_request_id uuid;
 begin
   perform set_config('request.jwt.claim.sub', p_client::text, false);
-  v_request_id := public.create_request_draft(p_establishment_id, p_description, null);
+  v_request_id := public.create_request_draft(p_establishment_id, p_description, null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.');
   perform public.submit_request(v_request_id);
   perform public.begin_request_analysis(v_request_id);
 
@@ -3176,9 +3176,7 @@ set role authenticated;
 
 do $$
 begin
-  insert into h7_ctx values ('request_susp_borrador', public.create_request_draft(
-    'b4000000-0000-0000-0000-000000000001', 'B3: borrador sin enviar', null
-  )::text);
+  insert into h7_ctx values ('request_susp_borrador', public.create_request_draft('b4000000-0000-0000-0000-000000000001', 'B3: borrador sin enviar', null, 'medium', 'Prueba de suite: la prioridad es obligatoria desde RN-REQ-05.')::text);
 end $$;
 
 reset role;
