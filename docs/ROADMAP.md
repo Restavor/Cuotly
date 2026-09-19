@@ -5246,10 +5246,14 @@ punto"). El razonamiento de los diez está en `docs/PROPUESTA-DISENO-MOVIL.md`; 
       **Lo que queda de este punto**: la pestaña "Invitar usuario" de la página 153, que crea una
       CUENTA nueva. Eso es el hito de invitaciones de más abajo, y la pantalla lo dice en vez de
       dejar un hueco.
-- [ ] **8 · La foto de perfil** — sin empezar.
+- [x] **8 · La foto de perfil** — migración 109, RN-GLO-09, decisión 53. Bucket propio `avatars`
+      (privado), `profiles.avatar_path`, y el botón "Cambiar foto" de la página 7 en Mi cuenta, con
+      la foto también en el avatar de la cabecera. **Quién la ve no lo decide ninguna regla nueva**:
+      lo decide `profiles_select`, que ya impide que un cliente lea la fila de nadie del equipo —y
+      una foto es identidad (CLAUDE.md)—.
 
-Queda además, fuera del orden de los ocho: las **invitaciones al panel del restaurante** con alta de
-cuenta (Bosco, 19/09/2026: "a los miembros del restaurante los invito yo… lo único que tienen que
+Los ocho están cerrados. Queda, fuera de ese orden: las **invitaciones al panel del restaurante**
+con alta de cuenta (Bosco, 19/09/2026: "a los miembros del restaurante los invito yo… lo único que tienen que
 hacer es registrarse con correo y contraseña y rellenar… todo lo que hay que rellenar para la
 cuenta"), y los **tres cabos de la decisión 48**: qué significan "Prioridad: Alta/Superior" e
 "Informes: Estándar/Avanzado" en las fichas de plan, si Premium+ lleva un plazo por debajo de 24 h, y

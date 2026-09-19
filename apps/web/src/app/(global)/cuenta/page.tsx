@@ -7,6 +7,9 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { myNotificationPreferences } from "@/services/global-gateway";
 
+import { avatarInitial, avatarLink } from "@/services/avatar-storage";
+
+import { AvatarForm } from "./AvatarForm";
 import { NotificationPreferences, type PreferenceRow } from "./NotificationPreferences";
 import { ProfileForm } from "./ProfileForm";
 
@@ -17,9 +20,9 @@ import { ProfileForm } from "./ProfileForm";
  * reúne— y los avisos, que valen en todos los contextos de esta persona y
  * también en el que entre mañana.
  *
- * La foto de G05 no está, y se dice por qué en vez de dejar un hueco: el
- * almacenamiento de archivos de Cuotly es por espacio (`files.space_id NOT
- * NULL`) y una foto de perfil no es de ningún espacio.
+ * La foto llegó el 19/09/2026 (RN-GLO-09, migración 109) con lo que le
+ * faltaba: un sitio propio. No cabía en `files` porque `files.space_id` es
+ * `NOT NULL` y una cara no es de ningún espacio.
  */
 export const dynamic = "force-dynamic";
 
@@ -33,7 +36,7 @@ export default async function AccountPage() {
   const [{ data: perfil, error }, preferencias] = await Promise.all([
     supabase
       .from("profiles")
-      .select("given_name, family_name, full_name, email, phone, display_timezone")
+      .select("given_name, family_name, full_name, email, phone, display_timezone, avatar_path")
       .eq("id", user.id)
       .maybeSingle(),
     myNotificationPreferences(supabase).catch(() => null),
@@ -84,7 +87,18 @@ export default async function AccountPage() {
       </Card>
 
       <Card title={t.photoTitle}>
-        <p className="text-sm text-text-secondary">{t.photoReason}</p>
+        {/*
+          El enlace se firma aquí, en el servidor, y dura lo que dura: el
+          bucket es privado y no hay URL pública de ninguna cara
+          (RN-GLO-09). Si el almacenamiento no contesta, `avatarLink`
+          devuelve `null` y se enseña la inicial —que es exactamente lo
+          que ve quien no tiene foto—, sin nada que explicarle a nadie.
+        */}
+        <AvatarForm
+          avatarUrl={await avatarLink(supabase.storage, perfil?.avatar_path ?? null)}
+          initial={avatarInitial(perfil?.full_name ?? null, perfil?.email ?? "")}
+          personName={perfil?.full_name ?? perfil?.email ?? ""}
+        />
       </Card>
 
       <Card title={t.securityTitle}>

@@ -454,6 +454,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/los_siete_permisos_del_cliente.sql
 
+      - name: "Diseño móvil — Verificar la foto de perfil: bucket privado y solo imágenes, cada quien cambia solo la suya y bajo su propia carpeta, y el cliente NO ve la cara de nadie del equipo (RN-GLO-09, CLAUDE.md)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/la_foto_de_perfil.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

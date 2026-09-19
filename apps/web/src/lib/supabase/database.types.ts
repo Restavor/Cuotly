@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 19/09/2026), con las 108 migraciones del
+// (generate_typescript_types, 19/09/2026), con las 109 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -5213,6 +5213,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          avatar_path: string | null;
           created_at: string;
           display_timezone: string | null;
           email: string;
@@ -5223,6 +5224,7 @@ export type Database = {
           phone: string | null;
         };
         Insert: {
+          avatar_path?: string | null;
           created_at?: string;
           display_timezone?: string | null;
           email: string;
@@ -5233,6 +5235,7 @@ export type Database = {
           phone?: string | null;
         };
         Update: {
+          avatar_path?: string | null;
           created_at?: string;
           display_timezone?: string | null;
           email?: string;
@@ -8261,6 +8264,7 @@ export type Database = {
           space_id: string;
         }[];
       };
+      clear_my_avatar: { Args: never; Returns: undefined };
       client_can_accept_terms: {
         Args: { p_establishment_id: string };
         Returns: boolean;
@@ -10455,6 +10459,7 @@ export type Database = {
         Args: { p_job_id: string; p_specialty: string };
         Returns: undefined;
       };
+      set_my_avatar: { Args: { p_path: string }; Returns: undefined };
       set_my_notification_preference: {
         Args: {
           p_email: boolean;

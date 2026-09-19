@@ -9,6 +9,7 @@ import { isClientRole, isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { avatarLink } from "@/services/avatar-storage";
 
 import { searchEverything } from "./shell-actions";
 
@@ -63,18 +64,23 @@ export default async function SpaceLayout({
     .order("created_at", { ascending: false })
     .limit(20);
 
-  // Nombre e inicial de quien mira, para el avatar de la cabecera. Sale de
-  // `profiles`, no del token: el nombre lo edita la persona y el correo es
-  // el respaldo cuando todavía no lo ha puesto. Nunca una foto — no hay
-  // fotos de perfil en Cuotly.
+  // Nombre, inicial y foto de quien mira, para el avatar de la cabecera.
+  // Salen de `profiles`, no del token: el nombre lo edita la persona y el
+  // correo es el respaldo cuando todavía no lo ha puesto.
+  //
+  // RN-GLO-09 · la foto es la propia, así que aquí no hay ninguna frontera
+  // que cuidar: `profiles_select` deja leer la fila de uno siempre. El
+  // enlace se firma en el servidor y dura una hora; si el almacenamiento
+  // no contesta, `avatarLink` devuelve `null` y se pinta la inicial.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email")
+    .select("full_name, email, avatar_path")
     .eq("id", user.id)
     .maybeSingle();
 
   const userLabel = profile?.full_name?.trim() || profile?.email || user.email || "";
   const userInitial = (userLabel.trim()[0] ?? "·").toUpperCase();
+  const userAvatarUrl = await avatarLink(supabase.storage, profile?.avatar_path ?? null);
 
   /*
    * RN-PAN-03 y RN-PAN-04 · lo que el panel del restaurante necesita para
@@ -126,6 +132,7 @@ export default async function SpaceLayout({
       role={role}
       roleLabel={es.roles[role]}
       userInitial={userInitial}
+      userAvatarUrl={userAvatarUrl}
       userLabel={userLabel}
       notifications={notifications}
       onSearch={searchEverything}

@@ -134,9 +134,22 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
 
 ### 5.5 · Cosas que no existen y el diseño da por hechas
 
-- **Foto de perfil** ("Cambiar foto", página 7). La migración 98 la dejó
-  fuera **con su motivo escrito**: `files` es por espacio y una foto de
-  persona no es de ningún espacio.
+- ~~**Foto de perfil** ("Cambiar foto", página 7)~~ — hecha el 19/09/2026
+  (decisión 53, RN-GLO-09, migración 109) con lo que le faltaba: un sitio
+  propio. `files` es por espacio y una cara no es de ningún espacio, así
+  que tiene bucket aparte (`avatars`, privado).
+
+  Al construirla apareció la **cuarta nota de este mapa que apunta mal**:
+  decía que las páginas 3, 22 y 23 enseñaban avatares de persona, y la 3 es
+  el estado de una solicitud de espacio, sin ninguna cara. Las caras están
+  en la **22** —carga de trabajo del equipo y actividad reciente—, y las dos
+  personas de esos bloques comparten espacio, que es justo lo que
+  `profiles_select` permite. Las listas del **panel** (152 y 153) dibujan
+  iniciales, no fotos.
+
+  Queda fuera, y no es lo mismo: la **foto del restaurante** que la 22
+  enseña en "Estado por restaurante". Esa sí es del espacio y cabe en
+  `files`.
 - **Estado "Configurando"** de un restaurante (página 54).
 - **"Cuotly Insights"** como fuente de datos propia (páginas 41, 44).
 - **Almacenamiento por restaurante** (página 50: "6,4 GB"). Hoy es por
@@ -145,7 +158,8 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   recepción** (página 109)~~ — **la página no es esa**: la 109 es "Ajustes
   del espacio · General", y la pantalla de preferencias de notificaciones
   no aparece en las contiguas (110-112, 114, 116) ni junto a "Mi cuenta"
-  (8). Tercera nota de este mapa que apunta mal, después de la 63 y la 46.
+  (8). Tercera nota de este mapa que apunta mal, después de la 63 y la 46;
+  la cuarta fue la de los avatares de la página 3, arriba.
   De la 109 se construyeron **las ocho pestañas** (decisión 50); la
   frecuencia y el horario siguen sin definir y no se inventan.
 - ~~**Prioridad con motivo obligatorio** en la solicitud del equipo (página 63)~~ — **la lectura

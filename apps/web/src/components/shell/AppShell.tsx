@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -84,6 +85,7 @@ export function AppShell({
   establishmentName = null,
   establishments = [],
   supportSession = null,
+  userAvatarUrl = null,
   children,
 }: {
   spaceSlug: string;
@@ -91,8 +93,15 @@ export function AppShell({
   role: ShellRole;
   /** El rol, en el nombre que ve la persona (§20.1: el selector lo enseña). */
   roleLabel: string;
-  /** La inicial del avatar. Nunca una foto: no hay fotos de perfil. */
+  /** La inicial del avatar, que es lo que se pinta cuando no hay foto. */
   userInitial: string;
+  /**
+   * RN-GLO-09 · el enlace firmado y temporal a la foto de quien mira, o
+   * `null`. Lo firma el servidor: el bucket es privado y no hay URL
+   * pública de ninguna cara. Es **siempre la propia**, así que aquí no hay
+   * ninguna frontera de identidad que cuidar.
+   */
+  userAvatarUrl?: string | null;
   /** Nombre o correo de quien mira, para el nombre accesible del avatar. */
   userLabel: string;
   notifications: readonly ShellNotification[];
@@ -431,9 +440,27 @@ export function AppShell({
             <Link
               href="/cuenta/sesiones"
               aria-label={`${es.nav.account} · ${userLabel}`}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft-surface text-sm font-semibold text-primary-dark hover:bg-border focus:outline focus:outline-2 focus:outline-cuotly-green"
+              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-soft-surface text-sm font-semibold text-primary-dark hover:bg-border focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
-              <span aria-hidden="true">{userInitial}</span>
+              {userAvatarUrl !== null ? (
+                /*
+                  `unoptimized` a propósito: el enlace es una URL firmada
+                  que caduca, y el optimizador de Next la cachearía más de
+                  lo que vive, acabando por pedir una ruta muerta. El `alt`
+                  va vacío porque el nombre accesible ya lo pone el
+                  `aria-label` del enlace: repetirlo lo diría dos veces.
+                */
+                <Image
+                  src={userAvatarUrl}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
+              ) : (
+                <span aria-hidden="true">{userInitial}</span>
+              )}
             </Link>
           </header>
 

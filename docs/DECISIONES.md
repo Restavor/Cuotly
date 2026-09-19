@@ -1081,6 +1081,49 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    no ve los informes, uno con ella sí—, y en la suite 56 un bloque nuevo que prueba la casilla
    entera: que abre los informes y que **no** abre los menús ni la facturación.
 
+53. **La foto de perfil: bucket propio, y la ve quien ya te ve** (19/09/2026). Punto 8 y último del
+   orden. La página 7 del diseño ("Mi cuenta") dibuja un botón "Cambiar foto"; hasta hoy la pantalla
+   decía por qué no estaba, en vez de dejar un hueco.
+
+   **Por qué faltaba.** `files.space_id` es `NOT NULL` y una cara no es de ningún espacio: la misma
+   persona puede estar en dos espacios y en el panel de un restaurante. Se resuelve con sitio propio
+   —bucket `avatars`, privado como el de archivos (RN-ARC-08)— y `profiles.avatar_path`.
+
+   **La parte que había que pensar no era dónde se guarda, sino quién la ve.** Una foto **es
+   identidad**, y CLAUDE.md prohíbe que el cliente vea la identidad individual de nadie del equipo de
+   mantenimiento. La respuesta fue **no escribir ninguna regla nueva**: `avatar_path` es una columna
+   de `profiles`, y `profiles_select` ya dice exactamente lo que hace falta —tu fila, o la de alguien
+   con quien compartes `space_memberships`—. Un cliente no está en esa tabla, así que no lee la fila
+   de nadie del equipo, foto incluida. Una regla nueva habría sido una segunda copia de la política,
+   y el día que discreparan ganaría la copia peor.
+
+   Eso decide también algo que **no** se hizo: la foto no se añade a `establishment_client_users()`
+   ni a `establishment_panel_users()`. Son `SECURITY DEFINER` y se saltan `profiles_select` a
+   propósito —para que el equipo vea el nombre de un cliente—, así que meter la foto ahí habría
+   abierto por esa puerta justo lo que la política cierra. Encaja con el diseño: las listas del panel
+   (páginas 152 y 153) dibujan **iniciales**; donde sí hay caras es en pantallas del equipo (página
+   22), y ahí las dos personas comparten espacio.
+
+   **La otra comprobación que importa es la del prefijo.** `set_my_avatar()` escribe la fila de quien
+   llama, pero eso no basta: hay que rechazar una **ruta** ajena, o la fila propia acabaría apuntando
+   a la foto de otra persona. Se exige que la ruta empiece por el uuid de quien llama **y una barra**
+   —sin la barra, un uuid sería prefijo de cualquier ruta que empezara por esas letras—.
+
+   **Lo que NO entra**, para que no se confunda: la **foto del restaurante** que el diseño enseña en
+   las listas (página 22) es otra cosa, esa sí es del espacio y cabe en `files`. Y el **límite de 2 MB
+   y los tres formatos son técnicos**, no un umbral que Bosco haya fijado: se presentan como lo que
+   son.
+
+   De paso, una nota del mapa del diseño que volvía a apuntar mal —la **cuarta**—: decía que la
+   página 3 enseñaba avatares de persona y lo que hay ahí es el estado de una solicitud de espacio.
+   Las caras están en la 22.
+
+   Comprobado: suite 57 `la_foto_de_perfil.sql` —el bucket es privado y solo admite imágenes, cada
+   quien cambia la suya, una ruta ajena y una sin la barra se rechazan, el cliente **no alcanza ni un
+   perfil del equipo**, el equipo sí ve la foto de su compañero, y quitar la foto no borra a nadie—,
+   con dos mutaciones probadas: quitar la comprobación del prefijo y poner el bucket en público hacen
+   fallar la suite nombrando la regla.
+
 ---
 
 ### Pendiente de completar

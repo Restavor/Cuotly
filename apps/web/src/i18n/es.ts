@@ -5182,10 +5182,29 @@ export const es = {
       savePending: "Guardando…",
       saved: "Guardado.",
       nameRequired: "El nombre no puede quedar en blanco.",
-      /** Lo que no está, con su motivo (CLAUDE.md). */
+      /**
+       * RN-GLO-09 · la foto, que llegó el 19/09/2026 con su propio sitio
+       * (bucket `avatars`, migración 109). Hasta entonces aquí había un
+       * motivo escrito en vez de un hueco.
+       */
       photoTitle: "Foto",
-      photoReason:
-        "Todavía no se puede subir una foto de perfil: el almacenamiento de archivos de Cuotly es por espacio y una foto tuya no es de ningún espacio. Necesita su propio sitio y llegará con él.",
+      photoHint:
+        "Se ve en tu cabecera y donde aparezcas dentro de tus espacios. Quien no comparte espacio contigo no la ve.",
+      photoChange: "Cambiar foto",
+      photoPending: "Subiendo…",
+      photoRemove: "Quitar foto",
+      photoSaved: "Foto actualizada.",
+      photoNone: "Todavía no tienes foto: se enseña tu inicial.",
+      /**
+       * El tamaño y los formatos son técnicos, no una regla de producto:
+       * los pone el bucket (migración 109) y aquí solo se cuentan.
+       */
+      photoLimits: "JPG, PNG o WebP, hasta 2 MB.",
+      avatarMissing: "Elige una imagen antes de guardar.",
+      avatarTooLarge: "Esa imagen pesa más de 2 MB. Prueba con una más pequeña.",
+      avatarWrongType: "Solo se admiten imágenes JPG, PNG o WebP.",
+      avatarNoSession: "Se ha cerrado tu sesión. Vuelve a entrar e inténtalo otra vez.",
+      avatarUploadFailed: "No se ha podido guardar la foto. Vuelve a intentarlo.",
       securityTitle: "Seguridad",
       securityBody: "Contraseña, verificación en dos pasos y sesiones abiertas.",
       securityLink: "Contraseña y verificación",

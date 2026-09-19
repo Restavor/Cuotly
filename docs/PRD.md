@@ -2172,10 +2172,10 @@ pantallas, ni `RN-USR`, que se confundiría con los usuarios de un espacio (RN-E
 - **RN-GLO-06**: **Mi cuenta es de la persona, no del espacio** (G05): perfil (nombre, apellidos,
   correo, teléfono, idioma, zona horaria y foto), seguridad (contraseña, verificación en dos pasos y
   sesiones, que ya existen) y preferencias de notificación. Dos precisiones de lo construido el
-  16/09/2026: **la foto no está todavía**, y la pantalla dice por qué —el almacenamiento de archivos
-  de Cuotly es por espacio (`files.space_id NOT NULL`) y una foto de perfil no es de ningún espacio,
-  así que necesita su propio sitio—; y **el idioma tampoco**, porque hoy solo hay uno y un selector
-  de un solo elemento es un adorno. Las preferencias de aviso de aquí son **de la persona** y valen
+  16/09/2026: **la foto** se quedó fuera porque el almacenamiento de archivos de Cuotly es por
+  espacio (`files.space_id NOT NULL`) y una foto de perfil no es de ningún espacio —eso lo resuelve
+  RN-GLO-09 con un sitio propio—; y **el idioma** sigue sin estar, porque hoy solo hay uno y un
+  selector de un solo elemento es un adorno. Las preferencias de aviso de aquí son **de la persona** y valen
   en todos sus contextos, también en el que entre mañana; la preferencia que alguien ponga **dentro**
   de un espacio es más específica y manda sobre esta. La **zona horaria de aquí sirve para
   enseñar fechas**, y **no sustituye a la del espacio**, que es la que manda en todo cálculo de
@@ -2188,6 +2188,31 @@ pantallas, ni `RN-USR`, que se confundiría con los usuarios de un espacio (RN-E
 - **RN-GLO-08** *(lectura)*: **la cabecera global lleva buscador, avisos y avatar**, como en el
   resto del producto, y el buscador busca **en lo que la persona ya puede ver**, sin una vía nueva.
   El diseño dibuja el atajo de teclado; el atajo es comodidad, no una regla de negocio.
+- **RN-GLO-09 (añadida 19/09/2026, decisión 53)**: **la foto de perfil es de la persona, la cambia
+  solo ella, y no la ve quien no la puede ver ya**. Página 7 del diseño definitivo móvil, el botón
+  "Cambiar foto".
+
+  - **Dónde vive.** En su propio bucket privado, `avatars`, y **no en `files`**: `files.space_id` es
+    `NOT NULL` y una cara no es de ningún espacio —la misma persona puede estar en dos y su cara no
+    pertenece a ninguno—. La ruta es `<uuid de la persona>/<archivo>`, y `profiles.avatar_path`
+    guarda cuál es la suya. Como el bucket de archivos (RN-ARC-08), es **privado**: no hay URL
+    pública de ninguna foto, se firma una cada vez y con caducidad corta.
+  - **Quién la cambia.** Solo su dueño, y el servidor no admite otra cosa: `set_my_avatar()` escribe
+    la fila de `auth.uid()` y **rechaza una ruta que no empiece por el uuid de quien llama**. Sin esa
+    comprobación, mandar la ruta de otro sería ponerle a esa persona la foto que uno quiera.
+  - **Quién la ve**, que es la parte delicada. La foto **es identidad**, y CLAUDE.md prohíbe que el
+    cliente vea la identidad individual de nadie del equipo de mantenimiento. No hace falta una regla
+    nueva: `avatar_path` es una columna de `profiles`, y la política `profiles_select` ya dice
+    exactamente lo que hay que decir —tu propia fila, o la de alguien con quien **compartes espacio
+    como miembro del espacio**—. Un cliente no está en `space_memberships`, así que **no puede leer
+    la fila de nadie del equipo**, foto incluida; y tampoco la de otro cliente de su restaurante, que
+    es coherente con el diseño: las listas del panel (páginas 152 y 153) dibujan **iniciales**, no
+    fotos. Donde el diseño sí enseña caras es en pantallas del equipo (página 22: carga de trabajo y
+    actividad reciente), y ahí las dos personas comparten espacio.
+  - **Lo que NO es.** La **foto del restaurante** que el diseño enseña en las listas (página 22) es
+    otra cosa: esa sí es del espacio y cabe en `files`. No entra aquí.
+  - **El límite de tamaño y los formatos son técnicos, no una regla de producto**: 2 MB y solo
+    imágenes (JPEG, PNG, WebP). No es un umbral que Bosco haya fijado y no se presenta como tal.
 
 Lo que este apartado **no** trae, dicho en claro: **no** trae ninguna capacidad nueva sobre los
 datos —todo lo que se ve aquí se puede ver ya dentro de su espacio o su panel—, **no** trae el

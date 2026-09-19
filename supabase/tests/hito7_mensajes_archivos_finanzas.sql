@@ -2838,6 +2838,18 @@ begin
         -- obligatorio no se apaga tampoco desde la cuenta.
         'set_my_profile', 'set_my_notification_preference',
         'my_notification_preferences',
+        -- Migración 109 (punto 8, RN-GLO-09). Misma familia, con un matiz
+        -- que conviene no perder: `set_my_avatar` **sí recibe** algo que
+        -- viene de fuera —la ruta—, así que "no admite un id ajeno" no la
+        -- absuelve sola. Lo que la absuelve es que comprueba esa ruta:
+        -- exige que empiece por el uuid de quien llama, porque sin eso la
+        -- fila propia acabaría apuntando a la foto de otra persona. Esa
+        -- comprobación no cabe en la heurística de arriba —no es una
+        -- capacidad, es `auth.uid()` contra el prefijo— y por eso se
+        -- clasifica aquí en vez de ensanchar el patrón. La suite 57 la
+        -- prueba con una ruta ajena y con una sin la barra.
+        -- `clear_my_avatar` no recibe nada y solo toca la fila propia.
+        'set_my_avatar', 'clear_my_avatar',
         -- Migración 100 (paso 2, §38). Las dos primitivas nuevas, que no
         -- pueden comprobarse a sí mismas y cuyos nombres entran en la
         -- heurística de arriba para que cuenten las que las llaman:

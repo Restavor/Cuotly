@@ -10,14 +10,14 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 108 migraciones del repositorio están aplicadas en el proyecto.
-Las siete del diseño definitivo móvil —de la 102 a la 108— se aplicaron el
-19/09/2026; abajo, en "Las siete del 19/09/2026", está qué hacía cada una y cómo
+**Ninguna.** Las 109 migraciones del repositorio están aplicadas en el proyecto.
+Las ocho del diseño definitivo móvil —de la 102 a la 109— se aplicaron el
+19/09/2026; abajo, en "Las ocho del 19/09/2026", está qué hacía cada una y cómo
 se comprobó. Lo que sigue es lo que se escribió sobre las seis últimas antes de aplicarlas —qué
 hacía cada una y qué había que mirar al leer el diff—, que se conserva porque es lo que se
 comprobó y no envejece.
 
-## Las siete del 19/09/2026, una a una
+## Las ocho del 19/09/2026, una a una
 
 Los puntos del orden acordado con Bosco para el diseño definitivo móvil
 (decisiones 47 a 52). Se aplicaron por el MCP, cada una comprobada antes de
@@ -87,6 +87,25 @@ pasar a la siguiente.
   28c se deshiciera sola y en silencio. Después se regeneró
   `database.types.ts`, y su diff es exactamente la columna `view_reports` y
   la función `establishment_panel_users`: nada más.
+
+- La **109** (`la_foto_de_perfil`, RN-GLO-09, decisión 53). En **una parte**:
+  el bucket `avatars`, la columna `profiles.avatar_path` y las dos funciones
+  con las que la persona pone y quita su foto. Aditiva; no toca ninguna fila
+  existente.
+
+  Es el **segundo bucket** del proyecto y sigue el patrón del primero
+  (migración 45): privado, y `storage.objects` con RLS activado y **cero
+  políticas**, que en PostgreSQL significa "nadie". Las dos puertas son el
+  `service_role` y las URLs firmadas. Que RLS siga activado lo comprueba la
+  propia migración y se para si no lo está, porque desactivarlo dejaría el
+  bucket abierto a cualquiera con sesión.
+
+  Comprobado después de aplicarla: el bucket está en `storage.buckets` con
+  `public = false`, 2 MB y solo JPEG/PNG/WebP. Antes, las 57 suites en verde
+  y dos mutaciones: quitar la comprobación del prefijo de `set_my_avatar()` y
+  poner el bucket en público hacen fallar la suite 57 nombrando la regla.
+  `database.types.ts` regenerado contra el proyecto, y su diff es exactamente
+  la columna y las dos funciones.
 
 ## Las seis del 17/09/2026, una a una
 
@@ -395,8 +414,8 @@ lanzar contra el proyecto y contra `al4` cuando haga falta.
 
 ## Aplicadas
 
-**Están aplicadas las 107 migraciones del repositorio.** Las seis del diseño
-definitivo móvil —de la 102 a la 107— el 19/09/2026. Las seis últimas —la 95, la 97, la 98,
+**Están aplicadas las 109 migraciones del repositorio.** Las ocho del diseño
+definitivo móvil —de la 102 a la 109— el 19/09/2026. Las seis últimas —la 95, la 97, la 98,
 la 99, la 100 y la 101— se aplicaron el 17/09/2026, una a una y comprobando cada una antes de
 pasar a la siguiente, por orden de Bosco ("Aplica las migraciones de una en una para asegurarnos
 de que se van a aplicar correctamente"). La 96 se
