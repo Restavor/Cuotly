@@ -245,6 +245,28 @@ comprobó y no envejece.
   —`585105cae7abee50b564c91e392638a3`— coincide con la de la base local construida desde el
   archivo del repositorio. `database.types.ts` **no cambia**: la firma es la misma.
 
+- La **105** (`20260919000105_crear_el_panel_del_restaurante.sql`, §40.1, RN-PAN-09 a 13, decisión
+  48). Dos cosas: el tipo de aviso `establishment_access_granted` en el CHECK de `notifications`, y
+  `grant_establishment_access()` redefinida para emitirlo.
+
+  **No añade ninguna columna de estado, y eso es la mitad de la decisión**: "panel creado" se
+  deriva de que haya un acceso vivo (RN-PAN-09), porque una bandera guardada puede quedarse en
+  `true` con todos los accesos revocados.
+
+  **Lo que hay que mirar al leer el diff**: la clave de deduplicación del aviso es de **un solo
+  uso** (`… || gen_random_uuid()`), y no es descuido. Una clave estable por persona y restaurante
+  deja **sin avisar** a quien se le devuelve un acceso revocado; y una clave nula es peor, porque
+  `dedupe_key` es `NOT NULL` y `emit_notification()` se traga el fallo y devuelve `null` **sin dar
+  error**: el aviso no se crea y nada lo dice. Lo que impide el doble aviso es `v_tenia`, leído
+  dentro del `for update` de la membresía.
+
+  No hay nada que hacer a mano en el panel. Comprobada en local: **las 54 suites en verde sobre
+  bootstrap + 105 migraciones**. **Aplicada el 19/09/2026**, en dos trozos
+  (`_1_tipo_de_aviso`, `_2_grant_establishment_access`). Comprobado después contra el proyecto: el
+  CHECK incluye el tipo nuevo y las dos huellas —la de la función
+  (`816cec9411b757dbf35997c6e2cb0b1b`) y la del CHECK (`f47cc64d03099cf6050bef51c5c9b942`)—
+  coinciden con las de la base local construida desde el archivo.
+
 ## Cómo se comprobó que las seis se aplicaron bien (17/09/2026)
 
 Después de cada una se hizo una consulta de comprobación —que existan sus tablas, sus funciones,

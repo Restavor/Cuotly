@@ -950,6 +950,7 @@ export const es = {
       absence_requested: "Ausencia pedida",
       absence_decided: "Ausencia resuelta",
       absence_uncovered_jobs: "Trabajos sin cobertura",
+      establishment_access_granted: "Acceso a tu panel",
     },
     // RN-MOV-04 (decisión 36) · el push dice qué ha pasado y dónde: el
     // evento, el restaurante y el espacio, la cifra si la hay y una frase
@@ -3677,6 +3678,44 @@ export const es = {
     // §38, RN-BCK · las copias de seguridad del contenido.
     // RN-ARC-10 · cuánto ocupa este restaurante (página 50 del diseño
     // definitivo móvil). Informativo: el límite es del espacio.
+    // §40.1, RN-PAN-09 a 13 · el panel del restaurante como algo que se
+    // crea (página 56 del diseño definitivo móvil).
+    panelTitle: "Panel del restaurante",
+    panelNotCreated: "No creado",
+    panelNotCreatedReason:
+      "Nadie del restaurante tiene acceso todavía, así que no hay panel al que entrar. Se crea dando el primer acceso.",
+    panelCreateTitle: "Crear panel del restaurante",
+    panelCreateHint: "Activa el acceso de este cliente a su panel para gestionar su presencia digital.",
+    panelBelongsTitle: "El panel pertenece a este establecimiento.",
+    panelBelongsHint:
+      "No crea un espacio de mantenimiento ni contrata automáticamente la suscripción de Cuotly del cliente.",
+    panelRestaurantLabel: "Restaurante",
+    panelCodeLabel: "Código",
+    panelGroupLabel: "Grupo",
+    panelNoGroup: "Sin grupo",
+    panelOwnerLabel: "Propietario del restaurante",
+    panelOwnerHint:
+      "Tiene que tener ya cuenta en Cuotly. Se le avisará con las instrucciones de acceso.",
+    panelAccessTitle: "Revisar accesos del cliente",
+    panelAccessItems: [
+      "Podrá ver y editar la carta digital",
+      "Podrá gestionar imágenes y contenidos",
+      "Podrá ver informes de visualizaciones",
+      "No tendrá acceso a otros establecimientos ni al espacio de mantenimiento",
+    ] as const,
+    panelCreateSubmit: "Crear panel",
+    panelCreatePending: "Creando…",
+    panelCreated: "Panel creado. Se ha avisado a quien lo gestiona.",
+    panelCreatedTitle: "Creado",
+    panelCreatedHint: (n: number) =>
+      n === 1
+        ? "1 persona del restaurante tiene acceso a su panel."
+        : `${n} personas del restaurante tienen acceso a su panel.`,
+    // CLAUDE.md · no se dice "No creado" cuando lo que ha pasado es que no
+    // se ha podido mirar. No son lo mismo.
+    panelUnknownTitle: "No hemos podido comprobarlo",
+    panelUnknownReason:
+      "No se ha podido leer quién tiene acceso a este restaurante, así que no sabemos si tiene panel. No es lo mismo que no tenerlo.",
     storageTitle: "Almacenamiento",
     storageValue: (restaurante: string, tamano: string) => `${restaurante}: ${tamano}`,
     storageNotAQuota:

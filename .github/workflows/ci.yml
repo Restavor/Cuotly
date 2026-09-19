@@ -436,6 +436,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/almacenamiento_por_restaurante.sql
 
+      - name: "Diseño móvil — Verificar que crear el panel del restaurante es dar el primer acceso, que no crea espacio ni suscripción y que avisa una sola vez (§40.1, RN-PAN-09 a 13)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/crear_el_panel_del_restaurante.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

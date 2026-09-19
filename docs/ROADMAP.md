@@ -5000,6 +5000,31 @@ diseño (**decisión 47**). Lo construido se retiró.
   sonaba a problema de la tabla entera. La 102 tropezaba con lo mismo y por eso lo lleva escrito.
 - **Verde**: 52 suites sobre 102 migraciones, typecheck, lint, 1422 tests y la compilación de Next.
 
+#### Hecho · Crear el panel del restaurante (§40.1, RN-PAN-09 a 13, migración 105, suite 54)
+Cuarto del orden, y el primero que cambia algo que se ve. El diseño dibuja el panel como algo que
+**se crea**: "Panel del restaurante · No creado" y un formulario (página 56). Hasta ahora el panel
+no se creaba —existía en cuanto alguien del lado cliente tenía acceso—, que es lo mismo dicho de
+otra manera, pero al equipo no se lo decía nadie.
+
+- **La duda que quedaba la resolvió el propio diseño.** En su formulario, "Propietario del
+  restaurante" lleva **asterisco** y dice *"Se enviará una invitación con las instrucciones de
+  acceso"*: no hay panel vacío, crear el panel **es** dar el primer acceso. No hubo que preguntar.
+- **El estado se DERIVA y no se guarda** (RN-PAN-09). Una bandera `panel_created_at` puede quedarse
+  en `true` con todos los accesos revocados, y entonces la ficha diría "panel creado" mientras nadie
+  puede entrar. La suite falla si aparece una columna de panel en `establishments`. El "cuándo" ya
+  está en `audit_log`.
+- **"No se ha podido mirar" no se dice como "No creado"**, que es la misma regla de siempre: uno le
+  dice a quien mira que pulse el botón y el otro que vuelva más tarde.
+- **Dos intentos de deduplicación fallaron, y los dos enseñaron algo.** Con una clave estable por
+  persona y restaurante, a quien se le devuelve un acceso revocado **no se le avisaba** — se habría
+  quedado sin saber que puede volver a entrar; lo cazó la suite. Con la clave a `null` fue peor:
+  `dedupe_key` es `NOT NULL`, `emit_notification()` se traga el fallo y devuelve `null` **sin dar
+  error**, así que el aviso no se crea y nada lo dice. Queda escrito en la migración por si vuelve a
+  aparecer un aviso que no llega y no hay error en ningún sitio.
+- **El guarda de listas compartidas volvió a hacer su trabajo**: el catálogo de avisos vive en
+  `src/core/notifications.ts` y en el CHECK de la tabla, y había tocado solo uno.
+- **Verde**: 54 suites sobre 105 migraciones, typecheck, lint, 1447 tests y la compilación de Next.
+
 #### Hecho · Los seis canales de fábrica (RN-CAN-03, migración 104)
 Tercero del orden. Estaba parado porque faltaban dos nombres y `CLAUDE.md` prohíbe inventarlos.
 **Salieron del propio diseño**: la página 74 enumera seis, y los que no estaban son **Diseño y

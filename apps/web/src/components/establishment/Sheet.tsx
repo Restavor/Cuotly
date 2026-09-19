@@ -37,6 +37,7 @@ import {
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { GrantAccessForm } from "./GrantAccessForm";
 import { BackupsBlock, type BackupRow } from "./BackupsBlock";
+import { CreatePanelForm } from "./CreatePanelForm";
 import { NotesPanel } from "@/components/notes/NotesPanel";
 import type { EstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 import { ServiceStatusForms } from "./ServiceStatusForms";
@@ -1950,6 +1951,50 @@ export function EstablishmentSheet({
           */}
           {block.key === "users" ? (
             <div className="space-y-4">
+            {/*
+              §40.1 · el panel del restaurante (página 56 del diseño).
+              Va DELANTE de la lista de usuarios porque es lo primero que
+              se pregunta de un restaurante nuevo: si el cliente puede
+              entrar ya o todavía no.
+
+              El estado se DERIVA de los accesos vivos (RN-PAN-09): no hay
+              bandera que guardar, porque una bandera puede decir "creado"
+              con todos los accesos revocados. Y "no se ha podido mirar" no
+              se dice como "no creado" (CLAUDE.md).
+            */}
+            <Card title={t.panelTitle}>
+              {users.failed ? (
+                <EmptyState title={t.panelUnknownTitle} description={t.panelUnknownReason} />
+              ) : users.rows.length > 0 ? (
+                <>
+                  <StatusBadge tone="success">{t.panelCreatedTitle}</StatusBadge>
+                  <p className="mt-2 text-sm text-text-secondary">
+                    {t.panelCreatedHint(users.rows.length)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <StatusBadge tone="neutral">{t.panelNotCreated}</StatusBadge>
+                  <p className="mt-2 text-sm text-text-secondary">{t.panelNotCreatedReason}</p>
+                  {canManageClients ? (
+                    <div className="mt-4 border-t border-border pt-4">
+                      <p className="text-base font-semibold text-primary-dark">
+                        {t.panelCreateTitle}
+                      </p>
+                      <p className="mb-3 mt-1 text-sm text-text-secondary">{t.panelCreateHint}</p>
+                      <CreatePanelForm
+                        establishmentId={header.id}
+                        groupId={header.groupId}
+                        establishmentName={header.name}
+                        code={header.code}
+                        groupName={header.groupName}
+                      />
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </Card>
+
             <Card title={t.usersTitle}>
               {/*
                 Maqueta 15 · "Añadir usuario existente" (RN-EST-04). Se le

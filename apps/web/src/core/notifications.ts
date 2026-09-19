@@ -99,6 +99,11 @@ export const NOTIFICATION_EVENTS = [
   "absence_requested",
   "absence_decided",
   "absence_uncovered_jobs",
+  // Migración 105 (§40.1, RN-PAN-12) · "se enviará una invitación con las
+  // instrucciones de acceso" de la página 56 del diseño. Antes se daba
+  // acceso a un restaurante en silencio y quien lo recibía se enteraba
+  // entrando.
+  "establishment_access_granted",
 ] as const;
 
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
@@ -341,6 +346,10 @@ export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = [
   // saber que hoy vence. Los dos avisos de impago que SÍ van al equipo son
   // los otros, los que cuentan que el servicio se ha parado.
   "charge_due_today",
+  // RN-PAN-12 · a quien se le da el acceso es a alguien del restaurante.
+  // El equipo ya sabe que lo ha dado: acaba de pulsarlo, y queda en la
+  // auditoría.
+  "establishment_access_granted",
 ];
 
 /**

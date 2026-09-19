@@ -2482,6 +2482,45 @@ La familia es **`RN-PAN`** (panel). No `RN-GLO`, que es lo que ocurre **fuera** 
   la ficha interna de §15.2 con sus cinco pestañas y la barra del espacio, en la misma dirección.
   Son dos lecturas de la misma cosa y cada una tiene su sitio.
 
+### 40.1 Crear el panel del restaurante (añadido 19/09/2026, decisión 48)
+
+El diseño definitivo móvil dibuja el panel como algo que **se crea**: la ficha enseña "Panel del
+restaurante · **No creado**" y un botón, y la página 56 es el formulario. Hasta ahora el panel no se
+creaba — existía en cuanto alguien del lado cliente tenía acceso al restaurante—, que es lo mismo
+dicho de otra manera, pero al equipo no se lo decía nadie.
+
+- **RN-PAN-09**: **"panel creado" se DERIVA, no se guarda.** Un restaurante tiene panel cuando
+  alguien del lado cliente tiene acceso vivo (`establishment_memberships` sin revocar). **No hay
+  columna** `panel_created_at` ni bandera equivalente, y es deliberado: una bandera guardada puede
+  quedarse en `true` con todos los accesos revocados, y entonces la ficha diría "panel creado"
+  mientras nadie puede entrar. Tener panel **es** que alguien pueda entrar; lo uno no es un reflejo
+  de lo otro, es lo otro. *Cuándo* se creó ya está en `audit_log`
+  (`establishment_access.granted`), que es donde viven los "cuándo" (CLAUDE.md).
+- **RN-PAN-10**: **crear el panel es dar el primer acceso**, y no se puede crear vacío. El diseño lo
+  fija: en su formulario, "Propietario del restaurante" es un campo **obligatorio** y dice
+  *"Se enviará una invitación con las instrucciones de acceso"*. Un panel creado sin nadie dentro
+  sería un estado que no significa nada para el cliente —no puede entrar igual— y una bandera más
+  que mantener.
+- **RN-PAN-11**: **crear el panel no crea un espacio, ni una membresía del espacio, ni una
+  suscripción.** Lo dice la propia pantalla del diseño, literal: *"El panel pertenece a este
+  establecimiento. No crea un espacio de mantenimiento ni contrata automáticamente la suscripción
+  de Cuotly del cliente."* Lo único que hace es `grant_establishment_access()` con rol
+  **propietario local**.
+- **RN-PAN-12**: **a quien recibe el acceso se le avisa** (`establishment_access_granted`, audiencia
+  cliente, con enlace a su panel). Antes se le daba acceso en silencio y se enteraba entrando.
+
+  **La persona tiene que tener ya cuenta en Cuotly**, y eso no cambia: `grant_establishment_access()`
+  rechaza un correo sin cuenta desde que existe, porque en Cuotly se invita al producto y luego se
+  da el restaurante (HU-03). La "invitación" de la pantalla del diseño es **este aviso**, no un alta
+  nueva — el campo del diseño es un **desplegable**, no un correo escrito a mano, y esa es la lectura
+  que sostiene. Si la intención era dar de alta a alguien que aún no tiene cuenta, esto hay que
+  reescribirlo: sería una puerta de creación de cuentas más, y `CLAUDE.md` no deja improvisarla.
+- **RN-PAN-13**: **quitar el último acceso deja el restaurante sin panel**, y la ficha vuelve a decir
+  "No creado". Es la consecuencia de RN-PAN-09 y se dice aquí porque parece un fallo cuando ocurre:
+  no lo es, es la única lectura que no miente.
+
+---
+
 Lo que este apartado **no** trae, dicho en claro:
 
 - **No mueve ninguna dirección.** Los 51 enlaces profundos que construye el servidor y los avisos ya
