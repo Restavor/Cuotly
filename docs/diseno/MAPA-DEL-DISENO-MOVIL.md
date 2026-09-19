@@ -169,3 +169,11 @@ seguridad). Hay que elegir una.
 
 Las siete de arriba, decididas. Hasta entonces no se construye: son reglas y
 modelo de datos, no disposición, y CLAUDE.md prohíbe inventarlas.
+
+**Al día 19/09/2026**: tres se cerraron como **decisión 47** (5.1 alérgenos,
+5.2 el plato como línea de texto, 5.6 la barra única). El resto está
+planteado punto por punto, con lo que cuesta cada salida y una propuesta,
+en **`docs/PROPUESTA-DISENO-MOVIL.md`** — que además corrige tres cosas que
+la lectura del PDF dio por ausentes y sí existen: el estado `configuring`,
+las notas internas (migraciones 66 y 67) y las copias de seguridad
+(migración 100).
