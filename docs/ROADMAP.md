@@ -5000,6 +5000,29 @@ diseño (**decisión 47**). Lo construido se retiró.
   sonaba a problema de la tabla entera. La 102 tropezaba con lo mismo y por eso lo lleva escrito.
 - **Verde**: 52 suites sobre 102 migraciones, typecheck, lint, 1422 tests y la compilación de Next.
 
+#### Hecho · Gestión, con los nueve bloques del diseño (RN-EST-14, decisión 48)
+Primero del orden de `docs/PROPUESTA-DISENO-MOVIL.md`, y el que menos toca: **es disposición, no
+reglas**. El diseño definitivo se contradice a sí mismo —la página 27 enumera Gestión entera y la
+58 enseña otra lista—, y manda la 27.
+
+- **Dos bloques que ya existían cambian de sitio, no de regla**: las **notas internas**
+  (migraciones 66 y 67) se leían desde la conversación y las **copias de seguridad** (migración
+  100) desde el cuerpo de la ficha.
+- **"Estado del servicio" se queda** aunque el diseño no lo dibuje: archivar, reactivar y registrar
+  una baja tienen que vivir en algún sitio.
+- **Los siete `slug` que ya existían no se tocan**, con un test que lo exige: la pestaña viaja en la
+  dirección, así que cambiar uno rompe los enlaces que alguien tenga pegados en un mensaje.
+- **Mover una pantalla de sitio es justo cuando se pierde una regla**, y la de aquí es RN-EST-13:
+  el cliente no ve las notas internas **nunca**. La suite nueva no comprueba que el bloque se pinte;
+  comprueba que **sin permiso no aparece ni el título** —una caja vacía titulada "Notas internas" ya
+  cuenta que existen—. Comprobado quitándole el guarda a `NotesPanel`: el test se pone rojo.
+- **Un guarda del repositorio saltó, y tenía razón**: el fixture compartido que hizo falta lleva una
+  zona horaria escrita, y el barrido de `dates.test.ts` lo tomó por una pantalla. Se excluyó a los
+  `*-fixture`, **con su falso-cerrado**: otro test exige que nadie fuera de las suites los importe,
+  para que la excepción no se trague una pantalla colada por el nombre. Comprobado haciendo que
+  `Sheet.tsx` importara el fixture: rojo.
+- **Verde**: typecheck, lint, 1429 tests y la compilación de Next.
+
 #### Hecho · El panel del restaurante como contexto propio (§40, RN-PAN-01 a 08; decisión 46)
 Lo último del paso 2. **La mitad de esta entrada estaba mal**: decía que faltaban las cinco pestañas
 de la ficha del restaurante, y llevaban hechas desde el Hito 7 —`SHEET_TABS`, `Sheet.tsx` y una

@@ -44,6 +44,35 @@ describe("las cinco pestañas de la ficha (PRD §15.2)", () => {
     );
   });
 
+  it("RN-EST-14 · Gestión tiene los nueve bloques del diseño, en su orden", () => {
+    expect(MANAGEMENT_BLOCKS.map((b) => b.key)).toEqual([
+      "establishmentData",
+      "plan",
+      "payments",
+      "users",
+      "files",
+      "integrations",
+      "internalNotes",
+      "backups",
+      "serviceStatus",
+    ]);
+  });
+
+  it("RN-EST-14 · los `slug` de los siete que ya existían NO cambian", () => {
+    // La pestaña viaja en la dirección, así que un `slug` que cambia rompe
+    // los enlaces que alguien tenga guardados o pegados en un mensaje. Las
+    // dos que se añaden traen hueco nuevo; las otras siete se quedan como
+    // estaban.
+    const porClave = new Map(MANAGEMENT_BLOCKS.map((b) => [b.key, b.slug]));
+    expect(porClave.get("establishmentData")).toBe("ficha");
+    expect(porClave.get("plan")).toBe("plan");
+    expect(porClave.get("payments")).toBe("pagos");
+    expect(porClave.get("users")).toBe("usuarios");
+    expect(porClave.get("files")).toBe("archivos");
+    expect(porClave.get("integrations")).toBe("integraciones");
+    expect(porClave.get("serviceStatus")).toBe("estado");
+  });
+
   it("ninguna dirección se repite", () => {
     expect(new Set(SHEET_TABS.map((t) => t.slug)).size).toBe(SHEET_TABS.length);
     expect(new Set(MANAGEMENT_BLOCKS.map((b) => b.slug)).size).toBe(MANAGEMENT_BLOCKS.length);
@@ -60,6 +89,8 @@ describe("las cinco pestañas de la ficha (PRD §15.2)", () => {
     expect(parseManagementBlock("ficha").key).toBe("establishmentData");
     expect(parseManagementBlock("plan").key).toBe("plan");
     expect(parseManagementBlock("archivos").key).toBe("files");
+    expect(parseManagementBlock("notas").key).toBe("internalNotes");
+    expect(parseManagementBlock("copias").key).toBe("backups");
   });
 
   it("el enlace de una pestaña no fija bloque salvo que se le pida", () => {

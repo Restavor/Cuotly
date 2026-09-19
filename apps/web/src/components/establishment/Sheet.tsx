@@ -37,6 +37,8 @@ import {
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { GrantAccessForm } from "./GrantAccessForm";
 import { BackupsBlock, type BackupRow } from "./BackupsBlock";
+import { NotesPanel } from "@/components/notes/NotesPanel";
+import type { EstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 import { ServiceStatusForms } from "./ServiceStatusForms";
 import { TransferBlock, type PendingTransfer } from "./TransferForms";
 import { StatusLegend } from "./StatusLegend";
@@ -140,6 +142,8 @@ export interface SheetData {
   // seguridad (RN-BCK). Las dos viven en el bloque "Estado del servicio".
   readonly transfer: PendingTransfer | null;
   readonly backups: readonly BackupRow[];
+  /** RN-EST-14 · las notas internas, ahora un bloque de Gestión. */
+  readonly notes: EstablishmentNotes;
   readonly canProposeTransfer: boolean;
   /**
    * Maqueta 17 · las integraciones del restaurante (Fase 3, Hito 14).
@@ -812,6 +816,7 @@ export function EstablishmentSheet({
     statusReason,
     transfer,
     backups,
+    notes,
     canProposeTransfer,
     integrations,
     digital,
@@ -2408,6 +2413,30 @@ export function EstablishmentSheet({
             `request_service_termination()` comprueba lo suyo—: es no
             ofrecer botones que van a decir que no.
           */}
+          {/*
+            RN-EST-14 · las notas internas, que hasta ahora solo se leían
+            desde la conversación. Cambiar dónde se entra no las acerca al
+            cliente: `NotesPanel` no se pinta cuando quien mira no tiene
+            nada que ver con ellas —ni siquiera vacío, porque una caja
+            titulada "Notas internas" diciendo "no hay ninguna" ya le
+            cuenta al cliente que existen (RN-EST-13, RN-MSG-04)—. Quién
+            las lee lo decide `can_read_establishment_notes()`, no esto.
+          */}
+          {block.key === "internalNotes" ? (
+            <NotesPanel establishmentId={header.id} notes={notes} timeZone={timeZone} />
+          ) : null}
+
+          {/* RN-EST-14 · las copias de seguridad (§38, RN-BCK), que hasta
+              ahora vivían con el estado del servicio. */}
+          {block.key === "backups" ? (
+            <BackupsBlock
+              establishmentId={header.id}
+              backups={backups}
+              timezone={timeZone}
+              canManage={canManageClients}
+            />
+          ) : null}
+
           {block.key === "serviceStatus" ? (
             <>
               <Card title={t.serviceStatusTitle}>
@@ -2423,13 +2452,6 @@ export function EstablishmentSheet({
                 establishmentId={header.id}
                 pending={transfer}
                 canPropose={canProposeTransfer}
-              />
-
-              <BackupsBlock
-                establishmentId={header.id}
-                backups={backups}
-                timezone={timeZone}
-                canManage={canManageClients}
               />
 
               {canManageClients ? (

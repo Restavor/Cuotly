@@ -34,6 +34,7 @@ import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
 import { loadBackups, loadPendingTransfer } from "./transfer-load";
+import { loadEstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 import { parseDataSection, parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
 import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
@@ -180,9 +181,14 @@ export default async function EstablishmentPage({
     // §38 · la propuesta de transferencia abierta, si la hay, y las copias
     // de seguridad. Las dos las filtra su política: si vuelven vacías es
     // que no había nada que enseñarle a quien preguntó.
-    const [transfer, backups, { data: soyPropietario }] = await Promise.all([
+    const [transfer, backups, notes, { data: soyPropietario }] = await Promise.all([
       loadPendingTransfer(supabase, id, space.id),
       loadBackups(supabase, id),
+      // RN-EST-14 · las notas internas, que desde el diseño definitivo son
+      // un bloque de Gestión. Quién las lee lo decide
+      // `can_read_establishment_notes()` dentro del cargador, no esta
+      // pantalla (RN-EST-13).
+      loadEstablishmentNotes(supabase, id, space.id, user.id),
       supabase.rpc("space_owner_is_me", { p_space_id: space.id }),
     ]);
 
@@ -299,6 +305,7 @@ export default async function EstablishmentPage({
           statusReason: statusReason ?? null,
           transfer,
           backups,
+          notes,
           canProposeTransfer: soyPropietario === true,
           integrations,
           digital,

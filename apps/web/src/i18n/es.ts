@@ -3638,6 +3638,8 @@ export const es = {
       users: "Usuarios",
       files: "Archivos",
       integrations: "Integraciones",
+      internalNotes: "Notas internas",
+      backups: "Copias de seguridad",
       serviceStatus: "Estado del servicio",
     },
     // Maqueta 06 · el enlace del encabezado. Solo aparece cuando hay sitio

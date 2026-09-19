@@ -537,6 +537,31 @@ La ficha tiene cinco pestañas: **Resumen · Operación · Informes y datos · G
 En Fase 1, "Informes y datos" muestra únicamente indicadores operativos propios; la analítica digital
 llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; las pantallas, Hito 14).
 
+- **RN-EST-14 (añadida 19/09/2026, decisión 48)**: **Gestión tiene nueve bloques**, en este orden:
+  **Datos · Plan y servicios · Pagos · Usuarios · Archivos · Integraciones · Notas internas ·
+  Copias de seguridad · Estado del servicio**.
+
+  Sale del diseño definitivo móvil, que **se contradice a sí mismo**: su página 27 enumera Gestión
+  entera (Datos · Plan y servicios · Pagos · Usuarios · Archivos · Integraciones · Notas internas)
+  y su página 58 enseña otra lista (Usuarios y accesos · Configuración · Archivos · Copias de
+  seguridad). **Manda la 27**, porque es la que enumera la pestaña entera; la 58 solo dibuja una de
+  sus subpestañas y llama "Configuración" a lo que la 27 llama Datos.
+
+  Las dos que se añaden **ya existían y vivían en otro sitio**: las **notas internas** (§16,
+  RN-MSG-04 y RN-EST-13; migraciones 66 y 67) se leían desde la conversación, y las **copias de
+  seguridad** (§38, RN-BCK; migración 100) desde el cuerpo de la ficha. Esto no cambia ninguna
+  regla suya: cambia dónde se entra. En particular **RN-EST-13 sigue intacta** —los clientes nunca
+  ven las notas internas—, y que ahora cuelguen de Gestión no las acerca ni un paso al cliente: la
+  pestaña Gestión es del equipo.
+
+  **"Estado del servicio" se queda aunque el diseño no lo dibuje.** Es donde se archiva un
+  restaurante, se reactiva y se registra la baja que llegó por teléfono (M84, M47), y eso tiene que
+  vivir en algún sitio; va el último a propósito, porque son las tres acciones que no se hacen
+  todos los días.
+
+  **El hueco de cada bloque en la dirección no cambia** (`?vista=gestion&bloque=archivos`): un
+  `slug` que cambia rompe los enlaces que alguien tenga guardados.
+
 ---
 
 ## 16. Mensajes (RN-MSG)

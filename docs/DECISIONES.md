@@ -919,6 +919,39 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    prioridad con motivo, los seis canales de fábrica y qué subpestañas tiene Gestión —el diseño se
    contradice a sí mismo entre sus páginas 27 y 58—.
 
+48. **Dos del diseño móvil, y un roce que queda abierto** (19/09/2026). De las tres preguntas que
+   dejó la propuesta (`docs/PROPUESTA-DISENO-MOVIL.md`), Bosco contestó dos.
+
+   - **"Cuotly Insights" es el resumen.** No es una fuente de datos nueva: es el nombre que el
+     diseño le da al resumen que Cuotly ya calcula a partir de GA4, Search Console, Clarity y
+     PageSpeed (páginas 41 y 44). No hay recogida propia, ni retención, ni aviso legal nuevo. Se
+     construye como una etiqueta sobre lo que existe.
+
+   - **La prioridad del plan es el tiempo de respuesta**, y quien más tiene es **Premium+**.
+
+     **Lo que esto NO resuelve todavía, dicho aquí para que no se pierda:**
+
+     1. **Premium+ no responde hoy más rápido que Impulso+ y Premium**: los tres arrancan a 24 h
+        laborables (`plans.start_sla_hours`, RN-SLA-02, fichas de Restavor del 16/09 — decisión
+        39). Si "el menor tiempo de respuesta" significa *más corto que los demás*, falta el
+        número y **no se inventa** (CLAUDE.md). Si significa *el más corto de los que hay*, ya se
+        cumple y no hay nada que cambiar.
+     2. **RN-COM-03 dice que el cliente NUNCA ve esa prioridad**, y las fichas de plan del diseño
+        (páginas 96 y 97) la enseñan como atributo comercial: "Prioridad: Alta / Superior". O la
+        prioridad del plan pasa a ser visible y RN-COM-03 se reescribe con su motivo, o la ficha
+        de plan no la pinta. **No se resuelve por cuenta propia.**
+
+     Mientras tanto, el punto 10 de la propuesta —los atributos de plan— **sigue sin construirse**,
+     igual que "Informes: Estándar / Avanzado", que nadie ha definido.
+
+   **Sigue sin contestar**: los dos canales de fábrica que faltan (el diseño enseña seis en su
+   página 74; la migración 100 siembra cuatro: General, Proyectos web, Menú diario, Redes
+   sociales). Hace falta antes del punto 3 del orden acordado.
+
+   **El orden de construcción queda confirmado** tal como lo propone `PROPUESTA-DISENO-MOVIL.md`:
+   Gestión → almacenamiento por restaurante → canales → crear panel → orden interno con motivo →
+   horario de recepción → permisos finos del cliente → foto de perfil.
+
 ---
 
 ### Pendiente de completar

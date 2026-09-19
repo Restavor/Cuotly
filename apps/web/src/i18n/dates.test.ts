@@ -58,9 +58,34 @@ function archivos(dir: string, acc: string[] = []): string[] {
     const ruta = join(dir, entrada);
     if (statSync(ruta).isDirectory()) {
       archivos(ruta, acc);
-    } else if (/\.tsx?$/.test(entrada) && !/\.test\.tsx?$/.test(entrada)) {
+    } else if (
+      /\.tsx?$/.test(entrada) &&
+      !/\.test\.tsx?$/.test(entrada) &&
+      // Un `*-fixture.ts` es dato de prueba, igual que un `*.test.tsx`: la
+      // zona que lleva dentro es la de un restaurante inventado, no la que
+      // una pantalla usa para pintar una fecha. Que esto sea de verdad
+      // dato de prueba y no una pantalla colada por el nombre lo comprueba
+      // el test de abajo, que exige que nadie fuera de las suites los
+      // importe.
+      !/-fixture\.tsx?$/.test(entrada)
+    ) {
       acc.push(ruta);
     }
+  }
+  return acc;
+}
+
+/**
+ * TODOS los `.ts`/`.tsx` bajo `src`, rutas relativas y sin saltarse nada:
+ * suites y fixtures incluidos. `archivos()` se salta unos cuantos a
+ * propósito, y para vigilar esos saltos hace falta una lista que no se
+ * salte ninguno.
+ */
+function todos(dir: string, base = dir, acc: string[] = []): string[] {
+  for (const entrada of readdirSync(dir)) {
+    const ruta = join(dir, entrada);
+    if (statSync(ruta).isDirectory()) todos(ruta, base, acc);
+    else if (/\.tsx?$/.test(entrada)) acc.push(ruta.slice(base.length + 1).replaceAll("\\", "/"));
   }
   return acc;
 }
@@ -132,6 +157,29 @@ describe("ninguna pantalla se inventa la zona horaria", () => {
     expect(
       culpables,
       "una pantalla lleva una zona horaria escrita a mano. La zona la manda el espacio: `spaces.timezone` en las pantallas del equipo, `establishment_timezone()` en las del restaurante",
+    ).toEqual([]);
+  });
+
+  it("los `*-fixture` que el barrido se salta son SOLO de las suites", () => {
+    // El falso-cerrado de la excepción de arriba. Si alguien llama
+    // `algo-fixture.ts` a una pantalla, o una pantalla empieza a tirar de
+    // un fixture, el barrido dejaría de mirarla y su zona escrita a mano
+    // pasaría sin que nadie se enterara. Aquí se exige lo contrario: un
+    // fixture solo lo importa un `*.test.ts(x)`.
+    const fixtures = todos(RAIZ).filter((r) => /-fixture\.tsx?$/.test(r));
+    expect(fixtures.length, "no hay ningún fixture: si se quitaron, quita también la excepción")
+      .toBeGreaterThan(0);
+
+    const culpables: string[] = [];
+    for (const ruta of todos(RAIZ)) {
+      if (/\.test\.tsx?$/.test(ruta)) continue;
+      if (/-fixture\.tsx?$/.test(ruta)) continue;
+      const codigo = readFileSync(join(RAIZ, ruta), "utf8");
+      if (/from\s+["'][^"']*-fixture["']/.test(codigo)) culpables.push(ruta);
+    }
+    expect(
+      culpables,
+      "algo que no es una suite importa un `*-fixture`: el barrido de zonas horarias no lo mira",
     ).toEqual([]);
   });
 

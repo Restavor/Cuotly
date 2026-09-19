@@ -37,7 +37,15 @@ export const SHEET_TABS: readonly SheetTab[] = [
 ];
 
 /**
- * Gestión, con la ficha de datos por delante.
+ * Gestión, con la ficha de datos por delante. **Nueve bloques**
+ * (RN-EST-14, decisión 48), que son los de la página 27 del diseño
+ * definitivo móvil más el estado del servicio.
+ *
+ * El diseño se contradice a sí mismo —su página 58 enseña otra lista:
+ * Usuarios y accesos / Configuración / Archivos / Copias de seguridad— y
+ * manda la 27, que es la que enumera la pestaña entera; la 58 solo dibuja
+ * una de sus subpestañas y llama "Configuración" a lo que la 27 llama
+ * Datos.
  *
  * §20 de la especificación maestra enumera cinco contenidos —"plan, pagos,
  * usuarios, archivos e integraciones"— y ninguno es el bloque de datos.
@@ -61,10 +69,19 @@ export const MANAGEMENT_BLOCKS: readonly ManagementBlock[] = [
   { key: "users", slug: "usuarios" },
   { key: "files", slug: "archivos" },
   { key: "integrations", slug: "integraciones" },
+  // RN-EST-14 · las dos que el diseño definitivo pone en Gestión y que ya
+  // existían en otro sitio: las notas internas se leían desde la
+  // conversación (migraciones 66 y 67) y las copias de seguridad desde el
+  // cuerpo de la ficha (migración 100). No cambia ninguna regla suya:
+  // cambia por dónde se entra.
+  { key: "internalNotes", slug: "notas" },
+  { key: "backups", slug: "copias" },
   // M84 y M47 · el estado de servicio del restaurante: archivar, reactivar
   // y registrar la baja que llegó por teléfono. Va el último a propósito:
   // son las tres acciones que no se hacen todos los días, y ponerlas antes
-  // de los datos o del plan las convertiría en un tropiezo.
+  // de los datos o del plan las convertiría en un tropiezo. El diseño no lo
+  // dibuja, y se queda igual: archivar y reactivar tienen que vivir en
+  // algún sitio (RN-EST-14).
   { key: "serviceStatus", slug: "estado" },
 ];
 
