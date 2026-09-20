@@ -1,5 +1,6 @@
 import { contractualCalendar, holidaysKnownAsOf, type HolidayRecord } from "@/core/business-clock";
 import {
+  dayKeyInTimeZone,
   jobDeadlineRisk,
   OPEN_JOB_STATES,
   PENDING_REQUEST_STATES,
@@ -9,6 +10,7 @@ import {
 } from "@/core/home";
 import { isJobState, type JobState } from "@/core/job-states";
 import { loadLevel, type LoadLevel } from "@/core/load-points";
+import { civilDayStartInZone } from "@/core/team-calendar";
 import { t2Status, t3Status, type CounterStatus } from "@/core/sla-timers";
 import type { TimerEvent, TimerEventType } from "@/core/timer-events";
 import type { ChangeCategory } from "@/core/classification-rules";
@@ -69,6 +71,23 @@ export interface SpaceHome {
   /** Página 22 · "Trabajos en curso", y de ellos cuántos van en plazo. */
   readonly jobsInProgress: number;
   readonly jobsOnTime: number;
+  /**
+   * Página 22 · "Actividad de mantenimiento": un punto por día del mes en
+   * curso, con las solicitudes creadas y los trabajos completados.
+   *
+   * Los días **sin nada son cero de verdad**, no un hueco: la consulta
+   * abarca el mes entero, así que un día vacío significa que no pasó nada
+   * ese día. Es lo contrario de una cifra que no se ha podido leer, y por
+   * eso `days` viene siempre completo y `failed` lo dice aparte.
+   */
+  readonly activityChart: {
+    readonly failed: boolean;
+    readonly days: readonly {
+      readonly day: string;
+      readonly requests: number;
+      readonly jobs: number;
+    }[];
+  };
   readonly pendingRequests: number;
   /**
    * `null` cuando NO se ha podido calcular (la consulta de contadores
@@ -103,6 +122,24 @@ export interface SpaceHome {
 }
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * El instante en que empieza el mes en curso **en la zona del espacio**,
+ * en ISO, para dárselo a la consulta tal cual.
+ *
+ * No es "el día 1 a las 00:00 UTC", que era lo que decía la primera
+ * versión: en Madrid el mes empieza a las 22:00 del último día del mes
+ * anterior, así que ese corte metía en la gráfica dos horas de solicitudes
+ * que son del mes pasado. `civilDayStartInZone()` ya sabe convertir un día
+ * civil en instante y sortear los dos días del año en que la zona cambia
+ * de horario.
+ */
+function inicioDeMes(mes: string, timeZone: string): string {
+  // El `??` solo se alcanzaría con una zona que `Intl` no conoce, y la
+  // zona sale de `spaces.timezone`: si fuera inválida, `dayKeyInTimeZone`
+  // habría lanzado antes de llegar aquí.
+  return civilDayStartInZone(`${mes}-01`, timeZone) ?? `${mes}-01T00:00:00.000Z`;
+}
 
 interface CounterRow {
   readonly job_id: string;
@@ -358,6 +395,9 @@ export async function loadSpaceHome(
   const { data: spaceRow } = await supabase.from("spaces").select("timezone").eq("id", spaceId).maybeSingle();
   const timeZone = spaceRow?.timezone ?? "Europe/Madrid";
 
+  /** "AAAA-MM" del mes en curso **en la zona del espacio** (CLAUDE.md). */
+  const mesEnCurso = dayKeyInTimeZone(now, timeZone).slice(0, 7);
+
   const [
     attention,
     { data: teamLoad, error: teamLoadError },
@@ -365,6 +405,8 @@ export async function loadSpaceHome(
     { data: events },
     menuQueue,
     { data: ciclos },
+    { data: solicitudesDelMes, error: errorSolicitudes },
+    { data: trabajosDelMes, error: errorTrabajos },
   ] = await Promise.all([
     loadSpaceAttention(supabase, spaceId, spaceSlug, now),
     supabase.rpc("space_team_load", { p_space_id: spaceId }),
@@ -394,6 +436,30 @@ export async function loadSpaceHome(
       .eq("space_id", spaceId)
       .lte("cycle_start", now.toISOString())
       .gt("cycle_end", now.toISOString()),
+    /*
+      Página 22 · "Actividad de mantenimiento", el mes en curso.
+
+      Dos consultas y no una: son dos tablas y dos fechas distintas —cuándo
+      se creó la solicitud y cuándo se completó el trabajo—, y juntarlas en
+      SQL obligaría a una vista o a un `union` que después habría que
+      desentrañar aquí de todos modos.
+
+      Se piden **solo las fechas**: nada de `select *` sobre `requests`,
+      que tiene privilegios de columna y devolvería 403 (CLAUDE.md).
+    */
+    supabase
+      .from("requests")
+      .select("created_at")
+      .eq("space_id", spaceId)
+      .gte("created_at", inicioDeMes(mesEnCurso, timeZone))
+      .lte("created_at", now.toISOString()),
+    supabase
+      .from("jobs")
+      .select("completed_at")
+      .eq("space_id", spaceId)
+      .not("completed_at", "is", null)
+      .gte("completed_at", inicioDeMes(mesEnCurso, timeZone))
+      .lte("completed_at", now.toISOString()),
   ]);
 
   // ------------------------------------------------------------------
@@ -456,6 +522,41 @@ export async function loadSpaceHome(
     }
   }
 
+  /*
+    Página 22 · la serie del mes, día a día y en la zona del espacio
+    (CLAUDE.md: las fechas se calculan en la zona horaria del espacio, no
+    en la del servidor ni en la del navegador).
+
+    El array se rellena entero desde el día 1 hasta hoy **antes** de contar
+    nada, así que un día sin actividad vale 0 y no desaparece de la
+    gráfica: una línea que se salta los días vacíos dibuja una pendiente
+    que no existió.
+  */
+  const porDia = new Map<string, { requests: number; jobs: number }>();
+  /*
+    Los días se cuentan **por su número**, del 1 a hoy, y no sumando 24
+    horas a un instante: los dos días del año en que la zona cambia de
+    horario, ese salto de 24 h cae una hora antes o después de medianoche
+    y repite un día o se salta otro. Aquí todos los días son del mismo mes,
+    así que contar es suficiente y no puede desfasarse.
+  */
+  const ultimoDia = Number(dayKeyInTimeZone(now, timeZone).slice(8, 10));
+  for (let dia = 1; dia <= ultimoDia; dia += 1) {
+    porDia.set(`${mesEnCurso}-${String(dia).padStart(2, "0")}`, { requests: 0, jobs: 0 });
+  }
+
+  for (const fila of solicitudesDelMes ?? []) {
+    const clave = dayKeyInTimeZone(new Date(fila.created_at), timeZone);
+    const punto = porDia.get(clave);
+    if (punto !== undefined) punto.requests += 1;
+  }
+  for (const fila of trabajosDelMes ?? []) {
+    if (fila.completed_at === null) continue;
+    const clave = dayKeyInTimeZone(new Date(fila.completed_at), timeZone);
+    const punto = porDia.get(clave);
+    if (punto !== undefined) punto.jobs += 1;
+  }
+
   const team: TeamMemberLoad[] = loadRows.map((row) => ({
     userId: row.user_id,
     name: names.get(row.user_id) ?? "",
@@ -497,6 +598,16 @@ export async function loadSpaceHome(
     })),
     jobsInProgress: attention.jobsInProgress,
     jobsOnTime: attention.jobsOnTime,
+    activityChart: {
+      // Si una de las dos consultas falló, la gráfica **no se dibuja a
+      // medias**: una línea plana en cero se leería como "no pasó nada".
+      failed: errorSolicitudes !== null || errorTrabajos !== null,
+      days: [...porDia.entries()].map(([day, punto]) => ({
+        day,
+        requests: punto.requests,
+        jobs: punto.jobs,
+      })),
+    },
     pendingRequests: attention.pendingRequests,
     jobsAtDeadlineRisk: attention.jobsAtDeadlineRisk,
     attention: attention.items,

@@ -45,6 +45,23 @@
   --color-danger: #c84c4c;
   --color-info: #3976d4;
 
+  /*
+   * Las series de una gráfica. Son **identidad**, no estado: la primera es
+   * el verde de la marca y la segunda un índigo propio.
+   *
+   * Por qué no son dos verdes, que es lo que dibuja el diseño: medidos,
+   * `#1d8a6a` y `#32b889` se separan ΔE 13,6 para vista normal y el mínimo
+   * es 15 — no se distinguen ni viendo bien los colores, menos en un
+   * teléfono. Y por qué no es el azul de `info`: un color de estado no se
+   * reutiliza para una serie, o deja de significar lo que significa.
+   *
+   * Esta pareja pasa las cinco comprobaciones (banda de luminosidad, croma,
+   * separación con daltonismo, separación con vista normal y contraste
+   * sobre el fondo). Antes de tocarla, vuelve a medirla.
+   */
+  --color-chart-1: #1d8a6a;
+  --color-chart-2: #5b6cb8;
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --radius-field: 10px;

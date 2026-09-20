@@ -751,6 +751,41 @@ export const es = {
     // barra con un porcentaje; **no se pinta** porque no está definido qué
     // mide, y una barra sin regla detrás es un adorno que se lee como un
     // dato. Cuando se defina qué mide, se añade.
+    // Página 22 del diseño definitivo móvil · "Actividad de mantenimiento".
+    activityChart: {
+      title: "Actividad de mantenimiento",
+      requests: "Solicitudes creadas",
+      jobs: "Trabajos completados",
+      thisMonth: "Este mes",
+      // CA-20 · si una de las dos consultas falla, no se dibuja una línea
+      // plana: una línea en cero se leería como "no pasó nada".
+      failed: "No hemos podido leer la actividad del mes. Vuelve a cargar en un momento.",
+      empty: "Todavía no ha pasado nada este mes.",
+      // La tabla que acompaña a la gráfica: quien no distinga los colores,
+      // quien use lector de pantalla y quien quiera el número exacto leen
+      // lo mismo que el dibujo.
+      tableCaption: "Actividad del mes, día a día",
+      showTable: "Ver los números",
+      hideTable: "Ocultar los números",
+      columnDay: "Día",
+      point: (dia: string, solicitudes: number, trabajos: number) =>
+        `${dia}: ${solicitudes} creadas, ${trabajos} completados`,
+      /**
+       * Las etiquetas del eje horizontal: "1 mar", como las escribe el
+       * diseño. El nombre corto del mes va aquí y **no sale de `Intl`**
+       * a propósito: la gráfica se pinta también en el navegador, y los
+       * datos de idioma del servidor y los del teléfono no tienen por qué
+       * coincidir — dos etiquetas distintas para el mismo día rompen la
+       * hidratación de React.
+       */
+      axisDay: (dia: number, mes: number) =>
+        `${dia} ${
+          ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][
+            mes - 1
+          ] ?? ""
+        }`,
+    },
+
     byRestaurant: {
       title: "Estado por restaurante",
       seeAll: "Ver todos",

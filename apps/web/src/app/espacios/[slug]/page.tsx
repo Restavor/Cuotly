@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { ActivityChart } from "@/components/home/ActivityChart";
 import { ActivityFeed } from "@/components/home/ActivityFeed";
 import { AttentionList } from "@/components/home/AttentionList";
 import { KpiCard } from "@/components/home/KpiCard";
@@ -234,11 +235,28 @@ export default async function SpacePage({
       </section>
 
       {/*
-        Página 22 · "Estado por restaurante". Va **sin la barra de
-        porcentaje** que dibuja el diseño: no está definido qué mide, y una
-        barra sin regla detrás se lee como un dato aunque no lo sea
-        (CLAUDE.md MUST NOT). El resto del bloque —quién es y cómo está— sí
-        es cierto y sí lleva a su ficha.
+        Página 22 · "Actividad de mantenimiento": las solicitudes creadas y
+        los trabajos completados, día a día del mes en curso.
+
+        El "Este mes" del diseño es ahí un desplegable de periodo. Aquí va
+        escrito, sin desplegable: el periodo es el mes en curso y no hay
+        otro que elegir todavía. Un desplegable con una sola opción —o peor,
+        con opciones que no cambian nada— promete algo que no existe.
+      */}
+      <Card title={es.spaceHome.activityChart.title} action={
+        <span className="text-sm text-text-secondary">{es.spaceHome.activityChart.thisMonth}</span>
+      }>
+        <ActivityChart
+          days={home.activityChart.days}
+          failed={home.activityChart.failed}
+        />
+      </Card>
+
+      {/*
+        Página 22 · "Estado por restaurante", con la barra que Bosco definió
+        el 20/09/2026: lo que lleva gastado de su bolsa de cambios en el
+        ciclo vigente. Donde no hay bolsa que medir no hay barra, porque un
+        porcentaje ahí afirmaría algo falso (CLAUDE.md MUST NOT).
       */}
       <Card
         title={es.spaceHome.byRestaurant.title}
