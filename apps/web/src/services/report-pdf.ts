@@ -21,6 +21,7 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import {
   type ReportFigure,
   type ReportSnapshot,
+  figureChange,
   orderedSections,
 } from "@/core/reports";
 import { es } from "@/i18n/es";
@@ -56,6 +57,29 @@ export function figureText(figure: ReportFigure, labels: Labels): string {
     return labels.units[unit](figure.value);
   }
   return new Intl.NumberFormat("es-ES").format(figure.value);
+}
+
+/**
+ * RN-REP-17 · la variación de una cifra, ya en palabras. `null` cuando no
+ * hay comparación, que la pantalla y el PDF traducen en **no pintar nada**
+ * — no en pintar un hueco.
+ */
+export function changeText(figure: ReportFigure, labels: Labels): string | null {
+  const cambio = figureChange(figure);
+  switch (cambio.kind) {
+    case "none":
+      return null;
+    case "no_previous":
+      return labels.change.noPrevious;
+    case "flat":
+      return labels.change.flat;
+    case "from_zero":
+      return labels.change.fromZero;
+    case "percent":
+      return cambio.percent > 0
+        ? labels.change.up(cambio.percent)
+        : labels.change.down(Math.abs(cambio.percent));
+  }
 }
 
 export function figureLabel(figure: ReportFigure, labels: Labels): string {

@@ -59,6 +59,9 @@ function informe(overrides: Partial<ReportRow> = {}): ReportRow {
     sections: SECCIONES,
     notes: {},
     timezone: "Europe/Madrid",
+    // RN-REP-15 · el nivel por omisión de los tests es el que lo lleva
+    // todo: los que prueban el recorte lo dicen a propósito.
+    reportLevel: "complete",
     ...overrides,
   };
 }
@@ -451,6 +454,86 @@ describe("la versión que se guarda (RN-REP-12)", () => {
     );
     expect(con.opportunities).toHaveLength(1);
     expect(aprobadas).toHaveBeenCalledWith("est-1", "2026-08-01", "2026-08-31");
+  });
+
+  it("RN-REP-17 · la versión pide también el periodo anterior y pega cada cifra con la suya", async () => {
+    const porPeriodo = vi
+      .fn()
+      .mockImplementation(async (_espacio: string, _est: string | null, desde: string) => ({
+        income_total_cents: desde === "2026-08-01" ? 48279 : 39900,
+      }));
+    const puertas = gateway({ financeDataset: porPeriodo });
+
+    const snapshot = await buildSnapshot({ gateway: puertas, now: () => AHORA }, informe());
+
+    // Agosto es un mes natural, así que el anterior es julio entero.
+    expect(porPeriodo).toHaveBeenCalledWith("space-1", "est-1", "2026-08-01", "2026-08-31");
+    expect(porPeriodo).toHaveBeenCalledWith("space-1", "est-1", "2026-07-01", "2026-07-31");
+
+    const ingresos = snapshot.figures.find((figura) => figura.metric === "income_total");
+    expect(ingresos?.value).toBe(48279);
+    expect(ingresos?.previous).toBe(39900);
+  });
+
+  it("RN-REP-17 · si el periodo anterior falla, el informe sale igual pero SIN comparación", async () => {
+    /*
+      Quedarse sin informe porque no se pudo mirar el mes pasado sería la
+      peor de las dos opciones: la comparación es un contexto, no el dato.
+      Y lo que no se pudo leer no sale como un 0 —eso diría "el mes pasado
+      no hubo nada"—, sale sin `previous`.
+    */
+    const puertas = gateway({
+      financeDataset: vi
+        .fn()
+        .mockImplementation(async (_espacio: string, _est: string | null, desde: string) => {
+          if (desde !== "2026-08-01") {
+            throw new Error("la fuente del periodo anterior no responde");
+          }
+          return { income_total_cents: 48279 };
+        }),
+    });
+
+    const snapshot = await buildSnapshot({ gateway: puertas, now: () => AHORA }, informe());
+
+    const ingresos = snapshot.figures.find((figura) => figura.metric === "income_total");
+    expect(ingresos?.value).toBe(48279);
+    expect(ingresos?.previous).toBeUndefined();
+  });
+
+  it("RN-REP-15 · un informe de nivel `basic` NI SIQUIERA pide el periodo anterior", async () => {
+    const porPeriodo = vi.fn().mockResolvedValue({ income_total_cents: 48279 });
+    const puertas = gateway({ financeDataset: porPeriodo });
+
+    const snapshot = await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({ reportLevel: "basic" }),
+    );
+
+    // El nivel es una barrera, no un filtro de pintado: si se calculara y
+    // se escondiera, la versión guardada llevaría dentro lo que el plan no
+    // incluye y el primer sitio que mirase las cifras crudas lo enseñaría.
+    expect(porPeriodo).toHaveBeenCalledTimes(1);
+    expect(porPeriodo).toHaveBeenCalledWith("space-1", "est-1", "2026-08-01", "2026-08-31");
+    expect(snapshot.figures.every((figura) => figura.previous === undefined)).toBe(true);
+  });
+
+  it("RN-REP-15 · en `standard` la comparación llega a Lo esencial y no a las demás cifras", async () => {
+    const puertas = gateway({
+      operationDataset: vi.fn().mockResolvedValue({
+        jobs: [{ id: "a", establishment_id: "est-1", category: "small", state: "delivered" }],
+      }),
+    });
+
+    const snapshot = await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({ reportLevel: "standard" }),
+    );
+
+    // `jobs_completed` es una de las tarjetas de "Lo esencial" (RN-REP-19).
+    expect(snapshot.figures.find((f) => f.metric === "jobs_completed")?.previous).not.toBeUndefined();
+    // `jobs_blocked` no lo es: sale sin comparación, que no es lo mismo
+    // que salir con la comparación vacía.
+    expect(snapshot.figures.find((f) => f.metric === "jobs_blocked")?.previous).toBeUndefined();
   });
 
   it("RN-CLK-10 · el calendario se arma con los festivos conocidos al empezar el periodo", async () => {

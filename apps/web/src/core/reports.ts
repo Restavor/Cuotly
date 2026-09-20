@@ -767,6 +767,241 @@ export interface ReportFigure {
   readonly dimension?: string;
   readonly at?: string;
   readonly noDataReason?: string;
+  /**
+   * RN-REP-17 · la misma cifra en el **periodo anterior**, del mismo
+   * tamaño y pegado a este. `undefined` cuando no se pidió la
+   * comparación; `null` cuando se pidió y en aquel periodo no había dato.
+   *
+   * Los dos casos se pintan distinto y por eso no se colapsan en uno: sin
+   * comparación no se dice nada, y con comparación pero sin dato anterior
+   * se dice "sin periodo anterior". Un 0 % sería mentira en los dos.
+   */
+  readonly previous?: number | null;
+}
+
+/**
+ * RN-REP-15 · los cinco niveles de informe, **de menos a más**. El orden
+ * de esta lista ES la escalera: ninguno quita lo del anterior. Es la misma
+ * que la de `report_level_rank()` en la migración 111, y las dos tienen
+ * que decir lo mismo — la de SQL manda, porque es la que hace de barrera.
+ */
+export const REPORT_LEVELS = ["basic", "standard", "standard_plus", "advanced", "complete"] as const;
+export type ReportLevel = (typeof REPORT_LEVELS)[number];
+
+export function isReportLevel(value: string): value is ReportLevel {
+  return (REPORT_LEVELS as readonly string[]).includes(value);
+}
+
+export function reportLevelRank(level: ReportLevel): number {
+  return REPORT_LEVELS.indexOf(level);
+}
+
+/** El más alto de varios, que es lo que decide un restaurante con más de un plan vivo. */
+export function highestReportLevel(levels: readonly ReportLevel[]): ReportLevel {
+  return levels.reduce<ReportLevel>(
+    (alto, level) => (reportLevelRank(level) > reportLevelRank(alto) ? level : alto),
+    "basic",
+  );
+}
+
+/**
+ * RN-REP-17 · hasta dónde llega la comparación con el periodo anterior en
+ * cada nivel. `none` no es "se calcula y no se enseña": es que **no se
+ * pide** el periodo anterior (RN-REP-15, el nivel es una barrera).
+ */
+export type ComparisonReach = "none" | "headline" | "all";
+
+export function reportLevelComparison(level: ReportLevel): ComparisonReach {
+  if (level === "basic") return "none";
+  if (level === "standard") return "headline";
+  return "all";
+}
+
+/**
+ * RN-REP-19 · las cifras de **"Lo esencial"**, la página del *"si solo
+ * lees una página, es esta"*. Van en este orden y se cogen las tres
+ * primeras que existan; las que no haya **no se rellenan** (CLAUDE.md).
+ *
+ * `sessions` lleva dimensión porque lo digital viene por fuente y las
+ * visitas de la web son las de Analytics: sin la dimensión se cogería la
+ * primera que apareciera, que puede ser la de Clarity y es otra cosa.
+ *
+ * La tarjeta de "clics en reservas" del primer boceto **no está**: las
+ * reservas no se monitorizan (CLAUDE.md), así que esa cifra no existe.
+ */
+export interface HeadlineFigureKey {
+  readonly section: ReportSectionKey;
+  readonly metric: string;
+  readonly dimension?: string;
+}
+
+export const HEADLINE_REPORT_FIGURES: readonly HeadlineFigureKey[] = [
+  { section: "operation", metric: "jobs_completed" },
+  { section: "digital", metric: "sessions", dimension: "ga4" },
+  { section: "operation", metric: "start_compliance" },
+  { section: "finance", metric: "income_total" },
+];
+
+/** Cuántas tarjetas caben en "Lo esencial" antes de dejar de ser lo esencial. */
+export const HEADLINE_LIMIT = 3;
+
+function matchesHeadline(figure: ReportFigure, clave: HeadlineFigureKey): boolean {
+  return (
+    figure.section === clave.section &&
+    figure.metric === clave.metric &&
+    (clave.dimension === undefined || figure.dimension === clave.dimension)
+  );
+}
+
+export function isHeadlineFigure(figure: ReportFigure): boolean {
+  return HEADLINE_REPORT_FIGURES.some((clave) => matchesHeadline(figure, clave));
+}
+
+/**
+ * Las tarjetas de "Lo esencial" de una versión: en el orden de la lista,
+ * solo de secciones **incluidas**, solo las que tienen cifra, y como mucho
+ * `HEADLINE_LIMIT`.
+ */
+export function headlineFigures(snapshot: ReportSnapshot): readonly ReportFigure[] {
+  const incluidas = new Set(
+    snapshot.sections.filter((section) => section.included).map((section) => section.key),
+  );
+  const elegidas: ReportFigure[] = [];
+  for (const clave of HEADLINE_REPORT_FIGURES) {
+    if (elegidas.length >= HEADLINE_LIMIT) break;
+    if (!incluidas.has(clave.section)) continue;
+    const figura = snapshot.figures.find(
+      (candidata) => matchesHeadline(candidata, clave) && candidata.value !== null,
+    );
+    if (figura) elegidas.push(figura);
+  }
+  return elegidas;
+}
+
+function diaIso(fecha: Date): string {
+  return fecha.toISOString().slice(0, 10);
+}
+
+/**
+ * Si el periodo es **un mes natural entero**: del día 1 al último día del
+ * mismo mes. Es el caso normal —el informe es mensual— y el que decide la
+ * regla de abajo.
+ */
+function esMesNatural(inicio: Date, fin: Date): boolean {
+  const ultimoDia = new Date(Date.UTC(fin.getUTCFullYear(), fin.getUTCMonth() + 1, 0));
+  return (
+    inicio.getUTCDate() === 1 &&
+    inicio.getUTCFullYear() === fin.getUTCFullYear() &&
+    inicio.getUTCMonth() === fin.getUTCMonth() &&
+    fin.getUTCDate() === ultimoDia.getUTCDate()
+  );
+}
+
+/**
+ * RN-REP-17 · el periodo anterior a uno dado. Dos reglas, y la primera
+ * manda:
+ *
+ *   · **Un mes natural se compara con el mes natural anterior**, entero:
+ *     septiembre contra agosto del 1 al 31. Aquí sí se aceptan los 30
+ *     días contra 31, porque lo que el restaurante lee es "agosto" y
+ *     recortarle el día 1 para cuadrar el tamaño sería llamar agosto a
+ *     algo que no lo es —una mentira callada, que es peor que un 3 % de
+ *     diferencia declarada—.
+ *   · **Cualquier otro periodo se compara con otros tantos días pegados
+ *     detrás**: uno de 14 días con los 14 anteriores. Un informe no tiene
+ *     por qué ser mensual —el equipo elige las fechas— y comparar 14 días
+ *     contra un mes diría cualquier cosa.
+ *
+ * En los dos casos el periodo anterior **termina el día antes de que este
+ * empiece**: ni se solapan ni dejan hueco.
+ */
+export function previousPeriod(period: ReportPeriod): ReportPeriod {
+  const inicio = new Date(`${period.start}T00:00:00Z`);
+  const fin = new Date(`${period.end}T00:00:00Z`);
+
+  if (esMesNatural(inicio, fin)) {
+    const anteriorInicio = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() - 1, 1));
+    const anteriorFin = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth(), 0));
+    return { start: diaIso(anteriorInicio), end: diaIso(anteriorFin) };
+  }
+
+  const dias = Math.round((fin.getTime() - inicio.getTime()) / 86_400_000) + 1;
+  const anteriorFin = new Date(inicio.getTime() - 86_400_000);
+  const anteriorInicio = new Date(anteriorFin.getTime() - (dias - 1) * 86_400_000);
+  return { start: diaIso(anteriorInicio), end: diaIso(anteriorFin) };
+}
+
+/**
+ * La clave con la que una cifra de un periodo encuentra la del anterior.
+ * Sección, métrica y dimensión: sin la dimensión, "Sesiones · móvil" se
+ * compararía con "Sesiones · escritorio" y el porcentaje sería inventado.
+ */
+export function figureKey(figure: ReportFigure): string {
+  return `${figure.section}\u0000${figure.metric}\u0000${figure.dimension ?? ""}`;
+}
+
+/**
+ * RN-REP-17 · pega a cada cifra la del periodo anterior.
+ *
+ * Una cifra del periodo anterior que no exista ahora **no se añade**: el
+ * informe cuenta este periodo, y una fila que solo tiene pasado sería una
+ * cifra fantasma. Al revés sí: una cifra de ahora sin pasado sale con
+ * `previous` a `null`, que la pantalla dice como "sin periodo anterior".
+ */
+export function withPreviousFigures(
+  current: readonly ReportFigure[],
+  previous: readonly ReportFigure[],
+  reach: ComparisonReach = "all",
+): readonly ReportFigure[] {
+  if (reach === "none") return current;
+  const antes = new Map(previous.map((figure) => [figureKey(figure), figure.value]));
+  return current.map((figure) => {
+    // RN-REP-15 · en `standard` la comparación llega solo a "Lo esencial".
+    // Las demás cifras salen **sin** `previous`, que la pantalla dice como
+    // "sin comparación", y no con un `null`, que diría "no había dato".
+    if (reach === "headline" && !isHeadlineFigure(figure)) return figure;
+    return { ...figure, previous: antes.get(figureKey(figure)) ?? null };
+  });
+}
+
+/**
+ * RN-REP-17 · la variación de una cifra respecto al periodo anterior, ya
+ * resuelta. Son cinco casos y no uno, porque los cinco se dicen distinto:
+ *
+ *   · `none` — no hay comparación. O el nivel del plan no la incluye
+ *     (RN-REP-15), o esta cifra no tiene dato este periodo y entonces ya
+ *     dice su motivo (§178) y una variación sobraría.
+ *   · `no_previous` — sí hay comparación, pero en aquel periodo esta cifra
+ *     no existía. Se dice "sin periodo anterior", nunca 0 %.
+ *   · `from_zero` — el periodo anterior fue **cero**. Un porcentaje desde
+ *     cero es infinito y escribir "+∞ %" no informa: se dice de cuánto se
+ *     viene, que es lo que se entiende.
+ *   · `flat` — el mismo número. No es "+0 %": es que no cambió.
+ *   · `percent` — la variación, con su signo.
+ *
+ * **La variación dice la dirección, no si está bien.** Que las incidencias
+ * suban un 20 % es malo y que las visitas suban un 20 % es bueno, y decidir
+ * eso cifra a cifra sería una lista de juicios inventada (CLAUDE.md). Quien
+ * juzga es la persona que escribe el resumen ejecutivo (§93).
+ */
+export type FigureChange =
+  | { readonly kind: "none" }
+  | { readonly kind: "no_previous" }
+  | { readonly kind: "from_zero"; readonly value: number }
+  | { readonly kind: "flat" }
+  | { readonly kind: "percent"; readonly percent: number };
+
+export function figureChange(figure: ReportFigure): FigureChange {
+  if (figure.previous === undefined || figure.value === null) return { kind: "none" };
+  if (figure.previous === null) return { kind: "no_previous" };
+  if (figure.value === figure.previous) return { kind: "flat" };
+  if (figure.previous === 0) return { kind: "from_zero", value: figure.value };
+  // Se redondea a entero: un "+18,4 %" en una tarjeta de portada finge una
+  // precisión que la cifra de debajo no tiene.
+  return {
+    kind: "percent",
+    percent: Math.round(((figure.value - figure.previous) / Math.abs(figure.previous)) * 100),
+  };
 }
 
 /**

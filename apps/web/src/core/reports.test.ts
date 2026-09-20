@@ -15,7 +15,12 @@ import {
   isObjectiveOnly,
   operationalIndicators,
   orderedSections,
+  figureChange,
+  headlineFigures,
+  highestReportLevel,
   parseFilters,
+  previousPeriod,
+  reportLevelComparison,
   reorderSections,
   reportCsv,
   reportIsVisibleToClient,
@@ -25,6 +30,7 @@ import {
   sendGate,
   sendIsDue,
   serializeFilters,
+  withPreviousFigures,
   workerComparison,
   workerPersonalReport,
 } from "./reports";
@@ -498,5 +504,282 @@ describe("§95.5 · seleccionar, editar y ordenar", () => {
     expect(nuevo.filter((section) => section.included).length).toBe(
       secciones.filter((section) => section.included).length,
     );
+  });
+});
+
+describe("RN-REP-17 · la comparación con el periodo anterior", () => {
+  it("RN-REP-17 · un mes se compara con el mes anterior entero", () => {
+    expect(previousPeriod({ start: "2026-09-01", end: "2026-09-30" })).toEqual({
+      start: "2026-08-01",
+      end: "2026-08-31",
+    });
+  });
+
+  it("RN-REP-17 · un periodo de 14 días se compara con los 14 días pegados a él, no con un mes", () => {
+    // El equipo elige las fechas del informe, así que no vale "el mes
+    // anterior": 14 días contra 31 daría una caída del 55 % inventada.
+    const anterior = previousPeriod({ start: "2026-09-15", end: "2026-09-28" });
+
+    expect(anterior).toEqual({ start: "2026-09-01", end: "2026-09-14" });
+  });
+
+  it("RN-REP-17 · un mes natural se compara con el mes natural anterior aunque tenga otros días", () => {
+    // Marzo tiene 31 y febrero de 2026 tiene 28. Se comparan igualmente:
+    // lo que el restaurante lee es "febrero", y recortar marzo para que
+    // cuadre el tamaño sería llamar febrero a algo que no lo es.
+    expect(previousPeriod({ start: "2026-03-01", end: "2026-03-31" })).toEqual({
+      start: "2026-02-01",
+      end: "2026-02-28",
+    });
+  });
+
+  it("RN-REP-17 · enero se compara con diciembre del año anterior", () => {
+    expect(previousPeriod({ start: "2026-01-01", end: "2026-01-31" })).toEqual({
+      start: "2025-12-01",
+      end: "2025-12-31",
+    });
+  });
+
+  it("RN-REP-17 · un periodo que empieza el día 1 pero no acaba el mes NO es un mes natural", () => {
+    // Del 1 al 20 de septiembre son 20 días: se comparan con los 20
+    // anteriores, no con agosto entero.
+    expect(previousPeriod({ start: "2026-09-01", end: "2026-09-20" })).toEqual({
+      start: "2026-08-12",
+      end: "2026-08-31",
+    });
+  });
+
+  it("RN-REP-17 · un solo día se compara con el día de antes", () => {
+    expect(previousPeriod({ start: "2026-01-01", end: "2026-01-01" })).toEqual({
+      start: "2025-12-31",
+      end: "2025-12-31",
+    });
+  });
+
+  it("RN-REP-17 · cada cifra se empareja con la suya por sección, métrica y dimensión", () => {
+    const ahora = [
+      { section: "digital" as const, metric: "sessions", value: 120, dimension: "mobile" },
+      { section: "digital" as const, metric: "sessions", value: 80, dimension: "desktop" },
+    ];
+    const antes = [
+      { section: "digital" as const, metric: "sessions", value: 30, dimension: "desktop" },
+      { section: "digital" as const, metric: "sessions", value: 100, dimension: "mobile" },
+    ];
+
+    const pegadas = withPreviousFigures(ahora, antes);
+
+    // Sin la dimensión, "móvil" se compararía con "escritorio" y el
+    // porcentaje sería inventado.
+    expect(pegadas[0].previous).toBe(100);
+    expect(pegadas[1].previous).toBe(30);
+  });
+
+  it("RN-REP-17 · una cifra sin periodo anterior sale con `previous` a null, nunca con un 0 inventado", () => {
+    const pegadas = withPreviousFigures(
+      [{ section: "operation" as const, metric: "jobs_completed", value: 10 }],
+      [],
+    );
+
+    // CLAUDE.md · no se inventa dato. Un 0 diría "el mes pasado no se hizo
+    // nada", que es otra cosa que "no hay con qué comparar".
+    expect(pegadas[0].previous).toBeNull();
+    expect(pegadas[0].value).toBe(10);
+  });
+
+  it("RN-REP-17 · un cero del periodo anterior es un dato y se conserva", () => {
+    const pegadas = withPreviousFigures(
+      [{ section: "operation" as const, metric: "jobs_completed", value: 10 }],
+      [{ section: "operation" as const, metric: "jobs_completed", value: 0 }],
+    );
+
+    expect(pegadas[0].previous).toBe(0);
+  });
+
+  it("RN-REP-17 · una cifra que solo existe en el periodo anterior no se añade al informe", () => {
+    const pegadas = withPreviousFigures(
+      [{ section: "operation" as const, metric: "jobs_completed", value: 10 }],
+      [
+        { section: "operation" as const, metric: "jobs_completed", value: 4 },
+        { section: "digital" as const, metric: "sessions", value: 900 },
+      ],
+    );
+
+    // El informe cuenta ESTE periodo: una fila con solo pasado sería una
+    // cifra fantasma que el restaurante no puede situar.
+    expect(pegadas).toHaveLength(1);
+    expect(pegadas.some((figure) => figure.metric === "sessions")).toBe(false);
+  });
+
+  it("RN-REP-17 · una cifra sin dato ahora conserva el dato de antes, que es justo lo que explica el hueco", () => {
+    const pegadas = withPreviousFigures(
+      [{ section: "digital" as const, metric: "sessions", value: null, noDataReason: "not_connected" }],
+      [{ section: "digital" as const, metric: "sessions", value: 900 }],
+    );
+
+    expect(pegadas[0].value).toBeNull();
+    expect(pegadas[0].previous).toBe(900);
+    expect(pegadas[0].noDataReason).toBe("not_connected");
+  });
+});
+
+describe("RN-REP-15 y RN-REP-19 · el nivel y \"Lo esencial\"", () => {
+  function version(overrides: Partial<ReportSnapshot> = {}): ReportSnapshot {
+    return {
+      category: "operation",
+      period: { start: "2026-08-01", end: "2026-08-31" },
+      generatedAt: "2026-09-01T08:00:00Z",
+      sections: [
+        { key: "operation", position: 1, included: true },
+        { key: "digital", position: 2, included: true },
+        { key: "finance", position: 3, included: true },
+      ],
+      figures: [],
+      opportunities: [],
+      notes: {},
+      ...overrides,
+    };
+  }
+
+  it("RN-REP-15 · Básico no compara, Impulso compara Lo esencial y de Impulso+ en adelante compara todo", () => {
+    expect(reportLevelComparison("basic")).toBe("none");
+    expect(reportLevelComparison("standard")).toBe("headline");
+    expect(reportLevelComparison("standard_plus")).toBe("all");
+    expect(reportLevelComparison("advanced")).toBe("all");
+    expect(reportLevelComparison("complete")).toBe("all");
+  });
+
+  it("RN-REP-15 · con varios planes vivos manda el nivel más alto, y sin ninguno es `basic`", () => {
+    expect(highestReportLevel(["standard", "complete", "basic"])).toBe("complete");
+    expect(highestReportLevel([])).toBe("basic");
+  });
+
+  it("RN-REP-19 · Lo esencial son como mucho tres tarjetas, en el orden de la lista", () => {
+    const snapshot = version({
+      figures: [
+        { section: "finance", metric: "income_total", value: 48279, unit: "cents" },
+        { section: "operation", metric: "start_compliance", value: 100, unit: "percent" },
+        { section: "digital", metric: "sessions", value: 5921, dimension: "ga4" },
+        { section: "operation", metric: "jobs_completed", value: 12 },
+      ],
+    });
+
+    expect(headlineFigures(snapshot).map((figura) => figura.metric)).toEqual([
+      "jobs_completed",
+      "sessions",
+      "start_compliance",
+    ]);
+  });
+
+  it("RN-REP-19 · una cifra sin dato NO ocupa tarjeta: el hueco no se rellena", () => {
+    const snapshot = version({
+      figures: [
+        { section: "operation", metric: "jobs_completed", value: 12 },
+        { section: "digital", metric: "sessions", value: null, dimension: "ga4", noDataReason: "not_connected" },
+        { section: "operation", metric: "start_compliance", value: 100, unit: "percent" },
+      ],
+    });
+
+    // CLAUDE.md · "si no hay dato, se dice cuál es el motivo". En una
+    // tarjeta de portada no cabe el motivo, así que la tarjeta no está.
+    expect(headlineFigures(snapshot).map((figura) => figura.metric)).toEqual([
+      "jobs_completed",
+      "start_compliance",
+    ]);
+  });
+
+  it("RN-REP-19 · una cifra de una sección que el equipo apagó no sube a la portada", () => {
+    const snapshot = version({
+      sections: [
+        { key: "operation", position: 1, included: true },
+        { key: "digital", position: 2, included: false },
+      ],
+      figures: [
+        { section: "operation", metric: "jobs_completed", value: 12 },
+        // Está en la versión porque la decisión 29 lo manda, pero el
+        // informe no lleva esa sección: no puede abrirlo.
+        { section: "digital", metric: "sessions", value: 5921, dimension: "ga4" },
+      ],
+    });
+
+    expect(headlineFigures(snapshot).map((figura) => figura.metric)).toEqual(["jobs_completed"]);
+  });
+
+  it("RN-REP-19 · las visitas de la portada son las de Analytics, no la primera fuente que aparezca", () => {
+    const snapshot = version({
+      figures: [
+        { section: "digital", metric: "sessions", value: 88, dimension: "clarity" },
+        { section: "digital", metric: "sessions", value: 5921, dimension: "ga4" },
+      ],
+    });
+
+    expect(headlineFigures(snapshot)[0].value).toBe(5921);
+  });
+
+  it("RN-REP-19 · no hay tarjeta de reservas, porque las reservas no se monitorizan", () => {
+    const snapshot = version({
+      figures: [{ section: "digital", metric: "reservation_clicks", value: 247, dimension: "ga4" }],
+    });
+
+    expect(headlineFigures(snapshot)).toEqual([]);
+  });
+
+  it("RN-REP-15 · con alcance `headline`, una cifra que no es de portada sale SIN comparación", () => {
+    const pegadas = withPreviousFigures(
+      [
+        { section: "operation", metric: "jobs_completed", value: 12 },
+        { section: "operation", metric: "jobs_blocked", value: 2 },
+      ],
+      [
+        { section: "operation", metric: "jobs_completed", value: 10 },
+        { section: "operation", metric: "jobs_blocked", value: 5 },
+      ],
+      "headline",
+    );
+
+    expect(pegadas[0].previous).toBe(10);
+    // Sin comparación no es lo mismo que comparación vacía: `undefined` no
+    // se pinta, `null` dice "sin periodo anterior".
+    expect(pegadas[1].previous).toBeUndefined();
+  });
+
+  it("RN-REP-15 · con alcance `none` no se pega nada, ni siquiera un null", () => {
+    const pegadas = withPreviousFigures(
+      [{ section: "operation", metric: "jobs_completed", value: 12 }],
+      [{ section: "operation", metric: "jobs_completed", value: 10 }],
+      "none",
+    );
+
+    expect(pegadas[0].previous).toBeUndefined();
+  });
+});
+
+describe("RN-REP-17 · cómo se dice la variación", () => {
+  const base = { section: "operation" as const, metric: "jobs_completed" };
+
+  it("RN-REP-17 · sin comparación pedida no se dice nada", () => {
+    expect(figureChange({ ...base, value: 12 })).toEqual({ kind: "none" });
+  });
+
+  it("RN-REP-17 · una cifra sin dato no lleva variación: ya dice su motivo", () => {
+    expect(figureChange({ ...base, value: null, noDataReason: "not_connected", previous: 10 })).toEqual({
+      kind: "none",
+    });
+  });
+
+  it("RN-REP-17 · sin cifra en el periodo anterior se dice eso, no un 0 %", () => {
+    expect(figureChange({ ...base, value: 12, previous: null })).toEqual({ kind: "no_previous" });
+  });
+
+  it("RN-REP-17 · el mismo número no es +0 %: es que no cambió", () => {
+    expect(figureChange({ ...base, value: 12, previous: 12 })).toEqual({ kind: "flat" });
+  });
+
+  it("RN-REP-17 · venir de cero no es un porcentaje infinito", () => {
+    expect(figureChange({ ...base, value: 12, previous: 0 })).toEqual({ kind: "from_zero", value: 12 });
+  });
+
+  it("RN-REP-17 · la variación va redondeada a entero, en los dos sentidos", () => {
+    expect(figureChange({ ...base, value: 5921, previous: 5018 })).toEqual({ kind: "percent", percent: 18 });
+    expect(figureChange({ ...base, value: 8, previous: 10 })).toEqual({ kind: "percent", percent: -20 });
   });
 });

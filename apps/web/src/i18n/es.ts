@@ -3129,6 +3129,20 @@ export const es = {
       sentAt: "Fecha de compartición",
       format: "Formato",
       actions: "Acciones",
+      previous: "Frente al periodo anterior",
+    },
+
+    // RN-REP-17 · la comparación con el periodo anterior. Dice la
+    // DIRECCIÓN, nunca si está bien: que suban las incidencias es malo y
+    // que suban las visitas es bueno, y eso lo escribe una persona en el
+    // resumen ejecutivo.
+    change: {
+      noPrevious: "Sin periodo anterior",
+      flat: "Igual que el periodo anterior",
+      fromZero: "El periodo anterior fue 0",
+      up: (percent: number) => `+${percent} %`,
+      down: (percent: number) => `−${percent} %`,
+      versus: (periodo: string) => `frente a ${periodo}`,
     },
 
     // Vista 10.04 · revisar y programar.

@@ -42,10 +42,14 @@ import {
   type ReportFigure,
   type ReportJobRow,
   type ReportMenuRow,
+  type ReportPeriod,
   type ReportRequestRow,
   type ReportSectionKey,
   type ReportSnapshot,
   operationalIndicators,
+  previousPeriod,
+  reportLevelComparison,
+  withPreviousFigures,
 } from "@/core/reports";
 import { todayInTimeZone } from "@/core/finance";
 import type { TimerEvent } from "@/core/timer-events";
@@ -292,35 +296,19 @@ export function digitalFigures(
 // 3 · Generar la versión
 // ---------------------------------------------------------------------
 
-export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRow): Promise<ReportSnapshot> {
-  const now = deps.now();
-  const period = { start: report.periodStart, end: report.periodEnd };
-  const incluidas = new Set(
-    report.sections.filter((section) => section.included).map((section) => section.key),
-  );
+/**
+ * Las cifras de las tres familias para UN periodo. Se saca aparte porque
+ * desde RN-REP-17 se pide dos veces —este periodo y el anterior— y tener
+ * el cuerpo copiado sería la manera de que las dos mitades se separaran.
+ */
+async function figuresForPeriod(
+  deps: ReportGenerationDeps,
+  report: ReportRow,
+  period: ReportPeriod,
+  now: Date,
+): Promise<readonly ReportFigure[]> {
   const figures: ReportFigure[] = [];
 
-  /*
-    **Decisión 29 (14/09/2026) · la versión guarda las cifras de las tres
-    familias, las marcara el equipo o no.** Antes se generaban solo las de
-    las secciones incluidas, y eso convertía una decisión editorial en una
-    pérdida de datos: si el equipo desmarcaba "Rendimiento digital", esa
-    versión se quedaba sin una sola cifra digital para siempre, y verlas
-    exigía regenerar —que es otra versión, con otras cifras, porque las
-    fuentes se siguen sincronizando—. Ahora la versión trae el periodo
-    entero y quien la mira elige qué mirar (`ReportFigures`).
-
-    Lo que **no** se guarda entero, y es lo que separa un dato de una
-    opinión: las **notas** del equipo, que se filtran abajo por sección
-    incluida (RN-REP-13), y las **oportunidades**, que §99 manda decidir
-    una a una. Las cifras son datos del propio restaurante y guardarlas
-    enteras no le enseña nada del equipo; el texto interno, sí.
-
-    Las cifras se generan **por familia de sección** y no por la familia
-    del informe: la maqueta 10.04 dibuja un informe con Operación y
-    Rendimiento digital a la vez, así que la familia dice de qué va el
-    informe y las secciones dicen qué lleva dentro.
-  */
   {
     const [raw, holidayRecords] = await Promise.all([
       deps.gateway.operationDataset(report.spaceId, report.establishmentId, period.start, period.end),
@@ -353,6 +341,75 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     figures.push(...digitalFigures(points, states, period, now, report.timezone));
   }
 
+  return figures;
+}
+
+export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRow): Promise<ReportSnapshot> {
+  const now = deps.now();
+  const period = { start: report.periodStart, end: report.periodEnd };
+  const incluidas = new Set(
+    report.sections.filter((section) => section.included).map((section) => section.key),
+  );
+  const figures: ReportFigure[] = [];
+
+  /*
+    **Decisión 29 (14/09/2026) · la versión guarda las cifras de las tres
+    familias, las marcara el equipo o no.** Antes se generaban solo las de
+    las secciones incluidas, y eso convertía una decisión editorial en una
+    pérdida de datos: si el equipo desmarcaba "Rendimiento digital", esa
+    versión se quedaba sin una sola cifra digital para siempre, y verlas
+    exigía regenerar —que es otra versión, con otras cifras, porque las
+    fuentes se siguen sincronizando—. Ahora la versión trae el periodo
+    entero y quien la mira elige qué mirar (`ReportFigures`).
+
+    Lo que **no** se guarda entero, y es lo que separa un dato de una
+    opinión: las **notas** del equipo, que se filtran abajo por sección
+    incluida (RN-REP-13), y las **oportunidades**, que §99 manda decidir
+    una a una. Las cifras son datos del propio restaurante y guardarlas
+    enteras no le enseña nada del equipo; el texto interno, sí.
+
+    Las cifras se generan **por familia de sección** y no por la familia
+    del informe: la maqueta 10.04 dibuja un informe con Operación y
+    Rendimiento digital a la vez, así que la familia dice de qué va el
+    informe y las secciones dicen qué lleva dentro.
+  */
+  figures.push(...(await figuresForPeriod(deps, report, period, now)));
+
+  /*
+    RN-REP-17 (decisión 57) · la comparación con el periodo anterior.
+
+    Se pide **el mismo periodo corrido hacia atrás** y se vuelven a calcular
+    las cifras enteras. No hay atajo: una cifra de septiembre no se deduce
+    de nada guardado, sale de los mismos datos del periodo, así que la
+    única manera honesta es preguntarlos otra vez.
+
+    **Cuesta el doble de consultas**, y se acepta a sabiendas: un informe se
+    genera una vez y se lee muchas, y un número sin con qué compararlo no
+    dice nada —"5.921 visitas" no es información hasta que se sabe si son
+    muchas o pocas—.
+
+    **El nivel decide hasta dónde llega** (RN-REP-15): un `basic` no la
+    lleva y por eso **no se pide** el periodo anterior —no es que se
+    calcule y se esconda—, un `standard` la lleva en "Lo esencial", y de
+    `standard_plus` en adelante en todas.
+
+    Si el periodo anterior falla, el informe **sale igual, sin
+    comparación**: quedarse sin informe porque no se pudo mirar el mes
+    pasado sería la peor de las dos opciones. Es el mismo criterio que
+    `sanitize()` en el PDF.
+  */
+  const alcance = reportLevelComparison(report.reportLevel);
+  let conAnterior: readonly ReportFigure[] = figures;
+  if (alcance !== "none") {
+    try {
+      const anterior = previousPeriod(period);
+      const figurasAnteriores = await figuresForPeriod(deps, report, anterior, now);
+      conAnterior = withPreviousFigures(figures, figurasAnteriores, alcance);
+    } catch {
+      conAnterior = figures;
+    }
+  }
+
   /*
     §96 y §99 · las oportunidades que entran son las **aprobadas** de ese
     periodo, y se guardan con su regla y su sujeto, nunca con una frase: el
@@ -369,7 +426,7 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     period,
     generatedAt: now.toISOString(),
     sections: report.sections,
-    figures,
+    figures: conAnterior,
     opportunities,
     // RN-REP-13 · solo las notas de las secciones que ENTRAN. La versión
     // se le envía al restaurante, y una nota de una sección que el equipo

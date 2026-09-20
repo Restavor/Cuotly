@@ -10,7 +10,14 @@
 
 import type { HolidayRecord } from "@/core/business-clock";
 import type { MetricPoint } from "@/core/integrations";
-import type { ReportCategory, ReportOpportunity, ReportSectionState } from "@/core/reports";
+import {
+  type ReportCategory,
+  type ReportLevel,
+  type ReportOpportunity,
+  type ReportSectionState,
+  highestReportLevel,
+  isReportLevel,
+} from "@/core/reports";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -39,6 +46,14 @@ export interface ReportRow {
   readonly sections: readonly ReportSectionState[];
   readonly notes: Readonly<Record<string, string>>;
   readonly timezone: string;
+  /**
+   * RN-REP-15 · el nivel del plan del restaurante, que decide hasta dónde
+   * llega el informe. Un **consolidado** no tiene restaurante y por tanto
+   * no tiene plan: va en `complete`, porque es del espacio y no lo recibe
+   * ningún cliente (decisión 30) — es la misma respuesta que da
+   * `create_report_draft()` en SQL.
+   */
+  readonly reportLevel: ReportLevel;
 }
 
 export interface ProviderState {
@@ -93,6 +108,39 @@ function spaceTimezone(value: any): string {
   return row?.timezone ?? "Europe/Madrid";
 }
 
+/**
+ * RN-REP-15 · el nivel del plan vigente de un restaurante.
+ *
+ * Se lee de las tablas y **no** por la función `establishment_report_level()`
+ * de la migración 111: aquella comprueba que quien pregunta sea del espacio
+ * o tenga acceso vivo al restaurante, y la generación corre como
+ * `service_role`, sin `auth.uid()`. Llamarla desde aquí devolvería `basic`
+ * siempre —su respuesta a quien no le corresponde— y todos los informes
+ * saldrían recortados en silencio, que es la peor forma de fallar.
+ *
+ * El más alto de los planes vivos, que es lo que hace la propia función.
+ */
+async function establishmentReportLevel(client: AnyClient, establishmentId: string): Promise<ReportLevel> {
+  const { data, error } = await client
+    .from("subscriptions")
+    .select("plans(report_level)")
+    .eq("establishment_id", establishmentId)
+    .eq("kind", "plan")
+    .eq("status", "active");
+  if (error) throw new Error(`subscriptions: ${error.message}`);
+
+  const niveles = (data ?? [])
+    .map((row: any) => {
+      const plan = Array.isArray(row.plans) ? row.plans[0] : row.plans;
+      return plan?.report_level;
+    })
+    .filter((level: unknown): level is ReportLevel => typeof level === "string" && isReportLevel(level));
+
+  // Sin plan vivo, `basic`: es lo que dice la migración 111, y no es un
+  // caso raro —un restaurante dado de alta y aún sin contratar lo está—.
+  return highestReportLevel(niveles);
+}
+
 export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
   return {
     async report(reportId) {
@@ -133,6 +181,9 @@ export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
         })) as readonly ReportSectionState[],
         notes,
         timezone: spaceTimezone(data.spaces),
+        reportLevel: data.establishment_id
+          ? await establishmentReportLevel(client, data.establishment_id)
+          : "complete",
       };
     },
 

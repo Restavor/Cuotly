@@ -1498,6 +1498,95 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   alcanzan las personas con ese permiso**, y quien no lo tenga no lo ve en su panel ni le llega su
   aviso. Si se quiere que lo vea todo el restaurante, la sección de Finanzas va en un informe aparte.
 
+- **RN-REP-17 (añadida 20/09/2026, decisión 57)**: **cada cifra se compara con la del periodo
+  anterior**. Bosco, 20/09/2026, preguntado si la comparación va en las tres cifras de cabecera o en
+  todas: *"Sí, en todas las cifras"*.
+
+  **Qué es "el periodo anterior"**, y son dos reglas porque el equipo elige las fechas del informe:
+
+  - Si el periodo es un **mes natural entero** —del día 1 al último—, el anterior es el **mes natural
+    anterior entero**: septiembre contra agosto del 1 al 31. Aquí se aceptan 30 días contra 31
+    porque lo que el restaurante lee es "agosto", y recortarle el día 1 para cuadrar el tamaño sería
+    llamar agosto a algo que no lo es: una mentira callada es peor que un 3 % de diferencia
+    declarada.
+  - **Cualquier otro periodo** se compara con **otros tantos días pegados detrás**: uno del 15 al 28
+    de septiembre, con el 1 al 14. Comparar catorce días contra un mes diría cualquier cosa.
+
+  En los dos casos el periodo anterior **termina el día antes de que este empiece**: ni se solapan ni
+  dejan hueco.
+
+  **Se calcula, no se deduce.** Las cifras del periodo anterior salen de preguntar los mismos datos
+  otra vez, no de una versión guardada: una versión vieja se generó con otras secciones y con las
+  fuentes en otro estado. Cuesta el doble de consultas y se acepta a sabiendas — un informe se
+  genera una vez y se lee muchas, y un número suelto no informa de nada: "5.921 visitas" no dice si
+  son muchas o pocas hasta que hay con qué compararlo.
+
+  **Cada cifra se empareja con la suya por sección, métrica y dimensión.** Sin la dimensión,
+  "Sesiones · móvil" se compararía con "Sesiones · escritorio" y el porcentaje sería inventado.
+
+  **Lo que no hay no se rellena con un cero** (CLAUDE.md): una cifra que no existía en el periodo
+  anterior se dice **"sin periodo anterior"**, porque un 0 % afirmaría que el mes pasado no hubo
+  nada, que es otra cosa. Un cero que **sí** es un dato —el mes pasado se publicaron cero menús— se
+  conserva como cero. Y una cifra que solo existe en el periodo anterior **no se añade** al informe:
+  el informe cuenta este periodo, y una fila con solo pasado sería una cifra fantasma.
+
+  **La comparación depende del nivel** (RN-REP-15): `basic` no la lleva, `standard` la lleva en las
+  cifras de **Lo esencial**, y de `standard_plus` en adelante en **todas**. Un informe de nivel
+  `basic` por tanto **ni siquiera pide el periodo anterior**: no es que se calcule y se esconda.
+
+  **Si el periodo anterior falla, el informe sale igual, sin comparación.** Quedarse sin informe
+  porque no se pudo leer el mes pasado sería la peor de las dos opciones: la comparación es contexto,
+  no el dato.
+
+  **La variación dice la dirección, no si está bien.** Que las incidencias suban un 20 % es malo y
+  que las visitas suban un 20 % es bueno; decidirlo cifra a cifra sería una lista de juicios
+  inventada (CLAUDE.md). Quien juzga es la persona que escribe el resumen ejecutivo (§93), así que la
+  variación se pinta igual en los dos sentidos. Y los cinco casos se dicen distinto, porque lo son:
+  sin comparación (no se pinta nada), **"sin periodo anterior"**, **"el periodo anterior fue 0"** —un
+  porcentaje desde cero es infinito—, **"igual que el periodo anterior"** y la variación con su
+  signo, redondeada a entero.
+
+- **RN-REP-18 (añadida 20/09/2026, decisión 57)**: el informe lleva **"Lo que ha pasado este mes"**:
+  el relato ordenado por fecha de todo lo que ocurrió en el periodo. Bosco, 20/09/2026: *"el informe
+  tiene que ser un resumen de todo lo que ha pasado en el mes"*.
+
+  Es una sección del catálogo (`month_activity`) y entra **en los cinco niveles**, Básico incluido:
+  es justo lo que un Básico —que no incluye ningún cambio (RN-COM-01)— sí tiene que poder leer.
+
+  **Qué entra**, cada entrada con su fecha y su estado: solicitudes recibidas y en qué acabaron,
+  cambios entregados, menús publicados, incidencias abiertas y cerradas, archivos entregados, y los
+  cobros **solo si el informe lleva Finanzas** — porque si no, un informe de cualquier nivel estaría
+  enseñando dinero a quien no tiene "Pagos y facturas" (RN-REP-16, RN-EST-15).
+
+  **Ninguna entrada lleva identidad del equipo** (P7, RN-REP-13): dice qué pasó y cuándo, nunca
+  quién lo hizo. "Cambio entregado", no "entregado por Marta".
+
+  **Se lee del libro, no se redacta.** Las entradas son filas con su clave y su fecha; la frase en
+  español la pone la pantalla o el PDF desde `src/i18n/es.ts`, igual que las oportunidades (§96).
+  Cuotly no escribe el relato: lo ordena.
+
+- **RN-REP-19 (añadida 20/09/2026, decisión 57)**: **cómo se ve el informe por dentro**. El PDF
+  sigue la maqueta aprobada por Bosco el 20/09/2026 y tiene este orden, que no es decorativo:
+
+  1. **Portada**: el restaurante, el periodo en letra y la fecha de generación.
+  2. **"Lo esencial"** — *"si solo lees una página, es esta"*: **como mucho tres cifras**, cada una
+     con su variación respecto al periodo anterior (RN-REP-17). Se toman, por este orden y solo de
+     las secciones que entran: cambios entregados y cumplimiento de plazo (Operación), visitas
+     (Rendimiento digital), ingresos (Finanzas). **Si una no hay, la tarjeta no está** — no se
+     rellena con un cero ni con una barra (CLAUDE.md, §178).
+  3. **Resumen ejecutivo**: el texto que escribió una persona del equipo, con la línea que lo dice.
+     Cuotly no lo redacta (§93).
+  4. **Índice** de lo que trae ese informe concreto.
+  5. **Una página por sección**, en el orden que fijó el equipo, con su tabla de concepto / valor /
+     comparación.
+  6. **Anexos**: el estado de cada fuente y su última sincronización (§94), que es lo que permite
+     leer un hueco sin llamar a nadie.
+  7. **Pie con paginación** en todas las páginas.
+
+  **La tarjeta de "clics en reservas" del primer boceto no se construye**: las reservas y el delivery
+  **no se monitorizan** (decisión fijada en `CLAUDE.md`), así que esa cifra no existe y ponerla sería
+  inventarla.
+
 Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
 redactado (§93: "el informe automático por correo no necesita IA"), no hay plantilla de informe
 configurable por espacio, y no hay envío a una dirección escrita a mano —el correo va a usuarios de

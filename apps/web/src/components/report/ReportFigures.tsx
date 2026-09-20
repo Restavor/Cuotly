@@ -12,7 +12,7 @@ import {
 } from "@/core/reports";
 import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
-import { figureLabel, figureText } from "@/services/report-pdf";
+import { changeText, figureLabel, figureText } from "@/services/report-pdf";
 
 const t = es.reportsPage;
 
@@ -152,6 +152,7 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
                     <TableRow>
                       <TableHeaderCell>{t.columns.name}</TableHeaderCell>
                       <TableHeaderCell>{t.columns.period}</TableHeaderCell>
+                      <TableHeaderCell>{t.columns.previous}</TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -163,6 +164,11 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
                           {figure.at ? (
                             <span className="ml-2 text-xs text-text-secondary">{fechaCorta(figure.at)}</span>
                           ) : null}
+                        </TableCell>
+                        {/* RN-REP-17 · sin comparación la celda va vacía, no
+                            con un guion: un guion se lee como "cero". */}
+                        <TableCell>
+                          <span className="text-sm text-text-secondary">{changeText(figure, t) ?? ""}</span>
                         </TableCell>
                       </TableRow>
                     ))}
