@@ -466,11 +466,17 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/invitaciones_al_panel_del_restaurante.sql
 
-      - name: "Informes — Verificar \"Lo que ha pasado este mes\": el relato es el del restaurante y el de su periodo, no lleva ni un uuid ni un nombre del equipo, los cobros solo con Finanzas dentro, un pago revertido no cuenta, y la función no está abierta por RPC (RN-REP-18, RN-REP-13, RN-REP-16, RN-FIN-04)"
+      - name: "Informes — Verificar \"Lo que ha pasado este mes\" y los tiempos de cada cambio: el relato es el del restaurante y el de su periodo, no lleva ni un uuid ni un nombre del equipo, los cobros solo con Finanzas dentro, un pago revertido no cuenta, el dataset trae el código de la solicitud, la fecha de aceptación y el motivo de cada bloqueo pero nunca su texto ni quién lo puso, y la función no está abierta por RPC (RN-REP-18, RN-REP-21, RN-REP-13, RN-REP-16, RN-FIN-04)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/lo_que_ha_pasado_este_mes.sql
+
+      - name: "Integraciones — Verificar la vigilancia de reseñas: la concede el plan y la barrera está en el servidor, solo vienen de Business Profile, tres estrellas o menos es baja, al equipo se le avisa de todas y al restaurante solo de las bajas, y volver a sincronizar no duplica ni vuelve a avisar (RN-INT-10, RN-INT-11, RN-INT-12)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/vigilancia_de_resenas.sql
 
       - name: "Planes — Verificar que el plan decide TRES cosas distintas: ordenar los cambios propios, el turno dentro del mismo plazo y el plan alto, y que ninguna arrastra a otra (RN-COM-03, decisión 55)"
         run: |

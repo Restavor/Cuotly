@@ -1165,6 +1165,59 @@ remota (migración 82) y las pantallas, en el Hito 14 (14/09/2026).
   proceso de la cola con `service_role`: la aplicación no sincroniza desde una pantalla. Dos procesos a
   la vez no toman la misma ejecución (`for update skip locked`), y una ejecución no tumba a las demás.
 
+- **RN-INT-10 (añadida 20/09/2026, decisión 60)**: Cuotly **vigila las reseñas de Google** del
+  establecimiento, y esa vigilancia **la concede el plan**: `plans.watches_reviews`. Es lo que
+  Bosco quiso añadirle a Premium+ además del informe, el 20/09/2026.
+
+  **Sale de la conexión que ya existe.** Google Business Profile ya está construido —el OAuth, la
+  sincronización, la pantalla, los siete estados— y hoy solo trae rendimiento: impresiones, clics a
+  la web, llamadas, cómo llegar y reservas. **No trae las reseñas.** Esta regla añade las reseñas a
+  la misma conexión: ni credencial nueva, ni proveedor nuevo, ni pantalla nueva de conectar.
+
+  **Una reseña no es un punto de métrica y no se guarda como tal.** Tiene texto, autor, puntuación
+  y fecha, y hay que poder señalar **una** y decir "esta". Vive en su propia tabla, con `space_id`
+  y RLS como cualquier otra (CLAUDE.md), y con la marca de solo lectura en Modo soporte y en
+  espacio archivado.
+
+  **El autor de una reseña es un cliente del restaurante, no alguien del equipo**, así que aquí no
+  hay nada que tapar con privilegios de columna (P7): el nombre que Google publica es público y
+  esconderlo dejaría al restaurante sin saber a quién contesta. Lo que sí se respeta es lo de
+  siempre: **ni una columna con clave ajena a `profiles`** que el restaurante pueda leer.
+
+  **Si el plan no la concede, la reseña no se descarga**, no es que se descargue y se esconda. Y eso
+  **no rompe el principio de la escalera** de RN-REP-15 —"los cinco niveles dicen la verdad sobre el
+  mismo mes"—, porque aquel principio habla de **contar lo que pasó con el servicio de
+  mantenimiento**. Esto es un servicio distinto que se compra o no se compra, como Menú Diario: no
+  es un dato del restaurante que se le oculte, es un trabajo que no se está haciendo. Queda escrito
+  aquí porque la confusión entre las dos cosas es fácil y sería grave.
+
+- **RN-INT-11 (añadida 20/09/2026, decisión 60)**: **una reseña de 3 estrellas o menos es una reseña
+  baja**, y salta. El umbral lo fijó Bosco el 20/09/2026 sobre las otras dos que se le propusieron,
+  2 y 4: *un 3 en Google ya es un cliente descontento que se tomó la molestia de escribir, y es el
+  que todavía se puede recuperar; esperar al 2 es llegar cuando el daño ya está hecho.*
+
+  **No es una constante suelta escondida en una consulta**: es una función propia, citable y con
+  una migración por delante el día que cambie. El día que otro espacio quiera su propio número,
+  será una columna; hoy sería inventar una preferencia que nadie ha pedido.
+
+  **Ni la puntuación ni el número de reseñas generan una oportunidad automática.** Las nueve reglas
+  de oportunidades son las de la decisión 26 y **no se amplía ninguna por la puerta de atrás**: una
+  reseña baja avisa a personas, que deciden. Inventar aquí un umbral de "reputación en riesgo"
+  sería exactamente lo que CLAUDE.md prohíbe.
+
+- **RN-INT-12 (añadida 20/09/2026, decisión 60)**: **quién se entera de una reseña nueva**, decidido
+  por Bosco el 20/09/2026: **el equipo siempre; el restaurante solo si es baja** (RN-INT-11).
+
+  La razón es que un aviso que llega todos los días deja de leerse. El equipo vigila y responde, que
+  es el trabajo que se está vendiendo; al restaurante se le interrumpe **solo cuando hay algo que
+  atender**. Las demás las tiene igual en su pantalla y en su informe (RN-REP-15), que es donde se
+  leen las cosas que no son urgentes.
+
+  Los dos avisos son de **lectura**, no obligatorios (RN-NOT-03): no son seguridad ni pérdida de
+  acceso. Y como todo lo demás, **llegar dos veces la misma reseña no genera dos avisos**: la
+  reseña es única por su identificador de Google dentro del establecimiento, y volver a
+  sincronizar no la duplica ni vuelve a avisar.
+
 Qué métricas guarda cada fuente lo fija §92 para GA4 (usuarios, sesiones, páginas más visitadas,
 procedencia, dispositivos, ubicaciones aproximadas y conversiones configuradas) y para Search Console
 (clics, impresiones, CTR, posición media, búsquedas principales y páginas que aparecen). Para Business
@@ -1184,8 +1237,7 @@ sin esto no se puede comparar cómo convierte el móvil) y los **kilobytes ahorr
 de PageSpeed (`uses-optimized-images` y `uses-responsive-images`, leídos de
 `details.overallSavingsBytes`, que es donde Lighthouse pone los bytes). Lo
 que la pantalla de "Informes y datos" enseña de cada fuente son los 28 últimos días completos con su
-antigüedad, y "periodo insuficiente" (§178) se lee como menos de una semana con dato (una medición,
-en PageSpeed): es una lectura aplicada y confirmada, anotada como decisión 25a. Las
+antigüedad, y "periodo insuficiente" (§178) se lee como menos de una semana con dato (una medición,en PageSpeed): es una lectura aplicada y confirmada, anotada como decisión 25a. Las
 oportunidades (§96 a §101) y los informes (§89 a §95) son los hitos 15 y 16. **Los umbrales de
 detección, la definición de impacto y la de esfuerzo los fijó Bosco el 14/09/2026** (decisión 26,
 sobre `docs/PROPUESTA-OPORTUNIDADES.md`): impacto es alto, medio o bajo según lo que toque el
@@ -1484,12 +1536,17 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   | Operación · cumplimiento de plazos | — | ✓ | ✓ | ✓ | ✓ |
   | Operación · tiempos medios de inicio y entrega | — | ✓ | ✓ | ✓ | ✓ |
   | Operación · bloqueos, correcciones y Menú Diario | — | — | ✓ | ✓ | ✓ |
-  | Operación · los tiempos **de cada cambio**, uno a uno | — | — | — | — | ✓ |
+  | Operación · los tiempos **de cada cambio**, uno a uno (RN-REP-21) | — | — | — | — | ✓ |
   | Comparación con el periodo anterior (RN-REP-17) | — | Lo esencial | todas las cifras | ✓ | ✓ |
-  | Rendimiento digital | — | — | cifras de cabecera | + desgloses | + evolución dentro del mes |
+  | Rendimiento digital | — | — | cifras de cabecera | + desgloses | + evolución dentro del mes (RN-REP-22) |
   | Oportunidades | — | — | — | ✓ | ✓ |
   | Finanzas | — | — | — | ✓ | ✓ |
   | Anexos y evidencias | — | — | — | ✓ | ✓ |
+  | Comparación con el **mismo mes del año anterior** (RN-REP-23) | — | — | — | — | ✓ |
+  | El **efecto de cada cambio** publicado (RN-REP-25) | — | — | — | — | ✓ |
+  | Qué pasó con las **oportunidades del informe anterior** (RN-REP-24) | — | — | — | — | ✓ |
+  | **Aprovechamiento del plan** en la permanencia (RN-REP-26) | — | — | — | — | ✓ |
+  | **Reseñas de Google**, si el plan las vigila (RN-INT-10) | — | — | — | — | ✓ |
 
   **Qué cambió respecto a la primera versión de esta regla (20/09/2026, decisión 58).** El día que se
   escribió, "el detalle cambio a cambio" era exclusivo de `complete`. Con el relato del mes ya
@@ -1705,6 +1762,150 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   la misma pregunta —qué ha pasado con mis cambios este mes— y así hereda su nivel sin que haya que
   gobernar una sección más. El **cumplimiento de plazos**, que en la primera maqueta ocupaba ese
   sitio, baja a la tabla de Operación, donde empieza en `standard`.
+
+
+- **RN-REP-21 (añadida 20/09/2026, decisión 60)**: en `complete`, Operación lleva **los tiempos de
+  cada cambio, uno a uno**. Es lo que la tabla de RN-REP-15 le prometía a Premium+ desde el día que
+  se escribió y no existía: hasta hoy Premium+ recibía exactamente el mismo informe que Premium.
+
+  De cada cambio del periodo **que tiene trabajo** se dice:
+
+  - **cuánto tardó en arrancar** desde que se aceptó, en **reloj laboral** (RN-CLK), y **si cumplió
+    el plazo con el que se aceptó** —`accepted_start_sla_hours`, no el del plan de hoy (RN-COM-15)—;
+  - **cuánto estuvo bloqueado**, sumando sus bloqueos (`blocks`), y **por qué tipo de motivo**
+    —información del cliente, incidencia externa, pausa autorizada, retención financiera—, que son
+    los cuatro de `blocks.reason_type` y ninguno nombra a nadie;
+  - **cuánto tardó de principio a fin**, de `started_at` a `completed_at`, también en reloj laboral;
+  - **cuántas correcciones** necesitó, que ya sale en su ficha (RN-REP-18) y aquí se repite en la
+    misma fila para poder leerla de un vistazo.
+
+  **Un cambio sin trabajo todavía no tiene tiempos, y se dice en vez de dejarlo en blanco**: "en
+  análisis" si nadie lo ha aceptado, "pendiente de empezar" si está aceptado y sin arrancar. Es el
+  mismo criterio de RN-REP-18 y de CLAUDE.md: si no hay dato, se dice cuál es el motivo.
+
+  **Esto no le enseña la cocina al restaurante** (P7, RN-REP-13): dice cuánto tardó **su** cambio,
+  nunca quién lo hizo, ni a cuántos más estaba asignada esa persona, ni cómo se repartió el equipo.
+  La fila no lleva ni una columna con clave ajena a `profiles`.
+
+  **Se calcula donde se calcula todo lo demás**: en `src/core/`, desde el mismo
+  `report_operation_dataset()` que ya trae los trabajos, sus bloqueos y sus `timer_events`. **No
+  hace falta ninguna consulta nueva**, y eso no es una casualidad: el dataset se diseñó devolviendo
+  filas en vez de cifras justamente para que una lectura nueva no obligue a tocar el servidor.
+
+- **RN-REP-22 (añadida 20/09/2026, decisión 60)**: en `complete`, Rendimiento digital lleva además
+  la **evolución dentro del mes**: en vez de una cifra por métrica, la **serie por semanas**.
+
+  **Las semanas son bloques de 7 días contados desde el primer día del periodo**, no semanas
+  naturales. La razón es del negocio, no técnica: un bloque de 7 días contiene **exactamente un
+  lunes, un martes y un sábado**, y en un restaurante el fin de semana pesa tanto que una semana
+  natural recortada por el borde del mes compara cosas distintas y parece una caída.
+
+  **El resto se dibuja, pero marcado.** Un mes de 31 días deja 3 días sueltos al final. Se enseñan
+  con sus fechas y con la etiqueta **"periodo parcial"**, porque una barra corta al lado de cuatro
+  barras llenas se lee como un desplome y no lo es. Ni se esconde ni se reparte: se dice.
+
+  **No todas las métricas se pueden partir igual**, y confundirlo sería inventarse un dato:
+
+  - las que se **suman** —visitas, sesiones, clics, impresiones— se suman dentro de cada bloque;
+  - las que son **proporción o posición** —CTR, posición media, puntuaciones de PageSpeed— se
+    **promedian**, y el promedio de un bloque sin datos **no es cero, es "sin datos"**;
+  - las que vienen ya **desglosadas por dimensión** —por página, por consulta, por dispositivo— **no
+    entran en la serie**: una serie semanal de 40 consultas no es una lectura, es una hoja de
+    cálculo, y el desglose ya lo tiene `advanced`.
+
+- **RN-REP-23 (añadida 20/09/2026, decisión 60)**: en `complete`, cada cifra se compara **también
+  con el mismo mes del año anterior**, además de con el periodo anterior (RN-REP-17).
+
+  **Es la comparación que de verdad significa algo en hostelería.** Septiembre contra agosto es en
+  buena parte temporada: un descenso puede ser que el negocio vaya peor o que agosto sea agosto.
+  Septiembre contra el septiembre pasado responde a la pregunta que el restaurante se hace de
+  verdad, que es si va mejor que el año pasado.
+
+  **Cómo se saca el periodo de hace un año**, con la misma forma de dos reglas que `previousPeriod`
+  (RN-REP-17): si el periodo es un **mes natural completo**, el mismo mes natural completo del año
+  anterior —febrero contra febrero, con sus 28 o 29 días, sin recortar ninguno—; si no lo es, las
+  mismas fechas con el año restado, y si el día no existe en ese año —29 de febrero— el último día
+  de ese mes.
+
+  **Se reutiliza la maquinaria de RN-REP-17 entera**: es una tercera llamada al mismo cálculo de
+  cifras, con los mismos cinco casos de variación (sin comparación, sin periodo anterior, el
+  anterior fue 0, igual, y el porcentaje con su signo). **La variación sigue sin juzgar**: que algo
+  suba un 20 % no se pinta como bueno ni como malo, por la misma razón que en RN-REP-17.
+
+  **Un restaurante que no llevaba un año con nosotros no tiene con qué compararse, y eso se dice**
+  —"sin periodo anterior"—, no se deja la casilla vacía ni se compara contra cero. Y como en
+  RN-REP-17, **si falla, el informe sale igual sin esa comparación**: es contexto, no el dato.
+
+- **RN-REP-24 (añadida 20/09/2026, decisión 60)**: en `complete`, el informe dice **qué ha pasado
+  con las oportunidades del informe anterior**.
+
+  Premium ya recibe oportunidades (RN-REP-15); lo que añade Premium+ es **cerrar el círculo**. Un
+  informe que cada mes propone cosas y nunca dice qué fue de las del mes pasado se lee como un
+  folleto. Uno que las persigue se lee como un seguimiento, que es lo que se está vendiendo.
+
+  Se toman las oportunidades que entraron en **la última versión enviada** del informe de ese
+  establecimiento —la anterior a esta, no la que se está generando— y se dice en qué estado están
+  **hoy**, agrupadas en cuatro lecturas, que es como las lee un restaurante:
+
+  - **Hecha** → `implemented`.
+  - **En marcha** → `in_progress`.
+  - **Sigue abierta** → `approved_for_report`, `detected`, `recommended`, `under_review`.
+  - **Ya no aplica** → `no_longer_applicable` y `discarded`.
+
+  **No se enseña el motivo interno del descarte.** `discard_reason` lo escribe el equipo para el
+  equipo y puede decir cualquier cosa; "ya no aplica" es toda la verdad que el restaurante necesita
+  y la única que no arrastra conversación interna a un PDF que se reenvía por correo (P7).
+
+  **Si no hay informe anterior enviado, la sección no se dibuja.** Un bloque que dice "no hay nada
+  que seguir" en el primer informe de un restaurante es ruido, no información.
+
+- **RN-REP-25 (añadida 20/09/2026, decisión 60)**: en `complete`, el informe dice **qué pasó con las
+  cifras después de cada cambio publicado**. Es lo que convierte el informe en la respuesta a la
+  única pregunta que un restaurante se hace sobre lo que paga: si sirvió de algo.
+
+  De cada cambio **publicado** dentro del periodo se comparan las métricas sumables de los **14 días
+  naturales anteriores** con las de los **14 posteriores**. **La ventana la fijó Bosco el 20/09/2026**
+  (decisión 60) sobre las otras dos que se le propusieron, 7 y 28: catorce días cubren **dos fines de
+  semana completos a cada lado**, así que un sábado flojo no mueve la lectura, y caben dentro del mes
+  para casi todos los cambios.
+
+  **El día de la publicación no entra en ninguna de las dos ventanas.** Es un día partido —unas horas
+  antes del cambio y otras después— y meterlo en cualquiera de los dos lados ensucia los dos.
+
+  **Se dice lo que pasó, nunca que lo causó el cambio.** "Después de este cambio, las visitas pasaron
+  de 1.240 a 1.480" es verdad; "este cambio trajo 240 visitas" no se sabe y no se escribe. Cuotly no
+  tiene forma de aislar una causa y **fingirla sería exactamente lo que CLAUDE.md prohíbe**.
+
+  Tres casos en los que **no se pinta número y se dice el motivo**:
+
+  - **Ventana incompleta** → el cambio se publicó tan cerca del final del periodo que los 14 días
+    posteriores todavía no han pasado, o tan cerca del alta del restaurante que no hay 14 días
+    antes. Se dice *"aún sin medir"*, y su efecto aparecerá en el informe del mes siguiente.
+  - **Sin datos suficientes** → la fuente no cubre esos días (no estaba conectada, o falló). Se dice
+    con el mismo vocabulario de RN-INT-07.
+  - **Otro cambio en la misma ventana** → si dentro de los 14 días posteriores se publicó otro
+    cambio, **se dice**, y las dos filas lo llevan escrito. Sin esa advertencia el restaurante
+    atribuiría a uno lo que hicieron dos, que es la manera más fácil de mentir con datos ciertos.
+
+- **RN-REP-26 (añadida 20/09/2026, decisión 60)**: en `complete`, el informe dice **cuánto está
+  aprovechando el restaurante el plan que paga**, a lo largo de su permanencia y no solo del mes.
+
+  RN-REP-20 ya dice lo del mes —2 de 5 pequeños—. Esto es la otra mitad: **de los ciclos cumplidos
+  de su permanencia vigente** (`plan_commitments`), cuántos cambios incluidos ha usado y **cuántos
+  dejó sin usar**, por categoría. Un restaurante que paga 399 € y gasta dos cambios pequeños al mes
+  de los seis que tiene está tirando dinero, y decírselo es más honesto —y a la larga mejor negocio—
+  que dejar que lo descubra el día que se plantea irse.
+
+  **Los ciclos no se prorratean ni se acumulan.** Cada ciclo es su propia bolsa (RN-CON-05) y lo que
+  no se gastó en agosto no se puede gastar en septiembre: la línea cuenta ciclo a ciclo y suma
+  cuántos quedaron sin usar, nunca presenta un saldo acumulado que no existe.
+
+  **El ciclo en curso no cuenta**, porque todavía puede gastarse: solo entran los ciclos cerrados
+  dentro de la permanencia. Si no hay ninguno cerrado todavía, **la sección no se dibuja**.
+
+  **No lleva ninguna recomendación automática.** Dice el hecho; si hay que sugerir bajar de plan o
+  aprovecharlo mejor, lo escribe una persona en el resumen ejecutivo (§93), que es donde este
+  producto pone los juicios.
 
 Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
 redactado (§93: "el informe automático por correo no necesita IA"), no hay plantilla de informe

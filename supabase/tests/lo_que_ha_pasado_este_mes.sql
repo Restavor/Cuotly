@@ -605,4 +605,92 @@ begin
 end;
 $$;
 
+-- ============================================================
+-- RN-REP-21 (migración 116, decisión 60) · los tiempos de cada cambio
+-- ============================================================
+--
+-- La tabla de RN-REP-15 le prometía esto a Premium+ desde el día que se
+-- escribió, y no existía: hasta la decisión 60, Premium+ recibía el mismo
+-- informe que Premium.
+--
+-- **El cálculo NO se prueba aquí y es a propósito**: los tiempos se miden
+-- con el reloj contractual, que vive en `src/core/business-clock.ts`, y
+-- calcularlos en SQL sería duplicar la lógica de dominio (CLAUDE.md). Lo
+-- que se prueba aquí es lo único que es del servidor: que la fila **lleva
+-- los tres datos** sin los cuales no se puede calcular nada, y que no
+-- lleva de más.
+
+-- Un bloqueo sobre el cambio entregado, para que el motivo tenga algo que
+-- decir. Va aquí y no arriba porque `report_month_activity` no mira los
+-- bloqueos: esto es del dataset de operación.
+insert into public.blocks (space_id, job_id, reason_type, note, started_at, ended_at, reverted) values
+  ('d0510000-0000-0000-0000-000000000001', 'd0570000-0000-0000-0000-000000000001',
+   'client_information', 'Falta la foto del plato nuevo',
+   '2026-08-06T09:00:00Z', '2026-08-07T09:00:00Z', false);
+
+do $$
+declare
+  v_dataset jsonb;
+  v_job jsonb;
+  v_bloqueo jsonb;
+begin
+  v_dataset := public.report_operation_dataset(
+    'd0510000-0000-0000-0000-000000000001',
+    'd0540000-0000-0000-0000-000000000001',
+    '2026-08-01'::date, '2026-08-31'::date);
+
+  select j into v_job
+  from jsonb_array_elements(v_dataset -> 'jobs') j
+  where j ->> 'id' = 'd0570000-0000-0000-0000-000000000001';
+
+  if v_job is null then
+    raise exception 'RN-REP-21 FALLA: el trabajo entregado no sale en el dataset';
+  end if;
+
+  -- 1 · El código de la SOLICITUD. Sin él, la tabla de tiempos no se puede
+  -- juntar con la ficha del cambio (RN-REP-18): serían dos listas de lo
+  -- mismo con nombres distintos, y el restaurante no reconoce el código
+  -- del trabajo porque nunca se lo enseñamos.
+  if v_job ->> 'request_code' is null then
+    raise exception 'RN-REP-21 FALLA: el trabajo no trae el código de su solicitud';
+  end if;
+  if v_job ->> 'request_code' = v_job ->> 'code' then
+    raise exception 'RN-REP-21 FALLA: request_code trae el código del TRABAJO, no el de la solicitud';
+  end if;
+
+  -- 2 · La fecha de aceptación. "Cuánto tardó en arrancar" se mide desde
+  -- que se aceptó (RN-COM-15), no desde que se creó el trabajo: son dos
+  -- momentos distintos y usar el segundo regalaría tiempo al equipo.
+  if v_job ->> 'request_accepted_at' is null then
+    raise exception 'RN-REP-21 FALLA: el trabajo no trae la fecha en que se aceptó su solicitud';
+  end if;
+  if (v_job ->> 'request_accepted_at')::timestamptz > (v_job ->> 'started_at')::timestamptz then
+    raise exception 'RN-REP-21 FALLA: se aceptó después de empezar, que es imposible';
+  end if;
+
+  -- 3 · El motivo del bloqueo, que es una de cuatro categorías cerradas.
+  select b into v_bloqueo
+  from jsonb_array_elements(v_dataset -> 'blocks') b
+  where b ->> 'job_id' = 'd0570000-0000-0000-0000-000000000001';
+
+  if v_bloqueo is null then
+    raise exception 'RN-REP-21 FALLA: el bloqueo no sale en el dataset';
+  end if;
+  if v_bloqueo ->> 'reason_type' <> 'client_information' then
+    raise exception 'RN-REP-21 FALLA: el bloqueo no dice por qué (reason_type: %)',
+      coalesce(v_bloqueo ->> 'reason_type', 'ninguno');
+  end if;
+
+  -- Y lo que NO puede llevar: el texto del bloqueo lo escribe el equipo
+  -- para el equipo (P7, RN-REP-13). Que hoy no esté no basta; esta línea
+  -- es la que impide que alguien lo añada mañana "para dar contexto".
+  if v_bloqueo ? 'note' then
+    raise exception 'P7 FALLA: el dataset lleva el texto interno del bloqueo';
+  end if;
+  if v_bloqueo ? 'started_by' or v_bloqueo ? 'ended_by' then
+    raise exception 'P7 FALLA: el dataset lleva quién puso o quitó el bloqueo';
+  end if;
+end;
+$$;
+
 rollback;
