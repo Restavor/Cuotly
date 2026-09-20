@@ -1832,6 +1832,27 @@ export type Database = {
           },
         ];
       };
+      establishment_invitations: {
+        Row: {
+          accepted_at: string | null;
+          created_at: string;
+          edit_establishment_data: boolean;
+          email: string;
+          establishment_id: string;
+          expires_at: string | null;
+          id: string;
+          rejection_reason: string | null;
+          reviewed_at: string | null;
+          role: string;
+          space_id: string;
+          status: string;
+          updated_at: string;
+          view_billing: boolean;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       establishment_permissions: {
         Row: {
           create_requests: boolean;
@@ -8874,6 +8895,45 @@ export type Database = {
       establishment_report_level: {
         Args: { p_establishment_id: string };
         Returns: string;
+      };
+      establishment_invitation_details: {
+        Args: { p_token: string };
+        Returns: {
+          email: string;
+          establishment_name: string;
+          state: string;
+        }[];
+      };
+      establishment_invitation_status: {
+        Args: { p_id: string };
+        Returns: string;
+      };
+      establishment_invitation_transition_allowed: {
+        Args: { p_actor: string; p_from: string; p_to: string };
+        Returns: boolean;
+      };
+      consume_establishment_invitation: {
+        Args: { p_token: string; p_user_id: string };
+        Returns: string;
+      };
+      invite_to_establishment_panel: {
+        Args: {
+          p_edit_establishment_data?: boolean;
+          p_email: string;
+          p_establishment_id: string;
+          p_idempotency_key?: string;
+          p_role: string;
+          p_view_billing?: boolean;
+        };
+        Returns: string;
+      };
+      review_establishment_invitation: {
+        Args: { p_approve: boolean; p_invitation_id: string; p_reason?: string };
+        Returns: string;
+      };
+      cancel_establishment_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: boolean;
       };
       establishment_space_id: {
         Args: { p_establishment_id: string };

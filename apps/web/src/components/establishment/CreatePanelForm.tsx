@@ -10,7 +10,7 @@ import {
   type GrantAccessState,
 } from "@/app/espacios/[slug]/restaurantes/[id]/actions";
 
-const INITIAL: GrantAccessState = { error: null, granted: 0, future: false };
+const INITIAL: GrantAccessState = { error: null, granted: 0, future: false, invited: false };
 
 /**
  * Página 56 del diseño · "Crear panel del restaurante" (RN-PAN-10).

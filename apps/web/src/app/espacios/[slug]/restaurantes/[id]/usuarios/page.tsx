@@ -7,8 +7,11 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import { PermissionsForm } from "./PermissionsForm";
+import { InvitationRow } from "./InvitationRow";
+import { InvitePanelForm } from "./InvitePanelForm";
 import {
   CLIENT_PERMISSIONS,
+  loadPanelInvitations,
   loadPanelUsers,
   type PanelUser,
 } from "./users-load";
@@ -37,10 +40,15 @@ import {
  *   · Un acceso que viene del **grupo** no cuelga de este restaurante
  *     (migración 74), así que tampoco se toca desde aquí.
  *
- * **La pestaña "Invitar usuario" de la página 153 no está**, y se dice en
- * vez de dejar un hueco (CLAUDE.md): esa pestaña crea una CUENTA nueva
- * —correo, contraseña y los datos del restaurante— y eso todavía no
- * existe. Hoy el acceso lo da el equipo a quien ya tiene cuenta.
+ * **La pestaña "Invitar usuario" de la página 153 ya está** (RN-ACC-13,
+ * decisión 59). Hasta el 20/09/2026 no existía, porque crear una cuenta
+ * nueva desde aquí era una tercera puerta de alta y `CLAUDE.md` no deja
+ * improvisar una. Bosco la decidió: el restaurante invita y el equipo
+ * aprueba.
+ *
+ * Un solo formulario para los dos casos, porque quien lo rellena no tiene
+ * por qué saber cuál le toca: si ese correo ya tiene cuenta entra en el
+ * momento, y si no, se crea una invitación. Lo decide el servidor.
  */
 export const dynamic = "force-dynamic";
 
@@ -64,18 +72,28 @@ export default async function PanelUsersPage({
 
   const { data: establishment } = await supabase
     .from("establishments")
-    .select("id, name, group_id")
+    .select("id, name, group_id, space_id")
     .eq("id", id)
     .maybeSingle();
   if (!establishment) notFound();
 
   // Decide qué se PINTA y nada más. El servidor lo vuelve a comprobar en
   // cada una de las tres funciones que esta pantalla puede llamar.
-  const [{ data: puedeGestionar }, users] = await Promise.all([
+  const [{ data: puedeGestionar }, users, invitations, { data: esDelEquipo }] = await Promise.all([
     supabase.rpc("client_can_manage_users", { p_establishment_id: id }),
     loadPanelUsers(supabase, id),
+    loadPanelInvitations(supabase, id),
+    // RN-PAN-14 · quién ve los botones de aprobar y rechazar. Es lo que se
+    // PINTA: quién puede de verdad lo decide
+    // `review_establishment_invitation()`, que rechaza a cualquiera sin
+    // `manage_clients` aunque llame a mano.
+    supabase.rpc("has_capability", {
+      p_space_id: establishment.space_id,
+      p_capability: "manage_clients",
+    }),
   ]);
   const gestiona = puedeGestionar === true;
+  const revisa = esDelEquipo === true;
   const t = es.panelUsers;
 
   return (
@@ -168,9 +186,39 @@ export default async function PanelUsersPage({
         <p className="text-sm text-text-secondary">{t.onlyOwnerHint}</p>
       </Card>
 
-      <Card title={t.inviteTitle}>
-        <p className="text-sm text-text-secondary">{t.inviteNotBuilt}</p>
-      </Card>
+      {/*
+        RN-ACC-13 · invitar. Solo se pinta a quien puede gestionar accesos;
+        a quien no, ni el formulario ni la lista, porque no tendría nada
+        que hacer con ellos. La barrera sigue estando en el servidor.
+      */}
+      {gestiona ? (
+        <>
+          <Card title={t.inviteTitle}>
+            <InvitePanelForm establishmentId={id} />
+          </Card>
+
+          <Card title={es.establishmentSheet.invitations.title}>
+            {invitations.failed ? (
+              // §20.7 · "no se pudo mirar" no es "no hay ninguna".
+              <p className="text-sm text-danger">{es.establishmentSheet.invitations.failed}</p>
+            ) : invitations.rows.length === 0 ? (
+              <p className="text-sm text-text-secondary">
+                {es.establishmentSheet.invitations.empty}
+              </p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {invitations.rows.map((invitation) => (
+                  <InvitationRow
+                    key={invitation.id}
+                    invitation={invitation}
+                    canReview={revisa}
+                  />
+                ))}
+              </ul>
+            )}
+          </Card>
+        </>
+      ) : null}
 
       <p>
         <Link

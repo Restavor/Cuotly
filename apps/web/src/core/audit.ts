@@ -59,6 +59,12 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // ve cualquiera": es "lo decide la fila". Para unos permisos se queda
   // corto.
   establishment_permissions: "manage_clients",
+  // RN-ACC-13 (migración 114) · una invitación al panel es cartera de
+  // clientes, como el acceso que acaba creando. Y va clasificada por
+  // CAPACIDAD y no por la fila a propósito: quién invitó, quién revisó y
+  // quién aceptó son identidades, y RN-PAN-15 no se las enseña al
+  // restaurante ni por esta vía.
+  panel_invitation: "manage_clients",
   // Las notas internas del restaurante (RN-EST-13, migración 66). Quién
   // escribió una y cuándo es de la misma cartera; el CUERPO de la nota no
   // está en el apunte, y es a propósito: copiarlo aquí lo sacaría de la
@@ -238,6 +244,12 @@ export const AUDIT_ACTIONS = [
   "establishment.termination_requested",
   "establishment_access.granted",
   "establishment_access.revoked",
+  // Migración 114 (RN-ACC-13, RN-PAN-14) · la tercera puerta: el
+  // restaurante invita, el equipo revisa, y quien recibe el enlace acepta.
+  "panel_invitation.created",
+  "panel_invitation.reviewed",
+  "panel_invitation.cancelled",
+  "panel_invitation.accepted",
   // Migración 107 (RN-EST-15) · el Propietario del restaurante, o el
   // equipo, configura las casillas de un Editor.
   "establishment_permissions.set",

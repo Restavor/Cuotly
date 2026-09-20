@@ -10,10 +10,14 @@ import {
   type GrantAccessState,
 } from "@/app/espacios/[slug]/restaurantes/[id]/actions";
 
-const INITIAL: GrantAccessState = { error: null, granted: 0, future: false };
+const INITIAL: GrantAccessState = { error: null, granted: 0, future: false, invited: false };
 
 /**
- * Maqueta 15 · "Añadir usuario existente" (RN-EST-04).
+ * Maqueta 15 · "Añadir usuario" (RN-EST-04, RN-ACC-13).
+ *
+ * Desde la decisión 59 el correo **no tiene por qué tener cuenta ya**: si
+ * no la tiene, la acción crea una invitación en vez de un acceso, y la
+ * pantalla lo dice con otra frase. Quién recibe qué lo decide el servidor.
  *
  * Los cuatro casos de la regla, en un solo alcance: este restaurante,
  * todos los que el grupo tiene ahora, o todos incluidos los futuros. Los
@@ -102,8 +106,13 @@ export function GrantAccessForm({
       <p className="text-xs text-text-secondary">{t.grantFutureHint}</p>
 
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}
+      {/* RN-ACC-13 · tres resultados distintos y tres frases distintas.
+          "Se ha invitado" no es "ya está dentro": esa persona todavía
+          tiene que abrir un enlace y ponerse una contraseña. */}
       {state.future ? (
         <p className="text-sm text-cuotly-green">{t.grantDoneFuture}</p>
+      ) : state.invited ? (
+        <p className="text-sm text-cuotly-green">{t.grantDoneInvited}</p>
       ) : state.granted > 0 ? (
         <p className="text-sm text-cuotly-green">{t.grantDone(state.granted)}</p>
       ) : null}

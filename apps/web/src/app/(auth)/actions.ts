@@ -273,6 +273,60 @@ export async function completeInvitationSignup(
  * está verificado** por el camino, porque el enlace con el que se llega
  * aquí solo pudo salir de ese buzón.
  */
+/**
+ * RN-ACC-13 · la tercera puerta: gastar el enlace de una invitación al
+ * panel de un restaurante.
+ *
+ * Es hermana de `completeAccountSetup()` y el orden es el mismo, por la
+ * misma razón: **primero la cuenta, después el enlace**. Si
+ * `consume_establishment_invitation()` falla —porque ya se gastó, porque
+ * caducó, porque el equipo no la aprobó, o porque el restaurante cambió de
+ * espacio— se **deshace el alta**, y así no queda una cuenta que ninguna
+ * puerta autorizó (RN-ACC-01).
+ *
+ * El correo NO sale del formulario: sale de la invitación. Lo que el
+ * formulario manda es la contraseña y el token, y nada más.
+ */
+export async function completePanelInvitation(
+  _prevState: PasswordFormState,
+  formData: FormData,
+): Promise<PasswordFormState> {
+  const token = String(formData.get("token") ?? "");
+  const leida = leerContrasena(formData);
+  if ("error" in leida) return { error: leida.error };
+
+  const supabase = await createClient();
+  const { data, error: detalleError } = await supabase
+    .rpc("establishment_invitation_details", { p_token: token })
+    .maybeSingle();
+
+  if (detalleError || !data || data.state !== "valid" || !data.email) {
+    return { error: es.auth.panelInvitation.unknownError };
+  }
+
+  const creada = await crearCuenta(data.email, leida.password);
+  if ("error" in creada) return { error: creada.error };
+
+  const admin = createAdminClient();
+  const { error: consumeError } = await admin.rpc("consume_establishment_invitation", {
+    p_token: token,
+    p_user_id: creada.userId,
+  });
+
+  if (consumeError) {
+    await admin.auth.admin.deleteUser(creada.userId);
+    return { error: es.auth.panelInvitation.unknownError };
+  }
+
+  const { error: entrarError } = await supabase.auth.signInWithPassword({
+    email: data.email,
+    password: leida.password,
+  });
+  if (entrarError) redirect("/login");
+
+  redirect("/");
+}
+
 async function crearCuenta(
   email: string,
   password: string,

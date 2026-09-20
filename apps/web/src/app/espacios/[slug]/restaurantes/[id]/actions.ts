@@ -171,15 +171,28 @@ export type GrantAccessState = {
   granted: number;
   /** `true` cuando lo concedido es el grupo entero, futuros incluidos. */
   future: boolean;
+  /**
+   * RN-ACC-13 · `true` cuando el correo **no tenía cuenta** y lo que se ha
+   * creado es una invitación, no un acceso. Son dos resultados distintos y
+   * la pantalla los dice distinto: uno ya está dentro, el otro tiene que
+   * abrir un enlace — y, si invitó el restaurante, esperar a que el equipo
+   * lo apruebe.
+   */
+  invited: boolean;
 };
 
 /**
- * Maqueta 15 · "Añadir usuario existente" (RN-EST-04).
+ * Maqueta 15 · "Añadir usuario" (RN-EST-04, RN-ACC-13).
  *
- * **Existente es literal.** En Cuotly se invita al ESPACIO (HU-03), no a un
- * restaurante: a quien todavía no tiene cuenta no se le puede dar acceso
- * aquí, y `grant_establishment_access()` lo dice con esas palabras en vez
- * de crear a medias algo que no existe.
+ * **Ya no hace falta que exista.** Hasta la decisión 59 esta pantalla solo
+ * admitía correos con cuenta de Cuotly, así que un restaurante no podía
+ * meter a su encargado. Ahora llama a `invite_to_establishment_panel()`,
+ * que **decide sola** cuál de los dos caminos toca: con cuenta, el acceso
+ * en el momento; sin cuenta, una invitación que crea la cuenta al
+ * aceptarse. Quien llama no elige — así la pantalla no puede equivocarse.
+ *
+ * Los dos caminos de GRUPO siguen exigiendo cuenta: invitar a alguien a un
+ * grupo entero de restaurantes es otra cosa y nadie la ha pedido todavía.
  *
  * Lo que esta acción NO decide: el rol que de verdad queda, los permisos
  * finos (RN-EST-11 y RN-FIN-07 los normalizan en el servidor: un Consulta
@@ -200,7 +213,7 @@ export async function grantClientAccess(
   const editData = formData.get("editData") !== null;
   const viewBilling = formData.get("viewBilling") !== null;
 
-  if (!email) return { error: null, granted: 0, future: false };
+  if (!email) return { error: null, granted: 0, future: false, invited: false };
 
   const supabase = await createClient();
 
@@ -213,9 +226,9 @@ export async function grantClientAccess(
       p_email: email,
       p_role: role,
     });
-    if (error) return { error: error.message, granted: 0, future: false };
+    if (error) return { error: error.message, granted: 0, future: false, invited: false };
     revalidatePath("/espacios", "layout");
-    return { error: null, granted: 0, future: true };
+    return { error: null, granted: 0, future: true, invited: false };
   }
 
   if (scope === "allCurrent") {
@@ -226,12 +239,12 @@ export async function grantClientAccess(
       p_edit_establishment_data: editData,
       p_view_billing: viewBilling,
     });
-    if (error) return { error: error.message, granted: 0, future: false };
+    if (error) return { error: error.message, granted: 0, future: false, invited: false };
     revalidatePath("/espacios", "layout");
-    return { error: null, granted: data ?? 0, future: false };
+    return { error: null, granted: data ?? 0, future: false, invited: false };
   }
 
-  const { error } = await supabase.rpc("grant_establishment_access", {
+  const { data, error } = await supabase.rpc("invite_to_establishment_panel", {
     p_establishment_id: establishmentId,
     p_email: email,
     p_role: role,
@@ -239,10 +252,13 @@ export async function grantClientAccess(
     p_view_billing: viewBilling,
   });
 
-  if (error) return { error: error.message, granted: 0, future: false };
+  if (error) return { error: error.message, granted: 0, future: false, invited: false };
 
   revalidatePath("/espacios", "layout");
-  return { error: null, granted: 1, future: false };
+  // La función devuelve el id de la invitación, o `null` cuando el correo
+  // ya tenía cuenta y el acceso se dio en el momento. Ese `null` **es** la
+  // respuesta, no un fallo.
+  return { error: null, granted: data === null ? 1 : 0, future: false, invited: data !== null };
 }
 
 export type AcceptTermsState = { error: string | null; accepted: boolean };

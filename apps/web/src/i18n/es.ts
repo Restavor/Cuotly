@@ -173,6 +173,32 @@ export const es = {
       unknownError:
         "No hemos podido crear tu cuenta y no sabemos por qué. Vuelve a intentarlo; el enlace sigue sirviendo.",
     },
+    /**
+     * RN-ACC-13 · la TERCERA puerta: alguien a quien invitó su propio
+     * restaurante. Casi nunca ha oído hablar de Cuotly, así que las
+     * frases dicen de qué va esto antes de pedirle nada.
+     */
+    panelInvitation: {
+      title: "Te han dado acceso a tu panel",
+      subtitle: "Elige una contraseña y entra.",
+      subtitleWith: (restaurante: string) =>
+        `Vas a entrar en el panel de ${restaurante}. Elige una contraseña.`,
+      usedTitle: "Este enlace ya se ha usado",
+      usedBody: "Tu cuenta ya existe. Entra con tu correo y tu contraseña.",
+      expiredTitle: "Este enlace ha caducado",
+      expiredBody:
+        "Por seguridad dura siete días. Pídele a quien te invitó que te mande uno nuevo.",
+      // Propio de esta puerta: la invitación existe, pero el equipo de
+      // mantenimiento todavía no la ha mirado (RN-PAN-14). Decir "este
+      // enlace no vale" sería mentira.
+      pendingTitle: "Tu invitación está en revisión",
+      pendingBody:
+        "El equipo de mantenimiento tiene que darle el visto bueno. Te avisaremos en cuanto lo haga; guarda este enlace.",
+      unknownTitle: "Este enlace no vale",
+      unknownBody: "O se ha copiado a medias, o ya no está en pie.",
+      unknownError:
+        "No hemos podido crear tu cuenta y no sabemos por qué. Vuelve a intentarlo; el enlace sigue sirviendo.",
+    },
     // RN-ACC-09 · la otra puerta: la invitación de un propietario.
     invitation: {
       title: "Te han invitado a Cuotly",
@@ -960,6 +986,11 @@ export const es = {
       absence_decided: "Ausencia resuelta",
       absence_uncovered_jobs: "Trabajos sin cobertura",
       establishment_access_granted: "Acceso a tu panel",
+      // RN-PAN-14 · dos audiencias distintas y dos frases distintas: al
+      // equipo se le dice que hay algo que mirar, a quien invitó en qué
+      // quedó. Ninguna dice quién la revisó (RN-PAN-15).
+      panel_invitation_pending_review: "Invitación al panel por revisar",
+      panel_invitation_decided: "Tu invitación al panel, resuelta",
     },
     // RN-MOV-04 (decisión 36) · el push dice qué ha pasado y dónde: el
     // evento, el restaurante y el espacio, la cifra si la hay y una frase
@@ -2722,6 +2753,9 @@ export const es = {
       space: "Espacio",
       space_request: "Solicitud de espacio",
       access_request: "Solicitud de acceso",
+      // RN-ACC-13 (migración 114) · la invitación al panel de un
+      // restaurante, que es la tercera puerta de alta.
+      establishment_invitation: "Invitación al panel",
       export: "Exportación",
       establishment: "Restaurante",
       group: "Grupo",
@@ -2769,6 +2803,11 @@ export const es = {
       "charge.refunded": "Cobro reembolsado",
       "charge.waived": "Cobro perdonado",
       "correction.completed": "Corrección terminada",
+      // RN-ACC-13 (migración 114) · las cuatro de la invitación al panel.
+      "panel_invitation.created": "Invitación al panel enviada",
+      "panel_invitation.reviewed": "Invitación al panel revisada",
+      "panel_invitation.cancelled": "Invitación al panel cancelada",
+      "panel_invitation.accepted": "Invitación al panel aceptada",
       "correction.requested": "Corrección pedida",
       "correction.started": "Corrección comenzada",
       "correction.team_error_opened": "Corrección por error del equipo",
@@ -4257,6 +4296,37 @@ export const es = {
       n === 1 ? "Acceso concedido." : `Acceso concedido a ${n} restaurantes.`,
     grantDoneFuture:
       "Acceso concedido a todo el grupo, incluidos los restaurantes que se den de alta más adelante.",
+    // RN-ACC-13 · el correo no tenía cuenta. No está dentro todavía: tiene
+    // que abrir un enlace y ponerse una contraseña, y decirle "acceso
+    // concedido" haría esperar a quien invita.
+    grantDoneInvited:
+      "Invitación enviada. Esa persona todavía no tiene cuenta en Cuotly: entrará cuando abra el enlace del correo y elija su contraseña.",
+
+    // RN-PAN-14 · la lista de invitaciones del restaurante.
+    invitations: {
+      title: "Invitaciones",
+      empty: "No hay ninguna invitación pendiente.",
+      failed:
+        "No se ha podido cargar la lista de invitaciones. Vuelve a intentarlo; no significa que no haya ninguna.",
+      states: {
+        pending_review: "En revisión",
+        approved: "Enviada, sin aceptar",
+        rejected: "Rechazada",
+        expired: "Caducada",
+      },
+      // RN-PAN-15 · el motivo sí; quién la revisó, nunca.
+      rejectedBecause: (motivo: string) => `Motivo: ${motivo}`,
+      expiresOn: (fecha: string) => `Caduca el ${fecha}`,
+      pendingHint:
+        "El equipo de mantenimiento tiene que aprobarla antes de que esa persona pueda entrar.",
+      approve: "Aprobar",
+      reject: "Rechazar",
+      rejectReasonLabel: "Motivo del rechazo",
+      rejectReasonHint: "Lo lee quien la envió, así que conviene que se entienda.",
+      rejectReasonRequired: "Un rechazo lleva motivo.",
+      cancel: "Cancelar invitación",
+      reviewedOk: "Hecho.",
+    },
 
     // Maqueta 15 · el alcance es lo que el rol SIGNIFICA (PRD §14), no un
     // permiso guardado: lo deriva `accessScope()` en src/core.

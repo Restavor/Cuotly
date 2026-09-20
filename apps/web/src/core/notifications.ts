@@ -104,6 +104,12 @@ export const NOTIFICATION_EVENTS = [
   // acceso a un restaurante en silencio y quien lo recibía se enteraba
   // entrando.
   "establishment_access_granted",
+  // Migración 114 (RN-ACC-13, RN-PAN-14) · la invitación al panel. Son dos
+  // avisos con dos audiencias distintas: al EQUIPO se le dice que hay una
+  // que mirar, y a quien invitó, en qué quedó. Ninguno de los dos dice
+  // quién la revisó (RN-PAN-15).
+  "panel_invitation_pending_review",
+  "panel_invitation_decided",
 ] as const;
 
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
@@ -350,6 +356,11 @@ export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = [
   // El equipo ya sabe que lo ha dado: acaba de pulsarlo, y queda en la
   // auditoría.
   "establishment_access_granted",
+  // RN-PAN-14 · a quien invitó se le dice en qué quedó su invitación, y
+  // quien invitó es del restaurante. El otro aviso de la pareja
+  // —`panel_invitation_pending_review`— es del EQUIPO y por eso no está
+  // en esta lista.
+  "panel_invitation_decided",
 ];
 
 /**

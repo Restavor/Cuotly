@@ -90,3 +90,73 @@ export async function loadPanelUsers(
     })),
   };
 }
+
+/**
+ * RN-PAN-14 · una invitación al panel, tal como la pinta la pantalla.
+ *
+ * **No lleva quién la mandó ni quién la revisó** (RN-PAN-15): esas
+ * columnas ni se piden, porque el privilegio de columna las cierra y
+ * pedirlas devolvería 403 para la consulta entera. Al cliente le responde
+ * "el equipo de mantenimiento", no una persona.
+ */
+export interface PanelInvitation {
+  readonly id: string;
+  readonly email: string;
+  readonly role: string;
+  readonly status: string;
+  readonly expiresAt: string | null;
+  readonly rejectionReason: string | null;
+  readonly createdAt: string;
+}
+
+export interface PanelInvitations {
+  readonly rows: readonly PanelInvitation[];
+  /** §20.7 · "no se pudo mirar" no es "no hay ninguna". */
+  readonly failed: boolean;
+}
+
+/**
+ * Las invitaciones vivas de un restaurante: las que están esperando a que
+ * el equipo las mire y las aprobadas que todavía nadie ha aceptado.
+ *
+ * Las resueltas —aceptadas, canceladas— no se listan: una aceptada ya es
+ * una persona de la lista de arriba, y repetirla como invitación haría
+ * pensar que hay algo pendiente. Un **rechazo sí se queda**, porque quien
+ * invitó tiene que leer el motivo; desaparece cuando vuelve a intentarlo.
+ *
+ * `select` enumera columnas **a la fuerza**: `establishment_invitations`
+ * tiene el select revocado y `select *` devuelve 403 (RN-PAN-15).
+ */
+export async function loadPanelInvitations(
+  supabase: Supabase,
+  establishmentId: string,
+): Promise<PanelInvitations> {
+  const { data, error } = await supabase
+    .from("establishment_invitations")
+    .select("id, email, role, status, expires_at, rejection_reason, created_at")
+    .eq("establishment_id", establishmentId)
+    .in("status", ["pending_review", "approved", "rejected"])
+    .order("created_at", { ascending: false });
+
+  if (error !== null) return { rows: [], failed: true };
+
+  return {
+    failed: false,
+    rows: (data ?? []).map((row) => ({
+      id: row.id,
+      email: row.email,
+      role: row.role,
+      // RN-PAN-14 · una aprobada con la fecha pasada ya no vale, aunque la
+      // columna siga diciendo `approved`. Se deriva aquí igual que en
+      // `establishment_invitation_status()`: enseñar "aprobada" sobre un
+      // enlace muerto haría esperar a quien invitó.
+      status:
+        row.status === "approved" && row.expires_at !== null && new Date(row.expires_at) <= new Date()
+          ? "expired"
+          : row.status,
+      expiresAt: row.expires_at,
+      rejectionReason: row.rejection_reason,
+      createdAt: row.created_at,
+    })),
+  };
+}

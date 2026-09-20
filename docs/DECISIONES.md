@@ -1358,6 +1358,68 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    ficha sobre `jobs`—, las 60 suites sobre una base limpia, 1.537 tests de web, y el PDF generado y
    mirado página a página.
 
+59. **La tercera puerta: el restaurante invita, Cuotly aprueba** (20/09/2026). Hasta hoy solo había
+   dos maneras de que alguien entrara en el panel de un restaurante: que el equipo le diera acceso a
+   una cuenta que ya existía, o que el equipo le mandara un alta. Faltaba la que pide la vida real:
+   el restaurante quiere meter a su jefe de sala, y su jefe de sala no tiene cuenta de Cuotly.
+
+   Bosco eligió **"el restaurante invita, tú apruebas"** frente a las otras dos opciones —que el
+   restaurante pudiera crear cuentas por su cuenta, o que tuviera que pedírselo al equipo por
+   mensaje—. Es la que no regala la creación de cuentas ni obliga a que el equipo teclee los datos
+   de un tercero: el restaurante escribe a quién quiere meter y con qué permisos, y la invitación
+   se queda **esperando revisión** hasta que alguien del equipo la aprueba o la rechaza.
+
+   **Quién puede invitar: igual que ahora** (RN-ACC-13). El equipo con `manage_clients`, y dentro
+   del panel quien tenga "Usuarios y accesos". No se inventó un permiso nuevo: el que ya decide
+   quién entra en el panel es el que decide a quién se invita.
+
+   **Lo que cambia para el equipo y lo que no.** Si el correo invitado **ya tiene cuenta**, no hay
+   nada que aprobar: es el acceso de siempre y se concede en el acto. La revisión existe solo
+   cuando la invitación va a **crear una cuenta nueva**, que es lo único que el restaurante no
+   puede hacer solo.
+
+   **RN-PAN-15 · el restaurante no ve quién revisó.** La fila guarda quién invitó, quién revisó y
+   quién aceptó, y las tres son identidad del equipo. Se tapan con privilegios de columna, como
+   manda CLAUDE.md, no con una vista ni confiando en la pantalla.
+
+   **Lo que encontró construirlo, que es la parte que conviene no olvidar:**
+
+   · Cuatro columnas que escribí de memoria **no existen**: `establishment_memberships` no tiene
+     `space_id`, ni `edit_establishment_data`, ni `view_billing`, ni `granted_by` —los permisos
+     viven en `establishment_permissions`—. plpgsql no valida nombres de columna al crear la
+     función, así que la migración aplicó limpia y solo habría reventado el día que alguien
+     aceptara una invitación. El permiso tampoco se llama `manage_access` sino `manage_users`. La
+     regla que sale de aquí es simple: **una función nueva se escribe leyendo la que ya hace lo
+     mismo**, no recordándola.
+
+   · Lo mismo con dos listas `check` cerradas —`state_events.entity_type` y el catálogo de
+     notificaciones—: las escribí de memoria, con tipos inventados y sin algunos de los de verdad.
+     Se reescribieron leyendo la definición viva.
+
+   · **Los tres barridos del proyecto dispararon los tres.** El de `SECURITY DEFINER` en falso
+     cerrado obligó a que `establishment_invitation_status()` comprobara permisos de verdad; el de
+     solo lectura pedía **los dos** disparadores (soporte y espacio archivado), no uno; y el de
+     traspaso exigía declarar la tabla nueva en `establishment_transfer_tables()`. Ninguno de los
+     tres lo habría visto yo leyendo mi propio código.
+
+   · **Y una mutación pasó en verde**, que es el hallazgo serio del día. Quité de
+     `consume_establishment_invitation()` la línea que exige que la invitación esté **aprobada** —la
+     barrera de seguridad entera de esta decisión— y la suite siguió pasando: el test moría antes
+     por otro motivo y el `when sqlstate 'P0001'` se tragaba el mensaje. Un test que pasa por el
+     motivo equivocado es peor que no tenerlo, porque además tranquiliza. Se arregló creando la
+     cuenta antes de la barrera y exigiendo que el error diga `no está aprobada`.
+
+   **La migración 115 salió de un test de web, no de una suite de SQL.** `audit_action_capability()`
+   no sabía de quién era la familia `panel_invitation`, así que caía en el `else null` —que no
+   significa "la ve cualquiera" sino "lo decide la fila"—, y la pantalla habría filtrado por
+   `manage_clients` mientras el servidor filtraba por la fila: **la pantalla más estricta que el
+   servidor**, que es la forma silenciosa de este fallo, la que nadie nota hasta que alguien
+   consulta por otra vía.
+
+   Comprobado: suite 61 `invitaciones_al_panel_del_restaurante.sql`, las 61 suites sobre una base
+   limpia en el orden de CI, 1.537 tests de web, y las huellas de las nueve funciones de las
+   migraciones 114 y 115 iguales en local y en producción.
+
 ---
 
 ### Pendiente de completar
