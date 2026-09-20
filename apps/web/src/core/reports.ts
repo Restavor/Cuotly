@@ -473,6 +473,15 @@ export interface ReportJobRow {
   readonly hasAcceleratedSla: boolean;
   readonly t2Events: readonly TimerEvent[];
   readonly t3Events: readonly TimerEvent[];
+  /**
+   * RN-REP-21 (migración 116) · el código de la SOLICITUD y la fecha en
+   * que se aceptó, y el plazo con el que se aceptó. Opcionales porque una
+   * versión guardada antes de la 116 no los trae: se leen como lo que
+   * son, no se inventan (RN-REP-12).
+   */
+  readonly requestCode?: string | null;
+  readonly requestAcceptedAt?: Date | null;
+  readonly startSlaHours?: number | null;
 }
 
 export interface ReportRequestRow {
@@ -486,6 +495,8 @@ export interface ReportBlockRow {
   readonly jobId: string;
   readonly startedAt: Date;
   readonly endedAt: Date | null;
+  /** RN-REP-21 · una de cuatro categorías cerradas; nunca el texto. */
+  readonly reason?: BlockReason | null;
 }
 
 export interface ReportConsumptionRow {
@@ -788,6 +799,17 @@ export interface ReportFigure {
    * se dice "sin periodo anterior". Un 0 % sería mentira en los dos.
    */
   readonly previous?: number | null;
+  /**
+   * RN-REP-23 (decisión 60) · la misma cifra en el **mismo mes del año
+   * anterior**, solo en `complete`. Va aparte de `previous` porque son dos
+   * preguntas distintas —"¿mejor que el mes pasado?" y "¿mejor que el año
+   * pasado?"— y en hostelería la segunda es la que significa algo: un
+   * septiembre contra un agosto es en buena parte temporada.
+   *
+   * Los mismos tres estados que `previous`: `undefined` no se pidió,
+   * `null` se pidió y no había dato de hace un año.
+   */
+  readonly yearAgo?: number | null;
 }
 
 /**
@@ -973,6 +995,24 @@ export function withPreviousFigures(
     if (reach === "headline" && !isHeadlineFigure(figure)) return figure;
     return { ...figure, previous: antes.get(figureKey(figure)) ?? null };
   });
+}
+
+/**
+ * RN-REP-23 (decisión 60) · pega a cada cifra la del mismo mes del año
+ * anterior. Mismo criterio que `withPreviousFigures` y por las mismas
+ * razones: una cifra que solo existía hace un año no se añade —sería una
+ * fila fantasma—, y una de ahora sin dato de entonces sale con `yearAgo`
+ * a `null`, que se dice "sin periodo anterior" y nunca 0 %.
+ *
+ * **Solo llega a `complete`**, así que no lleva `reach`: no hay un nivel
+ * intermedio que la lleve a medias.
+ */
+export function withYearAgoFigures(
+  current: readonly ReportFigure[],
+  yearAgo: readonly ReportFigure[],
+): readonly ReportFigure[] {
+  const entonces = new Map(yearAgo.map((figure) => [figureKey(figure), figure.value]));
+  return current.map((figure) => ({ ...figure, yearAgo: entonces.get(figureKey(figure)) ?? null }));
 }
 
 /**
@@ -1250,6 +1290,27 @@ export interface ReportSnapshot {
   readonly activity?: MonthActivity;
   /** RN-REP-20 · la bolsa del mes, a la cabeza del relato. */
   readonly allowance?: readonly ChangeAllowanceLine[];
+  /**
+   * Lo que añade `complete` (RN-REP-21 a 26, decisión 60). Todo opcional
+   * por lo mismo que `activity`: una versión guardada antes de la decisión
+   * 60 no lo trae, y una versión vieja es el original de su día
+   * (RN-REP-12) — no se recalcula, se lee como lo que es.
+   */
+  readonly timings?: readonly ChangeTiming[];
+  readonly evolution?: readonly WeeklySeries[];
+  readonly evolutionBuckets?: readonly WeekBucket[];
+  readonly effects?: readonly ChangeEffect[];
+  readonly planUsage?: readonly PlanUsageLine[];
+  readonly followUp?: readonly OpportunityFollowUpLine[];
+}
+
+/** RN-REP-24 · una oportunidad del informe anterior, con su lectura de hoy. */
+export interface OpportunityFollowUpLine {
+  readonly id: string;
+  readonly rule: string | null;
+  readonly subject: string;
+  readonly title: string | null;
+  readonly state: OpportunityFollowUp;
 }
 
 /**
@@ -1319,4 +1380,459 @@ export function reorderSections(
     position += 1;
   }
   return result;
+}
+
+// ---------------------------------------------------------------------
+// 12 · Lo que añade Premium+ (RN-REP-21 a 26, decisión 60)
+// ---------------------------------------------------------------------
+//
+// Seis lecturas, todas de nivel `complete`, y todas **análisis de lo que
+// ya cuentan los cinco niveles**: ninguna esconde un dato a nadie, que es
+// el principio de la escalera que fijó la decisión 58.
+//
+// Están aquí y no en SQL por lo de siempre: los tiempos se miden con el
+// reloj contractual y las series se agregan con el catálogo de métricas,
+// y las dos cosas son lógica de dominio (CLAUDE.md).
+
+/** RN-REP-21 · los cuatro motivos de `blocks.reason_type`, sin nombres. */
+export const BLOCK_REASONS = [
+  "client_information",
+  "external_incident",
+  "authorized_pause",
+  "financial_hold",
+] as const;
+export type BlockReason = (typeof BLOCK_REASONS)[number];
+
+export function isBlockReason(value: string): value is BlockReason {
+  return (BLOCK_REASONS as readonly string[]).includes(value);
+}
+
+/**
+ * RN-REP-21 · los tiempos de UN cambio. `null` en un tiempo no es cero: es
+ * que ese momento no ha llegado, y la pantalla lo dice con palabras
+ * (`pending`) en vez de pintar un 0 que se leería como "instantáneo".
+ */
+export interface ChangeTiming {
+  /** El código de la SOLICITUD, que es por el que el restaurante lo conoce. */
+  readonly code: string;
+  readonly category: ChangeCategory | null;
+  /** Minutos **laborables** desde que se aceptó hasta que arrancó. */
+  readonly startMinutes: number | null;
+  /** Si arrancó dentro del plazo con el que se aceptó (RN-COM-15). */
+  readonly startedWithinSla: boolean | null;
+  /** Minutos laborables de arrancar a entregar. */
+  readonly deliveryMinutes: number | null;
+  /** Minutos laborables parado, sumando todos sus bloqueos. */
+  readonly blockedMinutes: number;
+  /** Por qué estuvo parado, sin repetir motivos ni nombrar a nadie. */
+  readonly blockReasons: readonly BlockReason[];
+  /** Cuando no hay tiempos, por qué. `null` si los hay. */
+  readonly pending: "in_analysis" | "not_started" | null;
+}
+
+/**
+ * Una fila de trabajo con lo que la migración 116 le añadió. Va aparte de
+ * `ReportJobRow` para no obligar a las versiones guardadas antes de esa
+ * migración a traerlo: una versión vieja es el original de su día
+ * (RN-REP-12) y se lee como lo que es.
+ */
+export interface ChangeTimingInput {
+  readonly requestCode: string | null;
+  readonly requestAcceptedAt: Date | null;
+  readonly category: ChangeCategory | null;
+  readonly startedAt: Date | null;
+  readonly completedAt: Date | null;
+  readonly startSlaHours: number | null;
+  readonly jobId: string;
+}
+
+export interface TimingBlockRow {
+  readonly jobId: string;
+  readonly startedAt: Date;
+  readonly endedAt: Date | null;
+  readonly reason: BlockReason | null;
+}
+
+/**
+ * RN-REP-21 · los tiempos de cada cambio, uno a uno.
+ *
+ * **Todo en minutos laborables**, bloqueos incluidos. Mezclar reloj
+ * laboral con calendario en la misma fila —"tardó 3 h en arrancar, estuvo
+ * parado 2 días"— hace que el restaurante compare dos unidades distintas
+ * creyendo que compara dos números.
+ *
+ * Un bloqueo abierto se cuenta **hasta `now`**, no hasta el infinito ni
+ * cero: está parado ahora mismo y eso es lo que hay que decir.
+ */
+export function changeTimings(
+  jobs: readonly ChangeTimingInput[],
+  blocks: readonly TimingBlockRow[],
+  calendar: WorkCalendar,
+  now: Date,
+): readonly ChangeTiming[] {
+  const porTrabajo = new Map<string, TimingBlockRow[]>();
+  for (const block of blocks) {
+    const lista = porTrabajo.get(block.jobId) ?? [];
+    lista.push(block);
+    porTrabajo.set(block.jobId, lista);
+  }
+
+  const filas: ChangeTiming[] = [];
+  for (const job of jobs) {
+    // Sin código de solicitud no hay fila: el restaurante no reconoce el
+    // código del trabajo, que es organización interna (P7).
+    if (job.requestCode === null) continue;
+
+    const bloqueos = porTrabajo.get(job.jobId) ?? [];
+    const blockedMinutes = bloqueos.reduce(
+      (total, b) => total + businessMinutesBetween(b.startedAt, b.endedAt ?? now, calendar),
+      0,
+    );
+    const blockReasons = [
+      ...new Set(bloqueos.map((b) => b.reason).filter((r): r is BlockReason => r !== null)),
+    ];
+
+    const startMinutes =
+      job.requestAcceptedAt !== null && job.startedAt !== null
+        ? businessMinutesBetween(job.requestAcceptedAt, job.startedAt, calendar)
+        : null;
+
+    filas.push({
+      code: job.requestCode,
+      category: job.category,
+      startMinutes,
+      startedWithinSla:
+        startMinutes === null || job.startSlaHours === null
+          ? null
+          : startMinutes <= job.startSlaHours * 60,
+      deliveryMinutes:
+        job.startedAt !== null && job.completedAt !== null
+          ? businessMinutesBetween(job.startedAt, job.completedAt, calendar)
+          : null,
+      blockedMinutes,
+      blockReasons,
+      pending:
+        job.startedAt !== null
+          ? null
+          : job.requestAcceptedAt !== null
+            ? "not_started"
+            : "in_analysis",
+    });
+  }
+
+  return filas;
+}
+
+/**
+ * RN-REP-22 · la evolución dentro del mes, en **bloques de 7 días** desde
+ * el primer día del periodo.
+ *
+ * No son semanas naturales, y la razón es del negocio: un bloque de 7 días
+ * contiene exactamente un lunes, un martes y un sábado, y en un
+ * restaurante el fin de semana pesa tanto que una semana natural recortada
+ * por el borde del mes compara cosas distintas y parece una caída.
+ *
+ * El resto —de 1 a 6 días— **se dibuja marcado**: una barra corta al lado
+ * de cuatro barras llenas se lee como un desplome y no lo es.
+ */
+export interface WeekBucket {
+  readonly from: string;
+  readonly to: string;
+  readonly partial: boolean;
+}
+
+export const WEEK_BUCKET_DAYS = 7;
+
+export function weekBuckets(period: ReportPeriod): readonly WeekBucket[] {
+  const bloques: WeekBucket[] = [];
+  const fin = new Date(`${period.end}T00:00:00Z`);
+  let inicio = new Date(`${period.start}T00:00:00Z`);
+
+  while (inicio.getTime() <= fin.getTime()) {
+    const ultimoPosible = new Date(inicio.getTime());
+    ultimoPosible.setUTCDate(ultimoPosible.getUTCDate() + WEEK_BUCKET_DAYS - 1);
+    const cierre = ultimoPosible.getTime() <= fin.getTime() ? ultimoPosible : fin;
+    bloques.push({
+      from: inicio.toISOString().slice(0, 10),
+      to: cierre.toISOString().slice(0, 10),
+      partial: cierre !== ultimoPosible,
+    });
+    inicio = new Date(cierre.getTime());
+    inicio.setUTCDate(inicio.getUTCDate() + 1);
+  }
+
+  return bloques;
+}
+
+/** Un punto de métrica, tal como viaja desde `metric_points`. */
+export interface SeriesPoint {
+  readonly metric: string;
+  readonly dimension: string;
+  readonly periodStart: string;
+  readonly value: number;
+}
+
+export interface WeeklySeries {
+  readonly provider: string;
+  readonly metric: string;
+  /** Un valor por bloque, en el orden de `weekBuckets`. `null` = sin dato. */
+  readonly values: readonly (number | null)[];
+}
+
+/**
+ * RN-REP-22 · la serie de una métrica por bloques.
+ *
+ * **Las que se suman se suman y las que son proporción se promedian**, y
+ * confundirlo sería inventarse un dato: sumar cuatro posiciones medias de
+ * Google da 43, que no significa nada. El promedio de un bloque sin datos
+ * **no es cero, es null**.
+ *
+ * Los desgloses por dimensión **no entran**: una serie semanal de 40
+ * consultas no es una lectura, es una hoja de cálculo, y el desglose ya lo
+ * tiene `advanced`.
+ */
+export function weeklySeries(
+  provider: string,
+  metric: string,
+  aggregate: "sum" | "mean" | "latest",
+  points: readonly SeriesPoint[],
+  buckets: readonly WeekBucket[],
+): WeeklySeries {
+  const totales = points.filter((p) => p.metric === metric && p.dimension === "");
+
+  const values = buckets.map((bucket) => {
+    const dentro = totales.filter((p) => p.periodStart >= bucket.from && p.periodStart <= bucket.to);
+    if (dentro.length === 0) return null;
+    const suma = dentro.reduce((total, p) => total + p.value, 0);
+    if (aggregate === "sum") return suma;
+    if (aggregate === "mean") return suma / dentro.length;
+    // `latest`: el último dato del bloque, que es lo que significa una
+    // puntuación de PageSpeed —no se suma ni se promedia una medición—.
+    return [...dentro].sort((a, b) => a.periodStart.localeCompare(b.periodStart))[dentro.length - 1]!
+      .value;
+  });
+
+  return { provider, metric, values };
+}
+
+/**
+ * RN-REP-23 · el mismo periodo, un año antes.
+ *
+ * Dos reglas, como `previousPeriod` y por la misma razón: si el periodo es
+ * un **mes natural completo**, el mismo mes completo del año anterior
+ * —febrero contra febrero, con sus 28 o 29 días—; si no, las mismas fechas
+ * con el año restado, y si el día no existe en ese año (29 de febrero), el
+ * último día de ese mes.
+ */
+export function sameMonthLastYear(period: ReportPeriod): ReportPeriod {
+  const inicio = new Date(`${period.start}T00:00:00Z`);
+  const fin = new Date(`${period.end}T00:00:00Z`);
+
+  const esMesCompleto =
+    inicio.getUTCDate() === 1 &&
+    fin.getUTCMonth() === inicio.getUTCMonth() &&
+    fin.getUTCFullYear() === inicio.getUTCFullYear() &&
+    fin.getUTCDate() === new Date(Date.UTC(fin.getUTCFullYear(), fin.getUTCMonth() + 1, 0)).getUTCDate();
+
+  if (esMesCompleto) {
+    const anio = inicio.getUTCFullYear() - 1;
+    const mes = inicio.getUTCMonth();
+    const ultimo = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
+    return {
+      start: `${anio}-${String(mes + 1).padStart(2, "0")}-01`,
+      end: `${anio}-${String(mes + 1).padStart(2, "0")}-${String(ultimo).padStart(2, "0")}`,
+    };
+  }
+
+  return { start: shiftOneYearBack(period.start), end: shiftOneYearBack(period.end) };
+}
+
+function shiftOneYearBack(iso: string): string {
+  const fecha = new Date(`${iso}T00:00:00Z`);
+  const anio = fecha.getUTCFullYear() - 1;
+  const mes = fecha.getUTCMonth();
+  // El 29 de febrero de un año bisiesto no existe el año anterior: se cae
+  // al 28, que es el último de ese mes. Restar 365 días movería el día de
+  // la semana, que es justo lo que no se puede mover en hostelería.
+  const ultimo = new Date(Date.UTC(anio, mes + 1, 0)).getUTCDate();
+  const dia = Math.min(fecha.getUTCDate(), ultimo);
+  return `${anio}-${String(mes + 1).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
+/**
+ * RN-REP-24 · en qué quedó una oportunidad del informe anterior, en las
+ * cuatro lecturas en que las lee un restaurante.
+ *
+ * Un estado desconocido se lee **"sigue abierta"** y no se descarta: una
+ * oportunidad que desaparece del seguimiento sin decir por qué es peor que
+ * una que se queda esperando.
+ */
+export type OpportunityFollowUp = "done" | "in_progress" | "open" | "no_longer";
+
+export function opportunityFollowUp(status: string): OpportunityFollowUp {
+  if (status === "implemented") return "done";
+  if (status === "in_progress") return "in_progress";
+  if (status === "no_longer_applicable" || status === "discarded") return "no_longer";
+  return "open";
+}
+
+/**
+ * RN-REP-25 · el efecto de un cambio publicado: **14 días antes contra 14
+ * después**, sin contar el día de la publicación.
+ *
+ * La ventana la fijó Bosco el 20/09/2026 sobre 7 y 28. Catorce días cubren
+ * dos fines de semana completos a cada lado, así que un sábado flojo no
+ * mueve la lectura.
+ */
+export const CHANGE_EFFECT_WINDOW_DAYS = 14;
+
+export interface ChangeEffectFigure {
+  readonly provider: string;
+  readonly metric: string;
+  readonly before: number;
+  readonly after: number;
+}
+
+export interface ChangeEffect {
+  readonly code: string;
+  readonly publishedOn: string;
+  readonly figures: readonly ChangeEffectFigure[];
+  /** Códigos de otros cambios publicados dentro de la ventana posterior. */
+  readonly overlapping: readonly string[];
+  /** Cuando no hay cifras, por qué. `null` si las hay. */
+  readonly reason: "incomplete_window" | "no_data" | null;
+}
+
+export interface PublishedChange {
+  readonly code: string;
+  readonly publishedOn: string;
+}
+
+function addDaysIso(iso: string, days: number): string {
+  const fecha = new Date(`${iso}T00:00:00Z`);
+  fecha.setUTCDate(fecha.getUTCDate() + days);
+  return fecha.toISOString().slice(0, 10);
+}
+
+/**
+ * RN-REP-25 · lo que pasó con las cifras después de cada cambio publicado.
+ *
+ * **Dice lo que pasó, nunca que lo causó el cambio.** Cuotly no tiene
+ * forma de aislar una causa, y fingirla sería exactamente lo que CLAUDE.md
+ * prohíbe. Por eso esta función devuelve dos números y no una conclusión:
+ * la frase la escribe la pantalla, y la escribe en pasado.
+ */
+export function changeEffects(
+  changes: readonly PublishedChange[],
+  metrics: readonly { readonly provider: string; readonly metric: string }[],
+  pointsByProvider: ReadonlyMap<string, readonly SeriesPoint[]>,
+  todayIso: string,
+): readonly ChangeEffect[] {
+  return changes.map((change) => {
+    const antesDesde = addDaysIso(change.publishedOn, -CHANGE_EFFECT_WINDOW_DAYS);
+    const antesHasta = addDaysIso(change.publishedOn, -1);
+    const despuesDesde = addDaysIso(change.publishedOn, 1);
+    const despuesHasta = addDaysIso(change.publishedOn, CHANGE_EFFECT_WINDOW_DAYS);
+
+    const overlapping = changes
+      .filter(
+        (otro) =>
+          otro.code !== change.code &&
+          otro.publishedOn >= despuesDesde &&
+          otro.publishedOn <= despuesHasta,
+      )
+      .map((otro) => otro.code);
+
+    // La ventana posterior todavía no ha pasado entera: su efecto se verá
+    // en el informe del mes que viene, y decirlo es más honesto que medir
+    // media ventana y presentarla como si fuera entera.
+    if (despuesHasta > todayIso) {
+      return { code: change.code, publishedOn: change.publishedOn, figures: [], overlapping, reason: "incomplete_window" };
+    }
+
+    const figures: ChangeEffectFigure[] = [];
+    for (const { provider, metric } of metrics) {
+      const puntos = (pointsByProvider.get(provider) ?? []).filter(
+        (p) => p.metric === metric && p.dimension === "",
+      );
+      const antes = puntos.filter((p) => p.periodStart >= antesDesde && p.periodStart <= antesHasta);
+      const despues = puntos.filter(
+        (p) => p.periodStart >= despuesDesde && p.periodStart <= despuesHasta,
+      );
+      // Las dos mitades o ninguna: comparar 14 días contra 3 daría una
+      // caída del 80 % que solo mide que faltan datos.
+      if (antes.length === 0 || despues.length === 0) continue;
+      figures.push({
+        provider,
+        metric,
+        before: antes.reduce((total, p) => total + p.value, 0),
+        after: despues.reduce((total, p) => total + p.value, 0),
+      });
+    }
+
+    return {
+      code: change.code,
+      publishedOn: change.publishedOn,
+      figures,
+      overlapping,
+      reason: figures.length === 0 ? "no_data" : null,
+    };
+  });
+}
+
+/**
+ * RN-REP-26 · cuánto está aprovechando el restaurante el plan que paga.
+ *
+ * **Ciclo a ciclo y sin acumular.** Cada ciclo es su propia bolsa
+ * (RN-CON-05): lo que no se gastó en agosto no se puede gastar en
+ * septiembre, así que presentar un saldo acumulado sería enseñar un
+ * derecho que no existe. Lo que se suma es **cuántos quedaron sin usar**,
+ * que es otra cosa.
+ *
+ * El ciclo **en curso no cuenta**: todavía puede gastarse.
+ */
+export interface UsageCycle {
+  readonly cycleStart: string;
+  readonly cycleEnd: string;
+  readonly included: Readonly<Record<ChangeCategory, number>>;
+}
+
+export interface PlanUsageLine {
+  readonly category: ChangeCategory;
+  readonly included: number;
+  readonly used: number;
+  readonly unused: number;
+}
+
+export function planUsage(
+  cycles: readonly UsageCycle[],
+  /** Consumos con signo, como manda el libro: los débitos son negativos. */
+  entries: readonly { readonly category: ChangeCategory; readonly amount: number; readonly at: string }[],
+  nowIso: string,
+): readonly PlanUsageLine[] {
+  const cerrados = cycles.filter((c) => c.cycleEnd < nowIso);
+  if (cerrados.length === 0) return [];
+
+  const categorias: readonly ChangeCategory[] = ["small", "photo", "medium", "large"];
+  return categorias.map((category) => {
+    let included = 0;
+    let used = 0;
+    let unused = 0;
+
+    for (const cycle of cerrados) {
+      const incluidos = cycle.included[category] ?? 0;
+      const gastados = entries
+        .filter(
+          (e) => e.category === category && e.at >= cycle.cycleStart && e.at <= cycle.cycleEnd && e.amount < 0,
+        )
+        .reduce((total, e) => total - e.amount, 0);
+      included += incluidos;
+      used += gastados;
+      // Por ciclo y nunca en total: un ciclo en el que se gastó de más no
+      // compensa a otro en el que sobró, porque las bolsas no se juntan.
+      unused += Math.max(0, incluidos - gastados);
+    }
+
+    return { category, included, used, unused };
+  });
 }

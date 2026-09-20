@@ -46,8 +46,26 @@ import {
   type ReportRequestRow,
   type ReportSectionKey,
   type ReportSnapshot,
+  type ChangeEffect,
+  type ChangeTiming,
+  type OpportunityFollowUpLine,
+  type PlanUsageLine,
+  type PublishedChange,
+  type SeriesPoint,
+  type WeekBucket,
+  type WeeklySeries,
+  CHANGE_EFFECT_WINDOW_DAYS,
   EMPTY_MONTH_ACTIVITY,
+  changeEffects,
+  changeTimings,
+  isBlockReason,
+  opportunityFollowUp,
   operationalIndicators,
+  planUsage,
+  sameMonthLastYear,
+  weekBuckets,
+  weeklySeries,
+  withYearAgoFigures,
   parseChangeAllowance,
   parseMonthActivity,
   previousPeriod,
@@ -117,12 +135,26 @@ export function parseOperationDataset(raw: Record<string, unknown>): OperationDa
     hasAcceleratedSla: asNumber(row.start_sla_hours) === 24,
     t2Events: timerEvents(row.t2_events),
     t3Events: timerEvents(row.t3_events),
+    // RN-REP-21 (migración 116) · lo que hace falta para los tiempos de
+    // cada cambio. Un dataset de antes de la 116 no los trae y salen a
+    // `null`: la fila se queda sin tiempos y lo dice, que es lo correcto.
+    requestCode:
+      row.request_code === null || row.request_code === undefined ? null : String(row.request_code),
+    requestAcceptedAt: asDate(row.request_accepted_at),
+    startSlaHours:
+      row.start_sla_hours === null || row.start_sla_hours === undefined
+        ? null
+        : asNumber(row.start_sla_hours),
   }));
 
   const blocks: ReportBlockRow[] = asArray(raw.blocks).map((row) => ({
     jobId: String(row.job_id),
     startedAt: asDate(row.started_at) ?? new Date(0),
     endedAt: asDate(row.ended_at),
+    // RN-REP-21 · el motivo, si es uno de los cuatro. Cualquier otra cosa
+    // es `null` y la fila no dice por qué, que es mejor que decir mal.
+    reason:
+      typeof row.reason_type === "string" && isBlockReason(row.reason_type) ? row.reason_type : null,
   }));
 
   const consumption: ReportConsumptionRow[] = asArray(raw.consumption).map((row) => ({
@@ -347,6 +379,46 @@ async function figuresForPeriod(
   return figures;
 }
 
+/** Corre una fecha ISO los días que se le digan, sin tocar zonas horarias. */
+function isoShift(iso: string, days: number): string {
+  const fecha = new Date(`${iso}T00:00:00Z`);
+  fecha.setUTCDate(fecha.getUTCDate() + days);
+  return fecha.toISOString().slice(0, 10);
+}
+
+/**
+ * RN-REP-25 · las métricas que se pueden sumar, que son las únicas con las
+ * que tiene sentido comparar dos ventanas. Una posición media de Google
+ * antes y después no se suma, y promediarla escondería que lo que cambió
+ * fue el número de consultas y no la posición.
+ */
+function metricasSumables(): readonly { readonly provider: string; readonly metric: string }[] {
+  return INTEGRATION_PROVIDERS.flatMap((provider) =>
+    HEADLINE_METRICS[provider]
+      .filter((headline) => headline.aggregate === "sum")
+      .map((headline) => ({ provider, metric: headline.metric })),
+  );
+}
+
+/** Los puntos del gateway, en la forma que espera `src/core/`. */
+function seriesPorProveedor(
+  points: ReadonlyMap<string, readonly MetricPoint[]>,
+): ReadonlyMap<string, readonly SeriesPoint[]> {
+  const mapa = new Map<string, readonly SeriesPoint[]>();
+  for (const [provider, lista] of points) {
+    mapa.set(
+      provider,
+      lista.map((punto) => ({
+        metric: punto.metric,
+        dimension: punto.dimension,
+        periodStart: punto.period_start,
+        value: punto.value,
+      })),
+    );
+  }
+  return mapa;
+}
+
 export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRow): Promise<ReportSnapshot> {
   const now = deps.now();
   const period = { start: report.periodStart, end: report.periodEnd };
@@ -471,14 +543,169 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
       )
     : [];
 
+  /*
+    RN-REP-21 a 26 (decisión 60) · lo que añade Premium+.
+
+    **Todo cuelga de un solo `if`**, y es a propósito: el nivel es una
+    barrera y no una sugerencia (RN-REP-15), así que lo que no alcanza
+    `complete` **no se pide** —igual que un `basic` no pide el periodo
+    anterior—. Ni se calcula y se esconde, que sería pagar el coste sin
+    dar el servicio y dejar el dato a un `select` de distancia.
+
+    **Si algo de esto falla, el informe sale igual sin ello.** Es el mismo
+    criterio que la comparación de RN-REP-17: quedarse sin informe porque
+    no se pudo leer el año pasado sería la peor de las dos opciones.
+  */
+  const completo = report.reportLevel === "complete";
+  let conAnio: readonly ReportFigure[] = conAnterior;
+  let timings: readonly ChangeTiming[] = [];
+  let evolution: readonly WeeklySeries[] = [];
+  let evolutionBuckets: readonly WeekBucket[] = [];
+  let effects: readonly ChangeEffect[] = [];
+  let usage: readonly PlanUsageLine[] = [];
+  let followUp: readonly OpportunityFollowUpLine[] = [];
+
+  if (completo) {
+    // RN-REP-23 · el mismo mes del año pasado. En hostelería es la
+    // comparación que significa algo: septiembre contra agosto es en
+    // buena parte temporada.
+    try {
+      const haceUnAnio = await figuresForPeriod(deps, report, sameMonthLastYear(period), now);
+      conAnio = withYearAgoFigures(conAnterior, haceUnAnio);
+    } catch {
+      conAnio = conAnterior;
+    }
+
+    // RN-REP-21 · los tiempos de cada cambio. Sale del mismo dataset que
+    // los indicadores, con el mismo calendario de festivos: si se pidiera
+    // otro, dos cifras del mismo informe medirían meses distintos.
+    try {
+      const [raw, holidayRecords] = await Promise.all([
+        deps.gateway.operationDataset(report.spaceId, report.establishmentId, period.start, period.end),
+        deps.gateway.holidays(report.spaceId),
+      ]);
+      const dataset = parseOperationDataset(raw);
+      const holidays = holidaysKnownAsOf(holidayRecords, new Date(`${period.start}T00:00:00Z`));
+      const calendar = contractualCalendar(report.timezone, holidays);
+
+      timings = changeTimings(
+        dataset.jobs.map((job) => ({
+          jobId: job.id,
+          requestCode: job.requestCode ?? null,
+          requestAcceptedAt: job.requestAcceptedAt ?? null,
+          category: job.category,
+          startedAt: job.startedAt,
+          completedAt: job.completedAt,
+          startSlaHours: job.startSlaHours ?? null,
+        })),
+        dataset.blocks.map((block) => ({
+          jobId: block.jobId,
+          startedAt: block.startedAt,
+          endedAt: block.endedAt,
+          reason: block.reason ?? null,
+        })),
+        calendar,
+        now,
+      );
+
+      // RN-REP-25 · los cambios PUBLICADOS del periodo, que son los que
+      // pueden haber movido una cifra. Uno sin publicar todavía no ha
+      // llegado a la web del restaurante y no hay nada que medir.
+      const publicados: PublishedChange[] = dataset.jobs
+        .filter((job) => job.publishedAt !== null && (job.requestCode ?? null) !== null)
+        .map((job) => ({
+          code: job.requestCode as string,
+          publishedOn: job.publishedAt!.toISOString().slice(0, 10),
+        }));
+
+      if (report.establishmentId !== null && publicados.length > 0) {
+        // La ventana se ensancha 14 días por cada lado del periodo: es lo
+        // único que cambia respecto a lo que ya se pide para las cifras.
+        const puntos = await deps.gateway.metricPoints(
+          report.establishmentId,
+          isoShift(period.start, -CHANGE_EFFECT_WINDOW_DAYS),
+          isoShift(period.end, CHANGE_EFFECT_WINDOW_DAYS),
+        );
+        effects = changeEffects(
+          publicados,
+          metricasSumables(),
+          seriesPorProveedor(puntos),
+          todayInTimeZone(now, report.timezone),
+        );
+      }
+    } catch {
+      timings = [];
+      effects = [];
+    }
+
+    // RN-REP-22 · la evolución dentro del mes.
+    if (report.establishmentId !== null) {
+      try {
+        const puntos = await deps.gateway.metricPoints(report.establishmentId, period.start, period.end);
+        const series = seriesPorProveedor(puntos);
+        evolutionBuckets = weekBuckets(period);
+        evolution = INTEGRATION_PROVIDERS.flatMap((provider) =>
+          HEADLINE_METRICS[provider].map((headline) =>
+            weeklySeries(
+              provider,
+              headline.metric,
+              headline.aggregate,
+              series.get(provider) ?? [],
+              evolutionBuckets,
+            ),
+          ),
+        // Una serie entera sin un solo dato no se dibuja: sería una
+        // rejilla vacía con nombre de métrica, que es el relleno que
+        // CLAUDE.md prohíbe.
+        ).filter((serie) => serie.values.some((valor) => valor !== null));
+      } catch {
+        evolution = [];
+        evolutionBuckets = [];
+      }
+    }
+
+    if (report.establishmentId !== null) {
+      // RN-REP-26 · el aprovechamiento del plan en la permanencia.
+      try {
+        const datos = await deps.gateway.planUsageData(report.establishmentId);
+        usage = planUsage(datos.cycles, datos.entries, todayInTimeZone(now, report.timezone));
+      } catch {
+        usage = [];
+      }
+
+      // RN-REP-24 · qué pasó con las oportunidades del informe anterior.
+      try {
+        const anteriores = await deps.gateway.previousReportOpportunities(
+          report.establishmentId,
+          period.start,
+        );
+        followUp = anteriores.map((fila) => ({
+          id: fila.id,
+          rule: fila.rule,
+          subject: fila.subject,
+          title: fila.title,
+          state: opportunityFollowUp(fila.status),
+        }));
+      } catch {
+        followUp = [];
+      }
+    }
+  }
+
   return {
     category: report.category,
     period,
     generatedAt: now.toISOString(),
     sections: report.sections,
-    figures: conAnterior,
+    figures: conAnio,
     activity,
     allowance,
+    timings,
+    evolution,
+    evolutionBuckets,
+    effects,
+    planUsage: usage,
+    followUp,
     opportunities,
     // RN-REP-13 · solo las notas de las secciones que ENTRAN. La versión
     // se le envía al restaurante, y una nota de una sección que el equipo

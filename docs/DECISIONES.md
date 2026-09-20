@@ -1420,6 +1420,98 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    limpia en el orden de CI, 1.537 tests de web, y las huellas de las nueve funciones de las
    migraciones 114 y 115 iguales en local y en producción.
 
+60. **Qué añade Premium+, dentro y fuera del informe** (20/09/2026). Bosco: *"El premium+ tiene que
+   tener más cosas en el informe dame recomendaciones. También diría de añadirle algo al premium+ ya
+   sea una integración o algo así"*.
+
+   **De dónde venía.** La tabla de RN-REP-15 le prometía a Premium+ dos cosas que no existían —los
+   tiempos de cada cambio y la evolución digital dentro del mes—, así que llevaba desde el 20/09
+   pagando 100 € más que Premium por **un informe idéntico**. Eso no era una mejora pendiente: era
+   una promesa incumplida, y por eso va primero.
+
+   **Seis cosas en el informe**, las dos prometidas y cuatro recomendadas que Bosco aceptó enteras:
+
+   - **Los tiempos de cada cambio** (RN-REP-21): cuánto tardó en arrancar desde que se aceptó, si
+     cumplió el plazo con el que se aceptó, cuánto tardó en hacerse, cuánto estuvo parado y por qué.
+     Todo en reloj laboral, bloqueos incluidos: mezclar horas laborables con días de calendario en
+     la misma fila hace comparar dos unidades creyendo que se comparan dos números.
+   - **La evolución dentro del mes** (RN-REP-22), en bloques de 7 días y no en semanas naturales.
+     La razón es de hostelería: un bloque de 7 días tiene exactamente un sábado, y una semana
+     natural recortada por el borde del mes parece una caída que no existe.
+   - **La comparación con el mismo mes del año anterior** (RN-REP-23). Es la recomendación que más
+     valor da por lo poco que cuesta: septiembre contra agosto es en buena parte temporada;
+     septiembre contra septiembre es el dato que el restaurante se pregunta de verdad.
+   - **Qué pasó con las oportunidades del informe anterior** (RN-REP-24). Premium ya las recibe; lo
+     que añade Premium+ es cerrar el círculo. Un informe que propone cada mes y nunca dice qué fue
+     de lo del mes pasado se lee como un folleto.
+   - **El efecto de cada cambio publicado** (RN-REP-25), con **14 días a cada lado** —el número lo
+     eligió Bosco sobre 7 y 28—. Es lo que contesta la única pregunta que un restaurante se hace
+     sobre lo que paga. Y lleva escrita la frase más importante del informe entero: *"Es lo que pasó
+     después, no necesariamente lo que el cambio causó"*. Cuotly no sabe aislar una causa y fingirlo
+     sería justo lo que CLAUDE.md prohíbe.
+   - **El aprovechamiento del plan** (RN-REP-26): de los ciclos ya cerrados de la permanencia,
+     cuántos cambios quedaron sin usar. Decirle a un restaurante que está tirando dinero es más
+     honesto —y a la larga mejor negocio— que dejar que lo descubra el día que se plantea irse.
+
+   Lo que **no** se metió, aunque se propuso: el texto escrito a mano por el equipo cada mes. Barato
+   de programar y caro para siempre.
+
+   **Fuera del informe: la vigilancia de reseñas de Google** (RN-INT-10 a 12). Sale de una conexión
+   que ya existía —Business Profile lleva construido desde el Hito 14— y que hoy solo traía
+   rendimiento. **Reseña baja es 3 estrellas o menos** y **avisa al equipo siempre y al restaurante
+   solo si es baja**: las dos cosas las decidió Bosco. Un aviso que llega todos los días deja de
+   leerse, y entonces no sirve el día que importa.
+
+   Lo que se descartó aquí: **quitarle a los planes bajos las cinco integraciones** que hoy ya
+   tienen —eso no es añadir a Premium+, es retirar a los demás— y el **plazo de entrega
+   garantizado**, que Bosco rechazó: *"lo que podemos hacer es bajar el tiempo de realizaciones de
+   los trabajos"*, y eso queda para después.
+
+   **La contradicción aparente que hubo que resolver por escrito.** Las reseñas parecen romper el
+   principio de la escalera de la decisión 58 —"los cinco niveles dicen la verdad sobre el mismo
+   mes"—. No lo rompen, y queda dicho en RN-INT-10 para que nadie lo redescubra mal: si el plan no
+   las vigila **no se descargan**, así que no es un dato del restaurante que se le esconda, es un
+   trabajo que no se está haciendo, como Menú Diario. La confusión entre las dos cosas es fácil y
+   sería grave.
+
+   **Lo que encontró construirlo:**
+
+   · **Cinco de las seis piezas no tocaron el servidor**, y eso no fue suerte:
+     `report_operation_dataset()` se diseñó devolviendo **filas y no cifras** justamente para que una
+     lectura nueva se escriba en `src/core/` sin tocar SQL. La única migración de informe (la 116)
+     añade tres datos a la fila, no un cálculo.
+
+   · **La flecha `→` no existe en WinAnsi**, y `sanitize()` se la comió dejando "1240 1480": dos
+     números pegados sin decir cuál era cuál. Es el mismo fallo que el menos tipográfico de la
+     decisión 58, y lo encontró mirar el PDF, no el typecheck. **El barrido que lo tenía que cazar
+     existía y no llegaba a las cadenas nuevas.** La lección no es "cuidado con las flechas": es que
+     una red que no cubre lo último que se añadió no es una red, y ahora el barrido recorre los seis
+     bloques nuevos.
+
+   · **El motivo del bloqueo se montaba encima del "en plazo"**, porque las líneas de apoyo se
+     colocaban con desplazamientos escritos a mano. Ahora bajan solas. Solo se ve generando el PDF.
+
+   · **El barrido de catálogos compartidos saltó** por los dos avisos nuevos —bien— y después **no
+     supo leer la lista**: la migración 117 escribió el `check` como `any (array[...])`, que es como
+     lo devuelve `pg_get_constraintdef()`, y el barrido solo entendía `in (...)`. Falló por no poder
+     leer, que se parece peligrosamente a fallar por haber encontrado algo. Ahora entiende las dos
+     formas.
+
+   · **El aviso de reseña baja llevaba al restaurante a una pantalla cerrada al equipo.** Habría
+     pulsado su propio aviso para que le dijeran que no podía entrar. La puerta es
+     `can_read_establishment()`, la misma que filtra las filas.
+
+   · **Y una limitación que se dice en vez de taparse:** la API de reseñas de Google necesita
+     `accounts/A/locations/L`, y una conexión que solo guardó la ubicación no se puede completar a
+     ojo sin adivinar de quién es la ficha. Esas conexiones **lo dicen en la pantalla** —"hay que
+     volver a conectar eligiendo la cuenta"— en vez de enseñar una lista vacía para siempre.
+
+   Comprobado: suite 62 `vigilancia_de_resenas.sql` con **cinco mutaciones** —quitar la barrera del
+   plan, bajar el umbral a 2, avisar al restaurante de todas, volver a avisar de las conocidas, y el
+   `entity_type` equivocado que `emit_notification()` se traga en silencio—, **cinco mutaciones más**
+   sobre las funciones nuevas de `src/core`, las 62 suites sobre una base limpia, 1.567 tests de web,
+   y el PDF de un Premium+ con las seis piezas dentro generado y mirado página a página.
+
 ---
 
 ### Pendiente de completar

@@ -688,6 +688,20 @@ export default async function EstablishmentPage({
           >
             {es.panelUsers.title}
           </Link>
+          {/*
+            RN-INT-10 (migración 117) · las reseñas de Google. El enlace
+            se enseña siempre, también cuando el plan no las vigila: la
+            pantalla dice cuál es el motivo, y esconder el enlace dejaría
+            al restaurante sin saber que eso existe. Quien no pueda leer
+            el restaurante no ve ni una fila — lo decide la RLS de
+            `reviews`, no este enlace (CLAUDE.md).
+          */}
+          <Link
+            href={`/espacios/${slug}/restaurantes/${id}/resenas`}
+            className="text-cuotly-green underline"
+          >
+            {es.reviewsPage.title}
+          </Link>
         </p>
       </Card>
 

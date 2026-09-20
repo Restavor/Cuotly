@@ -13,6 +13,7 @@
 import type { MetricPoint } from "@/core/integrations";
 
 import {
+  type FetchedReview,
   type IntegrationAdapter,
   asNumber,
   bearer,
@@ -23,6 +24,35 @@ import {
 
 const PERFORMANCE_API = "https://businessprofileperformance.googleapis.com/v1";
 const INFORMATION_API = "https://mybusinessbusinessinformation.googleapis.com/v1";
+// RN-INT-10 · las reseñas siguen viviendo en la API v4 de My Business:
+// Google no las ha movido a las APIs nuevas, y la ruta exige la CUENTA
+// además de la ubicación.
+const REVIEWS_API = "https://mybusiness.googleapis.com/v4";
+
+/** Cuántas trae cada sincronización. Las nuevas van primero. */
+const REVIEWS_PAGE = 50;
+
+/** Las cinco estrellas, tal como Google las nombra. */
+const STAR_RATINGS: Readonly<Record<string, number>> = {
+  ONE: 1,
+  TWO: 2,
+  THREE: 3,
+  FOUR: 4,
+  FIVE: 5,
+};
+
+interface ReviewsResponse {
+  reviews?: {
+    reviewId?: string;
+    name?: string;
+    starRating?: string;
+    comment?: string;
+    createTime?: string;
+    updateTime?: string;
+    reviewer?: { displayName?: string };
+    reviewReply?: { comment?: string; updateTime?: string };
+  }[];
+}
 
 /** Métrica de Google → (métrica de Cuotly, dimensión). Las impresiones suman además en `profile_impressions`. */
 const DAILY_METRICS: readonly [string, string, string][] = [
@@ -115,6 +145,49 @@ export const businessProfileAdapter: IntegrationAdapter = {
       points.push(point("profile_impressions", day, total));
     }
 
-    return { points, accountLabel: null };
+    // RN-INT-10 · las reseñas, solo si el plan las vigila. Si no, ni se
+    // piden: es un trabajo que no se está haciendo, no un dato que se
+    // esconda.
+    if (ctx.watchesReviews !== true) {
+      return { points, accountLabel: null, reviewsUnavailable: "not_requested" };
+    }
+
+    // La API de reseñas necesita `accounts/A/locations/L`. Una conexión
+    // que solo guardó `locations/L` **no se completa a ojo**: inventarse
+    // una cuenta sería adivinar de quién es la ficha. Se dice, y la
+    // pantalla explica que hay que volver a conectar eligiendo la cuenta.
+    const propiedad = requireProperty(ctx, "la ubicación de Business Profile");
+    if (!/accounts\/[^/]+\/locations\/[^/]+/.test(propiedad)) {
+      return { points, accountLabel: null, reviewsUnavailable: "needs_account" };
+    }
+
+    const respuesta = await callJson<ReviewsResponse>(
+      ctx,
+      "Business Profile reviews",
+      `${REVIEWS_API}/${propiedad}/reviews?pageSize=${REVIEWS_PAGE}&orderBy=updateTime%20desc`,
+      { headers: bearer(ctx) },
+    );
+
+    const reviews: FetchedReview[] = [];
+    for (const fila of respuesta.reviews ?? []) {
+      const externalId = fila.reviewId ?? fila.name;
+      const rating = fila.starRating ? STAR_RATINGS[fila.starRating] : undefined;
+      // Sin identificador o sin estrellas no es una reseña que se pueda
+      // guardar: se salta, no se inventa un 0 ni un id.
+      if (!externalId || rating === undefined || !fila.createTime) continue;
+      reviews.push({
+        externalId,
+        rating,
+        // Google deja puntuar sin escribir: el comentario puede no existir
+        // y eso NO se rellena con nada (CLAUDE.md).
+        comment: fila.comment?.trim() || null,
+        authorName: fila.reviewer?.displayName?.trim() || null,
+        reviewedAt: fila.createTime,
+        replyComment: fila.reviewReply?.comment?.trim() || null,
+        repliedAt: fila.reviewReply?.updateTime ?? null,
+      });
+    }
+
+    return { points, accountLabel: null, reviews };
   },
 };

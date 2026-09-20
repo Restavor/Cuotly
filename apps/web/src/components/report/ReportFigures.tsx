@@ -21,6 +21,8 @@ import {
   changeText,
   figureLabel,
   figureText,
+  opportunityTitle,
+  yearAgoText,
 } from "@/services/report-pdf";
 
 const t = es.reportsPage;
@@ -243,9 +245,15 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
               {note ? <p className="text-sm text-text">{note}</p> : null}
 
               {section.key === "opportunities" ? (
-                <OpportunityList snapshot={snapshot} />
+                <>
+                  <OpportunityList snapshot={snapshot} />
+                  <FollowUp snapshot={snapshot} />
+                </>
               ) : section.key === "month_activity" ? (
-                <MonthActivity snapshot={snapshot} />
+                <>
+                  <MonthActivity snapshot={snapshot} />
+                  <PlanUsage snapshot={snapshot} />
+                </>
               ) : figures.length === 0 ? (
                 <EmptyReason reason="no_data_yet" title={t.sections[section.key]} />
               ) : (
@@ -269,17 +277,276 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
                         </TableCell>
                         {/* RN-REP-17 · sin comparación la celda va vacía, no
                             con un guion: un guion se lee como "cero". */}
+                        {/* RN-REP-23 · y debajo la del año pasado, cuando
+                            el nivel la trae. Debajo y no al lado: son dos
+                            lecturas distintas de la misma cifra. */}
                         <TableCell>
                           <span className="text-sm text-text-secondary">{changeText(figure, t) ?? ""}</span>
+                          {yearAgoText(figure, t) === null ? null : (
+                            <span className="block text-xs text-text-secondary">
+                              {yearAgoText(figure, t)}
+                            </span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               )}
+
+              {/* RN-REP-21, 22 y 25 · lo que añade Premium+, debajo de la
+                  sección de la que cuelga. El equipo revisa aquí antes de
+                  enviar: si el PDF llevara bloques que esta pantalla no
+                  enseña, estaría aprobando a ciegas. */}
+              {section.key === "operation" ? <Timings snapshot={snapshot} /> : null}
+              {section.key === "digital" ? (
+                <>
+                  <Evolution snapshot={snapshot} />
+                  <Effects snapshot={snapshot} />
+                </>
+              ) : null}
             </section>
           );
         })}
+    </div>
+  );
+}
+
+/** RN-REP-21 · los tiempos de cada cambio, uno a uno. */
+function Timings({ snapshot }: { readonly snapshot: ReportSnapshot }) {
+  const filas = snapshot.timings ?? [];
+  if (filas.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h5 className="text-sm font-semibold text-primary-dark">{t.timings.title}</h5>
+      <p className="text-xs text-text-secondary">{t.timings.hint}</p>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>{t.timings.columns.change}</TableHeaderCell>
+            <TableHeaderCell>{t.timings.columns.start}</TableHeaderCell>
+            <TableHeaderCell>{t.timings.columns.delivery}</TableHeaderCell>
+            <TableHeaderCell>{t.timings.columns.blocked}</TableHeaderCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {filas.map((fila) => (
+            <TableRow key={fila.code}>
+              <TableCell>
+                <span className="font-semibold text-text">{fila.code}</span>
+              </TableCell>
+              <TableCell>
+                {fila.pending !== null ? (
+                  <span className="text-sm text-text-secondary">
+                    {fila.pending === "in_analysis" ? t.timings.inAnalysis : t.timings.notStarted}
+                  </span>
+                ) : (
+                  <>
+                    <span className="font-semibold text-text">
+                      {fila.startMinutes === null
+                        ? t.timings.noValue
+                        : t.timings.duration(fila.startMinutes)}
+                    </span>
+                    {fila.startedWithinSla === null ? null : (
+                      <span
+                        className={`block text-xs ${
+                          fila.startedWithinSla ? "text-primary-dark" : "text-danger"
+                        }`}
+                      >
+                        {fila.startedWithinSla ? t.timings.withinSla : t.timings.outOfSla}
+                      </span>
+                    )}
+                  </>
+                )}
+              </TableCell>
+              <TableCell>
+                {fila.deliveryMinutes === null
+                  ? t.timings.noValue
+                  : t.timings.duration(fila.deliveryMinutes)}
+              </TableCell>
+              <TableCell>
+                {fila.blockedMinutes === 0
+                  ? t.timings.noValue
+                  : t.timings.duration(fila.blockedMinutes)}
+                {fila.blockReasons.length === 0 ? null : (
+                  <span className="block text-xs text-text-secondary">
+                    {fila.blockReasons.map((motivo) => t.blockReasons[motivo]).join(", ")}
+                  </span>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+/** RN-REP-22 · la evolución dentro del mes, por bloques de 7 días. */
+function Evolution({ snapshot }: { readonly snapshot: ReportSnapshot }) {
+  const series = snapshot.evolution ?? [];
+  const bloques = snapshot.evolutionBuckets ?? [];
+  if (series.length === 0 || bloques.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h5 className="text-sm font-semibold text-primary-dark">{t.evolution.title}</h5>
+      <p className="text-xs text-text-secondary">{t.evolution.hint}</p>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeaderCell>{t.columns.name}</TableHeaderCell>
+            {bloques.map((bloque) => (
+              <TableHeaderCell key={bloque.from}>
+                {fechaCorta(bloque.from)}
+                {/* El resto del mes se dibuja, pero marcado: una columna
+                    corta al lado de cuatro llenas se lee como un desplome
+                    y no lo es. */}
+                {bloque.partial ? (
+                  <span className="block text-xs font-normal text-danger">{t.evolution.partial}</span>
+                ) : null}
+              </TableHeaderCell>
+            ))}
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {series.map((serie) => (
+            <TableRow key={`${serie.provider}-${serie.metric}`}>
+              <TableCell>
+                {t.metrics[serie.metric as keyof typeof t.metrics] ?? serie.metric}
+              </TableCell>
+              {serie.values.map((valor, index) => (
+                <TableCell key={`${bloques[index]?.from ?? index}`}>
+                  {valor === null ? (
+                    <span className="text-sm text-text-secondary">{t.evolution.noData}</span>
+                  ) : (
+                    <span className="font-semibold text-text">
+                      {Number.isInteger(valor) ? valor : valor.toFixed(1).replace(".", ",")}
+                    </span>
+                  )}
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+/** RN-REP-25 · qué pasó con las cifras después de cada cambio publicado. */
+function Effects({ snapshot }: { readonly snapshot: ReportSnapshot }) {
+  const efectos = snapshot.effects ?? [];
+  if (efectos.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h5 className="text-sm font-semibold text-primary-dark">{t.effect.title}</h5>
+      {/* La frase más importante: dice lo que pasó y NO dice que lo
+          causara el cambio, porque eso no se sabe. */}
+      <p className="text-xs text-text-secondary">{t.effect.hint}</p>
+      <ul className="space-y-3">
+        {efectos.map((efecto) => (
+          <li key={efecto.code} className="rounded-[10px] bg-soft-surface p-3">
+            <p className="text-sm font-semibold text-text">
+              {efecto.code}
+              <span className="ml-2 text-xs font-normal text-text-secondary">
+                {t.effect.publishedOn(fechaCorta(efecto.publishedOn))}
+              </span>
+            </p>
+            {efecto.reason !== null ? (
+              <p className="mt-1 text-sm text-text-secondary">
+                {efecto.reason === "incomplete_window" ? t.effect.incompleteWindow : t.effect.noData}
+              </p>
+            ) : (
+              <ul className="mt-1 space-y-1">
+                {efecto.figures.map((cifra) => (
+                  <li key={`${cifra.provider}-${cifra.metric}`} className="text-sm text-text">
+                    {t.metrics[cifra.metric as keyof typeof t.metrics] ?? cifra.metric}
+                    <span className="ml-2 font-semibold">
+                      {t.effect.arrow(String(cifra.before), String(cifra.after))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {efecto.overlapping.length === 0 ? null : (
+              <p className="mt-1 text-xs text-danger">
+                {t.effect.overlapping(efecto.overlapping.join(", "))}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** RN-REP-26 · cuánto está aprovechando el restaurante su plan. */
+function PlanUsage({ snapshot }: { readonly snapshot: ReportSnapshot }) {
+  const lineas = (snapshot.planUsage ?? []).filter(
+    (linea) => linea.included > 0 || linea.used > 0,
+  );
+  if (lineas.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h5 className="text-sm font-semibold text-primary-dark">{t.planUsage.title}</h5>
+      <p className="text-xs text-text-secondary">{t.planUsage.hint}</p>
+      <Table>
+        <TableBody>
+          {lineas.map((linea) => (
+            <TableRow key={linea.category}>
+              <TableCell>{es.naming.categoriesPlural[linea.category]}</TableCell>
+              <TableCell>
+                <span className="font-semibold text-text">
+                  {t.planUsage.line(linea.used, linea.included)}
+                </span>
+              </TableCell>
+              <TableCell>
+                <span className={linea.unused > 0 ? "text-sm text-danger" : "text-sm text-text-secondary"}>
+                  {t.planUsage.unused(linea.unused, linea.category === "photo")}
+                </span>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
+/** RN-REP-24 · qué pasó con las oportunidades del informe anterior. */
+function FollowUp({ snapshot }: { readonly snapshot: ReportSnapshot }) {
+  const filas = snapshot.followUp ?? [];
+  if (filas.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h5 className="text-sm font-semibold text-primary-dark">{t.followUp.title}</h5>
+      <Table>
+        <TableBody>
+          {filas.map((fila) => (
+            <TableRow key={fila.id}>
+              <TableCell>{opportunityTitle(fila)}</TableCell>
+              <TableCell>
+                <span
+                  className={
+                    fila.state === "done"
+                      ? "text-sm font-semibold text-primary-dark"
+                      : fila.state === "no_longer"
+                        ? "text-sm text-text-secondary"
+                        : "text-sm font-semibold text-text"
+                  }
+                >
+                  {t.followUp.states[fila.state]}
+                </span>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }

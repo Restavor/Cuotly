@@ -141,9 +141,22 @@ function casoDe(sql: string, clave: string): string | null {
   return sql.slice(desde + `when '${clave}'`.length, hasta < 0 ? undefined : hasta);
 }
 
-/** Los valores entrecomillados de un `in ('a', 'b', ...)`. */
+/**
+ * Los valores entrecomillados de una lista cerrada, en cualquiera de las
+ * **dos formas** en que se escriben en este repositorio:
+ *
+ *   · `in ('a', 'b', ...)`, que es como se escriben a mano;
+ *   · `= any (array['a', 'b', ...])`, que es como las devuelve
+ *     `pg_get_constraintdef()` y por tanto como acaban escritas cuando una
+ *     migración copia la definición viva en vez de reescribirla de memoria.
+ *
+ * Entender solo la primera dejó este barrido ciego ante la migración 117,
+ * que usó la segunda. Un barrido que no sabe leer lo último que se
+ * escribió no protege de nada, y peor aún: **falla por no poder leer**,
+ * que se parece mucho a fallar por haber encontrado algo.
+ */
 function valoresDeLaLista(sql: string): readonly string[] {
-  const lista = /in\s*\(([^)]*)\)/.exec(sql);
+  const lista = /in\s*\(([^)]*)\)/.exec(sql) ?? /any\s*\(\s*array\[([^\]]*)\]/i.exec(sql);
   expect(lista, "no se ha podido leer la lista").not.toBeNull();
   return [...lista![1].matchAll(/'([a-z_0-9]+)'/g)].map((m) => m[1]);
 }

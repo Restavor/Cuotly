@@ -991,6 +991,10 @@ export const es = {
       // quedó. Ninguna dice quién la revisó (RN-PAN-15).
       panel_invitation_pending_review: "Invitación al panel por revisar",
       panel_invitation_decided: "Tu invitación al panel, resuelta",
+      // RN-INT-10 a 12 · las reseñas de Google. El nombre del aviso bajo
+      // dice ya lo que pasa, porque es el que hay que abrir hoy.
+      review_received: "Reseña nueva en Google",
+      low_review_received: "Reseña baja en Google",
     },
     // RN-MOV-04 (decisión 36) · el push dice qué ha pasado y dónde: el
     // evento, el restaurante y el espacio, la cifra si la hay y una frase
@@ -1021,6 +1025,30 @@ export const es = {
           "Puedes cambiar qué avisos recibes por correo desde Preferencias de aviso.",
         ].join("\n"),
     },
+  },
+
+  // RN-INT-10 a 12 (migración 117, decisión 60) · la pantalla de reseñas.
+  reviewsPage: {
+    title: "Reseñas de Google",
+    subtitle: "Lo que escriben los clientes en la ficha de Google del restaurante.",
+    lowBadge: "Reseña baja",
+    reply: "Respondida",
+    noComment: "Sin comentario, solo puntuación.",
+    stars: (n: number) => (n === 1 ? "1 estrella" : `${n} estrellas`),
+    emptyTitle: "Todavía no hay reseñas",
+    // CLAUDE.md · nunca un hueco mudo: cada motivo dice qué pasa y qué
+    // habría que hacer, y ninguno finge que el dato existe.
+    emptyNotWatched:
+      "El plan de este restaurante no incluye la vigilancia de reseñas, así que no se descargan.",
+    emptyNotConnected:
+      "La ficha de Google Business Profile no está conectada: conéctala en Integraciones.",
+    emptyNeedsAccount:
+      "La conexión guardó la ubicación pero no la cuenta de Google, y las reseñas la necesitan. " +
+      "Hay que volver a conectar Business Profile eligiendo la cuenta.",
+    emptyNoneYet: "La ficha está conectada y todavía no ha llegado ninguna reseña.",
+    noAccessTitle: "No puedes ver este restaurante",
+    noAccessReason:
+      "Las reseñas son de quien tiene acceso al restaurante. Si crees que deberías tenerlo, pídeselo al equipo.",
   },
 
   teamArea: {
@@ -3260,6 +3288,109 @@ export const es = {
       up: (percent: number) => `+${percent} %`,
       down: (percent: number) => `-${percent} %`,
       versus: (periodo: string) => `frente a ${periodo}`,
+      // RN-REP-23 (decisión 60) · la otra comparación, la que en
+      // hostelería significa algo. Se dice con palabras distintas a
+      // propósito: dos porcentajes seguidos sin etiqueta son dos números
+      // que el lector no sabe contra qué van.
+      yearAgo: "frente al año pasado",
+      yearAgoShort: "año pasado",
+      noYearAgo: "Sin datos del año pasado",
+    },
+
+    // RN-REP-21 (decisión 60) · los tiempos de cada cambio, uno a uno.
+    timings: {
+      title: "Cuánto tardó cada cambio",
+      // Se dice en horas laborables y se dice que lo son: el restaurante
+      // no cuenta igual un martes que un domingo, y nosotros tampoco.
+      hint: "Horas de trabajo, no de calendario: no cuentan noches, fines de semana ni festivos.",
+      columns: {
+        change: "Cambio",
+        start: "Tardó en empezar",
+        delivery: "Tardó en hacerse",
+        blocked: "Parado",
+        corrections: "Correcciones",
+      },
+      withinSla: "en plazo",
+      outOfSla: "fuera de plazo",
+      inAnalysis: "En análisis",
+      notStarted: "Pendiente de empezar",
+      noValue: "—",
+      // "2 h" y "1 d 3 h": un restaurante no lee 4.320 minutos.
+      duration: (minutes: number) => {
+        const horas = Math.round(minutes / 60);
+        if (horas < 24) return `${horas} h`;
+        const dias = Math.floor(horas / 24);
+        const resto = horas % 24;
+        return resto === 0 ? `${dias} d` : `${dias} d ${resto} h`;
+      },
+      blockedBy: (motivos: string) => `parado por ${motivos}`,
+      empty: "Ningún cambio del periodo tiene tiempos todavía.",
+    },
+
+    // Los cuatro motivos de bloqueo. Son categorías cerradas y ninguna
+    // nombra a nadie del equipo (P7).
+    blockReasons: {
+      client_information: "falta información del restaurante",
+      external_incident: "incidencia externa",
+      authorized_pause: "pausa autorizada",
+      financial_hold: "retención por pago pendiente",
+    },
+
+    // RN-REP-22 (decisión 60) · la evolución dentro del mes.
+    evolution: {
+      title: "Cómo fue evolucionando el mes",
+      hint: "Bloques de 7 días desde el primer día del periodo, para que cada uno tenga el mismo fin de semana.",
+      partial: "periodo parcial",
+      noData: "sin datos",
+      week: (desde: string, hasta: string) => `${desde} – ${hasta}`,
+    },
+
+    // RN-REP-25 (decisión 60) · el efecto de cada cambio publicado.
+    effect: {
+      title: "Qué pasó después de cada cambio",
+      // La frase más importante del informe entero: dice lo que pasó y NO
+      // dice que lo causara el cambio, porque eso no se sabe.
+      hint:
+        "Comparamos los 14 días anteriores con los 14 posteriores a publicar cada cambio. " +
+        "Es lo que pasó después, no necesariamente lo que el cambio causó.",
+      publishedOn: (fecha: string) => `publicado el ${fecha}`,
+      // Con flecha NO: `→` no existe en WinAnsi, que es lo que escribe la
+      // fuente estándar del PDF, y `sanitize()` la borraba dejando dos
+      // números pegados sin decir cuál era cuál. Lo encontró mirar el PDF,
+      // no el typecheck. Con palabras se lee igual y no depende de la
+      // tabla de caracteres de nadie.
+      arrow: (antes: string, despues: string) => `de ${antes} a ${despues}`,
+      incompleteWindow: "Aún sin medir: no han pasado los 14 días.",
+      noData: "Sin datos suficientes en esos días.",
+      overlapping: (codigos: string) =>
+        `Atención: en esos mismos días también se publicó ${codigos}.`,
+      empty: "No se publicó ningún cambio en el periodo.",
+    },
+
+    // RN-REP-26 (decisión 60) · el aprovechamiento del plan.
+    planUsage: {
+      title: "Cuánto estás aprovechando tu plan",
+      hint: "Ciclos ya cerrados de tu permanencia. Lo que no se usa en un mes no pasa al siguiente.",
+      line: (usados: number, incluidos: number) => `${usados} de ${incluidos}`,
+      unused: (n: number, femenino: boolean) =>
+        n === 0
+          ? "todos aprovechados"
+          : n === 1
+            ? femenino
+              ? "1 sin usar"
+              : "1 sin usar"
+            : `${n} sin usar`,
+    },
+
+    // RN-REP-24 (decisión 60) · qué pasó con lo que propusimos.
+    followUp: {
+      title: "Qué pasó con lo que te propusimos",
+      states: {
+        done: "Hecha",
+        in_progress: "En marcha",
+        open: "Sigue abierta",
+        no_longer: "Ya no aplica",
+      },
     },
 
     // Vista 10.04 · revisar y programar.

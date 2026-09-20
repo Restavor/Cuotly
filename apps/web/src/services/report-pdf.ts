@@ -124,6 +124,23 @@ export function changeText(figure: ReportFigure, labels: Labels, short = false):
   }
 }
 
+/**
+ * RN-REP-23 (decisión 60) · la variación respecto al **mismo mes del año
+ * anterior**. Se resuelve con el mismo `figureChange` que la del periodo
+ * anterior, prestándole `yearAgo` en el sitio de `previous`: son la misma
+ * cuenta con otro punto de partida, y escribirla dos veces sería la forma
+ * segura de que un día digan cosas distintas.
+ */
+export function yearAgoText(figure: ReportFigure, labels: Labels, short = false): string | null {
+  if (figure.yearAgo === undefined) return null;
+  const texto = changeText({ ...figure, previous: figure.yearAgo }, labels, short);
+  if (texto === null) return null;
+  // Sin etiqueta, dos porcentajes seguidos son dos números que el lector
+  // no sabe contra qué van.
+  if (figure.yearAgo === null) return labels.change.noYearAgo;
+  return `${texto} ${short ? labels.change.yearAgoShort : labels.change.yearAgo}`;
+}
+
 export function figureLabel(figure: ReportFigure, labels: Labels): string {
   const metric = labels.metrics[figure.metric as keyof Labels["metrics"]] ?? figure.metric;
   if (!figure.dimension) return metric;
@@ -227,7 +244,12 @@ export function allowanceText(line: ChangeAllowanceLine, labels: Labels): string
  * de la regla y el sujeto que guardó la versión. Así una aprobada hace dos
  * meses no sigue diciendo una frase que se corrigió después.
  */
-export function opportunityTitle(opportunity: ReportOpportunity): string {
+// Solo lee la regla, el sujeto y el título: pedir una `ReportOpportunity`
+// entera obligaría a inventarse un impacto y un esfuerzo para el
+// seguimiento de RN-REP-24, que no los tiene ni los necesita.
+export function opportunityTitle(
+  opportunity: Pick<ReportOpportunity, "rule" | "subject" | "title">,
+): string {
   const rule = opportunity.rule as keyof typeof es.opportunities.ruleTitles | null;
   if (rule !== null && rule in es.opportunities.ruleTitles) {
     return es.opportunities.ruleTitles[rule](opportunity.subject);
@@ -439,14 +461,336 @@ export async function renderReportPdf(
 
     if (section.key === "month_activity") {
       pintarRelato(snapshot);
+      // RN-REP-26 · el aprovechamiento del plan va aquí y no en Operación,
+      // por lo mismo que la bolsa del mes (RN-REP-20): es lo que gastó,
+      // no una lectura de cómo lo gastó, y las dos se leen juntas.
+      pintarAprovechamiento(snapshot);
     } else if (section.key === "opportunities") {
       pintarOportunidades(snapshot.opportunities);
+      pintarSeguimiento(snapshot);
     } else if (section.key === "annexes") {
       pintarAnexos(snapshot);
     } else {
       pintarCifras(section.key);
+      // RN-REP-21 · los tiempos de cada cambio, detrás de los indicadores
+      // de Operación: primero cómo fue el mes, después cambio a cambio.
+      if (section.key === "operation") pintarTiempos(snapshot);
+      // RN-REP-22 y RN-REP-25 · las dos cuelgan de Rendimiento digital
+      // porque las dos leen sus cifras. Si el equipo desmarca esa sección,
+      // no salen: es el mismo criterio con el que el dinero solo sale con
+      // Finanzas dentro (RN-REP-16).
+      if (section.key === "digital") {
+        pintarEvolucion(snapshot);
+        pintarEfecto(snapshot);
+      }
     }
   });
+
+  /** RN-REP-21 · los tiempos de cada cambio, uno a uno. */
+  function pintarTiempos(version: ReportSnapshot): void {
+    const filas = version.timings ?? [];
+    if (filas.length === 0) return;
+
+    space(10);
+    write(labels.timings.title, { size: 11, font: bold, gap: 4 });
+    write(labels.timings.hint, { size: 8, color: SOFT, gap: 10 });
+
+    const ANCHO_CODIGO = 110;
+    const ANCHO_TIEMPO = 120;
+    const xInicio = MARGIN + ANCHO_CODIGO + 10;
+    const xEntrega = xInicio + ANCHO_TIEMPO + 10;
+    const xParado = xEntrega + ANCHO_TIEMPO + 10;
+
+    room(24);
+    at(labels.timings.columns.change, MARGIN, y, { size: 7.5, font: bold, color: SOFT });
+    at(labels.timings.columns.start, xInicio, y, { size: 7.5, font: bold, color: SOFT });
+    at(labels.timings.columns.delivery, xEntrega, y, { size: 7.5, font: bold, color: SOFT });
+    at(labels.timings.columns.blocked, xParado, y, { size: 7.5, font: bold, color: SOFT });
+    y -= 8;
+    rule(12);
+
+    for (const fila of filas) {
+      room(34);
+      at(fit(fila.code, ANCHO_CODIGO, 9.5, bold), MARGIN, y, { size: 9.5, font: bold });
+
+      // Las líneas de apoyo —el plazo y el motivo del bloqueo— bajan solas
+      // en vez de colocarse cada una a mano. Escribirlas con desplazamientos
+      // fijos ya montó una encima de otra una vez, y eso solo se ve
+      // generando el PDF y mirándolo.
+      let apoyo = y - 9;
+
+      if (fila.pending !== null) {
+        // Sin tiempos todavía: se dice cuál es el motivo, no se deja el
+        // hueco ni se pinta un cero que se leería como "instantáneo".
+        at(
+          fila.pending === "in_analysis" ? labels.timings.inAnalysis : labels.timings.notStarted,
+          xInicio,
+          y,
+          { size: 9, color: SOFT },
+        );
+      } else {
+        at(
+          fila.startMinutes === null
+            ? labels.timings.noValue
+            : labels.timings.duration(fila.startMinutes),
+          xInicio,
+          y,
+          { size: 9.5, font: bold },
+        );
+        // Dentro o fuera del plazo con el que se aceptó (RN-COM-15). En
+        // verde y rojo porque es lo único de esta tabla que es un juicio
+        // sobre nosotros, y esconderlo sería lo cómodo.
+        if (fila.startedWithinSla !== null) {
+          at(
+            fila.startedWithinSla ? labels.timings.withinSla : labels.timings.outOfSla,
+            xInicio,
+            apoyo,
+            { size: 7.5, color: fila.startedWithinSla ? GREEN : RED },
+          );
+          apoyo -= 9;
+        }
+        at(
+          fila.deliveryMinutes === null
+            ? labels.timings.noValue
+            : labels.timings.duration(fila.deliveryMinutes),
+          xEntrega,
+          y,
+          { size: 9.5 },
+        );
+      }
+
+      at(
+        fila.blockedMinutes === 0
+          ? labels.timings.noValue
+          : labels.timings.duration(fila.blockedMinutes),
+        xParado,
+        y,
+        { size: 9.5 },
+      );
+      // El motivo va en su propia línea y a ancho completo, no debajo de
+      // la columna: "falta información del restaurante" no cabe en 100 pt
+      // y salía recortado en puntos suspensivos, que en un motivo es
+      // justo la parte que importa. Lo encontró mirar el PDF.
+      if (fila.blockReasons.length > 0) {
+        at(
+          fit(
+            labels.timings.blockedBy(
+              fila.blockReasons.map((motivo) => labels.blockReasons[motivo]).join(", "),
+            ),
+            PAGE_WIDTH - 2 * MARGIN - 12,
+            7.5,
+            regular,
+          ),
+          MARGIN + 12,
+          apoyo,
+          { size: 7.5, color: SOFT },
+        );
+        apoyo -= 9;
+      }
+
+      y = apoyo - 3;
+      page.drawLine({
+        start: { x: MARGIN, y },
+        end: { x: PAGE_WIDTH - MARGIN, y },
+        thickness: 0.5,
+        color: RULE,
+      });
+      y -= 12;
+    }
+  }
+
+  /** RN-REP-22 · la evolución dentro del mes, por bloques de 7 días. */
+  function pintarEvolucion(version: ReportSnapshot): void {
+    const series = version.evolution ?? [];
+    const bloques = version.evolutionBuckets ?? [];
+    if (series.length === 0 || bloques.length === 0) return;
+
+    space(12);
+    write(labels.evolution.title, { size: 11, font: bold, gap: 4 });
+    write(labels.evolution.hint, { size: 8, color: SOFT, gap: 10 });
+
+    const ANCHO_METRICA = 150;
+    const xPrimera = MARGIN + ANCHO_METRICA + 10;
+    const anchoBloque = (PAGE_WIDTH - MARGIN - xPrimera) / bloques.length;
+
+    room(26);
+    bloques.forEach((bloque, index) => {
+      at(fit(fechaCorta(bloque.from), anchoBloque - 4, 7, regular), xPrimera + index * anchoBloque, y, {
+        size: 7,
+        font: bold,
+        color: SOFT,
+      });
+      // El resto del mes se dibuja, pero marcado: una barra corta al lado
+      // de cuatro llenas se lee como un desplome y no lo es.
+      if (bloque.partial) {
+        at(labels.evolution.partial, xPrimera + index * anchoBloque, y - 7, { size: 5.5, color: RED });
+      }
+    });
+    y -= 16;
+    rule(10);
+
+    for (const serie of series) {
+      room(20);
+      const nombre = labels.metrics[serie.metric as keyof Labels["metrics"]] ?? serie.metric;
+      const fuente =
+        es.integrations.providers[serie.provider as keyof typeof es.integrations.providers]?.name ??
+        serie.provider;
+      at(fit(`${nombre} · ${fuente}`, ANCHO_METRICA, 8.5, regular), MARGIN, y, { size: 8.5 });
+      serie.values.forEach((valor, index) => {
+        at(
+          valor === null ? labels.evolution.noData : numeroDeSerie(valor),
+          xPrimera + index * anchoBloque,
+          y,
+          { size: 8.5, font: valor === null ? regular : bold, color: valor === null ? SOFT : INK },
+        );
+      });
+      y -= 8;
+      page.drawLine({
+        start: { x: MARGIN, y },
+        end: { x: PAGE_WIDTH - MARGIN, y },
+        thickness: 0.5,
+        color: RULE,
+      });
+      y -= 10;
+    }
+  }
+
+  /**
+   * Un valor de la serie. Las cuentas van enteras —no hay media sesión— y
+   * las proporciones con un decimal: una posición media de 10,9
+   * redondeada a 11 pierde exactamente lo que esa métrica mide, y el mes
+   * entero parecería plano.
+   */
+  function numeroDeSerie(valor: number): string {
+    return Number.isInteger(valor) ? String(valor) : valor.toFixed(1).replace(".", ",");
+  }
+
+  /** RN-REP-25 · qué pasó con las cifras después de cada cambio. */
+  function pintarEfecto(version: ReportSnapshot): void {
+    const efectos = version.effects ?? [];
+    if (efectos.length === 0) return;
+
+    space(12);
+    write(labels.effect.title, { size: 11, font: bold, gap: 4 });
+    // La frase más importante del informe: dice lo que pasó y NO dice que
+    // lo causara el cambio, porque eso no se sabe.
+    paragraph(labels.effect.hint, { size: 8, color: SOFT });
+    space(6);
+
+    for (const efecto of efectos) {
+      room(30);
+      at(efecto.code, MARGIN, y, { size: 9.5, font: bold });
+      at(labels.effect.publishedOn(fechaCorta(efecto.publishedOn)), MARGIN + 110, y, {
+        size: 8,
+        color: SOFT,
+      });
+      y -= 12;
+
+      if (efecto.reason !== null) {
+        at(
+          efecto.reason === "incomplete_window"
+            ? labels.effect.incompleteWindow
+            : labels.effect.noData,
+          MARGIN + 12,
+          y,
+          { size: 8.5, color: SOFT },
+        );
+        y -= 12;
+      } else {
+        for (const cifra of efecto.figures) {
+          room(14);
+          const nombre = labels.metrics[cifra.metric as keyof Labels["metrics"]] ?? cifra.metric;
+          at(fit(nombre, 180, 8.5, regular), MARGIN + 12, y, { size: 8.5 });
+          at(labels.effect.arrow(String(cifra.before), String(cifra.after)), MARGIN + 200, y, {
+            size: 8.5,
+            font: bold,
+          });
+          y -= 12;
+        }
+      }
+
+      // Sin esta advertencia el restaurante atribuiría a uno lo que
+      // hicieron dos, que es la manera más fácil de mentir con datos
+      // ciertos.
+      if (efecto.overlapping.length > 0) {
+        room(14);
+        at(fit(labels.effect.overlapping(efecto.overlapping.join(", ")), 483, 7.5, regular), MARGIN + 12, y, {
+          size: 7.5,
+          color: RED,
+        });
+        y -= 12;
+      }
+
+      rule(10);
+    }
+  }
+
+  /** RN-REP-26 · cuánto está aprovechando el restaurante su plan. */
+  function pintarAprovechamiento(version: ReportSnapshot): void {
+    const lineas = version.planUsage ?? [];
+    // Sin ciclos cerrados la sección no se dibuja: no hay nada que leer
+    // todavía y un bloque vacío es relleno (CLAUDE.md).
+    if (lineas.length === 0 || lineas.every((linea) => linea.included === 0)) return;
+
+    space(14);
+    write(labels.planUsage.title, { size: 11, font: bold, gap: 4 });
+    write(labels.planUsage.hint, { size: 8, color: SOFT, gap: 10 });
+
+    for (const linea of lineas) {
+      if (linea.included === 0 && linea.used === 0) continue;
+      room(18);
+      at(es.naming.categoriesPlural[linea.category], MARGIN, y, { size: 9.5 });
+      at(labels.planUsage.line(linea.used, linea.included), MARGIN + 200, y, { size: 9.5, font: bold });
+      at(
+        labels.planUsage.unused(linea.unused, linea.category === "photo"),
+        MARGIN + 300,
+        y,
+        { size: 8.5, color: linea.unused > 0 ? RED : SOFT },
+      );
+      y -= 8;
+      page.drawLine({
+        start: { x: MARGIN, y },
+        end: { x: PAGE_WIDTH - MARGIN, y },
+        thickness: 0.5,
+        color: RULE,
+      });
+      y -= 10;
+    }
+  }
+
+  /** RN-REP-24 · qué pasó con las oportunidades del informe anterior. */
+  function pintarSeguimiento(version: ReportSnapshot): void {
+    const filas = version.followUp ?? [];
+    // Sin informe anterior enviado no se dibuja: "no hay nada que seguir"
+    // en el primer informe de un restaurante es ruido, no información.
+    if (filas.length === 0) return;
+
+    space(14);
+    write(labels.followUp.title, { size: 11, font: bold, gap: 10 });
+
+    for (const fila of filas) {
+      room(18);
+      at(
+        fit(opportunityTitle(fila), 330, 9, regular),
+        MARGIN,
+        y,
+        { size: 9 },
+      );
+      at(labels.followUp.states[fila.state], MARGIN + 350, y, {
+        size: 8.5,
+        font: bold,
+        color: fila.state === "done" ? GREEN : fila.state === "no_longer" ? SOFT : INK,
+      });
+      y -= 8;
+      page.drawLine({
+        start: { x: MARGIN, y },
+        end: { x: PAGE_WIDTH - MARGIN, y },
+        thickness: 0.5,
+        color: RULE,
+      });
+      y -= 10;
+    }
+  }
 
   /**
    * RN-REP-18 · el relato del mes: una línea por cosa que pasó, con su
@@ -589,6 +933,14 @@ export async function renderReportPdf(
       });
       const variacion = changeText(figure, labels, true);
       if (variacion !== null) at(fit(variacion, anchoComp, 8.5, regular), xComp, y, { size: 8.5, color: SOFT });
+      // RN-REP-23 · y debajo, la del año pasado, cuando el nivel la trae.
+      // Debajo y no al lado: son dos lecturas distintas de la misma cifra
+      // y ponerlas en la misma línea las convierte en un galimatías.
+      const interanual = yearAgoText(figure, labels, true);
+      if (interanual !== null) {
+        at(fit(interanual, anchoComp, 7.5, regular), xComp, y - 9, { size: 7.5, color: SOFT });
+        y -= 9;
+      }
       y -= 8;
       page.drawLine({
         start: { x: MARGIN, y },

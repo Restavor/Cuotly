@@ -1853,6 +1853,26 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      reviews: {
+        Row: {
+          author_name: string | null;
+          comment: string | null;
+          created_at: string;
+          establishment_id: string;
+          external_id: string;
+          fetched_at: string;
+          id: string;
+          integration_id: string;
+          rating: number;
+          replied_at: string | null;
+          reply_comment: string | null;
+          reviewed_at: string;
+          space_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       establishment_permissions: {
         Row: {
           create_requests: boolean;
@@ -4972,6 +4992,7 @@ export type Database = {
           report_level: string;
           space_id: string;
           start_sla_hours: number;
+          watches_reviews: boolean;
         };
         Insert: {
           can_order_requests?: boolean;

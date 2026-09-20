@@ -129,6 +129,13 @@ async function executeRun(
 
   const secret = await resolveSecret(deps, vault, run.integration_id);
   const today = run.period_end === null ? isoDate(deps.now()) : dayAfter(run.period_end);
+  // RN-INT-10 · solo se le pregunta a Business Profile: las otras cuatro
+  // fuentes no tienen reseñas y preguntar por su plan sería una consulta
+  // por sincronización a cambio de nada.
+  const vigila =
+    run.kind === "sync" && run.provider === "business_profile"
+      ? await deps.gateway.watchesReviews(run.establishment_id)
+      : false;
   const ctx: AdapterContext = {
     provider: run.provider,
     secret,
@@ -136,6 +143,7 @@ async function executeRun(
     window: { from: run.period_start ?? today, to: run.period_end ?? today },
     today,
     fetchImpl: deps.fetchImpl,
+    watchesReviews: vigila,
   };
 
   if (run.kind === "check") {
@@ -146,6 +154,31 @@ async function executeRun(
   const result = await adapter.sync(ctx);
   const provider = run.provider;
   const points = result.points.filter((p) => isMetricOf(provider, p.metric));
+
+  /*
+    RN-INT-10, RN-INT-12 · las reseñas se guardan **aparte de los puntos**
+    y con su propia llamada, porque no son puntos: `finish_integration_run`
+    escribe métricas y no sabe de reseñas.
+
+    Y va **antes** de cerrar la ejecución a propósito: si guardarlas falla,
+    la ejecución falla con su motivo en vez de cerrarse en verde habiendo
+    perdido las reseñas del día sin que nadie se entere.
+  */
+  if (result.reviews !== undefined && result.reviews.length > 0) {
+    await deps.gateway.recordReviews(
+      run.integration_id,
+      result.reviews.map((review) => ({
+        external_id: review.externalId,
+        rating: review.rating,
+        comment: review.comment,
+        author_name: review.authorName,
+        reviewed_at: review.reviewedAt,
+        reply_comment: review.replyComment,
+        replied_at: review.repliedAt,
+      })),
+    );
+  }
+
   return { points, dropped: result.points.length - points.length, accountLabel: result.accountLabel };
 }
 

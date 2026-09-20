@@ -70,6 +70,15 @@ export interface IntegrationGateway {
   pendingRevocations(limit: number): Promise<readonly PendingRevocation[]>;
   readRevokedToken(integrationId: string): Promise<Pick<StoredCredential, "ciphertext" | "key_version"> | null>;
   recordRevocationAttempt(integrationId: string, ok: boolean, error: string | null): Promise<boolean>;
+  /**
+   * RN-INT-10 · si el plan del establecimiento concede la vigilancia de
+   * reseñas. Se pregunta para **no llamar a Google** cuando no toca; la
+   * barrera de verdad la pone `record_establishment_reviews()`, que lo
+   * vuelve a comprobar (CLAUDE.md: la autoridad es el servidor).
+   */
+  watchesReviews(establishmentId: string): Promise<boolean>;
+  /** RN-INT-10, RN-INT-12 · guarda las nuevas y avisa. Devuelve cuántas eran nuevas. */
+  recordReviews(integrationId: string, reviews: readonly unknown[]): Promise<number>;
 }
 
 export function createSupabaseIntegrationGateway(client: AnyClient): IntegrationGateway {
@@ -82,6 +91,30 @@ export function createSupabaseIntegrationGateway(client: AnyClient): Integration
       });
       return rows[0] ?? null;
     },
+
+    async watchesReviews(establishmentId) {
+      // Por las tablas y no por `establishment_watches_reviews()`: esa
+      // función es interna (no tiene EXECUTE ni para `authenticated`) y
+      // aquí se lee con `service_role`, que ve las filas directamente.
+      const { data, error } = await client
+        .from("subscriptions")
+        .select("plan_id, plans(watches_reviews)")
+        .eq("establishment_id", establishmentId)
+        .eq("kind", "plan")
+        .eq("status", "active")
+        .order("started_at", { ascending: false })
+        .limit(1);
+      if (error) throw new Error(`subscriptions: ${error.message}`);
+      const fila = (data ?? [])[0] as { plans?: unknown } | undefined;
+      const plan = Array.isArray(fila?.plans) ? fila?.plans[0] : fila?.plans;
+      return (plan as { watches_reviews?: boolean } | undefined)?.watches_reviews === true;
+    },
+
+    recordReviews: (integrationId, reviews) =>
+      rpc<number>(client, "record_establishment_reviews", {
+        p_integration_id: integrationId,
+        p_reviews: reviews,
+      }),
 
     finishRun: (input) =>
       rpc<number>(client, "finish_integration_run", {

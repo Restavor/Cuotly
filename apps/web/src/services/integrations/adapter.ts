@@ -30,6 +30,14 @@ export interface AdapterContext {
   /** Hoy en la zona del espacio, `YYYY-MM-DD`: el día de una medición puntual. */
   readonly today: string;
   readonly fetchImpl: typeof fetch;
+  /**
+   * RN-INT-10 · si el plan del establecimiento concede la vigilancia de
+   * reseñas. Cuando es falso **no se piden**: no es que se pidan y se
+   * escondan. La autoridad sigue siendo el servidor
+   * (`record_establishment_reviews()` lo vuelve a comprobar); esto evita
+   * la llamada a Google, que es lo que aquí se puede evitar.
+   */
+  readonly watchesReviews?: boolean;
 }
 
 export interface CheckResult {
@@ -37,9 +45,33 @@ export interface CheckResult {
   readonly accountLabel: string | null;
 }
 
+/**
+ * RN-INT-10 (decisión 60) · una reseña tal como la devuelve la fuente. No
+ * es un punto de métrica y no se guarda como tal: tiene texto, autor y
+ * puntuación, y hay que poder señalar una y decir "contesta a esta".
+ */
+export interface FetchedReview {
+  readonly externalId: string;
+  readonly rating: number;
+  readonly comment: string | null;
+  readonly authorName: string | null;
+  readonly reviewedAt: string;
+  readonly replyComment: string | null;
+  readonly repliedAt: string | null;
+}
+
 export interface SyncResult {
   readonly points: readonly MetricPoint[];
   readonly accountLabel: string | null;
+  /**
+   * RN-INT-10 · las reseñas, **solo si se han pedido**. `undefined` no es
+   * "no hay ninguna": es "no se han traído", y las dos cosas se dicen
+   * distinto en la pantalla (CLAUDE.md: si no hay dato, se dice el
+   * motivo).
+   */
+  readonly reviews?: readonly FetchedReview[];
+  /** Por qué no se trajeron, cuando no se trajeron. */
+  readonly reviewsUnavailable?: "not_requested" | "needs_account";
 }
 
 export interface IntegrationAdapter {

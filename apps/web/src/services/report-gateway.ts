@@ -10,11 +10,13 @@
 
 import type { HolidayRecord } from "@/core/business-clock";
 import type { MetricPoint } from "@/core/integrations";
+import type { ChangeCategory } from "@/core/classification-rules";
 import {
   type ReportCategory,
   type ReportLevel,
   type ReportOpportunity,
   type ReportSectionState,
+  type UsageCycle,
   highestReportLevel,
   isReportLevel,
 } from "@/core/reports";
@@ -54,6 +56,24 @@ export interface ReportRow {
    * `create_report_draft()` en SQL.
    */
   readonly reportLevel: ReportLevel;
+}
+
+export interface PreviousOpportunityRow {
+  readonly id: string;
+  readonly rule: string | null;
+  readonly subject: string;
+  readonly title: string | null;
+  /** El estado de HOY, no el que tenía cuando se envió aquel informe. */
+  readonly status: string;
+}
+
+export interface PlanUsageData {
+  readonly cycles: readonly UsageCycle[];
+  readonly entries: readonly {
+    readonly category: ChangeCategory;
+    readonly amount: number;
+    readonly at: string;
+  }[];
 }
 
 export interface ProviderState {
@@ -109,6 +129,22 @@ export interface ReportGateway {
     to: string,
   ): Promise<readonly ReportOpportunity[]>;
   holidays(spaceId: string): Promise<readonly HolidayRecord[]>;
+  /**
+   * RN-REP-24 (decisión 60) · las oportunidades que llevaba **la última
+   * versión enviada** del informe anterior de este restaurante, con el
+   * estado que tienen HOY. Vacío si no hay informe anterior enviado: la
+   * sección no se dibuja, porque "no hay nada que seguir" en el primer
+   * informe de un restaurante es ruido.
+   */
+  previousReportOpportunities(
+    establishmentId: string,
+    beforePeriodStart: string,
+  ): Promise<readonly PreviousOpportunityRow[]>;
+  /**
+   * RN-REP-26 (decisión 60) · los ciclos de consumo de la permanencia
+   * vigente y los apuntes del libro que caen dentro.
+   */
+  planUsageData(establishmentId: string): Promise<PlanUsageData>;
   storeVersion(reportId: string, snapshot: unknown): Promise<string>;
   /** §95 · los informes cuya fecha ya llegó y los que la tienen a menos de 24 h. */
   reportsDueForSend(limit: number): Promise<readonly string[]>;
@@ -326,6 +362,105 @@ export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
           configuredAt: new Date(row.created_at),
         }),
       );
+    },
+
+    async previousReportOpportunities(establishmentId, beforePeriodStart) {
+      // El informe ANTERIOR enviado de este restaurante. `sent` y no
+      // cualquiera: lo que el restaurante leyó, no lo que el equipo tenía
+      // a medias (RN-REP-13).
+      const { data: informes, error: errorInformes } = await client
+        .from("reports")
+        .select("id")
+        .eq("establishment_id", establishmentId)
+        .eq("status", "sent")
+        .lt("period_start", beforePeriodStart)
+        .order("period_start", { ascending: false })
+        .limit(1);
+      if (errorInformes) throw new Error(`reports: ${errorInformes.message}`);
+      const anterior = (informes ?? [])[0] as { id: string } | undefined;
+      if (anterior === undefined) return [];
+
+      // Su ÚLTIMA versión, que es la que se envió (RN-REP-12).
+      const { data: versiones, error: errorVersiones } = await client
+        .from("report_versions")
+        .select("snapshot")
+        .eq("report_id", anterior.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (errorVersiones) throw new Error(`report_versions: ${errorVersiones.message}`);
+      const snapshot = ((versiones ?? [])[0] as { snapshot?: unknown } | undefined)?.snapshot;
+      const llevaba = Array.isArray((snapshot as { opportunities?: unknown })?.opportunities)
+        ? ((snapshot as { opportunities: { id?: unknown }[] }).opportunities
+            .map((o) => (typeof o.id === "string" ? o.id : null))
+            .filter((id): id is string => id !== null))
+        : [];
+      if (llevaba.length === 0) return [];
+
+      // Y el estado que tienen HOY, que es toda la gracia del seguimiento.
+      // Columna a columna: `select *` sobre `opportunities` da 403.
+      const { data, error } = await client
+        .from("opportunities")
+        .select("id, rule_key, subject, title, status")
+        .in("id", llevaba);
+      if (error) throw new Error(`opportunities: ${error.message}`);
+      return (data ?? []).map((row: any) => ({
+        id: String(row.id),
+        rule: row.rule_key ?? null,
+        subject: String(row.subject ?? ""),
+        title: row.title ?? null,
+        status: String(row.status),
+      }));
+    },
+
+    async planUsageData(establishmentId) {
+      // La permanencia VIGENTE: la que empezó y todavía no ha terminado.
+      // Sin permanencia no hay nada que mirar y la sección no se dibuja.
+      const ahora = new Date().toISOString();
+      const { data: permanencias, error: errorPermanencia } = await client
+        .from("plan_commitments")
+        .select("started_at, ends_at")
+        .eq("establishment_id", establishmentId)
+        .lte("started_at", ahora)
+        .order("started_at", { ascending: false })
+        .limit(1);
+      if (errorPermanencia) throw new Error(`plan_commitments: ${errorPermanencia.message}`);
+      const permanencia = (permanencias ?? [])[0] as
+        | { started_at: string; ends_at: string | null }
+        | undefined;
+      if (permanencia === undefined) return { cycles: [], entries: [] };
+
+      const { data: ciclos, error: errorCiclos } = await client
+        .from("consumption_cycles")
+        .select("cycle_start, cycle_end, included_small, included_photo, included_medium, included_large")
+        .eq("establishment_id", establishmentId)
+        .gte("cycle_start", permanencia.started_at)
+        .order("cycle_start");
+      if (errorCiclos) throw new Error(`consumption_cycles: ${errorCiclos.message}`);
+
+      const { data: apuntes, error: errorApuntes } = await client
+        .from("consumption_entries")
+        .select("category, amount, created_at")
+        .eq("establishment_id", establishmentId)
+        .gte("created_at", permanencia.started_at);
+      if (errorApuntes) throw new Error(`consumption_entries: ${errorApuntes.message}`);
+
+      return {
+        cycles: (ciclos ?? []).map((row: any) => ({
+          cycleStart: String(row.cycle_start).slice(0, 10),
+          cycleEnd: String(row.cycle_end).slice(0, 10),
+          included: {
+            small: Number(row.included_small ?? 0),
+            photo: Number(row.included_photo ?? 0),
+            medium: Number(row.included_medium ?? 0),
+            large: Number(row.included_large ?? 0),
+          },
+        })),
+        entries: (apuntes ?? []).map((row: any) => ({
+          category: row.category as ChangeCategory,
+          amount: Number(row.amount),
+          at: String(row.created_at).slice(0, 10),
+        })),
+      };
     },
 
     storeVersion(reportId, snapshot) {

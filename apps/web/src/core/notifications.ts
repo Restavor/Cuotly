@@ -110,6 +110,11 @@ export const NOTIFICATION_EVENTS = [
   // quién la revisó (RN-PAN-15).
   "panel_invitation_pending_review",
   "panel_invitation_decided",
+  // Migración 117 (RN-INT-10 a 12) · las reseñas de Google. Son dos y no
+  // uno porque el aviso de una reseña de 2 estrellas no se lee igual que
+  // el de una de 5, y porque solo el primero cruza al restaurante.
+  "review_received",
+  "low_review_received",
 ] as const;
 
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
@@ -260,7 +265,8 @@ export type DeepLinkEntity =
   | "menu"
   | "quote"
   | "cuotly_charge"
-  | "incident";
+  | "incident"
+  | "review";
 
 export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId: string): string {
   switch (entity) {
@@ -287,6 +293,11 @@ export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId:
       // La incidencia en el centro de ayuda del espacio (Hito 21). A la
       // plataforma le llega con su propio enlace, al panel.
       return `/espacios/${spaceSlug}/ayuda/incidencias/${entityId}`;
+    case "review":
+      // RN-INT-10 · las reseñas del restaurante. El enlace va a su lista y
+      // no a una reseña suelta: se leen en contexto, con las de al lado.
+      // Es el mismo que escribe `record_establishment_reviews()`.
+      return `/espacios/${spaceSlug}/restaurantes/${entityId}/resenas`;
   }
 }
 
@@ -361,6 +372,11 @@ export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = [
   // —`panel_invitation_pending_review`— es del EQUIPO y por eso no está
   // en esta lista.
   "panel_invitation_decided",
+  // RN-INT-12 · al restaurante solo le llega la reseña BAJA. Las demás
+  // las tiene igual en su pantalla y en su informe: un aviso que llega
+  // todos los días deja de leerse, y entonces no sirve el día que
+  // importa. `review_received` es del equipo y por eso no está aquí.
+  "low_review_received",
 ];
 
 /**

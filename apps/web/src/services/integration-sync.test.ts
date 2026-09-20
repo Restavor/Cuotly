@@ -44,6 +44,7 @@ interface Falsa {
   readonly gateway: IntegrationGateway;
   readonly cierres: FinishRunInput[];
   readonly revocaciones: { integrationId: string; ok: boolean; error: string | null }[];
+  readonly resenas: { integrationId: string; reviews: readonly unknown[] }[];
 }
 
 function gatewayFalso(opts: {
@@ -52,12 +53,19 @@ function gatewayFalso(opts: {
   pending?: PendingRevocation[];
   revokedTokens?: Record<string, StoredCredential | null>;
   finishFails?: boolean;
+  watchesReviews?: boolean;
 }): Falsa {
   const cierres: FinishRunInput[] = [];
   const revocaciones: Falsa["revocaciones"] = [];
+  const resenasGuardadas: { integrationId: string; reviews: readonly unknown[] }[] = [];
   const gateway: IntegrationGateway = {
     claimRuns: vi.fn(async () => opts.runs ?? []),
     readCredential: vi.fn(async (id) => opts.credentials?.[id] ?? null),
+    watchesReviews: vi.fn(async () => opts.watchesReviews === true),
+    recordReviews: vi.fn(async (integrationId, reviews) => {
+      resenasGuardadas.push({ integrationId, reviews });
+      return reviews.length;
+    }),
     finishRun: vi.fn(async (input) => {
       if (opts.finishFails) throw new Error("la base no contesta");
       cierres.push(input);
@@ -70,7 +78,7 @@ function gatewayFalso(opts: {
       return ok;
     }),
   };
-  return { gateway, cierres, revocaciones };
+  return { gateway, cierres, revocaciones, resenas: resenasGuardadas };
 }
 
 function oauthFalso(overrides: Partial<OAuthClient> = {}): OAuthClient {

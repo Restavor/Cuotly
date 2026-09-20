@@ -35,6 +35,8 @@ function gateway(overrides: Partial<ReportGateway> = {}): ReportGateway {
     monthActivity: vi.fn().mockResolvedValue({ changes: [], entries: [] }),
     changeAllowance: vi.fn().mockResolvedValue({ categories: [] }),
     approvedOpportunities: vi.fn().mockResolvedValue([]),
+    previousReportOpportunities: vi.fn().mockResolvedValue([]),
+    planUsageData: vi.fn().mockResolvedValue({ cycles: [], entries: [] }),
     holidays: vi.fn().mockResolvedValue([]),
     storeVersion: vi.fn().mockResolvedValue("version-1"),
     reportsDueForSend: vi.fn().mockResolvedValue([]),
@@ -689,5 +691,97 @@ describe("§95 · la tanda de la cola", () => {
 
     expect(resultado.failed).toBe(1);
     expect(resultado.sent).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------
+// Lo que añade Premium+ (RN-REP-21 a 26, decisión 60)
+// ---------------------------------------------------------------------
+
+describe("el nivel `complete` y lo que solo él pide", () => {
+  it("RN-REP-15, RN-REP-23 · `advanced` NI SIQUIERA pide el año anterior ni el aprovechamiento del plan", async () => {
+    const porPeriodo = vi.fn().mockResolvedValue({ income_total_cents: 100 });
+    const uso = vi.fn().mockResolvedValue({ cycles: [], entries: [] });
+    const seguimiento = vi.fn().mockResolvedValue([]);
+
+    const snapshot = await buildSnapshot(
+      { gateway: gateway({ financeDataset: porPeriodo, planUsageData: uso, previousReportOpportunities: seguimiento }), now: () => AHORA },
+      informe({ reportLevel: "advanced" }),
+    );
+
+    // Premium lleva comparación con el periodo anterior (2 llamadas) y
+    // **no** con el año pasado, que serían 3. El nivel es una barrera: si
+    // se calculara y se escondiera, la versión guardada llevaría dentro lo
+    // que el plan no incluye.
+    expect(porPeriodo).toHaveBeenCalledTimes(2);
+    expect(uso).not.toHaveBeenCalled();
+    expect(seguimiento).not.toHaveBeenCalled();
+    expect(snapshot.figures.every((figura) => figura.yearAgo === undefined)).toBe(true);
+  });
+
+  it("RN-REP-23 · `complete` pide el mismo mes del año anterior, con sus fechas", async () => {
+    const porPeriodo = vi.fn().mockResolvedValue({ income_total_cents: 100 });
+
+    await buildSnapshot(
+      { gateway: gateway({ financeDataset: porPeriodo }), now: () => AHORA },
+      informe({ reportLevel: "complete" }),
+    );
+
+    // Este, el mes pasado y el mismo mes del año pasado.
+    expect(porPeriodo).toHaveBeenCalledTimes(3);
+    expect(porPeriodo).toHaveBeenCalledWith("space-1", "est-1", "2025-08-01", "2025-08-31");
+  });
+
+  it("RN-REP-25 · la ventana del efecto ensancha 14 días por cada lado, y solo si hay algo publicado", async () => {
+    const puntos = vi.fn().mockResolvedValue(new Map());
+    const dataset = vi.fn().mockResolvedValue({
+      jobs: [
+        {
+          id: "j1", establishment_id: "est-1", category: "small", state: "published",
+          request_code: "SOL-1", published_at: "2026-08-10T10:00:00Z", start_sla_hours: 24,
+        },
+      ],
+    });
+
+    await buildSnapshot(
+      { gateway: gateway({ metricPoints: puntos, operationDataset: dataset }), now: () => AHORA },
+      informe({ reportLevel: "complete" }),
+    );
+
+    expect(puntos).toHaveBeenCalledWith("est-1", "2026-07-18", "2026-09-14");
+  });
+
+  it("RN-REP-26 · si el aprovechamiento del plan falla, el informe sale igual sin esa sección", async () => {
+    const snapshot = await buildSnapshot(
+      {
+        gateway: gateway({
+          planUsageData: vi.fn().mockRejectedValue(new Error("se cayó la consulta")),
+        }),
+        now: () => AHORA,
+      },
+      informe({ reportLevel: "complete" }),
+    );
+
+    // Quedarse sin informe porque no se pudo mirar la permanencia sería la
+    // peor de las dos opciones: es contexto, no el dato.
+    expect(snapshot.planUsage).toEqual([]);
+    expect(snapshot.figures.length).toBeGreaterThan(0);
+  });
+
+  it("RN-REP-24 · el seguimiento traduce el estado de HOY, no el que tenía al enviarse", async () => {
+    const snapshot = await buildSnapshot(
+      {
+        gateway: gateway({
+          previousReportOpportunities: vi.fn().mockResolvedValue([
+            { id: "o1", rule: "slowness", subject: "/carta", title: null, status: "implemented" },
+            { id: "o2", rule: "low_ctr", subject: "/inicio", title: null, status: "approved_for_report" },
+          ]),
+        }),
+        now: () => AHORA,
+      },
+      informe({ reportLevel: "complete" }),
+    );
+
+    expect(snapshot.followUp?.map((f) => f.state)).toEqual(["done", "open"]);
   });
 });

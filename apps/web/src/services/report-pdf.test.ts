@@ -170,6 +170,16 @@ describe("RN-REP-17 · el signo de la variación sobrevive al PDF", () => {
       es.reportsPage.change,
       es.reportsPage.activity,
       es.reportsPage.columns,
+      // Decisión 60 · sin estas seis líneas el barrido no llegaba a lo
+      // nuevo, y la flecha de `effect.arrow` se coló hasta que alguien
+      // miró el PDF. Una red que no cubre lo último que se añadió no es
+      // una red.
+      es.reportsPage.timings,
+      es.reportsPage.blockReasons,
+      es.reportsPage.evolution,
+      es.reportsPage.effect,
+      es.reportsPage.planUsage,
+      es.reportsPage.followUp,
       es.emptyReasons,
       es.emptyReasonsShort,
       es.naming.categories,

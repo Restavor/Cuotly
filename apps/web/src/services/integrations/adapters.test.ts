@@ -461,3 +461,121 @@ describe("adaptadores (RN-INT-01, RN-INT-08)", () => {
     expect(METRICS_BY_PROVIDER.pagespeed.length).toBeGreaterThan(0);
   });
 });
+
+describe("RN-INT-10 a 12 · las reseñas de Google Business Profile (decisión 60)", () => {
+  const RENDIMIENTO = { multiDailyMetricTimeSeries: [] };
+
+  const RESENAS = {
+    reviews: [
+      {
+        reviewId: "g-1",
+        starRating: "TWO",
+        comment: "Tardaron mucho en servir",
+        createTime: "2026-09-05T21:30:00Z",
+        reviewer: { displayName: "Javier L." },
+      },
+      {
+        reviewId: "g-2",
+        starRating: "FIVE",
+        createTime: "2026-09-06T20:00:00Z",
+        reviewer: { displayName: "Marta R." },
+        reviewReply: { comment: "¡Gracias!", updateTime: "2026-09-07T09:00:00Z" },
+      },
+    ],
+  };
+
+  it("RN-INT-10 · si el plan no las vigila, NI SE PIDEN a Google", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(json(RENDIMIENTO));
+    const resultado = await ADAPTERS.business_profile.sync(
+      ctx("business_profile", {
+        fetchImpl,
+        propertyId: "accounts/7/locations/123",
+        watchesReviews: false,
+      }),
+    );
+
+    // Una sola llamada: la de rendimiento. No se pide y se esconde: no se
+    // pide, que es la diferencia entre un dato oculto y un trabajo que no
+    // se está haciendo.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(resultado.reviews).toBeUndefined();
+    expect(resultado.reviewsUnavailable).toBe("not_requested");
+  });
+
+  it("RN-INT-10 · una conexión sin la cuenta de Google lo DICE, no se inventa la cuenta", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(json(RENDIMIENTO));
+    const resultado = await ADAPTERS.business_profile.sync(
+      ctx("business_profile", { fetchImpl, propertyId: "locations/123", watchesReviews: true }),
+    );
+
+    // La API de reseñas necesita `accounts/A/locations/L`. Completar el
+    // camino a ojo sería adivinar de quién es la ficha.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(resultado.reviewsUnavailable).toBe("needs_account");
+  });
+
+  it("RN-INT-11 · traduce las estrellas y respeta la reseña sin comentario", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(json(RENDIMIENTO))
+      .mockResolvedValueOnce(json(RESENAS));
+
+    const resultado = await ADAPTERS.business_profile.sync(
+      ctx("business_profile", {
+        fetchImpl,
+        propertyId: "accounts/7/locations/123",
+        watchesReviews: true,
+      }),
+    );
+
+    expect(urlOf(fetchImpl, 1)).toContain("accounts/7/locations/123/reviews");
+    expect(headerOf(fetchImpl, "Authorization", 1)).toBe("Bearer SECRETO");
+
+    expect(resultado.reviews).toEqual([
+      {
+        externalId: "g-1",
+        rating: 2,
+        comment: "Tardaron mucho en servir",
+        authorName: "Javier L.",
+        reviewedAt: "2026-09-05T21:30:00Z",
+        replyComment: null,
+        repliedAt: null,
+      },
+      {
+        externalId: "g-2",
+        rating: 5,
+        // Google deja puntuar sin escribir: NO se rellena con nada.
+        comment: null,
+        authorName: "Marta R.",
+        reviewedAt: "2026-09-06T20:00:00Z",
+        replyComment: "¡Gracias!",
+        repliedAt: "2026-09-07T09:00:00Z",
+      },
+    ]);
+  });
+
+  it("RN-INT-10 · una reseña sin identificador o sin estrellas se salta, no se inventa un 0", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(json(RENDIMIENTO))
+      .mockResolvedValueOnce(
+        json({
+          reviews: [
+            { starRating: "THREE", createTime: "2026-09-05T21:30:00Z" },
+            { reviewId: "g-9", createTime: "2026-09-05T21:30:00Z" },
+            { reviewId: "g-10", starRating: "CUATROMIL", createTime: "2026-09-05T21:30:00Z" },
+          ],
+        }),
+      );
+
+    const resultado = await ADAPTERS.business_profile.sync(
+      ctx("business_profile", {
+        fetchImpl,
+        propertyId: "accounts/7/locations/123",
+        watchesReviews: true,
+      }),
+    );
+
+    expect(resultado.reviews).toEqual([]);
+  });
+});

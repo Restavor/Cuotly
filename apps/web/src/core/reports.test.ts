@@ -2,6 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { contractualCalendar } from "./business-clock";
 import {
+  changeEffects,
+  withYearAgoFigures,
+  changeTimings,
+  opportunityFollowUp,
+  planUsage,
+  sameMonthLastYear,
+  weekBuckets,
+  weeklySeries,
   REPORT_CATEGORIES,
   REPORT_SECTION_KEYS,
   REPORT_STATES,
@@ -785,5 +793,337 @@ describe("RN-REP-17 · cómo se dice la variación", () => {
   it("RN-REP-17 · la variación va redondeada a entero, en los dos sentidos", () => {
     expect(figureChange({ ...base, value: 5921, previous: 5018 })).toEqual({ kind: "percent", percent: 18 });
     expect(figureChange({ ...base, value: 8, previous: 10 })).toEqual({ kind: "percent", percent: -20 });
+  });
+});
+
+// ---------------------------------------------------------------------
+// Lo que añade Premium+ (RN-REP-21 a 26, decisión 60)
+// ---------------------------------------------------------------------
+
+describe("RN-REP-21 · los tiempos de cada cambio, uno a uno", () => {
+  const calendario = contractualCalendar("Europe/Madrid", []);
+
+  it("RN-REP-21 · mide el arranque desde que se ACEPTÓ, no desde que se creó el trabajo", () => {
+    const [fila] = changeTimings(
+      [
+        {
+          jobId: "j1",
+          requestCode: "SOL-1",
+          category: "small",
+          // Aceptada el lunes a las 9:00; arrancada el lunes a las 12:00.
+          requestAcceptedAt: new Date("2026-09-07T07:00:00Z"),
+          startedAt: new Date("2026-09-07T10:00:00Z"),
+          completedAt: new Date("2026-09-07T14:00:00Z"),
+          startSlaHours: 24,
+        },
+      ],
+      [],
+      calendario,
+      new Date("2026-09-30T10:00:00Z"),
+    );
+
+    expect(fila.code).toBe("SOL-1");
+    expect(fila.startMinutes).toBe(180);
+    expect(fila.startedWithinSla).toBe(true);
+    expect(fila.pending).toBeNull();
+  });
+
+  it("RN-REP-21 · un cambio sin aceptar dice 'en análisis' y uno aceptado sin arrancar, 'pendiente de empezar'", () => {
+    const filas = changeTimings(
+      [
+        {
+          jobId: "j1", requestCode: "SOL-1", category: "small",
+          requestAcceptedAt: null, startedAt: null, completedAt: null, startSlaHours: 24,
+        },
+        {
+          jobId: "j2", requestCode: "SOL-2", category: "medium",
+          requestAcceptedAt: new Date("2026-09-07T07:00:00Z"),
+          startedAt: null, completedAt: null, startSlaHours: 24,
+        },
+      ],
+      [],
+      calendario,
+      new Date("2026-09-30T10:00:00Z"),
+    );
+
+    expect(filas[0].pending).toBe("in_analysis");
+    expect(filas[1].pending).toBe("not_started");
+    // Y ninguno inventa un cero, que se leería como "instantáneo".
+    expect(filas[0].startMinutes).toBeNull();
+    expect(filas[1].startMinutes).toBeNull();
+  });
+
+  it("RN-REP-21 · un bloqueo todavía abierto cuenta hasta hoy, no cero ni infinito", () => {
+    const [fila] = changeTimings(
+      [
+        {
+          jobId: "j1", requestCode: "SOL-1", category: "small",
+          requestAcceptedAt: new Date("2026-09-07T07:00:00Z"),
+          startedAt: new Date("2026-09-07T07:00:00Z"),
+          completedAt: null, startSlaHours: 24,
+        },
+      ],
+      [{ jobId: "j1", startedAt: new Date("2026-09-07T08:00:00Z"), endedAt: null, reason: "client_information" }],
+      calendario,
+      new Date("2026-09-07T11:00:00Z"),
+    );
+
+    expect(fila.blockedMinutes).toBe(180);
+    expect(fila.blockReasons).toEqual(["client_information"]);
+  });
+
+  it("RN-REP-21, P7 · un trabajo sin código de solicitud no sale: el restaurante no conoce el código del trabajo", () => {
+    const filas = changeTimings(
+      [
+        {
+          jobId: "j1", requestCode: null, category: "small",
+          requestAcceptedAt: new Date("2026-09-07T07:00:00Z"),
+          startedAt: new Date("2026-09-07T10:00:00Z"),
+          completedAt: null, startSlaHours: 24,
+        },
+      ],
+      [],
+      calendario,
+      new Date("2026-09-30T10:00:00Z"),
+    );
+
+    expect(filas).toHaveLength(0);
+  });
+});
+
+describe("RN-REP-22 · la evolución dentro del mes", () => {
+  it("RN-REP-22 · parte el mes en bloques de 7 días y marca el resto como parcial", () => {
+    const bloques = weekBuckets({ start: "2026-08-01", end: "2026-08-31" });
+
+    expect(bloques).toHaveLength(5);
+    expect(bloques[0]).toEqual({ from: "2026-08-01", to: "2026-08-07", partial: false });
+    expect(bloques[3]).toEqual({ from: "2026-08-22", to: "2026-08-28", partial: false });
+    // Los 3 días que sobran de un mes de 31: se dibujan, pero marcados.
+    expect(bloques[4]).toEqual({ from: "2026-08-29", to: "2026-08-31", partial: true });
+  });
+
+  it("RN-REP-22 · un mes de 28 días sale en cuatro bloques enteros, sin resto", () => {
+    const bloques = weekBuckets({ start: "2026-02-01", end: "2026-02-28" });
+    expect(bloques).toHaveLength(4);
+    expect(bloques.every((b) => !b.partial)).toBe(true);
+  });
+
+  it("RN-REP-22 · lo que se suma se suma y lo que es proporción se promedia", () => {
+    const bloques = weekBuckets({ start: "2026-08-01", end: "2026-08-14" });
+    const puntos = [
+      { metric: "clicks", dimension: "", periodStart: "2026-08-01", value: 10 },
+      { metric: "clicks", dimension: "", periodStart: "2026-08-02", value: 20 },
+      { metric: "position", dimension: "", periodStart: "2026-08-01", value: 10 },
+      { metric: "position", dimension: "", periodStart: "2026-08-02", value: 20 },
+    ];
+
+    expect(weeklySeries("search_console", "clicks", "sum", puntos, bloques).values[0]).toBe(30);
+    // Sumar cuatro posiciones medias daría 30, que no significa nada.
+    expect(weeklySeries("search_console", "position", "mean", puntos, bloques).values[0]).toBe(15);
+    // Y un bloque sin datos NO es cero: es que no hay dato.
+    expect(weeklySeries("search_console", "clicks", "sum", puntos, bloques).values[1]).toBeNull();
+  });
+
+  it("RN-REP-22 · los desgloses por dimensión no entran en la serie", () => {
+    const bloques = weekBuckets({ start: "2026-08-01", end: "2026-08-07" });
+    const serie = weeklySeries(
+      "search_console",
+      "clicks",
+      "sum",
+      [
+        { metric: "clicks", dimension: "", periodStart: "2026-08-01", value: 10 },
+        { metric: "clicks", dimension: "menu del dia", periodStart: "2026-08-01", value: 500 },
+      ],
+      bloques,
+    );
+
+    expect(serie.values[0]).toBe(10);
+  });
+});
+
+describe("RN-REP-23 · la comparación con el mismo mes del año anterior", () => {
+  it("RN-REP-23 · un mes natural completo se compara con el mes completo del año anterior", () => {
+    expect(sameMonthLastYear({ start: "2026-09-01", end: "2026-09-30" })).toEqual({
+      start: "2025-09-01",
+      end: "2025-09-30",
+    });
+  });
+
+  it("RN-REP-23 · febrero contra febrero conserva sus días, no se recorta", () => {
+    // 2024 es bisiesto: febrero de 2025 tiene 28 y no se le quita ninguno
+    // al de 2024 ni se le añade ninguno al de 2025.
+    expect(sameMonthLastYear({ start: "2025-02-01", end: "2025-02-28" })).toEqual({
+      start: "2024-02-01",
+      end: "2024-02-29",
+    });
+  });
+
+  it("RN-REP-23 · un 29 de febrero cae al 28 del año anterior, no a un día de la semana distinto", () => {
+    expect(sameMonthLastYear({ start: "2024-02-10", end: "2024-02-29" })).toEqual({
+      start: "2023-02-10",
+      end: "2023-02-28",
+    });
+  });
+});
+
+describe("RN-REP-24 · qué pasó con las oportunidades del informe anterior", () => {
+  it("RN-REP-24 · los ocho estados se leen en cuatro, y lo desconocido sigue abierto", () => {
+    expect(opportunityFollowUp("implemented")).toBe("done");
+    expect(opportunityFollowUp("in_progress")).toBe("in_progress");
+    expect(opportunityFollowUp("approved_for_report")).toBe("open");
+    expect(opportunityFollowUp("detected")).toBe("open");
+    expect(opportunityFollowUp("discarded")).toBe("no_longer");
+    expect(opportunityFollowUp("no_longer_applicable")).toBe("no_longer");
+    // Un estado que no conocemos NO desaparece del seguimiento.
+    expect(opportunityFollowUp("lo_que_venga_manana")).toBe("open");
+  });
+});
+
+describe("RN-REP-25 · el efecto de cada cambio publicado", () => {
+  const metricas = [{ provider: "ga4", metric: "sessions" }];
+
+  function puntos(desde: string, hasta: string, valor: number) {
+    const lista = [];
+    let dia = desde;
+    while (dia <= hasta) {
+      lista.push({ metric: "sessions", dimension: "", periodStart: dia, value: valor });
+      const fecha = new Date(`${dia}T00:00:00Z`);
+      fecha.setUTCDate(fecha.getUTCDate() + 1);
+      dia = fecha.toISOString().slice(0, 10);
+    }
+    return lista;
+  }
+
+  it("RN-REP-25 · compara los 14 días de antes con los 14 de después, sin el día de la publicación", () => {
+    const mapa = new Map([
+      ["ga4", [...puntos("2026-08-18", "2026-08-31", 10), ...puntos("2026-09-01", "2026-09-15", 20)]],
+    ]);
+
+    const [efecto] = changeEffects(
+      [{ code: "SOL-1", publishedOn: "2026-09-01" }],
+      metricas,
+      mapa,
+      "2026-09-30",
+    );
+
+    // 14 días a 10 antes; 14 días a 20 después. El día 1 no entra en ninguna.
+    expect(efecto.figures[0]).toEqual({ provider: "ga4", metric: "sessions", before: 140, after: 280 });
+    expect(efecto.reason).toBeNull();
+  });
+
+  it("RN-REP-25 · si los 14 días de después no han pasado, no se mide media ventana: se dice", () => {
+    const mapa = new Map([["ga4", puntos("2026-09-01", "2026-09-30", 10)]]);
+
+    const [efecto] = changeEffects(
+      [{ code: "SOL-1", publishedOn: "2026-09-25" }],
+      metricas,
+      mapa,
+      "2026-09-30",
+    );
+
+    expect(efecto.reason).toBe("incomplete_window");
+    expect(efecto.figures).toHaveLength(0);
+  });
+
+  it("RN-REP-25 · sin datos en una de las dos mitades no se pinta número", () => {
+    // Solo hay datos después: comparar 14 días contra nada daría una
+    // subida infinita que solo mide que faltan datos.
+    const mapa = new Map([["ga4", puntos("2026-09-02", "2026-09-15", 20)]]);
+
+    const [efecto] = changeEffects(
+      [{ code: "SOL-1", publishedOn: "2026-09-01" }],
+      metricas,
+      mapa,
+      "2026-09-30",
+    );
+
+    expect(efecto.reason).toBe("no_data");
+  });
+
+  it("RN-REP-25 · otro cambio dentro de la ventana se dice, porque si no se atribuye a uno lo que hicieron dos", () => {
+    const mapa = new Map([
+      ["ga4", [...puntos("2026-08-18", "2026-08-31", 10), ...puntos("2026-09-01", "2026-09-20", 20)]],
+    ]);
+
+    const [primero] = changeEffects(
+      [
+        { code: "SOL-1", publishedOn: "2026-09-01" },
+        { code: "SOL-2", publishedOn: "2026-09-06" },
+      ],
+      metricas,
+      mapa,
+      "2026-09-30",
+    );
+
+    expect(primero.overlapping).toEqual(["SOL-2"]);
+  });
+});
+
+describe("RN-REP-26 · el aprovechamiento del plan", () => {
+  const ciclo = (start: string, end: string) => ({
+    cycleStart: start,
+    cycleEnd: end,
+    included: { small: 5, photo: 3, medium: 1, large: 0 } as const,
+  });
+
+  it("RN-REP-26 · cuenta ciclo a ciclo y NO acumula lo que sobró de un mes al siguiente", () => {
+    const lineas = planUsage(
+      [ciclo("2026-07-01", "2026-07-31"), ciclo("2026-08-01", "2026-08-31")],
+      [
+        // Julio: 1 de 5. Agosto: 5 de 5.
+        { category: "small", amount: -1, at: "2026-07-10" },
+        { category: "small", amount: -5, at: "2026-08-10" },
+      ],
+      "2026-09-15",
+    );
+
+    const pequenos = lineas.find((l) => l.category === "small")!;
+    expect(pequenos.included).toBe(10);
+    expect(pequenos.used).toBe(6);
+    // Cuatro sin usar en julio, ninguno en agosto. Si se acumulara, la
+    // cuenta daría 4 igual — por eso el caso de abajo, que sí los separa.
+    expect(pequenos.unused).toBe(4);
+  });
+
+  it("RN-REP-26 · un ciclo en el que se gastó de más no compensa a otro en el que sobró", () => {
+    const lineas = planUsage(
+      [ciclo("2026-07-01", "2026-07-31"), ciclo("2026-08-01", "2026-08-31")],
+      [
+        { category: "small", amount: -8, at: "2026-07-10" },
+        { category: "small", amount: -2, at: "2026-08-10" },
+      ],
+      "2026-09-15",
+    );
+
+    const pequenos = lineas.find((l) => l.category === "small")!;
+    // Julio se pasó (8 de 5) y agosto dejó 3 sin usar. Un saldo acumulado
+    // diría 0 sin usar; la verdad es que hay 3 pagados y no gastados.
+    expect(pequenos.unused).toBe(3);
+  });
+
+  it("RN-REP-26 · el ciclo en curso no cuenta, y sin ciclos cerrados no hay sección", () => {
+    expect(planUsage([ciclo("2026-09-01", "2026-09-30")], [], "2026-09-15")).toHaveLength(0);
+  });
+});
+
+describe("RN-REP-23 · pegar la cifra de hace un año", () => {
+  const cifra = (metric: string, value: number | null) => ({
+    section: "digital" as const, metric, value,
+  });
+
+  it("RN-REP-23 · una cifra sin dato de hace un año sale con null, no con cero", () => {
+    const [visitas, nuevas] = withYearAgoFigures(
+      [cifra("sessions", 100), cifra("bookings", 5)],
+      [cifra("sessions", 80)],
+    );
+
+    expect(visitas.yearAgo).toBe(80);
+    // Sin dato hace un año NO es un cero: sería decir que no hubo ninguna.
+    expect(nuevas.yearAgo).toBeNull();
+  });
+
+  it("RN-REP-23 · una cifra que solo existía hace un año no se añade: sería una fila fantasma", () => {
+    const filas = withYearAgoFigures([cifra("sessions", 100)], [cifra("sessions", 80), cifra("vieja", 3)]);
+    expect(filas).toHaveLength(1);
   });
 });
