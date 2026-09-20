@@ -173,15 +173,22 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   obligatorio, y el orden 1..N de la migración 62 se queda vivo y aparte.
 - ~~**Seis canales** de fábrica (página 74) frente a los cuatro que siembra
   la migración 100~~ — hecho el 19/09/2026 (RN-CAN-03, migración 104).
-- **"Prioridad: Alta/Superior"** (páginas 96-97) — resuelto el 19/09/2026
+- **"Prioridad: Alta/Superior"** (página **97**, no la 96: la 96 es
+  "Servicios adicionales". Quinta imprecisión de este mapa) — resuelto el
+  19/09/2026
   (decisión 55, migración 110): es `plans.can_order_requests`, que desde ese
   día tienen Premium y Premium+. El **turno** frente a otros restaurantes es
   otra columna (`queue_rank`) y ese sí sigue sin verlo el cliente.
-- **"Informes: Estándar/Avanzado"** (páginas 96-97) — **sigue abierto**.
-  Bosco dio la dirección el 19/09/2026 —"más completo, con más información y
-  más oportunidades; cuanto mejor sea el plan, más profundidad"— pero no el
-  reparto concreto, y sin saber qué secciones lleva cada plan no se
-  construye.
+- **"Informes: Estándar/Avanzado"** (página **97**) — **en propuesta**. La
+  página 97 es "Versiones de plan", y ahí "Informes" aparece en la
+  comparativa junto a "Prioridad" y a los cambios incluidos, con una línea
+  que dice "Se mejora el nivel de informes a Avanzado": es un **atributo
+  versionado del plan**, no una regla suelta.
+
+  El 20/09/2026 Bosco dio los niveles —**cinco**, uno por plan: básico,
+  estándar, estándar+, avanzado y completo— y pidió que el informe sea "un
+  resumen de todo lo que ha pasado en el mes". Qué lleva cada nivel está
+  propuesto en `docs/PROPUESTA-INFORMES.md` y **pendiente de confirmar**.
 
 ### 5.6 · La barra inferior contradice §20.3
 
