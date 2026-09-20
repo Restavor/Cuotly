@@ -45,8 +45,15 @@ insert into public.space_memberships (space_id, user_id, role, status, can_appro
   ('ff100000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000004', 'admin', 'active', false),
   ('ff100000-0000-0000-0000-000000000001', 'ff000000-0000-0000-0000-000000000003', 'worker', 'active', false);
 
-insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority) values
-  ('ff200000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false);
+-- RN-REP-15 (migración 111, decisión 56) · el plan decide el NIVEL de
+-- informe, y esta suite recorre el informe entero —oportunidades, anexos
+-- y finanzas incluidas—, así que su plan es el de nivel más alto. Con uno
+-- `basic`, que es el valor por defecto de la columna, estas pruebas
+-- estarían midiendo el nivel y no lo que quieren medir.
+--
+-- Que el nivel corta de verdad lo prueba la suite 59, que es su sitio.
+insert into public.plans (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority, report_level) values
+  ('ff200000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false, 'complete');
 
 insert into public.groups (id, space_id, name) values
   ('ff300000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001', 'Grupo R');

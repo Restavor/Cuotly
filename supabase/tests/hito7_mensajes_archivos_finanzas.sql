@@ -2637,6 +2637,14 @@ begin
         'conversation_is_read_only', 'conversation_space_id', 'establishment_space_id',
         'group_space_id', 'message_conversation_id', 'request_establishment_id',
         'request_space_id', 'request_state',
+        -- Migración 111 (RN-REP-16), mismo caso: vive dentro de
+        -- `reports_select` y por eso conserva el EXECUTE. No comprueba
+        -- permisos porque no decide ninguno: dice un HECHO del informe
+        -- —si lleva la sección de Finanzas— y quien decide con ese hecho
+        -- es la política, que además exige `client_can_view_billing`. Lo
+        -- único que revela a quien tenga el uuid de un informe es si esa
+        -- sección está dentro, no una sola cifra suya.
+        'report_includes_finance',
         -- Disparadores: los ejecuta la base, no se invocan por RPC.
         'handle_new_user', 'set_establishment_code',
         -- Disparador de la revisión de cierre: impide cambiar el estado de

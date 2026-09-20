@@ -1453,6 +1453,51 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   `manage_clients`, §21.2). Lo que escribe el proceso de la cola —el envío programado y el aviso de
   las 24 h— deja el actor nulo, como la detección de oportunidades.
 
+- **RN-REP-15 (añadida 20/09/2026, decisión 56)**: **el plan decide el nivel de informe**, y son
+  **cinco**. Lo dibuja la página 97 del diseño definitivo móvil ("Versiones de plan"), donde
+  "Informes" aparece en la comparativa junto a "Prioridad" y a los cambios incluidos, con una línea
+  que dice "Se mejora el nivel de informes a Avanzado": **es un atributo del plan y se versiona como
+  los demás**. Vive en `plans.report_level` y **no se deduce del nombre del plan**, porque Cuotly es
+  multiempresa y otro espacio pondrá los niveles donde quiera.
+
+  Los cinco niveles y lo que **añade** cada uno sobre el anterior —ninguno quita—:
+
+  | Nivel | Restavor | Lo que añade |
+  |---|---|---|
+  | `basic` | Básico | Resumen ejecutivo, las cifras de cabecera y **lo que ha pasado este mes**. Sin comparación y sin Rendimiento digital |
+  | `standard` | Impulso | La **operación completa** y la comparación con el mes anterior en las cifras de cabecera |
+  | `standard_plus` | Impulso+ | **Rendimiento digital** y la comparación en **todas** las cifras |
+  | `advanced` | Premium | Los **desgloses** de digital, **Oportunidades**, **Anexos** y **Finanzas** |
+  | `complete` | Premium+ | **Todas** las métricas, la evolución dentro del periodo, el **detalle cambio a cambio** y las **evidencias** |
+
+  **Por qué Básico es tan corto y no es un descuido:** Básico **no incluye ningún cambio**
+  (RN-COM-01), así que su mes tiene poco que contar. Un informe largo lleno de "no conectado" (§178)
+  sería peor que uno corto que dice lo que hay.
+
+  **El nivel es una barrera, no una sugerencia.** Una sección que el nivel no permite **no se puede
+  incluir**, ni al preparar el borrador ni marcándola a mano después: si bastara con la casilla, un
+  Básico recibiría lo que no paga en cuanto alguien se despistara (CLAUDE.md — ocultar no es
+  controlar). Solo aplica a los informes **de un restaurante**: un consolidado es del espacio y no lo
+  recibe ningún cliente (decisión 30).
+
+  **Un informe ya enviado no cambia de nivel.** Si el restaurante sube de plan mañana, lo que se le
+  envió sigue siendo lo que se le envió: la versión es el original (RN-REP-12) y el nivel se aplica
+  al prepararlo.
+
+- **RN-REP-16 (añadida 20/09/2026, decisión 56)**: **un informe que lleva Finanzas solo lo ve quien
+  tenga "Pagos y facturas"**. No es que se le enseñe el informe sin esa sección: **no ve el informe**.
+  Bosco, 20/09/2026: *"no verá ese informe a no ser que le den permiso"*.
+
+  Es coherente con RN-FIN-07, que ya dice que la facturación del restaurante depende de un permiso
+  por persona (`view_billing`, RN-EST-15) y no del plan: dos Editores del mismo restaurante pueden
+  ver cosas distintas. Y es lo prudente: recortar el PDF por secciones según quién lo abra
+  significaría que el mismo informe es dos documentos, y el informe es **uno** —la versión guardada,
+  RN-REP-12—.
+
+  Consecuencia práctica al preparar: si el informe de un restaurante lleva Finanzas, **solo lo
+  alcanzan las personas con ese permiso**, y quien no lo tenga no lo ve en su panel ni le llega su
+  aviso. Si se quiere que lo vea todo el restaurante, la sección de Finanzas va en un informe aparte.
+
 Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
 redactado (§93: "el informe automático por correo no necesita IA"), no hay plantilla de informe
 configurable por espacio, y no hay envío a una dirección escrita a mano —el correo va a usuarios de

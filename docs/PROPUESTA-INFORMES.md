@@ -1,9 +1,17 @@
 # Propuesta · Los cinco niveles de informe y qué se ve al abrirlo
 
 Escrito el 20/09/2026, después de que Bosco contestara tres cosas sobre los
-informes. **Nada de esto está construido**: es la propuesta que hay que
-confirmar o corregir antes de tocar código, porque `CLAUDE.md` prohíbe
-inventarse el contenido de un producto.
+informes.
+
+> **Estado, 20/09/2026.** Bosco confirmó el reparto de los cinco niveles, que
+> "Lo que ha pasado este mes" va en **todos** con distinto detalle, y que un
+> informe con Finanzas **no lo ve** quien no tenga ese permiso. Eso se
+> construyó como **decisión 56** (migración 111, RN-REP-15/16): la columna, el
+> reparto, la barrera y la visibilidad.
+>
+> **Lo que sigue pendiente de construir** es el apartado 3 de este documento
+> —"Lo que ha pasado este mes"—, la **comparación con el periodo anterior** y
+> el **PDF** de la maqueta.
 
 Lo que Bosco ya ha dicho, literal, y que aquí no se discute:
 
@@ -146,13 +154,14 @@ cosa, en `complete` con su plazo y su evidencia) o solo a partir de alguno.
 
 ---
 
-## 5 · Lo que sigue sin estar decidido
+## 5 · Lo que estaba sin decidir, y cómo quedó
 
-1. **La sección "Lo que ha pasado este mes": ¿en todos los niveles o desde
-   uno?** Y si lleva los pagos, teniendo en cuenta que verlos depende de un
-   permiso (`view_billing`, RN-FIN-07) y no solo del plan.
-2. **El reparto de arriba, nivel a nivel.** Está propuesto, no confirmado.
-3. **Qué pasa con un informe ya enviado si el plan cambia después.** Lo
+1. ~~**La sección "Lo que ha pasado este mes": ¿en todos los niveles o desde
+   uno?**~~ — **en todos**, cambiando el detalle (Bosco, 20/09/2026).
+2. ~~**Si lleva los pagos**~~ — los lleva, y quien no tenga "Pagos y facturas"
+   **no ve ese informe**, no lo ve recortado (RN-REP-16).
+3. ~~**El reparto de arriba, nivel a nivel**~~ — confirmado tal cual.
+4. **Qué pasa con un informe ya enviado si el plan cambia después.** Lo
    coherente con RN-REP-12 —la versión es el original— es que **no cambie**:
-   se envió con el nivel que había. Se dice aquí para que conste, pero es una
-   lectura.
+   se envió con el nivel que había. Está escrito así en RN-REP-15, pero sigue
+   siendo una lectura y no una respuesta de Bosco.

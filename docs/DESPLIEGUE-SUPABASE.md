@@ -10,7 +10,7 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
-**Ninguna.** Las 110 migraciones del repositorio están aplicadas en el proyecto.
+**Ninguna.** Las 111 migraciones del repositorio están aplicadas en el proyecto.
 Las ocho del diseño definitivo móvil —de la 102 a la 109— se aplicaron el
 19/09/2026; abajo, en "Las ocho del 19/09/2026", está qué hacía cada una y cómo
 se comprobó. Lo que sigue es lo que se escribió sobre las seis últimas antes de aplicarlas —qué
@@ -124,6 +124,34 @@ pasar a la siguiente.
   primeros pudiendo ordenar, `grants_priority` solo en Premium+ y los plazos
   sin mover. `database.types.ts` regenerado: su diff son las dos columnas y
   `establishment_queue_rank`.
+
+## La 111 del 20/09/2026
+
+- La **111** (`los_cinco_niveles_de_informe`, RN-REP-15/16, decisión 56). En
+  **tres partes**: la columna `plans.report_level` con su reparto, las
+  funciones del nivel y la política `reports_select`; las dos funciones que
+  preparan y editan un informe; y las dos que crean el catálogo de un espacio.
+
+  **No es solo aditiva**: cambia una política de RLS y estrecha lo que se
+  puede incluir en un informe. Dos cosas que conviene tener presentes al
+  leerla:
+
+  · **El nivel es una barrera**, no un valor por omisión: `set_report_sections`
+    rechaza una sección que el plan no incluye. Sin esa mitad el nivel sería
+    decorativo.
+  · **`reports_select` gana una condición**: un informe con Finanzas solo lo
+    alcanza quien tenga `view_billing`. El lado del equipo no cambia.
+
+  **La parte 3 es la lección de la 110 repetida**: los planes no los crea
+  ninguna migración sino `create_restavor_space()`, así que rellenar los
+  existentes no basta. Queda escrito en la propia migración.
+
+  Comprobado antes: 59 suites en verde y **dos mutaciones** —hacer que el
+  nivel lo admita todo, y quitarle a la política la condición de la
+  facturación— que hacen fallar la suite 59 nombrando la regla. Después,
+  sobre el proyecto: los cinco planes con su nivel, de `basic` a `complete`.
+  `database.types.ts` regenerado: su diff son la columna y las cinco
+  funciones nuevas.
 
 ## Las seis del 17/09/2026, una a una
 

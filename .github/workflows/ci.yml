@@ -454,6 +454,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/los_siete_permisos_del_cliente.sql
 
+      - name: "Informes — Verificar los cinco niveles: qué secciones admite cada uno, que el nivel es una BARRERA y no una sugerencia, y que un informe con Finanzas no lo ve quien no tenga 'Pagos y facturas' (RN-REP-15/16)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/los_cinco_niveles_de_informe.sql
+
       - name: "Planes — Verificar que el plan decide TRES cosas distintas: ordenar los cambios propios, el turno dentro del mismo plazo y el plan alto, y que ninguna arrastra a otra (RN-COM-03, decisión 55)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

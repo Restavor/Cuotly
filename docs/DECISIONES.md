@@ -1203,6 +1203,52 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    Mutación probada: darle a Premium el booleano del plan alto hace fallar `planes_de_restavor.sql`
    nombrando el plan.
 
+56. **Los cinco niveles de informe** (20/09/2026). Cierra el último cabo de la decisión 48, y lo
+   cierra **corrigiendo el planteamiento**: no son dos niveles, son cinco.
+
+   Bosco, literal: *"Básico tiene un informe básico, Impulso tiene un informe estándar, Impulso+ un
+   estándar+, Premium un avanzado y Premium+ un informe completo en el que está detallado todo"*. Y
+   además: las dos cosas a la vez —más informes y más profundidad—, la comparación con el periodo
+   anterior **en todas las cifras**, y el informe tiene que ser **"un resumen de todo lo que ha
+   pasado en el mes"**.
+
+   **Dónde estaba escrito el modelo de datos, que era lo que faltaba.** La página **97** del diseño
+   ("Versiones de plan") enseña "Informes" en la comparativa de versiones, junto a "Prioridad" y a
+   los cambios incluidos, y una línea del resumen de cambios dice *"Se mejora el nivel de informes a
+   Avanzado"*. Es decir: es un **atributo del plan y se versiona con él**. Eso lo convierte en una
+   columna, `plans.report_level`, y **no** en una regla por nombre de plan: Cuotly es multiempresa.
+
+   (De paso, la **quinta** imprecisión del mapa del diseño: los atributos de plan están en la 97, no
+   en la 96, que es "Servicios adicionales".)
+
+   **Lo que se construyó** (migración 111, RN-REP-15/16):
+
+   - La columna con sus cinco valores y el reparto de Restavor, más las dos funciones que crean el
+     catálogo de un espacio —porque los planes **no los crea ninguna migración** y sin eso cada
+     espacio nuevo nacería con Premium+ dando el informe más corto. **Es el mismo tropiezo que la
+     110 tuvo ayer**, y por eso la migración lo deja escrito: una columna nueva en `plans` se toca en
+     **tres** sitios o el espacio siguiente nace mal.
+   - **El nivel es una BARRERA, no una sugerencia**: una sección que el nivel no permite no entra al
+     preparar el borrador **ni marcándola a mano después**. Sin la segunda mitad, el nivel sería
+     decorativo y un Básico recibiría lo que no paga en cuanto alguien se despistara.
+   - **RN-REP-16 · un informe con Finanzas solo lo ve quien tenga "Pagos y facturas"**, y no lo ve
+     recortado: no lo ve. Bosco: *"no verá ese informe a no ser que le den permiso"*. Recortar el PDF
+     según quién lo abra convertiría un informe en dos documentos, y el informe es **uno** (RN-REP-12).
+
+   **Por qué Básico es tan corto**, que parece un descuido y no lo es: Básico no incluye ningún
+   cambio (RN-COM-01), así que su mes tiene poco que contar. Un informe largo lleno de "no
+   conectado" (§178) sería peor que uno corto que dice lo que hay.
+
+   Comprobado: suite 59 `los_cinco_niveles_de_informe.sql` —los cinco escalones uno a uno, que
+   ninguno quita lo del anterior, que un nivel o una sección inventados no abren nada, el reparto de
+   Restavor, y las dos mitades de RN-REP-16— con **dos mutaciones**: hacer que el nivel lo admita
+   todo, y quitarle a la política la condición de la facturación, hacen fallar la suite nombrando la
+   regla.
+
+   **Lo que queda de los informes**, y es lo más grande: la comparación con el periodo anterior, el
+   PDF de la maqueta y la sección **"Lo que ha pasado este mes"**. Están en
+   `docs/PROPUESTA-INFORMES.md` con su coste.
+
 ---
 
 ### Pendiente de completar

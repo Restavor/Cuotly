@@ -1,5 +1,5 @@
 // Generado a partir del esquema real del proyecto de Supabase de Cuotly
-// (generate_typescript_types, 19/09/2026), con las 110 migraciones del
+// (generate_typescript_types, 20/09/2026), con las 111 migraciones del
 // repositorio aplicadas.
 //
 // NO se edita a mano. Se regenera contra el proyecto cada vez que se
@@ -4948,6 +4948,7 @@ export type Database = {
           name: string;
           price_cents: number;
           queue_rank: number;
+          report_level: string;
           space_id: string;
           start_sla_hours: number;
         };
@@ -4963,6 +4964,7 @@ export type Database = {
           name: string;
           price_cents: number;
           queue_rank?: number;
+          report_level?: string;
           space_id: string;
           start_sla_hours: number;
         };
@@ -4978,6 +4980,7 @@ export type Database = {
           name?: string;
           price_cents?: number;
           queue_rank?: number;
+          report_level?: string;
           space_id?: string;
           start_sla_hours?: number;
         };
@@ -8868,6 +8871,10 @@ export type Database = {
         Args: { p_establishment_id: string };
         Returns: number;
       };
+      establishment_report_level: {
+        Args: { p_establishment_id: string };
+        Returns: string;
+      };
       establishment_space_id: {
         Args: { p_establishment_id: string };
         Returns: string;
@@ -10115,10 +10122,19 @@ export type Database = {
         };
         Returns: Json;
       };
+      report_includes_finance: {
+        Args: { p_report_id: string };
+        Returns: boolean;
+      };
       report_is_visible_to_client: {
         Args: { p_status: string };
         Returns: boolean;
       };
+      report_level_allows: {
+        Args: { p_level: string; p_section: string };
+        Returns: boolean;
+      };
+      report_level_rank: { Args: { p_level: string }; Returns: number };
       report_menu_publication_error: {
         Args: { p_menu_id: string; p_reason: string };
         Returns: undefined;
@@ -10142,6 +10158,10 @@ export type Database = {
           audience: string;
           recipient_id: string;
         }[];
+      };
+      report_section_default_for_level: {
+        Args: { p_category: string; p_level: string; p_section: string };
+        Returns: boolean;
       };
       report_section_default_included: {
         Args: { p_category: string; p_section: string };
