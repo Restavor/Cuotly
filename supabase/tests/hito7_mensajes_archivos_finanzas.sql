@@ -2825,9 +2825,12 @@ begin
         --     viaja en el correo de su dueño) y filtran por ella. La clave
         --     ES la barrera, igual que en `my_active_sessions` lo es
         --     `auth.uid()`; ninguna de las dos acepta un id de solicitud.
-        --   · `account_setup_details` e `invitation_signup_details` piden
-        --     también una clave y, cuando no vale, devuelven el motivo y
-        --     NADA más: ni correo, ni espacio, ni de quién era.
+        --   · `account_setup_details`, `invitation_signup_details` y
+        --     `establishment_invitation_details` piden también una clave
+        --     y, cuando no vale, devuelven el motivo y NADA más: ni
+        --     correo, ni espacio, ni restaurante, ni de quién era. La
+        --     tercera es la de RN-ACC-13 (migración 114) y está aquí por
+        --     lo mismo que las otras dos, no por parecerse a ellas.
         --
         -- Lo que de verdad crea una cuenta —`consume_account_setup_token`
         -- y `accept_space_invitation_as`— no está aquí: esas dos están
@@ -2835,7 +2838,7 @@ begin
         -- la suite 48.
         'submit_access_request', 'access_request_follow_up',
         'reply_to_access_request', 'account_setup_details',
-        'invitation_signup_details',
+        'invitation_signup_details', 'establishment_invitation_details',
         -- Migración 98 (paso 2, §36, RN-GLO-06). Misma familia que
         -- `my_active_sessions` y `edit_message`: es la propia persona
         -- tocando lo suyo, y el filtro por `auth.uid()` ES la barrera.

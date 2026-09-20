@@ -2611,10 +2611,29 @@ La familia es **`RN-ACC`** (acceso).
   producto donde alguien hace algo sin sesión, y por eso el formulario público **escribe y no lee**:
   no devuelve nunca si un correo existe, ni cuántas solicitudes hay, ni el estado de ninguna.
 
+- **RN-ACC-13 (añadida 20/09/2026, decisión 59)**: **la tercera puerta es la invitación al panel de
+  un restaurante, y la aprueba el espacio.** Hasta hoy las puertas eran dos (RN-ACC-01): una
+  solicitud de acceso que aprueba Cuotly, o una invitación al espacio que manda su propietario. Con
+  las dos, **un restaurante no podía meter a su encargado**: `grant_establishment_access()` rechaza
+  un correo sin cuenta, y eso dejaba a cada empleado de cada restaurante dependiendo de que el
+  equipo lo diera de alta a mano. Era lo que RN-PAN-12 dejó escrito como pendiente de decidir.
+
+  Bosco eligió el 20/09/2026, entre las tres opciones que se le pusieron: **"el restaurante invita,
+  tú apruebas"**. Y la manda **quien ya puede dar accesos** —el equipo del espacio, o dentro del
+  panel quien tenga "Usuarios y accesos" (RN-EST-17)—; no se cambia ningún permiso, solo deja de
+  exigirse que el correo tenga cuenta previa.
+
+  **Qué abre exactamente, que es poco a propósito:** la invitación da acceso a **ese restaurante y a
+  nada más**. No crea espacio, ni membresía de espacio, ni suscripción (RN-PAN-11), así que la
+  superficie nueva es una cuenta que solo puede entrar en un panel. Esa es la razón por la que se
+  acepta abrir una tercera puerta y no se aceptó abrirla para "entrar con Google" (RN-ACC-10): allí
+  la puerta creaba cuentas sin que nadie respondiera por ellas; aquí responde quien invita, y además
+  lo aprueba el espacio.
+
 Lo que este apartado **no** trae, dicho en claro: **no** sustituye a la solicitud de creación de
 espacio (RN-PLA), **no** crea espacios, paneles ni suscripciones al aprobarse (RN-ACC-03), **no**
-cobra nada, **no** deja ninguna vía de alta que no sean las dos de RN-ACC-01 y **no** toca el bloque
-legal, que sigue en el paso 4 del orden acordado.
+cobra nada, **no** deja ninguna vía de alta que no sean las **tres** de RN-ACC-01 y RN-ACC-13, y
+**no** toca el bloque legal, que sigue en el paso 4 del orden acordado.
 
 ## 38. Las cuatro del grupo C: transferencia, copias, canales y recordatorios — después del Hito 22 (RN-TRA, RN-BCK, RN-CAN, RN-REC)
 
@@ -2930,6 +2949,57 @@ dicho de otra manera, pero al equipo no se lo decía nadie.
 - **RN-PAN-13**: **quitar el último acceso deja el restaurante sin panel**, y la ficha vuelve a decir
   "No creado". Es la consecuencia de RN-PAN-09 y se dice aquí porque parece un fallo cuando ocurre:
   no lo es, es la única lectura que no miente.
+
+- **RN-PAN-14 (añadida 20/09/2026, decisión 59)**: **cómo funciona la invitación al panel**, que es
+  la tercera puerta de RN-ACC-13.
+
+  **Dos caminos según el correo, y el que decide no es quien invita:**
+
+  - **Si el correo ya tiene cuenta en Cuotly**, no hay invitación: se le da el acceso en el momento,
+    exactamente como hasta hoy (`grant_establishment_access()`), y se le avisa (RN-PAN-12). Meter a
+    alguien que ya está dentro nunca necesitó permiso de nadie y sigue sin necesitarlo.
+  - **Si el correo no tiene cuenta**, se crea una **invitación**, y ahí sí entra la aprobación.
+
+  **Quién aprueba, y el caso que parece una trampa y no lo es:** aprueba **el equipo del espacio**
+  (`manage_clients`). Cuando la invitación la manda **el propio equipo**, nace ya aprobada: pedirle
+  al espacio que apruebe su propia invitación no es un control, es una pantalla de más. La
+  aprobación existe para lo que Bosco quiso controlar —que un restaurante cree cuentas de Cuotly— y
+  eso solo pasa cuando invita el restaurante.
+
+  **Los estados** se mueven por tabla de transiciones, como los informes (RN-REP-08) y las
+  solicitudes de espacio (RN-PLA-03), no por comparaciones sueltas:
+
+  `pending_review` → `approved` | `rejected` | `cancelled`
+  `approved` → `accepted` | `cancelled` | `expired`
+
+  `accepted`, `rejected` y `expired` son **finales**. Quien invitó puede **cancelar** mientras no se
+  haya aceptado; el equipo puede **rechazar** con motivo.
+
+  **La caducidad cuenta desde que se aprueba, no desde que se manda**, y son **7 días**, los mismos
+  que la invitación al espacio (HU-03). Contarla desde el envío castigaría al invitado por lo que
+  tardara el equipo en mirarla: el enlace podría llegarle ya muerto.
+
+  **Aceptarla crea la cuenta y da el acceso en la misma transacción**, con clave de idempotencia
+  (`CLAUDE.md` MUST): pulsar dos veces no crea dos cuentas ni dos accesos. El correo va **prefijado
+  y bloqueado**, igual que en RN-ACC-09 y por la misma razón — dejarlo escribir solo produce un
+  rechazo que quien lo recibe no entiende.
+
+  **Cada movimiento deja evento de estado y apunte de auditoría** con actor, fecha, valor anterior,
+  valor nuevo y motivo cuando lo hay (`CLAUDE.md` MUST).
+
+  **Una invitación no es un acceso.** Mientras está pendiente o aprobada, esa persona **no** cuenta
+  para RN-PAN-09: un restaurante con una invitación sin aceptar sigue sin panel, porque nadie puede
+  entrar todavía. Decir lo contrario sería la bandera guardada que RN-PAN-09 evita.
+
+- **RN-PAN-15 (añadida 20/09/2026, decisión 59)**: **el restaurante no ve quién revisó su
+  invitación**. Ve el estado y el motivo del rechazo; nunca el nombre de quien decidió. Es la misma
+  regla que RN-ACC-07 para la solicitud de acceso y que RN-PLA-07 para la de espacio, y el mismo
+  motivo: al cliente le responde "el equipo de mantenimiento", no una persona (P7).
+
+  Como RLS filtra filas y **no columnas**, esto se sostiene con **privilegios de columna**
+  (`CLAUDE.md`): `revoke select on establishment_invitations from anon, authenticated` y luego
+  `grant select` de las columnas sin identidad. Consecuencia práctica: `select *` sobre esa tabla
+  devuelve 403 y toda consulta enumera columnas.
 
 ---
 

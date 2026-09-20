@@ -460,6 +460,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/los_cinco_niveles_de_informe.sql
 
+      - name: "Accesos — Verificar las invitaciones al panel: un correo con cuenta entra en el momento y uno sin cuenta abre una invitación que el equipo tiene que aprobar, el enlace no se gasta sin aprobar ni dos veces, los siete días cuentan desde la aprobación, y el restaurante no ve quién la revisó (RN-ACC-13, RN-PAN-14/15)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/invitaciones_al_panel_del_restaurante.sql
+
       - name: "Informes — Verificar \"Lo que ha pasado este mes\": el relato es el del restaurante y el de su periodo, no lleva ni un uuid ni un nombre del equipo, los cobros solo con Finanzas dentro, un pago revertido no cuenta, y la función no está abierta por RPC (RN-REP-18, RN-REP-13, RN-REP-16, RN-FIN-04)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
