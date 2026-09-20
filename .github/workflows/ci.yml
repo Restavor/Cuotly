@@ -460,6 +460,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/los_cinco_niveles_de_informe.sql
 
+      - name: "Informes — Verificar \"Lo que ha pasado este mes\": el relato es el del restaurante y el de su periodo, no lleva ni un uuid ni un nombre del equipo, los cobros solo con Finanzas dentro, un pago revertido no cuenta, y la función no está abierta por RPC (RN-REP-18, RN-REP-13, RN-REP-16, RN-FIN-04)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/lo_que_ha_pasado_este_mes.sql
+
       - name: "Planes — Verificar que el plan decide TRES cosas distintas: ordenar los cambios propios, el turno dentro del mismo plazo y el plan alto, y que ninguna arrastra a otra (RN-COM-03, decisión 55)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

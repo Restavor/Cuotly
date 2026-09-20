@@ -3030,6 +3030,7 @@ export const es = {
     // §95 · las cinco secciones de la maqueta 10.04, más Finanzas (§89).
     sections: {
       executive_summary: "Resumen ejecutivo",
+      month_activity: "Lo que ha pasado este mes",
       operation: "Operación",
       finance: "Finanzas",
       digital: "Rendimiento digital",
@@ -3039,11 +3040,33 @@ export const es = {
     // Lo que la maqueta escribe en pequeño junto a cada casilla.
     sectionHints: {
       executive_summary: "Lo escribe una persona. Cuotly no lo redacta.",
+      month_activity: "El relato del periodo, día a día. Cuotly lo ordena: no lo escribe.",
       operation: "Solicitudes, trabajos, plazos, bloqueos, consumos y menús.",
       finance: "Ingresos, cobros, impagos y renovaciones.",
       digital: "Web, Google y fuentes conectadas, con la fecha de cada dato.",
       opportunities: "Solo las aprobadas. Las pendientes impiden el envío.",
       annexes: "Evidencias y detalle de apoyo.",
+    },
+    // RN-REP-18 · el relato del mes. Cada clase de entrada dice QUÉ pasó,
+    // nunca quién lo hizo (P7): "Cambio entregado", no "entregado por
+    // Marta". El sujeto que va detrás es texto del propio restaurante —el
+    // código de su cambio, el nombre de su archivo, el día de su menú—.
+    activity: {
+      title: "Lo que ha pasado este mes",
+      empty: "En este periodo no se registró ninguna actividad.",
+      kinds: {
+        request_received: "Solicitud recibida",
+        request_accepted: "Solicitud aceptada",
+        request_rejected: "Solicitud rechazada",
+        job_published: "Cambio publicado",
+        job_completed: "Cambio entregado",
+        job_cancelled: "Cambio cancelado",
+        correction_requested: "Corrección solicitada",
+        menu_published: "Menú del día publicado",
+        file_shared: "Archivo compartido",
+        charge_issued: "Cobro emitido",
+        payment_recorded: "Pago registrado",
+      },
     },
     judgementBadge: "Requiere criterio",
     judgementHint:

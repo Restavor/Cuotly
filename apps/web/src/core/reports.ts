@@ -83,6 +83,10 @@ export interface ReportSectionDefinition {
 
 export const REPORT_SECTION_KEYS = [
   "executive_summary",
+  // RN-REP-18 · va la segunda, justo detrás del resumen: el relato del mes
+  // se lee antes que las cifras. El orden de esta lista es el mismo que el
+  // de `report_sections_catalogue()` en la migración 112.
+  "month_activity",
   "operation",
   "finance",
   "digital",
@@ -123,7 +127,14 @@ export const SECTION_OF_CATEGORY: Readonly<Record<ReportCategory, ReportSectionK
  * (decisión 28a de `docs/DECISIONES.md`) y se cambia en una línea.
  */
 export function defaultIncluded(category: ReportCategory, key: ReportSectionKey): boolean {
-  return key === "executive_summary" || key === "annexes" || key === SECTION_OF_CATEGORY[category];
+  return (
+    key === "executive_summary" ||
+    // RN-REP-18 · en las tres familias: un informe de finanzas también
+    // cuenta un mes. Lo que cambia es de qué va, no si lo cuenta.
+    key === "month_activity" ||
+    key === "annexes" ||
+    key === SECTION_OF_CATEGORY[category]
+  );
 }
 
 export function reportSectionCatalogue(): readonly ReportSectionDefinition[] {
@@ -1020,6 +1031,79 @@ export interface ReportOpportunity {
 }
 
 /** Lo que se guarda como versión: cifras y secciones, nada redactado. */
+/**
+ * RN-REP-18 · las clases de entrada del relato del mes. Son **claves**, no
+ * frases: la frase en español la escribe la pantalla o el PDF desde
+ * `src/i18n/es.ts`, igual que en las oportunidades (§96), para que un
+ * informe guardado en agosto no siga diciendo una frase que se corrigió
+ * en octubre.
+ *
+ * La lista es la misma que produce `report_month_activity()` en la
+ * migración 112. Si allí nace una clase nueva y aquí no, la entrada llega
+ * a la pantalla sin nombre — por eso `activityLabelKey()` no la inventa:
+ * devuelve `null` y el sitio que la pinta se la salta.
+ */
+export const MONTH_ACTIVITY_KINDS = [
+  "request_received",
+  "request_accepted",
+  "request_rejected",
+  "job_published",
+  "job_completed",
+  "job_cancelled",
+  "correction_requested",
+  "menu_published",
+  "file_shared",
+  "charge_issued",
+  "payment_recorded",
+] as const;
+export type MonthActivityKind = (typeof MONTH_ACTIVITY_KINDS)[number];
+
+export function isMonthActivityKind(value: string): value is MonthActivityKind {
+  return (MONTH_ACTIVITY_KINDS as readonly string[]).includes(value);
+}
+
+/**
+ * Una cosa que pasó, con su fecha y de qué iba. `subject` es texto del
+ * **propio restaurante** —el código de su cambio, el nombre de su archivo,
+ * el día de su menú—, nunca el nombre de nadie del equipo (P7).
+ */
+export interface MonthActivityEntry {
+  readonly at: string;
+  readonly kind: MonthActivityKind;
+  readonly subject: string | null;
+  readonly category: string | null;
+}
+
+/**
+ * Las filas de la base, ya filtradas: lo que no se reconoce **se cae** en
+ * vez de viajar dentro de la versión con una clave que nadie sabe pintar.
+ */
+export function parseMonthActivity(raw: unknown): readonly MonthActivityEntry[] {
+  const lista = raw && typeof raw === "object" ? (raw as Record<string, unknown>).entries : null;
+  if (!Array.isArray(lista)) return [];
+
+  return lista.flatMap((fila): MonthActivityEntry[] => {
+    if (!fila || typeof fila !== "object") return [];
+    const row = fila as Record<string, unknown>;
+    const kind = typeof row.kind === "string" ? row.kind : "";
+    const at = typeof row.at === "string" ? row.at : "";
+    if (!isMonthActivityKind(kind) || at === "") return [];
+    return [
+      {
+        at,
+        kind,
+        subject: typeof row.subject === "string" ? row.subject : null,
+        category: typeof row.category === "string" ? row.category : null,
+      },
+    ];
+  });
+}
+
+/** Lo que pasó, del día 1 al último. La base ya las ordena; esto lo sostiene. */
+export function orderedActivity(entries: readonly MonthActivityEntry[]): readonly MonthActivityEntry[] {
+  return [...entries].sort((a, b) => (a.at === b.at ? a.kind.localeCompare(b.kind) : a.at.localeCompare(b.at)));
+}
+
 export interface ReportSnapshot {
   readonly category: ReportCategory;
   readonly period: ReportPeriod;
@@ -1030,6 +1114,13 @@ export interface ReportSnapshot {
   readonly opportunities: readonly ReportOpportunity[];
   /** Texto que escribió una persona, por sección (§95.5). Nunca generado. */
   readonly notes: Readonly<Record<string, string>>;
+  /**
+   * RN-REP-18 · lo que pasó en el periodo, si el informe lleva la sección.
+   * Opcional porque las versiones guardadas **antes** de la migración 112
+   * no lo traen, y una versión vieja es el original de su día (RN-REP-12):
+   * no se recalcula, se lee como lo que es.
+   */
+  readonly activity?: readonly MonthActivityEntry[];
 }
 
 /**

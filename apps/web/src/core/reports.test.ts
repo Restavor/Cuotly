@@ -95,9 +95,13 @@ describe("§89 · las tres familias y las secciones de la maqueta 10.04", () => 
     expect([...REPORT_CATEGORIES]).toEqual(["operation", "finance", "digital"]);
   });
 
-  it("las secciones son las cinco de la maqueta más Finanzas", () => {
+  it("las secciones son las cinco de la maqueta, más Finanzas y el relato del mes", () => {
+    // El orden es el mismo que el de `report_sections_catalogue()` en SQL
+    // (migración 112): el relato del mes va detrás del resumen, porque se
+    // lee antes que las cifras.
     expect([...REPORT_SECTION_KEYS]).toEqual([
       "executive_summary",
+      "month_activity",
       "operation",
       "finance",
       "digital",
@@ -111,16 +115,16 @@ describe("§89 · las tres familias y las secciones de la maqueta 10.04", () => 
     expect([...conCriterio]).toEqual(["executive_summary", "opportunities"]);
   });
 
-  it("el borrador nace con el resumen, su familia y los anexos; las oportunidades nunca", () => {
+  it("RN-REP-18 · el borrador nace con el resumen, el relato del mes, su familia y los anexos; las oportunidades nunca", () => {
     // Requerir criterio NO es entrar apagada: la maqueta dibuja el resumen
     // ejecutivo marcado y las oportunidades sin marcar (§99: "Incluir en
     // informe" se vuelve a decidir).
     const operacion = defaultSections("operation");
     const incluidas = operacion.filter((section) => section.included).map((section) => section.key);
-    expect(incluidas).toEqual(["executive_summary", "operation", "annexes"]);
+    expect(incluidas).toEqual(["executive_summary", "month_activity", "operation", "annexes"]);
 
     const finanzas = defaultSections("finance").filter((s) => s.included).map((s) => s.key);
-    expect(finanzas).toEqual(["executive_summary", "finance", "annexes"]);
+    expect(finanzas).toEqual(["executive_summary", "month_activity", "finance", "annexes"]);
 
     for (const category of REPORT_CATEGORIES) {
       expect(defaultSections(category).find((s) => s.key === "opportunities")?.included).toBe(false);

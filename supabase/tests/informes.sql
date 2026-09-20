@@ -116,15 +116,19 @@ begin
     raise exception 'RN-REP-09 FALLIDO: una sección que requiere criterio no lo dice' using errcode = 'assert_failure';
   end if;
   if public.report_section_requires_judgement('operation')
+     or public.report_section_requires_judgement('month_activity')
      or public.report_section_requires_judgement('finance')
      or public.report_section_requires_judgement('digital')
      or public.report_section_requires_judgement('annexes') then
     raise exception 'RN-REP-09 FALLIDO: una sección de cifras pide criterio' using errcode = 'assert_failure';
   end if;
 
-  -- Las secciones son las de la maqueta 10.04, más Finanzas (§89).
+  -- Las secciones son las de la maqueta 10.04, más Finanzas (§89) y "Lo
+  -- que ha pasado este mes" (RN-REP-18, migración 112), que va la segunda
+  -- porque el relato del mes se lee antes que las cifras.
   if public.report_sections_catalogue() <> array[
-       'executive_summary', 'operation', 'finance', 'digital', 'opportunities', 'annexes'] then
+       'executive_summary', 'month_activity', 'operation', 'finance',
+       'digital', 'opportunities', 'annexes'] then
     raise exception 'RN-REP-09 FALLIDO: el catálogo de secciones no es el de la maqueta' using errcode = 'assert_failure';
   end if;
 
@@ -374,10 +378,14 @@ begin
     raise exception 'RN-REP-08 FALLIDO: un informe recién preparado no nace "Preparando"' using errcode = 'assert_failure';
   end if;
 
-  -- §95.2 · el borrador nace con las seis secciones y con tres marcadas:
-  -- el resumen ejecutivo, la de su familia y los anexos (maqueta 10.04).
-  if (select count(*) from public.report_sections where report_id = v_id) <> 6 then
-    raise exception 'RN-REP-09 FALLIDO: el borrador no trae las seis secciones' using errcode = 'assert_failure';
+  -- §95.2 · el borrador nace con las SIETE secciones del catálogo y con
+  -- cuatro marcadas: el resumen ejecutivo, "Lo que ha pasado este mes"
+  -- (RN-REP-18), la de su familia y los anexos (maqueta 10.04).
+  if (select count(*) from public.report_sections where report_id = v_id) <> 7 then
+    raise exception 'RN-REP-09 FALLIDO: el borrador no trae las siete secciones' using errcode = 'assert_failure';
+  end if;
+  if not (select included from public.report_sections where report_id = v_id and section_key = 'month_activity') then
+    raise exception 'RN-REP-18 FALLIDO: el relato del mes no entra marcado, y es lo que Bosco pidió que el informe contara' using errcode = 'assert_failure';
   end if;
   if not (select included from public.report_sections where report_id = v_id and section_key = 'executive_summary') then
     raise exception 'RN-REP-09 FALLIDO: el resumen ejecutivo no entra marcado, y la maqueta lo dibuja marcado' using errcode = 'assert_failure';

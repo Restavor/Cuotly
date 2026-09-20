@@ -83,6 +83,18 @@ export interface ReportGateway {
     to: string,
   ): Promise<ReadonlyMap<string, readonly MetricPoint[]>>;
   providerStates(establishmentId: string): Promise<readonly ProviderState[]>;
+  /**
+   * RN-REP-18 · lo que pasó en el periodo. `includeFinance` lo decide la
+   * sección de Finanzas de ESE informe, no quien llama: sin ella, los
+   * cobros no salen (RN-REP-16).
+   */
+  monthActivity(
+    spaceId: string,
+    establishmentId: string | null,
+    from: string,
+    to: string,
+    includeFinance: boolean,
+  ): Promise<Record<string, unknown>>;
   /** §96 · las oportunidades APROBADAS del periodo, que son las que entran. */
   approvedOpportunities(
     establishmentId: string,
@@ -185,6 +197,16 @@ export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
           ? await establishmentReportLevel(client, data.establishment_id)
           : "complete",
       };
+    },
+
+    monthActivity(spaceId, establishmentId, from, to, includeFinance) {
+      return rpc<Record<string, unknown>>(client, "report_month_activity", {
+        p_space_id: spaceId,
+        p_establishment_id: establishmentId,
+        p_from: from,
+        p_to: to,
+        p_include_finance: includeFinance,
+      });
     },
 
     operationDataset(spaceId, establishmentId, from, to) {

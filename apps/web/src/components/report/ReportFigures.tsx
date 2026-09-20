@@ -8,6 +8,7 @@ import {
   type ReportSectionKey,
   type ReportSnapshot,
   figuresOfSection,
+  orderedActivity,
   orderedSections,
 } from "@/core/reports";
 import { fechaCorta } from "@/i18n/dates";
@@ -76,11 +77,46 @@ function OpportunityList({ snapshot }: { snapshot: ReportSnapshot }) {
   );
 }
 
+/**
+ * RN-REP-18 · el relato del mes. Cada fila dice **qué pasó y cuándo**, y
+ * nunca quién lo hizo (P7): la versión no trae ninguna identidad del
+ * equipo dentro, y aquí tampoco habría de dónde sacarla.
+ *
+ * Una versión generada **antes** de la migración 112 no trae `activity`.
+ * No se recalcula —una versión es el original de su día (RN-REP-12)—: se
+ * dice que ese informe no lo trae, que es distinto de "no pasó nada".
+ */
+function MonthActivity({ snapshot }: { snapshot: ReportSnapshot }) {
+  const entradas = snapshot.activity;
+  if (entradas === undefined) {
+    return <EmptyReason reason="no_data_yet" title={t.activity.title} />;
+  }
+  if (entradas.length === 0) {
+    return <p className="text-sm text-text-secondary">{t.activity.empty}</p>;
+  }
+
+  return (
+    <ol className="space-y-2">
+      {orderedActivity(entradas).map((entrada, index) => (
+        <li
+          key={`${entrada.at}-${entrada.kind}-${index}`}
+          className="flex flex-wrap items-baseline gap-x-2 rounded-[10px] bg-soft-surface p-3 text-sm"
+        >
+          <span className="text-xs text-text-secondary">{fechaCorta(entrada.at)}</span>
+          <span className="font-semibold text-text">{t.activity.kinds[entrada.kind]}</span>
+          {entrada.subject ? <span className="text-text-secondary">{entrada.subject}</span> : null}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
 /** Si una sección trae algo dentro de la versión. Una que no trae nada y
  *  que el equipo tampoco incluyó no se ofrece: encenderla solo enseñaría
  *  un motivo de vacío, que es ruido y no información. */
 function tieneContenido(snapshot: ReportSnapshot, key: ReportSectionKey): boolean {
   if (key === "opportunities") return snapshot.opportunities.length > 0;
+  if (key === "month_activity") return (snapshot.activity?.length ?? 0) > 0;
   return figuresOfSection(snapshot, key).length > 0;
 }
 
@@ -144,6 +180,8 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
 
               {section.key === "opportunities" ? (
                 <OpportunityList snapshot={snapshot} />
+              ) : section.key === "month_activity" ? (
+                <MonthActivity snapshot={snapshot} />
               ) : figures.length === 0 ? (
                 <EmptyReason reason="no_data_yet" title={t.sections[section.key]} />
               ) : (

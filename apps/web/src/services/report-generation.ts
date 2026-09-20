@@ -47,6 +47,7 @@ import {
   type ReportSectionKey,
   type ReportSnapshot,
   operationalIndicators,
+  parseMonthActivity,
   previousPeriod,
   reportLevelComparison,
   withPreviousFigures,
@@ -421,12 +422,41 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
       ? await deps.gateway.approvedOpportunities(report.establishmentId, period.start, period.end)
       : [];
 
+  /*
+    RN-REP-18 (decisión 57) · "Lo que ha pasado este mes".
+
+    Se pide **solo si la sección entra**, y ahí se separa de las cifras a
+    propósito: la decisión 29 manda guardar las cifras de las tres familias
+    aunque el equipo las desmarque, porque son datos del restaurante y
+    verlas después exigiría regenerar. El relato no es eso: es una LISTA
+    que puede tener cientos de filas y que no se resume en nada. Guardarla
+    en una versión donde nadie la va a leer engorda cada versión del libro
+    inmutable para siempre.
+
+    `includeFinance` sale de la sección de Finanzas de **este** informe, no
+    de quien llama (RN-REP-16): sin ella, el relato no cuenta ni un cobro.
+    Un informe que sí la lleva ya solo lo ve quien tiene "Pagos y
+    facturas", así que el dinero no alcanza a nadie que no pudiera verlo.
+  */
+  const activity = incluidas.has("month_activity")
+    ? parseMonthActivity(
+        await deps.gateway.monthActivity(
+          report.spaceId,
+          report.establishmentId,
+          period.start,
+          period.end,
+          incluidas.has("finance"),
+        ),
+      )
+    : [];
+
   return {
     category: report.category,
     period,
     generatedAt: now.toISOString(),
     sections: report.sections,
     figures: conAnterior,
+    activity,
     opportunities,
     // RN-REP-13 · solo las notas de las secciones que ENTRAN. La versión
     // se le envía al restaurante, y una nota de una sección que el equipo

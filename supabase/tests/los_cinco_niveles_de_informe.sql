@@ -31,14 +31,17 @@ begin
   -- `>=` por un `>`, aquí se cae.
   for v in
     select * from (values
-      ('basic',         true,  true,  false, false, false, false),
-      ('standard',      true,  true,  false, false, false, false),
-      ('standard_plus', true,  true,  true,  false, false, false),
-      ('advanced',      true,  true,  true,  true,  true,  true),
-      ('complete',      true,  true,  true,  true,  true,  true)
-    ) as f(nivel, resumen, operacion, digital, oportunidades, anexos, finanzas)
+      -- RN-REP-18 · el relato del mes va en los cinco, Básico incluido:
+      -- es lo que hace que su informe no sea una hoja en blanco.
+      ('basic',         true,  true,  true,  false, false, false, false),
+      ('standard',      true,  true,  true,  false, false, false, false),
+      ('standard_plus', true,  true,  true,  true,  false, false, false),
+      ('advanced',      true,  true,  true,  true,  true,  true,  true),
+      ('complete',      true,  true,  true,  true,  true,  true,  true)
+    ) as f(nivel, resumen, relato, operacion, digital, oportunidades, anexos, finanzas)
   loop
     if public.report_level_allows(v.nivel, 'executive_summary') <> v.resumen
+       or public.report_level_allows(v.nivel, 'month_activity') <> v.relato
        or public.report_level_allows(v.nivel, 'operation') <> v.operacion
        or public.report_level_allows(v.nivel, 'digital') <> v.digital
        or public.report_level_allows(v.nivel, 'opportunities') <> v.oportunidades

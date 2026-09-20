@@ -32,6 +32,7 @@ function gateway(overrides: Partial<ReportGateway> = {}): ReportGateway {
     financeDataset: vi.fn().mockResolvedValue({}),
     metricPoints: vi.fn().mockResolvedValue(new Map()),
     providerStates: vi.fn().mockResolvedValue([]),
+    monthActivity: vi.fn().mockResolvedValue({ entries: [] }),
     approvedOpportunities: vi.fn().mockResolvedValue([]),
     holidays: vi.fn().mockResolvedValue([]),
     storeVersion: vi.fn().mockResolvedValue("version-1"),
@@ -534,6 +535,74 @@ describe("la versión que se guarda (RN-REP-12)", () => {
     // `jobs_blocked` no lo es: sale sin comparación, que no es lo mismo
     // que salir con la comparación vacía.
     expect(snapshot.figures.find((f) => f.metric === "jobs_blocked")?.previous).toBeUndefined();
+  });
+
+  it("RN-REP-18 · el relato del mes entra si la sección entra, y solo entonces se pide", async () => {
+    const relato = vi.fn().mockResolvedValue({
+      entries: [
+        { at: "2026-08-10T11:00:00Z", kind: "job_completed", subject: "TRB-1", category: "small" },
+        { at: "2026-08-03T09:00:00Z", kind: "request_received", subject: "SOL-1", category: null },
+      ],
+    });
+    const puertas = gateway({ monthActivity: relato });
+
+    const sin = await buildSnapshot({ gateway: puertas, now: () => AHORA }, informe());
+    expect(relato).not.toHaveBeenCalled();
+    expect(sin.activity).toEqual([]);
+
+    const con = await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({ sections: [{ key: "month_activity", position: 1, included: true }] }),
+    );
+    expect(con.activity).toHaveLength(2);
+    // La base ya las ordena; el dominio lo sostiene al pintarlas.
+    expect(con.activity?.map((entrada) => entrada.kind)).toEqual(["job_completed", "request_received"]);
+  });
+
+  it("RN-REP-16 · el relato solo cuenta cobros si el informe lleva Finanzas", async () => {
+    const relato = vi.fn().mockResolvedValue({ entries: [] });
+    const puertas = gateway({ monthActivity: relato });
+
+    await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({ sections: [{ key: "month_activity", position: 1, included: true }] }),
+    );
+    expect(relato).toHaveBeenLastCalledWith("space-1", "est-1", "2026-08-01", "2026-08-31", false);
+
+    await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({
+        sections: [
+          { key: "month_activity", position: 1, included: true },
+          { key: "finance", position: 2, included: true },
+        ],
+      }),
+    );
+    // El parámetro sale de ESTE informe, no de quien llama: un informe con
+    // Finanzas ya solo lo ve quien tiene "Pagos y facturas".
+    expect(relato).toHaveBeenLastCalledWith("space-1", "est-1", "2026-08-01", "2026-08-31", true);
+  });
+
+  it("RN-REP-18 · una entrada con una clase que no se reconoce se cae en vez de viajar sin nombre", async () => {
+    const puertas = gateway({
+      monthActivity: vi.fn().mockResolvedValue({
+        entries: [
+          { at: "2026-08-03T09:00:00Z", kind: "request_received", subject: "SOL-1", category: null },
+          { at: "2026-08-04T09:00:00Z", kind: "algo_que_no_existe", subject: "X", category: null },
+          { kind: "job_completed", subject: "sin fecha", category: null },
+        ],
+      }),
+    });
+
+    const snapshot = await buildSnapshot(
+      { gateway: puertas, now: () => AHORA },
+      informe({ sections: [{ key: "month_activity", position: 1, included: true }] }),
+    );
+
+    // Una clave que la pantalla no sabe pintar saldría como un hueco mudo,
+    // y una entrada sin fecha no tiene sitio en un relato ordenado.
+    expect(snapshot.activity).toHaveLength(1);
+    expect(snapshot.activity?.[0].kind).toBe("request_received");
   });
 
   it("RN-CLK-10 · el calendario se arma con los festivos conocidos al empezar el periodo", async () => {

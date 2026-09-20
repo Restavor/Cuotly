@@ -1553,10 +1553,18 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   Es una sección del catálogo (`month_activity`) y entra **en los cinco niveles**, Básico incluido:
   es justo lo que un Básico —que no incluye ningún cambio (RN-COM-01)— sí tiene que poder leer.
 
-  **Qué entra**, cada entrada con su fecha y su estado: solicitudes recibidas y en qué acabaron,
-  cambios entregados, menús publicados, incidencias abiertas y cerradas, archivos entregados, y los
-  cobros **solo si el informe lleva Finanzas** — porque si no, un informe de cualquier nivel estaría
-  enseñando dinero a quien no tiene "Pagos y facturas" (RN-REP-16, RN-EST-15).
+  **Qué entra**, cada entrada con su fecha: solicitudes recibidas, aceptadas y rechazadas; cambios
+  publicados, entregados y cancelados; correcciones que pidió el restaurante; menús del día
+  publicados; archivos compartidos con él; y los cobros y pagos **solo si el informe lleva
+  Finanzas** — porque si no, un informe de cualquier nivel estaría enseñando dinero a quien no tiene
+  "Pagos y facturas" (RN-REP-16, RN-EST-15).
+
+  **Tres cosas que NO entran y podrían parecer que sí.** Las **incidencias** de soporte: son del
+  espacio a Cuotly (§131, RN-SOP), no del restaurante, y contarlas aquí sería contarle las de otro.
+  Las **correcciones por error del equipo**: se corrigen sin que al restaurante le cueste nada
+  (RN-COR-07), y ponerlas en su relato es contarle nuestra cocina. Los **archivos internos**: son del
+  equipo y el cliente no los ve ni debe saber que existen (RN-ARC-04). Tampoco un **borrador de
+  solicitud** que nunca envió, ni un **pago revertido**, que no pasó (RN-FIN-04).
 
   **Ninguna entrada lleva identidad del equipo** (P7, RN-REP-13): dice qué pasó y cuándo, nunca
   quién lo hizo. "Cambio entregado", no "entregado por Marta".
