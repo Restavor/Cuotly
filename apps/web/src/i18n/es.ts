@@ -755,6 +755,15 @@ export const es = {
       title: "Estado por restaurante",
       seeAll: "Ver todos",
       empty: "Todavía no hay ningún restaurante en este espacio.",
+      // La barra mide lo que lleva gastado de su bolsa en el ciclo
+      // vigente, sumando las cuatro categorías (decisión de Bosco,
+      // 20/09/2026). Las otras dos frases son los casos en los que un
+      // porcentaje mentiría.
+      usage: (usados: number, incluidos: number) =>
+        `${usados} de ${incluidos} cambios usados este ciclo`,
+      usageLabel: "Bolsa del ciclo",
+      nothingIncluded: "Su plan no incluye cambios: todo se presupuesta aparte.",
+      noCycle: "Sin ciclo de consumo en marcha.",
     },
 
     attention: {

@@ -217,3 +217,64 @@ export function describeLedgerEntry(entry: {
     amount: entry.amount,
   };
 }
+
+/**
+ * Página 22 del diseño definitivo móvil · **cuánto lleva gastado de su
+ * bolsa** un restaurante en el ciclo vigente, sumando las cuatro
+ * categorías. Es la barra de "Estado por restaurante", y la definió Bosco
+ * el 20/09/2026: *"lo que lleva consumidos de cambios, se suman todos los
+ * cambios y según vayan gastando se hace el porcentaje"*.
+ *
+ * **Tres respuestas y no un número**, porque hay tres situaciones que se
+ * leen distinto y un porcentaje solo sabría contar una:
+ *
+ *   · `measured` — hay bolsa y se ha gastado parte. El único caso con
+ *     barra.
+ *   · `nothing_included` — el plan **no incluye ningún cambio** (Básico,
+ *     RN-COM-01). Aquí un 0 % diría "no ha gastado nada de lo suyo" y un
+ *     100 % diría lo contrario; los dos serían mentira, porque no hay
+ *     bolsa de la que gastar.
+ *   · `no_cycle` — no hay ciclo vigente que mirar: sin plan, o entre
+ *     ciclos. No es un cero, es que no hay nada que medir (CA-20).
+ *
+ * **No se acumula entre ciclos** (RN-COM-06): esto mide el ciclo de ahora,
+ * que es lo que el restaurante todavía puede gastar.
+ */
+export type CycleUsage =
+  | {
+      readonly kind: "measured";
+      readonly used: number;
+      readonly included: number;
+      /** Entero de 0 a 100. */
+      readonly percent: number;
+    }
+  | { readonly kind: "nothing_included" }
+  | { readonly kind: "no_cycle" };
+
+export function cycleUsage(allowance: CycleAllowance | null): CycleUsage {
+  if (allowance === null) return { kind: "no_cycle" };
+
+  const categorias = ["small", "photo", "medium", "large"] as const;
+  const included = categorias.reduce((total, c) => total + allowance.included[c], 0);
+  if (included <= 0) return { kind: "nothing_included" };
+
+  /*
+    Gastado = incluido − restante, categoría a categoría. Se suma después
+    y no antes: un restante negativo no existe —`accept_request` no deja
+    aceptar sin saldo— pero si un día lo hubiera, restar por categoría lo
+    deja en su sitio en vez de repartirlo entre las demás.
+  */
+  const used = categorias.reduce(
+    (total, c) => total + Math.max(0, allowance.included[c] - allowance.remaining[c]),
+    0,
+  );
+
+  return {
+    kind: "measured",
+    used,
+    included,
+    // Se acota a 100: la barra es una proporción, y una barra que se sale
+    // de su caja no dice "se ha pasado", dice que está rota.
+    percent: Math.min(100, Math.round((used / included) * 100)),
+  };
+}

@@ -4,9 +4,11 @@ import {
   DEBIT_AMOUNT,
   calculateConsumptionBalance,
   cycleAllowance,
+  cycleUsage,
   describeLedgerEntry,
   isCategoryIncludedInPlan,
   resolveCancellationOutcome,
+  type ChangeCategory,
   type PlanAllowance,
 } from "./consumption-ledger";
 
@@ -176,5 +178,57 @@ describe("consumption-ledger — HU-24 y HU-25 (Hito 7)", () => {
     it("sin motivo escrito no se inventa uno (P6)", () => {
       expect(describeLedgerEntry({ entryType: "compensatory_credit", reason: null, createdBy: null, amount: CREDIT_AMOUNT }).explanation).toBeNull();
     });
+  });
+});
+
+describe("cycleUsage · la barra de 'Estado por restaurante' (página 22, decisión de Bosco 20/09/2026)", () => {
+  const ciclo = (included: Record<ChangeCategory, number>, remaining: Record<ChangeCategory, number>) => ({
+    included,
+    remaining,
+    renewsAt: new Date("2026-10-01T00:00:00Z"),
+  });
+
+  it("suma las cuatro categorías: lo gastado sobre lo incluido", () => {
+    // Premium+: 20 pequeños, 15 fotos, 4 medianos, 1 grande = 40.
+    // Gastados: 10 + 5 + 1 + 0 = 16 → 40 %.
+    const uso = cycleUsage(
+      ciclo(
+        { small: 20, photo: 15, medium: 4, large: 1 },
+        { small: 10, photo: 10, medium: 3, large: 1 },
+      ),
+    );
+
+    expect(uso).toEqual({ kind: "measured", used: 16, included: 40, percent: 40 });
+  });
+
+  it("un plan sin ningún cambio incluido NO es un 0 %: no hay bolsa que medir", () => {
+    // Básico (RN-COM-01). Un 0 % diría "no ha gastado nada de lo suyo" y
+    // no tiene nada suyo que gastar.
+    const uso = cycleUsage(
+      ciclo(
+        { small: 0, photo: 0, medium: 0, large: 0 },
+        { small: 0, photo: 0, medium: 0, large: 0 },
+      ),
+    );
+
+    expect(uso).toEqual({ kind: "nothing_included" });
+  });
+
+  it("sin ciclo vigente no hay porcentaje, y tampoco un cero", () => {
+    expect(cycleUsage(null)).toEqual({ kind: "no_cycle" });
+  });
+
+  it("la bolsa entera gastada da 100, y nunca pasa de ahí", () => {
+    const uso = cycleUsage(
+      ciclo(
+        { small: 5, photo: 0, medium: 0, large: 0 },
+        // Un restante negativo no debería existir; si lo hubiera, la barra
+        // se queda en 100 en vez de salirse de su caja.
+        { small: -2, photo: 0, medium: 0, large: 0 },
+      ),
+    );
+
+    expect(uso.kind).toBe("measured");
+    expect(uso).toMatchObject({ percent: 100 });
   });
 });

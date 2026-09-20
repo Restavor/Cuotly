@@ -12,6 +12,7 @@ import { loadLevel, type LoadLevel } from "@/core/load-points";
 import { t2Status, t3Status, type CounterStatus } from "@/core/sla-timers";
 import type { TimerEvent, TimerEventType } from "@/core/timer-events";
 import type { ChangeCategory } from "@/core/classification-rules";
+import { cycleAllowance, cycleUsage, type CycleUsage } from "@/core/consumption-ledger";
 import type { createClient } from "@/lib/supabase/server";
 
 import { loadMenuQueue } from "./menu-diario/queue-load";
@@ -54,11 +55,16 @@ export interface SpaceHome {
    * y el segundo incluye pausados, suspendidos y archivados.
    */
   readonly establishmentsTotal: number;
-  /** Página 22 · "Estado por restaurante", con el estado de cada uno. */
+  /**
+   * Página 22 · "Estado por restaurante": cada uno con su estado y con
+   * **cuánto lleva gastado de su bolsa** en el ciclo vigente, que es lo
+   * que mide la barra (decisión de Bosco, 20/09/2026).
+   */
   readonly restaurants: readonly {
     readonly id: string;
     readonly name: string;
     readonly status: string;
+    readonly usage: CycleUsage;
   }[];
   /** Página 22 · "Trabajos en curso", y de ellos cuántos van en plazo. */
   readonly jobsInProgress: number;
@@ -358,6 +364,7 @@ export async function loadSpaceHome(
     { data: canAssignJobs },
     { data: events },
     menuQueue,
+    { data: ciclos },
   ] = await Promise.all([
     loadSpaceAttention(supabase, spaceId, spaceSlug, now),
     supabase.rpc("space_team_load", { p_space_id: spaceId }),
@@ -373,6 +380,20 @@ export async function loadSpaceHome(
       .order("occurred_at", { ascending: false })
       .limit(8),
     loadMenuQueue(supabase, spaceId, timeZone, now),
+    /*
+      Página 22 · el ciclo de consumo **vigente** de cada restaurante del
+      espacio, en una consulta. `cycle_start <= ahora < cycle_end` es lo
+      que define "vigente"; los cerrados no se miran porque la bolsa no se
+      acumula (RN-COM-06) y la barra dice lo que todavía puede gastar.
+    */
+    supabase
+      .from("consumption_cycles")
+      .select(
+        "id, establishment_id, cycle_start, cycle_end, included_small, included_photo, included_medium, included_large",
+      )
+      .eq("space_id", spaceId)
+      .lte("cycle_start", now.toISOString())
+      .gt("cycle_end", now.toISOString()),
   ]);
 
   // ------------------------------------------------------------------
@@ -389,6 +410,49 @@ export async function loadSpaceHome(
       .in("id", loadRows.map((row) => row.user_id));
     for (const p of profiles ?? []) {
       names.set(p.id, p.full_name?.trim() || p.email);
+    }
+  }
+
+  /*
+    Página 22 · la barra de cada restaurante. Los apuntes del ciclo se
+    piden en UNA consulta para todos los ciclos vivos del espacio, no una
+    por restaurante: en un espacio con veinte locales serían veinte
+    vueltas en la pantalla que más se abre.
+
+    Un restaurante sin ciclo vigente **no entra en el mapa**, y abajo se
+    lee como `no_cycle`: no es un cero, es que no hay nada que medir.
+  */
+  const cicloRows = ciclos ?? [];
+  const usoPorRestaurante = new Map<string, CycleUsage>();
+  if (cicloRows.length > 0) {
+    const { data: apuntes } = await supabase
+      .from("consumption_entries")
+      .select("consumption_cycle_id, category, amount")
+      .in(
+        "consumption_cycle_id",
+        cicloRows.map((c) => c.id),
+      );
+
+    for (const ciclo of cicloRows) {
+      const suyos = (apuntes ?? []).filter((a) => a.consumption_cycle_id === ciclo.id);
+      usoPorRestaurante.set(
+        ciclo.establishment_id,
+        cycleUsage(
+          cycleAllowance(
+            {
+              includedSmall: ciclo.included_small,
+              includedPhoto: ciclo.included_photo,
+              includedMedium: ciclo.included_medium,
+              includedLarge: ciclo.included_large,
+              renewsAt: new Date(ciclo.cycle_end),
+            },
+            suyos.map((a) => ({
+              amount: a.amount,
+              category: a.category as ChangeCategory,
+            })),
+          ),
+        ),
+      );
     }
   }
 
@@ -429,6 +493,7 @@ export async function loadSpaceHome(
       id: e.id,
       name: e.name,
       status: e.status,
+      usage: usoPorRestaurante.get(e.id) ?? { kind: "no_cycle" as const },
     })),
     jobsInProgress: attention.jobsInProgress,
     jobsOnTime: attention.jobsOnTime,

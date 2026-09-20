@@ -256,20 +256,55 @@ export default async function SpacePage({
               <li key={restaurante.id}>
                 <Link
                   href={`${base}/restaurantes/${restaurante.id}`}
-                  className="flex items-center gap-3 py-3 transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+                  className="block py-3 transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
                 >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface">
-                    <Icon name="building" className="h-5 w-5 text-primary-dark" />
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface">
+                      <Icon name="building" className="h-5 w-5 text-primary-dark" />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-medium text-text">
+                      {restaurante.name}
+                    </span>
+                    <StatusBadge tone={restaurante.status === "active" ? "success" : "neutral"}>
+                      {restaurante.status in es.space.statuses
+                        ? es.space.statuses[restaurante.status as keyof typeof es.space.statuses]
+                        : restaurante.status}
+                    </StatusBadge>
+                    <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-text-secondary" />
                   </span>
-                  <span className="min-w-0 flex-1 truncate font-medium text-text">
-                    {restaurante.name}
-                  </span>
-                  <StatusBadge tone={restaurante.status === "active" ? "success" : "neutral"}>
-                    {restaurante.status in es.space.statuses
-                      ? es.space.statuses[restaurante.status as keyof typeof es.space.statuses]
-                      : restaurante.status}
-                  </StatusBadge>
-                  <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-text-secondary" />
+
+                  {/*
+                    La barra del diseño, con lo que Bosco dijo que mide:
+                    lo gastado de su bolsa en el ciclo vigente. Los otros
+                    dos casos **no llevan barra**, porque un 0 % en un plan
+                    sin cambios incluidos diría algo falso.
+                  */}
+                  {restaurante.usage.kind === "measured" ? (
+                    <span className="mt-2 flex items-center gap-3 pl-[3.25rem]">
+                      <span
+                        className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-soft-surface"
+                        role="img"
+                        aria-label={`${es.spaceHome.byRestaurant.usageLabel}: ${es.spaceHome.byRestaurant.usage(
+                          restaurante.usage.used,
+                          restaurante.usage.included,
+                        )}`}
+                      >
+                        <span
+                          className="block h-full rounded-full bg-primary"
+                          style={{ width: `${restaurante.usage.percent}%` }}
+                        />
+                      </span>
+                      <span className="shrink-0 text-xs font-semibold text-text">
+                        {restaurante.usage.percent} %
+                      </span>
+                    </span>
+                  ) : (
+                    <span className="mt-1 block pl-[3.25rem] text-xs text-text-secondary">
+                      {restaurante.usage.kind === "nothing_included"
+                        ? es.spaceHome.byRestaurant.nothingIncluded
+                        : es.spaceHome.byRestaurant.noCycle}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
