@@ -5449,6 +5449,29 @@ export const es = {
       /** RN-GLO-04 · esta pantalla NO es donde viven las de trabajo. */
       requestsElsewhere:
         "Las solicitudes de trabajo viven dentro de cada espacio o de cada panel de restaurante, no aquí.",
+      // Página 1 del diseño definitivo móvil · el saludo, el buscador y los
+      // botones de entrar. El diseño pone "Hola, Bosco" con el nombre de
+      // quien entra; si no lo sabemos, se saluda sin nombre en vez de
+      // escribir uno inventado (CLAUDE.md).
+      greeting: (nombre: string) => (nombre === "" ? "Hola" : `Hola, ${nombre}`),
+      chooseContext: "Elige el espacio o panel al que quieres acceder.",
+      searchPlaceholder: "Buscar...",
+      attentionCount: (n: number) =>
+        n === 1
+          ? "Tienes 1 tarea pendiente en tus contextos."
+          : `Tienes ${n} tareas pendientes en tus contextos.`,
+      enterSpace: "Entrar al espacio",
+      enterPanel: "Entrar al panel",
+      seeAll: "Ver todos",
+      // "4 restaurantes" bajo el nombre del espacio. Es el número de los que
+      // hay en el espacio, no el de los que tú puedes ver.
+      spaceRestaurants: (n: number) => (n === 1 ? "1 restaurante" : `${n} restaurantes`),
+      spaceRestaurantsUnknown: "Sin contar los restaurantes",
+      // En un panel, de qué espacio de mantenimiento depende.
+      panelMaintenance: (espacio: string) => `Mantenimiento: ${espacio}`,
+      unreadCount: (n: number) =>
+        n === 1 ? "Tienes 1 mensaje nuevo de tu equipo." : `Tienes ${n} mensajes nuevos de tu equipo.`,
+      openItem: "Abrir",
     },
     requests: {
       title: "Mis solicitudes",

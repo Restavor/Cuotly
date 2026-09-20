@@ -50,6 +50,15 @@ export interface GlobalHome {
   readonly unread: number;
   readonly requests: readonly SpaceRequestSummary[];
   /**
+   * Página 1 del diseño · cuántos restaurantes tiene cada espacio, por
+   * `space_id`. Es el número de los que hay en el espacio, no el de los
+   * que quien mira puede ver — lo filtra la RLS de `establishments`, así
+   * que un trabajador con dos autorizados verá dos. Un espacio que no
+   * esté en el mapa **no tiene un cero**: no se ha podido contar, y la
+   * pantalla lo dice en vez de afirmar que no hay ninguno (CLAUDE.md).
+   */
+  readonly restaurantCount: ReadonlyMap<string, number>;
+  /**
    * Qué no se ha podido leer, para decirlo en su sitio en vez de enseñar
    * una lista corta como si estuviera entera (CLAUDE.md: si no hay dato,
    * se dice el motivo).
@@ -144,7 +153,28 @@ export async function loadGlobalHome(
     });
   }
 
+  /*
+    Página 1 del diseño · el recuento por espacio, en UNA consulta para
+    todos. Una por espacio sería una cascada en la portada, que es la
+    pantalla que más se abre de Cuotly.
+  */
+  const recuento = new Map<string, number>();
+  if (spaces.length > 0) {
+    const { data: establecimientos } = await supabase
+      .from("establishments")
+      .select("id, space_id")
+      .in("space_id", spaces.map((espacio) => espacio.space_id))
+      .neq("status", "archived");
+    if (establecimientos !== null) {
+      for (const espacio of spaces) recuento.set(espacio.space_id, 0);
+      for (const fila of establecimientos) {
+        recuento.set(fila.space_id, (recuento.get(fila.space_id) ?? 0) + 1);
+      }
+    }
+  }
+
   return {
+    restaurantCount: recuento,
     shape: contextsShape({ spaces: spaces.length, restaurants: restaurants.length }),
     spaces,
     restaurants,

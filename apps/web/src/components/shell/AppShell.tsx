@@ -15,6 +15,7 @@ import {
   createOptions,
   DESTINATION_ICONS,
   globalActiveDestination,
+  ABRIR_BUSQUEDA,
   globalCreateOptions,
   globalMenuGroups,
   globalMobileNav,
@@ -215,7 +216,17 @@ export function AppShell({
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+
+    // El buscador ancho del Inicio (página 1 del diseño) pide abrir ESTE
+    // buscador, no otro suyo: dos cajas que buscan lo mismo acaban
+    // comportándose distinto.
+    const onAbrir = () => setSearchOpen(true);
+    window.addEventListener(ABRIR_BUSQUEDA, onAbrir);
+
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener(ABRIR_BUSQUEDA, onAbrir);
+    };
   }, []);
 
   const closeSearch = useCallback(() => {
@@ -395,7 +406,7 @@ export function AppShell({
                 </Link>
                 <Icon name="chevronRight" className="h-3.5 w-3.5 text-text-secondary" />
                 <span className="truncate text-sm font-medium">{contextName}</span>
-                {active === null ? null : (
+                {active === null || active.label === contextName ? null : (
                   <>
                     <Icon name="chevronRight" className="h-3.5 w-3.5 text-text-secondary" />
                     <span className="truncate text-sm font-medium">{active.label}</span>
@@ -571,7 +582,13 @@ export function AppShell({
               </Link>
               <Icon name="chevronRight" className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
               <span className="truncate text-sm font-medium">{contextName}</span>
-              {active === null ? null : (
+              {/*
+                En el contexto global el contexto SE LLAMA "Inicio" y la
+                pantalla activa también, así que la miga decía "Inicio ›
+                Inicio". Cuando coinciden se pinta una sola vez: repetir el
+                mismo nombre no orienta a nadie.
+              */}
+              {active === null || active.label === contextName ? null : (
                 <>
                   <Icon name="chevronRight" className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
                   <span className="truncate text-sm font-medium">{active.label}</span>

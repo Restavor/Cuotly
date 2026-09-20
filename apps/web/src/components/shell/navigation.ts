@@ -595,3 +595,13 @@ export function activeDestination(
       null,
     );
 }
+
+/**
+ * El evento con el que una pantalla pide abrir el buscador del armazón.
+ *
+ * Existe porque el diseño pone un buscador ancho dentro del Inicio (página
+ * 1) y el que lo abre vive en `AppShell`. Un evento del navegador evita
+ * subir ese estado a un contexto de React solo para esto, y deja que
+ * cualquier pantalla futura haga lo mismo sin tocar el armazón.
+ */
+export const ABRIR_BUSQUEDA = "cuotly:abrir-busqueda";
