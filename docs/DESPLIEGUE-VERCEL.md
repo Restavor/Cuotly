@@ -3,8 +3,45 @@
 Este archivo dice **qué hay que configurar en Vercel** para que Cuotly
 funcione sola: la aplicación web y, sobre todo, el cron que dispara la cola.
 
-Escrito el 02/09/2026. Todavía **no se ha desplegado nada**: esto es la
-preparación, no un registro de lo hecho.
+Escrito el 02/09/2026 como preparación. **Desplegado de verdad el
+20/09/2026**, y desde entonces esto es también el registro de lo que hay.
+
+## Lo que hay hoy en Vercel (20/09/2026)
+
+Dos proyectos, los dos conectados a `Restavor/Cuotly` y los dos sirviendo la
+rama `claude/cuotly-supabase-migrations-tests-q8o18p`:
+
+| Proyecto | Qué sirve | Raíz | Dirección |
+|---|---|---|---|
+| `cuotly-web` | La aplicación web (Next.js) | `apps/web` | `cuotly-web.vercel.app` |
+| `cuotly-movil` | La app móvil exportada para navegador | `apps/mobile` | `cuotly-movil.vercel.app` |
+
+**Un aviso que costó doce días de confusión.** Hasta el 20/09/2026, la
+producción de `cuotly-web` seguía sirviendo el despliegue del **8 de
+septiembre**. Todo lo construido entre el 8 y el 20 —el diseño definitivo de
+escritorio, el de móvil, los informes, Premium+, las invitaciones al panel—
+estaba en el repositorio y **no estaba en la dirección que se miraba**. Mirar
+`cuotly-web.vercel.app` y concluir "esto no se parece al diseño" era mirar un
+edificio de hace dos semanas. Antes de juzgar una pantalla, comprueba de qué
+commit viene el despliegue.
+
+### El móvil en el navegador
+
+`apps/mobile` es Expo. Lo que se despliega en Vercel es su exportación para
+web (`expo export --platform web`), que es el mismo código corriendo sobre
+`react-native-web`: sirve para **mirar el diseño desde un teléfono sin
+compilar un binario**, no sustituye a la app nativa. Deja un solo
+`index.html`, así que `apps/mobile/vercel.json` reescribe todas las
+direcciones a él; sin eso, recargar en `/login` daría 404.
+
+Sus variables llevan el prefijo `EXPO_PUBLIC_` y **se incrustan al compilar**:
+cambiarlas en Vercel no basta, hay que volver a desplegar.
+
+| Variable | Si falta |
+|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | La app no arranca: pantalla en blanco |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Igual |
+| `EXPO_PUBLIC_WEB_URL` | No se pueden subir archivos; la pantalla lo dice |
 
 ## Qué depende del cron
 
