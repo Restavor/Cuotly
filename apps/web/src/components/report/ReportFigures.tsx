@@ -13,7 +13,15 @@ import {
 } from "@/core/reports";
 import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
-import { activitySubject, changeText, figureLabel, figureText } from "@/services/report-pdf";
+import {
+  activitySubject,
+  allowanceText,
+  changeCategoryText,
+  changeDatesText,
+  changeText,
+  figureLabel,
+  figureText,
+} from "@/services/report-pdf";
 
 const t = es.reportsPage;
 
@@ -87,29 +95,77 @@ function OpportunityList({ snapshot }: { snapshot: ReportSnapshot }) {
  * dice que ese informe no lo trae, que es distinto de "no pasó nada".
  */
 function MonthActivity({ snapshot }: { snapshot: ReportSnapshot }) {
-  const entradas = snapshot.activity;
-  if (entradas === undefined) {
+  const relato = snapshot.activity;
+  if (relato === undefined) {
     return <EmptyReason reason="no_data_yet" title={t.activity.title} />;
   }
-  if (entradas.length === 0) {
+
+  const bolsa = snapshot.allowance ?? [];
+  const vacio = bolsa.length === 0 && relato.changes.length === 0 && relato.entries.length === 0;
+  if (vacio) {
     return <p className="text-sm text-text-secondary">{t.activity.empty}</p>;
   }
 
   return (
-    <ol className="space-y-2">
-      {orderedActivity(entradas).map((entrada, index) => (
-        <li
-          key={`${entrada.at}-${entrada.kind}-${index}`}
-          className="flex flex-wrap items-baseline gap-x-2 rounded-[10px] bg-soft-surface p-3 text-sm"
-        >
-          <span className="text-xs text-text-secondary">{fechaCorta(entrada.at)}</span>
-          <span className="font-semibold text-text">{t.activity.kinds[entrada.kind]}</span>
-          {activitySubject(entrada) ? (
-            <span className="text-text-secondary">{activitySubject(entrada)}</span>
-          ) : null}
-        </li>
-      ))}
-    </ol>
+    <div className="space-y-4">
+      {bolsa.length > 0 ? (
+        <div className="rounded-[10px] bg-soft-surface p-3">
+          <p className="text-xs font-semibold text-primary-dark">{t.allowance.title}</p>
+          <ul className="mt-2 space-y-1">
+            {bolsa.map((linea) => (
+              <li key={linea.category} className="flex flex-wrap justify-between gap-x-4 text-sm">
+                <span className="text-text">{es.naming.categoriesPlural[linea.category]}</span>
+                <span className="text-text-secondary">
+                  {/* RN-REP-20 · con la coletilla que explica el "1 de 0":
+                      un presupuestado aparte no consume bolsa (RN-CON-03). */}
+                  {allowanceText(linea, t)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {relato.changes.length > 0 ? (
+        <section className="space-y-2">
+          <h5 className="text-xs font-semibold text-primary-dark">{t.activity.changesTitle}</h5>
+          <ol className="space-y-2">
+            {relato.changes.map((cambio) => (
+              <li key={cambio.code} className="rounded-[10px] bg-soft-surface p-3 text-sm">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                  <span className="font-semibold text-text">{cambio.title ?? cambio.code}</span>
+                  <span className="text-xs text-text-secondary">{changeCategoryText(cambio, t)}</span>
+                </div>
+                {cambio.description ? (
+                  <p className="mt-1 text-text-secondary">{cambio.description}</p>
+                ) : null}
+                <p className="mt-1 text-xs text-text-secondary">{changeDatesText(cambio, t)}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
+      {relato.entries.length > 0 ? (
+        <section className="space-y-2">
+          <h5 className="text-xs font-semibold text-primary-dark">{t.activity.othersTitle}</h5>
+          <ul className="space-y-2">
+            {orderedActivity(relato.entries).map((entrada, index) => (
+              <li
+                key={`${entrada.at}-${entrada.kind}-${index}`}
+                className="flex flex-wrap items-baseline gap-x-2 rounded-[10px] bg-soft-surface p-3 text-sm"
+              >
+                <span className="text-xs text-text-secondary">{fechaCorta(entrada.at)}</span>
+                <span className="font-semibold text-text">{t.activity.kinds[entrada.kind]}</span>
+                {activitySubject(entrada) ? (
+                  <span className="text-text-secondary">{activitySubject(entrada)}</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </div>
   );
 }
 
@@ -118,7 +174,13 @@ function MonthActivity({ snapshot }: { snapshot: ReportSnapshot }) {
  *  un motivo de vacío, que es ruido y no información. */
 function tieneContenido(snapshot: ReportSnapshot, key: ReportSectionKey): boolean {
   if (key === "opportunities") return snapshot.opportunities.length > 0;
-  if (key === "month_activity") return (snapshot.activity?.length ?? 0) > 0;
+  if (key === "month_activity") {
+    return (
+      (snapshot.allowance?.length ?? 0) > 0 ||
+      (snapshot.activity?.changes.length ?? 0) > 0 ||
+      (snapshot.activity?.entries.length ?? 0) > 0
+    );
+  }
   return figuresOfSection(snapshot, key).length > 0;
 }
 

@@ -25,11 +25,14 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 import {
+  type ChangeAllowanceLine,
   type MonthActivityEntry,
+  type MonthChange,
   type ReportFigure,
   type ReportOpportunity,
   type ReportSectionKey,
   type ReportSnapshot,
+  changeStatus,
   figureChange,
   figuresOfSection,
   headlineFigures,
@@ -148,6 +151,75 @@ export function activityText(entry: MonthActivityEntry, labels: Labels): string 
   const que = labels.activity.kinds[entry.kind];
   const sujeto = activitySubject(entry);
   return sujeto === null ? que : `${que} · ${sujeto}`;
+}
+
+/**
+ * RN-REP-18 · el tipo de cambio de una ficha. Tres respuestas y no una:
+ * presupuestado aparte —que no gastó bolsa (RN-CON-03)—, la categoría que
+ * consumió, o **sin clasificar todavía**, que es lo que se dice de un
+ * cambio recién pedido en vez de adivinarle una.
+ */
+export function changeCategoryText(change: MonthChange, labels: Labels): string {
+  if (change.budgeted) return labels.changeCard.budgeted;
+  if (change.category === null) return labels.changeCard.unclassified;
+  return es.naming.categories[change.category];
+}
+
+/**
+ * RN-REP-18 · la línea de fechas de una ficha: "Empezado el 4 ago ·
+ * Entregado el 6 ago", y donde no hay fecha de fin, **lo que pasa de
+ * verdad**. Bosco, 20/09/2026: *"en vez de poner fecha de finalización
+ * pondrías en proceso"*.
+ */
+export function changeDatesText(change: MonthChange, labels: Labels): string {
+  const estado = changeStatus(change);
+  const partes: string[] = [];
+
+  if (change.startedAt !== null) {
+    partes.push(labels.changeCard.startedOn(fechaCorta(change.startedAt)));
+  } else {
+    // Sin empezar no hay "empezado el": se dice cuándo lo pidió, que es la
+    // fecha que el restaurante tiene en la cabeza.
+    partes.push(labels.changeCard.requestedOn(fechaCorta(change.requestedAt)));
+  }
+
+  switch (estado) {
+    case "delivered":
+      partes.push(labels.changeCard.deliveredOn(fechaCorta(change.completedAt ?? change.requestedAt)));
+      break;
+    case "in_progress":
+      partes.push(labels.changeCard.inProgress);
+      break;
+    case "pending_start":
+      partes.push(labels.changeCard.pendingStart);
+      break;
+    case "under_review":
+      partes.push(labels.changeCard.underReview);
+      break;
+    case "rejected":
+      partes.push(labels.changeCard.rejectedOn(fechaCorta(change.rejectedAt ?? change.requestedAt)));
+      break;
+    case "cancelled":
+      partes.push(labels.changeCard.cancelledOn(fechaCorta(change.cancelledAt ?? change.requestedAt)));
+      break;
+  }
+
+  if (change.corrections > 0) partes.push(labels.changeCard.corrections(change.corrections));
+  return partes.join(" · ");
+}
+
+/**
+ * RN-REP-20 · una línea de la bolsa: "2 de 5 incluidos", y la coletilla
+ * del presupuestado cuando la hay. Sin ella, "1 de 0" se lee como que el
+ * restaurante se ha pasado de su plan, y lo que hizo fue comprar aparte.
+ */
+export function allowanceText(line: ChangeAllowanceLine, labels: Labels): string {
+  const base =
+    line.included === null
+      ? labels.allowance.noPlan(line.consumed)
+      : // `photo` es la única categoría femenina de las cuatro.
+        labels.allowance.line(line.consumed, line.included, line.category === "photo");
+  return line.budgeted > 0 ? `${base} · ${labels.allowance.budgeted(line.budgeted)}` : base;
 }
 
 /**
@@ -366,7 +438,7 @@ export async function renderReportPdf(
     }
 
     if (section.key === "month_activity") {
-      pintarRelato(snapshot.activity);
+      pintarRelato(snapshot);
     } else if (section.key === "opportunities") {
       pintarOportunidades(snapshot.opportunities);
     } else if (section.key === "annexes") {
@@ -382,29 +454,95 @@ export async function renderReportPdf(
    * pasado en el mes"*— y por eso no se recorta: un relato con puntos
    * suspensivos no es un relato.
    */
-  function pintarRelato(entradas: readonly MonthActivityEntry[] | undefined): void {
-    if (entradas === undefined || entradas.length === 0) {
-      // Una versión anterior a la migración 112 no lo trae, y un periodo
-      // sin actividad tampoco. Las dos cosas se dicen; ninguna se rellena.
-      write(entradas === undefined ? es.emptyReasons.no_data_yet : labels.activity.empty, {
-        size: 10,
-        color: SOFT,
-      });
+  function pintarRelato(version: ReportSnapshot): void {
+    const relato = version.activity;
+    const bolsa = version.allowance ?? [];
+
+    if (relato === undefined) {
+      // Una versión anterior a la migración 112 no lo trae. No se
+      // recalcula —es el original de su día (RN-REP-12)—: se dice.
+      write(es.emptyReasons.no_data_yet, { size: 10, color: SOFT });
       return;
     }
 
-    for (const entrada of orderedActivity(entradas)) {
-      room(18);
-      at(fechaCorta(entrada.at), MARGIN, y, { size: 9, color: SOFT });
-      at(activityText(entrada, labels), MARGIN + 78, y, { size: 10 });
-      y -= 8;
-      page.drawLine({
-        start: { x: MARGIN, y },
-        end: { x: PAGE_WIDTH - MARGIN, y },
-        thickness: 0.5,
-        color: RULE,
-      });
-      y -= 10;
+    // RN-REP-20 · la bolsa, a la cabeza. Las cuatro categorías siempre,
+    // el "0 de 0" incluido: esa línea dice lo que el plan NO le da.
+    if (bolsa.length > 0) {
+      write(labels.allowance.title, { size: 11, font: bold, gap: 10 });
+      for (const linea of bolsa) {
+        room(20);
+        at(es.naming.categoriesPlural[linea.category], MARGIN, y, { size: 9.5 });
+        at(fit(allowanceText(linea, labels), 230, 9.5, bold), MARGIN + 200, y, { size: 9.5, font: bold });
+        y -= 8;
+        page.drawLine({
+          start: { x: MARGIN, y },
+          end: { x: PAGE_WIDTH - MARGIN, y },
+          thickness: 0.5,
+          color: RULE,
+        });
+        y -= 10;
+      }
+      space(10);
+    }
+
+    if (relato.changes.length === 0 && relato.entries.length === 0 && bolsa.length === 0) {
+      write(labels.activity.empty, { size: 10, color: SOFT });
+      return;
+    }
+
+    // RN-REP-18 · la ficha de cada cambio: qué pidió, qué se cambió,
+    // cuándo y de qué tipo. Tres líneas por cambio, como la maqueta que
+    // aprobó Bosco.
+    if (relato.changes.length > 0) {
+      write(labels.activity.changesTitle, { size: 11, font: bold, gap: 10 });
+      for (const cambio of relato.changes) {
+        // El bloque entero de un tirón: partir una ficha entre dos páginas
+        // dejaría un título huérfano al pie.
+        room(cambio.description ? 58 : 44);
+        at(fechaCorta(cambio.requestedAt), MARGIN, y, { size: 9, color: SOFT });
+        at(fit(cambio.title ?? cambio.code, 280, 10.5, bold), MARGIN + 60, y, { size: 10.5, font: bold });
+        const tipo = changeCategoryText(cambio, labels);
+        at(tipo, PAGE_WIDTH - MARGIN - regular.widthOfTextAtSize(sanitize(tipo), 9), y, {
+          size: 9,
+          color: cambio.budgeted ? RED : SOFT,
+        });
+        y -= 14;
+
+        if (cambio.description) {
+          for (const linea of wrap(cambio.description, 80)) {
+            at(linea, MARGIN + 60, y, { size: 9.5, color: SOFT });
+            y -= 12;
+          }
+        }
+
+        at(changeDatesText(cambio, labels), MARGIN + 60, y, { size: 8.5, font: bold, color: SOFT });
+        y -= 10;
+        page.drawLine({
+          start: { x: MARGIN, y },
+          end: { x: PAGE_WIDTH - MARGIN, y },
+          thickness: 0.5,
+          color: RULE,
+        });
+        y -= 12;
+      }
+      space(6);
+    }
+
+    if (relato.entries.length > 0) {
+      write(labels.activity.othersTitle, { size: 11, font: bold, gap: 10 });
+      for (const entrada of orderedActivity(relato.entries)) {
+        room(18);
+        at(fechaCorta(entrada.at), MARGIN, y, { size: 9, color: SOFT });
+        at(activityText(entrada, labels), MARGIN + 60, y, { size: 10 });
+        y -= 8;
+        page.drawLine({
+          start: { x: MARGIN, y },
+          end: { x: PAGE_WIDTH - MARGIN, y },
+          thickness: 0.5,
+          color: RULE,
+        });
+        y -= 10;
+      }
     }
   }
 

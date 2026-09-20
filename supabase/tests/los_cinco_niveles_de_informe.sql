@@ -33,7 +33,12 @@ begin
     select * from (values
       -- RN-REP-18 · el relato del mes va en los cinco, Básico incluido:
       -- es lo que hace que su informe no sea una hoja en blanco.
-      ('basic',         true,  true,  true,  false, false, false, false),
+      --
+      -- RN-REP-15 (decisión 58) · y por eso mismo `operation` empieza en
+      -- `standard`: el mes ya se cuenta en el relato, y lo que queda en
+      -- Operación —plazos, tiempos, bloqueos— es justo lo que Básico no
+      -- paga. Un informe `basic` es resumen ejecutivo más relato del mes.
+      ('basic',         true,  true,  false, false, false, false, false),
       ('standard',      true,  true,  true,  false, false, false, false),
       ('standard_plus', true,  true,  true,  true,  false, false, false),
       ('advanced',      true,  true,  true,  true,  true,  true,  true),

@@ -46,7 +46,9 @@ import {
   type ReportRequestRow,
   type ReportSectionKey,
   type ReportSnapshot,
+  EMPTY_MONTH_ACTIVITY,
   operationalIndicators,
+  parseChangeAllowance,
   parseMonthActivity,
   previousPeriod,
   reportLevelComparison,
@@ -448,6 +450,25 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
           incluidas.has("finance"),
         ),
       )
+    : EMPTY_MONTH_ACTIVITY;
+
+  /*
+    RN-REP-20 (decisión 58) · la bolsa del mes, a la cabeza del relato.
+
+    Va con el relato y no con la sección de Operación a propósito: desde la
+    decisión 58 un informe `basic` **no lleva Operación** —ahí viven los
+    plazos y los tiempos, que es lo que Básico no paga— pero sí lleva su
+    bolsa, porque es lo que gastó y no una lectura de cómo lo gastó.
+  */
+  const allowance = incluidas.has("month_activity")
+    ? parseChangeAllowance(
+        await deps.gateway.changeAllowance(
+          report.spaceId,
+          report.establishmentId,
+          period.start,
+          period.end,
+        ),
+      )
     : [];
 
   return {
@@ -457,6 +478,7 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     sections: report.sections,
     figures: conAnterior,
     activity,
+    allowance,
     opportunities,
     // RN-REP-13 · solo las notas de las secciones que ENTRAN. La versión
     // se le envía al restaurante, y una nota de una sección que el equipo

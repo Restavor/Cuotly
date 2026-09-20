@@ -32,7 +32,8 @@ function gateway(overrides: Partial<ReportGateway> = {}): ReportGateway {
     financeDataset: vi.fn().mockResolvedValue({}),
     metricPoints: vi.fn().mockResolvedValue(new Map()),
     providerStates: vi.fn().mockResolvedValue([]),
-    monthActivity: vi.fn().mockResolvedValue({ entries: [] }),
+    monthActivity: vi.fn().mockResolvedValue({ changes: [], entries: [] }),
+    changeAllowance: vi.fn().mockResolvedValue({ categories: [] }),
     approvedOpportunities: vi.fn().mockResolvedValue([]),
     holidays: vi.fn().mockResolvedValue([]),
     storeVersion: vi.fn().mockResolvedValue("version-1"),
@@ -539,24 +540,47 @@ describe("la versión que se guarda (RN-REP-12)", () => {
 
   it("RN-REP-18 · el relato del mes entra si la sección entra, y solo entonces se pide", async () => {
     const relato = vi.fn().mockResolvedValue({
+      changes: [
+        {
+          code: "SOL-1",
+          title: "Cambiar el precio del menú",
+          description: "Cambiar 20 EUR de pescado por 25 EUR",
+          category: "small",
+          budgeted: false,
+          requestedAt: "2026-08-03T09:00:00Z",
+          acceptedAt: "2026-08-04T09:00:00Z",
+          rejectedAt: null,
+          startedAt: "2026-08-04T10:00:00Z",
+          completedAt: "2026-08-06T10:00:00Z",
+          cancelledAt: null,
+          corrections: 0,
+        },
+      ],
       entries: [
-        { at: "2026-08-10T11:00:00Z", kind: "job_completed", subject: "TRB-1", category: "small" },
-        { at: "2026-08-03T09:00:00Z", kind: "request_received", subject: "SOL-1", category: null },
+        { at: "2026-08-14T09:00:00Z", kind: "file_shared", subject: "carta.pdf", category: "photos" },
       ],
     });
-    const puertas = gateway({ monthActivity: relato });
+    const bolsa = vi.fn().mockResolvedValue({
+      categories: [{ category: "small", consumed: 2, included: 5, budgeted: 0 }],
+    });
+    const puertas = gateway({ monthActivity: relato, changeAllowance: bolsa });
 
     const sin = await buildSnapshot({ gateway: puertas, now: () => AHORA }, informe());
     expect(relato).not.toHaveBeenCalled();
-    expect(sin.activity).toEqual([]);
+    expect(bolsa).not.toHaveBeenCalled();
+    expect(sin.activity).toEqual({ changes: [], entries: [] });
+    expect(sin.allowance).toEqual([]);
 
     const con = await buildSnapshot(
       { gateway: puertas, now: () => AHORA },
       informe({ sections: [{ key: "month_activity", position: 1, included: true }] }),
     );
-    expect(con.activity).toHaveLength(2);
-    // La base ya las ordena; el dominio lo sostiene al pintarlas.
-    expect(con.activity?.map((entrada) => entrada.kind)).toEqual(["job_completed", "request_received"]);
+    expect(con.activity?.changes).toHaveLength(1);
+    expect(con.activity?.changes[0].description).toBe("Cambiar 20 EUR de pescado por 25 EUR");
+    expect(con.activity?.entries).toHaveLength(1);
+    // RN-REP-20 · la bolsa viaja con el relato, no con Operación: un
+    // informe `basic` no lleva Operación pero sí su bolsa.
+    expect(con.allowance).toEqual([{ category: "small", consumed: 2, included: 5, budgeted: 0 }]);
   });
 
   it("RN-REP-16 · el relato solo cuenta cobros si el informe lleva Finanzas", async () => {
@@ -586,10 +610,14 @@ describe("la versión que se guarda (RN-REP-12)", () => {
   it("RN-REP-18 · una entrada con una clase que no se reconoce se cae en vez de viajar sin nombre", async () => {
     const puertas = gateway({
       monthActivity: vi.fn().mockResolvedValue({
+        changes: [
+          // Sin código no hay ficha: no habría manera de nombrarla.
+          { title: "Sin código", requestedAt: "2026-08-04T09:00:00Z" },
+        ],
         entries: [
-          { at: "2026-08-03T09:00:00Z", kind: "request_received", subject: "SOL-1", category: null },
+          { at: "2026-08-14T09:00:00Z", kind: "file_shared", subject: "carta.pdf", category: null },
           { at: "2026-08-04T09:00:00Z", kind: "algo_que_no_existe", subject: "X", category: null },
-          { kind: "job_completed", subject: "sin fecha", category: null },
+          { kind: "menu_published", subject: "sin fecha", category: null },
         ],
       }),
     });
@@ -601,8 +629,9 @@ describe("la versión que se guarda (RN-REP-12)", () => {
 
     // Una clave que la pantalla no sabe pintar saldría como un hueco mudo,
     // y una entrada sin fecha no tiene sitio en un relato ordenado.
-    expect(snapshot.activity).toHaveLength(1);
-    expect(snapshot.activity?.[0].kind).toBe("request_received");
+    expect(snapshot.activity?.entries).toHaveLength(1);
+    expect(snapshot.activity?.entries[0].kind).toBe("file_shared");
+    expect(snapshot.activity?.changes).toHaveLength(0);
   });
 
   it("RN-CLK-10 · el calendario se arma con los festivos conocidos al empezar el periodo", async () => {

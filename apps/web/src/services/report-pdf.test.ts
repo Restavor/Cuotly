@@ -3,7 +3,17 @@ import { describe, expect, it } from "vitest";
 import type { ReportSnapshot } from "@/core/reports";
 import { es } from "@/i18n/es";
 
-import { activityText, changeText, figureLabel, figureText, renderReportPdf, sanitize } from "./report-pdf";
+import {
+  activityText,
+  allowanceText,
+  changeCategoryText,
+  changeDatesText,
+  changeText,
+  figureLabel,
+  figureText,
+  renderReportPdf,
+  sanitize,
+} from "./report-pdf";
 
 /**
  * El PDF de un informe (§93, RN-REP-06). Se prueba de verdad —se genera el
@@ -196,8 +206,8 @@ describe("RN-REP-17 · el signo de la variación sobrevive al PDF", () => {
 describe("RN-REP-18 · cómo se lee una entrada del relato", () => {
   it("RN-REP-18 · dice QUÉ pasó y de qué, nunca quién", () => {
     expect(
-      activityText({ at: "2026-08-11T11:00:00Z", kind: "job_completed", subject: "TRB-0039", category: "small" }, t),
-    ).toBe(`${t.activity.kinds.job_completed} · TRB-0039`);
+      activityText({ at: "2026-08-12T09:00:00Z", kind: "correction_requested", subject: "SOL-0041", category: "small" }, t),
+    ).toBe(`${t.activity.kinds.correction_requested} · SOL-0041`);
   });
 
   it("RN-REP-18 · el día de un menú se dice como una fecha, no como un ISO suelto", () => {
@@ -212,5 +222,120 @@ describe("RN-REP-18 · cómo se lee una entrada del relato", () => {
     expect(
       activityText({ at: "2026-08-18T07:00:00Z", kind: "menu_published", subject: null, category: null }, t),
     ).toBe(t.activity.kinds.menu_published);
+  });
+});
+
+describe("RN-REP-18 · la ficha de un cambio (decisión 58)", () => {
+  const base = {
+    code: "SOL-0041",
+    title: "Cambiar el precio del menú",
+    description: "Cambiar 20 EUR de pescado por 25 EUR",
+    category: "small" as const,
+    budgeted: false,
+    requestedAt: "2026-08-03T09:00:00Z",
+    acceptedAt: "2026-08-04T09:00:00Z",
+    rejectedAt: null,
+    startedAt: "2026-08-04T10:00:00Z",
+    completedAt: "2026-08-06T10:00:00Z",
+    cancelledAt: null,
+    corrections: 0,
+  };
+
+  it("RN-REP-18 · un cambio entregado lleva sus dos fechas", () => {
+    expect(changeDatesText(base, t)).toBe("Empezado el 4 ago · Entregado el 6 ago");
+  });
+
+  it("RN-REP-18 · un cambio en marcha dice \"En proceso\" donde iría la fecha de fin", () => {
+    // Bosco, 20/09/2026: "en vez de poner fecha de finalización pondrías
+    // en proceso". No un hueco y no una fecha estimada, que sería inventar.
+    expect(changeDatesText({ ...base, completedAt: null }, t)).toBe("Empezado el 4 ago · En proceso");
+  });
+
+  it("RN-REP-18 · un cambio aceptado y sin empezar dice cuándo se pidió y que está pendiente", () => {
+    expect(changeDatesText({ ...base, startedAt: null, completedAt: null }, t)).toBe(
+      "Pedido el 3 ago · Pendiente de empezar",
+    );
+  });
+
+  it("RN-REP-18 · una solicitud todavía en análisis no se confunde con una aceptada sin empezar", () => {
+    // Una ya es un compromiso y la otra no: decirle "pendiente de
+    // empezar" a algo que nadie ha aceptado sería prometer de más.
+    expect(changeDatesText({ ...base, acceptedAt: null, startedAt: null, completedAt: null }, t)).toBe(
+      "Pedido el 3 ago · En análisis",
+    );
+  });
+
+  it("RN-REP-18 · un rechazo y una cancelación lo dicen con su fecha", () => {
+    expect(
+      changeDatesText(
+        { ...base, acceptedAt: null, startedAt: null, completedAt: null, rejectedAt: "2026-08-07T09:00:00Z" },
+        t,
+      ),
+    ).toContain("Rechazado el 7 ago");
+    expect(changeDatesText({ ...base, completedAt: null, cancelledAt: "2026-08-09T09:00:00Z" }, t)).toContain(
+      "Cancelado el 9 ago",
+    );
+  });
+
+  it("RN-COR-07 · las correcciones que pidió el restaurante salen en su ficha", () => {
+    expect(changeDatesText({ ...base, corrections: 2 }, t)).toContain("2 correcciones pedidas");
+    // En singular la frase entera cambia: "1 corrección pedidas" no es
+    // español, y un plural mal puesto en un informe que lee un cliente se
+    // nota más que en cualquier otro sitio.
+    expect(changeDatesText({ ...base, corrections: 1 }, t)).toContain("1 corrección pedida");
+  });
+
+  it("RN-REP-18 · el tipo de cambio son tres respuestas, no una", () => {
+    expect(changeCategoryText(base, t)).toBe(es.naming.categories.small);
+    // RN-CON-03 · un presupuestado aparte no gastó bolsa, y eso es lo que
+    // hay que decir en vez de su categoría.
+    expect(changeCategoryText({ ...base, budgeted: true }, t)).toBe(t.changeCard.budgeted);
+    // Y a un cambio recién pedido no se le adivina una categoría: sería
+    // decirle al restaurante qué va a gastar antes de saberlo.
+    expect(changeCategoryText({ ...base, category: null }, t)).toBe(t.changeCard.unclassified);
+  });
+});
+
+describe("RN-REP-20 · la bolsa del mes", () => {
+  it("RN-REP-20 · una línea normal dice consumidos de incluidos", () => {
+    expect(allowanceText({ category: "small", consumed: 2, included: 5, budgeted: 0 }, t)).toBe(
+      "2 de 5 incluidos",
+    );
+  });
+
+  it("RN-REP-20 · el adjetivo concuerda en género y número, porque esto lo lee un cliente", () => {
+    // "Fotografías · 3 de 6 incluidos" y "1 de 1 incluidos" son las dos
+    // formas mal que salieron al mirar el PDF generado.
+    expect(allowanceText({ category: "photo", consumed: 3, included: 6, budgeted: 0 }, t)).toBe(
+      "3 de 6 incluidas",
+    );
+    expect(allowanceText({ category: "medium", consumed: 1, included: 1, budgeted: 0 }, t)).toBe(
+      "1 de 1 incluido",
+    );
+    expect(allowanceText({ category: "photo", consumed: 0, included: 1, budgeted: 0 }, t)).toBe(
+      "0 de 1 incluida",
+    );
+  });
+
+  it("RN-REP-20 · el \"1 de 0\" lleva siempre la coletilla que lo explica", () => {
+    /*
+      Sin ella el restaurante lee que se ha pasado de su plan, y lo que
+      hizo fue comprar un cambio aparte: un presupuestado NO consume bolsa
+      (RN-CON-03), así que el 1 y el 0 vienen de sitios distintos.
+    */
+    expect(allowanceText({ category: "large", consumed: 0, included: 0, budgeted: 1 }, t)).toBe(
+      "0 de 0 incluidos · 1 presupuestado aparte",
+    );
+    expect(allowanceText({ category: "large", consumed: 0, included: 0, budgeted: 2 }, t)).toContain(
+      "2 presupuestados aparte",
+    );
+  });
+
+  it("RN-REP-20 · sin plan vigente no se dice \"de 0\": se dice que no hay plan", () => {
+    // Cero dice "tu plan no incluye ninguno" y null dice "no tienes plan".
+    // Son dos cosas distintas y se dicen distinto (CLAUDE.md).
+    expect(allowanceText({ category: "small", consumed: 3, included: null, budgeted: 0 }, t)).toBe(
+      "3 consumidos · sin plan de mantenimiento",
+    );
   });
 });

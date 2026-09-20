@@ -10139,6 +10139,15 @@ export type Database = {
         Args: { p_menu_id: string; p_reason: string };
         Returns: undefined;
       };
+      report_change_allowance: {
+        Args: {
+          p_establishment_id: string;
+          p_from: string;
+          p_space_id: string;
+          p_to: string;
+        };
+        Returns: Json;
+      };
       report_month_activity: {
         Args: {
           p_establishment_id: string;

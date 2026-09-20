@@ -1303,6 +1303,61 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    identidad, el parámetro de Finanzas y el pago revertido—, las 60 suites juntas sobre una base
    limpia en el orden de CI, y el PDF generado y mirado página a página.
 
+58. **Qué lleva cada uno de los cinco informes** (20/09/2026). Bosco leyó el primer PDF de verdad y
+   pidió tres cosas; al contestarlas salió el principio que faltaba, que es lo más importante de
+   esta decisión.
+
+   **El principio: los cinco niveles reparten ANÁLISIS, no información.** Los cinco dicen la verdad
+   sobre el mismo mes y ninguno esconde el historial del restaurante. Lo que el restaurante pidió,
+   lo que se le entregó y lo que gastó de su bolsa está en los cinco; lo que sube con el plan es la
+   lectura de cómo fue —plazos, comparación, Rendimiento digital, Oportunidades, Finanzas—. Ante la
+   duda de mañana ("¿esto va en Básico?"), la pregunta es si es **lo que pasó** o **una valoración
+   de lo que pasó**.
+
+   Esto corrige la decisión 56, donde "el detalle cambio a cambio" era exclusivo de Completo. Con el
+   relato del mes ya construido eso no encajaba, porque el relato **es** el detalle. Se separan por
+   tanto dos cosas que se llamaban igual: **el qué** —descripción, fechas, tipo de cambio— en los
+   cinco, y **los tiempos de cada cambio uno a uno** en Completo. Bosco lo eligió así sobre las otras
+   dos opciones que se le propusieron: *"esconder la descripción de un cambio que un Básico ha
+   pagado aparte sería cobrarle por ver su propia factura"*.
+
+   **Consecuencia que hay que recordar:** `operation` pasa a empezar en `standard`. Un informe
+   `basic` es resumen ejecutivo más "Lo que ha pasado este mes" —con su bolsa y la ficha de cada
+   cambio— y nada más; su portada se queda incluso sin "Lo esencial", porque no tiene cifra de
+   cabecera que enseñar, y el bloque no se dibuja vacío.
+
+   **RN-REP-20 · la bolsa del mes.** Bosco: *"pon por separado cuántos cambios pequeños ha
+   consumido, cuántos medianos, cuántos grandes y cuántos fotográficos"*, y *"si hubiesen comprado
+   cambios adicionales habría que mencionarlo: 1/0 cambios grandes"*. Las cuatro categorías siempre,
+   el 0 de 0 incluido, porque esa línea dice lo que el plan **no** le da.
+
+   Lo que hubo que aclararle antes de construirlo, y él aceptó: **"1 de 0" no es un error de
+   cuentas**. Un cambio presupuestado aparte **no consume bolsa** (RN-CON-03), así que el 1 y el 0
+   salen de sitios distintos —los trabajos presupuestados del periodo y la instantánea del ciclo— y
+   sin coletilla el restaurante leería que se ha pasado de su plan cuando lo que hizo fue comprar
+   uno aparte.
+
+   **RN-REP-18 ampliada · la ficha de cada cambio**, con su descripción, su tipo, y las fechas de
+   inicio y fin; donde no hay fecha de fin se dice **"En proceso"**, y donde no hay de inicio,
+   **"Pendiente de empezar"** o **"En análisis"** según esté aceptado o no. Los dos últimos no los
+   pidió Bosco: salieron de preguntarse qué pasa con un cambio que nadie ha aceptado todavía, y sin
+   ellos desaparecía del informe.
+
+   **El fallo que encontró construirlo:** la ficha se montó primero sobre `jobs`, y así **una
+   solicitud enviada y todavía en análisis no aparecía en ninguna parte** — el restaurante la había
+   pedido y su informe no la mencionaba. La ficha sale de `requests` con el trabajo enganchado por
+   la izquierda, no al revés. Lo cazó la comprobación del consolidado de la suite 60, que existía
+   por otro motivo.
+
+   **Y una corrección de estilo que solo se ve mirando el PDF:** "Fotografías · 3 de 6 incluid**os**"
+   y "1 de 1 incluid**os**". El adjetivo concuerda en género y número, y son cuatro formas. En un
+   documento que lee un cliente, un plural mal puesto se nota más que en cualquier otro sitio.
+
+   Comprobado: suite 60 ampliada con la ficha y la bolsa, con **tres mutaciones nuevas** —juntar
+   presupuestados y consumidos, contar los débitos sin restar las devoluciones, y volver a montar la
+   ficha sobre `jobs`—, las 60 suites sobre una base limpia, 1.537 tests de web, y el PDF generado y
+   mirado página a página.
+
 ---
 
 ### Pendiente de completar

@@ -1044,12 +1044,6 @@ export interface ReportOpportunity {
  * devuelve `null` y el sitio que la pinta se la salta.
  */
 export const MONTH_ACTIVITY_KINDS = [
-  "request_received",
-  "request_accepted",
-  "request_rejected",
-  "job_published",
-  "job_completed",
-  "job_cancelled",
   "correction_requested",
   "menu_published",
   "file_shared",
@@ -1075,16 +1069,111 @@ export interface MonthActivityEntry {
 }
 
 /**
+ * RN-REP-18 · la ficha de un cambio: lo que el restaurante pidió, de qué
+ * tipo era, cuándo se hizo y en qué quedó.
+ *
+ * `title` y `description` son **texto suyo** —el resumen que validó el
+ * equipo y lo que escribió él—; ni aquí ni en la base hay nada del equipo
+ * (P7). `category` es null mientras nadie haya clasificado el cambio, y
+ * entonces **no se dice ninguna**: inventarle una categoría a algo sin
+ * clasificar es decirle al restaurante qué va a gastar antes de saberlo.
+ */
+export interface MonthChange {
+  readonly code: string;
+  readonly title: string | null;
+  readonly description: string | null;
+  readonly category: ChangeCategory | null;
+  readonly budgeted: boolean;
+  readonly requestedAt: string;
+  readonly acceptedAt: string | null;
+  readonly rejectedAt: string | null;
+  readonly startedAt: string | null;
+  readonly completedAt: string | null;
+  readonly cancelledAt: string | null;
+  readonly corrections: number;
+}
+
+/**
+ * En qué quedó un cambio, que es lo que decide qué se escribe donde iría
+ * la fecha de fin. Bosco, 20/09/2026: *"si hay algún cambio que todavía
+ * está en proceso mientras se ha generado el informe se pondría todo igual
+ * pero en vez de poner fecha de finalización pondrías en proceso"*.
+ *
+ * Se deriva de las **fechas**, no del estado del trabajo, y a propósito:
+ * el estado es organización interna del equipo —`assigned`,
+ * `pending_assignment`, `reassignment_requested` son cosas suyas— y el
+ * restaurante solo tiene que saber en cuál de estos cinco está el suyo.
+ */
+export type ChangeStatus =
+  | "delivered"
+  | "in_progress"
+  | "pending_start"
+  | "under_review"
+  | "rejected"
+  | "cancelled";
+
+export function changeStatus(change: MonthChange): ChangeStatus {
+  if (change.cancelledAt !== null) return "cancelled";
+  if (change.rejectedAt !== null) return "rejected";
+  if (change.completedAt !== null) return "delivered";
+  if (change.startedAt !== null) return "in_progress";
+  // Aceptado y sin arrancar. Distinto de "todavía lo estamos mirando":
+  // uno ya es un compromiso y el otro no.
+  if (change.acceptedAt !== null) return "pending_start";
+  return "under_review";
+}
+
+function parseChange(raw: Record<string, unknown>): MonthChange | null {
+  const code = typeof raw.code === "string" ? raw.code : "";
+  const requestedAt = typeof raw.requestedAt === "string" ? raw.requestedAt : "";
+  if (code === "" || requestedAt === "") return null;
+
+  const texto = (clave: string): string | null =>
+    typeof raw[clave] === "string" && raw[clave] !== "" ? (raw[clave] as string) : null;
+  const categoria = typeof raw.category === "string" ? raw.category : null;
+
+  return {
+    code,
+    title: texto("title"),
+    description: texto("description"),
+    category: categoria !== null && isChangeCategory(categoria) ? categoria : null,
+    budgeted: raw.budgeted === true,
+    requestedAt,
+    acceptedAt: texto("acceptedAt"),
+    rejectedAt: texto("rejectedAt"),
+    startedAt: texto("startedAt"),
+    completedAt: texto("completedAt"),
+    cancelledAt: texto("cancelledAt"),
+    corrections: typeof raw.corrections === "number" ? raw.corrections : 0,
+  };
+}
+
+/** Lo que el relato del mes trae dentro: las fichas y las líneas sueltas. */
+export interface MonthActivity {
+  readonly changes: readonly MonthChange[];
+  readonly entries: readonly MonthActivityEntry[];
+}
+
+export const EMPTY_MONTH_ACTIVITY: MonthActivity = { changes: [], entries: [] };
+
+/**
  * Las filas de la base, ya filtradas: lo que no se reconoce **se cae** en
  * vez de viajar dentro de la versión con una clave que nadie sabe pintar.
  */
-export function parseMonthActivity(raw: unknown): readonly MonthActivityEntry[] {
-  const lista = raw && typeof raw === "object" ? (raw as Record<string, unknown>).entries : null;
-  if (!Array.isArray(lista)) return [];
+export function parseMonthActivity(raw: unknown): MonthActivity {
+  const fuente = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
 
-  return lista.flatMap((fila): MonthActivityEntry[] => {
-    if (!fila || typeof fila !== "object") return [];
-    const row = fila as Record<string, unknown>;
+  const filas = (valor: unknown): readonly Record<string, unknown>[] =>
+    Array.isArray(valor)
+      ? valor.filter((fila): fila is Record<string, unknown> => Boolean(fila) && typeof fila === "object")
+      : [];
+
+  const changes = filas(fuente.changes).flatMap((fila) => {
+    const cambio = parseChange(fila);
+    return cambio === null ? [] : [cambio];
+  });
+
+  const entries = filas(fuente.entries).flatMap((row): MonthActivityEntry[] => {
     const kind = typeof row.kind === "string" ? row.kind : "";
     const at = typeof row.at === "string" ? row.at : "";
     if (!isMonthActivityKind(kind) || at === "") return [];
@@ -1094,6 +1183,44 @@ export function parseMonthActivity(raw: unknown): readonly MonthActivityEntry[] 
         kind,
         subject: typeof row.subject === "string" ? row.subject : null,
         category: typeof row.category === "string" ? row.category : null,
+      },
+    ];
+  });
+
+  return { changes, entries };
+}
+
+/**
+ * RN-REP-20 · una categoría de cambio en el mes: lo que se gastó de la
+ * bolsa, lo que el plan incluye y lo que fue a presupuesto.
+ *
+ * `included` es **null cuando no hay plan vigente**, y eso no es lo mismo
+ * que cero: cero dice "tu plan no incluye ninguno" y null dice "no tienes
+ * plan". Un consolidado del espacio tampoco tiene bolsa, y también es
+ * null: sumar las de cinco restaurantes no significa nada.
+ */
+export interface ChangeAllowanceLine {
+  readonly category: ChangeCategory;
+  readonly consumed: number;
+  readonly included: number | null;
+  readonly budgeted: number;
+}
+
+export function parseChangeAllowance(raw: unknown): readonly ChangeAllowanceLine[] {
+  const lista = raw && typeof raw === "object" ? (raw as Record<string, unknown>).categories : null;
+  if (!Array.isArray(lista)) return [];
+
+  return lista.flatMap((fila): ChangeAllowanceLine[] => {
+    if (!fila || typeof fila !== "object") return [];
+    const row = fila as Record<string, unknown>;
+    const category = typeof row.category === "string" ? row.category : "";
+    if (!isChangeCategory(category)) return [];
+    return [
+      {
+        category,
+        consumed: typeof row.consumed === "number" ? row.consumed : 0,
+        included: typeof row.included === "number" ? row.included : null,
+        budgeted: typeof row.budgeted === "number" ? row.budgeted : 0,
       },
     ];
   });
@@ -1120,7 +1247,9 @@ export interface ReportSnapshot {
    * no lo traen, y una versión vieja es el original de su día (RN-REP-12):
    * no se recalcula, se lee como lo que es.
    */
-  readonly activity?: readonly MonthActivityEntry[];
+  readonly activity?: MonthActivity;
+  /** RN-REP-20 · la bolsa del mes, a la cabeza del relato. */
+  readonly allowance?: readonly ChangeAllowanceLine[];
 }
 
 /**

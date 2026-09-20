@@ -1460,19 +1460,57 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   los demás**. Vive en `plans.report_level` y **no se deduce del nombre del plan**, porque Cuotly es
   multiempresa y otro espacio pondrá los niveles donde quiera.
 
+  **El principio de la escalera (fijado el 20/09/2026, decisión 58).** Los cinco niveles dicen la
+  **verdad sobre el mismo mes**; ninguno esconde una cifra mala ni el historial del restaurante. Lo
+  que sube con el plan **no es la información, es el análisis**: qué tan bien fue, con qué se
+  compara y qué conviene hacer después. Esto no es una frase bonita, es la regla que resuelve las
+  dudas del día de mañana — ante "¿esto va en Básico?", la pregunta es si es **lo que pasó** (va) o
+  **una valoración de lo que pasó** (sube de nivel).
+
+  Consecuencia directa: **lo que el restaurante pidió, lo que se le entregó y lo que gastó de su
+  bolsa está en los cinco niveles**, con su descripción y sus fechas (RN-REP-18, RN-REP-20). Esconder
+  la descripción de un cambio que un Básico ha **pagado aparte** sería cobrarle por ver su propia
+  factura, y dejaría su informe casi en blanco — que es peor producto que uno corto pero útil.
+
   Los cinco niveles y lo que **añade** cada uno sobre el anterior —ninguno quita—:
 
-  | Nivel | Restavor | Lo que añade |
-  |---|---|---|
-  | `basic` | Básico | Resumen ejecutivo, las cifras de cabecera y **lo que ha pasado este mes**. Sin comparación y sin Rendimiento digital |
-  | `standard` | Impulso | La **operación completa** y la comparación con el mes anterior en las cifras de cabecera |
-  | `standard_plus` | Impulso+ | **Rendimiento digital** y la comparación en **todas** las cifras |
-  | `advanced` | Premium | Los **desgloses** de digital, **Oportunidades**, **Anexos** y **Finanzas** |
-  | `complete` | Premium+ | **Todas** las métricas, la evolución dentro del periodo, el **detalle cambio a cambio** y las **evidencias** |
+  | | `basic` | `standard` | `standard_plus` | `advanced` | `complete` |
+  |---|:--:|:--:|:--:|:--:|:--:|
+  | | Básico | Impulso | Impulso+ | Premium | Premium+ |
+  | Portada y **Lo esencial** (RN-REP-19) | ✓ | ✓ | ✓ | ✓ | ✓ |
+  | Resumen ejecutivo | ✓ | ✓ | ✓ | ✓ | ✓ |
+  | **Lo que ha pasado este mes**, con la ficha de cada cambio (RN-REP-18) | ✓ | ✓ | ✓ | ✓ | ✓ |
+  | **Consumo por categoría** (RN-REP-20) | ✓ | ✓ | ✓ | ✓ | ✓ |
+  | Operación · cumplimiento de plazos | — | ✓ | ✓ | ✓ | ✓ |
+  | Operación · tiempos medios de inicio y entrega | — | ✓ | ✓ | ✓ | ✓ |
+  | Operación · bloqueos, correcciones y Menú Diario | — | — | ✓ | ✓ | ✓ |
+  | Operación · los tiempos **de cada cambio**, uno a uno | — | — | — | — | ✓ |
+  | Comparación con el periodo anterior (RN-REP-17) | — | Lo esencial | todas las cifras | ✓ | ✓ |
+  | Rendimiento digital | — | — | cifras de cabecera | + desgloses | + evolución dentro del mes |
+  | Oportunidades | — | — | — | ✓ | ✓ |
+  | Finanzas | — | — | — | ✓ | ✓ |
+  | Anexos y evidencias | — | — | — | ✓ | ✓ |
 
-  **Por qué Básico es tan corto y no es un descuido:** Básico **no incluye ningún cambio**
-  (RN-COM-01), así que su mes tiene poco que contar. Un informe largo lleno de "no conectado" (§178)
-  sería peor que uno corto que dice lo que hay.
+  **Qué cambió respecto a la primera versión de esta regla (20/09/2026, decisión 58).** El día que se
+  escribió, "el detalle cambio a cambio" era exclusivo de `complete`. Con el relato del mes ya
+  construido eso dejó de encajar, porque **el relato es el detalle**: si va en los cinco, el detalle
+  va en los cinco. Se separan por tanto dos cosas que se estaban llamando igual:
+
+  - **El qué** —descripción, fechas de inicio y fin, tipo de cambio consumido— va en **los cinco**.
+  - **Los tiempos de cada cambio uno a uno** —cuánto tardó en arrancar cada uno, cuánto estuvo
+    bloqueado, cuántas correcciones necesitó— siguen siendo de `complete`. Eso sí es análisis.
+
+  **Por qué Básico sigue siendo el más corto**, aunque ya no esté casi vacío: no lleva plazos, ni
+  comparación, ni Rendimiento digital, ni Oportunidades, ni Finanzas, ni Anexos. Tiene su mes
+  contado y su bolsa; no tiene ninguna lectura de cómo fue.
+
+  **Consecuencia técnica de lo anterior, y es un cambio respecto a la migración 111:** la sección
+  `operation` pasa a empezar en `standard`, no en `basic`. Antes empezaba en `basic` porque el relato
+  del mes no existía y sin ella el informe no tenía nada; hoy el mes se cuenta en `month_activity` y
+  la sección de Operación es solo lo que Básico no paga —plazos, tiempos, bloqueos—. Un informe
+  `basic` lleva por tanto **resumen ejecutivo y "Lo que ha pasado este mes"**, y su portada se queda
+  sin "Lo esencial" porque no tiene ninguna cifra de cabecera que enseñar; el bloque **no se dibuja
+  vacío** (RN-REP-19).
 
   **El nivel es una barrera, no una sugerencia.** Una sección que el nivel no permite **no se puede
   incluir**, ni al preparar el borrador ni marcándola a mano después: si bastara con la casilla, un
@@ -1553,11 +1591,46 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   Es una sección del catálogo (`month_activity`) y entra **en los cinco niveles**, Básico incluido:
   es justo lo que un Básico —que no incluye ningún cambio (RN-COM-01)— sí tiene que poder leer.
 
-  **Qué entra**, cada entrada con su fecha: solicitudes recibidas, aceptadas y rechazadas; cambios
-  publicados, entregados y cancelados; correcciones que pidió el restaurante; menús del día
-  publicados; archivos compartidos con él; y los cobros y pagos **solo si el informe lleva
-  Finanzas** — porque si no, un informe de cualquier nivel estaría enseñando dinero a quien no tiene
-  "Pagos y facturas" (RN-REP-16, RN-EST-15).
+  **La sección tiene dos mitades, y son distintas a propósito** (ampliado el 20/09/2026, decisión
+  58):
+
+  **1 · Los cambios, con su ficha.** Un cambio no es una línea de registro: es lo que el restaurante
+  pidió y pagó, así que se cuenta entero. Cada uno lleva:
+
+  ```
+  4 ago   Cambiar el precio del menú                      Cambio pequeño
+          Cambiar 20 € de pescado por 25 €
+          Empezado el 4 ago · Entregado el 6 ago
+  ```
+
+  - **El título** es el resumen que validó el equipo (`validated_summary`); si no lo hay, el código
+    del cambio. **La descripción** es lo que escribió el restaurante (`description`). Las dos son
+    texto que **ya se le muestra hoy** (migración 27, privilegios de columna): esto no le enseña
+    nada nuevo, lo reúne.
+  - **El tipo de cambio** que consumió —pequeño, fotografía, mediano, grande—, o **"presupuestado
+    aparte"** cuando fue a presupuesto y no gastó bolsa (RN-CON-03).
+  - **Las fechas de inicio y de fin**, y los dos casos en que no las hay:
+    - si el cambio **está en marcha** cuando se genera el informe, donde iría la fecha de fin se dice
+      **"En proceso"**;
+    - si está **aceptado pero sin empezar**, donde iría la de inicio se dice **"Pendiente de
+      empezar"**.
+
+    Ninguno de los dos es un hueco ni una fecha inventada: son dos estados reales y se nombran
+    (CLAUDE.md).
+  - Un cambio **cancelado** lo dice, con su fecha.
+
+  Esta mitad va en **los cinco niveles** (RN-REP-15): es lo que pasó, no una valoración de lo que
+  pasó.
+
+  **2 · Lo demás, una línea por cosa y con su fecha**: solicitudes rechazadas, correcciones que pidió
+  el restaurante, menús del día publicados, archivos compartidos con él, y los cobros y pagos **solo
+  si el informe lleva Finanzas** — porque si no, un informe de cualquier nivel estaría enseñando
+  dinero a quien no tiene "Pagos y facturas" (RN-REP-16, RN-EST-15).
+
+  **Un cambio sale en su ficha y no además como línea suelta.** Sin esta regla, el mismo cambio
+  aparecería cuatro veces —solicitud recibida, solicitud aceptada, cambio publicado, cambio
+  entregado— y el relato de un mes movido sería ilegible. Todo lo que le pasó a un cambio se cuenta
+  dentro de su ficha.
 
   **Tres cosas que NO entran y podrían parecer que sí.** Las **incidencias** de soporte: son del
   espacio a Cuotly (§131, RN-SOP), no del restaurante, y contarlas aquí sería contarle las de otro.
@@ -1594,6 +1667,44 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   **La tarjeta de "clics en reservas" del primer boceto no se construye**: las reservas y el delivery
   **no se monitorizan** (decisión fijada en `CLAUDE.md`), así que esa cifra no existe y ponerla sería
   inventarla.
+
+- **RN-REP-20 (añadida 20/09/2026, decisión 58)**: el informe dice **cuántos cambios de cada
+  categoría se han consumido y cuántos incluye el plan**. Bosco, 20/09/2026: *"prefiero que ahí
+  pongas por separado cuántos cambios pequeños ha consumido, cuántos medianos, cuántos grandes y
+  cuántos fotográficos"*.
+
+  Se escribe así, y **siempre las cuatro categorías**, el 0 de 0 incluido: esa línea informa, porque
+  dice lo que el plan del restaurante **no** le da (RN-COM-02: solo Premium+ incluye un cambio
+  grande).
+
+  ```
+  Cambios pequeños      2 de 5 incluidos
+  Fotografías           3 de 6 incluidas
+  Cambios medianos      1 de 1 incluido
+  Cambios grandes       1 de 0 incluidos · 1 presupuestado aparte
+  ```
+
+  **El "1 de 0" no es un error de cuentas, y por eso lleva coletilla.** Un cambio presupuestado
+  aparte **no consume bolsa** (RN-CON-03, RN-COM-07): no deja apunte en el libro de consumos. De
+  modo que el primer número y el segundo salen de sitios distintos —los trabajos presupuestados del
+  periodo, y la bolsa del ciclo— y sin decirlo el restaurante leería que se ha pasado de su plan
+  cuando lo que hizo fue comprar uno aparte. Bosco eligió esta forma el 20/09/2026 sobre las otras
+  dos que se le propusieron.
+
+  **De dónde sale cada número**, que es lo que evita que alguien los junte mal mañana:
+
+  - **Consumidos**: los apuntes de `consumption_entries` del **periodo del informe**. Es el libro
+    inmutable (CLAUDE.md), no un contador.
+  - **Incluidos**: la instantánea del **ciclo vigente al final del periodo** (`consumption_cycles`),
+    no el plan en vivo: un ciclo ya creado no se mueve si el plan cambia después (RN-CON-05). Sin
+    plan vigente no hay línea de incluidos, y se dice.
+  - **Presupuestados aparte**: los trabajos del periodo con presupuesto (`jobs.quote_id`), contados
+    por categoría.
+
+  **Dónde vive:** a la cabeza de "Lo que ha pasado este mes" (RN-REP-18), no como sección aparte. Es
+  la misma pregunta —qué ha pasado con mis cambios este mes— y así hereda su nivel sin que haya que
+  gobernar una sección más. El **cumplimiento de plazos**, que en la primera maqueta ocupaba ese
+  sitio, baja a la tabla de Operación, donde empieza en `standard`.
 
 Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
 redactado (§93: "el informe automático por correo no necesita IA"), no hay plantilla de informe

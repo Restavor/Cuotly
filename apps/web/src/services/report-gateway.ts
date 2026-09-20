@@ -95,6 +95,13 @@ export interface ReportGateway {
     to: string,
     includeFinance: boolean,
   ): Promise<Record<string, unknown>>;
+  /** RN-REP-20 · la bolsa del mes, categoría a categoría. */
+  changeAllowance(
+    spaceId: string,
+    establishmentId: string | null,
+    from: string,
+    to: string,
+  ): Promise<Record<string, unknown>>;
   /** §96 · las oportunidades APROBADAS del periodo, que son las que entran. */
   approvedOpportunities(
     establishmentId: string,
@@ -206,6 +213,15 @@ export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
         p_from: from,
         p_to: to,
         p_include_finance: includeFinance,
+      });
+    },
+
+    changeAllowance(spaceId, establishmentId, from, to) {
+      return rpc<Record<string, unknown>>(client, "report_change_allowance", {
+        p_space_id: spaceId,
+        p_establishment_id: establishmentId,
+        p_from: from,
+        p_to: to,
       });
     },
 

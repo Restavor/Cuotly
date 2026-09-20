@@ -526,6 +526,15 @@ export const es = {
       medium: "Cambio mediano",
       large: "Cambio grande",
     },
+    // RN-REP-20 · las mismas cuatro en plural, para la bolsa del mes:
+    // "Cambio pequeño · 2 de 5" se lee mal, y CA-21 pide un solo nombre
+    // visible por categoría, no una sola forma gramatical.
+    categoriesPlural: {
+      small: "Cambios pequeños",
+      photo: "Fotografías",
+      medium: "Cambios medianos",
+      large: "Cambios grandes",
+    },
     /**
      * RN-ASG-01 · las siete especialidades de `SPECIALTIES`
      * (src/core/assignment.ts), que es de donde salen los valores.
@@ -3054,19 +3063,56 @@ export const es = {
     activity: {
       title: "Lo que ha pasado este mes",
       empty: "En este periodo no se registró ninguna actividad.",
+      changesTitle: "Tus cambios",
+      othersTitle: "Además",
       kinds: {
-        request_received: "Solicitud recibida",
-        request_accepted: "Solicitud aceptada",
-        request_rejected: "Solicitud rechazada",
-        job_published: "Cambio publicado",
-        job_completed: "Cambio entregado",
-        job_cancelled: "Cambio cancelado",
         correction_requested: "Corrección solicitada",
         menu_published: "Menú del día publicado",
         file_shared: "Archivo compartido",
         charge_issued: "Cobro emitido",
         payment_recorded: "Pago registrado",
       },
+    },
+
+    // RN-REP-18 (decisión 58) · la ficha de cada cambio. Donde iría la
+    // fecha de fin, si no la hay, va lo que pasa de verdad — nunca un
+    // hueco ni una fecha inventada (CLAUDE.md).
+    //
+    // Se llama `changeCard` y no `change` porque `change` ya es la
+    // variación respecto al periodo anterior (RN-REP-17): dos cosas
+    // distintas que en español se dicen igual.
+    changeCard: {
+      startedOn: (fecha: string) => `Empezado el ${fecha}`,
+      deliveredOn: (fecha: string) => `Entregado el ${fecha}`,
+      requestedOn: (fecha: string) => `Pedido el ${fecha}`,
+      inProgress: "En proceso",
+      pendingStart: "Pendiente de empezar",
+      underReview: "En análisis",
+      rejectedOn: (fecha: string) => `Rechazado el ${fecha}`,
+      cancelledOn: (fecha: string) => `Cancelado el ${fecha}`,
+      budgeted: "Presupuestado aparte",
+      // Sin clasificar todavía: no se le adivina una categoría, porque eso
+      // sería decirle al restaurante qué va a gastar antes de saberlo.
+      unclassified: "Sin clasificar todavía",
+      corrections: (n: number) =>
+        n === 1 ? "1 corrección pedida" : `${n} correcciones pedidas`,
+    },
+
+    // RN-REP-20 · la bolsa del mes. "1 de 0 · 1 presupuestado aparte" no
+    // es un error de cuentas: un cambio presupuestado NO consume bolsa
+    // (RN-CON-03), así que los dos números salen de sitios distintos.
+    allowance: {
+      title: "Tus cambios de este mes",
+      // "3 de 6 incluidos" para las fotografías es incorrecto, y "1 de 1
+      // incluidos" también: el adjetivo concuerda con la categoría en
+      // género y con el número en singular o plural. Son cuatro formas y
+      // se escriben las cuatro, porque esto lo lee un cliente.
+      line: (consumidos: number, incluidos: number, femenino: boolean) =>
+        `${consumidos} de ${incluidos} ` +
+        (incluidos === 1 ? (femenino ? "incluida" : "incluido") : femenino ? "incluidas" : "incluidos"),
+      noPlan: (consumidos: number) => `${consumidos} consumidos · sin plan de mantenimiento`,
+      budgeted: (n: number) =>
+        n === 1 ? "1 presupuestado aparte" : `${n} presupuestados aparte`,
     },
     judgementBadge: "Requiere criterio",
     judgementHint:
