@@ -57,6 +57,12 @@ export interface SlaCounterRow {
   readonly counter_kind: "t2" | "t3";
   readonly category: ChangeCategory | null;
   readonly start_sla_hours: number | null;
+  /**
+   * RN-SLA-18 (migración 118) · el plazo de realización que el trabajo
+   * congeló al aceptarse. `null` en los aceptados antes de la 118, y ahí
+   * significa el valor por omisión de RN-SLA-12.
+   */
+  readonly execution_sla_hours: number | null;
   readonly timezone: string;
   readonly events: readonly { readonly event_type: TimerEventType; readonly occurred_at: string }[];
 }
@@ -234,7 +240,10 @@ export async function runSlaSweep(
         skipped += 1;
         continue;
       }
-      status = t3Status(events, calendar, now, row.category);
+      // RN-SLA-18 · el plazo CONGELADO del trabajo, no el de la tabla.
+      // Sin esto un Premium+ no recibiría ningún aviso hasta pasarse de
+      // largo: el 100 % de 72 h llega cuando las 48 reales ya vencieron.
+      status = t3Status(events, calendar, now, row.category, row.execution_sla_hours);
     }
 
     for (const due of slaNotificationsDue(row.counter_kind, status)) {

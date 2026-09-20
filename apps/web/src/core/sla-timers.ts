@@ -161,7 +161,18 @@ export function suggestsT2Reassignment(status: CounterStatus): boolean {
  * calcula aquí: el cliente ve rangos o fechas aproximadas, y propietario,
  * administradores y responsable ven este contador exacto.
  */
-export function t3DurationHours(category: ChangeCategory): number {
+export function t3DurationHours(category: ChangeCategory, frozen?: number | null): number {
+  /*
+    RN-SLA-18 (decisión 61) · el plazo que el trabajo **congeló al
+    aceptarse** manda sobre la tabla. Es el mismo criterio que
+    `accepted_start_sla_hours` en T2 (RN-COM-15): subir o bajar de plan no
+    reescribe hacia atrás un trabajo que ya está corriendo.
+
+    `null` o `undefined` no es un cero ni un error: es un trabajo aceptado
+    antes de la migración 118, y su plazo es el de la tabla, que es el que
+    tenía el día que se aceptó.
+  */
+  if (frozen !== undefined && frozen !== null && frozen > 0) return frozen;
   return category === "large" ? 120 : 72;
 }
 
@@ -179,9 +190,11 @@ export function t3Status(
   calendar: WorkCalendar,
   measuredAt: Date,
   category: ChangeCategory,
+  /** RN-SLA-18 · `jobs.execution_sla_hours`, si el trabajo lo congeló. */
+  frozenHours?: number | null,
 ): CounterStatus {
   const elapsedMinutes = recalculateElapsedBusinessMinutes(events, calendar, measuredAt);
-  return counterStatus(elapsedMinutes, t3DurationHours(category) * 60);
+  return counterStatus(elapsedMinutes, t3DurationHours(category, frozenHours) * 60);
 }
 
 // ---------------------------------------------------------------------

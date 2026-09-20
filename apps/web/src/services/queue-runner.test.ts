@@ -43,6 +43,7 @@ function contador(over: Partial<SlaCounterRow> = {}): SlaCounterRow {
     counter_kind: "t2",
     category: "small",
     start_sla_hours: 24,
+    execution_sla_hours: null,
     timezone: "Europe/Madrid",
     events: [{ event_type: "started", occurred_at: LUNES_9.toISOString() }],
     ...over,
@@ -446,5 +447,51 @@ describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el corr
       mailComposer,
     );
     expect(r).toEqual({ sent: 0, retried: 0, dead: 1 });
+  });
+});
+
+describe("RN-SLA-18 · el barrido mide contra el plazo congelado (decisión 61)", () => {
+  it("RN-SLA-18 · un Premium+ con 48 h ya tiene aviso donde uno de 72 h todavía no", async () => {
+    /*
+      El fallo silencioso que evita esta regla: si el barrido midiera
+      siempre contra las 72 h de la tabla, un Premium+ **no recibiría
+      ningún aviso hasta pasarse de largo**, porque el 100 % de 72 h llega
+      cuando las 48 reales hace rato que vencieron.
+
+      El reloj contractual corre lunes 09:00–24:00 y martes a viernes
+      enteros (RN-CLK-01/02), así que el martes a las 22:00 llevan
+      consumidas 37 h laborables: el 77 % de 48 y el 51 % de 72.
+    */
+    const eventos = [{ event_type: "started" as const, occurred_at: LUNES_9.toISOString() }];
+    const martes22 = new Date("2026-09-08T20:00:00Z");
+
+    const cortoEmit = vi.fn<QueueGateway["emitSlaNotification"]>(async () => 1);
+    await runSlaSweep(
+      gateway({
+        slaCounters: async () => [
+          contador({ counter_kind: "t3", category: "small", execution_sla_hours: 48, events: eventos }),
+        ],
+        emitSlaNotification: cortoEmit,
+      }),
+      "espacio",
+      martes22,
+    );
+
+    const normalEmit = vi.fn<QueueGateway["emitSlaNotification"]>(async () => 1);
+    await runSlaSweep(
+      gateway({
+        slaCounters: async () => [
+          contador({ counter_kind: "t3", category: "small", execution_sla_hours: null, events: eventos }),
+        ],
+        emitSlaNotification: normalEmit,
+      }),
+      "espacio",
+      martes22,
+    );
+
+    expect(cortoEmit.mock.calls.map((c) => c[1])).toEqual(["t3_threshold_75"]);
+    // El mismo trabajo, el mismo momento, el plazo de la tabla: todavía no
+    // hay nada que avisar.
+    expect(normalEmit).not.toHaveBeenCalled();
   });
 });

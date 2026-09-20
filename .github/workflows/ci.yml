@@ -478,6 +478,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/vigilancia_de_resenas.sql
 
+      - name: "Plazos — Verificar que el plan puede acortar el plazo de realización: se congela al aceptar y por categoría, bajar de plan no reescribe un trabajo en marcha, y los dos contadores —el de avisos y el del Inicio— miden con el congelado y no con el plan de hoy (RN-SLA-18, RN-COM-15)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/plazo_de_realizacion_del_plan.sql
+
       - name: "Planes — Verificar que el plan decide TRES cosas distintas: ordenar los cambios propios, el turno dentro del mismo plazo y el plan alto, y que ninguna arrastra a otra (RN-COM-03, decisión 55)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

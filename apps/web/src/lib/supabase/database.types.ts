@@ -3066,6 +3066,7 @@ export type Database = {
           assigned_to: string | null;
           cancelled_at: string | null;
           cancelled_by: string | null;
+          execution_sla_hours: number | null;
           cancelled_reason: string | null;
           category: string;
           code: string;
@@ -4989,6 +4990,10 @@ export type Database = {
           name: string;
           price_cents: number;
           queue_rank: number;
+          execution_sla_large: number;
+          execution_sla_medium: number;
+          execution_sla_photo: number;
+          execution_sla_small: number;
           report_level: string;
           space_id: string;
           start_sla_hours: number;
@@ -10713,6 +10718,7 @@ export type Database = {
           events: Json;
           job_id: string;
           start_sla_hours: number;
+          execution_sla_hours: number | null;
           timezone: string;
         }[];
       };
@@ -10742,6 +10748,7 @@ export type Database = {
           counter_kind: string;
           establishment_id: string;
           events: Json;
+          execution_sla_hours: number | null;
           job_code: string;
           job_id: string;
           job_state: string;

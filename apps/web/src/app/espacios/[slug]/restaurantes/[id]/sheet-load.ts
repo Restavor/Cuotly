@@ -376,7 +376,7 @@ export async function loadSheetSummary(
         .order("created_at", { ascending: false }),
       supabase
         .from("jobs")
-        .select("id, code, space_id, state, category, request_id, created_at")
+        .select("id, code, space_id, state, category, request_id, created_at, execution_sla_hours")
         .eq("establishment_id", establishmentId)
         .in("state", [...LIVE_JOB_STATES])
         .order("created_at", { ascending: false }),
@@ -552,7 +552,7 @@ export async function loadSheetOperation(
       .order("id", { ascending: false }),
     supabase
       .from("jobs")
-      .select("id, code, space_id, state, category, request_id, created_at")
+      .select("id, code, space_id, state, category, request_id, created_at, execution_sla_hours")
       .eq("establishment_id", establishmentId)
       .not("state", "in", `(${CLOSED_JOB_STATES.join(",")})`)
       .order("created_at", { ascending: false })

@@ -482,6 +482,8 @@ export interface ReportJobRow {
   readonly requestCode?: string | null;
   readonly requestAcceptedAt?: Date | null;
   readonly startSlaHours?: number | null;
+  /** RN-SLA-18 (migración 118) · el plazo de realización congelado. */
+  readonly executionSlaHours?: number | null;
 }
 
 export interface ReportRequestRow {
@@ -601,7 +603,7 @@ export function operationalIndicators(
     t2Status(job.t2Events, calendar, job.startedAt ?? measuredAt, job.hasAcceleratedSla),
   );
   const executionElapsed = finished.map((job) =>
-    t3Status(job.t3Events, calendar, job.publishedAt ?? measuredAt, job.category),
+    t3Status(job.t3Events, calendar, job.publishedAt ?? measuredAt, job.category, job.executionSlaHours),
   );
 
   const consumptionByCategory: Record<ChangeCategory, number> = { small: 0, photo: 0, medium: 0, large: 0 };
@@ -707,7 +709,7 @@ export function workerPersonalReport(input: {
       started.map((job) => t2Status(job.t2Events, input.calendar, job.startedAt ?? input.measuredAt, job.hasAcceleratedSla)),
     ),
     executionCompliancePercent: compliancePercent(
-      finished.map((job) => t3Status(job.t3Events, input.calendar, job.publishedAt ?? input.measuredAt, job.category)),
+      finished.map((job) => t3Status(job.t3Events, input.calendar, job.publishedAt ?? input.measuredAt, job.category, job.executionSlaHours)),
     ),
     averageStartMinutes: average(
       started.map(
@@ -716,7 +718,7 @@ export function workerPersonalReport(input: {
     ),
     averageCompletionMinutes: average(
       finished.map(
-        (job) => t3Status(job.t3Events, input.calendar, job.publishedAt ?? input.measuredAt, job.category).elapsedMinutes,
+        (job) => t3Status(job.t3Events, input.calendar, job.publishedAt ?? input.measuredAt, job.category, job.executionSlaHours).elapsedMinutes,
       ),
     ),
     jobsBlocked: new Set(input.blocks.filter((block) => myJobIds.has(block.jobId)).map((block) => block.jobId)).size,

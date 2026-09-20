@@ -91,6 +91,8 @@ interface CounterRow {
   readonly counter_kind: string;
   readonly category: string | null;
   readonly start_sla_hours: number | null;
+  /** RN-SLA-18 (migración 118) · el plazo de realización congelado. */
+  readonly execution_sla_hours: number | null;
   readonly timezone: string;
   readonly events: unknown;
 }
@@ -132,7 +134,14 @@ function counterStatuses(
       // RN-SLA-02 y RN-COM-12: sin plan, Básico o Impulso, 48 h; con Impulso+, Premium o Premium+, 24 h.
       actual.t2 = t2Status(events, calendar, now, row.start_sla_hours === 24);
     } else if (row.category !== null) {
-      actual.t3 = t3Status(events, calendar, now, row.category as ChangeCategory);
+      // RN-SLA-18 · el plazo congelado del trabajo (migración 118).
+      actual.t3 = t3Status(
+        events,
+        calendar,
+        now,
+        row.category as ChangeCategory,
+        row.execution_sla_hours,
+      );
     }
     porTrabajo.set(row.job_id, actual);
   }

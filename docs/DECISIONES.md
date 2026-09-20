@@ -1512,6 +1512,58 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    sobre las funciones nuevas de `src/core`, las 62 suites sobre una base limpia, 1.567 tests de web,
    y el PDF de un Premium+ con las seis piezas dentro generado y mirado página a página.
 
+61. **Premium+ tarda menos en hacer los cambios** (20/09/2026). Bosco, al cerrar la decisión 60:
+   *"lo que podemos hacer es bajar el tiempo de realizaciones de los trabajos"*, y después: *"solo lo
+   vamos a bajar en premium+"*.
+
+   Hasta hoy el plazo de realización era el mismo para todos: 72 h laborables en pequeño,
+   fotográfico y mediano, y 120 h en grande (RN-SLA-12). Los nuevos, **solo en Premium+**:
+
+   | Categoría | Antes | Premium+ | Lo que ve el cliente |
+   |---|---:|---:|---|
+   | Pequeño | 72 h | **48 h** | 1–3 días → **1–2 días** |
+   | Fotográfico | 72 h | **48 h** | 1–3 días → **1–2 días** |
+   | Mediano | 72 h | 72 h | 1–3 días (igual) |
+   | Grande | 120 h | **96 h** | 3–5 días → **2–4 días** |
+
+   **Los eligió él y son mejores que los tres que se le propusieron**, que eran recortes planos
+   (48/96, 48/72, 24/72). Lo que hizo fue crear una **escalera por categoría** que antes no existía:
+   hoy un cambio pequeño y uno mediano tienen exactamente el mismo plazo, que nunca tuvo mucho
+   sentido. Premium+ queda en 48, 48, 72 y 96, que sube con el tamaño del trabajo.
+
+   **La pega que se le puso y por qué se cayó sola.** Se le recomendó dejar las fotografías en 72 h,
+   porque una sesión depende de ir al restaurante y de que la cocina pueda emplatar. Él las bajó
+   igual, y al mirarlo resultó que no hacía falta la excepción: **el reloj de ejecución ya se pausa
+   durante los bloqueos** (RN-SLA-14), así que una sesión que espera al restaurante no consume
+   plazo. Lo único que exige es bloquearla de verdad en vez de dejar el reloj corriendo, que es una
+   costumbre del equipo, no una regla que haya que escribir.
+
+   **El plazo se congela al aceptar** (`jobs.execution_sla_hours`), igual que el de inicio
+   (RN-COM-15). Bajar de plan a mitad de mes **no alarga** el plazo de lo que ya está en marcha, ni
+   subir lo acorta. Un trabajo aceptado antes de esta regla se queda a `null`, que significa "el de
+   la tabla", que es el que tenía: rellenarlo hacia atrás habría reescrito compromisos vivos.
+
+   **Lo que encontró construirlo, y lo encontró el typecheck, no yo:** creía que el plazo de
+   ejecución se leía en **un** sitio y se lee en **tres** —el barrido que emite los avisos, los
+   contadores del Inicio del espacio y la ficha del trabajo—. Si una se hubiera quedado fuera,
+   habría **dos relojes distintos para el mismo trabajo**: el equipo vería "va sobrado" en una
+   pantalla y recibiría un aviso de vencimiento por correo. Eso es peor que un reloj mal, porque
+   deja de fiarse de los dos.
+
+   Y el fallo silencioso que esto evita: si el barrido hubiera seguido midiendo contra las 72 h de
+   la tabla, **un Premium+ no habría recibido ningún aviso hasta pasarse de largo**, porque el 100 %
+   de 72 h llega cuando las 48 reales hace rato que vencieron. Todo lo demás habría funcionado y
+   solo se habría notado el día que alguien se preguntara por qué no saltó nada.
+
+   **Los avisos del 75 %, 90 % y 100 % se mueven solos**, porque son porcentajes del plazo: en un
+   pequeño de Premium+ el primero salta a las 36 h laborables en vez de a las 54. No hubo ningún
+   umbral nuevo que decidir.
+
+   Comprobado: suite 63 `plazo_de_realizacion_del_plan.sql` con **tres mutaciones** —no congelar el
+   plazo, congelar siempre la columna del pequeño, y que el barrido leyera el plan de hoy en vez del
+   congelado—, las 63 suites sobre una base limpia, 1.572 tests de web, y las huellas de las cuatro
+   funciones iguales en local y en producción.
+
 ---
 
 ### Pendiente de completar

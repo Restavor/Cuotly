@@ -145,6 +145,12 @@ export function parseOperationDataset(raw: Record<string, unknown>): OperationDa
       row.start_sla_hours === null || row.start_sla_hours === undefined
         ? null
         : asNumber(row.start_sla_hours),
+    // RN-SLA-18 (migración 118) · el plazo de realización congelado. Sin
+    // él, los tiempos de cada cambio dirían si cumplió el plazo de otro.
+    executionSlaHours:
+      row.execution_sla_hours === null || row.execution_sla_hours === undefined
+        ? null
+        : asNumber(row.execution_sla_hours),
   }));
 
   const blocks: ReportBlockRow[] = asArray(raw.blocks).map((row) => ({

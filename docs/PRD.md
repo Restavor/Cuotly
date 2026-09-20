@@ -333,11 +333,44 @@ isWithinBusinessWindow(at: Date, calendar: WorkCalendar): boolean
 | Mediano | 1–3 días laborables | 72 h laborables |
 | Grande | 3–5 días laborables | 120 h laborables |
 
+Desde el 20/09/2026 esta tabla es el **valor por omisión**: un plan puede acortarla (RN-SLA-18).
+
 - **RN-SLA-13**: se detiene al publicar.
 - **RN-SLA-14**: se **pausa** durante bloqueos y pausas autorizadas, conservando el tiempo restante exacto.
 - **RN-SLA-15**: avisos al 75 %, 90 % y 100 %.
 - **RN-SLA-16**: el cliente ve rangos o fechas aproximadas. Propietario, administradores y responsable ven el contador exacto.
 - **RN-SLA-17**: "Fuera de plazo" es una **condición calculada**, no un estado. Puede coexistir con En curso, Bloqueado o cualquier otro.
+- **RN-SLA-18 (añadida 20/09/2026, decisión 61)**: **el plan puede acortar el plazo de realización**, y
+  la tabla de RN-SLA-12 pasa a ser el **valor por omisión**, no el único. Vive en cuatro columnas de
+  `plans` —una por categoría, como los cambios incluidos— y no en el nombre del plan, porque Cuotly
+  es multiempresa.
+
+  Los de Restavor, fijados por Bosco el 20/09/2026, y **solo bajan en Premium+**:
+
+  | Categoría | Todos los planes | Premium+ | Lo que ve el cliente |
+  |---|---:|---:|---|
+  | Pequeño | 72 h | **48 h** | 1–3 días → **1–2 días** |
+  | Fotográfico | 72 h | **48 h** | 1–3 días → **1–2 días** |
+  | Mediano | 72 h | 72 h | 1–3 días (igual) |
+  | Grande | 120 h | **96 h** | 3–5 días → **2–4 días** |
+
+  **Lo que esto arregla de paso:** hoy un cambio pequeño y uno mediano tienen el mismo plazo, que
+  nunca tuvo mucho sentido. Con estos números Premium+ tiene una escalera que sube con el tamaño del
+  trabajo —48, 48, 72, 96— en vez de un escalón plano y otro muy alto.
+
+  **El plazo se congela al aceptar**, en `jobs.execution_sla_hours`, exactamente como el de inicio
+  (RN-COM-15): un cambio de plan **no reescribe hacia atrás** un trabajo ya aceptado, ni para
+  acortarlo ni para alargarlo. Un trabajo aceptado antes de esta regla no tiene valor congelado y se
+  mide con la tabla de RN-SLA-12, que es la que tenía el día que se aceptó.
+
+  **No hace falta ninguna excepción para las fotografías**, que era la duda: el reloj de ejecución ya
+  **se pausa durante los bloqueos** (RN-SLA-14), así que una sesión que espera a que el restaurante
+  pueda emplatar no consume plazo mientras esté bloqueada. Lo que exige es bloquearla de verdad en
+  vez de dejar el reloj corriendo.
+
+  **Los avisos del 75 %, 90 % y 100 % (RN-SLA-15) se mueven solos**, porque son porcentajes del
+  plazo: en un pequeño de Premium+ el primero salta a las 36 h laborables en vez de a las 54. No hay
+  ningún umbral nuevo que decidir.
 
 **Implementación**: cada arranque, pausa, reanudación y parada se registra como fila en `timer_events`.
 El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mutable.

@@ -296,3 +296,42 @@ describe("CA-14 · RN-SLA-17: \"Fuera de plazo\" es una condición calculada, no
     expect(jobDeadlineCondition("completed", { t3: vencido }).outOfDeadline).toBe(false);
   });
 });
+
+describe("RN-SLA-18 · el plan puede acortar el plazo de realización (decisión 61)", () => {
+  it("RN-SLA-18 · el plazo congelado en el trabajo manda sobre la tabla", () => {
+    // Los de Premium+ que fijó Bosco el 20/09/2026.
+    expect(t3DurationHours("small", 48)).toBe(48);
+    expect(t3DurationHours("photo", 48)).toBe(48);
+    expect(t3DurationHours("medium", 72)).toBe(72);
+    expect(t3DurationHours("large", 96)).toBe(96);
+  });
+
+  it("RN-SLA-18 · un trabajo sin plazo congelado usa el de RN-SLA-12, que es el que tenía", () => {
+    // Aceptado antes de la migración 118: su compromiso era el de la
+    // tabla, y rellenarlo con el de hoy sería reescribirlo.
+    expect(t3DurationHours("small", null)).toBe(72);
+    expect(t3DurationHours("small", undefined)).toBe(72);
+    expect(t3DurationHours("large", null)).toBe(120);
+  });
+
+  it("RN-SLA-18 · un plazo congelado imposible no se usa: se cae al de la tabla", () => {
+    // Un 0 o un negativo no es un plazo más corto, es un dato roto, y
+    // tomarlo al pie de la letra dejaría el trabajo fuera de plazo desde
+    // el segundo cero.
+    expect(t3DurationHours("small", 0)).toBe(72);
+    expect(t3DurationHours("small", -5)).toBe(72);
+  });
+
+  it("RN-SLA-15, RN-SLA-18 · los avisos se mueven con el plazo, sin umbral nuevo", () => {
+    const eventos: TimerEvent[] = [{ type: "started", occurredAt: LUNES_09 }];
+
+    const premiumPlus = t3Status(eventos, calendar, LUNES_15, "small", 48);
+    const normal = t3Status(eventos, calendar, LUNES_15, "small");
+
+    // El mismo tiempo consumido, dos lecturas distintas: con 48 h ya va
+    // por más de la mitad; con 72 h, por bastante menos.
+    expect(premiumPlus.elapsedMinutes).toBe(normal.elapsedMinutes);
+    expect(premiumPlus.percentUsed).toBeGreaterThan(normal.percentUsed);
+    expect(premiumPlus.remainingMinutes).toBeLessThan(normal.remainingMinutes);
+  });
+});

@@ -87,6 +87,13 @@ export async function loadJobTimers(
     readonly space_id: string;
     readonly state: string;
     readonly category: string | null;
+    /**
+     * RN-SLA-18 (migración 118) · el plazo de realización congelado al
+     * aceptar. Opcional porque quien llama puede no haberlo pedido: sin
+     * él se usa el de RN-SLA-12, que es el correcto para un trabajo
+     * aceptado antes de la 118.
+     */
+    readonly execution_sla_hours?: number | null;
   },
   now: Date = new Date(),
 ): Promise<JobTimers> {
@@ -135,7 +142,8 @@ export async function loadJobTimers(
     job.category === null
       ? null
       : statusFrom(t3Events, holidays, timezone, (events, calendar) =>
-          t3Status(events, calendar, now, job.category as ChangeCategory),
+          // RN-SLA-18 · con el plazo que el trabajo congeló al aceptarse.
+          t3Status(events, calendar, now, job.category as ChangeCategory, job.execution_sla_hours),
         );
 
   const condition = jobDeadlineCondition(job.state as JobState, {

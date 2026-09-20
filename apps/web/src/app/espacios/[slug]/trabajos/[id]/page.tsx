@@ -168,7 +168,7 @@ export default async function TeamJobDetailPage({
   const { data: job } = await supabase
     .from("jobs")
     .select(
-      "id, space_id, code, state, category, assigned_to, establishment_id, request_id, quote_id, started_at, published_at, correction_window_ends_at",
+      "id, space_id, code, state, category, assigned_to, establishment_id, request_id, quote_id, started_at, published_at, correction_window_ends_at, execution_sla_hours",
     )
     .eq("id", id)
     .maybeSingle();
