@@ -30,12 +30,12 @@ export default async function SecurityPage() {
     access = await myPlatformAccess(supabase);
   } catch (fallo) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
+      <div className="mx-auto max-w-2xl">
         <ErrorState
           title={es.twoFactor.errorTitle}
           description={fallo instanceof Error ? fallo.message : es.twoFactor.loadError}
         />
-      </main>
+      </div>
     );
   }
 
@@ -50,7 +50,7 @@ export default async function SecurityPage() {
   const policy = twoFactorPolicyFor(access, spaceRole);
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-8">
+    <div className="mx-auto max-w-2xl space-y-6">
       <p className="text-sm">
         <Link href="/" className="text-cuotly-green underline">
           {es.twoFactor.backHome}
@@ -72,6 +72,6 @@ export default async function SecurityPage() {
       </header>
 
       <TwoFactorSetup sessionVerified={access.twoFactor} />
-    </main>
+    </div>
   );
 }

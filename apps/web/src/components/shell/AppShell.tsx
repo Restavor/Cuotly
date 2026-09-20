@@ -14,6 +14,10 @@ import {
   activeDestination,
   createOptions,
   DESTINATION_ICONS,
+  globalActiveDestination,
+  globalCreateOptions,
+  globalMenuGroups,
+  globalMobileNav,
   isClientRole,
   mobileNav,
   sidebarGroups,
@@ -73,10 +77,11 @@ export interface PanelEstablishment {
 }
 
 export function AppShell({
-  spaceSlug,
-  spaceName,
-  role,
-  roleLabel,
+  context = "space",
+  spaceSlug = "",
+  spaceName = "",
+  role = "owner",
+  roleLabel = "",
   userInitial,
   userLabel,
   notifications,
@@ -89,11 +94,26 @@ export function AppShell({
   unreadMessages = 0,
   children,
 }: {
-  spaceSlug: string;
-  spaceName: string;
-  role: ShellRole;
+  /**
+   * De quién es este armazón.
+   *
+   * `"space"` es el de siempre: un espacio de mantenimiento o el panel de
+   * un restaurante, que se distinguen por el rol. `"global"` es §36, la
+   * zona de fuera (G01 a G08), que tiene otros destinos y **ninguna caja
+   * de contexto**: no estás dentro de nada de lo que salir.
+   *
+   * Los cuatro campos de abajo —espacio, nombre, rol y su etiqueta— son
+   * del armazón de espacio y en `"global"` no se leen. Por eso llevan un
+   * valor por omisión en vez de ser obligatorios: quien pinta el contexto
+   * global no tiene ninguno de los cuatro que darle, y obligarle a
+   * inventárselos sería peor que no pedírselos.
+   */
+  context?: "space" | "global";
+  spaceSlug?: string;
+  spaceName?: string;
+  role?: ShellRole;
   /** El rol, en el nombre que ve la persona (§20.1: el selector lo enseña). */
-  roleLabel: string;
+  roleLabel?: string;
   /** La inicial del avatar, que es lo que se pinta cuando no hay foto. */
   userInitial: string;
   /**
@@ -148,32 +168,42 @@ export function AppShell({
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
 
-  const esPanel = isClientRole(role);
+  const esGlobal = context === "global";
+  const esPanel = !esGlobal && isClientRole(role);
   const menu = useMemo(
-    () => sidebarGroups(spaceSlug, role, establishmentId),
-    [spaceSlug, role, establishmentId],
+    () => (esGlobal ? globalMenuGroups() : sidebarGroups(spaceSlug, role, establishmentId)),
+    [esGlobal, spaceSlug, role, establishmentId],
   );
   /**
    * RN-PAN-01 · la raíz del contexto. Para el equipo es su espacio; para
    * el restaurante, SU panel. El logotipo y la casita de la miga de pan
    * llevan ahí, no a una pantalla del espacio que él no puede abrir.
    */
-  const contextHome = esPanel && establishmentId !== null
-    ? `/espacios/${spaceSlug}/restaurantes/${establishmentId}`
-    : `/espacios/${spaceSlug}`;
+  const contextHome = esGlobal
+    ? "/"
+    : esPanel && establishmentId !== null
+      ? `/espacios/${spaceSlug}/restaurantes/${establishmentId}`
+      : `/espacios/${spaceSlug}`;
   /** RN-PAN-03 · el nombre de arriba: el del local, nunca el del espacio. */
-  const contextName = esPanel ? establishmentName ?? es.restaurantPanel.label : spaceName;
+  const contextName = esGlobal
+    ? es.globalContext.nav.home
+    : esPanel
+      ? establishmentName ?? es.restaurantPanel.label
+      : spaceName;
   const mobile = useMemo(
-    () => mobileNav(spaceSlug, role, establishmentId),
-    [spaceSlug, role, establishmentId],
+    () => (esGlobal ? globalMobileNav() : mobileNav(spaceSlug, role, establishmentId)),
+    [esGlobal, spaceSlug, role, establishmentId],
   );
   const creates = useMemo(
-    () => createOptions(spaceSlug, role, establishmentId),
-    [spaceSlug, role, establishmentId],
+    () => (esGlobal ? globalCreateOptions() : createOptions(spaceSlug, role, establishmentId)),
+    [esGlobal, spaceSlug, role, establishmentId],
   );
   const active = useMemo(
-    () => activeDestination(spaceSlug, pathname ?? "", role, establishmentId),
-    [spaceSlug, pathname, role, establishmentId],
+    () =>
+      esGlobal
+        ? globalActiveDestination(pathname ?? "")
+        : activeDestination(spaceSlug, pathname ?? "", role, establishmentId),
+    [esGlobal, spaceSlug, pathname, role, establishmentId],
   );
   const unread = notifications.filter((n) => n.readAt === null).length;
 
@@ -243,6 +273,14 @@ export function AppShell({
             al mismo sitio, uno encima del otro, es un tabulador de más para
             quien navega con teclado y dos veces lo mismo para quien escucha.
           */}
+          {/*
+            La caja de contexto y la salida a Cuotly solo existen DENTRO de
+            algo. En el contexto global (§36) no se pintan: no hay espacio
+            del que cambiar ni sitio al que volver, porque ya estás en la
+            raíz. Un "Volver al inicio de Cuotly" en el inicio de Cuotly es
+            un enlace que no lleva a ninguna parte.
+          */}
+          {esGlobal ? null : (
           <div className="px-3">
             {esPanel ? (
               <PanelContextBox
@@ -287,6 +325,7 @@ export function AppShell({
               {es.globalContext.backToCuotly}
             </Link>
           </div>
+          )}
 
           <nav
             aria-label={esPanel ? es.restaurantPanel.menuLabel : es.nav.menuLabel}
@@ -454,8 +493,14 @@ export function AppShell({
               sitios era ofrecer la misma acción dos veces en una pantalla
               de 390 px, y encima empujaba la miga de pan hasta dejarla en
               "Arm…".
+
+              Y en el contexto global no va en la cabecera **en ninguna
+              anchura**: G01 y G04 pintan ahí solo el buscador, la campana y
+              el avatar, y ofrecen "Crear espacio de mantenimiento" como
+              botón de la propia pantalla. En el teléfono sigue en la barra
+              de abajo, que es donde la maqueta de móvil sí lo dibuja.
             */}
-            {creates.length > 0 ? (
+            {creates.length > 0 && !esGlobal ? (
               <details data-testid="create-menu" className="relative hidden lg:block">
                 <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-field bg-primary px-3.5 py-2 text-sm font-medium text-surface transition-colors hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green [&::-webkit-details-marker]:hidden">
                   <Icon name="plus" className="h-4 w-4" />

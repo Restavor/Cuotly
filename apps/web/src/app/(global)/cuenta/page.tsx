@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Card, ErrorState } from "@/components/ui";
+import { Button, Card, ErrorState } from "@/components/ui";
 import { MANDATORY_EVENTS, NOTIFICATION_EVENTS } from "@/core/notifications";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { myNotificationPreferences } from "@/services/global-gateway";
 
 import { avatarInitial, avatarLink } from "@/services/avatar-storage";
+
+import { signOut } from "../../(auth)/actions";
 
 import { AvatarForm } from "./AvatarForm";
 import { NotificationPreferences, type PreferenceRow } from "./NotificationPreferences";
@@ -125,6 +127,21 @@ export default async function AccountPage() {
             </Link>
           </li>
         </ul>
+
+        {/*
+          Salir de Cuotly vive aquí desde el 20/09/2026.
+          Estaba en la barra lateral del contexto global, que era la única
+          del producto que lo ofrecía; al pasar esa zona al armazón del
+          diseño —cuyo menú son los cinco destinos de G01, sin un sexto—
+          habría desaparecido del todo. Este es su sitio natural: cerrar la
+          sesión es de la cuenta, como cambiar la contraseña o revisar las
+          sesiones abiertas, y está a un clic del menú.
+        */}
+        <form action={signOut} className="mt-4 border-t border-border pt-4">
+          <Button type="submit" variant="secondary">
+            {es.home.signOut}
+          </Button>
+        </form>
       </Card>
 
       <Card title={t.notificationsTitle}>

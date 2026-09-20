@@ -188,7 +188,7 @@ export function mobileNav(
   if (isClientRole(role)) {
     return [
       D("home", es.nav.home, mine ?? GLOBAL_HOME),
-      D("establishments", es.nav.establishments, GLOBAL_HOME),
+      D("establishments", es.nav.establishments, `${GLOBAL_HOME}${GLOBAL_PANELS_ANCHOR}`),
       D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : GLOBAL_HOME),
       // "Más" es la MISMA ruta para todos: `/espacios/<slug>/mas` ya
       // decide su contenido por rol con `moreDestinations()`. Una ruta
@@ -206,8 +206,27 @@ export function mobileNav(
   ];
 }
 
-/** §36 · el Inicio global, la raíz de quien no está en ningún contexto. */
-const GLOBAL_HOME = "/inicio";
+/**
+ * §36 · el Inicio global, la raíz de quien no está en ningún contexto.
+ *
+ * Es `/` y no `/inicio` desde la **decisión 42**: la raíz *es* el Inicio
+ * global. `/inicio` sigue existiendo, pero solo como puerta que redirige
+ * —lo dice su propia página—, y mandar ahí la navegación del producto
+ * costaba un salto de más y, peor, hacía que estando en `/` el destino
+ * "Inicio" no se marcara como activo: la dirección no casaba con la del
+ * menú.
+ */
+const GLOBAL_HOME = "/";
+
+/**
+ * RN-GLO-03 · "Mis paneles de restaurante" es un bloque del Inicio global,
+ * no una pantalla aparte. El ancla es lo honesto mientras eso sea así: no
+ * inventa una ruta que no existe, y evita que la barra tenga dos filas que
+ * llevan al mismo sitio sin decir a qué parte —el mismo razonamiento que
+ * `PANEL_ANCHORS`—. El identificador tiene que existir en el Inicio
+ * global; `contexto-global.test.ts` falla si no está.
+ */
+export const GLOBAL_PANELS_ANCHOR = "#mis-paneles";
 
 /**
  * §20.5 · "Botón global **Crear** cuyas opciones dependen del contexto y
@@ -330,6 +349,109 @@ export function moreDestinations(
   ];
 }
 
+/* ------------------------------------------------------------------ *
+ * §36 · El contexto global (vistas G01 a G08)
+ *
+ * La zona de Cuotly que ocurre FUERA de todo espacio y de todo panel, y a
+ * la que entra todo el mundo al identificarse (decisión 42).
+ *
+ * Tiene su propia lista de destinos, pero **no su propio armazón**: el
+ * diseño enseña la misma barra lateral verde y la misma cabecera en las
+ * 157 vistas. Hasta el 20/09/2026 esta zona se pintaba con una tarjeta
+ * blanca con borde, sin iconos, sin buscador, sin campana y sin avatar, y
+ * como es la primera pantalla que se ve al entrar, era también la que
+ * menos se parecía al diseño.
+ * ------------------------------------------------------------------ */
+
+/** §36 · los cinco destinos de G01 a G08, en el orden de la maqueta. */
+export function globalMenu(): readonly NavDestination[] {
+  const t = es.globalContext.nav;
+  return [
+    D("home", t.home, GLOBAL_HOME),
+    D("myRequests", t.requests, "/mis-solicitudes"),
+    D("messages", t.messages, "/mensajes"),
+    D("account", t.account, "/cuenta"),
+    D("help", t.help, "/ayuda"),
+  ];
+}
+
+/**
+ * El menú lateral del contexto global. **No tiene pie**: el diseño pinta
+ * los cinco seguidos, sin separación. En el espacio sí la hay porque
+ * Agente y Ajustes son de otra naturaleza que los destinos de trabajo;
+ * aquí los cinco son lo mismo.
+ */
+export function globalMenuGroups(): {
+  readonly main: readonly NavDestination[];
+  readonly footer: readonly NavDestination[];
+} {
+  return { main: globalMenu(), footer: [] };
+}
+
+/**
+ * §20.3 (decisión 47) · la barra de móvil, que es la misma en todos los
+ * contextos: Inicio · Restaurantes · Crear · Mensajes · Más.
+ *
+ * "Restaurantes" apunta al bloque de paneles del Inicio global, que es
+ * donde están (RN-GLO-03). Con el ancla, y no a la raíz pelada, para que
+ * no sean dos filas que llevan a lo mismo sin decir a qué parte.
+ */
+export function globalMobileNav(): readonly NavDestination[] {
+  return [
+    D("home", es.globalContext.nav.home, GLOBAL_HOME),
+    D("establishments", es.nav.establishments, `${GLOBAL_HOME}${GLOBAL_PANELS_ANCHOR}`),
+    D("messages", es.globalContext.nav.messages, "/mensajes"),
+    D("more", es.nav.more, "/mas"),
+  ];
+}
+
+/**
+ * Lo que no cabe en la barra. Se DERIVA, igual que `moreDestinations()`:
+ * una tercera lista escrita a mano es la que se queda desfasada.
+ */
+export function globalMoreDestinations(): readonly NavDestination[] {
+  const enLaBarra = new Set(globalMobileNav().map((d) => d.key));
+  return [
+    ...globalMenu().filter((d) => !enLaBarra.has(d.key)),
+    D("sessions", es.nav.sessions, "/cuenta/sesiones"),
+  ];
+}
+
+/**
+ * §20.5 · lo único que se puede crear desde fuera de todo contexto es lo
+ * que G01 ofrece con ese mismo nombre: pedir un espacio de mantenimiento.
+ * No se inventa ninguna otra: fuera de un espacio no hay nada más que
+ * crear.
+ */
+export function globalCreateOptions(): readonly NavDestination[] {
+  return [D("space", es.create.space, "/solicitar-espacio")];
+}
+
+/**
+ * El destino activo del contexto global. Mismo criterio que
+ * `activeDestination()` —gana el prefijo más largo, por segmentos
+ * completos— con el caso aparte de Inicio: su ruta es `/`, que es prefijo
+ * de todo, así que solo casa exacto. Sin eso, las cinco pantallas
+ * marcarían "Inicio".
+ */
+export function globalActiveDestination(pathname: string): NavDestination | null {
+  const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+
+  return globalMenu()
+    .filter((d) => {
+      const href = hrefWithoutAnchor(d.href);
+      if (href === "/") return limpio === "/";
+      return limpio === href || limpio.startsWith(`${href}/`);
+    })
+    .reduce<NavDestination | null>(
+      (mejor, d) =>
+        mejor === null || hrefWithoutAnchor(d.href).length > hrefWithoutAnchor(mejor.href).length
+          ? d
+          : mejor,
+      null,
+    );
+}
+
 /**
  * El icono de cada destino del menú (§20.2). Vive aquí, junto a la lista
  * de destinos, y no dentro del JSX del armazón: así el barrido de
@@ -361,6 +483,10 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   sources: "database",
   switchSpace: "switchSpace",
   sessions: "person",
+  // §36 · los que solo existen en el contexto global (G01 a G08).
+  myRequests: "request",
+  account: "person",
+  space: "building",
 };
 
 /**

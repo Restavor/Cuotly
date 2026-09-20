@@ -62,11 +62,18 @@ sin buscador, sin campana y sin avatar, dentro de un contenedor centrado de
 
 A rehacer:
 
-1. Que `(global)` use el mismo armazón que el espacio, con sus cinco destinos y
-   su insignia de no leídos. Un armazón, no dos.
-2. **Miga de pan completa.** El diseño la escribe entera —`Restavor ›
-   Restaurantes › Magariños › Gestión › Datos del establecimiento` (M40)—. Hoy
-   `AppShell` pinta un icono de casa y, como mucho, el destino activo.
+1. ~~Que `(global)` use el mismo armazón que el espacio~~ — **hecho el
+   20/09/2026**. Un armazón, no dos: `AppShell` recibe `context="global"` y
+   pinta los cinco destinos de G01 con sus iconos, sin caja de contexto (no
+   hay espacio del que salir) y sin el botón Crear en la cabecera, que G01 y
+   G04 no dibujan ahí. Se puede mirar sin sesión en `/armazon/global`.
+   Dos cosas que había que recolocar y no perder por el camino: **cerrar
+   sesión**, que solo existía en la barra lateral vieja y ahora está en Mi
+   cuenta, y la pantalla **"Más"** de móvil, que en esta zona no existía y
+   era un 404 en la barra.
+2. ~~**Miga de pan completa**~~ — **hecha el 20/09/2026**. Casa, contexto y
+   pantalla, y en móvil en su propia fila: en una sola, a 390 px, se quedaba
+   en "Arm…".
 3. G02/G03 · crear espacio de mantenimiento: dos columnas de formulario, la
    elección de plan **Pro 149 € / Agency 499 €** (que son los reales, RN-SUB;
    no hay nada que inventar), "¿Qué pasa después?" en tres pasos y el aviso de
@@ -156,6 +163,14 @@ Las diez secciones restantes del panel, una vez que la parte 10 les ha hecho
 sitio.
 
 ---
+
+## Lo que se ha arreglado hasta ahora
+
+| Cuándo | Qué | Dónde se mira |
+|---|---|---|
+| 20/09/2026 | La barra inferior de móvil, con iconos y Crear en el centro (§20.3, decisión 47) | `/armazon` a 390 px |
+| 20/09/2026 | La cabecera, en dos filas en móvil, con el logotipo | `/armazon` a 390 px |
+| 20/09/2026 | El contexto global con el armazón de todos (§36) | `/armazon/global` |
 
 ## Cómo se comprueba cada parte
 

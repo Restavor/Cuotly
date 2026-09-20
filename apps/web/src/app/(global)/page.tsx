@@ -185,6 +185,16 @@ export default async function GlobalHomePage() {
             </Card>
           ) : null}
 
+          {/*
+            RN-GLO-03 · "Mis paneles de restaurante" es un bloque de esta
+            pantalla, y la barra de móvil lo nombra "Restaurantes" con un
+            ancla (`GLOBAL_PANELS_ANCHOR`). La sección se pinta SIEMPRE,
+            tenga o no paneles dentro: si solo existiera cuando hay alguno,
+            el enlace de la barra no llevaría a ninguna parte justo para
+            quien todavía no tiene ninguno. `contents` la deja fuera del
+            reparto del espacio, así que no cambia nada de la maqueta.
+          */}
+          <section id="mis-paneles" className="contents">
           {home.restaurants.length > 0 ? (
             <Card title={t.restaurantsTitle}>
               <ul className="space-y-2">
@@ -201,6 +211,7 @@ export default async function GlobalHomePage() {
               </ul>
             </Card>
           ) : null}
+          </section>
         </div>
       )}
 

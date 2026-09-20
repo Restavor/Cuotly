@@ -10,6 +10,7 @@ import {
   DESTINATION_ICONS,
   desktopMenu,
   desktopMenuGroups,
+  hrefWithoutAnchor,
   isClientRole,
   isStaffRole,
   mobileNav,
@@ -113,7 +114,7 @@ describe("Los destinos del cliente son SUYOS, no los del equipo", () => {
     // "Restaurantes" va al Inicio global a propósito: los suyos pueden estar
     // en varios espacios de mantenimiento y esa lista solo existe allí
     // (RN-GLO-03). No se inventa una ruta nueva.
-    expect(destinos.get("establishments")).toBe("/inicio");
+    expect(destinos.get("establishments")).toBe("/#mis-paneles");
     // "Más" es la misma ruta para todos: decide su contenido por rol.
     expect(destinos.get("more")).toBe(`/espacios/${SLUG}/mas`);
   });
@@ -140,7 +141,7 @@ describe("Los destinos del cliente son SUYOS, no los del equipo", () => {
     // la raíz ES el Inicio global, y desde la 47 la barra lo nombra. Lo que
     // no puede pasar es que caiga en una pantalla del equipo.
     for (const destino of mobileNav(SLUG, "client")) {
-      const esGlobal = destino.href === "/inicio";
+      const esGlobal = hrefWithoutAnchor(destino.href) === "/";
       const esMas = destino.href === `/espacios/${SLUG}/mas`;
       expect(esGlobal || esMas, `${destino.key} → ${destino.href}`).toBe(true);
     }

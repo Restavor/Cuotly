@@ -912,6 +912,8 @@ export const es = {
     invite: "Invitar a alguien al equipo",
     absence: "Pedir una ausencia",
     holiday: "Añadir un festivo",
+    // §36 · lo único que se crea desde fuera de todo contexto (G01, G02).
+    space: "Crear espacio de mantenimiento",
     empty: "No tienes permiso para crear nada aquí.",
   },
 

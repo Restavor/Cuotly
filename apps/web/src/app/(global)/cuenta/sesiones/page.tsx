@@ -32,10 +32,10 @@ export default async function SessionsPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
+      <div className="mx-auto max-w-2xl">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.sessions.title}</h1>
         <ErrorState title={es.sessions.errorTitle} description={es.sessions.errorReason} />
-      </main>
+      </div>
     );
   }
 
@@ -43,7 +43,7 @@ export default async function SessionsPage() {
   const others = sessions.filter((s) => !s.is_current);
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl">
       <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.sessions.title}</h1>
       <p className="mb-2 text-sm text-text-secondary">{es.sessions.subtitle}</p>
       <p className="mb-6 text-sm">
@@ -83,6 +83,6 @@ export default async function SessionsPage() {
           <EmptyState title={es.sessions.emptyTitle} description={es.sessions.emptyReason} />
         </div>
       ) : null}
-    </main>
+    </div>
   );
 }

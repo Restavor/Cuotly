@@ -42,9 +42,9 @@ export default async function RequestSpacePage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-2xl p-8">
+      <div className="mx-auto max-w-2xl">
         <ErrorState title={es.spaceRequestForm.errorTitle} description={error.message} />
-      </main>
+      </div>
     );
   }
 
@@ -60,7 +60,7 @@ export default async function RequestSpacePage() {
     : { data: null };
 
   return (
-    <main className="mx-auto max-w-2xl space-y-6 p-8">
+    <div className="mx-auto max-w-2xl space-y-6">
       <p className="text-sm">
         <Link href="/" className="text-cuotly-green underline">
           {t.back}
@@ -136,6 +136,6 @@ export default async function RequestSpacePage() {
           />
         </Card>
       ) : null}
-    </main>
+    </div>
   );
 }

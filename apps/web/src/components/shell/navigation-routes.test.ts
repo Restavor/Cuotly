@@ -6,6 +6,10 @@ import { describe, expect, it } from "vitest";
 import {
   createOptions,
   desktopMenu,
+  globalCreateOptions,
+  globalMenu,
+  globalMobileNav,
+  globalMoreDestinations,
   hrefWithoutAnchor,
   mobileNav,
   type ShellRole,
@@ -84,6 +88,13 @@ function destinosDeLaAplicacion() {
   const todos = [
     ...desktopMenu(SLUG),
     ...ROLES.flatMap((role) => [...mobileNav(SLUG, role, REST), ...createOptions(SLUG, role, REST)]),
+    // §36 · el contexto global entra en el mismo barrido desde el
+    // 20/09/2026, cuando pasó a usar este armazón. Sus destinos no
+    // dependen del espacio ni del rol, así que se añaden una sola vez.
+    ...globalMenu(),
+    ...globalMobileNav(),
+    ...globalMoreDestinations(),
+    ...globalCreateOptions(),
   ];
   // El selector de contexto ("/") no es una ruta del espacio: es la
   // portada, y tiene su propia página.
