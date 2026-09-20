@@ -48,6 +48,21 @@ export interface ActivityEntry {
 
 export interface SpaceHome {
   readonly activeEstablishments: number;
+  /**
+   * Página 22 del diseño · el "de N en total" del primer recuadro. Van los
+   * dos números porque son dos cosas: cuántos están activos y cuántos hay,
+   * y el segundo incluye pausados, suspendidos y archivados.
+   */
+  readonly establishmentsTotal: number;
+  /** Página 22 · "Estado por restaurante", con el estado de cada uno. */
+  readonly restaurants: readonly {
+    readonly id: string;
+    readonly name: string;
+    readonly status: string;
+  }[];
+  /** Página 22 · "Trabajos en curso", y de ellos cuántos van en plazo. */
+  readonly jobsInProgress: number;
+  readonly jobsOnTime: number;
   readonly pendingRequests: number;
   /**
    * `null` cuando NO se ha podido calcular (la consulta de contadores
@@ -163,6 +178,8 @@ export interface SpaceAttention {
   readonly items: readonly AttentionItem[];
   /** `null` cuando los contadores no se han podido leer (ver `SpaceHome`). */
   readonly jobsAtDeadlineRisk: number | null;
+  readonly jobsInProgress: number;
+  readonly jobsOnTime: number;
   readonly pendingRequests: number;
   readonly establishments: readonly EstablishmentRow[];
   readonly openJobs: readonly JobRow[];
@@ -227,6 +244,8 @@ export async function loadSpaceAttention(
   // ------------------------------------------------------------------
   const jobItems: AttentionItem[] = [];
   let atRisk = 0;
+  let enCurso = 0;
+  let enPlazo = 0;
 
   for (const job of jobRows) {
     if (!isJobState(job.state)) continue;
@@ -234,6 +253,11 @@ export async function loadSpaceAttention(
     const establishment = establishmentName.get(job.establishment_id) ?? null;
     const deepLink = `/espacios/${spaceSlug}/trabajos/${job.id}`;
     const { risk, remainingMinutes, counter } = jobDeadlineRisk(state, statuses.get(job.id) ?? {});
+
+    if (state === "in_progress") {
+      enCurso += 1;
+      if (risk === "none") enPlazo += 1;
+    }
 
     if (risk !== "none") {
       atRisk += 1;
@@ -302,6 +326,12 @@ export async function loadSpaceAttention(
 
   return {
     items: sortAttentionItems([...jobItems, ...requestItems]),
+    // Página 22 del diseño · "Trabajos en curso · N en tiempo". Los dos
+    // números salen del mismo recorrido de arriba: `enCurso` son los que
+    // están en marcha y `enPlazo`, los que de esos no tienen el plazo en
+    // riesgo. Contarlos en otro sitio daría dos cuentas que se separan.
+    jobsInProgress: enCurso,
+    jobsOnTime: enPlazo,
     // Sin contadores no hay número que dar: decir "0 trabajos próximos a
     // vencer" sería tranquilizar sin haber mirado (CA-20).
     jobsAtDeadlineRisk: countersError === null ? atRisk : null,
@@ -394,6 +424,14 @@ export async function loadSpaceHome(
 
   return {
     activeEstablishments: attention.establishments.filter((e) => e.status === "active").length,
+    establishmentsTotal: attention.establishments.length,
+    restaurants: attention.establishments.map((e) => ({
+      id: e.id,
+      name: e.name,
+      status: e.status,
+    })),
+    jobsInProgress: attention.jobsInProgress,
+    jobsOnTime: attention.jobsOnTime,
     pendingRequests: attention.pendingRequests,
     jobsAtDeadlineRisk: attention.jobsAtDeadlineRisk,
     attention: attention.items,

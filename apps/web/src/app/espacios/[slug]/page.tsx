@@ -5,8 +5,10 @@ import { AttentionList } from "@/components/home/AttentionList";
 import { KpiCard } from "@/components/home/KpiCard";
 import { PanelLink } from "@/components/home/PanelLink";
 import { TeamLoad } from "@/components/home/TeamLoad";
-import { Card, EmptyState, ErrorState, NoPermissionState } from "@/components/ui";
+import { Card, EmptyState, ErrorState, NoPermissionState, StatusBadge } from "@/components/ui";
 import { EmptyReason } from "@/components/ui/EmptyReason";
+import { Icon } from "@/components/ui/Icon";
+import Link from "next/link";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -83,6 +85,13 @@ export default async function SpacePage({
     );
   }
 
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const nombre = (perfil?.full_name ?? "").trim().split(" ")[0] ?? "";
+
   const now = new Date();
   const home = await loadSpaceHome(supabase, space.id, space.slug, now);
   const base = `/espacios/${space.slug}`;
@@ -108,9 +117,20 @@ export default async function SpacePage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
+      {/*
+        Página 22 del diseño · el saludo con el nombre de quien entra y una
+        frase que dice de qué va la pantalla. El título "Inicio" ya está en
+        la miga de pan del armazón: repetirlo aquí gastaba la línea más
+        visible de la pantalla en decir dónde estás en vez de qué hay.
+      */}
       <header>
-        <h1 className="text-3xl font-bold text-primary-dark">{es.spaceHome.title}</h1>
+        <h1 className="text-3xl font-bold text-primary-dark">
+          {es.spaceHome.greeting(nombre)}
+        </h1>
         <p className="mt-1 text-sm text-text-secondary">
+          {es.spaceHome.greetingSubtitle}
+        </p>
+        <p className="mt-1 text-sm font-medium text-text">
           {home.attention.length > 0
             ? es.spaceHome.subtitleAttention
             : es.spaceHome.subtitleClear}
@@ -143,30 +163,119 @@ export default async function SpacePage({
         </Card>
       ) : null}
 
-      <section aria-label={es.spaceHome.title} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <KpiCard
-          icon="building"
-          tone="info"
-          value={home.activeEstablishments}
-          label={es.spaceHome.kpi.establishments}
-          href={`${base}/restaurantes`}
-        />
-        <KpiCard
-          icon="request"
-          tone="warning"
-          value={home.pendingRequests}
-          label={es.spaceHome.kpi.requests}
-          href={`${base}/solicitudes`}
-        />
-        <KpiCard
-          icon="job"
-          tone="danger"
-          value={home.jobsAtDeadlineRisk}
-          label={es.spaceHome.kpi.jobs}
-          hint={es.spaceHome.kpi.jobsHint}
-          href={`${base}/trabajos`}
-        />
+      {/*
+        Página 22 del diseño definitivo móvil · **cinco** recuadros en dos
+        filas, tres arriba y dos abajo, también en un teléfono. La rejilla
+        es de seis columnas para poder repartirlos así: 2+2+2 y 3+3. Con
+        `sm:grid-cols-2` los cinco salían apilados a ancho completo, que es
+        lo que se veía en el móvil.
+      */}
+      <section
+        aria-label={es.spaceHome.title}
+        className="grid grid-cols-6 gap-2.5 sm:gap-4"
+      >
+        <div className="col-span-2">
+          <KpiCard
+            icon="building"
+            tone="info"
+            value={home.activeEstablishments}
+            label={es.spaceHome.kpi.establishments}
+            hint={es.spaceHome.kpi.establishmentsHint(
+              home.activeEstablishments,
+              home.establishmentsTotal,
+            )}
+            href={`${base}/restaurantes`}
+          />
+        </div>
+        <div className="col-span-2">
+          <KpiCard
+            icon="request"
+            tone="warning"
+            value={home.pendingRequests}
+            label={es.spaceHome.kpi.requests}
+            hint={es.spaceHome.kpi.requestsHint}
+            href={`${base}/solicitudes`}
+          />
+        </div>
+        <div className="col-span-2">
+          <KpiCard
+            icon="job"
+            tone="info"
+            value={home.jobsInProgress}
+            label={es.spaceHome.kpi.inProgress}
+            hint={es.spaceHome.kpi.inProgressHint(home.jobsOnTime)}
+            href={`${base}/trabajos`}
+          />
+        </div>
+        <div className="col-span-3">
+          <KpiCard
+            icon="dailyMenu"
+            tone="info"
+            value={home.dailyMenu.offered ? home.dailyMenu.pending : 0}
+            label={es.spaceHome.kpi.menu}
+            hint={
+              home.dailyMenu.offered
+                ? es.spaceHome.kpi.menuHint(home.dailyMenu.unassigned)
+                : es.spaceHome.kpi.menuNotOffered
+            }
+            href={`${base}/menu-diario`}
+          />
+        </div>
+        <div className="col-span-3">
+          <KpiCard
+            icon="clock"
+            tone="danger"
+            value={home.jobsAtDeadlineRisk}
+            label={es.spaceHome.kpi.jobs}
+            hint={es.spaceHome.kpi.jobsHint}
+            href={`${base}/trabajos`}
+          />
+        </div>
       </section>
+
+      {/*
+        Página 22 · "Estado por restaurante". Va **sin la barra de
+        porcentaje** que dibuja el diseño: no está definido qué mide, y una
+        barra sin regla detrás se lee como un dato aunque no lo sea
+        (CLAUDE.md MUST NOT). El resto del bloque —quién es y cómo está— sí
+        es cierto y sí lleva a su ficha.
+      */}
+      <Card
+        title={es.spaceHome.byRestaurant.title}
+        action={
+          <PanelLink href={`${base}/restaurantes`}>
+            {es.spaceHome.byRestaurant.seeAll}
+          </PanelLink>
+        }
+      >
+        {home.restaurants.length === 0 ? (
+          <p className="text-sm text-text-secondary">{es.spaceHome.byRestaurant.empty}</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {home.restaurants.map((restaurante) => (
+              <li key={restaurante.id}>
+                <Link
+                  href={`${base}/restaurantes/${restaurante.id}`}
+                  className="flex items-center gap-3 py-3 transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface">
+                    <Icon name="building" className="h-5 w-5 text-primary-dark" />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate font-medium text-text">
+                    {restaurante.name}
+                  </span>
+                  <StatusBadge tone={restaurante.status === "active" ? "success" : "neutral"}>
+                    {restaurante.status in es.space.statuses
+                      ? es.space.statuses[restaurante.status as keyof typeof es.space.statuses]
+                      : restaurante.status}
+                  </StatusBadge>
+                  <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-text-secondary" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
       {/*
         `min-w-0` en los dos hijos, y no es cosmético: CA-19 se rompía por

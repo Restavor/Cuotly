@@ -709,6 +709,11 @@ export const es = {
     // con la lista vacía, "Esto necesita tu atención" sería mentira.
     subtitleAttention: "Esto necesita tu atención",
     subtitleClear: "Nada reclama tu atención ahora mismo",
+    // Página 22 del diseño definitivo móvil · el saludo y la frase de
+    // debajo. Sin nombre se saluda sin él: sacarlo del correo llamaría
+    // "Info" a Bosco.
+    greeting: (nombre: string) => (nombre === "" ? "Hola," : `Hola ${nombre},`),
+    greetingSubtitle: "Aquí tienes un resumen de la actividad de tus restaurantes.",
 
     kpi: {
       establishments: "Restaurantes activos",
@@ -720,6 +725,36 @@ export const es = {
       // CA-20 · cuando la consulta falla, lo que va en el sitio del número
       // es el motivo. Un cero sería indistinguible de "no hay ninguno".
       unavailable: "No se ha podido calcular",
+      // Página 22 del diseño · los cinco recuadros y su letra pequeña.
+      // Cada pie dice algo que se ha contado de verdad: el diseño pone
+      // "+2 que el mes anterior" en las solicitudes pendientes, y eso no
+      // se puede saber —un pendiente de hoy no se compara con una foto
+      // del mes pasado que nadie guardó—, así que ahí va lo que sí es
+      // cierto (CLAUDE.md MUST NOT).
+      establishmentsHint: (activos: number, total: number) =>
+        activos === total ? `${total} en total` : `${activos} de ${total} en total`,
+      requestsHint: "Esperando que alguien las valide o las conteste.",
+      inProgress: "Trabajos en curso",
+      inProgressHint: (enPlazo: number) =>
+        enPlazo === 1 ? "1 en plazo" : `${enPlazo} en plazo`,
+      menu: "Publicaciones de menú pendientes",
+      menuHint: (sinAsignar: number) =>
+        sinAsignar === 0
+          ? "Todas con responsable"
+          : sinAsignar === 1
+            ? "1 sin asignar"
+            : `${sinAsignar} sin asignar`,
+      menuNotOffered: "Este espacio no vende Menú Diario.",
+    },
+
+    // Página 22 · "Estado por restaurante". El diseño dibuja además una
+    // barra con un porcentaje; **no se pinta** porque no está definido qué
+    // mide, y una barra sin regla detrás es un adorno que se lee como un
+    // dato. Cuando se defina qué mide, se añade.
+    byRestaurant: {
+      title: "Estado por restaurante",
+      seeAll: "Ver todos",
+      empty: "Todavía no hay ningún restaurante en este espacio.",
     },
 
     attention: {

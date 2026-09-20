@@ -45,29 +45,34 @@ export function KpiCard({
     danger: "bg-danger/10 text-danger",
   } as const;
 
+  /*
+    La tarjeta es **vertical y compacta**, como la dibuja la página 22 del
+    diseño definitivo móvil: icono pequeño arriba, el número grande, la
+    etiqueta y la letra pequeña. La anterior era horizontal con un círculo
+    de 56 px, y por eso en un teléfono los recuadros salían apilados a
+    ancho completo en vez de tres en una fila.
+  */
   return (
     <Link
       href={href}
-      className="flex items-center gap-4 rounded-[20px] border border-border bg-surface p-5 transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+      className="flex min-w-0 flex-col gap-1.5 rounded-[16px] border border-border bg-surface p-3.5 transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green sm:p-5"
     >
       <span
         aria-hidden="true"
-        className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${tones[tone]}`}
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${tones[tone]}`}
       >
-        <Icon name={icon} className="h-6 w-6" />
+        <Icon name={icon} className="h-5 w-5" />
       </span>
-      <span className="min-w-0">
-        {value === null ? (
-          <span className="block text-sm font-semibold text-danger">
-            {es.spaceHome.kpi.unavailable}
-          </span>
-        ) : (
-          <span className="block text-3xl font-bold leading-tight text-primary-dark">{value}</span>
-        )}
-        <span className="block text-sm text-text">{label}</span>
-        <span className="mt-0.5 block text-xs text-text-secondary">
-          {value === null ? es.emptyReasons.error : hint}
+      {value === null ? (
+        <span className="block text-sm font-semibold text-danger">
+          {es.spaceHome.kpi.unavailable}
         </span>
+      ) : (
+        <span className="block text-3xl font-bold leading-none text-primary-dark">{value}</span>
+      )}
+      <span className="block text-sm font-medium leading-snug text-text">{label}</span>
+      <span className="block text-xs leading-snug text-text-secondary">
+        {value === null ? es.emptyReasons.error : hint}
       </span>
     </Link>
   );
