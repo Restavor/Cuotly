@@ -86,6 +86,15 @@ const PATHS = {
   // 🔒 que pintaba `NoPermissionState`: cada sistema operativo lo dibuja a
   // su manera y desafinaba junto a los iconos de trazo del sistema.
   lock: "M7 10.5V8a5 5 0 0 1 10 0v2.5M6 10.5h12a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1-1.5 1.5H6a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 6 10.5ZM12 14.5v2.5",
+  /*
+   * "Más", el quinto de la barra de móvil: los tres puntos del diseño.
+   *
+   * Existe porque hasta hoy ese destino pedía prestado el icono de "Crear"
+   * (`plus`), y en la barra los dos salían uno al lado del otro: dos `+`
+   * seguidos que significaban cosas distintas. Tres puntos son lo que
+   * dibuja el diseño y lo que todo el mundo lee como "hay más aquí".
+   */
+  more: "M6 12h.01M12 12h.01M18 12h.01",
 } as const;
 
 export type IconName = keyof typeof PATHS;

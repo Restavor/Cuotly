@@ -86,6 +86,7 @@ export function AppShell({
   establishments = [],
   supportSession = null,
   userAvatarUrl = null,
+  unreadMessages = 0,
   children,
 }: {
   spaceSlug: string;
@@ -129,6 +130,17 @@ export function AppShell({
    * salir— para que no se le olvide que está en casa ajena.
    */
   supportSession?: ShellSupportSession | null;
+  /**
+   * Conversaciones sin leer, que es el número rojo que el diseño pinta
+   * sobre "Mensajes" en la barra de móvil.
+   *
+   * Lo calcula quien sirve la pantalla y llega ya contado: el armazón no
+   * consulta nada. Por omisión es **cero**, y cero no pinta nada — no es
+   * "no lo sabemos" disfrazado de "no hay", porque quien no lo pasa es que
+   * todavía no lo cuenta, y en ese caso enseñar un número inventado sería
+   * peor que no enseñar ninguno (CLAUDE.md, CA-20).
+   */
+  unreadMessages?: number;
   children: React.ReactNode;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -303,29 +315,54 @@ export function AppShell({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col lg:overflow-hidden">
-          <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-surface px-4 py-3 lg:px-6">
-            {/*
-              Miga de pan: dónde está quien mira. En móvil no hay menú lateral
-              que lo diga, así que el nombre del espacio ocupa su sitio.
-            */}
-            <nav aria-label={es.nav.breadcrumbLabel} className="flex min-w-0 items-center gap-2">
+          {/*
+            La cabecera. En escritorio es **una fila**: miga de pan a la
+            izquierda, controles a la derecha. En móvil el diseño la parte en
+            **dos**: arriba el logotipo con los controles, y debajo la miga de
+            pan entera.
+
+            Antes era una sola fila también en el teléfono, y a 390 px el
+            nombre del espacio competía por el sitio con cuatro controles: la
+            miga de pan se quedaba en "Arm…", que no dice dónde estás, que es
+            su único trabajo. Con dos filas cabe entera y aparece el
+            logotipo, que es lo que la maqueta pone ahí.
+          */}
+          <header className="sticky top-0 z-30 flex flex-col gap-2.5 border-b border-border bg-surface px-4 py-3 lg:flex-row lg:items-center lg:gap-3 lg:px-6">
+            <div className="flex items-center gap-3 lg:contents">
+              {/* El logotipo solo en móvil: en escritorio ya preside el menú lateral. */}
               <Link
                 href={contextHome}
-                className="rounded p-1 text-text-secondary hover:text-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+                aria-label={`${es.common.appName} · ${es.nav.home}`}
+                className="shrink-0 rounded focus:outline focus:outline-2 focus:outline-cuotly-green lg:hidden"
               >
-                <Icon name="home" className="h-4 w-4" title={es.nav.home} />
+                <span className="block text-lg font-bold leading-none tracking-tight text-primary-dark">
+                  {es.common.appName}
+                </span>
+                <span className="mt-1 block text-[10px] leading-none text-text-secondary">
+                  {es.common.appOwner}
+                </span>
               </Link>
-              <span aria-hidden="true" className="text-border lg:hidden">
-                /
-              </span>
-              <span className="truncate text-sm font-medium lg:hidden">{contextName}</span>
-              {active === null ? null : (
-                <>
-                  <Icon name="chevronRight" className="hidden h-3.5 w-3.5 text-text-secondary lg:block" />
-                  <span className="hidden truncate text-sm font-medium lg:block">{active.label}</span>
-                </>
-              )}
-            </nav>
+
+              {/* La miga de pan de escritorio. La de móvil va en la fila de abajo. */}
+              <nav
+                aria-label={es.nav.breadcrumbLabel}
+                className="hidden min-w-0 items-center gap-2 lg:flex"
+              >
+                <Link
+                  href={contextHome}
+                  className="rounded p-1 text-text-secondary hover:text-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+                >
+                  <Icon name="home" className="h-4 w-4" title={es.nav.home} />
+                </Link>
+                <Icon name="chevronRight" className="h-3.5 w-3.5 text-text-secondary" />
+                <span className="truncate text-sm font-medium">{contextName}</span>
+                {active === null ? null : (
+                  <>
+                    <Icon name="chevronRight" className="h-3.5 w-3.5 text-text-secondary" />
+                    <span className="truncate text-sm font-medium">{active.label}</span>
+                  </>
+                )}
+              </nav>
 
             <button
               ref={searchTrigger}
@@ -411,8 +448,15 @@ export function AppShell({
               es lo que hace que CA-22 se cumpla sin depender de la
               hidratación.
             */}
+            {/*
+              En móvil este botón NO va aquí: va en el centro de la barra
+              inferior, que es donde lo pone el diseño. Tenerlo en los dos
+              sitios era ofrecer la misma acción dos veces en una pantalla
+              de 390 px, y encima empujaba la miga de pan hasta dejarla en
+              "Arm…".
+            */}
             {creates.length > 0 ? (
-              <details data-testid="create-menu" className="relative">
+              <details data-testid="create-menu" className="relative hidden lg:block">
                 <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-field bg-primary px-3.5 py-2 text-sm font-medium text-surface transition-colors hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green [&::-webkit-details-marker]:hidden">
                   <Icon name="plus" className="h-4 w-4" />
                   {es.create.label}
@@ -461,7 +505,34 @@ export function AppShell({
               ) : (
                 <span aria-hidden="true">{userInitial}</span>
               )}
-            </Link>
+              </Link>
+            </div>
+
+            {/*
+              La miga de pan de móvil, en su propia fila y entera: casa,
+              contexto y pantalla. Es la misma información que la de
+              escritorio; lo que cambia es que aquí tiene el ancho para
+              caber.
+            */}
+            <nav
+              aria-label={es.nav.breadcrumbLabel}
+              className="flex min-w-0 items-center gap-1.5 lg:hidden"
+            >
+              <Link
+                href={contextHome}
+                className="shrink-0 rounded text-text-secondary hover:text-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                <Icon name="home" className="h-4 w-4" title={es.nav.home} />
+              </Link>
+              <Icon name="chevronRight" className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
+              <span className="truncate text-sm font-medium">{contextName}</span>
+              {active === null ? null : (
+                <>
+                  <Icon name="chevronRight" className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
+                  <span className="truncate text-sm font-medium">{active.label}</span>
+                </>
+              )}
+            </nav>
           </header>
 
           {supportSession ? (
@@ -505,19 +576,89 @@ export function AppShell({
         </div>
       </div>
 
+      {/*
+        §20.3 (decisión 47) · la barra de móvil del diseño: **verde oscuro**,
+        con icono y texto, y **Crear (+) en el centro**.
+          Inicio · Restaurantes · Crear · Mensajes · Más
+
+        Hasta hoy era una rejilla de cinco columnas con CUATRO enlaces de
+        texto suelto sobre fondo blanco. Se veían tres cosas mal a la vez:
+        el hueco de la quinta columna dejaba la fila descolgada a la
+        izquierda, "Restaurantes" se cortaba en "Restauran…" porque sin
+        icono el texto es lo único que hay, y el botón Crear —que §20.5
+        llama "global"— no existía en el teléfono; solo estaba arriba,
+        donde el diseño no lo pone.
+
+        El centro no sale de `mobileNav()` a propósito: Crear no es un
+        destino, es una acción, y `activeDestination()` nunca debe poder
+        marcarlo. Por eso la lista trae cuatro y el armazón intercala el
+        botón en medio, que es justo lo que ya anunciaba el comentario de
+        `BAR_KEYS`.
+      */}
       <nav
         aria-label={es.nav.menuLabel}
         data-testid="mobile-nav"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-border bg-surface lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 rounded-t-card bg-primary-dark pb-[env(safe-area-inset-bottom)] lg:hidden"
       >
-        {mobile.map((destination) => (
-          <Link
+        {mobile.slice(0, 2).map((destination) => (
+          <MobileBarLink
             key={destination.key}
-            href={destination.href}
-            className="truncate px-1 py-3 text-center text-xs focus:outline focus:outline-2 focus:outline-cuotly-green"
-          >
-            {destination.label}
-          </Link>
+            destination={destination}
+            active={active?.key === destination.key}
+            badge={destination.key === "messages" ? unreadMessages : 0}
+          />
+        ))}
+
+        {creates.length > 0 ? (
+          <details data-testid="mobile-create-menu" className="relative">
+            <summary className="flex cursor-pointer list-none flex-col items-center gap-1 pb-2 text-center [&::-webkit-details-marker]:hidden">
+              {/*
+                El círculo sobresale por encima de la barra, como en la
+                maqueta. `-mt-5` y no una posición absoluta: así sigue
+                ocupando su columna y el resto de la fila se alinea con él
+                sin cálculos.
+              */}
+              <span className="-mt-5 flex h-12 w-12 items-center justify-center rounded-full border-[3px] border-background bg-cuotly-green text-surface shadow-sm">
+                <Icon name="plus" className="h-6 w-6" />
+              </span>
+              <span className="text-[11px] font-medium leading-none text-surface">
+                {es.create.label}
+              </span>
+            </summary>
+            {/*
+              Se abre HACIA ARRIBA: es el último elemento de la pantalla y
+              un menú desplegado hacia abajo caería fuera.
+            */}
+            <ul className="absolute bottom-full left-1/2 z-40 mb-3 w-64 -translate-x-1/2 rounded-[20px] border border-border bg-surface p-2 shadow-lg">
+              {creates.map((option) => (
+                <li key={option.key}>
+                  <Link
+                    href={option.href}
+                    className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+                  >
+                    <Icon
+                      name={DESTINATION_ICONS[option.key] ?? "plus"}
+                      className="h-4 w-4 text-text-secondary"
+                    />
+                    {option.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : (
+          // Sin nada que crear no se pinta un botón muerto: se deja el
+          // hueco, que es lo que mantiene los otros cuatro en su sitio.
+          <span aria-hidden="true" />
+        )}
+
+        {mobile.slice(2).map((destination) => (
+          <MobileBarLink
+            key={destination.key}
+            destination={destination}
+            active={active?.key === destination.key}
+            badge={destination.key === "messages" ? unreadMessages : 0}
+          />
         ))}
       </nav>
 
@@ -651,6 +792,57 @@ function SidebarLink({
           {es.nav.agentBadge}
         </span>
       ) : null}
+    </Link>
+  );
+}
+
+/**
+ * Un destino de la barra inferior de móvil (§20.3): icono arriba, texto
+ * debajo, y el activo marcado con **color, peso y un punto verde** —tres
+ * señales, no solo color (PRD §21.4)—, más `aria-current` para quien no ve
+ * ninguna de las tres.
+ *
+ * El número de sin leer se pinta **solo si lo hay**. Un cero en un círculo
+ * rojo es ruido, no dato (CA-20), y es la misma regla que ya sigue el
+ * punto de la campana.
+ */
+function MobileBarLink({
+  destination,
+  active,
+  badge,
+}: {
+  destination: NavDestination;
+  active: boolean;
+  badge: number;
+}) {
+  return (
+    <Link
+      href={destination.href}
+      aria-current={active ? "page" : undefined}
+      className="flex flex-col items-center gap-1 px-1 pb-2 pt-2.5 text-center focus:outline focus:outline-2 focus:outline-cuotly-green"
+    >
+      <span className="relative">
+        <Icon
+          name={DESTINATION_ICONS[destination.key] ?? "chevronRight"}
+          className={`h-[22px] w-[22px] ${active ? "text-surface" : "text-sidebar-text"}`}
+        />
+        {badge > 0 ? (
+          <span className="absolute -right-2.5 -top-1.5 min-w-[18px] rounded-full bg-danger px-1 text-[10px] font-bold leading-[18px] text-surface">
+            {badge}
+          </span>
+        ) : null}
+      </span>
+      <span
+        className={`block max-w-full truncate text-[11px] leading-none ${
+          active ? "font-semibold text-surface" : "text-sidebar-text"
+        }`}
+      >
+        {destination.label}
+      </span>
+      <span
+        aria-hidden="true"
+        className={`h-1 w-1 rounded-full ${active ? "bg-accent-green" : "bg-transparent"}`}
+      />
     </Link>
   );
 }

@@ -354,7 +354,7 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   agent: "agent",
   settings: "settings",
   // Destinos que solo existen en móvil o en el botón Crear.
-  more: "plus",
+  more: "more",
   newRequest: "plus",
   billing: "finance",
   data: "reports",
