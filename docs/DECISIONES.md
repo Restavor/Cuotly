@@ -1247,7 +1247,61 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
    **Lo que queda de los informes**, y es lo más grande: la comparación con el periodo anterior, el
    PDF de la maqueta y la sección **"Lo que ha pasado este mes"**. Están en
-   `docs/PROPUESTA-INFORMES.md` con su coste.
+   `docs/PROPUESTA-INFORMES.md` con su coste. *Las tres se construyeron el mismo día, como decisión
+   57.*
+
+57. **Las tres piezas que le faltaban al informe** (20/09/2026). Bosco, mirando la maqueta del PDF:
+   *"está perfecto pero hay que añadir cosas porque el informe tiene que ser un resumen de todo lo
+   que ha pasado en el mes"*. Y antes, sobre la comparación: *"sí, en todas las cifras"*.
+
+   **RN-REP-17 · la comparación con el periodo anterior.** Lo que había que decidir no era si se
+   compara, sino **con qué**, y son dos reglas porque el equipo elige las fechas: un **mes natural**
+   se compara con el mes natural anterior entero —septiembre contra agosto del 1 al 31, aceptando 30
+   días contra 31, porque lo que el restaurante lee es "agosto" y recortarle el día 1 sería llamar
+   agosto a algo que no lo es—; **cualquier otro periodo**, con otros tantos días pegados detrás.
+
+   Tres cosas que no son evidentes:
+
+   - **El nivel del plan decide hasta dónde llega**, y un informe `basic` **ni siquiera pide** el
+     periodo anterior. Si se calculara y se escondiera, la versión guardada llevaría dentro lo que
+     el plan no incluye, y el nivel sería un filtro de pintado en vez de una barrera (RN-REP-15).
+   - **El nivel NO se lee con `establishment_report_level()`**: esa función comprueba que quien
+     pregunta sea del espacio, y la generación corre como `service_role`, sin `auth.uid()`.
+     Devolvería `basic` siempre y **todos** los informes saldrían recortados en silencio.
+   - **Lo que no hay no se rellena con un cero.** Son cinco casos y se dicen los cinco distinto: sin
+     comparación, sin periodo anterior, desde cero, igual, y la variación. La variación dice la
+     **dirección**, no si está bien: que suban las incidencias es malo y que suban las visitas es
+     bueno, y decidirlo cifra a cifra sería una lista de juicios inventada (CLAUDE.md).
+
+   **RN-REP-18 · "Lo que ha pasado este mes"** (migración 112). Hasta hoy el informe eran
+   **indicadores**, que responden "cómo fue el mes" pero no **"qué pasó"**. Entra en los cinco
+   niveles, Básico incluido — es la razón por la que su informe no es una hoja en blanco—. Lo que se
+   cuidó: **ninguna entrada lleva identidad del equipo**, y la suite no se fía de leer la función:
+   busca en el JSON el uuid y el nombre de cada persona; **los cobros solo con Finanzas dentro**, y
+   el parámetro sale de la sección de ESE informe; y **lo que no pasó no se cuenta** —un borrador
+   que el cliente nunca envió, un pago revertido, una corrección por error del equipo, un archivo
+   interno, o las incidencias de soporte, que son del espacio a Cuotly—.
+
+   **RN-REP-19 · el PDF de la maqueta.** Portada, "Lo esencial" —*"si solo lees una página, es
+   esta"*—, resumen ejecutivo, índice, una página por sección y anexos. Dos correcciones que salieron
+   de **mirar el PDF generado**, no de los tipos ni de los tests:
+
+   - **La tarjeta de "clics en reservas" del primer boceto no se construye**: las reservas no se
+     monitorizan (CLAUDE.md), así que esa cifra no existe y ponerla sería inventarla.
+   - **La caída se imprimía sin signo.** La variación usaba el menos **tipográfico** (U+2212), que
+     no existe en WinAnsi —lo que escribe la fuente estándar del PDF—, así que el filtro se lo comía
+     y `-16 %` salía impreso como `16 %`: una bajada pintada como una subida. Ahora hay un barrido
+     que recorre **todas** las frases que el PDF puede imprimir, llamando también a las plantillas
+     con valores de ejemplo, y falla si alguna no se puede escribir. Mutación probada: devolver el
+     menos tipográfico pone la suite en rojo.
+
+   También se vio ahí que las barras de dos tonos solo valen en **Rendimiento digital**: un 100 % de
+   cumplimiento contra otro 100 % son dos barras iguales que no dicen nada, y un tiempo medio
+   dibujado como barra se lee al revés, porque ahí la barra corta es la buena.
+
+   Comprobado: suite 60 `lo_que_ha_pasado_este_mes.sql` con **tres mutaciones** —filtrar la
+   identidad, el parámetro de Finanzas y el pago revertido—, las 60 suites juntas sobre una base
+   limpia en el orden de CI, y el PDF generado y mirado página a página.
 
 ---
 

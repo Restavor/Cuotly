@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ReportSnapshot } from "@/core/reports";
 import { es } from "@/i18n/es";
 
-import { figureLabel, figureText, renderReportPdf } from "./report-pdf";
+import { activityText, changeText, figureLabel, figureText, renderReportPdf, sanitize } from "./report-pdf";
 
 /**
  * El PDF de un informe (§93, RN-REP-06). Se prueba de verdad —se genera el
@@ -122,5 +122,95 @@ describe("el PDF del informe", () => {
       .toBe(`${t.metrics.consumption} · ${es.naming.categories.photo}`);
     expect(figureLabel({ section: "digital", metric: "sessions", value: 100, dimension: "ga4" }, t))
       .toBe(`${t.metrics.sessions} · ${es.integrations.providers.ga4.name}`);
+  });
+});
+
+describe("RN-REP-17 · el signo de la variación sobrevive al PDF", () => {
+  it("RN-REP-17 · una caída se escribe con su signo, y el signo llega al papel", () => {
+    const bajando = { section: "operation" as const, metric: "average_start", value: 380, previous: 450 };
+    const texto = changeText(bajando, t);
+
+    expect(texto).toBe("-16 %");
+    /*
+      Esto no es una redundancia. La primera versión usaba el menos
+      TIPOGRÁFICO (U+2212), que no existe en WinAnsi —lo que escribe la
+      fuente estándar del PDF—, así que `sanitize()` se lo comía y la
+      caída salía impresa como "16 %": una bajada del 16 % pintada como
+      una subida. Lo encontró mirar el PDF generado, no el tipo.
+    */
+    expect(sanitize(texto!)).toBe(texto);
+  });
+
+  it("todo el texto que el PDF imprime se puede escribir en WinAnsi", () => {
+    /*
+      El barrido que sostiene la regla. Un carácter que la fuente estándar
+      no sabe escribir no avisa: o hace **lanzar** a pdf-lib, o —peor— lo
+      quita `sanitize()` y la frase sale mutilada sin que nadie lo note.
+      Así que se recorren todas las frases que el PDF puede imprimir y se
+      comprueba que ninguna cambia al pasar por el filtro.
+
+      Se llama a las funciones con valores de ejemplo porque el problema
+      del menos estaba dentro de una plantilla, no en una constante.
+    */
+    const fuentes: unknown[] = [
+      es.reportsPage.pdf,
+      es.reportsPage.sections,
+      es.reportsPage.metrics,
+      es.reportsPage.units,
+      es.reportsPage.change,
+      es.reportsPage.activity,
+      es.reportsPage.columns,
+      es.emptyReasons,
+      es.emptyReasonsShort,
+      es.naming.categories,
+      es.opportunities.impacts,
+    ];
+
+    const malas: string[] = [];
+    const revisar = (valor: unknown): void => {
+      if (typeof valor === "string") {
+        if (sanitize(valor) !== valor) malas.push(valor);
+        return;
+      }
+      if (typeof valor === "function") {
+        // 12 y "agosto" como valores de ejemplo: lo que se mira es la
+        // plantilla que los envuelve.
+        try {
+          revisar((valor as (...args: unknown[]) => unknown)(12, 12, "agosto"));
+        } catch {
+          // Una función que no acepta esos argumentos se deja pasar: el
+          // barrido es una red, no un contrato.
+        }
+        return;
+      }
+      if (valor && typeof valor === "object") {
+        for (const dentro of Object.values(valor)) revisar(dentro);
+      }
+    };
+
+    fuentes.forEach(revisar);
+    expect(malas).toEqual([]);
+  });
+});
+
+describe("RN-REP-18 · cómo se lee una entrada del relato", () => {
+  it("RN-REP-18 · dice QUÉ pasó y de qué, nunca quién", () => {
+    expect(
+      activityText({ at: "2026-08-11T11:00:00Z", kind: "job_completed", subject: "TRB-0039", category: "small" }, t),
+    ).toBe(`${t.activity.kinds.job_completed} · TRB-0039`);
+  });
+
+  it("RN-REP-18 · el día de un menú se dice como una fecha, no como un ISO suelto", () => {
+    // La base entrega el día del menú en ISO. "2026-08-18" en medio de
+    // una frase es ruido: el restaurante reconoce "18 ago".
+    expect(
+      activityText({ at: "2026-08-18T07:00:00Z", kind: "menu_published", subject: "2026-08-18", category: null }, t),
+    ).toBe(`${t.activity.kinds.menu_published} · 18 ago`);
+  });
+
+  it("RN-REP-18 · una entrada sin sujeto dice solo qué pasó, sin un separador colgando", () => {
+    expect(
+      activityText({ at: "2026-08-18T07:00:00Z", kind: "menu_published", subject: null, category: null }, t),
+    ).toBe(t.activity.kinds.menu_published);
   });
 });

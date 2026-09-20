@@ -9,9 +9,17 @@ informes.
 > construyó como **decisión 56** (migración 111, RN-REP-15/16): la columna, el
 > reparto, la barrera y la visibilidad.
 >
-> **Lo que sigue pendiente de construir** es el apartado 3 de este documento
-> —"Lo que ha pasado este mes"—, la **comparación con el periodo anterior** y
-> el **PDF** de la maqueta.
+> **Las tres que quedaban se construyeron el mismo día, como decisión 57**:
+> la **comparación con el periodo anterior** (RN-REP-17), **"Lo que ha pasado
+> este mes"** (RN-REP-18, migración 112) y el **PDF de la maqueta**
+> (RN-REP-19). Este documento pasa a ser el razonamiento de fondo; lo que
+> manda es el PRD.
+>
+> Dos cosas cambiaron al construirlas, y las dos salieron de **mirar el PDF
+> generado**: la tarjeta de "clics en reservas" del primer boceto **no se
+> construye** —las reservas no se monitorizan—, y las barras de dos tonos
+> valen solo en Rendimiento digital, porque un 100 % contra otro 100 % son
+> dos barras iguales y un tiempo medio dibujado como barra se lee al revés.
 
 Lo que Bosco ya ha dicho, literal, y que aquí no se discute:
 

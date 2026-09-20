@@ -13,7 +13,7 @@ import {
 } from "@/core/reports";
 import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
-import { changeText, figureLabel, figureText } from "@/services/report-pdf";
+import { activitySubject, changeText, figureLabel, figureText } from "@/services/report-pdf";
 
 const t = es.reportsPage;
 
@@ -104,7 +104,9 @@ function MonthActivity({ snapshot }: { snapshot: ReportSnapshot }) {
         >
           <span className="text-xs text-text-secondary">{fechaCorta(entrada.at)}</span>
           <span className="font-semibold text-text">{t.activity.kinds[entrada.kind]}</span>
-          {entrada.subject ? <span className="text-text-secondary">{entrada.subject}</span> : null}
+          {activitySubject(entrada) ? (
+            <span className="text-text-secondary">{activitySubject(entrada)}</span>
+          ) : null}
         </li>
       ))}
     </ol>

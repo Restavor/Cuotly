@@ -3163,8 +3163,17 @@ export const es = {
       noPrevious: "Sin periodo anterior",
       flat: "Igual que el periodo anterior",
       fromZero: "El periodo anterior fue 0",
+      // En una tarjeta de portada no caben las frases de arriba, y
+      // truncarlas sería peor que decirlas cortas.
+      flatShort: "Igual",
+      fromZeroShort: "Antes: 0",
+      // El signo va con el guion normal (U+002D) y **no** con el menos
+      // tipográfico (U+2212): el menos tipográfico no existe en WinAnsi,
+      // que es lo que escribe la fuente estándar del PDF, así que allí se
+      // caía y "−16 %" salía como "16 %". Una caída pintada como subida
+      // es el peor fallo que puede tener una comparación.
       up: (percent: number) => `+${percent} %`,
-      down: (percent: number) => `−${percent} %`,
+      down: (percent: number) => `-${percent} %`,
       versus: (periodo: string) => `frente a ${periodo}`,
     },
 
@@ -3254,6 +3263,25 @@ export const es = {
       consolidated: "Consolidado de todos los restaurantes",
       noValue: "Sin dato",
       page: (n: number, total: number) => `Página ${n} de ${total}`,
+
+      // RN-REP-19 · la maqueta que aprobó Bosco el 20/09/2026.
+      headline: "Lo esencial",
+      headlineHint: "Si solo lees una página, es esta.",
+      writtenByAPerson: "Lo escribe una persona del equipo. Cuotly no lo redacta.",
+      contentsTitle: "En este informe",
+      columnConcept: "CONCEPTO",
+      columnValue: "ESTE PERIODO",
+      columnPrevious: "VS. PERIODO ANTERIOR",
+      barsLegend: "Barra oscura: este periodo. Barra clara: el anterior.",
+      opportunityMeta: (impacto: string, esfuerzo: string) => `${impacto} · Esfuerzo: ${esfuerzo}`,
+      opportunityEffortUnknown: "sin categoría todavía",
+      sourceConnected: "Conectada",
+      sourceMissing: "Sin datos",
+      sourceUpTo: (fecha: string) => `Datos hasta el ${fecha}`,
+      // El pie va en todas las páginas: un PDF se imprime y se reparte
+      // suelto, y una hoja sin contexto no se sabe de quién es.
+      footer: (restaurante: string, periodo: string) => `${restaurante} · ${periodo}`,
+      pageOfShort: (n: number, total: number) => `${n} / ${total}`,
     },
 
     // Unidades de las cifras, para no escribirlas en cada pantalla.
@@ -6356,6 +6384,21 @@ export const es = {
     // dice en vez de enseñarlo como actual (RN-INT-07).
     stale: "Dato desactualizado. La última sincronización correcta es antigua; se enseña la fecha, no una cifra actual.",
     insufficient_period: "Periodo insuficiente. Hace falta más historial para calcular esto.",
+  },
+
+  /**
+   * Los mismos cinco motivos de §178, **en una celda**. Las frases de
+   * arriba están escritas para un estado vacío de pantalla completa y no
+   * caben en una columna de tabla ni en una tarjeta: truncarlas dejaría
+   * "Sin datos todavía. Aparecerán en cuanto…", que es peor que decirlo
+   * corto. El motivo largo sigue estando donde hay sitio.
+   */
+  emptyReasonsShort: {
+    not_connected: "No conectado",
+    no_data_yet: "Sin datos todavía",
+    error: "No se ha podido cargar",
+    stale: "Dato desactualizado",
+    insufficient_period: "Periodo insuficiente",
   },
 } as const;
 
