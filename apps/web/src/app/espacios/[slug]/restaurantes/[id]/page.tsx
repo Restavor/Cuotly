@@ -35,7 +35,12 @@ import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
 import { loadBackups, loadPendingTransfer } from "./transfer-load";
 import { loadEstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
-import { parseDataSection, parseManagementBlock, parseSheetTab } from "@/components/establishment/tabs";
+import {
+  parseDataSection,
+  parseManagementBlock,
+  parseOperationSection,
+  parseSheetTab,
+} from "@/components/establishment/tabs";
 import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 
@@ -267,6 +272,13 @@ export default async function EstablishmentPage({
     */
     const vista = parseSheetTab(soloUno(query.vista));
     const seccion = parseDataSection(soloUno(query.seccion));
+    /*
+      Las dos pestañas con subsecciones —"Operación" e "Informes y datos"—
+      comparten el mismo hueco de la dirección (`?seccion=`). Cada una lo
+      lee con su propia lista, así que un valor de la otra no rompe nada:
+      cae en la primera sección, como cualquier dirección escrita a mano.
+    */
+    const seccionOperacion = parseOperationSection(soloUno(query.seccion));
     const mirandoOportunidades = vista.key === "data" && seccion.key === "opportunities";
 
     const { data: puedeAprobar } = mirandoOportunidades
@@ -299,6 +311,7 @@ export default async function EstablishmentPage({
         tab={vista}
         block={parseManagementBlock(soloUno(query.bloque))}
         section={seccion}
+        operationSection={seccionOperacion}
         data={{
           header,
           /*

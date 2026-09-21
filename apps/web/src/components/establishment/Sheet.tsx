@@ -68,6 +68,10 @@ import {
   DATA_SECTION_TABS,
   dataSectionHref,
   type DataSectionTab,
+  OPERATION_SECTION_TABS,
+  operationSectionHref,
+  operationSectionLabel,
+  type OperationSectionTab,
 } from "./tabs";
 import type {
   SheetCounts,
@@ -653,6 +657,48 @@ function TabNav({ base, active }: { base: string; active: SheetTab }) {
  * parezca un interruptor no lo convierte en uno — sin JavaScript navega
  * igual (CA-22).
  */
+/**
+ * Página 25 · las cuatro secciones de Operación, como control segmentado,
+ * con la misma forma que la subnavegación de "Informes y datos": una
+ * pista de pestañas subrayadas.
+ *
+ * Son **enlaces**, no botones. La sección vive en la dirección, así que
+ * sin JavaScript navega igual y el botón de volver deshace el cambio de
+ * sección (el mismo criterio que `BlockNav`, CA-22).
+ */
+function OperationSectionNav({
+  base,
+  active,
+}: {
+  base: string;
+  active: OperationSectionTab;
+}) {
+  return (
+    <nav aria-label={t.operationSectionsLabel} className="border-b border-border">
+      <ul className="flex flex-wrap gap-1">
+        {OPERATION_SECTION_TABS.map((section) => {
+          const seleccionada = section.key === active.key;
+          return (
+            <li key={section.key}>
+              <Link
+                href={operationSectionHref(base, section)}
+                aria-current={seleccionada ? "page" : undefined}
+                className={`-mb-px inline-block border-b-2 px-3 py-2 text-sm ${
+                  seleccionada
+                    ? "border-cuotly-green font-semibold text-primary-dark"
+                    : "border-transparent text-text-secondary hover:text-text"
+                }`}
+              >
+                {operationSectionLabel(section)}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 function BlockNav({ base, active }: { base: string; active: ManagementBlock }) {
   return (
     <nav aria-label={t.blocksLabel}>
@@ -814,6 +860,7 @@ export function EstablishmentSheet({
   tab,
   block,
   section = DATA_SECTION_TABS[0],
+  operationSection = OPERATION_SECTION_TABS[0],
   data,
 }: {
   base: string;
@@ -822,6 +869,8 @@ export function EstablishmentSheet({
   block: ManagementBlock;
   /** La sección de "Informes y datos" (`?seccion=`); sin ella, el Resumen. */
   section?: DataSectionTab;
+  /** Página 25 · cuál de las cuatro secciones de Operación se enseña. */
+  operationSection?: OperationSectionTab;
   data: SheetData;
 }) {
   const {
@@ -1357,21 +1406,25 @@ export function EstablishmentSheet({
         </>
       ) : null}
 
-      {tab.key === "operation" ? (
-        /*
-          Vista 04 · la Operación son cuatro tarjetas en rejilla:
-          Solicitudes, Trabajos, Tareas y Menú Diario. Cada una enseña las
-          primeras filas, dice cuántas deja detrás y enlaza a su listado
-          filtrado por este restaurante.
+      {/*
+        Página 25 del diseño · la Operación es un **control segmentado** con
+        cuatro secciones —Solicitudes, Trabajos, Tareas y Menú Diario— y se
+        enseña una cada vez.
 
-          La tarjeta de datos fiscales y de contacto que había aquí se ha
-          quitado: la maqueta no la tiene y los mismos quince datos se leen
-          enteros en Gestión · Ficha —en formulario para quien puede editar
-          y en lectura para quien no (RN-EST-11)—, así que no queda nada
-          inalcanzable. Repetirlos en dos pestañas era además la manera de
-          que un día dijeran cosas distintas.
-        */
-        <div className="grid items-start gap-4 lg:grid-cols-2">
+        Eran cuatro tarjetas a la vez en una rejilla de dos columnas. En un
+        teléfono salían apiladas: cuatro listas cortas seguidas, y para
+        llegar a las tareas había que pasar por delante de todo lo demás.
+
+        La sección vive en la dirección (`?vista=operacion&seccion=tareas`),
+        como las de "Informes y datos": son enlaces, no botones, así que un
+        enlace a "los trabajos de Magariños" se pega en un mensaje y el
+        botón de volver lo deshace. Sin JavaScript navega igual.
+      */}
+      {tab.key === "operation" ? (
+        <OperationSectionNav base={base} active={operationSection} />
+      ) : null}
+
+      {tab.key === "operation" && operationSection.key === "requests" ? (
           <Card
             title={t.requestsTitle}
             action={
@@ -1424,7 +1477,9 @@ export function EstablishmentSheet({
               </>
             )}
           </Card>
+      ) : null}
 
+      {tab.key === "operation" && operationSection.key === "jobs" ? (
           <Card
             title={t.jobsTitle}
             action={
@@ -1477,7 +1532,9 @@ export function EstablishmentSheet({
               </>
             )}
           </Card>
+      ) : null}
 
+      {tab.key === "operation" && operationSection.key === "tasks" ? (
           <Card
             title={t.tasksTitle}
             action={
@@ -1536,18 +1593,61 @@ export function EstablishmentSheet({
               </>
             )}
           </Card>
+      ) : null}
 
-          {/*
-            Menú Diario es la Fase 2 entera. La maqueta enseña aquí tres
-            menús con sus plazos y va marcada "Datos de ejemplo": no los
-            está publicando nadie, así que va el motivo (CLAUDE.md MUST
-            NOT). Tampoco el enlace "Ver menú" del dibujo, que no llevaría
-            a ninguna parte.
-          */}
-          <Card title={t.dailyMenuTitle}>
-            <EmptyState title={t.dailyMenuEmptyTitle} description={t.dailyMenuEmptyReason} />
+      {/*
+        Menú Diario **ya existe** (Hito 11). Esta tarjeta decía que
+        era "la Fase 2 entera", igual que el bloque del Resumen: dos
+        marcadores que sobrevivieron al servicio que anunciaban.
+
+        Aquí no se repite la lista de menús: la pantalla de Menú
+        Diario del restaurante la enseña entera, con su saldo de
+        actualizaciones y sus plantillas. Lo que va es la próxima
+        publicación —el mismo dato del Resumen, calculado una sola
+        vez— y la puerta a esa pantalla.
+      */}
+      {tab.key === "operation" && operationSection.key === "dailyMenu" ? (
+          <Card
+            title={t.dailyMenuTitle}
+            action={
+              nextMenu.kind === "no_service" ? undefined : (
+                <Link
+                  href={`${base}/menu-diario`}
+                  className="shrink-0 text-sm text-cuotly-green underline"
+                >
+                  {t.nextMenuLink}
+                </Link>
+              )
+            }
+          >
+            {nextMenu.kind === "no_service" ? (
+              <EmptyState
+                title={t.nextMenuNoServiceTitle}
+                description={t.nextMenuNoServiceReason}
+              />
+            ) : nextMenu.kind === "none" ? (
+              <EmptyState title={t.nextMenuNoneTitle} description={t.nextMenuNoneReason} />
+            ) : (
+              <div>
+                <p className="text-xs text-text-secondary">{t.nextMenuTitle}</p>
+                <p className="text-base font-semibold text-primary-dark">
+                  {fechaCorta(nextMenu.targetDate)}
+                </p>
+                <p className="truncate text-sm text-text">
+                  {nextMenu.name}
+                  {" · "}
+                  {es.naming.menuKinds[nextMenu.menuKind as MenuKindKey] ?? nextMenu.menuKind}
+                </p>
+                <p className="mt-1.5">
+                  <StatusBadge
+                    tone={isMenuState(nextMenu.state) ? menuTone(nextMenu.state) : "neutral"}
+                  >
+                    {es.naming.states.menu[nextMenu.state as MenuStateKey] ?? nextMenu.state}
+                  </StatusBadge>
+                </p>
+              </div>
+            )}
           </Card>
-        </div>
       ) : null}
 
       {tab.key === "data" ? (

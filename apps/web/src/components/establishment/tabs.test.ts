@@ -6,6 +6,10 @@ import {
   DATA_TAB,
   dataSectionHref,
   parseDataSection,
+  OPERATION_SECTION_TABS,
+  operationSectionHref,
+  operationSectionLabel,
+  parseOperationSection,
   FILES_BLOCK,
   MANAGEMENT_BLOCKS,
   MANAGEMENT_TAB,
@@ -147,5 +151,45 @@ describe("la dirección del catálogo de archivos (§15.2, RN-ARC-01)", () => {
     expect(filesHref("/r/1", { category: null, fileId: "abc" })).toBe(
       "/r/1?vista=gestion&bloque=archivos&archivo=abc",
     );
+  });
+});
+
+describe("página 25 · las cuatro secciones de Operación", () => {
+  it("son exactamente las cuatro del dibujo, en su orden", () => {
+    expect(OPERATION_SECTION_TABS.map((s) => s.key)).toEqual([
+      "requests",
+      "jobs",
+      "tasks",
+      "dailyMenu",
+    ]);
+  });
+
+  it("una sección desconocida cae en la primera, no deja la pestaña en blanco", () => {
+    // Un enlace viejo o una dirección escrita a mano enseñan Solicitudes,
+    // que es lo que sale al entrar, y no un hueco ni un fallo.
+    expect(parseOperationSection(undefined).key).toBe("requests");
+    expect(parseOperationSection("inventada").key).toBe("requests");
+    // Ni siquiera una sección de la OTRA pestaña con subsecciones, que
+    // comparte el mismo hueco de la dirección (`?seccion=`).
+    expect(parseOperationSection("analitica").key).toBe("requests");
+  });
+
+  it("cada slug lleva a su sección", () => {
+    expect(parseOperationSection("trabajos").key).toBe("jobs");
+    expect(parseOperationSection("tareas").key).toBe("tasks");
+    expect(parseOperationSection("menu-diario").key).toBe("dailyMenu");
+  });
+
+  it("la dirección lleva la pestaña Y la sección", () => {
+    const href = operationSectionHref("/espacios/demo/restaurantes/est-1", OPERATION_SECTION_TABS[2]);
+    expect(href).toBe("/espacios/demo/restaurantes/est-1?vista=operacion&seccion=tareas");
+  });
+
+  it("cada sección se llama igual que la pantalla a la que lleva (CA-21)", () => {
+    for (const section of OPERATION_SECTION_TABS) {
+      expect(operationSectionLabel(section)).toBe(
+        es.establishmentSheet.operationSections[section.key],
+      );
+    }
   });
 });

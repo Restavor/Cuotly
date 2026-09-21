@@ -155,6 +155,56 @@ export function dataSectionLabel(section: DataSectionTab): string {
 }
 
 /**
+ * Página 25 del diseño · las cuatro secciones de "Operación", con su
+ * hueco en la dirección (`?vista=operacion&seccion=trabajos`).
+ *
+ * **Por qué son secciones y no cuatro tarjetas a la vez.** Lo eran: en un
+ * teléfono salían apiladas, cuatro listas cortas seguidas, y para llegar a
+ * las tareas había que pasar por delante de todo lo demás. El diseño las
+ * pone como un control segmentado y enseña una cada vez, que es lo que
+ * cabe en una pantalla.
+ *
+ * Igual que las de "Informes y datos", viven en la dirección: un enlace a
+ * "los trabajos de Magariños" se pega en un mensaje y el botón de volver
+ * lo deshace.
+ */
+export const OPERATION_SECTIONS = ["requests", "jobs", "tasks", "dailyMenu"] as const;
+
+export type OperationSection = (typeof OPERATION_SECTIONS)[number];
+
+export interface OperationSectionTab {
+  readonly key: OperationSection;
+  readonly slug: string;
+}
+
+const OPERATION_SECTION_SLUGS: Readonly<Record<OperationSection, string>> = {
+  requests: "solicitudes",
+  jobs: "trabajos",
+  tasks: "tareas",
+  dailyMenu: "menu-diario",
+};
+
+export const OPERATION_SECTION_TABS: readonly OperationSectionTab[] = OPERATION_SECTIONS.map(
+  (key) => ({ key, slug: OPERATION_SECTION_SLUGS[key] }),
+);
+
+/** Una sección desconocida cae en Solicitudes, igual que arriba. */
+export function parseOperationSection(value: string | undefined): OperationSectionTab {
+  return (
+    OPERATION_SECTION_TABS.find((section) => section.slug === value) ?? OPERATION_SECTION_TABS[0]
+  );
+}
+
+export function operationSectionHref(base: string, section: OperationSectionTab): string {
+  const params = new URLSearchParams({ vista: OPERATION_TAB.slug, seccion: section.slug });
+  return `${base}?${params.toString()}`;
+}
+
+export function operationSectionLabel(section: OperationSectionTab): string {
+  return es.establishmentSheet.operationSections[section.key];
+}
+
+/**
  * La dirección de una pestaña. `bloque` solo se escribe cuando se pide,
  * para que el enlace de "Gestión" no fije un bloque y se pueda volver al
  * que estaba.

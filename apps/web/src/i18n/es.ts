@@ -4067,6 +4067,20 @@ export const es = {
     },
     tabsLabel: "Secciones de la ficha",
     blocksLabel: "Bloques de gestión",
+    /**
+     * Página 25 · las cuatro secciones de "Operación". Los nombres son
+     * los mismos que ya tienen sus tarjetas y sus listados: una sección
+     * que se llamara distinto que la pantalla a la que lleva parecería
+     * otra cosa (CA-21).
+     */
+    operationSectionsLabel: "Secciones de Operación",
+    operationSections: {
+      requests: "Solicitudes",
+      jobs: "Trabajos",
+      tasks: "Tareas",
+      dailyMenu: "Menú Diario",
+    },
+
     // Maquetas 09 a 12 y las seis vistas "sin datos": las secciones de
     // "Informes y datos". Las mismas para el equipo y para el restaurante.
     dataSectionsLabel: "Secciones de Informes y datos",

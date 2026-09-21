@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { es } from "@/i18n/es";
 import type { SheetData } from "./Sheet";
 import { EstablishmentSheet } from "./Sheet";
-import { SHEET_TABS, MANAGEMENT_BLOCKS } from "./tabs";
+import { SHEET_TABS, MANAGEMENT_BLOCKS, OPERATION_SECTION_TABS } from "./tabs";
 
 /**
  * Vista 04 · la Operación de la ficha, pintada.
@@ -120,16 +120,31 @@ const vacia: SheetData["operation"] = {
   tasks: { shown: [], hidden: 0 },
 };
 
-function pintar(operation: SheetData["operation"] = vacia) {
+/*
+  Página 25 · la Operación enseña **una sección cada vez**, no las cuatro
+  tarjetas a la vez. Por eso `pintar()` recibe cuál, y por defecto la
+  primera, que es la que sale al entrar.
+*/
+function pintar(
+  operation: SheetData["operation"] = vacia,
+  seccion = OPERATION_SECTION_TABS[0],
+  extra: Partial<SheetData> = {},
+) {
   return render(
     <EstablishmentSheet
       base="/espacios/demo/restaurantes/est-1"
       slug="demo"
       tab={OPERACION}
       block={MANAGEMENT_BLOCKS[0]}
-      data={sheetData(operation)}
+      operationSection={seccion}
+      data={{ ...sheetData(operation), ...extra }}
     />,
   );
+}
+
+/** Una de las cuatro secciones, por su clave. */
+function seccion(key: (typeof OPERATION_SECTION_TABS)[number]["key"]) {
+  return OPERATION_SECTION_TABS.find((s) => s.key === key)!;
 }
 
 /** La tarjeta entera, buscada por su titular, para mirar dentro de ella. */
@@ -138,33 +153,81 @@ function tarjeta(titulo: string): HTMLElement {
   return encabezado.closest("section") ?? encabezado.parentElement!.parentElement!;
 }
 
-describe("vista 04 · la Operación son cuatro tarjetas", () => {
-  it("las cuatro del dibujo, y ninguna más", () => {
+describe("página 25 · la Operación son cuatro secciones, una cada vez", () => {
+  it("las cuatro del dibujo están en la subnavegación, y ninguna más", () => {
     pintar();
-    for (const titulo of [t.requestsTitle, t.jobsTitle, t.tasksTitle, t.dailyMenuTitle]) {
-      expect(screen.getByRole("heading", { name: titulo })).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: t.operationSectionsLabel });
+    const nombres = within(nav)
+      .getAllByRole("link")
+      .map((enlace) => enlace.textContent);
+    expect(nombres).toEqual([
+      t.operationSections.requests,
+      t.operationSections.jobs,
+      t.operationSections.tasks,
+      t.operationSections.dailyMenu,
+    ]);
+  });
+
+  it("solo se enseña la sección elegida, no las cuatro a la vez", () => {
+    pintar(vacia, seccion("jobs"));
+
+    expect(screen.getByRole("heading", { name: t.jobsTitle })).toBeInTheDocument();
+    for (const titulo of [t.requestsTitle, t.tasksTitle, t.dailyMenuTitle]) {
+      expect(screen.queryByRole("heading", { name: titulo })).not.toBeInTheDocument();
     }
   });
 
-  it("Menú Diario dice por qué está vacío en vez de enseñar menús de ejemplo", () => {
-    // CLAUDE.md MUST NOT: la maqueta trae tres menús con sus plazos y va
-    // marcada "Datos de ejemplo". No los está publicando nadie.
+  it("al entrar sale Solicitudes, que es la primera", () => {
     pintar();
-    expect(within(tarjeta(t.dailyMenuTitle)).getByText(t.dailyMenuEmptyTitle)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: t.requestsTitle })).toBeInTheDocument();
   });
 
-  it("sin nada que enseñar, cada tarjeta dice su motivo y no se queda en blanco", () => {
+  it("la sección elegida se marca como la página actual", () => {
+    pintar(vacia, seccion("tasks"));
+    const nav = screen.getByRole("navigation", { name: t.operationSectionsLabel });
+    const actual = within(nav).getByRole("link", { current: "page" });
+    expect(actual).toHaveTextContent(t.operationSections.tasks);
+  });
+
+  it("son ENLACES con la sección en la dirección, no botones (CA-22)", () => {
     pintar();
-    expect(screen.getByText(t.requestsEmptyTitle)).toBeInTheDocument();
-    expect(screen.getByText(t.jobsEmptyTitle)).toBeInTheDocument();
-    expect(screen.getByText(t.tasksEmptyTitle)).toBeInTheDocument();
+    const nav = screen.getByRole("navigation", { name: t.operationSectionsLabel });
+    expect(within(nav).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: t.operationSections.tasks })).toHaveAttribute(
+      "href",
+      "/espacios/demo/restaurantes/est-1?vista=operacion&seccion=tareas",
+    );
+  });
+
+  it("Menú Diario ya NO dice que llega con la Fase 2: llegó en el Hito 11", () => {
+    pintar(vacia, seccion("dailyMenu"));
+
+    // Sin el servicio contratado dice eso, que es lo cierto, en vez del
+    // marcador que anunciaba un servicio que ya existe.
+    expect(screen.getByText(t.nextMenuNoServiceTitle)).toBeInTheDocument();
+    expect(screen.queryByText(/Fase 2/)).not.toBeInTheDocument();
+  });
+
+  it("sin nada que enseñar, cada sección dice su motivo y no se queda en blanco", () => {
+    for (const [clave, motivo] of [
+      ["requests", t.requestsEmptyTitle],
+      ["jobs", t.jobsEmptyTitle],
+      ["tasks", t.tasksEmptyTitle],
+    ] as const) {
+      cleanup();
+      pintar(vacia, seccion(clave));
+      expect(screen.getByText(motivo)).toBeInTheDocument();
+    }
   });
 
   it("la ficha de datos ya no está aquí: se lee entera en Gestión", () => {
     // La maqueta no la tiene en Operación, y repetida en dos pestañas
     // acabaría diciendo dos cosas distintas.
-    pintar();
-    expect(screen.queryByText(t.dataTitle)).not.toBeInTheDocument();
+    for (const clave of ["requests", "jobs", "tasks", "dailyMenu"] as const) {
+      cleanup();
+      pintar(vacia, seccion(clave));
+      expect(screen.queryByText(t.dataTitle)).not.toBeInTheDocument();
+    }
   });
 });
 
@@ -248,7 +311,7 @@ describe("vista 04 · lo que enseña cada fila", () => {
   };
 
   it("una solicitud lleva su autor y su momento; sin autor, solo el momento", () => {
-    pintar(conDatos);
+    pintar(conDatos, seccion("requests"));
     const card = within(tarjeta(t.requestsTitle));
     expect(card.getByText(/Nuria Ferreiro \(Magariños\) · /)).toBeInTheDocument();
     // La segunda no tiene nombre que enseñar y no se rellena con el uuid.
@@ -256,14 +319,14 @@ describe("vista 04 · lo que enseña cada fila", () => {
   });
 
   it("un trabajo fuera de plazo lo dice, y no las horas que le quedarían", () => {
-    pintar(conDatos);
+    pintar(conDatos, seccion("jobs"));
     const card = within(tarjeta(t.jobsTitle));
     expect(card.getByText(t.currentJobOverdue)).toBeInTheDocument();
     expect(card.getByText(t.currentJobToStart("2 h"))).toBeInTheDocument();
   });
 
   it("una tarea sin repartir lo dice, y sin trabajo no es un enlace", () => {
-    pintar(conDatos);
+    pintar(conDatos, seccion("tasks"));
     const card = within(tarjeta(t.tasksTitle));
     expect(card.getByText(new RegExp(t.tasksUnassigned))).toBeInTheDocument();
     // La que no cuelga de ningún trabajo no puede ser un enlace: no hay
@@ -277,14 +340,14 @@ describe("vista 04 · lo que enseña cada fila", () => {
     // Ahora lo hay y la tarea elegida viaja en la dirección, así que
     // pulsar una fila abre esa tarea y no obliga a buscarla entre las
     // demás del trabajo.
-    pintar(conDatos);
+    pintar(conDatos, seccion("tasks"));
     expect(
       within(tarjeta(t.tasksTitle)).getByRole("link", { name: /Retocar las fotografías/ }),
     ).toHaveAttribute("href", "/espacios/demo/trabajos/j-3/tareas?tarea=t-1");
   });
 
   it("maqueta 07: la tarea enseña su fecha, y sin planificar lo dice", () => {
-    pintar(conDatos);
+    pintar(conDatos, seccion("tasks"));
     const card = within(tarjeta(t.tasksTitle));
     expect(card.getByText(/13 sept/)).toBeInTheDocument();
     expect(card.getByText(new RegExp(t.tasksNoDate))).toBeInTheDocument();
@@ -293,26 +356,33 @@ describe("vista 04 · lo que enseña cada fila", () => {
   it("la tarjeta dice cuántas filas deja detrás, y calla cuando no deja ninguna", () => {
     // Es la comprobación que nace del dato real: Magariños tiene 19
     // solicitudes abiertas y la tarjeta enseña cuatro (CA-20).
-    pintar(conDatos);
+    pintar(conDatos, seccion("requests"));
     expect(within(tarjeta(t.requestsTitle)).getByText(t.cardMore(15))).toBeInTheDocument();
+
+    cleanup();
+    pintar(conDatos, seccion("tasks"));
     expect(within(tarjeta(t.tasksTitle)).getByText(t.cardMore(1))).toBeInTheDocument();
+
+    // Los tres trabajos caben enteros: no hay ninguno detrás que anunciar.
+    cleanup();
+    pintar(conDatos, seccion("jobs"));
     expect(within(tarjeta(t.jobsTitle)).queryByText(/y \d+ más/)).not.toBeInTheDocument();
   });
 
   it("cada 'Ver todas' lleva al listado FILTRADO por este restaurante", () => {
     // Sin el filtro, el enlace llevaría a las solicitudes de todos los
     // restaurantes del espacio, que no es lo que promete la tarjeta.
-    pintar(conDatos);
-    expect(
-      within(tarjeta(t.requestsTitle)).getByRole("link", { name: t.requestsLink }),
-    ).toHaveAttribute("href", "/espacios/demo/solicitudes?restaurante=est-1");
-    expect(within(tarjeta(t.jobsTitle)).getByRole("link", { name: t.jobsLink })).toHaveAttribute(
-      "href",
-      "/espacios/demo/trabajos?restaurante=est-1",
-    );
-    expect(within(tarjeta(t.tasksTitle)).getByRole("link", { name: t.tasksLink })).toHaveAttribute(
-      "href",
-      "/espacios/demo/tareas?restaurante=est-1",
-    );
+    for (const [clave, titulo, enlace, destino] of [
+      ["requests", t.requestsTitle, t.requestsLink, "/espacios/demo/solicitudes?restaurante=est-1"],
+      ["jobs", t.jobsTitle, t.jobsLink, "/espacios/demo/trabajos?restaurante=est-1"],
+      ["tasks", t.tasksTitle, t.tasksLink, "/espacios/demo/tareas?restaurante=est-1"],
+    ] as const) {
+      cleanup();
+      pintar(conDatos, seccion(clave));
+      expect(within(tarjeta(titulo)).getByRole("link", { name: enlace })).toHaveAttribute(
+        "href",
+        destino,
+      );
+    }
   });
 });
