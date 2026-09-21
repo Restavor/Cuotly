@@ -10,7 +10,7 @@ import {
 } from "@/core/home";
 import { isJobState, type JobState } from "@/core/job-states";
 import { loadLevel, type LoadLevel } from "@/core/load-points";
-import { civilDayStartInZone } from "@/core/team-calendar";
+import { civilDayStartInZone, shiftMonth } from "@/core/team-calendar";
 import { t2Status, t3Status, type CounterStatus } from "@/core/sla-timers";
 import type { TimerEvent, TimerEventType } from "@/core/timer-events";
 import type { ChangeCategory } from "@/core/classification-rules";
@@ -86,6 +86,40 @@ export interface SpaceHome {
       readonly day: string;
       readonly requests: number;
       readonly jobs: number;
+    }[];
+  };
+  /**
+   * Página 22 · "Próximas tareas": lo que viene por delante en el
+   * calendario del espacio, del día de hoy en adelante.
+   *
+   * Sale de `space_calendar()` —la misma función que pinta el calendario
+   * completo— y no de una tabla de tareas propia: los eventos se DERIVAN
+   * de `menus`, `jobs`, `charges`, `subscriptions`, `absences`, `holidays`
+   * y `supervisions` (RN-DAT-05), así que aquí no puede haber nada que
+   * discrepe de lo que se ve en el calendario.
+   *
+   * `failed` separa "no se ha podido leer" de "no hay nada": un `[]` por
+   * un error se leería como una agenda despejada, que es justo lo
+   * contrario de lo que pasa (CA-20).
+   */
+  /**
+   * El día de hoy **en la zona del espacio**, `AAAA-MM-DD`. Lo calcula el
+   * servidor y viaja hasta la pantalla porque el navegador de quien mira
+   * puede estar en otro huso: "Hoy" tiene que ser el hoy del restaurante,
+   * no el de quien lo abre desde otro país (CLAUDE.md MUST).
+   */
+  readonly today: string;
+  readonly upcoming: {
+    readonly failed: boolean;
+    readonly items: readonly {
+      readonly key: string;
+      readonly day: string;
+      readonly title: string;
+      readonly kind: string;
+      readonly entityType: string;
+      readonly entityId: string;
+      readonly establishmentId: string | null;
+      readonly establishmentName: string | null;
     }[];
   };
   readonly pendingRequests: number;
@@ -395,8 +429,9 @@ export async function loadSpaceHome(
   const { data: spaceRow } = await supabase.from("spaces").select("timezone").eq("id", spaceId).maybeSingle();
   const timeZone = spaceRow?.timezone ?? "Europe/Madrid";
 
-  /** "AAAA-MM" del mes en curso **en la zona del espacio** (CLAUDE.md). */
-  const mesEnCurso = dayKeyInTimeZone(now, timeZone).slice(0, 7);
+  /** Hoy y el mes en curso, **en la zona del espacio** (CLAUDE.md). */
+  const hoy = dayKeyInTimeZone(now, timeZone);
+  const mesEnCurso = hoy.slice(0, 7);
 
   const [
     attention,
@@ -407,6 +442,7 @@ export async function loadSpaceHome(
     { data: ciclos },
     { data: solicitudesDelMes, error: errorSolicitudes },
     { data: trabajosDelMes, error: errorTrabajos },
+    { data: proximas, error: errorProximas },
   ] = await Promise.all([
     loadSpaceAttention(supabase, spaceId, spaceSlug, now),
     supabase.rpc("space_team_load", { p_space_id: spaceId }),
@@ -460,6 +496,23 @@ export async function loadSpaceHome(
       .not("completed_at", "is", null)
       .gte("completed_at", inicioDeMes(mesEnCurso, timeZone))
       .lte("completed_at", now.toISOString()),
+    /*
+      Página 22 · "Próximas tareas". La misma función que pinta el
+      calendario completo, sin ninguno de sus tres filtros: de hoy al mismo
+      día del mes que viene.
+
+      Es `SECURITY INVOKER`, así que lo que devuelve ya viene filtrado por
+      las políticas de RLS de cada tabla con la identidad de quien mira —
+      esta pantalla no autoriza nada y no tiene que hacerlo.
+    */
+    supabase.rpc("space_calendar", {
+      p_space_id: spaceId,
+      p_from: hoy,
+      p_to: shiftMonth(hoy, 1),
+      p_establishment_id: undefined,
+      p_worker_id: undefined,
+      p_kind: undefined,
+    }),
   ]);
 
   // ------------------------------------------------------------------
@@ -607,6 +660,40 @@ export async function loadSpaceHome(
         requests: punto.requests,
         jobs: punto.jobs,
       })),
+    },
+    today: hoy,
+    upcoming: {
+      failed: errorProximas !== null,
+      /*
+        Cinco: las que caben en la tarjeta de un teléfono sin convertirla
+        en una lista. El resto está en el calendario, que es a donde
+        lleva el enlace de la cabecera — recortar aquí no esconde nada.
+
+        `space_calendar()` ya devuelve ordenado por fecha, pero el corte a
+        cinco depende de ese orden, así que se vuelve a ordenar aquí en
+        vez de confiar en que nadie lo cambie nunca.
+      */
+      items: [...(proximas ?? [])]
+        .sort((a, b) => a.event_date.localeCompare(b.event_date))
+        .slice(0, 5)
+        .map((evento, indice) => ({
+          // Dos eventos distintos pueden compartir entidad y día (una
+          // suscripción que renueva y vence a la vez), así que la clave
+          // lleva también el tipo y la posición.
+          key: `${evento.entity_id}-${evento.kind}-${evento.event_date}-${indice}`,
+          day: evento.event_date,
+          title: evento.title,
+          kind: evento.kind,
+          entityType: evento.entity_type,
+          entityId: evento.entity_id,
+          establishmentId: evento.establishment_id,
+          // Un festivo o una ausencia no son de ningún restaurante: ahí
+          // va `null` y la fila no escribe una línea vacía debajo.
+          establishmentName:
+            evento.establishment_id === null
+              ? null
+              : establishmentName.get(evento.establishment_id) ?? null,
+        })),
     },
     pendingRequests: attention.pendingRequests,
     jobsAtDeadlineRisk: attention.jobsAtDeadlineRisk,

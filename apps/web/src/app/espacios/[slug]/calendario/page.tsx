@@ -68,7 +68,13 @@ function isEventKind(value: string): value is EventKind {
   return value in es.calendar.kinds;
 }
 
-function kindLabel(kind: string): string {
+/**
+ * Se exporta porque el Inicio del espacio pinta las cinco primeras de
+ * estas mismas filas ("Próximas tareas", página 22): la etiqueta de un
+ * tipo de evento y a dónde lleva se deciden **una sola vez**, o las dos
+ * pantallas acabarían discrepando sobre qué es y adónde va lo mismo.
+ */
+export function kindLabel(kind: string): string {
   return isEventKind(kind) ? es.calendar.kinds[kind] : kind;
 }
 
@@ -126,7 +132,7 @@ function stateOf(kind: string, state: string): { readonly label: string; readonl
  * ausencia no tienen ficha propia (se gestionan desde aquí), y un cobro se
  * ve en Finanzas.
  */
-function eventHref(
+export function eventHref(
   base: string,
   evento: { readonly entity_type: string; readonly entity_id: string; readonly establishment_id: string | null },
 ): string | null {

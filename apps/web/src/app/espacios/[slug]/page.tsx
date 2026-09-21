@@ -6,6 +6,7 @@ import { AttentionList } from "@/components/home/AttentionList";
 import { KpiCard } from "@/components/home/KpiCard";
 import { PanelLink } from "@/components/home/PanelLink";
 import { TeamLoad } from "@/components/home/TeamLoad";
+import { UpcomingTasks } from "@/components/home/UpcomingTasks";
 import { Card, EmptyState, ErrorState, NoPermissionState, StatusBadge } from "@/components/ui";
 import { EmptyReason } from "@/components/ui/EmptyReason";
 import { Icon } from "@/components/ui/Icon";
@@ -13,6 +14,7 @@ import Link from "next/link";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { eventHref, kindLabel } from "./calendario/page";
 import { loadSpaceHome } from "./home-load";
 
 /**
@@ -327,6 +329,49 @@ export default async function SpacePage({
               </li>
             ))}
           </ul>
+        )}
+      </Card>
+
+      {/*
+        Página 22 · "Próximas tareas", del calendario del espacio: de hoy
+        al mismo día del mes que viene, las cinco primeras.
+
+        El diseño dibuja un asa de arrastre (⋮) a la izquierda de cada
+        fila para reordenarlas. No va: estas filas no son una lista que
+        alguien ordena, son eventos **derivados** de su propia fecha
+        (RN-DAT-05). Un asa que no puede mover nada es un botón que miente,
+        y moverlas de verdad exigiría inventar un orden que no existe.
+      */}
+      <Card
+        title={es.spaceHome.upcoming.title}
+        action={
+          <PanelLink href={`${base}/calendario`}>{es.spaceHome.upcoming.seeAll}</PanelLink>
+        }
+      >
+        {home.upcoming.failed ? (
+          <ErrorState title={es.spaceHome.upcoming.failed} />
+        ) : home.upcoming.items.length === 0 ? (
+          <EmptyState
+            title={es.spaceHome.upcoming.emptyTitle}
+            description={es.spaceHome.upcoming.emptyReason}
+          />
+        ) : (
+          <UpcomingTasks
+            today={home.today}
+            kindLabel={kindLabel}
+            tasks={home.upcoming.items.map((tarea) => ({
+              key: tarea.key,
+              day: tarea.day,
+              title: tarea.title,
+              kind: tarea.kind,
+              establishmentName: tarea.establishmentName,
+              href: eventHref(base, {
+                entity_type: tarea.entityType,
+                entity_id: tarea.entityId,
+                establishment_id: tarea.establishmentId,
+              }),
+            }))}
+          />
         )}
       </Card>
 

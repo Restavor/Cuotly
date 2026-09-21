@@ -801,6 +801,30 @@ export const es = {
       noCycle: "Sin ciclo de consumo en marcha.",
     },
 
+    /**
+     * Página 22 · "Próximas tareas". Lo que viene por delante, sacado del
+     * calendario del espacio: no hay una lista de tareas aparte que
+     * pudiera decir otra cosa.
+     */
+    upcoming: {
+      title: "Próximas tareas",
+      seeAll: "Ver calendario",
+      // Las tres respuestas distintas de CA-20: no se ha podido leer, no
+      // hay nada, y —cuando sí hay— la lista.
+      failed: "No hemos podido leer el calendario. Vuelve a cargar en un momento.",
+      emptyTitle: "No hay nada en el calendario",
+      emptyReason:
+        "Cuando haya una publicación de menú, un plazo de trabajo, un cobro o una renovación en el próximo mes, aparecerá aquí.",
+      /** La fecha corta de la columna izquierda: "2 abr". */
+      day: (dia: number, mes: number) =>
+        `${dia} ${
+          ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"][
+            mes - 1
+          ] ?? ""
+        }`,
+      today: "Hoy",
+    },
+
     attention: {
       title: "Necesita atención",
       seeAll: "Ver todas",
