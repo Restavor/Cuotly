@@ -19,7 +19,11 @@ import { EstablishmentDataForm } from "./DataForm";
 import { DataSectionNav, DigitalSection } from "./DigitalSections";
 import { IntegrationsBlock } from "./IntegrationsBlock";
 import type { DigitalDataView, IntegrationsView } from "./integrations-load";
-import { OpportunitiesSection, type OpportunityViewer } from "./Opportunities";
+import {
+  OpportunitiesSection,
+  OpportunityHighlights,
+  type OpportunityViewer,
+} from "./Opportunities";
 import type { OpportunitiesView } from "./opportunities-load";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
@@ -68,6 +72,7 @@ import {
   type SheetTab,
   DATA_SECTION_TABS,
   dataSectionHref,
+  OPPORTUNITIES_SECTION,
   type DataSectionTab,
   OPERATION_SECTION_TABS,
   openRequestHref,
@@ -1863,6 +1868,34 @@ export function EstablishmentSheet({
                 </div>
               </div>
             )}
+          </Card>
+
+          {/*
+            Página 26 · "Oportunidades destacadas", debajo de las fuentes.
+
+            Es un resumen de la sección Oportunidades, no un segundo sitio
+            donde decidir: aprobar o descartar se hace allí, con la
+            evidencia y el periodo delante, que es lo que no cabe en cuatro
+            líneas (§96). Por eso aquí no hay ni un botón.
+
+            La gráfica de "Visitas y conversiones" que el diseño dibuja
+            entre medias NO está, y el propio dibujo dice por qué: va
+            marcada "Datos de ejemplo". Las cifras de analítica se leen en
+            la sección Analítica, que enseña lo que la fuente trajo de
+            verdad o el motivo por el que no hay nada (§178, RN-INT-07).
+          */}
+          <Card
+            title={es.opportunities.highlightsTitle}
+            action={
+              <Link
+                href={dataSectionHref(base, OPPORTUNITIES_SECTION)}
+                className="shrink-0 text-sm text-cuotly-green underline"
+              >
+                {es.opportunities.highlightsLink}
+              </Link>
+            }
+          >
+            <OpportunityHighlights view={opportunities} />
           </Card>
 
           {/*

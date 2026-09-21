@@ -140,6 +140,11 @@ export const DATA_SECTION_TABS: readonly DataSectionTab[] = DATA_SECTIONS.map((k
   slug: DATA_SECTION_SLUGS[key],
 }));
 
+/** La sección de Oportunidades, que se nombra desde fuera (página 26). */
+export const OPPORTUNITIES_SECTION: DataSectionTab = DATA_SECTION_TABS.find(
+  (section) => section.key === "opportunities",
+)!;
+
 /** Una sección desconocida cae en el Resumen, igual que una pestaña desconocida. */
 export function parseDataSection(value: string | undefined): DataSectionTab {
   return DATA_SECTION_TABS.find((section) => section.slug === value) ?? DATA_SECTION_TABS[0];

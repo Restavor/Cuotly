@@ -5407,6 +5407,19 @@ export const es = {
       no_longer_applicable: "Ya no aplicable",
     },
 
+    /**
+     * Página 26 · "Oportunidades destacadas" en el Resumen de Informes y
+     * datos. Es un resumen de la sección Oportunidades, no otro sitio
+     * donde decidir: las acciones se toman ahí, con la evidencia delante.
+     */
+    highlightsTitle: "Oportunidades destacadas",
+    highlightsLink: "Ver todas",
+    highlightsEmptyTitle: "No hay ninguna oportunidad detectada",
+    highlightsEmptyReason:
+      "Cuotly las detecta a partir de lo que traen las fuentes de datos conectadas. Cuando encuentre alguna, aparecerá aquí.",
+    highlightsNoPlan:
+      "Las oportunidades se detectan para los restaurantes con plan de mantenimiento.",
+
     // Decisión 26a · qué significa cada nivel de impacto, dicho entero:
     // sin la explicación, "alto" es una etiqueta sin contenido.
     impacts: { high: "Impacto alto", medium: "Impacto medio", low: "Impacto bajo" },

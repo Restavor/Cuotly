@@ -354,3 +354,60 @@ export function OpportunitiesSection({
     </div>
   );
 }
+
+/**
+ * Página 26 del diseño · "Oportunidades destacadas", en el Resumen de
+ * "Informes y datos".
+ *
+ * Es un **resumen** de la sección Oportunidades, no un segundo sitio donde
+ * decidir: aquí no hay botones de aprobar ni de descartar. Esas decisiones
+ * se toman en la sección, con la evidencia y el periodo delante, que es
+ * justo lo que no cabe en cuatro líneas (§96).
+ *
+ * Qué entra y qué no:
+ *
+ *   · Fuera las **descartadas** y las que **ya no aplican**: una
+ *     oportunidad que alguien descartó no está destacada, está cerrada.
+ *   · El orden es el de `priority`, el mismo que usa la sección. Ordenar
+ *     aquí por otra cosa —el impacto, la fecha— haría que "las cuatro
+ *     primeras" fueran cuatro distintas en cada pantalla.
+ *   · Sin plan de mantenimiento no se detectan (§101), y eso se dice: un
+ *     "no hay ninguna" ahí haría pensar que se miró y no había nada.
+ *
+ * El impacto va **escrito**, no solo con color (§21.4), y su texto sale
+ * del mismo diccionario que la sección (CA-21).
+ */
+export function OpportunityHighlights({ view }: { readonly view: OpportunitiesView | null }) {
+  if (view === null || view.access === "none") {
+    return <EmptyState title={t.highlightsEmptyTitle} description={t.highlightsNoPlan} />;
+  }
+
+  const CERRADAS: readonly string[] = ["discarded", "no_longer_applicable"];
+  const destacadas = view.rows
+    .filter((row) => !CERRADAS.includes(row.status))
+    .slice(0, 4);
+
+  if (destacadas.length === 0) {
+    return (
+      <EmptyState title={t.highlightsEmptyTitle} description={t.highlightsEmptyReason} />
+    );
+  }
+
+  return (
+    <ul className="divide-y divide-border">
+      {destacadas.map((row) => (
+        <li key={row.id} className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 py-2.5">
+          <span className="min-w-0 flex-1 basis-48">
+            <span className="block truncate text-sm font-medium text-text">
+              {opportunityTitle(row)}
+            </span>
+            <span className="block truncate text-xs text-text-secondary">
+              {t.states[row.status]}
+            </span>
+          </span>
+          <StatusBadge tone={TONO_IMPACTO[row.impact]}>{t.impacts[row.impact]}</StatusBadge>
+        </li>
+      ))}
+    </ul>
+  );
+}
