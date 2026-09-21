@@ -825,6 +825,26 @@ export const es = {
       today: "Hoy",
     },
 
+    /**
+     * Página 22 · "Resumen financiero". Los dos importes NO se nombran
+     * aquí: se leen de `space.finance` —"Cobrado" y "Pendiente de cobro"—,
+     * que es donde ya se llamaban en la pantalla de Finanzas. Un mismo
+     * importe con dos nombres según la pantalla es la forma más fácil de
+     * que alguien crea que son dos cosas distintas (CA-21).
+     */
+    finance: {
+      title: "Resumen financiero",
+      seeAll: "Ver finanzas",
+      thisMonth: "Este mes",
+      failed: "No hemos podido leer el resumen financiero. Vuelve a cargar en un momento.",
+      // §20.7 · sin permiso se dice eso, no un cero: "0 € cobrado" es una
+      // afirmación sobre el dinero del espacio, y quien no puede verlo
+      // tampoco puede hacerla.
+      noPermissionTitle: "No puedes ver las finanzas de este espacio",
+      noPermissionReason:
+        "Hace falta el permiso de gestión financiera. Pídeselo a un administrador del espacio.",
+    },
+
     attention: {
       title: "Necesita atención",
       seeAll: "Ver todas",

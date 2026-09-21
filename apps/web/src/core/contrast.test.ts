@@ -156,6 +156,10 @@ describe("CA-22 · el contraste de lo que se pinta de verdad", () => {
     for (const [nombre, color] of [
       ["danger", PALETA.danger],
       ["info", PALETA.info],
+      // El verde de la marca lo estrenó "Resumen financiero" (página 22,
+      // el icono de "Cobrado"). Se mide aquí y no se da por bueno en un
+      // comentario: 3,78:1 sobre su propio tinte.
+      ["cuotlyGreen", PALETA.cuotlyGreen],
     ] as const) {
       it(`${nombre} vale como icono sobre su tinte`, () => {
         const fondo = blend(color, PALETA.surface, TINTE);

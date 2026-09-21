@@ -89,6 +89,13 @@ export interface SpaceHome {
     }[];
   };
   /**
+   * El día de hoy **en la zona del espacio**, `AAAA-MM-DD`. Lo calcula el
+   * servidor y viaja hasta la pantalla porque el navegador de quien mira
+   * puede estar en otro huso: "Hoy" tiene que ser el hoy del restaurante,
+   * no el de quien lo abre desde otro país (CLAUDE.md MUST).
+   */
+  readonly today: string;
+  /**
    * Página 22 · "Próximas tareas": lo que viene por delante en el
    * calendario del espacio, del día de hoy en adelante.
    *
@@ -102,13 +109,6 @@ export interface SpaceHome {
    * un error se leería como una agenda despejada, que es justo lo
    * contrario de lo que pasa (CA-20).
    */
-  /**
-   * El día de hoy **en la zona del espacio**, `AAAA-MM-DD`. Lo calcula el
-   * servidor y viaja hasta la pantalla porque el navegador de quien mira
-   * puede estar en otro huso: "Hoy" tiene que ser el hoy del restaurante,
-   * no el de quien lo abre desde otro país (CLAUDE.md MUST).
-   */
-  readonly today: string;
   readonly upcoming: {
     readonly failed: boolean;
     readonly items: readonly {
@@ -122,6 +122,22 @@ export interface SpaceHome {
       readonly establishmentName: string | null;
     }[];
   };
+  /**
+   * Página 22 · "Resumen financiero": cobrado y pendiente de cobro **del
+   * mes en curso**, en céntimos enteros (CLAUDE.md: ni un importe en coma
+   * flotante).
+   *
+   * Sale de `financial_dashboard()`, que es `SECURITY DEFINER` y exige la
+   * capacidad `manage_finance` por su cuenta: quien no la tiene recibe un
+   * error, no unos ceros. Por eso el estado es uno de tres y no un par de
+   * números sueltos — "no puedes verlo", "no se ha podido leer" y "esto
+   * es" se leen distinto, y confundirlos manda a alguien a pedir un
+   * permiso que ya tiene (§20.7, CA-20).
+   */
+  readonly finance:
+    | { readonly kind: "ok"; readonly collectedCents: number; readonly pendingCents: number }
+    | { readonly kind: "no_permission" }
+    | { readonly kind: "failed" };
   readonly pendingRequests: number;
   /**
    * `null` cuando NO se ha podido calcular (la consulta de contadores
@@ -420,6 +436,27 @@ export async function loadSpaceAttention(
   };
 }
 
+/**
+ * Cuál de los tres estados del "Resumen financiero" es (página 22).
+ *
+ * El orden importa: primero el permiso, porque sin `manage_finance` la
+ * función SIEMPRE devuelve error y tratarlo como fallo de lectura diría
+ * "vuelve a cargar" a quien nunca va a poder verlo.
+ */
+export function resumenFinanciero(
+  canManageFinance: boolean | null,
+  error: unknown,
+  fila: { collected_cents: number; pending_cents: number } | undefined,
+): SpaceHome["finance"] {
+  if (canManageFinance !== true) return { kind: "no_permission" };
+  if (error !== null || fila === undefined) return { kind: "failed" };
+  return {
+    kind: "ok",
+    collectedCents: fila.collected_cents,
+    pendingCents: fila.pending_cents,
+  };
+}
+
 export async function loadSpaceHome(
   supabase: Supabase,
   spaceId: string,
@@ -443,6 +480,8 @@ export async function loadSpaceHome(
     { data: solicitudesDelMes, error: errorSolicitudes },
     { data: trabajosDelMes, error: errorTrabajos },
     { data: proximas, error: errorProximas },
+    { data: canManageFinance },
+    { data: finanzas, error: errorFinanzas },
   ] = await Promise.all([
     loadSpaceAttention(supabase, spaceId, spaceSlug, now),
     supabase.rpc("space_team_load", { p_space_id: spaceId }),
@@ -512,6 +551,24 @@ export async function loadSpaceHome(
       p_establishment_id: undefined,
       p_worker_id: undefined,
       p_kind: undefined,
+    }),
+    /*
+      Página 22 · "Resumen financiero". Se pregunta la capacidad **además**
+      de llamar a la función, y no para decidir si llamarla: la función la
+      vuelve a comprobar por dentro y es ella quien manda (CLAUDE.md MUST:
+      "toda operación se valida en el servidor"). Se pregunta para poder
+      distinguir sus dos fracasos, que desde fuera son el mismo error:
+      "no tienes permiso" y "no se ha podido leer". Decirle lo primero a
+      quien sí lo tiene le manda a pedir algo que ya tiene (§20.7).
+    */
+    supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "manage_finance" }),
+    supabase.rpc("financial_dashboard", {
+      p_space_id: spaceId,
+      // Del principio del mes en la zona del espacio hasta ahora: el
+      // mismo corte que usa la gráfica de arriba, para que las dos
+      // tarjetas hablen del mismo "este mes".
+      p_from: inicioDeMes(mesEnCurso, timeZone),
+      p_to: now.toISOString(),
     }),
   ]);
 
@@ -662,6 +719,7 @@ export async function loadSpaceHome(
       })),
     },
     today: hoy,
+    finance: resumenFinanciero(canManageFinance, errorFinanzas, finanzas?.[0]),
     upcoming: {
       failed: errorProximas !== null,
       /*

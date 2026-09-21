@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { ActivityChart } from "@/components/home/ActivityChart";
 import { ActivityFeed } from "@/components/home/ActivityFeed";
 import { AttentionList } from "@/components/home/AttentionList";
+import { FinanceSummary } from "@/components/home/FinanceSummary";
 import { KpiCard } from "@/components/home/KpiCard";
 import { PanelLink } from "@/components/home/PanelLink";
 import { TeamLoad } from "@/components/home/TeamLoad";
@@ -333,6 +334,33 @@ export default async function SpacePage({
       </Card>
 
       {/*
+        Página 22 · el orden del diseño de aquí abajo: "Necesita atención"
+        a ancho completo, "Próximas tareas" debajo, y luego el "Resumen
+        financiero" al lado de la "Carga de trabajo del equipo".
+
+        Antes "Necesita atención" y la carga del equipo iban en una rejilla
+        de tres columnas, uno al lado del otro. En un teléfono eso se
+        apilaba igual, así que no era un error que se viera; era un orden
+        distinto del dibujado.
+      */}
+      <Card
+        title={es.spaceHome.attention.title}
+        action={<PanelLink href={`${base}/solicitudes`}>{es.spaceHome.attention.seeAll}</PanelLink>}
+      >
+        {home.attention.length === 0 ? (
+          // Esto NO es un "sin datos": es una respuesta, y buena. Por eso
+          // no lleva uno de los cuatro motivos de CA-20 —ninguno
+          // encaja— sino la explicación de qué llegaría a aparecer aquí.
+          <EmptyState
+            title={es.spaceHome.attention.emptyTitle}
+            description={es.spaceHome.attention.emptyReason}
+          />
+        ) : (
+          <AttentionList timeZone={space.timezone} items={home.attention} />
+        )}
+      </Card>
+
+      {/*
         Página 22 · "Próximas tareas", del calendario del espacio: de hoy
         al mismo día del mes que viene, las cinco primeras.
 
@@ -376,99 +404,109 @@ export default async function SpacePage({
       </Card>
 
       {/*
-        `min-w-0` en los dos hijos, y no es cosmético: CA-19 se rompía por
-        aquí. Un elemento de grid tiene `min-width: auto`, así que se niega
-        a encoger por debajo del ancho mínimo de su contenido; en un
-        teléfono de 390 px estos dos medían **931 px** y sacaban la página
-        entera fuera de la pantalla. Con `min-w-0` el elemento sí encoge y
-        los `truncate` de dentro (AttentionList, TeamLoad, ActivityFeed)
-        pueden hacer su trabajo, que hasta ahora no servía de nada.
-        Lo encontró el job `e2e-datos` la primera vez que CI lo ejecutó.
+        Página 22 · "Resumen financiero" y la carga del equipo, uno al lado
+        del otro.
+
+        `min-w-0` en los dos, y no es cosmético: CA-19 se rompía por aquí.
+        Un elemento de grid tiene `min-width: auto`, así que se niega a
+        encoger por debajo del ancho mínimo de su contenido; en un teléfono
+        de 390 px estos dos medían **931 px** y sacaban la página entera
+        fuera de la pantalla. Con `min-w-0` el elemento sí encoge y los
+        `truncate` de dentro pueden hacer su trabajo, que hasta ahora no
+        servía de nada. Lo encontró el job `e2e-datos` la primera vez que
+        CI lo ejecutó.
+
+        El "Este mes" del diseño es ahí un desplegable de periodo. Aquí va
+        escrito: el periodo es el mes en curso y no hay otro que elegir.
       */}
-      <div className="grid items-start gap-4 lg:grid-cols-3">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <Card
-          className="min-w-0 lg:col-span-2"
-          title={es.spaceHome.attention.title}
-          action={<PanelLink href={`${base}/solicitudes`}>{es.spaceHome.attention.seeAll}</PanelLink>}
+          className="min-w-0"
+          title={es.spaceHome.finance.title}
+          subtitle={es.spaceHome.finance.thisMonth}
+          action={<PanelLink href={`${base}/finanzas`}>{es.spaceHome.finance.seeAll}</PanelLink>}
         >
-          {home.attention.length === 0 ? (
-            // Esto NO es un "sin datos": es una respuesta, y buena. Por eso
-            // no lleva uno de los cuatro motivos de CA-20 —ninguno
-            // encaja— sino la explicación de qué llegaría a aparecer aquí.
-            <EmptyState
-              title={es.spaceHome.attention.emptyTitle}
-              description={es.spaceHome.attention.emptyReason}
+          {home.finance.kind === "no_permission" ? (
+            // §20.7 · "no puedes verlo" y "no se ha podido leer" son cosas
+            // distintas, y decirle la primera a quien sí puede le manda a
+            // pedir un permiso que ya tiene.
+            <NoPermissionState
+              title={es.spaceHome.finance.noPermissionTitle}
+              description={es.spaceHome.finance.noPermissionReason}
             />
+          ) : home.finance.kind === "failed" ? (
+            <ErrorState title={es.spaceHome.finance.failed} />
           ) : (
-            <AttentionList timeZone={space.timezone} items={home.attention} />
+            <FinanceSummary
+              collectedCents={home.finance.collectedCents}
+              pendingCents={home.finance.pendingCents}
+            />
           )}
         </Card>
 
-        <div className="min-w-0 space-y-4">
-          <Card
-            title={es.spaceHome.teamLoad.title}
-            action={<PanelLink href={`${base}/equipo`}>{es.spaceHome.teamLoad.seeAll}</PanelLink>}
-          >
-            {home.teamLoadFailed ? (
-              <ErrorState />
-            ) : !home.teamLoadAvailable ? (
-              // RN-ASG-17 y §20.7: sin permiso para ver la carga ajena se
-              // dice eso, no una lista vacía que parecería "no hay nadie".
-              <NoPermissionState
-                title={es.spaceHome.teamLoad.noPermissionTitle}
-                description={es.spaceHome.teamLoad.noPermissionReason}
-              />
-            ) : home.team.length === 0 ? (
-              <EmptyReason
-                testId="inicio-sin-equipo"
-                reason="no_data_yet"
-                title={es.spaceHome.teamLoad.emptyTitle}
-              />
-            ) : (
-              <TeamLoad members={home.team} />
-            )}
-          </Card>
-
-          <Card
-            title={es.spaceHome.dailyMenu.title}
-            action={
-              <PanelLink href={`${base}/menu-diario`}>{es.spaceHome.dailyMenu.openLink}</PanelLink>
-            }
-          >
-            {/*
-              Decisión 18 · el contador entra en la tarjeta que ya estaba
-              en su sitio. Sale de `team_menu_queue()` (RLS y garantía en el
-              servidor). CA-20: sin servicio o sin poder calcularlo, lo que
-              va es el motivo, no un cero.
-            */}
-            {!home.dailyMenu.offered && (home.dailyMenu.pending ?? 0) === 0 ? (
-              <EmptyState
-                title={es.spaceHome.dailyMenu.noServiceTitle}
-                description={es.spaceHome.dailyMenu.noServiceReason}
-              />
-            ) : home.dailyMenu.pending === null ? (
-              <ErrorState title={es.spaceHome.dailyMenu.unavailable} />
-            ) : (
-              <div data-testid="inicio-menu-diario">
-                <p className="text-2xl font-bold text-primary-dark">
-                  {es.spaceHome.dailyMenu.pending(home.dailyMenu.pending)}
-                </p>
-                <p className="text-sm text-text-secondary">{es.spaceHome.dailyMenu.pendingHint}</p>
-                {home.dailyMenu.unassigned > 0 || home.dailyMenu.overdue > 0 ? (
-                  <p className="mt-2 text-sm text-text">
-                    {[
-                      home.dailyMenu.unassigned > 0 ? es.spaceHome.dailyMenu.unassigned(home.dailyMenu.unassigned) : null,
-                      home.dailyMenu.overdue > 0 ? es.spaceHome.dailyMenu.overdue(home.dailyMenu.overdue) : null,
-                    ]
-                      .filter((x) => x !== null)
-                      .join(" · ")}
-                  </p>
-                ) : null}
-              </div>
-            )}
-          </Card>
-        </div>
+        <Card
+          title={es.spaceHome.teamLoad.title}
+          action={<PanelLink href={`${base}/equipo`}>{es.spaceHome.teamLoad.seeAll}</PanelLink>}
+        >
+          {home.teamLoadFailed ? (
+            <ErrorState />
+          ) : !home.teamLoadAvailable ? (
+            // RN-ASG-17 y §20.7: sin permiso para ver la carga ajena se
+            // dice eso, no una lista vacía que parecería "no hay nadie".
+            <NoPermissionState
+              title={es.spaceHome.teamLoad.noPermissionTitle}
+              description={es.spaceHome.teamLoad.noPermissionReason}
+            />
+          ) : home.team.length === 0 ? (
+            <EmptyReason
+              testId="inicio-sin-equipo"
+              reason="no_data_yet"
+              title={es.spaceHome.teamLoad.emptyTitle}
+            />
+          ) : (
+            <TeamLoad members={home.team} />
+          )}
+        </Card>
       </div>
+
+      <Card
+        title={es.spaceHome.dailyMenu.title}
+        action={
+          <PanelLink href={`${base}/menu-diario`}>{es.spaceHome.dailyMenu.openLink}</PanelLink>
+        }
+      >
+        {/*
+          Decisión 18 · el contador entra en la tarjeta que ya estaba
+          en su sitio. Sale de `team_menu_queue()` (RLS y garantía en el
+          servidor). CA-20: sin servicio o sin poder calcularlo, lo que
+          va es el motivo, no un cero.
+        */}
+        {!home.dailyMenu.offered && (home.dailyMenu.pending ?? 0) === 0 ? (
+          <EmptyState
+            title={es.spaceHome.dailyMenu.noServiceTitle}
+            description={es.spaceHome.dailyMenu.noServiceReason}
+          />
+        ) : home.dailyMenu.pending === null ? (
+          <ErrorState title={es.spaceHome.dailyMenu.unavailable} />
+        ) : (
+          <div data-testid="inicio-menu-diario">
+            <p className="text-2xl font-bold text-primary-dark">
+              {es.spaceHome.dailyMenu.pending(home.dailyMenu.pending)}
+            </p>
+            <p className="text-sm text-text-secondary">{es.spaceHome.dailyMenu.pendingHint}</p>
+            {home.dailyMenu.unassigned > 0 || home.dailyMenu.overdue > 0 ? (
+              <p className="mt-2 text-sm text-text">
+                {[
+                  home.dailyMenu.unassigned > 0 ? es.spaceHome.dailyMenu.unassigned(home.dailyMenu.unassigned) : null,
+                  home.dailyMenu.overdue > 0 ? es.spaceHome.dailyMenu.overdue(home.dailyMenu.overdue) : null,
+                ]
+                  .filter((x) => x !== null)
+                  .join(" · ")}
+              </p>
+            ) : null}
+          </div>
+        )}
+      </Card>
 
       <Card
         title={es.spaceHome.activity.title}
