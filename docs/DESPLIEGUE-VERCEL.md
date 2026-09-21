@@ -54,8 +54,12 @@ mirar los registros de compilación sigue siendo cosa del navegador):
   `apps/web/vercel.json` declara dos pasadas al día (07:00 y 19:00 UTC) y
   eso es lo que el plan admite. De ahí salió el fallo del resumen diario
   que corrigió la migración 124.
-- **Los despliegues sí se disparan al subir**: el alias de producción
-  `cuotly-web.vercel.app` se repuntó el 21/09/2026 a las 16:35 UTC.
+- **Los despliegues sí se disparan al subir, y el de hoy está verde.** El
+  despliegue de producción de `cuotly-web` se compiló el 21/09/2026 a las
+  17:45 UTC desde el commit `0c65ae6` de la rama de trabajo y terminó en
+  `Deployment completed`. Cuidado al leer la API: el alias lleva una fecha
+  `created` del 03/09 que es la del **alias**, no la del despliegue; la del
+  despliegue está en su registro de compilación.
 - **`cuotly-web` tiene ocho variables**: `CRON_SECRET`,
   `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
@@ -67,24 +71,133 @@ mirar los registros de compilación sigue siendo cosa del navegador):
 |---|---|---|
 | `cuotly-web` | `INTEGRATIONS_VAULT_KEY` | **Ninguna fuente analítica se puede conectar** (RN-INT-02). La pantalla lo dice en vez de fallar. |
 | `cuotly-web` | `GOOGLE_OAUTH_CLIENT_ID` y `..._SECRET` | GA4, Search Console y Perfil de Empresa no se pueden conectar. Clarity y PageSpeed sí. |
-| `cuotly-movil` | `EXPO_PUBLIC_SUPABASE_URL` | **La app en el navegador no arranca: pantalla en blanco.** |
-| `cuotly-movil` | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Igual. |
+| ~~`cuotly-movil` · `EXPO_PUBLIC_SUPABASE_URL`~~ | ~~La app en el navegador no arranca: pantalla en blanco.~~ | **Puesta el 21/09/2026** |
+| ~~`cuotly-movil` · `EXPO_PUBLIC_SUPABASE_ANON_KEY`~~ | ~~Igual.~~ | **Puesta el 21/09/2026** |
 
-`cuotly-movil` tiene **solo** `EXPO_PUBLIC_WEB_URL`. Las dos que faltan son
-los mismos valores públicos que ya usa la web —viajan al navegador, no son
-secretos— pero hay que **volver a desplegar** después de ponerlas, porque
-`EXPO_PUBLIC_*` se incrusta al compilar.
+Las dos del móvil eran los mismos valores públicos que ya usa la web
+—viajan dentro del paquete JS, no son secretos— y se pusieron el
+21/09/2026 con un redespliegue detrás, porque `EXPO_PUBLIC_*` se incrusta
+al compilar y la variable sola no hace nada. Antes de copiarla se comprobó
+que el token llevara `"role":"anon"` y no el de servicio; conviene repetir
+esa comprobación cada vez que se mueva una clave de Supabase de un sitio a
+otro, porque las dos se parecen mucho.
 
-Las otras tres sí son secretos que alguien tiene que generar u obtener: la
-clave de la caja fuerte (`openssl rand -base64 32`) y el cliente OAuth de
-Google Cloud.
+Las otras dos sí son secretos que alguien tiene que generar u obtener, y
+tienen su receta más abajo.
 
 ### Lo que sigue sin poder comprobarse desde aquí
 
-- Que las compilaciones de hoy hayan terminado en verde.
+- **Que el móvil haya dejado de estar en blanco.** Las dos variables están
+  puestas y el redespliegue del 21/09/2026 a las 18:27 UTC terminó bien
+  —Vercel solo repunta el alias de producción cuando la compilación sale
+  verde—, pero eso prueba que *compiló*, no que la pantalla pinte. Hay que
+  abrir `cuotly-movil.vercel.app` y mirarlo.
 - El `maxDuration` de la función de la cola y **que la invocación del cron
   llegue de verdad** — los otros dos detalles escritos de memoria.
 - El primer envío real de correo con Resend, con su dominio verificado.
+
+### Cómo poner la clave de la caja fuerte (`INTEGRATIONS_VAULT_KEY`)
+
+Es la clave con la que Cuotly cifra las credenciales de las integraciones
+—los tokens de Google, las claves de Clarity y PageSpeed— **antes** de
+guardarlas en Supabase (RN-INT-02). La base guarda el resultado cifrado; la
+clave vive solo en el entorno de Vercel. Por eso nadie con acceso a la base
+de datos, Supabase incluido, puede leer esas credenciales.
+
+1. **Genérala en tu ordenador**, en una terminal:
+
+   ```bash
+   openssl rand -base64 32
+   ```
+
+   Salen 44 caracteres terminados en `=`. Tienen que ser **32 bytes en
+   base64**: si pones otra cosa, la aplicación lo dice al arrancar la ruta
+   en vez de guardar nada en claro.
+
+2. **Pégala en Vercel**: proyecto `cuotly-web` → *Settings* →
+   *Environment Variables* → *Add New*.
+
+   - *Key*: `INTEGRATIONS_VAULT_KEY`
+   - *Value*: lo que ha salido del comando
+   - *Type*: **Sensitive** (así Vercel no te la vuelve a enseñar)
+   - *Environments*: Production y Preview
+
+3. **Vuelve a desplegar.** Vercel no aplica una variable nueva al
+   despliegue que ya está corriendo: en *Deployments*, el de producción,
+   menú `···` → *Redeploy*.
+
+`INTEGRATIONS_VAULT_KEY_VERSION` **no hace falta ponerla**: sin ella vale
+`1`, que es lo correcto para la primera clave. Solo entra en juego el día
+que quieras rotarla, y ese día se pone la nueva en `INTEGRATIONS_VAULT_KEY`,
+la vieja en `INTEGRATIONS_VAULT_KEY_PREVIOUS` y la versión en `2`.
+
+**Lo que no hay que hacer:** cambiar esta clave sin dejar la anterior en
+`_PREVIOUS`. Lo cifrado con la vieja deja de poder leerse, y cada
+establecimiento tiene que volver a autorizar todas sus fuentes a mano. No
+hay forma de recuperarlo: ese es justamente el punto de cifrarlo así.
+
+### Cómo crear el cliente OAuth de Google
+
+Es lo que permite que un restaurante conecte **GA4, Search Console y el
+Perfil de Empresa**. Clarity y PageSpeed no lo necesitan: esas van con su
+propia clave y funcionan sin esto.
+
+1. Entra en <https://console.cloud.google.com/> con la cuenta de Google que
+   vaya a ser la dueña, y crea un proyecto (o usa uno que ya tengas).
+
+2. **Activa las APIs** que Cuotly va a llamar, en *APIs y servicios* →
+   *Biblioteca*. Son tres, una por fuente:
+
+   | Fuente | API que hay que activar |
+   |---|---|
+   | GA4 | Google Analytics Data API |
+   | Search Console | Google Search Console API |
+   | Perfil de Empresa | Business Profile Performance API |
+
+   Si solo vas a usar una, activa solo esa: lo demás se puede añadir
+   después sin tocar el cliente OAuth.
+
+3. **Rellena la pantalla de consentimiento** (*OAuth consent screen*). Tipo
+   **External**, nombre de la aplicación, correo de contacto y dominio.
+   Es lo que verá el restaurante cuando le pidas permiso, así que el nombre
+   importa.
+
+4. **Crea las credenciales**: *Credenciales* → *Crear credenciales* →
+   *ID de cliente de OAuth* → tipo **Aplicación web**.
+
+5. **El URI de redirección autorizado.** Esta es la parte donde falla todo
+   el mundo, porque Google compara la cadena **carácter a carácter**. Es tu
+   `NEXT_PUBLIC_SITE_URL` seguido de la ruta del callback:
+
+   ```
+   https://cuotly-web.vercel.app/api/integraciones/oauth/callback
+   ```
+
+   Sin barra al final. Si `NEXT_PUBLIC_SITE_URL` en Vercel es otra cosa
+   —un dominio propio, por ejemplo— tiene que ser **esa**, no la de arriba:
+   la aplicación construye el URI a partir de esa variable, así que si no
+   coinciden Google contesta `redirect_uri_mismatch` y no pasa nada más.
+   La ruta sale de `OAUTH_CALLBACK_PATH` en
+   `apps/web/src/services/google-oauth.ts`, por si algún día cambia.
+
+6. **Copia el ID y el secreto a Vercel**, en `cuotly-web`, los dos como
+   *Sensitive*, en Production y Preview:
+
+   - `GOOGLE_OAUTH_CLIENT_ID`
+   - `GOOGLE_OAUTH_CLIENT_SECRET`
+
+7. **Vuelve a desplegar**, igual que antes.
+
+**Lo que conviene saber antes de empezar con el Perfil de Empresa:** los
+permisos que Cuotly pide son de solo lectura donde Google los ofrece
+(`analytics.readonly`, `webmasters.readonly`), pero el Perfil de Empresa
+**no tiene uno de solo lectura**: `business.manage` es el único que da
+acceso a la API de rendimiento, y Google lo considera un permiso
+restringido. Mientras la aplicación esté en modo de prueba solo funcionará
+con las cuentas que añadas a mano como usuarios de prueba; para abrirlo a
+cualquier restaurante hay que pasar la **verificación de Google**, que
+lleva semanas y pide un vídeo del recorrido. GA4 y Search Console no
+necesitan esa verificación, así que lo sensato es empezar por esas dos.
 
 ## Qué depende del cron
 
