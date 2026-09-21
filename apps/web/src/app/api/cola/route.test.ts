@@ -95,7 +95,11 @@ beforeEach(() => {
   delete process.env.CRON_SECRET;
 
   runScheduledJobsMock.mockResolvedValue({ ran: 0 });
-  drainEmailQueueMock.mockResolvedValue({ sent: 0 });
+  // La forma completa que devuelven las dos colas. `blockedBy` no es
+  // opcional: un mock que lo omita miente sobre el contrato y esconde
+  // justo lo que este campo existe para enseñar.
+  drainEmailQueueMock.mockResolvedValue({ sent: 0, retried: 0, dead: 0, blockedBy: null });
+  drainPlatformEmailQueueMock.mockResolvedValue({ sent: 0, retried: 0, dead: 0, blockedBy: null });
   runIntegrationSyncsMock.mockResolvedValue({ claimed: 0, skipped: "vault_not_configured" });
   runPendingRevocationsMock.mockResolvedValue({ attempted: 0, skipped: "vault_not_configured" });
   runOpportunityDetectionMock.mockResolvedValue({ scanned: 0, detections: 0, failed: 0 });
@@ -213,5 +217,62 @@ describe("GET /api/cola", () => {
 
     expect((await GET(peticion())).status).toBe(401);
     expect(runScheduledJobsMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("Una tanda bloqueada se ve sin abrir el código", () => {
+  /**
+   * Del 10 al 21/09/2026 la cola contestaba 200 con `sent: 0` mientras 211
+   * avisos se morían por un remitente mal escrito. Un cero porque no había
+   * nada que mandar y un cero porque está todo roto se veían igual.
+   *
+   * Ahora el motivo sale arriba del cuerpo y en el registro del servidor,
+   * que es donde mira quien va a averiguar por qué no llegan los correos.
+   */
+  it("el motivo sale en `blocked`, arriba de la respuesta", async () => {
+    process.env.QUEUE_RUNNER_SECRET = SECRETO;
+    drainEmailQueueMock.mockResolvedValue({
+      sent: 0,
+      retried: 0,
+      dead: 0,
+      blockedBy: "RESEND_FROM no es una dirección válida",
+    });
+
+    const cuerpo = (await (await POST(peticion(`Bearer ${SECRETO}`))).json()) as {
+      blocked: string[];
+    };
+
+    expect(cuerpo.blocked).toEqual(["RESEND_FROM no es una dirección válida"]);
+  });
+
+  it("y también al registro del servidor, que es lo que se ve en Vercel", async () => {
+    process.env.QUEUE_RUNNER_SECRET = SECRETO;
+    const registro = vi.spyOn(console, "error").mockImplementation(() => {});
+    drainPlatformEmailQueueMock.mockResolvedValue({
+      sent: 0,
+      retried: 0,
+      dead: 0,
+      blockedBy: "RESEND_API_KEY no está configurada",
+    });
+
+    await POST(peticion(`Bearer ${SECRETO}`));
+
+    expect(registro).toHaveBeenCalledWith(
+      expect.stringContaining("RESEND_API_KEY"),
+    );
+    registro.mockRestore();
+  });
+
+  it("cuando no hay nada bloqueado, `blocked` viene vacío y no se ensucia el registro", async () => {
+    process.env.QUEUE_RUNNER_SECRET = SECRETO;
+    const registro = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const cuerpo = (await (await POST(peticion(`Bearer ${SECRETO}`))).json()) as {
+      blocked: string[];
+    };
+
+    expect(cuerpo.blocked).toEqual([]);
+    expect(registro).not.toHaveBeenCalled();
+    registro.mockRestore();
   });
 });

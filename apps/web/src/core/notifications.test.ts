@@ -18,6 +18,7 @@ import {
   jobEventClientRecipients,
   jobEventRecipients,
   nextRetryDelayMinutes,
+  normalizeMailFrom,
   requestSubmittedRecipients,
   shouldDeliver,
   shouldQueueEmail,
@@ -279,5 +280,97 @@ describe("RN-NOT-06 · la hora del resumen", () => {
   it("se escribe como una hora española, con dos cifras", () => {
     expect(digestHourLabel()).toBe("08:00");
     expect(digestHourLabel(14)).toBe("14:00");
+  });
+});
+
+describe("RN-NOT-05 · el remitente se comprueba antes de intentar nada", () => {
+  /**
+   * Esto no es una validación de correos por gusto. Viene de un fallo que
+   * estuvo once días en producción sin que nadie lo viera: `RESEND_FROM`
+   * con un valor que Resend rechaza por formato, 211 avisos fallando de
+   * uno en uno, y el aviso dentro de Cuotly funcionando, así que nada
+   * parecía roto.
+   *
+   * Lo que vigilan estos casos es la frontera exacta: qué se acepta, qué
+   * se rechaza, y sobre todo que NO se adivine lo que quiso poner quien
+   * escribió mal la variable.
+   */
+
+  it("acepta una dirección desnuda", () => {
+    expect(normalizeMailFrom("avisos@cuotly.com")).toBe("avisos@cuotly.com");
+  });
+
+  it("acepta «Nombre <dirección>», que es como va a estar en producción", () => {
+    expect(normalizeMailFrom("Cuotly <avisos@cuotly.com>")).toBe("Cuotly <avisos@cuotly.com>");
+  });
+
+  it("recorta el salto de línea que arrastra una variable copiada a mano", () => {
+    // La causa más probable del fallo de producción, y la única que se
+    // corrige en silencio: es un despiste de copiar y pegar, no una
+    // decisión de nadie.
+    expect(normalizeMailFrom("  Cuotly <avisos@cuotly.com>\n")).toBe("Cuotly <avisos@cuotly.com>");
+  });
+
+  it("normaliza el espacio entre el nombre y la dirección", () => {
+    expect(normalizeMailFrom("Cuotly    <avisos@cuotly.com>")).toBe("Cuotly <avisos@cuotly.com>");
+  });
+
+  it("NO adivina: unas comillas alrededor del valor entero se rechazan", () => {
+    // Tentador «arreglarlo» quitando las comillas. No se hace: si alguien
+    // puso comillas puede haber puesto otras tres cosas mal, y devolver
+    // algo plausible esconde el problema en vez de decirlo.
+    expect(normalizeMailFrom('"Cuotly <avisos@cuotly.com>"')).toBeNull();
+  });
+
+  it("rechaza el ángulo sin cerrar", () => {
+    expect(normalizeMailFrom("Cuotly <avisos@cuotly.com")).toBeNull();
+  });
+
+  it("rechaza un nombre suelto sin dirección", () => {
+    expect(normalizeMailFrom("Cuotly")).toBeNull();
+  });
+
+  it("rechaza «<dirección>» sin nombre delante", () => {
+    // Resend pide «Nombre <correo>» o el correo a secas; el ángulo vacío
+    // de nombre no es ninguno de los dos.
+    expect(normalizeMailFrom("<avisos@cuotly.com>")).toBeNull();
+  });
+
+  it("rechaza una dirección sin punto en el dominio", () => {
+    expect(normalizeMailFrom("avisos@localhost")).toBeNull();
+  });
+
+  it("rechaza una dirección sin arroba", () => {
+    expect(normalizeMailFrom("Cuotly <avisos.cuotly.com>")).toBeNull();
+  });
+
+  it("rechaza dos direcciones separadas por coma", () => {
+    // Resend quiere un remitente, no una lista.
+    expect(normalizeMailFrom("a@x.com,b@x.com")).toBeNull();
+  });
+
+  it("rechaza la coma suelta que deja quien copia de una lista", () => {
+    // Este caso y el de arriba parecen el mismo y no lo son: el de arriba
+    // lo rechaza el segundo arroba, y por eso sobrevivía la mutación que
+    // permitía comas. Este sí entra por la clase de caracteres.
+    expect(normalizeMailFrom("avisos@cuotly.com,")).toBeNull();
+  });
+
+  it("rechaza la parte local entrecomillada del RFC", () => {
+    // `"avisos"@cuotly.com` es válido según el RFC y aquí no se admite, a
+    // propósito: nadie lo escribe a mano queriendo, y lo que sí llega son
+    // comillas de copiar y pegar. Mejor rechazarlo y decirlo.
+    expect(normalizeMailFrom('"avisos"@cuotly.com')).toBeNull();
+  });
+
+  it("rechaza espacios dentro de la propia dirección", () => {
+    expect(normalizeMailFrom("Cuotly <avisos @cuotly.com>")).toBeNull();
+  });
+
+  it("la variable sin poner y la vacía son lo mismo: no hay remitente", () => {
+    expect(normalizeMailFrom(undefined)).toBeNull();
+    expect(normalizeMailFrom(null)).toBeNull();
+    expect(normalizeMailFrom("")).toBeNull();
+    expect(normalizeMailFrom("   ")).toBeNull();
   });
 });

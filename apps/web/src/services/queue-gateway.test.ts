@@ -6,6 +6,7 @@ import {
   createExpoPushTransport,
   createMailComposer,
   createPushComposer,
+  createResendTransport,
 } from "./queue-gateway";
 import type { DeliveryRow } from "./queue-runner";
 
@@ -215,5 +216,68 @@ describe("RN-NOT-06 · el push del resumen diario", () => {
     expect(
       createPushComposer().compose(resumen({ channel: "push", push_tokens: [] })),
     ).toBeNull();
+  });
+});
+
+describe("El transporte de Resend dice cuándo no puede enviar, en vez de intentarlo", () => {
+  /**
+   * El 422 real que estuvo once días en producción:
+   *
+   *   Invalid `from` field. The email address needs to follow the
+   *   `email@example.com` or `Name <email@example.com>` format.
+   *
+   * Lo que se comprueba aquí es que ese error ya no llega a ocurrir: el
+   * transporte lo sabe **antes** de que la cola reclame ninguna fila, y lo
+   * dice nombrando la variable que hay que tocar. Quien lea la respuesta
+   * del cron tiene que poder arreglarlo sin abrir el código.
+   */
+  const CLAVE = "re_lo_que_sea";
+
+  it("con un remitente válido no pone ninguna pega", () => {
+    const t = createResendTransport(CLAVE, "Cuotly <avisos@cuotly.com>");
+    expect(t.unusableReason?.()).toBeNull();
+  });
+
+  it("con el remitente mal escrito lo dice, y nombra RESEND_FROM", () => {
+    const t = createResendTransport(CLAVE, "Cuotly");
+    const motivo = t.unusableReason?.();
+    expect(motivo).toContain("RESEND_FROM");
+  });
+
+  it("sin clave también lo dice, y nombra RESEND_API_KEY", () => {
+    const t = createResendTransport(undefined, "Cuotly <avisos@cuotly.com>");
+    expect(t.unusableReason?.()).toContain("RESEND_API_KEY");
+  });
+
+  it("no llama a Resend con un remitente inválido ni aunque se le llame a pelo", () => {
+    // La cola ya pregunta antes, pero este transporte se puede usar desde
+    // otro sitio. Mandar un `from` inválido es exactamente el 422 del que
+    // viene todo esto, así que ni se intenta la petición.
+    const fetchFalso = vi.fn();
+    const t = createResendTransport(CLAVE, "Cuotly", fetchFalso as unknown as typeof fetch);
+
+    return expect(
+      t.send({ to: "ana@example.com", subject: "s", body: "b" }),
+    ).rejects.toThrow(/RESEND_FROM/);
+  });
+
+  it("manda el remitente ya recortado, no el crudo con su salto de línea", async () => {
+    // Si se mandara el crudo, la variable con un `\n` al final seguiría
+    // dando el mismo 422 que estuvo once días sin verse.
+    const fetchFalso = vi.fn(async (_url: string, init?: { body?: string }) => {
+      void _url;
+      void init;
+      return { ok: true, json: async () => ({ id: "prov-1" }) };
+    });
+    const t = createResendTransport(
+      CLAVE,
+      "  Cuotly <avisos@cuotly.com>\n",
+      fetchFalso as unknown as typeof fetch,
+    );
+
+    await t.send({ to: "ana@example.com", subject: "s", body: "b" });
+
+    const cuerpo = JSON.parse(String(fetchFalso.mock.calls[0]?.[1]?.body));
+    expect(cuerpo.from).toBe("Cuotly <avisos@cuotly.com>");
   });
 });

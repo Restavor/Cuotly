@@ -154,6 +154,19 @@ export interface MailMessage {
 export interface MailTransport {
   /** Devuelve el identificador del proveedor, o lanza si el envío falla. */
   send(message: MailMessage): Promise<string | null>;
+  /**
+   * Por qué este transporte no puede enviar **nada**, o `null` si puede.
+   *
+   * Es para los fallos de configuración, que no son fallos de entrega: un
+   * remitente mal escrito no se arregla reintentando. Quien vacía la cola
+   * lo pregunta **antes de reclamar ninguna fila**, porque reclamar ya
+   * gasta un intento (`claim_notification_deliveries` hace
+   * `attempts + 1`), y al quinto la fila muere. Sin esto, cada pasada del
+   * cron acerca a la muerte avisos que no tienen nada de malo.
+   *
+   * Opcional: un transporte de prueba que siempre puede enviar lo omite.
+   */
+  unusableReason?(): string | null;
 }
 
 // ---------------------------------------------------------------------
@@ -354,6 +367,15 @@ export interface DrainResult {
   readonly sent: number;
   readonly retried: number;
   readonly dead: number;
+  /**
+   * Por qué no se intentó **nada** en esta tanda, o `null` si se intentó.
+   *
+   * Con un valor aquí, los otros tres contadores valen cero y en la base
+   * no se ha tocado una sola fila: ni reclamada, ni con un intento gastado,
+   * ni marcada. Es lo que hay que mirar cuando la cola dice que envió cero
+   * y no se entiende por qué.
+   */
+  readonly blockedBy: string | null;
 }
 
 export interface DeliveryTransports {
@@ -459,6 +481,20 @@ export async function drainDeliveryQueue(
   limit = 20,
   now: Date = new Date(),
 ): Promise<DrainResult> {
+  // ANTES de reclamar: reclamar gasta un intento de cada fila que toca, y
+  // son cinco en total. Si el transporte de correo no puede enviar por
+  // cómo está configurado, reclamar no acerca el envío ni un milímetro —
+  // solo mata avisos buenos, veinte por pasada.
+  const motivo = transports.mail.unusableReason?.() ?? null;
+  if (motivo !== null) {
+    // La cola mezcla correo y push, y `claimDeliveries` no distingue el
+    // canal: reclamar para salvar el push gastaría igualmente el intento
+    // de las filas de correo que vinieran en la misma tanda. Así que la
+    // tanda entera espera. Es el lado seguro, y además hace la avería
+    // imposible de no ver, que es justo lo que falló durante once días.
+    return { sent: 0, retried: 0, dead: 0, blockedBy: motivo };
+  }
+
   const deliveries = await gateway.claimDeliveries(limit);
   const result = { sent: 0, retried: 0, dead: 0 };
 
@@ -467,7 +503,7 @@ export async function drainDeliveryQueue(
     result[outcome] += 1;
   }
 
-  return result;
+  return { ...result, blockedBy: null };
 }
 
 // ---------------------------------------------------------------------
@@ -518,6 +554,13 @@ export async function drainPlatformEmailQueue(
   limit = 20,
   now: Date = new Date(),
 ): Promise<DrainResult> {
+  // Lo mismo que arriba: `claim_platform_emails` también hace
+  // `attempts + 1` al reclamar, así que la comprobación va antes.
+  const motivo = transport.unusableReason?.() ?? null;
+  if (motivo !== null) {
+    return { sent: 0, retried: 0, dead: 0, blockedBy: motivo };
+  }
+
   const filas = await gateway.claimPlatformEmails(limit);
   const result = { sent: 0, retried: 0, dead: 0 };
 
@@ -551,7 +594,7 @@ export async function drainPlatformEmailQueue(
     }
   }
 
-  return result;
+  return { ...result, blockedBy: null };
 }
 
 /**

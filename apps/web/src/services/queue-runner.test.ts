@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   drainDeliveryQueue,
   drainEmailQueue,
+  drainPlatformEmailQueue,
   runScheduledJobs,
   runSlaSweep,
   type DeliveryRow,
@@ -346,7 +347,7 @@ describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el corr
       gateway({ claimDeliveries: async () => [entregaPush()], markDeliverySent: sent }),
       transportes(push),
     );
-    expect(r).toEqual({ sent: 1, retried: 0, dead: 0 });
+    expect(r).toEqual({ sent: 1, retried: 0, dead: 0, blockedBy: null });
     expect(sent).toHaveBeenCalledWith("d-push", "t-ExponentPushToken[aaa]");
   });
 
@@ -387,7 +388,7 @@ describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el corr
     expect(revoke).toHaveBeenCalledTimes(2);
     expect(revoke).toHaveBeenCalledWith("ExponentPushToken[aaa]", "provider_rejected");
     // Ningún teléfono vivo: muerta, no reprogramada.
-    expect(r).toEqual({ sent: 0, retried: 0, dead: 1 });
+    expect(r).toEqual({ sent: 0, retried: 0, dead: 1, blockedBy: null });
     expect(failed.mock.calls[0][3]).toBe(true);
   });
 
@@ -420,7 +421,7 @@ describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el corr
       gateway({ claimDeliveries: async () => [entregaPush()], markDeliveryFailed: failed }),
       transportes(push),
     );
-    expect(r).toEqual({ sent: 0, retried: 1, dead: 0 });
+    expect(r).toEqual({ sent: 0, retried: 1, dead: 0, blockedBy: null });
     expect(failed.mock.calls[0][3]).toBe(false);
   });
 
@@ -452,7 +453,7 @@ describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el corr
       mailOk,
       mailComposer,
     );
-    expect(r).toEqual({ sent: 0, retried: 0, dead: 1 });
+    expect(r).toEqual({ sent: 0, retried: 0, dead: 1, blockedBy: null });
   });
 });
 
@@ -499,5 +500,133 @@ describe("RN-SLA-18 · el barrido mide contra el plazo congelado (decisión 61)"
     // El mismo trabajo, el mismo momento, el plazo de la tabla: todavía no
     // hay nada que avisar.
     expect(normalEmit).not.toHaveBeenCalled();
+  });
+});
+
+describe("RN-NOT-05 · un fallo de configuración no gasta los intentos de nadie", () => {
+  /**
+   * El fallo del que sale todo esto: del 10 al 21/09/2026, `RESEND_FROM`
+   * en producción tenía un valor que Resend rechaza con un 422 de formato.
+   * Los 211 avisos en cola fueron fallando uno a uno.
+   *
+   * Lo grave no era que no salieran, sino que **se estaban muriendo**:
+   * `claim_notification_deliveries` hace `attempts + 1` al RECLAMAR la
+   * fila, no al fallar, y al quinto la fila queda `dead` para siempre.
+   * Cada pasada del cron acercaba veinte avisos buenos a la muerte por un
+   * remitente mal escrito que reintentar no iba a arreglar jamás.
+   *
+   * De ahí la regla que vigilan estos casos: si el transporte dice que no
+   * puede enviar por cómo está configurado, **no se reclama nada**. No se
+   * toca una sola fila de la base.
+   */
+
+  const composer: MailComposer = {
+    compose: () => ({ to: "ana@example.com", subject: "s", body: "b" }),
+  };
+
+  function entrega(over: Partial<DeliveryRow> = {}): DeliveryRow {
+    return {
+      delivery_id: "d1",
+      notification_id: "n1",
+      attempts: 1,
+      channel: "email",
+      recipient_email: "ana@example.com",
+      push_tokens: null,
+      event_type: "job_published",
+      audience: "staff",
+      deep_link: "/espacios/x/trabajos/1",
+      space_name: "Restavor",
+      entity_type: "job",
+      establishment_name: "Casa Sol",
+      amount_cents: null,
+      threshold_percent: null,
+      subject: "Quiero cambiar el precio del menú del día",
+      digest_id: null,
+      digest_date: null,
+      digest_count: null,
+      ...over,
+    };
+  }
+
+  const inservible: MailTransport = {
+    send: async () => {
+      throw new Error("no debería llegar aquí");
+    },
+    unusableReason: () => "RESEND_FROM no es una dirección válida",
+  };
+
+  it("con el transporte inservible NO se reclama ninguna fila", async () => {
+    // El corazón del arreglo. Reclamar es lo que gasta el intento, así que
+    // la comprobación tiene que ir antes de reclamar, no antes de enviar.
+    const reclamar = vi.fn(async () => []);
+    const result = await drainEmailQueue(
+      gateway({ claimDeliveries: reclamar }),
+      inservible,
+      composer,
+    );
+
+    expect(reclamar).not.toHaveBeenCalled();
+    expect(result.blockedBy).toContain("RESEND_FROM");
+    expect(result).toMatchObject({ sent: 0, retried: 0, dead: 0 });
+  });
+
+  it("tampoco se marca nada como fallado ni como muerto", async () => {
+    const fallar = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const enviado = vi.fn<QueueGateway["markDeliverySent"]>(async () => {});
+
+    await drainEmailQueue(
+      gateway({
+        claimDeliveries: async () => [entrega()],
+        markDeliveryFailed: fallar,
+        markDeliverySent: enviado,
+      }),
+      inservible,
+      composer,
+    );
+
+    expect(fallar).not.toHaveBeenCalled();
+    expect(enviado).not.toHaveBeenCalled();
+  });
+
+  it("con el transporte bien, la cola trabaja como siempre y no dice estar bloqueada", async () => {
+    // El otro lado de la moneda: la guarda no puede dejar la cola parada
+    // cuando no hay nada que arreglar.
+    const result = await drainEmailQueue(
+      gateway({ claimDeliveries: async () => [entrega()] }),
+      { send: async () => "prov-1", unusableReason: () => null },
+      composer,
+    );
+
+    expect(result.sent).toBe(1);
+    expect(result.blockedBy).toBeNull();
+  });
+
+  it("un transporte que ni declara el método funciona igual: el método es opcional", async () => {
+    // Los transportes de prueba de todo el resto del archivo no lo tienen.
+    // Si la guarda los tomara por inservibles, pararía la cola entera.
+    const result = await drainEmailQueue(
+      gateway({ claimDeliveries: async () => [entrega()] }),
+      { send: async () => "prov-1" },
+      composer,
+    );
+
+    expect(result.sent).toBe(1);
+    expect(result.blockedBy).toBeNull();
+  });
+
+  it("la cola de accesos (RN-ACC-04) se guarda igual: también gasta el intento al reclamar", async () => {
+    const reclamar = vi.fn(async () => []);
+    const result = await drainPlatformEmailQueue(
+      {
+        claimPlatformEmails: reclamar,
+        markPlatformEmailSent: async () => {},
+        markPlatformEmailFailed: async () => {},
+      },
+      inservible,
+      { compose: () => ({ to: "x@y.com", subject: "s", body: "b" }) },
+    );
+
+    expect(reclamar).not.toHaveBeenCalled();
+    expect(result.blockedBy).toContain("RESEND_FROM");
   });
 });

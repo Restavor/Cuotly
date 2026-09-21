@@ -330,6 +330,58 @@ export function deliveryStatusAfterFailure(attempts: number): "pending" | "dead"
 }
 
 /**
+ * El remitente del correo saliente, comprobado antes de intentar nada.
+ *
+ * Esto existe por un fallo real: del 10/09 al 21/09/2026, `RESEND_FROM` en
+ * producción tenía un valor que Resend rechaza con un 422 de formato, y los
+ * 211 avisos que había en cola fallaron uno por uno sin que nadie se
+ * enterara. El aviso dentro de Cuotly sí llegaba, así que nada parecía
+ * roto.
+ *
+ * Lo que convierte ese despiste en pérdida de datos es la combinación con
+ * los reintentos: `claim_notification_deliveries` gasta un intento **al
+ * reclamar la fila**, antes de que el transporte opine, y al quinto la fila
+ * queda `dead` para siempre. Un remitente mal escrito no se arregla
+ * reintentando; lo único que consigue cada pasada del cron es acercar 211
+ * avisos reales a la muerte. Por eso quien llama comprueba esto **antes de
+ * reclamar**: un error de configuración no es un fallo transitorio de
+ * entrega, y no debe gastar el crédito de nadie.
+ *
+ * Formatos que Resend acepta, y por tanto los únicos que valen aquí:
+ * `correo@dominio.com` o `Nombre <correo@dominio.com>`.
+ *
+ * Se recorta el espacio de los extremos porque una variable de entorno
+ * copiada a mano arrastra saltos de línea con una facilidad pasmosa, y eso
+ * es un despiste de copiar y pegar, no una decisión de nadie. Lo que NO se
+ * hace es adivinar más allá: unas comillas alrededor del valor o un `<`
+ * sin cerrar se rechazan y se dicen, en vez de "corregirse" suponiendo qué
+ * quiso poner quien lo escribió.
+ */
+const DIRECCION_DE_CORREO = /^[^\s@<>,;"]+@[^\s@<>,;"]+\.[^\s@<>,;".]+$/;
+
+export function normalizeMailFrom(raw: string | undefined | null): string | null {
+  if (raw === undefined || raw === null) return null;
+
+  const limpio = raw.trim();
+  if (limpio === "") return null;
+
+  const conNombre = /^(.+?)\s*<([^<>]+)>$/.exec(limpio);
+  if (conNombre) {
+    // No hace falta comprobar que el nombre no esté vacío: `^(.+?)` tiene
+    // que consumir el primer carácter, y después del `trim()` ese carácter
+    // ya no es un espacio. Se probó a poner esa comprobación y sobrevivió
+    // a la mutación que la borraba, que es como se supo que no podía
+    // dispararse nunca.
+    const nombre = conNombre[1].trim();
+    const direccion = conNombre[2].trim();
+    if (!DIRECCION_DE_CORREO.test(direccion)) return null;
+    return `${nombre} <${direccion}>`;
+  }
+
+  return DIRECCION_DE_CORREO.test(limpio) ? limpio : null;
+}
+
+/**
  * §18, filas 3 y 4 · el cliente también recibe avisos, y no los mismos que
  * el equipo.
  *

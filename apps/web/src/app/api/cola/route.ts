@@ -185,7 +185,23 @@ async function ejecutarTanda(request: Request) {
     createPlatformEmailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
   );
 
+  /*
+    Lo que impidió que una tanda hiciera su trabajo va arriba del todo y
+    también al registro. Esto no es adorno: `RESEND_FROM` estuvo mal
+    escrita del 10 al 21/09/2026 y no se enteró nadie, porque la cola
+    contestaba 200 con un `sent: 0` que parecía "hoy no había nada que
+    mandar". Un cero silencioso y un cero porque está todo roto tienen que
+    distinguirse sin abrir el código.
+  */
+  const avisos = [mail.blockedBy, accesos.blockedBy].filter(
+    (m): m is string => m !== null,
+  );
+  for (const aviso of avisos) {
+    console.error(`[cola] tanda bloqueada: ${aviso}`);
+  }
+
   return NextResponse.json({
+    blocked: avisos,
     scheduled,
     slaNotifications: emitted,
     integrations: integraciones,

@@ -12,6 +12,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { HolidayRecord } from "@/core/business-clock";
+import { normalizeMailFrom } from "@/core/notifications";
 import { es } from "@/i18n/es";
 import { euros } from "@/i18n/money";
 import type {
@@ -258,10 +259,42 @@ export function createResendTransport(
   from: string,
   fetchImpl: typeof fetch = fetch,
 ): MailTransport {
+  // Se normaliza una vez, al crear el transporte, no en cada envío: el
+  // valor no cambia a mitad de tanda y así el motivo se puede dar sin
+  // haber tocado la base.
+  const remitente = normalizeMailFrom(from);
+
   return {
+    unusableReason() {
+      // El orden importa poco, pero el mensaje sí: quien lea esto en la
+      // respuesta de la cola tiene que saber qué variable tocar sin ir a
+      // buscar el código.
+      if (!apiKey) {
+        return "RESEND_API_KEY no está configurada: no se intenta ningún envío";
+      }
+      if (remitente === null) {
+        return (
+          "RESEND_FROM no es una dirección válida. Resend solo acepta " +
+          '"correo@dominio.com" o "Nombre <correo@dominio.com>". ' +
+          "No se intenta ningún envío: reintentar un remitente mal escrito " +
+          "no lo arregla y gastaría los intentos de los avisos en cola."
+        );
+      }
+      return null;
+    },
+
     async send(message) {
       if (!apiKey) {
         throw new Error("RESEND_API_KEY no está configurada: el aviso queda en cola");
+      }
+      // Cinturón y tirantes: quien vacía la cola ya ha preguntado por
+      // `unusableReason()`, pero este transporte también se puede llamar
+      // desde otro sitio, y mandar `from: null` a Resend es exactamente el
+      // 422 del que viene todo esto.
+      if (remitente === null) {
+        throw new Error(
+          "RESEND_FROM no es una dirección válida: no se intenta el envío",
+        );
       }
 
       const response = await fetchImpl("https://api.resend.com/emails", {
@@ -271,7 +304,7 @@ export function createResendTransport(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from,
+          from: remitente,
           to: [message.to],
           subject: message.subject,
           text: message.body,

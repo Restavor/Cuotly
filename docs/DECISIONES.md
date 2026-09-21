@@ -1950,3 +1950,40 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
    cliente**, y añade que si sale negativo se trata como 0 ("una mejora nunca quita
    consumos"). No hizo falta inventar nada: se implementó eso y está cubierto por tests que
    citan la regla. Como manda `CLAUDE.md`, el PRD manda sobre la Especificación Maestra.
+
+66. **Un error de configuración no gasta los intentos de la cola** (21/09/2026). No es una
+    decisión de producto sino de diseño, y se escribe porque costó once días de correo
+    perdido descubrirla. Del 10 al 21/09/2026 `RESEND_FROM` en producción tenía un valor que
+    Resend rechaza con un 422 de formato. Los 211 avisos encolados fueron fallando uno a uno
+    y **nadie se enteró**: el aviso dentro de Cuotly sí llegaba, y la cola contestaba 200 con
+    un `sent: 0` indistinguible de "hoy no había nada que mandar".
+
+    Lo grave no era que no salieran, sino que se estaban **muriendo**.
+    `claim_notification_deliveries` hace `attempts + 1` al **reclamar** la fila, no al fallar,
+    y `MAX_DELIVERY_ATTEMPTS` son 5. Cada pasada del cron acercaba veinte avisos buenos a
+    `dead` por un remitente mal escrito que reintentar no iba a arreglar nunca. Iban por tres.
+
+    La regla que queda: **si el transporte no puede enviar por cómo está configurado, no se
+    reclama nada.** La comprobación va antes de reclamar, no antes de enviar, porque reclamar
+    es lo que gasta el intento. `MailTransport` gana un `unusableReason()` opcional y
+    `DrainResult` un `blockedBy` que dice por qué no se intentó nada.
+
+    Dos consecuencias que conviene haber decidido a propósito y no descubrir luego:
+
+    - **La tanda entera espera, también el push.** La cola mezcla los dos canales y
+      `claimDeliveries` no distingue: reclamar para salvar el push gastaría igualmente el
+      intento de las filas de correo de la misma tanda. Se elige el lado seguro, y además
+      hace la avería imposible de no ver.
+    - **El remitente se recorta, pero no se adivina.** Un salto de línea al final se quita
+      —es un despiste de copiar y pegar, no una decisión de nadie— pero unas comillas
+      alrededor del valor o un `<` sin cerrar se rechazan y se dicen. "Corregir" suponiendo
+      qué quiso poner quien lo escribió esconde el problema en vez de resolverlo.
+
+    Y el motivo sale arriba del cuerpo de `/api/cola` y en el registro del servidor, que es
+    donde mira quien va a averiguar por qué no llegan los correos.
+
+    Los 183 envíos que iban a `cuotly.test` —de los datos sembrados, a un dominio que no
+    puede recibir— se cerraron a mano como `dead` con su motivo **antes** de arreglar la
+    variable: soltar la cola entera le habría metido a Resend 183 rebotes duros seguidos en
+    una cuenta recién abierta. Los 28 que van a una dirección real siguen vivos y serán la
+    primera prueba de verdad de Resend.

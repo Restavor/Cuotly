@@ -212,16 +212,28 @@ intenta entregarlos y se lleva **183 rebotes duros seguidos** en una cuenta
 recién abierta, que es la manera más rápida de que el dominio acabe
 marcado.
 
-Así que el orden es:
+### Lo que ya está hecho (21/09/2026)
 
-1. Arreglar el valor de `RESEND_FROM` en Vercel y redesplegar.
-2. **Antes de dejar correr la cola**, marcar como `dead` los envíos cuyo
-   destinatario sea de `cuotly.test`. No se borra nada: la fila queda con
-   su motivo, que es lo que pide CLAUDE.md sobre no borrar registros de
-   negocio.
-3. Dejar salir los 28 que van a una dirección real. Esos son, de paso, la
-   primera prueba de verdad de Resend, que es justo lo que quedaba
-   pendiente de comprobar.
+**El código no volverá a matar avisos por esto** (decisión 66). La
+comprobación del remitente pasa a hacerse **antes de reclamar**, porque
+reclamar es lo que gasta el intento: si el transporte no puede enviar por
+cómo está configurado, no se toca una sola fila de la base. El motivo sale
+arriba del cuerpo de `/api/cola`, en `blocked`, y en el registro del
+servidor, que es lo que se ve desde Vercel.
+
+**Los 183 de `cuotly.test` están cerrados** como `dead`, cada uno con su
+motivo escrito en `last_error`. No se ha borrado nada. Así, cuando la
+variable se arregle, la cola no le mete a Resend 183 rebotes duros
+seguidos.
+
+**Quedan vivos los 28 que van a una dirección real**, con tres intentos por
+delante. Son la primera prueba de verdad de Resend.
+
+### Lo único que falta, y es de Vercel
+
+Cambiar `RESEND_FROM` por un valor válido y redesplegar. Hasta entonces la
+cola de correo se queda parada **a propósito** y lo dice en cada pasada; no
+se pierde nada y no se gasta ningún intento.
 
 ### Cómo poner la clave de la caja fuerte (`INTEGRATIONS_VAULT_KEY`)
 

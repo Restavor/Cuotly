@@ -61,7 +61,7 @@ describe("RN-ACC-04 · el correo de la puerta de entrada", () => {
       composer,
     );
 
-    expect(resultado).toEqual({ sent: 0, retried: 0, dead: 1 });
+    expect(resultado).toEqual({ sent: 0, retried: 0, dead: 1, blockedBy: null });
     expect(fallados[0].dead).toBe(true);
   });
 
@@ -83,7 +83,7 @@ describe("RN-ACC-04 · el correo de la puerta de entrada", () => {
     const primera = puertaFalsa([fila({ attempts: 1 })]);
     expect(
       await drainPlatformEmailQueue(primera.gateway, { send: enviar }, createPlatformEmailComposer("https://c.test")),
-    ).toEqual({ sent: 0, retried: 1, dead: 0 });
+    ).toEqual({ sent: 0, retried: 1, dead: 0, blockedBy: null });
     expect(primera.fallados[0].dead).toBe(false);
 
     // El techo de intentos es el de `src/core/notifications.ts`, el mismo
@@ -91,7 +91,7 @@ describe("RN-ACC-04 · el correo de la puerta de entrada", () => {
     const ultima = puertaFalsa([fila({ attempts: 99 })]);
     expect(
       await drainPlatformEmailQueue(ultima.gateway, { send: enviar }, createPlatformEmailComposer("https://c.test")),
-    ).toEqual({ sent: 0, retried: 0, dead: 1 });
+    ).toEqual({ sent: 0, retried: 0, dead: 1, blockedBy: null });
     expect(ultima.fallados[0].dead).toBe(true);
   });
 
