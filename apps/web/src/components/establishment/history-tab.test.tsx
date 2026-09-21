@@ -123,6 +123,7 @@ function sheetData(audit: SheetData["audit"]): SheetData {
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
     audit,
     recentActivity: audit.rows,
+    nextMenu: { kind: "no_service" },
   };
 }
 

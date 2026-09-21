@@ -4257,6 +4257,25 @@ export const es = {
     // cosas se escriban igual hoy no las convierte en la misma.
     planLabel: "Plan",
 
+    /**
+     * Página 24 · "Próxima publicación de menú" en el Resumen.
+     *
+     * El tipo de menú y su estado NO se nombran aquí: salen de
+     * `naming.menuKinds` y de `naming.states.menu`, los únicos sitios
+     * donde una cosa tiene nombre (CA-21).
+     */
+    nextMenuTitle: "Próxima publicación de menú",
+    nextMenuLink: "Gestionar menú",
+    // Sin el servicio contratado no hay nada que publicar, y decirlo es
+    // más útil que un bloque vacío: lo que falta es contratar Menú Diario.
+    nextMenuNoServiceTitle: "Sin Menú Diario",
+    nextMenuNoServiceReason:
+      "Este restaurante no tiene contratado el servicio de Menú Diario, así que no hay publicaciones que programar.",
+    // Contratado y sin nada por delante. Es un dato, no un error.
+    nextMenuNoneTitle: "No hay ninguna publicación programada",
+    nextMenuNoneReason:
+      "Cuando se prepare un menú con fecha de hoy en adelante, aparecerá aquí con su estado.",
+
     // Página 24 · "Actividad reciente" en el Resumen. Son las últimas
     // filas de la MISMA auditoría que la pestaña Historial: no hay un
     // registro paralelo que pudiera contar otra cosa.
@@ -4289,10 +4308,6 @@ export const es = {
     currentJobEmptyReason:
       "Aquí aparece el trabajo vivo de este restaurante con el plazo que le corre, en cuanto haya uno.",
 
-    nextMenuTitle: "Próximo menú",
-    nextMenuEmptyTitle: "Menú Diario llega con la Fase 2",
-    nextMenuEmptyReason:
-      "Ni el menú de mañana ni su estado de publicación existen todavía, y el contador de actualizaciones de Menú Diario es aparte del de cambios (RN-CON-02). Los dos se ponen en marcha cuando el servicio empiece a publicar.",
 
     paymentStatusTitle: "Estado de pago",
     paymentStatusLink: "Ver facturación",

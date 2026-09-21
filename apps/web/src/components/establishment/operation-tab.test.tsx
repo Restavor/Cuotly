@@ -110,6 +110,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
       hasMore: false,
     },
     recentActivity: [],
+    nextMenu: { kind: "no_service" },
   };
 }
 

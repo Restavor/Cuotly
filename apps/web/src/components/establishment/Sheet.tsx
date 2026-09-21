@@ -26,6 +26,7 @@ import { UploadFileForm } from "./UploadFileForm";
 import { AUDIT_FAMILIES } from "@/core/audit";
 import { MAX_FILE_SIZE_BYTES, fileTypeLabel } from "@/core/files";
 import { isQuoteState, quoteTone } from "@/core/quotes";
+import { isMenuState, menuTone } from "@/core/menu-states";
 import {
   IDENTITY_FIELDS,
   MULTILINE_IDENTITY_FIELDS,
@@ -79,6 +80,7 @@ import type {
   SheetFileFolder,
   SheetAudit,
   SheetAuditRow,
+  SheetNextMenu,
   SheetStaffMember,
   SheetSummary,
   SheetUsers,
@@ -119,6 +121,8 @@ export interface SheetData {
    * enseñaría lo último de lo filtrado sin decirlo.
    */
   readonly recentActivity: readonly SheetAuditRow[];
+  /** Página 24 · "Próxima publicación de menú" (§57, Menú Diario). */
+  readonly nextMenu: SheetNextMenu;
   readonly operation: SheetOperation;
   readonly counts: SheetCounts;
   readonly payments: SheetPayments;
@@ -200,6 +204,8 @@ type PaymentMethodKey = keyof typeof es.teamArea.methods;
 type SpecialtyKey = keyof typeof es.naming.specialties;
 type TaskStateKey = keyof typeof es.naming.states.task;
 type CategoryKey = keyof typeof es.naming.categories;
+type MenuKindKey = keyof typeof es.naming.menuKinds;
+type MenuStateKey = keyof typeof es.naming.states.menu;
 type FileCategoryKey = keyof typeof es.space.files.categories;
 type FileVariantKey = keyof typeof es.establishmentSheet.fileVariants;
 type ClientRoleKey = keyof typeof es.establishmentSheet.clientRoles;
@@ -832,6 +838,7 @@ export function EstablishmentSheet({
     files,
     audit,
     recentActivity,
+    nextMenu,
     statusReason,
     transfer,
     backups,
@@ -1044,6 +1051,72 @@ export function EstablishmentSheet({
           </Card>
 
           {/*
+            Página 24 · "Próxima publicación de menú". El bloque estaba
+            marcado como "de la Fase 2" desde que se dibujó el Resumen;
+            Menú Diario existe desde el Hito 11 y ya se puede contestar.
+
+            Tres respuestas y no una fecha, porque son tres cosas que se
+            leen distinto: sin el servicio contratado no hay nada que
+            programar, contratado y sin nada por delante significa que
+            toca preparar uno, y si lo hay se dice **cuándo, cuál y en qué
+            estado**. Una fecha sola no distingue las dos primeras
+            (CA-20).
+
+            El diseño escribe solo la fecha y el nombre. El estado se
+            añade porque es lo que decide si alguien tiene que hacer algo:
+            "7 abr · Menú semanal" se lee igual esté listo para publicar o
+            pendiente de asignar, y no son lo mismo.
+          */}
+          <Card
+            title={t.nextMenuTitle}
+            action={
+              nextMenu.kind === "no_service" ? undefined : (
+                <Link
+                  href={`${base}/menu-diario`}
+                  className="shrink-0 text-sm text-cuotly-green underline"
+                >
+                  {t.nextMenuLink}
+                </Link>
+              )
+            }
+          >
+            {nextMenu.kind === "no_service" ? (
+              <EmptyState
+                title={t.nextMenuNoServiceTitle}
+                description={t.nextMenuNoServiceReason}
+              />
+            ) : nextMenu.kind === "none" ? (
+              <EmptyState title={t.nextMenuNoneTitle} description={t.nextMenuNoneReason} />
+            ) : (
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-cuotly-green/10 text-cuotly-green"
+                >
+                  <Icon name="calendar" className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-base font-semibold text-primary-dark">
+                    {fechaCorta(nextMenu.targetDate)}
+                  </p>
+                  <p className="truncate text-sm text-text">
+                    {nextMenu.name}
+                    {" · "}
+                    {es.naming.menuKinds[nextMenu.menuKind as MenuKindKey] ?? nextMenu.menuKind}
+                  </p>
+                  <p className="mt-1.5">
+                    <StatusBadge
+                      tone={isMenuState(nextMenu.state) ? menuTone(nextMenu.state) : "neutral"}
+                    >
+                      {es.naming.states.menu[nextMenu.state as MenuStateKey] ?? nextMenu.state}
+                    </StatusBadge>
+                  </p>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/*
             Página 24 · "Actividad reciente". Son las últimas filas de la
             **misma auditoría** que enseña la pestaña Historial, no un
             registro paralelo: `establishment_audit()` es SECURITY INVOKER
@@ -1207,16 +1280,6 @@ export function EstablishmentSheet({
           </div>
 
           <div className="grid items-start gap-4 lg:grid-cols-2">
-            {/*
-              RN-CON-02 y el propio servicio son de la Fase 2. La maqueta
-              enseña aquí "Menú de mañana · Publicación solicitada" con
-              datos de ejemplo; eso no lo está publicando nadie, así que se
-              dice el motivo en vez de copiarlo (CLAUDE.md MUST NOT).
-            */}
-            <Card title={t.nextMenuTitle}>
-              <EmptyState title={t.nextMenuEmptyTitle} description={t.nextMenuEmptyReason} />
-            </Card>
-
             <Card
               title={t.paymentStatusTitle}
               action={

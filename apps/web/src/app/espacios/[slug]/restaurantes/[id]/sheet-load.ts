@@ -1,5 +1,6 @@
 import type { CycleBag, EstablishmentIdentity } from "@/core/establishments";
 import { AUDIT_FAMILIES, auditChanges, auditDayWindow, type AuditChange } from "@/core/audit";
+import { todayInTimeZone } from "@/core/finance";
 import { TERMINAL_REQUEST_STATES } from "@/core/request-states";
 import type { AttentionItem } from "@/core/home";
 import {
@@ -426,6 +427,77 @@ export async function loadSheetSummary(
  * —RLS no deja ver ese perfil— viaja `null` y la fila enseña solo la
  * fecha, nunca un uuid.
  */
+/**
+ * Página 24 del diseño · "Próxima publicación de menú" en el Resumen.
+ *
+ * Tres respuestas y no una fecha, porque hay tres situaciones que se leen
+ * distinto y una fecha sola solo sabría contar una (CA-20):
+ *
+ *   · `no_service` — el restaurante **no tiene Menú Diario contratado**.
+ *     Lo dice `menu_update_balance()`: sin servicio no devuelve fila. Es
+ *     el mismo criterio que usa la pantalla de Menú Diario, no uno nuevo.
+ *   · `none` — lo tiene contratado y no hay ninguna publicación por
+ *     delante. Es un dato, no un error: significa que toca preparar una.
+ *   · `menu` — la más próxima, con su fecha, su nombre y su estado.
+ */
+export type SheetNextMenu =
+  | { readonly kind: "no_service" }
+  | { readonly kind: "none" }
+  | {
+      readonly kind: "menu";
+      readonly id: string;
+      readonly name: string;
+      readonly menuKind: string;
+      /** Día civil `AAAA-MM-DD` en la zona del espacio. */
+      readonly targetDate: string;
+      readonly state: string;
+    };
+
+export async function loadSheetNextMenu(
+  supabase: Supabase,
+  establishmentId: string,
+  timeZone: string,
+  now: Date = new Date(),
+): Promise<SheetNextMenu> {
+  const { data: balance } = await supabase.rpc("menu_update_balance", {
+    p_establishment_id: establishmentId,
+  });
+  if (!balance || balance.length === 0) return { kind: "no_service" };
+
+  /*
+    "Por delante" se mide con el día de HOY en la zona del espacio
+    (CLAUDE.md), no con `new Date()` del servidor: a las 23:30 de Madrid,
+    en UTC ya es mañana, y el menú de mañana dejaría de ser el próximo.
+
+    Se excluyen los cancelados: un menú cancelado no es una publicación
+    que venga. Los ya publicados SÍ entran, con su estado escrito: una
+    publicación futura ya resuelta es justo lo que alguien querría saber
+    al abrir la ficha.
+  */
+  const hoy = todayInTimeZone(now, timeZone);
+
+  const { data: menus } = await supabase
+    .from("menus")
+    .select("id, name, kind, target_date, state")
+    .eq("establishment_id", establishmentId)
+    .gte("target_date", hoy)
+    .neq("state", "cancelled")
+    .order("target_date", { ascending: true })
+    .limit(1);
+
+  const menu = menus?.[0];
+  if (!menu) return { kind: "none" };
+
+  return {
+    kind: "menu",
+    id: menu.id,
+    name: menu.name,
+    menuKind: menu.kind,
+    targetDate: menu.target_date,
+    state: menu.state,
+  };
+}
+
 export interface SheetOperationRequest {
   readonly id: string;
   readonly code: string;

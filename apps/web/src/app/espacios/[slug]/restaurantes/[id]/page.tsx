@@ -53,6 +53,7 @@ import {
   loadSheetPayments,
   loadSheetSummary,
   loadSheetAudit,
+  loadSheetNextMenu,
   loadSheetStaff,
   loadSheetUsers,
 } from "./sheet-load";
@@ -156,7 +157,7 @@ export default async function EstablishmentPage({
       page: Number(soloUno(query.pagina) ?? "1"),
     };
 
-    const [summary, operation, counts, payments, users, staff, files, audit, recentActivity] =
+    const [summary, operation, counts, payments, users, staff, files, audit, recentActivity, nextMenu] =
       await Promise.all([
       loadSheetSummary(supabase, space.id, slug, id),
       loadSheetOperation(supabase, slug, id),
@@ -185,6 +186,8 @@ export default async function EstablishmentPage({
         actorId: null,
         page: 1,
       }),
+      // Página 24 · "Próxima publicación de menú" del Resumen.
+      loadSheetNextMenu(supabase, id, space.timezone),
     ]);
 
     /*
@@ -328,6 +331,7 @@ export default async function EstablishmentPage({
           files,
           audit,
           recentActivity: recentActivity.rows,
+          nextMenu,
           statusReason: statusReason ?? null,
           transfer,
           backups,

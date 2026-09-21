@@ -137,6 +137,7 @@ function sheetData(payments: PaymentsProps): SheetData {
       hasMore: false,
     },
     recentActivity: [],
+    nextMenu: { kind: "no_service" },
   };
 }
 

@@ -95,5 +95,6 @@ export function sheetFixture(): SheetData {
     // Página 24 · "Actividad reciente" del Resumen, que llega sin los
     // filtros de Historial.
     recentActivity: [],
+    nextMenu: { kind: "no_service" },
   };
 }

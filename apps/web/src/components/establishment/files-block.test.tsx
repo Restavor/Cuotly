@@ -153,6 +153,7 @@ function sheetData(files: SheetData["files"]): SheetData {
       hasMore: false,
     },
     recentActivity: [],
+    nextMenu: { kind: "no_service" },
   };
 }
 

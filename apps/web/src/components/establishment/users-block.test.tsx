@@ -171,6 +171,7 @@ function sheetData(
       hasMore: false,
     },
     recentActivity: [],
+    nextMenu: { kind: "no_service" },
   };
 }
 
