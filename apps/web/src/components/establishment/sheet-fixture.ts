@@ -96,5 +96,6 @@ export function sheetFixture(): SheetData {
     // filtros de Historial.
     recentActivity: [],
     nextMenu: { kind: "no_service" },
+    requestDetail: null,
   };
 }

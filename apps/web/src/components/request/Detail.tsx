@@ -463,8 +463,13 @@ function ConsumoEstimado({ estimate }: { estimate: ConsumptionEstimate }) {
  * Se enseña el contador exacto porque quien mira es el equipo (RN-SLA-16:
  * el cliente ve rangos, el equipo ve el número). Parado no dice "quedan
  * 0": dice por qué está parado, que es un dato distinto.
+ *
+ * Se exporta porque la solicitud abierta dentro de la ficha (página 25)
+ * enseña el mismo reloj. Escribir ahí una versión corta habría sido una
+ * segunda copia —y peor— de las cinco maneras que tiene este contador de
+ * estar parado.
  */
-function CounterBox({ counter, state }: { counter: RequestCounter; state: string }) {
+export function CounterBox({ counter, state }: { counter: RequestCounter; state: string }) {
   const status = counter.status;
   const parada = t1StopCause(state);
 

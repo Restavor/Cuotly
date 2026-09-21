@@ -35,6 +35,7 @@ import {
   sortedCycleUsage,
   type CycleUsage,
 } from "@/core/establishments";
+import { CounterBox } from "@/components/request/Detail";
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { GrantAccessForm } from "./GrantAccessForm";
 import { BackupsBlock, type BackupRow } from "./BackupsBlock";
@@ -69,6 +70,7 @@ import {
   dataSectionHref,
   type DataSectionTab,
   OPERATION_SECTION_TABS,
+  openRequestHref,
   operationSectionHref,
   operationSectionLabel,
   type OperationSectionTab,
@@ -90,6 +92,7 @@ import type {
   SheetUsers,
 } from "@/app/espacios/[slug]/restaurantes/[id]/sheet-load";
 import type { SubscriptionTerms } from "@/app/espacios/[slug]/planes/terms-load";
+import type { RequestDetail } from "@/app/espacios/[slug]/solicitudes/[id]/detail-load";
 
 /**
  * La ficha del restaurante para el equipo (PRD §15.2): cinco pestañas, y
@@ -127,6 +130,12 @@ export interface SheetData {
   readonly recentActivity: readonly SheetAuditRow[];
   /** Página 24 · "Próxima publicación de menú" (§57, Menú Diario). */
   readonly nextMenu: SheetNextMenu;
+  /**
+   * Página 25 · la solicitud **abierta dentro de la ficha**, debajo de la
+   * lista. `null` cuando no hay ninguna abierta, o cuando la que pide la
+   * dirección no es de este restaurante.
+   */
+  readonly requestDetail: RequestDetail | null;
   readonly operation: SheetOperation;
   readonly counts: SheetCounts;
   readonly payments: SheetPayments;
@@ -888,6 +897,7 @@ export function EstablishmentSheet({
     audit,
     recentActivity,
     nextMenu,
+    requestDetail,
     statusReason,
     transfer,
     backups,
@@ -1443,8 +1453,17 @@ export function EstablishmentSheet({
                 <ul className="divide-y divide-border">
                   {operation.requests.shown.map((request) => (
                     <li key={request.id}>
+                      {/*
+                        Página 25 · la fila **abre la solicitud aquí
+                        debajo**, no se va a su pantalla. Así se recorre la
+                        lista sin perderla, que es lo que dibuja el diseño;
+                        la pantalla completa sigue a un clic, desde el
+                        propio panel.
+
+                        Sigue siendo un solo control por fila (§20.1).
+                      */}
                       <Link
-                        href={request.deepLink}
+                        href={openRequestHref(base, request.id)}
                         className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
                       >
                         <RowIcon name="request" />
@@ -1477,6 +1496,126 @@ export function EstablishmentSheet({
               </>
             )}
           </Card>
+      ) : null}
+
+      {/*
+        Página 25 · la solicitud abierta, debajo de la lista.
+
+        **Lo que el diseño dibuja aquí y NO está**: las subtareas con sus
+        marcas y las evidencias con sus fotos. No es una omisión de
+        pantalla, es de modelo: las dos cuelgan del **trabajo**, que nace
+        cuando alguien acepta la solicitud (RN-JOB). Pintarlas bajo una
+        solicitud sin aceptar sería enseñar algo que todavía no existe, y
+        bajo una aceptada sería una segunda copia de lo que ya se opera en
+        el trabajo. Va el enlace al trabajo, y cuando no lo hay se dice
+        cuándo nacerá.
+
+        Tampoco va "Asignado a" con su cara: quién lleva el trabajo se ve
+        en el trabajo, junto a lo demás.
+      */}
+      {tab.key === "operation" && operationSection.key === "requests" && requestDetail !== null ? (
+        <Card
+          title={requestDetail.request.code}
+          action={
+            <span className="flex shrink-0 items-center gap-3">
+              <Link
+                href={`/espacios/${slug}/solicitudes/${requestDetail.request.id}`}
+                className="text-sm text-cuotly-green underline"
+              >
+                {t.openRequestOpenFull}
+              </Link>
+              <Link
+                href={openRequestHref(base, null)}
+                className="text-sm text-text-secondary underline"
+              >
+                {t.openRequestClose}
+              </Link>
+            </span>
+          }
+        >
+          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+            <div>
+              <dt className="text-text-secondary">{t.openRequestCategory}</dt>
+              <dd className="font-medium text-text">
+                {/*
+                  La categoría validada manda; si todavía no la hay, se
+                  enseña la que propuso el clasificador **dicho que es una
+                  propuesta** (RN-CLS-04). Enseñarla sin avisar la haría
+                  pasar por decidida.
+                */}
+                {requestDetail.request.validated_category !== null
+                  ? (es.naming.categories[
+                      requestDetail.request.validated_category as CategoryKey
+                    ] ?? requestDetail.request.validated_category)
+                  : requestDetail.proposal !== null
+                    ? `${
+                        es.naming.categories[requestDetail.proposal.category as CategoryKey] ??
+                        requestDetail.proposal.category
+                      } · ${t.openRequestCategoryProposed}`
+                    : t.identityFieldEmpty}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-text-secondary">{t.openRequestCreatedAt}</dt>
+              <dd className="font-medium text-text">
+                {fechaYHoraLarga(requestDetail.request.created_at, timeZone)}
+              </dd>
+            </div>
+          </dl>
+
+          {/*
+            El reloj de primera atención, con el MISMO componente que la
+            pantalla de la solicitud. Se recalcula desde sus eventos
+            (CA-10) y, parado, dice por qué lo está, que es un dato
+            distinto de "quedan 0".
+          */}
+          <CounterBox counter={requestDetail.counter} state={requestDetail.request.state} />
+
+          <div className="mt-4">
+            <p className="text-sm text-text-secondary">{t.openRequestDescription}</p>
+            <p className="whitespace-pre-line text-sm text-text">
+              {requestDetail.request.description}
+            </p>
+          </div>
+
+          {requestDetail.request.context === null ? null : (
+            <div className="mt-3">
+              <p className="text-sm text-text-secondary">{t.openRequestContext}</p>
+              <p className="whitespace-pre-line text-sm text-text">
+                {requestDetail.request.context}
+              </p>
+            </div>
+          )}
+
+          <p className="mt-4 text-sm text-text-secondary">
+            {/*
+              "No se pudo leer" y "no lleva ninguno" son cosas distintas, y
+              el cargador ya las separa (CA-20).
+            */}
+            {requestDetail.attachmentsFailed
+              ? t.openRequestAttachmentsFailed
+              : requestDetail.attachments.length === 0
+                ? t.openRequestNoAttachments
+                : t.openRequestAttachments(requestDetail.attachments.length)}
+          </p>
+
+          <p className="mt-3 text-sm">
+            <span className="text-text-secondary">{t.openRequestJob}: </span>
+            {requestDetail.job === null ? (
+              <span className="text-text-secondary">{t.openRequestNoJob}</span>
+            ) : (
+              <>
+                <Link
+                  href={`/espacios/${slug}/trabajos/${requestDetail.job.id}`}
+                  className="text-cuotly-green underline"
+                >
+                  {requestDetail.job.code}
+                </Link>{" "}
+                <span className="text-text-secondary">{t.openRequestJobHint}</span>
+              </>
+            )}
+          </p>
+        </Card>
       ) : null}
 
       {tab.key === "operation" && operationSection.key === "jobs" ? (

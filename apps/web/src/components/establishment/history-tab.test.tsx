@@ -124,6 +124,7 @@ function sheetData(audit: SheetData["audit"]): SheetData {
     audit,
     recentActivity: audit.rows,
     nextMenu: { kind: "no_service" },
+    requestDetail: null,
   };
 }
 

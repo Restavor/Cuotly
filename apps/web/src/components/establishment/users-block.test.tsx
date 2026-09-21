@@ -172,6 +172,7 @@ function sheetData(
     },
     recentActivity: [],
     nextMenu: { kind: "no_service" },
+    requestDetail: null,
   };
 }
 

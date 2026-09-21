@@ -200,6 +200,23 @@ export function operationSectionHref(base: string, section: OperationSectionTab)
   return `${base}?${params.toString()}`;
 }
 
+/**
+ * Página 25 · la dirección de una solicitud **abierta dentro de la ficha**,
+ * en la sección Solicitudes.
+ *
+ * La solicitud elegida viaja en la dirección, como la sección: así el
+ * panel se puede enlazar, el botón de volver lo cierra y sin JavaScript
+ * funciona igual. `sin` es el enlace de cerrar, que quita el parámetro.
+ */
+export function openRequestHref(base: string, requestId: string | null): string {
+  const params = new URLSearchParams({
+    vista: OPERATION_TAB.slug,
+    seccion: OPERATION_SECTION_SLUGS.requests,
+  });
+  if (requestId !== null) params.set("solicitud", requestId);
+  return `${base}?${params.toString()}`;
+}
+
 export function operationSectionLabel(section: OperationSectionTab): string {
   return es.establishmentSheet.operationSections[section.key];
 }

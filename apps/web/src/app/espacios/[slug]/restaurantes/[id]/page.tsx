@@ -48,6 +48,7 @@ import { AcceptRequestButton } from "./AcceptRequestButton";
 import { AcceptTermsButton } from "./AcceptTermsButton";
 import { NewRequestForm } from "./NewRequestForm";
 import { TerminationForm } from "./TerminationForm";
+import { loadRequestDetail } from "../../solicitudes/[id]/detail-load";
 import { loadEstablishmentTimezone } from "./timezone-load";
 import { loadSubscriptionTerms } from "../../planes/terms-load";
 import {
@@ -279,6 +280,31 @@ export default async function EstablishmentPage({
       cae en la primera sección, como cualquier dirección escrita a mano.
     */
     const seccionOperacion = parseOperationSection(soloUno(query.seccion));
+
+    /*
+      Página 25 · la solicitud abierta dentro de la ficha (`?solicitud=`).
+
+      Se carga **solo** cuando se está mirando esa sección: en cualquier
+      otra pestaña el parámetro sobra y pedir el detalle sería una consulta
+      por nada.
+
+      Y se comprueba que la solicitud sea **de este restaurante**. RLS ya
+      impide ver las de otro espacio, pero dentro del mismo espacio un id
+      pegado a mano enseñaría la solicitud de otro restaurante bajo el
+      encabezado de este, que es decir algo falso aunque todo lo demás
+      esté bien.
+    */
+    const solicitudAbierta = soloUno(query.solicitud);
+    const detalleSolicitud =
+      vista.key !== "operation" ||
+      seccionOperacion.key !== "requests" ||
+      solicitudAbierta === undefined
+        ? null
+        : await loadRequestDetail(supabase, solicitudAbierta);
+    const detalleDeEsteRestaurante =
+      detalleSolicitud !== null && detalleSolicitud.request.establishment_id === id
+        ? detalleSolicitud
+        : null;
     const mirandoOportunidades = vista.key === "data" && seccion.key === "opportunities";
 
     const { data: puedeAprobar } = mirandoOportunidades
@@ -345,6 +371,7 @@ export default async function EstablishmentPage({
           audit,
           recentActivity: recentActivity.rows,
           nextMenu,
+          requestDetail: detalleDeEsteRestaurante,
           statusReason: statusReason ?? null,
           transfer,
           backups,

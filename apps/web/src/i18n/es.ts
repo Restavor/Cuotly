@@ -4073,6 +4073,35 @@ export const es = {
      * que se llamara distinto que la pantalla a la que lleva parecería
      * otra cosa (CA-21).
      */
+    /**
+     * Página 25 · la solicitud abierta dentro de la ficha, debajo de la
+     * lista. Los nombres de categoría y de estado NO se escriben aquí:
+     * salen de `naming`, el único sitio donde una cosa tiene nombre.
+     */
+    openRequestClose: "Cerrar",
+    openRequestOpenFull: "Abrir la solicitud",
+    openRequestCategory: "Tipo",
+    openRequestCategoryProposed: "Propuesto",
+    openRequestCreatedAt: "Solicitado el",
+    openRequestDeadline: "Primera atención",
+    openRequestDeadlineNotStarted: "Sin empezar",
+    openRequestDescription: "Descripción",
+    openRequestContext: "Contexto",
+    openRequestAttachments: (n: number) =>
+      n === 1 ? "1 archivo adjunto" : `${n} archivos adjuntos`,
+    openRequestAttachmentsFailed: "No hemos podido leer los archivos adjuntos.",
+    openRequestNoAttachments: "Sin archivos adjuntos.",
+    /*
+      Subtareas y evidencias son del TRABAJO, no de la solicitud: nacen
+      cuando alguien la acepta. El diseño las dibuja bajo la solicitud, y
+      copiarlo aquí significaría enseñarlas en un sitio donde todavía no
+      existen —y duplicarlas donde sí—. Va el enlace al trabajo, que es
+      donde se opera con ellas.
+    */
+    openRequestJob: "Trabajo",
+    openRequestJobHint: "Las subtareas y las evidencias están en el trabajo.",
+    openRequestNoJob: "Todavía no hay trabajo: nace al aceptar la solicitud.",
+
     operationSectionsLabel: "Secciones de Operación",
     operationSections: {
       requests: "Solicitudes",

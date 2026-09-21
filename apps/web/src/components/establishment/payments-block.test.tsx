@@ -138,6 +138,7 @@ function sheetData(payments: PaymentsProps): SheetData {
     },
     recentActivity: [],
     nextMenu: { kind: "no_service" },
+    requestDetail: null,
   };
 }
 

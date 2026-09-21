@@ -111,6 +111,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     },
     recentActivity: [],
     nextMenu: { kind: "no_service" },
+    requestDetail: null,
   };
 }
 
