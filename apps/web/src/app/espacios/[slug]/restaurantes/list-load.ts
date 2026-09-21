@@ -43,6 +43,15 @@ export interface EstablishmentListRow {
    * que hay es un trabajo y los trabajos se cuentan aparte.
    */
   readonly openRequests: number;
+  /**
+   * RN-EST-19 · quién del equipo lleva este restaurante, o `null` si no lo
+   * lleva nadie — que es un estado normal, no un hueco que rellenar.
+   *
+   * `name` puede ser `null` con `id` puesto: hay responsable y quien mira
+   * no puede resolver ese perfil. No es lo mismo que no tenerlo, y la
+   * pantalla no lo dice igual (CA-20).
+   */
+  readonly manager: { readonly id: string; readonly name: string | null } | null;
   readonly attention: readonly AttentionItem[];
 }
 
@@ -67,6 +76,7 @@ export async function loadEstablishmentList(
     { data: subscriptions },
     attention,
     { data: solicitudesAbiertas },
+    { data: responsables },
   ] = await Promise.all([
       supabase
         .from("establishments")
@@ -99,6 +109,22 @@ export async function loadEstablishmentList(
         .select("id, establishment_id")
         .eq("space_id", spaceId)
         .in("state", [...PENDING_REQUEST_STATES]),
+      /*
+        RN-EST-19 · quién lleva cada restaurante. La tabla es del equipo:
+        su RLS exige pertenecer al espacio, así que un cliente que llegara
+        aquí recibiría cero filas — pero un cliente no llega a esta
+        pantalla, y esto no es lo que le protege (P7): le protege que el
+        dato no esté en `establishments`, que sí lee.
+
+        El nombre se pide aparte y no con un `join`: `profiles_select` no
+        deja resolver cualquier perfil, y un `join` que no resuelve deja la
+        fila entera fuera. Así, si el nombre no se puede leer, se pierde el
+        nombre y no el hecho de que hay responsable.
+      */
+      supabase
+        .from("establishment_managers")
+        .select("establishment_id, manager_id")
+        .eq("space_id", spaceId),
     ]);
 
   const groupName = new Map((groups ?? []).map((g) => [g.id, g.name]));
@@ -106,6 +132,28 @@ export async function loadEstablishmentList(
     (subscriptions ?? []).map((s) => [s.establishment_id, s]),
   );
   const atencion = groupAttentionByEstablishment(attention.items);
+
+  const responsablePorRestaurante = new Map(
+    (responsables ?? []).map((fila) => [fila.establishment_id, fila.manager_id]),
+  );
+
+  /*
+    Los nombres, en una sola consulta para todos. `profiles_select` decide
+    cuáles se resuelven: los que no, se quedan en `null` y la fila sigue
+    diciendo que hay responsable.
+  */
+  const idsResponsables = [...new Set(responsablePorRestaurante.values())];
+  const nombreResponsable = new Map<string, string>();
+  if (idsResponsables.length > 0) {
+    const { data: perfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", idsResponsables);
+    for (const perfil of perfiles ?? []) {
+      const nombre = (perfil.full_name ?? perfil.email ?? "").trim();
+      if (nombre !== "") nombreResponsable.set(perfil.id, nombre);
+    }
+  }
 
   const abiertasPorRestaurante = new Map<string, number>();
   for (const fila of solicitudesAbiertas ?? []) {
@@ -130,6 +178,10 @@ export async function loadEstablishmentList(
       // tenerla: no se enseña una línea vacía bajo el nombre.
       city: (establishment.city ?? "").trim() === "" ? null : establishment.city,
       openRequests: abiertasPorRestaurante.get(establishment.id) ?? 0,
+      manager: (() => {
+        const id = responsablePorRestaurante.get(establishment.id);
+        return id === undefined ? null : { id, name: nombreResponsable.get(id) ?? null };
+      })(),
       attention: atencion.get(establishment.id) ?? [],
     };
   });

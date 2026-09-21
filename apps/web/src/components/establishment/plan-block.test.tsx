@@ -111,6 +111,7 @@ function sheetData(
     recentActivity: [],
     nextMenu: { kind: "no_service" },
     requestDetail: null,
+    manager: { currentId: null, currentName: null, team: [] },
   };
 }
 

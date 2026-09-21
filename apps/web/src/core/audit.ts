@@ -239,6 +239,9 @@ export const AUDIT_ACTIONS = [
   "establishment.created",
   "establishment.data_changed",
   "establishment.status_changed",
+  // Migración 119 (RN-EST-19, decisión 63) · quién del equipo lleva este
+  // restaurante. Quitarlo deja el mismo apunte que asignarlo.
+  "establishment.manager_set",
   // Migración 99 (R24, M47, RN-EST-09) · el restaurante comunica la baja, o
   // el equipo registra la que llegó por fuera.
   "establishment.termination_requested",

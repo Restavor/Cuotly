@@ -44,6 +44,7 @@ import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { GrantAccessForm } from "./GrantAccessForm";
 import { BackupsBlock, type BackupRow } from "./BackupsBlock";
 import { CreatePanelForm } from "./CreatePanelForm";
+import { ManagerForm } from "./ManagerForm";
 import { NotesPanel } from "@/components/notes/NotesPanel";
 import type { EstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 import { ServiceStatusForms } from "./ServiceStatusForms";
@@ -91,6 +92,7 @@ import type {
   SheetFileFolder,
   SheetAudit,
   SheetAuditRow,
+  SheetManager,
   SheetNextMenu,
   SheetStaffMember,
   SheetSummary,
@@ -141,6 +143,8 @@ export interface SheetData {
    * dirección no es de este restaurante.
    */
   readonly requestDetail: RequestDetail | null;
+  /** RN-EST-19 · quién lleva el restaurante y a quién se le puede asignar. */
+  readonly manager: SheetManager;
   readonly operation: SheetOperation;
   readonly counts: SheetCounts;
   readonly payments: SheetPayments;
@@ -903,6 +907,7 @@ export function EstablishmentSheet({
     recentActivity,
     nextMenu,
     requestDetail,
+    manager,
     statusReason,
     transfer,
     backups,
@@ -1966,6 +1971,42 @@ export function EstablishmentSheet({
                     />
                   </div>
                 </>
+              )}
+            </Card>
+          ) : null}
+
+          {/*
+            RN-EST-19 · quién del equipo lleva este restaurante (decisión
+            63).
+
+            Va aquí, al lado del contacto del cliente, porque las dos
+            tarjetas responden a la misma pregunta desde los dos lados: a
+            quién se llama de fuera y quién responde de dentro.
+
+            **Solo se le ofrece el formulario a quien puede cambiarlo**, y
+            eso es cortesía: `set_establishment_manager()` comprueba
+            `manage_clients` por su cuenta y es la única puerta (CLAUDE.md:
+            ocultar un control no es un control de acceso). A los demás se
+            les enseña quién lo lleva, que sí pueden ver.
+          */}
+          {block.key === "establishmentData" ? (
+            <Card title={es.teamArea.establishments.manager}>
+              {canManageClients ? (
+                <ManagerForm
+                  establishmentId={header.id}
+                  current={manager.currentId}
+                  team={manager.team}
+                />
+              ) : (
+                <p className="text-sm text-text">
+                  {manager.currentId === null ? (
+                    <span className="text-text-secondary">
+                      {es.teamArea.establishments.noManager}
+                    </span>
+                  ) : (
+                    (manager.currentName ?? es.teamArea.establishments.managerUnknown)
+                  )}
+                </p>
               )}
             </Card>
           ) : null}

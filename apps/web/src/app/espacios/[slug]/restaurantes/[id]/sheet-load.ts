@@ -990,6 +990,68 @@ export async function loadSheetUsers(
  * añadir la columna es otra tarea — con su migración y su decisión sobre
  * quién puede verlo.
  */
+/**
+ * RN-EST-19 · el responsable de este restaurante y a quién se le puede
+ * asignar: el **equipo del espacio** con pertenencia activa, que no es lo
+ * mismo que `staff` —los trabajadores autorizados en ESTE restaurante—.
+ * Ser responsable no exige estar autorizado, ni al revés: son dos cosas.
+ */
+export interface SheetManager {
+  /** Quién lo lleva, o `null` si no lo lleva nadie. */
+  readonly currentId: string | null;
+  readonly currentName: string | null;
+  readonly team: readonly { readonly id: string; readonly name: string }[];
+}
+
+export async function loadSheetManager(
+  supabase: Supabase,
+  spaceId: string,
+  establishmentId: string,
+): Promise<SheetManager> {
+  const [{ data: actual }, { data: miembros }] = await Promise.all([
+    supabase
+      .from("establishment_managers")
+      .select("manager_id")
+      .eq("establishment_id", establishmentId)
+      .maybeSingle(),
+    /*
+      Solo los ACTIVOS: `set_establishment_manager()` rechaza a los demás,
+      así que ofrecerlos sería ofrecer un error. Un invitado que todavía no
+      ha entrado no puede llevar un restaurante (RN-EST-19).
+    */
+    supabase
+      .from("space_memberships")
+      .select("user_id")
+      .eq("space_id", spaceId)
+      .eq("status", "active"),
+  ]);
+
+  const ids = [...new Set((miembros ?? []).map((m) => m.user_id))];
+  const nombres = new Map<string, string>();
+  if (ids.length > 0) {
+    const { data: perfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", ids);
+    for (const perfil of perfiles ?? []) {
+      const nombre = (perfil.full_name ?? "").trim() || perfil.email;
+      if (nombre) nombres.set(perfil.id, nombre);
+    }
+  }
+
+  const currentId = actual?.manager_id ?? null;
+
+  return {
+    currentId,
+    currentName: currentId === null ? null : (nombres.get(currentId) ?? null),
+    // Por nombre, que es como se busca a alguien en una lista.
+    team: ids
+      .map((id) => ({ id, name: nombres.get(id) ?? "" }))
+      .filter((persona) => persona.name !== "")
+      .sort((a, b) => a.name.localeCompare(b.name, "es")),
+  };
+}
+
 export interface SheetStaffMember {
   readonly userId: string;
   readonly displayName: string | null;

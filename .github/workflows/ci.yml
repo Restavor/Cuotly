@@ -484,6 +484,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/plazo_de_realizacion_del_plan.sql
 
+      - name: "Responsable — Verificar que el responsable de un restaurante es opcional, tiene que ser del equipo con pertenencia activa, NO concede permisos, se cae solo cuando esa persona sale del espacio y el cliente no lo ve nunca (RN-EST-19, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/responsable_del_restaurante.sql
+
       - name: "Planes — Verificar que el plan decide TRES cosas distintas: ordenar los cambios propios, el turno dentro del mismo plazo y el plan alto, y que ninguna arrastra a otra (RN-COM-03, decisión 55)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

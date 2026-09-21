@@ -22,11 +22,12 @@ import { es } from "@/i18n/es";
  *     dibujo es una foto de archivo, y poner una inventada sería enseñar
  *     un dato falso (CLAUDE.md MUST NOT). Está anotada como pendiente en
  *     `docs/diseno/MAPA-DEL-DISENO-MOVIL.md` §5.5.
- *   · El **supervisor con su cara**. "Supervisor" en Cuotly no es un
- *     cargo de un restaurante: es una relación Administrador–Trabajador
- *     (CLAUDE.md, decisión que no debe reaparecer), y `supervisions`
- *     enlaza dos personas, no una persona con un local. No hay nadie a
- *     quien nombrar aquí sin inventárselo.
+ *   · La **cara** del responsable. El responsable **sí existe** desde la
+ *     decisión 63 y sale en esta ficha; su foto no, que es el mismo hueco
+ *     que la del local. Lo que no existe y sigue sin existir es un
+ *     "supervisor" de un restaurante: ese nombre es una relación
+ *     Administrador–Trabajador (CLAUDE.md) y por eso este campo se llama
+ *     responsable.
  *   · Los nombres de plan "Estándar" y "Profesional" del dibujo. Los
  *     planes son Básico, Impulso, Impulso+, Premium y Premium+ (decisión
  *     39); la insignia enseña el que de verdad tiene contratado.
@@ -47,6 +48,8 @@ export type EstablishmentCardData = {
   readonly groupName: string | null;
   readonly planName: string | null;
   readonly openRequests: number;
+  /** RN-EST-19 · quién lo lleva, o `null` si no lo lleva nadie. */
+  readonly manager: { readonly id: string; readonly name: string | null } | null;
   readonly attention: readonly AttentionItem[];
 };
 
@@ -121,6 +124,22 @@ export function EstablishmentCard({
       <span className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 sm:grid-cols-3">
         <Dato label={t.groupColumn}>{row.groupName ?? t.noGroup}</Dato>
         <Dato label={t.openRequests}>{row.openRequests}</Dato>
+        {/*
+          RN-EST-19 · sin responsable es un estado normal y se dice así,
+          sin tono de aviso: la ficha no empuja a asignar a nadie.
+
+          Y "hay alguien cuyo nombre no puedo leer" es otra cosa distinta
+          de "no lo lleva nadie": lo primero pasa cuando quien mira no
+          puede resolver ese perfil, y decir "sin responsable" entonces
+          sería mentir (CA-20).
+        */}
+        <Dato label={t.manager}>
+          {row.manager === null ? (
+            <span className="font-normal text-text-secondary">{t.noManager}</span>
+          ) : (
+            (row.manager.name ?? t.managerUnknown)
+          )}
+        </Dato>
         {/*
           "Necesita atención" no está en el dibujo y se queda: es lo único
           de esta ficha que pide que alguien haga algo hoy, y era ya una

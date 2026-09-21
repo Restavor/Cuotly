@@ -1873,6 +1873,30 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      establishment_managers: {
+        Row: {
+          assigned_at: string;
+          assigned_by: string | null;
+          establishment_id: string;
+          manager_id: string;
+          space_id: string;
+        };
+        Insert: {
+          assigned_at?: string;
+          assigned_by?: string | null;
+          establishment_id: string;
+          manager_id: string;
+          space_id?: string;
+        };
+        Update: {
+          assigned_at?: string;
+          assigned_by?: string | null;
+          establishment_id?: string;
+          manager_id?: string;
+          space_id?: string;
+        };
+        Relationships: [];
+      };
       establishment_permissions: {
         Row: {
           create_requests: boolean;
@@ -10535,6 +10559,10 @@ export type Database = {
           p_space_id: string;
         };
         Returns: string;
+      };
+      set_establishment_manager: {
+        Args: { p_establishment_id: string; p_manager_id: string | null };
+        Returns: undefined;
       };
       set_establishment_data: {
         Args: {

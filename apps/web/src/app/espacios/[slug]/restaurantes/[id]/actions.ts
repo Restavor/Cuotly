@@ -322,3 +322,39 @@ export async function requestOwnTermination(
     return { error: es.states.errorDescription, done: false };
   }
 }
+
+/**
+ * RN-EST-19 · asignar el responsable del restaurante, o quitarlo.
+ *
+ * Aquí no se comprueba ningún permiso, y es a propósito:
+ * `set_establishment_manager()` exige `manage_clients` por su cuenta y es
+ * la única puerta. Lo que llega del formulario —a quién se asigna— lo
+ * vuelve a validar el servidor contra la pertenencia activa al espacio, así
+ * que un `select` manipulado en el navegador no cuela a nadie (CLAUDE.md:
+ * ocultar un control no es un control de acceso).
+ *
+ * El vacío significa **quitarlo**, que es un cambio como asignarlo y deja
+ * el mismo rastro en la auditoría.
+ */
+export async function setEstablishmentManager(
+  _prev: ServiceStatusState,
+  formData: FormData,
+): Promise<ServiceStatusState> {
+  const establishmentId = String(formData.get("establishmentId") ?? "");
+  const managerId = String(formData.get("managerId") ?? "").trim();
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("set_establishment_manager", {
+      p_establishment_id: establishmentId,
+      p_manager_id: managerId === "" ? null : managerId,
+    });
+    if (error) return { error: error.message, done: false };
+
+    revalidatePath("/espacios", "layout");
+    return { error: null, done: true };
+  } catch (fallo) {
+    console.error("[restaurante] el responsable no se pudo cambiar", { message: String(fallo) });
+    return { error: es.states.errorDescription, done: false };
+  }
+}

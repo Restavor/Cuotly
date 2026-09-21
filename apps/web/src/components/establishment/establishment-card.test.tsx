@@ -31,6 +31,7 @@ const magarinos: EstablishmentCardData = {
   groupName: "Grupo Norte",
   planName: "Premium+",
   openRequests: 3,
+  manager: { id: "u-1", name: "Marta Vidal" },
   attention: [],
 };
 
@@ -78,12 +79,33 @@ describe("página 23 · la ficha de un restaurante", () => {
     expect(container.querySelector("img")).toBeNull();
   });
 
-  it("NO inventa un supervisor, que en Cuotly no es de un restaurante", () => {
+  it("enseña quién lo lleva, y NO lo llama supervisor (RN-EST-19)", () => {
     render(<EstablishmentCard row={magarinos} href="/x" />);
 
+    expect(screen.getByText("Marta Vidal")).toBeInTheDocument();
     // "Supervisor" es una relación Administrador–Trabajador: `supervisions`
-    // enlaza dos personas, no una persona con un local.
+    // enlaza dos personas, no una persona con un local. Este campo se
+    // llama responsable justo para no confundirlos.
     expect(screen.queryByText(/supervisor/i)).not.toBeInTheDocument();
+  });
+
+  it("sin responsable lo dice, y sin tono de aviso: es un estado normal", () => {
+    render(<EstablishmentCard row={{ ...magarinos, manager: null }} href="/x" />);
+
+    expect(screen.getByText(t.noManager)).toBeInTheDocument();
+    // Ni rojo ni ámbar: la ficha no empuja a asignar a nadie.
+    expect(screen.getByText(t.noManager).className).not.toMatch(/danger|warning/);
+  });
+
+  it("hay responsable y no se lee su nombre: NO se dice «sin responsable»", () => {
+    // Pasa cuando quien mira no puede resolver ese perfil. Decir que no
+    // lo lleva nadie sería mentir.
+    render(
+      <EstablishmentCard row={{ ...magarinos, manager: { id: "u-9", name: null } }} href="/x" />,
+    );
+
+    expect(screen.getByText(t.managerUnknown)).toBeInTheDocument();
+    expect(screen.queryByText(t.noManager)).not.toBeInTheDocument();
   });
 
   it("un solo control por ficha, y lleva a la ficha completa (§20.1)", () => {

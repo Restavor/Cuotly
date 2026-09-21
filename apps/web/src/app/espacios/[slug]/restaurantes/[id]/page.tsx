@@ -60,6 +60,7 @@ import {
   loadSheetSummary,
   loadSheetAudit,
   loadSheetNextMenu,
+  loadSheetManager,
   loadSheetStaff,
   loadSheetUsers,
 } from "./sheet-load";
@@ -163,8 +164,10 @@ export default async function EstablishmentPage({
       page: Number(soloUno(query.pagina) ?? "1"),
     };
 
-    const [summary, operation, counts, payments, users, staff, files, audit, recentActivity, nextMenu] =
-      await Promise.all([
+    const [
+      summary, operation, counts, payments, users, staff, files, audit, recentActivity, nextMenu,
+      manager,
+    ] = await Promise.all([
       loadSheetSummary(supabase, space.id, slug, id),
       loadSheetOperation(supabase, slug, id),
       loadSheetCounts(supabase, id),
@@ -194,6 +197,8 @@ export default async function EstablishmentPage({
       }),
       // Página 24 · "Próxima publicación de menú" del Resumen.
       loadSheetNextMenu(supabase, id, space.timezone),
+      // RN-EST-19 · quién lo lleva y a quién se le puede asignar.
+      loadSheetManager(supabase, space.id, id),
     ]);
 
     /*
@@ -372,6 +377,7 @@ export default async function EstablishmentPage({
           recentActivity: recentActivity.rows,
           nextMenu,
           requestDetail: detalleDeEsteRestaurante,
+          manager,
           statusReason: statusReason ?? null,
           transfer,
           backups,

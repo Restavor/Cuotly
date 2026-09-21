@@ -1250,6 +1250,24 @@ export const es = {
       // Página 23 del diseño · los dos rótulos nuevos de la ficha.
       openRequests: "Solicitudes abiertas",
       noGroup: "Sin grupo",
+      /**
+       * RN-EST-19 · quién del equipo lleva el restaurante.
+       *
+       * NO se llama "supervisor": ese nombre ya significa otra cosa en
+       * Cuotly —una relación Administrador–Trabajador— y confundirlos
+       * dentro de seis meses sería fácil.
+       *
+       * Las dos frases de abajo son cosas distintas y por eso son dos:
+       * "no lo lleva nadie" es un estado normal, y "hay alguien y no
+       * puedo resolver su nombre" es otra cosa (CA-20).
+       */
+      manager: "Responsable",
+      noManager: "Sin responsable",
+      managerUnknown: "Asignado",
+      managerHint:
+        "Quién del equipo lleva este restaurante. Puede no llevarlo nadie: no concede permisos ni cambia plazos.",
+      managerSave: "Guardar responsable",
+      managerSaved: "Responsable guardado.",
       // El resumen de la columna: el motivo más urgente y cuántos hay de
       // él. Los nombres de estado NO se repiten aquí — son frases sobre lo
       // que hay que hacer, no etiquetas de estado (CA-21).
@@ -2970,6 +2988,7 @@ export const es = {
       "correction.team_error_opened": "Corrección por error del equipo",
       "establishment.created": "Restaurante dado de alta",
       "establishment.data_changed": "Datos del restaurante editados",
+      "establishment.manager_set": "Responsable del restaurante cambiado",
       "establishment.status_changed": "Estado del restaurante cambiado",
       // §38, RN-TRA · la transferencia entre espacios. Los dos espacios ven
       // el mismo apunte desde su lado, así que el texto no dice "nuestro"
