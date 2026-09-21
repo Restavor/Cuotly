@@ -170,6 +170,7 @@ function sheetData(
       filters: { from: null, to: null, family: null, actorId: null, page: 1 },
       hasMore: false,
     },
+    recentActivity: [],
   };
 }
 

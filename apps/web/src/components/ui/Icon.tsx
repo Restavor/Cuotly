@@ -63,6 +63,9 @@ const PATHS = {
   alert: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7.5V13M12 16.2v.1",
   check: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM8.2 12.3l2.6 2.6 5-5.4",
   person: "M12 12.5a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM4.5 20.5a7.5 7.5 0 0 1 15 0",
+  // La chincheta de la ciudad, en el encabezado de la ficha (página 24).
+  location:
+    "M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11ZM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z",
   crown: "M4 19h16M4 19V8l4.5 3.5L12 4.5l3.5 7L20 8v11",
   document:
     "M13 3H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8Zm0 0v5h5M9.5 13h5M9.5 16.5h3",

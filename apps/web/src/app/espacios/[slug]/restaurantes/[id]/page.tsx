@@ -156,7 +156,7 @@ export default async function EstablishmentPage({
       page: Number(soloUno(query.pagina) ?? "1"),
     };
 
-    const [summary, operation, counts, payments, users, staff, files, audit] =
+    const [summary, operation, counts, payments, users, staff, files, audit, recentActivity] =
       await Promise.all([
       loadSheetSummary(supabase, space.id, slug, id),
       loadSheetOperation(supabase, slug, id),
@@ -166,6 +166,25 @@ export default async function EstablishmentPage({
       loadSheetStaff(supabase, space.id, id),
       loadSheetFiles(supabase, id, soloUno(query.archivo), soloUno(query.tipo)),
       loadSheetAudit(supabase, id, space.timezone, filtrosAuditoria),
+      /*
+        Página 24 · "Actividad reciente" del Resumen. Se pide **sin
+        filtros**, y no se reaprovecha `audit`: los filtros de la pestaña
+        Historial viven en la dirección y siguen puestos aunque se vuelva
+        al Resumen, así que ese bloque enseñaría lo último *de lo
+        filtrado* sin decirlo. Una consulta más es más barata que un
+        bloque que miente.
+
+        Mismas filas que Historial en todo lo demás:
+        `establishment_audit()` es SECURITY INVOKER y la política de
+        `audit_log` decide qué ve cada quien (§21.2).
+      */
+      loadSheetAudit(supabase, id, space.timezone, {
+        from: null,
+        to: null,
+        family: null,
+        actorId: null,
+        page: 1,
+      }),
     ]);
 
     /*
@@ -308,6 +327,7 @@ export default async function EstablishmentPage({
           staff,
           files,
           audit,
+          recentActivity: recentActivity.rows,
           statusReason: statusReason ?? null,
           transfer,
           backups,

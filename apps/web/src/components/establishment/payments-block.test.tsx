@@ -136,6 +136,7 @@ function sheetData(payments: PaymentsProps): SheetData {
       filters: { from: null, to: null, family: null, actorId: null, page: 1 },
       hasMore: false,
     },
+    recentActivity: [],
   };
 }
 

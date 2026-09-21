@@ -109,6 +109,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
       filters: { from: null, to: null, family: null, actorId: null, page: 1 },
       hasMore: false,
     },
+    recentActivity: [],
   };
 }
 

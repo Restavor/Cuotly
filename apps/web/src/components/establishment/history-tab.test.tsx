@@ -122,6 +122,7 @@ function sheetData(audit: SheetData["audit"]): SheetData {
     staff: [],
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
     audit,
+    recentActivity: audit.rows,
   };
 }
 

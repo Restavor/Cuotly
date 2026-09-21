@@ -92,5 +92,8 @@ export function sheetFixture(): SheetData {
       filters: { from: null, to: null, family: null, actorId: null, page: 1 },
       hasMore: false,
     },
+    // Página 24 · "Actividad reciente" del Resumen, que llega sin los
+    // filtros de Historial.
+    recentActivity: [],
   };
 }

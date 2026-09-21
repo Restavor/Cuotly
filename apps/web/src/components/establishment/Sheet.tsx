@@ -78,6 +78,7 @@ import type {
   SheetPayments,
   SheetFileFolder,
   SheetAudit,
+  SheetAuditRow,
   SheetStaffMember,
   SheetSummary,
   SheetUsers,
@@ -110,6 +111,14 @@ export interface SheetData {
    */
   readonly canEditData: boolean;
   readonly summary: SheetSummary;
+  /**
+   * Página 24 · "Actividad reciente" del Resumen: las últimas filas de la
+   * auditoría, **sin los filtros** de la pestaña Historial. Llegan aparte
+   * y no se recortan de `audit` a propósito: esos filtros viven en la
+   * dirección y siguen puestos al volver al Resumen, así que este bloque
+   * enseñaría lo último de lo filtrado sin decirlo.
+   */
+  readonly recentActivity: readonly SheetAuditRow[];
   readonly operation: SheetOperation;
   readonly counts: SheetCounts;
   readonly payments: SheetPayments;
@@ -822,6 +831,7 @@ export function EstablishmentSheet({
     staff,
     files,
     audit,
+    recentActivity,
     statusReason,
     transfer,
     backups,
@@ -846,46 +856,81 @@ export function EstablishmentSheet({
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-8">
-      <header className="space-y-2">
-        <p className="text-sm text-text-secondary">{header.groupName ?? "—"}</p>
-        <h1 className="text-2xl font-bold text-primary-dark">
-          {header.name} <span className="text-text-secondary">{header.code}</span>
-        </h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <StatusBadge tone={statusTone(header.status)}>
-            {es.space.statuses[header.status as StatusKey] ?? header.status}
-          </StatusBadge>
-          {header.planName ? <StatusBadge tone="info">{header.planName}</StatusBadge> : null}
+      {/*
+        Página 24 del diseño definitivo móvil · el encabezado de la ficha,
+        en una tarjeta: el nombre grande, la ciudad con su chincheta y el
+        enlace al sitio web en la misma línea, las acciones a la derecha y,
+        abajo, el plan y el grupo como dos datos con su rótulo.
 
-          {/*
-            El enlace al sitio web del restaurante, como en la maqueta 06.
-            Solo cuando hay uno guardado: un botón que no lleva a ninguna
-            parte es peor que no tenerlo, y hasta la migración 57 esta
-            columna no existía.
+        El grupo estaba suelto encima del nombre, sin decir que era un
+        grupo, y el plan era una insignia más entre el estado y el enlace.
+        Los dos son **datos** del restaurante, no etiquetas de estado, y
+        ahora lo parecen.
 
-            `rel="noreferrer"` porque es una web ajena, y el "se abre en
-            una pestaña nueva" va escrito para quien no ve el icono: un
-            enlace que cambia de contexto sin avisar desorienta (§21.4).
-          */}
-          <div className="ml-auto flex shrink-0 flex-wrap items-center gap-2">
-            {header.identity.websiteUrl === null ? null : (
-              <a
-                href={header.identity.websiteUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-              >
-                <Icon name="externalLink" aria-hidden="true" className="h-4 w-4" />
-                {t.websiteLink}
-                <span className="sr-only">{t.websiteLinkNewTab}</span>
-              </a>
-            )}
+        Lo que el diseño dibuja y NO está:
+
+          · La **foto del local**. `establishments` no tiene ninguna
+            columna de imagen; la del dibujo es de archivo. Anotada en
+            `docs/diseno/MAPA-DEL-DISENO-MOVIL.md` §5.5.
+          · La **frase que describe el restaurante** ("Cocina gallega
+            contemporánea…"). Tampoco existe: no hay campo de descripción
+            en la ficha de datos (`IDENTITY_FIELDS`). Inventarla sería
+            escribirle al cliente algo que él no ha dicho.
+          · El **desplegable sobre la insignia de estado**. El estado no se
+            cambia desde aquí: se cambia en Gestión, con su motivo y su
+            registro de auditoría (RN-EST-08). Una insignia que se abre
+            invita a cambiarlo sin motivo escrito.
+      */}
+      <header className="rounded-[20px] border border-border bg-surface p-5 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+          <div className="min-w-0 flex-1 basis-56">
+            <h1 className="text-2xl font-bold text-primary-dark">{header.name}</h1>
 
             {/*
-              Maqueta 03 · "Editar restaurante", arriba a la derecha. Es un
-              atajo al formulario que ya existe en Gestión · Datos, no un
-              segundo sitio donde editar: dos formularios para lo mismo
-              acaban divergiendo.
+              La ciudad y el sitio web, en la misma línea que el diseño.
+              Cada uno solo si lo hay: hasta la migración 57 la columna del
+              sitio web no existía, y una ficha recién creada no tiene
+              ciudad. Un enlace que no lleva a ninguna parte es peor que no
+              tenerlo (P6).
+            */}
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-secondary">
+              <span className="text-text-secondary">{header.code}</span>
+              {header.identity.city === null ? null : (
+                <span className="inline-flex items-center gap-1">
+                  <Icon name="location" aria-hidden="true" className="h-4 w-4" />
+                  {header.identity.city}
+                </span>
+              )}
+              {header.identity.websiteUrl === null ? null : (
+                /*
+                  `rel="noreferrer"` porque es una web ajena, y el "se abre
+                  en una pestaña nueva" va escrito para quien no ve el
+                  icono: un enlace que cambia de contexto sin avisar
+                  desorienta (§21.4).
+                */
+                <a
+                  href={header.identity.websiteUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-cuotly-green underline focus:outline focus:outline-2 focus:outline-cuotly-green"
+                >
+                  {t.websiteLink}
+                  <Icon name="externalLink" aria-hidden="true" className="h-3.5 w-3.5" />
+                  <span className="sr-only">{t.websiteLinkNewTab}</span>
+                </a>
+              )}
+            </p>
+          </div>
+
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <StatusBadge tone={statusTone(header.status)}>
+              {es.space.statuses[header.status as StatusKey] ?? header.status}
+            </StatusBadge>
+
+            {/*
+              Maqueta 03 · "Editar restaurante". Es un atajo al formulario
+              que ya existe en Gestión · Datos, no un segundo sitio donde
+              editar: dos formularios para lo mismo acaban divergiendo.
 
               Solo se pinta a quien puede editar, y eso es cortesía:
               `set_establishment_data()` comprueba RN-EST-11 por su cuenta
@@ -901,6 +946,28 @@ export function EstablishmentSheet({
                 {t.editEstablishment}
               </Link>
             ) : null}
+          </div>
+        </div>
+
+        {/*
+          Los dos recuadros de abajo del diseño. Llevan su rótulo porque
+          "Premium+" y "Grupo Norte" sueltos no dicen qué son, y sin plan o
+          sin grupo se dice cuál de las dos cosas falta (P6).
+        */}
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:max-w-md">
+          <div className="rounded-[12px] bg-soft-surface px-3.5 py-2.5">
+            <span className="block text-xs text-text-secondary">{t.planLabel}</span>
+            <span className="block truncate text-sm font-semibold text-primary-dark">
+              {header.planName ?? es.teamArea.establishments.noPlan}
+            </span>
+          </div>
+          <div className="rounded-[12px] bg-soft-surface px-3.5 py-2.5">
+            <span className="block text-xs text-text-secondary">
+              {es.teamArea.establishments.groupColumn}
+            </span>
+            <span className="block truncate text-sm font-semibold text-primary-dark">
+              {header.groupName ?? es.teamArea.establishments.noGroup}
+            </span>
           </div>
         </div>
       </header>
@@ -973,6 +1040,56 @@ export function EstablishmentSheet({
                   </Link>
                 </p>
               </>
+            )}
+          </Card>
+
+          {/*
+            Página 24 · "Actividad reciente". Son las últimas filas de la
+            **misma auditoría** que enseña la pestaña Historial, no un
+            registro paralelo: `establishment_audit()` es SECURITY INVOKER
+            y la política de `audit_log` decide qué ve cada quien (§21.2),
+            así que aquí no hay ninguna regla de permiso escrita.
+
+            El diseño pone una cara junto a cada línea. No van: a estas
+            filas les basta el nombre, y una foto por línea en un teléfono
+            se come el ancho que necesita la frase. Lo que sí se respeta
+            es la diferencia que costó ver con datos reales: sin actor es
+            el sistema, y "hay actor y no sé su nombre" es otra cosa.
+          */}
+          <Card
+            title={t.recentActivityTitle}
+            action={
+              <Link
+                href={sheetHref(base, HISTORY_TAB)}
+                className="shrink-0 text-sm text-cuotly-green underline"
+              >
+                {t.recentActivityLink}
+              </Link>
+            }
+          >
+            {recentActivity.length === 0 ? (
+              <EmptyState
+                title={t.recentActivityEmptyTitle}
+                description={t.recentActivityEmptyReason}
+              />
+            ) : (
+              <ul className="divide-y divide-border">
+                {recentActivity.slice(0, 5).map((row) => (
+                  <li key={row.id} className="py-2.5">
+                    <p className="text-sm text-text">
+                      {(es.settings.auditActions as Readonly<Record<string, string>>)[row.action] ??
+                        row.action}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {row.actorId === null
+                        ? t.auditSystemActor
+                        : (row.actorName ?? t.auditUnknownActor)}
+                      {" · "}
+                      {momento(row.createdAt, timeZone)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
             )}
           </Card>
 

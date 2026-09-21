@@ -4252,6 +4252,19 @@ export const es = {
     today: (hora: string) => `Hoy, ${hora}`,
     cycleThisMonth: "(este mes)",
     editEstablishment: "Editar restaurante",
+    // Página 24 · el rótulo del recuadro del encabezado. No se reusa
+    // `blocks.plan`, que es el nombre de una pestaña de Gestión: que dos
+    // cosas se escriban igual hoy no las convierte en la misma.
+    planLabel: "Plan",
+
+    // Página 24 · "Actividad reciente" en el Resumen. Son las últimas
+    // filas de la MISMA auditoría que la pestaña Historial: no hay un
+    // registro paralelo que pudiera contar otra cosa.
+    recentActivityTitle: "Actividad reciente",
+    recentActivityLink: "Ver toda",
+    recentActivityEmptyTitle: "Todavía no hay actividad",
+    recentActivityEmptyReason:
+      "Cuando alguien cambie algo de este restaurante —una solicitud, un trabajo, un dato, un pago—, quedará anotado aquí.",
 
     // Maqueta 03 · las cuatro tarjetas del Resumen.
     pendingRequestsTitle: "Solicitudes pendientes",
