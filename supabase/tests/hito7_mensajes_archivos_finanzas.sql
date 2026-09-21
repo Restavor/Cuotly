@@ -2870,6 +2870,17 @@ begin
         -- prueba con una ruta ajena y con una sin la barra.
         -- `clear_my_avatar` no recibe nada y solo toca la fila propia.
         'set_my_avatar', 'clear_my_avatar',
+        -- Migración 122 (RN-NOT-06, decisión 65). Misma familia que
+        -- `set_my_avatar`, con el mismo matiz: **sí recibe** algo de fuera
+        -- —el identificador de un resumen—, así que "no admite un id ajeno"
+        -- no la absuelve sola. Lo que la absuelve es que filtra por
+        -- `notification_digests.profile_id = auth.uid()` dentro del propio
+        -- `where`: un resumen de otra persona no devuelve cero columnas,
+        -- devuelve cero FILAS, que es lo mismo que si no existiera. Tiene
+        -- que seguir abierta a `authenticated`: es la propia persona
+        -- mirando qué entró en su resumen. La suite 67 la prueba con el
+        -- resumen de otro.
+        'digest_contents',
         -- Migración 100 (paso 2, §38). Las dos primitivas nuevas, que no
         -- pueden comprobarse a sí mismas y cuyos nombres entran en la
         -- heurística de arriba para que cuenten las que las llaman:

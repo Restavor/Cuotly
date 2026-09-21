@@ -514,6 +514,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/subtareas_bajo_la_solicitud.sql
 
+      - name: "Avisos — Verificar la frecuencia: un obligatorio sale al momento aunque haya resumen, la campana nunca espera, las ocho son las del espacio, y un día sin nada no genera correo (RN-NOT-06, RN-NOT-03)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/al_momento_o_resumen_diario.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

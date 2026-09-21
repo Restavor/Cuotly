@@ -364,7 +364,13 @@ begin
          -- Los libros que pagar y archivar tienen que escribir.
          'audit_log', 'state_events',
          -- Los avisos de §4.5 llegan mientras el espacio está archivado.
+         -- Migración 122 (RN-NOT-06): un resumen diario es exactamente eso
+         -- —avisos—, así que sus dos tablas van en la misma exención.
+         -- Congelarlas dejaría a la gente sin enterarse de que su espacio
+         -- quedó archivado. Las escribe solo el barrido, que corre sin
+         -- sesión y sin política de insert ni de update.
          'notifications', 'notification_deliveries',
+         'notification_digests', 'notification_digest_items',
          -- De plataforma: su `space_id` es anulable.
          'space_requests',
          -- "En ese modo se puede pagar" (§4.6).

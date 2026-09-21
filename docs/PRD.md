@@ -811,6 +811,25 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
 - **RN-NOT-03**: seguridad, pérdida de acceso, impagos graves y vencimientos críticos **no pueden desactivarse** dentro de Cuotly.
 - **RN-NOT-04**: cada aviso lleva un enlace profundo que abre el elemento exacto, cambiando de espacio o establecimiento si hace falta y **verificando el acceso antes**.
 - **RN-NOT-05**: los envíos van por cola con reintentos e idempotencia. **El fallo de una notificación nunca revierte la operación principal.**
+- **RN-NOT-06 (añadida 21/09/2026, decisión 65)**: cada persona elige, **para cada espacio**, si
+  recibe los avisos **al momento** o en un **resumen diario**.
+
+  - **Al momento** es lo de siempre y el valor por omisión: quien no ha tocado nada lo tiene así.
+  - **El resumen diario sale a las 08:00 de la zona horaria del espacio** y recoge las 24 h
+    anteriores. La hora es fija: no se configura, porque una hora por persona multiplica los casos
+    y no resuelve nada que no resuelva ya elegir entre las dos frecuencias.
+  - **La elección es por espacio, no por persona.** Los avisos son de un espacio y la hora de
+    corte es la de ese espacio; quien trabaja en dos recibe dos resúmenes, cada uno en su mañana.
+  - **Agrupa el correo y el push, nunca el aviso dentro de la aplicación.** La campana no
+    interrumpe a nadie, y si también se retrasara, quien eligió resumen diario abriría Cuotly y no
+    vería nada de lo que ha pasado hoy.
+  - **Un aviso obligatorio (RN-NOT-03) no espera al resumen: sale al momento.** Si esperara,
+    "no se puede desactivar" sería falso en la práctica — se apagaría hasta la mañana siguiente.
+  - **Un resumen por persona, espacio y día.** Repetir el barrido no manda dos correos, y un día
+    sin nada que contar **no genera resumen**: un correo que dice "no ha pasado nada" es ruido.
+  - **El horario de recepción no existe**, y es una decisión, no un olvido: elegir entre las dos
+    frecuencias ya resuelve el "no me molestéis a deshora", y una franja añadiría cambios de hora,
+    husos ajenos y qué hacer con lo acumulado al cerrarse. Si hace falta, será otra decisión.
 
 **Ajustes del espacio tiene ocho pestañas** (añadido 19/09/2026, decisión 50): **General · Horarios ·
 Impuestos · Integraciones · Suscripción · Seguridad · Auditoría · Notificaciones**, como las dibuja
@@ -824,10 +843,8 @@ que ya eran páginas propias: hay avisos **ya emitidos** que apuntan ahí —el 
 100 %, entre otros— y RN-NOT-04 dice que un aviso abre el elemento exacto. Un enlace profundo que
 deja de funcionar es un aviso roto, no un detalle de navegación. Las otras seis viajan en `?vista=`.
 
-**Lo que este apartado NO trae**, y sigue sin construirse porque no está definido: la **frecuencia
-de aviso** ("Instantáneo / Resumen diario") y el **horario de recepción**. Harían falta una hora por
-defecto, una zona horaria y una regla de qué se salta el silencio por urgente, y `CLAUDE.md` prohíbe
-inventarlos.
+**La frecuencia de aviso** ("Al momento / Resumen diario") se decidió el 21/09/2026 y es RN-NOT-06.
+El **horario de recepción** queda fuera a propósito, con su motivo escrito en esa misma regla.
 
 ---
 

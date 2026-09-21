@@ -761,6 +761,10 @@ begin
     if not v_t.guardada and v_t.tabla not in (
          -- Los libros y los avisos que la propia sesión escribe.
          'audit_log', 'state_events', 'notifications', 'notification_deliveries',
+         -- Migración 122 (RN-NOT-06) · el resumen diario es la misma
+         -- familia que `notifications`: lo escribe el barrido sin sesión,
+         -- así que ninguna sesión de soporte puede tocarlo.
+         'notification_digests', 'notification_digest_items',
          -- De plataforma: su `space_id` es anulable.
          'space_requests',
          -- La sesión misma: cerrarla es una escritura de quien está en solo lectura.

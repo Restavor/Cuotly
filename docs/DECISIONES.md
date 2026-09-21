@@ -1656,6 +1656,33 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    `file_links_select` y añadir una política de `update` a `tasks`—, siete mutaciones más sobre la
    pantalla, las 66 suites sobre una base limpia, 1.727 tests de web y 23 de móvil.
 
+65. **Frecuencia de aviso: al momento o resumen diario a las 08:00** (21/09/2026). Era el último
+   hueco abierto del repaso del diseño. La página dibuja "Instantáneo / Resumen diario" y un
+   "horario de recepción", y no se construyó nada porque faltaban tres cosas que nadie había
+   decidido: la hora del resumen, si la franja existe, y qué se salta el silencio.
+
+   Bosco, después de preguntar con razón **a qué hora de corte me refería** —"Instantáneo" no
+   necesita ninguna; solo la necesita el resumen—:
+
+   - **El resumen sale a las 08:00** de la zona del espacio, cubriendo las 24 h anteriores.
+   - **El horario de recepción se queda fuera.** No es un aplazamiento vago: elegir entre las dos
+     frecuencias ya resuelve el "no me molestéis a deshora", y una franja traería cambios de hora,
+     husos ajenos y qué hacer con lo acumulado al cerrarse.
+   - **Un aviso obligatorio sale al momento**, aunque la persona tenga resumen diario.
+
+   Lo que eso obliga a decidir al construirlo, y queda escrito para que no se redecida:
+
+   - **La frecuencia es por persona Y espacio**, no por persona. Los avisos son de un espacio y la
+     hora de corte es la de ese espacio: quien trabaja en dos recibe dos resúmenes, cada uno en su
+     mañana. Con una frecuencia global habría que elegir la zona de alguien.
+   - **Agrupa el correo y el push, nunca la campana.** Si la campana también esperara, quien
+     eligiera resumen diario abriría Cuotly y no vería nada de lo que ha pasado hoy — y lo que la
+     campana hace no interrumpe a nadie.
+   - **Un día sin nada no genera resumen.** Un correo que dice "no ha pasado nada" es ruido, y el
+     que lo recibe deja de abrir los que sí traen algo.
+
+   Escrito como RN-NOT-06 antes de tocar código.
+
 ---
 
 ### Pendiente de completar
