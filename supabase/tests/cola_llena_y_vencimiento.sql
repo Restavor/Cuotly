@@ -355,8 +355,8 @@ declare
   v_tipos text;
 begin
   v_encolados := public.enqueue_due_scheduled_jobs(v_momento);
-  if v_encolados < 7 then
-    raise exception 'FALLIDO: llenar la cola encoló % trabajos; esperaba al menos 7 (uno por barrido)', v_encolados
+  if v_encolados < 8 then
+    raise exception 'FALLIDO: llenar la cola encoló % trabajos; esperaba al menos 8 (uno por barrido)', v_encolados
       using errcode = 'assert_failure';
   end if;
 
@@ -364,12 +364,18 @@ begin
   from public.scheduled_jobs
   where space_id = 'f2000000-0000-0000-0000-000000000001' and status = 'pending';
 
-  -- Los cuatro de la migración 52, el de Menú Diario de la 79 (Hito 11) y
-  -- los dos de la 100 (§38): la copia diaria (RN-BCK-02) y el aviso del
-  -- vencimiento (RN-REC-02). La lista va escrita entera y no contada:
-  -- un barrido nuevo que nadie haya querido tiene que romper este test.
-  if v_tipos is distinct from 'backup_sweep,charge_reminders,consumption_sweep,daily_menu_sweep,dunning_sweep,lifecycle_sweep,monthly_charges' then
-    raise exception 'FALLIDO: la cola de este espacio tiene "%"; esperaba los siete barridos de SQL', v_tipos
+  -- Los cuatro de la migración 52, el de Menú Diario de la 79 (Hito 11),
+  -- los dos de la 100 (§38) —la copia diaria (RN-BCK-02) y el aviso del
+  -- vencimiento (RN-REC-02)— y el resumen diario de avisos de la 123
+  -- (RN-NOT-06). La lista va escrita entera y no contada: un barrido nuevo
+  -- que nadie haya querido tiene que romper este test.
+  --
+  -- Y funcionó al revés también, que es lo que de verdad lo justifica: la
+  -- migración 122 añadió el barrido del resumen a `run_scheduled_job()`
+  -- sin encolarlo, y este test fue quien enseñó —al añadirlo en la 123—
+  -- que la lista de quien encola es una lista aparte.
+  if v_tipos is distinct from 'backup_sweep,charge_reminders,consumption_sweep,daily_menu_sweep,dunning_sweep,lifecycle_sweep,monthly_charges,notification_digests' then
+    raise exception 'FALLIDO: la cola de este espacio tiene "%"; esperaba los ocho barridos de SQL', v_tipos
       using errcode = 'assert_failure';
   end if;
 
@@ -393,20 +399,20 @@ begin
 
   select count(*) into v_mios from public.scheduled_jobs
   where space_id = 'f2000000-0000-0000-0000-000000000001';
-  if v_mios <> 7 then
-    raise exception 'CA-17 FALLIDO: el espacio tiene % trabajos encolados, esperaba 7', v_mios
+  if v_mios <> 8 then
+    raise exception 'CA-17 FALLIDO: el espacio tiene % trabajos encolados, esperaba 8', v_mios
       using errcode = 'assert_failure';
   end if;
 
   -- La hora siguiente sí es otra tanda: el ritmo lo pone quien llama.
   v_repetidos := public.enqueue_due_scheduled_jobs(v_momento + interval '1 hour');
-  if v_repetidos < 7 then
-    raise exception 'FALLIDO: la hora siguiente encoló % trabajos; esperaba al menos 7', v_repetidos
+  if v_repetidos < 8 then
+    raise exception 'FALLIDO: la hora siguiente encoló % trabajos; esperaba al menos 8', v_repetidos
       using errcode = 'assert_failure';
   end if;
 end $$;
 
--- Y los siete, reclamados y ejecutados, terminan bien: la cola llena
+-- Y los ocho, reclamados y ejecutados, terminan bien: la cola llena
 -- también se vacía.
 do $$
 declare
@@ -426,8 +432,8 @@ begin
     v_ejecutados := v_ejecutados + 1;
   end loop;
 
-  if v_ejecutados < 7 then
-    raise exception 'FALLIDO: se ejecutaron % barridos de este espacio, esperaba al menos 7', v_ejecutados
+  if v_ejecutados < 8 then
+    raise exception 'FALLIDO: se ejecutaron % barridos de este espacio, esperaba al menos 8', v_ejecutados
       using errcode = 'assert_failure';
   end if;
 

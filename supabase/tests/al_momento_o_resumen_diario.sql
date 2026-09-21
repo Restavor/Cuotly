@@ -549,6 +549,50 @@ begin
 end $$;
 
 -- ============================================================
+-- El barrido se ENCOLA (migración 123)
+-- ============================================================
+--
+-- Esta comprobación existe porque faltó. La migración 122 enseñó a
+-- `run_scheduled_job()` a ejecutar el barrido y lo metió en el CHECK de
+-- `scheduled_jobs.kind`, pero no tocó `enqueue_due_scheduled_jobs()`: el
+-- barrido existía, se podía llamar a mano, y **no corría nunca**.
+--
+-- Nada lo habría cazado, porque el resto de esta suite llama a
+-- `run_notification_digests()` directamente. Así que aquí se encola de
+-- verdad y se exige encontrar el trabajo: es la diferencia entre probar
+-- que la pieza funciona y probar que está enchufada.
+--
+-- Como postgres: `enqueue_due_scheduled_jobs()` está revocada a
+-- `authenticated` —la llama el proceso de cola con `service_role`— y que
+-- lo siga estando es justo lo que comprueba el bloque de más abajo.
+set local role postgres;
+
+do $$
+declare
+  v_cuando timestamptz := now();
+begin
+  perform public.enqueue_due_scheduled_jobs(v_cuando);
+
+  if not exists (
+    select 1 from public.scheduled_jobs
+    where space_id = 'a0910000-0000-0000-0000-000000000001'
+      and kind = 'notification_digests'
+  ) then
+    raise exception 'FALLO · el barrido del resumen no se encola: existe pero no correría nunca';
+  end if;
+
+  -- Y una sola vez por hora, como los demás: la clave de deduplicación es
+  -- lo que impide que la cola se llene si el proceso arranca dos veces.
+  perform public.enqueue_due_scheduled_jobs(v_cuando);
+
+  if (select count(*) from public.scheduled_jobs
+      where space_id = 'a0910000-0000-0000-0000-000000000001'
+        and kind = 'notification_digests') <> 1 then
+    raise exception 'FALLO · encolar dos veces en la misma hora creó dos trabajos';
+  end if;
+end $$;
+
+-- ============================================================
 -- Las dos restricciones que de verdad sujetan el resumen
 -- ============================================================
 --

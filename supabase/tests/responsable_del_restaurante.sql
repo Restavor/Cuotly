@@ -225,11 +225,18 @@ do $$
 declare
   v_nuevo uuid;
 begin
+  /*
+    Por contenido, no por "el último". Aquí todavía hay un solo apunte, así
+    que ordenar funcionaba — pero `audit_log.created_at` es `now()`, igual
+    para toda la transacción, y en cuanto hubiera dos este `order by` los
+    desempataría por un uuid aleatorio. Es lo que le pasó al bloque de
+    quitar el responsable, más abajo.
+  */
   select (new_value->>'manager_id')::uuid into v_nuevo
   from public.audit_log
   where action = 'establishment.manager_set'
     and entity_id = 'd0940000-0000-0000-0000-000000000001'
-  order by created_at desc, id desc
+    and old_value->>'manager_id' is null
   limit 1;
 
   if v_nuevo is distinct from 'd0900000-0000-0000-0000-000000000002' then
@@ -277,16 +284,42 @@ begin
     raise exception 'FALLO · quitar el responsable debería borrar la fila';
   end if;
 
+  /*
+    El apunte **de quitarlo**, buscado por lo que es y no por ser "el
+    último". `audit_log.created_at` vale `now()`, que dentro de una
+    transacción es el mismo instante para todas las filas, así que
+    `order by created_at desc, id desc` desempataba por un uuid aleatorio
+    y elegía a cara o cruz entre asignar y quitar. Esta suite falló así una
+    de cada dos o tres ejecuciones desde que se escribió, y solo se vio al
+    correrla ocho veces seguidas.
+
+    `audit_log` no tiene ninguna columna monótona —ni secuencia ni número
+    de orden—, así que no hay forma de pedir "el último" de verdad. Lo que
+    sí hay es una forma de pedir EL QUE INTERESA, que además dice mejor qué
+    se está comprobando.
+  */
   select (old_value->>'manager_id')::uuid, (new_value->>'manager_id')::uuid
   into v_anterior, v_nuevo
   from public.audit_log
   where action = 'establishment.manager_set'
     and entity_id = 'd0940000-0000-0000-0000-000000000001'
-  order by created_at desc, id desc
+    and new_value->>'manager_id' is null
   limit 1;
 
   if v_anterior is distinct from 'd0900000-0000-0000-0000-000000000002' or v_nuevo is not null then
     raise exception 'FALLO · quitar el responsable debería anotarse con su valor anterior';
+  end if;
+
+  -- Y el de asignarlo sigue estando, con el suyo: son dos apuntes, no uno
+  -- que se sobrescribe.
+  if not exists (
+    select 1 from public.audit_log
+    where action = 'establishment.manager_set'
+      and entity_id = 'd0940000-0000-0000-0000-000000000001'
+      and old_value->>'manager_id' is null
+      and new_value->>'manager_id' = 'd0900000-0000-0000-0000-000000000002'
+  ) then
+    raise exception 'FALLO · el apunte de asignar el responsable debería seguir ahí';
   end if;
 end $$;
 
