@@ -96,6 +96,62 @@ definen los planes (93 a 97) los nombres y los precios son los correctos.
 Estas sí son diferencias reales con lo decidido o con lo que existe. Ninguna
 se resuelve por cuenta propia (CLAUDE.md).
 
+### Repaso del 21/09/2026 · qué queda de verdad
+
+Se recorrieron las 157 páginas otra vez, contra el código de hoy y no contra
+el de hace dos días. **De los diez puntos de `PROPUESTA-DISENO-MOVIL.md`
+quedan dos**, y los dos por el mismo motivo: nadie ha dado el dato.
+
+Cerrados desde que se escribió este mapa —se comprobó en el código, no en la
+memoria—:
+
+| Punto | Cómo está hoy |
+| --- | --- |
+| 1 · Crear panel del restaurante | `CreatePanelForm`, con su invitación (decisión 59) |
+| 2 · Permisos finos del cliente | `establishment_permissions`, **ocho** columnas |
+| 3 · Foto de perfil | decisión 53, bucket `avatars` (migración 109) |
+| 4 · Cuotly Insights | decisión 48/54: no es una fuente, es el resumen |
+| 5 · Almacenamiento por restaurante | RN-ARC-10 (migración 103) |
+| 7 · Prioridad con motivo | decisión 49 (migración 106) |
+| 8 · Seis canales | RN-CAN-03 (migración 104) |
+| 9 · Subpestañas de Gestión | nueve bloques: los siete de la 27 más copias y estado |
+| 10 · Prioridad e informes del plan | `can_order_requests` (55) y los cinco niveles de informe |
+
+Abiertos, y no se inventan:
+
+- **Punto 6 · frecuencia de aviso y horario de recepción** (página 109).
+  `notification_preferences` tiene canal por evento —`in_app`, `email`,
+  `push`— y **ninguna columna de frecuencia ni de horario**. "Resumen
+  diario" necesita una hora de corte y una zona; no hay ninguna decidida.
+- **Punto 10, la mitad que falta**: nada. Los cinco niveles de informe se
+  construyeron; lo que queda de `PROPUESTA-INFORMES.md` es confirmación.
+
+### Lo que el repaso añade: cuatro huecos que este mapa no tenía
+
+Salieron construyendo las páginas 22 a 27, mirando las pantallas hechas.
+Los cuatro son **modelo de datos**, no disposición:
+
+1. **Foto del local** (páginas 22, 23, 24, 27). `establishments` no tiene
+   ninguna columna de imagen. Cabría en `files`, que sí es por espacio.
+   Aparece en cuatro pantallas, así que es el que más se nota.
+2. **Responsable por restaurante** (página 23, "Supervisor · Diego").
+   "Supervisor" en Cuotly **no es un cargo de un local**: es una relación
+   Administrador–Trabajador, y `supervisions` enlaza dos personas. Si hace
+   falta un responsable por restaurante es una tabla nueva, no un hueco.
+3. **Descripción del restaurante** (página 24, "Cocina gallega
+   contemporánea…"). No hay campo, y no es un olvido técnico: la escribe el
+   cliente, no Cuotly.
+4. **Subtareas y evidencias bajo la solicitud** (página 25). Existen, pero
+   cuelgan del **trabajo**, que nace al aceptar. Traerlas al panel de la
+   solicitud en **solo lectura** es disposición y se puede hacer; duplicar
+   dónde se marcan, no.
+
+Y uno que no es hueco sino decisión de qué enseñar:
+
+5. **"Visitas y conversiones" en el Resumen de Informes** (página 26). El
+   dibujo va marcado "Datos de ejemplo" y por eso no se copió. Con la serie
+   real de la analítica conectada sí se puede pintar.
+
 ### 5.1 · Alérgenos: el diseño y la decisión 45 no dicen lo mismo
 
 La página 125 trae, en el editor del menú del panel, un campo de **texto
