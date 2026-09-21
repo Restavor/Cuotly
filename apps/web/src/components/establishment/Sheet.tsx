@@ -44,6 +44,7 @@ import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import { GrantAccessForm } from "./GrantAccessForm";
 import { BackupsBlock, type BackupRow } from "./BackupsBlock";
 import { CreatePanelForm } from "./CreatePanelForm";
+import { SubtasksAndEvidence } from "@/components/request/SubtasksAndEvidence";
 import { ManagerForm } from "./ManagerForm";
 import { EstablishmentPhoto } from "./EstablishmentPhoto";
 import { PhotoForm } from "./PhotoForm";
@@ -1635,11 +1636,29 @@ export function EstablishmentSheet({
                   className="text-cuotly-green underline"
                 >
                   {requestDetail.job.code}
-                </Link>{" "}
-                <span className="text-text-secondary">{t.openRequestJobHint}</span>
+                </Link>
               </>
             )}
           </p>
+
+          {/*
+            RN-REQ-07 · las subtareas y las evidencias del trabajo, en solo
+            lectura (decisión 64). Antes aquí solo estaba el enlace al
+            trabajo, con la razón escrita de que "cuelgan del trabajo, que
+            nace al aceptar". Eso sigue siendo verdad y por eso se enseñan
+            **sin un solo control**: se ven aquí, se marcan allí.
+          */}
+          <SubtasksAndEvidence
+            jobId={requestDetail.job?.id ?? null}
+            jobHref={
+              requestDetail.job === null
+                ? null
+                : `/espacios/${slug}/trabajos/${requestDetail.job.id}`
+            }
+            tasks={requestDetail.jobTasks}
+            evidence={requestDetail.evidence}
+            timeZone={timeZone}
+          />
         </Card>
       ) : null}
 

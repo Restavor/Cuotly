@@ -508,6 +508,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/la_foto_del_restaurante.sql
 
+      - name: "Diseño móvil — Verificar que traer las subtareas y las evidencias bajo la solicitud NO abre ninguna puerta: el cliente no ve ni una tarea, el trabajador sin ese restaurante tampoco, y desde ahí no se marca nada (RN-REQ-07, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/subtareas_bajo_la_solicitud.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

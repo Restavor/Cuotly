@@ -13,13 +13,9 @@ import { attachJobEvidence } from "./actions";
 
 const t = es.teamArea.jobs;
 
-export interface EvidenceFile {
-  readonly id: string;
-  readonly name: string;
-  readonly sizeBytes: number | null;
-  readonly mimeType: string | null;
-  readonly attachedAt: string;
-}
+import type { EvidenceFile } from "./evidence-load";
+
+export type { EvidenceFile };
 
 function tamaño(bytes: number | null): string | null {
   if (bytes === null) return null;

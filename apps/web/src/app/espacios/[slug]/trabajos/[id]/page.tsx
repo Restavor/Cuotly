@@ -23,7 +23,8 @@ import { createClient } from "@/lib/supabase/server";
 import { loadTeamJobs } from "../list-query";
 import { listPosition } from "@/core/requests";
 import { jobEnd } from "@/core/job-execution";
-import { JobEvidence, type EvidenceFile } from "./JobEvidence";
+import { JobEvidence } from "./JobEvidence";
+import { loadJobEvidence } from "./evidence-load";
 import type { JobState } from "@/core/job-states";
 
 import { jobTone } from "../page";
@@ -347,58 +348,12 @@ export default async function TeamJobDetailPage({
         };
 
   /*
-    Maqueta 06 · la evidencia de lo publicado. Son los archivos enlazados a
-    este trabajo (RN-ARC-02, `file_links` con `entity_type = 'job'`), y las
-    filas las filtra `can_read_file()`: quien no puede ver un archivo no lo
-    ve aquí tampoco. `files` y `file_versions` tienen privilegios de
-    columna, así que se enumeran — `select *` devolvería 403.
+    Maqueta 06 · la evidencia de lo publicado. La consulta vive en
+    `evidence-load.ts` desde que el panel de la solicitud la enseña
+    también (RN-REQ-07): dos copias habrían acabado discrepando en cuál es
+    la versión vigente de un archivo.
   */
-  const { data: enlaces } = await supabase
-    .from("file_links")
-    .select("file_id, created_at")
-    .eq("entity_type", "job")
-    .eq("entity_id", id)
-    .order("created_at", { ascending: false });
-
-  const idsEvidencia = (enlaces ?? []).map((enlace) => enlace.file_id);
-
-  const [{ data: archivosEvidencia }, { data: versionesEvidencia }] = idsEvidencia.length
-    ? await Promise.all([
-        supabase.from("files").select("id, name").in("id", idsEvidencia),
-        supabase
-          .from("file_versions")
-          .select("file_id, size_bytes, mime_type, version_number")
-          .in("file_id", idsEvidencia)
-          .order("version_number", { ascending: false }),
-      ])
-    : [{ data: [] }, { data: [] }];
-
-  // La versión VIGENTE de cada archivo es la de número más alto, y las
-  // filas llegan ordenadas: la primera que se ve de cada archivo es la
-  // buena (RN-ARC-03, sustituir crea versión y la anterior permanece).
-  const versionVigente = new Map<string, { size: number | null; mime: string | null }>();
-  for (const version of versionesEvidencia ?? []) {
-    if (!versionVigente.has(version.file_id)) {
-      versionVigente.set(version.file_id, {
-        size: version.size_bytes,
-        mime: version.mime_type,
-      });
-    }
-  }
-
-  const nombreArchivo = new Map((archivosEvidencia ?? []).map((a) => [a.id, a.name]));
-
-  const evidencia: EvidenceFile[] = (enlaces ?? [])
-    // Un enlace cuyo archivo no se puede leer no se enseña como un hueco:
-    // simplemente no está, que es lo que `can_read_file()` ha decidido.
-    .filter((enlace) => nombreArchivo.has(enlace.file_id))
-    .map((enlace) => ({
-      id: enlace.file_id,
-      name: nombreArchivo.get(enlace.file_id)!,
-      sizeBytes: versionVigente.get(enlace.file_id)?.size ?? null,
-      mimeType: versionVigente.get(enlace.file_id)?.mime ?? null,
-      attachedAt: enlace.created_at,
-    }));
+  const evidencia = await loadJobEvidence(supabase, id);
 
   /*
     Maqueta 06 · la fecha estimada de fin. La decide `jobEnd()` en

@@ -20,6 +20,7 @@ import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { SubtasksAndEvidence } from "@/components/request/SubtasksAndEvidence";
 import { loadRequestDetail } from "./detail-load";
 import {
   CorrectClassificationForm,
@@ -177,6 +178,27 @@ return (
             attachments={detail.attachments}
             attachmentsFailed={detail.attachmentsFailed}
           />
+
+          {/*
+            RN-REQ-07 · las subtareas y las evidencias del trabajo, en solo
+            lectura (decisión 64). El mismo bloque que el panel de la ficha
+            del restaurante, con los mismos datos: la solicitud enseña esto
+            esté donde esté, y dos versiones acabarían contando cosas
+            distintas de las mismas tareas.
+
+            Va aquí, debajo de la solicitud, y no al lado del enlace al
+            trabajo: son el detalle de LO QUE SE PIDIÓ, no una acción
+            pendiente de la columna de decisiones.
+          */}
+          <Card title={es.establishmentSheet.openRequestJob}>
+            <SubtasksAndEvidence
+              jobId={job?.id ?? null}
+              jobHref={job === null ? null : `/espacios/${slug}/trabajos/${job.id}`}
+              tasks={detail.jobTasks}
+              evidence={detail.evidence}
+              timeZone={zona}
+            />
+          </Card>
 
           <RequestHistoryCard timeZone={zona} entries={detail.history} />
         </div>

@@ -1632,6 +1632,30 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    suben donde se hace el trabajo. Bajo una solicitud todavía sin aceptar no hay nada que enseñar
    —no existe el trabajo—, y eso se dice en vez de pintar una lista vacía.
 
+   Hecho el mismo día (RN-REQ-07). Tres cosas que salieron construyéndolo:
+
+   - **No hizo falta migración, y eso había que demostrarlo.** Las políticas que ya estaban bastan,
+     y la manera de equivocarse aquí habría sido añadir una excepción "para que el panel pueda
+     pintar". La suite 66 comprueba que no se añadió: el cliente no ve ni una subtarea de su propia
+     solicitud, un trabajador sin ese restaurante autorizado tampoco, y `tasks` no tiene política
+     de `update` — un `UPDATE` directo afecta a **cero filas sin dar error**, que es peor que un
+     error porque parece que funcionó.
+   - **Ni una casilla.** Se pintan iconos de estado con su nombre escrito al lado, no casillas
+     apagadas: una casilla que no se deja pulsar invita a pensar que la pantalla está rota, y por
+     eso además se dice dónde se marcan.
+   - **Tres vacíos, tres frases.** "Todavía no hay trabajo", "el trabajo no está desglosado" y "no
+     hay evidencias" se parecerían todos en una lista vacía (CA-20).
+
+   Y una consulta duplicada que se evitó a tiempo: la evidencia estaba escrita a mano dentro de la
+   ficha del trabajo, y copiarla habría sido el principio de dos versiones distintas de cuál es la
+   versión vigente de un archivo. Vive ahora en `evidence-load.ts`, como las tareas en
+   `tasks-load.ts`.
+
+   Comprobado: suite 66 `subtareas_bajo_la_solicitud.sql` con **cuatro mutaciones sobre las propias
+   políticas** —quitarle `is_space_member` a `tasks_select`, quitarle `can_read_job`, abrir
+   `file_links_select` y añadir una política de `update` a `tasks`—, siete mutaciones más sobre la
+   pantalla, las 66 suites sobre una base limpia, 1.727 tests de web y 23 de móvil.
+
 ---
 
 ### Pendiente de completar

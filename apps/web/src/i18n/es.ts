@@ -4136,14 +4136,36 @@ export const es = {
     openRequestNoAttachments: "Sin archivos adjuntos.",
     /*
       Subtareas y evidencias son del TRABAJO, no de la solicitud: nacen
-      cuando alguien la acepta. El diseño las dibuja bajo la solicitud, y
-      copiarlo aquí significaría enseñarlas en un sitio donde todavía no
-      existen —y duplicarlas donde sí—. Va el enlace al trabajo, que es
-      donde se opera con ellas.
+      cuando alguien la acepta. Desde la decisión 64 (RN-REQ-07) se ven
+      aquí, **en solo lectura**, que es distinto de duplicarlas: se marcan
+      donde se hacen, y para eso está el enlace al trabajo.
     */
     openRequestJob: "Trabajo",
-    openRequestJobHint: "Las subtareas y las evidencias están en el trabajo.",
+    openJobLink: "Abrir el trabajo",
     openRequestNoJob: "Todavía no hay trabajo: nace al aceptar la solicitud.",
+
+    /*
+      RN-REQ-07 · las subtareas y las evidencias bajo la solicitud.
+
+      `subtasksNoJob` y `subtasksEmpty` dicen cosas distintas y por eso son
+      dos: "todavía no hay trabajo" y "el trabajo no está desglosado" se
+      parecerían en una lista vacía, y una lista vacía sin motivo se lee
+      como que algo falló (CA-20).
+
+      `subtasksReadOnly` está escrito para que nadie busque la casilla: si
+      no se dijera, la primera reacción ante una lista de tareas que no se
+      dejan marcar es pensar que la pantalla está rota.
+    */
+    subtasksTitle: "Subtareas",
+    subtasksTitleWithCount: (done: number, total: number) => `Subtareas (${done}/${total})`,
+    subtasksReadOnly: "Se marcan en el trabajo.",
+    subtasksNoJob: "Todavía no hay trabajo, así que no hay subtareas: nacen al aceptar la solicitud.",
+    subtasksEmpty: "El trabajo todavía no está desglosado en subtareas.",
+    subtasksUnassigned: "Sin responsable",
+    evidenceTitle: "Evidencias",
+    evidenceReadOnly: "Se adjuntan en el trabajo.",
+    evidenceNoJob: "Todavía no hay trabajo, así que no hay evidencias.",
+    evidenceEmpty: "Nadie ha adjuntado todavía ninguna evidencia de este trabajo.",
 
     operationSectionsLabel: "Secciones de Operación",
     operationSections: {

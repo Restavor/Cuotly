@@ -5,6 +5,8 @@ import type { ChangeCategory } from "@/core/consumption-ledger";
 import type { CycleBag } from "@/core/establishments";
 import type { TimerEvent, TimerEventType } from "@/core/timer-events";
 import type { createClient } from "@/lib/supabase/server";
+import { loadJobTasks, type JobTaskRow } from "@/app/espacios/[slug]/trabajos/[id]/tasks-load";
+import { loadJobEvidence, type EvidenceFile } from "@/app/espacios/[slug]/trabajos/[id]/evidence-load";
 
 /**
  * Lo que la pantalla de una solicitud enseña al equipo (§20.4, HU-11 a
@@ -110,6 +112,21 @@ export interface RequestDetail {
   readonly counter: RequestCounter;
   readonly estimate: ConsumptionEstimate | null;
   readonly job: { readonly id: string; readonly code: string; readonly state: string } | null;
+  /**
+   * RN-REQ-07 · las subtareas del trabajo y su evidencia, **en solo
+   * lectura** (decisión 64).
+   *
+   * Vacías mientras no hay trabajo, que no es lo mismo que "el trabajo no
+   * lleva tareas": lo primero lo dice `job === null` y la pantalla cuenta
+   * ese caso aparte, sin pintar una lista vacía (CA-20).
+   *
+   * Salen de los MISMOS cargadores que la pantalla del trabajo, y eso es
+   * lo que sostiene la regla: se ven aquí, se marcan allí. Dos consultas
+   * distintas para las mismas tareas acabarían enseñando dos órdenes y,
+   * un día, dos recuentos.
+   */
+  readonly jobTasks: readonly JobTaskRow[];
+  readonly evidence: readonly EvidenceFile[];
   /**
    * §84 · el último presupuesto de la solicitud, con el estado que derivó
    * `quote_status()`. `null` si no hay ninguno o si quien mira no puede
@@ -355,6 +372,22 @@ export async function loadRequestDetail(
     classification?.proposed_category ??
     null) as ChangeCategory | null;
 
+  /*
+    RN-REQ-07 · las subtareas y la evidencia, solo si hay trabajo. Antes de
+    aceptar no existe ninguno y no hay nada que preguntar: varias consultas
+    para devolver dos listas vacías serían consultas de más en la pantalla
+    que más se abre.
+
+    Van en su propio `Promise.all` y no en el grande de arriba porque
+    dependen del identificador del trabajo, que sale de él.
+  */
+  const [jobTasks, evidence] = job
+    ? await Promise.all([
+        loadJobTasks(supabase, job.id).then((cargadas) => cargadas.tasks),
+        loadJobEvidence(supabase, job.id),
+      ])
+    : [[], []];
+
   return {
     request: request as RequestDetailRow,
     establishment: establishment ?? null,
@@ -374,6 +407,8 @@ export async function loadRequestDetail(
     counter,
     estimate: categoria === null ? null : consumptionEstimate(categoria, bags),
     job: job ?? null,
+    jobTasks,
+    evidence,
     quote:
       quoteRow === null
         ? null

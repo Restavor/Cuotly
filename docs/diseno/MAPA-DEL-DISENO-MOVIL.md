@@ -154,10 +154,22 @@ Los cuatro son **modelo de datos**, no disposición:
 3. **Descripción del restaurante** (página 24, "Cocina gallega
    contemporánea…"). No hay campo, y no es un olvido técnico: la escribe el
    cliente, no Cuotly.
-4. **Subtareas y evidencias bajo la solicitud** (página 25). Existen, pero
-   cuelgan del **trabajo**, que nace al aceptar. Traerlas al panel de la
-   solicitud en **solo lectura** es disposición y se puede hacer; duplicar
-   dónde se marcan, no.
+4. ~~**Subtareas y evidencias bajo la solicitud** (página 25)~~ — **hechas**
+   el 21/09/2026 (decisión 64, RN-REQ-07). En solo lectura, como estaba
+   anotado: se ven ahí, se marcan en el trabajo.
+
+   No hizo falta ninguna migración, y comprobar **que no hacía falta** es
+   justo lo que vigila la suite 66: traer filas a otra pantalla es la clase
+   de cambio en la que uno se descubre añadiendo una excepción "para que el
+   panel pueda pintar". El cliente no ve ni una tarea, un trabajador sin
+   ese restaurante autorizado tampoco, y desde el panel no se marca nada
+   —`tasks` no tiene política de `update`, así que un `UPDATE` directo
+   afecta a cero filas sin dar error—.
+
+   Salió también una consulta duplicada que no lo era todavía: la evidencia
+   estaba escrita a mano dentro de la ficha del trabajo. Vive ahora en
+   `evidence-load.ts`, como las tareas en `tasks-load.ts`, y las dos
+   pantallas leen de ahí.
 
 Y uno que no es hueco sino decisión de qué enseñar:
 
