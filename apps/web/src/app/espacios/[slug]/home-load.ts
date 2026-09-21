@@ -16,6 +16,7 @@ import type { TimerEvent, TimerEventType } from "@/core/timer-events";
 import type { ChangeCategory } from "@/core/classification-rules";
 import { cycleAllowance, cycleUsage, type CycleUsage } from "@/core/consumption-ledger";
 import type { createClient } from "@/lib/supabase/server";
+import { loadEstablishmentPhotos } from "@/services/establishment-photo";
 
 import { loadMenuQueue } from "./menu-diario/queue-load";
 
@@ -67,6 +68,11 @@ export interface SpaceHome {
     readonly name: string;
     readonly status: string;
     readonly usage: CycleUsage;
+    /**
+     * RN-EST-18 · el enlace firmado de su foto, o `null` si no tiene. Un
+     * restaurante sin foto se enseña sin foto, no con un hueco (CA-20).
+     */
+    readonly photoUrl: string | null;
   }[];
   /** Página 22 · "Trabajos en curso", y de ellos cuántos van en plazo. */
   readonly jobsInProgress: number;
@@ -683,6 +689,17 @@ export async function loadSpaceHome(
   // quién lo hizo (CLAUDE.md MUST NOT). Quién hizo qué sale de la
   // auditoría, que tiene su propia pantalla y su propio permiso.
   // ------------------------------------------------------------------
+  /*
+    RN-EST-18 · las fotos del "Estado por restaurante", en UNA llamada para
+    todas: una por fila serían tantos viajes como restaurantes tenga el
+    espacio solo para pintar la columna de la izquierda.
+  */
+  const fotos = await loadEstablishmentPhotos(
+    supabase,
+    supabase.storage,
+    attention.establishments.map((e) => e.id),
+  );
+
   const establishmentName = new Map(attention.establishments.map((e) => [e.id, e.name]));
   const jobById = new Map(attention.openJobs.map((j) => [j.id, j]));
   const activity: ActivityEntry[] = (events ?? []).map((event) => {
@@ -705,6 +722,7 @@ export async function loadSpaceHome(
       name: e.name,
       status: e.status,
       usage: usoPorRestaurante.get(e.id) ?? { kind: "no_cycle" as const },
+      photoUrl: fotos.get(e.id) ?? null,
     })),
     jobsInProgress: attention.jobsInProgress,
     jobsOnTime: attention.jobsOnTime,

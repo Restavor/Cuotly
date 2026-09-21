@@ -98,5 +98,8 @@ export function sheetFixture(): SheetData {
     nextMenu: { kind: "no_service" },
     requestDetail: null,
     manager: { currentId: null, currentName: null, team: [] },
+    // RN-EST-18 · sin foto por defecto, que es el estado de un restaurante
+    // recién creado y el que más pantallas tienen que saber pintar.
+    photoUrl: null,
   };
 }

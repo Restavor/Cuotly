@@ -113,6 +113,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     nextMenu: { kind: "no_service" },
     requestDetail: null,
     manager: { currentId: null, currentName: null, team: [] },
+    photoUrl: null,
   };
 }
 

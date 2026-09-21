@@ -131,9 +131,22 @@ Abiertos, y no se inventan:
 Salieron construyendo las páginas 22 a 27, mirando las pantallas hechas.
 Los cuatro son **modelo de datos**, no disposición:
 
-1. **Foto del local** (páginas 22, 23, 24, 27). `establishments` no tiene
-   ninguna columna de imagen. Cabría en `files`, que sí es por espacio.
-   Aparece en cuatro pantallas, así que es el que más se nota.
+1. ~~**Foto del local** (páginas 22, 23, 24, 27)~~ — **hecha** el
+   21/09/2026 (decisión 62, RN-EST-18, migraciones 120 y 121). Vive en
+   `files` como se sospechaba: una columna `establishments.photo_file_id`
+   apunta al archivo elegido, y así sustituirla versiona en vez de borrar.
+   Aparece en las cuatro pantallas, y en la quinta que no estaba en la
+   lista: el propio panel del restaurante, porque RN-EST-18 dice que la
+   sube también el cliente.
+
+   Lo que se aprendió montándola, y conviene no volver a descubrir:
+   `establishment_photo_path()` **no puede** limitarse a dejar que filtren
+   las políticas de `files`. Un trabajador ve todos los restaurantes del
+   espacio pero solo lee los archivos de los que tiene autorizados
+   (RN-ARC-05), así que la lista le saldría con unas caras sí y otras no.
+   La foto sigue la regla de **ver el restaurante**, no la de leer
+   archivos, y por eso la función es `SECURITY DEFINER` con esa
+   comprobación dentro.
 2. **Responsable por restaurante** (página 23, "Supervisor · Diego").
    "Supervisor" en Cuotly **no es un cargo de un local**: es una relación
    Administrador–Trabajador, y `supervisions` enlaza dos personas. Si hace
@@ -204,8 +217,8 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   iniciales, no fotos.
 
   Queda fuera, y no es lo mismo: la **foto del restaurante** que la 22
-  enseña en "Estado por restaurante". Esa sí es del espacio y cabe en
-  `files`.
+  enseña en "Estado por restaurante". Esa sí es del espacio y vive en
+  `files` desde el 21/09/2026 (RN-EST-18).
 - **Supervisor de un restaurante** (página 23: "Supervisor · Diego", con su
   cara). No existe y no es un descuido: "Supervisor" en Cuotly **no es un
   cargo de un local**, es una relación Administrador–Trabajador (CLAUDE.md,
@@ -215,10 +228,11 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   una prueba que falla si alguien lo repone. Si hiciera falta un
   **responsable por restaurante**, es una decisión de producto nueva y una
   migración, no un hueco que rellenar.
-- **Foto del local** en la lista de restaurantes (página 23) y en "Estado
-  por restaurante" (página 22). `establishments` no tiene ninguna columna
-  de imagen. Cabría en `files`, que sí es por espacio, pero no está hecho.
-  Las dos pantallas se construyeron sin foto, no con una de archivo.
+- ~~**Foto del local** en la lista de restaurantes (página 23) y en "Estado
+  por restaurante" (página 22)~~ — hecha el 21/09/2026 (RN-EST-18,
+  decisión 62, migraciones 120 y 121). Las dos pantallas se habían
+  construido sin foto, no con una de archivo; ahora enseñan la de verdad, y
+  el restaurante que no tenga ninguna se sigue enseñando sin foto.
 - **Estado "Configurando"** de un restaurante (página 54).
 - ~~**"Cuotly Insights"** como fuente de datos propia (páginas 41, 44)~~ —
   **no es una fuente**: Bosco decidió el 19/09/2026 que es el nombre del

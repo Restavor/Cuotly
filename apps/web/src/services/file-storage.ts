@@ -30,6 +30,19 @@ export const DOWNLOAD_LINK_TTL_SECONDS = 300;
 export const FILES_BUCKET = "files";
 
 /**
+ * RN-EST-18 · caducidad del enlace de la **foto de un restaurante**, en
+ * segundos. Una hora, como la de la foto de perfil (`avatar-storage.ts`) y
+ * no los cinco minutos de una descarga, por el mismo motivo: una foto se
+ * pinta en cada pantalla que enseña ese restaurante —el Inicio, la lista,
+ * la ficha— y un enlace de cinco minutos obligaría a refirmarlo en cuanto
+ * alguien deje la pestaña abierta mientras se toma un café.
+ *
+ * Sigue siendo temporal, que es lo que RN-ARC-08 pide del bucket privado:
+ * no hay URL permanente de la foto del local de nadie.
+ */
+export const ESTABLISHMENT_PHOTO_LINK_TTL_SECONDS = 3600;
+
+/**
  * La forma mínima de `supabase.storage` que este módulo necesita. Se
  * declara aquí en vez de importar el tipo del SDK para que la lógica sea
  * probable con un doble, sin levantar Supabase.

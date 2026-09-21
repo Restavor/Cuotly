@@ -1584,6 +1584,24 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    - **Sin foto no hay hueco gris esperándola.** Un restaurante sin foto se enseña sin foto, como
      ahora, no con un marco vacío que parece que algo falló.
 
+   Hecho el mismo día (RN-EST-18, migraciones 120 y 121). Dos cosas que se aprendieron
+   construyéndolo y que conviene no volver a descubrir:
+
+   - **Una columna, no "el último archivo de categoría fotos".** Con lo segundo, subir una
+     fotografía cualquiera de un trabajo cambiaría la cara del restaurante sin que nadie lo
+     decidiera. La foto es una elección y una elección se guarda.
+   - **La foto sigue la regla de ver el restaurante, no la de leer archivos.** Lo evidente era
+     dejar que filtraran las políticas de `files`, pero un trabajador ve todos los restaurantes
+     del espacio y solo lee los archivos de los que tiene autorizados (RN-ARC-05): la lista le
+     habría salido con unas caras sí y otras no, sin que nada lo explicara. Por eso
+     `establishment_photo_path()` comprueba esa otra regla dentro.
+
+   Comprobado: suite 65 `la_foto_del_restaurante.sql` con **quince mutaciones** —once sobre la 120
+   y cuatro sobre la 121—, nueve mutaciones más sobre las pantallas y cinco sobre el adaptador (una
+   sobrevivió y descubrió que al test le faltaba el caso que separa mirar el error de mirar si hay
+   datos), las 65 suites sobre una base limpia con las 121 migraciones, 1.724 tests de web, y las
+   huellas de las tres funciones iguales en local y en producción.
+
 63. **Responsable del restaurante, y opcional** (21/09/2026). El diseño enseña en la página 23 un
    "Supervisor · Diego" por restaurante. Eso chocaba con una decisión que no debe reaparecer:
    **supervisor no es un rol, es una relación Administrador–Trabajador**, y `supervisions` enlaza

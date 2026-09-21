@@ -2038,6 +2038,7 @@ export type Database = {
           opening_hours: string | null;
           phone_primary: string | null;
           phone_secondary: string | null;
+          photo_file_id: string | null;
           postal_code: string | null;
           space_id: string;
           status: string;
@@ -2063,6 +2064,7 @@ export type Database = {
           opening_hours?: string | null;
           phone_primary?: string | null;
           phone_secondary?: string | null;
+          photo_file_id?: string | null;
           postal_code?: string | null;
           space_id: string;
           status?: string;
@@ -2088,6 +2090,7 @@ export type Database = {
           opening_hours?: string | null;
           phone_primary?: string | null;
           phone_secondary?: string | null;
+          photo_file_id?: string | null;
           postal_code?: string | null;
           space_id?: string;
           status?: string;
@@ -2096,6 +2099,13 @@ export type Database = {
           website_url?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "establishments_photo_file_id_fkey";
+            columns: ["photo_file_id"];
+            isOneToOne: false;
+            referencedRelation: "files";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "establishments_group_id_fkey";
             columns: ["group_id"];
@@ -10563,6 +10573,26 @@ export type Database = {
       set_establishment_manager: {
         Args: { p_establishment_id: string; p_manager_id: string | null };
         Returns: undefined;
+      };
+      /** Migración 120 (RN-EST-18) · `p_file_id` nulo quita la foto. */
+      set_establishment_photo: {
+        Args: { p_establishment_id: string; p_file_id: string | null };
+        Returns: undefined;
+      };
+      /**
+       * Migración 121 (RN-EST-18) · las rutas de las fotos de varios
+       * restaurantes de una vez. Los que no tienen foto, o los que quien
+       * pregunta no puede ver, **no salen**: no devuelve una fila con la
+       * ruta a nulo.
+       */
+      establishment_photo_paths: {
+        Args: { p_establishment_ids: string[] };
+        Returns: { establishment_id: string; storage_path: string }[];
+      };
+      /** Migración 120, redefinida en la 121 como envoltura de la de lista. */
+      establishment_photo_path: {
+        Args: { p_establishment_id: string };
+        Returns: string | null;
       };
       set_establishment_data: {
         Args: {

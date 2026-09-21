@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AttentionCell } from "@/components/establishment/AttentionCell";
+import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhoto";
 import { StatusBadge } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import type { AttentionItem } from "@/core/home";
@@ -17,14 +18,9 @@ import { es } from "@/i18n/es";
  *
  * **Lo que el diseño dibuja y aquí NO está**, por orden de importancia:
  *
- *   · La **foto del local**. No existe: `establishments` no tiene ninguna
- *     columna de imagen y nadie ha subido ninguna. La casilla gris del
- *     dibujo es una foto de archivo, y poner una inventada sería enseñar
- *     un dato falso (CLAUDE.md MUST NOT). Está anotada como pendiente en
- *     `docs/diseno/MAPA-DEL-DISENO-MOVIL.md` §5.5.
  *   · La **cara** del responsable. El responsable **sí existe** desde la
- *     decisión 63 y sale en esta ficha; su foto no, que es el mismo hueco
- *     que la del local. Lo que no existe y sigue sin existir es un
+ *     decisión 63 y sale en esta ficha; su foto no. Lo que no existe y
+ *     sigue sin existir es un
  *     "supervisor" de un restaurante: ese nombre es una relación
  *     Administrador–Trabajador (CLAUDE.md) y por eso este campo se llama
  *     responsable.
@@ -50,6 +46,8 @@ export type EstablishmentCardData = {
   readonly openRequests: number;
   /** RN-EST-19 · quién lo lleva, o `null` si no lo lleva nadie. */
   readonly manager: { readonly id: string; readonly name: string | null } | null;
+  /** RN-EST-18 · enlace firmado de su foto, o `null` si no tiene. */
+  readonly photoUrl: string | null;
   readonly attention: readonly AttentionItem[];
 };
 
@@ -87,16 +85,36 @@ export function EstablishmentCard({
       className="block rounded-[16px] border border-border bg-surface p-4 transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
     >
       {/*
-        La fila de arriba **se parte** cuando no cabe, y el nombre se lleva
-        un ancho mínimo (`basis-40`) antes de que nadie lo recorte.
+        La fila de arriba **se parte** cuando no cabe, y el bloque del
+        nombre se lleva un ancho mínimo (`basis-56`) antes de que nadie lo
+        recorte.
 
         Sin eso, un estado largo —"Pausado por impago"— se quedaba con la
         línea entera y "Puerto Chico" salía como "Pu…". El nombre es lo que
         se busca en esta lista; la insignia es contexto. Se vio mirando la
         lista dibujada, no en el tipo ni en las pruebas.
+
+        El mínimo era `basis-40` hasta que la foto (RN-EST-18) entró en
+        este mismo bloque y le quitó 56 px: en un teléfono, "Santiago de
+        Compostela" pasó a salir como "Santiago de C…". No se arregló
+        recortando antes, sino subiendo el mínimo para que en ese ancho
+        sean las insignias las que bajen de línea. También se vio
+        mirándolo.
       */}
       <span className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <span className="min-w-0 flex-1 basis-40">
+        {/*
+          RN-EST-18 · la foto del local, que la página 23 pone a la
+          izquierda del nombre. Sin foto no se pinta un marco vacío: se
+          pinta el icono de local que esta lista ya usaba, porque un hueco
+          gris esperando una imagen se lee como "algo falló" (CA-20).
+
+          Va DENTRO del bloque del nombre y no como un tercer hijo de la
+          fila que se parte, para que al partirse la foto se lleve consigo
+          el nombre en vez de quedarse sola en una línea.
+        */}
+        <span className="flex min-w-0 flex-1 basis-56 items-start gap-3">
+          <EstablishmentPhoto photoUrl={row.photoUrl} size={44} />
+          <span className="min-w-0 flex-1">
           <span className="block truncate text-base font-semibold text-primary-dark">
             {row.name}
           </span>
@@ -106,6 +124,7 @@ export function EstablishmentCard({
           */}
           <span className="block truncate text-sm text-text-secondary">
             {row.city ?? row.code}
+          </span>
           </span>
         </span>
 

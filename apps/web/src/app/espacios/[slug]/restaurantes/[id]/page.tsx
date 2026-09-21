@@ -23,6 +23,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Conversation } from "@/components/conversation/Conversation";
 import { loadConversation } from "@/components/conversation/load";
 
+import { PhotoForm } from "@/components/establishment/PhotoForm";
 import { EstablishmentDataForm } from "@/components/establishment/DataForm";
 import {
   loadDigitalData,
@@ -64,6 +65,7 @@ import {
   loadSheetStaff,
   loadSheetUsers,
 } from "./sheet-load";
+import { loadEstablishmentPhoto } from "@/services/establishment-photo";
 
 /**
  * El restaurante, visto por su cliente (PRD §20.2). Es la pantalla a la
@@ -166,7 +168,7 @@ export default async function EstablishmentPage({
 
     const [
       summary, operation, counts, payments, users, staff, files, audit, recentActivity, nextMenu,
-      manager,
+      manager, photoUrl,
     ] = await Promise.all([
       loadSheetSummary(supabase, space.id, slug, id),
       loadSheetOperation(supabase, slug, id),
@@ -199,6 +201,9 @@ export default async function EstablishmentPage({
       loadSheetNextMenu(supabase, id, space.timezone),
       // RN-EST-19 · quién lo lleva y a quién se le puede asignar.
       loadSheetManager(supabase, space.id, id),
+      // RN-EST-18 · su foto, ya firmada. `null` si no tiene, que es un
+      // estado normal y la ficha lo pinta sin foto (CA-20).
+      loadEstablishmentPhoto(supabase, supabase.storage, id),
     ]);
 
     /*
@@ -378,6 +383,7 @@ export default async function EstablishmentPage({
           nextMenu,
           requestDetail: detalleDeEsteRestaurante,
           manager,
+          photoUrl,
           statusReason: statusReason ?? null,
           transfer,
           backups,
@@ -415,8 +421,13 @@ export default async function EstablishmentPage({
     notFound();
   }
 
-  const [{ data: allowance }, { data: canEditData }, { data: requests }, { data: sharedFiles }] =
-    await Promise.all([
+  const [
+    { data: allowance },
+    { data: canEditData },
+    { data: requests },
+    { data: sharedFiles },
+    photoUrl,
+  ] = await Promise.all([
     supabase.rpc("establishment_cycle_allowance", { p_establishment_id: id }),
     // RN-EST-11 · se le PREGUNTA al servidor, no se deduce del rol aquí:
     // el reparto tiene cuatro casos (propietario global, propietario
@@ -449,6 +460,8 @@ export default async function EstablishmentPage({
       // restaurante. Sigue existiendo, con sus versiones, para el equipo.
       .is("archived_at", null)
       .order("created_at", { ascending: false }),
+    // RN-EST-18 · la foto de su local, ya firmada. `null` si no tiene.
+    loadEstablishmentPhoto(supabase, supabase.storage, id),
   ]);
 
   const rows = requests ?? [];
@@ -690,6 +703,19 @@ export default async function EstablishmentPage({
         RN-EST-12 lo dice el propio formulario, arriba: esto no cambia la
         web.
       */}
+      {/*
+        RN-EST-18 · la foto de su propio local, que el restaurante también
+        sube (decisión 62): es su cara, no material interno del equipo.
+        Misma puerta que corregir sus datos —`client_can_edit_establishment_data()`,
+        contestada por el servidor— y la misma que vuelve a comprobar
+        `set_establishment_photo()` por su cuenta (CLAUDE.md).
+      */}
+      {canEditData === true ? (
+        <Card title={es.teamArea.establishments.photo}>
+          <PhotoForm establishmentId={id} photoUrl={photoUrl} />
+        </Card>
+      ) : null}
+
       {canEditData === true ? (
         <Card title={es.clientArea.dataCardTitle}>
           <EstablishmentDataForm

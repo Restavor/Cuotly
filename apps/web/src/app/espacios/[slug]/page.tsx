@@ -10,6 +10,7 @@ import { TeamLoad } from "@/components/home/TeamLoad";
 import { UpcomingTasks } from "@/components/home/UpcomingTasks";
 import { Card, EmptyState, ErrorState, NoPermissionState, StatusBadge } from "@/components/ui";
 import { EmptyReason } from "@/components/ui/EmptyReason";
+import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhoto";
 import { Icon } from "@/components/ui/Icon";
 import Link from "next/link";
 import { es } from "@/i18n/es";
@@ -280,9 +281,13 @@ export default async function SpacePage({
                   className="block py-3 transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
                 >
                   <span className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface">
-                      <Icon name="building" className="h-5 w-5 text-primary-dark" />
-                    </span>
+                    {/*
+                      RN-EST-18 · la foto del local. Sin ella se sigue
+                      pintando el mismo icono de siempre: el hueco no
+                      cambia de tamaño según haya foto o no, así que la
+                      lista no da saltos mientras cargan las imágenes.
+                    */}
+                    <EstablishmentPhoto photoUrl={restaurante.photoUrl} size={40} />
                     <span className="min-w-0 flex-1 truncate font-medium text-text">
                       {restaurante.name}
                     </span>

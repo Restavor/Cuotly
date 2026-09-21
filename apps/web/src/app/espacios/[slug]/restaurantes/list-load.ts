@@ -3,6 +3,7 @@ import { groupAttentionByEstablishment } from "@/core/establishments";
 import { PENDING_REQUEST_STATES } from "@/core/home";
 import type { EstablishmentState } from "@/core/naming";
 import type { createClient } from "@/lib/supabase/server";
+import { loadEstablishmentPhotos } from "@/services/establishment-photo";
 
 import { loadSpaceAttention } from "../home-load";
 
@@ -52,6 +53,12 @@ export interface EstablishmentListRow {
    * pantalla no lo dice igual (CA-20).
    */
   readonly manager: { readonly id: string; readonly name: string | null } | null;
+  /**
+   * RN-EST-18 · el enlace firmado y temporal de su foto, o `null` si no
+   * tiene ninguna — que es un estado normal y la ficha lo pinta sin foto,
+   * no con un marco esperándola (CA-20).
+   */
+  readonly photoUrl: string | null;
   readonly attention: readonly AttentionItem[];
 }
 
@@ -163,6 +170,19 @@ export async function loadEstablishmentList(
     );
   }
 
+  /*
+    RN-EST-18 · las fotos, en UNA llamada para toda la lista. Esta pantalla
+    no pagina —carga todos los restaurantes del espacio—, así que
+    resolverlas de una en una serían cincuenta viajes. Va después de la
+    consulta de establecimientos, y no en el `Promise.all` de arriba,
+    porque necesita saber de qué restaurantes preguntar.
+  */
+  const fotos = await loadEstablishmentPhotos(
+    supabase,
+    supabase.storage,
+    (establishments ?? []).map((establishment) => establishment.id),
+  );
+
   const rows: EstablishmentListRow[] = (establishments ?? []).map((establishment) => {
     const suscripcion = planPorRestaurante.get(establishment.id);
     return {
@@ -182,6 +202,7 @@ export async function loadEstablishmentList(
         const id = responsablePorRestaurante.get(establishment.id);
         return id === undefined ? null : { id, name: nombreResponsable.get(id) ?? null };
       })(),
+      photoUrl: fotos.get(establishment.id) ?? null,
       attention: atencion.get(establishment.id) ?? [],
     };
   });

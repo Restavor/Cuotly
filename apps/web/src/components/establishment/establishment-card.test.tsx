@@ -32,6 +32,7 @@ const magarinos: EstablishmentCardData = {
   planName: "Premium+",
   openRequests: 3,
   manager: { id: "u-1", name: "Marta Vidal" },
+  photoUrl: null,
   attention: [],
 };
 
@@ -71,11 +72,18 @@ describe("página 23 · la ficha de un restaurante", () => {
     expect(screen.getByText(t.noGroup)).toBeInTheDocument();
   });
 
-  it("NO inventa la foto del local que dibuja el diseño", () => {
+  it("un restaurante SIN foto no pinta ni imagen ni un hueco esperándola", () => {
     const { container } = render(<EstablishmentCard row={magarinos} href="/x" />);
 
-    // Ni una imagen, ni un hueco gris esperándola: `establishments` no
-    // tiene ninguna columna de imagen y nadie ha subido ninguna.
+    /*
+      Hasta el 21/09/2026 esta prueba decía que la foto del local "no
+      existe y no se inventa". Ya existe (RN-EST-18, decisión 62), así que
+      lo que vigila ahora es el otro lado de la misma regla: sin foto se
+      enseña sin foto —el icono de local de siempre—, nunca un marco gris
+      que se lea como que la imagen no cargó (CA-20).
+
+      Que la foto SÍ se pinte cuando la hay lo comprueba `photo.test.tsx`.
+    */
     expect(container.querySelector("img")).toBeNull();
   });
 
@@ -131,13 +139,21 @@ describe("página 23 · la ficha de un restaurante", () => {
       />,
     );
 
+    /*
+      Se busca hacia arriba en vez de mirar el padre directo: desde
+      RN-EST-18 el nombre va dentro de un bloque que comparte con la foto,
+      y el ancho mínimo lo lleva ese bloque. La regla que se vigila es la
+      misma —el nombre se lleva un mínimo antes que nadie—; lo que cambió
+      es cuántos escalones hay hasta ella, y eso no es lo que este test
+      tiene que proteger.
+    */
     const nombre = screen.getByText("Puerto Chico");
-    const bloque = nombre.parentElement!;
-    expect(bloque.className).toContain("basis-40");
-    expect(bloque.className).toContain("flex-1");
+    const bloque = nombre.closest(".basis-56");
+    expect(bloque).not.toBeNull();
+    expect(bloque!.className).toContain("flex-1");
 
     // Y la fila que los reparte se parte en vez de apretar.
-    expect(bloque.parentElement!.className).toContain("flex-wrap");
+    expect(bloque!.parentElement!.className).toContain("flex-wrap");
   });
 
   it("cuando no hay nada pendiente lo dice, y no deja el hueco vacío", () => {

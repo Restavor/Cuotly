@@ -358,3 +358,35 @@ export async function setEstablishmentManager(
     return { error: es.states.errorDescription, done: false };
   }
 }
+
+/**
+ * RN-EST-18 · elegir la foto del restaurante, o quitarla (decisión 62).
+ *
+ * Los bytes no pasan por aquí: los sube el navegador al bucket con un vale
+ * firmado, igual que cualquier otro archivo (`src/services/file-upload.ts`),
+ * y lo que llega a esta acción es el identificador del archivo ya
+ * registrado. `fileId` nulo **quita** la foto, que no es borrar el archivo.
+ *
+ * Quién puede lo comprueba `set_establishment_photo()` por su cuenta —la
+ * misma puerta que editar los datos—, así que llamar a esto desde la
+ * consola no autoriza nada (CLAUDE.md MUST).
+ */
+export async function setEstablishmentPhoto(
+  establishmentId: string,
+  fileId: string | null,
+): Promise<{ readonly ok: true } | { readonly ok: false; readonly motivo: string }> {
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("set_establishment_photo", {
+      p_establishment_id: establishmentId,
+      p_file_id: fileId,
+    });
+    if (error) return { ok: false, motivo: error.message };
+
+    revalidatePath("/espacios", "layout");
+    return { ok: true };
+  } catch (fallo) {
+    console.error("[restaurante] la foto no se pudo cambiar", { message: String(fallo) });
+    return { ok: false, motivo: es.states.errorDescription };
+  }
+}

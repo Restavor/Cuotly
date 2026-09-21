@@ -45,6 +45,8 @@ import { GrantAccessForm } from "./GrantAccessForm";
 import { BackupsBlock, type BackupRow } from "./BackupsBlock";
 import { CreatePanelForm } from "./CreatePanelForm";
 import { ManagerForm } from "./ManagerForm";
+import { EstablishmentPhoto } from "./EstablishmentPhoto";
+import { PhotoForm } from "./PhotoForm";
 import { NotesPanel } from "@/components/notes/NotesPanel";
 import type { EstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 import { ServiceStatusForms } from "./ServiceStatusForms";
@@ -145,6 +147,11 @@ export interface SheetData {
   readonly requestDetail: RequestDetail | null;
   /** RN-EST-19 · quién lleva el restaurante y a quién se le puede asignar. */
   readonly manager: SheetManager;
+  /**
+   * RN-EST-18 · el enlace firmado y temporal de la foto del local, o
+   * `null` si no tiene ninguna — que es un estado normal (decisión 62).
+   */
+  readonly photoUrl: string | null;
   readonly operation: SheetOperation;
   readonly counts: SheetCounts;
   readonly payments: SheetPayments;
@@ -908,6 +915,7 @@ export function EstablishmentSheet({
     nextMenu,
     requestDetail,
     manager,
+    photoUrl,
     statusReason,
     transfer,
     backups,
@@ -945,9 +953,6 @@ export function EstablishmentSheet({
 
         Lo que el diseño dibuja y NO está:
 
-          · La **foto del local**. `establishments` no tiene ninguna
-            columna de imagen; la del dibujo es de archivo. Anotada en
-            `docs/diseno/MAPA-DEL-DISENO-MOVIL.md` §5.5.
           · La **frase que describe el restaurante** ("Cocina gallega
             contemporánea…"). Tampoco existe: no hay campo de descripción
             en la ficha de datos (`IDENTITY_FIELDS`). Inventarla sería
@@ -959,7 +964,16 @@ export function EstablishmentSheet({
       */}
       <header className="rounded-[20px] border border-border bg-surface p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-          <div className="min-w-0 flex-1 basis-56">
+          {/*
+            RN-EST-18 · la foto del local, a la izquierda del nombre como
+            en la página 24. Sin foto se pinta el icono de local, no un
+            marco vacío: un hueco esperando una imagen se lee como que
+            algo falló (CA-20). Se cambia en Gestión · Datos, que es donde
+            se cambia todo lo demás del restaurante.
+          */}
+          <div className="flex min-w-0 flex-1 basis-56 items-start gap-4">
+            <EstablishmentPhoto photoUrl={photoUrl} size={64} />
+            <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold text-primary-dark">{header.name}</h1>
 
             {/*
@@ -996,6 +1010,7 @@ export function EstablishmentSheet({
                 </a>
               )}
             </p>
+            </div>
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -1989,6 +2004,22 @@ export function EstablishmentSheet({
             ocultar un control no es un control de acceso). A los demás se
             les enseña quién lo lleva, que sí pueden ver.
           */}
+          {/*
+            RN-EST-18 · la foto del restaurante (decisión 62), en el mismo
+            bloque donde se editan sus datos: cambiarla ES un cambio de
+            datos y deja auditoría como los demás.
+
+            Se le ofrece a quien puede editar los datos, que es la misma
+            puerta que comprueba `set_establishment_photo()` por su cuenta.
+            A los demás se les enseña la foto —que ya sale en la cabecera—
+            sin los botones, no un formulario que el servidor rechazaría.
+          */}
+          {block.key === "establishmentData" && canEditData ? (
+            <Card title={es.teamArea.establishments.photo}>
+              <PhotoForm establishmentId={header.id} photoUrl={photoUrl} />
+            </Card>
+          ) : null}
+
           {block.key === "establishmentData" ? (
             <Card title={es.teamArea.establishments.manager}>
               {canManageClients ? (

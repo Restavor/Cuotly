@@ -1268,6 +1268,29 @@ export const es = {
         "Quién del equipo lleva este restaurante. Puede no llevarlo nadie: no concede permisos ni cambia plazos.",
       managerSave: "Guardar responsable",
       managerSaved: "Responsable guardado.",
+      /**
+       * RN-EST-18 · la foto del restaurante (decisión 62).
+       *
+       * `photoHint` dice las dos cosas que la gente se pregunta antes de
+       * subir una foto de su local: quién la va a ver y qué pasa con la
+       * que había. Las dos tienen respuesta y ninguna es obvia.
+       *
+       * `noPhoto` NO es un aviso ni un "falta algo": un restaurante sin
+       * foto es normal, y la frase lo dice sin empujar a arreglarlo.
+       */
+      photo: "Foto del restaurante",
+      photoHint:
+        "Una foto que identifique al local. La ven el equipo y el restaurante. Si ya había otra, se guarda como versión anterior en los archivos: no se borra.",
+      noPhoto: "Este restaurante no tiene foto.",
+      photoChoose: "Subir una foto",
+      photoReplace: "Cambiar la foto",
+      photoRemove: "Quitar la foto",
+      photoUploading: "Subiendo la foto…",
+      photoSaved: "Foto guardada.",
+      photoRemoved: "Foto quitada. El archivo sigue en los archivos del restaurante.",
+      // CA-20 · el motivo, no un hueco. Es el caso de quien abre la ficha
+      // sin JavaScript: el resto de la pantalla funciona, esto no.
+      photoNeedsScript: "Para cambiar la foto hace falta JavaScript activado.",
       // El resumen de la columna: el motivo más urgente y cuántos hay de
       // él. Los nombres de estado NO se repiten aquí — son frases sobre lo
       // que hay que hacer, no etiquetas de estado (CA-21).
