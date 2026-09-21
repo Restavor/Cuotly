@@ -1,5 +1,6 @@
 import type { AttentionItem } from "@/core/home";
 import { groupAttentionByEstablishment } from "@/core/establishments";
+import { PENDING_REQUEST_STATES } from "@/core/home";
 import type { EstablishmentState } from "@/core/naming";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -29,6 +30,19 @@ export interface EstablishmentListRow {
   readonly groupName: string | null;
   readonly planId: string | null;
   readonly planName: string | null;
+  /**
+   * Página 23 del diseño · la ciudad, bajo el nombre. Puede faltar: una
+   * ficha recién creada no la tiene todavía, y entonces no se escribe
+   * nada — ni "—", ni una ciudad supuesta (P6).
+   */
+  readonly city: string | null;
+  /**
+   * Página 23 · "Solicitudes abiertas". Son las que esperan a alguien
+   * **antes** de que empiece el trabajo (`PENDING_REQUEST_STATES`, la
+   * misma lista derivada que cuenta el Inicio): a partir de aceptar, lo
+   * que hay es un trabajo y los trabajos se cuentan aparte.
+   */
+  readonly openRequests: number;
   readonly attention: readonly AttentionItem[];
 }
 
@@ -46,11 +60,17 @@ export async function loadEstablishmentList(
   spaceSlug: string,
   now: Date = new Date(),
 ): Promise<EstablishmentList> {
-  const [{ data: establishments }, { data: groups }, { data: plans }, { data: subscriptions }, attention] =
-    await Promise.all([
+  const [
+    { data: establishments },
+    { data: groups },
+    { data: plans },
+    { data: subscriptions },
+    attention,
+    { data: solicitudesAbiertas },
+  ] = await Promise.all([
       supabase
         .from("establishments")
-        .select("id, name, code, status, group_id")
+        .select("id, name, code, status, group_id, city")
         .eq("space_id", spaceId)
         .order("name", { ascending: true }),
       supabase.from("groups").select("id, name").eq("space_id", spaceId).order("name"),
@@ -64,6 +84,21 @@ export async function loadEstablishmentList(
         .eq("kind", "plan")
         .eq("status", "active"),
       loadSpaceAttention(supabase, spaceId, spaceSlug, now),
+      /*
+        Página 23 · las solicitudes abiertas de cada restaurante. Se piden
+        **solo las dos columnas** que hacen falta: `requests` tiene
+        privilegios de columna y un `select *` devolvería 403 (CLAUDE.md).
+
+        Se cuentan aquí y no con un `count` por restaurante porque serían
+        tantas consultas como restaurantes; y no se derivan de
+        `attention`, que es otra cosa: ahí solo entra lo que está en
+        riesgo, no todo lo que sigue abierto.
+      */
+      supabase
+        .from("requests")
+        .select("id, establishment_id")
+        .eq("space_id", spaceId)
+        .in("state", [...PENDING_REQUEST_STATES]),
     ]);
 
   const groupName = new Map((groups ?? []).map((g) => [g.id, g.name]));
@@ -71,6 +106,14 @@ export async function loadEstablishmentList(
     (subscriptions ?? []).map((s) => [s.establishment_id, s]),
   );
   const atencion = groupAttentionByEstablishment(attention.items);
+
+  const abiertasPorRestaurante = new Map<string, number>();
+  for (const fila of solicitudesAbiertas ?? []) {
+    abiertasPorRestaurante.set(
+      fila.establishment_id,
+      (abiertasPorRestaurante.get(fila.establishment_id) ?? 0) + 1,
+    );
+  }
 
   const rows: EstablishmentListRow[] = (establishments ?? []).map((establishment) => {
     const suscripcion = planPorRestaurante.get(establishment.id);
@@ -83,6 +126,10 @@ export async function loadEstablishmentList(
       groupName: groupName.get(establishment.group_id) ?? null,
       planId: suscripcion?.plan_id ?? null,
       planName: suscripcion?.plans?.name ?? null,
+      // Una ciudad en blanco en la base de datos es lo mismo que no
+      // tenerla: no se enseña una línea vacía bajo el nombre.
+      city: (establishment.city ?? "").trim() === "" ? null : establishment.city,
+      openRequests: abiertasPorRestaurante.get(establishment.id) ?? 0,
       attention: atencion.get(establishment.id) ?? [],
     };
   });

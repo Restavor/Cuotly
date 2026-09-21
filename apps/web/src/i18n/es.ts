@@ -1224,7 +1224,8 @@ export const es = {
 
     establishments: {
       title: "Restaurantes",
-      subtitle: "Los restaurantes de este espacio.",
+      // Página 23 del diseño, literal: dice qué se hace aquí, no qué hay.
+      subtitle: "Gestiona tus establecimientos y su mantenimiento digital.",
       // §20.2 · el subtítulo del listado cuenta lo que hay, y cuenta
       // ACTIVOS: un restaurante archivado sigue en la lista pero no es un
       // establecimiento en servicio.
@@ -1246,6 +1247,9 @@ export const es = {
       openSheet: "Abrir la ficha",
       noPlan: "Sin plan",
       noAttention: "Sin pendientes",
+      // Página 23 del diseño · los dos rótulos nuevos de la ficha.
+      openRequests: "Solicitudes abiertas",
+      noGroup: "Sin grupo",
       // El resumen de la columna: el motivo más urgente y cuántos hay de
       // él. Los nombres de estado NO se repiten aquí — son frases sobre lo
       // que hay que hacer, no etiquetas de estado (CA-21).
