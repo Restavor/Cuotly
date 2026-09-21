@@ -4295,6 +4295,19 @@ export const es = {
     today: (hora: string) => `Hoy, ${hora}`,
     cycleThisMonth: "(este mes)",
     editEstablishment: "Editar restaurante",
+    /**
+     * Página 27 · "Contacto del propietario", en Gestión · Datos.
+     *
+     * Los tres datos ya estaban en la ficha, mezclados con la
+     * identificación fiscal y el horario. Aquí salen aparte porque son
+     * los que se usan cuando hay que llamar al cliente, y se usan **en
+     * un teléfono**: por eso el correo y el número son enlaces de verdad.
+     */
+    ownerContactTitle: "Contacto del propietario",
+    ownerContactNoName: "Todavía no se ha escrito el nombre del contacto.",
+    ownerContactNoEmail: "Sin correo de contacto",
+    ownerContactNoPhone: "Sin teléfono de contacto",
+    ownerContactMessages: "Ver los mensajes del restaurante",
     // Página 24 · el rótulo del recuadro del encabezado. No se reusa
     // `blocks.plan`, que es el nombre de una pestaña de Gestión: que dos
     // cosas se escriban igual hoy no las convierte en la misma.

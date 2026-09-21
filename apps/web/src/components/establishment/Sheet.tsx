@@ -1971,6 +1971,73 @@ export function EstablishmentSheet({
           ) : null}
 
           {/*
+            Página 27 · "Contacto del propietario".
+
+            Los tres datos —nombre, correo y teléfono— ya estaban en la
+            ficha, en la lista larga, entre la identificación fiscal y el
+            horario. Aquí salen aparte porque son los que se usan cuando
+            hay que **llamar al cliente**, y no se leen: se pulsan. Por eso
+            el correo es un `mailto:` y el número un `tel:`, que en un
+            teléfono abren el correo y la llamada.
+
+            Es el contacto DEL CLIENTE —quien firma, a quien se llama
+            cuando hay un impago—, nunca nadie del equipo de mantenimiento
+            (CLAUDE.md MUST NOT); su propio nombre lo escribe él.
+
+            La cara que dibuja el diseño no está: no hay foto del contacto
+            en ninguna parte. Y "Enviar mensaje" tampoco abre una
+            conversación nueva —crearla al pintar una pantalla sería un
+            efecto por mirar—: lleva a los mensajes del restaurante, que
+            es donde está la suya.
+          */}
+          {block.key === "establishmentData" ? (
+            <Card title={t.ownerContactTitle}>
+              <p className="text-base font-semibold text-primary-dark">
+                {header.identity.contactName ?? (
+                  <span className="text-sm font-normal text-text-secondary">
+                    {t.ownerContactNoName}
+                  </span>
+                )}
+              </p>
+
+              <ul className="mt-2 space-y-1.5 text-sm">
+                <li>
+                  {header.identity.contactEmail === null ? (
+                    <span className="text-text-secondary">{t.ownerContactNoEmail}</span>
+                  ) : (
+                    <a
+                      href={`mailto:${header.identity.contactEmail}`}
+                      className="inline-flex items-center gap-2 text-cuotly-green underline focus:outline focus:outline-2 focus:outline-cuotly-green"
+                    >
+                      <Icon name="messages" aria-hidden="true" className="h-4 w-4" />
+                      {header.identity.contactEmail}
+                    </a>
+                  )}
+                </li>
+                <li>
+                  {header.identity.phonePrimary === null ? (
+                    <span className="text-text-secondary">{t.ownerContactNoPhone}</span>
+                  ) : (
+                    <a
+                      href={`tel:${header.identity.phonePrimary.replace(/\s+/g, "")}`}
+                      className="inline-flex items-center gap-2 text-cuotly-green underline focus:outline focus:outline-2 focus:outline-cuotly-green"
+                    >
+                      <Icon name="person" aria-hidden="true" className="h-4 w-4" />
+                      {header.identity.phonePrimary}
+                    </a>
+                  )}
+                </li>
+              </ul>
+
+              <p className="mt-3 text-sm">
+                <Link href={`/espacios/${slug}/mensajes`} className="text-cuotly-green underline">
+                  {t.ownerContactMessages}
+                </Link>
+              </p>
+            </Card>
+          ) : null}
+
+          {/*
             Maqueta 13 · "Plan y servicios": dos tarjetas, no una lista de
             tres líneas. La de la izquierda es el plan con su uso incluido;
             la de la derecha, los servicios adicionales.
