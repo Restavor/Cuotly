@@ -213,6 +213,27 @@ export function createMailComposer(baseUrl: string): MailComposer {
     compose(delivery: DeliveryRow) {
       if (!delivery.recipient_email) return null;
 
+      /*
+        RN-NOT-06 · un resumen diario. Va antes que nada porque una entrega
+        de resumen **no tiene** `event_type` ni `deep_link`: las columnas
+        del aviso vienen nulas, y seguir por el camino de abajo compondría
+        un correo con "undefined" dentro.
+
+        El enlace lleva a la lista de avisos del espacio, no al resumen:
+        lo que la persona quiere es leerlos, y ahí los lee con sus permisos
+        delante.
+      */
+      if (delivery.digest_id !== null) {
+        const cuantos = delivery.digest_count ?? 0;
+        if (cuantos < 1) return null;
+        const destino = `${baseUrl.replace(/\/$/, "")}/avisos`;
+        return {
+          to: delivery.recipient_email,
+          subject: es.notifications.digest.subject(delivery.space_name, cuantos),
+          body: es.notifications.digest.body(delivery.space_name, cuantos, destino),
+        };
+      }
+
       const events = es.notifications.events as Record<string, string | undefined>;
       const label = events[delivery.event_type] ?? es.notifications.title;
       const link = `${baseUrl.replace(/\/$/, "")}${delivery.deep_link}`;
@@ -280,6 +301,20 @@ export function createPushComposer(): PushComposer {
     compose(delivery: DeliveryRow) {
       const tokens = delivery.push_tokens ?? [];
       if (tokens.length === 0) return null;
+
+      // RN-NOT-06 · el resumen, por el mismo motivo que en el correo: sin
+      // `event_type` ni `deep_link`, el camino de abajo compondría un push
+      // que dice "undefined".
+      if (delivery.digest_id !== null) {
+        const cuantos = delivery.digest_count ?? 0;
+        if (cuantos < 1) return null;
+        return {
+          to: tokens,
+          title: es.notifications.digest.pushTitle(delivery.space_name),
+          body: es.notifications.digest.pushBody(cuantos),
+          deepLink: "/avisos",
+        };
+      }
 
       const events = es.notifications.events as Record<string, string | undefined>;
       const label = events[delivery.event_type] ?? es.notifications.title;

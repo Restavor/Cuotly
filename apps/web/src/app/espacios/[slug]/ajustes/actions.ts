@@ -314,3 +314,40 @@ export async function saveSpaceLogo(
     return { error: mensajeDeFallo(fallo), done: false, unchanged: false };
   }
 }
+
+/**
+ * RN-NOT-06 (decisión 65) · al momento o resumen diario, en este espacio.
+ *
+ * `set_my_notification_frequency()` comprueba por su cuenta que quien
+ * llama pertenece al espacio y que la frecuencia es una de las dos, así
+ * que un formulario manipulado no cuela nada (CLAUDE.md MUST).
+ *
+ * Distingue "guardado" de "ya lo tenías así" como el resto de Ajustes: la
+ * función vuelve sin escribir cuando el valor no cambia, y la pantalla lo
+ * dice en vez de fingir un cambio.
+ */
+export async function saveNotificationFrequency(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const frequency = String(formData.get("frequency") ?? "");
+  const previous = String(formData.get("previous") ?? "");
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("set_my_notification_frequency", {
+      p_space_id: spaceId,
+      p_frequency: frequency,
+    });
+    if (error) return { error: error.message, done: false, unchanged: false };
+
+    revalidatePath(`/espacios`, "layout");
+    return { error: null, done: true, unchanged: previous === frequency };
+  } catch (fallo) {
+    console.error("[ajustes] la frecuencia de avisos no se pudo guardar", {
+      message: String(fallo),
+    });
+    return { error: es.states.errorDescription, done: false, unchanged: false };
+  }
+}

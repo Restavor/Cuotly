@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { es } from "@/i18n/es";
-import { EXPO_PUSH_ENDPOINT, createExpoPushTransport, createPushComposer } from "./queue-gateway";
+import {
+  EXPO_PUSH_ENDPOINT,
+  createExpoPushTransport,
+  createMailComposer,
+  createPushComposer,
+} from "./queue-gateway";
 import type { DeliveryRow } from "./queue-runner";
 
 function entrega(over: Partial<DeliveryRow> = {}): DeliveryRow {
@@ -21,6 +26,9 @@ function entrega(over: Partial<DeliveryRow> = {}): DeliveryRow {
     amount_cents: null,
     threshold_percent: null,
     subject: "Quiero cambiar el precio del menú del día",
+    digest_id: null,
+    digest_date: null,
+    digest_count: null,
     ...over,
   };
 }
@@ -117,5 +125,95 @@ describe("RN-MOV-05 · el transporte de Expo traduce los tickets", () => {
     const sin = fetchQueResponde([{ status: "ok", id: "x" }, { status: "ok", id: "y" }]);
     await createExpoPushTransport(undefined, sin).send(mensaje);
     expect((sin.mock.calls[0][1]?.headers as Record<string, string>).Authorization).toBeUndefined();
+  });
+});
+
+/**
+ * RN-NOT-06 (decisión 65) · el correo y el push del resumen diario.
+ *
+ * Lo que vigila, y lo primero es lo que más:
+ *
+ *   · Que una entrega de resumen **no se cuele por el camino del aviso**.
+ *     Una entrega de resumen no tiene `event_type` ni `deep_link` —las
+ *     columnas del aviso vienen nulas—, así que seguir por ahí compondría
+ *     un correo con "undefined" dentro y lo mandaría de verdad.
+ *   · Que el cuerpo **no liste qué avisos entraron**. El detalle de cada
+ *     uno está protegido por las políticas que deciden quién ve qué, y un
+ *     correo reenviado ya no tiene RLS. Dice cuántos son y lleva al sitio.
+ *   · Que un resumen sin nada dentro no se componga: no hay nada que
+ *     mandar, y la cola lo cierra en vez de reintentarlo cinco veces.
+ */
+function resumen(over: Partial<DeliveryRow> = {}): DeliveryRow {
+  return {
+    ...entrega(),
+    channel: "email",
+    // Las del aviso vienen NULAS en una entrega de resumen. Se ponen así a
+    // propósito: es lo que devuelve `claim_notification_deliveries()`.
+    notification_id: null,
+    event_type: null as unknown as string,
+    deep_link: null as unknown as string,
+    audience: null as unknown as string,
+    entity_type: null as unknown as string,
+    digest_id: "dg-1",
+    digest_date: "2026-09-21",
+    digest_count: 3,
+    ...over,
+  };
+}
+
+describe("RN-NOT-06 · el correo del resumen diario", () => {
+  it("se compone sin tocar las columnas del aviso, que vienen nulas", () => {
+    const m = createMailComposer("https://cuotly.test").compose(resumen());
+
+    expect(m).not.toBeNull();
+    expect(m!.subject).not.toMatch(/undefined/);
+    expect(m!.body).not.toMatch(/undefined/);
+    expect(m!.subject).toContain("Restavor");
+    expect(m!.subject).toContain("3");
+  });
+
+  it("NO lista qué avisos entraron: eso se lee en Cuotly, con permisos", () => {
+    const m = createMailComposer("https://cuotly.test").compose(resumen());
+
+    // El enlace lleva a los avisos; el cuerpo no trae ni un título.
+    expect(m!.body).toContain("https://cuotly.test/avisos");
+    expect(m!.body).not.toMatch(/job_published|Trabajo publicado/);
+  });
+
+  it("uno solo se dice en singular", () => {
+    const m = createMailComposer("https://cuotly.test").compose(resumen({ digest_count: 1 }));
+    expect(m!.subject).toContain("1 aviso nuevo");
+  });
+
+  it("un resumen vacío no se compone: no hay nada que mandar", () => {
+    expect(createMailComposer("https://cuotly.test").compose(resumen({ digest_count: 0 }))).toBeNull();
+    expect(createMailComposer("https://cuotly.test").compose(resumen({ digest_count: null }))).toBeNull();
+  });
+
+  it("sin dirección de correo tampoco se compone", () => {
+    expect(
+      createMailComposer("https://cuotly.test").compose(resumen({ recipient_email: null })),
+    ).toBeNull();
+  });
+});
+
+describe("RN-NOT-06 · el push del resumen diario", () => {
+  it("dice cuántos son y lleva a los avisos, sin undefined", () => {
+    const m = createPushComposer().compose(
+      resumen({ channel: "push", push_tokens: ["ExponentPushToken[a]"] }),
+    );
+
+    expect(m).not.toBeNull();
+    expect(m!.title).not.toMatch(/undefined/);
+    expect(m!.body).not.toMatch(/undefined/);
+    expect(m!.title).toContain("Restavor");
+    expect(m!.body).toContain("3");
+    expect(m!.deepLink).toBe("/avisos");
+  });
+
+  it("sin teléfono no se compone, como cualquier otro push", () => {
+    expect(
+      createPushComposer().compose(resumen({ channel: "push", push_tokens: [] })),
+    ).toBeNull();
   });
 });

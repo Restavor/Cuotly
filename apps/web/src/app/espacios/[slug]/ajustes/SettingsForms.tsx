@@ -7,6 +7,7 @@ import { es } from "@/i18n/es";
 
 import { INITIAL_SETTINGS } from "./action-state";
 import {
+  saveNotificationFrequency,
   changeSpacePaymentTerm,
   changeSpaceTimezone,
   saveNotificationPreferences,
@@ -396,6 +397,102 @@ export function SpaceLogoForm({ spaceId, hasLogo }: { spaceId: string; hasLogo: 
       {state.done ? (
         <p role="status" className="mt-3 text-sm text-success">
           {es.settings.logoDone}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+/**
+ * RN-NOT-06 (decisión 65) · cuándo llegan los avisos de este espacio.
+ *
+ * **Dos opciones y ninguna casilla**, porque no son dos cosas que se
+ * puedan activar por separado: o al momento o en un resumen. Un par de
+ * radios lo dice; dos interruptores dejarían que alguien apagara los dos y
+ * se quedara sin avisos sin haberlo pedido.
+ *
+ * **La hora va escrita, con su zona.** "Resumen diario" a secas obliga a
+ * adivinar cuándo, y la hora es la del ESPACIO, no la de quien mira: quien
+ * esté de viaje tiene que poder entender por qué le llegó a las nueve.
+ *
+ * **Y se dice lo que NO espera.** Quien elige un resumen tiene derecho a
+ * saber que un incidente de seguridad o un impago grave le van a llegar
+ * igualmente al momento (RN-NOT-03); descubrirlo por sorpresa a las tres
+ * de la madrugada es peor que leerlo aquí.
+ *
+ * Que se pinte no autoriza nada: `set_my_notification_frequency()`
+ * comprueba la pertenencia al espacio y el valor por su cuenta.
+ */
+export function NotificationFrequencyForm({
+  spaceId,
+  frequency,
+  digestHour,
+  timeZone,
+}: {
+  readonly spaceId: string;
+  /** La que tiene ahora: `instant` o `daily_digest`. */
+  readonly frequency: string;
+  /** La hora del resumen, tal como se escribe. La fija el servidor. */
+  readonly digestHour: string;
+  /** La zona del espacio, que es de quien es la hora. */
+  readonly timeZone: string;
+}) {
+  const [state, action, pending] = useActionState(
+    saveNotificationFrequency,
+    INITIAL_SETTINGS,
+  );
+  const t = es.settings;
+
+  return (
+    <form action={action} className="space-y-3">
+      <input type="hidden" name="spaceId" value={spaceId} />
+      <input type="hidden" name="previous" value={frequency} />
+      <p className="text-sm text-text-secondary">{t.frequencyHint}</p>
+
+      <fieldset className="space-y-2">
+        <legend className="sr-only">{t.frequencyTitle}</legend>
+
+        {(
+          [
+            { value: "instant", label: t.frequencyInstant, hint: t.frequencyInstantHint },
+            {
+              value: "daily_digest",
+              label: t.frequencyDigest,
+              hint: t.frequencyDigestHint(digestHour, timeZone),
+            },
+          ] as const
+        ).map((opcion) => (
+          <label
+            key={opcion.value}
+            className="flex cursor-pointer items-start gap-3 rounded-[10px] border border-border p-3 transition-colors hover:border-cuotly-green focus-within:outline focus-within:outline-2 focus-within:outline-cuotly-green"
+          >
+            <input
+              type="radio"
+              name="frequency"
+              value={opcion.value}
+              defaultChecked={frequency === opcion.value}
+              className="mt-1 h-4 w-4 shrink-0 accent-cuotly-green"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-text">{opcion.label}</span>
+              <span className="block text-xs text-text-secondary">{opcion.hint}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      <Button type="submit" disabled={pending}>
+        {pending ? t.frequencyPending : t.frequencySubmit}
+      </Button>
+
+      {state.error ? (
+        <p role="alert" className="text-sm text-danger">
+          {state.error}
+        </p>
+      ) : null}
+      {state.done ? (
+        <p role="status" className="text-sm text-success">
+          {state.unchanged ? t.frequencyUnchanged : t.frequencyDone}
         </p>
       ) : null}
     </form>

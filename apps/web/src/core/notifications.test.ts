@@ -1,13 +1,18 @@
 import { describe, expect, it } from "vitest";
 
 import { es } from "@/i18n/es";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import {
   CLIENT_ONLY_EVENTS,
+  DIGEST_HOUR,
   MAX_DELIVERY_ATTEMPTS,
   NOTIFICATION_EVENTS,
   canDisable,
   dedupeKey,
   deepLinkFor,
+  digestHourLabel,
   deliveryStatusAfterFailure,
   isMandatoryEvent,
   jobEventClientRecipients,
@@ -229,5 +234,40 @@ describe("RN-MOV-06 · el push es el tercer canal de las preferencias", () => {
   it("RN-NOT-03: un aviso obligatorio no se apaga tampoco por push", () => {
     const pref = { event: "t3_threshold_100", inApp: false, email: false, push: false } as const;
     expect(shouldDeliver("t3_threshold_100", "push", pref)).toBe(true);
+  });
+});
+
+/**
+ * RN-NOT-06 (decisión 65) · la hora del resumen diario.
+ *
+ * El valor está escrito dos veces por necesidad: aquí, para que la
+ * pantalla pueda decir "a las 08:00", y en
+ * `run_notification_digests()` dentro de la migración 122, que es quien
+ * de verdad decide cuándo sale. Este test lee **la migración** y compara:
+ * si alguien cambia una y no la otra, la pantalla prometería una hora y el
+ * servidor mandaría a otra.
+ */
+describe("RN-NOT-06 · la hora del resumen", () => {
+  it("es la misma en TypeScript que en la migración que la aplica", () => {
+    const migracion = readFileSync(
+      resolve(
+        __dirname,
+        "../../../../supabase/migrations/20260921000122_al_momento_o_resumen_diario.sql",
+      ),
+      "utf8",
+    );
+
+    // La línea que decide si el barrido hace algo.
+    const match = migracion.match(
+      /extract\(hour from \(v_ahora at time zone v_zona\)\) <> (\d+)/,
+    );
+
+    expect(match, "no se encontró la comprobación de la hora en la migración 122").not.toBeNull();
+    expect(Number(match![1])).toBe(DIGEST_HOUR);
+  });
+
+  it("se escribe como una hora española, con dos cifras", () => {
+    expect(digestHourLabel()).toBe("08:00");
+    expect(digestHourLabel(14)).toBe("14:00");
   });
 });

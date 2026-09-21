@@ -441,3 +441,24 @@ export function requestSubmittedRecipients(
     ),
   ];
 }
+
+/**
+ * RN-NOT-06 (decisión 65) · la hora a la que sale el resumen diario, **en
+ * la zona del espacio**.
+ *
+ * Está aquí, y no escrita en la pantalla, porque es la MISMA hora que
+ * comprueba `run_notification_digests()` en la base de datos. Son dos
+ * copias inevitables —una en SQL y otra en TypeScript— y al menos esta
+ * está en un sitio, con su nombre, para que quien cambie una sepa que hay
+ * otra. `notifications.test.ts` falla si dejan de coincidir.
+ *
+ * No es configurable, y tampoco es un aplazamiento: una hora por persona
+ * multiplica los casos y no resuelve nada que no resuelva ya elegir entre
+ * las dos frecuencias.
+ */
+export const DIGEST_HOUR = 8;
+
+/** "08:00", que es como se escribe una hora en español. */
+export function digestHourLabel(hour: number = DIGEST_HOUR): string {
+  return `${String(hour).padStart(2, "0")}:00`;
+}

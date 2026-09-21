@@ -224,6 +224,9 @@ describe("RN-NOT-05 · la cola de correo, con reintentos e idempotencia", () => 
       amount_cents: null,
       threshold_percent: null,
       subject: "Quiero cambiar el precio del menú del día",
+      digest_id: null,
+      digest_date: null,
+      digest_count: null,
       ...over,
     };
   }
@@ -314,6 +317,9 @@ describe("RN-MOV-04 y RN-MOV-05 · la cola de push, el mismo proceso que el corr
       amount_cents: null,
       threshold_percent: null,
       subject: "Quiero cambiar el precio del menú del día",
+      digest_id: null,
+      digest_date: null,
+      digest_count: null,
       ...over,
     };
   }

@@ -15,7 +15,12 @@ import {
 import { formatMoment, loadSpaceIntegrations } from "@/components/establishment/integrations-load";
 import { ProviderMark } from "@/components/establishment/ProviderMark";
 import { integrationTone } from "@/core/integrations";
-import { MANDATORY_EVENTS, staffPreferenceEvents, type NotificationEvent } from "@/core/notifications";
+import {
+  MANDATORY_EVENTS,
+  digestHourLabel,
+  staffPreferenceEvents,
+  type NotificationEvent,
+} from "@/core/notifications";
 import { SETTINGS_TABS, parseSettingsTab, settingsTabHref } from "./tabs";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -23,6 +28,7 @@ import { vaultIsConfigured } from "@/services/credential-vault";
 import { googleOAuthIsConfigured } from "@/services/google-oauth";
 
 import {
+  NotificationFrequencyForm,
   NotificationPreferencesForm,
   PaymentTermForm,
   SpaceDetailsForm,
@@ -164,6 +170,20 @@ export default async function SettingsPage({
       };
     },
   );
+
+  /*
+    RN-NOT-06 · la frecuencia de esta persona en este espacio. Se PREGUNTA
+    al servidor en vez de leer la tabla: `my_notification_frequency()` es
+    la que sabe que "sin fila" significa "al momento", y repetir esa regla
+    aquí serían dos sitios donde decidirla.
+
+    Si la lectura falla se cae a "al momento", que es el valor por omisión
+    real: así el formulario se pinta con lo que casi seguro es cierto, y
+    guardar vuelve a preguntárselo al servidor de todas formas.
+  */
+  const { data: frecuencia } = await supabase.rpc("my_notification_frequency", {
+    p_space_id: space.id,
+  });
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-8">
@@ -410,6 +430,26 @@ export default async function SettingsPage({
           {es.settings.notificationsTitle}
         </h2>
         <NotificationPreferencesForm spaceId={space.id} preferences={preferences} />
+      </Card>
+      ) : null}
+
+      {/*
+        RN-NOT-06 · CUÁNDO llegan, en su propia tarjeta. La de arriba dice
+        QUÉ avisos quieres; esta, si salen al momento o en un resumen. Son
+        dos preguntas distintas y juntarlas en una lista haría que la
+        frecuencia pareciera un aviso más que activar.
+      */}
+      {vista.key === "notifications" ? (
+      <Card>
+        <h2 className="mb-3 text-lg font-semibold text-primary-dark">
+          {es.settings.frequencyTitle}
+        </h2>
+        <NotificationFrequencyForm
+          spaceId={space.id}
+          frequency={frecuencia ?? "instant"}
+          digestHour={digestHourLabel()}
+          timeZone={space.timezone}
+        />
       </Card>
       ) : null}
 

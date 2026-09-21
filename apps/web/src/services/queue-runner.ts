@@ -71,7 +71,13 @@ export type DeliveryChannel = "email" | "push";
 
 export interface DeliveryRow {
   readonly delivery_id: string;
-  readonly notification_id: string;
+  /**
+   * `null` cuando esta entrega es un **resumen diario** y no un aviso
+   * suelto (migración 122, RN-NOT-06). Las dos viajan por la misma cola
+   * —la que ya sabe reintentar y no duplicar— y se distinguen por cuál de
+   * los dos identificadores viene relleno.
+   */
+  readonly notification_id: string | null;
   readonly attempts: number;
   /** Migración 94 (RN-MOV-04): correo o push. */
   readonly channel: DeliveryChannel;
@@ -98,6 +104,17 @@ export interface DeliveryRow {
   readonly amount_cents: number | null;
   readonly threshold_percent: number | null;
   readonly subject: string | null;
+  /**
+   * RN-NOT-06 · los tres datos del resumen. Nulos en una entrega de aviso.
+   *
+   * `digest_count` es lo único que el correo necesita decir además del
+   * espacio: el detalle de qué entró se consulta desde la aplicación, no
+   * se mete en el cuerpo del correo — copiarlo ahí sacaría el contenido de
+   * los avisos fuera de las políticas que lo protegen.
+   */
+  readonly digest_id: string | null;
+  readonly digest_date: string | null;
+  readonly digest_count: number | null;
 }
 
 export interface QueueGateway {

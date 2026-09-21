@@ -119,10 +119,11 @@ memoria—:
 
 Abiertos, y no se inventan:
 
-- **Punto 6 · frecuencia de aviso y horario de recepción** (página 109).
-  `notification_preferences` tiene canal por evento —`in_app`, `email`,
-  `push`— y **ninguna columna de frecuencia ni de horario**. "Resumen
-  diario" necesita una hora de corte y una zona; no hay ninguna decidida.
+- ~~**Punto 6 · frecuencia de aviso y horario de recepción** (página 109)~~
+  — **cerrado** el 21/09/2026 (decisión 65, RN-NOT-06, migraciones 122 y
+  123). La frecuencia existe: al momento o resumen diario a las 08:00 de
+  la zona del espacio. El **horario de recepción se queda fuera**, y eso
+  también es una decisión con su motivo escrito, no un pendiente.
 - **Punto 10, la mitad que falta**: nada. Los cinco niveles de informe se
   construyeron; lo que queda de `PROPUESTA-INFORMES.md` es confirmación.
 
@@ -260,8 +261,11 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   no aparece en las contiguas (110-112, 114, 116) ni junto a "Mi cuenta"
   (8). Tercera nota de este mapa que apunta mal, después de la 63 y la 46;
   la cuarta fue la de los avatares de la página 3, arriba.
-  De la 109 se construyeron **las ocho pestañas** (decisión 50); la
-  frecuencia y el horario siguen sin definir y no se inventan.
+  De la 109 se construyeron **las ocho pestañas** (decisión 50), y la
+  frecuencia el 21/09/2026 (decisión 65, RN-NOT-06): vive en Ajustes ·
+  Notificaciones, en su propia tarjeta, porque la lista de arriba dice QUÉ
+  avisos quieres y esta dice CUÁNDO. El horario de recepción no se
+  construye, y el motivo está en la regla.
 - ~~**Prioridad con motivo obligatorio** en la solicitud del equipo (página 63)~~ — **la lectura
   estaba mal**: la página 63 es "Nueva solicitud", la del **cliente**, no la del equipo. Resuelto
   como decisión 49 (RN-REQ-05/06, migración 106): nivel Alta/Media/Baja al crear, motivo

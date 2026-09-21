@@ -10570,6 +10570,25 @@ export type Database = {
         };
         Returns: string;
       };
+      /** Migración 122 (RN-NOT-06) · 'instant' o 'daily_digest'. */
+      my_notification_frequency: {
+        Args: { p_space_id: string };
+        Returns: string;
+      };
+      set_my_notification_frequency: {
+        Args: { p_space_id: string; p_frequency: string };
+        Returns: undefined;
+      };
+      /** Migración 122 · qué avisos entraron en un resumen. Solo su dueño. */
+      digest_contents: {
+        Args: { p_digest_id: string };
+        Returns: {
+          notification_id: string;
+          event_type: string;
+          deep_link: string;
+          created_at: string;
+        }[];
+      };
       set_establishment_manager: {
         Args: { p_establishment_id: string; p_manager_id: string | null };
         Returns: undefined;

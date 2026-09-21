@@ -1150,6 +1150,33 @@ export const es = {
           "Puedes cambiar qué avisos recibes por correo desde Preferencias de aviso.",
         ].join("\n"),
     },
+
+    /*
+      RN-NOT-06 (decisión 65) · el resumen diario de las 08:00.
+      **El correo NO lista qué entró**, y no es pereza: el detalle de cada
+      aviso está protegido por las políticas que deciden quién ve qué, y
+      copiarlo al cuerpo de un correo lo sacaría de ellas para siempre —un
+      correo reenviado ya no tiene RLS. Dice cuántos son y lleva al sitio
+      donde se leen con su permiso delante.
+    */
+    digest: {
+      subject: (espacio: string, cuantos: number) =>
+        cuantos === 1 ? `1 aviso nuevo · ${espacio}` : `${cuantos} avisos nuevos · ${espacio}`,
+      body: (espacio: string, cuantos: number, enlace: string) =>
+        [
+          cuantos === 1
+            ? "Tienes 1 aviso nuevo desde ayer."
+            : `Tienes ${cuantos} avisos nuevos desde ayer.`,
+          "",
+          `Espacio: ${espacio}`,
+          `Léelos en Cuotly: ${enlace}`,
+          "",
+          "Recibes este resumen porque elegiste «Resumen diario». Puedes volver a recibirlos al momento desde Preferencias de aviso.",
+        ].join("\n"),
+      pushTitle: (espacio: string) => `Resumen diario · ${espacio}`,
+      pushBody: (cuantos: number) =>
+        cuantos === 1 ? "1 aviso nuevo desde ayer." : `${cuantos} avisos nuevos desde ayer.`,
+    },
   },
 
   // RN-INT-10 a 12 (migración 117, decisión 60) · la pantalla de reseñas.
@@ -2868,6 +2895,38 @@ export const es = {
     notificationsDone: "Preferencias guardadas.",
     notificationsMandatory:
       "No se puede desactivar (RN-NOT-03): vencimientos críticos e impagos graves.",
+
+    /*
+      RN-NOT-06 (decisión 65) · cuándo llegan, que es distinto de cuáles
+      llegan. Por eso va en su propia tarjeta y no como una fila más de la
+      lista de arriba: la lista dice QUÉ avisos quieres, esto dice CUÁNDO.
+
+      `frequencyDigestHint` dice la hora y de quién es esa hora, porque es
+      lo único que no se puede adivinar. Y dice lo del aviso obligatorio,
+      porque quien elige un resumen tiene derecho a saber qué no va a
+      esperar a mañana.
+    */
+    frequencyTitle: "Cuándo recibirlos",
+    frequencyHint:
+      "Esto no cambia qué avisos recibes, solo cuándo salen el correo y el aviso al teléfono. En la aplicación siguen apareciendo al momento.",
+    frequencyInstant: "Al momento",
+    frequencyInstantHint: "Cada aviso sale en cuanto ocurre.",
+    frequencyDigest: "Resumen diario",
+    /*
+      La zona va **entre paréntesis y como dato**, no metida en la frase.
+      "hora de Europe/Madrid" mete un identificador técnico en mitad de una
+      oración en español, y traducirlo no es una opción: haría falta una
+      tabla de nombres para las seiscientas zonas IANA, y no la hay. Lo que
+      sí se puede decir en español es de QUIÉN es la hora —del espacio—, y
+      enseñar el identificador al lado para quien necesite la precisión.
+      Se vio mirando la pantalla pintada.
+    */
+    frequencyDigestHint: (hora: string, zona: string) =>
+      `Un solo correo a las ${hora}, la hora del espacio (${zona}), con todo lo del día anterior. Los avisos que no se pueden desactivar —seguridad, pérdida de acceso e impagos graves— siguen saliendo al momento.`,
+    frequencySubmit: "Guardar",
+    frequencyPending: "Guardando…",
+    frequencyDone: "Guardado.",
+    frequencyUnchanged: "Ya lo tenías así.",
 
     pendingTitle: "Secciones que todavía no están",
     pendingHint:
