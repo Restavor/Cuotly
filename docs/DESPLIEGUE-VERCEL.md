@@ -69,8 +69,8 @@ mirar los registros de compilación sigue siendo cosa del navegador):
 
 | Proyecto | Variable que falta | Consecuencia hoy en producción |
 |---|---|---|
-| `cuotly-web` | `INTEGRATIONS_VAULT_KEY` | **Ninguna fuente analítica se puede conectar** (RN-INT-02). La pantalla lo dice en vez de fallar. |
-| `cuotly-web` | `GOOGLE_OAUTH_CLIENT_ID` y `..._SECRET` | GA4, Search Console y Perfil de Empresa no se pueden conectar. Clarity y PageSpeed sí. |
+| ~~`cuotly-web` · `INTEGRATIONS_VAULT_KEY`~~ | ~~Ninguna fuente analítica se puede conectar (RN-INT-02).~~ | **Puesta por Bosco el 21/09/2026 a las 21:19 UTC, con su redespliegue detrás a las 21:20 — verde.** Solo en `production`, no en `preview`: en preview no se podrán guardar credenciales, lo cual hoy no molesta. |
+| `cuotly-web` | `GOOGLE_OAUTH_CLIENT_ID` y `..._SECRET` | GA4, Search Console y Perfil de Empresa no se pueden conectar. Clarity y PageSpeed sí. **Aplazado a propósito** (ver abajo). |
 | ~~`cuotly-movil` · `EXPO_PUBLIC_SUPABASE_URL`~~ | ~~La app en el navegador no arranca: pantalla en blanco.~~ | **Puesta el 21/09/2026** |
 | ~~`cuotly-movil` · `EXPO_PUBLIC_SUPABASE_ANON_KEY`~~ | ~~Igual.~~ | **Puesta el 21/09/2026** |
 
@@ -82,8 +82,17 @@ que el token llevara `"role":"anon"` y no el de servicio; conviene repetir
 esa comprobación cada vez que se mueva una clave de Supabase de un sitio a
 otro, porque las dos se parecen mucho.
 
-Las otras dos sí son secretos que alguien tiene que generar u obtener, y
-tienen su receta más abajo.
+La clave de la caja fuerte la puso Bosco el mismo día, con su redespliegue
+detrás.
+
+**El cliente OAuth de Google queda aplazado a propósito**, y conviene que
+conste el porqué para que nadie lo apunte luego como un descuido: el
+21/09/2026 no hay ni un restaurante con GA4, Search Console o Perfil de
+Empresa conectado, así que el cliente no serviría para nada. Y la parte
+cara de crearlo —la verificación de Google para `business.manage`, que son
+semanas y un vídeo del recorrido— caducaría antes de usarse. Se crea el día
+que haya un restaurante que lo pida; la receta está más abajo y es media
+hora de trabajo.
 
 ### Lo que sigue sin poder comprobarse desde aquí
 
@@ -92,11 +101,132 @@ tienen su receta más abajo.
   —Vercel solo repunta el alias de producción cuando la compilación sale
   verde—, pero eso prueba que *compiló*, no que la pantalla pinte. Hay que
   abrir `cuotly-movil.vercel.app` y mirarlo.
-- El `maxDuration` de la función de la cola y **que la invocación del cron
-  llegue de verdad** — los otros dos detalles escritos de memoria.
 - El primer envío real de correo con Resend, con su dominio verificado.
 
+## El cron llega, pero no a la hora que pone en `vercel.json`
+
+Comprobado el 21/09/2026 **contra la base de datos de producción**, que es
+el único sitio donde el cron deja huella que se pueda leer desde aquí.
+Con esto queda cerrado el tercero y último de los tres detalles que
+llevaban desde el 02/09 escritos de memoria.
+
+**Llega, y lleva llegando desde el 14/09 por lo menos**: dos pasadas al
+día, todos los días, todos los trabajos en `done`, un intento, sin errores.
+La pasada de hoy encoló 16 trabajos y tardó **nueve segundos** de punta a
+punta. `maxDuration` está en 60 —el máximo que da Hobby— así que hay
+margen de sobra con los dos espacios de ahora.
+
+**Y el `notification_digests` corrió**: encolado a las 19:51:44, terminado
+a las 19:51:49, `done`. Las migraciones 122, 123 y 124 están vivas y
+haciendo su trabajo. Creó cero resúmenes, que es lo correcto: todavía no
+hay ni una fila en `notification_schedules`, o sea que nadie ha elegido
+"resumen diario" y no hay nada que resumir.
+
+### El detalle que no estaba escrito en ningún sitio
+
+`apps/web/vercel.json` declara `0 7 * * *` y `0 19 * * *`. Las pasadas
+reales son a las **07:13 y las 19:51 UTC**, y los minutos son distintos
+cada día. En el plan Hobby, Vercel dispara el cron **en algún momento de
+la hora declarada**, no en el minuto en punto.
+
+La migración 124 razonó sobre "07:00 y 19:00 UTC → 09:00 y 21:00 en
+Madrid". La conclusión era correcta y el arreglo también —en verano la
+pasada de la mañana cae en la hora 9 de Madrid y nunca en la 8, mire uno
+el minuto que mire—, pero los minutos de su cabecera son los declarados,
+no los reales. Las migraciones no se tocan una vez aplicadas, así que la
+corrección vive aquí.
+
+**Lo que hay que llevarse de esto, para lo próximo que dependa de una
+hora:** no se puede prometer un minuto. Un aviso que el PRD describe como
+"a las 20:00" sale de verdad a las 21:51 hora de Madrid en verano. No es
+un fallo, es la resolución del plan; pero una regla escrita como "a las
+20:00 en punto" sería mentira, y una comparación de hora exacta contra el
+reloj sería el mismo fallo que corrigió la 124.
+
+### El barrido que confirma que no queda otro igual
+
+Comprobado contra `pg_get_functiondef` de las funciones **vivas en
+producción**, no contra el repositorio:
+
+| Función | Cómo mira la hora | Veredicto |
+|---|---|---|
+| `run_notification_digests` | `< 8` | La corrección de la 124, viva |
+| `run_daily_menu_sweep` | `>= 20` | Ya era robusta desde la 107 |
+| `enqueue_due_scheduled_jobs` | no mira la hora | Correcto: encola siempre y decide el barrido |
+
+No queda ninguna comparación de hora exacta en el proyecto. La única que
+hubo fue la de la 122, y la 124 la cerró.
+
+## El correo no ha salido nunca: `RESEND_FROM` está mal escrita
+
+Encontrado el 21/09/2026 mirando `notification_deliveries` en producción.
+**Los 211 envíos de correo que hay están todos en `pending`, ninguno con
+`provider_message_id`, ninguno con `sent_at`.** El error guardado es
+siempre el mismo:
+
+```
+Resend respondió 422: {"message":"Invalid `from` field. The email address
+needs to follow the `email@example.com` or `Name <email@example.com>`
+format.","name":"validation_error","statusCode":422}
+```
+
+No es el dominio sin verificar ni la clave: es el **formato** del
+remitente. `RESEND_FROM` en Vercel contiene algo que Resend no acepta como
+dirección. El valor por defecto del código sí es válido
+(`Cuotly <avisos@cuotly.com>`, en `apps/web/src/app/api/cola/route.ts`),
+así que la variable está sobrescribiendo algo correcto con algo que no lo
+es. Sospechosos habituales: comillas alrededor del valor, un salto de
+línea al final, o el `<...>` sin cerrar.
+
+Cuotly lleva **desde el 10/09 sin mandar un solo correo** y no se ha notado,
+porque el aviso dentro de la aplicación sí funciona y nadie esperaba el
+correo todavía.
+
+### Por qué esto no se arregla solo, y por qué corre prisa
+
+`MAX_DELIVERY_ATTEMPTS` son 5 (`src/core/notifications.ts`). Cada pasada
+del cron gasta un intento por fila, y al quinto la fila pasa a `dead` y no
+se reintenta nunca más. Ahora mismo el máximo es **3**, así que no se ha
+perdido nada todavía, pero quedan dos pasadas.
+
+Y aquí hay un fallo de diseño que conviene arreglar aparte del valor de la
+variable: **un error de configuración se está tratando como un fallo
+transitorio de entrega.** Un remitente mal escrito no se va a arreglar
+reintentando; lo único que consigue el reintento es gastar los cinco
+intentos de 211 avisos reales y matarlos. Lo correcto es validar el
+remitente una vez, al crear el transporte, y si no vale no intentar
+ningún envío ni gastar intentos: dejar las filas quietas y que la cola lo
+diga en su respuesta.
+
+### El orden importa: 183 de los 211 van a un dominio que no existe
+
+| Dominio del destinatario | Personas | Avisos atascados |
+|---|---|---|
+| `cuotly.test` | 6 | **183** |
+| `restavor.com` | 1 | 28 |
+
+Los 183 son de los datos sembrados para las pruebas —134 de ellos del
+10/09 en un solo día— y van a un dominio que no puede recibir nada. Si se
+arregla `RESEND_FROM` y se deja que la cola se suelte sin más, Resend
+intenta entregarlos y se lleva **183 rebotes duros seguidos** en una cuenta
+recién abierta, que es la manera más rápida de que el dominio acabe
+marcado.
+
+Así que el orden es:
+
+1. Arreglar el valor de `RESEND_FROM` en Vercel y redesplegar.
+2. **Antes de dejar correr la cola**, marcar como `dead` los envíos cuyo
+   destinatario sea de `cuotly.test`. No se borra nada: la fila queda con
+   su motivo, que es lo que pide CLAUDE.md sobre no borrar registros de
+   negocio.
+3. Dejar salir los 28 que van a una dirección real. Esos son, de paso, la
+   primera prueba de verdad de Resend, que es justo lo que quedaba
+   pendiente de comprobar.
+
 ### Cómo poner la clave de la caja fuerte (`INTEGRATIONS_VAULT_KEY`)
+
+> Hecho el 21/09/2026. Queda escrito para el día que haya que rotarla,
+> o montar un segundo entorno.
 
 Es la clave con la que Cuotly cifra las credenciales de las integraciones
 —los tokens de Google, las claves de Clarity y PageSpeed— **antes** de
@@ -351,9 +481,9 @@ para y avisa: eso sería la cola abierta a internet.
 
 ## 5. Lo que sigue sin resolver
 
-- **El primer envío real de correo no se ha visto nunca.** `drainEmailQueue()`
-  tiene sus tests con un transporte falso, pero Resend de verdad, con su
-  dominio verificado y su remitente, está sin probar. El primer despliegue
-  es también la primera prueba.
+- **El primer envío real de correo no se ha visto nunca, y ahora se sabe
+  por qué**: `RESEND_FROM` está mal escrita y los 211 envíos llevan desde
+  el 10/09 fallando con un 422 de formato. Tiene su sección propia más
+  arriba, con el orden en que hay que arreglarlo.
 - **El dominio de envío** (`RESEND_FROM`) tiene que estar verificado en
   Resend o los correos se quedarán en spam.
