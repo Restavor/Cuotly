@@ -1564,6 +1564,56 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
    congelado—, las 63 suites sobre una base limpia, 1.572 tests de web, y las huellas de las cuatro
    funciones iguales en local y en producción.
 
+62. **El restaurante tiene foto** (21/09/2026). Sale de un repaso de las 157 páginas del diseño
+   contra el código: la foto del local aparece en **cuatro** pantallas —el Inicio del espacio, la
+   lista de Restaurantes, la ficha y Gestión— y no existía ninguna columna de imagen. Hasta hoy
+   esas cuatro pantallas se construyeron sin ella y diciendo por qué, en vez de poner la foto de
+   archivo del PDF.
+
+   Bosco: **una foto por restaurante**, y la puede subir tanto el equipo como el cliente.
+
+   Qué significa, para que no se convierta en otra cosa al construirlo:
+
+   - **Una, no una galería.** Es la foto que identifica el local en una lista. Las fotos de un
+     trabajo son otra cosa y ya existen: son las evidencias (antes/después).
+   - **Vive donde viven los archivos del espacio.** Un restaurante es de un espacio, así que
+     `files` le sirve —a diferencia de la foto de perfil, que no era de ningún espacio y necesitó
+     bucket propio (decisión 53)—.
+   - **La ve el cliente y la ve el equipo.** No es material interno: es la cara de su propio
+     restaurante.
+   - **Sin foto no hay hueco gris esperándola.** Un restaurante sin foto se enseña sin foto, como
+     ahora, no con un marco vacío que parece que algo falló.
+
+63. **Responsable del restaurante, y opcional** (21/09/2026). El diseño enseña en la página 23 un
+   "Supervisor · Diego" por restaurante. Eso chocaba con una decisión que no debe reaparecer:
+   **supervisor no es un rol, es una relación Administrador–Trabajador**, y `supervisions` enlaza
+   dos personas, no una persona con un local. Se construyó la lista sin esa columna y se preguntó.
+
+   Bosco: **crearlo, pero no es obligatorio que haya siempre uno.**
+
+   Las dos mitades importan y la segunda más:
+
+   - Es un **responsable del restaurante**: alguien del equipo a quien se le atribuye ese cliente.
+     No se llama "supervisor" —ese nombre ya está cogido y significa otra cosa— para que nadie los
+     confunda dentro de seis meses.
+   - **Opcional de verdad.** Un restaurante sin responsable es un estado normal, no un error ni un
+     aviso: se dice "sin responsable" y ya. Esto es lo que evita que la pantalla empiece a
+     empujar a asignar a alguien para quitarse un hueco de encima, y lo que impide que nada del
+     servidor —un aviso, un reparto, un cálculo— dependa de que ese campo esté relleno.
+   - **No cambia quién puede hacer qué.** Ser responsable no da permisos: los permisos siguen
+     saliendo de las capacidades del espacio. Es una atribución, no una llave.
+
+64. **Las subtareas y las evidencias se ven bajo la solicitud, en solo lectura** (21/09/2026). El
+   diseño de la página 25 las dibuja debajo de la solicitud; en el modelo cuelgan del **trabajo**,
+   que nace al aceptarla. El panel se construyó sin ellas, con el enlace al trabajo, y se preguntó.
+
+   Bosco: **sí, en solo lectura.**
+
+   La línea está donde tiene que estar: **se ven ahí, se marcan en el trabajo**. Una casilla que
+   se pudiera marcar en dos sitios acabaría marcándose en uno y no en el otro, y las evidencias se
+   suben donde se hace el trabajo. Bajo una solicitud todavía sin aceptar no hay nada que enseñar
+   —no existe el trabajo—, y eso se dice en vez de pintar una lista vacía.
+
 ---
 
 ### Pendiente de completar

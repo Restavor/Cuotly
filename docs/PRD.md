@@ -425,6 +425,19 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
   dice que le corre, y el equipo lo lee. Decirlo así en la pantalla evita la lectura de que marcar
   "Alta" adelanta el trabajo.
 
+- **RN-REQ-07 (añadida 21/09/2026, decisión 64)**: la solicitud **enseña las subtareas y las
+  evidencias de su trabajo, en solo lectura**.
+
+  - **Solo cuando hay trabajo.** Las subtareas y las evidencias cuelgan del trabajo (§11, RN-JOB),
+    que nace al aceptar la solicitud. Antes de aceptar no hay nada que enseñar, y eso se dice: no
+    se pinta una lista vacía que haría pensar que el trabajo no lleva tareas.
+  - **Se ven aquí, se marcan allí.** Ni una casilla se marca desde la solicitud, ni se sube una
+    evidencia desde ella. Una casilla que se pudiera marcar en dos sitios acabaría marcada en uno
+    y no en el otro; las evidencias se suben donde se hace el trabajo.
+  - Quien no puede ver el trabajo **tampoco ve sus tareas aquí**: esto no abre ninguna puerta. Las
+    filas salen de las mismas políticas que la pantalla del trabajo, y para el cliente siguen
+    siendo organización interna del equipo (P7).
+
 - **RN-REQ-04 (copiar/pegar)**: "Copiar solicitud" y "Pegar solicitud" funcionan **solo dentro del mismo grupo**. Copiar no crea nada por sí solo; al pegar se crea un **borrador** para el establecimiento destino, se vuelve a analizar el contenido, el consumo pertenece al destino y los adjuntos copiados se muestran para revisión sin enviarse automáticamente.
 
 ---
@@ -688,6 +701,37 @@ llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; la
 
   **El hueco de cada bloque en la dirección no cambia** (`?vista=gestion&bloque=archivos`): un
   `slug` que cambia rompe los enlaces que alguien tenga guardados.
+
+- **RN-EST-18 (añadida 21/09/2026, decisión 62)**: **un restaurante tiene una foto**, la que lo
+  identifica en una lista. Una, no una galería.
+
+  - La **sube el equipo o el cliente**, y la ven los dos: es la cara de su propio restaurante, no
+    material interno del equipo.
+  - Vive en los **archivos del espacio** (§18, RN-ARC), porque un restaurante es de un espacio. No
+    necesita sitio propio, a diferencia de la foto de perfil de una persona (RN-GLO-09), que no es
+    de ningún espacio.
+  - **Sustituirla no borra la anterior**: los archivos de Cuotly se versionan (RN-ARC-03) y los
+    registros de negocio no se borran físicamente. La foto vigente es la última versión.
+  - **Sin foto se enseña sin foto.** Un restaurante recién creado no tiene ninguna, y eso no es un
+    error ni un aviso: no se pinta un marco vacío esperándola, que haría pensar que algo falló
+    (CA-20).
+  - Cambiarla es un cambio de datos del restaurante y **deja auditoría** como los demás (§21.2).
+
+- **RN-EST-19 (añadida 21/09/2026, decisión 63)**: un restaurante puede tener un **responsable**,
+  que es alguien del **equipo del espacio**, y **puede no tenerlo**.
+
+  - **No se llama supervisor.** "Supervisor" ya significa otra cosa en Cuotly —una relación
+    Administrador–Trabajador (§14, RN-SUP)— y son cosas distintas: aquella enlaza dos personas,
+    esta enlaza a una persona con un restaurante.
+  - **Sin responsable es un estado normal**, no un hueco que rellenar: la pantalla dice "sin
+    responsable" y no empuja a asignar a nadie. Ninguna regla del servidor —un aviso, un reparto,
+    un plazo, un informe— puede depender de que ese campo esté relleno.
+  - **No concede ni quita permisos.** Quién puede hacer qué sigue saliendo de las capacidades del
+    espacio (§13); ser responsable de un restaurante es una atribución, no una llave. En
+    particular, no da acceso a un restaurante que no se tuviera ya.
+  - Solo puede serlo alguien con **pertenencia activa** al espacio. Si esa persona sale del
+    espacio, el restaurante se queda **sin responsable** —no se reasigna solo a nadie— y se dice.
+  - Asignarlo y quitarlo **deja auditoría** con actor, valor anterior y valor nuevo (§21.2).
 
 ---
 
