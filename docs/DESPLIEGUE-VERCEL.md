@@ -43,6 +43,49 @@ cambiarlas en Vercel no basta, hay que volver a desplegar.
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Igual |
 | `EXPO_PUBLIC_WEB_URL` | No se pueden subir archivos; la pantalla lo dice |
 
+## Revisión del 21/09/2026 · lo comprobado y lo que falta
+
+Comprobado **por la API de Vercel** desde la sesión (el contenedor tiene
+bloqueado `*.vercel.app` por política de red, así que abrir las páginas y
+mirar los registros de compilación sigue siendo cosa del navegador):
+
+- **El plan es Hobby.** Eso confirma el primero de los tres detalles que
+  estaban escritos de memoria: el cron **no puede correr cada hora**.
+  `apps/web/vercel.json` declara dos pasadas al día (07:00 y 19:00 UTC) y
+  eso es lo que el plan admite. De ahí salió el fallo del resumen diario
+  que corrigió la migración 124.
+- **Los despliegues sí se disparan al subir**: el alias de producción
+  `cuotly-web.vercel.app` se repuntó el 21/09/2026 a las 16:35 UTC.
+- **`cuotly-web` tiene ocho variables**: `CRON_SECRET`,
+  `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`,
+  `ANTHROPIC_API_KEY`, `RESEND_API_KEY` y `RESEND_FROM`.
+
+### Lo que falta, y qué deja sin funcionar
+
+| Proyecto | Variable que falta | Consecuencia hoy en producción |
+|---|---|---|
+| `cuotly-web` | `INTEGRATIONS_VAULT_KEY` | **Ninguna fuente analítica se puede conectar** (RN-INT-02). La pantalla lo dice en vez de fallar. |
+| `cuotly-web` | `GOOGLE_OAUTH_CLIENT_ID` y `..._SECRET` | GA4, Search Console y Perfil de Empresa no se pueden conectar. Clarity y PageSpeed sí. |
+| `cuotly-movil` | `EXPO_PUBLIC_SUPABASE_URL` | **La app en el navegador no arranca: pantalla en blanco.** |
+| `cuotly-movil` | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Igual. |
+
+`cuotly-movil` tiene **solo** `EXPO_PUBLIC_WEB_URL`. Las dos que faltan son
+los mismos valores públicos que ya usa la web —viajan al navegador, no son
+secretos— pero hay que **volver a desplegar** después de ponerlas, porque
+`EXPO_PUBLIC_*` se incrusta al compilar.
+
+Las otras tres sí son secretos que alguien tiene que generar u obtener: la
+clave de la caja fuerte (`openssl rand -base64 32`) y el cliente OAuth de
+Google Cloud.
+
+### Lo que sigue sin poder comprobarse desde aquí
+
+- Que las compilaciones de hoy hayan terminado en verde.
+- El `maxDuration` de la función de la cola y **que la invocación del cron
+  llegue de verdad** — los otros dos detalles escritos de memoria.
+- El primer envío real de correo con Resend, con su dominio verificado.
+
 ## Qué depende del cron
 
 Sin cron, Cuotly funciona pero no hace nada por su cuenta. Todo esto está
