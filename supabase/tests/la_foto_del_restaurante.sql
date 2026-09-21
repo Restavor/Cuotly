@@ -457,6 +457,61 @@ begin
 end $$;
 
 -- ============================================================
+-- La versión de lista dice lo mismo que la de uno (migración 121)
+-- ============================================================
+--
+-- Es la que pintan el Inicio y la lista de Restaurantes, y si decidiera
+-- por su cuenta acabaría diciendo algo distinto. Aquí se comprueban las
+-- tres cosas que tienen que coincidir: la ruta, a quién se la da y a quién
+-- no, y que un restaurante sin foto **no salga** en vez de salir con nulo.
+set local request.jwt.claim.sub = 'e0900000-0000-0000-0000-000000000002';
+
+do $$
+declare
+  v_filas int;
+  v_ruta text;
+begin
+  select count(*) into v_filas
+  from public.establishment_photo_paths(array[
+    'e0940000-0000-0000-0000-000000000001'::uuid,
+    'e0940000-0000-0000-0000-000000000002'::uuid
+  ]);
+
+  -- El segundo restaurante no tiene foto: no sale. Una fila con la ruta a
+  -- nulo obligaría a la pantalla a distinguir dos formas de "no hay".
+  if v_filas <> 1 then
+    raise exception 'FALLO · esperaba una sola fila con foto y hay %', v_filas;
+  end if;
+
+  select storage_path into v_ruta
+  from public.establishment_photo_paths(array['e0940000-0000-0000-0000-000000000001'::uuid]);
+
+  if v_ruta is distinct from public.establishment_photo_path('e0940000-0000-0000-0000-000000000001') then
+    raise exception 'FALLO · la de lista y la de uno deberían dar la misma ruta';
+  end if;
+
+  if v_ruta is distinct from 'espacio-65/fachada-v2.jpg' then
+    raise exception 'FALLO · la de lista debería dar la versión vigente';
+  end if;
+end $$;
+
+set local request.jwt.claim.sub = 'e0900000-0000-0000-0000-000000000004';
+
+do $$
+begin
+  if exists (
+    select 1 from public.establishment_photo_paths(array[
+      'e0940000-0000-0000-0000-000000000001'::uuid,
+      'e0940000-0000-0000-0000-000000000002'::uuid
+    ])
+  ) then
+    raise exception 'FALLO · alguien de fuera no debería sacar ninguna ruta por la de lista';
+  end if;
+end $$;
+
+set local request.jwt.claim.sub = 'e0900000-0000-0000-0000-000000000001';
+
+-- ============================================================
 -- Archivar la foto la retira de la cara del local
 -- ============================================================
 --
@@ -477,6 +532,13 @@ do $$
 begin
   if public.establishment_photo_path('e0940000-0000-0000-0000-000000000001') is not null then
     raise exception 'FALLO · una foto archivada no debería seguir sirviéndose';
+  end if;
+
+  if exists (
+    select 1 from public.establishment_photo_paths(
+      array['e0940000-0000-0000-0000-000000000001'::uuid])
+  ) then
+    raise exception 'FALLO · la de lista tampoco debería servir una foto archivada';
   end if;
 end $$;
 
@@ -499,7 +561,8 @@ begin
   join pg_namespace n on n.oid = p.pronamespace
   cross join (values ('anon'), ('public')) as r(rolname)
   where n.nspname = 'public'
-    and p.proname in ('set_establishment_photo', 'establishment_photo_path')
+    and p.proname in ('set_establishment_photo', 'establishment_photo_path',
+                      'establishment_photo_paths')
     and has_function_privilege(
       case when r.rolname = 'public' then 'anon' else r.rolname end, p.oid, 'execute')
     and r.rolname = 'anon';
@@ -517,6 +580,11 @@ begin
   if not has_function_privilege('authenticated',
        'public.establishment_photo_path(uuid)', 'execute') then
     raise exception 'FALLO · `establishment_photo_path` debería estar abierta a authenticated';
+  end if;
+
+  if not has_function_privilege('authenticated',
+       'public.establishment_photo_paths(uuid[])', 'execute') then
+    raise exception 'FALLO · `establishment_photo_paths` debería estar abierta a authenticated';
   end if;
 end $$;
 

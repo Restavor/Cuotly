@@ -2628,8 +2628,17 @@ begin
       -- Y `auth.uid()` ya no absuelve: estampar el actor en un `audit_log`
       -- no es comprobar nada, y trece funciones pasaban el filtro solo por
       -- mencionarlo.
+      --
+      -- `establishment_photo_paths` (migración 121) entra en la lista por
+      -- lo mismo que `report_actor_role` o `assert_can_manage_integrations`:
+      -- ES la comprobación de RN-EST-18 —solo devuelve la foto de los
+      -- restaurantes que quien pregunta puede ver— y ella misma pasa este
+      -- barrido por su cuenta, porque su cuerpo llama a `is_space_member`.
+      -- Su nombre está aquí para que `establishment_photo_path`, que es una
+      -- envoltura de una línea sobre ella, cuente como comprobada en vez de
+      -- tener que repetir la regla para satisfacer a un `grep`.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
