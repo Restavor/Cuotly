@@ -2989,6 +2989,7 @@ export const es = {
       "establishment.created": "Restaurante dado de alta",
       "establishment.data_changed": "Datos del restaurante editados",
       "establishment.manager_set": "Responsable del restaurante cambiado",
+      "establishment.photo_set": "Foto del restaurante cambiada",
       "establishment.status_changed": "Estado del restaurante cambiado",
       // §38, RN-TRA · la transferencia entre espacios. Los dos espacios ven
       // el mismo apunte desde su lado, así que el texto no dice "nuestro"

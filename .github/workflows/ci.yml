@@ -502,6 +502,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/la_foto_de_perfil.sql
 
+      - name: "Diseño móvil — Verificar la foto del restaurante: solo una imagen compartida y sin archivar de ESE local, la ven los dos lados y todo el equipo aunque no lea sus archivos, y quitarla no borra nada (RN-EST-18, decisión 62)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/la_foto_del_restaurante.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -242,6 +242,10 @@ export const AUDIT_ACTIONS = [
   // Migración 119 (RN-EST-19, decisión 63) · quién del equipo lleva este
   // restaurante. Quitarlo deja el mismo apunte que asignarlo.
   "establishment.manager_set",
+  // Migración 120 (RN-EST-18, decisión 62) · la foto que identifica al
+  // local. Quitarla no borra el archivo, así que el apunte guarda los dos
+  // identificadores y se puede volver a la de antes.
+  "establishment.photo_set",
   // Migración 99 (R24, M47, RN-EST-09) · el restaurante comunica la baja, o
   // el equipo registra la que llegó por fuera.
   "establishment.termination_requested",
