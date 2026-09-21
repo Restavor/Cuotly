@@ -250,65 +250,219 @@ begin
 end $$;
 
 -- ============================================================
--- El barrido: solo a las ocho, y las del espacio
+-- La ventana del barrido, a cualquier hora del día
 -- ============================================================
 --
--- No se puede mover `now()`, así que se mira al revés: qué hora es AHORA en
--- cada espacio, y se comprueba que el barrido hace algo exactamente en el
--- que sean las ocho — ninguno, uno o los dos. Sin esto, la suite solo
--- pasaría si alguien la ejecutara a las ocho de la mañana.
-do $$
-declare
-  v_hora_madrid int := extract(hour from (now() at time zone 'Europe/Madrid'));
-  v_hora_canarias int := extract(hour from (now() at time zone 'Atlantic/Canary'));
-  v_hechos_madrid int;
-  v_hechos_canarias int;
-begin
-  v_hechos_madrid := public.run_notification_digests('a0910000-0000-0000-0000-000000000001');
-  v_hechos_canarias := public.run_notification_digests('a0910000-0000-0000-0000-000000000002');
-
-  -- En Madrid hay una persona con resumen y avisos sin enviar: si son las
-  -- ocho allí, tiene que salir uno.
-  if v_hora_madrid = 8 and v_hechos_madrid <> 1 then
-    raise exception 'FALLO · son las 8 en Madrid y el barrido hizo % resúmenes', v_hechos_madrid;
-  end if;
-
-  if v_hora_madrid <> 8 and v_hechos_madrid <> 0 then
-    raise exception 'FALLO · no son las 8 en Madrid (%) y el barrido hizo algo', v_hora_madrid;
-  end if;
-
-  -- En Canarias nadie tiene resumen diario: nunca sale nada, sea la hora
-  -- que sea. Así se distingue "no es la hora" de "no hay a quién".
-  if v_hechos_canarias <> 0 then
-    raise exception 'FALLO · en Canarias nadie tiene resumen y salieron %', v_hechos_canarias;
-  end if;
-
-  -- Y las dos horas son distintas, o el decorado no está probando nada.
-  if v_hora_madrid = v_hora_canarias then
-    raise exception 'FALLO · las dos zonas marcan la misma hora: el decorado no prueba la zona';
-  end if;
-end $$;
-
--- ============================================================
--- El barrido, forzando que sean las ocho
--- ============================================================
+-- **Este bloque se reescribió porque el anterior mentía a medias.**
+-- Miraba qué hora era en Madrid AHORA y comprobaba el barrido contra esa
+-- hora, así que qué se ejercía dependía de cuándo se ejecutara la suite:
+-- lanzada por la tarde nunca probaba el caso "antes de las ocho", y
+-- lanzada a las ocho no probaba el resto. Tres mutaciones lo demostraron
+-- —quitar la ventana entera, usar la hora del servidor y volver a "las
+-- ocho en punto"— y las tres sobrevivieron.
 --
--- Para poder comprobar el CONTENIDO del resumen sin esperar a mañana, se
--- mueve la zona del espacio a una en la que ahora mismo sean las ocho.
--- Es un truco del test, no del producto: lo que se ejerce es exactamente
--- el mismo código.
-do $$
+-- Ahora se conduce el reloj en vez de mirarlo: para cada hora local que se
+-- quiere probar se busca una zona en la que **ahora mismo** sea esa hora y
+-- se le pone al espacio. Se ejerce el mismo código, con la hora que toca,
+-- corra la suite cuando corra.
+create or replace function pg_temp.a67_en_hora_local(p_hora int)
+returns void language plpgsql as $$
 declare
   v_zona text;
 begin
   select name into v_zona
   from pg_timezone_names
-  where extract(hour from (now() at time zone name)) = 8
+  where extract(hour from (now() at time zone name)) = p_hora
     and name like 'Etc/GMT%'
   limit 1;
 
   if v_zona is null then
-    raise exception 'FALLO · no se encontró ninguna zona en la que sean las ocho';
+    raise exception 'FALLO · no hay ninguna zona en la que ahora sean las %', p_hora;
+  end if;
+
+  -- Cada caso arranca sin resumen: lo que se mide es si el barrido lo
+  -- HACE a esa hora, no si ya estaba.
+  delete from public.notification_deliveries
+  where digest_id in (select id from public.notification_digests
+                      where profile_id = 'a0900000-0000-0000-0000-000000000002');
+  delete from public.notification_digests
+  where profile_id = 'a0900000-0000-0000-0000-000000000002';
+
+  update public.spaces set timezone = v_zona
+  where id = 'a0910000-0000-0000-0000-000000000001';
+end $$;
+
+do $$
+declare
+  v_caso record;
+  v_hechos int;
+begin
+  for v_caso in
+    select * from (values
+      -- Antes de las ocho: en silencio, a cualquier hora de la madrugada.
+      (0, false), (3, false), (7, false),
+      -- A las ocho y después: el resumen sale. Las 09 y las 21 son
+      -- exactamente las horas a las que el cron de Vercel pasa por Madrid
+      -- en verano, y son las que el fallo de la 122 dejaba fuera.
+      (8, true), (9, true), (14, true), (21, true), (23, true)
+    ) as t(hora, debe_salir)
+  loop
+    perform pg_temp.a67_en_hora_local(v_caso.hora);
+    v_hechos := public.run_notification_digests('a0910000-0000-0000-0000-000000000001');
+
+    if v_caso.debe_salir and v_hechos <> 1 then
+      raise exception 'FALLO · a las %:00 del espacio debería salir el resumen y salieron %',
+        v_caso.hora, v_hechos;
+    end if;
+
+    if not v_caso.debe_salir and v_hechos <> 0 then
+      raise exception 'FALLO · a las %:00 del espacio NO debería salir nada y salieron %',
+        v_caso.hora, v_hechos;
+    end if;
+  end loop;
+end $$;
+
+-- ============================================================
+-- Y la ventana es la del ESPACIO, no la del servidor
+-- ============================================================
+--
+-- Con la hora del servidor, el barrido saldría a la vez para todo el mundo
+-- y a una hora que no es la de nadie. Se comprueba poniendo al espacio en
+-- una hora que NO vale mientras en el servidor sí, y al revés.
+do $$
+declare
+  v_hora_servidor int := extract(hour from now() at time zone 'UTC');
+  v_hechos int;
+begin
+  -- Espacio a las 03:00: no debe salir nada, diga lo que diga el servidor.
+  perform pg_temp.a67_en_hora_local(3);
+  v_hechos := public.run_notification_digests('a0910000-0000-0000-0000-000000000001');
+  if v_hechos <> 0 then
+    raise exception 'FALLO · el espacio está a las 03:00 (servidor a las %) y salió resumen',
+      v_hora_servidor;
+  end if;
+
+  -- Espacio a las 10:00: debe salir, diga lo que diga el servidor.
+  perform pg_temp.a67_en_hora_local(10);
+  v_hechos := public.run_notification_digests('a0910000-0000-0000-0000-000000000001');
+  if v_hechos <> 1 then
+    raise exception 'FALLO · el espacio está a las 10:00 (servidor a las %) y no salió resumen',
+      v_hora_servidor;
+  end if;
+end $$;
+
+-- ============================================================
+-- Una pasada al día, aunque el cron pase dos veces
+-- ============================================================
+--
+-- Desde que la ventana es "a partir de las ocho", **las dos pasadas del
+-- cron la cumplen**. Lo que impide el segundo correo ya no es la hora: es
+-- la clave única de un resumen por día. Aquí se ejerce esa situación de
+-- verdad, corriendo el barrido dos veces a dos horas que valen.
+do $$
+declare
+  v_hechos int;
+begin
+  perform pg_temp.a67_en_hora_local(9);
+  if public.run_notification_digests('a0910000-0000-0000-0000-000000000001') <> 1 then
+    raise exception 'FALLO · la primera pasada del día debería hacer el resumen';
+  end if;
+
+  -- La segunda pasada del cron, más tarde y el mismo día.
+  update public.spaces set timezone = (
+    select name from pg_timezone_names
+    where extract(hour from (now() at time zone name)) = 21
+      and name like 'Etc/GMT%'
+    limit 1
+  )
+  where id = 'a0910000-0000-0000-0000-000000000001';
+
+  v_hechos := public.run_notification_digests('a0910000-0000-0000-0000-000000000001');
+  if v_hechos <> 0 then
+    raise exception 'FALLO · la segunda pasada del día mandó % resúmenes de más', v_hechos;
+  end if;
+end $$;
+
+-- ============================================================
+-- El cron de Vercel tiene que caer dentro de la ventana
+-- ============================================================
+--
+-- Esta comprobación existe porque el fallo se escapó: la 122 exigía las
+-- ocho en punto y la cola pasa dos veces al día, así que en Madrid y en
+-- verano no coincidían nunca. Se toman **las horas reales del cron** —las
+-- de `apps/web/vercel.json`—, se traducen a hora de Madrid en las dos
+-- estaciones, y se exige que al menos una haga salir el resumen
+-- **ejecutando el barrido de verdad a esa hora**, no razonando sobre ella.
+--
+-- Si alguien mueve el cron, o vuelve a estrechar la ventana, esto se pone
+-- rojo antes de que nadie se quede sin correo.
+do $$
+declare
+  v_caso record;
+  v_hora_utc int;
+  v_hora_local int;
+  v_sirve boolean;
+begin
+  for v_caso in
+    select * from (values
+      ('verano',   timestamptz '2026-07-15 00:00:00+00'),
+      ('invierno', timestamptz '2026-01-15 00:00:00+00')
+    ) as t(estacion, dia)
+  loop
+    v_sirve := false;
+
+    -- Las dos pasadas declaradas en `apps/web/vercel.json`.
+    foreach v_hora_utc in array array[7, 19] loop
+      v_hora_local := extract(hour from
+        ((v_caso.dia + (v_hora_utc || ' hours')::interval) at time zone 'Europe/Madrid'));
+
+      perform pg_temp.a67_en_hora_local(v_hora_local);
+      if public.run_notification_digests('a0910000-0000-0000-0000-000000000001') = 1 then
+        v_sirve := true;
+      end if;
+    end loop;
+
+    if not v_sirve then
+      raise exception
+        'FALLO · en % ninguna pasada del cron (07:00 y 19:00 UTC) hace salir el resumen: Madrid se quedaría sin correo',
+        v_caso.estacion;
+    end if;
+  end loop;
+end $$;
+
+-- ============================================================
+-- El barrido, forzando que la hora valga
+-- ============================================================
+--
+-- Para comprobar el CONTENIDO del resumen sin esperar a mañana se mueve la
+-- zona del espacio a una en la que ahora mismo ya sean las ocho o más. Es
+-- un truco del test, no del producto: lo que se ejerce es exactamente el
+-- mismo código.
+--
+-- Y **se borra antes el resumen que el bloque anterior pueda haber
+-- creado**: desde que la ventana es "a partir de las ocho" (migración
+-- 124), aquel bloque hace el resumen de verdad siempre que en Madrid ya
+-- sea esa hora. Sin borrarlo, este bloque encontraría el de hoy ya hecho y
+-- mediría cero — que es justo lo que pasó al cambiar la ventana, y por eso
+-- queda escrito.
+do $$
+declare
+  v_zona text;
+begin
+  delete from public.notification_deliveries
+  where digest_id in (select id from public.notification_digests
+                      where profile_id = 'a0900000-0000-0000-0000-000000000002');
+  delete from public.notification_digests
+  where profile_id = 'a0900000-0000-0000-0000-000000000002';
+
+  select name into v_zona
+  from pg_timezone_names
+  where extract(hour from (now() at time zone name)) between 8 and 20
+    and name like 'Etc/GMT%'
+  limit 1;
+
+  if v_zona is null then
+    raise exception 'FALLO · no se encontró ninguna zona en la que ya sean las ocho';
   end if;
 
   update public.spaces set timezone = v_zona
@@ -324,7 +478,7 @@ begin
   v_hechos := public.run_notification_digests('a0910000-0000-0000-0000-000000000001');
 
   if v_hechos <> 1 then
-    raise exception 'FALLO · a las ocho debería salir 1 resumen y salieron %', v_hechos;
+    raise exception 'FALLO · pasadas las ocho debería salir 1 resumen y salieron %', v_hechos;
   end if;
 
   select id, notification_count into v_digest, v_cuantos

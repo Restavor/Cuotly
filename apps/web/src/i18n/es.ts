@@ -2905,6 +2905,12 @@ export const es = {
       lo único que no se puede adivinar. Y dice lo del aviso obligatorio,
       porque quien elige un resumen tiene derecho a saber qué no va a
       esperar a mañana.
+
+      Dice **"a partir de"** y no "a las", y es exacto, no una cautela: el
+      resumen lo construye un barrido de la cola, y la cola la invoca el
+      cron dos veces al día. Llega en la primera pasada a partir de esa
+      hora — cuanto más a menudo corra, más cerca de las ocho. Prometer la
+      hora en punto sería prometer una infraestructura (migración 124).
     */
     frequencyTitle: "Cuándo recibirlos",
     frequencyHint:
@@ -2922,7 +2928,7 @@ export const es = {
       Se vio mirando la pantalla pintada.
     */
     frequencyDigestHint: (hora: string, zona: string) =>
-      `Un solo correo a las ${hora}, la hora del espacio (${zona}), con todo lo del día anterior. Los avisos que no se pueden desactivar —seguridad, pérdida de acceso e impagos graves— siguen saliendo al momento.`,
+      `Un solo correo a partir de las ${hora}, la hora del espacio (${zona}), con todo lo del día anterior. Los avisos que no se pueden desactivar —seguridad, pérdida de acceso e impagos graves— siguen saliendo al momento.`,
     frequencySubmit: "Guardar",
     frequencyPending: "Guardando…",
     frequencyDone: "Guardado.",

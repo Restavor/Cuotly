@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { es } from "@/i18n/es";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 import {
@@ -249,21 +249,31 @@ describe("RN-MOV-06 · el push es el tercer canal de las preferencias", () => {
  */
 describe("RN-NOT-06 · la hora del resumen", () => {
   it("es la misma en TypeScript que en la migración que la aplica", () => {
-    const migracion = readFileSync(
-      resolve(
-        __dirname,
-        "../../../../supabase/migrations/20260921000122_al_momento_o_resumen_diario.sql",
-      ),
-      "utf8",
-    );
+    /*
+      Se lee **la última** migración que define la ventana, no una fija.
+      La primera versión de este test apuntaba a la 122 por su nombre, y la
+      124 la corrigió: el test habría seguido en verde leyendo una función
+      que ya nadie ejecuta. Buscar la última hace que siga diciendo la
+      verdad después de cada corrección.
+    */
+    const dir = resolve(__dirname, "../../../../supabase/migrations");
+    const condiciones = readdirSync(dir)
+      .filter((f) => f.endsWith(".sql"))
+      .sort()
+      .flatMap((f) => {
+        const m = readFileSync(resolve(dir, f), "utf8").match(
+          /extract\(hour from \(v_ahora at time zone v_zona\)\) < (\d+)/,
+        );
+        return m ? [{ archivo: f, hora: Number(m[1]) }] : [];
+      });
 
-    // La línea que decide si el barrido hace algo.
-    const match = migracion.match(
-      /extract\(hour from \(v_ahora at time zone v_zona\)\) <> (\d+)/,
-    );
+    expect(
+      condiciones.length,
+      "ninguna migración define la ventana del resumen diario",
+    ).toBeGreaterThan(0);
 
-    expect(match, "no se encontró la comprobación de la hora en la migración 122").not.toBeNull();
-    expect(Number(match![1])).toBe(DIGEST_HOUR);
+    const ultima = condiciones[condiciones.length - 1];
+    expect(ultima.hora, `la ventana la define ${ultima.archivo}`).toBe(DIGEST_HOUR);
   });
 
   it("se escribe como una hora española, con dos cifras", () => {

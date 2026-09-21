@@ -1683,6 +1683,18 @@ Léelo entero al empezar cualquier sesión, junto con `CLAUDE.md`, `docs/PRD.md`
 
    Escrito como RN-NOT-06 antes de tocar código.
 
+   **Corrección del mismo día, antes de que nadie lo usara.** La primera versión exigía que fueran
+   **las ocho en punto** en el espacio, y eso habría hecho que el resumen no se enviara nunca en
+   Madrid durante el verano: el barrido lo lanza el cron de Vercel, que pasa dos veces al día
+   —07:00 y 19:00 UTC—, o sea a las 09:00 y 21:00 hora de Madrid en horario de verano. Habría
+   funcionado en invierno, se habría apagado solo en marzo y no habría dado ningún error.
+
+   El fallo fue escribir "a las ocho" sin mirar cada cuánto corre la cola de verdad. Se arregla en
+   la migración 124: **la primera pasada del día a las 08:00 o después**, que además es mejor
+   aunque la cola pase cada hora —con "las ocho en punto", una sola pasada perdida deja a todo el
+   mundo sin resumen ese día—. La pantalla dice "a partir de las 08:00", que es la verdad con
+   cualquier frecuencia.
+
 ---
 
 ### Pendiente de completar

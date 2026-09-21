@@ -815,9 +815,21 @@ app móvil (Fase 4). WhatsApp existe solo como **botón de acción manual**, nun
   recibe los avisos **al momento** o en un **resumen diario**.
 
   - **Al momento** es lo de siempre y el valor por omisión: quien no ha tocado nada lo tiene así.
-  - **El resumen diario sale a las 08:00 de la zona horaria del espacio** y recoge las 24 h
-    anteriores. La hora es fija: no se configura, porque una hora por persona multiplica los casos
-    y no resuelve nada que no resuelva ya elegir entre las dos frecuencias.
+  - **El resumen diario sale a partir de las 08:00 de la zona horaria del espacio** y recoge las
+    24 h anteriores. La hora es fija: no se configura, porque una hora por persona multiplica los
+    casos y no resuelve nada que no resuelva ya elegir entre las dos frecuencias.
+
+    **"A partir de" y no "a las", y el motivo importa.** El resumen lo construye un barrido de la
+    cola, y la cola no corre continuamente: la invoca el cron de Vercel, que en el plan actual pasa
+    **dos veces al día**. Si el barrido exigiera que fueran las ocho en punto, en Madrid y en
+    verano no coincidiría nunca —la cola pasa a las 09:00 y a las 21:00 locales— y el resumen
+    **no se enviaría**, sin dar ningún error, medio año. Así que sale en la **primera pasada del
+    día que ocurra a las 08:00 o después**, y la clave única de un resumen por día impide que
+    salgan dos.
+
+    Cuanto más a menudo corra la cola, más cerca de las ocho llega. Con una pasada por hora
+    llegaría a las 08:00 en punto. Prometer esa hora exacta depende de la infraestructura, así que
+    **la pantalla dice "a partir de las 08:00"**, que es verdad con cualquier frecuencia.
   - **La elección es por espacio, no por persona.** Los avisos son de un espacio y la hora de
     corte es la de ese espacio; quien trabaja en dos recibe dos resúmenes, cada uno en su mañana.
   - **Agrupa el correo y el push, nunca el aviso dentro de la aplicación.** La campana no
