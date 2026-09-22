@@ -1077,6 +1077,10 @@ export const es = {
     // del diseño definitivo.
     planAndServices: "Plan y servicios",
     payments: "Pagos y facturas",
+    // R28, R36 y R38 · los tres últimos destinos del panel del restaurante.
+    files: "Archivos",
+    panelUsers: "Usuarios y accesos",
+    settingsAndHelp: "Ajustes y ayuda",
     agent: "Agente Cuotly",
     agentBadge: "Próximamente",
     settings: "Ajustes",
@@ -2311,6 +2315,68 @@ export const es = {
     // tenga su pantalla.
     moreTitle: "Todo sobre tu restaurante",
   },
+  // R28 y R42 · "Archivos" del panel del restaurante.
+  panelFiles: {
+    title: "Archivos",
+    subtitle: "Consulta y descarga los archivos compartidos de tu restaurante, y sube los tuyos.",
+    all: "Todos",
+    tabsLabel: "Carpetas",
+    upload: "Subir archivo",
+    uploadCategory: "Carpeta",
+    uploadDone: "Archivo subido.",
+    uploadHint: "El archivo queda en tu restaurante y lo ve el equipo de mantenimiento.",
+    emptyTitle: "Todavía no hay archivos aquí",
+    emptyReason: "Aquí aparecen los archivos que subes y los que el equipo comparte contigo.",
+    folderEmpty: "Esta carpeta no tiene archivos.",
+    uploadedOn: (fecha: string) => `Subido el ${fecha}`,
+    detailTitle: "Información del archivo",
+    detailEmpty: "Elige un archivo para ver su información y sus versiones.",
+    name: "Nombre",
+    size: "Tamaño",
+    date: "Fecha de subida",
+    folder: "Carpeta",
+    versionsTitle: "Versiones",
+    versionLabel: (n: number) => `v${n}`,
+    current: "actual",
+    download: "Descargar archivo",
+    downloadVersion: "Descargar esta versión",
+    useInRequest: "Usar en una solicitud",
+    useInRequestHint: "¿Quieres usar este archivo en tu web? Pide el cambio desde Solicitudes y adjúntalo allí.",
+    preview: "Vista previa",
+    noPreview: "Este archivo no tiene vista previa: descárgalo para verlo.",
+    kb: (n: number) => `${n.toLocaleString("es-ES")} KB`,
+    mb: (n: number) => `${n.toLocaleString("es-ES", { maximumFractionDigits: 1 })} MB`,
+  },
+
+  // R38 a R40 y R44 · "Ajustes y ayuda" del panel del restaurante.
+  panelSettings: {
+    title: "Ajustes y ayuda",
+    subtitle: "Configura la información de tu restaurante y otras preferencias.",
+    tabs: { datos: "Datos del restaurante", notificaciones: "Notificaciones y seguridad", ayuda: "Ayuda", fuentes: "Fuentes de datos" },
+    tabsLabel: "Secciones de ajustes",
+    dataTitle: "Información del restaurante",
+    photoTitle: "Foto del restaurante",
+    noEditTitle: "No puedes cambiar estos datos",
+    noEditReason:
+      "Los datos del restaurante los cambia su propietario o un Editor con ese permiso. Si hay algo mal, díselo a quien lo gestiona o escribe al equipo.",
+    notOnWebTitle: "Los cambios de esta ficha no cambian tu web.",
+    notOnWebBody: "Si quieres actualizar la información que aparece en tu sitio web, envía una solicitud para que el equipo la revise.",
+    newRequest: "Nueva solicitud",
+    notificationsTitle: "Notificaciones",
+    notificationsBody: "Elige cómo recibes los avisos: al momento o en un resumen diario, y por qué canal.",
+    notificationsLink: "Configurar notificaciones",
+    securityTitle: "Seguridad de tu cuenta",
+    securityBody: "Gestiona la seguridad de tu cuenta personal.",
+    password: "Verificación en dos pasos",
+    passwordBody: "Añade un segundo paso al entrar en tu cuenta.",
+    sessions: "Gestionar sesiones",
+    sessionsBody: "Revisa los dispositivos donde has iniciado sesión.",
+    personalOnly: "Estas opciones son de tu cuenta personal, no del restaurante: lo que cambies aquí no afecta a los demás usuarios.",
+    timezoneTitle: "Zona horaria",
+    timezoneBody: (zona: string) =>
+      `Las fechas y horas de tu panel se enseñan en la zona de tu espacio de mantenimiento: ${zona}. La fija el espacio, no cada usuario.`,
+  },
+
   // R29 a R35, A19, A20 · "Informes y datos" del panel del restaurante.
   panelData: {
     title: "Informes y datos",
@@ -7808,6 +7874,10 @@ export const es = {
    * esquema.
    */
   panelUsers: {
+    // R36 · las columnas de la tabla de usuarios del panel.
+    nameLabel: "Nombre",
+    stateLabel: "Estado",
+    editPermissions: "Editar permisos",
     title: "Usuarios y accesos",
     hint: "Gestiona quién puede acceder a tu restaurante en Cuotly y qué permisos tiene.",
     listTitle: "Usuarios del restaurante",

@@ -2,7 +2,21 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { RevokeAccessButton } from "@/components/establishment/RevokeAccessButton";
-import { Card } from "@/components/ui";
+import {
+  ButtonLink,
+  Card,
+  PageHeader,
+  PersonCell,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  Tabs,
+} from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -59,10 +73,13 @@ function rolName(user: PanelUser): string {
 
 export default async function PanelUsersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug, id } = await params;
+  const { tab } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -96,86 +113,124 @@ export default async function PanelUsersPage({
   const revisa = esDelEquipo === true;
   const t = es.panelUsers;
 
-  return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
-      <header>
-        <p className="text-sm text-text-secondary">{establishment.name}</p>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
-        <p className="mt-1 text-sm text-text-secondary">{t.hint}</p>
-      </header>
+  const base = `/espacios/${slug}/restaurantes/${id}/usuarios`;
+  const vista = tab === "invitar" && gestiona ? "invitar" : "usuarios";
 
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t.title}
+        subtitle={t.hint}
+        actions={
+          gestiona && vista === "usuarios" ? (
+            <ButtonLink href={`${base}?tab=invitar`} icon="plus">
+              {t.inviteTitle}
+            </ButtonLink>
+          ) : null
+        }
+      />
+
+      {gestiona ? (
+        <Tabs
+          label={t.title}
+          active={vista}
+          tabs={[
+            { key: "usuarios", label: t.listTitle, href: base },
+            { key: "invitar", label: t.inviteTitle, href: `${base}?tab=invitar` },
+          ]}
+        />
+      ) : null}
+
+      {vista === "usuarios" ? (
       <Card title={t.listTitle}>
         {users.failed ? (
           <p className="text-sm text-danger">{t.failed}</p>
         ) : (
-          <ul className="divide-y divide-border">
-            {users.rows.map((row) => {
-              const nombre = row.displayName ?? es.establishmentSheet.noName;
-              const esPropietario = row.role === "local_owner";
-              const delGrupo = row.source === "group";
-              const concedidos = CLIENT_PERMISSIONS.filter((name) => row.permissions[name]);
-
-              return (
-                <li key={`${row.source}-${row.userId}`} className="space-y-3 py-4">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <span className="text-sm font-semibold text-text">{nombre}</span>
-                    <span className="text-xs text-cuotly-green">{t.active}</span>
-                  </div>
-
-                  <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                    <dt className="text-text-secondary">{t.roleLabel}</dt>
-                    <dd className="text-text">{rolName(row)}</dd>
-                    <dt className="text-text-secondary">{t.emailLabel}</dt>
-                    <dd className="text-text">{row.email}</dd>
-                    <dt className="text-text-secondary">{t.scopeLabel}</dt>
-                    <dd className="text-text">
-                      {delGrupo ? t.scopeGroup : establishment.name}
-                    </dd>
-                    <dt className="text-text-secondary">{t.permissionsLabel}</dt>
-                    <dd className="text-text">
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>{t.nameLabel}</TableHeaderCell>
+                <TableHeaderCell>{t.roleLabel}</TableHeaderCell>
+                <TableHeaderCell>{t.emailLabel}</TableHeaderCell>
+                <TableHeaderCell>{t.scopeLabel}</TableHeaderCell>
+                <TableHeaderCell>{t.stateLabel}</TableHeaderCell>
+                <TableHeaderCell>{t.permissionsLabel}</TableHeaderCell>
+                <TableHeaderCell>{es.ui.table.actions}</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {users.rows.map((row) => {
+                const nombre = row.displayName ?? es.establishmentSheet.noName;
+                const esPropietario = row.role === "local_owner";
+                const delGrupo = row.source === "group";
+                return (
+                  <TableRow key={`${row.source}-${row.userId}`}>
+                    <TableCell>
+                      <PersonCell name={nombre} />
+                    </TableCell>
+                    <TableCell>{rolName(row)}</TableCell>
+                    <TableCell>{row.email}</TableCell>
+                    <TableCell>{delGrupo ? t.scopeGroup : establishment.name}</TableCell>
+                    <TableCell>
+                      <StatusBadge tone="success">{t.active}</StatusBadge>
+                    </TableCell>
+                    <TableCell>
                       {esPropietario ? (
                         t.ownerAll
-                      ) : concedidos.length === 0 ? (
-                        // CLAUDE.md · no es un hueco: es que todavía no
-                        // tiene ninguno, y eso se dice con palabras.
-                        <span className="text-text-secondary">{t.noneYet}</span>
                       ) : (
-                        <ul>
-                          {concedidos.map((name) => (
-                            <li key={name}>{t.permissions[name]}</li>
+                        <ul className="space-y-0.5 text-sm">
+                          {CLIENT_PERMISSIONS.map((name) => (
+                            <li key={name} className="flex items-center gap-1.5">
+                              <Icon
+                                name={row.permissions[name] ? "check" : "close"}
+                                className={`h-3.5 w-3.5 ${row.permissions[name] ? "text-cuotly-green" : "text-danger"}`}
+                              />
+                              <span className={row.permissions[name] ? "text-text" : "text-text-secondary"}>
+                                {t.permissions[name]}
+                              </span>
+                            </li>
                           ))}
                         </ul>
                       )}
-                    </dd>
-                  </dl>
-
-                  {gestiona && !esPropietario && !delGrupo ? (
-                    <>
-                      <PermissionsForm
-                        establishmentId={id}
-                        userId={row.userId}
-                        personName={nombre}
-                        current={row.permissions}
-                      />
-                      <RevokeAccessButton
-                        userId={row.userId}
-                        source="establishment"
-                        establishmentId={id}
-                        groupId={establishment.group_id ?? ""}
-                        personName={nombre}
-                      />
-                    </>
-                  ) : gestiona && esPropietario ? (
-                    <p className="text-xs text-text-secondary">{t.ownerNotEditable}</p>
-                  ) : gestiona && delGrupo ? (
-                    <p className="text-xs text-text-secondary">{t.groupNotEditable}</p>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
+                    </TableCell>
+                    <TableCell>
+                      {gestiona && !esPropietario && !delGrupo ? (
+                        <details>
+                          <summary className="cursor-pointer text-sm font-semibold text-cuotly-green">
+                            {t.editPermissions}
+                          </summary>
+                          <div className="mt-3 w-72 space-y-3">
+                            <PermissionsForm
+                              establishmentId={id}
+                              userId={row.userId}
+                              personName={nombre}
+                              current={row.permissions}
+                            />
+                            <RevokeAccessButton
+                              userId={row.userId}
+                              source="establishment"
+                              establishmentId={id}
+                              groupId={establishment.group_id ?? ""}
+                              personName={nombre}
+                            />
+                          </div>
+                        </details>
+                      ) : gestiona && esPropietario ? (
+                        <span className="text-xs text-text-secondary">{t.ownerNotEditable}</span>
+                      ) : gestiona && delGrupo ? (
+                        <span className="text-xs text-text-secondary">{t.groupNotEditable}</span>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </Card>
+      ) : null}
 
       {/*
         Página 152 · el aviso que el diseño pone bajo la lista. Se enseña
@@ -191,7 +246,7 @@ export default async function PanelUsersPage({
         a quien no, ni el formulario ni la lista, porque no tendría nada
         que hacer con ellos. La barrera sigue estando en el servidor.
       */}
-      {gestiona ? (
+      {gestiona && vista === "invitar" ? (
         <>
           <Card title={t.inviteTitle}>
             <InvitePanelForm establishmentId={id} />

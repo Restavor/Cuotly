@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { SettingsTabs } from "@/components/panel/SettingsTabs";
+
 import { IntegrationsBlock } from "@/components/establishment/IntegrationsBlock";
 import { loadIntegrationsView } from "@/components/establishment/integrations-load";
 import { isStaffRole } from "@/components/shell/navigation";
@@ -79,19 +81,14 @@ export default async function ClientSourcesPage({
   });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
-      <header>
-        <p className="text-sm text-text-secondary">
-          {establishment.name} · {establishment.code}
-        </p>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.clientArea.sourcesTitle}</h1>
-        <p className="text-sm text-text-secondary">{es.clientArea.sourcesHint}</p>
-        <p className="mt-2 text-sm">
-          <Link href={`${base}/datos`} className="text-cuotly-green underline">
-            {es.clientArea.dataLink}
-          </Link>
-        </p>
-      </header>
+    <div className="space-y-6">
+      {/* R44 · las fuentes de siempre (RN-INT-05) dentro de "Ajustes y ayuda". */}
+      <SettingsTabs base={base} active="fuentes" subtitle={es.clientArea.sourcesHint} />
+      <p className="text-sm">
+        <Link href={`${base}/datos`} className="text-cuotly-green underline">
+          {es.clientArea.dataLink}
+        </Link>
+      </p>
 
       {view === null ? (
         <p className="text-sm text-danger">{es.emptyReasons.error}</p>

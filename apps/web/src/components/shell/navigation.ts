@@ -315,9 +315,12 @@ export function fullNav(
         D("plan", es.nav.planAndServices, mine ? `${mine}/plan` : "/"),
         D("billing", es.nav.payments, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
-        D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
-        // §131 · el restaurante consulta las guías; las incidencias, no.
-        D("help", es.nav.help, mine ? `${mine}/ayuda` : "/"),
+        // R28, R36 · archivos y usuarios del restaurante.
+        D("files", es.nav.files, mine ? `${mine}/archivos` : "/"),
+        D("users", es.nav.panelUsers, mine ? `${mine}/usuarios` : "/"),
+        // R38 a R40 y R44 · "Ajustes y ayuda": los datos, la cuenta, la
+        // ayuda (§131: las guías; las incidencias, no) y las fuentes.
+        D("help", es.nav.settingsAndHelp, mine ? `${mine}/ajustes` : "/"),
       ];
     case "client_daily_menu":
       return [
@@ -332,8 +335,9 @@ export function fullNav(
         D("plan", es.nav.planAndServices, mine ? `${mine}/plan` : "/"),
         D("billing", es.nav.payments, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
-        D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
-        D("help", es.nav.help, mine ? `${mine}/ayuda` : "/"),
+        D("files", es.nav.files, mine ? `${mine}/archivos` : "/"),
+        D("users", es.nav.panelUsers, mine ? `${mine}/usuarios` : "/"),
+        D("help", es.nav.settingsAndHelp, mine ? `${mine}/ajustes` : "/"),
       ];
   }
 }
@@ -499,6 +503,8 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   newRequest: "plus",
   billing: "finance",
   plan: "plans",
+  files: "document",
+  users: "team",
   data: "reports",
   sources: "database",
   switchSpace: "switchSpace",

@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { HelpCenter } from "@/components/help/HelpCenter";
+import { SettingsTabs } from "@/components/panel/SettingsTabs";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,12 +35,16 @@ export default async function ClientHelpPage({
   const { role } = await resolveShellViewer(supabase, user.id, slug);
 
   return (
-    <HelpCenter
-      supabase={supabase}
-      role={role}
-      base={`/espacios/${slug}/restaurantes/${id}/ayuda`}
-      spaceId={null}
-      consulta={(q ?? "").trim()}
-    />
+    <div className="space-y-6">
+      {/* R40 · la ayuda de siempre (§133) dentro de "Ajustes y ayuda". */}
+      <SettingsTabs base={`/espacios/${slug}/restaurantes/${id}`} active="ayuda" />
+      <HelpCenter
+        supabase={supabase}
+        role={role}
+        base={`/espacios/${slug}/restaurantes/${id}/ayuda`}
+        spaceId={null}
+        consulta={(q ?? "").trim()}
+      />
+    </div>
   );
 }

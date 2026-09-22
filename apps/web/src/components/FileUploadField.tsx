@@ -30,12 +30,18 @@ export function FileUploadField({
   category,
   name,
   label = es.files.label,
+  onUploaded,
 }: {
   establishmentId: string;
   category: string;
   /** Nombre del campo oculto por el que el formulario envía el archivo. */
   name: string;
   label?: string;
+  /**
+   * R28 · para quien sube un archivo suelto, sin formulario detrás: el
+   * archivo ya está registrado y solo hay que refrescar la pantalla.
+   */
+  onUploaded?: (fileId: string) => void;
 }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +106,7 @@ export function FileUploadField({
 
       setFileId(registro.fileId);
       setFileName(archivo.name);
+      onUploaded?.(registro.fileId);
     } finally {
       setSubiendo(false);
     }
