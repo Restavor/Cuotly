@@ -2227,6 +2227,86 @@ export const es = {
     },
   },
 
+  /**
+   * R01 a R04 y R43 · el Inicio del panel del restaurante con el diseño
+   * definitivo. Todo lo que pinta sale de datos reales; lo que no hay se
+   * dice, no se rellena.
+   */
+  panelHome: {
+    greeting: (nombre: string) => (nombre === "" ? "Hola" : `Hola, ${nombre}`),
+    subtitle: (restaurante: string) =>
+      `Bienvenido a ${restaurante}. Aquí tienes un resumen de la actividad de tu restaurante.`,
+    newRequest: "Nueva solicitud",
+    createMenu: "Crear menú",
+    // Las tarjetas de arriba: lo que espera algo de ti.
+    attentionRequestTitle: "Solicitud requiere tu respuesta",
+    attentionRequestBody: (n: number) =>
+      n === 1 ? "Hay 1 solicitud pendiente de tu revisión." : `Hay ${n} solicitudes pendientes de tu revisión.`,
+    attentionRequestCta: "Ver solicitud",
+    attentionMenuTitle: "Menú pendiente de publicación",
+    attentionMenuBody: (menu: string, fecha: string) => `${menu}, para el ${fecha}.`,
+    attentionMenuCta: "Revisar menú",
+    attentionChargeTitle: "Pago próximo a vencer",
+    attentionChargeBody: (concepto: string, fecha: string) => `${concepto} vence el ${fecha}.`,
+    attentionChargeOverdueTitle: "Pago vencido",
+    attentionChargeOverdueBody: (concepto: string, fecha: string) => `${concepto} venció el ${fecha}.`,
+    attentionChargeCta: "Ver pagos",
+    attentionMessagesTitle: "Mensajes del equipo",
+    attentionMessagesBody: "El equipo de mantenimiento te ha escrito.",
+    attentionMessagesCta: "Ver mensajes",
+    allClearTitle: "Todo al día",
+    allClearBody: "No hay nada que espere tu respuesta.",
+    // Tu plan.
+    planTitle: "Tu plan",
+    planDetails: "Ver detalles",
+    planActive: "Activo",
+    planNone: "Sin plan activo",
+    planNoneReason: "Tu restaurante no tiene todavía un plan contratado.",
+    quotasTitle: "Cuotas de este ciclo",
+    quotasRenew: (fecha: string) => `Se renuevan el ${fecha}.`,
+    quotasEmpty: "Tu plan no incluye cambios en este ciclo.",
+    quotaUsed: (usados: number, incluidos: number) => `${usados} / ${incluidos}`,
+    // Próxima publicación.
+    nextMenuTitle: "Próxima publicación",
+    nextMenuLink: "Ver menús",
+    nextMenuEmpty: "No hay ningún menú programado",
+    nextMenuEmptyReason: "Cuando crees un menú, aparecerá aquí con su fecha.",
+    nextMenuFor: (fecha: string) => `Para el ${fecha}`,
+    // Mensajes.
+    messagesTitle: "Mensajes",
+    messagesLink: "Ver todos",
+    messagesEmpty: "Aún no hay mensajes",
+    messagesEmptyReason: "Lo que escribas al equipo de mantenimiento aparecerá aquí.",
+    messageFromYou: "Tú",
+    // Actividad reciente.
+    activityTitle: "Actividad reciente",
+    activityLink: "Ver todas",
+    activityRequestSent: "Solicitud enviada",
+    activityFileShared: "Archivo compartido",
+    activityEmpty: "Sin actividad aún",
+    activityEmptyReason: "Aquí verás las últimas acciones de tu restaurante.",
+    // Trabajos en curso.
+    inProgressTitle: "Trabajos en curso",
+    inProgressLink: "Ver todos",
+    inProgressEmpty: "No hay trabajos en curso",
+    inProgressEmptyReason: "Cuando el equipo empiece una de tus solicitudes, la verás aquí.",
+    requestedOn: (fecha: string) => `Solicitado el ${fecha}`,
+    // R04 · primer acceso.
+    firstStepsTitle: "Primeros pasos",
+    firstStepsBody: "Completa estos pasos para que tu restaurante esté listo.",
+    stepDataTitle: "Revisa los datos de tu restaurante",
+    stepDataBody: "Comprueba que la información básica es correcta.",
+    stepDataCta: "Revisar datos",
+    stepRequestTitle: "Envía tu primera solicitud",
+    stepRequestBody: "Cuéntanos qué necesitas (web, menú, fotos, etc.).",
+    stepRequestCta: "Nueva solicitud",
+    stepMessageTitle: "Escribe al equipo",
+    stepMessageBody: "Preséntate o pregunta lo que necesites.",
+    stepMessageCta: "Ir a mensajes",
+    // El resto de lo que hay en el panel, debajo, hasta que cada parte
+    // tenga su pantalla.
+    moreTitle: "Todo sobre tu restaurante",
+  },
   clientArea: {
 
     // Decisión de Bosco (10/09/2026): el restaurante con plan que lo

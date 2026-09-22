@@ -46,12 +46,13 @@ import {
 import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 
-import { AcceptRequestButton } from "./AcceptRequestButton";
 import { AcceptTermsButton } from "./AcceptTermsButton";
 import { NewRequestForm } from "./NewRequestForm";
 import { TerminationForm } from "./TerminationForm";
 import { loadRequestDetail } from "../../solicitudes/[id]/detail-load";
 import { loadEstablishmentTimezone } from "./timezone-load";
+import { loadPanelHome } from "./panel-home-load";
+import { PanelHome } from "@/components/panel/PanelHome";
 import { loadSubscriptionTerms } from "../../planes/terms-load";
 import {
   loadSheetCounts,
@@ -84,9 +85,7 @@ import { loadEstablishmentPhoto } from "@/services/establishment-photo";
  */
 export const dynamic = "force-dynamic";
 
-type StatusKey = keyof typeof es.space.statuses;
 type RequestStateKey = keyof typeof es.naming.states.request;
-type CategoryKey = keyof typeof es.naming.categories;
 type FileCategoryKey = keyof typeof es.space.files.categories;
 
 function toneForState(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
@@ -469,7 +468,6 @@ export default async function EstablishmentPage({
 
   const rows = requests ?? [];
   const archivos = sharedFiles ?? [];
-  const pending = rows.filter((r) => r.state === "pending_client_acceptance");
   /*
     Qué estados detienen el servicio ya no se escribe aquí: lo dice
     `statusEffects()` en `src/core`, que es la traducción con tests de la
@@ -478,7 +476,6 @@ export default async function EstablishmentPage({
     ofrecerle a alguien un formulario que el servidor le va a rechazar.
   */
   const serviceStopped = !statusEffects(establishment.status).serviceRunning;
-  const statusKey = establishment.status as StatusKey;
 
   // §66.3 · la conversación general del restaurante. Se crea al abrir la
   // pantalla, igual que la de una solicitud: hay exactamente una por
@@ -529,94 +526,46 @@ export default async function EstablishmentPage({
     })),
   );
 
+  // R01 a R04 · el Inicio del panel con el diseño definitivo. Reutiliza
+  // lo ya leído arriba; `loadPanelHome()` solo añade lo que le falta.
+  const inicio = await loadPanelHome(supabase, {
+    slug,
+    establishmentId: id,
+    userId: user.id,
+    role,
+    establishment: { name: establishment.name, code: establishment.code, city: establishment.city },
+    photoUrl,
+    requests: rows,
+    files: archivos,
+    messages: conversation?.messages ?? [],
+    allowance: allowance ?? [],
+    planNames: condiciones
+      .map(({ terms }) => terms?.subjectName ?? null)
+      .filter((nombre): nombre is string => nombre !== null && nombre.trim() !== ""),
+    timeZone: zonaDelEspacio,
+  });
+
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
-      <header>
-        <p className="text-sm text-text-secondary">{establishment.code}</p>
-        <h1 className="text-2xl font-bold text-primary-dark">{establishment.name}</h1>
-        <p className="mt-2 flex items-center gap-2 text-sm text-text-secondary">
-          {es.clientArea.statusLabel}:{" "}
-          <StatusBadge tone={serviceStopped ? "warning" : "success"}>
-            {es.space.statuses[statusKey] ?? establishment.status}
-          </StatusBadge>
-        </p>
-        <p className="mt-3 text-sm">
-          <Link
-            href={`/espacios/${slug}/restaurantes/${id}/facturacion`}
-            className="text-cuotly-green underline"
-          >
-            {es.clientArea.billingLink}
-          </Link>
-        </p>
-      </header>
-
+    <div className="space-y-6">
       {/*
-        Maqueta 20 · el MISMO aviso que ve el equipo, con el motivo
-        concreto (RN-EST-08). Antes era una tarjeta genérica, igual para
-        las cuatro maneras de tener el servicio detenido: el restaurante
-        leía "el servicio está detenido" sin saber si era por impago, por
-        su propia baja o por las 24 horas de solo lectura, que son tres
-        cosas muy distintas de cara a qué hacer a continuación.
-
-        El motivo sale de `establishment_status_reason()`, que comprueba el
-        acceso por su cuenta y le devuelve nulo a quien no lo tenga.
+        Maqueta 20 y R43 · el MISMO aviso que ve el equipo, con el motivo
+        concreto (RN-EST-08), arriba del todo: con el servicio detenido es
+        lo primero que hay que saber. El motivo sale de
+        `establishment_status_reason()`, que comprueba el acceso por su
+        cuenta y le devuelve nulo a quien no lo tenga.
       */}
       <StatusNotice status={establishment.status} reason={statusReasonCliente ?? null} />
 
-      {pending.length > 0 ? (
-        <Card title={es.clientArea.acceptTitle}>
-          <div className="space-y-4">
-            {pending.map((request) => (
-              <div key={request.id} className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-medium text-text">{request.description}</p>
-                  {request.validated_category ? (
-                    <p className="text-sm text-text-secondary">
-                      {es.clientArea.acceptCategory(
-                        es.naming.categories[request.validated_category as CategoryKey] ??
-                          request.validated_category,
-                      )}
-                    </p>
-                  ) : null}
-                </div>
-                <AcceptRequestButton requestId={request.id} />
-              </div>
-            ))}
-          </div>
-        </Card>
-      ) : null}
+      <PanelHome data={inicio} />
 
-      <Card title={es.clientArea.allowanceTitle}>
-        {allowance && allowance.length > 0 ? (
-          <>
-            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {allowance.map((line) => (
-                <li key={line.category} className="rounded-lg bg-soft-surface p-3">
-                  <p className="text-xs text-text-secondary">
-                    {es.naming.categories[line.category as CategoryKey] ?? line.category}
-                  </p>
-                  <p className="text-lg font-semibold text-primary-dark">
-                    {line.remaining}{" "}
-                    <span className="text-sm font-normal text-text-secondary">
-                      {es.clientArea.allowanceOf(line.included)}
-                    </span>
-                  </p>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-sm text-text-secondary">
-              {es.clientArea.allowanceRenews(
-                enZona(allowance[0].renews_at, zonaDelEspacio, { dateStyle: "long" }),
-              )}
-            </p>
-          </>
-        ) : (
-          <EmptyState
-            title={es.clientArea.allowanceEmptyTitle}
-            description={es.clientArea.allowanceEmptyReason}
-          />
-        )}
-      </Card>
+      {/*
+        Lo demás del panel, debajo, hasta que cada parte tenga su propia
+        pantalla (partes 11 y 12 del plan de escritorio). La barra del
+        panel sigue llevando aquí con sus anclas (RN-PAN-07).
+      */}
+      <h2 className="border-t border-border pt-6 text-[20px] font-bold text-primary-dark">
+        {es.panelHome.moreTitle}
+      </h2>
 
       {/*
         R24 · RN-EST-09 — comunicar la baja. Va al final del panel, después
