@@ -3,7 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { DataSectionNav, DigitalSection } from "@/components/establishment/DigitalSections";
 import { loadDigitalData, loadIntegrationRows } from "@/components/establishment/integrations-load";
 import { OpportunitiesSection } from "@/components/establishment/Opportunities";
-import { AvailableReports } from "@/components/report/AvailableReports";
+import { ClientReports } from "@/components/report/ClientReports";
+import { Card, PageHeader } from "@/components/ui";
 import { loadEstablishmentReports } from "@/components/report/reports-load";
 import { loadOpportunities } from "@/components/establishment/opportunities-load";
 import { type DataSectionTab, parseDataSection } from "@/components/establishment/tabs";
@@ -116,19 +117,53 @@ export default async function ClientDataPage({
         })
       : [];
 
+  // R29 · "Tus solicitudes este mes": dos filas contadas, sin porcentaje.
+  // Un "83 % de resolución" sería una cifra derivada que nadie define; el
+  // recuento de filas no lo es. El mes es el de la zona del espacio.
+  const mesActual = todayInTimeZone(new Date(), timezone).slice(0, 7);
+  const { data: delMes } =
+    section.key === "summary"
+      ? await supabase
+          .from("requests")
+          .select("id, state, created_at")
+          .eq("establishment_id", id)
+          .neq("state", "draft")
+          .gte("created_at", `${mesActual}-01T00:00:00Z`)
+      : { data: [] };
+  const solicitudesMes = (delMes ?? []).filter(
+    (r) => todayInTimeZone(new Date(r.created_at), timezone).slice(0, 7) === mesActual,
+  );
+  const hechasMes = solicitudesMes.filter((r) => r.state === "published" || r.state === "closed").length;
+
   const words = es.integrations.sections[section.key];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
-      <header>
-        <p className="text-sm text-text-secondary">
-          {establishment.name} · {establishment.code}
-        </p>
-        <h1 className="text-2xl font-bold text-primary-dark">{words.title}</h1>
-        <p className="text-sm text-text-secondary">{words.hint}</p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader title={es.panelData.title} subtitle={words.hint} />
 
-      <DataSectionNav active={section} hrefFor={hrefFor} />
+      <DataSectionNav active={section} hrefFor={hrefFor} labels={{ summary: es.panelData.reportsTab }} />
+
+      {section.key === "summary" ? (
+        <ClientReports
+          reports={reports}
+          base={`/espacios/${slug}/informes`}
+          aside={
+            <Card title={es.panelData.requestsTitle}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-[10px] border border-border p-3">
+                  <p className="text-2xl font-bold text-primary-dark">{solicitudesMes.length}</p>
+                  <p className="text-sm text-text-secondary">{es.panelData.requestsReceived}</p>
+                </div>
+                <div className="rounded-[10px] border border-border p-3">
+                  <p className="text-2xl font-bold text-primary-dark">{hechasMes}</p>
+                  <p className="text-sm text-text-secondary">{es.panelData.requestsDone}</p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-text-secondary">{es.panelData.requestsHint}</p>
+            </Card>
+          }
+        />
+      ) : null}
 
       <DigitalSection
         section={section.key}
@@ -143,10 +178,6 @@ export default async function ClientDataPage({
           />
         }
       />
-
-      {section.key === "summary" ? (
-        <AvailableReports reports={reports} base={`/espacios/${slug}/informes`} />
-      ) : null}
     </div>
   );
 }

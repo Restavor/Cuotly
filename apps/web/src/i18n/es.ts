@@ -2311,6 +2311,25 @@ export const es = {
     // tenga su pantalla.
     moreTitle: "Todo sobre tu restaurante",
   },
+  // R29 a R35, A19, A20 · "Informes y datos" del panel del restaurante.
+  panelData: {
+    title: "Informes y datos",
+    reportsTab: "Informes",
+    published: "Informes publicados",
+    publishedHint: "Los informes que el equipo de mantenimiento ha compartido contigo.",
+    generatedOn: (fecha: string) => `Enviado el ${fecha}`,
+    viewReport: "Ver informe",
+    download: "Descargar",
+    onlyYourPlan: "Solo aparecen los informes que incluye tu plan, cuando el equipo los ha revisado y enviado.",
+    latestTitle: (nombre: string) => nombre,
+    latestPeriod: (periodo: string) => `Periodo: ${periodo}`,
+    viewFull: "Ver informe completo",
+    requestsTitle: "Tus solicitudes este mes",
+    requestsReceived: "Solicitudes enviadas",
+    requestsDone: "Publicadas o cerradas",
+    requestsHint: "Contadas de tus solicitudes de este mes, en la zona de tu espacio.",
+  },
+
   // R23 y R24 · "Plan y servicios" del panel del restaurante.
   panelPlan: {
     title: "Plan y servicios",

@@ -5,7 +5,7 @@ import type { ReportSnapshot, WorkerPersonalReport } from "@/core/reports";
 import { es } from "@/i18n/es";
 import { figureLabel } from "@/services/report-pdf";
 
-import { AvailableReports } from "./AvailableReports";
+import { ClientReports } from "./ClientReports";
 import { PersonalReport } from "./PersonalReport";
 import { ReportFigures } from "./ReportFigures";
 import { ReportsTable } from "./ReportsTable";
@@ -83,23 +83,27 @@ describe("la biblioteca del equipo (vista 10.01)", () => {
   });
 });
 
-describe("lo que ve el restaurante (vista 22.01, RN-REP-13)", () => {
-  it("enseña el informe con su periodo, su fecha de compartición y su PDF", () => {
-    render(<AvailableReports reports={[informe()]} base="/espacios/restavor/informes" />);
+describe("lo que ve el restaurante (R29, vista 22.01, RN-REP-13)", () => {
+  it("enseña el informe con su nombre, «Ver informe» y la descarga del PDF", () => {
+    render(<ClientReports reports={[informe()]} base="/espacios/restavor/informes" />);
 
-    expect(screen.getByText("Informe mensual")).toBeInTheDocument();
-    expect(screen.getByText(t.downloadPdf)).toBeInTheDocument();
+    expect(screen.getAllByText("Informe mensual").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: es.panelData.download })).toHaveAttribute(
+      "href",
+      expect.stringContaining("/descargar?formato=pdf"),
+    );
+    expect(screen.getByRole("link", { name: es.panelData.viewReport })).toBeInTheDocument();
   });
 
   it("no enseña el estado interno del informe: eso es conversación del equipo", () => {
-    render(<AvailableReports reports={[informe()]} base="/espacios/restavor/informes" />);
+    render(<ClientReports reports={[informe()]} base="/espacios/restavor/informes" />);
 
     expect(screen.queryByText(t.states.approved)).not.toBeInTheDocument();
     expect(screen.queryByText(t.states.pending_review)).not.toBeInTheDocument();
   });
 
   it("sin informes compartidos dice el motivo", () => {
-    render(<AvailableReports reports={[]} base="/espacios/restavor/informes" />);
+    render(<ClientReports reports={[]} base="/espacios/restavor/informes" />);
 
     expect(screen.getByText(t.clientEmpty)).toBeInTheDocument();
     expect(screen.getByText(t.clientEmptyReason)).toBeInTheDocument();

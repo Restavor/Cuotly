@@ -55,9 +55,12 @@ const sheet = es.establishmentSheet;
 export function DataSectionNav({
   active,
   hrefFor,
+  labels,
 }: {
   active: DataSectionTab;
   hrefFor: (section: DataSectionTab) => string;
+  /** R29 · el panel del restaurante llama "Informes" a la primera. */
+  labels?: Partial<Record<DataSectionTab["key"], string>>;
 }) {
   return (
     <Tabs
@@ -65,7 +68,7 @@ export function DataSectionNav({
       active={active.key}
       tabs={DATA_SECTION_TABS.map((section) => ({
         key: section.key,
-        label: dataSectionLabel(section),
+        label: labels?.[section.key] ?? dataSectionLabel(section),
         href: hrefFor(section),
       }))}
     />
