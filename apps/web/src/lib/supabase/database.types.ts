@@ -247,6 +247,9 @@ export type Database = {
           status: string;
           status_reason: string | null;
           tax_id: string | null;
+          tax_id_country: string | null;
+          tax_id_registry_name: string | null;
+          tax_id_verification: string | null;
           updated_at: string;
         };
         Insert: {
@@ -266,6 +269,9 @@ export type Database = {
           status?: string;
           status_reason?: string | null;
           tax_id?: string | null;
+          tax_id_country?: string | null;
+          tax_id_registry_name?: string | null;
+          tax_id_verification?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -285,6 +291,9 @@ export type Database = {
           status?: string;
           status_reason?: string | null;
           tax_id?: string | null;
+          tax_id_country?: string | null;
+          tax_id_registry_name?: string | null;
+          tax_id_verification?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -10912,6 +10921,9 @@ export type Database = {
           p_email: string;
           p_phone: string;
           p_tax_id: string;
+          p_tax_id_country: string;
+          p_tax_id_registry_name?: string;
+          p_tax_id_verification: string;
         };
         Returns: undefined;
       };

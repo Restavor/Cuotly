@@ -10,7 +10,16 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
-**Actualización del 22/09/2026: ninguna.** La **125** (`el_nif_en_la_solicitud_de_acceso`,
+**Actualización del 22/09/2026 (tarde): ninguna.** La **126** (`el_documento_se_comprueba`,
+decisión 68) se aplicó por el MCP justo después de la 125. Antes: 0 filas en `access_requests`.
+Después, comprobado en vivo: una sola firma, `submit_access_request(text × 9)`, con EXECUTE
+**solo** para `service_role` (ni `anon` ni `authenticated`), las tres columnas nuevas legibles por
+quien revisa y la restricción `access_requests_spanish_tax_id_checked` presente. En local, las 126
+migraciones aplican desde cero y pasan las 67 suites en el orden de CI; la 48 falla, como debe, si
+se le vuelve a dar EXECUTE a `anon`. **La web necesita `SUPABASE_SERVICE_ROLE_KEY`** en Vercel
+para enviar solicitudes, la misma variable que ya usa el alta de cuentas.
+
+La **125** (`el_nif_en_la_solicitud_de_acceso`,
 decisión 67) se aplicó por el MCP el 22/09/2026, con las 124 anteriores ya registradas en el
 proyecto. Antes: 0 filas en `access_requests` y la firma de cinco argumentos viva. Después,
 comprobado en vivo: una sola firma, `submit_access_request(text × 6)`, `security definer`, con

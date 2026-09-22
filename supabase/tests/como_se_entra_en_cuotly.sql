@@ -134,25 +134,29 @@ begin
 end $$;
 
 -- ============================================================
--- RN-ACC-02 y RN-ACC-12 · el formulario público, sentado como `anon`
+-- RN-ACC-02 y RN-ACC-12 · el formulario público
 -- ============================================================
-set role anon;
+--
+-- Decisión 68 · la función ya no la llama `anon`: el documento lo
+-- comprueba el servidor de Cuotly (cálculo de control y VIES) y llama con
+-- `service_role`. Que `anon` NO pueda llamarla se comprueba al final.
+set role service_role;
 do $$
 begin
   perform public.submit_access_request(
-    'Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test', 'b-12.345 678',
-    'Tengo una web de 2019 y quiero mantenerla');
+    'Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test', 'b-12.345/674',
+    'ES', 'checksum', null, 'Tengo una web de 2019 y quiero mantenerla');
 
   -- Faltando cualquiera de los cuatro obligatorios, no pasa.
   begin
-    perform public.submit_access_request('', 'Bar Nuevo', '600111222', 'otro@bar-nuevo.test', 'B12345678');
+    perform public.submit_access_request('', 'Bar Nuevo', '600111222', 'otro@bar-nuevo.test', 'B12345674', 'ES', 'checksum');
     raise exception 'RN-ACC-02 FALLIDO: una solicitud sin nombre se envió' using errcode = 'assert_failure';
   exception when others then
     if sqlerrm like 'RN-ACC%' then raise; end if;
   end;
 
   begin
-    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'esto-no-es-un-correo', 'B12345678');
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'esto-no-es-un-correo', 'B12345674', 'ES', 'checksum');
     raise exception 'RN-ACC-02 FALLIDO: una solicitud sin correo válido se envió' using errcode = 'assert_failure';
   exception when others then
     if sqlerrm like 'RN-ACC%' then raise; end if;
@@ -161,15 +165,39 @@ begin
   -- Decisión 67 · sin DNI, CIF o NIF tampoco. Ni vacío, ni solo con los
   -- signos que se quitan al guardarlo.
   begin
-    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-nif@bar-nuevo.test', null);
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-nif@bar-nuevo.test', null, 'ES', 'checksum');
     raise exception 'RN-ACC-02 FALLIDO: una solicitud sin DNI, CIF o NIF se envió' using errcode = 'assert_failure';
   exception when others then
     if sqlerrm like 'RN-ACC%' then raise; end if;
   end;
 
   begin
-    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-nif@bar-nuevo.test', ' .- ');
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-nif@bar-nuevo.test', ' .- ', 'ES', 'checksum');
     raise exception 'RN-ACC-02 FALLIDO: un DNI hecho solo de espacios y guiones se aceptó' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm like 'RN-ACC%' then raise; end if;
+  end;
+
+  -- Decisión 68 · sin país, o sin decir cómo se comprobó, no entra.
+  begin
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-pais@bar-nuevo.test', 'B12345674', '', 'checksum');
+    raise exception 'RN-ACC-02 FALLIDO: una solicitud sin país del documento se envió' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm like 'RN-ACC%' then raise; end if;
+  end;
+
+  begin
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-pais@bar-nuevo.test', 'B12345674', 'ES', 'me-lo-invento');
+    raise exception 'RN-ACC-02 FALLIDO: una comprobación desconocida se aceptó' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm like 'RN-ACC%' then raise; end if;
+  end;
+
+  -- Y un documento español solo entra con su cálculo de control: si el
+  -- servidor dijera "sin comprobar", la base tampoco lo deja pasar.
+  begin
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'es-sin-calculo@bar-nuevo.test', '12345678A', 'ES', 'unverified');
+    raise exception 'RN-ACC-02 FALLIDO: un documento español sin comprobar entró' using errcode = 'assert_failure';
   exception when others then
     if sqlerrm like 'RN-ACC%' then raise; end if;
   end;
@@ -190,9 +218,16 @@ begin
 
   -- Decisión 67 · el documento se guarda sin espacios, puntos ni guiones
   -- y en mayúsculas, como lo deja `normalizeTaxId()` en la pantalla.
-  if (select tax_id from public.access_requests where id = v_id) is distinct from 'B12345678' then
+  if (select tax_id from public.access_requests where id = v_id) is distinct from 'B12345674' then
     raise exception 'RN-ACC-02 FALLIDO: el DNI, CIF o NIF no se guardó normalizado (%)',
       (select tax_id from public.access_requests where id = v_id) using errcode = 'assert_failure';
+  end if;
+
+  -- Decisión 68 · el país y cómo se comprobó quedan con la solicitud.
+  if (select tax_id_country || '/' || tax_id_verification from public.access_requests where id = v_id)
+     is distinct from 'ES/checksum' then
+    raise exception 'RN-ACC-02 FALLIDO: la solicitud no guardó el país ni la comprobación del documento'
+      using errcode = 'assert_failure';
   end if;
 
   if (select status from public.access_requests where id = v_id) <> 'submitted' then
@@ -222,12 +257,12 @@ end $$;
 -- RN-ACC-12 · el formulario no es un oráculo. Reenviarlo con el mismo
 -- correo no abre una segunda solicitud, no cambia la clave de seguimiento
 -- de la primera, y no devuelve nada distinto: por fuera, lo mismo.
-set role anon;
+set role service_role;
 do $$
 begin
-  perform public.submit_access_request('Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test', 'B12345678');
+  perform public.submit_access_request('Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test', 'B12345674', 'ES', 'checksum');
   -- Y con un correo que YA tiene cuenta, tampoco pasa nada visible.
-  perform public.submit_access_request('Intrusa', 'Lo que sea', '600000000', 'info@restavor.com', 'X0000000T');
+  perform public.submit_access_request('Intrusa', 'Lo que sea', '600000000', 'info@restavor.com', 'X0000000T', 'ES', 'checksum');
 end $$;
 reset role;
 
@@ -775,8 +810,18 @@ begin
 
   -- Y las del formulario público siguen abiertas a `anon`: si alguien las
   -- revoca "por seguridad", la puerta se cierra entera y nadie entra.
-  if not has_function_privilege('anon', 'public.submit_access_request(text, text, text, text, text, text)', 'execute')
-     or not has_function_privilege('anon', 'public.access_request_follow_up(uuid)', 'execute')
+  -- Decisión 68 · `submit_access_request()` ya no es de esas: la llama el
+  -- servidor de Cuotly con `service_role` después de comprobar el
+  -- documento. Abierta a `anon`, cualquiera la llamaría con un documento
+  -- falso "ya comprobado".
+  if has_function_privilege('anon', 'public.submit_access_request(text, text, text, text, text, text, text, text, text)', 'execute')
+     or has_function_privilege('authenticated', 'public.submit_access_request(text, text, text, text, text, text, text, text, text)', 'execute')
+     or not has_function_privilege('service_role', 'public.submit_access_request(text, text, text, text, text, text, text, text, text)', 'execute') then
+    raise exception 'RN-ACC-02 FALLIDO: la solicitud se puede mandar sin pasar por la comprobación del documento'
+      using errcode = 'assert_failure';
+  end if;
+
+  if not has_function_privilege('anon', 'public.access_request_follow_up(uuid)', 'execute')
      or not has_function_privilege('anon', 'public.reply_to_access_request(uuid, text)', 'execute')
      or not has_function_privilege('anon', 'public.account_setup_details(uuid)', 'execute')
      or not has_function_privilege('anon', 'public.invitation_signup_details(uuid)', 'execute') then
@@ -794,6 +839,10 @@ begin
   if to_regprocedure('public.submit_access_request(text, text, text, text, text)') is not null then
     raise exception 'RN-ACC-02 FALLIDO: sigue viva la firma sin DNI, CIF o NIF' using errcode = 'assert_failure';
   end if;
+  -- Decisión 68 · ni la de seis, que no decía cómo se comprobó.
+  if to_regprocedure('public.submit_access_request(text, text, text, text, text, text)') is not null then
+    raise exception 'RN-ACC-02 FALLIDO: sigue viva la firma sin comprobación del documento' using errcode = 'assert_failure';
+  end if;
 
   if exists (
     select 1 from pg_proc p
@@ -805,7 +854,9 @@ begin
   end if;
 
   -- Quien revisa sí lo lee: la columna está en el `grant select`.
-  if not has_column_privilege('authenticated', 'public.access_requests', 'tax_id', 'select') then
+  if not has_column_privilege('authenticated', 'public.access_requests', 'tax_id', 'select')
+     or not has_column_privilege('authenticated', 'public.access_requests', 'tax_id_verification', 'select')
+     or not has_column_privilege('authenticated', 'public.access_requests', 'tax_id_registry_name', 'select') then
     raise exception 'RN-ACC-02 FALLIDO: quien revisa no puede leer el DNI, CIF o NIF'
       using errcode = 'assert_failure';
   end if;

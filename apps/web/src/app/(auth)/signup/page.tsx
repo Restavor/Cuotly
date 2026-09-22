@@ -1,4 +1,5 @@
 import { AccessShell } from "@/components/access/AccessShell";
+import { countriesForSelect } from "@/core/countries";
 import { es } from "@/i18n/es";
 
 import { AccessRequestForm } from "./AccessRequestForm";
@@ -17,7 +18,7 @@ import { AccessRequestForm } from "./AccessRequestForm";
 export default function SolicitarAccesoPage() {
   return (
     <AccessShell crumb={es.auth.access.crumbAccess}>
-      <AccessRequestForm />
+      <AccessRequestForm countries={countriesForSelect()} />
     </AccessShell>
   );
 }

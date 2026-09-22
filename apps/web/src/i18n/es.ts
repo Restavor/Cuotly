@@ -253,6 +253,7 @@ export const es = {
       emailPlaceholder: "nombre@empresa.com",
       // Decisión 67 · el quinto obligatorio.
       taxIdLabel: "DNI / CIF / NIF",
+      taxCountryLabel: "País del documento",
       taxIdPlaceholder: "Documento de la persona o de la empresa",
       commentsLabel: "Comentarios (opcional)",
       commentsPlaceholder: "Cuéntanos qué necesitas o añade información que quieras compartir.",
@@ -270,6 +271,9 @@ export const es = {
         emailMissing: "Introduce tu correo electrónico.",
         emailInvalid: "Introduce un correo válido.",
         tax_id: "Introduce tu DNI, CIF o NIF.",
+        // Decisión 68 · el cálculo de control no cuadra.
+        taxIdInvalid: "Este documento no es válido para ese país. Revisa las cifras y la letra.",
+        tax_country: "Elige el país del documento.",
       },
       reviewFields: "Revisa los campos indicados.",
       // A10 · el envío falló y lo escrito sigue en el formulario.
@@ -6513,6 +6517,24 @@ export const es = {
       // Decisión 67 · el sexto campo. Las solicitudes de antes no lo traen.
       taxId: "DNI / CIF / NIF",
       taxIdMissing: "No consta: la solicitud es anterior a pedirlo",
+      // Decisión 68 · cómo quedó comprobado el documento.
+      taxCountry: "País del documento",
+      taxCheckTitle: "Comprobación del documento",
+      taxCheckOk: "Comprobado",
+      taxCheckReview: "Revisar",
+      registryName: "Nombre registrado en VIES",
+      registryNameHint: "Compáralo con el negocio de la solicitud.",
+      taxChecks: {
+        checksum: "Comprobado: el cálculo de control del documento cuadra.",
+        registry: "Comprobado en VIES: el número de IVA está dado de alta.",
+        registry_not_found:
+          "Sin comprobar: VIES no encuentra este número y para ese país no hay cálculo de control. Revísalo antes de aprobar.",
+        registry_unavailable:
+          "Sin comprobar: VIES no contestó al enviarla y para ese país no hay cálculo de control. Revísalo antes de aprobar.",
+        unverified:
+          "Sin comprobar: para ese país no hay cálculo de control ni registro que consultar. Revísalo antes de aprobar.",
+      },
+      taxCheckMissing: "No consta: la solicitud es anterior a comprobarlo.",
       applicantReply: "Lo que contestó después",
       decisionTitle: "Decidir",
       decisionHint:

@@ -20,15 +20,25 @@ export type AccessRequestValues = {
   email: string;
   /** Decisión 67 · el DNI, CIF o NIF, tal como lo escribió. */
   tax_id: string;
+  /** Decisión 68 · el país del documento (ISO alfa-2). */
+  tax_country: string;
   comments: string;
 };
+
+export type AccessRequestProblemField =
+  | "contact_name"
+  | "business_name"
+  | "phone"
+  | "email"
+  | "tax_id"
+  | "tax_country";
 
 export type AccessRequestFormState = {
   error: string | null;
   /** A09 · qué campo señalar, uno a uno. */
   fields: readonly string[];
   /** A09 · y qué le pasa a cada uno: falta, o está mal escrito. */
-  problems: Partial<Record<"contact_name" | "business_name" | "phone" | "email" | "tax_id", "missing" | "invalid">>;
+  problems: Partial<Record<AccessRequestProblemField, "missing" | "invalid">>;
   /** RN-ACC-12 · la única respuesta posible, pase lo que pase por detrás. */
   done: boolean;
   /**
@@ -47,6 +57,7 @@ export const emptyAccessRequestValues: AccessRequestValues = {
   phone: "",
   email: "",
   tax_id: "",
+  tax_country: "ES",
   comments: "",
 };
 

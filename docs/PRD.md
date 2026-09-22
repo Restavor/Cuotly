@@ -2852,8 +2852,13 @@ La familia es **`RN-ACC`** (acceso).
   llame (`CLAUDE.md`: esconder un botón no es un control de acceso).
 - **RN-ACC-02**: **los seis campos** de F01: nombre y apellidos, nombre del restaurante o empresa,
   teléfono, correo electrónico, **DNI, CIF o NIF** y comentarios (opcional). Los cinco primeros son
-  obligatorios (el DNI, CIF o NIF lo añadió la decisión 67 del 22/09/2026; se guarda sin espacios,
-  puntos ni guiones y en mayúsculas, y no se comprueba su forma). Es
+  obligatorios (el DNI, CIF o NIF lo añadió la decisión 67 del 22/09/2026, con su **país**).
+  **El documento se comprueba en el servidor** (decisión 68): el cálculo de control de su país
+  (España: DNI, NIE, NIF y CIF; Portugal, Países Bajos y Bélgica) y, para los números de IVA de
+  la UE fuera de España, **VIES**. Si el cálculo dice que es falso, **se rechaza**. Lo que no se
+  puede confirmar entra **marcado** para que el equipo lo revise antes de aprobar. Ningún
+  registro público confirma que un documento de identidad exista: lo que se comprueba es que
+  esté bien formado, y en VIES, que la empresa esté dada de alta. Es
   deliberadamente corta: quien la escribe todavía no conoce el producto. La pantalla contesta
   **siempre lo mismo** —"hemos recibido tu solicitud"— haya pasado lo que haya pasado por detrás:
   si ese correo **ya tiene cuenta**, o ya tiene una solicitud abierta, no se abre otra y quien

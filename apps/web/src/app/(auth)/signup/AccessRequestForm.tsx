@@ -42,7 +42,16 @@ import {
  *     persona escribió. **Siempre lo mismo** (RN-ACC-12): nunca "ese
  *     correo ya tiene cuenta", que convertiría esto en un oráculo.
  */
-export function AccessRequestForm() {
+export function AccessRequestForm({
+  countries,
+}: {
+  /**
+   * Decisión 68 · los países del selector, con su nombre en español. Los
+   * calcula el servidor para que el navegador pinte exactamente la misma
+   * lista que llegó en el HTML.
+   */
+  countries: readonly { code: string; name: string }[];
+}) {
   const [state, formAction, pending] = useActionState<AccessRequestFormState, FormData>(
     requestAccess,
     accessRequestInitialState,
@@ -95,7 +104,7 @@ export function AccessRequestForm() {
 
   const cerrarAviso = useCallback(() => setSalirA(null), []);
 
-  if (state.done) return <Received values={state.values} />;
+  if (state.done) return <Received values={state.values} countries={countries} />;
 
   const problemas = state.problems;
   const fallo = state.error !== null && state.fields.length === 0;
@@ -105,6 +114,7 @@ export function AccessRequestForm() {
     if (campo === "email") {
       return problema === "invalid" ? t.fieldErrors.emailInvalid : t.fieldErrors.emailMissing;
     }
+    if (campo === "tax_id" && problema === "invalid") return t.fieldErrors.taxIdInvalid;
     return t.fieldErrors[campo];
   };
 
@@ -162,14 +172,47 @@ export function AccessRequestForm() {
             error={mensaje("email")}
           />
         </div>
-        <DesignInput
-          name="tax_id"
-          label={t.taxIdLabel}
-          placeholder={t.taxIdPlaceholder}
-          autoComplete="off"
-          defaultValue={state.values.tax_id}
-          error={mensaje("tax_id")}
-        />
+        {/*
+          Decisión 68 · el país decide qué cálculo de control se aplica y si
+          se pregunta a VIES. Va delante del número porque sin él no se
+          puede saber si el número es bueno.
+        */}
+        <div className="grid gap-x-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+          <div className="mb-5">
+            <label htmlFor="tax_country" className="mb-2 block text-[15px] font-semibold text-text">
+              {t.taxCountryLabel} <span aria-hidden="true">*</span>
+            </label>
+            <select
+              key={state.values.tax_country}
+              id="tax_country"
+              name="tax_country"
+              required
+              defaultValue={state.values.tax_country}
+              aria-invalid={mensaje("tax_country") !== undefined}
+              className="w-full rounded-[10px] border border-border bg-surface px-4 py-3 text-[15px] text-text outline-none transition-colors focus:border-cuotly-green focus:ring-3 focus:ring-cuotly-green/15"
+            >
+              {countries.map((pais) => (
+                <option key={pais.code} value={pais.code}>
+                  {pais.name}
+                </option>
+              ))}
+            </select>
+            {mensaje("tax_country") === undefined ? null : (
+              <p className="mt-2 flex items-center gap-2 text-[15px] text-danger">
+                <Icon name="alert" aria-hidden="true" className="h-5 w-5 shrink-0" strokeWidth={2} />
+                {mensaje("tax_country")}
+              </p>
+            )}
+          </div>
+          <DesignInput
+            name="tax_id"
+            label={t.taxIdLabel}
+            placeholder={t.taxIdPlaceholder}
+            autoComplete="off"
+            defaultValue={state.values.tax_id}
+            error={mensaje("tax_id")}
+          />
+        </div>
 
         <div className="mb-3">
           <label htmlFor="comments" className="mb-2 block text-[15px] font-semibold text-text">
@@ -243,14 +286,21 @@ export function AccessRequestForm() {
 }
 
 /** A01 · lo que se ve al terminar. Los datos son los que la persona acaba de escribir. */
-function Received({ values }: { values: AccessRequestValues }) {
+function Received({
+  values,
+  countries,
+}: {
+  values: AccessRequestValues;
+  countries: readonly { code: string; name: string }[];
+}) {
+  const pais = countries.find((c) => c.code === values.tax_country)?.name ?? values.tax_country;
   const t = es.auth.access;
   const filas: { icon: IconName; value: string }[] = [
     { icon: "person", value: values.contact_name },
     { icon: "building", value: values.business_name },
     { icon: "phone", value: values.phone },
     { icon: "mail", value: values.email },
-    { icon: "idCard", value: normalizeTaxId(values.tax_id) },
+    { icon: "idCard", value: `${normalizeTaxId(values.tax_id)} · ${pais}` },
     { icon: "document", value: values.comments },
   ].filter((fila): fila is { icon: IconName; value: string } => fila.value !== "");
 

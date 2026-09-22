@@ -2011,3 +2011,30 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       quiere validar DNI, NIE y CIF españoles, es una decisión aparte.
     - Lo ve quien revisa solicitudes (`is_platform_approver()`). El seguimiento por enlace con
       clave **no** lo devuelve: un enlace se reenvía.
+
+68. **El DNI, CIF o NIF se comprueba, sea del país que sea** (22/09/2026). Bosco, sobre la
+    decisión 67: "controla que el DNI exista, no tiene por qué ser español, pero controla que
+    sea real". Se le explicó lo que se puede comprobar y eligió **cálculo de control + VIES**.
+
+    - **Lo que no se puede:** ningún registro público dice si un documento de identidad
+      pertenece a una persona, ni en España ni fuera. El servicio de Hacienda que comprueba NIF
+      exige el certificado digital de la empresa y solo vale para España.
+    - **Lo que sí:** el cálculo de control de cada documento (España: DNI, NIE, NIF de K, L y M,
+      y CIF; Portugal: NIF; Países Bajos: BSN; Bélgica: número nacional y de empresa). Si no
+      cuadra, **se rechaza** con "Este documento no es válido para ese país". Para los números de
+      IVA de empresas de la UE fuera de España, **VIES**, que además devuelve el nombre
+      registrado para compararlo con el negocio.
+    - **Lo que no se puede confirmar entra marcado**, no rechazado: un país sin cálculo y fuera
+      de VIES, VIES que no encuentra el número y no hay cálculo, o VIES caído. Quien revisa lo ve
+      en ámbar con "Revisar" y el motivo. Rechazarlo dejaría fuera a gente real.
+    - **No se inventa ningún cálculo.** Solo están los que se conocen con certeza, probados con
+      números calculados aparte. Añadir un país es añadir su cálculo con sus números de prueba.
+    - **La comprobación vive en el servidor de Cuotly**, porque VIES no se puede consultar desde
+      la base. Por eso `submit_access_request()` pasa a ser **solo de `service_role`**
+      (migración 126): abierta, cualquiera la llamaría con un documento falso "ya comprobado".
+      La web y el teléfono pasan por el mismo código (`src/services/access-request.ts`); el
+      teléfono, por `/api/movil/solicitud-acceso`. La base sigue exigiendo el país, una de las
+      cinco comprobaciones conocidas, y que un documento español solo entre comprobado por
+      cálculo.
+    - Se elige el país en un desplegable (España por defecto, los 249 de ISO con su nombre en
+      español); en el teléfono, "España" u "Otro país" con su código de dos letras.

@@ -14,6 +14,14 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+// Decisión 68 · la solicitud va con el cliente de administración (la
+// función de la base es solo de `service_role`) y consulta VIES.
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => ({ rpc: rpcMock }),
+}));
+const viesMock = vi.hoisted(() => vi.fn());
+vi.mock("@/services/vies", () => ({ checkVies: viesMock }));
+
 import { requestAccess, signIn } from "./actions";
 import { accessRequestInitialState } from "./form-states";
 
@@ -114,13 +122,22 @@ describe("signIn", () => {
  * `src/core/registro-cerrado.test.ts` por el lado de la configuración.
  */
 describe("requestAccess", () => {
+  const completo = {
+    contact_name: "Nuria Vela",
+    business_name: "Bar Nuevo",
+    phone: "600111222",
+    email: "nuria@bar-nuevo.test",
+    tax_id: "b-12.345.674",
+    tax_country: "ES",
+  };
+
   it("RN-ACC-02: señala uno a uno los obligatorios que faltan y no llama a la base", async () => {
     const result = await requestAccess(
       accessRequestInitialState,
       formData({ contact_name: "Nuria", business_name: "", phone: "", email: "" }),
     );
 
-    expect(result.fields).toEqual(["business_name", "phone", "email", "tax_id"]);
+    expect(result.fields).toEqual(["business_name", "phone", "email", "tax_id", "tax_country"]);
     expect(result.done).toBe(false);
     expect(rpcMock).not.toHaveBeenCalled();
   });
@@ -128,13 +145,7 @@ describe("requestAccess", () => {
   it("RN-ACC-02: un correo mal escrito se señala como tal, no como campo vacío", async () => {
     const result = await requestAccess(
       accessRequestInitialState,
-      formData({
-        contact_name: "Nuria",
-        business_name: "Bar Nuevo",
-        phone: "600111222",
-        email: "esto-no-es-un-correo",
-        tax_id: "B12345678",
-      }),
+      formData({ ...completo, email: "esto-no-es-un-correo" }),
     );
 
     expect(result.fields).toEqual(["email"]);
@@ -142,19 +153,12 @@ describe("requestAccess", () => {
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
-  it("RN-ACC-02: envía los seis campos y deja los comentarios sin mandar si están vacíos", async () => {
+  it("RN-ACC-02: envía los seis campos, el país y cómo se comprobó el documento", async () => {
     rpcMock.mockResolvedValue({ error: null });
 
     const result = await requestAccess(
       accessRequestInitialState,
-      formData({
-        contact_name: "  Nuria Vela  ",
-        business_name: "Bar Nuevo",
-        phone: "600111222",
-        email: "nuria@bar-nuevo.test",
-        tax_id: "b-12.345 678",
-        comments: "",
-      }),
+      formData({ ...completo, contact_name: "  Nuria Vela  ", comments: "" }),
     );
 
     expect(rpcMock).toHaveBeenCalledWith("submit_access_request", {
@@ -162,10 +166,14 @@ describe("requestAccess", () => {
       p_business_name: "Bar Nuevo",
       p_phone: "600111222",
       p_email: "nuria@bar-nuevo.test",
-      // Decisión 67 · sin espacios, puntos ni guiones y en mayúsculas.
-      p_tax_id: "B12345678",
+      p_tax_id: "B12345674",
+      p_tax_id_country: "ES",
+      p_tax_id_verification: "checksum",
+      p_tax_id_registry_name: undefined,
       p_comments: undefined,
     });
+    // España no se pregunta a VIES: su cálculo de control basta.
+    expect(viesMock).not.toHaveBeenCalled();
     expect(result.done).toBe(true);
     expect(result.error).toBeNull();
   });
@@ -184,7 +192,8 @@ describe("requestAccess", () => {
         business_name: "Lo que sea",
         phone: "600000000",
         email: "info@restavor.com",
-        tax_id: "X0000000T",
+        tax_id: "X1234567L",
+        tax_country: "ES",
       }),
     );
 
@@ -200,7 +209,8 @@ describe("requestAccess", () => {
         business_name: "Lo que sea",
         phone: "600000000",
         email: "info@restavor.com",
-        tax_id: "X0000000T",
+        tax_id: "X1234567L",
+        tax_country: "ES",
         comments: "",
       },
     });
@@ -210,16 +220,7 @@ describe("requestAccess", () => {
   it("A11: si el envío falla, lo dice y no pierde lo escrito (no redirige)", async () => {
     rpcMock.mockResolvedValue({ error: { message: "network error" } });
 
-    const result = await requestAccess(
-      accessRequestInitialState,
-      formData({
-        contact_name: "Nuria",
-        business_name: "Bar Nuevo",
-        phone: "600111222",
-        email: "nuria@bar-nuevo.test",
-        tax_id: "B12345678",
-      }),
-    );
+    const result = await requestAccess(accessRequestInitialState, formData(completo));
 
     expect(result.done).toBe(false);
     expect(result.error).toContain("No hemos podido enviar");
@@ -233,7 +234,7 @@ describe("requestAccess", () => {
   it("Decisión 67 · RN-ACC-02: sin DNI, CIF o NIF no llama a la base", async () => {
     const result = await requestAccess(
       accessRequestInitialState,
-      formData({ contact_name: "Nuria", business_name: "Bar Nuevo", phone: "600111222", email: "nuria@bar-nuevo.test" }),
+      formData({ ...completo, tax_id: "" }),
     );
 
     expect(result.problems).toEqual({ tax_id: "missing" });
@@ -243,11 +244,68 @@ describe("requestAccess", () => {
   it("A09 · RN-ACC-02: el nombre vacío y el correo mal escrito se señalan a la vez", async () => {
     const result = await requestAccess(
       accessRequestInitialState,
-      formData({ contact_name: "", business_name: "Oliva", phone: "600000000", email: "ana@", tax_id: "B1" }),
+      formData({ ...completo, contact_name: "", business_name: "Oliva", email: "ana@" }),
     );
 
     expect(result.problems).toEqual({ contact_name: "missing", email: "invalid" });
     expect(result.values.business_name).toBe("Oliva");
     expect(rpcMock).not.toHaveBeenCalled();
   });
+
+  it("Decisión 68 · RN-ACC-02: un DNI inventado (la letra no cuadra) se rechaza sin llamar a la base", async () => {
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({ ...completo, tax_id: "12345678A" }),
+    );
+
+    expect(result.problems).toEqual({ tax_id: "invalid" });
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("Decisión 68 · RN-ACC-02: una empresa de la UE que VIES confirma entra comprobada, con su nombre", async () => {
+    rpcMock.mockResolvedValue({ error: null });
+    viesMock.mockResolvedValue({ kind: "found", name: "OLIVA LDA" });
+
+    await requestAccess(
+      accessRequestInitialState,
+      formData({ ...completo, tax_id: "PT501964843", tax_country: "PT" }),
+    );
+
+    expect(viesMock).toHaveBeenCalledWith("PT", "501964843");
+    expect(rpcMock).toHaveBeenCalledWith(
+      "submit_access_request",
+      expect.objectContaining({
+        p_tax_id_country: "PT",
+        p_tax_id_verification: "registry",
+        p_tax_id_registry_name: "OLIVA LDA",
+      }),
+    );
+  });
+
+  it("Decisión 68 · RN-ACC-02: sin nada que lo respalde entra, marcado para el equipo", async () => {
+    rpcMock.mockResolvedValue({ error: null });
+    viesMock.mockResolvedValue({ kind: "unavailable" });
+
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({ ...completo, tax_id: "FR40303265045", tax_country: "FR" }),
+    );
+
+    expect(result.done).toBe(true);
+    expect(rpcMock).toHaveBeenCalledWith(
+      "submit_access_request",
+      expect.objectContaining({ p_tax_id_country: "FR", p_tax_id_verification: "registry_unavailable" }),
+    );
+  });
+
+  it("Decisión 68 · RN-ACC-02: un país que no existe no se acepta", async () => {
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({ ...completo, tax_country: "XX" }),
+    );
+
+    expect(result.problems).toEqual({ tax_country: "missing" });
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
 });
+

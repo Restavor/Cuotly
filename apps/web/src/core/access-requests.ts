@@ -1,3 +1,5 @@
+import { normalizeTaxId } from "./tax-id";
+
 /**
  * `src/core/access-requests.ts` — cómo se entra en Cuotly (PRD §37,
  * RN-ACC; decisión 41 del 16/09/2026). Lógica de dominio pura, sin
@@ -225,19 +227,11 @@ export interface AccessRequestInput {
 }
 
 /**
- * Decisión 67 · el DNI, CIF o NIF se guarda sin espacios, puntos ni
- * guiones y en mayúsculas: "b-12.345.678" y "B12345678" son el mismo
- * documento, y quien revisa tiene que poder buscarlo de una sola forma.
- * La base hace lo mismo en `submit_access_request()`; esto es para que la
- * pantalla enseñe lo que se va a guardar.
- *
- * No se comprueba la letra de control ni el formato: Bosco no ha fijado
- * qué documentos se aceptan (uno extranjero no tiene la forma española),
- * y adivinarlo dejaría fuera a alguien. Se exige que haya algo.
+ * Decisión 67 · el DNI, CIF o NIF se guarda sin espacios, puntos, guiones
+ * ni barras y en mayúsculas. Vive en `tax-id.ts`, con los cálculos de
+ * control de la decisión 68; aquí se reexporta para quien ya lo importaba.
  */
-export function normalizeTaxId(value: string): string {
-  return value.replace(/[\s.\-]/g, "").toUpperCase();
-}
+export { normalizeTaxId };
 
 export type AccessRequestValidation =
   | { readonly ok: true }

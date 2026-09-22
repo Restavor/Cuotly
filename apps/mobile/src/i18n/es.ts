@@ -46,6 +46,12 @@ export const es = {
   },
 
   /** RN-MOV-09 · sin conexión. */
+  // Decisión 68 · el país del documento en la solicitud de acceso.
+  accessRequest: {
+    otherCountry: "Otro país",
+    countryCodeLabel: "Código del país",
+    countryCodeHelp: "Las dos letras del país del documento: PT, FR, IT, MX…",
+  },
   offline: {
     banner: "Sin conexión. Estás viendo lo último que se cargó.",
     fetchedAt: (when: string) => `Datos de ${when}`,

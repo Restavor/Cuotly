@@ -1,12 +1,13 @@
 import { Link } from "expo-router";
 import { useState } from "react";
 
-import { accessRequestSubmitFailure, normalizeTaxId, validateAccessRequest } from "@/core/access-requests";
+import { accessRequestSubmitFailure, validateAccessRequest } from "@/core/access-requests";
+import { DEFAULT_TAX_COUNTRY, countryName, isCountryCode } from "@/core/countries";
 
-import { Body, Button, Card, Field, Notice, Screen, Title } from "../src/components/ui";
+import { Body, Button, Card, Choice, Field, Notice, Screen, Title } from "../src/components/ui";
 import { es, web } from "../src/i18n/es";
 import { useOnline } from "../src/lib/connectivity";
-import { supabase } from "../src/lib/supabase";
+import { WEB_URL } from "../src/lib/supabase";
 import { colors } from "../src/lib/theme";
 
 /**
@@ -38,6 +39,14 @@ import { colors } from "../src/lib/theme";
  * devuelve `void` justamente para que esta pantalla no pueda ser un
  * oráculo de direcciones.
  */
+/** Lo que contesta `/api/movil/solicitud-acceso`. */
+type RespuestaSolicitud = {
+  ok?: boolean;
+  done?: boolean;
+  problems?: Record<string, string>;
+  error?: string | null;
+};
+
 export default function SolicitarAccesoScreen() {
   const t = web.auth.signup;
   const online = useOnline();
@@ -47,6 +56,9 @@ export default function SolicitarAccesoScreen() {
   const [email, setEmail] = useState("");
   // Decisión 67 · el DNI, CIF o NIF, obligatorio como en la web.
   const [taxId, setTaxId] = useState("");
+  // Decisión 68 · el país del documento: España, u otro con su código.
+  const [paisOtro, setPaisOtro] = useState(false);
+  const [codigoPais, setCodigoPais] = useState("");
   const [comments, setComments] = useState("");
   const [malos, setMalos] = useState<readonly string[]>([]);
   const [problema, setProblema] = useState<"missing" | "email" | null>(null);
@@ -54,38 +66,74 @@ export default function SolicitarAccesoScreen() {
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
 
-  const fallo = (campo: string) =>
-    malos.includes(campo) ? (problema === "email" ? t.validationEmail : t.validationRequired) : undefined;
+  // Decisión 68 · el servidor puede decir que el documento es falso.
+  const [documentoFalso, setDocumentoFalso] = useState(false);
+  const pais = paisOtro ? codigoPais.trim().toUpperCase() : DEFAULT_TAX_COUNTRY;
+
+  const fallo = (campo: string) => {
+    if (campo === "tax_id" && documentoFalso) return web.auth.access.fieldErrors.taxIdInvalid;
+    if (campo === "tax_country" && malos.includes(campo)) return web.auth.access.fieldErrors.tax_country;
+    return malos.includes(campo) ? (problema === "email" ? t.validationEmail : t.validationRequired) : undefined;
+  };
 
   async function enviar() {
+    setDocumentoFalso(false);
     const revision = validateAccessRequest({ contactName, businessName, phone, email, taxId });
-    if (!revision.ok) {
-      setMalos(revision.fields);
-      setProblema(revision.problem);
+    const paisMalo = !isCountryCode(pais);
+    if (!revision.ok || paisMalo) {
+      setMalos([...(revision.ok ? [] : revision.fields), ...(paisMalo ? ["tax_country"] : [])]);
+      setProblema(revision.ok ? null : revision.problem);
       setError(null);
       return;
     }
     setMalos([]);
     setProblema(null);
     setError(null);
-    setPending(true);
-    const { error: problemaEnvio } = await supabase.rpc("submit_access_request", {
-      p_contact_name: contactName.trim(),
-      p_business_name: businessName.trim(),
-      p_phone: phone.trim(),
-      p_email: email.trim(),
-      p_tax_id: normalizeTaxId(taxId),
-      p_comments: comments.trim() === "" ? undefined : comments.trim(),
-    });
-    setPending(false);
-    if (problemaEnvio) {
-      // A11 · lo escrito sigue aquí y se puede volver a pulsar.
-      setError(
-        accessRequestSubmitFailure(problemaEnvio.message) === "unreachable" ? t.unreachable : t.unknownError,
-      );
+    if (WEB_URL === "") {
+      setError(t.unknownError);
       return;
     }
-    setDone(true);
+    setPending(true);
+    // Decisión 68 · el documento se comprueba en el servidor (cálculo de
+    // control y VIES), con el mismo código que el formulario web. La
+    // función de la base ya no se puede llamar desde aquí.
+    let respuesta = null as RespuestaSolicitud | null;
+    let sinRed = false;
+    try {
+      const r = await fetch(`${WEB_URL}/api/movil/solicitud-acceso`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contact_name: contactName.trim(),
+          business_name: businessName.trim(),
+          phone: phone.trim(),
+          email: email.trim(),
+          tax_id: taxId.trim(),
+          tax_country: pais,
+          comments: comments.trim(),
+        }),
+      });
+      respuesta = (await r.json()) as RespuestaSolicitud;
+    } catch (fallo) {
+      sinRed = accessRequestSubmitFailure(fallo instanceof Error ? fallo.message : "") === "unreachable";
+    }
+    setPending(false);
+    if (respuesta?.ok && respuesta.done) {
+      setDone(true);
+      return;
+    }
+    // A11 · lo escrito sigue aquí y se puede volver a pulsar.
+    const problemas = respuesta?.problems ?? {};
+    if (problemas.tax_id === "invalid") {
+      setDocumentoFalso(true);
+      return;
+    }
+    if (Object.keys(problemas).length > 0) {
+      setMalos(Object.keys(problemas));
+      setProblema(problemas.email === "invalid" ? "email" : "missing");
+      return;
+    }
+    setError(sinRed ? t.unreachable : (respuesta?.error ?? t.unknownError));
   }
 
   // RN-ACC-12 · el mismo final siempre.
@@ -138,6 +186,27 @@ export default function SolicitarAccesoScreen() {
         error={fallo("email")}
         testID="email-input"
       />
+      <Choice
+        label={web.auth.access.taxCountryLabel}
+        options={[
+          { value: "es", label: countryName(DEFAULT_TAX_COUNTRY) },
+          { value: "otro", label: es.accessRequest.otherCountry },
+        ]}
+        value={paisOtro ? "otro" : "es"}
+        onChange={(valor) => setPaisOtro(valor === "otro")}
+      />
+      {paisOtro ? (
+        <Field
+          label={es.accessRequest.countryCodeLabel}
+          help={es.accessRequest.countryCodeHelp}
+          value={codigoPais}
+          onChangeText={setCodigoPais}
+          autoCapitalize="characters"
+          maxLength={2}
+          error={fallo("tax_country")}
+          testID="tax-country-input"
+        />
+      ) : null}
       <Field
         label={web.auth.access.taxIdLabel}
         value={taxId}

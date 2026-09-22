@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 
 import { Card, ErrorState, StatusBadge } from "@/components/ui";
 import { isAccessRequestFinal, type AccessRequestState } from "@/core/access-requests";
+import { countryName } from "@/core/countries";
 import { canApproveSpaces } from "@/core/platform-admin";
+import { TAX_ID_VERIFICATIONS, taxIdVerified, type TaxIdVerification } from "@/core/tax-id";
 import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -40,7 +42,7 @@ export default async function AdminAccessRequestDetailPage({
   const { data: row, error } = await supabase
     .from("access_requests")
     .select(
-      "id, business_name, contact_name, email, phone, tax_id, comments, applicant_reply, status, status_reason, decided_at, account_id, created_at",
+      "id, business_name, contact_name, email, phone, tax_id, tax_id_country, tax_id_verification, tax_id_registry_name, comments, applicant_reply, status, status_reason, decided_at, account_id, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -67,9 +69,16 @@ export default async function AdminAccessRequestDetailPage({
     [t.email, row.email],
     [t.phone, row.phone],
     [t.taxId, row.tax_id ?? t.taxIdMissing],
+    [t.taxCountry, row.tax_id_country === null ? null : countryName(row.tax_id_country)],
     [t.comments, row.comments],
     [t.createdAt, cuando(row.created_at)],
   ];
+
+  // Decisión 68 · cómo quedó comprobado el documento. Lo que no se pudo
+  // confirmar se dice en ámbar, para mirarlo antes de aprobar.
+  const comprobacion = (TAX_ID_VERIFICATIONS as readonly string[]).includes(row.tax_id_verification ?? "")
+    ? (row.tax_id_verification as TaxIdVerification)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -91,6 +100,27 @@ export default async function AdminAccessRequestDetailPage({
             </div>
           ))}
         </dl>
+
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="text-sm text-text-secondary">{t.taxCheckTitle}</p>
+          {comprobacion === null ? (
+            <p className="text-sm text-text">{t.taxCheckMissing}</p>
+          ) : (
+            <p className="mt-1 flex items-start gap-2 text-sm text-text">
+              <StatusBadge tone={taxIdVerified(comprobacion) ? "success" : "warning"}>
+                {taxIdVerified(comprobacion) ? t.taxCheckOk : t.taxCheckReview}
+              </StatusBadge>
+              <span>{t.taxChecks[comprobacion]}</span>
+            </p>
+          )}
+          {row.tax_id_registry_name ? (
+            <p className="mt-2 text-sm text-text">
+              <span className="text-text-secondary">{t.registryName}: </span>
+              {row.tax_id_registry_name}
+              <span className="block text-xs text-text-secondary">{t.registryNameHint}</span>
+            </p>
+          ) : null}
+        </div>
 
         {row.applicant_reply ? (
           <div className="mt-4 border-t border-border pt-4">

@@ -4,11 +4,8 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { es } from "@/i18n/es";
-import {
-  accessRequestFieldProblems,
-  accessRequestSubmitFailure,
-  normalizeTaxId,
-} from "@/core/access-requests";
+import { readAccessRequestValues, submitAccessRequest } from "@/services/access-request";
+import { checkVies } from "@/services/vies";
 import { classifySignInError, signInFailureMessage } from "@/core/auth-errors";
 
 import type {
@@ -88,65 +85,24 @@ export async function signOut() {
  * "ese correo ya tiene cuenta", el formulario sería un oráculo y bastaría
  * con escribir direcciones ajenas para saber quién está en Cuotly
  * (RN-ACC-12). Quien se entera de lo que pasó es la dirección, por correo.
+ *
+ * Decisión 68 · el documento se comprueba aquí, en el servidor (cálculo de
+ * control y VIES), con el mismo código que usa el teléfono:
+ * `src/services/access-request.ts`. La base solo acepta la llamada de
+ * `service_role`, así que va con el cliente de administración.
  */
 export async function requestAccess(
   _prevState: AccessRequestFormState,
   formData: FormData,
 ): Promise<AccessRequestFormState> {
-  const contactName = String(formData.get("contact_name") ?? "").trim();
-  const businessName = String(formData.get("business_name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  const email = String(formData.get("email") ?? "").trim();
-  const taxId = String(formData.get("tax_id") ?? "").trim();
-  const comments = String(formData.get("comments") ?? "").trim();
-
-  const values = {
-    contact_name: contactName,
-    business_name: businessName,
-    phone,
-    email,
-    tax_id: taxId,
-    comments,
-  };
-
-  // A09 · los campos mal rellenados se señalan uno a uno, y todos a la vez.
-  // La comprobación es la de `core/access-requests.ts`, la misma expresión
-  // del correo que usa la pantalla del teléfono: escrita dos veces se
-  // separaría.
-  const problems = accessRequestFieldProblems({ contactName, businessName, phone, email, taxId });
-  const fields = Object.keys(problems);
-  if (fields.length > 0) {
-    const soloCorreo = fields.length === 1 && problems.email === "invalid";
-    const texto = soloCorreo ? es.auth.signup.validationEmail : es.auth.signup.validationRequired;
-    return { error: texto, fields, problems, done: false, values };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("submit_access_request", {
-    p_contact_name: contactName,
-    p_business_name: businessName,
-    p_phone: phone,
-    p_email: email,
-    // Decisión 67 · la base vuelve a normalizarlo y a exigirlo: manda ella.
-    p_tax_id: normalizeTaxId(taxId),
-    p_comments: comments === "" ? undefined : comments,
+  const values = readAccessRequestValues((clave) => formData.get(clave));
+  return submitAccessRequest(values, {
+    submit: async (args) => {
+      const { error } = await createAdminClient().rpc("submit_access_request", args);
+      return { error };
+    },
+    vies: (pais, numero) => checkVies(pais, numero),
   });
-
-  if (error) {
-    // A11 · si el envío falla, lo escrito no se pierde y se puede
-    // reintentar. La acción no redirige, así que el formulario conserva
-    // sus valores y la persona vuelve a pulsar.
-    const motivo = accessRequestSubmitFailure(error.message);
-    return {
-      error: motivo === "unreachable" ? es.auth.signup.unreachable : es.auth.signup.unknownError,
-      fields: [],
-      problems: {},
-      done: false,
-      values,
-    };
-  }
-
-  return { error: null, fields: [], problems: {}, done: true, values };
 }
 
 /**
