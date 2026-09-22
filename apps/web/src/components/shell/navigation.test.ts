@@ -110,7 +110,7 @@ describe("Los destinos del cliente son SUYOS, no los del equipo", () => {
     const destinos = new Map(mobileNav(SLUG, "client", REST).map((d) => [d.key, d.href]));
     // Inicio y Mensajes son de SU panel.
     expect(destinos.get("home")).toBe(`/espacios/${SLUG}/restaurantes/${REST}`);
-    expect(destinos.get("messages")).toBe(`/espacios/${SLUG}/restaurantes/${REST}#mensajes`);
+    expect(destinos.get("messages")).toBe(`/espacios/${SLUG}/restaurantes/${REST}/mensajes`);
     // "Restaurantes" va al Inicio global a propósito: los suyos pueden estar
     // en varios espacios de mantenimiento y esa lista solo existe allí
     // (RN-GLO-03). No se inventa una ruta nueva.

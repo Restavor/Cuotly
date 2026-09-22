@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { ConversationMessage } from "@/components/conversation/Conversation";
 import type { PanelAttention, PanelHomeData } from "@/components/panel/PanelHome";
-import { PANEL_ANCHORS, PANEL_ROUTES, type ShellRole } from "@/components/shell/navigation";
+import { PANEL_ROUTES, type ShellRole } from "@/components/shell/navigation";
 import { todayInTimeZone } from "@/core/finance";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -104,7 +104,7 @@ export async function loadPanelHome(
     // el último es del equipo y todavía no lo ha contestado.
     const ultimo = input.messages.at(-1);
     if (ultimo !== undefined && !ultimo.isMine) {
-      attention.push({ kind: "messages", href: `${base}${PANEL_ANCHORS.messages}` });
+      attention.push({ kind: "messages", href: `${base}${PANEL_ROUTES.messages}` });
     }
   }
 
@@ -140,7 +140,7 @@ export async function loadPanelHome(
       createMenu: conMenu ? `${base}/menu-diario` : null,
       plan: `${base}/facturacion`,
       menus: conMenu ? `${base}/menu-diario` : null,
-      messages: `${base}${PANEL_ANCHORS.messages}`,
+      messages: `${base}${PANEL_ROUTES.messages}`,
       requests: `${base}${PANEL_ROUTES.requests}`,
       data: `${base}/datos`,
     },

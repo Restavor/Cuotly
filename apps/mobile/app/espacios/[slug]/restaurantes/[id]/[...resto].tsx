@@ -11,7 +11,15 @@ export default function ClientNotInAppScreen() {
   const pathname = usePathname();
   const last = pathname.split("/").filter(Boolean).pop() ?? "";
   const label =
-    last === "datos" ? web.nav.data : last === "fuentes" ? web.nav.sources : last === "ayuda" ? web.nav.help : last;
+    last === "datos"
+      ? web.nav.data
+      : last === "fuentes"
+        ? web.nav.sources
+        : last === "ayuda"
+          ? web.nav.help
+          : last === "calendario"
+            ? web.nav.calendar
+            : last;
   return (
     <Screen title={label}>
       <NotInApp what={label} />

@@ -98,16 +98,13 @@ describe("RN-PAN-07 · las anclas del panel llevan a algún sitio de verdad", ()
     "src/app/espacios/[slug]/restaurantes/[id]/page.tsx",
   );
 
-  it("cada ancla declarada existe como identificador en la página del restaurante", () => {
-    const fuente = readFileSync(PAGINA, "utf8");
-
-    for (const [clave, ancla] of Object.entries(PANEL_ANCHORS)) {
-      const id = ancla.replace(/^#/, "");
-      expect(fuente.includes(`id="${id}"`), `${clave} → ${ancla}`).toBe(true);
-    }
+  it("R05, R06 y R20 · ya no queda ninguna ancla: cada destino del panel es su pantalla", () => {
+    expect(Object.keys(PANEL_ANCHORS)).toEqual([]);
+    // La página del restaurante ya no se lee para buscar anclas.
+    expect(readFileSync(PAGINA, "utf8").length).toBeGreaterThan(0);
   });
 
-  it("R05 y R06 · Solicitudes y Nueva solicitud son pantallas con su page.tsx", () => {
+  it("R05, R06 y R20 · Solicitudes, Nueva solicitud y Mensajes son pantallas con su page.tsx", () => {
     for (const [clave, ruta] of Object.entries(PANEL_ROUTES)) {
       const pagina = join(
         process.cwd(),

@@ -25,6 +25,8 @@ export function navigableHref(href: string): string {
   // el formulario están en la pantalla del restaurante, y
   // `/solicitudes/nueva` casaría con `solicitudes/[requestId]` como si
   // "nueva" fuera una solicitud. Se lleva a la pantalla que sí los tiene.
-  const panel = ruta.match(/^(\/espacios\/[^/]+\/restaurantes\/[^/]+)\/solicitudes(?:\/nueva)?$/);
+  // Lo mismo con "Mensajes" (R20): en la app la conversación está en la
+  // pantalla del restaurante.
+  const panel = ruta.match(/^(\/espacios\/[^/]+\/restaurantes\/[^/]+)\/(?:solicitudes(?:\/nueva)?|mensajes)$/);
   return panel ? panel[1] : ruta;
 }

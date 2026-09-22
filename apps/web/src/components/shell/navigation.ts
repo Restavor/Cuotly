@@ -119,9 +119,7 @@ function clientBase(spaceSlug: string, establishmentId: string | null): string |
  * identificadores tienen que existir en la página del restaurante:
  * `panel-anclas.test.tsx` falla si alguno no está.
  */
-export const PANEL_ANCHORS = {
-  messages: "#mensajes",
-} as const;
+export const PANEL_ANCHORS = {} as const;
 
 /**
  * R05 y R06 · "Solicitudes" y "Nueva solicitud" ya son pantallas propias
@@ -133,6 +131,9 @@ export const PANEL_ANCHORS = {
 export const PANEL_ROUTES = {
   requests: "/solicitudes",
   newRequest: "/solicitudes/nueva",
+  // R20 · la bandeja del restaurante, con la conversación general y las
+  // de cada solicitud.
+  messages: "/mensajes",
 } as const;
 
 export type PanelAnchorKey = keyof typeof PANEL_ANCHORS;
@@ -199,7 +200,7 @@ export function mobileNav(
     return [
       D("home", es.nav.home, mine ?? GLOBAL_HOME),
       D("establishments", es.nav.establishments, `${GLOBAL_HOME}${GLOBAL_PANELS_ANCHOR}`),
-      D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : GLOBAL_HOME),
+      D("messages", es.nav.messages, mine ? `${mine}${PANEL_ROUTES.messages}` : GLOBAL_HOME),
       // "Más" es la MISMA ruta para todos: `/espacios/<slug>/mas` ya
       // decide su contenido por rol con `moreDestinations()`. Una ruta
       // propia bajo el restaurante habría sido una pantalla más que
@@ -307,7 +308,10 @@ export function fullNav(
         D("home", es.nav.home, mine ?? "/"),
         D("requests", es.nav.requests, mine ? `${mine}${PANEL_ROUTES.requests}` : "/"),
         D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ROUTES.newRequest}` : "/"),
-        D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : "/"),
+        D("messages", es.nav.messages, mine ? `${mine}${PANEL_ROUTES.messages}` : "/"),
+        // R21 · el calendario del restaurante: sus menús, sus solicitudes,
+        // sus renovaciones y lo demás que es suyo.
+        D("calendar", es.nav.calendar, mine ? `${mine}/calendario` : "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
@@ -320,7 +324,10 @@ export function fullNav(
         D("requests", es.nav.requests, mine ? `${mine}${PANEL_ROUTES.requests}` : "/"),
         D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ROUTES.newRequest}` : "/"),
         D("dailyMenu", es.nav.dailyMenu, mine ? `${mine}/menu-diario` : "/"),
-        D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : "/"),
+        D("messages", es.nav.messages, mine ? `${mine}${PANEL_ROUTES.messages}` : "/"),
+        // R21 · el calendario del restaurante: sus menús, sus solicitudes,
+        // sus renovaciones y lo demás que es suyo.
+        D("calendar", es.nav.calendar, mine ? `${mine}/calendario` : "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
