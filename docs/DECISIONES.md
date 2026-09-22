@@ -2038,3 +2038,11 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       cálculo.
     - Se elige el país en un desplegable (España por defecto, los 249 de ISO con su nombre en
       español); en el teléfono, "España" u "Otro país" con su código de dos letras.
+    - **VIES comprobado en vivo** (22/09/2026, a petición de Bosco). Este entorno no llega a
+      `ec.europa.eu`, así que se consultó desde un sandbox de Vercel en París (proyecto
+      `cuotly-web`, salida solo a `ec.europa.eu`, apagado al terminar), con una copia literal de
+      `src/services/vies.ts`. Resultado: Google Ireland (`IE6388047V`) → **encontrada**, con su
+      nombre; `PT123456789`, bien formado pero no dado de alta → **no encontrado**; Alemania →
+      **no se sabe**, porque su servidor contestaba `MS_UNAVAILABLE` **con un 200**, que es
+      justo el caso que el adaptador trata como "no se sabe" y no como "no existe". Esas tres
+      respuestas reales quedan fijadas en `vies.test.ts`.
