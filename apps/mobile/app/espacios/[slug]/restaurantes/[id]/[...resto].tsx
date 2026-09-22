@@ -19,7 +19,9 @@ export default function ClientNotInAppScreen() {
           ? web.nav.help
           : last === "calendario"
             ? web.nav.calendar
-            : last;
+            : last === "plan"
+              ? web.nav.planAndServices
+              : last;
   return (
     <Screen title={label}>
       <NotInApp what={label} />

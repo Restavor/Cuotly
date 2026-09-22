@@ -138,7 +138,7 @@ export async function loadPanelHome(
     links: {
       newRequest: `${base}${PANEL_ROUTES.newRequest}`,
       createMenu: conMenu ? `${base}/menu-diario` : null,
-      plan: `${base}/facturacion`,
+      plan: `${base}/plan`,
       menus: conMenu ? `${base}/menu-diario` : null,
       messages: `${base}${PANEL_ROUTES.messages}`,
       requests: `${base}${PANEL_ROUTES.requests}`,

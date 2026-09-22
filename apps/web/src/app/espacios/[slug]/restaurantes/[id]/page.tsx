@@ -12,7 +12,6 @@ import {
   TableRow,
 } from "@/components/ui";
 import { todayInTimeZone } from "@/core/finance";
-import { termsNeedAcceptance } from "@/core/terms";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { ExportForm } from "../../ajustes/exportacion/ExportForm";
@@ -44,12 +43,12 @@ import {
 import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 
-import { AcceptTermsButton } from "./AcceptTermsButton";
 import { TerminationForm } from "./TerminationForm";
 import { loadRequestDetail } from "../../solicitudes/[id]/detail-load";
 import { loadEstablishmentTimezone } from "./timezone-load";
 import { loadPanelHome } from "./panel-home-load";
 import { PanelHome } from "@/components/panel/PanelHome";
+import { TermsCard } from "@/components/panel/TermsCard";
 import { loadSubscriptionTerms } from "../../planes/terms-load";
 import {
   loadSheetCounts,
@@ -557,66 +556,7 @@ export default async function EstablishmentPage({
         canWrite={canWrite === true}
       />
 
-      <Card title={es.clientArea.terms.title}>
-        <p className="mb-3 text-sm text-text-secondary">{es.clientArea.terms.hint}</p>
-        {condiciones.length === 0 ? (
-          <p className="text-sm text-text-secondary">{es.clientArea.terms.empty}</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {condiciones.map(({ subscriptionId, terms }) => (
-              <li key={subscriptionId} className="flex flex-wrap items-start justify-between gap-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-primary-dark">{terms?.subjectName ?? "—"}</p>
-                  {terms === null || terms.current === null ? (
-                    <>
-                      <p className="text-sm text-text-secondary">{es.clientArea.terms.noTerms}</p>
-                      <p className="text-xs text-text-secondary">{es.clientArea.terms.noTermsReason}</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm text-text-secondary">
-                        {terms.accepted === null
-                          ? es.clientArea.terms.pending(terms.current.version)
-                          : terms.status === "accepted"
-                            ? es.clientArea.terms.accepted(
-                                terms.accepted.version,
-                                enZona(terms.accepted.acceptedAt, zonaDelEspacio, {
-                                  dateStyle: "long",
-                                }),
-                              )
-                            : es.clientArea.terms.outdated(
-                                terms.accepted.version,
-                                terms.current.version,
-                              )}
-                      </p>
-                      <details className="mt-1">
-                        <summary className="cursor-pointer text-sm text-cuotly-green underline">
-                          {es.clientArea.terms.read(terms.current.version)}
-                        </summary>
-                        <p className="mt-2 whitespace-pre-wrap text-sm text-text">
-                          {terms.current.conditions}
-                        </p>
-                      </details>
-                      {termsNeedAcceptance(terms.status) && canAcceptTerms !== true ? (
-                        <p className="mt-1 text-xs text-text-secondary">
-                          {es.clientArea.terms.onlyOwner}
-                        </p>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-                {terms?.current && termsNeedAcceptance(terms.status) && canAcceptTerms === true ? (
-                  <AcceptTermsButton
-                    subscriptionId={subscriptionId}
-                    versionId={terms.current.versionId}
-                    version={terms.current.version}
-                  />
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <TermsCard conditions={condiciones} canAccept={canAcceptTerms === true} timeZone={zonaDelEspacio} />
 
       {/*
         RN-EST-11 · "el propietario puede editar contacto y datos

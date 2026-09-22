@@ -1,9 +1,13 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { InfoNote } from "@/components/panel/RequestPieces";
 import {
+  ButtonLink,
   Card,
   EmptyState,
   NoPermissionState,
+  PageHeader,
   StatusBadge,
   Table,
   TableBody,
@@ -12,52 +16,79 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { Icon, type IconName } from "@/components/ui/Icon";
+import {
+  BILLING_PERIODS,
+  BILLING_TABS,
+  billingSummary,
+  filterCharges,
+  lastPayment,
+  readBillingFilters,
+  type BillingGroup,
+} from "@/core/client-billing";
 import { enZona } from "@/i18n/dates";
-import { PaymentHistory } from "@/components/finance/PaymentHistory";
-import { loadChargePayments } from "@/services/charge-payments";
-
-import { loadEstablishmentTimezone } from "../timezone-load";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import { ClientQuoteCard } from "./ClientQuoteCard";
-import { UploadReceiptForm } from "./UploadReceiptForm";
+import { loadEstablishmentTimezone } from "../timezone-load";
+import { loadClientCharges } from "./billing-load";
 
 /**
- * La facturación del restaurante, vista por él (HU-25, RN-FIN-07).
+ * R25 · Pagos y facturas del restaurante (HU-25, RN-FIN-07).
  *
  * Quién puede ver esto no lo decide la pantalla: `client_can_view_billing()`
  * lo dice en el servidor —propietario local siempre, Editor solo con el
  * permiso explícito, Consulta nunca— y las políticas de `charges` filtran
- * las filas igual. Aquí se pregunta solo para poder explicar el motivo en
- * vez de enseñar una tabla vacía (CA-20).
+ * las filas igual. Aquí se pregunta para poder explicar el motivo en vez de
+ * enseñar una tabla vacía (CA-20).
  *
- * El autor de cada apunte llega como identificador desde
- * `establishment_consumption_ledger()`: al restaurante nunca se le
- * devuelve la persona del equipo, solo "equipo de mantenimiento".
+ * Las tres tarjetas de arriba no suman dinero (CLAUDE.md): "Pendiente de
+ * pago" cuenta los cobros con deuda y enseña un importe solo cuando es uno,
+ * el que ya dio `charge_outstanding_cents()`. "Descargar factura" no está:
+ * Cuotly todavía no emite facturas (bloque legal pendiente, CLAUDE.md), y
+ * lo dice la pestaña de facturas.
  */
 export const dynamic = "force-dynamic";
 
+const t = es.panelBilling;
 type ChargeStateKey = keyof typeof es.teamArea.chargeStates;
-type CategoryKey = keyof typeof es.naming.categories;
 
 function euros(cents: number): string {
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
 }
 
-function chargeTone(status: string): "success" | "warning" | "danger" | "neutral" {
-  if (status === "paid" || status === "waived") return "success";
-  if (status === "overdue") return "danger";
-  if (status === "partially_paid" || status === "refunded") return "warning";
-  return "neutral";
+const TONO: Record<BillingGroup, "success" | "warning" | "neutral"> = {
+  paid: "success",
+  in_review: "warning",
+  pending: "neutral",
+};
+
+function Resumen({ icon, title, value, detail, tone }: { icon: IconName; title: string; value: string; detail?: string | null; tone: string }) {
+  return (
+    <Card>
+      <div className="flex items-center gap-4">
+        <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${tone}`}>
+          <Icon name={icon} className="h-6 w-6" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm text-text-secondary">{title}</p>
+          <p className="text-xl font-bold text-primary-dark">{value}</p>
+          {detail ? <p className="truncate text-sm text-text-secondary">{detail}</p> : null}
+        </div>
+      </div>
+    </Card>
+  );
 }
 
 export default async function ClientBillingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { id } = await params;
+  const { slug, id } = await params;
+  const filtros = readBillingFilters(await searchParams);
   const supabase = await createClient();
 
   const {
@@ -65,286 +96,169 @@ export default async function ClientBillingPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: establishment } = await supabase
-    .from("establishments")
-    .select("id, name, code")
-    .eq("id", id)
-    .maybeSingle();
-
+  const [{ data: establishment }, { data: canViewBilling }, zona] = await Promise.all([
+    supabase.from("establishments").select("id").eq("id", id).maybeSingle(),
+    supabase.rpc("client_can_view_billing", { p_establishment_id: id }),
+    loadEstablishmentTimezone(supabase, id),
+  ]);
   if (!establishment) notFound();
-
-  const { data: canViewBilling } = await supabase.rpc("client_can_view_billing", {
-    p_establishment_id: id,
-  });
 
   if (!canViewBilling) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.clientArea.billingTitle}</h1>
-        <NoPermissionState
-          title={es.clientArea.billingNoAccessTitle}
-          description={es.clientArea.billingNoAccessReason}
-        />
+      <div className="space-y-6">
+        <PageHeader title={es.clientArea.billingTitle} subtitle={t.subtitle} />
+        <NoPermissionState title={es.clientArea.billingNoAccessTitle} description={es.clientArea.billingNoAccessReason} />
       </div>
     );
   }
 
-  const [{ data: charges }, { data: ledger }, { data: quoteRows }, { data: canAnswerQuotes }, zona] =
-    await Promise.all([
-      supabase
-        .from("charges")
-        .select("id, concept, total_cents, due_at")
-        .eq("establishment_id", id)
-        .order("due_at", { ascending: false }),
-      supabase.rpc("establishment_consumption_ledger", { p_establishment_id: id }),
-      // §84 · los presupuestos del restaurante. `quotes_select` no le deja
-      // ver borradores; las columnas se enumeran porque las de identidad
-      // están revocadas (P7).
-      supabase
-        .from("quotes")
-        .select(
-          "id, code, concept, description, base_cents, tax_cents, total_cents, requires_payment_before_start, state, decided_by_team, decision_reason",
-        )
-        .eq("establishment_id", id)
-        .order("created_at", { ascending: false }),
-      // Quién responde a un presupuesto es quien acepta las condiciones:
-      // el propietario local o el del grupo. Se PREGUNTA al servidor.
-      supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
-      // CLAUDE.md · la zona del espacio; el restaurante no lee `spaces`.
-      loadEstablishmentTimezone(supabase, id),
-    ]);
-
-  const quotes = await Promise.all(
-    (quoteRows ?? []).map(async (quote) => {
-      const { data: status } = await supabase.rpc("quote_status", { p_quote_id: quote.id });
-      return {
-        id: quote.id,
-        code: quote.code,
-        concept: quote.concept,
-        description: quote.description,
-        baseCents: quote.base_cents,
-        taxCents: quote.tax_cents,
-        totalCents: quote.total_cents,
-        // Si la derivación no contestó, el estado guardado: nunca se
-        // inventa un "enviado" que ofrecería botones de responder.
-        status: status ?? quote.state,
-        requiresPaymentBeforeStart: quote.requires_payment_before_start,
-        decidedByTeam: quote.decided_by_team,
-        decisionReason: quote.decision_reason,
-      };
-    }),
-  );
-
-  // El estado y la deuda viva los deriva el servidor de los apuntes
-  // (RN-FIN-02 + RN-DAT-05). Aquí no se suma dinero.
-  const chargeRows = await Promise.all(
-    (charges ?? []).map(async (charge) => {
-      // M51 · con el estado y la deuda viene el libro de apuntes: el
-      // restaurante que paga a plazos necesita ver qué se le ha apuntado,
-      // no solo cuánto le falta.
-      const [{ data: status }, { data: outstanding }, payments] = await Promise.all([
-        supabase.rpc("charge_status", { p_charge_id: charge.id }),
-        supabase.rpc("charge_outstanding_cents", { p_charge_id: charge.id }),
-        loadChargePayments(supabase, charge.id),
-      ]);
-      return { ...charge, status: status ?? "pending", outstanding: outstanding ?? 0, payments };
-    }),
-  );
-
-  const ledgerRows = ledger ?? [];
-
-  // RN-FIN-06 · los justificantes que este restaurante puede ver. No salen
-  // de `receipts` —esa tabla es del equipo: su política es
-  // `can_read_establishment_finance()`, que al cliente lo deja fuera— sino
-  // de `file_links`, cuya política es `can_read_file()`. Así el cliente ve
-  // lo suyo y sigue sin ver lo que el equipo adjuntó como interno.
-  const chargeIds = chargeRows.map((charge) => charge.id);
-  const { data: links } = chargeIds.length
-    ? await supabase
-        .from("file_links")
-        .select("file_id, entity_id")
-        .eq("entity_type", "charge")
-        .in("entity_id", chargeIds)
-    : { data: [] };
-
-  const fileIds = [...new Set((links ?? []).map((link) => link.file_id))];
-  const { data: attachedFiles } = fileIds.length
-    ? await supabase.from("files").select("id, name, created_at").in("id", fileIds)
-    : { data: [] };
-
-  const fileById = new Map((attachedFiles ?? []).map((file) => [file.id, file]));
-  const receiptsByCharge = new Map<string, { id: string; name: string }[]>();
-  for (const link of links ?? []) {
-    const file = fileById.get(link.file_id);
-    if (!file) continue;
-    const lista = receiptsByCharge.get(link.entity_id) ?? [];
-    lista.push({ id: file.id, name: file.name });
-    receiptsByCharge.set(link.entity_id, lista);
-  }
-
-  // Solo tiene sentido adjuntar a un cobro con deuda viva.
-  const chargesPendientes = chargeRows
-    .filter((charge) => charge.outstanding > 0)
-    .map((charge) => ({
-      id: charge.id,
-      label: `${charge.concept} · ${euros(charge.outstanding)}`,
-    }));
+  const cobros = await loadClientCharges(supabase, id);
+  const filtrados = filterCharges(cobros, filtros, new Date());
+  const resumen = billingSummary(cobros);
+  const ultimo = lastPayment(cobros.flatMap((c) => c.payments));
+  const base = `/espacios/${slug}/restaurantes/${id}/facturacion`;
+  const fecha = (iso: string) => enZona(iso, zona, { day: "numeric", month: "long", year: "numeric" });
+  const corta = (iso: string) => enZona(iso, zona, { day: "numeric", month: "short", year: "numeric" });
+  const mes = (dia: string) => enZona(dia, zona, { month: "long", year: "numeric" });
+  const enlace = (cambios: Partial<typeof filtros>) => {
+    const f = { ...filtros, ...cambios };
+    const q = new URLSearchParams();
+    if (f.tab !== "todos") q.set("ver", f.tab);
+    if (f.period !== "12") q.set("periodo", f.period);
+    const s = q.toString();
+    return `${base}${s ? `?${s}` : ""}`;
+  };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
-      <header>
-        <p className="text-sm text-text-secondary">
-          {establishment.code} · {establishment.name}
-        </p>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.clientArea.billingTitle}</h1>
-        <p className="text-sm text-text-secondary">{es.clientArea.billingSubtitle}</p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        title={es.clientArea.billingTitle}
+        subtitle={t.subtitle}
+        actions={
+          <ButtonLink href={`${base}/documentos`} variant="outline" icon="document">
+            {t.documentsLink}
+          </ButtonLink>
+        }
+      />
 
-      <Card title={es.teamArea.finance.chargesTitle}>
-        {chargeRows.length === 0 ? (
-          <EmptyState
-            title={es.clientArea.billingEmptyTitle}
-            description={es.clientArea.billingEmptyReason}
-          />
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>{es.clientArea.billingConceptColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.billingTotalColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.billingDueColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.billingStatusColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.billingOutstandingColumn}</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {chargeRows.map((charge) => (
-                <TableRow key={charge.id}>
-                  <TableCell>{charge.concept}</TableCell>
-                  <TableCell>{euros(charge.total_cents)}</TableCell>
-                  <TableCell>
-                    {enZona(charge.due_at, zona, { dateStyle: "short" })}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge tone={chargeTone(charge.status)}>
-                      {es.teamArea.chargeStates[charge.status as ChargeStateKey] ?? charge.status}
-                    </StatusBadge>
-                  </TableCell>
-                  <TableCell>{euros(charge.outstanding)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Resumen
+          icon="clock"
+          tone="bg-warning/25 text-primary-dark"
+          title={t.pendingTitle}
+          value={
+            resumen.pendingCount === 0
+              ? t.pendingNone
+              : resumen.onlyPending
+                ? euros(resumen.onlyPending.outstandingCents)
+                : t.pendingCount(resumen.pendingCount)
+          }
+          detail={resumen.onlyPending ? t.pendingCount(1) : null}
+        />
+        <Resumen
+          icon="calendar"
+          tone="bg-soft-surface text-primary-dark"
+          title={t.nextDueTitle}
+          value={resumen.nextDue ? fecha(resumen.nextDue.due_at) : t.nextDueNone}
+          detail={resumen.nextDue?.concept ?? null}
+        />
+        <Resumen
+          icon="check"
+          tone="bg-cuotly-green/15 text-cuotly-green"
+          title={t.lastPaymentTitle}
+          value={ultimo ? fecha(ultimo.paid_at) : t.lastPaymentNone}
+          detail={ultimo ? euros(ultimo.amount_cents) : null}
+        />
+      </div>
 
-      </Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav aria-label={t.tabsLabel} className="flex flex-wrap gap-2">
+          {BILLING_TABS.map((tab) => (
+            <Link
+              key={tab}
+              href={enlace({ tab })}
+              aria-current={filtros.tab === tab ? "true" : undefined}
+              className={`rounded-[10px] border px-4 py-2 text-sm font-semibold ${
+                filtros.tab === tab ? "border-primary bg-primary text-surface" : "border-border bg-surface text-text hover:bg-soft-surface"
+              }`}
+            >
+              {t.tabs[tab]}
+            </Link>
+          ))}
+        </nav>
+        <nav aria-label={t.periodLabel} className="flex flex-wrap gap-2">
+          {BILLING_PERIODS.map((p) => (
+            <Link
+              key={p}
+              href={enlace({ period: p })}
+              aria-current={filtros.period === p ? "true" : undefined}
+              className={`rounded-[10px] border px-3 py-2 text-sm ${
+                filtros.period === p ? "border-cuotly-green font-semibold text-cuotly-green" : "border-border text-text-secondary hover:bg-soft-surface"
+              }`}
+            >
+              {t.periods[p]}
+            </Link>
+          ))}
+        </nav>
+      </div>
 
-      {/* M51 · los pagos parciales, uno a uno. Va aparte de la tabla y no
-          dentro de ella porque lo que se lee aquí es una conversación sobre
-          dinero —"el 12 te apunté 200 por Bizum"— y eso no cabe en una
-          celda. Solo aparece si hay cobros: sin cobros no hay pagos de los
-          que hablar, y la tabla de arriba ya dice por qué no los hay. */}
-      {chargeRows.length === 0 ? null : (
-        <Card title={es.teamArea.finance.paymentsTitle}>
-          <ul className="space-y-4">
-            {chargeRows.map((charge) => (
-              <li key={charge.id}>
-                <p className="mb-1 text-sm font-semibold text-text">{charge.concept}</p>
-                <PaymentHistory payments={charge.payments} timezone={zona} />
-              </li>
-            ))}
-          </ul>
+      {cobros.length === 0 ? (
+        <Card>
+          <EmptyState title={es.clientArea.billingEmptyTitle} description={es.clientArea.billingEmptyReason} />
         </Card>
+      ) : filtrados.length === 0 ? (
+        <Card>
+          <EmptyState title={t.emptyFilteredTitle} description={t.emptyFilteredReason} />
+        </Card>
+      ) : (
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeaderCell>{t.columnDate}</TableHeaderCell>
+              <TableHeaderCell>{t.columnConcept}</TableHeaderCell>
+              <TableHeaderCell>{t.columnPeriod}</TableHeaderCell>
+              <TableHeaderCell>{t.columnBase}</TableHeaderCell>
+              <TableHeaderCell>{t.columnTax(filtrados[0].tax_rate_percent)}</TableHeaderCell>
+              <TableHeaderCell>{t.columnTotal}</TableHeaderCell>
+              <TableHeaderCell>{t.columnState}</TableHeaderCell>
+              <TableHeaderCell>{t.columnActions}</TableHeaderCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filtrados.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell>{corta(c.due_at)}</TableCell>
+                <TableCell>{c.concept}</TableCell>
+                <TableCell>{mes(c.period_start)}</TableCell>
+                <TableCell>{euros(c.base_cents)}</TableCell>
+                <TableCell>{euros(c.tax_cents)}</TableCell>
+                <TableCell>{euros(c.total_cents)}</TableCell>
+                <TableCell>
+                  <StatusBadge tone={c.status === "overdue" ? "danger" : TONO[c.group]}>
+                    {c.group === "pending"
+                      ? (es.teamArea.chargeStates[c.status as ChargeStateKey] ?? t.groups.pending)
+                      : t.groups[c.group]}
+                  </StatusBadge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-2">
+                    <ButtonLink href={`${base}/${c.id}`} variant="outline" size="sm">
+                      {t.viewDetail}
+                    </ButtonLink>
+                    {c.group === "pending" ? (
+                      <ButtonLink href={`${base}/${c.id}#justificante`} variant="outline" size="sm" icon="upload">
+                        {t.uploadReceipt}
+                      </ButtonLink>
+                    ) : null}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
-      {/* §84 · los presupuestos, con sus dos botones cuando toca responder. */}
-      <section aria-labelledby="presupuestos" className="space-y-4">
-        <h2 id="presupuestos" className="text-lg font-semibold text-primary-dark">
-          {es.quotesClient.title}
-        </h2>
-        {quotes.length === 0 ? (
-          <Card>
-            <EmptyState title={es.quotesClient.emptyTitle} description={es.quotesClient.emptyReason} />
-          </Card>
-        ) : (
-          quotes.map((quote) => (
-            <ClientQuoteCard key={quote.id} quote={quote} canAnswer={canAnswerQuotes === true} />
-          ))
-        )}
-      </section>
-
-      <Card title={es.clientArea.receiptTitle}>
-        {chargesPendientes.length === 0 ? (
-          <p className="text-sm text-text-secondary">{es.clientArea.receiptNothingToSend}</p>
-        ) : (
-          <UploadReceiptForm establishmentId={id} charges={chargesPendientes} />
-        )}
-
-        <div className="mt-6">
-          <h3 className="mb-2 text-sm font-semibold text-text">
-            {es.clientArea.receiptSentTitle}
-          </h3>
-          {receiptsByCharge.size === 0 ? (
-            <p className="text-sm text-text-secondary">{es.clientArea.receiptSentEmpty}</p>
-          ) : (
-            <ul className="space-y-1 text-sm">
-              {chargeRows.flatMap((charge) =>
-                (receiptsByCharge.get(charge.id) ?? []).map((file) => (
-                  <li key={file.id}>
-                    <span className="text-text-secondary">{charge.concept} · </span>
-                    {/*
-                      RN-ARC-08: el enlace no es al objeto, es a una ruta que
-                      comprueba `can_read_file()` y firma una URL de unos
-                      minutos. No hay URL permanente de ningún archivo.
-                    */}
-                    <a href={`/api/archivos/${file.id}`} className="text-cuotly-green underline">
-                      {file.name}
-                    </a>
-                  </li>
-                )),
-              )}
-            </ul>
-          )}
-        </div>
-      </Card>
-
-      <Card title={es.clientArea.ledgerTitle}>
-        {ledgerRows.length === 0 ? (
-          <EmptyState
-            title={es.clientArea.ledgerEmptyTitle}
-            description={es.clientArea.ledgerEmptyReason}
-          />
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>{es.clientArea.ledgerDateColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.ledgerCategoryColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.ledgerAmountColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.ledgerRequestColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.ledgerReasonColumn}</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {ledgerRows.map((entry) => (
-                <TableRow key={entry.entry_id}>
-                  <TableCell>
-                    {enZona(entry.occurred_at, zona, { dateStyle: "short" })}
-                  </TableCell>
-                  <TableCell>
-                    {es.naming.categories[entry.category as CategoryKey] ?? entry.category}
-                  </TableCell>
-                  <TableCell>
-                    {entry.amount > 0 ? `+${entry.amount}` : String(entry.amount)}
-                  </TableCell>
-                  <TableCell>{entry.request_code ?? "—"}</TableCell>
-                  <TableCell>{entry.reason ?? "—"}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+      <InfoNote title={es.clientArea.billingTitle}>{t.manualNote}</InfoNote>
     </div>
   );
 }

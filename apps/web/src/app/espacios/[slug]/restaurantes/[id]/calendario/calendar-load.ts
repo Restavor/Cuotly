@@ -105,7 +105,7 @@ export async function loadClientCalendar(
       title: t.planRenewal,
       detail: t.planRenewalDetail,
       stateLabel: null,
-      href: `${base}/facturacion`,
+      href: `${base}/plan`,
     });
   }
   const finMenu = menuBalance.data?.[0]?.cycle_end ?? null;

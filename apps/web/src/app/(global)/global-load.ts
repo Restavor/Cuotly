@@ -208,11 +208,12 @@ function hrefDelCliente(
     case "request":
       return `${base}/solicitudes/${entityId}`;
     // §84 · los presupuestos del restaurante se ven y se deciden en
-    // Facturación, no en una pantalla propia: es donde vive
-    // `ClientQuoteCard`.
+    // "Facturas y presupuestos" (R27), que es donde vive `ClientQuoteCard`;
+    // un cobro, en su propio detalle (R26).
     case "quote":
+      return `${base}/facturacion/documentos?tab=presupuestos`;
     case "charge":
-      return `${base}/facturacion`;
+      return `${base}/facturacion/${entityId}`;
     case "menu":
       return `${base}/menu-diario`;
     // RN-DAT-07 · las condiciones se aceptan en la portada del panel, que

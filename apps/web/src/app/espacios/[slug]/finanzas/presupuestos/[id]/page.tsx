@@ -75,7 +75,7 @@ export default async function TeamQuoteDetailPage({
 
   const { data: esDelEquipo } = await supabase.rpc("is_space_member", { p_space_id: quote.space_id });
   if (!esDelEquipo) {
-    redirect(`/espacios/${slug}/restaurantes/${quote.establishment_id}/facturacion`);
+    redirect(`/espacios/${slug}/restaurantes/${quote.establishment_id}/facturacion/documentos?tab=presupuestos`);
   }
 
   const [

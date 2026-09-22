@@ -312,7 +312,8 @@ export function fullNav(
         // R21 · el calendario del restaurante: sus menús, sus solicitudes,
         // sus renovaciones y lo demás que es suyo.
         D("calendar", es.nav.calendar, mine ? `${mine}/calendario` : "/"),
-        D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
+        D("plan", es.nav.planAndServices, mine ? `${mine}/plan` : "/"),
+        D("billing", es.nav.payments, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
         // §131 · el restaurante consulta las guías; las incidencias, no.
@@ -328,7 +329,8 @@ export function fullNav(
         // R21 · el calendario del restaurante: sus menús, sus solicitudes,
         // sus renovaciones y lo demás que es suyo.
         D("calendar", es.nav.calendar, mine ? `${mine}/calendario` : "/"),
-        D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
+        D("plan", es.nav.planAndServices, mine ? `${mine}/plan` : "/"),
+        D("billing", es.nav.payments, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
         D("sources", es.nav.sources, mine ? `${mine}/fuentes` : "/"),
         D("help", es.nav.help, mine ? `${mine}/ayuda` : "/"),
@@ -496,6 +498,7 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   more: "more",
   newRequest: "plus",
   billing: "finance",
+  plan: "plans",
   data: "reports",
   sources: "database",
   switchSpace: "switchSpace",
