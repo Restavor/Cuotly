@@ -2,7 +2,9 @@ import Link from "next/link";
 
 import { redirect } from "next/navigation";
 
-import { Card, EmptyState, ErrorState } from "@/components/ui";
+import { ButtonLink, Card, EmptyState, ErrorState, PageHeader, StatusBadge } from "@/components/ui";
+import { fechaCorta } from "@/i18n/dates";
+import type { SpaceRequestState } from "@/core/space-requests";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -77,34 +79,34 @@ export default async function GlobalHomePage() {
 
   return (
     <div className="space-y-6">
-      {/* Página 1 del diseño definitivo móvil · buscador ancho, saludo y la
-          acción principal, en ese orden. */}
-      <InicioBuscador />
-
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
-        <p className="text-xl font-bold text-text">{t.greeting(nombre)}</p>
-        <p className="text-sm text-text-secondary">{t.chooseContext}</p>
-      </header>
+      {/* Página 1 del diseño definitivo móvil · el buscador ancho. En
+          escritorio ya está en la cabecera del armazón (G01), así que se
+          esconde: dos cajas que buscan lo mismo en la misma pantalla. */}
+      <div className="lg:hidden">
+        <InicioBuscador />
+      </div>
 
       {/*
-        El diseño pone aquí un botón ancho "Crear espacio de mantenimiento".
-        El destino NO es crear: es **pedirlo** (RN-PLA), y por eso conserva
-        su texto. Un botón que dijera "crear" y abriera una solicitud sería
-        prometer algo que la regla no da.
-
-        Para el Propietario de Cuotly no se pinta: él tiene su propia
-        tarjeta más abajo, que sí crea.
+        G01 · el título, el saludo con el nombre de quien entra y, a la
+        derecha, la acción principal. El destino del botón NO es crear: es
+        **pedir** un espacio (RN-PLA), y por eso conserva su texto. Un botón
+        que dijera "crear" y abriera una solicitud sería prometer algo que
+        la regla no da. Para el Propietario de Cuotly no se pinta: él tiene
+        su propia tarjeta más abajo, que sí crea.
       */}
-      {platform?.isOwner ? null : (
-        <Link
-          href="/solicitar-espacio"
-          className="flex w-full items-center justify-center gap-2 rounded-[12px] bg-primary px-4 py-3.5 text-base font-semibold text-surface transition-colors hover:bg-primary-dark focus:outline focus:outline-2 focus:outline-cuotly-green"
-        >
-          <Icon name="plus" className="h-5 w-5" />
-          {t.requestSpace}
-        </Link>
-      )}
+      <PageHeader
+        title={t.title}
+        actions={
+          platform?.isOwner ? null : (
+            <ButtonLink href="/solicitar-espacio" icon="plus">
+              {t.requestSpace}
+            </ButtonLink>
+          )
+        }
+      >
+        <p className="mt-1 text-lg font-bold text-text">{t.greeting(nombre)}</p>
+        <p className="text-sm text-text-secondary">{t.chooseContext}</p>
+      </PageHeader>
 
       <Card
         title={t.attentionTitle}
@@ -131,48 +133,6 @@ export default async function GlobalHomePage() {
         )}
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card title={t.unreadTitle}>
-          {home.failed.conversations ? (
-            <p className="text-sm text-text-secondary">
-              {es.globalContext.messages.failedReason}
-            </p>
-          ) : (
-            <>
-              <p className="mb-3 text-sm text-text">
-                {home.unread === 0 ? t.unreadNone : t.unreadCount(home.unread)}
-              </p>
-              <Link href="/mensajes" className="text-sm font-semibold text-cuotly-green underline">
-                {t.openMessages}
-              </Link>
-            </>
-          )}
-        </Card>
-
-        <Card title={t.requestsTitle}>
-          {home.requests.length === 0 ? (
-            <p className="mb-3 text-sm text-text-secondary">
-              {es.globalContext.requests.emptyReason}
-            </p>
-          ) : (
-            <ul className="mb-3 space-y-1 text-sm text-text">
-              {home.requests.slice(0, 3).map((solicitud) => (
-                <li key={solicitud.id}>
-                  {solicitud.business_name} ·{" "}
-                  {es.spaceRequestForm.states[solicitud.status]}
-                </li>
-              ))}
-            </ul>
-          )}
-          <Link
-            href="/mis-solicitudes"
-            className="text-sm font-semibold text-cuotly-green underline"
-          >
-            {t.openRequests}
-          </Link>
-        </Card>
-      </div>
-
       {esPlataforma && platform ? (
         <Card title={es.globalContext.home.platformTitle}>
           <p className="mb-3 text-sm text-text-secondary">
@@ -183,15 +143,18 @@ export default async function GlobalHomePage() {
               {es.globalContext.home.platformNeedsTwoFactor}
             </p>
           ) : null}
-          <Link
-            href="/administracion"
-            className="font-semibold text-cuotly-green underline"
-          >
+          <ButtonLink href="/administracion" variant="outline" trailingIcon="chevronRight">
             {es.platformAdmin.nav.overview}
-          </Link>
+          </ButtonLink>
         </Card>
       ) : null}
 
+      {/*
+        G01 · "Mis espacios de mantenimiento" y "Mis paneles de restaurante",
+        uno al lado del otro, cada uno con sus tarjetas en dos columnas:
+        icono o foto, nombre, rol, cuántos restaurantes, y el botón de
+        entrar a ancho completo.
+      */}
       {home.failed.contexts ? (
         <ErrorState title={t.contextsFailed} description={t.contextsFailedReason} />
       ) : home.shape === "none" ? (
@@ -200,57 +163,54 @@ export default async function GlobalHomePage() {
         ) : (
           <Card title={t.noneTitle}>
             <p className="mb-3 text-sm text-text-secondary">{t.noneReason}</p>
-            <Link
-              href="/solicitar-espacio"
-              className="inline-flex items-center justify-center rounded-[10px] border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
-            >
+            <ButtonLink href="/solicitar-espacio" variant="secondary">
               {t.requestSpace}
-            </Link>
+            </ButtonLink>
           </Card>
         )
       ) : (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
           {home.spaces.length > 0 ? (
-            <Card title={t.spacesTitle}>
-              <ul className="space-y-3">
+            <Card className="min-w-0" title={t.spacesTitle}>
+              <ul className="grid gap-3 sm:grid-cols-2">
                 {home.spaces.map((espacio) => {
                   const cuantos = home.restaurantCount.get(espacio.space_id);
                   return (
                     <li
                       key={espacio.space_id}
-                      className="rounded-[12px] border border-border p-3"
+                      className="flex min-w-0 flex-col rounded-[14px] border border-border bg-surface p-3.5"
                     >
                       <div className="flex items-start gap-3">
-                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-soft-surface">
-                          <Icon name="building" className="h-6 w-6 text-primary-dark" />
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cuotly-green/10 text-cuotly-green">
+                          <Icon name="building" className="h-6 w-6" />
                         </span>
                         <div className="min-w-0">
                           <p className="truncate font-semibold text-text">
                             {espacio.space_name}
                           </p>
-                          <p className="flex items-center gap-1.5 text-sm text-text-secondary">
-                            <Icon name="person" className="h-4 w-4" />
+                          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-text-secondary">
+                            <Icon name="person" className="h-3.5 w-3.5" />
                             {espacio.role
                               ? es.roles[espacio.role as keyof typeof es.roles]
                               : null}
                           </p>
                           {/* Un espacio que no se ha podido contar NO sale
                               con un cero: se dice que no se contó. */}
-                          <p className="flex items-center gap-1.5 text-sm text-text-secondary">
-                            <Icon name="building" className="h-4 w-4" />
+                          <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                            <Icon name="building" className="h-3.5 w-3.5" />
                             {cuantos === undefined
                               ? t.spaceRestaurantsUnknown
                               : t.spaceRestaurants(cuantos)}
                           </p>
                         </div>
                       </div>
-                      <Link
+                      <ButtonLink
                         href={`/espacios/${espacio.space_slug ?? ""}`}
-                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-primary-dark focus:outline focus:outline-2 focus:outline-cuotly-green"
+                        trailingIcon="chevronRight"
+                        className="mt-3 w-full"
                       >
                         {t.enterSpace}
-                        <Icon name="chevronRight" className="h-4 w-4" />
-                      </Link>
+                      </ButtonLink>
                     </li>
                   );
                 })}
@@ -268,56 +228,153 @@ export default async function GlobalHomePage() {
             reparto del espacio, así que no cambia nada de la maqueta.
           */}
           <section id="mis-paneles" className="contents">
-          {home.restaurants.length > 0 ? (
-            <Card title={t.restaurantsTitle}>
-              <ul className="space-y-3">
-                {home.restaurants.map((restaurante) => (
-                  <li
-                    key={restaurante.establishment_id}
-                    className="rounded-[12px] border border-border p-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      {/*
-                        El diseño enseña aquí una foto del local. Cuotly no
-                        guarda ninguna, así que va el icono: una foto de
-                        archivo sería un dato de adorno que no es del
-                        restaurante (CLAUDE.md MUST NOT).
-                      */}
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-soft-surface">
-                        <Icon name="building" className="h-6 w-6 text-primary-dark" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-text">
-                          {restaurante.establishment_name}
-                        </p>
-                        <p className="flex items-center gap-1.5 text-sm text-text-secondary">
-                          <Icon name="person" className="h-4 w-4" />
-                          {restaurante.role
-                            ? es.roles[restaurante.role as keyof typeof es.roles]
-                            : null}
-                        </p>
-                        <p className="truncate text-sm text-text-secondary">
-                          {t.panelMaintenance(restaurante.space_name)}
-                        </p>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/espacios/${restaurante.space_slug ?? ""}/restaurantes/${restaurante.establishment_id}`}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-[10px] border border-primary bg-soft-surface px-4 py-2.5 text-sm font-semibold text-primary-dark transition-colors hover:bg-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+            {home.restaurants.length > 0 ? (
+              <Card className="min-w-0" title={t.restaurantsTitle}>
+                <ul className="grid gap-3 sm:grid-cols-2">
+                  {home.restaurants.map((restaurante) => (
+                    <li
+                      key={restaurante.establishment_id}
+                      className="flex min-w-0 flex-col rounded-[14px] border border-border bg-surface p-3.5"
                     >
-                      {t.enterPanel}
-                      <Icon name="chevronRight" className="h-4 w-4" />
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
+                      <div className="flex items-start gap-3">
+                        {/*
+                          El diseño enseña aquí una foto del local. Esta
+                          lista no la trae todavía, así que va el icono:
+                          una foto de archivo sería un dato de adorno que
+                          no es del restaurante (CLAUDE.md MUST NOT).
+                        */}
+                        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-soft-surface text-primary-dark">
+                          <Icon name="building" className="h-6 w-6" />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-text">
+                            {restaurante.establishment_name}
+                          </p>
+                          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-text-secondary">
+                            <Icon name="person" className="h-3.5 w-3.5" />
+                            {restaurante.role
+                              ? es.roles[restaurante.role as keyof typeof es.roles]
+                              : null}
+                          </p>
+                          <p className="truncate text-xs text-text-secondary">
+                            {t.panelMaintenance(restaurante.space_name)}
+                          </p>
+                        </div>
+                      </div>
+                      <ButtonLink
+                        href={`/espacios/${restaurante.space_slug ?? ""}/restaurantes/${restaurante.establishment_id}`}
+                        variant="outline"
+                        trailingIcon="chevronRight"
+                        className="mt-3 w-full"
+                      >
+                        {t.enterPanel}
+                      </ButtonLink>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
           </section>
         </div>
       )}
 
+      {/*
+        G01 · la fila de abajo: lo sin leer a la izquierda y las
+        solicitudes de espacio a la derecha, cada una con su icono, su
+        frase y su botón.
+      */}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <Card className="min-w-0" title={t.unreadTitle}>
+          {home.failed.conversations ? (
+            <p className="text-sm text-text-secondary">
+              {es.globalContext.messages.failedReason}
+            </p>
+          ) : (
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cuotly-green/10 text-cuotly-green">
+                <Icon name="messages" className="h-5 w-5" />
+                {home.unread > 0 ? (
+                  <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-bold leading-[18px] text-surface">
+                    {home.unread}
+                  </span>
+                ) : null}
+              </span>
+              <p className="min-w-0 flex-1 text-sm text-text">
+                {home.unread === 0 ? t.unreadNone : t.unreadCount(home.unread)}
+              </p>
+              <ButtonLink href="/mensajes" variant="secondary">
+                {t.viewMessages}
+              </ButtonLink>
+            </div>
+          )}
+        </Card>
+
+        <Card
+          className="min-w-0"
+          title={t.requestsTitle}
+          action={
+            home.requests.length > 0 ? (
+              <Link
+                href="/mis-solicitudes"
+                className="text-sm font-medium text-cuotly-green hover:underline"
+              >
+                {t.openRequests}
+              </Link>
+            ) : undefined
+          }
+        >
+          {home.requests.length === 0 ? (
+            <p className="text-sm text-text-secondary">
+              {es.globalContext.requests.emptyReason}
+            </p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {home.requests.slice(0, 3).map((solicitud) => (
+                <li
+                  key={solicitud.id}
+                  className="flex flex-wrap items-center gap-3 py-2.5 first:pt-0 last:pb-0"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft-surface text-primary-dark">
+                    <Icon name="request" className="h-5 w-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="truncate text-sm font-semibold text-text">
+                        {solicitud.business_name}
+                      </span>
+                      <StatusBadge tone={spaceRequestTone(solicitud.status)}>
+                        {es.spaceRequestForm.states[solicitud.status]}
+                      </StatusBadge>
+                    </span>
+                    <span className="block truncate text-xs text-text-secondary">
+                      {t.requestSentOn(fechaCorta(solicitud.created_at))}
+                    </span>
+                  </span>
+                  <ButtonLink href="/mis-solicitudes" variant="secondary" size="sm">
+                    {t.viewRequest}
+                  </ButtonLink>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+
       <p className="text-sm text-text-secondary">{t.requestsElsewhere}</p>
     </div>
   );
+}
+
+/**
+ * El tono de cada estado de una solicitud de espacio: lo que espera algo
+ * del solicitante, en aviso; lo cerrado, en su color; lo demás, neutro.
+ */
+function spaceRequestTone(
+  status: SpaceRequestState,
+): "success" | "warning" | "danger" | "info" | "neutral" {
+  if (status === "approved") return "success";
+  if (status === "rejected") return "danger";
+  if (status === "needs_information") return "warning";
+  if (status === "in_review") return "info";
+  return "neutral";
 }

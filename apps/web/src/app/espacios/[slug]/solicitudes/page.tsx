@@ -1,37 +1,54 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
+  ButtonLink,
   Card,
   EmptyState,
+  EntityCell,
+  FilterBar,
+  FilterSelect,
   NoPermissionState,
+  PageHeader,
   StatusBadge,
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
-import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
+import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhoto";
+import { CHANGE_CATEGORIES } from "@/core/classification-rules";
+import { REQUEST_STATES } from "@/core/naming";
 import { requestHeadline, requestTone } from "@/core/requests";
 import { loadTeamRequests } from "./list-query";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadEstablishmentPhotos } from "@/services/establishment-photo";
 
 /**
- * Bandeja de solicitudes del equipo (HU-11, PRD §20.4).
+ * Bandeja de solicitudes del equipo (HU-11, PRD §20.4), con la pinta de la
+ * página 62 del diseño (M08): título y subtítulo, la barra de filtros
+ * —restaurante, estado, categoría— y la tabla con la foto del local.
  *
  * Qué solicitudes aparecen no lo decide esta pantalla: lo decide RLS.
  * Un trabajador ve las de sus establecimientos autorizados; propietario y
  * administradores, las del espacio entero. Aquí no hay ni un filtro de
  * permisos escrito a mano, y es a propósito (CLAUDE.md: ocultar no es
- * controlar; y al revés, filtrar aquí duplicaría la regla).
+ * controlar; y al revés, filtrar aquí duplicaría la regla). Los tres
+ * filtros de la barra **recortan** lo que RLS ya dejó pasar.
  *
  * `select` enumera columnas siempre: `requests` tiene privilegios de
  * columna para que el cliente no vea la identidad del equipo, así que
  * `select *` devuelve 403.
+ *
+ * El "+ Nueva solicitud" de la maqueta no va: una solicitud la pide el
+ * restaurante desde su panel (RN-REQ), no el equipo desde aquí. Un botón
+ * que abriera un formulario que no existe prometería lo que la regla no
+ * da. Y el panel de detalle de la derecha es la pantalla de la solicitud,
+ * a la que lleva "Ver solicitud".
  */
 export const dynamic = "force-dynamic";
 
@@ -43,13 +60,13 @@ export default async function TeamRequestsPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ restaurante?: string }>;
+  searchParams: Promise<{ restaurante?: string; estado?: string; categoria?: string }>;
 }) {
   const { slug } = await params;
-  // §15.2 · a este filtro llega el enlace "Ver todas" de la Operación de
-  // la ficha. Recorta filas que RLS ya dejó pasar: no enseña ni esconde
-  // nada que no estuviera decidido antes (CLAUDE.md).
-  const { restaurante } = await searchParams;
+  // §15.2 · a `restaurante` llega el enlace "Ver todas" de la Operación de
+  // la ficha. Los tres recortan filas que RLS ya dejó pasar: no enseñan
+  // ni esconden nada que no estuviera decidido antes (CLAUDE.md).
+  const query = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -77,99 +94,174 @@ export default async function TeamRequestsPage({
     .eq("status", "active")
     .maybeSingle();
 
+  const t = es.teamArea.requests;
+
   if (!membership) {
     return (
-      <div className="mx-auto max-w-6xl space-y-6">
-        <h1 className="text-3xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
+      <div className="space-y-6">
+        <PageHeader title={t.title} />
         <NoPermissionState />
       </div>
     );
   }
 
+  const restaurante = query.restaurante === "" ? undefined : query.restaurante;
+  const estado = (REQUEST_STATES as readonly string[]).includes(query.estado ?? "")
+    ? query.estado
+    : undefined;
+  const categoria = (CHANGE_CATEGORIES as readonly string[]).includes(query.categoria ?? "")
+    ? query.categoria
+    : undefined;
+
   // Qué filas y en qué orden lo decide `loadTeamRequests()`, que es el
   // mismo sitio del que lo lee el paginador del detalle: así el
   // "siguiente" de una solicitud no puede llevar a otro sitio que el
   // siguiente de esta tabla.
-  const rows = await loadTeamRequests(supabase, space.id, restaurante);
+  const [todas, { data: establishments }] = await Promise.all([
+    loadTeamRequests(supabase, space.id, restaurante),
+    supabase.from("establishments").select("id, name, city").eq("space_id", space.id).order("name"),
+  ]);
 
-  const { data: establishments } = await supabase
-    .from("establishments")
-    .select("id, name")
-    .eq("space_id", space.id);
+  const rows = todas.filter(
+    (request) =>
+      (estado === undefined || request.state === estado) &&
+      (categoria === undefined || request.validated_category === categoria),
+  );
 
-  const nameById = new Map((establishments ?? []).map((e) => [e.id, e.name]));
+  // RN-EST-18 · las fotos de los locales, firmadas de una vez para toda
+  // la tabla. Solo de los que aparecen: no hay que firmar cincuenta
+  // enlaces para pintar cuatro filas.
+  const fotos = await loadEstablishmentPhotos(
+    supabase,
+    supabase.storage,
+    [...new Set(rows.map((request) => request.establishment_id))],
+  );
+
+  const establecimiento = new Map((establishments ?? []).map((e) => [e.id, e]));
+  const hasFilters = restaurante !== undefined || estado !== undefined || categoria !== undefined;
+  const base = `/espacios/${slug}/solicitudes`;
+  const hrefSolicitud = (id: string) =>
+    restaurante === undefined ? `${base}/${id}` : `${base}/${id}?restaurante=${restaurante}`;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold text-primary-dark">{es.teamArea.requests.title}</h1>
-        <p className="mt-1 text-sm text-text-secondary">{es.teamArea.requests.subtitle}</p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader title={t.title} subtitle={t.subtitle} />
 
-      {restaurante === undefined ? null : (
-        <ListFilterNotice
-          establishmentName={nameById.get(restaurante) ?? null}
-          allHref={`/espacios/${slug}/solicitudes`}
-        />
+      {todas.length === 0 && !hasFilters ? null : (
+        <FilterBar action={base} hasFilters={hasFilters}>
+          <FilterSelect
+            id="filtro-restaurante"
+            name="restaurante"
+            label={t.filterRestaurant}
+            defaultValue={restaurante}
+            options={(establishments ?? []).map((e) => ({ value: e.id, label: e.name }))}
+          />
+          <FilterSelect
+            id="filtro-estado"
+            name="estado"
+            label={t.filterState}
+            defaultValue={estado}
+            options={REQUEST_STATES.map((state) => ({
+              value: state,
+              label: es.naming.states.request[state],
+            }))}
+          />
+          <FilterSelect
+            id="filtro-categoria"
+            name="categoria"
+            label={t.filterCategory}
+            defaultValue={categoria}
+            allLabel={es.ui.filters.allFeminine}
+            options={CHANGE_CATEGORIES.map((category) => ({
+              value: category,
+              label: es.naming.categories[category],
+            }))}
+          />
+        </FilterBar>
       )}
 
       <Card>
-        {rows.length === 0 ? (
-          <EmptyState
-            title={es.teamArea.requests.emptyTitle}
-            description={es.teamArea.requests.emptyReason}
-          />
+        {todas.length === 0 && !hasFilters ? (
+          <EmptyState title={t.emptyTitle} description={t.emptyReason} />
+        ) : rows.length === 0 ? (
+          // Un filtro que no casa con nada NO es "no hay solicitudes"
+          // (CA-20): se dice que es el filtro.
+          <EmptyState title={t.filteredEmptyTitle} description={t.filteredEmptyReason} />
         ) : (
-          <Table>
+          <Table
+            footer={
+              <TableFooter>
+                <span>{es.ui.table.showing(rows.length, todas.length, t.rowsNoun)}</span>
+              </TableFooter>
+            }
+          >
             <TableHead>
               <TableRow>
-                <TableHeaderCell>{es.teamArea.requests.codeColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.requests.establishmentColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.requests.descriptionColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.requests.stateColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.requests.categoryColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.requests.dateColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.establishmentColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.codeColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.descriptionColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.categoryColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.ui.table.view}</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell>
-                    <Link
-                      href={
-                        restaurante === undefined
-                          ? `/espacios/${slug}/solicitudes/${request.id}`
-                          : `/espacios/${slug}/solicitudes/${request.id}?restaurante=${restaurante}`
-                      }
-                      className="font-medium text-cuotly-green underline"
-                    >
-                      {request.code}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{nameById.get(request.establishment_id) ?? "—"}</TableCell>
-                  {/*
-                    La misma primera frase que hace de titular en el
-                    detalle: la fila y la pantalla a la que lleva tienen que
-                    llamar igual a lo mismo (CA-21). El texto completo sigue
-                    entero allí, en "Mensaje del restaurante".
-                  */}
-                  <TableCell>{requestHeadline(request.description)}</TableCell>
-                  <TableCell>
-                    <StatusBadge tone={requestTone(request.state)}>
-                      {es.naming.states.request[request.state as RequestStateKey] ?? request.state}
-                    </StatusBadge>
-                  </TableCell>
-                  <TableCell>
-                    {request.validated_category
-                      ? (es.naming.categories[request.validated_category as CategoryKey] ??
-                        request.validated_category)
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {enZona(request.created_at, space.timezone, { dateStyle: "short" })}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {rows.map((request) => {
+                const local = establecimiento.get(request.establishment_id);
+                return (
+                  <TableRow key={request.id}>
+                    <TableCell>
+                      <EntityCell
+                        media={
+                          <EstablishmentPhoto
+                            photoUrl={fotos.get(request.establishment_id) ?? null}
+                            size={40}
+                          />
+                        }
+                        title={local?.name ?? "—"}
+                        subtitle={local?.city ?? null}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium text-text-secondary">{request.code}</span>
+                    </TableCell>
+                    {/*
+                      La misma primera frase que hace de titular en el
+                      detalle: la fila y la pantalla a la que lleva tienen
+                      que llamar igual a lo mismo (CA-21). El texto entero
+                      sigue allí, en "Mensaje del restaurante".
+                    */}
+                    <TableCell>
+                      <span className="block max-w-xs truncate">
+                        {requestHeadline(request.description)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="whitespace-nowrap">
+                        {enZona(request.created_at, space.timezone, { dateStyle: "medium" })}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge tone={requestTone(request.state)}>
+                        {es.naming.states.request[request.state as RequestStateKey] ??
+                          request.state}
+                      </StatusBadge>
+                    </TableCell>
+                    <TableCell>
+                      {request.validated_category
+                        ? (es.naming.categories[request.validated_category as CategoryKey] ??
+                          request.validated_category)
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <ButtonLink href={hrefSolicitud(request.id)} variant="outline" size="sm">
+                        {t.viewRequest}
+                      </ButtonLink>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

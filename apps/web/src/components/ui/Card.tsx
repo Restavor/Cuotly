@@ -38,7 +38,7 @@ export function Card({
     tone === "danger" ? "border-danger/30 bg-danger/5" : "border-border bg-surface";
 
   return (
-    <div className={`rounded-[20px] border p-6 ${fondo} ${className}`}>
+    <div className={`rounded-card border p-5 shadow-sm sm:p-6 ${fondo} ${className}`}>
       {/*
         La cabecera **conserva su forma** cuando no se pide ni icono ni
         subtítulo: el título es hijo directo de esta fila, como siempre.
@@ -47,7 +47,7 @@ export function Card({
         tarjeta contando padres. Lo nuevo solo aparece si alguien lo pide.
       */}
       {title ? (
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="mb-4 flex items-start justify-between gap-3">
           {tone === undefined && subtitle === undefined ? (
             <h3 className="text-base font-semibold text-primary-dark">{title}</h3>
           ) : (

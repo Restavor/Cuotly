@@ -1,10 +1,26 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { EstablishmentCard } from "@/components/establishment/EstablishmentCard";
+import { AttentionCell } from "@/components/establishment/AttentionCell";
+import { EstablishmentCard, statusTone } from "@/components/establishment/EstablishmentCard";
+import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhoto";
 import { ListFilters } from "@/components/establishment/ListFilters";
-import { EmptyState, NoPermissionState } from "@/components/ui";
-import { Icon } from "@/components/ui/Icon";
+import {
+  ButtonLink,
+  Card,
+  EmptyState,
+  EntityCell,
+  NoPermissionState,
+  PageHeader,
+  PersonCell,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui";
 import { matchesFilters, parseFilters } from "@/core/establishments";
 import { ESTABLISHMENT_STATES } from "@/core/naming";
 import { es } from "@/i18n/es";
@@ -59,10 +75,8 @@ export default async function TeamEstablishmentsPage({
 
   if (!isMember) {
     return (
-      <div className="mx-auto max-w-6xl">
-        <h1 className="mb-6 text-3xl font-bold text-primary-dark">
-          {es.teamArea.establishments.title}
-        </h1>
+      <div className="space-y-6">
+        <PageHeader title={es.teamArea.establishments.title} />
         <NoPermissionState
           title={es.teamArea.ledger.noAccessTitle}
           description={es.teamArea.ledger.noAccessReason}
@@ -86,45 +100,36 @@ export default async function TeamEstablishmentsPage({
     filters.status !== null;
 
   const rows = list.rows.filter((row) => matchesFilters(row, filters));
+  const t = es.teamArea.establishments;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <h1 className="text-3xl font-bold text-primary-dark">
-          {es.teamArea.establishments.title}
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          {es.teamArea.establishments.subtitle}
-        </p>
-        <p className="mt-1 text-sm text-text">
-          {es.teamArea.establishments.activeCount(list.activeCount)}
-        </p>
-      </header>
-
+    <div className="space-y-6">
       {/*
-        §20.5 · crear un establecimiento también está en el botón Crear del
-        armazón. Aquí se repite a propósito, y a ancho completo como en la
-        página 23: es la acción principal de esta pantalla, y quien entra a
-        dar de alta un restaurante mira a la lista, no al menú.
-
-        Que se vea no autoriza nada: `create_establishment` lo comprueba el
-        servidor (CLAUDE.md — ocultar un botón no es un control de acceso).
+        Página 23 (M02) · título, subtítulo y el botón "Crear
+        establecimiento" a la derecha. También está en el botón Crear del
+        armazón; aquí se repite a propósito porque es la acción principal
+        de esta pantalla. Que se vea no autoriza nada: `create_establishment`
+        lo comprueba el servidor (CLAUDE.md — ocultar un botón no es un
+        control de acceso).
       */}
-      <div className="flex flex-wrap items-center gap-4">
-        <Link
-          href={`${base}/nuevo`}
-          className="flex flex-1 items-center justify-center gap-2 rounded-field bg-primary px-4 py-3 text-sm font-semibold text-surface transition-colors hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-        >
-          <Icon name="plus" className="h-4 w-4" />
-          {es.teamArea.establishments.createButton}
-        </Link>
-        {/* M82 · la vista del grupo entero, que es como se mira un cliente
-            con siete locales. Desde aquí, porque es donde está quien los
-            mira uno a uno y descubre que son del mismo dueño. */}
-        <Link href={`${base}/grupos`} className="text-sm text-cuotly-green underline">
-          {es.teamArea.groups.title}
-        </Link>
-      </div>
+      <PageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+        actions={
+          <>
+            {/* M82 · la vista del grupo entero, que es como se mira un
+                cliente con siete locales. */}
+            <ButtonLink href={`${base}/grupos`} variant="secondary">
+              {es.teamArea.groups.title}
+            </ButtonLink>
+            <ButtonLink href={`${base}/nuevo`} icon="plus">
+              {t.createButton}
+            </ButtonLink>
+          </>
+        }
+      >
+        <p className="mt-1 text-sm text-text">{t.activeCount(list.activeCount)}</p>
+      </PageHeader>
 
       {list.rows.length === 0 ? null : (
         <ListFilters
@@ -136,36 +141,99 @@ export default async function TeamEstablishmentsPage({
         />
       )}
 
-      <div>
-        {list.rows.length === 0 ? (
-          <EmptyState
-            title={es.teamArea.establishments.emptyTitle}
-            description={es.teamArea.establishments.emptyReason}
-          />
-        ) : rows.length === 0 ? (
-          // Un filtro que no casa con nada NO es "no hay restaurantes":
-          // decirlo así mandaría a crear uno que ya existe (CA-20).
-          <EmptyState
-            title={es.teamArea.establishments.filteredEmptyTitle}
-            description={es.teamArea.establishments.filteredEmptyReason}
-          />
-        ) : (
-          /*
-            Página 23 · fichas, no una tabla de cinco columnas. En un
-            teléfono una tabla así se recorta, se desborda o hay que
-            moverla de lado; una ficha cabe entera en cualquier ancho.
-            Lo que cada una enseña —y lo que el diseño pide y todavía no
-            existe— está explicado en `EstablishmentCard`.
-          */
-          <ul className="space-y-3">
+      {list.rows.length === 0 ? (
+        <EmptyState title={t.emptyTitle} description={t.emptyReason} />
+      ) : rows.length === 0 ? (
+        // Un filtro que no casa con nada NO es "no hay restaurantes":
+        // decirlo así mandaría a crear uno que ya existe (CA-20).
+        <EmptyState title={t.filteredEmptyTitle} description={t.filteredEmptyReason} />
+      ) : (
+        <>
+          {/*
+            M02 · en escritorio, la tabla de la maqueta: foto y nombre,
+            grupo, plan, estado, solicitudes abiertas, responsable y "Ver
+            ficha". En un teléfono una tabla así se recorta o hay que
+            moverla de lado, y ahí siguen las fichas de la página 23 del
+            diseño móvil (`EstablishmentCard`).
+
+            "Supervisor" en la maqueta es aquí **responsable** (RN-EST-19):
+            supervisor ya significa otra cosa en Cuotly. Y el menú de tres
+            puntos no va: no hay ninguna acción decidida para él.
+          */}
+          <Card className="hidden md:block">
+            <Table
+              footer={
+                <TableFooter>
+                  <span>{es.ui.table.showing(rows.length, list.rows.length, t.rowsNoun)}</span>
+                </TableFooter>
+              }
+            >
+              <TableHead>
+                <TableRow>
+                  <TableHeaderCell>{t.nameColumn}</TableHeaderCell>
+                  <TableHeaderCell>{t.groupColumn}</TableHeaderCell>
+                  <TableHeaderCell>{t.planColumn}</TableHeaderCell>
+                  <TableHeaderCell>{t.statusColumn}</TableHeaderCell>
+                  <TableHeaderCell>{t.openRequests}</TableHeaderCell>
+                  <TableHeaderCell>{t.manager}</TableHeaderCell>
+                  <TableHeaderCell>{t.attentionColumn}</TableHeaderCell>
+                  <TableHeaderCell>{es.ui.table.actions}</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell>
+                      <EntityCell
+                        media={<EstablishmentPhoto photoUrl={row.photoUrl} size={44} />}
+                        title={row.name}
+                        subtitle={row.city ?? row.code}
+                      />
+                    </TableCell>
+                    <TableCell>{row.groupName ?? t.noGroup}</TableCell>
+                    <TableCell>
+                      {row.planName === null ? (
+                        <span className="text-xs text-text-secondary">{t.noPlan}</span>
+                      ) : (
+                        <StatusBadge tone="info">{row.planName}</StatusBadge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge tone={statusTone(row.status)}>
+                        {es.naming.states.establishment[row.status]}
+                      </StatusBadge>
+                    </TableCell>
+                    <TableCell>{row.openRequests}</TableCell>
+                    <TableCell>
+                      {row.manager === null ? (
+                        <span className="text-text-secondary">{t.noManager}</span>
+                      ) : (
+                        <PersonCell name={row.manager.name ?? t.managerUnknown} />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <AttentionCell items={row.attention} />
+                    </TableCell>
+                    <TableCell>
+                      <ButtonLink href={`${base}/${row.id}`} variant="outline" size="sm">
+                        {es.ui.table.viewSheet}
+                      </ButtonLink>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+
+          <ul className="space-y-3 md:hidden">
             {rows.map((row) => (
               <li key={row.id}>
                 <EstablishmentCard row={row} href={`${base}/${row.id}`} />
               </li>
             ))}
           </ul>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

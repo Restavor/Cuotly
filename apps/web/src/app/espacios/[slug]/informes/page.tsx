@@ -7,7 +7,7 @@ import { ReportsTable } from "@/components/report/ReportsTable";
 import { loadReports } from "@/components/report/reports-load";
 import { isClientRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
-import { Card, NoPermissionState } from "@/components/ui";
+import { Card, NoPermissionState, PageHeader } from "@/components/ui";
 import { EmptyReason } from "@/components/ui/EmptyReason";
 import { defaultReportPeriod, isReportCategory, isReportState } from "@/core/reports";
 import { es } from "@/i18n/es";
@@ -65,7 +65,8 @@ export default async function ReportsPage({
   */
   if (isClientRole(viewer.role)) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
+      <div className="space-y-6">
+        <PageHeader title={es.reportsPage.title} />
         <NoPermissionState description={es.reportsPage.clientSubtitle} />
       </div>
     );
@@ -116,11 +117,11 @@ export default async function ReportsPage({
   const base = `/espacios/${slug}/informes`;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
-        <p className="text-sm text-text-secondary">{t.subtitle}</p>
-      </header>
+    <div className="space-y-6">
+      {/* Página 83 (M18) · título y subtítulo; debajo los filtros de §93 y
+          la biblioteca. Las tres tarjetas de cifra y las gráficas del
+          dibujo salen de cada informe, no de esta lista. */}
+      <PageHeader title={t.title} subtitle={t.subtitle} />
 
       <Card title={t.filters.title}>
         <ReportFilters

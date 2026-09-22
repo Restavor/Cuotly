@@ -1,7 +1,23 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import { Card, EmptyState, ErrorState, NoPermissionState, StatusBadge } from "@/components/ui";
+import {
+  ButtonLink,
+  Card,
+  EmptyState,
+  EntityCell,
+  ErrorState,
+  NoPermissionState,
+  PageHeader,
+  PersonCell,
+  StatusBadge,
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+} from "@/components/ui";
 import { menuTone } from "@/core/menu-states";
 import { es } from "@/i18n/es";
 import { enZona, fechaCorta } from "@/i18n/dates";
@@ -60,8 +76,8 @@ export default async function TeamDailyMenuPage({ params }: { params: Promise<{ 
 
   if (!membership) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{t.title}</h1>
+      <div className="space-y-6">
+        <PageHeader title={t.title} />
         <NoPermissionState />
       </div>
     );
@@ -78,11 +94,17 @@ export default async function TeamDailyMenuPage({ params }: { params: Promise<{ 
   const base = `/espacios/${slug}/menu-diario`;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
-        <p className="text-sm text-text-secondary">{t.subtitle}</p>
-      </header>
+    <div className="space-y-6">
+      {/*
+        Página 70 (M12) · título y subtítulo, y la cola como tabla:
+        restaurante, menú, fecha objetivo y corte, responsable, estado y
+        "Ver detalle". El "Programar menú" del dibujo no va: la publicación
+        la pide el restaurante (RN-MEN-06) y el equipo la publica desde el
+        detalle. Las pestañas Pendientes / Programados / Publicados tampoco:
+        esta cola es lo pendiente, que es lo que el equipo tiene que hacer;
+        lo publicado se ve en el historial de cada restaurante.
+      */}
+      <PageHeader title={t.title} subtitle={t.subtitle} />
 
       <Card title={t.queueTitle}>
         {queue.rows === null ? (
@@ -92,14 +114,30 @@ export default async function TeamDailyMenuPage({ params }: { params: Promise<{ 
         ) : queue.rows.length === 0 ? (
           <EmptyState title={t.queueEmptyTitle} description={t.queueEmptyReason} />
         ) : (
-          <>
-            <p className="mb-3 text-sm text-text-secondary">{t.orderHint}</p>
-            <ul className="divide-y divide-border">
+          <Table
+            footer={
+              <TableFooter>
+                <span>{t.orderHint}</span>
+              </TableFooter>
+            }
+          >
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>{t.establishmentColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.menuColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.cutoffColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.assigneeColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
+                <TableHeaderCell>{es.ui.table.view}</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {queue.rows.map((row) => (
                 <QueueRow key={row.menuId} row={row} base={base} timeZone={space.timezone} assignee={personName} />
               ))}
-            </ul>
-          </>
+            </TableBody>
+          </Table>
         )}
       </Card>
     </div>
@@ -117,42 +155,54 @@ function QueueRow({
   timeZone: string;
   assignee: Map<string, string>;
 }) {
-  const asignado = row.assignedTo
-    ? (assignee.get(row.assignedTo) ?? t.assignedToSomeone)
-    : row.isAssigned
-      ? t.assignedToSomeone
-      : t.unassigned;
+  const asignado = row.assignedTo ? (assignee.get(row.assignedTo) ?? null) : null;
 
   return (
-    <li className="flex flex-wrap items-start justify-between gap-3 py-3">
-      <div className="min-w-0 space-y-1">
-        <Link href={`${base}/${row.menuId}`} className="font-medium text-primary underline-offset-2 hover:underline">
-          {row.name}
-        </Link>
-        <p className="text-sm text-text-secondary">
-          {t.detailSubtitle(
-            row.establishmentName,
-            es.naming.menuKinds[row.kind as MenuKindKey] ?? row.kind,
-            fechaCorta(row.targetDate),
-          )}
-        </p>
-        <p className="text-sm text-text-secondary">
-          {t.cutoffColumn}: {horaLocal(row.cutoffAt, timeZone)} · {t.assigneeColumn}: {asignado}
-        </p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {row.pendingCorrections > 0 ? (
-          <StatusBadge tone="warning">{t.correctionsPending(row.pendingCorrections)}</StatusBadge>
-        ) : null}
-        {row.overdue ? (
-          <StatusBadge tone="danger">{t.overdueShort}</StatusBadge>
-        ) : row.guaranteed === true ? (
-          <StatusBadge tone="info">{t.guaranteedShort}</StatusBadge>
-        ) : row.guaranteed === false ? (
-          <StatusBadge tone="neutral">{t.notGuaranteedShort}</StatusBadge>
-        ) : null}
-        <StatusBadge tone={menuTone(row.state)}>{es.naming.states.menu[row.state]}</StatusBadge>
-      </div>
-    </li>
+    <TableRow>
+      <TableCell>
+        <span className="font-semibold">{row.establishmentName}</span>
+      </TableCell>
+      <TableCell>
+        <EntityCell
+          title={row.name}
+          subtitle={es.naming.menuKinds[row.kind as MenuKindKey] ?? row.kind}
+        />
+      </TableCell>
+      <TableCell>
+        <span className="whitespace-nowrap">{fechaCorta(row.targetDate)}</span>
+      </TableCell>
+      <TableCell>
+        <span className="whitespace-nowrap">{horaLocal(row.cutoffAt, timeZone)}</span>
+      </TableCell>
+      <TableCell>
+        {asignado !== null ? (
+          <PersonCell name={asignado} />
+        ) : (
+          <span className="text-text-secondary">
+            {row.isAssigned ? t.assignedToSomeone : t.unassigned}
+          </span>
+        )}
+      </TableCell>
+      <TableCell>
+        <span className="flex flex-wrap items-center gap-1.5">
+          <StatusBadge tone={menuTone(row.state)}>{es.naming.states.menu[row.state]}</StatusBadge>
+          {row.pendingCorrections > 0 ? (
+            <StatusBadge tone="warning">{t.correctionsPending(row.pendingCorrections)}</StatusBadge>
+          ) : null}
+          {row.overdue ? (
+            <StatusBadge tone="danger">{t.overdueShort}</StatusBadge>
+          ) : row.guaranteed === true ? (
+            <StatusBadge tone="info">{t.guaranteedShort}</StatusBadge>
+          ) : row.guaranteed === false ? (
+            <StatusBadge tone="neutral">{t.notGuaranteedShort}</StatusBadge>
+          ) : null}
+        </span>
+      </TableCell>
+      <TableCell>
+        <ButtonLink href={`${base}/${row.menuId}`} variant="outline" size="sm">
+          {es.ui.table.viewDetail}
+        </ButtonLink>
+      </TableCell>
+    </TableRow>
   );
 }

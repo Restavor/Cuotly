@@ -1,5 +1,5 @@
 import type { LoadLevel } from "@/core/load-points";
-import { Icon } from "@/components/ui/Icon";
+import { Avatar } from "@/components/ui/Avatar";
 import { StatusBadge } from "@/components/ui";
 import { es } from "@/i18n/es";
 
@@ -40,12 +40,9 @@ export function TeamLoad({
           key={member.userId}
           className="flex items-center gap-3 border-b border-border py-3 last:border-b-0"
         >
-          <span
-            aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft-surface text-text-secondary"
-          >
-            <Icon name="person" className="h-[18px] w-[18px]" />
-          </span>
+          {/* M01 · la cara de cada persona: sus iniciales, porque Cuotly
+              no guarda fotos de perfil. */}
+          <Avatar name={member.name} size={36} />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-text">
             {member.name}
           </span>

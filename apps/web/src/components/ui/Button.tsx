@@ -1,6 +1,6 @@
 import { type ButtonHTMLAttributes, forwardRef } from "react";
 
-type Variant = "primary" | "secondary" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "danger";
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: Variant;
@@ -12,6 +12,11 @@ const variantClasses: Record<Variant, string> = {
     "bg-primary text-surface hover:bg-primary-dark disabled:hover:bg-primary",
   secondary:
     "bg-surface text-text border border-border hover:bg-soft-surface",
+  // El contorno verde de las filas de la maqueta ("Ver ficha", "Confirmar
+  // pago"): lo que se puede hacer desde una fila sin ser la acción de la
+  // pantalla. Verde sobre blanco pasa AA como texto grande y como borde.
+  outline:
+    "bg-surface text-cuotly-green border border-cuotly-green hover:bg-cuotly-green/10 disabled:hover:bg-surface",
   danger: "bg-danger text-surface hover:opacity-90",
 };
 

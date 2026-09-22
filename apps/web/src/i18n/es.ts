@@ -1336,10 +1336,12 @@ export const es = {
           n === 1 ? "1 trabajo esperando al restaurante" : `${n} trabajos esperando al restaurante`,
       },
       attentionOthers: (n: number) => `y ${n} más`,
+      // M02 · el pie de la tabla cuenta restaurantes.
+      rowsNoun: "restaurantes",
       filters: {
         legend: "Filtrar los restaurantes",
         searchLabel: "Buscar restaurante",
-        searchPlaceholder: "Nombre o código",
+        searchPlaceholder: "Buscar restaurante…",
         groupLabel: "Grupo",
         planLabel: "Plan",
         statusLabel: "Estado",
@@ -1393,6 +1395,17 @@ export const es = {
       filterAll: "Todas",
       filterOpen: "Sin resolver",
       filterMine: "Pendientes de mí",
+      // M08 · la barra de filtros, el botón de cada fila y el pie de la
+      // tabla. "Origen" del dibujo no va: aquí toda solicitud la pide el
+      // restaurante, y una columna que siempre dice lo mismo no dice nada.
+      filterRestaurant: "Restaurante",
+      filterState: "Estado",
+      filterCategory: "Categoría",
+      filteredEmptyTitle: "Ninguna solicitud coincide",
+      filteredEmptyReason:
+        "Hay solicitudes en el espacio, pero ninguna cumple los filtros de arriba. Quítalos para verlas todas.",
+      viewRequest: "Ver solicitud",
+      rowsNoun: "solicitudes",
       detailTitle: "Solicitud",
       contextLabel: "Dónde",
       // RN-REQ-05 · lo que el cliente dijo que le corre. No es el "Orden
@@ -1582,6 +1595,15 @@ export const es = {
       // M09 · la misma bandeja vista por estado. No hay dato nuevo: son los
       // mismos trabajos, agrupados por la columna "Estado" de la tabla.
       viewLabel: "Cómo verlo",
+      // M09 · filtros, botón de fila y pie de la tabla.
+      filterRestaurant: "Restaurante",
+      filterAssignee: "Responsable",
+      filterState: "Estado",
+      filteredEmptyTitle: "Ningún trabajo coincide",
+      filteredEmptyReason:
+        "Hay trabajos en el espacio, pero ninguno cumple los filtros de arriba. Quítalos para verlos todos.",
+      viewJob: "Ver trabajo",
+      rowsNoun: "trabajos",
       viewList: "Lista",
       viewBoard: "Tablero",
       boardHint:
@@ -1770,9 +1792,18 @@ export const es = {
       unassigned: "Sin repartir",
       openJobLink: "Abrir el trabajo",
       filterAll: "Todas",
-      filterMine: "Mías",
+      filterMine: "Mis tareas",
       filterOpen: "Sin terminar",
       minutesSuffix: "min",
+      // M11 · filtros y pie de la tabla.
+      filterAssignee: "Responsable",
+      filterState: "Estado",
+      filterRestaurant: "Restaurante",
+      filteredEmptyTitle: "Ninguna tarea coincide",
+      filteredEmptyReason:
+        "Hay tareas en el espacio, pero ninguna cumple los filtros de arriba. Quítalos para verlas todas.",
+      myLoad: "Tu carga",
+      rowsNoun: "tareas",
       // §14.4, los cuatro pesos de tarea. RN-ASG-16 deja fuera a
       // propósito cualquier categoría por encima de 4 h.
       weights: {
@@ -1958,6 +1989,8 @@ export const es = {
       emptyTitle: "No hay ninguna conversación",
       emptyReason:
         "Aquí aparecen las conversaciones de las solicitudes, las internas de cada trabajo y las generales de cada restaurante, en cuanto exista una.",
+      // M14 · la primera pestaña; la segunda son los canales (§38).
+      tabConversations: "Conversaciones",
       subjectColumn: "Asunto",
       establishmentColumn: "Restaurante",
       lastMessageColumn: "Último mensaje",
@@ -2534,6 +2567,8 @@ export const es = {
   teamPage: {
     intro:
       "Quién está en el espacio y quién supervisa a quién. La supervisión no es un rol: es una relación Administrador–Trabajador (RN-SUP-01).",
+    // M19 · "Equipo de Restavor": el título lleva el nombre del espacio.
+    titleOf: (espacio: string) => `Equipo de ${espacio}`,
     membersTitle: "Personas del espacio",
     nameColumn: "Quién",
     roleColumn: "Rol",
@@ -5826,6 +5861,11 @@ export const es = {
       unreadCount: (n: number) =>
         n === 1 ? "Tienes 1 mensaje nuevo de tu equipo." : `Tienes ${n} mensajes nuevos de tu equipo.`,
       openItem: "Abrir",
+      // G01 · los dos botones de la fila de abajo y la fecha de la
+      // solicitud, como los escribe la maqueta.
+      viewMessages: "Ver mensajes",
+      viewRequest: "Ver solicitud",
+      requestSentOn: (fecha: string) => `Solicitud enviada el ${fecha}`,
     },
     requests: {
       title: "Mis solicitudes",
@@ -7025,6 +7065,40 @@ export const es = {
     error: "No se ha podido cargar",
     stale: "Dato desactualizado",
     insufficient_period: "Periodo insuficiente",
+  },
+
+  /**
+   * Los textos de las piezas compartidas del diseño de escritorio
+   * (`docs/diseno/Cuotly_definitivo_diseno.pdf`): la barra de filtros, el
+   * pie de una tabla, el botón "Ver ficha" de una fila. Están aquí y no
+   * en cada pantalla porque son **la misma pieza** en todas: "Limpiar
+   * filtros" se lee igual en Restaurantes (M02), Solicitudes (M08),
+   * Trabajos (M09) y Tareas (M11), y escribirlo cuatro veces es cómo
+   * acaban siendo cuatro frases distintas.
+   */
+  ui: {
+    filters: {
+      label: "Filtros",
+      all: "Todos",
+      allFeminine: "Todas",
+      clear: "Limpiar filtros",
+      apply: "Filtrar",
+      search: "Buscar",
+    },
+    table: {
+      // El pie de cada tabla de la maqueta: "Mostrando 4 de 4 trabajos".
+      // Cuenta filas de verdad, las que hay en pantalla sobre las que RLS
+      // dejó pasar; nunca una cifra que no se haya contado.
+      showing: (visibles: number, total: number, cosa: string) =>
+        `Mostrando ${visibles} de ${total} ${cosa}`,
+      actions: "Acciones",
+      view: "Ver",
+      viewSheet: "Ver ficha",
+      viewDetail: "Ver detalle",
+    },
+    // El avatar de una persona: sin foto se pintan sus iniciales, y a un
+    // lector de pantalla se le dice el nombre entero.
+    avatarOf: (nombre: string) => nombre,
   },
 } as const;
 

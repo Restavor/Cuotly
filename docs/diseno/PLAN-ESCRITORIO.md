@@ -171,6 +171,18 @@ sitio.
 | 20/09/2026 | La barra inferior de móvil, con iconos y Crear en el centro (§20.3, decisión 47) | `/armazon` a 390 px |
 | 20/09/2026 | La cabecera, en dos filas en móvil, con el logotipo | `/armazon` a 390 px |
 | 20/09/2026 | El contexto global con el armazón de todos (§36) | `/armazon/global` |
+| 22/09/2026 | Las **piezas comunes** del diseño de escritorio, en `components/ui`: `PageHeader` (título, subtítulo y acción a la derecha), `Tabs` (subrayadas), `FilterBar` con `FilterSearch` y `FilterSelect`, `StatCard` (la tarjeta de cifra), `Avatar` y `PersonCell` (iniciales, sin fotos de perfil), `ProgressBar`, `ButtonLink` con la variante `outline`, `EntityCell` y `TableFooter` ("Mostrando X de Y"). La cabecera de tabla ya no va en mayúsculas | `/styleguide` |
+| 22/09/2026 | **G01** · Inicio global: cabecera con el botón a la derecha, filas de atención con su etiqueta y su botón, espacios y paneles en tarjetas de dos columnas, y abajo mensajes sin leer y solicitudes con su botón | `(global)/page.tsx` |
+| 22/09/2026 | **M01** · Inicio del espacio: cinco cifras en una fila, gráfica y "Estado por restaurante" (con barra) al lado, "Necesita atención" y "Próximas tareas" debajo, y la fila de tres con finanzas, carga del equipo y actividad. La tarjeta suelta de Menú Diario desapareció: su cifra ya está arriba | `espacios/[slug]/page.tsx` |
+| 22/09/2026 | **M02, M08, M09, M11** · Restaurantes, Solicitudes, Trabajos y Tareas como tablas con foto o avatar, barra de filtros (grupo/estado/plan; restaurante/estado/categoría; restaurante/responsable/estado; responsable/estado/restaurante), pestañas Lista/Tablero y Todas/Mis tareas/Sin terminar, botón de contorno por fila y pie "Mostrando X de Y". En un teléfono Restaurantes sigue en fichas | las cuatro páginas |
+| 22/09/2026 | **M12, M14, M15, M16, M18, M19, M21, M23** · la cabecera común y, donde toca, la tabla, las pestañas y las tarjetas de cifra: Menú Diario en tabla; Mensajes como lista de conversaciones con pestaña de canales; Calendario con botones de mes; Finanzas con cinco `StatCard`; Equipo en dos columnas con avatar y rol como insignia; Planes con insignia de plan; Ajustes con `Tabs` | cada página |
+
+Lo que estas pantallas **no** copian del dibujo, y por qué, está escrito en el
+comentario de cada una: los botones que abrirían formularios que no existen
+("Nueva solicitud" del equipo, "Nuevo trabajo", "Programar menú", "Crear
+plan"), los selectores de periodo con una sola opción, el menú de tres puntos
+sin acciones decididas, y el "Supervisor" de M02, que aquí es el responsable
+(RN-EST-19).
 
 ## Cómo se comprueba cada parte
 

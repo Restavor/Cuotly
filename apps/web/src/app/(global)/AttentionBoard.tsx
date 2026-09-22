@@ -67,42 +67,35 @@ export function AttentionBoard({
         {visibles.map((item) => (
           <li
             key={item.key}
-            className="flex items-start gap-3 rounded-[12px] bg-surface p-3"
+            className="flex flex-wrap items-center gap-3 rounded-[12px] border border-border bg-surface px-3.5 py-3 sm:flex-nowrap"
           >
-            <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft-surface">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft-surface text-primary-dark">
               <Icon
                 name={item.side === "maintenance" ? "job" : "request"}
-                className="h-5 w-5 text-primary-dark"
+                className="h-5 w-5"
               />
             </span>
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-text">{item.title}</p>
-              <p className="truncate text-sm text-text-secondary">{item.contextName}</p>
-
-              {/*
-                Una sola etiqueta y no dos: si está fuera de plazo, eso es
-                lo que hay que leer; si no, lo que le pasa. Antes se
-                escribían las dos y en un móvil salía "Fuera de plazo
-                Fuera de plazo".
-              */}
-              <p className="mt-1.5 flex flex-wrap items-center gap-2">
-                {item.overdue ? (
-                  <StatusBadge tone="danger">{t.overdue}</StatusBadge>
-                ) : (
-                  <StatusBadge tone="neutral">
-                    {es.globalContext.kinds[item.kind]}
-                  </StatusBadge>
-                )}
-                <span className="text-xs text-text-secondary">
-                  {item.dueAt !== null
-                    ? `${t.dueOn} ${fechaCorta(item.dueAt)}`
-                    : item.createdAt !== null
-                      ? `${t.since} ${fechaCorta(item.createdAt)}`
-                      : t.noDate}
-                </span>
-              </p>
+            <div className="min-w-0 flex-1 basis-40">
+              <p className="truncate text-sm font-semibold text-text">{item.title}</p>
+              <p className="truncate text-xs text-text-secondary">{item.contextName}</p>
             </div>
+
+            {/*
+              Una sola etiqueta y no dos: si está fuera de plazo, eso es
+              lo que hay que leer; si no, lo que le pasa, y al lado la
+              fecha. Antes se escribían las dos y en un móvil salía
+              "Fuera de plazo Fuera de plazo".
+            */}
+            <StatusBadge tone={item.overdue ? "danger" : "info"} icon={item.overdue ? "alert" : "clock"}>
+              {item.overdue ? t.overdue : es.globalContext.kinds[item.kind]}
+              {" · "}
+              {item.dueAt !== null
+                ? `${t.dueOn} ${fechaCorta(item.dueAt)}`
+                : item.createdAt !== null
+                  ? `${t.since} ${fechaCorta(item.createdAt)}`
+                  : t.noDate}
+            </StatusBadge>
 
             {/*
               El botón del diseño. Va en la fila y no envolviendo la fila
@@ -111,7 +104,7 @@ export function AttentionBoard({
             */}
             <Link
               href={item.href}
-              className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-primary px-3 py-2 text-sm font-semibold text-surface transition-colors hover:bg-primary-dark focus:outline focus:outline-2 focus:outline-cuotly-green"
+              className="inline-flex shrink-0 items-center gap-1 rounded-field bg-primary px-3.5 py-2 text-sm font-semibold text-surface transition-colors hover:bg-primary-dark focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
               {t.openItem}
               <Icon name="chevronRight" className="h-4 w-4" />

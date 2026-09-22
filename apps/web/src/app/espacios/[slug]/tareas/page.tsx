@@ -4,17 +4,23 @@ import { notFound, redirect } from "next/navigation";
 import {
   Card,
   EmptyState,
+  FilterBar,
+  FilterSelect,
   NoPermissionState,
+  PageHeader,
+  PersonCell,
   StatusBadge,
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeaderCell,
   TableRow,
+  Tabs,
 } from "@/components/ui";
-import { ListFilterNotice } from "@/components/establishment/ListFilterNotice";
 import { TASK_LOAD_POINTS, loadLevel, type TaskWeight } from "@/core/load-points";
+import { TASK_STATES } from "@/core/naming";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -43,17 +49,22 @@ function taskTone(state: string): "success" | "warning" | "info" | "neutral" | "
 }
 
 /**
- * La dirección de un filtro de esta pantalla, conservando el restaurante.
+ * La dirección de esta pantalla con sus filtros puestos, conservando los
+ * que ya había.
  *
- * Sin conservarlo, pulsar "Abiertas" con el filtro de un restaurante
+ * Sin conservarlos, pulsar "Sin terminar" con el filtro de un restaurante
  * puesto devuelve las tareas de todos: quien llegó desde la ficha de
  * Magariños se encuentra las de los demás restaurantes sin haber pedido
  * nada.
  */
-function tareasHref(slug: string, filtro: string | undefined, restaurante: string | undefined): string {
+function tareasHref(
+  slug: string,
+  filtros: Readonly<Record<string, string | undefined>>,
+): string {
   const params = new URLSearchParams();
-  if (filtro !== undefined) params.set("filtro", filtro);
-  if (restaurante !== undefined) params.set("restaurante", restaurante);
+  for (const [nombre, valor] of Object.entries(filtros)) {
+    if (valor !== undefined) params.set(nombre, valor);
+  }
   const query = params.toString();
   return query === "" ? `/espacios/${slug}/tareas` : `/espacios/${slug}/tareas?${query}`;
 }
@@ -63,13 +74,25 @@ export default async function TeamTasksPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ filtro?: string; restaurante?: string }>;
+  searchParams: Promise<{
+    filtro?: string;
+    restaurante?: string;
+    responsable?: string;
+    estado?: string;
+  }>;
 }) {
   const { slug } = await params;
   // `restaurante` es a donde llega el enlace "Ver todas" de la Operación
-  // de la ficha (vista 04); convive con `filtro`, que es el de la propia
-  // pantalla. Los dos recortan filas que RLS ya dejó pasar.
-  const { filtro, restaurante } = await searchParams;
+  // de la ficha (vista 04); `filtro` es la pestaña de la propia pantalla,
+  // y `responsable` y `estado` los desplegables de M11. Todos recortan
+  // filas que RLS ya dejó pasar.
+  const query = await searchParams;
+  const filtro = query.filtro === "mias" || query.filtro === "abiertas" ? query.filtro : undefined;
+  const restaurante = query.restaurante === "" ? undefined : query.restaurante;
+  const responsable = query.responsable === "" ? undefined : query.responsable;
+  const estado = (TASK_STATES as readonly string[]).includes(query.estado ?? "")
+    ? query.estado
+    : undefined;
   const supabase = await createClient();
 
   const {
@@ -92,10 +115,12 @@ export default async function TeamTasksPage({
     .eq("status", "active")
     .maybeSingle();
 
+  const t = es.teamArea.tasks;
+
   if (!membership) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.teamArea.tasks.title}</h1>
+      <div className="space-y-6">
+        <PageHeader title={t.title} />
         <NoPermissionState />
       </div>
     );
@@ -111,30 +136,37 @@ export default async function TeamTasksPage({
 
   const todas = taskRows ?? [];
 
-  // Los tres filtros son de presentación y se aplican sobre lo que RLS ya
-  // dejó pasar: ninguno amplía lo que se ve.
-  const delRestaurante =
-    restaurante === undefined ? todas : todas.filter((t) => t.establishment_id === restaurante);
-
-  const rows =
-    filtro === "mias"
-      ? delRestaurante.filter((t) => t.assignee_id === user.id)
-      : filtro === "abiertas"
-        ? delRestaurante.filter((t) => t.state !== "completed" && t.state !== "cancelled")
-        : delRestaurante;
+  // Los filtros son de presentación y se aplican sobre lo que RLS ya dejó
+  // pasar: ninguno amplía lo que se ve.
+  const rows = todas.filter(
+    (tarea) =>
+      (restaurante === undefined || tarea.establishment_id === restaurante) &&
+      (responsable === undefined || tarea.assignee_id === responsable) &&
+      (estado === undefined || tarea.state === estado) &&
+      (filtro !== "mias" || tarea.assignee_id === user.id) &&
+      (filtro !== "abiertas" || (tarea.state !== "completed" && tarea.state !== "cancelled")),
+  );
+  const hasFilters = restaurante !== undefined || responsable !== undefined || estado !== undefined;
 
   const jobIds = [...new Set(todas.map((t) => t.job_id).filter(Boolean))] as string[];
   const [{ data: jobs }, { data: establishments }, { data: people }] = await Promise.all([
     jobIds.length
       ? supabase.from("jobs").select("id, code").in("id", jobIds)
       : Promise.resolve({ data: [] as { id: string; code: string }[] }),
-    supabase.from("establishments").select("id, name").eq("space_id", space.id),
+    supabase.from("establishments").select("id, name").eq("space_id", space.id).order("name"),
     supabase.from("profiles").select("id, full_name, email"),
   ]);
 
   const jobCode = new Map((jobs ?? []).map((j) => [j.id, j.code]));
   const establishmentName = new Map((establishments ?? []).map((e) => [e.id, e.name]));
   const personName = new Map((people ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]));
+
+  // Las personas del desplegable son las que tienen alguna tarea, no
+  // todos los perfiles: un nombre sin tareas devolvería cero filas y
+  // parecería un error.
+  const responsables = [...new Set(todas.map((t) => t.assignee_id).filter(Boolean))].map(
+    (id) => ({ value: id as string, label: personName.get(id as string) ?? "—" }),
+  );
 
   // RN-ASG-13 · la carga que suman MIS tareas activas. Es mi propia carga,
   // no una comparación con nadie: RN-ASG-17 prohíbe el ranking entre
@@ -145,86 +177,95 @@ export default async function TeamTasksPage({
     )
     .reduce((total, t) => total + TASK_LOAD_POINTS[t.weight as TaskWeight], 0);
 
-  const filtros = [
-    { key: undefined, label: es.teamArea.tasks.filterAll },
-    { key: "abiertas", label: es.teamArea.tasks.filterOpen },
-    { key: "mias", label: es.teamArea.tasks.filterMine },
-  ] as const;
+  const base = `/espacios/${slug}/tareas`;
+  const conFiltros = (extra: Readonly<Record<string, string | undefined>>) =>
+    tareasHref(slug, { filtro, restaurante, responsable, estado, ...extra });
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.tasks.title}</h1>
-      <p className="mb-4 text-sm text-text-secondary">{es.teamArea.tasks.subtitle}</p>
+    <div className="space-y-6">
+      {/*
+        Página 69 (M11) · título, subtítulo y las pestañas "Todas / Mis
+        tareas", más "Sin terminar", que no está en el dibujo y se queda:
+        es el filtro que más se usa en el día a día. El formulario "Nueva
+        tarea" de la derecha no va aquí: una tarea nace desglosando un
+        trabajo, desde su propia pantalla, donde ya está el formulario.
+      */}
+      <PageHeader title={t.title} subtitle={t.subtitle}>
+        {misPuntos > 0 ? (
+          <p className="mt-1 text-sm text-text">
+            {t.myLoad}: {es.space.jobs.loadLevels[loadLevel(misPuntos)]} · {misPuntos}{" "}
+            {t.pointsColumn.toLowerCase()}
+          </p>
+        ) : null}
+      </PageHeader>
 
-      <nav className="mb-6 flex flex-wrap gap-2" aria-label={es.teamArea.tasks.title}>
-        {filtros.map((f) => {
-          const activo = filtro === f.key || (f.key === undefined && !filtro);
-          return (
-            <Link
-              key={f.label}
-              href={tareasHref(slug, f.key, restaurante)}
-              aria-current={activo ? "page" : undefined}
-              className={
-                activo
-                  ? "rounded-[10px] border border-cuotly-green bg-soft-surface px-3 py-1.5 text-sm font-semibold text-primary-dark"
-                  : "rounded-[10px] border border-border px-3 py-1.5 text-sm text-text-secondary"
-              }
-            >
-              {f.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <Tabs
+        label={t.title}
+        active={filtro ?? "todas"}
+        tabs={[
+          { key: "todas", label: t.filterAll, href: conFiltros({ filtro: undefined }) },
+          { key: "mias", label: t.filterMine, href: conFiltros({ filtro: "mias" }) },
+          { key: "abiertas", label: t.filterOpen, href: conFiltros({ filtro: "abiertas" }) },
+        ]}
+      />
 
-      {restaurante === undefined ? null : (
-        <div className="mb-4">
-          <ListFilterNotice
-            establishmentName={establishmentName.get(restaurante) ?? null}
-            allHref={tareasHref(slug, filtro, undefined)}
+      {todas.length === 0 && !hasFilters ? null : (
+        <FilterBar action={base} hasFilters={hasFilters} hidden={{ filtro }}>
+          <FilterSelect
+            id="filtro-responsable"
+            name="responsable"
+            label={t.filterAssignee}
+            defaultValue={responsable}
+            options={responsables}
           />
-        </div>
+          <FilterSelect
+            id="filtro-estado"
+            name="estado"
+            label={t.filterState}
+            defaultValue={estado}
+            options={TASK_STATES.map((state) => ({
+              value: state,
+              label: es.naming.states.task[state],
+            }))}
+          />
+          <FilterSelect
+            id="filtro-restaurante"
+            name="restaurante"
+            label={t.filterRestaurant}
+            defaultValue={restaurante}
+            options={(establishments ?? []).map((e) => ({ value: e.id, label: e.name }))}
+          />
+        </FilterBar>
       )}
 
-      {misPuntos > 0 ? (
-        <p className="mb-4 text-sm text-text-secondary">
-          {es.space.jobs.loadLevels[loadLevel(misPuntos)]} · {misPuntos}{" "}
-          {es.teamArea.tasks.pointsColumn.toLowerCase()}
-        </p>
-      ) : null}
-
       <Card>
-        {rows.length === 0 ? (
-          <EmptyState
-            title={es.teamArea.tasks.emptyTitle}
-            description={es.teamArea.tasks.emptyReason}
-          />
+        {todas.length === 0 && !hasFilters ? (
+          <EmptyState title={t.emptyTitle} description={t.emptyReason} />
+        ) : rows.length === 0 ? (
+          <EmptyState title={t.filteredEmptyTitle} description={t.filteredEmptyReason} />
         ) : (
-          <Table>
+          <Table
+            footer={
+              <TableFooter>
+                <span>{es.ui.table.showing(rows.length, todas.length, t.rowsNoun)}</span>
+              </TableFooter>
+            }
+          >
             <TableHead>
               <TableRow>
-                <TableHeaderCell>{es.teamArea.tasks.titleColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.tasks.jobColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.tasks.establishmentColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.tasks.assigneeColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.tasks.weightColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.tasks.stateColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.titleColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.establishmentColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.jobColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.assigneeColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.weightColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {rows.map((task) => (
                 <TableRow key={task.id}>
-                  <TableCell>{task.title}</TableCell>
                   <TableCell>
-                    {task.job_id ? (
-                      <Link
-                        href={`/espacios/${slug}/trabajos/${task.job_id}`}
-                        className="text-cuotly-green underline"
-                      >
-                        {jobCode.get(task.job_id) ?? es.teamArea.tasks.openJobLink}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
+                    <span className="font-medium">{task.title}</span>
                   </TableCell>
                   <TableCell>
                     {task.establishment_id
@@ -232,17 +273,29 @@ export default async function TeamTasksPage({
                       : "—"}
                   </TableCell>
                   <TableCell>
-                    {task.assignee_id ? (
-                      (personName.get(task.assignee_id) ?? "—")
+                    {task.job_id ? (
+                      <Link
+                        href={`/espacios/${slug}/trabajos/${task.job_id}`}
+                        className="font-medium text-cuotly-green hover:underline"
+                      >
+                        {jobCode.get(task.job_id) ?? t.openJobLink}
+                      </Link>
                     ) : (
-                      <span className="text-text-secondary">{es.teamArea.tasks.unassigned}</span>
+                      "—"
                     )}
                   </TableCell>
                   <TableCell>
-                    {es.teamArea.tasks.weights[task.weight as TaskWeight]} ·{" "}
+                    {task.assignee_id ? (
+                      <PersonCell name={personName.get(task.assignee_id) ?? "—"} />
+                    ) : (
+                      <span className="text-text-secondary">{t.unassigned}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {t.weights[task.weight as TaskWeight]} ·{" "}
                     {TASK_LOAD_POINTS[task.weight as TaskWeight]} pts
-                    <span className="block text-sm text-text-secondary">
-                      {task.estimated_minutes} {es.teamArea.tasks.minutesSuffix}
+                    <span className="block text-xs text-text-secondary">
+                      {task.estimated_minutes} {t.minutesSuffix}
                     </span>
                   </TableCell>
                   <TableCell>

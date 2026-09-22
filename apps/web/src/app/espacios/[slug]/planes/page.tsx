@@ -1,10 +1,13 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
+  ButtonLink,
   Card,
   EmptyState,
+  EntityCell,
   NoPermissionState,
+  PageHeader,
+  StatusBadge,
   Table,
   TableBody,
   TableCell,
@@ -60,8 +63,8 @@ export default async function PlansPage({ params }: { params: Promise<{ slug: st
   const { data: isMember } = await supabase.rpc("is_space_member", { p_space_id: space.id });
   if (!isMember) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.plansPage.title}</h1>
+      <div className="space-y-6">
+        <PageHeader title={es.plansPage.title} />
         <NoPermissionState
           title={es.plansPage.noAccessTitle}
           description={es.plansPage.noAccessReason}
@@ -136,11 +139,24 @@ export default async function PlansPage({ params }: { params: Promise<{ slug: st
   });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.plansPage.title}</h1>
-        <p className="text-sm text-text-secondary">{es.plansPage.subtitle}</p>
-      </header>
+    <div className="space-y-6">
+      {/*
+        Página 94 (M21) · título, subtítulo y a la derecha el catálogo de
+        condiciones de cada plan (RN-DAT-07). El "Crear plan" del dibujo
+        no va aquí: los planes son los de Restavor (decisión 39) y se
+        gestionan por restaurante desde su ficha, donde hay contexto
+        suficiente para no equivocarse de restaurante al cobrar una
+        diferencia.
+      */}
+      <PageHeader
+        title={es.plansPage.title}
+        subtitle={es.plansPage.subtitle}
+        actions={
+          <ButtonLink href={`/espacios/${slug}/planes/condiciones`} variant="secondary">
+            {es.plansPage.terms.catalogueLink}
+          </ButtonLink>
+        }
+      />
 
       <Card>
         {filas.length === 0 ? (
@@ -161,14 +177,19 @@ export default async function PlansPage({ params }: { params: Promise<{ slug: st
               {filas.map((fila) => (
                 <TableRow key={fila.id}>
                   <TableCell>
-                    {fila.name} · {fila.code}
+                    <EntityCell title={fila.name} subtitle={fila.code} />
                   </TableCell>
                   <TableCell>
                     {fila.planName === null ? (
                       // P6 · no tener plan es un dato, no un hueco.
                       <span className="text-text-secondary">{es.plansPage.noPlan}</span>
                     ) : (
-                      `${fila.planName} · ${euros(fila.planPriceCents ?? 0)}`
+                      <span className="flex flex-wrap items-center gap-2">
+                        <StatusBadge tone="info">{fila.planName}</StatusBadge>
+                        <span className="whitespace-nowrap text-text-secondary">
+                          {euros(fila.planPriceCents ?? 0)}
+                        </span>
+                      </span>
                     )}
                   </TableCell>
                   <TableCell>
@@ -185,12 +206,13 @@ export default async function PlansPage({ params }: { params: Promise<{ slug: st
                     {fila.renewsAt === null ? es.plansPage.noCycle : dia(fila.renewsAt)}
                   </TableCell>
                   <TableCell>
-                    <Link
+                    <ButtonLink
                       href={`/espacios/${slug}/planes/${fila.id}`}
-                      className="text-cuotly-green underline"
+                      variant="outline"
+                      size="sm"
                     >
                       {es.plansPage.manageLink}
-                    </Link>
+                    </ButtonLink>
                   </TableCell>
                 </TableRow>
               ))}
@@ -199,14 +221,7 @@ export default async function PlansPage({ params }: { params: Promise<{ slug: st
         )}
       </Card>
 
-      <Card>
-        <p className="text-sm text-text-secondary">{es.plansPage.noPlanHint}</p>
-        <p className="mt-3 text-sm">
-          <Link href={`/espacios/${slug}/planes/condiciones`} className="text-cuotly-green underline">
-            {es.plansPage.terms.catalogueLink}
-          </Link>
-        </p>
-      </Card>
+      <p className="text-sm text-text-secondary">{es.plansPage.noPlanHint}</p>
     </div>
   );
 }

@@ -86,9 +86,14 @@ export function AttentionList({
   timeZone: string;
 }) {
   return (
-    <ul className="flex flex-col">
+    <ul className="-mx-2 flex flex-col">
       {items.map((item) => {
         const aspecto = ATTENTION_ASPECT[item.kind];
+        const accion =
+          item.kind === "request_pending_validation" ||
+          item.kind === "request_correction_requested"
+            ? es.spaceHome.attention.reviewRequest
+            : es.spaceHome.attention.openJob;
         return (
           <li key={item.id} className="border-b border-border last:border-b-0">
             <Link
@@ -102,13 +107,25 @@ export function AttentionList({
                 <Icon name={aspecto.entity} className="h-[18px] w-[18px]" />
               </span>
 
+              {/*
+                M01 · la maqueta lo dibuja como una tabla de cuatro
+                columnas: restaurante, solicitud o trabajo con su plazo,
+                estado y acción. Aquí es una fila con esas cuatro cosas en
+                ese orden; en un teléfono el estado y la fecha bajan de
+                línea en vez de recortar el título.
+              */}
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-medium text-text">{item.title}</span>
-                {item.establishment === null ? null : (
-                  <span className="block truncate text-xs text-text-secondary">
-                    {item.establishment}
-                  </span>
-                )}
+                <span className="block truncate text-xs text-text-secondary">
+                  {[
+                    item.establishment,
+                    // Desde cuándo espera. Se calla cuando no se sabe: una
+                    // fecha inventada ordenaría mal el trabajo del día.
+                    item.createdAt === null ? null : fecha(item.createdAt, timeZone),
+                  ]
+                    .filter((parte) => parte !== null)
+                    .join(" · ")}
+                </span>
               </span>
 
               <StatusBadge tone={aspecto.tone} icon={aspecto.icon}>
@@ -116,30 +133,16 @@ export function AttentionList({
               </StatusBadge>
 
               {/*
-                La acción principal de la fila, con el aspecto de un botón
-                pero sin serlo: la fila ENTERA es el enlace, así que un
-                `<button>` aquí dentro sería un control dentro de otro
-                —HTML inválido y un tabulador de más— para llevar
-                exactamente al mismo sitio. Pulsarlo hace lo que dice.
+                La acción principal de la fila, con el aspecto del botón
+                de contorno de la maqueta pero sin ser un botón: la fila
+                ENTERA es el enlace, así que un `<button>` aquí dentro
+                sería un control dentro de otro —HTML inválido y un
+                tabulador de más— para llevar exactamente al mismo sitio.
               */}
-              {item.kind === "request_pending_validation" ? (
-                <span className="hidden shrink-0 rounded-[10px] bg-primary px-3 py-1.5 text-xs font-medium text-surface sm:inline">
-                  {es.spaceHome.attention.reviewRequest}
-                </span>
-              ) : null}
-
-              {/*
-                Desde cuándo espera. Va antes del galón porque es un dato
-                de la fila, no un control, y se calla cuando no se sabe:
-                una fecha inventada ordenaría mal el trabajo del día.
-              */}
-              {item.createdAt === null ? null : (
-                <span className="hidden shrink-0 text-xs text-text-secondary sm:inline">
-                  {fecha(item.createdAt, timeZone)}
-                </span>
-              )}
-
-              <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-text-secondary" />
+              <span className="hidden shrink-0 rounded-field border border-cuotly-green px-3 py-1.5 text-xs font-semibold text-cuotly-green sm:inline">
+                {accion}
+              </span>
+              <Icon name="chevronRight" className="h-4 w-4 shrink-0 text-text-secondary sm:hidden" />
             </Link>
           </li>
         );

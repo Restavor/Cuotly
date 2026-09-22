@@ -1,18 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
-import {
-  Card,
-  EmptyState,
-  NoPermissionState,
-  StatusBadge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-} from "@/components/ui";
+import { Card, EmptyState, NoPermissionState, PageHeader, Tabs } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -77,8 +67,8 @@ export default async function TeamInboxPage({ params }: { params: Promise<{ slug
 
   if (!membership) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.teamArea.messages.title}</h1>
+      <div className="space-y-6">
+        <PageHeader title={es.teamArea.messages.title} />
         <NoPermissionState />
       </div>
     );
@@ -89,86 +79,104 @@ export default async function TeamInboxPage({ params }: { params: Promise<{ slug
   });
 
   const rows = conversations ?? [];
+  const t = es.teamArea.messages;
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
-      <h1 className="mb-1 text-2xl font-bold text-primary-dark">{es.teamArea.messages.title}</h1>
-      <p className="mb-2 text-sm text-text-secondary">{es.teamArea.messages.subtitle}</p>
+    <div className="space-y-6">
+      {/*
+        Página 73 (M14) · título, subtítulo y las pestañas "Clientes /
+        Internos". Las conversaciones de aquí son las de solicitudes,
+        trabajos y restaurantes; los **canales** del equipo (§38, RN-CAN)
+        son la otra pestaña, con su propia pantalla: aquí cada fila tiene
+        su restaurante y su código, y un canal no tiene ni lo uno ni lo
+        otro.
 
-      {/* §38, RN-CAN · los canales viven aparte y no en esta tabla: aquí
-          cada fila tiene su restaurante y su código, y un canal no tiene ni
-          lo uno ni lo otro. Mezclarlos habría dejado media tabla vacía la
-          mitad de las veces. */}
-      <p className="mb-6 text-sm">
-        <Link href={`/espacios/${slug}/mensajes/canales`} className="text-cuotly-green underline">
-          {es.teamArea.channels.title}
-        </Link>
-      </p>
+        El "Nuevo mensaje" del dibujo no va: una conversación nace de una
+        solicitud, de un trabajo o de un restaurante, no de un botón.
+      */}
+      <PageHeader title={t.title} subtitle={t.subtitle} />
+
+      <Tabs
+        label={t.title}
+        active="conversaciones"
+        tabs={[
+          { key: "conversaciones", label: t.tabConversations, href: `/espacios/${slug}/mensajes` },
+          {
+            key: "canales",
+            label: es.teamArea.channels.title,
+            href: `/espacios/${slug}/mensajes/canales`,
+          },
+        ]}
+      />
 
       <Card>
         {rows.length === 0 ? (
-          <EmptyState
-            title={es.teamArea.messages.emptyTitle}
-            description={es.teamArea.messages.emptyReason}
-          />
+          <EmptyState title={t.emptyTitle} description={t.emptyReason} />
         ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>{es.teamArea.messages.subjectColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.messages.establishmentColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.messages.lastMessageColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.messages.dateColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.teamArea.messages.unreadColumn}</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((conversation) => {
-                // La solicitud y el trabajo tienen código; la conversación
-                // general de un restaurante no cuelga de nada que lo
-                // tenga, y ahí el restaurante ya es todo el asunto.
-                const codigo = conversation.request_code ?? conversation.job_code;
+          <ul className="-mx-2 divide-y divide-border">
+            {rows.map((conversation) => {
+              // La solicitud y el trabajo tienen código; la conversación
+              // general de un restaurante no cuelga de nada que lo
+              // tenga, y ahí el restaurante ya es todo el asunto.
+              const codigo = conversation.request_code ?? conversation.job_code;
+              const sinLeer = conversation.unread_count > 0;
 
-                return (
-                <TableRow key={conversation.id}>
-                  <TableCell>
-                    <Link
-                      href={`/espacios/${slug}/mensajes/${conversation.id}`}
-                      className="text-cuotly-green underline"
+              return (
+                <li key={conversation.id}>
+                  <Link
+                    href={`/espacios/${slug}/mensajes/${conversation.id}`}
+                    className={`flex items-start gap-3 rounded-[12px] px-3 py-3 transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green ${
+                      sinLeer ? "bg-cuotly-green/5" : ""
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-soft-surface text-primary-dark"
                     >
-                      {TITULO_POR_TIPO[conversation.type] ?? conversation.type}
-                    </Link>
-                    {codigo ? <span className="text-text-secondary">{` · ${codigo}`}</span> : null}
-                  </TableCell>
-                  <TableCell>{conversation.establishment_name ?? "—"}</TableCell>
-                  <TableCell>
-                    {/*
-                      Cuando no hay ningún mensaje se dice eso mismo, no se
-                      deja la celda vacía: una conversación recién abierta y
-                      una sin cargar se parecen demasiado (CA-20).
-                    */}
-                    {conversation.last_message_preview ?? es.teamArea.messages.noMessagesYet}
-                  </TableCell>
-                  <TableCell>
-                    {conversation.last_message_at
-                      ? enZona(conversation.last_message_at, space.timezone, {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {conversation.unread_count > 0 ? (
-                      <StatusBadge tone="info">{conversation.unread_count}</StatusBadge>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      <Icon
+                        name={conversation.type === "job_internal" ? "job" : conversation.type === "request" ? "request" : "building"}
+                        className="h-5 w-5"
+                      />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-3">
+                        <span className={`truncate text-sm ${sinLeer ? "font-bold" : "font-semibold"} text-text`}>
+                          {conversation.establishment_name ?? "—"}
+                        </span>
+                        <span className="shrink-0 text-xs text-text-secondary">
+                          {conversation.last_message_at
+                            ? enZona(conversation.last_message_at, space.timezone, {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              })
+                            : null}
+                        </span>
+                      </span>
+                      <span className="block truncate text-sm text-text">
+                        {TITULO_POR_TIPO[conversation.type] ?? conversation.type}
+                        {codigo ? <span className="text-text-secondary">{` · ${codigo}`}</span> : null}
+                      </span>
+                      {/*
+                        Cuando no hay ningún mensaje se dice eso mismo, no se
+                        deja la línea vacía: una conversación recién abierta y
+                        una sin cargar se parecen demasiado (CA-20).
+                      */}
+                      <span className="flex items-center justify-between gap-3">
+                        <span className="truncate text-xs text-text-secondary">
+                          {conversation.last_message_preview ?? t.noMessagesYet}
+                        </span>
+                        {sinLeer ? (
+                          <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-cuotly-green px-1.5 text-[11px] font-bold text-surface">
+                            {conversation.unread_count}
+                          </span>
+                        ) : null}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </Card>
     </div>

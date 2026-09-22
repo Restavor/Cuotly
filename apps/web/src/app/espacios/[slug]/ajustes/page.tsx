@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import {
   Card,
   NoPermissionState,
+  PageHeader,
   StatusBadge,
   Table,
   TableBody,
@@ -11,6 +12,7 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
+  Tabs,
 } from "@/components/ui";
 import { formatMoment, loadSpaceIntegrations } from "@/components/establishment/integrations-load";
 import { ProviderMark } from "@/components/establishment/ProviderMark";
@@ -105,8 +107,8 @@ export default async function SettingsPage({
   const { data: isMember } = await supabase.rpc("is_space_member", { p_space_id: space.id });
   if (!isMember) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.settings.title}</h1>
+      <div className="space-y-6">
+        <PageHeader title={es.settings.title} />
         <NoPermissionState
           title={es.settings.noAccessTitle}
           description={es.settings.noAccessReason}
@@ -186,11 +188,10 @@ export default async function SettingsPage({
   });
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.settings.title}</h1>
-        <p className="text-sm text-text-secondary">{es.settings.subtitle}</p>
-      </header>
+    <div className="space-y-6">
+      {/* Página 100 (M23) · "Ajustes del espacio", el subtítulo y las
+          pestañas subrayadas. */}
+      <PageHeader title={es.settings.title} subtitle={es.settings.subtitle} />
 
       {/*
         Página 109 del diseño · las ocho pestañas. La vista viaja en la
@@ -203,28 +204,15 @@ export default async function SettingsPage({
         y conservan su dirección: hay avisos emitidos que apuntan ahí
         (RN-NOT-04).
       */}
-      <nav aria-label={es.settings.title} className="border-b border-border">
-        <ul className="-mb-px flex flex-wrap gap-1">
-          {SETTINGS_TABS.map((tab) => {
-            const seleccionada = tab.route === null && tab.key === vista.key;
-            return (
-              <li key={tab.key}>
-                <Link
-                  href={settingsTabHref(slug, tab)}
-                  aria-current={seleccionada ? "page" : undefined}
-                  className={`-mb-px inline-block border-b-2 px-3 py-2 text-sm ${
-                    seleccionada
-                      ? "border-cuotly-green font-semibold text-primary-dark"
-                      : "border-transparent text-text-secondary hover:text-text"
-                  }`}
-                >
-                  {es.settings.tabs[tab.key]}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      <Tabs
+        label={es.settings.title}
+        active={vista.key}
+        tabs={SETTINGS_TABS.map((tab) => ({
+          key: tab.key,
+          label: es.settings.tabs[tab.key],
+          href: settingsTabHref(slug, tab),
+        }))}
+      />
 
       {vista.key === "general" ? (
       <>

@@ -1,11 +1,13 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
 import {
+  ButtonLink,
   Card,
   EmptyState,
   NoPermissionState,
+  PageHeader,
+  StatCard,
   StatusBadge,
   Table,
   TableBody,
@@ -76,8 +78,8 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
 
   if (dashboardError) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.teamArea.finance.title}</h1>
+      <div className="space-y-6">
+        <PageHeader title={es.teamArea.finance.title} />
         <NoPermissionState
           title={es.teamArea.finance.noPermissionTitle}
           description={es.teamArea.finance.noPermissionReason}
@@ -143,42 +145,72 @@ export default async function FinancePage({ params }: { params: Promise<{ slug: 
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.teamArea.finance.title}</h1>
-        <p className="text-sm text-text-secondary">{es.teamArea.finance.subtitle}</p>
-      </header>
+    <div className="space-y-6">
+      {/*
+        Página 77 (M16) · título, subtítulo y a la derecha los presupuestos
+        (§84), que tienen su propia pantalla dentro de Finanzas. El
+        selector de mes del dibujo no va: el periodo es el de los últimos
+        doce meses, declarado, no una ventana que se elige.
+      */}
+      <PageHeader
+        title={es.teamArea.finance.title}
+        subtitle={es.teamArea.finance.subtitle}
+        actions={
+          <ButtonLink
+            href={`/espacios/${space.slug}/finanzas/presupuestos`}
+            variant="secondary"
+            trailingIcon="arrowRight"
+          >
+            {es.quotesTeam.title}
+          </ButtonLink>
+        }
+      >
+        <p className="mt-1 text-sm text-text-secondary">{es.teamArea.finance.quotesHint}</p>
+      </PageHeader>
 
+      {/*
+        M16 · las tarjetas de cifra. El dibujo pone tres; aquí son las
+        cinco que `financial_dashboard()` calcula sobre el libro de
+        apuntes (RN-FIN-02), y ninguna se estima: lo emitido, lo cobrado,
+        lo pendiente en plazo, lo vencido y el recurrente mensual.
+      */}
       {totals ? (
-        <Card>
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            {[
-              [es.teamArea.finance.forecastLabel, totals.forecast_total_cents],
-              [es.teamArea.finance.collectedLabel, totals.collected_cents],
-              [es.teamArea.finance.pendingLabel, totals.pending_cents],
-              [es.teamArea.finance.overdueLabel, totals.overdue_cents],
-              [es.teamArea.finance.recurringLabel, totals.recurring_monthly_total_cents],
-            ].map(([label, value]) => (
-              <div key={String(label)} className="rounded-lg bg-soft-surface p-3">
-                <dt className="text-xs text-text-secondary">{label}</dt>
-                <dd className="text-lg font-semibold text-primary-dark">
-                  {euros(Number(value))}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </Card>
+        <section
+          aria-label={es.teamArea.finance.title}
+          className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 xl:gap-4"
+        >
+          <StatCard
+            icon="document"
+            tone="neutral"
+            label={es.teamArea.finance.forecastLabel}
+            value={euros(Number(totals.forecast_total_cents))}
+          />
+          <StatCard
+            icon="finance"
+            tone="green"
+            label={es.teamArea.finance.collectedLabel}
+            value={euros(Number(totals.collected_cents))}
+          />
+          <StatCard
+            icon="clock"
+            tone="info"
+            label={es.teamArea.finance.pendingLabel}
+            value={euros(Number(totals.pending_cents))}
+          />
+          <StatCard
+            icon="alert"
+            tone="danger"
+            label={es.teamArea.finance.overdueLabel}
+            value={euros(Number(totals.overdue_cents))}
+          />
+          <StatCard
+            icon="plans"
+            tone="neutral"
+            label={es.teamArea.finance.recurringLabel}
+            value={euros(Number(totals.recurring_monthly_total_cents))}
+          />
+        </section>
       ) : null}
-
-      {/* §84 · los presupuestos, en su propia pantalla dentro de Finanzas. */}
-      <Card title={es.teamArea.finance.quotesLink}>
-        <p className="text-sm text-text-secondary">{es.teamArea.finance.quotesHint}</p>
-        <p className="mt-2 text-sm">
-          <Link href={`/espacios/${space.slug}/finanzas/presupuestos`} className="text-cuotly-green underline">
-            {es.quotesTeam.title} →
-          </Link>
-        </p>
-      </Card>
 
       <Card title={es.teamArea.finance.chargesTitle}>
         {chargeRows.length === 0 ? (

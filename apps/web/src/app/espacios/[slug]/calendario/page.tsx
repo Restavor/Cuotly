@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation";
 
 import {
   Button,
+  ButtonLink,
   Card,
   EmptyState,
+  PageHeader,
   Select,
   StatusBadge,
   Table,
@@ -304,26 +306,25 @@ export default async function CalendarPage({
   ];
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold text-primary-dark">{es.calendar.title}</h1>
-        <p className="text-sm text-text-secondary">{es.calendar.timeZoneHint(space.timezone)}</p>
-      </header>
+    <div className="space-y-6">
+      {/* Página 75 (M15) · título y subtítulo con la zona horaria del
+          espacio, que es en la que se calcula todo (CLAUDE.md MUST). */}
+      <PageHeader title={es.calendar.title} subtitle={es.calendar.timeZoneHint(space.timezone)} />
 
       <Card
         title={es.calendar.monthTitle(es.calendar.months[mes - 1], anio)}
         className="space-y-4"
       >
-        <nav aria-label={es.calendar.title} className="flex flex-wrap gap-3 text-sm">
-          <Link href={conFiltros(mesAnterior)} className="text-cuotly-green underline">
-            ← {es.calendar.previousMonth}
-          </Link>
-          <Link href={conFiltros(hoy)} className="text-cuotly-green underline">
+        <nav aria-label={es.calendar.title} className="flex flex-wrap gap-2 text-sm">
+          <ButtonLink href={conFiltros(mesAnterior)} variant="secondary" size="sm" icon="arrowLeft">
+            {es.calendar.previousMonth}
+          </ButtonLink>
+          <ButtonLink href={conFiltros(hoy)} variant="secondary" size="sm">
             {es.calendar.today}
-          </Link>
-          <Link href={conFiltros(mesSiguiente)} className="text-cuotly-green underline">
-            {es.calendar.nextMonth} →
-          </Link>
+          </ButtonLink>
+          <ButtonLink href={conFiltros(mesSiguiente)} variant="secondary" size="sm" trailingIcon="arrowRight">
+            {es.calendar.nextMonth}
+          </ButtonLink>
         </nav>
 
         {/*

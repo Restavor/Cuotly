@@ -1,9 +1,11 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
+  Avatar,
+  ButtonLink,
   Card,
   EmptyState,
+  PageHeader,
   StatusBadge,
   Table,
   TableBody,
@@ -132,21 +134,28 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   const hoy = todayInTimeZone(ahora, space.timezone);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold text-primary-dark">{es.nav.team}</h1>
-        <p className="text-sm text-text-secondary">{es.teamPage.intro}</p>
-      </header>
+    <div className="space-y-6">
+      {/*
+        Página 88 (M19) · "Equipo de Restavor", el subtítulo y el botón
+        "Invitar miembro" a la derecha, que solo se pinta a quien puede
+        invitar: el servidor lo comprueba igual, pero un botón que va a
+        ser rechazado es una promesa falsa. Debajo, la tabla de personas a
+        la izquierda y la supervisión en la columna de la derecha.
+      */}
+      <PageHeader
+        title={es.teamPage.titleOf(space.name)}
+        subtitle={es.teamPage.intro}
+        actions={
+          puedeInvitar === true ? (
+            <ButtonLink href={`/espacios/${space.slug}/equipo/invitar`} icon="person">
+              {es.teamPage.inviteLink}
+            </ButtonLink>
+          ) : null
+        }
+      />
 
-      <Card title={es.teamPage.membersTitle} className="space-y-4">
-        {puedeInvitar === true ? (
-          <Link
-            href={`/espacios/${space.slug}/equipo/invitar`}
-            className="text-sm text-cuotly-green underline"
-          >
-            {es.teamPage.inviteLink}
-          </Link>
-        ) : null}
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <Card title={es.teamPage.membersTitle} className="min-w-0 space-y-4">
 
         {activos.length > 0 ? (
           /*
@@ -178,8 +187,26 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
                   const esTrabajador = miembro.role === "worker";
                   return (
                     <TableRow key={miembro.user_id}>
-                      <TableCell>{personName(miembro.profiles)}</TableCell>
-                      <TableCell>{roleLabel(miembro.role)}</TableCell>
+                      <TableCell>
+                        <span className="flex min-w-0 items-center gap-3">
+                          <Avatar name={personName(miembro.profiles)} size={36} />
+                          <span className="min-w-0">
+                            <span className="block truncate text-sm font-semibold text-text">
+                              {personName(miembro.profiles)}
+                            </span>
+                            {miembro.profiles?.full_name && miembro.profiles?.email ? (
+                              <span className="block truncate text-xs text-text-secondary">
+                                {miembro.profiles.email}
+                              </span>
+                            ) : null}
+                          </span>
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge tone={miembro.role === "worker" ? "info" : "success"}>
+                          {roleLabel(miembro.role)}
+                        </StatusBadge>
+                      </TableCell>
                       <TableCell>
                         <StatusBadge tone={miembro.status === "active" ? "success" : "neutral"}>
                           {statusLabel(miembro.status)}
@@ -219,7 +246,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
         <p className="text-sm text-text-secondary">{es.teamPage.withoutWorkerHint}</p>
       </Card>
 
-      <Card title={es.teamPage.supervisionTitle} className="space-y-6">
+      <Card title={es.teamPage.supervisionTitle} className="min-w-0 space-y-6">
         <p className="text-sm text-text-secondary">{es.teamPage.supervisionIntro}</p>
 
         {puedeCambiar !== true ? (
@@ -267,6 +294,7 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
           </>
         )}
       </Card>
+      </div>
     </div>
   );
 }

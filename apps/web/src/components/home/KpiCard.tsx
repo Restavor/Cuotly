@@ -1,10 +1,12 @@
-import Link from "next/link";
-
-import { Icon, type IconName } from "@/components/ui/Icon";
+import { StatCard, type StatTone } from "@/components/ui/StatCard";
+import type { IconName } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 
 /**
- * Uno de los tres números del resumen de §20.4.
+ * Uno de los cinco números del resumen de §20.4, con la pinta de la
+ * página 22 del diseño definitivo (M01): icono tintado y rótulo en la
+ * misma fila, el número grande debajo y la letra pequeña al pie. La
+ * figura la pone `StatCard`; aquí solo se decide qué va en cada hueco.
  *
  * El número siempre es real y calculado en el servidor: esta tarjeta no
  * sabe redondear, estimar ni rellenar (CLAUDE.md MUST NOT). Cuando el dato
@@ -26,7 +28,7 @@ export function KpiCard({
   href,
 }: {
   icon: IconName;
-  tone: "info" | "warning" | "danger";
+  tone: "info" | "warning" | "danger" | "green";
   value: number | null;
   label: string;
   hint?: string;
@@ -39,41 +41,22 @@ export function KpiCard({
     se oscurece la paleta: la fija el PRD §20.6 (CA-22, y la prueba que lo
     mide esta en `src/core/contrast.test.ts`).
   */
-  const tones = {
-    info: "bg-info/10 text-info",
-    warning: "bg-info/10 text-info",
-    danger: "bg-danger/10 text-danger",
-  } as const;
+  const tono: StatTone = tone === "warning" ? "info" : tone;
 
-  /*
-    La tarjeta es **vertical y compacta**, como la dibuja la página 22 del
-    diseño definitivo móvil: icono pequeño arriba, el número grande, la
-    etiqueta y la letra pequeña. La anterior era horizontal con un círculo
-    de 56 px, y por eso en un teléfono los recuadros salían apilados a
-    ancho completo en vez de tres en una fila.
-  */
   return (
-    <Link
+    <StatCard
+      icon={icon}
+      tone={tono}
+      label={label}
       href={href}
-      className="flex min-w-0 flex-col gap-1.5 rounded-[16px] border border-border bg-surface p-3.5 transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green sm:p-5"
-    >
-      <span
-        aria-hidden="true"
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${tones[tone]}`}
-      >
-        <Icon name={icon} className="h-5 w-5" />
-      </span>
-      {value === null ? (
-        <span className="block text-sm font-semibold text-danger">
-          {es.spaceHome.kpi.unavailable}
-        </span>
-      ) : (
-        <span className="block text-3xl font-bold leading-none text-primary-dark">{value}</span>
-      )}
-      <span className="block text-sm font-medium leading-snug text-text">{label}</span>
-      <span className="block text-xs leading-snug text-text-secondary">
-        {value === null ? es.emptyReasons.error : hint}
-      </span>
-    </Link>
+      value={
+        value === null ? (
+          <span className="text-base font-semibold text-danger">{es.spaceHome.kpi.unavailable}</span>
+        ) : (
+          value
+        )
+      }
+      hint={value === null ? es.emptyReasons.error : hint}
+    />
   );
 }

@@ -5,11 +5,18 @@ import type { ReactNode } from "react";
  * en vez de recibir filas/columnas por props, para poder poner dentro de
  * cada celda lo que haga falta (badges, botones, enlaces) sin una API
  * genérica que acabe limitando.
+ *
+ * El aspecto es el de las tablas de la maqueta de escritorio: cabecera
+ * sobre superficie suave en gris y sin mayúsculas, filas separadas por una
+ * línea fina, y un pie opcional con "Mostrando X de Y" (`TableFooter`).
  */
-export function Table({ children }: { children: ReactNode }) {
+export function Table({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-[10px] border border-border">
-      <table className="w-full border-collapse text-left text-sm">{children}</table>
+    <div className="overflow-hidden rounded-[12px] border border-border">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left text-sm">{children}</table>
+      </div>
+      {footer}
     </div>
   );
 }
@@ -28,24 +35,33 @@ export function Table({ children }: { children: ReactNode }) {
  */
 export function TableHead({ children }: { children: ReactNode }) {
   return (
-    <thead className="bg-soft-surface text-xs font-semibold uppercase tracking-wide text-text-secondary">
+    <thead className="bg-soft-surface/70 text-xs font-medium text-text-secondary">
       {children}
     </thead>
   );
 }
 
 export function TableBody({ children }: { children: ReactNode }) {
-  return <tbody className="divide-y divide-border">{children}</tbody>;
+  return <tbody className="divide-y divide-border bg-surface">{children}</tbody>;
 }
 
 export function TableRow({ children }: { children: ReactNode }) {
-  return <tr className="hover:bg-soft-surface/60">{children}</tr>;
+  return <tr className="transition-colors hover:bg-soft-surface/50">{children}</tr>;
 }
 
 export function TableHeaderCell({ children }: { children: ReactNode }) {
-  return <th className="px-4 py-3 font-semibold">{children}</th>;
+  return <th className="whitespace-nowrap px-4 py-3 font-medium">{children}</th>;
 }
 
 export function TableCell({ children }: { children: ReactNode }) {
-  return <td className="px-4 py-3 text-text">{children}</td>;
+  return <td className="px-4 py-3 align-middle text-text">{children}</td>;
+}
+
+/** El pie de la maqueta: "Mostrando 4 de 4 trabajos", en gris. */
+export function TableFooter({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-t border-border bg-surface px-4 py-3 text-sm text-text-secondary">
+      {children}
+    </div>
+  );
 }

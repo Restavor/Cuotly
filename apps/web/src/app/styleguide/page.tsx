@@ -2,8 +2,20 @@
 
 import { useState } from "react";
 import {
+  Avatar,
   Button,
+  ButtonLink,
   Card,
+  EntityCell,
+  FilterBar,
+  FilterSearch,
+  FilterSelect,
+  PageHeader,
+  PersonCell,
+  ProgressBar,
+  StatCard,
+  TableFooter,
+  Tabs,
   EmptyState,
   ErrorState,
   Field,
@@ -33,7 +45,7 @@ export default function StyleGuidePage() {
   const { showToast } = useToast();
 
   return (
-    <main className="mx-auto max-w-4xl space-y-10 p-8">
+    <main className="mx-auto max-w-6xl space-y-10 p-8">
       <div>
         <h1 className="text-2xl font-bold text-primary-dark">Sistema de diseño — Emerald Control</h1>
         <p className="text-sm text-text-secondary">
@@ -42,10 +54,76 @@ export default function StyleGuidePage() {
         </p>
       </div>
 
+      {/*
+        Las piezas del diseño de escritorio (22/09/2026): la cabecera de
+        página, las pestañas, la barra de filtros, la tarjeta de cifra y el
+        avatar. Aquí con texto de muestra, que es lo que esta página es.
+      */}
+      <Card title="PageHeader, Tabs y FilterBar">
+        <div className="space-y-6" data-testid="page-pieces">
+          <PageHeader
+            title="Restaurantes"
+            subtitle="Gestiona tus establecimientos y su mantenimiento digital."
+            actions={
+              <>
+                <ButtonLink href="#" variant="secondary">
+                  Grupos
+                </ButtonLink>
+                <ButtonLink href="#" icon="plus">
+                  Crear establecimiento
+                </ButtonLink>
+              </>
+            }
+          />
+          <Tabs
+            label="Ejemplo"
+            active="lista"
+            tabs={[
+              { key: "lista", label: "Lista", href: "#" },
+              { key: "tablero", label: "Tablero", href: "#", count: 3, countTone: "danger" },
+              { key: "archivo", label: "Archivo", href: "#", count: 12 },
+            ]}
+          />
+          <FilterBar action="#" hasFilters>
+            <FilterSearch id="sg-buscar" name="buscar" placeholder="Buscar restaurante…" />
+            <FilterSelect id="sg-grupo" name="grupo" label="Grupo" options={[{ value: "n", label: "Grupo Norte" }]} />
+            <FilterSelect id="sg-estado" name="estado" label="Estado" options={[{ value: "a", label: "Activo" }]} />
+            <FilterSelect id="sg-plan" name="plan" label="Plan" options={[{ value: "p", label: "Premium+" }]} />
+          </FilterBar>
+        </div>
+      </Card>
+
+      <Card title="StatCard, Avatar y ProgressBar">
+        <div className="space-y-6" data-testid="stat-pieces">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+            <StatCard icon="building" tone="green" label="Restaurantes activos" value={4} hint="de 4 en total" href="#" />
+            <StatCard icon="request" tone="danger" label="Solicitudes pendientes" value={6} hint="Esperando validación" />
+            <StatCard icon="job" tone="green" label="Trabajos en curso" value={8} hint="4 en plazo" />
+            <StatCard icon="dailyMenu" tone="info" label="Publicaciones de menú pendientes" value={3} hint="Todas con responsable" />
+            <StatCard icon="clock" tone="neutral" label="Trabajos próximos a vencer" value={2} hint="En los próximos 7 días" />
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <Avatar name="Bosco Prieto" size={40} />
+            <Avatar name="Marta" />
+            <PersonCell name="Diego López" />
+            <span className="w-48">
+              <ProgressBar percent={72} label="72 % de la bolsa" />
+            </span>
+            <span className="w-48">
+              <ProgressBar percent={30} tone="info" label="30 %" />
+            </span>
+            <span className="w-48">
+              <ProgressBar percent={95} tone="danger" label="95 %" />
+            </span>
+          </div>
+        </div>
+      </Card>
+
       <Card title="Button">
         <div className="flex flex-wrap items-center gap-3" data-testid="buttons">
           <Button variant="primary">Primario</Button>
           <Button variant="secondary">Secundario</Button>
+          <Button variant="outline">Contorno</Button>
           <Button variant="danger">Peligro</Button>
           <Button variant="primary" pending>
             Cargando…
@@ -91,20 +169,40 @@ export default function StyleGuidePage() {
 
       <Card title="Table">
         <div data-testid="table">
-          <Table>
+          <Table
+            footer={
+              <TableFooter>
+                <span>Mostrando 1 de 1 restaurantes</span>
+              </TableFooter>
+            }
+          >
             <TableHead>
               <TableRow>
                 <TableHeaderCell>Establecimiento</TableHeaderCell>
                 <TableHeaderCell>Plan</TableHeaderCell>
                 <TableHeaderCell>Estado</TableHeaderCell>
+                <TableHeaderCell>Responsable</TableHeaderCell>
+                <TableHeaderCell>Acciones</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
               <TableRow>
-                <TableCell>Magariños</TableCell>
-                <TableCell>Premium+</TableCell>
+                <TableCell>
+                  <EntityCell title="Magariños" subtitle="A Coruña" />
+                </TableCell>
+                <TableCell>
+                  <StatusBadge tone="info">Premium+</StatusBadge>
+                </TableCell>
                 <TableCell>
                   <StatusBadge tone="success">Activo</StatusBadge>
+                </TableCell>
+                <TableCell>
+                  <PersonCell name="Diego López" />
+                </TableCell>
+                <TableCell>
+                  <ButtonLink href="#" variant="outline" size="sm">
+                    Ver ficha
+                  </ButtonLink>
                 </TableCell>
               </TableRow>
             </TableBody>
