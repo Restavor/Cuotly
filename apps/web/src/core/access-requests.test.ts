@@ -12,6 +12,7 @@ import {
   accessRequestSubmitFailure,
   accessRequestTransitionAllowed,
   invitationSignupStep,
+  normalizeTaxId,
   isAccessRequestFinal,
   isAccessRequestState,
   setupLinkAcceptsPassword,
@@ -113,14 +114,15 @@ describe("A09 · el formulario público señala los campos uno a uno", () => {
     businessName: "Restavor",
     phone: "600000000",
     email: "bosco@restavor.com",
+    taxId: "B12345678",
   };
 
-  it("los cuatro obligatorios se devuelven por su nombre, no como un cartel", () => {
-    const r = validateAccessRequest({ contactName: "", businessName: "", phone: "", email: "" });
+  it("los cinco obligatorios se devuelven por su nombre, no como un cartel", () => {
+    const r = validateAccessRequest({ contactName: "", businessName: "", phone: "", email: "", taxId: "" });
     expect(r.ok).toBe(false);
     if (r.ok) return;
     expect(r.problem).toBe("missing");
-    expect([...r.fields]).toEqual(["contact_name", "business_name", "phone", "email"]);
+    expect([...r.fields]).toEqual(["contact_name", "business_name", "phone", "email", "tax_id"]);
   });
 
   it("solo el que falta se señala", () => {
@@ -151,6 +153,7 @@ describe("A09 · RN-ACC-02 · el diseño señala todos los campos a la vez", () 
     businessName: "Restavor",
     phone: "600000000",
     email: "bosco@restavor.com",
+    taxId: "B12345678",
   };
 
   it("RN-ACC-02 · el nombre vacío y el correo mal escrito salen juntos, como en A09", () => {
@@ -171,6 +174,34 @@ describe("A09 · RN-ACC-02 · el diseño señala todos los campos a la vez", () 
     expect(accessRequestFieldProblems({ ...lleno, email: "bosco@restavor" })).toEqual({
       email: "invalid",
     });
+  });
+});
+
+describe("Decisión 67 · RN-ACC-02 · el DNI, CIF o NIF es obligatorio", () => {
+  const lleno = {
+    contactName: "Ana García",
+    businessName: "Restaurante Oliva",
+    phone: "600000000",
+    email: "ana@example.com",
+    taxId: "12345678Z",
+  };
+
+  it("RN-ACC-02 · sin documento no pasa, y tampoco con solo espacios, puntos o guiones", () => {
+    expect(accessRequestFieldProblems({ ...lleno, taxId: "" })).toEqual({ tax_id: "missing" });
+    expect(accessRequestFieldProblems({ ...lleno, taxId: " .- " })).toEqual({ tax_id: "missing" });
+    const r = validateAccessRequest({ ...lleno, taxId: "  " });
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect([...r.fields]).toEqual(["tax_id"]);
+  });
+
+  it("RN-ACC-02 · se guarda sin espacios, puntos ni guiones y en mayúsculas, como en la base", () => {
+    expect(normalizeTaxId("b-12.345 678")).toBe("B12345678");
+    expect(normalizeTaxId(" x1234567l ")).toBe("X1234567L");
+  });
+
+  it("RN-ACC-02 · no se inventa una forma: un documento extranjero también pasa", () => {
+    expect(accessRequestFieldProblems({ ...lleno, taxId: "PT123456789" })).toEqual({});
   });
 });
 

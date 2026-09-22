@@ -111,6 +111,10 @@ const PATHS = {
   warning: "M10.3 4.2 2.8 17.5A2 2 0 0 0 4.5 20.5h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0ZM12 9.5V14M12 17.2v.1",
   tick: "M5 12.5l4.5 4.5L19 7",
   xCircle: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 9l6 6M15 9l-6 6",
+  // Decisión 67 · el DNI, CIF o NIF en "Datos de tu solicitud": la tarjeta
+  // con la cara a un lado y dos líneas de texto al otro.
+  idCard:
+    "M4.5 5.5h15A1.5 1.5 0 0 1 21 7v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17V7a1.5 1.5 0 0 1 1.5-1.5ZM8.5 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5.5 15.5a3 3 0 0 1 6 0M14 10h4M14 13.5h3",
 } as const;
 
 export type IconName = keyof typeof PATHS;

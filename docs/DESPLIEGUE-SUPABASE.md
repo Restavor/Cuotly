@@ -10,6 +10,16 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
+**Actualización del 22/09/2026: ninguna.** La **125** (`el_nif_en_la_solicitud_de_acceso`,
+decisión 67) se aplicó por el MCP el 22/09/2026, con las 124 anteriores ya registradas en el
+proyecto. Antes: 0 filas en `access_requests` y la firma de cinco argumentos viva. Después,
+comprobado en vivo: una sola firma, `submit_access_request(text × 6)`, `security definer`, con
+EXECUTE para `anon` y `authenticated`; `tax_id` legible por `authenticated` (la RLS la deja a
+quien revisa) y no por `anon`; y una llamada sin documento rechazada sin dejar fila. En local,
+las 125 migraciones aplican desde cero y pasan las 67 suites en el orden de CI.
+
+Lo que sigue es el estado escrito el 19/09/2026.
+
 **Ninguna.** Las 111 migraciones del repositorio están aplicadas en el proyecto.
 Las ocho del diseño definitivo móvil —de la 102 a la 109— se aplicaron el
 19/09/2026; abajo, en "Las ocho del 19/09/2026", está qué hacía cada una y cómo

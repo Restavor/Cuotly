@@ -120,7 +120,7 @@ describe("requestAccess", () => {
       formData({ contact_name: "Nuria", business_name: "", phone: "", email: "" }),
     );
 
-    expect(result.fields).toEqual(["business_name", "phone", "email"]);
+    expect(result.fields).toEqual(["business_name", "phone", "email", "tax_id"]);
     expect(result.done).toBe(false);
     expect(rpcMock).not.toHaveBeenCalled();
   });
@@ -133,6 +133,7 @@ describe("requestAccess", () => {
         business_name: "Bar Nuevo",
         phone: "600111222",
         email: "esto-no-es-un-correo",
+        tax_id: "B12345678",
       }),
     );
 
@@ -141,7 +142,7 @@ describe("requestAccess", () => {
     expect(rpcMock).not.toHaveBeenCalled();
   });
 
-  it("RN-ACC-02: envía los cinco campos y deja los comentarios sin mandar si están vacíos", async () => {
+  it("RN-ACC-02: envía los seis campos y deja los comentarios sin mandar si están vacíos", async () => {
     rpcMock.mockResolvedValue({ error: null });
 
     const result = await requestAccess(
@@ -151,6 +152,7 @@ describe("requestAccess", () => {
         business_name: "Bar Nuevo",
         phone: "600111222",
         email: "nuria@bar-nuevo.test",
+        tax_id: "b-12.345 678",
         comments: "",
       }),
     );
@@ -160,6 +162,8 @@ describe("requestAccess", () => {
       p_business_name: "Bar Nuevo",
       p_phone: "600111222",
       p_email: "nuria@bar-nuevo.test",
+      // Decisión 67 · sin espacios, puntos ni guiones y en mayúsculas.
+      p_tax_id: "B12345678",
       p_comments: undefined,
     });
     expect(result.done).toBe(true);
@@ -180,6 +184,7 @@ describe("requestAccess", () => {
         business_name: "Lo que sea",
         phone: "600000000",
         email: "info@restavor.com",
+        tax_id: "X0000000T",
       }),
     );
 
@@ -195,6 +200,7 @@ describe("requestAccess", () => {
         business_name: "Lo que sea",
         phone: "600000000",
         email: "info@restavor.com",
+        tax_id: "X0000000T",
         comments: "",
       },
     });
@@ -211,6 +217,7 @@ describe("requestAccess", () => {
         business_name: "Bar Nuevo",
         phone: "600111222",
         email: "nuria@bar-nuevo.test",
+        tax_id: "B12345678",
       }),
     );
 
@@ -223,10 +230,20 @@ describe("requestAccess", () => {
     expect(result.values.email).toBe("nuria@bar-nuevo.test");
   });
 
+  it("Decisión 67 · RN-ACC-02: sin DNI, CIF o NIF no llama a la base", async () => {
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({ contact_name: "Nuria", business_name: "Bar Nuevo", phone: "600111222", email: "nuria@bar-nuevo.test" }),
+    );
+
+    expect(result.problems).toEqual({ tax_id: "missing" });
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
   it("A09 · RN-ACC-02: el nombre vacío y el correo mal escrito se señalan a la vez", async () => {
     const result = await requestAccess(
       accessRequestInitialState,
-      formData({ contact_name: "", business_name: "Oliva", phone: "600000000", email: "ana@" }),
+      formData({ contact_name: "", business_name: "Oliva", phone: "600000000", email: "ana@", tax_id: "B1" }),
     );
 
     expect(result.problems).toEqual({ contact_name: "missing", email: "invalid" });

@@ -12,6 +12,7 @@ import {
   StatusHero,
 } from "@/components/access/AccessPieces";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { normalizeTaxId } from "@/core/access-requests";
 import { es } from "@/i18n/es";
 import { requestAccess } from "../actions";
 import {
@@ -22,7 +23,8 @@ import {
 
 /**
  * F01 · el formulario público de solicitud de acceso (PRD §37, RN-ACC-02),
- * con el diseño definitivo: a la izquierda los cinco campos, a la derecha
+ * con el diseño definitivo: a la izquierda los seis campos —el DNI, CIF o
+ * NIF lo añadió la decisión 67 y no está en el dibujo—, a la derecha
  * "¿Qué ocurre después?". Y sus cinco estados de pantalla:
  *
  *   · A09 · cada campo mal rellenado se marca en rojo con su frase debajo,
@@ -160,6 +162,14 @@ export function AccessRequestForm() {
             error={mensaje("email")}
           />
         </div>
+        <DesignInput
+          name="tax_id"
+          label={t.taxIdLabel}
+          placeholder={t.taxIdPlaceholder}
+          autoComplete="off"
+          defaultValue={state.values.tax_id}
+          error={mensaje("tax_id")}
+        />
 
         <div className="mb-3">
           <label htmlFor="comments" className="mb-2 block text-[15px] font-semibold text-text">
@@ -240,6 +250,7 @@ function Received({ values }: { values: AccessRequestValues }) {
     { icon: "building", value: values.business_name },
     { icon: "phone", value: values.phone },
     { icon: "mail", value: values.email },
+    { icon: "idCard", value: normalizeTaxId(values.tax_id) },
     { icon: "document", value: values.comments },
   ].filter((fila): fila is { icon: IconName; value: string } => fila.value !== "");
 

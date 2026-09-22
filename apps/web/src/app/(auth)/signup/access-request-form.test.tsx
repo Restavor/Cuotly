@@ -22,6 +22,7 @@ const valores = {
   business_name: "Restaurante Oliva",
   phone: "+34600000000",
   email: "ana@",
+  tax_id: "b-12345678",
   comments: "",
 };
 
@@ -46,10 +47,17 @@ function enviar() {
 }
 
 describe("F01 · el formulario de acceso con el diseño definitivo", () => {
-  it("RN-ACC-02 · los cinco campos del diseño y la columna «¿Qué ocurre después?»", () => {
+  it("RN-ACC-02 · los seis campos (decisión 67) y la columna «¿Qué ocurre después?»", () => {
     render(<AccessRequestForm />);
 
-    for (const etiqueta of [t.contactNameLabel, t.businessNameLabel, t.phoneLabel, t.emailLabel, t.commentsLabel]) {
+    for (const etiqueta of [
+      t.contactNameLabel,
+      t.businessNameLabel,
+      t.phoneLabel,
+      t.emailLabel,
+      t.taxIdLabel,
+      t.commentsLabel,
+    ]) {
       expect(screen.getByLabelText(new RegExp(etiqueta.replace(/[()]/g, "\\$&")))).toBeInTheDocument();
     }
     expect(screen.getByText(t.firstAccess)).toBeInTheDocument();
@@ -76,6 +84,23 @@ describe("A09 · RN-ACC-02 · cada campo con su frase, todos a la vez", () => {
     expect(screen.getByText(t.reviewFields)).toBeInTheDocument();
     expect(screen.getByLabelText(new RegExp(t.contactNameLabel))).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByLabelText(new RegExp(t.businessNameLabel))).toHaveValue("Restaurante Oliva");
+  });
+});
+
+describe("Decisión 67 · RN-ACC-02 · el DNI, CIF o NIF se marca como los demás", () => {
+  it("sin documento, su frase debajo del campo", async () => {
+    requestAccessMock.mockResolvedValue({
+      error: es.auth.signup.validationRequired,
+      fields: ["tax_id"],
+      problems: { tax_id: "missing" },
+      done: false,
+      values: { ...valores, contact_name: "Ana", email: "ana@example.com", tax_id: "" },
+    });
+    render(<AccessRequestForm />);
+    await act(async () => enviar());
+
+    await waitFor(() => expect(screen.getByText(t.fieldErrors.tax_id)).toBeInTheDocument());
+    expect(screen.getByLabelText(new RegExp(t.taxIdLabel))).toHaveAttribute("aria-invalid", "true");
   });
 });
 
@@ -152,6 +177,8 @@ describe("A01 · RN-ACC-12 · al terminar, siempre lo mismo", () => {
     expect(screen.getByText(t.inReview)).toBeInTheDocument();
     expect(screen.getByText("Ana García")).toBeInTheDocument();
     expect(screen.getByText("Restaurante Oliva")).toBeInTheDocument();
+    // Decisión 67 · el documento, como se va a guardar.
+    expect(screen.getByText("B12345678")).toBeInTheDocument();
     // El enlace de seguimiento solo viaja por correo: no hay botón que lo enseñe.
     expect(screen.queryByRole("link", { name: /ver solicitud/i })).not.toBeInTheDocument();
     expect(screen.getByText(t.followUpByMail("ana@example.com"))).toBeInTheDocument();

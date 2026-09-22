@@ -22,9 +22,8 @@ import { FollowUpView } from "./FollowUpView";
  * reenvía y se pega en sitios, y con él no se regalan el teléfono ni el
  * correo de nadie. Se pinta lo que hay; no se rellena lo que falta.
  *
- * Los botones "Ver solicitud" y "Contactar con Cuotly" del diseño no
- * están: el primero trae aquí mismo, y el segundo no tiene todavía una
- * dirección de contacto decidida a la que llevar.
+ * "Contactar con Cuotly" escribe a la dirección de contacto (decisión 67).
+ * "Ver solicitud" no está: traería aquí mismo.
  */
 export default async function SeguimientoPage({
   params,

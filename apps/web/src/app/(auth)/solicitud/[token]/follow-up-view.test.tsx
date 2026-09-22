@@ -46,6 +46,11 @@ describe("A01 a A04 · el seguimiento de la solicitud de acceso", () => {
     render(<FollowUpView token="k" data={{ ...base, status: "approved" }} />);
     expect(screen.getByRole("heading", { name: t.approvedTitle })).toBeInTheDocument();
     expect(screen.getByText(t.approvedNotice)).toBeInTheDocument();
+    // Decisión 67 · "Contactar con Cuotly" escribe a info@restavor.com.
+    expect(screen.getByRole("link", { name: t.contactCuotly })).toHaveAttribute(
+      "href",
+      "mailto:info@restavor.com",
+    );
   });
 
   it("A04 · RN-ACC-07 · no aprobada enseña el motivo y nunca quién la revisó", () => {
@@ -56,5 +61,9 @@ describe("A01 a A04 · el seguimiento de la solicitud de acceso", () => {
     expect(screen.getByText(t.decisionReason)).toBeInTheDocument();
     expect(screen.getByText("“Falta concretar el servicio.”")).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/revisad[ao] por/i);
+    expect(screen.getByRole("link", { name: t.contactCuotly })).toHaveAttribute(
+      "href",
+      "mailto:info@restavor.com",
+    );
   });
 });

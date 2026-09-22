@@ -18,6 +18,8 @@ export type AccessRequestValues = {
   business_name: string;
   phone: string;
   email: string;
+  /** Decisión 67 · el DNI, CIF o NIF, tal como lo escribió. */
+  tax_id: string;
   comments: string;
 };
 
@@ -26,7 +28,7 @@ export type AccessRequestFormState = {
   /** A09 · qué campo señalar, uno a uno. */
   fields: readonly string[];
   /** A09 · y qué le pasa a cada uno: falta, o está mal escrito. */
-  problems: Partial<Record<"contact_name" | "business_name" | "phone" | "email", "missing" | "invalid">>;
+  problems: Partial<Record<"contact_name" | "business_name" | "phone" | "email" | "tax_id", "missing" | "invalid">>;
   /** RN-ACC-12 · la única respuesta posible, pase lo que pase por detrás. */
   done: boolean;
   /**
@@ -44,6 +46,7 @@ export const emptyAccessRequestValues: AccessRequestValues = {
   business_name: "",
   phone: "",
   email: "",
+  tax_id: "",
   comments: "",
 };
 

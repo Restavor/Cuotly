@@ -2850,8 +2850,10 @@ La familia es **`RN-ACC`** (acceso).
   quien lo sostiene, no la pantalla: crear una cuenta es una operación de servidor que exige una
   solicitud aprobada o una invitación viva, y sin ninguna de las dos falla, se llame desde donde se
   llame (`CLAUDE.md`: esconder un botón no es un control de acceso).
-- **RN-ACC-02**: **los cinco campos** de F01: nombre y apellidos, nombre del restaurante o empresa,
-  teléfono, correo electrónico y comentarios (opcional). Los cuatro primeros son obligatorios. Es
+- **RN-ACC-02**: **los seis campos** de F01: nombre y apellidos, nombre del restaurante o empresa,
+  teléfono, correo electrónico, **DNI, CIF o NIF** y comentarios (opcional). Los cinco primeros son
+  obligatorios (el DNI, CIF o NIF lo añadió la decisión 67 del 22/09/2026; se guarda sin espacios,
+  puntos ni guiones y en mayúsculas, y no se comprueba su forma). Es
   deliberadamente corta: quien la escribe todavía no conoce el producto. La pantalla contesta
   **siempre lo mismo** —"hemos recibido tu solicitud"— haya pasado lo que haya pasado por detrás:
   si ese correo **ya tiene cuenta**, o ya tiene una solicitud abierta, no se abre otra y quien

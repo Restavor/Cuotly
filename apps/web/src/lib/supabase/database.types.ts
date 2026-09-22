@@ -246,6 +246,7 @@ export type Database = {
           phone: string;
           status: string;
           status_reason: string | null;
+          tax_id: string | null;
           updated_at: string;
         };
         Insert: {
@@ -264,6 +265,7 @@ export type Database = {
           phone: string;
           status?: string;
           status_reason?: string | null;
+          tax_id?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -282,6 +284,7 @@ export type Database = {
           phone?: string;
           status?: string;
           status_reason?: string | null;
+          tax_id?: string | null;
           updated_at?: string;
         };
         Relationships: [
@@ -10908,6 +10911,7 @@ export type Database = {
           p_contact_name: string;
           p_email: string;
           p_phone: string;
+          p_tax_id: string;
         };
         Returns: undefined;
       };

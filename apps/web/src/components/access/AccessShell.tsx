@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { signOut } from "@/app/(auth)/actions";
 import { Icon } from "@/components/ui/Icon";
+import { contactMailto } from "@/core/contact";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,10 +17,9 @@ import { createClient } from "@/lib/supabase/server";
  * decisión 41 quien pide acceso no tiene cuenta todavía (RN-ACC-01):
  * ofrecerle "Mi cuenta" sería un enlace que lo manda a entrar con una
  * cuenta que no existe. Sin sesión se pinta lo que pinta A08, que es la
- * vista del diseño sin sesión, más "Iniciar sesión" para quien sí la
- * tiene. "Ayuda" lleva al centro de ayuda, que pide sesión; sin ella no
- * hay ayuda pública a la que mandar y no se pinta un enlace que acabaría
- * en la pantalla de entrar.
+ * vista del diseño sin sesión: "Ayuda", que escribe al correo de contacto
+ * de Cuotly (decisión 67) porque el centro de ayuda pide entrar, y además
+ * "Iniciar sesión" para quien sí tiene cuenta.
  */
 export async function AccessShell({
   crumb,
@@ -66,10 +66,17 @@ export async function AccessShell({
                 </form>
               </>
             ) : (
-              <Link href="/login" className="inline-flex items-center gap-2 hover:text-primary">
-                <Icon name="person" aria-hidden="true" className="h-[22px] w-[22px]" />
-                {t.signIn}
-              </Link>
+              <>
+                <a href={contactMailto()} className="inline-flex items-center gap-2 hover:text-primary">
+                  <Icon name="help" aria-hidden="true" className="h-[22px] w-[22px]" />
+                  {t.help}
+                </a>
+                <span aria-hidden="true" className="h-8 w-px bg-border" />
+                <Link href="/login" className="inline-flex items-center gap-2 hover:text-primary">
+                  <Icon name="person" aria-hidden="true" className="h-[22px] w-[22px]" />
+                  {t.signIn}
+                </Link>
+              </>
             )}
           </nav>
         </div>

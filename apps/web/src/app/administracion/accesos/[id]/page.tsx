@@ -40,7 +40,7 @@ export default async function AdminAccessRequestDetailPage({
   const { data: row, error } = await supabase
     .from("access_requests")
     .select(
-      "id, business_name, contact_name, email, phone, comments, applicant_reply, status, status_reason, decided_at, account_id, created_at",
+      "id, business_name, contact_name, email, phone, tax_id, comments, applicant_reply, status, status_reason, decided_at, account_id, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -66,6 +66,7 @@ export default async function AdminAccessRequestDetailPage({
     [t.contact, row.contact_name],
     [t.email, row.email],
     [t.phone, row.phone],
+    [t.taxId, row.tax_id ?? t.taxIdMissing],
     [t.comments, row.comments],
     [t.createdAt, cuando(row.created_at)],
   ];

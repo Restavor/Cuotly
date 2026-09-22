@@ -1987,3 +1987,27 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     variable: soltar la cola entera le habría metido a Resend 183 rebotes duros seguidos en
     una cuenta recién abierta. Los 28 que van a una dirección real siguen vivos y serán la
     primera prueba de verdad de Resend.
+
+67. **El DNI, CIF o NIF en la solicitud de acceso, y la dirección de contacto** (22/09/2026).
+    Bosco, al revisar el diseño de la puerta de entrada (F01, A01 a A12):
+
+    - **La solicitud pide seis campos**: nombre y apellidos, nombre del negocio, teléfono,
+      correo electrónico, **DNI/CIF/NIF** y un comentario opcional. Los cinco primeros son
+      obligatorios. RN-ACC-02 decía cinco campos y cuatro obligatorios; se ha reescrito.
+    - **La dirección de contacto de Cuotly es `info@restavor.com`.** Es la de "Contactar con
+      Cuotly" en A03 y A04, y la de "Ayuda" para quien no tiene sesión (el centro de ayuda pide
+      entrar). Vive en `apps/web/src/core/contact.ts`.
+
+    Cómo se llevó (migración 125, `el_nif_en_la_solicitud_de_acceso`):
+
+    - `access_requests.tax_id` **admite nulo**, porque un `not null` impediría decidir las
+      solicitudes anteriores. La obligación la pone `submit_access_request()`, que es la única
+      puerta de entrada, y cuya firma de cinco argumentos **se borró**: si siguiera viva, la
+      regla sería de la pantalla. En producción había 0 solicitudes al aplicarla.
+    - Se guarda **sin espacios, puntos ni guiones y en mayúsculas**, en la base y en
+      `normalizeTaxId()`, para que quien revisa lo busque de una sola forma.
+    - **No se comprueba la letra de control ni la forma.** No está decidido qué documentos se
+      aceptan, y uno extranjero no tiene la forma española: se exige que haya algo. Si se
+      quiere validar DNI, NIE y CIF españoles, es una decisión aparte.
+    - Lo ve quien revisa solicitudes (`is_platform_approver()`). El seguimiento por enlace con
+      clave **no** lo devuelve: un enlace se reenvía.

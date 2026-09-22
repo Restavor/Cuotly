@@ -70,10 +70,10 @@ begin
       using errcode = 'assert_failure';
   end if;
 
-  -- Los cinco campos de F01.
+  -- Los seis campos de F01 (decisión 67 añadió el DNI, CIF o NIF).
   if (select count(*) from information_schema.columns
       where table_schema = 'public' and table_name = 'access_requests'
-        and column_name in ('contact_name', 'business_name', 'phone', 'email', 'comments')) <> 5 then
+        and column_name in ('contact_name', 'business_name', 'phone', 'email', 'tax_id', 'comments')) <> 6 then
     raise exception 'RN-ACC-02 FALLIDO: faltan campos de F01' using errcode = 'assert_failure';
   end if;
 
@@ -140,20 +140,36 @@ set role anon;
 do $$
 begin
   perform public.submit_access_request(
-    'Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test',
+    'Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test', 'b-12.345 678',
     'Tengo una web de 2019 y quiero mantenerla');
 
   -- Faltando cualquiera de los cuatro obligatorios, no pasa.
   begin
-    perform public.submit_access_request('', 'Bar Nuevo', '600111222', 'otro@bar-nuevo.test');
+    perform public.submit_access_request('', 'Bar Nuevo', '600111222', 'otro@bar-nuevo.test', 'B12345678');
     raise exception 'RN-ACC-02 FALLIDO: una solicitud sin nombre se envió' using errcode = 'assert_failure';
   exception when others then
     if sqlerrm like 'RN-ACC%' then raise; end if;
   end;
 
   begin
-    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'esto-no-es-un-correo');
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'esto-no-es-un-correo', 'B12345678');
     raise exception 'RN-ACC-02 FALLIDO: una solicitud sin correo válido se envió' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm like 'RN-ACC%' then raise; end if;
+  end;
+
+  -- Decisión 67 · sin DNI, CIF o NIF tampoco. Ni vacío, ni solo con los
+  -- signos que se quitan al guardarlo.
+  begin
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-nif@bar-nuevo.test', null);
+    raise exception 'RN-ACC-02 FALLIDO: una solicitud sin DNI, CIF o NIF se envió' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm like 'RN-ACC%' then raise; end if;
+  end;
+
+  begin
+    perform public.submit_access_request('Nuria', 'Bar Nuevo', '600111222', 'sin-nif@bar-nuevo.test', ' .- ');
+    raise exception 'RN-ACC-02 FALLIDO: un DNI hecho solo de espacios y guiones se aceptó' using errcode = 'assert_failure';
   exception when others then
     if sqlerrm like 'RN-ACC%' then raise; end if;
   end;
@@ -171,6 +187,13 @@ begin
   select id into v_id from public.access_requests where email = 'acc-nueva@bar-nuevo.test';
   insert into acc_ids values ('sol', v_id);
   insert into acc_ids values ('clave', (select follow_up_token from public.access_requests where id = v_id));
+
+  -- Decisión 67 · el documento se guarda sin espacios, puntos ni guiones
+  -- y en mayúsculas, como lo deja `normalizeTaxId()` en la pantalla.
+  if (select tax_id from public.access_requests where id = v_id) is distinct from 'B12345678' then
+    raise exception 'RN-ACC-02 FALLIDO: el DNI, CIF o NIF no se guardó normalizado (%)',
+      (select tax_id from public.access_requests where id = v_id) using errcode = 'assert_failure';
+  end if;
 
   if (select status from public.access_requests where id = v_id) <> 'submitted' then
     raise exception 'RN-ACC-05 FALLIDO: una solicitud recién enviada no nace "Enviada"' using errcode = 'assert_failure';
@@ -202,9 +225,9 @@ end $$;
 set role anon;
 do $$
 begin
-  perform public.submit_access_request('Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test');
+  perform public.submit_access_request('Nuria Vela', 'Bar Nuevo', '600111222', 'acc-nueva@bar-nuevo.test', 'B12345678');
   -- Y con un correo que YA tiene cuenta, tampoco pasa nada visible.
-  perform public.submit_access_request('Intrusa', 'Lo que sea', '600000000', 'info@restavor.com');
+  perform public.submit_access_request('Intrusa', 'Lo que sea', '600000000', 'info@restavor.com', 'X0000000T');
 end $$;
 reset role;
 
@@ -752,12 +775,38 @@ begin
 
   -- Y las del formulario público siguen abiertas a `anon`: si alguien las
   -- revoca "por seguridad", la puerta se cierra entera y nadie entra.
-  if not has_function_privilege('anon', 'public.submit_access_request(text, text, text, text, text)', 'execute')
+  if not has_function_privilege('anon', 'public.submit_access_request(text, text, text, text, text, text)', 'execute')
      or not has_function_privilege('anon', 'public.access_request_follow_up(uuid)', 'execute')
      or not has_function_privilege('anon', 'public.reply_to_access_request(uuid, text)', 'execute')
      or not has_function_privilege('anon', 'public.account_setup_details(uuid)', 'execute')
      or not has_function_privilege('anon', 'public.invitation_signup_details(uuid)', 'execute') then
     raise exception 'RN-ACC-02 FALLIDO: el formulario público se ha quedado sin poder llamar a su función'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- Decisión 67 · la firma de cinco argumentos, sin documento, ya no existe:
+-- si siguiera viva, la regla sería de la pantalla y no del servidor. Y el
+-- seguimiento por enlace con clave no devuelve el documento: un enlace se
+-- reenvía.
+do $$
+begin
+  if to_regprocedure('public.submit_access_request(text, text, text, text, text)') is not null then
+    raise exception 'RN-ACC-02 FALLIDO: sigue viva la firma sin DNI, CIF o NIF' using errcode = 'assert_failure';
+  end if;
+
+  if exists (
+    select 1 from pg_proc p
+    where p.oid = 'public.access_request_follow_up(uuid)'::regprocedure
+      and 'tax_id' = any (p.proargnames)
+  ) then
+    raise exception 'RN-ACC-12 FALLIDO: el seguimiento por enlace devuelve el DNI, CIF o NIF'
+      using errcode = 'assert_failure';
+  end if;
+
+  -- Quien revisa sí lo lee: la columna está en el `grant select`.
+  if not has_column_privilege('authenticated', 'public.access_requests', 'tax_id', 'select') then
+    raise exception 'RN-ACC-02 FALLIDO: quien revisa no puede leer el DNI, CIF o NIF'
       using errcode = 'assert_failure';
   end if;
 end $$;

@@ -1,7 +1,7 @@
 import { Link } from "expo-router";
 import { useState } from "react";
 
-import { accessRequestSubmitFailure, validateAccessRequest } from "@/core/access-requests";
+import { accessRequestSubmitFailure, normalizeTaxId, validateAccessRequest } from "@/core/access-requests";
 
 import { Body, Button, Card, Field, Notice, Screen, Title } from "../src/components/ui";
 import { es, web } from "../src/i18n/es";
@@ -45,6 +45,8 @@ export default function SolicitarAccesoScreen() {
   const [businessName, setBusinessName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  // Decisión 67 · el DNI, CIF o NIF, obligatorio como en la web.
+  const [taxId, setTaxId] = useState("");
   const [comments, setComments] = useState("");
   const [malos, setMalos] = useState<readonly string[]>([]);
   const [problema, setProblema] = useState<"missing" | "email" | null>(null);
@@ -56,7 +58,7 @@ export default function SolicitarAccesoScreen() {
     malos.includes(campo) ? (problema === "email" ? t.validationEmail : t.validationRequired) : undefined;
 
   async function enviar() {
-    const revision = validateAccessRequest({ contactName, businessName, phone, email });
+    const revision = validateAccessRequest({ contactName, businessName, phone, email, taxId });
     if (!revision.ok) {
       setMalos(revision.fields);
       setProblema(revision.problem);
@@ -72,6 +74,7 @@ export default function SolicitarAccesoScreen() {
       p_business_name: businessName.trim(),
       p_phone: phone.trim(),
       p_email: email.trim(),
+      p_tax_id: normalizeTaxId(taxId),
       p_comments: comments.trim() === "" ? undefined : comments.trim(),
     });
     setPending(false);
@@ -134,6 +137,14 @@ export default function SolicitarAccesoScreen() {
         autoComplete="email"
         error={fallo("email")}
         testID="email-input"
+      />
+      <Field
+        label={web.auth.access.taxIdLabel}
+        value={taxId}
+        onChangeText={setTaxId}
+        autoCapitalize="characters"
+        error={fallo("tax_id")}
+        testID="tax-id-input"
       />
       <Field
         label={t.commentsLabel}

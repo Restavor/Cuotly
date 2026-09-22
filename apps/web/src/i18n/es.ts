@@ -251,6 +251,9 @@ export const es = {
       phonePlaceholder: "+34 600 000 000",
       emailLabel: "Correo electrónico",
       emailPlaceholder: "nombre@empresa.com",
+      // Decisión 67 · el quinto obligatorio.
+      taxIdLabel: "DNI / CIF / NIF",
+      taxIdPlaceholder: "Documento de la persona o de la empresa",
       commentsLabel: "Comentarios (opcional)",
       commentsPlaceholder: "Cuéntanos qué necesitas o añade información que quieras compartir.",
       requiredNote: "* Campos obligatorios",
@@ -266,6 +269,7 @@ export const es = {
         phone: "Introduce un número de teléfono.",
         emailMissing: "Introduce tu correo electrónico.",
         emailInvalid: "Introduce un correo válido.",
+        tax_id: "Introduce tu DNI, CIF o NIF.",
       },
       reviewFields: "Revisa los campos indicados.",
       // A10 · el envío falló y lo escrito sigue en el formulario.
@@ -318,6 +322,7 @@ export const es = {
       approvedBadge: "Aprobada",
       approvedStatusBody:
         "Nuestro equipo se ha puesto en contacto contigo y te hemos enviado las instrucciones por correo electrónico.",
+      contactCuotly: "Contactar con Cuotly",
       approvedNotice:
         "La aprobación de esta solicitud no crea automáticamente un espacio ni un panel de restaurante.",
       rejectedPill: "Solicitud no aprobada",
@@ -6505,6 +6510,9 @@ export const es = {
       back: "Volver a las solicitudes de acceso",
       fields: "Lo que ha escrito",
       comments: "Comentarios",
+      // Decisión 67 · el sexto campo. Las solicitudes de antes no lo traen.
+      taxId: "DNI / CIF / NIF",
+      taxIdMissing: "No consta: la solicitud es anterior a pedirlo",
       applicantReply: "Lo que contestó después",
       decisionTitle: "Decidir",
       decisionHint:

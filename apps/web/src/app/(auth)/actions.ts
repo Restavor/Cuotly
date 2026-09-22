@@ -4,7 +4,11 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { es } from "@/i18n/es";
-import { accessRequestFieldProblems, accessRequestSubmitFailure } from "@/core/access-requests";
+import {
+  accessRequestFieldProblems,
+  accessRequestSubmitFailure,
+  normalizeTaxId,
+} from "@/core/access-requests";
 import { classifySignInError, signInFailureMessage } from "@/core/auth-errors";
 
 import type {
@@ -93,6 +97,7 @@ export async function requestAccess(
   const businessName = String(formData.get("business_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
+  const taxId = String(formData.get("tax_id") ?? "").trim();
   const comments = String(formData.get("comments") ?? "").trim();
 
   const values = {
@@ -100,6 +105,7 @@ export async function requestAccess(
     business_name: businessName,
     phone,
     email,
+    tax_id: taxId,
     comments,
   };
 
@@ -107,7 +113,7 @@ export async function requestAccess(
   // La comprobación es la de `core/access-requests.ts`, la misma expresión
   // del correo que usa la pantalla del teléfono: escrita dos veces se
   // separaría.
-  const problems = accessRequestFieldProblems({ contactName, businessName, phone, email });
+  const problems = accessRequestFieldProblems({ contactName, businessName, phone, email, taxId });
   const fields = Object.keys(problems);
   if (fields.length > 0) {
     const soloCorreo = fields.length === 1 && problems.email === "invalid";
@@ -121,6 +127,8 @@ export async function requestAccess(
     p_business_name: businessName,
     p_phone: phone,
     p_email: email,
+    // Decisión 67 · la base vuelve a normalizarlo y a exigirlo: manda ella.
+    p_tax_id: normalizeTaxId(taxId),
     p_comments: comments === "" ? undefined : comments,
   });
 

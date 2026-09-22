@@ -1,12 +1,15 @@
 import {
   AccessCard,
   AccessPill,
+  BigLink,
+  ContactTextLink,
   QuoteBox,
   RequestData,
   StatusBox,
   StatusHero,
 } from "@/components/access/AccessPieces";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { contactMailto } from "@/core/contact";
 import { es } from "@/i18n/es";
 import { ReplyForm } from "./ReplyForm";
 
@@ -50,6 +53,9 @@ export function FollowUpView({ token, data }: { token: string; data: FollowUpDat
             {t.approvedNotice}
           </p>
           <RequestData rows={datos} />
+          <p className="mt-7">
+            <ContactTextLink />
+          </p>
         </>
       ) : data.status === "rejected" ? (
         <>
@@ -58,6 +64,9 @@ export function FollowUpView({ token, data }: { token: string; data: FollowUpDat
           <StatusBox kind="danger" badgeTone="danger" badge={t.rejectedBadge} body={t.rejectedStatusBody} />
           {data.status_reason ? <QuoteBox label={t.decisionReason} text={data.status_reason} /> : null}
           <RequestData rows={datos} />
+          <div className="mt-7 max-w-[420px]">
+            <BigLink href={contactMailto()}>{t.contactCuotly}</BigLink>
+          </div>
         </>
       ) : (
         <>

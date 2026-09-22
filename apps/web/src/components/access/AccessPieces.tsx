@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { contactMailto } from "@/core/contact";
 import { es } from "@/i18n/es";
 
 /*
@@ -146,27 +147,58 @@ export function RequestData({
   );
 }
 
+/**
+ * Un enlace que puede ser de la aplicación o un `mailto:` (el correo de
+ * contacto de Cuotly). El segundo no pasa por el enrutador de Next.
+ */
+function AnyLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
+  if (href.startsWith("mailto:")) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 /** El botón grande y lleno del diseño, como enlace. */
 export function BigLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link
+    <AnyLink
       href={href}
       className="block w-full rounded-[10px] bg-primary px-4 py-3.5 text-center text-[17px] font-semibold text-surface transition-colors hover:bg-primary-dark focus:outline focus:outline-2 focus:outline-cuotly-green"
     >
       {children}
-    </Link>
+    </AnyLink>
   );
 }
 
 /** El mismo de contorno: "Ayuda" en A05. */
 export function BigOutlineLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link
+    <AnyLink
       href={href}
       className="block w-full rounded-[10px] border border-border bg-surface px-4 py-3.5 text-center text-[17px] font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
     >
       {children}
-    </Link>
+    </AnyLink>
+  );
+}
+
+/** A03 · "Contactar con Cuotly" como enlace subrayado, al lado del botón. */
+export function ContactTextLink() {
+  return (
+    <a
+      href={contactMailto()}
+      className="inline-block text-[17px] font-semibold text-primary underline underline-offset-4 hover:text-primary-dark"
+    >
+      {es.auth.access.contactCuotly}
+    </a>
   );
 }
 
@@ -249,20 +281,16 @@ export function StateCard({
 }
 
 /**
- * A05 · "Volver al inicio" y, debajo, "Ayuda". Sin sesión el centro de
- * ayuda no abre (pide entrar), así que en su lugar va "Iniciar sesión",
- * que es adonde acabaría llevando de todos modos.
+ * A05 · "Volver al inicio" y, debajo, "Ayuda". Con sesión, el centro de
+ * ayuda; sin ella el centro de ayuda no abre (pide entrar), así que
+ * "Ayuda" escribe al correo de contacto de Cuotly (decisión 67).
  */
 export function HomeAndHelp({ signedIn }: { signedIn: boolean }) {
   const t = es.auth.access;
   return (
     <>
       <BigLink href="/">{t.backHome}</BigLink>
-      {signedIn ? (
-        <BigOutlineLink href="/ayuda">{t.help}</BigOutlineLink>
-      ) : (
-        <BigOutlineLink href="/login">{t.signIn}</BigOutlineLink>
-      )}
+      <BigOutlineLink href={signedIn ? "/ayuda" : contactMailto()}>{t.help}</BigOutlineLink>
     </>
   );
 }

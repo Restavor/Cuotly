@@ -211,14 +211,32 @@ export const ACCESS_REQUEST_SUBMIT_OUTCOME = "received" as const;
  * de la web, que es lo que esa pantalla usa para marcar cada campo.
  *
  * Esto no es el control: `submit_access_request()` vuelve a exigir los
- * cuatro campos y el arroba del lado del servidor, y es la que manda. Lo
+ * cinco campos y el arroba del lado del servidor, y es la que manda. Lo
  * de aquí evita el viaje y señala dónde está el problema.
+ *
+ * Decisión 67 (22/09/2026) · el DNI, CIF o NIF es el quinto obligatorio.
  */
 export interface AccessRequestInput {
   readonly contactName: string;
   readonly businessName: string;
   readonly phone: string;
   readonly email: string;
+  readonly taxId: string;
+}
+
+/**
+ * Decisión 67 · el DNI, CIF o NIF se guarda sin espacios, puntos ni
+ * guiones y en mayúsculas: "b-12.345.678" y "B12345678" son el mismo
+ * documento, y quien revisa tiene que poder buscarlo de una sola forma.
+ * La base hace lo mismo en `submit_access_request()`; esto es para que la
+ * pantalla enseñe lo que se va a guardar.
+ *
+ * No se comprueba la letra de control ni el formato: Bosco no ha fijado
+ * qué documentos se aceptan (uno extranjero no tiene la forma española),
+ * y adivinarlo dejaría fuera a alguien. Se exige que haya algo.
+ */
+export function normalizeTaxId(value: string): string {
+  return value.replace(/[\s.\-]/g, "").toUpperCase();
 }
 
 export type AccessRequestValidation =
@@ -232,6 +250,7 @@ export function validateAccessRequest(input: AccessRequestInput): AccessRequestV
       ["business_name", input.businessName],
       ["phone", input.phone],
       ["email", input.email],
+      ["tax_id", normalizeTaxId(input.taxId)],
     ] as const
   )
     .filter(([, valor]) => valor.trim() === "")
@@ -256,7 +275,7 @@ export function validateAccessRequest(input: AccessRequestInput): AccessRequestV
  * devuelve el problema de cada campo, para que la persona lo arregle todo
  * de una vez y no a golpe de envío.
  */
-export type AccessRequestField = "contact_name" | "business_name" | "phone" | "email";
+export type AccessRequestField = "contact_name" | "business_name" | "phone" | "email" | "tax_id";
 export type AccessRequestFieldProblem = "missing" | "invalid";
 
 export function accessRequestFieldProblems(
@@ -268,6 +287,7 @@ export function accessRequestFieldProblems(
   if (input.phone.trim() === "") problemas.phone = "missing";
   if (input.email.trim() === "") problemas.email = "missing";
   else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.email.trim())) problemas.email = "invalid";
+  if (normalizeTaxId(input.taxId) === "") problemas.tax_id = "missing";
   return problemas;
 }
 
