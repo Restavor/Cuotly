@@ -2,10 +2,11 @@
 
 import { useActionState } from "react";
 
+import { PersonCell } from "@/components/ui/Avatar";
 import { Button, Field, Select, StatusBadge, TextArea } from "@/components/ui";
 import { TASK_LOAD_POINTS, type TaskWeight } from "@/core/load-points";
 import type { TaskPanelActions } from "@/core/task-coordination";
-import { enZona } from "@/i18n/dates";
+import { enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 
 import { INITIAL_TASK_ACTION } from "../task-action-state";
@@ -337,7 +338,7 @@ export function TaskDetail({
   return (
     <section
       aria-label={es.teamArea.tasks.coordination.detailTitle}
-      className="rounded-xl border border-border bg-surface p-5"
+      className="rounded-card border border-border bg-surface p-5 shadow-sm"
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
@@ -359,30 +360,43 @@ export function TaskDetail({
         {task.description ?? es.teamArea.tasks.coordination.descriptionEmpty}
       </p>
 
-      <dl className="mb-4 space-y-2 text-sm">
-        <div className="flex justify-between gap-3">
-          <dt className="text-text-secondary">{es.teamArea.tasks.assigneeColumn}</dt>
-          <dd className="text-right font-medium text-text">
-            {task.assigneeName ?? es.teamArea.tasks.unassigned}
+      {/*
+        M30 · los datos de la tarea como casillas: quién la lleva, cuándo
+        está planificada y cuánto pesa. La "Prioridad" del dibujo no va:
+        una tarea no tiene prioridad propia, tiene peso (§14.4).
+      */}
+      <dl className="mb-4 grid gap-2 text-sm sm:grid-cols-3">
+        <div className="rounded-[12px] border border-border p-3">
+          <dt className="text-xs text-text-secondary">{es.teamArea.tasks.assigneeColumn}</dt>
+          <dd className="mt-1 font-medium text-text">
+            {task.assigneeName === null ? (
+              <span className="text-text-secondary">{es.teamArea.tasks.unassigned}</span>
+            ) : (
+              <PersonCell name={task.assigneeName} size={24} />
+            )}
           </dd>
         </div>
-        <div className="flex justify-between gap-3">
-          <dt className="text-text-secondary">{es.teamArea.tasks.weightColumn}</dt>
-          <dd className="text-right font-medium text-text">
-            {es.teamArea.tasks.weights[task.weight]} · {TASK_LOAD_POINTS[task.weight]} pts ·{" "}
-            {task.estimatedMinutes} {es.teamArea.tasks.minutesSuffix}
-          </dd>
-        </div>
-        <div className="flex justify-between gap-3">
-          <dt className="text-text-secondary">
+        <div className="rounded-[12px] border border-border p-3">
+          <dt className="text-xs text-text-secondary">
             {es.teamArea.tasks.coordination.plannedDateLabel}
           </dt>
-          <dd className="text-right font-medium text-text">
-            {task.plannedDate ?? (
+          <dd className="mt-1 font-medium text-text">
+            {task.plannedDate === null ? (
               <span className="text-text-secondary">
                 {es.teamArea.tasks.coordination.plannedDateEmpty}
               </span>
+            ) : (
+              fechaCorta(task.plannedDate)
             )}
+          </dd>
+        </div>
+        <div className="rounded-[12px] border border-border p-3">
+          <dt className="text-xs text-text-secondary">{es.teamArea.tasks.weightColumn}</dt>
+          <dd className="mt-1 font-medium text-text">
+            {es.teamArea.tasks.weights[task.weight]} · {TASK_LOAD_POINTS[task.weight]} pts
+            <span className="block text-xs font-normal text-text-secondary">
+              {task.estimatedMinutes} {es.teamArea.tasks.minutesSuffix}
+            </span>
           </dd>
         </div>
       </dl>

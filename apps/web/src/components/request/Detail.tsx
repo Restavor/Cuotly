@@ -157,61 +157,55 @@ export function RequestHeader({
   /** Ausente cuando no se viene de una lista que contenga esta solicitud. */
   pager?: RequestPager;
 }) {
-  return (
-    <header className="flex items-start gap-4">
-      <span
-        aria-hidden="true"
-        className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-soft-surface text-text-secondary sm:flex"
-      >
-        <Icon name="request" className="h-5 w-5" />
-      </span>
+  /*
+    M26 · arriba "Volver a solicitudes" con el paginador y el estado a la
+    derecha; debajo el titular con el código en su etiqueta, y de qué
+    restaurante es.
 
-      <div className="min-w-0 flex-1">
-        <h1 className="text-2xl font-bold text-primary-dark lg:text-3xl">{headline}</h1>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <p className="text-sm text-text-secondary">
-            {establishmentName ?? "—"} · {code}
-          </p>
-          <StatusBadge tone={requestTone(state)} icon={TONE_ICON[requestTone(state)]}>
-            {es.naming.states.request[state as RequestStateKey] ?? state}
-          </StatusBadge>
+    El paginador de la maqueta 05 ("1 de 3") solo sale cuando se viene de
+    una lista que contiene esta solicitud: llegando por un enlace directo
+    "1 de 1" fingiría un recorrido que no existe. Los extremos van
+    deshabilitados y no ocultos: un control que desaparece mueve los de al
+    lado y se pulsa el que no era.
+  */
+  return (
+    <header className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={backHref}
+            className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+          >
+            <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
+            {t.back}
+          </Link>
+
+          {pager === undefined ? null : (
+            <nav aria-label={t.pagerLabel} className="flex shrink-0 items-center gap-1">
+              <PagerLink href={pager.previousHref} icon="arrowLeft" label={t.pagerPrevious} />
+              <span className="whitespace-nowrap px-1 text-sm text-text-secondary">
+                {t.pagerPosition(pager.index, pager.total)}
+              </span>
+              <PagerLink href={pager.nextHref} icon="arrowRight" label={t.pagerNext} />
+            </nav>
+          )}
         </div>
+
+        <StatusBadge tone={requestTone(state)} icon={TONE_ICON[requestTone(state)]}>
+          {es.naming.states.request[state as RequestStateKey] ?? state}
+        </StatusBadge>
       </div>
 
-      {/*
-        Con su texto, como en la maqueta 05. Era un botón de solo icono con
-        el nombre en `aria-label`: quien ve la pantalla tenía que deducir a
-        dónde volvía por una flecha, y en móvil, sin `title` que se pueda
-        posar, no había manera de averiguarlo.
-      */}
-      <div className="flex shrink-0 items-center gap-2">
-        <Link
-          href={backHref}
-          className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
-        >
-          <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
-          {t.back}
-        </Link>
-
-        {/*
-          Maqueta 05 · "1 de 3" con sus flechas. Solo cuando se viene de
-          una lista que contiene esta solicitud: llegando por un enlace
-          directo no se pinta, porque "1 de 1" fingiría un recorrido que no
-          existe (`listPosition()` devuelve null y aquí no hay nada que
-          decidir).
-
-          Los extremos van deshabilitados y no ocultos: un control que
-          desaparece mueve los de al lado y se pulsa el que no era.
-        */}
-        {pager === undefined ? null : (
-          <nav aria-label={t.pagerLabel} className="flex shrink-0 items-center gap-1">
-            <PagerLink href={pager.previousHref} icon="arrowLeft" label={t.pagerPrevious} />
-            <span className="whitespace-nowrap px-1 text-sm text-text-secondary">
-              {t.pagerPosition(pager.index, pager.total)}
-            </span>
-            <PagerLink href={pager.nextHref} icon="arrowRight" label={t.pagerNext} />
-          </nav>
-        )}
+      <div>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+            {headline}
+          </h1>
+          <span className="rounded-[8px] bg-soft-surface px-2.5 py-1 text-sm font-semibold text-text-secondary">
+            {code}
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-text-secondary">{establishmentName ?? "—"}</p>
       </div>
     </header>
   );

@@ -179,6 +179,8 @@ sitio.
 
 | 22/09/2026 | **Ficha del restaurante, el marco (M25 a M48)** · a ancho completo; la cabecera con la foto, el nombre y su estado al lado, "Plan Premium+ \| 25 cambios pequeños · 5 medianos · 1 grande · 24 fotos" contado desde la bolsa del ciclo, "Ver sitio web ↗" y "Editar restaurante"; las cinco pestañas en casillas pegadas a la cabecera; las subpestañas de Operación, Informes y datos y Gestión con `Tabs`. Operación en tablas (M25, M27, M29); el Resumen en rejilla; Gestión · Datos en dos columnas (M40) | `components/establishment/Sheet.tsx` |
 
+| 22/09/2026 | **Ficha del restaurante, el resto (M26 a M48)** · los detalles de solicitud (M26), trabajo (M28), menú (M32) e informe (M39) con "Volver" arriba, el título con su código en una etiqueta y el estado al lado, y el contenido en tres columnas; la tarea (M30) con sus datos en casillas. En Gestión: Pagos con el historial a ancho completo (M42); Usuarios con la tabla arriba, cara y rol en insignia, y panel y equipo lado a lado (M43); Archivos con las carpetas en fichas y la tabla a lo ancho (M44); Notas internas con el aviso de que el cliente no las ve, lista y formulario lado a lado (M46); Historial con la cara de quien hizo cada cambio (M48). No se añade un "Resumen de cobros" con totales: sumar importes en pantalla va contra la regla de que el dinero lo calcula el servidor | las pantallas de detalle y `Sheet.tsx` |
+
 Lo que estas pantallas **no** copian del dibujo, y por qué, está escrito en el
 comentario de cada una: los botones que abrirían formularios que no existen
 ("Nueva solicitud" del equipo, "Nuevo trabajo", "Programar menú", "Crear

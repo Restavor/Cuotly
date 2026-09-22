@@ -326,6 +326,8 @@ export const es = {
     // cliente, y este panel vive al lado de una conversación que el
     // restaurante sí lee. La insignia es para quien escribe.
     teamOnly: "Solo equipo",
+    // M46 · el aviso de la ficha, a lo ancho y con su candado.
+    wideNotice: "Solo equipo autorizado · No visible para el cliente. Estas notas son internas del equipo.",
     emptyTitle: "Sin notas todavía",
     emptyReason:
       "Aquí se apunta lo que el equipo necesita recordar de este restaurante. El cliente no ve ninguna nota, nunca.",
@@ -1567,6 +1569,8 @@ export const es = {
     jobs: {
       // Maqueta 06 · volver a la lista y moverse por ella.
       backToList: "Volver a trabajos",
+      // M28 · bajo el título: de qué solicitud nació este trabajo.
+      createdFromRequest: "Trabajo creado desde la solicitud",
 
       pagerLabel: "Moverse por la lista",
       pagerPosition: (index: number, total: number) => `${index} de ${total}`,
@@ -3667,6 +3671,8 @@ export const es = {
 
     // Vista 10.04 · revisar y programar.
     detailTitle: "Revisar y programar informe",
+    // M39 · el "Volver" del detalle de un informe.
+    backToList: "Volver a informes",
     detailSubtitle: "Revisa el contenido, selecciona las secciones y programa el envío del informe.",
     infoTitle: "Información del informe",
     nameLabel: "Nombre",

@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import { Icon } from "@/components/ui/Icon";
 import { notFound, redirect } from "next/navigation";
 
 import { Card, StatusBadge } from "@/components/ui";
@@ -213,155 +215,200 @@ export default async function TeamMenuPage({ params }: { params: Promise<{ slug:
   }));
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
-      <header>
-        <Link href={base} className="text-sm text-primary underline-offset-2 hover:underline">
+    <div className="space-y-6">
+      {/*
+        M32 · "Volver" arriba, el nombre del menú con su estado al lado y,
+        debajo, de qué restaurante es, qué tipo, qué día y con qué
+        plantilla.
+      */}
+      <header className="space-y-3">
+        <Link
+          href={base}
+          className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+        >
+          <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
           {t.backToQueue}
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-primary-dark">{menu.name}</h1>
-        <p className="text-sm text-text-secondary">
-          {t.detailSubtitle(
-            establishment ? `${establishment.code} · ${establishment.name}` : "—",
-            es.naming.menuKinds[menu.kind as MenuKindKey] ?? menu.kind,
-            fechaCorta(menu.target_date),
-          )}{" "}
-          · {t.detailTemplate}: {template?.name ?? t.detailNoTemplate}
-        </p>
-        <div className="mt-2 flex flex-wrap gap-2">
-          <StatusBadge tone={menuTone(menu.state)}>{es.naming.states.menu[menu.state]}</StatusBadge>
-          {overdue ? <StatusBadge tone="danger">{t.overdueShort}</StatusBadge> : null}
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+              {menu.name}
+            </h1>
+            <StatusBadge tone={menuTone(menu.state)}>{es.naming.states.menu[menu.state]}</StatusBadge>
+            {overdue ? <StatusBadge tone="danger">{t.overdueShort}</StatusBadge> : null}
+          </div>
+          <p className="mt-1 text-sm text-text-secondary">
+            {t.detailSubtitle(
+              establishment ? `${establishment.code} · ${establishment.name}` : "—",
+              es.naming.menuKinds[menu.kind as MenuKindKey] ?? menu.kind,
+              fechaCorta(menu.target_date),
+            )}{" "}
+            · {t.detailTemplate}: {template?.name ?? t.detailNoTemplate}
+          </p>
         </div>
       </header>
 
-      {deadlines ? (
-        <Card title={t.deadlinesTitle}>
-          <p className="text-sm text-text">{t.cutoffLine(horaLocal(deadlines.cutoff_at, timeZone))}</p>
-          <p className="text-sm text-text">{t.publishByLine(horaLocal(deadlines.publish_by_at, timeZone))}</p>
-          {deadlines.requested_at ? (
-            <p className="text-sm text-text">{t.requestedLine(horaLocal(deadlines.requested_at, timeZone))}</p>
+      {/*
+        M32 · tres columnas: la vista previa del menú; la información —los
+        plazos, quién lo publica y sus versiones—; y lo que se hace con él
+        —publicar, descargar, corregir—. En pantallas estrechas se apilan.
+      */}
+      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="min-w-0 space-y-4">
+          {/*
+            M32 · la vista previa: el menú escrito como se lee en una carta, con
+            sus tres secciones, la bebida y el precio. Es el contenido de la
+            versión vigente tal cual; la imagen final se descarga aparte, en
+            PNG o PDF, desde "Descargas".
+          */}
+          <Card title={t.contentTitle(current?.version ?? null)}>
+            {current ? (
+              <div className="rounded-[14px] border border-border bg-soft-surface/60 px-5 py-6 text-center">
+                <p className="text-lg font-bold uppercase tracking-wide text-primary-dark">{menu.name}</p>
+                <p className="text-sm text-text-secondary">{fechaCorta(menu.target_date)}</p>
+                {(
+                  [
+                    [t.starters, current.starters],
+                    [t.mains, current.mains],
+                    [t.desserts, current.desserts],
+                  ] as const
+                ).map(([seccion, platos]) => (
+                  <div key={seccion} className="mt-5">
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-text">{seccion}</p>
+                    {platos.length === 0 ? (
+                      <p className="mt-1 text-sm text-text-secondary">—</p>
+                    ) : (
+                      <ul className="mt-1 space-y-0.5 text-sm text-text">
+                        {platos.map((plato) => (
+                          <li key={plato}>{plato}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+                <p className="mt-5 text-sm text-text-secondary">
+                  {t.drink}: {current.drink ?? "—"}
+                </p>
+                <p className="mt-2 text-2xl font-bold text-primary-dark">
+                  {current.price_cents === null
+                    ? "—"
+                    : `${Math.trunc(current.price_cents / 100)},${String(current.price_cents % 100).padStart(2, "0")} €`}
+                </p>
+                {current.note ? (
+                  <p className="mt-3 text-xs text-text-secondary">
+                    {t.note}: {current.note}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">{t.contentEmpty}</p>
+            )}
+          </Card>
+        </div>
+
+        <div className="min-w-0 space-y-4">
+          {deadlines ? (
+            <Card title={t.deadlinesTitle}>
+              <p className="text-sm text-text">{t.cutoffLine(horaLocal(deadlines.cutoff_at, timeZone))}</p>
+              <p className="text-sm text-text">{t.publishByLine(horaLocal(deadlines.publish_by_at, timeZone))}</p>
+              {deadlines.requested_at ? (
+                <p className="text-sm text-text">{t.requestedLine(horaLocal(deadlines.requested_at, timeZone))}</p>
+              ) : null}
+              <p className="mt-2 text-sm text-text-secondary">
+                {deadlines.guaranteed === null
+                  ? t.notRequested
+                  : overdue
+                    ? t.overdue
+                    : deadlines.guaranteed
+                      ? t.guaranteed
+                      : t.notGuaranteed}
+              </p>
+            </Card>
           ) : null}
-          <p className="mt-2 text-sm text-text-secondary">
-            {deadlines.guaranteed === null
-              ? t.notRequested
-              : overdue
-                ? t.overdue
-                : deadlines.guaranteed
-                  ? t.guaranteed
-                  : t.notGuaranteed}
-          </p>
-        </Card>
-      ) : null}
+          <Card title={t.publicationTitle}>
+            {menu.state === "published" && menu.published_at ? (
+              <p className="text-sm text-text">
+                {lastPublication?.published_by && personName.get(lastPublication.published_by)
+                  ? t.publishedBy(personName.get(lastPublication.published_by)!, horaLocal(menu.published_at, timeZone))
+                  : t.publishedAt(horaLocal(menu.published_at, timeZone))}
+              </p>
+            ) : livePublication?.assigned_to ? (
+              <p className="text-sm text-text">
+                {livePublication.assigned_to === user.id
+                  ? t.assignedToSelf
+                  : t.assignedTo(personName.get(livePublication.assigned_to) ?? "—")}
+                {livePublication.assignment_mode
+                  ? ` (${t.assignedMode[livePublication.assignment_mode as keyof typeof t.assignedMode] ?? livePublication.assignment_mode})`
+                  : ""}
+              </p>
+            ) : queueRow?.is_assigned ? (
+              <p className="text-sm text-text-secondary">{t.assignedToSomeone}</p>
+            ) : inFlight ? (
+              <p className="text-sm text-text-secondary">{t.noAssignee}</p>
+            ) : (
+              <p className="text-sm text-text-secondary">{closed ? t.nothingToDo : t.notRequested}</p>
+            )}
+            {inFlight && !canAct ? <p className="mt-2 text-sm text-text-secondary">{t.noPermissionHint}</p> : null}
+          </Card>
+          {canAssign === true && inFlight ? (
+            <AssignMenuForm menuId={menuId} candidates={candidates} reassign={livePublication?.assigned_to !== null && livePublication !== null} />
+          ) : null}
+          {/* RN-MEN-07: "el trabajador ve los cambios de versión y su hora". */}
+          <Card title={t.versionsTitle}>
+            <ul className="space-y-1 text-sm text-text-secondary">
+              {(versions ?? []).map((v) => {
+                const afterRequest =
+                  livePublication !== null && new Date(v.created_at).getTime() > new Date(livePublication.requested_at).getTime();
+                return (
+                  <li key={v.id}>
+                    {t.versionLine(v.version, horaLocal(v.created_at, timeZone))}
+                    {v.after_cutoff ? ` · ${t.versionAfterCutoff}` : ""}
+                    {afterRequest ? ` · ${t.versionAfterRequest}` : ""}
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        </div>
 
-      <Card title={t.publicationTitle}>
-        {menu.state === "published" && menu.published_at ? (
-          <p className="text-sm text-text">
-            {lastPublication?.published_by && personName.get(lastPublication.published_by)
-              ? t.publishedBy(personName.get(lastPublication.published_by)!, horaLocal(menu.published_at, timeZone))
-              : t.publishedAt(horaLocal(menu.published_at, timeZone))}
-          </p>
-        ) : livePublication?.assigned_to ? (
-          <p className="text-sm text-text">
-            {livePublication.assigned_to === user.id
-              ? t.assignedToSelf
-              : t.assignedTo(personName.get(livePublication.assigned_to) ?? "—")}
-            {livePublication.assignment_mode
-              ? ` (${t.assignedMode[livePublication.assignment_mode as keyof typeof t.assignedMode] ?? livePublication.assignment_mode})`
-              : ""}
-          </p>
-        ) : queueRow?.is_assigned ? (
-          <p className="text-sm text-text-secondary">{t.assignedToSomeone}</p>
-        ) : inFlight ? (
-          <p className="text-sm text-text-secondary">{t.noAssignee}</p>
-        ) : (
-          <p className="text-sm text-text-secondary">{closed ? t.nothingToDo : t.notRequested}</p>
-        )}
-        {inFlight && !canAct ? <p className="mt-2 text-sm text-text-secondary">{t.noPermissionHint}</p> : null}
-      </Card>
-
-      {canAssign === true && inFlight ? (
-        <AssignMenuForm menuId={menuId} candidates={candidates} reassign={livePublication?.assigned_to !== null && livePublication !== null} />
-      ) : null}
-
-      {canAct ? <WorkerActions menuId={menuId} state={menu.state} /> : null}
-
-      <Card title={t.contentTitle(current?.version ?? null)}>
-        {current ? (
-          <dl className="grid gap-2 text-sm sm:grid-cols-[auto_1fr]">
-            <dt className="font-medium text-text">{t.starters}</dt>
-            <dd className="text-text-secondary">{current.starters.join(" · ") || "—"}</dd>
-            <dt className="font-medium text-text">{t.mains}</dt>
-            <dd className="text-text-secondary">{current.mains.join(" · ") || "—"}</dd>
-            <dt className="font-medium text-text">{t.desserts}</dt>
-            <dd className="text-text-secondary">{current.desserts.join(" · ") || "—"}</dd>
-            <dt className="font-medium text-text">{t.drink}</dt>
-            <dd className="text-text-secondary">{current.drink ?? "—"}</dd>
-            <dt className="font-medium text-text">{t.price}</dt>
-            <dd className="text-text-secondary">
-              {current.price_cents === null
-                ? "—"
-                : `${Math.trunc(current.price_cents / 100)},${String(current.price_cents % 100).padStart(2, "0")} €`}
-            </dd>
-            <dt className="font-medium text-text">{t.note}</dt>
-            <dd className="text-text-secondary">{current.note ?? "—"}</dd>
-          </dl>
-        ) : (
-          <p className="text-sm text-text-secondary">{t.contentEmpty}</p>
-        )}
-      </Card>
-
-      <Card title={t.downloadsTitle}>
-        {canDownload ? (
-          <div className="flex flex-wrap gap-3">
-            <a href={`${downloadBase}?formato=png`} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-surface hover:bg-primary-dark">
-              {t.downloadPng}
-            </a>
-            <a href={`${downloadBase}?formato=pdf`} className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-soft-surface">
-              {t.downloadPdf}
-            </a>
-          </div>
-        ) : (
-          <p className="text-sm text-text-secondary">{t.downloadsNeedContent}</p>
-        )}
-        <p className="mt-3 text-sm text-text-secondary">{t.downloadsHint}</p>
-        {downloads && downloads.length > 0 ? (
-          <ul className="mt-3 space-y-1 text-sm text-text-secondary">
-            {downloads.map((d) => (
-              <li key={d.id}>{es.dailyMenuClient.downloadLine(d.format, horaLocal(d.downloaded_at, timeZone), d.by_team)}</li>
-            ))}
-          </ul>
-        ) : null}
-      </Card>
-
-      {/* RN-MEN-07: "el trabajador ve los cambios de versión y su hora". */}
-      <Card title={t.versionsTitle}>
-        <ul className="space-y-1 text-sm text-text-secondary">
-          {(versions ?? []).map((v) => {
-            const afterRequest =
-              livePublication !== null && new Date(v.created_at).getTime() > new Date(livePublication.requested_at).getTime();
-            return (
-              <li key={v.id}>
-                {t.versionLine(v.version, horaLocal(v.created_at, timeZone))}
-                {v.after_cutoff ? ` · ${t.versionAfterCutoff}` : ""}
-                {afterRequest ? ` · ${t.versionAfterRequest}` : ""}
-              </li>
-            );
-          })}
-        </ul>
-      </Card>
-
-      {canManage === true && lastPublication ? (
-        <RefundForm publicationId={lastPublication.id} alreadyRefunded={alreadyRefunded} />
-      ) : null}
-
-      {menu.state === "published" || correctionRows.length > 0 ? (
-        <CorrectionsPanel
-          menuId={menuId}
-          corrections={correctionRows}
-          canAct={canAct}
-          published={menu.state === "published"}
-          timeZone={timeZone}
-        />
-      ) : null}
+        <div className="min-w-0 space-y-4 lg:col-span-2 xl:col-span-1">
+          {canAct ? <WorkerActions menuId={menuId} state={menu.state} /> : null}
+          <Card title={t.downloadsTitle}>
+            {canDownload ? (
+              <div className="flex flex-wrap gap-3">
+                <a href={`${downloadBase}?formato=png`} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-surface hover:bg-primary-dark">
+                  {t.downloadPng}
+                </a>
+                <a href={`${downloadBase}?formato=pdf`} className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-soft-surface">
+                  {t.downloadPdf}
+                </a>
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">{t.downloadsNeedContent}</p>
+            )}
+            <p className="mt-3 text-sm text-text-secondary">{t.downloadsHint}</p>
+            {downloads && downloads.length > 0 ? (
+              <ul className="mt-3 space-y-1 text-sm text-text-secondary">
+                {downloads.map((d) => (
+                  <li key={d.id}>{es.dailyMenuClient.downloadLine(d.format, horaLocal(d.downloaded_at, timeZone), d.by_team)}</li>
+                ))}
+              </ul>
+            ) : null}
+          </Card>
+          {canManage === true && lastPublication ? (
+            <RefundForm publicationId={lastPublication.id} alreadyRefunded={alreadyRefunded} />
+          ) : null}
+          {menu.state === "published" || correctionRows.length > 0 ? (
+            <CorrectionsPanel
+              menuId={menuId}
+              corrections={correctionRows}
+              canAct={canAct}
+              published={menu.state === "published"}
+              timeZone={timeZone}
+            />
+          ) : null}
+        </div>
+      </div>
 
       <Card title={t.historyTitle}>
         {!events || events.length === 0 ? (

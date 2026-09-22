@@ -16,7 +16,7 @@ import { ReportsTable } from "@/components/report/ReportsTable";
 import type { ReportRow } from "@/components/report/reports-load";
 import { Icon } from "@/components/ui/Icon";
 import { Tabs } from "@/components/ui/Tabs";
-import { PersonCell } from "@/components/ui/Avatar";
+import { Avatar, PersonCell } from "@/components/ui/Avatar";
 import { EstablishmentDataForm } from "./DataForm";
 import { DataSectionNav, DigitalSection } from "./DigitalSections";
 import { IntegrationsBlock } from "./IntegrationsBlock";
@@ -477,16 +477,20 @@ function FolderRail({
   current: string | null;
   selectedFileId: string | null;
 }) {
+  /*
+    M44 · las carpetas como fichas en fila, con su recuento dentro: la
+    elegida en verde lleno y las demás con borde.
+  */
   const clase = (activo: boolean) =>
-    `flex items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
+    `inline-flex items-center gap-2 rounded-field border px-3.5 py-2 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
       activo
-        ? "bg-soft-surface font-semibold text-primary-dark"
-        : "text-text hover:bg-soft-surface"
+        ? "border-primary bg-primary font-semibold text-surface"
+        : "border-border bg-surface text-text hover:bg-soft-surface"
     }`;
 
   return (
     <nav aria-label={t.foldersTitle}>
-      <ul className="space-y-1">
+      <ul className="flex flex-wrap gap-2">
         <li>
           <Link
             href={filesHref(base, { category: null, fileId: selectedFileId })}
@@ -494,7 +498,7 @@ function FolderRail({
             className={clase(current === null)}
           >
             <span>{t.foldersAll}</span>
-            <span className="shrink-0 text-xs text-text-secondary">{total}</span>
+            <span className="shrink-0 text-xs opacity-80">{total}</span>
           </Link>
         </li>
         {folders.map((folder) => (
@@ -507,7 +511,7 @@ function FolderRail({
               <span>
                 {es.space.files.categories[folder.category as FileCategoryKey] ?? folder.category}
               </span>
-              <span className="shrink-0 text-xs text-text-secondary">{folder.count}</span>
+              <span className="shrink-0 text-xs opacity-80">{folder.count}</span>
             </Link>
           </li>
         ))}
@@ -2419,7 +2423,12 @@ export function EstablishmentSheet({
                     </div>
                   )}
 
-                  <div className="grid items-start gap-4 lg:grid-cols-2">
+                  {/*
+                    M42 · el historial de cobros a ancho completo, como en
+                    el diseño, y los presupuestos debajo: una tabla de cinco
+                    columnas en media anchura se partía en tres líneas.
+                  */}
+                  <div className="space-y-4">
                     <Card title={t.paymentHistoryTitle}>
                       {payments.payments.length === 0 ? (
                         <EmptyState
@@ -2568,49 +2577,6 @@ export function EstablishmentSheet({
           */}
           {block.key === "users" ? (
             <div className="space-y-4">
-            {/*
-              §40.1 · el panel del restaurante (página 56 del diseño).
-              Va DELANTE de la lista de usuarios porque es lo primero que
-              se pregunta de un restaurante nuevo: si el cliente puede
-              entrar ya o todavía no.
-
-              El estado se DERIVA de los accesos vivos (RN-PAN-09): no hay
-              bandera que guardar, porque una bandera puede decir "creado"
-              con todos los accesos revocados. Y "no se ha podido mirar" no
-              se dice como "no creado" (CLAUDE.md).
-            */}
-            <Card title={t.panelTitle}>
-              {users.failed ? (
-                <EmptyState title={t.panelUnknownTitle} description={t.panelUnknownReason} />
-              ) : users.rows.length > 0 ? (
-                <>
-                  <StatusBadge tone="success">{t.panelCreatedTitle}</StatusBadge>
-                  <p className="mt-2 text-sm text-text-secondary">
-                    {t.panelCreatedHint(users.rows.length)}
-                  </p>
-                </>
-              ) : (
-                <>
-                  <StatusBadge tone="neutral">{t.panelNotCreated}</StatusBadge>
-                  <p className="mt-2 text-sm text-text-secondary">{t.panelNotCreatedReason}</p>
-                  {canManageClients ? (
-                    <div className="mt-4 border-t border-border pt-4">
-                      <p className="text-base font-semibold text-primary-dark">
-                        {t.panelCreateTitle}
-                      </p>
-                      <p className="mb-3 mt-1 text-sm text-text-secondary">{t.panelCreateHint}</p>
-                      <CreatePanelForm
-                        establishmentId={header.id}
-                        groupId={header.groupId}
-                        establishmentName={header.name}
-                        code={header.code}
-                        groupName={header.groupName}
-                      />
-                    </div>
-                  ) : null}
-                </>
-              )}
-            </Card>
 
             <Card title={t.usersTitle}>
               {/*
@@ -2663,18 +2629,25 @@ export function EstablishmentSheet({
                         return (
                           <TableRow key={`${user.source}:${user.userId}`}>
                             <TableCell>
-                              <span className="block text-text">
-                                {user.displayName ?? t.noName}
-                              </span>
-                              <span className="block text-xs text-text-secondary">
-                                {user.email}
+                              <span className="flex min-w-0 items-center gap-3">
+                                <Avatar name={user.displayName ?? user.email} size={34} />
+                                <span className="min-w-0">
+                                  <span className="block truncate font-semibold text-text">
+                                    {user.displayName ?? t.noName}
+                                  </span>
+                                  <span className="block truncate text-xs text-text-secondary">
+                                    {user.email}
+                                  </span>
+                                </span>
                               </span>
                             </TableCell>
                             <TableCell>
                               {user.source === "group" ? t.sourceGroup : t.sourceEstablishment}
                             </TableCell>
                             <TableCell>
-                              {t.clientRoles[user.role as ClientRoleKey] ?? user.role}
+                              <StatusBadge tone="neutral">
+                                {t.clientRoles[user.role as ClientRoleKey] ?? user.role}
+                              </StatusBadge>
                             </TableCell>
                             {/*
                               El alcance no es un dato guardado: es lo que
@@ -2728,57 +2701,117 @@ export function EstablishmentSheet({
               )}
             </Card>
 
-            <Card title={t.staffTitle}>
-              <p className="mb-3 text-sm text-text-secondary">{t.staffHint}</p>
-              {staff.length === 0 ? (
-                <EmptyState title={t.staffEmptyTitle} description={t.staffEmptyReason} />
-              ) : (
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableHeaderCell>{t.personColumn}</TableHeaderCell>
-                      <TableHeaderCell>{t.specialtyColumn}</TableHeaderCell>
-                      <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
-                      <TableHeaderCell>{t.sinceColumn}</TableHeaderCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {staff.map((person) => (
-                      <TableRow key={person.userId}>
-                        <TableCell>
-                          <span className="block text-text">
-                            {person.displayName ?? t.noName}
-                          </span>
-                          <span className="block text-xs text-text-secondary">{person.email}</span>
-                        </TableCell>
-                        <TableCell>
-                          {/*
-                            Sin especialidad declarada se dice: un hueco
-                            aquí se lee como "no sabemos", y lo que pasa es
-                            que nadie se la ha puesto (§4.6).
-                          */}
-                          {person.specialties.length === 0
-                            ? t.specialtyNone
-                            : person.specialties
-                                .map(
-                                  (specialty) =>
-                                    es.naming.specialties[specialty as SpecialtyKey] ?? specialty,
-                                )
-                                .join(" · ")}
-                        </TableCell>
-                        <TableCell>
-                          {person.membershipStatus === null
-                            ? "—"
-                            : (es.space.statuses[person.membershipStatus as StatusKey] ??
-                              person.membershipStatus)}
-                        </TableCell>
-                        <TableCell>{diaCorto(person.assignedAt, timeZone)}</TableCell>
+            {/*
+              M43 · debajo de la tabla, dos tarjetas lado a lado: el panel
+              del cliente y el equipo de mantenimiento que tiene este
+              restaurante autorizado.
+            */}
+            <div className="grid items-start gap-4 xl:grid-cols-2">
+              {/*
+                §40.1 · el panel del restaurante (página 56 del diseño).
+                Va DELANTE de la lista de usuarios porque es lo primero que
+                se pregunta de un restaurante nuevo: si el cliente puede
+                entrar ya o todavía no.
+
+                El estado se DERIVA de los accesos vivos (RN-PAN-09): no hay
+                bandera que guardar, porque una bandera puede decir "creado"
+                con todos los accesos revocados. Y "no se ha podido mirar" no
+                se dice como "no creado" (CLAUDE.md).
+              */}
+              <Card title={t.panelTitle}>
+                {users.failed ? (
+                  <EmptyState title={t.panelUnknownTitle} description={t.panelUnknownReason} />
+                ) : users.rows.length > 0 ? (
+                  <>
+                    <StatusBadge tone="success">{t.panelCreatedTitle}</StatusBadge>
+                    <p className="mt-2 text-sm text-text-secondary">
+                      {t.panelCreatedHint(users.rows.length)}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <StatusBadge tone="neutral">{t.panelNotCreated}</StatusBadge>
+                    <p className="mt-2 text-sm text-text-secondary">{t.panelNotCreatedReason}</p>
+                    {canManageClients ? (
+                      <div className="mt-4 border-t border-border pt-4">
+                        <p className="text-base font-semibold text-primary-dark">
+                          {t.panelCreateTitle}
+                        </p>
+                        <p className="mb-3 mt-1 text-sm text-text-secondary">{t.panelCreateHint}</p>
+                        <CreatePanelForm
+                          establishmentId={header.id}
+                          groupId={header.groupId}
+                          establishmentName={header.name}
+                          code={header.code}
+                          groupName={header.groupName}
+                        />
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </Card>
+
+
+              <Card title={t.staffTitle}>
+                <p className="mb-3 text-sm text-text-secondary">{t.staffHint}</p>
+                {staff.length === 0 ? (
+                  <EmptyState title={t.staffEmptyTitle} description={t.staffEmptyReason} />
+                ) : (
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>{t.personColumn}</TableHeaderCell>
+                        <TableHeaderCell>{t.specialtyColumn}</TableHeaderCell>
+                        <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
+                        <TableHeaderCell>{t.sinceColumn}</TableHeaderCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </Card>
+                    </TableHead>
+                    <TableBody>
+                      {staff.map((person) => (
+                        <TableRow key={person.userId}>
+                          <TableCell>
+                            <span className="flex min-w-0 items-center gap-3">
+                              <Avatar name={person.displayName ?? person.email} size={34} />
+                              <span className="min-w-0">
+                                <span className="block truncate font-semibold text-text">
+                                  {person.displayName ?? t.noName}
+                                </span>
+                                <span className="block truncate text-xs text-text-secondary">
+                                  {person.email}
+                                </span>
+                              </span>
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {/*
+                              Sin especialidad declarada se dice: un hueco
+                              aquí se lee como "no sabemos", y lo que pasa es
+                              que nadie se la ha puesto (§4.6).
+                            */}
+                            {person.specialties.length === 0
+                              ? t.specialtyNone
+                              : person.specialties
+                                  .map(
+                                    (specialty) =>
+                                      es.naming.specialties[specialty as SpecialtyKey] ?? specialty,
+                                  )
+                                  .join(" · ")}
+                          </TableCell>
+                          <TableCell>
+                            {person.membershipStatus === null
+                              ? "—"
+                              : (es.space.statuses[person.membershipStatus as StatusKey] ??
+                                person.membershipStatus)}
+                          </TableCell>
+                          <TableCell>{diaCorto(person.assignedAt, timeZone)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </Card>
+
+            </div>
             </div>
           ) : null}
 
@@ -2792,279 +2825,286 @@ export function EstablishmentSheet({
                 filtro vive en la dirección (`?tipo=`)— así que se comparten
                 y el botón de volver los deshace (CA-22).
               */}
-              <div className="grid items-start gap-4 lg:grid-cols-[1fr_3fr]">
-                <Card title={t.foldersTitle}>
-                  <FolderRail
-                    base={base}
-                    folders={files.folders}
-                    total={files.total}
-                    current={files.category}
-                    selectedFileId={files.selected?.file.id ?? null}
-                  />
-                </Card>
-
-                {/*
-                  RN-ARC-10 · cuánto ocupa este restaurante (página 50 del
-                  diseño definitivo móvil).
-
-                  Va con la frase de que NO es una cuota, y esa frase no es
-                  relleno: un número junto al nombre de un restaurante se
-                  lee como su límite, y aquí el límite es del espacio y no
-                  se reparte (RN-SUB-13). El total del espacio no se repite
-                  aquí —vive en la suscripción— y se enlaza: dos copias del
-                  mismo número acaban discrepando.
-                */}
-                <Card title={t.storageTitle}>
-                  {storageBytes === null ? (
-                    <EmptyState
-                      title={t.storageHiddenTitle}
-                      description={t.storageHiddenReason}
+              {/*
+                M44 · dos columnas: a la izquierda las carpetas en fila y la
+                tabla de archivos a lo ancho; a la derecha el archivo
+                elegido con sus versiones, y cuánto ocupa el restaurante.
+              */}
+              <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                <div className="min-w-0 space-y-4">
+                  <Card title={t.foldersTitle}>
+                    <FolderRail
+                      base={base}
+                      folders={files.folders}
+                      total={files.total}
+                      current={files.category}
+                      selectedFileId={files.selected?.file.id ?? null}
                     />
-                  ) : (
-                    <>
-                      <p className="text-sm font-medium text-text">
-                        {t.storageValue(header.name, readableSize(storageBytes))}
-                      </p>
-                      <p className="mt-1 text-sm text-text-secondary">{t.storageNotAQuota}</p>
-                      <Link
-                        href={`/espacios/${slug}/ajustes/suscripcion`}
-                        className="mt-2 inline-block text-sm text-cuotly-green underline"
-                      >
-                        {t.storageSpaceLink}
-                      </Link>
-                    </>
-                  )}
-                </Card>
+                  </Card>
+                  <Card title={t.filesTitle(header.name)}>
+                    <UploadFileForm establishmentId={header.id} />
+                    {/* RN-ARC-06 · el límite, dicho antes de elegir el archivo. */}
+                    <p className="mt-2 text-xs text-text-secondary">
+                      {t.filesMaxSize(megabytes(MAX_FILE_SIZE_BYTES))}
+                    </p>
 
-                <Card title={t.filesTitle(header.name)}>
-                  <UploadFileForm establishmentId={header.id} />
-                  {/* RN-ARC-06 · el límite, dicho antes de elegir el archivo. */}
-                  <p className="mt-2 text-xs text-text-secondary">
-                    {t.filesMaxSize(megabytes(MAX_FILE_SIZE_BYTES))}
-                  </p>
-
-                  <div className="mt-4">
-                    {files.files.length === 0 ? (
-                      <EmptyState title={t.filesEmptyTitle} description={t.filesEmptyReason} />
-                    ) : (
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableHeaderCell>{t.fileNameColumn}</TableHeaderCell>
-                            <TableHeaderCell>{t.fileCategoryColumn}</TableHeaderCell>
-                            <TableHeaderCell>{t.fileTypeColumn}</TableHeaderCell>
-                            <TableHeaderCell>{t.fileSizeColumn}</TableHeaderCell>
-                            <TableHeaderCell>{t.fileVisibilityColumn}</TableHeaderCell>
-                            <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
-                            <TableHeaderCell>{t.fileVersionColumn}</TableHeaderCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {files.files.map((file) => (
-                            <TableRow key={file.id}>
-                              <TableCell>
+                    <div className="mt-4">
+                      {files.files.length === 0 ? (
+                        <EmptyState title={t.filesEmptyTitle} description={t.filesEmptyReason} />
+                      ) : (
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableHeaderCell>{t.fileNameColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.fileCategoryColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.fileTypeColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.fileSizeColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.fileVisibilityColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.fileVersionColumn}</TableHeaderCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {files.files.map((file) => (
+                              <TableRow key={file.id}>
+                                <TableCell>
+                                  {/*
+                                    El enlace elige el archivo del panel de
+                                    versiones. Va en la dirección: compartirlo
+                                    abre exactamente esto.
+                                  */}
+                                  <Link
+                                    href={filesHref(base, {
+                                      category: files.category,
+                                      fileId: file.id,
+                                    })}
+                                    className="text-cuotly-green underline"
+                                  >
+                                    {file.name}
+                                  </Link>
+                                  {file.archivedAt === null ? null : (
+                                    <span className="ml-2 text-xs text-text-secondary">
+                                      {t.fileArchived}
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {es.space.files.categories[file.category as FileCategoryKey] ?? file.category}
+                                </TableCell>
                                 {/*
-                                  El enlace elige el archivo del panel de
-                                  versiones. Va en la dirección: compartirlo
-                                  abre exactamente esto.
+                                  Tipo y tamaño son de la versión VIGENTE: lo
+                                  que pesa el archivo hoy, no lo que pesaba
+                                  hace tres sustituciones (RN-ARC-03). Y el
+                                  tipo sale del `mime_type` guardado, no de la
+                                  extensión del nombre: un `.jpg` que en
+                                  realidad es un PDF diría "JPG" y sería
+                                  mentira.
                                 */}
-                                <Link
-                                  href={filesHref(base, {
-                                    category: files.category,
-                                    fileId: file.id,
-                                  })}
+                                <TableCell>
+                                  {file.mimeType === null
+                                    ? t.fileTypeUnknown
+                                    : fileTypeLabel(file.mimeType)}
+                                </TableCell>
+                                <TableCell>
+                                  {file.sizeBytes === null
+                                    ? t.fileSizeUnknown
+                                    : t.fileSize(megabytes(file.sizeBytes))}
+                                </TableCell>
+                                <TableCell>
+                                  <VisibilityMark visibility={file.visibility} />
+                                </TableCell>
+                                <TableCell>{diaCorto(file.createdAt, timeZone)}</TableCell>
+                                <TableCell>{t.fileVersion(file.lastVersion)}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </div>
+                  </Card>
+                </div>
+
+                <div className="min-w-0 space-y-4">
+                  <Card>
+                    {files.selected === null ? (
+                      <>
+                        <h3 className="mb-3 text-base font-semibold text-primary-dark">
+                          {t.versionsTitle}
+                        </h3>
+                        <p className="text-sm text-text-secondary">{t.versionsPick}</p>
+                      </>
+                    ) : (
+                      <>
+                        {/*
+                          La cabecera del panel: qué archivo se está mirando y
+                          la salida. La X es un enlace a este mismo bloque sin
+                          `?archivo=`, así que cerrar el panel también se
+                          deshace con el botón de volver.
+                        */}
+                        <div className="mb-4 flex items-start gap-3">
+                          <span
+                            aria-hidden="true"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface text-text-secondary"
+                          >
+                            <Icon name="image" className="h-5 w-5" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-primary-dark">
+                              {files.selected.file.name}
+                            </p>
+                            <p className="mt-1">
+                              <StatusBadge tone="neutral">
+                                {es.space.files.categories[
+                                  files.selected.file.category as FileCategoryKey
+                                ] ?? files.selected.file.category}
+                              </StatusBadge>
+                            </p>
+                          </div>
+                          <Link
+                            href={filesHref(base, { category: files.category, fileId: null })}
+                            aria-label={t.versionsClose}
+                            className="shrink-0 rounded p-1 text-text-secondary transition-colors hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+                          >
+                            <Icon name="close" className="h-4 w-4" />
+                          </Link>
+                        </div>
+
+                        {/*
+                          RN-ARC-04 · la marca y, si es interno, el botón de
+                          compartirlo. Va en el panel y no en la fila de la
+                          tabla a propósito: es aquí donde se ve QUÉ es el
+                          archivo —su categoría, sus versiones, su
+                          miniatura—, y compartir con el restaurante no se
+                          deshace, así que la decisión se toma mirándolo.
+
+                          El botón se le ofrece a cualquiera que llegue
+                          hasta aquí, sin mirar su rol, y no por descuido:
+                          las filas de esta tabla son las que `can_read_file()`
+                          ha dejado pasar, `manage_files` la tienen los tres
+                          roles del espacio (propietario, administrador y
+                          trabajador) y esta pantalla es la del equipo. Quien
+                          no pueda —un trabajador con facturación, que ni
+                          siquiera ve la fila— recibe el "no" del servidor.
+                        */}
+                        <h3 className="mb-2 text-base font-semibold text-primary-dark">
+                          {t.shareTitle}
+                        </h3>
+                        <div className="mb-5 rounded-[10px] bg-soft-surface p-3 text-sm">
+                          <VisibilityMark visibility={files.selected.file.visibility} />
+                          {files.selected.file.visibility === "shared_with_client" ? (
+                            <p className="mt-2 text-text-secondary">{t.shareSharedHint}</p>
+                          ) : (
+                            <>
+                              <p className="mt-2 text-text-secondary">{t.shareInternalHint}</p>
+                              <ShareFileButton fileId={files.selected.file.id} />
+                              <p className="mt-2 text-xs text-text-secondary">
+                                {t.shareIrreversible}
+                              </p>
+                            </>
+                          )}
+                        </div>
+
+                        <h3 className="mb-2 text-base font-semibold text-primary-dark">
+                          {t.versionsTitle}
+                        </h3>
+                        <ul className="space-y-2">
+                          {files.selected.versions.map((version) => (
+                            <li
+                              key={version.id}
+                              className="flex items-start gap-3 rounded-[10px] bg-soft-surface p-2 text-sm"
+                            >
+                              {/*
+                                La miniatura es el propio archivo servido por
+                                la ruta privada, no una copia optimizada:
+                                RN-ARC-08 pide esa optimización y la Fase 1 no
+                                la monta, así que se dice en el adaptador y no
+                                se finge aquí. Lo que no es imagen no enseña
+                                recuadro vacío: dice que no hay vista previa.
+                              */}
+                              {version.mimeType.startsWith("image/") ? (
+                                // eslint-disable-next-line @next/next/no-img-element -- el original vive en un bucket privado y llega por un 302 firmado y temporal (RN-ARC-08): `next/image` no puede optimizar una URL que caduca en cinco minutos.
+                                <img
+                                  src={`/api/archivos/${files.selected!.file.id}?version=${version.versionNumber}`}
+                                  /*
+                                    Alternativa vacía a propósito: la miniatura
+                                    no añade nada que no esté escrito al lado
+                                    —el nombre del archivo está en la cabecera
+                                    del panel y la versión, en la fila—, y una
+                                    alternativa que repite eso solo lo hace
+                                    leer dos veces. Además, así una miniatura
+                                    que no cargue deja un hueco y no un párrafo
+                                    desbordado.
+                                  */
+                                  alt=""
+                                  className="h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-border bg-soft-surface object-cover"
+                                />
+                              ) : (
+                                <span
+                                  aria-hidden="true"
+                                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] border border-border bg-surface text-text-secondary"
+                                >
+                                  <Icon name="document" className="h-5 w-5" />
+                                </span>
+                              )}
+
+                              <span className="min-w-0 flex-1">
+                                <span className="block font-semibold text-primary-dark">
+                                  {version.variant === null
+                                    ? t.fileVersion(version.versionNumber)
+                                    : (t.fileVariants[version.variant as FileVariantKey] ??
+                                      version.variant)}
+                                </span>
+                                <span className="block text-xs text-text-secondary">
+                                  {dia(version.createdAt, timeZone)} · {t.fileSize(megabytes(version.sizeBytes))}
+                                </span>
+                                {/* RN-ARC-08: enlace privado y temporal, firmado tras
+                                    comprobar el permiso. Cada versión descarga LA SUYA. */}
+                                <a
+                                  href={`/api/archivos/${files.selected!.file.id}?version=${version.versionNumber}`}
                                   className="text-cuotly-green underline"
                                 >
-                                  {file.name}
-                                </Link>
-                                {file.archivedAt === null ? null : (
-                                  <span className="ml-2 text-xs text-text-secondary">
-                                    {t.fileArchived}
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                {es.space.files.categories[file.category as FileCategoryKey] ?? file.category}
-                              </TableCell>
-                              {/*
-                                Tipo y tamaño son de la versión VIGENTE: lo
-                                que pesa el archivo hoy, no lo que pesaba
-                                hace tres sustituciones (RN-ARC-03). Y el
-                                tipo sale del `mime_type` guardado, no de la
-                                extensión del nombre: un `.jpg` que en
-                                realidad es un PDF diría "JPG" y sería
-                                mentira.
-                              */}
-                              <TableCell>
-                                {file.mimeType === null
-                                  ? t.fileTypeUnknown
-                                  : fileTypeLabel(file.mimeType)}
-                              </TableCell>
-                              <TableCell>
-                                {file.sizeBytes === null
-                                  ? t.fileSizeUnknown
-                                  : t.fileSize(megabytes(file.sizeBytes))}
-                              </TableCell>
-                              <TableCell>
-                                <VisibilityMark visibility={file.visibility} />
-                              </TableCell>
-                              <TableCell>{diaCorto(file.createdAt, timeZone)}</TableCell>
-                              <TableCell>{t.fileVersion(file.lastVersion)}</TableCell>
-                            </TableRow>
+                                  {es.files.download}
+                                </a>
+                              </span>
+                            </li>
                           ))}
-                        </TableBody>
-                      </Table>
+                        </ul>
+                      </>
                     )}
-                  </div>
-                </Card>
+                  </Card>
+                  {/*
+                    RN-ARC-10 · cuánto ocupa este restaurante (página 50 del
+                    diseño definitivo móvil).
 
-                <Card>
-                  {files.selected === null ? (
-                    <>
-                      <h3 className="mb-3 text-base font-semibold text-primary-dark">
-                        {t.versionsTitle}
-                      </h3>
-                      <p className="text-sm text-text-secondary">{t.versionsPick}</p>
-                    </>
-                  ) : (
-                    <>
-                      {/*
-                        La cabecera del panel: qué archivo se está mirando y
-                        la salida. La X es un enlace a este mismo bloque sin
-                        `?archivo=`, así que cerrar el panel también se
-                        deshace con el botón de volver.
-                      */}
-                      <div className="mb-4 flex items-start gap-3">
-                        <span
-                          aria-hidden="true"
-                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface text-text-secondary"
-                        >
-                          <Icon name="image" className="h-5 w-5" />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-primary-dark">
-                            {files.selected.file.name}
-                          </p>
-                          <p className="mt-1">
-                            <StatusBadge tone="neutral">
-                              {es.space.files.categories[
-                                files.selected.file.category as FileCategoryKey
-                              ] ?? files.selected.file.category}
-                            </StatusBadge>
-                          </p>
-                        </div>
+                    Va con la frase de que NO es una cuota, y esa frase no es
+                    relleno: un número junto al nombre de un restaurante se
+                    lee como su límite, y aquí el límite es del espacio y no
+                    se reparte (RN-SUB-13). El total del espacio no se repite
+                    aquí —vive en la suscripción— y se enlaza: dos copias del
+                    mismo número acaban discrepando.
+                  */}
+                  <Card title={t.storageTitle}>
+                    {storageBytes === null ? (
+                      <EmptyState
+                        title={t.storageHiddenTitle}
+                        description={t.storageHiddenReason}
+                      />
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-text">
+                          {t.storageValue(header.name, readableSize(storageBytes))}
+                        </p>
+                        <p className="mt-1 text-sm text-text-secondary">{t.storageNotAQuota}</p>
                         <Link
-                          href={filesHref(base, { category: files.category, fileId: null })}
-                          aria-label={t.versionsClose}
-                          className="shrink-0 rounded p-1 text-text-secondary transition-colors hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+                          href={`/espacios/${slug}/ajustes/suscripcion`}
+                          className="mt-2 inline-block text-sm text-cuotly-green underline"
                         >
-                          <Icon name="close" className="h-4 w-4" />
+                          {t.storageSpaceLink}
                         </Link>
-                      </div>
-
-                      {/*
-                        RN-ARC-04 · la marca y, si es interno, el botón de
-                        compartirlo. Va en el panel y no en la fila de la
-                        tabla a propósito: es aquí donde se ve QUÉ es el
-                        archivo —su categoría, sus versiones, su
-                        miniatura—, y compartir con el restaurante no se
-                        deshace, así que la decisión se toma mirándolo.
-
-                        El botón se le ofrece a cualquiera que llegue
-                        hasta aquí, sin mirar su rol, y no por descuido:
-                        las filas de esta tabla son las que `can_read_file()`
-                        ha dejado pasar, `manage_files` la tienen los tres
-                        roles del espacio (propietario, administrador y
-                        trabajador) y esta pantalla es la del equipo. Quien
-                        no pueda —un trabajador con facturación, que ni
-                        siquiera ve la fila— recibe el "no" del servidor.
-                      */}
-                      <h3 className="mb-2 text-base font-semibold text-primary-dark">
-                        {t.shareTitle}
-                      </h3>
-                      <div className="mb-5 rounded-[10px] bg-soft-surface p-3 text-sm">
-                        <VisibilityMark visibility={files.selected.file.visibility} />
-                        {files.selected.file.visibility === "shared_with_client" ? (
-                          <p className="mt-2 text-text-secondary">{t.shareSharedHint}</p>
-                        ) : (
-                          <>
-                            <p className="mt-2 text-text-secondary">{t.shareInternalHint}</p>
-                            <ShareFileButton fileId={files.selected.file.id} />
-                            <p className="mt-2 text-xs text-text-secondary">
-                              {t.shareIrreversible}
-                            </p>
-                          </>
-                        )}
-                      </div>
-
-                      <h3 className="mb-2 text-base font-semibold text-primary-dark">
-                        {t.versionsTitle}
-                      </h3>
-                      <ul className="space-y-2">
-                        {files.selected.versions.map((version) => (
-                          <li
-                            key={version.id}
-                            className="flex items-start gap-3 rounded-[10px] bg-soft-surface p-2 text-sm"
-                          >
-                            {/*
-                              La miniatura es el propio archivo servido por
-                              la ruta privada, no una copia optimizada:
-                              RN-ARC-08 pide esa optimización y la Fase 1 no
-                              la monta, así que se dice en el adaptador y no
-                              se finge aquí. Lo que no es imagen no enseña
-                              recuadro vacío: dice que no hay vista previa.
-                            */}
-                            {version.mimeType.startsWith("image/") ? (
-                              // eslint-disable-next-line @next/next/no-img-element -- el original vive en un bucket privado y llega por un 302 firmado y temporal (RN-ARC-08): `next/image` no puede optimizar una URL que caduca en cinco minutos.
-                              <img
-                                src={`/api/archivos/${files.selected!.file.id}?version=${version.versionNumber}`}
-                                /*
-                                  Alternativa vacía a propósito: la miniatura
-                                  no añade nada que no esté escrito al lado
-                                  —el nombre del archivo está en la cabecera
-                                  del panel y la versión, en la fila—, y una
-                                  alternativa que repite eso solo lo hace
-                                  leer dos veces. Además, así una miniatura
-                                  que no cargue deja un hueco y no un párrafo
-                                  desbordado.
-                                */
-                                alt=""
-                                className="h-12 w-12 shrink-0 overflow-hidden rounded-[8px] border border-border bg-soft-surface object-cover"
-                              />
-                            ) : (
-                              <span
-                                aria-hidden="true"
-                                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[8px] border border-border bg-surface text-text-secondary"
-                              >
-                                <Icon name="document" className="h-5 w-5" />
-                              </span>
-                            )}
-
-                            <span className="min-w-0 flex-1">
-                              <span className="block font-semibold text-primary-dark">
-                                {version.variant === null
-                                  ? t.fileVersion(version.versionNumber)
-                                  : (t.fileVariants[version.variant as FileVariantKey] ??
-                                    version.variant)}
-                              </span>
-                              <span className="block text-xs text-text-secondary">
-                                {dia(version.createdAt, timeZone)} · {t.fileSize(megabytes(version.sizeBytes))}
-                              </span>
-                              {/* RN-ARC-08: enlace privado y temporal, firmado tras
-                                  comprobar el permiso. Cada versión descarga LA SUYA. */}
-                              <a
-                                href={`/api/archivos/${files.selected!.file.id}?version=${version.versionNumber}`}
-                                className="text-cuotly-green underline"
-                              >
-                                {es.files.download}
-                              </a>
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </>
-                  )}
-                </Card>
+                      </>
+                    )}
+                  </Card>
+                </div>
               </div>
 
               {/*
@@ -3127,7 +3167,7 @@ export function EstablishmentSheet({
             las lee lo decide `can_read_establishment_notes()`, no esto.
           */}
           {block.key === "internalNotes" ? (
-            <NotesPanel establishmentId={header.id} notes={notes} timeZone={timeZone} />
+            <NotesPanel establishmentId={header.id} notes={notes} timeZone={timeZone} wide />
           ) : null}
 
           {/* RN-EST-14 · las copias de seguridad (§38, RN-BCK), que hasta
@@ -3239,7 +3279,11 @@ export function EstablishmentSheet({
                 <TableBody>
                   {audit.rows.map((row) => (
                     <TableRow key={row.id}>
-                      <TableCell>{fechaYHoraLarga(row.createdAt, timeZone)}</TableCell>
+                      <TableCell>
+                        <span className="whitespace-nowrap text-text-secondary">
+                          {fechaYHoraLarga(row.createdAt, timeZone)}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         {/*
                           El nombre en español sale del catálogo de
@@ -3247,14 +3291,24 @@ export function EstablishmentSheet({
                           enseña cruda en vez de esconderse, igual que en la
                           auditoría del espacio.
                         */}
-                        <span className="block text-text">
-                          {(es.settings.auditActions as Readonly<Record<string, string>>)[
-                            row.action
-                          ] ?? row.action}
+                        <span className="flex items-start gap-3">
+                          <span
+                            aria-hidden="true"
+                            className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-cuotly-green/10 text-cuotly-green"
+                          >
+                            <Icon name="document" className="h-4 w-4" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block font-semibold text-text">
+                              {(es.settings.auditActions as Readonly<Record<string, string>>)[
+                                row.action
+                              ] ?? row.action}
+                            </span>
+                            {row.reason === null ? null : (
+                              <span className="block text-xs text-text-secondary">{row.reason}</span>
+                            )}
+                          </span>
                         </span>
-                        {row.reason === null ? null : (
-                          <span className="block text-xs text-text-secondary">{row.reason}</span>
-                        )}
                       </TableCell>
                       <TableCell>
                         {/*
@@ -3294,9 +3348,13 @@ export function EstablishmentSheet({
                           "Sistema" sería mentir en la pantalla que existe
                           justo para saber quién hizo qué.
                         */}
-                        {row.actorId === null
-                          ? t.auditSystemActor
-                          : (row.actorName ?? t.auditUnknownActor)}
+                        {row.actorId === null ? (
+                          <span className="text-text-secondary">{t.auditSystemActor}</span>
+                        ) : row.actorName === null ? (
+                          t.auditUnknownActor
+                        ) : (
+                          <PersonCell name={row.actorName} />
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

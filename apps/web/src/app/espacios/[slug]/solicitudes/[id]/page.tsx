@@ -160,7 +160,7 @@ export default async function TeamRequestDetailPage({
         };
 
 return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="space-y-6">
       <RequestHeader
         headline={requestHeadline(request.description)}
         code={request.code}
@@ -170,8 +170,13 @@ return (
         pager={pager}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_1fr] lg:items-start">
-        <div className="space-y-6">
+      {/*
+        M26 · tres columnas: lo que pidió el restaurante, la clasificación
+        con sus botones, y el historial de la solicitud. En pantallas
+        estrechas se apilan en ese orden.
+      */}
+      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="min-w-0 space-y-4">
           <ClientRequestCard timeZone={zona}
             request={request}
             establishmentName={establishment?.name ?? null}
@@ -200,10 +205,9 @@ return (
             />
           </Card>
 
-          <RequestHistoryCard timeZone={zona} entries={detail.history} />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-4">
           {/*
             Maqueta 05 · el panel de los tres pasos va ENCIMA de la
             clasificación y de los botones: dice dónde está la solicitud
@@ -350,6 +354,10 @@ return (
               </Link>
             </Card>
           ) : null}
+        </div>
+
+        <div className="min-w-0 space-y-4 lg:col-span-2 xl:col-span-1">
+          <RequestHistoryCard timeZone={zona} entries={detail.history} />
         </div>
       </div>
 

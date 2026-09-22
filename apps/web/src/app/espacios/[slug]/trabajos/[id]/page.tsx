@@ -21,7 +21,7 @@ import { es } from "@/i18n/es";
 import { tiempoRestante } from "@/i18n/duration";
 import { createClient } from "@/lib/supabase/server";
 import { loadTeamJobs } from "../list-query";
-import { listPosition } from "@/core/requests";
+import { listPosition, requestHeadline } from "@/core/requests";
 import { jobEnd } from "@/core/job-execution";
 import { JobEvidence } from "./JobEvidence";
 import { loadJobEvidence } from "./evidence-load";
@@ -371,253 +371,369 @@ export default async function TeamJobDetailPage({
   });
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="space-y-6">
       {/*
-        Maqueta 06 · volver a la lista y moverse por ella sin salir del
-        detalle. Con su texto y no solo una flecha: en móvil no hay dónde
-        posarse para leer un `title`.
+        M28 · arriba "Volver a trabajos" con el paginador, y el estado a la
+        derecha. RN-SLA-17: "Fuera de plazo" va AL LADO del estado, nunca en
+        su lugar: es una condición calculada que convive con En curso,
+        Bloqueado o el que sea.
       */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link
-          href={listaHref}
-          className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
-        >
-          <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
-          {es.teamArea.jobs.backToList}
-        </Link>
-
-        {pager === undefined ? null : (
-          <nav aria-label={es.teamArea.jobs.pagerLabel} className="flex shrink-0 items-center gap-1">
-            <JobPagerLink
-              href={pager.previousHref}
-              icon="arrowLeft"
-              label={es.teamArea.jobs.pagerPrevious}
-            />
-            <span className="whitespace-nowrap px-1 text-sm text-text-secondary">
-              {es.teamArea.jobs.pagerPosition(pager.index, pager.total)}
-            </span>
-            <JobPagerLink
-              href={pager.nextHref}
-              icon="arrowRight"
-              label={es.teamArea.jobs.pagerNext}
-            />
-          </nav>
-        )}
-      </div>
-
-      <header>
-        <p className="text-sm text-text-secondary">
-          {job.code} · {establishment?.name ?? "—"}
-        </p>
-        {/*
-          El título es el ALCANCE, no la palabra "Trabajo": quien abre esto
-          quiere saber de qué va, y el código y el restaurante ya están
-          encima. Si no hay solicitud legible, se cae al nombre genérico.
-        */}
-        <h1 className="text-2xl font-bold text-primary-dark">
-          {request?.description ?? es.teamArea.jobs.detailTitle}
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={listaHref}
+            className="flex shrink-0 items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+          >
+            <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
+            {es.teamArea.jobs.backToList}
+          </Link>
+          {pager === undefined ? null : (
+            <nav aria-label={es.teamArea.jobs.pagerLabel} className="flex shrink-0 items-center gap-1">
+              <JobPagerLink
+                href={pager.previousHref}
+                icon="arrowLeft"
+                label={es.teamArea.jobs.pagerPrevious}
+              />
+              <span className="whitespace-nowrap px-1 text-sm text-text-secondary">
+                {es.teamArea.jobs.pagerPosition(pager.index, pager.total)}
+              </span>
+              <JobPagerLink
+                href={pager.nextHref}
+                icon="arrowRight"
+                label={es.teamArea.jobs.pagerNext}
+              />
+            </nav>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <StatusBadge tone={jobTone(job.state)}>
             {es.naming.states.job[job.state as JobStateKey] ?? job.state}
           </StatusBadge>
-          {/*
-            RN-SLA-17 · "Fuera de plazo" va AL LADO del estado, nunca en su
-            lugar: es una condición calculada que convive con En curso,
-            Bloqueado o el que sea.
-          */}
           {timers.outOfDeadline ? (
             <StatusBadge tone="danger">{es.teamArea.jobs.outOfDeadline}</StatusBadge>
           ) : null}
+        </div>
+      </div>
+
+      {/*
+        El título es el ALCANCE —la primera frase de lo que se pidió—, con
+        el código en su etiqueta al lado, como en M28. Debajo, de qué
+        restaurante es y de qué solicitud nació.
+      */}
+      <header>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+            {request ? requestHeadline(request.description) : es.teamArea.jobs.detailTitle}
+          </h1>
+          <span className="rounded-[8px] bg-soft-surface px-2.5 py-1 text-sm font-semibold text-text-secondary">
+            {job.code}
+          </span>
+        </div>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-text-secondary">
+          <span>{establishment?.name ?? "—"}</span>
           {job.category ? (
-            <span className="text-sm text-text-secondary">
-              {es.naming.categories[job.category as CategoryKey] ?? job.category}
+            <span>· {es.naming.categories[job.category as CategoryKey] ?? job.category}</span>
+          ) : null}
+          {request ? (
+            <span>
+              · {es.teamArea.jobs.createdFromRequest}{" "}
+              <Link
+                href={`/espacios/${slug}/solicitudes/${request.id}`}
+                className="font-semibold text-cuotly-green hover:underline"
+              >
+                {request.code}
+              </Link>
             </span>
           ) : null}
-        </div>
+        </p>
       </header>
 
-      {request ? (
-        <Card title={es.teamArea.requests.descriptionColumn}>
-          <p className="whitespace-pre-wrap text-text">{request.description}</p>
-          <p className="mt-3 text-sm">
-            <Link
-              href={`/espacios/${slug}/solicitudes/${request.id}`}
-              className="text-cuotly-green underline"
-            >
-              {request.code}
-            </Link>
-          </p>
-        </Card>
-      ) : null}
+      {/*
+        M28 · tres columnas: la información del trabajo y lo que se pidió;
+        las tareas y lo que se puede hacer ahora; y la evidencia de lo
+        publicado. En pantallas estrechas se apilan en ese orden.
+      */}
+      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="min-w-0 space-y-4">
+            <Card title={es.teamArea.jobs.operativeTitle}>
+              <div className="border-b border-border py-3">
+                <p className="text-xs text-text-secondary">{es.teamArea.jobs.assigneeLabel}</p>
+                {/*
+                  El nombre de quien lleva el trabajo es información del EQUIPO.
+                  Esta pantalla es del espacio y `jobs_select` ya le ha negado la
+                  fila al restaurante; aun así el nombre sale de `profiles` y no
+                  de una columna de `jobs`, que las de identidad están revocadas.
+                */}
+                <p className="text-sm font-semibold text-primary-dark">
+                  {responsable ?? es.teamArea.jobs.assigneeNone}
+                </p>
+              </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card title={es.teamArea.jobs.operativeTitle}>
-          <div className="border-b border-border py-3">
-            <p className="text-xs text-text-secondary">{es.teamArea.jobs.assigneeLabel}</p>
-            {/*
-              El nombre de quien lleva el trabajo es información del EQUIPO.
-              Esta pantalla es del espacio y `jobs_select` ya le ha negado la
-              fila al restaurante; aun así el nombre sale de `profiles` y no
-              de una columna de `jobs`, que las de identidad están revocadas.
-            */}
-            <p className="text-sm font-semibold text-primary-dark">
-              {responsable ?? es.teamArea.jobs.assigneeNone}
-            </p>
-          </div>
+              {/*
+                Maqueta 06 · fecha de inicio y fecha estimada de fin. La
+                segunda es una AFIRMACIÓN sobre el futuro y por eso la decide
+                `jobEnd()` en `src/core/`, con sus tests: en pausa NO se da
+                ninguna fecha, porque el tiempo restante se conserva y la fecha
+                se movería sola (RN-JOB-08, RN-SLA-14). Dar una fecha ahí sería
+                mentir sin que fallara nada.
+              */}
+              {/*
+                Maqueta 06 · "Prioridad". No es una etiqueta Alta/Media/Baja:
+                es el PUESTO que el restaurante le ha dado entre sus cambios
+                pendientes (decisión de Bosco, 10/09/2026 — "organizando sus
+                cambios por cuál es más importante"). Lo pone el cliente y solo
+                con un plan que lo conceda, así que la mayoría de los trabajos
+                no lo tienen y eso se dice en vez de inventar un "Media"
+                (CA-20).
+              */}
+              <div className="border-b border-border py-3">
+                <p className="text-xs text-text-secondary">{es.teamArea.jobs.priorityLabel}</p>
+                <p className="text-sm font-semibold text-primary-dark">
+                  {request?.priority_rank == null
+                    ? es.teamArea.jobs.priorityNone
+                    : es.teamArea.jobs.priorityValue(request.priority_rank)}
+                </p>
+                <p className="text-xs text-text-secondary">
+                  {request?.priority_rank == null
+                    ? es.teamArea.jobs.priorityNoneHint
+                    : es.teamArea.jobs.priorityHint}
+                </p>
+              </div>
 
+              <div className="border-b border-border py-3">
+                <p className="text-xs text-text-secondary">{es.teamArea.jobs.startedAtLabel}</p>
+                <p className="text-sm font-semibold text-primary-dark">
+                  {job.started_at === null
+                    ? es.teamArea.jobs.startedAtNone
+                    : fechaYHora(job.started_at, zona)}
+                </p>
+              </div>
+
+              <div className="border-b border-border py-3">
+                <p className="text-xs text-text-secondary">
+                  {fin.kind === "published"
+                    ? es.teamArea.jobs.endPublishedLabel
+                    : es.teamArea.jobs.endLabel}
+                </p>
+                <p className="text-sm font-semibold text-primary-dark">
+                  {fin.kind === "published" || fin.kind === "estimated"
+                    ? fechaYHora(fin.at.toISOString(), zona)
+                    : FIN_SIN_FECHA[fin.kind].texto}
+                </p>
+                {/*
+                  El motivo, debajo. Sin él, "En pausa" a secas deja pensando
+                  si la fecha se ha perdido o si es que nadie la ha calculado.
+                */}
+                <p className="text-xs text-text-secondary">
+                  {fin.kind === "published" || fin.kind === "estimated"
+                    ? es.teamArea.jobs.endEstimatedHint
+                    : FIN_SIN_FECHA[fin.kind].motivo}
+                </p>
+              </div>
+
+              {timers.t2Done ? (
+                <Contador
+                  titulo={es.teamArea.jobs.t2Title}
+                  valor={es.teamArea.jobs.t2Done}
+                  pista={es.teamArea.jobs.t2DoneHint}
+                  tono="hecho"
+                />
+              ) : timers.t2 === null ? (
+                <Contador
+                  titulo={es.teamArea.jobs.t2Title}
+                  valor={es.teamArea.jobs.t2NotStarted}
+                  pista={es.teamArea.jobs.t2NotStartedHint}
+                  tono="normal"
+                />
+              ) : (
+                <Contador
+                  titulo={es.teamArea.jobs.t2Title}
+                  valor={
+                    timers.t2.overdue
+                      ? es.teamArea.jobs.outOfDeadline
+                      : es.teamArea.jobs.remaining(tiempoRestante(timers.t2.remainingMinutes))
+                  }
+                  pista={
+                    timers.t2.overdue ? es.teamArea.jobs.outOfDeadlineHint : es.teamArea.jobs.t2Hint
+                  }
+                  tono={timers.t2.overdue ? "alerta" : "normal"}
+                />
+              )}
+
+              {timers.t3 === null ? (
+                <Contador
+                  titulo={es.teamArea.jobs.t3Title}
+                  valor={es.teamArea.jobs.t3NotStarted}
+                  pista={es.teamArea.jobs.t3NotStartedHint}
+                  tono="normal"
+                />
+              ) : (
+                <Contador
+                  titulo={es.teamArea.jobs.t3Title}
+                  valor={
+                    timers.t3.overdue
+                      ? es.teamArea.jobs.outOfDeadline
+                      : es.teamArea.jobs.remaining(tiempoRestante(timers.t3.remainingMinutes))
+                  }
+                  pista={
+                    timers.t3.overdue
+                      ? es.teamArea.jobs.outOfDeadlineHint
+                      : blocked
+                        ? es.teamArea.jobs.t3PausedHint
+                        : es.teamArea.jobs.t3Hint
+                  }
+                  tono={timers.t3.overdue ? "alerta" : "normal"}
+                />
+              )}
+            </Card>
+
+            <Card title={es.teamArea.jobs.detailsTitle}>
+              <div className="border-b border-border py-3">
+                <p className="text-xs text-text-secondary">{es.teamArea.jobs.categoryLabel}</p>
+                <p className="text-sm font-semibold text-primary-dark">
+                  {job.category
+                    ? (es.naming.categories[job.category as CategoryKey] ?? job.category)
+                    : es.teamArea.jobs.categoryNone}
+                </p>
+              </div>
+
+              <div className="border-b border-border py-3">
+                <p className="text-xs text-text-secondary">{es.teamArea.jobs.consumedLabel}</p>
+                {/*
+                  Un trabajo consume UN cambio de su categoría al aceptarse
+                  (RN-CON-01), y ninguno si el plan no incluye esa categoría:
+                  entonces se presupuesta aparte y decirlo es más útil que un
+                  cero (RN-COM-12).
+                */}
+                <p className="text-sm font-semibold text-primary-dark">
+                  {timers.loadPoints === null
+                    ? es.teamArea.jobs.consumedNone
+                    : es.teamArea.jobs.consumedOne}
+                </p>
+              </div>
+
+              <div className="py-3">
+                <p className="text-xs text-text-secondary">{es.teamArea.jobs.loadPointsLabel}</p>
+                <p className="text-sm font-semibold text-primary-dark">
+                  {timers.loadPoints === null
+                    ? es.teamArea.jobs.loadPointsNone
+                    : es.teamArea.jobs.loadPointsValue(timers.loadPoints)}
+                </p>
+              </div>
+            </Card>
+          {request ? (
+            <Card title={es.teamArea.requests.descriptionColumn}>
+              <p className="whitespace-pre-wrap text-text">{request.description}</p>
+              <p className="mt-3 text-sm">
+                <Link
+                  href={`/espacios/${slug}/solicitudes/${request.id}`}
+                  className="text-cuotly-green underline"
+                >
+                  {request.code}
+                </Link>
+              </p>
+            </Card>
+          ) : null}
+        </div>
+
+        <div className="min-w-0 space-y-4">
           {/*
-            Maqueta 06 · fecha de inicio y fecha estimada de fin. La
-            segunda es una AFIRMACIÓN sobre el futuro y por eso la decide
-            `jobEnd()` en `src/core/`, con sus tests: en pausa NO se da
-            ninguna fecha, porque el tiempo restante se conserva y la fecha
-            se movería sola (RN-JOB-08, RN-SLA-14). Dar una fecha ahí sería
-            mentir sin que fallara nada.
+            Maqueta 06 · el desglose, para leerlo. Se enseña siempre que haya
+            tareas, aunque el trabajo ya esté terminado: lo que queda entonces
+            es el historial de cómo se repartió (RN-JOB-13, que las conserva).
+
+            Repartir, planificar y resolver reasignaciones es la maqueta 07 y
+            vive en su pantalla: aquí solo se enlaza, y solo a quien el
+            servidor va a dejar hacer algo allí. El enlace no autoriza nada
+            —`assign_task()` y compañía comprueban cada una lo suyo—, pero
+            ofrecer una puerta que se abre en un error no es ofrecer nada.
+          */}
+          {tasks.length > 0 || puedeDesglosar ? (
+            <TaskBreakdown
+              tasks={tasks}
+              coordinationHref={`/espacios/${slug}/trabajos/${id}/tareas${sufijo}`}
+              canCoordinate={puedeDesglosar && !terminado}
+            />
+          ) : null}
+          {job.state === "pending_assignment" ? (
+            <AssignJobForm jobId={id} candidates={candidates} />
+          ) : null}
+
+          {gate ? (
+            <Card title={es.teamArea.jobs.quoteGateTitle}>
+              <p className="text-sm text-text">{es.teamArea.jobs.quoteGateCode(gate.quote_code)}</p>
+              <p className="mt-1 text-sm text-text-secondary">
+                {!gate.requires_payment_before_start
+                  ? es.teamArea.jobs.quoteGateNoPaymentRequired
+                  : gate.paid
+                    ? es.teamArea.jobs.quoteGatePaid
+                    : gate.start_authorized
+                      ? es.teamArea.jobs.quoteGateAuthorized
+                      : es.teamArea.jobs.quoteGateBlocked}
+              </p>
+              {esDelEquipo ? (
+                <p className="mt-2 text-sm">
+                  <Link
+                    href={`/espacios/${slug}/finanzas/presupuestos/${gate.quote_id}`}
+                    className="text-cuotly-green underline"
+                  >
+                    {es.teamArea.jobs.quoteGateLink}
+                  </Link>
+                </p>
+              ) : null}
+            </Card>
+          ) : null}
+
+          {job.state === "assigned" ? <StartJobForm jobId={id} /> : null}
+
+          {job.state === "in_progress" ? (
+            <>
+              <PublishJobForm jobId={id} spaceId={job.space_id} />
+              <BlockJobForm jobId={id} />
+            </>
+          ) : null}
+
+          {blocked ? <UnblockJobForm jobId={id} /> : null}
+
+          {hasActions ? null : (
+            <Card title={es.teamArea.jobs.noActionTitle}>
+              <p className="text-sm text-text-secondary">{es.teamArea.jobs.noActionReason}</p>
+            </Card>
+          )}
+        </div>
+
+        <div className="min-w-0 space-y-4 lg:col-span-2 xl:col-span-1">
+          {/*
+            §66.2 · la coordinación del equipo sobre este trabajo. Se ofrece
+            siempre, en cualquier estado: un trabajo terminado también se
+            comenta, y el historial de cómo se coordinó no se cierra con él.
+            Quién puede abrirla lo decide `get_or_create_job_conversation()`,
+            que exige ser del espacio y poder leer el trabajo — al cliente,
+            que sí puede leer la ficha de su trabajo, le dice que no
+            (RN-MSG-04).
           */}
           {/*
-            Maqueta 06 · "Prioridad". No es una etiqueta Alta/Media/Baja:
-            es el PUESTO que el restaurante le ha dado entre sus cambios
-            pendientes (decisión de Bosco, 10/09/2026 — "organizando sus
-            cambios por cuál es más importante"). Lo pone el cliente y solo
-            con un plan que lo conceda, así que la mayoría de los trabajos
-            no lo tienen y eso se dice en vez de inventar un "Media"
-            (CA-20).
+            Maqueta 06 · la evidencia de lo publicado, al lado de los
+            comentarios. Solo al equipo: el restaurante puede abrir la ficha de
+            su trabajo y ni adjunta ni ve el catálogo interno (P7).
           */}
-          <div className="border-b border-border py-3">
-            <p className="text-xs text-text-secondary">{es.teamArea.jobs.priorityLabel}</p>
-            <p className="text-sm font-semibold text-primary-dark">
-              {request?.priority_rank == null
-                ? es.teamArea.jobs.priorityNone
-                : es.teamArea.jobs.priorityValue(request.priority_rank)}
-            </p>
-            <p className="text-xs text-text-secondary">
-              {request?.priority_rank == null
-                ? es.teamArea.jobs.priorityNoneHint
-                : es.teamArea.jobs.priorityHint}
-            </p>
-          </div>
-
-          <div className="border-b border-border py-3">
-            <p className="text-xs text-text-secondary">{es.teamArea.jobs.startedAtLabel}</p>
-            <p className="text-sm font-semibold text-primary-dark">
-              {job.started_at === null
-                ? es.teamArea.jobs.startedAtNone
-                : fechaYHora(job.started_at, zona)}
-            </p>
-          </div>
-
-          <div className="border-b border-border py-3">
-            <p className="text-xs text-text-secondary">
-              {fin.kind === "published"
-                ? es.teamArea.jobs.endPublishedLabel
-                : es.teamArea.jobs.endLabel}
-            </p>
-            <p className="text-sm font-semibold text-primary-dark">
-              {fin.kind === "published" || fin.kind === "estimated"
-                ? fechaYHora(fin.at.toISOString(), zona)
-                : FIN_SIN_FECHA[fin.kind].texto}
-            </p>
-            {/*
-              El motivo, debajo. Sin él, "En pausa" a secas deja pensando
-              si la fecha se ha perdido o si es que nadie la ha calculado.
-            */}
-            <p className="text-xs text-text-secondary">
-              {fin.kind === "published" || fin.kind === "estimated"
-                ? es.teamArea.jobs.endEstimatedHint
-                : FIN_SIN_FECHA[fin.kind].motivo}
-            </p>
-          </div>
-
-          {timers.t2Done ? (
-            <Contador
-              titulo={es.teamArea.jobs.t2Title}
-              valor={es.teamArea.jobs.t2Done}
-              pista={es.teamArea.jobs.t2DoneHint}
-              tono="hecho"
+          {esDelEquipo ? (
+            <JobEvidence timeZone={zona}
+              jobId={id}
+              establishmentId={job.establishment_id}
+              files={evidencia}
+              /*
+                Quién puede adjuntar es lo mismo que comprueba
+                `attach_job_evidence()`: el responsable o `assign_jobs`. Se
+                pregunta para no pintar un formulario que el servidor va a
+                rechazar; lo que lo impide de verdad es él.
+              */
+              canAttach={puedeDesglosar}
+              publicado={job.published_at !== null}
             />
-          ) : timers.t2 === null ? (
-            <Contador
-              titulo={es.teamArea.jobs.t2Title}
-              valor={es.teamArea.jobs.t2NotStarted}
-              pista={es.teamArea.jobs.t2NotStartedHint}
-              tono="normal"
-            />
-          ) : (
-            <Contador
-              titulo={es.teamArea.jobs.t2Title}
-              valor={
-                timers.t2.overdue
-                  ? es.teamArea.jobs.outOfDeadline
-                  : es.teamArea.jobs.remaining(tiempoRestante(timers.t2.remainingMinutes))
-              }
-              pista={
-                timers.t2.overdue ? es.teamArea.jobs.outOfDeadlineHint : es.teamArea.jobs.t2Hint
-              }
-              tono={timers.t2.overdue ? "alerta" : "normal"}
-            />
-          )}
-
-          {timers.t3 === null ? (
-            <Contador
-              titulo={es.teamArea.jobs.t3Title}
-              valor={es.teamArea.jobs.t3NotStarted}
-              pista={es.teamArea.jobs.t3NotStartedHint}
-              tono="normal"
-            />
-          ) : (
-            <Contador
-              titulo={es.teamArea.jobs.t3Title}
-              valor={
-                timers.t3.overdue
-                  ? es.teamArea.jobs.outOfDeadline
-                  : es.teamArea.jobs.remaining(tiempoRestante(timers.t3.remainingMinutes))
-              }
-              pista={
-                timers.t3.overdue
-                  ? es.teamArea.jobs.outOfDeadlineHint
-                  : blocked
-                    ? es.teamArea.jobs.t3PausedHint
-                    : es.teamArea.jobs.t3Hint
-              }
-              tono={timers.t3.overdue ? "alerta" : "normal"}
-            />
-          )}
-        </Card>
-
-        <Card title={es.teamArea.jobs.detailsTitle}>
-          <div className="border-b border-border py-3">
-            <p className="text-xs text-text-secondary">{es.teamArea.jobs.categoryLabel}</p>
-            <p className="text-sm font-semibold text-primary-dark">
-              {job.category
-                ? (es.naming.categories[job.category as CategoryKey] ?? job.category)
-                : es.teamArea.jobs.categoryNone}
-            </p>
-          </div>
-
-          <div className="border-b border-border py-3">
-            <p className="text-xs text-text-secondary">{es.teamArea.jobs.consumedLabel}</p>
-            {/*
-              Un trabajo consume UN cambio de su categoría al aceptarse
-              (RN-CON-01), y ninguno si el plan no incluye esa categoría:
-              entonces se presupuesta aparte y decirlo es más útil que un
-              cero (RN-COM-12).
-            */}
-            <p className="text-sm font-semibold text-primary-dark">
-              {timers.loadPoints === null
-                ? es.teamArea.jobs.consumedNone
-                : es.teamArea.jobs.consumedOne}
-            </p>
-          </div>
-
-          <div className="py-3">
-            <p className="text-xs text-text-secondary">{es.teamArea.jobs.loadPointsLabel}</p>
-            <p className="text-sm font-semibold text-primary-dark">
-              {timers.loadPoints === null
-                ? es.teamArea.jobs.loadPointsNone
-                : es.teamArea.jobs.loadPointsValue(timers.loadPoints)}
-            </p>
-          </div>
-        </Card>
+          ) : null}
+          {esDelEquipo ? <OpenInternalConversationForm jobId={id} slug={slug} /> : null}
+        </div>
       </div>
 
       {/*
@@ -672,103 +788,6 @@ export default async function TeamJobDetailPage({
           </>
         )}
       </Card>
-
-      {/*
-        Maqueta 06 · el desglose, para leerlo. Se enseña siempre que haya
-        tareas, aunque el trabajo ya esté terminado: lo que queda entonces
-        es el historial de cómo se repartió (RN-JOB-13, que las conserva).
-
-        Repartir, planificar y resolver reasignaciones es la maqueta 07 y
-        vive en su pantalla: aquí solo se enlaza, y solo a quien el
-        servidor va a dejar hacer algo allí. El enlace no autoriza nada
-        —`assign_task()` y compañía comprueban cada una lo suyo—, pero
-        ofrecer una puerta que se abre en un error no es ofrecer nada.
-      */}
-      {tasks.length > 0 || puedeDesglosar ? (
-        <TaskBreakdown
-          tasks={tasks}
-          coordinationHref={`/espacios/${slug}/trabajos/${id}/tareas${sufijo}`}
-          canCoordinate={puedeDesglosar && !terminado}
-        />
-      ) : null}
-
-      {/*
-        §66.2 · la coordinación del equipo sobre este trabajo. Se ofrece
-        siempre, en cualquier estado: un trabajo terminado también se
-        comenta, y el historial de cómo se coordinó no se cierra con él.
-        Quién puede abrirla lo decide `get_or_create_job_conversation()`,
-        que exige ser del espacio y poder leer el trabajo — al cliente,
-        que sí puede leer la ficha de su trabajo, le dice que no
-        (RN-MSG-04).
-      */}
-      {/*
-        Maqueta 06 · la evidencia de lo publicado, al lado de los
-        comentarios. Solo al equipo: el restaurante puede abrir la ficha de
-        su trabajo y ni adjunta ni ve el catálogo interno (P7).
-      */}
-      {esDelEquipo ? (
-        <JobEvidence timeZone={zona}
-          jobId={id}
-          establishmentId={job.establishment_id}
-          files={evidencia}
-          /*
-            Quién puede adjuntar es lo mismo que comprueba
-            `attach_job_evidence()`: el responsable o `assign_jobs`. Se
-            pregunta para no pintar un formulario que el servidor va a
-            rechazar; lo que lo impide de verdad es él.
-          */
-          canAttach={puedeDesglosar}
-          publicado={job.published_at !== null}
-        />
-      ) : null}
-
-      {esDelEquipo ? <OpenInternalConversationForm jobId={id} slug={slug} /> : null}
-
-      {job.state === "pending_assignment" ? (
-        <AssignJobForm jobId={id} candidates={candidates} />
-      ) : null}
-
-      {gate ? (
-        <Card title={es.teamArea.jobs.quoteGateTitle}>
-          <p className="text-sm text-text">{es.teamArea.jobs.quoteGateCode(gate.quote_code)}</p>
-          <p className="mt-1 text-sm text-text-secondary">
-            {!gate.requires_payment_before_start
-              ? es.teamArea.jobs.quoteGateNoPaymentRequired
-              : gate.paid
-                ? es.teamArea.jobs.quoteGatePaid
-                : gate.start_authorized
-                  ? es.teamArea.jobs.quoteGateAuthorized
-                  : es.teamArea.jobs.quoteGateBlocked}
-          </p>
-          {esDelEquipo ? (
-            <p className="mt-2 text-sm">
-              <Link
-                href={`/espacios/${slug}/finanzas/presupuestos/${gate.quote_id}`}
-                className="text-cuotly-green underline"
-              >
-                {es.teamArea.jobs.quoteGateLink}
-              </Link>
-            </p>
-          ) : null}
-        </Card>
-      ) : null}
-
-      {job.state === "assigned" ? <StartJobForm jobId={id} /> : null}
-
-      {job.state === "in_progress" ? (
-        <>
-          <PublishJobForm jobId={id} spaceId={job.space_id} />
-          <BlockJobForm jobId={id} />
-        </>
-      ) : null}
-
-      {blocked ? <UnblockJobForm jobId={id} /> : null}
-
-      {hasActions ? null : (
-        <Card title={es.teamArea.jobs.noActionTitle}>
-          <p className="text-sm text-text-secondary">{es.teamArea.jobs.noActionReason}</p>
-        </Card>
-      )}
     </div>
   );
 }

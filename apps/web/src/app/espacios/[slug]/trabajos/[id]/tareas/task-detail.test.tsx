@@ -1,3 +1,4 @@
+import { fechaCorta } from "@/i18n/dates";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -74,7 +75,9 @@ describe("TaskDetail · maqueta 07", () => {
   it("enseña la tarea con su fecha prevista", () => {
     pintar();
     expect(screen.getByText(TAREA.title)).toBeInTheDocument();
-    expect(screen.getByText("2026-09-13")).toBeInTheDocument();
+    // La fecha planificada se enseña en formato corto, como en el resto
+    // de la aplicación (M30).
+    expect(screen.getByText(fechaCorta("2026-09-13"))).toBeInTheDocument();
   });
 
   it("CA-20 · sin descripción dice que no la tiene, no deja el hueco", () => {

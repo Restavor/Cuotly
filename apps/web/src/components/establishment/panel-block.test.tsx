@@ -109,9 +109,14 @@ describe("RN-PAN-10/11 · el formulario de crear el panel", () => {
     // Van ocultos y el servidor los vuelve a leer: quien mande el
     // formulario a mano puede cambiarlos, y lo que pase será lo que
     // `grant_establishment_access()` permita (CLAUDE.md).
-    const { container } = pintar({ rows: [], failed: false });
-    expect(container.querySelector('input[name="role"]')).toHaveValue("local_owner");
-    expect(container.querySelector('input[name="scope"]')).toHaveValue("this");
+    //
+    // Se buscan DENTRO del formulario del panel: desde que la tabla de
+    // usuarios va primero (M43), el primer `scope` de la ficha es un botón
+    // de radio del formulario de dar acceso, que es otra cosa.
+    pintar({ rows: [], failed: false });
+    const formulario = screen.getByLabelText(new RegExp(t.panelOwnerLabel)).closest("form")!;
+    expect(formulario.querySelector('input[name="role"]')).toHaveValue("local_owner");
+    expect(formulario.querySelector('input[name="scope"]')).toHaveValue("this");
   });
 
   it("a quien no gestiona clientes no se le ofrece, pero sí se le dice el estado", () => {

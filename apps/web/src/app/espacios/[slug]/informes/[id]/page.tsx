@@ -14,7 +14,8 @@ import { ReportStateBadge, periodLabel } from "@/components/report/ReportsTable"
 import { loadReportDetail } from "@/components/report/reports-load";
 import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
-import { Card, EmptyState } from "@/components/ui";
+import { ButtonLink, Card, EmptyState } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import { isObjectiveOnly, orderedSections } from "@/core/reports";
 import { DEFAULT_TIMEZONE, enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -73,17 +74,55 @@ export default async function ReportDetailPage({
   const timezone = space?.timezone ?? DEFAULT_TIMEZONE;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-primary-dark">{t.detailTitle}</h1>
-          <p className="text-sm text-text-secondary">{t.detailSubtitle}</p>
+    <div className="space-y-6">
+      {/*
+        M39 · "Volver" arriba; el nombre del informe con su estado al lado,
+        de quién es y qué periodo cubre; y las descargas a la derecha, que
+        es donde las pone el diseño. Sin versión generada no hay nada que
+        descargar y no se pintan.
+      */}
+      <header className="space-y-3">
+        <Link
+          href={`/espacios/${slug}/informes`}
+          className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+        >
+          <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
+          {t.backToList}
+        </Link>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+                {report.name}
+              </h1>
+              <ReportStateBadge status={report.status} />
+            </div>
+            <p className="mt-1 text-sm text-text-secondary">
+              {report.establishmentName ?? t.pdf.consolidated} · {periodLabel(report)}
+            </p>
+            <p className="text-sm text-text-secondary">{t.detailSubtitle}</p>
+          </div>
+          {ultima === null ? null : (
+            <div className="flex flex-wrap items-center gap-2">
+              <ButtonLink
+                href={`/espacios/${slug}/informes/${report.id}/descargar?formato=pdf`}
+                icon="download"
+              >
+                {t.downloadPdf}
+              </ButtonLink>
+              <ButtonLink
+                href={`/espacios/${slug}/informes/${report.id}/descargar?formato=csv`}
+                variant="secondary"
+              >
+                {t.downloadCsv}
+              </ButtonLink>
+            </div>
+          )}
         </div>
-        <ReportStateBadge status={report.status} />
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid items-start gap-4 lg:grid-cols-3">
+        <div className="min-w-0 space-y-4 lg:col-span-2">
           <Card title={t.infoTitle}>
             <RenameForm slug={slug} reportId={report.id} name={report.name} readOnly={cerrado} />
             <dl className="grid gap-3 sm:grid-cols-2">
@@ -116,21 +155,7 @@ export default async function ReportDetailPage({
             />
           </Card>
 
-          <Card
-            title={t.previewTitle}
-            action={
-              ultima === null ? null : (
-                <span className="flex gap-3 text-sm">
-                  <Link className="underline" href={`/espacios/${slug}/informes/${report.id}/descargar?formato=pdf`}>
-                    {t.downloadPdf}
-                  </Link>
-                  <Link className="underline" href={`/espacios/${slug}/informes/${report.id}/descargar?formato=csv`}>
-                    {t.downloadCsv}
-                  </Link>
-                </span>
-              )
-            }
-          >
+          <Card title={t.previewTitle}>
             {ultima === null ? (
               <EmptyState icon="document" title={t.noVersion} description={t.emptyReason} />
             ) : (

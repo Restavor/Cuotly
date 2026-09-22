@@ -173,16 +173,16 @@ export default async function JobTasksPage({
     }));
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-8">
+    <div className="space-y-6">
       <Link
         href={volverHref}
-        className="inline-flex items-center gap-2 rounded-[10px] border border-border px-3 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+        className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
       >
         <Icon name="arrowLeft" aria-hidden="true" className="h-[18px] w-[18px]" />
         {es.teamArea.tasks.coordination.backToJob}
       </Link>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
         <Card title={es.teamArea.tasks.coordination.title}>
           <p className="mb-3 text-sm text-text-secondary">
             {es.teamArea.tasks.coordination.subtitle(job.code, request?.description ?? "—")}

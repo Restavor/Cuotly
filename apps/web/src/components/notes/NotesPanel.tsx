@@ -1,3 +1,5 @@
+import { Avatar } from "@/components/ui/Avatar";
+import { Icon } from "@/components/ui/Icon";
 import { Card, EmptyState, StatusBadge } from "@/components/ui";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -23,11 +25,18 @@ export function NotesPanel({
   establishmentId,
   notes,
   timeZone,
+  wide = false,
 }: {
   establishmentId: string;
   notes: EstablishmentNotes;
   /** La zona del espacio: la fecha de cada nota se pinta en ella. */
   timeZone: string;
+  /**
+   * M46 · en la ficha del restaurante hay sitio: la lista de notas a la
+   * izquierda y el formulario a la derecha. En el lateral de Mensajes, que
+   * es estrecho, van una encima de otra.
+   */
+  wide?: boolean;
 }) {
   if (!notes.canRead) return null;
 
@@ -42,57 +51,69 @@ export function NotesPanel({
         </StatusBadge>
       }
     >
-      <NewNoteForm establishmentId={establishmentId} canRestrict={notes.canRestrict} />
+      {wide ? (
+        <p className="mb-4 flex items-center gap-2 rounded-[12px] border border-warning/40 bg-warning/10 px-3.5 py-2.5 text-sm text-text">
+          <Icon name="lock" aria-hidden="true" className="h-4 w-4 shrink-0" />
+          {t.wideNotice}
+        </p>
+      ) : null}
 
-      <div className="mt-4">
-        {notes.notes.length === 0 ? (
-          <EmptyState title={t.emptyTitle} description={t.emptyReason} />
-        ) : (
-          <ul className="space-y-3">
-            {notes.notes.map((note) => (
-              <li key={note.id} className="rounded-[10px] bg-soft-surface p-3 text-sm">
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-semibold text-primary-dark">
-                    {note.authorName ?? t.unknownAuthor}
-                  </span>
-                  <span className="text-xs text-text-secondary">
-                    {enZona(note.createdAt, timeZone, {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
-                </div>
-
-                {/*
-                  RN-EST-13 · una nota reservada se marca. Sin la marca,
-                  quien la escribió no sabría si su compañero la está
-                  leyendo, que es justo lo que el interruptor decide.
-                */}
-                {note.operational ? null : (
-                  <p className="mt-1">
-                    <StatusBadge tone="warning">{t.restrictedBadge}</StatusBadge>
-                  </p>
-                )}
-
-                <p className="mt-2 whitespace-pre-wrap text-text">{note.body}</p>
-
-                {/*
-                  Archivar, no borrar (CLAUDE.md). Se le ofrece a quien la
-                  escribió y a quien gestiona clientes; quien no pueda
-                  recibe el "no" del servidor.
-                */}
-                {note.mine || notes.canRestrict ? (
-                  <div className="mt-2">
-                    <ArchiveNoteButton noteId={note.id} />
+      <div className={wide ? "grid items-start gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]" : "flex flex-col"}>
+        <div className={wide ? "order-2 min-w-0 lg:order-1" : "order-2 mt-4"}>
+          {notes.notes.length === 0 ? (
+            <EmptyState title={t.emptyTitle} description={t.emptyReason} />
+          ) : (
+            <ul className="space-y-3">
+              {notes.notes.map((note) => (
+                <li key={note.id} className="rounded-[10px] bg-soft-surface p-3 text-sm">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <span className="flex items-center gap-2 font-semibold text-primary-dark">
+                      <Avatar name={note.authorName ?? t.unknownAuthor} size={26} />
+                      {note.authorName ?? t.unknownAuthor}
+                    </span>
+                    <span className="text-xs text-text-secondary">
+                      {enZona(note.createdAt, timeZone, {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
+
+                  {/*
+                    RN-EST-13 · una nota reservada se marca. Sin la marca,
+                    quien la escribió no sabría si su compañero la está
+                    leyendo, que es justo lo que el interruptor decide.
+                  */}
+                  {note.operational ? null : (
+                    <p className="mt-1">
+                      <StatusBadge tone="warning">{t.restrictedBadge}</StatusBadge>
+                    </p>
+                  )}
+
+                  <p className="mt-2 whitespace-pre-wrap text-text">{note.body}</p>
+
+                  {/*
+                    Archivar, no borrar (CLAUDE.md). Se le ofrece a quien la
+                    escribió y a quien gestiona clientes; quien no pueda
+                    recibe el "no" del servidor.
+                  */}
+                  {note.mine || notes.canRestrict ? (
+                    <div className="mt-2">
+                      <ArchiveNoteButton noteId={note.id} />
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className={wide ? "order-1 min-w-0 lg:order-2" : "order-1"}>
+          <NewNoteForm establishmentId={establishmentId} canRestrict={notes.canRestrict} />
+        </div>
       </div>
     </Card>
   );
