@@ -12,12 +12,12 @@ function datos(cambios: Partial<PanelHomeData> = {}): PanelHomeData {
     firstName: "Ana",
     establishment: { name: "Oliva", code: "EST-0001", city: "Vigo", photoUrl: null },
     links: {
-      newRequest: "/r#nueva-solicitud",
+      newRequest: "/r/solicitudes/nueva",
       createMenu: null,
       plan: "/r/facturacion",
       menus: null,
       messages: "/r#mensajes",
-      requests: "/r#solicitudes",
+      requests: "/r/solicitudes",
       data: "/r/datos",
     },
     attention: [],
@@ -95,6 +95,6 @@ describe("R01 · el Inicio del panel del restaurante", () => {
     render(<PanelHome data={datos({ firstSteps: true })} />);
     const pasos = screen.getByRole("heading", { name: t.firstStepsTitle }).closest("section") as HTMLElement;
     expect(within(pasos).getByRole("link", { name: t.stepDataCta })).toHaveAttribute("href", "/r/datos");
-    expect(within(pasos).getByRole("link", { name: t.stepRequestCta })).toHaveAttribute("href", "/r#nueva-solicitud");
+    expect(within(pasos).getByRole("link", { name: t.stepRequestCta })).toHaveAttribute("href", "/r/solicitudes/nueva");
   });
 });

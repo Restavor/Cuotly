@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { ConversationMessage } from "@/components/conversation/Conversation";
 import type { PanelAttention, PanelHomeData } from "@/components/panel/PanelHome";
-import { PANEL_ANCHORS, type ShellRole } from "@/components/shell/navigation";
+import { PANEL_ANCHORS, PANEL_ROUTES, type ShellRole } from "@/components/shell/navigation";
 import { todayInTimeZone } from "@/core/finance";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -136,12 +136,12 @@ export async function loadPanelHome(
     firstName,
     establishment: { ...input.establishment, photoUrl: input.photoUrl },
     links: {
-      newRequest: `${base}${PANEL_ANCHORS.newRequest}`,
+      newRequest: `${base}${PANEL_ROUTES.newRequest}`,
       createMenu: conMenu ? `${base}/menu-diario` : null,
       plan: `${base}/facturacion`,
       menus: conMenu ? `${base}/menu-diario` : null,
       messages: `${base}${PANEL_ANCHORS.messages}`,
-      requests: `${base}${PANEL_ANCHORS.requests}`,
+      requests: `${base}${PANEL_ROUTES.requests}`,
       data: `${base}/datos`,
     },
     attention,

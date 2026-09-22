@@ -8408,6 +8408,16 @@ export type Database = {
           state: string;
         }[];
       };
+      client_request_milestones: {
+        Args: { p_request_id: string };
+        Returns: {
+          cancelled_at: string | null;
+          closed_at: string | null;
+          published_at: string | null;
+          started_at: string | null;
+          submitted_at: string | null;
+        }[];
+      };
       client_request_quote: {
         Args: { p_request_id: string };
         Returns: {

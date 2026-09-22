@@ -4,14 +4,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { es } from "@/i18n/es";
 
 vi.mock("./actions", () => ({
-  submitNewRequest: async () => ({ error: null, created: true }),
+  createRequestDraft: async () => ({ error: null, values: {} }),
 }));
+// La subida va al bucket con una URL firmada: aquí no hay bucket.
+vi.mock("@/components/FileUploadField", () => ({ FileUploadField: () => null }));
 
-import { NewRequestForm } from "./NewRequestForm";
+import { NewRequestDraftForm } from "./NewRequestDraftForm";
+
+function NewRequestForm({ establishmentId }: { establishmentId: string }) {
+  return (
+    <NewRequestDraftForm slug="demo" establishmentId={establishmentId} establishmentName="Casa Oliva" photoUrl={null} />
+  );
+}
 
 /**
  * RN-REQ-05/06 · la prioridad de la solicitud (página 63 del diseño
- * definitivo móvil).
+ * definitivo móvil), en el formulario de R06.
  *
  * Lo que vigila:
  *
@@ -60,5 +68,21 @@ describe("RN-REQ-05 · prioridad y motivo al pedir un cambio", () => {
   it("RN-REQ-06 · dice que la prioridad NO adelanta el trabajo", () => {
     render(<NewRequestForm establishmentId="est-1" />);
     expect(screen.getByText(es.clientArea.newPriorityNotAPromise)).toBeInTheDocument();
+  });
+});
+
+describe("R06 · la nueva solicitud del diseño definitivo", () => {
+  it("el tipo no se elige: lo decide el equipo al clasificar (RN-CLS)", () => {
+    render(<NewRequestForm establishmentId="est-1" />);
+    const tipo = screen.getByLabelText(new RegExp(es.panelRequests.typeLabel));
+    expect(tipo).toHaveValue(es.panelRequests.unclassified);
+    expect(tipo).toHaveAttribute("readOnly");
+  });
+
+  it("«Guardar borrador» y «Revisar solicitud» envían el mismo formulario con su intención", () => {
+    render(<NewRequestForm establishmentId="est-1" />);
+    expect(screen.getByRole("button", { name: es.panelRequests.saveDraft })).toHaveAttribute("value", "save");
+    expect(screen.getByRole("button", { name: es.panelRequests.review })).toHaveAttribute("value", "review");
+    expect(screen.getByText(es.panelRequests.importantBody)).toBeInTheDocument();
   });
 });

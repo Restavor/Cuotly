@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -11,6 +11,7 @@ import {
   fullNav,
   isClientRole,
   PANEL_ANCHORS,
+  PANEL_ROUTES,
   sidebarGroups,
   type ShellRole,
 } from "./navigation";
@@ -106,7 +107,17 @@ describe("RN-PAN-07 · las anclas del panel llevan a algún sitio de verdad", ()
     }
   });
 
-  it("los tres destinos que comparten pantalla se distinguen por su ancla", () => {
+  it("R05 y R06 · Solicitudes y Nueva solicitud son pantallas con su page.tsx", () => {
+    for (const [clave, ruta] of Object.entries(PANEL_ROUTES)) {
+      const pagina = join(
+        process.cwd(),
+        `src/app/espacios/[slug]/restaurantes/[id]${ruta}/page.tsx`,
+      );
+      expect(existsSync(pagina), `${clave} → ${ruta}`).toBe(true);
+    }
+  });
+
+  it("los destinos que comparten pantalla se distinguen por su ancla", () => {
     for (const role of CLIENTES) {
       const destinos = fullNav(SLUG, role, REST);
       const conAncla = destinos.filter((d) => d.href.includes("#"));

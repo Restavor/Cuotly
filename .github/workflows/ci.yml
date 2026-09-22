@@ -520,6 +520,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/al_momento_o_resumen_diario.sql
 
+      - name: "Panel del restaurante — Verificar el seguimiento de la solicitud: el restaurante recibe las fechas de envío, comienzo, publicación y cancelación sin ninguna identidad, otro restaurante no pregunta por lo ajeno y anon no la ejecuta (R08, R11, P7)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_seguimiento_de_la_solicitud.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

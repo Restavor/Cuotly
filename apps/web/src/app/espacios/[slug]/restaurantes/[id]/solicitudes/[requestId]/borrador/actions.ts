@@ -37,6 +37,14 @@ export async function saveDraftScope(
   const description = String(formData.get("description") ?? "").trim();
   const context = String(formData.get("context") ?? "").trim();
   const previousVersion = Number(formData.get("version") ?? 0);
+  // RN-REQ-05 · la prioridad se revisa aquí también: un borrador que sale
+  // de una conversación no la trae, y sin ella `submit_request()` no lo
+  // deja enviar.
+  const priority = String(formData.get("priority") ?? "").trim();
+  const priorityReason = String(formData.get("priorityReason") ?? "").trim();
+  const priorityChanged =
+    priority !== String(formData.get("previousPriority") ?? "") ||
+    priorityReason !== String(formData.get("previousPriorityReason") ?? "");
 
   if (!description) {
     return { error: es.clientArea.draftEmptyScope, saved: false, unchanged: false };
@@ -47,6 +55,8 @@ export async function saveDraftScope(
     p_request_id: requestId,
     p_description: description,
     p_context: context || undefined,
+    p_priority: priority || undefined,
+    p_priority_reason: priorityReason || undefined,
   });
 
   if (error) return { error: error.message, saved: false, unchanged: false };
@@ -56,7 +66,7 @@ export async function saveDraftScope(
   // El servidor devuelve la versión que ha quedado. Si es la misma que
   // había, es que no cambió nada: RN-DAT-07 versiona cambios, no
   // guardados.
-  const unchanged = typeof version === "number" && version === previousVersion;
+  const unchanged = typeof version === "number" && version === previousVersion && !priorityChanged;
   return { error: null, saved: !unchanged, unchanged };
 }
 

@@ -19,5 +19,12 @@ import { hrefWithoutAnchor } from "@/components/shell/navigation";
  * el diseño definitivo móvil.
  */
 export function navigableHref(href: string): string {
-  return hrefWithoutAnchor(href);
+  const ruta = hrefWithoutAnchor(href);
+  // R05 y R06 · en la web "Solicitudes" y "Nueva solicitud" ya son
+  // pantallas propias (`PANEL_ROUTES`). En la app todavía no: la lista y
+  // el formulario están en la pantalla del restaurante, y
+  // `/solicitudes/nueva` casaría con `solicitudes/[requestId]` como si
+  // "nueva" fuera una solicitud. Se lleva a la pantalla que sí los tiene.
+  const panel = ruta.match(/^(\/espacios\/[^/]+\/restaurantes\/[^/]+)\/solicitudes(?:\/nueva)?$/);
+  return panel ? panel[1] : ruta;
 }

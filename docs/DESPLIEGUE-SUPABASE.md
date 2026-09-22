@@ -10,6 +10,14 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
+**Actualización del 22/09/2026 (noche): ninguna.** La **127** (`el_seguimiento_de_la_solicitud`,
+R08 y R11 del panel del restaurante) se aplicó por el MCP después de la 126. Solo añade
+`client_request_milestones(uuid)`: las fechas de envío, comienzo, publicación, cierre y cancelación de
+una solicitud, sin ninguna identidad (P7), detrás de `can_read_establishment()`. Comprobado en vivo:
+`security definer`, EXECUTE para `authenticated` y no para `anon`; 219 migraciones registradas en el
+proyecto. En local, las 127 migraciones aplican desde cero y pasan las 68 suites en el orden de CI
+(la nueva es `el_seguimiento_de_la_solicitud.sql`).
+
 **Actualización del 22/09/2026 (tarde): ninguna.** La **126** (`el_documento_se_comprueba`,
 decisión 68) se aplicó por el MCP justo después de la 125. Antes: 0 filas en `access_requests`.
 Después, comprobado en vivo: una sola firma, `submit_access_request(text × 9)`, con EXECUTE

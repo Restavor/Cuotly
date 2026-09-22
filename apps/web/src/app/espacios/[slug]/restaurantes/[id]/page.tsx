@@ -4,7 +4,6 @@ import { notFound, redirect } from "next/navigation";
 import {
   Card,
   EmptyState,
-  StatusBadge,
   Table,
   TableBody,
   TableCell,
@@ -12,7 +11,6 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
-import { statusEffects } from "@/core/establishment-status";
 import { todayInTimeZone } from "@/core/finance";
 import { termsNeedAcceptance } from "@/core/terms";
 import { enZona } from "@/i18n/dates";
@@ -47,7 +45,6 @@ import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 
 import { AcceptTermsButton } from "./AcceptTermsButton";
-import { NewRequestForm } from "./NewRequestForm";
 import { TerminationForm } from "./TerminationForm";
 import { loadRequestDetail } from "../../solicitudes/[id]/detail-load";
 import { loadEstablishmentTimezone } from "./timezone-load";
@@ -85,16 +82,7 @@ import { loadEstablishmentPhoto } from "@/services/establishment-photo";
  */
 export const dynamic = "force-dynamic";
 
-type RequestStateKey = keyof typeof es.naming.states.request;
 type FileCategoryKey = keyof typeof es.space.files.categories;
-
-function toneForState(state: string): "success" | "warning" | "info" | "neutral" | "danger" {
-  if (state === "published" || state === "closed" || state === "accepted") return "success";
-  if (state === "pending_client_acceptance" || state === "needs_information") return "warning";
-  if (state.startsWith("cancelled") || state === "rejected") return "danger";
-  if (state === "in_progress" || state === "in_correction") return "info";
-  return "neutral";
-}
 
 /**
  * La misma dirección sirve a los dos lados, y es a propósito: un
@@ -468,15 +456,6 @@ export default async function EstablishmentPage({
 
   const rows = requests ?? [];
   const archivos = sharedFiles ?? [];
-  /*
-    Qué estados detienen el servicio ya no se escribe aquí: lo dice
-    `statusEffects()` en `src/core`, que es la traducción con tests de la
-    guarda del servidor. Tenerlo en dos sitios era tener dos listas que un
-    día dicen cosas distintas — y esta pantalla es justo donde se decide si
-    ofrecerle a alguien un formulario que el servidor le va a rechazar.
-  */
-  const serviceStopped = !statusEffects(establishment.status).serviceRunning;
-
   // §66.3 · la conversación general del restaurante. Se crea al abrir la
   // pantalla, igual que la de una solicitud: hay exactamente una por
   // restaurante y es el destino de "Mensajes" en su menú, así que siempre
@@ -694,17 +673,6 @@ export default async function EstablishmentPage({
         </Card>
       ) : null}
 
-      {/*
-        RN-PAN-07 · el ancla de "Nueva solicitud" en la barra del panel. La
-        envoltura se pinta siempre aunque el formulario no: si el ancla
-        desapareciera con el servicio detenido, el enlace de la barra no
-        llevaría a ninguna parte y el navegador se quedaría donde estaba
-        sin decir por qué. Vacía, lleva al sitio donde el formulario
-        estaría, que es justo encima del aviso que explica su ausencia.
-      */}
-      <section id="nueva-solicitud" className="scroll-mt-20">
-        {serviceStopped ? null : <NewRequestForm establishmentId={id} />}
-      </section>
 
       {/*
         Fase 3 · Hito 14 · los datos del restaurante y la autorización de
@@ -753,51 +721,8 @@ export default async function EstablishmentPage({
         </p>
       </Card>
 
-      {/* RN-PAN-07 · el ancla de "Solicitudes" de la barra del panel. */}
-      <section id="solicitudes" className="scroll-mt-20">
-      <Card title={es.clientArea.requestsTitle}>
-        {rows.length === 0 ? (
-          <EmptyState
-            title={es.clientArea.requestsEmptyTitle}
-            description={es.clientArea.requestsEmptyReason}
-          />
-        ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>{es.clientArea.codeColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.descriptionColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.stateColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.clientArea.dateColumn}</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rows.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell>
-                    <Link
-                      href={`/espacios/${slug}/restaurantes/${id}/solicitudes/${request.id}`}
-                      className="text-cuotly-green underline"
-                    >
-                      {request.code}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{request.description}</TableCell>
-                  <TableCell>
-                    <StatusBadge tone={toneForState(request.state)}>
-                      {es.naming.states.request[request.state as RequestStateKey] ?? request.state}
-                    </StatusBadge>
-                  </TableCell>
-                  <TableCell>
-                    {enZona(request.created_at, zonaDelEspacio, { dateStyle: "short" })}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
-      </section>
+      {/* R05 y R06 · las solicitudes y la nueva solicitud son ya pantallas
+          propias (`PANEL_ROUTES`); desde el Inicio se llega a ellas. */}
 
       {/*
         RN-ARC-04, el otro extremo del botón "Compartir con el

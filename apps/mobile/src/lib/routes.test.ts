@@ -12,6 +12,13 @@ describe("RN-MOV-01 · los destinos de la web se navegan en el teléfono", () =>
     expect(navigableHref("/espacios/demo/restaurantes/est-1")).toBe("/espacios/demo/restaurantes/est-1");
     expect(navigableHref("/")).toBe("/");
     expect(navigableHref("/espacios/demo/")).toBe("/espacios/demo");
+    // R05 y R06 son pantallas de la web que la app tiene dentro del panel.
+    expect(navigableHref("/espacios/demo/restaurantes/est-1/solicitudes/nueva")).toBe(
+      "/espacios/demo/restaurantes/est-1",
+    );
+    expect(navigableHref("/espacios/demo/restaurantes/est-1/solicitudes/sol-9")).toBe(
+      "/espacios/demo/restaurantes/est-1/solicitudes/sol-9",
+    );
   });
 
   it('ningún destino de "Más" llega a expo-router con un fragmento', () => {

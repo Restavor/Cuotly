@@ -120,9 +120,19 @@ function clientBase(spaceSlug: string, establishmentId: string | null): string |
  * `panel-anclas.test.tsx` falla si alguno no está.
  */
 export const PANEL_ANCHORS = {
-  requests: "#solicitudes",
-  newRequest: "#nueva-solicitud",
   messages: "#mensajes",
+} as const;
+
+/**
+ * R05 y R06 · "Solicitudes" y "Nueva solicitud" ya son pantallas propias
+ * del panel, y dejan de ser anclas: es el cambio que anunciaba el
+ * comentario de arriba. Se escriben como sufijo del restaurante, igual
+ * que las anclas, para que quien las use no tenga que saber cuál es cuál.
+ * `panel-armazon.test.ts` falla si alguna no tiene su `page.tsx`.
+ */
+export const PANEL_ROUTES = {
+  requests: "/solicitudes",
+  newRequest: "/solicitudes/nueva",
 } as const;
 
 export type PanelAnchorKey = keyof typeof PANEL_ANCHORS;
@@ -295,8 +305,8 @@ export function fullNav(
     case "client":
       return [
         D("home", es.nav.home, mine ?? "/"),
-        D("requests", es.nav.requests, mine ? `${mine}${PANEL_ANCHORS.requests}` : "/"),
-        D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ANCHORS.newRequest}` : "/"),
+        D("requests", es.nav.requests, mine ? `${mine}${PANEL_ROUTES.requests}` : "/"),
+        D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ROUTES.newRequest}` : "/"),
         D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
         D("data", es.nav.data, mine ? `${mine}/datos` : "/"),
@@ -307,8 +317,8 @@ export function fullNav(
     case "client_daily_menu":
       return [
         D("home", es.nav.home, mine ?? "/"),
-        D("requests", es.nav.requests, mine ? `${mine}${PANEL_ANCHORS.requests}` : "/"),
-        D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ANCHORS.newRequest}` : "/"),
+        D("requests", es.nav.requests, mine ? `${mine}${PANEL_ROUTES.requests}` : "/"),
+        D("newRequest", es.nav.newRequest, mine ? `${mine}${PANEL_ROUTES.newRequest}` : "/"),
         D("dailyMenu", es.nav.dailyMenu, mine ? `${mine}/menu-diario` : "/"),
         D("messages", es.nav.messages, mine ? `${mine}${PANEL_ANCHORS.messages}` : "/"),
         D("billing", es.nav.finance, mine ? `${mine}/facturacion` : "/"),
