@@ -129,9 +129,12 @@ function Marca({ status }: { status: TimelineStepStatus }) {
 export function RequestTimeline({
   steps,
   orientation,
+  showDates = true,
 }: {
   steps: readonly TimelineView[];
   orientation: "vertical" | "horizontal";
+  /** `false` para un camino que no tiene fechas que enseñar (R17). */
+  showDates?: boolean;
 }) {
   if (orientation === "horizontal") {
     return (
@@ -150,7 +153,7 @@ export function RequestTimeline({
               <Marca status={paso.status} />
             </span>
             <span className="mt-2 text-sm font-semibold text-text">{paso.label}</span>
-            {paso.status === "pending" ? null : (
+            {paso.status === "pending" || !showDates ? null : (
               <span className="text-xs text-text-secondary">{paso.dateLabel ?? es.panelRequests.noDate}</span>
             )}
           </li>
@@ -172,7 +175,7 @@ export function RequestTimeline({
               {paso.label}
             </p>
             {paso.note ? <p className="text-sm text-text-secondary">{paso.note}</p> : null}
-            {paso.status === "pending" || paso.status === "waiting" ? null : (
+            {paso.status === "pending" || paso.status === "waiting" || !showDates ? null : (
               <p className="text-xs text-text-secondary">{paso.dateLabel ?? es.panelRequests.noDate}</p>
             )}
           </div>

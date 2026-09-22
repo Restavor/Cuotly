@@ -549,7 +549,11 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await cabeEnElTelefono(page, "el Menú Diario del restaurante");
 
     // El saldo sale del libro (RN-COM-09): 30 incluidas.
-    await expect(page.getByText(/de 30/)).toBeVisible();
+    await expect(page.getByText(/\/ 30 utilizadas/).first()).toBeVisible();
+
+    // R13 · "Crear menú" lleva a su propia pantalla (`/menu-diario/nuevo`).
+    await page.getByRole("link", { name: "Crear menú" }).click();
+    await page.waitForURL(/\/menu-diario\/nuevo/, { timeout: 20_000 });
     // Las tres plantillas del sembrado, en el desplegable que las ofrece.
     // Antes era un `getByText("Pizarra")` suelto y encontraba DOS: la
     // opción del desplegable y el nombre de la plantilla en la lista de
@@ -578,11 +582,15 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await expect(page.getByText("Contenido · versión 1")).toBeVisible();
 
     // RN-MEN-09: preparado, y ya se puede descargar (RN-MEN-04: sin consumir).
+    // R17 · las acciones del menú están en la pestaña «Publicación».
+    await page.getByRole("link", { name: "Publicación", exact: true }).click();
     await page.getByRole("button", { name: "Marcar como preparado" }).click();
     // El estado de la cabecera, no el apunte del libro de estados: los dos
     // dicen "Preparado" y un `getByText` suelto encontraba los dos.
     await expect(page.getByTestId("estado-del-menu")).toHaveText("Preparado", { timeout: 20_000 });
 
+    // R16 · las descargas están en la pestaña «Vista previa».
+    await page.getByRole("link", { name: "Vista previa", exact: true }).click();
     const descarga = page.waitForEvent("download");
     await page.getByRole("link", { name: "Descargar PNG" }).click();
     const archivo = await descarga;
@@ -619,7 +627,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
 
     await test.step("PEDIR · el restaurante prepara y pide la publicación", async () => {
       await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
-      await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario`);
+      await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/nuevo`);
       await page.getByLabel("Nombre").fill(`Equipo ${MARCA}`);
       await page.getByLabel("Plantilla").selectOption({ label: "Pizarra" });
       await page.getByRole("button", { name: "Crear menú" }).click();
@@ -632,6 +640,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await page.getByLabel("Precio (euros)").fill("14,50");
       await page.getByRole("button", { name: "Guardar versión" }).click();
       await expect(page.getByText(avisoDeVersionGuardada())).toBeVisible({ timeout: 20_000 });
+      await page.getByRole("link", { name: "Publicación", exact: true }).click();
       await page.getByRole("button", { name: "Marcar como preparado" }).click();
       await expect(page.getByTestId("estado-del-menu")).toHaveText("Preparado", { timeout: 20_000 });
       await page.getByRole("button", { name: "Pedir la publicación" }).click();
@@ -680,7 +689,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
 
     await test.step("CORREGIR · el restaurante pide su corrección mínima (RN-COR-10)", async () => {
       await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
-      await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/${menuUrl.split("/").pop()}`);
+      // R18 · la corrección está en la pestaña «Versiones».
+      await page.goto(
+        `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/${menuUrl.split("/").pop()}?vista=versiones`,
+      );
       await cabeEnElTelefono(page, "el menú publicado del restaurante");
       await expect(page.getByRole("heading", { name: "Pedir una corrección" })).toBeVisible();
       await page.getByLabel("Qué hay que corregir").fill("El precio es 14,90.");

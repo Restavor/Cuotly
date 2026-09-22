@@ -2307,6 +2307,150 @@ export const es = {
     // tenga su pantalla.
     moreTitle: "Todo sobre tu restaurante",
   },
+  // R13 a R19, A17, A18 · el Menú Diario del panel del restaurante con el
+  // diseño definitivo. Lo que ya decían las tarjetas de antes sigue en
+  // `dailyMenuClient` y se reutiliza.
+  panelMenus: {
+    subtitle: "Gestiona tus menús del día, consulta su estado y solicita su publicación en la web.",
+    tabs: { menus: "Menús", templates: "Plantillas", service: "Servicio y consumo" },
+    tabsLabel: "Secciones de Menú Diario",
+    usageTitle: "Actualizaciones del ciclo",
+    usageLine: (usadas: number, incluidas: number) => `${usadas} / ${incluidas} utilizadas`,
+    cycleTitle: "Ciclo actual",
+    createMenu: "Crear menú",
+    copyPrevious: "Copiar menú anterior",
+    filterMonth: "Fecha",
+    filterMonthAll: "Todos los meses",
+    filterState: "Estado",
+    filterStateAll: "Todos los estados",
+    filterTemplate: "Plantilla",
+    filterTemplateAll: "Todas las plantillas",
+    noTemplate: "Sin plantilla",
+    columnDate: "Fecha",
+    columnTitle: "Título del menú",
+    columnTemplate: "Plantilla",
+    columnState: "Estado",
+    columnUpdated: "Última actualización",
+    columnActions: "Acciones",
+    view: "Ver",
+    menusNoun: "menús",
+    notSaved: "Sin guardar todavía",
+    emptyFilteredTitle: "Ningún menú con estos filtros",
+    emptyFilteredReason: "Quita algún filtro para ver el resto.",
+    aboutTitle: "Sobre las actualizaciones",
+    aboutBody: (incluidas: number) =>
+      `Tu servicio incluye ${incluidas} actualizaciones por ciclo. Cada menú que mandas a publicar consume una, y se reinician con cada renovación. Descargar el PNG o el PDF no consume nada.`,
+    aboutLink: "Ver servicio y consumo",
+    helpTitle: "¿Necesitas ayuda?",
+    helpBody: "Consulta nuestras guías o escribe al equipo de mantenimiento.",
+    helpLink: "Ir a Ayuda",
+    newPageTitle: "Crear menú",
+    newPageSubtitle: "Crea un menú nuevo o copia el último que preparaste.",
+
+    // R14 · la ficha del menú y sus pestañas
+    menuTabs: { editor: "Editor", preview: "Vista previa", publication: "Publicación", versions: "Versiones" },
+    menuTabsLabel: "Secciones del menú",
+    lastSaved: (cuando: string) => `Último guardado: ${cuando}`,
+    neverSaved: "Todavía no hay ninguna versión guardada",
+    editorSubtitle: "Edita el contenido de tu menú. Cada vez que guardas queda una versión nueva.",
+    previewTitle: "Vista previa",
+    openPreview: "Ver vista previa",
+    previewOfVersion: (n: number) => `Así queda la versión ${n}, la última guardada.`,
+    previewNoTemplate: "Elige una plantilla en «Datos del menú» para ver cómo queda.",
+    previewNoContent: "Guarda el contenido para ver cómo queda.",
+    previewUnknownLayout: "Esta plantilla no tiene todavía una vista previa que enseñar.",
+    previewAlt: (nombre: string) => `Vista previa de ${nombre}`,
+
+    // A17
+    conflictTitle: "Hay una versión más reciente",
+    conflictBody: "Otra persona ha guardado cambios mientras editabas. Revisa las dos antes de continuar: lo que escribiste sigue en el editor.",
+    conflictYours: "Tu versión",
+    conflictYoursHint: "Sin guardar",
+    conflictSaved: (n: number) => `Versión guardada (v${n})`,
+    conflictCompare: "Comparar versiones",
+    conflictBack: "Volver al editor",
+    conflictSaveAnyway: "Si quieres que valga lo tuyo, vuelve a pulsar «Guardar versión».",
+
+    // A18
+    pendingNotRequestedTitle: "Los últimos cambios todavía no están publicados.",
+    pendingNotRequestedBody: (n: number) =>
+      `La versión ${n} está guardada, pero nadie ha pedido todavía que se publique en tu web. Pedirlo consume una actualización.`,
+    pendingRequestAction: (n: number) => `Solicitar publicación de v${n}`,
+    pendingAfterRequestTitle: "Has guardado cambios después de pedir la publicación.",
+    pendingAfterRequestBody: (n: number) =>
+      `El equipo publica la versión vigente, que ahora es la ${n}. No se vuelve a consumir ninguna actualización.`,
+    pendingAfterCutoff: "Alguno de esos cambios se guardó después de las 21:00 del día anterior: no se garantiza que entre.",
+    pendingViewVersions: "Ver versiones",
+
+    // R16
+    previewPageSubtitle: "Revisa cómo se verá tu menú y descárgalo en PDF o imagen. Cuando esté listo, puedes pedir su publicación.",
+    downloadTitle: "Descargar",
+    downloadNotPublish: "Descargar el menú no lo publica en tu web ni consume ninguna actualización.",
+    infoTitle: "Información del menú",
+    infoDate: "Fecha",
+    infoTitleLabel: "Título",
+    infoPrice: "Precio",
+    infoTemplate: "Plantilla",
+    infoKind: "Tipo",
+    publicationStateTitle: "Estado de publicación",
+    editContent: "Editar contenido",
+    requestPublication: "Solicitar publicación",
+
+    // R17
+    publicationSubtitle: "Pide que el equipo de mantenimiento publique tu menú en la web.",
+    menuDataTitle: "Datos del menú",
+    versionLabel: "Versión",
+    versionCurrent: (n: number) => `v${n} (actual)`,
+    deadlinesTitle: "Plazos",
+    requestStateTitle: "Estado de la solicitud",
+    afterSending: "Después de enviar:",
+    pubSteps: {
+      received: { title: "Recibida", body: "La solicitud llega al equipo de mantenimiento." },
+      preparing: { title: "En preparación", body: "Revisión y maquetación del menú." },
+      published: { title: "Publicada", body: "El menú se publica en tu web." },
+    },
+    historyTitle: "Historial del menú",
+
+    // R18
+    versionsSubtitle: "Consulta el historial de versiones, compara cambios y descarga el menú. Ninguna versión se borra.",
+    versionListTitle: "Lista de versiones",
+    versionPublished: "Publicada",
+    versionAfterCutoff: "Después de las 21:00",
+    actionsTitle: "Acciones",
+    downloadPdfOf: (n: number) => `Descargar PDF (v${n})`,
+    downloadPngOf: (n: number) => `Descargar imagen (v${n})`,
+    versionsKept: "Las versiones no se sustituyen: todas se conservan en el historial.",
+
+    // R15
+    templatesSubtitle:
+      "Tus plantillas de Menú Diario. Incluye 3 plantillas iniciales; las nuevas o los rediseños se presupuestan aparte.",
+    templatesAvailable: "Plantillas disponibles",
+    templatePreviewTitle: "Vista previa de la plantilla",
+    templatePreviewWith: (menu: string) => `Con los platos de «${menu}», tu último menú guardado.`,
+    templatePreviewEmpty: "Todavía no has guardado ningún menú: la vista previa enseñará tus platos cuando lo hagas.",
+    templateSelectHint: "Cada menú elige su plantilla en «Datos del menú».",
+    customTitle: "Personalización",
+    customBody:
+      "Si necesitas una plantilla nueva o un rediseño, pídelo al equipo: se presupuesta aparte.",
+    requestTemplate: "Solicitar nueva plantilla",
+
+    // R19
+    serviceSubtitle: "Tu servicio de Menú Diario, el consumo de actualizaciones del ciclo y tus plantillas.",
+    serviceTitle: "Tu servicio actual",
+    serviceActive: "Activo",
+    serviceIncluded: (n: number) => `${n} actualizaciones por ciclo`,
+    serviceTemplates: (n: number) => `${n} plantillas iniciales incluidas`,
+    serviceRenews: "La cuota se renueva en cada renovación y no se acumula",
+    serviceNoName: "Menú Diario",
+    consumptionTitle: "Consumo de actualizaciones",
+    consumptionPeriod: (desde: string, hasta: string) => `Periodo: ${desde} – ${hasta}`,
+    consumptionExhausted: "Has usado todas las actualizaciones de este ciclo. Si necesitas publicar otro menú, escribe al equipo.",
+    consumptionAskTeam: "Escribir al equipo",
+    serviceInfoTitle: "Información",
+    serviceInfoBody: "El servicio de Menú Diario se contrata aparte del plan de mantenimiento.",
+    templatesIncluded: (n: number) => `Plantillas (${n} incluidas)`,
+  },
+
   // R05 a R12 · las solicitudes del panel del restaurante con el diseño
   // definitivo. Lo que ya decían las tarjetas de antes sigue en
   // `clientArea` y se reutiliza.

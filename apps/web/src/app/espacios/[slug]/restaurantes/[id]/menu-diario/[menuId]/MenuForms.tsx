@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { Button, Card, Field, Select, TextArea } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import { MenuDiffView } from "@/components/menu/MenuDiffView";
 import { MENU_KINDS } from "@/core/daily-menu";
 import { diffMenuVersions } from "@/core/menu-diff";
@@ -65,10 +66,13 @@ export function VersionEditor({
   menuId,
   current,
   editable,
+  compareHref,
 }: {
   menuId: string;
   current: VersionContent | null;
   editable: boolean;
+  /** A17 · "Comparar versiones" lleva a la pestaña de versiones (R18). */
+  compareHref: string;
 }) {
   const action = saveMenuVersion.bind(null, menuId);
   const [state, formAction, pending] = useActionState(action, INITIAL_MENU_ACTION);
@@ -96,31 +100,37 @@ export function VersionEditor({
             name="expectedVersion"
             value={state.conflict?.version ?? current?.version ?? ""}
           />
-          <TextArea
-            label={t.startersLabel}
-            name="starters"
-            rows={3}
-            hint={t.linesHint}
-            defaultValue={current?.starters.join("\n") ?? ""}
-          />
+          {/* R14 · primeros, segundos y postres en tres columnas, como el dibujo. */}
+          <div className="grid gap-4 md:grid-cols-3">
+            <TextArea
+              label={t.startersLabel}
+              name="starters"
+              rows={5}
+              hint={t.linesHint}
+              defaultValue={current?.starters.join("\n") ?? ""}
+            />
 
-          <TextArea
-            label={t.mainsLabel}
-            name="mains"
-            rows={3}
-            hint={t.linesHint}
-            defaultValue={current?.mains.join("\n") ?? ""}
-          />
+            <TextArea
+              label={t.mainsLabel}
+              name="mains"
+              rows={5}
+              hint={t.linesHint}
+              defaultValue={current?.mains.join("\n") ?? ""}
+            />
 
-          <TextArea
-            label={t.dessertsLabel}
-            name="desserts"
-            rows={2}
-            hint={t.linesHint}
-            defaultValue={current?.desserts.join("\n") ?? ""}
-          />
+            <TextArea
+              label={t.dessertsLabel}
+              name="desserts"
+              rows={5}
+              hint={t.linesHint}
+              defaultValue={current?.desserts.join("\n") ?? ""}
+            />
+          </div>
 
-          <Field label={t.drinkLabel} name="drink" defaultValue={current?.drink ?? ""} />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label={t.priceLabel} name="price" inputMode="decimal" hint={t.priceHint} defaultValue={precio} />
+            <Field label={t.drinkLabel} name="drink" defaultValue={current?.drink ?? ""} />
+          </div>
 
           {/*
             §39 · RN-ALE-01. Una sola nota para todo el menú. Sin `maxLength`
@@ -148,7 +158,6 @@ export function VersionEditor({
           )}
           {/* RN-ALE-03 · quién responde de lo que ahí pone. */}
           <p className="text-sm text-text-secondary">{es.allergens.whoseResponsibility}</p>
-          <Field label={t.priceLabel} name="price" inputMode="decimal" hint={t.priceHint} defaultValue={precio} />
           <Field label={t.noteLabel} name="note" defaultValue={current?.note ?? ""} />
 
           {/*
@@ -158,14 +167,11 @@ export function VersionEditor({
             la pena volver a guardar. Es la misma comparación de R18.
           */}
           {state.conflict && current ? (
-            <div className="rounded-[10px] border border-border bg-soft-surface p-3">
-              <p className="mb-1 font-semibold text-text">{es.menuDiff.conflictTitle}</p>
-              <p className="mb-2 text-sm text-text-secondary">
-                {es.menuDiff.conflictHint(state.conflict.version)}
-              </p>
-              <p className="mb-2 text-sm text-text-secondary">{es.menuDiff.conflictChanges}</p>
-              <MenuDiffView diff={diffMenuVersions(current, state.conflict.content)} />
-            </div>
+            <ConflictNotice
+              savedVersion={state.conflict.version}
+              diff={diffMenuVersions(current, state.conflict.content)}
+              compareHref={compareHref}
+            />
           ) : null}
 
           <Feedback state={state} />
@@ -235,19 +241,13 @@ export function DetailsForm({
  * quién puede y en qué estado lo decide el servidor, que lanza si no.
  */
 export function ActionPanel({
-  slug,
-  establishmentId,
   menuId,
   state,
   idempotencyKey,
-  defaultCopyDate,
 }: {
-  slug: string;
-  establishmentId: string;
   menuId: string;
   state: MenuState;
   idempotencyKey: string;
-  defaultCopyDate: string;
 }) {
   const [prepareState, prepareAction, preparePending] = useActionState(
     async () => prepareMenu(menuId),
@@ -265,11 +265,6 @@ export function ActionPanel({
     provideMenuInformation.bind(null, menuId),
     INITIAL_MENU_ACTION,
   );
-  const [copyState, copyAction, copyPending] = useActionState(
-    copyMenu.bind(null, slug, establishmentId, menuId),
-    INITIAL_MENU_ACTION,
-  );
-
   const closed = state === "published" || state === "cancelled";
   const inFlight = !closed && state !== "draft" && state !== "prepared";
 
@@ -322,14 +317,6 @@ export function ActionPanel({
           <p className="text-sm text-text-secondary">{t.nothingToDo}</p>
         )}
 
-        <form action={copyAction} className="space-y-2">
-          <p className="text-sm text-text-secondary">{t.copyHint}</p>
-          <Field label={t.copyDateLabel} name="targetDate" type="date" required defaultValue={defaultCopyDate} />
-          <Feedback state={copyState} />
-          <Button type="submit" variant="secondary" disabled={copyPending}>
-            {copyPending ? t.pending : t.copy}
-          </Button>
-        </form>
       </div>
     </Card>
   );
@@ -375,5 +362,86 @@ export function CorrectionForm({
         </Button>
       </form>
     </Card>
+  );
+}
+
+/**
+ * R18 · "Copiar como nuevo borrador" (RN-MEN-03: un menú publicado o
+ * cancelado no se edita, se copia). La misma `copy_menu()` de siempre.
+ */
+export function CopyMenuForm({
+  slug,
+  establishmentId,
+  menuId,
+  defaultCopyDate,
+}: {
+  slug: string;
+  establishmentId: string;
+  menuId: string;
+  defaultCopyDate: string;
+}) {
+  const [copyState, copyAction, copyPending] = useActionState(
+    copyMenu.bind(null, slug, establishmentId, menuId),
+    INITIAL_MENU_ACTION,
+  );
+  return (
+    <form action={copyAction} className="space-y-2">
+      <p className="text-sm text-text-secondary">{t.copyHint}</p>
+      <Field label={t.copyDateLabel} name="targetDate" type="date" required defaultValue={defaultCopyDate} />
+      <Feedback state={copyState} />
+      <Button type="submit" variant="outline" disabled={copyPending}>
+        {copyPending ? t.pending : t.copy}
+      </Button>
+    </form>
+  );
+}
+
+/**
+ * A17 · alguien guardó mientras escribías. No se pierde lo escrito —sigue
+ * en los cuadros del editor— y en vez de un mensaje seco se enseña QUÉ
+ * cambió, que es lo que deja decidir si vale la pena volver a guardar. Es
+ * la misma comparación de R18.
+ */
+function ConflictNotice({
+  savedVersion,
+  diff,
+  compareHref,
+}: {
+  savedVersion: number;
+  diff: ReturnType<typeof diffMenuVersions>;
+  compareHref: string;
+}) {
+  const p = es.panelMenus;
+  return (
+    <div role="alert" className="rounded-card border border-warning bg-surface p-5 shadow-sm">
+      <div className="flex flex-col items-center text-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-warning/25 text-primary-dark">
+          <Icon name="warning" className="h-6 w-6" />
+        </span>
+        <p className="mt-3 text-lg font-semibold text-primary-dark">{p.conflictTitle}</p>
+        <p className="mt-1 text-sm text-text-secondary">{p.conflictBody}</p>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-[10px] border border-border p-3">
+          <p className="text-sm font-semibold text-text">{p.conflictYours}</p>
+          <p className="text-xs text-text-secondary">{p.conflictYoursHint}</p>
+        </div>
+        <div className="rounded-[10px] border border-border p-3">
+          <p className="text-sm font-semibold text-text">{p.conflictSaved(savedVersion)}</p>
+        </div>
+      </div>
+      <div className="mt-3">
+        <MenuDiffView diff={diff} />
+      </div>
+      <p className="mt-3 text-sm text-text-secondary">{p.conflictSaveAnyway}</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-3">
+        <a
+          href={compareHref}
+          className="inline-flex items-center justify-center rounded-[10px] bg-primary px-4 py-2.5 text-sm font-semibold text-surface hover:bg-primary-dark"
+        >
+          {p.conflictCompare}
+        </a>
+      </div>
+    </div>
   );
 }
