@@ -41,7 +41,7 @@ cambiarlas en Vercel no basta, hay que volver a desplegar.
 |---|---|
 | `EXPO_PUBLIC_SUPABASE_URL` | La app no arranca: pantalla en blanco |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Igual |
-| `EXPO_PUBLIC_WEB_URL` | No se pueden subir archivos; la pantalla lo dice |
+| `EXPO_PUBLIC_WEB_URL` | No se pueden subir archivos ni **solicitar acceso** (decisión 68: la solicitud pasa por `/api/movil/solicitud-acceso` de la web); la pantalla lo dice. Valor: `https://cuotly-web.vercel.app` |
 
 ## Revisión del 21/09/2026 · lo comprobado y lo que falta
 
@@ -499,3 +499,20 @@ para y avisa: eso sería la cola abierta a internet.
   arriba, con el orden en que hay que arreglarlo.
 - **El dominio de envío** (`RESEND_FROM`) tiene que estar verificado en
   Resend o los correos se quedarán en spam.
+
+## 22/09/2026 · la puerta de entrada, publicada
+
+- `cuotly-web` publica solo al subir a la rama. Hoy se publicaron los commits de la ficha, la
+  puerta de entrada (F01, A01 a A12) y el DNI/CIF/NIF comprobado (decisiones 67 y 68). El de
+  `d23cc0b` terminó en `Deployment completed`, comprobado por la API.
+- **La solicitud de acceso del móvil ya no va directa a Supabase**: va a
+  `/api/movil/solicitud-acceso` de la web, que comprueba el documento. Dos consecuencias:
+  - `cuotly-movil` necesita `EXPO_PUBLIC_WEB_URL` (ver la tabla de arriba). Desde esta sesión
+    no se puede comprobar si está: la conexión con Vercel solo ve `cuotly-web`.
+  - La versión de navegador del móvil vive en otra dirección, así que la ruta contesta con
+    CORS abierto (`*`). Es seguro **solo** porque la ruta es pública y no usa cookies. La de
+    archivos (`/api/movil/archivos`) **no** lo tiene: en la versión de navegador del móvil la
+    subida de archivos está bloqueada por el navegador desde antes de hoy. En la app nativa no
+    pasa.
+- VIES se comprobó en vivo desde un sandbox de `cuotly-web` (región `cdg1`, salida solo a
+  `ec.europa.eu`, apagado al terminar). Detalle en la decisión 68.

@@ -4,7 +4,7 @@ const rpcMock = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ rpc: rpcMock }) }));
 vi.mock("@/services/vies", () => ({ checkVies: vi.fn(async () => ({ kind: "unavailable" })) }));
 
-import { POST } from "./route";
+import { OPTIONS, POST } from "./route";
 
 function peticion(cuerpo: unknown) {
   return new Request("http://localhost/api/movil/solicitud-acceso", {
@@ -47,5 +47,17 @@ describe("Decisión 68 · RN-ACC-02 · la solicitud desde el teléfono pasa por 
   it("un cuerpo que no es JSON es un 400", async () => {
     const respuesta = await POST(peticion("no es json"));
     expect(respuesta.status).toBe(400);
+  });
+
+  it("CORS · la versión de navegador del móvil puede preguntar y enviar desde otra dirección", async () => {
+    const pregunta = OPTIONS();
+    expect(pregunta.status).toBe(204);
+    expect(pregunta.headers.get("Access-Control-Allow-Origin")).toBe("*");
+    expect(pregunta.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+    expect(pregunta.headers.get("Access-Control-Allow-Headers")).toContain("Content-Type");
+
+    rpcMock.mockResolvedValue({ error: null });
+    const respuesta = await POST(peticion(completo));
+    expect(respuesta.headers.get("Access-Control-Allow-Origin")).toBe("*");
   });
 });
