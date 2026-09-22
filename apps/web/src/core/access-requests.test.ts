@@ -7,6 +7,7 @@ import {
   ACCESS_REQUEST_SUBMIT_OUTCOME,
   PLATFORM_EMAIL_KINDS,
   SETUP_LINK_STATES,
+  accessRequestFieldProblems,
   accessRequestNeedsReason,
   accessRequestSubmitFailure,
   accessRequestTransitionAllowed,
@@ -141,6 +142,35 @@ describe("A09 · el formulario público señala los campos uno a uno", () => {
     expect(validateAccessRequest(lleno).ok).toBe(true);
     // Los comentarios son opcionales (RN-ACC-02): no entran en la revisión.
     expect(validateAccessRequest({ ...lleno, email: " bosco@restavor.com " }).ok).toBe(true);
+  });
+});
+
+describe("A09 · RN-ACC-02 · el diseño señala todos los campos a la vez", () => {
+  const lleno = {
+    contactName: "Bosco",
+    businessName: "Restavor",
+    phone: "600000000",
+    email: "bosco@restavor.com",
+  };
+
+  it("RN-ACC-02 · el nombre vacío y el correo mal escrito salen juntos, como en A09", () => {
+    expect(accessRequestFieldProblems({ ...lleno, contactName: " ", email: "ana@" })).toEqual({
+      contact_name: "missing",
+      email: "invalid",
+    });
+  });
+
+  it("RN-ACC-02 · un correo vacío falta; no es un correo mal escrito", () => {
+    expect(accessRequestFieldProblems({ ...lleno, email: "" })).toEqual({ email: "missing" });
+  });
+
+  it("RN-ACC-02 · coincide con validateAccessRequest: lo que una deja pasar, la otra también", () => {
+    expect(accessRequestFieldProblems(lleno)).toEqual({});
+    expect(accessRequestFieldProblems({ ...lleno, email: " bosco@restavor.com " })).toEqual({});
+    expect(validateAccessRequest({ ...lleno, email: "bosco@restavor" }).ok).toBe(false);
+    expect(accessRequestFieldProblems({ ...lleno, email: "bosco@restavor" })).toEqual({
+      email: "invalid",
+    });
   });
 });
 

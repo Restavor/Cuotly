@@ -224,6 +224,122 @@ export const es = {
       unknownError:
         "No hemos podido crear tu cuenta y no sabemos por qué. Vuelve a intentarlo.",
     },
+    /**
+     * F01 y A01 a A12 · la puerta de entrada con el diseño definitivo:
+     * cabecera pública, el formulario a la izquierda y "¿Qué ocurre
+     * después?" a la derecha, y los cuatro estados de acceso (A05 a A08)
+     * en una tarjeta centrada.
+     */
+    access: {
+      help: "Ayuda",
+      myAccount: "Mi cuenta",
+      signOut: "Cerrar sesión",
+      signIn: "Iniciar sesión",
+      crumbRoot: "Cuotly",
+      crumbAccess: "Solicitud de acceso",
+      crumbInvitation: "Invitación",
+      crumbAccount: "Acceso",
+      crumbLink: "Enlace",
+      firstAccess: "Primer acceso",
+      title: "Solicita acceso a Cuotly",
+      subtitle: "Completa tus datos para que podamos revisar tu solicitud.",
+      contactNameLabel: "Nombre y apellidos",
+      contactNamePlaceholder: "Escribe tu nombre y apellidos",
+      businessNameLabel: "Nombre del restaurante o empresa",
+      businessNamePlaceholder: "Nombre de tu negocio",
+      phoneLabel: "Número de teléfono",
+      phonePlaceholder: "+34 600 000 000",
+      emailLabel: "Correo electrónico",
+      emailPlaceholder: "nombre@empresa.com",
+      commentsLabel: "Comentarios (opcional)",
+      commentsPlaceholder: "Cuéntanos qué necesitas o añade información que quieras compartir.",
+      requiredNote: "* Campos obligatorios",
+      submit: "Enviar solicitud",
+      submitPending: "Enviando…",
+      retry: "Reintentar envío",
+      submitNote: "Revisaremos tu solicitud y te contactaremos por correo electrónico.",
+      hasAccount: "¿Ya tienes cuenta?",
+      // A09 · un mensaje debajo de cada campo y el aviso junto al botón.
+      fieldErrors: {
+        contact_name: "Introduce tu nombre y apellidos.",
+        business_name: "Introduce el nombre de tu restaurante o empresa.",
+        phone: "Introduce un número de teléfono.",
+        emailMissing: "Introduce tu correo electrónico.",
+        emailInvalid: "Introduce un correo válido.",
+      },
+      reviewFields: "Revisa los campos indicados.",
+      // A10 · el envío falló y lo escrito sigue en el formulario.
+      sendFailed: "No se ha podido enviar la solicitud. Tus datos siguen en el formulario.",
+      // A11 · salir con cambios sin enviar.
+      leaveTitle: "Tienes cambios sin enviar",
+      leaveBody: "Si sales ahora, perderás los cambios de este formulario.",
+      leaveStay: "Seguir editando",
+      leaveGo: "Salir sin enviar",
+      // A12 · sin conexión.
+      offline: "Sin conexión. No podemos enviar tu solicitud en este momento.",
+      checkConnection: "Comprobar conexión",
+      offlineNote: "Mantén esta página abierta para conservar lo que has escrito.",
+      // La columna de la derecha, igual en F01 y en A01 a A12.
+      nextTitle: "¿Qué ocurre después?",
+      nextSteps: [
+        { title: "Envías tus datos", body: "Completa el formulario con tu información." },
+        { title: "Revisamos tu solicitud", body: "Nuestro equipo revisará tus datos." },
+        {
+          title: "Te contactamos por correo",
+          body: "Nos pondremos en contacto contigo por correo electrónico.",
+        },
+      ],
+      privacyNote: "Tus datos se utilizarán para gestionar tu solicitud.",
+      // A01 a A04 · el estado de la solicitud.
+      statusBoxTitle: "Estado de la solicitud",
+      yourData: "Datos de tu solicitud",
+      sentPill: "Solicitud enviada",
+      sentTitle: "Hemos recibido tu solicitud",
+      sentBody: "Tu solicitud ha sido enviada correctamente.",
+      inReview: "En revisión",
+      inReviewBody: "Nuestro equipo revisará tu solicitud y te contactaremos por correo electrónico.",
+      // RN-ACC-12 · el enlace de seguimiento solo viaja por correo.
+      followUpByMail: (email: string) =>
+        `Te escribiremos a ${email}. Ese correo lleva el enlace para consultar tu solicitud: guárdalo, es la única forma de verla.`,
+      needsInfoPill: "Necesita información",
+      needsInfoTitle: "Necesitamos más información",
+      needsInfoBody:
+        "Para continuar con la revisión de tu solicitud, necesitamos alguna información adicional.",
+      needsInfoStatusBody: "Por favor, responde con la información solicitada.",
+      teamMessage: "Mensaje de nuestro equipo",
+      yourReplyLabel: "Tu respuesta *",
+      replyPlaceholder: "Escribe aquí tu respuesta…",
+      replySubmit: "Enviar información",
+      replySubmitPending: "Enviando…",
+      yourPreviousReply: "Tu respuesta",
+      approvedPill: "Solicitud aprobada",
+      approvedTitle: "Solicitud aprobada",
+      approvedBody: "Te hemos enviado las instrucciones para continuar por correo electrónico.",
+      approvedBadge: "Aprobada",
+      approvedStatusBody:
+        "Nuestro equipo se ha puesto en contacto contigo y te hemos enviado las instrucciones por correo electrónico.",
+      approvedNotice:
+        "La aprobación de esta solicitud no crea automáticamente un espacio ni un panel de restaurante.",
+      rejectedPill: "Solicitud no aprobada",
+      rejectedTitle: "Solicitud no aprobada",
+      rejectedBody: "Consulta el motivo de la decisión.",
+      rejectedBadge: "No aprobada",
+      rejectedStatusBody: "No podemos continuar con tu solicitud en este momento.",
+      decisionReason: "Motivo de la decisión",
+      sentOn: (fecha: string) => `Enviada el ${fecha}`,
+      decidedOn: (fecha: string) => `Contestada el ${fecha}`,
+      // A05 a A08 · los estados de acceso.
+      backHome: "Volver al inicio",
+      invitationExpiredTitle: "Esta invitación ha caducado",
+      invitationExpiredBody: "Pide a la persona que te invitó que te envíe un nuevo enlace.",
+      accessRemovedTitle: "Ya no tienes acceso a este espacio",
+      accessRemovedBody: "Contacta con la persona responsable si crees que se trata de un error.",
+      myAccesses: "Ver mis accesos",
+      unavailableTitle: "No podemos mostrar este elemento",
+      unavailableBody: "Puede que ya no esté disponible o que no tengas permiso para verlo.",
+      sessionExpiredTitle: "Tu sesión ha caducado",
+      sessionExpiredBody: "Vuelve a iniciar sesión para continuar.",
+    },
   },
 
   home: {

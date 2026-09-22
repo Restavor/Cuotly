@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+import { isSupabaseAuthCookie, sessionExpired } from "@/core/session-expiry";
+
 /**
  * Se ejecuta en el servidor antes de cada página. Su único trabajo aquí es
  * mantener la sesión de Supabase actualizada (refrescar el token cuando
@@ -33,10 +35,36 @@ export async function proxy(request: NextRequest) {
     },
   );
 
+  const cookiesDeSesion = request.cookies
+    .getAll()
+    .map((cookie) => cookie.name)
+    .filter(isSupabaseAuthCookie);
+
   // Refresca la sesión si hace falta y mantiene la cookie al día.
   const {
     data: { user },
+    error: errorDeSesion,
   } = await supabase.auth.getUser();
+
+  // A08 · el navegador trae una sesión que el servidor ya no acepta: se
+  // dice que ha caducado, y se borra, para que la próxima vez sea la
+  // pantalla de entrar de siempre.
+  if (
+    sessionExpired({
+      method: request.method,
+      pathname: request.nextUrl.pathname,
+      hadAuthCookie: cookiesDeSesion.length > 0,
+      hasUser: user !== null,
+      errorStatus: errorDeSesion?.status,
+    })
+  ) {
+    const destino = request.nextUrl.clone();
+    destino.pathname = "/sesion-caducada";
+    destino.search = "";
+    const aviso = NextResponse.redirect(destino);
+    for (const nombre of cookiesDeSesion) aviso.cookies.delete(nombre);
+    return aviso;
+  }
 
   // §137, RN-ADM-02 · el segundo paso en cada inicio de sesión. Quien tiene
   // la 2FA activada y todavía no ha pasado el código (`aal1` con `aal2`

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { AccessRemoved } from "@/components/access/AccessStates";
 import {
   AppShell,
   type PanelEstablishment,
@@ -124,6 +125,15 @@ export default async function SpaceLayout({
   // él y no un 404. Para el equipo sí lo es: si no lee su propio espacio,
   // el slug no existe o no es suyo.
   if (!space && isStaffRole(role)) notFound();
+
+  // A06 · quien no lee el espacio, no tiene sesión de soporte en él y no
+  // tiene ningún restaurante en ningún panel no tiene nada que ver aquí:
+  // "Ya no tienes acceso a este espacio", en vez de un armazón vacío. La
+  // pantalla es la misma exista el espacio o no —no lo puede leer—, así
+  // que no le cuenta a nadie qué espacios existen.
+  if (!space && !supportSession && isClientRole(role) && establishments.length === 0) {
+    return <AccessRemoved />;
+  }
 
   return (
     <AppShell

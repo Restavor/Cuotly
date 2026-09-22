@@ -1,5 +1,7 @@
-import Link from "next/link";
-import { Logo } from "@/components/Logo";
+import { HomeAndHelp, StateCard } from "@/components/access/AccessPieces";
+import { AccessShell } from "@/components/access/AccessShell";
+import { AuthCard } from "@/components/access/AuthCard";
+import { hasSession } from "@/components/access/session";
 import { createClient } from "@/lib/supabase/server";
 import { es } from "@/i18n/es";
 import { PanelSetupForm } from "./PanelSetupForm";
@@ -35,34 +37,31 @@ export default async function PanelInvitationPage({
 
   if (estado === "valid" && data?.email) {
     return (
-      <PanelSetupForm
-        token={token}
-        email={data.email}
-        establishmentName={data.establishment_name}
-      />
+      <AuthCard>
+        <PanelSetupForm
+          token={token}
+          email={data.email}
+          establishmentName={data.establishment_name}
+        />
+      </AuthCard>
     );
   }
 
+  // A05 · el estado de la invitación en la tarjeta centrada del diseño.
   const motivo =
     estado === "used"
-      ? { title: t.usedTitle, body: t.usedBody }
+      ? { title: t.usedTitle, body: t.usedBody, badge: "check" as const }
       : estado === "expired"
-        ? { title: t.expiredTitle, body: t.expiredBody }
+        ? { title: t.expiredTitle, body: t.expiredBody, badge: "clock" as const }
         : estado === "pending_review"
-          ? { title: t.pendingTitle, body: t.pendingBody }
-          : { title: t.unknownTitle, body: t.unknownBody };
+          ? { title: t.pendingTitle, body: t.pendingBody, badge: "clock" as const }
+          : { title: t.unknownTitle, body: t.unknownBody, badge: "xCircle" as const };
 
   return (
-    <div>
-      <Logo />
-      <h1 className="mb-1.5 text-2xl font-bold text-primary-dark">{motivo.title}</h1>
-      <p className="mb-7 text-sm text-text-secondary">{motivo.body}</p>
-      <Link
-        href="/login"
-        className="block w-full rounded-[10px] bg-primary px-4 py-2.5 text-center text-[15px] font-semibold text-white"
-      >
-        {es.auth.setup.goToLogin}
-      </Link>
-    </div>
+    <AccessShell crumb={es.auth.access.crumbInvitation}>
+      <StateCard illustration="mail" badge={motivo.badge} title={motivo.title} body={motivo.body}>
+        <HomeAndHelp signedIn={await hasSession()} />
+      </StateCard>
+    </AccessShell>
   );
 }

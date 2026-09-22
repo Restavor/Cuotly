@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { es } from "@/i18n/es";
-import { accessRequestSubmitFailure, validateAccessRequest } from "@/core/access-requests";
+import { accessRequestFieldProblems, accessRequestSubmitFailure } from "@/core/access-requests";
 import { classifySignInError, signInFailureMessage } from "@/core/auth-errors";
 
 import type {
@@ -95,14 +95,24 @@ export async function requestAccess(
   const email = String(formData.get("email") ?? "").trim();
   const comments = String(formData.get("comments") ?? "").trim();
 
-  // A09 · los campos mal rellenados se señalan uno a uno. La comprobación
-  // es la de `core/access-requests.ts`, la misma que usa la pantalla del
-  // teléfono: escrita dos veces se separaría.
-  const revision = validateAccessRequest({ contactName, businessName, phone, email });
-  if (!revision.ok) {
-    const texto =
-      revision.problem === "missing" ? es.auth.signup.validationRequired : es.auth.signup.validationEmail;
-    return { error: texto, fields: [...revision.fields], done: false };
+  const values = {
+    contact_name: contactName,
+    business_name: businessName,
+    phone,
+    email,
+    comments,
+  };
+
+  // A09 · los campos mal rellenados se señalan uno a uno, y todos a la vez.
+  // La comprobación es la de `core/access-requests.ts`, la misma expresión
+  // del correo que usa la pantalla del teléfono: escrita dos veces se
+  // separaría.
+  const problems = accessRequestFieldProblems({ contactName, businessName, phone, email });
+  const fields = Object.keys(problems);
+  if (fields.length > 0) {
+    const soloCorreo = fields.length === 1 && problems.email === "invalid";
+    const texto = soloCorreo ? es.auth.signup.validationEmail : es.auth.signup.validationRequired;
+    return { error: texto, fields, problems, done: false, values };
   }
 
   const supabase = await createClient();
@@ -122,11 +132,13 @@ export async function requestAccess(
     return {
       error: motivo === "unreachable" ? es.auth.signup.unreachable : es.auth.signup.unknownError,
       fields: [],
+      problems: {},
       done: false,
+      values,
     };
   }
 
-  return { error: null, fields: [], done: true };
+  return { error: null, fields: [], problems: {}, done: true, values };
 }
 
 /**

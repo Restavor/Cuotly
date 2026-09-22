@@ -98,6 +98,19 @@ const PATHS = {
    * dibuja el diseño y lo que todo el mundo lee como "hay más aquí".
    */
   more: "M6 12h.01M12 12h.01M18 12h.01",
+  /*
+   * Los de la puerta de entrada (F01, A01 a A12): el sobre y el teléfono
+   * de "Datos de tu solicitud", la "i" del aviso de A03, el triángulo de
+   * "sin conexión" (A12), la marca suelta del círculo grande de A01 y A03,
+   * y el círculo con aspa de "no aprobada" (A04).
+   */
+  mail: "M4.5 5.5h15A1.5 1.5 0 0 1 21 7v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17V7a1.5 1.5 0 0 1 1.5-1.5ZM3.5 6.5l8.5 6.5 8.5-6.5",
+  phone:
+    "M5.5 3.5h3l1.5 4.5-2 1.3a11 11 0 0 0 6.7 6.7l1.3-2 4.5 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 3.5 5.5a2 2 0 0 1 2-2Z",
+  info: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 11v5.5M12 7.8v.1",
+  warning: "M10.3 4.2 2.8 17.5A2 2 0 0 0 4.5 20.5h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0ZM12 9.5V14M12 17.2v.1",
+  tick: "M5 12.5l4.5 4.5L19 7",
+  xCircle: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 9l6 6M15 9l-6 6",
 } as const;
 
 export type IconName = keyof typeof PATHS;

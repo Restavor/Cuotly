@@ -183,7 +183,21 @@ describe("requestAccess", () => {
       }),
     );
 
-    expect(result).toEqual({ error: null, fields: [], done: true });
+    // Lo único que vuelve además es lo que la persona escribió (A01 lo
+    // enseña en "Datos de tu solicitud"): nada que conteste la base.
+    expect(result).toEqual({
+      error: null,
+      fields: [],
+      problems: {},
+      done: true,
+      values: {
+        contact_name: "Intrusa",
+        business_name: "Lo que sea",
+        phone: "600000000",
+        email: "info@restavor.com",
+        comments: "",
+      },
+    });
     expect(redirectMock).not.toHaveBeenCalled();
   });
 
@@ -203,5 +217,20 @@ describe("requestAccess", () => {
     expect(result.done).toBe(false);
     expect(result.error).toContain("No hemos podido enviar");
     expect(redirectMock).not.toHaveBeenCalled();
+    // A10 · React 19 vacía el formulario tras enviar: lo escrito vuelve
+    // en la respuesta para que la pantalla lo reponga.
+    expect(result.values.business_name).toBe("Bar Nuevo");
+    expect(result.values.email).toBe("nuria@bar-nuevo.test");
+  });
+
+  it("A09 · RN-ACC-02: el nombre vacío y el correo mal escrito se señalan a la vez", async () => {
+    const result = await requestAccess(
+      accessRequestInitialState,
+      formData({ contact_name: "", business_name: "Oliva", phone: "600000000", email: "ana@" }),
+    );
+
+    expect(result.problems).toEqual({ contact_name: "missing", email: "invalid" });
+    expect(result.values.business_name).toBe("Oliva");
+    expect(rpcMock).not.toHaveBeenCalled();
   });
 });

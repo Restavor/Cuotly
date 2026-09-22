@@ -1,6 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Logo } from "@/components/Logo";
+import { BigLink, HomeAndHelp, StateCard } from "@/components/access/AccessPieces";
+import { AccessShell } from "@/components/access/AccessShell";
+import { AuthCard } from "@/components/access/AuthCard";
 import { invitationSignupStep } from "@/core/access-requests";
 import { createClient } from "@/lib/supabase/server";
 import { es } from "@/i18n/es";
@@ -61,31 +62,39 @@ export default async function InvitacionPage({
   const paso = invitationSignupStep(estado, Boolean(data?.has_account));
 
   if (paso === "set_password" && data?.email) {
-    return <InvitationForm token={token} email={data.email} spaceName={data.space_name} />;
+    return (
+      <AuthCard>
+        <InvitationForm token={token} email={data.email} spaceName={data.space_name} />
+      </AuthCard>
+    );
+  }
+
+  // A05 · el estado de la invitación en la tarjeta centrada del diseño.
+  // "Ya tienes cuenta" no es un fallo: su botón es entrar y aceptar.
+  if (paso === "sign_in") {
+    return (
+      <AccessShell crumb={es.auth.access.crumbInvitation}>
+        <StateCard illustration="mail" badge="check" title={t.hasAccountTitle} body={t.hasAccountBody}>
+          <BigLink href="/login">{t.signIn}</BigLink>
+        </StateCard>
+      </AccessShell>
+    );
   }
 
   const motivo =
-    paso === "sign_in"
-      ? { title: t.hasAccountTitle, body: t.hasAccountBody, cta: t.signIn }
-      : estado === "expired"
-        ? { title: t.expiredTitle, body: t.expiredBody, cta: t.goToLogin }
-        : estado === "accepted"
-          ? { title: t.acceptedTitle, body: t.acceptedBody, cta: t.goToLogin }
-          : estado === "cancelled"
-            ? { title: t.cancelledTitle, body: t.cancelledBody, cta: t.goToLogin }
-            : { title: t.unknownTitle, body: t.unknownBody, cta: t.goToLogin };
+    estado === "expired"
+      ? { title: t.expiredTitle, body: t.expiredBody, badge: "clock" as const }
+      : estado === "accepted"
+        ? { title: t.acceptedTitle, body: t.acceptedBody, badge: "check" as const }
+        : estado === "cancelled"
+          ? { title: t.cancelledTitle, body: t.cancelledBody, badge: "xCircle" as const }
+          : { title: t.unknownTitle, body: t.unknownBody, badge: "xCircle" as const };
 
   return (
-    <div>
-      <Logo />
-      <h1 className="mb-1.5 text-2xl font-bold text-primary-dark">{motivo.title}</h1>
-      <p className="mb-7 text-sm text-text-secondary">{motivo.body}</p>
-      <Link
-        href="/login"
-        className="block w-full rounded-[10px] bg-primary px-4 py-2.5 text-center text-[15px] font-semibold text-white"
-      >
-        {motivo.cta}
-      </Link>
-    </div>
+    <AccessShell crumb={es.auth.access.crumbInvitation}>
+      <StateCard illustration="mail" badge={motivo.badge} title={motivo.title} body={motivo.body}>
+        <HomeAndHelp signedIn={user !== null} />
+      </StateCard>
+    </AccessShell>
   );
 }

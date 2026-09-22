@@ -247,6 +247,31 @@ export function validateAccessRequest(input: AccessRequestInput): AccessRequestV
 }
 
 /**
+ * A09 · qué le pasa a **cada** campo, todos a la vez.
+ *
+ * `validateAccessRequest()` se queda en el primer problema (o faltan
+ * datos, o el correo está mal), y el diseño de A09 señala los dos juntos:
+ * el nombre vacío y el correo mal escrito en la misma pantalla. Esta
+ * función hace la misma comprobación —la misma expresión del correo— pero
+ * devuelve el problema de cada campo, para que la persona lo arregle todo
+ * de una vez y no a golpe de envío.
+ */
+export type AccessRequestField = "contact_name" | "business_name" | "phone" | "email";
+export type AccessRequestFieldProblem = "missing" | "invalid";
+
+export function accessRequestFieldProblems(
+  input: AccessRequestInput,
+): Partial<Record<AccessRequestField, AccessRequestFieldProblem>> {
+  const problemas: Partial<Record<AccessRequestField, AccessRequestFieldProblem>> = {};
+  if (input.contactName.trim() === "") problemas.contact_name = "missing";
+  if (input.businessName.trim() === "") problemas.business_name = "missing";
+  if (input.phone.trim() === "") problemas.phone = "missing";
+  if (input.email.trim() === "") problemas.email = "missing";
+  else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(input.email.trim())) problemas.email = "invalid";
+  return problemas;
+}
+
+/**
  * A11 · un envío que no llega no se cuenta como un dato mal escrito. El
  * mismo reparto que `classifySignInError()` hace para entrar, con el
  * mínimo que este formulario necesita: o no hubo línea, o falló y no se
