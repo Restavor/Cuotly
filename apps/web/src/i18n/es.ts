@@ -4780,6 +4780,47 @@ export const es = {
     outstandingColumn: "Pendiente",
     financeLink: "Abrir Finanzas",
 
+    // ---- Gestión · Pagos, como M42 del diseño de escritorio -------
+    // Las tres pestañas del bloque, en la dirección (`?pagos=`).
+    paymentsSectionsLabel: "Secciones de pagos",
+    paymentsSections: {
+      charges: "Cobros",
+      quotes: "Presupuestos",
+      invoices: "Facturas",
+    },
+    nextChargeTitle: "Próximo cobro",
+    pendingChargesTitle: "Cobros pendientes",
+    chargeViewDetail: "Ver detalle",
+    chargeRegisterPayment: "Registrar pago",
+    /*
+     * "Resumen de cobros" de M42. Las dos casillas del diseño están, con su
+     * icono y su color, pero **sin cifra**: ese total no lo calcula todavía
+     * ninguna función del servidor, y sumar importes en la pantalla haría
+     * del navegador la autoridad sobre el dinero (CLAUDE.md MUST). Donde va
+     * la cifra se dice por qué no la hay.
+     */
+    chargesSummaryTitle: "Resumen de cobros",
+    chargesSummaryCollected: (year: string) => `Total cobrado (${year})`,
+    chargesSummaryPending: "Pendiente de cobro",
+    chargesSummaryNoFigure: "Sin cifra todavía",
+    chargesSummaryNoFigureReason: "Este total aún no lo calcula el servidor.",
+    chargesOnlyThis: (restaurante: string) => `Solo se muestran cobros del restaurante ${restaurante}.`,
+    chargeHistoryTitle: "Historial de cobros",
+    chargeHistoryDate: "Fecha",
+    chargeHistoryPeriod: "Periodo",
+    chargeHistoryAmount: "Importe",
+    chargeHistoryState: "Estado",
+    chargeHistoryDetail: "Detalle",
+    chargeHistoryEmpty: "Todavía no se ha emitido ningún cobro a este restaurante.",
+    // Facturas · RN-FIN-09: Cuotly no emite facturas todavía. La pestaña
+    // existe con su sitio hecho (decisión 40) y dice el motivo.
+    invoicesTitle: "Facturas",
+    invoicesEmptyTitle: "Cuotly todavía no emite facturas",
+    invoicesEmptyReason:
+      "La numeración fiscal y el formato de la factura llegan con el bloque legal. Hasta entonces queda registrado cada cobro con su referencia y, si se adjunta, su justificante.",
+    paymentsFootNote:
+      "Las facturas llegarán con el bloque legal. Hoy se registran el cobro, el pago y su justificante.",
+
     // ---- Gestión · Usuarios --------------------------------------
     usersTitle: "Quién tiene acceso",
     usersEmptyTitle: "Nadie del restaurante tiene acceso todavía",
@@ -5068,6 +5109,32 @@ export const es = {
     checkPendingBadge: "Comprobación en cola",
     revocationPendingNote: "La autorización se revocará en Google en la próxima tanda de la cola.",
     frequency: { daily: "Se sincroniza a diario", weekly: "Se sincroniza cada semana" },
+    // M45 · el panel lateral "Configurar …": los tres pasos del flujo que
+    // de verdad sigue cada fuente (OAuth de Google o clave), y el estado
+    // actual dicho en una frase.
+    configure: "Configurar",
+    configureTitle: (fuente: string) => `Configurar ${fuente}`,
+    configureStepsOAuth: [
+      { title: "Elegir propiedad", text: "Escribe la propiedad de Google que corresponde a la web de este restaurante." },
+      { title: "Elegir cuenta", text: "Se abre Google para elegir la cuenta autorizada y aceptar el permiso de lectura." },
+      { title: "Confirmar acceso", text: "Al volver, la integración queda conectada y la primera sincronización entra en la siguiente tanda." },
+    ],
+    configureStepsKey: [
+      { title: "Indicar el sitio", text: "Escribe la dirección o el proyecto que hay que medir." },
+      { title: "Pegar la clave", text: "La clave se cifra en el servidor antes de guardarse y nadie la vuelve a ver." },
+      { title: "Confirmar acceso", text: "Con la clave guardada, la primera sincronización entra en la siguiente tanda de la cola." },
+    ],
+    configureCurrentState: "Estado actual",
+    configureHowTo: "Los formularios de conectar están en la fila de cada fuente, a la izquierda.",
+    stateHints: {
+      not_connected: "Todavía no se ha conectado. Sigue los pasos para empezar a recibir datos.",
+      pending_authorization: "Falta terminar la autorización de la cuenta.",
+      connected: "Conectada: los datos llegan solos, sin que nadie tenga que pedirlos.",
+      syncing: "Trayendo datos en este momento.",
+      needs_attention: "Hace falta que alguien actúe para que vuelva a funcionar.",
+      error: "La última sincronización falló.",
+      disconnected: "Se desconectó. Para volver a recibir datos hay que conectarla de nuevo.",
+    },
     noSyncNowNote:
       "No existe «Sincronizar ahora»: la sincronización la programa el sistema (§117). Al conectar, la primera pasada entra en la siguiente tanda de la cola.",
 

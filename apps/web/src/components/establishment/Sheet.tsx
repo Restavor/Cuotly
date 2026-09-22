@@ -16,10 +16,12 @@ import { ReportsTable } from "@/components/report/ReportsTable";
 import type { ReportRow } from "@/components/report/reports-load";
 import { Icon } from "@/components/ui/Icon";
 import { Tabs } from "@/components/ui/Tabs";
+import { SheetHeaderCard, SheetOperationNav } from "./SheetHeader";
 import { Avatar, PersonCell } from "@/components/ui/Avatar";
 import { EstablishmentDataForm } from "./DataForm";
 import { DataSectionNav, DigitalSection } from "./DigitalSections";
 import { IntegrationsBlock } from "./IntegrationsBlock";
+import { isIntegrationProvider } from "@/core/integrations";
 import type { DigitalDataView, IntegrationsView } from "./integrations-load";
 import {
   OpportunitiesSection,
@@ -48,7 +50,6 @@ import { BackupsBlock, type BackupRow } from "./BackupsBlock";
 import { CreatePanelForm } from "./CreatePanelForm";
 import { SubtasksAndEvidence } from "@/components/request/SubtasksAndEvidence";
 import { ManagerForm } from "./ManagerForm";
-import { EstablishmentPhoto } from "./EstablishmentPhoto";
 import { PhotoForm } from "./PhotoForm";
 import { NotesPanel } from "@/components/notes/NotesPanel";
 import type { EstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
@@ -69,11 +70,9 @@ import {
   MANAGEMENT_TAB,
   OPERATION_TAB,
   PAYMENTS_BLOCK,
-  SHEET_TABS,
   filesHref,
   managementBlockLabel,
   sheetHref,
-  sheetTabLabel,
   type ManagementBlock,
   type SheetTab,
   DATA_SECTION_TABS,
@@ -82,9 +81,10 @@ import {
   type DataSectionTab,
   OPERATION_SECTION_TABS,
   openRequestHref,
-  operationSectionHref,
-  operationSectionLabel,
   type OperationSectionTab,
+  PAYMENTS_SECTIONS,
+  paymentsSectionHref,
+  type PaymentsSection,
 } from "./tabs";
 import type {
   SheetCounts,
@@ -263,7 +263,6 @@ const t = es.establishmentSheet;
  * posición, igual que `FILES_BLOCK`: es a donde llevan los enlaces de
  * "rellenar los datos".
  */
-const DATA_BLOCK = MANAGEMENT_BLOCKS.find((block) => block.key === "establishmentData")!;
 const INTEGRATIONS_BLOCK = MANAGEMENT_BLOCKS.find((block) => block.key === "integrations")!;
 
 function euros(cents: number): string {
@@ -343,12 +342,6 @@ function megabytes(sizeBytes: number): string {
   }).format(sizeBytes / 1_048_576);
 }
 
-function statusTone(status: string): "success" | "warning" | "danger" | "neutral" {
-  if (status === "active") return "success";
-  if (status === "suspended" || status === "archived") return "danger";
-  if (status === "paused" || status === "ending" || status === "read_only") return "warning";
-  return "neutral";
-}
 
 /**
  * El color de la insignia de una solicitud, un trabajo y una tarea en las
@@ -595,37 +588,6 @@ function IdentityFacts({
   );
 }
 
-function TabNav({ base, active }: { base: string; active: SheetTab }) {
-  /*
-    Las cinco pestañas del diseño, pegadas al pie de la cabecera: una fila
-    de casillas iguales sobre la superficie suave, y la elegida en blanco
-    con la raya verde debajo. Siguen siendo enlaces (CA-22).
-  */
-  return (
-    <nav aria-label={t.tabsLabel} className="border-t border-border bg-soft-surface/60">
-      <ul className="flex overflow-x-auto">
-        {SHEET_TABS.map((tab) => {
-          const seleccionada = tab.key === active.key;
-          return (
-            <li key={tab.key} className="min-w-[8.5rem] flex-1 sm:flex-none">
-              <Link
-                href={sheetHref(base, tab)}
-                aria-current={seleccionada ? "page" : undefined}
-                className={`-mb-px block border-b-2 border-r border-r-border px-5 py-3 text-center text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
-                  seleccionada
-                    ? "border-b-cuotly-green bg-surface font-semibold text-cuotly-green"
-                    : "border-b-transparent font-medium text-text-secondary hover:bg-surface/70 hover:text-text"
-                }`}
-              >
-                {sheetTabLabel(tab)}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
-}
 
 /**
  * Los cinco bloques de Gestión, como control segmentado: una pista clara
@@ -645,23 +607,35 @@ function TabNav({ base, active }: { base: string; active: SheetTab }) {
  * sin JavaScript navega igual y el botón de volver deshace el cambio de
  * sección (el mismo criterio que `BlockNav`, CA-22).
  */
-function OperationSectionNav({
-  base,
-  active,
-}: {
-  base: string;
-  active: OperationSectionTab;
-}) {
+
+/**
+ * M42 · las tres pestañas de Pagos, como casillas unidas: la elegida en
+ * blanco con la raya verde. Son enlaces (`?pagos=`), no botones (CA-22).
+ */
+function PaymentsSectionNav({ base, active }: { base: string; active: PaymentsSection }) {
   return (
-    <Tabs
-      label={t.operationSectionsLabel}
-      active={active.key}
-      tabs={OPERATION_SECTION_TABS.map((section) => ({
-        key: section.key,
-        label: operationSectionLabel(section),
-        href: operationSectionHref(base, section),
-      }))}
-    />
+    <nav aria-label={t.paymentsSectionsLabel}>
+      <ul className="inline-flex overflow-hidden rounded-[12px] border border-border bg-soft-surface/60">
+        {PAYMENTS_SECTIONS.map((section) => {
+          const activa = section.key === active.key;
+          return (
+            <li key={section.key} className="border-r border-border last:border-r-0">
+              <Link
+                href={paymentsSectionHref(base, section)}
+                aria-current={activa ? "page" : undefined}
+                className={`-mb-px block border-b-2 px-6 py-2.5 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
+                  activa
+                    ? "border-b-cuotly-green bg-surface font-semibold text-primary-dark"
+                    : "border-b-transparent font-medium text-text-secondary hover:bg-surface/70 hover:text-text"
+                }`}
+              >
+                {t.paymentsSections[section.key]}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
   );
 }
 
@@ -819,6 +793,8 @@ export function EstablishmentSheet({
   block,
   section = DATA_SECTION_TABS[0],
   operationSection = OPERATION_SECTION_TABS[0],
+  paymentsSection = PAYMENTS_SECTIONS[0],
+  integrationSource = null,
   data,
 }: {
   base: string;
@@ -829,6 +805,10 @@ export function EstablishmentSheet({
   section?: DataSectionTab;
   /** Página 25 · cuál de las cuatro secciones de Operación se enseña. */
   operationSection?: OperationSectionTab;
+  /** M42 · la pestaña de Pagos (`?pagos=`); sin ella, Cobros. */
+  paymentsSection?: PaymentsSection;
+  /** M45 · la fuente del panel "Configurar …" (`?fuente=`), si la hay. */
+  integrationSource?: string | null;
   data: SheetData;
 }) {
   const {
@@ -874,126 +854,19 @@ export function EstablishmentSheet({
   return (
     <div className="space-y-6">
       {/*
-        La cabecera de la ficha, igual en las 31 vistas del diseño de
-        escritorio (M25 a M48): la foto, el nombre con su estado al lado,
-        una línea con el plan y lo que incluye, "Ver sitio web" a la
-        derecha, y las cinco pestañas pegadas debajo, dentro de la misma
-        tarjeta.
-
-        Lo que el diseño dibuja y NO está:
-
-          · El **menú de tres puntos** junto a "Ver sitio web". No hay
-            ninguna acción decidida para él, y un menú que se abre vacío es
-            peor que no estar.
-          · La **frase que describe el restaurante**. No hay campo de
-            descripción en la ficha de datos (`IDENTITY_FIELDS`), e
-            inventarla sería escribirle al cliente algo que no ha dicho.
-          · El **desplegable sobre la insignia de estado**. El estado se
-            cambia en Gestión, con su motivo y su auditoría (RN-EST-08).
+        La cabecera de la ficha con sus cinco pestañas, igual en las 31
+        vistas del diseño de escritorio (M25 a M48). Vive en su propio
+        componente porque las pantallas de detalle —solicitud, trabajo,
+        tarea, menú e informe— la llevan también encima.
       */}
-      <header className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4 p-5 sm:p-6">
-          {/*
-            RN-EST-18 · la foto del local. Sin foto se pinta el icono de
-            local, no un marco vacío (CA-20).
-          */}
-          <div className="flex min-w-0 flex-1 basis-72 items-start gap-4 sm:items-center">
-            <EstablishmentPhoto photoUrl={photoUrl} size={80} className="rounded-[14px]" />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
-                  {header.name}
-                </h1>
-                <StatusBadge tone={statusTone(header.status)}>
-                  {es.space.statuses[header.status as StatusKey] ?? header.status}
-                </StatusBadge>
-              </div>
-
-              {/*
-                La línea del diseño: "Plan Premium+ | 25 pequeños · 5
-                medianos · 1 grande · 24 fotos". Lo que incluye sale del
-                ciclo vigente (`summary.bags`), no del nombre del plan: es
-                lo que de verdad le toca este mes, y sin ciclo no se
-                escribe ningún número (CLAUDE.md MUST NOT).
-              */}
-              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-text-secondary">
-                <span className="font-medium text-text">
-                  {header.planName === null
-                    ? es.teamArea.establishments.noPlan
-                    : t.headerPlan(header.planName)}
-                </span>
-                {bolsas.length === 0 ? null : (
-                  <>
-                    <span aria-hidden="true" className="hidden text-border sm:inline">|</span>
-                    <span>
-                      {bolsas
-                        .map((bag) => t.headerIncluded[bag.category as CategoryKey](bag.included))
-                        .join(" · ")}
-                    </span>
-                  </>
-                )}
-              </p>
-
-              {/*
-                El código, el grupo y la ciudad: lo que identifica al
-                restaurante cuando hay dos que se llaman parecido. Cada
-                uno solo si lo hay (P6).
-              */}
-              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-text-secondary">
-                <span>{header.code}</span>
-                <span>
-                  {es.teamArea.establishments.groupColumn}:{" "}
-                  {header.groupName ?? es.teamArea.establishments.noGroup}
-                </span>
-                {header.identity.city === null ? null : (
-                  <span className="inline-flex items-center gap-1">
-                    <Icon name="location" aria-hidden="true" className="h-3.5 w-3.5" />
-                    {header.identity.city}
-                  </span>
-                )}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
-            {header.identity.websiteUrl === null ? null : (
-              /*
-                `rel="noreferrer"` porque es una web ajena, y el "se abre en
-                una pestaña nueva" va escrito para quien no ve el icono
-                (§21.4).
-              */
-              <a
-                href={header.identity.websiteUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-field border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green transition-colors hover:bg-cuotly-green/10 focus:outline focus:outline-2 focus:outline-cuotly-green"
-              >
-                {t.websiteLink}
-                <Icon name="externalLink" aria-hidden="true" className="h-4 w-4" />
-                <span className="sr-only">{t.websiteLinkNewTab}</span>
-              </a>
-            )}
-
-            {/*
-              Maqueta 03 · "Editar restaurante". Es un atajo al formulario
-              de Gestión · Datos, no un segundo sitio donde editar. Solo se
-              pinta a quien puede editar, y eso es cortesía:
-              `set_establishment_data()` comprueba RN-EST-11 por su cuenta
-              (CLAUDE.md: ocultar un botón no es un control de acceso).
-            */}
-            {canEditData ? (
-              <Link
-                href={sheetHref(base, MANAGEMENT_TAB, DATA_BLOCK)}
-                className="inline-flex items-center gap-2 rounded-field border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
-              >
-                {t.editEstablishment}
-              </Link>
-            ) : null}
-          </div>
-        </div>
-
-        <TabNav base={base} active={tab} />
-      </header>
+      <SheetHeaderCard
+        base={base}
+        tab={tab}
+        header={header}
+        bags={summary.bags}
+        photoUrl={photoUrl}
+        canEditData={canEditData}
+      />
 
       {/*
         Maqueta 20 · el aviso de estado va aquí, antes de las pestañas: un
@@ -1394,7 +1267,7 @@ export function EstablishmentSheet({
         botón de volver lo deshace. Sin JavaScript navega igual.
       */}
       {tab.key === "operation" ? (
-        <OperationSectionNav base={base} active={operationSection} />
+        <SheetOperationNav base={base} active={operationSection} />
       ) : null}
 
       {tab.key === "operation" && operationSection.key === "requests" ? (
@@ -2320,8 +2193,14 @@ export function EstablishmentSheet({
             multiplicado en la pantalla haría exactamente eso, y además
             sería inventarse una regla fiscal de las que CLAUDE.md aplaza.
           */}
+          {/*
+            M42 · Pagos y cobros, con sus tres pestañas: Cobros, Presupuestos
+            y Facturas.
+          */}
           {block.key === "payments" ? (
             <div className="space-y-4">
+              <PaymentsSectionNav base={base} active={paymentsSection} />
+
               {!payments.allowed ? (
                 /*
                   RN-FIN-07 · quién ve la facturación lo decide el servidor.
@@ -2335,231 +2214,389 @@ export function EstablishmentSheet({
                     description={t.chargesNoAccessReason}
                   />
                 </Card>
-              ) : (
+              ) : paymentsSection.key === "charges" ? (
                 <>
-                  {/*
-                    Las cuotas que siguen debiendo algo, cada una con su
-                    desglose y su formulario de registrar el pago. Un cobro
-                    saldado no necesita tarjeta: está en el historial.
-                  */}
-                  {cuotasVivas.length === 0 ? (
-                    <Card title={t.chargesTitle}>
-                      <EmptyState
-                        title={
-                          payments.charges.length === 0
-                            ? t.chargesEmptyTitle
-                            : t.chargesAllPaidTitle
-                        }
-                        description={
-                          payments.charges.length === 0
-                            ? t.chargesEmptyReason
-                            : t.chargesAllPaidReason
-                        }
-                      />
-                    </Card>
-                  ) : (
-                    <div className="grid items-start gap-4 lg:grid-cols-2">
-                      {cuotasVivas.map((charge) => (
-                        <Card
-                          key={charge.id}
-                          title={charge.concept}
-                          action={
-                            <StatusBadge tone={chargeTone(charge.status)}>
-                              {es.teamArea.chargeStates[charge.status as ChargeStateKey] ??
-                                charge.status}
-                            </StatusBadge>
-                          }
-                        >
-                          <dl className="space-y-2 text-sm">
-                            <div className="flex items-baseline justify-between gap-2">
-                              <dt className="text-text-secondary">{t.baseLabel}</dt>
-                              <dd className="font-semibold text-primary-dark">
-                                {euros(charge.baseCents)}
-                              </dd>
-                            </div>
-                            <div className="flex items-baseline justify-between gap-2">
-                              <dt className="text-text-secondary">
-                                {t.taxLabel(charge.taxRatePercent)}
-                              </dt>
-                              <dd className="font-semibold text-primary-dark">
-                                {euros(charge.taxCents)}
-                              </dd>
-                            </div>
-                            <div className="flex items-baseline justify-between gap-2 border-t border-border pt-2">
-                              <dt className="font-semibold text-text">{t.totalLabel}</dt>
-                              <dd className="text-lg font-bold text-primary-dark">
-                                {euros(charge.totalCents)}
-                              </dd>
-                            </div>
-                          </dl>
-
-                          <p className="mt-3 text-xs text-text-secondary">
-                            {t.billingPeriod(
-                              diaCorto(charge.periodStart, timeZone),
-                              diaCorto(charge.periodEnd, timeZone),
-                            )}
-                          </p>
-                          <p className="text-xs text-text-secondary">
-                            {t.dueOn(diaCorto(charge.dueAt, timeZone))}
-                          </p>
-
-                          {/*
-                            HU-26 · el MISMO formulario de Finanzas y del
-                            detalle del trabajo, no una tercera copia: lo
-                            que cambia entre roles es lo que permite
-                            `register_payment()` en el servidor, no la
-                            pantalla.
-                          */}
-                          <div className="mt-4 border-t border-border pt-4">
-                            <RegisterPaymentForm
-                              chargeId={charge.id}
-                              establishmentId={header.id}
-                              outstandingEuros={(charge.outstandingCents / 100).toFixed(2)}
-                              defaultDay={today}
-                            />
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {/*
-                    M42 · el historial de cobros a ancho completo, como en
-                    el diseño, y los presupuestos debajo: una tabla de cinco
-                    columnas en media anchura se partía en tres líneas.
-                  */}
-                  <div className="space-y-4">
-                    <Card title={t.paymentHistoryTitle}>
-                      {payments.payments.length === 0 ? (
+                  <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                    {/*
+                      M42 · "Próximo cobro": la cuota que sigue debiendo algo,
+                      con la fecha grande, el concepto, su estado, el
+                      desglose guardado (RN-FIN-08: la pantalla no multiplica
+                      nada) y sus dos botones. Si hay más de una, van todas,
+                      una debajo de otra.
+                    */}
+                    <Card
+                      className="min-w-0"
+                      title={cuotasVivas.length > 1 ? t.pendingChargesTitle : t.nextChargeTitle}
+                    >
+                      {cuotasVivas.length === 0 ? (
                         <EmptyState
-                          title={t.paymentHistoryEmptyTitle}
-                          description={t.paymentHistoryEmptyReason}
+                          title={
+                            payments.charges.length === 0
+                              ? t.chargesEmptyTitle
+                              : t.chargesAllPaidTitle
+                          }
+                          description={
+                            payments.charges.length === 0
+                              ? t.chargesEmptyReason
+                              : t.chargesAllPaidReason
+                          }
                         />
                       ) : (
-                        <>
-                          <Table>
-                            <TableHead>
-                              <TableRow>
-                                <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
-                                <TableHeaderCell>{t.conceptColumn}</TableHeaderCell>
-                                <TableHeaderCell>{t.amountColumn}</TableHeaderCell>
-                                <TableHeaderCell>{t.methodColumn}</TableHeaderCell>
-                                <TableHeaderCell>{t.receiptColumn}</TableHeaderCell>
-                              </TableRow>
-                            </TableHead>
-                            <TableBody>
-                              {payments.payments.map((payment) => (
-                                <TableRow key={payment.id}>
-                                  <TableCell>{diaCorto(payment.paidAt, timeZone)}</TableCell>
-                                  <TableCell>{payment.chargeConcept}</TableCell>
-                                  <TableCell>
-                                    {euros(payment.amountCents)}
-                                    {/*
-                                      RN-FIN-04 · un pago mal registrado no
-                                      se borra: se revierte y queda
-                                      marcado. Sin esta marca el historial
-                                      sumaría un dinero que ya no cuenta.
-                                    */}
-                                    {payment.reversedAt === null ? null : (
-                                      <span className="block text-xs text-text-secondary">
-                                        {t.paymentReversed}
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    {es.teamArea.methods[payment.method as PaymentMethodKey] ??
-                                      payment.method}
-                                  </TableCell>
-                                  <TableCell>
-                                    {/*
-                                      La maqueta enseña aquí "FAC-2026-083".
-                                      Esa numeración es fiscal y CLAUDE.md
-                                      la deja aplazada, así que lo que se
-                                      enseña es lo que sí existe: si hay
-                                      justificante adjunto, se dice; si no,
-                                      que no lo hay.
-                                    */}
-                                    {payment.receiptFileId === null
-                                      ? t.receiptNone
-                                      : t.receiptAttached}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          <p className="mt-3 text-sm">
-                            <Link
-                              href={`/espacios/${slug}/finanzas`}
-                              className="text-cuotly-green underline"
+                        <div className="space-y-4">
+                          {cuotasVivas.map((charge) => (
+                            <section
+                              key={charge.id}
+                              className="rounded-[14px] border border-border bg-surface p-4"
                             >
-                              {t.financeLink}
-                            </Link>
-                          </p>
-                        </>
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <span
+                                    aria-hidden="true"
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cuotly-green/10 text-cuotly-green"
+                                  >
+                                    <Icon name="calendar" className="h-5 w-5" />
+                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="text-[22px] font-bold leading-tight text-primary-dark">
+                                      {diaCorto(charge.dueAt, timeZone)}
+                                    </p>
+                                    <h4 className="truncate text-sm text-text-secondary">
+                                      {charge.concept}
+                                    </h4>
+                                  </div>
+                                </div>
+                                <StatusBadge tone={chargeTone(charge.status)}>
+                                  {es.teamArea.chargeStates[charge.status as ChargeStateKey] ??
+                                    charge.status}
+                                </StatusBadge>
+                              </div>
+
+                              <dl className="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-3 text-sm">
+                                <div>
+                                  <dt className="text-xs text-text-secondary">{t.baseLabel}</dt>
+                                  <dd className="mt-0.5 text-base font-semibold text-primary-dark">
+                                    {euros(charge.baseCents)}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs text-text-secondary">
+                                    {t.taxLabel(charge.taxRatePercent)}
+                                  </dt>
+                                  <dd className="mt-0.5 text-base font-semibold text-primary-dark">
+                                    {euros(charge.taxCents)}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className="text-xs text-text-secondary">{t.totalLabel}</dt>
+                                  <dd className="mt-0.5 text-base font-bold text-primary-dark">
+                                    {euros(charge.totalCents)}
+                                  </dd>
+                                </div>
+                              </dl>
+
+                              <p className="mt-3 text-xs text-text-secondary">
+                                {t.billingPeriod(
+                                  diaCorto(charge.periodStart, timeZone),
+                                  diaCorto(charge.periodEnd, timeZone),
+                                )}
+                              </p>
+
+                              {/*
+                                Los dos botones del diseño. "Registrar pago"
+                                abre aquí mismo el MISMO formulario de Finanzas
+                                y del detalle del trabajo (HU-26): lo que
+                                cambia entre roles es lo que permite
+                                `register_payment()`, no la pantalla.
+                              */}
+                              <div className="mt-4 flex flex-wrap items-start justify-end gap-2">
+                                <Link
+                                  href={`/espacios/${slug}/finanzas`}
+                                  className="inline-flex items-center justify-center rounded-field border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green transition-colors hover:bg-cuotly-green/10 focus:outline focus:outline-2 focus:outline-cuotly-green"
+                                >
+                                  {t.chargeViewDetail}
+                                </Link>
+                                <details className="group open:basis-full">
+                                  <summary className="flex cursor-pointer list-none justify-end [&::-webkit-details-marker]:hidden">
+                                    <span className="inline-flex items-center justify-center rounded-field bg-primary px-4 py-2.5 text-sm font-semibold text-surface transition-colors hover:bg-primary-dark group-open:bg-primary-dark">
+                                      {t.chargeRegisterPayment}
+                                    </span>
+                                  </summary>
+                                  <div className="mt-4 border-t border-border pt-4">
+                                    <RegisterPaymentForm
+                                      chargeId={charge.id}
+                                      establishmentId={header.id}
+                                      outstandingEuros={(charge.outstandingCents / 100).toFixed(2)}
+                                      defaultDay={today}
+                                    />
+                                  </div>
+                                </details>
+                              </div>
+                            </section>
+                          ))}
+                        </div>
                       )}
                     </Card>
 
                     {/*
-                      Maqueta 14 · "Presupuestos" (§84, desde el Hito 12).
-                      Los que hay, con el estado que deriva el servidor del
-                      cobro (`quote_status()`, RN-DAT-05), y el enlace a
-                      Finanzas, que es donde se crean, se envían y se
-                      autoriza el inicio. Sin ninguno se dice por qué.
+                      M42 · "Resumen de cobros": las dos casillas del diseño,
+                      con su icono y su color, y SIN cifra. Ese total no lo
+                      calcula todavía ninguna función del servidor, y sumarlo
+                      aquí haría de la pantalla la autoridad sobre el dinero
+                      (CLAUDE.md MUST). En su sitio va el motivo.
+
+                      El reloj va sobre ámbar con el trazo oscuro: el ámbar
+                      como color de trazo no llega a 3:1 (CA-22, y
+                      `contrast.test.ts` lo prohíbe).
                     */}
-                    <Card title={t.quotesTitle}>
-                      {payments.quotes.length === 0 ? (
-                        <EmptyState
-                          title={t.quotesEmptyTitle}
-                          description={t.quotesEmptyReason}
-                        />
-                      ) : (
+                    <Card className="min-w-0" title={t.chargesSummaryTitle}>
+                      <div className="space-y-3">
+                        {(
+                          [
+                            {
+                              key: "collected",
+                              label: t.chargesSummaryCollected(today.slice(0, 4)),
+                              icon: "calendar",
+                              tint: "bg-cuotly-green/10 text-cuotly-green",
+                            },
+                            {
+                              key: "pending",
+                              label: t.chargesSummaryPending,
+                              icon: "clock",
+                              tint: "bg-warning/25 text-primary-dark",
+                            },
+                          ] as const
+                        ).map((casilla) => (
+                          <div
+                            key={casilla.key}
+                            className="flex items-center gap-3 rounded-[14px] border border-border p-3.5"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${casilla.tint}`}
+                            >
+                              <Icon name={casilla.icon} className="h-5 w-5" />
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm text-text-secondary">{casilla.label}</p>
+                              <p className="text-base font-semibold text-text-secondary">
+                                {t.chargesSummaryNoFigure}
+                              </p>
+                              <p className="text-xs text-text-secondary">
+                                {t.chargesSummaryNoFigureReason}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        <p className="flex items-start gap-2 rounded-[10px] bg-soft-surface px-3 py-2 text-xs text-text-secondary">
+                          <Icon name="alert" aria-hidden="true" className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          {t.chargesOnlyThis(header.name)}
+                        </p>
+                      </div>
+                    </Card>
+                  </div>
+
+                  {/*
+                    M42 · "Historial de cobros": cada cuota emitida, con su
+                    periodo, su importe guardado y el estado que deriva el
+                    servidor de su libro (RN-FIN-02).
+                  */}
+                  <Card title={t.chargeHistoryTitle}>
+                    {payments.charges.length === 0 ? (
+                      <p className="text-sm text-text-secondary">{t.chargeHistoryEmpty}</p>
+                    ) : (
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableHeaderCell>{t.chargeHistoryDate}</TableHeaderCell>
+                            <TableHeaderCell>{t.conceptColumn}</TableHeaderCell>
+                            <TableHeaderCell>{t.chargeHistoryPeriod}</TableHeaderCell>
+                            <TableHeaderCell>{t.chargeHistoryAmount}</TableHeaderCell>
+                            <TableHeaderCell>{t.chargeHistoryState}</TableHeaderCell>
+                            <TableHeaderCell>{t.chargeHistoryDetail}</TableHeaderCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {payments.charges.map((charge) => (
+                            <TableRow key={charge.id}>
+                              <TableCell>
+                                <span className="whitespace-nowrap">
+                                  {diaCorto(charge.dueAt, timeZone)}
+                                </span>
+                              </TableCell>
+                              <TableCell>{charge.concept}</TableCell>
+                              <TableCell>
+                                <span className="whitespace-nowrap text-text-secondary">
+                                  {diaCorto(charge.periodStart, timeZone)} –{" "}
+                                  {diaCorto(charge.periodEnd, timeZone)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="whitespace-nowrap font-semibold">
+                                  {euros(charge.totalCents)}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <StatusBadge tone={chargeTone(charge.status)}>
+                                  {es.teamArea.chargeStates[charge.status as ChargeStateKey] ??
+                                    charge.status}
+                                </StatusBadge>
+                              </TableCell>
+                              <TableCell>
+                                <Link
+                                  href={`/espacios/${slug}/finanzas`}
+                                  className="inline-flex items-center justify-center rounded-field border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-soft-surface"
+                                >
+                                  {t.chargeViewDetail}
+                                </Link>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </Card>
+
+                  <Card title={t.paymentHistoryTitle}>
+                    {payments.payments.length === 0 ? (
+                      <EmptyState
+                        title={t.paymentHistoryEmptyTitle}
+                        description={t.paymentHistoryEmptyReason}
+                      />
+                    ) : (
+                      <>
                         <Table>
                           <TableHead>
                             <TableRow>
-                              <TableHeaderCell>{es.quotesTeam.codeColumn}</TableHeaderCell>
-                              <TableHeaderCell>{es.quotesTeam.conceptColumn}</TableHeaderCell>
-                              <TableHeaderCell>{es.quotesTeam.totalColumn}</TableHeaderCell>
-                              <TableHeaderCell>{es.quotesTeam.stateColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.conceptColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.amountColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.methodColumn}</TableHeaderCell>
+                              <TableHeaderCell>{t.receiptColumn}</TableHeaderCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {payments.quotes.map((quote) => (
-                              <TableRow key={quote.id}>
+                            {payments.payments.map((payment) => (
+                              <TableRow key={payment.id}>
+                                <TableCell>{diaCorto(payment.paidAt, timeZone)}</TableCell>
+                                <TableCell>{payment.chargeConcept}</TableCell>
                                 <TableCell>
-                                  <Link
-                                    href={`/espacios/${slug}/finanzas/presupuestos/${quote.id}`}
-                                    className="text-cuotly-green underline"
-                                  >
-                                    {quote.code}
-                                  </Link>
+                                  {euros(payment.amountCents)}
+                                  {/*
+                                    RN-FIN-04 · un pago mal registrado no
+                                    se borra: se revierte y queda
+                                    marcado. Sin esta marca el historial
+                                    sumaría un dinero que ya no cuenta.
+                                  */}
+                                  {payment.reversedAt === null ? null : (
+                                    <span className="block text-xs text-text-secondary">
+                                      {t.paymentReversed}
+                                    </span>
+                                  )}
                                 </TableCell>
-                                <TableCell>{quote.concept}</TableCell>
-                                <TableCell>{euros(quote.totalCents)}</TableCell>
                                 <TableCell>
-                                  <StatusBadge
-                                    tone={isQuoteState(quote.status) ? quoteTone(quote.status) : "neutral"}
-                                  >
-                                    {isQuoteState(quote.status)
-                                      ? es.naming.states.quote[quote.status]
-                                      : quote.status}
-                                  </StatusBadge>
+                                  {es.teamArea.methods[payment.method as PaymentMethodKey] ??
+                                    payment.method}
+                                </TableCell>
+                                <TableCell>
+                                  {/*
+                                    La maqueta enseña aquí "FAC-2026-083".
+                                    Esa numeración es fiscal y CLAUDE.md
+                                    la deja aplazada, así que lo que se
+                                    enseña es lo que sí existe: si hay
+                                    justificante adjunto, se dice; si no,
+                                    que no lo hay.
+                                  */}
+                                  {payment.receiptFileId === null
+                                    ? t.receiptNone
+                                    : t.receiptAttached}
                                 </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
                         </Table>
-                      )}
-                      <p className="mt-3 text-sm">
-                        <Link
-                          href={`/espacios/${slug}/finanzas/presupuestos?restaurante=${header.id}`}
-                          className="text-cuotly-green underline"
-                        >
-                          {t.quotesLink}
-                        </Link>
-                      </p>
-                    </Card>
-                  </div>
+                        <p className="mt-3 text-sm">
+                          <Link
+                            href={`/espacios/${slug}/finanzas`}
+                            className="text-cuotly-green underline"
+                          >
+                            {t.financeLink}
+                          </Link>
+                        </p>
+                      </>
+                    )}
+                  </Card>
+
+                  <p className="flex items-center gap-2 rounded-[12px] bg-soft-surface px-3.5 py-2.5 text-sm text-text-secondary">
+                    <Icon name="alert" aria-hidden="true" className="h-4 w-4 shrink-0" />
+                    {t.paymentsFootNote}
+                  </p>
                 </>
+              ) : paymentsSection.key === "quotes" ? (
+                /*
+                  Maqueta 14 · "Presupuestos" (§84, desde el Hito 12). Los
+                  que hay, con el estado que deriva el servidor del cobro
+                  (`quote_status()`, RN-DAT-05), y el enlace a Finanzas.
+                */
+                  <Card title={t.quotesTitle}>
+                    {payments.quotes.length === 0 ? (
+                      <EmptyState
+                        title={t.quotesEmptyTitle}
+                        description={t.quotesEmptyReason}
+                      />
+                    ) : (
+                      <Table>
+                        <TableHead>
+                          <TableRow>
+                            <TableHeaderCell>{es.quotesTeam.codeColumn}</TableHeaderCell>
+                            <TableHeaderCell>{es.quotesTeam.conceptColumn}</TableHeaderCell>
+                            <TableHeaderCell>{es.quotesTeam.totalColumn}</TableHeaderCell>
+                            <TableHeaderCell>{es.quotesTeam.stateColumn}</TableHeaderCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {payments.quotes.map((quote) => (
+                            <TableRow key={quote.id}>
+                              <TableCell>
+                                <Link
+                                  href={`/espacios/${slug}/finanzas/presupuestos/${quote.id}`}
+                                  className="text-cuotly-green underline"
+                                >
+                                  {quote.code}
+                                </Link>
+                              </TableCell>
+                              <TableCell>{quote.concept}</TableCell>
+                              <TableCell>{euros(quote.totalCents)}</TableCell>
+                              <TableCell>
+                                <StatusBadge
+                                  tone={isQuoteState(quote.status) ? quoteTone(quote.status) : "neutral"}
+                                >
+                                  {isQuoteState(quote.status)
+                                    ? es.naming.states.quote[quote.status]
+                                    : quote.status}
+                                </StatusBadge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                    <p className="mt-3 text-sm">
+                      <Link
+                        href={`/espacios/${slug}/finanzas/presupuestos?restaurante=${header.id}`}
+                        className="text-cuotly-green underline"
+                      >
+                        {t.quotesLink}
+                      </Link>
+                    </p>
+                  </Card>
+              ) : (
+                <Card title={t.invoicesTitle}>
+                  <EmptyState
+                    icon="document"
+                    title={t.invoicesEmptyTitle}
+                    description={t.invoicesEmptyReason}
+                  />
+                </Card>
               )}
             </div>
           ) : null}
@@ -3224,6 +3261,14 @@ export function EstablishmentSheet({
                 returnTo={sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK)}
                 title={t.integrationsTitle}
                 hint={t.integrationsHint}
+                configure={{
+                  hrefFor: (provider) =>
+                    `${sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK)}&fuente=${provider}`,
+                  selected:
+                    integrationSource !== null && isIntegrationProvider(integrationSource)
+                      ? integrationSource
+                      : null,
+                }}
               />
             )
           ) : null}

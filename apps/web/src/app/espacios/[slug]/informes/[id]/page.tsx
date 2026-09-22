@@ -20,6 +20,8 @@ import { isObjectiveOnly, orderedSections } from "@/core/reports";
 import { DEFAULT_TIMEZONE, enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { SheetFrame } from "@/components/establishment/SheetHeader";
+import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-load";
 
 /**
  * Vista 10.04 · revisar y programar un informe (§95, RN-REP-08/09/10).
@@ -73,8 +75,15 @@ export default async function ReportDetailPage({
   // barrido ahora también mira eso.
   const timezone = space?.timezone ?? DEFAULT_TIMEZONE;
 
+  // M39 · el marco de la ficha encima del informe. Un informe
+  // consolidado no es de ningún restaurante y va sin marco.
+  const frame =
+    report.establishmentId === null ? null : await loadSheetFrame(supabase, report.establishmentId);
+
   return (
     <div className="space-y-6">
+      <SheetFrame slug={slug} frame={frame} tab="data" />
+
       {/*
         M39 · "Volver" arriba; el nombre del informe con su estado al lado,
         de quién es y qué periodo cubre; y las descargas a la derecha, que

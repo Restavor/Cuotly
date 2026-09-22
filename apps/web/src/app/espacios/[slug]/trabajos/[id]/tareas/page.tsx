@@ -26,6 +26,8 @@ import {
   type DetailCandidate,
   type ResolvedReassignment,
 } from "./TaskDetail";
+import { SheetFrame } from "@/components/establishment/SheetHeader";
+import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-load";
 
 /**
  * Maqueta 07 · "Tareas — asignación y coordinación".
@@ -172,8 +174,13 @@ export default async function JobTasksPage({
       decisionReason: solicitud.decisionReason,
     }));
 
+  // M30 · el marco de la ficha del restaurante encima del detalle.
+  const frame = await loadSheetFrame(supabase, job.establishment_id);
+
   return (
     <div className="space-y-6">
+      <SheetFrame slug={slug} frame={frame} tab="operation" section="tasks" />
+
       <Link
         href={volverHref}
         className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-soft-surface hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"

@@ -274,3 +274,29 @@ export function sheetTabLabel(tab: SheetTab): string {
 export function managementBlockLabel(block: ManagementBlock): string {
   return es.establishmentSheet.blocks[block.key];
 }
+
+/**
+ * M42 · las tres pestañas del bloque de Pagos: Cobros, Presupuestos y
+ * Facturas. Viajan en la dirección (`?pagos=`) como todo lo demás de la
+ * ficha, así que se comparten y el botón de volver las deshace (CA-22).
+ */
+export interface PaymentsSection {
+  readonly key: keyof typeof es.establishmentSheet.paymentsSections;
+  readonly slug: string;
+}
+
+export const PAYMENTS_SECTIONS: readonly PaymentsSection[] = [
+  { key: "charges", slug: "cobros" },
+  { key: "quotes", slug: "presupuestos" },
+  { key: "invoices", slug: "facturas" },
+];
+
+export function parsePaymentsSection(value: string | undefined): PaymentsSection {
+  return PAYMENTS_SECTIONS.find((section) => section.slug === value) ?? PAYMENTS_SECTIONS[0];
+}
+
+export function paymentsSectionHref(base: string, section: PaymentsSection): string {
+  const params = new URLSearchParams({ vista: MANAGEMENT_TAB.slug, bloque: PAYMENTS_BLOCK.slug });
+  if (section.slug !== PAYMENTS_SECTIONS[0].slug) params.set("pagos", section.slug);
+  return `${base}?${params.toString()}`;
+}

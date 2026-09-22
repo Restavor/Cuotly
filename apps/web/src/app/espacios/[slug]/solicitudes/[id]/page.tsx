@@ -30,6 +30,8 @@ import {
   RequestInformationForm,
   ValidateProposalForm,
 } from "./RequestActions";
+import { SheetFrame } from "@/components/establishment/SheetHeader";
+import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-load";
 
 /**
  * Detalle de una solicitud para el equipo (HU-11, HU-12, HU-13, HU-14),
@@ -159,8 +161,13 @@ export default async function TeamRequestDetailPage({
               : `/espacios/${slug}/solicitudes/${posicion.nextId}${sufijo}`,
         };
 
+  // M26 · el marco de la ficha del restaurante encima del detalle.
+  const frame = await loadSheetFrame(supabase, request.establishment_id);
+
 return (
     <div className="space-y-6">
+
+      <SheetFrame slug={slug} frame={frame} tab="operation" section="requests" />
       <RequestHeader
         headline={requestHeadline(request.description)}
         code={request.code}

@@ -40,6 +40,8 @@ import {
 } from "./JobActions";
 import { TaskBreakdown } from "./TaskBreakdown";
 import { loadJobTasks } from "./tasks-load";
+import { SheetFrame } from "@/components/establishment/SheetHeader";
+import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-load";
 
 /**
  * Detalle de un trabajo para el equipo (HU-17 a HU-20).
@@ -370,8 +372,13 @@ export default async function TeamJobDetailPage({
     hasDeadline: job.category !== null,
   });
 
+  // M28 · el marco de la ficha del restaurante encima del detalle.
+  const frame = await loadSheetFrame(supabase, job.establishment_id);
+
   return (
     <div className="space-y-6">
+      <SheetFrame slug={slug} frame={frame} tab="operation" section="jobs" />
+
       {/*
         M28 · arriba "Volver a trabajos" con el paginador, y el estado a la
         derecha. RN-SLA-17: "Fuera de plazo" va AL LADO del estado, nunca en

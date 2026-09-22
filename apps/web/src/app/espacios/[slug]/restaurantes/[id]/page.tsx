@@ -40,6 +40,7 @@ import {
   parseDataSection,
   parseManagementBlock,
   parseOperationSection,
+  parsePaymentsSection,
   parseSheetTab,
 } from "@/components/establishment/tabs";
 import { isStaffRole } from "@/components/shell/navigation";
@@ -348,6 +349,8 @@ export default async function EstablishmentPage({
         block={parseManagementBlock(soloUno(query.bloque))}
         section={seccion}
         operationSection={seccionOperacion}
+        paymentsSection={parsePaymentsSection(soloUno(query.pagos))}
+        integrationSource={soloUno(query.fuente) ?? null}
         data={{
           header,
           /*

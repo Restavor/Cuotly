@@ -267,3 +267,46 @@ describe("Maqueta 17 · Gestión — Integraciones", () => {
     expect(screen.queryByText(t.webPlatformLastPublicationNone)).toBeNull();
   });
 });
+
+describe("M45 · el panel «Configurar …» de la ficha", () => {
+  function pintarConPanel(view: IntegrationsView, selected: "ga4" | "clarity" | null) {
+    return render(
+      <IntegrationsBlock
+        view={view}
+        establishmentId="est-1"
+        slug="restavor"
+        returnTo="/espacios/restavor/restaurantes/est-1?vista=gestion&bloque=integraciones"
+        title={es.establishmentSheet.integrationsTitle}
+        hint={es.establishmentSheet.integrationsHint}
+        configure={{ hrefFor: (provider) => `/ficha?fuente=${provider}`, selected }}
+      />,
+    );
+  }
+
+  it("sin fuente en la dirección elige la primera que no está conectada", () => {
+    const view = vista(OWNER);
+    pintarConPanel(view, null);
+    const primera = view.rows.find((row) => row.status !== "connected")!;
+    expect(
+      screen.getByRole("heading", { name: t.configureTitle(t.providers[primera.provider].name) }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(t.configureCurrentState)).toBeInTheDocument();
+  });
+
+  it("cada fila lleva su «Configurar» a la dirección de su fuente, y la elegida lo marca", () => {
+    pintarConPanel(vista(OWNER), "clarity");
+    const clarity = screen.getByTestId("integration-clarity");
+    const enlace = within(clarity).getByRole("link", { name: t.configure });
+    expect(enlace).toHaveAttribute("href", "/ficha?fuente=clarity");
+    expect(enlace).toHaveAttribute("aria-current", "true");
+    expect(
+      screen.getByRole("heading", { name: t.configureTitle(t.providers.clarity.name) }),
+    ).toBeInTheDocument();
+  });
+
+  it("fuera de la ficha no hay panel ni botón «Configurar»", () => {
+    pintar(vista(OWNER));
+    expect(screen.queryByRole("link", { name: t.configure })).toBeNull();
+    expect(screen.queryByText(t.configureCurrentState)).toBeNull();
+  });
+});

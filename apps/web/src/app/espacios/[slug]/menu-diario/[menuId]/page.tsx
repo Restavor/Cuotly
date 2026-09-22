@@ -11,6 +11,8 @@ import { enZona, fechaCorta } from "@/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 
 import { AssignMenuForm, CorrectionsPanel, RefundForm, WorkerActions, type MenuCandidate, type MenuCorrectionRow } from "./TeamMenuForms";
+import { SheetFrame } from "@/components/establishment/SheetHeader";
+import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-load";
 
 /**
  * Un menú, visto por el equipo (Fase 2, Hito 11; RN-MEN-06/07/09/10,
@@ -214,8 +216,13 @@ export default async function TeamMenuPage({ params }: { params: Promise<{ slug:
     completionNote: c.completion_note,
   }));
 
+  // M32 · el marco de la ficha del restaurante encima del detalle.
+  const frame = await loadSheetFrame(supabase, menu.establishment_id);
+
   return (
     <div className="space-y-6">
+      <SheetFrame slug={slug} frame={frame} tab="operation" section="dailyMenu" />
+
       {/*
         M32 · "Volver" arriba, el nombre del menú con su estado al lado y,
         debajo, de qué restaurante es, qué tipo, qué día y con qué

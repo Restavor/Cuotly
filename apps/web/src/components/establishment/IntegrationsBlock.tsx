@@ -1,7 +1,10 @@
+import Link from "next/link";
+
 import { Card, StatusBadge } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import {
   INTEGRATION_PROVIDERS,
+  type IntegrationProvider,
   canCancelConnection,
   canDisconnect,
   canManageConnections,
@@ -48,6 +51,7 @@ export function IntegrationsBlock({
   returnTo,
   title,
   hint,
+  configure,
 }: {
   view: IntegrationsView;
   establishmentId: string;
@@ -55,73 +59,115 @@ export function IntegrationsBlock({
   returnTo: string;
   title: string;
   hint: string;
+  /**
+   * M45 · en la ficha, el panel lateral "Configurar …" y un botón
+   * "Configurar" en cada fila que lo elige. `hrefFor` da la dirección que
+   * elige una fuente (`?fuente=`); `selected` es la elegida en la
+   * dirección, o `null` para la primera que no esté conectada.
+   */
+  configure?: {
+    readonly hrefFor: (provider: IntegrationProvider) => string;
+    readonly selected: IntegrationProvider | null;
+  };
 }) {
   const puedeGestionar = canManageConnections(view.actor) && !view.establishmentArchived;
   const veCredenciales = canSeeCredentialMetadata(view.actor);
 
+  /*
+    La fuente del panel "Configurar …": la que pide la dirección, o la
+    primera que no esté conectada (que es la que hay que configurar), o la
+    primera de todas si están todas conectadas.
+  */
+  const elegida =
+    configure === undefined
+      ? null
+      : (view.rows.find((row) => row.provider === configure.selected) ??
+        view.rows.find((row) => row.status !== "connected") ??
+        view.rows[0] ??
+        null);
+
+  const lista = (
+        <section aria-label={title} className="space-y-3">
+          <div>
+            <h3 className="text-base font-semibold text-primary-dark">{title}</h3>
+            <p className="text-sm text-text-secondary">{hint}</p>
+          </div>
+
+          {view.flash ? (
+            <p
+              role={view.flash === "connected" ? "status" : "alert"}
+              data-testid="integration-flash"
+              className={`rounded-lg px-3 py-2 text-sm ${
+                view.flash === "connected" ? "bg-success/10 text-text" : "bg-warning/10 text-text"
+              }`}
+            >
+              {t.flash[view.flash]}
+            </p>
+          ) : null}
+
+          {view.establishmentArchived ? <p className="text-sm text-text-secondary">{t.archivedNote}</p> : null}
+          {!canManageConnections(view.actor) ? (
+            <p className="text-sm text-text-secondary">
+              {view.actor.kind === "staff" ? t.workerReadOnly : t.clientReadOnly}
+            </p>
+          ) : view.actor.kind === "client" ? (
+            <p className="text-sm text-text-secondary">{t.clientOwnerHint}</p>
+          ) : null}
+          {puedeGestionar && !view.vaultConfigured ? (
+            <p role="alert" className="text-sm text-danger">
+              {t.vaultNotConfigured}
+            </p>
+          ) : null}
+          {puedeGestionar && view.vaultConfigured && !view.oauthConfigured ? (
+            <p className="text-sm text-text-secondary">{t.oauthNotConfigured}</p>
+          ) : null}
+
+          <ul className="space-y-3">
+            {INTEGRATION_PROVIDERS.map((provider) => {
+              const row = view.rows.find((r) => r.provider === provider);
+              if (!row) return null;
+              return (
+                <li
+                  key={provider}
+                  data-testid={`integration-${provider}`}
+                  className="rounded-[14px] border border-border bg-surface p-4"
+                >
+                  <IntegrationRowView
+                    row={row}
+                    view={view}
+                    establishmentId={establishmentId}
+                    slug={slug}
+                    returnTo={returnTo}
+                    puedeGestionar={puedeGestionar}
+                    veCredenciales={veCredenciales}
+                    configureHref={configure?.hrefFor(provider) ?? null}
+                    configureSelected={configure !== undefined && provider === elegida?.provider}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+
+          <p className="text-xs text-text-secondary">{t.noSyncNowNote}</p>
+        </section>
+  );
+
   return (
     <>
-      <section aria-label={title} className="space-y-3">
-        <div>
-          <h3 className="text-base font-semibold text-primary-dark">{title}</h3>
-          <p className="text-sm text-text-secondary">{hint}</p>
+      {configure === undefined ? (
+        lista
+      ) : (
+        /*
+          M45 · a la izquierda "Integraciones del sitio web" con una fila por
+          fuente; a la derecha el panel de configurar la elegida.
+        */
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="min-w-0 rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
+            {lista}
+          </div>
+          {elegida === null ? null : <ConfigurePanel row={elegida} />}
         </div>
-
-        {view.flash ? (
-          <p
-            role={view.flash === "connected" ? "status" : "alert"}
-            data-testid="integration-flash"
-            className={`rounded-lg px-3 py-2 text-sm ${
-              view.flash === "connected" ? "bg-success/10 text-text" : "bg-warning/10 text-text"
-            }`}
-          >
-            {t.flash[view.flash]}
-          </p>
-        ) : null}
-
-        {view.establishmentArchived ? <p className="text-sm text-text-secondary">{t.archivedNote}</p> : null}
-        {!canManageConnections(view.actor) ? (
-          <p className="text-sm text-text-secondary">
-            {view.actor.kind === "staff" ? t.workerReadOnly : t.clientReadOnly}
-          </p>
-        ) : view.actor.kind === "client" ? (
-          <p className="text-sm text-text-secondary">{t.clientOwnerHint}</p>
-        ) : null}
-        {puedeGestionar && !view.vaultConfigured ? (
-          <p role="alert" className="text-sm text-danger">
-            {t.vaultNotConfigured}
-          </p>
-        ) : null}
-        {puedeGestionar && view.vaultConfigured && !view.oauthConfigured ? (
-          <p className="text-sm text-text-secondary">{t.oauthNotConfigured}</p>
-        ) : null}
-
-        <ul className="space-y-3">
-          {INTEGRATION_PROVIDERS.map((provider) => {
-            const row = view.rows.find((r) => r.provider === provider);
-            if (!row) return null;
-            return (
-              <li
-                key={provider}
-                data-testid={`integration-${provider}`}
-                className="rounded-[14px] border border-border bg-surface p-4"
-              >
-                <IntegrationRowView
-                  row={row}
-                  view={view}
-                  establishmentId={establishmentId}
-                  slug={slug}
-                  returnTo={returnTo}
-                  puedeGestionar={puedeGestionar}
-                  veCredenciales={veCredenciales}
-                />
-              </li>
-            );
-          })}
-        </ul>
-
-        <p className="text-xs text-text-secondary">{t.noSyncNowNote}</p>
-      </section>
+      )}
 
       <ExternalPlatforms view={view} />
     </>
@@ -156,6 +202,8 @@ function IntegrationRowView({
   returnTo,
   puedeGestionar,
   veCredenciales,
+  configureHref,
+  configureSelected,
 }: {
   row: IntegrationRow;
   view: IntegrationsView;
@@ -164,6 +212,9 @@ function IntegrationRowView({
   returnTo: string;
   puedeGestionar: boolean;
   veCredenciales: boolean;
+  /** M45 · a dónde lleva "Configurar", o `null` fuera de la ficha. */
+  configureHref: string | null;
+  configureSelected: boolean;
 }) {
   const provider = row.provider;
   const info = t.providers[provider];
@@ -201,33 +252,53 @@ function IntegrationRowView({
         Se apila por debajo de `lg`: los tres datos más el botón no caben
         en la anchura de una tableta.
       */}
-      <div className="grid items-center gap-x-4 gap-y-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)_auto]">
-        <div className="flex min-w-0 items-start gap-3">
+      {/*
+        M45 · la marca grande a la izquierda con el nombre, de qué trata y
+        los tres datos de §117 debajo; a la derecha el estado arriba y la
+        acción debajo, como en el diseño.
+      */}
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-1 basis-72 items-start gap-3">
           <ProviderMark provider={provider} />
-          <div className="min-w-0">
-            <p className="font-semibold text-text">{info.name}</p>
-            <p className="text-xs text-text-secondary">{info.description}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <StatusBadge
-                tone={integrationTone(row.status)}
-                icon={row.status === "error" || row.status === "needs_attention" ? "alert" : row.status === "connected" ? "check" : "clock"}
-              >
-                {t.states[row.status]}
-              </StatusBadge>
-              {row.isStale ? <StatusBadge tone="warning" icon="clock">{t.staleBadge}</StatusBadge> : null}
-              {row.checkPending ? <StatusBadge tone="info" icon="clock">{t.checkPendingBadge}</StatusBadge> : null}
-            </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-semibold text-primary-dark">{info.name}</p>
+            <p className="text-sm text-text-secondary">{info.description}</p>
+            <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-1.5 sm:grid-cols-3">
+              <Dato label={t.accountLabel} value={row.accountLabel ?? t.accountNone} truncate />
+              <Dato label={t.lastSyncLabel} value={formatMoment(row.lastSyncAt, view.timezone)} truncate />
+              <Dato label={t.nextAttemptLabel} value={proximoIntento} truncate />
+            </dl>
           </div>
         </div>
 
-        <dl className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
-          <Dato label={t.accountLabel} value={row.accountLabel ?? t.accountNone} truncate />
-          <Dato label={t.lastSyncLabel} value={formatMoment(row.lastSyncAt, view.timezone)} truncate />
-          <Dato label={t.nextAttemptLabel} value={proximoIntento} truncate />
-        </dl>
-
-        <div className="lg:justify-self-end">
-          {puedeComprobar ? <CheckButton integrationId={row.integrationId!} disabled={row.checkPending} /> : null}
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <StatusBadge
+              tone={integrationTone(row.status)}
+              icon={row.status === "error" || row.status === "needs_attention" ? "alert" : row.status === "connected" ? "check" : "clock"}
+            >
+              {t.states[row.status]}
+            </StatusBadge>
+            {row.isStale ? <StatusBadge tone="warning" icon="clock">{t.staleBadge}</StatusBadge> : null}
+            {row.checkPending ? <StatusBadge tone="info" icon="clock">{t.checkPendingBadge}</StatusBadge> : null}
+          </div>
+          <div className="flex flex-wrap justify-end gap-2">
+            {configureHref === null ? null : (
+              <Link
+                href={configureHref}
+                aria-current={configureSelected ? "true" : undefined}
+                className={`inline-flex items-center gap-2 rounded-field border px-3.5 py-2 text-sm font-semibold transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
+                  configureSelected
+                    ? "border-cuotly-green bg-cuotly-green/10 text-cuotly-green"
+                    : "border-cuotly-green bg-surface text-cuotly-green hover:bg-cuotly-green/10"
+                }`}
+              >
+                <Icon name="settings" aria-hidden="true" className="h-4 w-4" />
+                {t.configure}
+              </Link>
+            )}
+            {puedeComprobar ? <CheckButton integrationId={row.integrationId!} disabled={row.checkPending} /> : null}
+          </div>
         </div>
       </div>
 
@@ -328,6 +399,53 @@ function IntegrationRowView({
         ) : null}
       </div>
     </div>
+  );
+}
+
+/**
+ * M45 · el panel "Configurar …" de la derecha: los tres pasos del flujo que
+ * de verdad sigue esta fuente —OAuth de Google o clave— y su estado actual
+ * dicho en una frase. Es una guía: los formularios siguen en la fila de
+ * cada fuente, que es donde los comprueba cada prueba y donde el servidor
+ * los espera.
+ */
+function ConfigurePanel({ row }: { row: IntegrationRow }) {
+  const info = t.providers[row.provider];
+  const pasos = isOAuthProvider(row.provider) ? t.configureStepsOAuth : t.configureStepsKey;
+  return (
+    <Card className="min-w-0" title={t.configureTitle(info.name)}>
+      <ol className="space-y-0">
+        {pasos.map((paso, i) => (
+          <li key={paso.title} className="relative flex gap-4 pb-5 last:pb-0">
+            {i < pasos.length - 1 ? (
+              <span
+                aria-hidden="true"
+                className="absolute left-[17px] top-9 h-[calc(100%-2.25rem)] w-px border-l border-dashed border-border"
+              />
+            ) : null}
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cuotly-green/10 text-sm font-bold text-primary-dark">
+              {i + 1}
+            </span>
+            <span className="min-w-0 pt-1">
+              <span className="block text-sm font-semibold text-primary-dark">{paso.title}</span>
+              <span className="block text-sm text-text-secondary">{paso.text}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-5 rounded-[14px] bg-soft-surface p-4">
+        <p className="flex items-center gap-2 text-sm font-semibold text-primary-dark">
+          <Icon name="alert" aria-hidden="true" className="h-4 w-4" />
+          {t.configureCurrentState}
+        </p>
+        <p className="mt-1 text-sm text-text">
+          <span className="font-semibold">{t.states[row.status]}.</span>{" "}
+          {row.lastFailureKind ? t.failureKinds[row.lastFailureKind] : t.stateHints[row.status]}
+        </p>
+        <p className="mt-2 text-xs text-text-secondary">{t.configureHowTo}</p>
+      </div>
+    </Card>
   );
 }
 

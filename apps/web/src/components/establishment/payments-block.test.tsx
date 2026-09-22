@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { es } from "@/i18n/es";
 import type { SheetData } from "./Sheet";
 import { EstablishmentSheet } from "./Sheet";
-import { MANAGEMENT_BLOCKS, SHEET_TABS } from "./tabs";
+import { MANAGEMENT_BLOCKS, SHEET_TABS, parsePaymentsSection } from "./tabs";
 
 /**
  * Vista 14 · "Gestión — Pagos y presupuestos", pintada.
@@ -144,13 +144,15 @@ function sheetData(payments: PaymentsProps): SheetData {
   };
 }
 
-function pintar(payments: PaymentsProps) {
+function pintar(payments: PaymentsProps, seccion: "cobros" | "presupuestos" | "facturas" = "cobros") {
   return render(
     <EstablishmentSheet
       base="/espacios/demo/restaurantes/est-1"
       slug="demo"
       tab={GESTION}
       block={BLOQUE_PAGOS}
+      // M42 · el bloque tiene tres pestañas; los presupuestos viven en la suya.
+      paymentsSection={parsePaymentsSection(seccion)}
       data={sheetData(payments)}
     />,
   );
@@ -251,7 +253,7 @@ describe("vista 14 · el historial de pagos", () => {
 
 describe("vista 14 · los presupuestos (§84)", () => {
   it("sin ninguno lo dice, con su motivo, y enlaza a Finanzas", () => {
-    pintar({ allowed: true, charges: [cobroPendiente], payments: [] });
+    pintar({ allowed: true, charges: [cobroPendiente], payments: [] }, "presupuestos");
     const card = within(tarjeta(t.quotesTitle));
     expect(card.getByText(t.quotesEmptyTitle)).toBeInTheDocument();
     expect(card.getByText(t.quotesEmptyReason)).toBeInTheDocument();
@@ -270,7 +272,7 @@ describe("vista 14 · los presupuestos (§84)", () => {
         { id: "q-1", code: "PRE-0001", concept: "Carta completa", totalCents: 30250, status: "pending_payment" },
         { id: "q-2", code: "PRE-0002", concept: "Banner", totalCents: 6050, status: "rejected" },
       ],
-    });
+    }, "presupuestos");
     const card = within(tarjeta(t.quotesTitle));
     expect(card.getByRole("link", { name: "PRE-0001" })).toHaveAttribute(
       "href",
@@ -280,5 +282,34 @@ describe("vista 14 · los presupuestos (§84)", () => {
     expect(card.getByText(es.naming.states.quote.pending_payment)).toBeInTheDocument();
     expect(card.getByText(es.naming.states.quote.rejected)).toBeInTheDocument();
     expect(card.queryByText(t.quotesEmptyTitle)).not.toBeInTheDocument();
+  });
+});
+
+describe("M42 · las tres pestañas de Pagos", () => {
+  it("el resumen de cobros está, con sus dos casillas, y NO pone cifra", () => {
+    pintar({ allowed: true, charges: [cobroPendiente], payments: [] });
+    const card = within(tarjeta(t.chargesSummaryTitle));
+    expect(card.getByText(t.chargesSummaryPending)).toBeInTheDocument();
+    expect(card.getAllByText(t.chargesSummaryNoFigure)).toHaveLength(2);
+    // Ningún importe: la suma no la calcula el servidor todavía.
+    expect(card.queryByText(/€/)).not.toBeInTheDocument();
+  });
+
+  it("Facturas dice por qué no hay ninguna, sin inventar un número fiscal", () => {
+    pintar({ allowed: true, charges: [cobroPendiente], payments: [] }, "facturas");
+    expect(screen.getByText(t.invoicesEmptyTitle)).toBeInTheDocument();
+    expect(screen.queryByText(/FAC-/)).not.toBeInTheDocument();
+  });
+
+  it("las pestañas son enlaces con la sección en la dirección (CA-22)", () => {
+    pintar({ allowed: true, charges: [], payments: [] }, "presupuestos");
+    const nav = screen.getByRole("navigation", { name: t.paymentsSectionsLabel });
+    expect(within(nav).getByRole("link", { current: "page" })).toHaveTextContent(
+      t.paymentsSections.quotes,
+    );
+    expect(within(nav).getByRole("link", { name: t.paymentsSections.invoices })).toHaveAttribute(
+      "href",
+      "/espacios/demo/restaurantes/est-1?vista=gestion&bloque=pagos&pagos=facturas",
+    );
   });
 });
