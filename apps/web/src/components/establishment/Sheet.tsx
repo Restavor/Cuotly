@@ -15,6 +15,8 @@ import { AttentionList } from "@/components/home/AttentionList";
 import { ReportsTable } from "@/components/report/ReportsTable";
 import type { ReportRow } from "@/components/report/reports-load";
 import { Icon } from "@/components/ui/Icon";
+import { Tabs } from "@/components/ui/Tabs";
+import { PersonCell } from "@/components/ui/Avatar";
 import { EstablishmentDataForm } from "./DataForm";
 import { DataSectionNav, DigitalSection } from "./DigitalSections";
 import { IntegrationsBlock } from "./IntegrationsBlock";
@@ -382,22 +384,6 @@ function taskTone(state: string): "success" | "warning" | "info" | "neutral" | "
 }
 
 /**
- * El recuadro de icono de cada fila, como en la vista 04. Es decorativo
- * —lo que identifica la fila es su título—, así que va oculto para quien
- * usa un lector de pantalla en vez de repetirle "solicitud" cuatro veces.
- */
-function RowIcon({ name }: { name: "request" | "job" | "task" }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-soft-surface text-text-secondary"
-    >
-      <Icon name={name} className="h-4 w-4" />
-    </span>
-  );
-}
-
-/**
  * Lo que la tarjeta no está enseñando. Sin esta línea, cuatro de doce
  * parecen doce de doce: enseñar cuatro y callar ocho es esconderlas
  * (CA-20). El enlace "Ver todas" de la cabecera es a donde están.
@@ -405,48 +391,6 @@ function RowIcon({ name }: { name: "request" | "job" | "task" }) {
 function CardMore({ hidden }: { hidden: number }) {
   if (hidden === 0) return null;
   return <p className="pt-3 text-sm text-text-secondary">{t.cardMore(hidden)}</p>;
-}
-
-/**
- * Una fila de la tarjeta de tareas.
- *
- * Es la única de las tres que puede no ser un enlace: no hay pantalla de
- * detalle de tarea —se opera con ella en su trabajo— y una actividad
- * interna independiente (§3, glosario) no cuelga de ninguno. Un enlace que
- * no lleva a ninguna parte es peor que su ausencia.
- */
-function TaskRow({
-  deepLink,
-  title,
-  subtitle,
-  badge,
-}: {
-  deepLink: string | null;
-  title: string;
-  subtitle: string;
-  badge: React.ReactNode;
-}) {
-  const contenido = (
-    <>
-      <RowIcon name="task" />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate font-medium text-text">{title}</span>
-        <span className="block truncate text-text-secondary">{subtitle}</span>
-      </span>
-      {badge}
-    </>
-  );
-
-  return deepLink === null ? (
-    <div className="flex items-center gap-3 py-3 text-sm">{contenido}</div>
-  ) : (
-    <Link
-      href={deepLink}
-      className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
-    >
-      {contenido}
-    </Link>
-  );
 }
 
 /**
@@ -648,20 +592,25 @@ function IdentityFacts({
 }
 
 function TabNav({ base, active }: { base: string; active: SheetTab }) {
+  /*
+    Las cinco pestañas del diseño, pegadas al pie de la cabecera: una fila
+    de casillas iguales sobre la superficie suave, y la elegida en blanco
+    con la raya verde debajo. Siguen siendo enlaces (CA-22).
+  */
   return (
-    <nav aria-label={t.tabsLabel} className="border-b border-border">
-      <ul className="flex flex-wrap gap-1">
+    <nav aria-label={t.tabsLabel} className="border-t border-border bg-soft-surface/60">
+      <ul className="flex overflow-x-auto">
         {SHEET_TABS.map((tab) => {
           const seleccionada = tab.key === active.key;
           return (
-            <li key={tab.key}>
+            <li key={tab.key} className="min-w-[8.5rem] flex-1 sm:flex-none">
               <Link
                 href={sheetHref(base, tab)}
                 aria-current={seleccionada ? "page" : undefined}
-                className={`-mb-px inline-block border-b-2 px-3 py-2 text-sm ${
+                className={`-mb-px block border-b-2 border-r border-r-border px-5 py-3 text-center text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
                   seleccionada
-                    ? "border-cuotly-green font-semibold text-primary-dark"
-                    : "border-transparent text-text-secondary hover:text-text"
+                    ? "border-b-cuotly-green bg-surface font-semibold text-cuotly-green"
+                    : "border-b-transparent font-medium text-text-secondary hover:bg-surface/70 hover:text-text"
                 }`}
               >
                 {sheetTabLabel(tab)}
@@ -700,55 +649,34 @@ function OperationSectionNav({
   active: OperationSectionTab;
 }) {
   return (
-    <nav aria-label={t.operationSectionsLabel} className="border-b border-border">
-      <ul className="flex flex-wrap gap-1">
-        {OPERATION_SECTION_TABS.map((section) => {
-          const seleccionada = section.key === active.key;
-          return (
-            <li key={section.key}>
-              <Link
-                href={operationSectionHref(base, section)}
-                aria-current={seleccionada ? "page" : undefined}
-                className={`-mb-px inline-block border-b-2 px-3 py-2 text-sm ${
-                  seleccionada
-                    ? "border-cuotly-green font-semibold text-primary-dark"
-                    : "border-transparent text-text-secondary hover:text-text"
-                }`}
-              >
-                {operationSectionLabel(section)}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <Tabs
+      label={t.operationSectionsLabel}
+      active={active.key}
+      tabs={OPERATION_SECTION_TABS.map((section) => ({
+        key: section.key,
+        label: operationSectionLabel(section),
+        href: operationSectionHref(base, section),
+      }))}
+    />
   );
 }
 
+/**
+ * Los bloques de Gestión, como las subpestañas subrayadas del diseño (M40
+ * a M46). Siguen siendo enlaces: el bloque vive en la dirección
+ * (`?vista=gestion&bloque=archivos`).
+ */
 function BlockNav({ base, active }: { base: string; active: ManagementBlock }) {
   return (
-    <nav aria-label={t.blocksLabel}>
-      <ul className="inline-flex flex-wrap gap-1 rounded-[14px] bg-soft-surface p-1">
-        {MANAGEMENT_BLOCKS.map((block) => {
-          const seleccionado = block.key === active.key;
-          return (
-            <li key={block.key}>
-              <Link
-                href={sheetHref(base, MANAGEMENT_TAB, block)}
-                aria-current={seleccionado ? "true" : undefined}
-                className={`inline-block rounded-[10px] px-3.5 py-1.5 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
-                  seleccionado
-                    ? "bg-surface font-semibold text-primary-dark shadow-sm"
-                    : "text-text-secondary hover:text-text"
-                }`}
-              >
-                {managementBlockLabel(block)}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <Tabs
+      label={t.blocksLabel}
+      active={active.key}
+      tabs={MANAGEMENT_BLOCKS.map((block) => ({
+        key: block.key,
+        label: managementBlockLabel(block),
+        href: sheetHref(base, MANAGEMENT_TAB, block),
+      }))}
+    />
   );
 }
 
@@ -940,100 +868,119 @@ export function EstablishmentSheet({
   const cuotasVivas = payments.charges.filter((charge) => charge.outstandingCents > 0);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
+    <div className="space-y-6">
       {/*
-        Página 24 del diseño definitivo móvil · el encabezado de la ficha,
-        en una tarjeta: el nombre grande, la ciudad con su chincheta y el
-        enlace al sitio web en la misma línea, las acciones a la derecha y,
-        abajo, el plan y el grupo como dos datos con su rótulo.
-
-        El grupo estaba suelto encima del nombre, sin decir que era un
-        grupo, y el plan era una insignia más entre el estado y el enlace.
-        Los dos son **datos** del restaurante, no etiquetas de estado, y
-        ahora lo parecen.
+        La cabecera de la ficha, igual en las 31 vistas del diseño de
+        escritorio (M25 a M48): la foto, el nombre con su estado al lado,
+        una línea con el plan y lo que incluye, "Ver sitio web" a la
+        derecha, y las cinco pestañas pegadas debajo, dentro de la misma
+        tarjeta.
 
         Lo que el diseño dibuja y NO está:
 
-          · La **frase que describe el restaurante** ("Cocina gallega
-            contemporánea…"). Tampoco existe: no hay campo de descripción
-            en la ficha de datos (`IDENTITY_FIELDS`). Inventarla sería
-            escribirle al cliente algo que él no ha dicho.
-          · El **desplegable sobre la insignia de estado**. El estado no se
-            cambia desde aquí: se cambia en Gestión, con su motivo y su
-            registro de auditoría (RN-EST-08). Una insignia que se abre
-            invita a cambiarlo sin motivo escrito.
+          · El **menú de tres puntos** junto a "Ver sitio web". No hay
+            ninguna acción decidida para él, y un menú que se abre vacío es
+            peor que no estar.
+          · La **frase que describe el restaurante**. No hay campo de
+            descripción en la ficha de datos (`IDENTITY_FIELDS`), e
+            inventarla sería escribirle al cliente algo que no ha dicho.
+          · El **desplegable sobre la insignia de estado**. El estado se
+            cambia en Gestión, con su motivo y su auditoría (RN-EST-08).
       */}
-      <header className="rounded-[20px] border border-border bg-surface p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+      <header className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4 p-5 sm:p-6">
           {/*
-            RN-EST-18 · la foto del local, a la izquierda del nombre como
-            en la página 24. Sin foto se pinta el icono de local, no un
-            marco vacío: un hueco esperando una imagen se lee como que
-            algo falló (CA-20). Se cambia en Gestión · Datos, que es donde
-            se cambia todo lo demás del restaurante.
+            RN-EST-18 · la foto del local. Sin foto se pinta el icono de
+            local, no un marco vacío (CA-20).
           */}
-          <div className="flex min-w-0 flex-1 basis-56 items-start gap-4">
-            <EstablishmentPhoto photoUrl={photoUrl} size={64} />
+          <div className="flex min-w-0 flex-1 basis-72 items-start gap-4 sm:items-center">
+            <EstablishmentPhoto photoUrl={photoUrl} size={80} className="rounded-[14px]" />
             <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold text-primary-dark">{header.name}</h1>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+                  {header.name}
+                </h1>
+                <StatusBadge tone={statusTone(header.status)}>
+                  {es.space.statuses[header.status as StatusKey] ?? header.status}
+                </StatusBadge>
+              </div>
 
-            {/*
-              La ciudad y el sitio web, en la misma línea que el diseño.
-              Cada uno solo si lo hay: hasta la migración 57 la columna del
-              sitio web no existía, y una ficha recién creada no tiene
-              ciudad. Un enlace que no lleva a ninguna parte es peor que no
-              tenerlo (P6).
-            */}
-            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-secondary">
-              <span className="text-text-secondary">{header.code}</span>
-              {header.identity.city === null ? null : (
-                <span className="inline-flex items-center gap-1">
-                  <Icon name="location" aria-hidden="true" className="h-4 w-4" />
-                  {header.identity.city}
+              {/*
+                La línea del diseño: "Plan Premium+ | 25 pequeños · 5
+                medianos · 1 grande · 24 fotos". Lo que incluye sale del
+                ciclo vigente (`summary.bags`), no del nombre del plan: es
+                lo que de verdad le toca este mes, y sin ciclo no se
+                escribe ningún número (CLAUDE.md MUST NOT).
+              */}
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-text-secondary">
+                <span className="font-medium text-text">
+                  {header.planName === null
+                    ? es.teamArea.establishments.noPlan
+                    : t.headerPlan(header.planName)}
                 </span>
-              )}
-              {header.identity.websiteUrl === null ? null : (
-                /*
-                  `rel="noreferrer"` porque es una web ajena, y el "se abre
-                  en una pestaña nueva" va escrito para quien no ve el
-                  icono: un enlace que cambia de contexto sin avisar
-                  desorienta (§21.4).
-                */
-                <a
-                  href={header.identity.websiteUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-cuotly-green underline focus:outline focus:outline-2 focus:outline-cuotly-green"
-                >
-                  {t.websiteLink}
-                  <Icon name="externalLink" aria-hidden="true" className="h-3.5 w-3.5" />
-                  <span className="sr-only">{t.websiteLinkNewTab}</span>
-                </a>
-              )}
-            </p>
+                {bolsas.length === 0 ? null : (
+                  <>
+                    <span aria-hidden="true" className="hidden text-border sm:inline">|</span>
+                    <span>
+                      {bolsas
+                        .map((bag) => t.headerIncluded[bag.category as CategoryKey](bag.included))
+                        .join(" · ")}
+                    </span>
+                  </>
+                )}
+              </p>
+
+              {/*
+                El código, el grupo y la ciudad: lo que identifica al
+                restaurante cuando hay dos que se llaman parecido. Cada
+                uno solo si lo hay (P6).
+              */}
+              <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-text-secondary">
+                <span>{header.code}</span>
+                <span>
+                  {es.teamArea.establishments.groupColumn}:{" "}
+                  {header.groupName ?? es.teamArea.establishments.noGroup}
+                </span>
+                {header.identity.city === null ? null : (
+                  <span className="inline-flex items-center gap-1">
+                    <Icon name="location" aria-hidden="true" className="h-3.5 w-3.5" />
+                    {header.identity.city}
+                  </span>
+                )}
+              </p>
             </div>
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-2">
-            <StatusBadge tone={statusTone(header.status)}>
-              {es.space.statuses[header.status as StatusKey] ?? header.status}
-            </StatusBadge>
+            {header.identity.websiteUrl === null ? null : (
+              /*
+                `rel="noreferrer"` porque es una web ajena, y el "se abre en
+                una pestaña nueva" va escrito para quien no ve el icono
+                (§21.4).
+              */
+              <a
+                href={header.identity.websiteUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-field border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green transition-colors hover:bg-cuotly-green/10 focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                {t.websiteLink}
+                <Icon name="externalLink" aria-hidden="true" className="h-4 w-4" />
+                <span className="sr-only">{t.websiteLinkNewTab}</span>
+              </a>
+            )}
 
             {/*
               Maqueta 03 · "Editar restaurante". Es un atajo al formulario
-              que ya existe en Gestión · Datos, no un segundo sitio donde
-              editar: dos formularios para lo mismo acaban divergiendo.
-
-              Solo se pinta a quien puede editar, y eso es cortesía:
+              de Gestión · Datos, no un segundo sitio donde editar. Solo se
+              pinta a quien puede editar, y eso es cortesía:
               `set_establishment_data()` comprueba RN-EST-11 por su cuenta
-              y desde la migración 57 es la única puerta, así que llegar a
-              esa dirección sin permiso enseña el motivo y no el formulario
               (CLAUDE.md: ocultar un botón no es un control de acceso).
             */}
             {canEditData ? (
               <Link
                 href={sheetHref(base, MANAGEMENT_TAB, DATA_BLOCK)}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-field border border-border px-3 py-1.5 text-sm font-medium text-text transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+                className="inline-flex items-center gap-2 rounded-field border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
               >
                 {t.editEstablishment}
               </Link>
@@ -1041,27 +988,7 @@ export function EstablishmentSheet({
           </div>
         </div>
 
-        {/*
-          Los dos recuadros de abajo del diseño. Llevan su rótulo porque
-          "Premium+" y "Grupo Norte" sueltos no dicen qué son, y sin plan o
-          sin grupo se dice cuál de las dos cosas falta (P6).
-        */}
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:max-w-md">
-          <div className="rounded-[12px] bg-soft-surface px-3.5 py-2.5">
-            <span className="block text-xs text-text-secondary">{t.planLabel}</span>
-            <span className="block truncate text-sm font-semibold text-primary-dark">
-              {header.planName ?? es.teamArea.establishments.noPlan}
-            </span>
-          </div>
-          <div className="rounded-[12px] bg-soft-surface px-3.5 py-2.5">
-            <span className="block text-xs text-text-secondary">
-              {es.teamArea.establishments.groupColumn}
-            </span>
-            <span className="block truncate text-sm font-semibold text-primary-dark">
-              {header.groupName ?? es.teamArea.establishments.noGroup}
-            </span>
-          </div>
-        </div>
+        <TabNav base={base} active={tab} />
       </header>
 
       {/*
@@ -1090,8 +1017,6 @@ export function EstablishmentSheet({
           ) : undefined
         }
       />
-
-      <TabNav base={base} active={tab} />
 
       {tab.key === "summary" ? (
         <>
@@ -1134,124 +1059,14 @@ export function EstablishmentSheet({
               </>
             )}
           </Card>
-
           {/*
-            Página 24 · "Próxima publicación de menú". El bloque estaba
-            marcado como "de la Fase 2" desde que se dibujó el Resumen;
-            Menú Diario existe desde el Hito 11 y ya se puede contestar.
-
-            Tres respuestas y no una fecha, porque son tres cosas que se
-            leen distinto: sin el servicio contratado no hay nada que
-            programar, contratado y sin nada por delante significa que
-            toca preparar uno, y si lo hay se dice **cuándo, cuál y en qué
-            estado**. Una fecha sola no distingue las dos primeras
-            (CA-20).
-
-            El diseño escribe solo la fecha y el nombre. El estado se
-            añade porque es lo que decide si alguien tiene que hacer algo:
-            "7 abr · Menú semanal" se lee igual esté listo para publicar o
-            pendiente de asignar, y no son lo mismo.
+            La rejilla del Resumen en escritorio: las tres tarjetas que se
+            miran cada mañana —lo que espera validación, el trabajo que corre y
+            el estado de pago— en una fila; debajo lo que pide atención junto a
+            la próxima publicación de menú, y la actividad a ancho completo.
+            En un teléfono se apilan en ese mismo orden.
           */}
-          <Card
-            title={t.nextMenuTitle}
-            action={
-              nextMenu.kind === "no_service" ? undefined : (
-                <Link
-                  href={`${base}/menu-diario`}
-                  className="shrink-0 text-sm text-cuotly-green underline"
-                >
-                  {t.nextMenuLink}
-                </Link>
-              )
-            }
-          >
-            {nextMenu.kind === "no_service" ? (
-              <EmptyState
-                title={t.nextMenuNoServiceTitle}
-                description={t.nextMenuNoServiceReason}
-              />
-            ) : nextMenu.kind === "none" ? (
-              <EmptyState title={t.nextMenuNoneTitle} description={t.nextMenuNoneReason} />
-            ) : (
-              <div className="flex items-start gap-3">
-                <span
-                  aria-hidden="true"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-cuotly-green/10 text-cuotly-green"
-                >
-                  <Icon name="calendar" className="h-5 w-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-base font-semibold text-primary-dark">
-                    {fechaCorta(nextMenu.targetDate)}
-                  </p>
-                  <p className="truncate text-sm text-text">
-                    {nextMenu.name}
-                    {" · "}
-                    {es.naming.menuKinds[nextMenu.menuKind as MenuKindKey] ?? nextMenu.menuKind}
-                  </p>
-                  <p className="mt-1.5">
-                    <StatusBadge
-                      tone={isMenuState(nextMenu.state) ? menuTone(nextMenu.state) : "neutral"}
-                    >
-                      {es.naming.states.menu[nextMenu.state as MenuStateKey] ?? nextMenu.state}
-                    </StatusBadge>
-                  </p>
-                </div>
-              </div>
-            )}
-          </Card>
-
-          {/*
-            Página 24 · "Actividad reciente". Son las últimas filas de la
-            **misma auditoría** que enseña la pestaña Historial, no un
-            registro paralelo: `establishment_audit()` es SECURITY INVOKER
-            y la política de `audit_log` decide qué ve cada quien (§21.2),
-            así que aquí no hay ninguna regla de permiso escrita.
-
-            El diseño pone una cara junto a cada línea. No van: a estas
-            filas les basta el nombre, y una foto por línea en un teléfono
-            se come el ancho que necesita la frase. Lo que sí se respeta
-            es la diferencia que costó ver con datos reales: sin actor es
-            el sistema, y "hay actor y no sé su nombre" es otra cosa.
-          */}
-          <Card
-            title={t.recentActivityTitle}
-            action={
-              <Link
-                href={sheetHref(base, HISTORY_TAB)}
-                className="shrink-0 text-sm text-cuotly-green underline"
-              >
-                {t.recentActivityLink}
-              </Link>
-            }
-          >
-            {recentActivity.length === 0 ? (
-              <EmptyState
-                title={t.recentActivityEmptyTitle}
-                description={t.recentActivityEmptyReason}
-              />
-            ) : (
-              <ul className="divide-y divide-border">
-                {recentActivity.slice(0, 5).map((row) => (
-                  <li key={row.id} className="py-2.5">
-                    <p className="text-sm text-text">
-                      {(es.settings.auditActions as Readonly<Record<string, string>>)[row.action] ??
-                        row.action}
-                    </p>
-                    <p className="text-xs text-text-secondary">
-                      {row.actorId === null
-                        ? t.auditSystemActor
-                        : (row.actorName ?? t.auditUnknownActor)}
-                      {" · "}
-                      {momento(row.createdAt, timeZone)}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
             <Card
               title={t.pendingRequestsTitle}
               action={
@@ -1362,9 +1177,6 @@ export function EstablishmentSheet({
                 </div>
               )}
             </Card>
-          </div>
-
-          <div className="grid items-start gap-4 lg:grid-cols-2">
             <Card
               title={t.paymentStatusTitle}
               action={
@@ -1412,6 +1224,8 @@ export function EstablishmentSheet({
             </Card>
           </div>
 
+          <div className="grid items-start gap-4 lg:grid-cols-2">
+
           {/*
             No está en la maqueta, y se queda: cubre lo que las dos
             tarjetas de arriba no miran —un trabajo fuera de plazo, uno sin
@@ -1426,6 +1240,125 @@ export function EstablishmentSheet({
               <AttentionList timeZone={timeZone} items={summary.attention} />
             )}
           </Card>
+
+          {/*
+            Página 24 · "Próxima publicación de menú". El bloque estaba
+            marcado como "de la Fase 2" desde que se dibujó el Resumen;
+            Menú Diario existe desde el Hito 11 y ya se puede contestar.
+
+            Tres respuestas y no una fecha, porque son tres cosas que se
+            leen distinto: sin el servicio contratado no hay nada que
+            programar, contratado y sin nada por delante significa que
+            toca preparar uno, y si lo hay se dice **cuándo, cuál y en qué
+            estado**. Una fecha sola no distingue las dos primeras
+            (CA-20).
+
+            El diseño escribe solo la fecha y el nombre. El estado se
+            añade porque es lo que decide si alguien tiene que hacer algo:
+            "7 abr · Menú semanal" se lee igual esté listo para publicar o
+            pendiente de asignar, y no son lo mismo.
+          */}
+          <Card
+            title={t.nextMenuTitle}
+            action={
+              nextMenu.kind === "no_service" ? undefined : (
+                <Link
+                  href={`${base}/menu-diario`}
+                  className="shrink-0 text-sm text-cuotly-green underline"
+                >
+                  {t.nextMenuLink}
+                </Link>
+              )
+            }
+          >
+            {nextMenu.kind === "no_service" ? (
+              <EmptyState
+                title={t.nextMenuNoServiceTitle}
+                description={t.nextMenuNoServiceReason}
+              />
+            ) : nextMenu.kind === "none" ? (
+              <EmptyState title={t.nextMenuNoneTitle} description={t.nextMenuNoneReason} />
+            ) : (
+              <div className="flex items-start gap-3">
+                <span
+                  aria-hidden="true"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-cuotly-green/10 text-cuotly-green"
+                >
+                  <Icon name="calendar" className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-base font-semibold text-primary-dark">
+                    {fechaCorta(nextMenu.targetDate)}
+                  </p>
+                  <p className="truncate text-sm text-text">
+                    {nextMenu.name}
+                    {" · "}
+                    {es.naming.menuKinds[nextMenu.menuKind as MenuKindKey] ?? nextMenu.menuKind}
+                  </p>
+                  <p className="mt-1.5">
+                    <StatusBadge
+                      tone={isMenuState(nextMenu.state) ? menuTone(nextMenu.state) : "neutral"}
+                    >
+                      {es.naming.states.menu[nextMenu.state as MenuStateKey] ?? nextMenu.state}
+                    </StatusBadge>
+                  </p>
+                </div>
+              </div>
+            )}
+          </Card>
+          </div>
+
+
+          {/*
+            Página 24 · "Actividad reciente". Son las últimas filas de la
+            **misma auditoría** que enseña la pestaña Historial, no un
+            registro paralelo: `establishment_audit()` es SECURITY INVOKER
+            y la política de `audit_log` decide qué ve cada quien (§21.2),
+            así que aquí no hay ninguna regla de permiso escrita.
+
+            El diseño pone una cara junto a cada línea. No van: a estas
+            filas les basta el nombre, y una foto por línea en un teléfono
+            se come el ancho que necesita la frase. Lo que sí se respeta
+            es la diferencia que costó ver con datos reales: sin actor es
+            el sistema, y "hay actor y no sé su nombre" es otra cosa.
+          */}
+          <Card
+            title={t.recentActivityTitle}
+            action={
+              <Link
+                href={sheetHref(base, HISTORY_TAB)}
+                className="shrink-0 text-sm text-cuotly-green underline"
+              >
+                {t.recentActivityLink}
+              </Link>
+            }
+          >
+            {recentActivity.length === 0 ? (
+              <EmptyState
+                title={t.recentActivityEmptyTitle}
+                description={t.recentActivityEmptyReason}
+              />
+            ) : (
+              <ul className="divide-y divide-border">
+                {recentActivity.slice(0, 5).map((row) => (
+                  <li key={row.id} className="py-2.5">
+                    <p className="text-sm text-text">
+                      {(es.settings.auditActions as Readonly<Record<string, string>>)[row.action] ??
+                        row.action}
+                    </p>
+                    <p className="text-xs text-text-secondary">
+                      {row.actorId === null
+                        ? t.auditSystemActor
+                        : (row.actorName ?? t.auditUnknownActor)}
+                      {" · "}
+                      {momento(row.createdAt, timeZone)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
           {/*
             Maqueta 20 · la leyenda de estados. "Pausado" y "Solo lectura"
             se parecen y no son lo mismo, y quien recibe uno de los dos
@@ -1461,67 +1394,80 @@ export function EstablishmentSheet({
       ) : null}
 
       {tab.key === "operation" && operationSection.key === "requests" ? (
+        <section>
           <Card
             title={t.requestsTitle}
             action={
               <Link
                 href={`/espacios/${slug}/solicitudes?restaurante=${header.id}`}
-                className="shrink-0 text-sm text-cuotly-green underline"
+                className="shrink-0 text-sm font-medium text-cuotly-green hover:underline"
               >
                 {t.requestsLink}
               </Link>
             }
           >
+            <p className="-mt-3 mb-4 text-sm text-text-secondary">
+              {t.requestsSubtitle(header.name)}
+            </p>
             {operation.requests.shown.length === 0 ? (
               <EmptyState title={t.requestsEmptyTitle} description={t.requestsEmptyReason} />
             ) : (
               <>
-                <ul className="divide-y divide-border">
-                  {operation.requests.shown.map((request) => (
-                    <li key={request.id}>
-                      {/*
-                        Página 25 · la fila **abre la solicitud aquí
-                        debajo**, no se va a su pantalla. Así se recorre la
-                        lista sin perderla, que es lo que dibuja el diseño;
-                        la pantalla completa sigue a un clic, desde el
-                        propio panel.
-
-                        Sigue siendo un solo control por fila (§20.1).
-                      */}
-                      <Link
-                        href={openRequestHref(base, request.id)}
-                        className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
-                      >
-                        <RowIcon name="request" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium text-text">
+                {/*
+                  M25 · la tabla del diseño. "Categoría propuesta" y "Fecha
+                  límite" no van: la categoría no existe hasta que el equipo
+                  la valida, y una solicitud no tiene plazo propio (el plazo
+                  es del trabajo, RN-SLA). La fila **abre la solicitud aquí
+                  debajo**, sin perder la lista: un solo control por fila
+                  (§20.1).
+                */}
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>{t.columnRequest}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnCode}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnState}</TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {operation.requests.shown.map((request) => (
+                      <TableRow key={request.id}>
+                        <TableCell>
+                          <Link
+                            href={openRequestHref(base, request.id)}
+                            className="block max-w-xl truncate font-semibold text-text hover:text-cuotly-green"
+                          >
                             {request.description}
-                          </span>
+                          </Link>
                           {/*
-                            Quién la pidió y cuándo. Dos solicitudes del
-                            mismo día se distinguen por el autor, y cuando
-                            RLS no deja resolver ese nombre se queda solo
-                            la fecha: un uuid no le dice a nadie quién
-                            escribió (CA-20).
+                            Quién la pidió y cuándo. Sin nombre que
+                            resolver queda solo la fecha: un uuid no le
+                            dice a nadie quién escribió (CA-20).
                           */}
-                          <span className="block truncate text-text-secondary">
+                          <span className="block truncate text-xs text-text-secondary">
                             {request.authorName === null
                               ? momento(request.createdAt, timeZone)
                               : `${request.authorName} · ${momento(request.createdAt, timeZone)}`}
                           </span>
-                        </span>
-                        <StatusBadge tone={requestTone(request.state)}>
-                          {es.naming.states.request[request.state as RequestStateKey] ??
-                            request.state}
-                        </StatusBadge>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                        </TableCell>
+                        <TableCell>
+                          <span className="whitespace-nowrap text-text-secondary">{request.code}</span>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge tone={requestTone(request.state)}>
+                            {es.naming.states.request[request.state as RequestStateKey] ??
+                              request.state}
+                          </StatusBadge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
                 <CardMore hidden={operation.requests.hidden} />
               </>
             )}
           </Card>
+        </section>
       ) : null}
 
       {/*
@@ -1663,119 +1609,165 @@ export function EstablishmentSheet({
       ) : null}
 
       {tab.key === "operation" && operationSection.key === "jobs" ? (
+        <section>
           <Card
             title={t.jobsTitle}
             action={
               <Link
                 href={`/espacios/${slug}/trabajos?restaurante=${header.id}`}
-                className="shrink-0 text-sm text-cuotly-green underline"
+                className="shrink-0 text-sm font-medium text-cuotly-green hover:underline"
               >
                 {t.jobsLink}
               </Link>
             }
           >
+            <p className="-mt-3 mb-4 text-sm text-text-secondary">{t.jobsSubtitle(header.name)}</p>
             {operation.jobs.shown.length === 0 ? (
               <EmptyState title={t.jobsEmptyTitle} description={t.jobsEmptyReason} />
             ) : (
               <>
-                <ul className="divide-y divide-border">
-                  {operation.jobs.shown.map((job) => (
-                    <li key={job.id}>
-                      <Link
-                        href={job.deepLink}
-                        className="flex items-center gap-3 py-3 text-sm transition-colors hover:text-cuotly-green"
-                      >
-                        <RowIcon name="job" />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate font-medium text-text">{job.title}</span>
-                          {/*
-                            El estado, y no el nombre del restaurante que
-                            la maqueta pone debajo: en la ficha de
-                            Magariños todas estas filas son de Magariños, y
-                            repetirlo cuatro veces gasta la línea que sí
-                            dice algo.
-                          */}
-                          <span className="block truncate text-text-secondary">
-                            {job.code} ·{" "}
-                            {es.naming.states.job[job.state as JobStateKey] ?? job.state}
+                {/*
+                  M27 · código, trabajo, estado y plazo. El plazo es el
+                  mismo del Resumen, recalculado desde los eventos (CA-10),
+                  y con su nombre: T2 para comenzar y T3 para publicar
+                  (RN-SLA-05/11).
+                */}
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>{t.columnCode}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnJob}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnState}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnDeadline}</TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {operation.jobs.shown.map((job) => (
+                      <TableRow key={job.id}>
+                        <TableCell>
+                          <span className="whitespace-nowrap font-medium text-text-secondary">
+                            {job.code}
                           </span>
-                        </span>
-                        {/*
-                          El mismo plazo que el Resumen, recalculado desde
-                          los eventos por la misma función (CA-10), y con
-                          su nombre: T2 es para comenzar y T3 para publicar
-                          (RN-SLA-05/11).
-                        */}
-                        <StatusBadge tone={jobTone(job)}>{plazoDelTrabajo(job)}</StatusBadge>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={job.deepLink}
+                            className="block max-w-xl truncate font-semibold text-text hover:text-cuotly-green"
+                          >
+                            {job.title}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge tone={job.state === "in_progress" ? "info" : "neutral"}>
+                            {es.naming.states.job[job.state as JobStateKey] ?? job.state}
+                          </StatusBadge>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge tone={jobTone(job)}>{plazoDelTrabajo(job)}</StatusBadge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
                 <CardMore hidden={operation.jobs.hidden} />
               </>
             )}
           </Card>
+        </section>
       ) : null}
 
       {tab.key === "operation" && operationSection.key === "tasks" ? (
+        <section>
           <Card
             title={t.tasksTitle}
             action={
               <Link
                 href={`/espacios/${slug}/tareas?restaurante=${header.id}`}
-                className="shrink-0 text-sm text-cuotly-green underline"
+                className="shrink-0 text-sm font-medium text-cuotly-green hover:underline"
               >
                 {t.tasksLink}
               </Link>
             }
           >
+            <p className="-mt-3 mb-4 text-sm text-text-secondary">{t.tasksSubtitle(header.name)}</p>
             {operation.tasks.shown.length === 0 ? (
               <EmptyState title={t.tasksEmptyTitle} description={t.tasksEmptyReason} />
             ) : (
               <>
-                <ul className="divide-y divide-border">
-                  {operation.tasks.shown.map((task) => (
-                    <li key={task.id}>
-                      {/*
-                        Maqueta 07 · la fila lleva a LA TAREA, abierta en
-                        la pantalla de coordinación de su trabajo. Antes
-                        llevaba al trabajo entero porque no había detalle
-                        de tarea al que llegar; ahora lo hay.
+                {/*
+                  M29 · tarea, trabajo vinculado, asignada a, fecha,
+                  estimado y estado. La "Prioridad" del dibujo no va: las
+                  tareas no tienen prioridad propia, tienen peso (§14.4).
 
-                        Y lleva los cuatro datos de la tabla del dibujo:
-                        tarea, responsable, estado (la insignia) y fecha.
-                        Una tarea sin planificar lo dice en vez de dejar
-                        el hueco: "sin fecha" es una respuesta, un guion
-                        no (CA-20).
-
-                        Una actividad interna independiente (§3) no cuelga
-                        de ningún trabajo y no hay pantalla donde abrirla,
-                        así que no se pinta como enlace en vez de ser un
-                        enlace que no lleva a nada.
-                      */}
-                      <TaskRow
-                        deepLink={task.deepLink}
-                        title={task.title}
-                        subtitle={`${task.jobCode ?? t.tasksNoJob} · ${
-                          task.assigneeName ?? t.tasksUnassigned
-                        } · ${
-                          task.plannedDate === null
-                            ? t.tasksNoDate
-                            : fechaCorta(task.plannedDate)
-                        } · ${t.tasksMinutes(task.estimatedMinutes)}`}
-                        badge={
+                  La fila lleva a LA TAREA, abierta en la pantalla de su
+                  trabajo (maqueta 07). Una actividad interna independiente
+                  (§3) no cuelga de ningún trabajo y no se pinta como
+                  enlace: no hay pantalla donde abrirla.
+                */}
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableHeaderCell>{t.columnTask}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnLinkedJob}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnAssignee}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnDate}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnEstimate}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnState}</TableHeaderCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {operation.tasks.shown.map((task) => (
+                      <TableRow key={task.id}>
+                        <TableCell>
+                          {task.deepLink === null ? (
+                            <span className="block max-w-xs truncate font-semibold text-text">
+                              {task.title}
+                            </span>
+                          ) : (
+                            <Link
+                              href={task.deepLink}
+                              className="block max-w-xs truncate font-semibold text-text hover:text-cuotly-green"
+                            >
+                              {task.title}
+                            </Link>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="whitespace-nowrap font-medium text-cuotly-green">
+                            {task.jobCode ?? t.tasksNoJob}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {task.assigneeName === null ? (
+                            <span className="text-text-secondary">{t.tasksUnassigned}</span>
+                          ) : (
+                            <PersonCell name={task.assigneeName} />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="whitespace-nowrap">
+                            {task.plannedDate === null ? t.tasksNoDate : fechaCorta(task.plannedDate)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="whitespace-nowrap text-text-secondary">
+                            {t.tasksMinutes(task.estimatedMinutes)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
                           <StatusBadge tone={taskTone(task.state)}>
                             {es.naming.states.task[task.state as TaskStateKey] ?? task.state}
                           </StatusBadge>
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
                 <CardMore hidden={operation.tasks.hidden} />
               </>
             )}
           </Card>
+        </section>
       ) : null}
 
       {/*
@@ -1984,6 +1976,15 @@ export function EstablishmentSheet({
             `set_establishment_data()`, y desde la migración 57 es la única
             puerta: `establishments` no tiene política de UPDATE.
           */}
+          {/*
+            M40 · "Datos del establecimiento" en dos columnas: el
+            formulario a la izquierda, y a la derecha lo que se consulta
+            de un vistazo —la foto, quién lo lleva y el contacto del
+            cliente—. En pantallas estrechas se apilan en ese orden.
+          */}
+          {block.key === "establishmentData" ? (
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <div className="min-w-0">
           {block.key === "establishmentData" ? (
             <Card title={t.dataTitle}>
               {canEditData ? (
@@ -2008,6 +2009,8 @@ export function EstablishmentSheet({
               )}
             </Card>
           ) : null}
+              </div>
+              <div className="min-w-0 space-y-4">
 
           {/*
             RN-EST-19 · quién del equipo lleva este restaurante (decisión
@@ -2126,6 +2129,10 @@ export function EstablishmentSheet({
                 </Link>
               </p>
             </Card>
+          ) : null}
+
+              </div>
+            </div>
           ) : null}
 
           {/*

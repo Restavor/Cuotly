@@ -177,6 +177,8 @@ sitio.
 | 22/09/2026 | **M02, M08, M09, M11** · Restaurantes, Solicitudes, Trabajos y Tareas como tablas con foto o avatar, barra de filtros (grupo/estado/plan; restaurante/estado/categoría; restaurante/responsable/estado; responsable/estado/restaurante), pestañas Lista/Tablero y Todas/Mis tareas/Sin terminar, botón de contorno por fila y pie "Mostrando X de Y". En un teléfono Restaurantes sigue en fichas | las cuatro páginas |
 | 22/09/2026 | **M12, M14, M15, M16, M18, M19, M21, M23** · la cabecera común y, donde toca, la tabla, las pestañas y las tarjetas de cifra: Menú Diario en tabla; Mensajes como lista de conversaciones con pestaña de canales; Calendario con botones de mes; Finanzas con cinco `StatCard`; Equipo en dos columnas con avatar y rol como insignia; Planes con insignia de plan; Ajustes con `Tabs` | cada página |
 
+| 22/09/2026 | **Ficha del restaurante, el marco (M25 a M48)** · a ancho completo; la cabecera con la foto, el nombre y su estado al lado, "Plan Premium+ \| 25 cambios pequeños · 5 medianos · 1 grande · 24 fotos" contado desde la bolsa del ciclo, "Ver sitio web ↗" y "Editar restaurante"; las cinco pestañas en casillas pegadas a la cabecera; las subpestañas de Operación, Informes y datos y Gestión con `Tabs`. Operación en tablas (M25, M27, M29); el Resumen en rejilla; Gestión · Datos en dos columnas (M40) | `components/establishment/Sheet.tsx` |
+
 Lo que estas pantallas **no** copian del dibujo, y por qué, está escrito en el
 comentario de cada una: los botones que abrirían formularios que no existen
 ("Nueva solicitud" del equipo, "Nuevo trabajo", "Programar menú", "Crear

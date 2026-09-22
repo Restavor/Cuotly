@@ -4460,6 +4460,15 @@ export const es = {
     today: (hora: string) => `Hoy, ${hora}`,
     cycleThisMonth: "(este mes)",
     editEstablishment: "Editar restaurante",
+    // La línea de la cabecera de la ficha (M25 a M48): el plan y lo que
+    // incluye en el ciclo vigente, contado desde la bolsa y no del nombre.
+    headerPlan: (plan: string) => `Plan ${plan}`,
+    headerIncluded: {
+      small: (n: number) => (n === 1 ? "1 cambio pequeño" : `${n} cambios pequeños`),
+      medium: (n: number) => (n === 1 ? "1 mediano" : `${n} medianos`),
+      large: (n: number) => (n === 1 ? "1 grande" : `${n} grandes`),
+      photo: (n: number) => (n === 1 ? "1 foto" : `${n} fotos`),
+    },
     /**
      * Página 27 · "Contacto del propietario", en Gestión · Datos.
      *
@@ -4624,6 +4633,23 @@ export const es = {
 
     // ---- Operación · vista 04, las cuatro tarjetas ---------------
     requestsTitle: "Solicitudes",
+    // M25, M27, M29 · la frase bajo el título de cada sección, con el
+    // nombre del restaurante, y las columnas de su tabla.
+    requestsSubtitle: (restaurante: string) =>
+      `Solicitudes de cambios y mejoras para la web de ${restaurante}.`,
+    jobsSubtitle: (restaurante: string) => `Trabajos de la web de ${restaurante}.`,
+    tasksSubtitle: (restaurante: string) => `Tareas de los trabajos de ${restaurante}.`,
+    columnRequest: "Solicitud",
+    columnCode: "Código",
+    columnState: "Estado",
+    columnReceived: "Recibida",
+    columnJob: "Trabajo",
+    columnDeadline: "Plazo",
+    columnTask: "Tarea",
+    columnLinkedJob: "Trabajo vinculado",
+    columnAssignee: "Asignada a",
+    columnDate: "Fecha",
+    columnEstimate: "Estimado",
     requestsLink: "Ver todas",
     requestsEmptyTitle: "Ninguna solicitud abierta",
     requestsEmptyReason: "Las solicitudes de este restaurante aparecerán aquí mientras estén en curso.",

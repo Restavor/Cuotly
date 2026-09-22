@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import { Tabs } from "@/components/ui/Tabs";
 import type { ReactNode } from "react";
 
 import { Card, EmptyState, ErrorState, StatusBadge, Table, TableBody, TableCell, TableHead, TableHeaderCell, TableRow } from "@/components/ui";
@@ -58,28 +60,15 @@ export function DataSectionNav({
   hrefFor: (section: DataSectionTab) => string;
 }) {
   return (
-    <nav aria-label={sheet.dataSectionsLabel} className="border-b border-border">
-      <ul className="flex flex-wrap gap-1">
-        {DATA_SECTION_TABS.map((section) => {
-          const seleccionada = section.key === active.key;
-          return (
-            <li key={section.key}>
-              <Link
-                href={hrefFor(section)}
-                aria-current={seleccionada ? "page" : undefined}
-                className={`-mb-px inline-block border-b-2 px-3 py-2 text-sm ${
-                  seleccionada
-                    ? "border-cuotly-green font-semibold text-primary-dark"
-                    : "border-transparent text-text-secondary hover:text-text"
-                }`}
-              >
-                {dataSectionLabel(section)}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <Tabs
+      label={sheet.dataSectionsLabel}
+      active={active.key}
+      tabs={DATA_SECTION_TABS.map((section) => ({
+        key: section.key,
+        label: dataSectionLabel(section),
+        href: hrefFor(section),
+      }))}
+    />
   );
 }
 
