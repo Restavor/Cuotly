@@ -9,7 +9,7 @@ import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { euros } from "@/i18n/money";
 
-import { chargeTone } from "../../FinanceView";
+import { chargeTone } from "../../charge-tone";
 
 const t = es.teamArea.finance;
 type ChargeStateKey = keyof typeof es.teamArea.chargeStates;
@@ -62,12 +62,15 @@ export function ChargeDetailView({
   timeZone,
   data,
   registerForm,
+  refundForm = null,
 }: {
   slug: string;
   timeZone: string;
   data: ChargeDetailData;
   /** `null` cuando no queda nada pendiente. */
   registerForm: ReactNode | null;
+  /** M52 · `null` cuando no hay nada cobrado que devolver. */
+  refundForm?: ReactNode | null;
 }) {
   const base = `/espacios/${slug}`;
   const dia = (v: string) => enZona(v, timeZone, { day: "numeric", month: "short", year: "numeric" });
@@ -213,6 +216,10 @@ export function ChargeDetailView({
           </div>
         </Card>
       </div>
+
+      <Card title={t.refundTitle}>
+        {refundForm === null ? <p className="text-sm text-text-secondary">{t.refundNothing}</p> : refundForm}
+      </Card>
 
       <Card title={t.historyTitle}>
         <div className="relative">

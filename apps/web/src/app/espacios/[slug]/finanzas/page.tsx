@@ -14,7 +14,13 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { loadSpaceInvoices } from "@/services/invoices";
 
-import { FinanceView, type FinanceChargeRow } from "./FinanceView";
+import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
+import { dueCharges, isDueFilter } from "@/core/finance-due";
+import { euros } from "@/i18n/money";
+import { loadChargePayments } from "@/services/charge-payments";
+
+import { loadChargeReceipts, loadChargesWithStatus } from "./finance-load";
+import { FinanceView, type FinanceChargeRow, type FinanceContent } from "./FinanceView";
 
 /**
  * M16 · Finanzas del espacio (HU-26, HU-28, PRD §17.2).
@@ -43,6 +49,7 @@ export default async function FinancePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const crudos = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -59,7 +66,7 @@ export default async function FinancePage({
 
   const zona = space.timezone ?? DEFAULT_TIMEZONE;
   const hoy = todayInTimeZone(new Date(), zona);
-  const q = readFinanceParams(await searchParams, hoy);
+  const q = readFinanceParams(crudos, hoy);
 
   const sinAcceso = (
     <div className="space-y-6">
@@ -71,23 +78,93 @@ export default async function FinancePage({
     </div>
   );
 
-  // M52 · Facturas: la pestaña espera al agente de facturas. Pide lo
-  // mismo que el resto de Finanzas (CA-03) y no lee ninguna cifra.
-  if (q.tab === "facturas") {
+  // Facturas, Pagos y Vencimientos no pasan por `financial_dashboard()`,
+  // así que el permiso se pregunta aparte: el mismo de todo Finanzas (CA-03).
+  if (q.tab === "facturas" || q.tab === "pagos" || q.tab === "vencimientos") {
     const { data: canManage } = await supabase.rpc("has_capability", {
       p_space_id: space.id,
       p_capability: "manage_finance",
     });
     if (canManage !== true) return sinAcceso;
-    return (
-      <FinanceView
-        slug={slug}
-        timeZone={zona}
-        month={q.month}
-        today={hoy}
-        content={{ tab: "facturas", invoices: await loadSpaceInvoices() }}
-      />
+  }
+
+  const vista = (content: FinanceContent) => (
+    <FinanceView slug={slug} timeZone={zona} month={q.month} today={hoy} content={content} />
+  );
+
+  // M52 · Facturas: la pestaña espera al agente de facturas (decisión 69).
+  if (q.tab === "facturas") {
+    return vista({ tab: "facturas", invoices: await loadSpaceInvoices() });
+  }
+
+  // Pagos y Vencimientos miran los cobros emitidos en los doce meses que
+  // acaban en el de hoy, con su estado y su deuda viva del servidor.
+  if (q.tab === "pagos" || q.tab === "vencimientos") {
+    const doce = monthsEndingAt(hoy.slice(0, 7), 12);
+    const { charges, establishments } = await loadChargesWithStatus(
+      supabase,
+      space.id,
+      monthRange(doce[0], zona).from,
+      monthRange(doce[11], zona).to,
     );
+    const pedido = typeof crudos.cobro === "string" ? crudos.cobro : null;
+
+    if (q.tab === "vencimientos") {
+      const restaurante = typeof crudos.restaurante === "string" && crudos.restaurante ? crudos.restaurante : null;
+      const situacion = typeof crudos.situacion === "string" && isDueFilter(crudos.situacion) ? crudos.situacion : null;
+      const filtros = { establishmentId: restaurante, state: situacion };
+      return vista({
+        tab: "vencimientos",
+        now: new Date(),
+        total: dueCharges(charges, { establishmentId: null, state: null }).length,
+        rows: dueCharges(charges, filtros),
+        establishments,
+        filters: filtros,
+        selectedId: pedido,
+      });
+    }
+
+    // M51 · el desplegable lleva los que tienen algo pendiente; el cobro
+    // pedido por enlace se enseña aunque ya esté pagado.
+    const pendientes = dueCharges(charges, { establishmentId: null, state: null });
+    const elegido = charges.find((c) => c.id === pedido) ?? pendientes[0] ?? null;
+    const opciones = [...pendientes, ...(elegido && !pendientes.includes(elegido) ? [elegido] : [])].map((c) => ({
+      id: c.id,
+      label: es.teamArea.finance.paymentsOption(c.concept, c.establishment, euros(c.totalCents)),
+    }));
+
+    if (elegido === null) return vista({ tab: "pagos", data: { options: [], selected: null }, registerForm: null });
+
+    const [{ data: cobrado }, pagos, justificantes] = await Promise.all([
+      supabase.rpc("charge_collected_cents", { p_charge_id: elegido.id }),
+      loadChargePayments(supabase, elegido.id),
+      loadChargeReceipts(supabase, elegido.id),
+    ]);
+
+    return vista({
+      tab: "pagos",
+      data: {
+        options: opciones,
+        selected: {
+          id: elegido.id,
+          totalCents: elegido.totalCents,
+          collectedCents: cobrado ?? 0,
+          outstandingCents: elegido.outstanding,
+          status: elegido.status,
+          payments: pagos,
+          receipts: justificantes,
+        },
+      },
+      registerForm:
+        elegido.outstanding > 0 ? (
+          <RegisterPaymentForm
+            chargeId={elegido.id}
+            establishmentId={elegido.establishmentId}
+            outstandingEuros={(elegido.outstanding / 100).toFixed(2)}
+            defaultDay={hoy}
+          />
+        ) : null,
+    });
   }
 
   // Los doce meses del gráfico acaban en el elegido; el elegido es el
@@ -113,67 +190,36 @@ export default async function FinancePage({
   const desde = monthRange(q.tab === "resumen" ? q.month : meses[0], zona).from;
   const hasta = monthRange(q.month, zona).to;
 
-  const [{ data: charges }, { data: nonpayment }, { data: establishments }] = await Promise.all([
-    supabase
-      .from("charges")
-      .select(
-        "id, concept, establishment_id, base_cents, tax_rate_percent, tax_cents, total_cents, issued_at",
-      )
-      .eq("space_id", space.id)
-      .gte("issued_at", desde.toISOString())
-      .lt("issued_at", hasta.toISOString())
-      .order("issued_at", { ascending: false }),
+  const [{ charges }, { data: nonpayment }] = await Promise.all([
+    loadChargesWithStatus(supabase, space.id, desde, hasta),
     q.tab === "resumen"
       ? supabase.rpc("establishments_with_nonpayment", { p_space_id: space.id })
       : Promise.resolve({ data: [] }),
-    supabase.from("establishments").select("id, name").eq("space_id", space.id),
   ]);
+  const chargeIds = charges.map((c) => c.id);
 
-  const establishmentName = new Map((establishments ?? []).map((e) => [e.id, e.name]));
-  const chargeIds = (charges ?? []).map((c) => c.id);
-
-  // El estado y la deuda viva de cada cobro los deriva el servidor de su
-  // libro de apuntes (RN-FIN-02 + RN-DAT-05): aquí no se suman importes.
-  const [estados, { data: receipts }] = await Promise.all([
-    Promise.all(
-      (charges ?? []).map(async (charge) => {
-        const [{ data: status }, { data: outstanding }] = await Promise.all([
-          supabase.rpc("charge_status", { p_charge_id: charge.id }),
-          supabase.rpc("charge_outstanding_cents", { p_charge_id: charge.id }),
-        ]);
-        return { id: charge.id, status: status ?? "pending", outstanding: outstanding ?? 0 };
-      }),
-    ),
-    // RN-FIN-06 · los justificantes que ha subido el restaurante. Solo se
-    // mira si existen: el archivo se abre en el detalle del cobro.
-    chargeIds.length
-      ? supabase
-          .from("receipts")
-          .select("charge_id, uploaded_side")
-          .in("charge_id", chargeIds)
-      : Promise.resolve({ data: [] }),
-  ]);
-  const estadoPorCobro = new Map(estados.map((e) => [e.id, e]));
+  // RN-FIN-06 · los justificantes que ha subido el restaurante. Solo se
+  // mira si existen: el archivo se abre en el detalle del cobro.
+  const { data: receipts } = chargeIds.length
+    ? await supabase.from("receipts").select("charge_id, uploaded_side").in("charge_id", chargeIds)
+    : { data: [] };
   const conJustificante = new Set(
     (receipts ?? []).filter((r) => r.uploaded_side === "client").map((r) => r.charge_id),
   );
 
-  const rows: FinanceChargeRow[] = (charges ?? []).map((c) => {
-    const estado = estadoPorCobro.get(c.id) ?? { status: "pending", outstanding: 0 };
-    return {
-      id: c.id,
-      issuedAt: c.issued_at,
-      establishment: establishmentName.get(c.establishment_id) ?? "—",
-      concept: c.concept,
-      baseCents: c.base_cents,
-      taxCents: c.tax_cents,
-      taxRatePercent: Number(c.tax_rate_percent),
-      totalCents: c.total_cents,
-      status: estado.status,
-      outstanding: estado.outstanding,
-      receiptWaiting: estado.outstanding > 0 && conJustificante.has(c.id),
-    };
-  });
+  const rows: FinanceChargeRow[] = charges.map((c) => ({
+    id: c.id,
+    issuedAt: c.issuedAt,
+    establishment: c.establishment,
+    concept: c.concept,
+    baseCents: c.baseCents,
+    taxCents: c.taxCents,
+    taxRatePercent: c.taxRatePercent,
+    totalCents: c.totalCents,
+    status: c.status,
+    outstanding: c.outstanding,
+    receiptWaiting: c.outstanding > 0 && conJustificante.has(c.id),
+  }));
 
   const cuenta = countChargesByBucket(
     q.tab === "resumen" ? rows : [],

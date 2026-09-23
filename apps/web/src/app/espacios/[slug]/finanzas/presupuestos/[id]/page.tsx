@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { PaymentHistory } from "@/components/finance/PaymentHistory";
 import { RequestHistoryCard } from "@/components/request/Detail";
 import { Card, EmptyState, StatusBadge } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import {
   isQuoteState,
   quoteTone,
@@ -11,8 +12,7 @@ import {
   type QuoteOutcome,
   type QuoteStoredState,
 } from "@/core/quotes";
-import { fechaCorta } from "@/i18n/dates";
-import { DEFAULT_TIMEZONE } from "@/i18n/dates";
+import { DEFAULT_TIMEZONE, enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { loadChargePayments } from "@/services/charge-payments";
@@ -67,9 +67,9 @@ export default async function TeamQuoteDetailPage({
 
   if (!quote) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
+      <Card>
         <EmptyState title={t.notFoundTitle} description={t.notFoundReason} />
-      </div>
+      </Card>
     );
   }
 
@@ -144,47 +144,74 @@ export default async function TeamQuoteDetailPage({
   const gestionar = puedeGestionar === true;
   const base = `/espacios/${slug}`;
 
+  const zona = space?.timezone ?? DEFAULT_TIMEZONE;
+  const dia = (v: string) => enZona(v, zona, { day: "numeric", month: "short", year: "numeric" });
+  const insignia = (
+    <StatusBadge tone={isQuoteState(estado) ? quoteTone(estado) : "neutral"}>
+      {isQuoteState(estado) ? es.naming.states.quote[estado] : estado}
+    </StatusBadge>
+  );
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
-      <header className="space-y-2">
-        <p className="text-sm">
-          <Link href={`${base}/finanzas/presupuestos`} className="text-cuotly-green underline">
-            ← {t.title}
-          </Link>
-        </p>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.detailTitle(quote.code)}</h1>
-        <p className="text-sm text-text-secondary">
+    <div className="space-y-6">
+      {/*
+        Página 80 (M50) · la ficha como el dibujo: información general y
+        alcance a la izquierda, importes y acciones a la derecha. No se
+        copian las "Partidas", "Entrega estimada", "Incluye / No incluye"
+        ni el "Documento adjunto": un presupuesto de Cuotly es un concepto,
+        un alcance y una base con su IVA (§84), y esas piezas no existen.
+      */}
+      <div>
+        <Link
+          href={`${base}/finanzas/presupuestos?presupuesto=${quote.id}`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-cuotly-green hover:underline"
+        >
+          <Icon name="arrowLeft" className="h-4 w-4" />
+          {t.backToList}
+        </Link>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-cuotly-green/10 text-cuotly-green"
+          >
+            <Icon name="document" className="h-5 w-5" />
+          </span>
+          <h1 className="text-2xl font-bold text-primary-dark sm:text-[28px]">{t.detailTitle(quote.code)}</h1>
+          {insignia}
+        </div>
+        <p className="mt-1 text-sm text-text-secondary">
           {establishment?.name ?? "—"} · {quote.concept}
         </p>
-        <StatusBadge tone={isQuoteState(estado) ? quoteTone(estado) : "neutral"}>
-          {isQuoteState(estado) ? es.naming.states.quote[estado] : estado}
-        </StatusBadge>
-      </header>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-2 lg:items-start">
         <div className="space-y-6">
-          <Card title={t.amountsTitle}>
-            {quote.description ? (
-              <p className="mb-3 whitespace-pre-wrap text-sm text-text">{quote.description}</p>
-            ) : null}
-            <dl className="space-y-1 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-text-secondary">{t.baseRow}</dt>
-                <dd>{euros(quote.base_cents)}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-text-secondary">{t.taxRow(String(Number(quote.tax_rate_percent)))}</dt>
-                <dd>{euros(quote.tax_cents)}</dd>
-              </div>
-              <div className="flex justify-between font-semibold text-primary-dark">
-                <dt>{t.totalRow}</dt>
-                <dd>{euros(quote.total_cents)}</dd>
+          <Card title={t.generalTitle}>
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+              <Dato termino={t.generalCode} valor={quote.code} />
+              <Dato termino={t.generalEstablishment} valor={establishment?.name ?? "—"} />
+              <Dato termino={t.generalConcept} valor={quote.concept} ancho />
+              <Dato
+                termino={t.generalOutcome}
+                valor={`${t.outcomes[outcome]}${
+                  quote.category
+                    ? ` · ${es.naming.categories[quote.category as keyof typeof es.naming.categories]}`
+                    : ""
+                }`}
+                ancho
+              />
+              <Dato termino={t.generalIssued} valor={dia(quote.created_at)} />
+              <Dato termino={t.generalSent} valor={quote.sent_at ? dia(quote.sent_at) : t.generalNotSent} />
+              <div className="sm:col-span-2">
+                <dt className="text-text-secondary">{t.generalApproval}</dt>
+                <dd className="mt-1">{insignia}</dd>
               </div>
             </dl>
-            <p className="mt-2 text-xs text-text-secondary">{t.taxFrozenHint}</p>
-            <p className="mt-2 text-sm text-text-secondary">
-              {t.outcomes[outcome]}
-              {quote.category ? ` · ${es.naming.categories[quote.category as keyof typeof es.naming.categories]}` : ""}
+          </Card>
+
+          <Card title={t.scopeTitle}>
+            <p className="whitespace-pre-wrap text-sm text-text">
+              {quote.description?.trim() || <span className="text-text-secondary">{t.scopeNone}</span>}
             </p>
             <p className="mt-3 flex flex-wrap gap-4 text-sm">
               {request ? (
@@ -215,7 +242,7 @@ export default async function TeamQuoteDetailPage({
                   <p className="mb-2 text-sm font-semibold text-text">
                     {es.teamArea.finance.paymentsTitle}
                   </p>
-                  <PaymentHistory payments={pagos} timezone={space?.timezone ?? DEFAULT_TIMEZONE} />
+                  <PaymentHistory payments={pagos} timezone={zona} />
                 </div>
               </>
             )}
@@ -252,6 +279,24 @@ export default async function TeamQuoteDetailPage({
         </div>
 
         <div className="space-y-6">
+          <Card title={t.amountsTitle}>
+            <dl className="divide-y divide-border text-sm">
+              <div className="flex justify-between py-2">
+                <dt className="text-text-secondary">{t.baseRow}</dt>
+                <dd className="text-text">{euros(quote.base_cents)}</dd>
+              </div>
+              <div className="flex justify-between py-2">
+                <dt className="text-text-secondary">{t.taxRow(String(Number(quote.tax_rate_percent)))}</dt>
+                <dd className="text-text">{euros(quote.tax_cents)}</dd>
+              </div>
+            </dl>
+            <div className="mt-2 flex items-baseline justify-between rounded-[10px] bg-cuotly-green/10 px-3 py-2.5">
+              <span className="font-semibold text-primary-dark">{t.totalRow}</span>
+              <span className="text-xl font-bold text-primary-dark">{euros(quote.total_cents)}</span>
+            </div>
+            <p className="mt-2 text-xs text-text-secondary">{t.taxFrozenHint}</p>
+          </Card>
+
           {stored === "draft" && gestionar ? (
             <>
               <QuoteForm
@@ -316,9 +361,18 @@ export default async function TeamQuoteDetailPage({
             </Card>
           ) : null}
 
-          <RequestHistoryCard timeZone={space?.timezone ?? DEFAULT_TIMEZONE} entries={history} />
+          <RequestHistoryCard timeZone={zona} entries={history} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function Dato({ termino, valor, ancho = false }: { termino: string; valor: string; ancho?: boolean }) {
+  return (
+    <div className={ancho ? "sm:col-span-2" : undefined}>
+      <dt className="text-text-secondary">{termino}</dt>
+      <dd className="mt-0.5 font-medium text-text">{valor}</dd>
     </div>
   );
 }

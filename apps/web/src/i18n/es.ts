@@ -2281,6 +2281,8 @@ export const es = {
       // M52 · la pestaña existe y espera al agente de facturas
       // (`services/invoices.ts`). Se dice qué falta, sin ejemplos.
       tabInvoices: "Facturas",
+      tabPayments: "Pagos",
+      tabDue: "Vencimientos",
       invoicesNotConnectedTitle: "Las facturas todavía no están conectadas",
       invoicesNotConnectedReason:
         "Aquí aparecerán las facturas cuando se conecte el agente de facturas. Mientras tanto, los cobros y sus justificantes están en la pestaña Cobros.",
@@ -2312,6 +2314,64 @@ export const es = {
       openCharge: "Ver cobro",
       registerFromList: "Registrar pago",
       receiptWaiting: "Justificante recibido",
+
+      // M51 · pagos parciales y justificantes.
+      paymentsSubtitle:
+        "Los cobros de los últimos doce meses que siguen con algo pendiente: lo pagado, los justificantes que ha subido el restaurante y el registro del siguiente pago.",
+      paymentsSelectLabel: "Cobro",
+      paymentsSelectHint: "Solo los que tienen algo pendiente.",
+      paymentsOption: (concepto: string, restaurante: string, total: string) =>
+        `${restaurante} · ${concepto} · ${total}`,
+      paymentsNoneTitle: "No queda nada por cobrar",
+      paymentsNoneReason: "Ningún cobro de los últimos doce meses tiene deuda viva.",
+      paymentsTotal: "Total del cobro",
+      paymentsPaid: "Pagado",
+      paymentsPending: "Pendiente",
+      paymentsHistoryTitle: "Historial de pagos",
+      receiptsReviewTitle: "Revisión de justificantes",
+      receiptsReviewEmpty: "El restaurante no ha subido ningún justificante de este cobro.",
+      registerNewTitle: "Registrar nuevo pago",
+      openFullCharge: "Ver el cobro completo",
+      paymentsChoose: "Ver",
+
+      // M52 · vencimientos.
+      dueSubtitle:
+        "Los cobros de los últimos doce meses con deuda viva, del que venció antes al que vence después, con los avisos que les tocan.",
+      dueFilterEstablishment: "Restaurante",
+      dueFilterState: "Situación",
+      dueFilters: { vencidos: "Vencidos", por_vencer: "Por vencer" },
+      dueNoneTitle: "Nada pendiente de cobro",
+      dueNoneReason: "Ningún cobro de los últimos doce meses tiene deuda viva.",
+      dueFilteredTitle: "Ningún cobro coincide",
+      dueFilteredReason: "Hay cobros pendientes, pero ninguno cumple los filtros.",
+      dueInDays: (n: number) => (n === 0 ? "vence hoy" : n === 1 ? "vence mañana" : `vence en ${n} días`),
+      dueAgoDays: (n: number) => (n === 1 ? "venció ayer" : `venció hace ${n} días`),
+      dueDetailTitle: "Detalle del cobro",
+      duePickTitle: "Elige un cobro",
+      duePickReason: "Pulsa una fila para ver sus importes y sus avisos.",
+      remindersTitle: "Recordatorios de cobro",
+      remindersHint:
+        "Cuotly avisa al restaurante en estas tres fechas mientras quede deuda (RN-REC-01). Lo que le llegó está en sus avisos, no aquí: puede tener apagado el del vencimiento.",
+      reminderSteps: {
+        due: "Día del vencimiento: aviso al restaurante",
+        pause: "+24 h: pausa por impago y aviso",
+        suspension: "+72 h: suspensión por impago y aviso",
+      },
+      reminderReached: "Llegó",
+      reminderUpcoming: "Pendiente",
+
+      // M52 · registrar un reembolso (RN-FIN-04b).
+      refundTitle: "Registrar un reembolso",
+      refundHint:
+        "Devuelve dinero ya cobrado. El cobro vuelve a quedar con deuda (RN-FIN-04b): si lo que quieres es que el restaurante no deba nada, eso es otra operación y todavía no existe.",
+      refundAmountLabel: "Importe a devolver (euros)",
+      refundReasonLabel: "Motivo",
+      refundSubmit: "Registrar el reembolso",
+      refundPending: "Registrando…",
+      refundDone: "Reembolso registrado.",
+      refundAmountInvalid: "Escribe un importe en euros, mayor que cero y no mayor que lo cobrado.",
+      refundReasonRequired: "Escribe el motivo: queda en la auditoría.",
+      refundNothing: "Este cobro no tiene nada cobrado que devolver.",
 
       // M17 · el detalle de un cobro.
       backToCharges: "Volver a cobros",
@@ -6471,6 +6531,28 @@ export const es = {
     open: "Abrir",
     backToFinance: "Volver a finanzas",
 
+    // M49 · la lista con buscador, filtros y el presupuesto elegido.
+    listSubtitle: "Lo que se cobra aparte del plan: trabajos fuera de bolsa y plantillas de Menú Diario.",
+    searchPlaceholder: "Buscar por código, concepto o restaurante",
+    filterEstablishment: "Restaurante",
+    filterState: "Estado",
+    dateColumn: "Fecha",
+    selectedTitle: "Presupuesto seleccionado",
+    pickTitle: "Elige un presupuesto",
+    pickReason: "Pulsa una fila para ver aquí su resumen.",
+    selectedEstablishment: "Restaurante",
+    selectedConcept: "Concepto",
+    selectedDate: "Fecha",
+    selectedTotal: "Importe total",
+    selectedScope: "Alcance",
+    selectedScopeNone: "Sin alcance escrito.",
+    selectedSentAt: (fecha: string) => `Enviado al restaurante el ${fecha}.`,
+    selectedNotSent: "Aún no enviado al restaurante.",
+    openQuote: "Abrir presupuesto",
+    rowsNoun: "presupuestos",
+    filteredEmptyTitle: "Ningún presupuesto coincide",
+    filteredEmptyReason: "Hay presupuestos, pero ninguno cumple los filtros. Quítalos para verlos todos.",
+
     // El formulario (crear y corregir un borrador).
     newTitle: "Nuevo presupuesto",
     editTitle: "Corregir el borrador",
@@ -6503,6 +6585,19 @@ export const es = {
 
     // La ficha.
     detailTitle: (code: string) => `Presupuesto ${code}`,
+    // M50 · la ficha ordenada como el dibujo.
+    backToList: "Volver a presupuestos",
+    generalTitle: "Información general",
+    generalCode: "Nº de presupuesto",
+    generalEstablishment: "Restaurante",
+    generalConcept: "Concepto",
+    generalOutcome: "Qué se presupuesta",
+    generalIssued: "Fecha de creación",
+    generalSent: "Enviado al restaurante",
+    generalNotSent: "Todavía no",
+    generalApproval: "Respuesta del restaurante",
+    scopeTitle: "Concepto y alcance",
+    scopeNone: "Este presupuesto no tiene alcance escrito.",
     amountsTitle: "Importes",
     baseRow: "Base imponible",
     taxRow: (rate: string) => `IVA (${rate} %)`,

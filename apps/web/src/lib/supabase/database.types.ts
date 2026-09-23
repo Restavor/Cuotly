@@ -10175,7 +10175,12 @@ export type Database = {
         Returns: undefined;
       };
       refund_charge: {
-        Args: { p_amount_cents: number; p_charge_id: string; p_reason: string };
+        Args: {
+          p_amount_cents: number;
+          p_charge_id: string;
+          p_idempotency_key?: string;
+          p_reason: string;
+        };
         Returns: undefined;
       };
       refund_menu_update: {

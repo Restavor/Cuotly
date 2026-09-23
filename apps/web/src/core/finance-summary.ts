@@ -10,7 +10,7 @@
  */
 import { addMonths } from "./client-calendar";
 
-export const FINANCE_TABS = ["resumen", "cobros", "facturas"] as const;
+export const FINANCE_TABS = ["resumen", "cobros", "pagos", "facturas", "vencimientos"] as const;
 export type FinanceTab = (typeof FINANCE_TABS)[number];
 
 export type FinanceParams = {

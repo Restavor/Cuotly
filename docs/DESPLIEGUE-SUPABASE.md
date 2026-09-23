@@ -6,9 +6,19 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 19/09/2026.
+Actualizado el 23/09/2026.
 
 ## Pendiente de aplicar
+
+**Actualización del 23/09/2026 (tarde): ninguna.** La **129** (`reembolso_sin_duplicados`, M52 de
+Finanzas) se aplicó por el MCP. `financial_entries` gana `idempotency_key` con un índice único por
+cobro, y `refund_charge()` pasa a aceptarla como cuarto parámetro opcional (las llamadas de tres
+siguen valiendo): la misma clave no escribe un segundo apunte ni un segundo registro de auditoría, y
+el motivo pasa a ser obligatorio. Reembolsar sigue reabriendo el cobro (RN-FIN-04b). En vivo se
+aplicó el cuerpo sin los comentarios largos del archivo; la lógica es la misma. Comprobado en vivo:
+solo queda la firma de cuatro parámetros, EXECUTE para `authenticated` y no para `anon`, columna e
+índice creados. En local, las 129 migraciones aplican desde cero y pasan las 70 suites en el orden de
+CI (la nueva es `reembolso_sin_duplicados.sql`).
 
 **Actualización del 23/09/2026: ninguna.** La **128** (`la_actividad_del_restaurante`, R41 del
 panel del restaurante) se aplicó por el MCP. Solo añade `client_activity(uuid, timestamptz,

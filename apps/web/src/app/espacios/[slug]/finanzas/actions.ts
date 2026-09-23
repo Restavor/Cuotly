@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { paymentDayToTimestamp } from "@/core/finance";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-import type { PaymentState } from "./action-state";
+import type { PaymentState, RefundState } from "./action-state";
 
 /**
  * HU-26 · registrar el cobro de una mensualidad, con **fecha**, importe y
@@ -111,4 +111,51 @@ export async function registerPayment(
 
   revalidatePath("/espacios", "layout");
   return { error: null, done: true };
+}
+
+/**
+ * M52 · registrar un reembolso de lo ya cobrado (RN-FIN-04b).
+ *
+ * `refund_charge()` comprueba `manage_finance`, que no se devuelve más de
+ * lo cobrado y que hay motivo; aquí solo se traduce el formulario. La
+ * clave de idempotencia la genera el formulario una vez por reembolso y
+ * viaja con cada envío: dos clics llevan la misma y el servidor escribe
+ * un solo apunte (migración 129).
+ *
+ * Reembolsar **reabre** el cobro: lo devuelto vuelve a deberse. Dejar al
+ * restaurante sin deuda es otra operación que no existe (decisión 12).
+ */
+export async function refundCharge(prev: RefundState, formData: FormData): Promise<RefundState> {
+  const chargeId = String(formData.get("chargeId") ?? "");
+  const euros = Number(String(formData.get("amount") ?? "").replace(",", "."));
+  const reason = String(formData.get("reason") ?? "").trim();
+  const key = String(formData.get("idempotencyKey") ?? "").trim();
+
+  if (!Number.isFinite(euros) || euros <= 0) {
+    return { ...prev, error: es.teamArea.finance.refundAmountInvalid, done: false };
+  }
+  if (reason === "") {
+    return { ...prev, error: es.teamArea.finance.refundReasonRequired, done: false };
+  }
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("refund_charge", {
+      p_charge_id: chargeId,
+      p_amount_cents: Math.round(euros * 100),
+      p_reason: reason,
+      p_idempotency_key: key === "" ? undefined : `ui:${key}`,
+    });
+    if (error) {
+      console.error("[finanzas] refund_charge devolvió error", { chargeId, message: error.message });
+      return { ...prev, error: error.message, done: false };
+    }
+  } catch (fallo) {
+    const message = fallo instanceof Error ? fallo.message : String(fallo);
+    console.error("[finanzas] refund_charge lanzó", { chargeId, message });
+    return { ...prev, error: message, done: false };
+  }
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true, serial: prev.serial + 1 };
 }

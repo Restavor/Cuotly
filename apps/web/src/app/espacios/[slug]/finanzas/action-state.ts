@@ -16,3 +16,13 @@
 export type PaymentState = { error: string | null; done: boolean };
 
 export const INITIAL_PAYMENT: PaymentState = { error: null, done: false };
+
+/** M52 · registrar un reembolso (RN-FIN-04b). */
+export type RefundState = {
+  error: string | null;
+  done: boolean;
+  /** Cuántos reembolsos ha registrado este formulario: entra en la clave de idempotencia. */
+  serial: number;
+};
+
+export const INITIAL_REFUND: RefundState = { error: null, done: false, serial: 0 };

@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import { Icon } from "@/components/ui/Icon";
 import { notFound, redirect } from "next/navigation";
 
 import { NoPermissionState } from "@/components/ui";
@@ -47,7 +49,7 @@ export default async function NewQuotePage({
 
   if (puedeGestionar !== true) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
+      <div className="space-y-6">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{t.newTitle}</h1>
         <NoPermissionState title={t.noPermissionTitle} description={t.noPermissionReason} />
       </div>
@@ -71,14 +73,16 @@ export default async function NewQuotePage({
   ]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-bold text-primary-dark">{t.newTitle}</h1>
-        <p className="text-sm">
-          <Link href={`/espacios/${space.slug}/finanzas/presupuestos`} className="text-cuotly-green underline">
-            ← {t.title}
-          </Link>
-        </p>
+    <div className="max-w-3xl space-y-6">
+      <header>
+        <Link
+          href={`/espacios/${space.slug}/finanzas/presupuestos`}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-cuotly-green hover:underline"
+        >
+          <Icon name="arrowLeft" className="h-4 w-4" />
+          {t.backToList}
+        </Link>
+        <h1 className="mt-3 text-2xl font-bold text-primary-dark sm:text-[28px]">{t.newTitle}</h1>
       </header>
 
       <QuoteForm

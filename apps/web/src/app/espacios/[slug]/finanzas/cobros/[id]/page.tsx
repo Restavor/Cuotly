@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadEstablishmentPhotos } from "@/services/establishment-photo";
 
 import { ChargeDetailView } from "./ChargeDetailView";
+import { RefundForm } from "./RefundForm";
 
 /**
  * M17 · el detalle de un cobro para el equipo.
@@ -191,6 +192,11 @@ export default async function TeamChargePage({
           })),
         }),
       }}
+      refundForm={
+        (collected ?? 0) > 0 ? (
+          <RefundForm chargeId={charge.id} collectedEuros={((collected ?? 0) / 100).toFixed(2)} />
+        ) : null
+      }
       registerForm={
         pendiente > 0 ? (
           <RegisterPaymentForm

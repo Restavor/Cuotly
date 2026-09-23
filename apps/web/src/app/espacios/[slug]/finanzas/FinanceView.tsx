@@ -15,26 +15,25 @@ import {
   TableHead,
   TableHeaderCell,
   TableRow,
-  Tabs,
 } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import { addMonths } from "@/core/client-calendar";
+import type { DueFilter } from "@/core/finance-due";
 import type { FinanceTab } from "@/core/finance-summary";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { euros } from "@/i18n/money";
+
+import { chargeTone } from "./charge-tone";
+import { DueTab, type DueRow } from "./DueTab";
+import { FinanceTabs } from "./FinanceTabs";
+import { PaymentsTab, type PaymentsTabData } from "./PaymentsTab";
 import type { InvoiceListing } from "@/services/invoices";
 
 const t = es.teamArea.finance;
 type ChargeStateKey = keyof typeof es.teamArea.chargeStates;
 type StageKey = keyof typeof es.teamArea.dunningStages;
 
-export function chargeTone(status: string): "success" | "warning" | "danger" | "neutral" {
-  if (status === "paid" || status === "waived") return "success";
-  if (status === "overdue") return "danger";
-  if (status === "partially_paid" || status === "refunded") return "warning";
-  return "neutral";
-}
 
 export type FinanceChargeRow = {
   readonly id: string;
@@ -81,7 +80,17 @@ export type FinanceContent =
       readonly nonpayment: readonly FinanceNonpaymentRow[];
     }
   | { readonly tab: "cobros"; readonly rows: readonly FinanceChargeRow[] }
-  | { readonly tab: "facturas"; readonly invoices: InvoiceListing };
+  | { readonly tab: "facturas"; readonly invoices: InvoiceListing }
+  | { readonly tab: "pagos"; readonly data: PaymentsTabData; readonly registerForm: ReactNode | null }
+  | {
+      readonly tab: "vencimientos";
+      readonly now: Date;
+      readonly total: number;
+      readonly rows: readonly DueRow[];
+      readonly establishments: readonly { readonly id: string; readonly name: string }[];
+      readonly filters: { readonly establishmentId: string | null; readonly state: DueFilter | null };
+      readonly selectedId: string | null;
+    };
 
 /**
  * M16 · Finanzas del espacio, como el dibujo: el mes arriba a la derecha,
@@ -134,18 +143,22 @@ export function FinanceView({
         }
       />
 
-      <Tabs
-        label={t.title}
-        active={tab}
-        tabs={[
-          { key: "resumen", label: t.tabSummary, href: enlace({ tab: "resumen" }) },
-          { key: "cobros", label: t.tabCharges, href: enlace({ tab: "cobros" }) },
-          { key: "presupuestos", label: t.tabQuotes, href: `${base}/presupuestos` },
-          { key: "facturas", label: t.tabInvoices, href: enlace({ tab: "facturas" }) },
-        ]}
-      />
+      <FinanceTabs slug={slug} active={tab} month={month === esteMes ? null : month} />
 
-      {content.tab === "facturas" ? (
+      {content.tab === "pagos" ? (
+        <PaymentsTab slug={slug} timeZone={timeZone} data={content.data} registerForm={content.registerForm} />
+      ) : content.tab === "vencimientos" ? (
+        <DueTab
+          slug={slug}
+          timeZone={timeZone}
+          now={content.now}
+          total={content.total}
+          rows={content.rows}
+          establishments={content.establishments}
+          filters={content.filters}
+          selectedId={content.selectedId}
+        />
+      ) : content.tab === "facturas" ? (
         <Card>
           {content.invoices.kind === "failed" ? (
             <EmptyState title={t.invoicesFailedTitle} description={t.invoicesFailedReason} />
