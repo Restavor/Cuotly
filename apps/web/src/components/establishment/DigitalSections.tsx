@@ -144,6 +144,16 @@ function Stat({
   );
 }
 
+/**
+ * La variación frente a los 28 días anteriores, o nada cuando la vista es
+ * la de "Últimos datos disponibles" de una fuente parada (A16): con la
+ * ventana a medias, comparar con la anterior entera diría una caída que no
+ * ha pasado.
+ */
+function vs(view: DigitalDataView, current: number | null, previous: number | null): number | null | undefined {
+  return view.lastDataOnly === true ? undefined : percentChange(current, previous);
+}
+
 function metricName(metric: string): string {
   return (t.metrics as Record<string, string | undefined>)[metric] ?? metric;
 }
@@ -451,7 +461,12 @@ export function DigitalSection({
     );
   }
 
-  if (conCifra.length === 0) {
+  // A16 · una fuente que falla o se ha quedado vieja pero trajo algo antes
+  // no deja la sección en blanco: se dice qué pasa y se enseñan sus
+  // últimos datos, con su fecha.
+  const conUltimos = datos.filter((d) => hasLastData(d, view.window));
+
+  if (conCifra.length === 0 && conUltimos.length === 0) {
     return (
       <>
         <SectionEmpty section={section} manageHref={manageHref} />
@@ -466,36 +481,35 @@ export function DigitalSection({
         data.reason === null ? (
           <ProviderView key={data.provider} data={data} view={view} />
         ) : (
-          <ProviderReason key={data.provider} data={data} view={view} />
+          <ProviderReason key={data.provider} data={data} view={view} manageHref={manageHref} />
         ),
       )}
     </>
   );
 }
 
-/** La fuente de una sección de dos que no tiene cifra: su motivo, con su nombre. */
-function ProviderReason({ data, view }: { data: ProviderData; view: DigitalDataView }) {
+/** Falla o está vieja, pero hay puntos suyos en la ventana que enseñar (A16). */
+function hasLastData(data: ProviderData, window: SyncWindow): boolean {
+  return (
+    (data.reason === "error" || data.reason === "stale") &&
+    data.lastSuccessAt !== null &&
+    data.points.some((p) => p.period_start >= window.from && p.period_end <= window.to)
+  );
+}
+
+/** La fuente de una sección que no tiene cifra actual: su motivo, con su nombre. */
+function ProviderReason({ data, view, manageHref }: { data: ProviderData; view: DigitalDataView; manageHref: string | null }) {
   const reason = data.reason as SummaryReason;
-  const titulo =
-    reason === "not_connected"
-      ? t.notConnectedTitle
-      : reason === "no_data_yet"
-        ? t.noDataTitle
-        : reason === "error"
-          ? t.errorTitle
-          : reason === "stale"
-            ? t.staleTitle
-            : t.insufficientTitle;
+  if (reason === "error" || reason === "stale") {
+    return <ProviderSyncProblem data={data} view={view} manageHref={manageHref} reason={reason} />;
+  }
+  const titulo = reason === "not_connected" ? t.notConnectedTitle : reason === "no_data_yet" ? t.noDataTitle : t.insufficientTitle;
   return (
     <Card title={providerName(data.provider)}>
       <div data-testid={`digital-${data.provider}`} data-reason={reason}>
         <EmptyReason reason={reason} title={titulo} />
-        {reason === "error" && data.lastError ? <p className="mt-2 text-xs text-danger">{data.lastError}</p> : null}
         {reason === "insufficient_period" && minimumCoveredDays(data.provider) > 1 ? (
           <p className="mt-2 text-xs text-text-secondary">{t.coveredDays(data.coveredDays, SUMMARY_WINDOW_DAYS)}</p>
-        ) : null}
-        {(reason === "stale" || reason === "error") && data.lastSuccessAt ? (
-          <p className="mt-2 text-xs text-text-secondary">{t.syncedAt(formatMoment(data.lastSuccessAt, view.timezone))}</p>
         ) : null}
       </div>
     </Card>
@@ -525,25 +539,104 @@ function ProviderView({ data, view }: { data: ProviderData; view: DigitalDataVie
     </span>
   );
   const titulo = PROVIDER_TITLE[data.provider];
-  const body: ReactNode = (() => {
-    switch (data.provider) {
-      case "ga4":
-        return <Ga4View data={data} view={view} />;
-      case "search_console":
-        return <SearchConsoleView data={data} view={view} />;
-      case "business_profile":
-        return <BusinessProfileView data={data} view={view} />;
-      case "clarity":
-        return <ClarityView data={data} view={view} />;
-      case "pagespeed":
-        return <PageSpeedView data={data} view={view} />;
-    }
-  })();
 
   return (
     <Card title={titulo} action={nota}>
       <div data-testid={`digital-${data.provider}`} data-reason="ok" className="space-y-4">
-        {body}
+        <ProviderBody data={data} view={view} />
+      </div>
+    </Card>
+  );
+}
+
+function ProviderBody({ data, view }: { data: ProviderData; view: DigitalDataView }): ReactNode {
+  switch (data.provider) {
+    case "ga4":
+      return <Ga4View data={data} view={view} />;
+    case "search_console":
+      return <SearchConsoleView data={data} view={view} />;
+    case "business_profile":
+      return <BusinessProfileView data={data} view={view} />;
+    case "clarity":
+      return <ClarityView data={data} view={view} />;
+    case "pagespeed":
+      return <PageSpeedView data={data} view={view} />;
+  }
+}
+
+/**
+ * A16 · "Error de sincronización". La franja roja dice qué fuente no se
+ * ha podido actualizar y lleva la insignia "Datos desactualizados"; debajo,
+ * la última pasada correcta y el último intento (con "Error" si fue un
+ * fallo), "Revisar conexión" para quien gestiona y, si la fuente trajo
+ * algo antes, sus "Últimos datos disponibles" con la fecha hasta la que
+ * llegan.
+ *
+ * El dibujo pone además "Reintentar sincronización". No se copia: CLAUDE.md
+ * prohíbe el botón "Sincronizar ahora" en las integraciones analíticas; la
+ * sincronización es la programada y el remedio está en la conexión.
+ */
+function ProviderSyncProblem({
+  data,
+  view,
+  manageHref,
+  reason,
+}: {
+  data: ProviderData;
+  view: DigitalDataView;
+  manageHref: string | null;
+  reason: "error" | "stale";
+}) {
+  const nombre = providerName(data.provider);
+  const ultimos = hasLastData(data, view.window);
+  const hasta = ultimos ? lastDayWithData(data.points, view.window) : null;
+  return (
+    <Card className="p-0! overflow-hidden">
+      <div data-testid={`digital-${data.provider}`} data-reason={reason}>
+        <div className="space-y-4 p-5">
+          <div role="alert" className="flex flex-wrap items-center gap-3 rounded-[10px] bg-danger/10 px-4 py-3">
+            <Icon name="alert" className="h-5 w-5 shrink-0 text-danger" />
+            <p className="flex-1 text-sm font-semibold text-danger">
+              {reason === "error" ? t.syncProblem.errorTitle(nombre) : t.syncProblem.staleTitle(nombre)}
+            </p>
+            <StatusBadge tone="danger">{t.syncProblem.badge}</StatusBadge>
+          </div>
+          <dl className="grid gap-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
+            <div>
+              <dt className="text-sm text-text-secondary">{t.syncProblem.lastSuccess}</dt>
+              <dd className="mt-1 font-semibold text-text-primary">
+                {data.lastSuccessAt ? formatMoment(data.lastSuccessAt, view.timezone) : t.syncProblem.never}
+              </dd>
+            </div>
+            <div className="sm:pl-6">
+              <dt className="text-sm text-text-secondary">{t.syncProblem.lastAttempt}</dt>
+              <dd className="mt-1 font-semibold text-text-primary">
+                {data.lastSyncAt ? formatMoment(data.lastSyncAt, view.timezone) : t.syncProblem.never}
+                {reason === "error" ? <span className="text-danger">{` · ${t.syncProblem.errorWord}`}</span> : null}
+              </dd>
+            </div>
+          </dl>
+          {reason === "error" && data.lastError ? <p className="text-xs text-danger">{data.lastError}</p> : null}
+          {manageHref !== null ? (
+            <Link
+              href={manageHref}
+              className="inline-flex items-center justify-center rounded-[10px] border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text-primary hover:bg-soft-surface"
+            >
+              {t.syncProblem.reviewConnection}
+            </Link>
+          ) : null}
+        </div>
+        <div className="space-y-4 border-t border-border p-5">
+          <h3 className="text-base font-semibold text-text-primary">
+            {t.syncProblem.lastData}
+            {hasta ? <span className="ml-2 text-xs font-normal text-text-secondary">{t.dataUntil(formatDay(hasta, view.timezone))}</span> : null}
+          </h3>
+          {ultimos ? (
+            <ProviderBody data={data} view={{ ...view, lastDataOnly: true }} />
+          ) : (
+            <EmptyReason reason={reason} title={reason === "error" ? t.errorTitle : t.staleTitle} />
+          )}
+        </div>
       </div>
     </Card>
   );
@@ -565,9 +658,9 @@ function Ga4View({ data, view }: { data: ProviderData; view: DigitalDataView }) 
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-3">
-        <Stat testId="stat-users" label={metricName("users")} value={usuarios === null ? "—" : formatNumber(usuarios)} change={percentChange(usuarios, sumOf(points, "users", pw))} />
-        <Stat testId="stat-sessions" label={metricName("sessions")} value={sesiones === null ? "—" : formatNumber(sesiones)} change={percentChange(sesiones, sumOf(points, "sessions", pw))} />
-        <Stat label={t.conversionsTitle} value={eventos === null ? "—" : formatNumber(eventos)} change={percentChange(eventos, sumOfDimensions(points, "conversions_by_event", pw))} />
+        <Stat testId="stat-users" label={metricName("users")} value={usuarios === null ? "—" : formatNumber(usuarios)} change={vs(view, usuarios, sumOf(points, "users", pw))} />
+        <Stat testId="stat-sessions" label={metricName("sessions")} value={sesiones === null ? "—" : formatNumber(sesiones)} change={vs(view, sesiones, sumOf(points, "sessions", pw))} />
+        <Stat label={t.conversionsTitle} value={eventos === null ? "—" : formatNumber(eventos)} change={vs(view, eventos, sumOfDimensions(points, "conversions_by_event", pw))} />
       </div>
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <LineChart
@@ -612,10 +705,10 @@ function SearchConsoleView({ data, view }: { data: ProviderData; view: DigitalDa
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-4">
-        <Stat testId="stat-clicks" label={metricName("clicks")} value={clics === null ? "—" : formatNumber(clics)} change={percentChange(clics, sumOf(points, "clicks", pw))} />
-        <Stat label={metricName("impressions")} value={impresiones === null ? "—" : formatNumber(impresiones)} change={percentChange(impresiones, sumOf(points, "impressions", pw))} />
-        <Stat label={metricName("ctr")} value={ctr === null ? "—" : formatPercentRatio(ctr)} change={percentChange(ctr, meanOf(points, "ctr", pw))} />
-        <Stat testId="stat-position" label={metricName("position")} value={posicion === null ? "—" : formatNumber(posicion, 1)} change={percentChange(posicion, meanOf(points, "position", pw))} invert />
+        <Stat testId="stat-clicks" label={metricName("clicks")} value={clics === null ? "—" : formatNumber(clics)} change={vs(view, clics, sumOf(points, "clicks", pw))} />
+        <Stat label={metricName("impressions")} value={impresiones === null ? "—" : formatNumber(impresiones)} change={vs(view, impresiones, sumOf(points, "impressions", pw))} />
+        <Stat label={metricName("ctr")} value={ctr === null ? "—" : formatPercentRatio(ctr)} change={vs(view, ctr, meanOf(points, "ctr", pw))} />
+        <Stat testId="stat-position" label={metricName("position")} value={posicion === null ? "—" : formatNumber(posicion, 1)} change={vs(view, posicion, meanOf(points, "position", pw))} invert />
       </div>
       <LineChart
         title={metricName("clicks")}
@@ -651,7 +744,7 @@ function BusinessProfileView({ data, view }: { data: ProviderData; view: Digital
               testId={`stat-${metric}`}
               label={metricName(metric)}
               value={actual === null ? "—" : formatNumber(actual)}
-              change={percentChange(actual, sumOf(points, metric, pw))}
+              change={vs(view, actual, sumOf(points, metric, pw))}
             />
           );
         })}
@@ -685,11 +778,11 @@ function ClarityView({ data, view }: { data: ProviderData; view: DigitalDataView
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Stat testId="stat-sessions" label={metricName("sessions")} value={sesiones === null ? "—" : formatNumber(sesiones)} change={percentChange(sesiones, sumOf(points, "sessions", pw))} />
-        <Stat label={metricName("distinct_users")} value={usuarios === null ? "—" : formatNumber(usuarios)} change={percentChange(usuarios, sumOf(points, "distinct_users", pw))} />
-        <Stat label={metricName("pages_per_session")} value={paginas === null ? "—" : formatNumber(paginas, 1)} change={percentChange(paginas, meanOf(points, "pages_per_session", pw))} />
-        <Stat label={metricName("scroll_depth")} value={scroll === null ? "—" : `${formatNumber(scroll, 0)} %`} change={percentChange(scroll, meanOf(points, "scroll_depth", pw))} />
-        <Stat label={metricName("engagement_time_seconds")} value={tiempo === null ? "—" : formatSeconds(tiempo)} change={percentChange(tiempo, sumOf(points, "engagement_time_seconds", pw))} />
+        <Stat testId="stat-sessions" label={metricName("sessions")} value={sesiones === null ? "—" : formatNumber(sesiones)} change={vs(view, sesiones, sumOf(points, "sessions", pw))} />
+        <Stat label={metricName("distinct_users")} value={usuarios === null ? "—" : formatNumber(usuarios)} change={vs(view, usuarios, sumOf(points, "distinct_users", pw))} />
+        <Stat label={metricName("pages_per_session")} value={paginas === null ? "—" : formatNumber(paginas, 1)} change={vs(view, paginas, meanOf(points, "pages_per_session", pw))} />
+        <Stat label={metricName("scroll_depth")} value={scroll === null ? "—" : `${formatNumber(scroll, 0)} %`} change={vs(view, scroll, meanOf(points, "scroll_depth", pw))} />
+        <Stat label={metricName("engagement_time_seconds")} value={tiempo === null ? "—" : formatSeconds(tiempo)} change={vs(view, tiempo, sumOf(points, "engagement_time_seconds", pw))} />
       </div>
       <p className="font-semibold text-text">{t.frictionTitle}</p>
       <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
@@ -701,7 +794,7 @@ function ClarityView({ data, view }: { data: ProviderData; view: DigitalDataView
               testId={`stat-${metric}`}
               label={metricName(metric)}
               value={actual === null ? "—" : formatNumber(actual)}
-              change={percentChange(actual, sumOf(points, metric, pw))}
+              change={vs(view, actual, sumOf(points, metric, pw))}
               invert
             />
           );

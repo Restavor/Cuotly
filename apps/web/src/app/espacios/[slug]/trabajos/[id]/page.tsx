@@ -33,6 +33,7 @@ import {
   AssignJobForm,
   BlockJobForm,
   OpenInternalConversationForm,
+  ResumeJobBar,
   PublishJobForm,
   StartJobForm,
   UnblockJobForm,
@@ -313,6 +314,21 @@ export default async function TeamJobDetailPage({
   const responsable = job.assigned_to === null ? null : nombrePorId.get(job.assigned_to) ?? null;
 
   const blocked = job.state === "blocked_by_client" || job.state === "authorized_pause";
+  /*
+    M78 · el bloqueo abierto: su motivo y su nota. `blocks_select` solo deja
+    leerlo a quien es del espacio (migración 23): el restaurante, que puede
+    abrir esta ficha, ve "Bloqueado" y nada más — el tipo de motivo y la
+    nota interna no son suyos.
+  */
+  const { data: bloqueo } = blocked
+    ? await supabase
+        .from("blocks")
+        .select("reason_type, note, started_at")
+        .eq("job_id", id)
+        .is("ended_at", null)
+        .maybeSingle()
+    : { data: null };
+
   const hasActions =
     job.state === "pending_assignment" ||
     job.state === "assigned" ||
@@ -454,6 +470,45 @@ export default async function TeamJobDetailPage({
           ) : null}
         </p>
       </header>
+
+      {/*
+        M78 · el trabajo bloqueado: por qué, desde cuándo y, si el motivo
+        es del restaurante, "Pedir información", que lleva a la conversación
+        de la solicitud —la misma que él lee—. El dibujo pone también
+        "Reasignar": no se copia, porque `request_job_reassignment()` solo
+        admite un trabajo asignado o en curso (RN-ASG-07) y un bloqueado no
+        lo es.
+      */}
+      {bloqueo ? (
+        <div
+          role="status"
+          className="flex flex-wrap items-start gap-3 rounded-card border border-danger/20 bg-danger/10 px-5 py-4"
+        >
+          <Icon name="alert" aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-primary-dark">
+              {es.teamArea.jobs.blockReasonLabel}
+              {" · "}
+              {es.teamArea.blockReasons[bloqueo.reason_type as keyof typeof es.teamArea.blockReasons] ??
+                bloqueo.reason_type}
+            </p>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-text">
+              {bloqueo.note?.trim() || es.teamArea.jobs.blockedNoNote}
+            </p>
+            <p className="mt-1 text-xs text-text-secondary">
+              {es.teamArea.jobs.blockedSince(fechaYHora(bloqueo.started_at, zona))}
+            </p>
+          </div>
+          {request && bloqueo.reason_type === "client_information" ? (
+            <Link
+              href={`/espacios/${slug}/solicitudes/${request.id}#conversacion`}
+              className="inline-flex shrink-0 items-center justify-center rounded-[10px] border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green hover:bg-soft-surface"
+            >
+              {es.teamArea.jobs.askForInformation}
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       {/*
         M28 · tres columnas: la información del trabajo y lo que se pidió;
@@ -700,7 +755,7 @@ export default async function TeamJobDetailPage({
             </>
           ) : null}
 
-          {blocked ? <UnblockJobForm jobId={id} /> : null}
+          {blocked && !esDelEquipo ? <UnblockJobForm jobId={id} /> : null}
 
           {hasActions ? null : (
             <Card title={es.teamArea.jobs.noActionTitle}>
@@ -742,6 +797,17 @@ export default async function TeamJobDetailPage({
           {esDelEquipo ? <OpenInternalConversationForm jobId={id} slug={slug} /> : null}
         </div>
       </div>
+
+      {blocked && esDelEquipo ? (
+        <ResumeJobBar
+          jobId={id}
+          hint={
+            bloqueo?.reason_type === "client_information"
+              ? es.teamArea.jobs.resumeHintClient
+              : es.teamArea.jobs.resumeHint
+          }
+        />
+      ) : null}
 
       {/*
         HU-27 · "marcar como pagado un cobro de un restaurante asignado,

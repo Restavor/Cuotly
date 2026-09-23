@@ -313,7 +313,16 @@ export default async function TeamJobsPage({
           <EmptyState title={t.emptyTitle} description={t.emptyReason} />
         ) : rows.length === 0 ? (
           // Un filtro que no casa con nada NO es "no hay trabajos" (CA-20).
-          <EmptyState title={t.filteredEmptyTitle} description={t.filteredEmptyReason} />
+          <EmptyState
+            icon="search"
+            title={t.filteredEmptyTitle}
+            description={t.filteredEmptyReason}
+            action={
+              <ButtonLink href={enTablero ? `${base}?vista=tablero` : base} variant="secondary" size="sm">
+                {es.ui.filters.clear}
+              </ButtonLink>
+            }
+          />
         ) : enTablero ? (
           <JobBoard
             columns={columns}

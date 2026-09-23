@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
+  ButtonLink,
   Card,
   EmptyState,
   FilterBar,
@@ -242,7 +243,16 @@ export default async function TeamTasksPage({
         {todas.length === 0 && !hasFilters ? (
           <EmptyState title={t.emptyTitle} description={t.emptyReason} />
         ) : rows.length === 0 ? (
-          <EmptyState title={t.filteredEmptyTitle} description={t.filteredEmptyReason} />
+          <EmptyState
+            icon="search"
+            title={t.filteredEmptyTitle}
+            description={t.filteredEmptyReason}
+            action={
+              <ButtonLink href={base} variant="secondary" size="sm">
+                {es.ui.filters.clear}
+              </ButtonLink>
+            }
+          />
         ) : (
           <Table
             footer={

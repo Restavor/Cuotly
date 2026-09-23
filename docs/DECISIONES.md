@@ -2078,3 +2078,18 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     - **La propuesta de reglas** está en `docs/PROPUESTA-EDICION-DE-PLANES.md`, con una propuesta
       concreta por punto y una pregunta abierta (qué pasa si el restaurante no acepta una versión
       que le perjudica). Cuando Bosco la decida, se escribe aquí y en el PRD antes de programar.
+
+71. **Los datos viejos de una fuente se enseñan como viejos, no se esconden** (23/09/2026). Lectura
+    de RN-INT-07 ("se indica la fecha de última sincronización; nunca se presenta información
+    desactualizada como actual") al construir A16, "Error de sincronización".
+
+    - Hasta ahora una fuente con error o con el dato viejo dejaba su sección en blanco, con el
+      motivo. A16 dibuja lo contrario: la franja roja con "Datos desactualizados" y, debajo,
+      "Últimos datos disponibles". Las dos cosas caben en la regla, que prohíbe hacer pasar lo
+      viejo por actual, no enseñarlo.
+    - Por eso los últimos datos van **siempre** con la franja, la insignia, la fecha de la última
+      sincronización correcta y el día hasta el que llegan, y **sin la variación** frente al
+      periodo anterior: con la ventana a medias, la comparación diría una caída que no ha pasado.
+    - Sin puntos en la ventana, se sigue diciendo el motivo y no se pinta ninguna cifra.
+    - No hay "Reintentar sincronización": CLAUDE.md prohíbe "Sincronizar ahora" en las
+      integraciones analíticas. El remedio que se ofrece es "Revisar conexión".

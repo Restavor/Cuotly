@@ -16,6 +16,7 @@ import {
   TableRow,
   TextArea,
 } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 
 import {
@@ -154,6 +155,32 @@ export function UnblockJobForm({ jobId }: { jobId: string }) {
         </Button>
       </form>
     </Card>
+  );
+}
+
+/**
+ * M78 · la franja de abajo de un trabajo bloqueado: qué hay que resolver
+ * y "Reanudar trabajo". Es el mismo `unblock_job()` que "Desbloquear": el
+ * servidor decide quién puede levantarlo y el contador de ejecución sigue
+ * donde se quedó (RN-SLA-14).
+ */
+export function ResumeJobBar({ jobId, hint }: { jobId: string; hint: string }) {
+  const [state, action, pending] = useActionState(unblockJob, INITIAL_JOB_ACTION);
+  return (
+    <form
+      action={action}
+      className="flex flex-wrap items-center gap-4 rounded-card border border-cuotly-green/30 bg-cuotly-green/10 px-5 py-4"
+    >
+      <input type="hidden" name="jobId" value={jobId} />
+      <Icon name="info" aria-hidden="true" className="h-5 w-5 shrink-0 text-cuotly-green" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <p className="text-sm text-text">{hint}</p>
+        <Error message={state.error} />
+      </div>
+      <Button type="submit" disabled={pending}>
+        {pending ? es.teamArea.jobs.unblockPending : es.teamArea.jobs.resumeSubmit}
+      </Button>
+    </form>
   );
 }
 

@@ -11,6 +11,7 @@ import { enZona, fechaCorta } from "@/i18n/dates";
 import { createClient } from "@/lib/supabase/server";
 
 import { AssignMenuForm, CorrectionsPanel, RefundForm, WorkerActions, type MenuCandidate, type MenuCorrectionRow } from "./TeamMenuForms";
+import { TeamMenuEditor } from "./TeamMenuEditor";
 import { SheetFrame } from "@/components/establishment/SheetHeader";
 import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-load";
 
@@ -45,8 +46,16 @@ function horaLocal(iso: string, timeZone: string): string {
   });
 }
 
-export default async function TeamMenuPage({ params }: { params: Promise<{ slug: string; menuId: string }> }) {
+export default async function TeamMenuPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string; menuId: string }>;
+  // M79 · `?vista=editar` abre el editor del contenido.
+  searchParams: Promise<{ vista?: string }>;
+}) {
   const { slug, menuId } = await params;
+  const { vista } = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -218,6 +227,25 @@ export default async function TeamMenuPage({ params }: { params: Promise<{ slug:
 
   // M32 · el marco de la ficha del restaurante encima del detalle.
   const frame = await loadSheetFrame(supabase, menu.establishment_id);
+  const fichaHref = `${base}/${menuId}`;
+  // M79 · editar el contenido es de quien puede escribir menús
+  // (`can_write_menus()`: el equipo con `manage_requests`).
+  const puedeEditar = canManage === true && !closed;
+
+  if (vista === "editar" && puedeEditar) {
+    return (
+      <div className="space-y-6">
+        <SheetFrame slug={slug} frame={frame} tab="operation" section="dailyMenu" />
+        <TeamMenuEditor
+          supabase={supabase}
+          menu={{ ...menu, state: menu.state }}
+          establishmentName={establishment?.name ?? ""}
+          fichaHref={fichaHref}
+          downloadHref={downloadBase}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -243,6 +271,15 @@ export default async function TeamMenuPage({ params }: { params: Promise<{ slug:
             </h1>
             <StatusBadge tone={menuTone(menu.state)}>{es.naming.states.menu[menu.state]}</StatusBadge>
             {overdue ? <StatusBadge tone="danger">{t.overdueShort}</StatusBadge> : null}
+            {puedeEditar ? (
+              <Link
+                href={`${fichaHref}?vista=editar`}
+                className="ml-auto inline-flex items-center gap-2 rounded-[10px] border border-cuotly-green bg-surface px-4 py-2 text-sm font-semibold text-cuotly-green hover:bg-cuotly-green/10"
+              >
+                <Icon name="document" aria-hidden="true" className="h-4 w-4" />
+                {t.editor.open}
+              </Link>
+            ) : null}
           </div>
           <p className="mt-1 text-sm text-text-secondary">
             {t.detailSubtitle(

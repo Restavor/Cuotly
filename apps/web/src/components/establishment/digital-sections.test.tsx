@@ -261,7 +261,7 @@ describe("Maqueta 10 · Analítica y búsqueda con cifra", () => {
     expect(within(ps).getAllByText("—").length).toBeGreaterThan(0);
   });
 
-  it("RN-INT-07 · el dato viejo se dice con su fecha, no con una cifra", () => {
+  it("RN-INT-07 · el dato viejo se enseña como viejo, con su fecha, y nunca como actual (A16)", () => {
     render(
       <DigitalSection
         section="behavior"
@@ -269,10 +269,17 @@ describe("Maqueta 10 · Analítica y búsqueda con cifra", () => {
         view={vista({ clarity: { status: "connected", reason: "stale", lastSuccessAt: "2026-09-01T03:00:00Z", points: dias("sessions", 100, 28, "", "2026-09-01") } })}
       />,
     );
-    // Con una sola fuente en la sección y sin cifra actual: el hueco, y la tabla con su estado.
-    expect(screen.getByText(t.sections.behavior.emptyTitle)).toBeInTheDocument();
-    expect(screen.getByText(t.sourceInfo.stale)).toBeInTheDocument();
-    expect(screen.queryByText("2.800")).toBeNull();
+    // A16 · lo viejo no se calla ni se hace pasar por actual: franja
+    // "Datos desactualizados", fecha de la última pasada buena y, aparte,
+    // "Últimos datos disponibles" con el día hasta el que llegan.
+    const clarity = screen.getByTestId("digital-clarity");
+    expect(clarity).toHaveAttribute("data-reason", "stale");
+    expect(within(clarity).getByText(t.syncProblem.badge)).toBeInTheDocument();
+    expect(within(clarity).getByText(t.syncProblem.lastData)).toBeInTheDocument();
+    expect(within(clarity).getByText(t.dataUntil("1 sept 2026"))).toBeInTheDocument();
+    // Con la ventana a medias no se compara con la anterior.
+    expect(within(clarity).queryByText(t.changeVsPrevious)).toBeNull();
+    expect(within(clarity).queryByText(t.changeNoPrevious)).toBeNull();
   });
 });
 
@@ -283,5 +290,57 @@ describe("la subnavegación de «Informes y datos»", () => {
     expect(enlaces.map((e) => e.textContent)).toEqual(DATA_SECTION_TABS.map((s) => es.establishmentSheet.dataSections[s.key]));
     expect(screen.getByRole("link", { name: es.establishmentSheet.dataSections.search })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: es.establishmentSheet.dataSections.analytics })).toHaveAttribute("href", "/r/1/datos?seccion=analitica");
+  });
+});
+
+describe("A16 · Error de sincronización", () => {
+  it("RN-INT-07 · la fuente que falla dice qué pasa, cuándo fue la última pasada buena y enseña sus últimos datos, sin «Reintentar»", () => {
+    const points = [...dias("users", 10, 20, "", "2026-09-06"), ...dias("sessions", 20, 20, "", "2026-09-06")];
+    render(
+      <DigitalSection
+        section="analytics"
+        manageHref={GESTION}
+        view={vista({
+          ga4: {
+            status: "error",
+            reason: "error",
+            lastSuccessAt: "2026-09-07T07:30:00Z",
+            lastSyncAt: "2026-09-14T08:00:00Z",
+            lastError: "invalid_grant",
+            points,
+          },
+        })}
+      />,
+    );
+    const ga4 = screen.getByTestId("digital-ga4");
+    expect(ga4).toHaveAttribute("data-reason", "error");
+    expect(within(ga4).getByRole("alert")).toHaveTextContent(t.syncProblem.errorTitle(es.integrations.providers.ga4.name));
+    expect(within(ga4).getByText(t.syncProblem.badge)).toBeInTheDocument();
+    expect(within(ga4).getByText(/7 sept 2026/)).toBeInTheDocument();
+    expect(within(ga4).getByText(/14 sept 2026/)).toBeInTheDocument();
+    expect(within(ga4).getByText("invalid_grant")).toBeInTheDocument();
+    expect(within(ga4).getByRole("link", { name: t.syncProblem.reviewConnection })).toHaveAttribute("href", GESTION);
+    expect(within(ga4).getByText(t.syncProblem.lastData)).toBeInTheDocument();
+    // Las cifras son las que hay, no de relleno: 20 días de 10 usuarios.
+    expect(within(within(ga4).getByTestId("stat-users")).getByText("200")).toBeInTheDocument();
+    expect(within(ga4).queryByRole("button", { name: /reintentar|sincronizar/i })).toBeNull();
+  });
+
+  it("sin datos anteriores dice el motivo en lugar de cifras, y quien no gestiona no ve «Revisar conexión»", () => {
+    render(
+      <DigitalSection
+        section="search"
+        manageHref={null}
+        view={vista({
+          search_console: { status: "connected", reason: null, points: dias("clicks", 1, 28) },
+          business_profile: { status: "error", reason: "error", lastSuccessAt: null, lastSyncAt: "2026-09-14T08:00:00Z" },
+        })}
+      />,
+    );
+    const bp = screen.getByTestId("digital-business_profile");
+    expect(bp).toHaveAttribute("data-reason", "error");
+    expect(within(bp).getByText(t.syncProblem.never)).toBeInTheDocument();
+    expect(within(bp).getByText(es.emptyReasons.error)).toBeInTheDocument();
+    expect(within(bp).queryByRole("link", { name: t.syncProblem.reviewConnection })).toBeNull();
   });
 });

@@ -1394,8 +1394,9 @@ export const es = {
       activeCount: (n: number) =>
         n === 1 ? "1 establecimiento activo" : `${n} establecimientos activos`,
       createButton: "Crear establecimiento",
-      emptyTitle: "No hay ningún restaurante",
-      emptyReason: "Cuando se dé de alta un restaurante, aparecerá aquí.",
+      // A13 · el espacio vacío, con la acción que lo llena.
+      emptyTitle: "Todavía no has añadido restaurantes",
+      emptyReason: "Añade tu primer establecimiento para empezar a organizar su mantenimiento.",
       filteredEmptyTitle: "Ningún restaurante coincide",
       filteredEmptyReason:
         "Hay restaurantes en el espacio, pero ninguno cumple los filtros de arriba. Quítalos para verlos todos.",
@@ -1713,6 +1714,10 @@ export const es = {
       subtitle: "Lo aceptado por los restaurantes, listo para hacerse.",
       emptyTitle: "No hay trabajos",
       emptyReason: "Un trabajo nace cuando un restaurante acepta una solicitud.",
+      // A15 · mientras carga la bandeja.
+      loading: "Cargando trabajos…",
+      loadingDetail: "Cargando el trabajo…",
+      loadingColumns: { id: "Código", title: "Trabajo" },
       codeColumn: "Código",
       establishmentColumn: "Restaurante",
       stateColumn: "Estado",
@@ -1819,6 +1824,14 @@ export const es = {
       blockPending: "Bloqueando…",
       unblockSubmit: "Desbloquear",
       unblockPending: "Desbloqueando…",
+      // M78 · el trabajo bloqueado.
+      blockedNoNote: "Sin detalle escrito.",
+      blockedSince: (moment: string) => `Bloqueado desde el ${moment}`,
+      askForInformation: "Pedir información",
+      resumeSubmit: "Reanudar trabajo",
+      resumeHintClient:
+        "Cuando el restaurante te dé lo que falta, reanuda el trabajo: el contador de ejecución sigue donde se quedó.",
+      resumeHint: "Cuando se resuelva el motivo del bloqueo, reanuda el trabajo: el contador de ejecución sigue donde se quedó.",
       publishTitle: "Publicar",
       publishHint:
         "Al publicar arranca la ventana de corrección del restaurante. La fecha la calcula el servidor con el reloj laborable.",
@@ -5399,6 +5412,18 @@ export const es = {
     openLink: "Abrir",
 
     backToQueue: "Volver a la cola",
+    // M79 · el editor del contenido para el equipo.
+    editor: {
+      open: "Editar menú",
+      back: "Volver al menú",
+      title: "Editar menú diario",
+      establishment: (name: string) => `Restaurante: ${name}`,
+      versionsNote: "Cada guardado es una versión nueva; la publicada no cambia hasta que se publique otra.",
+      notEditable: "Este menú ya no admite cambios de contenido.",
+      quotaTitle: "Cupo de actualizaciones",
+      quotaValue: (consumed: number, included: number) => `${consumed} / ${included}`,
+      download: "Descargar",
+    },
     detailSubtitle: (establishment: string, kind: string, date: string) => `${establishment} · ${kind} · ${date}`,
     detailTemplate: "Plantilla",
     detailNoTemplate: "Sin plantilla",
@@ -6796,6 +6821,19 @@ export const es = {
     errorTitle: "Error en la última sincronización",
     noDataTitle: "Todavía no hay datos",
     notConnectedTitle: "Integración no conectada",
+    // A16 · la fuente falla o se ha quedado vieja. Sin "Reintentar": la
+    // sincronización es la programada (CLAUDE.md, sin "Sincronizar ahora").
+    syncProblem: {
+      errorTitle: (fuente: string) => `No se han podido actualizar los datos de ${fuente}`,
+      staleTitle: (fuente: string) => `Los datos de ${fuente} no se han actualizado a tiempo`,
+      badge: "Datos desactualizados",
+      lastSuccess: "Última sincronización correcta",
+      lastAttempt: "Último intento de sincronización",
+      errorWord: "Error",
+      never: "Nunca",
+      reviewConnection: "Revisar conexión",
+      lastData: "Últimos datos disponibles",
+    },
     strategies: { mobile: "Móvil", desktop: "Escritorio" },
     // Maqueta 10 · los dispositivos que nombra GA4, en español. Lo que no
     // esté en esta lista se enseña como lo manda la fuente: es un dato

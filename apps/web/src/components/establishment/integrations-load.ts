@@ -237,6 +237,8 @@ export interface DigitalDataView {
   readonly previousWindow: SyncWindow;
   readonly timezone: string;
   readonly providers: readonly ProviderData[];
+  /** A16 · se pintan los últimos datos de una fuente parada: sin variación frente al periodo anterior. */
+  readonly lastDataOnly?: boolean;
 }
 
 /**

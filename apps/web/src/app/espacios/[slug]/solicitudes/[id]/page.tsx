@@ -369,13 +369,16 @@ return (
       </div>
 
       {conversationId && conversation ? (
-        <Conversation
+        // M78 · "Pedir información" desde un trabajo bloqueado llega aquí.
+        <div id="conversacion" className="scroll-mt-6">
+          <Conversation
             timeZone={zona}
-          conversationId={conversationId}
-          establishmentId={request.establishment_id}
-          messages={conversation.messages}
-          readOnly={conversation.readOnly}
-        />
+            conversationId={conversationId}
+            establishmentId={request.establishment_id}
+            messages={conversation.messages}
+            readOnly={conversation.readOnly}
+          />
+        </div>
       ) : null}
     </div>
   );
