@@ -133,6 +133,35 @@ begin
     raise exception 'RN-SLA-02 FALLIDO: las 24 h no son de Impulso+, Premium y Premium+' using errcode = 'assert_failure';
   end if;
 
+  -- RN-SLA-18 (decisión 61) · el plazo de realización solo baja en
+  -- Premium+: 48, 48, 72 y 96 h; los demás, la tabla de RN-SLA-12. Hasta
+  -- la migración 134 un Restavor recién creado nacía con Premium+ a 72,
+  -- 72, 72 y 120, porque la 118 solo rellenó los planes que ya existían.
+  if not exists (
+    select 1 from public.plans
+    where space_id = v_space and name = 'Premium+'
+      and execution_sla_small = 48 and execution_sla_photo = 48
+      and execution_sla_medium = 72 and execution_sla_large = 96
+  ) then
+    raise exception 'RN-SLA-18 FALLIDO: Premium+ no nace con los plazos 48/48/72/96' using errcode = 'assert_failure';
+  end if;
+
+  if exists (
+    select 1 from public.plans
+    where space_id = v_space and name <> 'Premium+'
+      and (execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large)
+          is distinct from (72, 72, 72, 120)
+  ) then
+    raise exception 'RN-SLA-18 FALLIDO: un plan distinto de Premium+ no tiene los plazos de RN-SLA-12' using errcode = 'assert_failure';
+  end if;
+
+  -- RN-INT-10 (decisión 60) · la vigilancia de reseñas la concede el plan,
+  -- y en Restavor solo Premium+. Mismo hueco que el de arriba, con la 117.
+  if (select string_agg(name, ',' order by name) from public.plans
+      where space_id = v_space and watches_reviews) is distinct from 'Premium+' then
+    raise exception 'RN-INT-10 FALLIDO: la vigilancia de reseñas no es exactamente de Premium+' using errcode = 'assert_failure';
+  end if;
+
   -- RN-COM-08 a 10 · Menú Diario: 229 € y 199 €, 30 actualizaciones.
   if not exists (
     select 1 from public.services

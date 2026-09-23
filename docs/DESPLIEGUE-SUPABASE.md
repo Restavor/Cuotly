@@ -6,9 +6,18 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 23/09/2026 (132 y 133).
+Actualizado el 23/09/2026 (132, 133 y 134).
 
 ## Pendiente de aplicar
+
+**Actualización del 23/09/2026 (cierre): ninguna.** La **134** (`restavor_nace_con_premium_plus_entero`)
+se aplicó por el MCP en una llamada, tras comprobar que `create_restavor_space()` en vivo coincidía con
+la del repositorio. Solo cambia el `insert` de los planes: Premium+ nace con `watches_reviews` y con
+los plazos 48/48/72/96 h, que la 117 y la 118 solo habían puesto en los planes que ya existían. El
+espacio `restavor` real ya los tenía. De paso se retiró el EXECUTE de `anon` sobre la función.
+Comprobado en vivo: sin EXECUTE para `anon`, con él para `authenticated`, y el `insert` nuevo en su
+sitio. En local, las 134 migraciones aplican desde cero, pasan las 74 suites en el orden de CI
+(`planes_de_restavor.sql` comprueba ahora las dos reglas) y el sembrado entra dos veces.
 
 **Actualización del 23/09/2026 (última): ninguna.** La **132** (`solicitud_en_nombre_del_restaurante`,
 M77, decisión 73, RN-REQ-08) y la **133** (`en_nombre_del_restaurante_sin_identidad`, P7) se aplicaron
