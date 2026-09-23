@@ -40,7 +40,7 @@ export function PageHeader({
         {subtitle ? <p className="mt-1 text-sm text-text-secondary">{subtitle}</p> : null}
         {children}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
   );
 }

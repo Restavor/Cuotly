@@ -86,6 +86,9 @@ export function ReportFilters({
 }) {
   return (
     <form action={base} method="get" className="grid gap-4 sm:grid-cols-3">
+      {/* M68 · la biblioteca es la pestaña "Informes generados": filtrar no
+          debe sacar de ella aunque todos los filtros vayan vacíos. */}
+      <input type="hidden" name="tab" value="generados" />
       <Select
         name="restaurante"
         label={t.filters.establishment}

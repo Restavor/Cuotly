@@ -9,9 +9,14 @@ import { isClientRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { Card, NoPermissionState, PageHeader } from "@/components/ui";
 import { EmptyReason } from "@/components/ui/EmptyReason";
+import { todayInTimeZone } from "@/core/finance";
 import { defaultReportPeriod, isReportCategory, isReportState } from "@/core/reports";
+import { readSpaceReportParams } from "@/core/space-reports";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+
+import { assertCanSeeReports, loadDigitalPanel, loadFinancePanel, loadOperationPanel } from "./dashboard-load";
+import { SpaceReportsView, type SpaceReportsContent } from "./SpaceReportsView";
 
 /**
  * Vista 10.01 · la biblioteca de informes (§89 a §95, RN-REP).
@@ -116,13 +121,56 @@ export default async function ReportsPage({
   const t = es.reportsPage;
   const base = `/espacios/${slug}/informes`;
 
-  return (
-    <div className="space-y-6">
-      {/* Página 83 (M18) · título y subtítulo; debajo los filtros de §93 y
-          la biblioteca. Las tres tarjetas de cifra y las gráficas del
-          dibujo salen de cada informe, no de esta lista. */}
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+  // M18 y M65 a M68 · las cuatro pestañas. Las tres primeras son las
+  // cifras del mes (las de cada informe, calculadas para el espacio o un
+  // restaurante); la cuarta, la biblioteca de siempre.
+  const now = new Date();
+  const hoy = todayInTimeZone(now, timezone);
+  const vista = readSpaceReportParams(query, hoy);
+  const comun = {
+    slug,
+    timeZone: timezone,
+    month: vista.month,
+    today: hoy,
+    establishmentId: vista.establishmentId,
+    establishments: (establishments ?? []).map((row) => ({ id: row.id, name: row.name })),
+  };
 
+  if (vista.tab !== "generados") {
+    // La política de `reports` pide `manage_clients`; las cifras del
+    // espacio salen de funciones internas, y solo después de comprobarlo
+    // con la sesión de quien mira (`dashboard-load.ts`).
+    if (!(await assertCanSeeReports(supabase, viewer.spaceId))) {
+      return (
+        <div className="space-y-6">
+          <PageHeader title={t.dashboard.title} />
+          <NoPermissionState title={t.dashboard.noPermissionTitle} description={t.dashboard.noPermissionReason} />
+        </div>
+      );
+    }
+    const entrada = {
+      spaceId: viewer.spaceId,
+      slug,
+      establishmentId: vista.establishmentId,
+      month: vista.month,
+      timeZone: timezone,
+      now,
+    };
+    const registrar = (panel: string) => (error: unknown) => {
+      console.error(`[informes] no se pudo calcular el panel ${panel}`, error);
+      return null;
+    };
+    const content: SpaceReportsContent =
+      vista.tab === "operacion"
+        ? { tab: "operacion", data: await loadOperationPanel(supabase, entrada).catch(registrar("operacion")) }
+        : vista.tab === "finanzas"
+          ? { tab: "finanzas", data: await loadFinancePanel(supabase, entrada).catch(registrar("finanzas")) }
+          : { tab: "digital", data: await loadDigitalPanel(supabase, entrada).catch(registrar("digital")) };
+    return <SpaceReportsView {...comun} content={content} />;
+  }
+
+  const biblioteca = (
+    <div className="space-y-6">
       <Card title={t.filters.title}>
         <ReportFilters
           base={base}
@@ -158,4 +206,6 @@ export default async function ReportsPage({
       )}
     </div>
   );
+
+  return <SpaceReportsView {...comun} content={{ tab: "generados", library: biblioteca }} />;
 }
