@@ -6,21 +6,23 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 23/09/2026 (135, sin aplicar).
+Actualizado el 23/09/2026 (135).
 
 ## Pendiente de aplicar
 
-**Actualización del 23/09/2026 (grupos): la 135.** `grupos_crear_editar_y_mover` (M82, decisión 74,
-RN-EST-20) **está en el repositorio y NO en el proyecto real**. Añade a `groups` las columnas
-`description` e `idempotency_key` (con su índice único parcial) y cinco funciones: `create_group()`,
-`update_group()`, `establishment_move_targets()`, `move_establishment_to_group()` y la interna
-`is_establishment_owner_user()` (cerrada a `anon` y `authenticated`). No toca ninguna función que ya
-exista. En local, las 135 migraciones aplican desde cero y pasan las 75 suites en el orden de CI; la
-suite 75 caza tres mutaciones a propósito (no llevarse los archivos, dejar al propietario meterlo en un
-grupo ajeno, dejarle la facturación a quien pasa a Editor). **Hasta aplicarla no se rompe nada, pero
-tampoco aparece lo nuevo**: la lista de Grupos vuelve a pedirse sin `description` y no pinta "Crear
-grupo", "Editar grupo" ni "Asignar establecimiento" (`grupos/groups-load.ts`), y "Cambiar de grupo" del
-panel no sale porque `establishment_move_targets()` no contesta.
+**Actualización del 23/09/2026 (grupos): ninguna.** La **135** (`grupos_crear_editar_y_mover`, M82,
+decisión 74, RN-EST-20) se aplicó por el MCP en una llamada, con Bosco de acuerdo, **después** de
+publicar la web: la lista de Grupos aguanta sin la columna nueva (`grupos/groups-load.ts`), así que
+el orden no rompía nada. Antes se comprobó en vivo que la última aplicada era la 134, que `groups`
+tenía sus cuatro columnas de siempre y que no existía ninguna de las cinco funciones. Después: `groups`
+tiene `description` e `idempotency_key` con el índice `groups_idempotency_key`; `create_group()`,
+`update_group()`, `establishment_move_targets()` y `move_establishment_to_group()` son SECURITY
+DEFINER, sin EXECUTE para `anon` y con él para `authenticated`; `is_establishment_owner_user()` no la
+ejecuta ni `anon` ni `authenticated`. Los cuatro grupos que había siguen igual (sin descripción ni
+clave). Se pidió a PostgREST que recargara el esquema. El revisor de seguridad de Supabase no saca
+ninguna de las nuevas en el aviso de `anon`; sí en el genérico de funciones SECURITY DEFINER
+ejecutables con sesión, como el resto de las que comprueban permisos por dentro. En local, las 135
+aplican desde cero y pasan las 75 suites en el orden de CI.
 
 **Actualización del 23/09/2026 (cierre): ninguna.** La **134** (`restavor_nace_con_premium_plus_entero`)
 se aplicó por el MCP en una llamada, tras comprobar que `create_restavor_space()` en vivo coincidía con
