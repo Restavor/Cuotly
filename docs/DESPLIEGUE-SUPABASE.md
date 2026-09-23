@@ -10,6 +10,16 @@ Actualizado el 19/09/2026.
 
 ## Pendiente de aplicar
 
+**Actualización del 23/09/2026: ninguna.** La **128** (`la_actividad_del_restaurante`, R41 del
+panel del restaurante) se aplicó por el MCP. Solo añade `client_activity(uuid, timestamptz,
+timestamptz)`: la actividad de un restaurante en un periodo, una fila por hecho leída de la fecha de
+cada tabla, sin ninguna identidad (P7) y con la visibilidad de cada tabla (menús, informes,
+presupuestos, cobros y archivos con la misma función que su política), detrás de
+`can_read_establishment()`. En vivo se aplicó el cuerpo sin los comentarios largos del archivo; la
+lógica es la misma. Comprobado en vivo: `security definer`, EXECUTE para `authenticated` y no para
+`anon`; 220 migraciones registradas. En local, las 128 migraciones aplican desde cero y pasan las
+69 suites en el orden de CI (la nueva es `la_actividad_del_restaurante.sql`).
+
 **Actualización del 22/09/2026 (noche): ninguna.** La **127** (`el_seguimiento_de_la_solicitud`,
 R08 y R11 del panel del restaurante) se aplicó por el MCP después de la 126. Solo añade
 `client_request_milestones(uuid)`: las fechas de envío, comienzo, publicación, cierre y cancelación de

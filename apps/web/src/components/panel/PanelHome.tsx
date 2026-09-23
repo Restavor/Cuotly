@@ -46,6 +46,8 @@ export type PanelHomeData = {
     readonly messages: string;
     readonly requests: string;
     readonly data: string;
+    /** R41 · la actividad e historial del restaurante. */
+    readonly activity: string;
   };
   readonly attention: readonly PanelAttention[];
   readonly plan: {
@@ -295,7 +297,7 @@ function RowIcon({ icon }: { icon: IconName }) {
 
 function ActivityCard({ data }: { data: PanelHomeData }) {
   return (
-    <Panel title={t.activityTitle} link={{ href: data.links.requests, label: t.activityLink }}>
+    <Panel title={t.activityTitle} link={{ href: data.links.activity, label: t.activityLink }}>
       {data.activity.length === 0 ? (
         <Empty icon="clock" title={t.activityEmpty} body={t.activityEmptyReason} />
       ) : (

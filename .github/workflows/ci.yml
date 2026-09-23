@@ -526,6 +526,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_seguimiento_de_la_solicitud.sql
 
+      - name: "Panel del restaurante — Verificar la actividad: fechas de verdad, un borrador no cuenta, el periodo recorta, sin Ver facturación no hay cobros, ninguna identidad, otro restaurante no pregunta y anon no la ejecuta (R41, P7, RN-FIN-07)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/la_actividad_del_restaurante.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -27,7 +27,9 @@ export default function ClientNotInAppScreen() {
                   ? web.nav.panelUsers
                   : last === "ajustes"
                     ? web.nav.settingsAndHelp
-                    : last;
+                    : last === "actividad"
+                      ? web.panelActivity.breadcrumb
+                      : last;
   return (
     <Screen title={label}>
       <NotInApp what={label} />

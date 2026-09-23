@@ -8408,6 +8408,21 @@ export type Database = {
           state: string;
         }[];
       };
+      client_activity: {
+        Args: {
+          p_establishment_id: string;
+          p_from: string;
+          p_to: string;
+        };
+        Returns: {
+          at: string;
+          detail: string | null;
+          entity_id: string;
+          entity_type: string;
+          kind: string;
+          subject: string | null;
+        }[];
+      };
       client_request_milestones: {
         Args: { p_request_id: string };
         Returns: {

@@ -19,6 +19,7 @@ function datos(cambios: Partial<PanelHomeData> = {}): PanelHomeData {
       messages: "/r#mensajes",
       requests: "/r/solicitudes",
       data: "/r/datos",
+      activity: "/r/actividad",
     },
     attention: [],
     plan: { names: ["Premium+"], quotas: [{ label: "Cambios pequeños", used: 8, included: 25 }], renewsLabel: "1 oct 2026" },

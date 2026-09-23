@@ -2288,7 +2288,7 @@ export const es = {
     messageFromYou: "Tú",
     // Actividad reciente.
     activityTitle: "Actividad reciente",
-    activityLink: "Ver todas",
+    activityLink: "Ver actividad e historial",
     activityRequestSent: "Solicitud enviada",
     activityFileShared: "Archivo compartido",
     activityEmpty: "Sin actividad aún",
@@ -2545,6 +2545,84 @@ export const es = {
   },
 
   // R21 y R22 · el calendario del restaurante.
+  /**
+   * R41 · la actividad e historial del restaurante. Una frase por clase de
+   * hecho de `client_activity()` (migración 128). Ninguna dice quién: el
+   * servidor no lo devuelve (P7).
+   */
+  panelActivity: {
+    title: "Inicio",
+    subtitle: "Actividad e historial de tu restaurante. Consulta el estado de tus solicitudes, archivos, menús y más.",
+    breadcrumb: "Actividad e historial",
+    filterMonth: "Fecha",
+    filterType: "Tipo de actividad",
+    filterTypeAll: "Todos",
+    previousMonth: "Mes anterior",
+    nextMonth: "Mes siguiente",
+    apply: "Filtrar",
+    groups: {
+      solicitudes: "Solicitudes",
+      menus: "Menú Diario",
+      informes: "Informes",
+      pagos: "Pagos y facturas",
+      archivos: "Archivos",
+    },
+    count: (n: number) => (n === 1 ? "1 evento encontrado" : `${n} eventos encontrados`),
+    emptyTitle: "No hay actividad en este mes",
+    emptyReason: "Cuando envíes una solicitud, se publique un menú o llegue un cobro, aparecerá aquí con su fecha.",
+    emptyFiltered: "Este mes no hay actividad de este tipo. Prueba con «Todos».",
+    failedTitle: "No hemos podido leer la actividad",
+    failedReason: "Vuelve a cargar en un momento; no se ha perdido nada.",
+    detailTitle: "Detalle del evento",
+    pickTitle: "Elige un evento",
+    pickReason: "Pulsa cualquier evento de la línea de tiempo para ver su detalle aquí.",
+    /** El título de cada clase. */
+    kinds: {
+      request_sent: "Solicitud enviada",
+      request_accepted: "Propuesta aceptada",
+      request_rejected: "Solicitud rechazada",
+      work_started: "Trabajo empezado",
+      work_published: "Cambio publicado",
+      request_cancelled: "Solicitud cancelada",
+      correction_requested: "Corrección pedida",
+      menu_published: "Menú publicado",
+      report_sent: "Informe disponible",
+      quote_sent: "Presupuesto recibido",
+      quote_accepted: "Presupuesto aceptado",
+      charge_issued: "Cobro emitido",
+      receipt_uploaded: "Justificante enviado",
+      payment_recorded: "Pago registrado",
+      file_shared: "Archivo compartido",
+    },
+    /** La frase de debajo, con el código o el nombre de la cosa. */
+    sentences: {
+      request_sent: (x: string) => `Se envió la solicitud ${x} al equipo de mantenimiento.`,
+      request_accepted: (x: string) => `Se aceptó la propuesta del equipo para ${x}.`,
+      request_rejected: (x: string) => `La solicitud ${x} no se ha podido hacer.`,
+      work_started: (x: string) => `El equipo de mantenimiento empezó ${x}.`,
+      work_published: (x: string) => `El equipo de mantenimiento publicó ${x}.`,
+      request_cancelled: (x: string) => `Se canceló la solicitud ${x}.`,
+      correction_requested: (x: string) => `Se pidió una corrección de ${x}.`,
+      menu_published: (x: string) => `Se publicó el menú «${x}».`,
+      report_sent: (x: string) => `Ya puedes consultar el informe «${x}».`,
+      quote_sent: (x: string) => `Te llegó el presupuesto ${x}.`,
+      quote_accepted: (x: string) => `Se aceptó el presupuesto ${x}.`,
+      charge_issued: (x: string) => `Se emitió el cobro «${x}».`,
+      receipt_uploaded: (x: string) => `Se envió un justificante del cobro «${x}».`,
+      payment_recorded: (x: string) => `El equipo registró un pago del cobro «${x}».`,
+      file_shared: (x: string) => `Se compartió el archivo «${x}».`,
+    },
+    /** El botón del detalle, a donde vive la cosa. */
+    open: {
+      request: "Ver solicitud",
+      menu: "Ver menú",
+      report: "Ver informe",
+      quote: "Ver presupuesto",
+      charge: "Ver cobro",
+      file: "Ver archivos",
+    },
+  },
+
   panelCalendar: {
     title: "Calendario",
     subtitle: "Consulta tus eventos importantes: menús, solicitudes, renovaciones e informes.",

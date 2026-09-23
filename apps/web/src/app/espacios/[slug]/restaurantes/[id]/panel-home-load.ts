@@ -143,6 +143,7 @@ export async function loadPanelHome(
       messages: `${base}${PANEL_ROUTES.messages}`,
       requests: `${base}${PANEL_ROUTES.requests}`,
       data: `${base}/datos`,
+      activity: `${base}/actividad`,
     },
     attention,
     plan: {
