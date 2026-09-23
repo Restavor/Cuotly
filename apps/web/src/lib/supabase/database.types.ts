@@ -1865,6 +1865,48 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      revision_acceptances: {
+        Row: {
+          accepted_at: string;
+          accepted_by: string | null;
+          channel: string;
+          created_at: string;
+          establishment_id: string;
+          evidence_file_id: string | null;
+          id: string;
+          plan_id: string | null;
+          service_id: string | null;
+          space_id: string;
+          subscription_id: string;
+        };
+        Insert: {
+          accepted_at: string;
+          accepted_by?: string | null;
+          channel: string;
+          created_at?: string;
+          establishment_id: string;
+          evidence_file_id?: string | null;
+          id?: string;
+          plan_id?: string | null;
+          service_id?: string | null;
+          space_id: string;
+          subscription_id: string;
+        };
+        Update: {
+          accepted_at?: string;
+          accepted_by?: string | null;
+          channel?: string;
+          created_at?: string;
+          establishment_id?: string;
+          evidence_file_id?: string | null;
+          id?: string;
+          plan_id?: string | null;
+          service_id?: string | null;
+          space_id?: string;
+          subscription_id?: string;
+        };
+        Relationships: [];
+      };
       reviews: {
         Row: {
           author_name: string | null;
@@ -5044,6 +5086,14 @@ export type Database = {
           space_id: string;
           start_sla_hours: number;
           watches_reviews: boolean;
+          lineage_id: string;
+          revision: number;
+          supersedes_id: string | null;
+          published_at: string;
+          published_by: string | null;
+          superseded_at: string | null;
+          archived_at: string | null;
+          publish_key: string | null;
         };
         Insert: {
           can_order_requests?: boolean;
@@ -5060,6 +5110,14 @@ export type Database = {
           report_level?: string;
           space_id: string;
           start_sla_hours: number;
+          lineage_id?: string;
+          revision?: number;
+          supersedes_id?: string | null;
+          published_at?: string;
+          published_by?: string | null;
+          superseded_at?: string | null;
+          archived_at?: string | null;
+          publish_key?: string | null;
         };
         Update: {
           can_order_requests?: boolean;
@@ -5076,6 +5134,14 @@ export type Database = {
           report_level?: string;
           space_id?: string;
           start_sla_hours?: number;
+          lineage_id?: string;
+          revision?: number;
+          supersedes_id?: string | null;
+          published_at?: string;
+          published_by?: string | null;
+          superseded_at?: string | null;
+          archived_at?: string | null;
+          publish_key?: string | null;
         };
         Relationships: [
           {
@@ -6382,6 +6448,14 @@ export type Database = {
           price_cents: number;
           price_premium_cents: number | null;
           space_id: string;
+          lineage_id: string;
+          revision: number;
+          supersedes_id: string | null;
+          published_at: string;
+          published_by: string | null;
+          superseded_at: string | null;
+          archived_at: string | null;
+          publish_key: string | null;
         };
         Insert: {
           created_at?: string;
@@ -6392,6 +6466,14 @@ export type Database = {
           price_cents: number;
           price_premium_cents?: number | null;
           space_id: string;
+          lineage_id?: string;
+          revision?: number;
+          supersedes_id?: string | null;
+          published_at?: string;
+          published_by?: string | null;
+          superseded_at?: string | null;
+          archived_at?: string | null;
+          publish_key?: string | null;
         };
         Update: {
           created_at?: string;
@@ -6402,6 +6484,14 @@ export type Database = {
           price_cents?: number;
           price_premium_cents?: number | null;
           space_id?: string;
+          lineage_id?: string;
+          revision?: number;
+          supersedes_id?: string | null;
+          published_at?: string;
+          published_by?: string | null;
+          superseded_at?: string | null;
+          archived_at?: string | null;
+          publish_key?: string | null;
         };
         Relationships: [
           {
@@ -7949,6 +8039,119 @@ export type Database = {
       };
     };
     Functions: {
+      accept_revision: { Args: { p_subscription_id: string }; Returns: string };
+      archive_plan: { Args: { p_plan_id: string }; Returns: undefined };
+      archive_service: { Args: { p_service_id: string }; Returns: undefined };
+      create_plan: {
+        Args: {
+          p_can_order_requests: boolean;
+          p_execution_sla_large: number;
+          p_execution_sla_medium: number;
+          p_execution_sla_photo: number;
+          p_execution_sla_small: number;
+          p_grants_priority: boolean;
+          p_idempotency_key: string;
+          p_included_large: number;
+          p_included_medium: number;
+          p_included_photo: number;
+          p_included_small: number;
+          p_name: string;
+          p_price_cents: number;
+          p_queue_rank: number;
+          p_report_level: string;
+          p_space_id: string;
+          p_start_sla_hours: number;
+          p_watches_reviews: boolean;
+        };
+        Returns: string;
+      };
+      create_service: {
+        Args: {
+          p_idempotency_key: string;
+          p_included_updates: number;
+          p_kind: string;
+          p_name: string;
+          p_price_cents: number;
+          p_price_premium_cents: number | null;
+          p_space_id: string;
+        };
+        Returns: string;
+      };
+      record_external_revision_acceptance: {
+        Args: { p_accepted_on: string; p_file_id: string; p_subscription_id: string };
+        Returns: string;
+      };
+      rename_plan: { Args: { p_name: string; p_plan_id: string }; Returns: undefined };
+      rename_service: { Args: { p_name: string; p_service_id: string }; Returns: undefined };
+      revise_plan: {
+        Args: {
+          p_can_order_requests: boolean;
+          p_execution_sla_large: number;
+          p_execution_sla_medium: number;
+          p_execution_sla_photo: number;
+          p_execution_sla_small: number;
+          p_grants_priority: boolean;
+          p_idempotency_key: string;
+          p_included_large: number;
+          p_included_medium: number;
+          p_included_photo: number;
+          p_included_small: number;
+          p_plan_id: string;
+          p_price_cents: number;
+          p_queue_rank: number;
+          p_report_level: string;
+          p_start_sla_hours: number;
+          p_watches_reviews: boolean;
+        };
+        Returns: string;
+      };
+      revise_service: {
+        Args: {
+          p_idempotency_key: string;
+          p_included_updates: number;
+          p_price_cents: number;
+          p_price_premium_cents: number | null;
+          p_service_id: string;
+        };
+        Returns: string;
+      };
+      revision_diff: {
+        Args: { p_from: string; p_kind: string; p_to: string };
+        Returns: { better: boolean; field: string; new_value: string; old_value: string }[];
+      };
+      space_revision_status: {
+        Args: { p_space_id: string };
+        Returns: {
+          accepted: boolean;
+          current_id: string;
+          current_revision: number;
+          establishment_id: string;
+          harms: boolean;
+          head_id: string;
+          head_published_at: string;
+          head_revision: number;
+          kind: string;
+          moves_at: string;
+          state: string;
+          subscription_id: string;
+        }[];
+      };
+      subscription_revision: { Args: { p_subscription_id: string }; Returns: {
+          accepted: boolean;
+          current_id: string;
+          current_revision: number;
+          harms: boolean;
+          head_id: string;
+          head_published_at: string;
+          head_revision: number;
+          kind: string;
+          moves_at: string;
+          state: string;
+        }[] };
+      subscription_revision_terms: {
+        Args: { p_subscription_id: string };
+        Returns: { name: string; revision: number; terms: Json; which: string }[];
+      };
       accept_establishment_transfer: {
         Args: { p_transfer_id: string };
         Returns: undefined;

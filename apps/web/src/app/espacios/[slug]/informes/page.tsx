@@ -106,7 +106,13 @@ export default async function ReportsPage({
   const [{ data: establishments }, { data: groups }, { data: plans }, reports] = await Promise.all([
     supabase.from("establishments").select("id, name").eq("space_id", viewer.spaceId).order("name"),
     supabase.from("groups").select("id, name").eq("space_id", viewer.spaceId).order("name"),
-    supabase.from("plans").select("id, name").eq("space_id", viewer.spaceId).order("name"),
+    // Un plan por linaje (decisión 72): la versión vigente, con su linaje como valor.
+    supabase
+      .from("plans")
+      .select("id:lineage_id, name")
+      .eq("space_id", viewer.spaceId)
+      .is("superseded_at", null)
+      .order("name"),
     loadReports(supabase, viewer.spaceId, {
       establishmentId: restaurante,
       groupId: grupo,

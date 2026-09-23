@@ -23,6 +23,9 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import { loadEstablishmentTimezone } from "../timezone-load";
+import { RevisionChanges } from "@/app/espacios/[slug]/planes/RevisionBlock";
+
+import { AcceptRevisionButton } from "../AcceptRevisionButton";
 import { loadClientPlan } from "./plan-load";
 
 /**
@@ -226,6 +229,45 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
       </section>
 
       <section id="condiciones" className="scroll-mt-20">
+        {datos.revisions.length > 0 ? (
+          <Card title={t.revision.title}>
+            <ul className="divide-y divide-border" data-testid="version-nueva">
+              {datos.revisions.map(({ subscriptionId, name, revision }) => {
+                const falta = revision.harms && !revision.accepted;
+                return (
+                  <li key={subscriptionId} className="space-y-3 py-3">
+                    <p className="font-semibold text-primary-dark">
+                      {t.revision.intro(name ?? t.noName, revision.headRevision)}
+                    </p>
+                    <p className="text-sm text-text">
+                      {revision.state === "held_back"
+                        ? t.revision.heldBack
+                        : !revision.harms
+                          ? t.revision.favours
+                          : revision.accepted
+                            ? t.revision.accepted
+                            : t.revision.needsAcceptance}
+                    </p>
+                    {revision.state !== "held_back" && revision.movesAt && !falta ? (
+                      <p className="text-sm text-text-secondary">{t.revision.moves(fecha(revision.movesAt))}</p>
+                    ) : null}
+                    <div>
+                      <p className="mb-1 text-sm font-semibold text-text">{t.revision.changesTitle}</p>
+                      <RevisionChanges changes={revision.changes} />
+                    </div>
+                    {falta ? (
+                      canAccept === true ? (
+                        <AcceptRevisionButton subscriptionId={subscriptionId} revision={revision.headRevision} />
+                      ) : (
+                        <p className="text-xs text-text-secondary">{t.revision.onlyOwner}</p>
+                      )
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        ) : null}
         <TermsCard conditions={datos.conditions} canAccept={canAccept === true} timeZone={zona} />
       </section>
     </div>

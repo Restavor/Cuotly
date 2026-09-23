@@ -166,11 +166,12 @@ async function establishmentsMatching(
   if (filters.planId) {
     const { data: subs, error: subsError } = await supabase
       .from("subscriptions")
-      .select("establishment_id")
+      // Decisión 72 · el filtro es el plan en cualquiera de sus versiones.
+      .select("establishment_id, plans!inner (lineage_id)")
       .eq("space_id", spaceId)
       .eq("kind", "plan")
       .eq("status", "active")
-      .eq("plan_id", filters.planId);
+      .eq("plans.lineage_id", filters.planId);
     if (subsError) throw new Error(`subscriptions: ${subsError.message}`);
     const conPlan = new Set((subs ?? []).map((row) => String(row.establishment_id)));
     ids = ids.filter((id) => conPlan.has(id));

@@ -10,6 +10,9 @@ import { loadPlanCatalogue, loadSubscribersTerms } from "./catalogue-load";
 import {
   PlanCatalogueTab,
   PlansTabs,
+  pickRevision,
+  revisionsOf,
+  type RevisionDiffRow,
   RestaurantsTab,
   ServicesTab,
   VersionsTab,
@@ -22,11 +25,11 @@ import {
  * lista de restaurantes con su plan; la ficha de cada uno es
  * `/planes/<restaurante>`, donde viven las acciones de §6.4 (HU-07).
  *
- * **Lo que no está, a propósito:** crear, editar y archivar planes y
- * servicios. Cómo se versionan el precio y las cuotas de un plan
- * contratado (§104 de la maestra) no tiene reglas en el PRD, y Bosco lo
- * decidió el 23/09/2026: primero las pantallas, la edición cuando se fijen
- * las reglas. Las condiciones sí se versionan (RN-DAT-07, migración 75).
+ * Crear, editar, renombrar y archivar planes y servicios (decisión 72,
+ * RN-COM-19 a 30) se abre con `?accion=` y solo lo ve el propietario;
+ * quien lo impide de verdad son `create_plan()`, `revise_plan()` y
+ * compañía, que exigen `manage_space`. Si editar crea versión o edita en
+ * el sitio lo decide el servidor (migración 131).
  *
  * Qué filas se ven lo decide RLS, no esta página: planes, servicios,
  * versiones y suscripciones son del equipo del espacio. Un restaurante no
@@ -73,18 +76,50 @@ export default async function PlansPage({
   let contenido: React.ReactNode;
   if (vista.tab === "servicios") {
     contenido = (
-      <ServicesTab slug={slug} catalogue={catalogue} selectedId={vista.service} timeZone={space.timezone} />
+      <ServicesTab
+        slug={slug}
+        spaceId={space.id}
+        catalogue={catalogue}
+        selectedId={vista.service}
+        action={vista.action}
+        timeZone={space.timezone}
+      />
     );
   } else if (vista.tab === "versiones") {
     const subject =
       vista.subject ?? (catalogue.plans[0] ? { type: "plan" as const, id: catalogue.plans[0].id } : null);
-    const subscribers = subject ? await loadSubscribersTerms(supabase, catalogue, subject) : [];
+    const head = subject
+      ? (subject.type === "plan" ? catalogue.plans : catalogue.services).find((x) => x.id === subject.id)
+      : undefined;
+    const subscribers = head && subject ? await loadSubscribersTerms(supabase, catalogue, { type: subject.type, lineageId: head.lineageId }) : [];
+
+    // RN-COM-30 · la comparativa de la versión elegida con la anterior.
+    // La hace `revision_diff()`: la misma regla de "mejora o empeora" que
+    // decide si se pide aceptación, sin copiarla aquí.
+    let revisionDiff: RevisionDiffRow[] | null = [];
+    if (head && subject) {
+      const revisions = revisionsOf(catalogue, subject.type, head.lineageId);
+      const elegida = pickRevision(revisions, vista.revision);
+      const anterior = elegida ? revisions.find((r) => r.revision === elegida.revision - 1) : undefined;
+      if (elegida && anterior) {
+        const { data, error } = await supabase.rpc("revision_diff", {
+          p_kind: subject.type,
+          p_from: anterior.id,
+          p_to: elegida.id,
+        });
+        revisionDiff = error
+          ? null
+          : (data ?? []).map((d) => ({ field: d.field, oldValue: d.old_value, newValue: d.new_value, better: d.better }));
+      }
+    }
     contenido = (
       <VersionsTab
         slug={slug}
         catalogue={catalogue}
         subject={subject}
         requestedVersion={vista.version}
+        requestedRevision={vista.revision}
+        revisionDiff={revisionDiff}
         subscribers={subscribers}
         timeZone={space.timezone}
       />
@@ -95,14 +130,22 @@ export default async function PlansPage({
       <RestaurantsTab
         slug={slug}
         rows={rows}
-        plans={catalogue.plans.map((p) => ({ id: p.id, name: p.name }))}
+        plans={catalogue.plans.map((p) => ({ id: p.lineageId, name: p.name }))}
         planFilter={vista.plan}
+        revisionStatus={catalogue.revisionStatus}
         timeZone={space.timezone}
       />
     );
   } else {
     contenido = (
-      <PlanCatalogueTab slug={slug} catalogue={catalogue} selectedId={vista.plan} timeZone={space.timezone} />
+      <PlanCatalogueTab
+        slug={slug}
+        spaceId={space.id}
+        catalogue={catalogue}
+        selectedId={vista.plan}
+        action={vista.action}
+        timeZone={space.timezone}
+      />
     );
   }
 
@@ -128,7 +171,7 @@ async function loadRestaurantRows(
       supabase.from("establishments").select("id, name, code").eq("space_id", spaceId).order("name"),
       supabase
         .from("subscriptions")
-        .select("id, establishment_id, kind, plan_id, plans (name, price_cents), services (name)")
+        .select("id, establishment_id, kind, plan_id, plans (name, price_cents, lineage_id), services (name)")
         .eq("space_id", spaceId)
         .eq("status", "active"),
       supabase
@@ -160,6 +203,7 @@ async function loadRestaurantRows(
       name: e.name,
       code: e.code,
       planId: plan?.plan_id ?? null,
+      planLineageId: plan?.plans?.lineage_id ?? null,
       planName: plan?.plans?.name ?? null,
       planPriceCents: plan?.plans?.price_cents ?? null,
       services: suyas

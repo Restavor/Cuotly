@@ -15,6 +15,15 @@ vi.mock("./actions", () => ({
   recordExternalAcceptance: vi.fn(),
   schedulePlanChange: vi.fn(),
   upgradePlanNow: vi.fn(),
+  createPlan: vi.fn(),
+  revisePlan: vi.fn(),
+  renamePlan: vi.fn(),
+  archivePlan: vi.fn(),
+  createService: vi.fn(),
+  reviseService: vi.fn(),
+  renameService: vi.fn(),
+  archiveService: vi.fn(),
+  recordRevisionAcceptance: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
@@ -27,6 +36,11 @@ const MENU = "5a000000-0000-4000-8000-000000000003";
 
 function plan(over: Partial<CataloguePlan> & Pick<CataloguePlan, "id" | "name" | "priceCents">): CataloguePlan {
   return {
+    lineageId: over.id,
+    revision: 1,
+    publishedAt: "2026-06-01T10:00:00Z",
+    supersededAt: null,
+    archived: false,
     includedSmall: 0,
     includedPhoto: 0,
     includedMedium: 0,
@@ -43,9 +57,7 @@ function plan(over: Partial<CataloguePlan> & Pick<CataloguePlan, "id" | "name" |
   };
 }
 
-function catalogue(over: Partial<PlanCatalogue> = {}): PlanCatalogue {
-  return {
-    plans: [
+const PLANES = [
       plan({ id: BASICO, name: "Básico", priceCents: 9900 }),
       plan({
         id: PREMIUM_PLUS,
@@ -61,19 +73,37 @@ function catalogue(over: Partial<PlanCatalogue> = {}): PlanCatalogue {
         reportLevel: "complete",
         reportLevelRank: 4,
       }),
-    ],
-    services: [
-      { id: MENU, name: "Menú Diario", kind: "daily_menu", priceCents: 22900, pricePremiumCents: 19900, includedUpdates: 30 },
-    ],
+];
+const MENU_DIARIO = {
+  id: MENU,
+  lineageId: MENU,
+  revision: 1,
+  publishedAt: "2026-06-01T10:00:00Z",
+  supersededAt: null,
+  archived: false,
+  name: "Menú Diario",
+  kind: "daily_menu" as const,
+  priceCents: 22900,
+  pricePremiumCents: 19900,
+  includedUpdates: 30,
+};
+
+function catalogue(over: Partial<PlanCatalogue> = {}): PlanCatalogue {
+  return {
+    plans: PLANES,
+    planRevisions: PLANES,
+    services: [MENU_DIARIO],
+    serviceRevisions: [MENU_DIARIO],
+    revisionStatus: [],
     planVersions: [
       { id: "v1", subjectId: PREMIUM_PLUS, version: 1, conditions: "Permanencia de 3 meses.\nSoporte.", publishedAt: "2026-06-15T10:00:00Z" },
       { id: "v2", subjectId: PREMIUM_PLUS, version: 2, conditions: "Permanencia de 3 meses.\nSoporte prioritario.", publishedAt: "2026-08-10T10:00:00Z" },
     ],
     serviceVersions: [],
     subscriptions: [
-      { id: "s1", establishmentId: "e1", planId: PREMIUM_PLUS, serviceId: null },
-      { id: "s2", establishmentId: "e2", planId: PREMIUM_PLUS, serviceId: null },
-      { id: "s3", establishmentId: "e1", planId: null, serviceId: MENU },
+      { id: "s1", establishmentId: "e1", planId: PREMIUM_PLUS, serviceId: null, lineageId: PREMIUM_PLUS },
+      { id: "s2", establishmentId: "e2", planId: PREMIUM_PLUS, serviceId: null, lineageId: PREMIUM_PLUS },
+      { id: "s3", establishmentId: "e1", planId: null, serviceId: MENU, lineageId: MENU },
     ],
     establishments: new Map([
       ["e1", "Magariños"],
@@ -87,7 +117,7 @@ function catalogue(over: Partial<PlanCatalogue> = {}): PlanCatalogue {
 
 describe("M21 · Planes", () => {
   it("lista los planes con su precio y cuántos restaurantes los tienen", () => {
-    render(<PlanCatalogueTab slug="s" catalogue={catalogue()} selectedId={null} timeZone="Europe/Madrid" />);
+    render(<PlanCatalogueTab slug="s" spaceId="sp" action={null} catalogue={catalogue()} selectedId={null} timeZone="Europe/Madrid" />);
     const filas = within(screen.getByTestId("planes-catalogo")).getAllByRole("row");
     const pp = filas.find((f) => f.textContent?.includes("Premium+"));
     expect(pp?.textContent).toContain(t.catalogue.pricePerMonth(euros(59900)));
@@ -95,7 +125,7 @@ describe("M21 · Planes", () => {
   });
 
   it("la ficha del plan elegido enseña sus cuotas y lo que decide", () => {
-    render(<PlanCatalogueTab slug="s" catalogue={catalogue()} selectedId={PREMIUM_PLUS} timeZone="Europe/Madrid" />);
+    render(<PlanCatalogueTab slug="s" spaceId="sp" action={null} catalogue={catalogue()} selectedId={PREMIUM_PLUS} timeZone="Europe/Madrid" />);
     expect(screen.getByText(t.catalogue.quotaSmall(25))).toBeTruthy();
     expect(screen.getByText(t.catalogue.quotaLarge(1))).toBeTruthy();
     expect(screen.getByText(t.catalogue.reportLevels.complete)).toBeTruthy();
@@ -105,19 +135,85 @@ describe("M21 · Planes", () => {
   });
 
   it("RN-COM-01 · Básico no incluye ningún cambio, y se dice", () => {
-    render(<PlanCatalogueTab slug="s" catalogue={catalogue()} selectedId={BASICO} timeZone="Europe/Madrid" />);
+    render(<PlanCatalogueTab slug="s" spaceId="sp" action={null} catalogue={catalogue()} selectedId={BASICO} timeZone="Europe/Madrid" />);
     expect(screen.getByText(t.catalogue.nothingIncluded)).toBeTruthy();
   });
 
-  it("no ofrece crear ni editar planes, y dice por qué", () => {
-    render(<PlanCatalogueTab slug="s" catalogue={catalogue()} selectedId={null} timeZone="Europe/Madrid" />);
-    expect(screen.queryByRole("button", { name: /crear plan|editar/i })).toBeNull();
-    expect(screen.getByText(t.catalogue.editingPending)).toBeTruthy();
+  it("RN-COM-19 · sin manage_space no se ofrece crear ni editar, y se dice por qué", () => {
+    render(
+      <PlanCatalogueTab
+        slug="s"
+        spaceId="sp"
+        action="editar"
+        catalogue={catalogue({ canPublish: false })}
+        selectedId={PREMIUM_PLUS}
+        timeZone="Europe/Madrid"
+      />,
+    );
+    expect(screen.queryByRole("link", { name: t.edit.createPlan })).toBeNull();
+    expect(screen.queryByRole("link", { name: t.edit.editPlan })).toBeNull();
+    expect(screen.queryByRole("form", { name: t.edit.editPlan })).toBeNull();
+    expect(screen.getByText(t.catalogue.editingReadOnly)).toBeTruthy();
+  });
+
+  it("RN-COM-20 · editar un plan con restaurantes avisa de que nace una versión", () => {
+    render(
+      <PlanCatalogueTab
+        slug="s"
+        spaceId="sp"
+        action="editar"
+        catalogue={catalogue()}
+        selectedId={PREMIUM_PLUS}
+        timeZone="Europe/Madrid"
+      />,
+    );
+    const form = screen.getByRole("form", { name: t.edit.editPlan });
+    expect(within(form).getByText(t.edit.createsVersion(2))).toBeTruthy();
+    expect((within(form).getByLabelText(t.edit.priceLabel) as HTMLInputElement).value).toBe("599,00");
+    expect(screen.getByRole("form", { name: t.edit.archiveTitle })).toBeTruthy();
+  });
+
+  it("RN-COM-21 · editar un plan que nadie tiene se hace en el sitio", () => {
+    render(
+      <PlanCatalogueTab
+        slug="s"
+        spaceId="sp"
+        action="editar"
+        catalogue={catalogue()}
+        selectedId={BASICO}
+        timeZone="Europe/Madrid"
+      />,
+    );
+    expect(screen.getByText(t.edit.inPlace)).toBeTruthy();
+  });
+
+  it("RN-COM-27 · un plan archivado lo dice y no se edita", () => {
+    const archivado = plan({ id: BASICO, name: "Básico", priceCents: 9900, archived: true });
+    render(
+      <PlanCatalogueTab
+        slug="s"
+        spaceId="sp"
+        action="editar"
+        catalogue={catalogue({ plans: [archivado], planRevisions: [archivado] })}
+        selectedId={BASICO}
+        timeZone="Europe/Madrid"
+      />,
+    );
+    expect(screen.getAllByText(t.catalogue.archived).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("form", { name: t.edit.editPlan })).toBeNull();
+  });
+
+  it("crear plan abre el formulario vacío", () => {
+    render(
+      <PlanCatalogueTab slug="s" spaceId="sp" action="crear" catalogue={catalogue()} selectedId={null} timeZone="Europe/Madrid" />,
+    );
+    const form = screen.getByRole("form", { name: t.edit.newPlanTitle });
+    expect(within(form).getByLabelText(t.edit.nameLabel)).toBeTruthy();
   });
 
   it("un catálogo que no se pudo leer lo dice", () => {
     render(
-      <PlanCatalogueTab slug="s" catalogue={catalogue({ plans: [], failed: true })} selectedId={null} timeZone="Europe/Madrid" />,
+      <PlanCatalogueTab slug="s" spaceId="sp" action={null} catalogue={catalogue({ plans: [], failed: true })} selectedId={null} timeZone="Europe/Madrid" />,
     );
     expect(screen.getByText(t.catalogue.loadFailed)).toBeTruthy();
   });
@@ -125,7 +221,7 @@ describe("M21 · Planes", () => {
 
 describe("M54 · Servicios", () => {
   it("RN-COM-08 · Menú Diario con sus dos precios, sus 30 actualizaciones y sus 3 plantillas", () => {
-    render(<ServicesTab slug="s" catalogue={catalogue()} selectedId={null} timeZone="Europe/Madrid" />);
+    render(<ServicesTab slug="s" spaceId="sp" action={null} catalogue={catalogue()} selectedId={null} timeZone="Europe/Madrid" />);
     expect(document.body.textContent).toContain(t.catalogue.premiumPrice(euros(19900)));
     expect(screen.getByText(t.catalogue.updatesValue(30))).toBeTruthy();
     expect(screen.getByText(t.catalogue.templatesValue(3))).toBeTruthy();
@@ -141,6 +237,8 @@ describe("M55 · Versiones", () => {
         catalogue={catalogue()}
         subject={{ type: "plan", id: PREMIUM_PLUS }}
         requestedVersion={null}
+        requestedRevision={null}
+        revisionDiff={[]}
         subscribers={[]}
         timeZone="Europe/Madrid"
       />,
@@ -158,6 +256,8 @@ describe("M55 · Versiones", () => {
         catalogue={catalogue()}
         subject={{ type: "plan", id: PREMIUM_PLUS }}
         requestedVersion={1}
+        requestedRevision={null}
+        revisionDiff={[]}
         subscribers={[]}
         timeZone="Europe/Madrid"
       />,
@@ -172,8 +272,11 @@ describe("M55 · Versiones", () => {
         catalogue={catalogue()}
         subject={{ type: "plan", id: PREMIUM_PLUS }}
         requestedVersion={null}
+        requestedRevision={null}
+        revisionDiff={[]}
         subscribers={[
           {
+            subscriptionId: "s1",
             establishmentId: "e1",
             name: "Magariños",
             terms: {
@@ -183,7 +286,7 @@ describe("M55 · Versiones", () => {
               status: "outdated",
             },
           },
-          { establishmentId: "e2", name: "La Encina", terms: null },
+          { subscriptionId: "s2", establishmentId: "e2", name: "La Encina", terms: null },
         ]}
         timeZone="Europe/Madrid"
       />,
@@ -200,12 +303,60 @@ describe("M55 · Versiones", () => {
         catalogue={catalogue({ canPublish: false })}
         subject={null}
         requestedVersion={null}
+        requestedRevision={null}
+        revisionDiff={[]}
         subscribers={[]}
         timeZone="Europe/Madrid"
       />,
     );
     expect(screen.getByText(t.versions.readOnly)).toBeTruthy();
     expect(screen.queryByRole("button", { name: t.terms.publishSubmit })).toBeNull();
+  });
+});
+
+describe("RN-COM-30 · las versiones del precio y las cuotas", () => {
+  const V1 = plan({ id: BASICO, name: "Básico", priceCents: 9900, supersededAt: "2026-09-01T10:00:00Z" });
+  const V2 = plan({ id: MENU + "0", name: "Básico", priceCents: 12900, revision: 2 });
+  const conVersiones = catalogue({
+    plans: [{ ...V2, lineageId: BASICO }],
+    planRevisions: [V1, { ...V2, lineageId: BASICO }],
+    revisionStatus: [
+      {
+        subscriptionId: "s9",
+        establishmentId: "e9",
+        kind: "plan",
+        currentId: BASICO,
+        currentRevision: 1,
+        headId: V2.id,
+        headRevision: 2,
+        movesAt: "2026-10-14T07:00:00Z",
+        harms: true,
+        accepted: false,
+        state: "held_back",
+      },
+    ],
+  });
+
+  it("lista las versiones y dice qué empeora y que pide aceptación", () => {
+    render(
+      <VersionsTab
+        slug="s"
+        catalogue={conVersiones}
+        subject={{ type: "plan", id: V2.id }}
+        requestedVersion={null}
+        requestedRevision={null}
+        revisionDiff={[{ field: "price_cents", oldValue: "9900", newValue: "12900", better: false }]}
+        subscribers={[{ subscriptionId: "s9", establishmentId: "e9", name: "Casa Nueve", terms: null }]}
+        timeZone="Europe/Madrid"
+      />,
+    );
+    expect(within(screen.getByTestId("planes-revisiones")).getAllByRole("link")).toHaveLength(2);
+    const comparativa = screen.getByTestId("planes-comparativa");
+    expect(comparativa.textContent).toContain(t.revisions.fields.price_cents);
+    expect(comparativa.textContent).toContain(t.revisions.worse);
+    expect(screen.getByText(t.revisions.harmsNote)).toBeTruthy();
+    // RN-COM-24 · quien no aceptó sigue en la anterior, y se ve.
+    expect(screen.getByTestId("planes-suscriptores").textContent).toContain(t.revisions.states.held_back);
   });
 });
 
@@ -216,6 +367,7 @@ describe("M56 · Asignación y cambio (lista)", () => {
       name: "Magariños",
       code: "EST-0001",
       planId: PREMIUM_PLUS,
+      planLineageId: PREMIUM_PLUS,
       planName: "Premium+",
       planPriceCents: 59900,
       services: ["Menú Diario"],
@@ -228,6 +380,7 @@ describe("M56 · Asignación y cambio (lista)", () => {
       name: "Mesa Norte",
       code: "EST-0003",
       planId: null,
+      planLineageId: null,
       planName: null,
       planPriceCents: null,
       services: [],
@@ -244,6 +397,7 @@ describe("M56 · Asignación y cambio (lista)", () => {
         rows={rows}
         plans={[{ id: PREMIUM_PLUS, name: "Premium+" }]}
         planFilter={PREMIUM_PLUS}
+        revisionStatus={[]}
         timeZone="Europe/Madrid"
       />,
     );
@@ -254,7 +408,7 @@ describe("M56 · Asignación y cambio (lista)", () => {
   });
 
   it("no tener plan es un dato, no un hueco", () => {
-    render(<RestaurantsTab slug="s" rows={rows} plans={[]} planFilter={null} timeZone="Europe/Madrid" />);
+    render(<RestaurantsTab slug="s" rows={rows} plans={[]} planFilter={null} revisionStatus={[]} timeZone="Europe/Madrid" />);
     expect(screen.getByTestId("planes-restaurantes").textContent).toContain(t.noPlan);
   });
 });

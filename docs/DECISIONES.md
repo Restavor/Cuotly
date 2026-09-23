@@ -2111,3 +2111,10 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     - Archivar solo quita de las altas; nada se borra; los trabajos aceptados no se reescriben.
     - Si Bosco cambia desde la aplicación un precio que fija CLAUDE.md (decisión 39, Menú Diario),
       esas líneas se actualizan el mismo día.
+    - **Cómo se programó (migración 131).** Cada versión es una fila nueva de `plans`/`services` con
+      el mismo `lineage_id`; la suscripción apunta a la versión que tiene. Así todo lo que ya leía
+      el contrato por `subscriptions.plan_id` (mensualidad, bolsa, plazos, prioridad, informe)
+      sigue diciendo la verdad sin tocarlo. Las condiciones pasan a colgar del linaje.
+    - **Una lectura que había que hacer:** el turno en la cola (`queue_rank`) crea versión, pero
+      **no cuenta** para decidir si perjudica ni se le enseña al restaurante: RN-COM-03 dice que el
+      cliente no lo ve, y no se le puede pedir que acepte lo que no se le enseña.

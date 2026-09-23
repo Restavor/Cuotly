@@ -6,7 +6,15 @@ const ID = "5a000000-0000-4000-8000-000000000001";
 
 describe("readPlansParams", () => {
   it("sin nada, la pestaña de planes", () => {
-    expect(readPlansParams({})).toEqual({ tab: "planes", plan: null, service: null, subject: null, version: null });
+    expect(readPlansParams({})).toEqual({
+      tab: "planes",
+      plan: null,
+      service: null,
+      subject: null,
+      version: null,
+      action: null,
+      revision: null,
+    });
   });
 
   it("lee el tema de Versiones y el número de versión", () => {
@@ -18,12 +26,22 @@ describe("readPlansParams", () => {
   });
 
   it("descarta lo que no entiende", () => {
-    expect(readPlansParams({ tab: "otra", plan: "x", tema: "grupo:1", version: "0" })).toEqual({
+    expect(readPlansParams({ tab: "otra", plan: "x", tema: "grupo:1", version: "0", accion: "borrar", rev: "x" })).toEqual({
       tab: "planes",
       plan: null,
       service: null,
       subject: null,
       version: null,
+      action: null,
+      revision: null,
+    });
+  });
+
+  it("decisión 72 · lee la acción del propietario y la versión del precio", () => {
+    expect(readPlansParams({ plan: ID, accion: "editar", rev: "3" })).toMatchObject({
+      plan: ID,
+      action: "editar",
+      revision: 3,
     });
   });
 });

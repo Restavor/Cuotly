@@ -357,6 +357,12 @@ export const AUDIT_ACTIONS = [
   "platform_status.declared",
   "platform_status.resolved",
   "plan.conditions_published",
+  // Decisión 72 (migración 131) · crear, editar, versionar y archivar.
+  "plan.archived",
+  "plan.created",
+  "plan.edited",
+  "plan.renamed",
+  "plan.revised",
   // Fase 2, Hito 12 · presupuestos adicionales (§84, migración 80).
   "quote.accepted",
   "quote.created",
@@ -395,6 +401,11 @@ export const AUDIT_ACTIONS = [
   "request.rejected",
   "request.submitted",
   "service.conditions_published",
+  "service.archived",
+  "service.created",
+  "service.edited",
+  "service.renamed",
+  "service.revised",
   "session.revoked",
   // Hito 22 · el teléfono con push (migración 94, RN-MOV-05).
   "push_device.registered",
@@ -445,6 +456,11 @@ export const AUDIT_ACTIONS = [
   // registrando una aceptación de fuera con su contrato.
   "subscription.terms_accepted",
   "subscription.terms_recorded",
+  // RN-COM-23/24 (migración 131) · aceptar una versión que perjudica y
+  // pasar a ella en la renovación.
+  "subscription.revision_accepted",
+  "subscription.revision_applied",
+  "subscription.revision_recorded",
   // Fase 4, Hito 19 · Modo soporte (migración 91): abrir y cerrar. Las
   // acciones hechas DENTRO no son una familia: son los apuntes de siempre
   // con `support_session_id` estampado.

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { loadSubscriptionRevision } from "@/app/espacios/[slug]/planes/revision-load";
 import { loadSubscriptionTerms } from "@/app/espacios/[slug]/planes/terms-load";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -40,13 +41,22 @@ export async function loadClientPlan(supabase: SupabaseClient<Database>, establi
     ]);
 
   const condiciones = await Promise.all(
-    (subs ?? []).map(async (s) => ({ subscriptionId: s.id, kind: s.kind, terms: await loadSubscriptionTerms(supabase, s.id) })),
+    (subs ?? []).map(async (s) => ({
+      subscriptionId: s.id,
+      kind: s.kind,
+      terms: await loadSubscriptionTerms(supabase, s.id),
+      // RN-COM-22 a 24 · si hay versión nueva de lo que tiene, y qué cambia.
+      revision: await loadSubscriptionRevision(supabase, s.id, s.kind === "service" ? "service" : "plan"),
+    })),
   );
   const plan = condiciones.find((c) => c.kind === "plan") ?? null;
   const compromiso = plan ? ((compromisos ?? []).find((c) => c.subscription_id === plan.subscriptionId) ?? null) : null;
 
   return {
     conditions: condiciones.map(({ subscriptionId, terms }) => ({ subscriptionId, terms })),
+    revisions: condiciones.flatMap(({ subscriptionId, terms, revision }) =>
+      revision === null ? [] : [{ subscriptionId, name: terms?.subjectName ?? null, revision }],
+    ),
     plan,
     allowance: bolsas ?? [],
     menuBalance: menu?.[0] ?? null,

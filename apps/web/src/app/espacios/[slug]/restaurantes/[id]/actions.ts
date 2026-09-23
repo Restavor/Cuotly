@@ -213,6 +213,27 @@ export async function acceptTerms(
 }
 
 /**
+ * RN-COM-23 · el propietario del restaurante acepta la versión nueva de su
+ * plan o servicio cuando le perjudica en algo. Qué versión se acepta (la
+ * vigente), si hace falta y quién puede lo decide `accept_revision()`;
+ * pulsar dos veces devuelve la misma aceptación.
+ */
+export async function acceptRevision(
+  _prev: AcceptTermsState,
+  formData: FormData,
+): Promise<AcceptTermsState> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_revision", {
+    p_subscription_id: String(formData.get("subscriptionId") ?? ""),
+  });
+
+  if (error) return { error: error.message, accepted: false };
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, accepted: true };
+}
+
+/**
  * R24 · RN-EST-09 — el restaurante comunica su propia baja.
  *
  * `request_service_termination()` comprueba que quien llama pueda escribir

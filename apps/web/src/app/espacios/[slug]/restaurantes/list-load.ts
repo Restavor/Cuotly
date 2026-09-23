@@ -29,6 +29,7 @@ export interface EstablishmentListRow {
   readonly status: EstablishmentState;
   readonly groupId: string;
   readonly groupName: string | null;
+  /** El plan en cualquiera de sus versiones (`plans.lineage_id`, decisión 72). */
   readonly planId: string | null;
   readonly planName: string | null;
   /**
@@ -91,12 +92,19 @@ export async function loadEstablishmentList(
         .eq("space_id", spaceId)
         .order("name", { ascending: true }),
       supabase.from("groups").select("id, name").eq("space_id", spaceId).order("name"),
-      supabase.from("plans").select("id, name").eq("space_id", spaceId).order("price_cents"),
+      // Decisión 72 · un plan por linaje para el filtro: quien sigue en una
+      // versión anterior también "tiene Premium".
+      supabase
+        .from("plans")
+        .select("lineage_id, name")
+        .eq("space_id", spaceId)
+        .is("superseded_at", null)
+        .order("price_cents"),
       // `subscriptions` tiene privilegios de columna (migración 27): las
       // columnas se enumeran, `select *` devuelve 403.
       supabase
         .from("subscriptions")
-        .select("establishment_id, plan_id, plans (name)")
+        .select("establishment_id, plan_id, plans (name, lineage_id)")
         .eq("space_id", spaceId)
         .eq("kind", "plan")
         .eq("status", "active"),
@@ -192,7 +200,7 @@ export async function loadEstablishmentList(
       status: establishment.status as EstablishmentState,
       groupId: establishment.group_id,
       groupName: groupName.get(establishment.group_id) ?? null,
-      planId: suscripcion?.plan_id ?? null,
+      planId: suscripcion?.plans?.lineage_id ?? suscripcion?.plan_id ?? null,
       planName: suscripcion?.plans?.name ?? null,
       // Una ciudad en blanco en la base de datos es lo mismo que no
       // tenerla: no se enseña una línea vacía bajo el nombre.
@@ -211,6 +219,6 @@ export async function loadEstablishmentList(
     rows,
     activeCount: rows.filter((row) => row.status === "active").length,
     groups: groups ?? [],
-    plans: plans ?? [],
+    plans: (plans ?? []).map((p) => ({ id: p.lineage_id, name: p.name })),
   };
 }

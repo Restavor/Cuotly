@@ -36,6 +36,8 @@ import {
 } from "../PlanForms";
 import { PlansTabs } from "../PlansView";
 import { loadSubscriptionTerms, type SubscriptionTerms } from "../terms-load";
+import { RevisionBlock } from "../RevisionBlock";
+import { loadSubscriptionRevision } from "../revision-load";
 
 /**
  * M56 · "Asignación y cambio de plan" de un restaurante (HU-07): lo que
@@ -123,7 +125,13 @@ export default async function EstablishmentPlanPage({
       .select("id, kind, plan_id, service_id, status, started_at, plans (name, price_cents), services (name, price_cents)")
       .eq("establishment_id", establishment.id)
       .eq("status", "active"),
-    supabase.from("services").select("id, name, price_cents").eq("space_id", space.id).order("name"),
+    supabase
+      .from("services")
+      .select("id, name, price_cents")
+      .eq("space_id", space.id)
+      .is("superseded_at", null)
+      .is("archived_at", null)
+      .order("name"),
     // Columnas enumeradas: `plan_commitments` tiene privilegio de columna.
     supabase
       .from("plan_commitments")
@@ -153,9 +161,14 @@ export default async function EstablishmentPlanPage({
   const activas = subscriptions ?? [];
   const planSubscription = activas.find((s) => s.kind === "plan") ?? null;
   const serviceSubscriptions = activas.filter((s) => s.kind === "service");
-  const planes = catalogue.plans;
+  // RN-COM-27 · a lo que se puede contratar o cambiar: la versión vigente
+  // de cada plan, sin los archivados. El plan que tiene puede ser una
+  // versión anterior (RN-COM-24): se busca entre todas.
+  const actual: CataloguePlan | null = planSubscription?.plan_id
+    ? (catalogue.planRevisions.find((p) => p.id === planSubscription.plan_id) ?? null)
+    : null;
+  const planes = catalogue.plans.filter((p) => !p.archived && p.lineageId !== actual?.lineageId);
   const planById = new Map(planes.map((p) => [p.id, p]));
-  const actual: CataloguePlan | null = planSubscription?.plan_id ? (planById.get(planSubscription.plan_id) ?? null) : null;
 
   // RN-COM-08 · qué precio se le cobra por cada servicio lo dice el
   // servidor (decisión 20): `service_monthly_price()` es la misma cuenta
@@ -244,7 +257,13 @@ export default async function EstablishmentPlanPage({
     es el del ESPACIO, no el del navegador de quien registra.
   */
   const [terminos, { data: archivos }] = await Promise.all([
-    Promise.all(activas.map(async (s) => ({ subscription: s, terms: await loadSubscriptionTerms(supabase, s.id) }))),
+    Promise.all(
+      activas.map(async (s) => ({
+        subscription: s,
+        terms: await loadSubscriptionTerms(supabase, s.id),
+        revision: await loadSubscriptionRevision(supabase, s.id, s.kind === "service" ? "service" : "plan"),
+      })),
+    ),
     // Columnas enumeradas: `files` tiene privilegios de columna.
     supabase
       .from("files")
@@ -346,7 +365,6 @@ export default async function EstablishmentPlanPage({
               <p className="mb-2 text-sm text-text-secondary">{tch.chooseTarget}</p>
               <ul className="mb-4 flex flex-wrap gap-2" data-testid="planes-destinos">
                 {planes
-                  .filter((p) => p.id !== actual?.id)
                   .map((p) => (
                     <li key={p.id}>
                       <Link
@@ -560,12 +578,22 @@ export default async function EstablishmentPlanPage({
       {terminos.length === 0 ? null : (
         <Card title={es.plansPage.terms.statusTitle}>
           <ul className="divide-y divide-border">
-            {terminos.map(({ subscription, terms }) => (
+            {terminos.map(({ subscription, terms, revision }) => (
               <li key={subscription.id} className="py-3">
                 <p className="font-semibold text-primary-dark">
                   {subscription.kind === "plan" ? (subscription.plans?.name ?? "—") : (subscription.services?.name ?? "—")}
                 </p>
                 <TermsLine terms={terms} dia={dia} />
+                {revision ? (
+                  <RevisionBlock
+                    revision={revision}
+                    subscriptionId={subscription.id}
+                    canRecord={gestionar}
+                    today={hoy}
+                    files={contratos}
+                    timeZone={tz}
+                  />
+                ) : null}
                 {terms?.current ? (
                   <details className="mt-2">
                     <summary className="cursor-pointer text-sm text-cuotly-green underline">

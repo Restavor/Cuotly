@@ -10,6 +10,21 @@ Actualizado el 23/09/2026.
 
 ## Pendiente de aplicar
 
+**Actualización del 23/09/2026 (madrugada): ninguna.** La **131** (`versiones_de_planes_y_servicios`,
+decisión 72, RN-COM-19 a 30) se aplicó por el MCP en cuatro partes (linaje y condiciones; comparar,
+crear, editar y archivar; aceptación y paso en la renovación; guardas, pantallas y aviso), sin los
+comentarios de línea del archivo: la lógica es la misma. `plans` y `services` ganan linaje, versión,
+archivo y clave de idempotencia (los 10 planes y 2 servicios que había quedan como versión 1 de sí
+mismos); se retiran las políticas de INSERT/UPDATE directo sobre las dos tablas (en vivo `plans` solo
+conserva `plans_select`); nace `revision_acceptances` con su privilegio de columna (sin
+`recorded_by`) y sus dos guardas; el paso de versión se engancha en la bolsa, el ciclo de Menú Diario
+y la mensualidad; y el aviso `plan_revision_published` entra en la lista de tipos (comprobada contra
+la viva antes de reescribirla). Comprobado en vivo: las funciones públicas nuevas tienen EXECUTE para
+`authenticated` y no para `anon`, `apply_due_revision_internal` no lo tiene para nadie,
+`plan_lineage` sí para `authenticated` (está en una política) y los cuatro disparadores existen. En
+local, las 131 migraciones aplican desde cero y pasan las 72 suites en el orden de CI (la nueva es
+`versiones_de_planes.sql`).
+
 **Actualización del 23/09/2026 (noche): ninguna.** La **130** (`los_permisos_del_equipo`, M70 y
 M71 de Equipo) se aplicó por el MCP. Añade tres funciones con permiso comprobado dentro:
 `set_worker_establishments(uuid, uuid, uuid[])` y `set_worker_specialties(uuid, uuid, text[])`

@@ -20,6 +20,10 @@ export interface PlansParams {
   /** En "Versiones", de qué plan o servicio (`plan:<id>` o `service:<id>`). */
   readonly subject: { readonly type: "plan" | "service"; readonly id: string } | null;
   readonly version: number | null;
+  /** Decisión 72 · `?accion=crear` o `?accion=editar` abre el formulario (solo el propietario lo ve). */
+  readonly action: "crear" | "editar" | null;
+  /** En "Versiones", qué versión del precio y las cuotas (`?rev=`). */
+  readonly revision: number | null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -46,12 +50,17 @@ export function readPlansParams(query: Record<string, string | string[] | undefi
     }
   }
   const n = version !== null && /^\d+$/.test(version) ? Number(version) : null;
+  const accion = first(query.accion);
+  const rev = first(query.rev);
+  const r = rev !== null && /^\d+$/.test(rev) ? Number(rev) : null;
   return {
     tab: tab !== null && (PLANS_TABS as readonly string[]).includes(tab) ? (tab as PlansTab) : "planes",
     plan: uuidOrNull(first(query.plan)),
     service: uuidOrNull(first(query.servicio)),
     subject,
     version: n !== null && n > 0 ? n : null,
+    action: accion === "crear" || accion === "editar" ? accion : null,
+    revision: r !== null && r > 0 ? r : null,
   };
 }
 
@@ -176,4 +185,152 @@ export function comparePlans(current: ComparablePlan, target: ComparablePlan): r
     row("ordering", Number(current.canOrderRequests), Number(target.canOrderRequests), true),
     row("report", current.reportLevelRank, target.reportLevelRank, true),
   ];
+}
+
+// ---------------------------------------------------------------------
+// Crear y editar planes y servicios (decisión 72, RN-COM-19 a 21)
+// ---------------------------------------------------------------------
+
+export const REPORT_LEVELS = ["basic", "standard", "standard_plus", "advanced", "complete"] as const;
+export type PlanReportLevel = (typeof REPORT_LEVELS)[number];
+
+/** Los términos de un plan tal como los recibe `create_plan()` / `revise_plan()`. */
+export interface PlanTerms {
+  readonly priceCents: number;
+  readonly includedSmall: number;
+  readonly includedPhoto: number;
+  readonly includedMedium: number;
+  readonly includedLarge: number;
+  readonly startSlaHours: number;
+  readonly executionSlaSmall: number;
+  readonly executionSlaPhoto: number;
+  readonly executionSlaMedium: number;
+  readonly executionSlaLarge: number;
+  readonly canOrderRequests: boolean;
+  readonly grantsPriority: boolean;
+  readonly queueRank: number;
+  readonly reportLevel: PlanReportLevel;
+  readonly watchesReviews: boolean;
+}
+
+export interface ServiceTerms {
+  readonly priceCents: number;
+  readonly pricePremiumCents: number | null;
+  readonly includedUpdates: number;
+}
+
+/** Qué campo no se entiende. La pantalla lo dice con su nombre. */
+export type TermsFormError =
+  | "price"
+  | "pricePremium"
+  | "included"
+  | "startSla"
+  | "executionSla"
+  | "queueRank"
+  | "reportLevel"
+  | "updates";
+
+export type TermsFormResult<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: TermsFormError };
+
+type FormLike = { get(name: string): unknown };
+
+function text(form: FormLike, name: string): string {
+  const v = form.get(name);
+  return typeof v === "string" ? v.trim() : "";
+}
+
+/** "499", "499,00" o "499.5" → céntimos. Lo demás, `undefined`. */
+export function eurosToCents(raw: string): number | undefined {
+  const match = /^(\d{1,6})(?:[,.](\d{1,2}))?$/.exec(raw.replace(/\s*€$/, "").trim());
+  if (!match) return undefined;
+  return Number(match[1]) * 100 + (match[2] === undefined ? 0 : Number(match[2].padEnd(2, "0")));
+}
+
+function wholeNumber(raw: string, min: number): number | undefined {
+  if (!/^-?\d{1,4}$/.test(raw)) return undefined;
+  const n = Number(raw);
+  return n >= min ? n : undefined;
+}
+
+/**
+ * Lee el formulario de un plan. Solo comprueba la forma —números donde van
+ * números, horas de al menos una—; si el cambio crea versión, si perjudica
+ * o si quien lo pide puede hacerlo lo decide el servidor.
+ */
+export function readPlanTermsForm(form: FormLike): TermsFormResult<PlanTerms> {
+  const price = eurosToCents(text(form, "price"));
+  if (price === undefined) return { ok: false, error: "price" };
+
+  const included = ["includedSmall", "includedPhoto", "includedMedium", "includedLarge"].map((k) =>
+    wholeNumber(text(form, k), 0),
+  );
+  if (included.some((n) => n === undefined)) return { ok: false, error: "included" };
+
+  const start = wholeNumber(text(form, "startSlaHours"), 1);
+  if (start === undefined) return { ok: false, error: "startSla" };
+
+  const execution = ["executionSlaSmall", "executionSlaPhoto", "executionSlaMedium", "executionSlaLarge"].map((k) =>
+    wholeNumber(text(form, k), 1),
+  );
+  if (execution.some((n) => n === undefined)) return { ok: false, error: "executionSla" };
+
+  const rank = wholeNumber(text(form, "queueRank") || "0", -99);
+  if (rank === undefined) return { ok: false, error: "queueRank" };
+
+  const level = text(form, "reportLevel");
+  if (!(REPORT_LEVELS as readonly string[]).includes(level)) return { ok: false, error: "reportLevel" };
+
+  const [small, photo, medium, large] = included as number[];
+  const [eSmall, ePhoto, eMedium, eLarge] = execution as number[];
+  const on = (k: string) => form.get(k) === "on";
+  return {
+    ok: true,
+    value: {
+      priceCents: price,
+      includedSmall: small,
+      includedPhoto: photo,
+      includedMedium: medium,
+      includedLarge: large,
+      startSlaHours: start,
+      executionSlaSmall: eSmall,
+      executionSlaPhoto: ePhoto,
+      executionSlaMedium: eMedium,
+      executionSlaLarge: eLarge,
+      canOrderRequests: on("canOrderRequests"),
+      grantsPriority: on("grantsPriority"),
+      queueRank: rank,
+      reportLevel: level as PlanReportLevel,
+      watchesReviews: on("watchesReviews"),
+    },
+  };
+}
+
+/** Lee el formulario de un servicio. El precio con Premium+ vacío es "no tiene" (RN-COM-08). */
+export function readServiceTermsForm(form: FormLike): TermsFormResult<ServiceTerms> {
+  const price = eurosToCents(text(form, "price"));
+  if (price === undefined) return { ok: false, error: "price" };
+  const premiumRaw = text(form, "pricePremium");
+  const premium = premiumRaw === "" ? null : eurosToCents(premiumRaw);
+  if (premium === undefined) return { ok: false, error: "pricePremium" };
+  const updates = wholeNumber(text(form, "includedUpdates") || "0", 0);
+  if (updates === undefined) return { ok: false, error: "updates" };
+  return { ok: true, value: { priceCents: price, pricePremiumCents: premium, includedUpdates: updates } };
+}
+
+/**
+ * Los estados de un restaurante frente a la versión vigente de lo suyo
+ * (`space_revision_status()`): pasa sola, falta su aceptación, o sigue en
+ * la anterior porque no aceptó (RN-COM-24).
+ */
+export const REVISION_STATES = ["scheduled", "awaiting_acceptance", "held_back"] as const;
+export type RevisionState = (typeof REVISION_STATES)[number];
+
+export function isRevisionState(value: string): value is RevisionState {
+  return (REVISION_STATES as readonly string[]).includes(value);
+}
+
+export function revisionTone(state: RevisionState): "info" | "warning" | "danger" {
+  return state === "scheduled" ? "info" : state === "awaiting_acceptance" ? "warning" : "danger";
 }

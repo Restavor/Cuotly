@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 
+import { readPlanTermsForm, readServiceTermsForm } from "@/core/plan-catalogue";
+import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import type { PlansState, TermsState } from "./action-state";
@@ -253,4 +255,167 @@ export async function recordExternalAcceptance(
 
   revalidatePath("/espacios", "layout");
   return { error: null, done: true };
+}
+
+// ---------------------------------------------------------------------
+// Decisión 72 · crear, editar, renombrar y archivar (RN-COM-19 a 21, 27)
+// ---------------------------------------------------------------------
+//
+// Igual que las de arriba: ninguna comprueba permisos. `create_plan()` y
+// compañía exigen `manage_space` (RN-COM-19) y deciden por su cuenta si la
+// edición va en el sitio o crea versión (RN-COM-20/21). Aquí solo se leen
+// los números del formulario y se traduce la respuesta.
+
+type RpcResult = { error: { message: string } | null };
+
+async function run(etiqueta: string, llamada: () => PromiseLike<RpcResult>): Promise<PlansState> {
+  try {
+    const { error } = await llamada();
+    if (error) {
+      console.error(`[planes] ${etiqueta} devolvió error`, { message: error.message });
+      return { error: error.message, done: false };
+    }
+  } catch (fallo) {
+    console.error(`[planes] ${etiqueta} lanzó`, { message: mensajeDeFallo(fallo) });
+    return { error: mensajeDeFallo(fallo), done: false };
+  }
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
+}
+
+export async function createPlan(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  const terms = readPlanTermsForm(formData);
+  if (!terms.ok) return { error: es.plansPage.edit.errors[terms.error], done: false };
+  const v = terms.value;
+  const supabase = await createClient();
+  return run("create_plan", () =>
+    supabase.rpc("create_plan", {
+      p_space_id: String(formData.get("spaceId") ?? ""),
+      p_name: String(formData.get("name") ?? ""),
+      p_price_cents: v.priceCents,
+      p_included_small: v.includedSmall,
+      p_included_photo: v.includedPhoto,
+      p_included_medium: v.includedMedium,
+      p_included_large: v.includedLarge,
+      p_start_sla_hours: v.startSlaHours,
+      p_execution_sla_small: v.executionSlaSmall,
+      p_execution_sla_photo: v.executionSlaPhoto,
+      p_execution_sla_medium: v.executionSlaMedium,
+      p_execution_sla_large: v.executionSlaLarge,
+      p_can_order_requests: v.canOrderRequests,
+      p_grants_priority: v.grantsPriority,
+      p_queue_rank: v.queueRank,
+      p_report_level: v.reportLevel,
+      p_watches_reviews: v.watchesReviews,
+      p_idempotency_key: String(formData.get("idempotencyKey") ?? ""),
+    }),
+  );
+}
+
+export async function revisePlan(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  const terms = readPlanTermsForm(formData);
+  if (!terms.ok) return { error: es.plansPage.edit.errors[terms.error], done: false };
+  const v = terms.value;
+  const supabase = await createClient();
+  return run("revise_plan", () =>
+    supabase.rpc("revise_plan", {
+      p_plan_id: String(formData.get("planId") ?? ""),
+      p_price_cents: v.priceCents,
+      p_included_small: v.includedSmall,
+      p_included_photo: v.includedPhoto,
+      p_included_medium: v.includedMedium,
+      p_included_large: v.includedLarge,
+      p_start_sla_hours: v.startSlaHours,
+      p_execution_sla_small: v.executionSlaSmall,
+      p_execution_sla_photo: v.executionSlaPhoto,
+      p_execution_sla_medium: v.executionSlaMedium,
+      p_execution_sla_large: v.executionSlaLarge,
+      p_can_order_requests: v.canOrderRequests,
+      p_grants_priority: v.grantsPriority,
+      p_queue_rank: v.queueRank,
+      p_report_level: v.reportLevel,
+      p_watches_reviews: v.watchesReviews,
+      p_idempotency_key: String(formData.get("idempotencyKey") ?? ""),
+    }),
+  );
+}
+
+export async function renamePlan(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  const supabase = await createClient();
+  return run("rename_plan", () =>
+    supabase.rpc("rename_plan", {
+      p_plan_id: String(formData.get("planId") ?? ""),
+      p_name: String(formData.get("name") ?? ""),
+    }),
+  );
+}
+
+export async function archivePlan(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  if (formData.get("confirm") !== "on") return { error: es.plansPage.edit.archiveConfirmMissing, done: false };
+  const supabase = await createClient();
+  return run("archive_plan", () =>
+    supabase.rpc("archive_plan", { p_plan_id: String(formData.get("planId") ?? "") }),
+  );
+}
+
+export async function createService(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  const terms = readServiceTermsForm(formData);
+  if (!terms.ok) return { error: es.plansPage.edit.errors[terms.error], done: false };
+  const supabase = await createClient();
+  return run("create_service", () =>
+    supabase.rpc("create_service", {
+      p_space_id: String(formData.get("spaceId") ?? ""),
+      p_name: String(formData.get("name") ?? ""),
+      p_kind: String(formData.get("kind") ?? "other"),
+      p_price_cents: terms.value.priceCents,
+      p_price_premium_cents: terms.value.pricePremiumCents,
+      p_included_updates: terms.value.includedUpdates,
+      p_idempotency_key: String(formData.get("idempotencyKey") ?? ""),
+    }),
+  );
+}
+
+export async function reviseService(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  const terms = readServiceTermsForm(formData);
+  if (!terms.ok) return { error: es.plansPage.edit.errors[terms.error], done: false };
+  const supabase = await createClient();
+  return run("revise_service", () =>
+    supabase.rpc("revise_service", {
+      p_service_id: String(formData.get("serviceId") ?? ""),
+      p_price_cents: terms.value.priceCents,
+      p_price_premium_cents: terms.value.pricePremiumCents,
+      p_included_updates: terms.value.includedUpdates,
+      p_idempotency_key: String(formData.get("idempotencyKey") ?? ""),
+    }),
+  );
+}
+
+export async function renameService(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  const supabase = await createClient();
+  return run("rename_service", () =>
+    supabase.rpc("rename_service", {
+      p_service_id: String(formData.get("serviceId") ?? ""),
+      p_name: String(formData.get("name") ?? ""),
+    }),
+  );
+}
+
+export async function archiveService(_prev: PlansState, formData: FormData): Promise<PlansState> {
+  if (formData.get("confirm") !== "on") return { error: es.plansPage.edit.archiveConfirmMissing, done: false };
+  const supabase = await createClient();
+  return run("archive_service", () =>
+    supabase.rpc("archive_service", { p_service_id: String(formData.get("serviceId") ?? "") }),
+  );
+}
+
+/** RN-COM-23 · el restaurante aceptó fuera de Cuotly una versión que le perjudica. */
+export async function recordRevisionAcceptance(_prev: TermsState, formData: FormData): Promise<TermsState> {
+  const supabase = await createClient();
+  return run("record_external_revision_acceptance", () =>
+    supabase.rpc("record_external_revision_acceptance", {
+      p_subscription_id: String(formData.get("subscriptionId") ?? ""),
+      p_accepted_on: String(formData.get("acceptedOn") ?? ""),
+      p_file_id: String(formData.get("fileId") ?? ""),
+    }),
+  );
 }

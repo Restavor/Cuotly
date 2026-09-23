@@ -16,18 +16,63 @@ import {
 import { EmptyReason } from "@/components/ui/EmptyReason";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { INCLUDED_TEMPLATE_LIMIT } from "@/core/daily-menu";
-import { diffConditions, pickVersion, restaurantsBySubject, type PlansTab } from "@/core/plan-catalogue";
+import {
+  diffConditions,
+  isRevisionState,
+  pickVersion,
+  restaurantsBySubject,
+  revisionTone,
+  type PlansTab,
+} from "@/core/plan-catalogue";
 import { termsTone } from "@/core/terms";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { euros } from "@/i18n/money";
 
-import type { CataloguePlan, ConditionsVersion, PlanCatalogue, SubscriberTerms } from "./catalogue-load";
+import type {
+  ActiveSubscription,
+  CataloguePlan,
+  ConditionsVersion,
+  PlanCatalogue,
+  RevisionStatusRow,
+  SubscriberTerms,
+} from "./catalogue-load";
+import { ArchiveForm, PlanTermsForm, RenameForm, ServiceTermsForm } from "./CatalogueForms";
+import { revisionValue } from "./RevisionBlock";
 import { PublishConditionsForm } from "./PlanForms";
 
 const t = es.plansPage;
 const tc = t.catalogue;
 const tv = t.versions;
+const te = t.edit;
+const tr = t.revisions;
+
+/**
+ * Cuántos restaurantes tiene cada plan o servicio, contando todas sus
+ * versiones: quien sigue en la 1 también lo tiene (decisión 72).
+ */
+function countsByLineage(subscriptions: readonly ActiveSubscription[]): ReadonlyMap<string, number> {
+  return restaurantsBySubject(
+    subscriptions.map((s) => ({
+      establishmentId: s.establishmentId,
+      planId: s.planId !== null ? s.lineageId : null,
+      serviceId: s.serviceId !== null ? s.lineageId : null,
+    })),
+  );
+}
+
+/** RN-COM-22/24 · la insignia de dónde está un restaurante frente a la versión vigente. */
+export function RevisionStateBadge({ row, timeZone }: { row: RevisionStatusRow; timeZone: string }) {
+  if (!isRevisionState(row.state)) return null;
+  const dia = row.movesAt ? enZona(row.movesAt, timeZone, { day: "numeric", month: "short", year: "numeric" }) : "—";
+  const texto =
+    row.state === "held_back" ? tr.states.held_back : row.state === "scheduled" ? tr.states.scheduled(dia) : tr.states.awaiting_acceptance(dia);
+  return (
+    <StatusBadge tone={revisionTone(row.state)} wrap>
+      {texto}
+    </StatusBadge>
+  );
+}
 
 /**
  * Las pestañas de Planes y servicios (M21, M54, M55, M56). "Asignación y
@@ -68,6 +113,31 @@ function currentVersion(versions: readonly ConditionsVersion[], subjectId: strin
   );
 }
 
+type RevisionRow = {
+  readonly id: string;
+  readonly lineageId: string;
+  readonly revision: number;
+  readonly priceCents: number;
+  readonly publishedAt: string;
+  readonly supersededAt: string | null;
+};
+
+/** Las versiones del precio y las cuotas de un plan o servicio, de la más nueva a la más vieja. */
+export function revisionsOf(
+  catalogue: PlanCatalogue,
+  type: "plan" | "service",
+  lineageId: string,
+): readonly RevisionRow[] {
+  const rows: readonly RevisionRow[] = type === "plan" ? catalogue.planRevisions : catalogue.serviceRevisions;
+  return rows
+    .filter((r) => r.lineageId === lineageId)
+    .sort((a, b) => b.revision - a.revision);
+}
+
+export function pickRevision(revisions: readonly RevisionRow[], requested: number | null): RevisionRow | null {
+  return revisions.find((r) => r.revision === requested) ?? revisions[0] ?? null;
+}
+
 function Quota({ icon, label }: { icon: IconName; label: string }) {
   return (
     <li className="flex items-start gap-3">
@@ -103,35 +173,56 @@ function Fact({ label, value, hint }: { label: string; value: string; hint?: str
 
 export function PlanCatalogueTab({
   slug,
+  spaceId,
   catalogue,
   selectedId,
+  action,
   timeZone,
 }: {
   slug: string;
+  spaceId: string;
   catalogue: PlanCatalogue;
   selectedId: string | null;
+  action: "crear" | "editar" | null;
   timeZone: string;
 }) {
-  const counts = restaurantsBySubject(catalogue.subscriptions);
+  const counts = countsByLineage(catalogue.subscriptions);
   const selected: CataloguePlan | undefined =
     catalogue.plans.find((p) => p.id === selectedId) ?? catalogue.plans[catalogue.plans.length - 1];
   const base = `/espacios/${slug}/planes`;
+
+  const crear =
+    catalogue.canPublish && action === "crear" ? (
+      <Card title={te.newPlanTitle}>
+        <PlanTermsForm spaceId={spaceId} planId={null} initial={null} inUse={0} />
+      </Card>
+    ) : null;
+  const botonCrear = catalogue.canPublish ? (
+    <ButtonLink href={`${base}?accion=crear`} icon="plus" size="sm">
+      {te.createPlan}
+    </ButtonLink>
+  ) : null;
 
   if (catalogue.plans.length === 0) {
     return (
       <div className="space-y-4">
         <LoadFailed failed={catalogue.failed} />
+        <div className="flex justify-end">{botonCrear}</div>
+        {crear}
         <EmptyReason reason={catalogue.failed ? "error" : "no_data_yet"} title={tc.noPlansTitle} />
       </div>
     );
   }
 
-  const conditions = selected ? currentVersion(catalogue.planVersions, selected.id) : null;
+  const conditions = selected ? currentVersion(catalogue.planVersions, selected.lineageId) : null;
+  const editando = catalogue.canPublish && action === "editar" && selected !== undefined && !selected.archived;
   const yesNo = (v: boolean) => (v ? tc.yes : tc.no);
 
   return (
     <div className="space-y-4">
       <LoadFailed failed={catalogue.failed} />
+      {botonCrear ? <div className="flex justify-end">{botonCrear}</div> : null}
+      {crear}
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
           <Card className="p-0! overflow-hidden">
@@ -151,11 +242,14 @@ export function PlanCatalogueTab({
                   {catalogue.plans.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell>
-                        <span
-                          className={`font-semibold ${p.id === selected?.id ? "text-cuotly-green" : "text-text"}`}
-                          aria-current={p.id === selected?.id ? "true" : undefined}
-                        >
-                          {p.name}
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`font-semibold ${p.id === selected?.id ? "text-cuotly-green" : "text-text"}`}
+                            aria-current={p.id === selected?.id ? "true" : undefined}
+                          >
+                            {p.name}
+                          </span>
+                          {p.archived ? <StatusBadge tone="neutral">{tc.archived}</StatusBadge> : null}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -164,7 +258,7 @@ export function PlanCatalogueTab({
                         </span>
                       </TableCell>
                       <TableCell>
-                        <span className="text-sm text-text-secondary">{counts.get(p.id) ?? 0}</span>
+                        <span className="text-sm text-text-secondary">{counts.get(p.lineageId) ?? 0}</span>
                       </TableCell>
                       <TableCell>
                         <Link
@@ -186,7 +280,11 @@ export function PlanCatalogueTab({
             <Card>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-bold text-primary-dark">{selected.name}</h2>
+                  <h2 className="flex flex-wrap items-center gap-2 text-xl font-bold text-primary-dark">
+                    {selected.name}
+                    <span className="text-xs font-normal text-text-secondary">{tc.revisionLabel(selected.revision)}</span>
+                    {selected.archived ? <StatusBadge tone="neutral">{tc.archived}</StatusBadge> : null}
+                  </h2>
                   <p className="mt-2">
                     <span className="text-4xl font-bold tracking-tight text-primary-dark">
                       {euros(selected.priceCents)}
@@ -194,10 +292,18 @@ export function PlanCatalogueTab({
                     <span className="text-text-secondary">+ IVA/mes</span>
                   </p>
                 </div>
-                <ButtonLink href={`${base}?tab=restaurantes&plan=${selected.id}`} variant="outline" size="sm">
-                  {tc.viewInRestaurants}
-                </ButtonLink>
+                <div className="flex flex-wrap gap-2">
+                  {catalogue.canPublish && !selected.archived ? (
+                    <ButtonLink href={`${base}?plan=${selected.id}&accion=editar`} variant="secondary" size="sm">
+                      {te.editPlan}
+                    </ButtonLink>
+                  ) : null}
+                  <ButtonLink href={`${base}?tab=restaurantes&plan=${selected.lineageId}`} variant="outline" size="sm">
+                    {tc.viewInRestaurants}
+                  </ButtonLink>
+                </div>
               </div>
+              {selected.archived ? <p className="mt-2 text-xs text-text-secondary">{tc.archivedHint}</p> : null}
               {selected.includedSmall + selected.includedPhoto + selected.includedMedium + selected.includedLarge ===
               0 ? (
                 <p className="mt-4 text-sm text-text-secondary">{tc.nothingIncluded}</p>
@@ -209,6 +315,45 @@ export function PlanCatalogueTab({
                   <Quota icon="image" label={tc.quotaPhoto(selected.includedPhoto)} />
                 </ul>
               )}
+            </Card>
+          ) : null}
+
+          {editando && selected ? (
+            <Card title={te.editPlan}>
+              <div className="space-y-6">
+                <PlanTermsForm
+                  spaceId={spaceId}
+                  planId={selected.id}
+                  inUse={counts.get(selected.lineageId) ?? 0}
+                  initial={{
+                    priceCents: selected.priceCents,
+                    includedSmall: selected.includedSmall,
+                    includedPhoto: selected.includedPhoto,
+                    includedMedium: selected.includedMedium,
+                    includedLarge: selected.includedLarge,
+                    startSlaHours: selected.startSlaHours,
+                    executionSlaSmall: selected.executionSla.small,
+                    executionSlaPhoto: selected.executionSla.photo,
+                    executionSlaMedium: selected.executionSla.medium,
+                    executionSlaLarge: selected.executionSla.large,
+                    canOrderRequests: selected.canOrderRequests,
+                    grantsPriority: selected.grantsPriority,
+                    queueRank: selected.queueRank,
+                    reportLevel: selected.reportLevel,
+                    watchesReviews: selected.watchesReviews,
+                  }}
+                />
+                <div className="border-t border-border pt-4">
+                  <RenameForm kind="plan" id={selected.id} name={selected.name} />
+                </div>
+                <div className="border-t border-border pt-4">
+                  <h3 className="mb-2 text-sm font-semibold text-text">{te.archiveTitle}</h3>
+                  <ArchiveForm kind="plan" id={selected.id} />
+                </div>
+                <ButtonLink href={`${base}?plan=${selected.id}`} variant="secondary" size="sm">
+                  {te.cancel}
+                </ButtonLink>
+              </div>
             </Card>
           ) : null}
         </div>
@@ -255,7 +400,7 @@ export function PlanCatalogueTab({
                 </Link>
               </p>
             </Card>
-            <p className="text-xs text-text-secondary">{tc.editingPending}</p>
+            {catalogue.canPublish ? null : <p className="text-xs text-text-secondary">{tc.editingReadOnly}</p>}
           </div>
         ) : null}
       </div>
@@ -269,33 +414,55 @@ export function PlanCatalogueTab({
 
 export function ServicesTab({
   slug,
+  spaceId,
   catalogue,
   selectedId,
+  action,
   timeZone,
 }: {
   slug: string;
+  spaceId: string;
   catalogue: PlanCatalogue;
   selectedId: string | null;
+  action: "crear" | "editar" | null;
   timeZone: string;
 }) {
   const base = `/espacios/${slug}/planes?tab=servicios`;
-  const counts = restaurantsBySubject(catalogue.subscriptions);
+  const counts = countsByLineage(catalogue.subscriptions);
   const selected = catalogue.services.find((s) => s.id === selectedId) ?? catalogue.services[0];
+  const crear =
+    catalogue.canPublish && action === "crear" ? (
+      <Card title={te.newServiceTitle}>
+        <ServiceTermsForm spaceId={spaceId} serviceId={null} initial={null} inUse={0} />
+      </Card>
+    ) : null;
+  const botonCrear = catalogue.canPublish ? (
+    <div className="flex justify-end">
+      <ButtonLink href={`${base}&accion=crear`} icon="plus" size="sm">
+        {te.createService}
+      </ButtonLink>
+    </div>
+  ) : null;
 
   if (!selected) {
     return (
       <div className="space-y-4">
         <LoadFailed failed={catalogue.failed} />
+        {botonCrear}
+        {crear}
         <EmptyReason reason={catalogue.failed ? "error" : "no_data_yet"} title={tc.noServicesTitle} />
       </div>
     );
   }
-  const conditions = currentVersion(catalogue.serviceVersions, selected.id);
+  const conditions = currentVersion(catalogue.serviceVersions, selected.lineageId);
+  const editando = catalogue.canPublish && action === "editar" && !selected.archived;
   const isMenu = selected.kind === "daily_menu";
 
   return (
     <div className="space-y-4">
       <LoadFailed failed={catalogue.failed} />
+      {botonCrear}
+      {crear}
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <Card title={tc.servicesTitle} className="min-w-0">
           <ul className="space-y-3" data-testid="planes-servicios">
@@ -311,7 +478,10 @@ export function ServicesTab({
                     }`}
                   >
                     <span className="flex items-start justify-between gap-3">
-                      <span className="font-semibold text-primary-dark">{s.name}</span>
+                      <span className="font-semibold text-primary-dark">
+                        {s.name}
+                        {s.archived ? <span className="ml-2 text-xs font-normal text-text-secondary">{tc.archived}</span> : null}
+                      </span>
                       <StatusBadge tone={s.kind === "daily_menu" ? "info" : "neutral"}>
                         {s.kind === "daily_menu" ? tc.kindDailyMenu : tc.kindOther}
                       </StatusBadge>
@@ -329,14 +499,24 @@ export function ServicesTab({
               );
             })}
           </ul>
-          <p className="mt-4 text-xs text-text-secondary">{tc.editingServicesPending}</p>
+          {catalogue.canPublish ? null : (
+            <p className="mt-4 text-xs text-text-secondary">{tc.editingServicesReadOnly}</p>
+          )}
         </Card>
 
         <Card className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-xl font-bold text-primary-dark">{selected.name}</h2>
-            <StatusBadge tone="neutral">{tc.restaurantsCount(counts.get(selected.id) ?? 0)}</StatusBadge>
+            <span className="text-xs text-text-secondary">{tc.revisionLabel(selected.revision)}</span>
+            <StatusBadge tone="neutral">{tc.restaurantsCount(counts.get(selected.lineageId) ?? 0)}</StatusBadge>
+            {selected.archived ? <StatusBadge tone="neutral">{tc.archived}</StatusBadge> : null}
+            {catalogue.canPublish && !selected.archived ? (
+              <ButtonLink href={`${base}&servicio=${selected.id}&accion=editar`} variant="secondary" size="sm">
+                {te.editService}
+              </ButtonLink>
+            ) : null}
           </div>
+          {selected.archived ? <p className="mt-1 text-xs text-text-secondary">{tc.archivedHint}</p> : null}
           <p className="mt-2">
             <span className="text-3xl font-bold tracking-tight text-primary-dark">{euros(selected.priceCents)}</span>{" "}
             <span className="text-text-secondary">+ IVA/mes</span>
@@ -392,6 +572,32 @@ export function ServicesTab({
               </Link>
             </p>
           </div>
+
+          {editando ? (
+            <div className="mt-5 space-y-6 border-t border-border pt-5">
+              <h3 className="text-base font-semibold text-text">{te.editService}</h3>
+              <ServiceTermsForm
+                spaceId={spaceId}
+                serviceId={selected.id}
+                inUse={counts.get(selected.lineageId) ?? 0}
+                initial={{
+                  priceCents: selected.priceCents,
+                  pricePremiumCents: selected.pricePremiumCents,
+                  includedUpdates: selected.includedUpdates,
+                }}
+              />
+              <div className="border-t border-border pt-4">
+                <RenameForm kind="service" id={selected.id} name={selected.name} />
+              </div>
+              <div className="border-t border-border pt-4">
+                <h3 className="mb-2 text-sm font-semibold text-text">{te.archiveTitle}</h3>
+                <ArchiveForm kind="service" id={selected.id} />
+              </div>
+              <ButtonLink href={`${base}&servicio=${selected.id}`} variant="secondary" size="sm">
+                {te.cancel}
+              </ButtonLink>
+            </div>
+          ) : null}
         </Card>
       </div>
     </div>
@@ -402,11 +608,20 @@ export function ServicesTab({
 /* M55 · Versiones                                                          */
 /* ----------------------------------------------------------------------- */
 
+export interface RevisionDiffRow {
+  readonly field: string;
+  readonly oldValue: string | null;
+  readonly newValue: string | null;
+  readonly better: boolean;
+}
+
 export function VersionsTab({
   slug,
   catalogue,
   subject,
   requestedVersion,
+  requestedRevision,
+  revisionDiff,
   subscribers,
   timeZone,
 }: {
@@ -414,21 +629,29 @@ export function VersionsTab({
   catalogue: PlanCatalogue;
   subject: { readonly type: "plan" | "service"; readonly id: string } | null;
   requestedVersion: number | null;
+  requestedRevision: number | null;
+  /** RN-COM-30 · la comparativa de la versión elegida con la anterior; `null` si no se pudo leer. */
+  revisionDiff: readonly RevisionDiffRow[] | null;
   subscribers: readonly SubscriberTerms[];
   timeZone: string;
 }) {
   const base = `/espacios/${slug}/planes?tab=versiones`;
   const subjects = [
-    ...catalogue.plans.map((p) => ({ type: "plan" as const, id: p.id, name: p.name })),
-    ...catalogue.services.map((s) => ({ type: "service" as const, id: s.id, name: s.name })),
+    ...catalogue.plans.map((p) => ({ type: "plan" as const, id: p.id, lineageId: p.lineageId, name: p.name })),
+    ...catalogue.services.map((s) => ({ type: "service" as const, id: s.id, lineageId: s.lineageId, name: s.name })),
   ];
   const chosen = subjects.find((s) => subject && s.type === subject.type && s.id === subject.id) ?? subjects[0];
   if (!chosen) {
     return <EmptyReason reason={catalogue.failed ? "error" : "no_data_yet"} title={tc.noPlansTitle} />;
   }
 
+  const revisions = revisionsOf(catalogue, chosen.type, chosen.lineageId);
+  const selectedRevision = pickRevision(revisions, requestedRevision);
+  const harms = revisionDiff?.some((d) => !d.better && d.field !== "queue_rank") ?? false;
+  const estados = new Map(catalogue.revisionStatus.map((r) => [r.subscriptionId, r]));
+
   const versions = (chosen.type === "plan" ? catalogue.planVersions : catalogue.serviceVersions)
-    .filter((v) => v.subjectId === chosen.id)
+    .filter((v) => v.subjectId === chosen.lineageId)
     .sort((a, b) => b.version - a.version);
   const selected = pickVersion(versions, requestedVersion);
   const previous = selected ? versions.find((v) => v.version === selected.version - 1) : undefined;
@@ -477,6 +700,70 @@ export function VersionsTab({
           {tv.choose}
         </button>
       </form>
+
+      {/* RN-COM-20 y 30 · las versiones de lo que se contrata. */}
+      <Card title={tr.title}>
+        {revisions.length <= 1 ? (
+          <p className="text-sm text-text-secondary">{tr.none}</p>
+        ) : (
+          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+            <ul className="space-y-2" data-testid="planes-revisiones">
+              {revisions.map((r) => {
+                const activa = r.revision === selectedRevision?.revision;
+                return (
+                  <li key={r.id}>
+                    <Link
+                      href={`${base}&tema=${chosen.type}:${chosen.id}&rev=${r.revision}`}
+                      aria-current={activa ? "true" : undefined}
+                      className={`flex items-center gap-4 rounded-[10px] border p-3 ${
+                        activa ? "border-cuotly-green bg-cuotly-green/5" : "border-border hover:bg-soft-surface"
+                      }`}
+                    >
+                      <span className="text-lg font-bold text-primary-dark">v{r.revision}</span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-text">
+                          {r.supersededAt === null ? tr.current : tr.previous} · {euros(r.priceCents)}
+                        </span>
+                        <span className="block text-xs text-text-secondary">{tr.publishedOn(day(r.publishedAt, timeZone))}</span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="min-w-0">
+              {selectedRevision === null || selectedRevision.revision === 1 ? (
+                <p className="text-sm text-text-secondary">{tr.firstRevision}</p>
+              ) : (
+                <>
+                  <h3 className="text-sm font-semibold text-text">
+                    {tr.compareTitle(selectedRevision.revision - 1, selectedRevision.revision)}
+                  </h3>
+                  {revisionDiff === null ? (
+                    <p className="mt-2 text-sm text-text-secondary">{tr.compareFailed}</p>
+                  ) : (
+                    <>
+                      <ul className="mt-2 divide-y divide-border" data-testid="planes-comparativa">
+                        {revisionDiff.map((d) => (
+                          <li key={d.field} className="flex flex-wrap items-center justify-between gap-3 py-2 text-sm">
+                            <span className="text-text-secondary">{tr.fields[d.field] ?? d.field}</span>
+                            <span className="flex items-center gap-2">
+                              <span className="text-text-secondary line-through">{revisionValue(d.field, d.oldValue)}</span>
+                              <span className="font-semibold text-text">{revisionValue(d.field, d.newValue)}</span>
+                              <StatusBadge tone={d.better ? "success" : "danger"}>{d.better ? tr.better : tr.worse}</StatusBadge>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-3 text-sm text-text">{harms ? tr.harmsNote : tr.favoursNote}</p>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
 
       {versions.length === 0 ? (
         <Card title={chosen.name}>
@@ -583,6 +870,9 @@ export function VersionsTab({
                   >
                     {s.name}
                   </Link>
+                  {estados.get(s.subscriptionId) ? (
+                    <RevisionStateBadge row={estados.get(s.subscriptionId)!} timeZone={timeZone} />
+                  ) : null}
                   {s.terms === null ? (
                     <StatusBadge tone="neutral">{tv.acceptanceUnknown}</StatusBadge>
                   ) : (
@@ -624,6 +914,8 @@ export interface RestaurantPlanRow {
   readonly name: string;
   readonly code: string;
   readonly planId: string | null;
+  /** El plan en cualquiera de sus versiones: es por lo que se filtra. */
+  readonly planLineageId: string | null;
   readonly planName: string | null;
   readonly planPriceCents: number | null;
   readonly services: readonly string[];
@@ -637,15 +929,21 @@ export function RestaurantsTab({
   rows,
   plans,
   planFilter,
+  revisionStatus,
   timeZone,
 }: {
   slug: string;
   rows: readonly RestaurantPlanRow[];
+  /** Un plan por linaje: `id` es el `lineage_id`. */
   plans: readonly { id: string; name: string }[];
   planFilter: string | null;
+  revisionStatus: readonly RevisionStatusRow[];
   timeZone: string;
 }) {
-  const visibles = planFilter === null ? rows : rows.filter((r) => r.planId === planFilter);
+  const visibles = planFilter === null ? rows : rows.filter((r) => r.planLineageId === planFilter);
+  const estadoDe = new Map(
+    revisionStatus.filter((r) => r.kind === "plan").map((r) => [r.establishmentId, r] as const),
+  );
   const dia = (v: string) => enZona(v, timeZone, { day: "numeric", month: "short", year: "numeric" });
 
   return (
@@ -711,6 +1009,9 @@ export function RestaurantsTab({
                           <span className="whitespace-nowrap text-sm text-text-secondary">
                             {euros(fila.planPriceCents ?? 0)}
                           </span>
+                          {estadoDe.get(fila.id) ? (
+                            <RevisionStateBadge row={estadoDe.get(fila.id)!} timeZone={timeZone} />
+                          ) : null}
                         </span>
                       )}
                     </TableCell>

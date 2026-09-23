@@ -31,6 +31,8 @@ export const NOTIFICATION_EVENTS = [
   "job_reassignment_requested",
   "task_reassignment_requested",
   "terms_version_published",
+  // RN-COM-23 (migración 131) · una versión nueva del plan o servicio.
+  "plan_revision_published",
   "menu_publication_requested",
   "menu_assigned",
   "menu_needs_information",
@@ -409,6 +411,9 @@ export const CLIENT_VISIBLE_JOB_EVENTS: readonly NotificationEvent[] = [
  */
 export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = [
   "terms_version_published",
+  // RN-COM-23 (migración 131): lo publica el propietario del espacio y se
+  // avisa a quien puede aceptarla por el restaurante.
+  "plan_revision_published",
   // Migración 77: pedirle información al restaurante es pedírsela a él.
   "menu_needs_information",
   // Migración 100 (RN-REC-05): quien tiene que pagar es quien tiene que

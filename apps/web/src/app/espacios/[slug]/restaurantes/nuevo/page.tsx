@@ -56,7 +56,15 @@ export default async function NewEstablishmentPage({
   const [{ data: groups }, { data: plans }] = puedeCrear
     ? await Promise.all([
         supabase.from("groups").select("id, name").eq("space_id", space.id).order("name"),
-        supabase.from("plans").select("id, name").eq("space_id", space.id).order("price_cents"),
+        // RN-COM-27 · solo lo que se puede contratar: la versión vigente
+        // de cada plan, sin los archivados.
+        supabase
+          .from("plans")
+          .select("id, name")
+          .eq("space_id", space.id)
+          .is("superseded_at", null)
+          .is("archived_at", null)
+          .order("price_cents"),
       ])
     : [{ data: null }, { data: null }];
 
