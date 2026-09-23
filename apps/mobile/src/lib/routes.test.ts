@@ -1,6 +1,6 @@
 import { moreDestinations, type ShellRole } from "@/components/shell/navigation";
 
-import { navigableHref } from "./routes";
+import { loginScreenDestination, navigableHref } from "./routes";
 
 const ROLES: readonly ShellRole[] = ["owner", "admin", "worker", "client", "client_daily_menu"];
 
@@ -47,5 +47,17 @@ describe("RN-MOV-01 · los destinos de la web se navegan en el teléfono", () =>
     for (const d of panel) {
       expect(navigableHref(d.href)).toBe("/espacios/demo/restaurantes/est-1");
     }
+  });
+});
+
+describe("RN-ACC-10 · entrar lleva dentro", () => {
+  it("con sesión, la pantalla de entrar lleva a la portada", () => {
+    expect(loginScreenDestination(true, false)).toBe("/");
+  });
+
+  it("sin sesión se queda en el formulario, y mientras se lee no decide", () => {
+    expect(loginScreenDestination(false, false)).toBeNull();
+    expect(loginScreenDestination(true, true)).toBeNull();
+    expect(loginScreenDestination(false, true)).toBeNull();
   });
 });

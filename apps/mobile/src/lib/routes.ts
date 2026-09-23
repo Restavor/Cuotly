@@ -30,3 +30,19 @@ export function navigableHref(href: string): string {
   const panel = ruta.match(/^(\/espacios\/[^/]+\/restaurantes\/[^/]+)\/(?:solicitudes(?:\/nueva)?|mensajes)$/);
   return panel ? panel[1] : ruta;
 }
+
+/**
+ * A dónde lleva la pantalla de entrar. Con sesión, a la portada (`/`), que
+ * elige el contexto; sin ella, a ningún sitio: se queda en el formulario.
+ *
+ * Existe porque faltaba: `login.tsx` solo enseñaba el error cuando lo había,
+ * y cuando todo iba bien **no navegaba**. En el teléfono se veía la misma
+ * pantalla después de un inicio de sesión correcto, y cada pulsación volvía
+ * a iniciar sesión (23/09/2026: diez en un minuto con la contraseña buena).
+ * Mientras la sesión se está leyendo no se decide nada, para no enseñar el
+ * formulario un instante a quien ya ha entrado.
+ */
+export function loginScreenDestination(hasSession: boolean, loading: boolean): "/" | null {
+  if (loading) return null;
+  return hasSession ? "/" : null;
+}

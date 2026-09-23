@@ -542,3 +542,20 @@ para y avisa: eso sería la cola abierta a internet.
   1.55 no reconoce. Funciona con `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` delante de
   `npx playwright install-deps chromium` (con `sudo -E`) y de `npx playwright install chromium`.
   Las capturas no se pueden traer a la sesión: `read_session_file` corta el archivo a unos 2 KB.
+
+## 23/09/2026 · entrar desde el móvil no llevaba dentro
+
+- **Síntoma** (Bosco, desde Safari en iPhone, `cuotly-movil.vercel.app`): "no me deja iniciar sesión"
+  con `info@restavor.com`. **No era la contraseña**: los registros de Supabase tienen diez inicios de
+  sesión correctos (200) entre las 22:40:01 y las 22:40:47 UTC desde su conexión, y ninguna petición
+  más detrás.
+- **Causa**: `apps/mobile/app/login.tsx` solo enseñaba el error cuando lo había; cuando todo iba bien
+  **no navegaba**, así que el formulario seguía delante con la sesión ya abierta y cada pulsación
+  volvía a iniciar sesión. Estaba así desde el Hito 1.
+- **Arreglo**: al terminar bien va a `/`, y quien llega a `/login` con sesión también
+  (`loginScreenDestination()`, `src/lib/routes.ts`, con su test).
+- **Comprobado en un navegador de verdad** (Chromium con el agente de usuario del iPhone, contra la
+  exportación web de la app y un Supabase simulado): la versión anterior se queda en `/login` tras un
+  inicio de sesión correcto; la arreglada pasa a "¿Dónde quieres entrar?" con un solo inicio de
+  sesión y pide `my_contexts`.
+
