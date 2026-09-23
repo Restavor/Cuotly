@@ -4,6 +4,7 @@ import { AttentionCell } from "@/components/establishment/AttentionCell";
 import { EstablishmentCard, statusTone } from "@/components/establishment/EstablishmentCard";
 import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhoto";
 import { ListFilters } from "@/components/establishment/ListFilters";
+import { RestaurantsTabs, restaurantsTabHref } from "@/components/establishment/RestaurantsTabs";
 import {
   ButtonLink,
   Card,
@@ -48,6 +49,13 @@ import { loadEstablishmentList } from "./list-load";
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * M84 · los estados de la pestaña Establecimientos: todos menos archivado,
+ * que tiene la suya. Un archivado ya no es un restaurante en servicio, y
+ * mezclarlo en la lista de todos los días es lo que el diseño separa.
+ */
+const LISTED_STATES = ESTABLISHMENT_STATES.filter((state) => state !== "archived");
+
 export default async function TeamEstablishmentsPage({
   params,
   searchParams,
@@ -85,13 +93,18 @@ export default async function TeamEstablishmentsPage({
     );
   }
 
+  // Un enlace viejo que filtraba por archivados va a su pestaña.
+  if (query.estado === "archived") redirect(restaurantsTabHref(slug, "archived"));
+
   const base = `/espacios/${slug}/restaurantes`;
   const list = await loadEstablishmentList(supabase, space.id, slug);
+  const vivos = list.rows.filter((row) => row.status !== "archived");
+  const archivados = list.rows.length - vivos.length;
 
   const filters = parseFilters(
     query,
     { groupIds: list.groups.map((g) => g.id), planIds: list.plans.map((p) => p.id) },
-    ESTABLISHMENT_STATES,
+    LISTED_STATES,
   );
   const hasFilters =
     filters.search.trim().length > 0 ||
@@ -99,7 +112,7 @@ export default async function TeamEstablishmentsPage({
     filters.planId !== null ||
     filters.status !== null;
 
-  const rows = list.rows.filter((row) => matchesFilters(row, filters));
+  const rows = vivos.filter((row) => matchesFilters(row, filters));
   const t = es.teamArea.establishments;
 
   return (
@@ -116,32 +129,42 @@ export default async function TeamEstablishmentsPage({
         title={t.title}
         subtitle={t.subtitle}
         actions={
-          <>
-            {/* M82 · la vista del grupo entero, que es como se mira un
-                cliente con siete locales. */}
-            <ButtonLink href={`${base}/grupos`} variant="secondary">
-              {es.teamArea.groups.title}
-            </ButtonLink>
-            <ButtonLink href={`${base}/nuevo`} icon="plus">
-              {t.createButton}
-            </ButtonLink>
-          </>
+          <ButtonLink href={`${base}/nuevo`} icon="plus">
+            {t.createButton}
+          </ButtonLink>
         }
       >
         <p className="mt-1 text-sm text-text">{t.activeCount(list.activeCount)}</p>
       </PageHeader>
 
-      {list.rows.length === 0 ? null : (
+      {/* M82 y M84 · Establecimientos, Grupos y Archivados. */}
+      <RestaurantsTabs slug={slug} active="list" archivedCount={archivados} />
+
+      {vivos.length === 0 ? null : (
         <ListFilters
           groups={list.groups}
           plans={list.plans}
           filters={filters}
           hasFilters={hasFilters}
           action={base}
+          states={LISTED_STATES}
         />
       )}
 
-      {list.rows.length === 0 ? (
+      {list.rows.length > 0 && vivos.length === 0 ? (
+        // Todos archivados no es "todavía no has añadido ninguno": decirlo
+        // así mandaría a crear uno que ya existe (CA-20).
+        <EmptyState
+          icon="building"
+          title={t.onlyArchivedTitle}
+          description={t.onlyArchivedReason}
+          action={
+            <ButtonLink href={restaurantsTabHref(slug, "archived")} variant="secondary">
+              {t.tabs.archived}
+            </ButtonLink>
+          }
+        />
+      ) : list.rows.length === 0 ? (
         <EmptyState
           icon="building"
           title={t.emptyTitle}
@@ -182,7 +205,7 @@ export default async function TeamEstablishmentsPage({
             <Table
               footer={
                 <TableFooter>
-                  <span>{es.ui.table.showing(rows.length, list.rows.length, t.rowsNoun)}</span>
+                  <span>{es.ui.table.showing(rows.length, vivos.length, t.rowsNoun)}</span>
                 </TableFooter>
               }
             >

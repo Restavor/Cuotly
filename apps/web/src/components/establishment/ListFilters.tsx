@@ -22,12 +22,18 @@ export function ListFilters({
   filters,
   hasFilters,
   action,
+  states = ESTABLISHMENT_STATES,
 }: {
   groups: readonly { readonly id: string; readonly name: string }[];
   plans: readonly { readonly id: string; readonly name: string }[];
   filters: EstablishmentFilters;
   hasFilters: boolean;
   action: string;
+  /**
+   * Los estados que se ofrecen. En Establecimientos no está "Archivado":
+   * los archivados tienen su pestaña (M84).
+   */
+  states?: readonly (typeof ESTABLISHMENT_STATES)[number][];
 }) {
   const t = es.teamArea.establishments.filters;
 
@@ -54,7 +60,7 @@ export function ListFilters({
         label={t.statusLabel}
         defaultValue={filters.status}
         allLabel={t.all}
-        options={ESTABLISHMENT_STATES.map((state) => ({
+        options={states.map((state) => ({
           value: state,
           label: es.naming.states.establishment[state],
         }))}

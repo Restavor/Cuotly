@@ -134,13 +134,14 @@ function sheetData(audit: SheetData["audit"]): SheetData {
 
 const sinFiltros = { from: null, to: null, family: null, actorId: null, page: 1 };
 
-function pintar(audit: SheetData["audit"]) {
+function pintar(audit: SheetData["audit"], auditEventId: string | null = null) {
   return render(
     <EstablishmentSheet
       base="/espacios/demo/restaurantes/est-1"
       slug="demo"
       tab={HISTORIAL}
       block={MANAGEMENT_BLOCKS[0]}
+      auditEventId={auditEventId}
       data={sheetData(audit)}
     />,
   );
@@ -248,5 +249,63 @@ describe("vista 19 · quién hizo cada cosa", () => {
     const tabla = within(screen.getByRole("table"));
     expect(tabla.getByText(t.auditUnknownActor)).toBeInTheDocument();
     expect(tabla.queryByText(t.auditSystemActor)).not.toBeInTheDocument();
+  });
+});
+
+describe("M48 · el detalle de un evento", () => {
+  const apunteDeTrabajo = {
+    id: "a-3",
+    createdAt: "2026-09-14T14:20:00.000Z",
+    action: "job.published",
+    entityType: "job",
+    entityId: "j-7",
+    actorId: "u-1",
+    actorName: "Ana García",
+    changes: [{ field: "state", before: "in_progress", after: "published" }],
+    reason: "Publicado tras la revisión",
+  };
+  const conFiltros = { ...sinFiltros, family: "job", page: 2 };
+
+  it("cada fila abre su detalle SIN perder los filtros ni la página", () => {
+    pintar({ rows: [apunteDeTrabajo], actors: [], filters: conFiltros, hasMore: false });
+    expect(screen.getByRole("link", { name: t.auditViewDetail })).toHaveAttribute(
+      "href",
+      "/espacios/demo/restaurantes/est-1?vista=historial&familia=job&pagina=2&evento=a-3",
+    );
+  });
+
+  it("enseña qué fue, el motivo, antes y después, y enlaza lo que tocó", () => {
+    pintar({ rows: [apunteDeTrabajo], actors: [], filters: sinFiltros, hasMore: false }, "a-3");
+    const titular = screen.getByRole("heading", { name: t.eventDetailTitle });
+    const panel = within(titular.closest("section") ?? titular.parentElement!.parentElement!);
+    expect(panel.getByText(es.settings.auditFamilies.job)).toBeInTheDocument();
+    expect(panel.getByText("Publicado tras la revisión")).toBeInTheDocument();
+    expect(panel.getByText(t.eventBefore)).toBeInTheDocument();
+    expect(panel.getByText("in_progress")).toBeInTheDocument();
+    expect(panel.getByText("published")).toBeInTheDocument();
+    expect(panel.getByRole("link", { name: t.eventLinks.job })).toHaveAttribute(
+      "href",
+      "/espacios/demo/trabajos/j-7",
+    );
+    // Cerrar vuelve a la lista con los mismos filtros, sin el evento.
+    expect(panel.getByRole("link", { name: t.eventDetailClose })).toHaveAttribute(
+      "href",
+      "/espacios/demo/restaurantes/est-1?vista=historial",
+    );
+  });
+
+  it("un evento que no está en la página lo dice, no enseña otro", () => {
+    pintar({ rows: [apunteDePersona], actors: [], filters: sinFiltros, hasMore: false }, "no-existe");
+    expect(screen.getByText(t.eventNotFoundTitle)).toBeInTheDocument();
+  });
+
+  it("una acción que no guarda valores lo dice en vez de una tabla vacía (P6)", () => {
+    pintar(
+      { rows: [{ ...apunteDePersona, changes: [] }], actors: [], filters: sinFiltros, hasMore: false },
+      "a-1",
+    );
+    expect(screen.getByText(t.eventNoChanges)).toBeInTheDocument();
+    // Un apunte del propio restaurante no enlaza a ninguna parte: ya está aquí.
+    expect(screen.queryByText(t.eventLinkedLabel)).not.toBeInTheDocument();
   });
 });

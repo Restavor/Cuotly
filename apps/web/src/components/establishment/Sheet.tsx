@@ -32,7 +32,7 @@ import {
 import type { OpportunitiesView } from "./opportunities-load";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
-import { AUDIT_FAMILIES } from "@/core/audit";
+import { AUDIT_FAMILIES, auditEntityLink, auditFamily } from "@/core/audit";
 import { MAX_FILE_SIZE_BYTES, fileTypeLabel } from "@/core/files";
 import { isQuoteState, quoteTone } from "@/core/quotes";
 import { isMenuState, menuTone } from "@/core/menu-states";
@@ -764,16 +764,28 @@ function AuditFilters({ base, audit }: { base: string; audit: SheetAudit }) {
  * "página 7 de 43": contar el total exigiría recorrer la tabla entera cada
  * vez. Se pide una fila de más y con eso se sabe si hay siguiente.
  */
+/**
+ * La dirección del historial con sus filtros puestos: la de otra página, o
+ * la de la misma página con un evento abierto al lado (M48). Los filtros
+ * viajan siempre, para que abrir un evento no deshaga lo que se filtró.
+ */
+function historyHref(
+  base: string,
+  audit: SheetAudit,
+  { page = audit.filters.page, event = null }: { page?: number; event?: string | null } = {},
+): string {
+  const params = new URLSearchParams({ vista: HISTORY_TAB.slug });
+  if (audit.filters.from !== null) params.set("desde", audit.filters.from);
+  if (audit.filters.to !== null) params.set("hasta", audit.filters.to);
+  if (audit.filters.family !== null) params.set("familia", audit.filters.family);
+  if (audit.filters.actorId !== null) params.set("persona", audit.filters.actorId);
+  if (page > 1) params.set("pagina", String(page));
+  if (event !== null) params.set("evento", event);
+  return `${base}?${params.toString()}`;
+}
+
 function AuditPager({ base, audit }: { base: string; audit: SheetAudit }) {
-  const href = (pagina: number) => {
-    const params = new URLSearchParams({ vista: HISTORY_TAB.slug });
-    if (audit.filters.from !== null) params.set("desde", audit.filters.from);
-    if (audit.filters.to !== null) params.set("hasta", audit.filters.to);
-    if (audit.filters.family !== null) params.set("familia", audit.filters.family);
-    if (audit.filters.actorId !== null) params.set("persona", audit.filters.actorId);
-    if (pagina > 1) params.set("pagina", String(pagina));
-    return `${base}?${params.toString()}`;
-  };
+  const href = (pagina: number) => historyHref(base, audit, { page: pagina });
 
   const pagina = audit.filters.page;
   if (pagina === 1 && !audit.hasMore) return null;
@@ -795,6 +807,169 @@ function AuditPager({ base, audit }: { base: string; audit: SheetAudit }) {
   );
 }
 
+function auditActionLabel(action: string): string {
+  return (es.settings.auditActions as Readonly<Record<string, string>>)[action] ?? action;
+}
+
+/**
+ * Quién hizo un apunte. Sin actor no es un hueco: es el servidor —los
+ * barridos y las emisiones automáticas escriben su apunte sin nadie
+ * detrás—, y decirlo es más honesto que un guion (CA-20).
+ *
+ * Y "no hay actor" no es lo mismo que "hay actor y no sé su nombre": lo
+ * segundo pasa cuando quien mira no puede resolver ese perfil, y llamarlo
+ * "Sistema" sería mentir en la pantalla que existe justo para saber quién
+ * hizo qué.
+ */
+function AuditActor({ row }: { row: SheetAuditRow }) {
+  if (row.actorId === null) {
+    return <span className="text-text-secondary">{t.auditSystemActor}</span>;
+  }
+  if (row.actorName === null) return <>{t.auditUnknownActor}</>;
+  return <PersonCell name={row.actorName} />;
+}
+
+/**
+ * M48 · "Detalle del evento": qué pasó, cuándo y quién; de qué tipo es, en
+ * qué restaurante y qué pantalla abre; el motivo si se escribió; y lo que
+ * cambió en dos columnas, antes y después.
+ *
+ * Todo sale de la MISMA fila de `establishment_audit()` que pinta la lista:
+ * no se vuelve a pedir a la base, así que el detalle no puede enseñar un
+ * apunte que la lista —y la política de `audit_log`— no deja ver. Si el
+ * evento pedido no está entre las filas de esta página (un enlace viejo,
+ * o filtros que lo dejan fuera), se dice, no se busca por otro camino.
+ *
+ * Lo que el dibujo pone y no está: la "Evidencia de publicación" con su
+ * captura. La evidencia vive en el trabajo, y el enlace lleva a él.
+ */
+function AuditEventDetail({
+  row,
+  closeHref,
+  slug,
+  establishmentName,
+  timeZone,
+}: {
+  row: SheetAuditRow | null;
+  closeHref: string;
+  slug: string;
+  establishmentName: string;
+  timeZone: string;
+}) {
+  const enlace = row === null ? null : auditEntityLink(slug, row.entityType, row.entityId);
+  const familia = row === null ? null : auditFamily(row.action);
+
+  return (
+    <Card
+      className="min-w-0"
+      title={t.eventDetailTitle}
+      action={
+        <Link
+          href={closeHref}
+          aria-label={t.eventDetailClose}
+          className="shrink-0 rounded p-1 text-text-secondary transition-colors hover:text-text focus:outline focus:outline-2 focus:outline-cuotly-green"
+        >
+          <Icon name="close" className="h-4 w-4" />
+        </Link>
+      }
+    >
+      {row === null ? (
+        <EmptyState title={t.eventNotFoundTitle} description={t.eventNotFoundReason} />
+      ) : (
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <span
+                aria-hidden="true"
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cuotly-green/10 text-cuotly-green"
+              >
+                <Icon name="check" className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-lg font-semibold text-primary-dark">
+                  {auditActionLabel(row.action)}
+                </p>
+                <p className="text-sm text-text-secondary">
+                  {fechaYHoraLarga(row.createdAt, timeZone)}
+                </p>
+              </div>
+            </div>
+            <div className="shrink-0">
+              <AuditActor row={row} />
+            </div>
+          </div>
+
+          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-text-secondary">{t.eventTypeLabel}</dt>
+              <dd className="font-medium text-text">
+                {(es.settings.auditFamilies as Readonly<Record<string, string>>)[familia!] ??
+                  familia}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-text-secondary">{t.eventContextLabel}</dt>
+              <dd className="font-medium text-text">{establishmentName}</dd>
+            </div>
+            {enlace === null ? null : (
+              <div className="sm:col-span-2">
+                <dt className="text-text-secondary">{t.eventLinkedLabel}</dt>
+                <dd>
+                  <Link href={enlace.href} className="font-medium text-cuotly-green underline">
+                    {t.eventLinks[enlace.kind]}
+                  </Link>
+                </dd>
+              </div>
+            )}
+            {row.reason === null ? null : (
+              <div className="sm:col-span-2">
+                <dt className="text-text-secondary">{t.eventReasonLabel}</dt>
+                <dd className="whitespace-pre-line text-text">{row.reason}</dd>
+              </div>
+            )}
+          </dl>
+
+          <div>
+            <h4 className="mb-2 text-base font-semibold text-primary-dark">
+              {t.eventChangesTitle}
+            </h4>
+            {row.changes.length === 0 ? (
+              /* P6 · esa acción no guarda valores: se dice, no se pinta una
+                 tabla vacía que parecería "no cambió nada". */
+              <p className="text-sm text-text-secondary">{t.eventNoChanges}</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[12px] border border-border p-3">
+                  <p className="mb-2 text-sm font-semibold text-danger">{t.eventBefore}</p>
+                  <dl className="space-y-1.5 text-sm">
+                    {row.changes.map((change) => (
+                      <div key={change.field}>
+                        <dt className="text-xs text-text-secondary">{change.field}</dt>
+                        <dd className="break-words text-text">{change.before ?? t.auditNoValue}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+                <div className="rounded-[12px] border border-border p-3">
+                  <p className="mb-2 text-sm font-semibold text-cuotly-green">{t.eventAfter}</p>
+                  <dl className="space-y-1.5 text-sm">
+                    {row.changes.map((change) => (
+                      <div key={change.field}>
+                        <dt className="text-xs text-text-secondary">{change.field}</dt>
+                        <dd className="break-words text-text">{change.after ?? t.auditNoValue}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function EstablishmentSheet({
   base,
   slug,
@@ -804,6 +979,7 @@ export function EstablishmentSheet({
   operationSection = OPERATION_SECTION_TABS[0],
   paymentsSection = PAYMENTS_SECTIONS[0],
   integrationSource = null,
+  auditEventId = null,
   data,
 }: {
   base: string;
@@ -818,6 +994,8 @@ export function EstablishmentSheet({
   paymentsSection?: PaymentsSection;
   /** M45 · la fuente del panel "Configurar …" (`?fuente=`), si la hay. */
   integrationSource?: string | null;
+  /** M48 · el evento del historial abierto al lado (`?evento=`), si lo hay. */
+  auditEventId?: string | null;
   data: SheetData;
 }) {
   const {
@@ -3445,8 +3623,21 @@ export function EstablishmentSheet({
         administrador la operativa, un trabajador lo suyo y lo que ya puede
         ver, y un cliente no llega hasta aquí.
       */}
+      {/*
+        M48 · con un evento abierto (`?evento=`), el historial se parte en
+        dos: la lista a la izquierda y el detalle a la derecha, como el
+        dibujo. El evento viaja en la dirección con los filtros y la
+        página, así que se comparte y el botón de volver lo cierra.
+      */}
       {tab.key === "history" ? (
-        <Card title={t.historyTitle}>
+        <div
+          className={
+            auditEventId === null
+              ? ""
+              : "grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]"
+          }
+        >
+        <Card className="min-w-0" title={t.historyTitle}>
           <p className="mb-3 text-sm text-text-secondary">{t.historyHint}</p>
 
           <AuditFilters base={base} audit={audit} />
@@ -3472,13 +3663,21 @@ export function EstablishmentSheet({
                   <TableRow>
                     <TableHeaderCell>{t.auditWhenColumn}</TableHeaderCell>
                     <TableHeaderCell>{t.auditActionColumn}</TableHeaderCell>
-                    <TableHeaderCell>{t.auditChangesColumn}</TableHeaderCell>
+                    {/*
+                      Con el detalle abierto, los cambios se leen en él: en
+                      la mitad del ancho, una columna de "antes → después"
+                      aplastaría la fila.
+                    */}
+                    {auditEventId === null ? (
+                      <TableHeaderCell>{t.auditChangesColumn}</TableHeaderCell>
+                    ) : null}
                     <TableHeaderCell>{t.auditActorColumn}</TableHeaderCell>
+                    <TableHeaderCell>{t.auditDetailColumn}</TableHeaderCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {audit.rows.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow key={row.id} highlight={row.id === auditEventId}>
                       <TableCell>
                         <span className="whitespace-nowrap text-text-secondary">
                           {fechaYHoraLarga(row.createdAt, timeZone)}
@@ -3500,9 +3699,7 @@ export function EstablishmentSheet({
                           </span>
                           <span className="min-w-0">
                             <span className="block font-semibold text-text">
-                              {(es.settings.auditActions as Readonly<Record<string, string>>)[
-                                row.action
-                              ] ?? row.action}
+                              {auditActionLabel(row.action)}
                             </span>
                             {row.reason === null ? null : (
                               <span className="block text-xs text-text-secondary">{row.reason}</span>
@@ -3510,51 +3707,44 @@ export function EstablishmentSheet({
                           </span>
                         </span>
                       </TableCell>
+                      {auditEventId === null ? (
+                        <TableCell>
+                          {/*
+                            Los cambios se derivan comparando el valor anterior
+                            con el nuevo (`auditChanges`), y solo salen los
+                            campos que de verdad cambiaron: una lista con diez
+                            campos idénticos y uno distinto esconde el que
+                            importa.
+                          */}
+                          {row.changes.length === 0 ? (
+                            <span className="text-text-secondary">—</span>
+                          ) : (
+                            <ul className="space-y-0.5">
+                              {row.changes.map((change) => (
+                                <li key={change.field} className="text-xs">
+                                  <span className="text-text-secondary">{change.field}: </span>
+                                  <span className="text-text">
+                                    {change.before ?? t.auditNoValue}
+                                    {" → "}
+                                    {change.after ?? t.auditNoValue}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </TableCell>
+                      ) : null}
                       <TableCell>
-                        {/*
-                          Los cambios se derivan comparando el valor anterior
-                          con el nuevo (`auditChanges`), y solo salen los
-                          campos que de verdad cambiaron: una lista con diez
-                          campos idénticos y uno distinto esconde el que
-                          importa.
-                        */}
-                        {row.changes.length === 0 ? (
-                          <span className="text-text-secondary">—</span>
-                        ) : (
-                          <ul className="space-y-0.5">
-                            {row.changes.map((change) => (
-                              <li key={change.field} className="text-xs">
-                                <span className="text-text-secondary">{change.field}: </span>
-                                <span className="text-text">
-                                  {change.before ?? t.auditNoValue}
-                                  {" → "}
-                                  {change.after ?? t.auditNoValue}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                        <AuditActor row={row} />
                       </TableCell>
                       <TableCell>
-                        {/*
-                          Sin actor no es un hueco: es el servidor. Los
-                          barridos y las emisiones automáticas escriben su
-                          apunte sin nadie detrás, y decirlo es más honesto
-                          que un guion (CA-20).
-
-                          Y "no hay actor" no es lo mismo que "hay actor y
-                          no sé su nombre": lo segundo pasa cuando quien
-                          mira no puede resolver ese perfil, y llamarlo
-                          "Sistema" sería mentir en la pantalla que existe
-                          justo para saber quién hizo qué.
-                        */}
-                        {row.actorId === null ? (
-                          <span className="text-text-secondary">{t.auditSystemActor}</span>
-                        ) : row.actorName === null ? (
-                          t.auditUnknownActor
-                        ) : (
-                          <PersonCell name={row.actorName} />
-                        )}
+                        <Link
+                          href={historyHref(base, audit, { event: row.id })}
+                          aria-current={row.id === auditEventId ? "true" : undefined}
+                          className="inline-flex items-center justify-center whitespace-nowrap rounded-field border border-cuotly-green bg-surface px-3 py-1.5 text-xs font-semibold text-cuotly-green transition-colors hover:bg-cuotly-green/10 focus:outline focus:outline-2 focus:outline-cuotly-green"
+                        >
+                          {t.auditViewDetail}
+                        </Link>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -3582,6 +3772,17 @@ export function EstablishmentSheet({
             </Link>
           </p>
         </Card>
+
+        {auditEventId === null ? null : (
+          <AuditEventDetail
+            row={audit.rows.find((row) => row.id === auditEventId) ?? null}
+            closeHref={historyHref(base, audit)}
+            slug={slug}
+            establishmentName={header.name}
+            timeZone={timeZone}
+          />
+        )}
+        </div>
       ) : null}
     </div>
   );

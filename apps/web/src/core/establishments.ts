@@ -497,3 +497,24 @@ export function accessScope(role: string): AccessScope {
   // tiene, y esta pantalla es justo donde alguien decide si retirarlo.
   return "read_only";
 }
+
+/**
+ * M82 y M84 · la lista de la izquierda y el elegido de la derecha.
+ *
+ * Filtra por el texto buscado (sin tildes ni mayúsculas, `searchKey`) sobre
+ * lo que devuelve `text`, y elige el que pide la dirección **si está entre
+ * los que se ven**; si no, el primero. Un elegido que el filtro ha dejado
+ * fuera no se enseña a la derecha: la pantalla diría una cosa a cada lado.
+ */
+export function pickListAndSelection<T extends { readonly id: string }>(
+  rows: readonly T[],
+  search: string,
+  selectedId: string | null,
+  text: (row: T) => string,
+): { readonly shown: readonly T[]; readonly selected: T | null } {
+  const buscado = searchKey(search);
+  const shown =
+    buscado.length === 0 ? rows : rows.filter((row) => searchKey(text(row)).includes(buscado));
+  const selected = shown.find((row) => row.id === selectedId) ?? shown[0] ?? null;
+  return { shown, selected };
+}

@@ -1372,9 +1372,25 @@ export const es = {
         global_owner: "Propietario del grupo",
         editor: "Editor de todos, también de los futuros",
       },
-      establishmentsTitle: "Restaurantes del grupo",
+      establishmentsTitle: "Establecimientos vinculados",
+      establishmentsNoneTitle: "Ningún restaurante que puedas ver",
       establishmentsNone:
         "Este grupo no tiene ningún restaurante que puedas ver. Si tienes restaurantes autorizados, son de otros grupos.",
+      // M82 · la lista con buscador y la ficha del grupo elegido.
+      searchLabel: "Buscar grupos",
+      searchPlaceholder: "Buscar grupos…",
+      searchEmptyTitle: "Ningún grupo coincide",
+      searchEmptyReason: "Prueba con otra parte del nombre, o quita la búsqueda.",
+      listLabel: "Grupos del espacio",
+      createdAtLabel: "Fecha de creación",
+      establishmentsCountLabel: "Establecimientos",
+      establishmentColumn: "Restaurante",
+      codeColumn: "Código",
+      statusColumn: "Estado",
+      oneSpaceNote:
+        "Un establecimiento solo puede estar activo en un espacio de mantenimiento a la vez (RN-EST-07). Para llevarlo a otro espacio se propone una transferencia desde su ficha, y el otro espacio la acepta.",
+      howMove:
+        "Cambiar un restaurante de grupo no se hace desde Cuotly todavía: cambiaría quién entra en él, porque el propietario del grupo tiene acceso a todos sus restaurantes (RN-EST-03), y esa regla está por decidir.",
       emptyTitle: "Todavía no hay ningún grupo",
       emptyReason:
         "Un grupo nace con su primer restaurante. Cuando des de alta uno y le pongas un nombre de grupo nuevo, aparecerá aquí.",
@@ -1383,7 +1399,35 @@ export const es = {
         "No se crea un grupo por su cuenta: nace al dar de alta el primer restaurante que lo tiene, escribiendo su nombre. Un grupo vacío no serviría de nada.",
       howAccess:
         "Dar acceso a alguien —a un restaurante, a todos los de hoy, o a todos incluidos los futuros— se hace desde la ficha de cualquier restaurante del grupo, donde están los cuatro casos juntos.",
-      backToList: "Volver a la lista de restaurantes",
+    },
+
+    // M84 · los restaurantes archivados, con reactivar y transferir.
+    archived: {
+      subtitle:
+        "Consulta tus establecimientos archivados y gestiona su reactivación o su transferencia a otro espacio.",
+      emptyTitle: "No hay ningún restaurante archivado",
+      emptyReason:
+        "Cuando archives uno desde su ficha (Gestión · Estado del servicio), aparecerá aquí con su historial intacto.",
+      searchLabel: "Buscar archivados",
+      searchPlaceholder: "Buscar establecimientos…",
+      searchEmptyTitle: "Ningún archivado coincide",
+      searchEmptyReason: "Prueba con otra parte del nombre o del código, o quita la búsqueda.",
+      establishmentColumn: "Restaurante",
+      codeColumn: "Código",
+      archivedAtColumn: "Fecha de archivo",
+      lastPlanColumn: "Último plan",
+      statusColumn: "Estado",
+      // Sin evento que leer no se pone una fecha supuesta (CA-20).
+      archivedAtUnknown: "Sin fecha que puedas ver",
+      noPlan: "Sin plan",
+      select: "Ver",
+      codeLine: (code: string) => `Código: ${code}`,
+      reasonLabel: "Motivo del archivo",
+      openSheet: "Abrir la ficha y su historial",
+      reactivateNoPermission:
+        "Reactivar un restaurante lo hacen el propietario y los administradores del espacio.",
+      nothingAutomatic:
+        "Aquí no pasa nada solo. El establecimiento no se borra y conserva toda su información: reactivarlo o transferirlo es una decisión, con su motivo, que queda en el historial.",
     },
 
     establishments: {
@@ -1396,6 +1440,16 @@ export const es = {
       activeCount: (n: number) =>
         n === 1 ? "1 establecimiento activo" : `${n} establecimientos activos`,
       createButton: "Crear establecimiento",
+      // M82 y M84 · las tres pestañas de Restaurantes.
+      tabs: {
+        label: "Vistas de restaurantes",
+        list: "Establecimientos",
+        groups: "Grupos",
+        archived: "Archivados",
+      },
+      onlyArchivedTitle: "Todos tus restaurantes están archivados",
+      onlyArchivedReason:
+        "No hay ninguno en servicio. Los archivados siguen en su pestaña, con su historial, y desde allí se reactivan.",
       // A13 · el espacio vacío, con la acción que lo llena.
       emptyTitle: "Todavía no has añadido restaurantes",
       emptyReason: "Añade tu primer establecimiento para empezar a organizar su mantenimiento.",
@@ -6842,6 +6896,30 @@ export const es = {
     auditActionColumn: "Tipo",
     auditChangesColumn: "Cambios",
     auditActorColumn: "Realizado por",
+    // M48 · el detalle de un evento, abierto al lado de la lista.
+    auditDetailColumn: "Ver",
+    auditViewDetail: "Ver detalle",
+    eventDetailTitle: "Detalle del evento",
+    eventDetailClose: "Cerrar el detalle del evento",
+    eventNotFoundTitle: "Ese evento no está en esta página",
+    eventNotFoundReason:
+      "Con los filtros y la página que tienes puestos no aparece. Quita los filtros o vuelve a la página en la que lo abriste.",
+    eventTypeLabel: "Tipo de evento",
+    eventContextLabel: "Restaurante",
+    eventLinkedLabel: "Vinculado a",
+    eventLinks: {
+      request: "Abrir la solicitud",
+      job: "Abrir el trabajo",
+      menu: "Abrir el menú",
+      quote: "Abrir el presupuesto",
+      charge: "Abrir el cobro",
+      report: "Abrir el informe",
+    },
+    eventReasonLabel: "Motivo",
+    eventChangesTitle: "Cambios realizados",
+    eventBefore: "Antes",
+    eventAfter: "Después",
+    eventNoChanges: "Esta acción no guarda el valor anterior ni el nuevo: solo que ocurrió.",
     // Un apunte sin actor no es un hueco: lo escribió el servidor (un
     // barrido, una emisión automática). Decirlo es más honesto que "—".
     auditSystemActor: "Sistema",

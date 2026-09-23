@@ -13,6 +13,7 @@ import {
   accessScope,
   sortOpenTasks,
   matchesFilters,
+  pickListAndSelection,
   NO_PLAN_FILTER,
   parseFilters,
   searchKey,
@@ -345,5 +346,34 @@ describe("alcance de acceso de un usuario del restaurante (maqueta 15, PRD §14)
     // retirárselo.
     expect(accessScope("lo_que_sea")).toBe("read_only");
     expect(accessScope("")).toBe("read_only");
+  });
+});
+
+describe("M82 y M84 · pickListAndSelection", () => {
+  const filas = [
+    { id: "g-1", name: "Grupo Centro" },
+    { id: "g-2", name: "Grupo Costa" },
+    { id: "g-3", name: "Marisquería Ría" },
+  ];
+  const nombre = (fila: { name: string }) => fila.name;
+
+  it("sin búsqueda enseña todos y elige el de la dirección", () => {
+    const { shown, selected } = pickListAndSelection(filas, "", "g-2", nombre);
+    expect(shown).toHaveLength(3);
+    expect(selected?.id).toBe("g-2");
+  });
+
+  it("busca sin tildes ni mayúsculas", () => {
+    expect(pickListAndSelection(filas, "MARISQUERIA", null, nombre).shown.map((f) => f.id)).toEqual([
+      "g-3",
+    ]);
+  });
+
+  it("un elegido que el filtro deja fuera no se enseña: se elige el primero de los que se ven", () => {
+    expect(pickListAndSelection(filas, "grupo", "g-3", nombre).selected?.id).toBe("g-1");
+  });
+
+  it("sin nada que enseñar no hay elegido", () => {
+    expect(pickListAndSelection(filas, "nada", "g-1", nombre)).toEqual({ shown: [], selected: null });
   });
 });

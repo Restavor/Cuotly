@@ -620,3 +620,45 @@ export function auditCsv(header: readonly string[], rows: readonly (readonly str
   };
   return "﻿" + [header, ...rows].map((fila) => fila.map(celda).join(",")).join("\r\n");
 }
+
+/**
+ * Las entidades de un apunte de auditoría que tienen pantalla propia en el
+ * espacio, y la pregunta que las nombra en el detalle del evento (M48).
+ */
+export type AuditEntityLinkKind = "request" | "job" | "menu" | "quote" | "charge" | "report";
+
+/**
+ * M48 · a dónde lleva el "vinculado" del detalle de un evento: la pantalla
+ * de la solicitud, del trabajo, del menú, del presupuesto, del cobro o del
+ * informe que tocó ese apunte.
+ *
+ * Solo se enlaza lo que tiene pantalla propia. Una tarea cuelga de su
+ * trabajo y el apunte no guarda cuál; un archivo se descarga, no se abre; y
+ * un apunte del propio restaurante ya está en su ficha. Para esos se
+ * devuelve `null` y el detalle no pinta un enlace que no lleva a ninguna
+ * parte. Abrir el enlace no autoriza nada: cada pantalla comprueba lo suyo.
+ */
+export function auditEntityLink(
+  spaceSlug: string,
+  entityType: string,
+  entityId: string | null,
+): { readonly kind: AuditEntityLinkKind; readonly href: string } | null {
+  if (entityId === null) return null;
+  const base = `/espacios/${spaceSlug}`;
+  switch (entityType) {
+    case "request":
+      return { kind: "request", href: `${base}/solicitudes/${entityId}` };
+    case "job":
+      return { kind: "job", href: `${base}/trabajos/${entityId}` };
+    case "menu":
+      return { kind: "menu", href: `${base}/menu-diario/${entityId}` };
+    case "quote":
+      return { kind: "quote", href: `${base}/finanzas/presupuestos/${entityId}` };
+    case "charge":
+      return { kind: "charge", href: `${base}/finanzas/cobros/${entityId}` };
+    case "report":
+      return { kind: "report", href: `${base}/informes/${entityId}` };
+    default:
+      return null;
+  }
+}

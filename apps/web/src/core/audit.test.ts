@@ -10,6 +10,7 @@ import {
   auditChanges,
   auditCsv,
   auditDayWindow,
+  auditEntityLink,
   auditFamily,
 } from "./audit";
 import { es } from "../i18n/es";
@@ -338,5 +339,28 @@ describe("M62 · auditCsv", () => {
     const csv = auditCsv(["Motivo"], [["=HYPERLINK(\"x\")"], ["+1"], ["-2"], ["@a"]]);
     const filas = csv.slice(1).split("\r\n").slice(1);
     expect(filas).toEqual(['"\'=HYPERLINK(""x"")"', "'+1", "'-2", "'@a"]);
+  });
+});
+
+describe("M48 · auditEntityLink", () => {
+  it("lleva a la pantalla de lo que tocó el apunte", () => {
+    expect(auditEntityLink("demo", "request", "r-1")).toEqual({
+      kind: "request",
+      href: "/espacios/demo/solicitudes/r-1",
+    });
+    expect(auditEntityLink("demo", "job", "j-1")?.href).toBe("/espacios/demo/trabajos/j-1");
+    expect(auditEntityLink("demo", "menu", "m-1")?.href).toBe("/espacios/demo/menu-diario/m-1");
+    expect(auditEntityLink("demo", "quote", "q-1")?.href).toBe(
+      "/espacios/demo/finanzas/presupuestos/q-1",
+    );
+    expect(auditEntityLink("demo", "charge", "c-1")?.href).toBe("/espacios/demo/finanzas/cobros/c-1");
+    expect(auditEntityLink("demo", "report", "i-1")?.href).toBe("/espacios/demo/informes/i-1");
+  });
+
+  it("sin pantalla propia o sin identificador no hay enlace, en vez de uno roto", () => {
+    expect(auditEntityLink("demo", "task", "t-1")).toBeNull();
+    expect(auditEntityLink("demo", "file", "f-1")).toBeNull();
+    expect(auditEntityLink("demo", "establishment", "e-1")).toBeNull();
+    expect(auditEntityLink("demo", "request", null)).toBeNull();
   });
 });

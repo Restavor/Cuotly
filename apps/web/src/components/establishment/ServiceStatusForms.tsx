@@ -105,7 +105,7 @@ function ArchiveForm({ establishmentId }: { establishmentId: string }) {
   );
 }
 
-function ReactivateForm({ establishmentId }: { establishmentId: string }) {
+export function ReactivateForm({ establishmentId }: { establishmentId: string }) {
   const [state, action, pending] = useActionState(reactivateEstablishment, INITIAL_SERVICE_STATUS);
 
   return (

@@ -343,6 +343,8 @@ export default async function EstablishmentPage({
         operationSection={seccionOperacion}
         paymentsSection={parsePaymentsSection(soloUno(query.pagos))}
         integrationSource={soloUno(query.fuente) ?? null}
+        // M48 · el evento del historial abierto al lado de la lista.
+        auditEventId={soloUno(query.evento) ?? null}
         data={{
           header,
           /*
