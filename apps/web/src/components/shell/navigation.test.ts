@@ -269,3 +269,16 @@ describe("El destino activo es el más concreto, no el primero que casa", () => 
     expect(activeDestination(SLUG, "/espacios/otro/trabajos")).toBeNull();
   });
 });
+
+describe("RN-REQ-08 · Nueva solicitud en nombre del restaurante (M77)", () => {
+  it("RN-REQ-08: el propietario y los administradores la tienen en Crear, y lleva a la del equipo", () => {
+    for (const role of ["owner", "admin"] as const) {
+      const opcion = createOptions(SLUG, role, REST).find((o) => o.key === "request");
+      expect(opcion?.href, role).toBe(`/espacios/${SLUG}/solicitudes/nueva`);
+    }
+  });
+
+  it("RN-REQ-08: un trabajador no la tiene", () => {
+    expect(createOptions(SLUG, "worker", REST).some((o) => o.key === "request")).toBe(false);
+  });
+});

@@ -46,6 +46,8 @@ function detalle(over: Partial<SheetData["requestDetail"] & object> = {}) {
       context: null,
       priority: null,
       priority_reason: null,
+      created_by_team: false,
+      on_behalf_reason: null,
       state: "pending_internal_validation",
       created_at: "2026-09-18T09:00:00.000Z",
       validated_category: null,

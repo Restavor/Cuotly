@@ -1187,6 +1187,7 @@ export const es = {
     preferences: "Preferencias de aviso",
     events: {
       request_submitted: "Solicitud enviada",
+      request_created_on_behalf: "El equipo creó una solicitud en tu nombre",
       job_unassigned: "Trabajo sin asignar",
       job_assigned: "Trabajo asignado",
       job_started: "Trabajo comenzado",
@@ -1520,6 +1521,61 @@ export const es = {
     requests: {
       title: "Solicitudes",
       subtitle: "Lo que han pedido los restaurantes, por orden de llegada.",
+      // M77 · RN-REQ-08 (decisión 73). Solo el propietario y los
+      // administradores del espacio; el botón no es el control, lo es
+      // `create_request_on_behalf()`.
+      newButton: "Nueva solicitud",
+      onBehalf: {
+        title: "Nueva solicitud",
+        subtitle: "Deja escrito en Cuotly lo que el restaurante pidió por teléfono, por correo o en persona.",
+        establishmentLabel: "Restaurante",
+        establishmentPlaceholder: "Elige el restaurante",
+        establishmentCode: (code: string) => `Código: ${code}`,
+        stoppedHidden: (n: number) =>
+          n === 1
+            ? "Hay 1 restaurante con el servicio detenido que no aparece: mientras esté así no se le crean solicitudes."
+            : `Hay ${n} restaurantes con el servicio detenido que no aparecen: mientras estén así no se les crean solicitudes.`,
+        descriptionLabel: "Descripción",
+        descriptionHint: "Lo que pidió el restaurante, con sus palabras si puede ser. Es lo que leerá en su panel.",
+        contextLabel: "Dónde (opcional)",
+        contextHint: "La web, Google, redes, la carta…",
+        attachmentsTitle: "Archivos adjuntos (opcional)",
+        attachmentsHint: "Se comparten con el restaurante: la solicitud es suya y los verá con ella.",
+        categoryLabel: "Categoría sugerida",
+        categoryAi: "Que la proponga la IA",
+        categoryHint:
+          "Si la eliges, es la propuesta y no se le pregunta a la IA. En los dos casos hay que validarla antes de que el restaurante la vea.",
+        pendingValidation: "Pendiente de validación",
+        priorityLabel: "Prioridad",
+        priorityHint: "La que dijo el restaurante. No cambia plazos ni adelanta la cola.",
+        priorityReasonLabel: "Motivo de la prioridad",
+        priorityReasonPlaceholder: "Por qué le corre, con lo que te dijo.",
+        onBehalfLabel: "Cómo lo pidió el restaurante",
+        onBehalfHint:
+          "Obligatorio. Cómo y cuándo te lo pidió. El restaurante lo verá junto a la solicitud y recibirá un aviso; no verá quién del equipo la creó.",
+        onBehalfPlaceholder: "Por teléfono, el 23/09 a las 10:15, con la propietaria.",
+        acceptanceNote:
+          "La propuesta la acepta el restaurante desde su panel, como cualquier otra: crearla en su nombre no consume nada.",
+        submit: "Enviar solicitud",
+        submitting: "Enviando…",
+        noPermissionReason:
+          "Crear una solicitud en nombre de un restaurante es del propietario y de los administradores del espacio.",
+        noEstablishmentsTitle: "No hay restaurantes a los que crearles una solicitud",
+        noEstablishmentsReason: "Todavía no hay restaurantes en el espacio, o todos tienen el servicio detenido.",
+        errors: {
+          establishment_required: "Elige el restaurante.",
+          description_required: "Escribe qué pidió el restaurante.",
+          priority_required: "Elige la prioridad.",
+          priority_reason_required: "Escribe el motivo de la prioridad.",
+          priority_reason_too_long: "El motivo de la prioridad no puede pasar de 200 caracteres.",
+          on_behalf_reason_required: "Escribe cómo y cuándo lo pidió el restaurante.",
+          on_behalf_reason_too_long: "Cómo lo pidió el restaurante no puede pasar de 500 caracteres.",
+          category_invalid: "Esa categoría no existe.",
+        },
+      },
+      // RN-REQ-08 · en la ficha de la solicitud, para el equipo.
+      onBehalfOrigin: "Origen",
+      onBehalfOriginValue: "Creada por el equipo en nombre del restaurante",
       emptyTitle: "No hay solicitudes",
       emptyReason: "Cuando un restaurante pida un cambio, aparecerá aquí.",
       codeColumn: "Código",
@@ -1533,8 +1589,9 @@ export const es = {
       filterOpen: "Sin resolver",
       filterMine: "Pendientes de mí",
       // M08 · la barra de filtros, el botón de cada fila y el pie de la
-      // tabla. "Origen" del dibujo no va: aquí toda solicitud la pide el
-      // restaurante, y una columna que siempre dice lo mismo no dice nada.
+      // tabla. "Origen" del dibujo no va como columna: toda solicitud es
+      // del restaurante, y la que el equipo crea en su nombre (RN-REQ-08)
+      // lo dice en su ficha.
       filterRestaurant: "Restaurante",
       filterState: "Estado",
       filterCategory: "Categoría",
@@ -1668,6 +1725,8 @@ export const es = {
       // IA, se dice: quien valida tiene que saber qué está leyendo.
       proposalSourceAi: "Propuesta por la IA",
       proposalSourceRules: "Propuesta por reglas",
+      // RN-REQ-08 · la eligió quien la creó en nombre del restaurante.
+      proposalSourceTeam: "Propuesta por el equipo al crearla",
       proposalFallbackReason: (motivo: string) => `Motivo: ${motivo}`,
       proposalNoneTitle: "Todavía no hay propuesta",
       proposalNoneReason:
@@ -3179,6 +3238,9 @@ export const es = {
     scopeTitle: "Alcance del trabajo",
     // R11
     teamTitle: "Equipo de mantenimiento",
+    // RN-REQ-08 · la creó el equipo en su nombre (decisión 73).
+    onBehalfTitle: "El Equipo de mantenimiento creó esta solicitud en tu nombre",
+    onBehalfReason: (reason: string) => `Cómo la pediste: ${reason}`,
     teamNoMessage: "El equipo todavía no ha escrito en esta solicitud.",
     webTitle: "Ver en la web",
     webPublished: "El cambio ya está publicado en la web del restaurante.",

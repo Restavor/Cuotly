@@ -655,7 +655,11 @@ export async function loadSheetOperation(
   const jobIds = filasTareas.shown.map((task) => task.job_id).filter((id): id is string => id !== null);
   const [nombres, { data: jobCodes }] = await Promise.all([
     loadPeopleNames(supabase, establishmentId, [
-      ...filasSolicitudes.shown.map((request) => request.created_by),
+      // Una solicitud creada por el equipo en nombre del restaurante no
+      // lleva autor en la columna (RN-REQ-08, P7): sale de la auditoría.
+      ...filasSolicitudes.shown
+        .map((request) => request.created_by)
+        .filter((id): id is string => id !== null),
       ...filasTareas.shown.map((task) => task.assignee_id).filter((id): id is string => id !== null),
     ]),
     jobIds.length === 0
@@ -674,7 +678,7 @@ export async function loadSheetOperation(
         description: request.description,
         state: request.state,
         createdAt: request.created_at,
-        authorName: nombres.get(request.created_by) ?? null,
+        authorName: request.created_by === null ? null : (nombres.get(request.created_by) ?? null),
         deepLink: `/espacios/${spaceSlug}/solicitudes/${request.id}`,
       })),
     },

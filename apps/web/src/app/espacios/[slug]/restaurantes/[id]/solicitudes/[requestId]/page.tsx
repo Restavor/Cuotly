@@ -82,7 +82,7 @@ export default async function ClientRequestDetailPage({
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, priority, priority_reason",
+      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, priority, priority_reason, created_by_team, on_behalf_reason",
     )
     .eq("id", requestId)
     .maybeSingle();
@@ -293,6 +293,21 @@ export default async function ClientRequestDetailPage({
               <p className="mt-3 text-xs text-text-secondary">
                 {t.priorityLabel}: {request.priority_reason}
               </p>
+            ) : null}
+            {/* RN-REQ-08 · la creó el equipo en su nombre: se le dice, y cómo
+                se la pidió. Firma el equipo, nunca una persona (P7). */}
+            {request.created_by_team ? (
+              <div className="mt-4 flex gap-3 rounded-[10px] border border-info/30 bg-info/10 p-4">
+                <Icon name="info" className="mt-0.5 h-5 w-5 shrink-0 text-primary-dark" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-primary-dark">{t.onBehalfTitle}</p>
+                  {request.on_behalf_reason ? (
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-text">
+                      {t.onBehalfReason(request.on_behalf_reason)}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
             ) : null}
           </Card>
 

@@ -33,6 +33,7 @@ export function FileUploadField({
   label = es.files.label,
   onUploaded,
   compact = false,
+  visibility,
 }: {
   establishmentId: string;
   category: string;
@@ -50,6 +51,13 @@ export function FileUploadField({
    * pantalla, y la pista viaja como título del botón.
    */
   compact?: boolean;
+  /**
+   * M77 · el adjunto de una solicitud que el equipo crea en nombre del
+   * restaurante es del restaurante, y se sube compartido con él. Sin esto,
+   * `registerFile` lo deja interno. Quién puede marcarlo así lo vuelve a
+   * decidir el servidor.
+   */
+  visibility?: "internal" | "shared_with_client";
 }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +112,7 @@ export function FileUploadField({
         name: archivo.name,
         path: preparacion.path,
         fileName: archivo.name,
+        visibility,
       });
 
       if (!registro.ok) {

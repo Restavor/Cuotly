@@ -6049,7 +6049,7 @@ export type Database = {
         Row: {
           context: string | null;
           created_at: string;
-          created_by: string;
+          created_by: string | null;
           description: string;
           id: string;
           request_id: string;
@@ -6059,7 +6059,7 @@ export type Database = {
         Insert: {
           context?: string | null;
           created_at?: string;
-          created_by: string;
+          created_by?: string | null;
           description: string;
           id?: string;
           request_id: string;
@@ -6069,7 +6069,7 @@ export type Database = {
         Update: {
           context?: string | null;
           created_at?: string;
-          created_by?: string;
+          created_by?: string | null;
           description?: string;
           id?: string;
           request_id?: string;
@@ -6109,10 +6109,13 @@ export type Database = {
           context: string | null;
           copied_from_request_id: string | null;
           created_at: string;
-          created_by: string;
+          created_by: string | null;
+          created_by_team: boolean;
+          creation_idempotency_key: string | null;
           description: string;
           establishment_id: string;
           id: string;
+          on_behalf_reason: string | null;
           opportunity_action: string | null;
           opportunity_id: string | null;
           priority: string | null;
@@ -6137,10 +6140,13 @@ export type Database = {
           context?: string | null;
           copied_from_request_id?: string | null;
           created_at?: string;
-          created_by: string;
+          created_by?: string | null;
+          created_by_team?: boolean;
+          creation_idempotency_key?: string | null;
           description: string;
           establishment_id: string;
           id?: string;
+          on_behalf_reason?: string | null;
           opportunity_action?: string | null;
           opportunity_id?: string | null;
           priority?: string | null;
@@ -6165,10 +6171,13 @@ export type Database = {
           context?: string | null;
           copied_from_request_id?: string | null;
           created_at?: string;
-          created_by?: string;
+          created_by?: string | null;
+          created_by_team?: boolean;
+          creation_idempotency_key?: string | null;
           description?: string;
           establishment_id?: string;
           id?: string;
+          on_behalf_reason?: string | null;
           opportunity_action?: string | null;
           opportunity_id?: string | null;
           priority?: string | null;
@@ -8856,6 +8865,20 @@ export type Database = {
           p_establishment_id: string;
           p_priority?: string;
           p_priority_reason?: string;
+        };
+        Returns: string;
+      };
+      create_request_on_behalf: {
+        Args: {
+          p_category?: string;
+          p_context?: string;
+          p_description: string;
+          p_establishment_id: string;
+          p_file_ids?: string[];
+          p_idempotency_key: string;
+          p_on_behalf_reason: string;
+          p_priority: string;
+          p_priority_reason: string;
         };
         Returns: string;
       };

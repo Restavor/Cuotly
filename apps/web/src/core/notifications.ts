@@ -23,6 +23,9 @@
 
 export const NOTIFICATION_EVENTS = [
   "request_submitted",
+  // RN-REQ-08 (migración 132) · el equipo creó una solicitud en nombre del
+  // restaurante; se avisa a quien responde por él.
+  "request_created_on_behalf",
   "job_unassigned",
   "job_assigned",
   "job_started",
@@ -411,6 +414,9 @@ export const CLIENT_VISIBLE_JOB_EVENTS: readonly NotificationEvent[] = [
  */
 export const CLIENT_ONLY_EVENTS: readonly NotificationEvent[] = [
   "terms_version_published",
+  // RN-REQ-08 (migración 132): la crea el equipo y se avisa al restaurante,
+  // que no la escribió. El equipo ya lo sabe: la acaba de crear.
+  "request_created_on_behalf",
   // RN-COM-23 (migración 131): lo publica el propietario del espacio y se
   // avisa a quien puede aceptarla por el restaurante.
   "plan_revision_published",

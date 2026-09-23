@@ -41,6 +41,12 @@ export interface RequestDetailRow {
    */
   readonly priority: string | null;
   readonly priority_reason: string | null;
+  /**
+   * RN-REQ-08 · la creó el equipo en nombre del restaurante, y cómo la
+   * pidió él. Quién del equipo fue no está aquí: está en la auditoría.
+   */
+  readonly created_by_team: boolean;
+  readonly on_behalf_reason: string | null;
   readonly state: string;
   readonly created_at: string;
   readonly validated_category: string | null;
@@ -186,7 +192,7 @@ export async function loadRequestDetail(
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, priority, priority_reason, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id",
+      "id, code, description, context, priority, priority_reason, created_by_team, on_behalf_reason, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id",
     )
     .eq("id", requestId)
     .maybeSingle();

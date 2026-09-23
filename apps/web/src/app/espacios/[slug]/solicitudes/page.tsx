@@ -22,6 +22,7 @@ import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhot
 import { CHANGE_CATEGORIES } from "@/core/classification-rules";
 import { REQUEST_STATES } from "@/core/naming";
 import { requestHeadline, requestTone } from "@/core/requests";
+import { canCreateOnBehalf } from "@/core/request-on-behalf";
 import { loadTeamRequests } from "./list-query";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -44,11 +45,11 @@ import { loadEstablishmentPhotos } from "@/services/establishment-photo";
  * columna para que el cliente no vea la identidad del equipo, así que
  * `select *` devuelve 403.
  *
- * El "+ Nueva solicitud" de la maqueta no va: una solicitud la pide el
- * restaurante desde su panel (RN-REQ), no el equipo desde aquí. Un botón
- * que abriera un formulario que no existe prometería lo que la regla no
- * da. Y el panel de detalle de la derecha es la pantalla de la solicitud,
- * a la que lleva "Ver solicitud".
+ * "+ Nueva solicitud" (M77) lleva al formulario de crear una en nombre del
+ * restaurante (RN-REQ-08, decisión 73), y solo se pinta a quien puede:
+ * propietario y administradores. No es el control: lo es
+ * `create_request_on_behalf()`. El panel de detalle de la derecha es la
+ * pantalla de la solicitud, a la que lleva "Ver solicitud".
  */
 export const dynamic = "force-dynamic";
 
@@ -145,7 +146,20 @@ export default async function TeamRequestsPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t.title} subtitle={t.subtitle} />
+      <PageHeader
+        title={t.title}
+        subtitle={t.subtitle}
+        actions={
+          canCreateOnBehalf(membership.role) ? (
+            <ButtonLink
+              href={restaurante === undefined ? `${base}/nueva` : `${base}/nueva?restaurante=${restaurante}`}
+              icon="plus"
+            >
+              {t.newButton}
+            </ButtonLink>
+          ) : undefined
+        }
+      />
 
       {todas.length === 0 && !hasFilters ? null : (
         <FilterBar action={base} hasFilters={hasFilters}>

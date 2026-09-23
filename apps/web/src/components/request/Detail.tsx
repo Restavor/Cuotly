@@ -323,6 +323,16 @@ export function ClientRequestCard({
         {/* "Dónde" solo si lo escribió: un guion en una fila vacía no dice
             nada que no diga no pintarla. */}
         {request.context ? <Dato label={t.contextLabel}>{request.context}</Dato> : null}
+        {/* RN-REQ-08 · la creó el equipo en nombre del restaurante: se dice,
+            con cómo la pidió él. Quién del equipo, en el historial. */}
+        {request.created_by_team ? (
+          <Dato label={t.onBehalfOrigin}>
+            {t.onBehalfOriginValue}
+            {request.on_behalf_reason ? (
+              <span className="mt-1 block text-sm text-text-secondary">{request.on_behalf_reason}</span>
+            ) : null}
+          </Dato>
+        ) : null}
         {/*
           RN-REQ-05 · cuánto le corre al cliente, y por qué. Es la mitad de
           la regla: si el equipo no lo lee, pedirlo no sirve de nada.
@@ -563,7 +573,11 @@ export function ClassificationCard({
               técnico: cambia cuánto se fía uno de ella. */}
           {validada || proposal === null ? null : (
             <p className="mt-2 text-xs text-text-secondary">
-              {proposal.source === "ai" ? t.proposalSourceAi : t.proposalSourceRules}
+              {proposal.source === "ai"
+                ? t.proposalSourceAi
+                : proposal.source === "team"
+                  ? t.proposalSourceTeam
+                  : t.proposalSourceRules}
               {proposal.fallbackReason
                 ? ` · ${t.proposalFallbackReason(proposal.fallbackReason)}`
                 : ""}

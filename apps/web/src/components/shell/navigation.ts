@@ -253,14 +253,18 @@ export function createOptions(
   const base = `/espacios/${spaceSlug}`;
   const mine = clientBase(spaceSlug, establishmentId);
   switch (role) {
+    // M77 · RN-REQ-08: el propietario y los administradores crean una
+    // solicitud en nombre del restaurante que la pidió fuera de Cuotly.
     case "owner":
       return [
+        D("request", es.create.request, `${base}/solicitudes/nueva`),
         D("establishment", es.create.establishment, `${base}/restaurantes/nuevo`),
         D("invite", es.create.invite, `${base}/equipo/invitar`),
         D("holiday", es.create.holiday, `${base}/calendario/festivo`),
       ];
     case "admin":
       return [
+        D("request", es.create.request, `${base}/solicitudes/nueva`),
         D("establishment", es.create.establishment, `${base}/restaurantes/nuevo`),
         D("holiday", es.create.holiday, `${base}/calendario/festivo`),
       ];

@@ -550,6 +550,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/versiones_de_planes.sql
 
+      - name: "Suite 73 — Solicitud en nombre del restaurante (migración 132, RN-REQ-08, M77)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/solicitud_en_nombre_del_restaurante.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

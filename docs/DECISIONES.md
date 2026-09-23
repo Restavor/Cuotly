@@ -2118,3 +2118,25 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     - **Una lectura que había que hacer:** el turno en la cola (`queue_rank`) crea versión, pero
       **no cuenta** para decidir si perjudica ni se le enseña al restaurante: RN-COM-03 dice que el
       cliente no lo ve, y no se le puede pedir que acepte lo que no se le enseña.
+
+73. **Crear una solicitud en nombre del restaurante (M77)** (23/09/2026). La pantalla M77 del diseño
+    definitivo se había dejado fuera (entrada del 23/09 de `docs/diseno/PLAN-ESCRITORIO.md`) porque
+    `create_request_draft()` exige ser del restaurante. Bosco decide hacerla, con el patrón de la
+    decisión 21. Queda escrita como **RN-REQ-08** (PRD §9) y la programa la **migración 132**.
+
+    - **Quién:** propietario y administradores del espacio (`manage_requests`). Un trabajador no.
+    - **Sin borrador:** se crea y se envía en un paso. No se copia "Guardar borrador" del dibujo.
+    - **Motivo obligatorio** (cómo y cuándo lo pidió el restaurante), marca en la fila, auditoría con
+      `on_behalf_of_client` y aviso a los propietarios del restaurante. El restaurante ve que lo
+      creó el Equipo de mantenimiento, no quién.
+    - **La aceptación sigue siendo del restaurante.** No se abre ninguna aceptación en su nombre
+      fuera de la del presupuesto.
+    - **La "Categoría sugerida" del dibujo sustituye a la IA** cuando el equipo la elige
+      (`source = 'team'`), y pasa igualmente por validación interna.
+    - **Dos cosas que salieron al programarlo.** (1) `requests.created_by` y
+      `request_versions.created_by` los lee el restaurante por columna, porque hasta ahora siempre
+      eran suyos: en una solicitud del equipo quedan vacíos, y quién fue sale de `audit_log`.
+      (2) `accept_request()` dejaba al propietario y a los administradores aceptar por RPC cualquier
+      propuesta **sin presupuesto**: la excepción de la decisión 21 comparaba con un estado de
+      presupuesto nulo y el `if` no saltaba. Se corrige en la misma migración.
+

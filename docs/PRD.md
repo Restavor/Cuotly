@@ -484,6 +484,32 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
     filas salen de las mismas políticas que la pantalla del trabajo, y para el cliente siguen
     siendo organización interna del equipo (P7).
 
+- **RN-REQ-08 (añadida 23/09/2026, decisión 73)**: **el propietario y los administradores del
+  espacio pueden crear una solicitud en nombre del restaurante** cuando la pidió fuera de Cuotly
+  (por teléfono, por correo, en persona). Es la pantalla M77 del diseño definitivo. Un trabajador
+  no puede; el restaurante sigue usando su propio formulario (§9.1).
+
+  - **Sin borrador.** Se crea y se envía en un paso: nace `received`, arranca T1 (RN-SLA-01) y
+    queda el apunte de envío que lee el seguimiento del restaurante. Un borrador del equipo
+    aparecería en el panel del restaurante como si lo estuviera escribiendo él.
+  - **Constancia, como en la decisión 21.** Es obligatorio escribir **cómo y cuándo lo pidió el
+    restaurante** (hasta 500 caracteres). La fila queda marcada (`requests.created_by_team`), la
+    auditoría lleva `on_behalf_of_client` y el motivo, y los propietarios del restaurante (local y
+    global del grupo) reciben el aviso `request_created_on_behalf`. El restaurante ve que la creó
+    el Equipo de mantenimiento y cómo la pidió, **nunca quién** (P7): en su fila `created_by`
+    queda vacío y quién fue lo dice la auditoría.
+  - **La prioridad y su motivo son obligatorios** también aquí (RN-REQ-05): el equipo escribe lo
+    que le dijo el restaurante.
+  - **La categoría que elija el equipo sustituye a la IA.** Si la elige, es la propuesta
+    (`classifications.source = 'team'`) y la solicitud pasa directa a validación interna, sin
+    llamar a la IA. Si la deja vacía, la IA la clasifica como cualquier otra (RN-CLS-01). En los
+    dos casos el restaurante no ve nada hasta que se valida (RN-CLS-03).
+  - **La aceptación no cambia.** La propuesta la acepta el restaurante en Cuotly, como siempre:
+    consumir cambios de su plan es decisión suya. Crearla en su nombre no consume nada. La única
+    aceptación en su nombre sigue siendo la del presupuesto (decisión 21, §84).
+  - **Los adjuntos** se suben compartidos con el restaurante: la solicitud es suya.
+  - Pulsar dos veces **no crea dos solicitudes** (clave de idempotencia).
+
 - **RN-REQ-04 (copiar/pegar)**: "Copiar solicitud" y "Pegar solicitud" funcionan **solo dentro del mismo grupo**. Copiar no crea nada por sí solo; al pegar se crea un **borrador** para el establecimiento destino, se vuelve a analizar el contenido, el consumo pertenece al destino y los adjuntos copiados se muestran para revisión sin enviarse automáticamente.
 
 ---
