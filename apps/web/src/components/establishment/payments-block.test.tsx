@@ -121,11 +121,13 @@ function sheetData(payments: PaymentsProps): SheetData {
       requests: { shown: [], hidden: 0 },
       jobs: { shown: [], hidden: 0 },
       tasks: { shown: [], hidden: 0 },
+      menus: null,
     },
     counts: { requestsByState: [], jobsByState: [], files: 0 },
     today: "2026-09-11",
     payments: { ...payments, quotes: payments.quotes ?? [] },
     users: { rows: [], failed: false },
+    invitations: { rows: [], failed: false },
     canManageClients: false,
     staff: [],
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
@@ -174,6 +176,13 @@ describe("vista 14 · la cuota del periodo", () => {
     // El 21 % de 599 serían 125,79 €: si saliera, la pantalla estaría
     // calculando en vez de leer.
     expect(card.queryByText("125,79 €")).not.toBeInTheDocument();
+  });
+
+  it("M42 · 'Ver detalle' lleva al detalle de ESE cobro (M17), no a Finanzas", () => {
+    pintar({ allowed: true, charges: [cobroPendiente], payments: [] });
+    for (const enlace of screen.getAllByRole("link", { name: t.chargeViewDetail })) {
+      expect(enlace).toHaveAttribute("href", "/espacios/demo/finanzas/cobros/c-1");
+    }
   });
 
   it("cada cuota viva lleva su formulario de registrar el pago (HU-26)", () => {

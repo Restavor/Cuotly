@@ -5,6 +5,7 @@ import { TERMINAL_REQUEST_STATES } from "@/core/request-states";
 import type { AttentionItem } from "@/core/home";
 import {
   LIVE_JOB_STATES,
+  MENU_SECTION_ROWS,
   OPERATION_CARD_ROWS,
   firstRows,
   groupAttentionByEstablishment,
@@ -506,6 +507,60 @@ export interface SheetOperationRequest {
   readonly createdAt: string;
   readonly authorName: string | null;
   readonly deepLink: string;
+  /**
+   * M25 · "Categoría propuesta". La validada si la hay; si no, la última
+   * que propuso el clasificador, marcada como propuesta (`proposed`) para
+   * que no se lea como decidida (RN-CLS-04). `null` si no hay ninguna.
+   */
+  readonly category: { readonly key: string; readonly proposed: boolean } | null;
+  /** M25 · "Trabajo": el que nació al aceptarla, si ya existe (RN-JOB). */
+  readonly job: { readonly id: string; readonly code: string } | null;
+}
+
+/**
+ * M27 · un trabajo vivo en la tabla de Operación: el mismo de la tarjeta
+ * del Resumen (su plazo sale de `currentJobFrom()`) más las dos columnas
+ * del dibujo que la tarjeta no necesita.
+ */
+export interface SheetOperationJob extends SheetCurrentJob {
+  /** Quién lo lleva. `null` sin asignar, y lo dice la tabla. */
+  readonly assigneeId: string | null;
+  readonly assigneeName: string | null;
+  /**
+   * Cuántas evidencias tiene enlazadas, contadas sobre lo que
+   * `can_read_file()` deja ver. `null` si la consulta falló: la columna lo
+   * dice en vez de pintar un cero que nadie ha contado (CA-20).
+   */
+  readonly evidence: number | null;
+}
+
+/**
+ * M31 · la sección Menú Diario de la ficha: el saldo del ciclo y los
+ * últimos menús.
+ *
+ * `null` entero cuando el restaurante no tiene el servicio
+ * (`menu_update_balance()` no devuelve fila): entonces no hay cuota que
+ * enseñar y la sección lo dice, no pinta "0 / 30".
+ *
+ * `consumed` e `included` son los del servidor, que suma el libro
+ * (RN-CON-02, CLAUDE.md MUST): aquí no se resta nada.
+ */
+export interface SheetOperationMenus {
+  readonly consumed: number;
+  readonly included: number;
+  /** Para la barra: lo consumido sobre lo incluido, de 0 a 100. */
+  readonly usedPercent: number;
+  readonly cycleStart: string;
+  readonly cycleEnd: string;
+  readonly rows: CardRows<{
+    readonly id: string;
+    readonly name: string;
+    readonly kind: string;
+    readonly targetDate: string;
+    readonly state: string;
+    readonly templateName: string | null;
+    readonly deepLink: string;
+  }>;
 }
 
 /**
@@ -544,8 +599,13 @@ export interface SheetOperationTask {
  */
 export interface SheetOperation {
   readonly requests: CardRows<SheetOperationRequest>;
-  readonly jobs: CardRows<SheetCurrentJob>;
+  readonly jobs: CardRows<SheetOperationJob>;
   readonly tasks: CardRows<SheetOperationTask>;
+  /**
+   * `null` sin el servicio; `"failed"` si el saldo no se pudo leer, que no
+   * es lo mismo que no tenerlo contratado (CA-20).
+   */
+  readonly menus: SheetOperationMenus | null | "failed";
 }
 
 /*
@@ -600,6 +660,69 @@ async function loadPeopleNames(
   return nombres;
 }
 
+/**
+ * M31 · el saldo del ciclo y los últimos menús del restaurante, por fecha
+ * de publicación, la más lejana primero, como la tabla del dibujo.
+ *
+ * El saldo es el de `menu_update_balance()`, la misma función que la
+ * cabecera de Menú Diario del restaurante: dos pantallas no pueden contar
+ * distinto las mismas 30 actualizaciones (CA-10). Los menús los filtra
+ * `menus_select`; aquí no se decide quién ve cuáles.
+ */
+async function loadOperationMenus(
+  supabase: Supabase,
+  spaceSlug: string,
+  establishmentId: string,
+): Promise<SheetOperationMenus | null | "failed"> {
+  const [
+    { data: balanceRows, error: balanceError },
+    { data: menus, count },
+    { data: templates },
+  ] = await Promise.all([
+    supabase.rpc("menu_update_balance", { p_establishment_id: establishmentId }),
+    supabase
+      .from("menus")
+      .select("id, name, kind, target_date, state, template_id", { count: "exact" })
+      .eq("establishment_id", establishmentId)
+      .order("target_date", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(MENU_SECTION_ROWS),
+    supabase.from("menu_templates").select("id, name").eq("establishment_id", establishmentId),
+  ]);
+
+  if (balanceError !== null) return "failed";
+  const balance = balanceRows?.[0] ?? null;
+  if (balance === null) return null;
+
+  const plantilla = new Map((templates ?? []).map((tpl) => [tpl.id, tpl.name]));
+  const filas = menus ?? [];
+
+  return {
+    consumed: balance.consumed,
+    included: balance.included_updates,
+    usedPercent:
+      balance.included_updates > 0
+        ? Math.min(100, Math.round((balance.consumed / balance.included_updates) * 100))
+        : 0,
+    cycleStart: balance.cycle_start,
+    cycleEnd: balance.cycle_end,
+    rows: {
+      // Cuántos quedan detrás lo dice el recuento de la base, no la página
+      // traída: si no llega, no se inventa un "y N más".
+      hidden: count === null ? 0 : Math.max(0, count - filas.length),
+      shown: filas.map((menu) => ({
+        id: menu.id,
+        name: menu.name,
+        kind: menu.kind,
+        targetDate: menu.target_date,
+        state: menu.state,
+        templateName: menu.template_id === null ? null : (plantilla.get(menu.template_id) ?? null),
+        deepLink: `/espacios/${spaceSlug}/menu-diario/${menu.id}`,
+      })),
+    },
+  };
+}
+
 export async function loadSheetOperation(
   supabase: Supabase,
   spaceSlug: string,
@@ -614,17 +737,19 @@ export async function loadSheetOperation(
   // Sin desempate, esas filas empatadas salen en el orden físico de la
   // tabla y la tarjeta puede enseñar unas u otras entre dos recargas, con
   // "y 1 más" escondiendo cada vez una distinta.
-  const [{ data: requests }, { data: jobs }, { data: tasks }] = await Promise.all([
+  const [{ data: requests }, { data: jobs }, { data: tasks }, menus] = await Promise.all([
     supabase
       .from("requests")
-      .select("id, code, description, state, created_by, created_at")
+      .select("id, code, description, state, created_by, created_at, validated_category")
       .eq("establishment_id", establishmentId)
       .not("state", "in", `(${CLOSED_REQUEST_STATES.join(",")})`)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false }),
     supabase
       .from("jobs")
-      .select("id, code, space_id, state, category, request_id, created_at, execution_sla_hours")
+      .select(
+        "id, code, space_id, state, category, request_id, created_at, execution_sla_hours, assigned_to",
+      )
       .eq("establishment_id", establishmentId)
       .not("state", "in", `(${CLOSED_JOB_STATES.join(",")})`)
       .order("created_at", { ascending: false })
@@ -641,6 +766,7 @@ export async function loadSheetOperation(
       .eq("establishment_id", establishmentId)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false }),
+    loadOperationMenus(supabase, spaceSlug, establishmentId),
   ]);
 
   // El orden de las tareas lo decide `sortOpenTasks()` (src/core), no la
@@ -653,34 +779,91 @@ export async function loadSheetOperation(
   const filasTareas = firstRows(abiertas, OPERATION_CARD_ROWS);
 
   const jobIds = filasTareas.shown.map((task) => task.job_id).filter((id): id is string => id !== null);
-  const [nombres, { data: jobCodes }] = await Promise.all([
-    loadPeopleNames(supabase, establishmentId, [
-      // Una solicitud creada por el equipo en nombre del restaurante no
-      // lleva autor en la columna (RN-REQ-08, P7): sale de la auditoría.
-      ...filasSolicitudes.shown
-        .map((request) => request.created_by)
-        .filter((id): id is string => id !== null),
-      ...filasTareas.shown.map((task) => task.assignee_id).filter((id): id is string => id !== null),
-    ]),
-    jobIds.length === 0
-      ? Promise.resolve({ data: [] as { id: string; code: string }[] })
-      : supabase.from("jobs").select("id, code").in("id", jobIds),
-  ]);
+  const requestIds = filasSolicitudes.shown.map((request) => request.id);
+  const shownJobIds = filasTrabajos.shown.map((job) => job.id);
+  const [nombres, { data: jobCodes }, { data: requestJobs }, { data: proposals }, evidencias] =
+    await Promise.all([
+      loadPeopleNames(supabase, establishmentId, [
+        // Una solicitud creada por el equipo en nombre del restaurante no
+        // lleva autor en la columna (RN-REQ-08, P7): sale de la auditoría.
+        ...filasSolicitudes.shown
+          .map((request) => request.created_by)
+          .filter((id): id is string => id !== null),
+        ...filasTareas.shown.map((task) => task.assignee_id).filter((id): id is string => id !== null),
+        // M27 · "Asignado a". Es la ficha del equipo: el nombre de quien
+        // lleva el trabajo es organización interna y aquí sí se enseña.
+        ...filasTrabajos.shown.map((job) => job.assigned_to).filter((id): id is string => id !== null),
+      ]),
+      jobIds.length === 0
+        ? Promise.resolve({ data: [] as { id: string; code: string }[] })
+        : supabase.from("jobs").select("id, code").in("id", jobIds),
+      // M25 · "Trabajo": el de cada solicitud, esté vivo o cerrado.
+      requestIds.length === 0
+        ? Promise.resolve({ data: [] as { id: string; code: string; request_id: string | null }[] })
+        : supabase.from("jobs").select("id, code, request_id").in("request_id", requestIds),
+      // M25 · "Categoría propuesta". `classifications` solo la lee el
+      // equipo (RN-CLS-04); la más reciente de cada solicitud es la que
+      // se valida, así que se ordena y se queda la primera.
+      requestIds.length === 0
+        ? Promise.resolve({
+            data: [] as { request_id: string; proposed_category: string; created_at: string }[],
+          })
+        : supabase
+            .from("classifications")
+            .select("request_id, proposed_category, created_at")
+            .in("request_id", requestIds)
+            .order("created_at", { ascending: false }),
+      // M27 · "Evidencias". Lo cuenta `file_links`, que pasa por
+      // `can_read_file()`: quien no puede ver un archivo no lo cuenta.
+      shownJobIds.length === 0
+        ? Promise.resolve({ data: [] as { entity_id: string }[], error: null })
+        : supabase
+            .from("file_links")
+            .select("entity_id")
+            .eq("entity_type", "job")
+            .in("entity_id", shownJobIds),
+    ]);
 
   const codigoDelTrabajo = new Map((jobCodes ?? []).map((job) => [job.id, job.code]));
+  const trabajoDeLaSolicitud = new Map(
+    (requestJobs ?? [])
+      .filter((job): job is typeof job & { request_id: string } => job.request_id !== null)
+      .map((job) => [job.request_id, { id: job.id, code: job.code }]),
+  );
+  const propuesta = new Map<string, string>();
+  for (const fila of proposals ?? []) {
+    if (!propuesta.has(fila.request_id)) propuesta.set(fila.request_id, fila.proposed_category);
+  }
+  let evidenciasPorTrabajo: Map<string, number> | null = null;
+  if (evidencias.error === null) {
+    evidenciasPorTrabajo = new Map();
+    for (const { entity_id } of evidencias.data ?? []) {
+      evidenciasPorTrabajo.set(entity_id, (evidenciasPorTrabajo.get(entity_id) ?? 0) + 1);
+    }
+  }
 
   return {
     requests: {
       hidden: filasSolicitudes.hidden,
-      shown: filasSolicitudes.shown.map((request) => ({
-        id: request.id,
-        code: request.code,
-        description: request.description,
-        state: request.state,
-        createdAt: request.created_at,
-        authorName: request.created_by === null ? null : (nombres.get(request.created_by) ?? null),
-        deepLink: `/espacios/${spaceSlug}/solicitudes/${request.id}`,
-      })),
+      shown: filasSolicitudes.shown.map((request) => {
+        const propuestaDeLaIA = propuesta.get(request.id);
+        return {
+          id: request.id,
+          code: request.code,
+          description: request.description,
+          state: request.state,
+          createdAt: request.created_at,
+          authorName: request.created_by === null ? null : (nombres.get(request.created_by) ?? null),
+          deepLink: `/espacios/${spaceSlug}/solicitudes/${request.id}`,
+          category:
+            request.validated_category !== null
+              ? { key: request.validated_category, proposed: false }
+              : propuestaDeLaIA === undefined
+                ? null
+                : { key: propuestaDeLaIA, proposed: true },
+          job: trabajoDeLaSolicitud.get(request.id) ?? null,
+        };
+      }),
     },
     // El plazo de cada trabajo sale de `currentJobFrom()`, la misma función
     // que usa el Resumen: dos pantallas de la misma ficha no pueden decir
@@ -688,11 +871,15 @@ export async function loadSheetOperation(
     jobs: {
       hidden: filasTrabajos.hidden,
       shown: await Promise.all(
-        filasTrabajos.shown.map((job) =>
-          currentJobFrom(supabase, spaceSlug, establishmentId, job, now),
-        ),
+        filasTrabajos.shown.map(async (job) => ({
+          ...(await currentJobFrom(supabase, spaceSlug, establishmentId, job, now)),
+          assigneeId: job.assigned_to,
+          assigneeName: job.assigned_to === null ? null : (nombres.get(job.assigned_to) ?? null),
+          evidence: evidenciasPorTrabajo === null ? null : (evidenciasPorTrabajo.get(job.id) ?? 0),
+        })),
       ),
     },
+    menus,
     tasks: {
       hidden: filasTareas.hidden,
       shown: filasTareas.shown.map((task) => ({

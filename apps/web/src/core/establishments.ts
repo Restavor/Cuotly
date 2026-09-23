@@ -457,6 +457,13 @@ export interface CardRows<T> {
  */
 export const OPERATION_CARD_ROWS = 4;
 
+/**
+ * M31 · cuántos menús enseña la sección Menú Diario de la ficha: una
+ * semana, que es lo que dibuja la maqueta (del lunes al domingo). El resto
+ * está en la pantalla de Menú Diario del restaurante, con sus filtros.
+ */
+export const MENU_SECTION_ROWS = 7;
+
 export function firstRows<T>(rows: readonly T[], limit: number): CardRows<T> {
   return { shown: rows.slice(0, limit), hidden: Math.max(0, rows.length - limit) };
 }

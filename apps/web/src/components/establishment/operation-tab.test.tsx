@@ -99,6 +99,7 @@ function sheetData(operation: SheetData["operation"]): SheetData {
     today: "2026-09-11",
     payments: { allowed: false, charges: [], payments: [], quotes: [] },
     users: { rows: [], failed: false },
+    invitations: { rows: [], failed: false },
     canManageClients: false,
     staff: [],
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
@@ -121,6 +122,7 @@ const vacia: SheetData["operation"] = {
   requests: { shown: [], hidden: 0 },
   jobs: { shown: [], hidden: 0 },
   tasks: { shown: [], hidden: 0 },
+  menus: null,
 };
 
 /*
@@ -234,84 +236,125 @@ describe("página 25 · la Operación son cuatro secciones, una cada vez", () =>
   });
 });
 
-describe("vista 04 · lo que enseña cada fila", () => {
-  const conDatos: SheetData["operation"] = {
-    requests: {
-      hidden: 15,
+const conDatos: SheetData["operation"] = {
+  requests: {
+    hidden: 15,
+    shown: [
+      {
+        id: "r-1",
+        code: "SOL-0023",
+        description: "Actualizar la carta de verano",
+        state: "pending_internal_validation",
+        createdAt: "2026-09-10T08:24:00.000Z",
+        authorName: "Nuria Ferreiro (Magariños)",
+        deepLink: "/espacios/demo/solicitudes/r-1",
+        category: { key: "small", proposed: true },
+        job: null,
+      },
+      {
+        id: "r-2",
+        code: "SOL-0022",
+        description: "Nueva fotografía de terraza",
+        state: "published",
+        createdAt: "2026-09-09T16:10:00.000Z",
+        authorName: null,
+        deepLink: "/espacios/demo/solicitudes/r-2",
+        category: { key: "medium", proposed: false },
+        job: { id: "j-9", code: "TRB-0009" },
+      },
+    ],
+  },
+  jobs: {
+    hidden: 0,
+    shown: [
+      {
+        id: "j-1",
+        code: "TRB-0015",
+        title: "Cambiar el horario del sábado",
+        state: "assigned",
+        deepLink: "/espacios/demo/trabajos/j-1",
+        counter: "t2",
+        remainingMinutes: 120,
+        overdue: false,
+        assigneeId: "u-1",
+        assigneeName: "Marta Rey",
+        evidence: 2,
+      },
+      {
+        id: "j-2",
+        code: "TRB-0011",
+        title: "Actualizar la fotografía del equipo",
+        state: "in_progress",
+        deepLink: "/espacios/demo/trabajos/j-2",
+        counter: "t3",
+        remainingMinutes: null,
+        overdue: true,
+        assigneeId: null,
+        assigneeName: null,
+        evidence: null,
+      },
+    ],
+  },
+  tasks: {
+    hidden: 1,
+    shown: [
+      {
+        id: "t-1",
+        title: "Retocar las fotografías seleccionadas",
+        state: "in_progress",
+        weight: "high",
+        estimatedMinutes: 120,
+        assigneeName: "Diego Sanz",
+        jobCode: "TRB-0014",
+        plannedDate: "2026-09-13",
+        deepLink: "/espacios/demo/trabajos/j-3/tareas?tarea=t-1",
+      },
+      {
+        id: "t-2",
+        title: "Revisar el crédito del fotógrafo",
+        state: "pending",
+        weight: "light",
+        estimatedMinutes: 15,
+        assigneeName: null,
+        jobCode: null,
+        plannedDate: null,
+        deepLink: null,
+      },
+    ],
+  },
+  menus: {
+    consumed: 12,
+    included: 30,
+    usedPercent: 40,
+    cycleStart: "2026-09-14T07:00:00.000Z",
+    cycleEnd: "2026-10-14T07:00:00.000Z",
+    rows: {
+      hidden: 3,
       shown: [
         {
-          id: "r-1",
-          code: "SOL-0023",
-          description: "Actualizar la carta de verano",
-          state: "pending_internal_validation",
-          createdAt: "2026-09-10T08:24:00.000Z",
-          authorName: "Nuria Ferreiro (Magariños)",
-          deepLink: "/espacios/demo/solicitudes/r-1",
+          id: "m-1",
+          name: "Menú del domingo",
+          kind: "daily",
+          targetDate: "2026-09-20",
+          state: "publication_requested",
+          templateName: "Plantilla clásica",
+          deepLink: "/espacios/demo/menu-diario/m-1",
         },
         {
-          id: "r-2",
-          code: "SOL-0022",
-          description: "Nueva fotografía de terraza",
+          id: "m-2",
+          name: "Menú del sábado",
+          kind: "daily",
+          targetDate: "2026-09-19",
           state: "published",
-          createdAt: "2026-09-09T16:10:00.000Z",
-          authorName: null,
-          deepLink: "/espacios/demo/solicitudes/r-2",
+          templateName: null,
+          deepLink: "/espacios/demo/menu-diario/m-2",
         },
       ],
     },
-    jobs: {
-      hidden: 0,
-      shown: [
-        {
-          id: "j-1",
-          code: "TRB-0015",
-          title: "Cambiar el horario del sábado",
-          state: "assigned",
-          deepLink: "/espacios/demo/trabajos/j-1",
-          counter: "t2",
-          remainingMinutes: 120,
-          overdue: false,
-        },
-        {
-          id: "j-2",
-          code: "TRB-0011",
-          title: "Actualizar la fotografía del equipo",
-          state: "in_progress",
-          deepLink: "/espacios/demo/trabajos/j-2",
-          counter: "t3",
-          remainingMinutes: null,
-          overdue: true,
-        },
-      ],
-    },
-    tasks: {
-      hidden: 1,
-      shown: [
-        {
-          id: "t-1",
-          title: "Retocar las fotografías seleccionadas",
-          state: "in_progress",
-          weight: "high",
-          estimatedMinutes: 120,
-          assigneeName: "Diego Sanz",
-          jobCode: "TRB-0014",
-          plannedDate: "2026-09-13",
-          deepLink: "/espacios/demo/trabajos/j-3/tareas?tarea=t-1",
-        },
-        {
-          id: "t-2",
-          title: "Revisar el crédito del fotógrafo",
-          state: "pending",
-          weight: "light",
-          estimatedMinutes: 15,
-          assigneeName: null,
-          jobCode: null,
-          plannedDate: null,
-          deepLink: null,
-        },
-      ],
-    },
-  };
+  },
+};
+
+describe("vista 04 · lo que enseña cada fila", () => {
 
   it("una solicitud lleva su autor y su momento; sin autor, solo el momento", () => {
     pintar(conDatos, seccion("requests"));
@@ -387,5 +430,73 @@ describe("vista 04 · lo que enseña cada fila", () => {
         destino,
       );
     }
+  });
+});
+
+describe("M25, M27 y M31 · las columnas del diseño definitivo", () => {
+  it("M25 · la solicitud enseña su categoría —marcada si es propuesta— y su trabajo", () => {
+    pintar(conDatos, seccion("requests"));
+    const card = within(tarjeta(t.requestsTitle));
+    // RN-CLS-04 · la propuesta del clasificador no se lee como decidida.
+    expect(card.getByText(es.naming.categories.small)).toBeInTheDocument();
+    expect(card.getByText(t.categoryProposed)).toBeInTheDocument();
+    // La validada sale sin la marca: solo hay una "propuesta" en la tabla.
+    expect(card.getByText(es.naming.categories.medium)).toBeInTheDocument();
+    expect(card.getAllByText(t.categoryProposed)).toHaveLength(1);
+    // El trabajo que nació al aceptarla, enlazado; sin trabajo, se dice.
+    expect(card.getByRole("link", { name: "TRB-0009" })).toHaveAttribute(
+      "href",
+      "/espacios/demo/trabajos/j-9",
+    );
+    expect(card.getByText(t.requestNoJob)).toBeInTheDocument();
+  });
+
+  it("M27 · el trabajo enseña quién lo lleva y sus evidencias; lo no contado no es un cero", () => {
+    pintar(conDatos, seccion("jobs"));
+    const card = within(tarjeta(t.jobsTitle));
+    expect(card.getByText("Marta Rey")).toBeInTheDocument();
+    expect(card.getByText(t.jobUnassigned)).toBeInTheDocument();
+    expect(card.getByText("2")).toBeInTheDocument();
+    expect(card.getByText(t.evidenceUnknown)).toBeInTheDocument();
+  });
+
+  it("M31 · la cuota del ciclo es la del servidor y la tabla lleva a cada menú", () => {
+    pintar(conDatos, seccion("dailyMenu"));
+    const card = within(tarjeta(t.dailyMenuTitle));
+    expect(card.getByText(t.dailyMenuQuota(12, 30))).toBeInTheDocument();
+    expect(card.getByRole("link", { name: "Menú del domingo" })).toHaveAttribute(
+      "href",
+      "/espacios/demo/menu-diario/m-1",
+    );
+    expect(card.getByText("Plantilla clásica")).toBeInTheDocument();
+    expect(card.getByText(t.menuNoTemplate)).toBeInTheDocument();
+    expect(card.getByText(es.naming.states.menu.publication_requested)).toBeInTheDocument();
+    // Los que quedan detrás se anuncian (CA-20).
+    expect(card.getByText(t.cardMore(3))).toBeInTheDocument();
+  });
+
+  it("M31 · con el servicio y sin menús, lo dice en vez de una tabla vacía", () => {
+    pintar(
+      {
+        ...vacia,
+        menus: {
+          consumed: 0,
+          included: 30,
+          usedPercent: 0,
+          cycleStart: "2026-09-14T07:00:00.000Z",
+          cycleEnd: "2026-10-14T07:00:00.000Z",
+          rows: { shown: [], hidden: 0 },
+        },
+      },
+      seccion("dailyMenu"),
+    );
+    expect(screen.getByText(t.dailyMenuEmptyTitle)).toBeInTheDocument();
+    expect(screen.getByText(t.dailyMenuQuota(0, 30))).toBeInTheDocument();
+  });
+
+  it("M31 · si el saldo no se pudo leer lo dice: no es 'sin Menú Diario' (CA-20)", () => {
+    pintar({ ...vacia, menus: "failed" }, seccion("dailyMenu"));
+    expect(screen.getByText(es.states.errorTitle)).toBeInTheDocument();
+    expect(screen.queryByText(t.nextMenuNoServiceTitle)).not.toBeInTheDocument();
   });
 });

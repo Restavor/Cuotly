@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   Card,
   EmptyState,
+  ProgressBar,
   StatusBadge,
   Table,
   TableBody,
@@ -57,6 +58,8 @@ import { ServiceStatusForms } from "./ServiceStatusForms";
 import { TransferBlock, type PendingTransfer } from "./TransferForms";
 import { StatusLegend } from "./StatusLegend";
 import { StatusNotice } from "./StatusNotice";
+import { InvitationRow } from "@/app/espacios/[slug]/restaurantes/[id]/usuarios/InvitationRow";
+import type { PanelInvitations } from "@/app/espacios/[slug]/restaurantes/[id]/usuarios/users-load";
 import { RevokeAccessButton } from "./RevokeAccessButton";
 import { fechaCorta } from "@/i18n/dates";
 import { enZona, instanteRelativo } from "@/i18n/dates";
@@ -167,6 +170,12 @@ export interface SheetData {
    */
   readonly today: string;
   readonly users: SheetUsers;
+  /**
+   * M43 · las invitaciones vivas del panel de este restaurante (RN-PAN-14).
+   * `failed` cuando no se pudieron leer: "no se pudo mirar" no es "no hay
+   * ninguna" (CA-20).
+   */
+  readonly invitations: PanelInvitations;
   /**
    * Maqueta 15 · si quien mira puede retirar accesos (`manage_clients`).
    * Decide qué se PINTA y nada más: `revoke_establishment_access()` lo
@@ -840,6 +849,7 @@ export function EstablishmentSheet({
     opportunities,
     opportunityViewer,
     reports,
+    invitations,
     timeZone,
   } = data;
   const bolsas = sortedCycleUsage(summary.bags);
@@ -1291,50 +1301,88 @@ export function EstablishmentSheet({
             ) : (
               <>
                 {/*
-                  M25 · la tabla del diseño. "Categoría propuesta" y "Fecha
-                  límite" no van: la categoría no existe hasta que el equipo
-                  la valida, y una solicitud no tiene plazo propio (el plazo
-                  es del trabajo, RN-SLA). La fila **abre la solicitud aquí
-                  debajo**, sin perder la lista: un solo control por fila
-                  (§20.1).
+                  M25 · la tabla del diseño: recibida, solicitud, categoría,
+                  estado y trabajo. La categoría es la validada, o la que
+                  propuso el clasificador dicho que es una propuesta
+                  (RN-CLS-04): enseñarla sin avisar la haría pasar por
+                  decidida. La "Fecha límite" del dibujo no va: una
+                  solicitud no tiene plazo propio, el plazo es del trabajo
+                  (RN-SLA), y está en su tabla. La fila **abre la solicitud
+                  aquí debajo**, sin perder la lista: un solo control por
+                  fila (§20.1).
                 */}
                 <Table>
                   <TableHead>
                     <TableRow>
+                      <TableHeaderCell>{t.columnReceived}</TableHeaderCell>
                       <TableHeaderCell>{t.columnRequest}</TableHeaderCell>
-                      <TableHeaderCell>{t.columnCode}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnCategory}</TableHeaderCell>
                       <TableHeaderCell>{t.columnState}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnJob}</TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {operation.requests.shown.map((request) => (
                       <TableRow key={request.id}>
                         <TableCell>
+                          <span className="whitespace-nowrap text-text-secondary">
+                            {diaCorto(request.createdAt, timeZone)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
                           <Link
                             href={openRequestHref(base, request.id)}
-                            className="block max-w-xl truncate font-semibold text-text hover:text-cuotly-green"
+                            className="block max-w-md truncate font-semibold text-text hover:text-cuotly-green"
                           >
                             {request.description}
                           </Link>
                           {/*
-                            Quién la pidió y cuándo. Sin nombre que
-                            resolver queda solo la fecha: un uuid no le
-                            dice a nadie quién escribió (CA-20).
+                            El código y quién la pidió. Sin nombre que
+                            resolver queda el código: un uuid no le dice a
+                            nadie quién escribió (CA-20).
                           */}
                           <span className="block truncate text-xs text-text-secondary">
                             {request.authorName === null
-                              ? momento(request.createdAt, timeZone)
-                              : `${request.authorName} · ${momento(request.createdAt, timeZone)}`}
+                              ? `${request.code} · ${momento(request.createdAt, timeZone)}`
+                              : `${request.code} · ${request.authorName} · ${momento(request.createdAt, timeZone)}`}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <span className="whitespace-nowrap text-text-secondary">{request.code}</span>
+                          {request.category === null ? (
+                            <span className="text-text-secondary">{t.categoryNone}</span>
+                          ) : (
+                            <span className="whitespace-nowrap">
+                              <StatusBadge tone="neutral">
+                                {es.naming.categories[request.category.key as CategoryKey] ??
+                                  request.category.key}
+                              </StatusBadge>
+                              {request.category.proposed ? (
+                                <span className="block text-xs text-text-secondary">
+                                  {t.categoryProposed}
+                                </span>
+                              ) : null}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <StatusBadge tone={requestTone(request.state)}>
                             {es.naming.states.request[request.state as RequestStateKey] ??
                               request.state}
                           </StatusBadge>
+                        </TableCell>
+                        <TableCell>
+                          {request.job === null ? (
+                            <span className="whitespace-nowrap text-text-secondary">
+                              {t.requestNoJob}
+                            </span>
+                          ) : (
+                            <Link
+                              href={`/espacios/${slug}/trabajos/${request.job.id}`}
+                              className="whitespace-nowrap font-medium text-cuotly-green hover:underline"
+                            >
+                              {request.job.code}
+                            </Link>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1504,18 +1552,22 @@ export function EstablishmentSheet({
             ) : (
               <>
                 {/*
-                  M27 · código, trabajo, estado y plazo. El plazo es el
-                  mismo del Resumen, recalculado desde los eventos (CA-10),
-                  y con su nombre: T2 para comenzar y T3 para publicar
-                  (RN-SLA-05/11).
+                  M27 · código, trabajo, asignado a, plazo, estado y
+                  evidencias. El plazo es el mismo del Resumen,
+                  recalculado desde los eventos (CA-10), y con su nombre:
+                  T2 para comenzar y T3 para publicar (RN-SLA-05/11). Es la
+                  ficha del equipo: quién lo lleva es organización interna
+                  y aquí sí se enseña (P7 es para el cliente).
                 */}
                 <Table>
                   <TableHead>
                     <TableRow>
                       <TableHeaderCell>{t.columnCode}</TableHeaderCell>
                       <TableHeaderCell>{t.columnJob}</TableHeaderCell>
-                      <TableHeaderCell>{t.columnState}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnJobAssignee}</TableHeaderCell>
                       <TableHeaderCell>{t.columnDeadline}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnState}</TableHeaderCell>
+                      <TableHeaderCell>{t.columnEvidence}</TableHeaderCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1529,10 +1581,22 @@ export function EstablishmentSheet({
                         <TableCell>
                           <Link
                             href={job.deepLink}
-                            className="block max-w-xl truncate font-semibold text-text hover:text-cuotly-green"
+                            className="block max-w-md truncate font-semibold text-text hover:text-cuotly-green"
                           >
                             {job.title}
                           </Link>
+                        </TableCell>
+                        <TableCell>
+                          {job.assigneeId === null ? (
+                            <span className="whitespace-nowrap text-text-secondary">
+                              {t.jobUnassigned}
+                            </span>
+                          ) : (
+                            <PersonCell name={job.assigneeName ?? t.auditUnknownActor} />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge tone={jobTone(job)}>{plazoDelTrabajo(job)}</StatusBadge>
                         </TableCell>
                         <TableCell>
                           <StatusBadge tone={job.state === "in_progress" ? "info" : "neutral"}>
@@ -1540,7 +1604,13 @@ export function EstablishmentSheet({
                           </StatusBadge>
                         </TableCell>
                         <TableCell>
-                          <StatusBadge tone={jobTone(job)}>{plazoDelTrabajo(job)}</StatusBadge>
+                          {job.evidence === null ? (
+                            <span className="whitespace-nowrap text-xs text-text-secondary">
+                              {t.evidenceUnknown}
+                            </span>
+                          ) : (
+                            <span className="text-text">{job.evidence}</span>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1648,58 +1718,117 @@ export function EstablishmentSheet({
       ) : null}
 
       {/*
-        Menú Diario **ya existe** (Hito 11). Esta tarjeta decía que
-        era "la Fase 2 entera", igual que el bloque del Resumen: dos
-        marcadores que sobrevivieron al servicio que anunciaban.
+        M31 · la sección Menú Diario: la cuota del ciclo arriba a la
+        derecha, y la tabla de los últimos menús con su fecha, su
+        plantilla y su estado. La cuota es la de `menu_update_balance()`,
+        la misma que la cabecera de Menú Diario del restaurante: dos
+        pantallas no pueden contar distinto las mismas 30 actualizaciones
+        (RN-CON-02, CA-10). Sin el servicio contratado no hay cuota que
+        enseñar, y se dice.
 
-        Aquí no se repite la lista de menús: la pantalla de Menú
-        Diario del restaurante la enseña entera, con su saldo de
-        actualizaciones y sus plantillas. Lo que va es la próxima
-        publicación —el mismo dato del Resumen, calculado una sola
-        vez— y la puerta a esa pantalla.
+        Lo que no se copia: "Nuevo menú" (un menú lo prepara el restaurante
+        o se crea desde Menú Diario, donde están sus plantillas), la
+        columna "Versión" (la versión vive en el detalle, con su historial)
+        y los filtros de estado y orden (están en la pantalla entera de
+        Menú Diario, a un enlace).
       */}
       {tab.key === "operation" && operationSection.key === "dailyMenu" ? (
-          <Card
-            title={t.dailyMenuTitle}
-            action={
-              nextMenu.kind === "no_service" ? undefined : (
-                <Link
-                  href={`${base}/menu-diario`}
-                  className="shrink-0 text-sm text-cuotly-green underline"
-                >
-                  {t.nextMenuLink}
-                </Link>
-              )
-            }
-          >
-            {nextMenu.kind === "no_service" ? (
-              <EmptyState
-                title={t.nextMenuNoServiceTitle}
-                description={t.nextMenuNoServiceReason}
-              />
-            ) : nextMenu.kind === "none" ? (
-              <EmptyState title={t.nextMenuNoneTitle} description={t.nextMenuNoneReason} />
-            ) : (
-              <div>
-                <p className="text-xs text-text-secondary">{t.nextMenuTitle}</p>
-                <p className="text-base font-semibold text-primary-dark">
-                  {fechaCorta(nextMenu.targetDate)}
-                </p>
-                <p className="truncate text-sm text-text">
-                  {nextMenu.name}
-                  {" · "}
-                  {es.naming.menuKinds[nextMenu.menuKind as MenuKindKey] ?? nextMenu.menuKind}
-                </p>
-                <p className="mt-1.5">
-                  <StatusBadge
-                    tone={isMenuState(nextMenu.state) ? menuTone(nextMenu.state) : "neutral"}
-                  >
-                    {es.naming.states.menu[nextMenu.state as MenuStateKey] ?? nextMenu.state}
-                  </StatusBadge>
-                </p>
+        <Card
+          title={t.dailyMenuTitle}
+          action={
+            operation.menus === null || operation.menus === "failed" ? undefined : (
+              <Link
+                href={`${base}/menu-diario`}
+                className="shrink-0 text-sm font-medium text-cuotly-green hover:underline"
+              >
+                {t.nextMenuLink}
+              </Link>
+            )
+          }
+        >
+          {operation.menus === "failed" ? (
+            <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />
+          ) : operation.menus === null ? (
+            <EmptyState
+              title={t.nextMenuNoServiceTitle}
+              description={t.nextMenuNoServiceReason}
+            />
+          ) : (
+            <>
+              <div className="-mt-3 mb-4 flex flex-wrap items-start justify-between gap-4">
+                <p className="text-sm text-text-secondary">{t.dailyMenuSubtitle(header.name)}</p>
+                <div className="w-full max-w-xs rounded-[12px] border border-border p-3">
+                  <p className="text-xs text-text-secondary">{t.dailyMenuQuotaTitle}</p>
+                  <p className="text-xl font-bold text-primary-dark">
+                    {t.dailyMenuQuota(operation.menus.consumed, operation.menus.included)}
+                  </p>
+                  <ProgressBar
+                    percent={operation.menus.usedPercent}
+                    label={t.dailyMenuQuota(operation.menus.consumed, operation.menus.included)}
+                  />
+                  <p className="mt-1 text-xs text-text-secondary">
+                    {t.dailyMenuQuotaCycle(
+                      diaCorto(operation.menus.cycleStart, timeZone),
+                      diaCorto(operation.menus.cycleEnd, timeZone),
+                    )}
+                  </p>
+                </div>
               </div>
-            )}
-          </Card>
+
+              {operation.menus.rows.shown.length === 0 ? (
+                <EmptyState title={t.dailyMenuEmptyTitle} description={t.dailyMenuEmptyReason} />
+              ) : (
+                <>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableHeaderCell>{t.columnDate}</TableHeaderCell>
+                        <TableHeaderCell>{t.columnMenu}</TableHeaderCell>
+                        <TableHeaderCell>{t.columnTemplate}</TableHeaderCell>
+                        <TableHeaderCell>{t.columnState}</TableHeaderCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {operation.menus.rows.shown.map((menu) => (
+                        <TableRow key={menu.id}>
+                          <TableCell>
+                            <span className="whitespace-nowrap">{fechaCorta(menu.targetDate)}</span>
+                          </TableCell>
+                          <TableCell>
+                            <Link
+                              href={menu.deepLink}
+                              className="block max-w-md truncate font-semibold text-text hover:text-cuotly-green"
+                            >
+                              {menu.name}
+                            </Link>
+                            <span className="block text-xs text-text-secondary">
+                              {es.naming.menuKinds[menu.kind as MenuKindKey] ?? menu.kind}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {menu.templateName === null ? (
+                              <span className="text-text-secondary">{t.menuNoTemplate}</span>
+                            ) : (
+                              menu.templateName
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge
+                              tone={isMenuState(menu.state) ? menuTone(menu.state) : "neutral"}
+                            >
+                              {es.naming.states.menu[menu.state as MenuStateKey] ?? menu.state}
+                            </StatusBadge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  <CardMore hidden={operation.menus.rows.hidden} />
+                </>
+              )}
+            </>
+          )}
+        </Card>
       ) : null}
 
       {tab.key === "data" ? (
@@ -2302,15 +2431,17 @@ export function EstablishmentSheet({
                               </p>
 
                               {/*
-                                Los dos botones del diseño. "Registrar pago"
-                                abre aquí mismo el MISMO formulario de Finanzas
+                                Los dos botones del diseño. "Ver detalle"
+                                lleva al detalle de ESE cobro (M17), no a
+                                Finanzas en general. "Registrar pago" abre
+                                aquí mismo el MISMO formulario de Finanzas
                                 y del detalle del trabajo (HU-26): lo que
                                 cambia entre roles es lo que permite
                                 `register_payment()`, no la pantalla.
                               */}
                               <div className="mt-4 flex flex-wrap items-start justify-end gap-2">
                                 <Link
-                                  href={`/espacios/${slug}/finanzas`}
+                                  href={`/espacios/${slug}/finanzas/cobros/${charge.id}`}
                                   className="inline-flex items-center justify-center rounded-field border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green transition-colors hover:bg-cuotly-green/10 focus:outline focus:outline-2 focus:outline-cuotly-green"
                                 >
                                   {t.chargeViewDetail}
@@ -2443,7 +2574,7 @@ export function EstablishmentSheet({
                               </TableCell>
                               <TableCell>
                                 <Link
-                                  href={`/espacios/${slug}/finanzas`}
+                                  href={`/espacios/${slug}/finanzas/cobros/${charge.id}`}
                                   className="inline-flex items-center justify-center rounded-field border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-text transition-colors hover:bg-soft-surface"
                                 >
                                   {t.chargeViewDetail}
@@ -2716,15 +2847,9 @@ export function EstablishmentSheet({
                   </Table>
                   <p className="mt-3 text-sm text-text-secondary">{t.revokeHint}</p>
                   {/*
-                    Tres cosas del dibujo que NO están, cada una por su
-                    motivo (CLAUDE.md MUST NOT):
+                    Lo que del dibujo NO está, y por qué (CLAUDE.md MUST
+                    NOT):
 
-                      · El estado "Invitación pendiente · Expira en 7
-                        días". Las invitaciones de Cuotly son al ESPACIO
-                        (`space_invitations`, HU-03), no a un restaurante:
-                        a un usuario del lado cliente se le da acceso
-                        cuando ya existe. No hay invitación que esté
-                        pendiente, así que no hay estado que enseñar.
                       · El permiso "Ver informes". No hay columna: los dos
                         permisos finos que existen son `edit_establishment_data`
                         y `view_billing` (RN-EST-11, RN-FIN-07). El PRD §14
@@ -2733,9 +2858,39 @@ export function EstablishmentSheet({
                         un permiso que no está modelado — y los informes
                         son Fase 3.
                   */}
-                  <p className="mt-1 text-sm text-text-secondary">{t.usersPendingHint}</p>
                 </>
               )}
+
+              {/*
+                M43 · la fila "Usuario pendiente · Invitación pendiente" del
+                dibujo. Existen desde RN-PAN-14: el restaurante invita y el
+                equipo aprueba o rechaza. Se listan aquí las vivas, con el
+                mismo componente que la pantalla de Usuarios y accesos del
+                restaurante; los botones de revisar se PINTAN a quien
+                gestiona clientes, y quien decide es
+                `review_establishment_invitation()` (CLAUDE.md). No hay
+                "Reenviar": Cuotly todavía no envía el correo.
+              */}
+              <div className="mt-6 border-t border-border pt-4">
+                <h3 className="text-base font-semibold text-primary-dark">
+                  {t.invitations.title}
+                </h3>
+                {invitations.failed ? (
+                  <p className="mt-2 text-sm text-danger">{t.invitations.failed}</p>
+                ) : invitations.rows.length === 0 ? (
+                  <p className="mt-2 text-sm text-text-secondary">{t.invitations.empty}</p>
+                ) : (
+                  <ul className="divide-y divide-border">
+                    {invitations.rows.map((invitation) => (
+                      <InvitationRow
+                        key={invitation.id}
+                        invitation={invitation}
+                        canReview={canManageClients}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </div>
             </Card>
 
             {/*
@@ -3411,12 +3566,21 @@ export function EstablishmentSheet({
           )}
 
           {/*
-            Maqueta 19 · el botón "Exportar". No se construye, y no es un
-            olvido: el PRD §24.1 pone "exportación e importación masiva"
-            entre lo que queda FUERA del alcance de la Fase 1. Un botón que
-            no exporta es peor que no tenerlo.
+            M07 no dibuja "Exportar" en el historial del restaurante. El
+            registro se exporta en CSV desde Ajustes · Auditoría (M62), con
+            sus filtros; allí no se filtra por restaurante porque el
+            registro no lo guarda como columna. Se dice y se enlaza, en vez
+            de un botón que exportaría otra cosa que lo que se ve aquí.
           */}
-          <p className="mt-4 text-xs text-text-secondary">{t.auditExportPending}</p>
+          <p className="mt-4 text-xs text-text-secondary">
+            {t.auditExportElsewhere}{" "}
+            <Link
+              href={`/espacios/${slug}/ajustes/auditoria`}
+              className="text-cuotly-green underline"
+            >
+              {t.auditLink}
+            </Link>
+          </p>
         </Card>
       ) : null}
     </div>

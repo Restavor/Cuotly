@@ -6472,9 +6472,30 @@ export const es = {
     tasksNoDate: "Sin fecha",
 
     dailyMenuTitle: "Menú Diario",
-    dailyMenuEmptyTitle: "Menú Diario llega con la Fase 2",
+    // M31 · la cuota del ciclo, contada por el servidor, y la tabla de
+    // menús con sus columnas.
+    dailyMenuSubtitle: (restaurante: string) =>
+      `Los menús diarios de la web de ${restaurante}.`,
+    dailyMenuQuotaTitle: "Actualizaciones del ciclo",
+    dailyMenuQuota: (usadas: number, incluidas: number) => `${usadas} / ${incluidas}`,
+    dailyMenuQuotaCycle: (desde: string, hasta: string) => `Ciclo del ${desde} al ${hasta}`,
+    dailyMenuEmptyTitle: "Todavía no hay ningún menú",
     dailyMenuEmptyReason:
-      "Los menús, su solicitud de publicación y el contador de 30 actualizaciones (RN-CON-02) todavía no existen: son la Fase 2 entera. La maqueta enseña aquí tres menús de ejemplo con sus plazos; en su lugar va el motivo, porque no los está publicando nadie.",
+      "Cuando el restaurante o el equipo preparen un menú, aparecerá aquí con su fecha y su estado.",
+    columnMenu: "Menú",
+    columnTemplate: "Plantilla",
+    menuNoTemplate: "Sin plantilla",
+    // M25 · las dos columnas del dibujo que la tabla no tenía.
+    columnCategory: "Categoría",
+    categoryProposed: "propuesta",
+    categoryNone: "Sin clasificar",
+    requestNoJob: "Sin trabajo",
+    // M27 · "Asignado a" y "Evidencias". Una cuenta que no se pudo leer
+    // lo dice: no es un cero.
+    columnJobAssignee: "Asignado a",
+    columnEvidence: "Evidencias",
+    evidenceUnknown: "No se pudo contar",
+    jobUnassigned: "Sin asignar",
 
     /**
      * Lo que la tarjeta no está enseñando. Enseñar cuatro de doce sin
@@ -6719,8 +6740,6 @@ export const es = {
     revokeReasonPlaceholder: "Motivo (opcional)",
     revokeHint:
       "Retirar un acceso no borra nada: desaparece de inmediato y la actividad histórica permanece (RN-EST-05).",
-    usersPendingHint:
-      "No hay invitaciones pendientes que enseñar: en Cuotly se invita al espacio, no a un restaurante, y a un usuario del restaurante se le da acceso cuando ya existe, desde «Añadir usuario existente».",
 
     // ---- Gestión · Usuarios · personal del equipo (maqueta 15) -----
     staffTitle: "Personal operativo asignado",
@@ -6842,8 +6861,8 @@ export const es = {
     auditPage: (page: number) => `Página ${page}`,
     // PRD §24.1: "exportación e importación masiva" está fuera del alcance
     // de la Fase 1. Un botón que no exporta es peor que no tenerlo.
-    auditExportPending:
-      "Exportar el historial todavía no está: la exportación masiva queda fuera del alcance de la Fase 1 (PRD §24.1).",
+    auditExportElsewhere:
+      "Este historial no se exporta desde aquí: el registro del espacio entero se exporta en CSV desde Ajustes · Auditoría.",
     auditLink: "Ver la auditoría del espacio",
   },
 

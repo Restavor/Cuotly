@@ -32,6 +32,7 @@ import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
 import { loadBackups, loadPendingTransfer } from "./transfer-load";
+import { loadPanelInvitations } from "./usuarios/users-load";
 import { loadEstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 import {
   parseDataSection,
@@ -206,7 +207,9 @@ export default async function EstablishmentPage({
     // §38 · la propuesta de transferencia abierta, si la hay, y las copias
     // de seguridad. Las dos las filtra su política: si vuelven vacías es
     // que no había nada que enseñarle a quien preguntó.
-    const [transfer, backups, notes, { data: soyPropietario }, { data: bytesOcupados }] =
+    const [
+      transfer, backups, notes, { data: soyPropietario }, { data: bytesOcupados }, invitations,
+    ] =
       await Promise.all([
       loadPendingTransfer(supabase, id, space.id),
       loadBackups(supabase, id),
@@ -221,6 +224,9 @@ export default async function EstablishmentPage({
       // pasa tal cual: la pantalla dice el motivo en vez de pintar un cero
       // (CLAUDE.md MUST NOT).
       supabase.rpc("establishment_storage_bytes", { p_establishment_id: id }),
+      // M43 · las invitaciones vivas del panel (RN-PAN-14), las mismas que
+      // lista la pantalla de Usuarios y accesos del restaurante.
+      loadPanelInvitations(supabase, id),
     ]);
 
     /*
@@ -365,6 +371,7 @@ export default async function EstablishmentPage({
           payments,
           today: hoy,
           users,
+          invitations,
           staff,
           files,
           audit,

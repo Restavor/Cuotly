@@ -117,11 +117,14 @@ describe("página 25 · la solicitud abierta dentro de la ficha", () => {
               createdAt: "2026-09-18T09:00:00.000Z",
               authorName: null,
               deepLink: "/espacios/demo/solicitudes/r-1",
+              category: null,
+              job: null,
             },
           ],
         },
         jobs: { shown: [], hidden: 0 },
         tasks: { shown: [], hidden: 0 },
+        menus: null,
       },
     });
 

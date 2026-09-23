@@ -29,6 +29,7 @@ const sinOperacion: SheetData["operation"] = {
   requests: { shown: [], hidden: 0 },
   jobs: { shown: [], hidden: 0 },
   tasks: { shown: [], hidden: 0 },
+  menus: null,
 };
 
 function sheetData(
@@ -98,6 +99,7 @@ function sheetData(
     today: "2026-09-11",
     payments: { allowed: false, charges: [], payments: [], quotes: [] },
     users: { rows: [], failed: false },
+    invitations: { rows: [], failed: false },
     canManageClients: false,
     staff: [],
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },

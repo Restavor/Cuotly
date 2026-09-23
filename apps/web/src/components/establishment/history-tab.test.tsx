@@ -114,11 +114,13 @@ function sheetData(audit: SheetData["audit"]): SheetData {
       requests: { shown: [], hidden: 0 },
       jobs: { shown: [], hidden: 0 },
       tasks: { shown: [], hidden: 0 },
+      menus: null,
     },
     counts: { requestsByState: [], jobsByState: [], files: 0 },
     payments: { allowed: false, charges: [], payments: [], quotes: [] },
     today: "2026-09-11",
     users: { rows: [], failed: false },
+    invitations: { rows: [], failed: false },
     staff: [],
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
     audit,
@@ -218,10 +220,14 @@ describe("vista 19 · los filtros y el paginador", () => {
   });
 });
 
-describe("vista 19 · exportar", () => {
-  it("NO hay botón de exportar, y se dice por qué (PRD §24.1)", () => {
+describe("M07 · exportar", () => {
+  it("no hay botón de exportar aquí: se dice dónde se exporta y se enlaza (M62)", () => {
     pintar({ rows: [apunteDePersona], actors: [], filters: sinFiltros, hasMore: false });
-    expect(screen.getByText(t.auditExportPending)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(t.auditExportElsewhere))).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: t.auditLink })).toHaveAttribute(
+      "href",
+      "/espacios/demo/ajustes/auditoria",
+    );
     expect(screen.queryByRole("button", { name: /exportar/i })).not.toBeInTheDocument();
   });
 });

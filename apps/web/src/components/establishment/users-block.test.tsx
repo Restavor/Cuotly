@@ -53,6 +53,20 @@ vi.mock("./RevokeAccessButton", () => ({
   ),
 }));
 
+vi.mock("@/app/espacios/[slug]/restaurantes/[id]/usuarios/InvitationRow", () => ({
+  InvitationRow: ({
+    invitation,
+    canReview,
+  }: {
+    invitation: { id: string; email: string; status: string };
+    canReview: boolean;
+  }) => (
+    <li data-testid={`invitacion-${invitation.id}`} data-review={String(canReview)}>
+      {invitation.email} · {invitation.status}
+    </li>
+  ),
+}));
+
 const GESTION = SHEET_TABS.find((tab) => tab.key === "management")!;
 const BLOQUE_USUARIOS = MANAGEMENT_BLOCKS.find((block) => block.key === "users")!;
 
@@ -93,6 +107,7 @@ function sheetData(
   users: SheetData["users"],
   canManageClients: boolean,
   staff: SheetData["staff"],
+  invitations: SheetData["invitations"] = { rows: [], failed: false },
 ): SheetData {
   return {
     header: {
@@ -156,11 +171,13 @@ function sheetData(
       requests: { shown: [], hidden: 0 },
       jobs: { shown: [], hidden: 0 },
       tasks: { shown: [], hidden: 0 },
+      menus: null,
     },
     counts: { requestsByState: [], jobsByState: [], files: 0 },
     payments: { allowed: false, charges: [], payments: [], quotes: [] },
     today: "2026-09-11",
     users,
+    invitations,
     staff,
     files: { files: [], selected: null, categories: [], folders: [], total: 0, category: null },
     timeZone: "Europe/Madrid",
@@ -182,6 +199,7 @@ function pintar(
   users: SheetData["users"],
   canManageClients = true,
   staff: SheetData["staff"] = [],
+  invitations: SheetData["invitations"] = { rows: [], failed: false },
 ) {
   return render(
     <EstablishmentSheet
@@ -189,7 +207,7 @@ function pintar(
       slug="demo"
       tab={GESTION}
       block={BLOQUE_USUARIOS}
-      data={sheetData(users, canManageClients, staff)}
+      data={sheetData(users, canManageClients, staff, invitations)}
     />,
   );
 }
@@ -226,6 +244,43 @@ describe("vista 15 · los usuarios del restaurante", () => {
     pintar({ rows: [], failed: true });
     expect(screen.getByText(t.usersFailedReason)).toBeInTheDocument();
     expect(screen.queryByText(t.usersEmptyReason)).not.toBeInTheDocument();
+  });
+});
+
+describe("M43 · las invitaciones pendientes del panel (RN-PAN-14)", () => {
+  const invitacion = {
+    id: "inv-1",
+    email: "sala@magarinos.test",
+    role: "editor",
+    status: "pending_review",
+    expiresAt: null,
+    rejectionReason: null,
+    createdAt: "2026-09-20T09:00:00.000Z",
+  };
+
+  it("salen en la ficha, y los botones de revisar solo a quien gestiona clientes", () => {
+    pintar({ rows: [propietariaLocal], failed: false }, true, [], {
+      rows: [invitacion],
+      failed: false,
+    });
+    expect(screen.getByTestId("invitacion-inv-1")).toHaveAttribute("data-review", "true");
+
+    cleanup();
+    pintar({ rows: [propietariaLocal], failed: false }, false, [], {
+      rows: [invitacion],
+      failed: false,
+    });
+    expect(screen.getByTestId("invitacion-inv-1")).toHaveAttribute("data-review", "false");
+  });
+
+  it("sin ninguna lo dice, y una lectura fallida no se enseña como 'ninguna'", () => {
+    pintar({ rows: [propietariaLocal], failed: false });
+    expect(screen.getByText(t.invitations.empty)).toBeInTheDocument();
+
+    cleanup();
+    pintar({ rows: [propietariaLocal], failed: false }, true, [], { rows: [], failed: true });
+    expect(screen.getByText(t.invitations.failed)).toBeInTheDocument();
+    expect(screen.queryByText(t.invitations.empty)).not.toBeInTheDocument();
   });
 });
 

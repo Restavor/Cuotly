@@ -106,6 +106,79 @@ La parte más grande. La cabecera de la ficha del diseño —foto, nombre, estad
 Las pestañas ya existen como dato en `components/establishment/tabs.ts`; lo que
 hay que revisar es que cada bloque se vea como la maqueta.
 
+### Tabla índice de la ficha (verificada el 23/09/2026)
+
+Las **36 vistas** del PDF que son la ficha, mirada una a una contra el código:
+M03 a M07 (las cinco pestañas en su primera versión) y M25 a M48, M73, M74 y
+M80 a M84 (páginas 24 a 28 y 29 a 59). La dirección es relativa a
+`/espacios/<espacio>/restaurantes/<id>`; "Sheet" es
+`components/establishment/Sheet.tsx`. **Hecha** quiere decir que el bloque
+está y enseña lo que el dibujo pide con datos reales; lo que no se copia va en
+la última columna con su motivo, que también está escrito en el comentario del
+código.
+
+| Vista | Qué es | Dónde se mira | Estado | Lo que no se copia, y por qué |
+|---|---|---|---|---|
+| M03 | Resumen | `?vista=resumen` | Hecha | "Solicitudes prioritarias" es "Solicitudes por validar" más "Necesita atención" (los avisos reales del Inicio). Se añaden la leyenda de estados y la actividad sin caras |
+| M04 | Operación (primera versión) | `?vista=operacion` | Sustituida por M25 | El panel lateral de la solicitud es el de M25 |
+| M05 | Informes y datos · Resumen | `?vista=datos` | Hecha | La gráfica "Visitas y conversiones" (el dibujo la marca "Datos de ejemplo"); las cifras están en Analítica |
+| M06 | Gestión · Datos | `?vista=gestion&bloque=ficha` | Hecha, con la forma de M40 | — |
+| M07 | Historial | `?vista=historial` | Hecha | Filtros de fecha, tipo y persona; los cambios salen en la fila (antes → después). No hay "Exportar" aquí: se exporta desde Ajustes · Auditoría (M62) y se enlaza |
+| M25 | Operación · Solicitudes | `?vista=operacion&seccion=solicitudes` | Hecha (**23/09**: Recibida, Categoría y Trabajo) | "Fecha límite": una solicitud no tiene plazo propio, lo tiene su trabajo (RN-SLA). "Crear solicitud" está en Solicitudes (M77) |
+| M26 | Detalle de solicitud | `/espacios/<espacio>/solicitudes/<id>` con la cabecera de la ficha | Hecha | — |
+| M27 | Operación · Trabajos | `?seccion=trabajos` | Hecha (**23/09**: Asignado a y Evidencias) | "Nuevo trabajo": un trabajo nace al aceptar una solicitud (RN-JOB) |
+| M28 | Detalle de trabajo | `/espacios/<espacio>/trabajos/<id>` con la cabecera | Hecha | — |
+| M29 | Operación · Tareas | `?seccion=tareas` | Hecha | "Prioridad": las tareas tienen peso, no prioridad (§14.4) |
+| M30 | Detalle de tarea | `/trabajos/<id>/tareas?tarea=<id>` con la cabecera | Hecha | — |
+| M31 | Operación · Menú Diario | `?seccion=menu-diario` | Hecha (**23/09**: cuota del ciclo y tabla de menús) | "Nuevo menú", la columna "Versión" y los filtros: están en la pantalla de Menú Diario, a un enlace |
+| M32 | Detalle de menú | `/espacios/<espacio>/menu-diario/<id>` con la cabecera | Hecha | — |
+| M33 | Informes y datos · Analítica | `?vista=datos&seccion=analitica` | Hecha | Cifras de GA4 o el motivo de que no las haya (§178) |
+| M34 | Búsqueda | `?seccion=busqueda` | Hecha | Ídem, Search Console |
+| M35 | Comportamiento | `?seccion=comportamiento` | Hecha | El mapa de calor y las grabaciones: la conexión de Clarity guarda métricas agregadas (sesiones, desplazamiento, fricción), no sesiones ni mapas |
+| M36 | Rendimiento | `?seccion=rendimiento` | Hecha | — |
+| M37 | Informes y datos · Resumen | `?vista=datos` | Hecha | "Visibilidad para el cliente" es la regla de §95, dicha en el informe |
+| M38 | Oportunidades | `?seccion=oportunidades` | Hecha | Umbrales de la decisión 26 |
+| M39 | Detalle de informe | `/espacios/<espacio>/informes/<id>` con la cabecera | Hecha | — |
+| M40 | Gestión · Datos del establecimiento | `?vista=gestion&bloque=ficha` | Hecha | Los ejemplos "Ej. 600 000 000" (serían datos inventados) |
+| M41 | Gestión · Plan y servicios | `?bloque=plan` | Hecha | La frase y la foto del plan; "Presupuestar servicio extra" está en Finanzas · Presupuestos |
+| M42 | Gestión · Pagos | `?bloque=pagos` y `&pagos=` | Hecha (**23/09**: "Ver detalle" abre el cobro, M17) | Las cifras de "Resumen de cobros" (ninguna función del servidor las calcula) y las facturas (bloque legal) |
+| M43 | Gestión · Usuarios | `?bloque=usuarios` | Hecha (**23/09**: invitaciones pendientes, RN-PAN-14) | "Reenviar invitación" (Cuotly no envía correos) y el permiso "Ver informes" (no está modelado) |
+| M44 | Gestión · Archivos | `?bloque=archivos` | Hecha | La cuadrícula de miniaturas: los archivos van en tabla, con las carpetas arriba y el panel de versiones al lado |
+| M45 | Gestión · Integraciones | `?bloque=integraciones&fuente=` | Hecha | — |
+| M46 | Gestión · Notas internas | `?bloque=notas` | Hecha | El editor con formato: las notas son texto plano |
+| M47 | Condiciones del servicio | `?bloque=plan` y `?bloque=estado` | Hecha | "Descargar condiciones" en PDF: las condiciones son texto versionado (migración 75); se leen en Planes |
+| M48 | Historial · Detalle de evento | `?vista=historial` | Parcial | No hay panel lateral: lo que cambió va en la fila. La "evidencia de publicación" vive en el trabajo |
+| M73 | Crear establecimiento | `/espacios/<espacio>/restaurantes/nuevo` | Hecha | "Guardar borrador" (un alta no tiene borrador) |
+| M74 | Estado · Solo lectura | aviso encima de las pestañas | Hecha | El panel "Historial de estados": los cambios de estado están en Historial |
+| M80 | Informes y datos · sin datos | `?vista=datos` sin fuentes | Hecha | — |
+| M81 | Crear panel del restaurante | `?bloque=usuarios` | Hecha | — |
+| M82 | Restaurantes · Grupos | `/espacios/<espacio>/restaurantes/grupos` | Hecha como pantalla aparte | Las pestañas Establecimientos · Grupos · Archivados son un botón y un filtro de estado |
+| M83 | Gestión · Copias de seguridad | `?bloque=copias` | Hecha | "Revisar restauración": restaurar es descargar y lo aplica el equipo (RN-BCK-04) |
+| M84 | Archivados y transferencia | `?bloque=estado` | Hecha dentro de la ficha | La lista de archivados como pestaña: se filtran en Restaurantes |
+
+**La pasada de revisión del 23/09/2026** encontró cinco cosas y las cinco se
+arreglaron en el mismo cambio:
+
+1. **M42** · "Ver detalle" de cada cobro llevaba a Finanzas en general, y desde
+   hoy existe el detalle de cobro (M17). Ahora abre ese cobro.
+2. **M43** · la ficha decía que "en Cuotly se invita al espacio, no a un
+   restaurante" y que no había invitaciones pendientes que enseñar. Dejó de
+   ser verdad con RN-PAN-14: el restaurante invita y el equipo aprueba. Ahora
+   salen las vivas, con los botones de revisar a quien gestiona clientes.
+3. **M07** · el historial decía que exportar quedaba fuera de la Fase 1, y
+   Ajustes · Auditoría ya exporta en CSV (M62). Ahora lo dice y lo enlaza.
+4. **M25 y M27** · a las tablas les faltaban columnas del dibujo que sí
+   existen en la base: la categoría (validada, o la propuesta marcada como
+   tal, RN-CLS-04) y el trabajo de cada solicitud; quién lleva cada trabajo y
+   cuántas evidencias tiene (contadas por `file_links`, que pasa por
+   `can_read_file()`).
+5. **M31** · Menú Diario en la ficha era solo la próxima publicación. Ahora es
+   la cuota del ciclo de `menu_update_balance()` y la tabla de los últimos
+   siete menús, cada uno enlazado a su detalle (M32).
+
+Queda como **parcial** y sin tocar: el panel de detalle de evento de M48 y las
+tres pestañas de Restaurantes de M82 y M84, que son de la Parte 3.
+
 ## Parte 5 · Solicitudes, Trabajos y Tareas (M08–M11, M77, M78, A14, A15)
 
 Incluye la **vista de tablero** de Trabajos (M09) junto a la de lista.
@@ -203,6 +276,7 @@ sitio.
 | 23/09/2026 | **Estados A13 a A16, M78 y M79** · **A13** (Restaurantes vacío): "Todavía no has añadido restaurantes" con el edificio y "Crear restaurante"; con filtros que no dan nada, la lupa y "Limpiar filtros". **A14** (sin resultados): lo mismo en Solicitudes, Tareas y Trabajos —lupa y "Limpiar filtros", que en el tablero vuelve al tablero—. **A15** (Trabajos cargando): `trabajos/loading.tsx` pinta la cabecera, la barra de filtros y cuatro filas en gris con "Cargando trabajos…", sin ninguna cifra; la ficha de un trabajo tiene su propio `loading.tsx`. **A16** (error de sincronización): una fuente con error o con el dato viejo ya no deja la sección en blanco; enseña la franja "No se han podido actualizar los datos de GA4" con "Datos desactualizados", la última sincronización correcta y el último intento (con "Error"), el error que dio, "Revisar conexión" a quien gestiona y, si la fuente trajo algo antes, "Últimos datos disponibles" con la fecha hasta la que llegan y **sin la variación** frente al periodo anterior (con la ventana a medias diría una caída que no ha pasado). Es la misma pieza en la ficha del equipo y en el panel del restaurante. **M78** (trabajo bloqueado): la franja "Motivo del bloqueo" con el motivo, la nota y desde cuándo (de `blocks`, que el restaurante no lee); "Pedir información" cuando falta algo del restaurante, que lleva a la conversación de la solicitud; y abajo "Reanudar trabajo" con qué hay que resolver (el contador de ejecución sigue donde se quedó, RN-JOB-08). **M79** (editar el menú desde el equipo, `?vista=editar`, botón "Editar menú" en la ficha a quien tiene `manage_requests`): los datos y la plantilla, el contenido por secciones con su precio, la vista previa con la plantilla, el cupo de actualizaciones del ciclo (`menu_update_balance()`, sin barra si el restaurante no tiene el servicio) y "Descargar"; son las piezas del editor del restaurante y `save_menu_version()` sigue decidiendo quién escribe. **No se copia:** M77 (crear una solicitud en nombre del restaurante: `create_request_draft()` exige ser del restaurante; se deja fuera por decisión de Bosco), "Reintentar sincronización" de A16 (CLAUDE.md prohíbe "Sincronizar ahora"), "Reasignar" de M78 (`request_job_reassignment()` solo admite un trabajo asignado o en curso, RN-ASG-07), y de M79 "Solicitar publicación" (pedirla es del restaurante; el equipo publica desde la ficha) y las plantillas con foto de ejemplo | `restaurantes/page.tsx`, `solicitudes/page.tsx`, `tareas/page.tsx`, `trabajos/page.tsx`, `trabajos/loading.tsx`, `components/establishment/DigitalSections.tsx`, `trabajos/[id]/page.tsx`, `menu-diario/[menuId]/TeamMenuEditor.tsx` |
 | 23/09/2026 | **Planes y servicios · crear, editar y archivar (decisión 72, migración 131)** · lo que la entrega de Planes dejó fuera. **Planes** (M21): "Crear plan" y, en la ficha del elegido, "Editar plan" solo para el propietario (`manage_space`, RN-COM-19): el formulario con precio, cambios incluidos, plazos de inicio y de realización, nivel de informe, turno en la cola y las tres casillas; avisa antes de guardar si el cambio se hará en el sitio (nadie lo tiene, RN-COM-21) o si nacerá una versión y qué les pasa a los restaurantes (RN-COM-22 a 24). Debajo, cambiar el nombre (sin versión) y "Archivar" con su casilla (RN-COM-27); lo archivado lleva su insignia. **Servicios** (M54): lo mismo con los dos precios y las actualizaciones. **Versiones** (M55): arriba "Versiones del precio y las cuotas" con cada versión, su precio y su fecha, y la comparativa con la anterior término a término con "Mejora" o "Empeora" (`revision_diff()`, la misma regla que decide si se pide aceptación, RN-COM-30); en la lista de restaurantes, dónde está cada uno ("Pasa el…", "Falta su aceptación", "En versión anterior"). **Asignación y cambio**: el filtro por plan vale para todas sus versiones y la fila de quien no aceptó lo dice. **Ficha del restaurante** (M56): la versión pendiente de lo suyo con lo que cambia y "Registrar aceptación de fuera" con fecha y contrato; los destinos de un cambio ya no incluyen lo archivado ni su propio plan. **Panel del restaurante** (R23): "Nueva versión de lo que tienes contratado" con lo que cambia, cuándo pasa y "Acepto la versión N" al propietario cuando algo empeora. De paso, "Nuevo restaurante", el filtro de Restaurantes y el de Informes ofrecen un plan por linaje | `planes/`, `planes/CatalogueForms.tsx`, `planes/RevisionBlock.tsx`, `restaurantes/[id]/plan/`, `core/plan-catalogue.ts`, migración 131, suite 72 |
 | 23/09/2026 | **M77 · Nueva solicitud en nombre del restaurante (decisión 73, RN-REQ-08)** · `/solicitudes/nueva`, con "+ Nueva solicitud" en la cabecera de Solicitudes y en el menú Crear, solo al propietario y a los administradores. Como el dibujo, en dos columnas: el restaurante con su foto, código y grupo; la descripción y el "Dónde"; los adjuntos, que se suben **compartidos con el restaurante**; la "Categoría sugerida" con "Pendiente de validación" (si se elige, es la propuesta y no se llama a la IA; si no, clasifica la IA); la prioridad y su motivo; y, aunque el dibujo no lo pinte, **"Cómo lo pidió el restaurante"**, obligatorio. Se envía en un paso con `create_request_on_behalf()` (**migración 132**, suite 73) y lleva a la ficha de la solicitud, que dice "Creada por el equipo en nombre del restaurante" con el motivo; el panel del restaurante dice que la creó el Equipo de mantenimiento en su nombre y cómo la pidió, sin nombre (P7). Solo se ofrecen los restaurantes con el servicio en marcha, y se dice cuántos quedan fuera. **Arreglado de paso** (migración 132): `accept_request()` dejaba aceptar sin presupuesto al propietario y a los administradores por RPC. **No se copia:** "Asunto" (la solicitud no tiene; el título sale de la descripción, como en R06) y "Guardar borrador" (decisión 73) | `solicitudes/nueva/page.tsx`, `solicitudes/nueva/NewTeamRequestForm.tsx`, `solicitudes/nueva/actions.ts`, `core/request-on-behalf.ts`, `components/request/Detail.tsx`, `restaurantes/[id]/solicitudes/[requestId]/page.tsx` |
+| 23/09/2026 | **Ficha del restaurante · tabla índice y pasada de revisión** · las 36 vistas de la ficha (M03–M07, M25–M48, M73, M74, M80–M84) cruzadas con el código en la tabla de la Parte 4. Arreglado: "Ver detalle" de un cobro abre ese cobro (M17); Usuarios enseña las invitaciones vivas del panel con sus botones de revisar (RN-PAN-14) en vez de decir que no existen; Historial enlaza la exportación de Ajustes · Auditoría en vez de decir que no hay; Solicitudes lleva Recibida, Categoría (propuesta marcada, RN-CLS-04) y Trabajo; Trabajos lleva Asignado a y Evidencias; Menú Diario lleva la cuota del ciclo y los últimos siete menús | `components/establishment/Sheet.tsx`, `restaurantes/[id]/sheet-load.ts`, `restaurantes/[id]/page.tsx` |
 
 Lo que estas pantallas **no** copian del dibujo, y por qué, está escrito en el
 comentario de cada una: los botones que abrirían formularios que no existen
