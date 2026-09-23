@@ -516,3 +516,29 @@ para y avisa: eso sería la cola abierta a internet.
     pasa.
 - VIES se comprobó en vivo desde un sandbox de `cuotly-web` (región `cdg1`, salida solo a
   `ec.europa.eu`, apagado al terminar). Detalle en la decisión 68.
+
+## 23/09/2026 · M77 publicada y recorrida en producción
+
+- `cuotly-web` publicó el commit `7b1fe13` (M77, migraciones 132 a 134) y terminó en
+  `Deployment completed`, comprobado por la API: el alias `cuotly-web.vercel.app` apunta a
+  `dpl_8dTxHsw14why7SpTFWZp4h8DEn6o`.
+- **M77 recorrida de verdad contra `cuotly-web.vercel.app`**, con Playwright desde un sandbox de
+  `cuotly-web` (región `cdg1`, parado al terminar), con las cuentas del espacio de demostración.
+  Pasaron las 16 comprobaciones:
+  - La propietaria ve "Nueva solicitud" en la bandeja y en el menú Crear. El formulario no tiene
+    "Guardar borrador", enseña el código del restaurante elegido y "Pendiente de validación" al
+    elegir categoría. Al enviar, la ficha dice "Creada por el equipo en nombre del restaurante",
+    con el motivo y "Propuesta por el equipo al crearla".
+  - El restaurante (`cliente2`, Café Prueba) ve "El Equipo de mantenimiento creó esta solicitud
+    en tu nombre" y cómo la pidió, y la página no nombra a la propietaria del espacio (P7).
+  - Una trabajadora no ve el botón, y por URL directa recibe "sin permiso" y ningún formulario.
+  - En la base (`SOL-0026` de Café Prueba): `created_by` vacío en la solicitud y en su versión 1,
+    propuesta `team:small` sin llamada a la IA, T1 arrancado, `request.submitted` con
+    `on_behalf_of_client`, aviso `request_created_on_behalf` al propietario del restaurante y
+    `request_submitted` al otro propietario del espacio, no a quien la creó.
+  - `SOL-0026` se queda en Café Prueba, pendiente de validación: es el restaurante que el sembrado
+    reserva para los recorridos que escriben, y el sembrado la borra al volver a ejecutarse.
+- **Playwright en un sandbox de Vercel.** La imagen universal es Ubuntu 26.04, que Playwright
+  1.55 no reconoce. Funciona con `PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=ubuntu24.04-x64` delante de
+  `npx playwright install-deps chromium` (con `sudo -E`) y de `npx playwright install chromium`.
+  Las capturas no se pueden traer a la sesión: `read_session_file` corta el archivo a unos 2 KB.
