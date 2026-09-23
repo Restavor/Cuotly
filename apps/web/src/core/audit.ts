@@ -295,6 +295,7 @@ export const AUDIT_ACTIONS = [
   "integration.revocation_done",
   "integration.revocation_failed",
   "invitation.accepted",
+  "invitation.cancelled",
   "job.assigned",
   "job.blocked",
   "job.completed",
@@ -308,7 +309,9 @@ export const AUDIT_ACTIONS = [
   // Fase 3, Hito 15 · "Aprobar informes", concedida persona a persona
   // (§97, migración 84), igual que `perform_jobs` en el Hito 6.
   "membership.approve_reports_changed",
+  "membership.establishments_changed",
   "membership.perform_jobs_changed",
+  "membership.specialties_changed",
   // Fase 2, Hito 9 · Menú Diario (migración 77); las correcciones, del Hito 11 (79).
   "menu.assigned",
   "menu.cancelled",

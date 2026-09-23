@@ -10,6 +10,16 @@ Actualizado el 23/09/2026.
 
 ## Pendiente de aplicar
 
+**Actualización del 23/09/2026 (noche): ninguna.** La **130** (`los_permisos_del_equipo`, M70 y
+M71 de Equipo) se aplicó por el MCP. Añade tres funciones con permiso comprobado dentro:
+`set_worker_establishments(uuid, uuid, uuid[])` y `set_worker_specialties(uuid, uuid, text[])`
+(piden `assign_jobs`, revocan con `revoked_at` lo que sobra, insertan lo que falta y auditan
+`membership.establishments_changed` / `membership.specialties_changed` solo si el conjunto cambió) y
+`cancel_space_invitation(uuid)` (pide `invite_member`, solo pendientes, repetir sobre una cancelada no
+hace nada, audita `invitation.cancelled`). Comprobado en vivo: las tres son `SECURITY DEFINER`, con
+EXECUTE para `authenticated` y no para `anon`. En local, las 130 migraciones aplican desde cero y
+pasan las 71 suites en el orden de CI (la nueva es `los_permisos_del_equipo.sql`).
+
 **Actualización del 23/09/2026 (tarde): ninguna.** La **129** (`reembolso_sin_duplicados`, M52 de
 Finanzas) se aplicó por el MCP. `financial_entries` gana `idempotency_key` con un índice único por
 cobro, y `refund_charge()` pasa a aceptarla como cuarto parámetro opcional (las llamadas de tres

@@ -1,21 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 
-import {
-  Avatar,
-  ButtonLink,
-  Card,
-  EmptyState,
-  PageHeader,
-  StatusBadge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-} from "@/components/ui";
+import { isClientRole } from "@/components/shell/navigation";
+import { resolveShellViewer } from "@/components/shell/viewer";
+import { ButtonLink, EmptyState, NoPermissionState, PageHeader } from "@/components/ui";
 import { todayInTimeZone } from "@/core/finance";
-import { isSupervisionCurrent } from "@/core/team-calendar";
+import { readTeamParams } from "@/core/team-roster";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -24,53 +13,50 @@ import {
   SubstituteSupervisorForm,
   SupervisionRowActions,
 } from "./SupervisionForms";
+import {
+  loadAbsences,
+  loadMemberHistory,
+  loadPendingInvitations,
+  loadPendingReassignments,
+  loadTeam,
+  type TeamData,
+} from "./team-load";
+import { InvitationsTab, MembersTab, PermissionsTab, SupervisionTab, TeamTabs } from "./TeamView";
 
 /**
- * HU-29 · "asignar un administrador principal a cada trabajador y un
- * sustituto con fechas". Es el destino "Equipo" del menú (§20.2), que
- * hasta ahora devolvía 404, y la casa de la lista del equipo y de las
- * invitaciones (HU-03, HU-04), que vivían sueltas en el inicio del
- * espacio.
+ * Equipo · las cuatro pestañas del dibujo: Miembros y carga (M69),
+ * Permisos (M70), Invitaciones (M71) y Supervisión y disponibilidad
+ * (M72). M19 y M20 eran el mismo destino antes de tener pestañas.
  *
  * "Supervisor" NO es un rol: es una relación Administrador–Trabajador
  * (RN-SUP-01, y CLAUDE.md lo enumera entre las decisiones que no deben
- * reaparecer). Por eso esta pantalla no tiene ninguna columna "supervisor"
- * en la tabla de roles: la supervisión se enseña aparte, como lo que es.
+ * reaparecer). Por eso vive en su pestaña y en la columna "Supervisor" de
+ * los trabajadores, nunca como un rol más.
  *
- * Quién puede cambiarlas lo decide `has_capability(space,'manage_space')`
- * dentro de cada función del servidor (RN-SUP-05). La capacidad se
- * consulta también aquí, y solo para decidir qué formularios se pintan:
- * quien llegue por URL sin ella ve la pantalla en modo lectura y, si
- * enviara el formulario de todos modos, el servidor lo rechaza.
- *
- * Qué filas se ven lo decide RLS (`is_space_member`), no esta página. Un
- * cliente no es miembro del espacio: `space_memberships` y `supervisions`
- * le devuelven cero filas.
+ * Nada de esta página autoriza nada. Las filas las filtra RLS, y cada
+ * cambio pasa por una función del servidor que comprueba la capacidad por
+ * su cuenta: `manage_space` para la supervisión (RN-SUP-05) y para lo que
+ * puede hacer un administrador; `assign_jobs` para restaurantes y
+ * especialidades (migración 130); `invite_member` para invitar y cancelar.
+ * Las capacidades se preguntan aquí solo para no pintar formularios
+ * condenados a fallar. Un restaurante no es miembro del espacio: aquí no
+ * tiene nada que ver, y se le dice (CA-20).
  */
 export const dynamic = "force-dynamic";
 
-type RoleKey = keyof typeof es.teamPage.roles;
-type StatusKey = keyof typeof es.space.statuses;
-
-function roleLabel(role: string): string {
-  return role in es.teamPage.roles ? es.teamPage.roles[role as RoleKey] : role;
-}
-
-function statusLabel(status: string): string {
-  return status in es.space.statuses ? es.space.statuses[status as StatusKey] : status;
-}
-
-function personName(profile: { full_name: string | null; email: string | null } | null): string {
-  return profile?.full_name ?? profile?.email ?? "—";
-}
-
-/** Solo la fecha, sin hora: la ventana se elige por días (RN-SUP-03). */
 function dayOf(instant: string): string {
   return instant.slice(0, 10);
 }
 
-export default async function TeamPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function TeamPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const query = await searchParams;
   const supabase = await createClient();
 
   const {
@@ -78,223 +64,168 @@ export default async function TeamPage({ params }: { params: Promise<{ slug: str
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const viewer = await resolveShellViewer(supabase, user.id, slug);
+  if (viewer.spaceId === null) redirect("/espacios");
+
   const { data: space } = await supabase
     .from("spaces")
     .select("id, name, slug, timezone")
-    .eq("slug", slug)
+    .eq("id", viewer.spaceId)
     .maybeSingle();
   if (!space) notFound();
 
-  const [{ data: memberships }, { data: supervisiones }, { data: puedeCambiar }, { data: puedeInvitar }] =
-    await Promise.all([
-      supabase
-        .from("space_memberships")
-        .select("user_id, role, status, profiles (full_name, email)")
-        .eq("space_id", space.id)
-        .order("role"),
-      // Dos claves ajenas a `profiles` —el trabajador y el administrador—,
-      // así que la unión se nombra por la constraint en las dos.
-      supabase
-        .from("supervisions")
-        .select(
-          "id, worker_id, admin_id, kind, starts_at, ends_at, revoked_at, profiles!supervisions_admin_id_fkey (full_name, email)",
-        )
-        .eq("space_id", space.id)
-        .order("kind"),
-      supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "manage_space" }),
-      supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "invite_member" }),
+  if (isClientRole(viewer.role)) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={es.teamPage.titleOf(space.name)} />
+        <NoPermissionState />
+      </div>
+    );
+  }
+
+  const now = new Date();
+  const today = todayInTimeZone(now, space.timezone);
+  const vista = readTeamParams(query, today);
+  const team = await loadTeam(supabase, space.id, now);
+
+  let contenido: React.ReactNode;
+  if (vista.tab === "permisos") {
+    const history =
+      vista.person !== null && team.members.some((m) => m.userId === vista.person)
+        ? await loadMemberHistory(supabase, space.id, vista.person)
+        : [];
+    contenido = (
+      <PermissionsTab
+        slug={space.slug}
+        spaceId={space.id}
+        data={team}
+        personId={vista.person}
+        history={history}
+        timeZone={space.timezone}
+      />
+    );
+  } else if (vista.tab === "invitaciones") {
+    const invitations = team.caps.invite ? await loadPendingInvitations(supabase, space.id) : [];
+    contenido = (
+      <InvitationsTab
+        spaceId={space.id}
+        slug={space.slug}
+        canInvite={team.caps.invite}
+        invitations={invitations}
+        timeZone={space.timezone}
+        now={now}
+      />
+    );
+  } else if (vista.tab === "supervision") {
+    // Las ausencias que tocan la semana elegida o están por venir.
+    const desde = vista.week < today ? vista.week : today;
+    const [absences, reassignments] = await Promise.all([
+      loadAbsences(supabase, space.id, desde),
+      loadPendingReassignments(supabase, space.id, space.slug),
     ]);
-
-  const activos = (memberships ?? []).filter((m) => m.status === "active");
-  const trabajadores = activos
-    .filter((m) => m.role === "worker")
-    .map((m) => ({ id: m.user_id, name: personName(m.profiles) }));
-  // RN-SUP-01: el supervisor —principal o sustituto— es un Administrador.
-  // El propietario entra porque el servidor lo acepta ('admin', 'owner').
-  const administradores = activos
-    .filter((m) => m.role === "admin" || m.role === "owner")
-    .map((m) => ({ id: m.user_id, name: personName(m.profiles) }));
-
-  // La vigencia se calcula con el mismo criterio que RN-SUP-04 —empezada,
-  // no terminada y no retirada— en `src/core/`, no aquí ni en SQL.
-  const ahora = new Date();
-  const vigentes = (supervisiones ?? []).filter((s) =>
-    isSupervisionCurrent(ahora, {
-      startsAt: s.starts_at,
-      endsAt: s.ends_at,
-      revokedAt: s.revoked_at,
-    }),
-  );
-
-  const principalDe = new Map(vigentes.filter((s) => s.kind === "principal").map((s) => [s.worker_id, s]));
-  const sustitutoDe = new Map(
-    vigentes.filter((s) => s.kind === "substitute").map((s) => [s.worker_id, s]),
-  );
-
-  const hoy = todayInTimeZone(ahora, space.timezone);
+    contenido = (
+      <SupervisionTab
+        slug={space.slug}
+        data={team}
+        week={vista.week}
+        today={today}
+        absences={absences}
+        reassignments={reassignments}
+        timeZone={space.timezone}
+        supervisionForms={<SupervisionForms data={team} spaceId={space.id} today={today} />}
+      />
+    );
+  } else {
+    contenido = <MembersTab slug={space.slug} data={team} />;
+  }
 
   return (
     <div className="space-y-6">
       {/*
-        Página 88 (M19) · "Equipo de Restavor", el subtítulo y el botón
-        "Invitar miembro" a la derecha, que solo se pinta a quien puede
-        invitar: el servidor lo comprueba igual, pero un botón que va a
-        ser rechazado es una promesa falsa. Debajo, la tabla de personas a
-        la izquierda y la supervisión en la columna de la derecha.
+        El botón de invitar solo se pinta a quien puede invitar: el
+        servidor lo comprueba igual, pero un botón que va a ser rechazado
+        es una promesa falsa.
       */}
       <PageHeader
         title={es.teamPage.titleOf(space.name)}
-        subtitle={es.teamPage.intro}
+        subtitle={vista.tab === "invitaciones" ? es.teamPage.invitations.subtitle : es.teamPage.intro}
         actions={
-          puedeInvitar === true ? (
-            <ButtonLink href={`/espacios/${space.slug}/equipo/invitar`} icon="person">
+          team.caps.invite && vista.tab !== "invitaciones" ? (
+            <ButtonLink href={`/espacios/${space.slug}/equipo?tab=invitaciones`} icon="person">
               {es.teamPage.inviteLink}
             </ButtonLink>
           ) : null
         }
       />
+      <TeamTabs slug={space.slug} active={vista.tab} />
+      {contenido}
+    </div>
+  );
+}
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-      <Card title={es.teamPage.membersTitle} className="min-w-0 space-y-4">
+/**
+ * HU-29 · los formularios de supervisión de siempre, dentro de la tarjeta
+ * "Asignar cobertura de supervisión" de M72.
+ */
+function SupervisionForms({ data, spaceId, today }: { data: TeamData; spaceId: string; today: string }) {
+  const activos = data.members.filter((m) => m.status === "active");
+  const trabajadores = activos.filter((m) => m.role === "worker").map((m) => ({ id: m.userId, name: m.name }));
+  // RN-SUP-01: el supervisor —principal o sustituto— es un Administrador.
+  // El propietario entra porque el servidor lo acepta ('admin', 'owner').
+  const administradores = activos
+    .filter((m) => m.role === "admin" || m.role === "owner")
+    .map((m) => ({ id: m.userId, name: m.name }));
+  const names = new Map(data.members.map((m) => [m.userId, m.name]));
 
-        {activos.length > 0 ? (
-          /*
-            El testid es para los recorridos. El nombre de una persona del
-            equipo aparece SIETE veces en esta pantalla —la tabla de
-            miembros, las de sustituciones, los desplegables de los
-            formularios y las tarjetas de cada sustitución—, así que un
-            `getByText` suelto no puede decir "está en la lista". Y dentro
-            de ESTA tabla vuelve a repetirse, con razón: quien supervisa a
-            un trabajador sale en la columna "Principal" de su fila. Lo
-            que dice que alguien está en el equipo es la columna de
-            nombres, que es lo que mira el recorrido.
-          */
-          <div className="overflow-x-auto" data-testid="equipo-miembros">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeaderCell>{es.teamPage.nameColumn}</TableHeaderCell>
-                  <TableHeaderCell>{es.teamPage.roleColumn}</TableHeaderCell>
-                  <TableHeaderCell>{es.teamPage.statusColumn}</TableHeaderCell>
-                  <TableHeaderCell>{es.teamPage.principalColumn}</TableHeaderCell>
-                  <TableHeaderCell>{es.teamPage.substituteColumn}</TableHeaderCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {activos.map((miembro) => {
-                  const principal = principalDe.get(miembro.user_id);
-                  const sustituto = sustitutoDe.get(miembro.user_id);
-                  const esTrabajador = miembro.role === "worker";
-                  return (
-                    <TableRow key={miembro.user_id}>
-                      <TableCell>
-                        <span className="flex min-w-0 items-center gap-3">
-                          <Avatar name={personName(miembro.profiles)} size={36} />
-                          <span className="min-w-0">
-                            <span className="block truncate text-sm font-semibold text-text">
-                              {personName(miembro.profiles)}
-                            </span>
-                            {miembro.profiles?.full_name && miembro.profiles?.email ? (
-                              <span className="block truncate text-xs text-text-secondary">
-                                {miembro.profiles.email}
-                              </span>
-                            ) : null}
-                          </span>
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge tone={miembro.role === "worker" ? "info" : "success"}>
-                          {roleLabel(miembro.role)}
-                        </StatusBadge>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge tone={miembro.status === "active" ? "success" : "neutral"}>
-                          {statusLabel(miembro.status)}
-                        </StatusBadge>
-                      </TableCell>
-                      {/*
-                        La supervisión es de los trabajadores. A un
-                        administrador no se le pinta "Sin asignar", que
-                        sonaría a que le falta algo: RN-SUP-06 dice que
-                        puede existir sin supervisados.
-                      */}
-                      <TableCell>
-                        {esTrabajador
-                          ? principal
-                            ? personName(principal.profiles)
-                            : es.teamPage.noPrincipal
-                          : "—"}
-                      </TableCell>
-                      <TableCell>
-                        {esTrabajador
-                          ? sustituto
-                            ? `${personName(sustituto.profiles)} · ${es.teamPage.substituteUntil(
-                                sustituto.ends_at ? dayOf(sustituto.ends_at) : "—",
-                              )}`
-                            : es.teamPage.noSubstitute
-                          : "—"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <EmptyState title={es.space.team.title} description={es.space.team.empty} />
-        )}
-        <p className="text-sm text-text-secondary">{es.teamPage.withoutWorkerHint}</p>
-      </Card>
+  if (!data.caps.manageSpace) {
+    return <p className="text-sm text-text-secondary">{es.teamPage.onlyOwner}</p>;
+  }
+  if (trabajadores.length === 0) {
+    return <EmptyState title={es.teamPage.supervisionTitle} description={es.teamPage.noWorkers} />;
+  }
+  if (administradores.length === 0) {
+    return <EmptyState title={es.teamPage.supervisionTitle} description={es.teamPage.noAdmins} />;
+  }
 
-      <Card title={es.teamPage.supervisionTitle} className="min-w-0 space-y-6">
-        <p className="text-sm text-text-secondary">{es.teamPage.supervisionIntro}</p>
-
-        {puedeCambiar !== true ? (
-          <p className="text-sm text-text-secondary">{es.teamPage.onlyOwner}</p>
-        ) : trabajadores.length === 0 ? (
-          <EmptyState title={es.teamPage.supervisionTitle} description={es.teamPage.noWorkers} />
-        ) : administradores.length === 0 ? (
-          <EmptyState title={es.teamPage.supervisionTitle} description={es.teamPage.noAdmins} />
-        ) : (
-          <>
-            <PrincipalSupervisorForm
-              spaceId={space.id}
-              workers={trabajadores}
-              admins={administradores}
-            />
-            <div className="border-t border-border pt-6">
-              <p className="mb-2 font-semibold text-text">{es.teamPage.substituteTitle}</p>
-              <SubstituteSupervisorForm
-                spaceId={space.id}
-                workers={trabajadores}
-                admins={administradores}
-                defaultDay={hoy}
-              />
-            </div>
-
-            {vigentes.length > 0 ? (
-              <div className="space-y-6 border-t border-border pt-6">
-                {vigentes.map((supervision) => (
-                  <div key={supervision.id} className="space-y-2">
-                    <p className="text-sm font-semibold text-text">
-                      {personName(supervision.profiles)} ·{" "}
-                      {supervision.kind === "principal"
-                        ? es.teamPage.principalColumn
-                        : es.teamPage.substituteColumn}
-                    </p>
-                    <SupervisionRowActions
-                      supervisionId={supervision.id}
-                      canReschedule={supervision.kind === "substitute"}
-                      defaultDay={supervision.ends_at ? dayOf(supervision.ends_at) : hoy}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </>
-        )}
-      </Card>
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-text-secondary">{es.teamPage.supervisionIntro}</p>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="min-w-0">
+          <p className="mb-2 font-semibold text-text">{es.teamPage.principalColumn}</p>
+          <PrincipalSupervisorForm spaceId={spaceId} workers={trabajadores} admins={administradores} />
+        </div>
+        <div className="min-w-0">
+          <p className="mb-2 font-semibold text-text">{es.teamPage.substituteTitle}</p>
+          <SubstituteSupervisorForm
+            spaceId={spaceId}
+            workers={trabajadores}
+            admins={administradores}
+            defaultDay={today}
+          />
+        </div>
       </div>
+
+      {data.supervisions.length > 0 ? (
+        <div className="border-t border-border pt-6">
+          <p className="mb-3 font-semibold text-text">{es.teamPage.supervision.currentTitle}</p>
+          <div className="grid gap-6 md:grid-cols-2">
+            {data.supervisions.map((s) => (
+              <div key={s.id} className="min-w-0 space-y-2 rounded-[10px] border border-border p-4">
+                <p className="text-sm font-semibold text-text">
+                  {names.get(s.workerId) ?? "—"} → {names.get(s.adminId) ?? "—"} ·{" "}
+                  {s.kind === "principal" ? es.teamPage.principalColumn : es.teamPage.substituteColumn}
+                </p>
+                <SupervisionRowActions
+                  supervisionId={s.id}
+                  canReschedule={s.kind === "substitute"}
+                  defaultDay={s.endsAt ? dayOf(s.endsAt) : today}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

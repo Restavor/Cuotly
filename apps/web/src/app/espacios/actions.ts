@@ -81,7 +81,7 @@ export async function inviteMember(
       return { error: membershipError.message };
     }
 
-    revalidatePath(`/espacios/${spaceSlug}`);
+    revalidatePath(`/espacios/${spaceSlug}`, "layout");
     return { ...emptyState, message: "already_registered" };
   }
 
@@ -95,6 +95,6 @@ export async function inviteMember(
     return { error: invitationError.message };
   }
 
-  revalidatePath(`/espacios/${spaceSlug}`);
+  revalidatePath(`/espacios/${spaceSlug}`, "layout");
   return { ...emptyState, inviteToken: invitation.token };
 }

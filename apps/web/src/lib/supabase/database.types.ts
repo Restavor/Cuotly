@@ -8281,6 +8281,10 @@ export type Database = {
         Args: { p_reason?: string; p_subscription_id: string };
         Returns: boolean;
       };
+      cancel_space_invitation: {
+        Args: { p_invitation_id: string };
+        Returns: undefined;
+      };
       cancel_task: {
         Args: { p_reason?: string; p_task_id: string };
         Returns: undefined;
@@ -10821,6 +10825,18 @@ export type Database = {
       };
       set_task_planned_date: {
         Args: { p_planned_date?: string; p_task_id: string };
+        Returns: undefined;
+      };
+      set_worker_establishments: {
+        Args: {
+          p_establishment_ids: string[];
+          p_space_id: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
+      set_worker_specialties: {
+        Args: { p_space_id: string; p_specialties: string[]; p_user_id: string };
         Returns: undefined;
       };
       share_file_with_client: {

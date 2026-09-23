@@ -206,3 +206,116 @@ export async function revokeSupervision(
   revalidatePath("/espacios", "layout");
   return { error: null, done: true };
 }
+
+/**
+ * M70 · guardar los permisos de una persona: restaurantes autorizados
+ * (RN-ASG-01), especialidades (§4.6) y, si es administrador, si realiza
+ * trabajos y si aprueba informes.
+ *
+ * Nada se autoriza aquí. `set_worker_establishments()` y
+ * `set_worker_specialties()` piden `assign_jobs` (migración 130);
+ * `set_admin_can_perform_jobs()` y `set_admin_can_approve_reports()`,
+ * `manage_space`. Las cuatro auditan. Las dos primeras son de conjunto
+ * —dejan exactamente lo marcado— y no auditan si nada cambió, así que
+ * pulsar dos veces no duplica nada. Las dos marcas de administrador
+ * auditan siempre, así que solo se llaman si el valor de la base es otro:
+ * se compara con lo que hay guardado, no con lo que el formulario creía.
+ */
+export async function saveMemberPermissions(
+  _prev: TeamState,
+  formData: FormData,
+): Promise<TeamState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const userId = String(formData.get("userId") ?? "");
+  const editaRestaurantes = formData.get("editEstablishments") === "1";
+  const editaEspecialidades = formData.get("editSpecialties") === "1";
+  const editaMarcas = formData.get("editAdminFlags") === "1";
+
+  try {
+    const supabase = await createClient();
+
+    if (editaRestaurantes) {
+      const { error } = await supabase.rpc("set_worker_establishments", {
+        p_space_id: spaceId,
+        p_user_id: userId,
+        p_establishment_ids: formData.getAll("establishment").map(String),
+      });
+      if (error) {
+        console.error("[equipo] set_worker_establishments devolvió error", { userId, message: error.message });
+        return { error: error.message, done: false };
+      }
+    }
+
+    if (editaEspecialidades) {
+      const { error } = await supabase.rpc("set_worker_specialties", {
+        p_space_id: spaceId,
+        p_user_id: userId,
+        p_specialties: formData.getAll("specialty").map(String),
+      });
+      if (error) {
+        console.error("[equipo] set_worker_specialties devolvió error", { userId, message: error.message });
+        return { error: error.message, done: false };
+      }
+    }
+
+    if (editaMarcas) {
+      const { data: actual } = await supabase
+        .from("space_memberships")
+        .select("can_perform_jobs, can_approve_reports")
+        .eq("space_id", spaceId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!actual) return { error: es.teamPage.permissions.notMember, done: false };
+
+      const realiza = formData.get("performJobs") === "on";
+      if (realiza !== actual.can_perform_jobs) {
+        const { error } = await supabase.rpc("set_admin_can_perform_jobs", {
+          p_space_id: spaceId,
+          p_user_id: userId,
+          p_value: realiza,
+        });
+        if (error) return { error: error.message, done: false };
+      }
+
+      const aprueba = formData.get("approveReports") === "on";
+      if (aprueba !== actual.can_approve_reports) {
+        const { error } = await supabase.rpc("set_admin_can_approve_reports", {
+          p_space_id: spaceId,
+          p_user_id: userId,
+          p_value: aprueba,
+        });
+        if (error) return { error: error.message, done: false };
+      }
+    }
+  } catch (fallo) {
+    console.error("[equipo] guardar permisos lanzó", { userId, message: mensajeDeFallo(fallo) });
+    return { error: mensajeDeFallo(fallo), done: false };
+  }
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
+}
+
+/**
+ * M71 · cancelar una invitación pendiente. `cancel_space_invitation()`
+ * pide `invite_member`, solo cancela las pendientes, audita y no hace
+ * nada si ya estaba cancelada (pulsar dos veces es inofensivo).
+ */
+export async function cancelInvitation(_prev: TeamState, formData: FormData): Promise<TeamState> {
+  const invitationId = String(formData.get("invitationId") ?? "");
+
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("cancel_space_invitation", { p_invitation_id: invitationId });
+    if (error) {
+      console.error("[equipo] cancel_space_invitation devolvió error", { invitationId, message: error.message });
+      return { error: error.message, done: false };
+    }
+  } catch (fallo) {
+    console.error("[equipo] cancel_space_invitation lanzó", { invitationId, message: mensajeDeFallo(fallo) });
+    return { error: mensajeDeFallo(fallo), done: false };
+  }
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
+}
