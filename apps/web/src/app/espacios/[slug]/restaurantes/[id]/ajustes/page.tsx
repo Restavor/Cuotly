@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { EstablishmentDataForm } from "@/components/establishment/DataForm";
+import { MoveToGroupForm } from "@/components/establishment/GroupForms";
 import { PhotoForm } from "@/components/establishment/PhotoForm";
 import { InfoNote } from "@/components/panel/RequestPieces";
 import { SettingsTabs } from "@/components/panel/SettingsTabs";
@@ -27,6 +28,11 @@ import { loadEstablishmentTimezone } from "../timezone-load";
  * restaurante: se llevan a "Mi cuenta", donde existen. No hay "Cambiar
  * contraseña" (la aplicación no lo tiene) ni una zona horaria por usuario
  * (la fija el espacio, CLAUDE.md): se dice cuál es.
+ *
+ * RN-EST-20 · "Cambiar de grupo", para el propietario del restaurante que
+ * también es propietario de otro grupo del espacio. Solo se pinta si
+ * `establishment_move_targets()` le devuelve algún grupo; quien decide es
+ * `move_establishment_to_group()`, que lo vuelve a comprobar.
  */
 export const dynamic = "force-dynamic";
 
@@ -48,7 +54,8 @@ export default async function ClientSettingsPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: establishment }, { data: canEditData }, photoUrl, zona] = await Promise.all([
+  const [{ data: establishment }, { data: canEditData }, photoUrl, zona, { data: destinos }] =
+    await Promise.all([
     supabase
       .from("establishments")
       .select(
@@ -59,7 +66,9 @@ export default async function ClientSettingsPage({
     supabase.rpc("client_can_edit_establishment_data", { p_establishment_id: id }),
     loadEstablishmentPhoto(supabase, supabase.storage, id),
     loadEstablishmentTimezone(supabase, id),
+    supabase.rpc("establishment_move_targets", { p_establishment_id: id }),
   ]);
+  const gruposDestino = destinos ?? [];
   if (!establishment) notFound();
 
   const base = `/espacios/${slug}/restaurantes/${id}`;
@@ -127,7 +136,18 @@ export default async function ClientSettingsPage({
             <EmptyState title={t.noEditTitle} description={t.noEditReason} />
           </Card>
         )
-      ) : (
+      ) : null}
+
+      {activa === "datos" && gruposDestino.length > 0 ? (
+        <div className="max-w-2xl">
+          <Card title={es.teamArea.groups.moveTitle}>
+            <p className="mb-4 text-sm text-text-secondary">{es.teamArea.groups.moveHint}</p>
+            <MoveToGroupForm establishmentId={id} targets={gruposDestino} />
+          </Card>
+        </div>
+      ) : null}
+
+      {activa !== "datos" ? (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-6">
             <Card title={t.notificationsTitle}>
@@ -149,7 +169,7 @@ export default async function ClientSettingsPage({
             </div>
           </Card>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

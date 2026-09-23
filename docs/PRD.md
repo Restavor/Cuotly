@@ -804,6 +804,27 @@ llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; la
   - Solo puede serlo alguien con **pertenencia activa** al espacio. Si esa persona sale del
     espacio, el restaurante se queda **sin responsable** —no se reasigna solo a nadie— y se dice.
   - Asignarlo y quitarlo **deja auditoría** con actor, valor anterior y valor nuevo (§21.2).
+- **RN-EST-20 (añadida 23/09/2026, decisión 74)**: **los grupos se crean, se renombran y un
+  restaurante se puede mover de grupo.**
+
+  - **Crear**: el propietario y los administradores del espacio (`manage_clients`) pueden crear un
+    grupo **vacío**, con nombre (obligatorio) y descripción (opcional). Crear dos veces con la misma
+    clave crea uno solo.
+  - **Renombrar y describir**: libre, mismas personas. No cambia ningún acceso.
+  - **Mover un restaurante de grupo**: lo hace el equipo (`manage_clients`) a **cualquier grupo del
+    espacio**, o el **propietario del restaurante** (propietario local o propietario global de su
+    grupo) **solo a un grupo del que también sea propietario global**.
+  - **El grupo de destino gana acceso en el acto**: sus propietarios globales y sus editores de grupo
+    entran por el grupo (RN-EST-03, RN-EST-04), sin conceder nada.
+  - **Quien entraba por el grupo de origen** y no sigue entrando por otra vía **se queda como Editor**
+    del restaurante **o pierde el acceso**, según elija quien hace el cambio. Quien se queda como
+    Editor conserva los permisos operativos (crear solicitudes, editar menús, mensajes, subir archivos
+    y consultar informes) y no los de propietario (pagos y facturas, usuarios y accesos, editar
+    datos); el nuevo propietario los ajusta (RN-EST-15).
+  - **Los accesos del propio restaurante** (propietario local, Editores del restaurante) no cambian.
+  - El restaurante se lleva sus archivos y sus informes individuales; los **consolidados** del grupo
+    de origen se quedan con él. Mover al grupo en el que ya está no hace nada. Todo deja auditoría
+    con actor, valor anterior y valor nuevo (§21.2).
 
 ---
 

@@ -1,8 +1,15 @@
+import { randomUUID } from "node:crypto";
+
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { statusTone } from "@/components/establishment/EstablishmentCard";
 import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhoto";
+import {
+  AssignEstablishmentForm,
+  CreateGroupForm,
+  EditGroupForm,
+} from "@/components/establishment/GroupForms";
 import { RestaurantsTabs } from "@/components/establishment/RestaurantsTabs";
 import {
   ButtonLink,
@@ -37,18 +44,16 @@ import { loadEstablishmentPhotos } from "@/services/establishment-photo";
  * Los grupos existían en la base desde la migración 3; esta pantalla los
  * enseña enteros, que es como se mira un cliente con siete locales.
  *
- * **Lo que el dibujo pone y no está, y por qué** (CLAUDE.md: no se inventa
- * lo que no está decidido):
+ * **"Crear grupo", "Editar grupo" y "Asignar establecimiento"** llegaron
+ * con RN-EST-20 (decisión 74, migración 135): un grupo se crea vacío con su
+ * nombre y su descripción, se renombra libremente, y traer un restaurante
+ * de otro grupo pide elegir qué pasa con quien entraba por el de origen.
+ * Los tres formularios se PINTAN a quien gestiona clientes; quien decide
+ * es cada función, que lo vuelve a comprobar.
  *
- *   · "Crear grupo". Un grupo nace con su primer restaurante
- *     —`create_establishment_with_data()` lo crea al escribir un nombre
- *     nuevo—, y un grupo vacío no es nada.
- *   · "Editar grupo" y "Asignar establecimiento". Cambiar un restaurante de
- *     grupo cambia quién entra en él: el propietario global del grupo
- *     tiene acceso automático a sus restaurantes (RN-EST-03), así que
- *     moverlo quitaría y daría accesos a la vez. Ninguna regla del PRD dice
- *     qué pasa entonces, y no hay función que lo haga.
- *   · La descripción y la foto del grupo: `groups` no las guarda.
+ * **Lo que el dibujo pone y no está, y por qué**:
+ *
+ *   · La foto del grupo: `groups` no la guarda.
  *   · "En espacios": un restaurante solo está activo en un espacio a la vez
  *     (RN-EST-07), y la frase de abajo lo dice en vez de una columna que
  *     diría "1" en todas las filas.
@@ -67,7 +72,7 @@ export default async function SpaceGroupsPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ buscar?: string; grupo?: string }>;
+  searchParams: Promise<{ buscar?: string; grupo?: string; nuevo?: string }>;
 }) {
   const { slug } = await params;
   const query = await searchParams;
@@ -98,10 +103,11 @@ export default async function SpaceGroupsPage({
   const base = `/espacios/${slug}/restaurantes`;
   const action = `${base}/grupos`;
 
-  const [{ data: groups }, { data: establishments }] = await Promise.all([
+  const [{ data: groups, error: groupsError }, { data: establishments }, { data: gestiona }] =
+    await Promise.all([
     supabase
       .from("groups")
-      .select("id, name, created_at")
+      .select("id, name, description, created_at")
       .eq("space_id", space.id)
       .order("name"),
     supabase
@@ -109,8 +115,12 @@ export default async function SpaceGroupsPage({
       .select("id, code, name, status, group_id, city")
       .eq("space_id", space.id)
       .order("name"),
+    // RN-EST-20 · qué formularios se PINTAN. Quien decide es cada función.
+    supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "manage_clients" }),
   ]);
 
+  const puedeGestionar = gestiona === true;
+  const creando = puedeGestionar && query.nuevo === "1";
   const todos = establishments ?? [];
   const archivados = todos.filter((row) => row.status === "archived").length;
 
@@ -152,6 +162,17 @@ export default async function SpaceGroupsPage({
     ),
   ]);
 
+  const nombreDeGrupo = new Map((groups ?? []).map((group) => [group.id, group.name]));
+  const asignables =
+    selected === null
+      ? []
+      : todos
+          .filter((row) => row.group_id !== selected.id && row.status !== "archived")
+          .map((row) => ({
+            id: row.id,
+            label: t.assignOption(row.name, row.code, nombreDeGrupo.get(row.group_id) ?? null),
+          }));
+
   const userIds = [...new Set((memberships ?? []).map((m) => m.user_id))];
   const { data: people } = userIds.length
     ? await supabase.from("profiles").select("id, full_name, email").in("id", userIds)
@@ -172,17 +193,41 @@ export default async function SpaceGroupsPage({
         title={es.teamArea.establishments.title}
         subtitle={t.subtitle}
         actions={
-          <ButtonLink href={`${base}/nuevo`} icon="plus">
-            {es.teamArea.establishments.createButton}
-          </ButtonLink>
+          puedeGestionar ? (
+            <ButtonLink href={`${action}?nuevo=1`} icon="plus">
+              {t.createButton}
+            </ButtonLink>
+          ) : undefined
         }
       />
 
       <RestaurantsTabs slug={slug} active="groups" archivedCount={archivados} />
 
-      {(groups ?? []).length === 0 ? (
+      {creando ? (
+        <div className="max-w-2xl">
+          <Card title={t.createTitle}>
+            {/* Una clave por carga de la página: dos pulsaciones, un grupo. */}
+            <CreateGroupForm spaceId={space.id} slug={slug} idempotencyKey={randomUUID()} />
+          </Card>
+        </div>
+      ) : groupsError !== null ? (
+        // "No se pudo leer" no es "no hay ninguno" (CA-20).
         <Card>
-          <EmptyState title={t.emptyTitle} description={t.emptyReason} />
+          <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />
+        </Card>
+      ) : (groups ?? []).length === 0 ? (
+        <Card>
+          <EmptyState
+            title={t.emptyTitle}
+            description={t.emptyReason}
+            action={
+              puedeGestionar ? (
+                <ButtonLink href={`${action}?nuevo=1`} icon="plus">
+                  {t.createButton}
+                </ButtonLink>
+              ) : undefined
+            }
+          />
         </Card>
       ) : (
         <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
@@ -245,6 +290,9 @@ export default async function SpaceGroupsPage({
           {selected === null ? null : (
             <div className="min-w-0 space-y-4">
               <Card title={selected.name}>
+                <p className="-mt-2 mb-4 text-sm text-text-secondary">
+                  {selected.description ?? t.noDescription}
+                </p>
                 <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
                   <div className="sm:col-span-3">
                     <dt className="text-text-secondary">{t.accessTitle}</dt>
@@ -281,6 +329,21 @@ export default async function SpaceGroupsPage({
                     <dd className="font-medium text-text">{suyos.length}</dd>
                   </div>
                 </dl>
+
+                {puedeGestionar ? (
+                  <details className="mt-4 rounded-[10px] border border-border p-3">
+                    <summary className="cursor-pointer text-sm font-semibold text-primary-dark">
+                      {t.editTitle}
+                    </summary>
+                    <div className="mt-3">
+                      <EditGroupForm
+                        groupId={selected.id}
+                        name={selected.name}
+                        description={selected.description}
+                      />
+                    </div>
+                  </details>
+                ) : null}
               </Card>
 
               <Card title={t.establishmentsTitle}>
@@ -343,6 +406,27 @@ export default async function SpaceGroupsPage({
                   <Icon name="alert" aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
                   {t.oneSpaceNote}
                 </p>
+
+                {/*
+                  M82 · "Asignar establecimiento": traer aquí uno que está en
+                  otro grupo. Los archivados no se ofrecen: primero se
+                  reactivan. Se elige qué pasa con quien entraba por su
+                  grupo de ahora (RN-EST-20).
+                */}
+                {puedeGestionar ? (
+                  <details className="mt-4 rounded-[10px] border border-border p-3">
+                    <summary className="cursor-pointer text-sm font-semibold text-primary-dark">
+                      {t.assignTitle}
+                    </summary>
+                    <div className="mt-3">
+                      {asignables.length === 0 ? (
+                        <p className="text-sm text-text-secondary">{t.assignNone}</p>
+                      ) : (
+                        <AssignEstablishmentForm groupId={selected.id} establishments={asignables} />
+                      )}
+                    </div>
+                  </details>
+                ) : null}
               </Card>
 
               <Card title={t.howTitle}>

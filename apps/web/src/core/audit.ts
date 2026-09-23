@@ -249,6 +249,8 @@ export const AUDIT_ACTIONS = [
   // Migración 99 (R24, M47, RN-EST-09) · el restaurante comunica la baja, o
   // el equipo registra la que llegó por fuera.
   "establishment.termination_requested",
+  // Migración 135 (RN-EST-20, decisión 74) · mover un restaurante de grupo.
+  "establishment.group_changed",
   "establishment_access.granted",
   "establishment_access.revoked",
   // Migración 114 (RN-ACC-13, RN-PAN-14) · la tercera puerta: el
@@ -275,6 +277,8 @@ export const AUDIT_ACTIONS = [
   "file.shared_with_client",
   "file.version_added",
   "group.created",
+  // Migración 135 (RN-EST-20) · renombrar un grupo o cambiar su descripción.
+  "group.updated",
   "group_access.granted",
   "group_access.revoked",
   "holiday.created",

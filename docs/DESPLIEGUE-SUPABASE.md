@@ -6,9 +6,20 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 23/09/2026 (132, 133 y 134).
+Actualizado el 23/09/2026 (135, sin aplicar).
 
 ## Pendiente de aplicar
+
+**Actualización del 23/09/2026 (grupos): la 135.** `grupos_crear_editar_y_mover` (M82, decisión 74,
+RN-EST-20) **está en el repositorio y NO en el proyecto real**. Añade a `groups` las columnas
+`description` e `idempotency_key` (con su índice único parcial) y cinco funciones: `create_group()`,
+`update_group()`, `establishment_move_targets()`, `move_establishment_to_group()` y la interna
+`is_establishment_owner_user()` (cerrada a `anon` y `authenticated`). No toca ninguna función que ya
+exista. En local, las 135 migraciones aplican desde cero y pasan las 75 suites en el orden de CI; la
+suite 75 caza tres mutaciones a propósito (no llevarse los archivos, dejar al propietario meterlo en un
+grupo ajeno, dejarle la facturación a quien pasa a Editor). **Hasta aplicarla, las pantallas de Grupos
+y "Cambiar de grupo" del panel fallan al llamar a esas funciones**, y la lista de grupos no puede leer
+`description`.
 
 **Actualización del 23/09/2026 (cierre): ninguna.** La **134** (`restavor_nace_con_premium_plus_entero`)
 se aplicó por el MCP en una llamada, tras comprobar que `create_restavor_space()` en vivo coincidía con

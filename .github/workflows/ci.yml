@@ -562,6 +562,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/en_nombre_del_restaurante_sin_identidad.sql
 
+      - name: "Suite 75 — Grupos: crear, renombrar y mover un restaurante de grupo (migración 135, RN-EST-20, decisión 74)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/grupos_crear_editar_y_mover.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

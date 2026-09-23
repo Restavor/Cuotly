@@ -2147,3 +2147,40 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       La suite 74 recorre todas las rutas "en su nombre" y barre, sentada como el restaurante, toda
       columna uuid y de texto: el barrido de hito7 no las veía porque su fixture no tenía filas así.
 
+74. **Grupos: crear, renombrar y mover un restaurante de grupo (M82)** (23/09/2026). La pantalla M82
+    del diseño definitivo tiene "Crear grupo", "Editar grupo" y "Asignar establecimiento", y se había
+    dejado fuera (entrada del 23/09 de `docs/diseno/PLAN-ESCRITORIO.md`) porque mover un restaurante
+    de grupo cambia accesos (RN-EST-03) y no había regla. Bosco las fija. Quedan escritas como
+    **RN-EST-20** (PRD §15) y las programa la **migración 135**.
+
+    - **Un grupo se puede crear vacío**, con su nombre y, si se quiere, una descripción. Sirve para
+      preparar un cliente antes de dar de alta sus locales; los datos y los accesos se rellenan
+      después. Lo crean el propietario y los administradores del espacio (`manage_clients`).
+    - **Renombrarlo es libre**, y editar su descripción también. Mismas personas.
+    - **Mover un restaurante de grupo** lo pueden hacer **el equipo** (propietario y administradores
+      del espacio) **o el propietario del restaurante** (propietario local o propietario global de su
+      grupo).
+    - **Quien tenía acceso por el grupo de origen elige**: **quedarse como Editor** de ese restaurante
+      o **perder el acceso**. Lo elige quien hace el cambio, y vale para todos los que entraban por el
+      grupo de origen (propietarios y editores de grupo) y no siguen entrando por otra vía.
+    - **El grupo de destino gana acceso en el mismo momento.** No hay nada que conceder: el acceso de
+      un grupo a sus restaurantes se deriva del grupo (RN-EST-03).
+
+    **Tres cosas que se añadieron al programarlo, y se pueden cambiar:**
+
+    - **A dónde puede moverlo el restaurante.** El equipo, a cualquier grupo del espacio. El
+      propietario del restaurante, **solo a un grupo del que también sea propietario global**: si
+      pudiera meterlo en un grupo ajeno estaría dando su restaurante a desconocidos, y además no ve
+      los grupos de otros clientes. Si el local cambia de dueño, lo mueve el equipo.
+    - **Con qué permisos se queda quien pasa a Editor.** Con los operativos que ya usaba —crear
+      solicitudes, editar menús, mensajes, subir archivos y consultar informes— y **sin** los de
+      propietario —pagos y facturas, usuarios y accesos, y editar los datos del restaurante—. Es el
+      mismo criterio de la migración 107 ("se les concede lo que ya tenían"), y el nuevo propietario
+      los ajusta en Permisos.
+    - **Los accesos del propio restaurante no se tocan**: un propietario local o un Editor de ese
+      restaurante sigue igual, porque su acceso es del restaurante y no del grupo.
+
+    Lo demás, por coherencia: el restaurante se lleva sus archivos (`files.group_id`) y sus informes
+    individuales; los informes **consolidados** del grupo de origen se quedan en él, porque son
+    historia de ese grupo. Mover al mismo grupo no hace nada, y crear dos veces con la misma clave
+    crea un solo grupo (CLAUDE.md). Todo deja auditoría con actor, valor anterior y nuevo.

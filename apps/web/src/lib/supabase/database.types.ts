@@ -2529,19 +2529,25 @@ export type Database = {
       groups: {
         Row: {
           created_at: string;
+          description: string | null;
           id: string;
+          idempotency_key: string | null;
           name: string;
           space_id: string;
         };
         Insert: {
           created_at?: string;
+          description?: string | null;
           id?: string;
+          idempotency_key?: string | null;
           name: string;
           space_id: string;
         };
         Update: {
           created_at?: string;
+          description?: string | null;
           id?: string;
+          idempotency_key?: string | null;
           name?: string;
           space_id?: string;
         };
@@ -8051,6 +8057,15 @@ export type Database = {
       accept_revision: { Args: { p_subscription_id: string }; Returns: string };
       archive_plan: { Args: { p_plan_id: string }; Returns: undefined };
       archive_service: { Args: { p_service_id: string }; Returns: undefined };
+      create_group: {
+        Args: {
+          p_description?: string;
+          p_idempotency_key?: string;
+          p_name: string;
+          p_space_id: string;
+        };
+        Returns: string;
+      };
       create_plan: {
         Args: {
           p_can_order_requests: boolean;
@@ -8085,6 +8100,25 @@ export type Database = {
           p_space_id: string;
         };
         Returns: string;
+      };
+      establishment_move_targets: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          id: string;
+          name: string;
+        }[];
+      };
+      is_establishment_owner_user: {
+        Args: { p_establishment_id: string; p_user_id: string };
+        Returns: boolean;
+      };
+      move_establishment_to_group: {
+        Args: {
+          p_establishment_id: string;
+          p_group_id: string;
+          p_previous_access: string;
+        };
+        Returns: Json;
       };
       record_external_revision_acceptance: {
         Args: { p_accepted_on: string; p_file_id: string; p_subscription_id: string };
@@ -11315,6 +11349,10 @@ export type Database = {
           plan_name: string;
           renews_at: string;
         }[];
+      };
+      update_group: {
+        Args: { p_description?: string; p_group_id: string; p_name: string };
+        Returns: undefined;
       };
       update_menu_details: {
         Args: {

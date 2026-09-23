@@ -1390,13 +1390,66 @@ export const es = {
       oneSpaceNote:
         "Un establecimiento solo puede estar activo en un espacio de mantenimiento a la vez (RN-EST-07). Para llevarlo a otro espacio se propone una transferencia desde su ficha, y el otro espacio la acepta.",
       howMove:
-        "Cambiar un restaurante de grupo no se hace desde Cuotly todavía: cambiaría quién entra en él, porque el propietario del grupo tiene acceso a todos sus restaurantes (RN-EST-03), y esa regla está por decidir.",
+        "Al mover un restaurante de grupo, el grupo de destino entra en él en el acto, y quien entraba por el de origen se queda como Editor o pierde el acceso: lo elige quien lo mueve (RN-EST-20). Los accesos del propio restaurante no cambian.",
+      // RN-EST-20 · crear, editar y mover.
+      description: "Descripción",
+      noDescription: "Sin descripción",
+      createButton: "Crear grupo",
+      createTitle: "Crear grupo",
+      createHint:
+        "El grupo nace vacío. Después se le asignan restaurantes y se da acceso a su propietario desde la ficha de cualquiera de ellos.",
+      createSubmit: "Crear grupo",
+      editTitle: "Editar grupo",
+      editSubmit: "Guardar cambios",
+      nameLabel: "Nombre del grupo",
+      descriptionLabel: "Descripción (opcional)",
+      descriptionHint: "Qué es este cliente, para quien lo lea dentro de unos meses.",
+      nameRequired: "El grupo necesita un nombre.",
+      pending: "Guardando…",
+      saved: "Guardado.",
+      assignTitle: "Asignar establecimiento",
+      assignEstablishmentLabel: "Restaurante que se trae a este grupo",
+      assignEstablishmentPlaceholder: "Elige un restaurante",
+      assignNone: "No hay ningún restaurante en servicio fuera de este grupo.",
+      assignOption: (nombre: string, codigo: string, grupo: string | null) =>
+        grupo === null ? `${nombre} · ${codigo}` : `${nombre} · ${codigo} · ahora en ${grupo}`,
+      assignSubmit: "Asignar a este grupo",
+      moveTitle: "Cambiar de grupo",
+      moveHint:
+        "Llevar este restaurante a otro grupo cambia quién entra en él: el grupo de destino entra en el acto.",
+      moveTargetLabel: "Grupo de destino",
+      moveTargetPlaceholder: "Elige un grupo",
+      moveSubmit: "Cambiar de grupo",
+      moveMissing: "Elige el restaurante y el grupo.",
+      moveAlreadyThere: "Ya estaba en ese grupo: no ha cambiado nada.",
+      moveDone: (seQuedan: number, pierden: number) =>
+        [
+          "Movido.",
+          seQuedan === 0 ? null : seQuedan === 1 ? "1 persona se queda como Editor." : `${seQuedan} personas se quedan como Editor.`,
+          pierden === 0 ? null : pierden === 1 ? "1 persona pierde el acceso." : `${pierden} personas pierden el acceso.`,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      previousAccessLegend: "Quien entraba por el grupo de origen",
+      previousAccessHint:
+        "Sus propietarios y editores de grupo que no entren por otra vía. Los accesos del propio restaurante no cambian.",
+      previousAccessRequired: "Elige qué pasa con quien entraba por el grupo de origen.",
+      previousAccess: {
+        keep_as_editor: {
+          title: "Se queda como Editor",
+          hint: "Sigue trabajando en el restaurante con los permisos operativos, sin pagos ni usuarios. El nuevo propietario los ajusta.",
+        },
+        revoke: {
+          title: "Pierde el acceso",
+          hint: "Deja de entrar en este restaurante en el momento. Su actividad pasada se conserva.",
+        },
+      },
       emptyTitle: "Todavía no hay ningún grupo",
       emptyReason:
-        "Un grupo nace con su primer restaurante. Cuando des de alta uno y le pongas un nombre de grupo nuevo, aparecerá aquí.",
+        "Un grupo es la empresa cliente. Créalo vacío para preparar un cliente nuevo, o dale un nombre de grupo nuevo al dar de alta su primer restaurante.",
       howTitle: "Cómo se manejan los grupos",
       howBorn:
-        "No se crea un grupo por su cuenta: nace al dar de alta el primer restaurante que lo tiene, escribiendo su nombre. Un grupo vacío no serviría de nada.",
+        "Un grupo se crea vacío desde aquí, o nace al dar de alta un restaurante escribiendo un nombre de grupo nuevo.",
       howAccess:
         "Dar acceso a alguien —a un restaurante, a todos los de hoy, o a todos incluidos los futuros— se hace desde la ficha de cualquier restaurante del grupo, donde están los cuatro casos juntos.",
     },
@@ -4835,6 +4888,7 @@ export const es = {
       "correction.team_error_opened": "Corrección por error del equipo",
       "establishment.created": "Restaurante dado de alta",
       "establishment.data_changed": "Datos del restaurante editados",
+      "establishment.group_changed": "Restaurante movido de grupo",
       "establishment.manager_set": "Responsable del restaurante cambiado",
       "establishment.photo_set": "Foto del restaurante cambiada",
       "establishment.status_changed": "Estado del restaurante cambiado",
@@ -4862,6 +4916,7 @@ export const es = {
       "file.shared_with_client": "Archivo compartido con el restaurante",
       "file.version_added": "Nueva versión de un archivo",
       "group.created": "Grupo de cliente creado",
+      "group.updated": "Grupo de cliente editado",
       "group_access.granted": "Acceso a un grupo concedido",
       "group_access.revoked": "Acceso a un grupo revocado",
       "holiday.created": "Festivo añadido",
