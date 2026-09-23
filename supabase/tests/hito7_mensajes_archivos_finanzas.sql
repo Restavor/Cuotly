@@ -2893,7 +2893,15 @@ begin
         --     está en la política de `conversations`, así que **no puede
         --     perder el EXECUTE de `authenticated`**: revocárselo no la
         --     cierra, rompe la política entera (CLAUDE.md, la excepción).
-        'space_owner_is_me', 'is_channel_member'
+        'space_owner_is_me', 'is_channel_member',
+        -- Migración 131 (decisión 72, RN-COM-20). Las condiciones cuelgan
+        -- del linaje de un plan o servicio, y estas dos lo dicen dentro de
+        -- las políticas de `plan_versions` y `service_versions`: **no
+        -- pueden perder el EXECUTE de `authenticated`** (CLAUDE.md, la
+        -- excepción). Solo devuelven otro identificador del mismo
+        -- catálogo; quién puede leer lo que cuelga de él lo sigue
+        -- decidiendo la política.
+        'plan_lineage', 'service_lineage'
       )
       -- Los ayudantes del propio fixture (`h7_make_job` y compañía), que
       -- este archivo crea y borra: son andamiaje del test, no producto.

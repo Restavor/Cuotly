@@ -544,6 +544,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/los_permisos_del_equipo.sql
 
+      - name: "Suite 72 — Versiones de planes y servicios (migración 131, RN-COM-19 a 30)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/versiones_de_planes.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
