@@ -17,13 +17,18 @@ import { postMessage } from "./actions";
  * `requests_and_jobs`, que es la de RN-ARC-01 que describe lo que se
  * adjunta a una conversación de solicitud; no se inventa una categoría
  * nueva para esto.
+ *
+ * Sin restaurante no hay adjunto: todo archivo de Cuotly es de un
+ * restaurante (RN-ARC-01), y un canal del equipo (RN-CAN-01) no cuelga de
+ * ninguno. Se quita el clip en vez de ofrecer una subida que no tiene
+ * dónde guardarse.
  */
 export function PostMessageForm({
   conversationId,
   establishmentId,
 }: {
   conversationId: string;
-  establishmentId: string;
+  establishmentId: string | null;
 }) {
   const [state, action, pending] = useActionState(postMessage, INITIAL_MESSAGE);
   const campo = `mensaje-${conversationId}`;
@@ -32,12 +37,14 @@ export function PostMessageForm({
     <form action={action}>
       <input type="hidden" name="conversationId" value={conversationId} />
       <div className="flex items-start gap-2 rounded-[10px] border border-border bg-surface p-2">
-        <FileUploadField
-          establishmentId={establishmentId}
-          category="requests_and_jobs"
-          name="attachmentFileId"
-          compact
-        />
+        {establishmentId === null ? null : (
+          <FileUploadField
+            establishmentId={establishmentId}
+            category="requests_and_jobs"
+            name="attachmentFileId"
+            compact
+          />
+        )}
         <label htmlFor={campo} className="sr-only">
           {es.clientArea.messageLabel}
         </label>

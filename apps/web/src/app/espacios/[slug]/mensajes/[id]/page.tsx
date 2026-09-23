@@ -73,6 +73,14 @@ export default async function ConversationPage({
 
   const type = conversation.type as ConversationType;
 
+  // M76 · un canal se lee en su pantalla, con la lista al lado. Aquí
+  // llegaba desde la búsqueda y desde enlaces viejos, y además salía
+  // vacío: la conversación solo se pintaba si colgaba de un restaurante, y
+  // un canal no cuelga de ninguno (RN-CAN-01).
+  if (type === "channel") {
+    redirect(`/espacios/${slug}/mensajes/canales?canal=${id}`);
+  }
+
   // El establecimiento de la conversación: la de solicitud y la interna de
   // trabajo lo heredan de su dueño, así que se pregunta al servidor en vez
   // de deducirlo aquí de tres maneras distintas.
@@ -101,26 +109,19 @@ export default async function ConversationPage({
   // PRD llama "un fallo aquí es un fallo grave".
   const loLeeElCliente = isClientVisibleConversation(type);
 
-  // §38, RN-CAN · el nombre de un canal ES su título: es lo único que lo
-  // distingue de los demás, y llamarlo "Conversación" sería quitarle lo
-  // único que dice de qué va.
   const titulo =
-    type === "channel"
-      ? (conversation.name ?? es.teamArea.channels.untitled)
-      : type === "job_internal"
+    type === "job_internal"
         ? es.teamArea.messages.internalTitle
         : type === "establishment"
           ? es.teamArea.messages.establishmentTitle
           : es.clientArea.conversationTitle;
 
   const aviso =
-    type === "channel"
-      ? es.teamArea.channels.notice
-      : type === "job_internal"
-        ? es.teamArea.messages.internalNotice
-        : loLeeElCliente
-          ? es.teamArea.messages.establishmentNotice
-          : undefined;
+    type === "job_internal"
+      ? es.teamArea.messages.internalNotice
+      : loLeeElCliente
+        ? es.teamArea.messages.establishmentNotice
+        : undefined;
 
   /*
     Maqueta 18 · las notas internas del restaurante, al lado de la
@@ -147,9 +148,7 @@ export default async function ConversationPage({
     <div className="mx-auto max-w-5xl space-y-6 p-8">
       <header>
         <p className="text-sm text-text-secondary">
-          {type === "channel"
-            ? es.teamArea.channels.spaceChannel
-            : (establishment?.name ?? "—")}
+          {establishment?.name ?? "—"}
         </p>
         <h1 className="text-2xl font-bold text-primary-dark">{titulo}</h1>
       </header>

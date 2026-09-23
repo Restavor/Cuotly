@@ -2130,7 +2130,6 @@ export const es = {
       title: "Canales internos",
       subtitle:
         "Conversaciones del equipo que no cuelgan de ningún restaurante. Entra quien esté en la lista de miembros del canal, y nadie más.",
-      spaceChannel: "Canal del equipo",
       notice:
         "Esto es un canal interno del equipo. El restaurante no lo ve ni lo verá nunca.",
       untitled: "Canal sin nombre",
@@ -2142,7 +2141,7 @@ export const es = {
       open: "Abrir el canal",
       unread: (n: number) => (n === 1 ? "1 sin leer" : `${n} sin leer`),
       notMember:
-        "No eres miembro de este canal, así que no puedes leer lo que se dice dentro. Ver que existe y entrar en él son dos cosas distintas.",
+        "Así que no puedes leer lo que se dice dentro: ver que un canal existe y entrar en él son dos cosas distintas.",
       membersTitle: "Quién está dentro",
       membersEmpty:
         "Este canal no tiene miembros, así que no lo lee nadie. Añade a alguien para que sirva de algo.",
@@ -2165,6 +2164,28 @@ export const es = {
       emptyTitle: "No ves ningún canal",
       emptyReason:
         "O este espacio no tiene canales todavía, o no eres miembro de ninguno. Quien administra el espacio puede añadirte.",
+      // M76 · la vista en dos columnas: la lista a la izquierda y el
+      // canal elegido a la derecha.
+      listTitle: (espacio: string) => `Canales de ${espacio}`,
+      newChannel: "Crear un canal",
+      pickTitle: "Elige un canal",
+      pickReason:
+        "Abrir un canal marca como leído lo que haya dentro, así que no se abre ninguno hasta que lo eliges.",
+      notFoundTitle: "Ese canal no está en tu lista",
+      notFoundReason:
+        "O no existe, o es de otro espacio, o no eres miembro y no administras el espacio.",
+      manage: "Gestionar el canal",
+      backToChannel: "Volver a la conversación",
+      backToList: "Volver a los canales",
+      archivedSection: (n: number) => `Archivados (${n})`,
+      archivedNotice: "Canal archivado: se puede leer lo que se dijo, pero ya no se escribe en él.",
+      notMemberTitle: "No eres miembro de este canal",
+      notMemberShort: "no eres miembro",
+      notMemberManage: "Como administras el espacio, puedes añadirte desde Gestionar el canal.",
+      noAttachments:
+        "En un canal no se adjuntan archivos: cada archivo de Cuotly es de un restaurante, y un canal no es de ninguno.",
+      emptyMessagesTitle: "Todavía no se ha escrito nada",
+      emptyMessagesReason: "Lo que se escriba aquí solo lo leen los miembros del canal.",
     },
 
     messages: {

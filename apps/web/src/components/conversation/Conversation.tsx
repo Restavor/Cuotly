@@ -86,7 +86,8 @@ export async function Conversation({
   bare = false,
 }: {
   conversationId: string;
-  establishmentId: string;
+  /** `null` en un canal del equipo, que no es de ningún restaurante (RN-CAN-01). */
+  establishmentId: string | null;
   /**
    * La zona del espacio (CLAUDE.md). La hora de un mensaje es la del
    * espacio, no la del servidor: quien escribe y quien lee tienen que ver

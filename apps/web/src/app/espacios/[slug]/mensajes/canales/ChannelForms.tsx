@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import { Button, Card, Field, Select } from "@/components/ui";
+import { Button, Field, Select } from "@/components/ui";
 import { es } from "@/i18n/es";
 
 import { INITIAL_CHANNEL } from "./action-state";
@@ -37,8 +37,9 @@ export function CreateChannelForm({ spaceId }: { spaceId: string }) {
   const [state, action, pending] = useActionState(createChannel, INITIAL_CHANNEL);
 
   return (
-    <Card title={t.createTitle}>
-      <form action={action} className="space-y-3">
+    <div>
+      <h2 className="mb-3 text-lg font-semibold text-primary-dark">{t.createTitle}</h2>
+      <form action={action} className="max-w-md space-y-3">
         <input type="hidden" name="spaceId" value={spaceId} />
         <p className="text-sm text-text-secondary">{t.createHint}</p>
         <Field label={t.nameLabel} name="name" required />
@@ -47,7 +48,7 @@ export function CreateChannelForm({ spaceId }: { spaceId: string }) {
           {pending ? t.pending : t.createSubmit}
         </Button>
       </form>
-    </Card>
+    </div>
   );
 }
 
