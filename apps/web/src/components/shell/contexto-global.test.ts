@@ -135,7 +135,10 @@ describe("§36 · salir de Cuotly sigue siendo posible", () => {
    * fallara nada.
    */
   it("RN-GLO-06: 'Cerrar sesión' está en Mi cuenta", () => {
-    const cuenta = readFileSync(join(RAIZ, "cuenta/page.tsx"), "utf8");
-    expect(cuenta).toContain("signOut");
+    // Desde G05 lo pinta la vista de Mi cuenta, que la página monta.
+    const pagina = readFileSync(join(RAIZ, "cuenta/page.tsx"), "utf8");
+    const vista = readFileSync(join(RAIZ, "cuenta/AccountView.tsx"), "utf8");
+    expect(pagina).toContain("<AccountView");
+    expect(vista).toContain("signOut");
   });
 });

@@ -18,86 +18,138 @@ export interface PreferenceRow {
 }
 
 /**
- * G05 · los avisos de la persona (RN-GLO-06).
+ * G05 · los avisos de la persona (RN-GLO-06), como la tabla del dibujo:
+ * cada aviso en una fila y un interruptor por canal. Cambiar uno guarda esa
+ * fila en el momento; sin JavaScript, cada fila lleva su botón de guardar.
+ *
+ * `compact` es la tarjeta de la pestaña Perfil, con los dos canales del
+ * dibujo (en la app y correo). El tercero, el móvil, no se pierde: viaja
+ * oculto con su valor para que guardar una fila no lo apague, y se cambia
+ * en la pestaña Notificaciones, que enseña los tres.
  *
  * Los obligatorios de RN-NOT-03 se pintan bloqueados **y** el servidor los
  * vuelve a rechazar: esconder la casilla no es un control de acceso
- * (CLAUDE.md). Aquí se enseñan igualmente, con su motivo, en vez de
- * desaparecer de la lista — que alguien no pueda apagar un aviso no
- * significa que no deba saber que existe.
+ * (CLAUDE.md). Se enseñan igualmente, con su motivo, en vez de desaparecer
+ * de la lista: que alguien no pueda apagar un aviso no significa que no
+ * deba saber que existe.
  */
-export function NotificationPreferences({ rows }: { rows: readonly PreferenceRow[] }) {
+export function NotificationPreferences({
+  rows,
+  compact = false,
+}: {
+  rows: readonly PreferenceRow[];
+  compact?: boolean;
+}) {
   const t = es.globalContext.account;
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-text-secondary">{t.notificationsBody}</p>
-      <ul className="divide-y divide-border">
+    <div>
+      <div
+        className={`grid items-end gap-2 border-b border-border pb-2 text-xs font-medium text-text-secondary ${
+          compact ? "grid-cols-[minmax(0,1fr)_64px_64px]" : "grid-cols-[minmax(0,1fr)_72px_72px_72px]"
+        }`}
+      >
+        <span />
+        <span className="text-center">{t.channelInApp}</span>
+        <span className="text-center">{t.channelEmail}</span>
+        {compact ? null : <span className="text-center">{t.channelPush}</span>}
+      </div>
+      <ul className={`divide-y divide-border ${compact ? "max-h-72 overflow-y-auto" : ""}`}>
         {rows.map((row) => (
-          <li key={row.event} className="py-3">
-            <Fila row={row} />
+          <li key={row.event}>
+            <Fila row={row} compact={compact} />
           </li>
         ))}
       </ul>
-      <p className="text-sm text-text-secondary">{t.mandatoryReason}</p>
+      <p className="mt-3 text-xs text-text-secondary">{t.mandatoryReason}</p>
     </div>
   );
 }
 
-function Fila({ row }: { row: PreferenceRow }) {
-  const [state, action, pending] = useActionState(
-    saveNotificationPreference,
-    ACCOUNT_INITIAL_STATE,
-  );
+function Fila({ row, compact }: { row: PreferenceRow; compact: boolean }) {
+  const [state, action, pending] = useActionState(saveNotificationPreference, ACCOUNT_INITIAL_STATE);
   const t = es.globalContext.account;
+  const guardar = (e: React.ChangeEvent<HTMLInputElement>) => e.currentTarget.form?.requestSubmit();
 
   return (
-    <form action={action} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <form
+      action={action}
+      className={`grid items-center gap-2 py-2.5 ${
+        compact ? "grid-cols-[minmax(0,1fr)_64px_64px]" : "grid-cols-[minmax(0,1fr)_72px_72px_72px]"
+      }`}
+    >
       <input type="hidden" name="event_type" value={row.event} />
-      <span className="min-w-48 flex-1 text-sm font-semibold text-text">{row.label}</span>
-
-      <Casilla name="in_app" label={t.channelInApp} checked={row.inApp} disabled={row.mandatory} />
-      <Casilla name="email" label={t.channelEmail} checked={row.email} disabled={row.mandatory} />
-      <Casilla name="push" label={t.channelPush} checked={row.push} disabled={row.mandatory} />
-
-      {row.mandatory ? (
-        <span className="text-xs text-text-secondary">{t.mandatory}</span>
-      ) : (
-        <Button type="submit" variant="secondary" pending={pending}>
-          {pending ? t.savePending : t.save}
-        </Button>
+      {compact && row.push ? <input type="hidden" name="push" value="on" /> : null}
+      <div className="min-w-0">
+        <p className="text-sm text-text">{row.label}</p>
+        {row.mandatory ? <p className="text-xs text-text-secondary">{t.mandatory}</p> : null}
+        {state.error ? (
+          <p role="alert" className="text-xs text-danger">
+            {state.error}
+          </p>
+        ) : null}
+        <noscript>
+          {row.mandatory ? null : (
+            <Button type="submit" variant="secondary">
+              {t.save}
+            </Button>
+          )}
+        </noscript>
+      </div>
+      <Interruptor
+        name="in_app"
+        label={`${row.label} · ${t.channelInApp}`}
+        checked={row.inApp}
+        disabled={row.mandatory || pending}
+        onChange={guardar}
+      />
+      <Interruptor
+        name="email"
+        label={`${row.label} · ${t.channelEmail}`}
+        checked={row.email}
+        disabled={row.mandatory || pending}
+        onChange={guardar}
+      />
+      {compact ? null : (
+        <Interruptor
+          name="push"
+          label={`${row.label} · ${t.channelPush}`}
+          checked={row.push}
+          disabled={row.mandatory || pending}
+          onChange={guardar}
+        />
       )}
-
-      {state.error ? (
-        <span role="alert" className="w-full text-sm text-danger">
-          {state.error}
-        </span>
-      ) : null}
     </form>
   );
 }
 
-function Casilla({
+function Interruptor({
   name,
   label,
   checked,
   disabled,
+  onChange,
 }: {
   name: string;
   label: string;
   checked: boolean;
   disabled: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
-    <label className="flex items-center gap-1.5 text-sm text-text">
+    <label className="relative mx-auto inline-flex cursor-pointer items-center has-disabled:cursor-not-allowed">
       <input
         type="checkbox"
+        role="switch"
         name={name}
+        aria-label={label}
         defaultChecked={checked}
         disabled={disabled}
-        className="size-4 accent-[var(--color-primary)]"
+        onChange={onChange}
+        className="peer sr-only"
       />
-      {label}
+      <span className="h-6 w-11 rounded-full bg-border transition-colors peer-checked:bg-cuotly-green peer-disabled:opacity-60 peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-cuotly-green" />
+      <span className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-surface shadow-sm transition-transform peer-checked:translate-x-5" />
     </label>
   );
 }

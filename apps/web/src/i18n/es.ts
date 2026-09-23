@@ -6860,19 +6860,23 @@ export const es = {
     },
     account: {
       title: "Mi cuenta",
-      subtitle: "Tus datos, tu seguridad y tus avisos. Es de la persona, no del espacio.",
+      subtitle: "Gestiona tu información personal, seguridad y preferencias.",
+      tabsLabel: "Secciones de Mi cuenta",
+      tabs: { profile: "Perfil", security: "Seguridad", notifications: "Notificaciones" },
+      personalTitle: "Datos personales",
       profileTitle: "Perfil",
       givenName: "Nombre",
       familyName: "Apellidos",
       email: "Correo electrónico",
       emailLocked: "El correo es la identidad de tu cuenta y se cambia desde Seguridad.",
       phone: "Teléfono",
-      timezone: "Zona horaria para leer las fechas",
+      timezone: "Zona horaria",
       /** CLAUDE.md MUST · la del espacio manda en los cálculos. */
       timezoneHelp:
         "Solo cambia cómo se te enseñan las fechas. Los plazos y los vencimientos se siguen calculando en la zona horaria de cada espacio.",
-      timezonePlaceholder: "La del espacio",
+      timezoneSpace: "La de cada espacio",
       save: "Guardar",
+      saveChanges: "Guardar cambios",
       savePending: "Guardando…",
       saved: "Guardado.",
       nameRequired: "El nombre no puede quedar en blanco.",
@@ -6881,9 +6885,6 @@ export const es = {
        * (bucket `avatars`, migración 109). Hasta entonces aquí había un
        * motivo escrito en vez de un hueco.
        */
-      photoTitle: "Foto",
-      photoHint:
-        "Se ve en tu cabecera y donde aparezcas dentro de tus espacios. Quien no comparte espacio contigo no la ve.",
       photoChange: "Cambiar foto",
       photoPending: "Subiendo…",
       photoRemove: "Quitar foto",
@@ -6900,16 +6901,18 @@ export const es = {
       avatarNoSession: "Se ha cerrado tu sesión. Vuelve a entrar e inténtalo otra vez.",
       avatarUploadFailed: "No se ha podido guardar la foto. Vuelve a intentarlo.",
       securityTitle: "Seguridad",
-      securityBody: "Contraseña, verificación en dos pasos y sesiones abiertas.",
-      securityLink: "Contraseña y verificación",
-      sessionsLink: "Mis sesiones",
-      verifyLink: "Verificar mi correo",
+      securitySubtitle: "Gestiona la seguridad de tu cuenta.",
+      twoFactorLink: "Configurar verificación en dos pasos",
+      sessionsLink: "Ver sesiones",
       closeLink: "Cerrar mi cuenta",
-      notificationsTitle: "Avisos",
+      rolesNote: "Tus roles dependen de cada espacio y restaurante.",
+      notificationsTitle: "Preferencias de notificación",
+      notificationsSubtitle: "Elige qué notificaciones quieres recibir.",
+      notificationsAll: "Ver también los avisos al móvil",
       notificationsBody:
         "Lo que eliges aquí vale en todos tus contextos, también en los que entres mañana. Dentro de un espacio puedes afinarlo, y lo que decidas allí manda sobre esto.",
-      channelInApp: "En Cuotly",
-      channelEmail: "Correo",
+      channelInApp: "En la app",
+      channelEmail: "Correo electrónico",
       channelPush: "Móvil",
       mandatory: "No se puede desactivar",
       mandatoryReason:
