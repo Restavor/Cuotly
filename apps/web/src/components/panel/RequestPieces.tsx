@@ -130,11 +130,17 @@ export function RequestTimeline({
   steps,
   orientation,
   showDates = true,
+  onlyKnownDates = false,
 }: {
   steps: readonly TimelineView[];
   orientation: "vertical" | "horizontal";
   /** `false` para un camino que no tiene fechas que enseñar (R17). */
   showDates?: boolean;
+  /**
+   * `true` para no escribir "Sin fecha" en un paso que no la tiene: en G03
+   * el paso en marcha lleva su frase y no una fecha que no existe.
+   */
+  onlyKnownDates?: boolean;
 }) {
   if (orientation === "horizontal") {
     return (
@@ -175,7 +181,10 @@ export function RequestTimeline({
               {paso.label}
             </p>
             {paso.note ? <p className="text-sm text-text-secondary">{paso.note}</p> : null}
-            {paso.status === "pending" || paso.status === "waiting" || !showDates ? null : (
+            {paso.status === "pending" ||
+            paso.status === "waiting" ||
+            !showDates ||
+            (onlyKnownDates && paso.dateLabel === null) ? null : (
               <p className="text-xs text-text-secondary">{paso.dateLabel ?? es.panelRequests.noDate}</p>
             )}
           </div>

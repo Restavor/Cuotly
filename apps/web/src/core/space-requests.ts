@@ -163,3 +163,58 @@ export function isSpaceRequestFinal(state: SpaceRequestState): boolean {
 export function isVisibleToPlatform(state: SpaceRequestState): boolean {
   return state !== "draft";
 }
+
+// ---------------------------------------------------------------------------
+// G03 · el camino de la solicitud, en cuatro pasos
+// ---------------------------------------------------------------------------
+
+export type SpaceRequestStepKey = "submitted" | "review" | "approval" | "activation";
+
+/** El mismo vocabulario que el camino de una solicitud del restaurante. */
+export type SpaceRequestStepStatus = "done" | "current" | "waiting" | "pending" | "stopped";
+
+/**
+ * Los cuatro pasos que dibuja G03 —"Solicitud enviada", "Revisión de
+ * Cuotly", "Aprobación e instrucciones de pago", "Activación del
+ * espacio"— sobre los seis estados de §10 y el estado del espacio.
+ *
+ * No es una máquina nueva. Aprobar crea el espacio en prueba y emite la
+ * primera mensualidad (RN-PLA-05, RN-SUB-05): esas son las instrucciones
+ * de pago. Pagarla lo **activa**, así que el cuarto paso solo está hecho
+ * cuando el espacio está `active`, y no al aprobar. Un espacio archivado
+ * porque la prueba terminó sin pago sigue esperando ese pago (§4.4: 30
+ * días para reactivarse); uno que archivó su propietario está parado.
+ *
+ * `spaceStatus` es `null` cuando no hay espacio o no se puede leer: el
+ * paso se queda pendiente, sin afirmar nada.
+ */
+export function spaceRequestSteps(
+  state: SpaceRequestState,
+  spaceStatus: string | null,
+): { key: SpaceRequestStepKey; status: SpaceRequestStepStatus }[] {
+  const paso = (key: SpaceRequestStepKey, status: SpaceRequestStepStatus) => ({ key, status });
+  switch (state) {
+    case "draft":
+      return [paso("submitted", "pending"), paso("review", "pending"), paso("approval", "pending"), paso("activation", "pending")];
+    case "submitted":
+    case "in_review":
+      return [paso("submitted", "done"), paso("review", "current"), paso("approval", "pending"), paso("activation", "pending")];
+    case "needs_information":
+      return [paso("submitted", "done"), paso("review", "waiting"), paso("approval", "pending"), paso("activation", "pending")];
+    case "rejected":
+      return [paso("submitted", "done"), paso("review", "done"), paso("approval", "stopped"), paso("activation", "pending")];
+    case "approved": {
+      const activacion: SpaceRequestStepStatus =
+        spaceStatus === "active"
+          ? "done"
+          : spaceStatus === "trial"
+            ? "current"
+            : spaceStatus === "archived_trial_ended" || spaceStatus === "archived_nonpayment"
+              ? "waiting"
+              : spaceStatus === "archived_by_owner"
+                ? "stopped"
+                : "pending";
+      return [paso("submitted", "done"), paso("review", "done"), paso("approval", "done"), paso("activation", activacion)];
+    }
+  }
+}

@@ -1,37 +1,57 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Card, ErrorState, StatusBadge } from "@/components/ui";
+import { InfoNote } from "@/components/panel/RequestPieces";
+import { ErrorState, PageHeader } from "@/components/ui";
 import { isSpaceRequestFinal, type SpaceRequestState } from "@/core/space-requests";
-import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import { requestTone } from "../../administracion/solicitudes/request-tone";
+import { SentRequestView } from "./SentRequestView";
 import { SpaceRequestForm } from "./SpaceRequestForm";
 
 /**
- * RN-ADM-05 · el formulario básico con el que alguien recién registrado
- * pide su espacio y ve en qué estado está (decisión 31: primero la cuenta,
- * luego la solicitud, luego la aprobación). Lo que se ve sale de
- * `space_requests` con la política de la 89: cada uno la suya, y sin
- * `decided_by` (RN-PLA-07), así que las columnas van enumeradas.
+ * G02 y G03 · pedir un espacio de mantenimiento y seguir la solicitud
+ * (RN-ADM-05, RN-PLA; decisión 31: primero la cuenta, luego la solicitud,
+ * luego la aprobación).
+ *
+ * Una sola ruta con dos caras, según el estado de la solicitud que se mira:
+ *
+ *   · **G02, el formulario**, cuando no hay ninguna, cuando es un borrador
+ *     o cuando Cuotly ha pedido información (RN-PLA-03: son los dos estados
+ *     desde los que el solicitante la mueve). Con "Necesita información"
+ *     va arriba lo que Cuotly dijo que falta (RN-PLA-06).
+ *   · **G03, la solicitud enviada**, en los demás: el estado, los tres
+ *     datos de la cabecera y el camino en cuatro pasos
+ *     (`spaceRequestSteps()`), que llega hasta la activación del espacio
+ *     porque aprobar lo crea en prueba y emite la primera mensualidad, y
+ *     pagarla lo activa (RN-PLA-05, RN-SUB-05).
+ *
+ * `?solicitud=<id>` abre una en concreto, que es a donde lleva cada fila de
+ * Mis solicitudes; RLS solo devuelve las de quien mira. `?nueva=1` abre el
+ * formulario vacío después de una decidida, y `?ver=datos` despliega lo
+ * enviado. Las columnas van enumeradas: `decided_by` está revocada
+ * (RN-PLA-07) y quién la revisó no se enseña.
  */
 export const dynamic = "force-dynamic";
 
-function cuando(value: string | null): string {
-  return value === null ? "—" : enZona(value, CUOTLY_TIMEZONE, { dateStyle: "short", timeStyle: "short" });
+const t = es.spaceRequestForm;
+
+type Params = Record<string, string | string[] | undefined>;
+
+function uno(valor: string | string[] | undefined): string | null {
+  const v = Array.isArray(valor) ? valor[0] : valor;
+  return v && v.trim() !== "" ? v.trim() : null;
 }
 
-export default async function RequestSpacePage() {
+export default async function RequestSpacePage({ searchParams }: { searchParams: Promise<Params> }) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // La más reciente que no esté cerrada es la que se sigue; si todas están
-  // decididas, se enseña la última y se deja pedir otra.
   const { data, error } = await supabase
     .from("space_requests")
     .select(
@@ -41,100 +61,75 @@ export default async function RequestSpacePage() {
     .order("updated_at", { ascending: false });
 
   if (error) {
+    return <ErrorState title={t.errorTitle} description={error.message} />;
+  }
+
+  const solicitudes = data ?? [];
+  // La que no esté cerrada es la que se sigue: solo puede haber una viva.
+  const viva = solicitudes.find((r) => !isSpaceRequestFinal(r.status as SpaceRequestState)) ?? null;
+  const pedida = uno(params.solicitud);
+  const nueva = uno(params.nueva) === "1" && viva === null;
+  const mirada = nueva ? null : (solicitudes.find((r) => r.id === pedida) ?? viva ?? solicitudes[0] ?? null);
+  const state = mirada ? (mirada.status as SpaceRequestState) : null;
+
+  const header = <PageHeader title={t.pageTitle} subtitle={t.pageSubtitle} />;
+
+  // G02 · el formulario.
+  if (mirada === null || state === "draft" || state === "needs_information") {
     return (
-      <div className="mx-auto max-w-2xl">
-        <ErrorState title={es.spaceRequestForm.errorTitle} description={error.message} />
+      <div className="space-y-6">
+        {header}
+        {state === "needs_information" && mirada?.status_reason ? (
+          <InfoNote title={t.needsInfoTitle}>{mirada.status_reason}</InfoNote>
+        ) : null}
+        <SpaceRequestForm
+          key={mirada?.id ?? "nueva"}
+          initial={
+            mirada
+              ? {
+                  businessName: mirada.business_name,
+                  contactName: mirada.contact_name,
+                  email: mirada.email,
+                  phone: mirada.phone ?? "",
+                  estimatedEstablishments: mirada.estimated_establishments,
+                  estimatedUsers: mirada.estimated_users,
+                  intendedUse: mirada.intended_use ?? "",
+                  plan: mirada.plan,
+                  taxName: mirada.tax_name ?? "",
+                  taxId: mirada.tax_id ?? "",
+                  taxAddress: mirada.tax_address ?? "",
+                }
+              : { email: user.email ?? "" }
+          }
+        />
       </div>
     );
   }
 
-  const t = es.spaceRequestForm;
-  const solicitudes = data ?? [];
-  const viva = solicitudes.find((r) => !isSpaceRequestFinal(r.status as SpaceRequestState)) ?? null;
-  const ultima = viva ?? solicitudes[0] ?? null;
-  const state = ultima ? (ultima.status as SpaceRequestState) : null;
-  const editable = ultima === null || state === "draft" || state === "needs_information" || isSpaceRequestFinal(state!);
-
-  const { data: space } = ultima?.space_id
-    ? await supabase.from("spaces").select("slug").eq("id", ultima.space_id).maybeSingle()
+  // G03 · la solicitud enviada.
+  const { data: space } = mirada.space_id
+    ? await supabase
+        .from("spaces")
+        .select("slug, cuotly_status, cuotly_status_changed_at")
+        .eq("id", mirada.space_id)
+        .maybeSingle()
     : { data: null };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <p className="text-sm">
-        <Link href="/" className="text-cuotly-green underline">
-          {t.back}
-        </Link>
-      </p>
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
-        <p className="text-sm text-text-secondary">{t.subtitle}</p>
-      </header>
-
-      {ultima && state ? (
-        <Card title={t.statusTitle}>
-          <div className="flex flex-wrap items-center gap-3 text-sm">
-            <StatusBadge tone={requestTone(state)}>{t.states[state]}</StatusBadge>
-            {ultima.submitted_at ? (
-              <span className="text-text-secondary">
-                {t.submittedAt} {cuando(ultima.submitted_at)}
-              </span>
-            ) : null}
-            {ultima.decided_at ? (
-              <span className="text-text-secondary">
-                {t.decidedAt} {cuando(ultima.decided_at)}
-              </span>
-            ) : null}
-          </div>
-          {ultima.status_reason ? (
-            <p className="mt-3 text-sm">
-              <span className="font-semibold">{t.reasonLabel}:</span> {ultima.status_reason}
-            </p>
-          ) : null}
-          <p className="mt-3 text-sm text-text-secondary">
-            {state === "approved"
-              ? t.approvedHint
-              : state === "rejected"
-                ? t.rejectedHint
-                : state === "needs_information"
-                  ? t.needsInfoHint
-                  : state === "draft"
-                    ? null
-                    : t.pendingHint}
-          </p>
-          {state === "approved" && space ? (
-            <p className="mt-3 text-sm">
-              <Link href={`/espacios/${space.slug}`} className="text-cuotly-green underline">
-                {t.goToSpace}
-              </Link>
-            </p>
-          ) : null}
-        </Card>
-      ) : null}
-
-      {editable ? (
-        <Card title={t.formTitle}>
-          <p className="mb-4 text-sm text-text-secondary">{t.formHint}</p>
-          <SpaceRequestForm
-            initial={
-              ultima && !isSpaceRequestFinal(state!)
-                ? {
-                    businessName: ultima.business_name,
-                    contactName: ultima.contact_name,
-                    email: ultima.email,
-                    phone: ultima.phone ?? "",
-                    estimatedEstablishments: ultima.estimated_establishments,
-                    estimatedUsers: ultima.estimated_users,
-                    intendedUse: ultima.intended_use ?? "",
-                    plan: ultima.plan,
-                    taxName: ultima.tax_name ?? "",
-                    taxId: ultima.tax_id ?? "",
-                    taxAddress: ultima.tax_address ?? "",
-                  }
-                : { email: user.email ?? "" }
-            }
-          />
-        </Card>
+    <div className="space-y-4">
+      {header}
+      <SentRequestView
+        request={mirada}
+        space={space}
+        showData={uno(params.ver) === "datos"}
+        canRequestAnother={viva === null}
+      />
+      {solicitudes.length > 1 ? (
+        <p className="text-sm">
+          <Link href="/mis-solicitudes" className="text-cuotly-green underline">
+            {es.globalContext.nav.requests}
+          </Link>
+        </p>
       ) : null}
     </div>
   );

@@ -6,7 +6,7 @@ import { isCuotlyPlan } from "@/core/space-requests";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import type { SpaceRequestFormState } from "./form-state";
+import type { SpaceRequestFormState, SpaceRequestValues } from "./form-state";
 
 function texto(formData: FormData, name: string): string {
   return String(formData.get(name) ?? "").trim();
@@ -32,12 +32,25 @@ export async function saveSpaceRequest(
   const contactName = texto(formData, "contactName");
   const email = texto(formData, "email");
   const plan = texto(formData, "plan");
+  const values: SpaceRequestValues = {
+    businessName,
+    contactName,
+    email,
+    phone: texto(formData, "phone"),
+    estimatedEstablishments: texto(formData, "estimatedEstablishments"),
+    estimatedUsers: texto(formData, "estimatedUsers"),
+    intendedUse: texto(formData, "intendedUse"),
+    plan,
+    taxName: texto(formData, "taxName"),
+    taxId: texto(formData, "taxId"),
+    taxAddress: texto(formData, "taxAddress"),
+  };
 
   if (!businessName || !contactName || !email) {
-    return { error: es.spaceRequestForm.validation, saved: false, submitted: false };
+    return { error: es.spaceRequestForm.validation, saved: false, submitted: false, values };
   }
   if (!isCuotlyPlan(plan)) {
-    return { error: es.spaceRequestForm.invalidPlan, saved: false, submitted: false };
+    return { error: es.spaceRequestForm.invalidPlan, saved: false, submitted: false, values };
   }
 
   const supabase = await createClient();
@@ -54,16 +67,17 @@ export async function saveSpaceRequest(
     p_tax_id: texto(formData, "taxId") || undefined,
     p_tax_address: texto(formData, "taxAddress") || undefined,
   });
-  if (error) return { error: error.message, saved: false, submitted: false };
+  if (error) return { error: error.message, saved: false, submitted: false, values };
 
   if (intent === "submit") {
     const { error: submitError } = await supabase.rpc("submit_space_request", {
       p_request_id: requestId,
     });
-    if (submitError) return { error: submitError.message, saved: true, submitted: false };
+    if (submitError) return { error: submitError.message, saved: true, submitted: false, values };
   }
 
   revalidatePath("/solicitar-espacio");
+  revalidatePath("/mis-solicitudes");
   revalidatePath("/");
-  return { error: null, saved: true, submitted: intent === "submit" };
+  return { error: null, saved: true, submitted: intent === "submit", values: null };
 }

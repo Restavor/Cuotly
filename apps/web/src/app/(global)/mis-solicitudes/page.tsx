@@ -90,7 +90,7 @@ export default async function MyRequestsPage() {
                   </TableCell>
                   <TableCell>
                     <Link
-                      href="/solicitar-espacio"
+                      href={`/solicitar-espacio?solicitud=${fila.id}`}
                       className="text-sm font-semibold text-cuotly-green underline"
                     >
                       {t.actions[estado]}
