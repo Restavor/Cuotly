@@ -2093,3 +2093,21 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     - Sin puntos en la ventana, se sigue diciendo el motivo y no se pinta ninguna cifra.
     - No hay "Reintentar sincronización": CLAUDE.md prohíbe "Sincronizar ahora" en las
       integraciones analíticas. El remedio que se ofrece es "Revisar conexión".
+
+72. **Editar planes y servicios: reglas fijadas, opción A** (23/09/2026). Bosco acepta la propuesta de
+    `docs/PROPUESTA-EDICION-DE-PLANES.md` tal como está y elige la **opción A** del punto 4. Queda
+    escrita como RN-COM-19 a RN-COM-30 (PRD §6.5) y levanta el "pendiente" de la decisión 70.
+
+    - Cambia de versión lo que el restaurante contrata (precio, cuotas, plazos, prioridad, nivel,
+      vigilancia); el nombre y la descripción se corrigen en el sitio. Un plan sin restaurantes se
+      edita en el sitio.
+    - Los clientes pasan en su primera renovación a 30 días o más de publicar la versión, sin
+      reiniciar la permanencia.
+    - Lo que les favorece solo se avisa; lo que les perjudica en algo pide aceptación.
+    - **Opción A:** quien no acepta un cambio que le perjudica **sigue en la versión que aceptó**,
+      marcado "en versión anterior", y el propietario decide. Nunca se cobra una versión no aceptada.
+      Se descartó la B (pasar igualmente con la aceptación pendiente) porque cobraría un precio más
+      alto sin consentimiento.
+    - Archivar solo quita de las altas; nada se borra; los trabajos aceptados no se reescriben.
+    - Si Bosco cambia desde la aplicación un precio que fija CLAUDE.md (decisión 39, Menú Diario),
+      esas líneas se actualizan el mismo día.

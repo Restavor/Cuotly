@@ -271,6 +271,52 @@ unidades_extra(cat) = techo( (incluidas_nuevo(cat) - incluidas_antiguo(cat)) * f
 ```
 Si `unidades_extra` sale negativo se trata como 0: una mejora nunca quita consumos.
 
+### 6.5 Crear, editar y archivar planes y servicios (decisión 72, 23/09/2026)
+
+Concreta §102–104 de la especificación maestra con la propuesta de
+`docs/PROPUESTA-EDICION-DE-PLANES.md`, aceptada por Bosco con la opción A del punto 4.
+
+- **RN-COM-19**: solo el **propietario del espacio** crea, edita y archiva planes y servicios. Los
+  administradores asignan los que existen (§102).
+- **RN-COM-20**: crea **versión nueva** cualquier cambio en lo que el restaurante contrata: precio
+  (y, en un servicio, el precio con Premium+ de RN-COM-08), consumos incluidos por categoría,
+  plazos de inicio y de realización, si ordena sus solicitudes, prioridad (`grants_priority`),
+  nivel de informe y vigilancia de reseñas. Corregir el nombre o la descripción comercial **no**
+  crea versión: se edita en el sitio y queda en la auditoría con el valor anterior y el nuevo.
+- **RN-COM-21**: un plan o servicio que **no tiene ningún restaurante** se edita en el sitio, sin
+  versión nueva, con su apunte de auditoría. Versionar lo que nadie tiene no protege a nadie.
+- **RN-COM-22**: quien ya tiene el plan pasa a la versión nueva en su **primera renovación que
+  caiga al menos 30 días naturales después de publicarla** (§104, aviso mínimo). Quien renueva
+  antes renueva con la versión que tiene y pasa en la siguiente. Nadie elige fechas a mano.
+- **RN-COM-23**: una versión que **solo favorece** al restaurante (baja el precio, sube alguna
+  cuota, acorta algún plazo o sube el nivel, sin empeorar nada) no pide aceptación: se le avisa al
+  publicarla y pasa según RN-COM-22. Una que **le perjudica en algo** (sube el precio, baja una
+  cuota, alarga un plazo, baja el nivel o quita la prioridad o la vigilancia) pide su aceptación
+  con el mismo mecanismo de las condiciones (RN-DAT-07, migración 75): aviso en Cuotly y por
+  correo, y aceptar en su pantalla o registrarlo el equipo con fecha y contrato. Si un cambio
+  favorece en una cosa y perjudica en otra, cuenta como que perjudica.
+- **RN-COM-24 (opción A)**: si llega la renovación de RN-COM-22 y el restaurante **no ha aceptado**
+  una versión que le perjudica, **sigue en la versión que aceptó**, que no se borra ni se cierra
+  (§104, "se conserva la versión aceptada"). La pantalla del equipo lo marca como "en versión
+  anterior" y el propietario decide qué hacer. Si acepta más tarde, pasa en su siguiente
+  renovación. Nunca se le cobra una versión que no ha aceptado.
+- **RN-COM-25**: pasar a una versión nueva **no reinicia la permanencia**. RN-COM-05 reinicia en un
+  cambio **voluntario** de plan del restaurante; este lo hace el espacio.
+- **RN-COM-26**: todos los restaurantes de una versión pasan juntos, cada uno en su renovación. No
+  hay precios individuales (RN-COM-14): el único que se queda atrás es el de RN-COM-24, y por no
+  aceptar, no por un precio pactado.
+- **RN-COM-27**: archivar un plan, un servicio o una versión lo quita de las altas y de los cambios
+  de plan nuevos, y nada más: quien lo tiene lo conserva hasta que pase a otro. Nunca se borra. Lo
+  archivado sigue en el historial de versiones.
+- **RN-COM-28**: una versión nueva **no reescribe hacia atrás**: los trabajos ya aceptados
+  conservan las condiciones con las que se aceptaron (RN-COM-15, RN-COM-17,
+  `accepted_start_sla_hours`), y el ciclo en curso se cobra y se consume con la versión con la
+  que empezó.
+- **RN-COM-29**: las mismas reglas valen para los servicios adicionales, Menú Diario incluido. Sus
+  dos precios (RN-COM-08) son dos campos de la versión y cambian con ella.
+- **RN-COM-30**: la comparativa de versiones (M55) enseña, además del texto de las condiciones, el
+  precio y las cuotas de cada versión, y marca qué mejora y qué empeora para el restaurante.
+
 ---
 
 ## 7. Reloj contractual (RN-CLK)

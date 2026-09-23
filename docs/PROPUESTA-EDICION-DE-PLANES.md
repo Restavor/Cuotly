@@ -1,10 +1,8 @@
 # Propuesta · crear, editar y archivar planes y servicios (§102–104)
 
-**Estado: pendiente de que Bosco decida.** Nada de esto está programado. Las pantallas de Planes y
-servicios (M21, M53–M56) se hicieron el 23/09/2026 **sin** crear, editar ni archivar planes, por
-decisión suya de ese día: primero las pantallas, la edición cuando estén fijadas las reglas. Cuando
-las fije, se recogen como decisión en `docs/DECISIONES.md` y como reglas `RN-` en el PRD, y solo
-entonces se programa.
+**Estado: decidida el 23/09/2026** (decisión 72). Bosco la aceptó tal como está, con la **opción A**
+del punto 4. Las reglas están en el PRD, §6.5, RN-COM-19 a RN-COM-30. Este documento queda como el
+razonamiento; lo que manda es el PRD.
 
 ## De dónde sale
 
@@ -105,7 +103,6 @@ su doble precio (RN-COM-08): el precio con Premium+ es un campo más del servici
 
 ---
 
-## Qué necesito de ti
+## Lo que decidió Bosco
 
-Un sí o un cambio en cada punto, y sobre todo **la opción A o B del punto 4**. Con eso escribo la
-decisión, las reglas del PRD y los tests antes de programar nada.
+Sí a todos los puntos tal como están y **opción A** en el punto 4 (23/09/2026, decisión 72).
