@@ -1,31 +1,36 @@
 import { redirect } from "next/navigation";
 
-import { HelpCenter } from "@/components/help/HelpCenter";
-import type { ShellRole } from "@/components/shell/navigation";
-import { es } from "@/i18n/es";
+import { readHelpParams } from "@/core/global-help";
+import { helpAudienceFor } from "@/core/support";
 import { createClient } from "@/lib/supabase/server";
 import { myContexts } from "@/services/global-gateway";
+import { searchHelpArticles, supportIsOpenNow, type HelpArticleHit } from "@/services/support-gateway";
+
+import { HelpView, type HelpContact } from "./HelpView";
 
 /**
  * G06 · la Ayuda global (RN-GLO-07): el centro de ayuda de RN-SOP visto
  * desde fuera de los espacios. Los artículos son los mismos
- * (`help_articles`), y el componente también: dos copias del buscador
- * acabarían enseñando dos catálogos.
+ * (`help_articles`, por `search_help_articles()`), y las guías se abren en
+ * `/ayuda/guias/<slug>` con el mismo `HelpArticle` de siempre.
  *
- * Abrir una incidencia sí necesita un espacio detrás —una incidencia es de
- * un espacio y va con su prioridad (RN-SOP-03)—. Con un solo espacio se
- * pasa ese, que es lo que la persona esperaría; con varios no se elige por
- * ella, y la pantalla dice por dónde abrirla en vez de ofrecer un botón que
- * el servidor rechazaría.
+ * El dibujo pone un formulario de "Asunto" y "Descripción". No se copia:
+ * una consulta abierta desde aquí es una **incidencia** de RN-SOP-03, que
+ * tiene sus propios campos (tipo, categoría, impacto, descripción) y es de
+ * un espacio, con su prioridad. Por eso la tarjeta de contacto ofrece
+ * abrirla en cada espacio donde quien mira puede (`contact_cuotly`, que se
+ * pregunta al servidor espacio a espacio), y a quien no puede le dice a
+ * quién pedírselo. Un formulario aquí que no supiera de qué espacio es
+ * acabaría rechazado por el servidor.
  */
 export const dynamic = "force-dynamic";
 
 export default async function GlobalHelpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { q } = await searchParams;
+  const params = readHelpParams(await searchParams);
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,38 +39,38 @@ export default async function GlobalHelpPage({
 
   const contextos = await myContexts(supabase).catch(() => []);
   const espacios = contextos.filter((c) => c.kind === "space");
-  const t = es.globalContext.help;
+
+  // Con qué papel se ordenan las guías. NO es un permiso: solo decide qué
+  // guía sale primero, así que con varios espacios se toma el rol del
+  // primero en vez de inventar una mezcla.
+  const audiencia = helpAudienceFor(espacios[0]?.role ?? "client");
+
+  const [busqueda, abierto, puede] = await Promise.all([
+    searchHelpArticles(supabase, params.q, audiencia, 60).then(
+      (hits) => ({ hits, failed: false }),
+      () => ({ hits: [] as readonly HelpArticleHit[], failed: true }),
+    ),
+    supportIsOpenNow(supabase).catch(() => null),
+    Promise.all(
+      espacios.map(async (e) => {
+        const { data } = await supabase.rpc("has_capability", {
+          p_space_id: e.space_id,
+          p_capability: "contact_cuotly",
+        });
+        return data === true ? { slug: e.space_slug ?? "", name: e.space_name ?? "" } : null;
+      }),
+    ),
+  ]);
+
+  const conPermiso = puede.filter((e): e is { slug: string; name: string } => e !== null && e.slug !== "");
+  const contact: HelpContact =
+    conPermiso.length > 0
+      ? { kind: "spaces", spaces: conPermiso }
+      : espacios.length > 0
+        ? { kind: "cannot" }
+        : { kind: "client" };
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
-        <p className="text-sm text-text-secondary">{t.subtitle}</p>
-      </header>
-
-      <HelpCenter
-        supabase={supabase}
-        role={rolDeGuias(espacios)}
-        base="/ayuda"
-        spaceId={espacios.length === 1 ? espacios[0].space_id : null}
-        consulta={(q ?? "").trim()}
-      />
-
-      {espacios.length !== 1 ? (
-        <p className="text-sm text-text-secondary">{t.incidentNeedsSpace}</p>
-      ) : null}
-    </div>
+    <HelpView params={params} hits={busqueda.hits} failed={busqueda.failed} contact={contact} supportOpen={abierto} />
   );
-}
-
-/**
- * Con qué papel se ordenan las guías. NO es un permiso: `HelpCenter`
- * pregunta por separado quién puede abrir una incidencia
- * (`has_capability(..., 'contact_cuotly')`). Esto solo decide qué guía sale
- * primero, así que con varios espacios se toma el rol del primero en vez de
- * inventar una mezcla.
- */
-function rolDeGuias(espacios: readonly { role: string | null }[]): ShellRole {
-  const rol = espacios[0]?.role;
-  return rol === "owner" || rol === "admin" || rol === "worker" ? rol : "client";
 }

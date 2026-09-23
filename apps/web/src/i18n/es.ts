@@ -6951,11 +6951,46 @@ export const es = {
       notificationsFailedReason: "Vuelve a cargar en un momento; no se ha cambiado nada.",
     },
     help: {
-      title: "Ayuda",
-      subtitle: "El centro de ayuda de Cuotly, desde fuera de tus espacios.",
-      /** RN-GLO-07 · abrir una incidencia necesita un espacio detrás. */
-      incidentNeedsSpace:
-        "Para abrir una incidencia a Cuotly hace falta entrar desde un espacio: una incidencia es de un espacio y va con su prioridad. Entra en el tuyo y ábrela desde su Ayuda.",
+      title: "¿En qué podemos ayudarte?",
+      subtitle: "Encuentra respuestas, guías y ponte en contacto con nuestro equipo.",
+      searchLabel: "Buscar en la ayuda",
+      searchPlaceholder: "Buscar en la ayuda…",
+      /** Una línea por tema de RN-SOP-11, para su tarjeta. */
+      topicHints: {
+        first_steps: "Aprende a usar Cuotly desde el principio.",
+        requests: "Cómo se pide un cambio y qué pasa después.",
+        jobs: "Asignar, comenzar y publicar el trabajo.",
+        menus: "El Menú Diario, de la plantilla a la web.",
+        payments: "Cobros, justificantes y pagos.",
+        users: "Invitaciones, roles y permisos.",
+        integrations: "Conectar Google, Meta y las demás fuentes.",
+        security: "Verificación en dos pasos y sesiones.",
+      },
+      articleCount: (n: number) => (n === 1 ? "1 artículo" : `${n} artículos`),
+      seeArticles: "Ver artículos",
+      allTopics: "Todos los temas",
+      faqTitle: "Preguntas frecuentes",
+      faqTopicTitle: (tema: string) => `Preguntas frecuentes · ${tema}`,
+      faqResults: (q: string) => `Resultados para «${q}»`,
+      readGuide: "Leer la guía completa",
+      faqEmptyTitle: "Ninguna guía responde a eso",
+      faqEmptyReason: "Prueba con otras palabras o escríbenos desde uno de tus espacios.",
+      faqNone: "Todavía no hay guías publicadas.",
+      failedTitle: "No hemos podido cargar las guías",
+      failedReason: "Es un problema nuestro o de tu conexión. Vuelve a cargar en un momento.",
+      contactTitle: "Contactar con soporte de Cuotly",
+      contactSubtitle: "Si no encuentras la respuesta, envíanos tu consulta.",
+      /**
+       * RN-GLO-07 · una consulta es una incidencia de RN-SOP-03, y una
+       * incidencia es de un espacio y va con su prioridad: se abre desde él.
+       */
+      contactFromSpace: "La consulta se abre desde el espacio al que se refiere, con su tipo, categoría y descripción.",
+      contactOpenIn: (espacio: string) => `Abrir consulta en ${espacio}`,
+      contactCannot:
+        "En tus espacios, las consultas a Cuotly las abre el propietario o un administrador. Cuéntaselo a ellos.",
+      contactClient:
+        "Las consultas a Cuotly las abre tu equipo de mantenimiento. Escríbeles desde Mensajes: te contestan como «Equipo de mantenimiento».",
+      contactClientLink: "Ir a Mensajes",
     },
     backToCuotly: "Volver al inicio de Cuotly",
     /**
