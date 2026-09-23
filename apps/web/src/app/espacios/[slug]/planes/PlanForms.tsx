@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { Button, Field, Select, TextArea } from "@/components/ui";
 import { es } from "@/i18n/es";
@@ -10,7 +11,6 @@ import {
   assignPlan,
   cancelScheduledPlanChange,
   contractService,
-  previewPlanChange,
   publishConditions,
   recordExternalAcceptance,
   schedulePlanChange,
@@ -25,9 +25,9 @@ import {
  * cuelan los "no pasa nada" —el fallo que costó cuatro revisiones en el
  * CA-19— y aquí el precio de equivocarse es un cobro.
  *
- * Por eso la mejora inmediata son dos pasos: primero se pide el prorrateo
- * (que no escribe nada) y solo cuando el servidor ha dicho cuánto es
- * aparece el botón que cobra.
+ * Por eso la mejora inmediata son dos pasos: la ficha (M56) pide primero
+ * el prorrateo al servidor (que no escribe nada) y solo cuando la cifra
+ * está en pantalla aparece el botón que cobra.
  *
  * Se pintan solo a quien tiene `manage_clients`, pero eso es cortesía: cada
  * función del servidor lo comprueba, así que enviar el formulario con otra
@@ -80,101 +80,6 @@ export function AssignPlanForm({
         {pending ? es.plansPage.assignPlanPending : es.plansPage.assignPlanSubmit}
       </Button>
       <Aviso error={state.error} done={state.done} hecho={es.plansPage.assignPlanDone} />
-    </form>
-  );
-}
-
-/**
- * RN-COM-15 · la mejora inmediata, en dos pasos. El primero solo pregunta
- * (`plan_change_preview()` es una lectura); el segundo es el que cobra, y
- * no existe hasta que la cifra está en pantalla.
- */
-export function UpgradeNowForms({
-  subscriptionId,
-  plans,
-}: {
-  subscriptionId: string;
-  plans: readonly PlanOption[];
-}) {
-  const [state, action, pending] = useActionState(previewPlanChange, INITIAL_PLANS);
-  const [confirmState, confirmAction, confirmPending] = useActionState(
-    upgradePlanNow,
-    INITIAL_PLANS,
-  );
-
-  const preview = state.preview;
-  const extras = preview
-    ? ([
-        [es.naming.categories.small, preview.extraSmall],
-        [es.naming.categories.photo, preview.extraPhoto],
-        [es.naming.categories.medium, preview.extraMedium],
-        [es.naming.categories.large, preview.extraLarge],
-      ] as const).filter(([, cantidad]) => cantidad > 0)
-    : [];
-
-  return (
-    <div className="space-y-3">
-      <form action={action} className="space-y-2">
-        <input type="hidden" name="subscriptionId" value={subscriptionId} />
-        <Select label={es.plansPage.targetPlanLabel} name="planId" required options={opciones(plans)} />
-        <Button type="submit" variant="secondary" disabled={pending}>
-          {pending ? es.plansPage.previewPending : es.plansPage.previewSubmit}
-        </Button>
-        <Aviso error={state.error} done={false} hecho="" />
-      </form>
-
-      {preview ? (
-        <div className="rounded-[10px] border border-border bg-background p-4">
-          <p className="text-sm font-semibold text-primary-dark">{es.plansPage.previewTitle}</p>
-          <p className="text-sm text-text-secondary">
-            {es.plansPage.previewDifference} <strong>{euros(preview.differenceCents)}</strong>{" "}
-            {es.plansPage.previewFraction} ({preview.fractionPercent} %).
-          </p>
-          {extras.length === 0 ? (
-            <p className="text-sm text-text-secondary">{es.plansPage.previewNoExtras}</p>
-          ) : (
-            <p className="text-sm text-text-secondary">
-              {es.plansPage.previewExtras}{" "}
-              {extras.map(([nombre, cantidad]) => `${nombre}: +${cantidad}`).join(" · ")}
-            </p>
-          )}
-
-          <form action={confirmAction} className="mt-3 space-y-2">
-            <input type="hidden" name="subscriptionId" value={subscriptionId} />
-            <input type="hidden" name="planId" value={preview.targetPlanId} />
-            <Button type="submit" disabled={confirmPending}>
-              {confirmPending ? es.plansPage.upgradeNowPending : es.plansPage.upgradeNowSubmit}
-            </Button>
-            <Aviso
-              error={confirmState.error}
-              done={confirmState.done}
-              hecho={es.plansPage.upgradeNowDone}
-            />
-          </form>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-/** RN-COM-16 y RN-COM-17 · el cambio que espera a la renovación. */
-export function SchedulePlanChangeForm({
-  subscriptionId,
-  plans,
-}: {
-  subscriptionId: string;
-  plans: readonly PlanOption[];
-}) {
-  const [state, action, pending] = useActionState(schedulePlanChange, INITIAL_PLANS);
-
-  return (
-    <form action={action} className="space-y-2">
-      <input type="hidden" name="subscriptionId" value={subscriptionId} />
-      <Select label={es.plansPage.targetPlanLabel} name="planId" required options={opciones(plans)} />
-      <Button type="submit" variant="secondary" disabled={pending}>
-        {pending ? es.plansPage.schedulePending : es.plansPage.scheduleSubmit}
-      </Button>
-      <Aviso error={state.error} done={state.done} hecho={es.plansPage.scheduleDone} />
     </form>
   );
 }
@@ -298,5 +203,80 @@ export function RecordExternalAcceptanceForm({
       </div>
       <Aviso error={state.error} done={state.done} hecho={t.recordDone} />
     </form>
+  );
+}
+
+/**
+ * M56 · confirmar un cambio de plan ya elegido en la comparativa. Un
+ * formulario por camino, con el plan destino fijo: la mejora inmediata
+ * cobra (RN-COM-15) y la programada espera a la renovación (RN-COM-16 y
+ * 17). En la inmediata, la cifra la ha calculado el servidor antes de
+ * pintar este botón (`plan_change_preview()`), así que se confirma lo que
+ * se está viendo. La casilla es la del dibujo: el botón no se habilita
+ * hasta marcarla.
+ */
+export function ConfirmPlanChangeForm({
+  subscriptionId,
+  planId,
+  mode,
+}: {
+  subscriptionId: string;
+  planId: string;
+  mode: "now" | "renewal";
+}) {
+  const [state, action, pending] = useActionState(mode === "now" ? upgradePlanNow : schedulePlanChange, INITIAL_PLANS);
+  const [revisado, setRevisado] = useState(false);
+  const t = es.plansPage;
+
+  return (
+    <form action={action} className="space-y-3">
+      <input type="hidden" name="subscriptionId" value={subscriptionId} />
+      <input type="hidden" name="planId" value={planId} />
+      <Button type="submit" disabled={pending || !revisado} className="w-full">
+        {mode === "now"
+          ? pending
+            ? t.upgradeNowPending
+            : t.upgradeNowSubmit
+          : pending
+            ? t.schedulePending
+            : t.scheduleSubmit}
+      </Button>
+      <label className="flex items-start gap-2 text-sm text-text">
+        <input
+          type="checkbox"
+          checked={revisado}
+          onChange={(e) => setRevisado(e.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-cuotly-green"
+        />
+        {t.change.reviewed}
+      </label>
+      <Aviso
+        error={state.error}
+        done={state.done}
+        hecho={mode === "now" ? t.upgradeNowDone : t.scheduleDone}
+      />
+    </form>
+  );
+}
+
+/** M56 · "Seleccionar restaurante": cambia de ficha sin perder la pestaña. */
+export function RestaurantSwitcher({
+  slug,
+  current,
+  restaurants,
+}: {
+  slug: string;
+  current: string;
+  restaurants: readonly { id: string; name: string }[];
+}) {
+  const router = useRouter();
+  return (
+    <Select
+      label={es.plansPage.change.restaurantLabel}
+      name="restaurante"
+      defaultValue={current}
+      options={restaurants.map((r) => ({ value: r.id, label: r.name }))}
+      onChange={(e) => router.push(`/espacios/${slug}/planes/${e.target.value}`)}
+    />
   );
 }

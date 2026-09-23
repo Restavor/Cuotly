@@ -2060,3 +2060,21 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       una factura siguen aplazados (CLAUDE.md, "No inventes lo que está pendiente"): no se ha
       creado ninguna tabla ni se ha fijado la forma de una factura. Lo decidirá quien construya
       el agente, con esas reglas delante.
+
+70. **Planes y servicios: primero las pantallas, la edición cuando haya reglas** (23/09/2026).
+    El diseño de Planes (M21, M53, M54) dibuja crear, editar y archivar planes y servicios con
+    precio, cuotas y "Crear nueva versión", y la comparativa de versiones (M55) compara cifras.
+    Cuotly solo versiona el texto de las condiciones (RN-DAT-07, migración 75); el precio y las
+    cuotas no tienen versión, y la maestra (§102–104) describe cómo debería ser sin que el PRD
+    tenga ninguna regla `RN-` que lo concrete. Bosco eligió: "Pantallas ahora, edición después".
+
+    - **Se hicieron las pantallas con lo que existe**: la lista y la ficha de cada plan, el
+      catálogo de servicios, las versiones de las condiciones (historial, qué cambió frente a la
+      anterior, en qué versión está cada restaurante y publicar la siguiente) y la asignación y
+      cambio de plan de cada restaurante con las reglas de §6.4.
+    - **Crear, editar y archivar planes y servicios no se ofrece**, y las pantallas lo dicen con
+      su motivo. Tampoco se editan filas de `plans` o `services` por ningún otro camino de la
+      aplicación.
+    - **La propuesta de reglas** está en `docs/PROPUESTA-EDICION-DE-PLANES.md`, con una propuesta
+      concreta por punto y una pregunta abierta (qué pasa si el restaurante no acepta una versión
+      que le perjudica). Cuando Bosco la decida, se escribe aquí y en el PRD antes de programar.

@@ -11,12 +11,12 @@ function mensajeDeFallo(fallo: unknown): string {
 }
 
 /**
- * HU-07 · las seis acciones de planes y servicios (§6 del PRD).
+ * HU-07 · las acciones de planes y servicios (§6 del PRD).
  *
  * Ninguna autoriza nada. `manage_clients` lo hace cumplir cada función del
  * servidor —`create_plan_subscription()`, `create_service_subscription()`,
- * `change_plan_immediately()`, `schedule_plan_change()`,
- * `cancel_scheduled_plan_change()` y `plan_change_preview()`—, y las reglas
+ * `change_plan_immediately()`, `schedule_plan_change()` y
+ * `cancel_scheduled_plan_change()`—, y las reglas
  * que rodean cada una (RN-COM-15 sobre la reducción, RN-COM-17 sobre la
  * permanencia, RN-COM-13 sobre el servicio repetido) también. Aquí solo se
  * traduce la negativa del servidor a un mensaje en pantalla.
@@ -39,75 +39,18 @@ export async function assignPlan(_prev: PlansState, formData: FormData): Promise
         establishmentId,
         message: error.message,
       });
-      return { error: error.message, done: false, preview: null };
+      return { error: error.message, done: false };
     }
   } catch (fallo) {
     console.error("[planes] create_plan_subscription lanzó", {
       establishmentId,
       message: mensajeDeFallo(fallo),
     });
-    return { error: mensajeDeFallo(fallo), done: false, preview: null };
+    return { error: mensajeDeFallo(fallo), done: false };
   }
 
   revalidatePath("/espacios", "layout");
-  return { error: null, done: true, preview: null };
-}
-
-/**
- * RN-COM-18 · lo que costaría la mejora, sin ejecutarla. Es una lectura:
- * `plan_change_preview()` no escribe nada.
- */
-export async function previewPlanChange(
-  _prev: PlansState,
-  formData: FormData,
-): Promise<PlansState> {
-  const subscriptionId = String(formData.get("subscriptionId") ?? "");
-  const planId = String(formData.get("planId") ?? "");
-
-  try {
-    const supabase = await createClient();
-    const { data, error } = await supabase.rpc("plan_change_preview", {
-      p_subscription_id: subscriptionId,
-      p_new_plan_id: planId,
-    });
-    if (error) {
-      console.error("[planes] plan_change_preview devolvió error", {
-        subscriptionId,
-        message: error.message,
-      });
-      return { error: error.message, done: false, preview: null };
-    }
-
-    const fila = data?.[0];
-    if (!fila) {
-      // P6: sin ciclo abierto no hay fracción que prorratear, y decirlo es
-      // mejor que enseñar un cero que parecería "gratis".
-      return { error: null, done: false, preview: null };
-    }
-
-    return {
-      error: null,
-      done: false,
-      preview: {
-        differenceCents: fila.difference_cents,
-        // `fraction` viene como numeric: llega en texto o en número según
-        // el driver, así que se normaliza aquí y se redondea solo para
-        // enseñarlo. El dinero no se recalcula con ella.
-        fractionPercent: Math.round(Number(fila.fraction) * 100),
-        extraSmall: fila.extra_small,
-        extraPhoto: fila.extra_photo,
-        extraMedium: fila.extra_medium,
-        extraLarge: fila.extra_large,
-        targetPlanId: planId,
-      },
-    };
-  } catch (fallo) {
-    console.error("[planes] plan_change_preview lanzó", {
-      subscriptionId,
-      message: mensajeDeFallo(fallo),
-    });
-    return { error: mensajeDeFallo(fallo), done: false, preview: null };
-  }
+  return { error: null, done: true };
 }
 
 /** RN-COM-15 · mejora inmediata: se cobra la diferencia prorrateada. */
@@ -129,18 +72,18 @@ export async function upgradePlanNow(_prev: PlansState, formData: FormData): Pro
         subscriptionId,
         message: error.message,
       });
-      return { error: error.message, done: false, preview: null };
+      return { error: error.message, done: false };
     }
   } catch (fallo) {
     console.error("[planes] change_plan_immediately lanzó", {
       subscriptionId,
       message: mensajeDeFallo(fallo),
     });
-    return { error: mensajeDeFallo(fallo), done: false, preview: null };
+    return { error: mensajeDeFallo(fallo), done: false };
   }
 
   revalidatePath("/espacios", "layout");
-  return { error: null, done: true, preview: null };
+  return { error: null, done: true };
 }
 
 /** RN-COM-16 y RN-COM-17 · el cambio que espera a la renovación. */
@@ -162,18 +105,18 @@ export async function schedulePlanChange(
         subscriptionId,
         message: error.message,
       });
-      return { error: error.message, done: false, preview: null };
+      return { error: error.message, done: false };
     }
   } catch (fallo) {
     console.error("[planes] schedule_plan_change lanzó", {
       subscriptionId,
       message: mensajeDeFallo(fallo),
     });
-    return { error: mensajeDeFallo(fallo), done: false, preview: null };
+    return { error: mensajeDeFallo(fallo), done: false };
   }
 
   revalidatePath("/espacios", "layout");
-  return { error: null, done: true, preview: null };
+  return { error: null, done: true };
 }
 
 /** Deshacer el cambio programado. No borra la fila: la deja en `cancelled`. */
@@ -195,18 +138,18 @@ export async function cancelScheduledPlanChange(
         subscriptionId,
         message: error.message,
       });
-      return { error: error.message, done: false, preview: null };
+      return { error: error.message, done: false };
     }
   } catch (fallo) {
     console.error("[planes] cancel_scheduled_plan_change lanzó", {
       subscriptionId,
       message: mensajeDeFallo(fallo),
     });
-    return { error: mensajeDeFallo(fallo), done: false, preview: null };
+    return { error: mensajeDeFallo(fallo), done: false };
   }
 
   revalidatePath("/espacios", "layout");
-  return { error: null, done: true, preview: null };
+  return { error: null, done: true };
 }
 
 /** RN-COM-11 y RN-COM-13 · contratar un servicio adicional. */
@@ -225,18 +168,18 @@ export async function contractService(_prev: PlansState, formData: FormData): Pr
         establishmentId,
         message: error.message,
       });
-      return { error: error.message, done: false, preview: null };
+      return { error: error.message, done: false };
     }
   } catch (fallo) {
     console.error("[planes] create_service_subscription lanzó", {
       establishmentId,
       message: mensajeDeFallo(fallo),
     });
-    return { error: mensajeDeFallo(fallo), done: false, preview: null };
+    return { error: mensajeDeFallo(fallo), done: false };
   }
 
   revalidatePath("/espacios", "layout");
-  return { error: null, done: true, preview: null };
+  return { error: null, done: true };
 }
 
 /**

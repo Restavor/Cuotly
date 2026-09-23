@@ -63,6 +63,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - ~~Precio del almacenamiento adicional~~ — no hay precio: pasarse de lo incluido **se presupuesta aparte** (decisión 38 del 16/09/2026; RN-SUB-13, migración 95). Se avisa al 80 % y al 100 %, y al 100 % también a Cuotly. Nada se bloquea. No inventes un precio por GB.
 - Cancelación/anulación/abono de un cobro. Reembolsar lo **reabre** (RN-FIN-04b, decisión 12): devolver el dinero dejando al cliente a cero es otra operación, y no existe. No la metas dentro de `refund_charge`.
 - Sincronización bidireccional de calendarios.
+- Crear, editar y archivar planes y servicios (precio, cuotas y sus versiones, §102–104 de la maestra). Decisión 70: las pantallas existen sin esa edición y la propuesta de reglas está en `docs/PROPUESTA-EDICION-DE-PLANES.md`, pendiente de Bosco. Las condiciones sí se versionan (migración 75).
 
 ## Decisiones que NO deben reaparecer
 
