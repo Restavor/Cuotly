@@ -6,9 +6,27 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 23/09/2026.
+Actualizado el 23/09/2026 (132 y 133).
 
 ## Pendiente de aplicar
+
+**Actualización del 23/09/2026 (última): ninguna.** La **132** (`solicitud_en_nombre_del_restaurante`,
+M77, decisión 73, RN-REQ-08) y la **133** (`en_nombre_del_restaurante_sin_identidad`, P7) se aplicaron
+por el MCP, cada una en una sola llamada. Antes de la 132 se comprobó en vivo que la lista de tipos de
+aviso era idéntica a la que la migración reescribe y que `accept_request()` coincidía con la del
+repositorio (md5 del texto sin comentarios ni espacios); antes de la 133, lo mismo con `accept_quote()`
+y `accept_request()`. **132:** `requests` gana `created_by_team`, `on_behalf_reason` y
+`creation_idempotency_key`; `requests.created_by` y `request_versions.created_by` admiten null (una
+solicitud del equipo no lleva autor en la columna que lee el restaurante); `classifications.source`
+admite `team`; el aviso `request_created_on_behalf` entra en la lista; nace
+`create_request_on_behalf()`; y `accept_request()` deja de aceptar sin presupuesto a quien no es del
+restaurante (el `coalesce`). **133:** `acceptances.accepted_by` admite null; `accept_request()` deja
+`accepted_by` vacío cuando acepta el equipo en nombre del restaurante, y `accept_quote()` marca como
+creada por el equipo, con el motivo, la solicitud que crea en su nombre. No había filas que sanear: 0
+presupuestos respondidos por el equipo. Comprobado en vivo: `create_request_on_behalf` con EXECUTE
+para `authenticated` y no para `anon`; `accept_request` y `accept_quote` conservan sus privilegios y
+llevan el arreglo; `creation_idempotency_key` no se concede a `authenticated`. En local, las 133
+migraciones aplican desde cero, pasan las 74 suites en el orden de CI y el sembrado entra dos veces.
 
 **Actualización del 23/09/2026 (madrugada): ninguna.** La **131** (`versiones_de_planes_y_servicios`,
 decisión 72, RN-COM-19 a 30) se aplicó por el MCP en cuatro partes (linaje y condiciones; comparar,

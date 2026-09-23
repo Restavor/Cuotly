@@ -176,24 +176,40 @@ values
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001', 'owner',  'active', true),
   ('d1000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000002', 'worker', 'active', true);
 
--- `grants_priority`: Premium+ es el único que deja al restaurante ordenar
--- sus cambios por importancia (migración 62). Se marca aquí y no con un
--- `update ... where name = 'Premium+'` porque este archivo ES quien crea
--- estos planes: dejarlo para después haría que el sembrado dependiera del
--- orden en que se ejecutan sus propias secciones.
+-- Las columnas del contrato, todas escritas aquí y no heredadas de su
+-- valor por omisión. Las migraciones que las añadieron (110, 111, 117 y
+-- 118) rellenaron con un `update` los planes que YA existían; los que
+-- este archivo inserta después nacían con el valor por omisión, y
+-- `can_order_requests = false` hacía que Magariños (Premium+) no pudiera
+-- ordenar sus cambios: el sembrado moría en la sección 9 con "Ordenar los
+-- cambios por importancia es del restaurante, y solo con un plan que lo
+-- incluya". Se marcan aquí y no con un `update ... where name = ...`
+-- porque este archivo ES quien crea estos planes.
+--
+-- Los valores son los de Restavor, los mismos que siembra
+-- `create_restavor_space()`, más lo que solo tiene Premium+:
+--   · `grants_priority`: el plan alto (precio de Menú Diario, RN-COM-08).
+--   · `queue_rank` y `can_order_requests`: turno en la cola y ordenar sus
+--     cambios (RN-COM-03, decisión 55): Premium y Premium+.
+--   · `report_level`: qué informe recibe (RN-REP-15, decisión 56).
+--   · `watches_reviews`: vigilancia de reseñas (migración 117).
+--   · `execution_sla_*`: plazos de realización; solo bajan en Premium+
+--     (RN-SLA-18, decisión 61). Los demás, la tabla de RN-SLA-12.
 --
 -- Los identificadores 2 y 3 son los de siempre: Impulso+ y Premium+ son lo
 -- que hasta el 16/09/2026 se llamaba Impulso y Premium, con las mismas
 -- condiciones (migración 96). Impulso y Premium, los nuevos, son el 4 y
 -- el 5.
 insert into public.plans
-  (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, grants_priority)
+  (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large,
+   start_sla_hours, grants_priority, queue_rank, can_order_requests, report_level, watches_reviews,
+   execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large)
 values
-  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',    9900,  0,  0, 0, 0, 48, false),
-  ('d2000000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'Impulso',  29900,  6,  6, 1, 0, 48, false),
-  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false),
-  ('d2000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'Premium',  49900, 10, 12, 2, 0, 24, false),
-  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium+', 59900, 25, 24, 5, 1, 24, true);
+  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',    9900,  0,  0, 0, 0, 48, false, 0, false, 'basic',         false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'Impulso',  29900,  6,  6, 1, 0, 48, false, 0, false, 'standard',      false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false, 0, false, 'standard_plus', false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'Premium',  49900, 10, 12, 2, 0, 24, false, 1, true,  'advanced',      false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium+', 59900, 25, 24, 5, 1, 24, true,  2, true,  'complete',      true,  48, 48, 72,  96);
 
 -- `kind` e `included_updates` (migración 77): es lo que hace que el
 -- servicio SEA Menú Diario para las funciones; por el nombre no se mira.

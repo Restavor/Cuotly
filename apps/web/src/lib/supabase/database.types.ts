@@ -88,7 +88,7 @@ export type Database = {
       acceptances: {
         Row: {
           accepted_at: string;
-          accepted_by: string;
+          accepted_by: string | null;
           budgeted: boolean;
           category: string;
           consumption_cycle_id: string | null;
@@ -101,7 +101,7 @@ export type Database = {
         };
         Insert: {
           accepted_at?: string;
-          accepted_by: string;
+          accepted_by?: string | null;
           budgeted?: boolean;
           category: string;
           consumption_cycle_id?: string | null;
@@ -114,7 +114,7 @@ export type Database = {
         };
         Update: {
           accepted_at?: string;
-          accepted_by?: string;
+          accepted_by?: string | null;
           budgeted?: boolean;
           category?: string;
           consumption_cycle_id?: string | null;

@@ -2139,4 +2139,11 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       (2) `accept_request()` dejaba al propietario y a los administradores aceptar por RPC cualquier
       propuesta **sin presupuesto**: la excepción de la decisión 21 comparaba con un estado de
       presupuesto nulo y el `if` no saltaba. Se corrige en la misma migración.
+    - **La misma fuga, por la ruta de los presupuestos (migración 133).** Responder un presupuesto en
+      nombre del restaurante (decisión 21) escribía la identidad del administrador en tres columnas
+      que el restaurante lee: `requests.created_by` (cuando `accept_quote()` crea la solicitud),
+      `requests.accepted_by` y `acceptances.accepted_by`. Ahora quedan vacías cuando es el equipo, y
+      la solicitud que nace así va marcada como creada en su nombre con el motivo de la aceptación.
+      La suite 74 recorre todas las rutas "en su nombre" y barre, sentada como el restaurante, toda
+      columna uuid y de texto: el barrido de hito7 no las veía porque su fixture no tenía filas así.
 

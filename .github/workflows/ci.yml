@@ -556,6 +556,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/solicitud_en_nombre_del_restaurante.sql
 
+      - name: "Suite 74 — En nombre del restaurante, sin identidad del equipo (migración 133, P7, decisiones 21 y 73)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/en_nombre_del_restaurante_sin_identidad.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
