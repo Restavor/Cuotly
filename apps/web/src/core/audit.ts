@@ -587,3 +587,20 @@ function nextDay(day: string): string {
   );
   return siguiente.toISOString().slice(0, 10);
 }
+
+/**
+ * M62 · "Exportar registro": las filas que ya se ven, en CSV, con BOM para
+ * que Excel abra bien los acentos.
+ *
+ * Una celda que empieza por `=`, `+`, `-`, `@`, tabulador o retorno se
+ * antepone con `'`: el registro guarda texto que escriben personas (un
+ * motivo, un nombre), y abrirlo en una hoja de cálculo no puede convertir
+ * ese texto en una fórmula que se ejecute.
+ */
+export function auditCsv(header: readonly string[], rows: readonly (readonly string[])[]): string {
+  const celda = (valor: string): string => {
+    const seguro = /^[=+\-@\t\r]/.test(valor) ? `'${valor}` : valor;
+    return /[",\r\n]/.test(seguro) ? `"${seguro.replace(/"/g, '""')}"` : seguro;
+  };
+  return "﻿" + [header, ...rows].map((fila) => fila.map(celda).join(",")).join("\r\n");
+}

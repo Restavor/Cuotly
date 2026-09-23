@@ -8,6 +8,7 @@ import {
   AUDIT_FAMILY_CAPABILITY,
   AUDIT_ROW_VISIBLE_ENTITIES,
   auditChanges,
+  auditCsv,
   auditDayWindow,
   auditFamily,
 } from "./audit";
@@ -323,5 +324,19 @@ describe("HU-36 · el filtro por días se resuelve en la zona del espacio", () =
 
   it("sin filtro no hay límites", () => {
     expect(auditDayWindow(null, null, "Europe/Madrid")).toEqual({ from: null, to: null });
+  });
+});
+
+describe("M62 · auditCsv", () => {
+  it("escribe cabecera y filas, con BOM y comillas donde hacen falta", () => {
+    const csv = auditCsv(["Fecha", "Motivo"], [["23/09/2026 10:00", 'Dijo "vale", y siguió']]);
+    expect(csv.startsWith("﻿")).toBe(true);
+    expect(csv.slice(1).split("\r\n")).toEqual(["Fecha,Motivo", '23/09/2026 10:00,"Dijo ""vale"", y siguió"']);
+  });
+
+  it("un texto que empieza como una fórmula no se ejecuta al abrirlo", () => {
+    const csv = auditCsv(["Motivo"], [["=HYPERLINK(\"x\")"], ["+1"], ["-2"], ["@a"]]);
+    const filas = csv.slice(1).split("\r\n").slice(1);
+    expect(filas).toEqual(['"\'=HYPERLINK(""x"")"', "'+1", "'-2", "'@a"]);
   });
 });

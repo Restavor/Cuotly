@@ -153,3 +153,28 @@ export async function removeAvatar(): Promise<void> {
   await supabase.rpc("clear_my_avatar");
   revalidatePath("/cuenta");
 }
+
+/**
+ * RN-GLO-06 · cambiar la contraseña de la propia cuenta, con la sesión de
+ * quien la cambia. Las mismas dos comprobaciones que al ponerla la primera
+ * vez (al menos 8 caracteres, y repetida igual); Supabase Auth guarda la
+ * nueva y el resto de sesiones siguen abiertas, que es lo que el usuario
+ * ve y puede cerrar en "Sesiones activas".
+ */
+export async function changePassword(
+  _prev: AccountFormState,
+  formData: FormData,
+): Promise<AccountFormState> {
+  const password = String(formData.get("password") ?? "");
+  const repeat = String(formData.get("repeat") ?? "");
+  if (password.length < 8) return { error: es.auth.setup.tooShort, done: false };
+  if (password !== repeat) return { error: es.auth.setup.mismatch, done: false };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    console.error("[cuenta] no se pudo cambiar la contraseña", { message: error.message });
+    return { error: error.message, done: false };
+  }
+  return { error: null, done: true };
+}

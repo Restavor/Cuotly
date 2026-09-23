@@ -214,55 +214,69 @@ export function NotificationPreferencesForm({
       <input type="hidden" name="spaceId" value={spaceId} />
       <p className="text-sm text-text-secondary">{es.settings.notificationsHint}</p>
 
-      <ul className="divide-y divide-border">
-        {preferences.map((pref) => (
-          <li key={pref.eventType} className="flex flex-wrap items-center gap-4 py-2">
-            <span className="min-w-52 flex-1 text-sm text-text">
-              {es.notifications.events[pref.eventType]}
-              {pref.mandatory ? (
-                <span className="block text-xs text-text-secondary">
-                  {es.settings.notificationsMandatory}
-                </span>
-              ) : null}
-            </span>
-            {/*
-              Un aviso obligatorio no viaja en el envío: sin su `eventType`
-              la acción ni siquiera lo mira. Mandarlo con las casillas
-              desactivadas sería peor que inútil — una casilla `disabled` no
-              se envía, así que llegaría como "desactívalo" y el servidor
-              respondería con un error a algo que nadie pidió.
-            */}
-            {pref.mandatory ? null : (
-              <>
-                <input type="hidden" name="eventType" value={pref.eventType} />
-                <input
-                  type="hidden"
-                  name={`previous:${pref.eventType}`}
-                  value={`${pref.inApp ? "1" : "0"}${pref.email ? "1" : "0"}`}
-                />
-              </>
-            )}
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
-              <input
-                type="checkbox"
-                name={`inApp:${pref.eventType}`}
-                defaultChecked={pref.inApp}
-                disabled={pref.mandatory}
-              />
-              {es.settings.notificationsInApp}
-            </label>
-            <label className="flex items-center gap-2 text-sm text-text-secondary">
-              <input
-                type="checkbox"
-                name={`email:${pref.eventType}`}
-                defaultChecked={pref.email}
-                disabled={pref.mandatory}
-              />
-              {es.settings.notificationsEmail}
-            </label>
-          </li>
-        ))}
-      </ul>
+      <div className="relative overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-soft-surface text-left text-xs font-medium text-text-secondary">
+              <th className="px-3 py-2.5 font-medium">{es.settings.view.eventColumn}</th>
+              <th className="px-3 py-2.5 text-center font-medium">{es.settings.notificationsInApp}</th>
+              <th className="px-3 py-2.5 text-center font-medium">{es.settings.notificationsEmail}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {preferences.map((pref) => (
+              <tr key={pref.eventType}>
+                <td className="px-3 py-2.5 text-text">
+                  {es.notifications.events[pref.eventType]}
+                  {pref.mandatory ? (
+                    <span className="block text-xs text-text-secondary">
+                      {es.settings.notificationsMandatory}
+                    </span>
+                  ) : null}
+                  {/*
+                    Un aviso obligatorio no viaja en el envío: sin su
+                    `eventType` la acción ni siquiera lo mira. Mandarlo con
+                    las casillas desactivadas sería peor que inútil — una
+                    casilla `disabled` no se envía, así que llegaría como
+                    "desactívalo" y el servidor respondería con un error a
+                    algo que nadie pidió.
+                  */}
+                  {pref.mandatory ? null : (
+                    <>
+                      <input type="hidden" name="eventType" value={pref.eventType} />
+                      <input
+                        type="hidden"
+                        name={`previous:${pref.eventType}`}
+                        value={`${pref.inApp ? "1" : "0"}${pref.email ? "1" : "0"}`}
+                      />
+                    </>
+                  )}
+                </td>
+                <td className="px-3 py-2.5 text-center">
+                  <input
+                    type="checkbox"
+                    name={`inApp:${pref.eventType}`}
+                    defaultChecked={pref.inApp}
+                    disabled={pref.mandatory}
+                    aria-label={`${es.notifications.events[pref.eventType]} · ${es.settings.notificationsInApp}`}
+                    className="h-4 w-4 accent-cuotly-green"
+                  />
+                </td>
+                <td className="px-3 py-2.5 text-center">
+                  <input
+                    type="checkbox"
+                    name={`email:${pref.eventType}`}
+                    defaultChecked={pref.email}
+                    disabled={pref.mandatory}
+                    aria-label={`${es.notifications.events[pref.eventType]} · ${es.settings.notificationsEmail}`}
+                    className="h-4 w-4 accent-cuotly-green"
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <Button type="submit" disabled={pending}>
         {pending ? es.settings.notificationsPending : es.settings.notificationsSubmit}

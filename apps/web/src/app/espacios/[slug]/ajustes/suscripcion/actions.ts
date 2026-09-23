@@ -44,3 +44,51 @@ export async function declareCuotlyPayment(
   revalidatePath("/espacios", "layout");
   return { error: null, done: true, unchanged: false };
 }
+
+/**
+ * RN-SUB-10 · cambiar el plan de Cuotly. Pro → Agency es inmediato y se
+ * cobra la diferencia proporcional; Agency → Pro se programa para la
+ * renovación y solo si el uso cabe en Pro con los adicionales que se
+ * contraten. Todo eso lo decide `change_cuotly_plan()` (`manage_space`,
+ * con evento y auditoría, RN-SUB-12); la clave de idempotencia hace que
+ * pulsar dos veces no cobre dos diferencias.
+ */
+export async function changeCuotlyPlan(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const newPlan = String(formData.get("newPlan") ?? "");
+  const extras = (k: string) => {
+    const n = Number.parseInt(String(formData.get(k) ?? "0"), 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  };
+  const idempotencyKey = String(formData.get("idempotencyKey") ?? "").trim();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("change_cuotly_plan", {
+    p_space_id: spaceId,
+    p_new_plan: newPlan,
+    p_extra_establishments: extras("extraEstablishments"),
+    p_extra_users: extras("extraUsers"),
+    p_idempotency_key: idempotencyKey || undefined,
+  });
+  if (error) return { error: error.message, done: false, unchanged: false };
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true, unchanged: false };
+}
+
+/** RN-SUB-10 · anular el paso a Pro mientras no llegue la renovación. */
+export async function cancelCuotlyPlanChange(
+  _prev: SettingsState,
+  formData: FormData,
+): Promise<SettingsState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_cuotly_plan_change", { p_space_id: spaceId });
+  if (error) return { error: error.message, done: false, unchanged: false };
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true, unchanged: false };
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState, useState } from "react";
 
 import { Button, Field, Select, TextArea } from "@/components/ui";
 import { CUOTLY_PAYMENT_METHODS } from "@/core/cuotly-subscription";
@@ -18,16 +18,20 @@ export interface DeclarableCharge {
 
 /**
  * RN-SUB-06 · declarar un pago: método, fecha, importe y referencia. La
- * clave de idempotencia nace con el formulario (CA-17).
+ * clave de idempotencia nace con el formulario (CA-17) y es aleatoria:
+ * hasta el 23/09/2026 era `useId()`, que vale lo mismo en cada carga de la
+ * página, así que volver a declarar un cobro después de que Cuotly
+ * rechazara el pago devolvía el pago rechazado en vez de registrar el
+ * nuevo (`declare_cuotly_payment()` deduplica por cobro y clave).
  */
 export function DeclarePaymentForm({ charges }: { charges: readonly DeclarableCharge[] }) {
   const [state, action, pending] = useActionState(declareCuotlyPayment, INITIAL_SETTINGS);
-  const key = useId();
+  const [key] = useState(() => crypto.randomUUID());
   const t = es.cuotlySubscription;
 
   return (
     <form action={action}>
-      <input type="hidden" name="idempotencyKey" value={`declare:${key}`} />
+      <input type="hidden" name="idempotencyKey" value={`declare:${key}`} suppressHydrationWarning />
       <Select
         name="chargeId"
         label={t.declareCharge}

@@ -74,10 +74,10 @@ describe("Ajustes del espacio · las ocho pestañas (página 109)", () => {
       join(process.cwd(), "src/app/espacios/[slug]/ajustes/page.tsx"),
       "utf8",
     );
-    // Desde el 22/09/2026 las pestañas las pinta `Tabs`, la pieza común
-    // del diseño de escritorio; el ancla es ese uso, no un `<nav>` propio.
-    const inicio = fuente.indexOf("<Tabs");
-    expect(inicio, "la página no pinta las pestañas con <Tabs>").toBeGreaterThan(-1);
+    // Desde el 23/09/2026 las pestañas las pinta `SettingsHeader`, la
+    // cabecera común de Ajustes que también usan sus páginas propias.
+    const inicio = fuente.indexOf("<SettingsHeader");
+    expect(inicio, "la página no pinta las pestañas con <SettingsHeader>").toBeGreaterThan(-1);
     const cuerpo = fuente.slice(inicio);
     const condiciones = [...cuerpo.matchAll(/vista\.key === "(\w+)"/g)].map((m) => m[1]);
     expect(condiciones.length, "la página no envuelve nada en pestañas").toBeGreaterThan(0);

@@ -15,6 +15,7 @@ import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { SettingsHeader } from "../SettingsHeader";
 import { ExportForm } from "./ExportForm";
 
 /**
@@ -59,8 +60,8 @@ export default async function ExportPage({ params }: { params: Promise<{ slug: s
 
   if (!canManage) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
-        <h1 className="mb-6 text-2xl font-bold text-primary-dark">{t.title}</h1>
+      <div className="space-y-6">
+        <SettingsHeader slug={slug} active={null} />
         <NoPermissionState title={t.noAccessTitle} description={t.noAccessReason} />
       </div>
     );
@@ -75,18 +76,19 @@ export default async function ExportPage({ params }: { params: Promise<{ slug: s
     .limit(20);
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
+    <div className="space-y-6">
+      <SettingsHeader slug={slug} active={null} />
+      <header>
+        <h2 className="text-lg font-semibold text-primary-dark">{t.title}</h2>
         <p className="text-sm text-text-secondary">{t.subtitle}</p>
       </header>
 
-      <Card title={t.spaceTitle} className="mb-6">
+      <Card title={t.spaceTitle}>
         <p className="mb-4 text-sm text-text-secondary">{t.spaceHint}</p>
         <ExportForm spaceId={space.id} scope="space" label={t.submit} />
       </Card>
 
-      <Card title={t.historyTitle} className="mb-6">
+      <Card title={t.historyTitle}>
         {historial === null || historial.length === 0 ? (
           <EmptyState title={t.historyEmptyTitle} description={t.historyEmptyReason} />
         ) : (

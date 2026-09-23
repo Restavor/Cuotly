@@ -30,5 +30,7 @@ export async function revokeSession(
   }
 
   revalidatePath("/cuenta/sesiones");
+  // También se revocan desde Ajustes › Seguridad (M61) de cada espacio.
+  revalidatePath("/espacios", "layout");
   return { error: null, closed: true };
 }
