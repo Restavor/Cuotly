@@ -1,22 +1,11 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import {
-  EmptyState,
-  ErrorState,
-  StatusBadge,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeaderCell,
-  TableRow,
-} from "@/components/ui";
-import type { SpaceRequestState } from "@/core/space-requests";
-import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
+import { ErrorState } from "@/components/ui";
+import { readMyRequestFilters } from "@/core/my-space-requests";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import { requestTone } from "../../administracion/solicitudes/request-tone";
+import { MyRequestsView, type MyRequestRow } from "./MyRequestsView";
 
 /**
  * G04 · Mis solicitudes (RN-GLO-04).
@@ -25,93 +14,67 @@ import { requestTone } from "../../administracion/solicitudes/request-tone";
  * dice en su propio texto para que nadie busque aquí las de trabajo, que
  * viven dentro de cada espacio o panel.
  *
+ * Cada fila lleva la acción que toca ahora (`myRequestAction()`). Para una
+ * aprobada eso depende del espacio que creó: mientras su primera
+ * mensualidad no esté pagada, las instrucciones de pago; con el espacio
+ * activo, entrar en él (RN-SUB-05). Por eso se lee el estado de esos
+ * espacios, con la misma política que decide si quien mira es miembro.
+ *
  * Las columnas van enumeradas: `decided_by` está revocada (RN-PLA-07) y un
  * `select *` devolvería 403. Quién la revisó no se enseña, y también se
  * dice: callarlo sin explicarlo parece un descuido.
  */
 export const dynamic = "force-dynamic";
 
-export default async function MyRequestsPage() {
+export default async function MyRequestsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const filters = readMyRequestFilters(await searchParams);
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  // "Mis": la plataforma las ve todas por RLS (RN-PLA-01), y aquí solo van
+  // las que escribió quien mira.
   const { data, error } = await supabase
     .from("space_requests")
-    .select("id, business_name, plan, status, status_reason, submitted_at, updated_at, created_at")
+    .select(
+      "id, business_name, contact_name, tax_name, plan, status, status_reason, submitted_at, created_at, updated_at, space_id",
+    )
+    .eq("requester_id", user.id)
     .order("updated_at", { ascending: false });
-
-  const t = es.globalContext.requests;
 
   if (error) {
     return <ErrorState title={es.platformAdmin.loadErrorTitle} description={error.message} />;
   }
 
   const filas = data ?? [];
+  const idsEspacio = filas.flatMap((f) => (f.space_id ? [f.space_id] : []));
+  const { data: espacios } =
+    idsEspacio.length > 0
+      ? await supabase.from("spaces").select("id, slug, cuotly_status").in("id", idsEspacio)
+      : { data: [] };
+  const porId = new Map((espacios ?? []).map((e) => [e.id, e]));
 
-  return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
-        <p className="text-sm text-text-secondary">{t.subtitle}</p>
-      </header>
+  const rows: MyRequestRow[] = filas.map((f) => {
+    const espacio = f.space_id ? porId.get(f.space_id) : undefined;
+    return {
+      id: f.id,
+      business_name: f.business_name,
+      contact_name: f.contact_name,
+      tax_name: f.tax_name,
+      plan: f.plan,
+      status: f.status,
+      status_reason: f.status_reason,
+      submitted_at: f.submitted_at,
+      created_at: f.created_at,
+      space: espacio ? { slug: espacio.slug, cuotly_status: espacio.cuotly_status } : null,
+    };
+  });
 
-      {filas.length === 0 ? (
-        <EmptyState title={t.emptyTitle} description={t.emptyReason} />
-      ) : (
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeaderCell>{t.business}</TableHeaderCell>
-              <TableHeaderCell>{t.plan}</TableHeaderCell>
-              <TableHeaderCell>{t.status}</TableHeaderCell>
-              <TableHeaderCell>{t.updated}</TableHeaderCell>
-              <TableHeaderCell>{t.action}</TableHeaderCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filas.map((fila) => {
-              const estado = fila.status as SpaceRequestState;
-              return (
-                <TableRow key={fila.id}>
-                  <TableCell>{fila.business_name}</TableCell>
-                  <TableCell>
-                    {es.cuotlySubscription.plans[fila.plan as "pro" | "agency"]}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge tone={requestTone(estado)}>
-                      {es.spaceRequestForm.states[estado]}
-                    </StatusBadge>
-                    {fila.status_reason ? (
-                      <span className="mt-1 block text-sm text-text-secondary">
-                        {fila.status_reason}
-                      </span>
-                    ) : null}
-                  </TableCell>
-                  <TableCell>
-                    {enZona(fila.updated_at, CUOTLY_TIMEZONE, { dateStyle: "short" })}
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      href={`/solicitar-espacio?solicitud=${fila.id}`}
-                      className="text-sm font-semibold text-cuotly-green underline"
-                    >
-                      {t.actions[estado]}
-                    </Link>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      )}
-
-      <p className="text-sm text-text-secondary">{t.reviewerHidden}</p>
-      <p className="text-sm text-text-secondary">{es.globalContext.home.requestsElsewhere}</p>
-
-      <Link
-        href="/solicitar-espacio"
-        className="inline-flex items-center justify-center rounded-[10px] border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
-      >
-        {t.newRequest}
-      </Link>
-    </div>
-  );
+  return <MyRequestsView rows={rows} filters={filters} />;
 }

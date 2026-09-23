@@ -45,8 +45,11 @@ export function TableBody({ children }: { children: ReactNode }) {
   return <tbody className="divide-y divide-border bg-surface">{children}</tbody>;
 }
 
-export function TableRow({ children }: { children: ReactNode }) {
-  return <tr className="transition-colors hover:bg-soft-surface/50">{children}</tr>;
+/** `highlight` es la fila que espera algo de quien mira, en verde muy suave (G04). */
+export function TableRow({ children, highlight = false }: { children: ReactNode; highlight?: boolean }) {
+  return (
+    <tr className={`transition-colors ${highlight ? "bg-cuotly-green/5" : "hover:bg-soft-surface/50"}`}>{children}</tr>
+  );
 }
 
 export function TableHeaderCell({ children }: { children: ReactNode }) {

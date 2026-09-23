@@ -82,6 +82,8 @@ export interface SpaceRequestSummary {
 
 export async function loadGlobalHome(
   supabase: Supabase,
+  /** Quien mira: sus solicitudes de espacio, no todas las que la plataforma puede leer. */
+  userId: string,
   now: Date = new Date(),
 ): Promise<GlobalHome> {
   const contexts = await myContexts(supabase).catch(() => null);
@@ -109,12 +111,14 @@ export async function loadGlobalHome(
     ),
     myClientAttention(supabase).catch(() => null),
     myConversations(supabase).catch(() => null),
-    // RN-GLO-04 · las solicitudes de creación de espacio son de quien las
-    // escribió, y la política ya lo garantiza; el filtro explícito está
-    // por claridad, no por seguridad.
+    // RN-GLO-04 · las solicitudes de creación de espacio de quien mira.
+    // El filtro NO es de adorno: la política de la 89 deja a quien aprueba
+    // en la plataforma leer todas las enviadas (RN-PLA-04), y sin él el
+    // Inicio de Bosco enseñaba las de los demás como si fueran suyas.
     supabase
       .from("space_requests")
       .select("id, business_name, plan, status, status_reason, created_at, updated_at")
+      .eq("requester_id", userId)
       .order("updated_at", { ascending: false }),
   ]);
 

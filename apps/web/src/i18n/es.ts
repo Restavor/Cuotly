@@ -6800,25 +6800,42 @@ export const es = {
     },
     requests: {
       title: "Mis solicitudes",
-      subtitle: "Las solicitudes de creación de espacio que has enviado.",
+      subtitle: "Consulta tus solicitudes de creación de espacios de mantenimiento.",
       emptyTitle: "No has enviado ninguna solicitud",
       emptyReason: "Cuando pidas un espacio de mantenimiento, aparecerá aquí con su estado.",
-      business: "Negocio",
-      plan: "Plan",
+      filteredEmptyTitle: "Ninguna solicitud coincide",
+      filteredEmptyReason: "Tienes solicitudes, pero ninguna cumple la búsqueda o el estado de arriba.",
+      searchPlaceholder: "Buscar solicitudes…",
+      filterState: "Estado",
+      filterStateAll: "Todos los estados",
+      space: "Espacio",
+      plan: "Plan solicitado",
+      date: "Fecha",
       status: "Estado",
-      updated: "Última novedad",
       action: "Acción",
-      /** La acción que toca AHORA en cada estado (RN-GLO-04). */
-      actions: {
-        draft: "Continuar el borrador",
-        submitted: "Esperando respuesta",
-        in_review: "En revisión",
-        needs_information: "Aportar la información",
-        approved: "Ver las instrucciones de pago",
-        rejected: "Ver el motivo",
+      planPrice: (precio: string) => `${precio} + IVA/mes`,
+      /** Lo que acompaña a "Aprobada", del estado del espacio (RN-SUB-05). */
+      approvedDetail: {
+        payment_pending: "Pago pendiente",
+        active: "Espacio activo",
+        archived: "Espacio archivado",
       },
+      /** La acción que toca AHORA en cada fila (RN-GLO-04). */
+      actions: {
+        continue: "Continuar",
+        view: "Ver solicitud",
+        complete: "Completar datos",
+        payment: "Ver instrucciones",
+        enter: "Entrar en el espacio",
+        reason: "Ver motivo",
+      },
+      infoRequestedTitle: "Información solicitada",
+      provideInfo: "Aportar información",
+      newRequest: "Crear espacio de mantenimiento",
       reviewerHidden: "Quién la revisó no se enseña: eso queda en la auditoría de Cuotly.",
-      newRequest: "Solicitar otro espacio",
+      /** RN-GLO-04 · lo dice la propia pantalla: las de trabajo no viven aquí. */
+      elsewhere:
+        "Aquí aparecen las solicitudes de nuevos espacios. Las solicitudes de trabajo están dentro de cada espacio o panel.",
     },
     messages: {
       title: "Mensajes",

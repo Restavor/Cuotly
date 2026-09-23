@@ -55,7 +55,7 @@ export default async function GlobalHomePage() {
   // falta, se le dice aquí. Si la consulta falla no se bloquea a nadie: se
   // sigue como un usuario normal.
   const [home, platform] = await Promise.all([
-    loadGlobalHome(supabase),
+    loadGlobalHome(supabase, user.id),
     myPlatformAccess(supabase).catch(() => null),
   ]);
   const esPlataforma = platform !== null && isPlatformPerson(platform);
