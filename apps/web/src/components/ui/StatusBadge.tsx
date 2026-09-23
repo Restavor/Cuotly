@@ -13,6 +13,12 @@ type Props = {
    * aviso de un reloj sin depender de verlos en color.
    */
   icon?: IconName;
+  /**
+   * Deja partir el texto en dos líneas. Para tablas con muchas columnas,
+   * donde un estado largo ("Bloqueado · Esperando al restaurante") fijaba
+   * el ancho de toda la columna.
+   */
+  wrap?: boolean;
   children: ReactNode;
 };
 
@@ -55,13 +61,15 @@ const dotClasses: Record<Tone, string> = {
  * Insignia de estado. El color nunca es la única señal (PRD §21.4): siempre
  * lleva el texto del estado al lado, nunca solo un punto de color.
  */
-export function StatusBadge({ tone, icon, children }: Props) {
+export function StatusBadge({ tone, icon, wrap = false, children }: Props) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${toneClasses[tone]}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 text-xs font-semibold ${
+        wrap ? "max-w-44 rounded-[10px]" : "whitespace-nowrap rounded-full"
+      } ${toneClasses[tone]}`}
     >
       {icon === undefined ? (
-        <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${dotClasses[tone]}`} />
+        <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${dotClasses[tone]}`} />
       ) : (
         <Icon name={icon} className="h-3.5 w-3.5" />
       )}

@@ -5,6 +5,7 @@ import {
   Card,
   EmptyState,
   EntityCell,
+  ErrorState,
   FilterBar,
   FilterSelect,
   NoPermissionState,
@@ -22,17 +23,23 @@ import {
 } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import {
+  DEADLINE_FILTERS,
   deadlinesByJob,
   groupJobsByState,
+  isDeadlineFilter,
   jobHeadline,
+  matchesDeadlineFilter,
   upcomingDeadlines,
+  type ProjectedDeadline,
 } from "@/core/job-board";
 import { JOB_STATES } from "@/core/naming";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { loadSpaceAttention, loadTeamLoad } from "../home-load";
 import { JobBoard } from "./JobBoard";
+import { CeldaPlazo, Recuento } from "./JobListCells";
 import { JobsOverview, type WorkloadCard } from "./JobsOverview";
+import { loadJobListExtras } from "./list-extras-load";
 import { loadTeamJobs } from "./list-query";
 
 /**
@@ -69,6 +76,7 @@ export default async function TeamJobsPage({
     responsable?: string;
     estado?: string;
     vencimientos?: string;
+    plazo?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -85,6 +93,7 @@ export default async function TeamJobsPage({
   // cambia cómo se pinta lo que ya se ha leído.
   const enTablero = query.vista === "tablero";
   const todosLosVencimientos = query.vencimientos === "todos";
+  const plazo = isDeadlineFilter(query.plazo) ? query.plazo : undefined;
   const supabase = await createClient();
 
   const {
@@ -122,7 +131,7 @@ export default async function TeamJobsPage({
   // del que lo lee el paginador del detalle: así el "siguiente" de un
   // trabajo no puede llevar a otro sitio que el siguiente de esta tabla.
   const ahora = new Date();
-  const [jobs, { data: establishments }, { data: people }, atencion, carga] = await Promise.all([
+  const [jobs, { data: establishments }, { data: people }, atencion, carga, extras] = await Promise.all([
     loadTeamJobs(supabase, space.id),
     supabase.from("establishments").select("id, name").eq("space_id", space.id).order("name"),
     supabase.from("profiles").select("id, full_name, email"),
@@ -134,6 +143,8 @@ export default async function TeamJobsPage({
     loadSpaceAttention(supabase, space.id, slug, ahora).catch(() => null),
     // M09 · "Carga de trabajo del equipo", la misma que la del Inicio.
     loadTeamLoad(supabase, space.id).catch(() => null),
+    // M09 · las columnas Evidencia y Comentarios.
+    loadJobListExtras(supabase, space.id).catch(() => ({ evidence: null, comments: null })),
   ]);
 
   const establishmentName = new Map((establishments ?? []).map((e) => [e.id, e.name]));
@@ -141,14 +152,33 @@ export default async function TeamJobsPage({
     (people ?? []).map((p) => [p.id, p.full_name?.trim() || p.email]),
   );
 
+  // El plazo de cada trabajo, del reloj laborable (`projectDeadline()`).
+  // `null` si los contadores no se han podido leer.
+  const plazoPorTrabajo: ReadonlyMap<string, ProjectedDeadline> | null =
+    atencion?.deadlines == null
+      ? null
+      : new Map(atencion.deadlines.map((d) => [d.id, d.deadline]));
+  const contadorPorTrabajo = new Map(
+    (atencion?.deadlines ?? []).map((d) => [d.id, d.counter]),
+  );
+  // Sin plazos no se puede filtrar por ellos: se dice, en vez de devolver
+  // una bandeja vacía que parecería "no hay ninguno".
+  const plazoIlegible = plazo !== undefined && plazoPorTrabajo === null;
+
   const todos = jobs ?? [];
   const rows = todos.filter(
     (job) =>
       (restaurante === undefined || job.establishment_id === restaurante) &&
       (responsable === undefined || job.assigned_to === responsable) &&
-      (estado === undefined || job.state === estado),
+      (estado === undefined || job.state === estado) &&
+      (plazo === undefined ||
+        (plazoPorTrabajo !== null && matchesDeadlineFilter(plazoPorTrabajo.get(job.id), plazo))),
   );
-  const hasFilters = restaurante !== undefined || responsable !== undefined || estado !== undefined;
+  const hasFilters =
+    restaurante !== undefined ||
+    responsable !== undefined ||
+    estado !== undefined ||
+    plazo !== undefined;
 
   // Las personas del desplegable "Responsable" son las que llevan algún
   // trabajo del espacio, no todos los perfiles que RLS deja leer: un
@@ -160,7 +190,7 @@ export default async function TeamJobsPage({
   const base = `/espacios/${slug}/trabajos`;
   const conFiltros = (extra: Readonly<Record<string, string | undefined>>) => {
     const q = new URLSearchParams();
-    for (const [k, v] of Object.entries({ restaurante, responsable, estado, ...extra })) {
+    for (const [k, v] of Object.entries({ restaurante, responsable, estado, plazo, ...extra })) {
       if (v !== undefined) q.set(k, v);
     }
     const cola = q.toString();
@@ -170,6 +200,7 @@ export default async function TeamJobsPage({
     restaurante === undefined ? `${base}/${id}` : `${base}/${id}?restaurante=${restaurante}`;
 
   const { columns, unknown } = groupJobsByState(rows);
+  const zona = space.timezone ?? "Europe/Madrid";
 
   // M09 · los vencimientos siguen a los filtros de arriba: son la misma
   // bandeja, contada por su plazo.
@@ -263,13 +294,22 @@ export default async function TeamJobsPage({
               label: es.naming.states.job[state],
             }))}
           />
+          <FilterSelect
+            id="filtro-plazo"
+            name="plazo"
+            label={t.filterDeadline}
+            defaultValue={plazo}
+            options={DEADLINE_FILTERS.map((f) => ({ value: f, label: t.deadlineFilters[f] }))}
+          />
         </FilterBar>
       )}
 
       {enTablero ? <p className="text-sm text-text-secondary">{t.boardHint}</p> : null}
 
       <Card>
-        {todos.length === 0 && !hasFilters ? (
+        {plazoIlegible ? (
+          <ErrorState title={t.deadlinesUnreadableTitle} description={t.deadlinesUnreadableReason} />
+        ) : todos.length === 0 && !hasFilters ? (
           <EmptyState title={t.emptyTitle} description={t.emptyReason} />
         ) : rows.length === 0 ? (
           // Un filtro que no casa con nada NO es "no hay trabajos" (CA-20).
@@ -294,60 +334,111 @@ export default async function TeamJobsPage({
           >
             <TableHead>
               <TableRow>
-                <TableHeaderCell>{t.codeColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.jobColumn}</TableHeaderCell>
                 <TableHeaderCell>{t.establishmentColumn}</TableHeaderCell>
                 <TableHeaderCell>{t.assigneeColumn}</TableHeaderCell>
                 <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
-                <TableHeaderCell>{t.priorityColumn}</TableHeaderCell>
-                <TableHeaderCell>{es.ui.table.actions}</TableHeaderCell>
+                <TableHeaderCell>{t.deadlineColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.evidenceColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.commentsColumn}</TableHeaderCell>
+                <TableHeaderCell>
+                  <span className="sr-only">{es.ui.table.actions}</span>
+                </TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rows.map((job) => (
-                <TableRow key={job.id}>
-                  <TableCell>
-                    <EntityCell
-                      media={
-                        <span
-                          aria-hidden="true"
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-cuotly-green/10 text-cuotly-green"
-                        >
-                          <Icon name="job" className="h-[18px] w-[18px]" />
-                        </span>
-                      }
-                      title={job.code}
-                      subtitle={
-                        job.category
-                          ? (es.naming.categories[job.category as CategoryKey] ?? job.category)
-                          : null
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>{establishmentName.get(job.establishment_id) ?? "—"}</TableCell>
-                  <TableCell>
-                    {job.assigned_to ? (
-                      <PersonCell name={personName.get(job.assigned_to) ?? "—"} />
-                    ) : (
-                      <span className="text-text-secondary">{t.unassigned}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge tone={jobTone(job.state)}>
-                      {es.naming.states.job[job.state as JobStateKey] ?? job.state}
-                    </StatusBadge>
-                  </TableCell>
-                  <TableCell>
-                    {job.priority_rank === null
-                      ? t.priorityShortNone
-                      : t.priorityShort(job.priority_rank)}
-                  </TableCell>
-                  <TableCell>
-                    <ButtonLink href={hrefTrabajo(job.id)} variant="outline" size="sm">
-                      {t.viewJob}
-                    </ButtonLink>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {rows.map((job) => {
+                const titulo = jobHeadline(job);
+                const categoria = job.category
+                  ? (es.naming.categories[job.category as CategoryKey] ?? job.category)
+                  : null;
+                return (
+                  <TableRow key={job.id}>
+                    <TableCell>
+                      {/* El puesto que le dio su restaurante va delante del
+                          código: la bandeja se ordena por él y tiene que
+                          verse por qué (el subtítulo de la página lo
+                          explica). Antes era una columna, y con Plazo,
+                          Evidencia y Comentarios sacaba columnas de la
+                          pantalla. */}
+                      <div className="max-w-60">
+                      <EntityCell
+                        media={
+                          <span
+                            aria-hidden="true"
+                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-cuotly-green/10 text-cuotly-green"
+                          >
+                            <Icon name="job" className="h-[18px] w-[18px]" />
+                          </span>
+                        }
+                        title={titulo ?? job.code}
+                        subtitle={
+                          [
+                            job.priority_rank === null ? null : t.priorityShort(job.priority_rank),
+                            titulo ? job.code : null,
+                            categoria,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || null
+                        }
+                      />
+                      </div>
+                    </TableCell>
+                    <TableCell>{establishmentName.get(job.establishment_id) ?? "—"}</TableCell>
+                    <TableCell>
+                      {job.assigned_to ? (
+                        <PersonCell name={personName.get(job.assigned_to) ?? "—"} />
+                      ) : (
+                        <span className="text-text-secondary">{t.unassigned}</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="min-w-36">
+                      <StatusBadge tone={jobTone(job.state)} wrap>
+                        {es.naming.states.job[job.state as JobStateKey] ?? job.state}
+                      </StatusBadge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <CeldaPlazo
+                        deadline={plazoPorTrabajo === null ? null : (plazoPorTrabajo.get(job.id) ?? "none")}
+                        counter={contadorPorTrabajo.get(job.id) ?? null}
+                        timeZone={zona}
+                        now={ahora}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Recuento
+                        total={extras.evidence === null ? null : (extras.evidence.get(job.id) ?? 0)}
+                        icon="document"
+                        label={t.evidenceCount}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Recuento
+                        total={extras.comments === null ? null : (extras.comments.get(job.id) ?? 0)}
+                        icon="messages"
+                        label={t.commentsCount}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {/* Solo el icono: con nueve columnas, el texto
+                          "Ver trabajo" en cada fila empujaba Comentarios
+                          fuera de la pantalla. El nombre sigue ahí para el
+                          lector de pantalla. */}
+                      <ButtonLink
+                        href={hrefTrabajo(job.id)}
+                        variant="outline"
+                        size="sm"
+                        className="px-2!"
+                      >
+                        <span className="sr-only">{`${t.viewJob} ${job.code}`}</span>
+                        <Icon name="chevronRight" className="h-4 w-4" />
+                      </ButtonLink>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -362,9 +453,10 @@ export default async function TeamJobsPage({
         teamHref={`/espacios/${slug}/equipo`}
         href={hrefTrabajo}
         tone={jobTone}
-        timeZone={space.timezone ?? "Europe/Madrid"}
+        timeZone={zona}
         now={ahora}
       />
     </div>
   );
 }
+

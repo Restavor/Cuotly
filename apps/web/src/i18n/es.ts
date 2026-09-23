@@ -1718,12 +1718,11 @@ export const es = {
       stateColumn: "Estado",
       assigneeColumn: "Responsable",
       categoryColumn: "Categoría",
-      // La bandeja va ordenada por esta columna, así que la columna tiene
-      // que estar: un orden que el equipo no pueda explicar mirando la
-      // tabla parece un fallo de la tabla.
-      priorityColumn: "Orden de importancia",
+      // La bandeja va ordenada por el puesto que da cada restaurante, así
+      // que el puesto tiene que verse en la fila: un orden que el equipo
+      // no pueda explicar mirando la tabla parece un fallo de la tabla.
+      // Desde M09 va delante del código, bajo el título ("Nº 2 · TRB-0024").
       priorityShort: (rank: number) => `Nº ${rank}`,
-      priorityShortNone: "—",
       orderHint:
         "Primero lo que cada restaurante ha marcado como más importante; después, lo más reciente.",
       unassigned: "Sin asignar",
@@ -1746,6 +1745,31 @@ export const es = {
       boardHint:
         "Los mismos trabajos, agrupados por su estado y en el orden en que un trabajo recorre su vida. Para moverlo de columna, ábrelo: cada cambio de estado tiene su regla y la comprueba el servidor.",
       boardNoTitle: "Sin solicitud de origen",
+      // M09 · las columnas Trabajo, Plazo, Evidencia y Comentarios, y el
+      // filtro Plazo.
+      jobColumn: "Trabajo",
+      deadlineColumn: "Plazo",
+      evidenceColumn: "Evidencia",
+      commentsColumn: "Comentarios",
+      filterDeadline: "Plazo",
+      deadlineFilters: {
+        fuera_de_plazo: "Fuera de plazo",
+        corriendo: "Con plazo corriendo",
+        en_pausa: "En pausa",
+        sin_plazo: "Sin plazo corriendo",
+      },
+      deadlinePaused: "En pausa",
+      deadlineNone: "Sin plazo",
+      evidenceCount: (total: number) =>
+        total === 1 ? "1 archivo de evidencia" : `${total} archivos de evidencia`,
+      commentsCount: (total: number) =>
+        total === 1
+          ? "1 mensaje en la conversación interna"
+          : `${total} mensajes en la conversación interna`,
+      countFailed: "No se pudo leer",
+      deadlinesUnreadableTitle: "No se han podido leer los plazos",
+      deadlinesUnreadableReason:
+        "Sin los plazos no se puede filtrar por ellos. Quita el filtro Plazo o vuelve a cargar la página.",
       // M09 · las dos tarjetas de debajo de la bandeja.
       workloadTitle: "Carga de trabajo del equipo",
       workloadSeeDetail: "Ver detalle",

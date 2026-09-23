@@ -13,7 +13,9 @@ import type { ReactNode } from "react";
 export function Table({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   return (
     <div className="overflow-hidden rounded-[12px] border border-border">
-      <div className="overflow-x-auto">
+      {/* `relative`: los textos `sr-only` de las celdas van posicionados y,
+          sin esto, se escapan del desplazamiento y ensanchan la página. */}
+      <div className="relative overflow-x-auto">
         <table className="w-full border-collapse text-left text-sm">{children}</table>
       </div>
       {footer}

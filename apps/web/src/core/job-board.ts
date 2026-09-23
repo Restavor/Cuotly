@@ -154,3 +154,32 @@ export function jobHeadline(job: {
 }): string | null {
   return job.summary?.trim() || (job.description ? requestHeadline(job.description, 80) : "") || null;
 }
+
+/**
+ * M09 · el filtro "Plazo" de la bandeja. Cuatro casos, los mismos que
+ * sabe distinguir `projectDeadline()`, más el de un trabajo sin ningún
+ * plazo corriendo (sin asignar, publicado, cerrado): no se inventa un
+ * "vence esta semana" que ninguna regla define.
+ */
+export const DEADLINE_FILTERS = ["fuera_de_plazo", "corriendo", "en_pausa", "sin_plazo"] as const;
+export type DeadlineFilter = (typeof DEADLINE_FILTERS)[number];
+
+export function isDeadlineFilter(value: string | undefined): value is DeadlineFilter {
+  return (DEADLINE_FILTERS as readonly string[]).includes(value ?? "");
+}
+
+export function matchesDeadlineFilter(
+  deadline: ProjectedDeadline | undefined,
+  filter: DeadlineFilter,
+): boolean {
+  switch (filter) {
+    case "fuera_de_plazo":
+      return deadline?.kind === "overdue";
+    case "corriendo":
+      return deadline?.kind === "at";
+    case "en_pausa":
+      return deadline?.kind === "paused";
+    case "sin_plazo":
+      return deadline === undefined;
+  }
+}

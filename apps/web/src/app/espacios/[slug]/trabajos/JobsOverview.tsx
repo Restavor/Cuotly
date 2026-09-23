@@ -279,7 +279,7 @@ function Vencimiento({
 }
 
 /** "Hoy, 18:00" o "16 sept 2026, 18:00", en la zona del espacio. */
-function fechaDelPlazo(at: Date, timeZone: string, now: Date): string {
+export function fechaDelPlazo(at: Date, timeZone: string, now: Date): string {
   const iso = at.toISOString();
   const hora = enZona(iso, timeZone, { hour: "2-digit", minute: "2-digit" });
   const dia = (valor: string) =>

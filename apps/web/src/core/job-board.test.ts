@@ -5,6 +5,7 @@ import {
   deadlinesByJob,
   groupJobsByState,
   jobHeadline,
+  matchesDeadlineFilter,
   projectDeadline,
   upcomingDeadlines,
 } from "./job-board";
@@ -126,5 +127,27 @@ describe("jobHeadline · el título de un trabajo en la bandeja", () => {
     expect(jobHeadline({ summary: " Cambiar horario ", description: "Texto largo" })).toBe("Cambiar horario");
     expect(jobHeadline({ summary: null, description: "Subir la carta de otoño" })).toBe("Subir la carta de otoño");
     expect(jobHeadline({ summary: "  ", description: null })).toBeNull();
+  });
+});
+
+describe("matchesDeadlineFilter · el filtro Plazo de la bandeja (M09, RN-SLA-14, RN-SLA-17)", () => {
+  const vencido = { kind: "overdue" as const };
+  const corre = { kind: "at" as const, at: new Date("2026-09-20T10:00:00Z") };
+  const pausa = { kind: "paused" as const };
+
+  it("RN-SLA-17 · fuera de plazo es solo lo que el reloj da por vencido", () => {
+    expect(matchesDeadlineFilter(vencido, "fuera_de_plazo")).toBe(true);
+    expect(matchesDeadlineFilter(corre, "fuera_de_plazo")).toBe(false);
+  });
+
+  it("RN-SLA-14 · en pausa no es corriendo, y corriendo no es en pausa", () => {
+    expect(matchesDeadlineFilter(pausa, "en_pausa")).toBe(true);
+    expect(matchesDeadlineFilter(pausa, "corriendo")).toBe(false);
+    expect(matchesDeadlineFilter(corre, "corriendo")).toBe(true);
+  });
+
+  it("sin plazo es el trabajo que no tiene ningún contador que mande", () => {
+    expect(matchesDeadlineFilter(undefined, "sin_plazo")).toBe(true);
+    expect(matchesDeadlineFilter(pausa, "sin_plazo")).toBe(false);
   });
 });
