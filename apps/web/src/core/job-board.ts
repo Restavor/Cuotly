@@ -23,7 +23,10 @@
  * que está vacía, que es un dato, no un hueco.
  */
 
+import { addBusinessMinutes, type WorkCalendar } from "./business-clock";
 import { JOB_STATES, type JobState } from "./job-states";
+import { requestHeadline } from "./requests";
+import type { CounterStatus } from "./sla-timers";
 
 export interface JobBoardColumn<T> {
   readonly state: JobState;
@@ -91,4 +94,63 @@ export function deadlinesByJob(
       });
   }
   return mapa;
+}
+
+/**
+ * M09 · "Próximos vencimientos": cuándo vence el plazo que corre de un
+ * trabajo, proyectado igual que la "Fecha estimada de fin" de su ficha
+ * (`timers-load.ts`): desde ahora, sumando los minutos laborables que le
+ * quedan en su calendario.
+ *
+ *   · **Vencido**: el reloj dice que se ha pasado (RN-SLA-17). No se
+ *     inventa a qué hora venció.
+ *   · **En pausa**: el contador está parado (RN-SLA-14) y lo que queda se
+ *     conserva. Sumárselo a "ahora" daría una fecha distinta en cada
+ *     recarga, así que no se da ninguna.
+ *   · **Fecha**: corre, y vence en `at`.
+ */
+export type ProjectedDeadline =
+  | { readonly kind: "overdue" }
+  | { readonly kind: "paused" }
+  | { readonly kind: "at"; readonly at: Date };
+
+export function projectDeadline(
+  status: CounterStatus,
+  running: boolean,
+  now: Date,
+  calendar: WorkCalendar,
+): ProjectedDeadline {
+  if (status.overdue) return { kind: "overdue" };
+  if (!running) return { kind: "paused" };
+  return { kind: "at", at: addBusinessMinutes(now, Math.max(0, status.remainingMinutes), calendar) };
+}
+
+/**
+ * Los próximos vencimientos, para la tarjeta: primero lo vencido, después
+ * lo que vence antes. Lo que está en pausa no tiene fecha y no entra.
+ */
+export function upcomingDeadlines<T extends { readonly deadline: ProjectedDeadline }>(
+  rows: readonly T[],
+  limit = 5,
+): T[] {
+  const vencidos = rows.filter((r) => r.deadline.kind === "overdue");
+  const conFecha = rows
+    .filter((r) => r.deadline.kind === "at")
+    .sort(
+      (a, b) =>
+        (a.deadline as { at: Date }).at.getTime() - (b.deadline as { at: Date }).at.getTime(),
+    );
+  return [...vencidos, ...conFecha].slice(0, limit);
+}
+
+/**
+ * El título de un trabajo en la bandeja: el resumen validado de su
+ * solicitud o, si no lo tiene, el principio de lo que escribió el
+ * restaurante. `null` si no viene de ninguna solicitud.
+ */
+export function jobHeadline(job: {
+  readonly summary: string | null;
+  readonly description: string | null;
+}): string | null {
+  return job.summary?.trim() || (job.description ? requestHeadline(job.description, 80) : "") || null;
 }

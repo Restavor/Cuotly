@@ -21,12 +21,18 @@ import {
   Tabs,
 } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
-import { deadlinesByJob, groupJobsByState } from "@/core/job-board";
+import {
+  deadlinesByJob,
+  groupJobsByState,
+  jobHeadline,
+  upcomingDeadlines,
+} from "@/core/job-board";
 import { JOB_STATES } from "@/core/naming";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-import { loadSpaceAttention } from "../home-load";
+import { loadSpaceAttention, loadTeamLoad } from "../home-load";
 import { JobBoard } from "./JobBoard";
+import { JobsOverview, type WorkloadCard } from "./JobsOverview";
 import { loadTeamJobs } from "./list-query";
 
 /**
@@ -62,6 +68,7 @@ export default async function TeamJobsPage({
     vista?: string;
     responsable?: string;
     estado?: string;
+    vencimientos?: string;
   }>;
 }) {
   const { slug } = await params;
@@ -77,6 +84,7 @@ export default async function TeamJobsPage({
   // pantalla ni otra consulta. Por eso vive en la misma ruta y solo
   // cambia cómo se pinta lo que ya se ha leído.
   const enTablero = query.vista === "tablero";
+  const todosLosVencimientos = query.vencimientos === "todos";
   const supabase = await createClient();
 
   const {
@@ -86,7 +94,7 @@ export default async function TeamJobsPage({
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, name, slug")
+    .select("id, name, slug, timezone")
     .eq("slug", slug)
     .maybeSingle();
   if (!space) notFound();
@@ -113,15 +121,19 @@ export default async function TeamJobsPage({
   // Qué filas y en qué orden lo decide `loadTeamJobs()`, el mismo sitio
   // del que lo lee el paginador del detalle: así el "siguiente" de un
   // trabajo no puede llevar a otro sitio que el siguiente de esta tabla.
-  const [jobs, { data: establishments }, { data: people }, atencion] = await Promise.all([
+  const ahora = new Date();
+  const [jobs, { data: establishments }, { data: people }, atencion, carga] = await Promise.all([
     loadTeamJobs(supabase, space.id),
     supabase.from("establishments").select("id, name").eq("space_id", space.id).order("name"),
     supabase.from("profiles").select("id, full_name, email"),
-    // El aviso de plazo de cada tarjeta lo calcula el reloj laborable en
+    // El aviso de plazo de cada tarjeta del tablero y los "Próximos
+    // vencimientos" los calcula el reloj laborable en
     // `loadSpaceAttention()`, la misma cuenta que "Necesita atención" del
-    // Inicio. Solo hace falta en el tablero; si falla, las tarjetas salen
-    // sin aviso en vez de dejar la bandeja en blanco.
-    enTablero ? loadSpaceAttention(supabase, space.id, slug).catch(() => null) : Promise.resolve(null),
+    // Inicio. Si falla, la bandeja sale igual: las tarjetas sin aviso y
+    // los vencimientos diciendo que no se han podido leer.
+    loadSpaceAttention(supabase, space.id, slug, ahora).catch(() => null),
+    // M09 · "Carga de trabajo del equipo", la misma que la del Inicio.
+    loadTeamLoad(supabase, space.id).catch(() => null),
   ]);
 
   const establishmentName = new Map((establishments ?? []).map((e) => [e.id, e.name]));
@@ -158,6 +170,36 @@ export default async function TeamJobsPage({
     restaurante === undefined ? `${base}/${id}` : `${base}/${id}?restaurante=${restaurante}`;
 
   const { columns, unknown } = groupJobsByState(rows);
+
+  // M09 · los vencimientos siguen a los filtros de arriba: son la misma
+  // bandeja, contada por su plazo.
+  const filaPorId = new Map(rows.map((job) => [job.id, job]));
+  const conPlazo =
+    atencion?.deadlines == null
+      ? null
+      : atencion.deadlines
+          .filter((d) => filaPorId.has(d.id))
+          .map((d) => {
+            const fila = filaPorId.get(d.id);
+            return { ...d, title: fila ? jobHeadline(fila) : null };
+          });
+  const vencimientos =
+    conPlazo === null ? null : upcomingDeadlines(conPlazo, todosLosVencimientos ? Infinity : 5);
+  const conFecha = conPlazo === null ? 0 : upcomingDeadlines(conPlazo, Infinity).length;
+  const enPausa = conPlazo === null ? 0 : conPlazo.filter((d) => d.deadline.kind === "paused").length;
+  const verTodos =
+    conFecha > 5
+      ? conFiltros({
+          vista: enTablero ? "tablero" : undefined,
+          vencimientos: todosLosVencimientos ? undefined : "todos",
+        })
+      : null;
+  const cargaDelEquipo: WorkloadCard =
+    carga === null || carga.failed
+      ? { kind: "failed" }
+      : !carga.available
+        ? { kind: "no_permission" }
+        : { kind: "ok", members: carga.members };
 
   return (
     <div className="space-y-6">
@@ -310,6 +352,19 @@ export default async function TeamJobsPage({
           </Table>
         )}
       </Card>
+
+      <JobsOverview
+        workload={cargaDelEquipo}
+        deadlines={vencimientos}
+        pausedCount={enPausa}
+        showAll={todosLosVencimientos}
+        seeAllHref={verTodos}
+        teamHref={`/espacios/${slug}/equipo`}
+        href={hrefTrabajo}
+        tone={jobTone}
+        timeZone={space.timezone ?? "Europe/Madrid"}
+        now={ahora}
+      />
     </div>
   );
 }

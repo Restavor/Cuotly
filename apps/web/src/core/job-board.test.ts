@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { deadlinesByJob, groupJobsByState } from "./job-board";
+import { contractualCalendar } from "./business-clock";
+import {
+  deadlinesByJob,
+  groupJobsByState,
+  jobHeadline,
+  projectDeadline,
+  upcomingDeadlines,
+} from "./job-board";
 import { JOB_STATES } from "./job-states";
 
 const trabajo = (id: string, state: string) => ({ id, state });
@@ -75,5 +82,49 @@ describe("deadlinesByJob · el aviso de plazo de cada tarjeta (M09, RN-SLA-17)",
     expect(mapa.get("b")).toEqual({ kind: "about_to_expire", remainingMinutes: 90, counter: "t2" });
     expect(mapa.has("c")).toBe(false);
     expect(mapa.has("d")).toBe(false);
+  });
+});
+
+describe("projectDeadline · cuándo vence lo que corre (M09, RN-SLA-14, RN-SLA-17)", () => {
+  const calendario = contractualCalendar("Europe/Madrid", []);
+  const estado = (remaining: number, overdue = false) => ({
+    elapsedMinutes: 0,
+    totalMinutes: 600,
+    remainingMinutes: remaining,
+    percentUsed: 0,
+    overdue,
+  });
+
+  it("RN-SLA-17 · vencido no tiene fecha inventada", () => {
+    expect(projectDeadline(estado(0, true), true, new Date(), calendario)).toEqual({ kind: "overdue" });
+  });
+
+  it("RN-SLA-14 · en pausa no se proyecta: la fecha cambiaría en cada recarga", () => {
+    expect(projectDeadline(estado(120), false, new Date(), calendario)).toEqual({ kind: "paused" });
+  });
+
+  it("corriendo, suma los minutos laborables que quedan a partir de ahora", () => {
+    // Martes 15/09/2026 a las 10:00 en Madrid (08:00 UTC), dentro de ventana.
+    const ahora = new Date("2026-09-15T08:00:00Z");
+    const p = projectDeadline(estado(60), true, ahora, calendario);
+    expect(p).toEqual({ kind: "at", at: new Date("2026-09-15T09:00:00Z") });
+  });
+
+  it("primero lo vencido, después por fecha, y lo que está en pausa no entra", () => {
+    const filas = [
+      { id: "tarde", deadline: { kind: "at" as const, at: new Date("2026-09-20T10:00:00Z") } },
+      { id: "pausa", deadline: { kind: "paused" as const } },
+      { id: "pronto", deadline: { kind: "at" as const, at: new Date("2026-09-16T10:00:00Z") } },
+      { id: "vencido", deadline: { kind: "overdue" as const } },
+    ];
+    expect(upcomingDeadlines(filas).map((f) => f.id)).toEqual(["vencido", "pronto", "tarde"]);
+  });
+});
+
+describe("jobHeadline · el título de un trabajo en la bandeja", () => {
+  it("prefiere el resumen validado, luego lo que escribió el restaurante, y si no hay nada no inventa", () => {
+    expect(jobHeadline({ summary: " Cambiar horario ", description: "Texto largo" })).toBe("Cambiar horario");
+    expect(jobHeadline({ summary: null, description: "Subir la carta de otoño" })).toBe("Subir la carta de otoño");
+    expect(jobHeadline({ summary: "  ", description: null })).toBeNull();
   });
 });

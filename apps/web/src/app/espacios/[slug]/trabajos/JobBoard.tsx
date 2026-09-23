@@ -2,8 +2,11 @@ import Link from "next/link";
 
 import { Avatar, StatusBadge } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
-import type { BoardDeadline, JobBoardColumn } from "@/core/job-board";
-import { requestHeadline } from "@/core/requests";
+import {
+  jobHeadline,
+  type BoardDeadline,
+  type JobBoardColumn,
+} from "@/core/job-board";
 import { tiempoRestante } from "@/i18n/duration";
 import { es } from "@/i18n/es";
 
@@ -162,10 +165,7 @@ function Tarjeta({
   person: string | null;
   href: string;
 }) {
-  const titulo =
-    job.summary?.trim() ||
-    (job.description ? requestHeadline(job.description, 80) : "") ||
-    t.boardNoTitle;
+  const titulo = jobHeadline(job) ?? t.boardNoTitle;
   return (
     <Link
       href={href}

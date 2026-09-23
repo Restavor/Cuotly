@@ -1,4 +1,9 @@
-import { contractualCalendar, holidaysKnownAsOf, type HolidayRecord } from "@/core/business-clock";
+import {
+  contractualCalendar,
+  holidaysKnownAsOf,
+  type HolidayRecord,
+  type WorkCalendar,
+} from "@/core/business-clock";
 import {
   dayKeyInTimeZone,
   jobDeadlineRisk,
@@ -8,11 +13,12 @@ import {
   type AttentionItem,
   type DeadlineRisk,
 } from "@/core/home";
+import { projectDeadline, type ProjectedDeadline } from "@/core/job-board";
 import { isJobState, type JobState } from "@/core/job-states";
 import { loadLevel, type LoadLevel } from "@/core/load-points";
 import { civilDayStartInZone, shiftMonth } from "@/core/team-calendar";
 import { t2Status, t3Status, type CounterStatus } from "@/core/sla-timers";
-import type { TimerEvent, TimerEventType } from "@/core/timer-events";
+import { isCounterRunning, type TimerEvent, type TimerEventType } from "@/core/timer-events";
 import type { ChangeCategory } from "@/core/classification-rules";
 import { cycleAllowance, cycleUsage, type CycleUsage } from "@/core/consumption-ledger";
 import type { createClient } from "@/lib/supabase/server";
@@ -229,12 +235,25 @@ function toTimerEvents(raw: unknown): readonly TimerEvent[] {
  * usa el barrido de la cola, y por la misma razón: cambiar un festivo hoy
  * no puede mover hacia atrás un plazo que ya corría.
  */
+/** Si el contador corre y con qué calendario: lo que hace falta para proyectar su vencimiento. */
+interface CounterClock {
+  readonly running: boolean;
+  readonly calendar: WorkCalendar;
+}
+
+interface JobCounters {
+  t2?: CounterStatus;
+  t3?: CounterStatus;
+  t2Clock?: CounterClock;
+  t3Clock?: CounterClock;
+}
+
 function counterStatuses(
   rows: readonly CounterRow[],
   holidays: readonly HolidayRecord[],
   now: Date,
-): Map<string, { t2?: CounterStatus; t3?: CounterStatus }> {
-  const porTrabajo = new Map<string, { t2?: CounterStatus; t3?: CounterStatus }>();
+): Map<string, JobCounters> {
+  const porTrabajo = new Map<string, JobCounters>();
 
   for (const row of rows) {
     const events = toTimerEvents(row.events);
@@ -244,10 +263,13 @@ function counterStatuses(
     const calendar = contractualCalendar(row.timezone, holidaysKnownAsOf(holidays, startedAt));
 
     const actual = porTrabajo.get(row.job_id) ?? {};
+    const clock = { running: isCounterRunning(events), calendar };
     if (row.counter_kind === "t2") {
       // RN-SLA-02 y RN-COM-12: sin plan, Básico o Impulso, 48 h; con Impulso+, Premium o Premium+, 24 h.
       actual.t2 = t2Status(events, calendar, now, row.start_sla_hours === 24);
+      actual.t2Clock = clock;
     } else if (row.category !== null) {
+      actual.t3Clock = clock;
       // RN-SLA-18 · el plazo congelado del trabajo (migración 118).
       actual.t3 = t3Status(
         events,
@@ -282,6 +304,22 @@ export interface SpaceAttention {
   readonly pendingRequests: number;
   readonly establishments: readonly EstablishmentRow[];
   readonly openJobs: readonly JobRow[];
+  /**
+   * M09 · "Próximos vencimientos": el plazo que corre de cada trabajo
+   * abierto, proyectado con su reloj laborable. Sin ordenar ni recortar
+   * (eso es `upcomingDeadlines()`), y `null` si los contadores no se
+   * han podido leer: una lista vacía diría "nada vence" sin haber mirado.
+   */
+  readonly deadlines: readonly JobDeadline[] | null;
+}
+
+export interface JobDeadline {
+  readonly id: string;
+  readonly code: string;
+  readonly state: JobState;
+  readonly establishment: string | null;
+  readonly counter: "t2" | "t3";
+  readonly deadline: ProjectedDeadline;
 }
 
 interface EstablishmentRow {
@@ -295,6 +333,55 @@ interface JobRow {
   readonly code: string;
   readonly state: string;
   readonly establishment_id: string;
+}
+
+/**
+ * La carga del equipo (§14.4): puntos y nivel de cada persona, con su
+ * nombre. La usan el Inicio y la bandeja de Trabajos (M09), y es una sola
+ * función para que las dos digan lo mismo.
+ *
+ * Sin `assign_jobs`, `space_team_load()` solo devuelve la fila de quien
+ * pregunta: eso no es "la carga del equipo", así que se dice que no está
+ * disponible en vez de enseñar una lista de uno (RN-ASG-17).
+ */
+export interface TeamLoadResult {
+  readonly members: readonly TeamMemberLoad[];
+  readonly available: boolean;
+  readonly failed: boolean;
+}
+
+export async function loadTeamLoad(supabase: Supabase, spaceId: string): Promise<TeamLoadResult> {
+  const [{ data: teamLoad, error }, { data: canAssignJobs }] = await Promise.all([
+    supabase.rpc("space_team_load", { p_space_id: spaceId }),
+    // La misma capacidad que comprueba `space_team_load()` por dentro. Se
+    // pregunta aquí para poder distinguir dos cosas que se parecen y no lo
+    // son: "no puedes ver la carga del equipo" y "no hay equipo". CA-20
+    // exige decir cuál de las dos es.
+    supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "assign_jobs" }),
+  ]);
+
+  const loadRows = canAssignJobs === true ? (teamLoad ?? []) : [];
+  const names = new Map<string, string>();
+  if (loadRows.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", loadRows.map((row) => row.user_id));
+    for (const p of profiles ?? []) {
+      names.set(p.id, p.full_name?.trim() || p.email);
+    }
+  }
+
+  return {
+    members: loadRows.map((row) => ({
+      userId: row.user_id,
+      name: names.get(row.user_id) ?? "",
+      points: row.load_points,
+      level: loadLevel(row.load_points),
+    })),
+    available: canAssignJobs === true,
+    failed: error !== null,
+  };
 }
 
 export async function loadSpaceAttention(
@@ -345,13 +432,31 @@ export async function loadSpaceAttention(
   let atRisk = 0;
   let enCurso = 0;
   let enPlazo = 0;
+  const deadlines: JobDeadline[] = [];
 
   for (const job of jobRows) {
     if (!isJobState(job.state)) continue;
     const state: JobState = job.state;
     const establishment = establishmentName.get(job.establishment_id) ?? null;
     const deepLink = `/espacios/${spaceSlug}/trabajos/${job.id}`;
-    const { risk, remainingMinutes, counter } = jobDeadlineRisk(state, statuses.get(job.id) ?? {});
+    const contadores = statuses.get(job.id) ?? {};
+    const { risk, remainingMinutes, counter } = jobDeadlineRisk(state, contadores);
+
+    // El contador que manda en este estado es el mismo que decide el
+    // riesgo (`jobDeadlineCondition`): el de inicio antes de Comenzar, el
+    // de realización después. Sin sus eventos no hay nada que proyectar.
+    const estado = counter === null ? undefined : contadores[counter];
+    const reloj = counter === null ? undefined : contadores[`${counter}Clock`];
+    if (counter !== null && estado !== undefined && reloj !== undefined) {
+      deadlines.push({
+        id: job.id,
+        code: job.code,
+        state,
+        establishment,
+        counter,
+        deadline: projectDeadline(estado, reloj.running, now, reloj.calendar),
+      });
+    }
 
     if (state === "in_progress") {
       enCurso += 1;
@@ -439,6 +544,7 @@ export async function loadSpaceAttention(
     ).length,
     establishments: establishments ?? [],
     openJobs: jobRows,
+    deadlines: countersError === null ? deadlines : null,
   };
 }
 
@@ -478,8 +584,7 @@ export async function loadSpaceHome(
 
   const [
     attention,
-    { data: teamLoad, error: teamLoadError },
-    { data: canAssignJobs },
+    teamLoad,
     { data: events },
     menuQueue,
     { data: ciclos },
@@ -490,12 +595,7 @@ export async function loadSpaceHome(
     { data: finanzas, error: errorFinanzas },
   ] = await Promise.all([
     loadSpaceAttention(supabase, spaceId, spaceSlug, now),
-    supabase.rpc("space_team_load", { p_space_id: spaceId }),
-    // La misma capacidad que comprueba `space_team_load()` por dentro. Se
-    // pregunta aquí para poder distinguir dos cosas que se parecen y no lo
-    // son: "no puedes ver la carga del equipo" y "no hay equipo". CA-20
-    // exige decir cuál de las dos es.
-    supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "assign_jobs" }),
+    loadTeamLoad(supabase, spaceId),
     supabase
       .from("state_events")
       .select("id, entity_type, entity_id, to_state, occurred_at")
@@ -578,23 +678,6 @@ export async function loadSpaceHome(
     }),
   ]);
 
-  // ------------------------------------------------------------------
-  // Carga del equipo. Sin `assign_jobs`, la función solo devuelve la fila
-  // de quien pregunta: eso no es "la carga del equipo", así que la
-  // pantalla lo dice en vez de enseñar una lista de uno (RN-ASG-17).
-  // ------------------------------------------------------------------
-  const loadRows = canAssignJobs === true ? (teamLoad ?? []) : [];
-  const names = new Map<string, string>();
-  if (loadRows.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .in("id", loadRows.map((row) => row.user_id));
-    for (const p of profiles ?? []) {
-      names.set(p.id, p.full_name?.trim() || p.email);
-    }
-  }
-
   /*
     Página 22 · la barra de cada restaurante. Los apuntes del ciclo se
     piden en UNA consulta para todos los ciclos vivos del espacio, no una
@@ -672,13 +755,6 @@ export async function loadSpaceHome(
     const punto = porDia.get(clave);
     if (punto !== undefined) punto.jobs += 1;
   }
-
-  const team: TeamMemberLoad[] = loadRows.map((row) => ({
-    userId: row.user_id,
-    name: names.get(row.user_id) ?? "",
-    points: row.load_points,
-    level: loadLevel(row.load_points),
-  }));
 
   // ------------------------------------------------------------------
   // Actividad reciente. Sale de `state_events`, el libro inmutable de
@@ -774,9 +850,9 @@ export async function loadSpaceHome(
     pendingRequests: attention.pendingRequests,
     jobsAtDeadlineRisk: attention.jobsAtDeadlineRisk,
     attention: attention.items,
-    team,
-    teamLoadAvailable: canAssignJobs === true,
-    teamLoadFailed: teamLoadError !== null,
+    team: teamLoad.members,
+    teamLoadAvailable: teamLoad.available,
+    teamLoadFailed: teamLoad.failed,
     activity,
     dailyMenu: {
       offered: menuQueue.offered,

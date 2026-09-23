@@ -1746,6 +1746,28 @@ export const es = {
       boardHint:
         "Los mismos trabajos, agrupados por su estado y en el orden en que un trabajo recorre su vida. Para moverlo de columna, ábrelo: cada cambio de estado tiene su regla y la comprueba el servidor.",
       boardNoTitle: "Sin solicitud de origen",
+      // M09 · las dos tarjetas de debajo de la bandeja.
+      workloadTitle: "Carga de trabajo del equipo",
+      workloadSeeDetail: "Ver detalle",
+      workloadScale:
+        "La barra se llena al llegar a 30 puntos, donde empieza la carga muy alta. No es un tope: se puede asignar por encima.",
+      deadlinesTitle: "Próximos vencimientos",
+      deadlinesSeeAll: "Ver todos",
+      deadlinesSeeFewer: "Ver menos",
+      deadlinesToday: (hora: string) => `Hoy, ${hora}`,
+      deadlinesCounter: {
+        t2: "Para comenzar",
+        t3: "Para entregar",
+      },
+      deadlinesEmptyTitle: "Ningún plazo corriendo",
+      deadlinesEmptyReason:
+        "Ninguno de estos trabajos tiene ahora un plazo en marcha: sin asignar o en pausa, el reloj no corre.",
+      deadlinesFailedTitle: "No se han podido leer los plazos",
+      deadlinesFailedReason: "Vuelve a cargar la página. Si sigue igual, avisa a soporte.",
+      deadlinesPaused: (total: number) =>
+        total === 1
+          ? "1 trabajo tiene el plazo en pausa y no aparece: su fecha depende de cuándo se reanude."
+          : `${total} trabajos tienen el plazo en pausa y no aparecen: su fecha depende de cuándo se reanuden.`,
       boardColumnCount: (total: number) =>
         total === 1 ? "1 trabajo" : `${total} trabajos`,
       boardColumnEmpty: "Ninguno en este estado.",
