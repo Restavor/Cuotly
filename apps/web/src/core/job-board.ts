@@ -60,3 +60,35 @@ export function groupJobsByState<T extends { readonly state: string }>(
     unknown: desconocidos,
   };
 }
+
+/**
+ * El aviso de plazo de cada tarjeta del tablero. **No se calcula aquí**: lo
+ * calcula `loadSpaceAttention()` con el reloj laborable, la misma función
+ * que alimenta "Necesita atención" del Inicio del espacio, y aquí solo se
+ * pasa de su lista a un mapa por trabajo. Dos cálculos del mismo plazo
+ * acabarían diciendo cosas distintas en dos pantallas.
+ */
+export type BoardDeadline =
+  | { readonly kind: "out_of_deadline" }
+  | { readonly kind: "about_to_expire"; readonly remainingMinutes: number; readonly counter: string | null };
+
+export function deadlinesByJob(
+  items: readonly {
+    readonly kind: string;
+    readonly id: string;
+    readonly remainingMinutes: number | null;
+    readonly counter: string | null;
+  }[],
+): Map<string, BoardDeadline> {
+  const mapa = new Map<string, BoardDeadline>();
+  for (const item of items) {
+    if (item.kind === "job_out_of_deadline") mapa.set(item.id, { kind: "out_of_deadline" });
+    else if (item.kind === "job_about_to_expire")
+      mapa.set(item.id, {
+        kind: "about_to_expire",
+        remainingMinutes: item.remainingMinutes ?? 0,
+        counter: item.counter,
+      });
+  }
+  return mapa;
+}

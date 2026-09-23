@@ -47,6 +47,13 @@ export interface JobListRow {
    * pueda explicar es un orden que parece un fallo.
    */
   readonly priority_rank: number | null;
+  /**
+   * Qué es el trabajo, dicho como lo entiende el equipo: el resumen que
+   * validó al clasificar la solicitud o, si aún no lo hay, lo que escribió
+   * el restaurante. `null` si no cuelga de ninguna solicitud.
+   */
+  readonly summary: string | null;
+  readonly description: string | null;
 }
 
 export async function loadTeamJobs(
@@ -57,7 +64,7 @@ export async function loadTeamJobs(
   const { data } = await supabase
     .from("jobs")
     .select(
-      "id, code, state, category, assigned_to, establishment_id, created_at, requests(priority_rank)",
+      "id, code, state, category, assigned_to, establishment_id, created_at, requests(priority_rank, validated_summary, description)",
     )
     .eq("space_id", spaceId)
     .order("created_at", { ascending: false });
@@ -65,6 +72,8 @@ export async function loadTeamJobs(
   const filas = (data ?? []).map(({ requests, ...job }) => ({
     ...job,
     priority_rank: requests?.priority_rank ?? null,
+    summary: requests?.validated_summary ?? null,
+    description: requests?.description ?? null,
   }));
 
   const delRestaurante =

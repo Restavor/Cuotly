@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { groupJobsByState } from "./job-board";
+import { deadlinesByJob, groupJobsByState } from "./job-board";
 import { JOB_STATES } from "./job-states";
 
 const trabajo = (id: string, state: string) => ({ id, state });
@@ -59,5 +59,21 @@ describe("groupJobsByState · el tablero de trabajos (M09)", () => {
     const { columns, unknown } = groupJobsByState(entrada);
     const salida = columns.flatMap((c) => c.jobs).length + unknown.length;
     expect(salida).toBe(entrada.length);
+  });
+});
+
+describe("deadlinesByJob · el aviso de plazo de cada tarjeta (M09, RN-SLA-17)", () => {
+  it("RN-SLA-17 · fuera de plazo y a punto de vencer salen del cálculo del reloj, por trabajo", () => {
+    const mapa = deadlinesByJob([
+      { kind: "job_out_of_deadline", id: "a", remainingMinutes: null, counter: "t3" },
+      { kind: "job_about_to_expire", id: "b", remainingMinutes: 90, counter: "t2" },
+      // Lo que no es de plazo no se convierte en aviso de plazo.
+      { kind: "job_pending_assignment", id: "c", remainingMinutes: null, counter: null },
+      { kind: "request_pending_validation", id: "d", remainingMinutes: null, counter: null },
+    ]);
+    expect(mapa.get("a")).toEqual({ kind: "out_of_deadline" });
+    expect(mapa.get("b")).toEqual({ kind: "about_to_expire", remainingMinutes: 90, counter: "t2" });
+    expect(mapa.has("c")).toBe(false);
+    expect(mapa.has("d")).toBe(false);
   });
 });

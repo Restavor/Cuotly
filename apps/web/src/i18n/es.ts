@@ -1744,7 +1744,8 @@ export const es = {
       viewList: "Lista",
       viewBoard: "Tablero",
       boardHint:
-        "Los mismos trabajos, agrupados por su estado. Las columnas van en el orden en que un trabajo recorre su vida.",
+        "Los mismos trabajos, agrupados por su estado y en el orden en que un trabajo recorre su vida. Para moverlo de columna, ábrelo: cada cambio de estado tiene su regla y la comprueba el servidor.",
+      boardNoTitle: "Sin solicitud de origen",
       boardColumnCount: (total: number) =>
         total === 1 ? "1 trabajo" : `${total} trabajos`,
       boardColumnEmpty: "Ninguno en este estado.",

@@ -1,8 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
-  Avatar,
   ButtonLink,
   Card,
   EmptyState,
@@ -23,10 +21,12 @@ import {
   Tabs,
 } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
-import { groupJobsByState } from "@/core/job-board";
+import { deadlinesByJob, groupJobsByState } from "@/core/job-board";
 import { JOB_STATES } from "@/core/naming";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadSpaceAttention } from "../home-load";
+import { JobBoard } from "./JobBoard";
 import { loadTeamJobs } from "./list-query";
 
 /**
@@ -113,10 +113,15 @@ export default async function TeamJobsPage({
   // Qué filas y en qué orden lo decide `loadTeamJobs()`, el mismo sitio
   // del que lo lee el paginador del detalle: así el "siguiente" de un
   // trabajo no puede llevar a otro sitio que el siguiente de esta tabla.
-  const [jobs, { data: establishments }, { data: people }] = await Promise.all([
+  const [jobs, { data: establishments }, { data: people }, atencion] = await Promise.all([
     loadTeamJobs(supabase, space.id),
     supabase.from("establishments").select("id, name").eq("space_id", space.id).order("name"),
     supabase.from("profiles").select("id, full_name, email"),
+    // El aviso de plazo de cada tarjeta lo calcula el reloj laborable en
+    // `loadSpaceAttention()`, la misma cuenta que "Necesita atención" del
+    // Inicio. Solo hace falta en el tablero; si falla, las tarjetas salen
+    // sin aviso en vez de dejar la bandeja en blanco.
+    enTablero ? loadSpaceAttention(supabase, space.id, slug).catch(() => null) : Promise.resolve(null),
   ]);
 
   const establishmentName = new Map((establishments ?? []).map((e) => [e.id, e.name]));
@@ -228,84 +233,15 @@ export default async function TeamJobsPage({
           // Un filtro que no casa con nada NO es "no hay trabajos" (CA-20).
           <EmptyState title={t.filteredEmptyTitle} description={t.filteredEmptyReason} />
         ) : enTablero ? (
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {columns.map((columna) => (
-              <section key={columna.state} className="w-64 shrink-0">
-                <header className="mb-2">
-                  <StatusBadge tone={jobTone(columna.state)}>
-                    {es.naming.states.job[columna.state]}
-                  </StatusBadge>
-                  <p className="mt-1 text-xs text-text-secondary">
-                    {t.boardColumnCount(columna.jobs.length)}
-                  </p>
-                </header>
-                {columna.jobs.length === 0 ? (
-                  <p className="rounded-[10px] border border-dashed border-border p-3 text-xs text-text-secondary">
-                    {t.boardColumnEmpty}
-                  </p>
-                ) : (
-                  <ul className="space-y-2">
-                    {columna.jobs.map((job) => (
-                      <li
-                        key={job.id}
-                        className="rounded-[12px] border border-border bg-surface p-3 shadow-sm"
-                      >
-                        <Link
-                          href={hrefTrabajo(job.id)}
-                          className="text-sm font-semibold text-primary-dark hover:underline"
-                        >
-                          {job.code}
-                        </Link>
-                        <p className="mt-1 text-xs text-text">
-                          {establishmentName.get(job.establishment_id) ?? "—"}
-                        </p>
-                        <p className="mt-1.5 flex items-center gap-1.5 text-xs text-text-secondary">
-                          {job.assigned_to ? (
-                            <>
-                              <Avatar name={personName.get(job.assigned_to) ?? "—"} size={20} />
-                              {personName.get(job.assigned_to) ?? "—"}
-                            </>
-                          ) : (
-                            t.unassigned
-                          )}
-                        </p>
-                        {job.priority_rank === null ? null : (
-                          <p className="text-xs text-text-secondary">
-                            {t.priorityColumn}: {t.priorityShort(job.priority_rank)}
-                          </p>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            ))}
-
-            {/* Un trabajo con un estado fuera de los once no debería existir
-                —la base lo impide con un CHECK—, pero si existiera, esconderlo
-                sería hacerlo desaparecer de la bandeja del equipo. */}
-            {unknown.length === 0 ? null : (
-              <section className="w-64 shrink-0">
-                <header className="mb-2">
-                  <StatusBadge tone="danger">{t.boardUnknownTitle}</StatusBadge>
-                  <p className="mt-1 text-xs text-text-secondary">{t.boardUnknownHint}</p>
-                </header>
-                <ul className="space-y-2">
-                  {unknown.map((job) => (
-                    <li
-                      key={job.id}
-                      className="rounded-[12px] border border-border bg-surface p-3"
-                    >
-                      <Link href={hrefTrabajo(job.id)} className="text-cuotly-green underline">
-                        {job.code}
-                      </Link>
-                      <p className="mt-1 text-xs text-text-secondary">{job.state}</p>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-          </div>
+          <JobBoard
+            columns={columns}
+            unknown={unknown}
+            deadlines={deadlinesByJob(atencion?.items ?? [])}
+            establishmentName={establishmentName}
+            personName={personName}
+            href={hrefTrabajo}
+            tone={jobTone}
+          />
         ) : (
           <Table
             footer={
