@@ -1,6 +1,7 @@
 import { Card, EmptyState } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import { canEditMessage, resolveAuthorLabel } from "@/core/messages";
-import { enZona } from "@/i18n/dates";
+import { instanteRelativo } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -82,6 +83,7 @@ export async function Conversation({
   emptyTitle,
   emptyReason,
   timeZone,
+  bare = false,
 }: {
   conversationId: string;
   establishmentId: string;
@@ -103,6 +105,11 @@ export async function Conversation({
   notice?: string;
   emptyTitle?: string;
   emptyReason?: string;
+  /**
+   * Sin tarjeta ni título: para la bandeja global (G07, G08), que ya pinta
+   * su propia cabecera encima de la conversación.
+   */
+  bare?: boolean;
 }) {
   // RN-MSG-09 · los adjuntos de estos mensajes. Se piden aquí y no en cada
   // pantalla que monta una conversación para que las dos —la del equipo y
@@ -147,8 +154,8 @@ export async function Conversation({
 
   const now = new Date();
 
-  return (
-    <Card title={title ?? es.clientArea.conversationTitle}>
+  const contenido = (
+    <>
       {notice ? (
         <p className="mb-4 rounded-lg border border-border bg-soft-surface p-3 text-sm text-text-secondary">
           {notice}
@@ -180,6 +187,8 @@ export async function Conversation({
               now,
               conversationIsReadOnly: readOnly,
             }).ok;
+            const firma = authorLabel(message);
+            const adjuntos = attachmentsByMessage.get(message.id) ?? [];
 
             return (
               <li key={message.id}>
@@ -189,33 +198,60 @@ export async function Conversation({
                   </p>
                 ) : null}
 
-                <div className="rounded-lg bg-soft-surface p-3">
-                  <p className="text-xs font-semibold text-text-secondary">
-                    {authorLabel(message)}
-                    {" · "}
-                    {enZona(message.createdAt, timeZone, {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })}
-                    {message.editCount > 0 ? ` · ${es.clientArea.edited}` : ""}
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap text-text">{message.body}</p>
-                  {(attachmentsByMessage.get(message.id) ?? []).length > 0 ? (
-                    <ul className="mt-2 space-y-1 text-sm">
-                      {(attachmentsByMessage.get(message.id) ?? []).map((file) => (
-                        <li key={file.id}>
-                          {/* RN-ARC-08: el enlace no apunta al objeto sino a una
-                              ruta que comprueba el permiso y firma una URL de
-                              unos minutos. */}
-                          <a href={`/api/archivos/${file.id}`} className="text-cuotly-green underline">
-                            {file.name}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
-
-                  {editable ? <EditMessageForm messageId={message.id} body={message.body} /> : null}
+                {/*
+                  Las burbujas del diseño: lo propio a la derecha en verde,
+                  lo de los demás a la izquierda con su inicial. La del
+                  equipo de mantenimiento, cuando quien mira es el
+                  restaurante, es un edificio y no la cara de nadie (P7).
+                */}
+                <div className={`flex items-start gap-3 ${message.isMine ? "flex-row-reverse" : ""}`}>
+                  {message.isMine ? null : (
+                    <span
+                      aria-hidden="true"
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft-surface text-sm font-semibold text-primary-dark"
+                    >
+                      {message.senderDisplay === "maintenance_team" ? (
+                        <Icon name="building" className="h-5 w-5" />
+                      ) : (
+                        (firma.trim()[0] ?? "·").toUpperCase()
+                      )}
+                    </span>
+                  )}
+                  <div className={`flex min-w-0 max-w-[85%] flex-col ${message.isMine ? "items-end" : "items-start"}`}>
+                    <p className="text-xs text-text-secondary">
+                      <span className="font-semibold text-text">{firma}</span>
+                      {" · "}
+                      {instanteRelativo(message.createdAt, timeZone, now, (hora) => hora)}
+                      {message.editCount > 0 ? ` · ${es.clientArea.edited}` : ""}
+                    </p>
+                    <div
+                      className={`mt-1 rounded-[12px] px-3.5 py-2.5 ${
+                        message.isMine ? "bg-cuotly-green/10" : "border border-border bg-surface"
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap text-sm text-text">{message.body}</p>
+                      {adjuntos.length > 0 ? (
+                        <ul className="mt-2 space-y-1.5">
+                          {adjuntos.map((file) => (
+                            <li key={file.id}>
+                              {/* RN-ARC-08: el enlace no apunta al objeto sino a una
+                                  ruta que comprueba el permiso y firma una URL de
+                                  unos minutos. */}
+                              <a
+                                href={`/api/archivos/${file.id}`}
+                                className="flex items-center gap-2 rounded-[10px] border border-border bg-surface px-3 py-2 text-sm text-text hover:bg-soft-surface"
+                              >
+                                <Icon name="document" className="h-5 w-5 shrink-0 text-danger" />
+                                <span className="min-w-0 flex-1 truncate font-medium">{file.name}</span>
+                                <Icon name="download" className="h-4 w-4 shrink-0 text-text-secondary" />
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </div>
+                    {editable ? <EditMessageForm messageId={message.id} body={message.body} /> : null}
+                  </div>
                 </div>
               </li>
             );
@@ -235,6 +271,8 @@ export async function Conversation({
           <PostMessageForm conversationId={conversationId} establishmentId={establishmentId} />
         </div>
       )}
-    </Card>
+    </>
   );
+
+  return bare ? <div>{contenido}</div> : <Card title={title ?? es.clientArea.conversationTitle}>{contenido}</Card>;
 }

@@ -61,11 +61,15 @@ export async function postMessage(
 
     if (fallo) {
       revalidatePath("/espacios", "layout");
+      // La bandeja global (G07, G08) monta esta misma conversación.
+      revalidatePath("/mensajes");
       return { error: fallo.message, sent: true };
     }
   }
 
   revalidatePath("/espacios", "layout");
+  // La bandeja global (G07, G08) monta esta misma conversación.
+  revalidatePath("/mensajes");
   return { error: null, sent: true };
 }
 
@@ -100,5 +104,7 @@ export async function editMessage(
   if (error) return { error: error.message, sent: false };
 
   revalidatePath("/espacios", "layout");
+  // La bandeja global (G07, G08) monta esta misma conversación.
+  revalidatePath("/mensajes");
   return { error: null, sent: true };
 }

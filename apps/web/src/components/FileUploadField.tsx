@@ -4,6 +4,7 @@ import { useId, useRef, useState } from "react";
 import { megabytesMaximos } from "@/core/files";
 
 import { ALLOWED_MIME_TYPES } from "@/core/files";
+import { Icon } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/client";
 import { FILES_BUCKET } from "@/services/file-storage";
@@ -31,6 +32,7 @@ export function FileUploadField({
   name,
   label = es.files.label,
   onUploaded,
+  compact = false,
 }: {
   establishmentId: string;
   category: string;
@@ -42,6 +44,12 @@ export function FileUploadField({
    * archivo ya está registrado y solo hay que refrescar la pantalla.
    */
   onUploaded?: (fileId: string) => void;
+  /**
+   * La caja de escribir de una conversación: un botón de clip en vez del
+   * bloque con rótulo y pista. El rótulo sigue ahí para el lector de
+   * pantalla, y la pista viaja como título del botón.
+   */
+  compact?: boolean;
 }) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +118,64 @@ export function FileUploadField({
     } finally {
       setSubiendo(false);
     }
+  }
+
+  if (compact) {
+    return (
+      <div className="flex shrink-0 flex-col items-start">
+        <input type="hidden" name={name} value={fileId} />
+        <label
+          htmlFor={inputId}
+          title={es.files.hint(megabytesMaximos())}
+          className={`flex h-10 w-10 cursor-pointer items-center justify-center rounded-[10px] border border-border text-text-secondary transition-colors hover:bg-soft-surface hover:text-text has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-cuotly-green ${
+            subiendo || fileId ? "pointer-events-none opacity-60" : ""
+          }`}
+        >
+          <Icon name="upload" className="h-5 w-5" />
+          <span className="sr-only">{label}</span>
+          <input
+            ref={inputRef}
+            id={inputId}
+            type="file"
+            disabled={subiendo || fileId !== ""}
+            accept={ALLOWED_MIME_TYPES.join(",")}
+            onChange={(evento) => {
+              const archivo = evento.target.files?.[0];
+              if (archivo) void alElegir(archivo);
+            }}
+            className="sr-only"
+          />
+        </label>
+        {fileId ? (
+          <p className="mt-1 flex max-w-48 items-center gap-2 text-xs text-text">
+            <span role="status" className="truncate">
+              {fileName}
+            </span>
+            <button
+              type="button"
+              className="shrink-0 text-cuotly-green underline"
+              onClick={() => {
+                setFileId("");
+                setFileName("");
+                limpiarEntrada();
+              }}
+            >
+              {es.files.remove}
+            </button>
+          </p>
+        ) : null}
+        {subiendo ? (
+          <p role="status" className="mt-1 text-xs text-text-secondary">
+            {es.files.uploading}
+          </p>
+        ) : null}
+        {error ? (
+          <p role="alert" className="mt-1 max-w-48 text-xs text-danger">
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
   }
 
   return (
