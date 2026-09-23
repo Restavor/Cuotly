@@ -35,6 +35,8 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { loadEstablishmentPhotos } from "@/services/establishment-photo";
 
+import { loadGroups } from "./groups-load";
+
 /**
  * M82 · los grupos de restaurantes del espacio, como el dibujo: a la
  * izquierda la lista con su buscador, a la derecha el grupo elegido
@@ -103,13 +105,9 @@ export default async function SpaceGroupsPage({
   const base = `/espacios/${slug}/restaurantes`;
   const action = `${base}/grupos`;
 
-  const [{ data: groups, error: groupsError }, { data: establishments }, { data: gestiona }] =
+  const [cargaDeGrupos, { data: establishments }, { data: gestiona }] =
     await Promise.all([
-    supabase
-      .from("groups")
-      .select("id, name, description, created_at")
-      .eq("space_id", space.id)
-      .order("name"),
+    loadGroups(supabase, space.id),
     supabase
       .from("establishments")
       .select("id, code, name, status, group_id, city")
@@ -119,7 +117,10 @@ export default async function SpaceGroupsPage({
     supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "manage_clients" }),
   ]);
 
-  const puedeGestionar = gestiona === true;
+  const groups = cargaDeGrupos.rows;
+  // Sin la migración 135 no se pintan los formularios: llamarían a
+  // funciones que todavía no existen (ver `loadGroups`).
+  const puedeGestionar = gestiona === true && cargaDeGrupos.rn20Available;
   const creando = puedeGestionar && query.nuevo === "1";
   const todos = establishments ?? [];
   const archivados = todos.filter((row) => row.status === "archived").length;
@@ -210,7 +211,7 @@ export default async function SpaceGroupsPage({
             <CreateGroupForm spaceId={space.id} slug={slug} idempotencyKey={randomUUID()} />
           </Card>
         </div>
-      ) : groupsError !== null ? (
+      ) : cargaDeGrupos.failed ? (
         // "No se pudo leer" no es "no hay ninguno" (CA-20).
         <Card>
           <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />

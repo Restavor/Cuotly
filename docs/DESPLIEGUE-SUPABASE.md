@@ -17,9 +17,10 @@ RN-EST-20) **está en el repositorio y NO en el proyecto real**. Añade a `group
 `is_establishment_owner_user()` (cerrada a `anon` y `authenticated`). No toca ninguna función que ya
 exista. En local, las 135 migraciones aplican desde cero y pasan las 75 suites en el orden de CI; la
 suite 75 caza tres mutaciones a propósito (no llevarse los archivos, dejar al propietario meterlo en un
-grupo ajeno, dejarle la facturación a quien pasa a Editor). **Hasta aplicarla, las pantallas de Grupos
-y "Cambiar de grupo" del panel fallan al llamar a esas funciones**, y la lista de grupos no puede leer
-`description`.
+grupo ajeno, dejarle la facturación a quien pasa a Editor). **Hasta aplicarla no se rompe nada, pero
+tampoco aparece lo nuevo**: la lista de Grupos vuelve a pedirse sin `description` y no pinta "Crear
+grupo", "Editar grupo" ni "Asignar establecimiento" (`grupos/groups-load.ts`), y "Cambiar de grupo" del
+panel no sale porque `establishment_move_targets()` no contesta.
 
 **Actualización del 23/09/2026 (cierre): ninguna.** La **134** (`restavor_nace_con_premium_plus_entero`)
 se aplicó por el MCP en una llamada, tras comprobar que `create_restavor_space()` en vivo coincidía con
