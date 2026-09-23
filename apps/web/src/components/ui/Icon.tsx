@@ -53,6 +53,8 @@ const PATHS = {
   chevronRight: "m10 6 6 6-6 6",
   arrowRight: "M4.5 12h15M13.5 6l6 6-6 6",
   arrowLeft: "M19.5 12h-15M10.5 6l-6 6 6 6",
+  arrowUp: "M12 19.5v-15M6 10.5l6-6 6 6",
+  arrowDown: "M12 4.5v15M6 13.5l6 6 6-6",
   // La flecha de bajar, que es la de `upload` del revés. No se reutiliza
   // aquella girada con una clase: subir y descargar aparecen en la misma
   // pantalla (los adjuntos de una solicitud) y dos flechas que solo se
