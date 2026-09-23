@@ -12,6 +12,7 @@ import {
 import { DEFAULT_TIMEZONE } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadSpaceInvoices } from "@/services/invoices";
 
 import { FinanceView, type FinanceChargeRow } from "./FinanceView";
 
@@ -60,6 +61,35 @@ export default async function FinancePage({
   const hoy = todayInTimeZone(new Date(), zona);
   const q = readFinanceParams(await searchParams, hoy);
 
+  const sinAcceso = (
+    <div className="space-y-6">
+      <PageHeader title={es.teamArea.finance.title} />
+      <NoPermissionState
+        title={es.teamArea.finance.noPermissionTitle}
+        description={es.teamArea.finance.noPermissionReason}
+      />
+    </div>
+  );
+
+  // M52 · Facturas: la pestaña espera al agente de facturas. Pide lo
+  // mismo que el resto de Finanzas (CA-03) y no lee ninguna cifra.
+  if (q.tab === "facturas") {
+    const { data: canManage } = await supabase.rpc("has_capability", {
+      p_space_id: space.id,
+      p_capability: "manage_finance",
+    });
+    if (canManage !== true) return sinAcceso;
+    return (
+      <FinanceView
+        slug={slug}
+        timeZone={zona}
+        month={q.month}
+        today={hoy}
+        content={{ tab: "facturas", invoices: await loadSpaceInvoices() }}
+      />
+    );
+  }
+
   // Los doce meses del gráfico acaban en el elegido; el elegido es el
   // último y el anterior, el penúltimo.
   const meses = monthsEndingAt(q.month, 12);
@@ -76,17 +106,7 @@ export default async function FinancePage({
   );
 
   const actual = tableros[tableros.length - 1];
-  if (actual.error || actual.fila === null) {
-    return (
-      <div className="space-y-6">
-        <PageHeader title={es.teamArea.finance.title} />
-        <NoPermissionState
-          title={es.teamArea.finance.noPermissionTitle}
-          description={es.teamArea.finance.noPermissionReason}
-        />
-      </div>
-    );
-  }
+  if (actual.error || actual.fila === null) return sinAcceso;
   const anterior = tableros[tableros.length - 2];
 
   // Resumen: lo emitido en el mes. Cobros: lo emitido en los doce meses.
@@ -166,32 +186,38 @@ export default async function FinancePage({
       timeZone={zona}
       month={q.month}
       today={hoy}
-      tab={q.tab}
-      summary={{
-        collected: Number(fila.collected_cents),
-        collectedChange: percentChange(
-          Number(fila.collected_cents),
-          anterior?.fila ? Number(anterior.fila.collected_cents) : null,
-        ),
-        pending: Number(fila.pending_cents),
-        pendingCount: cuenta.pending,
-        overdue: Number(fila.overdue_cents),
-        overdueCount: cuenta.overdue,
-        issued: Number(fila.forecast_total_cents),
-        recurring: Number(fila.recurring_monthly_total_cents),
-        monthly: tableros.map((tb) => ({
-          month: tb.mes,
-          collected: tb.fila ? Number(tb.fila.collected_cents) : null,
-        })),
-      }}
-      rows={rows}
-      nonpayment={(nonpayment ?? []).map((n) => ({
-        establishmentId: n.establishment_id,
-        name: n.establishment_name,
-        oldestDueAt: n.oldest_due_at,
-        outstandingCents: Number(n.outstanding_cents),
-        stage: n.stage,
-      }))}
+      content={
+        q.tab === "cobros"
+          ? { tab: "cobros", rows }
+          : {
+              tab: "resumen",
+              rows,
+              summary: {
+                collected: Number(fila.collected_cents),
+                collectedChange: percentChange(
+                  Number(fila.collected_cents),
+                  anterior?.fila ? Number(anterior.fila.collected_cents) : null,
+                ),
+                pending: Number(fila.pending_cents),
+                pendingCount: cuenta.pending,
+                overdue: Number(fila.overdue_cents),
+                overdueCount: cuenta.overdue,
+                issued: Number(fila.forecast_total_cents),
+                recurring: Number(fila.recurring_monthly_total_cents),
+                monthly: tableros.map((tb) => ({
+                  month: tb.mes,
+                  collected: tb.fila ? Number(tb.fila.collected_cents) : null,
+                })),
+              },
+              nonpayment: (nonpayment ?? []).map((n) => ({
+                establishmentId: n.establishment_id,
+                name: n.establishment_name,
+                oldestDueAt: n.oldest_due_at,
+                outstandingCents: Number(n.outstanding_cents),
+                stage: n.stage,
+              })),
+            }
+      }
     />
   );
 }

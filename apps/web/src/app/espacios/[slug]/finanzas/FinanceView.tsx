@@ -23,6 +23,7 @@ import type { FinanceTab } from "@/core/finance-summary";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { euros } from "@/i18n/money";
+import type { InvoiceListing } from "@/services/invoices";
 
 const t = es.teamArea.finance;
 type ChargeStateKey = keyof typeof es.teamArea.chargeStates;
@@ -63,6 +64,25 @@ export type FinanceSummaryData = {
   readonly monthly: readonly { readonly month: string; readonly collected: number | null }[];
 };
 
+export type FinanceNonpaymentRow = {
+  readonly establishmentId: string;
+  readonly name: string;
+  readonly oldestDueAt: string;
+  readonly outstandingCents: number;
+  readonly stage: string;
+};
+
+/** Lo que enseña cada pestaña: cada una lee solo lo suyo. */
+export type FinanceContent =
+  | {
+      readonly tab: "resumen";
+      readonly summary: FinanceSummaryData;
+      readonly rows: readonly FinanceChargeRow[];
+      readonly nonpayment: readonly FinanceNonpaymentRow[];
+    }
+  | { readonly tab: "cobros"; readonly rows: readonly FinanceChargeRow[] }
+  | { readonly tab: "facturas"; readonly invoices: InvoiceListing };
+
 /**
  * M16 · Finanzas del espacio, como el dibujo: el mes arriba a la derecha,
  * las pestañas, tres cifras, el gráfico de cobros mensuales, el estado de
@@ -74,26 +94,15 @@ export function FinanceView({
   timeZone,
   month,
   today,
-  tab,
-  summary,
-  rows,
-  nonpayment,
+  content,
 }: {
   slug: string;
   timeZone: string;
   month: string;
   today: string;
-  tab: FinanceTab;
-  summary: FinanceSummaryData;
-  rows: readonly FinanceChargeRow[];
-  nonpayment: readonly {
-    readonly establishmentId: string;
-    readonly name: string;
-    readonly oldestDueAt: string;
-    readonly outstandingCents: number;
-    readonly stage: string;
-  }[];
+  content: FinanceContent;
 }) {
+  const tab = content.tab;
   const base = `/espacios/${slug}/finanzas`;
   const esteMes = today.slice(0, 7);
   const enlace = (cambios: { month?: string; tab?: FinanceTab }) => {
@@ -132,10 +141,50 @@ export function FinanceView({
           { key: "resumen", label: t.tabSummary, href: enlace({ tab: "resumen" }) },
           { key: "cobros", label: t.tabCharges, href: enlace({ tab: "cobros" }) },
           { key: "presupuestos", label: t.tabQuotes, href: `${base}/presupuestos` },
+          { key: "facturas", label: t.tabInvoices, href: enlace({ tab: "facturas" }) },
         ]}
       />
 
-      {tab === "resumen" ? (
+      {content.tab === "facturas" ? (
+        <Card>
+          {content.invoices.kind === "failed" ? (
+            <EmptyState title={t.invoicesFailedTitle} description={t.invoicesFailedReason} />
+          ) : (
+            <EmptyState
+              icon="document"
+              title={t.invoicesNotConnectedTitle}
+              description={t.invoicesNotConnectedReason}
+            />
+          )}
+        </Card>
+      ) : content.tab === "resumen" ? (
+        <ResumenDelMes content={content} timeZone={timeZone} month={month} base={base} enlace={enlace} nombreMes={nombreMes} tituloMes={tituloMes} />
+      ) : (
+        <TablaDeCobros title={t.allChargesTitle} rows={content.rows} timeZone={timeZone} base={base} />
+      )}
+    </div>
+  );
+}
+
+function ResumenDelMes({
+  content,
+  timeZone,
+  month,
+  base,
+  enlace,
+  nombreMes,
+  tituloMes,
+}: {
+  content: Extract<FinanceContent, { tab: "resumen" }>;
+  timeZone: string;
+  month: string;
+  base: string;
+  enlace: (cambios: { month?: string; tab?: FinanceTab }) => string;
+  nombreMes: (m: string, opciones: Intl.DateTimeFormatOptions) => string;
+  tituloMes: string;
+}) {
+  const { summary, rows, nonpayment } = content;
+  return (
         <>
           <section aria-label={tituloMes} className="grid gap-4 md:grid-cols-3">
             <StatCard
@@ -238,10 +287,6 @@ export function FinanceView({
             )}
           </Card>
         </>
-      ) : (
-        <TablaDeCobros title={t.allChargesTitle} rows={rows} timeZone={timeZone} base={base} />
-      )}
-    </div>
   );
 }
 

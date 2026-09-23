@@ -2278,6 +2278,14 @@ export const es = {
       tabSummary: "Resumen",
       tabCharges: "Cobros",
       tabQuotes: "Presupuestos",
+      // M52 · la pestaña existe y espera al agente de facturas
+      // (`services/invoices.ts`). Se dice qué falta, sin ejemplos.
+      tabInvoices: "Facturas",
+      invoicesNotConnectedTitle: "Las facturas todavía no están conectadas",
+      invoicesNotConnectedReason:
+        "Aquí aparecerán las facturas cuando se conecte el agente de facturas. Mientras tanto, los cobros y sus justificantes están en la pestaña Cobros.",
+      invoicesFailedTitle: "No se han podido leer las facturas",
+      invoicesFailedReason: "El agente de facturas no ha contestado. Vuelve a cargar en un momento.",
       monthLabel: "Mes",
       previousMonth: "Mes anterior",
       nextMonth: "Mes siguiente",

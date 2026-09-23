@@ -2046,3 +2046,17 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       **no se sabe**, porque su servidor contestaba `MS_UNAVAILABLE` **con un 200**, que es
       justo el caso que el adaptador trata como "no se sabe" y no como "no existe". Esas tres
       respuestas reales quedan fijadas en `vies.test.ts`.
+
+69. **Las facturas las hará un agente de facturas; Finanzas le deja el sitio** (23/09/2026).
+    Bosco, al revisar M16 y M17, sobre la pestaña "Facturas" del dibujo (M52): "deja un espacio
+    de facturas para cuando cree el agente de facturas poder conectarlo".
+
+    - **La pestaña existe y dice la verdad**: "Las facturas todavía no están conectadas", con el
+      motivo y dónde están mientras tanto los cobros. Sin facturas de ejemplo (CLAUDE.md).
+    - **Un solo punto de conexión**: `loadSpaceInvoices()` en `src/services/invoices.ts`. Hoy
+      devuelve `not_connected`; conectar el agente es añadir ahí la variante con sus facturas, y
+      la pestaña la pinta. Pide `manage_finance`, como el resto de Finanzas (CA-03).
+    - **No resuelve el bloque fiscal.** La numeración, la serie, el receptor y los impuestos de
+      una factura siguen aplazados (CLAUDE.md, "No inventes lo que está pendiente"): no se ha
+      creado ninguna tabla ni se ha fijado la forma de una factura. Lo decidirá quien construya
+      el agente, con esas reglas delante.

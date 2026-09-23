@@ -27,21 +27,21 @@ const resumen = {
 describe("M16 · Finanzas del espacio", () => {
   it("sin mes anterior con cobros no inventa un porcentaje (RN-FIN-02)", () => {
     render(
-      <FinanceView slug="s" timeZone="Europe/Madrid" month="2026-09" today="2026-09-23" tab="resumen" summary={resumen} rows={[]} nonpayment={[]} />,
+      <FinanceView slug="s" timeZone="Europe/Madrid" month="2026-09" today="2026-09-23" content={{ tab: "resumen", summary: resumen, rows: [], nonpayment: [] }} />,
     );
     expect(screen.getByText(t.noPreviousToCompare)).toBeTruthy();
   });
 
   it("un mes que no se pudo leer se dice, no se pinta a cero", () => {
     render(
-      <FinanceView slug="s" timeZone="Europe/Madrid" month="2026-09" today="2026-09-23" tab="resumen" summary={resumen} rows={[]} nonpayment={[]} />,
+      <FinanceView slug="s" timeZone="Europe/Madrid" month="2026-09" today="2026-09-23" content={{ tab: "resumen", summary: resumen, rows: [], nonpayment: [] }} />,
     );
     expect(screen.getByText(`Agosto de 2026: ${t.monthlyFailed}`)).toBeTruthy();
   });
 
   it("no deja avanzar más allá del mes de hoy", () => {
     render(
-      <FinanceView slug="s" timeZone="Europe/Madrid" month="2026-09" today="2026-09-23" tab="resumen" summary={resumen} rows={[]} nonpayment={[]} />,
+      <FinanceView slug="s" timeZone="Europe/Madrid" month="2026-09" today="2026-09-23" content={{ tab: "resumen", summary: resumen, rows: [], nonpayment: [] }} />,
     );
     expect(screen.getByLabelText(t.previousMonth)).toBeTruthy();
     expect(screen.queryByLabelText(t.nextMonth)).toBeNull();
@@ -66,6 +66,17 @@ const detalle = (cambios: Partial<ChargeDetailData> = {}): ChargeDetailData => (
   receipts: [{ fileId: "f", name: "j.pdf", side: "client", at: "2026-09-05T10:00:00Z" }],
   timeline: [{ kind: "issued", at: "2026-09-01T08:00:00Z" }],
   ...cambios,
+});
+
+describe("M52 · la pestaña Facturas, a la espera del agente", () => {
+  it("dice que no está conectada, sin ninguna factura de ejemplo (CLAUDE.md)", () => {
+    render(
+      <FinanceView slug="s" timeZone="Europe/Madrid" month="2026-09" today="2026-09-23" content={{ tab: "facturas", invoices: { kind: "not_connected" } }} />,
+    );
+    expect(screen.getByText(t.invoicesNotConnectedTitle)).toBeTruthy();
+    expect(screen.queryByRole("table")).toBeNull();
+    expect(screen.getByRole("link", { name: t.tabInvoices }).getAttribute("href")).toBe("/espacios/s/finanzas?tab=facturas");
+  });
 });
 
 describe("M17 · el detalle de un cobro", () => {

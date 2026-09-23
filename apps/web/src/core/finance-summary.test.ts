@@ -17,6 +17,7 @@ describe("M16 · el mes y la pestaña de Finanzas", () => {
     expect(readFinanceParams({ mes: "2026-13" }, "2026-09-23").month).toBe("2026-09");
     expect(readFinanceParams({ mes: "2026-10" }, "2026-09-23").month).toBe("2026-09");
     expect(readFinanceParams({ tab: "otra" }, "2026-09-23").tab).toBe("resumen");
+    expect(readFinanceParams({ tab: "facturas" }, "2026-09-23").tab).toBe("facturas");
   });
 
   it("el gráfico lleva los doce meses que acaban en el elegido, cruzando el año", () => {
