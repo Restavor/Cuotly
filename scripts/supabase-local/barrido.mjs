@@ -1,7 +1,7 @@
 // Barrido a 390 px: por cada ruta, si la página se sale por la derecha, qué
 // elemento lo causa, y una captura de página entera.
 //
-//   node scripts/supabase-local/barrido.mjs <correo> <carpeta> <ruta> [<ruta>…]
+//   node scripts/supabase-local/barrido.mjs <correo|-> <carpeta> <ruta> [<ruta>…]
 //
 // Necesita la web de arrancar.sh en marcha. @playwright/test se toma de
 // apps/web, que es quien lo tiene instalado.
@@ -10,8 +10,12 @@ const { chromium } = createRequire(new URL("../../apps/web/package.json", import
 const [email, out, ...routes] = process.argv.slice(2);
 const b = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });
 const p = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
-await p.goto("http://localhost:3999/login"); await p.fill('input[type="email"]', email); await p.fill('input[type="password"]', "Cuotly-demo-2026");
-await Promise.all([p.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 60000 }), p.click('button[type="submit"]')]);
+// Con "-" como correo no se entra: para las pantallas públicas (acceso,
+// invitaciones, sesión caducada).
+if (email !== "-") {
+  await p.goto("http://localhost:3999/login"); await p.fill('input[type="email"]', email); await p.fill('input[type="password"]', "Cuotly-demo-2026");
+  await Promise.all([p.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 60000 }), p.click('button[type="submit"]')]);
+}
 for (const route of routes) {
   try {
     await p.goto("http://localhost:3999" + route, { waitUntil: "networkidle", timeout: 120000 });

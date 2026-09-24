@@ -67,7 +67,7 @@ export function StatusHero({
         <Icon name={HERO_ICON[tone]} className="h-10 w-10" strokeWidth={2.2} />
       </span>
       <div className="min-w-0 pt-1.5">
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-text">{title}</h1>
+        <h1 className="text-[22px] font-bold leading-tight tracking-tight text-text sm:text-[28px]">{title}</h1>
         <p className="mt-1 text-[17px] text-text-secondary">{body}</p>
       </div>
     </div>
@@ -212,7 +212,7 @@ export function WhatHappensNext() {
   return (
     <aside className="flex flex-col border-t border-border bg-soft-surface/60 px-6 py-8 sm:px-10 lg:border-l lg:border-t-0 lg:py-14">
       <Icon name="document" aria-hidden="true" className="h-[84px] w-[84px] text-primary-dark" strokeWidth={1.1} />
-      <h2 className="mt-8 text-[28px] font-bold tracking-tight text-primary-dark">{t.nextTitle}</h2>
+      <h2 className="mt-6 text-[20px] font-bold tracking-tight text-primary-dark sm:mt-8 sm:text-[28px]">{t.nextTitle}</h2>
       <ol className="mt-7 space-y-8">
         {t.nextSteps.map((step, i) => (
           <li key={step.title} className="flex gap-5">
@@ -266,16 +266,16 @@ export function StateCard({
   children: ReactNode;
 }) {
   return (
-    <section className="mx-auto mt-6 max-w-[640px] rounded-card border border-border bg-surface px-6 py-12 text-center sm:px-16">
+    <section className="mx-auto mt-6 max-w-[640px] rounded-card border border-border bg-surface px-5 py-8 text-center sm:px-16 sm:py-12">
       <span aria-hidden="true" className="relative mx-auto inline-flex text-primary-dark">
-        <Icon name={illustration} className="h-[104px] w-[104px]" strokeWidth={1.1} />
-        <span className="absolute -bottom-1 -right-5 flex h-14 w-14 items-center justify-center rounded-full bg-surface">
-          <Icon name={badge} className="h-14 w-14" strokeWidth={1.3} />
+        <Icon name={illustration} className="h-16 w-16 sm:h-[104px] sm:w-[104px]" strokeWidth={1.1} />
+        <span className="absolute -bottom-1 -right-4 flex h-9 w-9 items-center justify-center rounded-full bg-surface sm:-right-5 sm:h-14 sm:w-14">
+          <Icon name={badge} className="h-9 w-9 sm:h-14 sm:w-14" strokeWidth={1.3} />
         </span>
       </span>
-      <h1 className="mt-8 text-[30px] font-bold leading-tight tracking-tight text-text">{title}</h1>
-      <p className="mx-auto mt-3 max-w-[440px] text-[18px] text-text-secondary">{body}</p>
-      <div className="mx-auto mt-8 max-w-[440px] space-y-3">{children}</div>
+      <h1 className="mt-5 text-[22px] font-bold leading-tight tracking-tight text-text sm:mt-8 sm:text-[30px]">{title}</h1>
+      <p className="mx-auto mt-2 max-w-[440px] text-[15px] text-text-secondary sm:mt-3 sm:text-[18px]">{body}</p>
+      <div className="mx-auto mt-6 max-w-[440px] space-y-3 sm:mt-8">{children}</div>
     </section>
   );
 }

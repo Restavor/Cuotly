@@ -132,7 +132,7 @@ export function AccessRequestForm({
       ) : null}
 
       <AccessPill>{t.firstAccess}</AccessPill>
-      <h1 className="mt-4 text-[34px] font-bold leading-tight tracking-tight text-text">{t.title}</h1>
+      <h1 className="mt-3 text-[24px] font-bold leading-tight tracking-tight text-text sm:mt-4 sm:text-[34px]">{t.title}</h1>
       <p className="mt-1 text-[17px] text-text-secondary">{t.subtitle}</p>
 
       <form action={formAction} onChange={() => setTocado(true)} noValidate className="mt-7">
@@ -435,7 +435,7 @@ function LeaveDialog({ onStay, onLeave }: { onStay: () => void; onLeave: () => v
         >
           <Icon name="alert" className="h-11 w-11" strokeWidth={1.8} />
         </span>
-        <h2 id={tituloId} className="mt-5 text-[26px] font-bold tracking-tight text-text">
+        <h2 id={tituloId} className="mt-4 text-[20px] font-bold tracking-tight text-text sm:mt-5 sm:text-[26px]">
           {t.leaveTitle}
         </h2>
         <p className="mx-auto mt-2 max-w-[420px] text-[17px] text-text-secondary">{t.leaveBody}</p>

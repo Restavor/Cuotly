@@ -43,22 +43,22 @@ export async function AccessShell({
             href="/"
             className="inline-flex flex-col items-end rounded-lg leading-none focus:outline focus:outline-2 focus:outline-cuotly-green"
           >
-            <span className="text-[30px] font-bold tracking-tight text-primary">{es.common.appName}</span>
-            <span className="mt-0.5 text-[11px] font-semibold text-primary-dark">{es.common.appOwner}</span>
+            <span className="text-[24px] font-bold tracking-tight text-primary sm:text-[30px]">{es.common.appName}</span>
+            <span className="mt-0.5 text-[10px] font-semibold text-primary-dark sm:text-[11px]">{es.common.appOwner}</span>
           </Link>
 
-          <nav aria-label={es.common.appName} className="flex items-center gap-4 text-[15px] text-text sm:gap-6">
+          <nav aria-label={es.common.appName} className="flex items-center gap-3 whitespace-nowrap text-[13px] text-text sm:gap-6 sm:text-[15px]">
             {user ? (
               <>
                 <Link href="/ayuda" className="inline-flex items-center gap-2 hover:text-primary">
-                  <Icon name="help" aria-hidden="true" className="h-[22px] w-[22px]" />
+                  <Icon name="help" aria-hidden="true" className="h-[18px] w-[18px] sm:h-[22px] sm:w-[22px]" />
                   {t.help}
                 </Link>
                 <Link href="/cuenta" className="inline-flex items-center gap-2 hover:text-primary">
-                  <Icon name="person" aria-hidden="true" className="h-[22px] w-[22px]" />
+                  <Icon name="person" aria-hidden="true" className="h-[18px] w-[18px] sm:h-[22px] sm:w-[22px]" />
                   {t.myAccount}
                 </Link>
-                <span aria-hidden="true" className="h-8 w-px bg-border" />
+                <span aria-hidden="true" className="h-6 w-px bg-border sm:h-8" />
                 <form action={signOut}>
                   <button type="submit" className="hover:text-primary">
                     {t.signOut}
@@ -68,12 +68,12 @@ export async function AccessShell({
             ) : (
               <>
                 <a href={contactMailto()} className="inline-flex items-center gap-2 hover:text-primary">
-                  <Icon name="help" aria-hidden="true" className="h-[22px] w-[22px]" />
+                  <Icon name="help" aria-hidden="true" className="h-[18px] w-[18px] sm:h-[22px] sm:w-[22px]" />
                   {t.help}
                 </a>
-                <span aria-hidden="true" className="h-8 w-px bg-border" />
+                <span aria-hidden="true" className="h-6 w-px bg-border sm:h-8" />
                 <Link href="/login" className="inline-flex items-center gap-2 hover:text-primary">
-                  <Icon name="person" aria-hidden="true" className="h-[22px] w-[22px]" />
+                  <Icon name="person" aria-hidden="true" className="h-[18px] w-[18px] sm:h-[22px] sm:w-[22px]" />
                   {t.signIn}
                 </Link>
               </>
@@ -84,7 +84,7 @@ export async function AccessShell({
 
       <main className="mx-auto max-w-[1320px] px-4 pb-12 pt-5 sm:px-8 lg:px-[100px]">
         {crumb ? (
-          <nav aria-label={t.crumbRoot} className="mb-4 text-[15px] text-text-secondary">
+          <nav aria-label={t.crumbRoot} className="mb-3 text-[13px] text-text-secondary sm:mb-4 sm:text-[15px]">
             <Link href="/" className="hover:text-primary">
               {t.crumbRoot}
             </Link>
