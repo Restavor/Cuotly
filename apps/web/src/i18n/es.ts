@@ -4630,6 +4630,8 @@ export const es = {
     brandHint:
       "El sistema visual, la paleta y la firma no se personalizan (§124): un único modo claro y una única densidad.",
     logoLabel: "Logotipo",
+    logoChoose: "Elegir imagen",
+    logoNoFile: "Ninguna imagen elegida",
     logoHint:
       "JPG, PNG o WebP, hasta 2 MB. El resto de la identidad visual no se personaliza.",
     logoPresent: "Hay un logotipo guardado; si subes otro, lo sustituye.",
@@ -6119,6 +6121,7 @@ export const es = {
     badge: "Próximamente",
     description:
       "Todavía no está disponible. Cuando lo esté, se anunciará aquí: de momento esta pantalla no hace nada y no hay nada que configurar.",
+    backHome: "Volver a Inicio",
   },
 
   /**

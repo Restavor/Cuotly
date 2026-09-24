@@ -456,7 +456,10 @@ function WeekTable({ title, hint, week }: { title: string; hint: string; week: r
   return (
     <Card title={title} subtitle={hint} className="min-w-0">
       <div className="relative overflow-x-auto">
-        <Table>
+        {/* Tres columnas cortas: en el teléfono sigue siendo tabla, una
+            fila por día, como en el diseño (PDF móvil, p. 102). Apilada
+            eran siete tarjetas para decir un horario. */}
+        <Table stack={false}>
           <TableHead>
             <TableRow>
               <TableHeaderCell>{tv.dayColumn}</TableHeaderCell>
@@ -548,7 +551,7 @@ async function ScheduleTab({
             <p className="text-sm text-text-secondary">{tv.holidaysEmpty}</p>
           ) : (
             <div className="relative overflow-x-auto" data-testid="ajustes-festivos">
-              <Table>
+              <Table stack={false}>
                 <TableHead>
                   <TableRow>
                     <TableHeaderCell>{tv.holidayDate}</TableHeaderCell>

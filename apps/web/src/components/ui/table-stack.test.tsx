@@ -71,5 +71,12 @@ describe("P3 · la tabla en el teléfono", () => {
     const tabla = screen.getByRole("table");
     expect(tabla).not.toHaveAttribute("data-apilada");
     expect(tabla.style.getPropertyValue("--tabla-c1")).toBe("");
+    // Y la marca de rejilla, que estrecha las celdas en el teléfono.
+    expect(tabla).toHaveAttribute("data-rejilla");
+  });
+
+  it("una tabla apilada no lleva la marca de rejilla", () => {
+    render(<Ejemplo />);
+    expect(screen.getByRole("table")).not.toHaveAttribute("data-rejilla");
   });
 });

@@ -11,10 +11,12 @@ import { es } from "@/i18n/es";
  * avatar que pintar. Esto es para las pantallas del equipo.
  */
 export function initials(name: string): string {
+  // Solo las palabras que empiezan por letra: "Marta Gil (trabajadora)"
+  // daba «M(» por tomar la inicial del paréntesis.
   const partes = name
     .trim()
     .split(/\s+/)
-    .filter((parte) => parte !== "");
+    .filter((parte) => /^\p{L}/u.test(parte));
   if (partes.length === 0) return "?";
   const primera = partes[0]?.[0] ?? "";
   const segunda = partes.length > 1 ? (partes[partes.length - 1]?.[0] ?? "") : "";

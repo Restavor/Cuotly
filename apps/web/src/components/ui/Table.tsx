@@ -25,7 +25,9 @@ export function Table({
    * vez de una tabla que se desplaza de lado dentro de su caja.
    *
    * `false` la deja como tabla también en el teléfono: para una rejilla
-   * que solo se entiende entera (un calendario, una matriz de días).
+   * que solo se entiende entera (un calendario, una matriz de días). Por
+   * debajo de `sm` sus celdas se estrechan (`data-rejilla`) para que una
+   * semana de siete columnas quepa sin desplazarse, como en el PDF.
    */
   stack?: boolean;
 }) {
@@ -57,6 +59,7 @@ export function Table({
         <table
           role="table"
           data-apilada={stack ? "" : undefined}
+          data-rejilla={stack ? undefined : ""}
           style={variables as CSSProperties}
           className="w-full border-collapse text-left text-sm"
         >

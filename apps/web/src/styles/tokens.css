@@ -160,4 +160,15 @@
   table[data-apilada] > tbody > tr > td:nth-child(10)::before { content: var(--tabla-c10, none); }
   table[data-apilada] > tbody > tr > td:nth-child(11)::before { content: var(--tabla-c11, none); }
   table[data-apilada] > tbody > tr > td:nth-child(12)::before { content: var(--tabla-c12, none); }
+
+  /* Una rejilla (`stack={false}`: la semana de disponibilidad) sigue siendo
+     tabla, pero con las celdas estrechas: siete días y el nombre caben en
+     los 390 px sin desplazarse de lado. */
+  table[data-rejilla] :is(th, td) {
+    padding: 0.5rem 0.25rem;
+  }
+
+  table[data-rejilla] :is(th, td):first-child {
+    padding-left: 0.75rem;
+  }
 }

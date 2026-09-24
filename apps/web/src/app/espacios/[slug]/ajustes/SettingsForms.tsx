@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button, Field, Select, TextArea } from "@/components/ui";
 import { es } from "@/i18n/es";
@@ -382,21 +382,39 @@ export function TaxRateForm({ spaceId, percent }: { spaceId: string; percent: nu
 /** §9 paso 2, §124 · el logotipo. Lo demás de la identidad visual no se toca. */
 export function SpaceLogoForm({ spaceId, hasLogo }: { spaceId: string; hasLogo: boolean }) {
   const [state, action, pending] = useActionState(saveSpaceLogo, INITIAL_SETTINGS);
+  const [elegido, setElegido] = useState<string | null>(null);
 
   return (
     <form action={action} className="mb-2">
       <input type="hidden" name="spaceId" value={spaceId} />
-      <label className="mb-1 block text-sm font-semibold text-text" htmlFor={`logo-${spaceId}`}>
+      <p className="mb-1 block text-sm font-semibold text-text" id={`logo-${spaceId}-rotulo`}>
         {es.settings.logoLabel}
-      </label>
-      <input
-        id={`logo-${spaceId}`}
-        type="file"
-        name="logo"
-        accept="image/jpeg,image/png,image/webp"
-        className="mb-3 block w-full text-sm text-text-secondary"
-        required
-      />
+      </p>
+      {/*
+        Un `<input type="file">` disfrazado de botón, como en la foto del
+        restaurante (PhotoForm): el campo suelto lo pinta el navegador en
+        su idioma —"Choose File · No file chosen" en uno en inglés— y sin
+        los tokens del sistema. El `<label>` es el control: se llega con el
+        tabulador y se abre con Enter.
+      */}
+      <div className="mb-3 flex flex-wrap items-center gap-3">
+        <label className="inline-flex cursor-pointer items-center rounded-field border border-border bg-surface px-4 py-2 text-sm font-medium text-text transition-colors hover:bg-soft-surface focus-within:outline focus-within:outline-2 focus-within:outline-cuotly-green">
+          {es.settings.logoChoose}
+          <input
+            id={`logo-${spaceId}`}
+            type="file"
+            name="logo"
+            accept="image/jpeg,image/png,image/webp"
+            aria-labelledby={`logo-${spaceId}-rotulo`}
+            className="sr-only"
+            required
+            onChange={(evento) => setElegido(evento.target.files?.[0]?.name ?? null)}
+          />
+        </label>
+        <span className="min-w-0 text-sm text-text-secondary [overflow-wrap:anywhere]">
+          {elegido ?? es.settings.logoNoFile}
+        </span>
+      </div>
       <p className="mb-3 text-sm text-text-secondary">
         {hasLogo ? es.settings.logoPresent : es.settings.logoAbsent} {es.settings.logoHint}
       </p>

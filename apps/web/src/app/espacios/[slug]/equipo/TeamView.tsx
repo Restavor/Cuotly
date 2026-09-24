@@ -784,14 +784,21 @@ function WeekGrid({
           className="relative overflow-x-auto"
           data-testid="equipo-disponibilidad"
         >
-          <Table>
+          <Table stack={false}>
             <TableHead>
               <TableRow>
                 <TableHeaderCell>{t.members.memberColumn}</TableHeaderCell>
                 {days.map((d) => (
                   <TableHeaderCell key={d}>
+                    {/* En el teléfono, el día de la semana encima del
+                        número: así caben las siete columnas (PDF, p. 93). */}
                     <span className="block text-center capitalize">
-                      {cabecera(d)}
+                      <span className="block sm:inline">
+                        {enZona(d, "UTC", { weekday: "short" })}
+                      </span>{" "}
+                      <span className="block sm:inline">
+                        {enZona(d, "UTC", { day: "numeric" })}
+                      </span>
                     </span>
                   </TableHeaderCell>
                 ))}
@@ -801,7 +808,7 @@ function WeekGrid({
               {people.map((p) => (
                 <TableRow key={p.userId}>
                   <TableCell>
-                    <div className="whitespace-nowrap text-sm text-text">
+                    <div className="text-xs text-text [overflow-wrap:anywhere] sm:whitespace-nowrap sm:text-sm">
                       {p.name}
                     </div>
                   </TableCell>
