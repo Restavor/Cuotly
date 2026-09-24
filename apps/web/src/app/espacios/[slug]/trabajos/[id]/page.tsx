@@ -445,7 +445,7 @@ export default async function TeamJobDetailPage({
       */}
       <header>
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+          <h1 className="text-[22px] font-bold sm:text-[26px] leading-tight tracking-tight text-primary-dark">
             {request ? requestHeadline(request.description) : es.teamArea.jobs.detailTitle}
           </h1>
           <span className="rounded-[8px] bg-soft-surface px-2.5 py-1 text-sm font-semibold text-text-secondary">

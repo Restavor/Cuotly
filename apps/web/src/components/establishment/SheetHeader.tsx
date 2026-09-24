@@ -168,10 +168,15 @@ export function SheetHeaderCard({
                   ? es.teamArea.establishments.noPlan
                   : t.headerPlan(header.planName)}
               </span>
+              {/*
+                Lo incluido no se escribe en el teléfono: ahí ocupaba tres
+                líneas de cabecera y el diseño móvil (página 24) no lo pone.
+                Está entero en el Resumen, justo debajo, con lo gastado.
+              */}
               {bolsas.length === 0 ? null : (
                 <>
                   <span aria-hidden="true" className="hidden text-border sm:inline">|</span>
-                  <span>
+                  <span className="hidden sm:inline">
                     {bolsas
                       .map((bag) => t.headerIncluded[bag.category as CategoryKey](bag.included))
                       .join(" · ")}

@@ -51,7 +51,12 @@ if ! psql "$DB" -Atc "select 1 from public.spaces where slug = 'demo'" 2>/dev/nu
 fi
 
 echo "· PostgREST"
-if ! docker info >/dev/null 2>&1; then (dockerd >"$LOGS/dockerd.log" 2>&1 &); sleep 6; fi
+if ! docker info >/dev/null 2>&1; then
+  (dockerd >"$LOGS/dockerd.log" 2>&1 &)
+  # Espera a que el demonio conteste: tras reiniciar el contenedor tarda más
+  # de los seis segundos que se le daban, y PostgREST no arrancaba.
+  for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
+fi
 docker rm -f cuotly-postgrest >/dev/null 2>&1 || true
 docker run -d --name cuotly-postgrest --network host \
   -e PGRST_DB_URI="postgres://authenticator@127.0.0.1:5433/cuotly" \

@@ -98,7 +98,7 @@ export async function TeamMenuEditor({
           {t.editor.back}
         </Link>
         <div>
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">{t.editor.title}</h1>
+          <h1 className="text-[22px] font-bold sm:text-[26px] leading-tight tracking-tight text-primary-dark">{t.editor.title}</h1>
           <p className="mt-1 text-sm text-text-secondary">{t.editor.establishment(establishmentName)}</p>
         </div>
       </header>

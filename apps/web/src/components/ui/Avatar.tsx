@@ -45,7 +45,7 @@ export function Avatar({
 /** Avatar y nombre al lado, como en una celda de tabla. */
 export function PersonCell({ name, size = 28 }: { name: string; size?: number }) {
   return (
-    <span className="inline-flex min-w-0 items-center gap-2">
+    <span className="inline-flex min-w-0 max-w-full items-center gap-2">
       <Avatar name={name} size={size} />
       <span className="truncate text-sm text-text">{name}</span>
     </span>

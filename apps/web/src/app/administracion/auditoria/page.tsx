@@ -11,7 +11,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
-import { auditChanges } from "@/core/audit";
+import { auditChanges, auditListedChanges } from "@/core/audit";
 import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -98,7 +98,7 @@ export default async function AdminAuditPage({
           </TableHead>
           <TableBody>
             {visibles.map((row) => {
-              const cambios = auditChanges(row.old_value, row.new_value);
+              const cambios = auditListedChanges(auditChanges(row.old_value, row.new_value));
               return (
                 <TableRow key={row.id}>
                   <TableCell>{enZona(row.created_at, CUOTLY_TIMEZONE, { dateStyle: "short", timeStyle: "short" })}</TableCell>

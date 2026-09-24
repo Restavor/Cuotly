@@ -32,7 +32,7 @@ import {
 import type { OpportunitiesView } from "./opportunities-load";
 import { ShareFileButton } from "./ShareFileButton";
 import { UploadFileForm } from "./UploadFileForm";
-import { AUDIT_FAMILIES, auditEntityLink, auditFamily } from "@/core/audit";
+import { AUDIT_FAMILIES, auditEntityLink, auditFamily, auditListedChanges } from "@/core/audit";
 import { MAX_FILE_SIZE_BYTES, fileTypeLabel } from "@/core/files";
 import { isQuoteState, quoteTone } from "@/core/quotes";
 import { isMenuState, menuTone } from "@/core/menu-states";
@@ -411,20 +411,25 @@ function CycleBagCard({ bag }: { bag: CycleUsage }) {
   const devueltos = bag.used < 0 ? -bag.used : 0;
 
   return (
-    <div className="rounded-lg bg-soft-surface p-3">
-      <p className="text-xs text-text-secondary">
-        {es.naming.categories[bag.category as CategoryKey] ?? bag.category}
-      </p>
-      <p className="text-sm font-semibold text-primary-dark">
-        {t.cycleUsed(Math.max(0, bag.used), bag.included)}
-      </p>
+    // En el teléfono cada categoría es una fila fina —nombre y "8 de 25"
+    // arriba, la barra debajo—, como "Consumo del plan" en la página 24
+    // del diseño móvil; desde `sm`, la tarjeta de siempre.
+    <div className="rounded-lg bg-soft-surface px-3 py-2 sm:p-3">
+      <div className="flex items-baseline justify-between gap-2 sm:block">
+        <p className="text-xs text-text-secondary">
+          {es.naming.categories[bag.category as CategoryKey] ?? bag.category}
+        </p>
+        <p className="text-sm font-semibold text-primary-dark">
+          {t.cycleUsed(Math.max(0, bag.used), bag.included)}
+        </p>
+      </div>
 
       {bag.percentUsed === null ? (
         <p className="mt-1 text-xs text-text-secondary">{t.cycleNotIncluded}</p>
       ) : (
         <>
           <div
-            className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-border"
+            className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-border sm:mt-2"
             role="progressbar"
             aria-valuenow={bag.percentUsed}
             aria-valuemin={0}
@@ -438,7 +443,13 @@ function CycleBagCard({ bag }: { bag: CycleUsage }) {
             obliga a estimar a ojo cuánto queda, y a quien no la ve no le
             dice nada: el número es el dato y la barra, su forma.
           */}
-          <p className="mt-1 flex items-baseline justify-between gap-2 text-xs text-text-secondary">
+          {/* En el teléfono esta línea solo sale cuando dice algo que la
+              barra no: que está agotada o que hubo devoluciones. */}
+          <p
+            className={`mt-1 items-baseline justify-between gap-2 text-xs text-text-secondary ${
+              bag.exhausted || devueltos > 0 ? "flex" : "hidden sm:flex"
+            }`}
+          >
             <span>
               {bag.exhausted ? t.cycleExhausted : t.cycleRemaining(bag.remaining)}
               {devueltos > 0 ? ` · ${t.cycleReturned(devueltos)}` : ""}
@@ -1136,7 +1147,7 @@ export function EstablishmentSheet({
               <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
             ) : (
               <>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
                   {bolsas.map((bag) => (
                     <CycleBagCard key={bag.category} bag={bag} />
                   ))}
@@ -3743,11 +3754,11 @@ export function EstablishmentSheet({
                             campos idénticos y uno distinto esconde el que
                             importa.
                           */}
-                          {row.changes.length === 0 ? (
+                          {auditListedChanges(row.changes).length === 0 ? (
                             <span className="text-text-secondary">—</span>
                           ) : (
                             <ul className="space-y-0.5">
-                              {row.changes.map((change) => (
+                              {auditListedChanges(row.changes).map((change) => (
                                 <li key={change.field} className="text-xs">
                                   <span className="text-text-secondary">{change.field}: </span>
                                   <span className="text-text">

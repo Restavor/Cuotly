@@ -8,6 +8,7 @@ import {
   AUDIT_FAMILY_CAPABILITY,
   AUDIT_ROW_VISIBLE_ENTITIES,
   auditChanges,
+  auditListedChanges,
   auditCsv,
   auditDayWindow,
   auditEntityLink,
@@ -362,5 +363,29 @@ describe("M48 · auditEntityLink", () => {
     expect(auditEntityLink("demo", "file", "f-1")).toBeNull();
     expect(auditEntityLink("demo", "establishment", "e-1")).toBeNull();
     expect(auditEntityLink("demo", "request", null)).toBeNull();
+  });
+});
+
+describe("auditListedChanges · la lista no enseña identificadores internos (P4)", () => {
+  it("quita los cambios que solo son uuids o vacíos y deja los demás", () => {
+    const cambios = auditChanges(
+      { note_id: null, operational: null },
+      { note_id: "a4a9ed10-daab-4b16-8797-66b7e83beafb", operational: true },
+    );
+    expect(cambios).toHaveLength(2);
+    expect(auditListedChanges(cambios)).toEqual([{ field: "operational", before: null, after: "true" }]);
+  });
+
+  it("no toca un cambio con valor legible aunque el otro lado sea un uuid", () => {
+    const cambios = auditChanges({ plan: "a4a9ed10-daab-4b16-8797-66b7e83beafb" }, { plan: "Premium+" });
+    expect(auditListedChanges(cambios)).toHaveLength(1);
+  });
+
+  it("también quita una lista de identificadores (el orden de la cola)", () => {
+    const cambios = auditChanges(
+      { order: null },
+      { order: ["e5c16904-62c6-4db5-8288-b8898bd8ecbe", "eb82d7ee-7c0d-4f89-8364-5f558ef564d5"] },
+    );
+    expect(auditListedChanges(cambios)).toEqual([]);
   });
 });

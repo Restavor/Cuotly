@@ -120,13 +120,25 @@
     overflow-wrap: anywhere;
   }
 
+  /* La primera celda es el título, y una celda con formulario (retirar un
+     acceso con su motivo, registrar un pago) necesita el ancho entero: en
+     media tarjeta el botón se partía en cuatro líneas. */
   table[data-apilada] > tbody > tr > td:first-child,
-  table[data-apilada] > tbody > tr > td[colspan] {
+  table[data-apilada] > tbody > tr > td[colspan],
+  table[data-apilada] > tbody > tr > td:has(form) {
     grid-column: 1 / -1;
   }
 
   table[data-apilada] > tbody > tr > td:first-child {
     font-weight: 600;
+  }
+
+  /* Una insignia larga ("46 h 1 min para publicar") no cabe en media
+     tarjeta: parte línea en vez de montarse sobre la celda de al lado. */
+  table[data-apilada] > tbody > tr > td [data-badge] {
+    max-width: 100%;
+    white-space: normal;
+    flex-shrink: 1;
   }
 
   table[data-apilada] > tbody > tr > td::before {

@@ -551,6 +551,35 @@ export function auditChanges(before: unknown, after: unknown): readonly AuditCha
     .filter((cambio) => cambio.before !== cambio.after);
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Los cambios que se **enseñan en una lista**: los de `auditChanges()` sin
+ * los identificadores internos (`note_id: (vacío) → a4a9ed10-…`). Un uuid no
+ * le dice nada a quien lee el historial y en un teléfono ocupaba tres
+ * líneas por fila; lo que ese identificador señala ya está enlazado en la
+ * fila ("Ver detalle").
+ *
+ * Solo recorta la vista: la exportación en CSV y el detalle del evento
+ * siguen usando `auditChanges()` entero, porque la auditoría no pierde
+ * nada (P4). Si un apunte solo cambió identificadores, la lista dice que
+ * no hay cambios que enseñar en vez de pintar una fila vacía.
+ */
+export function auditListedChanges(changes: readonly AuditChange[]): readonly AuditChange[] {
+  // Un uuid suelto o una lista de ellos (el orden de la cola se guarda así).
+  const esId = (valor: string | null) => {
+    if (valor === null || UUID.test(valor)) return true;
+    if (!valor.startsWith("[")) return false;
+    try {
+      const lista: unknown = JSON.parse(valor);
+      return Array.isArray(lista) && lista.every((x) => typeof x === "string" && UUID.test(x));
+    } catch {
+      return false;
+    }
+  };
+  return changes.filter((cambio) => !(esId(cambio.before) && esId(cambio.after)));
+}
+
 /**
  * El filtro por fechas de la auditoría, de días naturales a instantes.
  *

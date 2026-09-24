@@ -101,7 +101,7 @@ export default async function ReportDetailPage({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+              <h1 className="text-[22px] font-bold sm:text-[26px] leading-tight tracking-tight text-primary-dark">
                 {report.name}
               </h1>
               <ReportStateBadge status={report.status} />

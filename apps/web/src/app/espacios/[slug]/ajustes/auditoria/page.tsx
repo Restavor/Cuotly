@@ -15,7 +15,7 @@ import {
 } from "@/components/ui";
 import { EmptyReason } from "@/components/ui/EmptyReason";
 import { Icon } from "@/components/ui/Icon";
-import { AUDIT_FAMILIES, auditChanges } from "@/core/audit";
+import { AUDIT_FAMILIES, auditChanges, auditListedChanges } from "@/core/audit";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -239,7 +239,7 @@ export default async function AuditPage({
                 </TableHead>
                 <TableBody>
                   {filas.map((fila) => {
-                    const cambios = auditChanges(fila.old_value, fila.new_value);
+                    const cambios = auditListedChanges(auditChanges(fila.old_value, fila.new_value));
                     const enlace = enlaceDelElemento(slug, fila.entity_type, fila.entity_id);
                     const actor =
                       fila.actor_id === null

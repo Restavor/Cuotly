@@ -64,6 +64,7 @@ const dotClasses: Record<Tone, string> = {
 export function StatusBadge({ tone, icon, wrap = false, children }: Props) {
   return (
     <span
+      data-badge=""
       className={`inline-flex shrink-0 items-center gap-1.5 px-2.5 py-1 text-xs font-semibold ${
         wrap ? "max-w-44 rounded-[10px]" : "whitespace-nowrap rounded-full"
       } ${toneClasses[tone]}`}

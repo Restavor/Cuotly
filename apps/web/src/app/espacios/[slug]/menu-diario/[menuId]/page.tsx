@@ -266,7 +266,7 @@ export default async function TeamMenuPage({
         </Link>
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+            <h1 className="text-[22px] font-bold sm:text-[26px] leading-tight tracking-tight text-primary-dark">
               {menu.name}
             </h1>
             <StatusBadge tone={menuTone(menu.state)}>{es.naming.states.menu[menu.state]}</StatusBadge>
