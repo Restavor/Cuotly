@@ -56,7 +56,7 @@ export function EstablishmentDataForm({
         Dos columnas en pantalla ancha y una en móvil, con el horario a lo
         largo porque es el único campo multilínea.
       */}
-      <div className="grid gap-x-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
         <Field
           label={t.dataNameLabel}
           name="name"

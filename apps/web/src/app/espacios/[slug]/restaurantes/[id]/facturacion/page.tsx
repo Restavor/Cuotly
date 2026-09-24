@@ -141,7 +141,7 @@ export default async function ClientBillingPage({
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <Resumen
           icon="clock"
           tone="bg-warning/25 text-primary-dark"

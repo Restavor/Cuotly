@@ -30,7 +30,7 @@ export function ClientReports({
 }) {
   const ultimo = reports[0] ?? null;
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <Card title={t.published} subtitle={t.publishedHint}>
         {reports.length === 0 ? (
           <EmptyState icon="document" title={es.reportsPage.clientEmpty} description={es.reportsPage.clientEmptyReason} />

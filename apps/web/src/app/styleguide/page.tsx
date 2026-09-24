@@ -135,7 +135,7 @@ export default function StyleGuidePage() {
       </Card>
 
       <Card title="Field, TextArea y Select">
-        <div className="grid gap-4 sm:grid-cols-2" data-testid="fields">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" data-testid="fields">
           <Field label="Correo electrónico" placeholder="tu@correo.com" />
           <Field label="Con error" defaultValue="algo mal" error="Este campo no es válido." />
           <Field label="Con ayuda" hint="El texto de ayuda va enlazado con aria-describedby." />
@@ -223,7 +223,7 @@ export default function StyleGuidePage() {
       </Card>
 
       <Card title="Estados: cargando / sin datos / error / sin permisos">
-        <div className="grid gap-4 sm:grid-cols-2" data-testid="states">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" data-testid="states">
           <div className="rounded-lg border border-border">
             <LoadingState />
           </div>

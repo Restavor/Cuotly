@@ -105,7 +105,7 @@ export default async function OwnershipPage({ params }: { params: Promise<{ slug
       */}
       <SettingsHeader slug={slug} active={null} />
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <div className="min-w-0 space-y-4">
           <Card title={m.exportTitle} subtitle={es.spaceExport.spaceHint}>
             <ExportForm spaceId={space.id} scope="space" label={es.spaceExport.submit} />

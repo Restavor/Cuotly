@@ -904,7 +904,7 @@ export function SupervisionTab({
         </div>
       </Card>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <Card title={ts.availabilityTitle} className="min-w-0">
           <WeekGrid
             slug={slug}

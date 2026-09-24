@@ -98,7 +98,7 @@ export function SentRequestView({
 
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
         <Card>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
             <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-cuotly-green/15 text-primary-dark">
@@ -115,7 +115,7 @@ export function SentRequestView({
                   <InfoNote title={t.reasonLabel}>{request.status_reason}</InfoNote>
                 </div>
               ) : null}
-              <dl className="mt-5 grid gap-4 border-t border-border pt-5 sm:grid-cols-2 xl:grid-cols-3">
+              <dl className="mt-5 grid grid-cols-1 gap-4 border-t border-border pt-5 sm:grid-cols-2 xl:grid-cols-3">
                 <Dato icon="building" label={t.summaryBusiness} value={request.business_name} />
                 <Dato icon="document" label={t.summaryPlan} value={plan} />
                 <Dato icon="person" label={t.summaryContact} value={request.contact_name} />
@@ -161,7 +161,7 @@ export function SentRequestView({
 
       {showData ? (
         <Card title={t.submittedDataTitle}>
-          <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
             <Enviado label={t.businessName} value={request.business_name} />
             <Enviado label={t.contactName} value={request.contact_name} />
             <Enviado label={t.email} value={request.email} />

@@ -31,7 +31,7 @@ describe("P4 · las pestañas en el teléfono", () => {
 describe("P5 y P6 · filtros y cifras en el teléfono", () => {
   it("P5: los filtros van en rejilla, varios por fila, y solo desde sm en fila flexible", () => {
     const barra = leer("src/components/ui/FilterBar.tsx");
-    expect(barra).toContain("grid-cols-[repeat(auto-fit,minmax(6rem,1fr))]");
+    expect(barra).toContain("grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]");
     // Un desplegable con anchura mínima fija volvería a dejar uno por fila.
     expect(barra).toContain('<div className="min-w-0 sm:min-w-[150px]">');
   });

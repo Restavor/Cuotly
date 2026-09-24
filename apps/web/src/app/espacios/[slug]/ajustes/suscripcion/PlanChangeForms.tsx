@@ -44,7 +44,7 @@ export function ChangeCuotlyPlanForm({
       <input type="hidden" name="newPlan" value={target} />
       <input type="hidden" name="idempotencyKey" value={`plan:${target}:${clave}`} suppressHydrationWarning />
       {target === "pro" ? (
-        <div className="grid gap-x-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
           <Field
             label={t.extraEstablishments}
             name="extraEstablishments"

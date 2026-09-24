@@ -231,7 +231,7 @@ export default async function SpaceGroupsPage({
           />
         </Card>
       ) : (
-        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <div className="min-w-0 space-y-3">
             <FilterBar action={action} hasFilters={buscar.trim() !== ""} label={t.searchLabel}>
               <FilterSearch
@@ -294,7 +294,7 @@ export default async function SpaceGroupsPage({
                 <p className="-mt-2 mb-4 text-sm text-text-secondary">
                   {selected.description ?? t.noDescription}
                 </p>
-                <dl className="grid gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-3">
                   <div className="sm:col-span-3">
                     <dt className="text-text-secondary">{t.accessTitle}</dt>
                     <dd className="mt-1">

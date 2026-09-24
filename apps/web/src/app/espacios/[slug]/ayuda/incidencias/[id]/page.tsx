@@ -99,7 +99,7 @@ export default async function SpaceIncidentDetailPage({
         </div>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title={t.description}>
           <p className="whitespace-pre-wrap text-sm text-text">{inc.description}</p>
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">

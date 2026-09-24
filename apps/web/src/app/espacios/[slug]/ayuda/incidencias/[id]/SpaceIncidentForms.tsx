@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button, TextArea } from "@/components/ui";
 import { type IncidentState, incidentTransitionAllowed } from "@/core/support";
@@ -45,6 +45,7 @@ export function SpaceIncidentForms({
   const [replyState, reply, replying] = useActionState(replyFromSpace, INITIAL_HELP_STATE);
   const [moveState, move, moving] = useActionState(moveFromSpace, INITIAL_HELP_STATE);
   const [attachState, attach, attaching] = useActionState(attachToIncident, INITIAL_HELP_STATE);
+  const [elegido, setElegido] = useState<string | null>(null);
   const t = es.help.incidents;
 
   if (state === "closed") {
@@ -70,10 +71,27 @@ export function SpaceIncidentForms({
         <input type="hidden" name="incidentId" value={incidentId} />
         <input type="hidden" name="spaceId" value={spaceId} />
         <input type="hidden" name="slug" value={slug} />
-        <label className="block text-sm">
-          <span className="mb-1 block font-semibold text-text">{t.attachLabel}</span>
-          <input type="file" name="file" className="block text-sm" required />
-        </label>
+        <p className="mb-1 block text-sm font-semibold text-text" id={`adjunto-${incidentId}`}>
+          {t.attachLabel}
+        </p>
+        {/* El campo de archivo disfrazado de botón (ver FileUploadField):
+            el del navegador habla su idioma, no el de Cuotly. */}
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="inline-flex cursor-pointer items-center rounded-[10px] border border-border bg-soft-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-cuotly-green">
+            {es.files.choose}
+            <input
+              type="file"
+              name="file"
+              aria-labelledby={`adjunto-${incidentId}`}
+              className="sr-only"
+              required
+              onChange={(evento) => setElegido(evento.target.files?.[0]?.name ?? null)}
+            />
+          </label>
+          <span className="min-w-0 text-sm text-text-secondary [overflow-wrap:anywhere]">
+            {elegido ?? es.files.noneChosen}
+          </span>
+        </div>
         <Button type="submit" variant="secondary" pending={attaching}>
           {t.attachSubmit}
         </Button>

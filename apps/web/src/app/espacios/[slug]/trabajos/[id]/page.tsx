@@ -515,7 +515,7 @@ export default async function TeamJobDetailPage({
         las tareas y lo que se puede hacer ahora; y la evidencia de lo
         publicado. En pantallas estrechas se apilan en ese orden.
       */}
-      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <div className="min-w-0 space-y-4">
             <Card title={es.teamArea.jobs.operativeTitle}>
               <div className="border-b border-border py-3">

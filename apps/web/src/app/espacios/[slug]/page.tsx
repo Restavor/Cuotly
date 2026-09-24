@@ -257,7 +257,7 @@ export default async function SpacePage({
         encoger por debajo de su contenido; sin esto, en 390 px una tabla
         sacaba la página entera fuera de la pantalla.
       */}
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         {/*
           Página 22 · "Actividad de mantenimiento": las solicitudes creadas
           y los trabajos completados, día a día del mes en curso. El "Este
@@ -420,7 +420,7 @@ export default async function SpacePage({
         "Carga de trabajo del equipo" y "Actividad reciente". El "Este
         mes" del diseño es ahí un desplegable de periodo; aquí va escrito.
       */}
-      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
         <Card
           className="min-w-0"
           title={es.spaceHome.finance.title}

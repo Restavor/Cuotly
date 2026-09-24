@@ -103,7 +103,7 @@ export async function TeamMenuEditor({
         </div>
       </header>
 
-      <div className="grid items-start gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
           <DetailsForm
             menuId={menu.id}
@@ -148,7 +148,7 @@ export async function TeamMenuEditor({
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_auto_auto]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_auto]">
         <div className="flex items-center gap-3 rounded-card border border-info/30 bg-info/10 px-5 py-4 text-sm text-text">
           <Icon name="info" aria-hidden="true" className="h-5 w-5 shrink-0 text-info" />
           <p>{editable ? t.editor.versionsNote : t.editor.notEditable}</p>

@@ -92,7 +92,7 @@ export default async function AdminAccessRequestDetailPage({
       </header>
 
       <Card title={t.fields}>
-        <dl className="grid gap-3 sm:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {campos.map(([etiqueta, valor]) => (
             <div key={etiqueta}>
               <dt className="text-sm text-text-secondary">{etiqueta}</dt>

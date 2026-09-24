@@ -77,7 +77,7 @@ export function HelpView({
       </form>
 
       {temas.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {temas.map(({ topic, count }) => {
             const activo = params.topic === topic;
             return (
@@ -106,7 +106,7 @@ export function HelpView({
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <Card>
           <h2 className="mb-3 text-base font-semibold text-primary-dark">{tituloFaq}</h2>
           {failed ? (

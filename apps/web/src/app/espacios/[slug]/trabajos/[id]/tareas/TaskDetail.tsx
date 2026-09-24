@@ -365,7 +365,7 @@ export function TaskDetail({
         está planificada y cuánto pesa. La "Prioridad" del dibujo no va:
         una tarea no tiene prioridad propia, tiene peso (§14.4).
       */}
-      <dl className="mb-4 grid gap-2 text-sm sm:grid-cols-3">
+      <dl className="mb-4 grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
         <div className="rounded-[12px] border border-border p-3">
           <dt className="text-xs text-text-secondary">{es.teamArea.tasks.assigneeColumn}</dt>
           <dd className="mt-1 font-medium text-text">

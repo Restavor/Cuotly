@@ -189,7 +189,7 @@ export default async function JobTasksPage({
         {es.teamArea.tasks.coordination.backToJob}
       </Link>
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_420px]">
         <Card title={es.teamArea.tasks.coordination.title}>
           <p className="mb-3 text-sm text-text-secondary">
             {es.teamArea.tasks.coordination.subtitle(job.code, request?.description ?? "—")}

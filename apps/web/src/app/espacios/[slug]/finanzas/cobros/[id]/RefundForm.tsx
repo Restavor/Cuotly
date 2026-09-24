@@ -35,7 +35,7 @@ export function RefundForm({ chargeId, collectedEuros }: { chargeId: string; col
       <p className="text-sm text-text-secondary">{t.refundHint}</p>
       <input type="hidden" name="chargeId" value={chargeId} />
       <input type="hidden" name="idempotencyKey" value={clave} />
-      <div className="grid gap-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[10rem_minmax(0,1fr)]">
         <Field label={t.refundAmountLabel} name="amount" inputMode="decimal" defaultValue={collectedEuros} required />
         <Field label={t.refundReasonLabel} name="reason" required />
       </div>

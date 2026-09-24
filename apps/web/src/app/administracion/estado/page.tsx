@@ -52,7 +52,7 @@ export default async function AdminStatusPage() {
         </Link>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card title={t.declareTitle}>
           <p className="mb-3 text-sm text-text-secondary">{t.declareHint}</p>
           <DeclareEventForm />

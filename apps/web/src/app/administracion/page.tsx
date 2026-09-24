@@ -102,7 +102,7 @@ export default async function AdminOverviewPage() {
         <p className="text-sm text-text-secondary">{es.platformAdmin.subtitle}</p>
       </header>
 
-      <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {PANEL_BLOCKS.map((block) => {
           const href = panelBlockHref(block);
           const label = es.platformAdmin.blocks[block];

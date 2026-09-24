@@ -212,18 +212,33 @@ export function FileUploadField({
           </button>
         </p>
       ) : (
-        <input
-          ref={inputRef}
-          id={inputId}
-          type="file"
-          disabled={subiendo}
-          accept={ALLOWED_MIME_TYPES.join(",")}
-          onChange={(evento) => {
-            const archivo = evento.target.files?.[0];
-            if (archivo) void alElegir(archivo);
-          }}
-          className="block w-full text-sm text-text file:mr-3 file:rounded-[10px] file:border file:border-border file:bg-soft-surface file:px-3 file:py-2 file:text-sm file:text-text"
-        />
+        /*
+          Un `<input type="file">` disfrazado de botón, como la foto del
+          restaurante (PhotoForm): el campo suelto lo pinta el navegador en
+          su idioma —"Choose File · No file chosen" en uno en inglés— y no
+          admite los tokens del sistema. El `<label>` es el control: se
+          llega con el tabulador y se abre con Enter.
+        */
+        <label
+          className={`inline-flex cursor-pointer items-center gap-2 rounded-[10px] border border-border bg-soft-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-cuotly-green ${
+            subiendo ? "pointer-events-none opacity-60" : ""
+          }`}
+        >
+          <Icon name="upload" className="h-4 w-4" />
+          {es.files.choose}
+          <input
+            ref={inputRef}
+            id={inputId}
+            type="file"
+            disabled={subiendo}
+            accept={ALLOWED_MIME_TYPES.join(",")}
+            onChange={(evento) => {
+              const archivo = evento.target.files?.[0];
+              if (archivo) void alElegir(archivo);
+            }}
+            className="sr-only"
+          />
+        </label>
       )}
 
       {subiendo ? (

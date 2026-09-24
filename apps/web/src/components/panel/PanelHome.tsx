@@ -196,7 +196,7 @@ function AttentionRow({ items }: { items: readonly PanelAttention[] }) {
     );
   }
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => {
         const s = ATTENTION_STYLE[item.kind];
         const { title, body, cta } =
@@ -405,7 +405,7 @@ function FirstSteps({ data }: { data: PanelHomeData }) {
           <p className="text-sm text-text-secondary">{t.firstStepsBody}</p>
         </div>
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
         {pasos.map((p) => (
           <div key={p.title} className="flex gap-3 rounded-[14px] border border-border p-4">
             <RowIcon icon={p.icon} />

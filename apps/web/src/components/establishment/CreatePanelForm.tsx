@@ -74,7 +74,7 @@ export function CreatePanelForm({
         campos bloqueados del dibujo); a la derecha quién va a ser su
         propietario y lo que ese rol le abre.
       */}
-      <div className="grid gap-x-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-6 lg:grid-cols-2">
         <div>
           <Field label={t.panelRestaurantLabel} name="panelRestaurant" value={establishmentName} readOnly disabled />
           <Field label={t.panelCodeLabel} name="panelCode" value={code} readOnly disabled />

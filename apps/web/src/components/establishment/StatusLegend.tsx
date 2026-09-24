@@ -22,7 +22,7 @@ export function StatusLegend({ current }: { current: string }) {
   >;
 
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {ESTABLISHMENT_STATUSES.map((status) => {
         const actual = status === current;
         const efectos = statusEffects(status);

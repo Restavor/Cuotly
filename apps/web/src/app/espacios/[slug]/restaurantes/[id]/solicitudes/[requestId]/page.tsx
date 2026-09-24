@@ -272,7 +272,7 @@ export default async function ClientRequestDetailPage({
         </div>
       </PageHeader>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           <Card title={t.summaryTitle}>
             <SummaryRow>
@@ -342,7 +342,7 @@ export default async function ClientRequestDetailPage({
                 <div className="mt-4 rounded-[10px] border border-border p-4">
                   <p className="text-sm font-semibold text-text">{t.consumptionTitle}</p>
                   {estimacion.kind === "included" && bolsa !== null ? (
-                    <div className="mt-2 grid items-center gap-4 sm:grid-cols-[1fr_auto]">
+                    <div className="mt-2 grid grid-cols-1 items-center gap-4 sm:grid-cols-[1fr_auto]">
                       <div>
                         <ProgressBar
                           percent={

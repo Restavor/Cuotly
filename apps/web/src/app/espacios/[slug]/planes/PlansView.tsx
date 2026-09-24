@@ -223,7 +223,7 @@ export function PlanCatalogueTab({
       <LoadFailed failed={catalogue.failed} />
       {botonCrear ? <div className="flex justify-end">{botonCrear}</div> : null}
       {crear}
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
           <Card className="p-0! overflow-hidden">
             <div className="relative overflow-x-auto" data-testid="planes-catalogo">
@@ -308,7 +308,7 @@ export function PlanCatalogueTab({
               0 ? (
                 <p className="mt-4 text-sm text-text-secondary">{tc.nothingIncluded}</p>
               ) : (
-                <ul className="mt-5 grid gap-4 sm:grid-cols-2">
+                <ul className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Quota icon="document" label={tc.quotaSmall(selected.includedSmall)} />
                   <Quota icon="job" label={tc.quotaLarge(selected.includedLarge)} />
                   <Quota icon="task" label={tc.quotaMedium(selected.includedMedium)} />
@@ -463,7 +463,7 @@ export function ServicesTab({
       <LoadFailed failed={catalogue.failed} />
       {botonCrear}
       {crear}
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
         <Card title={tc.servicesTitle} className="min-w-0">
           <ul className="space-y-3" data-testid="planes-servicios">
             {catalogue.services.map((s) => {
@@ -525,7 +525,7 @@ export function ServicesTab({
             <p className="text-sm text-text-secondary">{tc.premiumPrice(euros(selected.pricePremiumCents))}</p>
           ) : null}
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {selected.includedUpdates > 0 ? (
               <div className="rounded-[10px] border border-border p-4">
                 <p className="text-xs text-text-secondary">{tc.monthlyUpdates}</p>
@@ -706,7 +706,7 @@ export function VersionsTab({
         {revisions.length <= 1 ? (
           <p className="text-sm text-text-secondary">{tr.none}</p>
         ) : (
-          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
             <ul className="space-y-2" data-testid="planes-revisiones">
               {revisions.map((r) => {
                 const activa = r.revision === selectedRevision?.revision;
@@ -770,7 +770,7 @@ export function VersionsTab({
           <EmptyReason reason="no_data_yet" title={tv.noVersionsTitle} />
         </Card>
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <Card title={tv.historyTitle} className="min-w-0">
             <ul className="space-y-2" data-testid="planes-versiones">
               {versions.map((v) => {
@@ -856,7 +856,7 @@ export function VersionsTab({
         </div>
       )}
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <Card title={tv.subscribersTitle} className="min-w-0">
           {subscribers.length === 0 ? (
             <p className="text-sm text-text-secondary">{tv.subscribersNone}</p>

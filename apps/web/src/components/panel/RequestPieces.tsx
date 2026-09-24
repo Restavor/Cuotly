@@ -25,7 +25,12 @@ export function SummaryItem({ label, children }: { label: string; children: Reac
 export function SummaryRow({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-wrap items-start gap-4 rounded-[10px] border border-border p-3">
-      <span className="flex h-14 w-16 shrink-0 items-center justify-center rounded-lg bg-soft-surface text-cuotly-green">
+      {/* El icono es adorno: en el teléfono se quita y las dos columnas de
+          datos tienen sitio ("Pendiente de aceptación" iba en tres líneas). */}
+      <span
+        aria-hidden="true"
+        className="hidden h-14 w-16 shrink-0 items-center justify-center rounded-lg bg-soft-surface text-cuotly-green sm:flex"
+      >
         <Icon name="request" className="h-6 w-6" />
       </span>
       <div className="grid min-w-0 flex-1 grid-cols-2 gap-4 sm:grid-cols-4 sm:divide-x sm:divide-border [&>*]:sm:pl-4 [&>*:first-child]:sm:pl-0">
@@ -143,10 +148,14 @@ export function RequestTimeline({
   onlyKnownDates?: boolean;
 }) {
   if (orientation === "horizontal") {
-    return (
-      <ol className="flex flex-wrap items-start justify-between gap-y-4">
+    const fila = (
+      // En el teléfono todos los pasos en una fila, con la letra a 12 px,
+      // como en el diseño (PDF móvil, p. 122). Con el mínimo de 110 px de
+      // escritorio cabían dos por fila y la línea del primero de cada fila
+      // salía del borde de la tarjeta sin unir nada.
+      <ol className="flex items-start justify-between gap-y-4 sm:flex-wrap">
         {steps.map((paso, i) => (
-          <li key={paso.key} className="relative flex min-w-[110px] flex-1 flex-col items-center text-center">
+          <li key={paso.key} className="relative flex min-w-0 flex-1 flex-col items-center px-0.5 text-center sm:min-w-[110px] sm:px-0">
             {i > 0 ? (
               <span
                 aria-hidden="true"
@@ -158,13 +167,31 @@ export function RequestTimeline({
             <span className="relative">
               <Marca status={paso.status} />
             </span>
-            <span className="mt-2 text-sm font-semibold text-text">{paso.label}</span>
+            <span className="mt-2 text-xs font-semibold text-text sm:text-sm">{paso.label}</span>
             {paso.status === "pending" || !showDates ? null : (
               <span className="text-xs text-text-secondary">{paso.dateLabel ?? es.panelRequests.noDate}</span>
             )}
           </li>
         ))}
       </ol>
+    );
+    // Hasta cuatro pasos caben en una fila de 390 px. Con más (una
+    // corrección añade "En corrección" y queda en seis) cada paso mide
+    // 50 px y "Solicitud" se partía por la mitad: en el teléfono van en
+    // vertical y la fila se queda para la pantalla ancha.
+    if (steps.length <= 4) return fila;
+    return (
+      <>
+        <div className="sm:hidden">
+          <RequestTimeline
+            steps={steps}
+            orientation="vertical"
+            showDates={showDates}
+            onlyKnownDates={onlyKnownDates}
+          />
+        </div>
+        <div className="hidden sm:block">{fila}</div>
+      </>
     );
   }
   return (

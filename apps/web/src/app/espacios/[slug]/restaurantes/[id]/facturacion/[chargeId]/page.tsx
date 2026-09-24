@@ -108,7 +108,7 @@ export default async function ClientChargePage({
       />
       {volver}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card>
           <h2 className="text-xl font-bold text-primary-dark">{cobro.concept}</h2>
           <p className="text-sm text-text-secondary">

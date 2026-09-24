@@ -96,7 +96,7 @@ export function ChargeDetailView({
       </div>
 
       <Card>
-        <div className="grid gap-5 md:grid-cols-2 md:divide-x md:divide-border">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:divide-x md:divide-border">
           <div className="flex items-center gap-4">
             <EstablishmentPhoto photoUrl={data.establishment.photoUrl} size={72} />
             <div className="min-w-0">

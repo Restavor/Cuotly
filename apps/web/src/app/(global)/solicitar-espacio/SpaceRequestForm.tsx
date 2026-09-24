@@ -38,13 +38,13 @@ export function SpaceRequestForm({ initial }: { initial: SpaceRequestValues }) {
   return (
     <form
       action={action}
-      className="grid gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_304px]"
+      className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_304px]"
     >
       <Card className="lg:col-start-1 lg:row-start-1">
         <h2 className="mb-3 text-base font-semibold text-primary-dark">
           {t.businessTitle}
         </h2>
-        <div className="grid items-end gap-x-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 items-end gap-x-4 sm:grid-cols-2">
           <Field
             name="businessName"
             label={t.businessName}
@@ -113,7 +113,7 @@ export function SpaceRequestForm({ initial }: { initial: SpaceRequestValues }) {
           <legend className="mb-3 text-base font-semibold text-primary-dark">
             {t.planTitle}
           </legend>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {CUOTLY_PLANS.map((clave) => {
               const terms = CUOTLY_PLAN_TERMS[clave];
               return (
@@ -161,7 +161,7 @@ export function SpaceRequestForm({ initial }: { initial: SpaceRequestValues }) {
           {t.taxTitle}
         </h2>
         <p className="mb-3 text-xs text-text-secondary">{t.taxHint}</p>
-        <div className="grid items-end gap-x-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 items-end gap-x-4 sm:grid-cols-2">
           <Field
             name="taxName"
             label={t.taxName}

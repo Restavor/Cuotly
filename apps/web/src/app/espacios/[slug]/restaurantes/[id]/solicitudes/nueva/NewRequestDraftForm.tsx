@@ -41,7 +41,7 @@ export function NewRequestDraftForm({
   const [longitud, setLongitud] = useState(state.values.description.length);
 
   return (
-    <form action={action} className="grid gap-6 lg:grid-cols-2">
+    <form action={action} className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="establishmentId" value={establishmentId} />
 

@@ -85,7 +85,7 @@ export function ReportFilters({
   };
 }) {
   return (
-    <form action={base} method="get" className="grid gap-4 sm:grid-cols-3">
+    <form action={base} method="get" className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {/* M68 · la biblioteca es la pestaña "Informes generados": filtrar no
           debe sacar de ella aunque todos los filtros vayan vacíos. */}
       <input type="hidden" name="tab" value="generados" />
@@ -163,7 +163,7 @@ export function CreateReportForm({
   const [state, action, pending] = useActionState(createReport, IDLE_REPORT_ACTION);
 
   return (
-    <form action={action} className="grid gap-4 sm:grid-cols-2">
+    <form action={action} className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <input type="hidden" name="slug" value={slug} />
       <Field name="name" label={t.nameLabel} required maxLength={120} />
       <Select

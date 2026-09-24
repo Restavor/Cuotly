@@ -152,7 +152,7 @@ export function AccessRequestForm({
           defaultValue={state.values.business_name}
           error={mensaje("business_name")}
         />
-        <div className="grid gap-x-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-2">
           <DesignInput
             name="phone"
             type="tel"
@@ -177,7 +177,7 @@ export function AccessRequestForm({
           se pregunta a VIES. Va delante del número porque sin él no se
           puede saber si el número es bueno.
         */}
-        <div className="grid gap-x-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="grid grid-cols-1 gap-x-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <div className="mb-5">
             <label htmlFor="tax_country" className="mb-2 block text-[15px] font-semibold text-text">
               {t.taxCountryLabel} <span aria-hidden="true">*</span>

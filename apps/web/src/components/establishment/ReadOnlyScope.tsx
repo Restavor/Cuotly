@@ -43,10 +43,10 @@ export function ReadOnlyScope({
   timeZone: string;
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="space-y-6">
         <Card>
-          <div className="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-border">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 sm:divide-x sm:divide-border">
             <div>
               <h2 className="mb-3 text-sm font-semibold text-text">{t.readOnlyCanTitle}</h2>
               <ul className="space-y-2 text-sm text-text-secondary">

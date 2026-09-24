@@ -42,7 +42,7 @@ export function PersonalReport({
       ) : (
         <>
           <Card title={t.personalMetrics.currentLoadPoints}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Cifra label={t.personalMetrics.currentLoadPoints} value={String(report.currentLoadPoints)} />
               <Cifra label={t.personalMetrics.historicalPoints} value={String(report.historicalPoints)} />
             </div>
@@ -50,7 +50,7 @@ export function PersonalReport({
           </Card>
 
           <Card title={es.nav.jobs}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Cifra label={t.personalMetrics.jobsCompleted} value={String(report.jobsCompleted)} />
               <Cifra label={t.personalMetrics.jobsPending} value={String(report.jobsPending)} />
               <Cifra label={t.personalMetrics.jobsBlocked} value={String(report.jobsBlocked)} />
@@ -62,7 +62,7 @@ export function PersonalReport({
           </Card>
 
           <Card title={t.personalDeadlines}>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Cifra
                 label={t.personalMetrics.startCompliancePercent}
                 value={porcentaje(report.startCompliancePercent)}

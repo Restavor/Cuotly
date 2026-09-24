@@ -36,7 +36,7 @@ export function MenuSectionHeader({
         <PageHeader title={title} subtitle={subtitle} actions={actions} />
         {balance !== null ? (
           <Card className="min-w-[280px] p-4! sm:p-4!">
-            <div className="grid gap-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
               <div>
                 <p className="text-sm font-semibold text-text">{t.usageTitle}</p>
                 <div className="my-2">

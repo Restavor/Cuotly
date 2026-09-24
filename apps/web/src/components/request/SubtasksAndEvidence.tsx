@@ -79,7 +79,7 @@ export function SubtasksAndEvidence({
   const progreso = taskProgress(tasks);
 
   return (
-    <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
+    <div className="mt-4 grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">
       <section>
         <h4 className="text-sm font-semibold text-text">
           {/*

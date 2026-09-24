@@ -119,7 +119,7 @@ export default async function ClientBillingDocumentsPage({
           <EmptyState title={es.quotesClient.emptyTitle} description={es.quotesClient.emptyReason} />
         </Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {quotes.map((quote) => (
             <ClientQuoteCard key={quote.id} quote={quote} canAnswer={canAnswerQuotes === true} />
           ))}

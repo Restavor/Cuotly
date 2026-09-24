@@ -240,7 +240,7 @@ export function WhatHappensNext() {
 /** F01 y A01 a A12 · la tarjeta de dos columnas: lo de cada vista a la izquierda. */
 export function AccessCard({ children }: { children: ReactNode }) {
   return (
-    <div className="grid overflow-hidden rounded-card border border-border bg-surface lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 overflow-hidden rounded-card border border-border bg-surface lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
       <div className="min-w-0 px-6 py-8 sm:px-10">{children}</div>
       <WhatHappensNext />
     </div>

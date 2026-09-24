@@ -601,7 +601,7 @@ function ProviderSyncProblem({
             </p>
             <StatusBadge tone="danger">{t.syncProblem.badge}</StatusBadge>
           </div>
-          <dl className="grid gap-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
             <div>
               <dt className="text-sm text-text-secondary">{t.syncProblem.lastSuccess}</dt>
               <dd className="mt-1 font-semibold text-text-primary">
@@ -657,12 +657,12 @@ function Ga4View({ data, view }: { data: ProviderData; view: DigitalDataView }) 
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Stat testId="stat-users" label={metricName("users")} value={usuarios === null ? "—" : formatNumber(usuarios)} change={vs(view, usuarios, sumOf(points, "users", pw))} />
         <Stat testId="stat-sessions" label={metricName("sessions")} value={sesiones === null ? "—" : formatNumber(sesiones)} change={vs(view, sesiones, sumOf(points, "sessions", pw))} />
         <Stat label={t.conversionsTitle} value={eventos === null ? "—" : formatNumber(eventos)} change={vs(view, eventos, sumOfDimensions(points, "conversions_by_event", pw))} />
       </div>
-      <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[3fr_2fr]">
         <LineChart
           testId="chart-users-sessions"
           title={t.usersSessionsTitle}
@@ -679,7 +679,7 @@ function Ga4View({ data, view }: { data: ProviderData; view: DigitalDataView }) 
           slices={dispositivos.map((d) => ({ key: d.dimension, label: t.devices[d.dimension] ?? d.dimension, value: d.value }))}
         />
       </div>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RankingTable testId="top-pages" title={t.topPagesTitle} dimensionColumn={t.pageColumn} valueColumn={t.viewsColumn} rows={topDimensions(points, "page_views_by_page", w, 5)} />
         <RankingTable title={t.trafficSourcesTitle} dimensionColumn={t.trafficSourceColumn} valueColumn={t.sessionsColumn} rows={topDimensions(points, "sessions_by_source", w, 5)} />
         <RankingTable title={t.locationsTitle} dimensionColumn={t.locationColumn} valueColumn={t.sessionsColumn} rows={topDimensions(points, "sessions_by_location", w, 5)} />
@@ -704,7 +704,7 @@ function SearchConsoleView({ data, view }: { data: ProviderData; view: DigitalDa
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
         <Stat testId="stat-clicks" label={metricName("clicks")} value={clics === null ? "—" : formatNumber(clics)} change={vs(view, clics, sumOf(points, "clicks", pw))} />
         <Stat label={metricName("impressions")} value={impresiones === null ? "—" : formatNumber(impresiones)} change={vs(view, impresiones, sumOf(points, "impressions", pw))} />
         <Stat label={metricName("ctr")} value={ctr === null ? "—" : formatPercentRatio(ctr)} change={vs(view, ctr, meanOf(points, "ctr", pw))} />
@@ -715,7 +715,7 @@ function SearchConsoleView({ data, view }: { data: ProviderData; view: DigitalDa
         window={w}
         series={[{ key: "clicks", label: metricName("clicks"), points: dailySeries(points, "clicks", w), tone: "green" }]}
       />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <RankingTable testId="top-queries" title={t.topQueriesTitle} dimensionColumn={t.queryColumn} valueColumn={t.clicksColumn} rows={topDimensions(points, "clicks_by_query", w, 5)} />
         <RankingTable title={t.searchPagesTitle} dimensionColumn={t.pageColumn} valueColumn={t.clicksColumn} rows={topDimensions(points, "clicks_by_page", w, 5)} />
       </div>
@@ -735,7 +735,7 @@ function BusinessProfileView({ data, view }: { data: ProviderData; view: Digital
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {metricas.map((metric) => {
           const actual = sumOf(points, metric, w);
           return (
@@ -777,7 +777,7 @@ function ClarityView({ data, view }: { data: ProviderData; view: DigitalDataView
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Stat testId="stat-sessions" label={metricName("sessions")} value={sesiones === null ? "—" : formatNumber(sesiones)} change={vs(view, sesiones, sumOf(points, "sessions", pw))} />
         <Stat label={metricName("distinct_users")} value={usuarios === null ? "—" : formatNumber(usuarios)} change={vs(view, usuarios, sumOf(points, "distinct_users", pw))} />
         <Stat label={metricName("pages_per_session")} value={paginas === null ? "—" : formatNumber(paginas, 1)} change={vs(view, paginas, meanOf(points, "pages_per_session", pw))} />
@@ -785,7 +785,7 @@ function ClarityView({ data, view }: { data: ProviderData; view: DigitalDataView
         <Stat label={metricName("engagement_time_seconds")} value={tiempo === null ? "—" : formatSeconds(tiempo)} change={vs(view, tiempo, sumOf(points, "engagement_time_seconds", pw))} />
       </div>
       <p className="font-semibold text-text">{t.frictionTitle}</p>
-      <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {friccion.map((metric) => {
           const actual = sumOf(points, metric, w);
           return (
@@ -834,7 +834,7 @@ function PageSpeedView({ data, view }: { data: ProviderData; view: DigitalDataVi
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {estrategias.map((estrategia) => {
           const medida = puntuacion.find((m) => m.dimension === estrategia);
           return (

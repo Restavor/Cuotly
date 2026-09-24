@@ -144,7 +144,7 @@ export function PlanTermsForm({
         </div>
       </fieldset>
 
-      <div className="grid gap-x-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
         <Select
           label={te.reportLevelLabel}
           name="reportLevel"
@@ -216,7 +216,7 @@ export function ServiceTermsForm({
           />
         </>
       ) : null}
-      <div className="grid gap-x-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
         <Field
           label={te.priceLabel}
           name="price"

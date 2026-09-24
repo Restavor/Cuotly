@@ -182,7 +182,7 @@ return (
         con sus botones, y el historial de la solicitud. En pantallas
         estrechas se apilan en ese orden.
       */}
-      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <div className="min-w-0 space-y-4">
           <ClientRequestCard timeZone={zona}
             request={request}

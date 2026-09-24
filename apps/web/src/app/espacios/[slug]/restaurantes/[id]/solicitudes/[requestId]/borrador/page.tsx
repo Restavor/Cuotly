@@ -185,7 +185,7 @@ export default async function RequestDraftPage({
           <SummaryItem label={t.restaurantLabel}>{establishment?.name ?? "—"}</SummaryItem>
         </SummaryRow>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="sm:col-span-2">
             <p className="text-sm font-semibold text-text">{es.clientArea.newDescriptionLabel}</p>
             <p className="mt-1 whitespace-pre-wrap text-sm text-text-secondary">{request.description}</p>
@@ -227,7 +227,7 @@ export default async function RequestDraftPage({
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* §68, punto 3 · archivos. */}
         <Card title={t.filesTitle(lista.length)}>
           {lista.length === 0 ? (

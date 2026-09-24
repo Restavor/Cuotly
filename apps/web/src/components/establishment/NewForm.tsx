@@ -76,7 +76,7 @@ export function NewEstablishmentForm({
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
       <Card>
-        <div className="grid gap-x-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-6 lg:grid-cols-2">
           <Field label={t.nameLabel} name="name" required maxLength={120} />
           <Field
             label={t.codeLabel}

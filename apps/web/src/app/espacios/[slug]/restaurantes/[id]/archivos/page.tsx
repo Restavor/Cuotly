@@ -123,7 +123,7 @@ export default async function ClientFilesPage({
         />
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
           {lista.length === 0 ? (
             <Card>
@@ -135,7 +135,7 @@ export default async function ClientFilesPage({
             </Card>
           ) : (
             <Card>
-              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 {enCarpeta.map((f) => {
                   const activo = f.id === elegido?.id;
                   return (

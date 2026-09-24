@@ -73,7 +73,7 @@ export default async function NewClientMenuPage({ params }: { params: Promise<{ 
   return (
     <div className="space-y-6">
       <PageHeader title={t.newPageTitle} subtitle={t.newPageSubtitle} />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <NewMenuForm
           slug={slug}
           establishmentId={id}

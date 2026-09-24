@@ -72,7 +72,7 @@ export default async function ClientPlanChangePage({
         <TerminationForm establishmentId={id} status={establishment.status} canWrite={canWrite === true} />
       ) : (
         <>
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <Card title={t.currentTitle}>
               <div className="flex items-center gap-3">
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-warning/25 text-primary-dark">
@@ -109,7 +109,7 @@ export default async function ClientPlanChangePage({
           </div>
 
           <Card title={t.stepsTitle}>
-            <ol className="grid gap-4 md:grid-cols-3">
+            <ol className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {t.steps.map((paso, i) => (
                 <li key={paso.title} className="flex gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-soft-surface font-bold text-primary-dark">

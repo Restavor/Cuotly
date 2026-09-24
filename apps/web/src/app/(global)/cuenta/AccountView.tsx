@@ -94,7 +94,7 @@ export function AccountView({
       />
 
       {section === "perfil" ? (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
           <Card className="h-full">
             <h2 className="mb-3 text-base font-semibold text-primary-dark">{t.personalTitle}</h2>
             <AvatarForm avatarUrl={avatar.url} initial={avatar.initial} personName={avatar.personName} />

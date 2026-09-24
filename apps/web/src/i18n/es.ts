@@ -508,6 +508,7 @@ export const es = {
     // cambie, y encima en el sitio donde alguien decide qué archivo elegir.
     hint: (mb: string) => `Imágenes, PDF, Word, Excel o texto. Hasta ${mb} MB.`,
     choose: "Elegir archivo",
+    noneChosen: "Ningún archivo elegido",
     uploading: "Subiendo…",
     uploaded: "Archivo subido.",
     remove: "Quitar",

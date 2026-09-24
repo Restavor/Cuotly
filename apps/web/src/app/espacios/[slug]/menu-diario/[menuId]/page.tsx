@@ -297,7 +297,7 @@ export default async function TeamMenuPage({
         plazos, quién lo publica y sus versiones—; y lo que se hace con él
         —publicar, descargar, corregir—. En pantallas estrechas se apilan.
       */}
-      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
         <div className="min-w-0 space-y-4">
           {/*
             M32 · la vista previa: el menú escrito como se lee en una carta, con

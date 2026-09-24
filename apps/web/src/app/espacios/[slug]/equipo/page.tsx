@@ -190,7 +190,7 @@ function SupervisionForms({ data, spaceId, today }: { data: TeamData; spaceId: s
   return (
     <div className="space-y-6">
       <p className="text-sm text-text-secondary">{es.teamPage.supervisionIntro}</p>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="min-w-0">
           <p className="mb-2 font-semibold text-text">{es.teamPage.principalColumn}</p>
           <PrincipalSupervisorForm spaceId={spaceId} workers={trabajadores} admins={administradores} />
@@ -209,7 +209,7 @@ function SupervisionForms({ data, spaceId, today }: { data: TeamData; spaceId: s
       {data.supervisions.length > 0 ? (
         <div className="border-t border-border pt-6">
           <p className="mb-3 font-semibold text-text">{es.teamPage.supervision.currentTitle}</p>
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {data.supervisions.map((s) => (
               <div key={s.id} className="min-w-0 space-y-2 rounded-[10px] border border-border p-4">
                 <p className="text-sm font-semibold text-text">

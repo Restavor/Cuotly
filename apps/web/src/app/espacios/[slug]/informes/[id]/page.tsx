@@ -130,11 +130,11 @@ export default async function ReportDetailPage({
         </div>
       </header>
 
-      <div className="grid items-start gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <div className="min-w-0 space-y-4 lg:col-span-2">
           <Card title={t.infoTitle}>
             <RenameForm slug={slug} reportId={report.id} name={report.name} readOnly={cerrado} />
-            <dl className="grid gap-3 sm:grid-cols-2">
+            <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Dato label={t.filters.establishment} value={report.establishmentName ?? t.pdf.consolidated} />
               <Dato label={t.columns.category} value={t.categories[report.category]} />
               <Dato label={t.periodLabel} value={periodLabel(report)} />

@@ -375,7 +375,7 @@ function AgendaView({
 }) {
   const meses = [...new Set(proximos.map((e) => e.day.slice(0, 7)))];
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <Card title={t.upcomingTitle}>
         {proximos.length === 0 ? (
           <EmptyState title={t.upcomingTitle} description={t.upcomingEmpty} />

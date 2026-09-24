@@ -161,7 +161,7 @@ export function IntegrationsBlock({
           M45 · a la izquierda "Integraciones del sitio web" con una fila por
           fuente; a la derecha el panel de configurar la elegida.
         */
-        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <div className="min-w-0 rounded-card border border-border bg-surface p-5 shadow-sm sm:p-6">
             {lista}
           </div>
@@ -464,7 +464,7 @@ function ExternalPlatforms({ view }: { view: IntegrationsView }) {
         <h3 className="text-base font-semibold text-primary-dark">{t.platformsTitle}</h3>
         <p className="text-sm text-text-secondary">{t.platformsHint}</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-[2fr_1fr_1fr]">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[2fr_1fr_1fr]">
         <Card>
           <div className="flex items-start gap-3">
             <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft-surface text-primary">
@@ -473,7 +473,7 @@ function ExternalPlatforms({ view }: { view: IntegrationsView }) {
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-text">{view.webPlatform ?? t.webPlatformLabel}</p>
               <p className="text-xs text-text-secondary">{t.webPlatformNote}</p>
-              <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+              <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="min-w-0">
                   <dt className="text-xs text-text-secondary">{t.webPlatformProject}</dt>
                   <dd className="truncate text-sm text-text">{proyecto ?? t.webPlatformNone}</dd>

@@ -38,7 +38,7 @@ export function ProfileForm({
 
   return (
     <form action={action}>
-      <div className="grid items-end gap-x-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 items-end gap-x-4 sm:grid-cols-2">
         <Field label={t.givenName} id="given_name" name="given_name" defaultValue={givenName} required />
         <Field label={t.familyName} id="family_name" name="family_name" defaultValue={familyName} />
         <Field label={t.email} id="email" defaultValue={email} readOnly disabled />

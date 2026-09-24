@@ -86,7 +86,7 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
             <h2 className="text-lg font-semibold text-primary-dark">{t.currentTitle}</h2>
             <StatusBadge tone="success">{t.active}</StatusBadge>
           </div>
-          <div className="grid gap-6 md:grid-cols-3 md:divide-x md:divide-border">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:divide-x md:divide-border">
             <div>
               <p className="text-3xl font-bold text-primary-dark">{datos.plan.terms?.subjectName ?? t.noName}</p>
               <p className="mt-2 text-sm text-text-secondary">{t.noPrice}</p>
@@ -127,7 +127,7 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 rounded-[10px] bg-soft-surface p-4 sm:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-4 rounded-[10px] bg-soft-surface p-4 sm:grid-cols-2">
             {renovacion ? (
               <div className="flex gap-3">
                 <Icon name="calendar" className="mt-0.5 h-5 w-5 text-text-secondary" />
@@ -166,7 +166,7 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
           {datos.menuBalance ? <StatusBadge tone="success">{t.serviceActive}</StatusBadge> : null}
         </div>
         {datos.menuBalance ? (
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <p className="text-2xl font-bold text-primary-dark">{t.serviceMenu}</p>
             <ul className="space-y-2 text-sm text-text">
               {[t.serviceMenuUpdates(datos.menuBalance.included_updates), t.serviceMenuTemplates(INCLUDED_TEMPLATE_LIMIT)].map(

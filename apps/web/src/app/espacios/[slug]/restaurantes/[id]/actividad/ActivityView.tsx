@@ -127,7 +127,7 @@ export function ActivityView({
     <div className="space-y-6">
       <PageHeader title={t.title} subtitle={t.subtitle} />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <Card className="p-4! sm:p-5!">
           <div className="mb-4 flex flex-wrap items-end gap-4">
             <div>

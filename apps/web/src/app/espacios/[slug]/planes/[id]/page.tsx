@@ -284,7 +284,7 @@ export default async function EstablishmentPlanPage({
       <PageHeader title={tch.title} subtitle={tch.subtitle} />
       <PlansTabs slug={slug} active="restaurantes" />
 
-      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_minmax(0,1fr)]">
         {/* Seleccionar restaurante */}
         <Card className="min-w-0">
           <RestaurantSwitcher
@@ -457,7 +457,7 @@ export default async function EstablishmentPlanPage({
         </Card>
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <Card title={es.plansPage.includedTitle} className="min-w-0">
           {bolsa.length === 0 ? (
             <EmptyState title={es.plansPage.cycleEmptyTitle} description={es.plansPage.cycleEmptyReason} />

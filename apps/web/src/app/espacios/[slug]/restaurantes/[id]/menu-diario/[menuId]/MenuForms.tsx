@@ -101,7 +101,7 @@ export function VersionEditor({
             value={state.conflict?.version ?? current?.version ?? ""}
           />
           {/* R14 · primeros, segundos y postres en tres columnas, como el dibujo. */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <TextArea
               label={t.startersLabel}
               name="starters"
@@ -127,7 +127,7 @@ export function VersionEditor({
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label={t.priceLabel} name="price" inputMode="decimal" hint={t.priceHint} defaultValue={precio} />
             <Field label={t.drinkLabel} name="drink" defaultValue={current?.drink ?? ""} />
           </div>
@@ -421,7 +421,7 @@ function ConflictNotice({
         <p className="mt-3 text-lg font-semibold text-primary-dark">{p.conflictTitle}</p>
         <p className="mt-1 text-sm text-text-secondary">{p.conflictBody}</p>
       </div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="rounded-[10px] border border-border p-3">
           <p className="text-sm font-semibold text-text">{p.conflictYours}</p>
           <p className="text-xs text-text-secondary">{p.conflictYoursHint}</p>

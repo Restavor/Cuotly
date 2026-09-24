@@ -133,9 +133,12 @@
     font-weight: 600;
   }
 
-  /* Una insignia larga ("46 h 1 min para publicar") no cabe en media
-     tarjeta: parte línea en vez de montarse sobre la celda de al lado. */
-  table[data-apilada] > tbody > tr > td [data-badge] {
+  /* Una insignia larga ("46 h 1 min para publicar", "Pendiente de
+     aceptación") no cabe en media tarjeta ni en media columna: parte
+     línea en vez de salirse de la pantalla. Vale para todas, no solo las
+     de una tabla apilada: el detalle de una solicitud del panel se salía
+     a 418 px por la del estado. */
+  [data-badge] {
     max-width: 100%;
     white-space: normal;
     flex-shrink: 1;

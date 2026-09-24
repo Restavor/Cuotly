@@ -598,7 +598,7 @@ function IdentityFacts({
   if (visibles.length === 0) return null;
 
   return (
-    <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+    <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
       {visibles.map(({ field, valor, multilinea }) => (
         <div key={field} className={multilinea ? "sm:col-span-2" : undefined}>
           <dt className="text-text-secondary">{t.identityFields[field]}</dt>
@@ -917,7 +917,7 @@ function AuditEventDetail({
             </div>
           </div>
 
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-text-secondary">{t.eventTypeLabel}</dt>
               <dd className="font-medium text-text">
@@ -956,7 +956,7 @@ function AuditEventDetail({
                  tabla vacía que parecería "no cambió nada". */
               <p className="text-sm text-text-secondary">{t.eventNoChanges}</p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="rounded-[12px] border border-border p-3">
                   <p className="mb-2 text-sm font-semibold text-danger">{t.eventBefore}</p>
                   <dl className="space-y-1.5 text-sm">
@@ -1147,7 +1147,7 @@ export function EstablishmentSheet({
               <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
             ) : (
               <>
-                <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-4">
                   {bolsas.map((bag) => (
                     <CycleBagCard key={bag.category} bag={bag} />
                   ))}
@@ -1167,7 +1167,7 @@ export function EstablishmentSheet({
             la próxima publicación de menú, y la actividad a ancho completo.
             En un teléfono se apilan en ese mismo orden.
           */}
-          <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 xl:grid-cols-3">
             <Card
               title={t.pendingRequestsTitle}
               action={
@@ -1325,7 +1325,7 @@ export function EstablishmentSheet({
             </Card>
           </div>
 
-          <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
 
           {/*
             No está en la maqueta, y se queda: cubre lo que las dos
@@ -1644,7 +1644,7 @@ export function EstablishmentSheet({
             </span>
           }
         >
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-3">
             <div>
               <dt className="text-text-secondary">{t.openRequestCategory}</dt>
               <dd className="font-medium text-text">
@@ -2082,7 +2082,7 @@ export function EstablishmentSheet({
             {counts.requestsByState.length === 0 && counts.jobsByState.length === 0 ? (
               <EmptyState title={t.countsEmptyTitle} description={t.countsEmptyReason} />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-lg bg-soft-surface p-3">
                   <p className="text-xs text-text-secondary">{t.countsRequests}</p>
                   <p className="text-lg font-semibold text-primary-dark">
@@ -2203,7 +2203,7 @@ export function EstablishmentSheet({
             cliente—. En pantallas estrechas se apilan en ese orden.
           */}
           {block.key === "establishmentData" ? (
-            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <div className="min-w-0">
           {block.key === "establishmentData" ? (
             <Card title={t.dataTitle}>
@@ -2366,7 +2366,7 @@ export function EstablishmentSheet({
             misma ficha (CA-10).
           */}
           {block.key === "plan" ? (
-            <div className="grid items-start gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
               <Card
                 title={t.planTitle}
                 action={
@@ -2390,14 +2390,14 @@ export function EstablishmentSheet({
                     {bolsas.length === 0 ? (
                       <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
                     ) : (
-                      <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {bolsas.map((bag) => (
                           <CycleBagCard key={bag.category} bag={bag} />
                         ))}
                       </div>
                     )}
 
-                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                    <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                       <div className="rounded-lg bg-soft-surface p-3">
                         <dt className="text-xs text-text-secondary">{t.renewalTitle}</dt>
                         {/*
@@ -2559,7 +2559,7 @@ export function EstablishmentSheet({
                 </Card>
               ) : paymentsSection.key === "charges" ? (
                 <>
-                  <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                  <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                     {/*
                       M42 · "Próximo cobro": la cuota que sigue debiendo algo,
                       con la fecha grande, el concepto, su estado, el
@@ -3112,7 +3112,7 @@ export function EstablishmentSheet({
               del cliente y el equipo de mantenimiento que tiene este
               restaurante autorizado.
             */}
-            <div className="grid items-start gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
               {/*
                 §40.1 · el panel del restaurante (página 56 del diseño).
                 Va DELANTE de la lista de usuarios porque es lo primero que
@@ -3236,7 +3236,7 @@ export function EstablishmentSheet({
                 tabla de archivos a lo ancho; a la derecha el archivo
                 elegido con sus versiones, y cuánto ocupa el restaurante.
               */}
-              <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+              <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
                 <div className="min-w-0 space-y-4">
                   <Card title={t.foldersTitle}>
                     <FolderRail

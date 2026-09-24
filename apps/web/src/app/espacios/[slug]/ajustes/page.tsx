@@ -154,7 +154,7 @@ export default async function SettingsPage({
       {vista.key === "schedule" ? await ScheduleTab({ supabase, space, gestiona, hoy }) : null}
 
       {vista.key === "taxes" ? (
-        <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           <Card title={tv.fiscalTitle} subtitle={tv.fiscalHint} className="min-w-0">
             {gestiona ? (
               <SpaceDetailsForm
@@ -303,7 +303,7 @@ function GeneralTab({
       .size;
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-3">
+    <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-3">
       <Card title={tv.generalTitle} className="min-w-0">
         {gestiona ? (
           <SpaceNameForm spaceId={space.id} name={space.name} />
@@ -530,7 +530,7 @@ async function ScheduleTab({
       : null;
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
       <div className="min-w-0 space-y-4">
         <Card title={tv.timezoneTitle} subtitle={tv.timezoneShownIn}>
           {gestiona ? (
@@ -665,7 +665,7 @@ function IntegrationsTab({
   const elegido = establishments.find((e) => e.id === restaurante) ?? establishments[0] ?? null;
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <Card title={tv.sourcesTitle} subtitle={tv.sourcesHint} className="min-w-0">
         <form method="get" className="mb-4 flex flex-wrap items-end gap-3">
           <input type="hidden" name="vista" value="integraciones" />
@@ -857,7 +857,7 @@ async function SecurityTab({ supabase }: { supabase: Supabase }) {
   const dosPasos = aal.error ? null : aal.data.nextLevel === "aal2";
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <div className="min-w-0 space-y-4">
         <Card title={tv.twoFactorTitle}>
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -974,7 +974,7 @@ async function NotificationsTab({
   });
 
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <Card title={es.settings.notificationsTitle} className="min-w-0">
         <NotificationPreferencesForm spaceId={spaceId} preferences={preferences} />
       </Card>

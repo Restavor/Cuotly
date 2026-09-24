@@ -280,7 +280,7 @@ export default async function ClientMenuPage({
       ) : null}
 
       {vista === "editor" ? (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <VersionEditor
               menuId={menuId}
@@ -331,12 +331,12 @@ export default async function ClientMenuPage({
       ) : null}
 
       {vista === "vista-previa" ? (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card className="flex justify-center lg:col-span-2">{vistaPrevia(520)}</Card>
           <div className="space-y-6">
             <Card title={t.downloadsTitle}>
               {canDownload ? (
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <a
                     href={`${aqui}/descargar?formato=pdf`}
                     className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-cuotly-green bg-surface px-3 py-2.5 text-sm font-semibold text-cuotly-green hover:bg-cuotly-green/10"
@@ -388,7 +388,7 @@ export default async function ClientMenuPage({
               <div className="mt-3">{plazos}</div>
             </Card>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {botonTab("editor", p.editContent, false, "settings")}
               {botonTab("publicacion", p.requestPublication, true, "share")}
             </div>
@@ -397,10 +397,10 @@ export default async function ClientMenuPage({
       ) : null}
 
       {vista === "publicacion" ? (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <Card title={p.menuDataTitle}>
-              <div className="grid gap-6 sm:grid-cols-[auto_1fr]">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-[auto_1fr]">
                 <div className="flex justify-center">{vistaPrevia(180)}</div>
                 <div className="space-y-4 text-sm">
                   <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
@@ -462,7 +462,7 @@ export default async function ClientMenuPage({
       ) : null}
 
       {vista === "versiones" ? (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card title={p.versionListTitle}>
             {(versions ?? []).length === 0 ? (
               <p className="text-sm text-text-secondary">{p.neverSaved}</p>

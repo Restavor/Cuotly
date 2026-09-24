@@ -77,7 +77,7 @@ export default async function ClientMenuServicePage({ params }: { params: Promis
         cycleLabel={cycleLabel}
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card title={t.serviceTitle}>
           <div className="flex items-start gap-3">
             <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-soft-surface text-cuotly-green">
@@ -139,7 +139,7 @@ export default async function ClientMenuServicePage({ params }: { params: Promis
         {(templates ?? []).length === 0 ? (
           <p className="text-sm text-text-secondary">{d.templatesEmptyReason}</p>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-3">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {(templates ?? []).map((tpl) => (
               <li key={tpl.id}>
                 <Link

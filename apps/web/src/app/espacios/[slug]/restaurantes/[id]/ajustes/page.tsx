@@ -93,7 +93,7 @@ export default async function ClientSettingsPage({
 
       {activa === "datos" ? (
         canEditData === true ? (
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <Card title={t.dataTitle}>
               <EstablishmentDataForm
                 establishmentId={id}
@@ -148,7 +148,7 @@ export default async function ClientSettingsPage({
       ) : null}
 
       {activa !== "datos" ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="space-y-6">
             <Card title={t.notificationsTitle}>
               <p className="mb-4 text-sm text-text-secondary">{t.notificationsBody}</p>

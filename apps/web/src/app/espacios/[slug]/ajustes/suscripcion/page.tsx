@@ -182,7 +182,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
     <div className="space-y-6">
       <SettingsHeader slug={slug} active="subscription" />
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <div className="min-w-0 space-y-4">
           <Card>
             <div className="flex flex-wrap items-center gap-2">
@@ -394,7 +394,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
 
           {otro ? (
             <Card title={t.compareTitle}>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <p className="text-lg font-bold text-primary-dark">Cuotly {t.plans[otro]}</p>
                   <p className="text-xl font-bold text-primary-dark">

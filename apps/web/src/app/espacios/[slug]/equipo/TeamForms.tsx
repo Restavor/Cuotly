@@ -54,7 +54,7 @@ export function PermissionsForm({
   const algoEditable = editEstablishments || editSpecialties || editAdminFlags;
 
   return (
-    <form action={action} className="grid items-start gap-4 lg:grid-cols-3">
+    <form action={action} className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
       <input type="hidden" name="spaceId" value={spaceId} />
       <input type="hidden" name="userId" value={userId} />
       {editEstablishments ? <input type="hidden" name="editEstablishments" value="1" /> : null}

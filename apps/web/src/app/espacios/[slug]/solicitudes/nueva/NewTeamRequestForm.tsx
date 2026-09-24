@@ -65,7 +65,7 @@ export function NewTeamRequestForm({
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
       <Card>
-        <div className="grid gap-x-8 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-x-8 lg:grid-cols-2">
           <div>
             <Select
               label={t.establishmentLabel}

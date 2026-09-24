@@ -98,7 +98,7 @@ export default async function ClientMessagesPage({
           <EmptyState title={t.emptyTitle} description={t.emptyReason} />
         </Card>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)_280px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)_280px]">
           <Card className="p-3! sm:p-3!">
             <nav aria-label={t.listLabel}>
               <ul className="space-y-1">

@@ -121,7 +121,7 @@ export default async function AdminRequestDetailPage({ params }: { params: Promi
       </header>
 
       <Card title={t.fields}>
-        <dl className="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
           {campos.map(([label, value]) => (
             <div key={label}>
               <dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{label}</dt>

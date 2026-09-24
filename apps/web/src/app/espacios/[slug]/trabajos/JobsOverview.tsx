@@ -132,7 +132,7 @@ export function JobsOverview({
                   <Avatar name={m.name} size={34} />
                   {/* Columnas de ancho fijo: si no, cada barra mide lo que
                       le dejan su nombre y su insignia, y se comparan mal. */}
-                  <div className="grid min-w-0 flex-1 gap-x-3 gap-y-1.5 sm:grid-cols-[8rem_minmax(0,1fr)_13rem] sm:items-center">
+                  <div className="grid grid-cols-1 min-w-0 flex-1 gap-x-3 gap-y-1.5 sm:grid-cols-[8rem_minmax(0,1fr)_13rem] sm:items-center">
                     <span className="truncate text-sm font-medium text-text">
                       {m.name}
                     </span>

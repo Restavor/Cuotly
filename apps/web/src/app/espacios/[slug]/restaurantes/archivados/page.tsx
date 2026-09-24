@@ -134,7 +134,7 @@ export default async function ArchivedEstablishmentsPage({
           <EmptyState icon="building" title={t.emptyTitle} description={t.emptyReason} />
         </Card>
       ) : (
-        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <div className="min-w-0 space-y-3">
             <FilterBar action={action} hasFilters={buscar.trim() !== ""} label={t.searchLabel}>
               <FilterSearch
@@ -231,7 +231,7 @@ export default async function ArchivedEstablishmentsPage({
                   El ámbar del dibujo: fondo ámbar con el texto oscuro, porque
                   el ámbar como color de texto no llega a 3:1 (CA-22).
                 */}
-                <dl className="mt-4 grid gap-3 rounded-[12px] bg-warning/20 p-3 text-sm sm:grid-cols-2">
+                <dl className="mt-4 grid grid-cols-1 gap-3 rounded-[12px] bg-warning/20 p-3 text-sm sm:grid-cols-2">
                   <div>
                     <dt className="text-xs text-text-secondary">{t.archivedAtColumn}</dt>
                     <dd className="font-semibold text-primary-dark">

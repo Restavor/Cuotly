@@ -46,11 +46,15 @@ export function FilterBar({
       role="search"
       aria-label={label ?? es.ui.filters.label}
       // Diseño móvil (P5 de docs/diseno/PLAN-MOVIL.md) · en el teléfono los
-      // desplegables van en una rejilla, tantos por fila como quepan —tres a
-      // 390 px, como en la página 23—, y el buscador y los botones a lo
-      // ancho. Antes cada desplegable medía lo que su opción más larga y
-      // quedaban uno por fila, empujando la lista una pantalla hacia abajo.
-      className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] items-end gap-x-3 gap-y-3 rounded-card border border-border bg-surface p-4 shadow-sm sm:flex sm:flex-wrap sm:gap-x-4"
+      // desplegables van en una rejilla, tantos por fila como quepan, y el
+      // buscador y los botones a lo ancho. Antes cada desplegable medía lo
+      // que su opción más larga y quedaban uno por fila, empujando la lista
+      // una pantalla hacia abajo.
+      //
+      // Dos por fila a 390 px, no tres como el PDF (p. 23 y 116): el PDF
+      // los pinta a 9 px, y a nuestro cuerpo de letra en tres columnas cada
+      // desplegable medía 98 px y cortaba su valor ("Todos lc", "Todas la").
+      className="grid grid-cols-[repeat(auto-fit,minmax(9rem,1fr))] items-end gap-x-2 gap-y-3 rounded-card border border-border bg-surface p-3 shadow-sm sm:flex sm:flex-wrap sm:gap-x-4 sm:p-4"
     >
       {hidden
         ? Object.entries(hidden).map(([nombre, valor]) =>
@@ -145,7 +149,7 @@ export function FilterSelect({
         id={id}
         name={name}
         defaultValue={defaultValue ?? ""}
-        className="w-full rounded-field border border-border bg-surface px-3 py-2 text-sm text-text outline-none transition-colors focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+        className="w-full rounded-field border border-border bg-surface px-2 py-2 text-sm text-text outline-none sm:px-3 transition-colors focus:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
       >
         <option value="">{allLabel ?? es.ui.filters.all}</option>
         {options.map((opcion) => (

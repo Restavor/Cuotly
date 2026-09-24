@@ -169,10 +169,10 @@ export default async function GlobalHomePage() {
           </Card>
         )
       ) : (
-        <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           {home.spaces.length > 0 ? (
             <Card className="min-w-0" title={t.spacesTitle}>
-              <ul className="grid gap-3 sm:grid-cols-2">
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {home.spaces.map((espacio) => {
                   const cuantos = home.restaurantCount.get(espacio.space_id);
                   return (
@@ -230,7 +230,7 @@ export default async function GlobalHomePage() {
           <section id="mis-paneles" className="contents">
             {home.restaurants.length > 0 ? (
               <Card className="min-w-0" title={t.restaurantsTitle}>
-                <ul className="grid gap-3 sm:grid-cols-2">
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {home.restaurants.map((restaurante) => (
                     <li
                       key={restaurante.establishment_id}
@@ -283,7 +283,7 @@ export default async function GlobalHomePage() {
         solicitudes de espacio a la derecha, cada una con su icono, su
         frase y su botón.
       */}
-      <div className="grid items-start gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
         <Card className="min-w-0" title={t.unreadTitle}>
           {home.failed.conversations ? (
             <p className="text-sm text-text-secondary">
