@@ -38,7 +38,15 @@ export function Tabs({
 }) {
   return (
     <nav aria-label={label} className={`border-b border-border ${className}`}>
-      <ul className="-mb-px flex gap-6 overflow-x-auto">
+      {/*
+        Diseño móvil (P4 de docs/diseno/PLAN-MOVIL.md) · en el teléfono las
+        pestañas se **reparten en filas** y se ven todas, como en las
+        páginas 26, 27 y 100 del PDF. Antes iban en una fila que se
+        desplazaba de lado, y las del final ("Integraciones", "Notas
+        internas") no se veían sin saber que había que arrastrar. Desde
+        `sm` vuelven a ser una fila.
+      */}
+      <ul className="-mb-px flex flex-wrap gap-x-5 gap-y-1 sm:flex-nowrap sm:gap-6 sm:overflow-x-auto">
         {tabs.map((tab) => {
           const activa = tab.key === active;
           return (
@@ -46,7 +54,7 @@ export function Tabs({
               <Link
                 href={tab.href}
                 aria-current={activa ? "page" : undefined}
-                className={`flex items-center gap-2 border-b-2 px-1 pb-3 pt-1 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
+                className={`flex items-center gap-2 border-b-2 px-1 pb-2 pt-1 text-sm transition-colors sm:pb-3 focus:outline focus:outline-2 focus:outline-cuotly-green ${
                   activa
                     ? "border-cuotly-green font-semibold text-cuotly-green"
                     : "border-transparent font-medium text-text-secondary hover:text-text"

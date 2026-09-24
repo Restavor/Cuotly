@@ -57,15 +57,22 @@ function TabNav({ base, active }: { base: string; active: SheetTab }) {
   */
   return (
     <nav aria-label={t.tabsLabel} className="border-t border-border bg-soft-surface/60">
-      <ul className="flex overflow-x-auto">
+      {/*
+        En el teléfono las cinco caben en una fila, como en las páginas 24
+        a 52 del diseño móvil: cinco columnas iguales y el nombre en dos
+        líneas si no cabe ("Informes / y datos"). Antes cada una medía al
+        menos 136 px y la fila se desplazaba: "Gestión" e "Historial" no
+        se veían.
+      */}
+      <ul className="grid grid-cols-5 sm:flex">
         {SHEET_TABS.map((tab) => {
           const seleccionada = tab.key === active.key;
           return (
-            <li key={tab.key} className="min-w-[8.5rem] flex-1 sm:flex-none">
+            <li key={tab.key} className="min-w-0 sm:flex-none">
               <Link
                 href={sheetHref(base, tab)}
                 aria-current={seleccionada ? "page" : undefined}
-                className={`-mb-px block border-b-2 border-r border-r-border px-5 py-3 text-center text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${
+                className={`-mb-px flex h-full items-center justify-center border-b-2 border-r border-r-border px-1 py-2.5 text-center text-xs leading-tight transition-colors sm:block sm:px-5 sm:py-3 sm:text-sm focus:outline focus:outline-2 focus:outline-cuotly-green ${
                   seleccionada
                     ? "border-b-cuotly-green bg-surface font-semibold text-cuotly-green"
                     : "border-b-transparent font-medium text-text-secondary hover:bg-surface/70 hover:text-text"
@@ -122,16 +129,25 @@ export function SheetHeaderCard({
   */
   return (
     <header className="overflow-hidden rounded-card border border-border bg-surface shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4 p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 p-4 sm:gap-y-4 sm:p-6">
         {/*
           RN-EST-18 · la foto del local. Sin foto se pinta el icono de
           local, no un marco vacío (CA-20).
         */}
         <div className="flex min-w-0 flex-1 basis-72 items-start gap-4 sm:items-center">
-          <EstablishmentPhoto photoUrl={photoUrl} size={80} className="rounded-[14px]" />
+          {/*
+            En el teléfono la foto baja a 56 px, como en el diseño móvil:
+            a 80 se comía un cuarto del ancho. `!` porque el tamaño lo pone
+            el componente en línea.
+          */}
+          <EstablishmentPhoto
+            photoUrl={photoUrl}
+            size={80}
+            className="h-14! w-14! rounded-[12px] sm:h-20! sm:w-20! sm:rounded-[14px]"
+          />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-[26px] font-bold leading-tight tracking-tight text-primary-dark">
+              <h1 className="text-[20px] font-bold leading-tight tracking-tight text-primary-dark sm:text-[26px]">
                 {header.name}
               </h1>
               <StatusBadge tone={statusTone(header.status)}>
@@ -196,7 +212,7 @@ export function SheetHeaderCard({
               href={header.identity.websiteUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-field border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green transition-colors hover:bg-cuotly-green/10 focus:outline focus:outline-2 focus:outline-cuotly-green"
+              className="inline-flex items-center gap-2 rounded-field border border-cuotly-green bg-surface px-3 py-2 text-xs font-semibold text-cuotly-green sm:px-4 sm:py-2.5 sm:text-sm transition-colors hover:bg-cuotly-green/10 focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
               {t.websiteLink}
               <Icon name="externalLink" aria-hidden="true" className="h-4 w-4" />
@@ -214,7 +230,7 @@ export function SheetHeaderCard({
           {canEditData ? (
             <Link
               href={sheetHref(base, MANAGEMENT_TAB, DATA_BLOCK)}
-              className="inline-flex items-center gap-2 rounded-field border border-border bg-surface px-4 py-2.5 text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+              className="inline-flex items-center gap-2 rounded-field border border-border bg-surface px-3 py-2 text-xs sm:px-4 sm:py-2.5 sm:text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
               {t.editEstablishment}
             </Link>
