@@ -199,7 +199,7 @@ function ResumenDelMes({
   const { summary, rows, nonpayment } = content;
   return (
         <>
-          <section aria-label={tituloMes} className="grid gap-4 md:grid-cols-3">
+          <section aria-label={tituloMes} className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
             <StatCard
               icon="finance"
               tone="green"

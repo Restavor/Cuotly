@@ -45,7 +45,12 @@ export function FilterBar({
       action={action}
       role="search"
       aria-label={label ?? es.ui.filters.label}
-      className="flex flex-wrap items-end gap-x-4 gap-y-3 rounded-card border border-border bg-surface p-4 shadow-sm"
+      // Diseño móvil (P5 de docs/diseno/PLAN-MOVIL.md) · en el teléfono los
+      // desplegables van en una rejilla, tantos por fila como quepan —tres a
+      // 390 px, como en la página 23—, y el buscador y los botones a lo
+      // ancho. Antes cada desplegable medía lo que su opción más larga y
+      // quedaban uno por fila, empujando la lista una pantalla hacia abajo.
+      className="grid grid-cols-[repeat(auto-fit,minmax(6rem,1fr))] items-end gap-x-3 gap-y-3 rounded-card border border-border bg-surface p-4 shadow-sm sm:flex sm:flex-wrap sm:gap-x-4"
     >
       {hidden
         ? Object.entries(hidden).map(([nombre, valor]) =>
@@ -55,7 +60,7 @@ export function FilterBar({
           )
         : null}
       {children}
-      <div className="ml-auto flex items-center gap-3 self-end">
+      <div className="col-span-full flex items-center justify-end gap-3 self-end sm:ml-auto">
         <button
           type="submit"
           className="rounded-field border border-border bg-surface px-3.5 py-2 text-sm font-semibold text-text transition-colors hover:bg-soft-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
@@ -90,7 +95,7 @@ export function FilterSearch({
   label?: string;
 }) {
   return (
-    <div className="min-w-[200px] flex-1 sm:max-w-xs">
+    <div className="col-span-full min-w-0 sm:min-w-[200px] sm:max-w-xs sm:flex-1">
       <label htmlFor={id} className="sr-only">
         {label ?? es.ui.filters.search}
       </label>
@@ -132,7 +137,7 @@ export function FilterSelect({
   options: readonly { readonly value: string; readonly label: string }[];
 }) {
   return (
-    <div className="min-w-[150px]">
+    <div className="min-w-0 sm:min-w-[150px]">
       <label htmlFor={id} className="mb-1 block text-xs font-medium text-text-secondary">
         {label}
       </label>

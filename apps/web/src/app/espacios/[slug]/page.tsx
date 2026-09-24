@@ -176,12 +176,13 @@ export default async function SpacePage({
 
       {/*
         M01 · **cinco** recuadros en una sola fila en escritorio. En un
-        teléfono se reparten en dos columnas y en una tableta en tres,
-        como los dibuja la página 22 del diseño definitivo móvil.
+        teléfono, tres arriba y dos debajo, como los dibuja la página 22
+        del diseño móvil (una rejilla de seis: los tres primeros ocupan dos
+        columnas y los dos últimos tres); en una tableta, filas de tres.
       */}
       <section
         aria-label={es.spaceHome.title}
-        className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5 xl:gap-4"
+        className="grid grid-cols-6 gap-2.5 *:col-span-2 *:nth-[n+4]:col-span-3 md:grid-cols-3 md:gap-3 md:*:col-span-1! xl:grid-cols-5 xl:gap-4"
       >
         <KpiCard
           icon="building"

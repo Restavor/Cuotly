@@ -27,3 +27,19 @@ describe("P4 · las pestañas en el teléfono", () => {
     expect(cabecera).not.toContain("min-w-[8.5rem]");
   });
 });
+
+describe("P5 y P6 · filtros y cifras en el teléfono", () => {
+  it("P5: los filtros van en rejilla, varios por fila, y solo desde sm en fila flexible", () => {
+    const barra = leer("src/components/ui/FilterBar.tsx");
+    expect(barra).toContain("grid-cols-[repeat(auto-fit,minmax(6rem,1fr))]");
+    // Un desplegable con anchura mínima fija volvería a dejar uno por fila.
+    expect(barra).toContain('<div className="min-w-0 sm:min-w-[150px]">');
+  });
+
+  it("P6: la tarjeta de cifra se compacta en el teléfono sin bajar de 12 px", () => {
+    const tarjeta = leer("src/components/ui/StatCard.tsx");
+    expect(tarjeta).toContain("p-3.5");
+    expect(tarjeta).toContain("text-[22px]");
+    expect(tarjeta).not.toMatch(/text-\[(9|10|11)px\]/);
+  });
+});

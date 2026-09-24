@@ -60,18 +60,31 @@ docker run -d --name cuotly-postgrest --network host \
   postgrest/postgrest:v12.2.12 >/dev/null
 
 echo "· Pasarela"
+pkill -f "supabase-local/pasarela.mjs" 2>/dev/null || true
 nohup node "$RAIZ/scripts/supabase-local/pasarela.mjs" >"$LOGS/pasarela.log" 2>&1 &
 echo $! >"$LOGS/pasarela.pid"
 
-# La clave anónima: un JWT con rol `anon` firmado con el mismo secreto.
-ANON=$(node -e '
+# Las dos claves: JWT con rol `anon` y `service_role` firmados con el mismo
+# secreto. La de servicio la usan las pantallas que calculan cifras del
+# espacio entero (Informes) y la cola; sin ella dicen que no pudieron.
+clave() {
+  node -e '
 const c=require("crypto"),b=x=>Buffer.from(x).toString("base64url");
-const h=b(JSON.stringify({alg:"HS256",typ:"JWT"})),p=b(JSON.stringify({role:"anon",iss:"supabase",iat:1700000000,exp:2000000000}));
-console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRETO")
+const h=b(JSON.stringify({alg:"HS256",typ:"JWT"})),p=b(JSON.stringify({role:process.argv[2],iss:"supabase",iat:1700000000,exp:2000000000}));
+console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRETO" "$1"
+}
+ANON=$(clave anon)
+SERVICIO=$(clave service_role)
 
 echo "· next dev en http://localhost:3999"
+# Por el puerto y no por el pid: `npx` deja vivo al servidor de Next si solo
+# se cierra él, y el nuevo no podría escuchar en el 3999.
+pkill -f "next dev -p 3999" 2>/dev/null || true
+pkill -f "next-server" 2>/dev/null || true
+sleep 1
 cd "$RAIZ/apps/web"
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON" \
+SUPABASE_SERVICE_ROLE_KEY="$SERVICIO" \
 NEXT_PUBLIC_SITE_URL=http://localhost:3999 \
   nohup npx next dev -p 3999 >"$LOGS/next.log" 2>&1 &
 echo $! >"$LOGS/next.pid"

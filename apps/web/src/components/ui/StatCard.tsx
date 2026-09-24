@@ -46,26 +46,30 @@ export function StatCard({
 }) {
   const contenido = (
     <>
-      <span className="flex items-center gap-3">
+      <span className="flex flex-col items-start gap-1.5 min-[480px]:flex-row min-[480px]:items-center sm:gap-3">
         <span
           aria-hidden="true"
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] ${TONOS[tone]}`}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] sm:h-10 sm:w-10 ${TONOS[tone]}`}
         >
-          <Icon name={icon} className="h-5 w-5" />
+          <Icon name={icon} className="h-4 w-4 sm:h-5 sm:w-5" />
         </span>
-        <span className="min-w-0 text-sm font-medium leading-snug text-text-secondary">{label}</span>
+        <span className="min-w-0 text-xs font-medium leading-snug text-text-secondary sm:text-sm">{label}</span>
       </span>
-      <span className="mt-3 block text-[28px] font-bold leading-none tracking-tight text-primary-dark">
+      <span className="mt-2 block text-[22px] font-bold leading-none tracking-tight text-primary-dark sm:mt-3 sm:text-[28px]">
         {value}
       </span>
       {hint === undefined || hint === null ? null : (
-        <span className="mt-2 block text-xs leading-snug text-text-secondary">{hint}</span>
+        <span className="mt-1.5 block text-xs leading-snug text-text-secondary sm:mt-2">{hint}</span>
       )}
     </>
   );
 
   const clase =
-    "block min-w-0 rounded-card border border-border bg-surface p-5 shadow-sm transition-colors";
+    // En el teléfono (P6 de docs/diseno/PLAN-MOVIL.md) la tarjeta se compacta
+    // —menos margen, icono y cifra más pequeños— para que quepan dos o tres
+    // por fila como en el diseño móvil, en vez de una columna de tarjetas
+    // grandes. El texto no baja de 12 px (§21.4).
+    "block min-w-0 rounded-card border border-border bg-surface p-3.5 shadow-sm transition-colors sm:p-5";
 
   if (href === undefined) {
     return (

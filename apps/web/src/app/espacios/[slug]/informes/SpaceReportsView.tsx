@@ -185,7 +185,7 @@ function Operacion({ data }: { data: OperationPanel }) {
   const maximo = Math.max(1, ...data.workers.map((w) => w.assigned));
   return (
     <div className="space-y-5">
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <StatCard
           icon="job"
           tone="green"
@@ -310,7 +310,7 @@ function Finanzas({ data, slug }: { data: FinancePanel; slug: string }) {
   ];
   return (
     <div className="space-y-5">
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <StatCard icon="document" tone="neutral" label={t.issued} value={euros(data.issued)} />
         <StatCard icon="finance" tone="green" label={t.collected} value={euros(data.collected)} />
         <StatCard icon="clock" tone="info" label={t.outstanding} value={euros(data.outstanding)} />
@@ -432,7 +432,7 @@ function Digital({ data, slug, timeZone }: { data: DigitalPanel; slug: string; t
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <StatCard
           icon="reports"
           tone="green"

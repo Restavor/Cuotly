@@ -167,7 +167,7 @@ export function MembersTab({ slug, data }: { slug: string; data: TeamData }) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
         <StatCard icon="team" label={tm.statMembers} value={counts.members} />
         <StatCard
           icon="person"
