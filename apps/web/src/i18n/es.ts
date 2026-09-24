@@ -2147,6 +2147,8 @@ export const es = {
         "La conversación interna de este trabajo se crea la primera vez que alguien la abre.",
       commentsOpen: "Abrir los comentarios internos",
       commentsOpenPending: "Abriendo…",
+      // La misma conversación también está en la bandeja (§66.2).
+      commentsInInbox: "Ver en Mensajes",
 
       // RN-JOB-10 · lo que se publicó, archivado con el trabajo. Los
       // archivos salen de `file_links` (RN-ARC-02, "elemento
@@ -2427,7 +2429,6 @@ export const es = {
       internalTitle: "Conversación interna del equipo",
       internalNotice:
         "El restaurante no ve esta conversación. Para hablar con él, usa la de su solicitud o la general de su restaurante.",
-      internalOpen: "Abrir la conversación interna del equipo",
       establishmentTitle: "Conversación general del restaurante",
       establishmentNotice:
         "El restaurante lee esta conversación. Para coordinaros entre vosotros, usa la interna de su trabajo.",

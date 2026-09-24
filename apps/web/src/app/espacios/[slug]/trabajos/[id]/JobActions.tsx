@@ -22,7 +22,7 @@ import { es } from "@/i18n/es";
 import {
   assignJob,
   blockJob,
-  openJobInternalConversation,
+  openJobCommentsHere,
   publishJob,
   startJob,
   unblockJob,
@@ -202,26 +202,23 @@ export function PublishJobForm({ jobId, spaceId }: { jobId: string; spaceId: str
 }
 
 /**
- * §66.2 · la puerta a la conversación interna del equipo desde la ficha
- * del trabajo.
- *
- * Es un formulario y no un enlace porque la conversación puede no existir
- * todavía: la acción la abre —creándola la primera vez— y lleva a ella.
- * El aviso de que el restaurante no la ve va en la conversación misma,
- * que es donde se escribe (RN-MSG-04).
+ * §66.2 · los comentarios internos todavía no abiertos. Un botón y no una
+ * creación al mirar (ver `openJobCommentsHere`): al pulsarlo se crea la
+ * conversación y la ficha, revalidada, la enseña aquí mismo.
  */
-export function OpenInternalConversationForm({ jobId, slug }: { jobId: string; slug: string }) {
-  const [state, action, pending] = useActionState(openJobInternalConversation, INITIAL_JOB_ACTION);
+export function OpenJobCommentsForm({ jobId }: { jobId: string }) {
+  const [state, action, pending] = useActionState(openJobCommentsHere, INITIAL_JOB_ACTION);
+  const t = es.teamArea.jobs;
 
   return (
-    <Card title={es.teamArea.messages.internalTitle}>
-      <p className="mb-3 text-sm text-text-secondary">{es.teamArea.messages.internalNotice}</p>
-      <form action={action}>
+    <Card title={t.commentsTitle}>
+      <EmptyState title={t.commentsClosedTitle} description={t.commentsClosedReason} />
+      <p className="mt-3 text-sm text-text-secondary">{es.teamArea.messages.internalNotice}</p>
+      <form action={action} className="mt-3">
         <input type="hidden" name="jobId" value={jobId} />
-        <input type="hidden" name="slug" value={slug} />
         <Error message={state.error} />
         <Button type="submit" disabled={pending}>
-          {es.teamArea.messages.internalOpen}
+          {pending ? t.commentsOpenPending : t.commentsOpen}
         </Button>
       </form>
     </Card>

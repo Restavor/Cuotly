@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { RegisterPaymentForm } from "@/components/RegisterPaymentForm";
+import { Conversation } from "@/components/conversation/Conversation";
+import { loadConversation } from "@/components/conversation/load";
 
 import {
   Card,
@@ -32,7 +34,7 @@ import { loadJobTimers } from "./timers-load";
 import {
   AssignJobForm,
   BlockJobForm,
-  OpenInternalConversationForm,
+  OpenJobCommentsForm,
   ResumeJobBar,
   PublishJobForm,
   StartJobForm,
@@ -268,6 +270,22 @@ export default async function TeamJobDetailPage({
   const { data: esDelEquipo } = await supabase.rpc("is_space_member", {
     p_space_id: job.space_id,
   });
+
+  // §66.2 · los comentarios internos, dentro de la ficha (maqueta 06). Se
+  // busca la conversación que ya exista; no se crea al mirar (eso lo hace
+  // el botón, `openJobCommentsHere`). Solo para el equipo: al restaurante
+  // ni se le pregunta, y la política de `conversations` tampoco se la daría.
+  const { data: conversacionInterna } = esDelEquipo
+    ? await supabase
+        .from("conversations")
+        .select("id")
+        .eq("job_id", id)
+        .eq("type", "job_internal")
+        .maybeSingle()
+    : { data: null };
+  const comentarios = conversacionInterna
+    ? await loadConversation(supabase, conversacionInterna.id)
+    : null;
 
   // §84 / RN-JOB-06 · la puerta de un trabajo presupuestado: si se puede
   // Comenzar la decide el servidor (`job_quote_gate()`, sin importes ni
@@ -794,7 +812,29 @@ export default async function TeamJobDetailPage({
               publicado={job.published_at !== null}
             />
           ) : null}
-          {esDelEquipo ? <OpenInternalConversationForm jobId={id} slug={slug} /> : null}
+          {esDelEquipo && conversacionInterna && comentarios ? (
+            <div className="space-y-2">
+              <Conversation
+                conversationId={conversacionInterna.id}
+                establishmentId={job.establishment_id}
+                timeZone={zona}
+                messages={comentarios.messages}
+                readOnly={comentarios.readOnly}
+                title={es.teamArea.jobs.commentsTitle}
+                notice={es.teamArea.messages.internalNotice}
+                emptyTitle={es.teamArea.jobs.commentsEmptyTitle}
+                emptyReason={es.teamArea.jobs.commentsEmptyReason}
+              />
+              <Link
+                href={`/espacios/${slug}/mensajes/${conversacionInterna.id}`}
+                className="inline-block text-sm text-cuotly-green underline"
+              >
+                {es.teamArea.jobs.commentsInInbox}
+              </Link>
+            </div>
+          ) : esDelEquipo ? (
+            <OpenJobCommentsForm jobId={id} />
+          ) : null}
         </div>
       </div>
 

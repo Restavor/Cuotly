@@ -6,7 +6,7 @@ import { es } from "@/i18n/es";
 vi.mock("./actions", () => ({
   assignJob: vi.fn(),
   blockJob: vi.fn(),
-  openJobInternalConversation: vi.fn(),
+  openJobCommentsHere: vi.fn(),
   publishJob: vi.fn(),
   startJob: vi.fn(),
   unblockJob: vi.fn(),
