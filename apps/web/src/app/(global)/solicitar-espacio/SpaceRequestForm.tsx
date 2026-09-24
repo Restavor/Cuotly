@@ -81,7 +81,7 @@ export function SpaceRequestForm({ initial }: { initial: SpaceRequestValues }) {
         <h2 className="mb-3 text-base font-semibold text-primary-dark">
           {t.usageTitle}
         </h2>
-        <div className="grid items-end gap-x-4 sm:grid-cols-2">
+        <div className="grid grid-cols-2 items-end gap-x-3 sm:gap-x-4">
           <Field
             name="estimatedEstablishments"
             label={t.estimatedEstablishments}

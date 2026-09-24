@@ -35,6 +35,23 @@ export function AttentionBoard({
   const t = es.globalContext.home;
   const visibles = filterByContext(items, contexto === "" ? null : contexto);
 
+  /*
+    Una sola etiqueta y no dos: si está fuera de plazo, eso es lo que hay
+    que leer; si no, lo que le pasa, y al lado la fecha. Antes se escribían
+    las dos y en un móvil salía "Fuera de plazo Fuera de plazo".
+  */
+  const estado = (item: GlobalAttentionItem) => (
+    <StatusBadge tone={item.overdue ? "danger" : "info"} icon={item.overdue ? "alert" : "clock"}>
+      {item.overdue ? t.overdue : es.globalContext.kinds[item.kind]}
+      {" · "}
+      {item.dueAt !== null
+        ? `${t.dueOn} ${fechaCorta(item.dueAt)}`
+        : item.createdAt !== null
+          ? `${t.since} ${fechaCorta(item.createdAt)}`
+          : t.noDate}
+    </StatusBadge>
+  );
+
   return (
     <div>
       {/*
@@ -67,7 +84,11 @@ export function AttentionBoard({
         {visibles.map((item) => (
           <li
             key={item.key}
-            className="flex flex-wrap items-center gap-3 rounded-[12px] border border-border bg-surface px-3.5 py-3 sm:flex-nowrap"
+            // En el teléfono, una rejilla: icono, título y botón en la primera
+            // fila, y la etiqueta debajo del título, como en la página 1 del
+            // diseño móvil. Antes la fila se partía en tres y cada aviso
+            // ocupaba media pantalla. Desde `sm`, todo en una fila.
+            className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 rounded-[12px] border border-border bg-surface px-3.5 py-3 sm:flex"
           >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft-surface text-primary-dark">
               <Icon
@@ -76,26 +97,12 @@ export function AttentionBoard({
               />
             </span>
 
-            <div className="min-w-0 flex-1 basis-40">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-text">{item.title}</p>
               <p className="truncate text-xs text-text-secondary">{item.contextName}</p>
             </div>
 
-            {/*
-              Una sola etiqueta y no dos: si está fuera de plazo, eso es
-              lo que hay que leer; si no, lo que le pasa, y al lado la
-              fecha. Antes se escribían las dos y en un móvil salía
-              "Fuera de plazo Fuera de plazo".
-            */}
-            <StatusBadge tone={item.overdue ? "danger" : "info"} icon={item.overdue ? "alert" : "clock"}>
-              {item.overdue ? t.overdue : es.globalContext.kinds[item.kind]}
-              {" · "}
-              {item.dueAt !== null
-                ? `${t.dueOn} ${fechaCorta(item.dueAt)}`
-                : item.createdAt !== null
-                  ? `${t.since} ${fechaCorta(item.createdAt)}`
-                  : t.noDate}
-            </StatusBadge>
+            <span className="hidden shrink-0 sm:inline-flex">{estado(item)}</span>
 
             {/*
               El botón del diseño. Va en la fila y no envolviendo la fila
@@ -109,6 +116,8 @@ export function AttentionBoard({
               {t.openItem}
               <Icon name="chevronRight" className="h-4 w-4" />
             </Link>
+
+            <span className="col-span-2 col-start-2 sm:hidden">{estado(item)}</span>
           </li>
         ))}
       </ul>

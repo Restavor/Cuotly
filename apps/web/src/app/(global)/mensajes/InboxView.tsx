@@ -254,7 +254,12 @@ export function InboxView({
           )}
         </div>
 
-        <div className="min-w-0 p-4">
+        {/*
+          En el teléfono, sin conversación elegida no hay columna derecha:
+          la lista es la pantalla, y el "Elige una conversación" solo
+          empujaba hacia abajo un hueco vacío (página 5 del diseño móvil).
+        */}
+        <div className={`min-w-0 p-4 ${params.selected === null ? "hidden lg:block" : ""}`}>
           {params.selected === null ? (
             <EmptyState title={t.pickTitle} description={t.pickReason} />
           ) : selected === null ? (
