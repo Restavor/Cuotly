@@ -48,9 +48,14 @@ que se arregla a mano en el panel:
 
 **Desde el 24/09/2026 (decisión 77), `cuotly-movil` ya no sirve la app de
 Expo: redirige cada dirección a la misma en `cuotly-web.vercel.app`**, que
-es donde está el diseño móvil. Lo hace `apps/mobile/vercel.json`. Mientras
-la rama de producción de `cuotly-movil` no se cambie (arriba), la
-redirección solo llega a su alias de rama, no a `cuotly-movil.vercel.app`.
+es donde está el diseño móvil. Lo hace `apps/mobile/vercel.json`.
+
+**La rama de producción de `cuotly-movil` es la principal del repositorio,
+`claude/cuotly-build-from-scratch-okynpm`** (comprobado el 24/09/2026: una
+subida ahí sale con `target: production`). Por eso la redirección se subió
+también a esa rama, con permiso de Bosco y como único cambio. Todo lo demás
+de `apps/mobile` que se suba a la rama de trabajo seguirá sin llegar a
+`cuotly-movil.vercel.app` hasta que se cambie esa rama en el panel.
 
 Lo que sigue describe cómo era antes, por si hay que volver atrás.
 
