@@ -25,6 +25,25 @@ estaba en el repositorio y **no estaba en la dirección que se miraba**. Mirar
 edificio de hace dos semanas. Antes de juzgar una pantalla, comprueba de qué
 commit viene el despliegue.
 
+**Corrección del 24/09/2026: lo de arriba solo es cierto para `cuotly-web`.**
+Comprobado por la API: cada subida a la rama de trabajo despliega `cuotly-web`
+a **producción**, pero despliega `cuotly-movil` como **preview** (sin
+`target: production`; solo recibe el alias de rama
+`cuotly-movil-git-claude-cuotly-supabase-mi-c17df3-info-67216310.vercel.app`).
+O sea: la rama de producción de `cuotly-movil` no es la rama de trabajo, y
+`cuotly-movil.vercel.app` se queda en un despliegue viejo aunque el código esté
+subido. El conector de Vercel de las sesiones de Claude no tiene permiso sobre
+`cuotly-movil` (403 al crear un despliegue de producción, 404 al promover), así
+que se arregla a mano en el panel:
+
+1. `cuotly-movil` → *Settings* → *Git* (o *Environments* → *Production*) →
+   *Branch Tracking*: rama de producción
+   `claude/cuotly-supabase-migrations-tests-q8o18p`.
+2. *Deployments* → el último (commit más reciente) → *⋯* → *Redeploy* a
+   **Production**. Redesplegar, no solo promover: las `EXPO_PUBLIC_*` se
+   incrustan al compilar y un preview puede haberse compilado sin ellas si
+   solo están definidas en `production`.
+
 ### El móvil en el navegador
 
 `apps/mobile` es Expo. Lo que se despliega en Vercel es su exportación para
