@@ -156,7 +156,10 @@ export default async function ClientDailyMenuPage({
             />
           </FilterBar>
         </div>
-        <div className="flex flex-col gap-2">
+        {/* En el teléfono, los dos botones a lo ancho debajo de los filtros
+            (PDF móvil, p. 124). Al lado se comían media fila y los filtros
+            quedaban uno por línea y cortados. */}
+        <div className="flex w-full flex-col gap-2 sm:w-auto">
           <ButtonLink href={`${base}/nuevo`} icon="plus">
             {t.createMenu}
           </ButtonLink>

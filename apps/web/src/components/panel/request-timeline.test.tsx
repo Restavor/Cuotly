@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { RequestTimeline, type TimelineView } from "./RequestPieces";
 
@@ -16,6 +16,8 @@ const cuatro = [
   paso("in_progress", "En curso"),
   paso("published", "Publicada"),
 ];
+
+afterEach(cleanup);
 
 describe("RequestTimeline horizontal en el teléfono (PDF móvil, p. 122)", () => {
   it("con cuatro pasos o menos es una sola fila, también en el teléfono", () => {

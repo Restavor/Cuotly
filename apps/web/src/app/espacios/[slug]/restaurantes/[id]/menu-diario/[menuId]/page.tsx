@@ -184,9 +184,10 @@ export default async function ClientMenuPage({
     <StatusBadge tone={menuTone(menu.state)}>{es.naming.states.menu[menu.state]}</StatusBadge>
   );
 
+  // En el teléfono, nunca más de 300 px: la tarjeta deja unos 310.
   const vistaPrevia = (ancho: number) =>
     doc ? (
-      <MenuPreview doc={doc} width={ancho} label={p.previewAlt(menu.name)} />
+      <MenuPreview doc={doc} width={ancho} mobileWidth={Math.min(ancho, 300)} label={p.previewAlt(menu.name)} />
     ) : (
       <p className="text-sm text-text-secondary">{vacioVistaPrevia}</p>
     );
@@ -270,7 +271,10 @@ export default async function ClientMenuPage({
               <p className="text-sm text-text-secondary">{p.pendingAfterCutoff}</p>
             ) : null}
           </div>
-          <div className="flex flex-col gap-2">
+          {/* A lo ancho en el teléfono, debajo del texto: al lado, el texto
+              (flex-1, base 0) cedía todo el sitio y salía una palabra por
+              línea (PDF móvil, p. 132). */}
+          <div className="flex w-full flex-col gap-2 sm:w-auto">
             {pendientes.kind === "not_requested"
               ? botonTab("publicacion", p.pendingRequestAction(pendientes.version), true, "share")
               : null}

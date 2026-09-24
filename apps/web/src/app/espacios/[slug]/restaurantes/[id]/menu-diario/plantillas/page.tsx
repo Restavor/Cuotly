@@ -105,7 +105,11 @@ export default async function ClientMenuTemplatesPage({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <Card title={t.templatesAvailable}>
-              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {/* Tres por fila también en el teléfono, en miniatura, como la
+                  página 126 del PDF móvil: a lo ancho, cada plantilla ocupaba
+                  una pantalla entera. La vista grande está en la tarjeta de
+                  al lado (debajo, en el teléfono). */}
+              <ul className="grid grid-cols-3 gap-2 sm:gap-4">
                 {lista.map((tpl) => {
                   const doc = docDe(tpl);
                   const activa = tpl.id === elegida?.id;
@@ -114,26 +118,26 @@ export default async function ClientMenuTemplatesPage({
                       <Link
                         href={`${base}/plantillas?plantilla=${tpl.id}`}
                         aria-current={activa ? "true" : undefined}
-                        className={`block rounded-[10px] border-2 p-3 transition-colors hover:bg-soft-surface ${
+                        className={`block rounded-[10px] border-2 p-2 transition-colors hover:bg-soft-surface sm:p-3 ${
                           activa ? "border-cuotly-green" : "border-border"
                         }`}
                       >
                         <div className="relative flex justify-center">
                           {doc ? (
-                            <MenuPreview doc={doc} width={150} label={t.previewAlt(tpl.name)} />
+                            <MenuPreview doc={doc} width={150} mobileWidth={76} label={t.previewAlt(tpl.name)} />
                           ) : (
-                            <span className="flex h-[212px] w-[150px] items-center justify-center rounded-md bg-soft-surface text-center text-xs text-text-secondary">
+                            <span className="flex h-[108px] w-[76px] items-center justify-center rounded-md bg-soft-surface text-center text-xs text-text-secondary sm:h-[212px] sm:w-[150px]">
                               {t.previewUnknownLayout}
                             </span>
                           )}
                           {activa ? (
-                            <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-cuotly-green text-surface">
-                              <Icon name="tick" className="h-4 w-4" />
+                            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-cuotly-green text-surface sm:right-1 sm:top-1 sm:h-6 sm:w-6">
+                              <Icon name="tick" className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                             </span>
                           ) : null}
                         </div>
-                        <p className="mt-3 font-semibold text-text">{tpl.name}</p>
-                        <p className="text-sm text-text-secondary">
+                        <p className="mt-2 text-sm font-semibold text-text [overflow-wrap:anywhere] sm:mt-3 sm:text-base">{tpl.name}</p>
+                        <p className="text-xs text-text-secondary sm:text-sm">
                           {d.templateOrigin[tpl.origin as keyof typeof d.templateOrigin] ?? tpl.origin}
                         </p>
                       </Link>

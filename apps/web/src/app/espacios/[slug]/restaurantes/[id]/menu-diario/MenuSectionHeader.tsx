@@ -35,7 +35,7 @@ export function MenuSectionHeader({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader title={title} subtitle={subtitle} actions={actions} />
         {balance !== null ? (
-          <Card className="min-w-[280px] p-4! sm:p-4!">
+          <Card className="w-full p-4! sm:w-auto sm:min-w-[280px] sm:p-4!">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:divide-x sm:divide-border">
               <div>
                 <p className="text-sm font-semibold text-text">{t.usageTitle}</p>

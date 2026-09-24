@@ -12,7 +12,35 @@ import { MENU_IMAGE_HEIGHT, MENU_IMAGE_WIDTH, MenuImage } from "@/services/menu-
  * Y no pasa por `/descargar`: aquella ruta deja la descarga en el historial
  * (RN-MEN-10), y mirar el menú no es descargarlo.
  */
-export function MenuPreview({ doc, width, label }: { doc: MenuDocument; width: number; label: string }) {
+export function MenuPreview({
+  doc,
+  width,
+  label,
+  mobileWidth,
+}: {
+  doc: MenuDocument;
+  width: number;
+  label: string;
+  /**
+   * El ancho por debajo de `sm`. La reducción es una escala en píxeles, no
+   * un porcentaje, así que un menú de 520 px en un teléfono de 390 no
+   * encoge: su caja lo recorta por la derecha. Con esto se pintan dos, cada
+   * uno a su tamaño, y solo uno se ve (y lo anuncia el lector de pantalla).
+   */
+  mobileWidth?: number;
+}) {
+  if (mobileWidth !== undefined && mobileWidth !== width) {
+    return (
+      <>
+        <span className="block sm:hidden">
+          <MenuPreview doc={doc} width={mobileWidth} label={label} />
+        </span>
+        <span className="hidden sm:block">
+          <MenuPreview doc={doc} width={width} label={label} />
+        </span>
+      </>
+    );
+  }
   const escala = width / MENU_IMAGE_WIDTH;
   return (
     <div
