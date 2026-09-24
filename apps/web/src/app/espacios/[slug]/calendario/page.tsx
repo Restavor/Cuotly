@@ -2,12 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import {
-  Button,
   ButtonLink,
   Card,
   EmptyState,
   PageHeader,
-  Select,
   StatusBadge,
   Table,
   TableBody,
@@ -16,9 +14,11 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
+import { FilterBar, FilterSelect } from "@/components/ui/FilterBar";
 import { todayInTimeZone } from "@/core/finance";
 import { isMenuState, menuTone } from "@/core/menu-states";
 import { monthBounds, shiftMonth, spanDays } from "@/core/team-calendar";
+import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
@@ -331,40 +331,37 @@ export default async function CalendarPage({
           §75 · los filtros, como formulario GET: la URL resultante es la
           que se comparte y la que funciona sin JavaScript (CA-22).
         */}
-        <form method="get" action={base} className="rounded-lg bg-soft-surface p-4">
-          <p className="mb-2 text-sm font-semibold text-text">{es.calendar.filtersTitle}</p>
-          <input type="hidden" name="dia" value={anclaje} />
-          <div className="grid gap-x-4 sm:grid-cols-3">
-            <Select
-              label={es.calendar.filterEstablishment}
-              name="restaurante"
-              defaultValue={filtroRestaurante ?? ""}
-              options={opcionesRestaurante}
-            />
-            <Select
-              label={es.calendar.filterWorker}
-              name="trabajador"
-              defaultValue={filtroTrabajador ?? ""}
-              options={opcionesTrabajador}
-            />
-            <Select
-              label={es.calendar.filterKind}
-              name="tipo"
-              defaultValue={filtroTipo ?? ""}
-              options={opcionesTipo}
-            />
-          </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <Button type="submit" variant="secondary">
-              {es.calendar.filterApply}
-            </Button>
-            {hayFiltros ? (
-              <Link href={`${base}?dia=${anclaje}`} className="text-sm text-cuotly-green underline">
-                {es.calendar.filterClear}
-              </Link>
-            ) : null}
-          </div>
-        </form>
+        <FilterBar
+          action={base}
+          hasFilters={hayFiltros}
+          label={es.calendar.filtersTitle}
+          hidden={{ dia: anclaje }}
+        >
+          <FilterSelect
+            id="calendario-restaurante"
+            name="restaurante"
+            label={es.calendar.filterEstablishment}
+            defaultValue={filtroRestaurante}
+            allLabel={es.calendar.filterAny}
+            options={opcionesRestaurante.slice(1)}
+          />
+          <FilterSelect
+            id="calendario-trabajador"
+            name="trabajador"
+            label={es.calendar.filterWorker}
+            defaultValue={filtroTrabajador}
+            allLabel={es.calendar.filterAny}
+            options={opcionesTrabajador.slice(1)}
+          />
+          <FilterSelect
+            id="calendario-tipo"
+            name="tipo"
+            label={es.calendar.filterKind}
+            defaultValue={filtroTipo}
+            allLabel={es.calendar.filterAny}
+            options={opcionesTipo.slice(1)}
+          />
+        </FilterBar>
 
         {eventosError ? (
           <EmptyState title={es.states.errorTitle} description={es.emptyReasons.error} />
@@ -386,7 +383,8 @@ export default async function CalendarPage({
                   const detalle = evento.title || es.calendar.noDetail;
                   return (
                     <TableRow key={`${evento.entity_id}-${evento.event_date}-${i}`}>
-                      <TableCell>{evento.event_date}</TableCell>
+                      {/* El día escrito como se lee ("29 sept"), no en ISO. */}
+                      <TableCell>{fechaCorta(evento.event_date)}</TableCell>
                       <TableCell>{kindLabel(evento.kind)}</TableCell>
                       <TableCell>
                         {href === null ? (

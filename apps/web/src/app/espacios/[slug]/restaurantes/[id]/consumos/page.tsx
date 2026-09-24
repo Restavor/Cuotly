@@ -114,7 +114,7 @@ export default async function TeamConsumptionLedgerPage({
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
+    <div className="mx-auto max-w-4xl space-y-6 sm:p-8">
       <header>
         <p className="text-sm text-text-secondary">
           {establishment.code} · {establishment.name}

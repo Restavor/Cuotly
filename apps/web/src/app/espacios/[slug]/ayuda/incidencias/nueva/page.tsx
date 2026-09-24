@@ -39,7 +39,7 @@ export default async function NewIncidentPage({
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 sm:p-8">
       <header>
         <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
         <p className="text-sm text-text-secondary">{t.subtitle}</p>

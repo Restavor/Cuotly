@@ -35,7 +35,7 @@ export default async function MorePage({ params }: { params: Promise<{ slug: str
   const destinos = moreDestinations(slug, role, establishmentId);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 sm:p-8">
       <header>
         <h1 className="text-2xl font-bold text-primary-dark">{es.morePage.title}</h1>
         <p className="text-sm text-text-secondary">{es.morePage.subtitle}</p>

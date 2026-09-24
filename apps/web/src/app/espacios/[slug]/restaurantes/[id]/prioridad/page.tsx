@@ -100,7 +100,7 @@ export default async function PriorityPage({
   }));
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 sm:p-8">
       <header>
         <p className="text-sm text-text-secondary">{establishment.name}</p>
         <h1 className="text-2xl font-bold text-primary-dark">{es.clientArea.priority.title}</h1>

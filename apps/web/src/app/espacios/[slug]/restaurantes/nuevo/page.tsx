@@ -69,7 +69,7 @@ export default async function NewEstablishmentPage({
     : [{ data: null }, { data: null }];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
+    <div className="mx-auto max-w-5xl space-y-6 sm:p-8">
       <header>
         <h1 className="text-[22px] font-bold sm:text-[28px] tracking-tight text-primary-dark">{es.newEstablishmentPage.title}</h1>
         <p className="text-sm text-text-secondary">{es.newEstablishmentPage.intro}</p>

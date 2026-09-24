@@ -81,24 +81,45 @@ export default async function ConversationPage({
     redirect(`/espacios/${slug}/mensajes/canales?canal=${id}`);
   }
 
-  // El establecimiento de la conversación: la de solicitud y la interna de
-  // trabajo lo heredan de su dueño, así que se pregunta al servidor en vez
-  // de deducirlo aquí de tres maneras distintas.
-  const { data: establishmentId } = await supabase.rpc("conversation_establishment_id", {
-    p_conversation_id: id,
-  });
+  /*
+    El restaurante de la conversación. La de solicitud y la interna de
+    trabajo lo heredan de su dueño, así que se lee de la solicitud o del
+    trabajo, que pasan por su RLS: si quien mira no puede verlos, no hay
+    restaurante y no hay conversación que pintar.
 
-  const [{ data: request }, { data: job }, { data: establishment }] = await Promise.all([
+    Antes se preguntaba a `conversation_establishment_id()` por RPC, y esa
+    función es interna (`SECURITY DEFINER` sin comprobar permisos,
+    revocada a `authenticated` en la migración 26): la base contestaba
+    "permission denied" y toda conversación de solicitud o de trabajo
+    abierta desde Mensajes salía sin un solo mensaje.
+  */
+  const [{ data: request }, { data: job }] = await Promise.all([
     conversation.request_id
-      ? supabase.from("requests").select("id, code").eq("id", conversation.request_id).maybeSingle()
+      ? supabase
+          .from("requests")
+          .select("id, code, establishment_id")
+          .eq("id", conversation.request_id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
     conversation.job_id
-      ? supabase.from("jobs").select("id, code").eq("id", conversation.job_id).maybeSingle()
-      : Promise.resolve({ data: null }),
-    establishmentId
-      ? supabase.from("establishments").select("id, name").eq("id", establishmentId).maybeSingle()
+      ? supabase
+          .from("jobs")
+          .select("id, code, establishment_id")
+          .eq("id", conversation.job_id)
+          .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  const establishmentId: string | null =
+    type === "request"
+      ? (request?.establishment_id ?? null)
+      : type === "job_internal"
+        ? (job?.establishment_id ?? null)
+        : conversation.establishment_id;
+
+  const { data: establishment } = establishmentId
+    ? await supabase.from("establishments").select("id, name").eq("id", establishmentId).maybeSingle()
+    : { data: null };
 
   const { messages, readOnly } = await loadConversation(supabase, id);
 
@@ -145,7 +166,7 @@ export default async function ConversationPage({
   const zona = space?.timezone ?? DEFAULT_TIMEZONE;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-8">
+    <div className="mx-auto max-w-5xl space-y-6">
       <header>
         <p className="text-sm text-text-secondary">
           {establishment?.name ?? "—"}
@@ -154,11 +175,11 @@ export default async function ConversationPage({
       </header>
 
       <div
-        className={`grid items-start gap-6 ${
+        className={`grid grid-cols-1 items-start gap-6 ${
           notes?.canRead ? "lg:grid-cols-[2fr_1fr]" : ""
         }`}
       >
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {establishmentId ? (
             <Conversation
             timeZone={zona}

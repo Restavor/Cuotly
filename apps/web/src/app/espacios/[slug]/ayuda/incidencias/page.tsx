@@ -114,7 +114,7 @@ export default async function SpaceIncidentsPage({ params }: { params: Promise<{
   );
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
+    <div className="mx-auto max-w-4xl space-y-6 sm:p-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>

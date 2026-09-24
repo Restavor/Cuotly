@@ -82,7 +82,7 @@ export default async function SpaceIncidentDetailPage({
   const base = `/espacios/${slug}/ayuda/incidencias`;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-8">
+    <div className="mx-auto max-w-4xl space-y-6 sm:p-8">
       <header className="space-y-2">
         <Link href={base} className="text-sm text-cuotly-green underline">
           {t.backToList}
