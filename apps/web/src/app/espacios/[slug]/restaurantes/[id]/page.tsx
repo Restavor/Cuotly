@@ -32,6 +32,7 @@ import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
 import { loadBackups, loadPendingTransfer } from "./transfer-load";
+import { loadStatusHistory } from "./status-history-load";
 import { loadPanelInvitations } from "./usuarios/users-load";
 import { loadEstablishmentNotes } from "@/app/espacios/[slug]/mensajes/[id]/notes-load";
 import {
@@ -204,6 +205,11 @@ export default async function EstablishmentPage({
       p_establishment_id: id,
     });
 
+    // M74 · la línea de tiempo de los estados, que solo se pinta en solo
+    // lectura. No se pide en los demás: nadie la va a ver.
+    const statusHistory =
+      header.status === "read_only" ? await loadStatusHistory(supabase, space.id, id) : null;
+
     // §38 · la propuesta de transferencia abierta, si la hay, y las copias
     // de seguridad. Las dos las filtra su política: si vuelven vacías es
     // que no había nada que enseñarle a quien preguntó.
@@ -345,6 +351,8 @@ export default async function EstablishmentPage({
         integrationSource={soloUno(query.fuente) ?? null}
         // M48 · el evento del historial abierto al lado de la lista.
         auditEventId={soloUno(query.evento) ?? null}
+        // M83 · la copia de seguridad abierta en el panel de detalle.
+        backupId={soloUno(query.copia) ?? null}
         data={{
           header,
           /*
@@ -383,6 +391,7 @@ export default async function EstablishmentPage({
           manager,
           photoUrl,
           statusReason: statusReason ?? null,
+          statusHistory,
           transfer,
           backups,
           notes,

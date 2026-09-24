@@ -422,7 +422,8 @@ export const es = {
           "Se ha comunicado la baja y el servicio sigue activo hasta el final del periodo pagado o de la permanencia vigente (RN-EST-09).",
       },
       read_only: {
-        title: "Solo lectura",
+        // M74 · el título del dibujo.
+        title: "Este restaurante está en modo de solo lectura",
         meaning:
           "Se puede consultar todo, pero no crear ni cambiar nada. Son las 24 horas previas a la suspensión (RN-EST-10).",
       },
@@ -442,6 +443,37 @@ export const es = {
           "Este restaurante tiene un estado que esta pantalla no sabe explicar. Se trata como detenido hasta saber qué es.",
       },
     },
+
+    /*
+     * M74 · "Qué puedes hacer / Qué no puedes hacer" en solo lectura.
+     *
+     * No son las frases del dibujo: son las de la guarda del servidor,
+     * `assert_establishment_service_running()`, y las funciones que la
+     * llaman. El dibujo pone en la segunda columna "Modificar la
+     * información del restaurante" y "Cambiar configuraciones o permisos",
+     * y ninguna de las dos está cerrada en solo lectura —la ficha y los
+     * accesos se siguen pudiendo corregir—, así que decirlo sería mentir.
+     */
+    readOnlyCanTitle: "Qué puedes hacer",
+    readOnlyCan: [
+      "Consultar toda la información del restaurante",
+      "Ver informes y datos históricos",
+      "Consultar el historial y los cambios de estado",
+      "Descargar archivos y documentos",
+    ],
+    readOnlyCannotTitle: "Qué no puedes hacer",
+    readOnlyCannot: [
+      "Enviar ni aceptar solicitudes",
+      "Comenzar trabajos",
+      "Pedir la publicación o correcciones del Menú Diario",
+      "Enviar ni aceptar presupuestos, ni cambiar de plan",
+    ],
+    historyFilesTitle: "Historial y archivos",
+    historyFilesHint: "Puedes consultar el historial completo y descargar los archivos disponibles.",
+    historyLink: "Ver historial",
+    filesLink: "Ver archivos",
+    timelineTitle: "Historial de estados",
+    timelineCreated: "Restaurante creado",
   },
 
   // ---- Notas internas del restaurante (RN-EST-13, maqueta 18) ------
@@ -6042,47 +6074,43 @@ export const es = {
    * espacio; lo que se añade es la ruta.
    */
   newEstablishmentPage: {
-    title: "Nuevo restaurante",
-    intro: "Completa los datos para crear el establecimiento",
+    // M73 · "Crear establecimiento", con las palabras del dibujo.
+    title: "Crear establecimiento",
+    intro: "Completa la información básica del restaurante para empezar a gestionarlo en Cuotly.",
     back: "Volver a Restaurantes",
+    cancel: "Cancelar",
 
-    generalTitle: "Datos generales",
     nameLabel: "Nombre comercial",
-    nameHint: "Es el nombre con el que el restaurante aparece en toda la aplicación.",
-    groupLabel: "Grupo de cliente",
+    // RN-EST-06 · el código lo pone Cuotly, correlativo por espacio. El
+    // dibujo lo pide escrito; aquí se dice que llega solo.
+    codeLabel: "Código",
+    codeAuto: "Se asigna automáticamente al crear",
+    codeHint: "Correlativo dentro del espacio, como EST-0048 (RN-EST-06).",
+    groupLabel: "Grupo",
     groupNewOption: "Crear un grupo nuevo…",
     groupNameLabel: "Nombre del grupo nuevo",
     groupNameHint:
       "Si ya existe uno con ese nombre, se reutiliza: no se crean dos grupos para el mismo cliente.",
-    planLabel: "Plan",
+    contactNameLabel: "Contacto responsable",
+    contactNameHint: "Quién responde por el restaurante, del lado del cliente.",
+    contactEmailLabel: "Email (opcional)",
+    phonePrimaryLabel: "Teléfono (opcional)",
+    websiteLabel: "Web",
+    addressLabel: "Dirección",
+    cityLabel: "Ciudad",
+    planLabel: "Plan contratado",
     planNoneOption: "Sin plan por ahora",
+    planHint: "Si todavía no lo ha contratado, se asigna después desde Gestión · Plan y servicios.",
     planNoneAvailable:
       "Este espacio no tiene ningún plan definido todavía, así que no hay ninguno que asignar. Se puede contratar después desde la ficha.",
-    statusLabel: "Estado",
-    statusHint:
-      "El restaurante estará en fase de configuración hasta completar la puesta en marcha. El estado se cambia después, desde su ficha.",
 
-    fiscalTitle: "Datos fiscales",
-    taxIdLabel: "NIF",
-    legalNameLabel: "Razón social",
-    addressLabel: "Dirección fiscal",
-    postalCodeLabel: "Código postal",
-    cityLabel: "Ciudad",
+    // RN-PAN-10 · el panel del cliente no nace con el alta.
+    panelNotice: "El panel del cliente se crea después desde la ficha del restaurante.",
+    // Lo que el dibujo no pide y la ficha sí tiene: dónde se completa.
+    laterNotice:
+      "Los datos fiscales, las redes y el resto de la ficha se completan después en Gestión · Datos del establecimiento. El restaurante empieza en «Configurando».",
 
-    contactTitle: "Contacto principal",
-    contactNameLabel: "Nombre",
-    contactNameHint: "Quién responde por el restaurante, del lado del cliente.",
-    contactEmailLabel: "Email",
-    phonePrimaryLabel: "Teléfono",
-
-    webTitle: "Web y redes",
-    websiteLabel: "Sitio web",
-    instagramLabel: "Instagram",
-    facebookLabel: "Facebook",
-    webNotice:
-      "Son los enlaces del restaurante, para tenerlos a mano. Darlo de alta aquí no publica ni modifica nada en esas webs (RN-EST-12).",
-
-    submit: "Guardar",
+    submit: "Crear establecimiento",
     submitPending: "Creando…",
   },
 
@@ -6301,11 +6329,40 @@ export const es = {
       "Una copia diaria de lo que Cuotly guarda de este restaurante: sus datos, sus solicitudes, sus menús y sus conversaciones. Se guardan las treinta últimas.",
     backupsNoRestore:
       "Restaurar es descargar la copia y volver a poner a mano lo que haga falta. Cuotly no deshace nada: reponer los datos de otra fecha machacaría la auditoría, los consumos y los cobros posteriores, y todo esto está construido sobre libros que no se reescriben.",
-    backupsInventory:
-      "La copia lleva el listado de los archivos —nombre, tamaño y fecha—, no los archivos en sí: esos se descargan uno a uno desde donde están.",
     backupsContents: (solicitudes: number, menus: number, archivos: number) =>
       `${solicitudes} solicitudes · ${menus} menús · ${archivos} archivos`,
-    backupsDownload: "Descargar",
+    // M83 · la tabla de copias y el panel "Detalles del respaldo".
+    backupsDateColumn: "Fecha",
+    backupsAuthorColumn: "Autor",
+    backupsContentColumn: "Contenido respaldado",
+    backupsSizeColumn: "Tamaño",
+    backupsStateColumn: "Estado",
+    // Una copia que existe está completa: se genera en una transacción y
+    // hasta que termina no hay fila (RN-BCK-08). No hay "Pendiente".
+    backupsStateDone: "Correcta",
+    backupsAutomatic: "Copia diaria",
+    backupsUnknownAuthor: "Alguien del equipo",
+    backupsDetailTitle: "Detalles del respaldo",
+    backupsRecoverableTitle: "Contenido recuperable",
+    backupsRecoverable: (c: {
+      requests: number;
+      menus: number;
+      files: number;
+      conversations: number;
+    }) => [
+      "Datos del establecimiento",
+      `${c.requests} ${c.requests === 1 ? "solicitud" : "solicitudes"}`,
+      `${c.menus} ${c.menus === 1 ? "menú" : "menús"}, con sus versiones`,
+      `Listado de ${c.files} ${c.files === 1 ? "archivo" : "archivos"} (sin los archivos en sí)`,
+      `${c.conversations} ${c.conversations === 1 ? "conversación" : "conversaciones"}`,
+    ],
+    backupsLimitsTitle: "Limitaciones",
+    backupsLimits: [
+      "No incluye la web del restaurante: Cuotly no la aloja (RN-BCK-01).",
+      "No lleva los archivos, solo su listado (RN-BCK-09).",
+      "Restaurar no es automático: se descarga y lo aplica el equipo (RN-BCK-04).",
+    ],
+    backupsDownloadSelected: "Descargar respaldo",
     backupsCreate: "Generar una copia ahora",
     backupsDone: "Copia generada.",
     backupsEmptyTitle: "Todavía no hay ninguna copia",

@@ -17,7 +17,9 @@ function campo(formData: FormData, nombre: string): string {
 }
 
 /**
- * Maqueta 02 · dar de alta un restaurante (RN-EST-06, §20.5).
+ * M73 · dar de alta un restaurante (RN-EST-06, §20.5). Solo viaja lo
+ * que el formulario pide; lo fiscal y las redes se completan después en
+ * Gestión · Datos, y la función los deja vacíos si no llegan.
  *
  * **No autoriza nada.** `create_establishment_with_data()` comprueba
  * `create_establishment` por su cuenta, crea el grupo y el establecimiento
@@ -52,17 +54,12 @@ export async function createEstablishmentWithData(
       p_group_id: grupoElegido === "" ? undefined : grupoElegido,
       p_group_name: grupoElegido === "" ? campo(formData, "groupName") : undefined,
       p_plan_id: campo(formData, "planId") === "" ? undefined : campo(formData, "planId"),
-      p_legal_name: campo(formData, "legalName"),
-      p_tax_id: campo(formData, "taxId"),
       p_address: campo(formData, "address"),
-      p_postal_code: campo(formData, "postalCode"),
       p_city: campo(formData, "city"),
       p_contact_name: campo(formData, "contactName"),
       p_contact_email: campo(formData, "contactEmail"),
       p_phone_primary: campo(formData, "phonePrimary"),
       p_website_url: campo(formData, "websiteUrl"),
-      p_instagram: campo(formData, "instagram"),
-      p_facebook_url: campo(formData, "facebookUrl"),
       p_idempotency_key: campo(formData, "idempotencyKey"),
     });
 

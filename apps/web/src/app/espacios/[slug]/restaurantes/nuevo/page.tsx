@@ -9,7 +9,7 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 /**
- * Maqueta 02 · el alta de un restaurante (§20.5, RN-EST-06).
+ * M73 · el alta de un restaurante (§20.5, RN-EST-06).
  *
  * Que se pinte el formulario o no depende de `create_establishment`, pero
  * eso es presentación: quien llegue por URL sin el permiso ve el motivo, y
@@ -71,7 +71,7 @@ export default async function NewEstablishmentPage({
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-8">
       <header>
-        <h1 className="text-2xl font-bold text-primary-dark">{es.newEstablishmentPage.title}</h1>
+        <h1 className="text-[28px] font-bold tracking-tight text-primary-dark">{es.newEstablishmentPage.title}</h1>
         <p className="text-sm text-text-secondary">{es.newEstablishmentPage.intro}</p>
       </header>
 
@@ -90,11 +90,14 @@ export default async function NewEstablishmentPage({
         />
       )}
 
-      <p className="text-sm">
-        <Link href={`/espacios/${slug}/restaurantes`} className="text-cuotly-green underline">
-          {es.newEstablishmentPage.back}
-        </Link>
-      </p>
+      {/* Con formulario, la salida es su "Cancelar"; sin él, este enlace. */}
+      {puedeCrear ? null : (
+        <p className="text-sm">
+          <Link href={`/espacios/${slug}/restaurantes`} className="text-cuotly-green underline">
+            {es.newEstablishmentPage.back}
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

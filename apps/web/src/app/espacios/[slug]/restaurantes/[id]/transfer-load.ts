@@ -58,14 +58,36 @@ export async function loadBackups(
   // treinta veces. El contenido se sirve al descargar una (RN-BCK-05).
   const { data } = await supabase
     .from("establishment_backups")
-    .select("id, taken_at, size_bytes, item_counts")
+    .select("id, taken_at, size_bytes, item_counts, created_by")
     .eq("establishment_id", establishmentId)
     .order("taken_at", { ascending: false });
+
+  /*
+    M83 · la columna "Autor". Las copias solo las lee el equipo con
+    `manage_clients` (RN-BCK-07), así que el nombre de quien la generó es
+    de puertas adentro. `created_by` vacío es la copia del barrido diario
+    (RN-BCK-02), que no la pide nadie; un autor cuyo perfil no se puede
+    leer se queda sin nombre, no con un uuid.
+  */
+  const autores = [...new Set((data ?? []).flatMap((fila) => (fila.created_by ? [fila.created_by] : [])))];
+  const nombres = new Map<string, string>();
+  if (autores.length > 0) {
+    const { data: perfiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", autores);
+    for (const perfil of perfiles ?? []) {
+      const nombre = (perfil.full_name ?? "").trim() || perfil.email;
+      if (nombre) nombres.set(perfil.id, nombre);
+    }
+  }
 
   return (data ?? []).map((fila) => ({
     id: fila.id,
     takenAt: fila.taken_at,
     sizeBytes: fila.size_bytes,
     counts: (fila.item_counts ?? {}) as Counts,
+    automatic: fila.created_by === null,
+    authorName: fila.created_by === null ? null : (nombres.get(fila.created_by) ?? null),
   }));
 }

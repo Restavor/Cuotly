@@ -58,6 +58,8 @@ import { ServiceStatusForms } from "./ServiceStatusForms";
 import { TransferBlock, type PendingTransfer } from "./TransferForms";
 import { StatusLegend } from "./StatusLegend";
 import { StatusNotice } from "./StatusNotice";
+import { ReadOnlyScope } from "./ReadOnlyScope";
+import type { StatusHistoryEntry } from "@/app/espacios/[slug]/restaurantes/[id]/status-history-load";
 import { InvitationRow } from "@/app/espacios/[slug]/restaurantes/[id]/usuarios/InvitationRow";
 import type { PanelInvitations } from "@/app/espacios/[slug]/restaurantes/[id]/usuarios/users-load";
 import { RevokeAccessButton } from "./RevokeAccessButton";
@@ -194,6 +196,11 @@ export interface SheetData {
    * se dice lo que el estado significa y no se inventa un porqué.
    */
   readonly statusReason: string | null;
+  /**
+   * M74 · los pasos del estado del restaurante, del más reciente al alta.
+   * `null` (o ausente) cuando no se pudieron leer o no hubo cambios.
+   */
+  readonly statusHistory?: readonly StatusHistoryEntry[] | null;
   // §38 · la propuesta de transferencia abierta (RN-TRA) y las copias de
   // seguridad (RN-BCK). Las dos viven en el bloque "Estado del servicio".
   readonly transfer: PendingTransfer | null;
@@ -980,6 +987,7 @@ export function EstablishmentSheet({
   paymentsSection = PAYMENTS_SECTIONS[0],
   integrationSource = null,
   auditEventId = null,
+  backupId = null,
   data,
 }: {
   base: string;
@@ -996,6 +1004,8 @@ export function EstablishmentSheet({
   integrationSource?: string | null;
   /** M48 · el evento del historial abierto al lado (`?evento=`), si lo hay. */
   auditEventId?: string | null;
+  /** M83 · la copia de seguridad abierta al lado (`?copia=`), si la hay. */
+  backupId?: string | null;
   data: SheetData;
 }) {
   const {
@@ -1017,6 +1027,7 @@ export function EstablishmentSheet({
     manager,
     photoUrl,
     statusReason,
+    statusHistory,
     transfer,
     backups,
     notes,
@@ -1082,6 +1093,20 @@ export function EstablishmentSheet({
           ) : undefined
         }
       />
+
+      {/*
+        M74 · en solo lectura el Resumen empieza por lo que eso significa:
+        qué se puede y qué no, dónde están el historial y los archivos, y
+        la línea de tiempo de los estados.
+      */}
+      {tab.key === "summary" && header.status === "read_only" ? (
+        <ReadOnlyScope
+          historyHref={sheetHref(base, HISTORY_TAB)}
+          filesHref={filesHref(base, { category: null, fileId: null })}
+          history={statusHistory ?? null}
+          timeZone={timeZone}
+        />
+      ) : null}
 
       {tab.key === "summary" ? (
         <>
@@ -3548,6 +3573,8 @@ export function EstablishmentSheet({
               backups={backups}
               timezone={timeZone}
               canManage={canManageClients}
+              blockHref={sheetHref(base, MANAGEMENT_TAB, block)}
+              selectedId={backupId}
             />
           ) : null}
 

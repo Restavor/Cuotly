@@ -148,12 +148,12 @@ código.
 | M46 | Gestión · Notas internas | `?bloque=notas` | Hecha | El editor con formato: las notas son texto plano |
 | M47 | Condiciones del servicio | `?bloque=plan` y `?bloque=estado` | Hecha | "Descargar condiciones" en PDF: las condiciones son texto versionado (migración 75); se leen en Planes |
 | M48 | Historial · Detalle de evento | `?vista=historial&evento=<id>` | Hecha (**23/09**) | La "evidencia de publicación" con su captura: vive en el trabajo, y el detalle enlaza a él |
-| M73 | Crear establecimiento | `/espacios/<espacio>/restaurantes/nuevo` | Hecha | "Guardar borrador" (un alta no tiene borrador) |
-| M74 | Estado · Solo lectura | aviso encima de las pestañas | Hecha | El panel "Historial de estados": los cambios de estado están en Historial |
-| M80 | Informes y datos · sin datos | `?vista=datos` sin fuentes | Hecha | — |
-| M81 | Crear panel del restaurante | `?bloque=usuarios` | Hecha | — |
+| M73 | Crear establecimiento | `/espacios/<espacio>/restaurantes/nuevo` | Hecha (**24/09**: rehecha con la forma de M73; antes era la maqueta 02) | El "Código" tecleado (es automático, RN-EST-06: se pinta bloqueado diciéndolo), "Guardar borrador" (un alta a medias ya es "Configurando"; en su lugar, "Cancelar"), el asterisco de "Plan contratado" (se puede contratar después) y los ejemplos dentro de los campos |
+| M74 | Estado · Solo lectura | aviso encima de las pestañas y Resumen | Hecha (**24/09**: qué se puede y qué no, "Historial y archivos" y la línea de tiempo de estados) | "Ver condiciones de reactivación" (no hay condiciones escritas: RN-EST-10 suspende tras 24 h y RN-FIN-13 reactiva cobrando); el candado en lugar de "Editar restaurante" (la ficha se sigue pudiendo corregir); y dos frases de "Qué no puedes hacer" que el servidor no cierra |
+| M80 | Informes y datos · sin datos | `?vista=datos` sin fuentes | Hecha (revisada **24/09**) | Las tres tarjetas Sin conectar · Pendiente · Esperando sincronización son el estado de cada fuente en "Estado de las fuentes", una fila por fuente |
+| M81 | Crear panel del restaurante | `?bloque=usuarios` | Hecha (**24/09**: aviso con icono, dos columnas y accesos con su marca) | "Cancelar" (el formulario va dentro de Usuarios, no hay pantalla de la que salir) y "Se enviará una invitación" (Cuotly no envía correos) |
 | M82 | Restaurantes · Grupos | `/espacios/<espacio>/restaurantes/grupos?grupo=` | Hecha (**23/09**: pestañas, lista con buscador, ficha del grupo, y crear, editar y asignar con RN-EST-20) | La foto del grupo (`groups` no la guarda) y la columna "En espacios" (RN-EST-07, dicho en una frase) |
-| M83 | Gestión · Copias de seguridad | `?bloque=copias` | Hecha | "Revisar restauración": restaurar es descargar y lo aplica el equipo (RN-BCK-04) |
+| M83 | Gestión · Copias de seguridad | `?bloque=copias&copia=` | Hecha (**24/09**: tabla con autor, tamaño y estado, y "Detalles del respaldo" a la derecha) | "Revisar restauración": restaurar es descargar y lo aplica el equipo (RN-BCK-04). "Última ejecución" (es la misma fecha) y el estado "Pendiente" (una copia no existe hasta que termina, RN-BCK-08) |
 | M84 | Restaurantes · Archivados | `/espacios/<espacio>/restaurantes/archivados?restaurante=` | Hecha (**23/09**: pestaña propia, reactivar y transferir) | "Solicitar reactivación" es Reactivar (lo hace el equipo, RN-FIN-13 lo para si hay deuda) y el buscador de espacios es el identificador del espacio (un espacio no ve los demás) |
 
 **La pasada de revisión del 23/09/2026** encontró cinco cosas y las cinco se
@@ -179,6 +179,34 @@ arreglaron en el mismo cambio:
 Lo que quedó parcial ese día —M48, M82 y M84— se hizo después, el mismo
 23/09 (ver el registro de abajo), y los tres botones de M82 cuando Bosco fijó
 las reglas de los grupos (decisión 74, RN-EST-20, migración 135).
+
+**La pasada pantalla a pantalla de M73, M74 y M80 a M84 (24/09/2026).**
+La tabla las daba por hechas, pero nadie las había comparado una a una con
+las páginas 53 a 59 del PDF. M80, M82 y M84 cuadran. Las otras cuatro no, y
+se arreglaron en el mismo cambio:
+
+1. **M73** · el alta seguía siendo la maqueta 02: cuatro tarjetas con NIF,
+   razón social, código postal y redes obligatorios en el navegador. Ahora
+   es la de M73: una tarjeta en dos columnas (nombre, código automático,
+   grupo, contacto responsable, email y teléfono opcionales, web,
+   dirección, plan y ciudad), el aviso de que el panel del cliente se crea
+   después, y "Cancelar" + "Crear establecimiento". Lo fiscal y las redes
+   se completan en Gestión · Datos (M40).
+2. **M74** · el aviso de solo lectura era el genérico de cualquier estado.
+   Ahora lleva el título del dibujo y, en el Resumen, "Qué puedes hacer /
+   Qué no puedes hacer" —con lo que cierra `assert_establishment_service_running()`,
+   no con las frases del dibujo que el servidor no cumple—, "Historial y
+   archivos" con sus dos enlaces y la línea de tiempo "Historial de
+   estados" sacada de `state_events` y del alta.
+3. **M81** · el formulario estaba en una columna con los datos en letra
+   pequeña. Ahora es el del dibujo: aviso azul con su icono, el restaurante
+   en campos bloqueados a la izquierda y el propietario con sus accesos
+   marcados a la derecha.
+4. **M83** · las copias eran una lista. Ahora son la tabla del dibujo
+   (fecha, autor —"Copia diaria" si la generó el barrido—, contenido,
+   tamaño y estado) y "Detalles del respaldo" de la elegida (`?copia=`):
+   contenido recuperable con sus números, limitaciones con sus reglas y
+   "Descargar respaldo".
 
 ## Parte 5 · Solicitudes, Trabajos y Tareas (M08–M11, M77, M78, A14, A15)
 
@@ -280,6 +308,7 @@ sitio.
 | 23/09/2026 | **Ficha del restaurante · tabla índice y pasada de revisión** · las 36 vistas de la ficha (M03–M07, M25–M48, M73, M74, M80–M84) cruzadas con el código en la tabla de la Parte 4. Arreglado: "Ver detalle" de un cobro abre ese cobro (M17); Usuarios enseña las invitaciones vivas del panel con sus botones de revisar (RN-PAN-14) en vez de decir que no existen; Historial enlaza la exportación de Ajustes · Auditoría en vez de decir que no hay; Solicitudes lleva Recibida, Categoría (propuesta marcada, RN-CLS-04) y Trabajo; Trabajos lleva Asignado a y Evidencias; Menú Diario lleva la cuota del ciclo y los últimos siete menús | `components/establishment/Sheet.tsx`, `restaurantes/[id]/sheet-load.ts`, `restaurantes/[id]/page.tsx` |
 | 23/09/2026 | **M48, M82 y M84** · **M48**: en Historial cada fila lleva "Ver detalle" y el evento se abre a la derecha (`?evento=`, con los filtros y la página puestos): qué fue, cuándo y quién, el tipo, el restaurante, el motivo, "Cambios realizados" en dos columnas (antes y después) y el enlace a lo que tocó —solicitud, trabajo, menú, presupuesto, cobro o informe (`auditEntityLink()`)—; sale de la misma fila de `establishment_audit()`, así que no enseña nada que la lista no deje ver, y un evento que no está en la página lo dice. **M82 y M84**: Restaurantes tiene tres pestañas, Establecimientos · Grupos · Archivados (`RestaurantsTabs`, con el número de archivados); Establecimientos ya no mezcla los archivados ni los ofrece en el filtro de estado. **Grupos** en lista con buscador y el grupo elegido a la derecha (`?grupo=`): quién tiene acceso a todo él, fecha de creación, cuántos restaurantes y la tabla de los vinculados con foto, código, estado y "Ver ficha". **Archivados** (`/restaurantes/archivados`): tabla con fecha de archivo (del último paso a `archived` en `state_events`) y último plan, y a la derecha el elegido con su motivo, **Reactivar** (a quien gestiona clientes) y **Transferir a otro espacio** (al propietario), con los mismos componentes y funciones de la ficha. No se copia de M82 "Crear grupo", "Editar grupo" ni "Asignar establecimiento": está por decidir | `components/establishment/Sheet.tsx`, `core/audit.ts`, `components/establishment/RestaurantsTabs.tsx`, `restaurantes/grupos/`, `restaurantes/archivados/`, `core/establishments.ts` |
 | 23/09/2026 | **M82 · Crear grupo, Editar grupo y Asignar establecimiento (decisión 74, RN-EST-20, migración 135)** · "Crear grupo" arriba a la derecha (`?nuevo=1`): un grupo **vacío** con nombre y descripción, con clave de idempotencia por carga de la página. En la ficha del grupo, su descripción y "Editar grupo" (nombre y descripción). En "Establecimientos vinculados", "Asignar establecimiento": se elige un restaurante en servicio de otro grupo y **qué pasa con quien entraba por su grupo de ahora** —se queda como Editor o pierde el acceso—, sin opción marcada por defecto. Los tres formularios se pintan a quien gestiona clientes. En el panel del restaurante, Ajustes · Datos lleva **"Cambiar de grupo"** para su propietario cuando también es propietario de otro grupo del espacio (`establishment_move_targets()`). Suite 75 en la CI | `restaurantes/grupos/`, `components/establishment/GroupForms.tsx`, `restaurantes/[id]/ajustes/page.tsx`, migración 135 |
+| 24/09/2026 | **M73, M74, M81 y M83 · pasada pantalla a pantalla contra el PDF (páginas 53 a 59)** · M80, M82 y M84 cuadran. **M73**: el alta deja la maqueta 02 y es una tarjeta en dos columnas con el código automático (RN-EST-06) bloqueado, el aviso "El panel del cliente se crea después desde la ficha del restaurante", "Cancelar" y "Crear establecimiento"; la acción ya no manda NIF, razón social, código postal ni redes. **M74**: el aviso de solo lectura con el título del dibujo y, en el Resumen, qué se puede y qué no (según la guarda del servidor), "Historial y archivos" y la línea de tiempo de estados (`loadStatusHistory()`, de `state_events` y el alta; solo se pide en solo lectura). **M81**: aviso con icono, dos columnas y accesos con su marca. **M83**: tabla Fecha · Autor · Contenido · Tamaño · Estado y "Detalles del respaldo" a la derecha (`?copia=`), con el autor leído de `created_by` (vacío es la copia diaria) | `components/establishment/NewForm.tsx`, `restaurantes/nuevo/`, `components/establishment/ReadOnlyScope.tsx`, `restaurantes/[id]/status-history-load.ts`, `components/establishment/CreatePanelForm.tsx`, `components/establishment/BackupsBlock.tsx`, `restaurantes/[id]/transfer-load.ts` |
 
 Lo que estas pantallas **no** copian del dibujo, y por qué, está escrito en el
 comentario de cada una: los botones que abrirían formularios que no existen

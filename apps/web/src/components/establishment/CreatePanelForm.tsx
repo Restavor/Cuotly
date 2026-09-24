@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { Button, Field } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 
 import {
@@ -13,7 +14,12 @@ import {
 const INITIAL: GrantAccessState = { error: null, granted: 0, future: false, invited: false };
 
 /**
- * Página 56 del diseño · "Crear panel del restaurante" (RN-PAN-10).
+ * M81 (página 56 del diseño) · "Crear panel del restaurante" (RN-PAN-10).
+ *
+ * El "Cancelar" del dibujo no está: aquí el formulario va dentro del
+ * bloque de Usuarios, no en una pantalla propia, y no hay nada de lo que
+ * salir. El "Se enviará una invitación" tampoco: Cuotly no envía correos,
+ * y la ayuda del campo dice lo que pasa de verdad.
  *
  * **No hay acción nueva detrás.** Crear el panel es dar el primer acceso,
  * así que esto llama a `grantClientAccess()` como el formulario de
@@ -51,66 +57,64 @@ export function CreatePanelForm({
 
       {/*
         RN-PAN-11 · lo que crear el panel NO hace, dicho antes de crearlo.
-        Es la frase de la página 56 del diseño, y está ahí porque es la
-        pregunta que se hace quien va a pulsar: "¿esto le abre un espacio
-        de mantenimiento? ¿le cobra algo?".
+        Es el aviso azul de M81, y está ahí porque es la pregunta que se
+        hace quien va a pulsar: "¿esto le abre un espacio de
+        mantenimiento? ¿le cobra algo?".
       */}
-      <p className="rounded-[10px] bg-soft-surface p-3 text-sm text-text-secondary">
-        <span className="font-semibold text-text">{t.panelBelongsTitle}</span> {t.panelBelongsHint}
-      </p>
-
-      {/* Los tres datos del restaurante, para leer, como en el diseño. */}
-      <dl className="grid gap-2 text-sm sm:grid-cols-3">
+      <div className="flex items-start gap-3 rounded-[10px] bg-info/10 p-4 text-sm">
+        <Icon name="info" aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-info" />
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            {t.panelRestaurantLabel}
-          </dt>
-          <dd className="text-text">{establishmentName}</dd>
+          <p className="font-semibold text-text">{t.panelBelongsTitle}</p>
+          <p className="text-text-secondary">{t.panelBelongsHint}</p>
         </div>
-        <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            {t.panelCodeLabel}
-          </dt>
-          <dd className="text-text">{code}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            {t.panelGroupLabel}
-          </dt>
-          <dd className="text-text">{groupName ?? t.panelNoGroup}</dd>
-        </div>
-      </dl>
-
-      <div className="w-full sm:w-80">
-        <Field
-          label={t.panelOwnerLabel}
-          name="email"
-          type="email"
-          placeholder={t.grantEmailPlaceholder}
-          hint={t.panelOwnerHint}
-          required
-        />
       </div>
 
       {/*
-        "Revisar accesos del cliente" del diseño. Son lo que HOY concede el
-        rol de propietario local, no casillas que se elijan aquí: los
-        permisos finos del diseño (siete por rol) siguen sin decidirse, y
-        pintar casillas que no hacen nada sería justo lo que CLAUDE.md
-        prohíbe.
+        M81 · dos columnas: a la izquierda el restaurante, para leer (los
+        campos bloqueados del dibujo); a la derecha quién va a ser su
+        propietario y lo que ese rol le abre.
       */}
-      <div className="rounded-[10px] border border-border p-3">
-        <p className="mb-2 text-sm font-medium text-text">{t.panelAccessTitle}</p>
-        <ul className="space-y-1 text-sm text-text-secondary">
-          {t.panelAccessItems.map((linea) => (
-            <li key={linea}>· {linea}</li>
-          ))}
-        </ul>
+      <div className="grid gap-x-6 lg:grid-cols-2">
+        <div>
+          <Field label={t.panelRestaurantLabel} name="panelRestaurant" value={establishmentName} readOnly disabled />
+          <Field label={t.panelCodeLabel} name="panelCode" value={code} readOnly disabled />
+          <Field label={t.panelGroupLabel} name="panelGroup" value={groupName ?? t.panelNoGroup} readOnly disabled />
+        </div>
+
+        <div>
+          <Field
+            label={t.panelOwnerLabel}
+            name="email"
+            type="email"
+            placeholder={t.grantEmailPlaceholder}
+            hint={t.panelOwnerHint}
+            required
+          />
+
+          {/*
+            "Revisar accesos del cliente" del dibujo. Son lo que HOY concede
+            el rol de propietario local, no casillas que se elijan aquí: los
+            permisos finos del diseño (siete por rol) siguen sin decidirse,
+            y pintar casillas que no hacen nada sería justo lo que CLAUDE.md
+            prohíbe.
+          */}
+          <p className="mb-1.5 text-sm font-semibold text-text">{t.panelAccessTitle}</p>
+          <ul className="space-y-1.5 rounded-[10px] border border-border bg-soft-surface/60 p-3 text-sm text-text-secondary">
+            {t.panelAccessItems.map((linea) => (
+              <li key={linea} className="flex items-start gap-2">
+                <Icon name="check" aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-cuotly-green" />
+                {linea}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
-      <Button type="submit" disabled={pending}>
-        {pending ? t.panelCreatePending : t.panelCreateSubmit}
-      </Button>
+      <div className="flex justify-end">
+        <Button type="submit" disabled={pending}>
+          {pending ? t.panelCreatePending : t.panelCreateSubmit}
+        </Button>
+      </div>
 
       {state.error ? (
         <p role="alert" className="text-sm text-danger">
