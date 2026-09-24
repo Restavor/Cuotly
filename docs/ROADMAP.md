@@ -5252,12 +5252,29 @@ punto"). El razonamiento de los diez está en `docs/PROPUESTA-DISENO-MOVIL.md`; 
       lo decide `profiles_select`, que ya impide que un cliente lea la fila de nadie del equipo —y
       una foto es identidad (CLAUDE.md)—.
 
-Los ocho están cerrados. Queda, fuera de ese orden: las **invitaciones al panel del restaurante**
+Los ocho están cerrados. Quedaba, fuera de ese orden: las **invitaciones al panel del restaurante**
 con alta de cuenta (Bosco, 19/09/2026: "a los miembros del restaurante los invito yo… lo único que tienen que
 hacer es registrarse con correo y contraseña y rellenar… todo lo que hay que rellenar para la
 cuenta"), y los **tres cabos de la decisión 48**: qué significan "Prioridad: Alta/Superior" e
 "Informes: Estándar/Avanzado" en las fichas de plan, si Premium+ lleva un plazo por debajo de 24 h, y
-el choque de RN-COM-03 (el cliente no ve la prioridad de su plan, pero el diseño se la enseña).
+el choque de RN-COM-03 (el cliente no ve la prioridad de su plan, pero el diseño se la enseña). Los
+dos quedaron cerrados: las invitaciones con alta de cuenta, por la decisión 59 (20/09/2026); los tres
+cabos, por las decisiones 55 y 56 (19 y 20/09/2026).
+
+### Paso 3 · cerrado el 24/09/2026 — el diseño móvil aplicado a la web
+
+Bosco decidió (decisión 76) que el diseño definitivo móvil se aplica a **la web en el teléfono**
+(`cuotly-web`), no a la app de Expo, que se retoma cuando toque el paso 7. El trabajo completo está en
+`docs/diseno/PLAN-MOVIL.md`: los seis patrones que se repiten en las 157 páginas, y las doce partes
+—las mismas del diseño de escritorio, página a página contra el PDF móvil— todas comparadas y
+ajustadas. Quedan escritas como diferencias a propósito y no como pendientes: el cuerpo de letra del
+PDF (9–10 px, ilegible en un teléfono real), los datos de ejemplo, los formularios largos a una
+columna en vez de dos, los filtros a dos por fila en vez de tres, y el papel de cada persona
+("Propietario", "Editor") en la tarjeta de contexto del panel, que el armazón no carga hoy.
+
+Con esto se cierra el paso 3 de la decisión 37. **Antes de seguir con el paso 4** (la parte legal y
+fiscal, que exige revisión profesional) hay que confirmarlo con Bosco: CLAUDE.md pide parar entre
+hitos del ROADMAP y avisar antes de empezar el siguiente.
 
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
