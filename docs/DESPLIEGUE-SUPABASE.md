@@ -6,7 +6,7 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 23/09/2026 (135).
+Actualizado el 24/09/2026 (136).
 
 ## Pendiente de aplicar
 
@@ -16,8 +16,18 @@ ella, `report_finance_dataset()` falla en cuanto el espacio tiene un cobro en el
 pestaña Finanzas de Informes ("No se han podido calcular las cifras") y la generación de informes
 financieros. Solo cambia el cuerpo de la función (misma firma, sin tocar privilegios). Se comprobó
 en local: la suite `informes.sql` falla sin ella y pasa con ella, y pasan las 75 suites en el orden
-de CI. **No está aplicada en el proyecto real**: desde el entorno de esta sesión no hay salida a
-Supabase.
+de CI.
+
+**Aplicada el 24/09/2026 por el MCP**, con Bosco de acuerdo. Antes se comprobó en vivo que la última
+aplicada era la 135 y que la función tenía el cuerpo de siempre (sin la rama de `service_role`).
+Después: 231 migraciones registradas; el cuerpo nuevo está en el proyecto; `authenticated` conserva
+el EXECUTE, que necesita porque la función está en las políticas de `charges`, `payments` y
+`receipts`. `anon` también lo tiene, igual que antes de la 136, porque nunca se le revocó. No abre
+nada: sin sesión `can_read_billing()` da falso, y la rama nueva mira el rol del token firmado, que
+`anon` no puede falsificar. Prueba en vivo, en una transacción deshecha al final:
+`report_finance_dataset()` con la clave de servicio calcula las cifras de los dos espacios que
+tienen cobros. En el espacio de demostración son 5 cobros, 2 vencidos, 1.207,58 € cobrados y
+480,37 € pendientes. Antes de la 136, esa misma llamada lanzaba la excepción.
 
 **Actualización del 23/09/2026 (grupos): ninguna.** La **135** (`grupos_crear_editar_y_mover`, M82,
 decisión 74, RN-EST-20) se aplicó por el MCP en una llamada, con Bosco de acuerdo, **después** de
