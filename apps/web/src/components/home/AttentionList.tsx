@@ -126,11 +126,23 @@ export function AttentionList({
                     .filter((parte) => parte !== null)
                     .join(" · ")}
                 </span>
+                {/*
+                  En el teléfono la etiqueta va debajo, como en la página 22
+                  del diseño móvil: al lado, apretaba el título hasta
+                  dejarlo en "TRB-00…".
+                */}
+                <span className="mt-1 block sm:hidden">
+                  <StatusBadge tone={aspecto.tone} icon={aspecto.icon}>
+                    {etiqueta(item)}
+                  </StatusBadge>
+                </span>
               </span>
 
-              <StatusBadge tone={aspecto.tone} icon={aspecto.icon}>
-                {etiqueta(item)}
-              </StatusBadge>
+              <span className="hidden shrink-0 sm:inline-flex">
+                <StatusBadge tone={aspecto.tone} icon={aspecto.icon}>
+                  {etiqueta(item)}
+                </StatusBadge>
+              </span>
 
               {/*
                 La acción principal de la fila, con el aspecto del botón

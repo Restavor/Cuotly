@@ -64,8 +64,10 @@ export function statusTone(
 function Dato({ label, children }: { readonly label: string; readonly children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <span className="block truncate text-xs text-text-secondary">{label}</span>
-      <span className="block truncate text-sm font-medium text-text">{children}</span>
+      {/* En la fila de tres del teléfono se parte en vez de cortarse
+          ("Solicitudes abie…"); desde `sm` hay ancho y se recorta. */}
+      <span className="block text-xs text-text-secondary sm:truncate">{label}</span>
+      <span className="block break-words text-sm font-medium text-text sm:truncate">{children}</span>
     </div>
   );
 }
@@ -140,7 +142,12 @@ export function EstablishmentCard({
         </span>
       </span>
 
-      <span className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-border pt-3 sm:grid-cols-3">
+      {/*
+        Página 23 del diseño móvil · Grupo, Solicitudes y Responsable en
+        una fila de tres también en el teléfono; "Necesita atención" debajo,
+        a lo ancho. En dos columnas cada tarjeta ocupaba el doble.
+      */}
+      <span className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 border-t border-border pt-3">
         <Dato label={t.groupColumn}>{row.groupName ?? t.noGroup}</Dato>
         <Dato label={t.openRequests}>{row.openRequests}</Dato>
         {/*
@@ -165,7 +172,7 @@ export function EstablishmentCard({
           columna de la tabla que esto sustituye. Cuando no hay nada,
           `AttentionCell` lo dice; no se pinta un hueco.
         */}
-        <span className="col-span-2 min-w-0 sm:col-span-1">
+        <span className="col-span-3 min-w-0">
           <span className="block truncate text-xs text-text-secondary">{t.attentionColumn}</span>
           <span className="flex items-center justify-between gap-3">
             <AttentionCell items={row.attention} />

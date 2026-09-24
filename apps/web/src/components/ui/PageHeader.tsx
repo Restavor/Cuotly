@@ -40,7 +40,16 @@ export function PageHeader({
         {subtitle ? <p className="mt-1 text-sm text-text-secondary">{subtitle}</p> : null}
         {children}
       </div>
-      {actions ? <div className="flex max-w-full shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {/*
+        Diseño móvil (páginas 1, 23, 88 y 90) · en el teléfono la acción de
+        la pantalla va a lo ancho, debajo del título, y si hay dos se
+        reparten la fila. Desde \`sm\`, a la derecha del título.
+      */}
+      {actions ? (
+        <div className="flex w-full flex-wrap items-center gap-2 *:flex-1 *:justify-center sm:w-auto sm:max-w-full sm:shrink-0 sm:*:flex-none">
+          {actions}
+        </div>
+      ) : null}
     </header>
   );
 }
