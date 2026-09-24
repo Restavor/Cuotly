@@ -22,9 +22,10 @@ type StatusKey = keyof typeof es.space.statuses;
  *   se sale cobrando (RN-FIN-13). Un botón que abre unas condiciones que
  *   no existen es peor que no tenerlo.
  * - **El candado "Solo lectura" en lugar de "Editar restaurante".** La
- *   ficha se sigue pudiendo corregir en solo lectura (`set_establishment_data()`
- *   no pasa por la guarda del servicio), así que quitar el botón diría
- *   lo contrario de lo que hace el servidor. El estado ya va en la
+ *   ficha y los accesos se siguen pudiendo corregir en solo lectura
+ *   (decisión 75: `set_establishment_data()` no pasa por la guarda del
+ *   servicio, y así debe ser), así que quitar el botón diría lo contrario
+ *   de lo que hace el servidor. El estado ya va en la
  *   insignia junto al nombre.
  * - **La "X" del panel de estados.** Aquí no es un cajón que se abre: es
  *   la columna derecha del Resumen mientras dura el estado.

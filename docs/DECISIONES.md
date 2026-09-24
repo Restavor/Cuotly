@@ -2184,3 +2184,12 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     individuales; los informes **consolidados** del grupo de origen se quedan en él, porque son
     historia de ese grupo. Mover al mismo grupo no hace nada, y crear dos veces con la misma clave
     crea un solo grupo (CLAUDE.md). Todo deja auditoría con actor, valor anterior y nuevo.
+
+75. **En solo lectura se siguen pudiendo corregir la ficha y los accesos (M74)** (24/09/2026). El
+    dibujo de M74 pone en "Qué no puedes hacer" "Modificar la información del restaurante" y
+    "Cambiar configuraciones o permisos". Bosco decide que **no hace falta bloquearlo**: solo
+    lectura (RN-EST-10) detiene el servicio —solicitudes, trabajos, Menú Diario, presupuestos y
+    cambio de plan, lo que cierra `assert_establishment_service_running()`—, pero corregir un dato
+    de contacto o retirar un acceso no le da servicio a nadie y puede hacer falta justo en esas 24 h.
+    Consecuencias: el servidor no cambia, la pantalla enseña en "Qué no puedes hacer" solo lo que la
+    guarda cierra, y "Editar restaurante" sigue en la cabecera en lugar del candado del dibujo.
