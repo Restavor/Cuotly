@@ -284,13 +284,22 @@ export default async function GlobalHomePage() {
         frase y su botón.
       */}
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-        <Card className="min-w-0" title={t.unreadTitle}>
+        {/*
+          Los dos diseños (G01 escritorio y página 1 del móvil) pintan esto
+          como UNA fila —icono, título con su frase, botón— sin cabecera de
+          tarjeta. Con el título arriba, a 390 px la frase se partía en
+          cuatro líneas al lado del botón.
+        */}
+        <Card className="min-w-0">
           {home.failed.conversations ? (
-            <p className="text-sm text-text-secondary">
-              {es.globalContext.messages.failedReason}
-            </p>
+            <>
+              <h3 className="mb-2 text-base font-semibold text-primary-dark">{t.unreadTitle}</h3>
+              <p className="text-sm text-text-secondary">
+                {es.globalContext.messages.failedReason}
+              </p>
+            </>
           ) : (
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cuotly-green/10 text-cuotly-green">
                 <Icon name="messages" className="h-5 w-5" />
                 {home.unread > 0 ? (
@@ -299,10 +308,15 @@ export default async function GlobalHomePage() {
                   </span>
                 ) : null}
               </span>
-              <p className="min-w-0 flex-1 text-sm text-text">
-                {home.unread === 0 ? t.unreadNone : t.unreadCount(home.unread)}
-              </p>
-              <ButtonLink href="/mensajes" variant="secondary">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-primary-dark sm:text-base">
+                  {t.unreadTitle}
+                </h3>
+                <p className="text-xs text-text-secondary sm:text-sm">
+                  {home.unread === 0 ? t.unreadNone : t.unreadCount(home.unread)}
+                </p>
+              </div>
+              <ButtonLink href="/mensajes" variant="secondary" className="shrink-0">
                 {t.viewMessages}
               </ButtonLink>
             </div>

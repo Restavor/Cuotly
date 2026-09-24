@@ -590,19 +590,28 @@ export function AppShell({
                   <Link
                     href="/"
                     aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
-                    className="block rounded-field border border-border bg-surface transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 rounded-field focus:outline focus:outline-2 focus:outline-cuotly-green"
                   >
-                    <span aria-hidden="true" className="flex items-center gap-3 px-3 py-2">
-                      <Icon name="building" className="h-6 w-6 shrink-0 text-primary-dark" />
+                    {/*
+                      Página 22 del diseño móvil: el espacio con su rol a
+                      la izquierda y "Cambiar de espacio" a la derecha, en
+                      una fila. Sigue siendo UN enlace (ver el menú
+                      lateral): las dos mitades llevan al mismo sitio.
+                    */}
+                    <span
+                      aria-hidden="true"
+                      className="flex min-w-0 items-center gap-2 rounded-field border border-border bg-surface px-2.5 py-2 transition-colors hover:border-cuotly-green"
+                    >
+                      <Icon name="building" className="h-5 w-5 shrink-0 text-primary-dark" />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-semibold text-text">{spaceName}</span>
-                        <span className="block truncate text-xs text-text-secondary">{roleLabel}</span>
+                        <span className="block truncate text-[11px] text-text-secondary">{roleLabel}</span>
                       </span>
                       <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-text-secondary" />
                     </span>
                     <span
                       aria-hidden="true"
-                      className="flex items-center gap-2 border-t border-border bg-soft-surface/70 px-3 py-2 text-xs font-medium text-text"
+                      className="flex items-center gap-1.5 rounded-field border border-cuotly-green/15 bg-cuotly-green/10 px-2.5 py-2 text-xs font-medium text-primary-dark"
                     >
                       <Icon name="switchSpace" className="h-3.5 w-3.5" />
                       {es.nav.switchSpace}
