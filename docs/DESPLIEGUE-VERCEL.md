@@ -46,6 +46,14 @@ que se arregla a mano en el panel:
 
 ### El móvil en el navegador
 
+**Desde el 24/09/2026 (decisión 77), `cuotly-movil` ya no sirve la app de
+Expo: redirige cada dirección a la misma en `cuotly-web.vercel.app`**, que
+es donde está el diseño móvil. Lo hace `apps/mobile/vercel.json`. Mientras
+la rama de producción de `cuotly-movil` no se cambie (arriba), la
+redirección solo llega a su alias de rama, no a `cuotly-movil.vercel.app`.
+
+Lo que sigue describe cómo era antes, por si hay que volver atrás.
+
 `apps/mobile` es Expo. Lo que se despliega en Vercel es su exportación para
 web (`expo export --platform web`), que es el mismo código corriendo sobre
 `react-native-web`: sirve para **mirar el diseño desde un teléfono sin

@@ -2201,3 +2201,17 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     es de forma, pantalla a pantalla, sin construir nada nuevo ni duplicar cada pantalla en dos
     códigos. La app de Expo se decide aparte, cuando toque llevarla a las tiendas (paso 7 de la
     decisión 37). El plan está en `docs/diseno/PLAN-MOVIL.md`.
+
+77. **La app del teléfono tiene que llevar el diseño móvil, en Vercel y en las tiendas** (24/09/2026).
+    Amplía la 76, no la anula. Bosco abrió `cuotly-movil.vercel.app`, vio la app de Expo sin el
+    diseño y pidió: *"el diseño de móvil que te subí esté en la app, que cuando yo abra Vercel esté
+    el diseño"*, y lo mismo cuando se publique en App Store y Google Play.
+    - **Vercel, ya:** `apps/mobile/vercel.json` deja de servir la exportación web de Expo y
+      redirige toda dirección a la misma en `cuotly-web.vercel.app`, que es donde está el diseño
+      (las direcciones son las mismas, RN-PAN-01). Redirección temporal (307), para poder
+      deshacerla sin que los navegadores la recuerden.
+    - **Tiendas, en el paso 7:** la app que se publique enseña ese mismo diseño. Cómo (la web
+      dentro de un armazón nativo con push, biometría y cámara, o pantallas nativas rehechas) se
+      decide al empezar el paso 7, porque la primera obliga a reescribir RN-MOV-03 y RN-MOV-09
+      (sin conexión) y la segunda son dos códigos para siempre. Lo que ya no está en discusión es
+      el resultado: la app de las tiendas no sale con las 29 pantallas sin diseño.
