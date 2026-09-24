@@ -10,6 +10,15 @@ Actualizado el 23/09/2026 (135).
 
 ## Pendiente de aplicar
 
+**Actualización del 24/09/2026: la 136.** `informes_de_finanzas_con_la_clave_de_servicio`
+redefine `can_read_establishment_finance()` para que responda que sí a la clave de servicio. Sin
+ella, `report_finance_dataset()` falla en cuanto el espacio tiene un cobro en el periodo, y con ello la
+pestaña Finanzas de Informes ("No se han podido calcular las cifras") y la generación de informes
+financieros. Solo cambia el cuerpo de la función (misma firma, sin tocar privilegios). Se comprobó
+en local: la suite `informes.sql` falla sin ella y pasa con ella, y pasan las 75 suites en el orden
+de CI. **No está aplicada en el proyecto real**: desde el entorno de esta sesión no hay salida a
+Supabase.
+
 **Actualización del 23/09/2026 (grupos): ninguna.** La **135** (`grupos_crear_editar_y_mover`, M82,
 decisión 74, RN-EST-20) se aplicó por el MCP en una llamada, con Bosco de acuerdo, **después** de
 publicar la web: la lista de Grupos aguanta sin la columna nueva (`grupos/groups-load.ts`), así que

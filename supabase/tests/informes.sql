@@ -1048,4 +1048,49 @@ begin
 end $$;
 reset role;
 
+-- ============================================================
+-- Migración 136 · las cifras de finanzas se calculan con la clave de
+-- servicio. `report_finance_dataset()` fallaba en cuanto había un cobro:
+-- sus funciones auxiliares exigían visibilidad financiera a un usuario que,
+-- con esa clave, no existe. Esta suite no tenía cobros y no lo vio.
+-- ============================================================
+reset role;
+insert into public.charges
+  (id, space_id, establishment_id, concept, period_start, period_end,
+   base_cents, tax_rate_percent, tax_cents, total_cents, due_at, issued_at, issued_by) values
+  ('ff900000-0000-0000-0000-000000000001', 'ff100000-0000-0000-0000-000000000001',
+   'ff400000-0000-0000-0000-000000000001', 'Cuota de agosto',
+   '2026-08-01T00:00:00Z', '2026-08-31T23:59:59Z',
+   39900, 21, 8379, 48279, '2026-08-31T23:59:59Z', '2026-08-01T08:00:00Z',
+   'ff000000-0000-0000-0000-000000000001');
+
+select set_config('request.jwt.claims', '{"role": "service_role"}', false);
+select set_config('request.jwt.claim.sub', '', false);
+set role service_role;
+do $$
+declare v jsonb;
+begin
+  v := public.report_finance_dataset('ff100000-0000-0000-0000-000000000001', null, '2026-08-01', '2026-08-31');
+  if (v ->> 'charges_issued')::integer <> 1 or (v ->> 'income_total_cents')::bigint <> 48279 then
+    raise exception 'Migración 136 FALLIDO: las cifras de finanzas no cuentan el cobro: %', v
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+
+-- Y para una persona sin relación con el restaurante sigue siendo que no:
+-- la clave de servicio no ha abierto la puerta a nadie más.
+select set_config('request.jwt.claims', '{"role": "authenticated"}', false);
+select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000009', false);
+set role authenticated;
+do $$
+begin
+  if public.can_read_establishment_finance('ff400000-0000-0000-0000-000000000001') then
+    raise exception 'Migración 136 FALLIDO: alguien ajeno al restaurante ve sus finanzas'
+      using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+select set_config('request.jwt.claims', '', false);
+
 select 'informes.sql OK' as resultado;
