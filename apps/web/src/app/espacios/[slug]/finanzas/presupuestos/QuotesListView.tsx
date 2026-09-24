@@ -185,7 +185,9 @@ export function QuotesListView({
           )}
         </Card>
 
-        <Card title={t.selectedTitle} className="lg:sticky lg:top-4">
+        {/* En el teléfono, sin nada elegido no se pinta el hueco vacío
+            del detalle bajo la lista: la lista es la pantalla. */}
+        <Card title={t.selectedTitle} className={`lg:sticky lg:top-4 ${elegido === null ? "hidden lg:block" : ""}`}>
           {elegido === null ? (
             <EmptyState title={t.pickTitle} description={t.pickReason} />
           ) : (

@@ -357,7 +357,9 @@ function Barras({
 }): ReactNode {
   const maximo = Math.max(1, ...meses.map((m) => m.collected ?? 0));
   return (
-    <ol className="flex h-52 items-end gap-1.5 sm:gap-2.5">
+    // En el teléfono la franja es baja (página 77 del diseño móvil): doce
+    // barras finas no necesitan 208 px de alto para compararse.
+    <ol className="flex h-32 items-end gap-1 sm:h-52 sm:gap-2.5">
       {meses.map((m) => {
         const activo = m.month === elegido;
         const alto = m.collected === null ? 0 : Math.max(2, (m.collected / maximo) * 100);
@@ -387,7 +389,7 @@ function Barras({
             </Link>
             <span
               aria-hidden="true"
-              className={`text-[11px] capitalize ${activo ? "font-bold text-text" : "text-text-secondary"}`}
+              className={`text-[10px] capitalize sm:text-[11px] ${activo ? "font-bold text-text" : "text-text-secondary"}`}
             >
               {m.corto}
             </span>

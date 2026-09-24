@@ -60,8 +60,10 @@ export function PaymentsTab({
     <div className="space-y-5">
       <p className="text-sm text-text-secondary">{t.paymentsSubtitle}</p>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))]">
-        <Card className="p-4!">
+      {/* En el teléfono el selector va a lo ancho y las tres cifras en dos
+          columnas, en vez de tres tarjetas una debajo de otra. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1.3fr)_repeat(3,minmax(0,1fr))] lg:gap-4">
+        <Card className="col-span-2 p-4! lg:col-span-1">
           <AutoSubmitForm action={base} submitLabel={t.paymentsChoose} className="flex items-end gap-2">
             <input type="hidden" name="tab" value="pagos" />
             <label className="block flex-1 text-sm font-medium text-text">
