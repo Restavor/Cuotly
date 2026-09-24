@@ -420,7 +420,7 @@ export function AppShell({
               data-testid="search-trigger"
               aria-label={es.search.title}
               onClick={() => setSearchOpen(true)}
-              className="ml-auto flex items-center gap-2 rounded-field border border-border px-3 py-2 text-sm text-text-secondary transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green lg:w-72"
+              className="ml-auto flex items-center gap-2 rounded-field border border-transparent px-2 py-2 text-sm text-text-secondary transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green lg:w-72 lg:border-border lg:px-3"
             >
               <Icon name="search" className="h-4 w-4" />
               <span className="hidden sm:inline">{es.search.open}</span>
@@ -540,7 +540,7 @@ export function AppShell({
             <Link
               href="/cuenta/sesiones"
               aria-label={`${es.nav.account} · ${userLabel}`}
-              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-soft-surface text-sm font-semibold text-primary-dark hover:bg-border focus:outline focus:outline-2 focus:outline-cuotly-green"
+              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-dark text-sm font-semibold text-surface hover:bg-primary focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
               {userAvatarUrl !== null ? (
                 /*
@@ -565,36 +565,52 @@ export function AppShell({
             </div>
 
             {/*
-              La miga de pan de móvil, en su propia fila y entera: casa,
-              contexto y pantalla. Es la misma información que la de
-              escritorio; lo que cambia es que aquí tiene el ancho para
-              caber.
+              Móvil (páginas 21 a 157 del diseño móvil) · debajo del
+              logotipo no va la miga de pan: va la **tarjeta de contexto**,
+              la misma caja del menú lateral de escritorio en claro. En un
+              espacio, el nombre con su rol y "Cambiar de espacio"; en el
+              panel, el restaurante con su selector (RN-PAN-04). Es lo que
+              en el teléfono dice dónde estás, y además deja cambiarlo, que
+              la miga no hacía.
+
+              En el contexto global (§36) no hay nada: no estás dentro de
+              nada de lo que cambiar, y el diseño (páginas 1 a 8) no pinta
+              ninguna fila ahí.
             */}
-            <nav
-              aria-label={es.nav.breadcrumbLabel}
-              className="flex min-w-0 items-center gap-1.5 lg:hidden"
-            >
-              <Link
-                href={contextHome}
-                className="shrink-0 rounded text-text-secondary hover:text-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-              >
-                <Icon name="home" className="h-4 w-4" title={es.nav.home} />
-              </Link>
-              <Icon name="chevronRight" className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
-              <span className="truncate text-sm font-medium">{contextName}</span>
-              {/*
-                En el contexto global el contexto SE LLAMA "Inicio" y la
-                pantalla activa también, así que la miga decía "Inicio ›
-                Inicio". Cuando coinciden se pinta una sola vez: repetir el
-                mismo nombre no orienta a nadie.
-              */}
-              {active === null || active.label === contextName ? null : (
-                <>
-                  <Icon name="chevronRight" className="h-3.5 w-3.5 shrink-0 text-text-secondary" />
-                  <span className="truncate text-sm font-medium">{active.label}</span>
-                </>
-              )}
-            </nav>
+            {esGlobal ? null : (
+              <div data-testid="mobile-context" className="lg:hidden">
+                {esPanel ? (
+                  <PanelContextBox
+                    name={contextName}
+                    current={establishmentId}
+                    establishments={establishments}
+                    tone="light"
+                  />
+                ) : (
+                  <Link
+                    href="/"
+                    aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
+                    className="block rounded-field border border-border bg-surface transition-colors hover:border-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green"
+                  >
+                    <span aria-hidden="true" className="flex items-center gap-3 px-3 py-2">
+                      <Icon name="building" className="h-6 w-6 shrink-0 text-primary-dark" />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-text">{spaceName}</span>
+                        <span className="block truncate text-xs text-text-secondary">{roleLabel}</span>
+                      </span>
+                      <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-text-secondary" />
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="flex items-center gap-2 border-t border-border bg-soft-surface/70 px-3 py-2 text-xs font-medium text-text"
+                    >
+                      <Icon name="switchSpace" className="h-3.5 w-3.5" />
+                      {es.nav.switchSpace}
+                    </span>
+                  </Link>
+                )}
+              </div>
+            )}
           </header>
 
           {supportSession ? (
@@ -754,27 +770,52 @@ export function AppShell({
  * un manejador, y `Escape` lo cierra solo. La misma razón por la que el
  * resto del armazón navega con enlaces de verdad (CA-22).
  */
+/**
+ * Los dos tonos de la caja del panel: sobre el verde del menú lateral
+ * (escritorio) y sobre blanco, bajo la cabecera (móvil). Mismo contenido y
+ * mismo comportamiento; solo cambian los colores.
+ */
+const PANEL_BOX_TONES = {
+  dark: {
+    box: "border-sidebar-border bg-sidebar-raised [&[open]]:border-accent-green",
+    title: "text-surface",
+    sub: "text-sidebar-text",
+    divider: "border-sidebar-border",
+    item: "text-sidebar-text hover:bg-primary hover:text-surface",
+  },
+  light: {
+    box: "border-border bg-surface [&[open]]:border-cuotly-green",
+    title: "text-text",
+    sub: "text-text-secondary",
+    divider: "border-border",
+    item: "text-text hover:bg-soft-surface",
+  },
+} as const;
+
 function PanelContextBox({
   name,
   current,
   establishments,
+  tone = "dark",
 }: {
   name: string;
   current: string | null;
   establishments: readonly PanelEstablishment[];
+  tone?: keyof typeof PANEL_BOX_TONES;
 }) {
   const otros = establishments.filter((e) => e.id !== current);
+  const c = PANEL_BOX_TONES[tone];
 
   const identidad = (
     <span className="flex items-center gap-2 px-3 py-2.5">
       <span aria-hidden="true" className="min-w-0 flex-1 text-left">
-        <span className="block truncate text-sm font-semibold text-surface">{name}</span>
-        <span className="block truncate text-xs text-sidebar-text">
+        <span className={`block truncate text-sm font-semibold ${c.title}`}>{name}</span>
+        <span className={`block truncate text-xs ${c.sub}`}>
           {es.restaurantPanel.label}
         </span>
       </span>
       {otros.length === 0 ? null : (
-        <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-sidebar-text" />
+        <Icon name="chevronDown" className={`h-4 w-4 shrink-0 ${c.sub}`} />
       )}
     </span>
   );
@@ -783,7 +824,7 @@ function PanelContextBox({
   if (otros.length === 0) {
     return (
       <div
-        className="rounded-field border border-sidebar-border bg-sidebar-raised"
+        className={`rounded-field border ${c.box}`}
         aria-label={es.restaurantPanel.singleLabel(name)}
       >
         {identidad}
@@ -792,7 +833,7 @@ function PanelContextBox({
   }
 
   return (
-    <details className="group rounded-field border border-sidebar-border bg-sidebar-raised [&[open]]:border-accent-green">
+    <details className={`group rounded-field border ${c.box}`}>
       <summary
         className="cursor-pointer list-none rounded-field transition-colors hover:border-accent-green focus:outline focus:outline-2 focus:outline-cuotly-green"
         aria-label={`${name} · ${es.restaurantPanel.switchLabel}`}
@@ -800,14 +841,14 @@ function PanelContextBox({
         {identidad}
         <span
           aria-hidden="true"
-          className="flex items-center justify-center gap-1.5 border-t border-sidebar-border px-3 py-2 text-xs font-medium text-sidebar-text"
+          className={`flex items-center justify-center gap-1.5 border-t px-3 py-2 text-xs font-medium ${c.divider} ${c.sub}`}
         >
           <Icon name="switchSpace" className="h-3.5 w-3.5" />
           {es.restaurantPanel.switchLabel}
         </span>
       </summary>
-      <div className="border-t border-sidebar-border px-2 py-2">
-        <p className="px-1 pb-1 text-xs font-medium text-sidebar-text">
+      <div className={`border-t px-2 py-2 ${c.divider}`}>
+        <p className={`px-1 pb-1 text-xs font-medium ${c.sub}`}>
           {es.restaurantPanel.pickerTitle}
         </p>
         <ul className="flex flex-col gap-0.5">
@@ -815,7 +856,7 @@ function PanelContextBox({
             <li key={e.id}>
               <Link
                 href={`/espacios/${e.spaceSlug}/restaurantes/${e.id}`}
-                className="block truncate rounded-field px-2 py-1.5 text-sm text-sidebar-text transition-colors hover:bg-primary hover:text-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+                className={`block truncate rounded-field px-2 py-1.5 text-sm transition-colors focus:outline focus:outline-2 focus:outline-cuotly-green ${c.item}`}
               >
                 {e.name}
               </Link>

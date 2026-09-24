@@ -38,7 +38,12 @@ export function Card({
     tone === "danger" ? "border-danger/30 bg-danger/5" : "border-border bg-surface";
 
   return (
-    <div className={`rounded-card border p-5 shadow-sm sm:p-6 ${fondo} ${className}`}>
+    // `min-w-0`: una tarjeta dentro de una rejilla o una fila flexible no
+    // debe ensancharla nunca. Sin él, su anchura mínima es la de su
+    // contenido —una tabla, un texto que no se parte— y a 390 px la
+    // página entera se salía por la derecha (el Resumen de la ficha
+    // llegaba a 887 px).
+    <div className={`min-w-0 rounded-card border p-5 shadow-sm sm:p-6 ${fondo} ${className}`}>
       {/*
         La cabecera **conserva su forma** cuando no se pide ni icono ni
         subtítulo: el título es hijo directo de esta fila, como siempre.

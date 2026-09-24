@@ -162,7 +162,13 @@ export default async function ClientCalendarPage({
   const fila = (e: ClientCalendarEvent) => (
     <span className="flex items-start gap-1.5">
       <span aria-hidden="true" className={`mt-1 h-2 w-2 shrink-0 rounded-full ${COLOR[e.kind]}`} />
-      <span className="min-w-0">
+      {/*
+        Página 134 del diseño móvil · en el teléfono cada día es una
+        casilla de 50 px y solo cabe el punto de color. El texto sigue ahí
+        para quien usa lector de pantalla (`sr-only`) y vuelve a verse
+        desde `sm`; lo completo de cada día está en la Agenda.
+      */}
+      <span className="sr-only min-w-0 sm:not-sr-only">
         <span className="line-clamp-2 text-xs font-medium text-text">{e.title}</span>
         {e.time ? <span className="block text-xs text-text-secondary">{e.time}</span> : null}
       </span>
@@ -181,8 +187,8 @@ export default async function ClientCalendarPage({
       </nav>
 
       {q.view === "mes" ? (
-        <div className="grid gap-6 lg:grid-cols-4">
-          <div className="space-y-4 lg:col-span-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          <div className="min-w-0 space-y-4 lg:col-span-3">
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={enlace({ month: addMonths(q.month, -1) })}
@@ -191,7 +197,7 @@ export default async function ClientCalendarPage({
               >
                 <Icon name="arrowLeft" className="h-5 w-5" />
               </Link>
-              <h2 className="min-w-[200px] text-center text-2xl font-bold text-primary-dark">{nombreMes(q.month)}</h2>
+              <h2 className="text-center text-xl font-bold text-primary-dark sm:min-w-[200px] sm:text-2xl">{nombreMes(q.month)}</h2>
               <Link
                 href={enlace({ month: addMonths(q.month, 1) })}
                 aria-label={t.nextMonth}
@@ -208,7 +214,7 @@ export default async function ClientCalendarPage({
             </div>
 
             <div className="overflow-x-auto rounded-card border border-border bg-surface">
-              <table className="w-full min-w-[640px] table-fixed border-collapse">
+              <table className="w-full table-fixed border-collapse sm:min-w-[640px]">
                 <thead>
                   <tr>
                     {t.weekdays.map((d) => (
@@ -224,7 +230,7 @@ export default async function ClientCalendarPage({
                       {semana.map(({ day, inMonth }) => {
                         const delDia = porDia.get(day) ?? [];
                         return (
-                          <td key={day} className="h-28 border border-border p-2 align-top">
+                          <td key={day} className="h-14 border border-border p-1 align-top sm:h-28 sm:p-2">
                             <p
                               className={`text-sm ${
                                 day === hoy

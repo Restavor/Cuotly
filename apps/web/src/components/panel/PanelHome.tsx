@@ -114,13 +114,19 @@ export function PanelHome({ data }: { data: PanelHomeData }) {
       {/* R04 · en el primer acceso los primeros pasos ya dicen qué hacer. */}
       {data.firstSteps && data.attention.length === 0 ? null : <AttentionRow items={data.attention} />}
 
-      <div className="grid items-start gap-5 xl:grid-cols-3">
+      {/*
+        `grid-cols-1` en móvil a propósito: sin columnas declaradas, la
+        única columna implícita mide lo que el texto más largo que no se
+        parte (los `truncate` de Mensajes y Trabajos), y a 390 px el
+        Inicio se salía por la derecha hasta los 593.
+      */}
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-3">
         <PlanCard data={data} />
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           {data.showMenus ? <NextMenuCard data={data} /> : null}
           <ActivityCard data={data} />
         </div>
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           <MessagesCard data={data} />
           <InProgressCard data={data} />
         </div>

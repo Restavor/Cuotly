@@ -1,0 +1,114 @@
+# Plan del diseño definitivo móvil, por partes
+
+Escrito el 24/09/2026, después de recorrer otra vez las 157 páginas de
+`docs/diseno/Cuotly_movil.pdf`, esta vez **contra la web con datos** y no
+contra el código. Es el equivalente de `PLAN-ESCRITORIO.md` para el paso 3
+del orden de la decisión 37.
+
+`MAPA-DEL-DISENO-MOVIL.md` dice qué pide el PDF y qué de eso no existía;
+`PROPUESTA-DISENO-MOVIL.md`, qué había que decidir. Las dos cosas están
+cerradas. Este documento contesta lo que queda: **dónde se aplica el diseño,
+en qué orden y cómo se comprueba**.
+
+## La decisión de partida (decisión 76)
+
+El PDF móvil **no es una app reducida**: es el producto entero a ancho de
+teléfono, con las mismas pantallas que el de escritorio. Había dos sitios
+donde aplicarlo:
+
+- **La web en el teléfono** (`cuotly-web`), que ya tiene las 157 pantallas
+  con sus datos y, desde la decisión 47, la barra inferior del diseño.
+- **La app de Expo** (`cuotly-movil`), que tiene 29 pantallas y los once
+  flujos de §176.
+
+Bosco eligió el 24/09/2026 **la web**. El trabajo es de forma, no de
+construir: ninguna pantalla nueva, ningún dato nuevo. La app de Expo se
+decide aparte, cuando toque llevarla a las tiendas (paso 7).
+
+## Cómo se comprueba: la web con datos en local
+
+Este entorno no llega al proyecto real de Supabase y Docker Hub limita las
+descargas, así que `supabase start` no arranca. `scripts/supabase-local/`
+monta lo mínimo para ver cada pantalla con los datos del espacio de
+demostración:
+
+```bash
+bash scripts/supabase-local/arrancar.sh      # PostgreSQL + PostgREST + pasarela + next dev
+node scripts/supabase-local/barrido.mjs owner@cuotly.test /tmp/capturas /espacios/demo /espacios/demo/solicitudes
+```
+
+`arrancar.sh` aplica el bootstrap de las suites, las 135 migraciones y
+`supabase/seed/espacio-demo.sql`; la pasarela comprueba las contraseñas
+contra `auth.users` y firma los tokens, así que **RLS y las funciones son
+las de verdad**. Lo que no hay es Storage: las fotos y las descargas no
+cargan, y las pantallas lo dicen.
+
+`barrido.mjs` abre cada ruta a 390 × 844, dice si la página se sale por la
+derecha y qué elemento lo causa, y guarda una captura de página entera para
+ponerla al lado de la del PDF.
+
+## Lo que se repite en las 157 páginas
+
+El PDF no inventa una pantalla por cada vista: aplica **seis patrones** a
+las mismas pantallas de escritorio. Se arreglan una vez, en el componente
+común, y no pantalla a pantalla.
+
+| # | Patrón del diseño | Cómo estaba la web | Dónde se arregla |
+|---|---|---|---|
+| P1 | Bajo el logotipo, la **tarjeta de contexto**: el espacio con su rol y "Cambiar de espacio", o el restaurante con su selector | Una miga de pan "⌂ › Demo Cuotly › Inicio" | `AppShell` · **hecho (24/09)** |
+| P2 | Ninguna pantalla más ancha que el teléfono | Cuatro se salían: Resumen de la ficha (887 px), Gestión · Usuarios (562 px), calendario del panel (658 px) e Inicio del panel (593 px) | `Card` con `min-w-0`, rejillas con `grid-cols-1` · **hecho (24/09)** |
+| P3 | Las **tablas son tarjetas apiladas**: el título arriba y los demás datos en parejas etiqueta–valor | Tablas con desplazamiento lateral dentro de su caja (39 pantallas) | `components/ui/Table.tsx`, una vez |
+| P4 | Las **pestañas se reparten en filas** que caben enteras | Una fila con desplazamiento lateral | `components/ui/Tabs.tsx` y las pestañas de la ficha |
+| P5 | Los **filtros van en una fila** de dos o tres desplegables | Uno debajo de otro a lo ancho, con "Filtrar" | `components/ui/FilterBar.tsx` |
+| P6 | Las **cifras de resumen en tres columnas** pequeñas | Dos columnas de tarjetas grandes | Los `StatCard` de cada Inicio |
+
+Y dos cosas del PDF que **no se copian**, por el mismo motivo que en
+escritorio:
+
+- **El tamaño de letra.** El PDF pinta a 9–10 px buena parte del texto. En
+  un teléfono de verdad eso no se lee, y §21.4 pide texto legible. Se copia
+  la disposición (cuántas columnas, qué va junto), no el cuerpo de letra.
+- **Los datos de ejemplo** ("Datos de ejemplo" está escrito en muchas
+  páginas). Igual que en escritorio (CLAUDE.md).
+
+## Las partes
+
+Las mismas doce de escritorio, con las páginas del PDF móvil. Se hacen
+**después** de los seis patrones, porque la mayoría de lo que falta en cada
+parte es alguno de ellos.
+
+| # | Parte | Páginas | Rutas |
+|---|---|---|---|
+| 1 | Contexto global | 1–8 | `/`, `/solicitar-espacio`, `/mis-solicitudes`, `/mensajes`, `/cuenta`, `/ayuda` |
+| 2 | Acceso a Cuotly y estados | 9–21 | `/solicitar-acceso`, `/estado/*`, `/sesion-caducada` |
+| 3 | Espacio · Inicio y Restaurantes | 22, 23, 57, 59, 60 | `/espacios/<e>`, `/restaurantes`, `/grupos`, `/archivados` |
+| 4 | Ficha del restaurante | 24–56, 58, 61 | `/restaurantes/<id>?vista=…` y los detalles con su marco |
+| 5 | Solicitudes, Trabajos y Tareas | 62–69 | `/solicitudes`, `/trabajos` (lista y tablero), `/tareas` |
+| 6 | Menú Diario, Mensajes y Calendario | 70–76 | `/menu-diario`, `/mensajes`, `/mensajes/canales`, `/calendario` |
+| 7 | Finanzas | 77–82 | `/finanzas?tab=…`, `/finanzas/cobros/<id>`, `/finanzas/presupuestos` |
+| 8 | Informes | 83–87 | `/informes?tab=…` |
+| 9 | Equipo, Planes, Agente y Ajustes | 88–109 | `/equipo`, `/planes`, `/agente`, `/ajustes` |
+| 10 | Panel · Inicio y Solicitudes | 110–123 | `/restaurantes/<id>`, `/actividad`, `/solicitudes` |
+| 11 | Panel · Menú Diario, Mensajes y Calendario | 124–135 | `/menu-diario/*`, `/mensajes`, `/calendario` |
+| 12 | Panel · Plan, Pagos, Informes, Archivos, Usuarios y Ajustes | 136–157 | `/plan`, `/facturacion`, `/datos`, `/archivos`, `/usuarios`, `/ajustes`, `/fuentes` |
+
+## Primer barrido (24/09/2026)
+
+107 direcciones recorridas a 390 px con las dos identidades que lo cubren
+todo: la propietaria del espacio (contexto global, espacio y ficha) y la
+propietaria de Magariños (el panel del restaurante).
+
+- **Cuatro pantallas se salían** por la derecha, y es el único defecto que
+  un usuario nota sin comparar con nada: la página entera se desplaza de
+  lado. Las cuatro por lo mismo: una rejilla o una tarjeta que se ensancha
+  hasta su contenido más largo. Arregladas en la raíz (`Card` con
+  `min-w-0`) y en las dos rejillas sin columnas declaradas.
+- **Ninguna otra se sale.** Las tablas (39 pantallas) y el tablero de
+  Trabajos se desplazan dentro de su propia caja, que funciona pero no es
+  el diseño: son P3 y la vista Tablero de la parte 5.
+
+## Registro
+
+| Fecha | Qué | Dónde |
+|---|---|---|
+| 24/09/2026 | **Decisión 76, el entorno local y P1–P2** · el diseño móvil se aplica a la web. `scripts/supabase-local/` para ver la web con datos sin salida a Supabase. P1: la tarjeta de contexto bajo la cabecera en espacio y panel (el selector del panel, el mismo de escritorio en claro); en el contexto global no hay fila. El avatar pasa al verde oscuro de los dos diseños. P2: `Card` con `min-w-0`; `grid-cols-1` en el Inicio del panel y en su calendario, que además pinta en móvil solo el punto de cada evento (el texto sigue para el lector de pantalla) | `components/shell/AppShell.tsx`, `components/ui/Card.tsx`, `components/panel/PanelHome.tsx`, `restaurantes/[id]/calendario/page.tsx`, `scripts/supabase-local/` |

@@ -62,3 +62,35 @@ describe("§20.3 · la barra de móvil", () => {
     expect(barra.slice(0, barra.indexOf(">"))).toContain("bg-primary-dark");
   });
 });
+
+/*
+ * Diseño móvil (decisión 76) · bajo la cabecera va la tarjeta de contexto
+ * —el espacio con su rol y "Cambiar de espacio", o el restaurante con su
+ * selector—, no la miga de pan. Y en el contexto global no va nada: no hay
+ * espacio del que cambiar.
+ */
+describe("diseño móvil · la tarjeta de contexto", () => {
+  const movil = SHELL.slice(SHELL.indexOf('data-testid="mobile-context"') - 400);
+
+  it("la cabecera de móvil lleva la tarjeta de contexto y solo fuera del contexto global", () => {
+    expect(SHELL).toContain('data-testid="mobile-context"');
+    expect(movil.slice(0, 420)).toContain("esGlobal ? null");
+  });
+
+  it("la tarjeta ofrece cambiar de espacio, y en el panel es el selector de restaurante", () => {
+    expect(movil).toContain("es.nav.switchSpace");
+    expect(movil).toContain('tone="light"');
+  });
+});
+
+describe("diseño móvil · nada más ancho que el teléfono", () => {
+  /*
+   * El Resumen de la ficha llegaba a 887 px a 390 de ancho: una tarjeta
+   * dentro de una rejilla se ensanchaba hasta su tabla. `min-w-0` en la
+   * tarjeta lo corta en la raíz para todas las pantallas.
+   */
+  it("Card no se ensancha más que su columna", () => {
+    const card = readFileSync(join(process.cwd(), "src/components/ui/Card.tsx"), "utf8");
+    expect(card).toMatch(/className=\{`min-w-0 rounded-card/);
+  });
+});

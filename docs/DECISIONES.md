@@ -2193,3 +2193,11 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     de contacto o retirar un acceso no le da servicio a nadie y puede hacer falta justo en esas 24 h.
     Consecuencias: el servidor no cambia, la pantalla enseña en "Qué no puedes hacer" solo lo que la
     guarda cierra, y "Editar restaurante" sigue en la cabecera en lugar del candado del dibujo.
+
+76. **El diseño móvil se aplica a la web en el teléfono** (24/09/2026). `Cuotly_movil.pdf` es el
+    producto entero a ancho de teléfono, no una app reducida, y había dos sitios donde aplicarlo:
+    la web (`cuotly-web`), que ya tiene todas esas pantallas con sus datos y la barra inferior de la
+    decisión 47, o la app de Expo (`cuotly-movil`), que tiene 29. Bosco elige **la web**: el trabajo
+    es de forma, pantalla a pantalla, sin construir nada nuevo ni duplicar cada pantalla en dos
+    códigos. La app de Expo se decide aparte, cuando toque llevarla a las tiendas (paso 7 de la
+    decisión 37). El plan está en `docs/diseno/PLAN-MOVIL.md`.
