@@ -34,9 +34,16 @@ export async function loadJobListExtras(
       .eq("entity_type", "job"),
     // La conversación interna del trabajo (§66.2), la que abre "Mensajes"
     // en su ficha. Hay una por trabajo como mucho.
+    //
+    // Se piden los `id` y se cuentan aquí, no con el recuento incrustado de
+    // PostgREST (`count` dentro de la relación): `messages`
+    // tiene el `select` revocado y concedido por columnas (CLAUDE.md), y el
+    // recuento incrustado de PostgREST no enumera columnas, así que la
+    // base contestaba "permission denied for table messages" y la columna
+    // Comentarios decía "No se pudo leer" en todas las filas.
     supabase
       .from("conversations")
-      .select("job_id, messages(count)")
+      .select("job_id, messages(id)")
       .eq("space_id", spaceId)
       .eq("type", "job_internal")
       .not("job_id", "is", null),
@@ -55,7 +62,7 @@ export async function loadJobListExtras(
     comments = new Map();
     for (const fila of conversaciones.data ?? []) {
       if (fila.job_id === null) continue;
-      const total = fila.messages[0]?.count ?? 0;
+      const total = fila.messages.length;
       comments.set(fila.job_id, (comments.get(fila.job_id) ?? 0) + total);
     }
   }
