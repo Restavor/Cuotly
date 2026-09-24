@@ -43,7 +43,7 @@ export default async function CloseAccountPage() {
   );
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="mx-auto max-w-2xl sm:p-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
         <p className="text-sm text-text-secondary">{t.subtitle}</p>

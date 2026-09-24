@@ -55,7 +55,7 @@ export default async function SpaceIncidentsPage({ params }: { params: Promise<{
   const { data: puede } = await supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "contact_cuotly" });
   if (!puede) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
+      <div className="mx-auto max-w-3xl sm:p-8">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{t.title}</h1>
         <NoPermissionState title={t.noAccessTitle} description={t.noAccessReason} />
       </div>

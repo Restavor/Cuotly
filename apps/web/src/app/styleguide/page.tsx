@@ -45,7 +45,7 @@ export default function StyleGuidePage() {
   const { showToast } = useToast();
 
   return (
-    <main className="mx-auto max-w-6xl space-y-10 p-8">
+    <main className="mx-auto max-w-6xl space-y-10 sm:p-8">
       <div>
         <h1 className="text-2xl font-bold text-primary-dark">Sistema de diseño — Emerald Control</h1>
         <p className="text-sm text-text-secondary">

@@ -69,7 +69,7 @@ export default async function OnboardingPage({ params }: { params: Promise<{ slu
   // que el servidor haya contestado.
   if (error || progreso === null) {
     return (
-      <div className="mx-auto max-w-4xl p-8">
+      <div className="mx-auto max-w-4xl sm:p-8">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{t.title}</h1>
         <NoPermissionState title={t.noAccessTitle} description={t.noAccessReason} />
       </div>
@@ -80,7 +80,7 @@ export default async function OnboardingPage({ params }: { params: Promise<{ slu
   const pendientes = progreso.filter((fila) => !fila.done).length;
 
   return (
-    <div className="mx-auto max-w-4xl p-8">
+    <div className="mx-auto max-w-4xl sm:p-8">
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-primary-dark">{t.title}</h1>
         <p className="text-sm text-text-secondary">{t.subtitle}</p>

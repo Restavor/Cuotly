@@ -99,7 +99,6 @@ export default async function ClientSourcesPage({
           slug={slug}
           returnTo={`${base}/fuentes`}
           title={es.clientArea.sourcesConnectedTitle}
-          hint={es.integrations.clientOwnerHint}
         />
       )}
 

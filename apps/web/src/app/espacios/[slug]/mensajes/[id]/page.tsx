@@ -54,7 +54,7 @@ export default async function ConversationPage({
 
   if (!conversation) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
+      <div className="mx-auto max-w-3xl sm:p-8">
         <h1 className="mb-6 text-2xl font-bold text-primary-dark">{es.teamArea.messages.title}</h1>
         <Card>
           <EmptyState

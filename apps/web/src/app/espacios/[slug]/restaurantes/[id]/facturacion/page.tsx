@@ -65,14 +65,17 @@ const TONO: Record<BillingGroup, "success" | "warning" | "neutral"> = {
 
 function Resumen({ icon, title, value, detail, tone }: { icon: IconName; title: string; value: string; detail?: string | null; tone: string }) {
   return (
-    <Card>
-      <div className="flex items-center gap-4">
-        <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${tone}`}>
-          <Icon name={icon} className="h-6 w-6" />
+    // En el teléfono, una fila compacta como la página 138 del PDF: con el
+    // icono de 56 px y la cifra a 20 px, "24 de septiembre de 2026" iba en
+    // dos líneas y las tres tarjetas llenaban la pantalla.
+    <Card className="p-3.5! sm:p-6!">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-14 sm:w-14 ${tone}`}>
+          <Icon name={icon} className="h-5 w-5 sm:h-6 sm:w-6" />
         </span>
         <div className="min-w-0">
-          <p className="text-sm text-text-secondary">{title}</p>
-          <p className="text-xl font-bold text-primary-dark">{value}</p>
+          <p className="text-xs text-text-secondary sm:text-sm">{title}</p>
+          <p className="text-base font-bold text-primary-dark sm:text-xl">{value}</p>
           {detail ? <p className="truncate text-sm text-text-secondary">{detail}</p> : null}
         </div>
       </div>
@@ -141,7 +144,7 @@ export default async function ClientBillingPage({
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:gap-4 md:grid-cols-3">
         <Resumen
           icon="clock"
           tone="bg-warning/25 text-primary-dark"

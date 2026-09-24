@@ -58,7 +58,12 @@ export function IntegrationsBlock({
   slug: string;
   returnTo: string;
   title: string;
-  hint: string;
+  /**
+   * El subtítulo de la sección. Opcional: al propietario del restaurante el
+   * bloque ya le explica qué puede autorizar (`clientOwnerHint`), y la
+   * página de Fuentes lo pasaba también aquí; salía dos veces seguidas.
+   */
+  hint?: string;
   /**
    * M45 · en la ficha, el panel lateral "Configurar …" y un botón
    * "Configurar" en cada fila que lo elige. `hrefFor` da la dirección que
@@ -90,7 +95,7 @@ export function IntegrationsBlock({
         <section aria-label={title} className="space-y-3">
           <div>
             <h3 className="text-base font-semibold text-primary-dark">{title}</h3>
-            <p className="text-sm text-text-secondary">{hint}</p>
+            {hint ? <p className="text-sm text-text-secondary">{hint}</p> : null}
           </div>
 
           {view.flash ? (

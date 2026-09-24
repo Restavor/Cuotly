@@ -282,3 +282,21 @@ describe("RN-REQ-08 · Nueva solicitud en nombre del restaurante (M77)", () => {
     expect(createOptions(SLUG, "worker", REST).some((o) => o.key === "request")).toBe(false);
   });
 });
+
+describe("R40 y R44 · las pestañas de «Ajustes y ayuda» del panel son ese destino", () => {
+  const panel = `/espacios/${SLUG}/restaurantes/${REST}`;
+
+  it("Ayuda y Fuentes de datos marcan «Ajustes y ayuda», no Inicio", () => {
+    for (const ruta of ["/ajustes", "/ayuda", "/ayuda/guias/primer-acceso", "/fuentes"]) {
+      expect(activeDestination(SLUG, `${panel}${ruta}`, "client", REST)?.key).toBe("help");
+    }
+  });
+
+  it("el Inicio del panel sigue siendo Inicio", () => {
+    expect(activeDestination(SLUG, panel, "client", REST)?.key).toBe("home");
+  });
+
+  it("el equipo no hereda los alias del panel", () => {
+    expect(activeDestination(SLUG, `/espacios/${SLUG}/ayuda`, "owner")?.key).toBe("help");
+  });
+});

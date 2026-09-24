@@ -26,7 +26,7 @@ export function PersonalReport({
   period: ReportPeriod;
 }) {
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 sm:p-8">
       <header>
         <h1 className="text-2xl font-bold text-primary-dark">{t.personalTitle}</h1>
         <p className="text-sm text-text-secondary">{t.personalSubtitle}</p>

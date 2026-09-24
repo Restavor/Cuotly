@@ -50,7 +50,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     access = await myPlatformAccess(supabase);
   } catch (fallo) {
     return (
-      <main className="mx-auto max-w-lg p-8">
+      <main className="mx-auto max-w-lg sm:p-8">
         <ErrorState
           title={es.platformAdmin.loadErrorTitle}
           description={fallo instanceof Error ? fallo.message : String(fallo)}
@@ -61,7 +61,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (!isPlatformPerson(access)) {
     return (
-      <main className="mx-auto max-w-lg p-8">
+      <main className="mx-auto max-w-lg sm:p-8">
         <NoPermissionState
           title={es.platformAdmin.noAccessTitle}
           description={es.platformAdmin.noAccessReason}
@@ -77,7 +77,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   if (platformNeedsTwoFactor(access) || !canReadPanel(access)) {
     return (
-      <main className="mx-auto max-w-lg p-8">
+      <main className="mx-auto max-w-lg sm:p-8">
         <Card title={es.platformAdmin.twoFactorRequiredTitle}>
           <p className="mb-4 text-sm text-text-secondary">{es.platformAdmin.twoFactorRequiredReason}</p>
           <div className="flex flex-wrap gap-3">

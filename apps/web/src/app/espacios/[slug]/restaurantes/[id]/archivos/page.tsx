@@ -135,7 +135,9 @@ export default async function ClientFilesPage({
             </Card>
           ) : (
             <Card>
-              <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {/* Dos por fila en el teléfono (PDF móvil, p. 149): a lo ancho,
+                  cada archivo era una miniatura de pantalla entera. */}
+              <ul className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-3">
                 {enCarpeta.map((f) => {
                   const activo = f.id === elegido?.id;
                   return (

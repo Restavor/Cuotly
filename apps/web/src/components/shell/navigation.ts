@@ -613,18 +613,31 @@ export function activeDestination(
   const lista = isStaffRole(role)
     ? desktopMenu(spaceSlug)
     : fullNav(spaceSlug, role, establishmentId);
+  const mine = isStaffRole(role) ? null : clientBase(spaceSlug, establishmentId);
 
-  return lista
-    .filter((d) => {
-      const href = hrefWithoutAnchor(d.href);
-      return limpio === href || limpio.startsWith(`${href}/`);
-    })
-    .reduce<NavDestination | null>(
-      (mejor, d) =>
-        mejor === null || hrefWithoutAnchor(d.href).length > hrefWithoutAnchor(mejor.href).length ? d : mejor,
-      null,
-    );
+  const casa = (href: string) => limpio === href || limpio.startsWith(`${href}/`);
+  let mejor: { destino: NavDestination; largo: number } | null = null;
+  for (const d of lista) {
+    const rutas = [
+      hrefWithoutAnchor(d.href),
+      ...(mine ? (PANEL_ALIASES[d.key] ?? []).map((ruta) => `${mine}${ruta}`) : []),
+    ];
+    for (const ruta of rutas) {
+      if (casa(ruta) && (mejor === null || ruta.length > mejor.largo)) mejor = { destino: d, largo: ruta.length };
+    }
+  }
+  return mejor?.destino ?? null;
 }
+
+/**
+ * Rutas del panel que son el mismo destino que otra del menú. "Ajustes y
+ * ayuda" abre `/ajustes`, pero sus pestañas Ayuda y Fuentes de datos
+ * viven en `/ayuda` y `/fuentes` (R40, R44): sin esto solo casaba
+ * "Inicio", y la barra de abajo marcaba Inicio estando en la ayuda.
+ */
+const PANEL_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  help: ["/ayuda", "/fuentes"],
+};
 
 /**
  * El evento con el que una pantalla pide abrir el buscador del armazón.

@@ -29,7 +29,7 @@ export async function HelpArticle({
 
   const t = es.help;
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-8">
+    <div className="mx-auto max-w-3xl space-y-6 sm:p-8">
       <Link href={backHref} className="text-sm text-cuotly-green underline">
         {t.title}
       </Link>

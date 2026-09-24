@@ -309,4 +309,17 @@ describe("M45 · el panel «Configurar …» de la ficha", () => {
     expect(screen.queryByRole("link", { name: t.configure })).toBeNull();
     expect(screen.queryByText(t.configureCurrentState)).toBeNull();
   });
+
+  it("R44 · en Fuentes, la propietaria lee una sola vez qué puede autorizar (sin subtítulo repetido)", () => {
+    render(
+      <IntegrationsBlock
+        view={vista(LOCAL_OWNER)}
+        establishmentId="est-1"
+        slug="restavor"
+        returnTo="/espacios/restavor/restaurantes/est-1/fuentes"
+        title={es.clientArea.sourcesConnectedTitle}
+      />,
+    );
+    expect(screen.getAllByText(t.clientOwnerHint)).toHaveLength(1);
+  });
 });
