@@ -6,9 +6,23 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 25/09/2026 (138).
+Actualizado el 25/09/2026 (139).
 
 ## Pendiente de aplicar
+
+**Actualización del 25/09/2026: la 139.** `retirar_a_alguien_del_equipo` (decisión 80, §4.5,
+RN-MIE-01 a 07): el propietario retira a un administrador o trabajador del equipo, que pasa a
+`access_revoked`. Función nueva `remove_space_member()` (EXECUTE para `authenticated`, no para
+`anon`: comprueba `manage_space` por dentro) y el disparador `space_memberships_end_consequences`
+con `end_membership_consequences()` (sin EXECUTE para nadie). Añade `space_membership` al CHECK de
+`state_events.entity_type`. En local pasan las 78 suites en el orden de CI.
+
+**Aplicada el 25/09/2026 por el MCP**, con Bosco de acuerdo. Antes se comprobó en vivo que la última
+era la 138, que nada de la 139 existía, que ningún miembro estaba ya en `inactive` ni
+`access_revoked`, y por md5 que `approve_job_reassignment` y `notify_reassignment_deciders` eran
+idénticas a las del repositorio (`support_access_level` difiere solo en comentarios). Después: 234
+migraciones registradas, el CHECK incluye `space_membership`, el disparador está activo y los
+privilegios son los esperados. Se aplicó sin las líneas de comentario, como la 137 y la 138.
 
 **Actualización del 25/09/2026: la 138.** `el_trabajador_lleva_los_informes_de_su_restaurante`
 (decisión 79, RN-REP-31): el trabajador autorizado en un restaurante ve, prepara y sube los informes
