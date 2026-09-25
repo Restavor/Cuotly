@@ -586,6 +586,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/retirar_a_alguien_del_equipo.sql
 
+      - name: "Suite 79 — Cuotly elimina cuentas, espacios y restaurantes: solo Bosco o un administrador con el permiso y con 2FA; nada se borra; el espacio pasa a un administrador o trabajador; solo Cuotly lo recupera (migración 140, RN-ADM-14 a 20, decisión 81)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/cuotly_elimina_cuentas_espacios_y_restaurantes.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

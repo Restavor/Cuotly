@@ -2642,8 +2642,15 @@ begin
       -- ES la comprobación de las funciones de informes —gestiona la
       -- cartera o es el trabajador autorizado en ese restaurante— y ella
       -- misma llama a `has_capability` y a `is_report_worker`.
+      --
+      -- `is_platform_account_manager` (migración 140, RN-ADM-14) es LA
+      -- comprobación del cuarto permiso fino de §167 —Bosco, o un
+      -- Administrador de Cuotly con `can_delete_accounts`— y ella misma
+      -- llama a `is_platform_owner`. Su nombre está aquí para que las
+      -- siete funciones que eliminan y recuperan cuentas, espacios y
+      -- restaurantes cuenten como comprobadas.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths|report_can_prepare'
+          !~ 'is_platform_account_manager|has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths|report_can_prepare'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -3801,7 +3808,13 @@ begin
          -- dejaría fuera al otro, que es precisamente quien tiene que
          -- decidir—. Su política la lee cualquiera de los dos espacios y
          -- nadie la escribe por PostgREST: solo las cuatro funciones.
-         'establishment_transfers'
+         'establishment_transfers',
+         -- Migración 140 (RN-ADM-18): las cuentas que Cuotly elimina. Una
+         -- cuenta no es de ningún espacio —puede estar en varios o en
+         -- ninguno—, como `profiles` y `push_devices`. Lleva RLS con
+         -- política: solo la lee la plataforma y nadie la escribe por
+         -- PostgREST, solo las dos funciones que eliminan y recuperan.
+         'platform_account_closures'
        ) then
       v_sin_space := v_sin_space || ' ' || v_t.tabla;
     end if;

@@ -14,7 +14,12 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { PlatformAccess, SupportAccessLevel } from "@/core/platform-admin";
+import {
+  readAccountDeletionPreview,
+  type AccountDeletionPreview,
+  type PlatformAccess,
+  type SupportAccessLevel,
+} from "@/core/platform-admin";
 import type { Database } from "@/lib/supabase/database.types";
 
 type Client = SupabaseClient<Database>;
@@ -67,7 +72,24 @@ export interface PlatformUserRow {
   readonly can_approve_spaces: boolean;
   readonly can_manage_subscriptions: boolean;
   readonly can_support: boolean;
+  readonly can_delete_accounts: boolean;
   readonly two_factor_enrolled: boolean;
+  /** RN-ADM-18 · cuándo la eliminó Cuotly; `null` si no lo está. */
+  readonly closed_at: string | null;
+}
+
+/** RN-ADM-17 · cada restaurante de cada espacio, para el panel. */
+export interface PlatformEstablishmentRow {
+  readonly id: string;
+  readonly name: string;
+  readonly code: string;
+  readonly status: string;
+  readonly platform_archived_at: string | null;
+  readonly space_id: string;
+  readonly space_name: string;
+  readonly space_slug: string;
+  readonly space_status: string | null;
+  readonly created_at: string;
 }
 
 export interface PlatformSpaceRow {
@@ -204,6 +226,7 @@ export async function myPlatformAccess(client: Client): Promise<PlatformAccess> 
     canApproveSpaces: raw?.can_approve_spaces === true,
     canManageSubscriptions: raw?.can_manage_subscriptions === true,
     canSupport: raw?.can_support === true,
+    canDeleteAccounts: raw?.can_delete_accounts === true,
     twoFactor: raw?.two_factor === true,
   };
 }
@@ -288,6 +311,7 @@ export function setPlatformAdmin(
     canApproveSpaces: boolean;
     canManageSubscriptions: boolean;
     canSupport: boolean;
+    canDeleteAccounts: boolean;
   },
 ): Promise<void> {
   return rpc(client, "set_platform_admin", {
@@ -295,6 +319,7 @@ export function setPlatformAdmin(
     p_can_approve_spaces: input.canApproveSpaces,
     p_can_manage_subscriptions: input.canManageSubscriptions,
     p_can_support: input.canSupport,
+    p_can_delete_accounts: input.canDeleteAccounts,
   });
 }
 
@@ -311,4 +336,49 @@ export function spaceRequestTrialConflicts(client: Client, requestId: string): P
   return rpc(client, "space_request_trial_conflicts", { p_request_id: requestId }) as Promise<unknown> as Promise<
     readonly TrialConflict[]
   >;
+}
+
+/*
+ * RN-ADM-14 a 20 (migración 140, decisión 81) · eliminar y recuperar.
+ * Quién puede lo decide `is_platform_account_manager()` dentro de cada
+ * función; aquí solo se traduce.
+ */
+
+export function listEstablishments(client: Client): Promise<readonly PlatformEstablishmentRow[]> {
+  return rpc(client, "platform_list_establishments", undefined as never);
+}
+
+export async function accountDeletionPreview(client: Client, userId: string): Promise<AccountDeletionPreview> {
+  return readAccountDeletionPreview(await rpc(client, "platform_account_deletion_preview", { p_user_id: userId }));
+}
+
+export function deleteAccount(
+  client: Client,
+  input: { userId: string; reason: string; successors: Record<string, string> },
+): Promise<unknown> {
+  return rpc(client, "platform_delete_account", {
+    p_user_id: input.userId,
+    p_reason: input.reason,
+    p_successors: input.successors,
+  });
+}
+
+export function restoreAccount(client: Client, userId: string, reason: string): Promise<unknown> {
+  return rpc(client, "platform_restore_account", { p_user_id: userId, p_reason: reason });
+}
+
+export function deleteSpace(client: Client, spaceId: string, reason: string): Promise<boolean> {
+  return rpc(client, "platform_delete_space", { p_space_id: spaceId, p_reason: reason });
+}
+
+export function restoreSpace(client: Client, spaceId: string, reason: string): Promise<boolean> {
+  return rpc(client, "platform_restore_space", { p_space_id: spaceId, p_reason: reason });
+}
+
+export function deleteEstablishment(client: Client, establishmentId: string, reason: string): Promise<boolean> {
+  return rpc(client, "platform_delete_establishment", { p_establishment_id: establishmentId, p_reason: reason });
+}
+
+export function restoreEstablishment(client: Client, establishmentId: string, reason: string): Promise<boolean> {
+  return rpc(client, "platform_restore_establishment", { p_establishment_id: establishmentId, p_reason: reason });
 }

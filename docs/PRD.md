@@ -2568,6 +2568,39 @@ Donde la maestra calla, las lecturas quedan escritas como regla y Bosco las conf
   elimina a los 30 días, se conserva todo el historial, los archivos y los datos del restaurante, y
   las facturas las preparará un agente aparte (RN-SUB-05 sigue: referencia bancaria, ninguna factura).
 
+**Cuotly elimina cuentas, espacios y restaurantes** (decisión 81, 25/09/2026; migración 140, suite
+79). "Eliminar" **no borra nada** (RN-DAT-06, decisión 38, pendiente 20): archiva, marca y bloquea, y
+**solo Cuotly lo deshace**, sin plazo.
+
+- **RN-ADM-14**: lo hacen **Bosco** y los **Administradores de Cuotly con el cuarto permiso fino**,
+  `can_delete_accounts` ("Eliminar cuentas y espacios"), que concede Bosco como los otros tres
+  (RN-ADM-03), siempre con la sesión en dos pasos (RN-ADM-02). La comprobación es
+  `is_platform_account_manager()`.
+- **RN-ADM-15**: eliminar y recuperar exigen **motivo**; eliminar exige además **escribir** el nombre
+  del espacio o del restaurante, o el correo de la cuenta (§140). Todo queda en la auditoría de la
+  plataforma y, lo que toca a un espacio, también en la del espacio.
+- **RN-ADM-16**: un **espacio** eliminado pasa al modo `archived_by_platform` de `cuotly_status`: **solo
+  lectura** para su equipo y sus clientes, como los otros archivados. Su propietario **no** lo
+  restaura, los barridos de la suscripción **no** lo mueven y Cuotly lo recupera **al modo que tenía**.
+- **RN-ADM-17**: un **restaurante** eliminado queda **archivado** (sus integraciones se desconectan
+  como en cualquier archivado) y **marcado** (`platform_archived_at`): el equipo del espacio no lo
+  reactiva, ni desde la ficha ni por ninguna otra vía. Cuotly lo recupera **al estado en que lo
+  encontró** (si el equipo ya lo tenía archivado, sigue archivado).
+- **RN-ADM-18**: una **cuenta** eliminada **no vuelve a entrar** (`auth.users.banned_until`) y sus
+  sesiones abiertas se cierran; **sale de todos sus equipos** con las consecuencias de RN-MIE-03 a 05,
+  **pierde sus accesos** de cliente a restaurantes y grupos, y se apunta en
+  `platform_account_closures` con lo que se le quitó. Recuperarla lo **devuelve** todo, salvo los
+  restaurantes autorizados y las especialidades (RN-MIE-07); donde su propiedad pasó a otra persona,
+  vuelve como **administradora**.
+- **RN-ADM-19**: de cada espacio del que la cuenta es la **única propietaria**, la propiedad pasa a
+  un **administrador** del espacio **elegido o al azar**; si el espacio **no tiene administradores**,
+  a un **trabajador** elegido o al azar. A un trabajador no se le puede elegir habiendo
+  administradores. Si **no hay nadie más** en el equipo, el espacio **se elimina con la cuenta**
+  (RN-ADM-16) y vuelve si la cuenta se recupera. El traspaso queda en el libro del espacio y avisa como
+  cualquier transferencia (RN-CIC-15).
+- **RN-ADM-20**: **ni Bosco ni un Administrador de Cuotly** se eliminan desde aquí: al administrador,
+  Bosco le retira antes el rol.
+
 Lo que este apartado **no** trae, dicho en claro: **no** trae las incidencias de §131 ni el horario
 humano de §132 (Hito 21: el bloque "incidencias" del panel está vacío con su motivo), **no** trae el
 onboarding de §9 ni la propiedad y el fin de un espacio de §127 (Hito 20), **no** trae exportación

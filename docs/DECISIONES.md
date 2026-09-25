@@ -2276,3 +2276,28 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       retirada, igual que hoy no se avisa a quien pierde el acceso a un restaurante (RN-MIE-08).
 
     Reglas en el PRD: RN-MIE-01 a RN-MIE-08 (§4.5). Migración 139, suite 78.
+
+81. **Cuotly elimina cuentas, espacios y restaurantes** (25/09/2026). Bosco: *"el propietario de Cuotly
+    (yo: info@restavor.com) y los administradores de Cuotly pueden eliminar usuarios registrados, sus
+    espacios y sus restaurantes"*. Preguntado, decide:
+    - **Quién:** los administradores, con un **permiso nuevo** que concede él ("Eliminar cuentas y
+      espacios"), como los otros tres de §167.
+    - **La cuenta que es la única propietaria de un espacio:** la propiedad *"se le traspasa a un
+      administrador que se seleccione o aleatorio y, si no hay administrador, se le traspasa a un
+      trabajador seleccionado o aleatorio"*.
+    - **Deshacer:** sí, **solo Cuotly**, sin plazo.
+
+    "Eliminar" es archivar, marcar y bloquear el acceso, **no borrar** (CLAUDE.md, decisión 38,
+    pendiente 20).
+
+    - **Propuesto por Claude, pendiente de que Bosco lo confirme** (no estaba escrito): si un espacio
+      de propiedad única **no tiene a nadie más** en su equipo, se elimina con la cuenta y vuelve con
+      ella (RN-ADM-19); un espacio eliminado por Cuotly queda en **solo lectura** para su equipo y sus
+      clientes, como los otros archivados, en vez de desaparecerles (RN-ADM-16); al recuperar una
+      cuenta vuelve como **administradora** donde su propiedad pasó a otra persona (RN-ADM-18); **ni
+      Bosco ni un Administrador de Cuotly** se eliminan desde aquí (RN-ADM-20); y **no se avisa** a la
+      cuenta eliminada ni a los dueños de un espacio o restaurante eliminado, como en RN-MIE-08 (sí
+      avisa el traspaso de propiedad, como cualquier transferencia).
+
+    Reglas en el PRD: RN-ADM-14 a RN-ADM-20 (§32). Migración 140, suite 79.
+

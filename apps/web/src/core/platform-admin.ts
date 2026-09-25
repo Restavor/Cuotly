@@ -134,6 +134,8 @@ export interface PlatformAccess {
   readonly canApproveSpaces: boolean;
   readonly canManageSubscriptions: boolean;
   readonly canSupport: boolean;
+  /** RN-ADM-14 (migración 140) · eliminar y recuperar cuentas, espacios y restaurantes. */
+  readonly canDeleteAccounts: boolean;
   readonly twoFactor: boolean;
 }
 
@@ -165,6 +167,15 @@ export function canOpenSupport(access: PlatformAccess): boolean {
   return access.twoFactor && (access.isOwner || (access.isAdmin && access.canSupport));
 }
 
+/**
+ * RN-ADM-14 (decisión 81) · eliminar y recuperar cuentas, espacios y
+ * restaurantes: Bosco siempre; un Administrador, con su permiso. La misma
+ * cuenta que `is_platform_account_manager()`.
+ */
+export function canDeleteAccounts(access: PlatformAccess): boolean {
+  return access.twoFactor && (access.isOwner || (access.isAdmin && access.canDeleteAccounts));
+}
+
 /** §167 · "Nombrar Admin Cuotly: Bosco sí; Admin Cuotly no." */
 export function canNamePlatformAdmins(access: PlatformAccess): boolean {
   return access.twoFactor && access.isOwner;
@@ -193,4 +204,94 @@ export function twoFactorPolicyFor(access: PlatformAccess, spaceRole: string | n
   if (spaceRole === "admin") return TWO_FACTOR_POLICY.space_admin;
   if (spaceRole === "worker") return TWO_FACTOR_POLICY.worker;
   return TWO_FACTOR_POLICY.client;
+}
+
+/**
+ * RN-ADM-19 (decisión 81) · lo que `platform_account_deletion_preview()`
+ * cuenta antes de eliminar una cuenta: si está protegida (RN-ADM-20), si
+ * ya está eliminada y, de cada espacio del que es la única propietaria,
+ * entre quién se puede elegir a la persona que se queda con él.
+ */
+export interface DeletionCandidate {
+  readonly userId: string;
+  readonly name: string;
+  readonly role: "admin" | "worker";
+}
+
+export interface SoleOwnerSpace {
+  readonly spaceId: string;
+  readonly spaceName: string;
+  /** Vacío: no hay nadie más, y el espacio se elimina con la cuenta. */
+  readonly candidates: readonly DeletionCandidate[];
+}
+
+export interface AccountDeletionPreview {
+  readonly email: string;
+  readonly protected: boolean;
+  readonly closed: boolean;
+  readonly soleOwnerSpaces: readonly SoleOwnerSpace[];
+  readonly teamMemberships: number;
+  readonly clientAccesses: number;
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function count(value: unknown): number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : 0;
+}
+
+/**
+ * Lee el `jsonb` de la vista previa. Lo que no tenga forma se descarta:
+ * un candidato sin id no se puede elegir, y un espacio sin id no se puede
+ * mandar de vuelta. Si algo falta, la cuenta sale **protegida**: ante la
+ * duda, no se ofrece el botón (el servidor lo comprueba igual).
+ */
+export function readAccountDeletionPreview(value: unknown): AccountDeletionPreview {
+  const raw = record(value);
+  const spaces = Array.isArray(raw.sole_owner_spaces) ? raw.sole_owner_spaces : [];
+  return {
+    email: typeof raw.email === "string" ? raw.email : "",
+    protected: raw.protected !== false,
+    closed: raw.closed === true,
+    soleOwnerSpaces: spaces.flatMap((item) => {
+      const s = record(item);
+      if (typeof s.space_id !== "string") return [];
+      const candidates = Array.isArray(s.candidates) ? s.candidates : [];
+      return [
+        {
+          spaceId: s.space_id,
+          spaceName: typeof s.space_name === "string" ? s.space_name : "—",
+          candidates: candidates.flatMap((c) => {
+            const r = record(c);
+            if (typeof r.user_id !== "string" || (r.role !== "admin" && r.role !== "worker")) return [];
+            return [{ userId: r.user_id, name: typeof r.name === "string" ? r.name : "—", role: r.role }];
+          }),
+        },
+      ];
+    }),
+    teamMemberships: count(raw.team_memberships),
+    clientAccesses: count(raw.client_accesses),
+  };
+}
+
+/**
+ * RN-ADM-19 · lo que se manda al servidor: `{ espacio: persona }` solo de
+ * los espacios donde se eligió a alguien que está en su lista. "Al azar"
+ * es no mandar nada para ese espacio, y lo que no esté en la lista no se
+ * cuela: el servidor lo rechazaría de todos modos.
+ */
+export function successorsFromChoices(
+  spaces: readonly SoleOwnerSpace[],
+  choices: Readonly<Record<string, string>>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const space of spaces) {
+    const chosen = choices[space.spaceId];
+    if (chosen && space.candidates.some((c) => c.userId === chosen)) out[space.spaceId] = chosen;
+  }
+  return out;
 }

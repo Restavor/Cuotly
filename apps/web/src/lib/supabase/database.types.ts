@@ -2093,6 +2093,7 @@ export type Database = {
           phone_primary: string | null;
           phone_secondary: string | null;
           photo_file_id: string | null;
+          platform_archived_at: string | null;
           postal_code: string | null;
           space_id: string;
           status: string;
@@ -2119,6 +2120,7 @@ export type Database = {
           phone_primary?: string | null;
           phone_secondary?: string | null;
           photo_file_id?: string | null;
+          platform_archived_at?: string | null;
           postal_code?: string | null;
           space_id: string;
           status?: string;
@@ -2145,6 +2147,7 @@ export type Database = {
           phone_primary?: string | null;
           phone_secondary?: string | null;
           photo_file_id?: string | null;
+          platform_archived_at?: string | null;
           postal_code?: string | null;
           space_id?: string;
           status?: string;
@@ -5255,6 +5258,7 @@ export type Database = {
       platform_roles: {
         Row: {
           can_approve_spaces: boolean;
+          can_delete_accounts: boolean;
           can_manage_subscriptions: boolean;
           can_support: boolean;
           created_at: string;
@@ -5263,6 +5267,7 @@ export type Database = {
         };
         Insert: {
           can_approve_spaces?: boolean;
+          can_delete_accounts?: boolean;
           can_manage_subscriptions?: boolean;
           can_support?: boolean;
           created_at?: string;
@@ -5271,6 +5276,7 @@ export type Database = {
         };
         Update: {
           can_approve_spaces?: boolean;
+          can_delete_accounts?: boolean;
           can_manage_subscriptions?: boolean;
           can_support?: boolean;
           created_at?: string;
@@ -10335,8 +10341,11 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number };
         Returns: {
           can_approve_spaces: boolean;
+          can_delete_accounts: boolean;
           can_manage_subscriptions: boolean;
           can_support: boolean;
+          /** Migración 140 (RN-ADM-18) · cuándo la eliminó Cuotly; `null` si no lo está. */
+          closed_at: string | null;
           created_at: string;
           email: string;
           full_name: string;
@@ -10348,6 +10357,39 @@ export type Database = {
         }[];
       };
       platform_panel_summary: { Args: never; Returns: Json };
+      /** Migración 140 (RN-ADM-14 a 20) · eliminar y recuperar desde el panel. */
+      platform_account_deletion_preview: { Args: { p_user_id: string }; Returns: Json };
+      platform_delete_account: {
+        Args: { p_reason: string; p_successors?: Json; p_user_id: string };
+        Returns: Json;
+      };
+      platform_restore_account: { Args: { p_reason: string; p_user_id: string }; Returns: Json };
+      platform_delete_space: { Args: { p_reason: string; p_space_id: string }; Returns: boolean };
+      platform_restore_space: { Args: { p_reason: string; p_space_id: string }; Returns: boolean };
+      platform_delete_establishment: {
+        Args: { p_establishment_id: string; p_reason: string };
+        Returns: boolean;
+      };
+      platform_restore_establishment: {
+        Args: { p_establishment_id: string; p_reason: string };
+        Returns: boolean;
+      };
+      platform_list_establishments: {
+        Args: never;
+        Returns: {
+          code: string;
+          created_at: string;
+          id: string;
+          name: string;
+          platform_archived_at: string | null;
+          space_id: string;
+          space_name: string;
+          space_slug: string;
+          space_status: string | null;
+          status: string;
+        }[];
+      };
+      is_platform_account_manager: { Args: never; Returns: boolean };
       platform_reactivate_space: {
         Args: { p_reason: string; p_space_id: string };
         Returns: undefined;
@@ -11082,6 +11124,7 @@ export type Database = {
       set_platform_admin: {
         Args: {
           p_can_approve_spaces?: boolean;
+          p_can_delete_accounts?: boolean;
           p_can_manage_subscriptions?: boolean;
           p_can_support?: boolean;
           p_user_id: string;

@@ -3,14 +3,25 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { isSupportAccessLevel, supportDurationIsValid } from "@/core/platform-admin";
+import {
+  isSupportAccessLevel,
+  successorsFromChoices,
+  supportDurationIsValid,
+} from "@/core/platform-admin";
 import { accessRequestNeedsReason, isAccessRequestState } from "@/core/access-requests";
 import { isSpaceRequestState, spaceRequestNeedsReason } from "@/core/space-requests";
 import { isCuotlyPaymentMethod } from "@/core/cuotly-subscription";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import {
+  accountDeletionPreview,
+  deleteAccount,
+  deleteEstablishment,
+  deleteSpace,
   endSupportSession,
+  restoreAccount,
+  restoreEstablishment,
+  restoreSpace,
   revokePlatformAdmin,
   setPlatformAdmin,
   startSupportSession,
@@ -297,6 +308,7 @@ export async function savePlatformAdmin(
       canApproveSpaces: formData.get("canApproveSpaces") === "on",
       canManageSubscriptions: formData.get("canManageSubscriptions") === "on",
       canSupport: formData.get("canSupport") === "on",
+      canDeleteAccounts: formData.get("canDeleteAccounts") === "on",
     });
   } catch (fallo) {
     return { error: mensaje(fallo), done: false };
@@ -339,4 +351,107 @@ export async function leaveSupportSession(formData: FormData): Promise<void> {
   }
   revalidatePath("/espacios", "layout");
   redirect("/administracion/espacios");
+}
+
+/*
+ * RN-ADM-14 a 20 (decisión 81) · eliminar y recuperar cuentas, espacios y
+ * restaurantes. Nada se borra: la base archiva, marca y bloquea, y solo
+ * Cuotly lo deshace. Quién puede lo decide `is_platform_account_manager()`
+ * en cada función; aquí se exige el motivo (§140) y, para eliminar, que
+ * se escriba el nombre de lo que se elimina.
+ */
+
+type Eliminable = "account" | "space" | "establishment";
+
+/**
+ * §140 · la confirmación adicional: escribir lo que se va a eliminar tal
+ * como aparece. Se compara con lo que dice la base, no con lo que el
+ * formulario dijo que había.
+ */
+async function nombreEnLaBase(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tipo: Eliminable,
+  id: string,
+): Promise<string | null> {
+  if (tipo === "account") return (await accountDeletionPreview(supabase, id)).email || null;
+  const { data, error } =
+    tipo === "space"
+      ? await supabase.rpc("platform_list_spaces")
+      : await supabase.rpc("platform_list_establishments");
+  if (error || !Array.isArray(data)) return null;
+  const fila = (data as { id: string; name: string }[]).find((row) => row.id === id);
+  return fila?.name ?? null;
+}
+
+export async function platformDelete(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const tipo = texto(formData, "kind") as Eliminable;
+  const id = texto(formData, "id");
+  const reason = texto(formData, "reason");
+  const confirmation = texto(formData, "confirmation");
+  const t = es.platformAdmin.deletion;
+
+  if (!["account", "space", "establishment"].includes(tipo) || id === "") {
+    return { error: t.invalid, done: false };
+  }
+  if (reason === "") return { error: t.reasonRequired, done: false };
+
+  const supabase = await createClient();
+  try {
+    const nombre = await nombreEnLaBase(supabase, tipo, id);
+    if (nombre === null || confirmation !== nombre) return { error: t.confirmationMismatch, done: false };
+
+    if (tipo === "account") {
+      const preview = await accountDeletionPreview(supabase, id);
+      const choices: Record<string, string> = {};
+      for (const space of preview.soleOwnerSpaces) {
+        choices[space.spaceId] = texto(formData, `successor:${space.spaceId}`);
+      }
+      await deleteAccount(supabase, {
+        userId: id,
+        reason,
+        successors: successorsFromChoices(preview.soleOwnerSpaces, choices),
+      });
+    } else if (tipo === "space") {
+      await deleteSpace(supabase, id, reason);
+    } else {
+      await deleteEstablishment(supabase, id, reason);
+    }
+  } catch (fallo) {
+    return { error: mensaje(fallo), done: false };
+  }
+
+  revalidatePath("/administracion", "layout");
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
+}
+
+export async function platformRestore(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const tipo = texto(formData, "kind") as Eliminable;
+  const id = texto(formData, "id");
+  const reason = texto(formData, "reason");
+  const t = es.platformAdmin.deletion;
+
+  if (!["account", "space", "establishment"].includes(tipo) || id === "") {
+    return { error: t.invalid, done: false };
+  }
+  if (reason === "") return { error: t.reasonRequired, done: false };
+
+  const supabase = await createClient();
+  try {
+    if (tipo === "account") await restoreAccount(supabase, id, reason);
+    else if (tipo === "space") await restoreSpace(supabase, id, reason);
+    else await restoreEstablishment(supabase, id, reason);
+  } catch (fallo) {
+    return { error: mensaje(fallo), done: false };
+  }
+
+  revalidatePath("/administracion", "layout");
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
 }

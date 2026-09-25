@@ -9,12 +9,15 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
-import { canNamePlatformAdmins } from "@/core/platform-admin";
+import Link from "next/link";
+
+import { canDeleteAccounts, canNamePlatformAdmins } from "@/core/platform-admin";
 import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { listUsers, myPlatformAccess, type PlatformUserRow } from "@/services/platform-gateway";
 
+import { RestoreButton } from "../DeletionForms";
 import { PlatformAdminForm } from "./PlatformAdminForm";
 
 /**
@@ -36,10 +39,12 @@ export default async function AdminUsersPage() {
 
   let users: readonly PlatformUserRow[];
   let bosco = false;
+  let elimina = false;
   try {
     const [rows, access] = await Promise.all([listUsers(supabase), myPlatformAccess(supabase)]);
     users = rows;
     bosco = canNamePlatformAdmins(access);
+    elimina = canDeleteAccounts(access);
   } catch (fallo) {
     return (
       <ErrorState
@@ -50,6 +55,7 @@ export default async function AdminUsersPage() {
   }
 
   const t = es.platformAdmin.users;
+  const td = es.platformAdmin.deletion;
 
   return (
     <div className="space-y-6">
@@ -72,12 +78,20 @@ export default async function AdminUsersPage() {
               <TableHeaderCell>{t.twoFactor}</TableHeaderCell>
               <TableHeaderCell>{t.createdAt}</TableHeaderCell>
               {bosco ? <TableHeaderCell>{t.manageTitle}</TableHeaderCell> : null}
+              {elimina ? <TableHeaderCell>{t.accountColumn}</TableHeaderCell> : null}
             </TableRow>
           </TableHead>
           <TableBody>
             {users.map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{row.email}</TableCell>
+                <TableCell>
+                  {row.email}
+                  {row.closed_at ? (
+                    <span className="mt-1 block">
+                      <StatusBadge tone="danger">{t.closedBadge}</StatusBadge>
+                    </span>
+                  ) : null}
+                </TableCell>
                 <TableCell>{row.full_name ?? "—"}</TableCell>
                 <TableCell>{row.spaces_count}</TableCell>
                 <TableCell>{rol(row)}</TableCell>
@@ -102,7 +116,25 @@ export default async function AdminUsersPage() {
                         canApproveSpaces={row.can_approve_spaces}
                         canManageSubscriptions={row.can_manage_subscriptions}
                         canSupport={row.can_support}
+                        canDeleteAccounts={row.can_delete_accounts}
                       />
+                    )}
+                  </TableCell>
+                ) : null}
+                {elimina ? (
+                  <TableCell>
+                    {/* RN-ADM-20 · la plataforma no se elimina a sí misma. */}
+                    {row.closed_at ? (
+                      <RestoreButton kind="account" id={row.id} name={row.email} hint={td.restoreAccountHint} />
+                    ) : row.is_owner || row.is_admin ? (
+                      <span className="text-sm text-text-secondary">{t.protectedHint}</span>
+                    ) : (
+                      <Link
+                        href={`/administracion/usuarios/${row.id}/eliminar`}
+                        className="text-sm font-semibold text-danger underline"
+                      >
+                        {t.deleteLink}
+                      </Link>
                     )}
                   </TableCell>
                 ) : null}

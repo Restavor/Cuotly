@@ -583,7 +583,7 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     );
   });
 
-  it("los cinco modos del espacio (RN-SUB-02, RN-CIC-07) son los mismos en el CHECK y en `src/core`", () => {
+  it("los seis modos del espacio (RN-SUB-02, RN-CIC-07, RN-ADM-16) son los mismos en el CHECK y en `src/core`", () => {
     // La 90 lo escribió pegado al `add column`; la 92 lo sacó a una
     // restricción con nombre para poder ensancharlo con el quinto modo.
     // Se busca la última, que es la que tiene la base.
@@ -596,7 +596,7 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     expect(entrecomillados(check![1])).toEqual([...SPACE_CUOTLY_STATES]);
   });
 
-  it("los tres modos archivados son los mismos en `space_status_is_archived` y en `src/core`", () => {
+  it("los cuatro modos archivados son los mismos en `space_status_is_archived` y en `src/core`", () => {
     // RN-SUB-08 + RN-CIC-07. `isSpaceReadOnly()` decide qué botones pinta
     // la pantalla y la función SQL decide qué escrituras rechaza el
     // servidor: si se separan, la pantalla ofrece lo que la base rechaza.

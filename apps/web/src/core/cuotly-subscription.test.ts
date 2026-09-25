@@ -83,6 +83,7 @@ describe("el modo del espacio (RN-SUB-02, RN-SUB-08)", () => {
       "archived_trial_ended",
       "archived_nonpayment",
       "archived_by_owner",
+      "archived_by_platform",
     ]);
   });
 
@@ -90,6 +91,8 @@ describe("el modo del espacio (RN-SUB-02, RN-SUB-08)", () => {
     expect(isSpaceReadOnly("archived_trial_ended")).toBe(true);
     expect(isSpaceReadOnly("archived_nonpayment")).toBe(true);
     expect(isSpaceReadOnly("archived_by_owner")).toBe(true);
+    // RN-ADM-16 · el que elimina Cuotly, también.
+    expect(isSpaceReadOnly("archived_by_platform")).toBe(true);
     expect(isSpaceReadOnly("active")).toBe(false);
     expect(isSpaceReadOnly("trial")).toBe(false);
     expect(isSpaceReadOnly(null)).toBe(false);

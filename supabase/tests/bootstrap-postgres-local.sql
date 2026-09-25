@@ -121,6 +121,8 @@ create table auth.users (
   recovery_token text,
   email_change text,
   email_change_token_new text,
+  -- Migración 140 (RN-ADM-18) · GoTrue no deja entrar mientras sea futura.
+  banned_until timestamptz,
   updated_at timestamptz not null default now()
 );
 

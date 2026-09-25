@@ -30,6 +30,7 @@ const NAV = [
   { key: "access", href: "/administracion/accesos", label: es.platformAdmin.nav.access },
   { key: "requests", href: "/administracion/solicitudes", label: es.platformAdmin.nav.requests },
   { key: "spaces", href: "/administracion/espacios", label: es.platformAdmin.nav.spaces },
+  { key: "establishments", href: "/administracion/restaurantes", label: es.platformAdmin.nav.establishments },
   { key: "charges", href: "/administracion/cobros", label: es.platformAdmin.nav.charges },
   { key: "users", href: "/administracion/usuarios", label: es.platformAdmin.nav.users },
   { key: "support", href: "/administracion/soporte", label: es.platformAdmin.nav.support },

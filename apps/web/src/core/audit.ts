@@ -239,6 +239,9 @@ export const AUDIT_ACTIONS = [
   "establishment.created",
   "establishment.data_changed",
   "establishment.status_changed",
+  // Decisión 81 (migración 140, RN-ADM-17) · Cuotly lo elimina o lo recupera.
+  "establishment.archived_by_platform",
+  "establishment.restored_by_platform",
   // Migración 119 (RN-EST-19, decisión 63) · quién del equipo lleva este
   // restaurante. Quitarlo deja el mismo apunte que asignarlo.
   "establishment.manager_set",
@@ -354,9 +357,16 @@ export const AUDIT_ACTIONS = [
   "payment.registered",
   "payment.reversed",
   // Fase 4, Hito 19 · Administradores de Cuotly (migración 91).
+  // Decisión 81 (migración 140, RN-ADM-14 a 20).
+  "platform.account_deleted",
+  "platform.account_restored",
   "platform.admin_granted",
   "platform.admin_revoked",
   "platform.admin_updated",
+  "platform.establishment_deleted",
+  "platform.establishment_restored",
+  "platform.space_deleted",
+  "platform.space_restored",
   // Fase 4, Hito 21 · festivos y estado de la plataforma (migración 93).
   "platform_holiday.added",
   "platform_holiday.retired",
@@ -427,6 +437,8 @@ export const AUDIT_ACTIONS = [
   // final del asistente de §9 (migración 92).
   "space.activated",
   "space.archived_by_owner",
+  // Decisión 81 (migración 140, RN-ADM-16).
+  "space.archived_by_platform",
   "space.archived_nonpayment",
   "space.archived_trial_ended",
   "space.created",
@@ -445,6 +457,7 @@ export const AUDIT_ACTIONS = [
   "space.reactivated",
   "space.renamed",
   "space.restored_by_owner",
+  "space.restored_by_platform",
   "space.timezone_changed",
   // Las cinco de la solicitud de espacio (migración 89), con el nombre
   // literal en cada INSERT para que el barrido que lee las migraciones las

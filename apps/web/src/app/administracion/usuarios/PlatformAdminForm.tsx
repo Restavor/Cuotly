@@ -9,7 +9,9 @@ import { INITIAL_ADMIN_STATE } from "../action-state";
 import { removePlatformAdmin, savePlatformAdmin } from "../actions";
 
 /**
- * RN-ADM-03 · los tres permisos de §167 de una persona, y retirar el rol.
+ * RN-ADM-03 · los cuatro permisos de §167 de una persona —el cuarto,
+ * eliminar cuentas y espacios, desde la decisión 81 (RN-ADM-14)— y
+ * retirar el rol.
  * Solo Bosco lo ve, y solo Bosco puede: lo comprueba el servidor.
  */
 export function PlatformAdminForm({
@@ -18,12 +20,14 @@ export function PlatformAdminForm({
   canApproveSpaces,
   canManageSubscriptions,
   canSupport,
+  canDeleteAccounts,
 }: {
   userId: string;
   isAdmin: boolean;
   canApproveSpaces: boolean;
   canManageSubscriptions: boolean;
   canSupport: boolean;
+  canDeleteAccounts: boolean;
 }) {
   const [saveState, saveAction, saving] = useActionState(savePlatformAdmin, INITIAL_ADMIN_STATE);
   const [revokeState, revokeAction, revoking] = useActionState(removePlatformAdmin, INITIAL_ADMIN_STATE);
@@ -44,6 +48,10 @@ export function PlatformAdminForm({
         <label className="flex items-center gap-1.5">
           <input type="checkbox" name="canSupport" defaultChecked={canSupport} />
           {t.canSupport}
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" name="canDeleteAccounts" defaultChecked={canDeleteAccounts} />
+          {t.canDeleteAccounts}
         </label>
         <Button type="submit" variant="secondary" pending={saving} className="px-3 py-1.5 text-xs">
           {saving ? t.pending : t.save}

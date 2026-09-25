@@ -7,6 +7,7 @@ import {
   TWO_FACTOR_POLICY,
   type PlatformAccess,
   canApproveSpaces,
+  canDeleteAccounts,
   canManageSubscriptions,
   canNamePlatformAdmins,
   canOpenSupport,
@@ -15,6 +16,8 @@ import {
   isSupportAccessLevel,
   panelBlockHref,
   platformNeedsTwoFactor,
+  readAccountDeletionPreview,
+  successorsFromChoices,
   supportDurationIsValid,
   supportRemainingMinutes,
   supportSessionIsActive,
@@ -35,6 +38,7 @@ const NADIE: PlatformAccess = {
   canApproveSpaces: false,
   canManageSubscriptions: false,
   canSupport: false,
+  canDeleteAccounts: false,
   twoFactor: true,
 };
 const BOSCO: PlatformAccess = { ...NADIE, isOwner: true };
@@ -45,6 +49,7 @@ const ADMIN_CON_TODO: PlatformAccess = {
   canApproveSpaces: true,
   canManageSubscriptions: true,
   canSupport: true,
+  canDeleteAccounts: true,
 };
 
 describe("los doce bloques del panel (RN-ADM-04, §128)", () => {
@@ -173,5 +178,71 @@ describe("para quién es obligatoria la 2FA (§136, RN-ADM-02)", () => {
     expect(twoFactorPolicyFor(NADIE, "admin")).toBe("recommended");
     expect(twoFactorPolicyFor(NADIE, "worker")).toBe("optional");
     expect(twoFactorPolicyFor(NADIE, null)).toBe("optional");
+  });
+});
+
+describe("eliminar cuentas, espacios y restaurantes (decisión 81)", () => {
+  it("RN-ADM-14 · Bosco siempre; un administrador, solo con su permiso; nadie sin 2FA", () => {
+    expect(canDeleteAccounts(BOSCO)).toBe(true);
+    expect(canDeleteAccounts(BOSCO_SIN_2FA)).toBe(false);
+    expect(canDeleteAccounts(ADMIN_SIN_PERMISOS)).toBe(false);
+    expect(canDeleteAccounts(ADMIN_CON_TODO)).toBe(true);
+    expect(canDeleteAccounts({ ...ADMIN_CON_TODO, twoFactor: false })).toBe(false);
+    expect(canDeleteAccounts(NADIE)).toBe(false);
+  });
+
+  it("RN-ADM-14 · el permiso es aparte: tener los otros tres no lo da", () => {
+    expect(canDeleteAccounts({ ...ADMIN_CON_TODO, canDeleteAccounts: false })).toBe(false);
+  });
+
+  it("RN-ADM-19 · lee la vista previa: espacios de propiedad única y sus candidatos", () => {
+    const preview = readAccountDeletionPreview({
+      email: "ana@example.com",
+      protected: false,
+      closed: false,
+      team_memberships: 3,
+      client_accesses: 1,
+      sole_owner_spaces: [
+        {
+          space_id: "a",
+          space_name: "Espacio A",
+          candidates: [{ user_id: "luis", name: "Luis", role: "admin" }],
+        },
+        { space_id: "c", space_name: "Espacio C", candidates: [] },
+      ],
+    });
+    expect(preview.protected).toBe(false);
+    expect(preview.teamMemberships).toBe(3);
+    expect(preview.clientAccesses).toBe(1);
+    expect(preview.soleOwnerSpaces).toEqual([
+      { spaceId: "a", spaceName: "Espacio A", candidates: [{ userId: "luis", name: "Luis", role: "admin" }] },
+      { spaceId: "c", spaceName: "Espacio C", candidates: [] },
+    ]);
+  });
+
+  it("RN-ADM-20 · ante la duda, la cuenta sale protegida y no se ofrece eliminarla", () => {
+    expect(readAccountDeletionPreview(null).protected).toBe(true);
+    expect(readAccountDeletionPreview({ email: "x" }).protected).toBe(true);
+  });
+
+  it("RN-ADM-19 · un candidato sin forma o con otro rol no se ofrece", () => {
+    const preview = readAccountDeletionPreview({
+      protected: false,
+      sole_owner_spaces: [
+        { space_id: "a", candidates: [{ user_id: "x", role: "owner" }, { name: "sin id", role: "admin" }] },
+        { candidates: [] },
+      ],
+    });
+    expect(preview.soleOwnerSpaces).toEqual([{ spaceId: "a", spaceName: "—", candidates: [] }]);
+  });
+
+  it("RN-ADM-19 · se manda solo lo elegido de la lista; «al azar» es no mandar nada", () => {
+    const spaces = [
+      { spaceId: "a", spaceName: "A", candidates: [{ userId: "luis", name: "Luis", role: "admin" as const }] },
+      { spaceId: "b", spaceName: "B", candidates: [{ userId: "pedro", name: "Pedro", role: "worker" as const }] },
+    ];
+    expect(successorsFromChoices(spaces, { a: "luis", b: "" })).toEqual({ a: "luis" });
+    expect(successorsFromChoices(spaces, { a: "intrusa", b: "pedro" })).toEqual({ b: "pedro" });
+    expect(successorsFromChoices(spaces, {})).toEqual({});
   });
 });

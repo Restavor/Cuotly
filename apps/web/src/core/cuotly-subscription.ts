@@ -91,6 +91,8 @@ export const SPACE_CUOTLY_STATES = [
   "archived_trial_ended",
   "archived_nonpayment",
   "archived_by_owner",
+  // RN-ADM-16 (migración 140, decisión 81) · lo eliminó Cuotly.
+  "archived_by_platform",
 ] as const;
 export type SpaceCuotlyState = (typeof SPACE_CUOTLY_STATES)[number];
 
@@ -102,7 +104,8 @@ export function isSpaceReadOnly(state: SpaceCuotlyState | null): boolean {
   return (
     state === "archived_trial_ended" ||
     state === "archived_nonpayment" ||
-    state === "archived_by_owner"
+    state === "archived_by_owner" ||
+    state === "archived_by_platform"
   );
 }
 

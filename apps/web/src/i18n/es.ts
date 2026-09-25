@@ -4944,6 +4944,7 @@ export const es = {
       cuotly_payment: "Pago a Cuotly",
       support_session: "Sesión de Modo soporte",
       platform_role: "Administrador de Cuotly",
+      profile: "Cuenta",
       incident: "Incidencia a Cuotly",
       platform_holiday: "Festivo de Cuotly",
       platform_status_event: "Evento de estado de Cuotly",
@@ -4976,6 +4977,8 @@ export const es = {
       "establishment.manager_set": "Responsable del restaurante cambiado",
       "establishment.photo_set": "Foto del restaurante cambiada",
       "establishment.status_changed": "Estado del restaurante cambiado",
+      "establishment.archived_by_platform": "Restaurante eliminado por Cuotly",
+      "establishment.restored_by_platform": "Restaurante recuperado por Cuotly",
       // §38, RN-TRA · la transferencia entre espacios. Los dos espacios ven
       // el mismo apunte desde su lado, así que el texto no dice "nuestro"
       // ni "suyo": dice qué pasó.
@@ -5124,6 +5127,8 @@ export const es = {
       "space.ownership_transferred": "Propiedad del espacio transferida",
       "space.archived_by_owner": "Espacio archivado por su propietario",
       "space.restored_by_owner": "Espacio restaurado",
+      "space.archived_by_platform": "Espacio eliminado por Cuotly",
+      "space.restored_by_platform": "Espacio recuperado por Cuotly",
       "export.requested": "Exportación de datos",
       "incident.opened": "Incidencia abierta a Cuotly",
       "incident.status_changed": "Incidencia: cambio de estado",
@@ -5187,6 +5192,12 @@ export const es = {
       "task.reassignment_requested": "Reasignación de tarea solicitada",
       "task.state_changed": "Estado de una tarea cambiado",
       "platform.admin_granted": "Administrador de Cuotly nombrado",
+      "platform.account_deleted": "Cuenta eliminada por Cuotly",
+      "platform.account_restored": "Cuenta recuperada por Cuotly",
+      "platform.space_deleted": "Espacio eliminado por Cuotly",
+      "platform.space_restored": "Espacio recuperado por Cuotly",
+      "platform.establishment_deleted": "Restaurante eliminado por Cuotly",
+      "platform.establishment_restored": "Restaurante recuperado por Cuotly",
       "platform.admin_updated": "Permisos de un Administrador de Cuotly cambiados",
       "platform.admin_revoked": "Administrador de Cuotly retirado",
       "support.session_started": "Cuotly ha entrado en Modo soporte",
@@ -8499,6 +8510,74 @@ export const es = {
   },
 
   platformAdmin: {
+    // Decisión 81 · eliminar y recuperar cuentas, espacios y restaurantes
+    // (RN-ADM-14 a 20). "Eliminar" no borra: archiva, marca y bloquea, y
+    // solo Cuotly lo deshace.
+    deletion: {
+      deleteAction: "Eliminar",
+      restoreAction: "Recuperar",
+      deleting: "Eliminando…",
+      restoring: "Recuperando…",
+      reasonLabel: "Motivo",
+      reasonHint: "Queda en la auditoría de la plataforma.",
+      confirmationLabel: (nombre: string) => `Escribe «${nombre}» para confirmar`,
+      reasonRequired: "Escribe el motivo: queda en la auditoría.",
+      confirmationMismatch: "No coincide. Escríbelo tal como aparece.",
+      invalid: "No se sabe qué eliminar.",
+      deleted: "Eliminado. Solo Cuotly puede recuperarlo.",
+      restored: "Recuperado.",
+      noPermissionHint: "Eliminar y recuperar es del propietario de Cuotly y de los administradores con ese permiso.",
+      nothingIsErased:
+        "Nada se borra: queda archivado, sin acceso para nadie de fuera de Cuotly, y se puede recuperar desde aquí.",
+      spaceTitle: (nombre: string) => `Eliminar el espacio «${nombre}»`,
+      spaceHint:
+        "Todo el espacio, con sus restaurantes, queda en solo lectura para su equipo y sus clientes. Su propietario no puede restaurarlo.",
+      establishmentTitle: (nombre: string) => `Eliminar el restaurante «${nombre}»`,
+      establishmentHint:
+        "Queda archivado y sus integraciones se desconectan. El equipo del espacio no puede reactivarlo.",
+      restoreTitle: (nombre: string) => `Recuperar «${nombre}»`,
+      restoreSpaceHint: "Vuelve al modo que tenía antes de eliminarlo.",
+      restoreEstablishmentHint: "Vuelve al estado en que estaba cuando se eliminó.",
+      restoreAccountHint:
+        "Vuelve a poder entrar, a sus equipos (como administradora donde su propiedad pasó a otra persona) y a sus restaurantes. Los restaurantes autorizados y las especialidades no vuelven.",
+      account: {
+        title: (email: string) => `Eliminar la cuenta ${email}`,
+        back: "Volver a usuarios",
+        consequences: [
+          "No podrá volver a entrar en Cuotly y sus sesiones abiertas se cierran.",
+          "Sale de todos sus equipos de mantenimiento; sus trabajos y tareas quedan pendientes de reasignar.",
+          "Pierde el acceso a todos los restaurantes y grupos en los que era cliente.",
+        ],
+        summary: (equipos: number, accesos: number) =>
+          `Está en ${equipos} ${equipos === 1 ? "equipo" : "equipos"} y tiene ${accesos} ${accesos === 1 ? "acceso" : "accesos"} de cliente.`,
+        successorsTitle: "Espacios de los que es la única propietaria",
+        successorsHint:
+          "La propiedad pasa a un administrador del espacio; si no tiene ninguno, a un trabajador. Elige a quién o déjalo al azar.",
+        successorLabel: (espacio: string) => `Nuevo propietario de «${espacio}»`,
+        random: "Al azar",
+        roleAdmin: "Administrador",
+        roleWorker: "Trabajador",
+        noSuccessor: (espacio: string) =>
+          `«${espacio}» no tiene a nadie más en su equipo: se elimina con la cuenta y vuelve si se recupera.`,
+        protectedTitle: "Esta cuenta no se puede eliminar",
+        protectedReason:
+          "Es la del propietario de Cuotly o la de un Administrador de Cuotly. A un administrador, el propietario de Cuotly le retira antes el rol.",
+        closedTitle: "Esta cuenta ya está eliminada",
+        closedReason: "Se puede recuperar desde la lista de usuarios.",
+        submit: "Eliminar la cuenta",
+      },
+      establishments: {
+        title: "Restaurantes",
+        subtitle: "Todos los restaurantes de todos los espacios. Desde aquí se eliminan y se recuperan.",
+        name: "Restaurante",
+        space: "Espacio",
+        status: "Estado",
+        actions: "Acciones",
+        deletedBadge: "Eliminado por Cuotly",
+        emptyTitle: "No hay restaurantes",
+        emptyReason: "Todavía no se ha dado de alta ninguno.",
+      },
+    },
     title: "Administración de Cuotly",
     subtitle: "Los doce bloques de §128. Solo Cuotly, con la sesión verificada en dos pasos.",
     switchSpace: "Cambiar de espacio",
@@ -8521,6 +8600,7 @@ export const es = {
       incidents: "Incidencias",
       status: "Estado y festivos",
       audit: "Auditoría",
+      establishments: "Restaurantes",
     },
     blocks: {
       users: "Usuarios",
@@ -8670,6 +8750,7 @@ export const es = {
       canApproveSpaces: "Aprobar espacios",
       canManageSubscriptions: "Gestionar suscripciones",
       canSupport: "Modo soporte",
+      canDeleteAccounts: "Eliminar cuentas y espacios",
       save: "Guardar permisos",
       revoke: "Retirar el rol",
       pending: "Guardando…",
@@ -8678,6 +8759,10 @@ export const es = {
       notOwnerHint: "Nombrar y retirar Administradores es del propietario de Cuotly.",
       emptyTitle: "No hay usuarios",
       emptyReason: "Todavía no se ha registrado nadie.",
+      closedBadge: "Eliminada",
+      accountColumn: "Cuenta",
+      deleteLink: "Eliminar cuenta",
+      protectedHint: "Protegida",
     },
 
     spaces: {
@@ -8698,6 +8783,7 @@ export const es = {
       period: "Periodo hasta",
       trialEnds: "Prueba hasta",
       reactivateBy: "Reactivable hasta",
+      archivedSince: "Desde el",
       noPlan: "Sin suscripción",
       noPlanHint: "Anterior al Hito 17: Cuotly no se cobra a sí misma.",
       statuses: {
@@ -8706,6 +8792,7 @@ export const es = {
         archived_trial_ended: "Archivado · prueba sin pago",
         archived_nonpayment: "Archivado · impago",
         archived_by_owner: "Archivado por su propietario",
+        archived_by_platform: "Eliminado por Cuotly",
       },
       supportActive: "Soporte abierto",
       declaredPending: "Pago declarado",
@@ -9230,6 +9317,7 @@ export const es = {
       archived_trial_ended: "Archivado en modo lectura: la prueba terminó sin pago",
       archived_nonpayment: "Archivado en modo lectura por impago",
       archived_by_owner: "Archivado en modo lectura por decisión de su propietario",
+      archived_by_platform: "Eliminado por Cuotly: en modo lectura hasta que Cuotly lo recupere",
     },
     planLabel: "Plan",
     plans: { pro: "Pro", agency: "Agency" },

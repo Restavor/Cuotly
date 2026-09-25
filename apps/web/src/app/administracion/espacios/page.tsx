@@ -11,7 +11,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from "@/components/ui";
-import { canManageSubscriptions, canOpenSupport } from "@/core/platform-admin";
+import { canDeleteAccounts, canManageSubscriptions, canOpenSupport } from "@/core/platform-admin";
 import { isSpaceReadOnly, type SpaceCuotlyState } from "@/core/cuotly-subscription";
 import { CUOTLY_TIMEZONE, enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -19,6 +19,7 @@ import { euros, gigabytes } from "@/i18n/money";
 import { createClient } from "@/lib/supabase/server";
 import { listSpaces, myPlatformAccess, type PlatformSpaceRow } from "@/services/platform-gateway";
 
+import { DeleteButton, RestoreButton } from "../DeletionForms";
 import { ReactivateForm, StartSupportForm } from "./SpaceActions";
 
 /**
@@ -51,11 +52,13 @@ export default async function AdminSpacesPage({
   let spaces: readonly PlatformSpaceRow[];
   let puedeSoporte = false;
   let puedeSuscripciones = false;
+  let puedeEliminar = false;
   try {
     const [rows, access] = await Promise.all([listSpaces(supabase), myPlatformAccess(supabase)]);
     spaces = rows;
     puedeSoporte = canOpenSupport(access);
     puedeSuscripciones = canManageSubscriptions(access);
+    puedeEliminar = canDeleteAccounts(access);
   } catch (fallo) {
     return (
       <ErrorState
@@ -134,7 +137,9 @@ export default async function AdminSpacesPage({
                       <>
                         <StatusBadge tone={tono(status)}>{t.statuses[status]}</StatusBadge>
                         <span className="mt-1 block text-xs text-text-secondary">
-                          {status === "trial"
+                          {status === "archived_by_platform"
+                            ? `${t.archivedSince} ${dia(row.cuotly_archived_at)}`
+                            : status === "trial"
                             ? `${t.trialEnds} ${dia(row.cuotly_trial_ends_at)}`
                             : isSpaceReadOnly(status)
                               ? `${t.reactivateBy} ${dia(row.cuotly_reactivation_deadline_at)}`
@@ -188,8 +193,28 @@ export default async function AdminSpacesPage({
                       {puedeSoporte ? (
                         <StartSupportForm spaceId={row.id} spaceSlug={row.slug} spaceName={row.name} />
                       ) : null}
-                      {puedeSuscripciones && status !== null && isSpaceReadOnly(status) ? (
+                      {puedeSuscripciones &&
+                      (status === "archived_trial_ended" || status === "archived_nonpayment") ? (
                         <ReactivateForm spaceId={row.id} />
+                      ) : null}
+                      {/* RN-ADM-16 · eliminar y recuperar, decisión 81. */}
+                      {puedeEliminar ? (
+                        status === "archived_by_platform" ? (
+                          <RestoreButton
+                            kind="space"
+                            id={row.id}
+                            name={row.name}
+                            hint={es.platformAdmin.deletion.restoreSpaceHint}
+                          />
+                        ) : (
+                          <DeleteButton
+                            kind="space"
+                            id={row.id}
+                            name={row.name}
+                            title={es.platformAdmin.deletion.spaceTitle(row.name)}
+                            hint={es.platformAdmin.deletion.spaceHint}
+                          />
+                        )
                       ) : null}
                     </div>
                   </TableCell>

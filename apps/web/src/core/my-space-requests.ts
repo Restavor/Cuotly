@@ -66,6 +66,7 @@ export function approvedDetail(spaceStatus: string | null): ApprovedDetail | nul
     case "active":
       return "active";
     case "archived_by_owner":
+    case "archived_by_platform":
       return "archived";
     default:
       return null;

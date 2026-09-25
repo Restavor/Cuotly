@@ -211,7 +211,7 @@ export function spaceRequestSteps(
             ? "current"
             : spaceStatus === "archived_trial_ended" || spaceStatus === "archived_nonpayment"
               ? "waiting"
-              : spaceStatus === "archived_by_owner"
+              : spaceStatus === "archived_by_owner" || spaceStatus === "archived_by_platform"
                 ? "stopped"
                 : "pending";
       return [paso("submitted", "done"), paso("review", "done"), paso("approval", "done"), paso("activation", activacion)];
