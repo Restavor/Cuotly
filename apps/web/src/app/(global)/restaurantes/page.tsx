@@ -12,7 +12,9 @@ import { PanelCards, SpaceCards } from "../ContextCards";
 import { loadGlobalContexts } from "../global-load";
 
 /**
- * RN-GLO-03 · "Restaurantes" de la barra de móvil en el contexto global.
+ * RN-GLO-03 · "Restaurantes" del contexto global: en la barra de móvil y,
+ * desde el 25/09/2026, también en el menú lateral de escritorio, donde
+ * ocupa el hueco que tenía "Mis solicitudes".
  *
  * El botón de la barra llevaba a un ancla del Inicio (`/#mis-paneles`)
  * que en el teléfono no hacía nada: ya estabas en el Inicio y el bloque

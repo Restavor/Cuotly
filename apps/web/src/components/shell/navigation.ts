@@ -392,12 +392,21 @@ export function moreDestinations(
  * menos se parecía al diseño.
  * ------------------------------------------------------------------ */
 
-/** §36 · los cinco destinos de G01 a G08, en el orden de la maqueta. */
+/**
+ * §36 · los cinco destinos de G01 a G08.
+ *
+ * El segundo es **Restaurantes** (`/restaurantes`, RN-GLO-03), la misma
+ * pantalla que la barra de móvil: los espacios de mantenimiento y los
+ * paneles de restaurante en dos pestañas. Hasta el 25/09/2026 ese hueco
+ * lo ocupaba "Mis solicitudes"; Bosco lo cambió para que escritorio y
+ * teléfono nombren igual el mismo sitio. "Mis solicitudes" sigue
+ * existiendo: se llega desde su bloque del Inicio y, en móvil, desde Más.
+ */
 export function globalMenu(): readonly NavDestination[] {
   const t = es.globalContext.nav;
   return [
     D("home", t.home, GLOBAL_HOME),
-    D("myRequests", t.requests, "/mis-solicitudes"),
+    D("establishments", es.nav.establishments, GLOBAL_CONTEXTS),
     D("messages", t.messages, "/mensajes"),
     D("account", t.account, "/cuenta"),
     D("help", t.help, "/ayuda"),
@@ -422,9 +431,8 @@ export function globalMenuGroups(): {
  * contextos: Inicio · Restaurantes · Crear · Mensajes · Más.
  *
  * "Restaurantes" lleva a `/restaurantes`, que separa en dos pestañas los
- * espacios de mantenimiento y los paneles de restaurante (RN-GLO-03). No
- * está en el menú lateral: en escritorio los dos bloques caben en el
- * Inicio, y el diseño de G01 pinta cinco destinos, no seis.
+ * espacios de mantenimiento y los paneles de restaurante (RN-GLO-03). Es
+ * el mismo destino que el del menú lateral.
  */
 export function globalMobileNav(): readonly NavDestination[] {
   return [
@@ -443,6 +451,9 @@ export function globalMoreDestinations(): readonly NavDestination[] {
   const enLaBarra = new Set(globalMobileNav().map((d) => d.key));
   return [
     ...globalMenu().filter((d) => !enLaBarra.has(d.key)),
+    // Ya no está en el menú lateral, pero en el teléfono Más era su sitio
+    // y el bloque del Inicio queda lejos: se queda aquí.
+    D("myRequests", es.globalContext.nav.requests, "/mis-solicitudes"),
     D("sessions", es.nav.sessions, "/cuenta/sesiones"),
   ];
 }
@@ -466,7 +477,7 @@ export function globalCreateOptions(): readonly NavDestination[] {
  */
 export function globalActiveDestination(pathname: string): NavDestination | null {
   const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
-  // "Restaurantes" solo está en la barra, pero también se marca.
+  // Lo de la barra que no está en el menú lateral también se marca.
   const menu = globalMenu();
   const claves = new Set(menu.map((d) => d.key));
   const candidatos = [...menu, ...globalMobileNav().filter((d) => !claves.has(d.key))];

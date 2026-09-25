@@ -62,7 +62,7 @@ describe("§36 · los cinco destinos de G01", () => {
   it("§36: son los de la maqueta, en su orden", () => {
     expect(globalMenu().map((d) => [d.key, d.href])).toEqual([
       ["home", "/"],
-      ["myRequests", "/mis-solicitudes"],
+      ["establishments", "/restaurantes"],
       ["messages", "/mensajes"],
       ["account", "/cuenta"],
       ["help", "/ayuda"],
@@ -88,7 +88,7 @@ describe("§36 · los cinco destinos de G01", () => {
   it("§36: Inicio solo está activo en la raíz", () => {
     expect(globalActiveDestination("/")?.key).toBe("home");
     expect(globalActiveDestination("/mensajes")?.key).toBe("messages");
-    expect(globalActiveDestination("/mis-solicitudes")?.key).toBe("myRequests");
+    expect(globalActiveDestination("/restaurantes")?.key).toBe("establishments");
     expect(globalActiveDestination("/cuenta/sesiones")?.key).toBe("account");
     expect(globalActiveDestination("/ayuda")?.key).toBe("help");
   });
@@ -116,6 +116,13 @@ describe("§20.3 · la barra de móvil del contexto global", () => {
     const pagina = readFileSync(join(RAIZ, "restaurantes/page.tsx"), "utf8");
     expect(pagina).toContain(`pestana("maintenance"`);
     expect(pagina).toContain(`pestana("restaurant"`);
+  });
+
+  it("RN-GLO-03: el menú lateral lleva al mismo 'Restaurantes' que la barra, y ya no a 'Mis solicitudes'", () => {
+    const lateral = new Map(globalMenu().map((d) => [d.key, d.href]));
+    const barra = new Map(globalMobileNav().map((d) => [d.key, d.href]));
+    expect(lateral.get("establishments")).toBe(barra.get("establishments"));
+    expect(lateral.has("myRequests")).toBe(false);
   });
 
   it("RN-GLO-03: en 'Restaurantes' la barra lo marca como activo", () => {
