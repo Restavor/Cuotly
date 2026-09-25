@@ -5276,6 +5276,22 @@ Con esto se cierra el paso 3 de la decisión 37. **Antes de seguir con el paso 4
 fiscal, que exige revisión profesional) hay que confirmarlo con Bosco: CLAUDE.md pide parar entre
 hitos del ROADMAP y avisar antes de empezar el siguiente.
 
+### Fuera de orden · 25/09/2026 — el informe del mes desde la ficha (decisión 78)
+
+Bosco pidió generar el informe desde la ficha del restaurante con dos botones, **Subir informe** y
+**Revisar informe**. Está hecho sobre lo que ya existía del Hito 16 y no abre ningún paso nuevo:
+
+- **Servidor (migración 137, suite 76):** `publish_report()` aprueba y envía en una transacción y
+  exige la confirmación cuando nadie aprobó el informe. Sale por el canal que arrastra el push.
+  `report_entry_texts` y `set_report_entry_texts()` guardan los textos reescritos del relato del
+  mes; la fila es solo del equipo (P7).
+- **Web:** la tarjeta "Informe del mes" en Informes y datos › Resumen; el resumen ejecutivo de
+  frases fijas (RN-REP-28, sin IA); el editor de textos en la vista 10.04. Guardar textos o
+  secciones genera una versión nueva, así que lo revisado es lo que se sube.
+- **Enmiendas al PRD:** RN-REP-09, RN-REP-19 (punto 3) y la nota de cierre del §29, porque el
+  resumen ya no lo escribe siempre una persona. Reglas nuevas: RN-REP-27 a RN-REP-30.
+- **Pendiente de aplicar** la migración 137 al proyecto real de Supabase.
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

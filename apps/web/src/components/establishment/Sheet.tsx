@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import {
+  ButtonLink,
   Card,
   EmptyState,
   ProgressBar,
@@ -13,7 +14,8 @@ import {
   TableRow,
 } from "@/components/ui";
 import { AttentionList } from "@/components/home/AttentionList";
-import { ReportsTable } from "@/components/report/ReportsTable";
+import { GenerateMonthlyButton, PublishReportButton } from "@/components/report/MonthlyReport";
+import { ReportStateBadge, ReportsTable } from "@/components/report/ReportsTable";
 import type { ReportRow } from "@/components/report/reports-load";
 import { Icon } from "@/components/ui/Icon";
 import { Tabs } from "@/components/ui/Tabs";
@@ -237,12 +239,34 @@ export interface SheetData {
    */
   readonly reports: readonly ReportRow[];
   /**
+   * Decisión 78 (RN-REP-27) · el informe del último mes cerrado, con sus
+   * botones. `undefined` cuando no se está mirando el Resumen o quien mira
+   * no gestiona la cartera: el trabajador no entra en los informes de un
+   * restaurante (RN-REP-08).
+   */
+  readonly monthlyReport?: MonthlyReportView;
+  /**
    * La zona horaria del espacio (CLAUDE.md: las fechas se calculan en
    * ella). No es decorativa ni tiene valor por defecto: sin ella, `Intl`
    * usaría la del servidor —UTC en Vercel— y un cobro registrado a las
    * once de la noche aparecería con la fecha del día anterior.
    */
   readonly timeZone: string;
+}
+
+/** Decisión 78 · lo que la tarjeta "Informe del mes" necesita. */
+export interface MonthlyReportView {
+  readonly establishmentId: string;
+  /** "agosto de 2026". */
+  readonly monthLabel: string;
+  readonly report: {
+    readonly id: string;
+    readonly status: ReportRow["status"];
+    readonly sentAt: string | null;
+    readonly generatedAt: string | null;
+  } | null;
+  /** "Aprobar informes": la tiene quien puede subirlo (RN-REP-29). */
+  readonly canPublish: boolean;
 }
 
 type StatusKey = keyof typeof es.space.statuses;
@@ -1049,6 +1073,7 @@ export function EstablishmentSheet({
     opportunities,
     opportunityViewer,
     reports,
+    monthlyReport,
     invitations,
     timeZone,
   } = data;
@@ -2158,6 +2183,10 @@ export function EstablishmentSheet({
             view={digital}
             manageHref={canManageClients ? sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK) : null}
           />
+
+          {monthlyReport ? (
+            <MonthlyReportCard slug={slug} view={monthlyReport} timeZone={timeZone} />
+          ) : null}
 
           {/*
             Maqueta 09 · "Informes generados" (§89 a §95). Cada uno enlaza
@@ -3823,5 +3852,75 @@ export function EstablishmentSheet({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Decisión 78 (RN-REP-27, RN-REP-29) · "Informe del mes". Generar, y una
+ * vez generado, **Subir informe** y **Revisar informe**. Lo subido ya no
+ * se regenera ni se edita: se enseña.
+ */
+export function MonthlyReportCard({
+  slug,
+  view,
+  timeZone,
+}: {
+  slug: string;
+  view: MonthlyReportView;
+  timeZone: string;
+}) {
+  const tm = es.reportsPage.monthly;
+  const informe = view.report;
+  const enlace = informe ? `/espacios/${slug}/informes/${informe.id}` : null;
+  const subido = informe !== null && (informe.status === "sent" || informe.status === "archived");
+
+  return (
+    <Card title={tm.title}>
+      <p className="text-sm text-text-secondary">{tm.hint(view.monthLabel)}</p>
+
+      {informe === null ? (
+        <div className="mt-4 space-y-3">
+          <p className="text-sm text-text">{tm.notGenerated(view.monthLabel)}</p>
+          <GenerateMonthlyButton slug={slug} establishmentId={view.establishmentId} again={false} />
+        </div>
+      ) : (
+        <div className="mt-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <ReportStateBadge status={informe.status} />
+            <span className="text-sm text-text-secondary">
+              {subido && informe.sentAt
+                ? tm.sentOn(enZona(informe.sentAt, timeZone, { dateStyle: "medium" }))
+                : informe.generatedAt
+                  ? tm.generatedOn(enZona(informe.generatedAt, timeZone, { dateStyle: "medium", timeStyle: "short" }))
+                  : null}
+            </span>
+          </div>
+
+          {subido ? (
+            <ButtonLink href={enlace ?? "#"} variant="secondary">
+              {tm.view}
+            </ButtonLink>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-start gap-3">
+                {view.canPublish && informe.generatedAt ? (
+                  <PublishReportButton
+                    slug={slug}
+                    reportId={informe.id}
+                    reviewed={informe.status === "approved" || informe.status === "scheduled"}
+                    reviewHref={enlace ?? "#"}
+                  />
+                ) : null}
+                <ButtonLink href={enlace ?? "#"} variant="outline">
+                  {tm.review}
+                </ButtonLink>
+              </div>
+              {view.canPublish ? null : <p className="text-xs text-text-secondary">{tm.noApprovePermission}</p>}
+              <GenerateMonthlyButton slug={slug} establishmentId={view.establishmentId} again />
+            </>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }

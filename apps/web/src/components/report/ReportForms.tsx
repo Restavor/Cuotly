@@ -201,11 +201,14 @@ export function SectionsForm({
   slug,
   reportId,
   sections,
+  autoSummary = null,
   readOnly,
 }: {
   slug: string;
   reportId: string;
   sections: readonly { readonly key: ReportSectionKey; readonly included: boolean; readonly note: string | null }[];
+  /** RN-REP-28 · el resumen automático de la última versión, si lo hay. */
+  autoSummary?: string | null;
   readOnly: boolean;
 }) {
   const [state, action, pending] = useActionState(saveReportSections, IDLE_REPORT_ACTION);
@@ -214,6 +217,8 @@ export function SectionsForm({
     <form action={action} className="space-y-4">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="reportId" value={reportId} />
+      {/* Si se guarda tal cual, sigue siendo el automático (RN-REP-28). */}
+      <input type="hidden" name="autoSummary" value={autoSummary ?? ""} />
 
       {sections.map((section) => (
         <div key={section.key} className="rounded-[10px] border border-border p-3">
@@ -242,7 +247,7 @@ export function SectionsForm({
                 <TextArea
                   name={`note:${section.key}`}
                   label={t.sections[section.key]}
-                  defaultValue={section.note ?? ""}
+                  defaultValue={section.note ?? autoSummary ?? ""}
                   rows={3}
                   disabled={readOnly}
                 />

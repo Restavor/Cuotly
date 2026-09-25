@@ -2215,3 +2215,31 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       decide al empezar el paso 7, porque la primera obliga a reescribir RN-MOV-03 y RN-MOV-09
       (sin conexión) y la segunda son dos códigos para siempre. Lo que ya no está en discusión es
       el resultado: la app de las tiendas no sale con las 29 pantallas sin diseño.
+
+78. **El informe del mes se genera, se sube y se revisa desde la ficha del restaurante**
+    (25/09/2026). Bosco pide: *"yo le doy a generar informe y me crea ya con todo lo que ha pasado
+    este mes, con lo que ya definimos, y luego me tienen que aparecer dos botones: subir informe
+    (para que lo vea el restaurante) y otro para revisar informe"*. Preguntado por las dudas,
+    decide:
+    - **Periodo:** el **último mes natural cerrado**, que ya era lo que RN-REP-05 da por omisión. El
+      25 de septiembre se genera agosto.
+    - **El resumen ejecutivo se crea solo, con frases fijas, y se puede editar.** Esto **enmienda**
+      RN-REP-09 (paso 3), RN-REP-17 y RN-REP-19 (punto 3), que decían que lo escribe una persona y
+      que Cuotly no redacta. Sigue sin IA (RN-CLS-06, §93): son frases escritas de antemano y
+      rellenadas con las cifras de la versión, y **solo cuentan hechos, nunca valoran** —el principio
+      de la escalera de la decisión 58—. Quien revisa puede reescribirlo; si lo reescribe, manda su
+      texto.
+    - **Cada cosa del relato del mes es editable**: *"cada cambio que se haga se registra en el
+      informe con una información editable, y lo mismo con el resto de cosas"*. El título y la
+      descripción de cada cambio y el texto de cada línea de "Lo que ha pasado este mes"
+      (RN-REP-18) se pueden reescribir antes de subirlo.
+    - **Subir sin revisar se puede, pero con una alerta**: *"si lo suben sin revisar les saldrá una
+      alerta para confirmar que lo quieren subir o cancelar y revisarlo"*. Confirmar la alerta **es**
+      la aprobación de quien tiene "Aprobar informes", y queda así en la auditoría ("Subido sin
+      revisar").
+    - **Al subirlo se avisa al restaurante, con push**: el envío sale por el canal de correo, que es
+      el que arrastra el push (RN-MOV-04), aunque el informe se hubiera preparado sin canal.
+    - **Pulsar "Generar" otra vez** con un informe de ese mes ya hecho **añade una versión nueva** si
+      no se ha subido (RN-REP-12), y si ya se subió solo lo enseña.
+
+    Reglas en el PRD: RN-REP-27 a RN-REP-30. Migración 137, suite 76.

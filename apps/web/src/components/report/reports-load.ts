@@ -15,12 +15,15 @@ import {
   type ReportSectionState,
   type ReportSnapshot,
   type ReportState,
+  defaultReportPeriod,
   isReportCategory,
   isReportSectionKey,
   isReportState,
 } from "@/core/reports";
 
+import type { MonthlyReportView } from "@/components/establishment/Sheet";
 import type { Database } from "@/lib/supabase/database.types";
+import { monthName } from "@/services/report-summary";
 import type { createClient } from "@/lib/supabase/server";
 
 /** El cliente tipado de siempre: la frontera con `any` que tenía este
@@ -294,5 +297,53 @@ export async function loadReportDetail(client: Supabase, reportId: string): Prom
       snapshot: row.snapshot as unknown as ReportSnapshot,
     })),
     pendingOpportunities: typeof pending === "number" ? pending : 0,
+  };
+}
+
+/**
+ * Decisión 78 (RN-REP-27) · lo que la tarjeta "Informe del mes" de la ficha
+ * necesita: el informe de operación del **último mes natural cerrado** en
+ * la zona del espacio, si existe, y cuándo se generó su última versión.
+ *
+ * Se busca en la lista que la ficha ya leyó, por familia y periodo exactos
+ * —lo mismo que encuentra la clave de idempotencia al generarlo—, así que
+ * no hace falta otra consulta para eso. La versión sí se pregunta: una
+ * fila sin versión no tiene nada que subir.
+ */
+export async function loadMonthlyReport(
+  client: Supabase,
+  input: {
+    readonly establishmentId: string;
+    readonly reports: readonly ReportRow[];
+    readonly timeZone: string;
+    readonly canPublish: boolean;
+  },
+): Promise<MonthlyReportView> {
+  const period = defaultReportPeriod(new Date(), input.timeZone);
+  const fila =
+    input.reports.find(
+      (row) =>
+        row.category === "operation" && row.periodStart === period.start && row.periodEnd === period.end,
+    ) ?? null;
+
+  let generatedAt: string | null = null;
+  if (fila !== null) {
+    const { data, error } = await client
+      .from("report_versions")
+      .select("generated_at")
+      .eq("report_id", fila.id)
+      .order("version_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(`report_versions: ${error.message}`);
+    generatedAt = data?.generated_at ?? null;
+  }
+
+  return {
+    establishmentId: input.establishmentId,
+    monthLabel: monthName(period),
+    report:
+      fila === null ? null : { id: fila.id, status: fila.status, sentAt: fila.sentAt, generatedAt },
+    canPublish: input.canPublish,
   };
 }

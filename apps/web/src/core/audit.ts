@@ -377,7 +377,9 @@ export const AUDIT_ACTIONS = [
   // Fase 3, Hito 16 · informes (§89 a §95, migración 85). El envío
   // programado y el aviso los escribe la cola, no una persona: su apunte
   // lo dice dejando `actor_id` nulo, como el de la detección.
+  "report.channel_changed",
   "report.created",
+  "report.entry_texts_changed",
   "report.renamed",
   "report.scheduled",
   "report.sections_changed",

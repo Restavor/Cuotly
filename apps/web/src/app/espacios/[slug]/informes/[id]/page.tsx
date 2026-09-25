@@ -16,7 +16,17 @@ import { isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { ButtonLink, Card, EmptyState } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
-import { isObjectiveOnly, orderedSections } from "@/core/reports";
+import { EntryTextsForm } from "@/components/report/MonthlyReport";
+import {
+  activityEntryKey,
+  changeDescription,
+  changeEntryKey,
+  changeTitle,
+  isObjectiveOnly,
+  orderedActivity,
+  orderedSections,
+} from "@/core/reports";
+import { activityText } from "@/services/report-pdf";
 import { DEFAULT_TIMEZONE, enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -68,6 +78,11 @@ export default async function ReportDetailPage({
   const ordenadas = orderedSections(sections);
   const objetivo = isObjectiveOnly(ordenadas);
   const cerrado = report.status === "sent" || report.status === "archived";
+  // Solo si la última versión lleva el relato: una sin él no tiene nada que editar.
+  const relato =
+    ultima !== null && ultima.snapshot.sections.some((row) => row.key === "month_activity" && row.included)
+      ? ultima.snapshot.activity
+      : undefined;
   // CLAUDE.md · la zona del espacio, no una escrita a mano. Esta pantalla
   // se quedó fuera del barrido del 14/09/2026: aquel solo prohibía
   // construir un formateador por tu cuenta, y aquí la zona se le pasaba a
@@ -160,9 +175,41 @@ export default async function ReportDetailPage({
                 included: section.included,
                 note: sections.find((row) => row.key === section.key)?.note ?? null,
               }))}
+              // RN-REP-28 · el resumen se abre ya escrito con las frases de
+              // la última versión, para corregirlo en vez de empezar de cero.
+              autoSummary={ultima?.snapshot.summary?.autoText ?? null}
               readOnly={cerrado}
             />
           </Card>
+          {/*
+            RN-REP-30 (decisión 78) · los textos de "Lo que ha pasado este
+            mes", sobre la última versión. Guardar genera la siguiente.
+          */}
+          {relato === undefined ? null : (
+            <Card title={t.texts.title}>
+              <EntryTextsForm
+                slug={slug}
+                reportId={report.id}
+                readOnly={cerrado}
+                changes={relato.changes.map((cambio) => ({
+                  key: changeEntryKey(cambio),
+                  date: fechaCorta(cambio.requestedAt),
+                  title: changeTitle(cambio),
+                  titleOriginal: cambio.title ?? cambio.code,
+                  description: changeDescription(cambio) ?? "",
+                  descriptionOriginal: cambio.description ?? "",
+                  edited: cambio.editedTitle !== undefined || cambio.editedDescription !== undefined,
+                }))}
+                entries={orderedActivity(relato.entries).map((entrada) => ({
+                  key: activityEntryKey(entrada),
+                  date: fechaCorta(entrada.at),
+                  text: activityText(entrada, t),
+                  textOriginal: activityText({ ...entrada, editedText: undefined }, t),
+                  edited: entrada.editedText !== undefined,
+                }))}
+              />
+            </Card>
+          )}
 
           <Card title={t.previewTitle}>
             {ultima === null ? (

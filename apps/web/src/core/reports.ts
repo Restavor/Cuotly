@@ -1108,6 +1108,13 @@ export interface MonthActivityEntry {
   readonly kind: MonthActivityKind;
   readonly subject: string | null;
   readonly category: string | null;
+  /**
+   * RN-REP-30 (decisión 78) · la línea tal y como la reescribió el equipo
+   * antes de subir el informe. Si no está, la línea es la de siempre —la
+   * clase en español y su sujeto—. Va aparte del original para que la
+   * pantalla de revisión sepa qué se tocó.
+   */
+  readonly editedText?: string;
 }
 
 /**
@@ -1133,6 +1140,14 @@ export interface MonthChange {
   readonly completedAt: string | null;
   readonly cancelledAt: string | null;
   readonly corrections: number;
+  /**
+   * RN-REP-30 (decisión 78) · el título y la descripción reescritos por el
+   * equipo. `title` y `description` siguen siendo los originales —lo que
+   * validó el equipo y lo que escribió el restaurante—, y lo que se lee es
+   * `changeTitle()` y `changeDescription()`.
+   */
+  readonly editedTitle?: string;
+  readonly editedDescription?: string;
 }
 
 /**
@@ -1273,6 +1288,169 @@ export function orderedActivity(entries: readonly MonthActivityEntry[]): readonl
   return [...entries].sort((a, b) => (a.at === b.at ? a.kind.localeCompare(b.kind) : a.at.localeCompare(b.at)));
 }
 
+// ---------------------------------------------------------------------
+// RN-REP-30 (decisión 78) · los textos editables del relato del mes
+// ---------------------------------------------------------------------
+
+/**
+ * La clave de una cosa del relato, que es con la que se guarda su texto
+ * editado en `report_entry_texts`. Tiene que salir **igual en cada
+ * generación** para que el texto reescrito siga pegado a su cosa cuando
+ * el informe se regenera:
+ *
+ *   · un cambio se conoce por su **código**, que es único y no cambia;
+ *   · una línea suelta no tiene código propio, así que se conoce por su
+ *     clase, su fecha y su sujeto, que es lo que la distingue de las demás
+ *     del mismo mes.
+ *
+ * La base comprueba la forma (`^(change|entry):`), no el contenido.
+ */
+export function changeEntryKey(change: Pick<MonthChange, "code">): string {
+  return `change:${change.code}`;
+}
+
+export function activityEntryKey(entry: Pick<MonthActivityEntry, "kind" | "at" | "subject">): string {
+  return `entry:${entry.kind}:${entry.at}:${entry.subject ?? ""}`;
+}
+
+/** Lo que el equipo reescribió de una cosa. `null` es "el original". */
+export interface EntryTextOverride {
+  readonly title: string | null;
+  readonly body: string | null;
+}
+
+function textoEditado(valor: string | null | undefined): string | undefined {
+  const limpio = (valor ?? "").trim();
+  return limpio === "" ? undefined : limpio;
+}
+
+/**
+ * Pone los textos editados encima del relato. No toca el original: lo deja
+ * al lado, para que la versión diga las dos cosas (RN-REP-30). En una línea
+ * suelta, el texto editado es `body`; `title` no se usa.
+ */
+export function applyEntryTexts(
+  activity: MonthActivity,
+  overrides: ReadonlyMap<string, EntryTextOverride>,
+): MonthActivity {
+  if (overrides.size === 0) return activity;
+
+  const changes = activity.changes.map((change): MonthChange => {
+    const texto = overrides.get(changeEntryKey(change));
+    const editedTitle = textoEditado(texto?.title);
+    const editedDescription = textoEditado(texto?.body);
+    const original: MonthChange = { ...change };
+    delete (original as { editedTitle?: string }).editedTitle;
+    delete (original as { editedDescription?: string }).editedDescription;
+    return {
+      ...original,
+      ...(editedTitle === undefined ? {} : { editedTitle }),
+      ...(editedDescription === undefined ? {} : { editedDescription }),
+    };
+  });
+
+  const entries = activity.entries.map((entry): MonthActivityEntry => {
+    const editedText = textoEditado(overrides.get(activityEntryKey(entry))?.body);
+    const original: MonthActivityEntry = { ...entry };
+    delete (original as { editedText?: string }).editedText;
+    return editedText === undefined ? original : { ...original, editedText };
+  });
+
+  return { changes, entries };
+}
+
+/** El título que se lee: el editado, el que validó el equipo o el código. */
+export function changeTitle(change: MonthChange): string {
+  return change.editedTitle ?? change.title ?? change.code;
+}
+
+/** La descripción que se lee: la editada o la que escribió el restaurante. */
+export function changeDescription(change: MonthChange): string | null {
+  return change.editedDescription ?? change.description;
+}
+
+// ---------------------------------------------------------------------
+// RN-REP-28 (decisión 78) · los hechos del resumen ejecutivo automático
+// ---------------------------------------------------------------------
+
+/**
+ * Lo que dice el resumen automático, en cifras. Las frases las pone
+ * `src/i18n/es.ts`; aquí solo se decide **qué hechos hay**, y cada uno es
+ * `null` cuando no hay dato o su sección no entra — lo que no hay no se
+ * dice con un cero (CLAUDE.md).
+ *
+ * **Solo hechos, ninguna valoración** (decisión 58): no hay aquí ningún
+ * "mejor" ni "peor", ni una comparación con el mes anterior. Eso lo juzga
+ * una persona si reescribe el resumen.
+ */
+export interface ExecutiveSummaryFacts {
+  readonly period: ReportPeriod;
+  /** Null si el informe no lleva "Lo que ha pasado este mes". */
+  readonly changes: {
+    readonly delivered: number;
+    readonly inProgress: number;
+    readonly pendingStart: number;
+  } | null;
+  /** Categorías con bolsa (incluidos conocidos) y algo gastado, en el orden de la bolsa. */
+  readonly allowance: readonly { readonly category: ChangeCategory; readonly consumed: number; readonly included: number }[];
+  /** Cuántos cambios fueron a presupuesto aparte (RN-REP-20). */
+  readonly budgeted: number;
+  /** Null si el relato no entra; 0 no se dice (no es noticia que no hubo menú). */
+  readonly menusPublished: number | null;
+  /** Porcentaje de cumplimiento del plazo de inicio, si entra Operación y hay cifra. */
+  readonly startCompliance: number | null;
+  /** Visitas de la web (Analytics), si entra Rendimiento digital y hay cifra. */
+  readonly visits: number | null;
+}
+
+function cifraIncluida(
+  snapshot: Pick<ReportSnapshot, "figures" | "sections">,
+  section: ReportSectionKey,
+  metric: string,
+  dimension?: string,
+): number | null {
+  const incluida = snapshot.sections.some((row) => row.key === section && row.included);
+  if (!incluida) return null;
+  const figura = snapshot.figures.find(
+    (candidata) =>
+      candidata.section === section &&
+      candidata.metric === metric &&
+      (dimension === undefined || candidata.dimension === dimension) &&
+      candidata.value !== null,
+  );
+  return figura?.value ?? null;
+}
+
+export function executiveSummaryFacts(
+  snapshot: Pick<ReportSnapshot, "period" | "figures" | "sections" | "activity" | "allowance">,
+): ExecutiveSummaryFacts {
+  const conRelato =
+    snapshot.sections.some((row) => row.key === "month_activity" && row.included) &&
+    snapshot.activity !== undefined;
+  const relato = snapshot.activity ?? EMPTY_MONTH_ACTIVITY;
+
+  const estados = relato.changes.map(changeStatus);
+  const cuantos = (estado: ChangeStatus) => estados.filter((valor) => valor === estado).length;
+
+  const bolsa = conRelato ? (snapshot.allowance ?? []) : [];
+
+  return {
+    period: snapshot.period,
+    changes: conRelato
+      ? { delivered: cuantos("delivered"), inProgress: cuantos("in_progress"), pendingStart: cuantos("pending_start") }
+      : null,
+    allowance: bolsa.flatMap((line) =>
+      line.included !== null && line.consumed > 0
+        ? [{ category: line.category, consumed: line.consumed, included: line.included }]
+        : [],
+    ),
+    budgeted: bolsa.reduce((total, line) => total + line.budgeted, 0),
+    menusPublished: conRelato ? relato.entries.filter((entry) => entry.kind === "menu_published").length : null,
+    startCompliance: cifraIncluida(snapshot, "operation", "start_compliance"),
+    visits: cifraIncluida(snapshot, "digital", "sessions", "ga4"),
+  };
+}
+
 export interface ReportSnapshot {
   readonly category: ReportCategory;
   readonly period: ReportPeriod;
@@ -1281,8 +1459,19 @@ export interface ReportSnapshot {
   readonly figures: readonly ReportFigure[];
   /** §96 · las oportunidades aprobadas que lleva, si lleva la sección. */
   readonly opportunities: readonly ReportOpportunity[];
-  /** Texto que escribió una persona, por sección (§95.5). Nunca generado. */
+  /**
+   * El texto de cada sección (§95.5), solo de las que entran (RN-REP-13).
+   * Desde la decisión 78 el del resumen ejecutivo puede ser el automático
+   * de frases fijas (RN-REP-28): lo dice `summary`.
+   */
   readonly notes: Readonly<Record<string, string>>;
+  /**
+   * RN-REP-28 (decisión 78) · el resumen ejecutivo automático de ESTA
+   * versión, y si el que va en `notes` es ese o uno que reescribió una
+   * persona. Opcional porque las versiones de antes de la decisión 78 no lo
+   * traen: su resumen lo escribió una persona.
+   */
+  readonly summary?: { readonly auto: boolean; readonly autoText: string };
   /**
    * RN-REP-18 · lo que pasó en el periodo, si el informe lleva la sección.
    * Opcional porque las versiones guardadas **antes** de la migración 112

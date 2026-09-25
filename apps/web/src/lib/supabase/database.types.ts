@@ -5749,6 +5749,61 @@ export type Database = {
           },
         ];
       };
+      report_entry_texts: {
+        Row: {
+          body: string | null;
+          entry_key: string;
+          id: string;
+          report_id: string;
+          space_id: string;
+          title: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          body?: string | null;
+          entry_key: string;
+          id?: string;
+          report_id: string;
+          space_id: string;
+          title?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          body?: string | null;
+          entry_key?: string;
+          id?: string;
+          report_id?: string;
+          space_id?: string;
+          title?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "report_entry_texts_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "reports";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_entry_texts_space_id_fkey";
+            columns: ["space_id"];
+            isOneToOne: false;
+            referencedRelation: "spaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "report_entry_texts_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       report_sections: {
         Row: {
           id: string;
@@ -10339,6 +10394,10 @@ export type Database = {
         Args: { p_correction_window_ends_at: string; p_job_id: string };
         Returns: undefined;
       };
+      publish_report: {
+        Args: { p_confirm_unreviewed?: boolean; p_report_id: string };
+        Returns: number;
+      };
       publish_plan_conditions: {
         Args: { p_conditions: string; p_plan_id: string };
         Returns: string;
@@ -11022,6 +11081,10 @@ export type Database = {
       set_principal_supervisor: {
         Args: { p_admin_id: string; p_space_id: string; p_worker_id: string };
         Returns: string;
+      };
+      set_report_entry_texts: {
+        Args: { p_entries: Json; p_report_id: string };
+        Returns: undefined;
       };
       set_report_sections: {
         Args: { p_report_id: string; p_sections: Json };

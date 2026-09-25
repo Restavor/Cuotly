@@ -12,6 +12,7 @@ import type { HolidayRecord } from "@/core/business-clock";
 import type { MetricPoint } from "@/core/integrations";
 import type { ChangeCategory } from "@/core/classification-rules";
 import {
+  type EntryTextOverride,
   type ReportCategory,
   type ReportLevel,
   type ReportOpportunity,
@@ -47,6 +48,11 @@ export interface ReportRow {
   readonly status: string;
   readonly sections: readonly ReportSectionState[];
   readonly notes: Readonly<Record<string, string>>;
+  /**
+   * RN-REP-30 (decisión 78) · lo que el equipo reescribió del relato del
+   * mes, por la clave de cada cosa. Opcional: vacío es "todo el original".
+   */
+  readonly entryTexts?: ReadonlyMap<string, EntryTextOverride>;
   readonly timezone: string;
   /**
    * RN-REP-15 · el nivel del plan del restaurante, que decide hasta dónde
@@ -221,6 +227,21 @@ export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
         if (row.note) notes[row.section_key] = row.note;
       }
 
+      // RN-REP-30 · los textos editados. Con la clave de servicio, como el
+      // resto de esta lectura: la sesión de quien pulsa ya se comprobó
+      // antes de llegar aquí (`asegurarVisible` en las acciones).
+      const { data: textos, error: textosError } = await client
+        .from("report_entry_texts")
+        .select("entry_key, title, body")
+        .eq("report_id", reportId);
+      if (textosError) throw new Error(`report_entry_texts: ${textosError.message}`);
+      const entryTexts = new Map<string, EntryTextOverride>(
+        (textos ?? []).map((row: { entry_key: string; title: string | null; body: string | null }) => [
+          row.entry_key,
+          { title: row.title, body: row.body },
+        ]),
+      );
+
       return {
         id: data.id,
         spaceId: data.space_id,
@@ -235,6 +256,7 @@ export function createSupabaseReportGateway(client: AnyClient): ReportGateway {
           included: row.included,
         })) as readonly ReportSectionState[],
         notes,
+        entryTexts,
         timezone: spaceTimezone(data.spaces),
         reportLevel: data.establishment_id
           ? await establishmentReportLevel(client, data.establishment_id)

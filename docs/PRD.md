@@ -1665,7 +1665,9 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   demás son cifras y no piden opinión—, (4) revisa quien tiene "Aprobar informes", (5) **selecciona,
   edita y ordena** las secciones, (6) lo aprobado se inserta, y (7) se genera el PDF y se programa o
   se envía. Requerir criterio **no** es entrar apagada: el resumen ejecutivo entra marcado y lo
-  escribe quien revisa. Las secciones se guardan con su **orden** y su **inclusión**, y editarlas
+  escribe quien revisa. *(Enmendado el 25/09/2026, decisión 78: el resumen ejecutivo **nace
+  escrito** con frases fijas —RN-REP-28— y quien revisa lo corrige o lo reescribe; sigue siendo
+  sección de criterio porque es la que una persona firma.)* Las secciones se guardan con su **orden** y su **inclusión**, y editarlas
   después de aprobar **devuelve el informe a revisión**: un informe aprobado es un texto concreto, no
   una carpeta que sigue cambiando.
 - **RN-REP-10**: §95 · **un informe solo objetivo puede enviarse automáticamente** —si ninguna sección
@@ -1912,7 +1914,9 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
      (Rendimiento digital), ingresos (Finanzas). **Si una no hay, la tarjeta no está** — no se
      rellena con un cero ni con una barra (CLAUDE.md, §178).
   3. **Resumen ejecutivo**: el texto que escribió una persona del equipo, con la línea que lo dice.
-     Cuotly no lo redacta (§93).
+     Cuotly no lo redacta (§93). *(Enmendado el 25/09/2026, decisión 78: si nadie lo reescribió, es
+     el de frases fijas de RN-REP-28, y la línea dice que lo generó Cuotly con las cifras del
+     periodo.)*
   4. **Índice** de lo que trae ese informe concreto.
   5. **Una página por sección**, en el orden que fijó el equipo, con su tabla de concepto / valor /
      comparación.
@@ -2106,8 +2110,86 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   aprovecharlo mejor, lo escribe una persona en el resumen ejecutivo (§93), que es donde este
   producto pone los juicios.
 
+- **RN-REP-27 (añadida 25/09/2026, decisión 78)**: **el informe del mes se genera desde la ficha
+  del restaurante**, en Informes y datos › Resumen. Un botón, **"Generar informe"**, y nada que
+  rellenar: familia **operación**, periodo el **último mes natural cerrado** (RN-REP-05), nombre
+  "Informe de <mes> de <año>", y las secciones que permite el nivel del plan (RN-REP-15), con
+  "Lo que ha pasado este mes" dentro. No lleva Finanzas, así que lo alcanza todo el restaurante sin
+  chocar con RN-REP-16.
+
+  **Pulsar dos veces no hace dos informes** (CA-17): la clave de idempotencia es la de la biblioteca
+  —familia, restaurante y periodo—, así que el segundo pulso encuentra el mismo informe. Si **no se
+  ha subido**, le añade una versión con las cifras al día (RN-REP-12, no pisa la anterior); si ya se
+  subió, no lo toca: solo lo enseña.
+
+  Generado, aparecen **dos botones**: **"Subir informe"** (RN-REP-29) y **"Revisar informe"**, que
+  abre la vista 10.04 con los textos editables de RN-REP-28 y RN-REP-30. Los ven el propietario y
+  los administradores (`manage_clients`); "Subir" solo quien tiene "Aprobar informes". El trabajador
+  no los ve (RN-REP-08). Ocultarlos no es el control: lo son `create_report_draft()`,
+  `publish_report()` y `set_report_entry_texts()`.
+
+- **RN-REP-28 (añadida 25/09/2026, decisión 78)**: **el resumen ejecutivo nace escrito, con frases
+  fijas, y se puede editar.** Sin IA (RN-CLS-06): las frases están escritas de antemano en
+  `src/i18n/es.ts` y se rellenan con las cifras **de la versión**, en el servidor, al generarla.
+  **Solo cuentan hechos, nunca valoran** —ni "buen mes" ni "mejoró"—, porque lo que sube de nivel es
+  el análisis y no la información (decisión 58), y **solo citan cifras de secciones que ese informe
+  lleva**: un Básico no recibe por el resumen el cumplimiento de plazos que su plan no incluye.
+
+  Las frases, en este orden, y **cada una solo si tiene su dato** (lo que no hay no se dice con un
+  cero, CLAUDE.md):
+
+  1. Los cambios del periodo: cuántos se entregaron, cuántos siguen en proceso y cuántos están
+     pendientes de empezar (de "Lo que ha pasado este mes"). Sin ningún cambio, lo dice.
+  2. La bolsa: "has usado X de tus Y" por categoría con cambios incluidos o consumidos, y cuántos se
+     presupuestaron aparte (RN-REP-20). Sin plan vigente no hay "de tus Y".
+  3. Los menús del día publicados.
+  4. El cumplimiento del plazo de inicio, si el informe lleva Operación y hay cifra.
+  5. Las visitas de la web, si lleva Rendimiento digital y hay cifra.
+
+  **Si quien revisa lo reescribe, manda su texto** y se guarda en `report_sections.note`; si lo deja
+  como está o lo vacía, vuelve a ser el automático y **se recalcula en cada versión**, que es lo que
+  hace que un informe regenerado no diga las cifras de la versión anterior. La versión guarda las
+  dos cosas —el texto que va y el automático de ese día— y si el que va es el automático, el PDF y
+  la pantalla lo dicen: "Resumen generado por Cuotly con las cifras del periodo".
+
+- **RN-REP-29 (añadida 25/09/2026, decisión 78)**: **"Subir informe" aprueba y envía de una vez**, en
+  una sola transacción (`publish_report()`), y solo lo hace quien tiene "Aprobar informes".
+
+  - Si el informe ya está **aprobado o programado**, se envía sin preguntar.
+  - Si **nadie lo aprobó** (está preparando o en revisión), la pantalla pide confirmación: **"Subir
+    sin revisar"** o **"Cancelar y revisar"**. Confirmar **es** la aprobación de esa persona y queda
+    así: evento de estado y apunte de auditoría con el motivo "Subido sin revisar" (RN-REP-14). El
+    servidor **exige** la confirmación: sin ella, `publish_report()` se niega, aunque se llame a
+    mano.
+  - **Se avisa con push** (RN-REP-11, RN-MOV-04): el envío sale por el canal de correo aunque el
+    informe se hubiera preparado sin canal, porque el push viaja con él. Las preferencias de cada
+    persona (RN-MOV-06) siguen mandando.
+  - El **freno de las oportunidades** (RN-REP-10) sigue igual: si salta, el informe queda en revisión
+    con su motivo y no sale.
+  - **Subir dos veces es subirlo una** (CA-17): un informe enviado devuelve 0 y no escribe nada.
+  - Un **consolidado** no se sube a ningún restaurante (decisión 30): `publish_report()` lo rechaza.
+
+- **RN-REP-30 (añadida 25/09/2026, decisión 78)**: **cada cosa de "Lo que ha pasado este mes" es
+  editable antes de subirla**: el **título** y la **descripción** de cada cambio, y el **texto** de
+  cada línea suelta (RN-REP-18). Lo editado se guarda en `report_entry_texts`, una fila por cosa,
+  y **no toca el dato de origen**: la solicitud sigue diciendo lo que escribió el restaurante.
+
+  - **La fila es del equipo** (P7): el restaurante no la ve nunca, como `report_sections`. Lo que ve
+    es la versión que se le sube, con el texto ya puesto.
+  - **Guardar genera una versión nueva** con los textos puestos (RN-REP-12): lo que se revisa es lo
+    que se sube, y la versión anterior se conserva. Dejar un texto igual al original o vacío lo
+    devuelve al original.
+  - **Editar un informe aprobado lo devuelve a revisión** (RN-REP-09), y un informe subido no se
+    edita (P4).
+  - La versión guarda **el original y el editado** de cada cosa, para que la pantalla de revisión
+    sepa qué se tocó y para que nadie tenga que ir al histórico a averiguarlo.
+  - Lo que se escribe aquí lo lee el restaurante: **no se escribe el nombre de nadie del equipo**
+    (P7). Ninguna máquina puede comprobarlo en texto libre, así que la pantalla lo recuerda al lado
+    del campo.
+
 Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
-redactado (§93: "el informe automático por correo no necesita IA"), no hay plantilla de informe
+redactado por un modelo (§93: "el informe automático por correo no necesita IA"; el resumen de
+frases fijas de RN-REP-28 no es redacción: es una plantilla rellenada con cifras), no hay plantilla de informe
 configurable por espacio, y no hay envío a una dirección escrita a mano —el correo va a usuarios de
 Cuotly, que es de quien se sabe si puede ver el informe—. La **numeración fiscal**, la exportación
 masiva y la conservación legal siguen siendo del bloque legal aplazado (CLAUDE.md).

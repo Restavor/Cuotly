@@ -27,7 +27,7 @@ import {
   loadIntegrationsView,
 } from "@/components/establishment/integrations-load";
 import { loadOpportunities } from "@/components/establishment/opportunities-load";
-import { loadEstablishmentReports } from "@/components/report/reports-load";
+import { loadEstablishmentReports, loadMonthlyReport } from "@/components/report/reports-load";
 import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
@@ -316,9 +316,13 @@ export default async function EstablishmentPage({
         : null;
     const mirandoOportunidades = vista.key === "data" && seccion.key === "opportunities";
 
-    const { data: puedeAprobar } = mirandoOportunidades
-      ? await supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "approve_reports" })
-      : { data: false };
+    const mirandoResumenDeDatos = vista.key === "data" && seccion.key === "summary";
+    // "Aprobar informes" decide dos cosas que se ofrecen: aprobar
+    // oportunidades (§97) y subir el informe del mes (RN-REP-29).
+    const { data: puedeAprobar } =
+      mirandoOportunidades || (mirandoResumenDeDatos && (role === "owner" || role === "admin"))
+        ? await supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "approve_reports" })
+        : { data: false };
     const opportunities = mirandoOportunidades
       ? await loadOpportunities(supabase, id).catch((fallo: unknown) => {
           console.error("[ficha] no se pudieron leer las oportunidades", { id, message: String(fallo) });
@@ -331,13 +335,32 @@ export default async function EstablishmentPage({
       oportunidades, solo cuando se mira el Resumen de la pestaña de datos:
       es donde la maqueta los pone.
     */
-    const reports =
-      vista.key === "data" && seccion.key === "summary"
-        ? await loadEstablishmentReports(supabase, id).catch((fallo: unknown) => {
-            console.error("[ficha] no se pudieron leer los informes", { id, message: String(fallo) });
-            return [];
+    const reports = mirandoResumenDeDatos
+      ? await loadEstablishmentReports(supabase, id).catch((fallo: unknown) => {
+          console.error("[ficha] no se pudieron leer los informes", { id, message: String(fallo) });
+          return [];
+        })
+      : [];
+
+    /*
+      Decisión 78 (RN-REP-27) · el informe del último mes cerrado, en la
+      zona del espacio. Es el de operación de ese periodo exacto —el mismo
+      que encuentra la clave de idempotencia al generarlo—. Solo a quien
+      gestiona la cartera: el trabajador no entra en los informes de un
+      restaurante (RN-REP-08), y RLS ya se lo niega.
+    */
+    const monthlyReport =
+      mirandoResumenDeDatos && (role === "owner" || role === "admin")
+        ? await loadMonthlyReport(supabase, {
+            establishmentId: id,
+            reports,
+            timeZone: space.timezone,
+            canPublish: puedeAprobar === true,
+          }).catch((fallo: unknown) => {
+            console.error("[ficha] no se pudo leer el informe del mes", { id, message: String(fallo) });
+            return undefined;
           })
-        : [];
+        : undefined;
 
     return (
       <EstablishmentSheet
@@ -402,6 +425,7 @@ export default async function EstablishmentPage({
           opportunities,
           opportunityViewer: puedeAprobar === true ? "approver" : "worker",
           reports,
+          monthlyReport,
           // CLAUDE.md · la zona del espacio, que esta pantalla ya lee para
           // proponer el día del pago. La ficha entera pinta con ella.
           timeZone: space.timezone,

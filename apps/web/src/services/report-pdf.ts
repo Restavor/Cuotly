@@ -32,7 +32,9 @@ import {
   type ReportOpportunity,
   type ReportSectionKey,
   type ReportSnapshot,
+  changeDescription,
   changeStatus,
+  changeTitle,
   figureChange,
   figuresOfSection,
   headlineFigures,
@@ -165,6 +167,8 @@ export function activitySubject(entry: MonthActivityEntry): string | null {
 }
 
 export function activityText(entry: MonthActivityEntry, labels: Labels): string {
+  // RN-REP-30 (decisión 78) · la línea que reescribió el equipo, entera.
+  if (entry.editedText) return entry.editedText;
   const que = labels.activity.kinds[entry.kind];
   const sujeto = activitySubject(entry);
   return sujeto === null ? que : `${que} · ${sujeto}`;
@@ -416,7 +420,14 @@ export async function renderReportPdf(
   if (sections.some((section) => section.key === "executive_summary") && resumen) {
     write(labels.sections.executive_summary, { size: 11, font: bold });
     paragraph(resumen);
-    write(labels.pdf.writtenByAPerson, { size: 8, color: SOFT, gap: 10 });
+    // RN-REP-28 (decisión 78) · si es el automático, la línea lo dice. Una
+    // versión de antes de la decisión 78 no trae `summary`: la escribió una
+    // persona, como decía su línea.
+    write(snapshot.summary?.auto ? labels.autoSummary.autoLine : labels.pdf.writtenByAPerson, {
+      size: 8,
+      color: SOFT,
+      gap: 10,
+    });
     space(6);
     rule();
   }
@@ -842,9 +853,11 @@ export async function renderReportPdf(
       for (const cambio of relato.changes) {
         // El bloque entero de un tirón: partir una ficha entre dos páginas
         // dejaría un título huérfano al pie.
-        room(cambio.description ? 58 : 44);
+        // RN-REP-30 · lo que se lee es el texto editado si lo hay.
+        const descripcion = changeDescription(cambio);
+        room(descripcion ? 58 : 44);
         at(fechaCorta(cambio.requestedAt), MARGIN, y, { size: 9, color: SOFT });
-        at(fit(cambio.title ?? cambio.code, 280, 10.5, bold), MARGIN + 60, y, { size: 10.5, font: bold });
+        at(fit(changeTitle(cambio), 280, 10.5, bold), MARGIN + 60, y, { size: 10.5, font: bold });
         const tipo = changeCategoryText(cambio, labels);
         at(tipo, PAGE_WIDTH - MARGIN - regular.widthOfTextAtSize(sanitize(tipo), 9), y, {
           size: 9,
@@ -852,8 +865,8 @@ export async function renderReportPdf(
         });
         y -= 14;
 
-        if (cambio.description) {
-          for (const linea of wrap(cambio.description, 80)) {
+        if (descripcion) {
+          for (const linea of wrap(descripcion, 80)) {
             at(linea, MARGIN + 60, y, { size: 9.5, color: SOFT });
             y -= 12;
           }

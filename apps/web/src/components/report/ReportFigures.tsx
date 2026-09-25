@@ -7,6 +7,8 @@ import { EmptyReason } from "@/components/ui/EmptyReason";
 import {
   type ReportSectionKey,
   type ReportSnapshot,
+  changeDescription,
+  changeTitle,
   figuresOfSection,
   orderedActivity,
   orderedSections,
@@ -135,11 +137,12 @@ function MonthActivity({ snapshot }: { snapshot: ReportSnapshot }) {
             {relato.changes.map((cambio) => (
               <li key={cambio.code} className="rounded-[10px] bg-soft-surface p-3 text-sm">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                  <span className="font-semibold text-text">{cambio.title ?? cambio.code}</span>
+                  {/* RN-REP-30 · el texto que se lee es el editado si lo hay. */}
+                  <span className="font-semibold text-text">{changeTitle(cambio)}</span>
                   <span className="text-xs text-text-secondary">{changeCategoryText(cambio, t)}</span>
                 </div>
-                {cambio.description ? (
-                  <p className="mt-1 text-text-secondary">{cambio.description}</p>
+                {changeDescription(cambio) ? (
+                  <p className="mt-1 text-text-secondary">{changeDescription(cambio)}</p>
                 ) : null}
                 <p className="mt-1 text-xs text-text-secondary">{changeDatesText(cambio, t)}</p>
               </li>
@@ -158,10 +161,16 @@ function MonthActivity({ snapshot }: { snapshot: ReportSnapshot }) {
                 className="flex flex-wrap items-baseline gap-x-2 rounded-[10px] bg-soft-surface p-3 text-sm"
               >
                 <span className="text-xs text-text-secondary">{fechaCorta(entrada.at)}</span>
-                <span className="font-semibold text-text">{t.activity.kinds[entrada.kind]}</span>
-                {activitySubject(entrada) ? (
-                  <span className="text-text-secondary">{activitySubject(entrada)}</span>
-                ) : null}
+                {entrada.editedText ? (
+                  <span className="font-semibold text-text">{entrada.editedText}</span>
+                ) : (
+                  <>
+                    <span className="font-semibold text-text">{t.activity.kinds[entrada.kind]}</span>
+                    {activitySubject(entrada) ? (
+                      <span className="text-text-secondary">{activitySubject(entrada)}</span>
+                    ) : null}
+                  </>
+                )}
               </li>
             ))}
           </ul>
@@ -243,6 +252,12 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
             <section key={section.key} className="space-y-2">
               <h4 className="text-sm font-semibold text-primary-dark">{t.sections[section.key]}</h4>
               {note ? <p className="text-sm text-text">{note}</p> : null}
+              {/* RN-REP-19, punto 3 · la línea que dice de quién es el resumen. */}
+              {section.key === "executive_summary" && note && snapshot.summary ? (
+                <p className="text-xs text-text-secondary">
+                  {snapshot.summary.auto ? t.autoSummary.autoLine : t.autoSummary.editedLine}
+                </p>
+              ) : null}
 
               {section.key === "opportunities" ? (
                 <>

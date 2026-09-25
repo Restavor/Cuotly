@@ -15,8 +15,10 @@
  *     `metric_points`, que es lo que las sincronizaciones ya trajeron. Por
  *     eso un informe de un periodo cerrado sale igual meses después.
  *   · **Lo que se guarda** es una **versión** (RN-REP-12): cifras, claves
- *     de sección y fechas. Ni una frase generada — §93: "el informe
- *     automático por correo no necesita IA", y aquí no hay ninguna.
+ *     de sección y fechas. Sin IA — §93: "el informe automático por correo
+ *     no necesita IA", y aquí no hay ninguna. La única frase que se guarda
+ *     es la del resumen ejecutivo automático (RN-REP-28, decisión 78), que
+ *     son frases fijas rellenadas con cifras (`report-summary.ts`).
  *
  * Todo lo externo entra por `ReportGateway`, así que esto se prueba entero
  * sin base de datos y sin red.
@@ -56,7 +58,9 @@ import {
   type WeeklySeries,
   CHANGE_EFFECT_WINDOW_DAYS,
   EMPTY_MONTH_ACTIVITY,
+  applyEntryTexts,
   changeEffects,
+  executiveSummaryFacts,
   changeTimings,
   isBlockReason,
   opportunityFollowUp,
@@ -74,6 +78,8 @@ import {
 } from "@/core/reports";
 import { todayInTimeZone } from "@/core/finance";
 import type { TimerEvent } from "@/core/timer-events";
+
+import { executiveSummaryText } from "./report-summary";
 
 import type { ProviderState, ReportGateway, ReportRow } from "./report-gateway";
 
@@ -518,15 +524,23 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     Un informe que sí la lleva ya solo lo ve quien tiene "Pagos y
     facturas", así que el dinero no alcanza a nadie que no pudiera verlo.
   */
+  /*
+    RN-REP-30 (decisión 78) · encima del relato, lo que el equipo
+    reescribió antes de subirlo. El original viaja al lado: la versión
+    dice las dos cosas y la pantalla de revisión sabe qué se tocó.
+  */
   const activity = incluidas.has("month_activity")
-    ? parseMonthActivity(
-        await deps.gateway.monthActivity(
-          report.spaceId,
-          report.establishmentId,
-          period.start,
-          period.end,
-          incluidas.has("finance"),
+    ? applyEntryTexts(
+        parseMonthActivity(
+          await deps.gateway.monthActivity(
+            report.spaceId,
+            report.establishmentId,
+            period.start,
+            period.end,
+            incluidas.has("finance"),
+          ),
         ),
+        report.entryTexts ?? new Map(),
       )
     : EMPTY_MONTH_ACTIVITY;
 
@@ -698,6 +712,33 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     }
   }
 
+  // RN-REP-13 · solo las notas de las secciones que ENTRAN. La versión
+  // se le envía al restaurante, y una nota de una sección que el equipo
+  // desmarcó es preparación interna: el PDF no la pinta, pero viajaba
+  // dentro del `snapshot` y desde ahí se leía. Lo encontró la revisión
+  // del Hito 16 (14/09/2026).
+  const notes: Record<string, string> = Object.fromEntries(
+    Object.entries(report.notes).filter(([key]) =>
+      report.sections.some((section) => section.key === key && section.included),
+    ),
+  );
+
+  /*
+    RN-REP-28 (decisión 78) · el resumen ejecutivo nace escrito, con frases
+    fijas y las cifras de ESTA versión. Si una persona lo reescribió, manda
+    su texto; si no, va el automático, que se recalcula en cada versión para
+    no repetir las cifras de la anterior. Se guardan las dos cosas.
+  */
+  let summary: { auto: boolean; autoText: string } | undefined;
+  if (incluidas.has("executive_summary")) {
+    const autoText = executiveSummaryText(
+      executiveSummaryFacts({ period, figures: conAnio, sections: report.sections, activity, allowance }),
+    );
+    const escrito = notes.executive_summary;
+    summary = { auto: escrito === undefined, autoText };
+    if (escrito === undefined && autoText !== "") notes.executive_summary = autoText;
+  }
+
   return {
     category: report.category,
     period,
@@ -713,16 +754,8 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     planUsage: usage,
     followUp,
     opportunities,
-    // RN-REP-13 · solo las notas de las secciones que ENTRAN. La versión
-    // se le envía al restaurante, y una nota de una sección que el equipo
-    // desmarcó es preparación interna: el PDF no la pinta, pero viajaba
-    // dentro del `snapshot` y desde ahí se leía. Lo encontró la revisión
-    // del Hito 16 (14/09/2026).
-    notes: Object.fromEntries(
-      Object.entries(report.notes).filter(([key]) =>
-        report.sections.some((section) => section.key === key && section.included),
-      ),
-    ),
+    notes,
+    ...(summary === undefined ? {} : { summary }),
   };
 }
 

@@ -5119,6 +5119,9 @@ export const es = {
       // Fase 3, Hito 16 · informes (§89 a §95).
       "report.created": "Informe preparado",
       "report.renamed": "Informe renombrado",
+      // Decisión 78 · subir desde la ficha y los textos editables.
+      "report.channel_changed": "Canal de envío del informe cambiado",
+      "report.entry_texts_changed": "Textos del informe reescritos",
       "report.scheduled": "Envío de informe programado",
       "report.sections_changed": "Secciones del informe cambiadas",
       "report.send_blocked": "Envío detenido: hay oportunidades pendientes",
@@ -5328,7 +5331,8 @@ export const es = {
     },
     // Lo que la maqueta escribe en pequeño junto a cada casilla.
     sectionHints: {
-      executive_summary: "Lo escribe una persona. Cuotly no lo redacta.",
+      // Decisión 78 · nace escrito con frases fijas y se puede reescribir.
+      executive_summary: "Nace escrito con frases fijas a partir de las cifras, sin IA. Se puede reescribir.",
       month_activity: "El relato del periodo, día a día. Cuotly lo ordena: no lo escribe.",
       operation: "Solicitudes, trabajos, plazos, bloqueos, consumos y menús.",
       finance: "Ingresos, cobros, impagos y renovaciones.",
@@ -5396,7 +5400,90 @@ export const es = {
     },
     judgementBadge: "Requiere criterio",
     judgementHint:
-      "Esta sección la escribe o la elige una persona. Cuotly no la redacta: no hay ninguna regla que genere ese texto.",
+      "Esta sección la revisa una persona. El resumen ejecutivo nace con frases fijas a partir de las cifras (sin IA) y se puede reescribir; las oportunidades se eligen una a una.",
+
+    // RN-REP-28 (decisión 78) · el resumen ejecutivo automático. Frases
+    // fijas rellenadas con las cifras de la versión: dicen HECHOS, nunca
+    // valoran ("buen mes", "mejoró"), y cada una solo si tiene su dato.
+    autoSummary: {
+      noChanges: (mes: string) => `En ${mes} no hubo cambios.`,
+      changes: (mes: string, entregados: number, enProceso: number, pendientes: number) => {
+        const partes: string[] = [];
+        partes.push(
+          entregados === 1 ? "se entregó 1 cambio" : entregados === 0 ? "no se entregó ningún cambio" : `se entregaron ${entregados} cambios`,
+        );
+        if (enProceso > 0) partes.push(enProceso === 1 ? "1 sigue en proceso" : `${enProceso} siguen en proceso`);
+        if (pendientes > 0) {
+          partes.push(pendientes === 1 ? "1 está pendiente de empezar" : `${pendientes} están pendientes de empezar`);
+        }
+        const unidas = partes.length === 1 ? partes[0] : `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}`;
+        return `En ${mes} ${unidas}.`;
+      },
+      // "Has usado 2 de tus 5 cambios pequeños y 1 de tus 2 fotografías."
+      allowance: (partes: readonly string[]) =>
+        `Has usado ${partes.length === 1 ? partes[0] : `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}`}.`,
+      allowancePart: (usados: number, incluidos: number, categoria: string) =>
+        `${usados} de ${incluidos === 1 ? "tu" : "tus"} ${incluidos} ${categoria}`,
+      // La categoría en plural o singular según lo incluido: "de tus 5
+      // cambios pequeños", "de tu 1 cambio mediano".
+      categoryNames: {
+        small: { one: "cambio pequeño", many: "cambios pequeños" },
+        photo: { one: "fotografía", many: "fotografías" },
+        medium: { one: "cambio mediano", many: "cambios medianos" },
+        large: { one: "cambio grande", many: "cambios grandes" },
+      },
+      budgeted: (n: number) =>
+        n === 1 ? "1 cambio se presupuestó aparte y no gastó de tu plan." : `${n} cambios se presupuestaron aparte y no gastaron de tu plan.`,
+      menus: (n: number) => (n === 1 ? "Se publicó 1 menú del día." : `Se publicaron ${n} menús del día.`),
+      startCompliance: (pct: number) => `El ${pct} % de los cambios empezó dentro de plazo.`,
+      visits: (n: string) => `La web recibió ${n} visitas.`,
+      // La línea que dice de quién es el texto (RN-REP-19, punto 3).
+      autoLine: "Resumen generado por Cuotly con las cifras del periodo.",
+      editedLine: "Resumen revisado por el equipo.",
+    },
+
+    // RN-REP-27 y RN-REP-29 (decisión 78) · el informe del mes en la ficha.
+    monthly: {
+      title: "Informe del mes",
+      name: (mes: string) => `Informe de ${mes}`,
+      hint: (mes: string) =>
+        `Todo lo que ha pasado en ${mes}, con lo que incluye su plan. Cuotly lo genera; tú lo revisas si quieres y lo subes para que lo vea el restaurante.`,
+      notGenerated: (mes: string) => `El informe de ${mes} todavía no se ha generado.`,
+      generate: "Generar informe",
+      regenerate: "Volver a generar",
+      generating: "Generando…",
+      regenerateHint: "Vuelve a calcular las cifras y añade una versión nueva. La anterior se conserva.",
+      regeneratedReason: "Se volvió a generar después de aprobarlo",
+      publish: "Subir informe",
+      publishing: "Subiendo…",
+      review: "Revisar informe",
+      view: "Ver informe",
+      published: "Informe subido. El restaurante ya lo ve y le ha llegado el aviso.",
+      sentOn: (fecha: string) => `Subido el ${fecha}. El restaurante ya lo ve.`,
+      generatedOn: (fecha: string) => `Generado el ${fecha}.`,
+      noApprovePermission: "Subirlo lo hace quien tiene el permiso «Aprobar informes».",
+      // La alerta de RN-REP-29.
+      confirmTitle: "Este informe no se ha revisado",
+      confirmBody:
+        "Nadie lo ha aprobado todavía. Si lo subes ahora, el restaurante lo verá tal y como está y le llegará el aviso. Quedará registrado que lo subiste sin revisar.",
+      confirmPublish: "Subir sin revisar",
+      confirmReview: "Cancelar y revisar",
+    },
+
+    // RN-REP-30 (decisión 78) · los textos editables del relato del mes.
+    texts: {
+      title: "Textos de «Lo que ha pasado este mes»",
+      hint:
+        "Puedes reescribir cómo se cuenta cada cambio y cada línea antes de subir el informe. Lo que escribas aquí lo lee el restaurante: no pongas el nombre de nadie del equipo. Si dejas un texto vacío o como estaba, vuelve al original.",
+      changeTitle: "Título",
+      changeDescription: "Descripción",
+      entryText: "Texto",
+      edited: "Editado",
+      save: "Guardar textos",
+      saved: "Textos guardados. Se ha generado una versión nueva con ellos.",
+      empty: "Este informe no trae nada en «Lo que ha pasado este mes» que se pueda editar.",
+      readOnly: "Un informe subido no se edita.",
+    },
     objectiveOnly:
       "Solo lleva secciones objetivas, así que puede programarse sin aprobación (§95).",
     needsApproval:

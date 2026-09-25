@@ -568,6 +568,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/grupos_crear_editar_y_mover.sql
 
+      - name: "Suite 76 — El informe del mes desde la ficha: subir exige 'Aprobar informes' y confirmar lo no revisado, sale con push, dos pulsos son uno, y los textos editables son del equipo (migración 137, RN-REP-27 a 30, decisión 78)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_informe_del_mes_desde_la_ficha.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
