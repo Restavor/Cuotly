@@ -6,9 +6,24 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 24/09/2026 (136).
+Actualizado el 25/09/2026 (137).
 
 ## Pendiente de aplicar
+
+**Actualización del 25/09/2026: la 137.** `el_informe_del_mes_desde_la_ficha` (decisión 78,
+RN-REP-27 a 30): la tabla `report_entry_texts` y las funciones `set_report_entry_texts()` y
+`publish_report()`. Se comprobó en local: la suite 76 pasa, falla con tres mutaciones (sin exigir
+la confirmación, sin el canal del push y sin devolver a revisión) y siguen pasando los barridos de
+`hito7`, `plataforma_panel_soporte_y_2fa` y `plataforma_suscripcion_de_cuotly`, y las suites de
+informes.
+
+**Aplicada el 25/09/2026 por el MCP**, con Bosco de acuerdo. Antes se comprobó en vivo que la última
+aplicada era la 136, que no existía ni la tabla ni ninguna de las dos funciones, y que había 0
+informes en el proyecto. Después: 232 migraciones registradas; `report_entry_texts` con RLS, una
+sola política (`select`) y sus dos disparadores de solo lectura; las dos funciones sin EXECUTE para
+`anon` y con él para `authenticated`; `send_report()` es la de la 86, con la tabla de transiciones,
+que es la que `publish_report()` llama. Lo aplicado es el archivo del repositorio sin los
+comentarios de cabecera y de dentro de las funciones: el SQL que se ejecuta es el mismo.
 
 **Actualización del 24/09/2026: la 136.** `informes_de_finanzas_con_la_clave_de_servicio`
 redefine `can_read_establishment_finance()` para que responda que sí a la clave de servicio. Sin

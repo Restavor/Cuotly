@@ -5290,7 +5290,7 @@ Bosco pidió generar el informe desde la ficha del restaurante con dos botones, 
   secciones genera una versión nueva, así que lo revisado es lo que se sube.
 - **Enmiendas al PRD:** RN-REP-09, RN-REP-19 (punto 3) y la nota de cierre del §29, porque el
   resumen ya no lo escribe siempre una persona. Reglas nuevas: RN-REP-27 a RN-REP-30.
-- **Pendiente de aplicar** la migración 137 al proyecto real de Supabase.
+- La migración 137 está **aplicada** al proyecto real de Supabase desde el 25/09/2026.
 
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
