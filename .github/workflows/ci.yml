@@ -580,7 +580,7 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_trabajador_lleva_los_informes_de_su_restaurante.sql
 
-      - name: "Suite 78 — Retirar a alguien del equipo: solo el propietario y con motivo, nunca al propietario ni desde soporte; sus trabajos y tareas quedan para reasignar, pierde el acceso y se conserva su historial (migración 139, §4.5, RN-MIE-01 a 07, decisión 80)"
+      - name: "Suite 78 — Retirar a alguien del equipo: solo el propietario y con motivo, nunca al propietario ni desde soporte; sus trabajos y tareas quedan para reasignar, pierde el acceso y se conserva su historial (migración 139, §4.5, RN-MIE-01 a 08, decisión 80)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \

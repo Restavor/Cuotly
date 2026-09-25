@@ -2270,10 +2270,9 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     - **Retirar a una persona del equipo no existía**: el estado `access_revoked` de §4.5 estaba en el
       modelo desde la migración 2 y nada lo ponía. Ahora lo pone el propietario desde Equipo →
       Permisos → la persona → "Retirar del equipo", con lo que §4.5 manda que ocurra.
-    - **Propuesto por Claude, pendiente de que Bosco lo confirme** (no estaba escrito y se ha elegido
-      lo más prudente): que Modo soporte no pueda retirar a nadie (RN-MIE-02); que quien vuelve con
-      una invitación nueva vuelva sin sus restaurantes y especialidades de antes (RN-MIE-07); y que no
-      se avise por correo a la persona retirada — hoy tampoco se avisa a quien pierde el acceso a un
-      restaurante.
+    - **Propuesto por Claude y confirmado por Bosco el 25/09/2026** (no estaba escrito): que Modo
+      soporte no pueda retirar a nadie (RN-MIE-02); que quien vuelve con una invitación nueva vuelva
+      sin sus restaurantes y especialidades de antes (RN-MIE-07); y que no se avise a la persona
+      retirada, igual que hoy no se avisa a quien pierde el acceso a un restaurante (RN-MIE-08).
 
-    Reglas en el PRD: RN-MIE-01 a RN-MIE-07 (§4.5). Migración 139, suite 78.
+    Reglas en el PRD: RN-MIE-01 a RN-MIE-08 (§4.5). Migración 139, suite 78.

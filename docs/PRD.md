@@ -146,6 +146,9 @@ todo su historial**.
 - **RN-MIE-07**: **no toca a nadie de un restaurante**: sus usuarios tienen su propio "retirar acceso"
   (RN-EST-05). Si la persona tiene que **volver**, se la invita de nuevo y vuelve **sin** los permisos
   de antes (RN-ASG-01: una autorización nunca se da por defecto).
+- **RN-MIE-08**: a la persona retirada **no se le manda ningún aviso** (ni en Cuotly, ni por correo,
+  ni push), igual que no se avisa a quien pierde el acceso a un restaurante (RN-EST-05). Los únicos
+  avisos que salen son los de reasignación, a propietario y administradores (RN-MIE-03).
 
 Lo mismo pasa si el estado se cambia a `inactive` o `access_revoked` por cualquier otra vía: las
 consecuencias de RN-MIE-03 a 05 las pone un disparador, no la función.

@@ -1,6 +1,6 @@
 -- ============================================================
 -- Suite 78 · Retirar a alguien del equipo de mantenimiento
--- (migración 139, decisión 80, PRD §4.5, RN-MIE-01 a RN-MIE-07)
+-- (migración 139, decisión 80, PRD §4.5, RN-MIE-01 a RN-MIE-08)
 -- ============================================================
 --
 -- Lo que vigila:
@@ -20,6 +20,7 @@
 --   · RN-MIE-06 · retirarlo dos veces no hace nada la segunda.
 --   · RN-MIE-07 · no toca a nadie de un restaurante; y una invitación nueva
 --     le devuelve la entrada, sin sus autorizaciones de antes.
+--   · RN-MIE-08 · a la persona retirada no le llega ningún aviso.
 --   · Un `update` directo por PostgREST tiene las mismas consecuencias.
 --   · `anon` no ejecuta la función; el disparador no lo ejecuta nadie.
 --
@@ -258,6 +259,14 @@ begin
     and recipient_id not in ('e7800000-0000-0000-0000-000000000001', 'e7800000-0000-0000-0000-000000000002');
   if v_n <> 0 then
     raise exception 'RN-MIE-03 FALLIDO: el aviso de reasignación llegó a quien no decide (% avisos)', v_n
+      using errcode = 'assert_failure';
+  end if;
+
+  -- RN-MIE-08 · a Eva no le llega nada: ni en Cuotly ni por ningún canal.
+  select count(*) into v_n from public.notifications
+  where space_id = v_space and recipient_id = v_eva;
+  if v_n <> 0 then
+    raise exception 'RN-MIE-08 FALLIDO: a la persona retirada le han llegado % avisos', v_n
       using errcode = 'assert_failure';
   end if;
 
