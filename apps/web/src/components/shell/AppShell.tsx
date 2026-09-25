@@ -25,6 +25,9 @@ import {
   type NavDestination,
   type ShellRole,
 } from "./navigation";
+import { MobileContextCard, type ShellContext } from "./MobileContextCard";
+
+export type { ShellContext } from "./MobileContextCard";
 
 export interface SearchResult {
   readonly kind: string;
@@ -90,6 +93,7 @@ export function AppShell({
   establishmentId = null,
   establishmentName = null,
   establishments = [],
+  contexts = [],
   supportSession = null,
   userAvatarUrl = null,
   unreadMessages = 0,
@@ -145,6 +149,11 @@ export function AppShell({
    * mantenimiento que estén. Con uno solo no se pinta selector (RN-PAN-05).
    */
   establishments?: readonly PanelEstablishment[];
+  /**
+   * Móvil · todos los espacios y paneles de quien mira, para el
+   * desplegable de la tarjeta de contexto. Salen de `my_contexts()`.
+   */
+  contexts?: readonly ShellContext[];
   /**
    * Hito 19 (§129, RN-ADM-07) · si quien mira es de Cuotly y está dentro en
    * Modo soporte, se pinta una banda que lo dice —nivel, tiempo que queda,
@@ -579,45 +588,17 @@ export function AppShell({
             */}
             {esGlobal ? null : (
               <div data-testid="mobile-context" className="lg:hidden">
-                {esPanel ? (
-                  <PanelContextBox
-                    name={contextName}
-                    current={establishmentId}
-                    establishments={establishments}
-                    tone="light"
-                  />
-                ) : (
-                  <Link
-                    href="/"
-                    aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
-                    className="grid grid-cols-[minmax(0,1fr)_auto] gap-1.5 rounded-field focus:outline focus:outline-2 focus:outline-cuotly-green"
-                  >
-                    {/*
-                      Página 22 del diseño móvil: el espacio con su rol a
-                      la izquierda y "Cambiar de espacio" a la derecha, en
-                      una fila. Sigue siendo UN enlace (ver el menú
-                      lateral): las dos mitades llevan al mismo sitio.
-                    */}
-                    <span
-                      aria-hidden="true"
-                      className="flex min-w-0 items-center gap-2 rounded-field border border-border bg-surface px-2.5 py-2 transition-colors hover:border-cuotly-green"
-                    >
-                      <Icon name="building" className="h-5 w-5 shrink-0 text-primary-dark" />
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-semibold text-text">{spaceName}</span>
-                        <span className="block truncate text-[11px] text-text-secondary">{roleLabel}</span>
-                      </span>
-                      <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-text-secondary" />
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className="flex items-center gap-1.5 rounded-field border border-cuotly-green/15 bg-cuotly-green/10 px-2.5 py-2 text-xs font-medium text-primary-dark"
-                    >
-                      <Icon name="switchSpace" className="h-3.5 w-3.5" />
-                      {es.nav.switchSpace}
-                    </span>
-                  </Link>
-                )}
+                {/*
+                  A la izquierda, dónde estás; tocarla despliega todos tus
+                  espacios y paneles. A la derecha, "Volver al inicio
+                  global". Igual en el espacio y en el panel.
+                */}
+                <MobileContextCard
+                  name={esPanel ? contextName : spaceName}
+                  detail={esPanel ? es.restaurantPanel.label : roleLabel}
+                  currentHref={contextHome}
+                  contexts={contexts}
+                />
               </div>
             )}
           </header>
@@ -779,41 +760,26 @@ export function AppShell({
  * un manejador, y `Escape` lo cierra solo. La misma razón por la que el
  * resto del armazón navega con enlaces de verdad (CA-22).
  */
-/**
- * Los dos tonos de la caja del panel: sobre el verde del menú lateral
- * (escritorio) y sobre blanco, bajo la cabecera (móvil). Mismo contenido y
- * mismo comportamiento; solo cambian los colores.
- */
-const PANEL_BOX_TONES = {
-  dark: {
-    box: "border-sidebar-border bg-sidebar-raised [&[open]]:border-accent-green",
-    title: "text-surface",
-    sub: "text-sidebar-text",
-    divider: "border-sidebar-border",
-    item: "text-sidebar-text hover:bg-primary hover:text-surface",
-  },
-  light: {
-    box: "border-border bg-surface [&[open]]:border-cuotly-green",
-    title: "text-text",
-    sub: "text-text-secondary",
-    divider: "border-border",
-    item: "text-text hover:bg-soft-surface",
-  },
+/** Los colores de la caja del panel, sobre el verde del menú lateral. */
+const PANEL_BOX = {
+  box: "border-sidebar-border bg-sidebar-raised [&[open]]:border-accent-green",
+  title: "text-surface",
+  sub: "text-sidebar-text",
+  divider: "border-sidebar-border",
+  item: "text-sidebar-text hover:bg-primary hover:text-surface",
 } as const;
 
 function PanelContextBox({
   name,
   current,
   establishments,
-  tone = "dark",
 }: {
   name: string;
   current: string | null;
   establishments: readonly PanelEstablishment[];
-  tone?: keyof typeof PANEL_BOX_TONES;
 }) {
   const otros = establishments.filter((e) => e.id !== current);
-  const c = PANEL_BOX_TONES[tone];
+  const c = PANEL_BOX;
 
   const identidad = (
     <span className="flex items-center gap-2 px-3 py-2.5">

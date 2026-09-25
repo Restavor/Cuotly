@@ -1136,6 +1136,16 @@ export const es = {
     menuLabel: "Menú del espacio",
     breadcrumbLabel: "Dónde estás",
     account: "Mi cuenta",
+    /**
+     * Móvil · la tarjeta de contexto: a la izquierda el desplegable con
+     * todos tus espacios y paneles, a la derecha la vuelta a `/`.
+     */
+    contextPicker: {
+      open: "Cambiar de espacio o restaurante",
+      maintenance: "Mantenimiento",
+      restaurants: "Restaurantes",
+      backToGlobal: "Volver al inicio global",
+    },
   },
 
   /**

@@ -4,6 +4,7 @@ import { AccessRemoved } from "@/components/access/AccessStates";
 import {
   AppShell,
   type PanelEstablishment,
+  type ShellContext,
   type ShellNotification,
 } from "@/components/shell/AppShell";
 import { isClientRole, isStaffRole } from "@/components/shell/navigation";
@@ -93,15 +94,44 @@ export default async function SpaceLayout({
    * lo mismo. Preguntarlo aquí de otra manera sería un segundo criterio de
    * "mis restaurantes" que un día diría otra cosa (RN-PAN-02: el panel no
    * estrena ninguna capacidad).
-   *
-   * Solo se pregunta cuando quien mira es del lado cliente. Para el equipo
-   * no hace falta y sería una consulta por pantalla que nadie usa.
    */
   let establishments: readonly PanelEstablishment[] = [];
   let establishmentName: string | null = null;
 
+  /*
+   * Móvil · la tarjeta de contexto despliega TODOS los espacios y paneles
+   * de quien mira, para saltar entre ellos. Es la misma `my_contexts()`, y
+   * ahora se pregunta para todos. Si falla, la lista queda vacía y la
+   * tarjeta se pinta sin desplegable: la vuelta al Inicio global sigue ahí.
+   */
+  const { data: contextos } = await supabase.rpc("my_contexts");
+  const contexts: ShellContext[] = (contextos ?? []).flatMap((c): ShellContext[] => {
+    if (c.kind === "space") {
+      return [
+        {
+          key: `space:${c.space_id}`,
+          kind: "space",
+          name: c.space_name ?? "",
+          detail: c.role ? es.roles[c.role as keyof typeof es.roles] : "",
+          href: `/espacios/${c.space_slug ?? ""}`,
+        },
+      ];
+    }
+    if (c.kind === "establishment" && c.establishment_id !== null) {
+      return [
+        {
+          key: `panel:${c.establishment_id}`,
+          kind: "panel",
+          name: c.establishment_name ?? "",
+          detail: es.restaurantPanel.label,
+          href: `/espacios/${c.space_slug ?? slug}/restaurantes/${c.establishment_id}`,
+        },
+      ];
+    }
+    return [];
+  });
+
   if (isClientRole(role)) {
-    const { data: contextos } = await supabase.rpc("my_contexts");
     establishments = (contextos ?? [])
       .filter((c) => c.kind === "establishment" && c.establishment_id !== null)
       .map((c) => ({
@@ -149,6 +179,7 @@ export default async function SpaceLayout({
       establishmentId={establishmentId}
       establishmentName={establishmentName}
       establishments={establishments}
+      contexts={contexts}
       supportSession={
         supportSession
           ? {

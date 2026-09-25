@@ -64,22 +64,32 @@ describe("§20.3 · la barra de móvil", () => {
 });
 
 /*
- * Diseño móvil (decisión 76) · bajo la cabecera va la tarjeta de contexto
- * —el espacio con su rol y "Cambiar de espacio", o el restaurante con su
- * selector—, no la miga de pan. Y en el contexto global no va nada: no hay
- * espacio del que cambiar.
+ * Diseño móvil (decisión 76) · bajo la cabecera va la tarjeta de contexto,
+ * no la miga de pan. A la izquierda, dónde estás, y al tocarla todos tus
+ * espacios y paneles; a la derecha, "Volver al inicio global" (25/09/2026:
+ * antes decía "Cambiar de espacio" y llevaba al mismo sitio sin decirlo).
+ * En el contexto global no va nada: no estás dentro de nada.
  */
 describe("diseño móvil · la tarjeta de contexto", () => {
   const movil = SHELL.slice(SHELL.indexOf('data-testid="mobile-context"') - 400);
+  const TARJETA = readFileSync(
+    join(process.cwd(), "src/components/shell/MobileContextCard.tsx"),
+    "utf8",
+  );
 
   it("la cabecera de móvil lleva la tarjeta de contexto y solo fuera del contexto global", () => {
     expect(SHELL).toContain('data-testid="mobile-context"');
     expect(movil.slice(0, 420)).toContain("esGlobal ? null");
+    expect(movil).toContain("<MobileContextCard");
   });
 
-  it("la tarjeta ofrece cambiar de espacio, y en el panel es el selector de restaurante", () => {
-    expect(movil).toContain("es.nav.switchSpace");
-    expect(movil).toContain('tone="light"');
+  it("la tarjeta despliega espacios y paneles por separado, y el botón vuelve al inicio global", () => {
+    expect(TARJETA).toContain("<details");
+    expect(TARJETA).toContain("grupo(t.maintenance, espacios)");
+    expect(TARJETA).toContain("grupo(t.restaurants, paneles)");
+    expect(TARJETA).toContain('href="/"');
+    expect(TARJETA).toContain("t.backToGlobal");
+    expect(TARJETA).not.toContain("switchSpace");
   });
 });
 
