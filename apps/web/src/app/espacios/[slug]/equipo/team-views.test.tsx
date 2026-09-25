@@ -9,6 +9,7 @@ import { InvitationsTab, MembersTab, PermissionsTab, SupervisionTab } from "./Te
 vi.mock("./actions", () => ({
   saveMemberPermissions: vi.fn(),
   cancelInvitation: vi.fn(),
+  removeMember: vi.fn(),
 }));
 vi.mock("@/app/espacios/actions", () => ({ inviteMember: vi.fn() }));
 
@@ -152,6 +153,46 @@ describe("M70 · Permisos", () => {
   it("un historial que no se pudo leer se dice", () => {
     render(<PermissionsTab slug="s" spaceId="sp" data={team()} personId={WORKER} history={null} timeZone="Europe/Madrid" />);
     expect(screen.getByText(t.permissions.historyFailed)).toBeTruthy();
+  });
+});
+
+describe("Decisión 80 · Retirar del equipo", () => {
+  const tp = t.permissions;
+  const ver = (data: TeamData, personId: string) =>
+    render(<PermissionsTab slug="s" spaceId="sp" data={data} personId={personId} history={[]} timeZone="Europe/Madrid" />);
+
+  it("RN-MIE-01 · el propietario ve el formulario, con motivo y el nombre a escribir (§140)", () => {
+    ver(team(), WORKER);
+    expect(screen.getByRole("button", { name: tp.removeSubmit })).toBeTruthy();
+    expect(screen.getByLabelText(tp.removeReasonLabel)).toBeTruthy();
+    expect(screen.getByLabelText(tp.removeConfirmationLabel("Diego"))).toBeTruthy();
+  });
+
+  it("RN-MIE-01 · a un administrador no se le ofrece retirar a nadie", () => {
+    ver(team({ caps: { manageSpace: false, invite: false, assignJobs: true } }), WORKER);
+    expect(screen.queryByRole("button", { name: tp.removeSubmit })).toBeNull();
+    expect(screen.queryByText(tp.removeTitle)).toBeNull();
+  });
+
+  it("RN-MIE-02 · al propietario no se le retira: se le manda a transferir la propiedad", () => {
+    ver(team(), OWNER);
+    expect(screen.queryByRole("button", { name: tp.removeSubmit })).toBeNull();
+    expect(screen.getByText(tp.removeOwnerTitle)).toBeTruthy();
+    expect(screen.getByRole("link", { name: tp.removeOwnerLink }).getAttribute("href")).toBe(
+      "/espacios/s/ajustes/propiedad",
+    );
+  });
+
+  it("RN-MIE-06 · a quien ya está fuera no se le retira otra vez ni se le cambian los permisos", () => {
+    const base = team();
+    const data = team({
+      members: base.members.map((m) => (m.userId === WORKER ? { ...m, status: "access_revoked" } : m)),
+    });
+    ver(data, WORKER);
+    expect(screen.queryByRole("button", { name: tp.removeSubmit })).toBeNull();
+    expect(screen.getByText(tp.removedTitle)).toBeTruthy();
+    expect((screen.getByRole("checkbox", { name: "Magariños" }) as HTMLInputElement).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: tp.save })).toBeNull();
   });
 });
 

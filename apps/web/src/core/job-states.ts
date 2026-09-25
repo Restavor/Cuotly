@@ -124,6 +124,16 @@ export const JOB_TRANSITIONS: readonly JobTransition[] = [
   { from: "in_progress", to: "reassignment_requested", actor: "worker", rule: "RN-ASG-07 · HU-22", t2: null, t3: null },
   { from: "reassignment_requested", to: "assigned", actor: "staff", rule: "RN-ASG-08/09 · CA-12", t2: null, t3: null },
   { from: "reassignment_requested", to: "in_progress", actor: "staff", rule: "RN-ASG-08/09 · CA-12", t2: null, t3: null },
+  // §4.5 · RN-MIE-03 (migración 139): quien se va del equipo deja sus
+  // trabajos vivos en reasignación, también los bloqueados o en pausa, y
+  // al aprobarla vuelven al estado que tenían. Sin tocar contadores: la
+  // pausa de T3 sigue abierta en `timer_events` mientras tanto.
+  { from: "assigned", to: "reassignment_requested", actor: "staff", rule: "§4.5 · RN-MIE-03", t2: null, t3: null },
+  { from: "in_progress", to: "reassignment_requested", actor: "staff", rule: "§4.5 · RN-MIE-03", t2: null, t3: null },
+  { from: "blocked_by_client", to: "reassignment_requested", actor: "staff", rule: "§4.5 · RN-MIE-03", t2: null, t3: null },
+  { from: "authorized_pause", to: "reassignment_requested", actor: "staff", rule: "§4.5 · RN-MIE-03", t2: null, t3: null },
+  { from: "reassignment_requested", to: "blocked_by_client", actor: "staff", rule: "RN-ASG-08 · RN-MIE-03", t2: null, t3: null },
+  { from: "reassignment_requested", to: "authorized_pause", actor: "staff", rule: "RN-ASG-08 · RN-MIE-03", t2: null, t3: null },
 
   { from: "in_progress", to: "blocked_by_client", actor: "worker", rule: "RN-JOB-08/09 · HU-19", t2: null, t3: "pause" },
   { from: "blocked_by_client", to: "in_progress", actor: "worker", rule: "RN-JOB-08 · CA-13", t2: null, t3: "resume" },

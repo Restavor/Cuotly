@@ -113,6 +113,45 @@ describe("job-states — RN-JOB, PRD §11", () => {
     });
   });
 
+  describe("§4.5 · RN-MIE-03: quien sale del equipo deja sus trabajos para reasignar", () => {
+    const vivos = ["assigned", "in_progress", "blocked_by_client", "authorized_pause"] as const;
+
+    it("RN-MIE-03: los cuatro estados vivos pasan a reasignación al retirarlo el propietario", () => {
+      for (const from of vivos) {
+        expect(canTransitionJobState(from, "reassignment_requested", "staff")).toBe(true);
+      }
+    });
+
+    it("RN-MIE-03: al aprobarla, cada uno vuelve al estado que tenía", () => {
+      for (const to of vivos) {
+        expect(canTransitionJobState("reassignment_requested", to, "staff")).toBe(true);
+      }
+    });
+
+    it("RN-MIE-03 · RN-ASG-09: ni la ida ni la vuelta tocan un contador (la pausa de T3 sigue abierta)", () => {
+      for (const estado of vivos) {
+        for (const transition of [
+          findJobTransition(estado, "reassignment_requested", "staff"),
+          findJobTransition("reassignment_requested", estado, "staff"),
+        ]) {
+          expect(transition?.t2).toBe(null);
+          expect(transition?.t3).toBe(null);
+        }
+      }
+    });
+
+    it("RN-MIE-03: un trabajo en corrección o terminado no se marca", () => {
+      for (const from of ["in_correction", "published", "completed"] as const) {
+        expect(canTransitionJobState(from, "reassignment_requested", "staff")).toBe(false);
+      }
+    });
+
+    it("RN-ASG-07: el trabajador sigue sin poder pedirla desde un bloqueo o una pausa", () => {
+      expect(canTransitionJobState("blocked_by_client", "reassignment_requested", "worker")).toBe(false);
+      expect(canTransitionJobState("authorized_pause", "reassignment_requested", "worker")).toBe(false);
+    });
+  });
+
   describe("HU-23 · RN-COR: corrección", () => {
     it("RN-COR-06: quien la ejecuta mueve el trabajo — la petición del cliente vive en la solicitud", () => {
       expect(canTransitionJobState("published", "in_correction", "worker")).toBe(true);

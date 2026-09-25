@@ -25,6 +25,7 @@ import {
   canPerformJobs,
   dayStatus,
   invitationExpired,
+  memberRemoval,
   shiftWeek,
   teamCounts,
   upcomingAbsences,
@@ -39,6 +40,7 @@ import {
   CancelInvitationButton,
   CopyInviteLinkButton,
   PermissionsForm,
+  RemoveMemberCard,
 } from "./TeamForms";
 import type {
   AbsenceRow,
@@ -425,11 +427,18 @@ export function PermissionsTab({
     person.role,
     person.establishmentIds,
   );
-  const editEstablishments = data.caps.assignJobs && esTrabajador;
-  const editSpecialties = data.caps.assignJobs && realiza;
-  const editAdminFlags = data.caps.manageSpace && esAdmin;
+  // Decisión 80 · a quien ya está fuera del equipo no se le cambian los
+  // permisos: volvería a tenerlos si se le invita de nuevo, y RN-ASG-01
+  // dice que una autorización nunca se da por defecto.
+  const retirada = memberRemoval(person.role, person.status, true) === "removed";
+  const editEstablishments = data.caps.assignJobs && esTrabajador && !retirada;
+  const editSpecialties = data.caps.assignJobs && realiza && !retirada;
+  const editAdminFlags = data.caps.manageSpace && esAdmin && !retirada;
+  const removal = memberRemoval(person.role, person.status, data.caps.manageSpace);
+  // A una persona retirada no se le explica quién cambia sus permisos:
+  // no se le cambian, y la tarjeta de abajo dice por qué.
   const soloLectura =
-    !editEstablishments && !editSpecialties && !editAdminFlags;
+    !retirada && !editEstablishments && !editSpecialties && !editAdminFlags;
   const yesNo = (v: boolean) => (v ? tp.yes : tp.no);
 
   const general = (
@@ -597,6 +606,17 @@ export function PermissionsTab({
         general={general}
         history={historial}
       />
+
+      {removal !== null ? (
+        <RemoveMemberCard
+          key={`retirar-${person.userId}`}
+          spaceId={spaceId}
+          slug={slug}
+          userId={person.userId}
+          name={person.name}
+          mode={removal}
+        />
+      ) : null}
     </div>
   );
 }

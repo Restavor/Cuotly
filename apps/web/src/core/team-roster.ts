@@ -176,3 +176,46 @@ export function canPerformJobs(role: string, adminFlag: boolean): boolean {
 export function invitationExpired(expiresAt: string, now: Date): boolean {
   return new Date(expiresAt).getTime() <= now.getTime();
 }
+
+/**
+ * Decisión 80 · qué ofrece la ficha de una persona para sacarla del
+ * equipo. No autoriza nada —`remove_space_member()` lo comprueba todo—;
+ * decide qué se pinta para no ofrecer un botón condenado a fallar:
+ *
+ * - RN-MIE-01 · solo el propietario retira (`manageSpace`). Los demás no
+ *   ven nada.
+ * - RN-MIE-02 · al propietario no se le retira: se le explica que antes
+ *   se transfiere la propiedad.
+ * - §4.5 · quien ya está fuera (`access_revoked` o `inactive`) no se
+ *   retira otra vez: se dice que está fuera y cómo vuelve.
+ */
+export type MemberRemoval = "form" | "owner" | "removed" | null;
+
+export function memberRemoval(role: string, status: string, manageSpace: boolean): MemberRemoval {
+  if (!manageSpace) return null;
+  if (status === "access_revoked" || status === "inactive") return "removed";
+  if (role === "owner") return "owner";
+  return "form";
+}
+
+/** Lo que ha quedado para reasignar al retirar a alguien (RN-MIE-03). */
+export interface RemovedMemberSummary {
+  readonly jobs: number;
+  readonly tasks: number;
+  readonly menus: number;
+  readonly corrections: number;
+}
+
+/**
+ * Lee el `jsonb` que devuelve `remove_space_member()`. Lo que no sea un
+ * número entero y no negativo cuenta como cero: el resumen es un aviso, y
+ * un campo que falte no puede inventar trabajos pendientes.
+ */
+export function readRemovedMemberSummary(value: unknown): RemovedMemberSummary {
+  const record = typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  const count = (key: string): number => {
+    const n = record[key];
+    return typeof n === "number" && Number.isInteger(n) && n >= 0 ? n : 0;
+  };
+  return { jobs: count("jobs"), tasks: count("tasks"), menus: count("menus"), corrections: count("other_jobs") };
+}

@@ -10594,6 +10594,11 @@ export type Database = {
         Args: { p_conversation_id: string; p_user_id: string };
         Returns: undefined;
       };
+      /** Migración 139 (§4.5, RN-MIE-01) · lo que ha quedado para reasignar. */
+      remove_space_member: {
+        Args: { p_reason: string; p_space_id: string; p_user_id: string };
+        Returns: Json;
+      };
       rename_report: {
         Args: { p_name: string; p_report_id: string };
         Returns: undefined;

@@ -312,6 +312,8 @@ export const AUDIT_ACTIONS = [
   "job.unblocked",
   // Fase 3, Hito 15 · "Aprobar informes", concedida persona a persona
   // (§97, migración 84), igual que `perform_jobs` en el Hito 6.
+  // Decisión 80 · retirar a alguien del equipo (migración 139, §4.5).
+  "membership.access_revoked",
   "membership.approve_reports_changed",
   "membership.establishments_changed",
   "membership.perform_jobs_changed",

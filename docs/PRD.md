@@ -124,6 +124,32 @@ Al pasar a `inactive` o `access_revoked`: pierde acceso de inmediato, deja de re
 notificaciones, el sistema marca sus trabajos pendientes como necesitados de reasignación y **se conserva
 todo su historial**.
 
+**Retirar a alguien del equipo** (decisión 80, 25/09/2026; migración 139, suite 78). Es poner
+`access_revoked`: **no se borra a nadie** (RN-DAT-06) y **solo afecta al equipo de mantenimiento**.
+
+- **RN-MIE-01**: **solo el propietario del espacio** retira a un administrador o a un trabajador
+  (§4.2: es el único que invita trabajadores y nombra o retira administradores), y **con motivo**, que
+  es la confirmación adicional de §140 junto con escribir el nombre de la persona.
+- **RN-MIE-02**: **al propietario no se le retira**: antes se transfiere la propiedad (RN-CIC-05,
+  RN-CIC-06). **Modo soporte no retira a nadie**, igual que no archiva ni transfiere (RN-CIC-05/07).
+- **RN-MIE-03**: sus **trabajos vivos** —asignados, en curso, bloqueados por el cliente o en pausa
+  autorizada— pasan a **reasignación pedida**, con aviso a propietario y administradores; al aprobarla
+  vuelven al estado que tenían y **ningún contador se reinicia** (RN-ASG-09). Sus **tareas vivas**
+  quedan con la reasignación pendiente. Los **menús** que tenga asignados y los trabajos **en
+  corrección** no se marcan (no hay estado para ello) y se le dicen a quien lo retira.
+- **RN-MIE-04**: pierde el acceso **en el acto**, y se le retiran —sin borrarlas— sus supervisiones
+  (como supervisado y como supervisor), sus restaurantes autorizados y sus especialidades. Deja de ser
+  responsable de restaurante (migración 119).
+- **RN-MIE-05**: queda en la **auditoría** (`membership.access_revoked`, con actor, motivo, antes y
+  después) y en `state_events`; su historial —trabajos hechos, mensajes, apuntes— **se conserva**.
+- **RN-MIE-06**: retirarlo **dos veces** no hace nada la segunda: ni otro apunte ni otro aviso.
+- **RN-MIE-07**: **no toca a nadie de un restaurante**: sus usuarios tienen su propio "retirar acceso"
+  (RN-EST-05). Si la persona tiene que **volver**, se la invita de nuevo y vuelve **sin** los permisos
+  de antes (RN-ASG-01: una autorización nunca se da por defecto).
+
+Lo mismo pasa si el estado se cambia a `inactive` o `access_revoked` por cualquier otra vía: las
+consecuencias de RN-MIE-03 a 05 las pone un disparador, no la función.
+
 ### 4.6 Especialidades
 
 `web` · `design` · `copy` · `seo` · `daily_menu` · `analytics` · `general`

@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { civilDayStartInZone, isCivilDay, nextDay, supervisionWindow } from "@/core/team-calendar";
+import { readRemovedMemberSummary } from "@/core/team-roster";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import type { TeamState } from "./action-state";
+import type { RemoveMemberState, TeamState } from "./action-state";
 
 function mensajeDeFallo(fallo: unknown): string {
   return fallo instanceof Error ? fallo.message : String(fallo);
@@ -318,4 +319,60 @@ export async function cancelInvitation(_prev: TeamState, formData: FormData): Pr
 
   revalidatePath("/espacios", "layout");
   return { error: null, done: true };
+}
+
+/**
+ * Decisión 80 · retirar a alguien del equipo de mantenimiento (§4.5).
+ *
+ * No borra a nadie: `remove_space_member()` lo pasa a `access_revoked`, y
+ * es ella la que decide si se puede —solo el propietario (RN-MIE-01),
+ * nunca al propietario ni desde Modo soporte (RN-MIE-02)— y la que deja
+ * sus trabajos y tareas para reasignar (RN-MIE-03). Las personas de los
+ * restaurantes no pasan por aquí.
+ *
+ * §140 pide "confirmación adicional" para lo sensible: se escribe el
+ * nombre de la persona, y se compara con el que tiene **en la base**, no
+ * con el que el formulario dijo que tenía.
+ */
+export async function removeMember(_prev: RemoveMemberState, formData: FormData): Promise<RemoveMemberState> {
+  const spaceId = String(formData.get("spaceId") ?? "");
+  const userId = String(formData.get("userId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  const confirmation = String(formData.get("confirmation") ?? "").trim();
+  const tp = es.teamPage.permissions;
+
+  if (!reason) return { error: tp.removeReasonRequired, done: false, summary: null };
+
+  try {
+    const supabase = await createClient();
+
+    const { data: miembro } = await supabase
+      .from("space_memberships")
+      .select("profiles (full_name, email)")
+      .eq("space_id", spaceId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!miembro) return { error: tp.notMember, done: false, summary: null };
+
+    const nombre = miembro.profiles?.full_name?.trim() || miembro.profiles?.email || "";
+    if (confirmation !== nombre) {
+      return { error: tp.removeConfirmationMismatch, done: false, summary: null };
+    }
+
+    const { data, error } = await supabase.rpc("remove_space_member", {
+      p_space_id: spaceId,
+      p_user_id: userId,
+      p_reason: reason,
+    });
+    if (error) {
+      console.error("[equipo] remove_space_member devolvió error", { userId, message: error.message });
+      return { error: error.message, done: false, summary: null };
+    }
+
+    revalidatePath("/espacios", "layout");
+    return { error: null, done: true, summary: readRemovedMemberSummary(data) };
+  } catch (fallo) {
+    console.error("[equipo] remove_space_member lanzó", { userId, message: mensajeDeFallo(fallo) });
+    return { error: mensajeDeFallo(fallo), done: false, summary: null };
+  }
 }

@@ -4004,6 +4004,44 @@ export const es = {
       saving: "Guardando…",
       saved: "Cambios guardados.",
       auditNote: "Todos los cambios de permisos quedan registrados en el historial de auditoría.",
+      // Decisión 80 · retirar a alguien del equipo (§4.5, RN-MIE).
+      removeTitle: "Retirar del equipo",
+      removeIntro:
+        "Deja de tener acceso a este espacio en el acto. No se borra nada: su historial, los trabajos que hizo y sus mensajes se quedan. Solo afecta al equipo de mantenimiento; los usuarios de los restaurantes no cambian.",
+      removeConsequences: [
+        "Sus trabajos y tareas en marcha quedan pendientes de reasignar, y os avisamos.",
+        "Se le retiran la supervisión, los restaurantes autorizados y las especialidades.",
+        "Si tiene que volver, se le invita de nuevo y se le conceden otra vez los permisos.",
+      ],
+      removeReasonLabel: "Motivo",
+      removeReasonHint: "Queda en la auditoría del espacio.",
+      removeConfirmationLabel: (nombre: string) => `Escribe «${nombre}» para confirmar`,
+      removeSubmit: "Retirar del equipo",
+      removing: "Retirando…",
+      removeReasonRequired: "Escribe el motivo: queda en la auditoría.",
+      removeConfirmationMismatch: "El nombre no coincide. Escríbelo tal como aparece.",
+      removeOwnerTitle: "Al propietario no se le retira del equipo",
+      removeOwnerReason:
+        "Un espacio siempre tiene propietario. Si tiene que salir, primero se transfiere la propiedad.",
+      removeOwnerLink: "Transferir la propiedad",
+      removedTitle: "Retirado del equipo",
+      removedReason:
+        "Ya no tiene acceso a este espacio y su historial se conserva. Si tiene que volver, invítalo de nuevo desde Invitaciones.",
+      removedDone: (nombre: string) => `${nombre} ya no está en el equipo.`,
+      removedJobs: (n: number) =>
+        n === 1 ? "1 trabajo queda pendiente de reasignar." : `${n} trabajos quedan pendientes de reasignar.`,
+      removedTasks: (n: number) =>
+        n === 1 ? "1 tarea queda pendiente de reasignar." : `${n} tareas quedan pendientes de reasignar.`,
+      removedMenus: (n: number) =>
+        n === 1
+          ? "1 menú sigue a su nombre: reasígnalo desde Menú Diario."
+          : `${n} menús siguen a su nombre: reasígnalos desde Menú Diario.`,
+      removedCorrections: (n: number) =>
+        n === 1
+          ? "1 trabajo en corrección sigue a su nombre."
+          : `${n} trabajos en corrección siguen a su nombre.`,
+      removedNothingPending: "No tenía nada en marcha.",
+      reassignmentsLink: "Ver reasignaciones pendientes",
     },
     invitations: {
       subtitle: "Gestiona las invitaciones pendientes y añade nuevos miembros al equipo.",
@@ -4989,6 +5027,7 @@ export const es = {
       "job.required_specialty_changed": "Especialidad requerida cambiada",
       "job.started": "Trabajo comenzado",
       "job.unblocked": "Trabajo desbloqueado",
+      "membership.access_revoked": "Retirado del equipo",
       "membership.approve_reports_changed": "Permiso de aprobar informes cambiado",
       "membership.establishments_changed": "Restaurantes autorizados cambiados",
       "membership.perform_jobs_changed": "Permiso de ejecutar trabajos cambiado",

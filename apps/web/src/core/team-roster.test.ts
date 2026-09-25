@@ -5,7 +5,9 @@ import {
   canPerformJobs,
   dayStatus,
   invitationExpired,
+  memberRemoval,
   mondayOf,
+  readRemovedMemberSummary,
   readTeamParams,
   shiftWeek,
   teamCounts,
@@ -147,5 +149,41 @@ describe("invitationExpired", () => {
     const ahora = new Date("2026-09-23T10:00:00Z");
     expect(invitationExpired("2026-09-23T10:00:00Z", ahora)).toBe(true);
     expect(invitationExpired("2026-09-23T10:00:01Z", ahora)).toBe(false);
+  });
+});
+
+describe("memberRemoval — decisión 80, §4.5", () => {
+  it("RN-MIE-01: solo el propietario ve cómo retirar a alguien", () => {
+    expect(memberRemoval("worker", "active", false)).toBeNull();
+    expect(memberRemoval("admin", "active", false)).toBeNull();
+    expect(memberRemoval("worker", "active", true)).toBe("form");
+    expect(memberRemoval("admin", "temporarily_absent", true)).toBe("form");
+  });
+
+  it("RN-MIE-02: al propietario no se le retira; se le manda a transferir la propiedad", () => {
+    expect(memberRemoval("owner", "active", true)).toBe("owner");
+  });
+
+  it("RN-MIE-06: a quien ya está fuera no se le ofrece retirarlo otra vez", () => {
+    expect(memberRemoval("worker", "access_revoked", true)).toBe("removed");
+    expect(memberRemoval("admin", "inactive", true)).toBe("removed");
+  });
+});
+
+describe("readRemovedMemberSummary — RN-MIE-03", () => {
+  it("RN-MIE-03: lee lo que ha quedado para reasignar tal como lo cuenta el servidor", () => {
+    expect(
+      readRemovedMemberSummary({ already_removed: false, jobs: 3, tasks: 2, menus: 1, other_jobs: 1 }),
+    ).toEqual({ jobs: 3, tasks: 2, menus: 1, corrections: 1 });
+  });
+
+  it("RN-MIE-03: un campo que falta o no es un número no inventa pendientes", () => {
+    expect(readRemovedMemberSummary(null)).toEqual({ jobs: 0, tasks: 0, menus: 0, corrections: 0 });
+    expect(readRemovedMemberSummary({ jobs: "3", tasks: -1, menus: 1.5 })).toEqual({
+      jobs: 0,
+      tasks: 0,
+      menus: 0,
+      corrections: 0,
+    });
   });
 });

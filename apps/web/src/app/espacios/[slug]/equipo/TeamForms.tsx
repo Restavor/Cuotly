@@ -2,12 +2,13 @@
 
 import { useActionState, useState, type ReactNode } from "react";
 
-import { Button, Card } from "@/components/ui";
+import { Button, ButtonLink, Card, Field, TextArea } from "@/components/ui";
 import { SPECIALTIES } from "@/core/assignment";
+import type { MemberRemoval } from "@/core/team-roster";
 import { es } from "@/i18n/es";
 
-import { INITIAL_TEAM } from "./action-state";
-import { cancelInvitation, saveMemberPermissions } from "./actions";
+import { INITIAL_REMOVE_MEMBER, INITIAL_TEAM } from "./action-state";
+import { cancelInvitation, removeMember, saveMemberPermissions } from "./actions";
 
 const t = es.teamPage.permissions;
 
@@ -252,5 +253,108 @@ export function CopyInviteLinkButton({ token }: { token: string }) {
     >
       {copiado ? ti.copied : ti.copyLink}
     </Button>
+  );
+}
+
+/**
+ * Decisión 80 · "Retirar del equipo", al pie de la ficha de una persona
+ * (M70). Solo lo ve el propietario (RN-MIE-01); qué enseña lo decide
+ * `memberRemoval()`. El servidor vuelve a comprobarlo todo.
+ *
+ * La tarjeta se queda montada después de retirar: al refrescarse la
+ * página la persona ya sale como retirada, y el resumen de lo que ha
+ * quedado para reasignar tiene que seguir a la vista —es lo siguiente
+ * que hay que hacer—.
+ */
+export function RemoveMemberCard({
+  spaceId,
+  slug,
+  userId,
+  name,
+  mode,
+}: {
+  spaceId: string;
+  slug: string;
+  userId: string;
+  name: string;
+  mode: Exclude<MemberRemoval, null>;
+}) {
+  const [state, action, pending] = useActionState(removeMember, INITIAL_REMOVE_MEMBER);
+  const base = `/espacios/${slug}`;
+
+  if (state.done && state.summary) {
+    const s = state.summary;
+    const pendientes = [
+      s.jobs > 0 ? t.removedJobs(s.jobs) : null,
+      s.tasks > 0 ? t.removedTasks(s.tasks) : null,
+      s.menus > 0 ? t.removedMenus(s.menus) : null,
+      s.corrections > 0 ? t.removedCorrections(s.corrections) : null,
+    ].filter((linea): linea is string => linea !== null);
+    return (
+      <Card title={t.removedTitle}>
+        <p role="status" className="mb-3 text-sm font-semibold text-success">
+          {t.removedDone(name)}
+        </p>
+        {pendientes.length === 0 ? (
+          <p className="text-sm text-text-secondary">{t.removedNothingPending}</p>
+        ) : (
+          <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-text">
+            {pendientes.map((linea) => (
+              <li key={linea}>{linea}</li>
+            ))}
+          </ul>
+        )}
+        {s.jobs > 0 || s.tasks > 0 ? (
+          <ButtonLink href={`${base}/equipo?tab=supervision`} variant="secondary" size="sm">
+            {t.reassignmentsLink}
+          </ButtonLink>
+        ) : null}
+      </Card>
+    );
+  }
+
+  if (mode === "removed") {
+    return (
+      <Card title={t.removedTitle}>
+        <p className="text-sm text-text-secondary">{t.removedReason}</p>
+      </Card>
+    );
+  }
+
+  if (mode === "owner") {
+    return (
+      <Card title={t.removeTitle}>
+        <p className="mb-1 text-sm font-semibold text-text">{t.removeOwnerTitle}</p>
+        <p className="mb-3 text-sm text-text-secondary">{t.removeOwnerReason}</p>
+        <ButtonLink href={`${base}/ajustes/propiedad`} variant="secondary" size="sm">
+          {t.removeOwnerLink}
+        </ButtonLink>
+      </Card>
+    );
+  }
+
+  return (
+    <Card title={t.removeTitle}>
+      <form action={action}>
+        <input type="hidden" name="spaceId" value={spaceId} />
+        <input type="hidden" name="userId" value={userId} />
+        <p className="mb-3 text-sm text-text-secondary">{t.removeIntro}</p>
+        <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-text">
+          {t.removeConsequences.map((linea) => (
+            <li key={linea}>{linea}</li>
+          ))}
+        </ul>
+        <TextArea name="reason" label={t.removeReasonLabel} hint={t.removeReasonHint} rows={2} required />
+        <Field name="confirmation" label={t.removeConfirmationLabel(name)} required autoComplete="off" />
+        {state.error ? (
+          <p role="alert" className="mb-3 text-sm text-danger">
+            {state.error}
+          </p>
+        ) : null}
+        <Button type="submit" variant="danger" disabled={pending}>
+          {pending ? t.removing : t.removeSubmit}
+        </Button>
+      </form>
+    </Card>
   );
 }

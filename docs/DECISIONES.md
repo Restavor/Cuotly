@@ -2257,3 +2257,23 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
 
     Aprobar oportunidades (§97) sigue siendo de "Aprobar informes". Regla en el PRD: RN-REP-31.
     Migración 138, suite 77.
+
+80. **El propietario retira a personas de su equipo de mantenimiento** (25/09/2026). Bosco: *"quiero
+    que el propietario del espacio de mantenimiento pueda eliminar el espacio de mantenimiento y los
+    restaurantes. También que pueda eliminar a personas de su equipo, no del de restaurante, solo del
+    mantenimiento"*.
+    - **Eliminar el espacio y los restaurantes ya existía**, con la forma que permite CLAUDE.md (nada
+      se borra físicamente): el espacio se **archiva** desde Ajustes → General → "Archivar espacio",
+      recuperable 30 días y con la eliminación **programada** (RN-CIC-07 a 09); el borrado
+      real es del bloque legal (pendiente 20). Un restaurante se **archiva** desde su ficha → Gestión →
+      "Estado del servicio" (RN-EST-08). No se añade nada nuevo ahí.
+    - **Retirar a una persona del equipo no existía**: el estado `access_revoked` de §4.5 estaba en el
+      modelo desde la migración 2 y nada lo ponía. Ahora lo pone el propietario desde Equipo →
+      Permisos → la persona → "Retirar del equipo", con lo que §4.5 manda que ocurra.
+    - **Propuesto por Claude, pendiente de que Bosco lo confirme** (no estaba escrito y se ha elegido
+      lo más prudente): que Modo soporte no pueda retirar a nadie (RN-MIE-02); que quien vuelve con
+      una invitación nueva vuelva sin sus restaurantes y especialidades de antes (RN-MIE-07); y que no
+      se avise por correo a la persona retirada — hoy tampoco se avisa a quien pierde el acceso a un
+      restaurante.
+
+    Reglas en el PRD: RN-MIE-01 a RN-MIE-07 (§4.5). Migración 139, suite 78.
