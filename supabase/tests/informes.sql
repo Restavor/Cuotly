@@ -334,17 +334,22 @@ end $$;
 reset role;
 
 -- ============================================================
--- RN-REP-08 · preparar: solo quien gestiona la cartera
+-- RN-REP-08 · preparar: quien gestiona la cartera
 -- ============================================================
+--
+-- Desde la decisión 79 (RN-REP-31) Ana, autorizada en ese restaurante,
+-- SÍ prepara los informes de ese restaurante: eso lo prueba la suite 77.
+-- Lo que sigue sin poder es un CONSOLIDADO, que es del espacio y mezcla
+-- restaurantes que no son suyos (decisión 30).
 select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
 begin
   begin
     perform public.create_report_draft(
-      'ff100000-0000-0000-0000-000000000001', 'operation', 'Informe de Ana',
-      '2026-08-01', '2026-08-31', 'ff400000-0000-0000-0000-000000000001');
-    raise exception 'RN-REP-08 FALLIDO: un trabajador prepara informes de un restaurante' using errcode = 'assert_failure';
+      'ff100000-0000-0000-0000-000000000001', 'operation', 'Consolidado de Ana',
+      '2026-08-01', '2026-08-31');
+    raise exception 'RN-REP-08 FALLIDO: un trabajador prepara un informe consolidado del espacio' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-REP-08 FALLIDO%' then raise; end if;
@@ -838,14 +843,20 @@ begin
 end $$;
 reset role;
 
--- El trabajador autorizado en el restaurante tampoco los ve: §89 no se los
--- da, y lo que §90 le da es su informe personal.
+-- El trabajador autorizado en el restaurante: desde la decisión 79
+-- (RN-REP-31) ve los informes de ESE restaurante, y el consolidado del
+-- espacio sigue sin verlo (decisión 30). Lo demás de RN-REP-31 —preparar,
+-- subir, que el de otro restaurante no los vea— es de la suite 77.
 select set_config('request.jwt.claim.sub', 'ff000000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
 begin
-  if exists (select 1 from public.reports where space_id = 'ff100000-0000-0000-0000-000000000001') then
-    raise exception 'RN-REP-01 FALLIDO: un trabajador ve los informes de un restaurante' using errcode = 'assert_failure';
+  if exists (select 1 from public.reports where space_id = 'ff100000-0000-0000-0000-000000000001'
+             and establishment_id is null) then
+    raise exception 'RN-REP-31 FALLIDO: un trabajador ve un informe consolidado del espacio' using errcode = 'assert_failure';
+  end if;
+  if not exists (select 1 from public.reports where establishment_id = 'ff400000-0000-0000-0000-000000000001') then
+    raise exception 'RN-REP-31 FALLIDO: la trabajadora autorizada no ve los informes de su restaurante' using errcode = 'assert_failure';
   end if;
 
   -- §90 · el suyo sí.

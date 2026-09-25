@@ -323,6 +323,13 @@ export default async function EstablishmentPage({
       mirandoOportunidades || (mirandoResumenDeDatos && (role === "owner" || role === "admin"))
         ? await supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "approve_reports" })
         : { data: false };
+    // Decisión 79 (RN-REP-31) · el trabajador autorizado en ESTE
+    // restaurante lleva sus informes: los genera, los revisa y los sube.
+    // Se le pregunta a la base, que es la que lo hace cumplir.
+    const { data: trabajadorDelRestaurante } =
+      mirandoResumenDeDatos && role === "worker"
+        ? await supabase.rpc("is_report_worker", { p_space_id: space.id, p_establishment_id: id })
+        : { data: false };
     const opportunities = mirandoOportunidades
       ? await loadOpportunities(supabase, id).catch((fallo: unknown) => {
           console.error("[ficha] no se pudieron leer las oportunidades", { id, message: String(fallo) });
@@ -345,17 +352,18 @@ export default async function EstablishmentPage({
     /*
       Decisión 78 (RN-REP-27) · el informe del último mes cerrado, en la
       zona del espacio. Es el de operación de ese periodo exacto —el mismo
-      que encuentra la clave de idempotencia al generarlo—. Solo a quien
-      gestiona la cartera: el trabajador no entra en los informes de un
-      restaurante (RN-REP-08), y RLS ya se lo niega.
+      que encuentra la clave de idempotencia al generarlo—. A quien
+      gestiona la cartera y, desde la decisión 79, al trabajador
+      autorizado en este restaurante; a los demás trabajadores, no, y la
+      RLS ya se lo niega.
     */
     const monthlyReport =
-      mirandoResumenDeDatos && (role === "owner" || role === "admin")
+      mirandoResumenDeDatos && (role === "owner" || role === "admin" || trabajadorDelRestaurante === true)
         ? await loadMonthlyReport(supabase, {
             establishmentId: id,
             reports,
             timeZone: space.timezone,
-            canPublish: puedeAprobar === true,
+            canPublish: puedeAprobar === true || trabajadorDelRestaurante === true,
           }).catch((fallo: unknown) => {
             console.error("[ficha] no se pudo leer el informe del mes", { id, message: String(fallo) });
             return undefined;

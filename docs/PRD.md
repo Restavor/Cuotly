@@ -1596,7 +1596,10 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   espacio**, no de un grupo: el CHECK `reports_scope` de la migración 85 no admite un informe sin
   restaurante que tenga grupo, así que "el consolidado de su grupo" tampoco existía como fila. El **trabajador no ve la pantalla de informes
   de un restaurante** —lo que §90 le da es el suyo personal—, pero si está autorizado en él **sí
-  recibe el informe enviado**, porque trabaja ahí (RN-REP-11).
+  recibe el informe enviado**, porque trabaja ahí (RN-REP-11). *(Enmendado el 25/09/2026, decisión
+  79: el trabajador **autorizado en un restaurante** ve **todos los informes de ese restaurante**,
+  los de finanzas incluidos, y los prepara, revisa y sube como quien tiene "Aprobar informes" —ver
+  RN-REP-31—. En los demás restaurantes, y en los consolidados, sigue sin entrar.)*
 - **RN-REP-02**: el **informe personal del trabajador** (§90) lleva carga actual, trabajos realizados,
   pendientes, cumplimiento de plazos, tiempos medios, bloqueos, correcciones y **puntos históricos
   realizados separados de la carga actual**. **No lleva finanzas.** El trabajador ve el suyo; las
@@ -1650,7 +1653,8 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   administradores **con "Aprobar informes"** (`space_memberships.can_approve_reports`, la misma
   capacidad del Hito 15 y de §97). El **trabajador no entra en los informes de un restaurante**: §89
   no se los da, y lo que §90 le da es su informe personal, que es otra cosa y no pasa por estos
-  estados. Mover al mismo estado dos
+  estados. *(Enmendado el 25/09/2026, decisión 79: salvo en los restaurantes donde está
+  **autorizado**, donde mueve todos los estados como quien aprueba —RN-REP-31—.)* Mover al mismo estado dos
   veces no escribe dos apuntes (RN-DAT-09), y aprobar, programar o enviar dos veces produce **un solo
   efecto** (CA-17).
 - **RN-REP-09**: las **secciones** de un informe son las **cinco de la maqueta 10.04** —resumen
@@ -2124,8 +2128,9 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
 
   Generado, aparecen **dos botones**: **"Subir informe"** (RN-REP-29) y **"Revisar informe"**, que
   abre la vista 10.04 con los textos editables de RN-REP-28 y RN-REP-30. Los ven el propietario y
-  los administradores (`manage_clients`); "Subir" solo quien tiene "Aprobar informes". El trabajador
-  no los ve (RN-REP-08). Ocultarlos no es el control: lo son `create_report_draft()`,
+  los administradores (`manage_clients`); "Subir" solo quien tiene "Aprobar informes". *(Enmendado
+  el 25/09/2026, decisión 79: los tres botones los ve también el **trabajador autorizado en ese
+  restaurante**, "Subir" incluido —RN-REP-31—.)* Ocultarlos no es el control: lo son `create_report_draft()`,
   `publish_report()` y `set_report_entry_texts()`.
 
 - **RN-REP-28 (añadida 25/09/2026, decisión 78)**: **el resumen ejecutivo nace escrito, con frases
@@ -2186,6 +2191,31 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   - Lo que se escribe aquí lo lee el restaurante: **no se escribe el nombre de nadie del equipo**
     (P7). Ninguna máquina puede comprobarlo en texto libre, así que la pantalla lo recuerda al lado
     del campo.
+
+- **RN-REP-31 (añadida 25/09/2026, decisión 79)**: **el trabajador autorizado en un restaurante
+  lleva los informes de ese restaurante.** Bosco, 25/09/2026: *"quien también puede acceder es el
+  trabajador de ese restaurante"*; preguntado, eligió que **genere, revise y suba**, que sean **los
+  autorizados en él** y que vea **todos los informes de ese restaurante**, no solo el del mes.
+
+  - **Quién es.** Miembro **activo** del espacio con rol de trabajador y **autorizado en el
+    restaurante** (`worker_establishments`, sin revocar). Lo dice `is_report_worker()`. Quitarle la
+    autorización o la membresía le quita los informes en ese mismo momento (RN-EST-05): no hay copia.
+  - **Qué ve.** Todos los informes de ese restaurante —las políticas de `reports`,
+    `report_sections`, `report_versions`, `report_deliveries` y `report_entry_texts`—, **los de
+    finanzas incluidos**, que Bosco eligió a sabiendas. De otros restaurantes, nada. **Ningún
+    consolidado**: es del espacio y mezcla restaurantes que no son suyos (decisión 30).
+  - **Qué hace.** En los informes de ese restaurante actúa **como quien tiene "Aprobar informes"**:
+    prepara, genera, edita secciones y textos, aprueba, programa, envía, sube y archiva
+    (`report_actor_role_for()`). Es la lectura de "generar, revisar y subir": revisar incluye
+    aprobar, y "Subir" aprueba por dentro (RN-REP-29).
+  - **Lo que no cambia.** Aprobar **oportunidades** sigue siendo de "Aprobar informes" (§97): si un
+    informe lleva oportunidades pendientes, el trabajador no puede subirlo hasta que alguien con ese
+    permiso las apruebe (RN-REP-10). La **biblioteca** del espacio sigue enseñándole su informe
+    personal (§90); los informes de su restaurante los encuentra en la ficha. El aviso de las 24 h
+    de un envío programado (RN-REP-11) sigue yendo al propietario y a los administradores con
+    "Aprobar informes".
+  - **P7 no se toca.** Es equipo: ve lo mismo que ve el equipo, y lo que se sube al restaurante no
+    lleva su nombre, igual que el de nadie.
 
 Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
 redactado por un modelo (§93: "el informe automático por correo no necesita IA"; el resumen de

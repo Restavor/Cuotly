@@ -10394,6 +10394,11 @@ export type Database = {
         Args: { p_correction_window_ends_at: string; p_job_id: string };
         Returns: undefined;
       };
+      is_report_worker: {
+        Args: { p_establishment_id: string; p_space_id: string };
+        Returns: boolean;
+      };
+      is_report_worker_for: { Args: { p_report_id: string }; Returns: boolean };
       publish_report: {
         Args: { p_confirm_unreviewed?: boolean; p_report_id: string };
         Returns: number;

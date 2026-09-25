@@ -311,11 +311,12 @@ export default async function ReportDetailPage({
             </Card>
           ) : null}
 
-          {viewer.role === "worker" ? (
-            <Card>
-              <p className="text-sm text-text-secondary">{t.workerNotAllowed}</p>
-            </Card>
-          ) : null}
+          {/*
+            Decisión 79 (RN-REP-31) · el trabajador que llega aquí es el
+            autorizado en ese restaurante —la RLS no le deja llegar a otro—
+            y lleva el informe como quien aprueba. Antes se le decía que los
+            informes no eran suyos; ya no es verdad y no se dice.
+          */}
         </div>
       </div>
     </div>

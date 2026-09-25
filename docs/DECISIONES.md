@@ -2243,3 +2243,17 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       no se ha subido (RN-REP-12), y si ya se subió solo lo enseña.
 
     Reglas en el PRD: RN-REP-27 a RN-REP-30. Migración 137, suite 76.
+
+79. **El trabajador autorizado en un restaurante lleva sus informes** (25/09/2026). Bosco, tras la
+    decisión 78: *"quien también puede acceder es el trabajador de ese restaurante"*. Esto
+    **enmienda** RN-REP-01 y RN-REP-08, que dejaban al trabajador fuera de los informes de un
+    restaurante. Preguntado, decide:
+    - **Qué puede:** generar, revisar y **subir**. En los informes de ese restaurante actúa como
+      quien tiene "Aprobar informes".
+    - **Quién:** los trabajadores **autorizados en ese restaurante** (la lista de la ficha), no los
+      que solo le hacen trabajos ni el resto del equipo.
+    - **Alcance:** **todos** los informes de ese restaurante, los de finanzas incluidos; no solo el
+      del mes. Los consolidados, no: son del espacio.
+
+    Aprobar oportunidades (§97) sigue siendo de "Aprobar informes". Regla en el PRD: RN-REP-31.
+    Migración 138, suite 77.

@@ -5292,6 +5292,15 @@ Bosco pidió generar el informe desde la ficha del restaurante con dos botones, 
   resumen ya no lo escribe siempre una persona. Reglas nuevas: RN-REP-27 a RN-REP-30.
 - La migración 137 está **aplicada** al proyecto real de Supabase desde el 25/09/2026.
 
+### Fuera de orden · 25/09/2026 — el trabajador lleva los informes de su restaurante (decisión 79)
+
+Bosco amplió la decisión 78: el **trabajador autorizado** en un restaurante ve **todos** los informes
+de ese restaurante y los genera, revisa y sube como quien tiene "Aprobar informes" (RN-REP-31;
+enmienda RN-REP-01 y RN-REP-08). Migración 138 y suite 77. Las funciones de informes preguntan
+ahora por el **informe** (`report_actor_role_for`, `report_can_prepare_report`) y no solo por el
+espacio; las cinco políticas de lectura suman al trabajador autorizado. Ni consolidados ni
+restaurantes donde no está autorizado; aprobar oportunidades sigue siendo de "Aprobar informes".
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

@@ -5461,7 +5461,8 @@ export const es = {
       published: "Informe subido. El restaurante ya lo ve y le ha llegado el aviso.",
       sentOn: (fecha: string) => `Subido el ${fecha}. El restaurante ya lo ve.`,
       generatedOn: (fecha: string) => `Generado el ${fecha}.`,
-      noApprovePermission: "Subirlo lo hace quien tiene el permiso «Aprobar informes».",
+      noApprovePermission:
+        "Subirlo lo hace quien tiene el permiso «Aprobar informes» o el trabajador autorizado en este restaurante.",
       // La alerta de RN-REP-29.
       confirmTitle: "Este informe no se ha revisado",
       confirmBody:
@@ -5739,8 +5740,6 @@ export const es = {
       "Hay oportunidades pendientes de este periodo. Mientras lo estén, el informe no sale.",
     sentTo: (n: number) => `Enviado a ${n} ${n === 1 ? "destinatario" : "destinatarios"}.`,
     noRecipients: "Nadie del restaurante puede ver informes todavía, así que el envío no llegaría a nadie.",
-    workerNotAllowed:
-      "Los informes de un restaurante son del propietario y de los administradores (§89). Tu informe personal está en tu ficha.",
 
     // Lo que ve el restaurante (vista 22.01).
     clientTitle: "Informes disponibles",

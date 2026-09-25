@@ -574,6 +574,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_informe_del_mes_desde_la_ficha.sql
 
+      - name: "Suite 77 — El trabajador autorizado lleva los informes de su restaurante: los ve todos, los prepara y los sube; el de otro restaurante, el retirado y el de baja, no; ni el consolidado (migración 138, RN-REP-31, decisión 79)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_trabajador_lleva_los_informes_de_su_restaurante.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

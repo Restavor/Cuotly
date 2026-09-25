@@ -2637,8 +2637,13 @@ begin
       -- Su nombre está aquí para que `establishment_photo_path`, que es una
       -- envoltura de una línea sobre ella, cuente como comprobada en vez de
       -- tener que repetir la regla para satisfacer a un `grep`.
+      --
+      -- `report_can_prepare` (migración 138, RN-REP-31) entra por lo mismo:
+      -- ES la comprobación de las funciones de informes —gestiona la
+      -- cartera o es el trabajador autorizado en ese restaurante— y ella
+      -- misma llama a `has_capability` y a `is_report_worker`.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths'
+          !~ 'has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths|report_can_prepare'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se

@@ -241,8 +241,8 @@ export interface SheetData {
   /**
    * Decisión 78 (RN-REP-27) · el informe del último mes cerrado, con sus
    * botones. `undefined` cuando no se está mirando el Resumen o quien mira
-   * no gestiona la cartera: el trabajador no entra en los informes de un
-   * restaurante (RN-REP-08).
+   * no lo lleva: lo llevan quien gestiona la cartera y, desde la decisión
+   * 79 (RN-REP-31), el trabajador autorizado en este restaurante.
    */
   readonly monthlyReport?: MonthlyReportView;
   /**
@@ -265,7 +265,7 @@ export interface MonthlyReportView {
     readonly sentAt: string | null;
     readonly generatedAt: string | null;
   } | null;
-  /** "Aprobar informes": la tiene quien puede subirlo (RN-REP-29). */
+  /** Quien puede subirlo: "Aprobar informes" (RN-REP-29) o el trabajador autorizado (RN-REP-31). */
   readonly canPublish: boolean;
 }
 
