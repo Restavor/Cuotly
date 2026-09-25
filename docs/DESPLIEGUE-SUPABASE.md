@@ -6,9 +6,25 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 25/09/2026 (137).
+Actualizado el 25/09/2026 (138).
 
 ## Pendiente de aplicar
+
+**Actualización del 25/09/2026: la 138.** `el_trabajador_lleva_los_informes_de_su_restaurante`
+(decisión 79, RN-REP-31): el trabajador autorizado en un restaurante ve, prepara y sube los informes
+de ese restaurante. Funciones nuevas `is_report_worker` e `is_report_worker_for` (en las políticas:
+EXECUTE para `authenticated`, no para `anon`) y `report_can_prepare`, `report_can_prepare_report` y
+`report_actor_role_for` (internas, sin EXECUTE para nadie). Redefine nueve funciones de informes
+cambiando solo la línea que decide quién puede, y las cinco políticas de lectura. En local pasan
+las 77 suites en el orden de CI y la 77 falla con tres mutaciones.
+
+**Aplicada el 25/09/2026 por el MCP**, con Bosco de acuerdo. Antes se comprobó en vivo que la última
+era la 137 y, por md5 del cuerpo, que las funciones y las cinco políticas que la 138 reescribe eran
+idénticas a las del repositorio (salvo `publish_report` y `set_report_entry_texts`, que difieren solo
+en los comentarios quitados al aplicar la 137). Después: 233 migraciones registradas; las seis
+funciones que preparan llaman a `report_can_prepare`, las cuatro que aprueban a
+`report_actor_role_for`, y las cinco políticas incluyen al trabajador autorizado. Se aplicó sin
+las líneas de comentario, como la 137.
 
 **Actualización del 25/09/2026: la 137.** `el_informe_del_mes_desde_la_ficha` (decisión 78,
 RN-REP-27 a 30): la tabla `report_entry_texts` y las funciones `set_report_entry_texts()` y
