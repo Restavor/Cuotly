@@ -178,3 +178,22 @@ export function contextsShape(counts: {
   if (counts.spaces === 0) return "only_restaurants";
   return "both";
 }
+
+/**
+ * RN-GLO-03 · la pestaña que se abre en "Restaurantes" del contexto
+ * global (`/restaurantes`), que separa los mismos contextos que el Inicio
+ * en dos: **Mantenimiento**, los espacios de mantenimiento, y
+ * **Restaurantes**, los paneles de restaurante.
+ *
+ * La de la dirección (`?lado=`, con los mismos valores que la bandeja)
+ * manda. Sin ella se abre la que tenga algo, igual que la bandeja: quien
+ * solo es restaurante no aterriza en una pestaña de Mantenimiento vacía.
+ */
+export function contextsTab(
+  lado: string | null,
+  counts: { readonly spaces: number; readonly restaurants: number },
+): ContextSide {
+  if (lado === "mantenimiento") return "maintenance";
+  if (lado === "restaurantes") return "restaurant";
+  return counts.spaces === 0 && counts.restaurants > 0 ? "restaurant" : "maintenance";
+}

@@ -157,25 +157,7 @@ export async function loadGlobalHome(
     });
   }
 
-  /*
-    Página 1 del diseño · el recuento por espacio, en UNA consulta para
-    todos. Una por espacio sería una cascada en la portada, que es la
-    pantalla que más se abre de Cuotly.
-  */
-  const recuento = new Map<string, number>();
-  if (spaces.length > 0) {
-    const { data: establecimientos } = await supabase
-      .from("establishments")
-      .select("id, space_id")
-      .in("space_id", spaces.map((espacio) => espacio.space_id))
-      .neq("status", "archived");
-    if (establecimientos !== null) {
-      for (const espacio of spaces) recuento.set(espacio.space_id, 0);
-      for (const fila of establecimientos) {
-        recuento.set(fila.space_id, (recuento.get(fila.space_id) ?? 0) + 1);
-      }
-    }
-  }
+  const recuento = await countRestaurantsBySpace(supabase, spaces);
 
   return {
     restaurantCount: recuento,
@@ -195,6 +177,57 @@ export async function loadGlobalHome(
       conversations: conversaciones === null,
     },
   };
+}
+
+/**
+ * RN-GLO-03 · "Restaurantes" del contexto global (`/restaurantes`): solo
+ * los contextos, sin lo pendiente ni la bandeja. Es la misma lectura que
+ * hace el Inicio —`my_contexts()` y el recuento por espacio—, así que las
+ * dos pantallas no pueden enseñar listas distintas.
+ */
+export interface GlobalContexts {
+  readonly spaces: readonly ContextRow[];
+  readonly restaurants: readonly ContextRow[];
+  readonly restaurantCount: ReadonlyMap<string, number>;
+  readonly failed: boolean;
+}
+
+export async function loadGlobalContexts(supabase: Supabase): Promise<GlobalContexts> {
+  const contexts = await myContexts(supabase).catch(() => null);
+  const spaces = (contexts ?? []).filter((c) => c.kind === "space");
+  const restaurants = (contexts ?? []).filter((c) => c.kind === "establishment");
+  return {
+    spaces,
+    restaurants,
+    restaurantCount: await countRestaurantsBySpace(supabase, spaces),
+    failed: contexts === null,
+  };
+}
+
+/*
+  Página 1 del diseño · el recuento por espacio, en UNA consulta para
+  todos. Una por espacio sería una cascada en la portada, que es la
+  pantalla que más se abre de Cuotly. Un espacio que no esté en el mapa no
+  se ha podido contar (ver `GlobalHome.restaurantCount`).
+*/
+async function countRestaurantsBySpace(
+  supabase: Supabase,
+  spaces: readonly ContextRow[],
+): Promise<Map<string, number>> {
+  const recuento = new Map<string, number>();
+  if (spaces.length === 0) return recuento;
+  const { data: establecimientos } = await supabase
+    .from("establishments")
+    .select("id, space_id")
+    .in("space_id", spaces.map((espacio) => espacio.space_id))
+    .neq("status", "archived");
+  if (establecimientos !== null) {
+    for (const espacio of spaces) recuento.set(espacio.space_id, 0);
+    for (const fila of establecimientos) {
+      recuento.set(fila.space_id, (recuento.get(fila.space_id) ?? 0) + 1);
+    }
+  }
+  return recuento;
 }
 
 /**

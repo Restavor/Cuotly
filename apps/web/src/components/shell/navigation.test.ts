@@ -111,10 +111,10 @@ describe("Los destinos del cliente son SUYOS, no los del equipo", () => {
     // Inicio y Mensajes son de SU panel.
     expect(destinos.get("home")).toBe(`/espacios/${SLUG}/restaurantes/${REST}`);
     expect(destinos.get("messages")).toBe(`/espacios/${SLUG}/restaurantes/${REST}/mensajes`);
-    // "Restaurantes" va al Inicio global a propósito: los suyos pueden estar
-    // en varios espacios de mantenimiento y esa lista solo existe allí
-    // (RN-GLO-03). No se inventa una ruta nueva.
-    expect(destinos.get("establishments")).toBe("/#mis-paneles");
+    // "Restaurantes" va al contexto global a propósito: los suyos pueden
+    // estar en varios espacios de mantenimiento y esa lista solo existe
+    // allí (RN-GLO-03). Directo a la pestaña Restaurantes.
+    expect(destinos.get("establishments")).toBe("/restaurantes?lado=restaurantes");
     // "Más" es la misma ruta para todos: decide su contenido por rol.
     expect(destinos.get("more")).toBe(`/espacios/${SLUG}/mas`);
   });
@@ -139,9 +139,11 @@ describe("Los destinos del cliente son SUYOS, no los del equipo", () => {
   it("sin restaurante identificado, el cliente va al Inicio global y no a una ruta del equipo", () => {
     // Antes iba a "/", que era el selector de contexto. Desde la decisión 42
     // la raíz ES el Inicio global, y desde la 47 la barra lo nombra. Lo que
-    // no puede pasar es que caiga en una pantalla del equipo.
+    // no puede pasar es que caiga en una pantalla del equipo. "Restaurantes"
+    // es del contexto global también: `/restaurantes`, no la del espacio.
     for (const destino of mobileNav(SLUG, "client")) {
-      const esGlobal = hrefWithoutAnchor(destino.href) === "/";
+      const ruta = hrefWithoutAnchor(destino.href.split("?")[0]);
+      const esGlobal = ruta === "/" || ruta === "/restaurantes";
       const esMas = destino.href === `/espacios/${SLUG}/mas`;
       expect(esGlobal || esMas, `${destino.key} → ${destino.href}`).toBe(true);
     }

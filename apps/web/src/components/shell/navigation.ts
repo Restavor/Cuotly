@@ -176,9 +176,9 @@ export function hrefWithoutAnchor(href: string): string {
  * barra por rol:
  *
  *   · **Inicio** — el del espacio, el del panel, o el global;
- *   · **Restaurantes** — los del espacio si eres del equipo; los tuyos, en
- *     el Inicio global, si eres restaurante. No se inventa una ruta nueva:
- *     el Inicio global ya los lista (RN-GLO-03);
+ *   · **Restaurantes** — los del espacio si eres del equipo; los tuyos,
+ *     en la pestaña Restaurantes de `/restaurantes`, si eres restaurante
+ *     (RN-GLO-03);
  *   · **Mensajes** — la bandeja del espacio, la del panel o la global;
  *   · **Más** — el resto de su superficie.
  */
@@ -193,13 +193,13 @@ export function mobileNav(
   const mine = clientBase(spaceSlug, establishmentId);
 
   // El restaurante: su inicio es su panel, y sus restaurantes son los suyos,
-  // que están en el Inicio global. Sin panel identificado —tiene varios, o
+  // en la pestaña Restaurantes del contexto global. Sin panel identificado —tiene varios, o
   // el armazón se pinta fuera de contexto— todo va al Inicio global, que es
   // donde elige, y nunca a una ruta del equipo.
   if (isClientRole(role)) {
     return [
       D("home", es.nav.home, mine ?? GLOBAL_HOME),
-      D("establishments", es.nav.establishments, `${GLOBAL_HOME}${GLOBAL_PANELS_ANCHOR}`),
+      D("establishments", es.nav.establishments, `${GLOBAL_CONTEXTS}?lado=restaurantes`),
       D("messages", es.nav.messages, mine ? `${mine}${PANEL_ROUTES.messages}` : GLOBAL_HOME),
       // "Más" es la MISMA ruta para todos: `/espacios/<slug>/mas` ya
       // decide su contenido por rol con `moreDestinations()`. Una ruta
@@ -230,14 +230,16 @@ export function mobileNav(
 const GLOBAL_HOME = "/";
 
 /**
- * RN-GLO-03 · "Mis paneles de restaurante" es un bloque del Inicio global,
- * no una pantalla aparte. El ancla es lo honesto mientras eso sea así: no
- * inventa una ruta que no existe, y evita que la barra tenga dos filas que
- * llevan al mismo sitio sin decir a qué parte —el mismo razonamiento que
- * `PANEL_ANCHORS`—. El identificador tiene que existir en el Inicio
- * global; `contexto-global.test.ts` falla si no está.
+ * RN-GLO-03 · "Restaurantes" del contexto global: los espacios de
+ * mantenimiento y los paneles de restaurante de quien mira, en dos
+ * pestañas (`?lado=mantenimiento` y `?lado=restaurantes`, los mismos
+ * valores que la bandeja).
+ *
+ * Hasta el 25/09/2026 era un ancla del Inicio global (`/#mis-paneles`),
+ * y en el teléfono el botón no hacía nada: ya estabas en el Inicio y el
+ * bloque no tenía caja a la que desplazarse. Ahora es una pantalla.
  */
-export const GLOBAL_PANELS_ANCHOR = "#mis-paneles";
+export const GLOBAL_CONTEXTS = "/restaurantes";
 
 /**
  * §20.5 · "Botón global **Crear** cuyas opciones dependen del contexto y
@@ -419,14 +421,15 @@ export function globalMenuGroups(): {
  * §20.3 (decisión 47) · la barra de móvil, que es la misma en todos los
  * contextos: Inicio · Restaurantes · Crear · Mensajes · Más.
  *
- * "Restaurantes" apunta al bloque de paneles del Inicio global, que es
- * donde están (RN-GLO-03). Con el ancla, y no a la raíz pelada, para que
- * no sean dos filas que llevan a lo mismo sin decir a qué parte.
+ * "Restaurantes" lleva a `/restaurantes`, que separa en dos pestañas los
+ * espacios de mantenimiento y los paneles de restaurante (RN-GLO-03). No
+ * está en el menú lateral: en escritorio los dos bloques caben en el
+ * Inicio, y el diseño de G01 pinta cinco destinos, no seis.
  */
 export function globalMobileNav(): readonly NavDestination[] {
   return [
     D("home", es.globalContext.nav.home, GLOBAL_HOME),
-    D("establishments", es.nav.establishments, `${GLOBAL_HOME}${GLOBAL_PANELS_ANCHOR}`),
+    D("establishments", es.nav.establishments, GLOBAL_CONTEXTS),
     D("messages", es.globalContext.nav.messages, "/mensajes"),
     D("more", es.nav.more, "/mas"),
   ];
@@ -463,8 +466,12 @@ export function globalCreateOptions(): readonly NavDestination[] {
  */
 export function globalActiveDestination(pathname: string): NavDestination | null {
   const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+  // "Restaurantes" solo está en la barra, pero también se marca.
+  const menu = globalMenu();
+  const claves = new Set(menu.map((d) => d.key));
+  const candidatos = [...menu, ...globalMobileNav().filter((d) => !claves.has(d.key))];
 
-  return globalMenu()
+  return candidatos
     .filter((d) => {
       const href = hrefWithoutAnchor(d.href);
       if (href === "/") return limpio === "/";

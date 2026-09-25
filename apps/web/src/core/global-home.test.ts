@@ -4,6 +4,7 @@ import {
   CLIENT_ATTENTION_KINDS,
   clientItemIsOverdue,
   contextsShape,
+  contextsTab,
   filterByContext,
   isClientAttentionKind,
   orderGlobalAttention,
@@ -118,5 +119,22 @@ describe("el Inicio del contexto global (PRD §36, RN-GLO)", () => {
     ]);
     expect(isClientAttentionKind("charge_to_pay")).toBe(true);
     expect(isClientAttentionKind("lo_que_sea")).toBe(false);
+  });
+});
+
+describe("RN-GLO-03 · Restaurantes del contexto global, en dos pestañas", () => {
+  it("RN-GLO-03: la pestaña de la dirección manda", () => {
+    const ambos = { spaces: 1, restaurants: 1 };
+    expect(contextsTab("mantenimiento", ambos)).toBe("maintenance");
+    expect(contextsTab("restaurantes", ambos)).toBe("restaurant");
+    // Aunque esté vacía: si alguien la pide, se le enseña y se le dice por qué.
+    expect(contextsTab("mantenimiento", { spaces: 0, restaurants: 3 })).toBe("maintenance");
+  });
+
+  it("RN-GLO-03: sin pestaña, se abre la que tiene algo", () => {
+    expect(contextsTab(null, { spaces: 2, restaurants: 0 })).toBe("maintenance");
+    expect(contextsTab(null, { spaces: 0, restaurants: 2 })).toBe("restaurant");
+    expect(contextsTab(null, { spaces: 1, restaurants: 1 })).toBe("maintenance");
+    expect(contextsTab("otra", { spaces: 0, restaurants: 0 })).toBe("maintenance");
   });
 });

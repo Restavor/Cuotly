@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DESTINATION_ICONS,
-  GLOBAL_PANELS_ANCHOR,
+  GLOBAL_CONTEXTS,
   globalActiveDestination,
   globalCreateOptions,
   globalMenu,
@@ -105,14 +105,22 @@ describe("§20.3 · la barra de móvil del contexto global", () => {
   });
 
   /*
-   * RN-GLO-03 · "Restaurantes" lleva al bloque de paneles del Inicio
-   * global. Si el identificador desapareciera de la pantalla, el enlace
-   * seguiría existiendo y no llevaría a ninguna parte — un fallo que no
-   * rompe nada y que nadie ve.
+   * RN-GLO-03 · "Restaurantes" era un ancla del Inicio (`/#mis-paneles`)
+   * y en el teléfono no hacía nada: ya estabas en el Inicio. Ahora lleva a
+   * su propia pantalla, que existe y separa las dos pestañas.
    */
-  it("RN-GLO-03: el ancla de 'Restaurantes' existe en el Inicio global", () => {
-    const inicio = readFileSync(join(RAIZ, "page.tsx"), "utf8");
-    expect(inicio).toContain(`id="${GLOBAL_PANELS_ANCHOR.slice(1)}"`);
+  it("RN-GLO-03: 'Restaurantes' lleva a su pantalla, con las dos pestañas", () => {
+    const destinos = new Map(globalMobileNav().map((d) => [d.key, d.href]));
+    expect(destinos.get("establishments")).toBe(GLOBAL_CONTEXTS);
+
+    const pagina = readFileSync(join(RAIZ, "restaurantes/page.tsx"), "utf8");
+    expect(pagina).toContain(`pestana("maintenance"`);
+    expect(pagina).toContain(`pestana("restaurant"`);
+  });
+
+  it("RN-GLO-03: en 'Restaurantes' la barra lo marca como activo", () => {
+    expect(globalActiveDestination("/restaurantes")?.key).toBe("establishments");
+    expect(globalActiveDestination("/")?.key).toBe("home");
   });
 
   it("§20.3: 'Más' recoge lo que no cabe en la barra, sin repetir nada", () => {

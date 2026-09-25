@@ -8116,6 +8116,25 @@ export const es = {
       elsewhere:
         "Aquí aparecen las solicitudes de nuevos espacios. Las solicitudes de trabajo están dentro de cada espacio o panel.",
     },
+    /**
+     * RN-GLO-03 · "Restaurantes" de la barra de móvil en el contexto
+     * global: los mismos contextos que el Inicio, separados en dos
+     * pestañas con los nombres de la bandeja.
+     */
+    contexts: {
+      title: "Restaurantes",
+      subtitle: "Tus espacios de mantenimiento y tus paneles de restaurante.",
+      tabsLabel: "Espacios y paneles",
+      tabMaintenance: "Mantenimiento",
+      tabRestaurants: "Restaurantes",
+      count: (n: number) => (n === 1 ? "1 contexto" : `${n} contextos`),
+      maintenanceEmptyTitle: "No estás en ningún espacio de mantenimiento",
+      maintenanceEmptyReason:
+        "Aquí aparecen los espacios de mantenimiento a los que perteneces. Si te van a invitar a uno, te llegará por correo; si quieres el tuyo, puedes solicitarlo.",
+      restaurantsEmptyTitle: "No tienes ningún panel de restaurante",
+      restaurantsEmptyReason:
+        "Aquí aparecen los restaurantes a los que tienes acceso como cliente. Cuando su equipo de mantenimiento te dé acceso, te llegará una invitación por correo.",
+    },
     messages: {
       title: "Mensajes",
       subtitle: "Todas tus conversaciones, organizadas por contexto.",
