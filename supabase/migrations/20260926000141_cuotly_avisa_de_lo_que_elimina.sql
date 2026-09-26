@@ -621,6 +621,13 @@ begin
 end;
 $$;
 
+comment on function public.platform_restore_account(uuid, text) is
+  'RN-ADM-18 · Cuotly recupera una cuenta eliminada: vuelve a entrar, vuelve
+   a sus equipos (como trabajadora donde su propiedad pasó a otra persona,
+   confirmado por Bosco el 26/09/2026) y a sus restaurantes, y sus espacios
+   eliminados con ella vuelven. Los restaurantes autorizados y las
+   especialidades no vuelven (RN-MIE-07).';
+
 -- Los privilegios se conservan con `create or replace`; se repiten para
 -- que esta migración se lea sola.
 revoke all on function public.platform_delete_space(uuid, text) from public, anon;

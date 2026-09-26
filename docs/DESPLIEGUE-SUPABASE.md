@@ -6,9 +6,29 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 25/09/2026 (139).
+Actualizado el 26/09/2026 (141).
 
 ## Pendiente de aplicar
+
+**Actualización del 26/09/2026: la 140 y la 141.** `cuotly_elimina_cuentas_espacios_y_restaurantes`
+y `cuotly_avisa_de_lo_que_elimina` (decisión 81, RN-ADM-14 a 21): Bosco y los Administradores de
+Cuotly con el permiso nuevo `can_delete_accounts` eliminan y recuperan cuentas, espacios y
+restaurantes, sin borrar nada. Añade el modo `archived_by_platform` a `spaces.cuotly_status`,
+`establishments.platform_archived_at` con su disparador, la tabla `platform_account_closures` (RLS,
+solo lectura de plataforma), el correo `account_deleted` y los avisos obligatorios
+`space_deleted_by_platform` y `establishment_deleted_by_platform`. Retira la firma de cuatro
+argumentos de `set_platform_admin` y la sustituye por la de cinco; `platform_list_users` cambia lo
+que devuelve. En local pasan las 79 suites en el orden de CI.
+
+**Aplicadas el 26/09/2026 por el MCP**, con Bosco de acuerdo. Antes se comprobó en vivo que la última
+era la 139, que nada de la 140 existía, que `auth.users.banned_until` existe, y por md5 que las
+funciones que se reescriben eran las del repositorio (`revoke_platform_admin` y
+`set_establishment_status_internal` difieren solo en comentarios). Las dos versiones sin comentarios
+pasaron antes la suite 79 en una base local con la 139. Después: 236 migraciones registradas, el CHECK
+del espacio, el del correo y el de los avisos incluyen lo nuevo, los dos avisos son obligatorios, el
+disparador del restaurante está activo, RLS activado en `platform_account_closures`, una sola firma de
+`set_platform_admin`, y las internas sin EXECUTE para `authenticated`. Se aplicaron sin las líneas de
+comentario, como la 137 a la 139.
 
 **Actualización del 25/09/2026: la 139.** `retirar_a_alguien_del_equipo` (decisión 80, §4.5,
 RN-MIE-01 a 07): el propietario retira a un administrador o trabajador del equipo, que pasa a
