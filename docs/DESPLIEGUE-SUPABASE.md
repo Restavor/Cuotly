@@ -6,12 +6,12 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 26/09/2026 (146).
+Actualizado el 26/09/2026 (147).
 
 ## Pendiente de aplicar
 
-**Pendientes desde el 26/09/2026: la 145 y la 146.** No se han aplicado al proyecto real: hay que
-pedirlo.
+**Pendientes desde el 26/09/2026: la 145, la 146 y la 147.** No se han aplicado al proyecto real:
+hay que pedirlo, y en ese orden.
 
 - **145 · `el_informe_trimestral`** (decisión 83, RN-REP-32 y RN-REP-33). Añade
   `plans.report_period` (`month`/`quarter`, `not null default 'month'`), la función
@@ -29,10 +29,20 @@ pedirlo.
   `queue_rank` a los otros cuatro planes, en el sitio y con su apunte (RN-COM-21). **Se para** si
   alguno de esos planes tiene un restaurante; el 26/09/2026 no había ninguno activo en Restavor
   (comprobado en vivo: Impulso+ tiene una suscripción, pero no activa).
-- **El espacio de demostración** no lo toca ninguna de las dos: después de aplicarlas hay que volver a
+- **147 · `las_incidencias`** (decisión 83, RN-REQ-09 a RN-REQ-12). Añade a `requests` `kind`
+  (`change`/`incident`, `not null default 'change'`), `incident_outcome`, `incident_note` e
+  `incident_resolved_at`, con su `select` concedido a `authenticated` columna a columna (ninguna lleva
+  identidad), y a `acceptances` `free_of_charge`. Crea `set_request_kind(uuid, text)` y
+  `resolve_incident(uuid, text, text, text)`, las dos para `authenticated` y no para `anon`, con el
+  permiso comprobado dentro. Redefine `accept_request()` (misma firma; una incidencia no consume) y
+  `validate_classification()` (misma firma; una incidencia no se valida como un cambio). No toca datos:
+  todas las solicitudes que existen quedan como cambios. **La web y la app de este commit necesitan
+  esta migración**: los formularios de nueva solicitud llaman a `set_request_kind()` al elegir
+  incidencia, y las listas leen `requests.kind`.
+- **El espacio de demostración** no lo toca ninguna de las tres: después de aplicarlas hay que volver a
   sembrarlo con `supabase/seed/espacio-demo.sql` para que su Básico sea el de 20 €.
 
-En local pasan las 81 suites en el orden de CI y la semilla dos veces.
+En local pasan las 82 suites en el orden de CI y la semilla dos veces.
 
 **Anterior:**
 

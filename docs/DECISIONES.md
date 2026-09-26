@@ -2364,10 +2364,13 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
        la web, y comprobar que el botón de reservas funciona no es monitorizar las reservas.
     3. **Incidencias frente a cambios** — *"a"*: un tipo de solicitud "Incidencia" cuyo diagnóstico
        no cuesta nada; si el error fue de Restavor, el arreglo tampoco; si hace falta un trabajo no
-       incluido, se presupuesta; con su propio historial. **Pendiente de construir**: antes de
-       hacerlo se le han preguntado a Bosco los detalles del flujo (quién acepta un arreglo sin
-       coste, qué pasa con un problema externo, si una incidencia puede resultar ser un cambio y si
-       vale para todos los planes).
+       incluido, se presupuesta; con su propio historial. Preguntado por el flujo, contesta que
+       **sí** a las cuatro propuestas el 26/09/2026: (a) el error de Restavor se arregla sin que el
+       restaurante acepte nada; (b) lo externo se cierra con la explicación, sin trabajo; (c) si
+       resulta ser un cambio, sigue como un cambio (bolsa o presupuesto); (d) vale para todos los
+       planes y para quien no tiene plan, y una incidencia nunca gasta del plan. La cuarta salida,
+       "trabajo no incluido", es la de la ficha y va por el presupuesto de §84. RN-REQ-09 a RN-REQ-12,
+       migración 147, suite 82.
     4. **Las condiciones** — *"las condiciones siguen igual no han cambiado"*: no se publica nada.
 
     **Lectura de Claude sobre el turno** (RN-COM-03): *"prioridad inferior a Impulso y Premium"* se

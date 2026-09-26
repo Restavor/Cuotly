@@ -262,9 +262,8 @@ Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanz
 - **Informe**: **trimestral** (RN-REP-32) y con el **tráfico de la web** —visitas, usuarios, páginas
   más visitadas, dispositivos y evolución— (RN-REP-33). Sin análisis estratégico ni recomendaciones.
 - **Incidencias**: el diagnóstico de una incidencia técnica de la web no cuesta nada, lo que rompió
-  Restavor se arregla sin coste y lo que requiera un trabajo no incluido se presupuesta antes. *(Cómo
-  entra esto en Cuotly está pendiente de confirmar con Bosco: ver la decisión 83 de
-  `docs/DECISIONES.md`.)*
+  Restavor se arregla sin coste y lo que requiera un trabajo no incluido se presupuesta antes. En
+  Cuotly es un tipo de solicitud propio, para todos los planes (RN-REQ-09 a RN-REQ-12, §9).
 - **Lo que hace Restavor por su cuenta, no Cuotly** (decisión 83, punto 2): la monitorización de
   caídas, la supervisión del dominio y el DNS, del certificado HTTPS/SSL y de los elementos esenciales
   de la web (botón de reservas, teléfono, ubicación, carta, formularios y enlaces), y las copias de
@@ -572,6 +571,39 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
   - **Los adjuntos** se suben compartidos con el restaurante: la solicitud es suya.
   - Pulsar dos veces **no crea dos solicitudes** (clave de idempotencia).
 
+- **RN-REQ-09 (añadida 26/09/2026, decisión 83)**: **una solicitud es un cambio o una incidencia.**
+  Un cambio es algo que se quiere distinto en la web; una incidencia, algo que **ha dejado de
+  funcionar**. Lo elige el restaurante al crearla (web y app) y, si la crea el equipo en su nombre
+  (RN-REQ-08), el equipo. Enviada, el restaurante ya no lo cambia; el equipo sí puede corregirlo
+  mientras la solicitud espera a que la miren —recibida, en análisis o pendiente de validar—, y lo
+  deja en la auditoría. Vale para **todos los planes** y para quien no tiene plan (RN-COM-12).
+  *(`requests.kind`, `set_request_kind()`, migración 147.)*
+- **RN-REQ-10 (añadida 26/09/2026, decisión 83)**: **una incidencia no gasta nunca del plan**, aunque
+  el plan incluya cambios de esa categoría. O se arregla sin coste, o se presupuesta aparte (§84), o
+  deja de ser incidencia (RN-REQ-11). Lo hace cumplir `accept_request()`: una incidencia no se acepta
+  "a secas", y la pantalla del restaurante no le ofrece ese botón ni le enseña ningún consumo.
+- **RN-REQ-11 (añadida 26/09/2026, decisión 83)**: **el diagnóstico de una incidencia** sustituye a la
+  validación de la clasificación: el equipo con `manage_requests`, desde "pendiente de validación
+  interna", elige una de **cuatro salidas** y escribe una **explicación obligatoria** (hasta 1000
+  caracteres) que el restaurante lee en la conversación de la solicitud, sin el nombre de nadie (P7).
+  Una incidencia no se valida como un cambio.
+
+  | Salida | Qué pasa | Coste |
+  |---|---|---|
+  | **Error de Restavor** | Se valida y se acepta en el acto, **sin pedirle nada al restaurante**, y nace el trabajo. El equipo dice su tamaño (decide el plazo de realización, RN-SLA-12). | Ninguno: ni bolsa ni presupuesto (`acceptances.free_of_charge`). `accepted_by` queda vacío. |
+  | **Servicio externo** | Se cierra (`closed`) con la explicación, sin trabajo. Si después hace falta trabajar, es otra solicitud. | Ninguno. |
+  | **Trabajo no incluido** | Queda pendiente de aceptación con su tamaño, y solo se acepta por el **presupuesto** (§84). | El del presupuesto. |
+  | **Era un cambio** | Deja de ser incidencia y sigue pendiente de validar como cualquier cambio. | El de un cambio: bolsa o presupuesto. |
+
+  **La primera atención (T1, RN-SLA-01 a 03) es el plazo de diagnóstico**: la ficha del Básico lo
+  llama "inicio de atención de solicitudes o incidencias". Se para al diagnosticar, salvo en "era un
+  cambio", donde sigue hasta que se valide. Pulsar dos veces la misma salida no hace nada la segunda
+  (CA-17); una incidencia diagnosticada no cambia de salida. Queda en la auditoría
+  (`request.incident_resolved`) con la salida, la categoría y la explicación.
+- **RN-REQ-12 (añadida 26/09/2026, decisión 83)**: **el historial de incidencias**. El listado de
+  solicitudes del restaurante se filtra por "Cambios" o "Incidencias" (`?clase=`), y cada incidencia
+  lleva su etiqueta en las listas del restaurante y del equipo. El detalle enseña que no gasta del
+  plan y, diagnosticada, lo que significa la salida para él y la explicación.
 - **RN-REQ-04 (copiar/pegar)**: "Copiar solicitud" y "Pegar solicitud" funcionan **solo dentro del mismo grupo**. Copiar no crea nada por sí solo; al pegar se crea un **borrador** para el establecimiento destino, se vuelve a analizar el contenido, el consumo pertenece al destino y los adjuntos copiados se muestran para revisión sin enviarse automáticamente.
 
 ---
