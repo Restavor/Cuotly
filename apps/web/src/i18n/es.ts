@@ -3201,7 +3201,7 @@ export const es = {
     // R16
     previewPageSubtitle: "Revisa cómo se verá tu menú y descárgalo en PDF o imagen. Cuando esté listo, puedes pedir su publicación.",
     downloadTitle: "Descargar",
-    downloadNotPublish: "Descargar el menú no lo publica en tu web ni consume ninguna actualización.",
+    downloadNotPublish: "Descargar o imprimir el menú no lo publica en tu web ni consume ninguna actualización.",
     infoTitle: "Información del menú",
     infoDate: "Fecha",
     infoTitleLabel: "Título",
@@ -3235,6 +3235,10 @@ export const es = {
     actionsTitle: "Acciones",
     downloadPdfOf: (n: number) => `Descargar PDF (v${n})`,
     downloadPngOf: (n: number) => `Descargar imagen (v${n})`,
+    // Imprimir: el mismo PDF de la descarga, mandado a la impresora.
+    print: "Imprimir",
+    printPending: "Preparando…",
+    printError: "No se ha podido preparar el menú para imprimir. Descarga el PDF e imprímelo desde tu equipo.",
     versionsKept: "Las versiones no se sustituyen: todas se conservan en el historial.",
 
     // R15

@@ -34,6 +34,14 @@ import { renderMenuPdf, renderMenuPng } from "@/services/menu-image";
  *
  * Las columnas se enumeran porque las cuatro tablas tienen privilegios de
  * columna (CLAUDE.md).
+ *
+ * **Imprimir es esta misma descarga** (`?formato=pdf&imprimir=1`): el
+ * mismo registro, el mismo PDF y el mismo 404 a quien no puede. Lo único
+ * que cambia es `Content-Disposition: inline`, para que el navegador lo
+ * cargue en vez de guardarlo y el botón de imprimir pueda mandarlo a la
+ * impresora. No hay formato `print` en `menu_downloads`: lo que salió de
+ * Cuotly es el PDF, y así consta. Solo el PDF se imprime; `imprimir` con
+ * `png` es un 404, igual que un formato desconocido.
  */
 export const dynamic = "force-dynamic";
 
@@ -42,8 +50,11 @@ export async function GET(
   { params }: { params: Promise<{ slug: string; id: string; menuId: string }> },
 ) {
   const { menuId } = await params;
-  const formato = new URL(request.url).searchParams.get("formato");
+  const busqueda = new URL(request.url).searchParams;
+  const formato = busqueda.get("formato");
   if (formato !== "png" && formato !== "pdf") return new NextResponse(null, { status: 404 });
+  const imprimir = busqueda.get("imprimir") === "1";
+  if (imprimir && formato !== "pdf") return new NextResponse(null, { status: 404 });
 
   const supabase = await createClient();
   const {
@@ -120,7 +131,7 @@ export async function GET(
     status: 200,
     headers: {
       "Content-Type": formato === "png" ? "image/png" : "application/pdf",
-      "Content-Disposition": `attachment; filename="${nombre}"`,
+      "Content-Disposition": `${imprimir ? "inline" : "attachment"}; filename="${nombre}"`,
       "Cache-Control": "private, no-store",
     },
   });

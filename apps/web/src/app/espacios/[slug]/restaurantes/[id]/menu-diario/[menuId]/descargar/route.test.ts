@@ -73,8 +73,8 @@ function tabla(filas: Record<string, unknown>) {
   };
 }
 
-function peticion(formato = "png") {
-  return new Request(`http://localhost:3000/x/descargar?formato=${formato}`);
+function peticion(formato = "png", extra = "") {
+  return new Request(`http://localhost:3000/x/descargar?formato=${formato}${extra}`);
 }
 
 const params = Promise.resolve({ slug: "demo", id: "est-1", menuId: MENU });
@@ -216,5 +216,38 @@ describe("RN-MEN-10 · descargar un menú entrega lo que quedó registrado", () 
 
     expect(respuesta.status).toBe(404);
     expect(rpcMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("RN-MEN-04 · imprimir el menú es descargar su PDF", () => {
+  it("con imprimir=1 registra la misma descarga en PDF y la entrega para abrirla, no para guardarla", async () => {
+    const respuesta = await GET(peticion("pdf", "&imprimir=1"), { params });
+
+    expect(respuesta.status).toBe(200);
+    expect(rpcMock).toHaveBeenCalledWith("register_menu_download", { p_menu_id: MENU, p_format: "pdf" });
+    expect(respuesta.headers.get("Content-Type")).toBe("application/pdf");
+    expect(respuesta.headers.get("Content-Disposition")).toMatch(/^inline; /);
+  });
+
+  it("sin imprimir, el PDF sigue llegando como archivo adjunto", async () => {
+    const respuesta = await GET(peticion("pdf"), { params });
+
+    expect(respuesta.headers.get("Content-Disposition")).toMatch(/^attachment; /);
+  });
+
+  it("solo se imprime el PDF: imprimir un PNG no llega siquiera a registrar", async () => {
+    const respuesta = await GET(peticion("png", "&imprimir=1"), { params });
+
+    expect(respuesta.status).toBe(404);
+    expect(rpcMock).not.toHaveBeenCalled();
+  });
+
+  it("a quien no puede descargar tampoco se le imprime nada", async () => {
+    rpcMock.mockResolvedValue({ data: null, error: { message: "Menú no encontrado" } });
+
+    const respuesta = await GET(peticion("pdf", "&imprimir=1"), { params });
+
+    expect(respuesta.status).toBe(404);
+    expect(renderMenuPdfMock).not.toHaveBeenCalled();
   });
 });

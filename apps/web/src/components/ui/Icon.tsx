@@ -117,6 +117,10 @@ const PATHS = {
   // con la cara a un lado y dos líneas de texto al otro.
   idCard:
     "M4.5 5.5h15A1.5 1.5 0 0 1 21 7v10a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17V7a1.5 1.5 0 0 1 1.5-1.5ZM8.5 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5.5 15.5a3 3 0 0 1 6 0M14 10h4M14 13.5h3",
+  // La impresora del botón Imprimir del Menú Diario: la bandeja arriba, el
+  // cuerpo y la hoja que sale por abajo.
+  printer:
+    "M7 8.5V3.5h10v5M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5.5A1.5 1.5 0 0 1 5 8.5h14a1.5 1.5 0 0 1 1.5 1.5v5.5A1.5 1.5 0 0 1 19 17h-2M7 13.5h10v7H7v-7Z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

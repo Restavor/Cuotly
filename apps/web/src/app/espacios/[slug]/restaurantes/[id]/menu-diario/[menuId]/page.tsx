@@ -17,6 +17,7 @@ import { createClient } from "@/lib/supabase/server";
 
 import { loadEstablishmentTimezone } from "../../timezone-load";
 import { ActionPanel, CopyMenuForm, CorrectionForm, DetailsForm, VersionEditor } from "./MenuForms";
+import { PrintMenuButton } from "./PrintMenuButton";
 import { VersionComparison } from "./VersionComparison";
 
 /**
@@ -24,7 +25,8 @@ import { VersionComparison } from "./VersionComparison";
  * 09, 10, 12), con el diseño definitivo en cuatro pestañas (`?vista=`):
  * Editor (R14, con A17 y A18), Vista previa y descarga (R16), Publicación
  * (R17) y Versiones (R18). Es la misma pantalla de siempre repartida: los
- * datos se leen una vez y cada pestaña enseña su parte.
+ * datos se leen una vez y cada pestaña enseña su parte. Junto a descargar
+ * está Imprimir, que manda a la impresora ese mismo PDF (`PrintMenuButton`).
  *
  * Lo que el dibujo pinta y aquí no está: "los cambios se guardan
  * automáticamente" (cada guardado es una versión, RN-MEN-03, y se hace al
@@ -355,6 +357,12 @@ export default async function ClientMenuPage({
                     <Icon name="image" className="h-4 w-4" />
                     {t.downloadPng}
                   </a>
+                  <div className="sm:col-span-2">
+                    <PrintMenuButton
+                      href={`${aqui}/descargar?formato=pdf&imprimir=1`}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-[10px] bg-primary px-3 py-2.5 text-sm font-semibold text-surface hover:bg-primary-dark"
+                    />
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-text-secondary">{t.downloadsNeedContent}</p>
@@ -525,6 +533,10 @@ export default async function ClientMenuPage({
                       <Icon name="download" className="h-4 w-4" />
                       {p.downloadPdfOf(current.version)}
                     </a>
+                    <PrintMenuButton
+                      href={`${aqui}/descargar?formato=pdf&imprimir=1`}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-[10px] border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green hover:bg-cuotly-green/10"
+                    />
                   </div>
                 ) : (
                   <p className="text-sm text-text-secondary">{t.downloadsNeedContent}</p>
