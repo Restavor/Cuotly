@@ -1,3 +1,4 @@
+import { formatCredits } from "@/core/credits";
 import { notFound, redirect } from "next/navigation";
 
 import { InfoNote } from "@/components/panel/RequestPieces";
@@ -81,7 +82,13 @@ export default async function ClientPlanChangePage({
                 <p className="text-xl font-bold text-primary-dark">{datos.plan?.terms?.subjectName ?? t.noName}</p>
               </div>
               <ul className="mt-4 space-y-2 text-sm text-text">
-                {datos.allowance
+                {datos.creditsIncludedHalf ? (
+                  <li className="flex gap-2">
+                    <Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-cuotly-green" />
+                    {es.credits.includedPerMonth(formatCredits(datos.creditsIncludedHalf))}
+                  </li>
+                ) : null}
+                {(datos.creditsIncludedHalf ? [] : datos.allowance)
                   .filter((b) => b.included > 0)
                   .map((b) => (
                     <li key={b.category} className="flex gap-2">

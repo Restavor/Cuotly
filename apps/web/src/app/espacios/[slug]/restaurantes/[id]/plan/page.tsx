@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { CreditUsageBar, CreditUsageDetail } from "@/components/credits/CreditUsage";
 import { InfoNote } from "@/components/panel/RequestPieces";
 import { TermsCard } from "@/components/panel/TermsCard";
 import {
@@ -17,11 +18,13 @@ import {
   TableRow,
 } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
+import { formatCredits, percentOfPlan } from "@/core/credits";
 import { INCLUDED_TEMPLATE_LIMIT } from "@/core/daily-menu";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { loadCreditUsage } from "../credit-usage-load";
 import { loadEstablishmentTimezone } from "../timezone-load";
 import { RevisionChanges } from "@/app/espacios/[slug]/planes/RevisionBlock";
 
@@ -58,16 +61,19 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
   ]);
   if (!establishment) notFound();
 
-  const [datos, { data: ledger }] = await Promise.all([
+  const base = `/espacios/${slug}/restaurantes/${id}`;
+  const [datos, { data: ledger }, creditos] = await Promise.all([
     loadClientPlan(supabase, id),
     // HU-25 · el libro de consumos del restaurante: apuntes con signo, no un
     // contador (RN-DAT-04). Al restaurante nunca se le devuelve la persona
     // del equipo: `establishment_consumption_ledger()` solo rellena el autor
     // para quien es del espacio (CLAUDE.md MUST NOT).
     supabase.rpc("establishment_consumption_ledger", { p_establishment_id: id }),
+    // RN-CRE-16 · la barra de créditos y su detalle, del servidor.
+    loadCreditUsage(supabase, id, { timeZone: zona, requestHref: (r) => `${base}/solicitudes/${r}` }),
   ]);
   const apuntes = ledger ?? [];
-  const base = `/espacios/${slug}/restaurantes/${id}`;
+  const saldo = creditos.balance;
   const fecha = (iso: string) => enZona(iso, zona, { day: "numeric", month: "long", year: "numeric" });
   const categoria = (c: string) => es.naming.categories[c as CategoryKey] ?? c;
   const renovacion = datos.allowance[0]?.renews_at ?? null;
@@ -94,7 +100,13 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
             <div className="md:pl-6">
               <p className="mb-2 font-semibold text-text">{t.includesTitle}</p>
               <ul className="space-y-2 text-sm text-text">
-                {datos.allowance.map((b) => (
+                {saldo ? (
+                  <li className="flex gap-2">
+                    <Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-cuotly-green" />
+                    {es.credits.includedPerMonth(formatCredits(saldo.includedHalf))}
+                  </li>
+                ) : null}
+                {(saldo ? [] : datos.allowance).map((b) => (
                   <li key={b.category} className="flex gap-2">
                     <Icon name={b.included > 0 ? "check" : "close"} className="mt-0.5 h-4 w-4 shrink-0 text-cuotly-green" />
                     {b.included > 0 ? t.includedLine(b.included, categoria(b.category)) : `${categoria(b.category)} · ${t.notIncluded}`}
@@ -106,8 +118,10 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
               <p className="mb-2 font-semibold text-text">
                 {t.usageTitle} <span className="font-normal text-text-secondary">{t.usageSubtitle}</span>
               </p>
+              {/* La renovación ya va abajo, con la permanencia. */}
+              {saldo ? <CreditUsageBar balance={{ ...saldo, renewsLabel: null }} audience="client" /> : null}
               <ul className="space-y-3 text-sm">
-                {datos.allowance
+                {(saldo ? [] : datos.allowance)
                   .filter((b) => b.included > 0)
                   .map((b) => {
                     // La bolsa la da el servidor; aquí solo se resta para
@@ -159,6 +173,13 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
           ) : null}
         </Card>
       )}
+
+      {/* RN-CRE-16 · "no solo la barra": en qué se ha usado, por solicitud. */}
+      {saldo ? (
+        <Card title={es.credits.detailTitle}>
+          <CreditUsageDetail lines={creditos.lines} audience="client" />
+        </Card>
+      ) : null}
 
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -217,7 +238,17 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
                   <TableRow key={entry.entry_id}>
                     <TableCell>{enZona(entry.occurred_at, zona, { dateStyle: "short" })}</TableCell>
                     <TableCell>{categoria(entry.category)}</TableCell>
-                    <TableCell>{entry.amount > 0 ? `+${entry.amount}` : String(entry.amount)}</TableCell>
+                    <TableCell>
+                      {/* RN-CRE-16 · el restaurante lee los créditos como porcentaje de su plan. */}
+                      {entry.category === "credits" && saldo
+                        ? es.credits.ledgerPercent(
+                            entry.amount > 0 ? "+" : "−",
+                            percentOfPlan(Math.abs(entry.amount), saldo.includedHalf) ?? 0,
+                          )
+                        : entry.amount > 0
+                          ? `+${entry.amount}`
+                          : String(entry.amount)}
+                    </TableCell>
                     <TableCell>{entry.request_code ?? "—"}</TableCell>
                     <TableCell>{entry.reason ?? "—"}</TableCell>
                   </TableRow>

@@ -1,3 +1,4 @@
+import { formatCredits } from "@/core/credits";
 import Link from "next/link";
 
 import {
@@ -304,7 +305,11 @@ export function PlanCatalogueTab({
                 </div>
               </div>
               {selected.archived ? <p className="mt-2 text-xs text-text-secondary">{tc.archivedHint}</p> : null}
-              {selected.includedSmall + selected.includedPhoto + selected.includedMedium + selected.includedLarge ===
+              {selected.includedCreditsHalf > 0 ? (
+                <ul className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Quota icon="document" label={es.credits.includedPerMonth(formatCredits(selected.includedCreditsHalf))} />
+                </ul>
+              ) : selected.includedSmall + selected.includedPhoto + selected.includedMedium + selected.includedLarge ===
               0 ? (
                 <p className="mt-4 text-sm text-text-secondary">{tc.nothingIncluded}</p>
               ) : (
@@ -331,6 +336,7 @@ export function PlanCatalogueTab({
                     includedPhoto: selected.includedPhoto,
                     includedMedium: selected.includedMedium,
                     includedLarge: selected.includedLarge,
+                    includedCreditsHalf: selected.includedCreditsHalf,
                     startSlaHours: selected.startSlaHours,
                     executionSlaSmall: selected.executionSla.small,
                     executionSlaPhoto: selected.executionSla.photo,

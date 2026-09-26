@@ -9,6 +9,7 @@
  * el servidor lo vuelve a comprobar.
  */
 
+import { parseCreditsInput } from "./credits";
 import { type ReportPeriodKind, isReportPeriodKind } from "./reports";
 
 export const PLANS_TABS = ["planes", "servicios", "versiones", "restaurantes"] as const;
@@ -143,6 +144,8 @@ export interface ComparablePlan {
   readonly includedPhoto: number;
   readonly includedMedium: number;
   readonly includedLarge: number;
+  /** PRD §41 · créditos al mes, en medios créditos. Sin él, 0. */
+  readonly includedCreditsHalf?: number;
   readonly startSlaHours: number;
   readonly canOrderRequests: boolean;
   readonly reportLevelRank: number;
@@ -152,6 +155,7 @@ export interface ComparablePlan {
 
 export type ComparisonKey =
   | "price"
+  | "credits"
   | "small"
   | "photo"
   | "medium"
@@ -182,6 +186,8 @@ export function comparePlans(current: ComparablePlan, target: ComparablePlan): r
   });
   return [
     row("price", current.priceCents, target.priceCents, null),
+    // RN-COM-23 y RN-CRE-01 · más créditos es mejor.
+    row("credits", current.includedCreditsHalf ?? 0, target.includedCreditsHalf ?? 0, true),
     row("small", current.includedSmall, target.includedSmall, true),
     row("photo", current.includedPhoto, target.includedPhoto, true),
     row("medium", current.includedMedium, target.includedMedium, true),
@@ -213,6 +219,8 @@ export interface PlanTerms {
   readonly includedPhoto: number;
   readonly includedMedium: number;
   readonly includedLarge: number;
+  /** PRD §41, RN-CRE-01 · créditos al mes, en medios créditos (40 = 20). */
+  readonly includedCreditsHalf: number;
   readonly startSlaHours: number;
   readonly executionSlaSmall: number;
   readonly executionSlaPhoto: number;
@@ -238,6 +246,7 @@ export type TermsFormError =
   | "price"
   | "pricePremium"
   | "included"
+  | "credits"
   | "startSla"
   | "executionSla"
   | "queueRank"
@@ -283,6 +292,12 @@ export function readPlanTermsForm(form: FormLike): TermsFormResult<PlanTerms> {
   );
   if (included.some((n) => n === undefined)) return { ok: false, error: "included" };
 
+  // RN-CRE-04 · créditos en múltiplos de 0,5; vacío o 0, el plan no los incluye.
+  const creditosTexto = text(form, "includedCredits");
+  const creditos =
+    creditosTexto === "" || /^0+([.,]0+)?$/.test(creditosTexto) ? 0 : parseCreditsInput(creditosTexto);
+  if (creditos === null) return { ok: false, error: "credits" };
+
   const start = wholeNumber(text(form, "startSlaHours"), 1);
   if (start === undefined) return { ok: false, error: "startSla" };
 
@@ -313,6 +328,7 @@ export function readPlanTermsForm(form: FormLike): TermsFormResult<PlanTerms> {
       includedPhoto: photo,
       includedMedium: medium,
       includedLarge: large,
+      includedCreditsHalf: creditos,
       startSlaHours: start,
       executionSlaSmall: eSmall,
       executionSlaPhoto: ePhoto,

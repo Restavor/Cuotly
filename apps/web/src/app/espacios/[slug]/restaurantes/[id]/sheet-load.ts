@@ -1,3 +1,6 @@
+import type { CreditBalanceView, CreditDetailView } from "@/components/credits/CreditUsage";
+import { DEFAULT_TIMEZONE } from "@/i18n/dates";
+import { loadCreditUsage } from "./credit-usage-load";
 import type { CycleBag, EstablishmentIdentity } from "@/core/establishments";
 import { AUDIT_FAMILIES, auditChanges, auditDayWindow, type AuditChange } from "@/core/audit";
 import { todayInTimeZone } from "@/core/finance";
@@ -272,6 +275,11 @@ export interface SheetSummary {
    */
   readonly liveJobs: number;
   readonly payment: SheetPaymentStatus;
+  /**
+   * RN-CRE-16 · la barra de créditos y su detalle, con los créditos
+   * exactos para el equipo. Sin valor si su plan no incluye créditos.
+   */
+  readonly credits?: { readonly balance: CreditBalanceView; readonly lines: readonly CreditDetailView[] } | null;
 }
 
 /**
@@ -365,8 +373,9 @@ export async function loadSheetSummary(
   spaceSlug: string,
   establishmentId: string,
   now: Date = new Date(),
+  timeZone: string = DEFAULT_TIMEZONE,
 ): Promise<SheetSummary> {
-  const [{ data: allowance }, attention, { data: requests }, { data: jobs }, payment] =
+  const [{ data: allowance }, attention, { data: requests }, { data: jobs }, payment, creditos] =
     await Promise.all([
       supabase.rpc("establishment_cycle_allowance", { p_establishment_id: establishmentId }),
       loadSpaceAttention(supabase, spaceId, spaceSlug, now),
@@ -383,6 +392,10 @@ export async function loadSheetSummary(
         .in("state", [...LIVE_JOB_STATES])
         .order("created_at", { ascending: false }),
       loadPaymentStatus(supabase, establishmentId, now),
+      loadCreditUsage(supabase, establishmentId, {
+        timeZone,
+        requestHref: (requestId) => `/espacios/${spaceSlug}/solicitudes/${requestId}`,
+      }),
     ]);
 
   // El trabajo que se enseña es el MÁS AVANZADO de los vivos, no el más
@@ -396,6 +409,7 @@ export async function loadSheetSummary(
       included: line.included,
       remaining: line.remaining,
     })),
+    credits: creditos.balance === null ? null : { balance: creditos.balance, lines: creditos.lines },
     attention: groupAttentionByEstablishment(attention.items).get(establishmentId) ?? [],
     openRequests: (requests ?? []).length,
     pendingValidation: (requests ?? [])

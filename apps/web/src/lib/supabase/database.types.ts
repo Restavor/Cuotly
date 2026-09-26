@@ -9425,6 +9425,18 @@ export type Database = {
         Args: { p_request_id: string };
         Returns: string;
       };
+      establishment_credit_detail: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          kind: string;
+          last_at: string;
+          percent_of_plan: number;
+          request_code: string | null;
+          request_description: string | null;
+          request_id: string | null;
+          used_half: number;
+        }[];
+      };
       establishment_credit_balance: {
         Args: { p_establishment_id: string };
         Returns: {

@@ -1,3 +1,4 @@
+import type { CreditBalanceView } from "@/components/credits/CreditUsage";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { ConversationMessage } from "@/components/conversation/Conversation";
@@ -32,6 +33,8 @@ export type PanelHomeInput = {
   readonly allowance: readonly { readonly category: string; readonly included: number; readonly remaining: number; readonly renews_at: string }[];
   readonly planNames: readonly string[];
   readonly timeZone: string;
+  /** RN-CRE-16 · la barra de créditos del ciclo; `null` si su plan no los incluye. */
+  readonly credits?: CreditBalanceView | null;
 };
 
 /** Lo que espera una respuesta del restaurante (RN-REQ): aceptar, o contestar. */
@@ -148,7 +151,9 @@ export async function loadPanelHome(
     attention,
     plan: {
       names: input.planNames,
-      quotas: input.allowance.map((linea) => ({
+      credits: input.credits ?? null,
+      // Con créditos, las cuotas por categoría no aplican (RN-CRE-03).
+      quotas: (input.credits ? [] : input.allowance).map((linea) => ({
         label: es.naming.categories[linea.category as CategoryKey] ?? linea.category,
         used: Math.max(0, linea.included - linea.remaining),
         included: linea.included,

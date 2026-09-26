@@ -1,3 +1,4 @@
+import { formatCredits } from "@/core/credits";
 import { notFound, redirect } from "next/navigation";
 
 import {
@@ -153,7 +154,14 @@ export default async function TeamConsumptionLedgerPage({
                   </TableCell>
                   {/* El signo se enseña tal cual: el libro son apuntes con
                       signo y un "+1" y un "-1" no significan lo mismo. */}
-                  <TableCell>{row.amount > 0 ? `+${row.amount}` : String(row.amount)}</TableCell>
+                  <TableCell>
+                    {/* RN-CRE-04 · en créditos el libro guarda medios créditos: se escriben como créditos. */}
+                    {row.category === "credits"
+                      ? es.credits.ledgerCredits(row.amount > 0 ? "+" : "−", formatCredits(Math.abs(row.amount)))
+                      : row.amount > 0
+                        ? `+${row.amount}`
+                        : String(row.amount)}
+                  </TableCell>
                   <TableCell>
                     {es.teamArea.ledger.types[row.entry_type as EntryTypeKey] ?? row.entry_type}
                   </TableCell>

@@ -3280,6 +3280,29 @@ export const es = {
   // (RN-CRE-16); los créditos exactos, solo al equipo.
   credits: {
     categoryLabel: "Cambio en créditos",
+    // RN-CRE-16 y RN-CRE-17 · la barra del ciclo y su detalle.
+    usageTitle: "Consumo del plan",
+    usagePercent: (percent: number) => `${percent} % utilizado`,
+    usageTeam: (usados: string, incluidos: string) => `${usados} de ${incluidos} créditos`,
+    usageFull:
+      "Has usado todo lo que incluye tu plan este mes. Si pides algo más, podrás quitar cosas, esperar al mes que viene o pedir un presupuesto aparte.",
+    usageFullTeam: "Ha usado todos los créditos de este ciclo: lo que pida va por las tres salidas (RN-CRE-14).",
+    usageRenews: (fecha: string) => `Se renueva el ${fecha}.`,
+    usageNone: "Tu plan no incluye cambios: cada cambio se presupuesta aparte.",
+    usageNoneTeam: "Su plan no incluye créditos: cada cambio se presupuesta aparte.",
+    includedPerMonth: (creditos: string) => `${creditos} créditos al mes para cambios`,
+    detailTitle: "En qué se ha usado este mes",
+    detailEmpty: "Todavía no se ha usado nada del plan este mes.",
+    detailPercent: (percent: number) => `${percent} % del plan`,
+    detailTeam: (creditos: string, percent: number) => `${creditos} créditos · ${percent} %`,
+    detailAdjustment: "Créditos añadidos (cambio de plan u otro ajuste)",
+    detailAdjustmentPercent: (percent: number) => `+${percent} % del plan`,
+    detailAdjustmentTeam: (creditos: string, percent: number) => `+${creditos} créditos · +${percent} %`,
+    detailReturned: (percent: number) => `Devuelto: ${percent} % del plan`,
+    detailReturnedTeam: (creditos: string) => `Devuelto: ${creditos} créditos`,
+    detailNote: "El total de arriba es el que cuenta: cada línea se redondea por separado.",
+    ledgerPercent: (signo: string, percent: number) => `${signo}${percent} % del plan`,
+    ledgerCredits: (signo: string, creditos: string) => `${signo}${creditos} créditos`,
     costTitle: "Lo que cuesta",
     usesPercent: (percent: number) => `Esta solicitud usará el ${percent} % de tu plan`,
     leavesPercent: (percent: number) => `Si la aceptas, te quedará el ${percent} % del plan este mes.`,
@@ -4482,6 +4505,9 @@ export const es = {
       pricePremiumLabel: "Precio con Premium+ (€, sin IVA)",
       pricePremiumHint: "Vacío si no tiene precio reducido (RN-COM-08).",
       kindLabel: "Tipo",
+      includedCreditsLabel: "Créditos al mes",
+      includedCreditsHint:
+        "En múltiplos de 0,5; 0 si el plan no incluye créditos (RN-CRE-01). Con créditos, deja los cambios por categoría a 0.",
       includedTitle: "Cambios incluidos por ciclo",
       includedSmall: "Pequeños",
       includedPhoto: "Fotografías",
@@ -4517,6 +4543,7 @@ export const es = {
         price: "El precio no se entiende: escríbelo en euros, con dos decimales como mucho.",
         pricePremium: "El precio con Premium+ no se entiende: déjalo vacío o escríbelo en euros.",
         included: "Los cambios incluidos tienen que ser números enteros, cero o más.",
+        credits: "Los créditos al mes tienen que ser un múltiplo de 0,5, como 20 o 20,5, o 0.",
         startSla: "El plazo de inicio tiene que ser de al menos una hora.",
         executionSla: "Cada plazo de realización tiene que ser de al menos una hora.",
         queueRank: "El turno en la cola tiene que ser un número entero.",
@@ -4551,6 +4578,7 @@ export const es = {
       fields: {
         price_cents: "Precio",
         price_premium_cents: "Precio con Premium+",
+        included_credits_half: "Créditos al mes",
         included_small: "Cambios pequeños",
         included_photo: "Fotografías",
         included_medium: "Cambios medianos",
@@ -4620,6 +4648,7 @@ export const es = {
       newPlan: "Nuevo plan",
       rows: {
         price: "Precio",
+        credits: "Créditos al mes",
         small: "Cambios pequeños",
         photo: "Fotografías",
         medium: "Cambios medianos",

@@ -1,3 +1,4 @@
+import { CreditUsageBar, CreditUsageDetail } from "@/components/credits/CreditUsage";
 import Link from "next/link";
 
 import {
@@ -1105,6 +1106,7 @@ export function EstablishmentSheet({
         tab={tab}
         header={header}
         bags={summary.bags}
+        creditsIncludedHalf={summary.credits?.balance.includedHalf ?? null}
         photoUrl={photoUrl}
         canEditData={canEditData}
       />
@@ -1174,7 +1176,21 @@ export function EstablishmentSheet({
               ) : undefined
             }
           >
-            {bolsas.length === 0 ? (
+            {/* RN-CRE-16 · en créditos, la barra y el detalle con los créditos exactos. */}
+            {summary.credits ? (
+              <div className="space-y-4">
+                <CreditUsageBar balance={summary.credits.balance} audience="team" />
+                <div>
+                  <p className="mb-1 text-sm font-semibold text-text">{es.credits.detailTitle}</p>
+                  <CreditUsageDetail lines={summary.credits.lines} audience="team" />
+                </div>
+                <p className="text-sm">
+                  <Link href={`${base}/consumos`} className="text-cuotly-green underline">
+                    {t.ledgerLink}
+                  </Link>
+                </p>
+              </div>
+            ) : bolsas.length === 0 ? (
               <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
             ) : (
               <>
@@ -2422,7 +2438,9 @@ export function EstablishmentSheet({
                     )}
 
                     <p className="mt-4 mb-2 text-sm font-semibold text-text">{t.planUsageTitle}</p>
-                    {bolsas.length === 0 ? (
+                    {summary.credits ? (
+                      <CreditUsageBar balance={summary.credits.balance} audience="team" />
+                    ) : bolsas.length === 0 ? (
                       <EmptyState title={t.cycleEmptyTitle} description={t.cycleEmptyReason} />
                     ) : (
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -612,7 +612,7 @@ export async function loadSpaceHome(
     supabase
       .from("consumption_cycles")
       .select(
-        "id, establishment_id, cycle_start, cycle_end, included_small, included_photo, included_medium, included_large",
+        "id, establishment_id, cycle_start, cycle_end, included_small, included_photo, included_medium, included_large, included_credits_half",
       )
       .eq("space_id", spaceId)
       .lte("cycle_start", now.toISOString())
@@ -709,11 +709,12 @@ export async function loadSpaceHome(
               includedPhoto: ciclo.included_photo,
               includedMedium: ciclo.included_medium,
               includedLarge: ciclo.included_large,
+              includedCreditsHalf: ciclo.included_credits_half,
               renewsAt: new Date(ciclo.cycle_end),
             },
             suyos.map((a) => ({
               amount: a.amount,
-              category: a.category as ChangeCategory,
+              category: a.category as ChangeCategory | "credits",
             })),
           ),
         ),

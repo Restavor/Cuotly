@@ -30,10 +30,12 @@ export async function loadSheetFrame(
   const header = await loadSheetHeader(supabase, establishmentId).catch(() => null);
   if (header === null) return null;
 
-  const [{ data: allowance }, photoUrl, { data: establishment }] = await Promise.all([
+  const [{ data: allowance }, photoUrl, { data: establishment }, { data: creditos }] = await Promise.all([
     supabase.rpc("establishment_cycle_allowance", { p_establishment_id: establishmentId }),
     loadEstablishmentPhoto(supabase, supabase.storage, establishmentId).catch(() => null),
     supabase.from("establishments").select("space_id").eq("id", establishmentId).maybeSingle(),
+    // RN-CRE-01 · un plan en créditos se lee "20 créditos al mes", no por categorías.
+    supabase.rpc("establishment_credit_balance", { p_establishment_id: establishmentId }),
   ]);
 
   const { data: canEdit } =
@@ -51,6 +53,7 @@ export async function loadSheetFrame(
       included: line.included,
       remaining: line.remaining,
     })),
+    creditsIncludedHalf: creditos?.[0]?.included_half ?? null,
     photoUrl,
     canEditData: canEdit === true,
   };

@@ -48,6 +48,7 @@ import { resolveShellViewer } from "@/components/shell/viewer";
 import { TerminationForm } from "./TerminationForm";
 import { loadRequestDetail } from "../../solicitudes/[id]/detail-load";
 import { loadEstablishmentTimezone } from "./timezone-load";
+import { loadCreditUsage } from "./credit-usage-load";
 import { loadPanelHome } from "./panel-home-load";
 import { PanelHome } from "@/components/panel/PanelHome";
 import { TermsCard } from "@/components/panel/TermsCard";
@@ -159,7 +160,7 @@ export default async function EstablishmentPage({
       summary, operation, counts, payments, users, staff, files, audit, recentActivity, nextMenu,
       manager, photoUrl,
     ] = await Promise.all([
-      loadSheetSummary(supabase, space.id, slug, id),
+      loadSheetSummary(supabase, space.id, slug, id, new Date(), space.timezone),
       loadSheetOperation(supabase, slug, id),
       loadSheetCounts(supabase, id),
       loadSheetPayments(supabase, id),
@@ -554,6 +555,12 @@ export default async function EstablishmentPage({
     })),
   );
 
+  // RN-CRE-16 · la barra de créditos del ciclo, si su plan los incluye.
+  const creditos = await loadCreditUsage(supabase, id, {
+    timeZone: zonaDelEspacio,
+    requestHref: (r) => `/espacios/${slug}/restaurantes/${id}/solicitudes/${r}`,
+  });
+
   // R01 a R04 · el Inicio del panel con el diseño definitivo. Reutiliza
   // lo ya leído arriba; `loadPanelHome()` solo añade lo que le falta.
   const inicio = await loadPanelHome(supabase, {
@@ -567,6 +574,7 @@ export default async function EstablishmentPage({
     files: archivos,
     messages: conversation?.messages ?? [],
     allowance: allowance ?? [],
+    credits: creditos.balance,
     planNames: condiciones
       .map(({ terms }) => terms?.subjectName ?? null)
       .filter((nombre): nombre is string => nombre !== null && nombre.trim() !== ""),

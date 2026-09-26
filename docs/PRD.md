@@ -3794,8 +3794,15 @@ restaurante ve el porcentaje de su plan, lo que le quedará, qué se va a hacer 
 (RN-CRE-11, RN-CRE-16); si no le llega, elige entre quitar cosas, esperar al ciclo siguiente o pedir
 presupuesto aparte (RN-CRE-14); el equipo fija o corrige los créditos antes de que acepte (RN-CRE-10) y
 fija los días de un trabajo de más de 20 créditos (RN-CRE-19); y un trabajo en créditos ya no tiene
-corrección gratis (RN-CRE-29). Falta: la barra y el detalle del ciclo, las pantallas del equipo y el
-editor de planes (punto 4), Menú Diario (5), informes (6) y el catálogo (7). Escrito con las fichas de Impulso y Premium y el documento
+corrección gratis (RN-CRE-29). **Construido el 27/09/2026 (punto 4, migración 151, suite 85)**: la barra
+"Consumo del plan · N % utilizado" y, debajo, el detalle por solicitud en porcentaje del plan, en el
+Inicio y en Plan y servicios del restaurante; en la ficha del equipo, lo mismo con los créditos exactos,
+y el libro de consumos escrito en créditos (RN-CRE-16); el aviso al 100 % (RN-CRE-17); el editor de planes
+con "Créditos al mes" y la comparativa y las versiones que los cuentan (RN-CRE-01, RN-COM-23); y los
+créditos extra de una mejora en la vista previa (RN-CRE-15). En el libro del restaurante cada apunte en
+créditos se lee como porcentaje del plan con el mismo redondeo que el servidor
+(`percentOfPlan()`), porque RN-CRE-16 no le enseña créditos. Falta: Menú Diario (5), informes (6) y el
+catálogo (7). Escrito con las fichas de Impulso y Premium y el documento
 "Sistema de créditos de mantenimiento — Restavor" que Bosco mandó el 26/09/2026 y sus respuestas a
 las preguntas (decisión 85). **Donde esta sección y otra anterior digan cosas distintas, manda esta**;
 cada regla anterior que cambia lleva una nota que remite aquí. Hasta que cada parte esté construida,

@@ -1,3 +1,4 @@
+import { formatCredits } from "@/core/credits";
 import Link from "next/link";
 
 import { StatusBadge } from "@/components/ui";
@@ -93,6 +94,7 @@ export function SheetHeaderCard({
   tab,
   header,
   bags,
+  creditsIncludedHalf = null,
   photoUrl,
   canEditData,
 }: {
@@ -103,6 +105,8 @@ export function SheetHeaderCard({
   header: SheetHeader;
   /** La bolsa del ciclo vigente, para "25 cambios pequeños · 5 medianos…". */
   bags: readonly CycleBag[];
+  /** RN-CRE-01 · con créditos, "20 créditos al mes" en vez de las categorías. */
+  creditsIncludedHalf?: number | null;
   photoUrl: string | null;
   /** Solo decide si se pinta "Editar restaurante"; el servidor manda (RN-EST-11). */
   canEditData: boolean;
@@ -173,7 +177,14 @@ export function SheetHeaderCard({
                 líneas de cabecera y el diseño móvil (página 24) no lo pone.
                 Está entero en el Resumen, justo debajo, con lo gastado.
               */}
-              {bolsas.length === 0 ? null : (
+              {creditsIncludedHalf !== null && creditsIncludedHalf > 0 ? (
+                <>
+                  <span aria-hidden="true" className="hidden text-border sm:inline">|</span>
+                  <span className="hidden sm:inline">
+                    {es.credits.includedPerMonth(formatCredits(creditsIncludedHalf))}
+                  </span>
+                </>
+              ) : bolsas.length === 0 ? null : (
                 <>
                   <span aria-hidden="true" className="hidden text-border sm:inline">|</span>
                   <span className="hidden sm:inline">
@@ -281,6 +292,8 @@ export function SheetOperationNav({
 export interface SheetFrameData {
   readonly header: SheetHeader;
   readonly bags: readonly CycleBag[];
+  /** RN-CRE-01 · los créditos del plan, si va en créditos. */
+  readonly creditsIncludedHalf?: number | null;
   readonly photoUrl: string | null;
   readonly canEditData: boolean;
 }
@@ -316,6 +329,7 @@ export function SheetFrame({
         tab={pestana}
         header={frame.header}
         bags={frame.bags}
+        creditsIncludedHalf={frame.creditsIncludedHalf ?? null}
         photoUrl={frame.photoUrl}
         canEditData={frame.canEditData}
       />

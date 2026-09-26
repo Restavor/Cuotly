@@ -622,6 +622,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/las_tres_salidas.sql
 
+      - name: "Suite 85 — El detalle del consumo de créditos (migración 151, RN-CRE-16)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_detalle_del_consumo.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { comparePlans, diffConditions, pickVersion, readPlansParams, restaurantsBySubject } from "./plan-catalogue";
+import {
+  comparePlans,
+  diffConditions,
+  pickVersion,
+  readPlanTermsForm,
+  readPlansParams,
+  restaurantsBySubject,
+} from "./plan-catalogue";
 
 const ID = "5a000000-0000-4000-8000-000000000001";
 
@@ -113,5 +120,56 @@ describe("RN-COM-15 · comparePlans", () => {
   it("menos horas de plazo es mejor", () => {
     const rows = new Map(comparePlans({ ...premium, startSlaHours: 48 }, premium).map((r) => [r.key, r]));
     expect(rows.get("startSla")?.better).toBe(true);
+  });
+});
+
+describe("RN-CRE-01 · los créditos del plan en el formulario y en la comparativa", () => {
+  const base = {
+    price: "99",
+    includedSmall: "0",
+    includedPhoto: "0",
+    includedMedium: "0",
+    includedLarge: "0",
+    startSlaHours: "24",
+    executionSlaSmall: "48",
+    executionSlaPhoto: "48",
+    executionSlaMedium: "72",
+    executionSlaLarge: "120",
+    reportLevel: "standard",
+  };
+  const form = (extra: Record<string, string>) => {
+    const m = new Map(Object.entries({ ...base, ...extra }));
+    return { get: (k: string) => m.get(k) ?? null };
+  };
+
+  it.each([
+    ["20", 40],
+    ["20,5", 41],
+    ["0", 0],
+    ["", 0],
+  ])("RN-CRE-04 · %s créditos → %i medios créditos", (texto, half) => {
+    const r = readPlanTermsForm(form({ includedCredits: texto }));
+    expect(r.ok && r.value.includedCreditsHalf).toBe(half);
+  });
+
+  it.each(["20,3", "-2", "veinte"])("%s no vale", (texto) => {
+    expect(readPlanTermsForm(form({ includedCredits: texto }))).toEqual({ ok: false, error: "credits" });
+  });
+
+  it("RN-COM-23 · más créditos es mejor en la comparativa", () => {
+    const sinNada = {
+      priceCents: 9900,
+      includedSmall: 0,
+      includedPhoto: 0,
+      includedMedium: 0,
+      includedLarge: 0,
+      startSlaHours: 24,
+      canOrderRequests: false,
+      reportLevelRank: 2,
+    };
+    const impulso = { ...sinNada, includedCreditsHalf: 40 };
+    const premium = { ...sinNada, priceCents: 19900, includedCreditsHalf: 80 };
+    const fila = comparePlans(impulso, premium).find((r) => r.key === "credits");
+    expect(fila).toEqual({ key: "credits", changed: true, better: true });
   });
 });

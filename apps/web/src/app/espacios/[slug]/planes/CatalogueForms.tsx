@@ -1,5 +1,6 @@
 "use client";
 
+import { formatCredits } from "@/core/credits";
 import { useActionState, useState } from "react";
 
 import { Button, Field, Select } from "@/components/ui";
@@ -76,6 +77,7 @@ const EMPTY_PLAN: PlanTerms = {
   includedPhoto: 0,
   includedMedium: 0,
   includedLarge: 0,
+  includedCreditsHalf: 0,
   startSlaHours: 48,
   executionSlaSmall: 72,
   executionSlaPhoto: 72,
@@ -122,6 +124,16 @@ export function PlanTermsForm({
         inputMode="decimal"
         required
         defaultValue={planId === null ? "" : centsToEuros(v.priceCents)}
+      />
+
+      {/* RN-CRE-01 · los créditos del plan (decisión 85). */}
+      <Field
+        label={te.includedCreditsLabel}
+        hint={te.includedCreditsHint}
+        name="includedCredits"
+        inputMode="decimal"
+        defaultValue={formatCredits(v.includedCreditsHalf)}
+        required
       />
 
       <fieldset>

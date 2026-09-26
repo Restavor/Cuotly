@@ -1,4 +1,5 @@
 import { StatusBadge } from "@/components/ui";
+import { formatCredits } from "@/core/credits";
 import { revisionTone } from "@/core/plan-catalogue";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
@@ -14,6 +15,8 @@ const tr = es.plansPage.revisions;
 export function revisionValue(field: string, value: string | null): string {
   if (value === null || value === "") return tr.noValue;
   if (field.startsWith("price")) return euros(Number(value));
+  // RN-CRE-04 · se guarda en medios créditos y se lee en créditos.
+  if (field === "included_credits_half") return formatCredits(Number(value));
   if (field.endsWith("_hours") || field.startsWith("execution_sla")) return tc.hours(Number(value));
   if (value === "true") return tc.yes;
   if (value === "false") return tc.no;

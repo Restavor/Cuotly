@@ -6,11 +6,16 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 y 150 aplicadas).
+Actualizado el 27/09/2026 (149 y 150 aplicadas; 151 escrita, sin aplicar).
 
 ## Pendiente de aplicar
 
-Nada.
+**151 · `el_detalle_del_consumo`** (decisión 85, PRD RN-CRE-16). Solo **añade** una función,
+`establishment_credit_detail(uuid)` (lectura, `security definer`, comprueba `can_read_establishment`;
+`execute` a `authenticated`, no a `anon`): el detalle por solicitud del consumo de créditos del ciclo
+vigente, con el porcentaje del plan calculado en el servidor. No toca tablas ni redefine nada. En local
+pasan las 85 suites; la 85 falla si una solicitud cancelada antes de empezar sale como gasto o si otro
+restaurante lee el detalle (probado). Mientras no se aplique, la web enseña la barra sin detalle.
 
 **Actualización del 27/09/2026: el motor de créditos y las tres salidas** (decisión 85). Aplicadas en
 producción, en este orden y con estas versiones:

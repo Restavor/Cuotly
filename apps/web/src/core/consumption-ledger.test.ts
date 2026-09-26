@@ -232,3 +232,36 @@ describe("cycleUsage · la barra de 'Estado por restaurante' (página 22, decisi
     expect(uso).toMatchObject({ percent: 100 });
   });
 });
+
+describe("RN-CRE-16 · la barra de un plan en créditos", () => {
+  const cicloCreditos = {
+    includedSmall: 0,
+    includedPhoto: 0,
+    includedMedium: 0,
+    includedLarge: 0,
+    includedCreditsHalf: 40,
+    renewsAt: new Date("2026-10-27T07:00:00Z"),
+  };
+
+  it("mide en créditos: 6,5 de 20 son el 33 %, con la misma cuenta que el servidor", () => {
+    const uso = cycleUsage(
+      cycleAllowance(cicloCreditos, [{ amount: -13, category: "credits" }]),
+    );
+    expect(uso).toEqual({ kind: "measured", used: 13, included: 40, percent: 33 });
+  });
+
+  it("una devolución vuelve a dejarlo como estaba", () => {
+    const uso = cycleUsage(
+      cycleAllowance(cicloCreditos, [
+        { amount: -8, category: "credits" },
+        { amount: 8, category: "credits" },
+      ]),
+    );
+    expect(uso).toEqual({ kind: "measured", used: 0, included: 40, percent: 0 });
+  });
+
+  it("sin créditos en el ciclo sigue midiendo por categorías", () => {
+    const uso = cycleUsage(cycleAllowance({ ...cicloCreditos, includedCreditsHalf: 0 }, []));
+    expect(uso).toEqual({ kind: "nothing_included" });
+  });
+});

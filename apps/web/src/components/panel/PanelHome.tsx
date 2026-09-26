@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { CreditUsageBar, type CreditBalanceView } from "@/components/credits/CreditUsage";
 import { EstablishmentPhoto } from "@/components/establishment/EstablishmentPhoto";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -53,6 +54,8 @@ export type PanelHomeData = {
   readonly plan: {
     readonly names: readonly string[];
     readonly quotas: readonly { readonly label: string; readonly used: number; readonly included: number }[];
+    /** RN-CRE-16 · con créditos, la barra en vez de las cuotas por categoría. */
+    readonly credits?: CreditBalanceView | null;
     readonly renewsLabel: string | null;
   };
   readonly nextMenu: { readonly name: string; readonly stateLabel: string; readonly dateLabel: string; readonly href: string } | null;
@@ -243,27 +246,36 @@ function PlanCard({ data }: { data: PanelHomeData }) {
           <StatusBadge tone="success">{t.planActive}</StatusBadge>
         </div>
       )}
-      <h3 className="mt-5 text-[15px] font-semibold text-text">{t.quotasTitle}</h3>
-      {plan.quotas.length === 0 ? (
-        <p className="mt-2 text-sm text-text-secondary">{t.quotasEmpty}</p>
+      {plan.credits ? (
+        <>
+          <h3 className="mb-3 mt-5 text-[15px] font-semibold text-text">{es.credits.usageTitle}</h3>
+          <CreditUsageBar balance={plan.credits} audience="client" />
+        </>
       ) : (
-        <ul className="mt-3 space-y-4">
-          {plan.quotas.map((q) => (
-            <li key={q.label}>
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="text-text">{q.label}</span>
-                <span className="font-semibold text-text">{t.quotaUsed(q.used, q.included)}</span>
-              </div>
-              <ProgressBar
-                percent={q.included === 0 ? 0 : Math.min(100, Math.round((q.used / q.included) * 100))}
-                label={`${q.label}: ${t.quotaUsed(q.used, q.included)}`}
-              />
-            </li>
-          ))}
-        </ul>
-      )}
-      {plan.renewsLabel === null ? null : (
-        <p className="mt-4 text-xs text-text-secondary">{t.quotasRenew(plan.renewsLabel)}</p>
+        <>
+          <h3 className="mt-5 text-[15px] font-semibold text-text">{t.quotasTitle}</h3>
+          {plan.quotas.length === 0 ? (
+            <p className="mt-2 text-sm text-text-secondary">{t.quotasEmpty}</p>
+          ) : (
+            <ul className="mt-3 space-y-4">
+              {plan.quotas.map((q) => (
+                <li key={q.label}>
+                  <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <span className="text-text">{q.label}</span>
+                    <span className="font-semibold text-text">{t.quotaUsed(q.used, q.included)}</span>
+                  </div>
+                  <ProgressBar
+                    percent={q.included === 0 ? 0 : Math.min(100, Math.round((q.used / q.included) * 100))}
+                    label={`${q.label}: ${t.quotaUsed(q.used, q.included)}`}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          {plan.renewsLabel === null ? null : (
+            <p className="mt-4 text-xs text-text-secondary">{t.quotasRenew(plan.renewsLabel)}</p>
+          )}
+        </>
       )}
     </Panel>
   );

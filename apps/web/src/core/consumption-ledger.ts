@@ -126,18 +126,26 @@ export type ConsumptionCycle = {
   readonly includedPhoto: number;
   readonly includedMedium: number;
   readonly includedLarge: number;
+  /**
+   * PRD §41 · los créditos del ciclo, en medios créditos
+   * (`consumption_cycles.included_credits_half`). 0 o ausente: el plan no
+   * va en créditos.
+   */
+  readonly includedCreditsHalf?: number;
   /** `consumption_cycles.cycle_end`: la fecha de renovación (RN-COM-06). */
   readonly renewsAt: Date;
 };
 
 /** Un apunte del ciclo, con su categoría (RN-CON-01). */
-export type CategorizedLedgerEntry = LedgerEntry & { readonly category: ChangeCategory };
+export type CategorizedLedgerEntry = LedgerEntry & { readonly category: ChangeCategory | "credits" };
 
 export type CycleAllowance = {
   readonly remaining: Readonly<Record<ChangeCategory, number>>;
   readonly included: Readonly<Record<ChangeCategory, number>>;
   /** RN-COM-06: los consumos se renuevan en esta fecha y **no se acumulan**. */
   readonly renewsAt: Date;
+  /** PRD §41 · los créditos del ciclo, en medios créditos, si el plan va en créditos. */
+  readonly credits?: { readonly included: number; readonly remaining: number };
 };
 
 /**
@@ -182,7 +190,23 @@ export function cycleAllowance(
     );
   }
 
-  return { remaining, included, renewsAt: cycle.renewsAt };
+  const creditos = cycle.includedCreditsHalf ?? 0;
+  return {
+    remaining,
+    included,
+    renewsAt: cycle.renewsAt,
+    ...(creditos > 0
+      ? {
+          credits: {
+            included: creditos,
+            remaining: calculateConsumptionBalance(
+              creditos,
+              entries.filter((entry) => entry.category === "credits"),
+            ),
+          },
+        }
+      : {}),
+  };
 }
 
 /**
@@ -253,6 +277,19 @@ export type CycleUsage =
 
 export function cycleUsage(allowance: CycleAllowance | null): CycleUsage {
   if (allowance === null) return { kind: "no_cycle" };
+
+  // RN-CRE-16 · un plan en créditos se mide en créditos: la misma cuenta
+  // que `establishment_credit_balance()` (gastado ÷ incluido, al entero
+  // más cercano, sin pasar de 100).
+  if (allowance.credits) {
+    const used = Math.max(0, allowance.credits.included - allowance.credits.remaining);
+    return {
+      kind: "measured",
+      used,
+      included: allowance.credits.included,
+      percent: Math.min(100, Math.round((used / allowance.credits.included) * 100)),
+    };
+  }
 
   const categorias = ["small", "photo", "medium", "large"] as const;
   const included = categorias.reduce((total, c) => total + allowance.included[c], 0);

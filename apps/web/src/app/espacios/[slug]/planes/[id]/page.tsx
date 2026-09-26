@@ -17,6 +17,7 @@ import {
 import { Icon } from "@/components/ui/Icon";
 import { statusEffects } from "@/core/establishment-status";
 import { todayInTimeZone } from "@/core/finance";
+import { formatCredits } from "@/core/credits";
 import { comparePlans, type ComparisonKey } from "@/core/plan-catalogue";
 import { commitmentIsCurrent, planChangeOptions } from "@/core/plans";
 import { termsNeedAcceptance } from "@/core/terms";
@@ -221,7 +222,7 @@ export default async function EstablishmentPlanPage({
   let prorrateo: {
     differenceCents: number;
     fractionPercent: number;
-    extras: readonly (readonly [string, number])[];
+    extras: readonly (readonly [string, string])[];
   } | null = null;
   if (planSubscription && destino && opciones.includes("immediate")) {
     const { data } = await supabase.rpc("plan_change_preview", {
@@ -235,12 +236,16 @@ export default async function EstablishmentPlanPage({
         fractionPercent: Math.round(Number(fila.fraction) * 100),
         extras: (
           [
-            [es.naming.categories.small, fila.extra_small],
-            [es.naming.categories.photo, fila.extra_photo],
-            [es.naming.categories.medium, fila.extra_medium],
-            [es.naming.categories.large, fila.extra_large],
+            // RN-CRE-15 · los créditos extra, en créditos (se guardan en medios).
+            [es.credits.categoryLabel, fila.extra_credits_half, formatCredits],
+            [es.naming.categories.small, fila.extra_small, String],
+            [es.naming.categories.photo, fila.extra_photo, String],
+            [es.naming.categories.medium, fila.extra_medium, String],
+            [es.naming.categories.large, fila.extra_large, String],
           ] as const
-        ).filter(([, n]) => n > 0),
+        )
+          .filter(([, n]) => n > 0)
+          .map(([etiqueta, n, escribir]) => [etiqueta, escribir(n)] as const),
       };
     }
   }
@@ -656,6 +661,8 @@ function PlanComparison({ current, target }: { current: CataloguePlan; target: C
     switch (key) {
       case "price":
         return `${euros(p.priceCents)} + IVA`;
+      case "credits":
+        return formatCredits(p.includedCreditsHalf);
       case "small":
         return String(p.includedSmall);
       case "photo":

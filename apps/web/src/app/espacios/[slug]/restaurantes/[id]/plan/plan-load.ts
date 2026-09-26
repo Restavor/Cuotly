@@ -15,7 +15,7 @@ import type { Database } from "@/lib/supabase/database.types";
  * vacíos y la pantalla no los enseña.
  */
 export async function loadClientPlan(supabase: SupabaseClient<Database>, establishmentId: string) {
-  const [{ data: subs }, { data: bolsas }, { data: menu }, { data: compromisos }, { data: cambios }] =
+  const [{ data: subs }, { data: bolsas }, { data: menu }, { data: compromisos }, { data: cambios }, { data: creditos }] =
     await Promise.all([
       supabase
         .from("subscriptions")
@@ -38,6 +38,8 @@ export async function loadClientPlan(supabase: SupabaseClient<Database>, establi
         .eq("state", "pending")
         .order("effective_at", { ascending: true })
         .limit(1),
+      // RN-CRE-01 · si su plan va en créditos, cuántos trae al mes.
+      supabase.rpc("establishment_credit_balance", { p_establishment_id: establishmentId }),
     ]);
 
   const condiciones = await Promise.all(
@@ -59,6 +61,7 @@ export async function loadClientPlan(supabase: SupabaseClient<Database>, establi
     ),
     plan,
     allowance: bolsas ?? [],
+    creditsIncludedHalf: creditos?.[0]?.included_half ?? null,
     menuBalance: menu?.[0] ?? null,
     commitmentEndsAt: compromiso?.ends_at ?? null,
     scheduledChange: cambios?.[0] ?? null,

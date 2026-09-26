@@ -34,6 +34,8 @@ export interface CataloguePlan {
   readonly includedPhoto: number;
   readonly includedMedium: number;
   readonly includedLarge: number;
+  /** PRD §41 · créditos al mes, en medios créditos. */
+  readonly includedCreditsHalf: number;
   readonly startSlaHours: number;
   readonly executionSla: { readonly small: number; readonly photo: number; readonly medium: number; readonly large: number };
   readonly canOrderRequests: boolean;
@@ -115,7 +117,7 @@ export async function loadPlanCatalogue(supabase: Supabase, spaceId: string): Pr
       supabase
         .from("plans")
         .select(
-          "id, lineage_id, revision, published_at, superseded_at, archived_at, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large, can_order_requests, queue_rank, grants_priority, watches_reviews, report_level, report_period",
+          "id, lineage_id, revision, published_at, superseded_at, archived_at, name, price_cents, included_small, included_photo, included_medium, included_large, included_credits_half, start_sla_hours, execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large, can_order_requests, queue_rank, grants_priority, watches_reviews, report_level, report_period",
         )
         .eq("space_id", spaceId)
         .order("price_cents"),
@@ -159,6 +161,7 @@ export async function loadPlanCatalogue(supabase: Supabase, spaceId: string): Pr
       includedPhoto: p.included_photo,
       includedMedium: p.included_medium,
       includedLarge: p.included_large,
+      includedCreditsHalf: p.included_credits_half,
       startSlaHours: p.start_sla_hours,
       executionSla: {
         small: p.execution_sla_small,

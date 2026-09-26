@@ -45,6 +45,7 @@ function plan(over: Partial<CataloguePlan> & Pick<CataloguePlan, "id" | "name" |
     includedPhoto: 0,
     includedMedium: 0,
     includedLarge: 0,
+    includedCreditsHalf: 0,
     startSlaHours: 48,
     executionSla: { small: 72, photo: 72, medium: 72, large: 120 },
     canOrderRequests: false,
