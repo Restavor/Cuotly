@@ -71,7 +71,7 @@ en los correos y en el historial. **Nunca se usan como sinónimos.**
 | Espacio de mantenimiento | space | Un proveedor de mantenimiento (Restavor es uno). Unidad de aislamiento de datos. |
 | Grupo | group | Empresa o grupo cliente. Contiene establecimientos. |
 | Establecimiento | establishment | Un restaurante concreto. Tiene plan, consumos, pagos y trabajos propios. |
-| Plan de mantenimiento | plan | Producto que el espacio vende a un establecimiento (en Restavor: Básico, Impulso, Impulso+, Premium, Premium+). |
+| Plan de mantenimiento | plan | Producto que el espacio vende a un establecimiento (en Restavor: Básico, Impulso y Premium desde el 26/09/2026; Impulso+ y Premium+ archivados). |
 | Servicio | service | Producto adicional con sus propias reglas y consumos (Menú Diario). |
 | Suscripción del establecimiento | subscription | Contrato vigente de un establecimiento con un plan o un servicio. |
 | Ciclo de consumo | consumption_cycle | Periodo mensual de una suscripción; define qué bolsa de consumos aplica. |
@@ -219,22 +219,36 @@ el 13/09/2026: su flujo completo es el §26 (Fase 2, Hito 12, migración 80).
 
 ### 6.1 Planes de mantenimiento de Restavor
 
-Todos los precios son **más IVA** (Restavor: 21 %). Los cuatro planes con cambios incluidos son los de
-las fichas de Restavor del 16/09/2026 (decisión 39, migración 96). **El Básico es el de su ficha del
-26/09/2026** (decisión 83, migración 146).
+Todos los precios son **más IVA** (Restavor: 21 %). **El catálogo de Restavor es Básico, Impulso y
+Premium** (decisión 84, 26/09/2026). El Básico es el de su ficha del 26/09/2026 (decisión 83,
+migración 146); Impulso y Premium siguen siendo los de las fichas del 16/09/2026 (decisión 39,
+migración 96) hasta que lleguen las suyas.
 
-> **Catálogo en transición (26/09/2026).** Restavor rehace su catálogo y quedarán **Básico, Impulso y
-> Premium**. Bosco manda las fichas una a una: la del Básico ya está aplicada; las de Impulso y Premium
-> llegarán después, y con ellas se archivarán Impulso+ y Premium+ (RN-COM-27). Hasta entonces, las
-> filas de Impulso, Impulso+, Premium y Premium+ son las del 16/09/2026.
+> **Impulso+ y Premium+ están archivados desde el 26/09/2026** (decisión 84, migración 148,
+> RN-COM-27): no se pueden contratar ni elegir en un cambio de plan, no se borran y siguen en el
+> historial de versiones. Sus filas se quedan en la tabla de abajo, tachadas, porque las reglas que
+> citan Premium+ se escribieron con ellas.
+>
+> **Lo que solo tenía Premium+ no lo tiene hoy ningún plan de Restavor**: la prioridad
+> (`grants_priority`, de la que cuelgan el precio reducido de Menú Diario —RN-COM-08— y las
+> oportunidades avanzadas —RN-OPP-08—), el cambio grande incluido (RN-COM-02), los plazos de
+> realización cortos (RN-SLA-18), la vigilancia de reseñas (RN-INT-10) y el informe completo
+> (RN-REP-15). Las reglas siguen valiendo: son columnas del plan y el servidor las aplica al plan que
+> las tenga. Qué vuelve y a qué plan lo dirá la ficha del Premium; no se le da a Premium nada de esto
+> por su cuenta.
+>
+> **Menú Diario deja de venderse aparte** (decisión 84, punto 3): *"solo funciona si tienes plan
+> impulso o premium, que está incluido dentro de ellos, no es un plan aparte"*. Todavía **no está
+> construido**: hasta que se escriban sus reglas (cuántas actualizaciones incluye cada plan, qué pasa
+> con RN-COM-08 a RN-COM-12) el servidor sigue con el servicio de §6.2.
 
 | Plan | Precio/mes | Pequeños | Fotográficos | Medianos | Grandes | Plazo de inicio | Prioridad |
 |---|---:|---:|---:|---:|---:|---:|---|
 | Básico | 20 € | 0 | 0 | 0 | 0 | 48 h laborables | Por detrás de todos |
 | Impulso | 299 € | 6 | 6 | 1 | 0 | 48 h laborables | Estándar |
-| Impulso+ | 399 € | 16 | 12 | 3 | 0 | 24 h laborables | Alta |
+| ~~Impulso+~~ (archivado) | 399 € | 16 | 12 | 3 | 0 | 24 h laborables | Alta |
 | Premium | 499 € | 10 | 12 | 2 | 0 | 24 h laborables | Alta |
-| Premium+ | 599 € | 25 | 24 | 5 | 1 | 24 h laborables | Máxima, superior en la cola |
+| ~~Premium+~~ (archivado) | 599 € | 25 | 24 | 5 | 1 | 24 h laborables | Máxima, superior en la cola |
 
 Premium incluye **menos** cambios pequeños que Impulso+ (10 frente a 16) y es intencionado: es lo que
 dice su ficha. Lo que cada ficha añade además de la bolsa, y que Cuotly recoge como **descripción
@@ -274,7 +288,7 @@ Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanz
   servicios externos los paga él aparte. No tiene reflejo en Cuotly.
 
 - **RN-COM-01**: en Básico **cualquier** modificación se presupuesta aparte. No hay consumos incluidos.
-- **RN-COM-02**: Impulso, Impulso+ y Premium no incluyen cambios grandes; se presupuestan aparte. Solo Premium+ incluye uno al mes.
+- **RN-COM-02**: Impulso, Impulso+ y Premium no incluyen cambios grandes; se presupuestan aparte. Solo Premium+ incluye uno al mes. *(Desde el 26/09/2026, con Premium+ archivado, ningún plan de Restavor que se pueda contratar incluye un cambio grande; decisión 84.)*
 - **RN-COM-03 (reescrita 19/09/2026, decisión 55)**: el plan decide **tres cosas distintas** que
   hasta hoy colgaban del mismo booleano `plans.grants_priority`, y separarlas es la regla:
 
@@ -306,6 +320,13 @@ Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanz
 - **RN-COM-07**: no existen bolsas de horas. Los trabajos fuera de plan se presupuestan aparte y no consumen bolsa.
 
 ### 6.2 Servicio Menú Diario
+
+> **Cambia (decisión 84, 26/09/2026), sin construir todavía.** Bosco: Menú Diario *"solo funciona si
+> tienes plan impulso o premium, que está incluido dentro de ellos, no es un plan aparte"*. Las reglas
+> de esta sección —el precio aparte, las 30 actualizaciones, el restaurante con Menú Diario y sin plan
+> de RN-COM-11 y RN-COM-12— dejarán de valer cuando se escriban las nuevas. Hasta entonces el servidor
+> se comporta como dicen, y el precio reducido de RN-COM-08 no lo da ningún plan que se pueda contratar
+> (Premium+ está archivado).
 
 - **RN-COM-08**: 229 € + IVA al mes; 199 € + IVA **solo** si el establecimiento tiene plan Premium+ activo. Impulso, Impulso+ y Premium **no** tienen descuento en Menú Diario (decisión 39). *(Hito 12, migración 80: la mensualidad del servicio se emite al contratar y en cada renovación con `generate_monthly_charge_internal()`; "Premium+" es el plan activo con `plans.grants_priority`, decisión 20. `service_monthly_price()` dice a la pantalla cuál de los dos se aplica.)*
 - **RN-COM-09**: 30 actualizaciones por ciclo mensual, no acumulables. Permanencia mínima de 3 meses.
@@ -417,7 +438,7 @@ isWithinBusinessWindow(at: Date, calendar: WorkCalendar): boolean
 
 ### T1 — Primera atención interna
 - **RN-SLA-01**: arranca cuando la solicitud se envía y entra en el espacio (estado `received`).
-- **RN-SLA-02**: duración = 48 h laborables (Básico, Impulso o establecimiento sin plan) / 24 h laborables (Impulso+, Premium y Premium+). Sale de `plans.start_sla_hours`.
+- **RN-SLA-02**: duración = 48 h laborables (Básico, Impulso o establecimiento sin plan) / 24 h laborables (Impulso+, Premium y Premium+; desde el 26/09/2026 solo se contrata Premium, decisión 84). Sale de `plans.start_sla_hours`.
 - **RN-SLA-03**: se detiene cuando la solicitud pasa a `pending_client_acceptance`, `needs_information` o `rejected`.
 - **RN-SLA-04**: reciben aviso el propietario y **todos** los administradores. Un trabajador solo recibe aviso cuando ya existe una asignación válida.
 

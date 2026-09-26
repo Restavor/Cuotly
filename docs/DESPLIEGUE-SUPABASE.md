@@ -6,13 +6,50 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 26/09/2026 (147).
+Actualizado el 26/09/2026 (148 y limpieza de las pruebas).
 
 ## Pendiente de aplicar
 
-Ninguna migración. Queda **volver a sembrar el espacio de demostración** con
-`supabase/seed/espacio-demo.sql` para que su Básico sea el de 20 € (ninguna de las tres de abajo lo
-toca).
+Ninguna migración.
+
+**El espacio de demostración ya no existe en el proyecto real y no se vuelve a sembrar** salvo que
+Bosco lo pida (decisión 84). `supabase/seed/espacio-demo.sql` sigue sirviendo para la base local y para
+el job `e2e-datos` de CI, que levanta su propia Supabase.
+
+**Actualización del 26/09/2026: limpieza de las pruebas y la 148** (decisión 84). Por orden:
+
+- **Limpieza** (`supabase/operaciones/2026-09-26-limpieza-de-pruebas.sql`, no es una migración).
+  Pedida por Bosco: borrar los restaurantes de prueba y dejar la aplicación "como si acabase de
+  crearme la cuenta", conservándolo como propietario. Borrado **físico, una sola vez**, auditoría
+  incluida, con su autorización expresa (CLAUDE.md sigue prohibiéndolo para todo lo demás). Se ensayó
+  antes en el proyecto real con una excepción al final que deshizo todo, y después se ejecutó; las
+  comprobaciones van dentro del mismo bloque y, si alguna falla, no se aplica nada.
+  - **Se borró**: el espacio «Restavor Mantenimiento» (slug `demo`) entero, con sus cuatro
+    restaurantes; el restaurante «Prueba» del espacio «Restavor» y todo lo suyo (suscripción, cobro,
+    apuntes, ciclo de consumos, copias, compromisos de permanencia, grupo); las siete cuentas
+    `@cuotly.test`; los dos apuntes de plataforma que las nombraban; y lo que dejó archivar
+    «Restavor» esa mañana (la operación, el evento de estado, el aviso y su apunte). Los correlativos
+    de «Restavor» vuelven a empezar en 1.
+  - **Se quedó**: la cuenta de Bosco tal cual (perfil, verificación en dos pasos y sesiones), el
+    espacio «Restavor» **desarchivado** (`cuotly_status` y sus fechas a `null`, como al crearse, y sin
+    borrado programado) con Bosco de propietario, sus cinco planes, Menú Diario, sus tres calendarios,
+    sus seis canales, el historial de barridos (`scheduled_jobs`), sus apuntes `space.created` y
+    `plan.edited`, y las 16 guías del centro de ayuda. Ningún objeto en Storage.
+  - Después: 1 espacio, 1 cuenta, 1 perfil, 1 pertenencia, 0 restaurantes, suscripciones, solicitudes
+    y cobros; los disparadores de usuario de `public`, todos encendidos otra vez.
+- **148 · `el_catalogo_de_tres_planes`** (decisión 84, RN-COM-27). Redefine `create_restavor_space()`
+  (misma firma y `grant`; siembra solo Básico, Impulso y Premium) y crea
+  `retire_plus_plans_internal(uuid)` (interna, cerrada a `public`, `anon` y `authenticated`), que
+  archiva Impulso+ y Premium+ en `restavor` con su apunte `plan.archived`. Sube la guía
+  `cobros-a-tus-restaurantes-y-tu-suscripcion` a la versión 3, que nombra solo los tres planes.
+  **Aplicada el 26/09/2026 por el MCP**, a petición del usuario, después de la limpieza; antes se
+  comprobó en vivo que `create_restavor_space()` era la de la 146 y que la 148 no estaba. Después:
+  243 migraciones registradas; planes de `restavor`: Básico 2000 (turno 0, trimestral) · Impulso
+  29900 (1) · Premium 49900 (2) activos, Impulso+ y Premium+ archivados; dos apuntes
+  `plan.archived`; la guía en su versión 3 sin Impulso+ ni Premium+; `anon` y `authenticated` no
+  ejecutan `retire_plus_plans_internal`.
+- En local pasan las 82 suites en el orden de CI con las 148 migraciones, y `planes_de_restavor`
+  falla si la 148 no archiva.
 
 **Anterior:**
 

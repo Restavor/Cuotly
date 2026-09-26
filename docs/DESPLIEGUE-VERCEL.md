@@ -6,6 +6,11 @@ funcione sola: la aplicación web y, sobre todo, el cron que dispara la cola.
 Escrito el 02/09/2026 como preparación. **Desplegado de verdad el
 20/09/2026**, y desde entonces esto es también el registro de lo que hay.
 
+> **Desde el 26/09/2026 el proyecto real ya no tiene el espacio de demostración ni las cuentas
+> `@cuotly.test`** (decisión 84, DESPLIEGUE-SUPABASE). Los recorridos de Playwright contra producción
+> que usaban esas cuentas, más abajo, ya no se pueden repetir tal cual: habría que sembrar un espacio
+> de prueba, y Bosco decidió no volver a meter datos de prueba en producción sin pedirlo.
+
 ## Lo que hay hoy en Vercel (20/09/2026)
 
 Dos proyectos, los dos conectados a `Restavor/Cuotly` y los dos sirviendo la

@@ -1,24 +1,32 @@
--- Los cuatro planes de mantenimiento de Restavor (migración 96; PRD §6.1,
--- RN-COM-01 a 03 y RN-COM-08; decisión 39 del 16/09/2026).
+-- Los planes de mantenimiento de Restavor (migraciones 96, 146 y 148;
+-- PRD §6.1, RN-COM-01 a 03, RN-COM-08 y RN-COM-27; decisiones 39, 83 y 84).
 --
---   · §6.1: `create_restavor_space()` siembra los cinco planes con los
---     números de las fichas de Restavor y Menú Diario con sus dos precios.
+--   · §6.1: desde el 26/09/2026 (decisión 84) `create_restavor_space()`
+--     siembra solo Básico, Impulso y Premium, con los números de sus
+--     fichas, y Menú Diario con sus dos precios.
 --   · RN-COM-01: Básico no incluye ningún cambio.
---   · RN-COM-02: solo Premium+ incluye un cambio grande.
---   · RN-COM-03: solo Premium+ concede la prioridad.
---   · RN-SLA-02: Impulso arranca a 48 h; Impulso+, Premium y Premium+ a 24.
---   · RN-COM-08: el precio reducido de Menú Diario sale solo con Premium+,
---     porque es el único con `grants_priority`.
+--   · RN-COM-02: ningún plan de Restavor incluye ya un cambio grande (solo
+--     lo incluía Premium+, que se archiva).
+--   · RN-COM-03: ninguno concede ya la prioridad; ordenar los cambios
+--     propios es de Premium; el turno, Premium delante de Impulso y el
+--     Básico por detrás de todos.
+--   · RN-SLA-02: Básico e Impulso arrancan a 48 h; Premium a 24.
+--   · RN-COM-08: el precio reducido de Menú Diario sale solo con un plan que
+--     conceda la prioridad (`grants_priority`), que ya no es ninguno del
+--     catálogo; se prueba con un plan de prueba que la tiene.
 --   · La migración de datos: un espacio con el catálogo del Hito 2 queda
 --     con Impulso+ y Premium+ (las mismas filas, mismas suscripciones) y
 --     con Impulso y Premium nuevos; repetirla no duplica nada, y no toca
 --     Básico ni un plan de otro nombre.
---   · La guía del centro de ayuda nombra los cinco planes.
 --   · La ficha del Básico del 26/09/2026 (migración 146, decisión 83):
 --     20 € + IVA, informe trimestral (RN-REP-32) y por detrás de todos en
 --     la cola (RN-COM-03). La función que lo aplica es idempotente, no
 --     toca lo que no toca y se para si alguien tiene ya un plan que cambia
 --     (RN-COM-20).
+--   · Migración 148 (decisión 84): Impulso+ y Premium+ se archivan
+--     (RN-COM-27): nadie los contrata, quien los tiene los conserva, nada
+--     se borra, y aplicarla dos veces no hace nada más.
+--   · La guía del centro de ayuda nombra solo Básico, Impulso y Premium.
 --
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/planes_de_restavor.sql
 
@@ -51,8 +59,13 @@ begin
   insert into pr_ids values ('restavor', v_space);
 
   select count(*) into v_n from public.plans where space_id = v_space;
-  if v_n <> 5 then
-    raise exception '§6.1 FALLIDO: Restavor debía nacer con 5 planes y tiene %', v_n using errcode = 'assert_failure';
+  if v_n <> 3 then
+    raise exception '§6.1 FALLIDO: Restavor debía nacer con 3 planes y tiene %', v_n using errcode = 'assert_failure';
+  end if;
+
+  -- Decisión 84 · Impulso+ y Premium+ ya no se siembran.
+  if exists (select 1 from public.plans where space_id = v_space and name in ('Impulso+', 'Premium+')) then
+    raise exception '§6.1 FALLIDO: Restavor nace con Impulso+ o Premium+ (decisión 84)' using errcode = 'assert_failure';
   end if;
 
   -- Cada plan, con los números de su ficha (precio, pequeños,
@@ -62,9 +75,7 @@ begin
       -- Decisión 83 · la ficha del Básico del 26/09/2026: 20 €.
       ('Básico',    2000,  0,  0, 0, 0, 48, false),
       ('Impulso',  29900,  6,  6, 1, 0, 48, false),
-      ('Impulso+', 39900, 16, 12, 3, 0, 24, false),
-      ('Premium',  49900, 10, 12, 2, 0, 24, false),
-      ('Premium+', 59900, 25, 24, 5, 1, 24, true)
+      ('Premium',  49900, 10, 12, 2, 0, 24, false)
     ) as f(name, price, small, photo, medium, large, sla, priority)
   loop
     if not exists (
@@ -85,10 +96,10 @@ begin
     raise exception 'RN-COM-01 FALLIDO: Básico incluye algún cambio' using errcode = 'assert_failure';
   end if;
 
-  -- RN-COM-02 · solo Premium+ incluye un cambio grande.
-  if (select string_agg(name, ',' order by name) from public.plans
-      where space_id = v_space and included_large > 0) <> 'Premium+' then
-    raise exception 'RN-COM-02 FALLIDO: un plan distinto de Premium+ incluye cambios grandes' using errcode = 'assert_failure';
+  -- RN-COM-02 · el cambio grande solo lo incluía Premium+; archivado
+  -- (decisión 84), ya no lo incluye ningún plan de Restavor.
+  if exists (select 1 from public.plans where space_id = v_space and included_large > 0) then
+    raise exception 'RN-COM-02 FALLIDO: un plan de Restavor incluye cambios grandes sin que ninguna ficha lo diga' using errcode = 'assert_failure';
   end if;
 
   -- RN-COM-03 · las TRES cosas que el plan decide, desde la decisión 55
@@ -96,32 +107,26 @@ begin
   -- comprueban juntas: separarlas mal es lo que le daría a Premium el
   -- precio rebajado de Menú Diario sin que nadie lo decidiera.
 
-  -- 1 · El plan alto sigue siendo solo Premium+. De aquí cuelgan el precio
-  --     de Menú Diario (RN-COM-08) y las oportunidades avanzadas (RN-OPP),
-  --     que Bosco fijó en la decisión 39 y que CLAUDE.md enumera.
-  if (select string_agg(name, ',' order by name) from public.plans
-      where space_id = v_space and grants_priority) <> 'Premium+' then
-    raise exception 'RN-COM-03 FALLIDO: la prioridad la concede un plan que no es Premium+' using errcode = 'assert_failure';
+  -- 1 · El plan alto era solo Premium+. De ahí cuelgan el precio de Menú
+  --     Diario (RN-COM-08) y las oportunidades avanzadas (RN-OPP). Con
+  --     Premium+ archivado no lo es ninguno: dárselo a Premium sería
+  --     decidir por Bosco.
+  if exists (select 1 from public.plans where space_id = v_space and grants_priority) then
+    raise exception 'RN-COM-03 FALLIDO: un plan de Restavor concede la prioridad sin que ninguna ficha lo diga' using errcode = 'assert_failure';
   end if;
 
-  -- 2 · Ordenar los cambios propios: Premium y Premium+ (19/09/2026).
+  -- 2 · Ordenar los cambios propios: Premium (19/09/2026; Premium+ ya no
+  --     está).
   if (select string_agg(name, ',' order by name) from public.plans
-      where space_id = v_space and can_order_requests) <> 'Premium,Premium+' then
-    raise exception 'RN-COM-03 FALLIDO: ordenar los cambios propios no es exactamente de Premium y Premium+'
+      where space_id = v_space and can_order_requests) is distinct from 'Premium' then
+    raise exception 'RN-COM-03 FALLIDO: ordenar los cambios propios no es exactamente de Premium'
       using errcode = 'assert_failure';
   end if;
 
-  -- 3 · El turno: Premium+ por delante de Premium, y Premium del resto.
-  --     Bosco, 19/09/2026: "si hay una solicitud de Premium+ y otra de
-  --     Premium, se contestaría primero la de Premium+".
-  if (select queue_rank from public.plans where space_id = v_space and name = 'Premium+')
-     <= (select queue_rank from public.plans where space_id = v_space and name = 'Premium') then
-    raise exception 'RN-COM-03 FALLIDO: Premium+ no se atiende antes que Premium' using errcode = 'assert_failure';
-  end if;
-
+  -- 3 · El turno: Premium por delante de los planes de abajo.
   if (select queue_rank from public.plans where space_id = v_space and name = 'Premium')
      <= (select max(queue_rank) from public.plans
-         where space_id = v_space and name in ('Básico', 'Impulso', 'Impulso+')) then
+         where space_id = v_space and name in ('Básico', 'Impulso')) then
     raise exception 'RN-COM-03 FALLIDO: Premium no se atiende antes que los planes de abajo' using errcode = 'assert_failure';
   end if;
 
@@ -140,47 +145,28 @@ begin
     raise exception 'RN-REP-32 FALLIDO: el informe trimestral no es exactamente del Básico' using errcode = 'assert_failure';
   end if;
 
-  -- Y el turno NO es un plazo más corto: Impulso+, Premium y Premium+
-  -- arrancan los tres a 24 h. Bosco: "todos tienen de máximo 24 h".
-  if (select count(distinct start_sla_hours) from public.plans
-      where space_id = v_space and name in ('Impulso+', 'Premium', 'Premium+')) <> 1 then
-    raise exception 'RN-SLA-02 FALLIDO: el turno del plan se ha colado como un plazo distinto'
-      using errcode = 'assert_failure';
-  end if;
-
-  -- RN-SLA-02 · Impulso a 48 h; los otros tres con cambios a 24.
+  -- RN-SLA-02 · Básico e Impulso a 48 h; Premium a 24.
   if (select string_agg(name, ',' order by name) from public.plans
-      where space_id = v_space and start_sla_hours = 24) <> 'Impulso+,Premium,Premium+' then
-    raise exception 'RN-SLA-02 FALLIDO: las 24 h no son de Impulso+, Premium y Premium+' using errcode = 'assert_failure';
+      where space_id = v_space and start_sla_hours = 24) is distinct from 'Premium' then
+    raise exception 'RN-SLA-02 FALLIDO: las 24 h no son exactamente de Premium' using errcode = 'assert_failure';
   end if;
 
-  -- RN-SLA-18 (decisión 61) · el plazo de realización solo baja en
-  -- Premium+: 48, 48, 72 y 96 h; los demás, la tabla de RN-SLA-12. Hasta
-  -- la migración 134 un Restavor recién creado nacía con Premium+ a 72,
-  -- 72, 72 y 120, porque la 118 solo rellenó los planes que ya existían.
-  if not exists (
-    select 1 from public.plans
-    where space_id = v_space and name = 'Premium+'
-      and execution_sla_small = 48 and execution_sla_photo = 48
-      and execution_sla_medium = 72 and execution_sla_large = 96
-  ) then
-    raise exception 'RN-SLA-18 FALLIDO: Premium+ no nace con los plazos 48/48/72/96' using errcode = 'assert_failure';
-  end if;
-
+  -- RN-SLA-18 (decisión 61) · los plazos de realización cortos (48, 48, 72
+  -- y 96 h) eran solo de Premium+; los tres que quedan tienen los de la
+  -- tabla de RN-SLA-12.
   if exists (
     select 1 from public.plans
-    where space_id = v_space and name <> 'Premium+'
+    where space_id = v_space
       and (execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large)
           is distinct from (72, 72, 72, 120)
   ) then
-    raise exception 'RN-SLA-18 FALLIDO: un plan distinto de Premium+ no tiene los plazos de RN-SLA-12' using errcode = 'assert_failure';
+    raise exception 'RN-SLA-18 FALLIDO: un plan de Restavor no tiene los plazos de RN-SLA-12' using errcode = 'assert_failure';
   end if;
 
   -- RN-INT-10 (decisión 60) · la vigilancia de reseñas la concede el plan,
-  -- y en Restavor solo Premium+. Mismo hueco que el de arriba, con la 117.
-  if (select string_agg(name, ',' order by name) from public.plans
-      where space_id = v_space and watches_reviews) is distinct from 'Premium+' then
-    raise exception 'RN-INT-10 FALLIDO: la vigilancia de reseñas no es exactamente de Premium+' using errcode = 'assert_failure';
+  -- y en Restavor era solo Premium+: ya no la concede ninguno.
+  if exists (select 1 from public.plans where space_id = v_space and watches_reviews) then
+    raise exception 'RN-INT-10 FALLIDO: un plan de Restavor vigila reseñas sin que ninguna ficha lo diga' using errcode = 'assert_failure';
   end if;
 
   -- RN-COM-08 a 10 · Menú Diario: 229 € y 199 €, 30 actualizaciones.
@@ -195,14 +181,25 @@ end $$;
 reset role;
 
 -- ============================================================
--- RN-COM-08 · el precio reducido de Menú Diario sale solo con Premium+
+-- RN-COM-08 · el precio reducido de Menú Diario sale solo con el plan que
+-- concede la prioridad
 --
--- Un restaurante con Premium (499 €) paga 229 €; con Premium+, 199 €. Es
--- lo que Bosco subrayó como MUY IMPORTANTE: Impulso, Impulso+ y Premium
--- no tienen descuento en Menú Diario.
+-- Un restaurante con Premium (499 €) o con Impulso paga 229 €. Es lo que
+-- Bosco subrayó como MUY IMPORTANTE: los planes sin prioridad no tienen
+-- descuento en Menú Diario. Hasta el 26/09/2026 el que la concedía era
+-- Premium+; archivado (decisión 84), el catálogo ya no tiene ninguno, así
+-- que el mecanismo se prueba con un plan de prueba que la tiene.
 -- ============================================================
 insert into public.space_memberships (space_id, user_id, role, status) values
   ((select v from pr_ids where k = 'restavor'), 'ffd00000-0000-0000-0000-000000000002', 'admin', 'active');
+
+-- Turno 3, por delante de todos: si empatara con el Básico, la ficha del
+-- Básico de abajo lo querría subir y se pararía por tener restaurante.
+insert into public.plans
+  (space_id, name, price_cents, included_small, included_photo, included_medium, included_large,
+   start_sla_hours, grants_priority, queue_rank)
+values
+  ((select v from pr_ids where k = 'restavor'), 'Plan de prueba con prioridad', 59900, 25, 24, 5, 1, 24, true, 3);
 
 insert into public.groups (id, space_id, name) values
   ('ffd30000-0000-0000-0000-000000000001', (select v from pr_ids where k = 'restavor'), 'Grupo Planes');
@@ -211,9 +208,9 @@ insert into public.establishments (id, space_id, group_id, code, name, status) v
   ('ffd40000-0000-0000-0000-000000000001', (select v from pr_ids where k = 'restavor'),
    'ffd30000-0000-0000-0000-000000000001', 'PLN-0001', 'Casa Premium', 'active'),
   ('ffd40000-0000-0000-0000-000000000002', (select v from pr_ids where k = 'restavor'),
-   'ffd30000-0000-0000-0000-000000000001', 'PLN-0002', 'Casa Premium Plus', 'active'),
+   'ffd30000-0000-0000-0000-000000000001', 'PLN-0002', 'Casa Prioridad', 'active'),
   ('ffd40000-0000-0000-0000-000000000003', (select v from pr_ids where k = 'restavor'),
-   'ffd30000-0000-0000-0000-000000000001', 'PLN-0003', 'Casa Impulso Plus', 'active');
+   'ffd30000-0000-0000-0000-000000000001', 'PLN-0003', 'Casa Impulso', 'active');
 
 select set_config('request.jwt.claim.sub', 'ffd00000-0000-0000-0000-000000000002', false);
 select set_config('request.jwt.claim.aal', 'aal1', false);
@@ -229,9 +226,9 @@ begin
   perform public.create_plan_subscription('ffd40000-0000-0000-0000-000000000001',
     (select id from public.plans where space_id = v_space and name = 'Premium'));
   perform public.create_plan_subscription('ffd40000-0000-0000-0000-000000000002',
-    (select id from public.plans where space_id = v_space and name = 'Premium+'));
+    (select id from public.plans where space_id = v_space and name = 'Plan de prueba con prioridad'));
   perform public.create_plan_subscription('ffd40000-0000-0000-0000-000000000003',
-    (select id from public.plans where space_id = v_space and name = 'Impulso+'));
+    (select id from public.plans where space_id = v_space and name = 'Impulso'));
 
   -- Premium (499 €): Menú Diario a 229 €.
   v_sub := public.create_service_subscription('ffd40000-0000-0000-0000-000000000001', v_service);
@@ -240,26 +237,27 @@ begin
     raise exception 'RN-COM-08 FALLIDO: con Premium (499 €) Menú Diario debía costar 22900 sin descuento y es % (descuento: %)', v_base, v_premium using errcode = 'assert_failure';
   end if;
 
-  -- Impulso+ (399 €): también 229 €.
+  -- Impulso (299 €): también 229 €.
   v_sub := public.create_service_subscription('ffd40000-0000-0000-0000-000000000003', v_service);
   select base_cents, premium_applied into v_base, v_premium from public.service_monthly_price(v_sub);
   if v_base <> 22900 or v_premium then
-    raise exception 'RN-COM-08 FALLIDO: con Impulso+ Menú Diario debía costar 22900 sin descuento y es %', v_base using errcode = 'assert_failure';
+    raise exception 'RN-COM-08 FALLIDO: con Impulso Menú Diario debía costar 22900 sin descuento y es %', v_base using errcode = 'assert_failure';
   end if;
 
-  -- Premium+ (599 €): 199 €, y el apunte lo dice.
+  -- El plan que concede la prioridad: 199 €, y el apunte lo dice.
   v_sub := public.create_service_subscription('ffd40000-0000-0000-0000-000000000002', v_service);
   select base_cents, premium_applied into v_base, v_premium from public.service_monthly_price(v_sub);
   if v_base <> 19900 or not v_premium then
-    raise exception 'RN-COM-08 FALLIDO: con Premium+ Menú Diario debía costar 19900 y es %', v_base using errcode = 'assert_failure';
+    raise exception 'RN-COM-08 FALLIDO: con un plan que concede la prioridad Menú Diario debía costar 19900 y es %', v_base using errcode = 'assert_failure';
   end if;
 
-  -- RN-OPP-08 · Premium ve las básicas; Premium+ también las avanzadas.
+  -- RN-OPP-08 · Premium ve las básicas; el plan con prioridad, también las
+  -- avanzadas.
   if public.client_opportunity_access('ffd40000-0000-0000-0000-000000000001') <> 'basic' then
     raise exception 'RN-OPP-08 FALLIDO: Premium (499 €) debía ver solo las básicas' using errcode = 'assert_failure';
   end if;
   if public.client_opportunity_access('ffd40000-0000-0000-0000-000000000002') <> 'advanced' then
-    raise exception 'RN-OPP-08 FALLIDO: Premium+ debía ver también las avanzadas' using errcode = 'assert_failure';
+    raise exception 'RN-OPP-08 FALLIDO: el plan que concede la prioridad debía ver también las avanzadas' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -332,9 +330,11 @@ begin
     raise exception 'MIGRACIÓN 96 FALLIDA: aplicarla dos veces duplica planes' using errcode = 'assert_failure';
   end if;
 
-  -- Y sobre un espacio ya sembrado con los cinco (Restavor), tampoco.
+  -- Y sobre un espacio sembrado con el catálogo de hoy (Restavor),
+  -- tampoco: ni resucita Impulso+ ni Premium+.
+  select count(*) into v_n from public.plans where space_id = (select v from pr_ids where k = 'restavor');
   perform public.upgrade_restavor_plan_catalogue((select v from pr_ids where k = 'restavor'));
-  if (select count(*) from public.plans where space_id = (select v from pr_ids where k = 'restavor')) <> 5 then
+  if (select count(*) from public.plans where space_id = (select v from pr_ids where k = 'restavor')) <> v_n then
     raise exception 'MIGRACIÓN 96 FALLIDA: sobre Restavor recién sembrado añadió planes' using errcode = 'assert_failure';
   end if;
 
@@ -430,18 +430,113 @@ begin
 end $$;
 
 -- ============================================================
--- RN-SOP-10 · la guía del centro de ayuda nombra los cinco planes
+-- Migración 148 · Impulso+ y Premium+ archivados (decisión 84, RN-COM-27)
+--
+-- El espacio de prueba de arriba acaba con los cinco planes de Restavor y
+-- el suyo propio (Total), que es como estaba Restavor el 26/09/2026. Casa
+-- Total tiene Premium+: archivarlo no se lo quita.
+-- ============================================================
+insert into public.establishments (id, space_id, group_id, code, name, status) values
+  ('ffd40000-0000-0000-0000-00000000000a', 'ffd10000-0000-0000-0000-000000000009',
+   'ffd30000-0000-0000-0000-000000000009', 'PLN-0010', 'Casa Nueva', 'active');
+insert into public.subscriptions (space_id, establishment_id, kind, plan_id)
+values ('ffd10000-0000-0000-0000-000000000009', 'ffd40000-0000-0000-0000-000000000009', 'plan',
+        'ffd20000-0000-0000-0000-000000000003');
+
+do $$
+declare
+  v_space uuid := 'ffd10000-0000-0000-0000-000000000009';
+  v_impulso_plus uuid := 'ffd20000-0000-0000-0000-000000000002';
+  v_premium_plus uuid := 'ffd20000-0000-0000-0000-000000000003';
+  v_n integer;
+begin
+  select count(*) into v_n from public.plans where space_id = v_space;
+
+  perform public.retire_plus_plans_internal(v_space);
+
+  -- RN-COM-27 · los dos, archivados; ninguno más.
+  if exists (select 1 from public.plans
+             where id in (v_impulso_plus, v_premium_plus) and archived_at is null) then
+    raise exception 'MIGRACIÓN 148 FALLIDA: Impulso+ o Premium+ sigue sin archivar' using errcode = 'assert_failure';
+  end if;
+  if exists (select 1 from public.plans
+             where space_id = v_space and id not in (v_impulso_plus, v_premium_plus)
+               and archived_at is not null) then
+    raise exception 'MIGRACIÓN 148 FALLIDA: archivó un plan que no era Impulso+ ni Premium+' using errcode = 'assert_failure';
+  end if;
+
+  -- RN-COM-27 · nunca se borra.
+  if (select count(*) from public.plans where space_id = v_space) <> v_n then
+    raise exception 'RN-COM-27 FALLIDO: archivar borró planes' using errcode = 'assert_failure';
+  end if;
+
+  -- RN-COM-27 · quien lo tiene lo conserva hasta que pase a otro.
+  if not exists (select 1 from public.subscriptions
+                 where establishment_id = 'ffd40000-0000-0000-0000-000000000009'
+                   and plan_id = v_premium_plus and status = 'active') then
+    raise exception 'RN-COM-27 FALLIDO: archivar Premium+ le quitó el plan a quien lo tenía' using errcode = 'assert_failure';
+  end if;
+
+  -- El mismo apunte que archive_plan(), uno por plan, y el de Premium+
+  -- dice que alguien lo tiene.
+  if (select count(*) from public.audit_log where space_id = v_space and action = 'plan.archived') <> 2 then
+    raise exception 'MIGRACIÓN 148 FALLIDA: esperaba dos apuntes plan.archived' using errcode = 'assert_failure';
+  end if;
+  if not exists (
+    select 1 from public.audit_log
+    where space_id = v_space and action = 'plan.archived'
+      and entity_id = (select lineage_id from public.plans where id = v_premium_plus)
+      and (new_value ->> 'in_use')::boolean
+  ) then
+    raise exception 'MIGRACIÓN 148 FALLIDA: el apunte de Premium+ no dice que alguien lo tiene' using errcode = 'assert_failure';
+  end if;
+
+  -- RN-COM-27 · ya no lo contrata nadie.
+  begin
+    insert into public.subscriptions (space_id, establishment_id, kind, plan_id)
+    values (v_space, 'ffd40000-0000-0000-0000-00000000000a', 'plan', v_impulso_plus);
+    raise exception 'RN-COM-27 FALLIDO: se pudo contratar Impulso+ archivado' using errcode = 'assert_failure';
+  exception
+    when assert_failure then raise;
+    when others then
+      if sqlerrm not like '%ya no se ofrece%' then raise; end if;
+  end;
+
+  -- Idempotente: otra vez no escribe otro apunte.
+  perform public.retire_plus_plans_internal(v_space);
+  if (select count(*) from public.audit_log where space_id = v_space and action = 'plan.archived') <> 2 then
+    raise exception 'MIGRACIÓN 148 FALLIDA: aplicarla dos veces escribió más apuntes' using errcode = 'assert_failure';
+  end if;
+
+  -- Sobre Restavor recién sembrado no hay nada que archivar.
+  perform public.retire_plus_plans_internal((select v from pr_ids where k = 'restavor'));
+  if exists (select 1 from public.plans
+             where space_id = (select v from pr_ids where k = 'restavor') and archived_at is not null) then
+    raise exception 'MIGRACIÓN 148 FALLIDA: archivó un plan del catálogo de hoy' using errcode = 'assert_failure';
+  end if;
+
+  -- CLAUDE.md · interna: cerrada a anon y a authenticated, no solo a public.
+  if has_function_privilege('anon', 'public.retire_plus_plans_internal(uuid)', 'execute')
+     or has_function_privilege('authenticated', 'public.retire_plus_plans_internal(uuid)', 'execute') then
+    raise exception 'CLAUDE.md FALLIDO: retire_plus_plans_internal está abierta por RPC' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- ============================================================
+-- RN-SOP-10 · la guía del centro de ayuda nombra Básico, Impulso y
+-- Premium, y ni Impulso+ ni Premium+ (decisión 84)
 -- ============================================================
 do $$
 declare v_body text;
 begin
   select body into v_body from public.help_articles where slug = 'cobros-a-tus-restaurantes-y-tu-suscripcion';
-  if v_body not like '%Impulso+%' or v_body not like '%Premium+%' or v_body not like '%Básico%' then
-    raise exception 'RN-SOP-10 FALLIDO: la guía de cobros no nombra los cinco planes' using errcode = 'assert_failure';
+  if v_body not like '%Básico%' or v_body not like '%Impulso%' or v_body not like '%Premium%'
+     or v_body like '%Impulso+%' or v_body like '%Premium+%' then
+    raise exception 'RN-SOP-10 FALLIDO: la guía de cobros no nombra exactamente Básico, Impulso y Premium' using errcode = 'assert_failure';
   end if;
-  if (select version from public.help_articles where slug = 'cobros-a-tus-restaurantes-y-tu-suscripcion') < 2 then
+  if (select version from public.help_articles where slug = 'cobros-a-tus-restaurantes-y-tu-suscripcion') < 3 then
     raise exception 'RN-SOP-10 FALLIDO: cambiar la guía no subió su versión' using errcode = 'assert_failure';
   end if;
 end $$;
 
-select 'planes_de_restavor.sql: §6.1, RN-COM-01/02/03/08, RN-SLA-02, RN-OPP-08, RN-REP-32 y las migraciones 96 y 146 cumplidos' as resultado;
+select 'planes_de_restavor.sql: §6.1, RN-COM-01/02/03/08/27, RN-SLA-02, RN-OPP-08, RN-REP-32 y las migraciones 96, 146 y 148 cumplidos' as resultado;

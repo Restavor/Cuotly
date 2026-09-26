@@ -2127,7 +2127,7 @@ export const es = {
       priorityHint: "Lo ha ordenado así el propio restaurante, incluido en su plan.",
       priorityNone: "Sin ordenar",
       priorityNoneHint:
-        "Ordenar los cambios por importancia va incluido en el plan Premium+. Este restaurante no lo ha hecho, o su plan no lo incluye.",
+        "Ordenar los cambios por importancia va incluido en el plan Premium. Este restaurante no lo ha hecho, o su plan no lo incluye.",
 
       startedAtLabel: "Fecha de inicio",
       startedAtNone: "Todavía no ha comenzado",
@@ -3475,7 +3475,7 @@ export const es = {
       emptyReason:
         "Cuando pidas un cambio y esté esperando, aparecerá aquí para que digas cuánto te corre.",
       notAllowed:
-        "Ordenar los cambios por importancia va incluido en el plan Premium+. Con tu plan actual el equipo los atiende por orden de llegada.",
+        "Ordenar los cambios por importancia va incluido en el plan Premium. Con tu plan actual el equipo los atiende por orden de llegada.",
       /*
        * Decisión de Bosco (12/09/2026): "si un trabajo ya se está haciendo
        * no se puede mover, no se puede reordenar".

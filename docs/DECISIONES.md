@@ -2382,3 +2382,40 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     salvo el turno; con sus fichas llegarán sus cambios, el archivo de Impulso+ y Premium+
     (RN-COM-27), el precio reducido de Menú Diario (hoy de Premium+, RN-COM-08) y la guía del centro
     de ayuda que nombra los cinco planes.
+
+
+84. **Limpieza de las pruebas, el catálogo de tres planes y Menú Diario dentro del plan**
+    (26/09/2026). Bosco manda la ficha del Impulso, que **no llega** (el mensaje no traía adjunto y
+    en su Drive no hay ninguna). Preguntado por lo que la decisión 83 dejó pendiente, contesta:
+
+    1. **Borrar los restaurantes de prueba** — *"los restaurantes que hay actualmente en la app son
+       pruebas, quiero que borres todos. Limpia la app como si acabase de crearme la cuenta. Pero que
+       no se te olvide que soy el propietario"*. Preguntado por las dudas, decide:
+       - **Qué espacio se queda**: «Restavor» (slug `restavor`, *"el que solo tiene 1 plan"*), aunque
+         él mismo lo había archivado esa mañana con el motivo *"este es inecesario y tengo el otro
+         espacio"*. Sale de Archivados y vuelve a como estaba al crearse. **Se borra entero**
+         «Restavor Mantenimiento» (slug `demo`, el que sembraba `supabase/seed/espacio-demo.sql`,
+         que él había renombrado el 21/09 y donde había archivado Impulso+ y Premium+ el 25/09) con
+         las siete cuentas `@cuotly.test`.
+       - **Borrado físico, una sola vez**: *"Sí, borrado real, una vez"*. Es una excepción autorizada
+         por él, solo sobre datos de prueba, al "no borrar físicamente registros de negocio" y a "los
+         registros de auditoría no se borran" de CLAUDE.md, que siguen igual para todo lo demás. Por
+         eso no vive en una migración: está en `supabase/operaciones/2026-09-26-limpieza-de-pruebas.sql`,
+         ensayada antes con la transacción deshecha. Lo que se queda y lo que no, en DESPLIEGUE-SUPABASE.
+    2. **Impulso+ y Premium+ fuera ya** — *"Sí, ya"*, sin esperar a las fichas: sin restaurantes, no
+       afecta a nadie. Se **archivan** (RN-COM-27), no se borran. `create_restavor_space()` siembra
+       solo Básico, Impulso y Premium. Migración 148, suite `planes_de_restavor`. Consecuencia que
+       queda escrita en PRD §6.1: lo que solo tenía Premium+ —la prioridad (`grants_priority`, de la
+       que cuelgan el precio reducido de Menú Diario y las oportunidades avanzadas), el cambio grande,
+       los plazos de realización cortos, la vigilancia de reseñas y el informe completo— no lo tiene
+       hoy ningún plan que se pueda contratar. No se le pasa a Premium por su cuenta: lo dirá su ficha.
+    3. **Menú Diario** — preguntado si "borra Menú Diario de los planes" quería decir quitar el
+       descuento o dejar de ofrecerlo, contesta otra cosa: *"que menú diario solo funciona si tienes
+       plan impulso o premium que está incluido dentro de ellos, no es un plan aparte"*. Deja de
+       venderse como servicio y va incluido en Impulso y Premium; el Básico no lo tiene. **No está
+       construido**: faltan cuántas actualizaciones incluye cada plan, si siguen las tres plantillas
+       iniciales, y qué pasa con el restaurante con Menú Diario y sin plan (RN-COM-11 y RN-COM-12).
+       Hasta que se escriban las reglas, el servidor sigue con el servicio de PRD §6.2.
+    4. **La guía del centro de ayuda** — *"que solo nombre básico impulso y premium"*. La guía de cobros
+       pasa a su versión 3 en la migración 148. Los dos textos de la web que decían que ordenar los
+       cambios "va incluido en el plan Premium+" dicen Premium, que es quien lo tiene.

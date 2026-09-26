@@ -126,8 +126,10 @@ declare
 begin
   for v in
     select * from (values
-      ('Básico', 'basic'), ('Impulso', 'standard'), ('Impulso+', 'standard_plus'),
-      ('Premium', 'advanced'), ('Premium+', 'complete')
+      -- Decisión 84 (26/09/2026) · Impulso+ ('standard_plus') y Premium+
+      -- ('complete') salen del catálogo de Restavor. Los dos niveles siguen
+      -- existiendo (la escalera de arriba) para el plan que los tenga.
+      ('Básico', 'basic'), ('Impulso', 'standard'), ('Premium', 'advanced')
     ) as f(plan, nivel)
   loop
     if not exists (
