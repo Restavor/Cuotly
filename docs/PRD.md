@@ -220,11 +220,17 @@ el 13/09/2026: su flujo completo es el §26 (Fase 2, Hito 12, migración 80).
 ### 6.1 Planes de mantenimiento de Restavor
 
 Todos los precios son **más IVA** (Restavor: 21 %). Los cuatro planes con cambios incluidos son los de
-las fichas de Restavor del 16/09/2026 (decisión 39, migración 96); Básico se mantiene tal como estaba.
+las fichas de Restavor del 16/09/2026 (decisión 39, migración 96). **El Básico es el de su ficha del
+26/09/2026** (decisión 83, migración 146).
+
+> **Catálogo en transición (26/09/2026).** Restavor rehace su catálogo y quedarán **Básico, Impulso y
+> Premium**. Bosco manda las fichas una a una: la del Básico ya está aplicada; las de Impulso y Premium
+> llegarán después, y con ellas se archivarán Impulso+ y Premium+ (RN-COM-27). Hasta entonces, las
+> filas de Impulso, Impulso+, Premium y Premium+ son las del 16/09/2026.
 
 | Plan | Precio/mes | Pequeños | Fotográficos | Medianos | Grandes | Plazo de inicio | Prioridad |
 |---|---:|---:|---:|---:|---:|---:|---|
-| Básico | 99 € | 0 | 0 | 0 | 0 | 48 h laborables | — |
+| Básico | 20 € | 0 | 0 | 0 | 0 | 48 h laborables | Por detrás de todos |
 | Impulso | 299 € | 6 | 6 | 1 | 0 | 48 h laborables | Estándar |
 | Impulso+ | 399 € | 16 | 12 | 3 | 0 | 24 h laborables | Alta |
 | Premium | 499 € | 10 | 12 | 2 | 0 | 24 h laborables | Alta |
@@ -243,6 +249,31 @@ comercial del plan** sin construir ninguna restricción nueva (decisión 39, pun
 
 Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanzadas), no esta tabla.
 
+**La ficha del Básico (26/09/2026, decisión 83)**, en lo que toca a Cuotly:
+
+- **Precio**: 20 € + IVA al mes, facturación mensual, permanencia de 3 meses, renovación mensual
+  después, y cancelar antes obliga a pagar lo que queda (RN-COM-04, RN-FIN-14). Un cambio voluntario
+  de plan vuelve a empezar la permanencia (RN-COM-05).
+- **Cambios**: ninguno incluido. Cualquier modificación se pide en Cuotly y se presupuesta
+  (RN-COM-01). No hay bolsas de horas (RN-COM-07).
+- **Atención**: empieza en 48 h laborables como máximo (T1 y T2, RN-SLA-02), que es empezar la
+  gestión, no resolverla. Sus solicitudes van **por detrás de Impulso y Premium** en la cola del equipo
+  (RN-COM-03, turno 0).
+- **Informe**: **trimestral** (RN-REP-32) y con el **tráfico de la web** —visitas, usuarios, páginas
+  más visitadas, dispositivos y evolución— (RN-REP-33). Sin análisis estratégico ni recomendaciones.
+- **Incidencias**: el diagnóstico de una incidencia técnica de la web no cuesta nada, lo que rompió
+  Restavor se arregla sin coste y lo que requiera un trabajo no incluido se presupuesta antes. *(Cómo
+  entra esto en Cuotly está pendiente de confirmar con Bosco: ver la decisión 83 de
+  `docs/DECISIONES.md`.)*
+- **Lo que hace Restavor por su cuenta, no Cuotly** (decisión 83, punto 2): la monitorización de
+  caídas, la supervisión del dominio y el DNS, del certificado HTTPS/SSL y de los elementos esenciales
+  de la web (botón de reservas, teléfono, ubicación, carta, formularios y enlaces), y las copias de
+  seguridad de la web (una al mes y otra antes de cada modificación). Es **descripción comercial del
+  plan**, como la decisión 39 punto 5: Cuotly no vigila la web ni la respalda (RN-BCK-01), y comprobar
+  que el botón de reservas de la web funciona **no** es monitorizar las reservas (CLAUDE.md, §24.2).
+- **Propiedad**: la web es del restaurante desde su entrega, y el alojamiento, el dominio y los
+  servicios externos los paga él aparte. No tiene reflejo en Cuotly.
+
 - **RN-COM-01**: en Básico **cualquier** modificación se presupuesta aparte. No hay consumos incluidos.
 - **RN-COM-02**: Impulso, Impulso+ y Premium no incluyen cambios grandes; se presupuestan aparte. Solo Premium+ incluye uno al mes.
 - **RN-COM-03 (reescrita 19/09/2026, decisión 55)**: el plan decide **tres cosas distintas** que
@@ -254,8 +285,10 @@ Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanz
      hay ningún plazo más corto que inventar.
   2. **El turno dentro de ese plazo** (`plans.queue_rank`): a igualdad de todo lo demás se atiende
      primero al plan más alto. Bosco, 19/09/2026: *"si hay una solicitud de Premium+ y otra de
-     Premium, se contestaría primero la de Premium+"*. En Restavor: Premium+ (2), Premium (1), el
-     resto (0). **Esto el cliente no lo ve**: es el orden de trabajo del equipo, y enseñarle en qué
+     Premium, se contestaría primero la de Premium+"*. En Restavor, desde el 26/09/2026 (decisión 83,
+     ficha del Básico: *"prioridad inferior a los planes Impulso y Premium"*): Premium+ (3), Premium
+     (2), Impulso e Impulso+ (1) y Básico (0), que es también el turno de quien no tiene plan
+     (RN-COM-12). **Esto el cliente no lo ve**: es el orden de trabajo del equipo, y enseñarle en qué
      puesto va frente a otros restaurantes no le sirve de nada y compromete a otros.
   3. **Si puede ordenar sus propias solicitudes** 1..N (`plans.can_order_requests`, RN-PRI): **Premium
      y Premium+**, decidido el 19/09/2026 —hasta entonces solo Premium+—. Esto **sí es visible**: es
@@ -1767,6 +1800,7 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   | Resumen ejecutivo | ✓ | ✓ | ✓ | ✓ | ✓ |
   | **Lo que ha pasado este mes**, con la ficha de cada cambio (RN-REP-18) | ✓ | ✓ | ✓ | ✓ | ✓ |
   | **Consumo por categoría** (RN-REP-20) | ✓ | ✓ | ✓ | ✓ | ✓ |
+  | **Tráfico de la web** (RN-REP-33, desde el 26/09/2026) | ✓ | ✓ | ✓ | ✓ | ✓ |
   | Operación · cumplimiento de plazos | — | ✓ | ✓ | ✓ | ✓ |
   | Operación · tiempos medios de inicio y entrega | — | ✓ | ✓ | ✓ | ✓ |
   | Operación · bloqueos, correcciones y Menú Diario | — | — | ✓ | ✓ | ✓ |
@@ -2147,7 +2181,9 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   del restaurante**, en Informes y datos › Resumen. Un botón, **"Generar informe"**, y nada que
   rellenar: familia **operación**, periodo el **último mes natural cerrado** (RN-REP-05), nombre
   "Informe de <mes> de <año>", y las secciones que permite el nivel del plan (RN-REP-15), con
-  "Lo que ha pasado este mes" dentro. No lleva Finanzas, así que lo alcanza todo el restaurante sin
+  "Lo que ha pasado este mes" dentro. *(Desde el 26/09/2026, decisión 83: si el plan manda el informe
+  cada trimestre, el periodo es el **último trimestre natural cerrado** y el nombre "Informe del
+  trimestre de <mes> a <mes> de <año>" —RN-REP-32—. Lo decide el servidor con el plan, no la pantalla.)* No lleva Finanzas, así que lo alcanza todo el restaurante sin
   chocar con RN-REP-16.
 
   **Pulsar dos veces no hace dos informes** (CA-17): la clave de idempotencia es la de la biblioteca
@@ -2245,6 +2281,51 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
     "Aprobar informes".
   - **P7 no se toca.** Es equipo: ve lo mismo que ve el equipo, y lo que se sube al restaurante no
     lleva su nombre, igual que el de nadie.
+
+- **RN-REP-32 (añadida 26/09/2026, decisión 83)**: **el plan decide cada cuánto llega el informe**:
+  cada **mes** o cada **trimestre**. Lo pide la ficha del Básico —*"resumen trimestral automático"*— y
+  Bosco eligió el 26/09/2026 construirlo como una característica más del plan: el Básico recibe el
+  trimestral y **deja de recibir el mensual**.
+
+  - **Es un término del plan** (`plans.report_period`, `month` o `quarter`) y se versiona como los
+    demás (RN-COM-20). Pasar de mensual a trimestral **perjudica** —son menos informes por el mismo
+    precio— y pide aceptación (RN-COM-23); al revés, favorece. No se deduce del nombre del plan.
+  - **Sin plan, mensual**: un restaurante solo con Menú Diario sigue recibiendo el suyo cada mes.
+  - **"Generar informe" de la ficha** (RN-REP-27) usa el último trimestre natural cerrado —enero a
+    marzo, abril a junio, julio a septiembre u octubre a diciembre— en la zona del espacio. El 1 de
+    octubre ya toca julio a septiembre. Quién es el plan lo pregunta el servidor
+    (`establishment_report_period()`), con la misma puerta que el nivel: a quien no es de ese
+    restaurante le contesta `month`.
+  - **Un trimestre se compara con el trimestre natural anterior**, entero (RN-REP-17), por lo mismo
+    que un mes con el mes anterior. En `complete`, el del año pasado es el mismo trimestre.
+  - **El texto dice "trimestre"**: el nombre, el resumen automático (RN-REP-28: *"En el trimestre de
+    julio a septiembre de 2026…"*) y el título del relato (*"Lo que ha pasado este trimestre"*).
+  - **"Automático" es lo que ya hace el informe del mes**: Cuotly lo genera con un botón, sin nada que
+    rellenar y con el resumen escrito por frases fijas, y el equipo lo sube (RN-REP-29). No hay envío
+    programado que salga solo.
+  - **La biblioteca no cambia**: el equipo puede seguir preparando un informe de las fechas que elija
+    (RN-REP-05). Lo que decide el plan es el informe que le toca al restaurante.
+
+- **RN-REP-33 (añadida 26/09/2026, decisión 83)**: **la sección "Tráfico de la web"**
+  (`web_traffic`), en los **cinco niveles** y marcada por omisión en las tres familias. Es lo que la
+  ficha del Básico promete: *"visitas, usuarios, páginas más visitadas, dispositivos utilizados y
+  evolución general del tráfico"*.
+
+  - **Va en los cinco porque es lo que pasó**, no una valoración (decisión 58), así que no rompe la
+    escalera: ninguno la quita. Va detrás de "Lo que ha pasado este mes".
+  - **Las visitas y los usuarios** son las mismas cifras de Analytics que "Rendimiento digital", con
+    su fecha y, si faltan, su motivo (§178): se copian, no se recalculan. Se comparan con el periodo
+    anterior según el nivel (RN-REP-17), y en "Lo esencial" las visitas salen **una sola vez** aunque
+    el informe lleve las dos secciones.
+  - **Las páginas más visitadas**: las cinco con más vistas del periodo. **Los dispositivos**: las
+    visitas desde cada tipo, con su parte en entero. **La evolución**: visitas y usuarios de cada mes
+    del periodo, solo si el periodo toca dos meses o más; un mes sin datos dice "sin datos", no cero,
+    y uno que el periodo no cubre entero se marca incompleto.
+  - **Sin Analytics** las visitas dicen el motivo y **no hay detalle debajo**: un detalle con números
+    contradiría a la cifra de arriba. Lo que no hay no se pinta (CLAUDE.md).
+  - **No llama a ninguna API** (RN-REP-04): lee lo importado en `metric_points`.
+  - El resto no se mueve: un Básico sigue sin Operación, Rendimiento digital, Oportunidades, Finanzas
+    ni Anexos, y sin comparación con el periodo anterior (RN-REP-15, RN-REP-17).
 
 Lo que este apartado **no** trae, dicho en claro: no hay informe **generado por IA** ni resumen
 redactado por un modelo (§93: "el informe automático por correo no necesita IA"; el resumen de

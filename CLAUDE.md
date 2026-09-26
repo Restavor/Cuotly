@@ -69,7 +69,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 
 - Cuotly es multiempresa, no solo el espacio de Restavor.
 - Menú Diario: 30 actualizaciones (no 25). 229 € + IVA, o 199 € + IVA **solo** si el establecimiento tiene Premium+ activo. Impulso, Impulso+ y Premium pagan 229 €.
-- Planes (fichas de Restavor del 16/09/2026, decisión 39, migración 96): Básico 99 €, Impulso 299 €, Impulso+ 399 €, Premium 499 €, Premium+ 599 €, todos + IVA. Básico NO incluye ningún cambio ni fotografía. Solo Premium+ incluye un cambio grande y solo Premium+ concede la prioridad (`plans.grants_priority`). Impulso arranca a 48 h laborables; Impulso+, Premium y Premium+ a 24 h. Premium (499 €) incluye menos cambios pequeños que Impulso+ y es intencionado.
+- Planes: el catálogo de Restavor pasa a ser **solo Básico, Impulso y Premium** (26/09/2026); Bosco manda las fichas una a una. **Básico** (ficha del 26/09/2026, decisión 83, migraciones 145 y 146): 20 € + IVA, NO incluye ningún cambio ni fotografía, arranca a 48 h laborables, va por detrás de Impulso y Premium en la cola (`queue_rank` 0) y recibe el informe **cada trimestre** (`plans.report_period`), con el tráfico de la web. Hasta que lleguen sus fichas, el resto sigue como el 16/09/2026 (decisión 39, migración 96): Impulso 299 €, Impulso+ 399 €, Premium 499 €, Premium+ 599 €, todos + IVA. Solo Premium+ incluye un cambio grande y solo Premium+ concede la prioridad (`plans.grants_priority`). Impulso arranca a 48 h laborables; Impulso+, Premium y Premium+ a 24 h. Premium (499 €) incluye menos cambios pequeños que Impulso+ y es intencionado.
 - Permanencia de mantenimiento: 3 meses. No existen bolsas de horas.
 - "Supervisor" no es un rol: es una relación Administrador–Trabajador.
 - El supervisor NO aprueba antes de publicar. El trabajador publica directamente.
@@ -77,7 +77,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - El horario de soporte humano es un reloj distinto y no afecta a los plazos contractuales.
 - Los mensajes se editan durante 10 minutos y no se eliminan nunca.
 - Menú Diario no tiene botón "Comenzar".
-- Reservas y delivery no se monitorizan.
+- Reservas y delivery no se monitorizan. (Que Restavor compruebe por su cuenta que el botón de reservas de la web funciona, como dice la ficha del Básico, no es monitorizarlas: Cuotly no vigila la web —decisión 83—.)
 - No existe botón "Sincronizar ahora" en las integraciones analíticas.
 - Sin Stripe: los pagos se registran manualmente (transferencia o Bizum).
 - Sin modo oscuro, sin selector de densidad, sin marca blanca, sin publicidad.

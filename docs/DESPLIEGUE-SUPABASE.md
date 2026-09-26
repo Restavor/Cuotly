@@ -6,9 +6,35 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 26/09/2026 (144).
+Actualizado el 26/09/2026 (146).
 
 ## Pendiente de aplicar
+
+**Pendientes desde el 26/09/2026: la 145 y la 146.** No se han aplicado al proyecto real: hay que
+pedirlo.
+
+- **145 · `el_informe_trimestral`** (decisión 83, RN-REP-32 y RN-REP-33). Añade
+  `plans.report_period` (`month`/`quarter`, `not null default 'month'`), la función
+  `establishment_report_period(uuid)` (`security definer`, para `authenticated` y no para `anon`) y la
+  sección `web_traffic` en `report_sections_catalogue()`, `report_level_allows()` y
+  `report_section_default_included()`. **Cambia la firma** de `create_plan()` y `revise_plan()`: gana
+  `p_report_period text default null` al final, así que se borran y se crean (y su `grant`). Redefine
+  `plan_terms_diff_internal()` con la fila del periodo. Datos: rellena la fila `web_traffic`
+  **desmarcada** en los informes que no estén enviados ni archivados, como hizo la 112. **La web de
+  este commit necesita esta migración**: la pantalla de planes manda `p_report_period` y la ficha del
+  restaurante llama a `establishment_report_period()`.
+- **146 · `el_basico_a_veinte_euros`** (decisión 83). Redefine `create_restavor_space()` y crea
+  `apply_basic_plan_sheet_internal(uuid)` (interna, cerrada a `public`, `anon` y `authenticated`). En el
+  espacio `restavor`: Básico a 2000 céntimos y `report_period = 'quarter'`, y un escalón más de
+  `queue_rank` a los otros cuatro planes, en el sitio y con su apunte (RN-COM-21). **Se para** si
+  alguno de esos planes tiene un restaurante; el 26/09/2026 no había ninguno activo en Restavor
+  (comprobado en vivo: Impulso+ tiene una suscripción, pero no activa).
+- **El espacio de demostración** no lo toca ninguna de las dos: después de aplicarlas hay que volver a
+  sembrarlo con `supabase/seed/espacio-demo.sql` para que su Básico sea el de 20 €.
+
+En local pasan las 81 suites en el orden de CI y la semilla dos veces.
+
+**Anterior:**
 
 **Actualización del 26/09/2026: la 144.** `imprimir_el_menu` (RN-MEN-04, RN-MEN-10, §61 paso 4): el
 botón Imprimir del Menú Diario, en la pantalla del restaurante y en la del equipo. Añade

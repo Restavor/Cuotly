@@ -2343,3 +2343,39 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
 
     Reglas en el PRD: RN-ADM-22 a RN-ADM-26 (§32), y cambian RN-ADM-15 y RN-ADM-17. Migraciones 142
     y 143, suite 80.
+
+
+83. **El catálogo pasa a Básico, Impulso y Premium; la ficha del Básico** (26/09/2026). Bosco:
+    *"vamos a cambiar los planes. Van a ser solo básico, impulso y premium. Te voy a subir primero el
+    básico y luego te subo el resto"*. La ficha del Básico, en lo que toca a Cuotly: **20 € + IVA al
+    mes** (antes 99 €), ningún cambio incluido, 48 h laborables para empezar la gestión, sus
+    solicitudes **por detrás de Impulso y Premium**, un **resumen trimestral** con el tráfico de la web,
+    diagnóstico de incidencias sin coste y arreglo sin coste de lo que rompió Restavor, 3 meses de
+    permanencia. Preguntado por lo que chocaba con lo construido, contesta el 26/09/2026:
+
+    1. **El informe trimestral** — *"A"*: se construye como una característica más del plan
+       (`plans.report_period`, RN-REP-32), el Básico recibe el trimestral con las cifras de tráfico y
+       deja de recibir el mensual. Las cifras van en una sección nueva, "Tráfico de la web", en los
+       cinco niveles (RN-REP-33). Migración 145, suite 81.
+    2. **La vigilancia y las copias de la web** — *"Sí, restavor hacemos las revisiones Cuotly no se
+       encarga de revisar"*: la monitorización de caídas, el dominio y el DNS, el certificado, los
+       elementos esenciales y las copias de la web los hace Restavor con sus herramientas. En Cuotly
+       son descripción comercial del plan (PRD §6.1), como la decisión 39 punto 5. Cuotly no vigila
+       la web, y comprobar que el botón de reservas funciona no es monitorizar las reservas.
+    3. **Incidencias frente a cambios** — *"a"*: un tipo de solicitud "Incidencia" cuyo diagnóstico
+       no cuesta nada; si el error fue de Restavor, el arreglo tampoco; si hace falta un trabajo no
+       incluido, se presupuesta; con su propio historial. **Pendiente de construir**: antes de
+       hacerlo se le han preguntado a Bosco los detalles del flujo (quién acepta un arreglo sin
+       coste, qué pasa con un problema externo, si una incidencia puede resultar ser un cambio y si
+       vale para todos los planes).
+    4. **Las condiciones** — *"las condiciones siguen igual no han cambiado"*: no se publica nada.
+
+    **Lectura de Claude sobre el turno** (RN-COM-03): *"prioridad inferior a Impulso y Premium"* se
+    aplica subiendo un escalón a todos los demás planes y dejando el Básico en 0, que es también el
+    turno de quien no tiene plan (RN-COM-12 dice que se comporta como Básico). El orden entre los
+    otros no cambia. Migración 146.
+
+    **Lo que no se toca todavía**: Impulso, Impulso+, Premium y Premium+ siguen como el 16/09/2026
+    salvo el turno; con sus fichas llegarán sus cambios, el archivo de Impulso+ y Premium+
+    (RN-COM-27), el precio reducido de Menú Diario (hoy de Premium+, RN-COM-08) y la guía del centro
+    de ayuda que nombra los cinco planes.
