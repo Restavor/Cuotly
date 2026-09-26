@@ -6,9 +6,28 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 26/09/2026 (143).
+Actualizado el 26/09/2026 (144).
 
 ## Pendiente de aplicar
+
+**Actualización del 26/09/2026: la 144.** `imprimir_el_menu` (RN-MEN-04, RN-MEN-10, §61 paso 4): el
+botón Imprimir del Menú Diario, en la pantalla del restaurante y en la del equipo. Añade
+`menu_downloads.printed` (booleano, falso por defecto, con `select` concedido a `authenticated`
+columna a columna como las demás) y cambia la firma de `register_menu_download`: gana `p_print`
+(falso por defecto), así que se borra y se crea. Con `p_print` solo se admite PDF, la fila y su
+apunte de auditoría quedan marcados como impresión y el menú **no** pasa a "Listo para publicar"
+aunque imprima el trabajador asignado. No toca datos. En local pasan las 80 suites en el orden de CI,
+y la suite `menu_diario_descargas_y_plantillas` falla si se quita la condición de `p_print`.
+
+**Aplicada el 26/09/2026 por el MCP**, a petición del usuario. Antes se comprobó en vivo que la última
+era la 143, que `printed` no existía, que `menu_downloads` no tenía filas, que ninguna otra función
+depende de `register_menu_download` y, por md5, que la función en vivo era la del repositorio: no
+coincidía, pero quitando las tres líneas de comentario que en vivo faltan el md5 es idéntico
+(`68c72890…`). Después: 239 migraciones registradas, una sola `register_menu_download` con la firma de
+tres argumentos y el mismo md5 que en el repositorio (`6b0ed466…`), `security definer`, ejecutable por
+`authenticated` y no por `anon`; `printed` es `boolean not null default false`, `authenticated` la lee
+y sigue sin leer `downloaded_by` (P7), y `anon` no lee nada. **La web que manda `p_print` necesita esta
+migración**: sin ella fallan las descargas y la impresión del menú.
 
 **Actualización del 26/09/2026: la 143.** `lo_eliminado_ya_no_se_ve` (decisión 82, RN-ADM-26): lo eliminado
 definitivamente ya no lo ve nadie. Añade cuatro funciones internas (`space_is_gone`,
