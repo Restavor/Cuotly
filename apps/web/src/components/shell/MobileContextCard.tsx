@@ -24,34 +24,13 @@ export interface ShellContext {
 }
 
 /**
- * Móvil (página 22 del diseño) · la tarjeta de contexto bajo la cabecera.
- *
- * A la izquierda, dónde estás. Tocarla despliega **todos** tus contextos,
- * separados como en "Restaurantes": Mantenimiento (los espacios) y
- * Restaurantes (los paneles), y desde ahí se cambia sin pasar por el
- * Inicio global. A la derecha, "Volver al inicio global", que lleva a `/`.
- *
- * Con un solo contexto —el que ya estás mirando— no hay desplegable: un
- * `<details>` de un elemento promete algo que no hay (el mismo criterio
- * que RN-PAN-05). Si `my_contexts()` falla, se cae ahí también, y el botón
- * de la derecha sigue llevando a donde se elige.
- *
- * Es un `<details>` por la misma razón que el selector del panel: funciona
- * sin hidratación y con teclado. Como el armazón vive en el layout y no se
- * desmonta al navegar, se cierra al cambiar de ruta y al tocar fuera.
+ * El `<details>` de un selector de contexto se cierra solo al cambiar de
+ * ruta y al tocar fuera. Hace falta porque el armazón vive en el layout y
+ * no se desmonta al navegar: sin esto, el desplegable seguiría abierto en
+ * la pantalla de destino. Lo comparten la tarjeta de móvil y la caja del
+ * menú lateral de escritorio.
  */
-export function MobileContextCard({
-  name,
-  detail,
-  currentHref,
-  contexts,
-}: {
-  name: string;
-  detail: string;
-  currentHref: string;
-  contexts: readonly ShellContext[];
-}) {
-  const t = es.nav.contextPicker;
+export function useCloseDetailsOnLeave() {
   const pathname = usePathname();
   const desplegable = useRef<HTMLDetailsElement>(null);
 
@@ -68,25 +47,26 @@ export function MobileContextCard({
     return () => document.removeEventListener("pointerdown", fuera);
   }, []);
 
-  const hayOtros = contexts.some((c) => c.href !== currentHref);
+  return desplegable;
+}
+
+/**
+ * La lista del desplegable: todos tus contextos, separados como en
+ * "Restaurantes" —Mantenimiento (los espacios) y Restaurantes (los
+ * paneles)—, con el actual marcado. Es la misma en móvil y en escritorio:
+ * dos listas de "mis contextos" que un día dirían cosas distintas serían
+ * peor que una.
+ */
+export function ContextPickerList({
+  currentHref,
+  contexts,
+}: {
+  currentHref: string;
+  contexts: readonly ShellContext[];
+}) {
+  const t = es.nav.contextPicker;
   const espacios = contexts.filter((c) => c.kind === "space");
   const paneles = contexts.filter((c) => c.kind === "panel");
-
-  const identidad = (
-    <span className="flex min-w-0 items-center gap-2 rounded-field border border-border bg-surface px-2.5 py-2 transition-colors group-open:border-cuotly-green">
-      <Icon name="building" className="h-5 w-5 shrink-0 text-primary-dark" />
-      <span aria-hidden="true" className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-semibold text-text">{name}</span>
-        <span className="block truncate text-[11px] text-text-secondary">{detail}</span>
-      </span>
-      {hayOtros ? (
-        <Icon
-          name="chevronDown"
-          className="h-4 w-4 shrink-0 text-text-secondary transition-transform group-open:rotate-180"
-        />
-      ) : null}
-    </span>
-  );
 
   const grupo = (titulo: string, filas: readonly ShellContext[]) =>
     filas.length === 0 ? null : (
@@ -122,6 +102,63 @@ export function MobileContextCard({
     );
 
   return (
+    <>
+      {grupo(t.maintenance, espacios)}
+      {grupo(t.restaurants, paneles)}
+    </>
+  );
+}
+
+/**
+ * Móvil (página 22 del diseño) · la tarjeta de contexto bajo la cabecera.
+ *
+ * A la izquierda, dónde estás. Tocarla despliega **todos** tus contextos,
+ * separados como en "Restaurantes": Mantenimiento (los espacios) y
+ * Restaurantes (los paneles), y desde ahí se cambia sin pasar por el
+ * Inicio global. A la derecha, "Volver al inicio global", que lleva a `/`.
+ *
+ * Con un solo contexto —el que ya estás mirando— no hay desplegable: un
+ * `<details>` de un elemento promete algo que no hay (el mismo criterio
+ * que RN-PAN-05). Si `my_contexts()` falla, se cae ahí también, y el botón
+ * de la derecha sigue llevando a donde se elige.
+ *
+ * Es un `<details>` por la misma razón que el selector del panel: funciona
+ * sin hidratación y con teclado. Como el armazón vive en el layout y no se
+ * desmonta al navegar, se cierra al cambiar de ruta y al tocar fuera.
+ */
+export function MobileContextCard({
+  name,
+  detail,
+  currentHref,
+  contexts,
+}: {
+  name: string;
+  detail: string;
+  currentHref: string;
+  contexts: readonly ShellContext[];
+}) {
+  const t = es.nav.contextPicker;
+  const desplegable = useCloseDetailsOnLeave();
+
+  const hayOtros = contexts.some((c) => c.href !== currentHref);
+
+  const identidad = (
+    <span className="flex min-w-0 items-center gap-2 rounded-field border border-border bg-surface px-2.5 py-2 transition-colors group-open:border-cuotly-green">
+      <Icon name="building" className="h-5 w-5 shrink-0 text-primary-dark" />
+      <span aria-hidden="true" className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-semibold text-text">{name}</span>
+        <span className="block truncate text-[11px] text-text-secondary">{detail}</span>
+      </span>
+      {hayOtros ? (
+        <Icon
+          name="chevronDown"
+          className="h-4 w-4 shrink-0 text-text-secondary transition-transform group-open:rotate-180"
+        />
+      ) : null}
+    </span>
+  );
+
+  return (
     <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-stretch gap-1.5">
       {hayOtros ? (
         <details ref={desplegable} className="group min-w-0">
@@ -132,8 +169,7 @@ export function MobileContextCard({
             {identidad}
           </summary>
           <div className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-[60vh] overflow-y-auto rounded-card border border-border bg-surface p-2 shadow-lg">
-            {grupo(t.maintenance, espacios)}
-            {grupo(t.restaurants, paneles)}
+            <ContextPickerList currentHref={currentHref} contexts={contexts} />
           </div>
         </details>
       ) : (

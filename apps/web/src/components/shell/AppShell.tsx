@@ -25,7 +25,12 @@ import {
   type NavDestination,
   type ShellRole,
 } from "./navigation";
-import { MobileContextCard, type ShellContext } from "./MobileContextCard";
+import {
+  ContextPickerList,
+  MobileContextCard,
+  useCloseDetailsOnLeave,
+  type ShellContext,
+} from "./MobileContextCard";
 
 export type { ShellContext } from "./MobileContextCard";
 
@@ -289,9 +294,9 @@ export function AppShell({
 
           {/*
             §20.1 · la acción persistente "Cambiar de espacio". Es UN control,
-            no dos: la caja entera lleva al selector de contexto. Dos enlaces
-            al mismo sitio, uno encima del otro, es un tabulador de más para
-            quien navega con teclado y dos veces lo mismo para quien escucha.
+            no dos: la caja entera abre el desplegable con todos tus espacios
+            y paneles, igual que la tarjeta de móvil, y desde ahí se cambia
+            sin pasar por el Inicio global. Volver a él es el enlace de debajo.
           */}
           {/*
             La caja de contexto y la salida a Cuotly solo existen DENTRO de
@@ -309,26 +314,12 @@ export function AppShell({
                 establishments={establishments}
               />
             ) : (
-              <Link
-                href="/"
-                aria-label={`${spaceName} · ${roleLabel} · ${es.nav.switchSpace}`}
-                className="block rounded-field border border-sidebar-border bg-sidebar-raised transition-colors hover:border-accent-green focus:outline focus:outline-2 focus:outline-cuotly-green"
-              >
-                <span className="flex items-center gap-2 px-3 py-2.5">
-                  <span aria-hidden="true" className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-surface">{spaceName}</span>
-                    <span className="block truncate text-xs text-sidebar-text">{roleLabel}</span>
-                  </span>
-                  <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-sidebar-text" />
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="flex items-center justify-center gap-1.5 border-t border-sidebar-border px-3 py-2 text-xs font-medium text-sidebar-text"
-                >
-                  <Icon name="switchSpace" className="h-3.5 w-3.5" />
-                  {es.nav.switchSpace}
-                </span>
-              </Link>
+              <SpaceContextBox
+                name={spaceName}
+                roleLabel={roleLabel}
+                currentHref={contextHome}
+                contexts={contexts}
+              />
             )}
 
             {/*
@@ -740,6 +731,88 @@ export function AppShell({
  * y peso a la vez, no solo con color (PRD §21.4), y con `aria-current`
  * para quien no ve ninguno de los tres.
  */
+/**
+ * §20.1 · la caja de contexto del espacio en el menú lateral de escritorio.
+ *
+ * Funciona como la tarjeta de móvil: pulsarla despliega **todos** tus
+ * contextos —Mantenimiento y Restaurantes, con la misma lista—, y desde ahí
+ * se cambia de espacio sin pasar por el Inicio global. Antes era un enlace
+ * a `/` que decía "Cambiar de espacio" y en realidad salía de los espacios:
+ * eso ya lo hace "Volver al inicio de Cuotly", que está justo debajo.
+ *
+ * Con un solo contexto —el que ya estás mirando— no hay desplegable ni
+ * fila de "Cambiar de espacio": sería una promesa de algo que no hay (el
+ * mismo criterio que RN-PAN-05). Si `my_contexts()` falla se cae ahí
+ * también, y el enlace de debajo sigue llevando a donde se elige.
+ *
+ * Es un `<details>` por la misma razón que el resto de selectores del
+ * armazón: funciona sin hidratación y con teclado (CA-22).
+ */
+function SpaceContextBox({
+  name,
+  roleLabel,
+  currentHref,
+  contexts,
+}: {
+  name: string;
+  roleLabel: string;
+  currentHref: string;
+  contexts: readonly ShellContext[];
+}) {
+  const desplegable = useCloseDetailsOnLeave();
+  const hayOtros = contexts.some((c) => c.href !== currentHref);
+
+  const identidad = (
+    <span className="flex items-center gap-2 px-3 py-2.5">
+      <span aria-hidden="true" className="min-w-0 flex-1 text-left">
+        <span className="block truncate text-sm font-semibold text-surface">{name}</span>
+        <span className="block truncate text-xs text-sidebar-text">{roleLabel}</span>
+      </span>
+      {hayOtros ? (
+        <Icon
+          name="chevronDown"
+          className="h-4 w-4 shrink-0 text-sidebar-text transition-transform group-open:rotate-180"
+        />
+      ) : null}
+    </span>
+  );
+
+  if (!hayOtros) {
+    return (
+      <div
+        className="rounded-field border border-sidebar-border bg-sidebar-raised"
+        aria-label={`${name} · ${roleLabel}`}
+      >
+        {identidad}
+      </div>
+    );
+  }
+
+  return (
+    <details ref={desplegable} className="group relative">
+      <summary
+        aria-label={`${name} · ${roleLabel} · ${es.nav.switchSpace}`}
+        className="block cursor-pointer list-none rounded-field border border-sidebar-border bg-sidebar-raised transition-colors hover:border-accent-green focus:outline focus:outline-2 focus:outline-cuotly-green group-open:border-accent-green [&::-webkit-details-marker]:hidden"
+      >
+        {identidad}
+        <span
+          aria-hidden="true"
+          className="flex items-center justify-center gap-1.5 border-t border-sidebar-border px-3 py-2 text-xs font-medium text-sidebar-text"
+        >
+          <Icon name="switchSpace" className="h-3.5 w-3.5" />
+          {es.nav.switchSpace}
+        </span>
+      </summary>
+      <div
+        data-testid="sidebar-context-picker"
+        className="absolute left-0 right-0 top-full z-40 mt-1.5 max-h-[60vh] overflow-y-auto rounded-card border border-border bg-surface p-2 shadow-lg"
+      >
+        <ContextPickerList currentHref={currentHref} contexts={contexts} />
+      </div>
+    </details>
+  );
+}
+
 /**
  * RN-PAN-03, RN-PAN-04 y RN-PAN-05 · la caja de contexto del panel del
  * restaurante, que ocupa el sitio de la del espacio.
