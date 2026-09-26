@@ -10,8 +10,13 @@ Actualizado el 26/09/2026 (147).
 
 ## Pendiente de aplicar
 
-**Pendientes desde el 26/09/2026: la 145, la 146 y la 147.** No se han aplicado al proyecto real:
-hay que pedirlo, y en ese orden.
+Ninguna migración. Queda **volver a sembrar el espacio de demostración** con
+`supabase/seed/espacio-demo.sql` para que su Básico sea el de 20 € (ninguna de las tres de abajo lo
+toca).
+
+**Anterior:**
+
+**Actualización del 26/09/2026: la 145, la 146 y la 147.** Por orden:
 
 - **145 · `el_informe_trimestral`** (decisión 83, RN-REP-32 y RN-REP-33). Añade
   `plans.report_period` (`month`/`quarter`, `not null default 'month'`), la función
@@ -44,7 +49,26 @@ hay que pedirlo, y en ese orden.
 
 En local pasan las 82 suites en el orden de CI y la semilla dos veces.
 
-**Anterior:**
+**Aplicadas el 26/09/2026 por el MCP, en ese orden**, a petición del usuario. Antes se comprobó en
+vivo que la última era la 144 y, por md5, que las funciones que se redefinen (`accept_request`,
+`validate_classification`, `create_plan`, `revise_plan`, `create_restavor_space`,
+`plan_terms_diff_internal` y las tres del catálogo de secciones) eran las del repositorio: las que no
+coincidían diferían solo en comentarios (md5 idéntico quitando comentarios y espacios, contra una
+base local construida hasta la 144). También que ningún plan de Restavor tenía un restaurante activo,
+así que la 146 no se iba a parar. Después:
+
+- 242 migraciones registradas.
+- Planes de `restavor`: Básico 2000 céntimos, turno 0, trimestral · Impulso 29900, turno 1 · Impulso+
+  39900, turno 1 · Premium 49900, turno 2 · Premium+ 59900, turno 3; los cuatro últimos, mensuales.
+  Cinco apuntes `plan.edited` de la 146 (uno del Básico y uno por cada turno subido).
+- Las nueve funciones nuevas o redefinidas (`accept_request`, `validate_classification`,
+  `create_plan`, `revise_plan`, `create_restavor_space`, `establishment_report_period`,
+  `apply_basic_plan_sheet_internal`, `set_request_kind` y `resolve_incident`) tienen **el mismo md5**
+  en vivo que en la base local con las tres migraciones.
+- `anon` no ejecuta ninguna de las funciones nuevas; `authenticated` ejecuta `set_request_kind`,
+  `resolve_incident` y `establishment_report_period`, y no `apply_basic_plan_sheet_internal`.
+- `authenticated` lee `requests.kind` e `incident_note`; las 26 solicitudes que había quedaron como
+  `change`. `report_sections_catalogue()` ya incluye `web_traffic`.
 
 **Actualización del 26/09/2026: la 144.** `imprimir_el_menu` (RN-MEN-04, RN-MEN-10, §61 paso 4): el
 botón Imprimir del Menú Diario, en la pantalla del restaurante y en la del equipo. Añade
