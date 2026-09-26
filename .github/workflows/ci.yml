@@ -610,6 +610,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/las_incidencias.sql
 
+      - name: "Suite 83 — El motor de créditos (migración 149, RN-CRE)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_motor_de_creditos.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

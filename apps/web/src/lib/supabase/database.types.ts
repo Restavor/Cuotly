@@ -87,6 +87,7 @@ export type Database = {
       };
       acceptances: {
         Row: {
+          credits_half: number | null;
           accepted_at: string;
           accepted_by: string | null;
           budgeted: boolean;
@@ -101,6 +102,7 @@ export type Database = {
           space_id: string;
         };
         Insert: {
+          credits_half?: number | null;
           accepted_at?: string;
           accepted_by?: string | null;
           budgeted?: boolean;
@@ -115,6 +117,7 @@ export type Database = {
           space_id: string;
         };
         Update: {
+          credits_half?: number | null;
           accepted_at?: string;
           accepted_by?: string | null;
           budgeted?: boolean;
@@ -842,6 +845,10 @@ export type Database = {
       };
       classifications: {
         Row: {
+          proposed_credits_half: number | null;
+          proposed_breakdown: Json | null;
+          prompt_version: string | null;
+          decided_credits_half: number | null;
           created_at: string;
           decided_at: string | null;
           decided_by: string | null;
@@ -860,6 +867,10 @@ export type Database = {
           space_id: string;
         };
         Insert: {
+          proposed_credits_half?: number | null;
+          proposed_breakdown?: Json | null;
+          prompt_version?: string | null;
+          decided_credits_half?: number | null;
           created_at?: string;
           decided_at?: string | null;
           decided_by?: string | null;
@@ -878,6 +889,10 @@ export type Database = {
           space_id: string;
         };
         Update: {
+          proposed_credits_half?: number | null;
+          proposed_breakdown?: Json | null;
+          prompt_version?: string | null;
+          decided_credits_half?: number | null;
           created_at?: string;
           decided_at?: string | null;
           decided_by?: string | null;
@@ -921,6 +936,7 @@ export type Database = {
       };
       consumption_cycles: {
         Row: {
+          included_credits_half: number;
           created_at: string;
           cycle_end: string;
           cycle_start: string;
@@ -934,6 +950,7 @@ export type Database = {
           subscription_id: string;
         };
         Insert: {
+          included_credits_half?: number;
           created_at?: string;
           cycle_end: string;
           cycle_start: string;
@@ -947,6 +964,7 @@ export type Database = {
           subscription_id: string;
         };
         Update: {
+          included_credits_half?: number;
           created_at?: string;
           cycle_end?: string;
           cycle_start?: string;
@@ -3165,6 +3183,7 @@ export type Database = {
       };
       jobs: {
         Row: {
+          credits_half: number | null;
           assigned_at: string | null;
           assigned_to: string | null;
           cancelled_at: string | null;
@@ -3190,6 +3209,7 @@ export type Database = {
           state: string;
         };
         Insert: {
+          credits_half?: number | null;
           assigned_at?: string | null;
           assigned_to?: string | null;
           cancelled_at?: string | null;
@@ -3214,6 +3234,7 @@ export type Database = {
           state?: string;
         };
         Update: {
+          credits_half?: number | null;
           assigned_at?: string | null;
           assigned_to?: string | null;
           cancelled_at?: string | null;
@@ -5085,6 +5106,7 @@ export type Database = {
       };
       plans: {
         Row: {
+          included_credits_half: number;
           can_order_requests: boolean;
           created_at: string;
           grants_priority: boolean;
@@ -5115,6 +5137,7 @@ export type Database = {
           publish_key: string | null;
         };
         Insert: {
+          included_credits_half?: number;
           can_order_requests?: boolean;
           created_at?: string;
           grants_priority?: boolean;
@@ -5140,6 +5163,7 @@ export type Database = {
           publish_key?: string | null;
         };
         Update: {
+          included_credits_half?: number;
           can_order_requests?: boolean;
           created_at?: string;
           grants_priority?: boolean;
@@ -6181,6 +6205,10 @@ export type Database = {
       };
       requests: {
         Row: {
+          validated_credits_half: number | null;
+          credit_breakdown: Json | null;
+          credits_deferred_until: string | null;
+          credits_deferred_by: string | null;
           accepted_at: string | null;
           accepted_by: string | null;
           accepted_start_sla_hours: number | null;
@@ -6216,6 +6244,10 @@ export type Database = {
           validated_summary: string | null;
         };
         Insert: {
+          validated_credits_half?: number | null;
+          credit_breakdown?: Json | null;
+          credits_deferred_until?: string | null;
+          credits_deferred_by?: string | null;
           accepted_at?: string | null;
           accepted_by?: string | null;
           accepted_start_sla_hours?: number | null;
@@ -6251,6 +6283,10 @@ export type Database = {
           validated_summary?: string | null;
         };
         Update: {
+          validated_credits_half?: number | null;
+          credit_breakdown?: Json | null;
+          credits_deferred_until?: string | null;
+          credits_deferred_by?: string | null;
           accepted_at?: string | null;
           accepted_by?: string | null;
           accepted_start_sla_hours?: number | null;
@@ -8156,6 +8192,7 @@ export type Database = {
       };
       create_plan: {
         Args: {
+          p_included_credits_half?: number;
           p_can_order_requests: boolean;
           p_execution_sla_large: number;
           p_execution_sla_medium: number;
@@ -8217,6 +8254,7 @@ export type Database = {
       rename_service: { Args: { p_name: string; p_service_id: string }; Returns: undefined };
       revise_plan: {
         Args: {
+          p_included_credits_half?: number;
           p_can_order_requests: boolean;
           p_execution_sla_large: number;
           p_execution_sla_medium: number;
@@ -9355,6 +9393,53 @@ export type Database = {
         Args: { p_category?: string; p_note: string; p_outcome: string; p_request_id: string };
         Returns: undefined;
       };
+      record_credit_valuation: {
+        Args: {
+          p_actor_id: string;
+          p_breakdown: Json;
+          p_credits_half: number;
+          p_estimated_cost_millicents?: number;
+          p_input_tokens?: number;
+          p_model?: string;
+          p_output_tokens?: number;
+          p_prompt_version?: string;
+          p_request_id: string;
+          p_summary: string;
+        };
+        Returns: string;
+      };
+      set_request_credits: {
+        Args: {
+          p_breakdown: Json;
+          p_credits_half: number;
+          p_reason?: string;
+          p_request_id: string;
+          p_summary: string;
+        };
+        Returns: undefined;
+      };
+      defer_request_to_next_cycle: {
+        Args: { p_request_id: string };
+        Returns: string;
+      };
+      establishment_credit_balance: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          included_half: number;
+          percent_used: number;
+          remaining_half: number;
+          renews_at: string;
+          used_half: number;
+        }[];
+      };
+      set_job_execution_days: {
+        Args: { p_days: number; p_job_id: string };
+        Returns: undefined;
+      };
+      credit_execution_sla_hours: {
+        Args: { p_credits_half: number };
+        Returns: number;
+      };
       set_request_kind: {
         Args: { p_kind: string; p_request_id: string };
         Returns: undefined;
@@ -10215,6 +10300,7 @@ export type Database = {
       plan_change_preview: {
         Args: { p_new_plan_id: string; p_subscription_id: string };
         Returns: {
+          extra_credits_half: number;
           difference_cents: number;
           extra_large: number;
           extra_medium: number;
@@ -10226,6 +10312,7 @@ export type Database = {
       plan_change_proration: {
         Args: { p_new_plan_id: string; p_subscription_id: string };
         Returns: {
+          extra_credits_half: number;
           difference_cents: number;
           extra_large: number;
           extra_medium: number;

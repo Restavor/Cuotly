@@ -64,8 +64,8 @@ declare
   v_fn text;
 begin
   foreach v_fn in array array[
-    'public.create_plan(uuid, text, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text)',
-    'public.revise_plan(uuid, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text)',
+    'public.create_plan(uuid, text, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text, integer)',
+    'public.revise_plan(uuid, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text, integer)',
     'public.establishment_report_period(uuid)'
   ] loop
     if has_function_privilege('anon', v_fn, 'execute') then
@@ -77,10 +77,12 @@ begin
   end loop;
 
   -- Las firmas viejas no pueden quedar vivas a la vez: una llamada sin el
-  -- parámetro nuevo sería ambigua.
+  -- parámetro nuevo sería ambigua. Desde la migración 149 hay otro
+  -- parámetro más (los créditos), así que se mira que haya una sola de cada.
   if exists (
     select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public' and p.proname in ('create_plan', 'revise_plan') and p.pronargs <> 19 - (p.proname = 'revise_plan')::int
+    where n.nspname = 'public' and p.proname in ('create_plan', 'revise_plan')
+    group by p.proname having count(*) > 1
   ) then
     raise exception 'RN-REP-32 FALLIDO: sigue viva una firma vieja de create_plan o revise_plan' using errcode = 'assert_failure';
   end if;

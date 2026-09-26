@@ -3786,7 +3786,10 @@ Lo que este apartado **no** trae, dicho en claro:
 
 ## 41. Créditos, el catálogo nuevo y Menú Diario dentro del plan — decisión 85 (RN-CRE)
 
-Escrito el 27/09/2026 **antes del código**, con las fichas de Impulso y Premium y el documento
+Escrito el 27/09/2026 **antes del código**. **Construido en el servidor (migración 149, suite 83)**: RN-CRE-01
+(créditos del plan), RN-CRE-04/05, RN-CRE-07, RN-CRE-09 a RN-CRE-19. Falta: la IA que valora en créditos
+y la aceptación en pantalla (punto 3), las pantallas (punto 4), Menú Diario (5), informes (6) y el
+catálogo (7). Escrito con las fichas de Impulso y Premium y el documento
 "Sistema de créditos de mantenimiento — Restavor" que Bosco mandó el 26/09/2026 y sus respuestas a
 las preguntas (decisión 85). **Donde esta sección y otra anterior digan cosas distintas, manda esta**;
 cada regla anterior que cambia lleva una nota que remite aquí. Hasta que cada parte esté construida,
@@ -3931,7 +3934,10 @@ grande, vigilancia de reseñas ni los plazos cortos de RN-SLA-18 (decisión 84).
   | 15,5–20 | 1–5 días laborables | 120 h laborables |
 
   El plazo se congela al aceptar (`jobs.execution_sla_hours`), como ahora: un cambio de plan no lo
-  reescribe. Los tramos son un término del plan y se versionan con él; no se deducen del nombre.
+  reescribe. **Los tramos son hoy los mismos para todos los planes** (decisión 85: "igual en Impulso y
+  Premium") y viven en el servidor, en `credit_execution_sla_hours()` (migración 149), con su espejo en
+  `src/core/credits.ts`. Si algún día un plan necesitara tramos propios, pasarían a ser un término del
+  plan que se versiona con él (RN-COM-20).
 - **RN-CRE-19**: **más de 20 créditos (solo Premium, que es el único donde cabe)**: no hay plazo
   automático. Dentro de las 24 h laborables de la confirmación de inicio, el equipo fija cuántos días
   laborables necesita y el cliente lo ve en esa misma confirmación. **Queda registrado antes de

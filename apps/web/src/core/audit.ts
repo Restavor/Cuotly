@@ -309,6 +309,8 @@ export const AUDIT_ACTIONS = [
   "job.blocked",
   "job.completed",
   "job.evidence_attached",
+  // RN-CRE-19 · el plazo de un trabajo de más de 20 créditos (migración 149).
+  "job.execution_sla_set",
   "job.published",
   "job.reassigned",
   "job.reassignment_requested",
@@ -412,6 +414,12 @@ export const AUDIT_ACTIONS = [
   "request.converted_from_conversation",
   "request.copied",
   "request.created_from_quote",
+  // PRD §41 · los créditos (migración 149): la IA los fija, el equipo los
+  // corrige, y la espera al ciclo siguiente.
+  "request.credits_set",
+  "request.credits_valued",
+  "request.deferral_expired",
+  "request.deferred_to_next_cycle",
   "request.declined_by_client",
   "request.draft_created",
   "request.draft_file_attached",

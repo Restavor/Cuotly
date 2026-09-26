@@ -6,11 +6,28 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 26/09/2026 (148 y limpieza de las pruebas).
+Actualizado el 27/09/2026 (149 escrita, sin aplicar).
 
 ## Pendiente de aplicar
 
-Ninguna migración.
+**149 · `el_motor_de_creditos`** (decisión 85, PRD §41, RN-CRE-01 a RN-CRE-19). El servidor aprende a
+medir en créditos; **no cambia el catálogo** ni ningún dato, y sin la IA en créditos (punto 3) nadie
+llega a la rama nueva. Añade `plans.included_credits_half`, `consumption_cycles.included_credits_half`,
+la categoría `credits` en consumos, trabajos, aceptaciones, presupuestos, solicitudes y
+clasificaciones, y columnas nuevas en `requests` (con `select` concedido a `authenticated` para
+`validated_credits_half`, `credit_breakdown` y `credits_deferred_until`, no para `credits_deferred_by`),
+`classifications`, `jobs` y `acceptances`. Funciones nuevas: `credit_execution_sla_hours`,
+`record_credit_valuation` (solo `service_role`), `set_request_credits`, `defer_request_to_next_cycle`,
+`run_deferred_credit_requests` (interna), `establishment_credit_balance`, `set_job_execution_days`, y
+dos internas del desglose. Redefine `accept_request`, `cancel_accepted_request`, `start_job`,
+`run_scheduled_job`, `run_consumption_thresholds`, `get_or_create_consumption_cycle_internal`,
+`change_plan_immediately` y `plan_terms_diff_internal` (mismas firmas). **Cambian de firma** y se
+borran y crean: `plan_change_proration` y `plan_change_preview` (una columna más),
+`create_plan` y `revise_plan` (`p_included_credits_half` al final, con valor por omisión).
+`request_new_client_acceptance` pasa a envolver a `request_new_client_acceptance_categories` (interna).
+En local pasan las 83 suites en el orden de CI, y la suite 83 falla si `accept_request()` deja pasar una
+solicitud que no cabe. **Antes de aplicarla**, comprobar por md5 que las funciones que redefine son las
+de la 148 en vivo.
 
 **El espacio de demostración ya no existe en el proyecto real y no se vuelve a sembrar** salvo que
 Bosco lo pida (decisión 84). `supabase/seed/espacio-demo.sql` sigue sirviendo para la base local y para
