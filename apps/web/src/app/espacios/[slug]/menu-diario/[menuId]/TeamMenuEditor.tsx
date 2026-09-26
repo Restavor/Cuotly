@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { MenuPreview, menuDocumentFromRows } from "@/components/menu/MenuPreview";
+import { PrintMenuButton } from "@/components/menu/PrintMenuButton";
 import { Card, ProgressBar } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import { isMenuEditable, type MenuState } from "@/core/menu-states";
@@ -176,6 +177,12 @@ export async function TeamMenuEditor({
               <Icon name="download" className="h-4 w-4" />
               {t.editor.download}
             </a>
+          ) : null}
+          {current !== null && menu.template_id !== null ? (
+            <PrintMenuButton
+              href={`${downloadHref}?formato=pdf&imprimir=1`}
+              className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green hover:bg-cuotly-green/10"
+            />
           ) : null}
         </div>
       </div>

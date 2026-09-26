@@ -220,11 +220,11 @@ describe("RN-MEN-10 · descargar un menú entrega lo que quedó registrado", () 
 });
 
 describe("RN-MEN-04 · imprimir el menú es descargar su PDF", () => {
-  it("con imprimir=1 registra la misma descarga en PDF y la entrega para abrirla, no para guardarla", async () => {
+  it("con imprimir=1 registra una descarga en PDF marcada como impresión y la entrega para abrirla, no para guardarla", async () => {
     const respuesta = await GET(peticion("pdf", "&imprimir=1"), { params });
 
     expect(respuesta.status).toBe(200);
-    expect(rpcMock).toHaveBeenCalledWith("register_menu_download", { p_menu_id: MENU, p_format: "pdf" });
+    expect(rpcMock).toHaveBeenCalledWith("register_menu_download", { p_menu_id: MENU, p_format: "pdf", p_print: true });
     expect(respuesta.headers.get("Content-Type")).toBe("application/pdf");
     expect(respuesta.headers.get("Content-Disposition")).toMatch(/^inline; /);
   });
@@ -232,6 +232,9 @@ describe("RN-MEN-04 · imprimir el menú es descargar su PDF", () => {
   it("sin imprimir, el PDF sigue llegando como archivo adjunto", async () => {
     const respuesta = await GET(peticion("pdf"), { params });
 
+    // Y se registra como descarga: la del trabajador asignado sí es el
+    // paso 4 de §61, y eso lo decide `p_print` en el servidor.
+    expect(rpcMock).toHaveBeenCalledWith("register_menu_download", { p_menu_id: MENU, p_format: "pdf", p_print: false });
     expect(respuesta.headers.get("Content-Disposition")).toMatch(/^attachment; /);
   });
 

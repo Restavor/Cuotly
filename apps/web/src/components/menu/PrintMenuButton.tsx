@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 
-const p = es.panelMenus;
+const t = es.menuPrint;
 
 /**
  * Imprimir el menú (RN-MEN-04): manda a la impresora **el mismo PDF que
@@ -15,7 +15,10 @@ const p = es.panelMenus;
  * `register_menu_download()`, en el servidor, no este botón.
  *
  * Es un enlace a `descargar?formato=pdf&imprimir=1`, que la ruta entrega
- * `inline`. Con puntero fino (escritorio) se intercepta: se pide el PDF,
+ * `inline` y registra como impresión (`menu_downloads.printed`, migración
+ * 144): imprimir no pasa el menú a "Listo para publicar", ni aunque
+ * imprima el trabajador asignado. Lo usan la pantalla del restaurante y
+ * la del equipo. Con puntero fino (escritorio) se intercepta: se pide el PDF,
  * se carga en un marco invisible y se abre el diálogo de impresión sin
  * salir de la pantalla. Con puntero grueso (móvil, tableta) se deja que el
  * enlace abra el PDF en una pestaña nueva, porque imprimir un marco en
@@ -85,11 +88,11 @@ export function PrintMenuButton({ href, className }: { href: string; className: 
         className={className}
       >
         <Icon name="printer" className="h-4 w-4" />
-        {estado === "pending" ? p.printPending : p.print}
+        {estado === "pending" ? t.pending : t.print}
       </a>
       {estado === "error" ? (
         <p role="alert" className="text-sm text-danger">
-          {p.printError}
+          {t.error}
         </p>
       ) : null}
     </div>

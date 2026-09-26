@@ -134,7 +134,7 @@ end $$;
 -- RN-MEN-04 / RN-MEN-10 · La descarga del restaurante: se registra, no consume
 -- ============================================================
 do $$
-declare v_m uuid; v_v uuid; v_d uuid; v_d2 uuid; v_row record;
+declare v_m uuid; v_v uuid; v_d uuid; v_d2 uuid; v_d3 uuid; v_row record;
 begin
   v_m := public.create_menu('de400000-0000-0000-0000-000000000001', 'Menú', 'daily', current_date + 5);
   insert into dl_ids values ('menu', v_m);
@@ -170,6 +170,15 @@ begin
   end if;
   if (select count(*) from public.menu_downloads where menu_id = v_m) <> 2 then
     raise exception 'RN-MEN-10 FALLIDO: dos descargas, dos filas' using errcode = 'assert_failure';
+  end if;
+
+  -- Migración 144 · el restaurante imprime: una fila más, marcada como
+  -- impresión y legible por él (no lleva identidad). Lo de abajo comprueba
+  -- que tampoco consume ni cambia el estado.
+  v_d3 := public.register_menu_download(v_m, 'pdf', true);
+  if (select printed from public.menu_downloads where id = v_d3) is not true
+     or (select printed from public.menu_downloads where id = v_d2) then
+    raise exception 'RN-MEN-10 FALLIDO: el restaurante no ve qué descarga fue una impresión' using errcode = 'assert_failure';
   end if;
 
   -- RN-MEN-04: ni un apunte, ni ciclo creado, y el menú sigue en borrador.
@@ -225,6 +234,32 @@ begin
   if (select state from public.menus where id = v_m) <> 'assigned' then
     raise exception '§61 FALLIDO: la descarga de un trabajador no asignado cambió el estado' using errcode = 'assert_failure';
   end if;
+end $$;
+reset role;
+
+-- Migración 144 · IMPRIMIR no es el paso 4 de §61. Ana, la asignada,
+-- imprime el menú para mirarlo: queda en el historial como impresión y el
+-- menú sigue asignado. Solo se imprime el PDF.
+select set_config('request.jwt.claim.sub', 'de000000-0000-0000-0000-000000000003', false);
+set role authenticated;
+do $$
+declare
+  v_m uuid := (select v from dl_ids where k = 'menu');
+  v_d uuid;
+begin
+  v_d := public.register_menu_download(v_m, 'pdf', true);
+  if (select state from public.menus where id = v_m) <> 'assigned' then
+    raise exception '§61 FALLIDO: imprimir el menú lo pasó a listo para publicar' using errcode = 'assert_failure';
+  end if;
+  if not (select printed from public.menu_downloads where id = v_d) then
+    raise exception 'RN-MEN-10 FALLIDO: la impresión no queda marcada como impresión' using errcode = 'assert_failure';
+  end if;
+  begin
+    perform public.register_menu_download(v_m, 'png', true);
+    raise exception 'FALLIDO: se imprimió un PNG' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm not like '%Solo se imprime el PDF%' then raise; end if;
+  end;
 end $$;
 reset role;
 
@@ -293,6 +328,16 @@ begin
       using errcode = 'assert_failure';
   end if;
 
+  -- Migración 144 · las dos impresiones (la del restaurante y la de Ana)
+  -- están, y sus apuntes lo dicen.
+  if (select count(*) from public.audit_log
+      where entity_type = 'menu' and entity_id = v_m and action = 'menu.downloaded'
+        and (new_value ->> 'printed')::boolean) <> 2
+     or (select count(*) from public.menu_downloads where menu_id = v_m and printed) <> 2 then
+    raise exception 'CLAUDE.md MUST FALLIDO: el apunte de la impresión no dice que fue una impresión'
+      using errcode = 'assert_failure';
+  end if;
+
   -- Y cada apunte nombra su fila, su versión y su plantilla: sin eso solo
   -- diría "alguien descargó algo".
   if exists (
@@ -304,9 +349,10 @@ begin
           and (a.new_value ->> 'version_id')::uuid = d.version_id
           and (a.new_value ->> 'template_id')::uuid = d.template_id
           and (a.new_value ->> 'format') = d.format
+          and coalesce((a.new_value ->> 'printed')::boolean, false) = d.printed
       )
   ) then
-    raise exception 'RN-MEN-10 FALLIDO: algún apunte de descarga no apunta a su fila, su versión y su plantilla'
+    raise exception 'RN-MEN-10 FALLIDO: algún apunte de descarga no apunta a su fila, su versión, su plantilla o no dice si fue impresión'
       using errcode = 'assert_failure';
   end if;
 end $$;

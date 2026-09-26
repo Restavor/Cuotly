@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import { MenuAllergensCard } from "@/components/menu/MenuAllergensCard";
 import { MenuPreview, menuDocumentFromRows } from "@/components/menu/MenuPreview";
+import { PrintMenuButton } from "@/components/menu/PrintMenuButton";
 import { InfoNote, RequestTimeline } from "@/components/panel/RequestPieces";
 import { Card, PageHeader, StatusBadge, Tabs } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
@@ -17,7 +18,6 @@ import { createClient } from "@/lib/supabase/server";
 
 import { loadEstablishmentTimezone } from "../../timezone-load";
 import { ActionPanel, CopyMenuForm, CorrectionForm, DetailsForm, VersionEditor } from "./MenuForms";
-import { PrintMenuButton } from "./PrintMenuButton";
 import { VersionComparison } from "./VersionComparison";
 
 /**
@@ -125,7 +125,7 @@ export default async function ClientMenuPage({
       .order("occurred_at", { ascending: false }),
     supabase
       .from("menu_downloads")
-      .select("id, format, by_team, downloaded_at")
+      .select("id, format, by_team, printed, downloaded_at")
       .eq("menu_id", menuId)
       .order("downloaded_at", { ascending: false }),
     supabase.rpc("menu_deadlines", { p_menu_id: menuId }),
@@ -374,7 +374,7 @@ export default async function ClientMenuPage({
                 <ul className="mt-3 space-y-1 text-sm text-text-secondary">
                   <li className="font-medium text-text">{t.downloadsHistory(downloads.length)}</li>
                   {downloads.slice(0, 5).map((dl) => (
-                    <li key={dl.id}>{t.downloadLine(dl.format, horaEnZona(dl.downloaded_at, timezone), dl.by_team)}</li>
+                    <li key={dl.id}>{t.downloadLine(dl.format, horaEnZona(dl.downloaded_at, timezone), dl.by_team, dl.printed)}</li>
                   ))}
                 </ul>
               ) : null}

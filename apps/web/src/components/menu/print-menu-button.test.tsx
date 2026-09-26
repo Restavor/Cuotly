@@ -10,7 +10,8 @@ import { PrintMenuButton } from "./PrintMenuButton";
  * navegador: que pida a la ruta de descarga el PDF para imprimir y lo
  * cargue en un marco, que en móvil deje abrir el PDF en una pestaña y que
  * un fallo se diga. Que imprimir registre la descarga y no consuma lo
- * prueba `descargar/route.test.ts`.
+ * prueba la ruta de descarga (`descargar/route.test.ts`) y, que no
+ * cambie el estado del menú, `supabase/tests/menu_diario_descargas_y_plantillas.sql`.
  */
 
 const HREF = "/espacios/demo/restaurantes/est-1/menu-diario/m-1/descargar?formato=pdf&imprimir=1";
@@ -38,7 +39,7 @@ describe("RN-MEN-04 · imprimir el menú", () => {
   it("sin JavaScript o en móvil es un enlace que abre el PDF para imprimir en una pestaña nueva", () => {
     render(<PrintMenuButton href={HREF} className="" />);
 
-    const enlace = screen.getByRole("link", { name: es.panelMenus.print });
+    const enlace = screen.getByRole("link", { name: es.menuPrint.print });
     expect(enlace).toHaveAttribute("href", HREF);
     expect(enlace).toHaveAttribute("target", "_blank");
   });
@@ -47,7 +48,7 @@ describe("RN-MEN-04 · imprimir el menú", () => {
     fetchMock.mockResolvedValue({ ok: true, status: 200, blob: async () => new Blob(["%PDF"], { type: "application/pdf" }) });
     render(<PrintMenuButton href={HREF} className="" />);
 
-    const clic = fireEvent.click(screen.getByRole("link", { name: es.panelMenus.print }));
+    const clic = fireEvent.click(screen.getByRole("link", { name: es.menuPrint.print }));
 
     expect(clic).toBe(false); // se impidió la navegación
     expect(fetchMock).toHaveBeenCalledWith(HREF, expect.objectContaining({ cache: "no-store" }));
@@ -59,7 +60,7 @@ describe("RN-MEN-04 · imprimir el menú", () => {
     puntero(true);
     render(<PrintMenuButton href={HREF} className="" />);
 
-    const clic = fireEvent.click(screen.getByRole("link", { name: es.panelMenus.print }));
+    const clic = fireEvent.click(screen.getByRole("link", { name: es.menuPrint.print }));
 
     expect(clic).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
@@ -69,9 +70,9 @@ describe("RN-MEN-04 · imprimir el menú", () => {
     fetchMock.mockResolvedValue({ ok: false, status: 404, blob: async () => new Blob([]) });
     render(<PrintMenuButton href={HREF} className="" />);
 
-    fireEvent.click(screen.getByRole("link", { name: es.panelMenus.print }));
+    fireEvent.click(screen.getByRole("link", { name: es.menuPrint.print }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(es.panelMenus.printError);
+    expect(await screen.findByRole("alert")).toHaveTextContent(es.menuPrint.error);
     expect(document.querySelector("iframe")).toBeNull();
   });
 });

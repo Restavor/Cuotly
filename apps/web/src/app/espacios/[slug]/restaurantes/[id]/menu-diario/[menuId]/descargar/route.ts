@@ -36,12 +36,13 @@ import { renderMenuPdf, renderMenuPng } from "@/services/menu-image";
  * columna (CLAUDE.md).
  *
  * **Imprimir es esta misma descarga** (`?formato=pdf&imprimir=1`): el
- * mismo registro, el mismo PDF y el mismo 404 a quien no puede. Lo único
- * que cambia es `Content-Disposition: inline`, para que el navegador lo
- * cargue en vez de guardarlo y el botón de imprimir pueda mandarlo a la
- * impresora. No hay formato `print` en `menu_downloads`: lo que salió de
- * Cuotly es el PDF, y así consta. Solo el PDF se imprime; `imprimir` con
- * `png` es un 404, igual que un formato desconocido.
+ * mismo PDF y el mismo 404 a quien no puede. Cambian dos cosas: se
+ * registra con `p_print` —la fila queda marcada como impresión y el menú
+ * NO pasa a "Listo para publicar" aunque imprima el trabajador asignado
+ * (migración 144)— y se entrega con `Content-Disposition: inline`, para
+ * que el navegador lo cargue en vez de guardarlo y el botón pueda
+ * mandarlo a la impresora. Solo el PDF se imprime; `imprimir` con `png`
+ * es un 404, igual que un formato desconocido.
  */
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,7 @@ export async function GET(
   const { data: downloadId, error: registroError } = await supabase.rpc("register_menu_download", {
     p_menu_id: menuId,
     p_format: formato,
+    p_print: imprimir,
   });
   if (registroError || !downloadId) return new NextResponse(null, { status: 404 });
 

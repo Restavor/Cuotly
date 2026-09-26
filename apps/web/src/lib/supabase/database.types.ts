@@ -3393,6 +3393,7 @@ export type Database = {
           format: string;
           id: string;
           menu_id: string;
+          printed: boolean;
           space_id: string;
           template_id: string;
           version_id: string;
@@ -3405,6 +3406,7 @@ export type Database = {
           format: string;
           id?: string;
           menu_id: string;
+          printed?: boolean;
           space_id: string;
           template_id: string;
           version_id: string;
@@ -3417,6 +3419,7 @@ export type Database = {
           format?: string;
           id?: string;
           menu_id?: string;
+          printed?: boolean;
           space_id?: string;
           template_id?: string;
           version_id?: string;
@@ -10617,7 +10620,7 @@ export type Database = {
         Returns: string;
       };
       register_menu_download: {
-        Args: { p_format: string; p_menu_id: string };
+        Args: { p_format: string; p_menu_id: string; p_print?: boolean };
         Returns: string;
       };
       register_payment: {

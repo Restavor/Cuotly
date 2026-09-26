@@ -3235,10 +3235,6 @@ export const es = {
     actionsTitle: "Acciones",
     downloadPdfOf: (n: number) => `Descargar PDF (v${n})`,
     downloadPngOf: (n: number) => `Descargar imagen (v${n})`,
-    // Imprimir: el mismo PDF de la descarga, mandado a la impresora.
-    print: "Imprimir",
-    printPending: "Preparando…",
-    printError: "No se ha podido preparar el menú para imprimir. Descarga el PDF e imprímelo desde tu equipo.",
     versionsKept: "Las versiones no se sustituyen: todas se conservan en el historial.",
 
     // R15
@@ -6092,6 +6088,16 @@ export const es = {
     conflictChanges: "Esto es lo que cambió respecto de la versión que tenías delante:",
   },
 
+  /**
+   * Imprimir un menú: el mismo PDF de la descarga, mandado a la
+   * impresora. Lo usan la pantalla del restaurante y la del equipo.
+   */
+  menuPrint: {
+    print: "Imprimir",
+    pending: "Preparando…",
+    error: "No se ha podido preparar el menú para imprimir. Descarga el PDF e imprímelo desde tu ordenador.",
+  },
+
   dailyMenuClient: {
     title: "Menú Diario",
     subtitle: "Prepara tus menús, pide su publicación y descárgalos en PNG o PDF.",
@@ -6224,8 +6230,8 @@ export const es = {
     versionsTitle: "Versiones",
     versionLine: (n: number, when: string) => `Versión ${n} · ${when}`,
     versionAfterCutoff: "después del corte",
-    downloadLine: (format: string, when: string, byTeam: boolean) =>
-      `${format.toUpperCase()} · ${when} · ${byTeam ? "equipo de mantenimiento" : "restaurante"}`,
+    downloadLine: (format: string, when: string, byTeam: boolean, printed: boolean) =>
+      `${format.toUpperCase()}${printed ? " para imprimir" : ""} · ${when} · ${byTeam ? "equipo de mantenimiento" : "restaurante"}`,
   },
 
   /**

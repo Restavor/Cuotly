@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { notFound, redirect } from "next/navigation";
 
+import { PrintMenuButton } from "@/components/menu/PrintMenuButton";
 import { Card, StatusBadge } from "@/components/ui";
 import { isPublicationOverdue } from "@/core/daily-menu";
 import { FINAL_MENU_STATES, isMenuState, menuTone } from "@/core/menu-states";
@@ -21,7 +22,7 @@ import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-lo
  *
  * Es la ficha desde la que se trabaja la publicación (§61): asignar, pedir
  * información, descargar la plantilla generada (que pone "Listo para
- * publicar"), marcar publicado, registrar un error, devolver la
+ * publicar"; imprimirla no, migración 144), marcar publicado, registrar un error, devolver la
  * actualización, y las correcciones del menú publicado. La pantalla elige
  * qué formularios pintar por estado y por lo que el servidor dice de quien
  * mira (`has_capability`, la publicación que RLS le deja ver); quien decide
@@ -127,7 +128,7 @@ export default async function TeamMenuPage({
       .order("occurred_at", { ascending: false }),
     supabase
       .from("menu_downloads")
-      .select("id, format, by_team, downloaded_at")
+      .select("id, format, by_team, printed, downloaded_at")
       .eq("menu_id", menuId)
       .order("downloaded_at", { ascending: false })
       .limit(5),
@@ -426,6 +427,10 @@ export default async function TeamMenuPage({
                 <a href={`${downloadBase}?formato=pdf`} className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-soft-surface">
                   {t.downloadPdf}
                 </a>
+                <PrintMenuButton
+                  href={`${downloadBase}?formato=pdf&imprimir=1`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-soft-surface"
+                />
               </div>
             ) : (
               <p className="text-sm text-text-secondary">{t.downloadsNeedContent}</p>
@@ -434,7 +439,7 @@ export default async function TeamMenuPage({
             {downloads && downloads.length > 0 ? (
               <ul className="mt-3 space-y-1 text-sm text-text-secondary">
                 {downloads.map((d) => (
-                  <li key={d.id}>{es.dailyMenuClient.downloadLine(d.format, horaLocal(d.downloaded_at, timeZone), d.by_team)}</li>
+                  <li key={d.id}>{es.dailyMenuClient.downloadLine(d.format, horaLocal(d.downloaded_at, timeZone), d.by_team, d.printed)}</li>
                 ))}
               </ul>
             ) : null}
