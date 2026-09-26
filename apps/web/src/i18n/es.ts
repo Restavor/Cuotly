@@ -711,6 +711,10 @@ export const es = {
       photo: "Fotografía",
       medium: "Cambio mediano",
       large: "Cambio grande",
+      // PRD §41 · una solicitud o un trabajo valorado en créditos, no una
+      // quinta categoría de cambio: por eso no está en las listas que se
+      // eligen (CHANGE_CATEGORIES), solo aquí para nombrarlo.
+      credits: "Cambio en créditos",
     },
     // RN-REP-20 · las mismas cuatro en plural, para la bolsa del mes:
     // "Cambio pequeño · 2 de 5" se lee mal, y CA-21 pide un solo nombre
@@ -1231,6 +1235,7 @@ export const es = {
     events: {
       request_submitted: "Solicitud enviada",
       request_created_on_behalf: "El equipo creó una solicitud en tu nombre",
+      credit_quote_requested: "Un restaurante pide presupuesto",
       job_unassigned: "Trabajo sin asignar",
       job_assigned: "Trabajo asignado",
       job_started: "Trabajo comenzado",
@@ -3270,6 +3275,73 @@ export const es = {
   // R05 a R12 · las solicitudes del panel del restaurante con el diseño
   // definitivo. Lo que ya decían las tarjetas de antes sigue en
   // `clientArea` y se reutiliza.
+  // PRD §41 (decisión 85) · los créditos, tal como los lee el restaurante y
+  // el equipo. Al restaurante se le habla en porcentaje de su plan
+  // (RN-CRE-16); los créditos exactos, solo al equipo.
+  credits: {
+    categoryLabel: "Cambio en créditos",
+    costTitle: "Lo que cuesta",
+    usesPercent: (percent: number) => `Esta solicitud usará el ${percent} % de tu plan`,
+    leavesPercent: (percent: number) => `Si la aceptas, te quedará el ${percent} % del plan este mes.`,
+    noCreditsPlan: "Tu plan no incluye cambios: esta solicitud se presupuesta aparte.",
+    itemsTitle: "Qué se va a hacer",
+    processingNote: "Incluye la gestión de la solicitud.",
+    slaRange: (min: number, max: number) => `Se hace en ${min} a ${max} días laborables desde que se comienza.`,
+    slaByTeam: "Por su tamaño, el equipo te dirá los días que necesita antes de empezar.",
+    summaryTitle: "Resumen",
+    notEnoughTitle: "No te quedan créditos suficientes este mes",
+    notEnoughHint:
+      "No hacemos una parte por lo que te queda. Elige cómo quieres seguir: quitar cosas de la solicitud, esperar al mes que viene o pedir un presupuesto aparte.",
+    neverFitsHint:
+      "Esta solicitud pide más de lo que incluye tu plan en un mes. Puedes quitar cosas o pedir un presupuesto aparte.",
+    acceptTitle: "Aceptar",
+    trimTitle: "Quitar cosas",
+    trimHint: "Deja solo lo que quieras ahora. La volvemos a valorar al guardar.",
+    trimLabel: "Lo que necesitas",
+    trimContextLabel: "Dónde está en la web (opcional)",
+    trimSubmit: "Guardar y volver a valorar",
+    trimPending: "Valorando…",
+    deferTitle: "Esperar al mes que viene",
+    deferHint: "Se acepta sola el día que se renueva tu plan, si entonces cabe.",
+    deferSubmit: "Esperar al mes que viene",
+    deferPending: "Guardando…",
+    deferredUntil: (fecha: string) => `En espera hasta el ${fecha}: se aceptará sola si entonces cabe.`,
+    quoteTitle: "Pedir presupuesto aparte",
+    quoteHint: "El equipo prepara un presupuesto y tú decides si lo aceptas. No usa tu plan.",
+    quoteNoteLabel: "Algo que quieras añadir (opcional)",
+    quoteSubmit: "Pedir presupuesto",
+    quotePending: "Enviando…",
+    quoteRequested: (fecha: string) => `Pediste presupuesto el ${fecha}. El equipo lo está preparando.`,
+    // Equipo.
+    teamTitle: "Créditos",
+    teamValued: (creditos: string, porcentaje: string) => `${creditos} créditos · ${porcentaje}`,
+    teamValuedNoPlan: (creditos: string) => `${creditos} créditos · su plan no incluye créditos`,
+    teamByAi: "Valorados por la IA.",
+    teamByTeam: "Fijados por el equipo.",
+    teamPending: "La IA no pudo valorarla: fija tú los créditos.",
+    teamFallbackReason: (motivo: string) => `Motivo: ${motivo}`,
+    teamFormTitle: "Fijar los créditos",
+    teamCorrectTitle: "Corregir los créditos",
+    teamCorrectHint:
+      "Solo antes de que el restaurante acepte. El restaurante verá la cifra nueva y la aceptará; queda en la auditoría.",
+    teamCreditsLabel: "Créditos, gestión incluida (múltiplos de 0,5)",
+    teamCreditsHint: "0,5 de gestión más el trabajo. Por ejemplo, cuatro cambios simples: 2,5.",
+    teamSummaryLabel: "Resumen para el restaurante",
+    teamReasonLabel: "Motivo de la corrección",
+    teamSubmit: "Guardar créditos",
+    teamPendingSubmit: "Guardando…",
+    teamInvalidCredits: "Escribe los créditos con una cifra múltiplo de 0,5, como 2,5.",
+    teamQuoteRequested: (fecha: string) =>
+      `El restaurante pidió presupuesto aparte el ${fecha}. Prepáralo desde Presupuestos.`,
+    teamDeferred: (fecha: string) => `El restaurante espera al ciclo siguiente: se acepta sola el ${fecha} si cabe.`,
+    jobDaysTitle: "Plazo del trabajo",
+    jobDaysHint:
+      "Pasa de 20 créditos: no tiene plazo automático. Fija los días laborables antes de que se comience; el restaurante los verá.",
+    jobDaysLabel: "Días laborables",
+    jobDaysSubmit: "Fijar el plazo",
+    jobDaysInvalid: "Escribe un número entero de días laborables, como 6.",
+    jobDaysSet: (dias: number) => `Plazo fijado: ${dias} días laborables.`,
+  },
   panelRequests: {
     title: "Solicitudes",
     subtitle: "Aquí puedes gestionar todas tus solicitudes de cambios y mejoras.",
@@ -5157,6 +5229,8 @@ export const es = {
       "request.kind_changed": "Cambio o incidencia corregido",
       "request.new_acceptance_requested": "Nueva aceptación pedida",
       "request.priority_set": "Cambios ordenados por importancia",
+      "request.quote_requested": "Presupuesto pedido por el restaurante",
+      "request.scope_trimmed": "Solicitud recortada por el restaurante",
       "request.rejected": "Solicitud rechazada",
       "request.submitted": "Solicitud enviada",
       "session.revoked": "Sesión cerrada",

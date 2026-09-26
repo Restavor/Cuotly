@@ -6205,6 +6205,7 @@ export type Database = {
       };
       requests: {
         Row: {
+          quote_requested_at: string | null;
           validated_credits_half: number | null;
           credit_breakdown: Json | null;
           credits_deferred_until: string | null;
@@ -6244,6 +6245,7 @@ export type Database = {
           validated_summary: string | null;
         };
         Insert: {
+          quote_requested_at?: string | null;
           validated_credits_half?: number | null;
           credit_breakdown?: Json | null;
           credits_deferred_until?: string | null;
@@ -6283,6 +6285,7 @@ export type Database = {
           validated_summary?: string | null;
         };
         Update: {
+          quote_requested_at?: string | null;
           validated_credits_half?: number | null;
           credit_breakdown?: Json | null;
           credits_deferred_until?: string | null;
@@ -9439,6 +9442,14 @@ export type Database = {
       credit_execution_sla_hours: {
         Args: { p_credits_half: number };
         Returns: number;
+      };
+      trim_request_scope: {
+        Args: { p_context?: string; p_description: string; p_request_id: string };
+        Returns: undefined;
+      };
+      request_credit_quote: {
+        Args: { p_note?: string; p_request_id: string };
+        Returns: string;
       };
       set_request_kind: {
         Args: { p_kind: string; p_request_id: string };

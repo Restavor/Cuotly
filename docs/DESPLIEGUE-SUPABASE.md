@@ -6,7 +6,7 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 escrita, sin aplicar).
+Actualizado el 27/09/2026 (149 y 150 escritas, sin aplicar).
 
 ## Pendiente de aplicar
 
@@ -28,6 +28,16 @@ borran y crean: `plan_change_proration` y `plan_change_preview` (una columna má
 En local pasan las 83 suites en el orden de CI, y la suite 83 falla si `accept_request()` deja pasar una
 solicitud que no cabe. **Antes de aplicarla**, comprobar por md5 que las funciones que redefine son las
 de la 148 en vivo.
+
+**150 · `las_tres_salidas`** (decisión 85, PRD RN-CRE-14 y RN-CRE-29). Va **después de la 149** y
+depende de ella. Añade `requests.quote_requested_at` (con `select` concedido a `authenticated`), el
+aviso `credit_quote_requested` al CHECK de `notifications`, deja a `create_quote()` presupuestar una
+solicitud en créditos, y crea `trim_request_scope` (quitar cosas: nueva versión del alcance y vuelta a
+valorar) y `request_credit_quote` (pedir presupuesto aparte; avisa al propietario y a los
+administradores), las dos solo del restaurante. Redefine `request_free_correction` con la misma firma
+para rechazar la corrección gratis en un trabajo en créditos (RN-CRE-29); **antes de aplicarla,
+comprobar por md5 que la versión en vivo es la de la migración 38**. En local pasan las 84 suites en
+el orden de CI; la 84 falla si se quita la comprobación de RN-CRE-29 (probado).
 
 **El espacio de demostración ya no existe en el proyecto real y no se vuelve a sembrar** salvo que
 Bosco lo pida (decisión 84). `supabase/seed/espacio-demo.sql` sigue sirviendo para la base local y para

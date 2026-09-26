@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import { clasificarSolicitud } from "@/services/request-classification";
 import type { ClientRequestState } from "./action-state";
 
 async function run(
@@ -82,4 +83,60 @@ export async function cancelRequest(
   return run((s) =>
     s.rpc("cancel_request", { p_request_id: requestId, p_reason: reason || undefined }),
   );
+}
+
+/**
+ * RN-CRE-14 · la segunda salida: esperar al ciclo siguiente. Si cabe ya, o
+ * si no cabe ni en un ciclo entero, `defer_request_to_next_cycle()` lo
+ * rechaza con el motivo.
+ */
+export async function deferToNextCycle(
+  _prev: ClientRequestState,
+  formData: FormData,
+): Promise<ClientRequestState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  return run((s) => s.rpc("defer_request_to_next_cycle", { p_request_id: requestId }));
+}
+
+/** RN-CRE-14 · la tercera salida: pedir que se presupueste aparte. */
+export async function askCreditQuote(
+  _prev: ClientRequestState,
+  formData: FormData,
+): Promise<ClientRequestState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  const note = String(formData.get("note") ?? "").trim();
+  return run((s) => s.rpc("request_credit_quote", { p_request_id: requestId, p_note: note || undefined }));
+}
+
+/**
+ * RN-CRE-14 · la primera salida: quitar cosas. `trim_request_scope()`
+ * guarda el alcance nuevo como versión y la deja en análisis; después se
+ * vuelve a valorar con la misma rutina que al enviar (RN-CRE-09). Si la IA
+ * falla, va al equipo: el recorte ya está guardado y no se pierde.
+ */
+export async function trimScope(
+  _prev: ClientRequestState,
+  formData: FormData,
+): Promise<ClientRequestState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const context = String(formData.get("context") ?? "").trim();
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("trim_request_scope", {
+    p_request_id: requestId,
+    p_description: description,
+    p_context: context || undefined,
+  });
+  if (error) return { error: error.message, done: false };
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    await clasificarSolicitud(supabase, { requestId, actorId: user.id, description, context });
+  }
+
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
 }

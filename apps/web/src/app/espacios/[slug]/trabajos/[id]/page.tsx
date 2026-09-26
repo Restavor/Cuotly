@@ -37,6 +37,7 @@ import {
   OpenJobCommentsForm,
   ResumeJobBar,
   PublishJobForm,
+  SetJobDaysForm,
   StartJobForm,
   UnblockJobForm,
   type Candidate,
@@ -174,7 +175,7 @@ export default async function TeamJobDetailPage({
   const { data: job } = await supabase
     .from("jobs")
     .select(
-      "id, space_id, code, state, category, assigned_to, establishment_id, request_id, quote_id, started_at, published_at, correction_window_ends_at, execution_sla_hours",
+      "id, space_id, code, state, category, assigned_to, establishment_id, request_id, quote_id, started_at, published_at, correction_window_ends_at, execution_sla_hours, credits_half",
     )
     .eq("id", id)
     .maybeSingle();
@@ -346,6 +347,18 @@ export default async function TeamJobDetailPage({
         .is("ended_at", null)
         .maybeSingle()
     : { data: null };
+
+  // RN-CRE-19 · lo comprueba `set_job_execution_days()`; aquí solo se
+  // evita ofrecer un formulario que va a decir que no.
+  const { data: gestionaSolicitudes } = await supabase.rpc("has_capability", {
+    p_space_id: job.space_id,
+    p_capability: "manage_requests",
+  });
+  const jobDaysEditable =
+    Boolean(gestionaSolicitudes) &&
+    job.category === "credits" &&
+    (job.credits_half ?? 0) > 40 &&
+    job.started_at === null;
 
   const hasActions =
     job.state === "pending_assignment" ||
@@ -762,6 +775,14 @@ export default async function TeamJobDetailPage({
                 </p>
               ) : null}
             </Card>
+          ) : null}
+
+          {/* RN-CRE-19 · más de 20 créditos: el plazo lo fija el equipo antes de comenzar. */}
+          {jobDaysEditable ? (
+            <SetJobDaysForm
+              jobId={id}
+              currentDays={job.execution_sla_hours === null ? null : job.execution_sla_hours / 24}
+            />
           ) : null}
 
           {job.state === "assigned" ? <StartJobForm jobId={id} /> : null}

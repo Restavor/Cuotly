@@ -7,6 +7,7 @@ import {
   Button,
   Card,
   EmptyState,
+  Field,
   Select,
   Table,
   TableBody,
@@ -24,6 +25,7 @@ import {
   blockJob,
   openJobCommentsHere,
   publishJob,
+  setJobExecutionDays,
   startJob,
   unblockJob,
 } from "./actions";
@@ -219,6 +221,39 @@ export function OpenJobCommentsForm({ jobId }: { jobId: string }) {
         <Error message={state.error} />
         <Button type="submit" disabled={pending}>
           {pending ? t.commentsOpenPending : t.commentsOpen}
+        </Button>
+      </form>
+    </Card>
+  );
+}
+
+/**
+ * RN-CRE-19 · el plazo de un trabajo de más de 20 créditos, en días
+ * laborables, fijado antes de comenzar. `start_job()` no deja comenzarlo
+ * sin él.
+ */
+export function SetJobDaysForm({ jobId, currentDays }: { jobId: string; currentDays: number | null }) {
+  const c = es.credits;
+  const [state, action, pending] = useActionState(setJobExecutionDays, INITIAL_JOB_ACTION);
+  return (
+    <Card title={c.jobDaysTitle}>
+      <form action={action} className="space-y-3">
+        <input type="hidden" name="jobId" value={jobId} />
+        <p className="text-sm text-text-secondary">{c.jobDaysHint}</p>
+        {currentDays !== null ? <p className="text-sm font-semibold text-text">{c.jobDaysSet(currentDays)}</p> : null}
+        <Field
+          label={c.jobDaysLabel}
+          name="days"
+          type="number"
+          min={1}
+          step={1}
+          inputMode="numeric"
+          defaultValue={currentDays ?? ""}
+          required
+        />
+        <Error message={state.error} />
+        <Button type="submit" disabled={pending}>
+          {c.jobDaysSubmit}
         </Button>
       </form>
     </Card>

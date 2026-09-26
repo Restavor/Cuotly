@@ -3787,9 +3787,15 @@ Lo que este apartado **no** trae, dicho en claro:
 ## 41. Créditos, el catálogo nuevo y Menú Diario dentro del plan — decisión 85 (RN-CRE)
 
 Escrito el 27/09/2026 **antes del código**. **Construido en el servidor (migración 149, suite 83)**: RN-CRE-01
-(créditos del plan), RN-CRE-04/05, RN-CRE-07, RN-CRE-09 a RN-CRE-19. Falta: la IA que valora en créditos
-y la aceptación en pantalla (punto 3), las pantallas (punto 4), Menú Diario (5), informes (6) y el
-catálogo (7). Escrito con las fichas de Impulso y Premium y el documento
+(créditos del plan), RN-CRE-04/05, RN-CRE-07, RN-CRE-09 a RN-CRE-19. **Construido el 27/09/2026 (punto 3,
+migración 150, suite 84)**: la IA valora en créditos al enviarse la solicitud
+(`src/services/ai-credit-valuator.ts`, RN-CRE-09; si falla, va al equipo con el motivo, RN-CRE-10); el
+restaurante ve el porcentaje de su plan, lo que le quedará, qué se va a hacer y el plazo, y acepta
+(RN-CRE-11, RN-CRE-16); si no le llega, elige entre quitar cosas, esperar al ciclo siguiente o pedir
+presupuesto aparte (RN-CRE-14); el equipo fija o corrige los créditos antes de que acepte (RN-CRE-10) y
+fija los días de un trabajo de más de 20 créditos (RN-CRE-19); y un trabajo en créditos ya no tiene
+corrección gratis (RN-CRE-29). Falta: la barra y el detalle del ciclo, las pantallas del equipo y el
+editor de planes (punto 4), Menú Diario (5), informes (6) y el catálogo (7). Escrito con las fichas de Impulso y Premium y el documento
 "Sistema de créditos de mantenimiento — Restavor" que Bosco mandó el 26/09/2026 y sus respuestas a
 las preguntas (decisión 85). **Donde esta sección y otra anterior digan cosas distintas, manda esta**;
 cada regla anterior que cambia lleva una nota que remite aquí. Hasta que cada parte esté construida,

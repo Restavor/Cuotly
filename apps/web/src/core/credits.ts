@@ -98,3 +98,111 @@ export function creditFit(neededHalf: number, remainingHalf: number, includedHal
   if (neededHalf <= includedHalf) return "choose";
   return "quote_or_trim";
 }
+
+/**
+ * Qué camino sigue una solicitud al enviarse (PRD §41). Mientras convivan
+ * los planes por categorías y los de créditos (Cuotly es multiempresa y el
+ * catálogo cambia por partes), lo decide el plan del restaurante:
+ *
+ * - Una **incidencia** no se valora: va al equipo por su camino
+ *   (RN-REQ-11, RN-CRE-07).
+ * - Un plan con **créditos** se valora en créditos (RN-CRE-09).
+ * - Un plan con **cambios por categoría** sigue con las categorías de §10.
+ * - Sin plan, o con un plan que no incluye nada (el Básico): créditos,
+ *   que es lo que ve el restaurante como coste aunque vaya a presupuesto
+ *   (RN-CRE-07).
+ */
+export type ValuationMode = "credits" | "categories" | "incident";
+
+export function valuationMode(input: {
+  readonly kind: string;
+  readonly plan: { readonly creditsHalf: number; readonly categoryUnits: number } | null;
+}): ValuationMode {
+  if (input.kind === "incident") return "incident";
+  if (input.plan === null) return "credits";
+  if (input.plan.creditsHalf > 0) return "credits";
+  if (input.plan.categoryUnits > 0) return "categories";
+  return "credits";
+}
+
+/**
+ * RN-CRE-11 y RN-CRE-16 · lo que ve el restaurante antes de aceptar una
+ * solicitud: cuánto de su plan usará, cuánto le quedará si acepta, qué
+ * puede hacer y en cuánto se hace. Sin plan con créditos no hay
+ * porcentajes: solo el camino del presupuesto (RN-CRE-07).
+ */
+export type CreditCostView = {
+  readonly percentOfPlan: number | null;
+  readonly remainingAfterPercent: number | null;
+  readonly fit: CreditFit;
+  readonly slaRange: { minDays: number; maxDays: number } | null;
+};
+
+export function creditCostView(
+  neededHalf: number,
+  balance: { readonly includedHalf: number; readonly remainingHalf: number } | null,
+): CreditCostView {
+  const includedHalf = balance?.includedHalf ?? 0;
+  const remainingHalf = balance?.remainingHalf ?? 0;
+  const fit = creditFit(neededHalf, remainingHalf, includedHalf);
+  return {
+    percentOfPlan: percentOfPlan(neededHalf, includedHalf),
+    remainingAfterPercent:
+      fit === "accept" ? percentOfPlan(remainingHalf - neededHalf, includedHalf) : null,
+    fit,
+    slaRange: clientSlaRange(neededHalf),
+  };
+}
+
+/**
+ * Lee el desglose guardado (`requests.credit_breakdown`,
+ * `{"items": [{"description", "credits_half"}]}`). Lo que no tenga esa
+ * forma se ignora partida a partida: la pantalla enseña lo que hay, no lo
+ * inventa (CLAUDE.md, sin datos de relleno).
+ */
+export function parseCreditBreakdown(value: unknown): CreditItem[] {
+  if (typeof value !== "object" || value === null) return [];
+  const items = (value as { items?: unknown }).items;
+  if (!Array.isArray(items)) return [];
+  return items.flatMap((raw): CreditItem[] => {
+    if (typeof raw !== "object" || raw === null) return [];
+    const { description, credits_half: half } = raw as { description?: unknown; credits_half?: unknown };
+    if (typeof description !== "string" || description.trim() === "") return [];
+    if (typeof half !== "number" || !Number.isInteger(half) || half < 1) return [];
+    return [{ description: description.trim(), creditsHalf: half }];
+  });
+}
+
+/**
+ * Lo que escribe el equipo en el formulario ("2,5", "2.5", "3") en medios
+ * créditos; `null` si no es un múltiplo positivo de 0,5 (RN-CRE-04). El
+ * servidor lo vuelve a comprobar.
+ */
+export function parseCreditsInput(text: string): number | null {
+  const normal = text.trim().replace(",", ".");
+  if (!/^\d+(\.\d+)?$/.test(normal)) return null;
+  const half = Number(normal) * 2;
+  return Number.isInteger(half) && half >= 1 ? half : null;
+}
+
+/**
+ * RN-CRE-10 · cuando el equipo fija o corrige los créditos escribe el
+ * total, no las partidas. Si el total coincide con un desglose que ya
+ * existía (el vigente o el que propuso la IA), se conserva, para que el
+ * restaurante siga viendo qué se va a hacer; si no coincide con ninguno,
+ * no se inventa uno: se guarda sin desglose y el restaurante lee el
+ * resumen. El servidor vuelve a comprobar la suma
+ * (`assert_credit_breakdown_internal()`).
+ */
+export function breakdownMatchingTotal(
+  totalHalf: number,
+  ...candidates: readonly unknown[]
+): { items: { description: string; credits_half: number }[] } | null {
+  for (const candidate of candidates) {
+    const items = parseCreditBreakdown(candidate);
+    if (items.length > 0 && breakdownTotal(items) === totalHalf) {
+      return { items: items.map((i) => ({ description: i.description, credits_half: i.creditsHalf })) };
+    }
+  }
+  return null;
+}

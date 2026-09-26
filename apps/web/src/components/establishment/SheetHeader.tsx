@@ -38,7 +38,7 @@ import {
 const t = es.establishmentSheet;
 
 type StatusKey = keyof typeof es.space.statuses;
-type CategoryKey = keyof typeof es.naming.categories;
+type CategoryKey = keyof typeof es.establishmentSheet.headerIncluded;
 
 const DATA_BLOCK = MANAGEMENT_BLOCKS.find((block) => block.key === "establishmentData")!;
 

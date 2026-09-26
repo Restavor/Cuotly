@@ -26,6 +26,9 @@ export const NOTIFICATION_EVENTS = [
   // RN-REQ-08 (migración 132) · el equipo creó una solicitud en nombre del
   // restaurante; se avisa a quien responde por él.
   "request_created_on_behalf",
+  // RN-CRE-14 (migración 150) · el restaurante pide que su solicitud en
+  // créditos se presupueste aparte; se avisa a quien presupuesta.
+  "credit_quote_requested",
   "job_unassigned",
   "job_assigned",
   "job_started",

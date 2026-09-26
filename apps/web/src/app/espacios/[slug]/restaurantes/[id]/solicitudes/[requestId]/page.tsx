@@ -1,3 +1,4 @@
+import { CreditCostCard } from "@/components/request/CreditCostCard";
 import { IncidentCard } from "@/components/request/IncidentCard";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -16,6 +17,7 @@ import {
 import { Card, PageHeader, ProgressBar, StatusBadge } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
 import { isChangeCategory } from "@/core/classification-rules";
+import { creditCostView, parseCreditBreakdown } from "@/core/credits";
 import { requestTimeline } from "@/core/client-requests";
 import { isDraft } from "@/core/request-draft";
 import {
@@ -38,6 +40,7 @@ import {
   ProvideInformationForm,
   RequestCorrectionForm,
 } from "./ClientRequestActions";
+import { CreditDecision } from "./CreditDecision";
 
 /**
  * R08 a R12 · una solicitud, vista por el restaurante que la pidió
@@ -83,7 +86,7 @@ export default async function ClientRequestDetailPage({
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, priority, priority_reason, created_by_team, on_behalf_reason, kind, incident_outcome, incident_note, incident_resolved_at",
+      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, priority, priority_reason, created_by_team, on_behalf_reason, kind, incident_outcome, incident_note, incident_resolved_at, validated_credits_half, credit_breakdown, credits_deferred_until, quote_requested_at",
     )
     .eq("id", requestId)
     .maybeSingle();
@@ -129,6 +132,7 @@ export default async function ClientRequestDetailPage({
     { data: links },
     { data: bolsas },
     { data: suscripciones },
+    { data: saldos },
   ] = await Promise.all([
     supabase.rpc("client_request_quote", { p_request_id: requestId }),
     supabase.rpc("client_can_accept_terms", { p_establishment_id: id }),
@@ -146,6 +150,11 @@ export default async function ClientRequestDetailPage({
       .eq("establishment_id", id)
       .eq("status", "active")
       .eq("kind", "plan"),
+    // RN-CRE-11 · el saldo de créditos del ciclo, el mismo que cuenta
+    // `accept_request()`. Solo hace falta si la solicitud va en créditos.
+    request.validated_category === "credits"
+      ? supabase.rpc("establishment_credit_balance", { p_establishment_id: id })
+      : Promise.resolve({ data: null }),
   ]);
 
   const fileIds = [...new Set((links ?? []).map((l) => l.file_id))];
@@ -183,7 +192,13 @@ export default async function ClientRequestDetailPage({
   // decide `cancel_request()`; esto solo sirve para decirlo antes de
   // pulsar en vez de ofrecer un botón que va a fallar (CA-20).
   const cancelacion = cancelRequestAvailability({ state, hasJob: job !== null });
-  const correctionAvailable = job !== null && job.state === "published" && !job.free_correction_used;
+  // RN-CRE-29 · en créditos ya no hay corrección gratis: otro retoque es
+  // una solicitud nueva.
+  const correctionAvailable =
+    job !== null &&
+    job.state === "published" &&
+    !job.free_correction_used &&
+    request.validated_category !== "credits";
 
   const resultado = ["published", "closed", "correction_requested", "in_correction"].includes(state);
   // RN-REQ-10 · una incidencia no se acepta a secas: si cuesta algo, se
@@ -191,6 +206,19 @@ export default async function ClientRequestDetailPage({
   // rechazaría, así que no se ofrece el botón (CA-20).
   const esIncidencia = request.kind === "incident";
   const aceptarClasificacion = state === "pending_client_acceptance" && quoteRow === null && !esIncidencia;
+  // PRD §41 · la solicitud se valoró en créditos: lo que se enseña es el
+  // porcentaje del plan y las tres salidas (RN-CRE-11, RN-CRE-14), no la
+  // bolsa por categorías.
+  const creditosNecesarios =
+    request.validated_category === "credits" ? request.validated_credits_half : null;
+  const saldo = saldos?.[0] ?? null;
+  const vistaCreditos =
+    creditosNecesarios === null
+      ? null
+      : creditCostView(
+          creditosNecesarios,
+          saldo === null ? null : { includedHalf: saldo.included_half, remainingHalf: saldo.remaining_half },
+        );
 
   const pasos: TimelineView[] = requestTimeline({
     state,
@@ -220,7 +248,9 @@ export default async function ClientRequestDetailPage({
   const categoria =
     request.validated_category === null
       ? t.unclassified
-      : (es.naming.categories[request.validated_category as CategoryKey] ?? request.validated_category);
+      : request.validated_category === "credits"
+        ? es.credits.categoryLabel
+        : (es.naming.categories[request.validated_category as CategoryKey] ?? request.validated_category);
   const prioridad =
     request.priority === "high" || request.priority === "medium" || request.priority === "low"
       ? es.clientArea.priorityLevels[request.priority]
@@ -334,7 +364,13 @@ export default async function ClientRequestDetailPage({
           />
 
           {/* R09 · RN-CLS-03: hasta que el equipo no valida, aquí no hay nada que leer. */}
-          {request.validated_summary && !resultado ? (
+          {vistaCreditos !== null && creditosNecesarios !== null && !resultado ? (
+            <CreditCostCard
+              view={vistaCreditos}
+              items={parseCreditBreakdown(request.credit_breakdown)}
+              summary={request.validated_summary}
+            />
+          ) : request.validated_summary && !resultado ? (
             <Card title={t.proposalTitle}>
               <div className="flex flex-wrap gap-4 rounded-[10px] bg-soft-surface p-4">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface text-cuotly-green">
@@ -492,7 +528,22 @@ export default async function ClientRequestDetailPage({
             </Card>
           )}
 
-          {aceptarClasificacion ? (
+          {aceptarClasificacion && vistaCreditos !== null ? (
+            job === null ? (
+              <CreditDecision
+                requestId={requestId}
+                fit={vistaCreditos.fit}
+                description={request.description}
+                context={request.context}
+                deferredUntilLabel={request.credits_deferred_until ? fecha(request.credits_deferred_until) : null}
+                quoteRequestedLabel={request.quote_requested_at ? fechaHora(request.quote_requested_at) : null}
+              />
+            ) : (
+              <Card title={es.credits.acceptTitle}>
+                <AcceptRevisedForm requestId={requestId} />
+              </Card>
+            )
+          ) : aceptarClasificacion ? (
             <Card title={t.extraTitle}>
               <dl className="divide-y divide-border text-sm">
                 <div className="pb-3">

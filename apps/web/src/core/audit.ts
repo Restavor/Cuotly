@@ -433,7 +433,11 @@ export const AUDIT_ACTIONS = [
   "request.kind_changed",
   "request.new_acceptance_requested",
   "request.priority_set",
+  // RN-CRE-14 (migración 150) · pedir presupuesto aparte.
+  "request.quote_requested",
   "request.rejected",
+  // RN-CRE-14 (migración 150) · quitar cosas de una solicitud que no cabe.
+  "request.scope_trimmed",
   "request.submitted",
   "service.conditions_published",
   "service.archived",

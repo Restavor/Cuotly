@@ -553,7 +553,9 @@ export function ClassificationCard({
           <dl className="divide-y divide-border">
             <Dato label={t.proposalCategoryLabel}>
               <StatusBadge tone="neutral">
-                {es.naming.categories[categoria as CategoryKey] ?? categoria}
+                {categoria === "credits"
+                  ? es.credits.categoryLabel
+                  : (es.naming.categories[categoria as CategoryKey] ?? categoria)}
               </StatusBadge>
             </Dato>
             {estimate === null ? null : (

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 
-import { Button, Card, Select, TextArea } from "@/components/ui";
+import { Button, Card, Field, Select, TextArea } from "@/components/ui";
 import { INCIDENT_NOTE_MAX, INCIDENT_OUTCOMES, type IncidentOutcome, outcomeNeedsCategory } from "@/core/incidents";
 import { es } from "@/i18n/es";
 
@@ -14,6 +14,7 @@ import {
   rejectRequest,
   requestMoreInformation,
   resolveIncident,
+  setRequestCredits,
   setRequestKind,
   validateClassification,
 } from "./actions";
@@ -314,5 +315,46 @@ export function CancelRequestForClientForm({ requestId }: { requestId: string })
         </Button>
       </form>
     </Card>
+  );
+}
+
+/**
+ * RN-CRE-10 · fijar los créditos (la IA no pudo) o corregirlos antes de
+ * que el restaurante acepte. El total va con la gestión incluida
+ * (RN-CRE-05). Que se pueda lo decide `set_request_credits()`.
+ */
+export function SetCreditsForm({
+  requestId,
+  defaultCredits,
+  defaultSummary,
+  correcting,
+}: {
+  requestId: string;
+  defaultCredits: string;
+  defaultSummary: string;
+  correcting: boolean;
+}) {
+  const c = es.credits;
+  const [state, action, pending] = useActionState(setRequestCredits, INITIAL_REQUEST_ACTION);
+  return (
+    <form action={action} className="mt-4 space-y-3">
+      <input type="hidden" name="requestId" value={requestId} />
+      <p className="text-sm font-semibold text-text">{correcting ? c.teamCorrectTitle : c.teamFormTitle}</p>
+      {correcting ? <p className="text-sm text-text-secondary">{c.teamCorrectHint}</p> : null}
+      <Field
+        label={c.teamCreditsLabel}
+        hint={c.teamCreditsHint}
+        name="credits"
+        inputMode="decimal"
+        defaultValue={defaultCredits}
+        required
+      />
+      <TextArea label={c.teamSummaryLabel} name="summary" rows={3} defaultValue={defaultSummary} required />
+      {correcting ? <TextArea label={c.teamReasonLabel} name="reason" rows={2} required /> : null}
+      <Error message={state.error} />
+      <Button type="submit" disabled={pending}>
+        {pending ? c.teamPendingSubmit : c.teamSubmit}
+      </Button>
+    </form>
   );
 }

@@ -63,6 +63,10 @@ function detalle(over: Partial<SheetData["requestDetail"] & object> = {}) {
       incident_outcome: null,
       incident_note: null,
       incident_resolved_at: null,
+      validated_credits_half: null,
+      credit_breakdown: null,
+      credits_deferred_until: null,
+      quote_requested_at: null,
     },
     establishment: { id: "est-1", name: "Magariños", code: "EST-0003" },
     proposal: {
@@ -71,6 +75,9 @@ function detalle(over: Partial<SheetData["requestDetail"] & object> = {}) {
       source: "rules",
       fallbackReason: null,
       createdAt: "2026-09-18T09:00:05.000Z",
+      creditsHalf: null,
+      creditItems: [],
+      decidedByTeam: false,
     },
     attachments: [],
     attachmentsFailed: false,
@@ -82,6 +89,7 @@ function detalle(over: Partial<SheetData["requestDetail"] & object> = {}) {
     evidence: [],
     quote: null,
     canManage: true,
+    creditBalance: null,
     ...over,
   } satisfies NonNullable<SheetData["requestDetail"]>;
 }
@@ -190,7 +198,7 @@ describe("página 25 · la solicitud abierta dentro de la ficha", () => {
   });
 
   it("con trabajo enlaza a él, que es donde se marcan las subtareas", () => {
-    pintar(detalle({ job: { id: "j-9", code: "TRA-0009", state: "in_progress" } }));
+    pintar(detalle({ job: { id: "j-9", code: "TRA-0009", state: "in_progress", category: "small", credits_half: null, execution_sla_hours: null, started_at: null } }));
 
     expect(screen.getByRole("link", { name: "TRA-0009" })).toHaveAttribute(
       "href",
@@ -208,7 +216,7 @@ describe("página 25 · la solicitud abierta dentro de la ficha", () => {
     */
     const { container } = pintar(
       detalle({
-        job: { id: "j-9", code: "TRA-0009", state: "in_progress" },
+        job: { id: "j-9", code: "TRA-0009", state: "in_progress", category: "small", credits_half: null, execution_sla_hours: null, started_at: null },
         jobTasks: [
           {
             id: "t-1",
@@ -262,7 +270,7 @@ describe("página 25 · la solicitud abierta dentro de la ficha", () => {
   });
 
   it("RN-REQ-07 · con trabajo sin desglosar dice ESO, no que no haya trabajo", () => {
-    pintar(detalle({ job: { id: "j-9", code: "TRA-0009", state: "in_progress" } }));
+    pintar(detalle({ job: { id: "j-9", code: "TRA-0009", state: "in_progress", category: "small", credits_half: null, execution_sla_hours: null, started_at: null } }));
 
     expect(screen.getByText(t.subtasksEmpty)).toBeInTheDocument();
     expect(screen.getByText(t.evidenceEmpty)).toBeInTheDocument();
@@ -272,7 +280,7 @@ describe("página 25 · la solicitud abierta dentro de la ficha", () => {
   it("RN-REQ-07 · la evidencia se puede descargar, y nada más", () => {
     const { container } = pintar(
       detalle({
-        job: { id: "j-9", code: "TRA-0009", state: "published" },
+        job: { id: "j-9", code: "TRA-0009", state: "published", category: "small", credits_half: null, execution_sla_hours: null, started_at: null },
         evidence: [
           {
             id: "f-1",

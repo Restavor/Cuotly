@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { breakdownMatchingTotal, parseCreditsInput } from "@/core/credits";
 import { readIncidentResolution } from "@/core/incidents";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
@@ -176,5 +177,50 @@ export async function cancelRequestForClient(
   const reason = String(formData.get("reason") ?? "").trim();
   return run((s) =>
     s.rpc("cancel_request", { p_request_id: requestId, p_reason: reason || undefined }),
+  );
+}
+
+/**
+ * RN-CRE-10 · el equipo fija los créditos cuando la IA no pudo, o los
+ * corrige antes de que el restaurante acepte. Quién puede y en qué estado
+ * lo decide `set_request_credits()`; esta capa solo convierte "2,5" en
+ * medios créditos y conserva el desglose si el total coincide
+ * (`breakdownMatchingTotal()`). El desglose sale de la base, no del
+ * formulario.
+ */
+export async function setRequestCredits(
+  _prev: RequestActionState,
+  formData: FormData,
+): Promise<RequestActionState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  const creditsHalf = parseCreditsInput(String(formData.get("credits") ?? ""));
+  const summary = String(formData.get("summary") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (creditsHalf === null) return { error: es.credits.teamInvalidCredits, done: false };
+
+  const supabase = await createClient();
+  const [{ data: request }, { data: classification }] = await Promise.all([
+    supabase.from("requests").select("credit_breakdown").eq("id", requestId).maybeSingle(),
+    supabase
+      .from("classifications")
+      .select("proposed_breakdown")
+      .eq("request_id", requestId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  return run((s) =>
+    s.rpc("set_request_credits", {
+      p_request_id: requestId,
+      p_credits_half: creditsHalf,
+      p_breakdown: breakdownMatchingTotal(
+        creditsHalf,
+        request?.credit_breakdown ?? null,
+        classification?.proposed_breakdown ?? null,
+      ),
+      p_summary: summary,
+      p_reason: reason === "" ? undefined : reason,
+    }),
   );
 }

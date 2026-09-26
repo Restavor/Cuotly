@@ -194,3 +194,18 @@ export async function attachJobEvidence(
 
   return run((s) => s.rpc("attach_job_evidence", { p_file_id: fileId, p_job_id: jobId }));
 }
+
+/**
+ * RN-CRE-19 · un trabajo de más de 20 créditos no tiene plazo automático:
+ * el equipo fija los días laborables antes de comenzar. Quién puede, en
+ * qué trabajos y hasta cuándo lo decide `set_job_execution_days()`.
+ */
+export async function setJobExecutionDays(
+  _prev: JobActionState,
+  formData: FormData,
+): Promise<JobActionState> {
+  const jobId = String(formData.get("jobId") ?? "");
+  const days = Number(String(formData.get("days") ?? "").trim());
+  if (!Number.isInteger(days) || days < 1) return { error: es.credits.jobDaysInvalid, done: false };
+  return run((s) => s.rpc("set_job_execution_days", { p_job_id: jobId, p_days: days }));
+}

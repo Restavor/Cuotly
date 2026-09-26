@@ -2,6 +2,7 @@ import { contractualCalendar, holidaysKnownAsOf, type HolidayRecord } from "@/co
 import { counterIsRunning, consumptionEstimate, type ConsumptionEstimate } from "@/core/requests";
 import { t1Status, type CounterStatus } from "@/core/sla-timers";
 import type { ChangeCategory } from "@/core/consumption-ledger";
+import { parseCreditBreakdown, type CreditItem } from "@/core/credits";
 import type { CycleBag } from "@/core/establishments";
 import type { TimerEvent, TimerEventType } from "@/core/timer-events";
 import type { createClient } from "@/lib/supabase/server";
@@ -68,16 +69,30 @@ export interface RequestDetailRow {
   readonly incident_outcome: string | null;
   readonly incident_note: string | null;
   readonly incident_resolved_at: string | null;
+  /**
+   * PRD §41 · la valoración en créditos, en medios créditos (RN-CRE-04), y
+   * lo que eligió el restaurante si no le llegaba (RN-CRE-14).
+   */
+  readonly validated_credits_half: number | null;
+  readonly credit_breakdown: unknown;
+  readonly credits_deferred_until: string | null;
+  readonly quote_requested_at: string | null;
 }
 
 /** La propuesta del clasificador (RN-CLS-01/02/04), tal y como se guardó. */
 export interface RequestProposal {
-  readonly category: ChangeCategory;
+  /** Una categoría de §10 o, en un plan de créditos, `credits` (PRD §41). */
+  readonly category: ChangeCategory | "credits";
   readonly summary: string;
   /** 'ai' o 'rules'. RN-CLS-02 obliga a decir cuál de los dos fue. */
   readonly source: string;
   readonly fallbackReason: string | null;
   readonly createdAt: string;
+  /** RN-CRE-09 · lo que valoró la IA en créditos, si fue ella. */
+  readonly creditsHalf: number | null;
+  readonly creditItems: readonly CreditItem[];
+  /** Una persona del equipo decidió sobre esta propuesta (RN-CLS-04). */
+  readonly decidedByTeam: boolean;
 }
 
 /** Un adjunto de la solicitud, con su versión vigente (RN-ARC-03). */
@@ -125,7 +140,17 @@ export interface RequestDetail {
   readonly history: readonly RequestHistoryEntry[];
   readonly counter: RequestCounter;
   readonly estimate: ConsumptionEstimate | null;
-  readonly job: { readonly id: string; readonly code: string; readonly state: string } | null;
+  readonly job: {
+    readonly id: string;
+    readonly code: string;
+    readonly state: string;
+    readonly category: string;
+    /** RN-CRE-12 · los créditos que quedaron fijos al aceptar. */
+    readonly credits_half: number | null;
+    /** RN-CRE-18/19 · el plazo de ejecución en horas laborables. */
+    readonly execution_sla_hours: number | null;
+    readonly started_at: string | null;
+  } | null;
   /**
    * RN-REQ-07 · las subtareas del trabajo y su evidencia, **en solo
    * lectura** (decisión 64).
@@ -154,6 +179,12 @@ export interface RequestDetail {
     readonly totalCents: number;
   } | null;
   readonly canManage: boolean;
+  /**
+   * RN-CRE-16 · el saldo de créditos del ciclo del restaurante, para decir
+   * al equipo qué porcentaje del plan es la cifra. `null` sin plan con
+   * créditos o si no se pudo leer.
+   */
+  readonly creditBalance: { readonly includedHalf: number; readonly remainingHalf: number } | null;
 }
 
 function toTimerEvents(
@@ -200,7 +231,7 @@ export async function loadRequestDetail(
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, priority, priority_reason, created_by_team, on_behalf_reason, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id, kind, incident_outcome, incident_note, incident_resolved_at",
+      "id, code, description, context, priority, priority_reason, created_by_team, on_behalf_reason, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id, kind, incident_outcome, incident_note, incident_resolved_at, validated_credits_half, credit_breakdown, credits_deferred_until, quote_requested_at",
     )
     .eq("id", requestId)
     .maybeSingle();
@@ -220,6 +251,7 @@ export async function loadRequestDetail(
     { data: allowance },
     { data: subscriptions },
     { data: quoteRow },
+    { data: creditBalanceRows },
   ] = await Promise.all([
     supabase
       .from("establishments")
@@ -231,7 +263,7 @@ export async function loadRequestDetail(
     // persona se guardan los dos. El último intento es el que se valida.
     supabase
       .from("classifications")
-      .select("proposed_category, proposed_summary, source, fallback_reason, created_at")
+      .select("proposed_category, proposed_summary, source, fallback_reason, created_at, proposed_credits_half, proposed_breakdown, decided_at")
       .eq("request_id", requestId)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -258,7 +290,11 @@ export async function loadRequestDetail(
       .eq("entity_type", "request")
       .eq("entity_id", requestId)
       .order("created_at", { ascending: true }),
-    supabase.from("jobs").select("id, code, state").eq("request_id", requestId).maybeSingle(),
+    supabase
+      .from("jobs")
+      .select("id, code, state, category, credits_half, execution_sla_hours, started_at")
+      .eq("request_id", requestId)
+      .maybeSingle(),
     supabase.rpc("has_capability", {
       p_space_id: request.space_id,
       p_capability: "manage_requests",
@@ -279,6 +315,7 @@ export async function loadRequestDetail(
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase.rpc("establishment_credit_balance", { p_establishment_id: request.establishment_id }),
   ]);
 
   const { data: quoteStatus } = quoteRow
@@ -409,11 +446,14 @@ export async function loadRequestDetail(
       classification === null
         ? null
         : {
-            category: classification.proposed_category as ChangeCategory,
+            category: classification.proposed_category as ChangeCategory | "credits",
             summary: classification.proposed_summary,
             source: classification.source,
             fallbackReason: classification.fallback_reason,
             createdAt: classification.created_at,
+            creditsHalf: classification.proposed_credits_half,
+            creditItems: parseCreditBreakdown(classification.proposed_breakdown),
+            decidedByTeam: classification.decided_at !== null,
           },
     attachments,
     attachmentsFailed: Boolean(linksError),
@@ -428,5 +468,9 @@ export async function loadRequestDetail(
         ? null
         : { id: quoteRow.id, code: quoteRow.code, status: quoteStatus ?? "draft", totalCents: quoteRow.total_cents },
     canManage: Boolean(canManage),
+    creditBalance: (() => {
+      const saldo = creditBalanceRows?.[0];
+      return saldo ? { includedHalf: saldo.included_half, remainingHalf: saldo.remaining_half } : null;
+    })(),
   };
 }

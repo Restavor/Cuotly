@@ -8,6 +8,7 @@ vi.mock("./actions", () => ({
   blockJob: vi.fn(),
   openJobCommentsHere: vi.fn(),
   publishJob: vi.fn(),
+  setJobExecutionDays: vi.fn(),
   startJob: vi.fn(),
   unblockJob: vi.fn(),
 }));

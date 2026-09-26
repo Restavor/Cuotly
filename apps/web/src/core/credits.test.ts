@@ -1,12 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   PROCESSING_HALF,
+  breakdownMatchingTotal,
   breakdownTotal,
   clientSlaRange,
+  creditCostView,
   creditExecutionSlaHours,
   creditFit,
   formatCredits,
+  parseCreditBreakdown,
+  parseCreditsInput,
   percentOfPlan,
+  valuationMode,
 } from "./credits";
 
 describe("RN-CRE-04 · medios créditos escritos como créditos", () => {
@@ -95,5 +100,104 @@ describe("RN-CRE-14 · si no llega", () => {
 
   it("sin créditos en el plan: presupuesto (RN-CRE-07)", () => {
     expect(creditFit(2, 0, 0)).toBe("quote");
+  });
+});
+
+describe("PRD §41 · qué camino sigue una solicitud al enviarse", () => {
+  it("RN-CRE-09 · un plan con créditos se valora en créditos", () => {
+    expect(valuationMode({ kind: "change", plan: { creditsHalf: 40, categoryUnits: 0 } })).toBe("credits");
+  });
+
+  it("un plan por categorías sigue con las categorías", () => {
+    expect(valuationMode({ kind: "change", plan: { creditsHalf: 0, categoryUnits: 13 } })).toBe("categories");
+  });
+
+  it("RN-CRE-07 · sin plan o con el Básico, créditos (irá a presupuesto)", () => {
+    expect(valuationMode({ kind: "change", plan: null })).toBe("credits");
+    expect(valuationMode({ kind: "change", plan: { creditsHalf: 0, categoryUnits: 0 } })).toBe("credits");
+  });
+
+  it("RN-REQ-11 · una incidencia no se valora", () => {
+    expect(valuationMode({ kind: "incident", plan: { creditsHalf: 40, categoryUnits: 0 } })).toBe("incident");
+  });
+});
+
+describe("RN-CRE-11 · lo que ve el restaurante antes de aceptar", () => {
+  it("cabe: el porcentaje, lo que le quedará y el plazo", () => {
+    expect(creditCostView(8, { includedHalf: 40, remainingHalf: 33 })).toEqual({
+      percentOfPlan: 20,
+      remainingAfterPercent: 63,
+      fit: "accept",
+      slaRange: { minDays: 1, maxDays: 2 },
+    });
+  });
+
+  it("RN-CRE-14 · no cabe: sin 'le quedará', con las salidas", () => {
+    const vista = creditCostView(34, { includedHalf: 40, remainingHalf: 33 });
+    expect(vista.fit).toBe("choose");
+    expect(vista.remainingAfterPercent).toBeNull();
+    expect(vista.percentOfPlan).toBe(85);
+  });
+
+  it("RN-CRE-07 · sin plan con créditos, sin porcentajes", () => {
+    expect(creditCostView(4, null)).toEqual({
+      percentOfPlan: null,
+      remainingAfterPercent: null,
+      fit: "quote",
+      slaRange: { minDays: 1, maxDays: 2 },
+    });
+  });
+});
+
+describe("RN-CRE-05 · el desglose guardado", () => {
+  it("lee las partidas bien formadas e ignora las demás", () => {
+    expect(
+      parseCreditBreakdown({
+        items: [
+          { description: "Cambiar teléfono", credits_half: 1 },
+          { description: "", credits_half: 2 },
+          { description: "Foto", credits_half: 1.5 },
+          { description: "Sección", credits_half: 4 },
+        ],
+      }),
+    ).toEqual([
+      { description: "Cambiar teléfono", creditsHalf: 1 },
+      { description: "Sección", creditsHalf: 4 },
+    ]);
+    expect(parseCreditBreakdown(null)).toEqual([]);
+    expect(parseCreditBreakdown({ items: "no" })).toEqual([]);
+  });
+});
+
+describe("RN-CRE-04 · lo que escribe el equipo", () => {
+  it.each([
+    ["2,5", 5],
+    ["2.5", 5],
+    ["3", 6],
+    ["0,5", 1],
+  ])("%s → %i medios créditos", (texto, half) => {
+    expect(parseCreditsInput(texto)).toBe(half);
+  });
+
+  it.each(["0", "0,3", "-1", "", "dos"])("%s no vale", (texto) => {
+    expect(parseCreditsInput(texto)).toBeNull();
+  });
+});
+
+describe("RN-CRE-10 · el equipo corrige el total", () => {
+  const ia = { items: [{ description: "Cambiar teléfono", credits_half: 1 }, { description: "Sección", credits_half: 4 }] };
+
+  it("si coincide con el desglose de la IA, se conserva", () => {
+    expect(breakdownMatchingTotal(6, null, ia)).toEqual(ia);
+  });
+
+  it("si no coincide con ninguno, no se inventa: sin desglose", () => {
+    expect(breakdownMatchingTotal(9, null, ia)).toBeNull();
+    expect(breakdownMatchingTotal(1, { items: [] })).toBeNull();
+  });
+
+  it("gana el primero que coincide (el vigente antes que el de la IA)", () => {
+    const vigente = { items: [{ description: "Otra cosa", credits_half: 5 }] };
+    expect(breakdownMatchingTotal(6, vigente, ia)).toEqual(vigente);
   });
 });

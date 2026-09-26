@@ -22,6 +22,8 @@ import { createClient } from "@/lib/supabase/server";
 
 import { SubtasksAndEvidence } from "@/components/request/SubtasksAndEvidence";
 import { IncidentCard } from "@/components/request/IncidentCard";
+import { TeamCreditSummary } from "@/components/request/TeamCredits";
+import { formatCredits, parseCreditBreakdown } from "@/core/credits";
 import { canChangeKind, canResolveIncident } from "@/core/incidents";
 import { loadRequestDetail } from "./detail-load";
 import {
@@ -32,6 +34,7 @@ import {
   CancelRequestForClientForm,
   RejectRequestForm,
   RequestInformationForm,
+  SetCreditsForm,
   ValidateProposalForm,
 } from "./RequestActions";
 import { SheetFrame } from "@/components/establishment/SheetHeader";
@@ -122,6 +125,22 @@ export default async function TeamRequestDetailPage({
   // la única forma, y sale abierto (RN-CLS-03 exige que alguien decida la
   // categoría, y aquí no hay ninguna que aceptar de un botón).
   const corrigiendo = corregir === "1" || proposal === null;
+
+  // PRD §41 · la solicitud va en créditos: la valoró la IA en créditos, el
+  // equipo ya fijó créditos, o la IA falló al valorarla en créditos (el
+  // motivo lo apunta `clasificarSolicitud()` con el prefijo `credits:`).
+  // Entonces no se valida una categoría: se fijan o corrigen créditos
+  // (RN-CRE-10), antes de que el restaurante acepte (RN-CRE-12).
+  const enCreditos =
+    !esIncidencia &&
+    (request.validated_category === "credits" ||
+      proposal?.category === "credits" ||
+      (proposal?.fallbackReason ?? "").startsWith("credits:"));
+  const creditosVigentes = request.validated_credits_half ?? proposal?.creditsHalf ?? null;
+  const partidasVigentes =
+    request.validated_credits_half !== null ? parseCreditBreakdown(request.credit_breakdown) : (proposal?.creditItems ?? []);
+  const sePuedenFijarCreditos =
+    canManage && (state === "pending_internal_validation" || state === "pending_client_acceptance");
 
     /*
     El paginador de la maqueta 05. La lista y su orden salen de
@@ -243,7 +262,7 @@ return (
             request={request}
             proposal={proposal}
             // RN-REQ-10 · una incidencia no gasta del plan: no hay consumo que estimar.
-            estimate={esIncidencia ? null : estimate}
+            estimate={esIncidencia || enCreditos ? null : estimate}
             counter={counter}
             /*
               Fuera del tramo de validación la tarjeta no lleva botones:
@@ -254,7 +273,35 @@ return (
               botón que le va a decir que no (CLAUDE.md).
             */
             actions={
-              !enValidacion ? null : canManage ? (
+              enCreditos ? (
+                <>
+                  <TeamCreditSummary
+                    creditsHalf={creditosVigentes}
+                    items={partidasVigentes}
+                    byAi={proposal?.source === "ai" && proposal.decidedByTeam === false}
+                    fallbackReason={
+                      proposal?.fallbackReason?.startsWith("credits:")
+                        ? proposal.fallbackReason.slice("credits:".length)
+                        : null
+                    }
+                    includedHalf={detail.creditBalance?.includedHalf ?? null}
+                    deferredUntil={request.credits_deferred_until}
+                    quoteRequestedAt={quote === null ? request.quote_requested_at : null}
+                    timeZone={zona}
+                  />
+                  {sePuedenFijarCreditos ? (
+                    <SetCreditsForm
+                      requestId={id}
+                      defaultCredits={creditosVigentes === null ? "" : formatCredits(creditosVigentes)}
+                      defaultSummary={request.validated_summary ?? proposal?.summary ?? ""}
+                      correcting={request.validated_credits_half !== null}
+                    />
+                  ) : null}
+                  {enValidacion && canManage && canChangeKind({ state, incidentOutcome: request.incident_outcome }, "team") ? (
+                    <ChangeKindForm requestId={id} kind="change" />
+                  ) : null}
+                </>
+              ) : !enValidacion ? null : canManage ? (
                 esIncidencia ? (
                   <>
                     {/* RN-REQ-11 · una incidencia se diagnostica, no se valida como un cambio. */}
