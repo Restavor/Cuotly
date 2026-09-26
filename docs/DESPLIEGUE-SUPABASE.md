@@ -6,9 +6,30 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 y 150 escritas, sin aplicar).
+Actualizado el 27/09/2026 (149 y 150 aplicadas).
 
 ## Pendiente de aplicar
+
+Nada.
+
+**Actualización del 27/09/2026: el motor de créditos y las tres salidas** (decisión 85). Aplicadas en
+producción, en este orden y con estas versiones:
+
+- `20260926224755 · el_motor_de_creditos_p1_esquema_plazo_ciclo_y_valoracion` (149, líneas 1–477)
+- `20260926224919 · el_motor_de_creditos_p2_aceptar_cancelar_esperar_barra_y_avisos` (149, líneas 478–1143)
+- `20260926225124 · el_motor_de_creditos_p3_cambio_de_plan_plazo_aceptacion_y_planes` (149, líneas 1144–final)
+- `20260926225334 · las_tres_salidas` (150 entera)
+
+La 149 se partió en tres por su tamaño, cortada por sus secciones, como la 131; el corte se probó antes
+en una base local construida hasta la 148. **Antes de aplicar** se comprobó por md5 que las 15 funciones
+que redefinen eran las de la 148: doce idénticas; `change_plan_immediately`,
+`get_or_create_consumption_cycle_internal` y `run_consumption_thresholds` solo diferían en comentarios
+(md5 igual sin comentarios ni espacios). También que la lista de tipos de `notifications` en vivo era la
+misma que reescribe la 150 (65 tipos). **Después**, el cuerpo, los permisos (`proacl`) y
+`security definer` de las 27 funciones que tocan, y los privilegios de columna de `requests`, dan el
+mismo md5 en producción que en local.
+
+Lo que sigue es lo que decía esta sección antes de aplicarlas:
 
 **149 · `el_motor_de_creditos`** (decisión 85, PRD §41, RN-CRE-01 a RN-CRE-19). El servidor aprende a
 medir en créditos; **no cambia el catálogo** ni ningún dato, y sin la IA en créditos (punto 3) nadie
