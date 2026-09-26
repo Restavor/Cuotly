@@ -25,6 +25,7 @@ import { EstablishmentDataForm } from "./DataForm";
 import { DataSectionNav, DigitalSection } from "./DigitalSections";
 import { IntegrationsBlock } from "./IntegrationsBlock";
 import { isIntegrationProvider } from "@/core/integrations";
+import type { ReportPeriodKind } from "@/core/reports";
 import type { DigitalDataView, IntegrationsView } from "./integrations-load";
 import {
   OpportunitiesSection,
@@ -257,6 +258,11 @@ export interface SheetData {
 /** Decisión 78 · lo que la tarjeta "Informe del mes" necesita. */
 export interface MonthlyReportView {
   readonly establishmentId: string;
+  /**
+   * RN-REP-32 · cada cuánto recibe su informe, según su plan. Con
+   * `quarter`, `monthLabel` es el trimestre: "julio a septiembre de 2026".
+   */
+  readonly periodKind: ReportPeriodKind;
   /** "agosto de 2026". */
   readonly monthLabel: string;
   readonly report: {
@@ -3874,13 +3880,19 @@ export function MonthlyReportCard({
   const enlace = informe ? `/espacios/${slug}/informes/${informe.id}` : null;
   const subido = informe !== null && (informe.status === "sent" || informe.status === "archived");
 
+  const trimestral = view.periodKind === "quarter";
+
   return (
-    <Card title={tm.title}>
-      <p className="text-sm text-text-secondary">{tm.hint(view.monthLabel)}</p>
+    <Card title={trimestral ? tm.quarterTitle : tm.title}>
+      <p className="text-sm text-text-secondary">
+        {trimestral ? tm.quarterHint(view.monthLabel) : tm.hint(view.monthLabel)}
+      </p>
 
       {informe === null ? (
         <div className="mt-4 space-y-3">
-          <p className="text-sm text-text">{tm.notGenerated(view.monthLabel)}</p>
+          <p className="text-sm text-text">
+            {trimestral ? tm.quarterNotGenerated(view.monthLabel) : tm.notGenerated(view.monthLabel)}
+          </p>
           <GenerateMonthlyButton slug={slug} establishmentId={view.establishmentId} again={false} />
         </div>
       ) : (

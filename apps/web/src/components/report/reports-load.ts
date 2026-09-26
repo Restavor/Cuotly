@@ -14,16 +14,18 @@ import {
   type ReportSectionKey,
   type ReportSectionState,
   type ReportSnapshot,
+  type ReportPeriodKind,
   type ReportState,
-  defaultReportPeriod,
   isReportCategory,
+  isReportPeriodKind,
   isReportSectionKey,
   isReportState,
+  reportPeriodFor,
 } from "@/core/reports";
 
 import type { MonthlyReportView } from "@/components/establishment/Sheet";
 import type { Database } from "@/lib/supabase/database.types";
-import { monthName } from "@/services/report-summary";
+import { monthName, quarterName } from "@/services/report-summary";
 import type { createClient } from "@/lib/supabase/server";
 
 /** El cliente tipado de siempre: la frontera con `any` que tenía este
@@ -319,7 +321,15 @@ export async function loadMonthlyReport(
     readonly canPublish: boolean;
   },
 ): Promise<MonthlyReportView> {
-  const period = defaultReportPeriod(new Date(), input.timeZone);
+  // RN-REP-32 · el periodo lo decide el plan del restaurante, y lo dice la
+  // base con la misma puerta que el nivel del informe.
+  const { data: periodo, error: periodoError } = await client.rpc("establishment_report_period", {
+    p_establishment_id: input.establishmentId,
+  });
+  if (periodoError) throw new Error(`establishment_report_period: ${periodoError.message}`);
+  const periodKind: ReportPeriodKind =
+    typeof periodo === "string" && isReportPeriodKind(periodo) ? periodo : "month";
+  const period = reportPeriodFor(periodKind, new Date(), input.timeZone);
   const fila =
     input.reports.find(
       (row) =>
@@ -341,7 +351,8 @@ export async function loadMonthlyReport(
 
   return {
     establishmentId: input.establishmentId,
-    monthLabel: monthName(period),
+    periodKind,
+    monthLabel: periodKind === "quarter" ? quarterName(period) : monthName(period),
     report:
       fila === null ? null : { id: fila.id, status: fila.status, sentAt: fila.sentAt, generatedAt },
     canPublish: input.canPublish,

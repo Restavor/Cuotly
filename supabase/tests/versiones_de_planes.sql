@@ -80,8 +80,8 @@ declare
   v_fn text;
 begin
   foreach v_fn in array array[
-    'public.create_plan(uuid, text, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text)',
-    'public.revise_plan(uuid, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text)',
+    'public.create_plan(uuid, text, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text)',
+    'public.revise_plan(uuid, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text)',
     'public.rename_plan(uuid, text)', 'public.archive_plan(uuid)',
     'public.create_service(uuid, text, text, integer, integer, integer, text)',
     'public.revise_service(uuid, integer, integer, integer, text)',

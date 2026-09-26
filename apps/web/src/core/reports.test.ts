@@ -103,13 +103,14 @@ describe("§89 · las tres familias y las secciones de la maqueta 10.04", () => 
     expect([...REPORT_CATEGORIES]).toEqual(["operation", "finance", "digital"]);
   });
 
-  it("las secciones son las cinco de la maqueta, más Finanzas y el relato del mes", () => {
+  it("las secciones son las cinco de la maqueta, más Finanzas, el relato del mes y el tráfico de la web (RN-REP-33)", () => {
     // El orden es el mismo que el de `report_sections_catalogue()` en SQL
-    // (migración 112): el relato del mes va detrás del resumen, porque se
-    // lee antes que las cifras.
+    // (migraciones 112 y 145): el relato del mes va detrás del resumen,
+    // porque se lee antes que las cifras, y el tráfico justo detrás.
     expect([...REPORT_SECTION_KEYS]).toEqual([
       "executive_summary",
       "month_activity",
+      "web_traffic",
       "operation",
       "finance",
       "digital",
@@ -129,10 +130,10 @@ describe("§89 · las tres familias y las secciones de la maqueta 10.04", () => 
     // informe" se vuelve a decidir).
     const operacion = defaultSections("operation");
     const incluidas = operacion.filter((section) => section.included).map((section) => section.key);
-    expect(incluidas).toEqual(["executive_summary", "month_activity", "operation", "annexes"]);
+    expect(incluidas).toEqual(["executive_summary", "month_activity", "web_traffic", "operation", "annexes"]);
 
     const finanzas = defaultSections("finance").filter((s) => s.included).map((s) => s.key);
-    expect(finanzas).toEqual(["executive_summary", "month_activity", "finance", "annexes"]);
+    expect(finanzas).toEqual(["executive_summary", "month_activity", "web_traffic", "finance", "annexes"]);
 
     for (const category of REPORT_CATEGORIES) {
       expect(defaultSections(category).find((s) => s.key === "opportunities")?.included).toBe(false);

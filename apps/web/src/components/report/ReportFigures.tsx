@@ -13,7 +13,7 @@ import {
   orderedActivity,
   orderedSections,
 } from "@/core/reports";
-import { fechaCorta } from "@/i18n/dates";
+import { enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import {
   activitySubject,
@@ -21,9 +21,12 @@ import {
   changeCategoryText,
   changeDatesText,
   changeText,
+  deviceName,
   figureLabel,
   figureText,
   opportunityTitle,
+  sectionTitle,
+  trafficShare,
   yearAgoText,
 } from "@/services/report-pdf";
 
@@ -192,6 +195,14 @@ function tieneContenido(snapshot: ReportSnapshot, key: ReportSectionKey): boolea
       (snapshot.activity?.entries.length ?? 0) > 0
     );
   }
+  if (key === "web_traffic") {
+    const trafico = snapshot.traffic;
+    return (
+      figuresOfSection(snapshot, key).length > 0 ||
+      (trafico !== undefined &&
+        (trafico.topPages.length > 0 || trafico.devices.length > 0 || trafico.months.length > 0))
+    );
+  }
   return figuresOfSection(snapshot, key).length > 0;
 }
 
@@ -231,7 +242,7 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
                     checked={visibles.includes(section.key)}
                     onChange={() => alternar(section.key)}
                   />
-                  {t.sections[section.key]}
+                  {sectionTitle(section.key, snapshot.period, t)}
                   {section.included ? null : (
                     <span className="text-xs text-text-secondary">({t.viewSectionExtra})</span>
                   )}
@@ -250,7 +261,9 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
 
           return (
             <section key={section.key} className="space-y-2">
-              <h4 className="text-sm font-semibold text-primary-dark">{t.sections[section.key]}</h4>
+              <h4 className="text-sm font-semibold text-primary-dark">
+                {sectionTitle(section.key, snapshot.period, t)}
+              </h4>
               {note ? <p className="text-sm text-text">{note}</p> : null}
               {/* RN-REP-19, punto 3 · la línea que dice de quién es el resumen. */}
               {section.key === "executive_summary" && note && snapshot.summary ? (
@@ -270,7 +283,7 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
                   <PlanUsage snapshot={snapshot} />
                 </>
               ) : figures.length === 0 ? (
-                <EmptyReason reason="no_data_yet" title={t.sections[section.key]} />
+                <EmptyReason reason="no_data_yet" title={sectionTitle(section.key, snapshot.period, t)} />
               ) : (
                 <Table>
                   <TableHead>
@@ -313,6 +326,7 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
                   sección de la que cuelga. El equipo revisa aquí antes de
                   enviar: si el PDF llevara bloques que esta pantalla no
                   enseña, estaría aprobando a ciegas. */}
+              {section.key === "web_traffic" ? <Traffic snapshot={snapshot} /> : null}
               {section.key === "operation" ? <Timings snapshot={snapshot} /> : null}
               {section.key === "digital" ? (
                 <>
@@ -323,6 +337,119 @@ export function ReportFigures({ snapshot }: { snapshot: ReportSnapshot }) {
             </section>
           );
         })}
+    </div>
+  );
+}
+
+/**
+ * RN-REP-33 · el detalle del tráfico de la web: páginas más visitadas,
+ * dispositivos y la evolución mes a mes. Lo que no hay no se pinta: sin
+ * Analytics, las visitas y los usuarios de arriba ya dicen el motivo.
+ */
+function Traffic({ snapshot }: { readonly snapshot: ReportSnapshot }) {
+  const trafico = snapshot.traffic;
+  if (trafico === undefined) return null;
+  const tt = t.traffic;
+  const numero = (n: number) => new Intl.NumberFormat("es-ES").format(n);
+
+  return (
+    <div className="space-y-4">
+      {trafico.topPages.length > 0 ? (
+        <div className="space-y-2">
+          <h5 className="text-sm font-semibold text-primary-dark">{tt.topPagesTitle}</h5>
+          <p className="text-xs text-text-secondary">{tt.topPagesHint}</p>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>{tt.columns.page}</TableHeaderCell>
+                <TableHeaderCell>{tt.columns.views}</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {trafico.topPages.map((linea) => (
+                <TableRow key={linea.dimension}>
+                  <TableCell>
+                    <span className="break-all">{linea.dimension}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-semibold text-text">{numero(linea.value)}</span>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : null}
+
+      {trafico.devices.length > 0 ? (
+        <div className="space-y-2">
+          <h5 className="text-sm font-semibold text-primary-dark">{tt.devicesTitle}</h5>
+          <p className="text-xs text-text-secondary">{tt.devicesHint}</p>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>{tt.columns.device}</TableHeaderCell>
+                <TableHeaderCell>{tt.columns.visits}</TableHeaderCell>
+                <TableHeaderCell>{tt.columns.share}</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {trafico.devices.map((linea) => {
+                const parte = trafficShare(linea.value, trafico.devices);
+                return (
+                  <TableRow key={linea.dimension}>
+                    <TableCell>{deviceName(linea.dimension)}</TableCell>
+                    <TableCell>
+                      <span className="font-semibold text-text">{numero(linea.value)}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-text-secondary">{parte === null ? "" : tt.share(parte)}</span>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      ) : null}
+
+      {trafico.months.length > 0 ? (
+        <div className="space-y-2">
+          <h5 className="text-sm font-semibold text-primary-dark">{tt.monthsTitle}</h5>
+          <p className="text-xs text-text-secondary">{tt.monthsHint}</p>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableHeaderCell>{tt.columns.month}</TableHeaderCell>
+                <TableHeaderCell>{tt.columns.visits}</TableHeaderCell>
+                <TableHeaderCell>{tt.columns.users}</TableHeaderCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {trafico.months.map((mes) => (
+                <TableRow key={mes.month}>
+                  <TableCell>
+                    {enZona(`${mes.month}-01`, "UTC", { month: "long", year: "numeric" })}
+                    {/* Un mes que el periodo no cubre entero se dice: una
+                        cifra corta al lado de dos llenas se lee como un
+                        desplome y no lo es. */}
+                    {mes.partial ? <span className="block text-xs text-danger">{tt.partial}</span> : null}
+                  </TableCell>
+                  {[mes.sessions, mes.users].map((valor, index) => (
+                    <TableCell key={index}>
+                      {valor === null ? (
+                        <span className="text-sm text-text-secondary">{tt.noData}</span>
+                      ) : (
+                        <span className="font-semibold text-text">{numero(valor)}</span>
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : null}
     </div>
   );
 }

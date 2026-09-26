@@ -54,6 +54,7 @@ import {
   type PlanUsageLine,
   type PublishedChange,
   type SeriesPoint,
+  type WebTraffic,
   type WeekBucket,
   type WeeklySeries,
   CHANGE_EFFECT_WINDOW_DAYS,
@@ -67,6 +68,8 @@ import {
   operationalIndicators,
   planUsage,
   sameMonthLastYear,
+  trafficFigures,
+  webTraffic,
   weekBuckets,
   weeklySeries,
   withYearAgoFigures,
@@ -385,7 +388,13 @@ async function figuresForPeriod(
       deps.gateway.metricPoints(report.establishmentId, period.start, period.end),
       deps.gateway.providerStates(report.establishmentId),
     ]);
-    figures.push(...digitalFigures(points, states, period, now, report.timezone));
+    const digital = digitalFigures(points, states, period, now, report.timezone);
+    figures.push(...digital);
+    // RN-REP-33 · las visitas y los usuarios, también en "Tráfico de la
+    // web". Copiadas de las de Analytics, no recalculadas: aquí se piden
+    // para este periodo, el anterior y el del año pasado, y las tres
+    // comparaciones salen solas.
+    figures.push(...trafficFigures(digital));
   }
 
   return figures;
@@ -562,6 +571,34 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
         ),
       )
     : [];
+
+  /*
+    RN-REP-33 (decisión 83) · el detalle del tráfico de la web: páginas,
+    dispositivos y evolución mes a mes.
+
+    Se pide **solo si la sección entra**, por lo mismo que el relato: son
+    listas, no cifras, y guardarlas donde nadie las va a leer engorda cada
+    versión del libro inmutable. Y **solo si las visitas del periodo tienen
+    cifra**: si Analytics no está conectado o el periodo no tiene datos
+    suficientes, las visitas ya dicen el motivo, y un detalle debajo que
+    sí enseñara números contradiría a la cifra de arriba.
+  */
+  let traffic: WebTraffic | undefined;
+  if (incluidas.has("web_traffic") && report.establishmentId !== null) {
+    const visitas = figures.find(
+      (figure) => figure.section === "web_traffic" && figure.metric === "sessions" && figure.value !== null,
+    );
+    traffic = { topPages: [], devices: [], months: [] };
+    if (visitas !== undefined) {
+      try {
+        const puntos = await deps.gateway.metricPoints(report.establishmentId, period.start, period.end);
+        traffic = webTraffic(seriesPorProveedor(puntos).get("ga4") ?? [], period);
+      } catch {
+        // Si falla, el informe sale igual con las visitas y los usuarios:
+        // quedarse sin informe por el detalle sería la peor opción.
+      }
+    }
+  }
 
   /*
     RN-REP-21 a 26 (decisión 60) · lo que añade Premium+.
@@ -748,6 +785,7 @@ export async function buildSnapshot(deps: ReportGenerationDeps, report: ReportRo
     activity,
     allowance,
     timings,
+    ...(traffic === undefined ? {} : { traffic }),
     evolution,
     evolutionBuckets,
     effects,

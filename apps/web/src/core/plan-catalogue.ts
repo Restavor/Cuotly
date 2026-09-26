@@ -9,6 +9,8 @@
  * el servidor lo vuelve a comprobar.
  */
 
+import { type ReportPeriodKind, isReportPeriodKind } from "./reports";
+
 export const PLANS_TABS = ["planes", "servicios", "versiones", "restaurantes"] as const;
 export type PlansTab = (typeof PLANS_TABS)[number];
 
@@ -144,6 +146,8 @@ export interface ComparablePlan {
   readonly startSlaHours: number;
   readonly canOrderRequests: boolean;
   readonly reportLevelRank: number;
+  /** RN-REP-32 · cada cuánto llega el informe. Sin él, mensual. */
+  readonly reportPeriod?: ReportPeriodKind;
 }
 
 export type ComparisonKey =
@@ -154,7 +158,8 @@ export type ComparisonKey =
   | "large"
   | "startSla"
   | "ordering"
-  | "report";
+  | "report"
+  | "reportPeriod";
 
 export interface ComparisonRow {
   readonly key: ComparisonKey;
@@ -184,6 +189,13 @@ export function comparePlans(current: ComparablePlan, target: ComparablePlan): r
     row("startSla", current.startSlaHours, target.startSlaHours, false),
     row("ordering", Number(current.canOrderRequests), Number(target.canOrderRequests), true),
     row("report", current.reportLevelRank, target.reportLevelRank, true),
+    // RN-REP-32 · un informe cada mes es mejor que uno cada trimestre.
+    row(
+      "reportPeriod",
+      Number((current.reportPeriod ?? "month") === "month"),
+      Number((target.reportPeriod ?? "month") === "month"),
+      true,
+    ),
   ];
 }
 
@@ -210,6 +222,8 @@ export interface PlanTerms {
   readonly grantsPriority: boolean;
   readonly queueRank: number;
   readonly reportLevel: PlanReportLevel;
+  /** RN-REP-32 (decisión 83) · informe mensual o trimestral. */
+  readonly reportPeriod: ReportPeriodKind;
   readonly watchesReviews: boolean;
 }
 
@@ -228,6 +242,7 @@ export type TermsFormError =
   | "executionSla"
   | "queueRank"
   | "reportLevel"
+  | "reportPeriod"
   | "updates";
 
 export type TermsFormResult<T> =
@@ -282,6 +297,11 @@ export function readPlanTermsForm(form: FormLike): TermsFormResult<PlanTerms> {
   const level = text(form, "reportLevel");
   if (!(REPORT_LEVELS as readonly string[]).includes(level)) return { ok: false, error: "reportLevel" };
 
+  // Sin el campo, mensual: es lo que tenían todos los planes antes de la
+  // migración 145.
+  const period = text(form, "reportPeriod") || "month";
+  if (!isReportPeriodKind(period)) return { ok: false, error: "reportPeriod" };
+
   const [small, photo, medium, large] = included as number[];
   const [eSmall, ePhoto, eMedium, eLarge] = execution as number[];
   const on = (k: string) => form.get(k) === "on";
@@ -302,6 +322,7 @@ export function readPlanTermsForm(form: FormLike): TermsFormResult<PlanTerms> {
       grantsPriority: on("grantsPriority"),
       queueRank: rank,
       reportLevel: level as PlanReportLevel,
+      reportPeriod: period,
       watchesReviews: on("watchesReviews"),
     },
   };

@@ -1,4 +1,10 @@
-import { isReportLevel, reportLevelRank, type ReportLevel } from "@/core/reports";
+import {
+  isReportLevel,
+  isReportPeriodKind,
+  reportLevelRank,
+  type ReportLevel,
+  type ReportPeriodKind,
+} from "@/core/reports";
 import type { createClient } from "@/lib/supabase/server";
 
 import { loadSubscriptionTerms, type SubscriptionTerms } from "./terms-load";
@@ -36,6 +42,8 @@ export interface CataloguePlan {
   readonly watchesReviews: boolean;
   readonly reportLevel: ReportLevel;
   readonly reportLevelRank: number;
+  /** RN-REP-32 · informe mensual o trimestral. */
+  readonly reportPeriod: ReportPeriodKind;
 }
 
 export interface CatalogueService {
@@ -107,7 +115,7 @@ export async function loadPlanCatalogue(supabase: Supabase, spaceId: string): Pr
       supabase
         .from("plans")
         .select(
-          "id, lineage_id, revision, published_at, superseded_at, archived_at, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large, can_order_requests, queue_rank, grants_priority, watches_reviews, report_level",
+          "id, lineage_id, revision, published_at, superseded_at, archived_at, name, price_cents, included_small, included_photo, included_medium, included_large, start_sla_hours, execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large, can_order_requests, queue_rank, grants_priority, watches_reviews, report_level, report_period",
         )
         .eq("space_id", spaceId)
         .order("price_cents"),
@@ -164,6 +172,7 @@ export async function loadPlanCatalogue(supabase: Supabase, spaceId: string): Pr
       watchesReviews: p.watches_reviews,
       reportLevel: level,
       reportLevelRank: reportLevelRank(level),
+      reportPeriod: isReportPeriodKind(p.report_period) ? p.report_period : "month",
     };
   });
   const serviceRevisions: CatalogueService[] = (services.data ?? []).map((s) => ({

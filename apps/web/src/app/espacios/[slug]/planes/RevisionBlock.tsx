@@ -18,6 +18,7 @@ export function revisionValue(field: string, value: string | null): string {
   if (value === "true") return tc.yes;
   if (value === "false") return tc.no;
   if (field === "report_level") return tc.reportLevels[value as keyof typeof tc.reportLevels] ?? value;
+  if (field === "report_period") return tc.reportPeriods[value as keyof typeof tc.reportPeriods] ?? value;
   return value;
 }
 

@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 
 import { Button, Field, Select } from "@/components/ui";
 import { REPORT_LEVELS, type PlanTerms, type ServiceTerms } from "@/core/plan-catalogue";
+import { REPORT_PERIOD_KINDS } from "@/core/reports";
 import { es } from "@/i18n/es";
 
 import { INITIAL_PLANS, INITIAL_TERMS } from "./action-state";
@@ -84,6 +85,7 @@ const EMPTY_PLAN: PlanTerms = {
   grantsPriority: false,
   queueRank: 0,
   reportLevel: "basic",
+  reportPeriod: "month",
   watchesReviews: false,
 };
 
@@ -150,6 +152,12 @@ export function PlanTermsForm({
           name="reportLevel"
           defaultValue={v.reportLevel}
           options={REPORT_LEVELS.map((level) => ({ value: level, label: tc.reportLevels[level] }))}
+        />
+        <Select
+          label={te.reportPeriodLabel}
+          name="reportPeriod"
+          defaultValue={v.reportPeriod}
+          options={REPORT_PERIOD_KINDS.map((period) => ({ value: period, label: tc.reportPeriods[period] }))}
         />
         <Field
           label={te.queueRankLabel}

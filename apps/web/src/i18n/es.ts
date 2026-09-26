@@ -4308,6 +4308,9 @@ export const es = {
         advanced: "Avanzado",
         complete: "Completo",
       },
+      // RN-REP-32 (decisión 83).
+      reportPeriod: "Cada cuánto llega el informe",
+      reportPeriods: { month: "Mensual", quarter: "Trimestral" },
       yes: "Sí",
       no: "No",
       conditionsTitle: "Condiciones vigentes",
@@ -4360,6 +4363,7 @@ export const es = {
       queueRankLabel: "Turno en la cola del equipo",
       queueRankHint: "Número más alto, antes se atiende. El restaurante no lo ve (RN-COM-03).",
       reportLevelLabel: "Nivel de informe",
+      reportPeriodLabel: "Informe",
       canOrderRequests: "Ordena sus propias solicitudes",
       grantsPriority: "Menú Diario a precio reducido y oportunidades avanzadas (Premium+)",
       watchesReviews: "Vigilancia de reseñas",
@@ -4388,6 +4392,7 @@ export const es = {
         executionSla: "Cada plazo de realización tiene que ser de al menos una hora.",
         queueRank: "El turno en la cola tiene que ser un número entero.",
         reportLevel: "Elige un nivel de informe.",
+        reportPeriod: "Elige si el informe es mensual o trimestral.",
         updates: "Las actualizaciones incluidas tienen que ser un número entero, cero o más.",
       },
     },
@@ -4430,6 +4435,7 @@ export const es = {
         can_order_requests: "Ordena sus solicitudes",
         grants_priority: "Premium+",
         report_level: "Nivel de informe",
+        report_period: "Cada cuánto llega el informe",
         watches_reviews: "Vigilancia de reseñas",
         queue_rank: "Turno en la cola",
       } as Record<string, string | undefined>,
@@ -4492,6 +4498,7 @@ export const es = {
         startSla: "Plazo de inicio",
         ordering: "Ordena sus solicitudes",
         report: "Informe",
+        reportPeriod: "Cada cuánto llega el informe",
       },
       configTitle: "Configuración del cambio",
       pickTargetFirst: "Elige un plan en la comparativa para ver cómo se haría el cambio.",
@@ -5379,6 +5386,8 @@ export const es = {
     sections: {
       executive_summary: "Resumen ejecutivo",
       month_activity: "Lo que ha pasado este mes",
+      // RN-REP-33 (decisión 83).
+      web_traffic: "Tráfico de la web",
       operation: "Operación",
       finance: "Finanzas",
       digital: "Rendimiento digital",
@@ -5390,12 +5399,33 @@ export const es = {
       // Decisión 78 · nace escrito con frases fijas y se puede reescribir.
       executive_summary: "Nace escrito con frases fijas a partir de las cifras, sin IA. Se puede reescribir.",
       month_activity: "El relato del periodo, día a día. Cuotly lo ordena: no lo escribe.",
+      web_traffic: "Visitas, usuarios, páginas más visitadas y dispositivos, de Google Analytics.",
       operation: "Solicitudes, trabajos, plazos, bloqueos, consumos y menús.",
       finance: "Ingresos, cobros, impagos y renovaciones.",
       digital: "Web, Google y fuentes conectadas, con la fecha de cada dato.",
       opportunities: "Solo las aprobadas. Las pendientes impiden el envío.",
       annexes: "Evidencias y detalle de apoyo.",
     },
+    // RN-REP-32 · el título del relato cuando el informe es de un
+    // trimestre natural: "este mes" sería mentira.
+    monthActivityQuarter: "Lo que ha pasado este trimestre",
+
+    // RN-REP-33 (decisión 83) · el detalle del tráfico de la web. Lo que
+    // pasó, sin valorarlo: ni "buen trimestre" ni "mejoró".
+    traffic: {
+      metrics: { sessions: "Visitas", users: "Usuarios" } as Record<string, string | undefined>,
+      topPagesTitle: "Páginas más visitadas",
+      topPagesHint: "Vistas de cada página en el periodo. Las cinco primeras.",
+      devicesTitle: "Dispositivos",
+      devicesHint: "Visitas desde cada tipo de dispositivo en el periodo.",
+      monthsTitle: "Evolución del tráfico",
+      monthsHint: "Visitas y usuarios de cada mes del periodo.",
+      columns: { page: "Página", views: "Vistas", device: "Dispositivo", visits: "Visitas", share: "Parte", month: "Mes", users: "Usuarios" },
+      share: (pct: number) => `${pct} %`,
+      partial: "mes incompleto",
+      noData: "Sin datos",
+    },
+
     // RN-REP-18 · el relato del mes. Cada clase de entrada dice QUÉ pasó,
     // nunca quién lo hizo (P7): "Cambio entregado", no "entregado por
     // Marta". El sujeto que va detrás es texto del propio restaurante —el
@@ -5462,6 +5492,10 @@ export const es = {
     // fijas rellenadas con las cifras de la versión: dicen HECHOS, nunca
     // valoran ("buen mes", "mejoró"), y cada una solo si tiene su dato.
     autoSummary: {
+      // RN-REP-32 · cómo se nombra un trimestre natural en las frases:
+      // "En el trimestre de julio a septiembre de 2026 se entregaron…".
+      quarterRange: (desde: string, hasta: string) => `${desde} a ${hasta}`,
+      quarterPhrase: (trimestre: string) => `el trimestre de ${trimestre}`,
       noChanges: (mes: string) => `En ${mes} no hubo cambios.`,
       changes: (mes: string, entregados: number, enProceso: number, pendientes: number) => {
         const partes: string[] = [];
@@ -5502,6 +5536,13 @@ export const es = {
     monthly: {
       title: "Informe del mes",
       name: (mes: string) => `Informe de ${mes}`,
+      // RN-REP-32 (decisión 83) · el mismo informe cuando el plan lo manda
+      // cada trimestre. `trimestre` es "julio a septiembre de 2026".
+      quarterTitle: "Informe del trimestre",
+      quarterName: (trimestre: string) => `Informe del trimestre de ${trimestre}`,
+      quarterHint: (trimestre: string) =>
+        `Todo lo que ha pasado en el trimestre de ${trimestre}, con lo que incluye su plan, que recibe el informe cada trimestre. Cuotly lo genera; tú lo revisas si quieres y lo subes para que lo vea el restaurante.`,
+      quarterNotGenerated: (trimestre: string) => `El informe del trimestre de ${trimestre} todavía no se ha generado.`,
       hint: (mes: string) =>
         `Todo lo que ha pasado en ${mes}, con lo que incluye su plan. Cuotly lo genera; tú lo revisas si quieres y lo subes para que lo vea el restaurante.`,
       notGenerated: (mes: string) => `El informe de ${mes} todavía no se ha generado.`,

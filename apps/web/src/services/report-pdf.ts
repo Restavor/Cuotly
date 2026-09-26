@@ -40,8 +40,9 @@ import {
   headlineFigures,
   orderedActivity,
   orderedSections,
+  periodShape,
 } from "@/core/reports";
-import { fechaCorta } from "@/i18n/dates";
+import { enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 
 export interface ReportPdfMeta {
@@ -144,6 +145,11 @@ export function yearAgoText(figure: ReportFigure, labels: Labels, short = false)
 }
 
 export function figureLabel(figure: ReportFigure, labels: Labels): string {
+  // RN-REP-33 · en "Tráfico de la web" la fuente ya la dice la sección, y
+  // lo que la ficha del plan promete son "visitas" y "usuarios".
+  if (figure.section === "web_traffic") {
+    return labels.traffic.metrics[figure.metric] ?? figure.metric;
+  }
   const metric = labels.metrics[figure.metric as keyof Labels["metrics"]] ?? figure.metric;
   if (!figure.dimension) return metric;
   const dimension =
@@ -151,6 +157,33 @@ export function figureLabel(figure: ReportFigure, labels: Labels): string {
     es.integrations.providers[figure.dimension as keyof typeof es.integrations.providers]?.name ??
     figure.dimension;
   return `${metric} · ${dimension}`;
+}
+
+/**
+ * El título de una sección. Solo cambia uno: el relato, que en un informe
+ * de un trimestre natural (RN-REP-32) no puede decir "este mes".
+ */
+export function sectionTitle(
+  key: ReportSectionKey,
+  period: ReportSnapshot["period"],
+  labels: Labels,
+): string {
+  if (key === "month_activity" && periodShape(period) === "quarter") return labels.monthActivityQuarter;
+  return labels.sections[key] ?? key;
+}
+
+/** RN-REP-33 · el nombre de un dispositivo de Analytics, en español. */
+export function deviceName(dimension: string): string {
+  return es.integrations.devices[dimension] ?? dimension;
+}
+
+/**
+ * RN-REP-33 · la parte de cada línea sobre el total, en entero: "62 %".
+ * Sin total no hay parte, y se dice con `null` en vez de con un 0 %.
+ */
+export function trafficShare(value: number, lines: readonly { readonly value: number }[]): number | null {
+  const total = lines.reduce((suma, linea) => suma + linea.value, 0);
+  return total > 0 ? Math.round((value / total) * 100) : null;
 }
 
 /**
@@ -443,7 +476,7 @@ export async function renderReportPdf(
   if (cuerpo.length > 0) {
     write(labels.pdf.contentsTitle, { size: 11, font: bold });
     cuerpo.forEach((section, index) => {
-      write(`${index + 1}. ${labels.sections[section.key] ?? section.key}`, {
+      write(`${index + 1}. ${sectionTitle(section.key, snapshot.period, labels)}`, {
         size: 9,
         color: SOFT,
         gap: 3,
@@ -458,7 +491,7 @@ export async function renderReportPdf(
     page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     y = PAGE_HEIGHT - MARGIN;
 
-    write(`${index + 1} · ${labels.sections[section.key] ?? section.key}`, {
+    write(`${index + 1} · ${sectionTitle(section.key, snapshot.period, labels)}`, {
       size: 16,
       font: bold,
       color: GREEN,
@@ -483,6 +516,9 @@ export async function renderReportPdf(
       pintarAnexos(snapshot);
     } else {
       pintarCifras(section.key);
+      // RN-REP-33 · el detalle del tráfico, detrás de las visitas y los
+      // usuarios del periodo.
+      if (section.key === "web_traffic") pintarTrafico(snapshot);
       // RN-REP-21 · los tiempos de cada cambio, detrás de los indicadores
       // de Operación: primero cómo fue el mes, después cambio a cambio.
       if (section.key === "operation") pintarTiempos(snapshot);
@@ -608,6 +644,78 @@ export async function renderReportPdf(
       });
       y -= 12;
     }
+  }
+
+  /**
+   * RN-REP-33 · páginas más visitadas, dispositivos y la evolución mes a
+   * mes. Lo que no hay no se pinta: sin Analytics conectado, las visitas y
+   * los usuarios de arriba ya dicen el motivo, y una tabla vacía debajo
+   * sería relleno (CLAUDE.md).
+   */
+  function pintarTrafico(version: ReportSnapshot): void {
+    const trafico = version.traffic;
+    if (trafico === undefined) return;
+    const tt = labels.traffic;
+
+    const tabla = (
+      titulo: string,
+      pista: string,
+      columnas: readonly string[],
+      filas: readonly (readonly string[])[],
+    ) => {
+      if (filas.length === 0) return;
+      space(12);
+      write(titulo, { size: 11, font: bold, gap: 4 });
+      write(pista, { size: 8, color: SOFT, gap: 10 });
+      const ANCHO_PRIMERA = 240;
+      const resto = (PAGE_WIDTH - MARGIN - (MARGIN + ANCHO_PRIMERA + 10)) / Math.max(1, columnas.length - 1);
+      const x = (i: number) => (i === 0 ? MARGIN : MARGIN + ANCHO_PRIMERA + 10 + (i - 1) * resto);
+      room(24);
+      columnas.forEach((columna, i) => at(columna, x(i), y, { size: 7.5, font: bold, color: SOFT }));
+      y -= 8;
+      rule(12);
+      for (const fila of filas) {
+        room(20);
+        fila.forEach((celda, i) =>
+          at(fit(celda, i === 0 ? ANCHO_PRIMERA : resto - 4, 9, i === 0 ? regular : bold), x(i), y, {
+            size: 9,
+            font: i === 0 ? regular : bold,
+            color: celda === tt.noData ? SOFT : INK,
+          }),
+        );
+        y -= 8;
+        page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_WIDTH - MARGIN, y }, thickness: 0.5, color: RULE });
+        y -= 12;
+      }
+    };
+
+    const numero = (n: number) => new Intl.NumberFormat("es-ES").format(n);
+
+    tabla(
+      tt.topPagesTitle,
+      tt.topPagesHint,
+      [tt.columns.page, tt.columns.views],
+      trafico.topPages.map((linea) => [linea.dimension, numero(linea.value)]),
+    );
+    tabla(
+      tt.devicesTitle,
+      tt.devicesHint,
+      [tt.columns.device, tt.columns.visits, tt.columns.share],
+      trafico.devices.map((linea) => {
+        const parte = trafficShare(linea.value, trafico.devices);
+        return [deviceName(linea.dimension), numero(linea.value), parte === null ? "" : tt.share(parte)];
+      }),
+    );
+    tabla(
+      tt.monthsTitle,
+      tt.monthsHint,
+      [tt.columns.month, tt.columns.visits, tt.columns.users],
+      trafico.months.map((mes) => [
+        `${enZona(`${mes.month}-01`, "UTC", { month: "long", year: "numeric" })}${mes.partial ? ` (${tt.partial})` : ""}`,
+        mes.sessions === null ? tt.noData : numero(mes.sessions),
+        mes.users === null ? tt.noData : numero(mes.users),
+      ]),
+    );
   }
 
   /** RN-REP-22 · la evolución dentro del mes, por bloques de 7 días. */

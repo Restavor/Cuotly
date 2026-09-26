@@ -5098,6 +5098,7 @@ export type Database = {
           execution_sla_photo: number;
           execution_sla_small: number;
           report_level: string;
+          report_period: string;
           space_id: string;
           start_sla_hours: number;
           watches_reviews: boolean;
@@ -5123,6 +5124,7 @@ export type Database = {
           price_cents: number;
           queue_rank?: number;
           report_level?: string;
+          report_period?: string;
           space_id: string;
           start_sla_hours: number;
           lineage_id?: string;
@@ -5147,6 +5149,7 @@ export type Database = {
           price_cents?: number;
           queue_rank?: number;
           report_level?: string;
+          report_period?: string;
           space_id?: string;
           start_sla_hours?: number;
           lineage_id?: string;
@@ -8153,6 +8156,7 @@ export type Database = {
           p_price_cents: number;
           p_queue_rank: number;
           p_report_level: string;
+          p_report_period?: string;
           p_space_id: string;
           p_start_sla_hours: number;
           p_watches_reviews: boolean;
@@ -8213,6 +8217,7 @@ export type Database = {
           p_price_cents: number;
           p_queue_rank: number;
           p_report_level: string;
+          p_report_period?: string;
           p_start_sla_hours: number;
           p_watches_reviews: boolean;
         };
@@ -9324,6 +9329,10 @@ export type Database = {
         Returns: number;
       };
       establishment_report_level: {
+        Args: { p_establishment_id: string };
+        Returns: string;
+      };
+      establishment_report_period: {
         Args: { p_establishment_id: string };
         Returns: string;
       };

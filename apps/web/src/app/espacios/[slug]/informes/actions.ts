@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 
-import { defaultReportPeriod, isReportCategory, isReportSectionKey } from "@/core/reports";
+import { isReportCategory, isReportSectionKey, reportPeriodFor } from "@/core/reports";
 import { es } from "@/i18n/es";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { generateReportVersion } from "@/services/report-generation";
 import { createSupabaseReportGateway } from "@/services/report-gateway";
-import { monthName } from "@/services/report-summary";
+import { monthName, quarterName } from "@/services/report-summary";
 
 import { type ReportActionState, IDLE_REPORT_ACTION } from "./action-state";
 
@@ -304,13 +304,24 @@ export async function generateMonthlyReport(
     const { data: space } = await supabase.from("spaces").select("id, timezone").eq("slug", slug).maybeSingle();
     if (!space) return fallo(new Error("Espacio no encontrado"));
 
+    // RN-REP-32 (decisión 83) · mes o trimestre lo decide el plan del
+    // restaurante, y lo pregunta el servidor: la pantalla no manda el
+    // periodo.
+    const { data: periodo, error: periodoError } = await supabase.rpc("establishment_report_period", {
+      p_establishment_id: establishmentId,
+    });
+    if (periodoError) return fallo(new Error(periodoError.message));
+    const trimestral = periodo === "quarter";
+
     // CLAUDE.md · el mes se calcula en la zona del espacio.
-    const period = defaultReportPeriod(new Date(), space.timezone);
+    const period = reportPeriodFor(trimestral ? "quarter" : "month", new Date(), space.timezone);
 
     const { data: reportId, error } = await supabase.rpc("create_report_draft", {
       p_space_id: space.id,
       p_category: "operation",
-      p_name: es.reportsPage.monthly.name(monthName(period)),
+      p_name: trimestral
+        ? es.reportsPage.monthly.quarterName(quarterName(period))
+        : es.reportsPage.monthly.name(monthName(period)),
       p_period_start: period.start,
       p_period_end: period.end,
       p_establishment_id: establishmentId,

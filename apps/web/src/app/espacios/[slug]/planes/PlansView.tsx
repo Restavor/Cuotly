@@ -340,6 +340,7 @@ export function PlanCatalogueTab({
                     grantsPriority: selected.grantsPriority,
                     queueRank: selected.queueRank,
                     reportLevel: selected.reportLevel,
+                    reportPeriod: selected.reportPeriod,
                     watchesReviews: selected.watchesReviews,
                   }}
                 />
@@ -378,6 +379,7 @@ export function PlanCatalogueTab({
                 <Fact label={tc.grantsPriority} value={yesNo(selected.grantsPriority)} />
                 <Fact label={tc.watchesReviews} value={yesNo(selected.watchesReviews)} />
                 <Fact label={tc.reportLevel} value={tc.reportLevels[selected.reportLevel]} />
+                <Fact label={tc.reportPeriod} value={tc.reportPeriods[selected.reportPeriod]} />
               </dl>
             </Card>
             <Card title={tc.conditionsTitle}>

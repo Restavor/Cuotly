@@ -87,6 +87,10 @@ export const REPORT_SECTION_KEYS = [
   // se lee antes que las cifras. El orden de esta lista es el mismo que el
   // de `report_sections_catalogue()` en la migración 112.
   "month_activity",
+  // RN-REP-33 (decisión 83) · el tráfico de la web, detrás del relato: lo
+  // que se hizo en la web y después quién la visitó. Mismo orden que
+  // `report_sections_catalogue()` desde la migración 145.
+  "web_traffic",
   "operation",
   "finance",
   "digital",
@@ -132,6 +136,9 @@ export function defaultIncluded(category: ReportCategory, key: ReportSectionKey)
     // RN-REP-18 · en las tres familias: un informe de finanzas también
     // cuenta un mes. Lo que cambia es de qué va, no si lo cuenta.
     key === "month_activity" ||
+    // RN-REP-33 · también en las tres: es lo que pasó en la web, y es lo
+    // que la ficha del Básico promete (decisión 83).
+    key === "web_traffic" ||
     key === "annexes" ||
     key === SECTION_OF_CATEGORY[category]
   );
@@ -367,6 +374,61 @@ export function defaultReportPeriod(now: Date, timeZone: string): ReportPeriod {
     start: `${pad(previousYear, 4)}-${pad(previousMonth, 2)}-01`,
     end: `${pad(previousYear, 4)}-${pad(previousMonth, 2)}-${pad(daysInMonth(previousYear, previousMonth), 2)}`,
   };
+}
+
+/**
+ * RN-REP-32 (decisión 83) · cada cuánto recibe su informe un restaurante.
+ * Es un término del plan (`plans.report_period`) y se versiona como los
+ * demás; sin plan, `month`.
+ */
+export const REPORT_PERIOD_KINDS = ["month", "quarter"] as const;
+export type ReportPeriodKind = (typeof REPORT_PERIOD_KINDS)[number];
+
+export function isReportPeriodKind(value: string): value is ReportPeriodKind {
+  return (REPORT_PERIOD_KINDS as readonly string[]).includes(value);
+}
+
+/**
+ * RN-REP-32 · el **último trimestre natural cerrado** en la zona del
+ * espacio: enero-marzo, abril-junio, julio-septiembre u octubre-diciembre.
+ * El 1 de octubre ya está cerrado julio-septiembre; el 30 de septiembre
+ * todavía no, y toca abril-junio.
+ */
+export function lastClosedQuarter(now: Date, timeZone: string): ReportPeriod {
+  const today = todayInTimeZone(now, timeZone);
+  const [year, month] = today.split("-").map((part) => Number(part));
+  // El primer mes del trimestre en curso (1, 4, 7 o 10) y, de ahí, el
+  // primero del anterior.
+  const currentFirst = Math.floor((month - 1) / 3) * 3 + 1;
+  const firstMonth = currentFirst === 1 ? 10 : currentFirst - 3;
+  const firstYear = currentFirst === 1 ? year - 1 : year;
+  const lastMonth = firstMonth + 2;
+  return {
+    start: `${pad(firstYear, 4)}-${pad(firstMonth, 2)}-01`,
+    end: `${pad(firstYear, 4)}-${pad(lastMonth, 2)}-${pad(daysInMonth(firstYear, lastMonth), 2)}`,
+  };
+}
+
+/** RN-REP-27 y RN-REP-32 · el periodo del informe de la ficha, según el plan. */
+export function reportPeriodFor(kind: ReportPeriodKind, now: Date, timeZone: string): ReportPeriod {
+  return kind === "quarter" ? lastClosedQuarter(now, timeZone) : defaultReportPeriod(now, timeZone);
+}
+
+/**
+ * Qué forma tiene un periodo: un **mes natural** entero, un **trimestre
+ * natural** entero, u otra cosa (el equipo elige las fechas en la
+ * biblioteca). Lo usan la comparación con el periodo anterior y las
+ * frases que nombran el periodo.
+ */
+export type PeriodShape = "month" | "quarter" | "other";
+
+export function periodShape(period: ReportPeriod): PeriodShape {
+  const [y1, m1, d1] = period.start.split("-").map(Number);
+  const [y2, m2, d2] = period.end.split("-").map(Number);
+  if (d1 !== 1 || y1 !== y2 || d2 !== daysInMonth(y2, m2)) return "other";
+  if (m1 === m2) return "month";
+  if (m2 === m1 + 2 && (m1 - 1) % 3 === 0) return "quarter";
+  return "other";
 }
 
 export function periodContains(period: ReportPeriod, dayIso: string): boolean {
@@ -868,11 +930,22 @@ export interface HeadlineFigureKey {
   readonly section: ReportSectionKey;
   readonly metric: string;
   readonly dimension?: string;
+  /**
+   * Dos claves del mismo grupo son **la misma tarjeta** vista desde dos
+   * secciones: sale la primera que tenga cifra y la otra no. Las visitas
+   * de la web viven en "Rendimiento digital" y, desde RN-REP-33, también en
+   * "Tráfico de la web"; sin el grupo, un informe con las dos saldría con
+   * dos tarjetas de visitas iguales.
+   */
+  readonly group?: string;
 }
 
 export const HEADLINE_REPORT_FIGURES: readonly HeadlineFigureKey[] = [
   { section: "operation", metric: "jobs_completed" },
-  { section: "digital", metric: "sessions", dimension: "ga4" },
+  { section: "digital", metric: "sessions", dimension: "ga4", group: "visits" },
+  // RN-REP-33 · la misma cifra, en la sección que llevan los cinco niveles:
+  // es la que le da "Lo esencial" a un Básico.
+  { section: "web_traffic", metric: "sessions", dimension: "ga4", group: "visits" },
   { section: "operation", metric: "start_compliance" },
   { section: "finance", metric: "income_total" },
 ];
@@ -902,13 +975,18 @@ export function headlineFigures(snapshot: ReportSnapshot): readonly ReportFigure
     snapshot.sections.filter((section) => section.included).map((section) => section.key),
   );
   const elegidas: ReportFigure[] = [];
+  const grupos = new Set<string>();
   for (const clave of HEADLINE_REPORT_FIGURES) {
     if (elegidas.length >= HEADLINE_LIMIT) break;
     if (!incluidas.has(clave.section)) continue;
+    if (clave.group !== undefined && grupos.has(clave.group)) continue;
     const figura = snapshot.figures.find(
       (candidata) => matchesHeadline(candidata, clave) && candidata.value !== null,
     );
-    if (figura) elegidas.push(figura);
+    if (figura) {
+      elegidas.push(figura);
+      if (clave.group !== undefined) grupos.add(clave.group);
+    }
   }
   return elegidas;
 }
@@ -953,6 +1031,15 @@ function esMesNatural(inicio: Date, fin: Date): boolean {
 export function previousPeriod(period: ReportPeriod): ReportPeriod {
   const inicio = new Date(`${period.start}T00:00:00Z`);
   const fin = new Date(`${period.end}T00:00:00Z`);
+
+  // RN-REP-32 · un trimestre natural se compara con el trimestre natural
+  // anterior, entero, por la misma razón que un mes: lo que el restaurante
+  // lee es "abril a junio", no 92 días corridos hacia atrás.
+  if (periodShape(period) === "quarter") {
+    const anteriorInicio = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() - 3, 1));
+    const anteriorFin = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth(), 0));
+    return { start: diaIso(anteriorInicio), end: diaIso(anteriorFin) };
+  }
 
   if (esMesNatural(inicio, fin)) {
     const anteriorInicio = new Date(Date.UTC(inicio.getUTCFullYear(), inicio.getUTCMonth() - 1, 1));
@@ -1399,7 +1486,10 @@ export interface ExecutiveSummaryFacts {
   readonly menusPublished: number | null;
   /** Porcentaje de cumplimiento del plazo de inicio, si entra Operación y hay cifra. */
   readonly startCompliance: number | null;
-  /** Visitas de la web (Analytics), si entra Rendimiento digital y hay cifra. */
+  /**
+   * Visitas de la web (Analytics), si entra Rendimiento digital o Tráfico
+   * de la web (RN-REP-33) y hay cifra.
+   */
   readonly visits: number | null;
 }
 
@@ -1447,7 +1537,9 @@ export function executiveSummaryFacts(
     budgeted: bolsa.reduce((total, line) => total + line.budgeted, 0),
     menusPublished: conRelato ? relato.entries.filter((entry) => entry.kind === "menu_published").length : null,
     startCompliance: cifraIncluida(snapshot, "operation", "start_compliance"),
-    visits: cifraIncluida(snapshot, "digital", "sessions", "ga4"),
+    visits:
+      cifraIncluida(snapshot, "digital", "sessions", "ga4") ??
+      cifraIncluida(snapshot, "web_traffic", "sessions", "ga4"),
   };
 }
 
@@ -1488,6 +1580,14 @@ export interface ReportSnapshot {
    * (RN-REP-12) — no se recalcula, se lee como lo que es.
    */
   readonly timings?: readonly ChangeTiming[];
+  /**
+   * RN-REP-33 (decisión 83) · el detalle del tráfico de la web: páginas
+   * más visitadas, dispositivos y la evolución mes a mes. Las visitas y los
+   * usuarios del periodo van en `figures`, con su fecha y su motivo, como
+   * cualquier cifra. Opcional por lo mismo que `activity`: una versión
+   * anterior a la migración 145 no lo trae.
+   */
+  readonly traffic?: WebTraffic;
   readonly evolution?: readonly WeeklySeries[];
   readonly evolutionBuckets?: readonly WeekBucket[];
   readonly effects?: readonly ChangeEffect[];
@@ -2026,4 +2126,131 @@ export function planUsage(
 
     return { category, included, used, unused };
   });
+}
+
+// ---------------------------------------------------------------------
+// Tráfico de la web (RN-REP-33, decisión 83)
+// ---------------------------------------------------------------------
+
+/** Una línea de un desglose: la página o el dispositivo, y su cifra. */
+export interface TrafficLine {
+  readonly dimension: string;
+  readonly value: number;
+}
+
+/**
+ * Un mes del periodo, con sus visitas y sus usuarios. `partial` cuando el
+ * periodo no cubre el mes entero —un informe de fechas elegidas a mano—,
+ * por lo mismo que en `WeekBucket`: una barra corta al lado de dos llenas
+ * se lee como un desplome y no lo es.
+ */
+export interface TrafficMonth {
+  /** `YYYY-MM`. */
+  readonly month: string;
+  readonly partial: boolean;
+  readonly sessions: number | null;
+  readonly users: number | null;
+}
+
+export interface WebTraffic {
+  readonly topPages: readonly TrafficLine[];
+  readonly devices: readonly TrafficLine[];
+  /** Vacío si el periodo no llega a dos meses: una sola barra no es una evolución. */
+  readonly months: readonly TrafficMonth[];
+}
+
+/** Cuántas páginas se enseñan. Más que eso es una hoja de cálculo, no un resumen. */
+export const TOP_PAGES_LIMIT = 5;
+
+export const EMPTY_WEB_TRAFFIC: WebTraffic = { topPages: [], devices: [], months: [] };
+
+/** Los meses que toca un periodo, con si lo cubre entero o no. */
+export function monthsOfPeriod(
+  period: ReportPeriod,
+): readonly { readonly month: string; readonly from: string; readonly to: string; readonly partial: boolean }[] {
+  const meses: { month: string; from: string; to: string; partial: boolean }[] = [];
+  let [anio, mes] = period.start.split("-").map(Number);
+  const [anioFin, mesFin] = period.end.split("-").map(Number);
+  while (anio < anioFin || (anio === anioFin && mes <= mesFin)) {
+    const primero = `${pad(anio, 4)}-${pad(mes, 2)}-01`;
+    const ultimo = `${pad(anio, 4)}-${pad(mes, 2)}-${pad(daysInMonth(anio, mes), 2)}`;
+    const from = primero < period.start ? period.start : primero;
+    const to = ultimo > period.end ? period.end : ultimo;
+    meses.push({ month: `${pad(anio, 4)}-${pad(mes, 2)}`, from, to, partial: from !== primero || to !== ultimo });
+    mes += 1;
+    if (mes > 12) {
+      mes = 1;
+      anio += 1;
+    }
+  }
+  return meses;
+}
+
+function desglose(points: readonly SeriesPoint[], metric: string, period: ReportPeriod): readonly TrafficLine[] {
+  const sumas = new Map<string, number>();
+  for (const p of points) {
+    if (p.metric !== metric || p.dimension === "") continue;
+    if (p.periodStart < period.start || p.periodStart > period.end) continue;
+    sumas.set(p.dimension, (sumas.get(p.dimension) ?? 0) + p.value);
+  }
+  return [...sumas.entries()]
+    .map(([dimension, value]) => ({ dimension, value }))
+    .sort((a, b) => b.value - a.value || a.dimension.localeCompare(b.dimension));
+}
+
+function totalEntre(points: readonly SeriesPoint[], metric: string, from: string, to: string): number | null {
+  const dentro = points.filter(
+    (p) => p.metric === metric && p.dimension === "" && p.periodStart >= from && p.periodStart <= to,
+  );
+  return dentro.length === 0 ? null : dentro.reduce((total, p) => total + p.value, 0);
+}
+
+/**
+ * RN-REP-33 · el detalle del tráfico de la web a partir de los puntos de
+ * Analytics ya importados (RN-REP-04: un informe no llama a ninguna API).
+ *
+ * Las **páginas** son las vistas por página (`page_views_by_page`), las
+ * `TOP_PAGES_LIMIT` con más vistas. Los **dispositivos** son las visitas
+ * por tipo de dispositivo (`sessions_by_device`), todos: son tres. La
+ * **evolución** son las visitas y los usuarios de cada mes del periodo, y
+ * solo si el periodo toca dos meses o más.
+ *
+ * **Un mes sin ningún punto no es cero, es null**: se dice "sin datos", no
+ * se dibuja una barra vacía (CLAUDE.md). Y si no hay ni un dato en todo el
+ * periodo, no hay evolución que enseñar: sería una rejilla vacía.
+ */
+export function webTraffic(points: readonly SeriesPoint[], period: ReportPeriod): WebTraffic {
+  const meses = monthsOfPeriod(period);
+  const months =
+    meses.length < 2
+      ? []
+      : meses.map((m) => ({
+          month: m.month,
+          partial: m.partial,
+          sessions: totalEntre(points, "sessions", m.from, m.to),
+          users: totalEntre(points, "users", m.from, m.to),
+        }));
+  return {
+    topPages: desglose(points, "page_views_by_page", period).slice(0, TOP_PAGES_LIMIT),
+    devices: desglose(points, "sessions_by_device", period),
+    months: months.some((m) => m.sessions !== null || m.users !== null) ? months : [],
+  };
+}
+
+/**
+ * RN-REP-33 · las visitas y los usuarios del periodo, en la sección
+ * "Tráfico de la web". Son **las mismas cifras** que "Rendimiento digital"
+ * saca de Analytics —con su fecha y, si faltan, su motivo—, copiadas a la
+ * otra sección: calcularlas dos veces sería la manera de que un día dijeran
+ * cosas distintas.
+ */
+export function trafficFigures(digital: readonly ReportFigure[]): readonly ReportFigure[] {
+  return digital
+    .filter(
+      (figure) =>
+        figure.section === "digital" &&
+        figure.dimension === "ga4" &&
+        (figure.metric === "sessions" || figure.metric === "users"),
+    )
+    .map((figure) => ({ ...figure, section: "web_traffic" as const }));
 }

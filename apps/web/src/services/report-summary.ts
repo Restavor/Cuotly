@@ -14,7 +14,7 @@
  * subidos siguen diciendo lo que dijeron.
  */
 
-import type { ExecutiveSummaryFacts, ReportPeriod } from "@/core/reports";
+import { type ExecutiveSummaryFacts, type ReportPeriod, periodShape } from "@/core/reports";
 import { enZona } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 
@@ -25,8 +25,29 @@ export function monthName(period: ReportPeriod): string {
   return enZona(period.start, "UTC", { month: "long", year: "numeric" });
 }
 
+/**
+ * RN-REP-32 · "julio a septiembre de 2026". Solo tiene sentido para un
+ * trimestre natural; para cualquier otro periodo, `periodPhrase` usa el
+ * nombre del mes como hasta ahora.
+ */
+export function quarterName(period: ReportPeriod): string {
+  return t.quarterRange(
+    enZona(period.start, "UTC", { month: "long" }),
+    enZona(period.end, "UTC", { month: "long", year: "numeric" }),
+  );
+}
+
+/**
+ * Cómo se nombra el periodo dentro de una frase: "agosto de 2026" o, si es
+ * un trimestre natural (RN-REP-32), "el trimestre de julio a septiembre de
+ * 2026".
+ */
+export function periodPhrase(period: ReportPeriod): string {
+  return periodShape(period) === "quarter" ? t.quarterPhrase(quarterName(period)) : monthName(period);
+}
+
 export function executiveSummaryText(facts: ExecutiveSummaryFacts): string {
-  const mes = monthName(facts.period);
+  const mes = periodPhrase(facts.period);
   const frases: string[] = [];
 
   if (facts.changes !== null) {

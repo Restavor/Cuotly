@@ -670,6 +670,8 @@ function PlanComparison({ current, target }: { current: CataloguePlan; target: C
         return p.canOrderRequests ? tc.yes : tc.no;
       case "report":
         return tc.reportLevels[p.reportLevel];
+      case "reportPeriod":
+        return tc.reportPeriods[p.reportPeriod];
     }
   };
   const filas = target

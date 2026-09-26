@@ -53,6 +53,7 @@ function plan(over: Partial<CataloguePlan> & Pick<CataloguePlan, "id" | "name" |
     watchesReviews: false,
     reportLevel: "basic",
     reportLevelRank: 0,
+    reportPeriod: "month",
     ...over,
   };
 }

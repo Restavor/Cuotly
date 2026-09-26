@@ -32,6 +32,7 @@ afterEach(cleanup);
 function vista(overrides: Partial<MonthlyReportView> = {}): MonthlyReportView {
   return {
     establishmentId: "est-1",
+    periodKind: "month",
     monthLabel: "agosto de 2026",
     report: {
       id: "rep-1",
@@ -43,6 +44,21 @@ function vista(overrides: Partial<MonthlyReportView> = {}): MonthlyReportView {
     ...overrides,
   };
 }
+
+describe("RN-REP-32 · la tarjeta cuando el plan manda el informe cada trimestre", () => {
+  it("RN-REP-32 · un plan trimestral ve el informe del trimestre, no el del mes", () => {
+    render(
+      <MonthlyReportCard
+        slug="restavor"
+        view={vista({ periodKind: "quarter", monthLabel: "julio a septiembre de 2026", report: null })}
+        timeZone="Europe/Madrid"
+      />,
+    );
+    expect(screen.getByText(t.quarterTitle)).toBeInTheDocument();
+    expect(screen.getByText(t.quarterNotGenerated("julio a septiembre de 2026"))).toBeInTheDocument();
+    expect(screen.queryByText(t.title)).not.toBeInTheDocument();
+  });
+});
 
 describe("RN-REP-27 · la tarjeta del informe del mes", () => {
   it("RN-REP-27 · sin informe del mes, solo se ofrece generarlo", () => {
