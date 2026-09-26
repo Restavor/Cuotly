@@ -2336,8 +2336,8 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
 
     **Lo eliminado definitivamente ya no lo ve nadie** (26/09/2026). Bosco: *"yo creo que se elimina
     definitivamente y no se puede ver más"*. Un espacio: ni su equipo, ni los clientes de sus
-    restaurantes, ni Modo soporte. Un restaurante: ni sus clientes ni su grupo. **Lectura de Claude:**
-    el equipo de mantenimiento de un espacio que sigue vivo conserva el historial del restaurante que
+    restaurantes, ni Modo soporte. Un restaurante: ni sus clientes ni su grupo. **Lectura de Claude,
+    confirmada por Bosco el 26/09/2026:** el equipo de mantenimiento de un espacio que sigue vivo conserva el historial del restaurante que
     se fue (cobros, trabajos, libro de consumos), porque son registros del espacio y RN-FIN-14 no deja
     perder la deuda; solo deja de verlo en sus listas. RN-ADM-26, migración 143.
 

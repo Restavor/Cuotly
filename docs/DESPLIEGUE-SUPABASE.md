@@ -6,16 +6,26 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 26/09/2026 (142).
+Actualizado el 26/09/2026 (143).
 
 ## Pendiente de aplicar
 
-**La 143, sin aplicar todavía.** `lo_eliminado_ya_no_se_ve` (decisión 82, RN-ADM-26): lo eliminado
+**Actualización del 26/09/2026: la 143.** `lo_eliminado_ya_no_se_ve` (decisión 82, RN-ADM-26): lo eliminado
 definitivamente ya no lo ve nadie. Añade cuatro funciones internas (`space_is_gone`,
 `establishment_is_gone`, `establishment_space_is_gone`, `group_is_gone`), reescribe diecinueve
 funciones de permisos —`is_space_member`, `has_capability_as`, `is_group_member`,
 `is_establishment_member` y las de cliente— tal como estaban con la puerta nueva delante, y rehace la
 política `establishments_select`. No toca datos.
+
+**Aplicada el 26/09/2026 por el MCP**, con Bosco de acuerdo. Antes se comprobó en vivo que la última
+era la 142, que ninguna de las cuatro internas existía y, por md5, que dieciocho de las diecinueve
+funciones que se reescriben y la política eran las del repositorio. `is_space_member` no coincidía
+por md5, pero la diferencia eran solo dos líneas de comentario que en vivo faltan; la lógica era la
+misma. Después se comprobó que cuatro de las funciones reescritas tienen el mismo md5 que en local,
+que la política quedó como en el repositorio, que las cuatro internas no se pueden ejecutar ni como
+`anon` ni como `authenticated`, que las puertas que usan las políticas siguen abiertas a
+`authenticated` (CLAUDE.md) y que no hay nada eliminado definitivamente, así que hoy nadie pierde
+ningún acceso.
 
 **Actualización del 26/09/2026: la 142.** `archivados_recuperar_y_eliminar` (decisión 82, RN-ADM-22 a 25):
 Archivados en el panel, recuperar de un clic y eliminado definitivo sin borrar nada. Añade
