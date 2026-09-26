@@ -2327,13 +2327,15 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
       restaurante archivado por su equipo. Lo que se archiva solo —prueba sin pago, impago— sigue en
       Espacios con su estado.
 
-    **Lectura de Claude, a confirmar:** "nada más darle se activa de nuevo" se lee al pie de la letra,
-    y eso **cambia RN-ADM-17**: un restaurante que su equipo tenía archivado antes de que Cuotly lo
+    **Lectura de Claude, confirmada por Bosco el 26/09/2026** (*"me parece bien lo de recuperar"*):
+    "nada más darle se activa de nuevo" se lee al pie de la letra, y eso **cambia RN-ADM-17**: un restaurante que su equipo tenía archivado antes de que Cuotly lo
     archivara ya no vuelve archivado, vuelve **activo**; y un espacio que su propietario había
     archivado antes que Cuotly vuelve también de ese archivado. Las guardas de siempre siguen: con
     deuda vencida (RN-FIN-13) o sin hueco en el plan de Cuotly del espacio, no se recupera y se dice
-    por qué. Tampoco se ha tocado lo que ve el **equipo** de un espacio eliminado definitivamente:
-    sigue en solo lectura, como cuando estaba archivado por Cuotly.
+    por qué.
+
+    **Sin contestar todavía:** lo que ve el **equipo** de un espacio eliminado definitivamente no se
+    ha tocado: sigue en solo lectura, como cuando estaba archivado por Cuotly.
 
     Reglas en el PRD: RN-ADM-22 a RN-ADM-25 (§32), y cambian RN-ADM-15 y RN-ADM-17. Migración 142,
     suite 80.

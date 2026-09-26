@@ -6,18 +6,24 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 26/09/2026 (141).
+Actualizado el 26/09/2026 (142).
 
 ## Pendiente de aplicar
 
-**La 142, sin aplicar todavía.** `archivados_recuperar_y_eliminar` (decisión 82, RN-ADM-22 a 25):
+**Actualización del 26/09/2026: la 142.** `archivados_recuperar_y_eliminar` (decisión 82, RN-ADM-22 a 25):
 Archivados en el panel, recuperar de un clic y eliminado definitivo sin borrar nada. Añade
 `permanently_deleted_at` a `spaces` y a `establishments` con un disparador en cada una, las funciones
 `platform_list_archived`, `platform_recover_space`, `platform_recover_establishment`,
 `platform_delete_space_permanently` y `platform_delete_establishment_permanently`, y reescribe
 `platform_set_space_archived_internal` y `restore_space_by_owner`. `platform_list_establishments`
-cambia lo que devuelve (se borra y se crea). En local pasan las 80 suites en el orden de CI. Hasta
-aplicarla, la pantalla Archivados del panel falla al cargar con su motivo.
+cambia lo que devuelve (se borra y se crea). En local pasan las 80 suites en el orden de CI.
+
+**Aplicada el 26/09/2026 por el MCP**, con Bosco de acuerdo. Antes se comprobó en vivo que nada de la
+142 existía y, por md5, que `restore_space_by_owner` y `platform_list_establishments` eran las del
+repositorio. `platform_set_space_archived_internal` no coincidía por md5, pero la diferencia eran
+solo dos comentarios que en vivo faltan; la lógica era la misma. Después se comprobó que están las
+dos columnas y los dos disparadores, que ninguna función nueva se puede ejecutar como `anon`, que las
+dos guardas y la interna tampoco como `authenticated`, y que no hay nada marcado.
 
 **Actualización del 26/09/2026: la 140 y la 141.** `cuotly_elimina_cuentas_espacios_y_restaurantes`
 y `cuotly_avisa_de_lo_que_elimina` (decisión 81, RN-ADM-14 a 21): Bosco y los Administradores de
