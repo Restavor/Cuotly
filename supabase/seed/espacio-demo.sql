@@ -161,9 +161,10 @@ where u.id = p.id and u.email like '%@cuotly.test';
 -- ============================================================
 -- 2 · El espacio, su equipo y su catálogo.
 --
--- Los precios son los de CLAUDE.md ("Planes: Básico 99 €, Impulso 299 €,
+-- Los precios son los de CLAUDE.md ("Planes: Básico 20 €, Impulso 299 €,
 -- Impulso+ 399 €, Premium 499 €, Premium+ 599 €, todos + IVA"; fichas de
--- Restavor del 16/09/2026, decisión 39) y los mismos que siembra
+-- Restavor del 16/09/2026, decisión 39, y la del Básico del 26/09/2026,
+-- decisión 83) y los mismos que siembra
 -- create_restavor_space(). No se usa esa función porque es de Restavor y
 -- Cuotly es multiempresa: este es otro espacio.
 -- ============================================================
@@ -190,8 +191,11 @@ values
 -- `create_restavor_space()`, más lo que solo tiene Premium+:
 --   · `grants_priority`: el plan alto (precio de Menú Diario, RN-COM-08).
 --   · `queue_rank` y `can_order_requests`: turno en la cola y ordenar sus
---     cambios (RN-COM-03, decisión 55): Premium y Premium+.
+--     cambios (RN-COM-03, decisión 55): Premium y Premium+. El Básico va
+--     por detrás de todos en el turno (decisión 83).
 --   · `report_level`: qué informe recibe (RN-REP-15, decisión 56).
+--   · `report_period`: cada cuánto lo recibe (RN-REP-32, decisión 83):
+--     el Básico, cada trimestre.
 --   · `watches_reviews`: vigilancia de reseñas (migración 117).
 --   · `execution_sla_*`: plazos de realización; solo bajan en Premium+
 --     (RN-SLA-18, decisión 61). Los demás, la tabla de RN-SLA-12.
@@ -202,14 +206,14 @@ values
 -- el 5.
 insert into public.plans
   (id, space_id, name, price_cents, included_small, included_photo, included_medium, included_large,
-   start_sla_hours, grants_priority, queue_rank, can_order_requests, report_level, watches_reviews,
+   start_sla_hours, grants_priority, queue_rank, can_order_requests, report_level, report_period, watches_reviews,
    execution_sla_small, execution_sla_photo, execution_sla_medium, execution_sla_large)
 values
-  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',    9900,  0,  0, 0, 0, 48, false, 0, false, 'basic',         false, 72, 72, 72, 120),
-  ('d2000000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'Impulso',  29900,  6,  6, 1, 0, 48, false, 0, false, 'standard',      false, 72, 72, 72, 120),
-  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false, 0, false, 'standard_plus', false, 72, 72, 72, 120),
-  ('d2000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'Premium',  49900, 10, 12, 2, 0, 24, false, 1, true,  'advanced',      false, 72, 72, 72, 120),
-  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium+', 59900, 25, 24, 5, 1, 24, true,  2, true,  'complete',      true,  48, 48, 72,  96);
+  ('d2000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'Básico',    2000,  0,  0, 0, 0, 48, false, 0, false, 'basic',         'quarter', false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'Impulso',  29900,  6,  6, 1, 0, 48, false, 1, false, 'standard',      'month',   false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'Impulso+', 39900, 16, 12, 3, 0, 24, false, 1, false, 'standard_plus', 'month',   false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'Premium',  49900, 10, 12, 2, 0, 24, false, 2, true,  'advanced',      'month',   false, 72, 72, 72, 120),
+  ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium+', 59900, 25, 24, 5, 1, 24, true,  3, true,  'complete',      'month',   true,  48, 48, 72,  96);
 
 -- `kind` e `included_updates` (migración 77): es lo que hace que el
 -- servicio SEA Menú Diario para las funciones; por el nombre no se mira.
@@ -526,8 +530,8 @@ begin
   end if;
 
   -- Y uno del segundo restaurante que se queda SIN pagar, para que el
-  -- recorrido de CA-19 tenga sobre qué registrar un pago. Básico son 99 €
-  -- + 21 % = 119,79 €. Vence dentro de 20 días: pendiente, no vencido, así
+  -- recorrido de CA-19 tenga sobre qué registrar un pago. Básico son 20 €
+  -- + 21 % = 24,20 €. Vence dentro de 20 días: pendiente, no vencido, así
   -- que el ciclo de impago no lo toca.
   perform public.generate_monthly_charge(
     'd6000000-0000-0000-0000-000000000002'::uuid, now() + interval '20 days');
@@ -1647,15 +1651,15 @@ begin
     raise exception 'El plan Básico no incluye ningún cambio pequeño y la bolsa dice %', v_incluidos;
   end if;
 
-  -- Y la mensualidad: 99 € + 21 % = 119,79 €, sin pagar.
+  -- Y la mensualidad: 20 € + 21 % = 24,20 €, sin pagar (decisión 83).
   select count(*) into v_cobros from public.charges where establishment_id = v_est;
   if v_cobros <> 1 then
     raise exception 'Se esperaba 1 mensualidad emitida para Casa Sol y hay %', v_cobros;
   end if;
   select coalesce(public.charge_outstanding_cents(id), 0) into v_deuda
   from public.charges where establishment_id = v_est;
-  if v_deuda <> 11979 then
-    raise exception 'La mensualidad del Básico tenía que quedar en 11979 céntimos sin pagar y está en %', v_deuda;
+  if v_deuda <> 2420 then
+    raise exception 'La mensualidad del Básico tenía que quedar en 2420 céntimos sin pagar y está en %', v_deuda;
   end if;
 
   select count(*) into v_usuarios from public.establishment_client_users(v_est);

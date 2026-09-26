@@ -14,6 +14,11 @@
 --     con Impulso y Premium nuevos; repetirla no duplica nada, y no toca
 --     Básico ni un plan de otro nombre.
 --   · La guía del centro de ayuda nombra los cinco planes.
+--   · La ficha del Básico del 26/09/2026 (migración 146, decisión 83):
+--     20 € + IVA, informe trimestral (RN-REP-32) y por detrás de todos en
+--     la cola (RN-COM-03). La función que lo aplica es idempotente, no
+--     toca lo que no toca y se para si alguien tiene ya un plan que cambia
+--     (RN-COM-20).
 --
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/planes_de_restavor.sql
 
@@ -54,7 +59,8 @@ begin
   -- fotográficos, medianos, grandes, plazo de inicio, prioridad).
   for r in
     select * from (values
-      ('Básico',    9900,  0,  0, 0, 0, 48, false),
+      -- Decisión 83 · la ficha del Básico del 26/09/2026: 20 €.
+      ('Básico',    2000,  0,  0, 0, 0, 48, false),
       ('Impulso',  29900,  6,  6, 1, 0, 48, false),
       ('Impulso+', 39900, 16, 12, 3, 0, 24, false),
       ('Premium',  49900, 10, 12, 2, 0, 24, false),
@@ -117,6 +123,21 @@ begin
      <= (select max(queue_rank) from public.plans
          where space_id = v_space and name in ('Básico', 'Impulso', 'Impulso+')) then
     raise exception 'RN-COM-03 FALLIDO: Premium no se atiende antes que los planes de abajo' using errcode = 'assert_failure';
+  end if;
+
+  -- Decisión 83 · "las solicitudes del Plan Básico tendrán prioridad
+  -- inferior a los planes Impulso y Premium". Por detrás de todos, y en
+  -- el 0, que es el turno de quien no tiene plan (RN-COM-12).
+  if (select queue_rank from public.plans where space_id = v_space and name = 'Básico') <> 0
+     or (select min(queue_rank) from public.plans where space_id = v_space and name <> 'Básico') <= 0 then
+    raise exception 'RN-COM-03 FALLIDO: el Básico no va por detrás de Impulso y Premium' using errcode = 'assert_failure';
+  end if;
+
+  -- RN-REP-32 · el Básico recibe su informe cada trimestre; los demás,
+  -- cada mes.
+  if (select string_agg(name, ',' order by name) from public.plans
+      where space_id = v_space and report_period = 'quarter') is distinct from 'Básico' then
+    raise exception 'RN-REP-32 FALLIDO: el informe trimestral no es exactamente del Básico' using errcode = 'assert_failure';
   end if;
 
   -- Y el turno NO es un plazo más corto: Impulso+, Premium y Premium+
@@ -326,6 +347,89 @@ begin
 end $$;
 
 -- ============================================================
+-- Migración 146 · la ficha del Básico sobre un espacio con el catálogo
+-- anterior (decisión 83)
+--
+-- El espacio de prueba de arriba acaba con Básico a 99 € y todos los
+-- planes en el turno 0, que es como estaba Restavor el 26/09/2026.
+-- ============================================================
+insert into public.groups (id, space_id, name) values
+  ('ffd30000-0000-0000-0000-000000000009', 'ffd10000-0000-0000-0000-000000000009', 'Grupo Hito 2');
+insert into public.establishments (id, space_id, group_id, code, name, status) values
+  ('ffd40000-0000-0000-0000-000000000009', 'ffd10000-0000-0000-0000-000000000009',
+   'ffd30000-0000-0000-0000-000000000009', 'PLN-0009', 'Casa Total', 'active');
+
+do $$
+declare
+  v_space uuid := 'ffd10000-0000-0000-0000-000000000009';
+  v_basico uuid := 'ffd20000-0000-0000-0000-000000000001';
+begin
+  -- RN-COM-20 · si alguien tiene un plan cuyo turno cambia, se para y no
+  -- toca nada. El bloque con excepción deshace también la suscripción.
+  begin
+    insert into public.subscriptions (space_id, establishment_id, kind, plan_id)
+    values (v_space, 'ffd40000-0000-0000-0000-000000000009', 'plan', 'ffd20000-0000-0000-0000-000000000004');
+    perform public.apply_basic_plan_sheet_internal(v_space);
+    raise exception 'RN-COM-20 FALLIDO: reescribió en el sitio un plan que alguien tiene' using errcode = 'assert_failure';
+  exception
+    when assert_failure then raise;
+    when others then
+      if sqlerrm not like '%versión nueva%' then raise; end if;
+  end;
+  if (select price_cents from public.plans where id = v_basico) <> 9900 then
+    raise exception 'RN-COM-20 FALLIDO: al pararse dejó el Básico cambiado' using errcode = 'assert_failure';
+  end if;
+
+  create temp table pr_turnos on commit drop as
+    select id, queue_rank from public.plans where space_id = v_space;
+
+  perform public.apply_basic_plan_sheet_internal(v_space);
+
+  -- El Básico de la ficha: 20 € y trimestral, con su apunte.
+  if not exists (select 1 from public.plans where id = v_basico
+                 and price_cents = 2000 and report_period = 'quarter') then
+    raise exception 'MIGRACIÓN 146 FALLIDA: el Básico no quedó en 20 € y trimestral' using errcode = 'assert_failure';
+  end if;
+  if not exists (select 1 from public.audit_log where entity_id = v_basico and action = 'plan.edited'
+                 and (old_value->>'price_cents')::int = 9900 and (new_value->>'price_cents')::int = 2000) then
+    raise exception 'RN-COM-21 FALLIDO: el cambio del Básico no quedó en la auditoría' using errcode = 'assert_failure';
+  end if;
+
+  -- Los demás, un escalón por delante cada uno, sin perder su orden entre
+  -- ellos (Premium sigue delante de Impulso); y lo que no es del Básico,
+  -- igual.
+  if exists (select 1 from public.plans p join pr_turnos t on t.id = p.id
+             where p.space_id = v_space and p.id <> v_basico and p.queue_rank <> t.queue_rank + 1)
+     or (select queue_rank from public.plans where id = v_basico) <> 0 then
+    raise exception 'MIGRACIÓN 146 FALLIDA: los turnos no quedaron con el Básico por detrás' using errcode = 'assert_failure';
+  end if;
+  if (select price_cents from public.plans where id = 'ffd20000-0000-0000-0000-000000000004') <> 79900
+     or exists (select 1 from public.plans where space_id = v_space and id <> v_basico and report_period <> 'month') then
+    raise exception 'MIGRACIÓN 146 FALLIDA: tocó algo de un plan que no es el Básico' using errcode = 'assert_failure';
+  end if;
+
+  -- Idempotente: otra vez no sube otro escalón ni escribe otro apunte.
+  perform public.apply_basic_plan_sheet_internal(v_space);
+  if exists (select 1 from public.plans p join pr_turnos t on t.id = p.id
+             where p.space_id = v_space and p.id <> v_basico and p.queue_rank <> t.queue_rank + 1) then
+    raise exception 'MIGRACIÓN 146 FALLIDA: aplicarla dos veces subió dos escalones' using errcode = 'assert_failure';
+  end if;
+  if (select count(*) from public.audit_log where entity_id = v_basico and action = 'plan.edited') <> 1 then
+    raise exception 'MIGRACIÓN 146 FALLIDA: aplicarla dos veces escribió dos apuntes' using errcode = 'assert_failure';
+  end if;
+
+  -- Sobre Restavor recién sembrado no hay nada que hacer, aunque tenga
+  -- restaurantes con plan: no se para por lo que no va a tocar.
+  perform public.apply_basic_plan_sheet_internal((select v from pr_ids where k = 'restavor'));
+
+  -- CLAUDE.md · interna: cerrada a anon y a authenticated, no solo a public.
+  if has_function_privilege('anon', 'public.apply_basic_plan_sheet_internal(uuid)', 'execute')
+     or has_function_privilege('authenticated', 'public.apply_basic_plan_sheet_internal(uuid)', 'execute') then
+    raise exception 'CLAUDE.md FALLIDO: apply_basic_plan_sheet_internal está abierta por RPC' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- ============================================================
 -- RN-SOP-10 · la guía del centro de ayuda nombra los cinco planes
 -- ============================================================
 do $$
@@ -340,4 +444,4 @@ begin
   end if;
 end $$;
 
-select 'planes_de_restavor.sql: §6.1, RN-COM-01/02/03/08, RN-SLA-02, RN-OPP-08 y la migración 96 cumplidos' as resultado;
+select 'planes_de_restavor.sql: §6.1, RN-COM-01/02/03/08, RN-SLA-02, RN-OPP-08, RN-REP-32 y las migraciones 96 y 146 cumplidos' as resultado;

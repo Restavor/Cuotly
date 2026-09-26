@@ -435,7 +435,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await cabeEnElTelefono(page, "el panel financiero");
 
     // El cobro de Café Prueba queda pendiente en el sembrado justo para
-    // esto: 99 € + 21 % = 119,79 €. El formulario va dentro de la propia
+    // esto: 20 € + 21 % = 24,20 € (plan Básico, decisión 83). El formulario va dentro de la propia
     // fila, sin ventana intermedia, y el importe viene ya relleno con lo
     // que queda por cobrar.
     const fila = page.locator("tbody tr").filter({ hasText: "Café Prueba" }).first();
@@ -446,7 +446,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
 
     // Se cobra UN EURO, no la deuda entera, y esa es la decisión de este
     // test: un cobro saldado deja de ofrecer el formulario, así que pagar
-    // los 119,79 € lo dejaría sin nada que pulsar en la segunda ejecución
+    // los 24,20 € lo dejaría sin nada que pulsar en la segunda ejecución
     // y obligaría a resembrar entre pasada y pasada. Cobrar una parte
     // ejercita exactamente los mismos botones y se puede repetir. El
     // importe se escribe a mano en vez de fiarse del valor que trae puesto
