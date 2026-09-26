@@ -197,6 +197,13 @@ export function createPlatformEmailComposer(baseUrl: string): PlatformEmailCompo
             subject: t.alreadyRegistered.subject,
             body: t.alreadyRegistered.body(nombre, `${raiz}/login`),
           };
+        case "account_deleted":
+          // RN-ADM-21 · sin enlace: la cuenta ya no entra en ninguna parte.
+          return {
+            to: row.to_email,
+            subject: t.accountDeleted.subject,
+            body: t.accountDeleted.body,
+          };
         default:
           return null;
       }

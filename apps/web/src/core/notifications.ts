@@ -84,6 +84,10 @@ export const NOTIFICATION_EVENTS = [
   "storage_threshold_80",
   "storage_threshold_100",
   "security_incident",
+  // Migración 141 (decisión 81, RN-ADM-21) · Cuotly ha eliminado el espacio
+  // o el restaurante. Los dos, obligatorios: es pérdida de acceso.
+  "space_deleted_by_platform",
+  "establishment_deleted_by_platform",
   "consumption_threshold_80",
   "consumption_threshold_100",
   "t2_threshold_50",
@@ -157,6 +161,10 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   // primera palabra de RN-NOT-03. Los dos avisos de almacenamiento no:
   // pasarse no bloquea nada (decisión 38).
   "security_incident",
+  // RN-ADM-21 (decisión 81): que Cuotly elimine tu espacio o tu restaurante
+  // es perder el acceso, la segunda palabra de RN-NOT-03.
+  "space_deleted_by_platform",
+  "establishment_deleted_by_platform",
 ];
 
 export function isMandatoryEvent(event: NotificationEvent): boolean {

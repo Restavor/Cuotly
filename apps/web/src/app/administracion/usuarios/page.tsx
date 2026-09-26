@@ -123,10 +123,10 @@ export default async function AdminUsersPage() {
                 ) : null}
                 {elimina ? (
                   <TableCell>
-                    {/* RN-ADM-20 · la plataforma no se elimina a sí misma. */}
+                    {/* RN-ADM-20 · Bosco no se elimina; a un administrador solo lo elimina Bosco. */}
                     {row.closed_at ? (
                       <RestoreButton kind="account" id={row.id} name={row.email} hint={td.restoreAccountHint} />
-                    ) : row.is_owner || row.is_admin ? (
+                    ) : row.is_owner || (row.is_admin && !bosco) ? (
                       <span className="text-sm text-text-secondary">{t.protectedHint}</span>
                     ) : (
                       <Link

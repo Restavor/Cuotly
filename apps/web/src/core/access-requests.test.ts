@@ -79,13 +79,14 @@ describe("cómo se entra en Cuotly (PRD §37, RN-ACC)", () => {
     expect(setupLinkAcceptsPassword("expired")).toBe(false);
   });
 
-  it("RN-ACC-04: los cinco correos a direcciones sin cuenta, y ninguno más", () => {
+  it("RN-ACC-04 · RN-ADM-21: los cinco correos a direcciones sin cuenta y el de la cuenta eliminada", () => {
     expect([...PLATFORM_EMAIL_KINDS]).toEqual([
       "access_request_received",
       "access_request_needs_information",
       "access_request_approved",
       "access_request_rejected",
       "access_request_already_registered",
+      "account_deleted",
     ]);
   });
 

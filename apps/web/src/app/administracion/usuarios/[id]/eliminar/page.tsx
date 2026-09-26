@@ -71,6 +71,9 @@ export default async function AdminDeleteAccountPage({ params }: { params: Promi
           <p className="mb-2 text-sm text-text-secondary">
             {ta.summary(preview.teamMemberships, preview.clientAccesses)}
           </p>
+          {preview.platformAdmin ? (
+            <p className="mb-2 text-sm font-semibold text-danger">{ta.alsoRevokesAdmin}</p>
+          ) : null}
           <p className="mb-4 text-sm text-text-secondary">{t.nothingIsErased}</p>
           <AccountDeletionForm userId={id} email={preview.email} spaces={preview.soleOwnerSpaces} />
         </Card>

@@ -2568,8 +2568,8 @@ Donde la maestra calla, las lecturas quedan escritas como regla y Bosco las conf
   elimina a los 30 días, se conserva todo el historial, los archivos y los datos del restaurante, y
   las facturas las preparará un agente aparte (RN-SUB-05 sigue: referencia bancaria, ninguna factura).
 
-**Cuotly elimina cuentas, espacios y restaurantes** (decisión 81, 25/09/2026; migración 140, suite
-79). "Eliminar" **no borra nada** (RN-DAT-06, decisión 38, pendiente 20): archiva, marca y bloquea, y
+**Cuotly elimina cuentas, espacios y restaurantes** (decisión 81, 25/09/2026; migraciones 140 y 141,
+suite 79). "Eliminar" **no borra nada** (RN-DAT-06, decisión 38, pendiente 20): archiva, marca y bloquea, y
 **solo Cuotly lo deshace**, sin plazo.
 
 - **RN-ADM-14**: lo hacen **Bosco** y los **Administradores de Cuotly con el cuarto permiso fino**,
@@ -2591,15 +2591,21 @@ Donde la maestra calla, las lecturas quedan escritas como regla y Bosco las conf
   **pierde sus accesos** de cliente a restaurantes y grupos, y se apunta en
   `platform_account_closures` con lo que se le quitó. Recuperarla lo **devuelve** todo, salvo los
   restaurantes autorizados y las especialidades (RN-MIE-07); donde su propiedad pasó a otra persona,
-  vuelve como **administradora**.
+  vuelve como **trabajadora** (confirmado por Bosco el 26/09/2026, migración 141).
 - **RN-ADM-19**: de cada espacio del que la cuenta es la **única propietaria**, la propiedad pasa a
   un **administrador** del espacio **elegido o al azar**; si el espacio **no tiene administradores**,
   a un **trabajador** elegido o al azar. A un trabajador no se le puede elegir habiendo
   administradores. Si **no hay nadie más** en el equipo, el espacio **se elimina con la cuenta**
   (RN-ADM-16) y vuelve si la cuenta se recupera. El traspaso queda en el libro del espacio y avisa como
   cualquier transferencia (RN-CIC-15).
-- **RN-ADM-20**: **ni Bosco ni un Administrador de Cuotly** se eliminan desde aquí: al administrador,
-  Bosco le retira antes el rol.
+- **RN-ADM-20**: la cuenta de **Bosco** no se elimina nunca. A un **Administrador de Cuotly** solo lo
+  elimina **Bosco**, que le retira el rol y todos sus permisos en el mismo acto (migración 141); un
+  administrador con el permiso no elimina a otro.
+- **RN-ADM-21**: **se avisa** (migración 141). A la cuenta eliminada, **por correo** —ya no puede
+  entrar a leer un aviso—: *"Su cuenta ha sido eliminada"*, con el texto que dio Bosco. A todo el
+  equipo en activo de un **espacio** eliminado, y al propietario y los administradores del espacio y a
+  los propietarios (local y global) de un **restaurante** eliminado, con un aviso **obligatorio**
+  (RN-NOT-03: es pérdida de acceso). El traspaso de propiedad avisa como cualquier transferencia.
 
 Lo que este apartado **no** trae, dicho en claro: **no** trae las incidencias de §131 ni el horario
 humano de §132 (Hito 21: el bloque "incidencias" del panel está vacío con su motivo), **no** trae el

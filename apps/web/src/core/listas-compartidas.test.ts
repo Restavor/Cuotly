@@ -491,10 +491,19 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
     expect([...enSql].sort()).toEqual([...CLIENT_ATTENTION_KINDS].sort());
   });
 
-  it("los cinco correos a direcciones sin cuenta (RN-ACC-04) son los mismos en SQL y en `src/core`", () => {
-    const tabla = ultimaDefinicion("create table public.platform_emails", ");");
-    const check = tabla.slice(tabla.indexOf("kind text not null check"));
-    const enSql = entrecomillados(check.slice(0, check.indexOf("))") + 2));
+  it("los correos de la plataforma (RN-ACC-04, RN-ADM-21) son los mismos en SQL y en `src/core`", () => {
+    // La 97 los escribió dentro del `create table`; la 141 ensanchó el
+    // CHECK con el de la cuenta eliminada. Se lee la última de las dos.
+    const ampliado = migracionesEnOrden().some((sql) =>
+      sql.includes("add constraint platform_emails_kind_check"),
+    );
+    const enSql = ampliado
+      ? entrecomillados(ultimaDefinicion("add constraint platform_emails_kind_check", "));"))
+      : (() => {
+          const tabla = ultimaDefinicion("create table public.platform_emails", ");");
+          const check = tabla.slice(tabla.indexOf("kind text not null check"));
+          return entrecomillados(check.slice(0, check.indexOf("))") + 2));
+        })();
     expect(enSql.length).toBeGreaterThan(0);
     expect([...enSql].sort()).toEqual([...PLATFORM_EMAIL_KINDS].sort());
   });

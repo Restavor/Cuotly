@@ -1,6 +1,6 @@
 -- ============================================================
 -- Suite 79 · Cuotly elimina cuentas, espacios y restaurantes
--- (migración 140, decisión 81, PRD §32, RN-ADM-14 a RN-ADM-20)
+-- (migraciones 140 y 141, decisión 81, PRD §32, RN-ADM-14 a RN-ADM-21)
 -- ============================================================
 --
 -- Lo que vigila:
@@ -22,7 +22,11 @@
 --     propiedad pasa al administrador elegido o a uno al azar; a un
 --     trabajador solo si no hay administradores; sin nadie, el espacio se
 --     elimina con la cuenta.
---   · RN-ADM-20 · ni Bosco ni un Administrador de Cuotly se eliminan.
+--   · RN-ADM-20 · Bosco no se elimina; a un Administrador de Cuotly solo
+--     lo elimina Bosco, retirándole el rol en el mismo acto.
+--   · RN-ADM-21 · se avisa: a la cuenta, por correo ("su cuenta ha sido
+--     eliminada"); al equipo del espacio y a quien lleva el restaurante,
+--     con un aviso obligatorio.
 --   · Nada se borra: todas las filas siguen ahí.
 --
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/cuotly_elimina_cuentas_espacios_y_restaurantes.sql
@@ -235,6 +239,18 @@ begin
       and action in ('establishment.archived_by_platform', 'platform.establishment_deleted')) <> 2 then
     raise exception 'RN-ADM-17 FALLIDO: faltan los apuntes de auditoría del espacio y de la plataforma' using errcode = 'assert_failure';
   end if;
+  -- RN-ADM-21 · se enteran el dueño del espacio (equipo) y Ana, que es la
+  -- propietaria local del restaurante (cliente). Una vez cada uno.
+  if (select count(*) from public.notifications where event_type = 'establishment_deleted_by_platform'
+      and entity_id = 'e7940000-0000-0000-0000-000000000001'
+      and ((recipient_id = 'e7900000-0000-0000-0000-000000000008' and audience = 'staff')
+        or (recipient_id = 'e7900000-0000-0000-0000-000000000004' and audience = 'client'))) <> 2 then
+    raise exception 'RN-ADM-21 FALLIDO: el aviso del restaurante eliminado no llegó a su equipo y a su propietaria' using errcode = 'assert_failure';
+  end if;
+  if not public.notification_event_is_mandatory('establishment_deleted_by_platform')
+     or not public.notification_event_is_mandatory('space_deleted_by_platform') then
+    raise exception 'RN-NOT-03 FALLIDO: perder el acceso por Cuotly se puede desactivar' using errcode = 'assert_failure';
+  end if;
 end $$;
 
 -- El dueño del espacio no lo reactiva, ni por la ficha ni por PostgREST.
@@ -310,6 +326,12 @@ do $$
 begin
   if (select cuotly_status from public.spaces where id = 'e7910000-0000-0000-0000-00000000000d') <> 'archived_by_platform' then
     raise exception 'RN-ADM-16 FALLIDO: el espacio no quedó en archived_by_platform' using errcode = 'assert_failure';
+  end if;
+  -- RN-ADM-21 · su equipo en activo se entera, una sola vez aunque se pulse dos.
+  if (select count(*) from public.notifications where event_type = 'space_deleted_by_platform'
+      and space_id = 'e7910000-0000-0000-0000-00000000000d'
+      and recipient_id = 'e7900000-0000-0000-0000-000000000008') <> 1 then
+    raise exception 'RN-ADM-21 FALLIDO: el dueño del espacio eliminado no recibió un aviso (y solo uno)' using errcode = 'assert_failure';
   end if;
   -- Los barridos de la suscripción no lo sacan de ahí.
   perform public.set_space_cuotly_status_internal('e7910000-0000-0000-0000-00000000000d', 'active', 'barrido', 'sweep');
@@ -489,6 +511,12 @@ begin
   if not exists (select 1 from public.audit_log where action = 'platform.account_deleted' and entity_id = v_ana) then
     raise exception 'RN-ADM-18 FALLIDO: falta la auditoría de la plataforma' using errcode = 'assert_failure';
   end if;
+  -- RN-ADM-21 · el correo "su cuenta ha sido eliminada", uno aunque se
+  -- pulsara dos veces.
+  if (select count(*) from public.platform_emails where kind = 'account_deleted'
+      and to_email = 'ana79@example.com') <> 1 then
+    raise exception 'RN-ADM-21 FALLIDO: a Ana no le sale un correo (y solo uno) diciendo que su cuenta se eliminó' using errcode = 'assert_failure';
+  end if;
   -- Nada se borra.
   if not exists (select 1 from public.profiles where id = v_ana)
      or (select count(*) from public.space_memberships where user_id = v_ana) <> 3 then
@@ -551,10 +579,11 @@ begin
   if (select banned_until from auth.users where id = v_ana) is not null then
     raise exception 'RN-ADM-18 FALLIDO: recuperada, la cuenta sigue sin poder entrar' using errcode = 'assert_failure';
   end if;
-  -- Vuelve a A y B como administradora: los espacios ya tienen dueño.
-  if (select count(*) from public.space_memberships where user_id = v_ana and status = 'active' and role = 'admin'
+  -- Vuelve a A y B como trabajadora: los espacios ya tienen dueño
+  -- (confirmado por Bosco el 26/09/2026).
+  if (select count(*) from public.space_memberships where user_id = v_ana and status = 'active' and role = 'worker'
       and space_id in ('e7910000-0000-0000-0000-00000000000a', 'e7910000-0000-0000-0000-00000000000b')) <> 2 then
-    raise exception 'RN-ADM-18 FALLIDO: Ana no volvió a A y B como administradora' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-18 FALLIDO: Ana no volvió a A y B como trabajadora' using errcode = 'assert_failure';
   end if;
   if (select role from public.space_memberships where space_id = 'e7910000-0000-0000-0000-00000000000a'
       and user_id = 'e7900000-0000-0000-0000-000000000005') <> 'owner' then
@@ -572,6 +601,41 @@ begin
   if not exists (select 1 from public.platform_account_closures where user_id = v_ana
                  and restored_at is not null and restored_by = 'ffb00000-0000-0000-0000-000000000001') then
     raise exception 'RN-ADM-18 FALLIDO: el libro no dice quién la recuperó' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- ============================================================
+-- RN-ADM-20 · Bosco sí elimina a un Administrador de Cuotly
+-- ============================================================
+select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', false);
+set role authenticated;
+do $$
+declare
+  v_preview jsonb := public.platform_account_deletion_preview('e7900000-0000-0000-0000-000000000003');
+begin
+  if (v_preview ->> 'protected')::boolean or not (v_preview ->> 'platform_admin')::boolean then
+    raise exception 'RN-ADM-20 FALLIDO: para Bosco, el administrador sale protegido o sin marcar: %', v_preview
+      using errcode = 'assert_failure';
+  end if;
+  begin
+    perform public.platform_delete_account('ffb00000-0000-0000-0000-000000000001', 'Yo mismo');
+    raise exception 'RN-ADM-20 FALLIDO: Bosco se eliminó a sí mismo' using errcode = 'assert_failure';
+  exception when assert_failure then raise; when others then null;
+  end;
+  perform public.platform_delete_account('e7900000-0000-0000-0000-000000000003', 'Deja Cuotly');
+end $$;
+reset role;
+
+do $$
+begin
+  if exists (select 1 from public.platform_roles where user_id = 'e7900000-0000-0000-0000-000000000003') then
+    raise exception 'RN-ADM-20 FALLIDO: eliminado, sigue siendo Administrador de Cuotly' using errcode = 'assert_failure';
+  end if;
+  if not exists (select 1 from public.audit_log where action = 'platform.admin_revoked'
+                 and entity_id = 'e7900000-0000-0000-0000-000000000003')
+     or not exists (select 1 from public.platform_account_closures
+                    where user_id = 'e7900000-0000-0000-0000-000000000003' and restored_at is null) then
+    raise exception 'RN-ADM-20 FALLIDO: falta el rol retirado o la cuenta cerrada en los libros' using errcode = 'assert_failure';
   end if;
 end $$;
 

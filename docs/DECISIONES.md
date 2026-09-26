@@ -2290,14 +2290,20 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     "Eliminar" es archivar, marcar y bloquear el acceso, **no borrar** (CLAUDE.md, decisión 38,
     pendiente 20).
 
-    - **Propuesto por Claude, pendiente de que Bosco lo confirme** (no estaba escrito): si un espacio
-      de propiedad única **no tiene a nadie más** en su equipo, se elimina con la cuenta y vuelve con
-      ella (RN-ADM-19); un espacio eliminado por Cuotly queda en **solo lectura** para su equipo y sus
-      clientes, como los otros archivados, en vez de desaparecerles (RN-ADM-16); al recuperar una
-      cuenta vuelve como **administradora** donde su propiedad pasó a otra persona (RN-ADM-18); **ni
-      Bosco ni un Administrador de Cuotly** se eliminan desde aquí (RN-ADM-20); y **no se avisa** a la
-      cuenta eliminada ni a los dueños de un espacio o restaurante eliminado, como en RN-MIE-08 (sí
-      avisa el traspaso de propiedad, como cualquier transferencia).
+    - **Las cinco propuestas de Claude, contestadas por Bosco el 26/09/2026**: *"1. Sí. 2. Sí. 3. No,
+      vuelve como trabajador. 4. Correcto, y si quiero yo, info@restavor.com, el propietario de
+      Cuotly, le quito los permisos y le elimino. 5. Sí se le avisa, le llega un mensaje diciendo: su
+      cuenta ha sido eliminada."* Queda así:
+      1. Un espacio de propiedad única **sin nadie más** en su equipo se elimina con la cuenta y
+         vuelve con ella (RN-ADM-19).
+      2. Un espacio eliminado por Cuotly queda en **solo lectura** para su equipo y sus clientes
+         (RN-ADM-16).
+      3. Al recuperar una cuenta, donde su propiedad pasó a otra persona vuelve como **trabajadora**
+         (RN-ADM-18).
+      4. La cuenta de Bosco no se elimina; a un Administrador de Cuotly **lo elimina Bosco**,
+         retirándole el rol en el mismo acto (RN-ADM-20).
+      5. **Se avisa**: a la cuenta, por correo, *"Su cuenta ha sido eliminada"*; al equipo del espacio
+         y a quien lleva el restaurante, con un aviso obligatorio (RN-ADM-21).
 
-    Reglas en el PRD: RN-ADM-14 a RN-ADM-20 (§32). Migración 140, suite 79.
+    Reglas en el PRD: RN-ADM-14 a RN-ADM-21 (§32). Migraciones 140 y 141, suite 79.
 

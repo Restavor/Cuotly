@@ -228,6 +228,8 @@ export interface SoleOwnerSpace {
 export interface AccountDeletionPreview {
   readonly email: string;
   readonly protected: boolean;
+  /** RN-ADM-20 · es Administrador de Cuotly: eliminarla le retira también el rol. */
+  readonly platformAdmin: boolean;
   readonly closed: boolean;
   readonly soleOwnerSpaces: readonly SoleOwnerSpace[];
   readonly teamMemberships: number;
@@ -256,6 +258,7 @@ export function readAccountDeletionPreview(value: unknown): AccountDeletionPrevi
   return {
     email: typeof raw.email === "string" ? raw.email : "",
     protected: raw.protected !== false,
+    platformAdmin: raw.platform_admin === true,
     closed: raw.closed === true,
     soleOwnerSpaces: spaces.flatMap((item) => {
       const s = record(item);

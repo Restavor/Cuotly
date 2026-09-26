@@ -152,6 +152,9 @@ export const PLATFORM_EMAIL_KINDS = [
   "access_request_approved",
   "access_request_rejected",
   "access_request_already_registered",
+  // RN-ADM-21 (migración 141, decisión 81) · "Su cuenta ha sido eliminada".
+  // Va por aquí porque quien la recibe ya no puede entrar a leer un aviso.
+  "account_deleted",
 ] as const;
 export type PlatformEmailKind = (typeof PLATFORM_EMAIL_KINDS)[number];
 

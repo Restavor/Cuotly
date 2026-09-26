@@ -108,7 +108,16 @@ describe("RN-ACC-04 · el correo de la puerta de entrada", () => {
     expect(mensaje!.body).toContain("no se ha");
   });
 
-  it("los cinco correos que la base puede encolar se saben componer", () => {
+  it("RN-ADM-21 · el correo de la cuenta eliminada dice que su cuenta ha sido eliminada, sin enlace", () => {
+    const mensaje = createPlatformEmailComposer("https://cuotly.com").compose(
+      fila({ kind: "account_deleted", payload: {} }),
+    );
+    expect(mensaje).not.toBeNull();
+    expect(mensaje!.body).toContain("Su cuenta ha sido eliminada");
+    expect(mensaje!.body).not.toContain("https://");
+  });
+
+  it("los correos que la base puede encolar se saben componer", () => {
     const composer = createPlatformEmailComposer("https://cuotly.com");
     const payload = {
       contact_name: "Nuria",
@@ -123,6 +132,7 @@ describe("RN-ACC-04 · el correo de la puerta de entrada", () => {
       "access_request_approved",
       "access_request_rejected",
       "access_request_already_registered",
+      "account_deleted",
     ]) {
       expect(composer.compose(fila({ kind, payload })), kind).not.toBeNull();
     }

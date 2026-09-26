@@ -220,6 +220,11 @@ describe("eliminar cuentas, espacios y restaurantes (decisión 81)", () => {
     ]);
   });
 
+  it("RN-ADM-20 · si es Administrador de Cuotly se dice, porque eliminarla le retira el rol", () => {
+    expect(readAccountDeletionPreview({ protected: false, platform_admin: true }).platformAdmin).toBe(true);
+    expect(readAccountDeletionPreview({ protected: false }).platformAdmin).toBe(false);
+  });
+
   it("RN-ADM-20 · ante la duda, la cuenta sale protegida y no se ofrece eliminarla", () => {
     expect(readAccountDeletionPreview(null).protected).toBe(true);
     expect(readAccountDeletionPreview({ email: "x" }).protected).toBe(true);

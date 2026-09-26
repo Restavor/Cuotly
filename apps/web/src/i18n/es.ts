@@ -1264,6 +1264,8 @@ export const es = {
       support_session_started: "Alguien de Cuotly ha entrado en tu espacio en Modo soporte",
       space_ownership_transferred: "El espacio ha cambiado de propietario",
       space_archived_by_owner: "Tu propietario ha archivado el espacio",
+      space_deleted_by_platform: "Cuotly ha eliminado el espacio: queda en modo lectura",
+      establishment_deleted_by_platform: "Cuotly ha eliminado el restaurante",
       incident_opened: "Nueva incidencia a Cuotly",
       incident_updated: "Tu incidencia ha cambiado de estado",
       incident_replied: "Hay un mensaje nuevo en una incidencia",
@@ -8507,6 +8509,12 @@ export const es = {
         "Si no reconoces esta petición, puedes ignorar este mensaje: no se ha " +
         "cambiado nada de tu cuenta.",
     },
+    // RN-ADM-21 (decisión 81) · el texto lo dio Bosco: "su cuenta ha sido
+    // eliminada".
+    accountDeleted: {
+      subject: "Su cuenta de Cuotly ha sido eliminada",
+      body: "Hola.\n\nSu cuenta ha sido eliminada.\n\nYa no puede entrar en Cuotly con esta dirección.",
+    },
   },
 
   platformAdmin: {
@@ -8561,7 +8569,9 @@ export const es = {
           `«${espacio}» no tiene a nadie más en su equipo: se elimina con la cuenta y vuelve si se recupera.`,
         protectedTitle: "Esta cuenta no se puede eliminar",
         protectedReason:
-          "Es la del propietario de Cuotly o la de un Administrador de Cuotly. A un administrador, el propietario de Cuotly le retira antes el rol.",
+          "Es la del propietario de Cuotly, o la de un Administrador de Cuotly: a un administrador solo lo elimina el propietario de Cuotly.",
+        alsoRevokesAdmin:
+          "Es Administrador de Cuotly: al eliminarla se le retira también el rol y todos sus permisos.",
         closedTitle: "Esta cuenta ya está eliminada",
         closedReason: "Se puede recuperar desde la lista de usuarios.",
         submit: "Eliminar la cuenta",
