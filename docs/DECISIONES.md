@@ -2307,3 +2307,33 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
 
     Reglas en el PRD: RN-ADM-14 a RN-ADM-21 (§32). Migraciones 140 y 141, suite 79.
 
+
+82. **Archivados: separar lo activo de lo archivado** (26/09/2026). Bosco: *"que haya una parte de
+    archivados y ahí puedas ver los espacios y restaurantes y todo lo que esté archivado. Así separamos
+    lo que está activo con lo que está archivado. Y dentro de la parte de archivados se verá el
+    restaurante o espacio de mantenimiento y habrá 2 botones: 1 que es recuperar, que nada más darle se
+    activa de nuevo, y otro que es eliminar, que necesitarías confirmar antes de eliminar"*.
+    Preguntado por las tres cosas que chocaban con lo escrito, decide:
+    - **Qué es "eliminar" en Archivados:** un **eliminado definitivo**. Lo que la decisión 81 llamaba
+      "eliminar" un espacio o un restaurante pasa a llamarse **archivar**. Desde Archivados,
+      "Eliminar" lo saca del panel para siempre y ya no se recupera, pero **no se borra nada**
+      (CLAUDE.md, RN-DAT-06): los datos siguen en la base y todo queda en la auditoría. Se confirma
+      con motivo y escribiendo el nombre (§140). Las cuentas no cambian.
+    - **Recuperar sin motivo:** un clic; el motivo que pedía RN-ADM-15 lo pone la base, fijo,
+      *"Recuperado desde Archivados"*, con actor y fecha en la auditoría.
+    - **Qué entra:** *"todo lo que se ha archivado manualmente, y el resto de restaurantes que estén en
+      la parte activa tienen que mostrar siempre su estado, si están pausados por impago, si están
+      activos…"*. En Archivados: lo archivado por Cuotly, el espacio archivado por su propietario y el
+      restaurante archivado por su equipo. Lo que se archiva solo —prueba sin pago, impago— sigue en
+      Espacios con su estado.
+
+    **Lectura de Claude, a confirmar:** "nada más darle se activa de nuevo" se lee al pie de la letra,
+    y eso **cambia RN-ADM-17**: un restaurante que su equipo tenía archivado antes de que Cuotly lo
+    archivara ya no vuelve archivado, vuelve **activo**; y un espacio que su propietario había
+    archivado antes que Cuotly vuelve también de ese archivado. Las guardas de siempre siguen: con
+    deuda vencida (RN-FIN-13) o sin hueco en el plan de Cuotly del espacio, no se recupera y se dice
+    por qué. Tampoco se ha tocado lo que ve el **equipo** de un espacio eliminado definitivamente:
+    sigue en solo lectura, como cuando estaba archivado por Cuotly.
+
+    Reglas en el PRD: RN-ADM-22 a RN-ADM-25 (§32), y cambian RN-ADM-15 y RN-ADM-17. Migración 142,
+    suite 80.

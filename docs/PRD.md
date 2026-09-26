@@ -2578,14 +2578,19 @@ suite 79). "Eliminar" **no borra nada** (RN-DAT-06, decisión 38, pendiente 20):
   `is_platform_account_manager()`.
 - **RN-ADM-15**: eliminar y recuperar exigen **motivo**; eliminar exige además **escribir** el nombre
   del espacio o del restaurante, o el correo de la cuenta (§140). Todo queda en la auditoría de la
-  plataforma y, lo que toca a un espacio, también en la del espacio.
+  plataforma y, lo que toca a un espacio, también en la del espacio. **Desde la decisión 82**, a un
+  espacio o un restaurante esto se le llama **archivar**, y **recuperarlo desde Archivados no pide
+  motivo**: es un clic y el motivo lo pone la base, fijo (RN-ADM-23). Recuperar una **cuenta** sigue
+  pidiéndolo.
 - **RN-ADM-16**: un **espacio** eliminado pasa al modo `archived_by_platform` de `cuotly_status`: **solo
   lectura** para su equipo y sus clientes, como los otros archivados. Su propietario **no** lo
   restaura, los barridos de la suscripción **no** lo mueven y Cuotly lo recupera **al modo que tenía**.
 - **RN-ADM-17**: un **restaurante** eliminado queda **archivado** (sus integraciones se desconectan
   como en cualquier archivado) y **marcado** (`platform_archived_at`): el equipo del espacio no lo
   reactiva, ni desde la ficha ni por ninguna otra vía. Cuotly lo recupera **al estado en que lo
-  encontró** (si el equipo ya lo tenía archivado, sigue archivado).
+  encontró** (si el equipo ya lo tenía archivado, sigue archivado). **Cambiado por la decisión 82:**
+  recuperarlo desde Archivados lo **activa de nuevo**, también si su equipo lo tenía archivado
+  (RN-ADM-23).
 - **RN-ADM-18**: una **cuenta** eliminada **no vuelve a entrar** (`auth.users.banned_until`) y sus
   sesiones abiertas se cierran; **sale de todos sus equipos** con las consecuencias de RN-MIE-03 a 05,
   **pierde sus accesos** de cliente a restaurantes y grupos, y se apunta en
@@ -2606,6 +2611,36 @@ suite 79). "Eliminar" **no borra nada** (RN-DAT-06, decisión 38, pendiente 20):
   equipo en activo de un **espacio** eliminado, y al propietario y los administradores del espacio y a
   los propietarios (local y global) de un **restaurante** eliminado, con un aviso **obligatorio**
   (RN-NOT-03: es pérdida de acceso). El traspaso de propiedad avisa como cualquier transferencia.
+
+**Archivados** (decisión 82, 26/09/2026; migración 142, suite 80). El panel separa lo activo de lo
+archivado. Lo que la decisión 81 llamaba "eliminar" un espacio o un restaurante se llama **archivar**,
+y lo archivado vive en su propia pantalla, **Archivados**, con dos botones por fila.
+
+- **RN-ADM-22**: en **Archivados** está **todo lo archivado a mano**: los espacios archivados por
+  Cuotly (`archived_by_platform`) o por su propietario (`archived_by_owner`), y los restaurantes
+  archivados por Cuotly o por su equipo. Cada fila dice **quién** lo archivó (Cuotly, su propietario,
+  su equipo), **desde cuándo** y **con qué motivo**, del libro de estados y de la auditoría. Lo
+  archivado **solo** —prueba sin pago, impago— **no** está aquí: sigue en Espacios con su estado. La
+  lista es `platform_list_archived()`, que exige ser de la plataforma con la sesión en dos pasos.
+- **RN-ADM-23**: **Recuperar** es **un clic**, sin motivo que escribir: la base apunta *"Recuperado
+  desde Archivados"* con el actor y la fecha. **Lo activa de nuevo**: un restaurante vuelve a
+  `active` —o al estado no archivado en que lo encontró Cuotly—, aunque su equipo lo hubiera archivado
+  antes; un espacio vuelve al modo que tenía, deshaciendo también el archivado de su propietario si lo
+  había. Las guardas de siempre siguen: con **deuda vencida** (RN-FIN-13) o sin hueco en el **plan de
+  Cuotly** del espacio, no se recupera y se dice por qué. Pulsar dos veces no hace nada la segunda
+  (CA-17). Lo hacen quienes archivan (RN-ADM-14).
+- **RN-ADM-24**: **Eliminar** desde Archivados es un **eliminado definitivo**, y se **confirma
+  antes**: aviso de que no se deshace, **motivo** y **escribir el nombre** (§140). Solo se elimina lo
+  que está en Archivados. **No se borra nada** (CLAUDE.md, RN-DAT-06): se marca
+  `permanently_deleted_at`, el espacio se queda en `archived_by_platform` y el restaurante archivado y
+  marcado **para siempre**, ninguna función ni `update` lo mueve —tampoco recuperar la cuenta con la
+  que se fue un espacio—, y **desaparece** del panel y de los archivados del espacio. Queda en la
+  auditoría de la plataforma y en la del espacio. El equipo de un espacio eliminado definitivamente lo
+  sigue viendo en solo lectura, como cuando estaba archivado.
+- **RN-ADM-25**: las listas de **activos** enseñan **siempre el estado**: Espacios, el modo de cada
+  espacio (también los archivados solos, por prueba o impago); Restaurantes, el estado de cada uno, con
+  **"Impago"** cuando tiene cobros vencidos sin pagar —lo que distingue un pausado por impago de un
+  pausado cualquiera— y el modo del espacio cuando este está en solo lectura.
 
 Lo que este apartado **no** trae, dicho en claro: **no** trae las incidencias de §131 ni el horario
 humano de §132 (Hito 21: el bloque "incidencias" del panel está vacío con su motivo), **no** trae el

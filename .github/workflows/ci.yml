@@ -592,6 +592,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/cuotly_elimina_cuentas_espacios_y_restaurantes.sql
 
+      - name: "Suite 80 — Archivados: lo archivado a mano, recuperar de un clic que lo activa de nuevo y eliminar definitivamente con confirmación, sin borrar nada (migración 142, RN-ADM-22 a 25, decisión 82)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/archivados_recuperar_y_eliminar.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

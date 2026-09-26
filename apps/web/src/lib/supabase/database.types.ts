@@ -2094,6 +2094,7 @@ export type Database = {
           phone_secondary: string | null;
           photo_file_id: string | null;
           platform_archived_at: string | null;
+          permanently_deleted_at: string | null;
           postal_code: string | null;
           space_id: string;
           status: string;
@@ -2121,6 +2122,7 @@ export type Database = {
           phone_secondary?: string | null;
           photo_file_id?: string | null;
           platform_archived_at?: string | null;
+          permanently_deleted_at?: string | null;
           postal_code?: string | null;
           space_id: string;
           status?: string;
@@ -2148,6 +2150,7 @@ export type Database = {
           phone_secondary?: string | null;
           photo_file_id?: string | null;
           platform_archived_at?: string | null;
+          permanently_deleted_at?: string | null;
           postal_code?: string | null;
           space_id?: string;
           status?: string;
@@ -7071,6 +7074,7 @@ export type Database = {
           cuotly_reactivation_deadline_at: string | null;
           cuotly_status: string | null;
           cuotly_status_changed_at: string | null;
+          permanently_deleted_at: string | null;
           cuotly_trial_ends_at: string | null;
           id: string;
           legal_name: string | null;
@@ -7093,6 +7097,7 @@ export type Database = {
           cuotly_reactivation_deadline_at?: string | null;
           cuotly_status?: string | null;
           cuotly_status_changed_at?: string | null;
+          permanently_deleted_at?: string | null;
           cuotly_trial_ends_at?: string | null;
           id?: string;
           legal_name?: string | null;
@@ -7115,6 +7120,7 @@ export type Database = {
           cuotly_reactivation_deadline_at?: string | null;
           cuotly_status?: string | null;
           cuotly_status_changed_at?: string | null;
+          permanently_deleted_at?: string | null;
           cuotly_trial_ends_at?: string | null;
           id?: string;
           legal_name?: string | null;
@@ -10387,7 +10393,34 @@ export type Database = {
           space_slug: string;
           space_status: string | null;
           status: string;
+          has_overdue_debt: boolean;
         }[];
+      };
+      platform_list_archived: {
+        Args: never;
+        Returns: {
+          kind: string;
+          id: string;
+          name: string;
+          code: string | null;
+          space_id: string;
+          space_name: string;
+          space_slug: string;
+          space_status: string | null;
+          archived_by: string;
+          archived_at: string | null;
+          reason: string | null;
+        }[];
+      };
+      platform_recover_space: { Args: { p_space_id: string }; Returns: boolean };
+      platform_recover_establishment: { Args: { p_establishment_id: string }; Returns: boolean };
+      platform_delete_space_permanently: {
+        Args: { p_reason: string; p_space_id: string };
+        Returns: boolean;
+      };
+      platform_delete_establishment_permanently: {
+        Args: { p_establishment_id: string; p_reason: string };
+        Returns: boolean;
       };
       is_platform_account_manager: { Args: never; Returns: boolean };
       platform_reactivate_space: {

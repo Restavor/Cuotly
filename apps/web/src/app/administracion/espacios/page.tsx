@@ -19,7 +19,7 @@ import { euros, gigabytes } from "@/i18n/money";
 import { createClient } from "@/lib/supabase/server";
 import { listSpaces, myPlatformAccess, type PlatformSpaceRow } from "@/services/platform-gateway";
 
-import { DeleteButton, RestoreButton } from "../DeletionForms";
+import { ArchiveButton } from "../DeletionForms";
 import { ReactivateForm, StartSupportForm } from "./SpaceActions";
 
 /**
@@ -28,8 +28,15 @@ import { ReactivateForm, StartSupportForm } from "./SpaceActions";
  * sitios (RN-ADM-04). Y desde aquí se abre Modo soporte (RN-ADM-06): el
  * formulario se pinta a quien tiene el permiso, y `start_support_session()`
  * lo vuelve a comprobar.
+ *
+ * Decisión 82 (RN-ADM-22, RN-ADM-25) · aquí solo lo que no está archivado
+ * a mano, cada uno con su estado —también el archivado solo, por prueba
+ * sin pago o impago—. Lo que archivó Cuotly o su propietario está en
+ * Archivados, que es donde se recupera o se elimina.
  */
 export const dynamic = "force-dynamic";
+
+const ARCHIVADO_A_MANO: ReadonlySet<string> = new Set(["archived_by_platform", "archived_by_owner"]);
 
 function dia(value: string | null): string {
   return value === null ? "—" : enZona(value, CUOTLY_TIMEZONE, { dateStyle: "short" });
@@ -69,12 +76,13 @@ export default async function AdminSpacesPage({
   }
 
   const t = es.platformAdmin.spaces;
+  const activos = spaces.filter((s) => s.cuotly_status === null || !ARCHIVADO_A_MANO.has(s.cuotly_status));
   const visibles =
     filtro === "prueba"
-      ? spaces.filter((s) => s.cuotly_status === "trial")
+      ? activos.filter((s) => s.cuotly_status === "trial")
       : filtro === "impago"
-        ? spaces.filter((s) => s.overdue_cents > 0 || s.cuotly_status === "archived_nonpayment")
-        : spaces;
+        ? activos.filter((s) => s.overdue_cents > 0 || s.cuotly_status === "archived_nonpayment")
+        : activos;
 
   return (
     <div className="space-y-6">
@@ -137,9 +145,7 @@ export default async function AdminSpacesPage({
                       <>
                         <StatusBadge tone={tono(status)}>{t.statuses[status]}</StatusBadge>
                         <span className="mt-1 block text-xs text-text-secondary">
-                          {status === "archived_by_platform"
-                            ? `${t.archivedSince} ${dia(row.cuotly_archived_at)}`
-                            : status === "trial"
+                          {status === "trial"
                             ? `${t.trialEnds} ${dia(row.cuotly_trial_ends_at)}`
                             : isSpaceReadOnly(status)
                               ? `${t.reactivateBy} ${dia(row.cuotly_reactivation_deadline_at)}`
@@ -197,24 +203,15 @@ export default async function AdminSpacesPage({
                       (status === "archived_trial_ended" || status === "archived_nonpayment") ? (
                         <ReactivateForm spaceId={row.id} />
                       ) : null}
-                      {/* RN-ADM-16 · eliminar y recuperar, decisión 81. */}
+                      {/* RN-ADM-16 · archivar (decisiones 81 y 82); se recupera en Archivados. */}
                       {puedeEliminar ? (
-                        status === "archived_by_platform" ? (
-                          <RestoreButton
-                            kind="space"
-                            id={row.id}
-                            name={row.name}
-                            hint={es.platformAdmin.deletion.restoreSpaceHint}
-                          />
-                        ) : (
-                          <DeleteButton
-                            kind="space"
-                            id={row.id}
-                            name={row.name}
-                            title={es.platformAdmin.deletion.spaceTitle(row.name)}
-                            hint={es.platformAdmin.deletion.spaceHint}
-                          />
-                        )
+                        <ArchiveButton
+                          kind="space"
+                          id={row.id}
+                          name={row.name}
+                          title={es.platformAdmin.deletion.spaceTitle(row.name)}
+                          hint={es.platformAdmin.deletion.spaceHint}
+                        />
                       ) : null}
                     </div>
                   </TableCell>

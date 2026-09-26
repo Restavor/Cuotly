@@ -90,6 +90,26 @@ export interface PlatformEstablishmentRow {
   readonly space_slug: string;
   readonly space_status: string | null;
   readonly created_at: string;
+  /** RN-ADM-25 · tiene cobros vencidos sin pagar: "pausado por impago". */
+  readonly has_overdue_debt: boolean;
+}
+
+/** RN-ADM-22 · quién lo archivó: Cuotly, el propietario del espacio o su equipo. */
+export type ArchivedBy = "platform" | "owner" | "team";
+
+/** RN-ADM-22 · una fila de Archivados: un espacio o un restaurante. */
+export interface PlatformArchivedRow {
+  readonly kind: "space" | "establishment";
+  readonly id: string;
+  readonly name: string;
+  readonly code: string | null;
+  readonly space_id: string;
+  readonly space_name: string;
+  readonly space_slug: string;
+  readonly space_status: string | null;
+  readonly archived_by: ArchivedBy;
+  readonly archived_at: string | null;
+  readonly reason: string | null;
 }
 
 export interface PlatformSpaceRow {
@@ -381,4 +401,38 @@ export function deleteEstablishment(client: Client, establishmentId: string, rea
 
 export function restoreEstablishment(client: Client, establishmentId: string, reason: string): Promise<boolean> {
   return rpc(client, "platform_restore_establishment", { p_establishment_id: establishmentId, p_reason: reason });
+}
+
+/*
+ * RN-ADM-22 a 24 (migración 142, decisión 82) · Archivados: recuperar de
+ * un clic y eliminar definitivamente. Mismo permiso que archivar.
+ */
+
+export function listArchived(client: Client): Promise<readonly PlatformArchivedRow[]> {
+  return rpc(client, "platform_list_archived", undefined as never) as Promise<unknown> as Promise<
+    readonly PlatformArchivedRow[]
+  >;
+}
+
+export function recoverSpace(client: Client, spaceId: string): Promise<boolean> {
+  return rpc(client, "platform_recover_space", { p_space_id: spaceId });
+}
+
+export function recoverEstablishment(client: Client, establishmentId: string): Promise<boolean> {
+  return rpc(client, "platform_recover_establishment", { p_establishment_id: establishmentId });
+}
+
+export function deleteSpacePermanently(client: Client, spaceId: string, reason: string): Promise<boolean> {
+  return rpc(client, "platform_delete_space_permanently", { p_space_id: spaceId, p_reason: reason });
+}
+
+export function deleteEstablishmentPermanently(
+  client: Client,
+  establishmentId: string,
+  reason: string,
+): Promise<boolean> {
+  return rpc(client, "platform_delete_establishment_permanently", {
+    p_establishment_id: establishmentId,
+    p_reason: reason,
+  });
 }

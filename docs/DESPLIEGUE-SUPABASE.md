@@ -10,6 +10,15 @@ Actualizado el 26/09/2026 (141).
 
 ## Pendiente de aplicar
 
+**La 142, sin aplicar todavía.** `archivados_recuperar_y_eliminar` (decisión 82, RN-ADM-22 a 25):
+Archivados en el panel, recuperar de un clic y eliminado definitivo sin borrar nada. Añade
+`permanently_deleted_at` a `spaces` y a `establishments` con un disparador en cada una, las funciones
+`platform_list_archived`, `platform_recover_space`, `platform_recover_establishment`,
+`platform_delete_space_permanently` y `platform_delete_establishment_permanently`, y reescribe
+`platform_set_space_archived_internal` y `restore_space_by_owner`. `platform_list_establishments`
+cambia lo que devuelve (se borra y se crea). En local pasan las 80 suites en el orden de CI. Hasta
+aplicarla, la pantalla Archivados del panel falla al cargar con su motivo.
+
 **Actualización del 26/09/2026: la 140 y la 141.** `cuotly_elimina_cuentas_espacios_y_restaurantes`
 y `cuotly_avisa_de_lo_que_elimina` (decisión 81, RN-ADM-14 a 21): Bosco y los Administradores de
 Cuotly con el permiso nuevo `can_delete_accounts` eliminan y recuperan cuentas, espacios y

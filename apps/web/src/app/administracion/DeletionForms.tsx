@@ -16,6 +16,11 @@ import { platformDelete, platformRestore } from "./actions";
  * función de la base lo vuelve a comprobar con `is_platform_account_manager()`.
  * Eliminar pide motivo y escribir el nombre de lo que se elimina (§140);
  * recuperar, el motivo.
+ *
+ * Desde la decisión 82, lo que aquí se hacía con un espacio o un
+ * restaurante se llama **archivar** (`ArchiveButton`): lo manda a
+ * Archivados, y recuperarlo o eliminarlo definitivamente se hace allí
+ * (`archivados/ArchivedActions.tsx`). Las cuentas no cambian.
  */
 
 type Kind = "space" | "establishment";
@@ -38,7 +43,8 @@ function Mensaje({ error, done, texto }: { error: string | null; done: boolean; 
   return null;
 }
 
-export function DeleteButton({
+/** Decisión 82 · archivar un espacio o un restaurante: pasa a Archivados. */
+export function ArchiveButton({
   kind,
   id,
   name,
@@ -57,8 +63,8 @@ export function DeleteButton({
 
   return (
     <>
-      <Button type="button" variant="danger" className="px-3 py-1.5 text-xs" onClick={() => setOpen(true)}>
-        {t.deleteAction}
+      <Button type="button" variant="secondary" className="px-3 py-1.5 text-xs" onClick={() => setOpen(true)}>
+        {t.archiveAction}
       </Button>
       <Modal open={open} title={title} onClose={() => setOpen(false)}>
         <form action={action}>
@@ -68,13 +74,13 @@ export function DeleteButton({
           <p className="mb-4 text-sm text-text-secondary">{t.nothingIsErased}</p>
           <TextArea name="reason" label={t.reasonLabel} hint={t.reasonHint} rows={2} required />
           <Field name="confirmation" label={t.confirmationLabel(name)} required autoComplete="off" />
-          <Mensaje error={state.error} done={state.done} texto={t.deleted} />
+          <Mensaje error={state.error} done={state.done} texto={t.archivedDone} />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>
               {es.common.cancel}
             </Button>
-            <Button type="submit" variant="danger" pending={pending} disabled={state.done}>
-              {pending ? t.deleting : t.deleteAction}
+            <Button type="submit" pending={pending} disabled={state.done}>
+              {pending ? t.archiving : t.archiveAction}
             </Button>
           </div>
         </form>
@@ -83,13 +89,14 @@ export function DeleteButton({
   );
 }
 
+/** RN-ADM-18 · recuperar una cuenta, con motivo. */
 export function RestoreButton({
   kind,
   id,
   name,
   hint,
 }: {
-  kind: Kind | "account";
+  kind: "account";
   id: string;
   name: string;
   hint: string;

@@ -242,6 +242,8 @@ export const AUDIT_ACTIONS = [
   // Decisión 81 (migración 140, RN-ADM-17) · Cuotly lo elimina o lo recupera.
   "establishment.archived_by_platform",
   "establishment.restored_by_platform",
+  // Decisión 82 (migración 142, RN-ADM-24) · eliminado definitivo desde Archivados.
+  "establishment.permanently_deleted_by_platform",
   // Migración 119 (RN-EST-19, decisión 63) · quién del equipo lleva este
   // restaurante. Quitarlo deja el mismo apunte que asignarlo.
   "establishment.manager_set",
@@ -367,6 +369,9 @@ export const AUDIT_ACTIONS = [
   "platform.establishment_restored",
   "platform.space_deleted",
   "platform.space_restored",
+  // Decisión 82 (migración 142, RN-ADM-24).
+  "platform.establishment_permanently_deleted",
+  "platform.space_permanently_deleted",
   // Fase 4, Hito 21 · festivos y estado de la plataforma (migración 93).
   "platform_holiday.added",
   "platform_holiday.retired",
@@ -453,6 +458,8 @@ export const AUDIT_ACTIONS = [
   "space.tax_rate_changed",
   "space.onboarding_completed",
   "space.ownership_transferred",
+  // Decisión 82 (migración 142, RN-ADM-24).
+  "space.permanently_deleted_by_platform",
   "space.plan_changed",
   "space.reactivated",
   "space.renamed",

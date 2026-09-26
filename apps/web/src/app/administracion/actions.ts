@@ -17,8 +17,13 @@ import {
   accountDeletionPreview,
   deleteAccount,
   deleteEstablishment,
+  deleteEstablishmentPermanently,
   deleteSpace,
+  deleteSpacePermanently,
   endSupportSession,
+  listArchived,
+  recoverEstablishment,
+  recoverSpace,
   restoreAccount,
   restoreEstablishment,
   restoreSpace,
@@ -447,6 +452,71 @@ export async function platformRestore(
     if (tipo === "account") await restoreAccount(supabase, id, reason);
     else if (tipo === "space") await restoreSpace(supabase, id, reason);
     else await restoreEstablishment(supabase, id, reason);
+  } catch (fallo) {
+    return { error: mensaje(fallo), done: false };
+  }
+
+  revalidatePath("/administracion", "layout");
+  revalidatePath("/espacios", "layout");
+  return { error: null, done: true };
+}
+
+/*
+ * Decisión 82 · Archivados (RN-ADM-22 a 24). Recuperar es un clic: el
+ * motivo lo pone la base, fijo. Eliminar definitivamente pide motivo y
+ * escribir el nombre, que se compara con el de Archivados: si ya no está
+ * ahí, no se elimina.
+ */
+type Archivable = "space" | "establishment";
+
+function archivable(valor: string): valor is Archivable {
+  return valor === "space" || valor === "establishment";
+}
+
+export async function platformRecover(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const tipo = texto(formData, "kind");
+  const id = texto(formData, "id");
+  const t = es.platformAdmin.archived;
+
+  if (!archivable(tipo) || id === "") return { error: es.platformAdmin.deletion.invalid, done: false };
+
+  const supabase = await createClient();
+  let hecho: boolean;
+  try {
+    hecho = tipo === "space" ? await recoverSpace(supabase, id) : await recoverEstablishment(supabase, id);
+  } catch (fallo) {
+    return { error: mensaje(fallo), done: false };
+  }
+
+  revalidatePath("/administracion", "layout");
+  revalidatePath("/espacios", "layout");
+  // CA-17 · el segundo clic no encuentra nada archivado y lo dice.
+  return hecho ? { error: null, done: true } : { error: t.recoverNothing, done: false };
+}
+
+export async function platformDeletePermanently(
+  _prev: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  const tipo = texto(formData, "kind");
+  const id = texto(formData, "id");
+  const reason = texto(formData, "reason");
+  const confirmation = texto(formData, "confirmation");
+  const t = es.platformAdmin.deletion;
+
+  if (!archivable(tipo) || id === "") return { error: t.invalid, done: false };
+  if (reason === "") return { error: t.reasonRequired, done: false };
+
+  const supabase = await createClient();
+  try {
+    const fila = (await listArchived(supabase)).find((row) => row.kind === tipo && row.id === id);
+    if (!fila || confirmation !== fila.name) return { error: t.confirmationMismatch, done: false };
+
+    if (tipo === "space") await deleteSpacePermanently(supabase, id, reason);
+    else await deleteEstablishmentPermanently(supabase, id, reason);
   } catch (fallo) {
     return { error: mensaje(fallo), done: false };
   }
