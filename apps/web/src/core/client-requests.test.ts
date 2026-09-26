@@ -22,12 +22,14 @@ const filas = [
 describe("R05 · los filtros del listado de solicitudes", () => {
   it("lee la dirección y descarta lo que no es un filtro válido", () => {
     expect(readClientRequestFilters({ estado: "published", tipo: "small", fecha: "90", pagina: "2" })).toEqual({
+      kind: null,
       state: "published",
       category: "small",
       period: "90",
       page: 2,
     });
     expect(readClientRequestFilters({ estado: "", fecha: "7", pagina: "-3" })).toEqual({
+      kind: null,
       state: null,
       category: null,
       period: null,
@@ -36,7 +38,7 @@ describe("R05 · los filtros del listado de solicitudes", () => {
   });
 
   it("filtra por estado, por tipo (con «sin clasificar») y por fecha de envío", () => {
-    const sin = { state: null, category: null, period: null, page: 1 } as const;
+    const sin = { kind: null, state: null, category: null, period: null, page: 1 } as const;
     expect(filterClientRequests(filas, { ...sin, state: "draft" }, AHORA).map((f) => f.id)).toEqual(["a"]);
     expect(filterClientRequests(filas, { ...sin, category: UNCLASSIFIED }, AHORA).map((f) => f.id)).toEqual(["a", "b"]);
     expect(filterClientRequests(filas, { ...sin, category: "photo" }, AHORA).map((f) => f.id)).toEqual(["d"]);

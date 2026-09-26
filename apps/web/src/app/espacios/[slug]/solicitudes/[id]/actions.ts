@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { readIncidentResolution } from "@/core/incidents";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { clasificarSolicitud } from "@/services/request-classification";
@@ -102,6 +103,39 @@ export async function validateClassification(
       p_summary: summary,
     }),
   );
+}
+
+/**
+ * RN-REQ-11 · el diagnóstico de una incidencia. El formulario se lee en
+ * `src/core/incidents.ts` solo para decir qué falta; quién puede, desde
+ * qué estado y qué pasa después lo decide `resolve_incident()`.
+ */
+export async function resolveIncident(
+  _prev: RequestActionState,
+  formData: FormData,
+): Promise<RequestActionState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  const leido = readIncidentResolution(formData);
+  if (!leido.ok) return { error: es.requestIncidents.errors[leido.error], done: false };
+  const { outcome, note, category } = leido.value;
+  return run((s) =>
+    s.rpc("resolve_incident", {
+      p_request_id: requestId,
+      p_outcome: outcome,
+      p_note: note,
+      p_category: category ?? undefined,
+    }),
+  );
+}
+
+/** RN-REQ-09 · el equipo corrige cambio o incidencia antes de validar. */
+export async function setRequestKind(
+  _prev: RequestActionState,
+  formData: FormData,
+): Promise<RequestActionState> {
+  const requestId = String(formData.get("requestId") ?? "");
+  const kind = String(formData.get("kind") ?? "");
+  return run((s) => s.rpc("set_request_kind", { p_request_id: requestId, p_kind: kind }));
 }
 
 /** HU-12 · pedir información. Detiene el contador de primera atención. */

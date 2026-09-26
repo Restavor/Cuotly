@@ -60,6 +60,14 @@ export interface RequestDetailRow {
   readonly accepted_start_sla_hours: number | null;
   readonly establishment_id: string;
   readonly space_id: string;
+  /**
+   * RN-REQ-09 a 11 · cambio o incidencia, y lo que decidió el equipo al
+   * diagnosticarla. Quién la resolvió no está aquí: está en la auditoría.
+   */
+  readonly kind: string;
+  readonly incident_outcome: string | null;
+  readonly incident_note: string | null;
+  readonly incident_resolved_at: string | null;
 }
 
 /** La propuesta del clasificador (RN-CLS-01/02/04), tal y como se guardó. */
@@ -192,7 +200,7 @@ export async function loadRequestDetail(
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, priority, priority_reason, created_by_team, on_behalf_reason, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id",
+      "id, code, description, context, priority, priority_reason, created_by_team, on_behalf_reason, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, accepted_start_sla_hours, establishment_id, space_id, kind, incident_outcome, incident_note, incident_resolved_at",
     )
     .eq("id", requestId)
     .maybeSingle();

@@ -23,6 +23,8 @@ export type RequestDraft = {
   readonly establishmentId: string;
   readonly description: string;
   readonly context: string;
+  /** RN-REQ-09 · un cambio o algo que no funciona. Sin él, un cambio (borradores de antes). */
+  readonly requestKind?: "change" | "incident";
   /** El id del borrador en el servidor, en cuanto `create_request_draft` lo devuelve. */
   readonly serverRequestId: string | null;
 };
@@ -63,6 +65,7 @@ export function newRequestDraft(input: {
   establishmentId: string;
   description: string;
   context: string;
+  requestKind?: "change" | "incident";
 }): RequestDraft {
   return {
     kind: "request",
@@ -73,6 +76,7 @@ export function newRequestDraft(input: {
     establishmentId: input.establishmentId,
     description: input.description,
     context: input.context,
+    requestKind: input.requestKind ?? "change",
     serverRequestId: null,
   };
 }

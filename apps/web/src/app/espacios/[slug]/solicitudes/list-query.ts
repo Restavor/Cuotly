@@ -31,6 +31,8 @@ export interface RequestListRow {
   readonly created_at: string;
   readonly validated_category: string | null;
   readonly establishment_id: string;
+  /** RN-REQ-09 · `change` o `incident`. */
+  readonly kind: string;
 }
 
 /**
@@ -45,7 +47,7 @@ export async function loadTeamRequests(
 ): Promise<readonly RequestListRow[]> {
   const { data } = await supabase
     .from("requests")
-    .select("id, code, description, state, created_at, validated_category, establishment_id")
+    .select("id, code, description, state, created_at, validated_category, establishment_id, kind")
     .eq("space_id", spaceId)
     .neq("state", "draft")
     .order("created_at", { ascending: false });

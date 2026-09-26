@@ -11,6 +11,7 @@ import { INITIAL_NEW_REQUEST_DRAFT } from "./action-state";
 import { createRequestDraft } from "./actions";
 
 const t = es.panelRequests;
+const ti = es.requestIncidents;
 const MAX_DESCRIPTION = 1000;
 
 /**
@@ -18,10 +19,10 @@ const MAX_DESCRIPTION = 1000;
  *
  * Lo que el dibujo pide y aquí NO está, porque no existe en la solicitud:
  * "Asunto" (el título de la fila sale de la primera frase de la
- * descripción, `requestHeadline()`), "Fecha límite deseada" (no hay
- * columna ni regla que la sostenga) y un tipo que se elija: el tipo lo
- * decide el equipo al clasificar (RN-CLS), así que el campo se enseña
- * fijo en "A valorar por mantenimiento".
+ * descripción, `requestHeadline()`) y "Fecha límite deseada" (no hay
+ * columna ni regla que la sostenga). La categoría la decide el equipo al
+ * clasificar (RN-CLS); lo que sí elige el restaurante, desde la decisión
+ * 83, es si pide un cambio o avisa de algo que no funciona (RN-REQ-09).
  *
  * Lo que está aunque el dibujo no lo pinte: la prioridad y su motivo,
  * obligatorios desde RN-REQ-05.
@@ -62,7 +63,18 @@ export function NewRequestDraftForm({
           </span>
         </div>
 
-        <Field label={t.typeLabel} name="type" value={t.unclassified} readOnly hint={t.typeHint} className="bg-soft-surface text-text-secondary" />
+        {/* RN-REQ-09 · cambio o incidencia. Una incidencia no gasta del plan (RN-REQ-10). */}
+        <Select
+          label={ti.kindLabel}
+          name="kind"
+          required
+          hint={ti.kindHint}
+          defaultValue={state.values.kind}
+          options={[
+            { value: "change", label: ti.kinds.change },
+            { value: "incident", label: ti.kinds.incident },
+          ]}
+        />
 
         <div className="relative">
           <TextArea

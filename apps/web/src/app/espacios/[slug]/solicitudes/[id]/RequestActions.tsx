@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { Button, Card, Select, TextArea } from "@/components/ui";
+import { INCIDENT_NOTE_MAX, INCIDENT_OUTCOMES, type IncidentOutcome, outcomeNeedsCategory } from "@/core/incidents";
 import { es } from "@/i18n/es";
 
 import { INITIAL_REQUEST_ACTION } from "./action-state";
@@ -12,6 +13,8 @@ import {
   retryAnalysis,
   rejectRequest,
   requestMoreInformation,
+  resolveIncident,
+  setRequestKind,
   validateClassification,
 } from "./actions";
 
@@ -161,6 +164,99 @@ export function CorrectClassificationForm({
           </Link>
         )}
       </div>
+    </form>
+  );
+}
+
+/**
+ * RN-REQ-11 · el diagnóstico de una incidencia, en lugar de validar la
+ * clasificación. Las cuatro salidas, con lo que pasa en cada una dicho al
+ * lado; el tamaño del trabajo solo se pide en las dos que crean trabajo.
+ * Que se pueda, y quién, lo decide `resolve_incident()`.
+ */
+export function ResolveIncidentForm({
+  requestId,
+  suggestedCategory,
+}: {
+  requestId: string;
+  suggestedCategory: string | null;
+}) {
+  const [state, action, pending] = useActionState(resolveIncident, INITIAL_REQUEST_ACTION);
+  const [outcome, setOutcome] = useState<IncidentOutcome>("restavor_error");
+  const ti = es.requestIncidents;
+
+  return (
+    <form action={action} className="mt-4 space-y-3">
+      <input type="hidden" name="requestId" value={requestId} />
+      <p className="text-sm text-text-secondary">{ti.resolveHint}</p>
+
+      <fieldset className="space-y-2">
+        <legend className="mb-1 text-sm font-semibold text-text">{ti.outcomeLabel}</legend>
+        {INCIDENT_OUTCOMES.map((o) => (
+          <label key={o} className="flex items-start gap-2 rounded-[10px] border border-border p-3 text-sm text-text">
+            <input
+              type="radio"
+              name="outcome"
+              value={o}
+              checked={outcome === o}
+              onChange={() => setOutcome(o)}
+              className="mt-0.5 h-4 w-4 accent-cuotly-green"
+            />
+            <span>
+              <span className="block font-semibold">{ti.outcomes[o]}</span>
+              <span className="block text-xs text-text-secondary">{ti.outcomeHints[o]}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      {outcomeNeedsCategory(outcome) ? (
+        <Select
+          label={ti.categoryLabel}
+          name="category"
+          hint={ti.categoryHint}
+          defaultValue={suggestedCategory ?? "small"}
+          required
+          options={CATEGORIAS}
+        />
+      ) : null}
+
+      <TextArea
+        label={ti.noteLabel}
+        name="note"
+        required
+        maxLength={INCIDENT_NOTE_MAX}
+        hint={ti.noteHint(INCIDENT_NOTE_MAX)}
+      />
+
+      <Error message={state.error} />
+
+      <Button type="submit" disabled={pending}>
+        {pending ? ti.pending : ti.submit}
+      </Button>
+    </form>
+  );
+}
+
+/**
+ * RN-REQ-09 · corregir cambio o incidencia antes de validar, cuando el
+ * restaurante se equivocó al elegir. `set_request_kind()` lo permite al
+ * equipo solo hasta la validación.
+ */
+export function ChangeKindForm({ requestId, kind }: { requestId: string; kind: "change" | "incident" }) {
+  const [state, action, pending] = useActionState(setRequestKind, INITIAL_REQUEST_ACTION);
+  const ti = es.requestIncidents;
+  const destino = kind === "change" ? "incident" : "change";
+
+  return (
+    <form action={action} className="mt-4 space-y-2 border-t border-border pt-4">
+      <input type="hidden" name="requestId" value={requestId} />
+      <input type="hidden" name="kind" value={destino} />
+      <p className="text-xs text-text-secondary">{ti.markHint}</p>
+      <Error message={state.error} />
+      <Button type="submit" variant="secondary" disabled={pending}>
+        {pending ? ti.markPending : destino === "incident" ? ti.markIncident : ti.markChange}
+      </Button>
     </form>
   );
 }

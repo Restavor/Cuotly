@@ -142,6 +142,19 @@ export function NewTeamRequestForm({
           </div>
 
           <div>
+            {/* RN-REQ-09 · cambio o incidencia, lo que contó el restaurante. */}
+            <Select
+              label={es.requestIncidents.kindLabel}
+              name="kind"
+              required
+              hint={es.requestIncidents.kindHint}
+              defaultValue={state.values.kind}
+              options={[
+                { value: "change", label: es.requestIncidents.kinds.change },
+                { value: "incident", label: es.requestIncidents.kinds.incident },
+              ]}
+            />
+
             <div className="relative">
               <Select
                 label={t.categoryLabel}

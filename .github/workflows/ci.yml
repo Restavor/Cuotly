@@ -604,6 +604,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_informe_trimestral.sql
 
+      - name: "Suite 82 — Las incidencias: cambio o incidencia, las cuatro salidas del diagnóstico y una incidencia no gasta nunca del plan (migración 147, RN-REQ-09 a RN-REQ-12, decisión 83)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/las_incidencias.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

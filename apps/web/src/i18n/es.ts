@@ -3404,6 +3404,63 @@ export const es = {
       "El equipo de mantenimiento revisará tu solicitud de corrección y te confirmará los siguientes pasos. Te avisaremos por aquí cuando esté resuelta.",
     cancelPendingTitle: "Cancelar solicitud pendiente",
   },
+  // Decisión 83 (RN-REQ-09 a RN-REQ-12) · cambio o incidencia. No confundir
+  // con `incidents`, que son las que un espacio le abre a Cuotly (§131).
+  requestIncidents: {
+    kindLabel: "¿Qué necesitas?",
+    kindHint: "Una incidencia es algo de tu web que ha dejado de funcionar. Diagnosticarla no cuesta nada y nunca gasta de tu plan.",
+    kinds: { change: "Un cambio en la web", incident: "Algo no funciona (incidencia)" },
+    short: { change: "Cambio", incident: "Incidencia" },
+    badge: "Incidencia",
+    noPlanSpend: "Una incidencia no gasta nada de tu plan.",
+    // El equipo.
+    resolveTitle: "Diagnóstico de la incidencia",
+    resolveHint:
+      "Diagnosticar no cuesta nada al restaurante. Elige qué habéis visto y explícaselo: lo leerá en la conversación de la solicitud, sin el nombre de nadie del equipo.",
+    outcomeLabel: "Qué habéis visto",
+    outcomes: {
+      restavor_error: "Lo rompimos nosotros: se arregla sin coste",
+      external: "Es de un servicio externo: se cierra con la explicación",
+      quote: "Hace falta un trabajo no incluido: se presupuesta",
+      change: "No es una avería, es un cambio",
+    },
+    outcomeHints: {
+      restavor_error: "Nace el trabajo ya aceptado, sin pedirle nada al restaurante. No gasta de su plan.",
+      external: "Se cierra sin trabajo. Si después hace falta trabajar, será otra solicitud.",
+      quote: "Queda pendiente de su aceptación, y solo se acepta con el presupuesto.",
+      change: "Sigue pendiente de validar como un cambio: gastará de su plan o irá presupuestado.",
+    },
+    categoryLabel: "Tamaño del trabajo",
+    categoryHint: "Decide el plazo de realización. No gasta nada de su plan.",
+    noteLabel: "Explicación para el restaurante",
+    noteHint: (max: number) => `Hasta ${max} caracteres. No escribas el nombre de nadie del equipo.`,
+    submit: "Guardar diagnóstico",
+    pending: "Guardando…",
+    errors: {
+      outcome: "Elige qué habéis visto.",
+      note: "Explica al restaurante lo que habéis visto.",
+      noteTooLong: "La explicación es demasiado larga.",
+      category: "Elige el tamaño del trabajo.",
+    },
+    markIncident: "Es una incidencia",
+    markChange: "Es un cambio",
+    markHint: "Corrige el tipo si el restaurante se equivocó al elegirlo. Solo se puede antes de validar.",
+    markPending: "Cambiando…",
+    resolvedTitle: "Diagnóstico",
+    resolvedOn: (fecha: string) => `Diagnosticada el ${fecha}.`,
+    // El restaurante.
+    clientOutcomes: {
+      restavor_error: "Era un error nuestro: lo arreglamos sin coste.",
+      external: "Es de un servicio externo. Te hemos explicado cómo se resuelve.",
+      quote: "Hace falta un trabajo que tu plan no incluye: te enviamos un presupuesto.",
+      change: "No era una avería sino un cambio: sigue como solicitud de cambio.",
+    },
+    filterLabel: "Mostrar",
+    filterAll: "Todas",
+    filterChanges: "Cambios",
+    filterIncidents: "Incidencias",
+  },
+
   clientArea: {
 
     // Decisión de Bosco (10/09/2026): el restaurante con plan que lo
@@ -5089,8 +5146,10 @@ export const es = {
       "request.draft_file_attached": "Archivo añadido al borrador",
       "request.draft_file_detached": "Archivo quitado del borrador",
       "request.draft_updated": "Alcance del borrador revisado",
+      "request.incident_resolved": "Incidencia diagnosticada",
       "request.information_provided": "Información aportada",
       "request.information_requested": "Información pedida",
+      "request.kind_changed": "Cambio o incidencia corregido",
       "request.new_acceptance_requested": "Nueva aceptación pedida",
       "request.priority_set": "Cambios ordenados por importancia",
       "request.rejected": "Solicitud rechazada",

@@ -95,6 +95,7 @@ export type Database = {
           consumption_entry_id: string | null;
           establishment_id: string;
           id: string;
+          free_of_charge: boolean;
           job_id: string | null;
           request_id: string;
           space_id: string;
@@ -108,6 +109,7 @@ export type Database = {
           consumption_entry_id?: string | null;
           establishment_id: string;
           id?: string;
+          free_of_charge?: boolean;
           job_id?: string | null;
           request_id: string;
           space_id: string;
@@ -121,6 +123,7 @@ export type Database = {
           consumption_entry_id?: string | null;
           establishment_id?: string;
           id?: string;
+          free_of_charge?: boolean;
           job_id?: string | null;
           request_id?: string;
           space_id?: string;
@@ -6191,6 +6194,10 @@ export type Database = {
           description: string;
           establishment_id: string;
           id: string;
+          incident_resolved_at: string | null;
+          incident_outcome: string | null;
+          incident_note: string | null;
+          kind: string;
           on_behalf_reason: string | null;
           opportunity_action: string | null;
           opportunity_id: string | null;
@@ -6222,6 +6229,10 @@ export type Database = {
           description: string;
           establishment_id: string;
           id?: string;
+          incident_resolved_at?: string | null;
+          incident_outcome?: string | null;
+          incident_note?: string | null;
+          kind?: string;
           on_behalf_reason?: string | null;
           opportunity_action?: string | null;
           opportunity_id?: string | null;
@@ -6253,6 +6264,10 @@ export type Database = {
           description?: string;
           establishment_id?: string;
           id?: string;
+          incident_resolved_at?: string | null;
+          incident_outcome?: string | null;
+          incident_note?: string | null;
+          kind?: string;
           on_behalf_reason?: string | null;
           opportunity_action?: string | null;
           opportunity_id?: string | null;
@@ -9335,6 +9350,14 @@ export type Database = {
       establishment_report_period: {
         Args: { p_establishment_id: string };
         Returns: string;
+      };
+      resolve_incident: {
+        Args: { p_category?: string; p_note: string; p_outcome: string; p_request_id: string };
+        Returns: undefined;
+      };
+      set_request_kind: {
+        Args: { p_kind: string; p_request_id: string };
+        Returns: undefined;
       };
       establishment_invitation_details: {
         Args: { p_token: string };

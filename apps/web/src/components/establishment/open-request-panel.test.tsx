@@ -59,6 +59,10 @@ function detalle(over: Partial<SheetData["requestDetail"] & object> = {}) {
       accepted_start_sla_hours: null,
       establishment_id: "est-1",
       space_id: "sp-1",
+      kind: "change",
+      incident_outcome: null,
+      incident_note: null,
+      incident_resolved_at: null,
     },
     establishment: { id: "est-1", name: "Magariños", code: "EST-0003" },
     proposal: {

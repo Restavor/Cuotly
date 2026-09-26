@@ -33,6 +33,7 @@ export async function createRequestDraft(
   const establishmentId = String(formData.get("establishmentId") ?? "");
   const intent = String(formData.get("intent") ?? "review");
   const values = {
+    kind: String(formData.get("kind") ?? "change"),
     description: String(formData.get("description") ?? "").trim(),
     context: String(formData.get("context") ?? "").trim(),
     priority: String(formData.get("priority") ?? "").trim(),
@@ -55,6 +56,19 @@ export async function createRequestDraft(
 
   if (error || typeof requestId !== "string") {
     return { error: error?.message ?? es.states.errorDescription, values };
+  }
+
+  // RN-REQ-09 · el borrador nace como cambio; si es una incidencia, se dice
+  // aquí. Quién puede y cuándo lo decide `set_request_kind()`.
+  if (values.kind === "incident") {
+    const { error: tipo } = await supabase.rpc("set_request_kind", {
+      p_request_id: requestId,
+      p_kind: "incident",
+    });
+    if (tipo) {
+      revalidatePath("/espacios", "layout");
+      redirect(`/espacios/${slug}/restaurantes/${establishmentId}/solicitudes/${requestId}/borrador`);
+    }
   }
 
   if (attachment) {

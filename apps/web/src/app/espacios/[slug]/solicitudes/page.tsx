@@ -276,6 +276,11 @@ export default async function TeamRequestsPage({
                         ? (es.naming.categories[request.validated_category as CategoryKey] ??
                           request.validated_category)
                         : "—"}
+                      {request.kind === "incident" ? (
+                        <span className="ml-1 inline-flex">
+                          <StatusBadge tone="info">{es.requestIncidents.badge}</StatusBadge>
+                        </span>
+                      ) : null}
                     </TableCell>
                     <TableCell>
                       <ButtonLink href={hrefSolicitud(request.id)} variant="outline" size="sm">

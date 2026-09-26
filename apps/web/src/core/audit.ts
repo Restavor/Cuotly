@@ -417,8 +417,12 @@ export const AUDIT_ACTIONS = [
   "request.draft_file_attached",
   "request.draft_file_detached",
   "request.draft_updated",
+  // RN-REQ-11 · el diagnóstico de una incidencia (migración 147).
+  "request.incident_resolved",
   "request.information_provided",
   "request.information_requested",
+  // RN-REQ-09 · cambio o incidencia (migración 147).
+  "request.kind_changed",
   "request.new_acceptance_requested",
   "request.priority_set",
   "request.rejected",

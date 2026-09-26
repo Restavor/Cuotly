@@ -35,6 +35,7 @@ export async function createRequestOnBehalf(
   const idempotencyKey = String(formData.get("idempotencyKey") ?? "");
   const values = {
     establishmentId: String(formData.get("establishmentId") ?? "").trim(),
+    kind: String(formData.get("kind") ?? "change"),
     description: String(formData.get("description") ?? "").trim(),
     context: String(formData.get("context") ?? "").trim(),
     category: String(formData.get("category") ?? "").trim(),
@@ -67,6 +68,18 @@ export async function createRequestOnBehalf(
 
   if (error || typeof requestId !== "string") {
     return { error: error?.message ?? es.states.errorDescription, values };
+  }
+
+  // RN-REQ-09 · nace como cambio; si lo que contó el restaurante es algo
+  // que no funciona, se dice aquí. `set_request_kind()` lo admite del
+  // equipo mientras nadie la ha validado, y el mismo tipo dos veces no
+  // hace nada (una segunda pulsación llega aquí con la misma solicitud).
+  if (values.kind === "incident") {
+    const { error: tipo } = await supabase.rpc("set_request_kind", {
+      p_request_id: requestId,
+      p_kind: "incident",
+    });
+    if (tipo) return { error: tipo.message, values };
   }
 
   if (needsAiClassification(revisada.value)) {

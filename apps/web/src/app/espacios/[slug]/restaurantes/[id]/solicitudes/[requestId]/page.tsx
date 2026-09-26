@@ -1,3 +1,4 @@
+import { IncidentCard } from "@/components/request/IncidentCard";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -82,7 +83,7 @@ export default async function ClientRequestDetailPage({
   const { data: request } = await supabase
     .from("requests")
     .select(
-      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, priority, priority_reason, created_by_team, on_behalf_reason",
+      "id, code, description, context, state, created_at, validated_category, validated_summary, validated_at, accepted_at, rejected_at, rejected_reason, priority, priority_reason, created_by_team, on_behalf_reason, kind, incident_outcome, incident_note, incident_resolved_at",
     )
     .eq("id", requestId)
     .maybeSingle();
@@ -185,7 +186,11 @@ export default async function ClientRequestDetailPage({
   const correctionAvailable = job !== null && job.state === "published" && !job.free_correction_used;
 
   const resultado = ["published", "closed", "correction_requested", "in_correction"].includes(state);
-  const aceptarClasificacion = state === "pending_client_acceptance" && quoteRow === null;
+  // RN-REQ-10 · una incidencia no se acepta a secas: si cuesta algo, se
+  // acepta su presupuesto; si no, ya está en marcha. `accept_request()` lo
+  // rechazaría, así que no se ofrece el botón (CA-20).
+  const esIncidencia = request.kind === "incident";
+  const aceptarClasificacion = state === "pending_client_acceptance" && quoteRow === null && !esIncidencia;
 
   const pasos: TimelineView[] = requestTimeline({
     state,
@@ -233,8 +238,9 @@ export default async function ClientRequestDetailPage({
     .map((terms) => terms?.subjectName ?? null)
     .filter((n): n is string => n !== null && n.trim() !== "");
   const plan = planes[0] ?? null;
+  // RN-REQ-10 · una incidencia no gasta de la bolsa: no hay consumo que enseñar.
   const estimacion =
-    request.validated_category !== null && isChangeCategory(request.validated_category)
+    !esIncidencia && request.validated_category !== null && isChangeCategory(request.validated_category)
       ? consumptionEstimate(
           request.validated_category,
           (bolsas ?? []).flatMap((b) => (isChangeCategory(b.category) ? [{ ...b, category: b.category }] : [])),
@@ -316,6 +322,16 @@ export default async function ClientRequestDetailPage({
               <RequestTimeline steps={pasos} orientation="horizontal" />
             </Card>
           ) : null}
+
+          {/* RN-REQ-09 a 11 · que es una incidencia y lo que se decidió. */}
+          <IncidentCard
+            kind={request.kind}
+            outcome={request.incident_outcome}
+            note={request.incident_note}
+            resolvedAt={request.incident_resolved_at}
+            audience="client"
+            timeZone={zona}
+          />
 
           {/* R09 · RN-CLS-03: hasta que el equipo no valida, aquí no hay nada que leer. */}
           {request.validated_summary && !resultado ? (

@@ -8,6 +8,8 @@
  */
 export type OnBehalfRequestValues = {
   establishmentId: string;
+  /** RN-REQ-09 · `change` o `incident`. */
+  kind: string;
   description: string;
   context: string;
   category: string;
@@ -26,6 +28,7 @@ export function initialOnBehalfRequestState(establishmentId: string): OnBehalfRe
     error: null,
     values: {
       establishmentId,
+      kind: "change",
       description: "",
       context: "",
       category: "",

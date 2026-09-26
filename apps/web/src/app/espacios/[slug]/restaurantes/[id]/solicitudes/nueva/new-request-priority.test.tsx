@@ -72,11 +72,15 @@ describe("RN-REQ-05 · prioridad y motivo al pedir un cambio", () => {
 });
 
 describe("R06 · la nueva solicitud del diseño definitivo", () => {
-  it("el tipo no se elige: lo decide el equipo al clasificar (RN-CLS)", () => {
-    render(<NewRequestForm establishmentId="est-1" />);
-    const tipo = screen.getByLabelText(new RegExp(es.panelRequests.typeLabel));
-    expect(tipo).toHaveValue(es.panelRequests.unclassified);
-    expect(tipo).toHaveAttribute("readOnly");
+  it("RN-REQ-09 · el restaurante elige cambio o incidencia; la categoría la sigue decidiendo el equipo (RN-CLS)", () => {
+    const { container } = render(<NewRequestForm establishmentId="est-1" />);
+    const tipo = container.querySelector('select[name="kind"]') as HTMLSelectElement;
+    expect([...tipo.options].map((o) => o.value)).toEqual(["change", "incident"]);
+    // Por omisión, un cambio: es lo que era toda solicitud antes de la decisión 83.
+    expect(tipo.value).toBe("change");
+    expect(screen.getByText(es.requestIncidents.kindHint)).toBeInTheDocument();
+    // No hay ningún campo de categoría que el restaurante pueda tocar.
+    expect(container.querySelector('[name="category"]')).toBeNull();
   });
 
   it("«Guardar borrador» y «Revisar solicitud» envían el mismo formulario con su intención", () => {

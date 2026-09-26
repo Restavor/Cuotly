@@ -7,6 +7,8 @@
  * enviarlo: sin esto, un error se llevaba por delante lo escrito.
  */
 export type NewRequestDraftValues = {
+  /** RN-REQ-09 · `change` o `incident`. */
+  kind: string;
   description: string;
   context: string;
   priority: string;
@@ -19,6 +21,7 @@ export type NewRequestDraftState = {
 };
 
 export const EMPTY_NEW_REQUEST_DRAFT: NewRequestDraftValues = {
+  kind: "change",
   description: "",
   context: "",
   priority: "medium",

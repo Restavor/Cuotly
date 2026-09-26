@@ -38,3 +38,13 @@ describe("RN-MOV-10 · la clave de idempotencia nace con el borrador", () => {
     expect(submitOk).toHaveBeenCalledWith("req-1");
   });
 });
+
+describe("RN-REQ-09 · el borrador del teléfono sabe si es un cambio o una incidencia", () => {
+  it("RN-REQ-09 · por omisión es un cambio, y guarda la incidencia si se elige", () => {
+    expect(newRequestDraft({ spaceSlug: "demo", establishmentId: "e1", description: "x", context: "" }).requestKind).toBe("change");
+    expect(
+      newRequestDraft({ spaceSlug: "demo", establishmentId: "e1", description: "La web no carga", context: "", requestKind: "incident" })
+        .requestKind,
+    ).toBe("incident");
+  });
+});

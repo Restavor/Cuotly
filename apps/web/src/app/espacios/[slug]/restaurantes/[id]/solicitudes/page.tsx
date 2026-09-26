@@ -80,7 +80,7 @@ export default async function ClientRequestsPage({
     // Enumeradas: `requests` tiene privilegios de columna (CLAUDE.md).
     supabase
       .from("requests")
-      .select("id, code, description, state, created_at, validated_category")
+      .select("id, code, description, state, created_at, validated_category, kind")
       .eq("establishment_id", id)
       .order("created_at", { ascending: false }),
     loadEstablishmentTimezone(supabase, id),
@@ -107,11 +107,15 @@ export default async function ClientRequestsPage({
 
   const estados = presentValues(filas.map((r) => r.state), "");
   const tipos = presentValues(filas.map((r) => r.validated_category), UNCLASSIFIED);
-  const hayFiltros = filtros.state !== null || filtros.category !== null || filtros.period !== null;
+  const hayFiltros =
+    filtros.kind !== null || filtros.state !== null || filtros.category !== null || filtros.period !== null;
+  // RN-REQ-12 · el valor de `?clase=` que corresponde al filtro puesto.
+  const clase = filtros.kind === "incident" ? "incidencias" : filtros.kind === "change" ? "cambios" : null;
   const serviceStopped = !statusEffects(establishment.status).serviceRunning;
 
   const conservar = (pag: number) => {
     const q = new URLSearchParams();
+    if (clase) q.set("clase", clase);
     if (filtros.state) q.set("estado", filtros.state);
     if (filtros.category) q.set("tipo", filtros.category);
     if (filtros.period) q.set("fecha", filtros.period);
@@ -140,6 +144,18 @@ export default async function ClientRequestsPage({
       />
 
       <FilterBar action={`${base}/solicitudes`} hasFilters={hayFiltros}>
+        {/* RN-REQ-12 · el historial de incidencias, aparte de los cambios. */}
+        <FilterSelect
+          id="filtro-clase"
+          name="clase"
+          label={es.requestIncidents.filterLabel}
+          allLabel={es.requestIncidents.filterAll}
+          defaultValue={clase}
+          options={[
+            { value: "cambios", label: es.requestIncidents.filterChanges },
+            { value: "incidencias", label: es.requestIncidents.filterIncidents },
+          ]}
+        />
         <FilterSelect
           id="filtro-estado"
           name="estado"
@@ -242,6 +258,11 @@ export default async function ClientRequestsPage({
                     <span className="inline-flex rounded-full bg-soft-surface px-2.5 py-1 text-xs font-medium text-text">
                       {tipoDe(r.validated_category)}
                     </span>
+                    {r.kind === "incident" ? (
+                      <span className="ml-1 inline-flex">
+                        <StatusBadge tone="info">{es.requestIncidents.badge}</StatusBadge>
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell>
                     <StatusBadge tone={requestTone(r.state)}>

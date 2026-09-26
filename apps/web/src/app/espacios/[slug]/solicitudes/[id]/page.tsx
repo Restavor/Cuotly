@@ -21,9 +21,13 @@ import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
 import { SubtasksAndEvidence } from "@/components/request/SubtasksAndEvidence";
+import { IncidentCard } from "@/components/request/IncidentCard";
+import { canChangeKind, canResolveIncident } from "@/core/incidents";
 import { loadRequestDetail } from "./detail-load";
 import {
+  ChangeKindForm,
   CorrectClassificationForm,
+  ResolveIncidentForm,
   RetryAnalysisForm,
   CancelRequestForClientForm,
   RejectRequestForm,
@@ -78,10 +82,14 @@ export default async function TeamRequestDetailPage({
 
   // §84 · presupuestar se ofrece entre la validación interna y la
   // aceptación del restaurante, que es donde `create_quote()` lo admite.
+  // RN-REQ-11 · una incidencia se presupuesta después de diagnosticarla
+  // así; antes, lo que toca es el diagnóstico.
+  const esIncidencia = request.kind === "incident";
   const sePuedePresupuestar =
     canManage &&
     quote === null &&
-    (state === "pending_internal_validation" || state === "pending_client_acceptance");
+    (state === "pending_internal_validation" || state === "pending_client_acceptance") &&
+    (!esIncidencia || request.incident_outcome === "quote");
   const euros = (cents: number) =>
     new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(cents / 100);
 
@@ -222,10 +230,20 @@ return (
           */}
           <ValidationStatusCard timeZone={zona} request={request} proposal={proposal} />
 
+          <IncidentCard
+            kind={request.kind}
+            outcome={request.incident_outcome}
+            note={request.incident_note}
+            resolvedAt={request.incident_resolved_at}
+            audience="team"
+            timeZone={zona}
+          />
+
           <ClassificationCard
             request={request}
             proposal={proposal}
-            estimate={estimate}
+            // RN-REQ-10 · una incidencia no gasta del plan: no hay consumo que estimar.
+            estimate={esIncidencia ? null : estimate}
             counter={counter}
             /*
               Fuera del tramo de validación la tarjeta no lleva botones:
@@ -237,6 +255,17 @@ return (
             */
             actions={
               !enValidacion ? null : canManage ? (
+                esIncidencia ? (
+                  <>
+                    {/* RN-REQ-11 · una incidencia se diagnostica, no se valida como un cambio. */}
+                    {canResolveIncident({ kind: request.kind, state, incidentOutcome: request.incident_outcome }) ? (
+                      <ResolveIncidentForm requestId={id} suggestedCategory={proposal?.category ?? null} />
+                    ) : null}
+                    {canChangeKind({ state, incidentOutcome: request.incident_outcome }, "team") ? (
+                      <ChangeKindForm requestId={id} kind="incident" />
+                    ) : null}
+                  </>
+                ) : (
                 <>
                   {corrigiendo ? (
                     <CorrectClassificationForm
@@ -254,7 +283,11 @@ return (
                     />
                   )}
                   <AfterValidateNote />
+                  {canChangeKind({ state, incidentOutcome: request.incident_outcome }, "team") ? (
+                    <ChangeKindForm requestId={id} kind="change" />
+                  ) : null}
                 </>
+                )
               ) : (
                 <div className="mt-4">
                   <NoPermissionState

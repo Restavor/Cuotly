@@ -16,7 +16,16 @@ export type ClientRequestPeriod = (typeof CLIENT_REQUEST_PERIODS)[number];
 
 export const CLIENT_REQUESTS_PAGE_SIZE = 10;
 
+/**
+ * RN-REQ-12 · "historial de incidencias y trabajos": el listado se puede
+ * ver entero, solo los cambios o solo las incidencias (`?clase=`).
+ */
+export const CLIENT_REQUEST_KINDS = { cambios: "change", incidencias: "incident" } as const;
+export type ClientRequestKindParam = keyof typeof CLIENT_REQUEST_KINDS;
+
 export type ClientRequestFilters = {
+  /** `change`, `incident` o todas. */
+  readonly kind: "change" | "incident" | null;
   readonly state: string | null;
   readonly category: string | null;
   readonly period: ClientRequestPeriod | null;
@@ -39,7 +48,9 @@ function uno(valor: string | string[] | undefined): string | null {
 export function readClientRequestFilters(params: Params): ClientRequestFilters {
   const periodo = uno(params.fecha);
   const pagina = Number.parseInt(uno(params.pagina) ?? "1", 10);
+  const clase = uno(params.clase);
   return {
+    kind: clase !== null && clase in CLIENT_REQUEST_KINDS ? CLIENT_REQUEST_KINDS[clase as ClientRequestKindParam] : null,
     state: uno(params.estado),
     category: uno(params.tipo),
     period: CLIENT_REQUEST_PERIODS.includes(periodo as ClientRequestPeriod)
@@ -50,6 +61,8 @@ export function readClientRequestFilters(params: Params): ClientRequestFilters {
 }
 
 export type FilterableRequest = {
+  /** RN-REQ-09 · sin él, un cambio: es lo que eran todas antes de la migración 147. */
+  readonly kind?: string;
   readonly state: string;
   readonly validated_category: string | null;
   /** La fecha de envío, o la de creación si todavía no se envió. */
@@ -64,6 +77,7 @@ export function filterClientRequests<T extends FilterableRequest>(
   const desde =
     filters.period === null ? null : now.getTime() - Number(filters.period) * 24 * 60 * 60 * 1000;
   return rows.filter((r) => {
+    if (filters.kind !== null && (r.kind ?? "change") !== filters.kind) return false;
     if (filters.state !== null && r.state !== filters.state) return false;
     if (filters.category !== null) {
       const categoria = r.validated_category ?? UNCLASSIFIED;
