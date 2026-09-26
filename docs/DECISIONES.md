@@ -2419,3 +2419,56 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     4. **La guía del centro de ayuda** — *"que solo nombre básico impulso y premium"*. La guía de cobros
        pasa a su versión 3 en la migración 148. Los dos textos de la web que decían que ordenar los
        cambios "va incluido en el plan Premium+" dicen Premium, que es quien lo tiene.
+
+
+85. **Las fichas de Impulso y Premium, los créditos y Menú Diario dentro del plan** (26/09/2026).
+    Bosco manda la ficha del Impulso, el documento "Sistema de créditos de mantenimiento — Restavor" y
+    la ficha del Premium. Donde chocaban entre sí o con lo construido, preguntado, contesta:
+
+    1. **Precios y créditos**: Impulso **99 €** (la ficha decía 99 arriba y 119 en Condiciones) y
+       **20 créditos**; Premium **199 €** y **40 créditos** (el documento de créditos decía 25 y 50:
+       *"Impulso 20 y premium 40"*). Básico, 0.
+    2. **Impulso confirma el inicio en 24 h laborables** (antes 48): *"Sí, 24h"*.
+    3. **La IA fija los créditos sola** — *"b"*: sin que el equipo los valide antes de que el cliente
+       los vea. Cambia P5 **solo para los créditos**; el resto de lo que propone la IA sigue igual
+       (*"Sí"*). La IA que ya clasificaba por categoría pasa a valorar en créditos (*"la IA que
+       instalábamos que iba a detectar qué tipo de cambio ahora determina cuántos créditos"*).
+    4. **El restaurante acepta antes de gastar**, viendo el porcentaje de su plan — *"Sí, ponlo"*. **Los
+       créditos quedan fijos** al aceptar — *"Sí, los créditos se quedan fijos"*.
+    5. **Si no le llegan**: *"no significa que si le quedan 3 y sus cambios cuestan 6,5 le vayamos a
+       hacer el cambio por 3. Se le da una opción que le salga a 3 quitando cosas, espera al siguiente
+       mes o se presupuesta aparte"*.
+    6. **No gastan créditos, ni los 0,5 de procesamiento**: incidencias, rechazos y lo presupuestado
+       (*"Correcto"*), además de los errores de Restavor que dice el documento.
+    7. **Plazos por créditos**: 0,5–4 → 1–2 días; 4,5–10 → 1–3; 10,5–15 → 1–4; 15,5–20 → 1–5, con el
+       horario laborable que ya existe. En Premium, más de 20 créditos no tienen plazo automático: el
+       equipo lo fija en 24 h laborables y queda registrado antes de comenzar (ficha del Premium).
+    8. **Cambio de plan a mitad de ciclo**: créditos extra proporcionales, redondeando a favor del
+       cliente (*"Sí, lo mismo"*). Cancelar antes de comenzar devuelve los créditos (*"Sí"*).
+    9. **Menú Diario**: va **incluido en Impulso y Premium** (*"Sí, hay menú diario en premium"*); suelto,
+       **199 €/mes**, también con Básico (*"Sí"*). **Un menú por día** y cambiarlo lo sustituye sin
+       límite; **dos plantillas**, una para publicar y otra para imprimir en blanco y negro; **sin hora
+       de corte, sin recordatorio de las 20:00 y sin corrección mínima del menú** (*"ya nada no hay
+       recordatorio para eso y se hace un menú al día"*). Lo publica el equipo a mano (*"yo"*) hasta que
+       exista el **agente de IA que lo publique al guardar**, que es idea de Bosco y no se construye
+       todavía.
+    10. **Informes**: Impulso y Premium reciben **mensual y trimestral** (*"tiene que tener un informe
+        mensual y trimestral"*).
+    11. **Premium deja de ordenar sus solicitudes** y el restaurante **ve las oportunidades que el equipo
+        le sube al informe** (*"Ya no puede ordenar y ve las oportunidades que se le suban al
+        informe"*).
+    12. **Lo que Cuotly no hace** (*"Correcto"*): la revisión técnica, las copias de la web, la analítica
+        y el SEO de las fichas los hace Restavor con sus herramientas; en Cuotly son descripción del
+        plan, como en la decisión 83.
+    13. **Lo que ve el cliente**: la barra del porcentaje **y** el detalle por solicitud (*"No solo la
+        barra"*).
+
+    **Lecturas de Claude, para confirmar con Bosco** (PRD §41): esperar al mes siguiente deja la
+    solicitud aceptada en espera y gasta del ciclo nuevo si entonces cabe (RN-CRE-14); el propietario
+    o un administrador pueden corregir los créditos **antes** de que el restaurante acepte si ven un
+    error, y entonces vuelve a aceptar (RN-CRE-10); el Impulso nunca tiene solicitudes de más de 20
+    créditos porque no le caben; los menús de otros tipos (Navidad, grupos…) siguen como hoy. **Queda
+    pendiente** si la corrección mínima gratuita de un cambio de la web (§13) sigue existiendo.
+
+    Reglas en el PRD: §41, RN-CRE-01 a RN-CRE-28, con notas en cada regla anterior que cambia. Todavía
+    sin construir.

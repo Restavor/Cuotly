@@ -54,7 +54,7 @@ preparado para ello**, pero no se implementa ahora.
 | P2 | Separación estricta de contextos | La interfaz indica siempre en qué espacio y establecimiento estás. |
 | P3 | Permisos antes que ocultación visual | Todo se valida en servidor y en RLS. |
 | P4 | Historial antes que sobrescritura | Versiones y auditoría; nunca se pierde el valor anterior. |
-| P5 | Automatización con control humano | La IA propone; una persona autorizada valida antes de que el cliente lo vea. |
+| P5 | Automatización con control humano | La IA propone; una persona autorizada valida antes de que el cliente lo vea. **Excepción: los créditos de una solicitud los fija la IA sola (RN-CRE-09, decisión 85).** |
 | P6 | No inventar datos | Se distingue dato medido, dato manual, estimación y dato no disponible. |
 | P7 | El cliente no ve la organización interna | Toda comunicación del equipo aparece como "Equipo de mantenimiento". |
 
@@ -224,6 +224,10 @@ Premium** (decisión 84, 26/09/2026). El Básico es el de su ficha del 26/09/202
 migración 146); Impulso y Premium siguen siendo los de las fichas del 16/09/2026 (decisión 39,
 migración 96) hasta que lleguen las suyas.
 
+> **Decisión 85 (26/09/2026): el catálogo nuevo está en §41** —Impulso 99 € con 20 créditos, Premium
+> 199 € con 40, los créditos en vez de las categorías, Menú Diario dentro del plan—. La tabla de abajo
+> es la de antes y se queda como referencia de lo que el servidor hace hasta que §41 esté construida.
+>
 > **Impulso+ y Premium+ están archivados desde el 26/09/2026** (decisión 84, migración 148,
 > RN-COM-27): no se pueden contratar ni elegir en un cambio de plan, no se borran y siguen en el
 > historial de versiones. Sus filas se quedan en la tabla de abajo, tachadas, porque las reglas que
@@ -287,9 +291,9 @@ Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanz
 - **Propiedad**: la web es del restaurante desde su entrega, y el alojamiento, el dominio y los
   servicios externos los paga él aparte. No tiene reflejo en Cuotly.
 
-- **RN-COM-01**: en Básico **cualquier** modificación se presupuesta aparte. No hay consumos incluidos.
-- **RN-COM-02**: Impulso, Impulso+ y Premium no incluyen cambios grandes; se presupuestan aparte. Solo Premium+ incluye uno al mes. *(Desde el 26/09/2026, con Premium+ archivado, ningún plan de Restavor que se pueda contratar incluye un cambio grande; decisión 84.)*
-- **RN-COM-03 (reescrita 19/09/2026, decisión 55)**: el plan decide **tres cosas distintas** que
+- **RN-COM-01**: en Básico **cualquier** modificación se presupuesta aparte. No hay consumos incluidos. *(Cambia con §41, RN-CRE-01, decisión 85.)*
+- **RN-COM-02**: Impulso, Impulso+ y Premium no incluyen cambios grandes; se presupuestan aparte. Solo Premium+ incluye uno al mes. *(Desde el 26/09/2026, con Premium+ archivado, ningún plan de Restavor que se pueda contratar incluye un cambio grande; decisión 84.)* *(Desaparece con §41: no hay categorías, solo créditos; RN-CRE-03, decisión 85.)*
+- **RN-COM-03 (reescrita 19/09/2026, decisión 55)**: el plan decide **tres cosas distintas** que *(El punto 3 cambia con §41: ningún plan de Restavor ordena sus solicitudes, RN-CRE-28; los turnos quedan Premium 2, Impulso 1, Básico 0.)*
   hasta hoy colgaban del mismo booleano `plans.grants_priority`, y separarlas es la regla:
 
   1. **El plazo de inicio** (`plans.start_sla_hours`, RN-SLA-02) **no lo decide el plan alto**: son
@@ -328,9 +332,9 @@ Qué oportunidades **ve** cada plan lo fija RN-OPP-08 (básicas o también avanz
 > se comporta como dicen, y el precio reducido de RN-COM-08 no lo da ningún plan que se pueda contratar
 > (Premium+ está archivado).
 
-- **RN-COM-08**: 229 € + IVA al mes; 199 € + IVA **solo** si el establecimiento tiene plan Premium+ activo. Impulso, Impulso+ y Premium **no** tienen descuento en Menú Diario (decisión 39). *(Hito 12, migración 80: la mensualidad del servicio se emite al contratar y en cada renovación con `generate_monthly_charge_internal()`; "Premium+" es el plan activo con `plans.grants_priority`, decisión 20. `service_monthly_price()` dice a la pantalla cuál de los dos se aplica.)*
-- **RN-COM-09**: 30 actualizaciones por ciclo mensual, no acumulables. Permanencia mínima de 3 meses.
-- **RN-COM-10**: tres plantillas personalizadas iniciales incluidas una sola vez. Sustituciones y rediseños se presupuestan aparte.
+- **RN-COM-08**: 229 € + IVA al mes; 199 € + IVA **solo** si el establecimiento tiene plan Premium+ activo. Impulso, Impulso+ y Premium **no** tienen descuento en Menú Diario (decisión 39). *(Hito 12, migración 80: la mensualidad del servicio se emite al contratar y en cada renovación con `generate_monthly_charge_internal()`; "Premium+" es el plan activo con `plans.grants_priority`, decisión 20. `service_monthly_price()` dice a la pantalla cuál de los dos se aplica.)* *(Sustituida por RN-CRE-21, decisión 85: incluido en Impulso y Premium; suelto, 199 €.)*
+- **RN-COM-09**: 30 actualizaciones por ciclo mensual, no acumulables. Permanencia mínima de 3 meses. *(Sustituida por RN-CRE-22: un menú del día por fecha, sin contador.)*
+- **RN-COM-10**: tres plantillas personalizadas iniciales incluidas una sola vez. Sustituciones y rediseños se presupuestan aparte. *(Sustituida por RN-CRE-23: dos plantillas, publicar e imprimir.)*
 
 ### 6.3 Composición contractual de un establecimiento (enmienda 29/08/2026)
 
@@ -351,7 +355,7 @@ fracción_restante = minutos_naturales_restantes_del_ciclo / minutos_naturales_t
 importe_diferencia = redondear2( (precio_nuevo - precio_antiguo) * fracción_restante )
 unidades_extra(cat) = techo( (incluidas_nuevo(cat) - incluidas_antiguo(cat)) * fracción_restante )
 ```
-Si `unidades_extra` sale negativo se trata como 0: una mejora nunca quita consumos.
+Si `unidades_extra` sale negativo se trata como 0: una mejora nunca quita consumos. *(Con créditos, RN-CRE-15: se redondea hacia arriba al medio crédito.)*
 
 ### 6.5 Crear, editar y archivar planes y servicios (decisión 72, 23/09/2026)
 
@@ -438,7 +442,7 @@ isWithinBusinessWindow(at: Date, calendar: WorkCalendar): boolean
 
 ### T1 — Primera atención interna
 - **RN-SLA-01**: arranca cuando la solicitud se envía y entra en el espacio (estado `received`).
-- **RN-SLA-02**: duración = 48 h laborables (Básico, Impulso o establecimiento sin plan) / 24 h laborables (Impulso+, Premium y Premium+; desde el 26/09/2026 solo se contrata Premium, decisión 84). Sale de `plans.start_sla_hours`.
+- **RN-SLA-02**: duración = 48 h laborables (Básico, Impulso o establecimiento sin plan) / 24 h laborables (Impulso+, Premium y Premium+; desde el 26/09/2026 solo se contrata Premium, decisión 84). Sale de `plans.start_sla_hours`. *(Cambia con §41: Impulso a 24 h, RN-CRE-20.)*
 - **RN-SLA-03**: se detiene cuando la solicitud pasa a `pending_client_acceptance`, `needs_information` o `rejected`.
 - **RN-SLA-04**: reciben aviso el propietario y **todos** los administradores. Un trabajador solo recibe aviso cuando ya existe una asignación válida.
 
@@ -452,7 +456,7 @@ isWithinBusinessWindow(at: Date, calendar: WorkCalendar): boolean
 
 ### T3 — Ejecución
 - **RN-SLA-11**: arranca al pulsar **Comenzar**.
-- **RN-SLA-12**: duración por categoría:
+- **RN-SLA-12**: duración por categoría: *(Sustituida por RN-CRE-18: el plazo sale de los créditos, no de la categoría.)*
 
 | Categoría | Rango mostrado al cliente | Máximo operativo interno |
 |---|---|---:|
@@ -468,7 +472,7 @@ Desde el 20/09/2026 esta tabla es el **valor por omisión**: un plan puede acort
 - **RN-SLA-15**: avisos al 75 %, 90 % y 100 %.
 - **RN-SLA-16**: el cliente ve rangos o fechas aproximadas. Propietario, administradores y responsable ven el contador exacto.
 - **RN-SLA-17**: "Fuera de plazo" es una **condición calculada**, no un estado. Puede coexistir con En curso, Bloqueado o cualquier otro.
-- **RN-SLA-18 (añadida 20/09/2026, decisión 61)**: **el plan puede acortar el plazo de realización**, y
+- **RN-SLA-18 (añadida 20/09/2026, decisión 61)**: **el plan puede acortar el plazo de realización**, y *(Sustituida por RN-CRE-18, decisión 85.)*
   la tabla de RN-SLA-12 pasa a ser el **valor por omisión**, no el único. Vive en cuatro columnas de
   `plans` —una por categoría, como los cambios incluidos— y no en el nombre del plan, porque Cuotly
   es multiempresa.
@@ -640,9 +644,9 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 
 ### 10.2 Reglas
 
-- **RN-CLS-01**: al enviarse una solicitud, Cuotly llama a la API de Anthropic desde el **servidor** para proponer categoría, consumo y un resumen del alcance. La clave vive en variables de entorno y **nunca** se expone al cliente.
+- **RN-CLS-01**: al enviarse una solicitud, Cuotly llama a la API de Anthropic desde el **servidor** para proponer categoría, consumo y un resumen del alcance. La clave vive en variables de entorno y **nunca** se expone al cliente. *(Con §41 propone créditos, no categoría: RN-CRE-09.)*
 - **RN-CLS-02**: si la API falla, tarda demasiado o no hay clave configurada, el sistema **cae automáticamente** a un motor de reglas por palabras clave y lo indica en la propuesta. El flujo nunca se bloquea por la IA.
-- **RN-CLS-03**: la propuesta de la IA es **siempre** una propuesta. Propietario o administrador la valida o corrige antes de que el cliente la vea. La IA nunca cierra una clasificación por sí sola.
+- **RN-CLS-03**: la propuesta de la IA es **siempre** una propuesta. Propietario o administrador la valida o corrige antes de que el cliente la vea. La IA nunca cierra una clasificación por sí sola. *(Excepción: los créditos, RN-CRE-09 y RN-CRE-10.)*
 - **RN-CLS-04**: se guarda qué propuso la IA, qué decidió la persona y quién fue, para poder medir la calidad de la clasificación y calibrarla después.
 - **RN-CLS-05**: cada llamada registra un apunte en `ai_usage` con espacio, tokens y coste estimado. La IA se factura aparte al propietario del espacio, aunque en Fase 1 solo se mida.
 - **RN-CLS-06**: la IA se usa **exclusivamente** para clasificar solicitudes y reanalizar solicitudes pegadas. Las oportunidades y los informes son deterministas y no la usan.
@@ -694,8 +698,8 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 
 ## 12. Consumos (RN-CON)
 
-- **RN-CON-01**: cada cambio consume **una unidad de su categoría**. Los puntos de carga no intervienen en el consumo.
-- **RN-CON-02**: Menú Diario usa un contador de **actualizaciones** separado del de cambios.
+- **RN-CON-01**: cada cambio consume **una unidad de su categoría**. Los puntos de carga no intervienen en el consumo. *(Sustituida por RN-CRE-03 a RN-CRE-05: se consumen créditos.)*
+- **RN-CON-02**: Menú Diario usa un contador de **actualizaciones** separado del de cambios. *(Desaparece con RN-CRE-22: Menú Diario no lleva contador.)*
 - **RN-CON-03**: un trabajo presupuestado aparte **no consume** la bolsa del plan. *(Hito 12: `accept_request()` no mira la bolsa cuando la solicitud tiene presupuesto aceptado; la aceptación queda `budgeted` y el trabajo lleva `quote_id`; RN-QUO-02.)*
 - **RN-CON-04**: los consumos devueltos, corregidos o compensatorios se auditan con motivo y actor.
 - **RN-CON-05**: una renovación **no modifica** el periodo al que pertenece un consumo ya aceptado.
@@ -725,7 +729,7 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 - **RN-COR-07**: los errores imputables al equipo se corrigen **sin** consumir esta corrección ni créditos.
 - **RN-COR-08**: al terminar la ventana de corrección, la conversación de esa solicitud pasa a **solo lectura**. Una necesidad nueva exige una solicitud nueva.
 - **RN-COR-09**: no hay recordatorio automático de expiración de la corrección.
-- **RN-COR-10 (Menú Diario, enmienda 29/08/2026)**: la corrección mínima también existe en Menú Diario, pero **no se garantiza su ejecución** si la edición o la petición de cambio llega después de las 21:00 del día anterior. *(Hito 11: `menu_corrections`; una por publicación, RN-COR-01; el error del equipo no la gasta, RN-COR-07; la ventana de RN-COR-02 son 72 h de reloj porque el calendario de Menú Diario no tiene días no laborables, RN-CLK-09.)*
+- **RN-COR-10 (Menú Diario, enmienda 29/08/2026)**: la corrección mínima también existe en Menú Diario, pero **no se garantiza su ejecución** si la edición o la petición de cambio llega después de las 21:00 del día anterior. *(Hito 11: `menu_corrections`; una por publicación, RN-COR-01; el error del equipo no la gasta, RN-COR-07; la ventana de RN-COR-02 son 72 h de reloj porque el calendario de Menú Diario no tiene días no laborables, RN-CLK-09.)* *(Desaparece con RN-CRE-24, decisión 85.)*
 
 ---
 
@@ -1377,13 +1381,13 @@ completo (§75, §76) y los presupuestos adicionales (§26) en la 80 (Hito 12).
 - **RN-MEN-02**: el contenido son **primeros, segundos, postres, bebida, precio y nota u observación** (§58).
 - **RN-MEN-03**: edición y guardado ilimitados antes de la publicación. **Cada guardado es una versión nueva e inmutable** (RN-DAT-07): ninguna se edita ni se borra. "Copiar menú anterior" crea un borrador con el contenido vigente como versión 1. Un menú publicado o cancelado no se edita: se copia.
 - **RN-MEN-04**: descargar el PNG o el PDF **no consume** actualización (§59). *(Hito 10.)* **Imprimir** (26/09/2026, migración 144) es descargar el PDF para mandarlo a la impresora, desde la pantalla del restaurante o la del equipo: tampoco consume, queda en el historial marcado como impresión y **no pasa el menú a "Listo para publicar"** aunque imprima el trabajador asignado —eso es descargar la plantilla para subirla (§61, paso 4), no imprimirla—.
-- **RN-MEN-05**: **pedir que el equipo publique consume 1 actualización**, en el momento de pedirlo; los menús especiales también consumen. Cancelar antes de "Publicado" la devuelve (RN-CON-08 aplicado); después no. Un error del equipo se devuelve o corrige sin perjuicio para el cliente: la devolución la registra el equipo con motivo (RN-CON-12) y **una sola vez** por publicación (CA-17). Se aplican RN-CON-06 (solo una petición consume el último crédito, con bloqueo de fila sobre el ciclo), RN-CON-07 (dos pulsaciones, un efecto), RN-CON-10 y RN-CON-11 (si el ciclo del consumo ya cerró, crédito compensatorio en el vigente, que caduca con él).
+- **RN-MEN-05**: **pedir que el equipo publique consume 1 actualización**, en el momento de pedirlo; los menús especiales también consumen. Cancelar antes de "Publicado" la devuelve (RN-CON-08 aplicado); después no. Un error del equipo se devuelve o corrige sin perjuicio para el cliente: la devolución la registra el equipo con motivo (RN-CON-12) y **una sola vez** por publicación (CA-17). Se aplican RN-CON-06 (solo una petición consume el último crédito, con bloqueo de fila sobre el ciclo), RN-CON-07 (dos pulsaciones, un efecto), RN-CON-10 y RN-CON-11 (si el ciclo del consumo ya cerró, crédito compensatorio en el vigente, que caduca con él). *(Sustituida por RN-CRE-22: pedir la publicación no consume.)*
 - **RN-MEN-06**: el flujo es **manual** (§61): el restaurante prepara y pide, Cuotly asigna un trabajador de Menú Diario (con un único candidato válido, solo; con varios o ninguno, a mano por `assign_jobs`), el trabajador descarga la plantilla generada, la sube a LandingSite y pulsa **Marcar como publicado**. **No existe botón Comenzar**. Al marcar publicado se registran fecha y hora, usuario, versión publicada, plantilla y consumo, y se avisa al cliente. Sobre una publicación actúan el trabajador asignado, el propietario y los administradores; un trabajador no asignado, no.
-- **RN-MEN-07**: el contenido puede modificarse libremente **hasta las 21:00 del día anterior** a la fecha objetivo, en la zona horaria del espacio. Si la versión definitiva y la petición llegaron antes de esa hora, la publicación **se garantiza antes de las 08:00**. Los cambios posteriores se aceptan, quedan marcados y **no se garantiza** que entren. El trabajador ve los cambios de versión y su hora. La garantía es un estado derivado que calcula el servidor (RN-DAT-05).
-- **RN-MEN-08**: Menú Diario opera **todos los días del año, festivos incluidos**, con su propio calendario (RN-CLK-09). A las 20:00 se recuerda al propietario y a los Editores si no hay menú preparado para el día siguiente. *(Hito 11: `run_daily_menu_sweep()`, tipo `daily_menu_sweep` de la cola de barridos; "preparado" es cualquier menú de mañana que no sea borrador ni cancelado. El mismo barrido avisa al equipo a partir de las 08:00 de las publicaciones garantizadas sin publicar, §62.)*
+- **RN-MEN-07**: el contenido puede modificarse libremente **hasta las 21:00 del día anterior** a la fecha objetivo, en la zona horaria del espacio. Si la versión definitiva y la petición llegaron antes de esa hora, la publicación **se garantiza antes de las 08:00**. Los cambios posteriores se aceptan, quedan marcados y **no se garantiza** que entren. El trabajador ve los cambios de versión y su hora. La garantía es un estado derivado que calcula el servidor (RN-DAT-05). *(Desaparece con RN-CRE-24: sin hora de corte ni garantía de las 08:00.)*
+- **RN-MEN-08**: Menú Diario opera **todos los días del año, festivos incluidos**, con su propio calendario (RN-CLK-09). A las 20:00 se recuerda al propietario y a los Editores si no hay menú preparado para el día siguiente. *(Hito 11: `run_daily_menu_sweep()`, tipo `daily_menu_sweep` de la cola de barridos; "preparado" es cualquier menú de mañana que no sea borrador ni cancelado. El mismo barrido avisa al equipo a partir de las 08:00 de las publicaciones garantizadas sin publicar, §62.)* *(El recordatorio de las 20:00 y el aviso de las 08:00 desaparecen con RN-CRE-24.)*
 - **RN-MEN-09**: los estados son los once de §63, con este nombre interno: `draft` · `prepared` · `publication_requested` · `pending_assignment` · `assigned` · `needs_information` · `reviewing` · `ready_to_publish` · `published` · `cancelled` · `publication_error`. "Publicación solicitada" y "Pendiente de asignación" son dos estados por los que pasa la misma petición: el primero deja constancia de que el restaurante pidió y consumió, el segundo de que el equipo aún no tiene a nadie. Guardar una versión mientras "Falta información" es la respuesta y pasa a "Revisando". La máquina vive en `src/core/menu-states.ts` y el servidor la hace cumplir.
 - **RN-MEN-10**: el historial conserva fechas, platos, precio, nota, plantilla, versiones, estados, solicitudes de publicación, consumo, cancelaciones y usuario publicador (§64): `menu_versions`, `menu_events`, `menu_publications` y `menu_update_entries` son libros inmutables. Las descargas se registran en el Hito 10.
-- **RN-MEN-11**: **tres plantillas personalizadas iniciales, incluidas una sola vez** (RN-COM-10). Archivar una incluida no libera su plaza. Sustituciones, nuevas plantillas y rediseños se presupuestan aparte (`origin = quoted`). Las crea el equipo (`manage_clients`) y el restaurante elige cualquiera de las suyas en cada menú. *(Hito 12: una plantilla `quoted` cuelga de un presupuesto aceptado de ese restaurante y de tipo plantilla, `menu_templates.quote_id`; sin él, `create_menu_template()` la rechaza.)*
+- **RN-MEN-11**: **tres plantillas personalizadas iniciales, incluidas una sola vez** (RN-COM-10). Archivar una incluida no libera su plaza. Sustituciones, nuevas plantillas y rediseños se presupuestan aparte (`origin = quoted`). Las crea el equipo (`manage_clients`) y el restaurante elige cualquiera de las suyas en cada menú. *(Hito 12: una plantilla `quoted` cuelga de un presupuesto aceptado de ese restaurante y de tipo plantilla, `menu_templates.quote_id`; sin él, `create_menu_template()` la rechaza.)* *(Sustituida por RN-CRE-23.)*
 - **RN-MEN-12**: el restaurante **nunca ve quién es el trabajador** (P7, CLAUDE.md MUST NOT). La publicación (`menu_publications`) es una fila interna del equipo; lo que el cliente necesita saber (estado, fecha de publicación, versión y plantilla publicadas) está en `menus`. En las filas que sí son suyas, la columna con el actor va con privilegio de columna.
 - **RN-MEN-13**: con el servicio detenido por impago (RN-FIN-12), en solo lectura o archivado, **ni se pide ni se marca una publicación** (§85: "se detienen trabajos, publicaciones y contadores").
 
@@ -1641,7 +1645,7 @@ Hito 15).
   `opportunities`, no que la pantalla no la pinte (CLAUDE.md). "Detectada", "recomendada" y "en
   revisión" son conversación interna del equipo; "descartada" no la ve nunca. Las notas del equipo y
   el libro de detecciones tampoco los ve: ahí se le deja fuera de la **fila**, como en `tasks` (P7).
-- **RN-OPP-08**: §101 · **Básico ninguna** ("detección interna"), **Impulso, Impulso+ y Premium las
+- **RN-OPP-08**: §101 · **Básico ninguna** ("detección interna"), **Impulso, Impulso+ y Premium las *(Cambia con RN-CRE-27: el restaurante ve las oportunidades que el equipo le sube al informe.)*
   básicas aprobadas**, **Premium+ también las avanzadas** (decisión 39, punto 4: las cantidades por
   ciclo de las fichas son descripción comercial, no un tope que el servidor cuente). **Avanzada** es la
   que **cruza dos fuentes** y **básica** la que
@@ -2335,7 +2339,7 @@ Servidor y dominio en la migración 85 y en `src/core/reports.ts` (Fase 3, Hito 
   - **P7 no se toca.** Es equipo: ve lo mismo que ve el equipo, y lo que se sube al restaurante no
     lleva su nombre, igual que el de nadie.
 
-- **RN-REP-32 (añadida 26/09/2026, decisión 83)**: **el plan decide cada cuánto llega el informe**:
+- **RN-REP-32 (añadida 26/09/2026, decisión 83)**: **el plan decide cada cuánto llega el informe**: *(Cambia con RN-CRE-26: un plan puede recibir los dos, mensual y trimestral.)*
   cada **mes** o cada **trimestre**. Lo pide la ficha del Básico —*"resumen trimestral automático"*— y
   Bosco eligió el 26/09/2026 construirlo como una característica más del plan: el Básico recibe el
   trimestral y **deja de recibir el mensual**.
@@ -3775,3 +3779,203 @@ Lo que este apartado **no** trae, dicho en claro:
 - **No cambia las cinco pestañas de la ficha** (§15.2), que son del equipo y llevan hechas desde el
   Hito 7.
 - **No toca la app móvil**: su navegación es la de §35 (RN-MOV) y no usa estas rutas.
+
+---
+
+## 41. Créditos, el catálogo nuevo y Menú Diario dentro del plan — decisión 85 (RN-CRE)
+
+Escrito el 27/09/2026 **antes del código**, con las fichas de Impulso y Premium y el documento
+"Sistema de créditos de mantenimiento — Restavor" que Bosco mandó el 26/09/2026 y sus respuestas a
+las preguntas (decisión 85). **Donde esta sección y otra anterior digan cosas distintas, manda esta**;
+cada regla anterior que cambia lleva una nota que remite aquí. Hasta que cada parte esté construida,
+el servidor se comporta como decían las reglas anteriores: esta sección dice lo que **va a ser**, y
+cada regla lleva entre paréntesis la migración que la construya cuando exista.
+
+### 41.1 El catálogo de Restavor
+
+| | Básico | Impulso | Premium |
+|---|---|---|---|
+| Precio (+ IVA, al mes) | 20 € | **99 €** | **199 €** |
+| Créditos al mes | 0 | **20** | **40** |
+| Confirmación de inicio (T1 y T2) | 48 h laborables | **24 h laborables** | 24 h laborables |
+| Turno en la cola (`queue_rank`) | 0, el último | 1 | 2, el primero |
+| Informe | Trimestral | **Mensual y trimestral** | **Mensual y trimestral** |
+| Menú Diario | No (suelto, 199 €) | **Incluido** | **Incluido** |
+| Ordenar sus solicitudes (RN-PRI) | No | No | **No** (antes sí) |
+
+Los tres con permanencia de 3 meses, renovación mensual después, y un cambio voluntario de plan que
+vuelve a empezarla (RN-COM-04 y RN-COM-05, sin cambios). Ninguno tiene hoy `grants_priority`, cambio
+grande, vigilancia de reseñas ni los plazos cortos de RN-SLA-18 (decisión 84).
+
+- **RN-CRE-01**: **los créditos son un término del plan** (`plans.included_credits`), no del nombre:
+  Cuotly es multiempresa. En Restavor: Básico 0, Impulso 20, Premium 40. Se versionan como los demás
+  (RN-COM-20): bajar los créditos **perjudica** y pide aceptación (RN-COM-23).
+- **RN-CRE-02**: **lo que cada ficha promete y Cuotly no hace** es descripción comercial del plan
+  (decisión 39 punto 5, decisión 83 punto 2): la revisión técnica mensual (Impulso) o más frecuente
+  (Premium), las copias de la web (una al mes y tres conservadas en Impulso; cada dos semanas en
+  Premium), GA4, Search Console, Clarity, Google Business Profile, Tag Manager y la supervisión SEO.
+  Los hace Restavor con sus herramientas. Cuotly no vigila la web ni la respalda (RN-BCK-01), y
+  comprobar que el sistema de reservas de la web funciona **no** es monitorizar reservas (CLAUDE.md).
+  Tampoco son reglas del servidor la lista de "No incluido" de cada ficha ni la propiedad de la web.
+
+### 41.2 Los créditos
+
+- **RN-CRE-03**: **el crédito es la única medida de lo que consume un cambio**. Desaparecen las
+  categorías pequeño, fotográfico, mediano y grande como consumo (§10.1, RN-CON-01) y sus cuatro
+  bolsas (`included_small`, `included_photo`, `included_medium`, `included_large`). **Los puntos de
+  carga del trabajador (§14.4) no cambian**: siguen sin intervenir en el consumo del cliente.
+- **RN-CRE-04**: **la unidad mínima es 0,5 créditos** y todo consumo es múltiplo de 0,5. El servidor
+  guarda **medios créditos enteros** (1 = 0,5 créditos) para no arrastrar decimales, como los precios en
+  céntimos.
+- **RN-CRE-05**: **una solicitud cuesta 0,5 créditos de procesamiento más el trabajo** que contiene. El
+  procesamiento se cobra **una vez por solicitud**, tenga los cambios que tenga. El trabajo se valora
+  por lo que cuesta de verdad —tiempo, complejidad, alcance y trabajo adicional—, no multiplicando el
+  número de cambios: veinte precios de la misma carta se valoran como una tarea agrupada, no como
+  veinte veces 0,5.
+- **RN-CRE-06**: **la tabla de referencia** del documento de Bosco es la que usa la IA (RN-CRE-09), y
+  vive en el prompt, no en el servidor:
+
+  | Trabajo | Créditos |
+  |---|---:|
+  | Cambiar un elemento existente simple (precio, palabra, teléfono, horario concreto, enlace, texto de botón, frase corta, dirección, dato concreto) | 0,5 |
+  | Sustituir una fotografía ya preparada | 0,5 |
+  | Sustituir y recortar o adaptar una fotografía; optimizar tamaño o formato y colocar | 1 |
+  | Pequeño retoque fotográfico | 1–1,5 |
+  | Sustituir un párrafo corto proporcionado | 0,5–1 |
+  | Reorganizar o adaptar un texto | 1 |
+  | Redactar un texto corto | 1–1,5 |
+  | Redactar una sección completa | 2–4 |
+  | Modificar parte del contenido de una sección existente | 2 |
+  | Reestructurar una sección existente | 5 |
+  | Crear un bloque nuevo con una estructura existente | 6 |
+  | Crear una sección nueva sencilla (7 la básica; 8 con más contenido, imágenes o adaptación) | 7–8 |
+  | Modificación estructural importante (14 localizada; 15 varias partes; 16 amplia) | 14–16 |
+  | Crear una sección nueva con diseño personalizado | 20 |
+  | Edición fotográfica avanzada, rediseño o reconstrucción de la web, web nueva, tienda online, funcionalidades complejas, automatizaciones, integraciones complejas, migraciones importantes | **No se hace con créditos**: presupuesto aparte |
+
+  Cambiar la tabla es cambiar el prompt, con su versión en el repositorio; no hay un umbral en la base
+  de datos que lo limite.
+- **RN-CRE-07**: **no gastan créditos**, ni siquiera los 0,5 de procesamiento:
+  - un **error de Restavor**, y su corrección (RN-JOB-12, RN-COR-07);
+  - una **incidencia** (RN-REQ-12);
+  - una solicitud **rechazada** por el equipo (RN-REQ-03);
+  - lo **presupuestado aparte** (RN-CON-03).
+
+  **Un cambio de opinión del cliente sí gasta**: rehacer bien hecho lo que él pidió es una solicitud
+  nueva.
+- **RN-CRE-08**: **los créditos no se acumulan**: cada ciclo empieza con los del plan y lo que sobra
+  desaparece (RN-COM-06). Se renuevan en la fecha de renovación del restaurante, como ahora.
+
+### 41.3 Quién fija los créditos y cuándo se gastan
+
+- **RN-CRE-09 (cambia P5 y RN-CLS-03 solo para los créditos; decisión 85, opción B)**: **la IA fija
+  los créditos de la solicitud sola**, sin que nadie del equipo los valide antes de que el restaurante
+  los vea. El resto de lo que propone la IA —el resumen del alcance— sigue como decía P5. Se guarda qué
+  valoró la IA, con qué desglose y en qué versión del prompt (RN-CLS-04), y su coste en `ai_usage`
+  (RN-CLS-05).
+- **RN-CRE-10**: **el equipo solo interviene si algo falla**: si la IA no contesta, tarda o no hay clave
+  (RN-CLS-02), o si la solicitud no se puede valorar sin más información. Entonces la solicitud va al
+  equipo, que fija los créditos o pide información (`needs_information`). El motor de palabras clave
+  ya **no** valora créditos: no sabe. Mientras la solicitud **no esté aceptada**, el propietario o un
+  administrador pueden corregir los créditos si ven un error; queda en la auditoría con el valor
+  anterior y el nuevo, y el restaurante vuelve a aceptar (RN-CLS-09, RN-SLA-08).
+- **RN-CRE-11**: **el restaurante acepta antes de gastar.** Ve lo que le costará **en porcentaje de su
+  plan** —"Esta solicitud usará el 26 % de tu plan"— y el desglose de lo que se va a hacer, y acepta.
+  Hasta que acepta no se gasta nada (RN-CLS-08).
+- **RN-CRE-12**: **al aceptar, los créditos quedan fijos** y reservados para esa solicitud en el ciclo:
+  no se ajustan después aunque el trabajo lleve más o menos. Se registran como apunte con signo en el
+  libro de consumos (CLAUDE.md, libro inmutable) con transacción, bloqueo de fila sobre el ciclo y clave
+  de idempotencia: **solo una solicitud puede gastar los últimos créditos** (RN-CON-06, RN-CON-07).
+  "Comprometidos" y "consumidos" son estados derivados del libro y del trabajo, no dos contadores.
+- **RN-CRE-13**: **cancelar antes de "Comenzar" devuelve todo**, procesamiento incluido; después de
+  "Comenzar" se mantiene (RN-CON-08, RN-CON-09). Si el ciclo ya cerró, la devolución es un crédito
+  compensatorio en el ciclo vigente que caduca con él (RN-CON-10, RN-CON-11).
+- **RN-CRE-14**: **si no le llegan los créditos** —le quedan 3 y la solicitud cuesta 6,5—, **no se hace
+  por lo que le queda**. El restaurante elige una de tres:
+  1. **quitar cosas** de la solicitud hasta que quepa; se vuelve a valorar (RN-CRE-09);
+  2. **esperar al ciclo siguiente**: la solicitud queda aceptada en espera y gasta del ciclo nuevo el
+     día de la renovación, si entonces cabe;
+  3. **pedir presupuesto aparte**: el equipo lo prepara y el restaurante lo acepta (§26, RN-QUO); lo
+     presupuestado no toca los créditos (RN-CRE-07).
+
+  En el Impulso, una solicitud de más de 20 créditos nunca cabe y va siempre por aquí.
+- **RN-CRE-15**: **un cambio de plan a mitad de ciclo** da créditos extra en proporción a lo que queda
+  del ciclo, **redondeando hacia arriba al medio crédito** (a favor del cliente): cambia en RN-COM-18
+  `unidades_extra(cat)` por `créditos_extra = techo_al_medio((créditos_nuevo − créditos_antiguo) ×
+  fracción_restante)`. Si sale negativo es 0.
+
+### 41.4 Lo que ve el restaurante
+
+- **RN-CRE-16**: **el restaurante ve sobre todo el porcentaje**: una barra "Consumo del plan · 60 %
+  utilizado", calculada en el servidor como créditos gastados del ciclo ÷ créditos del plan (20 = 100 %
+  en Impulso, 40 = 100 % en Premium). **Y debajo, el detalle** por solicitud (decisión 85: "no solo la
+  barra"), en porcentaje del plan. El número exacto de créditos lo ven siempre el propietario, los
+  administradores y el trabajador. Sin plan con créditos (Básico, o solo Menú Diario) no hay barra:
+  se dice que su plan no incluye cambios (CLAUDE.md, sin datos de relleno).
+- **RN-CRE-17**: **al 100 %** el restaurante lo ve dicho así, y una solicitud nueva va por RN-CRE-14.
+  Tener una solicitud pendiente no aumenta los créditos del plan.
+
+### 41.5 Plazos por créditos
+
+- **RN-CRE-18 (sustituye la tabla de RN-SLA-12 y RN-SLA-18)**: **el plazo de ejecución (T3) sale de los
+  créditos de la solicitud**, igual en Impulso y Premium. Un día laborable son 24 h del reloj
+  contractual, el que ya existe (RN-CLK):
+
+  | Créditos de la solicitud | Lo que ve el cliente | Máximo operativo |
+  |---|---|---:|
+  | 0,5–4 | 1–2 días laborables | 48 h laborables |
+  | 4,5–10 | 1–3 días laborables | 72 h laborables |
+  | 10,5–15 | 1–4 días laborables | 96 h laborables |
+  | 15,5–20 | 1–5 días laborables | 120 h laborables |
+
+  El plazo se congela al aceptar (`jobs.execution_sla_hours`), como ahora: un cambio de plan no lo
+  reescribe. Los tramos son un término del plan y se versionan con él; no se deducen del nombre.
+- **RN-CRE-19**: **más de 20 créditos (solo Premium, que es el único donde cabe)**: no hay plazo
+  automático. Dentro de las 24 h laborables de la confirmación de inicio, el equipo fija cuántos días
+  laborables necesita y el cliente lo ve en esa misma confirmación. **Queda registrado antes de
+  "Comenzar"**, y el servidor no deja comenzar un trabajo de más de 20 créditos sin él.
+- **RN-CRE-20**: la confirmación de inicio es T1 y T2 (RN-SLA-02, RN-SLA-06): **24 h laborables en
+  Impulso y Premium** y 48 h en Básico o sin plan.
+
+### 41.6 Menú Diario dentro del plan
+
+- **RN-CRE-21 (sustituye RN-COM-08 a RN-COM-10)**: **Menú Diario va incluido en Impulso y Premium** y
+  no gasta créditos. **Suelto cuesta 199 € + IVA al mes** para cualquier restaurante que no tenga Impulso
+  ni Premium, **también con Básico**. RN-COM-11 y RN-COM-12 siguen: sin plan de mantenimiento, sus
+  solicitudes de la web van como Básico (sin créditos, todo a presupuesto, 48 h). Desaparece el precio
+  reducido con prioridad (`services.price_premium_cents`).
+- **RN-CRE-22 (sustituye RN-COM-09, RN-CON-02 y RN-MEN-05)**: **un menú del día por fecha**, sin
+  contador de actualizaciones: pedir la publicación no consume nada. **Cambiarlo ese mismo día lo
+  sustituye, sin límite.** Los menús de otros tipos (§RN-MEN-01) siguen como hoy mientras no se diga
+  otra cosa.
+- **RN-CRE-23 (sustituye RN-COM-10 y RN-MEN-11)**: **dos plantillas incluidas una sola vez**, adaptadas
+  al diseño de la web: **una para publicar** y **otra para imprimir en blanco y negro**. Cambiar su
+  diseño, crear otras o modificarlas por estructura gasta créditos o se presupuesta.
+- **RN-CRE-24 (sustituye RN-MEN-07, RN-MEN-08 y RN-COR-10)**: **no hay hora de corte**: desaparecen el
+  límite de las 21:00, la publicación garantizada antes de las 08:00, el recordatorio de las 20:00 y
+  su aviso al equipo, y la corrección mínima del menú publicado. El restaurante escribe el menú a la
+  hora que sea y pulsa Guardar.
+- **RN-CRE-25**: **quién publica**: hoy, **el equipo a mano** (RN-MEN-06), como ahora. La idea de Bosco
+  es que lo publique **un agente de IA** cuando el restaurante guarde; **no se construye todavía** y no
+  se simula (RN-CLS-07, CLAUDE.md). Cuando se decida, será su propia regla.
+
+### 41.7 Informes y oportunidades
+
+- **RN-CRE-26 (cambia RN-REP-32)**: **un plan puede recibir el informe mensual y además el
+  trimestral**: `plans.report_period` gana el valor "los dos". Impulso y Premium los reciben los dos; el
+  Básico, solo el trimestral. El nivel de cada plan (RN-REP-15) no cambia: Impulso `standard`, Premium
+  `advanced`.
+- **RN-CRE-27 (cambia RN-OPP-08)**: **el restaurante ve las oportunidades que el equipo le sube al
+  informe**, y ninguna más, en Impulso y Premium (decisión 85: "ve las oportunidades que se le suban al
+  informe"). Desaparece la diferencia entre básicas y avanzadas para el cliente; la detección sigue
+  igual para el equipo (RN-OPP-01 a RN-OPP-07). Básico: ninguna.
+- **RN-CRE-28 (cambia RN-COM-03 punto 3)**: **ningún plan de Restavor ordena sus solicitudes** 1..N
+  (`can_order_requests`): Premium deja de hacerlo. La prioridad que elige el cliente al crear una
+  solicitud (RN-REQ-05) no cambia.
+
+### 41.8 Lo que queda por decidir
+
+- **La corrección mínima gratuita (§13) en los cambios de la web**: el documento de créditos dice que un
+  cambio de opinión gasta y un error de Restavor no, pero no dice si sigue existiendo la corrección
+  mínima gratuita de un cambio bien hecho (RN-COR-01 a RN-COR-09). **Pendiente de Bosco**; hasta que
+  conteste se mantiene como está.
