@@ -8628,10 +8628,11 @@ export const es = {
       deleteSpaceTitle: (nombre: string) => `Eliminar definitivamente el espacio «${nombre}»`,
       deleteEstablishmentTitle: (nombre: string) => `Eliminar definitivamente el restaurante «${nombre}»`,
       deleteWarning:
-        "No se puede deshacer: deja de aparecer en el panel y ya no se puede recuperar. Los datos no se borran: siguen guardados y todo queda en la auditoría.",
-      deleteSpaceHint: "El espacio se queda en solo lectura para siempre; su propietario tampoco podrá restaurarlo.",
+        "No se puede deshacer: nadie podrá volver a verlo ni recuperarlo. Los datos no se borran: siguen guardados y todo queda en la auditoría.",
+      deleteSpaceHint:
+        "Ni su equipo ni los clientes de sus restaurantes podrán volver a entrar; su propietario tampoco podrá restaurarlo.",
       deleteEstablishmentHint:
-        "El restaurante se queda archivado para siempre y desaparece también de los archivados de su espacio.",
+        "Sus clientes dejan de verlo y desaparece de las listas de su espacio. El equipo de mantenimiento conserva su historial de cobros y trabajos.",
       deleteConfirm: "Eliminar definitivamente",
       deleted: "Eliminado definitivamente.",
     },

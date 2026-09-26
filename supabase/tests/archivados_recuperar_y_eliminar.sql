@@ -18,6 +18,10 @@
 --     la cuenta con la que se fue; no se borra nada.
 --   · RN-ADM-25 · el listado de restaurantes dice la deuda vencida y
 --     no enseña los eliminados definitivamente.
+--   · RN-ADM-26 · lo eliminado definitivamente ya no lo ve nadie: del
+--     espacio, ni su equipo ni sus clientes; del restaurante, ni su
+--     propietario local ni su grupo. El equipo de un espacio vivo conserva
+--     el historial del restaurante que se fue.
 --   · RN-ADM-14 · todo con el permiso fino y la sesión en dos pasos.
 --
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/archivados_recuperar_y_eliminar.sql
@@ -31,12 +35,20 @@ on conflict (id) do nothing;
 insert into auth.users (id, email, role, aud) values
   ('e8000000-0000-0000-0000-000000000002', 'adm80-con@example.com', 'authenticated', 'authenticated'),
   ('e8000000-0000-0000-0000-000000000003', 'adm80-sin@example.com', 'authenticated', 'authenticated'),
-  ('e8000000-0000-0000-0000-000000000004', 'dueno80@example.com', 'authenticated', 'authenticated');
+  ('e8000000-0000-0000-0000-000000000004', 'dueno80@example.com', 'authenticated', 'authenticated'),
+  -- Clientes: la propietaria local de R5, el propietario global del grupo
+  -- de A y el propietario local de R6, que está en el espacio B.
+  ('e8000000-0000-0000-0000-000000000005', 'local80@example.com', 'authenticated', 'authenticated'),
+  ('e8000000-0000-0000-0000-000000000006', 'grupo80@example.com', 'authenticated', 'authenticated'),
+  ('e8000000-0000-0000-0000-000000000007', 'localb80@example.com', 'authenticated', 'authenticated');
 
 insert into public.profiles (id, email, full_name) values
   ('e8000000-0000-0000-0000-000000000002', 'adm80-con@example.com', 'Admin con permiso 80'),
   ('e8000000-0000-0000-0000-000000000003', 'adm80-sin@example.com', 'Admin sin permiso 80'),
-  ('e8000000-0000-0000-0000-000000000004', 'dueno80@example.com', 'Dueño 80')
+  ('e8000000-0000-0000-0000-000000000004', 'dueno80@example.com', 'Dueño 80'),
+  ('e8000000-0000-0000-0000-000000000005', 'local80@example.com', 'Local 80'),
+  ('e8000000-0000-0000-0000-000000000006', 'grupo80@example.com', 'Grupo 80'),
+  ('e8000000-0000-0000-0000-000000000007', 'localb80@example.com', 'Local B 80')
 on conflict (id) do update set full_name = excluded.full_name;
 
 insert into public.platform_roles (user_id, role, can_delete_accounts) values
@@ -69,7 +81,8 @@ insert into public.state_events (space_id, entity_type, entity_id, from_state, t
   ('e8010000-0000-0000-0000-00000000000e', 'space', 'e8010000-0000-0000-0000-00000000000e', 'active', 'archived_by_owner', 'Pausa', 'owner_request');
 
 insert into public.groups (id, space_id, name) values
-  ('e8030000-0000-0000-0000-00000000000a', 'e8010000-0000-0000-0000-00000000000a', 'Grupo A 80');
+  ('e8030000-0000-0000-0000-00000000000a', 'e8010000-0000-0000-0000-00000000000a', 'Grupo A 80'),
+  ('e8030000-0000-0000-0000-00000000000b', 'e8010000-0000-0000-0000-00000000000b', 'Grupo B 80');
 
 -- R1: activo, lo archivará Cuotly. R2: lo archiva el equipo. R3: lo
 -- archiva el equipo y luego Cuotly. R4: activo, se queda activo. R5: lo
@@ -79,7 +92,14 @@ insert into public.establishments (id, space_id, group_id, code, name, status) v
   ('e8040000-0000-0000-0000-000000000002', 'e8010000-0000-0000-0000-00000000000a', 'e8030000-0000-0000-0000-00000000000a', 'EST-80-2', 'Casa dos 80', 'active'),
   ('e8040000-0000-0000-0000-000000000003', 'e8010000-0000-0000-0000-00000000000a', 'e8030000-0000-0000-0000-00000000000a', 'EST-80-3', 'Casa tres 80', 'active'),
   ('e8040000-0000-0000-0000-000000000004', 'e8010000-0000-0000-0000-00000000000a', 'e8030000-0000-0000-0000-00000000000a', 'EST-80-4', 'Casa cuatro 80', 'active'),
-  ('e8040000-0000-0000-0000-000000000005', 'e8010000-0000-0000-0000-00000000000a', 'e8030000-0000-0000-0000-00000000000a', 'EST-80-5', 'Casa cinco 80', 'active');
+  ('e8040000-0000-0000-0000-000000000005', 'e8010000-0000-0000-0000-00000000000a', 'e8030000-0000-0000-0000-00000000000a', 'EST-80-5', 'Casa cinco 80', 'active'),
+  ('e8040000-0000-0000-0000-000000000006', 'e8010000-0000-0000-0000-00000000000b', 'e8030000-0000-0000-0000-00000000000b', 'EST-80-6', 'Casa seis 80', 'active');
+
+insert into public.establishment_memberships (establishment_id, user_id, role) values
+  ('e8040000-0000-0000-0000-000000000005', 'e8000000-0000-0000-0000-000000000005', 'local_owner'),
+  ('e8040000-0000-0000-0000-000000000006', 'e8000000-0000-0000-0000-000000000007', 'local_owner');
+insert into public.group_memberships (group_id, user_id, role) values
+  ('e8030000-0000-0000-0000-00000000000a', 'e8000000-0000-0000-0000-000000000006', 'global_owner');
 
 -- ============================================================
 -- Privilegios: nada abierto a `anon`; las guardas, cerradas
@@ -108,6 +128,26 @@ begin
     if has_function_privilege('authenticated', f, 'execute') or has_function_privilege('anon', f, 'execute') then
       raise exception 'CLAUDE.md FALLIDO: la interna % está abierta por RPC', f using errcode = 'assert_failure';
     end if;
+  end loop;
+end $$;
+
+-- RN-ADM-26 · antes de eliminar nada, los tres clientes ven lo suyo: la
+-- puerta que se cierra al final está abierta de verdad.
+do $$
+declare
+  c record;
+begin
+  for c in select * from (values
+      ('e8000000-0000-0000-0000-000000000005'::uuid, 'e8040000-0000-0000-0000-000000000005'::uuid),
+      ('e8000000-0000-0000-0000-000000000006', 'e8040000-0000-0000-0000-000000000005'),
+      ('e8000000-0000-0000-0000-000000000007', 'e8040000-0000-0000-0000-000000000006')) v(u, e) loop
+    perform set_config('request.jwt.claim.sub', c.u::text, true);
+    set local role authenticated;
+    if not public.can_read_establishment_as_client(c.e)
+       or not exists (select 1 from public.establishments where id = c.e) then
+      raise exception 'RN-ADM-26 FALLIDO (fixture): % no veía % ni antes', c.u, c.e using errcode = 'assert_failure';
+    end if;
+    reset role;
   end loop;
 end $$;
 
@@ -414,6 +454,112 @@ begin
         and entity_id in ('e8010000-0000-0000-0000-00000000000b', 'e8040000-0000-0000-0000-000000000005')) <> 4 then
     raise exception 'RN-ADM-24 FALLIDO: faltan apuntes de auditoría del eliminado definitivo' using errcode = 'assert_failure';
   end if;
+end $$;
+
+-- ============================================================
+-- RN-ADM-26 · lo eliminado definitivamente ya no lo ve nadie
+-- ============================================================
+
+-- El espacio B ya se eliminó definitivamente arriba; el restaurante R5,
+-- también. Su dueño (el mismo de A y de B):
+select set_config('request.jwt.claim.sub', 'e8000000-0000-0000-0000-000000000004', false);
+select set_config('request.jwt.claim.aal', 'aal1', false);
+set role authenticated;
+do $$
+begin
+  if public.is_space_member('e8010000-0000-0000-0000-00000000000b')
+     or public.has_capability('e8010000-0000-0000-0000-00000000000b', 'manage_space') then
+    raise exception 'RN-ADM-26 FALLIDO: el equipo sigue dentro de un espacio eliminado definitivamente' using errcode = 'assert_failure';
+  end if;
+  if exists (select 1 from public.spaces where id = 'e8010000-0000-0000-0000-00000000000b')
+     or exists (select 1 from public.establishments where id = 'e8040000-0000-0000-0000-000000000006')
+     or exists (select 1 from public.my_contexts() c where c.space_id = 'e8010000-0000-0000-0000-00000000000b') then
+    raise exception 'RN-ADM-26 FALLIDO: el equipo sigue viendo el espacio eliminado, o uno de sus restaurantes' using errcode = 'assert_failure';
+  end if;
+  -- El espacio A sigue vivo: su equipo conserva el historial de R5.
+  if not public.is_space_member('e8010000-0000-0000-0000-00000000000a')
+     or not public.can_read_establishment('e8040000-0000-0000-0000-000000000005')
+     or not exists (select 1 from public.establishments where id = 'e8040000-0000-0000-0000-000000000005') then
+    raise exception 'RN-ADM-26 FALLIDO: el equipo de un espacio vivo perdió el historial del restaurante eliminado' using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+
+-- La propietaria local de R5, eliminado definitivamente.
+select set_config('request.jwt.claim.sub', 'e8000000-0000-0000-0000-000000000005', false);
+set role authenticated;
+do $$
+begin
+  if exists (select 1 from public.establishments where id = 'e8040000-0000-0000-0000-000000000005')
+     or public.is_establishment_client('e8040000-0000-0000-0000-000000000005')
+     or public.can_read_establishment('e8040000-0000-0000-0000-000000000005')
+     or public.client_permission('e8040000-0000-0000-0000-000000000005', 'view_billing')
+     or public.client_can_accept_terms('e8040000-0000-0000-0000-000000000005')
+     or public.can_write_establishment('e8040000-0000-0000-0000-000000000005')
+     or exists (select 1 from public.my_contexts() c where c.establishment_id = 'e8040000-0000-0000-0000-000000000005') then
+    raise exception 'RN-ADM-26 FALLIDO: la propietaria local sigue viendo su restaurante eliminado definitivamente' using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+
+-- El propietario global del grupo de A: sigue viendo R4, no R5.
+select set_config('request.jwt.claim.sub', 'e8000000-0000-0000-0000-000000000006', false);
+set role authenticated;
+do $$
+begin
+  if not exists (select 1 from public.establishments where id = 'e8040000-0000-0000-0000-000000000004')
+     or not public.client_can_view_billing('e8040000-0000-0000-0000-000000000004') then
+    raise exception 'RN-ADM-26 FALLIDO: el grupo perdió también los restaurantes que siguen vivos' using errcode = 'assert_failure';
+  end if;
+  if exists (select 1 from public.establishments where id = 'e8040000-0000-0000-0000-000000000005')
+     or public.can_read_establishment_as_client('e8040000-0000-0000-0000-000000000005')
+     or public.client_can_view_billing('e8040000-0000-0000-0000-000000000005')
+     or public.client_can_view_reports('e8040000-0000-0000-0000-000000000005')
+     or public.can_export_scope('e8010000-0000-0000-0000-00000000000a', 'establishment', null, 'e8040000-0000-0000-0000-000000000005') then
+    raise exception 'RN-ADM-26 FALLIDO: el grupo sigue viendo el restaurante eliminado definitivamente' using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+
+-- El cliente de R6, en el espacio B eliminado.
+select set_config('request.jwt.claim.sub', 'e8000000-0000-0000-0000-000000000007', false);
+set role authenticated;
+do $$
+begin
+  if exists (select 1 from public.establishments where id = 'e8040000-0000-0000-0000-000000000006')
+     or public.can_read_establishment_as_client('e8040000-0000-0000-0000-000000000006')
+     or public.client_permission('e8040000-0000-0000-0000-000000000006', 'create_requests')
+     or exists (select 1 from public.my_contexts()) then
+    raise exception 'RN-ADM-26 FALLIDO: el cliente de un espacio eliminado definitivamente sigue viendo su restaurante' using errcode = 'assert_failure';
+  end if;
+end $$;
+reset role;
+
+-- Nada se ha tocado en las pertenencias: la puerta está en las funciones.
+do $$
+begin
+  if (select count(*) from public.establishment_memberships
+      where user_id in ('e8000000-0000-0000-0000-000000000005', 'e8000000-0000-0000-0000-000000000007')
+        and revoked_at is null) <> 2
+     or not exists (select 1 from public.space_memberships
+                    where space_id = 'e8010000-0000-0000-0000-00000000000b' and status = 'active') then
+    raise exception 'RN-ADM-24 FALLIDO: eliminar definitivamente tocó las pertenencias' using errcode = 'assert_failure';
+  end if;
+end $$;
+
+-- Las cuatro internas nuevas, cerradas.
+do $$
+declare
+  f text;
+begin
+  foreach f in array array[
+    'public.space_is_gone(uuid)', 'public.establishment_is_gone(uuid)',
+    'public.establishment_space_is_gone(uuid)', 'public.group_is_gone(uuid)'
+  ] loop
+    if has_function_privilege('authenticated', f, 'execute') or has_function_privilege('anon', f, 'execute') then
+      raise exception 'CLAUDE.md FALLIDO: la interna % está abierta por RPC', f using errcode = 'assert_failure';
+    end if;
+  end loop;
 end $$;
 
 select set_config('request.jwt.claim.aal', '', false);

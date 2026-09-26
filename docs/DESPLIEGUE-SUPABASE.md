@@ -10,6 +10,13 @@ Actualizado el 26/09/2026 (142).
 
 ## Pendiente de aplicar
 
+**La 143, sin aplicar todavía.** `lo_eliminado_ya_no_se_ve` (decisión 82, RN-ADM-26): lo eliminado
+definitivamente ya no lo ve nadie. Añade cuatro funciones internas (`space_is_gone`,
+`establishment_is_gone`, `establishment_space_is_gone`, `group_is_gone`), reescribe diecinueve
+funciones de permisos —`is_space_member`, `has_capability_as`, `is_group_member`,
+`is_establishment_member` y las de cliente— tal como estaban con la puerta nueva delante, y rehace la
+política `establishments_select`. No toca datos.
+
 **Actualización del 26/09/2026: la 142.** `archivados_recuperar_y_eliminar` (decisión 82, RN-ADM-22 a 25):
 Archivados en el panel, recuperar de un clic y eliminado definitivo sin borrar nada. Añade
 `permanently_deleted_at` a `spaces` y a `establishments` con un disparador en cada una, las funciones

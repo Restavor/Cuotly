@@ -2334,8 +2334,12 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     deuda vencida (RN-FIN-13) o sin hueco en el plan de Cuotly del espacio, no se recupera y se dice
     por qué.
 
-    **Sin contestar todavía:** lo que ve el **equipo** de un espacio eliminado definitivamente no se
-    ha tocado: sigue en solo lectura, como cuando estaba archivado por Cuotly.
+    **Lo eliminado definitivamente ya no lo ve nadie** (26/09/2026). Bosco: *"yo creo que se elimina
+    definitivamente y no se puede ver más"*. Un espacio: ni su equipo, ni los clientes de sus
+    restaurantes, ni Modo soporte. Un restaurante: ni sus clientes ni su grupo. **Lectura de Claude:**
+    el equipo de mantenimiento de un espacio que sigue vivo conserva el historial del restaurante que
+    se fue (cobros, trabajos, libro de consumos), porque son registros del espacio y RN-FIN-14 no deja
+    perder la deuda; solo deja de verlo en sus listas. RN-ADM-26, migración 143.
 
-    Reglas en el PRD: RN-ADM-22 a RN-ADM-25 (§32), y cambian RN-ADM-15 y RN-ADM-17. Migración 142,
-    suite 80.
+    Reglas en el PRD: RN-ADM-22 a RN-ADM-26 (§32), y cambian RN-ADM-15 y RN-ADM-17. Migraciones 142
+    y 143, suite 80.

@@ -2612,7 +2612,7 @@ suite 79). "Eliminar" **no borra nada** (RN-DAT-06, decisión 38, pendiente 20):
   los propietarios (local y global) de un **restaurante** eliminado, con un aviso **obligatorio**
   (RN-NOT-03: es pérdida de acceso). El traspaso de propiedad avisa como cualquier transferencia.
 
-**Archivados** (decisión 82, 26/09/2026; migración 142, suite 80). El panel separa lo activo de lo
+**Archivados** (decisión 82, 26/09/2026; migraciones 142 y 143, suite 80). El panel separa lo activo de lo
 archivado. Lo que la decisión 81 llamaba "eliminar" un espacio o un restaurante se llama **archivar**,
 y lo archivado vive en su propia pantalla, **Archivados**, con dos botones por fila.
 
@@ -2635,12 +2635,19 @@ y lo archivado vive en su propia pantalla, **Archivados**, con dos botones por f
   `permanently_deleted_at`, el espacio se queda en `archived_by_platform` y el restaurante archivado y
   marcado **para siempre**, ninguna función ni `update` lo mueve —tampoco recuperar la cuenta con la
   que se fue un espacio—, y **desaparece** del panel y de los archivados del espacio. Queda en la
-  auditoría de la plataforma y en la del espacio. El equipo de un espacio eliminado definitivamente lo
-  sigue viendo en solo lectura, como cuando estaba archivado.
+  auditoría de la plataforma y en la del espacio. **Nadie más lo ve** (RN-ADM-26).
 - **RN-ADM-25**: las listas de **activos** enseñan **siempre el estado**: Espacios, el modo de cada
   espacio (también los archivados solos, por prueba o impago); Restaurantes, el estado de cada uno, con
   **"Impago"** cuando tiene cobros vencidos sin pagar —lo que distingue un pausado por impago de un
   pausado cualquiera— y el modo del espacio cuando este está en solo lectura.
+- **RN-ADM-26**: **lo eliminado definitivamente ya no lo ve nadie** (confirmado por Bosco el
+  26/09/2026, migración 143). Un **espacio**: ni su equipo, ni los clientes de sus restaurantes, ni
+  Modo soporte; desaparece de "Cambiar de espacio" y de cualquier consulta. Un **restaurante**: ni su
+  propietario local, ni sus editores o consultas, ni el grupo al que pertenece. Su **equipo de
+  mantenimiento** conserva el historial —cobros, trabajos, libro de consumos—, que son registros del
+  espacio y la deuda del que se va no se pierde (RN-FIN-14); lo deja de ver en sus listas. La puerta se
+  cierra en las funciones de las que cuelgan las políticas (`is_space_member()`,
+  `has_capability_as()` y las de cliente); ninguna pertenencia se toca y nada se borra.
 
 Lo que este apartado **no** trae, dicho en claro: **no** trae las incidencias de §131 ni el horario
 humano de §132 (Hito 21: el bloque "incidencias" del panel está vacío con su motivo), **no** trae el
