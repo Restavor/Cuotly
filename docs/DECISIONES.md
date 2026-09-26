@@ -2470,5 +2470,11 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     créditos porque no le caben; los menús de otros tipos (Navidad, grupos…) siguen como hoy. **Queda
     pendiente** si la corrección mínima gratuita de un cambio de la web (§13) sigue existiendo.
 
-    Reglas en el PRD: §41, RN-CRE-01 a RN-CRE-28, con notas en cada regla anterior que cambia. Todavía
+    **Confirmadas por Bosco el 26/09/2026**: la espera al mes siguiente (*"me parece bien"*), el paso
+    al equipo si la IA falla (*"Correcto"*) y los menús especiales como hoy (*"Vale"*). Sobre la
+    corrección del equipo antes de aceptar preguntó *"¿pero qué tiene que aceptar el restaurante?"*: la
+    cifra buena, una sola vez (PRD RN-CRE-10). Y **la corrección mínima gratuita desaparece**: *"ya no
+    hay corrección gratis"* (RN-CRE-29).
+
+    Reglas en el PRD: §41, RN-CRE-01 a RN-CRE-29, con notas en cada regla anterior que cambia. Todavía
     sin construir.

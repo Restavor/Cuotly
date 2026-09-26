@@ -718,6 +718,8 @@ El tiempo consumido se recalcula sumando eventos, nunca guardando un contador mu
 
 ## 13. Corrección mínima gratuita (RN-COR)
 
+> **Desaparece con RN-CRE-29 (decisión 85): ya no hay corrección gratis.** Un error de Restavor se corrige a 0 créditos; cualquier otro retoque es una solicitud nueva.
+
 > **1 cambio realizado → 1 corrección mínima gratuita sobre ese mismo cambio → 0 créditos adicionales.**
 
 - **RN-COR-01**: una sola corrección en total por trabajo.
@@ -3973,9 +3975,16 @@ grande, vigilancia de reseñas ni los plazos cortos de RN-SLA-18 (decisión 84).
   (`can_order_requests`): Premium deja de hacerlo. La prioridad que elige el cliente al crear una
   solicitud (RN-REQ-05) no cambia.
 
-### 41.8 Lo que queda por decidir
+### 41.8 Sin corrección gratis
 
-- **La corrección mínima gratuita (§13) en los cambios de la web**: el documento de créditos dice que un
-  cambio de opinión gasta y un error de Restavor no, pero no dice si sigue existiendo la corrección
-  mínima gratuita de un cambio bien hecho (RN-COR-01 a RN-COR-09). **Pendiente de Bosco**; hasta que
-  conteste se mantiene como está.
+- **RN-CRE-29 (sustituye §13, RN-COR-01 a RN-COR-10; decisión 85)**: **ya no hay corrección mínima
+  gratuita**. Bosco, 26/09/2026: *"ya no hay corrección gratis"*. Lo que queda es lo del documento de
+  créditos: **un error de Restavor se corrige a 0 créditos** (RN-CRE-07, RN-JOB-12) y **cualquier otro
+  retoque del cliente sobre un cambio bien hecho es una solicitud nueva y gasta** (RN-CRE-07). La
+  conversación de la solicitud deja de cerrarse a las 72 h por la ventana de corrección (RN-COR-08); se
+  cierra como las demás.
+
+Las lecturas de Claude de RN-CRE-10, RN-CRE-14 y RN-CRE-22 las confirmó Bosco el 26/09/2026 (decisión
+85). En RN-CRE-10, "vuelve a aceptar" quiere decir que el restaurante acepta la cifra corregida: si
+todavía no había visto la anterior, acepta una sola vez, la buena; si ya la había visto sin aceptarla,
+se le enseña la nueva en su lugar. Nunca se le cobra una cifra que no ha aceptado.
