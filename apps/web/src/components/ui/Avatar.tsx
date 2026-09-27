@@ -2,7 +2,7 @@ import { es } from "@/i18n/es";
 
 /**
  * La cara de una persona del equipo, en las tablas (M09, M11, M19) y en
- * las listas de carga (M01). Cuotly no guarda fotos de perfil, así que lo
+ * las listas de carga (M01). Restavor web no guarda fotos de perfil, así que lo
  * que se pinta son las **iniciales** sobre un círculo verde suave: no un
  * retrato de archivo, que sería un dato de adorno (CLAUDE.md MUST NOT).
  *

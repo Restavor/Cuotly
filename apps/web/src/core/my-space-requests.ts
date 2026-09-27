@@ -3,7 +3,7 @@
  * que toca en cada fila.
  *
  * RN-GLO-04 pide "la acción que toca ahora": continuar el borrador, aportar
- * la información que Cuotly pidió, ver las instrucciones de pago de una
+ * la información que Restavor web pidió, ver las instrucciones de pago de una
  * aprobada. Una aprobada ya tiene espacio (RN-PLA-05) y su primera
  * mensualidad emitida (RN-SUB-05); mientras no se pague, la acción son esas
  * instrucciones, y cuando el espacio pasa a `active`, entrar en él.
@@ -77,7 +77,7 @@ export type MyRequestAction = "continue" | "view" | "complete" | "payment" | "en
 
 /**
  * La acción de la fila y si es la principal de la pantalla: solo "Necesita
- * información" lo es, porque es la única en la que Cuotly espera algo de
+ * información" lo es, porque es la única en la que Restavor web espera algo de
  * quien mira (RN-PLA-06).
  */
 export function myRequestAction(

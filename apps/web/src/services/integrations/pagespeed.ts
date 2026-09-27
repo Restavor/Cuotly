@@ -46,7 +46,7 @@ const SAVINGS_AUDITS: readonly [string, string][] = [
   ["uses-responsive-images", "responsive_images_savings_kb_by_strategy"],
 ];
 
-/** Auditoría de Lighthouse → métrica de Cuotly y unidad. */
+/** Auditoría de Lighthouse → métrica de Restavor web y unidad. */
 const AUDITS: readonly [string, string, string][] = [
   ["largest-contentful-paint", "lcp_ms_by_strategy", "ms"],
   ["cumulative-layout-shift", "cls_by_strategy", "score"],

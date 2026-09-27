@@ -20,7 +20,7 @@ const t = es.spaceRequestForm;
 /**
  * G02 · los nueve campos de §10 (RN-PLA-01) en las cuatro tarjetas del
  * dibujo, "¿Qué pasa después?" a la derecha y abajo el aviso y los dos
- * botones: guardar el borrador, que es suyo y nadie de Cuotly ve
+ * botones: guardar el borrador, que es suyo y nadie de Restavor web ve
  * (RN-PLA-02), y enviar. El servidor vuelve a comprobar qué se puede
  * enviar y desde qué estado (RN-PLA-03).
  *

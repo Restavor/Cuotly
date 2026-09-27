@@ -19,7 +19,7 @@ import {
   validateAccessRequest,
 } from "./access-requests";
 
-describe("cómo se entra en Cuotly (PRD §37, RN-ACC)", () => {
+describe("cómo se entra en Restavor web (PRD §37, RN-ACC)", () => {
   it("RN-ACC-01: hay dos puertas y ninguna más", () => {
     expect([...ACCESS_DOORS]).toEqual(["approved_request", "invitation"]);
     expect(ACCESS_DOORS).toHaveLength(2);
@@ -38,7 +38,7 @@ describe("cómo se entra en Cuotly (PRD §37, RN-ACC)", () => {
     expect(isAccessRequestState("in_review")).toBe(false);
   });
 
-  it("RN-ACC-05: solo Cuotly decide, y solo desde `submitted`", () => {
+  it("RN-ACC-05: solo Restavor web decide, y solo desde `submitted`", () => {
     for (const destino of ["needs_information", "approved", "rejected"] as const) {
       expect(accessRequestTransitionAllowed("submitted", destino, "platform")).toBe(true);
       expect(accessRequestTransitionAllowed("submitted", destino, "applicant")).toBe(false);

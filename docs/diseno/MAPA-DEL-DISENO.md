@@ -42,7 +42,7 @@ Lo que cambia es **cómo se llega a ello**. El diseño reorganiza la navegación
   son rutas sueltas bajo `restaurantes/[id]`.
 - El panel del restaurante se presenta como un contexto propio ("Panel de
   restaurante"), con su selector de restaurante y un "Volver al inicio de
-  Cuotly". Hoy el cliente entra por la ruta del espacio.
+  Restavor web". Hoy el cliente entra por la ruta del espacio.
 
 ## Lo que no existe todavía
 
@@ -69,11 +69,11 @@ Inicio, Mis solicitudes, Mensajes, Mi cuenta, Ayuda.
 - **G06 Ayuda**: centro de ayuda global con buscador, categorías, preguntas
   frecuentes y contacto con soporte. Hoy la ayuda cuelga del espacio.
 
-### 2. La solicitud de acceso a Cuotly (F01, A01 a A04, A09 a A12)
+### 2. La solicitud de acceso a Restavor web (F01, A01 a A04, A09 a A12)
 
 Un flujo nuevo y distinto de la solicitud de creación de espacio que ya existe.
-Se pide acceso a Cuotly con nombre y apellidos, nombre del restaurante o empresa,
-teléfono, correo y comentarios. Cuotly la revisa y la deja en enviada, necesita
+Se pide acceso a Restavor web con nombre y apellidos, nombre del restaurante o empresa,
+teléfono, correo y comentarios. Restavor web la revisa y la deja en enviada, necesita
 más información (con mensaje del equipo y respuesta del solicitante), aprobada o
 no aprobada con motivo. La vista A03 dice expresamente que aprobarla **no crea
 espacio ni panel**. No existe nada de esto: ni tabla, ni pantallas, ni panel de
@@ -110,20 +110,20 @@ revisión.
 
 ### Facturas: aclarado, con el hueco preparado
 
-La vista **R27** enseña una factura emitida por Cuotly, con número `FAC-2026-010`,
+La vista **R27** enseña una factura emitida por Restavor web, con número `FAC-2026-010`,
 emisor y cliente con CIF, base, IVA y botón de descarga. **M42** dice que "las
 facturas y recibos se generan automáticamente tras la confirmación del pago", y
 **M58** configura "la información fiscal que se incluirá en tus facturas".
 
-Eso chocaba con RN-FIN-09 ("Cuotly no emite facturas") y con la decisión 38 ("las
+Eso chocaba con RN-FIN-09 ("Restavor web no emite facturas") y con la decisión 38 ("las
 facturas las preparará un agente aparte"). Preguntado, Bosco lo aclaró el mismo
-día: el agente **vivirá dentro de Cuotly**, así que el diseño enseña el estado
+día: el agente **vivirá dentro de Restavor web**, así que el diseño enseña el estado
 final y no un error (**decisión 40**).
 
 Cómo se construye entonces: las pantallas se hacen con su sitio hecho, y **no se
 inventa numeración fiscal**. Mientras el bloque legal no llegue (paso 4 del orden
 acordado, con revisión profesional), donde no haya factura se dice el motivo, y lo
-que Cuotly emite sigue siendo el cobro con referencia bancaria de RN-SUB-05.
+que Restavor web emite sigue siendo el cobro con referencia bancaria de RN-SUB-05.
 
 ### Detalles menores de las maquetas que no se copian
 

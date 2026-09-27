@@ -373,7 +373,7 @@ begin
   end;
 end $$;
 
--- Casa Cuatro acepta fuera de Cuotly: lo registra la dueña con contrato.
+-- Casa Cuatro acepta fuera de Restavor web: lo registra la dueña con contrato.
 set local request.jwt.claim.sub = 'f1600000-0000-0000-0000-000000000001';
 do $$
 declare
@@ -418,7 +418,7 @@ begin
     raise exception 'RN-COM-24 FALLIDO: se le cobró una versión que no aceptó' using errcode = 'assert_failure';
   end if;
 
-  -- Casa Dos (aceptó en Cuotly) y Casa Cuatro (fuera) pasan a la 2.
+  -- Casa Dos (aceptó en Restavor web) y Casa Cuatro (fuera) pasan a la 2.
   if (select count(*) from public.subscriptions
       where establishment_id in ('f1640000-0000-0000-0000-000000000002', 'f1640000-0000-0000-0000-000000000004')
         and kind = 'plan' and plan_id = v_v2) <> 2 then

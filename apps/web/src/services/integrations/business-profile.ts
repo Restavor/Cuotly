@@ -54,7 +54,7 @@ interface ReviewsResponse {
   }[];
 }
 
-/** Métrica de Google → (métrica de Cuotly, dimensión). Las impresiones suman además en `profile_impressions`. */
+/** Métrica de Google → (métrica de Restavor web, dimensión). Las impresiones suman además en `profile_impressions`. */
 const DAILY_METRICS: readonly [string, string, string][] = [
   ["BUSINESS_IMPRESSIONS_DESKTOP_MAPS", "impressions_by_surface", "maps_desktop"],
   ["BUSINESS_IMPRESSIONS_DESKTOP_SEARCH", "impressions_by_surface", "search_desktop"],

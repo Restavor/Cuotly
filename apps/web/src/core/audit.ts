@@ -132,17 +132,17 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // hace su seguimiento por el enlace con clave (RN-ACC-12), no por la
   // auditoría.
   access_request: null,
-  // Fase 4, Hito 18 · lo que el espacio le paga a Cuotly (migración 90).
+  // Fase 4, Hito 18 · lo que el espacio le paga a Restavor web (migración 90).
   // Del propietario, como `space`: §4.2.1 dice que es él quien paga. No
   // `manage_finance`, que es el dinero de los restaurantes y lo tienen los
   // administradores.
   cuotly_charge: "manage_space",
   cuotly_payment: "manage_space",
-  // Fase 4, Hito 19 · Modo soporte (migración 91). Quién de Cuotly entró
+  // Fase 4, Hito 19 · Modo soporte (migración 91). Quién de Restavor web entró
   // en el espacio, con qué nivel y qué hizo es del propietario, como la
   // composición de su equipo (§129: "identidad visible en auditoría").
   support: "manage_space",
-  // Fase 4, Hito 19 · nombrar y retirar Administradores de Cuotly. Sin
+  // Fase 4, Hito 19 · nombrar y retirar Administradores de Restavor web. Sin
   // espacio, como `space_request`: lo ven Bosco y quien hizo la acción por
   // la tercera rama de `audit_log_select`.
   platform: null,
@@ -155,12 +155,12 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // apunte es quién ve la fila de `space_exports`, y eso ya lo decide su
   // política.
   export: null,
-  // Fase 4, Hito 21 · las incidencias a Cuotly (migración 93). La decide
+  // Fase 4, Hito 21 · las incidencias a Restavor web (migración 93). La decide
   // la FILA (RN-SOP-14): quien ve la incidencia ve sus apuntes, sea el
-  // espacio que la abrió o Cuotly, que atiende. Una capacidad fija
+  // espacio que la abrió o Restavor web, que atiende. Una capacidad fija
   // dejaría fuera a uno de los dos lados.
   incident: null,
-  // Fase 4, Hito 21 · los festivos de Cuotly y lo que declara sobre su
+  // Fase 4, Hito 21 · los festivos de Restavor web y lo que declara sobre su
   // estado (migración 93). Sin espacio, como `platform`: los ven Bosco y
   // quien hizo la acción por la tercera rama de `audit_log_select`.
   platform_holiday: null,
@@ -221,7 +221,7 @@ export const AUDIT_ACTIONS = [
   "charge.refunded",
   "charge.waived",
   "correction.completed",
-  // Hito 18 · los cobros y los pagos a Cuotly (migración 90).
+  // Hito 18 · los cobros y los pagos a Restavor web (migración 90).
   "cuotly_charge.issued",
   "cuotly_payment.confirmed",
   "cuotly_payment.declared",
@@ -239,7 +239,7 @@ export const AUDIT_ACTIONS = [
   "establishment.created",
   "establishment.data_changed",
   "establishment.status_changed",
-  // Decisión 81 (migración 140, RN-ADM-17) · Cuotly lo elimina o lo recupera.
+  // Decisión 81 (migración 140, RN-ADM-17) · Restavor web lo elimina o lo recupera.
   "establishment.archived_by_platform",
   "establishment.restored_by_platform",
   // Decisión 82 (migración 142, RN-ADM-24) · eliminado definitivo desde Archivados.
@@ -287,7 +287,7 @@ export const AUDIT_ACTIONS = [
   "group_access.granted",
   "group_access.revoked",
   "holiday.created",
-  // Fase 4, Hito 21 · las incidencias a Cuotly (migración 93).
+  // Fase 4, Hito 21 · las incidencias a Restavor web (migración 93).
   "incident.attachment_added",
   "incident.opened",
   "incident.replied",
@@ -360,7 +360,7 @@ export const AUDIT_ACTIONS = [
   "opportunity.status_changed",
   "payment.registered",
   "payment.reversed",
-  // Fase 4, Hito 19 · Administradores de Cuotly (migración 91).
+  // Fase 4, Hito 19 · Administradores de Restavor web (migración 91).
   // Decisión 81 (migración 140, RN-ADM-14 a 20).
   "platform.account_deleted",
   "platform.account_restored",
@@ -451,7 +451,7 @@ export const AUDIT_ACTIONS = [
   "push_device.revoked",
   // Hito 20 · la exportación de §141 (migración 92).
   "export.requested",
-  // Hito 18 · el modo del espacio respecto a Cuotly (migración 90):
+  // Hito 18 · el modo del espacio respecto a Restavor web (migración 90):
   // activarse con el primer pago, archivarse por prueba sin pago o por
   // impago, reactivarse, y los cambios de plan y de adicionales.
   // Hito 20 · y el archivado, la restauración, el cambio de dueño y el
@@ -496,7 +496,7 @@ export const AUDIT_ACTIONS = [
   "subscription.plan_created",
   "subscription.service_created",
   // Maqueta 13 · las dos maneras de aceptar las condiciones (decisión del
-  // 12/09/2026, opción c): el restaurante en Cuotly, o el equipo
+  // 12/09/2026, opción c): el restaurante en Restavor web, o el equipo
   // registrando una aceptación de fuera con su contrato.
   "subscription.terms_accepted",
   "subscription.terms_recorded",

@@ -1,5 +1,5 @@
 /**
- * `src/core/platform-admin.ts` — el panel de Administración de Cuotly, Modo
+ * `src/core/platform-admin.ts` — el panel de Administración de Restavor web, Modo
  * soporte y la 2FA (PRD §32, RN-ADM; §128, §129, §136 y §167 de la maestra;
  * Fase 4, Hito 19). Lógica de dominio pura, sin Supabase, sin Next y sin
  * React (CLAUDE.md).
@@ -125,8 +125,8 @@ export function supportShellRole(level: SupportAccessLevel): "admin" | "owner" {
 /**
  * Lo que `my_platform_access()` cuenta de quien pregunta: la identidad de
  * plataforma y si la sesión ha pasado el segundo factor. Las dos cosas por
- * separado, porque la pantalla necesita distinguir "no eres de Cuotly" de
- * "eres de Cuotly pero te falta la 2FA".
+ * separado, porque la pantalla necesita distinguir "no eres de Restavor web" de
+ * "eres de Restavor web pero te falta la 2FA".
  */
 export interface PlatformAccess {
   readonly isOwner: boolean;
@@ -139,12 +139,12 @@ export interface PlatformAccess {
   readonly twoFactor: boolean;
 }
 
-/** RN-ADM-01 · Bosco o un Administrador de Cuotly, con o sin cerradura. */
+/** RN-ADM-01 · Bosco o un Administrador de Restavor web, con o sin cerradura. */
 export function isPlatformPerson(access: PlatformAccess): boolean {
   return access.isOwner || access.isAdmin;
 }
 
-/** RN-ADM-02 · es de Cuotly y todavía no ha pasado el segundo factor. */
+/** RN-ADM-02 · es de Restavor web y todavía no ha pasado el segundo factor. */
 export function platformNeedsTwoFactor(access: PlatformAccess): boolean {
   return isPlatformPerson(access) && !access.twoFactor;
 }
@@ -176,7 +176,7 @@ export function canDeleteAccounts(access: PlatformAccess): boolean {
   return access.twoFactor && (access.isOwner || (access.isAdmin && access.canDeleteAccounts));
 }
 
-/** §167 · "Nombrar Admin Cuotly: Bosco sí; Admin Cuotly no." */
+/** §167 · "Nombrar Admin Restavor web: Bosco sí; Admin Restavor web no." */
 export function canNamePlatformAdmins(access: PlatformAccess): boolean {
   return access.twoFactor && access.isOwner;
 }
@@ -228,7 +228,7 @@ export interface SoleOwnerSpace {
 export interface AccountDeletionPreview {
   readonly email: string;
   readonly protected: boolean;
-  /** RN-ADM-20 · es Administrador de Cuotly: eliminarla le retira también el rol. */
+  /** RN-ADM-20 · es Administrador de Restavor web: eliminarla le retira también el rol. */
   readonly platformAdmin: boolean;
   readonly closed: boolean;
   readonly soleOwnerSpaces: readonly SoleOwnerSpace[];

@@ -3,7 +3,7 @@
  * §6 RN-COM-04). Lógica de dominio pura: sin Supabase, sin Next.js, sin
  * React (CLAUDE.md, regla de estilo de código).
  *
- * Cuotly **no procesa pagos** (RN-FIN, §80): registra cuotas, cobros,
+ * Restavor web **no procesa pagos** (RN-FIN, §80): registra cuotas, cobros,
  * vencimientos, justificantes e impagos. Aquí no hay pasarela, ni Stripe,
  * ni cálculo fiscal oficial — solo la aritmética determinista que el
  * servidor y las pantallas deben compartir para no discrepar nunca en un
@@ -264,7 +264,7 @@ export const NONPAYMENT_SUSPENSION_HOURS = 72;
 /**
  * Horas naturales, no laborables: RN-FIN-10/11 dicen "naturales"
  * explícitamente, así que el reloj contractual (RN-CLK) **no** interviene
- * aquí. Es la única familia de plazos de Cuotly que no pasa por
+ * aquí. Es la única familia de plazos de Restavor web que no pasa por
  * `business-clock.ts`, y por eso se dice en voz alta.
  */
 export type NonpaymentStage = "current" | "paused" | "suspended";
@@ -303,7 +303,7 @@ export function establishmentNonpaymentStage(
  * trabajos."
  *
  * Que continúen exactos no es una promesa: es una consecuencia de cómo se
- * miden. Un contador de Cuotly no guarda "minutos restantes" en ninguna
+ * miden. Un contador de Restavor web no guarda "minutos restantes" en ninguna
  * columna — se recalcula sumando los tramos cerrados de `timer_events`
  * (src/core/timer-events.ts, CA-10). Pausar escribe un `paused`, reactivar
  * escribe un `resumed`, y el tramo pausado simplemente no existe para la

@@ -45,7 +45,7 @@ import { loadClientCharges } from "./billing-load";
  * Las tres tarjetas de arriba no suman dinero (CLAUDE.md): "Pendiente de
  * pago" cuenta los cobros con deuda y enseña un importe solo cuando es uno,
  * el que ya dio `charge_outstanding_cents()`. "Descargar factura" no está:
- * Cuotly todavía no emite facturas (bloque legal pendiente, CLAUDE.md), y
+ * Restavor web todavía no emite facturas (bloque legal pendiente, CLAUDE.md), y
  * lo dice la pestaña de facturas.
  */
 export const dynamic = "force-dynamic";

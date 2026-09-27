@@ -132,7 +132,7 @@ export function SentRequestView({
 
       <Card className="p-4!">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {/* Solo mientras está en manos de Cuotly: de una decidida ya no se pide nada. */}
+          {/* Solo mientras está en manos de Restavor web: de una decidida ya no se pide nada. */}
           <p className="flex flex-1 items-center gap-3 text-sm text-text-secondary">
             {estado === "submitted" || estado === "in_review" ? (
               <>

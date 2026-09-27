@@ -19,7 +19,7 @@ Preguntaste a qué me refería. Impacto es **cuánto gana el restaurante si esto
 poder ordenar la lista: si hay seis oportunidades abiertas, cuál merece la pena primero.
 
 Lo natural sería decirlo en euros ("esto te trae 300 € al mes"). **Propongo no hacerlo**, y el
-motivo es el de siempre en este proyecto: no tenemos el dato. Cuotly no sabe lo que vale una
+motivo es el de siempre en este proyecto: no tenemos el dato. Restavor web no sabe lo que vale una
 reserva ni cuántas visitas acaban en cena. Poner un euro ahí sería inventarlo, y un número
 inventado en una pantalla de producción es justo lo que CLAUDE.md prohíbe.
 
@@ -31,13 +31,13 @@ inventado en una pantalla de producción es justo lo que CLAUDE.md prohíbe.
 | **Medio** | Afecta a una parte visible del sitio o a una entrada de tráfico importante, pero no al camino de contacto. | Se pierde gente por el camino, pero quien llega puede contactar. |
 | **Bajo** | Afecta a una página, una consulta o un detalle suelto. | Merece arreglarse, no corre prisa. |
 
-El nivel lo **propone** Cuotly con esa regla y el equipo **lo puede cambiar** antes de enseñárselo
+El nivel lo **propone** Restavor web con esa regla y el equipo **lo puede cambiar** antes de enseñárselo
 al restaurante: §96 dice que impacto, prioridad y esfuerzo son propuestas editables. Lo que no
 cambia es la evidencia: los números que dispararon la oportunidad se guardan y se enseñan.
 
 ## 2. Qué es "esfuerzo": la categoría del cambio, sin escala nueva
 
-Dijiste "lo que se tarda en hacer y los cambios que gasta". Eso ya existe en Cuotly y tiene
+Dijiste "lo que se tarda en hacer y los cambios que gasta". Eso ya existe en Restavor web y tiene
 nombre: **la categoría del cambio**. Propongo usarla tal cual y no inventar una escala paralela.
 
 | Esfuerzo | Se tarda (RN-SLA-12) | Gasta | En Impulso+ quedan | En Premium+ quedan |
@@ -75,13 +75,13 @@ Tres cosas valen para todas:
 | 5 | Imágenes pesadas | **Falta el dato.** Ver el apartado 4. | — |
 | 6 | Error técnico | Clarity `script_errors` | Hay errores de script en **el 5 % o más de las sesiones**, con **100 sesiones o más** en la ventana. |
 | 7 | Baja conversión móvil | **Falta el dato.** Ver el apartado 4. | — |
-| 8 | Búsquedas sin contenido adecuado | Search Console `impressions`, `position`, por consulta | Una consulta con **100 impresiones o más** cuya posición media es **peor que 20**. Google cree que el sitio va de eso y lo enseña muy abajo. Ojo: esto detecta "sale muy abajo", no "el contenido no es adecuado". Juzgar el contenido exigiría leer la web, y Cuotly no la lee. |
+| 8 | Búsquedas sin contenido adecuado | Search Console `impressions`, `position`, por consulta | Una consulta con **100 impresiones o más** cuya posición media es **peor que 20**. Google cree que el sitio va de eso y lo enseña muy abajo. Ojo: esto detecta "sale muy abajo", no "el contenido no es adecuado". Juzgar el contenido exigiría leer la web, y Restavor web no la lee. |
 | 9 | Poco uso de botones importantes | Business Profile `profile_impressions`, `website_clicks`, `call_clicks`, `direction_requests`; Clarity `dead_clicks`, `rage_clicks` | Dos casos distintos. **(a)** La ficha de Google tiene **500 impresiones o más** y las acciones (web, llamada, cómo llegar) suman **menos del 2 %**: la ven y no hacen nada. **(b)** Los clics muertos o de rabia pasan del **5 % de las sesiones**: pulsan algo que no responde. |
 
 ## 4. Dos de los nueve no se pueden calcular hoy
 
 Esto es lo más importante de la propuesta y por eso va aparte. Dos de los nueve ejemplos de §96
-**no se pueden detectar con lo que Cuotly recoge**, y prefiero decirlo antes que escribir un
+**no se pueden detectar con lo que Restavor web recoge**, y prefiero decirlo antes que escribir un
 umbral que nunca saltaría.
 
 **Imágenes pesadas (5).** De PageSpeed guardamos la puntuación y las métricas de laboratorio

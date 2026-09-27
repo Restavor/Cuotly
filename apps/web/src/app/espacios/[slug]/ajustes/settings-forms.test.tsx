@@ -55,7 +55,7 @@ describe("M63 · Notificaciones en tabla", () => {
   });
 });
 
-describe("RN-SUB-10 · cambiar el plan de Cuotly", () => {
+describe("RN-SUB-10 · cambiar el plan de Restavor web", () => {
   it("pasar a Pro propone los adicionales que pide el uso de hoy", () => {
     render(<ChangeCuotlyPlanForm spaceId="sp" target="pro" minExtraEstablishments={2} minExtraUsers={1} />);
     const t = es.cuotlySubscription.change;

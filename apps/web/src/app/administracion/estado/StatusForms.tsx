@@ -105,7 +105,7 @@ export function ResolveEventForm({ eventId }: { eventId: string }) {
   );
 }
 
-/** RN-SOP-06 · los festivos de Cuotly. */
+/** RN-SOP-06 · los festivos de Restavor web. */
 export function AddHolidayForm() {
   const [state, action, pending] = useActionState(addHoliday, INITIAL_ADMIN_STATE);
   return (

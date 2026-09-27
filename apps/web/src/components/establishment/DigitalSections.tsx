@@ -317,9 +317,9 @@ export function SourcesStatusTable({
             );
           })}
           {/*
-            RN-INT-09 (decisión 48) · "Cuotly Insights", donde el diseño lo
+            RN-INT-09 (decisión 48) · "Restavor web Insights", donde el diseño lo
             pone —entre las fuentes, páginas 41 y 44— pero diciendo lo que
-            es: la lectura propia de Cuotly, no una conexión.
+            es: la lectura propia de Restavor web, no una conexión.
 
             Su estado **se deriva** (RN-DAT-05). El diseño lo pinta siempre
             "Activa"; pintarlo así afirmaría que hay un resumen cuando
@@ -357,7 +357,7 @@ export function SourcesStatusTable({
 
 /**
  * RN-INT-09 · el momento del dato más reciente que el resumen resume, o
- * `null` si no hay ninguno. Es lo que decide el estado de "Cuotly
+ * `null` si no hay ninguno. Es lo que decide el estado de "Restavor web
  * Insights" y también lo que se enseña como su fecha: no sincroniza nada,
  * así que una fecha propia sería inventada.
  */
@@ -820,7 +820,7 @@ const PAGESPEED_ROWS: readonly { metric: string; format: (v: number) => string }
 
 /**
  * El color de la puntuación son las bandas de Lighthouse (0-49 rojo, 50-89
- * ámbar, 90-100 verde): son de la herramienta, no una lectura de Cuotly.
+ * ámbar, 90-100 verde): son de la herramienta, no una lectura de Restavor web.
  * Y van con texto, no solo con el punto (§21.4).
  */
 function scoreTone(value: number): "success" | "warning" | "danger" {

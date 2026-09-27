@@ -163,7 +163,7 @@ describe("HU-36 · el catálogo de acciones de auditoría cubre lo que la base e
       "session",
       "space_request",
       "platform",
-      // Hito 21 · festivos y estado de Cuotly: sin espacio, como `platform`.
+      // Hito 21 · festivos y estado de Restavor web: sin espacio, como `platform`.
       "platform_holiday",
       "platform_status",
       // Hito 22 · el teléfono con push: sin espacio, como `session`; lo ve

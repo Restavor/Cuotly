@@ -262,7 +262,7 @@ begin
       using errcode = 'assert_failure';
   end if;
 
-  -- RN-MIE-08 · a Eva no le llega nada: ni en Cuotly ni por ningún canal.
+  -- RN-MIE-08 · a Eva no le llega nada: ni en Restavor web ni por ningún canal.
   select count(*) into v_n from public.notifications
   where space_id = v_space and recipient_id = v_eva;
   if v_n <> 0 then

@@ -35,7 +35,7 @@ import {
 import type { AdminActionState } from "./action-state";
 
 /**
- * Las acciones del panel de Administración de Cuotly (Fase 4, Hito 19).
+ * Las acciones del panel de Administración de Restavor web (Fase 4, Hito 19).
  *
  * Ninguna autoriza nada. Cada función de la base comprueba quién llama y
  * con qué sesión —`is_platform_approver()`, `is_platform_subscription_manager()`,
@@ -299,7 +299,7 @@ export async function closeSupportSession(
   return { error: null, done: true };
 }
 
-/** RN-ADM-03 · nombrar o cambiar los permisos de un Administrador de Cuotly. */
+/** RN-ADM-03 · nombrar o cambiar los permisos de un Administrador de Restavor web. */
 export async function savePlatformAdmin(
   _prev: AdminActionState,
   formData: FormData,
@@ -361,7 +361,7 @@ export async function leaveSupportSession(formData: FormData): Promise<void> {
 /*
  * RN-ADM-14 a 20 (decisión 81) · eliminar y recuperar cuentas, espacios y
  * restaurantes. Nada se borra: la base archiva, marca y bloquea, y solo
- * Cuotly lo deshace. Quién puede lo decide `is_platform_account_manager()`
+ * Restavor web lo deshace. Quién puede lo decide `is_platform_account_manager()`
  * en cada función; aquí se exige el motivo (§140) y, para eliminar, que
  * se escriba el nombre de lo que se elimina.
  */

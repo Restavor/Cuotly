@@ -82,7 +82,7 @@ const PATHS = {
   // con el restaurante son dos operaciones distintas y en el mismo bloque.
   share:
     "M17.5 8.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM6.5 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM17.5 20.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM8.7 10.8l6.6-3.6M8.7 13.2l6.6 3.6",
-  // La flecha que sale del recuadro: "esto se va de Cuotly". Se usa en el
+  // La flecha que sale del recuadro: "esto se va de Restavor web". Se usa en el
   // enlace al sitio web del restaurante (§15.2), que abre una web ajena en
   // otra pestaña. No se reutiliza `arrowRight`, que es navegación dentro
   // de la aplicación.

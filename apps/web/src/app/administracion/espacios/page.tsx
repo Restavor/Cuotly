@@ -31,7 +31,7 @@ import { ReactivateForm, StartSupportForm } from "./SpaceActions";
  *
  * Decisión 82 (RN-ADM-22, RN-ADM-25) · aquí solo lo que no está archivado
  * a mano, cada uno con su estado —también el archivado solo, por prueba
- * sin pago o impago—. Lo que archivó Cuotly o su propietario está en
+ * sin pago o impago—. Lo que archivó Restavor web o su propietario está en
  * Archivados, que es donde se recupera o se elimina.
  */
 export const dynamic = "force-dynamic";

@@ -3,7 +3,7 @@ import { Icon } from "@/components/ui/Icon";
 import { es } from "@/i18n/es";
 
 /**
- * PRD §20.2 · entrada de menú "Agente Cuotly (Próximamente)".
+ * PRD §20.2 · entrada de menú "Agente Restavor web (Próximamente)".
  *
  * CLAUDE.md es explícito: "solo existe la entrada de menú con la etiqueta
  * Próximamente. Sin funcionalidad simulada." Así que esta pantalla dice

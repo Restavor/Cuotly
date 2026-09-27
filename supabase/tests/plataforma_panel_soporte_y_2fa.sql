@@ -1,4 +1,4 @@
--- Fase 4 · Hito 19 · el panel de Administración de Cuotly, Modo soporte y
+-- Fase 4 · Hito 19 · el panel de Administración de Restavor web, Modo soporte y
 -- 2FA (migración 91; PRD §32, RN-ADM-01 a 12; §128, §129, §134, §136 y
 -- §167 de la maestra).
 --
@@ -6,7 +6,7 @@
 -- cierra en todas las demás. Lo que comprueba, en orden:
 --
 --   · RN-ADM-02: sin 2FA no hay plataforma: ni Bosco ni un Administrador
---     de Cuotly hacen nada con una sesión `aal1`.
+--     de Restavor web hacen nada con una sesión `aal1`.
 --   · RN-ADM-03: nombrar y retirar Administradores es solo de Bosco, por
 --     función y con auditoría; la escritura directa ya no existe.
 --   · RN-ADM-06: abrir soporte exige permiso, motivo, nivel y duración
@@ -101,13 +101,13 @@ begin
 end $$;
 reset role;
 
--- El Administrador de Cuotly con permiso tampoco, sin 2FA.
+-- El Administrador de Restavor web con permiso tampoco, sin 2FA.
 select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000002', false);
 set role authenticated;
 do $$
 begin
   if public.is_platform_supporter() or public.is_platform_admin() then
-    raise exception 'RN-ADM-02 FALLIDO: un Admin de Cuotly es plataforma sin 2FA' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-02 FALLIDO: un Admin de Restavor web es plataforma sin 2FA' using errcode = 'assert_failure';
   end if;
   begin
     perform public.start_support_session('ffb10000-0000-0000-0000-000000000001', 'Sin segundo factor', 'read', 60);
@@ -123,7 +123,7 @@ reset role;
 select set_config('request.jwt.claim.aal', 'aal2', false);
 
 -- ============================================================
--- RN-ADM-03 · nombrar Administrador de Cuotly es de Bosco
+-- RN-ADM-03 · nombrar Administrador de Restavor web es de Bosco
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000002', false);
 set role authenticated;
@@ -131,7 +131,7 @@ do $$
 begin
   begin
     perform public.set_platform_admin('ffb00000-0000-0000-0000-000000000007', true, true, true);
-    raise exception 'RN-ADM-03 FALLIDO: un Admin de Cuotly nombra a otro' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-03 FALLIDO: un Admin de Restavor web nombra a otro' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-ADM%' then raise; end if;
@@ -161,7 +161,7 @@ begin
   -- Bosco no se nombra a sí mismo.
   begin
     perform public.set_platform_admin('ffb00000-0000-0000-0000-000000000001', true, true, true);
-    raise exception 'RN-ADM-03 FALLIDO: Bosco se nombra Administrador de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-03 FALLIDO: Bosco se nombra Administrador de Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-ADM%' then raise; end if;
@@ -220,14 +220,14 @@ select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000003
 set role authenticated;
 do $$
 begin
-  -- Es Administrador de Cuotly y lee el panel (RN-ADM-01)…
+  -- Es Administrador de Restavor web y lee el panel (RN-ADM-01)…
   if (public.platform_panel_summary() ->> 'spaces_total')::integer < 2 then
-    raise exception 'RN-ADM-01 FALLIDO: un Admin de Cuotly sin permisos no lee el panel' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-01 FALLIDO: un Admin de Restavor web sin permisos no lee el panel' using errcode = 'assert_failure';
   end if;
   -- …pero sin `can_support` no entra en ningún espacio.
   begin
     perform public.start_support_session('ffb10000-0000-0000-0000-000000000001', 'Sin permiso', 'read', 60);
-    raise exception 'RN-ADM-06 FALLIDO: abre soporte un Admin de Cuotly sin can_support' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-06 FALLIDO: abre soporte un Admin de Restavor web sin can_support' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-ADM%' then raise; end if;
@@ -415,7 +415,7 @@ do $$
 declare v_id uuid := (select v from adm_ids where k = 'read');
 begin
   if not exists (select 1 from public.support_sessions where id = v_id and actor_id = 'ffb00000-0000-0000-0000-000000000002') then
-    raise exception 'RN-ADM-08 FALLIDO: el propietario no ve quién de Cuotly entró en su espacio' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-08 FALLIDO: el propietario no ve quién de Restavor web entró en su espacio' using errcode = 'assert_failure';
   end if;
   if not exists (select 1 from public.audit_log where action = 'support.session_started' and entity_id = v_id) then
     raise exception 'RN-ADM-08 FALLIDO: el propietario no ve el apunte de soporte en su auditoría' using errcode = 'assert_failure';
@@ -423,7 +423,7 @@ begin
   -- Y no puede cerrarla ni abrir una: no es plataforma.
   begin
     perform public.end_support_session(v_id);
-    raise exception 'RN-ADM-06 FALLIDO: el propietario del espacio cierra la sesión de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-06 FALLIDO: el propietario del espacio cierra la sesión de Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-ADM%' then raise; end if;
@@ -444,7 +444,7 @@ begin
   end if;
   begin
     perform public.platform_panel_summary();
-    raise exception 'RN-ADM-04 FALLIDO: un trabajador con 2FA lee el panel de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-04 FALLIDO: un trabajador con 2FA lee el panel de Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-ADM%' then raise; end if;
@@ -556,14 +556,14 @@ begin
 end $$;
 reset role;
 
--- Un Admin de Cuotly sin permiso no cierra la sesión de otro; Bosco, sí.
+-- Un Admin de Restavor web sin permiso no cierra la sesión de otro; Bosco, sí.
 select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
 begin
   begin
     perform public.end_support_session((select v from adm_ids where k = 'admin'));
-    raise exception 'RN-ADM-06 FALLIDO: un Admin de Cuotly cierra la sesión de otro' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-06 FALLIDO: un Admin de Restavor web cierra la sesión de otro' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-ADM%' then raise; end if;
@@ -626,7 +626,7 @@ begin
 
   -- Nunca figura como miembro: la sesión es la ÚNICA vía (§134).
   if exists (select 1 from public.space_memberships where user_id = auth.uid()) then
-    raise exception '§134 FALLIDO: la persona de Cuotly aparece en space_memberships' using errcode = 'assert_failure';
+    raise exception '§134 FALLIDO: la persona de Restavor web aparece en space_memberships' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -709,7 +709,7 @@ begin
 
   select * into v_row from public.platform_list_users(500, 0) where email = 'adm-con-soporte@example.com';
   if v_row.id is null or not v_row.is_admin or not v_row.can_support or not v_row.two_factor_enrolled then
-    raise exception 'RN-ADM-04 FALLIDO: la fila del Admin de Cuotly no dice su permiso ni su 2FA' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-04 FALLIDO: la fila del Admin de Restavor web no dice su permiso ni su 2FA' using errcode = 'assert_failure';
   end if;
   select * into v_row from public.platform_list_users(500, 0) where email = 'adm-sin-permisos@example.com';
   if v_row.two_factor_enrolled then

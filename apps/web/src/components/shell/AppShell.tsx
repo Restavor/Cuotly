@@ -160,7 +160,7 @@ export function AppShell({
    */
   contexts?: readonly ShellContext[];
   /**
-   * Hito 19 (§129, RN-ADM-07) · si quien mira es de Cuotly y está dentro en
+   * Hito 19 (§129, RN-ADM-07) · si quien mira es de Restavor web y está dentro en
    * Modo soporte, se pinta una banda que lo dice —nivel, tiempo que queda,
    * salir— para que no se le olvide que está en casa ajena.
    */
@@ -299,10 +299,10 @@ export function AppShell({
             sin pasar por el Inicio global. Volver a él es el enlace de debajo.
           */}
           {/*
-            La caja de contexto y la salida a Cuotly solo existen DENTRO de
+            La caja de contexto y la salida a Restavor web solo existen DENTRO de
             algo. En el contexto global (§36) no se pintan: no hay espacio
             del que cambiar ni sitio al que volver, porque ya estás en la
-            raíz. Un "Volver al inicio de Cuotly" en el inicio de Cuotly es
+            raíz. Un "Volver al inicio de Restavor web" en el inicio de Restavor web es
             un enlace que no lleva a ninguna parte.
           */}
           {esGlobal ? null : (
@@ -738,7 +738,7 @@ export function AppShell({
  * contextos —Mantenimiento y Restaurantes, con la misma lista—, y desde ahí
  * se cambia de espacio sin pasar por el Inicio global. Antes era un enlace
  * a `/` que decía "Cambiar de espacio" y en realidad salía de los espacios:
- * eso ya lo hace "Volver al inicio de Cuotly", que está justo debajo.
+ * eso ya lo hace "Volver al inicio de Restavor web", que está justo debajo.
  *
  * Con un solo contexto —el que ya estás mirando— no hay desplegable ni
  * fila de "Cambiar de espacio": sería una promesa de algo que no hay (el
@@ -826,7 +826,7 @@ function SpaceContextBox({
  *     `<details>` de un elemento es una promesa de que hay más, y quien lo
  *     abre y encuentra lo que ya estaba mirando ha perdido un gesto;
  *   · **no es "Cambiar de espacio".** Salir de aquí es "Volver al inicio de
- *     Cuotly", que está justo debajo y es el enlace de siempre.
+ *     Restavor web", que está justo debajo y es el enlace de siempre.
  *
  * Es un `<details>` y no un menú con estado de React a propósito: funciona
  * sin hidratación, se abre y se cierra con teclado sin que nadie escriba

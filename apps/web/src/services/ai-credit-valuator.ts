@@ -50,7 +50,7 @@ export function estimateCostMillicents(model: string, inputTokens: number, outpu
 }
 
 /** RN-CRE-06 · la tabla de referencia y las reglas del documento de Restavor. */
-const SYSTEM_PROMPT = `Valoras en créditos las solicitudes de cambio que los restaurantes piden sobre su web ya existente, para Cuotly, la plataforma de mantenimiento web de Restavor.
+const SYSTEM_PROMPT = `Valoras en créditos las solicitudes de cambio que los restaurantes piden sobre su web ya existente, para Restavor web, la plataforma de mantenimiento web de Restavor.
 
 Un crédito mide el trabajo real que exige una modificación: tiempo, complejidad, alcance y trabajo adicional (preparar imágenes, redactar, reorganizar). No es una hora ni una unidad por cambio. La unidad mínima es 0,5 créditos y toda cifra es múltiplo de 0,5.
 

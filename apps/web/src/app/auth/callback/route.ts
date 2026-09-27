@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Google redirige aquí después de que la persona inicie sesión en su
  * cuenta de Google. Intercambiamos el código temporal por una sesión real
- * de Cuotly y la llevamos a Inicio.
+ * de Restavor web y la llevamos a Inicio.
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);

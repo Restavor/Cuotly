@@ -63,9 +63,9 @@ describe("worker-queue — HU-17, PRD §20.4", () => {
   });
 
   it("el orden del restaurante NO adelanta un plazo: el que vence antes sigue primero", () => {
-    // Si ordenar su lista pudiera hacer que Cuotly incumpliera el plazo
+    // Si ordenar su lista pudiera hacer que Restavor web incumpliera el plazo
     // del cambio que él puso el último, el cliente estaría renunciando a
-    // algo que no ha renunciado. El plazo se lo debe Cuotly igual.
+    // algo que no ha renunciado. El plazo se lo debe Restavor web igual.
     const cola = [
       queued({ jobId: "el-mas-importante", priorityRank: 1, remainingBusinessMinutes: 900 }),
       queued({ jobId: "el-que-vence-hoy", priorityRank: 5, remainingBusinessMinutes: 60 }),

@@ -312,7 +312,7 @@ export function ArchiveForm({ kind, id }: { kind: "plan" | "service"; id: string
 }
 
 /**
- * RN-COM-23 · el equipo registra que el restaurante aceptó fuera de Cuotly
+ * RN-COM-23 · el equipo registra que el restaurante aceptó fuera de Restavor web
  * una versión que le perjudica, con la fecha y el contrato. Sin archivos
  * del restaurante no hay formulario: se dice por qué.
  */

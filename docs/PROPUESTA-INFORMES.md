@@ -49,7 +49,7 @@ Así que va donde van los demás: una columna en `plans`.
 plans.report_level  -- 'basic' | 'standard' | 'standard_plus' | 'advanced' | 'complete'
 ```
 
-**No se decide por el nombre del plan.** Cuotly es multiempresa: otro
+**No se decide por el nombre del plan.** Restavor web es multiempresa: otro
 espacio llamará "Total" al suyo y elegirá qué nivel le pone. Lo que sigue es
 el reparto **de Restavor**, que es un dato de producto como los precios:
 

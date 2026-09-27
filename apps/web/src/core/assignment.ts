@@ -126,9 +126,9 @@ export function rankCandidates(
 
 /**
  * HU-16 · RN-ASG-03/04/05, los tres desenlaces posibles:
- * - `auto_assign`: hay **exactamente un** candidato válido, Cuotly lo
+ * - `auto_assign`: hay **exactamente un** candidato válido, Restavor web lo
  *   asigna automáticamente (RN-ASG-03).
- * - `recommendation`: hay varios; Cuotly recomienda uno y el propietario
+ * - `recommendation`: hay varios; Restavor web recomienda uno y el propietario
  *   acepta o elige otro (RN-ASG-04). La recomendación **no** asigna.
  * - `pending_assignment`: no hay ninguno; el trabajo queda pendiente, se
  *   avisa al propietario y a todos los administradores, y las alertas

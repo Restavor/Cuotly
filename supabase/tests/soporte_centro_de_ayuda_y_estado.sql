@@ -1,4 +1,4 @@
--- Fase 4 · Hito 21 · soporte de Cuotly, centro de ayuda y página de
+-- Fase 4 · Hito 21 · soporte de Restavor web, centro de ayuda y página de
 -- estado (migración 93; PRD §34, RN-SOP-01 a 15; §131, §132, §133 y §157
 -- de la maestra).
 --
@@ -8,8 +8,8 @@
 --     contexto técnico filtrado a las cuatro claves de §131.
 --   · RN-SOP-04: la tabla de transiciones por lado y los motivos.
 --   · RN-SOP-05: la prioridad derivada del impacto y del plan.
---   · RN-SOP-06: el reloj humano de §132 y los festivos de Cuotly.
---   · RN-SOP-07: Cuotly atiende; el espacio ve "Cuotly", no quién.
+--   · RN-SOP-06: el reloj humano de §132 y los festivos de Restavor web.
+--   · RN-SOP-07: Restavor web atiende; el espacio ve "Restavor web", no quién.
 --   · RN-SOP-08: mensajes inmutables y adjuntos con su ruta.
 --   · RN-SOP-09: en un espacio archivado se puede hablar con soporte.
 --   · RN-SOP-10/11: el buscador y las guías por rol.
@@ -34,7 +34,7 @@ insert into auth.users (id, email, role, aud) values
   ('ffb00000-0000-0000-0000-000000000001', 'info@restavor.com', 'authenticated', 'authenticated')
 on conflict (id) do nothing;
 
--- §167 · un Administrador de Cuotly con los tres permisos.
+-- §167 · un Administrador de Restavor web con los tres permisos.
 insert into public.platform_roles (user_id, role, can_approve_spaces, can_manage_subscriptions, can_support) values
   ('d0d00000-0000-0000-0000-000000000006', 'cuotly_admin', true, true, true);
 
@@ -116,7 +116,7 @@ do $$
 begin
   begin
     perform public.open_incident((select v from sop_ids where k = 'pro'), 'error', 'jobs', 'No puedo publicar', 'high');
-    raise exception 'RN-SOP-01 FALLIDO: un trabajador abre una incidencia a Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-01 FALLIDO: un trabajador abre una incidencia a Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-SOP%' then raise; end if;
@@ -131,7 +131,7 @@ do $$
 begin
   begin
     perform public.open_incident((select v from sop_ids where k = 'pro'), 'error', 'requests', 'Mi solicitud no sale', 'low');
-    raise exception 'RN-SOP-01 FALLIDO: un restaurante abre una incidencia a Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-01 FALLIDO: un restaurante abre una incidencia a Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-SOP%' then raise; end if;
@@ -262,7 +262,7 @@ begin
   end if;
   begin
     perform public.platform_list_incidents(true);
-    raise exception 'RN-SOP-07 FALLIDO: un trabajador lee la bandeja de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-07 FALLIDO: un trabajador lee la bandeja de Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-SOP%' then raise; end if;
@@ -284,9 +284,9 @@ end $$;
 reset role;
 
 -- ============================================================
--- RN-SOP-07 · Cuotly atiende, con 2FA, y ve quién escribió
+-- RN-SOP-07 · Restavor web atiende, con 2FA, y ve quién escribió
 -- ============================================================
--- Sin aal2 el Administrador de Cuotly es un usuario normal.
+-- Sin aal2 el Administrador de Restavor web es un usuario normal.
 select set_config('request.jwt.claim.aal', 'aal1', false);
 select set_config('request.jwt.claim.sub', 'd0d00000-0000-0000-0000-000000000006', false);
 set role authenticated;
@@ -341,12 +341,12 @@ begin
   perform public.set_incident_status(v_adm, 'resolved');
 
   if (select first_platform_response_at from public.incidents where id = v_inc1) is null then
-    raise exception 'RN-SOP-06 FALLIDO: la primera respuesta de Cuotly no queda anotada' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-06 FALLIDO: la primera respuesta de Restavor web no queda anotada' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
 
--- El espacio ve "Cuotly": la columna del autor no se lee, el lado sí.
+-- El espacio ve "Restavor web": la columna del autor no se lee, el lado sí.
 select set_config('request.jwt.claim.sub', 'd0d00000-0000-0000-0000-000000000001', false);
 set role authenticated;
 do $$
@@ -356,17 +356,17 @@ declare
 begin
   select count(*) into v_n from public.incident_messages where incident_id = v_adm and author_side = 'platform';
   if v_n <> 1 then
-    raise exception 'RN-SOP-07 FALLIDO: el espacio no ve el mensaje de Cuotly por su lado' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-07 FALLIDO: el espacio no ve el mensaje de Restavor web por su lado' using errcode = 'assert_failure';
   end if;
   begin
     perform (select author_id from public.incident_messages where incident_id = v_adm limit 1);
-    raise exception 'RN-SOP-07 FALLIDO: el espacio lee quién de Cuotly contestó' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-07 FALLIDO: el espacio lee quién de Restavor web contestó' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then null;
   end;
   begin
     perform (select actor_id from public.incident_events where incident_id = v_adm limit 1);
-    raise exception 'RN-SOP-07 FALLIDO: el espacio lee quién de Cuotly movió el estado' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-07 FALLIDO: el espacio lee quién de Restavor web movió el estado' using errcode = 'assert_failure';
   exception
     when insufficient_privilege then null;
   end;
@@ -395,7 +395,7 @@ begin
 end $$;
 reset role;
 
--- Cuotly sí ve quién escribió por el espacio.
+-- Restavor web sí ve quién escribió por el espacio.
 select set_config('request.jwt.claim.sub', 'd0d00000-0000-0000-0000-000000000006', false);
 set role authenticated;
 do $$
@@ -405,7 +405,7 @@ begin
   from public.platform_incident_messages((select v from sop_ids where k = 'inc1'))
   where author_side = 'space' limit 1;
   if v_email <> 'sop-propietario@example.com' then
-    raise exception 'RN-SOP-07 FALLIDO: Cuotly no ve quién escribió por el espacio: %', v_email using errcode = 'assert_failure';
+    raise exception 'RN-SOP-07 FALLIDO: Restavor web no ve quién escribió por el espacio: %', v_email using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -452,7 +452,7 @@ end $$;
 reset role;
 
 -- ============================================================
--- RN-SOP-06 · el reloj humano de §132 y los festivos de Cuotly
+-- RN-SOP-06 · el reloj humano de §132 y los festivos de Restavor web
 -- ============================================================
 set role authenticated;
 do $$
@@ -474,14 +474,14 @@ begin
 end $$;
 reset role;
 
--- Los festivos los pone Cuotly, y mientras no los pone no hay ninguno.
+-- Los festivos los pone Restavor web, y mientras no los pone no hay ninguno.
 select set_config('request.jwt.claim.sub', 'd0d00000-0000-0000-0000-000000000001', false);
 set role authenticated;
 do $$
 begin
   begin
     perform public.add_platform_holiday('2026-09-15', 'Inventado por un espacio');
-    raise exception 'RN-SOP-06 FALLIDO: un propietario fija los festivos de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-06 FALLIDO: un propietario fija los festivos de Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-SOP%' then raise; end if;
@@ -498,7 +498,7 @@ begin
   insert into sop_ids values ('festivo', v_h);
   -- El martes pasa al horario de fin de semana: 330 + 300.
   if public.support_minutes_between('2026-09-15 00:00+02'::timestamptz, '2026-09-16 00:00+02'::timestamptz) <> 630 then
-    raise exception 'RN-SOP-06 FALLIDO: un festivo de Cuotly no usa el horario de fin de semana' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-06 FALLIDO: un festivo de Restavor web no usa el horario de fin de semana' using errcode = 'assert_failure';
   end if;
   begin
     perform public.retire_platform_holiday(v_h, '');
@@ -653,7 +653,7 @@ do $$
 begin
   begin
     perform public.declare_platform_status_event('files', 'degraded', 'Lentitud subiendo archivos');
-    raise exception 'RN-SOP-13 FALLIDO: un propietario declara el estado de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-13 FALLIDO: un propietario declara el estado de Restavor web' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-SOP%' then raise; end if;
@@ -712,16 +712,16 @@ declare
   v_admin uuid := 'd0d00000-0000-0000-0000-000000000006';
   v_owner uuid := 'd0d00000-0000-0000-0000-000000000001';
 begin
-  -- Abrir avisa a Bosco y al Administrador de Cuotly.
+  -- Abrir avisa a Bosco y al Administrador de Restavor web.
   if (select count(*) from public.notifications where event_type = 'incident_opened' and entity_id = v_inc1 and recipient_id in (v_bosco, v_admin)) <> 2 then
     raise exception 'RN-SOP-15 FALLIDO: abrir no avisa a toda la plataforma' using errcode = 'assert_failure';
   end if;
-  -- Que Cuotly la mueva avisa a quien la abrió; que el espacio conteste avisa a Cuotly.
+  -- Que Restavor web la mueva avisa a quien la abrió; que el espacio conteste avisa a Restavor web.
   if (select count(*) from public.notifications where event_type = 'incident_updated' and entity_id = v_inc1 and recipient_id = v_owner) < 1 then
     raise exception 'RN-SOP-15 FALLIDO: mover el estado no avisa a quien abrió' using errcode = 'assert_failure';
   end if;
   if (select count(*) from public.notifications where event_type = 'incident_replied' and entity_id = v_inc1 and recipient_id = v_bosco) < 1 then
-    raise exception 'RN-SOP-15 FALLIDO: contestar no avisa a Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SOP-15 FALLIDO: contestar no avisa a Restavor web' using errcode = 'assert_failure';
   end if;
   if public.notification_event_is_mandatory('incident_opened')
      or public.notification_event_is_mandatory('incident_updated')

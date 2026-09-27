@@ -88,7 +88,7 @@ export async function reactivateEstablishment(
 }
 
 /**
- * M47 · registrar la baja que llegó por fuera de Cuotly —una llamada, un
+ * M47 · registrar la baja que llegó por fuera de Restavor web —una llamada, un
  * correo—. Es la misma función que usa el restaurante desde su panel
  * (R24): el hecho es el mismo y `requested_by_client` distingue quién lo
  * comunicó, que es lo que hace falta saber después.

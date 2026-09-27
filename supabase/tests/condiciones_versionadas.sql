@@ -1,7 +1,7 @@
 -- Condiciones versionadas y su aceptación (maqueta 13, RN-DAT-07, §104).
 --
 -- Decisión de Bosco (12/09/2026), opción (c): el propietario del
--- restaurante acepta en Cuotly, Y el equipo puede registrar una
+-- restaurante acepta en Restavor web, Y el equipo puede registrar una
 -- aceptación de fuera con fecha y contrato. Lo que se comprueba:
 --
 --   · Publicar es VERSIONAR: la v1 sigue ahí después de publicar la v2, y

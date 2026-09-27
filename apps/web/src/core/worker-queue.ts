@@ -31,7 +31,7 @@
  * sí: si su cambio menos importante vence esta tarde y el más importante
  * pasado mañana, lo que hay que hacer ahora es el que vence: incumplirlo
  * no es algo que el cliente haya pedido al ordenar su lista, y el plazo se
- * lo debe Cuotly igual (RN-SLA). Por debajo de los dos criterios de plazo,
+ * lo debe Restavor web igual (RN-SLA). Por debajo de los dos criterios de plazo,
  * su orden manda — y ese es exactamente el caso para el que se inventó:
  * cinco cambios enviados de una vez, aceptados a la vez y con el mismo
  * contador, donde hasta ahora decidía la fecha de asignación y ahora
@@ -56,7 +56,7 @@ import { compareClientRank } from "./priority";
  *
  * El número es el de la base: **mayor va primero**. En Restavor, Premium+
  * (2), Premium (1) y el resto (0). No se traduce a nombres de plan porque
- * Cuotly es multiempresa (CLAUDE.md): otro espacio llamará "Total" al
+ * Restavor web es multiempresa (CLAUDE.md): otro espacio llamará "Total" al
  * suyo, y lo que cuenta es el número que su catálogo le haya puesto.
  *
  * **Esto no es un plazo más corto.** El plazo es `start_sla_hours`

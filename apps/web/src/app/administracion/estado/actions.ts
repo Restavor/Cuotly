@@ -17,7 +17,7 @@ import {
 import type { AdminActionState } from "../action-state";
 
 /**
- * Las acciones del estado de Cuotly y sus festivos (RN-SOP-06, RN-SOP-13).
+ * Las acciones del estado de Restavor web y sus festivos (RN-SOP-06, RN-SOP-13).
  * Ninguna autoriza nada: las cuatro funciones exigen `is_platform_member()`
  * con la 2FA dentro, y aquí solo se traduce la negativa.
  */

@@ -1,7 +1,7 @@
 # Estado del despliegue en Supabase
 
 Este archivo dice **qué migraciones del repositorio están aplicadas en el
-proyecto real de Supabase** (`Cuotly`, `mcajbfxhkxtdhjoyrqha`, eu-west-1).
+proyecto real de Supabase** (`Restavor web`, `mcajbfxhkxtdhjoyrqha`, eu-west-1).
 Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
@@ -339,7 +339,7 @@ dos guardas y la interna tampoco como `authenticated`, y que no hay nada marcado
 
 **Actualización del 26/09/2026: la 140 y la 141.** `cuotly_elimina_cuentas_espacios_y_restaurantes`
 y `cuotly_avisa_de_lo_que_elimina` (decisión 81, RN-ADM-14 a 21): Bosco y los Administradores de
-Cuotly con el permiso nuevo `can_delete_accounts` eliminan y recuperan cuentas, espacios y
+Restavor web con el permiso nuevo `can_delete_accounts` eliminan y recuperan cuentas, espacios y
 restaurantes, sin borrar nada. Añade el modo `archived_by_platform` a `spaces.cuotly_status`,
 `establishments.platform_archived_at` con su disparador, la tabla `platform_account_closures` (RLS,
 solo lectura de plataforma), el correo `account_deleted` y los avisos obligatorios
@@ -1003,7 +1003,7 @@ la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 y la 96 el 16/
 
 - La **91** (`panel_modo_soporte_y_2fa`, Fase 4 · Hito 19) el 15/09/2026,
   desde el MCP, en **cuatro partes** porque el archivo son 55 KB: `p1`
-  (la 2FA, el tercer permiso fino y nombrar Administradores de Cuotly),
+  (la 2FA, el tercer permiso fino y nombrar Administradores de Restavor web),
   `p2` (la sesión de Modo soporte y la puerta), `p3` (los dos
   disparadores, el aviso obligatorio y las familias de auditoría) y `p4`
   (las nueve funciones del panel). **NO es solo aditiva, y por eso se
@@ -1047,7 +1047,7 @@ la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 y la 96 el 16/
   esa capa.
 
   **Lo que cambia para Bosco desde este momento:** la administración de
-  Cuotly no responde hasta que registre el segundo factor en
+  Restavor web no responde hasta que registre el segundo factor en
   `/cuenta/seguridad` (Authentication → Multi-Factor con TOTP habilitado en
   el proyecto). En Restavor entra con normalidad.
 
@@ -1730,7 +1730,7 @@ la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 y la 96 el 16/
   los nuevos **Impulso** (299 €, 6/6/1/0, 48 h) y **Premium** (499 €,
   10/12/2/0, 24 h) nacen sin suscripciones; Básico no se tocó;
   `grants_priority` lo tiene solo Premium+ en los dos espacios. La guía
-  "Cobros a tus restaurantes y tu suscripción a Cuotly" pasó a la versión
+  "Cobros a tus restaurantes y tu suscripción a Restavor web" pasó a la versión
   2 y nombra los cinco planes. `upgrade_restavor_plan_catalogue(uuid)` no
   tiene EXECUTE ni para `anon` ni para `authenticated`. Los tipos ya
   llevaban la función (se añadió a mano con la 96); no se regeneran hasta
@@ -1787,10 +1787,10 @@ la 90 el 15/09/2026, la 91, la 92 y la 93 ese mismo día, y la 94 y la 96 el 16/
 - La **93** (`soporte_centro_de_ayuda_y_estado`, Fase 4 · Hito 21) el
   15/09/2026, por orden de Bosco, desde el MCP y en **siete partes**
   porque el archivo son 80 KB: `parte_1` (la capacidad `contact_cuotly`,
-  los tres catálogos y los festivos de Cuotly), `parte_2` (el reloj
+  los tres catálogos y los festivos de Restavor web), `parte_2` (el reloj
   humano, las cuatro tablas de incidencias, los dos avisos y
   `open_incident`), `parte_3` (el lado de quien llama, mover, contestar,
-  adjuntar, lo derivado y la bandeja), `parte_4` (el hilo para Cuotly,
+  adjuntar, lo derivado y la bandeja), `parte_4` (el hilo para Restavor web,
   `help_articles` y el buscador), `parte_5` (las dieciséis guías),
   `parte_6` (la página de estado, la instantánea pública y los tres CHECK
   de `notifications`) y `parte_7` (`audit_entity_is_visible`, el panel, la
@@ -1954,7 +1954,7 @@ evalúa la política de RLS.
 
 Después, doce comprobaciones de comportamiento con las dos identidades
 sembradas (`owner@cuotly.test` y `trabajadora@cuotly.test`), todas dentro de
-una transacción revertida — el espacio siguió llamándose "Demo Cuotly", en
+una transacción revertida — el espacio siguió llamándose "Demo Restavor web", en
 `Europe/Madrid`, con 0 versiones de calendario y las mismas 95 filas de
 auditoría:
 
@@ -2426,7 +2426,7 @@ los flujos. Es idempotente y NO es una migración (por eso vive fuera de
 datos de prueba en el historial del esquema).
 
 Está sembrado en el proyecto ahora mismo. Tres identidades, todas con la
-contraseña `Cuotly-demo-2026`:
+contraseña `Restavor web-demo-2026`:
 
 | Correo | Papel |
 |---|---|
@@ -2434,7 +2434,7 @@ contraseña `Cuotly-demo-2026`:
 | `trabajadora@cuotly.test` | Trabajadora que ejecuta los trabajos |
 | `restaurante@cuotly.test` | Propietario local del restaurante (cliente) |
 
-Espacio `demo` ("Demo Cuotly", Europe/Madrid, IVA 21 %), restaurante
+Espacio `demo` ("Demo Restavor web", Europe/Madrid, IVA 21 %), restaurante
 `EST-0001` ("Bar Demo") con plan Impulso+ (el Impulso de entonces, renombrado por la
 migración 96), y cuatro solicitudes dejadas a
 propósito en cuatro estados distintos para que ninguna pantalla se quede
@@ -2480,7 +2480,7 @@ real de que sigue siendo idempotente.
 
 ### Entrar con info@restavor.com
 
-Es el correo con el que se usa Cuotly de verdad: el de `CUOTLY_OWNER_EMAIL`
+Es el correo con el que se usa Restavor web de verdad: el de `CUOTLY_OWNER_EMAIL`
 y el que reconoce `is_platform_owner()`. Ser propietario de la plataforma
 **no da acceso a ningún espacio** —el Modo soporte es de la Fase 4 (PRD
 §4.1)—, así que para ver el espacio de demostración hace falta una

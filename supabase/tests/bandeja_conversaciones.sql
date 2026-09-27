@@ -381,7 +381,7 @@ begin
   end if;
 
   -- La positiva: para el equipo ese mismo mensaje NO es suyo, y ahí
-  -- `sender_id` sí llega (§15, "internamente Cuotly registra quién
+  -- `sender_id` sí llega (§15, "internamente Restavor web registra quién
   -- realizó cada acción").
   perform set_config('request.jwt.claim.sub', 'f0000000-0000-0000-0000-000000000001', false);
 

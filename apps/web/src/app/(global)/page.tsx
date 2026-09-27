@@ -20,7 +20,7 @@ import { PanelCards, SpaceCards } from "./ContextCards";
 import { InicioBuscador } from "./InicioBuscador";
 
 /**
- * G01 · el Inicio del contexto global, y **la portada de Cuotly** (PRD §36,
+ * G01 · el Inicio del contexto global, y **la portada de Restavor web** (PRD §36,
  * RN-GLO-02 y RN-GLO-03).
  *
  * "Necesita tu atención" con lo pendiente de **todos** los contextos a la
@@ -38,8 +38,8 @@ import { InicioBuscador } from "./InicioBuscador";
  * esta pantalla (RN-GLO-03).
  *
  * Lo que la portada anterior traía y aquí sigue: la entrada a
- * Administración de Cuotly con su aviso de 2FA, y la tarjeta de crear el
- * espacio de Restavor para el Propietario de Cuotly.
+ * Administración de Restavor web con su aviso de 2FA, y la tarjeta de crear el
+ * espacio de Restavor para el Propietario de Restavor web.
  */
 export const dynamic = "force-dynamic";
 
@@ -51,7 +51,7 @@ export default async function GlobalHomePage() {
 
   if (!user) redirect("/login");
 
-  // Hito 19 (§8, RN-ADM-01) · quien es de Cuotly ve SIEMPRE su entrada, la
+  // Hito 19 (§8, RN-ADM-01) · quien es de Restavor web ve SIEMPRE su entrada, la
   // primera. Se pregunta por la identidad sin la cerradura de la 2FA: si le
   // falta, se le dice aquí. Si la consulta falla no se bloquea a nadie: se
   // sigue como un usuario normal.
@@ -92,7 +92,7 @@ export default async function GlobalHomePage() {
         derecha, la acción principal. El destino del botón NO es crear: es
         **pedir** un espacio (RN-PLA), y por eso conserva su texto. Un botón
         que dijera "crear" y abriera una solicitud sería prometer algo que
-        la regla no da. Para el Propietario de Cuotly no se pinta: él tiene
+        la regla no da. Para el Propietario de Restavor web no se pinta: él tiene
         su propia tarjeta más abajo, que sí crea.
       */}
       <PageHeader

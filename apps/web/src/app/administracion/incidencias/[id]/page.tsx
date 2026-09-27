@@ -12,9 +12,9 @@ import { priorityTone, stateTone } from "../tone";
 import { IncidentForms } from "./IncidentForms";
 
 /**
- * Una incidencia vista desde Cuotly (RN-SOP-07): todo lo que el espacio
+ * Una incidencia vista desde Restavor web (RN-SOP-07): todo lo que el espacio
  * escribió, el contexto técnico que se recogió, el hilo con quién escribió
- * cada mensaje —Cuotly sí lo ve— y los botones que la tabla de
+ * cada mensaje —Restavor web sí lo ve— y los botones que la tabla de
  * transiciones permite.
  */
 export const dynamic = "force-dynamic";

@@ -1,7 +1,7 @@
 {
   "name": "cuotly",
   "private": true,
-  "description": "Cuotly — plataforma SaaS multiempresa de mantenimiento web para restaurantes (Restavor).",
+  "description": "Restavor web — plataforma SaaS multiempresa de mantenimiento web para restaurantes (Restavor).",
   "engines": {
     "node": ">=20"
   },

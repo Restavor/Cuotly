@@ -26,7 +26,7 @@ insert into auth.users (id, email, role, aud) values
   ('c1c00000-0000-0000-0000-000000000005', 'cic-cuotly@example.com', 'authenticated', 'authenticated'),
   ('c1c00000-0000-0000-0000-000000000006', 'cic-ajena@example.com', 'authenticated', 'authenticated');
 
--- §167 · un Administrador de Cuotly con los tres permisos, para Modo
+-- §167 · un Administrador de Restavor web con los tres permisos, para Modo
 -- soporte y para la restauración tardía.
 insert into public.platform_roles (user_id, role, can_approve_spaces, can_manage_subscriptions, can_support) values
   ('c1c00000-0000-0000-0000-000000000005', 'cuotly_admin', true, true, true);

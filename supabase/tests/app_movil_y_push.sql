@@ -311,7 +311,7 @@ begin
   end if;
   if (select in_app from public.notification_preferences
       where space_id = v_space and profile_id = auth.uid() and event_type = 'job_assigned') is not true then
-    raise exception 'RN-MOV-06 FALLIDO: apagar el push toca el aviso dentro de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-MOV-06 FALLIDO: apagar el push toca el aviso dentro de Restavor web' using errcode = 'assert_failure';
   end if;
 
   -- La web de escritorio guarda los dos canales de siempre (cuatro
@@ -432,12 +432,12 @@ begin
     raise exception 'RN-MOV-06 FALLIDO: un aviso obligatorio no sale por push' using errcode = 'assert_failure';
   end if;
 
-  -- §18 · "visible dentro de Cuotly, sin correo ni push": lo uno y lo
+  -- §18 · "visible dentro de Restavor web, sin correo ni push": lo uno y lo
   -- otro van juntos.
   v_n := public.emit_notification(v_space, v_ana, 'job_published', 'staff', 'job', gen_random_uuid(),
                                   '/espacios/espacio-h22-test/trabajos', 'h22:solo-dentro', null, null, null, false);
   if exists (select 1 from public.notification_deliveries where notification_id = v_n) then
-    raise exception 'RN-MOV-04 FALLIDO: un aviso "solo dentro de Cuotly" encola correo o push' using errcode = 'assert_failure';
+    raise exception 'RN-MOV-04 FALLIDO: un aviso "solo dentro de Restavor web" encola correo o push' using errcode = 'assert_failure';
   end if;
 end $$;
 

@@ -177,7 +177,7 @@ export function SendQuoteForm({ quoteId }: { quoteId: string }) {
 
 /**
  * Decisión 21 · el equipo registra la respuesta que el restaurante dio
- * fuera de Cuotly. Dos formularios con el mismo motivo obligatorio: se
+ * fuera de Restavor web. Dos formularios con el mismo motivo obligatorio: se
  * pinta a quien gestiona solicitudes, pero el control es `accept_quote()`
  * y `reject_quote()`, que comprueban quién y exigen el motivo.
  */

@@ -1,6 +1,6 @@
 /**
  * `src/services/support-gateway.ts` — la mitad de Supabase del soporte de
- * Cuotly, el centro de ayuda y la página de estado (Fase 4, Hito 21).
+ * Restavor web, el centro de ayuda y la página de estado (Fase 4, Hito 21).
  *
  * Aquí no se decide nada: cada función de la migración 93 comprueba quién
  * pregunta y con qué sesión (`has_capability(…, 'contact_cuotly')`,

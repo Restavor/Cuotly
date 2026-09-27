@@ -22,14 +22,14 @@ import {
 } from "./cuotly-subscription";
 
 /**
- * La suscripción de Cuotly (PRD §31, RN-SUB; §4.1 a §4.7). Lo que se vigila
+ * La suscripción de Restavor web (PRD §31, RN-SUB; §4.1 a §4.7). Lo que se vigila
  * aquí es la cuenta —catálogo, límites, avisos, corte, prorrateo—, que es
  * lo único de este hito que es dominio puro. Lo demás —quién paga, quién
  * confirma, qué se congela— lo comprueba
  * `supabase/tests/plataforma_suscripcion_de_cuotly.sql` contra la base,
  * porque es donde tiene que ser verdad.
  */
-describe("los dos planes de Cuotly (RN-SUB-01)", () => {
+describe("los dos planes de Restavor web (RN-SUB-01)", () => {
   it("RN-SUB-01 · Pro es 149 € con 5 y 5 incluidos, 20 GB, y adicionales de 25 € y 15 €", () => {
     expect(CUOTLY_PLAN_TERMS.pro).toEqual({
       priceCents: 14900,
@@ -91,7 +91,7 @@ describe("el modo del espacio (RN-SUB-02, RN-SUB-08)", () => {
     expect(isSpaceReadOnly("archived_trial_ended")).toBe(true);
     expect(isSpaceReadOnly("archived_nonpayment")).toBe(true);
     expect(isSpaceReadOnly("archived_by_owner")).toBe(true);
-    // RN-ADM-16 · el que elimina Cuotly, también.
+    // RN-ADM-16 · el que elimina Restavor web, también.
     expect(isSpaceReadOnly("archived_by_platform")).toBe(true);
     expect(isSpaceReadOnly("active")).toBe(false);
     expect(isSpaceReadOnly("trial")).toBe(false);
@@ -225,7 +225,7 @@ describe("el prorrateo y el cambio de plan (RN-SUB-04, RN-SUB-10)", () => {
   const start = new Date("2026-10-01T00:00:00Z");
   const end = new Date("2026-10-31T00:00:00Z");
 
-  it("RN-COM-18 aplicada a Cuotly · la fracción es natural y va de 0 a 1", () => {
+  it("RN-COM-18 aplicada a Restavor web · la fracción es natural y va de 0 a 1", () => {
     expect(remainingPeriodFraction(start, end, new Date("2026-10-16T00:00:00Z"))).toBeCloseTo(0.5, 6);
     expect(remainingPeriodFraction(start, end, new Date("2026-09-01T00:00:00Z"))).toBe(1);
     expect(remainingPeriodFraction(start, end, new Date("2026-11-01T00:00:00Z"))).toBe(0);

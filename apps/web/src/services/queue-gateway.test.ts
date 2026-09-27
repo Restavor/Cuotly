@@ -173,7 +173,7 @@ describe("RN-NOT-06 · el correo del resumen diario", () => {
     expect(m!.subject).toContain("3");
   });
 
-  it("NO lista qué avisos entraron: eso se lee en Cuotly, con permisos", () => {
+  it("NO lista qué avisos entraron: eso se lee en Restavor web, con permisos", () => {
     const m = createMailComposer("https://cuotly.test").compose(resumen());
 
     // El enlace lleva a los avisos; el cuerpo no trae ni un título.
@@ -234,18 +234,18 @@ describe("El transporte de Resend dice cuándo no puede enviar, en vez de intent
   const CLAVE = "re_lo_que_sea";
 
   it("con un remitente válido no pone ninguna pega", () => {
-    const t = createResendTransport(CLAVE, "Cuotly <avisos@cuotly.com>");
+    const t = createResendTransport(CLAVE, "Restavor web <avisos@cuotly.com>");
     expect(t.unusableReason?.()).toBeNull();
   });
 
   it("con el remitente mal escrito lo dice, y nombra RESEND_FROM", () => {
-    const t = createResendTransport(CLAVE, "Cuotly");
+    const t = createResendTransport(CLAVE, "Restavor web");
     const motivo = t.unusableReason?.();
     expect(motivo).toContain("RESEND_FROM");
   });
 
   it("sin clave también lo dice, y nombra RESEND_API_KEY", () => {
-    const t = createResendTransport(undefined, "Cuotly <avisos@cuotly.com>");
+    const t = createResendTransport(undefined, "Restavor web <avisos@cuotly.com>");
     expect(t.unusableReason?.()).toContain("RESEND_API_KEY");
   });
 
@@ -254,7 +254,7 @@ describe("El transporte de Resend dice cuándo no puede enviar, en vez de intent
     // otro sitio. Mandar un `from` inválido es exactamente el 422 del que
     // viene todo esto, así que ni se intenta la petición.
     const fetchFalso = vi.fn();
-    const t = createResendTransport(CLAVE, "Cuotly", fetchFalso as unknown as typeof fetch);
+    const t = createResendTransport(CLAVE, "Restavor web", fetchFalso as unknown as typeof fetch);
 
     return expect(
       t.send({ to: "ana@example.com", subject: "s", body: "b" }),
@@ -271,13 +271,13 @@ describe("El transporte de Resend dice cuándo no puede enviar, en vez de intent
     });
     const t = createResendTransport(
       CLAVE,
-      "  Cuotly <avisos@cuotly.com>\n",
+      "  Restavor web <avisos@cuotly.com>\n",
       fetchFalso as unknown as typeof fetch,
     );
 
     await t.send({ to: "ana@example.com", subject: "s", body: "b" });
 
     const cuerpo = JSON.parse(String(fetchFalso.mock.calls[0]?.[1]?.body));
-    expect(cuerpo.from).toBe("Cuotly <avisos@cuotly.com>");
+    expect(cuerpo.from).toBe("Restavor web <avisos@cuotly.com>");
   });
 });

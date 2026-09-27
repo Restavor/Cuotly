@@ -328,7 +328,7 @@ export function sendGate(input: {
 }
 
 /**
- * §95 · "Cuotly avisa cuando se acerca la fecha programada". Cuánto es
+ * §95 · "Restavor web avisa cuando se acerca la fecha programada". Cuánto es
  * "se acerca" no lo dice la maestra: **24 horas antes** es lectura
  * confirmada por Bosco (decisión 28b). Se eligen 24 h y no 1 h porque el aviso sirve
  * para poder pararlo o corregirlo, y eso necesita una jornada por delante.
@@ -2031,7 +2031,7 @@ function addDaysIso(iso: string, days: number): string {
 /**
  * RN-REP-25 · lo que pasó con las cifras después de cada cambio publicado.
  *
- * **Dice lo que pasó, nunca que lo causó el cambio.** Cuotly no tiene
+ * **Dice lo que pasó, nunca que lo causó el cambio.** Restavor web no tiene
  * forma de aislar una causa, y fingirla sería exactamente lo que CLAUDE.md
  * prohíbe. Por eso esta función devuelve dos números y no una conclusión:
  * la frase la escribe la pantalla, y la escribe en pasado.

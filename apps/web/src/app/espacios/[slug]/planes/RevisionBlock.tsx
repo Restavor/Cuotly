@@ -47,7 +47,7 @@ export function RevisionChanges({ changes }: { changes: SubscriptionRevision["ch
 /**
  * M56 · la versión nueva de lo que tiene este restaurante: dónde está,
  * cuándo pasa, qué cambia y, si le perjudica y no la ha aceptado,
- * registrar la aceptación que dio fuera de Cuotly (RN-COM-23/24).
+ * registrar la aceptación que dio fuera de Restavor web (RN-COM-23/24).
  */
 export function RevisionBlock({
   revision,

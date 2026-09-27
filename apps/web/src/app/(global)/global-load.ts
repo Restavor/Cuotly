@@ -207,7 +207,7 @@ export async function loadGlobalContexts(supabase: Supabase): Promise<GlobalCont
 /*
   Página 1 del diseño · el recuento por espacio, en UNA consulta para
   todos. Una por espacio sería una cascada en la portada, que es la
-  pantalla que más se abre de Cuotly. Un espacio que no esté en el mapa no
+  pantalla que más se abre de Restavor web. Un espacio que no esté en el mapa no
   se ha podido contar (ver `GlobalHome.restaurantCount`).
 */
 async function countRestaurantsBySpace(

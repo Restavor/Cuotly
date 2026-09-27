@@ -44,7 +44,7 @@ import { loadArchivedEstablishments } from "./archived-load";
  * (CLAUDE.md).
  *
  * Lo que el dibujo dice y aquí cambia: "Solicitar reactivación" es
- * **Reactivar**, porque en Cuotly reactivar no se pide a nadie: lo hace el
+ * **Reactivar**, porque en Restavor web reactivar no se pide a nadie: lo hace el
  * equipo, con su motivo, y si hay deuda vencida la guarda de RN-FIN-13 lo
  * para. Y "Buscar espacio de mantenimiento" no es un buscador: un espacio
  * no ve los demás espacios, así que se pega su identificador, como en la

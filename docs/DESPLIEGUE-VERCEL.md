@@ -1,6 +1,6 @@
-# Desplegar Cuotly en Vercel
+# Desplegar Restavor web en Vercel
 
-Este archivo dice **qué hay que configurar en Vercel** para que Cuotly
+Este archivo dice **qué hay que configurar en Vercel** para que Restavor web
 funcione sola: la aplicación web y, sobre todo, el cron que dispara la cola.
 
 Escrito el 02/09/2026 como preparación. **Desplegado de verdad el
@@ -13,7 +13,7 @@ Escrito el 02/09/2026 como preparación. **Desplegado de verdad el
 
 ## Lo que hay hoy en Vercel (20/09/2026)
 
-Dos proyectos, los dos conectados a `Restavor/Cuotly` y los dos sirviendo la
+Dos proyectos, los dos conectados a `Restavor/Restavor web` y los dos sirviendo la
 rama `claude/cuotly-supabase-migrations-tests-q8o18p`:
 
 | Proyecto | Qué sirve | Raíz | Dirección |
@@ -210,12 +210,12 @@ format.","name":"validation_error","statusCode":422}
 No es el dominio sin verificar ni la clave: es el **formato** del
 remitente. `RESEND_FROM` en Vercel contiene algo que Resend no acepta como
 dirección. El valor por defecto del código sí es válido
-(`Cuotly <avisos@cuotly.com>`, en `apps/web/src/app/api/cola/route.ts`),
+(`Restavor web <avisos@cuotly.com>`, en `apps/web/src/app/api/cola/route.ts`),
 así que la variable está sobrescribiendo algo correcto con algo que no lo
 es. Sospechosos habituales: comillas alrededor del valor, un salto de
 línea al final, o el `<...>` sin cerrar.
 
-Cuotly lleva **desde el 10/09 sin mandar un solo correo** y no se ha notado,
+Restavor web lleva **desde el 10/09 sin mandar un solo correo** y no se ha notado,
 porque el aviso dentro de la aplicación sí funciona y nadie esperaba el
 correo todavía.
 
@@ -277,7 +277,7 @@ se pierde nada y no se gasta ningún intento.
 > Hecho el 21/09/2026. Queda escrito para el día que haya que rotarla,
 > o montar un segundo entorno.
 
-Es la clave con la que Cuotly cifra las credenciales de las integraciones
+Es la clave con la que Restavor web cifra las credenciales de las integraciones
 —los tokens de Google, las claves de Clarity y PageSpeed— **antes** de
 guardarlas en Supabase (RN-INT-02). La base guarda el resultado cifrado; la
 clave vive solo en el entorno de Vercel. Por eso nadie con acceso a la base
@@ -324,7 +324,7 @@ propia clave y funcionan sin esto.
 1. Entra en <https://console.cloud.google.com/> con la cuenta de Google que
    vaya a ser la dueña, y crea un proyecto (o usa uno que ya tengas).
 
-2. **Activa las APIs** que Cuotly va a llamar, en *APIs y servicios* →
+2. **Activa las APIs** que Restavor web va a llamar, en *APIs y servicios* →
    *Biblioteca*. Son tres, una por fuente:
 
    | Fuente | API que hay que activar |
@@ -368,7 +368,7 @@ propia clave y funcionan sin esto.
 7. **Vuelve a desplegar**, igual que antes.
 
 **Lo que conviene saber antes de empezar con el Perfil de Empresa:** los
-permisos que Cuotly pide son de solo lectura donde Google los ofrece
+permisos que Restavor web pide son de solo lectura donde Google los ofrece
 (`analytics.readonly`, `webmasters.readonly`), pero el Perfil de Empresa
 **no tiene uno de solo lectura**: `business.manage` es el único que da
 acceso a la API de rendimiento, y Google lo considera un permiso
@@ -380,7 +380,7 @@ necesitan esa verificación, así que lo sensato es empezar por esas dos.
 
 ## Qué depende del cron
 
-Sin cron, Cuotly funciona pero no hace nada por su cuenta. Todo esto está
+Sin cron, Restavor web funciona pero no hace nada por su cuenta. Todo esto está
 implementado y esperando a que alguien lo llame:
 
 | Qué | Regla | Función |
@@ -420,7 +420,7 @@ En Vercel → Settings → Environment Variables. Las que llevan
 | `CRON_SECRET` | Autenticar el cron | **La ruta responde 503 y el cron no hace nada** |
 | `ANTHROPIC_API_KEY` | Clasificación con IA | Cae al motor de reglas (RN-CLS-02), no es un fallo |
 | `RESEND_API_KEY` | Enviar los correos | Se encolan y salen cuando se configure; nunca se pierden |
-| `RESEND_FROM` | Remitente | Usa `Cuotly <avisos@cuotly.com>` |
+| `RESEND_FROM` | Remitente | Usa `Restavor web <avisos@cuotly.com>` |
 | `INTEGRATIONS_VAULT_KEY` | Cifrar las credenciales de las integraciones (RN-INT-02): 32 bytes en base64, `openssl rand -base64 32` | **No se puede conectar ninguna fuente** y la cola no reclama sincronizaciones; la pantalla lo dice |
 | `INTEGRATIONS_VAULT_KEY_VERSION` | La versión de la clave actual (para rotarla) | Vale `1` |
 | `INTEGRATIONS_VAULT_KEY_PREVIOUS` | La clave anterior, solo para descifrar lo guardado con ella durante una rotación | Lo cifrado con la versión anterior deja de leerse hasta volver a autorizar |

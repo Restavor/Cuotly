@@ -158,7 +158,7 @@ export default async function TeamQuoteDetailPage({
         Página 80 (M50) · la ficha como el dibujo: información general y
         alcance a la izquierda, importes y acciones a la derecha. No se
         copian las "Partidas", "Entrega estimada", "Incluye / No incluye"
-        ni el "Documento adjunto": un presupuesto de Cuotly es un concepto,
+        ni el "Documento adjunto": un presupuesto de Restavor web es un concepto,
         un alcance y una base con su IVA (§84), y esas piezas no existen.
       */}
       <div>
@@ -326,7 +326,7 @@ export default async function TeamQuoteDetailPage({
 
           {/*
             Decisión 21 · registrar la respuesta que el restaurante dio
-            fuera de Cuotly. Solo sobre uno enviado y a quien gestiona;
+            fuera de Restavor web. Solo sobre uno enviado y a quien gestiona;
             el servidor lo vuelve a comprobar y exige el motivo.
           */}
           {isQuoteState(estado) && teamCanAnswerQuoteForClient(estado, gestionar) ? (

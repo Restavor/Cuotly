@@ -14,7 +14,7 @@ const t = es.allergens;
  * Dos cosas que esta tarjeta hace a propósito:
  *
  *   · **El título dice "según la información proporcionada"**, que es el
- *     del diseño y además es lo único que Cuotly puede prometer: la nota
+ *     del diseño y además es lo único que Restavor web puede prometer: la nota
  *     la escribe el restaurante y aquí no se comprueba (RN-ALE-03).
  *   · **Un menú sin nota no dice "no lleva alérgenos"**: dice que nadie la
  *     ha escrito. Las dos frases se parecen y significan lo contrario para

@@ -17,7 +17,7 @@ import { fechaCorta } from "@/i18n/dates";
  *   · **El color va con la entidad y hay leyenda desde dos series**, más
  *     la etiqueta directa al final de cada línea: la identidad nunca es
  *     solo el color. Los colores son los tokens de Emerald Control —el
- *     verde de Cuotly, `info` y `warning`— validados con el comprobador
+ *     verde de Restavor web, `info` y `warning`— validados con el comprobador
  *     de la paleta: los dos primeros pasan todo; el ámbar se queda por
  *     debajo de 3:1 sobre blanco y por eso solo se usa donde hay etiqueta
  *     visible y tabla (el anillo).

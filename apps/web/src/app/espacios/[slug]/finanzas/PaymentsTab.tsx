@@ -31,7 +31,7 @@ export type PaymentsTabData = {
  * derecha.
  *
  * El dibujo elige un **presupuesto**; aquí se elige un **cobro**, que es
- * donde viven los pagos en Cuotly (RN-FIN-02): un presupuesto aceptado
+ * donde viven los pagos en Restavor web (RN-FIN-02): un presupuesto aceptado
  * emite su cobro (§84), y las mensualidades del plan también se pagan a
  * plazos. Las tres cifras salen del servidor; aquí no se suma nada.
  */

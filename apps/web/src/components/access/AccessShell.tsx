@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/server";
  * ofrecerle "Mi cuenta" sería un enlace que lo manda a entrar con una
  * cuenta que no existe. Sin sesión se pinta lo que pinta A08, que es la
  * vista del diseño sin sesión: "Ayuda", que escribe al correo de contacto
- * de Cuotly (decisión 67) porque el centro de ayuda pide entrar, y además
+ * de Restavor web (decisión 67) porque el centro de ayuda pide entrar, y además
  * "Iniciar sesión" para quien sí tiene cuenta.
  */
 export async function AccessShell({

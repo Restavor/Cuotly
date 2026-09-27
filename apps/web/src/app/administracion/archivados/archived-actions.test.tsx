@@ -18,7 +18,7 @@ afterEach(cleanup);
 const t = es.platformAdmin.archived;
 const td = es.platformAdmin.deletion;
 
-describe("Decisión 82 · Archivados en el panel de Cuotly", () => {
+describe("Decisión 82 · Archivados en el panel de Restavor web", () => {
   it("RN-ADM-22 · en las listas de activos el botón es Archivar, y dice que pasa a Archivados", () => {
     render(
       <ArchiveButton

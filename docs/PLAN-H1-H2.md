@@ -202,4 +202,4 @@ zona horaria, crear un establecimiento dentro, e invitar a alguien de tu equipo 
 
 Al cerrar H1 y, por separado, al cerrar H2, te enseño la evidencia descrita arriba y espero
 tu aprobación explícita antes de seguir. Si en cualquier punto ves que algo no coincide con
-lo que esperabas de Cuotly, dilo — se para y se ajusta, no se sigue construyendo encima.
+lo que esperabas de Restavor web, dilo — se para y se ajusta, no se sigue construyendo encima.

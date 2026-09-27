@@ -33,7 +33,7 @@ sin conexión de §144 con sus borradores y su puerta de acciones críticas.
 
 Lo que la app no trae **dice dónde está** y no se queda en blanco
 (RN-MOV-03): el catch-all `[...resto].tsx` resuelve el destino contra la
-misma lista de la web y lo nombra. El panel de Cuotly y Modo soporte no
+misma lista de la web y lo nombra. El panel de Restavor web y Modo soporte no
 están a propósito (RN-MOV-08).
 
 ## Lo que se le ha quedado atrás
@@ -57,7 +57,7 @@ PDF.
 
 ### 2 · El panel del restaurante como contexto propio (§40, RN-PAN)
 La web le da cabecera propia, selector de restaurante y "Volver al inicio de
-Cuotly". La app enseña el panel dentro del armazón del espacio, con la barra
+Restavor web". La app enseña el panel dentro del armazón del espacio, con la barra
 de cinco destinos. Las direcciones son las mismas (RN-PAN-01), así que esto
 es forma, no fontanería.
 

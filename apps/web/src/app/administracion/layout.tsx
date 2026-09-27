@@ -11,10 +11,10 @@ import { myPlatformAccess } from "@/services/platform-gateway";
 import { signOut } from "../(auth)/actions";
 
 /**
- * El armazón del panel de Administración de Cuotly (§128, RN-ADM-01/02).
+ * El armazón del panel de Administración de Restavor web (§128, RN-ADM-01/02).
  *
  * Aquí hay UNA comprobación, y es cortesía: `my_platform_access()` dice si
- * quien mira es de Cuotly y si su sesión ha pasado el segundo paso, y con
+ * quien mira es de Restavor web y si su sesión ha pasado el segundo paso, y con
  * eso se decide qué pintar —el panel, "no es para ti" o "te falta la 2FA"—.
  * Lo que decide de verdad es cada función del panel, que vuelve a
  * preguntar con la cerradura puesta (`is_platform_member()`): sin 2FA,

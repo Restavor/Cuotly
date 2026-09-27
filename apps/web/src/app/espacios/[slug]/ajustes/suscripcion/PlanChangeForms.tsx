@@ -16,7 +16,7 @@ function nuevaClave(): string {
 }
 
 /**
- * RN-SUB-10 · cambiar el plan de Cuotly (M60, "Mejorar a Agency" y
+ * RN-SUB-10 · cambiar el plan de Restavor web (M60, "Mejorar a Agency" y
  * "¿Necesitas menos?"). Pasar a Agency es inmediato y cobra la parte
  * proporcional; pasar a Pro se programa para la renovación con los
  * adicionales que hagan falta para que el uso quepa. Qué se cobra y si

@@ -149,7 +149,7 @@ export function RequestData({
 
 /**
  * Un enlace que puede ser de la aplicación o un `mailto:` (el correo de
- * contacto de Cuotly). El segundo no pasa por el enrutador de Next.
+ * contacto de Restavor web). El segundo no pasa por el enrutador de Next.
  */
 function AnyLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
   if (href.startsWith("mailto:")) {
@@ -190,7 +190,7 @@ export function BigOutlineLink({ href, children }: { href: string; children: Rea
   );
 }
 
-/** A03 · "Contactar con Cuotly" como enlace subrayado, al lado del botón. */
+/** A03 · "Contactar con Restavor web" como enlace subrayado, al lado del botón. */
 export function ContactTextLink() {
   return (
     <a
@@ -283,7 +283,7 @@ export function StateCard({
 /**
  * A05 · "Volver al inicio" y, debajo, "Ayuda". Con sesión, el centro de
  * ayuda; sin ella el centro de ayuda no abre (pide entrar), así que
- * "Ayuda" escribe al correo de contacto de Cuotly (decisión 67).
+ * "Ayuda" escribe al correo de contacto de Restavor web (decisión 67).
  */
 export function HomeAndHelp({ signedIn }: { signedIn: boolean }) {
   const t = es.auth.access;

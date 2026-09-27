@@ -13,7 +13,7 @@
  * Lo que sí decide aquí, y para los cinco igual, es **por qué** falló una
  * llamada (RN-INT-08): 401 y 403 son de autorización (hace falta una
  * persona), 404 y 400 son de configuración (la propiedad ya no existe o
- * se dio mal), 429 y 5xx y los cortes de red son transitorios (Cuotly
+ * se dio mal), 429 y 5xx y los cortes de red son transitorios (Restavor web
  * reintenta sola). Es lo que `finish_integration_run()` convierte en
  * "Requiere atención" o "Error".
  */

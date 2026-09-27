@@ -20,7 +20,7 @@ import {
  * armazón de todos** y no uno propio. Hasta el 20/09/2026 tenía el suyo
  * —tarjeta blanca, sin iconos, sin cabecera, sin buscador, sin campana y
  * sin avatar—, y como desde la decisión 42 aquí entra todo el mundo al
- * identificarse, la primera pantalla de Cuotly era también la que menos se
+ * identificarse, la primera pantalla de Restavor web era también la que menos se
  * parecía al diseño.
  */
 const RAIZ = join(process.cwd(), "src/app/(global)");
@@ -142,7 +142,7 @@ describe("§20.3 · la barra de móvil del contexto global", () => {
   });
 });
 
-describe("§36 · salir de Cuotly sigue siendo posible", () => {
+describe("§36 · salir de Restavor web sigue siendo posible", () => {
   /*
    * El botón de cerrar sesión vivía en la barra lateral vieja, que era el
    * único sitio del producto que lo ofrecía. Al pasar esta zona al armazón

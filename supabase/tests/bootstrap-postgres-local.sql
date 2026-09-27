@@ -168,7 +168,7 @@ create table auth.sessions (
 -- comparación con el literal funciona igual en los dos. Las columnas
 -- anulables que GoTrue tiene además (`secret`, `phone`,
 -- `last_challenged_at`, `web_authn_credential`, `web_authn_aaguid`) se
--- dejan fuera a propósito: nada de Cuotly las lee, y una columna que no
+-- dejan fuera a propósito: nada de Restavor web las lee, y una columna que no
 -- existe falla más ruidosamente que una que miente.
 create table auth.mfa_factors (
   id uuid primary key,

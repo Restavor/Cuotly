@@ -71,7 +71,7 @@ export type LocalTaxIdCheck =
   | { readonly kind: "valid"; readonly method: TaxIdMethod }
   /** Hay cálculo para ese país y el número no lo pasa: es falso o está mal escrito. */
   | { readonly kind: "invalid" }
-  /** Para ese país no hay cálculo en Cuotly. */
+  /** Para ese país no hay cálculo en Restavor web. */
   | { readonly kind: "no_algorithm" };
 
 const LETRAS_DNI = "TRWAGMYFPDXBNJZSQVHLCKE";

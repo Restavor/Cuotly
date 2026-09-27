@@ -1,10 +1,10 @@
 /**
- * `src/core/cuotly-subscription.ts` — la suscripción de Cuotly de un espacio
+ * `src/core/cuotly-subscription.ts` — la suscripción de Restavor web de un espacio
  * (PRD §31, RN-SUB; §4.1 a §4.7 de la maestra; Fase 4, Hito 18). Lógica de
  * dominio pura, sin Supabase, sin Next y sin React (CLAUDE.md).
  *
  * Es la otra cara de `finance.ts`: allí un espacio le cobra a sus
- * restaurantes; aquí el propietario del espacio le paga a Cuotly. Las
+ * restaurantes; aquí el propietario del espacio le paga a Restavor web. Las
  * cuentas son las mismas —un libro con signo, un estado que se deriva, una
  * fracción natural del periodo— con otro pagador.
  *
@@ -91,7 +91,7 @@ export const SPACE_CUOTLY_STATES = [
   "archived_trial_ended",
   "archived_nonpayment",
   "archived_by_owner",
-  // RN-ADM-16 (migración 140, decisión 81) · lo eliminó Cuotly.
+  // RN-ADM-16 (migración 140, decisión 81) · lo eliminó Restavor web.
   "archived_by_platform",
 ] as const;
 export type SpaceCuotlyState = (typeof SPACE_CUOTLY_STATES)[number];
@@ -178,7 +178,7 @@ export function monthlyBaseCents(plan: CuotlyPlan, extraEstablishments: number, 
   );
 }
 
-/** RN-FIN-08 aplicada a Cuotly: base, impuesto y total. Decisión 7: en céntimos. */
+/** RN-FIN-08 aplicada a Restavor web: base, impuesto y total. Decisión 7: en céntimos. */
 export function cuotlyChargeAmounts(baseCents: number): {
   readonly baseCents: number;
   readonly taxCents: number;
@@ -188,7 +188,7 @@ export function cuotlyChargeAmounts(baseCents: number): {
   return { baseCents, taxCents, totalCents: baseCents + taxCents };
 }
 
-/** RN-COM-18, aplicada a Cuotly: fracción NATURAL restante del periodo. */
+/** RN-COM-18, aplicada a Restavor web: fracción NATURAL restante del periodo. */
 export function remainingPeriodFraction(periodStart: Date, periodEnd: Date, now: Date): number {
   const total = periodEnd.getTime() - periodStart.getTime();
   if (total <= 0) return 0;

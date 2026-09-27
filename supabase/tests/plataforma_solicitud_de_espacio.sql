@@ -7,7 +7,7 @@
 --     el borrador es suyo y la plataforma no lo ve.
 --   · RN-PLA-03: la tabla de transiciones manda en el servidor, no la
 --     pantalla.
---   · RN-PLA-04: Bosco siempre; un Admin de Cuotly SOLO con el permiso.
+--   · RN-PLA-04: Bosco siempre; un Admin de Restavor web SOLO con el permiso.
 --   · RN-PLA-05: aprobar crea espacio, propietario y prueba de 7 días, y
 --     pulsarlo dos veces devuelve el mismo espacio (CA-17).
 --   · RN-PLA-06: rechazar y pedir información exigen motivo.
@@ -25,14 +25,14 @@ insert into auth.users (id, email, role, aud) values
   ('ff900000-0000-0000-0000-000000000004', 'pla-admin-sin@example.com', 'authenticated', 'authenticated'),
   ('ff900000-0000-0000-0000-000000000005', 'pla-segundo@example.com', 'authenticated', 'authenticated');
 
--- §167 · un Administrador de Cuotly CON el permiso y otro SIN él. Sin los
+-- §167 · un Administrador de Restavor web CON el permiso y otro SIN él. Sin los
 -- dos, "si recibe permiso" sería una frase decorativa.
 insert into public.platform_roles (user_id, role, can_approve_spaces) values
   ('ff900000-0000-0000-0000-000000000003', 'cuotly_admin', true),
   ('ff900000-0000-0000-0000-000000000004', 'cuotly_admin', false);
 
 -- Hito 19 (RN-ADM-02) · la plataforma solo existe en una sesión verificada
--- en dos pasos: sin este reclamo, Bosco y los Administradores de Cuotly
+-- en dos pasos: sin este reclamo, Bosco y los Administradores de Restavor web
 -- de esta suite serían usuarios normales y nada de lo de abajo pasaría.
 select set_config('request.jwt.claim.aal', 'aal2', false);
 
@@ -172,14 +172,14 @@ set role authenticated;
 do $$
 declare v_id uuid := (select v from pla_ids where k = 'sol');
 begin
-  -- Es Administrador de Cuotly, pero sin el permiso de §167.
+  -- Es Administrador de Restavor web, pero sin el permiso de §167.
   if public.is_platform_approver() then
-    raise exception 'RN-PLA-04 FALLIDO: un Admin de Cuotly SIN permiso aprueba espacios' using errcode = 'assert_failure';
+    raise exception 'RN-PLA-04 FALLIDO: un Admin de Restavor web SIN permiso aprueba espacios' using errcode = 'assert_failure';
   end if;
 
   begin
     perform public.decide_space_request(v_id, 'in_review');
-    raise exception 'RN-PLA-04 FALLIDO: decide un Admin de Cuotly sin permiso' using errcode = 'assert_failure';
+    raise exception 'RN-PLA-04 FALLIDO: decide un Admin de Restavor web sin permiso' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-PLA%' then raise; end if;
@@ -196,7 +196,7 @@ do $$
 declare v_id uuid := (select v from pla_ids where k = 'sol');
 begin
   if not public.is_platform_approver() then
-    raise exception 'RN-PLA-04 FALLIDO: un Admin de Cuotly CON permiso no puede decidir' using errcode = 'assert_failure';
+    raise exception 'RN-PLA-04 FALLIDO: un Admin de Restavor web CON permiso no puede decidir' using errcode = 'assert_failure';
   end if;
 
   perform public.decide_space_request(v_id, 'in_review');
@@ -283,7 +283,7 @@ end $$;
 reset role;
 
 -- Lo que aprobar dejó hecho lo comprueba **el propietario nuevo**, y no
--- quien aprobó. No es un capricho: el administrador de Cuotly NO es miembro
+-- quien aprobó. No es un capricho: el administrador de Restavor web NO es miembro
 -- de ese espacio, así que la RLS de `space_memberships` no le enseña la
 -- fila y la comprobación daba un falso negativo. Hacerlo desde dentro
 -- prueba además lo que de verdad importa — que el solicitante entra en su
@@ -452,7 +452,7 @@ begin
           using errcode = 'assert_failure';
       end if;
   end;
-  -- Sigue enviada: el choque no decide por Cuotly, que puede rechazarla con su motivo.
+  -- Sigue enviada: el choque no decide por Restavor web, que puede rechazarla con su motivo.
   if (select status from public.space_requests where id = (select v from pla_ids where k = 'mismo_negocio')) <> 'submitted' then
     raise exception 'RN-PLA-09 FALLIDO: la solicitud que choca cambió de estado sola' using errcode = 'assert_failure';
   end if;

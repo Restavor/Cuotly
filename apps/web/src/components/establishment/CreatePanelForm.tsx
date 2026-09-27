@@ -18,7 +18,7 @@ const INITIAL: GrantAccessState = { error: null, granted: 0, future: false, invi
  *
  * El "Cancelar" del dibujo no está: aquí el formulario va dentro del
  * bloque de Usuarios, no en una pantalla propia, y no hay nada de lo que
- * salir. El "Se enviará una invitación" tampoco: Cuotly no envía correos,
+ * salir. El "Se enviará una invitación" tampoco: Restavor web no envía correos,
  * y la ayuda del campo dice lo que pasa de verdad.
  *
  * **No hay acción nueva detrás.** Crear el panel es dar el primer acceso,

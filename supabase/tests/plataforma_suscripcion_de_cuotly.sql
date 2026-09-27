@@ -1,4 +1,4 @@
--- Fase 4 · Hito 18 · la suscripción de Cuotly (migración 90; PRD §31,
+-- Fase 4 · Hito 18 · la suscripción de Restavor web (migración 90; PRD §31,
 -- RN-SUB-01 a 13; §4.1 a §4.7 de la maestra).
 --
 --   · RN-SUB-01: el catálogo, el IVA y la referencia.
@@ -29,13 +29,13 @@ insert into auth.users (id, email, role, aud) values
   ('ffa00000-0000-0000-0000-000000000007', 'sub-u7@example.com', 'authenticated', 'authenticated'),
   ('ffa00000-0000-0000-0000-000000000008', 'sub-u8@example.com', 'authenticated', 'authenticated');
 
--- §167 · un Administrador de Cuotly CON los dos permisos y otro SIN ninguno.
+-- §167 · un Administrador de Restavor web CON los dos permisos y otro SIN ninguno.
 insert into public.platform_roles (user_id, role, can_approve_spaces, can_manage_subscriptions) values
   ('ffa00000-0000-0000-0000-000000000002', 'cuotly_admin', true, true),
   ('ffa00000-0000-0000-0000-000000000003', 'cuotly_admin', false, false);
 
 -- Hito 19 (RN-ADM-02) · la plataforma solo existe en una sesión verificada
--- en dos pasos: sin este reclamo, Bosco y los Administradores de Cuotly
+-- en dos pasos: sin este reclamo, Bosco y los Administradores de Restavor web
 -- de esta suite serían usuarios normales y nada de lo de abajo pasaría.
 select set_config('request.jwt.claim.aal', 'aal2', false);
 
@@ -202,7 +202,7 @@ begin
       if sqlerrm like 'RN-SUB%' then raise; end if;
   end;
 
-  -- RN-SUB-12 · quién en Cuotly confirmó no lo ve la propietaria.
+  -- RN-SUB-12 · quién en Restavor web confirmó no lo ve la propietaria.
   begin
     perform (select confirmed_by from public.cuotly_payments where id = v_pay);
     raise exception 'RN-SUB-12 FALLIDO: la propietaria lee confirmed_by' using errcode = 'assert_failure';
@@ -226,7 +226,7 @@ begin
   end if;
 end $$;
 
--- Cuotly rechaza el pago (no llegó), con motivo; el siguiente barrido corta.
+-- Restavor web rechaza el pago (no llegó), con motivo; el siguiente barrido corta.
 select set_config('request.jwt.claim.sub', 'ffa00000-0000-0000-0000-000000000002', false);
 set role authenticated;
 do $$
@@ -242,20 +242,20 @@ begin
 end $$;
 reset role;
 
--- Y el Administrador de Cuotly SIN permiso no decide nada (§167).
+-- Y el Administrador de Restavor web SIN permiso no decide nada (§167).
 select set_config('request.jwt.claim.sub', 'ffa00000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
 begin
   begin
     perform public.confirm_cuotly_payment((select v from sub_ids where k = 'pago1'));
-    raise exception 'RN-SUB-06 FALLIDO: un Admin de Cuotly sin permiso confirma pagos' using errcode = 'assert_failure';
+    raise exception 'RN-SUB-06 FALLIDO: un Admin de Restavor web sin permiso confirma pagos' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-SUB%' then raise; end if;
   end;
   if exists (select 1 from public.cuotly_charges) then
-    raise exception 'RN-SUB-06 FALLIDO: un Admin de Cuotly sin permiso ve los cobros' using errcode = 'assert_failure';
+    raise exception 'RN-SUB-06 FALLIDO: un Admin de Restavor web sin permiso ve los cobros' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -501,7 +501,7 @@ set role authenticated;
 do $$
 begin
   if exists (select 1 from public.cuotly_charges) or exists (select 1 from public.cuotly_subscriptions) then
-    raise exception 'RN-SUB-02 FALLIDO: un administrador del espacio ve la suscripción de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SUB-02 FALLIDO: un administrador del espacio ve la suscripción de Restavor web' using errcode = 'assert_failure';
   end if;
   begin
     perform public.set_cuotly_extras((select v from sub_ids where k = 'espacio'), 1, 0);
@@ -799,7 +799,7 @@ declare
   v_space uuid := (select v from sub_ids where k = 'espacio');
   v_pay uuid := (select v from sub_ids where k = 'pago3');
 begin
-  -- RN-FIN-04 aplicada a Cuotly · revertir escribe el apunte contrario.
+  -- RN-FIN-04 aplicada a Restavor web · revertir escribe el apunte contrario.
   perform public.reverse_cuotly_payment(v_pay, 'Era de otro espacio');
   if public.cuotly_charge_outstanding_cents((select v from sub_ids where k = 'cobro2')) <>
      (select total_cents from public.cuotly_charges where id = (select v from sub_ids where k = 'cobro2')) then
@@ -879,14 +879,14 @@ begin
   end if;
 end $$;
 
--- El Admin de Cuotly sin permiso tampoco reactiva.
+-- El Admin de Restavor web sin permiso tampoco reactiva.
 select set_config('request.jwt.claim.sub', 'ffa00000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
 begin
   begin
     perform public.platform_reactivate_space((select v from sub_ids where k = 'espacio'), 'motivo');
-    raise exception 'RN-SUB-09 FALLIDO: un Admin de Cuotly sin permiso reactiva espacios' using errcode = 'assert_failure';
+    raise exception 'RN-SUB-09 FALLIDO: un Admin de Restavor web sin permiso reactiva espacios' using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then
       if sqlerrm like 'RN-SUB%' then raise; end if;
@@ -896,7 +896,7 @@ reset role;
 
 -- ============================================================
 -- RN-SUB-13 · el almacenamiento se mide y no se limita; el uso lo ve el
--- propietario y Cuotly, y nadie más
+-- propietario y Restavor web, y nadie más
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'ffa00000-0000-0000-0000-000000000001', false);
 set role authenticated;

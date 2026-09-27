@@ -179,7 +179,7 @@ export async function registrarArchivoCon(
   if (!metadatos.ok) return { ok: false, motivo: es.files.objectMissing };
 
   // Lo que se valida es el objeto real. Si no vale, los bytes se retiran:
-  // nunca llegaron a ser un archivo de Cuotly.
+  // nunca llegaron a ser un archivo de Restavor web.
   const validacion = validateUpload(metadatos.value);
   if (!validacion.ok) {
     await discardObject(admin.storage, entrada.path);

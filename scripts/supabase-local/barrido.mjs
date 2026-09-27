@@ -13,7 +13,7 @@ const p = await (await b.newContext({ viewport: { width: 390, height: 844 } })).
 // Con "-" como correo no se entra: para las pantallas públicas (acceso,
 // invitaciones, sesión caducada).
 if (email !== "-") {
-  await p.goto("http://localhost:3999/login"); await p.fill('input[type="email"]', email); await p.fill('input[type="password"]', "Cuotly-demo-2026");
+  await p.goto("http://localhost:3999/login"); await p.fill('input[type="email"]', email); await p.fill('input[type="password"]', "Restavor web-demo-2026");
   await Promise.all([p.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 60000 }), p.click('button[type="submit"]')]);
 }
 for (const route of routes) {

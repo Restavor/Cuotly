@@ -108,7 +108,7 @@ export type GrantAccessState = {
  * Maqueta 15 · "Añadir usuario" (RN-EST-04, RN-ACC-13).
  *
  * **Ya no hace falta que exista.** Hasta la decisión 59 esta pantalla solo
- * admitía correos con cuenta de Cuotly, así que un restaurante no podía
+ * admitía correos con cuenta de Restavor web, así que un restaurante no podía
  * meter a su encargado. Ahora llama a `invite_to_establishment_panel()`,
  * que **decide sola** cuál de los dos caminos toca: con cuenta, el acceso
  * en el momento; sin cuenta, una invitación que crea la cuenta al

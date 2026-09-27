@@ -22,7 +22,7 @@ import type { SheetData } from "./Sheet";
  *   · Que "no lo lleva nadie" y "hay alguien cuyo nombre no puedo leer"
  *     sigan siendo cosas distintas (CA-20).
  *   · Que no se llame **supervisor** en ninguna parte: ese nombre ya
- *     significa otra cosa en Cuotly.
+ *     significa otra cosa en Restavor web.
  */
 vi.mock("@/app/espacios/[slug]/restaurantes/[id]/actions", () => ({
   setEstablishmentManager: vi.fn(),

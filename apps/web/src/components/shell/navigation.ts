@@ -256,7 +256,7 @@ export function createOptions(
   const mine = clientBase(spaceSlug, establishmentId);
   switch (role) {
     // M77 · RN-REQ-08: el propietario y los administradores crean una
-    // solicitud en nombre del restaurante que la pidió fuera de Cuotly.
+    // solicitud en nombre del restaurante que la pidió fuera de Restavor web.
     case "owner":
       return [
         D("request", es.create.request, `${base}/solicitudes/nueva`),
@@ -381,7 +381,7 @@ export function moreDestinations(
 /* ------------------------------------------------------------------ *
  * §36 · El contexto global (vistas G01 a G08)
  *
- * La zona de Cuotly que ocurre FUERA de todo espacio y de todo panel, y a
+ * La zona de Restavor web que ocurre FUERA de todo espacio y de todo panel, y a
  * la que entra todo el mundo al identificarse (decisión 42).
  *
  * Tiene su propia lista de destinos, pero **no su propio armazón**: el

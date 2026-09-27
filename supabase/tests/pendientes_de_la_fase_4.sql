@@ -3,7 +3,7 @@
 -- RN-PLA-09 y RN-ADM-13).
 --
 --   · RN-SUB-13: avisos al 80 % y al 100 % del almacenamiento incluido en
---     el plan (§113), al propietario y, al 100 %, también a Cuotly. Una
+--     el plan (§113), al propietario y, al 100 %, también a Restavor web. Una
 --     vez al mes por umbral. Pasarse NO bloquea nada: se presupuesta
 --     aparte (pendiente 18). "Uso razonable" no tiene umbral y aquí no se
 --     mide (pendiente 17: lo controla Bosco).
@@ -28,7 +28,7 @@ insert into auth.users (id, email, role, aud) values
   ('ffc00000-0000-0000-0000-000000000006', 'p4-dos@gmail.com', 'authenticated', 'authenticated'),
   ('ffc00000-0000-0000-0000-000000000007', 'p4-cuotly-sin@example.com', 'authenticated', 'authenticated');
 
--- Un Administrador de Cuotly que aprueba espacios Y gestiona suscripciones
+-- Un Administrador de Restavor web que aprueba espacios Y gestiona suscripciones
 -- (recibe el aviso del 100 %), y otro sin el segundo permiso (no lo recibe).
 insert into public.platform_roles (user_id, role, can_approve_spaces, can_manage_subscriptions) values
   ('ffc00000-0000-0000-0000-000000000002', 'cuotly_admin', true, true),
@@ -155,7 +155,7 @@ begin
       end if;
   end;
 
-  -- La solicitud no cambió de estado: el rechazo automático no decide por Cuotly.
+  -- La solicitud no cambió de estado: el rechazo automático no decide por Restavor web.
   if (select status from public.space_requests where id = (select v from p4_ids where k = 'sol_nif')) <> 'submitted' then
     raise exception 'RN-PLA-09 FALLIDO: la solicitud que choca cambió de estado sola' using errcode = 'assert_failure';
   end if;
@@ -266,9 +266,9 @@ begin
   if public.cuotly_storage_limit_bytes(v_space) <> 20::bigint * 1024 * 1024 * 1024 then
     raise exception 'RN-SUB-13 FALLIDO: lo incluido en Pro no son 20 GB' using errcode = 'assert_failure';
   end if;
-  -- Sin plan de Cuotly (Restavor, la demo) no hay nada que vigilar.
+  -- Sin plan de Restavor web (Restavor, la demo) no hay nada que vigilar.
   if public.cuotly_storage_limit_bytes(gen_random_uuid()) is not null then
-    raise exception 'RN-SUB-13 FALLIDO: un espacio sin plan de Cuotly tiene límite de almacenamiento'
+    raise exception 'RN-SUB-13 FALLIDO: un espacio sin plan de Restavor web tiene límite de almacenamiento'
       using errcode = 'assert_failure';
   end if;
 
@@ -290,9 +290,9 @@ begin
   if v_n <> 1 then
     raise exception 'RN-SUB-13 FALLIDO: el aviso del 80 %% no lleva umbral y enlace a la suscripción' using errcode = 'assert_failure';
   end if;
-  -- El aviso del 80 % no molesta a Cuotly: al 80 % no hay nada que presupuestar.
+  -- El aviso del 80 % no molesta a Restavor web: al 80 % no hay nada que presupuestar.
   if exists (select 1 from public.notifications where recipient_id = 'ffc00000-0000-0000-0000-000000000002' and event_type = 'storage_threshold_80') then
-    raise exception 'RN-SUB-13 FALLIDO: el 80 %% avisa a Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SUB-13 FALLIDO: el 80 %% avisa a Restavor web' using errcode = 'assert_failure';
   end if;
 
   -- El mismo mes, otra hora: nada (una vez al mes por umbral).
@@ -304,7 +304,7 @@ begin
     raise exception 'RN-SUB-13 FALLIDO: no recuerda el 80 %% al mes siguiente' using errcode = 'assert_failure';
   end if;
 
-  -- 100 %: al propietario Y a Cuotly (Bosco y quien gestiona suscripciones;
+  -- 100 %: al propietario Y a Restavor web (Bosco y quien gestiona suscripciones;
   -- cuántos gestores hay depende de las suites anteriores, así que se
   -- exige "al menos los dos de aquí" y se mira uno a uno).
   perform pg_temp.p4_add_versions(657, 820);
@@ -324,7 +324,7 @@ begin
       using errcode = 'assert_failure';
   end if;
   if exists (select 1 from public.notifications where recipient_id = 'ffc00000-0000-0000-0000-000000000007' and event_type like 'storage_%') then
-    raise exception 'RN-SUB-13 FALLIDO: un Administrador de Cuotly SIN el permiso de suscripciones recibe el aviso'
+    raise exception 'RN-SUB-13 FALLIDO: un Administrador de Restavor web SIN el permiso de suscripciones recibe el aviso'
       using errcode = 'assert_failure';
   end if;
 
@@ -338,14 +338,14 @@ begin
     raise exception 'RN-SUB-13 FALLIDO: el uso medido no cuadra con lo subido' using errcode = 'assert_failure';
   end if;
 
-  -- El barrido está en la cola de trabajos, solo para espacios con plan de Cuotly.
+  -- El barrido está en la cola de trabajos, solo para espacios con plan de Restavor web.
   perform public.enqueue_due_scheduled_jobs('2026-12-01 09:00+00');
   if not exists (select 1 from public.scheduled_jobs where space_id = v_space and kind = 'cuotly_storage_sweep') then
     raise exception 'RN-SUB-13 FALLIDO: el barrido de almacenamiento no se encola' using errcode = 'assert_failure';
   end if;
   if exists (select 1 from public.scheduled_jobs j join public.spaces s on s.id = j.space_id
              where j.kind = 'cuotly_storage_sweep' and s.cuotly_plan is null) then
-    raise exception 'RN-SUB-13 FALLIDO: se encola el barrido para espacios sin plan de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-SUB-13 FALLIDO: se encola el barrido para espacios sin plan de Restavor web' using errcode = 'assert_failure';
   end if;
   -- Y el despachador lo ejecuta (diciembre: nuevo mes, vuelve a avisar del 100 %).
   select public.run_scheduled_job(j.id) into v_n from public.scheduled_jobs j

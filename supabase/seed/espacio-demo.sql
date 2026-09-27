@@ -17,7 +17,7 @@
 --   o pegándolo en el SQL Editor del panel, o con la herramienta
 --   execute_sql del conector de Supabase.
 --
--- Las siete identidades, todas con la contraseña `Cuotly-demo-2026`:
+-- Las siete identidades, todas con la contraseña `Restavor web-demo-2026`:
 --   owner@cuotly.test          Propietaria del espacio (equipo)
 --   trabajadora@cuotly.test    Trabajadora que ejecuta los trabajos
 --   trabajador2@cuotly.test    Segundo trabajador (equipo)
@@ -27,7 +27,7 @@
 --   sala.magarinos@cuotly.test Editor sin casillas en "Magariños": solo lee
 --
 -- Y una octava que NO es de mentira ni la crea este archivo:
--- info@restavor.com, el correo con el que se usa Cuotly de verdad. La
+-- info@restavor.com, el correo con el que se usa Restavor web de verdad. La
 -- sección 11 le da la pertenencia al espacio como propietario si ya se ha
 -- registrado en la aplicación; si no, lo dice y no falla. El porqué de no
 -- crearla está ahí escrito.
@@ -116,19 +116,19 @@ insert into auth.users
 values
   ('d0000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'owner@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   extensions.crypt('Restavor web-demo-2026', extensions.gen_salt('bf', 10)), now(),
    '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Elena Ruiz (propietaria)"}'::jsonb, now(), now()),
   ('d0000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'trabajadora@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   extensions.crypt('Restavor web-demo-2026', extensions.gen_salt('bf', 10)), now(),
    '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Marta Gil (trabajadora)"}'::jsonb, now(), now()),
   ('d0000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'restaurante@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   extensions.crypt('Restavor web-demo-2026', extensions.gen_salt('bf', 10)), now(),
    '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Bar Demo"}'::jsonb, now(), now());
@@ -166,10 +166,10 @@ where u.id = p.id and u.email like '%@cuotly.test';
 -- Restavor del 16/09/2026, decisión 39, y la del Básico del 26/09/2026,
 -- decisión 83) y los mismos que siembra
 -- create_restavor_space(). No se usa esa función porque es de Restavor y
--- Cuotly es multiempresa: este es otro espacio.
+-- Restavor web es multiempresa: este es otro espacio.
 -- ============================================================
 insert into public.spaces (id, name, slug, timezone, created_by, tax_rate_percent)
-values ('d1000000-0000-0000-0000-000000000001', 'Demo Cuotly', 'demo',
+values ('d1000000-0000-0000-0000-000000000001', 'Demo Restavor web', 'demo',
         'Europe/Madrid', 'd0000000-0000-0000-0000-000000000001', 21);
 
 insert into public.space_memberships (space_id, user_id, role, status, can_perform_jobs)
@@ -324,7 +324,7 @@ insert into auth.users
 values
   ('d0000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'cliente2@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   extensions.crypt('Restavor web-demo-2026', extensions.gen_salt('bf', 10)), now(),
    '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Café Prueba"}'::jsonb, now(), now());
@@ -566,7 +566,7 @@ begin
   select count(*) into v_entrables
   from auth.users u
   where u.email like '%@cuotly.test'
-    and u.encrypted_password = extensions.crypt('Cuotly-demo-2026', u.encrypted_password)
+    and u.encrypted_password = extensions.crypt('Restavor web-demo-2026', u.encrypted_password)
     and u.email_confirmed_at is not null
     and u.confirmation_token is not null
     and u.recovery_token is not null
@@ -668,19 +668,19 @@ insert into auth.users
 values
   ('d0000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'magarinos@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   extensions.crypt('Restavor web-demo-2026', extensions.gen_salt('bf', 10)), now(),
    '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Nuria Ferreiro (Magariños)"}'::jsonb, now(), now()),
   ('d0000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'sala.magarinos@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   extensions.crypt('Restavor web-demo-2026', extensions.gen_salt('bf', 10)), now(),
    '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Iván Cortés (sala)"}'::jsonb, now(), now()),
   ('d0000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000000',
    'authenticated', 'authenticated', 'trabajador2@cuotly.test',
-   extensions.crypt('Cuotly-demo-2026', extensions.gen_salt('bf', 10)), now(),
+   extensions.crypt('Restavor web-demo-2026', extensions.gen_salt('bf', 10)), now(),
    '', '', '', '',
    '{"provider":"email","providers":["email"]}'::jsonb,
    '{"full_name":"Diego Sanz (trabajador)"}'::jsonb, now(), now());
@@ -1342,7 +1342,7 @@ begin
   select count(*) into v_entrables
   from auth.users u
   where u.email in ('magarinos@cuotly.test', 'sala.magarinos@cuotly.test', 'trabajador2@cuotly.test')
-    and u.encrypted_password = extensions.crypt('Cuotly-demo-2026', u.encrypted_password)
+    and u.encrypted_password = extensions.crypt('Restavor web-demo-2026', u.encrypted_password)
     and u.email_confirmed_at is not null
     and exists (select 1 from auth.identities i where i.user_id = u.id and i.provider = 'email');
   if v_entrables <> 3 then
@@ -1676,7 +1676,7 @@ end $$;
 --
 -- Los siete usuarios de arriba son de mentira (@cuotly.test) y sirven
 -- para probar cada papel por separado. El correo con el que se entra a
--- Cuotly de verdad es info@restavor.com —el mismo que reconoce
+-- Restavor web de verdad es info@restavor.com —el mismo que reconoce
 -- `is_platform_owner()` (migración 06) y el mismo de `CUOTLY_OWNER_EMAIL`—
 -- y ese no es un usuario de demostración: es una cuenta real, con su
 -- contraseña, creada al registrarse en la aplicación.

@@ -42,7 +42,7 @@ const DEFAULT_TIMEOUT_MS = 8000;
 const INPUT_MILLICENTS_PER_TOKEN = 100_000 / 1_000_000;
 const OUTPUT_MILLICENTS_PER_TOKEN = 500_000 / 1_000_000;
 
-const SYSTEM_PROMPT = `Eres el clasificador de solicitudes de Cuotly, una plataforma de mantenimiento web para restaurantes.
+const SYSTEM_PROMPT = `Eres el clasificador de solicitudes de Restavor web, una plataforma de mantenimiento web para restaurantes.
 Dada la descripción de una solicitud de cambio en la web de un restaurante, debes proponer:
 - "category": una de "small", "photo", "medium", "large", según esta definición exacta:
   - small: nombre, frase, precio, título, contacto, enlace, un día de horario, media o número de reseñas, logo ya entregado, texto ya redactado por el cliente.

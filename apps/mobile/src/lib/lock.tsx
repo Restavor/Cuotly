@@ -12,7 +12,7 @@ import { useAuth } from "./auth-context";
  *
  * No autentica contra el servidor, no sustituye a la contraseña y no es
  * la verificación en dos pasos (RN-ADM-02): el sombrero de plataforma
- * sigue exigiendo la sesión verificada, y el panel de Cuotly y Modo
+ * sigue exigiendo la sesión verificada, y el panel de Restavor web y Modo
  * soporte no están en la app. Sin biometría en el teléfono, o si se
  * rechaza, la app sigue funcionando sin cerrojo.
  */

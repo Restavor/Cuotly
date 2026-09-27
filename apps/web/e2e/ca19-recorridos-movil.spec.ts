@@ -56,7 +56,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ESPACIO = "demo";
 const CAFE_ID = "d4000000-0000-0000-0000-000000000002";
-const CLAVE = "Cuotly-demo-2026";
+const CLAVE = "Restavor web-demo-2026";
 
 const PROPIETARIA = "owner@cuotly.test";
 const TRABAJADORA = "trabajadora@cuotly.test";
@@ -115,7 +115,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
-    await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
+    await page.getByRole("button", { name: "Entrar en Restavor web" }).click();
 
     try {
       await page.waitForURL(/\/$/, { timeout: 45_000 });
@@ -132,7 +132,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
         .locator('[role="alert"]:visible:not(#__next-route-announcer__)')
         .allInnerTexts();
       throw new Error(
-        `Entrando como ${email} no se llegó al Inicio de Cuotly. Se quedó en ${page.url()}, ` +
+        `Entrando como ${email} no se llegó al Inicio de Restavor web. Se quedó en ${page.url()}, ` +
           `con el titular "${titulo.trim()}"` +
           (alertas.length ? ` y este error en pantalla: ${alertas.join(" / ")}` : " y sin error en pantalla") +
           `. Causa original: ${fallo instanceof Error ? fallo.message.split("\n")[0] : String(fallo)}`,
@@ -225,7 +225,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // cada navegación, para que un lector de pantalla diga dónde has
     // llegado. Playwright atraviesa el shadow DOM y lo cuenta como
     // visible, así que este paso fallaba con "el servidor lo rechazó —
-    // Cuotly", que es el título del sitio. Se identifica por su id, que
+    // Restavor web", que es el título del sitio. Se identifica por su id, que
     // Next fija en esa misma línea.
     //
     // Y con texto: una alerta vacía tampoco es un error.

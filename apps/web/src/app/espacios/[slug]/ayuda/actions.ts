@@ -76,7 +76,7 @@ export async function openIncidentAction(_prev: HelpActionState, formData: FormD
   redirect(`/espacios/${slug}/ayuda/incidencias/${incidentId}`);
 }
 
-/** RN-SOP-08 · escribir a Cuotly. */
+/** RN-SOP-08 · escribir a Restavor web. */
 export async function replyFromSpace(_prev: HelpActionState, formData: FormData): Promise<HelpActionState> {
   const incidentId = texto(formData, "incidentId");
   const slug = texto(formData, "slug");

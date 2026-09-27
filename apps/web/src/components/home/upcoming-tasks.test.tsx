@@ -11,7 +11,7 @@ import { UpcomingTasks, type UpcomingTask } from "./UpcomingTasks";
  *
  *   · Que **"Hoy" sea el hoy del espacio** y no el de quien mira. El día
  *     llega calculado por el servidor en la zona del restaurante; si esta
- *     lista lo recalculara, alguien que abriera Cuotly desde otro huso
+ *     lista lo recalculara, alguien que abriera Restavor web desde otro huso
  *     vería "Hoy" en la fila equivocada (CLAUDE.md MUST).
  *   · Que una fila **sin ficha propia no sea un enlace**. Un festivo se
  *     gestiona en el calendario: un enlace ahí llevaría a una pantalla que

@@ -12,7 +12,7 @@ vi.mock("@/app/administracion/actions", () => ({ leaveSupportSession: vi.fn() })
  * §20.1 · en escritorio, "Cambiar de espacio" funciona como la tarjeta de
  * móvil: la caja del menú lateral despliega todos tus espacios y paneles y
  * desde ahí se cambia. Volver al Inicio global es otro enlace, el de
- * debajo ("Volver al inicio de Cuotly"), y no la caja.
+ * debajo ("Volver al inicio de Restavor web"), y no la caja.
  */
 afterEach(cleanup);
 

@@ -181,7 +181,7 @@ describe("§18 · el lado del cliente y el canal de cada fila", () => {
     expect(jobEventClientRecipients("correction_requested", ["cliente"])).toEqual([]);
   });
 
-  it("§18: el inicio se ve dentro de Cuotly pero no sale por correo para el cliente", () => {
+  it("§18: el inicio se ve dentro de Restavor web pero no sale por correo para el cliente", () => {
     expect(shouldQueueEmail("job_started", "client")).toBe(false);
     // Para el equipo, el mismo evento sí sale por correo.
     expect(shouldQueueEmail("job_started", "staff")).toBe(true);
@@ -288,7 +288,7 @@ describe("RN-NOT-05 · el remitente se comprueba antes de intentar nada", () => 
    * Esto no es una validación de correos por gusto. Viene de un fallo que
    * estuvo once días en producción sin que nadie lo viera: `RESEND_FROM`
    * con un valor que Resend rechaza por formato, 211 avisos fallando de
-   * uno en uno, y el aviso dentro de Cuotly funcionando, así que nada
+   * uno en uno, y el aviso dentro de Restavor web funcionando, así que nada
    * parecía roto.
    *
    * Lo que vigilan estos casos es la frontera exacta: qué se acepta, qué
@@ -301,33 +301,33 @@ describe("RN-NOT-05 · el remitente se comprueba antes de intentar nada", () => 
   });
 
   it("acepta «Nombre <dirección>», que es como va a estar en producción", () => {
-    expect(normalizeMailFrom("Cuotly <avisos@cuotly.com>")).toBe("Cuotly <avisos@cuotly.com>");
+    expect(normalizeMailFrom("Restavor web <avisos@cuotly.com>")).toBe("Restavor web <avisos@cuotly.com>");
   });
 
   it("recorta el salto de línea que arrastra una variable copiada a mano", () => {
     // La causa más probable del fallo de producción, y la única que se
     // corrige en silencio: es un despiste de copiar y pegar, no una
     // decisión de nadie.
-    expect(normalizeMailFrom("  Cuotly <avisos@cuotly.com>\n")).toBe("Cuotly <avisos@cuotly.com>");
+    expect(normalizeMailFrom("  Restavor web <avisos@cuotly.com>\n")).toBe("Restavor web <avisos@cuotly.com>");
   });
 
   it("normaliza el espacio entre el nombre y la dirección", () => {
-    expect(normalizeMailFrom("Cuotly    <avisos@cuotly.com>")).toBe("Cuotly <avisos@cuotly.com>");
+    expect(normalizeMailFrom("Restavor web    <avisos@cuotly.com>")).toBe("Restavor web <avisos@cuotly.com>");
   });
 
   it("NO adivina: unas comillas alrededor del valor entero se rechazan", () => {
     // Tentador «arreglarlo» quitando las comillas. No se hace: si alguien
     // puso comillas puede haber puesto otras tres cosas mal, y devolver
     // algo plausible esconde el problema en vez de decirlo.
-    expect(normalizeMailFrom('"Cuotly <avisos@cuotly.com>"')).toBeNull();
+    expect(normalizeMailFrom('"Restavor web <avisos@cuotly.com>"')).toBeNull();
   });
 
   it("rechaza el ángulo sin cerrar", () => {
-    expect(normalizeMailFrom("Cuotly <avisos@cuotly.com")).toBeNull();
+    expect(normalizeMailFrom("Restavor web <avisos@cuotly.com")).toBeNull();
   });
 
   it("rechaza un nombre suelto sin dirección", () => {
-    expect(normalizeMailFrom("Cuotly")).toBeNull();
+    expect(normalizeMailFrom("Restavor web")).toBeNull();
   });
 
   it("rechaza «<dirección>» sin nombre delante", () => {
@@ -341,7 +341,7 @@ describe("RN-NOT-05 · el remitente se comprueba antes de intentar nada", () => 
   });
 
   it("rechaza una dirección sin arroba", () => {
-    expect(normalizeMailFrom("Cuotly <avisos.cuotly.com>")).toBeNull();
+    expect(normalizeMailFrom("Restavor web <avisos.cuotly.com>")).toBeNull();
   });
 
   it("rechaza dos direcciones separadas por coma", () => {
@@ -364,7 +364,7 @@ describe("RN-NOT-05 · el remitente se comprueba antes de intentar nada", () => 
   });
 
   it("rechaza espacios dentro de la propia dirección", () => {
-    expect(normalizeMailFrom("Cuotly <avisos @cuotly.com>")).toBeNull();
+    expect(normalizeMailFrom("Restavor web <avisos @cuotly.com>")).toBeNull();
   });
 
   it("la variable sin poner y la vacía son lo mismo: no hay remitente", () => {

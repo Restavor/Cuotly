@@ -358,13 +358,13 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/plataforma_solicitud_de_espacio.sql
 
-      - name: "Hito 18 — Verificar la suscripción de Cuotly: límites, prueba, cobro manual, modo lectura, impago y cambio de plan (RN-SUB-01 a 13, §4.1 a §4.7)"
+      - name: "Hito 18 — Verificar la suscripción de Restavor web: límites, prueba, cobro manual, modo lectura, impago y cambio de plan (RN-SUB-01 a 13, §4.1 a §4.7)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/plataforma_suscripcion_de_cuotly.sql
 
-      - name: "Hito 19 — Verificar el panel de Administración de Cuotly, Modo soporte y 2FA (RN-ADM-01 a 12, §128, §129, §134, §136, §167)"
+      - name: "Hito 19 — Verificar el panel de Administración de Restavor web, Modo soporte y 2FA (RN-ADM-01 a 12, §128, §129, §134, §136, §167)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
@@ -376,7 +376,7 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/onboarding_y_ciclo_de_vida_del_espacio.sql
 
-      - name: "Hito 21 — Verificar el soporte de Cuotly, el centro de ayuda y la página de estado (RN-SOP-01 a 15, §131, §132, §133, §157)"
+      - name: "Hito 21 — Verificar el soporte de Restavor web, el centro de ayuda y la página de estado (RN-SOP-01 a 15, §131, §132, §133, §157)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
@@ -400,7 +400,7 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/planes_de_restavor.sql
 
-      - name: "Paso 2 — Verificar cómo se entra en Cuotly: solicitud de acceso, enlace de un solo uso e invitación que crea cuenta (RN-ACC-01 a 12, decisión 41)"
+      - name: "Paso 2 — Verificar cómo se entra en Restavor web: solicitud de acceso, enlace de un solo uso e invitación que crea cuenta (RN-ACC-01 a 12, decisión 41)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
@@ -586,7 +586,7 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/retirar_a_alguien_del_equipo.sql
 
-      - name: "Suite 79 — Cuotly elimina cuentas, espacios y restaurantes: solo Bosco o un administrador con el permiso y con 2FA; nada se borra; el espacio pasa a un administrador o trabajador; solo Cuotly lo recupera (migraciones 140 y 141, RN-ADM-14 a 21, decisión 81)"
+      - name: "Suite 79 — Restavor web elimina cuentas, espacios y restaurantes: solo Bosco o un administrador con el permiso y con 2FA; nada se borra; el espacio pasa a un administrador o trabajador; solo Restavor web lo recupera (migraciones 140 y 141, RN-ADM-14 a 21, decisión 81)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \

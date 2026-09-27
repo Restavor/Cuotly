@@ -14,7 +14,7 @@ import type { AdminActionState } from "../action-state";
  * Ninguna autoriza nada: `set_incident_status()` y `post_incident_message()`
  * deciden de qué lado habla quien llama con `incident_side_of_caller()`,
  * que exige `is_platform_member()` —con la 2FA dentro— para hablar como
- * Cuotly. Aquí solo se traduce la negativa a un mensaje en pantalla.
+ * Restavor web. Aquí solo se traduce la negativa a un mensaje en pantalla.
  */
 function mensaje(fallo: unknown): string {
   return fallo instanceof Error ? fallo.message : String(fallo);
@@ -24,7 +24,7 @@ function texto(formData: FormData, name: string): string {
   return String(formData.get(name) ?? "").trim();
 }
 
-/** RN-SOP-04 · mover una incidencia, desde el lado de Cuotly. */
+/** RN-SOP-04 · mover una incidencia, desde el lado de Restavor web. */
 export async function moveIncident(_prev: AdminActionState, formData: FormData): Promise<AdminActionState> {
   const incidentId = texto(formData, "incidentId");
   const status = texto(formData, "status");
@@ -41,7 +41,7 @@ export async function moveIncident(_prev: AdminActionState, formData: FormData):
   }
 }
 
-/** RN-SOP-08 · contestar, como Cuotly. */
+/** RN-SOP-08 · contestar, como Restavor web. */
 export async function replyIncident(_prev: AdminActionState, formData: FormData): Promise<AdminActionState> {
   const incidentId = texto(formData, "incidentId");
   const body = texto(formData, "body");

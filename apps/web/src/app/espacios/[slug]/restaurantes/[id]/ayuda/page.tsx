@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * §131, §133 · el centro de ayuda visto desde el restaurante: las mismas
  * guías, colgadas de su restaurante como todo lo suyo. Un restaurante
- * consulta artículos; las incidencias a Cuotly las abre su equipo, y aquí
+ * consulta artículos; las incidencias a Restavor web las abre su equipo, y aquí
  * no se le ofrecen (sin `spaceId`, el servidor ni se lo pregunta).
  */
 export const dynamic = "force-dynamic";

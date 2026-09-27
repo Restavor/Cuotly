@@ -20,7 +20,7 @@ import { loadClientCharges } from "../billing-load";
  * da `charge_outstanding_cents()`. Nada se suma aquí.
  *
  * "Cómo realizar el pago" no enseña una cuenta ni un número de Bizum:
- * Cuotly no los guarda, así que se dice que los da el equipo y se lleva a
+ * Restavor web no los guarda, así que se dice que los da el equipo y se lleva a
  * los mensajes para pedirlos. Tampoco hay "Referencia de pago": no existe
  * ese dato, y una referencia inventada que el banco no reconozca sería
  * peor que ninguna.

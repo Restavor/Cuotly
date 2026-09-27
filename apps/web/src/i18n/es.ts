@@ -62,7 +62,7 @@ export const es = {
       subtitle: "Entra para consultar y actualizar los mantenimientos.",
       emailLabel: "Correo electrónico",
       passwordLabel: "Contraseña",
-      submit: "Entrar en Cuotly",
+      submit: "Entrar en Restavor web",
       submitPending: "Entrando…",
       // RN-ACC-10 · se retiró "entrar con Google" (decisión 41). Una sola
       // forma de entrar: correo y contraseña.
@@ -93,7 +93,7 @@ export const es = {
     // registro (decisión 41). No hay pantalla donde alguien se cree una
     // cuenta por su cuenta: se pide acceso, y la cuenta llega al aprobarlo.
     signup: {
-      title: "Solicita acceso a Cuotly",
+      title: "Solicita acceso a Restavor web",
       subtitle:
         "Cuéntanos quién eres y qué negocio llevas. Revisamos cada solicitud a mano y te contestamos por correo.",
       contactNameLabel: "Nombre y apellidos",
@@ -154,7 +154,7 @@ export const es = {
     // RN-ACC-04 · el enlace de un solo uso donde se pone la contraseña.
     setup: {
       title: "Pon tu contraseña",
-      subtitle: "Tu acceso a Cuotly está aprobado. Elige una contraseña y entra.",
+      subtitle: "Tu acceso a Restavor web está aprobado. Elige una contraseña y entra.",
       emailLabel: "Tu correo",
       emailLocked: "Es el correo que aprobamos. No se puede cambiar aquí.",
       passwordLabel: "Contraseña",
@@ -176,7 +176,7 @@ export const es = {
     },
     /**
      * RN-ACC-13 · la TERCERA puerta: alguien a quien invitó su propio
-     * restaurante. Casi nunca ha oído hablar de Cuotly, así que las
+     * restaurante. Casi nunca ha oído hablar de Restavor web, así que las
      * frases dicen de qué va esto antes de pedirle nada.
      */
     panelInvitation: {
@@ -202,7 +202,7 @@ export const es = {
     },
     // RN-ACC-09 · la otra puerta: la invitación de un propietario.
     invitation: {
-      title: "Te han invitado a Cuotly",
+      title: "Te han invitado a Restavor web",
       subtitleSpace: "Vas a entrar en",
       emailLabel: "Tu correo",
       emailLocked: "Es el correo al que te invitaron. No se puede cambiar aquí.",
@@ -210,7 +210,7 @@ export const es = {
       repeatLabel: "Repite la contraseña",
       submit: "Crear mi cuenta y entrar",
       submitPending: "Creando la cuenta…",
-      hasAccountTitle: "Ya tienes cuenta en Cuotly",
+      hasAccountTitle: "Ya tienes cuenta en Restavor web",
       hasAccountBody: "Entra con tu correo y tu contraseña y te añadimos al espacio.",
       signIn: "Entrar y aceptar",
       expiredTitle: "Esta invitación ha caducado",
@@ -242,7 +242,7 @@ export const es = {
       crumbAccount: "Acceso",
       crumbLink: "Enlace",
       firstAccess: "Primer acceso",
-      title: "Solicita acceso a Cuotly",
+      title: "Solicita acceso a Restavor web",
       subtitle: "Completa tus datos para que podamos revisar tu solicitud.",
       contactNameLabel: "Nombre y apellidos",
       contactNamePlaceholder: "Escribe tu nombre y apellidos",
@@ -327,7 +327,7 @@ export const es = {
       approvedBadge: "Aprobada",
       approvedStatusBody:
         "Nuestro equipo se ha puesto en contacto contigo y te hemos enviado las instrucciones por correo electrónico.",
-      contactCuotly: "Contactar con Cuotly",
+      contactCuotly: "Contactar con Restavor web",
       approvedNotice:
         "La aprobación de esta solicitud no crea automáticamente un espacio ni un panel de restaurante.",
       rejectedPill: "Solicitud no aprobada",
@@ -361,7 +361,7 @@ export const es = {
     createRestavor: {
       title: "Todavía no existe ningún espacio",
       description:
-        "Como propietario de Cuotly, puedes crear el espacio de Restavor. Solo hace falta hacerlo una vez.",
+        "Como propietario de Restavor web, puedes crear el espacio de Restavor. Solo hace falta hacerlo una vez.",
       button: "Crear Restavor",
       confirmTitle: "Crear el espacio de Restavor",
       confirmBody:
@@ -574,7 +574,7 @@ export const es = {
       roleWorker: "Trabajador",
       submit: "Enviar invitación",
       submitPending: "Enviando…",
-      alreadyRegistered: "Este usuario ya está registrado en Cuotly. Se ha añadido directamente al espacio.",
+      alreadyRegistered: "Este usuario ya está registrado en Restavor web. Se ha añadido directamente al espacio.",
       invitationCreated:
         "Invitación creada. Como todavía no hay envío automático de correo, comparte este enlace tú mismo:",
       emailColumn: "Correo",
@@ -868,7 +868,7 @@ export const es = {
   spaceHome: {
     // Fase 4 · Hito 21 · §20.4 nombra "incidencias" en el Inicio del propietario.
     incidentsAwaiting: (n: number) =>
-      n === 1 ? "1 incidencia a Cuotly espera algo de ti." : `${n} incidencias a Cuotly esperan algo de ti.`,
+      n === 1 ? "1 incidencia a Restavor web espera algo de ti." : `${n} incidencias a Restavor web esperan algo de ti.`,
     title: "Inicio",
     // El subtítulo dice la verdad de la pantalla, no una consigna fija:
     // con la lista vacía, "Esto necesita tu atención" sería mentira.
@@ -1118,7 +1118,7 @@ export const es = {
     files: "Archivos",
     panelUsers: "Usuarios y accesos",
     settingsAndHelp: "Ajustes y ayuda",
-    agent: "Agente Cuotly",
+    agent: "Agente Restavor web",
     agentBadge: "Próximamente",
     settings: "Ajustes",
     // Fase 4 · Hito 21 · el centro de ayuda de §133, para el equipo y para
@@ -1259,24 +1259,24 @@ export const es = {
       integration_reauthorization_required: "Una integración necesita que vuelvas a autorizarla",
       report_schedule_due_soon: "Un informe se envía mañana",
       report_sent: "Tienes un informe nuevo",
-      cuotly_payment_due_soon: "Tu mensualidad de Cuotly vence en 3 días",
-      cuotly_payment_due_today: "Tu mensualidad de Cuotly vence hoy",
-      cuotly_payment_overdue_24h: "Tu mensualidad de Cuotly lleva 24 h vencida",
-      cuotly_payment_overdue_48h: "Tu mensualidad de Cuotly lleva 48 h vencida",
+      cuotly_payment_due_soon: "Tu mensualidad de Restavor web vence en 3 días",
+      cuotly_payment_due_today: "Tu mensualidad de Restavor web vence hoy",
+      cuotly_payment_overdue_24h: "Tu mensualidad de Restavor web lleva 24 h vencida",
+      cuotly_payment_overdue_48h: "Tu mensualidad de Restavor web lleva 48 h vencida",
       cuotly_payment_final_notice: "Último aviso: tu espacio se archivará por impago",
       cuotly_space_archived: "Tu espacio está archivado en modo lectura",
       cuotly_space_reactivated: "Tu espacio vuelve a estar activo",
-      support_session_started: "Alguien de Cuotly ha entrado en tu espacio en Modo soporte",
+      support_session_started: "Alguien de Restavor web ha entrado en tu espacio en Modo soporte",
       space_ownership_transferred: "El espacio ha cambiado de propietario",
       space_archived_by_owner: "Tu propietario ha archivado el espacio",
-      space_deleted_by_platform: "Cuotly ha eliminado el espacio: queda en modo lectura",
-      establishment_deleted_by_platform: "Cuotly ha eliminado el restaurante",
-      incident_opened: "Nueva incidencia a Cuotly",
+      space_deleted_by_platform: "Restavor web ha eliminado el espacio: queda en modo lectura",
+      establishment_deleted_by_platform: "Restavor web ha eliminado el restaurante",
+      incident_opened: "Nueva incidencia a Restavor web",
       incident_updated: "Tu incidencia ha cambiado de estado",
       incident_replied: "Hay un mensaje nuevo en una incidencia",
       storage_threshold_80: "Has usado el 80 % del almacenamiento incluido en tu plan",
       storage_threshold_100: "Has llegado al 100 % del almacenamiento incluido en tu plan",
-      security_incident: "Incidente de seguridad en Cuotly",
+      security_incident: "Incidente de seguridad en Restavor web",
       consumption_threshold_80: "Has consumido el 80 % de tu plan",
       consumption_threshold_100: "Has agotado tu plan",
       t2_threshold_50: "Plazo de inicio al 50 %",
@@ -1332,7 +1332,7 @@ export const es = {
           `${evento}.`,
           "",
           `Espacio: ${espacio}`,
-          `Ábrelo en Cuotly: ${enlace}`,
+          `Ábrelo en Restavor web: ${enlace}`,
           "",
           "Puedes cambiar qué avisos recibes por correo desde Preferencias de aviso.",
         ].join("\n"),
@@ -1356,7 +1356,7 @@ export const es = {
             : `Tienes ${cuantos} avisos nuevos desde ayer.`,
           "",
           `Espacio: ${espacio}`,
-          `Léelos en Cuotly: ${enlace}`,
+          `Léelos en Restavor web: ${enlace}`,
           "",
           "Recibes este resumen porque elegiste «Resumen diario». Puedes volver a recibirlos al momento desde Preferencias de aviso.",
         ].join("\n"),
@@ -1576,7 +1576,7 @@ export const es = {
        * RN-EST-19 · quién del equipo lleva el restaurante.
        *
        * NO se llama "supervisor": ese nombre ya significa otra cosa en
-       * Cuotly —una relación Administrador–Trabajador— y confundirlos
+       * Restavor web —una relación Administrador–Trabajador— y confundirlos
        * dentro de seis meses sería fácil.
        *
        * Las dos frases de abajo son cosas distintas y por eso son dos:
@@ -1684,7 +1684,7 @@ export const es = {
       newButton: "Nueva solicitud",
       onBehalf: {
         title: "Nueva solicitud",
-        subtitle: "Deja escrito en Cuotly lo que el restaurante pidió por teléfono, por correo o en persona.",
+        subtitle: "Deja escrito en Restavor web lo que el restaurante pidió por teléfono, por correo o en persona.",
         establishmentLabel: "Restaurante",
         establishmentPlaceholder: "Elige el restaurante",
         establishmentCode: (code: string) => `Código: ${code}`,
@@ -2415,7 +2415,7 @@ export const es = {
       notMemberShort: "no eres miembro",
       notMemberManage: "Como administras el espacio, puedes añadirte desde Gestionar el canal.",
       noAttachments:
-        "En un canal no se adjuntan archivos: cada archivo de Cuotly es de un restaurante, y un canal no es de ninguno.",
+        "En un canal no se adjuntan archivos: cada archivo de Restavor web es de un restaurante, y un canal no es de ninguno.",
       emptyMessagesTitle: "Todavía no se ha escrito nada",
       emptyMessagesReason: "Lo que se escriba aquí solo lo leen los miembros del canal.",
     },
@@ -2582,7 +2582,7 @@ export const es = {
       duePickReason: "Pulsa una fila para ver sus importes y sus avisos.",
       remindersTitle: "Recordatorios de cobro",
       remindersHint:
-        "Cuotly avisa al restaurante en estas tres fechas mientras quede deuda (RN-REC-01). Lo que le llegó está en sus avisos, no aquí: puede tener apagado el del vencimiento.",
+        "Restavor web avisa al restaurante en estas tres fechas mientras quede deuda (RN-REC-01). Lo que le llegó está en sus avisos, no aquí: puede tener apagado el del vencimiento.",
       reminderSteps: {
         due: "Día del vencimiento: aviso al restaurante",
         pause: "+24 h: pausa por impago y aviso",
@@ -2948,7 +2948,7 @@ export const es = {
     howBody: "Puedes pagar por transferencia bancaria o por Bizum.",
     howInstructionsTitle: "Las instrucciones te las da el equipo",
     howInstructionsBody:
-      "Cuotly no guarda la cuenta ni el número de Bizum de tu espacio de mantenimiento. Si no los tienes, pídeselos al equipo en tus mensajes.",
+      "Restavor web no guarda la cuenta ni el número de Bizum de tu espacio de mantenimiento. Si no los tienes, pídeselos al equipo en tus mensajes.",
     askInstructions: "Pedir las instrucciones",
     receiptTitle: "Subir justificante de pago",
     receiptSubtitle: "Adjunta el comprobante de la transferencia o una captura del Bizum.",
@@ -2965,7 +2965,7 @@ export const es = {
     documentsSubtitle: "Consulta tus facturas y los presupuestos que te ha enviado el equipo.",
     docTabs: { facturas: "Facturas", presupuestos: "Presupuestos" },
     docTabsLabel: "Facturas o presupuestos",
-    invoicesTitle: "Cuotly todavía no emite facturas",
+    invoicesTitle: "Restavor web todavía no emite facturas",
     invoicesReason:
       "La numeración fiscal de las facturas está pendiente de decidir. Mientras tanto, cada cobro tiene su detalle con base, IVA y total, y tu espacio de mantenimiento te entrega la factura por su cuenta.",
   },
@@ -3501,7 +3501,7 @@ export const es = {
     cancelPendingTitle: "Cancelar solicitud pendiente",
   },
   // Decisión 83 (RN-REQ-09 a RN-REQ-12) · cambio o incidencia. No confundir
-  // con `incidents`, que son las que un espacio le abre a Cuotly (§131).
+  // con `incidents`, que son las que un espacio le abre a Restavor web (§131).
   requestIncidents: {
     kindLabel: "¿Qué necesitas?",
     kindHint: "Una incidencia es algo de tu web que ha dejado de funcionar. Diagnosticarla no cuesta nada y nunca gasta de tu plan.",
@@ -3596,7 +3596,7 @@ export const es = {
     // la Fase 4, así que aquí solo se autoriza.
     sourcesTitle: "Autorizar fuentes",
     sourcesHint:
-      "Conecta tus cuentas para que el equipo de mantenimiento pueda leer los datos de tu web. Usamos tu propia cuenta mediante OAuth; Cuotly no guarda tu contraseña.",
+      "Conecta tus cuentas para que el equipo de mantenimiento pueda leer los datos de tu web. Usamos tu propia cuenta mediante OAuth; Restavor web no guarda tu contraseña.",
     sourcesConnectedTitle: "Cuentas conectadas",
     sourcesLink: "Autorizar fuentes",
     sourcesExportNote:
@@ -4154,7 +4154,7 @@ export const es = {
       historyEmpty: "Todavía no hay cambios registrados para esta persona.",
       historyFailed: "No se ha podido leer el historial.",
       historyBy: (quien: string) => `por ${quien}`,
-      historySystem: "Cuotly",
+      historySystem: "Restavor web",
       save: "Guardar cambios",
       saving: "Guardando…",
       saved: "Cambios guardados.",
@@ -4219,7 +4219,7 @@ export const es = {
       inviteTitle: "Invitar miembro",
       noAutoAccess:
         "Al aceptar, un trabajador no tiene ningún restaurante autorizado: se le asignan en Permisos.",
-      noEmail: "Cuotly todavía no envía el correo: comparte tú el enlace de la invitación.",
+      noEmail: "Restavor web todavía no envía el correo: comparte tú el enlace de la invitación.",
     },
     supervision: {
       coverageTitle: "Asignar cobertura de supervisión",
@@ -4329,7 +4329,7 @@ export const es = {
       readCurrent: "Leer la versión vigente",
       publishTitle: "Publicar una versión nueva",
       publishHint:
-        "Al publicar se avisa al propietario de cada restaurante con este plan o servicio, en Cuotly y por correo, para que lea la versión nueva y la acepte. Los que aceptaron la anterior pasan a tenerla pendiente.",
+        "Al publicar se avisa al propietario de cada restaurante con este plan o servicio, en Restavor web y por correo, para que lea la versión nueva y la acepte. Los que aceptaron la anterior pasan a tenerla pendiente.",
       publishLabel: "Texto de las condiciones",
       publishSubmit: "Publicar como versión nueva",
       publishPending: "Publicando…",
@@ -4341,7 +4341,7 @@ export const es = {
       statusAccepted: (n: number, day: string) => `Versión ${n} aceptada el ${day}`,
       statusOutdated: (accepted: number, current: number) =>
         `Aceptada la versión ${accepted}; la ${current} está pendiente de aceptar`,
-      channelInApp: "en Cuotly",
+      channelInApp: "en Restavor web",
       channelExternal: "registrada por el equipo, con contrato",
       readLink: "Ver condiciones",
       recordTitle: "Registrar una aceptación de fuera",
@@ -4740,7 +4740,7 @@ export const es = {
       generalTitle: "Información general",
       languageLabel: "Idioma",
       languageValue: "Español",
-      languageReason: "Cuotly está hoy solo en español: no hay otro idioma que elegir (RN-GLO-06).",
+      languageReason: "Restavor web está hoy solo en español: no hay otro idioma que elegir (RN-GLO-06).",
       timezoneLabel: "Zona horaria",
       timezoneChangeIn: "Se cambia en Horarios.",
       logoTitle: "Logo del espacio",
@@ -4783,14 +4783,14 @@ export const es = {
       addHolidayTitle: "Añadir festivo",
       holidaysReadOnly: "Añadir festivos es de quien gestiona el calendario del espacio.",
       supportNote:
-        "El horario de soporte de Cuotly es otro reloj, con los festivos de Cuotly: no mueve ningún plazo del espacio (RN-CLK-08).",
+        "El horario de soporte de Restavor web es otro reloj, con los festivos de Restavor web: no mueve ningún plazo del espacio (RN-CLK-08).",
       versionsTitle: "Versiones de los calendarios",
       fiscalTitle: "Datos fiscales",
       fiscalHint: "Los datos del espacio que acompañan a sus cobros.",
       taxConfigTitle: "Configuración de impuestos",
       pricesShownLabel: "Los precios se muestran",
       pricesShownValue: "Antes de impuestos (+ IVA)",
-      pricesShownReason: "Todos los precios de Cuotly se dan más IVA; no es una preferencia.",
+      pricesShownReason: "Todos los precios de Restavor web se dan más IVA; no es una preferencia.",
       paymentMethodsTitle: "Métodos de pago",
       methodTransfer: "Transferencia bancaria",
       methodBizum: "Bizum",
@@ -4913,11 +4913,11 @@ export const es = {
     // se dicen, no se eligen (ver `docs/diseno/LAS-CATORCE-PIEZAS.md`).
     currencyLabel: "Moneda",
     currencyValue: "Euro (€)",
-    currencyReason: "Cuotly trabaja en euros. No hay otra moneda que elegir.",
+    currencyReason: "Restavor web trabaja en euros. No hay otra moneda que elegir.",
     paymentMethodsLabel: "Métodos de pago que se pueden registrar",
     paymentMethodsValue: "Transferencia y Bizum",
     paymentMethodsReason:
-      "Los pagos se registran a mano: no hay pasarela. Esto no es una preferencia del espacio, es lo que Cuotly acepta.",
+      "Los pagos se registran a mano: no hay pasarela. Esto no es una preferencia del espacio, es lo que Restavor web acepta.",
     paymentTermLabel: "Plazo de pago de las mensualidades (días naturales)",
     paymentTermHint:
       "Días desde que se emite una mensualidad hasta que vence. Pasadas 24 h del vencimiento el restaurante queda pausado por impago, y a las 72 h suspendido (RN-FIN-10 y RN-FIN-11).",
@@ -5010,7 +5010,7 @@ export const es = {
     pending: [
       "Apariencia: no habrá selector. Un único modo claro y una única densidad, por decisión de producto (§124).",
       "Facturación e impuestos: depende del bloque legal y fiscal, que revisa un profesional antes de lanzar.",
-      "Suscripción a Cuotly, exportación y conservación: Fase 4.",
+      "Suscripción a Restavor web, exportación y conservación: Fase 4.",
       "Propiedad y eliminación del espacio (§127): archivado, transferencia y borrado programado, sin construir.",
       "Auditoría del restaurante: §21.2 dice que el propietario de un restaurante ve la de su establecimiento. Necesita una proyección sin identidad del equipo, como la del libro de consumos, y todavía no existe.",
     ],
@@ -5114,14 +5114,14 @@ export const es = {
       integration: "Integración",
       opportunity: "Oportunidad",
       report: "Informe",
-      cuotly_charge: "Cobro de Cuotly",
-      cuotly_payment: "Pago a Cuotly",
+      cuotly_charge: "Cobro de Restavor web",
+      cuotly_payment: "Pago a Restavor web",
       support_session: "Sesión de Modo soporte",
-      platform_role: "Administrador de Cuotly",
+      platform_role: "Administrador de Restavor web",
       profile: "Cuenta",
-      incident: "Incidencia a Cuotly",
-      platform_holiday: "Festivo de Cuotly",
-      platform_status_event: "Evento de estado de Cuotly",
+      incident: "Incidencia a Restavor web",
+      platform_holiday: "Festivo de Restavor web",
+      platform_status_event: "Evento de estado de Restavor web",
       // Hito 22 · el teléfono con push de una persona (RN-MOV-05).
       push_device: "Teléfono con avisos",
       // Migración 100 (§38, RN-CAN) · un canal interno es una conversación.
@@ -5151,9 +5151,9 @@ export const es = {
       "establishment.manager_set": "Responsable del restaurante cambiado",
       "establishment.photo_set": "Foto del restaurante cambiada",
       "establishment.status_changed": "Estado del restaurante cambiado",
-      "establishment.archived_by_platform": "Restaurante archivado por Cuotly",
-      "establishment.restored_by_platform": "Restaurante recuperado por Cuotly",
-      "establishment.permanently_deleted_by_platform": "Restaurante eliminado definitivamente por Cuotly",
+      "establishment.archived_by_platform": "Restaurante archivado por Restavor web",
+      "establishment.restored_by_platform": "Restaurante recuperado por Restavor web",
+      "establishment.permanently_deleted_by_platform": "Restaurante eliminado definitivamente por Restavor web",
       // §38, RN-TRA · la transferencia entre espacios. Los dos espacios ven
       // el mismo apunte desde su lado, así que el texto no dice "nuestro"
       // ni "suyo": dice qué pasó.
@@ -5274,24 +5274,24 @@ export const es = {
       "push_device.registered": "Teléfono registrado para avisos",
       "push_device.revoked": "Teléfono dado de baja de los avisos",
       "space.created": "Espacio creado",
-      // Hito 18 · el modo del espacio respecto a Cuotly, y su plan.
-      "space.activated": "Suscripción de Cuotly activada",
+      // Hito 18 · el modo del espacio respecto a Restavor web, y su plan.
+      "space.activated": "Suscripción de Restavor web activada",
       "space.archived_trial_ended": "Espacio archivado: la prueba terminó sin pago",
       "space.archived_nonpayment": "Espacio archivado por impago",
       "space.reactivated": "Espacio reactivado",
-      "space.plan_changed": "Plan de Cuotly cambiado",
+      "space.plan_changed": "Plan de Restavor web cambiado",
       "space.tax_rate_changed": "Cambió el IVA por defecto del espacio",
       "establishment.termination_requested": "El restaurante comunicó la baja del servicio",
-      "space.plan_change_scheduled": "Cambio de plan de Cuotly programado",
-      "space.plan_change_cancelled": "Cambio de plan de Cuotly anulado",
-      "space.extras_changed": "Adicionales de Cuotly cambiados",
-      "cuotly_charge.issued": "Cobro de Cuotly emitido",
-      "cuotly_payment.declared": "Pago a Cuotly declarado",
-      "cuotly_payment.confirmed": "Pago a Cuotly confirmado",
-      "cuotly_payment.rejected": "Pago a Cuotly rechazado",
-      "cuotly_payment.reversed": "Pago a Cuotly revertido",
+      "space.plan_change_scheduled": "Cambio de plan de Restavor web programado",
+      "space.plan_change_cancelled": "Cambio de plan de Restavor web anulado",
+      "space.extras_changed": "Adicionales de Restavor web cambiados",
+      "cuotly_charge.issued": "Cobro de Restavor web emitido",
+      "cuotly_payment.declared": "Pago a Restavor web declarado",
+      "cuotly_payment.confirmed": "Pago a Restavor web confirmado",
+      "cuotly_payment.rejected": "Pago a Restavor web rechazado",
+      "cuotly_payment.reversed": "Pago a Restavor web revertido",
       // Hito 17 · el recorrido de una solicitud de creación de espacio.
-      // "Enviada" la escribe quien la pide; las otras cuatro, Cuotly.
+      // "Enviada" la escribe quien la pide; las otras cuatro, Restavor web.
       "space_request.submitted": "Solicitud de espacio enviada",
       "space_request.in_review": "Solicitud de espacio en revisión",
       "space_request.needs_information": "Se pidió más información sobre la solicitud",
@@ -5311,18 +5311,18 @@ export const es = {
       "space.ownership_transferred": "Propiedad del espacio transferida",
       "space.archived_by_owner": "Espacio archivado por su propietario",
       "space.restored_by_owner": "Espacio restaurado",
-      "space.archived_by_platform": "Espacio archivado por Cuotly",
-      "space.restored_by_platform": "Espacio recuperado por Cuotly",
-      "space.permanently_deleted_by_platform": "Espacio eliminado definitivamente por Cuotly",
+      "space.archived_by_platform": "Espacio archivado por Restavor web",
+      "space.restored_by_platform": "Espacio recuperado por Restavor web",
+      "space.permanently_deleted_by_platform": "Espacio eliminado definitivamente por Restavor web",
       "export.requested": "Exportación de datos",
-      "incident.opened": "Incidencia abierta a Cuotly",
+      "incident.opened": "Incidencia abierta a Restavor web",
       "incident.status_changed": "Incidencia: cambio de estado",
       "incident.replied": "Incidencia: mensaje",
       "incident.attachment_added": "Incidencia: adjunto añadido",
-      "platform_holiday.added": "Festivo de Cuotly añadido",
-      "platform_holiday.retired": "Festivo de Cuotly retirado",
-      "platform_status.declared": "Estado de Cuotly: evento declarado",
-      "platform_status.resolved": "Estado de Cuotly: evento resuelto",
+      "platform_holiday.added": "Festivo de Restavor web añadido",
+      "platform_holiday.retired": "Festivo de Restavor web retirado",
+      "platform_status.declared": "Estado de Restavor web: evento declarado",
+      "platform_status.resolved": "Estado de Restavor web: evento resuelto",
       "space.timezone_changed": "Zona horaria cambiada",
       "subscription.plan_change_cancelled": "Cambio de plan anulado",
       "subscription.plan_change_scheduled": "Cambio de plan programado",
@@ -5376,19 +5376,19 @@ export const es = {
       "task.reassignment_rejected": "Reasignación de tarea rechazada",
       "task.reassignment_requested": "Reasignación de tarea solicitada",
       "task.state_changed": "Estado de una tarea cambiado",
-      "platform.admin_granted": "Administrador de Cuotly nombrado",
-      "platform.account_deleted": "Cuenta eliminada por Cuotly",
-      "platform.account_restored": "Cuenta recuperada por Cuotly",
-      "platform.space_deleted": "Espacio archivado por Cuotly",
-      "platform.space_restored": "Espacio recuperado por Cuotly",
-      "platform.space_permanently_deleted": "Espacio eliminado definitivamente por Cuotly",
-      "platform.establishment_deleted": "Restaurante archivado por Cuotly",
-      "platform.establishment_restored": "Restaurante recuperado por Cuotly",
-      "platform.establishment_permanently_deleted": "Restaurante eliminado definitivamente por Cuotly",
-      "platform.admin_updated": "Permisos de un Administrador de Cuotly cambiados",
-      "platform.admin_revoked": "Administrador de Cuotly retirado",
-      "support.session_started": "Cuotly ha entrado en Modo soporte",
-      "support.session_ended": "Cuotly ha salido de Modo soporte",
+      "platform.admin_granted": "Administrador de Restavor web nombrado",
+      "platform.account_deleted": "Cuenta eliminada por Restavor web",
+      "platform.account_restored": "Cuenta recuperada por Restavor web",
+      "platform.space_deleted": "Espacio archivado por Restavor web",
+      "platform.space_restored": "Espacio recuperado por Restavor web",
+      "platform.space_permanently_deleted": "Espacio eliminado definitivamente por Restavor web",
+      "platform.establishment_deleted": "Restaurante archivado por Restavor web",
+      "platform.establishment_restored": "Restaurante recuperado por Restavor web",
+      "platform.establishment_permanently_deleted": "Restaurante eliminado definitivamente por Restavor web",
+      "platform.admin_updated": "Permisos de un Administrador de Restavor web cambiados",
+      "platform.admin_revoked": "Administrador de Restavor web retirado",
+      "support.session_started": "Restavor web ha entrado en Modo soporte",
+      "support.session_ended": "Restavor web ha salido de Modo soporte",
     },
   },
 
@@ -5517,12 +5517,12 @@ export const es = {
         pagespeed: "PageSpeed",
       },
       sourcesNote:
-        "Fuentes: Google Analytics 4, Google Search Console, Google Business Profile, Microsoft Clarity y PageSpeed Insights. Cuotly solo lee lo que cada restaurante ha conectado.",
+        "Fuentes: Google Analytics 4, Google Search Console, Google Business Profile, Microsoft Clarity y PageSpeed Insights. Restavor web solo lee lo que cada restaurante ha conectado.",
     },
     subtitle: "Consulta, filtra y gestiona todos los informes de tus restaurantes.",
     empty: "Todavía no hay informes",
     emptyReason:
-      "Ninguno se ha preparado con estos filtros. Un informe se prepara desde aquí: se eligen la familia, el restaurante y el periodo, y Cuotly genera las cifras.",
+      "Ninguno se ha preparado con estos filtros. Un informe se prepara desde aquí: se eligen la familia, el restaurante y el periodo, y Restavor web genera las cifras.",
     create: "Preparar informe",
     detail: "Revisar y programar",
 
@@ -5551,7 +5551,7 @@ export const es = {
       preparing: "Revisa las secciones y aprueba para programar el envío.",
       pending_review: "Requiere aprobación para finalizar y programar el envío.",
       approved: "Aprobado. Se puede programar o enviar.",
-      scheduled: "Programado. Cuotly avisa 24 horas antes de la fecha.",
+      scheduled: "Programado. Restavor web avisa 24 horas antes de la fecha.",
       sent: "Enviado al restaurante. Lo enviado no se edita: una corrección es una versión nueva.",
       archived: "Archivado. Se conserva y deja de aparecer en la lista activa.",
     },
@@ -5572,7 +5572,7 @@ export const es = {
     sectionHints: {
       // Decisión 78 · nace escrito con frases fijas y se puede reescribir.
       executive_summary: "Nace escrito con frases fijas a partir de las cifras, sin IA. Se puede reescribir.",
-      month_activity: "El relato del periodo, día a día. Cuotly lo ordena: no lo escribe.",
+      month_activity: "El relato del periodo, día a día. Restavor web lo ordena: no lo escribe.",
       web_traffic: "Visitas, usuarios, páginas más visitadas y dispositivos, de Google Analytics.",
       operation: "Solicitudes, trabajos, plazos, bloqueos, consumos y menús.",
       finance: "Ingresos, cobros, impagos y renovaciones.",
@@ -5702,7 +5702,7 @@ export const es = {
       startCompliance: (pct: number) => `El ${pct} % de los cambios empezó dentro de plazo.`,
       visits: (n: string) => `La web recibió ${n} visitas.`,
       // La línea que dice de quién es el texto (RN-REP-19, punto 3).
-      autoLine: "Resumen generado por Cuotly con las cifras del periodo.",
+      autoLine: "Resumen generado por Restavor web con las cifras del periodo.",
       editedLine: "Resumen revisado por el equipo.",
     },
 
@@ -5715,10 +5715,10 @@ export const es = {
       quarterTitle: "Informe del trimestre",
       quarterName: (trimestre: string) => `Informe del trimestre de ${trimestre}`,
       quarterHint: (trimestre: string) =>
-        `Todo lo que ha pasado en el trimestre de ${trimestre}, con lo que incluye su plan, que recibe el informe cada trimestre. Cuotly lo genera; tú lo revisas si quieres y lo subes para que lo vea el restaurante.`,
+        `Todo lo que ha pasado en el trimestre de ${trimestre}, con lo que incluye su plan, que recibe el informe cada trimestre. Restavor web lo genera; tú lo revisas si quieres y lo subes para que lo vea el restaurante.`,
       quarterNotGenerated: (trimestre: string) => `El informe del trimestre de ${trimestre} todavía no se ha generado.`,
       hint: (mes: string) =>
-        `Todo lo que ha pasado en ${mes}, con lo que incluye su plan. Cuotly lo genera; tú lo revisas si quieres y lo subes para que lo vea el restaurante.`,
+        `Todo lo que ha pasado en ${mes}, con lo que incluye su plan. Restavor web lo genera; tú lo revisas si quieres y lo subes para que lo vea el restaurante.`,
       notGenerated: (mes: string) => `El informe de ${mes} todavía no se ha generado.`,
       generate: "Generar informe",
       regenerate: "Volver a generar",
@@ -6057,7 +6057,7 @@ export const es = {
       // RN-REP-19 · la maqueta que aprobó Bosco el 20/09/2026.
       headline: "Lo esencial",
       headlineHint: "Si solo lees una página, es esta.",
-      writtenByAPerson: "Lo escribe una persona del equipo. Cuotly no lo redacta.",
+      writtenByAPerson: "Lo escribe una persona del equipo. Restavor web no lo redacta.",
       contentsTitle: "En este informe",
       columnConcept: "CONCEPTO",
       columnValue: "ESTE PERIODO",
@@ -6232,7 +6232,7 @@ export const es = {
    * (decisión 47) son **una sola nota de texto libre para todo el menú**,
    * no una declaración plato a plato: manda el diseño definitivo móvil
    * (`Cuotly_movil.pdf`, página 125). El título es el de esa página,
-   * literal, porque dice justo lo que Cuotly puede prometer.
+   * literal, porque dice justo lo que Restavor web puede prometer.
    */
   allergens: {
     title: "Alérgenos (según la información proporcionada)",
@@ -6250,7 +6250,7 @@ export const es = {
       "Nadie la ha escrito todavía. No significa que los platos no lleven ninguno: es que no se sabe.",
     // RN-ALE-03 · quién responde de lo que ahí pone.
     whoseResponsibility:
-      "Esta información la declara el restaurante. Cuotly la guarda y la publica tal cual: no la comprueba ni la corrige.",
+      "Esta información la declara el restaurante. Restavor web la guarda y la publica tal cual: no la comprueba ni la corrige.",
   },
 
   // R18 y A17 · comparar dos versiones de un menú. El cálculo vive en
@@ -6420,12 +6420,12 @@ export const es = {
   newEstablishmentPage: {
     // M73 · "Crear establecimiento", con las palabras del dibujo.
     title: "Crear establecimiento",
-    intro: "Completa la información básica del restaurante para empezar a gestionarlo en Cuotly.",
+    intro: "Completa la información básica del restaurante para empezar a gestionarlo en Restavor web.",
     back: "Volver a Restaurantes",
     cancel: "Cancelar",
 
     nameLabel: "Nombre comercial",
-    // RN-EST-06 · el código lo pone Cuotly, correlativo por espacio. El
+    // RN-EST-06 · el código lo pone Restavor web, correlativo por espacio. El
     // dibujo lo pide escrito; aquí se dice que llega solo.
     codeLabel: "Código",
     codeAuto: "Se asigna automáticamente al crear",
@@ -6459,7 +6459,7 @@ export const es = {
   },
 
   agent: {
-    title: "Agente Cuotly",
+    title: "Agente Restavor web",
     badge: "Próximamente",
     description:
       "Todavía no está disponible. Cuando lo esté, se anunciará aquí: de momento esta pantalla no hace nada y no hay nada que configurar.",
@@ -6572,7 +6572,7 @@ export const es = {
     reportsTitle: "Informes generados",
     reportsEmptyTitle: "Todavía no hay informes de este restaurante",
     reportsEmptyReason:
-      "Los informes se preparan desde la biblioteca: se eligen la familia, el periodo y las secciones, y Cuotly genera las cifras. Aquí aparecerán los de este restaurante.",
+      "Los informes se preparan desde la biblioteca: se eligen la familia, el periodo y las secciones, y Restavor web genera las cifras. Aquí aparecerán los de este restaurante.",
     reportsLink: "Ir a la biblioteca de informes",
     blocks: {
       establishmentData: "Datos",
@@ -6599,7 +6599,7 @@ export const es = {
     transferNeedsAccept: "Con deuda vencida no se transfiere: primero se cobra.",
     transferSpaceLabel: "Identificador del espacio de destino",
     transferSpaceHint:
-      "Te lo da el otro espacio. No hay lista donde elegirlo: Cuotly no enseña los espacios de nadie más.",
+      "Te lo da el otro espacio. No hay lista donde elegirlo: Restavor web no enseña los espacios de nadie más.",
     transferSpaceRequired: "Escribe el identificador del espacio de destino.",
     transferSubmit: "Proponer la transferencia",
     transferOnlyOwner:
@@ -6630,14 +6630,14 @@ export const es = {
     panelCreateHint: "Activa el acceso de este cliente a su panel para gestionar su presencia digital.",
     panelBelongsTitle: "El panel pertenece a este establecimiento.",
     panelBelongsHint:
-      "No crea un espacio de mantenimiento ni contrata automáticamente la suscripción de Cuotly del cliente.",
+      "No crea un espacio de mantenimiento ni contrata automáticamente la suscripción de Restavor web del cliente.",
     panelRestaurantLabel: "Restaurante",
     panelCodeLabel: "Código",
     panelGroupLabel: "Grupo",
     panelNoGroup: "Sin grupo",
     panelOwnerLabel: "Propietario del restaurante",
     panelOwnerHint:
-      "Tiene que tener ya cuenta en Cuotly. Se le avisará con las instrucciones de acceso.",
+      "Tiene que tener ya cuenta en Restavor web. Se le avisará con las instrucciones de acceso.",
     panelAccessTitle: "Revisar accesos del cliente",
     panelAccessItems: [
       "Podrá ver y editar la carta digital",
@@ -6671,9 +6671,9 @@ export const es = {
       "Sumarla exige ver todos los archivos del restaurante, incluidos los de facturación, y tu permiso no llega ahí. Un total con solo los que ves sería más pequeño de lo que ocupa de verdad.",
     backupsTitle: "Copias de seguridad",
     backupsHint:
-      "Una copia diaria de lo que Cuotly guarda de este restaurante: sus datos, sus solicitudes, sus menús y sus conversaciones. Se guardan las treinta últimas.",
+      "Una copia diaria de lo que Restavor web guarda de este restaurante: sus datos, sus solicitudes, sus menús y sus conversaciones. Se guardan las treinta últimas.",
     backupsNoRestore:
-      "Restaurar es descargar la copia y volver a poner a mano lo que haga falta. Cuotly no deshace nada: reponer los datos de otra fecha machacaría la auditoría, los consumos y los cobros posteriores, y todo esto está construido sobre libros que no se reescriben.",
+      "Restaurar es descargar la copia y volver a poner a mano lo que haga falta. Restavor web no deshace nada: reponer los datos de otra fecha machacaría la auditoría, los consumos y los cobros posteriores, y todo esto está construido sobre libros que no se reescriben.",
     backupsContents: (solicitudes: number, menus: number, archivos: number) =>
       `${solicitudes} solicitudes · ${menus} menús · ${archivos} archivos`,
     // M83 · la tabla de copias y el panel "Detalles del respaldo".
@@ -6703,7 +6703,7 @@ export const es = {
     ],
     backupsLimitsTitle: "Limitaciones",
     backupsLimits: [
-      "No incluye la web del restaurante: Cuotly no la aloja (RN-BCK-01).",
+      "No incluye la web del restaurante: Restavor web no la aloja (RN-BCK-01).",
       "No lleva los archivos, solo su listado (RN-BCK-09).",
       "Restaurar no es automático: se descarga y lo aplica el equipo (RN-BCK-04).",
     ],
@@ -6730,7 +6730,7 @@ export const es = {
     serviceReactivateHint:
       "Vuelve a estar activo y a darse servicio. Si tiene deuda vencida, no se reactiva desde aquí: se reactiva al cobrar.",
     serviceReactivateSubmit: "Reactivar",
-    serviceTerminationTitle: "Baja comunicada por fuera de Cuotly",
+    serviceTerminationTitle: "Baja comunicada por fuera de Restavor web",
     serviceTerminationHint:
       "Para la baja que llegó por teléfono o por correo. El servicio NO se corta ahora: pasa a Finalizando, que quiere decir que no se renueva. Cuándo acaba lo marcan el periodo pagado y la permanencia.",
     serviceTerminationSubmit: "Registrar la baja",
@@ -6898,7 +6898,7 @@ export const es = {
 
     // ---- Gestión · Datos del establecimiento ---------------------
     // RN-EST-12 · el aviso más importante de esta pantalla: aquí se
-    // corrige la ficha de Cuotly, no la web del restaurante.
+    // corrige la ficha de Restavor web, no la web del restaurante.
     dataTitle: "Datos del establecimiento",
     dataNotPublicNotice:
       "Editar esta ficha no actualiza la web del restaurante. Un cambio en el contenido público requiere una solicitud (RN-EST-12).",
@@ -6907,7 +6907,7 @@ export const es = {
     dataLegalNameLabel: "Nombre fiscal",
     dataTaxIdLabel: "CIF / NIF",
     dataTaxIdHint:
-      "Se guarda tal cual, en mayúsculas. Cuotly no comprueba el dígito de control ni emite facturas todavía (RN-FIN-09).",
+      "Se guarda tal cual, en mayúsculas. Restavor web no comprueba el dígito de control ni emite facturas todavía (RN-FIN-09).",
     dataAddressLabel: "Dirección",
     dataPostalCodeLabel: "Código postal",
     dataCityLabel: "Ciudad",
@@ -6929,7 +6929,7 @@ export const es = {
     dataWebPlatformLabel: "Plataforma web",
     dataWebPlatforms: {
       unset: "Sin indicar",
-      landing_site: "LandingSite de Cuotly",
+      landing_site: "LandingSite de Restavor web",
       other: "Otra plataforma",
     },
     dataWebPlatformHint:
@@ -7138,10 +7138,10 @@ export const es = {
     chargeHistoryState: "Estado",
     chargeHistoryDetail: "Detalle",
     chargeHistoryEmpty: "Todavía no se ha emitido ningún cobro a este restaurante.",
-    // Facturas · RN-FIN-09: Cuotly no emite facturas todavía. La pestaña
+    // Facturas · RN-FIN-09: Restavor web no emite facturas todavía. La pestaña
     // existe con su sitio hecho (decisión 40) y dice el motivo.
     invoicesTitle: "Facturas",
-    invoicesEmptyTitle: "Cuotly todavía no emite facturas",
+    invoicesEmptyTitle: "Restavor web todavía no emite facturas",
     invoicesEmptyReason:
       "La numeración fiscal y el formato de la factura llegan con el bloque legal. Hasta entonces queda registrado cada cobro con su referencia y, si se adjunta, su justificante.",
     paymentsFootNote:
@@ -7181,10 +7181,10 @@ export const es = {
     permissionsNone: "Ninguno",
     noName: "Sin nombre",
     // Maqueta 15 · "Añadir usuario existente" (RN-EST-04). Existente es
-    // literal: en Cuotly se invita al ESPACIO, no a un restaurante.
+    // literal: en Restavor web se invita al ESPACIO, no a un restaurante.
     grantTitle: "Añadir usuario existente",
     grantHint:
-      "Da acceso a este restaurante a alguien que ya tiene cuenta en Cuotly. Si todavía no la tiene, primero hay que invitarle al espacio.",
+      "Da acceso a este restaurante a alguien que ya tiene cuenta en Restavor web. Si todavía no la tiene, primero hay que invitarle al espacio.",
     grantEmailLabel: "Correo de la persona",
     grantEmailPlaceholder: "nombre@surestaurante.com",
     grantRoleLabel: "Rol",
@@ -7208,7 +7208,7 @@ export const es = {
     // que abrir un enlace y ponerse una contraseña, y decirle "acceso
     // concedido" haría esperar a quien invita.
     grantDoneInvited:
-      "Invitación enviada. Esa persona todavía no tiene cuenta en Cuotly: entrará cuando abra el enlace del correo y elija su contraseña.",
+      "Invitación enviada. Esa persona todavía no tiene cuenta en Restavor web: entrará cuando abra el enlace del correo y elija su contraseña.",
 
     // RN-PAN-14 · la lista de invitaciones del restaurante.
     invitations: {
@@ -7325,11 +7325,11 @@ export const es = {
     backupTitle: "Copias de seguridad web",
     backupEmptyTitle: "No conectado",
     backupEmptyReason:
-      "Cuotly no hace copias de la web del restaurante todavía: no hay ninguna integración con el alojamiento, así que no hay fecha de último respaldo que enseñar.",
+      "Restavor web no hace copias de la web del restaurante todavía: no hay ninguna integración con el alojamiento, así que no hay fecha de último respaldo que enseñar.",
     // La advertencia de §5.5, que se dice AUNQUE algún día haya copias:
     // solo se respalda lo que la plataforma externa deje exportar.
     backupLimitation:
-      "Aunque se conecte, Cuotly solo podrá guardar los contenidos y recursos que la plataforma de la web permita exportar. No afirmará nunca que existe una copia completa restaurable de la web.",
+      "Aunque se conecte, Restavor web solo podrá guardar los contenidos y recursos que la plataforma de la web permita exportar. No afirmará nunca que existe una copia completa restaurable de la web.",
 
     // ---- Gestión · Integraciones (maqueta 17) ---------------------
     integrationsTitle: "Integraciones",
@@ -7439,7 +7439,7 @@ export const es = {
       disconnected: "Desconectada",
     },
     failureKinds: {
-      transient: "Fallo pasajero: Cuotly vuelve a intentarlo sola.",
+      transient: "Fallo pasajero: Restavor web vuelve a intentarlo sola.",
       authorization: "Hace falta volver a autorizar la cuenta.",
       configuration: "Hay que revisar la configuración: la propiedad, el sitio o la clave.",
     },
@@ -7587,7 +7587,7 @@ export const es = {
     strategies: { mobile: "Móvil", desktop: "Escritorio" },
     // Maqueta 10 · los dispositivos que nombra GA4, en español. Lo que no
     // esté en esta lista se enseña como lo manda la fuente: es un dato
-    // suyo, no una etiqueta de Cuotly.
+    // suyo, no una etiqueta de Restavor web.
     devices: { mobile: "Móvil", desktop: "Ordenador", tablet: "Tablet", smart_tv: "Televisión" } as Record<string, string | undefined>,
     // El botón que despliega el formulario de conectar (la maqueta dibuja
     // las cinco conectadas, así que el formulario no aparece en ella).
@@ -7645,7 +7645,7 @@ export const es = {
     webPlatformProject: "Proyecto",
     webPlatformLastPublication: "Última publicación",
     webPlatformLastPublicationNone: "Sin publicaciones de Menú Diario todavía",
-    webPlatformNote: "Web del restaurante en el ecosistema Cuotly.",
+    webPlatformNote: "Web del restaurante en el ecosistema Restavor web.",
     reservationsTitle: "Reservas",
     deliveryTitle: "Delivery",
     externalPlatformNote: "Plataforma externa utilizada",
@@ -7691,26 +7691,26 @@ export const es = {
         title: "Oportunidades",
         hint: "Mejoras basadas en los datos de tu restaurante.",
         emptyTitle: "Ninguna oportunidad abierta",
-        emptyHint: "Cuotly revisa cada día los datos de las fuentes conectadas. Cuando una regla salte, la oportunidad aparecerá aquí con las cifras que la dispararon.",
+        emptyHint: "Restavor web revisa cada día los datos de las fuentes conectadas. Cuando una regla salte, la oportunidad aparecerá aquí con las cifras que la dispararon.",
       },
     },
     manageIntegrations: "Gestionar integraciones",
     sourcesStatusTitle: "Estado de las fuentes",
     /**
-     * RN-INT-09 (decisión 48) · "Cuotly Insights" es el nombre que el
-     * diseño (páginas 41 y 44) le da al resumen que Cuotly ya calcula a
+     * RN-INT-09 (decisión 48) · "Restavor web Insights" es el nombre que el
+     * diseño (páginas 41 y 44) le da al resumen que Restavor web ya calcula a
      * partir de las fuentes conectadas. NO es una conexión: no se
      * autoriza, no sincroniza y no tiene cuenta. La fila lo dice, porque
      * ponerlo entre las demás sin decirlo prometería una fuente que no
      * existe.
      */
-    insightsName: "Cuotly Insights",
+    insightsName: "Restavor web Insights",
     insightsActive: "Activo",
     insightsNothingYet: "Sin nada que resumir",
     insightsInfo:
-      "No es una conexión: es la lectura propia de Cuotly sobre las fuentes que tengas conectadas.",
+      "No es una conexión: es la lectura propia de Restavor web sobre las fuentes que tengas conectadas.",
     insightsInfoEmpty:
-      "No es una conexión. Cuando alguna fuente traiga datos, Cuotly los resumirá aquí.",
+      "No es una conexión. Cuando alguna fuente traiga datos, Restavor web los resumirá aquí.",
     sourceOfDataTitle: "Fuente de datos",
     sourceColumn: "Fuente",
     stateColumn: "Estado",
@@ -7728,7 +7728,7 @@ export const es = {
       disconnected: "Desconectada. Los datos ya importados se conservan (RN-INT-07).",
       no_data_yet: "Conexión completada. Aún no hay datos importados.",
       no_analysis_yet: "Todavía no hay resultados disponibles.",
-      error: "La última sincronización falló. Cuotly vuelve a intentarlo sola.",
+      error: "La última sincronización falló. Restavor web vuelve a intentarlo sola.",
       needs_attention: "Hace falta una persona: volver a autorizar o revisar la configuración.",
       stale: "Dato desactualizado: la última sincronización correcta es antigua.",
       insufficient_period: "Hay datos, pero todavía de pocos días.",
@@ -7936,7 +7936,7 @@ export const es = {
     decidedAt: (day: string) => `Respondido el ${day}.`,
     decisionReason: (reason: string) => `Motivo: ${reason}`,
     decidedByTeam:
-      "La respuesta la dio el restaurante fuera de Cuotly y la registró el equipo en su nombre. Quién, en el historial.",
+      "La respuesta la dio el restaurante fuera de Restavor web y la registró el equipo en su nombre. Quién, en el historial.",
     rejectedHint:
       "Rechazado. La solicitud, si la hay, sigue donde estaba: puedes enviar otro presupuesto o el restaurante puede no continuarla.",
     waitingHint: "Enviado. Esperando la respuesta del restaurante.",
@@ -7944,7 +7944,7 @@ export const es = {
     // Decisión 21 · el equipo registra la respuesta en nombre del restaurante.
     answerForClientTitle: "Registrar la respuesta del restaurante",
     answerForClientHint:
-      "Si el restaurante te ha contestado fuera de Cuotly (por teléfono, por correo, en persona), regístralo aquí en su nombre. Solo el propietario y los administradores. Queda en el historial con tu nombre, la fecha y el motivo, y el restaurante recibe un aviso de lo registrado.",
+      "Si el restaurante te ha contestado fuera de Restavor web (por teléfono, por correo, en persona), regístralo aquí en su nombre. Solo el propietario y los administradores. Queda en el historial con tu nombre, la fecha y el motivo, y el restaurante recibe un aviso de lo registrado.",
     onBehalfReasonLabel: "Cómo y cuándo respondió el restaurante",
     onBehalfReasonHint: "Obligatorio: es lo único que cuenta cómo se dio la respuesta.",
     onBehalfReasonRequired: "Di cómo y cuándo respondió el restaurante: sin motivo no se registra.",
@@ -7992,7 +7992,7 @@ export const es = {
     rejectDone: "Presupuesto rechazado.",
     onlyOwnerTitle: "Solo el propietario responde",
     onlyOwnerReason:
-      "Un presupuesto compromete dinero del restaurante: lo acepta o rechaza el propietario local o el del grupo, como las condiciones. Si ya lo habéis contestado fuera de Cuotly, el equipo puede registrarlo en vuestro nombre.",
+      "Un presupuesto compromete dinero del restaurante: lo acepta o rechaza el propietario local o el del grupo, como las condiciones. Si ya lo habéis contestado fuera de Restavor web, el equipo puede registrarlo en vuestro nombre.",
     decidedByTeamHint: (reason: string) =>
       `Respuesta registrada por el equipo en nombre del restaurante: ${reason}. Si no es correcto, avisa al equipo por mensajes.`,
     pendingPaymentHint: "Aceptado. El cobro está en tu facturación.",
@@ -8015,7 +8015,7 @@ export const es = {
     title: "Oportunidades",
     teamHint:
       "Detectadas por reglas sobre los datos de las fuentes conectadas, sin IA. El restaurante no ve ninguna hasta que alguien la aprueba.",
-    clientHint: "Mejoras que Cuotly ha detectado en los datos de tu restaurante.",
+    clientHint: "Mejoras que Restavor web ha detectado en los datos de tu restaurante.",
 
     // El título de cada regla. Lleva el sujeto cuando la regla habla de
     // una consulta concreta: "CTR bajo en «menú del día»".
@@ -8044,7 +8044,7 @@ export const es = {
       heavy_images: "PageSpeed calcula que se ahorraría medio megabyte o más comprimiendo las imágenes o sirviéndolas al tamaño en que se ven.",
       technical_error: "Una parte de las sesiones tiene errores de script. Un error puede romper el formulario o la reserva.",
       low_mobile_conversion: "El móvil convierte la mitad o menos que el escritorio, con suficientes sesiones para que no sea casualidad.",
-      queries_without_content: "Google enseña el sitio para esa búsqueda, pero muy abajo. Detecta que sale abajo, no que el contenido sea malo: Cuotly no lee la web.",
+      queries_without_content: "Google enseña el sitio para esa búsqueda, pero muy abajo. Detecta que sale abajo, no que el contenido sea malo: Restavor web no lee la web.",
       low_button_use: "Las acciones sobre la ficha de Google (web, llamada, cómo llegar) son muy pocas para las veces que se ve, o hay clics que no responden.",
     },
 
@@ -8089,7 +8089,7 @@ export const es = {
     highlightsLink: "Ver todas",
     highlightsEmptyTitle: "No hay ninguna oportunidad detectada",
     highlightsEmptyReason:
-      "Cuotly las detecta a partir de lo que traen las fuentes de datos conectadas. Cuando encuentre alguna, aparecerá aquí.",
+      "Restavor web las detecta a partir de lo que traen las fuentes de datos conectadas. Cuando encuentre alguna, aparecerá aquí.",
     highlightsNoPlan:
       "Las oportunidades se detectan para los restaurantes con plan de mantenimiento.",
 
@@ -8102,7 +8102,7 @@ export const es = {
       low: "Afecta a una página, una consulta o un detalle suelto.",
     },
     impactNotMoney:
-      "El impacto no se dice en euros: Cuotly no sabe lo que vale una reserva ni cuántas visitas acaban en cena, y no va a inventarlo.",
+      "El impacto no se dice en euros: Restavor web no sabe lo que vale una reserva ni cuántas visitas acaban en cena, y no va a inventarlo.",
 
     scopes: { basic: "Básica", advanced: "Avanzada" },
     scopeHint: {
@@ -8111,7 +8111,7 @@ export const es = {
     },
 
     priorityLabel: (n: number) => `Prioridad ${n}`,
-    origins: { automatic: "Detectada por Cuotly", manual: "Añadida por el equipo" },
+    origins: { automatic: "Detectada por Restavor web", manual: "Añadida por el equipo" },
 
     // Decisión 26b · el esfuerzo ES la categoría del cambio: se dice lo
     // que se tarda y lo que gasta, no "esfuerzo: medio".
@@ -8225,13 +8225,13 @@ export const es = {
   spaceRequestForm: {
     title: "Pide tu espacio de mantenimiento",
     subtitle:
-      "Cuotly revisa cada solicitud a mano. Cuando la acepte, tu espacio se crea con una prueba de 7 días y tú como propietario.",
+      "Restavor web revisa cada solicitud a mano. Cuando la acepte, tu espacio se crea con una prueba de 7 días y tú como propietario.",
     back: "Volver",
-    reasonLabel: "Lo que dice Cuotly",
+    reasonLabel: "Lo que dice Restavor web",
     submittedAt: "Enviada el",
     decidedAt: "Decidida el",
     goToSpace: "Entrar en tu espacio",
-    pendingHint: "Está en manos de Cuotly. Aquí verás la respuesta.",
+    pendingHint: "Está en manos de Restavor web. Aquí verás la respuesta.",
     states: {
       draft: "Borrador",
       submitted: "Enviada",
@@ -8242,7 +8242,7 @@ export const es = {
     },
     // G02 · las cuatro tarjetas del formulario y la columna de la derecha.
     pageTitle: "Crear espacio de mantenimiento",
-    pageSubtitle: "Envía tu solicitud. El equipo de Cuotly la revisará antes de crear tu espacio.",
+    pageSubtitle: "Envía tu solicitud. El equipo de Restavor web la revisará antes de crear tu espacio.",
     businessTitle: "Datos del negocio",
     usageTitle: "Uso previsto",
     planTitle: "Plan solicitado",
@@ -8275,7 +8275,7 @@ export const es = {
     nextTitle: "¿Qué pasa después?",
     nextSteps: [
       { title: "Envías la solicitud", body: "Rellena el formulario y envíanos la información." },
-      { title: "Cuotly la revisa", body: "Validamos los datos y te escribimos aquí si necesitamos algo más." },
+      { title: "Restavor web la revisa", body: "Validamos los datos y te escribimos aquí si necesitamos algo más." },
       {
         title: "Recibes la aprobación y las instrucciones de pago",
         body: "Tu espacio se crea con 7 días de prueba y la primera mensualidad ya emitida: pagarla lo activa.",
@@ -8283,7 +8283,7 @@ export const es = {
     ],
     onlySpacesNotice: "Las solicitudes solo pueden ser para espacios de mantenimiento.",
     noChargeNotice: "Enviar la solicitud no activa el espacio ni realiza ningún cobro.",
-    needsInfoTitle: "Cuotly necesita más información",
+    needsInfoTitle: "Restavor web necesita más información",
     // G03 · la solicitud enviada.
     receivedTitle: "Hemos recibido tu solicitud",
     receivedBody: "Revisaremos los datos y te avisaremos cuando haya una respuesta.",
@@ -8299,7 +8299,7 @@ export const es = {
     progressTitle: "Estado de la solicitud",
     steps: {
       submitted: "Solicitud enviada",
-      review: "Revisión de Cuotly",
+      review: "Revisión de Restavor web",
       approval: "Aprobación e instrucciones de pago",
       activation: "Activación del espacio",
     },
@@ -8329,7 +8329,7 @@ export const es = {
   },
 
   /**
-   * Fase 4, Hito 19 · el panel de Administración de Cuotly (PRD §32,
+   * Fase 4, Hito 19 · el panel de Administración de Restavor web (PRD §32,
    * RN-ADM-01 a 04, §128).
    */
   /**
@@ -8339,7 +8339,7 @@ export const es = {
    * absolutos.
    */
   /**
-   * PRD §36 (RN-GLO) · el contexto global: la zona de Cuotly que una
+   * PRD §36 (RN-GLO) · el contexto global: la zona de Restavor web que una
    * persona ve por lo que ES —su cuenta— y no por dónde está.
    */
   globalContext: {
@@ -8351,10 +8351,10 @@ export const es = {
       help: "Ayuda",
     },
     home: {
-      // §8 y RN-ADM-01 · la entrada a Administración de Cuotly, que vivía en
+      // §8 y RN-ADM-01 · la entrada a Administración de Restavor web, que vivía en
       // el selector de contexto hasta que el Inicio global ocupó su sitio
       // (decisión 42). Es el mismo texto: lo que cambió es dónde se lee.
-      platformTitle: "Administración de Cuotly",
+      platformTitle: "Administración de Restavor web",
       platformSubtitle: "El panel de la plataforma: usuarios, espacios, solicitudes, cobros y soporte.",
       platformNeedsTwoFactor: "Para entrar en la administración hace falta la verificación en dos pasos.",
       title: "Inicio",
@@ -8451,7 +8451,7 @@ export const es = {
       infoRequestedTitle: "Información solicitada",
       provideInfo: "Aportar información",
       newRequest: "Crear espacio de mantenimiento",
-      reviewerHidden: "Quién la revisó no se enseña: eso queda en la auditoría de Cuotly.",
+      reviewerHidden: "Quién la revisó no se enseña: eso queda en la auditoría de Restavor web.",
       /** RN-GLO-04 · lo dice la propia pantalla: las de trabajo no viven aquí. */
       elsewhere:
         "Aquí aparecen las solicitudes de nuevos espacios. Las solicitudes de trabajo están dentro de cada espacio o panel.",
@@ -8594,7 +8594,7 @@ export const es = {
       searchPlaceholder: "Buscar en la ayuda…",
       /** Una línea por tema de RN-SOP-11, para su tarjeta. */
       topicHints: {
-        first_steps: "Aprende a usar Cuotly desde el principio.",
+        first_steps: "Aprende a usar Restavor web desde el principio.",
         requests: "Cómo se pide un cambio y qué pasa después.",
         jobs: "Asignar, comenzar y publicar el trabajo.",
         menus: "El Menú Diario, de la plantilla a la web.",
@@ -8615,7 +8615,7 @@ export const es = {
       faqNone: "Todavía no hay guías publicadas.",
       failedTitle: "No hemos podido cargar las guías",
       failedReason: "Es un problema nuestro o de tu conexión. Vuelve a cargar en un momento.",
-      contactTitle: "Contactar con soporte de Cuotly",
+      contactTitle: "Contactar con soporte de Restavor web",
       contactSubtitle: "Si no encuentras la respuesta, envíanos tu consulta.",
       /**
        * RN-GLO-07 · una consulta es una incidencia de RN-SOP-03, y una
@@ -8624,12 +8624,12 @@ export const es = {
       contactFromSpace: "La consulta se abre desde el espacio al que se refiere, con su tipo, categoría y descripción.",
       contactOpenIn: (espacio: string) => `Abrir consulta en ${espacio}`,
       contactCannot:
-        "En tus espacios, las consultas a Cuotly las abre el propietario o un administrador. Cuéntaselo a ellos.",
+        "En tus espacios, las consultas a Restavor web las abre el propietario o un administrador. Cuéntaselo a ellos.",
       contactClient:
-        "Las consultas a Cuotly las abre tu equipo de mantenimiento. Escríbeles desde Mensajes: te contestan como «Equipo de mantenimiento».",
+        "Las consultas a Restavor web las abre tu equipo de mantenimiento. Escríbeles desde Mensajes: te contestan como «Equipo de mantenimiento».",
       contactClientLink: "Ir a Mensajes",
     },
-    backToCuotly: "Volver al inicio de Cuotly",
+    backToCuotly: "Volver al inicio de Restavor web",
     /**
      * Por qué está cada fila en "Necesita tu atención". Los seis primeros
      * son los del Inicio del espacio, dichos en singular porque aquí cada
@@ -8654,17 +8654,17 @@ export const es = {
 
   platformEmails: {
     received: {
-      subject: "Hemos recibido tu solicitud de acceso a Cuotly",
+      subject: "Hemos recibido tu solicitud de acceso a Restavor web",
       body: (nombre: string | null, enlace: string) =>
         `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
-        "Hemos recibido tu solicitud de acceso a Cuotly. La revisamos a mano y te " +
+        "Hemos recibido tu solicitud de acceso a Restavor web. La revisamos a mano y te " +
         "escribiremos a esta dirección con la respuesta.\n\n" +
         `Puedes consultar cómo va aquí: ${enlace}\n\n` +
         "Guarda este mensaje: ese enlace es el único sitio donde seguirla mientras " +
         "todavía no tienes cuenta.",
     },
     needsInformation: {
-      subject: "Necesitamos un dato más sobre tu solicitud de Cuotly",
+      subject: "Necesitamos un dato más sobre tu solicitud de Restavor web",
       body: (nombre: string | null, motivo: string, enlace: string) =>
         `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
         "Para seguir con tu solicitud necesitamos que nos cuentes esto:\n\n" +
@@ -8672,10 +8672,10 @@ export const es = {
         `Puedes contestarnos aquí mismo: ${enlace}`,
     },
     approved: {
-      subject: "Ya tienes acceso a Cuotly",
+      subject: "Ya tienes acceso a Restavor web",
       body: (nombre: string | null, enlace: string) =>
         `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
-        "Hemos aprobado tu acceso a Cuotly. Entra por este enlace y elige tu " +
+        "Hemos aprobado tu acceso a Restavor web. Entra por este enlace y elige tu " +
         `contraseña:\n\n${enlace}\n\n` +
         "El enlace sirve una sola vez y caduca en siete días. No te mandamos ninguna " +
         "contraseña por correo a propósito: la eliges tú ahí y no queda escrita en " +
@@ -8684,18 +8684,18 @@ export const es = {
         "dentro, cuando ya estés.",
     },
     rejected: {
-      subject: "Sobre tu solicitud de acceso a Cuotly",
+      subject: "Sobre tu solicitud de acceso a Restavor web",
       body: (nombre: string | null, motivo: string) =>
         `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
-        "Esta vez no hemos podido darte acceso a Cuotly. El motivo:\n\n" +
+        "Esta vez no hemos podido darte acceso a Restavor web. El motivo:\n\n" +
         `${motivo}\n\n` +
         "Si crees que es un malentendido o cambia algo, puedes volver a escribirnos.",
     },
     alreadyRegistered: {
-      subject: "Ya tienes cuenta en Cuotly",
+      subject: "Ya tienes cuenta en Restavor web",
       body: (nombre: string | null, enlace: string) =>
         `${nombre ? `Hola, ${nombre}.` : "Hola."}\n\n` +
-        "Alguien ha pedido acceso a Cuotly con esta dirección, y esta dirección ya " +
+        "Alguien ha pedido acceso a Restavor web con esta dirección, y esta dirección ya " +
         "tiene cuenta. No hemos abierto ninguna solicitud nueva.\n\n" +
         `Si has sido tú, entra por aquí: ${enlace}\n\n` +
         "Si no reconoces esta petición, puedes ignorar este mensaje: no se ha " +
@@ -8704,15 +8704,15 @@ export const es = {
     // RN-ADM-21 (decisión 81) · el texto lo dio Bosco: "su cuenta ha sido
     // eliminada".
     accountDeleted: {
-      subject: "Su cuenta de Cuotly ha sido eliminada",
-      body: "Hola.\n\nSu cuenta ha sido eliminada.\n\nYa no puede entrar en Cuotly con esta dirección.",
+      subject: "Su cuenta de Restavor web ha sido eliminada",
+      body: "Hola.\n\nSu cuenta ha sido eliminada.\n\nYa no puede entrar en Restavor web con esta dirección.",
     },
   },
 
   platformAdmin: {
     // Decisión 81 · eliminar y recuperar cuentas, espacios y restaurantes
     // (RN-ADM-14 a 20). "Eliminar" no borra: archiva, marca y bloquea, y
-    // solo Cuotly lo deshace.
+    // solo Restavor web lo deshace.
     deletion: {
       archiveAction: "Archivar",
       archiving: "Archivando…",
@@ -8726,10 +8726,10 @@ export const es = {
       reasonRequired: "Escribe el motivo: queda en la auditoría.",
       confirmationMismatch: "No coincide. Escríbelo tal como aparece.",
       invalid: "No se sabe qué eliminar.",
-      deleted: "Eliminado. Solo Cuotly puede recuperarlo.",
+      deleted: "Eliminado. Solo Restavor web puede recuperarlo.",
       restored: "Recuperado.",
       noPermissionHint:
-        "Archivar, recuperar y eliminar es del propietario de Cuotly y de los administradores con ese permiso.",
+        "Archivar, recuperar y eliminar es del propietario de Restavor web y de los administradores con ese permiso.",
       nothingIsErased:
         "Nada se borra: pasa a Archivados, desde donde se recupera con un clic o se elimina definitivamente.",
       spaceTitle: (nombre: string) => `Archivar el espacio «${nombre}»`,
@@ -8745,7 +8745,7 @@ export const es = {
         title: (email: string) => `Eliminar la cuenta ${email}`,
         back: "Volver a usuarios",
         consequences: [
-          "No podrá volver a entrar en Cuotly y sus sesiones abiertas se cierran.",
+          "No podrá volver a entrar en Restavor web y sus sesiones abiertas se cierran.",
           "Sale de todos sus equipos de mantenimiento; sus trabajos y tareas quedan pendientes de reasignar.",
           "Pierde el acceso a todos los restaurantes y grupos en los que era cliente.",
         ],
@@ -8762,9 +8762,9 @@ export const es = {
           `«${espacio}» no tiene a nadie más en su equipo: se elimina con la cuenta y vuelve si se recupera.`,
         protectedTitle: "Esta cuenta no se puede eliminar",
         protectedReason:
-          "Es la del propietario de Cuotly, o la de un Administrador de Cuotly: a un administrador solo lo elimina el propietario de Cuotly.",
+          "Es la del propietario de Restavor web, o la de un Administrador de Restavor web: a un administrador solo lo elimina el propietario de Restavor web.",
         alsoRevokesAdmin:
-          "Es Administrador de Cuotly: al eliminarla se le retira también el rol y todos sus permisos.",
+          "Es Administrador de Restavor web: al eliminarla se le retira también el rol y todos sus permisos.",
         closedTitle: "Esta cuenta ya está eliminada",
         closedReason: "Se puede recuperar desde la lista de usuarios.",
         submit: "Eliminar la cuenta",
@@ -8791,7 +8791,7 @@ export const es = {
     archived: {
       title: "Archivados",
       subtitle:
-        "Lo que se ha archivado a mano: por Cuotly, por el propietario de un espacio o por el equipo de un restaurante. Lo que se archiva solo —prueba sin pago, impago— sigue en Espacios con su estado.",
+        "Lo que se ha archivado a mano: por Restavor web, por el propietario de un espacio o por el equipo de un restaurante. Lo que se archiva solo —prueba sin pago, impago— sigue en Espacios con su estado.",
       spacesTitle: "Espacios",
       establishmentsTitle: "Restaurantes",
       name: "Nombre",
@@ -8800,7 +8800,7 @@ export const es = {
       archivedAt: "Desde",
       reason: "Motivo",
       actions: "Acciones",
-      by: { platform: "Cuotly", owner: "Su propietario", team: "Su equipo" },
+      by: { platform: "Restavor web", owner: "Su propietario", team: "Su equipo" },
       noReason: "Sin motivo registrado",
       noDate: "Sin fecha registrada",
       emptySpacesTitle: "No hay espacios archivados",
@@ -8824,14 +8824,14 @@ export const es = {
       deleteConfirm: "Eliminar definitivamente",
       deleted: "Eliminado definitivamente.",
     },
-    title: "Administración de Cuotly",
-    subtitle: "Los doce bloques de §128. Solo Cuotly, con la sesión verificada en dos pasos.",
+    title: "Administración de Restavor web",
+    subtitle: "Los doce bloques de §128. Solo Restavor web, con la sesión verificada en dos pasos.",
     switchSpace: "Cambiar de espacio",
-    noAccessTitle: "Este panel es de Cuotly",
-    noAccessReason: "Solo el propietario de Cuotly y sus Administradores entran aquí.",
+    noAccessTitle: "Este panel es de Restavor web",
+    noAccessReason: "Solo el propietario de Restavor web y sus Administradores entran aquí.",
     twoFactorRequiredTitle: "Te falta el segundo paso",
     twoFactorRequiredReason:
-      "La administración de Cuotly exige una sesión verificada en dos pasos (§136). Actívala en tu cuenta y vuelve a entrar.",
+      "La administración de Restavor web exige una sesión verificada en dos pasos (§136). Actívala en tu cuenta y vuelve a entrar.",
     twoFactorRequiredAction: "Activar la verificación en dos pasos",
     twoFactorChallengeAction: "Verificar esta sesión",
     loadErrorTitle: "No se ha podido cargar el panel",
@@ -8864,16 +8864,16 @@ export const es = {
       audit: "Auditoría",
     },
     blockHints: {
-      users: "Cuentas registradas en Cuotly.",
+      users: "Cuentas registradas en Restavor web.",
       spaces: "Espacios de mantenimiento, en cualquier modo.",
       space_requests: "Pendientes de decidir: enviadas, en revisión o esperando información.",
-      subscriptions: "Espacios con suscripción a Cuotly.",
+      subscriptions: "Espacios con suscripción a Restavor web.",
       revenue: "Cobrado este mes según el libro. Una cifra de libro, no una factura.",
       active_trials: "Espacios en su prueba de 7 días.",
       nonpayment: "Cobros vencidos sin pagar.",
       storage: "Lo que ocupan todos los espacios. Se mide, no se limita: al 100 % de lo incluido se presupuesta aparte.",
       activity: "Apuntes de auditoría de todos los espacios en las últimas 24 h.",
-      incidents: "Incidencias abiertas a Cuotly que no están cerradas.",
+      incidents: "Incidencias abiertas a Restavor web que no están cerradas.",
       support: "Sesiones de Modo soporte abiertas ahora mismo.",
       audit: "Apuntes de plataforma: solicitudes, cobros, permisos y soporte.",
     },
@@ -8882,14 +8882,14 @@ export const es = {
     storageOverLimit: (n: number) =>
       n === 0 ? "Ningún espacio ha llegado al 100 % de lo incluido." : `${n} espacio${n === 1 ? "" : "s"} al 100 % de lo incluido: presupuestar aparte`,
 
-    /** §131, RN-SOP-07 · la bandeja de incidencias de Cuotly. */
+    /** §131, RN-SOP-07 · la bandeja de incidencias de Restavor web. */
     incidents: {
       title: "Incidencias",
-      subtitle: "Lo que los espacios le abren a Cuotly, por prioridad. Crítica por encima del plan; Agency por encima de Pro.",
+      subtitle: "Lo que los espacios le abren a Restavor web, por prioridad. Crítica por encima del plan; Agency por encima de Pro.",
       showAll: "Ver también las cerradas",
       showOpen: "Ver solo las que no están cerradas",
       emptyTitle: "No hay incidencias",
-      emptyReason: "Ningún espacio ha abierto una incidencia a Cuotly.",
+      emptyReason: "Ningún espacio ha abierto una incidencia a Restavor web.",
       space: "Espacio",
       kind: "Tipo",
       category: "Tema",
@@ -8914,7 +8914,7 @@ export const es = {
       thread: "Conversación",
       threadEmpty: "Todavía no hay mensajes.",
       sideSpace: "El espacio",
-      sidePlatform: "Cuotly",
+      sidePlatform: "Restavor web",
       reply: "Contestar",
       replyLabel: "Mensaje al espacio",
       replySubmit: "Enviar",
@@ -8930,10 +8930,10 @@ export const es = {
       openSpace: "Abrir el espacio",
     },
 
-    /** §133, §157, RN-SOP-12/13 · la página de estado y los festivos de Cuotly. */
+    /** §133, §157, RN-SOP-12/13 · la página de estado y los festivos de Restavor web. */
     status: {
       title: "Estado y festivos",
-      subtitle: "Lo que Cuotly declara sobre sus cinco componentes, y los festivos del horario humano de §132.",
+      subtitle: "Lo que Restavor web declara sobre sus cinco componentes, y los festivos del horario humano de §132.",
       publicLink: "Ver la página pública de estado",
       declareTitle: "Declarar un evento",
       declareHint: "Lo declarado manda sobre lo medido en la página pública. Resuélvelo cuando termine: pasa al historial.",
@@ -8950,7 +8950,7 @@ export const es = {
       resolved: "Evento resuelto.",
       historyTitle: "Historial",
       historyEmpty: "Todavía no hay eventos resueltos.",
-      holidaysTitle: "Festivos de Cuotly",
+      holidaysTitle: "Festivos de Restavor web",
       holidaysHint: "Los días en que el horario humano usa el horario de fin de semana. La lista nace vacía: hasta que la rellenes, no hay festivos.",
       holidaysEmpty: "Sin festivos configurados.",
       holidayDate: "Fecha",
@@ -8979,21 +8979,21 @@ export const es = {
 
     users: {
       title: "Usuarios",
-      subtitle: "Cada cuenta de Cuotly, a qué espacios pertenece y si tiene la verificación en dos pasos.",
+      subtitle: "Cada cuenta de Restavor web, a qué espacios pertenece y si tiene la verificación en dos pasos.",
       email: "Correo",
       name: "Nombre",
       spaces: "Espacios",
-      role: "En Cuotly",
+      role: "En Restavor web",
       twoFactor: "2FA",
       twoFactorYes: "Activada",
       twoFactorNo: "Sin activar",
-      owner: "Propietario de Cuotly",
-      admin: "Administrador de Cuotly",
+      owner: "Propietario de Restavor web",
+      admin: "Administrador de Restavor web",
       nobody: "—",
       createdAt: "Alta",
-      manageTitle: "Nombrar Administrador de Cuotly",
+      manageTitle: "Nombrar Administrador de Restavor web",
       manageHint:
-        "Solo el propietario de Cuotly (§167). Cada permiso se concede por separado y todo cambio queda en la auditoría de plataforma. Sin 2FA activada, la persona no podrá actuar aunque tenga el permiso.",
+        "Solo el propietario de Restavor web (§167). Cada permiso se concede por separado y todo cambio queda en la auditoría de plataforma. Sin 2FA activada, la persona no podrá actuar aunque tenga el permiso.",
       canApproveSpaces: "Aprobar espacios",
       canManageSubscriptions: "Gestionar suscripciones",
       canSupport: "Modo soporte",
@@ -9003,7 +9003,7 @@ export const es = {
       pending: "Guardando…",
       saved: "Permisos guardados.",
       revoked: "Rol retirado.",
-      notOwnerHint: "Nombrar y retirar Administradores es del propietario de Cuotly.",
+      notOwnerHint: "Nombrar y retirar Administradores es del propietario de Restavor web.",
       emptyTitle: "No hay usuarios",
       emptyReason: "Todavía no se ha registrado nadie.",
       closedBadge: "Eliminada",
@@ -9023,7 +9023,7 @@ export const es = {
       usageValue: (est: number, users: number) => `${est} rest. · ${users} pers.`,
       storage: "Almacenamiento",
       storageOf: (used: string, included: string) => `${used} de ${included} GB`,
-      storageNoLimit: "Sin plan de Cuotly: nada que vigilar.",
+      storageNoLimit: "Sin plan de Restavor web: nada que vigilar.",
       storageAt80: "Al 80 %",
       storageAt100: "Al 100 %: presupuestar aparte",
       debt: "Deuda",
@@ -9031,14 +9031,14 @@ export const es = {
       trialEnds: "Prueba hasta",
       reactivateBy: "Reactivable hasta",
       noPlan: "Sin suscripción",
-      noPlanHint: "Anterior al Hito 17: Cuotly no se cobra a sí misma.",
+      noPlanHint: "Anterior al Hito 17: Restavor web no se cobra a sí misma.",
       statuses: {
         trial: "En prueba",
         active: "Activo",
         archived_trial_ended: "Archivado · prueba sin pago",
         archived_nonpayment: "Archivado · impago",
         archived_by_owner: "Archivado por su propietario",
-        archived_by_platform: "Archivado por Cuotly",
+        archived_by_platform: "Archivado por Restavor web",
       },
       supportActive: "Soporte abierto",
       declaredPending: "Pago declarado",
@@ -9057,7 +9057,7 @@ export const es = {
     access: {
       title: "Solicitudes de acceso",
       subtitle:
-        "Quién pide entrar en Cuotly (§37). Aprobar crea la cuenta y nada más: ni espacio, ni panel, ni suscripción.",
+        "Quién pide entrar en Restavor web (§37). Aprobar crea la cuenta y nada más: ni espacio, ni panel, ni suscripción.",
       business: "Negocio",
       contact: "Quién escribe",
       phone: "Teléfono",
@@ -9163,7 +9163,7 @@ export const es = {
 
     charges: {
       title: "Cobros e impagos",
-      subtitle: "Lo que cada espacio debe a Cuotly, lo que ha declarado y lo cobrado por mes según el libro.",
+      subtitle: "Lo que cada espacio debe a Restavor web, lo que ha declarado y lo cobrado por mes según el libro.",
       pendingTitle: "Pagos declarados pendientes de confirmar",
       pendingHint: "El propietario dice que ha pagado. Confirmar lo apunta en el libro y reactiva el espacio si estaba archivado y no queda deuda vencida; rechazar exige motivo.",
       space: "Espacio",
@@ -9183,7 +9183,7 @@ export const es = {
       methods: { transfer: "Transferencia", bizum: "Bizum" },
       paidAt: "Fecha del pago",
       declaredBy: "Declarado por",
-      declaredSide: { owner: "el propietario", platform: "Cuotly" },
+      declaredSide: { owner: "el propietario", platform: "Restavor web" },
       receipt: "Justificante",
       note: "Nota",
       confirm: "Confirmar",
@@ -9220,7 +9220,7 @@ export const es = {
 
     support: {
       title: "Modo soporte",
-      subtitle: "Cada entrada de Cuotly en un espacio ajeno: quién, dónde, por qué, con qué nivel, cuánto y qué hizo (§129).",
+      subtitle: "Cada entrada de Restavor web en un espacio ajeno: quién, dónde, por qué, con qué nivel, cuánto y qué hizo (§129).",
       space: "Espacio",
       who: "Quién",
       reason: "Motivo",
@@ -9257,7 +9257,7 @@ export const es = {
       startValidation: "Escribe un motivo y una duración entre 15 y 240 minutos.",
       noPermissionHint: "Abrir Modo soporte exige el permiso «Modo soporte» (§167).",
       emptyTitle: "Ninguna sesión de soporte",
-      emptyReason: "Nadie de Cuotly ha entrado todavía en un espacio ajeno.",
+      emptyReason: "Nadie de Restavor web ha entrado todavía en un espacio ajeno.",
       bannerTitle: "Estás en Modo soporte",
       bannerBody: (level: string, minutes: number) => `${level} · quedan ${minutes} min`,
       bannerReadOnly: "Solo lectura: nada de lo que hagas se guardará.",
@@ -9292,7 +9292,7 @@ export const es = {
     title: "Verificación en dos pasos",
     subtitle: "Un código de tu aplicación de autenticación además de la contraseña, cada vez que entras.",
     policy: {
-      mandatory: "Obligatoria para ti: sin ella, la administración de Cuotly no responde (§136).",
+      mandatory: "Obligatoria para ti: sin ella, la administración de Restavor web no responde (§136).",
       recommended: "Muy recomendada para propietarios y administradores de espacio (§136).",
       optional: "Opcional. Protege tu cuenta si la activas.",
     },
@@ -9318,7 +9318,7 @@ export const es = {
     unenroll: "Desactivar",
     unenrolling: "Desactivando…",
     unenrolled: "Verificación en dos pasos desactivada.",
-    unenrollConfirm: "Desactivar la verificación en dos pasos deja tu cuenta solo con la contraseña. Si eres de Cuotly, perderás el acceso a la administración hasta que la vuelvas a activar.",
+    unenrollConfirm: "Desactivar la verificación en dos pasos deja tu cuenta solo con la contraseña. Si eres de Restavor web, perderás el acceso a la administración hasta que la vuelvas a activar.",
     unenrollAction: "Sí, desactivar",
     unenrollNeedsAal2: "Para desactivarla, verifica primero esta sesión con un código.",
     invalidCode: "El código no es correcto o ha caducado. Prueba con el siguiente que te dé la aplicación.",
@@ -9334,7 +9334,7 @@ export const es = {
   },
 
   /**
-   * Fase 4, Hito 19 · la suscripción de Cuotly vista por el propietario del
+   * Fase 4, Hito 19 · la suscripción de Restavor web vista por el propietario del
    * espacio (PRD §31 y §32, RN-ADM-10, RN-SUB-06).
    */
   /**
@@ -9429,7 +9429,7 @@ export const es = {
     noAccessReason:
       "Transferir la propiedad y archivar el espacio son cosa de su propietario (§127).",
     stateTitle: "Estado del espacio",
-    stateUnknown: "Sin suscripción de Cuotly",
+    stateUnknown: "Sin suscripción de Restavor web",
     archivedOn: "Archivado el",
     recoverableUntil: "Recuperable hasta el",
     deletionScheduledFor: "Eliminación programada para el",
@@ -9481,7 +9481,7 @@ export const es = {
       exportTitle: "Exportar datos",
       exportHistory: "Ver exportaciones anteriores",
       supportTitle: "Soporte",
-      supportHint: "¿Necesitas ayuda? Abre una incidencia a Cuotly desde Ayuda y te responderemos allí.",
+      supportHint: "¿Necesitas ayuda? Abre una incidencia a Restavor web desde Ayuda y te responderemos allí.",
       supportLink: "Ir a Ayuda",
       ownershipTitle: "Propiedad del espacio",
       ownershipHint: "Aquí puedes transferir la propiedad del espacio a otra persona del equipo.",
@@ -9547,15 +9547,15 @@ export const es = {
   },
 
   cuotlySubscription: {
-    title: "Suscripción de Cuotly",
-    subtitle: "Lo que este espacio le paga a Cuotly: el modo, el plan, los cobros y cómo declarar un pago.",
+    title: "Suscripción de Restavor web",
+    subtitle: "Lo que este espacio le paga a Restavor web: el modo, el plan, los cobros y cómo declarar un pago.",
     back: "Volver a Ajustes",
-    settingsLink: "Ver la suscripción de Cuotly",
-    settingsHint: "El plan, los cobros y la declaración de pagos a Cuotly. Solo el propietario.",
+    settingsLink: "Ver la suscripción de Restavor web",
+    settingsHint: "El plan, los cobros y la declaración de pagos a Restavor web. Solo el propietario.",
     noAccessTitle: "La suscripción es del propietario",
-    noAccessReason: "Lo que el espacio le paga a Cuotly solo lo ve y lo gestiona su propietario (§4.2.1).",
-    noPlanTitle: "Este espacio no tiene suscripción de Cuotly",
-    noPlanReason: "Es anterior a la solicitud de espacio (Hito 17): Cuotly no se cobra a sí misma ni a los espacios de prueba.",
+    noAccessReason: "Lo que el espacio le paga a Restavor web solo lo ve y lo gestiona su propietario (§4.2.1).",
+    noPlanTitle: "Este espacio no tiene suscripción de Restavor web",
+    noPlanReason: "Es anterior a la solicitud de espacio (Hito 17): Restavor web no se cobra a sí misma ni a los espacios de prueba.",
     statusLabel: "Modo del espacio",
     statuses: {
       trial: "En prueba",
@@ -9563,7 +9563,7 @@ export const es = {
       archived_trial_ended: "Archivado en modo lectura: la prueba terminó sin pago",
       archived_nonpayment: "Archivado en modo lectura por impago",
       archived_by_owner: "Archivado en modo lectura por decisión de su propietario",
-      archived_by_platform: "Archivado por Cuotly: en modo lectura hasta que Cuotly lo recupere",
+      archived_by_platform: "Archivado por Restavor web: en modo lectura hasta que Restavor web lo recupere",
     },
     planLabel: "Plan",
     plans: { pro: "Pro", agency: "Agency" },
@@ -9576,7 +9576,7 @@ export const es = {
     usageLabel: "Uso actual",
     usageValue: (est: number, users: number, gb: string) => `${est} restaurantes activos · ${users} usuarios internos · ${gb} GB`,
     chargesTitle: "Cobros",
-    chargesHint: "El estado se calcula en el servidor a partir del libro y del vencimiento. Cuotly emite referencia bancaria, no factura.",
+    chargesHint: "El estado se calcula en el servidor a partir del libro y del vencimiento. Restavor web emite referencia bancaria, no factura.",
     reference: "Referencia",
     concept: "Concepto",
     period: "Periodo",
@@ -9586,9 +9586,9 @@ export const es = {
     status: "Estado",
     statusesCharge: { pending: "Pendiente", declared: "Pago declarado", paid: "Pagado", overdue: "Vencido" },
     emptyChargesTitle: "Sin cobros",
-    emptyChargesReason: "Cuotly todavía no ha emitido ningún cobro a este espacio.",
+    emptyChargesReason: "Restavor web todavía no ha emitido ningún cobro a este espacio.",
     declareTitle: "Declarar un pago",
-    declareHint: "Haz la transferencia o el Bizum con la referencia del cobro y decláralo aquí. Cuotly lo confirma a mano; mientras esté pendiente, el espacio no se archiva por ese cobro.",
+    declareHint: "Haz la transferencia o el Bizum con la referencia del cobro y decláralo aquí. Restavor web lo confirma a mano; mientras esté pendiente, el espacio no se archiva por ese cobro.",
     declareCharge: "Cobro",
     declareAmount: "Importe pagado (€)",
     declareMethod: "Método",
@@ -9597,7 +9597,7 @@ export const es = {
     declareNote: "Nota",
     declare: "Declarar el pago",
     declaring: "Enviando…",
-    declared: "Pago declarado. Cuotly lo confirmará.",
+    declared: "Pago declarado. Restavor web lo confirmará.",
     declareValidation: "Elige el cobro, el método y un importe mayor que cero.",
     bankTitle: "Cómo pagar",
     bankHint: "Transferencia o Bizum, con la referencia del cobro en el concepto. No hay pago con tarjeta.",
@@ -9677,22 +9677,22 @@ export const es = {
       resolved: "Resuelta",
       closed: "Cerrada",
     },
-    sides: { space: "El espacio", platform: "Cuotly" },
+    sides: { space: "El espacio", platform: "Restavor web" },
   },
 
   /** §133, RN-SOP-10/11 · el centro de ayuda y las incidencias, vistos desde el espacio. */
   help: {
     title: "Ayuda",
-    subtitle: "Guías por rol y un buscador. Si no encuentras solución, el propietario o un administrador pueden abrir una incidencia a Cuotly.",
+    subtitle: "Guías por rol y un buscador. Si no encuentras solución, el propietario o un administrador pueden abrir una incidencia a Restavor web.",
     searchLabel: "¿Qué necesitas?",
     searchPlaceholder: "Busca por palabras: logotipo, Bizum, plazo…",
     searchSubmit: "Buscar",
     resultsTitle: (q: string) => `Resultados para «${q}»`,
     noResultsTitle: "Ninguna guía responde a eso",
-    noResultsCanOpen: "Puedes abrir una incidencia a Cuotly con esta búsqueda ya dentro: así se conserva el contexto.",
+    noResultsCanOpen: "Puedes abrir una incidencia a Restavor web con esta búsqueda ya dentro: así se conserva el contexto.",
     noResultsCannotOpen: (rol: string) =>
-      `Las incidencias a Cuotly las abre el propietario o un administrador de tu espacio de mantenimiento. Como ${rol}, cuéntaselo a ellos${"."}`,
-    noResultsClient: "Las incidencias a Cuotly las abre tu equipo de mantenimiento. Escríbeles desde cualquiera de tus solicitudes: te contestan como «Equipo de mantenimiento».",
+      `Las incidencias a Restavor web las abre el propietario o un administrador de tu espacio de mantenimiento. Como ${rol}, cuéntaselo a ellos${"."}`,
+    noResultsClient: "Las incidencias a Restavor web las abre tu equipo de mantenimiento. Escríbeles desde cualquiera de tus solicitudes: te contestan como «Equipo de mantenimiento».",
     openFromSearch: "Abrir una incidencia con esta búsqueda",
     guidesTitle: "Guías para tu rol",
     otherGuidesTitle: "Otras guías",
@@ -9711,17 +9711,17 @@ export const es = {
     hoursBody: "Lunes a viernes de 14:00 a 22:00; sábados, domingos y festivos de 09:00 a 14:30 y de 16:30 a 21:30 (hora de Madrid). Puedes escribir a cualquier hora; el tiempo de atención solo cuenta dentro de esas franjas. No hay un plazo de respuesta comprometido.",
     supportOpenNow: "Ahora mismo hay soporte humano.",
     supportClosedNow: "Ahora mismo estás fuera del horario de soporte humano.",
-    statusLink: "Ver el estado de Cuotly",
-    incidentsLink: "Tus incidencias a Cuotly",
+    statusLink: "Ver el estado de Restavor web",
+    incidentsLink: "Tus incidencias a Restavor web",
     newIncidentLink: "Abrir una incidencia",
 
     incidents: {
-      title: "Incidencias a Cuotly",
-      subtitle: "Errores y sugerencias que este espacio le ha abierto a Cuotly. Las ven el propietario y los administradores.",
+      title: "Incidencias a Restavor web",
+      subtitle: "Errores y sugerencias que este espacio le ha abierto a Restavor web. Las ven el propietario y los administradores.",
       noAccessTitle: "Sin acceso a las incidencias",
-      noAccessReason: "Las incidencias a Cuotly las abren y las ven el propietario y los administradores del espacio (§131).",
+      noAccessReason: "Las incidencias a Restavor web las abren y las ven el propietario y los administradores del espacio (§131).",
       emptyTitle: "Sin incidencias",
-      emptyReason: "Este espacio no ha abierto ninguna incidencia a Cuotly.",
+      emptyReason: "Este espacio no ha abierto ninguna incidencia a Restavor web.",
       errorsTitle: "Errores",
       suggestionsTitle: "Sugerencias",
       openNew: "Abrir una incidencia",
@@ -9735,15 +9735,15 @@ export const es = {
       category: "Tema",
       impact: "Impacto",
       kind: "Tipo",
-      statusReason: "Cuotly dice",
-      thread: "Conversación con Cuotly",
-      threadEmpty: "Todavía no hay mensajes. Cuotly te contestará aquí.",
+      statusReason: "Restavor web dice",
+      thread: "Conversación con Restavor web",
+      threadEmpty: "Todavía no hay mensajes. Restavor web te contestará aquí.",
       you: "Tu espacio",
-      cuotly: "Cuotly",
-      replyLabel: "Escribir a Cuotly",
+      cuotly: "Restavor web",
+      replyLabel: "Escribir a Restavor web",
       replySubmit: "Enviar",
       replyDone: "Mensaje enviado.",
-      replyHint: "Si Cuotly te pidió información, contestar aquí devuelve la incidencia a revisión.",
+      replyHint: "Si Restavor web te pidió información, contestar aquí devuelve la incidencia a revisión.",
       closedHint: "Cerrada: no admite más mensajes. Si hace falta algo más, abre otra.",
       confirmResolved: "Dar por resuelta y cerrar",
       reopen: "No está resuelta: reabrir",
@@ -9762,8 +9762,8 @@ export const es = {
     },
 
     newIncident: {
-      title: "Abrir una incidencia a Cuotly",
-      subtitle: "Para errores de Cuotly y sugerencias. Lo que sea de tu web o de tus restaurantes va por tus solicitudes.",
+      title: "Abrir una incidencia a Restavor web",
+      subtitle: "Para errores de Restavor web y sugerencias. Lo que sea de tu web o de tus restaurantes va por tus solicitudes.",
       kindLabel: "Qué es",
       categoryLabel: "Tema",
       impactLabel: "Impacto",
@@ -9773,7 +9773,7 @@ export const es = {
       deviceLabel: "Dispositivo (opcional)",
       appVersionLabel: "Versión de la aplicación (opcional)",
       contextTitle: "Lo que se enviará con la incidencia",
-      contextHint: "Cuotly recoge navegador, sistema y tamaño de pantalla para reproducir el problema. Nada más: ni datos de tu espacio ni cookies.",
+      contextHint: "Restavor web recoge navegador, sistema y tamaño de pantalla para reproducir el problema. Nada más: ni datos de tu espacio ni cookies.",
       contextUnavailable: "No se ha podido leer el contexto del navegador; la incidencia irá sin él.",
       fromSearch: (q: string) => `Nace de la búsqueda «${q}», que no encontró solución.`,
       submit: "Abrir la incidencia",
@@ -9784,7 +9784,7 @@ export const es = {
 
   /** §133, §157, RN-SOP-12 · la página pública de estado. */
   statusPage: {
-    title: "Estado de Cuotly",
+    title: "Estado de Restavor web",
     subtitle: "Cinco componentes. De cada uno se dice si su estado se mide o solo se declara: nada se da por operativo sin comprobarlo.",
     generatedAt: "Actualizado",
     components: {
@@ -9802,9 +9802,9 @@ export const es = {
       unmeasured: "Sin medición automática",
     },
     sourceMeasured: "Medido",
-    sourceDeclared: "Declarado por Cuotly",
+    sourceDeclared: "Declarado por Restavor web",
     securityLabel: "Incidente de seguridad",
-    sourceUnmeasured: "Sin medición automática: solo lo que Cuotly declare.",
+    sourceUnmeasured: "Sin medición automática: solo lo que Restavor web declare.",
     measuredDetails: {
       responds: "La aplicación responde.",
       nothingConnected: "No hay integraciones conectadas que medir.",
@@ -9824,7 +9824,7 @@ export const es = {
     supportOpen: "Dentro del horario de soporte humano ahora mismo.",
     supportClosed: "Fuera del horario de soporte humano ahora mismo. Lunes a viernes de 14:00 a 22:00; fines de semana y festivos de 09:00 a 14:30 y de 16:30 a 21:30, hora de Madrid.",
     loadError: "No se ha podido cargar el estado.",
-    backToApp: "Volver a Cuotly",
+    backToApp: "Volver a Restavor web",
   },
 
   /**
@@ -9842,7 +9842,7 @@ export const es = {
     stateLabel: "Estado",
     editPermissions: "Editar permisos",
     title: "Usuarios y accesos",
-    hint: "Gestiona quién puede acceder a tu restaurante en Cuotly y qué permisos tiene.",
+    hint: "Gestiona quién puede acceder a tu restaurante en Restavor web y qué permisos tiene.",
     listTitle: "Usuarios del restaurante",
     roleLabel: "Rol",
     emailLabel: "Correo electrónico",
@@ -9899,11 +9899,11 @@ export const es = {
      * CLAUDE.md · no se pinta un hueco ni un dato de relleno: se dice qué
      * falta y por qué. La pestaña "Invitar usuario" de la página 153 crea
      * una CUENTA nueva, y eso todavía no existe: hoy solo se puede dar
-     * acceso a quien ya tiene cuenta en Cuotly, desde la ficha del equipo.
+     * acceso a quien ya tiene cuenta en Restavor web, desde la ficha del equipo.
      */
     inviteTitle: "Invitar usuario",
     inviteNotBuilt:
-      "Invitar a alguien que todavía no tiene cuenta en Cuotly no está construido. De momento el acceso lo da el equipo de mantenimiento a quien ya tiene cuenta.",
+      "Invitar a alguien que todavía no tiene cuenta en Restavor web no está construido. De momento el acceso lo da el equipo de mantenimiento a quien ya tiene cuenta.",
   },
 
   emptyReasons: {

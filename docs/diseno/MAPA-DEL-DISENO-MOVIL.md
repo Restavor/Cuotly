@@ -37,7 +37,7 @@ Todo lo demás del PDF es disposición estrecha del mismo producto.
 | Páginas | Bloque |
 | --- | --- |
 | 1-8 | Contexto global: Inicio, Crear espacio, Mis solicitudes, Mensajes (Mantenimiento/Restaurantes), Mi cuenta, Ayuda |
-| 9-16 | Solicitud de acceso a Cuotly, con sus cuatro estados, validación, error de envío, sin conexión y aviso de salida |
+| 9-16 | Solicitud de acceso a Restavor web, con sus cuatro estados, validación, error de envío, sin conexión y aviso de salida |
 | 17-20 | Estados de error: invitación caducada, acceso retirado, elemento no disponible, sesión caducada |
 | 21-28 | Espacio: Inicio, Restaurantes, ficha con las cinco pestañas (Resumen, Operación, Informes y datos, Gestión, Historial) |
 | 29-36 | Ficha · Operación: solicitudes, trabajos, tareas y Menú Diario, con sus detalles |
@@ -47,7 +47,7 @@ Todo lo demás del PDF es disposición estrecha del mismo producto.
 | 63-74 | Espacio: solicitudes, trabajos (Lista/Tablero), tareas, Menú Diario y mensajes (Clientes/Internos, con canales) |
 | 75-87 | Calendario, Finanzas (resumen, cobros, presupuestos, pagos parciales, facturas) e Informes |
 | 88-98 | Equipo (miembros, permisos, invitaciones, supervisión) y Planes y servicios (planes, servicios, versiones) |
-| 99-109 | Agente Cuotly ("Próximamente") y Ajustes del espacio: general, horarios, impuestos, integraciones, suscripción, seguridad, auditoría, notificaciones |
+| 99-109 | Agente Restavor web ("Próximamente") y Ajustes del espacio: general, horarios, impuestos, integraciones, suscripción, seguridad, auditoría, notificaciones |
 | 110-122 | Panel del restaurante: inicio, primeros pasos, solo lectura, solicitudes y su ciclo completo |
 | 123-135 | Panel: Menú Diario entero (editor, plantillas, vista previa, publicación, versiones, edición simultánea), mensajes y calendario |
 | 136-146 | Panel: plan y servicios, cambio o baja, pagos y facturas, informes y datos |
@@ -75,7 +75,7 @@ servidor no se toca:
   **copiar borrador a otro restaurante del grupo** (R07).
 - **Pagos parciales y justificantes**, con "enviar un justificante no
   confirma el pago".
-- El **selector de restaurante del panel** con "Volver al inicio de Cuotly"
+- El **selector de restaurante del panel** con "Volver al inicio de Restavor web"
   (página 112) es exactamente lo que se construyó el 17/09 como RN-PAN-04/06.
 - P7 respetado: el cliente ve "Equipo de mantenimiento" como interlocutor y
   como autor de versiones de archivo, nunca un nombre.
@@ -110,7 +110,7 @@ memoria—:
 | 1 · Crear panel del restaurante | `CreatePanelForm`, con su invitación (decisión 59) |
 | 2 · Permisos finos del cliente | `establishment_permissions`, **ocho** columnas |
 | 3 · Foto de perfil | decisión 53, bucket `avatars` (migración 109) |
-| 4 · Cuotly Insights | decisión 48/54: no es una fuente, es el resumen |
+| 4 · Restavor web Insights | decisión 48/54: no es una fuente, es el resumen |
 | 5 · Almacenamiento por restaurante | RN-ARC-10 (migración 103) |
 | 7 · Prioridad con motivo | decisión 49 (migración 106) |
 | 8 · Seis canales | RN-CAN-03 (migración 104) |
@@ -149,12 +149,12 @@ Los cuatro son **modelo de datos**, no disposición:
    archivos, y por eso la función es `SECURITY DEFINER` con esa
    comprobación dentro.
 2. **Responsable por restaurante** (página 23, "Supervisor · Diego").
-   "Supervisor" en Cuotly **no es un cargo de un local**: es una relación
+   "Supervisor" en Restavor web **no es un cargo de un local**: es una relación
    Administrador–Trabajador, y `supervisions` enlaza dos personas. Si hace
    falta un responsable por restaurante es una tabla nueva, no un hueco.
 3. **Descripción del restaurante** (página 24, "Cocina gallega
    contemporánea…"). No hay campo, y no es un olvido técnico: la escribe el
-   cliente, no Cuotly.
+   cliente, no Restavor web.
 4. ~~**Subtareas y evidencias bajo la solicitud** (página 25)~~ — **hechas**
    el 21/09/2026 (decisión 64, RN-REQ-07). En solo lectura, como estaba
    anotado: se ven ahí, se marcan en el trabajo.
@@ -233,7 +233,7 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   enseña en "Estado por restaurante". Esa sí es del espacio y vive en
   `files` desde el 21/09/2026 (RN-EST-18).
 - **Supervisor de un restaurante** (página 23: "Supervisor · Diego", con su
-  cara). No existe y no es un descuido: "Supervisor" en Cuotly **no es un
+  cara). No existe y no es un descuido: "Supervisor" en Restavor web **no es un
   cargo de un local**, es una relación Administrador–Trabajador (CLAUDE.md,
   decisión que no debe reaparecer), y `supervisions` enlaza dos personas,
   no una persona con un restaurante. La ficha de la página 23 se hizo el
@@ -247,9 +247,9 @@ roles y dos permisos (`edit_establishment_data`, `view_billing`).
   construido sin foto, no con una de archivo; ahora enseñan la de verdad, y
   el restaurante que no tenga ninguna se sigue enseñando sin foto.
 - **Estado "Configurando"** de un restaurante (página 54).
-- ~~**"Cuotly Insights"** como fuente de datos propia (páginas 41, 44)~~ —
+- ~~**"Restavor web Insights"** como fuente de datos propia (páginas 41, 44)~~ —
   **no es una fuente**: Bosco decidió el 19/09/2026 que es el nombre del
-  resumen que Cuotly ya calcula (decisión 48), y se construyó ese mismo día
+  resumen que Restavor web ya calcula (decisión 48), y se construyó ese mismo día
   (decisión 54, RN-INT-09). Aparece entre las fuentes, como en el diseño,
   pero diciendo que no es una conexión y con el estado derivado en vez del
   "Activa" fijo que pinta el PDF.

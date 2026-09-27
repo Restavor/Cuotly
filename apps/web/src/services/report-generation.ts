@@ -1,5 +1,5 @@
 /**
- * `src/services/report-generation.ts` — el paso 1 de §95 ("Cuotly genera
+ * `src/services/report-generation.ts` — el paso 1 de §95 ("Restavor web genera
  * datos objetivos automáticamente") y el paso 7 ("programa o envía"),
  * Fase 3, Hito 16.
  *

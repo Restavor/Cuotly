@@ -16,9 +16,9 @@ La especificación maestra lo pide en tres apartados cortos:
 - **§104** · editar un plan **contratado** crea una versión nueva; la anterior puede archivarse
   para altas nuevas; los clientes pasan en su siguiente renovación o en una fecha programada; los
   cambios generales se avisan con **30 días naturales** como mínimo; se conserva la versión
-  aceptada; y si el cambio importante requiere aceptación, Cuotly la pide.
+  aceptada; y si el cambio importante requiere aceptación, Restavor web la pide.
 
-El PRD no tiene todavía ninguna regla `RN-` para esto. Hoy Cuotly versiona **solo el texto de las
+El PRD no tiene todavía ninguna regla `RN-` para esto. Hoy Restavor web versiona **solo el texto de las
 condiciones** (RN-DAT-07, migración 75): el precio, las cuotas, los plazos y el nivel de informe
 viven en la fila del plan y no tienen versión. Por eso no se pueden editar desde la aplicación:
 cambiar la fila cambiaría el contrato de todos los restaurantes que ya lo tienen, sin aviso y sin
@@ -54,7 +54,7 @@ Hay que distinguir dos casos:
   **propuesta**, no pide aceptación; se le avisa y pasa en la renovación del punto 3.
 - **Le perjudica en algo** (sube el precio, baja una cuota, alarga un plazo o baja el nivel de
   informe): **propuesta**, se le pide aceptación con el mismo mecanismo de las condiciones
-  (aviso en Cuotly y por correo, aceptar en su pantalla o registrarlo el equipo con contrato).
+  (aviso en Restavor web y por correo, aceptar en su pantalla o registrarlo el equipo con contrato).
 
 Y lo que falta decidir de verdad: **¿qué pasa si llega la fecha y no ha aceptado?**
 

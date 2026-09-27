@@ -18,7 +18,7 @@ import { passwordInitialState } from "../../form-states";
  * rechazo que no se entiende.
  *
  * Y se dice **a qué restaurante entra**: quien abre este enlace puede no
- * haber oído hablar de Cuotly, así que el nombre de su restaurante es lo
+ * haber oído hablar de Restavor web, así que el nombre de su restaurante es lo
  * único que le dice de qué va esto.
  */
 export function PanelSetupForm({

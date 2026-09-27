@@ -17,7 +17,7 @@ import { colors } from "../lib/theme";
 /**
  * Las piezas de pantalla de la app, con los tokens de Emerald Control
  * (§146) de `theme.ts` y ningún color suelto. Son pocas a propósito: una
- * pantalla de Cuotly en el teléfono es una lista de tarjetas, un
+ * pantalla de Restavor web en el teléfono es una lista de tarjetas, un
  * formulario corto o un detalle con sus botones.
  */
 export function Screen({

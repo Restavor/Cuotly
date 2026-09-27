@@ -125,7 +125,7 @@ end;
 $$;
 
 -- ============================================================
--- HU-16 · RN-ASG-03: con exactamente un candidato válido, Cuotly asigna
+-- HU-16 · RN-ASG-03: con exactamente un candidato válido, Restavor web asigna
 -- automáticamente. Solo Ana está asignada al establecimiento A.
 -- ============================================================
 do $$
@@ -1034,7 +1034,7 @@ reset role;
 -- RN-COR-02: pasada la ventana, ya no se puede pedir. Se simula sobre el
 -- segundo trabajo, publicándolo y adelantando el cierre de su ventana
 -- desde fuera de la aplicación (aquí, como postgres: ninguna función de
--- Cuotly permite mover esa fecha).
+-- Restavor web permite mover esa fecha).
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000004', false);
 set role authenticated;
 
@@ -1670,7 +1670,7 @@ end $$;
 reset role;
 
 -- ------------------------------------------------------------
--- M2 · Cuotly es multiempresa: la misma persona puede trabajar en dos
+-- M2 · Restavor web es multiempresa: la misma persona puede trabajar en dos
 -- espacios, con sus especialidades y su supervisión en cada uno.
 -- ------------------------------------------------------------
 insert into public.spaces (id, name, slug, created_by) values

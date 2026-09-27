@@ -94,7 +94,7 @@ export function clientCanAnswerQuote(state: QuoteState, isEstablishmentOwner: bo
 /**
  * Decisión 21 (13/09/2026) · el propietario o un administrador del espacio
  * (`manage_requests`) pueden REGISTRAR la respuesta que el restaurante dio
- * fuera de Cuotly, en su nombre y con motivo obligatorio. Solo sobre uno
+ * fuera de Restavor web, en su nombre y con motivo obligatorio. Solo sobre uno
  * enviado, como el restaurante. El servidor lo vuelve a comprobar y es
  * quien exige el motivo; aquí solo se decide si se enseña el formulario.
  */

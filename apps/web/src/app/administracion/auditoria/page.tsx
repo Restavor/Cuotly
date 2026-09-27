@@ -19,7 +19,7 @@ import { platformAudit, type PlatformAuditRow } from "@/services/platform-gatewa
 
 /**
  * Actividad y auditoría (§128, RN-ADM-04): los apuntes de plataforma, o los
- * últimos de todos los espacios. Con la identidad del actor: es Cuotly
+ * últimos de todos los espacios. Con la identidad del actor: es Restavor web
  * mirando su plataforma. Paginado, porque el libro solo crece (§20.7).
  */
 export const dynamic = "force-dynamic";

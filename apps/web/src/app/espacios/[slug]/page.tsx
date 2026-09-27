@@ -117,7 +117,7 @@ export default async function SpacePage({
   });
   const onboardingPendiente = pasos === null ? null : pasos.filter((p) => !p.done).length;
 
-  // §20.4, RN-SOP-15 · las incidencias a Cuotly que esperan algo del
+  // §20.4, RN-SOP-15 · las incidencias a Restavor web que esperan algo del
   // espacio: contestar a "necesita información" o dar por buena una
   // resolución. La RLS de `incidents` decide quién las ve: un trabajador
   // recibe cero y no ve la tarjeta, sin ninguna regla de permiso aquí.

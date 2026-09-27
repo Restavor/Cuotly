@@ -145,7 +145,7 @@ export async function saveReportSections(
   const reportId = texto(formData, "reportId");
   const orden = formData.getAll("sectionKey").map(String).filter(isReportSectionKey);
 
-  // RN-REP-28 · si el resumen se deja como lo escribió Cuotly, no se
+  // RN-REP-28 · si el resumen se deja como lo escribió Restavor web, no se
   // guarda como escrito por una persona: vuelve a ser el automático y se
   // recalcula en cada versión. Vaciarlo, igual.
   const automatico = texto(formData, "autoSummary");

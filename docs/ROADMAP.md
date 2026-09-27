@@ -1,4 +1,4 @@
-# ROADMAP — Cuotly
+# ROADMAP — Restavor web
 
 La Fase 1 se construye por **hitos**. Cada hito termina con `pnpm typecheck && pnpm lint && pnpm test`
 en verde, y con una parada para que Bosco lo revise antes de empezar el siguiente.
@@ -32,7 +32,7 @@ Actualizado el 16/09/2026.
 | 16 · Informes (Fase 3) | Servidor, dominio y pantallas | Migraciones 85 y 86, 14/09/2026, aplicadas al proyecto real el mismo día. Revisado con subagente ese día: la 86 cierra los dos agujeros que encontró. Decisiones 28, 29 y 30. Ver la entrada de cierre abajo. |
 
 | 17 · Solicitud de espacio, aprobación y alta (Fase 4) | Servidor y dominio; sin pantallas | Migración 89, escrita y aplicada al proyecto real el 15/09/2026 (en dos partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §30 (RN-PLA-01 a 09) escrito antes del código. Ver la entrada de cierre abajo. |
-| 18 · Suscripción de Cuotly: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
+| 18 · Suscripción de Restavor web: Pro, Agency, prueba, cobro e impago (Fase 4) | Servidor y dominio; sin pantallas | Migración 90, escrita y aplicada al proyecto real el 15/09/2026 (en seis partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §31 (RN-SUB-01 a 13) escrito antes del código. Las doce lecturas, confirmadas por Bosco (decisión 32). Ver la entrada de cierre abajo. |
 | 19 · Panel de Administración, Modo soporte y 2FA (Fase 4) | Servidor, dominio y pantallas | Migración 91, escrita y aplicada al proyecto real el 15/09/2026 (en cuatro partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §32 (RN-ADM-01 a 12) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 33). Ver la entrada de cierre abajo. |
 | 20 · Onboarding y ciclo de vida del espacio (Fase 4) | Servidor, dominio y pantallas | Migración 92, escrita y aplicada al proyecto real el 15/09/2026 (en cinco partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §33 (RN-CIC-01 a 15) escrito antes del código. Las trece lecturas, confirmadas por Bosco (decisión 34). Ver la entrada de cierre abajo. |
 | 21 · Soporte, centro de ayuda y página de estado (Fase 4) | Servidor, dominio y pantallas | Migración 93, escrita y aplicada al proyecto real el 15/09/2026 (en siete partes; ver `docs/DESPLIEGUE-SUPABASE.md`). PRD §34 (RN-SOP-01 a 15) escrito antes del código. Las catorce lecturas, confirmadas por Bosco (decisión 35). Ver la entrada de cierre abajo. |
@@ -298,7 +298,7 @@ no son un fallo, sino alcance:
    |---|---|
    | Nueva solicitud sin asignar → propietario y administradores | Emite |
    | Asignación de un trabajo → el responsable | Emite, también al aprobar una reasignación |
-   | Inicio → visible dentro de Cuotly para el cliente, sin correo | Emite; sin correo al cliente, con correo al equipo (decisión 13) |
+   | Inicio → visible dentro de Restavor web para el cliente, sin correo | Emite; sin correo al cliente, con correo al equipo (decisión 13) |
    | Publicación → cliente y supervisión | Emite |
    | Corrección pedida → el responsable | Emite |
    | Consumo de bolsa al 80 % y al 100 % | **No emite** |
@@ -315,7 +315,7 @@ no son un fallo, sino alcance:
    |---|---|
    | Nueva solicitud sin asignar → propietario y administradores | Emite |
    | Asignación de un trabajo → el responsable | Emite, también al aprobar una reasignación |
-   | Inicio → visible dentro de Cuotly para el cliente, sin correo | Emite; sin correo al cliente, con correo al equipo (decisión 13) |
+   | Inicio → visible dentro de Restavor web para el cliente, sin correo | Emite; sin correo al cliente, con correo al equipo (decisión 13) |
    | Publicación → cliente y supervisión | Emite |
    | Corrección pedida → el responsable | Emite |
    | Consumo de bolsa al 80 % y al 100 % | Emite |
@@ -926,7 +926,7 @@ no son un fallo, sino alcance:
       NULL: hoy no existe un archivo que sea del espacio y no de un
       restaurante. La pantalla lo dice en vez de enseñar un botón muerto.
     - **Las secciones de §123 que son de otra fase** —integraciones,
-      suscripción a Cuotly, exportación, propiedad y eliminación del
+      suscripción a Restavor web, exportación, propiedad y eliminación del
       espacio— se enumeran en la pantalla con su motivo, no se esconden.
     - **El recorrido de Playwright con datos.** `ca19-recorridos-movil.spec.ts`
       no crece con esta pantalla, igual que no creció con equipo,
@@ -1498,7 +1498,7 @@ regenerar salió idéntica, así que no había desviación.
     comprobación.
 
     **info@restavor.com entra al espacio sembrado.** Es el correo con el
-    que se usa Cuotly de verdad y el que ya reconoce `is_platform_owner()`,
+    que se usa Restavor web de verdad y el que ya reconoce `is_platform_owner()`,
     pero ser propietario de la plataforma **no da acceso a un espacio** (el
     Modo soporte es de la Fase 4), así que le faltaba la membresía. El
     sembrado se la da como propietario si la cuenta existe. **No la crea**:
@@ -1546,7 +1546,7 @@ regenerar salió idéntica, así que no había desviación.
       `client_can_view_billing()` y el mismo reparto de cuatro casos: el
       propietario global del grupo sí, el propietario local sí, el editor
       con el permiso sí, el editor de grupo y Consulta no.
-    - **RN-EST-12** ("cambiar datos en la ficha de Cuotly no cambia el
+    - **RN-EST-12** ("cambiar datos en la ficha de Restavor web no cambia el
       contenido público de la web"). Va escrito **encima** del formulario y
       no debajo: hay que leerlo antes de escribir el teléfono nuevo, no
       después de guardarlo.
@@ -2341,7 +2341,7 @@ regenerar salió idéntica, así que no había desviación.
     3. **Depende del plan**, no del nombre del plan.
 
     **Por qué `plans.grants_priority` y no `name = 'Premium'`.** CLAUDE.md
-    fija que Cuotly es multiempresa: otro espacio puede llamar a su plan
+    fija que Restavor web es multiempresa: otro espacio puede llamar a su plan
     alto "Total" o "Avanzado" y seguiría siendo el que da prioridad. Un
     nombre escrito dentro de una función es una regla que se rompe en
     silencio con el segundo cliente de la plataforma. El test lo vigila
@@ -2665,16 +2665,16 @@ regenerar salió idéntica, así que no había desviación.
     a falta de una decisión.** Lo que la maqueta enseña es "Versión
     aceptada v2.1 · Ver condiciones" en la tarjeta del servicio. Sin
     inventar nada eso es: condiciones VERSIONADAS por plan y servicio
-    (texto que escribe el espacio, no Cuotly), y en la suscripción qué
+    (texto que escribe el espacio, no Restavor web), y en la suscripción qué
     versión aceptó el restaurante y cuándo (§104 de la maestra: "se
     conserva versión aceptada"; RN-DAT-07 lista `plan_versions` y
     `service_versions`, que no existen). Lo que decide el diseño y se le
     ha preguntado: **cómo acepta el restaurante las condiciones de un
     plan**, dado que hoy la suscripción la da de alta el equipo — (a) el
-    propietario del restaurante acepta en Cuotly con un botón y hasta
+    propietario del restaurante acepta en Restavor web con un botón y hasta
     entonces la ficha dice "pendiente de aceptar"; (b) el equipo registra
     que se aceptó fuera, con fecha y el contrato adjunto; (c) las dos. Y
-    si en los servicios contratados desde Cuotly la aceptación va
+    si en los servicios contratados desde Restavor web la aceptación va
     implícita en contratar. Términos de uso, privacidad, retenciones,
     numeración fiscal y jurisdicción siguen sin texto que se pueda
     escribir aquí: lo trae Bosco o el profesional que exige "Antes de
@@ -2687,10 +2687,10 @@ regenerar salió idéntica, así que no había desviación.
 - [x] **Condiciones versionadas y su aceptación** (maqueta 13) — migración 75.
 
     Bosco contestó a la pregunta de la segunda ronda: **(c), las dos**.
-    El propietario del restaurante acepta en Cuotly con un botón, y el
+    El propietario del restaurante acepta en Restavor web con un botón, y el
     equipo puede registrar una aceptación de fuera con la fecha y el
     contrato adjunto. Y "sí" a que en los servicios contratados desde
-    Cuotly la aceptación vaya implícita — con una salvedad, abajo.
+    Restavor web la aceptación vaya implícita — con una salvedad, abajo.
 
     **Lo que hay.** `plan_versions` y `service_versions` (los nombres del
     modelo de datos del PRD, §5), donde publicar es una fila más con
@@ -2729,7 +2729,7 @@ regenerar salió idéntica, así que no había desviación.
     al propietario; al Editor se le dice por qué no lo tiene). Las
     condiciones se publican en `/planes/condiciones`.
 
-    **La salvedad sobre los servicios.** "Contratar desde Cuotly" lo hace
+    **La salvedad sobre los servicios.** "Contratar desde Restavor web" lo hace
     hoy el EQUIPO (`create_service_subscription()` exige
     `manage_clients`), no el restaurante. No hay ningún acto del cliente
     en el que apoyar una aceptación implícita, y escribirla sería
@@ -2740,7 +2740,7 @@ regenerar salió idéntica, así que no había desviación.
     función.
 
     **Lo que NO se inventa.** El texto de las condiciones es del espacio.
-    Términos de uso de Cuotly, privacidad, retenciones, numeración fiscal
+    Términos de uso de Restavor web, privacidad, retenciones, numeración fiscal
     y jurisdicción siguen aplazados en CLAUDE.md, que ahora dice la
     excepción con estas palabras. Y no se avisa (RN-NOT) al restaurante
     cuando se publica una versión nueva: la pantalla de publicar lo dice.
@@ -2924,7 +2924,7 @@ regenerar salió idéntica, así que no había desviación.
     no regla: la maestra dice "tres plantillas personalizadas" y no
     describe ninguna. Los colores son hexadecimales a propósito: son la
     marca del RESTAURANTE, y la regla de "solo tokens" es de los
-    componentes de Cuotly. Las diseña el equipo con `manage_clients`
+    componentes de Restavor web. Las diseña el equipo con `manage_clients`
     (`update_menu_template_design()`), con apunte de auditoría con valor
     anterior y nuevo, y una archivada no se rediseña.
 
@@ -3261,7 +3261,7 @@ regenerar salió idéntica, así que no había desviación.
     `client_request_quote()`), y acepta o rechaza quien acepta las
     condiciones (propietario local o global; el Editor ve y no responde;
     Consulta no ve), o el propietario o un administrador del espacio en
-    nombre del restaurante cuando respondió fuera de Cuotly (decisión 21:
+    nombre del restaurante cuando respondió fuera de Restavor web (decisión 21:
     motivo obligatorio, `decided_by_team` en la fila, `on_behalf_of_client`
     en el apunte y aviso a los propietarios del restaurante). Aceptar
     emite el cobro en el libro y, con
@@ -3590,7 +3590,7 @@ regenerar salió idéntica, así que no había desviación.
     Lo que el diseño pinta y aquí no está, dicho: "Interpretación
     rápida" (22.02) es un texto generado y no hay regla que lo genere;
     "Mejoras aprobadas" (22.03), "Optimización de imágenes — análisis
-    interno Cuotly" (11) y todo lo de oportunidades son el Hito 15; los
+    interno Restavor web" (11) y todo lo de oportunidades son el Hito 15; los
     informes (09, 22.01) el Hito 16; accesibilidad, buenas prácticas y
     SEO de PageSpeed (11) no están en el catálogo de §27 y no se
     añadieron sin decirlo; la duración media de la sesión de GA4 (22.02)
@@ -3636,7 +3636,7 @@ regenerar salió idéntica, así que no había desviación.
     era una confesión: "la zona horaria del cliente en su tarjeta es la de
     Restavor porque el restaurante no lee `spaces`". No era una salvedad
     de alcance: era un incumplimiento de CLAUDE.md ("las fechas se
-    calculan en la zona horaria del espacio") y de que Cuotly sea
+    calculan en la zona horaria del espacio") y de que Restavor web sea
     multiempresa. Y no estaba solo en las dos pantallas nuevas del hito:
     las cuatro que tiene el restaurante llevaban `"Europe/Madrid"` escrito
     en el código, las dos de Menú Diario desde el Hito 10.
@@ -3954,7 +3954,7 @@ regenerar salió idéntica, así que no había desviación.
     necesita IA, y aquí no hay ninguna llamada al clasificador — el resumen
     ejecutivo y las recomendaciones los escribe una persona o el informe sale
     sin ellos. No hay plantilla de informe configurable por espacio. No hay
-    envío a una dirección escrita a mano: el correo va a usuarios de Cuotly,
+    envío a una dirección escrita a mano: el correo va a usuarios de Restavor web,
     que es de quien se sabe si puede ver el informe. Y la numeración fiscal,
     la exportación masiva y la conservación legal siguen siendo del bloque
     legal aplazado.
@@ -4166,7 +4166,7 @@ regenerar salió idéntica, así que no había desviación.
 - Botón Crear contextual.
 - Centro de notificaciones + correo con Resend, por cola, con reintentos e idempotencia.
 - Calendario operativo básico con eventos automáticos y ausencias.
-- Entrada "Agente Cuotly · Próximamente".
+- Entrada "Agente Restavor web · Próximamente".
 - Repaso completo de los criterios CA-19 a CA-22.
 
 **Se verifica con:** revisión adversarial de toda la Fase 1 por un subagente contra este ROADMAP y el PRD.
@@ -4274,7 +4274,7 @@ trabajaron con hitos que entregaban primero servidor y dominio y después pantal
 por hito; esto mantiene esa forma.
 
 **El orden es 17 → 22, la plataforma primero.** La app móvil es independiente de las otras cinco —no
-depende de ellas ni ellas de ella— y va al final: lo primero es que Cuotly sea multiempresa de
+depende de ellas ni ellas de ella— y va al final: lo primero es que Restavor web sea multiempresa de
 verdad, que alguien pueda pedir un espacio, que se apruebe, que pague y que se le corte si no paga.
 Hoy nada de eso existe, y sin ello la plataforma no se puede vender a nadie que no sea Bosco.
 
@@ -4295,7 +4295,7 @@ PRD** a partir de ella. No es papeleo: es donde se decide qué es una regla y qu
 las tres fases anteriores demostraron que el PRD es lo que impide inventar.
 
 **Tablas que no pertenecen a un espacio.** Casi todo lo de esta fase —solicitudes de alta,
-suscripciones de Cuotly, incidencias, sesiones de Modo soporte— está **por encima** del espacio y no
+suscripciones de Restavor web, incidencias, sesiones de Modo soporte— está **por encima** del espacio y no
 lleva `space_id`. CLAUDE.md exige `space_id NOT NULL` y RLS a "toda tabla que pertenezca a un
 espacio": estas no le pertenecen, pero el barrido de invariantes de RLS las va a señalar y habrá que
 **clasificarlas con su motivo escrito**, como se hizo con las excepciones del Hito 7. No se relaja el
@@ -4303,14 +4303,14 @@ barrido.
 
 **El bloque legal sigue aplazado** (§170.1, CLAUDE.md) y toca esta fase por cuatro sitios: la
 eliminación de datos a los 30 días, los "registros que deban conservarse por obligaciones legales",
-el procedimiento ante incidentes y la numeración fiscal de lo que Cuotly le cobra a un espacio. En
+el procedimiento ante incidentes y la numeración fiscal de lo que Restavor web le cobra a un espacio. En
 esos cuatro puntos se deja el placeholder documentado y se pregunta. No se inventa.
 
 ### Hito 17 · La plataforma: solicitud de espacio, aprobación y alta *(servidor y dominio)*
 - La **solicitud de creación de espacio** de §10 con sus nueve campos y sus **seis estados**
   (Borrador · Enviada · En revisión · Necesita información · Aprobada · Rechazada con motivo).
-- **Quién aprueba** (§167): Bosco siempre; un Administrador de Cuotly, si recibe el permiso. El rol
-  Administrador de Cuotly no existe todavía; `CUOTLY_OWNER_EMAIL` sí.
+- **Quién aprueba** (§167): Bosco siempre; un Administrador de Restavor web, si recibe el permiso. El rol
+  Administrador de Restavor web no existe todavía; `CUOTLY_OWNER_EMAIL` sí.
 - **Aprobar crea el espacio y arranca la prueba** (§4.4: "la prueba comienza cuando Bosco aprueba").
   Operación crítica: transacción y clave de idempotencia, como aceptar o publicar.
 - El **selector de contexto** de §8 para Bosco, que ya existe pero sin la entrada de Administración.
@@ -4353,7 +4353,7 @@ que no se pueden leer desde el test ni encontrar con grep.
 comprobación de permiso al aprobar, enseñarle los borradores a la plataforma y dejar rechazar sin
 motivo.
 
-### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(servidor y dominio)*
+### Hito 18 · La suscripción de Restavor web: Pro, Agency, prueba, cobro manual e impago *(servidor y dominio)*
 - **Los dos planes** de §4.1 y §4.2 con sus límites: Pro 149 €, 5 establecimientos activos y 5
   usuarios internos, 20 GB, adicionales a 25 € y 15 €; Agency 499 €, 100 GB. Los límites se
   **comprueban en el servidor**: crear el sexto establecimiento en Pro sin pagar el adicional no es
@@ -4369,7 +4369,7 @@ motivo.
 - Todo como **libro inmutable de apuntes**, igual que las finanzas del espacio. Es el mismo problema
   con otro pagador.
 
-### Hito 18 · La suscripción de Cuotly: Pro, Agency, prueba, cobro manual e impago *(hecho el 15/09/2026; la 90 aplicada ese mismo día)*
+### Hito 18 · La suscripción de Restavor web: Pro, Agency, prueba, cobro manual e impago *(hecho el 15/09/2026; la 90 aplicada ese mismo día)*
 - **PRD §31 escrito primero**, como manda el desglose: §4.1 a §4.7 convertidos en trece reglas
   `RN-SUB`. Doce lecturas donde la maestra calla quedan escritas como regla; Bosco las confirmó
   las doce el 15/09/2026 (**decisión 32** de `docs/DECISIONES.md`). Ninguna es un umbral que la
@@ -4422,9 +4422,9 @@ a 13, con el reloj movido por `p_now`), `cuotly-subscription.test.ts` (catálogo
 corte y prorrateo), `listas-compartidas.test.ts` (catálogo, constantes, avisos, modos y obligatorios
 iguales a los dos lados), `audit.test.ts` y `notifications.test.ts`. Cuatro mutaciones detectadas:
 quitar el disparador del límite de establecimientos, cortar sin mirar el pago declarado, dejar
-pasar a todos en modo lectura y confirmar pagos sin ser de Cuotly.
+pasar a todos en modo lectura y confirmar pagos sin ser de Restavor web.
 
-### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(servidor y pantallas)*
+### Hito 19 · Panel de Administración de Restavor web, Modo soporte y 2FA *(servidor y pantallas)*
 - **Las dos pantallas del flujo del Hito 17**, que aquel no trajo por ser de servidor y dominio: el
   **formulario básico** con el que alguien recién registrado pide su espacio y ve en qué estado está,
   y la pantalla en la que **Bosco acepta**, pide información o rechaza (decisión 31). Van aquí y no
@@ -4438,10 +4438,10 @@ pasar a todos en modo lectura y confirmar pagos sin ser de Cuotly.
   la puerta que el aislamiento multiempresa (§134) cierra en todas las demás, y por eso el hito no
   termina sin una suite que la ataque.
 - **2FA** (§136) en el mismo hito y no más tarde, porque es **obligatoria** para Bosco y para los
-  Administradores de Cuotly: entregar Modo soporte sin ella sería entregar la llave sin la cerradura.
+  Administradores de Restavor web: entregar Modo soporte sin ella sería entregar la llave sin la cerradura.
   Lo de §137 está a medias —"Mis sesiones" y el cierre remoto existen desde HU-05—; falta el resto.
 
-### Hito 19 · Panel de Administración de Cuotly, Modo soporte y 2FA *(hecho el 15/09/2026; la 91 aplicada ese mismo día)*
+### Hito 19 · Panel de Administración de Restavor web, Modo soporte y 2FA *(hecho el 15/09/2026; la 91 aplicada ese mismo día)*
 - **PRD §32 escrito primero**, como manda el desglose: §128, §129, §136, §137 y §167 convertidos en
   doce reglas `RN-ADM`. Catorce lecturas donde la maestra calla quedan escritas como regla; Bosco las
   confirmó las catorce el 15/09/2026 (**decisión 33** de `docs/DECISIONES.md`). Ninguna es un umbral
@@ -4463,19 +4463,19 @@ pasar a todos en modo lectura y confirmar pagos sin ser de Cuotly.
   tiempo cierra la puerta en la siguiente consulta.
 - **El rastro** (RN-ADM-08): apuntes `support.session_started` y `support.session_ended` en la
   auditoría **del espacio**, con la identidad —el propietario ve quién entró; §129 lo pide y P7 no
-  aplica a Cuotly—, un disparador que estampa `support_session_id` en cada apunte que la persona
+  aplica a Restavor web—, un disparador que estampa `support_session_id` en cada apunte que la persona
   deje mientras dura la sesión (eso son las "acciones realizadas"), y el aviso **obligatorio**
   `support_session_started` a los propietarios del espacio.
 - **El panel** (RN-ADM-04): los doce bloques de §128, cada uno desde una función que comprueba
   `is_platform_member()`. Incidencias está vacío con su motivo (Hito 21), no con un cero. Ingresos es
   una cifra de libro, no una factura (pendiente 20).
-- **Nombrar Administradores de Cuotly** es de Bosco por función y con auditoría (RN-ADM-03); la
+- **Nombrar Administradores de Restavor web** es de Bosco por función y con auditoría (RN-ADM-03); la
   política de escritura directa sobre `platform_roles` de la Fase 1 se retira: era una segunda puerta
   sin rastro.
 - **Las pantallas**, que este hito sí trae: el formulario de solicitud de espacio y su estado
   (`/solicitar-espacio`), el panel entero (`/administracion` y sus seis pantallas), la banda de Modo
   soporte en el armazón del espacio, la 2FA (`/cuenta/seguridad` y el segundo paso en cada inicio de
-  sesión, `/cuenta/verificar`, que impone `proxy.ts`), la entrada **Administración de Cuotly** del
+  sesión, `/cuenta/verificar`, que impone `proxy.ts`), la entrada **Administración de Restavor web** del
   selector (§8: Bosco ve siempre el selector) y la suscripción vista por el propietario
   (`/ajustes/suscripcion`, el enlace al que los avisos del Hito 18 ya apuntaban).
 - **Lo que el hito NO trae, y se dice:** sin incidencias ni horario humano (Hito 21), sin onboarding ni
@@ -4598,7 +4598,7 @@ del libro y los tres modos archivados, iguales a los dos lados), `cuotly-subscri
 local, y los 1282 tests unitarios.
 
 ### Hito 21 · Soporte, centro de ayuda y página de estado *(servidor y pantallas)*
-- **Incidencias de Cuotly** (§131) con sus seis estados y sus campos, abiertas solo por propietario y
+- **Incidencias de Restavor web** (§131) con sus seis estados y sus campos, abiertas solo por propietario y
   administradores del espacio; Agency con prioridad superior y las críticas por encima del plan.
 - El **horario humano** de §132 —un tercer reloj, que no toca ni el contractual ni el de Menú Diario—.
 - **Centro de ayuda** (§133) con buscador y guías por rol, una búsqueda sin solución que se convierte
@@ -4615,11 +4615,11 @@ local, y los 1282 tests unitarios.
 - **Migración 93**: la capacidad `contact_cuotly` (propietario y administrador, **nunca Modo
   soporte** ni en nivel `owner`); `incidents`, su libro de estados, su hilo y sus adjuntos, con el
   autor y el actor **tapados por privilegio de columna** y un `*_side` visible: el espacio ve
-  "Cuotly", no quién (RN-SOP-07, la misma lectura que RN-PLA-07); los seis estados de §131 con la
+  "Restavor web", no quién (RN-SOP-07, la misma lectura que RN-PLA-07); los seis estados de §131 con la
   tabla de transiciones por lado; la **prioridad derivada** del impacto y del plan (RN-DAT-05); el
   **reloj humano de §132 en SQL**, la misma cuenta que `supportCalendar()` de la Fase 1, con los
-  festivos de Cuotly en una lista de plataforma que **nace vacía**; abrir, contestar, mover y
-  adjuntar con evento, auditoría y aviso; la bandeja de Cuotly; **dieciséis guías** del centro de
+  festivos de Restavor web en una lista de plataforma que **nace vacía**; abrir, contestar, mover y
+  adjuntar con evento, auditoría y aviso; la bandeja de Restavor web; **dieciséis guías** del centro de
   ayuda, contenido versionado por migración y buscable a texto completo en español; y la **página de
   estado pública**, que de cada componente dice si se mide o solo se declara.
 - **`platform_status_snapshot()` es la única función del proyecto abierta a `anon`**, a propósito y
@@ -4718,7 +4718,7 @@ sin aflojar la comprobación para que valgan los dos.
   core, corregir, pagar (registrar un pago) y confirmar (justificante y presupuesto), preparar menú
   (guardar versión, preparado, pedir publicación), consultar informe, y gestionar equipo (supervisor
   principal) y ajustes (avisos por evento con el tercer canal, estado del push, cerrojo biométrico,
-  sesiones). Lo que la app no trae dice dónde está (RN-MOV-03); el panel de Cuotly y Modo soporte no
+  sesiones). Lo que la app no trae dice dónde está (RN-MOV-03); el panel de Restavor web y Modo soporte no
   están (RN-MOV-08).
 - **Push en el teléfono** (RN-MOV-05/06): la explicación va antes del diálogo del sistema, que solo
   se puede enseñar una vez; con permiso, el token se registra al entrar y se da de baja **antes** de
@@ -4790,7 +4790,7 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
 4. **La parte legal y fiscal** (§170.1), con la revisión profesional que "Antes de lanzar" exige.
 5. **Desplegar todo en Vercel**.
 6. **Lo aplazado** en CLAUDE.md: API pública y webhooks, cancelación o abono de un cobro,
-   sincronización bidireccional de calendarios y el Agente Cuotly.
+   sincronización bidireccional de calendarios y el Agente Restavor web.
 7. **Poner la app en las tiendas** (cuentas de desarrollador de Apple y Google, proyecto de Expo con
    su `projectId`, compilaciones nativas).
 8. **Desplegar todo en Vercel** otra vez, con lo anterior.
@@ -4837,13 +4837,13 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
   todavía y lo que hay que decidir antes de construir.
 - **La respuesta a "¿queda algún hito?" es que sí**: el contexto global entero (Inicio, Mis
   solicitudes, bandeja de mensajes, Mi cuenta y Ayuda fuera del espacio) y el flujo de solicitud de
-  acceso a Cuotly no existen, además de una lista de piezas sueltas que el mapa enumera.
+  acceso a Restavor web no existen, además de una lista de piezas sueltas que el mapa enumera.
 - **La contradicción de las facturas, resuelta** (decisión 40): la vista R27 enseña una factura
-  emitida por Cuotly y RN-FIN-09 decía que Cuotly no emite facturas. Preguntado, Bosco aclaró que
-  el agente que las prepara vivirá **dentro** de Cuotly, así que el diseño enseña el estado final.
+  emitida por Restavor web y RN-FIN-09 decía que Restavor web no emite facturas. Preguntado, Bosco aclaró que
+  el agente que las prepara vivirá **dentro** de Restavor web, así que el diseño enseña el estado final.
   La numeración fiscal sigue en el bloque legal (paso 4), y hasta entonces no se inventa ninguna.
 
-#### Hecho · Cómo se entra en Cuotly (§37, RN-ACC-01 a 12; migración 97, suite 48)
+#### Hecho · Cómo se entra en Restavor web (§37, RN-ACC-01 a 12; migración 97, suite 48)
 - **Decisión 41**: se acabó el registro abierto. Quedan **dos puertas y ninguna más**: una solicitud
   de acceso que aprueba `info@restavor.com` con el permiso "Aprobar espacios", o una invitación de
   un propietario. El formulario de solicitud ocupa el lugar del registro y la cuenta se crea al
@@ -4897,7 +4897,7 @@ se termina uno, se para, y solo entonces se empieza el siguiente.
   tocar la raíz, se preguntó, y Bosco decidió que se entre **siempre** al Inicio global. Se retira
   la redirección automática y con ella la pantalla de selector de contexto —el selector sigue, como
   parte de abajo del Inicio—, y se conserva lo que aquella portada traía: la entrada a
-  Administración de Cuotly con su aviso de 2FA y la tarjeta de crear el espacio de Restavor.
+  Administración de Restavor web con su aviso de 2FA y la tarjeta de crear el espacio de Restavor.
   Quince recorridos de Playwright entran ahora al Inicio y van a lo suyo desde ahí, y hay uno nuevo
   que se pone rojo si alguien devuelve la redirección.
 - **Verde**: 49 suites SQL sobre bootstrap + 98 migraciones, typecheck, lint, 1371 tests de web,
@@ -4977,9 +4977,9 @@ diseño (**decisión 47**). Lo construido se retiró.
 - **Una nota, del menú entero** (RN-ALE-01), máximo 200 caracteres, límite en la base y no solo en
   la pantalla. La escribe quien edita el menú, con la misma puerta que el resto del contenido
   (RN-ALE-02): no hace falta permiso nuevo.
-- **Cuotly no la comprueba** (RN-ALE-03) y **no bloquea la publicación** (RN-ALE-04). Un menú sin
+- **Restavor web no la comprueba** (RN-ALE-03) y **no bloquea la publicación** (RN-ALE-04). Un menú sin
   nota se publica igual; pararle el menú del día a un restaurante por un campo vacío es un daño
-  cierto por un riesgo que Cuotly no está en condiciones de juzgar.
+  cierto por un riesgo que Restavor web no está en condiciones de juzgar.
 - **Viaja con la versión** (RN-ALE-05), que es inmutable, y **copiar un menú copia su nota**: un
   menú copiado con sus platos y sin su nota sería la manera más silenciosa de publicar un menú sin
   declarar creyendo que la llevaba.
@@ -5164,7 +5164,7 @@ docena de tests por bloque—. Lo que sí faltaba era el panel.
 - **Cabecera, selector y salida**: "Panel de restaurante" con el nombre del local y no el del
   espacio (RN-PAN-03, que es la misma frontera que tapa la identidad del equipo), selector con
   todos sus restaurantes estén en el espacio que estén (RN-PAN-04, desde `my_contexts()` de la
-  migración 98, sin estrenar ninguna capacidad) y "Volver al inicio de Cuotly" siempre (RN-PAN-06).
+  migración 98, sin estrenar ninguna capacidad) y "Volver al inicio de Restavor web" siempre (RN-PAN-06).
   Con un solo restaurante **no hay selector** (RN-PAN-05): un desplegable de un elemento es una
   promesa de que hay más.
 - **Las tres filas que iban al mismo sitio**: el panel es una pantalla larga con todos sus bloques,
@@ -5210,7 +5210,7 @@ docena de tests por bloque—. Lo que sí faltaba era el panel.
     cliente de otro espacio—. Ahora sale de `my_contexts()` (RN-GLO-03), la misma función que la web,
     por el mismo módulo de servicio.
 - **Dos de limpieza que salieron con ellos**: el bloque `auth` del catálogo del teléfono era una copia
-  del de la web y se había quedado atrás (seguía diciendo "Crear cuenta en Cuotly"), así que se ha ido
+  del de la web y se había quedado atrás (seguía diciendo "Crear cuenta en Restavor web"), así que se ha ido
   entero a `web.auth`; y subir un archivo sin sesión decía "Correo o contraseña incorrectos".
 - **Ninguna migración.** Nada de esto es servidor: las dos funciones que hacían falta —`my_contexts()`
   y `submit_access_request()`— llegaron con las migraciones 98 y 97 del paso 2.

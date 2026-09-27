@@ -11,7 +11,7 @@ import { WEB_URL } from "../src/lib/supabase";
 import { colors } from "../src/lib/theme";
 
 /**
- * PRD §37 (RN-ACC-02) · solicitar acceso a Cuotly, **en el sitio donde
+ * PRD §37 (RN-ACC-02) · solicitar acceso a Restavor web, **en el sitio donde
  * estaba el registro**.
  *
  * Esta pantalla llamaba a `supabase.auth.signUp()`. La decisión 41 acabó

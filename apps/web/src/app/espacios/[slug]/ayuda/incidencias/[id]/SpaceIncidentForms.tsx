@@ -75,7 +75,7 @@ export function SpaceIncidentForms({
           {t.attachLabel}
         </p>
         {/* El campo de archivo disfrazado de botón (ver FileUploadField):
-            el del navegador habla su idioma, no el de Cuotly. */}
+            el del navegador habla su idioma, no el de Restavor web. */}
         <div className="flex flex-wrap items-center gap-3">
           <label className="inline-flex cursor-pointer items-center rounded-[10px] border border-border bg-soft-surface px-3 py-2 text-sm font-medium text-text transition-colors hover:bg-surface has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-cuotly-green">
             {es.files.choose}

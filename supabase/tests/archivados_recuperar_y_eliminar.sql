@@ -5,7 +5,7 @@
 --
 -- Lo que vigila:
 --
---   · RN-ADM-22 · Archivados enseña lo archivado a mano —por Cuotly, por
+--   · RN-ADM-22 · Archivados enseña lo archivado a mano —por Restavor web, por
 --     el propietario del espacio, por el equipo del restaurante— y nada
 --     más: ni lo archivado solo, ni lo eliminado definitivamente.
 --   · RN-ADM-23 · recuperar es un clic, con motivo fijo, y "activa de
@@ -55,8 +55,8 @@ insert into public.platform_roles (user_id, role, can_delete_accounts) values
   ('e8000000-0000-0000-0000-000000000002', 'cuotly_admin', true),
   ('e8000000-0000-0000-0000-000000000003', 'cuotly_admin', false);
 
--- A: activo. B: lo archiva su propietario. C: lo archiva Cuotly desde
--- activo. E: lo archiva el propietario y luego Cuotly.
+-- A: activo. B: lo archiva su propietario. C: lo archiva Restavor web desde
+-- activo. E: lo archiva el propietario y luego Restavor web.
 insert into public.spaces (id, name, slug, timezone, created_by) values
   ('e8010000-0000-0000-0000-00000000000a', 'Espacio A 80', 'espacio-a-80', 'Europe/Madrid', 'e8000000-0000-0000-0000-000000000004'),
   ('e8010000-0000-0000-0000-00000000000b', 'Espacio B 80', 'espacio-b-80', 'Europe/Madrid', 'e8000000-0000-0000-0000-000000000004'),
@@ -84,8 +84,8 @@ insert into public.groups (id, space_id, name) values
   ('e8030000-0000-0000-0000-00000000000a', 'e8010000-0000-0000-0000-00000000000a', 'Grupo A 80'),
   ('e8030000-0000-0000-0000-00000000000b', 'e8010000-0000-0000-0000-00000000000b', 'Grupo B 80');
 
--- R1: activo, lo archivará Cuotly. R2: lo archiva el equipo. R3: lo
--- archiva el equipo y luego Cuotly. R4: activo, se queda activo. R5: lo
+-- R1: activo, lo archivará Restavor web. R2: lo archiva el equipo. R3: lo
+-- archiva el equipo y luego Restavor web. R4: activo, se queda activo. R5: lo
 -- archiva el equipo, y se eliminará definitivamente.
 insert into public.establishments (id, space_id, group_id, code, name, status) values
   ('e8040000-0000-0000-0000-000000000001', 'e8010000-0000-0000-0000-00000000000a', 'e8030000-0000-0000-0000-00000000000a', 'EST-80-1', 'Casa uno 80', 'active'),
@@ -160,7 +160,7 @@ select public.set_establishment_status('e8040000-0000-0000-0000-000000000003', '
 select public.set_establishment_status('e8040000-0000-0000-0000-000000000005', 'archived', 'Traspaso');
 reset role;
 
--- Cuotly archiva R1, R3, C y E.
+-- Restavor web archiva R1, R3, C y E.
 select set_config('request.jwt.claim.sub', 'e8000000-0000-0000-0000-000000000002', false);
 select set_config('request.jwt.claim.aal', 'aal2', false);
 set role authenticated;
@@ -298,14 +298,14 @@ begin
              where id in ('e8040000-0000-0000-0000-000000000001', 'e8040000-0000-0000-0000-000000000002',
                           'e8040000-0000-0000-0000-000000000003')
                and (status <> 'active' or platform_archived_at is not null)) then
-    raise exception 'RN-ADM-23 FALLIDO: recuperar no dejó activos los tres restaurantes (también el que su equipo había archivado antes que Cuotly)'
+    raise exception 'RN-ADM-23 FALLIDO: recuperar no dejó activos los tres restaurantes (también el que su equipo había archivado antes que Restavor web)'
       using errcode = 'assert_failure';
   end if;
   if exists (select 1 from public.spaces
              where id in ('e8010000-0000-0000-0000-00000000000b', 'e8010000-0000-0000-0000-00000000000c',
                           'e8010000-0000-0000-0000-00000000000e')
                and cuotly_status is distinct from 'active') then
-    raise exception 'RN-ADM-23 FALLIDO: recuperar no dejó activos los tres espacios (también el que su propietario había archivado antes que Cuotly)'
+    raise exception 'RN-ADM-23 FALLIDO: recuperar no dejó activos los tres espacios (también el que su propietario había archivado antes que Restavor web)'
       using errcode = 'assert_failure';
   end if;
   if (select count(*) from public.audit_log
@@ -362,7 +362,7 @@ begin
   exception when assert_failure then raise; when others then null;
   end;
 
-  -- El espacio B lo vuelve a archivar su dueño... aquí, a mano, y Cuotly
+  -- El espacio B lo vuelve a archivar su dueño... aquí, a mano, y Restavor web
   -- lo elimina definitivamente desde el archivado del propietario.
 end $$;
 reset role;
@@ -402,7 +402,7 @@ begin
 end $$;
 reset role;
 
--- El dueño ya no lo restaura: pasó a Cuotly antes de la marca.
+-- El dueño ya no lo restaura: pasó a Restavor web antes de la marca.
 select set_config('request.jwt.claim.sub', 'e8000000-0000-0000-0000-000000000004', false);
 set role authenticated;
 do $$

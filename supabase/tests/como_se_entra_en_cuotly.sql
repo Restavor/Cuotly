@@ -1,4 +1,4 @@
--- Paso 2 del orden acordado · cómo se entra en Cuotly (migración 97;
+-- Paso 2 del orden acordado · cómo se entra en Restavor web (migración 97;
 -- PRD §37, RN-ACC-01 a RN-ACC-12; decisión 41 del 16/09/2026).
 --
 --   · RN-ACC-01: dos puertas y ninguna más. Sin solicitud aprobada ni
@@ -40,7 +40,7 @@ insert into auth.users (id, email, role, aud) values
 -- crea GoTrue con la API de administración, que es lo que la migración
 -- explica: el alta pública se cierra en `config.toml`, no aquí dentro.
 
--- §167 · un Administrador de Cuotly CON "Aprobar espacios" y otro SIN él.
+-- §167 · un Administrador de Restavor web CON "Aprobar espacios" y otro SIN él.
 insert into public.platform_roles (user_id, role, can_approve_spaces) values
   ('ffe00000-0000-0000-0000-000000000002', 'cuotly_admin', true),
   ('ffe00000-0000-0000-0000-000000000003', 'cuotly_admin', false);
@@ -58,7 +58,7 @@ grant select, insert, update on acc_ids to anon, authenticated, service_role;
 do $$
 begin
   -- Es la primera tabla del proyecto sin dueño: quien la escribe todavía
-  -- no es nadie en Cuotly. Si algún día alguien le ata un `requester_id`
+  -- no es nadie en Restavor web. Si algún día alguien le ata un `requester_id`
   -- "por coherencia", el formulario dejaría de ser público y la puerta se
   -- cerraría sin que nadie lo dijera.
   if exists (
@@ -138,7 +138,7 @@ end $$;
 -- ============================================================
 --
 -- Decisión 68 · la función ya no la llama `anon`: el documento lo
--- comprueba el servidor de Cuotly (cálculo de control y VIES) y llama con
+-- comprueba el servidor de Restavor web (cálculo de control y VIES) y llama con
 -- `service_role`. Que `anon` NO pueda llamarla se comprueba al final.
 set role service_role;
 do $$
@@ -349,7 +349,7 @@ do $$
 begin
   begin
     perform public.approve_access_request((select v from acc_ids where k = 'sol'), 'acc-1');
-    raise exception 'RN-ACC-06 FALLIDO: un Administrador de Cuotly SIN "Aprobar espacios" aprobó'
+    raise exception 'RN-ACC-06 FALLIDO: un Administrador de Restavor web SIN "Aprobar espacios" aprobó'
       using errcode = 'assert_failure';
   exception when others then
     if sqlerrm like 'RN-ACC%' then raise; end if;
@@ -811,7 +811,7 @@ begin
   -- Y las del formulario público siguen abiertas a `anon`: si alguien las
   -- revoca "por seguridad", la puerta se cierra entera y nadie entra.
   -- Decisión 68 · `submit_access_request()` ya no es de esas: la llama el
-  -- servidor de Cuotly con `service_role` después de comprobar el
+  -- servidor de Restavor web con `service_role` después de comprobar el
   -- documento. Abierta a `anon`, cualquiera la llamaría con un documento
   -- falso "ya comprobado".
   if has_function_privilege('anon', 'public.submit_access_request(text, text, text, text, text, text, text, text, text)', 'execute')

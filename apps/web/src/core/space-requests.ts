@@ -16,7 +16,7 @@
  *     `listas-compartidas.test.ts` vigila que no se separen. Es la misma
  *     decisión que se tomó con los informes y con las oportunidades.
  *   · **Qué transiciones exigen un motivo escrito** (RN-PLA-06).
- *   · **Los dos planes de Cuotly** que se pueden pedir (§4).
+ *   · **Los dos planes de Restavor web** que se pueden pedir (§4).
  *
  * Lo que NO está aquí:
  *
@@ -47,12 +47,12 @@ export function isSpaceRequestState(value: string): value is SpaceRequestState {
 
 /**
  * Los dos lados que mueven una solicitud. No son roles del espacio —no hay
- * espacio todavía—: es quien la escribió, y Cuotly.
+ * espacio todavía—: es quien la escribió, y Restavor web.
  */
 export const SPACE_REQUEST_ACTORS = ["requester", "platform"] as const;
 export type SpaceRequestActor = (typeof SPACE_REQUEST_ACTORS)[number];
 
-/** §4 · los dos planes de Cuotly que el solicitante elige antes de enviar. */
+/** §4 · los dos planes de Restavor web que el solicitante elige antes de enviar. */
 export const CUOTLY_PLANS = ["pro", "agency"] as const;
 export type CuotlyPlan = (typeof CUOTLY_PLANS)[number];
 
@@ -175,7 +175,7 @@ export type SpaceRequestStepStatus = "done" | "current" | "waiting" | "pending" 
 
 /**
  * Los cuatro pasos que dibuja G03 —"Solicitud enviada", "Revisión de
- * Cuotly", "Aprobación e instrucciones de pago", "Activación del
+ * Restavor web", "Aprobación e instrucciones de pago", "Activación del
  * espacio"— sobre los seis estados de §10 y el estado del espacio.
  *
  * No es una máquina nueva. Aprobar crea el espacio en prueba y emite la

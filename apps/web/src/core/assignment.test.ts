@@ -102,7 +102,7 @@ describe("assignment — RN-ASG-01 a 06, HU-16", () => {
   });
 
   describe("HU-16: asignación automática con candidato único, recomendación con varios", () => {
-    it("RN-ASG-03: con exactamente un candidato válido, Cuotly lo asigna automáticamente", () => {
+    it("RN-ASG-03: con exactamente un candidato válido, Restavor web lo asigna automáticamente", () => {
       const candidates = [
         candidate({ workerId: "valido" }),
         candidate({ workerId: "inactivo", memberStatus: "inactive" }),

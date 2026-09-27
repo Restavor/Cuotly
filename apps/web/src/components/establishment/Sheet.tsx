@@ -3124,7 +3124,7 @@ export function EstablishmentSheet({
                 restaurante; los botones de revisar se PINTAN a quien
                 gestiona clientes, y quien decide es
                 `review_establishment_invitation()` (CLAUDE.md). No hay
-                "Reenviar": Cuotly todavía no envía el correo.
+                "Reenviar": Restavor web todavía no envía el correo.
               */}
               <div className="mt-6 border-t border-border pt-4">
                 <h3 className="text-base font-semibold text-primary-dark">
@@ -3557,7 +3557,7 @@ export function EstablishmentSheet({
               {/*
                 El backup va a lo ancho y debajo, como en la maqueta. Lo que
                 la maqueta enseña dentro —"Último respaldo: 7 sep 2026"— es
-                un dato de ejemplo: Cuotly no copia la web de nadie todavía,
+                un dato de ejemplo: Restavor web no copia la web de nadie todavía,
                 así que aquí va el motivo (CLAUDE.md MUST NOT).
               */}
               <Card>
@@ -3576,7 +3576,7 @@ export function EstablishmentSheet({
                       §5.5 de la especificación maestra, y es la frase más
                       importante de la tarjeta: "si LandingSite u otra
                       plataforma no permite exportar una web completa,
-                      Cuotly no afirmará que existe una copia completa
+                      Restavor web no afirmará que existe una copia completa
                       restaurable". La maqueta también la escribe. Se dice
                       aquí y no el día que haya integración, porque es
                       justo antes de conectarla cuando alguien se hace la

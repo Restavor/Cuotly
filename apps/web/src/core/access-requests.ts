@@ -1,14 +1,14 @@
 import { normalizeTaxId } from "./tax-id";
 
 /**
- * `src/core/access-requests.ts` — cómo se entra en Cuotly (PRD §37,
+ * `src/core/access-requests.ts` — cómo se entra en Restavor web (PRD §37,
  * RN-ACC; decisión 41 del 16/09/2026). Lógica de dominio pura, sin
  * Supabase, sin Next y sin React (CLAUDE.md).
  *
  * Es el segundo archivo de `core/` que describe algo que ocurre **fuera de
  * un espacio**, y el primero que describe algo que ocurre **fuera de una
  * cuenta**: quien escribe una solicitud de acceso todavía no es nadie en
- * Cuotly. `space-requests.ts` es el hermano mayor y conviene no
+ * Restavor web. `space-requests.ts` es el hermano mayor y conviene no
  * confundirlos: aquella solicitud la escribe quien ya ha entrado y al
  * aprobarse crea un espacio; esta la escribe quien no ha entrado y al
  * aprobarse crea una cuenta (RN-ACC-03).
@@ -19,10 +19,10 @@ import { normalizeTaxId } from "./tax-id";
  *     (RN-ACC-05). La tabla está duplicada a propósito con
  *     `access_request_transition_allowed()` de la migración 97, y
  *     `listas-compartidas.test.ts` vigila que no se separen.
- *   · **Las dos puertas** por las que se puede nacer en Cuotly
+ *   · **Las dos puertas** por las que se puede nacer en Restavor web
  *     (RN-ACC-01), que la pantalla necesita saber para no ofrecer una
  *     tercera.
- *   · **Los cinco correos** que Cuotly manda a direcciones que todavía no
+ *   · **Los cinco correos** que Restavor web manda a direcciones que todavía no
  *     son de nadie (RN-ACC-04), duplicados con el CHECK de
  *     `platform_emails.kind`.
  *   · **Qué le pasa a un enlace de un solo uso**: válido, gastado o
@@ -57,7 +57,7 @@ export function isAccessRequestState(value: string): value is AccessRequestState
 /**
  * Los dos lados que mueven una solicitud de acceso. Ninguno es un rol de
  * espacio —no hay espacio, y uno de los dos ni siquiera tiene cuenta—: es
- * quien la escribió, y Cuotly.
+ * quien la escribió, y Restavor web.
  */
 export const ACCESS_REQUEST_ACTORS = ["applicant", "platform"] as const;
 export type AccessRequestActor = (typeof ACCESS_REQUEST_ACTORS)[number];
@@ -142,7 +142,7 @@ export const ACCESS_DOORS = ["approved_request", "invitation"] as const;
 export type AccessDoor = (typeof ACCESS_DOORS)[number];
 
 /**
- * RN-ACC-04 · los cinco correos que Cuotly manda a direcciones que
+ * RN-ACC-04 · los cinco correos que Restavor web manda a direcciones que
  * todavía no son de nadie. Duplicados con el CHECK de
  * `platform_emails.kind`; los vigila `listas-compartidas.test.ts`.
  */
@@ -195,7 +195,7 @@ export function invitationSignupStep(
  * Lo único que la pantalla del formulario público puede decir, pase lo que
  * pase por detrás (RN-ACC-02 y RN-ACC-12). No es una comodidad: devolver
  * cualquier otra cosa convertiría el formulario en un oráculo de correos,
- * y quien quisiera saber si alguien está en Cuotly solo tendría que
+ * y quien quisiera saber si alguien está en Restavor web solo tendría que
  * escribir su dirección. Lo que cambia según el caso es el correo que
  * sale, no lo que se ve.
  */

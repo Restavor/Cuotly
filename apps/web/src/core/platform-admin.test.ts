@@ -118,7 +118,7 @@ describe("Modo soporte: nivel y duración (RN-ADM-06)", () => {
 });
 
 describe("quién es plataforma y qué le falta (RN-ADM-01, RN-ADM-02, §167)", () => {
-  it("RN-ADM-01 · Bosco y los Administradores de Cuotly son plataforma; nadie más", () => {
+  it("RN-ADM-01 · Bosco y los Administradores de Restavor web son plataforma; nadie más", () => {
     expect(isPlatformPerson(BOSCO)).toBe(true);
     expect(isPlatformPerson(ADMIN_SIN_PERMISOS)).toBe(true);
     expect(isPlatformPerson(NADIE)).toBe(false);
@@ -136,7 +136,7 @@ describe("quién es plataforma y qué le falta (RN-ADM-01, RN-ADM-02, §167)", (
     expect(canNamePlatformAdmins(BOSCO_SIN_2FA)).toBe(false);
   });
 
-  it("RN-ADM-01 · un Administrador de Cuotly lee el panel entero aunque no tenga ningún permiso", () => {
+  it("RN-ADM-01 · un Administrador de Restavor web lee el panel entero aunque no tenga ningún permiso", () => {
     expect(canReadPanel(ADMIN_SIN_PERMISOS)).toBe(true);
     expect(canReadPanel(NADIE)).toBe(false);
   });
@@ -155,7 +155,7 @@ describe("quién es plataforma y qué le falta (RN-ADM-01, RN-ADM-02, §167)", (
     expect(canOpenSupport(ADMIN_CON_TODO)).toBe(true);
   });
 
-  it("RN-ADM-03/§167 · nombrar Administradores de Cuotly es de Bosco y de nadie más", () => {
+  it("RN-ADM-03/§167 · nombrar Administradores de Restavor web es de Bosco y de nadie más", () => {
     expect(canNamePlatformAdmins(BOSCO)).toBe(true);
     expect(canNamePlatformAdmins(ADMIN_CON_TODO)).toBe(false);
   });
@@ -220,7 +220,7 @@ describe("eliminar cuentas, espacios y restaurantes (decisión 81)", () => {
     ]);
   });
 
-  it("RN-ADM-20 · si es Administrador de Cuotly se dice, porque eliminarla le retira el rol", () => {
+  it("RN-ADM-20 · si es Administrador de Restavor web se dice, porque eliminarla le retira el rol", () => {
     expect(readAccountDeletionPreview({ protected: false, platform_admin: true }).platformAdmin).toBe(true);
     expect(readAccountDeletionPreview({ protected: false }).platformAdmin).toBe(false);
   });

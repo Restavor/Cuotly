@@ -1,6 +1,6 @@
 /**
  * `src/core/classification-rules.ts` — motor de reglas por palabras clave
- * al que Cuotly cae automáticamente cuando la IA falla, tarda demasiado o
+ * al que Restavor web cae automáticamente cuando la IA falla, tarda demasiado o
  * no hay clave configurada (RN-CLS-02). Lógica de dominio pura: sin
  * Supabase, sin Next.js, sin React, sin llamada de red (CLAUDE.md).
  *

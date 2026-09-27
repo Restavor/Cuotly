@@ -54,7 +54,7 @@ function Estado({ status, wrap = false }: { status: string; wrap?: boolean }) {
  * ficha (M50), que es donde están las acciones que el servidor comprueba.
  *
  * Del panel del dibujo no se copian "Entrega estimada", "Incluye" ni
- * "Versión": un presupuesto de Cuotly no guarda ninguna de las tres
+ * "Versión": un presupuesto de Restavor web no guarda ninguna de las tres
  * (§84), y enseñarlas sería inventarlas.
  */
 export function QuotesListView({

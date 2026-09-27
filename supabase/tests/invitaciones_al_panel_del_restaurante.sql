@@ -10,7 +10,7 @@
 --   · **Que la aprobación sea de verdad una barrera.** Una invitación del
 --     restaurante nace `pending_review` y su enlace **no se puede gastar**
 --     hasta que el equipo la apruebe. Si esto falla, un restaurante crea
---     cuentas de Cuotly por su cuenta, que es justo lo que Bosco quiso
+--     cuentas de Restavor web por su cuenta, que es justo lo que Bosco quiso
 --     controlar.
 --   · **Que la del equipo NO pase por aprobación**, porque pedirle al
 --     espacio que apruebe lo suyo es una pantalla de más.
@@ -75,7 +75,7 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
 -- ------------------------------------------------------------
 --
 -- No hay invitación ni aprobación: meter a alguien que ya está dentro de
--- Cuotly nunca necesitó permiso de nadie y sigue sin necesitarlo.
+-- Restavor web nunca necesitó permiso de nadie y sigue sin necesitarlo.
 select set_config('request.jwt.claim.sub', 'd0600000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
@@ -157,7 +157,7 @@ reset role;
 -- ------------------------------------------------------------
 --
 -- Este es el bloque que justifica toda la decisión 59. Si esto pasara, un
--- restaurante crearía cuentas de Cuotly sin que nadie las mirara.
+-- restaurante crearía cuentas de Restavor web sin que nadie las mirara.
 set local role postgres;
 
 -- **La cuenta se crea AQUÍ, antes de la barrera**, y esto no es un detalle
@@ -425,7 +425,7 @@ begin
   begin
     perform public.invite_to_establishment_panel(
       'd0640000-0000-0000-0000-000000000001', 'colado61@cuotly.test', 'editor');
-    raise exception 'RN-EST-17 FALLA: un Editor sin "Usuarios y accesos" invita a Cuotly'
+    raise exception 'RN-EST-17 FALLA: un Editor sin "Usuarios y accesos" invita a Restavor web'
       using errcode = 'assert_failure';
   exception
     when sqlstate 'P0001' then

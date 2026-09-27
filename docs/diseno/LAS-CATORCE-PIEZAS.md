@@ -41,7 +41,7 @@ elección:
   desplegable de un elemento es un adorno; se enseña como lo que es.
 - **Los métodos de pago son transferencia y Bizum**, y están fijados en el
   CHECK de `payments.method` por la decisión de no usar Stripe. Tampoco es
-  una preferencia del espacio: es lo que Cuotly acepta.
+  una preferencia del espacio: es lo que Restavor web acepta.
 
 ## B · Falta servidor, pero las reglas ya están en el PRD (cinco) — **hechas el 17/09/2026**
 
@@ -120,24 +120,24 @@ conversaciones y auditoría. Las preguntas son tres:
 1. ¿El historial **viaja** con el restaurante, o **se queda** en el espacio
    de origen y el nuevo empieza de cero?
 2. ¿Quién lo autoriza? ¿Basta el propietario del espacio de origen, hace
-   falta que el de destino lo acepte, o lo hace Cuotly?
+   falta que el de destino lo acepte, o lo hace Restavor web?
 3. ¿Qué pasa con los **cobros abiertos** y con la permanencia en curso?
 
 ### C2 · Copias de seguridad del contenido del restaurante (M83) — **decidido**
 
-> **Se respalda lo que hay dentro de Cuotly** (decisión 43): menús, archivos,
-> solicitudes y datos del restaurante, descargable. La web no: Cuotly no la
+> **Se respalda lo que hay dentro de Restavor web** (decisión 43): menús, archivos,
+> solicitudes y datos del restaurante, descargable. La web no: Restavor web no la
 > aloja.
 
 No existe nada: ni tabla, ni proceso, ni una línea en el PRD. La maqueta
 enseña un historial de respaldos, una descarga y una revisión de
 restauración.
 
-1. ¿Qué se respalda exactamente? ¿La web del restaurante —que Cuotly no
-   aloja— o **lo que hay dentro de Cuotly** de ese restaurante?
+1. ¿Qué se respalda exactamente? ¿La web del restaurante —que Restavor web no
+   aloja— o **lo que hay dentro de Restavor web** de ese restaurante?
 2. ¿Cada cuánto, y cuántos se guardan?
 3. "Restaurar", ¿qué significa: descargar y que lo aplique el equipo a mano,
-   o que Cuotly deshaga algo?
+   o que Restavor web deshaga algo?
 
 Mientras no haya respuesta, esta es la más fácil de dejar bien dicha: una
 pantalla que explique que todavía no hay copias y por qué es mejor que una
@@ -175,12 +175,12 @@ cuarta cosa, con su propia lista de miembros.
 > declarado con la 101 convertido en esa nota.
 >
 > Lo suyo que sigue en el paso 4 es el **aviso legal**. Lo que la pantalla
-> dice hoy —de quién es la información y que Cuotly no la comprueba— es un
+> dice hoy —de quién es la información y que Restavor web no la comprueba— es un
 > hecho sobre cómo funciona el producto, no un texto legal.
 
 **No aparece en el PRD ni en la especificación maestra.** Es la única de las
 catorce que toca materia legal: la información de alérgenos en la carta es
-una obligación del restaurante, y Cuotly publicaría lo que el restaurante
+una obligación del restaurante, y Restavor web publicaría lo que el restaurante
 declare.
 
 1. ¿Es **texto libre** por plato, o la lista de los catorce alérgenos de la

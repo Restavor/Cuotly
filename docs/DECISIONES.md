@@ -2504,7 +2504,14 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     espacio tenga su propio nombre y logotipo. Restavor agents es la otra parte y no existe todavía.
 
     Primer paso, solo el nombre: cabeceras (menú lateral, móvil, acceso), título de la pestaña, miga
-    de pan, pie del PDF de informes y la ficha de identidad de Ajustes. **No se han tocado todavía**:
-    las menciones a "Cuotly" como plataforma en los textos de pantalla (unas 250 en `es.ts`), el
-    remitente de correo (`Cuotly <avisos@cuotly.com>`), los identificadores del código y la base
-    (`is_platform_*`, `cuotly_payments`…) ni los documentos.
+    de pan, pie del PDF de informes y la ficha de identidad de Ajustes.
+
+    Segundo paso, el mismo día. Bosco: *"Vale todos los sitios donde ponga Cuotly / Cuotly by
+    Restavor cámbialo por Restavor web"*. Se cambia en todos los textos: pantallas web y móvil,
+    correos, notificaciones, tests, suites, sembrado, `CLAUDE.md` y documentos. En la base, la
+    **migración 155** redefine las 77 funciones cuyo texto nombraba a la app (mensajes de error que la
+    pantalla enseña tal cual, conceptos de los cobros de la suscripción) y los artículos del centro de
+    ayuda. Se quedan como estaban, a propósito: las migraciones ya aplicadas (no se editan nunca), los
+    identificadores del código y de la base (`cuotly_payments`, `CUOTLY_PLANS`, `cuotly-green`, los
+    slugs), el dominio `cuotly.com` del remitente, los apuntes ya escritos en libros inmutables y
+    este registro de decisiones, que cita lo que se dijo cuando se dijo.

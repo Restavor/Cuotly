@@ -313,7 +313,7 @@ end $$;
 
 reset role;
 
--- El equipo sí ve quién escribió (§15: "internamente, Cuotly registra
+-- El equipo sí ve quién escribió (§15: "internamente, Restavor web registra
 -- quién realizó cada acción").
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', false);
 set role authenticated;
@@ -2645,7 +2645,7 @@ begin
       --
       -- `is_platform_account_manager` (migración 140, RN-ADM-14) es LA
       -- comprobación del cuarto permiso fino de §167 —Bosco, o un
-      -- Administrador de Cuotly con `can_delete_accounts`— y ella misma
+      -- Administrador de Restavor web con `can_delete_accounts`— y ella misma
       -- llama a `is_platform_owner`. Su nombre está aquí para que las
       -- siete funciones que eliminan y recuperan cuentas, espacios y
       -- restaurantes cuenten como comprobadas.
@@ -2680,7 +2680,7 @@ begin
         -- envoltorio de una línea y cae en el mismo caso.
         'client_permission', 'client_can_manage_users',
         -- Migración 91 (Fase 4, Hito 19), misma familia: `is_platform_admin`
-        -- es la primitiva "¿es un Administrador de Cuotly con 2FA?" y no
+        -- es la primitiva "¿es un Administrador de Restavor web con 2FA?" y no
         -- puede comprobarse a sí misma; `is_platform_member` e
         -- `is_platform_supporter` la llaman junto a `is_platform_owner`,
         -- así que sí caen en la heurística. `my_platform_access` contesta
@@ -2783,7 +2783,7 @@ begin
         -- persona mirando qué le impide cerrar su cuenta.
         'account_deletion_blockers',
         -- Migración 89 (Fase 4, Hito 17). `is_platform_approver()` es LA
-        -- comprobación de §167 —Bosco, o un Administrador de Cuotly con el
+        -- comprobación de §167 —Bosco, o un Administrador de Restavor web con el
         -- permiso—, así que no puede comprobarse a sí misma; su nombre
         -- entra en la heurística de arriba para que las dos que la llaman
         -- (`decide_space_request`, `approve_space_request`) cuenten como
@@ -2807,7 +2807,7 @@ begin
         'platform_status_snapshot',
         -- Migración 90 (Fase 4, Hito 18). `is_platform_subscription_manager()`
         -- es LA comprobación de "gestionar suscripciones" de §167 —Bosco, o
-        -- un Administrador de Cuotly con el permiso— y por eso no puede
+        -- un Administrador de Restavor web con el permiso— y por eso no puede
         -- comprobarse a sí misma; su nombre entra en la heurística para que
         -- las cinco que la llaman (`confirm_cuotly_payment`,
         -- `record_cuotly_payment`, `reject_cuotly_payment`,
@@ -3782,8 +3782,8 @@ begin
          'access_requests', 'access_request_events',
          'account_setup_tokens', 'platform_emails',
          -- Migración 93 (Fase 4, Hito 21): de plataforma. Los festivos del
-         -- horario humano de Cuotly, las guías del centro de ayuda y lo que
-         -- Cuotly declara sobre su propio estado no pertenecen a ningún
+         -- horario humano de Restavor web, las guías del centro de ayuda y lo que
+         -- Restavor web declara sobre su propio estado no pertenecen a ningún
          -- espacio (RN-SOP-06, RN-SOP-10, RN-SOP-13). Las tres llevan RLS
          -- con política, que es lo que el barrido sigue exigiendo.
          'platform_holidays', 'help_articles', 'platform_status_events',
@@ -3809,7 +3809,7 @@ begin
          -- decidir—. Su política la lee cualquiera de los dos espacios y
          -- nadie la escribe por PostgREST: solo las cuatro funciones.
          'establishment_transfers',
-         -- Migración 140 (RN-ADM-18): las cuentas que Cuotly elimina. Una
+         -- Migración 140 (RN-ADM-18): las cuentas que Restavor web elimina. Una
          -- cuenta no es de ningún espacio —puede estar en varios o en
          -- ninguno—, como `profiles` y `push_devices`. Lleva RLS con
          -- política: solo la lee la plataforma y nadie la escribe por
@@ -3926,8 +3926,8 @@ begin
       ('opportunities','approved_by'),
       ('opportunities','discarded_by'),
       ('opportunities','proposal_edited_by'),
-      -- Migración 90 (Fase 4, Hito 18): la fila de un pago a Cuotly es del
-      -- propietario del espacio; quién en Cuotly lo confirmó, rechazó o
+      -- Migración 90 (Fase 4, Hito 18): la fila de un pago a Restavor web es del
+      -- propietario del espacio; quién en Restavor web lo confirmó, rechazó o
       -- revirtió, no (RN-SUB-12, el mismo principio que RN-PLA-07).
       ('cuotly_payments','confirmed_by'),
       ('cuotly_payments','rejected_by'),

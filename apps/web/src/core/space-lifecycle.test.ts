@@ -45,7 +45,7 @@ describe("RN-CIC-01 · el asistente son los diez pasos de §9 y no bloquea nada"
   it("no hay ningún paso de más ni de menos", () => {
     expect(ONBOARDING_STEPS).toHaveLength(10);
     expect(isOnboardingStep("space_details")).toBe(true);
-    // El Agente Cuotly está aplazado (CLAUDE.md) y no es un paso de §9.
+    // El Agente Restavor web está aplazado (CLAUDE.md) y no es un paso de §9.
     expect(isOnboardingStep("agent")).toBe(false);
   });
 

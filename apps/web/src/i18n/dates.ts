@@ -35,8 +35,8 @@
 export const DEFAULT_TIMEZONE = "Europe/Madrid";
 
 /**
- * La zona de Cuotly como plataforma (Hito 19). El panel de Administración
- * no está en ningún espacio y no tiene `spaces.timezone` que leer: Cuotly
+ * La zona de Restavor web como plataforma (Hito 19). El panel de Administración
+ * no está en ningún espacio y no tiene `spaces.timezone` que leer: Restavor web
  * vive en Madrid, y `platform_revenue_by_month()` agrupa los meses en esa
  * misma zona. Solo la usan las pantallas de `/administracion` y la de la
  * solicitud de espacio, que ocurre antes de que exista el espacio.

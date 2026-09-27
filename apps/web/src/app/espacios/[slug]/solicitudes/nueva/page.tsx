@@ -12,7 +12,7 @@ import { NewTeamRequestForm, type OnBehalfEstablishment } from "./NewTeamRequest
 
 /**
  * M77 · Nueva solicitud en nombre de un restaurante (RN-REQ-08, decisión
- * 73). El restaurante lo pidió fuera de Cuotly y el propietario o un
+ * 73). El restaurante lo pidió fuera de Restavor web y el propietario o un
  * administrador del espacio lo deja escrito aquí.
  *
  * Quién puede lo decide `create_request_on_behalf()`, que exige

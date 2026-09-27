@@ -18,7 +18,7 @@ import type { MenuDocument, MenuSection } from "@/core/menu-render";
  * Las tres disposiciones (`classic`, `board`, `elegant`) son las de la
  * migración 78: implementación del Hito 10, no regla de producto. Los
  * colores son los de la plantilla del restaurante: es su marca, no la de
- * Cuotly, y por eso aquí hay hexadecimales y no tokens de Emerald Control.
+ * Restavor web, y por eso aquí hay hexadecimales y no tokens de Emerald Control.
  */
 
 /** A4 a 150 ppp, en vertical. Cabe en la caja del motor y se imprime nítido. */

@@ -193,7 +193,7 @@ end;
 $$;
 
 -- ------------------------------------------------------------
--- RN-PAN-10 · sin cuenta de Cuotly no hay acceso que dar
+-- RN-PAN-10 · sin cuenta de Restavor web no hay acceso que dar
 -- ------------------------------------------------------------
 do $$
 begin

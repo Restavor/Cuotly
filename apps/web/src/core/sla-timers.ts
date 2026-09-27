@@ -205,7 +205,7 @@ export function t3Status(
  * RN-SLA-17 · CA-14: "Fuera de plazo" es una **condición calculada**, no un
  * estado — puede coexistir con En curso, Bloqueado o cualquier otro. Por
  * eso esta función devuelve el estado del trabajo **sin tocarlo** junto a
- * la condición: nada en Cuotly guarda "fuera de plazo" como estado, ni lo
+ * la condición: nada en Restavor web guarda "fuera de plazo" como estado, ni lo
  * sustituye por el estado real del trabajo.
  *
  * Qué contador manda depende del estado: antes de Comenzar el plazo vivo es

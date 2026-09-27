@@ -40,7 +40,7 @@ export function TeamLoad({
           key={member.userId}
           className="flex items-center gap-3 border-b border-border py-3 last:border-b-0"
         >
-          {/* M01 · la cara de cada persona: sus iniciales, porque Cuotly
+          {/* M01 · la cara de cada persona: sus iniciales, porque Restavor web
               no guarda fotos de perfil. */}
           <Avatar name={member.name} size={36} />
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-text">

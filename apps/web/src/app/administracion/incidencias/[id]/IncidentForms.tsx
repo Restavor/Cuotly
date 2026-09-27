@@ -11,7 +11,7 @@ import { moveIncident, replyIncident } from "../actions";
 
 /**
  * RN-SOP-04 · solo se pintan las transiciones que la tabla permite desde el
- * estado actual como Cuotly; el servidor las vuelve a comprobar. El motivo
+ * estado actual como Restavor web; el servidor las vuelve a comprobar. El motivo
  * es obligatorio al pedir información y al cerrar sin resolver, y el
  * servidor lo exige también.
  */

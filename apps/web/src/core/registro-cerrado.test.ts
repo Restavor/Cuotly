@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 /**
  * RN-ACC-01 y RN-ACC-10 · que el registro abierto siga cerrado.
  *
- * Desde la decisión 41 (16/09/2026) a Cuotly se entra por una solicitud de
+ * Desde la decisión 41 (16/09/2026) a Restavor web se entra por una solicitud de
  * acceso aprobada o por una invitación, y por nada más. La parte de ese
  * cierre que **no** vive en una migración es la que este archivo vigila,
  * porque es la que se puede revertir sin que nadie lo note:

@@ -5,7 +5,7 @@ import { enZona, zonaDelNavegador } from "@/i18n/dates";
 /**
  * HU-05 · cuándo se usó por última vez una sesión.
  *
- * **Por qué es un componente de cliente.** Es la única pantalla de Cuotly
+ * **Por qué es un componente de cliente.** Es la única pantalla de Restavor web
  * que no cuelga de ningún espacio: son las sesiones de una persona. No hay
  * zona del espacio que aplicar, y la hora que esa persona espera leer es
  * la de su reloj ("entré a las nueve"). En el servidor eso no se puede

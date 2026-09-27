@@ -22,7 +22,7 @@ import { PlatformAdminForm } from "./PlatformAdminForm";
 
 /**
  * Usuarios (§128): cada cuenta, sus espacios y si tiene la 2FA; y, para
- * Bosco, nombrar o retirar Administradores de Cuotly (RN-ADM-03). El
+ * Bosco, nombrar o retirar Administradores de Restavor web (RN-ADM-03). El
  * formulario se pinta solo a Bosco por cortesía: `set_platform_admin()`
  * vuelve a comprobarlo.
  */

@@ -27,7 +27,7 @@ import { createClient } from "@/lib/supabase/server";
 import { priorityTone, stateTone } from "../../../../administracion/incidencias/tone";
 
 /**
- * Las incidencias del espacio a Cuotly (RN-SOP-01): errores y sugerencias,
+ * Las incidencias del espacio a Restavor web (RN-SOP-01): errores y sugerencias,
  * separados (RN-SOP-02). Las ven el propietario y los administradores; la
  * RLS de `incidents` ya lo decide, y aquí solo se dice "sin acceso" a quien
  * no lo tiene en vez de enseñar una lista vacía que parecería un dato.

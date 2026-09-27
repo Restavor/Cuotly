@@ -1,4 +1,4 @@
-# Cuotly
+# Restavor web
 
 Plataforma SaaS multiempresa para el mantenimiento web de restaurantes.
 Creada por Restavor.
@@ -25,7 +25,7 @@ docs/        Documentación del producto y del plan de trabajo
 
 - Node.js 20 o superior
 - pnpm 9 (`corepack enable` si no lo tienes)
-- Una cuenta de Supabase con un proyecto creado para Cuotly
+- Una cuenta de Supabase con un proyecto creado para Restavor web
 
 ## Puesta en marcha
 
@@ -64,7 +64,7 @@ sistema de diseño (Emerald Control) en un solo sitio.
 ## Primer arranque (Hito 2): crear el espacio de Restavor
 
 1. Entra con la cuenta cuyo correo coincide con `CUOTLY_OWNER_EMAIL` (§0 de la
-   Especificación Maestra: el Propietario de Cuotly).
+   Especificación Maestra: el Propietario de Restavor web).
 2. En Inicio verás el botón **Crear Restavor**. Solo lo ve esa cuenta — la
    base de datos lo comprueba de verdad, no solo la pantalla.
 3. Se crea el espacio, sus tres planes y el servicio Menú Diario, todo en

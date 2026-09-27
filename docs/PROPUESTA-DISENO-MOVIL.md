@@ -45,7 +45,7 @@ subpestaña de Gestión. Mismo caso: va con el punto 9.
 "Panel del restaurante · **No creado**" y un botón "Crear panel del restaurante". El formulario de
 la 56 pide **propietario** (correo) y **envía invitación**, y dice literalmente: *"El panel
 pertenece a este establecimiento. No crea un espacio de mantenimiento ni contrata la suscripción
-de Cuotly del cliente."* La 53, al crear un establecimiento, avisa de que *"el panel del cliente
+de Restavor web del cliente."* La 53, al crear un establecimiento, avisa de que *"el panel del cliente
 se crea después desde la ficha del restaurante"*. La 26 dice que aprobar una solicitud de acceso
 **no** crea espacio ni panel.
 
@@ -126,21 +126,21 @@ más prescindible de los diez.
 
 ---
 
-## 4 · "Cuotly Insights" como fuente de datos
+## 4 · "Restavor web Insights" como fuente de datos
 
 **Qué enseña el diseño** (páginas 41 y 44). En Informes y datos aparece una fuente llamada
-**"Cuotly Insights"** junto a GA4, Search Console, Clarity y PageSpeed.
+**"Restavor web Insights"** junto a GA4, Search Console, Clarity y PageSpeed.
 
 **Qué hay hoy.** Las cuatro integraciones reales y nada más. `DATA_SECTIONS` tiene Analítica,
 Búsqueda, Comportamiento y Rendimiento.
 
 **Qué cuesta.** Depende enteramente de qué es, y el PDF no lo dice: no enseña ni una métrica suya.
-Puede ser (a) un nombre para el **resumen que Cuotly ya calcula** a partir de las cuatro fuentes,
-que no cuesta nada porque ya existe; o (b) una **fuente propia** —telemetría de Cuotly sobre el
+Puede ser (a) un nombre para el **resumen que Restavor web ya calcula** a partir de las cuatro fuentes,
+que no cuesta nada porque ya existe; o (b) una **fuente propia** —telemetría de Restavor web sobre el
 sitio del restaurante—, que es un producto entero: recogida, almacenamiento, retención y aviso
 legal.
 
-**Propuesta.** Entenderlo como (a): **Cuotly Insights es el nombre del resumen propio**, no una
+**Propuesta.** Entenderlo como (a): **Restavor web Insights es el nombre del resumen propio**, no una
 fuente nueva. Es lo único que el PDF sostiene, y (b) sería inventarse un producto a partir de una
 etiqueta en una pantalla, que es justo lo que `CLAUDE.md` prohíbe.
 
@@ -155,7 +155,7 @@ escribe qué mide, y eso es una conversación aparte.
 (Magariños) 6,4 GB"**.
 
 **Qué hay hoy.** El almacenamiento es **del espacio** (RN-SUB-13, migración 95): se avisa al 80 % y
-al 100 %, al 100 % también a Cuotly, no se bloquea nada, y pasarse **se presupuesta aparte** — no
+al 100 %, al 100 % también a Restavor web, no se bloquea nada, y pasarse **se presupuesta aparte** — no
 hay precio por GB y no se inventa (decisión 38).
 
 **Qué cuesta.** Poco: es una suma con `where establishment_id = …` sobre `files`. No cambia el
@@ -198,7 +198,7 @@ construye**.
 formulario pide un **motivo obligatorio**.
 
 **Qué hay hoy.** La prioridad tiene dos caras y conviene no mezclarlas: el **cliente** ordena sus
-solicitudes (es una ordenación suya, no un compromiso de Cuotly), y la **prioridad contractual**
+solicitudes (es una ordenación suya, no un compromiso de Restavor web), y la **prioridad contractual**
 la concede el plan (`plans.grants_priority`, y hoy solo Premium+ la da — decisión 39). El equipo no
 tiene hoy una prioridad propia con motivo.
 
@@ -301,4 +301,4 @@ Por dependencia y por riesgo, no por tamaño:
 8. **Foto de perfil** (3) — lo último de lo que se hace.
 
 **No se construye** hasta que haya números o significados: el resumen diario (6), los atributos de
-plan (10), y "Cuotly Insights" si resulta ser una fuente de verdad (4).
+plan (10), y "Restavor web Insights" si resulta ser una fuente de verdad (4).

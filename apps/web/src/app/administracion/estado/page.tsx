@@ -9,7 +9,7 @@ import { statusSnapshot } from "@/services/support-gateway";
 import { AddHolidayForm, DeclareEventForm, DeclareSecurityIncidentForm, ResolveEventForm, RetireHolidayForm } from "./StatusForms";
 
 /**
- * El estado de Cuotly visto desde dentro (RN-SOP-13): declarar y resolver
+ * El estado de Restavor web visto desde dentro (RN-SOP-13): declarar y resolver
  * eventos sobre los cinco componentes, y los festivos del horario humano
  * de §132 (RN-SOP-06). Lo que aquí se declara es lo que la página pública
  * enseña; lo medido lo calcula la misma instantánea.

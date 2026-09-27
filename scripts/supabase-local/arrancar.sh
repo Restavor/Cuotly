@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# La web de Cuotly con datos, sin salida a Supabase.
+# La web de Restavor web con datos, sin salida a Supabase.
 #
 # Para qué. El contenedor de desarrollo no llega al proyecto real (la
 # política de salida contesta 403) y Docker Hub limita las descargas, así que
@@ -20,7 +20,7 @@
 # Uso, desde la raíz del repositorio y como root:
 #   bash scripts/supabase-local/arrancar.sh
 # Después se entra con cualquiera de las identidades de espacio-demo.sql
-# (contraseña Cuotly-demo-2026) en http://localhost:3999/login.
+# (contraseña Restavor web-demo-2026) en http://localhost:3999/login.
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "$0")/../.." && pwd)"

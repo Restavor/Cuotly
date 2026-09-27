@@ -57,7 +57,7 @@ import { parseSettingsTab } from "./tabs";
  * M62, y Propiedad y Exportación, M64).
  *
  * Cada pestaña pinta lo que el espacio tiene de verdad. Lo que el dibujo
- * trae y Cuotly no —el horario editable por día, la vista previa "de
+ * trae y Restavor web no —el horario editable por día, la vista previa "de
  * ejemplo" del IVA, el correo de contacto del espacio, los "últimos
  * accesos"— no se imita: está dicho en `docs/diseno/PLAN-ESCRITORIO.md`.
  *

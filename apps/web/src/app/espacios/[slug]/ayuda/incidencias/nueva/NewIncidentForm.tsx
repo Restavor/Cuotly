@@ -10,7 +10,7 @@ import { INITIAL_HELP_STATE } from "../../action-state";
 import { openIncidentAction } from "../../actions";
 
 /**
- * RN-SOP-03 · el formulario de §131, y lo que "Cuotly puede recoger
+ * RN-SOP-03 · el formulario de §131, y lo que "Restavor web puede recoger
  * informando al usuario": navegador, sistema y pantalla se leen del
  * navegador, se ENSEÑAN antes de enviar y viajan en campos ocultos. El
  * servidor solo guarda esas claves. RN-SOP-14: la clave de idempotencia

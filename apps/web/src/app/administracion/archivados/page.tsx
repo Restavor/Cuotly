@@ -18,7 +18,7 @@ import { listArchived, myPlatformAccess, type PlatformArchivedRow } from "@/serv
 import { PermanentDeleteButton, RecoverButton } from "./ArchivedActions";
 
 /**
- * Decisión 82 · Archivados (RN-ADM-22): lo archivado a mano —por Cuotly,
+ * Decisión 82 · Archivados (RN-ADM-22): lo archivado a mano —por Restavor web,
  * por el propietario de un espacio o por el equipo de un restaurante—,
  * separado de lo activo. Cada fila, con Recuperar (un clic) y Eliminar
  * (definitivo, con confirmación).

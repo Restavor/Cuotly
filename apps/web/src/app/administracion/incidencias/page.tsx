@@ -20,7 +20,7 @@ import { platformListIncidents, type PlatformIncidentRow } from "@/services/supp
 import { priorityTone, stateTone } from "./tone";
 
 /**
- * La bandeja de Cuotly (§131, RN-SOP-07, RN-SOP-15): lo que los espacios le
+ * La bandeja de Restavor web (§131, RN-SOP-07, RN-SOP-15): lo que los espacios le
  * han abierto, por prioridad —crítica, alta, estándar— y después por
  * antigüedad. Las sugerencias van al final: no tienen prioridad
  * (RN-SOP-02). `?todas=1` enseña también las cerradas.

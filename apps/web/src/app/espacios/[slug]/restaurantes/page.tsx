@@ -198,7 +198,7 @@ export default async function TeamEstablishmentsPage({
             diseño móvil (`EstablishmentCard`).
 
             "Supervisor" en la maqueta es aquí **responsable** (RN-EST-19):
-            supervisor ya significa otra cosa en Cuotly. Y el menú de tres
+            supervisor ya significa otra cosa en Restavor web. Y el menú de tres
             puntos no va: no hay ninguna acción decidida para él.
           */}
           <Card className="hidden md:block">

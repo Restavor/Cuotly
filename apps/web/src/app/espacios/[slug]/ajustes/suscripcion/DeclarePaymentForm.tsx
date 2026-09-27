@@ -20,7 +20,7 @@ export interface DeclarableCharge {
  * RN-SUB-06 · declarar un pago: método, fecha, importe y referencia. La
  * clave de idempotencia nace con el formulario (CA-17) y es aleatoria:
  * hasta el 23/09/2026 era `useId()`, que vale lo mismo en cada carga de la
- * página, así que volver a declarar un cobro después de que Cuotly
+ * página, así que volver a declarar un cobro después de que Restavor web
  * rechazara el pago devolvía el pago rechazado en vez de registrar el
  * nuevo (`declare_cuotly_payment()` deduplica por cobro y clave).
  */

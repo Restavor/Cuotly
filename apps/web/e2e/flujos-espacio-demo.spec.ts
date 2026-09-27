@@ -53,7 +53,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ESPACIO = "demo";
 const RESTAURANTE_ID = "d4000000-0000-0000-0000-000000000001";
-const CLAVE = "Cuotly-demo-2026";
+const CLAVE = "Restavor web-demo-2026";
 
 const EQUIPO = {
   propietaria: { email: "owner@cuotly.test", nombre: "Elena Ruiz (propietaria)" },
@@ -127,7 +127,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
-    await page.getByRole("button", { name: "Entrar en Cuotly" }).click();
+    await page.getByRole("button", { name: "Entrar en Restavor web" }).click();
 
     try {
       await page.waitForURL(/\/$/, { timeout: 45_000 });
@@ -144,7 +144,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
         .locator('[role="alert"]:visible:not(#__next-route-announcer__)')
         .allInnerTexts();
       throw new Error(
-        `Entrando como ${email} no se llegó al Inicio de Cuotly. Se quedó en ${page.url()}, ` +
+        `Entrando como ${email} no se llegó al Inicio de Restavor web. Se quedó en ${page.url()}, ` +
           `con el titular "${titulo.trim()}"` +
           (alertas.length ? ` y este error en pantalla: ${alertas.join(" / ")}` : " y sin error en pantalla") +
           `. Causa original: ${fallo instanceof Error ? fallo.message.split("\n")[0] : String(fallo)}`,
@@ -158,7 +158,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
   const RESTAURANTE_URL = `/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`;
 
   test.describe("El equipo", () => {
-    test("la propietaria entra al Inicio de Cuotly y llega a su espacio, con el restaurante sembrado", async ({ page }) => {
+    test("la propietaria entra al Inicio de Restavor web y llega a su espacio, con el restaurante sembrado", async ({ page }) => {
       await entrar(page, EQUIPO.propietaria.email, ESPACIO_URL);
 
       // Decisión 42 · la raíz ya no redirige: se entra SIEMPRE al Inicio
@@ -172,7 +172,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // los recorridos con datos no los ejecutaba nadie desde el 02/09.
       // Se comprueban las dos cosas: que es el Inicio y que es SU espacio.
       await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
-      await expect(page.getByText("Demo Cuotly").first()).toBeVisible();
+      await expect(page.getByText("Demo Restavor web").first()).toBeVisible();
 
       // Y el equipo, con los dos miembros por su nombre visible: eso sí
       // sigue en el Inicio, en la tarjeta "Carga del equipo".
@@ -188,7 +188,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(page.getByText("Activo").first()).toBeVisible();
     });
 
-    test("decisión 42 · la raíz es el Inicio de Cuotly, también con un solo espacio", async ({
+    test("decisión 42 · la raíz es el Inicio de Restavor web, también con un solo espacio", async ({
       page,
     }) => {
       // Este test existe por lo que cambió: hasta el 16/09/2026 la raíz
@@ -208,7 +208,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // enlace del selector es el único cuyo nombre accesible es EXACTAMENTE
       // el del espacio.
       await expect(
-        page.getByRole("link", { name: "Demo Cuotly", exact: true }),
+        page.getByRole("link", { name: "Demo Restavor web", exact: true }),
       ).toBeVisible();
     });
 
@@ -281,7 +281,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
   });
 
   test.describe("El cliente", () => {
-    test("entra al Inicio de Cuotly y desde ahí a su restaurante, no a un espacio", async ({ page }) => {
+    test("entra al Inicio de Restavor web y desde ahí a su restaurante, no a un espacio", async ({ page }) => {
       await entrar(page, CLIENTE.email);
 
       // Decisión 42 · el cliente también entra al Inicio global, y desde

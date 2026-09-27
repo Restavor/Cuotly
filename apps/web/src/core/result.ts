@@ -1,5 +1,5 @@
 /**
- * `src/core/` es la lógica de dominio pura de Cuotly: sin Supabase, sin
+ * `src/core/` es la lógica de dominio pura de Restavor web: sin Supabase, sin
  * Next.js, sin React. Solo funciones y tipos que se pueden probar sin
  * levantar nada (CLAUDE.md, regla de estilo de código). Esta primera pieza
  * es el tipo que usa el resto del dominio para representar un error de

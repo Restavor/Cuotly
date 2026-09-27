@@ -30,7 +30,7 @@ export async function loadArchivedEstablishments(
   spaceId: string,
 ): Promise<readonly ArchivedEstablishment[]> {
   // Qué restaurantes se ven lo decide RLS sobre `establishments`. Los que
-  // Cuotly eliminó definitivamente desde su panel ya no salen (RN-ADM-24):
+  // Restavor web eliminó definitivamente desde su panel ya no salen (RN-ADM-24):
   // siguen en la base, pero aquí no hay nada que hacer con ellos.
   const { data: establishments } = await supabase
     .from("establishments")

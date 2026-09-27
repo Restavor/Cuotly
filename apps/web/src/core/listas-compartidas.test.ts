@@ -431,7 +431,7 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
 
   /*
    * Migración 97 (paso 2, decisión 41). La solicitud de acceso es la
-   * puerta por la que se entra en Cuotly, y su tabla de transiciones está
+   * puerta por la que se entra en Restavor web, y su tabla de transiciones está
    * a los dos lados por la misma razón que la de la solicitud de espacio:
    * en SQL decide y en TypeScript la pantalla dibuja. Separadas, la
    * pantalla ofrecería un botón que el servidor rechaza.
@@ -541,12 +541,12 @@ describe("las listas duplicadas a los dos lados no se separan en silencio", () =
 
   /*
    * Migración 90 (Fase 4, Hito 18). El catálogo de los dos planes de
-   * Cuotly, las constantes del apartado y los cinco avisos están a los dos
+   * Restavor web, las constantes del apartado y los cinco avisos están a los dos
    * lados: en SQL cobran, limitan y cortan; en TypeScript la pantalla
    * enseña lo que va a pasar. Un precio cambiado en un solo lado cobraría
    * una cosa y enseñaría otra.
    */
-  it("los dos planes de Cuotly (RN-SUB-01) son los mismos en SQL y en `src/core`", () => {
+  it("los dos planes de Restavor web (RN-SUB-01) son los mismos en SQL y en `src/core`", () => {
     const fn = ultimaDefinicion("create or replace function public.cuotly_plan_terms", "$$;");
     for (const plan of ["pro", "agency"] as const) {
       const fila = new RegExp(`\\('${plan}', ([^)]*)\\)`).exec(fn);

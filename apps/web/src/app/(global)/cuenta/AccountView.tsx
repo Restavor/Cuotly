@@ -45,7 +45,7 @@ export function AccountView({
         {t.rolesNote}
       </p>
       {/*
-        Salir de Cuotly vive aquí desde el 20/09/2026: el menú del contexto
+        Salir de Restavor web vive aquí desde el 20/09/2026: el menú del contexto
         global son los cinco destinos de G01, y cerrar la sesión es de la
         cuenta, como las sesiones abiertas.
       */}

@@ -236,7 +236,7 @@ describe("RN-NOT-05 · la cola de correo, con reintentos e idempotencia", () => 
     compose: (d) =>
       d.recipient_email === null
         ? null
-        : { to: d.recipient_email, subject: "Aviso de Cuotly", body: d.deep_link },
+        : { to: d.recipient_email, subject: "Aviso de Restavor web", body: d.deep_link },
   };
 
   const ok: MailTransport = { send: async () => "prov-1" };

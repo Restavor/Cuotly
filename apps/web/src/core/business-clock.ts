@@ -1,6 +1,6 @@
 /**
  * `src/core/business-clock.ts` — el reloj contractual y los otros dos
- * calendarios de Cuotly (RN-CLK, PRD §7 y §132 de la especificación
+ * calendarios de Restavor web (RN-CLK, PRD §7 y §132 de la especificación
  * maestra). Lógica de dominio pura: sin Supabase, sin Next.js, sin React
  * (CLAUDE.md, regla de estilo de código). Toda la aritmética de fechas
  * pasa por `Intl.DateTimeFormat` para ser correcta con el cambio de

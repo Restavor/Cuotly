@@ -66,28 +66,28 @@ export const NOTIFICATION_EVENTS = [
   "cuotly_payment_final_notice",
   "cuotly_space_archived",
   "cuotly_space_reactivated",
-  // Migración 91 (Fase 4, Hito 19) · alguien de Cuotly ha entrado en el
+  // Migración 91 (Fase 4, Hito 19) · alguien de Restavor web ha entrado en el
   // espacio en Modo soporte (RN-ADM-08). A los propietarios, obligatorio.
   "support_session_started",
   // Migración 92 (Fase 4, Hito 20) · el espacio cambia de dueño, o su
   // dueño lo archiva (RN-CIC-15). Los dos, obligatorios.
   "space_ownership_transferred",
   "space_archived_by_owner",
-  // Migración 93 (Fase 4, Hito 21) · una incidencia a Cuotly abierta,
+  // Migración 93 (Fase 4, Hito 21) · una incidencia a Restavor web abierta,
   // movida de estado o contestada (RN-SOP-15). Ninguno obligatorio: no
   // son seguridad ni pérdida de acceso.
   "incident_opened",
   "incident_updated",
   "incident_replied",
   // Migración 95 (Fase 4, después del Hito 22; decisión 38) · el
-  // almacenamiento incluido en el plan de Cuotly al 80 % y al 100 %
-  // (RN-SUB-13; al 100 % también a Cuotly, porque lo que pasa de lo
+  // almacenamiento incluido en el plan de Restavor web al 80 % y al 100 %
+  // (RN-SUB-13; al 100 % también a Restavor web, porque lo que pasa de lo
   // incluido se presupuesta aparte), y el incidente de seguridad de §142
   // (RN-ADM-13), obligatorio.
   "storage_threshold_80",
   "storage_threshold_100",
   "security_incident",
-  // Migración 141 (decisión 81, RN-ADM-21) · Cuotly ha eliminado el espacio
+  // Migración 141 (decisión 81, RN-ADM-21) · Restavor web ha eliminado el espacio
   // o el restaurante. Los dos, obligatorios: es pérdida de acceso.
   "space_deleted_by_platform",
   "establishment_deleted_by_platform",
@@ -133,7 +133,7 @@ export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];
 
 /**
  * RN-NOT-03: "seguridad, pérdida de acceso, impagos graves y vencimientos
- * críticos **no pueden desactivarse** dentro de Cuotly".
+ * críticos **no pueden desactivarse** dentro de Restavor web".
  *
  * Los vencimientos críticos son los plazos al 100 %: pasado ese punto el
  * incumplimiento ya ocurrió. Los impagos graves son los dos estados en los
@@ -152,7 +152,7 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   // recordatorios y se pueden apagar.
   "cuotly_payment_final_notice",
   "cuotly_space_archived",
-  // RN-ADM-08: que alguien de Cuotly haya entrado en tu espacio es
+  // RN-ADM-08: que alguien de Restavor web haya entrado en tu espacio es
   // seguridad (§137, "cambios sensibles").
   "support_session_started",
   // RN-CIC-15: cambiar de dueño es un cambio sensible de §137, y el
@@ -164,7 +164,7 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   // primera palabra de RN-NOT-03. Los dos avisos de almacenamiento no:
   // pasarse no bloquea nada (decisión 38).
   "security_incident",
-  // RN-ADM-21 (decisión 81): que Cuotly elimine tu espacio o tu restaurante
+  // RN-ADM-21 (decisión 81): que Restavor web elimine tu espacio o tu restaurante
   // es perder el acceso, la segunda palabra de RN-NOT-03.
   "space_deleted_by_platform",
   "establishment_deleted_by_platform",
@@ -302,7 +302,7 @@ export function deepLinkFor(spaceSlug: string, entity: DeepLinkEntity, entityId:
       // La ficha del equipo; al restaurante lo reenvía a su facturación.
       return `/espacios/${spaceSlug}/finanzas/presupuestos/${entityId}`;
     case "cuotly_charge":
-      // La suscripción de Cuotly del espacio, en sus ajustes (Hito 18). La
+      // La suscripción de Restavor web del espacio, en sus ajustes (Hito 18). La
       // pantalla llega con el panel del Hito 19.
       return `/espacios/${spaceSlug}/ajustes/suscripcion`;
     case "incident":
@@ -351,7 +351,7 @@ export function deliveryStatusAfterFailure(attempts: number): "pending" | "dead"
  * Esto existe por un fallo real: del 10/09 al 21/09/2026, `RESEND_FROM` en
  * producción tenía un valor que Resend rechaza con un 422 de formato, y los
  * 211 avisos que había en cola fallaron uno por uno sin que nadie se
- * enterara. El aviso dentro de Cuotly sí llegaba, así que nada parecía
+ * enterara. El aviso dentro de Restavor web sí llegaba, así que nada parecía
  * roto.
  *
  * Lo que convierte ese despiste en pérdida de datos es la combinación con
@@ -401,7 +401,7 @@ export function normalizeMailFrom(raw: string | undefined | null): string | null
  * §18, filas 3 y 4 · el cliente también recibe avisos, y no los mismos que
  * el equipo.
  *
- *   · "Inicio de un trabajo → visible **dentro** de Cuotly para el
+ *   · "Inicio de un trabajo → visible **dentro** de Restavor web para el
  *     cliente, sin correo ni push".
  *   · "Publicación → cliente y supervisión" (esta sí sale por correo).
  *
@@ -487,7 +487,7 @@ export function jobEventClientRecipients(
 }
 
 /**
- * §18 distingue entre "visible dentro de Cuotly" y "visible + correo". Hoy
+ * §18 distingue entre "visible dentro de Restavor web" y "visible + correo". Hoy
  * la única fila que pide lo primero sin lo segundo es el inicio de un
  * trabajo mirado desde el lado del cliente; para el equipo ese mismo
  * evento sí sale por correo.

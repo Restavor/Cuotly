@@ -9,7 +9,7 @@ import { ClientQuoteCard } from "../ClientQuoteCard";
 /**
  * R27 · facturas y presupuestos del restaurante.
  *
- * Facturas: Cuotly todavía no las emite. La numeración fiscal es parte del
+ * Facturas: Restavor web todavía no las emite. La numeración fiscal es parte del
  * bloque legal aplazado (CLAUDE.md, "No inventes lo que está pendiente"),
  * y una "FAC-2026-010" con emisor y CIF de relleno sería exactamente el
  * dato ficticio que no se enseña. La pestaña lo dice.

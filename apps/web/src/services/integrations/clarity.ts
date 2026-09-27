@@ -32,7 +32,7 @@ interface ClarityMetric {
   information?: Record<string, unknown>[];
 }
 
-/** Métrica de Clarity → campo de `information` → métrica de Cuotly y unidad. */
+/** Métrica de Clarity → campo de `information` → métrica de Restavor web y unidad. */
 const FIELDS: readonly [string, string, string, string | null][] = [
   ["Traffic", "totalSessionCount", "sessions", null],
   ["Traffic", "totalBotSessionCount", "bot_sessions", null],

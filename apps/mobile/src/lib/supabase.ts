@@ -26,7 +26,7 @@ export const supabase = createClient<Database>(
 );
 
 /**
- * La dirección de la web de Cuotly, para lo que la app no hace por sí
+ * La dirección de la web de Restavor web, para lo que la app no hace por sí
  * misma: subir archivos pasa por `/api/movil/archivos` (RN-MOV-07) y las
  * pantallas que no están en la app dicen dónde están (RN-MOV-03).
  */

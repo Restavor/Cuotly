@@ -1,5 +1,5 @@
 /**
- * `src/core/support.ts` — el soporte de Cuotly, el centro de ayuda y la
+ * `src/core/support.ts` — el soporte de Restavor web, el centro de ayuda y la
  * página de estado (PRD §34, RN-SOP; §131, §132, §133 y §157 de la
  * maestra; Fase 4, Hito 21). Lógica de dominio pura, sin Supabase, sin
  * Next y sin React (CLAUDE.md).
@@ -84,14 +84,14 @@ export function isIncidentState(value: string): value is IncidentState {
   return (INCIDENT_STATES as readonly string[]).includes(value);
 }
 
-/** Los dos lados de una incidencia: el espacio que la abre y Cuotly. */
+/** Los dos lados de una incidencia: el espacio que la abre y Restavor web. */
 export const INCIDENT_SIDES = ["space", "platform"] as const;
 export type IncidentSide = (typeof INCIDENT_SIDES)[number];
 
 /**
  * RN-SOP-04 · la misma tabla que `incident_transition_allowed()`.
  *
- *   · Cuotly lleva la incidencia por los estados de trabajo.
+ *   · Restavor web lleva la incidencia por los estados de trabajo.
  *   · "Necesita información" devuelve la pelota al espacio, que al
  *     contestar la deja en revisión.
  *   · De "resuelta" el espacio cierra (conforme) o reabre.
@@ -187,7 +187,7 @@ export function incidentPriorityFor(
   return "standard";
 }
 
-/** El orden de la bandeja de Cuotly: primero lo que más urge. */
+/** El orden de la bandeja de Restavor web: primero lo que más urge. */
 export function incidentPriorityRank(priority: IncidentPriority | null): number {
   switch (priority) {
     case "critical":
@@ -202,7 +202,7 @@ export function incidentPriorityRank(priority: IncidentPriority | null): number 
 }
 
 /**
- * §131 · lo que "Cuotly puede recoger informando al usuario". Las cuatro
+ * §131 · lo que "Restavor web puede recoger informando al usuario". Las cuatro
  * claves, y ninguna más: `open_incident()` descarta el resto aunque
  * llegue. La pantalla enseña estos cuatro valores ANTES de enviar.
  */
@@ -219,11 +219,11 @@ export function pickClientContext(raw: Readonly<Record<string, unknown>>): Clien
   return out;
 }
 
-/** RN-SOP-06 · §132 es el horario de Bosco: la zona es la de Cuotly, no la del espacio. */
+/** RN-SOP-06 · §132 es el horario de Bosco: la zona es la de Restavor web, no la del espacio. */
 export const SUPPORT_TIMEZONE = "Europe/Madrid";
 
 /**
- * El reloj humano, con los festivos de Cuotly (RN-SOP-06). Es el
+ * El reloj humano, con los festivos de Restavor web (RN-SOP-06). Es el
  * `supportCalendar()` de la Fase 1 con la zona ya puesta: la lista de
  * festivos la trae quien llama, del servidor, y nace vacía.
  */
@@ -239,7 +239,7 @@ export function supportIsOpenAt(at: Date, holidays: readonly string[] = []): boo
 export const STATUS_COMPONENTS = ["app", "auth", "files", "notifications", "integrations"] as const;
 export type StatusComponent = (typeof STATUS_COMPONENTS)[number];
 
-/** RN-SOP-13 · lo que Cuotly puede declarar sobre un componente. */
+/** RN-SOP-13 · lo que Restavor web puede declarar sobre un componente. */
 export const STATUS_SEVERITIES = ["degraded", "outage", "maintenance"] as const;
 export type StatusSeverity = (typeof STATUS_SEVERITIES)[number];
 
@@ -272,7 +272,7 @@ export interface ComponentSnapshot {
 }
 
 /**
- * Lo declarado manda sobre lo medido: si Cuotly dice que hay una caída,
+ * Lo declarado manda sobre lo medido: si Restavor web dice que hay una caída,
  * hay una caída aunque el contador diga otra cosa. Sin declaración y sin
  * medición, "sin medición automática" — nunca "operativo" por defecto.
  */

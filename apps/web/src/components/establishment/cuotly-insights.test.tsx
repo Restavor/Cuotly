@@ -7,7 +7,7 @@ import { SourcesStatusTable, insightsSince } from "./DigitalSections";
 import type { DigitalDataView } from "./integrations-load";
 
 /**
- * RN-INT-09 (decisión 48) · "Cuotly Insights" es el nombre del resumen
+ * RN-INT-09 (decisión 48) · "Restavor web Insights" es el nombre del resumen
  * propio, no una fuente.
  *
  * Lo que esta suite vigila es la tentación de copiar el diseño literal:

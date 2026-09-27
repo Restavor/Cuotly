@@ -176,7 +176,7 @@ describe("la vista previa de las cifras (§94, CA-20)", () => {
     expect(screen.queryByText(t.sections.digital)).not.toBeInTheDocument();
   });
 
-  it("el texto que escribió una persona se enseña tal cual: Cuotly no redacta nada", () => {
+  it("el texto que escribió una persona se enseña tal cual: Restavor web no redacta nada", () => {
     render(<ReportFigures snapshot={snapshot} />);
 
     expect(screen.getByText("Agosto flojo, como todos los agostos.")).toBeInTheDocument();

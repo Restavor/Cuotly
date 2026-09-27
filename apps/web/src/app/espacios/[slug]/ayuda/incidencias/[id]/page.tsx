@@ -17,7 +17,7 @@ import { SpaceIncidentForms } from "./SpaceIncidentForms";
 
 /**
  * Una incidencia vista desde el espacio (RN-SOP-07): el hilo enseña de qué
- * lado vino cada mensaje —"Cuotly" o "Tu espacio"— y nunca quién de Cuotly
+ * lado vino cada mensaje —"Restavor web" o "Tu espacio"— y nunca quién de Restavor web
  * lo escribió: esa columna está revocada, y aquí ni se pide.
  */
 export const dynamic = "force-dynamic";

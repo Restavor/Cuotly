@@ -11,7 +11,7 @@ import { searchEverything } from "../espacios/[slug]/shell-actions";
 
 /**
  * El armazón del contexto global (PRD §36, vistas G01 a G08): la zona de
- * Cuotly que ocurre **fuera de todo espacio y de todo panel**.
+ * Restavor web que ocurre **fuera de todo espacio y de todo panel**.
  *
  * Es **el mismo armazón** que el de un espacio, con otros destinos. Hasta
  * el 20/09/2026 era otro distinto —una tarjeta blanca con borde a la
@@ -20,7 +20,7 @@ import { searchEverything } from "../espacios/[slug]/shell-actions";
  * aquí entra todo el mundo al identificarse, **la primera pantalla que se
  * veía era la que menos se parecía al diseño**. El diseño enseña la misma
  * barra lateral verde en sus 157 vistas; tener dos armazones era la razón
- * de fondo por la que entrar en Cuotly no se parecía a la maqueta.
+ * de fondo por la que entrar en Restavor web no se parecía a la maqueta.
  *
  * Solo cuelgan de aquí las pantallas de §36. Los espacios
  * (`/espacios/...`), el panel de Administración y la página pública de

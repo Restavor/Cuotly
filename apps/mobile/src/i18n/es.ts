@@ -15,7 +15,7 @@ export const es = {
    * El bloque `auth` que había aquí se ha ido entero al catálogo de la web
    * (`web.auth.login` y `web.auth.signup`), que es donde manda RN-MOV-11.
    * Eran textos repetidos, y repetidos se quedaron atrás: seguían diciendo
-   * "Crear cuenta en Cuotly" y "Regístrate" después de que la decisión 41
+   * "Crear cuenta en Restavor web" y "Regístrate" después de que la decisión 41
    * cerrara el registro abierto (§37).
    */
 
@@ -71,7 +71,7 @@ export const es = {
   push: {
     explainTitle: "Avisos en el teléfono",
     explainBody:
-      "Cuotly puede avisarte aquí cuando llegue una solicitud, cuando un plazo esté cerca o cuando el restaurante conteste. El aviso solo dice qué ha pasado y en qué espacio: el detalle está dentro, con tu sesión.",
+      "Restavor web puede avisarte aquí cuando llegue una solicitud, cuando un plazo esté cerca o cuando el restaurante conteste. El aviso solo dice qué ha pasado y en qué espacio: el detalle está dentro, con tu sesión.",
     explainAccept: "Activar avisos",
     explainLater: "Ahora no",
     deniedBanner: "Los avisos del teléfono están desactivados. Sigues recibiendo el correo.",
@@ -100,8 +100,8 @@ export const es = {
     disable: "Desactivar bloqueo",
     notAvailable: "Este dispositivo no tiene huella ni cara configuradas.",
     unlock: "Desbloquear",
-    prompt: "Desbloquear Cuotly",
-    lockedTitle: "Cuotly está bloqueada",
+    prompt: "Desbloquear Restavor web",
+    lockedTitle: "Restavor web está bloqueada",
   },
 
   /** RN-MOV-07 · permisos, pedidos al usarlos. */
@@ -120,8 +120,8 @@ export const es = {
   /** RN-MOV-03 · lo que la app no trae dice dónde está. */
   notInApp: {
     title: "Esto se hace desde la web",
-    body: (what: string) => `${what} no está en la app: se gestiona desde la web de Cuotly, en el ordenador.`,
-    adminPanel: "El panel de Administración de Cuotly y Modo soporte son de escritorio.",
+    body: (what: string) => `${what} no está en la app: se gestiona desde la web de Restavor web, en el ordenador.`,
+    adminPanel: "El panel de Administración de Restavor web y Modo soporte son de escritorio.",
   },
 
   home: {
@@ -279,8 +279,8 @@ export const es = {
   settings: {
     title: "Ajustes",
     notifications: "Avisos",
-    notificationsHint: "Por evento. Dentro de Cuotly, por correo y en el teléfono.",
-    inApp: "En Cuotly",
+    notificationsHint: "Por evento. Dentro de Restavor web, por correo y en el teléfono.",
+    inApp: "En Restavor web",
     email: "Correo",
     saved: "Guardado.",
     account: "Cuenta",

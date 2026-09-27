@@ -1,4 +1,4 @@
-// Generado a partir del esquema real del proyecto de Supabase de Cuotly
+// Generado a partir del esquema real del proyecto de Supabase de Restavor web
 // (generate_typescript_types, 20/09/2026), con las 111 migraciones del
 // repositorio aplicadas.
 //
@@ -10508,7 +10508,7 @@ export type Database = {
           can_delete_accounts: boolean;
           can_manage_subscriptions: boolean;
           can_support: boolean;
-          /** Migración 140 (RN-ADM-18) · cuándo la eliminó Cuotly; `null` si no lo está. */
+          /** Migración 140 (RN-ADM-18) · cuándo la eliminó Restavor web; `null` si no lo está. */
           closed_at: string | null;
           created_at: string;
           email: string;

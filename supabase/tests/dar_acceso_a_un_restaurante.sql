@@ -187,7 +187,7 @@ begin
       -- las dos puertas —el equipo y el propietario del panel— y por eso
       -- no nombra al propietario del espacio. El de GRUPO sigue siendo
       -- solo del equipo y conserva el suyo.
-    if sqlerrm not like '%cuenta de Cuotly%' then
+    if sqlerrm not like '%cuenta de Restavor web%' then
       v_error := v_error || ' / ha fallado por otro motivo: ' || sqlerrm;
     end if;
   end;

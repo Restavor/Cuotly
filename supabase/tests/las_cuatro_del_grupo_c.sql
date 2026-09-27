@@ -598,7 +598,7 @@ begin
   v_backup := public.create_establishment_backup((select v from gc_ids where k = 'rest'));
   insert into gc_ids values ('copia', v_backup);
 
-  -- RN-BCK-01 · lo que hay DENTRO de Cuotly. La solicitud que viajó tiene
+  -- RN-BCK-01 · lo que hay DENTRO de Restavor web. La solicitud que viajó tiene
   -- que estar: si no, la copia no respalda el trabajo del restaurante.
   select content into v_contenido from public.establishment_backups where id = v_backup;
   if jsonb_array_length(v_contenido -> 'requests') < 1 then

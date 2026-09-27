@@ -5,7 +5,7 @@
 -- zona horaria del espacio. Las pantallas del restaurante no podían
 -- cumplirlo —`spaces_select` exige ser miembro del espacio— y tenían
 -- `"Europe/Madrid"` escrito en el código, que da la hora correcta
--- mientras Cuotly sea solo Restavor. Por eso el fixture crea un espacio
+-- mientras Restavor web sea solo Restavor. Por eso el fixture crea un espacio
 -- en **Atlantic/Canary**: si la función devolviera el valor por defecto
 -- de la columna en vez del del espacio, o si alguien volviera a escribir
 -- la zona a mano, aquí se ve. Una suite montada sobre un espacio en

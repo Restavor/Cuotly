@@ -12,7 +12,7 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
  * lo cumplen; las del restaurante no pueden —`spaces_select` exige ser
  * miembro del espacio, y un restaurante no lo es—, así que las cuatro que
  * tiene acabaron con `"Europe/Madrid"` escrito en el código. Eso da la
- * hora correcta mientras Cuotly sea solo Restavor, y deja de darla en
+ * hora correcta mientras Restavor web sea solo Restavor, y deja de darla en
  * cuanto hay un espacio en otra zona, sin que nada falle de forma
  * visible. `establishment_timezone()` (migración 83) da ese dato y solo
  * ese, comprobando que quien pregunta es de ese restaurante.

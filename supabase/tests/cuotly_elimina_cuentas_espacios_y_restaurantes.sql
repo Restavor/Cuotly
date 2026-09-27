@@ -1,19 +1,19 @@
 -- ============================================================
--- Suite 79 · Cuotly elimina cuentas, espacios y restaurantes
+-- Suite 79 · Restavor web elimina cuentas, espacios y restaurantes
 -- (migraciones 140 y 141, decisión 81, PRD §32, RN-ADM-14 a RN-ADM-21)
 -- ============================================================
 --
 -- Lo que vigila:
 --
---   · RN-ADM-14 · lo hacen Bosco y los Administradores de Cuotly con el
+--   · RN-ADM-14 · lo hacen Bosco y los Administradores de Restavor web con el
 --     permiso `can_delete_accounts`; sin el permiso, o sin la sesión en
 --     dos pasos, nadie. Lo concede Bosco.
 --   · RN-ADM-15 · todo con motivo.
 --   · RN-ADM-16 · un espacio eliminado queda en `archived_by_platform`:
 --     solo lectura, su dueño no lo restaura, los barridos no lo mueven y
---     solo Cuotly lo recupera, al modo que tenía.
+--     solo Restavor web lo recupera, al modo que tenía.
 --   · RN-ADM-17 · un restaurante eliminado queda archivado y marcado; el
---     equipo no lo reactiva ni por función ni por `update`; Cuotly lo
+--     equipo no lo reactiva ni por función ni por `update`; Restavor web lo
 --     recupera al estado en que lo encontró.
 --   · RN-ADM-18 · una cuenta eliminada no entra (`banned_until`, sesiones
 --     cerradas), sale de sus equipos y de sus restaurantes, y todo queda
@@ -22,7 +22,7 @@
 --     propiedad pasa al administrador elegido o a uno al azar; a un
 --     trabajador solo si no hay administradores; sin nadie, el espacio se
 --     elimina con la cuenta.
---   · RN-ADM-20 · Bosco no se elimina; a un Administrador de Cuotly solo
+--   · RN-ADM-20 · Bosco no se elimina; a un Administrador de Restavor web solo
 --     lo elimina Bosco, retirándole el rol en el mismo acto.
 --   · RN-ADM-21 · se avisa: a la cuenta, por correo ("su cuenta ha sido
 --     eliminada"); al equipo del espacio y a quien lleva el restaurante,
@@ -196,7 +196,7 @@ set role authenticated;
 do $$
 begin
   begin
-    perform public.platform_delete_space('e7910000-0000-0000-0000-00000000000a', 'no soy Cuotly');
+    perform public.platform_delete_space('e7910000-0000-0000-0000-00000000000a', 'no soy Restavor web');
     raise exception 'RN-ADM-14 FALLIDO: un usuario eliminó un espacio ajeno' using errcode = 'assert_failure';
   exception when assert_failure then raise; when others then null;
   end;
@@ -249,7 +249,7 @@ begin
   end if;
   if not public.notification_event_is_mandatory('establishment_deleted_by_platform')
      or not public.notification_event_is_mandatory('space_deleted_by_platform') then
-    raise exception 'RN-NOT-03 FALLIDO: perder el acceso por Cuotly se puede desactivar' using errcode = 'assert_failure';
+    raise exception 'RN-NOT-03 FALLIDO: perder el acceso por Restavor web se puede desactivar' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -261,13 +261,13 @@ do $$
 begin
   begin
     perform public.set_establishment_status('e7940000-0000-0000-0000-000000000001', 'active', 'Lo quiero de vuelta');
-    raise exception 'RN-ADM-17 FALLIDO: el equipo reactivó un restaurante que eliminó Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-17 FALLIDO: el equipo reactivó un restaurante que eliminó Restavor web' using errcode = 'assert_failure';
   exception when assert_failure then raise; when others then null;
   end;
   begin
     update public.establishments set platform_archived_at = null where id = 'e7940000-0000-0000-0000-000000000001';
     if (select platform_archived_at from public.establishments where id = 'e7940000-0000-0000-0000-000000000001') is null then
-      raise exception 'RN-ADM-17 FALLIDO: el equipo quitó la marca de Cuotly por PostgREST' using errcode = 'assert_failure';
+      raise exception 'RN-ADM-17 FALLIDO: el equipo quitó la marca de Restavor web por PostgREST' using errcode = 'assert_failure';
     end if;
   exception when assert_failure then raise; when others then null;
   end;
@@ -275,7 +275,7 @@ end $$;
 reset role;
 select set_config('request.jwt.claim.aal', 'aal2', false);
 
--- El segundo restaurante lo archiva el equipo antes; Cuotly lo elimina y
+-- El segundo restaurante lo archiva el equipo antes; Restavor web lo elimina y
 -- al recuperarlo sigue archivado, como lo encontró.
 select set_config('request.jwt.claim.sub', 'e7900000-0000-0000-0000-000000000008', false);
 set role authenticated;
@@ -336,7 +336,7 @@ begin
   -- Los barridos de la suscripción no lo sacan de ahí.
   perform public.set_space_cuotly_status_internal('e7910000-0000-0000-0000-00000000000d', 'active', 'barrido', 'sweep');
   if (select cuotly_status from public.spaces where id = 'e7910000-0000-0000-0000-00000000000d') <> 'archived_by_platform' then
-    raise exception 'RN-ADM-16 FALLIDO: un barrido sacó el espacio del archivo de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-16 FALLIDO: un barrido sacó el espacio del archivo de Restavor web' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -348,7 +348,7 @@ do $$
 begin
   begin
     perform public.restore_space_by_owner('e7910000-0000-0000-0000-00000000000d', 'Es mío');
-    raise exception 'RN-ADM-16 FALLIDO: el dueño restauró un espacio que eliminó Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-16 FALLIDO: el dueño restauró un espacio que eliminó Restavor web' using errcode = 'assert_failure';
   exception when assert_failure then raise; when others then null;
   end;
   begin
@@ -359,7 +359,7 @@ begin
   -- Lo ve en su auditoría.
   if not exists (select 1 from public.audit_log where space_id = 'e7910000-0000-0000-0000-00000000000d'
                  and action = 'space.archived_by_platform') then
-    raise exception 'RN-ADM-16 FALLIDO: el dueño no ve en su auditoría que Cuotly eliminó su espacio' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-16 FALLIDO: el dueño no ve en su auditoría que Restavor web eliminó su espacio' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -378,7 +378,7 @@ begin
 end $$;
 
 -- ============================================================
--- RN-ADM-20 · ni Bosco ni un Administrador de Cuotly se eliminan
+-- RN-ADM-20 · ni Bosco ni un Administrador de Restavor web se eliminan
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'e7900000-0000-0000-0000-000000000002', false);
 set role authenticated;
@@ -391,7 +391,7 @@ begin
   end;
   begin
     perform public.platform_delete_account('e7900000-0000-0000-0000-000000000003', 'Compañero');
-    raise exception 'RN-ADM-20 FALLIDO: se eliminó a un Administrador de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-20 FALLIDO: se eliminó a un Administrador de Restavor web' using errcode = 'assert_failure';
   exception when assert_failure then raise; when others then null;
   end;
   if not (public.platform_account_deletion_preview('e7900000-0000-0000-0000-000000000003') ->> 'protected')::boolean then
@@ -605,7 +605,7 @@ begin
 end $$;
 
 -- ============================================================
--- RN-ADM-20 · Bosco sí elimina a un Administrador de Cuotly
+-- RN-ADM-20 · Bosco sí elimina a un Administrador de Restavor web
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', false);
 set role authenticated;
@@ -622,14 +622,14 @@ begin
     raise exception 'RN-ADM-20 FALLIDO: Bosco se eliminó a sí mismo' using errcode = 'assert_failure';
   exception when assert_failure then raise; when others then null;
   end;
-  perform public.platform_delete_account('e7900000-0000-0000-0000-000000000003', 'Deja Cuotly');
+  perform public.platform_delete_account('e7900000-0000-0000-0000-000000000003', 'Deja Restavor web');
 end $$;
 reset role;
 
 do $$
 begin
   if exists (select 1 from public.platform_roles where user_id = 'e7900000-0000-0000-0000-000000000003') then
-    raise exception 'RN-ADM-20 FALLIDO: eliminado, sigue siendo Administrador de Cuotly' using errcode = 'assert_failure';
+    raise exception 'RN-ADM-20 FALLIDO: eliminado, sigue siendo Administrador de Restavor web' using errcode = 'assert_failure';
   end if;
   if not exists (select 1 from public.audit_log where action = 'platform.admin_revoked'
                  and entity_id = 'e7900000-0000-0000-0000-000000000003')
@@ -641,4 +641,4 @@ end $$;
 
 select set_config('request.jwt.claim.aal', '', false);
 
-\echo 'Suite 79 · Cuotly elimina cuentas, espacios y restaurantes: OK'
+\echo 'Suite 79 · Restavor web elimina cuentas, espacios y restaurantes: OK'

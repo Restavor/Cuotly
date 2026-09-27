@@ -161,7 +161,7 @@ async function ejecutarTanda(request: Request) {
   const mail = await drainDeliveryQueue(gateway, {
     mail: createResendTransport(
       process.env.RESEND_API_KEY,
-      process.env.RESEND_FROM ?? "Cuotly <avisos@cuotly.com>",
+      process.env.RESEND_FROM ?? "Restavor web <avisos@cuotly.com>",
     ),
     mailComposer: createMailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
     push: createExpoPushTransport(process.env.EXPO_PUSH_ACCESS_TOKEN),
@@ -180,7 +180,7 @@ async function ejecutarTanda(request: Request) {
     createPlatformEmailGateway(client),
     createResendTransport(
       process.env.RESEND_API_KEY,
-      process.env.RESEND_FROM ?? "Cuotly <avisos@cuotly.com>",
+      process.env.RESEND_FROM ?? "Restavor web <avisos@cuotly.com>",
     ),
     createPlatformEmailComposer(process.env.NEXT_PUBLIC_SITE_URL ?? ""),
   );

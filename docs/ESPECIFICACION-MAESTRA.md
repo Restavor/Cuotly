@@ -1,7 +1,7 @@
-# CUOTLY — ESPECIFICACIÓN MAESTRA ACTUALIZADA
+# RESTAVOR WEB — ESPECIFICACIÓN MAESTRA ACTUALIZADA
 
-**Producto:** Cuotly  
-**Marca:** Cuotly · by Restavor  
+**Producto:** Restavor web  
+**Marca:** Restavor web  
 **Propietario del producto:** Bosco Núñez  
 **Empresa creadora:** Restavor  
 **Estado del documento:** Especificación funcional y técnica consolidada  
@@ -44,11 +44,11 @@
 ---
 ## 0. Propósito, autoridad y forma de usar este documento
 
-Este documento reúne las decisiones vigentes de Cuotly después de revisar y ampliar la documentación original. Es la fuente maestra para diseñar, dividir en versiones y desarrollar el producto.
+Este documento reúne las decisiones vigentes de Restavor web después de revisar y ampliar la documentación original. Es la fuente maestra para diseñar, dividir en versiones y desarrollar el producto.
 
 Cuando este documento contradiga textos, mockups o conversaciones anteriores, prevalece este documento. Entre otras cosas, sustituye expresamente decisiones antiguas sobre:
 
-- una concepción de Cuotly limitada exclusivamente a Restavor;
+- una concepción de Restavor web limitada exclusivamente a Restavor;
 - 25 actualizaciones de Menú Diario, que pasan a ser 30;
 - horarios contractuales anteriores;
 - precios antiguos de los planes de mantenimiento;
@@ -65,9 +65,9 @@ Este documento define el producto completo conocido, no la primera versión. La 
 
 # PARTE I — IDENTIDAD, VISIÓN Y ALCANCE
 
-## 1. Qué es Cuotly
+## 1. Qué es Restavor web
 
-Cuotly es una plataforma SaaS multiempresa para organizar y controlar el mantenimiento digital de restaurantes y otros establecimientos.
+Restavor web es una plataforma SaaS multiempresa para organizar y controlar el mantenimiento digital de restaurantes y otros establecimientos.
 
 Debe permitir que un proveedor de mantenimiento gestione desde un único lugar:
 
@@ -90,7 +90,7 @@ Debe permitir que un proveedor de mantenimiento gestione desde un único lugar:
 - Menú Diario;
 - actividad e historial.
 
-Desde el lado del restaurante, Cuotly debe permitir conocer con claridad:
+Desde el lado del restaurante, Restavor web debe permitir conocer con claridad:
 
 - qué tiene contratado;
 - qué consumos ha utilizado y cuáles le quedan;
@@ -102,19 +102,19 @@ Desde el lado del restaurante, Cuotly debe permitir conocer con claridad:
 - qué oportunidades han sido aprobadas para mostrarle;
 - qué menús ha preparado o publicado.
 
-Cuotly no es únicamente un gestor de tareas. Su función principal es responder de forma sencilla a dos preguntas:
+Restavor web no es únicamente un gestor de tareas. Su función principal es responder de forma sencilla a dos preguntas:
 
 1. **¿Qué está pasando ahora?**
 2. **¿Qué necesita atención o una decisión?**
 
 ## 2. Evolución de Restavor a plataforma multiempresa
 
-Cuotly nace para Restavor, pero no está limitado a Restavor.
+Restavor web nace para Restavor, pero no está limitado a Restavor.
 
 La estructura definitiva es:
 
 ```text
-Plataforma Cuotly
+Plataforma Restavor web
 └── Espacios de mantenimiento
     ├── Espacio de Restavor
     ├── Espacio de otro proveedor
@@ -130,8 +130,8 @@ Reglas:
 - Cualquier usuario registrado puede solicitar la creación de su propio espacio.
 - Bosco aprueba o rechaza inicialmente esas solicitudes.
 - Cada nuevo espacio utiliza una plantilla genérica y configura sus propios planes.
-- Todos los espacios conservan la identidad `Cuotly · by Restavor`.
-- Un espacio puede personalizar nombre y logotipo, pero no convertir Cuotly en una aplicación de marca blanca.
+- Todos los espacios conservan la identidad `Restavor web`.
+- Un espacio puede personalizar nombre y logotipo, pero no convertir Restavor web en una aplicación de marca blanca.
 - Un mismo usuario puede pertenecer a varios espacios, grupos o establecimientos con papeles diferentes.
 - Un establecimiento solo puede estar activo en un espacio de mantenimiento a la vez.
 - Se permitirá transferir un establecimiento entre espacios conservando el historial que corresponda.
@@ -156,7 +156,7 @@ Los cambios importantes crean versiones o registros de auditoría. No se debe pe
 
 ### 3.5 Automatización con control humano
 
-Cuotly puede recomendar, clasificar, detectar y preparar, pero las decisiones comerciales u operativas sensibles mantienen aprobación humana cuando se haya definido.
+Restavor web puede recomendar, clasificar, detectar y preparar, pero las decisiones comerciales u operativas sensibles mantienen aprobación humana cuando se haya definido.
 
 ### 3.6 No inventar datos
 
@@ -176,11 +176,11 @@ El restaurante se comunica con el **Equipo de mantenimiento**. No ve nombres, fo
 
 # PARTE II — MODELO COMERCIAL
 
-## 4. Planes SaaS de Cuotly para espacios de mantenimiento
+## 4. Planes SaaS de Restavor web para espacios de mantenimiento
 
-Estos planes regulan lo que paga el propietario de un espacio por utilizar Cuotly. No deben confundirse con los planes que ese espacio vende a sus restaurantes.
+Estos planes regulan lo que paga el propietario de un espacio por utilizar Restavor web. No deben confundirse con los planes que ese espacio vende a sus restaurantes.
 
-### 4.1 Cuotly Pro
+### 4.1 Restavor web Pro
 
 - **Precio:** 149 € + IVA al mes.
 - **Periodicidad:** mensual.
@@ -194,7 +194,7 @@ Estos planes regulan lo que paga el propietario de un espacio por utilizar Cuotl
 - **Usuario interno adicional:** 15 € + IVA al mes.
 - Sin API pública incluida.
 
-### 4.2 Cuotly Agency
+### 4.2 Restavor web Agency
 
 - **Precio:** 499 € + IVA al mes.
 - **Periodicidad:** mensual.
@@ -204,7 +204,7 @@ Estos planes regulan lo que paga el propietario de un espacio por utilizar Cuotl
 - **Usuarios internos y de clientes:** ilimitados bajo uso razonable.
 - **Almacenamiento incluido:** 100 GB.
 - Incluye informes y capacidades avanzadas.
-- Tiene prioridad superior en el soporte de Cuotly.
+- Tiene prioridad superior en el soporte de Restavor web.
 - La API y los webhooks se contemplan como posibilidad futura, no como función actual.
 
 ### 4.2.1 Reglas de suscripción por espacio
@@ -212,13 +212,13 @@ Estos planes regulan lo que paga el propietario de un espacio por utilizar Cuotl
 - Cada suscripción cubre un espacio de mantenimiento.
 - Una misma persona puede ser propietaria de varios espacios, cada uno con su suscripción.
 - Los restaurantes pagan al propietario de su espacio por los servicios de mantenimiento.
-- Los propietarios de espacios pagan a Bosco por utilizar Cuotly.
-- Cuotly no cobra las cuotas que los espacios facturan a sus restaurantes.
+- Los propietarios de espacios pagan a Bosco por utilizar Restavor web.
+- Restavor web no cobra las cuotas que los espacios facturan a sus restaurantes.
 - El uso futuro de IA se pagará aparte por el propietario del espacio; no está incluido de forma ilimitada en Pro o Agency.
 
 ### 4.3 Significado de “ilimitado”
 
-“Ilimitado” no significa uso abusivo o técnicamente infinito. Cuotly medirá consumo de almacenamiento, tráfico y actividad.
+“Ilimitado” no significa uso abusivo o técnicamente infinito. Restavor web medirá consumo de almacenamiento, tráfico y actividad.
 
 Ante un uso anormal:
 
@@ -238,16 +238,16 @@ Ante un uso anormal:
 - Si termina sin pago, el espacio queda archivado en modo lectura.
 - Puede pagarse y reactivarse durante 30 días; después se aplica la eliminación operativa prevista.
 
-### 4.5 Pagos de Cuotly
+### 4.5 Pagos de Restavor web
 
-- Cuotly no utilizará Stripe inicialmente.
+- Restavor web no utilizará Stripe inicialmente.
 - Métodos: transferencia bancaria o Bizum.
-- Cuotly genera importe, concepto y referencia.
+- Restavor web genera importe, concepto y referencia.
 - El propietario puede adjuntar justificante.
-- Bosco o un Administrador de Cuotly autorizado confirma manualmente el pago.
+- Bosco o un Administrador de Restavor web autorizado confirma manualmente el pago.
 - Los avisos se envían 3 días antes, el día del vencimiento, a las 24 h, a las 48 h y antes de las 72 h.
 
-### 4.6 Impago de Cuotly
+### 4.6 Impago de Restavor web
 
 - Desde vencimiento hasta +72 horas naturales: periodo de gracia.
 - A las 72 horas: espacio **Archivado por impago** y acceso de solo lectura.
@@ -257,7 +257,7 @@ Ante un uso anormal:
 - Transcurridos 30 días sin pago, se elimina la información operativa.
 - Los registros que deban conservarse por obligaciones legales quedan aislados; la regla jurídica exacta está pendiente de revisión profesional.
 
-### 4.7 Cambio de plan Cuotly
+### 4.7 Cambio de plan Restavor web
 
 - Pro → Agency: inmediato, con diferencia proporcional.
 - Agency → Pro: en la siguiente renovación.
@@ -357,7 +357,7 @@ Todos los precios son más IVA. Cada establecimiento contrata su propio plan, in
 La palabra “backup” solo puede utilizarse para aquello que realmente sea recuperable.
 
 - Se guardarán contenidos, recursos, configuración y archivos que la plataforma externa permita exportar.
-- Si LandingSite u otra plataforma no permite exportar una web completa, Cuotly no afirmará que existe una copia completa restaurable.
+- Si LandingSite u otra plataforma no permite exportar una web completa, Restavor web no afirmará que existe una copia completa restaurable.
 - Debe mostrarse qué se respaldó, cuándo, por quién y con qué limitaciones.
 
 ## 6. Menú Diario de Restavor
@@ -408,7 +408,7 @@ Menú Diario es un servicio independiente de los planes de mantenimiento.
 Cuando se intenta añadir un correo ya registrado:
 
 - No se crea otra cuenta.
-- Se muestra `Este usuario ya está registrado en Cuotly`.
+- Se muestra `Este usuario ya está registrado en Restavor web`.
 - Aparece la acción **Añadir al espacio**.
 - Se asignan rol y establecimientos.
 - El usuario recibe una notificación sobre el nuevo acceso.
@@ -421,11 +421,11 @@ Cuando se intenta añadir un correo ya registrado:
 
 ## 8. Selector de contexto
 
-Todos los usuarios entran primero en **Inicio**, pero antes Cuotly determina el contexto.
+Todos los usuarios entran primero en **Inicio**, pero antes Restavor web determina el contexto.
 
 - Con un solo contexto accesible: entrada automática.
 - Con varios contextos: selector inicial.
-- Bosco siempre ve el selector para poder elegir Administración de Cuotly, Restavor, otros espacios o paneles de restaurante.
+- Bosco siempre ve el selector para poder elegir Administración de Restavor web, Restavor, otros espacios o paneles de restaurante.
 - Existe una acción persistente **Cambiar de espacio** que vuelve al selector.
 - El selector muestra nombre, logotipo, tipo, rol y alertas rápidas.
 - Pulsar una alerta abre el elemento exacto después de comprobar permisos.
@@ -470,7 +470,7 @@ Estados:
 - Aprobada;
 - Rechazada con motivo.
 
-Inicialmente Bosco es el único aprobador. Más adelante podrá delegar mediante permisos de Administrador de Cuotly.
+Inicialmente Bosco es el único aprobador. Más adelante podrá delegar mediante permisos de Administrador de Restavor web.
 
 ---
 
@@ -478,9 +478,9 @@ Inicialmente Bosco es el único aprobador. Más adelante podrá delegar mediante
 
 ## 11. Roles de plataforma
 
-### 11.1 Propietario de Cuotly
+### 11.1 Propietario de Restavor web
 
-Bosco es el Propietario de Cuotly y dispone del control global.
+Bosco es el Propietario de Restavor web y dispone del control global.
 
 Puede:
 
@@ -489,9 +489,9 @@ Puede:
 - ver métricas globales;
 - administrar la plataforma;
 - entrar en Modo soporte;
-- nombrar Administradores de Cuotly en el futuro.
+- nombrar Administradores de Restavor web en el futuro.
 
-### 11.2 Administrador de Cuotly
+### 11.2 Administrador de Restavor web
 
 Rol futuro y configurable por permisos.
 
@@ -506,7 +506,7 @@ Puede llegar a:
 
 No puede:
 
-- transferir la propiedad de Cuotly;
+- transferir la propiedad de Restavor web;
 - modificar datos personales de Bosco;
 - eliminar la plataforma;
 - concederse privilegios superiores.
@@ -552,7 +552,7 @@ No puede:
 - Puede retirarse antes o ampliarse.
 - Principal y sustituto reciben los avisos correspondientes.
 - Solo el propietario del espacio crea o cambia estas relaciones.
-- Al nombrar un administrador, Cuotly ofrece **Asignar trabajador** o **Continuar sin trabajador**.
+- Al nombrar un administrador, Restavor web ofrece **Asignar trabajador** o **Continuar sin trabajador**.
 - Un administrador puede empezar sin supervisados y recibirlos posteriormente.
 
 ## 14. Roles de cliente/restaurante
@@ -591,7 +591,7 @@ Toda comunicación aparece como:
 
 > **Equipo de mantenimiento**
 
-Internamente, Cuotly registra quién realizó cada acción.
+Internamente, Restavor web registra quién realizó cada acción.
 
 ## 16. Estados de miembros internos
 
@@ -643,10 +643,10 @@ Menú principal de escritorio:
 10. Informes.
 11. Equipo.
 12. Planes y servicios.
-13. Agente Cuotly.
+13. Agente Restavor web.
 14. Ajustes.
 
-`Agente Cuotly` aparece en la zona inferior, antes de Ajustes, con la etiqueta `Próximamente`.
+`Agente Restavor web` aparece en la zona inferior, antes de Ajustes, con la etiqueta `Próximamente`.
 
 ## 19. Inicio según rol
 
@@ -855,7 +855,7 @@ Incluye al menos:
 - notas internas;
 - archivos principales.
 
-El propietario puede editar contacto y datos fiscales. Los Editores solo si tienen permiso. Cambiar datos en la ficha de Cuotly no cambia automáticamente contenido público de la web: eso requiere una solicitud.
+El propietario puede editar contacto y datos fiscales. Los Editores solo si tienen permiso. Cambiar datos en la ficha de Restavor web no cambia automáticamente contenido público de la web: eso requiere una solicitud.
 
 ## 29. Notas internas
 
@@ -909,7 +909,7 @@ Flujo base:
 1. El restaurante crea un borrador.
 2. Añade descripción, contexto y archivos.
 3. Envía.
-4. Cuotly analiza y propone clasificación.
+4. Restavor web analiza y propone clasificación.
 5. Propietario o administrador confirma o corrige clasificación y consumo.
 6. Si falta información, se solicita.
 7. El restaurante recibe la propuesta final.
@@ -920,7 +920,7 @@ Flujo base:
 
 ### 33.1 Tres tiempos distintos
 
-Cuotly no debe mezclar:
+Restavor web no debe mezclar:
 
 1. **Primera atención interna:** comienza cuando la solicitud llega al espacio y utiliza 48 horas laborables en Básico, en Impulso o en un establecimiento sin plan de mantenimiento, aunque tenga Menú Diario; utiliza 24 horas laborables en Impulso+, Premium y Premium+. Reciben aviso propietario y administradores; un trabajador solo cuando ya exista asignación válida.
 2. **Inicio operativo:** después de la aceptación final y la asignación, mide el tiempo disponible para pulsar Comenzar.
@@ -1081,7 +1081,7 @@ Ejemplos:
 
 ## 42. Clasificación y aceptación
 
-- Cuotly propone categoría y consumo.
+- Restavor web propone categoría y consumo.
 - Propietario o administrador valida antes de presentarlo al cliente.
 - El cliente acepta la propuesta definitiva.
 - El consumo se registra en esa aceptación.
@@ -1125,7 +1125,7 @@ Este reloj contractual **no se aplica a Menú Diario**. Menú Diario utiliza un 
 
 El cliente no ve que Premium+ se coloque internamente por delante del resto.
 
-Además de los avisos porcentuales generales, cuando queden 2 horas laborables se genera una alerta importante para responsable, supervisor y propietario. Cuando quede 1 hora, Cuotly puede sugerir reasignación. Al vencer, exige intervención.
+Además de los avisos porcentuales generales, cuando queden 2 horas laborables se genera una alerta importante para responsable, supervisor y propietario. Cuando quede 1 hora, Restavor web puede sugerir reasignación. Al vencer, exige intervención.
 
 ## 46. Plazo de ejecución
 
@@ -1148,7 +1148,7 @@ Separado del plazo de inicio:
 3. Prioridad del plan.
 4. Antigüedad entre trabajos comparables.
 
-El propietario puede reordenar manualmente con motivo y auditoría. Cuotly recomienda al trabajador el siguiente trabajo, pero este puede elegir otro autorizado.
+El propietario puede reordenar manualmente con motivo y auditoría. Restavor web recomienda al trabajador el siguiente trabajo, pero este puede elegir otro autorizado.
 
 ## 48. Corrección mínima gratuita
 
@@ -1207,11 +1207,11 @@ Los errores imputables al equipo de mantenimiento se corrigen sin consumir esta 
 
 ### Un único trabajador válido
 
-Si existe exactamente un trabajador activo, disponible, especializado y asignado al restaurante, Cuotly lo asigna automáticamente.
+Si existe exactamente un trabajador activo, disponible, especializado y asignado al restaurante, Restavor web lo asigna automáticamente.
 
 ### Varios trabajadores válidos
 
-Cuotly recomienda uno. El propietario acepta la recomendación o elige otro.
+Restavor web recomienda uno. El propietario acepta la recomendación o elige otro.
 
 Factores conceptuales:
 
@@ -1324,7 +1324,7 @@ Solo propietario y administradores ven comparaciones. No existe ranking público
 
 ## 56. Concepto
 
-El restaurante introduce información y Cuotly genera una plantilla lista para descargar. La publicación en LandingSite es manual mientras no exista API.
+El restaurante introduce información y Restavor web genera una plantilla lista para descargar. La publicación en LandingSite es manual mientras no exista API.
 
 ## 57. Tipos y cantidad de menús
 
@@ -1373,14 +1373,14 @@ Cada menú registra:
 
 1. Restaurante prepara y guarda menú.
 2. Solicita publicación.
-3. Cuotly asigna trabajador de Menú Diario.
+3. Restavor web asigna trabajador de Menú Diario.
 4. El trabajador descarga la plantilla generada.
 5. La sube manualmente a LandingSite.
 6. Pulsa **Marcar como publicado**.
 
 No existe botón Comenzar ni confirmación innecesaria para esta tarea breve.
 
-Al marcar Publicado, Cuotly registra automáticamente:
+Al marcar Publicado, Restavor web registra automáticamente:
 
 - fecha y hora;
 - usuario;
@@ -1475,19 +1475,19 @@ Para cuestiones no vinculadas inicialmente a una solicitud. Puede convertirse en
 
 ## 69. Canales
 
-- Centro dentro de Cuotly.
+- Centro dentro de Restavor web.
 - Correo electrónico.
 - Push móvil.
 - WhatsApp solo como botón de acción manual, no como canal automático.
 
 ## 70. Limitación del push
 
-Cuotly solicita y recomienda activar push, pero iOS y Android permiten al usuario rechazarlo. La aplicación debe seguir funcionando sin push.
+Restavor web solicita y recomienda activar push, pero iOS y Android permiten al usuario rechazarlo. La aplicación debe seguir funcionando sin push.
 
 - Onboarding explica su utilidad.
 - Si se rechaza, aparece aviso persistente.
 - El correo actúa como respaldo.
-- Las alertas críticas no pueden desactivarse dentro de Cuotly.
+- Las alertas críticas no pueden desactivarse dentro de Restavor web.
 - El sistema operativo siempre conserva el control final.
 
 ## 71. Preferencias
@@ -1503,7 +1503,7 @@ Cuotly solicita y recomienda activar push, pero iOS y Android permiten al usuari
 - No se avisa a trabajadores no asignados.
 - Asignación: trabajador y supervisores.
 - Principal y sustituto reciben alertas cuando corresponda.
-- Inicio de trabajo: visible dentro de Cuotly para cliente, sin push o correo.
+- Inicio de trabajo: visible dentro de Restavor web para cliente, sin push o correo.
 - Publicación: cliente y supervisión correspondiente.
 - Cuotas: avisos al 80 % y 100 %.
 - Plazo de inicio interno: avisos al 50 %, 80 % y 100 %.
@@ -1511,13 +1511,13 @@ Cuotly solicita y recomienda activar push, pero iOS y Android permiten al usuari
 - No hay recordatorio de expiración de corrección.
 - Menú Diario: recordatorio 20:00 si falta el del día siguiente.
 - El icono móvil muestra el número de avisos pendientes.
-- WhatsApp puede aparecer como botón manual para acciones como solicitar cambios adicionales, sin mensajes automáticos enviados por Cuotly.
+- WhatsApp puede aparecer como botón manual para acciones como solicitar cambios adicionales, sin mensajes automáticos enviados por Restavor web.
 
 ## 73. Deep links
 
-Push y avisos internos abren el elemento exacto. Si pertenece a otro contexto, Cuotly verifica acceso, cambia de espacio o establecimiento y navega al destino.
+Push y avisos internos abren el elemento exacto. Si pertenece a otro contexto, Restavor web verifica acceso, cambia de espacio o establecimiento y navega al destino.
 
-## 74. Agente Cuotly
+## 74. Agente Restavor web
 
 En la etapa inicial:
 
@@ -1587,7 +1587,7 @@ Restavor utiliza Europa/Madrid y el reloj contractual ya definido. Los festivos 
 - Agenda.
 - Agenda como vista principal móvil.
 - Exportación o suscripción hacia Google Calendar, Apple Calendar y Outlook.
-- Inicialmente el flujo es desde Cuotly hacia el calendario externo.
+- Inicialmente el flujo es desde Restavor web hacia el calendario externo.
 - La sincronización bidireccional queda preparada para futuro por el riesgo de conflictos.
 
 ---
@@ -1596,7 +1596,7 @@ Restavor utiliza Europa/Madrid y el reloj contractual ya definido. Los festivos 
 
 ## 80. Alcance
 
-Cuotly funciona inicialmente como control financiero operativo. No procesa pagos de restaurantes ni sustituye un sistema contable oficial.
+Restavor web funciona inicialmente como control financiero operativo. No procesa pagos de restaurantes ni sustituye un sistema contable oficial.
 
 Registra:
 
@@ -1701,7 +1701,7 @@ Tras aceptación se crea solicitud o trabajo sin consumir bolsa. Puede exigirse 
 - Inicialmente propietario o administrador revisa antes de emitir.
 - El bloque legal y fiscal definitivo está pendiente.
 
-## 88. Suscripción Cuotly visible en el espacio
+## 88. Suscripción Restavor web visible en el espacio
 
 La factura y datos de Pro o Agency solo los ve el propietario del espacio, no sus administradores.
 
@@ -1827,22 +1827,22 @@ Estados:
 
 Flujo:
 
-1. Cuotly genera datos objetivos automáticamente.
+1. Restavor web genera datos objetivos automáticamente.
 2. Prepara borrador.
 3. Muestra las secciones que requieren criterio.
 4. Propietario o administrador con `Aprobar informes` revisa.
 5. Selecciona, edita y ordena.
-6. Cuotly inserta automáticamente lo aprobado.
+6. Restavor web inserta automáticamente lo aprobado.
 7. Genera PDF, programa o envía.
 
 - Informes solo objetivos pueden enviarse automáticamente.
 - Si hay oportunidades pendientes, no se envía hasta aprobación.
-- Cuotly avisa cuando se acerca la fecha programada.
+- Restavor web avisa cuando se acerca la fecha programada.
 - Cada versión se conserva.
 
 ## 96. Oportunidades automáticas
 
-Cuotly aplica reglas a datos de GA4, Search Console, Business Profile, Clarity y PageSpeed sin necesidad de IA.
+Restavor web aplica reglas a datos de GA4, Search Console, Business Profile, Clarity y PageSpeed sin necesidad de IA.
 
 Ejemplos:
 
@@ -1922,7 +1922,7 @@ La acción crea borrador de solicitud con evidencia adjunta. Después sigue aná
 - Impulso, Impulso+ y Premium: oportunidades básicas aprobadas.
 - Premium+: también las oportunidades avanzadas aprobadas.
 
-Un futuro Agente Cuotly podrá resumir o explicar oportunidades consumiendo IA, pero no forma parte del sistema actual de reglas.
+Un futuro Agente Restavor web podrá resumir o explicar oportunidades consumiendo IA, pero no forma parte del sistema actual de reglas.
 
 ---
 
@@ -1959,7 +1959,7 @@ Otros espacios pueden crear categorías propias y periodicidades mensuales, trim
 - Los clientes existentes migran en la siguiente renovación o fecha programada.
 - Cambios generales se avisan con mínimo 30 días naturales.
 - Se conserva versión aceptada.
-- Si el cambio importante requiere aceptación, Cuotly la solicita.
+- Si el cambio importante requiere aceptación, Restavor web la solicita.
 
 ## 105. Asignación y precio
 
@@ -1967,7 +1967,7 @@ Otros espacios pueden crear categorías propias y periodicidades mensuales, trim
 - Como máximo puede existir **un plan de mantenimiento activo** a la vez. Puede haber servicios adicionales según la configuración del espacio.
 - Un establecimiento de Restavor **sin plan de mantenimiento y con Menú Diario** puede crear solicitudes de cambio en su web. Esas solicitudes se comportan como en Básico: **sin consumos incluidos, todo a presupuesto y primera atención de 48 horas laborables**.
 - No se permiten precios negociados individuales para los planes de Restavor.
-- Otros espacios aplicarán sus reglas, pero Cuotly no fomenta negociación oculta.
+- Otros espacios aplicarán sus reglas, pero Restavor web no fomenta negociación oculta.
 
 ## 106. Cambio de plan Restavor
 
@@ -2082,7 +2082,7 @@ Cada archivo se marca **Interno** o **Compartido con el restaurante**. Un trabaj
 
 ## 114. Evidencia externa
 
-Cuotly conserva el archivo o evidencia publicado, pero no garantiza que una plataforma externa lo mantenga disponible.
+Restavor web conserva el archivo o evidencia publicado, pero no garantiza que una plataforma externa lo mantenga disponible.
 
 ---
 
@@ -2128,7 +2128,7 @@ Se muestra cuenta, establecimiento, última sincronización, siguiente intento y
 - PageSpeed: semanal y cuando el sistema lo programe.
 - Otros datos: frecuencia adaptada.
 
-Cuotly conserva último dato válido, lo marca como desactualizado si falla y reintenta. Propietario y administradores reciben aviso; el propietario del restaurante solo si debe autorizar de nuevo.
+Restavor web conserva último dato válido, lo marca como desactualizado si falla y reintenta. Propietario y administradores reciben aviso; el propietario del restaurante solo si debe autorizar de nuevo.
 
 ## 119. Permisos y terminación
 
@@ -2140,7 +2140,7 @@ Cuotly conserva último dato válido, lo marca como desactualizado si falla y re
 
 ## 120. Plataformas de reservas, pedidos y delivery
 
-No son integraciones monitorizadas de Cuotly.
+No son integraciones monitorizadas de Restavor web.
 
 - Se puede indicar cuáles usa el restaurante y sus enlaces.
 - Puede haber varias.
@@ -2158,7 +2158,7 @@ No son integraciones monitorizadas de Cuotly.
 
 ## 122. Costes externos
 
-Dominios, reservas, delivery, herramientas y otros servicios externos corresponden al restaurante o al proveedor de mantenimiento según su contrato. No están incluidos automáticamente en Cuotly.
+Dominios, reservas, delivery, herramientas y otros servicios externos corresponden al restaurante o al proveedor de mantenimiento según su contrato. No están incluidos automáticamente en Restavor web.
 
 ---
 
@@ -2175,7 +2175,7 @@ Dominios, reservas, delivery, herramientas y otros servicios externos correspond
 - Facturación e impuestos.
 - Integraciones.
 - Seguridad.
-- Suscripción a Cuotly.
+- Suscripción a Restavor web.
 - Auditoría.
 - Exportación y conservación.
 
@@ -2184,7 +2184,7 @@ Cada usuario solo ve lo permitido.
 ## 124. Identidad visual del espacio
 
 - Puede cambiar nombre y logotipo.
-- No puede cambiar paleta, estructura base ni eliminar `Cuotly · by Restavor`.
+- No puede cambiar paleta, estructura base ni eliminar `Restavor web`.
 - Un único sistema visual: Emerald Control.
 - Un único modo claro inicialmente.
 - Sin selector de densidad: densidad cómoda única.
@@ -2217,7 +2217,7 @@ Propietario y administradores gestionan festivos, cierres y horarios especiales 
 - Después se programa eliminación.
 - Registros legales se tratan según la futura revisión jurídica.
 
-## 128. Panel de Administración de Cuotly
+## 128. Panel de Administración de Restavor web
 
 Muestra:
 
@@ -2236,7 +2236,7 @@ Muestra:
 
 ## 129. Modo soporte
 
-Bosco o Administrador de Cuotly autorizado puede entrar en un espacio ajeno solo mediante Modo soporte.
+Bosco o Administrador de Restavor web autorizado puede entrar en un espacio ajeno solo mediante Modo soporte.
 
 Requisitos:
 
@@ -2255,9 +2255,9 @@ El restaurante ve **Contactar con el equipo de mantenimiento**.
 - Trabajadores asignados pueden participar.
 - El cliente nunca ve nombres individuales.
 
-## 131. Soporte de Cuotly
+## 131. Soporte de Restavor web
 
-- Solo propietario y administradores del espacio crean incidencias para Cuotly.
+- Solo propietario y administradores del espacio crean incidencias para Restavor web.
 - Trabajadores y clientes consultan artículos, pero no contactan directamente con Bosco.
 - Pro: soporte estándar.
 - Agency: prioridad superior.
@@ -2283,7 +2283,7 @@ Campos:
 - versión;
 - impacto.
 
-Cuotly puede recoger navegador, sistema, pantalla y error no sensible informando al usuario.
+Restavor web puede recoger navegador, sistema, pantalla y error no sensible informando al usuario.
 
 ## 132. Horario humano de soporte e incidencias
 
@@ -2326,7 +2326,7 @@ Este horario no modifica el reloj contractual de trabajos.
 ## 136. Autenticación en dos pasos
 
 - Obligatoria para Bosco.
-- Obligatoria para Administradores de Cuotly.
+- Obligatoria para Administradores de Restavor web.
 - Muy recomendada, inicialmente opcional, para propietarios y administradores de espacios.
 - Opcional para trabajadores y clientes.
 
@@ -2339,7 +2339,7 @@ Este horario no modifica el reloj contractual de trabajos.
 - Verificación adicional cuando exista riesgo.
 - Al cerrar sesión o perder acceso, el dispositivo deja de recibir push y pierde datos temporales.
 
-## 138. Copias de seguridad de Cuotly
+## 138. Copias de seguridad de Restavor web
 
 - Automáticas y diarias.
 - Cifradas.
@@ -2396,7 +2396,7 @@ Una corrección manual conserva:
 
 ## 142. Incidentes de seguridad
 
-Cuotly identifica espacios y usuarios potencialmente afectados, conserva evidencia, permite revocar sesiones y facilita comunicación. El procedimiento jurídico exacto se definirá en el bloque legal.
+Restavor web identifica espacios y usuarios potencialmente afectados, conserva evidencia, permite revocar sesiones y facilita comunicación. El procedimiento jurídico exacto se definirá en el bloque legal.
 
 ---
 
@@ -2441,7 +2441,7 @@ Al volver la conexión:
 
 - Primary Dark: `#0B2F2A`.
 - Primary: `#145C4E`.
-- Cuotly Green: `#1D8A6A`.
+- Restavor web Green: `#1D8A6A`.
 - Accent Green: `#32B889`.
 - Background: `#F5F7F4`.
 - Surface: `#FFFFFF`.
@@ -2501,7 +2501,7 @@ Inter.
 
 ## 150. Publicidad
 
-Cuotly no incluye anuncios ni promociones invasivas.
+Restavor web no incluye anuncios ni promociones invasivas.
 
 ---
 
@@ -2536,7 +2536,7 @@ Cuotly no incluye anuncios ni promociones invasivas.
 - Capa de servicios propia para reducir dependencia de proveedores.
 - Entornos separados: desarrollo, pruebas y producción.
 - Datos reales no se copian libremente a pruebas.
-- Agente Cuotly fuera de arquitectura inicial.
+- Agente Restavor web fuera de arquitectura inicial.
 
 ### 152.1 Modelo conceptual de datos
 
@@ -2551,8 +2551,8 @@ El esquema físico se diseñará al definir versiones, pero debe representar com
 - espacios de mantenimiento;
 - membresías de espacios;
 - suscripciones Pro/Agency;
-- pagos de Cuotly;
-- Administradores de Cuotly;
+- pagos de Restavor web;
+- Administradores de Restavor web;
 - sesiones de Modo soporte.
 
 #### Clientes
@@ -2709,7 +2709,7 @@ El fallo de una notificación no revierte la operación principal.
 ## 157. Monitorización
 
 - Automática y permanente.
-- Alerta crítica a Bosco y Administradores de Cuotly.
+- Alerta crítica a Bosco y Administradores de Restavor web.
 - No implica soporte humano 24/7.
 - Página de estado pública con componentes e historial de incidencias relevantes.
 
@@ -2760,7 +2760,7 @@ El fallo de una notificación no revierte la operación principal.
 
 ## 164. Pérdida de responsable
 
-- Si un trabajador se desactiva, pierde acceso o entra en ausencia, Cuotly alerta sobre trabajos pendientes.
+- Si un trabajador se desactiva, pierde acceso o entra en ausencia, Restavor web alerta sobre trabajos pendientes.
 - Reasignar no reinicia contadores.
 - Propietario/administrador puede asumir.
 
@@ -2780,12 +2780,12 @@ Toda corrección de consumo, pago, plazo, asignación o estado exige motivo y co
 
 ## 167. Plataforma
 
-| Acción | Bosco | Admin Cuotly |
+| Acción | Bosco | Admin Restavor web |
 |---|:---:|:---:|
 | Aprobar espacios | Sí | Si recibe permiso |
 | Gestionar suscripciones | Sí | Si recibe permiso |
 | Modo soporte | Sí | Si recibe permiso |
-| Nombrar Admin Cuotly | Sí | No |
+| Nombrar Admin Restavor web | Sí | No |
 | Transferir propiedad plataforma | Sí | No |
 | Eliminar plataforma | No desde operación ordinaria | No |
 
@@ -2841,7 +2841,7 @@ Se definirá más adelante por decisión de Bosco:
 
 Antes del lanzamiento debe revisarlo un profesional cualificado.
 
-### 170.2 Agente Cuotly
+### 170.2 Agente Restavor web
 
 - funciones;
 - modelo;
@@ -2894,7 +2894,7 @@ Se admite como futuro extra, pero su precio no está fijado.
 
 ## 172. Lista de sustituciones
 
-- Cuotly no es solo el espacio de Restavor: es multiempresa.
+- Restavor web no es solo el espacio de Restavor: es multiempresa.
 - Se habla de espacios de mantenimiento en general.
 - Menú Diario tiene 30 actualizaciones, no 25.
 - Menú Diario cuesta 229 € + IVA; solo Premium+ paga 199 € + IVA.
@@ -2986,4 +2986,4 @@ Las mismas entidades y estados deben conservar el mismo nombre en escritorio, m�
 
 # 180. Definición final del producto
 
-> **Cuotly es una plataforma SaaS multiempresa, creada por Restavor, que centraliza la relación operativa entre proveedores de mantenimiento digital y restaurantes: espacios, establecimientos, planes, solicitudes, trabajos, tareas, equipo, plazos, consumos, comunicación, archivos, pagos, informes, analítica, oportunidades y Menú Diario; ofreciendo a cada usuario una visión adaptada a sus permisos y conservando seguridad, trazabilidad y control humano sobre las decisiones importantes.**
+> **Restavor web es una plataforma SaaS multiempresa, creada por Restavor, que centraliza la relación operativa entre proveedores de mantenimiento digital y restaurantes: espacios, establecimientos, planes, solicitudes, trabajos, tareas, equipo, plazos, consumos, comunicación, archivos, pagos, informes, analítica, oportunidades y Menú Diario; ofreciendo a cada usuario una visión adaptada a sus permisos y conservando seguridad, trazabilidad y control humano sobre las decisiones importantes.**

@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { SettingsState } from "../action-state";
 
 /**
- * RN-SUB-06, RN-ADM-10 · el propietario declara un pago a Cuotly. Quién
+ * RN-SUB-06, RN-ADM-10 · el propietario declara un pago a Restavor web. Quién
  * puede lo comprueba `declare_cuotly_payment()` (`manage_space`); aquí
  * solo se recogen los campos y se traduce la negativa.
  */
@@ -46,7 +46,7 @@ export async function declareCuotlyPayment(
 }
 
 /**
- * RN-SUB-10 · cambiar el plan de Cuotly. Pro → Agency es inmediato y se
+ * RN-SUB-10 · cambiar el plan de Restavor web. Pro → Agency es inmediato y se
  * cobra la diferencia proporcional; Agency → Pro se programa para la
  * renovación y solo si el uso cabe en Pro con los adicionales que se
  * contraten. Todo eso lo decide `change_cuotly_plan()` (`manage_space`,

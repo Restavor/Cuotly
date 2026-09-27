@@ -29,7 +29,7 @@ describe("messages — RN-MSG, HU-35", () => {
       expect(resolveSenderIdentity(trabajador, "client")).toEqual(resolveSenderIdentity(otro, "client"));
     });
 
-    it("dentro del espacio sí se sabe quién escribió (la especificación maestra §15: 'internamente, Cuotly registra quién realizó cada acción')", () => {
+    it("dentro del espacio sí se sabe quién escribió (la especificación maestra §15: 'internamente, Restavor web registra quién realizó cada acción')", () => {
       expect(resolveSenderIdentity(trabajador, "staff")).toEqual({ kind: "person", profileId: "worker-1" });
     });
 

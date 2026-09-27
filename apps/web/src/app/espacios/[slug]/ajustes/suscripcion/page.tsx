@@ -33,7 +33,7 @@ import { DeclarePaymentForm } from "./DeclarePaymentForm";
 import { CancelCuotlyPlanChangeForm, ChangeCuotlyPlanForm } from "./PlanChangeForms";
 
 /**
- * RN-ADM-10 · la suscripción de Cuotly vista por el propietario: el modo,
+ * RN-ADM-10 · la suscripción de Restavor web vista por el propietario: el modo,
  * el plan, los cobros con su estado derivado y la declaración de un pago.
  * Es el enlace al que los avisos del Hito 18 ya apuntaban (RN-NOT-04).
  *
@@ -192,7 +192,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
               </StatusBadge>
             </div>
             <p className="mt-3 text-2xl font-bold text-primary-dark">
-              {plan ? `Cuotly ${t.plans[plan]}` : "—"}
+              {plan ? `Restavor web ${t.plans[plan]}` : "—"}
             </p>
             {terms ? (
               <p className="text-xl font-bold text-primary-dark">{t.pricePerMonth(euros(terms.priceCents))}</p>
@@ -396,7 +396,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
             <Card title={t.compareTitle}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-lg font-bold text-primary-dark">Cuotly {t.plans[otro]}</p>
+                  <p className="text-lg font-bold text-primary-dark">Restavor web {t.plans[otro]}</p>
                   <p className="text-xl font-bold text-primary-dark">
                     {t.pricePerMonth(euros(CUOTLY_PLAN_TERMS[otro].priceCents))}
                   </p>

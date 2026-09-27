@@ -18,9 +18,9 @@ import { SpaceRequestForm } from "./SpaceRequestForm";
  * Una sola ruta con dos caras, según el estado de la solicitud que se mira:
  *
  *   · **G02, el formulario**, cuando no hay ninguna, cuando es un borrador
- *     o cuando Cuotly ha pedido información (RN-PLA-03: son los dos estados
+ *     o cuando Restavor web ha pedido información (RN-PLA-03: son los dos estados
  *     desde los que el solicitante la mueve). Con "Necesita información"
- *     va arriba lo que Cuotly dijo que falta (RN-PLA-06).
+ *     va arriba lo que Restavor web dijo que falta (RN-PLA-06).
  *   · **G03, la solicitud enviada**, en los demás: el estado, los tres
  *     datos de la cabecera y el camino en cuatro pasos
  *     (`spaceRequestSteps()`), que llega hasta la activación del espacio

@@ -181,7 +181,7 @@ export async function readObjectMetadata(
 
 /**
  * Retirar los bytes de una subida que **no llegó a ser un archivo de
- * Cuotly** porque su registro se rechazó. No contradice a CLAUDE.md ("no
+ * Restavor web** porque su registro se rechazó. No contradice a CLAUDE.md ("no
  * se borran registros de negocio"): sin fila en `files` no hay registro
  * que conservar, y dejarlo sería guardar basura, no historial.
  *

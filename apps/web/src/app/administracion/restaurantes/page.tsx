@@ -30,7 +30,7 @@ import { ArchiveButton } from "../DeletionForms";
  * Decisión 82 (RN-ADM-25) · aquí solo los que no están archivados, cada
  * uno con su estado, y "Impago" si tiene cobros vencidos: un pausado por
  * impago no es un pausado cualquiera (RN-FIN-13). Los archivados —por
- * Cuotly o por su equipo— están en Archivados.
+ * Restavor web o por su equipo— están en Archivados.
  */
 export const dynamic = "force-dynamic";
 

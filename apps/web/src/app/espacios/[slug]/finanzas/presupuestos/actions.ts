@@ -106,7 +106,7 @@ export async function sendQuote(quoteId: string): Promise<QuoteActionState> {
 }
 
 /**
- * Decisión 21 · registrar que el restaurante aceptó fuera de Cuotly.
+ * Decisión 21 · registrar que el restaurante aceptó fuera de Restavor web.
  * `accept_quote()` decide quién (propietario o administrador del espacio,
  * `manage_requests`) y exige el motivo; aquí solo se ahorra el viaje si
  * va en blanco. Lo que pasa después es lo mismo que si aceptara el
@@ -124,7 +124,7 @@ export async function acceptQuoteForClient(
   return afterRpc(error, t.acceptForClientDone);
 }
 
-/** Decisión 21 · registrar que el restaurante lo rechazó fuera de Cuotly. Mismo motivo obligatorio. */
+/** Decisión 21 · registrar que el restaurante lo rechazó fuera de Restavor web. Mismo motivo obligatorio. */
 export async function rejectQuoteForClient(
   quoteId: string,
   _prev: QuoteActionState,

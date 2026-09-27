@@ -414,7 +414,7 @@ export async function archiveService(_prev: PlansState, formData: FormData): Pro
   );
 }
 
-/** RN-COM-23 · el restaurante aceptó fuera de Cuotly una versión que le perjudica. */
+/** RN-COM-23 · el restaurante aceptó fuera de Restavor web una versión que le perjudica. */
 export async function recordRevisionAcceptance(_prev: TermsState, formData: FormData): Promise<TermsState> {
   const supabase = await createClient();
   return run("record_external_revision_acceptance", () =>

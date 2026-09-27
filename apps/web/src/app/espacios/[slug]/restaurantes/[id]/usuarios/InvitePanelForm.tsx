@@ -17,7 +17,7 @@ const INITIAL: GrantAccessState = { error: null, granted: 0, future: false, invi
  *
  * Un solo formulario para los dos casos, porque **quien lo rellena no
  * tiene por qué saber cuál le toca**: escribe el correo y el servidor
- * decide. Si esa persona ya tiene cuenta de Cuotly, entra en el momento;
+ * decide. Si esa persona ya tiene cuenta de Restavor web, entra en el momento;
  * si no, se crea una invitación —y, si la manda el restaurante, el equipo
  * de mantenimiento tiene que aprobarla antes de que llegue el enlace—.
  *

@@ -234,7 +234,7 @@ export function CancelInvitationButton({ invitationId }: { invitationId: string 
 }
 
 /**
- * M71 · "Reenviar" en el dibujo. Cuotly todavía no envía correos, así que
+ * M71 · "Reenviar" en el dibujo. Restavor web todavía no envía correos, así que
  * reenviar sería una promesa falsa: lo que sí se puede es volver a copiar
  * el enlace de la invitación para mandarlo uno mismo.
  */

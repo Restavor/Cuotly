@@ -11,7 +11,7 @@
 --     sería falso en la práctica — se apagaría doce horas.
 --   · **La campana nunca espera.** El aviso dentro de la aplicación se crea
 --     igual; lo que se agrupa es el correo y el push. Sin esto, quien
---     eligiera resumen diario abriría Cuotly y no vería nada de hoy.
+--     eligiera resumen diario abriría Restavor web y no vería nada de hoy.
 --   · **Las ocho son las del espacio**, no las del servidor (CLAUDE.md).
 --     El barrido corre cada hora y solo hace algo en esa.
 --   · **Un resumen por persona, espacio y día.** Repetir el barrido no

@@ -16,7 +16,7 @@ const emptyState: ActionState = { error: null };
 /**
  * Dispara la semilla del espacio de Restavor (create_restavor_space en la
  * base de datos). Toda la comprobación de "¿eres el propietario de
- * Cuotly?" y toda la creación ocurren en una única transacción dentro de
+ * Restavor web?" y toda la creación ocurren en una única transacción dentro de
  * esa función — aquí solo se llama y se traduce el resultado.
  */
 export async function createRestavorSpace(): Promise<ActionState> {
@@ -34,7 +34,7 @@ export async function createRestavorSpace(): Promise<ActionState> {
 
 /**
  * Invita a alguien al equipo (HU-03, HU-04). Si el correo ya está
- * registrado en Cuotly, se le añade directamente al espacio (PRD §7.4:
+ * registrado en Restavor web, se le añade directamente al espacio (PRD §7.4:
  * "Añadir al espacio"); si no, se crea una invitación con caducidad de
  * 7 días — el envío por correo llega cuando exista Resend, mientras
  * tanto se devuelve el enlace para compartirlo a mano

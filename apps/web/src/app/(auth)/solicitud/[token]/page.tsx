@@ -22,7 +22,7 @@ import { FollowUpView } from "./FollowUpView";
  * reenvía y se pega en sitios, y con él no se regalan el teléfono ni el
  * correo de nadie. Se pinta lo que hay; no se rellena lo que falta.
  *
- * "Contactar con Cuotly" escribe a la dirección de contacto (decisión 67).
+ * "Contactar con Restavor web" escribe a la dirección de contacto (decisión 67).
  * "Ver solicitud" no está: traería aquí mismo.
  */
 export default async function SeguimientoPage({

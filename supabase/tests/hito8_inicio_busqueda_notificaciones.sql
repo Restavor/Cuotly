@@ -743,7 +743,7 @@ reset role;
 -- R4 (segunda pasada) · el §18 tiene siete filas y solo se cubrían dos y
 -- media. Aquí se comprueban las que sí deben emitirse hoy, una por una y
 -- con su audiencia y su canal, porque el §18 distingue entre lo que se ve
--- dentro de Cuotly y lo que además sale por correo.
+-- dentro de Restavor web y lo que además sale por correo.
 --
 -- Lo que sigue SIN emitirse está dicho en el ROADMAP, no aquí: consumo de
 -- bolsa al 80 %/100 % y los umbrales de T2 y T3, que necesitan el barrido
@@ -781,14 +781,14 @@ begin
       using errcode = 'assert_failure';
   end if;
 
-  -- §18 fila 3: "Inicio de un trabajo -> visible DENTRO de Cuotly para el
+  -- §18 fila 3: "Inicio de un trabajo -> visible DENTRO de Restavor web para el
   -- cliente, sin correo ni push". Estaba al revés: iba al equipo y
   -- encolaba correos, y el cliente no recibía nada.
   select id into v_aviso from public.notifications
   where event_type = 'job_started' and entity_id = v_job
     and audience = 'client' and recipient_id = '80000000-0000-0000-0000-000000000005';
   if v_aviso is null then
-    raise exception '§18/R4 FALLIDO: el cliente no ve dentro de Cuotly que su trabajo ha comenzado'
+    raise exception '§18/R4 FALLIDO: el cliente no ve dentro de Restavor web que su trabajo ha comenzado'
       using errcode = 'assert_failure';
   end if;
   if exists (select 1 from public.notification_deliveries where notification_id = v_aviso) then

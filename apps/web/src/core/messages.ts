@@ -90,7 +90,7 @@ export function resolveSenderIdentity(
  *     Es RN-MSG-02 literal, y es lo único que el restaurante puede llegar
  *     a saber de quien le contesta;
  *   · `person` — alguien del equipo, visto por el equipo (§15 de la
- *     especificación maestra: "internamente, Cuotly registra quién
+ *     especificación maestra: "internamente, Restavor web registra quién
  *     realizó cada acción"). La pantalla ya tiene el nombre resuelto;
  *   · `establishment` — alguien del restaurante cuyo nombre esta pantalla
  *     no tiene. Le pasa al propio restaurante con los mensajes de sus

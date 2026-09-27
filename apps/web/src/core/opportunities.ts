@@ -141,7 +141,7 @@ export function ruleScope(rule: OpportunityRule): OpportunityScope {
  * avanzadas por igual, si su plan incluye algo; el plan de entrada, sin
  * nada incluido, ninguna ("detección interna", §101).
  *
- * Se decide por lo que el plan ES, no por cómo se llama: Cuotly es
+ * Se decide por lo que el plan ES, no por cómo se llama: Restavor web es
  * multiempresa (CLAUDE.md). "Incluye algo" son créditos (RN-CRE-01) o
  * cambios por categoría de los planes de antes; lo mismo que mira
  * `client_opportunity_access()` en el servidor, que es quien decide.
@@ -180,7 +180,7 @@ export function planSees(access: PlanOpportunityAccess): boolean {
 
 /**
  * "Cuánto gana el restaurante si esto se arregla", para poder ordenar la
- * lista. **No son euros**: Cuotly no sabe lo que vale una reserva ni
+ * lista. **No son euros**: Restavor web no sabe lo que vale una reserva ni
  * cuántas visitas acaban en cena, y un euro inventado en una pantalla de
  * producción es lo que CLAUDE.md prohíbe.
  *
@@ -191,7 +191,7 @@ export function planSees(access: PlanOpportunityAccess): boolean {
  *     tráfico importante, pero no al camino de contacto.
  *   · **Bajo** — afecta a una página, una consulta o un detalle suelto.
  *
- * El nivel lo PROPONE Cuotly con esa regla; el equipo lo puede cambiar
+ * El nivel lo PROPONE Restavor web con esa regla; el equipo lo puede cambiar
  * antes de enseñárselo al restaurante (§96: impacto, prioridad y esfuerzo
  * son propuestas editables). Lo que no cambia es la evidencia.
  */
@@ -692,7 +692,7 @@ function queryRules(input: DetectionInput): OpportunityDetection[] {
 
     // 8 · Google cree que el sitio va de eso y lo enseña muy abajo. Ojo:
     // esto detecta "sale muy abajo", no "el contenido no es adecuado":
-    // juzgar eso exigiría leer la web, y Cuotly no la lee (decisión 26c).
+    // juzgar eso exigiría leer la web, y Restavor web no la lee (decisión 26c).
     if (
       impresionesConsulta >= OPPORTUNITY_THRESHOLDS.queriesWithoutContentImpressions &&
       posicionConsulta > OPPORTUNITY_THRESHOLDS.queriesWithoutContentPosition

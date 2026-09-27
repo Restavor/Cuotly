@@ -101,7 +101,7 @@ const publico = createClient(URL_SUPABASE, CLAVE_PUBLICA, {
 
 // Un PDF mínimo de verdad: el bucket comprueba el tipo declarado, y así
 // además el contenido se corresponde con él.
-const CONTENIDO = Buffer.from("%PDF-1.4\n% comprobación de Cuotly\n%%EOF\n", "utf8");
+const CONTENIDO = Buffer.from("%PDF-1.4\n% comprobación de Restavor web\n%%EOF\n", "utf8");
 const RUTA = `comprobacion/${randomUUID()}/comprobacion.pdf`;
 
 console.log("\n1 · El bucket");

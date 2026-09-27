@@ -37,7 +37,7 @@ export interface RequestDetailRow {
   readonly context: string | null;
   /**
    * RN-REQ-05 · cuánto le corre al restaurante, y por qué. Lo escribe el
-   * cliente al pedirla; el equipo lo lee. No es un compromiso de Cuotly
+   * cliente al pedirla; el equipo lo lee. No es un compromiso de Restavor web
    * (RN-REQ-06) ni el "Orden de importancia" del plan (RN-PRI).
    */
   readonly priority: string | null;

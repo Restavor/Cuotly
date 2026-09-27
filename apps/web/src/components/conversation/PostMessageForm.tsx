@@ -18,7 +18,7 @@ import { postMessage } from "./actions";
  * adjunta a una conversación de solicitud; no se inventa una categoría
  * nueva para esto.
  *
- * Sin restaurante no hay adjunto: todo archivo de Cuotly es de un
+ * Sin restaurante no hay adjunto: todo archivo de Restavor web es de un
  * restaurante (RN-ARC-01), y un canal del equipo (RN-CAN-01) no cuelga de
  * ninguno. Se quita el clip en vez de ofrecer una subida que no tiene
  * dónde guardarse.

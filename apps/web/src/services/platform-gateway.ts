@@ -1,6 +1,6 @@
 /**
  * `src/services/platform-gateway.ts` — la mitad de Supabase del panel de
- * Administración de Cuotly, Modo soporte y la 2FA (Fase 4, Hito 19).
+ * Administración de Restavor web, Modo soporte y la 2FA (Fase 4, Hito 19).
  *
  * Aquí no se decide nada: cada función de la migración 91 comprueba quién
  * pregunta y con qué sesión (`is_platform_member()`, `is_platform_supporter()`,
@@ -74,7 +74,7 @@ export interface PlatformUserRow {
   readonly can_support: boolean;
   readonly can_delete_accounts: boolean;
   readonly two_factor_enrolled: boolean;
-  /** RN-ADM-18 · cuándo la eliminó Cuotly; `null` si no lo está. */
+  /** RN-ADM-18 · cuándo la eliminó Restavor web; `null` si no lo está. */
   readonly closed_at: string | null;
 }
 
@@ -94,7 +94,7 @@ export interface PlatformEstablishmentRow {
   readonly has_overdue_debt: boolean;
 }
 
-/** RN-ADM-22 · quién lo archivó: Cuotly, el propietario del espacio o su equipo. */
+/** RN-ADM-22 · quién lo archivó: Restavor web, el propietario del espacio o su equipo. */
 export type ArchivedBy = "platform" | "owner" | "team";
 
 /** RN-ADM-22 · una fila de Archivados: un espacio o un restaurante. */
@@ -128,7 +128,7 @@ export interface PlatformSpaceRow {
   readonly active_establishments: number;
   readonly internal_users: number;
   readonly storage_bytes: number;
-  /** Lo incluido en su plan de Cuotly, en bytes; `null` sin plan (RN-SUB-13). */
+  /** Lo incluido en su plan de Restavor web, en bytes; `null` sin plan (RN-SUB-13). */
   readonly storage_limit_bytes: number | null;
   readonly outstanding_cents: number;
   readonly overdue_cents: number;

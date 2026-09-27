@@ -83,7 +83,7 @@ export async function signOut() {
  * Contesta siempre lo mismo. La función de la base devuelve `void` a
  * propósito y aquí no se añade ninguna distinción: si esta acción dijera
  * "ese correo ya tiene cuenta", el formulario sería un oráculo y bastaría
- * con escribir direcciones ajenas para saber quién está en Cuotly
+ * con escribir direcciones ajenas para saber quién está en Restavor web
  * (RN-ACC-12). Quien se entera de lo que pasó es la dirección, por correo.
  *
  * Decisión 68 · el documento se comprueba aquí, en el servidor (cálculo de

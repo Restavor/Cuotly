@@ -27,7 +27,7 @@ import { storeEncryptedCredential } from "@/services/integration-gateway";
  *      toca nada.
  *   2. El nonce del `state` tiene que ser el de la cookie que se puso al
  *      salir: una vuelta pegada desde otro navegador no vale.
- *   3. Quien vuelve tiene que ser quien salió: la sesión de Cuotly tiene
+ *   3. Quien vuelve tiene que ser quien salió: la sesión de Restavor web tiene
  *      que ser la del `state`.
  *   4. Solo entonces se canjea el código, se cifra el token de refresco y
  *      se guarda con `store_integration_credential()`, que vuelve a

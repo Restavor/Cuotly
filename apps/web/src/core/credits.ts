@@ -101,7 +101,7 @@ export function creditFit(neededHalf: number, remainingHalf: number, includedHal
 
 /**
  * Qué camino sigue una solicitud al enviarse (PRD §41). Mientras convivan
- * los planes por categorías y los de créditos (Cuotly es multiempresa y el
+ * los planes por categorías y los de créditos (Restavor web es multiempresa y el
  * catálogo cambia por partes), lo decide el plan del restaurante:
  *
  * - Una **incidencia** no se valora: va al equipo por su camino

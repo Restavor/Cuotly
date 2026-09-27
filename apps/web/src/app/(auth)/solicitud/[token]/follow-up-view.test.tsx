@@ -46,7 +46,7 @@ describe("A01 a A04 · el seguimiento de la solicitud de acceso", () => {
     render(<FollowUpView token="k" data={{ ...base, status: "approved" }} />);
     expect(screen.getByRole("heading", { name: t.approvedTitle })).toBeInTheDocument();
     expect(screen.getByText(t.approvedNotice)).toBeInTheDocument();
-    // Decisión 67 · "Contactar con Cuotly" escribe a info@restavor.com.
+    // Decisión 67 · "Contactar con Restavor web" escribe a info@restavor.com.
     expect(screen.getByRole("link", { name: t.contactCuotly })).toHaveAttribute(
       "href",
       "mailto:info@restavor.com",

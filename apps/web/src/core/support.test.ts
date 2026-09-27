@@ -27,7 +27,7 @@ import {
 } from "./support";
 
 /**
- * El soporte de Cuotly (PRD §34, RN-SOP; §131 a §133 y §157). Lo que se
+ * El soporte de Restavor web (PRD §34, RN-SOP; §131 a §133 y §157). Lo que se
  * vigila aquí es lo que es dominio puro: los catálogos, la tabla de
  * transiciones, la prioridad y qué se mide. Quién puede hacer qué lo
  * comprueba `supabase/tests/soporte_centro_de_ayuda_y_estado.sql` contra
@@ -77,7 +77,7 @@ describe("los seis estados y quién mueve cada transición (RN-SOP-04)", () => {
     ]);
   });
 
-  it("RN-SOP-04 · el espacio no mueve una incidencia abierta: la lleva Cuotly", () => {
+  it("RN-SOP-04 · el espacio no mueve una incidencia abierta: la lleva Restavor web", () => {
     for (const destino of INCIDENT_STATES) {
       expect(incidentTransitionAllowed("open", destino, "space"), `open -> ${destino}`).toBe(false);
     }
@@ -92,7 +92,7 @@ describe("los seis estados y quién mueve cada transición (RN-SOP-04)", () => {
     expect(incidentTransitionAllowed("needs_information", "closed", "space")).toBe(false);
   });
 
-  it("RN-SOP-04 · de «resuelta» el espacio cierra o reabre; Cuotly también puede cerrar", () => {
+  it("RN-SOP-04 · de «resuelta» el espacio cierra o reabre; Restavor web también puede cerrar", () => {
     expect(incidentTransitionAllowed("resolved", "closed", "space")).toBe(true);
     expect(incidentTransitionAllowed("resolved", "in_review", "space")).toBe(true);
     expect(incidentTransitionAllowed("resolved", "closed", "platform")).toBe(true);
@@ -138,7 +138,7 @@ describe("la prioridad se deriva (RN-SOP-05)", () => {
     expect(incidentPriorityFor("error", "low", "agency")).toBe("high");
     expect(incidentPriorityFor("error", "high", "pro")).toBe("standard");
     // Lectura 6 de la decisión 35: Restavor y el espacio de demostración
-    // no tienen plan de Cuotly.
+    // no tienen plan de Restavor web.
     expect(incidentPriorityFor("error", "high", null)).toBe("standard");
   });
 
@@ -164,7 +164,7 @@ describe("el reloj humano de §132 (RN-SOP-06)", () => {
     expect(minutos).toBe(240);
   });
 
-  it("RN-SOP-06 · un festivo de Cuotly usa el horario de fin de semana, no cierra", () => {
+  it("RN-SOP-06 · un festivo de Restavor web usa el horario de fin de semana, no cierra", () => {
     // Martes 15/09/2026 marcado como festivo: 09:00–14:30 en vez de 14:00–22:00.
     const con = businessMinutesBetween(
       madrid(2026, 9, 15, 8, 0),
