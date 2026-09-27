@@ -538,7 +538,7 @@ export function AppShell({
             ) : null}
 
             <Link
-              href="/cuenta/sesiones"
+              href="/cuenta"
               aria-label={`${es.nav.account} · ${userLabel}`}
               className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary-dark text-sm font-semibold text-surface hover:bg-primary focus:outline focus:outline-2 focus:outline-cuotly-green"
             >
