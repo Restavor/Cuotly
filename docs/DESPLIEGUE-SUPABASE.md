@@ -6,9 +6,19 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 a 152 aplicadas; 153 pendiente).
+Actualizado el 27/09/2026 (149 a 153 aplicadas).
 
 ## Pendiente de aplicar
+
+Nada.
+
+**Actualización del 27/09/2026: la 153** aplicada entera como `20260927093029 · informes_y_oportunidades`.
+**Antes**: las seis funciones que redefine estaban en producción como en la 152 (cinco idénticas;
+`client_opportunity_access` solo difería en comentarios) y `plans_report_period_check` tenía el mismo
+nombre y la misma definición; `report_period_rank` no existía. **Después**: las siete funciones (cuerpo,
+`proacl` y `security definer`) y el `check` dan el mismo md5 que en local.
+
+Lo que decía esta sección antes de aplicarla:
 
 **153 · `informes_y_oportunidades`** (decisión 85, PRD §41.7, RN-CRE-26 y RN-CRE-27). Lo que hace:
 
