@@ -204,7 +204,6 @@ export type MenuCorrectionRow = {
   readonly kind: string;
   readonly description: string;
   readonly requestedAt: string;
-  readonly requestedBeforeCutoff: boolean;
   readonly completedAt: string | null;
   readonly completionNote: string | null;
 };
@@ -260,8 +259,7 @@ export function CorrectionsPanel({
               <p className="text-sm text-text">{c.description}</p>
               <p className="text-sm text-text-secondary">
                 {t.correctionRequested(formatWhen(c.requestedAt))} ·{" "}
-                {t.correctionKind[c.kind as keyof typeof t.correctionKind] ?? c.kind} ·{" "}
-                {c.requestedBeforeCutoff ? t.correctionGuaranteed : t.correctionNotGuaranteed}
+                {t.correctionKind[c.kind as keyof typeof t.correctionKind] ?? c.kind}
               </p>
               {c.completedAt ? (
                 <p className="text-sm text-success">

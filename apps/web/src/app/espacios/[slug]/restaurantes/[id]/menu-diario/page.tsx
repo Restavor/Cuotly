@@ -28,15 +28,16 @@ import { MenuSectionHeader } from "./MenuSectionHeader";
 import { loadMenuSection } from "./section-load";
 
 /**
- * R13 · el Menú Diario del restaurante: el consumo del ciclo arriba a la
- * derecha, los filtros (mes, estado y plantilla), "Crear menú" y "Copiar
- * menú anterior", y la tabla de menús (Fase 2, Hito 10; RN-MEN-01,
+ * R13 · el Menú Diario del restaurante: de dónde le viene el servicio
+ * arriba a la derecha, los filtros (mes, estado y plantilla), "Crear menú"
+ * y "Copiar menú anterior", y la tabla de menús (Fase 2, Hito 10; RN-MEN-01,
  * RN-MEN-05, RN-MEN-11).
  *
- * Todo lo que se lee lo filtra RLS y lo calcula el servidor: el saldo sale
- * de `menu_update_balance()` (suma del libro, nunca un contador), y si no
- * devuelve fila es que el restaurante no tiene el servicio, y se dice el
- * motivo (CA-20) en vez de enseñar ceros.
+ * Todo lo que se lee lo filtra RLS y lo decide el servidor: si
+ * `establishment_daily_menu_access()` no devuelve nada, el restaurante no
+ * tiene el servicio ni un plan que lo incluya (RN-CRE-21), y se dice el
+ * motivo (CA-20). Desde la decisión 85 no hay contador de actualizaciones
+ * que enseñar (RN-CRE-22).
  *
  * "Última actualización" es la hora de la última versión guardada
  * (`menu_versions`), que es lo que el restaurante entiende por actualizar
@@ -63,15 +64,15 @@ export default async function ClientDailyMenuPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { establishment, balance, timezone, cycleLabel } = await loadMenuSection(supabase, id);
+  const { establishment, access, timezone } = await loadMenuSection(supabase, id);
   if (!establishment) notFound();
 
   const base = `/espacios/${slug}/restaurantes/${id}/menu-diario`;
 
-  if (!balance) {
+  if (!access) {
     return (
       <div className="space-y-6">
-        <MenuSectionHeader base={base} active="menus" title={d.title} subtitle={t.subtitle} balance={null} cycleLabel={null} />
+        <MenuSectionHeader base={base} active="menus" title={d.title} subtitle={t.subtitle} access={null} />
         <Card title={d.noServiceTitle}>
           <p className="text-sm text-text-secondary">{d.noServiceReason}</p>
         </Card>
@@ -120,8 +121,7 @@ export default async function ClientDailyMenuPage({
         active="menus"
         title={d.title}
         subtitle={t.subtitle}
-        balance={balance}
-        cycleLabel={cycleLabel}
+        access={access}
       />
 
       <div className="flex flex-wrap items-end gap-4">
@@ -234,7 +234,7 @@ export default async function ClientDailyMenuPage({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <InfoNote title={t.aboutTitle}>
-            <p>{t.aboutBody(balance.included_updates)}</p>
+            <p>{t.aboutBody}</p>
             <Link href={`${base}/servicio`} className="mt-1 inline-flex items-center gap-1 font-semibold text-cuotly-green underline">
               {t.aboutLink}
               <Icon name="arrowRight" className="h-4 w-4" />

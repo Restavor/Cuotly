@@ -2,9 +2,9 @@ import Link from "next/link";
 
 import { MenuPreview, menuDocumentFromRows } from "@/components/menu/MenuPreview";
 import { PrintMenuButton } from "@/components/menu/PrintMenuButton";
-import { Card, ProgressBar } from "@/components/ui";
+import { Card } from "@/components/ui";
 import { Icon } from "@/components/ui/Icon";
-import { isMenuEditable, type MenuState } from "@/core/menu-states";
+import { canSaveMenuVersion, isMenuEditable, type MenuState } from "@/core/menu-states";
 import { es } from "@/i18n/es";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -17,19 +17,19 @@ const t = es.dailyMenuTeam;
 /**
  * M79 · "Editar menú diario" para el equipo (`?vista=editar`). Son las
  * mismas piezas que el editor del restaurante (R14): el contenido por
- * secciones, los datos del menú con su plantilla y la vista previa con
- * esa plantilla, porque el menú es uno y la regla también: cada guardado
- * es una versión (RN-MEN-03) y `save_menu_version()` decide quién escribe
+ * secciones, los datos del menú y la vista previa con su plantilla de
+ * publicar, porque el menú es uno y la regla también: cada guardado es
+ * una versión (RN-MEN-03; el menú del día publicado también, y vuelve a
+ * borrador, RN-CRE-30) y `save_menu_version()` decide quién escribe
  * (`can_write_menus()`: el equipo con `manage_requests`). La pantalla solo
  * se ofrece a quien tiene ese permiso; la que lo impide es la función.
  *
  * Lo que el dibujo pone y aquí no está:
- *   · "Solicitar publicación". Pedir que se publique es del restaurante
- *     (RN-MEN-07, el corte de las 21:00 cuenta desde su petición); el
- *     equipo publica desde la ficha, con "Marcar publicado".
- *   · Plantillas con foto de muestra ("Clásica", "Moderna", "Fotográfica").
- *     Las plantillas son las que el restaurante tiene dadas de alta, y se
- *     eligen por su nombre; no se enseña una imagen de ejemplo.
+ *   · "Solicitar publicación". Pedir que se publique es del restaurante;
+ *     el equipo publica desde la ficha, con "Marcar publicado".
+ *   · Elegir plantilla. Cada restaurante tiene una para publicar y otra
+ *     para imprimir, y el menú sale en las dos (RN-CRE-23, decisión 86).
+ *   · El cupo de actualizaciones: ya no existe (RN-CRE-22).
  */
 export async function TeamMenuEditor({
   supabase,
@@ -54,7 +54,7 @@ export async function TeamMenuEditor({
   downloadHref: string;
 }) {
   const p = es.panelMenus;
-  const [{ data: current }, { data: templates }, { data: balanceRows }] = await Promise.all([
+  const [{ data: current }, { data: templates }] = await Promise.all([
     menu.current_version_id
       ? supabase
           .from("menu_versions")
@@ -64,18 +64,18 @@ export async function TeamMenuEditor({
       : Promise.resolve({ data: null }),
     supabase
       .from("menu_templates")
-      .select("id, name, layout, background_color, text_color, accent_color, heading_text, footer_text, show_prices")
+      .select("id, name, purpose, layout, background_color, text_color, accent_color, heading_text, footer_text, show_prices")
       .eq("establishment_id", menu.establishment_id)
       .is("archived_at", null)
       .order("created_at"),
-    // El cupo del ciclo: sin servicio de Menú Diario no hay fila, y
-    // entonces no se pinta una barra de un cupo que no existe.
-    supabase.rpc("menu_update_balance", { p_establishment_id: menu.establishment_id }),
   ]);
 
-  const editable = isMenuEditable(menu.state);
-  const template = (templates ?? []).find((tpl) => tpl.id === menu.template_id) ?? null;
-  const balance = balanceRows?.[0] ?? null;
+  const editable = canSaveMenuVersion(menu.state, menu.kind);
+  const detailsEditable = isMenuEditable(menu.state);
+  const template =
+    (templates ?? []).find((tpl) => tpl.id === menu.template_id) ??
+    (templates ?? []).find((tpl) => tpl.purpose === "publish") ??
+    null;
   const doc =
     template !== null && current !== null
       ? menuDocumentFromRows({
@@ -111,13 +111,12 @@ export async function TeamMenuEditor({
             name={menu.name}
             kind={menu.kind}
             targetDate={menu.target_date}
-            templateId={menu.template_id}
-            templates={(templates ?? []).map((tpl) => ({ id: tpl.id, name: tpl.name }))}
-            editable={editable}
+            editable={detailsEditable}
           />
           <VersionEditor
             menuId={menu.id}
             editable={editable}
+            publishedDaily={menu.state === "published" && menu.kind === "daily"}
             compareHref={fichaHref}
             current={
               current
@@ -149,27 +148,13 @@ export async function TeamMenuEditor({
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto_auto]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
         <div className="flex items-center gap-3 rounded-card border border-info/30 bg-info/10 px-5 py-4 text-sm text-text">
           <Icon name="info" aria-hidden="true" className="h-5 w-5 shrink-0 text-info" />
           <p>{editable ? t.editor.versionsNote : t.editor.notEditable}</p>
         </div>
-        {balance ? (
-          <div className="min-w-48 rounded-card border border-border bg-surface px-5 py-4">
-            <p className="text-xs text-text-secondary">{t.editor.quotaTitle}</p>
-            <p className="text-sm font-semibold text-primary-dark">
-              {t.editor.quotaValue(balance.consumed, balance.included_updates)}
-            </p>
-            <div className="mt-2">
-              <ProgressBar
-                percent={balance.included_updates > 0 ? (balance.consumed / balance.included_updates) * 100 : 0}
-                label={t.editor.quotaValue(balance.consumed, balance.included_updates)}
-              />
-            </div>
-          </div>
-        ) : null}
         <div className="flex flex-wrap items-center gap-3">
-          {current !== null && menu.template_id !== null ? (
+          {current !== null && template !== null ? (
             <a
               href={`${downloadHref}?formato=pdf`}
               className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green hover:bg-cuotly-green/10"
@@ -178,7 +163,7 @@ export async function TeamMenuEditor({
               {t.editor.download}
             </a>
           ) : null}
-          {current !== null && menu.template_id !== null ? (
+          {current !== null && template !== null ? (
             <PrintMenuButton
               href={`${downloadHref}?formato=pdf&imprimir=1`}
               className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-cuotly-green bg-surface px-4 py-2.5 text-sm font-semibold text-cuotly-green hover:bg-cuotly-green/10"

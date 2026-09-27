@@ -23,8 +23,11 @@ const t = es.dailyMenuClient;
  *
  * La petición de publicación lleva una clave de idempotencia que genera
  * la pantalla al pintarse: pulsar dos veces, o reenviar el formulario,
- * devuelve la misma publicación y consume una sola actualización
- * (RN-CON-07, CA-17).
+ * devuelve la misma publicación (RN-CON-07, CA-17). Desde la decisión 85
+ * no consume nada (RN-CRE-22).
+ *
+ * El restaurante no elige plantilla (RN-CRE-23): el servidor pone la de
+ * publicar al crear el menú y usa la de imprimir al imprimir.
  */
 export async function createMenu(
   slug: string,
@@ -35,7 +38,6 @@ export async function createMenu(
   const name = String(formData.get("name") ?? "").trim();
   const kind = String(formData.get("kind") ?? "daily");
   const targetDate = String(formData.get("targetDate") ?? "");
-  const templateId = String(formData.get("templateId") ?? "");
 
   if (!name || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
     return { error: t.newValidation, done: false, notice: null };
@@ -47,7 +49,6 @@ export async function createMenu(
     p_name: name,
     p_kind: kind,
     p_target_date: targetDate,
-    p_template_id: templateId || undefined,
   });
 
   if (error || !menuId) {
@@ -132,19 +133,9 @@ export async function saveMenuVersion(
     return { error: error?.message ?? es.states.errorDescription, done: false, notice: null };
   }
 
-  // RN-MEN-07: si la versión llegó después del corte, se dice aquí mismo.
-  const { data: version } = await supabase
-    .from("menu_versions")
-    .select("after_cutoff")
-    .eq("id", versionId)
-    .maybeSingle();
-
+  // RN-CRE-24 · sin hora de corte: guardar es guardar, a la hora que sea.
   revalidatePath("/espacios", "layout");
-  return {
-    error: null,
-    done: true,
-    notice: version?.after_cutoff ? t.savedAfterCutoff : t.savedVersion,
-  };
+  return { error: null, done: true, notice: t.savedVersion };
 }
 
 export async function updateMenuDetails(
@@ -155,7 +146,6 @@ export async function updateMenuDetails(
   const name = String(formData.get("name") ?? "").trim();
   const kind = String(formData.get("kind") ?? "daily");
   const targetDate = String(formData.get("targetDate") ?? "");
-  const templateId = String(formData.get("templateId") ?? "");
 
   if (!name || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
     return { error: t.newValidation, done: false, notice: null };
@@ -167,9 +157,10 @@ export async function updateMenuDetails(
     p_name: name,
     p_kind: kind,
     p_target_date: targetDate,
-    // La función admite null ("sin plantilla"); el tipo generado no lo
-    // sabe porque el parámetro no tiene valor por omisión en la 77.
-    p_template_id: (templateId || null) as unknown as string,
+    // RN-CRE-23 · null deja la plantilla que tiene (la de publicar). El
+    // tipo generado no sabe que admite null: el parámetro no tiene valor
+    // por omisión desde la 77.
+    p_template_id: null as unknown as string,
   });
 
   if (error) return { error: error.message, done: false, notice: null };
@@ -251,21 +242,4 @@ export async function copyMenu(
 
   revalidatePath("/espacios", "layout");
   redirect(`/espacios/${slug}/restaurantes/${establishmentId}/menu-diario/${newId}`);
-}
-
-/**
- * RN-COR-10 · la corrección mínima de un menú publicado. Una por
- * publicación (RN-COR-01), dentro de la ventana (RN-COR-02), y garantizada
- * solo si llega antes de las 21:00 del día anterior: todo lo decide
- * `request_menu_correction()`.
- */
-export async function requestMenuCorrection(
-  menuId: string,
-  _prev: MenuActionState,
-  formData: FormData,
-): Promise<MenuActionState> {
-  const description = String(formData.get("description") ?? "").trim();
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("request_menu_correction", { p_menu_id: menuId, p_description: description });
-  return afterRpc(error);
 }

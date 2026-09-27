@@ -323,11 +323,7 @@ const conDatos: SheetData["operation"] = {
     ],
   },
   menus: {
-    consumed: 12,
-    included: 30,
-    usedPercent: 40,
-    cycleStart: "2026-09-14T07:00:00.000Z",
-    cycleEnd: "2026-10-14T07:00:00.000Z",
+    access: "plan",
     rows: {
       hidden: 3,
       shown: [
@@ -460,10 +456,10 @@ describe("M25, M27 y M31 · las columnas del diseño definitivo", () => {
     expect(card.getByText(t.evidenceUnknown)).toBeInTheDocument();
   });
 
-  it("M31 · la cuota del ciclo es la del servidor y la tabla lleva a cada menú", () => {
+  it("M31 · RN-CRE-21 · dice de dónde le viene Menú Diario, sin cuota, y la tabla lleva a cada menú", () => {
     pintar(conDatos, seccion("dailyMenu"));
     const card = within(tarjeta(t.dailyMenuTitle));
-    expect(card.getByText(t.dailyMenuQuota(12, 30))).toBeInTheDocument();
+    expect(card.getByText(t.dailyMenuAccess.plan)).toBeInTheDocument();
     expect(card.getByRole("link", { name: "Menú del domingo" })).toHaveAttribute(
       "href",
       "/espacios/demo/menu-diario/m-1",
@@ -480,18 +476,14 @@ describe("M25, M27 y M31 · las columnas del diseño definitivo", () => {
       {
         ...vacia,
         menus: {
-          consumed: 0,
-          included: 30,
-          usedPercent: 0,
-          cycleStart: "2026-09-14T07:00:00.000Z",
-          cycleEnd: "2026-10-14T07:00:00.000Z",
+          access: "service",
           rows: { shown: [], hidden: 0 },
         },
       },
       seccion("dailyMenu"),
     );
     expect(screen.getByText(t.dailyMenuEmptyTitle)).toBeInTheDocument();
-    expect(screen.getByText(t.dailyMenuQuota(0, 30))).toBeInTheDocument();
+    expect(screen.getByText(t.dailyMenuAccess.service)).toBeInTheDocument();
   });
 
   it("M31 · si el saldo no se pudo leer lo dice: no es 'sin Menú Diario' (CA-20)", () => {

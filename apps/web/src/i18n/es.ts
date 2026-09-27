@@ -1048,10 +1048,9 @@ export const es = {
       pending: (n: number) => (n === 1 ? "1 publicación pendiente" : `${n} publicaciones pendientes`),
       pendingHint: "Pedidas por los restaurantes y todavía sin publicar, o publicadas con una corrección abierta.",
       unassigned: (n: number) => (n === 1 ? "1 sin asignar" : `${n} sin asignar`),
-      overdue: (n: number) => (n === 1 ? "1 garantizada pasada de hora" : `${n} garantizadas pasadas de hora`),
       // CA-20 · sin servicio no hay cero que enseñar: se dice el motivo.
       noServiceTitle: "Este espacio no ofrece Menú Diario",
-      noServiceReason: "No hay ningún servicio de tipo Menú Diario en Planes y servicios.",
+      noServiceReason: "No hay ningún servicio de tipo Menú Diario ni ningún plan que lo incluya en Planes y servicios.",
       // CA-20 · la consulta falló: el sitio del número lo ocupa el motivo.
       unavailable: "No se ha podido calcular",
     },
@@ -2866,13 +2865,15 @@ export const es = {
       acceptDone: "Aceptada.",
       changesTitle: "Qué cambia",
     },
-    serviceTitle: "Servicio adicional contratado",
+    serviceTitle: "Servicios",
     serviceActive: "Servicio activo",
     serviceMenu: "Menú Diario",
-    serviceMenuUpdates: (n: number) => `${n} actualizaciones de Menú Diario por ciclo`,
-    serviceMenuTemplates: (n: number) => `${n} plantillas iniciales`,
-    serviceSeparate: "Menú Diario es un servicio adicional: se contrata aparte del plan de mantenimiento.",
-    noService: "No tienes contratado ningún servicio adicional.",
+    // RN-CRE-21 a RN-CRE-23 · sin contador de actualizaciones.
+    serviceMenuOnePerDay: "Un menú del día por fecha, que puedes cambiar sin límite",
+    serviceMenuTemplates: (n: number) => `${n} plantillas: una para publicar y otra para imprimir`,
+    serviceSeparate: "Lo tienes contratado aparte de tu plan de mantenimiento.",
+    serviceInPlan: "Va incluido en tu plan de mantenimiento.",
+    noService: "No tienes Menú Diario: tu plan no lo incluye y no lo has contratado aparte.",
     viewUsage: "Ver consumos",
     viewConditions: "Consultar condiciones",
     requestChange: "Solicitar cambio",
@@ -3120,8 +3121,6 @@ export const es = {
     requestCreated: "Solicitud",
     planRenewal: "Renovación del plan",
     planRenewalDetail: "Empieza un nuevo ciclo de cambios incluidos.",
-    menuRenewal: "Renovación de Menú Diario",
-    menuRenewalDetail: "Empieza un nuevo ciclo de actualizaciones.",
     reportSent: (nombre: string) => `Informe disponible · ${nombre}`,
     chargeDue: (concepto: string) => `Vence un cobro · ${concepto}`,
     teamWillAnswer: "El equipo de mantenimiento revisará tu solicitud y te responderá por los mensajes.",
@@ -3133,11 +3132,12 @@ export const es = {
   // `dailyMenuClient` y se reutiliza.
   panelMenus: {
     subtitle: "Gestiona tus menús del día, consulta su estado y solicita su publicación en la web.",
-    tabs: { menus: "Menús", templates: "Plantillas", service: "Servicio y consumo" },
+    tabs: { menus: "Menús", templates: "Plantillas", service: "Servicio" },
     tabsLabel: "Secciones de Menú Diario",
-    usageTitle: "Actualizaciones del ciclo",
-    usageLine: (usadas: number, incluidas: number) => `${usadas} / ${incluidas} utilizadas`,
-    cycleTitle: "Ciclo actual",
+    // RN-CRE-21 · de dónde le viene el servicio. Sin contador (RN-CRE-22).
+    accessTitle: "Menú Diario",
+    accessPlan: "Incluido en tu plan",
+    accessService: "Contratado aparte",
     createMenu: "Crear menú",
     copyPrevious: "Copiar menú anterior",
     filterMonth: "Fecha",
@@ -3158,10 +3158,10 @@ export const es = {
     notSaved: "Sin guardar todavía",
     emptyFilteredTitle: "Ningún menú con estos filtros",
     emptyFilteredReason: "Quita algún filtro para ver el resto.",
-    aboutTitle: "Sobre las actualizaciones",
-    aboutBody: (incluidas: number) =>
-      `Tu servicio incluye ${incluidas} actualizaciones por ciclo. Cada menú que mandas a publicar consume una, y se reinician con cada renovación. Descargar el PNG o el PDF no consume nada.`,
-    aboutLink: "Ver servicio y consumo",
+    aboutTitle: "Cómo funciona",
+    aboutBody:
+      "Un menú del día por fecha. Escríbelo cuando quieras, pulsa Guardar y pide que se publique. Si cambias uno ya publicado, el equipo lo sustituye en tu web; sin límite de veces. Descargar o imprimir no cuesta nada.",
+    aboutLink: "Ver servicio",
     helpTitle: "¿Necesitas ayuda?",
     helpBody: "Consulta nuestras guías o escribe al equipo de mantenimiento.",
     helpLink: "Ir a Ayuda",
@@ -3177,7 +3177,7 @@ export const es = {
     previewTitle: "Vista previa",
     openPreview: "Ver vista previa",
     previewOfVersion: (n: number) => `Así queda la versión ${n}, la última guardada.`,
-    previewNoTemplate: "Elige una plantilla en «Datos del menú» para ver cómo queda.",
+    previewNoTemplate: "Tu plantilla para publicar todavía no está lista: la prepara el equipo.",
     previewNoContent: "Guarda el contenido para ver cómo queda.",
     previewUnknownLayout: "Esta plantilla no tiene todavía una vista previa que enseñar.",
     previewAlt: (nombre: string) => `Vista previa de ${nombre}`,
@@ -3195,18 +3195,21 @@ export const es = {
     // A18
     pendingNotRequestedTitle: "Los últimos cambios todavía no están publicados.",
     pendingNotRequestedBody: (n: number) =>
-      `La versión ${n} está guardada, pero nadie ha pedido todavía que se publique en tu web. Pedirlo consume una actualización.`,
+      `La versión ${n} está guardada, pero nadie ha pedido todavía que se publique en tu web.`,
     pendingRequestAction: (n: number) => `Solicitar publicación de v${n}`,
     pendingAfterRequestTitle: "Has guardado cambios después de pedir la publicación.",
     pendingAfterRequestBody: (n: number) =>
-      `El equipo publica la versión vigente, que ahora es la ${n}. No se vuelve a consumir ninguna actualización.`,
-    pendingAfterCutoff: "Alguno de esos cambios se guardó después de las 21:00 del día anterior: no se garantiza que entre.",
+      `El equipo publica la versión vigente, que ahora es la ${n}.`,
+    // RN-CRE-30 · el menú del día publicado se cambia editándolo.
+    changedAfterPublishTitle: "Cambios sin publicar",
+    changedAfterPublishBody: (publicada: number, actual: number) =>
+      `En tu web sigue la versión ${publicada}. Has guardado la ${actual}: pide que se publique y el equipo la sustituirá.`,
     pendingViewVersions: "Ver versiones",
 
     // R16
     previewPageSubtitle: "Revisa cómo se verá tu menú y descárgalo en PDF o imagen. Cuando esté listo, puedes pedir su publicación.",
     downloadTitle: "Descargar",
-    downloadNotPublish: "Descargar o imprimir el menú no lo publica en tu web ni consume ninguna actualización.",
+    downloadNotPublish: "Descargar o imprimir el menú no lo publica en tu web y no cuesta nada. Para imprimir se usa tu plantilla en blanco y negro.",
     infoTitle: "Información del menú",
     infoDate: "Fecha",
     infoTitleLabel: "Título",
@@ -3222,7 +3225,6 @@ export const es = {
     menuDataTitle: "Datos del menú",
     versionLabel: "Versión",
     versionCurrent: (n: number) => `v${n} (actual)`,
-    deadlinesTitle: "Plazos",
     requestStateTitle: "Estado de la solicitud",
     afterSending: "Después de enviar:",
     pubSteps: {
@@ -3236,7 +3238,6 @@ export const es = {
     versionsSubtitle: "Consulta el historial de versiones, compara cambios y descarga el menú. Ninguna versión se borra.",
     versionListTitle: "Lista de versiones",
     versionPublished: "Publicada",
-    versionAfterCutoff: "Después de las 21:00",
     actionsTitle: "Acciones",
     downloadPdfOf: (n: number) => `Descargar PDF (v${n})`,
     downloadPngOf: (n: number) => `Descargar imagen (v${n})`,
@@ -3244,32 +3245,31 @@ export const es = {
 
     // R15
     templatesSubtitle:
-      "Tus plantillas de Menú Diario. Incluye 3 plantillas iniciales; las nuevas o los rediseños se presupuestan aparte.",
+      "Tus dos plantillas de Menú Diario: una para publicar en tu web y otra para imprimir en blanco y negro. Un diseño nuevo gasta créditos de tu plan o se presupuesta aparte.",
     templatesAvailable: "Plantillas disponibles",
     templatePreviewTitle: "Vista previa de la plantilla",
     templatePreviewWith: (menu: string) => `Con los platos de «${menu}», tu último menú guardado.`,
     templatePreviewEmpty: "Todavía no has guardado ningún menú: la vista previa enseñará tus platos cuando lo hagas.",
-    templateSelectHint: "Cada menú elige su plantilla en «Datos del menú».",
+    templateSelectHint: "No tienes que elegir: cada menú sale en la de publicar para tu web y en la de imprimir para el papel.",
+    templatePurpose: { publish: "Para publicar", print: "Para imprimir (blanco y negro)" },
     customTitle: "Personalización",
     customBody:
-      "Si necesitas una plantilla nueva o un rediseño, pídelo al equipo: se presupuesta aparte.",
+      "Si necesitas un diseño nuevo, pídelo al equipo: gasta créditos de tu plan o se presupuesta aparte.",
     requestTemplate: "Solicitar nueva plantilla",
 
     // R19
-    serviceSubtitle: "Tu servicio de Menú Diario, el consumo de actualizaciones del ciclo y tus plantillas.",
+    serviceSubtitle: "Tu servicio de Menú Diario y tus plantillas.",
     serviceTitle: "Tu servicio actual",
     serviceActive: "Activo",
-    serviceIncluded: (n: number) => `${n} actualizaciones por ciclo`,
-    serviceTemplates: (n: number) => `${n} plantillas iniciales incluidas`,
-    serviceRenews: "La cuota se renueva en cada renovación y no se acumula",
+    // RN-CRE-22 a RN-CRE-24 · lo que incluye, sin contador ni hora de corte.
+    serviceOnePerDay: "Un menú del día por fecha, que puedes cambiar sin límite",
+    serviceTemplates: (n: number) => `${n} plantillas incluidas: una para publicar y otra para imprimir en blanco y negro`,
+    serviceNoCutoff: "Sin hora límite: escríbelo cuando quieras y pulsa Guardar",
     serviceNoName: "Menú Diario",
-    consumptionTitle: "Consumo de actualizaciones",
-    consumptionPeriod: (desde: string, hasta: string) => `Periodo: ${desde} – ${hasta}`,
-    consumptionExhausted: "Has usado todas las actualizaciones de este ciclo. Si necesitas publicar otro menú, escribe al equipo.",
-    consumptionAskTeam: "Escribir al equipo",
     serviceInfoTitle: "Información",
-    serviceInfoBody: "El servicio de Menú Diario se contrata aparte del plan de mantenimiento.",
-    templatesIncluded: (n: number) => `Plantillas (${n} incluidas)`,
+    serviceInfoPlan: "Va incluido en tu plan de mantenimiento.",
+    serviceInfoService: "Lo tienes contratado aparte de tu plan de mantenimiento.",
+    templatesTitle: "Tus plantillas",
   },
 
   // R05 a R12 · las solicitudes del panel del restaurante con el diseño
@@ -4452,6 +4452,7 @@ export const es = {
       queueRankHint: "El restaurante no lo ve (RN-COM-03).",
       grantsPriority: "Menú Diario a precio reducido y oportunidades avanzadas",
       watchesReviews: "Vigilancia de reseñas",
+      includesDailyMenu: "Incluye Menú Diario",
       reportLevel: "Nivel de informe",
       reportLevels: {
         basic: "Básico",
@@ -4485,7 +4486,7 @@ export const es = {
       updatesHint: "Por ciclo mensual, no acumulables (RN-COM-09).",
       templates: "Plantillas iniciales",
       templatesValue: (n: number) => `${n} diseños incluidos`,
-      templatesHint: "Una sola vez (RN-COM-10).",
+      templatesHint: "Una para publicar y otra para imprimir, una sola vez (RN-CRE-23).",
       commitment: "Permanencia",
       commitmentValue: "3 meses",
       restaurantsCount: (n: number) => `${n} ${n === 1 ? "restaurante" : "restaurantes"}`,
@@ -4522,6 +4523,8 @@ export const es = {
       canOrderRequests: "Ordena sus propias solicitudes",
       grantsPriority: "Menú Diario a precio reducido y oportunidades avanzadas (Premium+)",
       watchesReviews: "Vigilancia de reseñas",
+      // RN-CRE-21 · quien lo tiene en su plan no lo contrata suelto.
+      includesDailyMenu: "Incluye Menú Diario",
       updatesLabel: "Actualizaciones incluidas por ciclo",
       savePlan: "Guardar plan",
       saveService: "Guardar servicio",
@@ -4594,6 +4597,7 @@ export const es = {
         report_level: "Nivel de informe",
         report_period: "Cada cuánto llega el informe",
         watches_reviews: "Vigilancia de reseñas",
+        includes_daily_menu: "Incluye Menú Diario",
         queue_rank: "Turno en la cola",
       } as Record<string, string | undefined>,
       noValue: "Sin precio reducido",
@@ -4657,6 +4661,7 @@ export const es = {
         ordering: "Ordena sus solicitudes",
         report: "Informe",
         reportPeriod: "Cada cuánto llega el informe",
+        dailyMenu: "Incluye Menú Diario",
       },
       configTitle: "Configuración del cambio",
       pickTargetFirst: "Elige un plan en la comparativa para ver cómo se haría el cambio.",
@@ -6090,26 +6095,24 @@ export const es = {
    */
   dailyMenuTeam: {
     title: "Menú Diario",
-    subtitle: "Las publicaciones que los restaurantes han pedido, por fecha y hora de corte.",
+    subtitle: "Las publicaciones que los restaurantes han pedido, por fecha.",
     queueTitle: "Cola de publicaciones",
     queueEmptyTitle: "No hay ninguna publicación pendiente",
     queueEmptyReason:
       "Cuando un restaurante pida la publicación de un menú, o pida una corrección de uno publicado, aparecerá aquí.",
     noServiceTitle: "Este espacio no ofrece Menú Diario",
-    noServiceReason: "No hay ningún servicio de tipo Menú Diario en Planes y servicios, así que ningún restaurante puede pedir publicaciones.",
+    noServiceReason:
+      "No hay ningún servicio de tipo Menú Diario ni ningún plan que lo incluya en Planes y servicios, así que ningún restaurante puede pedir publicaciones.",
     menuColumn: "Menú",
     establishmentColumn: "Restaurante",
     dateColumn: "Fecha",
-    cutoffColumn: "Corte",
+    requestedColumn: "Pedida",
     stateColumn: "Estado",
     assigneeColumn: "Asignado a",
     unassigned: "Sin asignar",
     assignedToSomeone: "Asignado",
-    guaranteedShort: "Garantizada",
-    notGuaranteedShort: "Sin garantía",
-    overdueShort: "Pasada de hora",
     correctionsPending: (n: number) => (n === 1 ? "1 corrección pendiente" : `${n} correcciones pendientes`),
-    orderHint: "Primero la fecha más próxima; a igual fecha, el corte más cercano.",
+    orderHint: "Primero la fecha más próxima.",
     openLink: "Abrir",
 
     backToQueue: "Volver a la cola",
@@ -6121,21 +6124,13 @@ export const es = {
       establishment: (name: string) => `Restaurante: ${name}`,
       versionsNote: "Cada guardado es una versión nueva; la publicada no cambia hasta que se publique otra.",
       notEditable: "Este menú ya no admite cambios de contenido.",
-      quotaTitle: "Cupo de actualizaciones",
-      quotaValue: (consumed: number, included: number) => `${consumed} / ${included}`,
       download: "Descargar",
     },
     detailSubtitle: (establishment: string, kind: string, date: string) => `${establishment} · ${kind} · ${date}`,
     detailTemplate: "Plantilla",
     detailNoTemplate: "Sin plantilla",
 
-    deadlinesTitle: "Plazos",
-    cutoffLine: (when: string) => `Corte: ${when}. Hasta entonces el restaurante puede cambiar el contenido.`,
-    publishByLine: (when: string) => `Límite de publicación: ${when}.`,
     requestedLine: (when: string) => `Publicación pedida el ${when}.`,
-    guaranteed: "Garantizada: la petición y la última versión llegaron antes del corte. Hay que publicar antes de las 08:00.",
-    notGuaranteed: "Sin garantía: la petición o alguna versión llegaron después del corte. Se publica cuando se pueda.",
-    overdue: "Pasada de hora: estaba garantizada antes de las 08:00 y sigue sin publicar.",
     notRequested: "El restaurante todavía no ha pedido la publicación.",
 
     publicationTitle: "Publicación",
@@ -6154,10 +6149,9 @@ export const es = {
     drink: "Bebida",
     price: "Precio",
     note: "Nota",
-    // RN-MEN-07: "el trabajador ve los cambios de versión y su hora".
+    // El trabajador ve los cambios de versión y su hora.
     versionsTitle: "Versiones y sus horas",
     versionLine: (n: number, when: string) => `Versión ${n} · ${when}`,
-    versionAfterCutoff: "después del corte",
     versionAfterRequest: "después de pedir la publicación",
 
     downloadsTitle: "Descargar la plantilla generada",
@@ -6165,7 +6159,7 @@ export const es = {
       "Paso 4 de §61: si eres quien tiene asignada la publicación, descargar pone el menú en «Listo para publicar». Descargar no consume nada.",
     downloadPng: "Descargar PNG",
     downloadPdf: "Descargar PDF",
-    downloadsNeedContent: "Para generarla hacen falta contenido guardado y una plantilla.",
+    downloadsNeedContent: "Para generarla hacen falta contenido guardado y la plantilla para publicar.",
 
     actionsTitle: "Qué puedes hacer",
     assignTitle: "Asignar",
@@ -6189,7 +6183,7 @@ export const es = {
 
     publishTitle: "Marcar como publicado",
     publishHint:
-      "Cuando ya lo has subido a LandingSite. Se registran fecha, hora, versión, plantilla y consumo, y se avisa al restaurante (§61).",
+      "Cuando ya lo has subido a LandingSite. Se registran fecha, hora, versión y plantilla, y se avisa al restaurante (§61). Si ya había otra publicada, esta la sustituye (RN-CRE-30).",
     publishSubmit: "Marcar como publicado",
 
     errorTitle: "Error de publicación",
@@ -6199,7 +6193,7 @@ export const es = {
 
     refundTitle: "Devolver la actualización",
     refundHint:
-      "Solo por un error del equipo (§60): devuelve al restaurante la actualización que consumió esta publicación, una sola vez y con motivo.",
+      "Solo por un error del equipo (§60) y solo en publicaciones de antes de la decisión 85, que consumían una actualización: la devuelve una sola vez y con motivo.",
     refundLabel: "Motivo",
     refundSubmit: "Devolver la actualización",
     refundDone: "Esta publicación ya tiene su actualización devuelta.",
@@ -6208,8 +6202,6 @@ export const es = {
     correctionsEmpty: "Ninguna corrección pedida.",
     correctionKind: { client_request: "pedida por el restaurante", team_error: "por error del equipo" },
     correctionRequested: (when: string) => `Pedida el ${when}`,
-    correctionGuaranteed: "garantizada",
-    correctionNotGuaranteed: "sin garantía: llegó después de las 21:00 del día anterior",
     correctionCompleted: (when: string) => `Aplicada el ${when}`,
     correctionCompleteNoteLabel: "Nota (opcional)",
     correctionCompleteSubmit: "Marcar como aplicada",
@@ -6323,8 +6315,8 @@ export const es = {
     templatesTitle: "Tus plantillas",
     templatesEmptyTitle: "Sin plantillas todavía",
     templatesEmptyReason:
-      "El equipo de mantenimiento todavía no ha creado tus plantillas. Puedes preparar menús, pero no pedir su publicación ni descargarlos hasta que haya una.",
-    templateOrigin: { included: "Incluida", quoted: "Presupuestada aparte" },
+      "El equipo de mantenimiento todavía no ha creado tus plantillas. Puedes escribir menús, pero no prepararlos ni descargarlos hasta que esté la de publicar.",
+    templateOrigin: { included: "Incluida", quoted: "Con créditos o presupuesto" },
 
     menusTitle: "Tus menús",
     menusEmptyTitle: "Todavía no has preparado ningún menú",
@@ -6336,9 +6328,7 @@ export const es = {
     newNameHint: "Cómo lo verás en tu lista: «Menú del día», «Menú de Navidad»…",
     newKindLabel: "Tipo",
     newDateLabel: "Fecha del menú",
-    newDateHint: "El día en que se sirve. Se puede cambiar hasta las 21:00 del día anterior.",
-    newTemplateLabel: "Plantilla",
-    newTemplateNone: "Sin plantilla",
+    newDateHint: "El día en que se sirve. Un menú del día por fecha.",
     newSubmit: "Crear menú",
     newSubmitPending: "Creando…",
     newValidation: "El nombre y la fecha son obligatorios.",
@@ -6346,18 +6336,13 @@ export const es = {
     detailKind: "Tipo",
     detailDate: "Fecha",
     detailTemplate: "Plantilla",
-    detailNoTemplate: "Sin plantilla: elige una para poder prepararlo.",
-
-    deadlinesTitle: "Plazos",
-    cutoffLine: (when: string) => `Puedes cambiar el contenido hasta las ${when}.`,
-    publishByLine: (when: string) => `Si lo pides antes, se publica antes de las ${when}.`,
-    guaranteed: "Publicación garantizada: pediste la publicación y guardaste la última versión antes del corte.",
-    notGuaranteed:
-      "Publicación no garantizada: la petición o algún cambio llegaron después de las 21:00 del día anterior. El equipo lo intentará, pero no está garantizado que entre en la publicación prevista.",
-    notRequested: "Todavía no has pedido la publicación.",
+    detailNoTemplate: "Tu plantilla para publicar todavía no está lista: la prepara el equipo.",
 
     editorTitle: (version: number | null) => (version === null ? "Contenido" : `Contenido · versión ${version}`),
-    editorLocked: "Un menú publicado o cancelado no se edita. Cópialo para crear un borrador nuevo.",
+    editorLocked: "Este menú ya no se edita. Cópialo para crear un borrador nuevo.",
+    // RN-CRE-30 · el menú del día publicado se cambia editándolo.
+    editorPublishedDaily:
+      "Este menú está publicado. Si guardas un cambio, vuelve a borrador y lo que hay en tu web sigue igual hasta que el equipo publique la versión nueva.",
     startersLabel: "Primeros",
     mainsLabel: "Segundos",
     dessertsLabel: "Postres",
@@ -6369,7 +6354,6 @@ export const es = {
     saveVersion: "Guardar versión",
     saveVersionPending: "Guardando…",
     savedVersion: "Versión guardada.",
-    savedAfterCutoff: "Versión guardada después de las 21:00: se acepta, pero no se garantiza que entre en la publicación prevista.",
     priceInvalid: "El precio no se entiende. Escríbelo como 14,50.",
 
     detailsTitle: "Datos del menú",
@@ -6379,12 +6363,12 @@ export const es = {
 
     actionsTitle: "Qué puedes hacer",
     prepare: "Marcar como preparado",
-    prepareHint: "Dice que el menú está completo. Necesita contenido guardado y plantilla.",
+    prepareHint: "Dice que el menú está completo. Necesita contenido guardado y tu plantilla para publicar.",
     requestPublication: "Pedir la publicación",
-    requestPublicationHint: "Consume una actualización. El equipo lo publicará en tu web.",
+    requestPublicationHint: "El equipo lo publicará en tu web. No cuesta nada.",
     cancel: "Cancelar el menú",
     cancelReasonLabel: "Motivo",
-    cancelHint: "Si ya habías pedido la publicación, se te devuelve la actualización.",
+    cancelHint: "Si ya habías pedido la publicación, el equipo deja de publicarlo.",
     cancelReasonRequired: "Di por qué lo cancelas.",
     copy: "Copiar para otro día",
     copyDateLabel: "Fecha del menú nuevo",
@@ -6403,41 +6387,23 @@ export const es = {
     answerLabel: "Respuesta",
     answer: "Enviar respuesta",
     nothingToDo: "Este menú ya está cerrado. Puedes copiarlo para otro día.",
+    publishedDailyHint:
+      "Está publicado. Para cambiarlo, edita el contenido y guarda: vuelve a borrador y pides que se publique la versión nueva.",
     pending: "Un momento…",
     done: "Hecho.",
 
     downloadsTitle: "Descargar",
     downloadPng: "Descargar PNG",
     downloadPdf: "Descargar PDF",
-    downloadsHint: "Descargar no consume ninguna actualización.",
-    downloadsNeedContent: "Para descargarlo hace falta contenido guardado y una plantilla.",
+    downloadsHint: "Descargar no cuesta nada.",
+    downloadsNeedContent: "Para descargarlo hace falta contenido guardado y tu plantilla para publicar.",
     downloadsHistory: (n: number) => (n === 1 ? "1 descarga" : `${n} descargas`),
-
-    // RN-COR-10 · la corrección mínima de un menú publicado.
-    correctionTitle: "Pedir una corrección",
-    correctionHint:
-      "Una corrección mínima gratuita sobre el menú publicado: una errata, un precio, un plato mal escrito. Para cambiar el menú entero, cópialo para otro día.",
-    correctionGuaranteedHint: "Si la pides ahora, el equipo la aplica antes de las 08:00 del día del menú.",
-    correctionNotGuaranteedHint:
-      "Son más de las 21:00 del día anterior: el equipo la aplicará cuando pueda, sin garantía de hora (RN-COR-10).",
-    correctionLabel: "Qué hay que corregir",
-    correctionSubmit: "Pedir la corrección",
-    correctionUsed: "Este menú ya usó su corrección mínima gratuita.",
-    correctionWindowClosed: "La ventana de corrección de este menú ya se cerró: pasaron 72 horas desde que se publicó.",
-    correctionsListTitle: "Correcciones",
-    correctionLine: (when: string) => `Pedida el ${when}`,
-    correctionByTeam: "corrección por error del equipo de mantenimiento",
-    correctionGuaranteed: "garantizada antes de las 08:00",
-    correctionNotGuaranteed: "sin garantía de hora",
-    correctionCompleted: (when: string) => `aplicada el ${when}`,
-    correctionPending: "pendiente",
 
     historyTitle: "Historial",
     historyEmpty: "Sin movimientos todavía.",
     historyTeam: "Equipo de mantenimiento",
     versionsTitle: "Versiones",
     versionLine: (n: number, when: string) => `Versión ${n} · ${when}`,
-    versionAfterCutoff: "después del corte",
     downloadLine: (format: string, when: string, byTeam: boolean, printed: boolean) =>
       `${format.toUpperCase()}${printed ? " para imprimir" : ""} · ${when} · ${byTeam ? "equipo de mantenimiento" : "restaurante"}`,
   },
@@ -7017,9 +6983,9 @@ export const es = {
     // menús con sus columnas.
     dailyMenuSubtitle: (restaurante: string) =>
       `Los menús diarios de la web de ${restaurante}.`,
-    dailyMenuQuotaTitle: "Actualizaciones del ciclo",
-    dailyMenuQuota: (usadas: number, incluidas: number) => `${usadas} / ${incluidas}`,
-    dailyMenuQuotaCycle: (desde: string, hasta: string) => `Ciclo del ${desde} al ${hasta}`,
+    // RN-CRE-21 · de dónde le viene. Sin cuota (RN-CRE-22).
+    dailyMenuAccessTitle: "Menú Diario",
+    dailyMenuAccess: { plan: "Incluido en su plan", service: "Contratado aparte" },
     dailyMenuEmptyTitle: "Todavía no hay ningún menú",
     dailyMenuEmptyReason:
       "Cuando el restaurante o el equipo preparen un menú, aparecerá aquí con su fecha y su estado.",

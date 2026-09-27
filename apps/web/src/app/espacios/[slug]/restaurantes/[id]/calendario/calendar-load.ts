@@ -22,7 +22,7 @@ const t = es.panelCalendar;
  *   · menús (fecha objetivo) — solo los ve quien tiene Menú Diario;
  *   · solicitudes (el día en que se crearon);
  *   · la próxima renovación de su bolsa (`establishment_cycle_allowance()`)
- *     y la de Menú Diario (`menu_update_balance()`);
+ *     (Menú Diario ya no tiene ciclo de actualizaciones que renovar, RN-CRE-22);
  *   · informes enviados (RN-REP-16 decide cuáles ve);
  *   · cobros que vencen, solo si `client_can_view_billing()` (RN-FIN-07).
  *
@@ -42,7 +42,7 @@ export async function loadClientCalendar(
   const hasta = new Date(new Date(`${to}T00:00:00Z`).getTime() + 2 * 86_400_000).toISOString();
   const antesDe = new Date(new Date(desde).getTime() - 86_400_000).toISOString();
 
-  const [menus, requests, bolsas, menuBalance, reports, puedePagos] = await Promise.all([
+  const [menus, requests, bolsas, reports, puedePagos] = await Promise.all([
     supabase
       .from("menus")
       .select("id, name, target_date, state")
@@ -56,7 +56,6 @@ export async function loadClientCalendar(
       .gte("created_at", antesDe)
       .lt("created_at", hasta),
     supabase.rpc("establishment_cycle_allowance", { p_establishment_id: id }),
-    supabase.rpc("menu_update_balance", { p_establishment_id: id }),
     supabase
       .from("reports")
       .select("id, name, sent_at")
@@ -106,19 +105,6 @@ export async function loadClientCalendar(
       detail: t.planRenewalDetail,
       stateLabel: null,
       href: `${base}/plan`,
-    });
-  }
-  const finMenu = menuBalance.data?.[0]?.cycle_end ?? null;
-  if (finMenu) {
-    eventos.push({
-      id: "renewal-menu",
-      kind: "renewal",
-      day: dia(finMenu),
-      time: null,
-      title: t.menuRenewal,
-      detail: t.menuRenewalDetail,
-      stateLabel: null,
-      href: `${base}/menu-diario/servicio`,
     });
   }
 

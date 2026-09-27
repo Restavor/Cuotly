@@ -67,10 +67,10 @@ async function resolveViewer(userId: string, slug: string): Promise<SpaceViewer>
   if (role === "client") {
     if (mine.length === 1) {
       establishmentId = mine[0].id;
-      // §20.3 · "Restaurante con Menú Diario" es otra barra: se sabe
-      // preguntando por el saldo del servicio.
-      const { data: balance } = await supabase.rpc("menu_update_balance", { p_establishment_id: establishmentId });
-      if (balance && balance.length > 0) role = "client_daily_menu";
+      // §20.3 · "Restaurante con Menú Diario" es otra barra: contratado
+      // aparte o incluido en su plan (RN-CRE-21).
+      const { data: access } = await supabase.rpc("establishment_daily_menu_access", { p_establishment_id: establishmentId });
+      if (access) role = "client_daily_menu";
     }
     if (mine.length === 0 && spaceId === null) {
       throw new Error("not_found");

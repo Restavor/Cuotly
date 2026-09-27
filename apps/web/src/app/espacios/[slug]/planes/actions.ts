@@ -309,6 +309,7 @@ export async function createPlan(_prev: PlansState, formData: FormData): Promise
       p_report_level: v.reportLevel,
       p_report_period: v.reportPeriod,
       p_watches_reviews: v.watchesReviews,
+      p_includes_daily_menu: v.includesDailyMenu,
       p_idempotency_key: String(formData.get("idempotencyKey") ?? ""),
     }),
   );
@@ -339,6 +340,7 @@ export async function revisePlan(_prev: PlansState, formData: FormData): Promise
       p_report_level: v.reportLevel,
       p_report_period: v.reportPeriod,
       p_watches_reviews: v.watchesReviews,
+      p_includes_daily_menu: v.includesDailyMenu,
       p_idempotency_key: String(formData.get("idempotencyKey") ?? ""),
     }),
   );

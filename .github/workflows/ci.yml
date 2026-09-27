@@ -628,6 +628,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_detalle_del_consumo.sql
 
+      - name: "Suite 86 — Menú Diario dentro del plan (migración 152, RN-CRE-21 a 24 y 30)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/menu_diario_dentro_del_plan.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

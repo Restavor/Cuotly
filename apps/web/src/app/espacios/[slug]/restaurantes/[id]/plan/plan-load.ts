@@ -24,7 +24,8 @@ export async function loadClientPlan(supabase: SupabaseClient<Database>, establi
         .eq("status", "active")
         .order("kind", { ascending: true }),
       supabase.rpc("establishment_cycle_allowance", { p_establishment_id: establishmentId }),
-      supabase.rpc("menu_update_balance", { p_establishment_id: establishmentId }),
+      // RN-CRE-21 · Menú Diario: incluido en su plan, contratado aparte o nada.
+      supabase.rpc("establishment_daily_menu_access", { p_establishment_id: establishmentId }),
       supabase
         .from("plan_commitments")
         .select("id, subscription_id, ends_at")
@@ -62,7 +63,7 @@ export async function loadClientPlan(supabase: SupabaseClient<Database>, establi
     plan,
     allowance: bolsas ?? [],
     creditsIncludedHalf: creditos?.[0]?.included_half ?? null,
-    menuBalance: menu?.[0] ?? null,
+    menuAccess: menu === "plan" || menu === "service" ? menu : null,
     commitmentEndsAt: compromiso?.ends_at ?? null,
     scheduledChange: cambios?.[0] ?? null,
   };

@@ -448,9 +448,10 @@ export async function loadSheetSummary(
  * Tres respuestas y no una fecha, porque hay tres situaciones que se leen
  * distinto y una fecha sola solo sabría contar una (CA-20):
  *
- *   · `no_service` — el restaurante **no tiene Menú Diario contratado**.
- *     Lo dice `menu_update_balance()`: sin servicio no devuelve fila. Es
- *     el mismo criterio que usa la pantalla de Menú Diario, no uno nuevo.
+ *   · `no_service` — el restaurante **no tiene Menú Diario**: ni contratado
+ *     aparte ni incluido en su plan. Lo dice
+ *     `establishment_daily_menu_access()` (RN-CRE-21), el mismo criterio
+ *     que usa la pantalla de Menú Diario, no uno nuevo.
  *   · `none` — lo tiene contratado y no hay ninguna publicación por
  *     delante. Es un dato, no un error: significa que toca preparar una.
  *   · `menu` — la más próxima, con su fecha, su nombre y su estado.
@@ -474,10 +475,10 @@ export async function loadSheetNextMenu(
   timeZone: string,
   now: Date = new Date(),
 ): Promise<SheetNextMenu> {
-  const { data: balance } = await supabase.rpc("menu_update_balance", {
+  const { data: access } = await supabase.rpc("establishment_daily_menu_access", {
     p_establishment_id: establishmentId,
   });
-  if (!balance || balance.length === 0) return { kind: "no_service" };
+  if (!access) return { kind: "no_service" };
 
   /*
     "Por delante" se mide con el día de HOY en la zona del espacio
@@ -549,23 +550,16 @@ export interface SheetOperationJob extends SheetCurrentJob {
 }
 
 /**
- * M31 · la sección Menú Diario de la ficha: el saldo del ciclo y los
- * últimos menús.
+ * M31 · la sección Menú Diario de la ficha: de dónde le viene el servicio
+ * y los últimos menús.
  *
- * `null` entero cuando el restaurante no tiene el servicio
- * (`menu_update_balance()` no devuelve fila): entonces no hay cuota que
- * enseñar y la sección lo dice, no pinta "0 / 30".
- *
- * `consumed` e `included` son los del servidor, que suma el libro
- * (RN-CON-02, CLAUDE.md MUST): aquí no se resta nada.
+ * `null` entero cuando el restaurante no tiene Menú Diario
+ * (`establishment_daily_menu_access()` no devuelve nada): la sección lo
+ * dice. Desde la decisión 85 no hay cuota de actualizaciones (RN-CRE-22).
  */
 export interface SheetOperationMenus {
-  readonly consumed: number;
-  readonly included: number;
-  /** Para la barra: lo consumido sobre lo incluido, de 0 a 100. */
-  readonly usedPercent: number;
-  readonly cycleStart: string;
-  readonly cycleEnd: string;
+  /** RN-CRE-21 · incluido en su plan o contratado aparte. */
+  readonly access: "plan" | "service";
   readonly rows: CardRows<{
     readonly id: string;
     readonly name: string;
@@ -675,13 +669,12 @@ async function loadPeopleNames(
 }
 
 /**
- * M31 · el saldo del ciclo y los últimos menús del restaurante, por fecha
- * de publicación, la más lejana primero, como la tabla del dibujo.
+ * M31 · de dónde le viene Menú Diario y los últimos menús del restaurante,
+ * por fecha de publicación, la más lejana primero, como la tabla del dibujo.
  *
- * El saldo es el de `menu_update_balance()`, la misma función que la
- * cabecera de Menú Diario del restaurante: dos pantallas no pueden contar
- * distinto las mismas 30 actualizaciones (CA-10). Los menús los filtra
- * `menus_select`; aquí no se decide quién ve cuáles.
+ * El acceso es el de `establishment_daily_menu_access()`, la misma función
+ * que la cabecera de Menú Diario del restaurante (CA-10). Los menús los
+ * filtra `menus_select`; aquí no se decide quién ve cuáles.
  */
 async function loadOperationMenus(
   supabase: Supabase,
@@ -689,11 +682,11 @@ async function loadOperationMenus(
   establishmentId: string,
 ): Promise<SheetOperationMenus | null | "failed"> {
   const [
-    { data: balanceRows, error: balanceError },
+    { data: access, error: accessError },
     { data: menus, count },
     { data: templates },
   ] = await Promise.all([
-    supabase.rpc("menu_update_balance", { p_establishment_id: establishmentId }),
+    supabase.rpc("establishment_daily_menu_access", { p_establishment_id: establishmentId }),
     supabase
       .from("menus")
       .select("id, name, kind, target_date, state, template_id", { count: "exact" })
@@ -704,22 +697,14 @@ async function loadOperationMenus(
     supabase.from("menu_templates").select("id, name").eq("establishment_id", establishmentId),
   ]);
 
-  if (balanceError !== null) return "failed";
-  const balance = balanceRows?.[0] ?? null;
-  if (balance === null) return null;
+  if (accessError !== null) return "failed";
+  if (access !== "plan" && access !== "service") return null;
 
   const plantilla = new Map((templates ?? []).map((tpl) => [tpl.id, tpl.name]));
   const filas = menus ?? [];
 
   return {
-    consumed: balance.consumed,
-    included: balance.included_updates,
-    usedPercent:
-      balance.included_updates > 0
-        ? Math.min(100, Math.round((balance.consumed / balance.included_updates) * 100))
-        : 0,
-    cycleStart: balance.cycle_start,
-    cycleEnd: balance.cycle_end,
+    access,
     rows: {
       // Cuántos quedan detrás lo dice el recuento de la base, no la página
       // traída: si no llega, no se inventa un "y N más".

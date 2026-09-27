@@ -11,21 +11,18 @@ import { createMenu } from "./actions";
 
 const t = es.dailyMenuClient;
 
-export interface TemplateOption {
-  readonly id: string;
-  readonly name: string;
-}
-
-/** RN-MEN-01 · nombre, tipo, fecha objetivo y plantilla. El contenido se guarda después, por versiones. */
+/**
+ * RN-MEN-01 · nombre, tipo y fecha objetivo. El contenido se guarda
+ * después, por versiones. La plantilla no se elige (RN-CRE-23): la pone el
+ * servidor.
+ */
 export function NewMenuForm({
   slug,
   establishmentId,
-  templates,
   defaultDate,
 }: {
   slug: string;
   establishmentId: string;
-  templates: readonly TemplateOption[];
   defaultDate: string;
 }) {
   const action = createMenu.bind(null, slug, establishmentId);
@@ -41,11 +38,6 @@ export function NewMenuForm({
           options={MENU_KINDS.map((kind) => ({ value: kind, label: es.naming.menuKinds[kind] }))}
         />
         <Field label={t.newDateLabel} name="targetDate" type="date" required defaultValue={defaultDate} hint={t.newDateHint} />
-        <Select
-          label={t.newTemplateLabel}
-          name="templateId"
-          options={[{ value: "", label: t.newTemplateNone }, ...templates.map((tpl) => ({ value: tpl.id, label: tpl.name }))]}
-        />
         {state.error ? (
           <p role="alert" className="text-sm text-danger">
             {state.error}

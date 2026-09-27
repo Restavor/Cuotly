@@ -179,7 +179,6 @@ export interface SpaceHome {
     readonly offered: boolean;
     readonly pending: number | null;
     readonly unassigned: number;
-    readonly overdue: number;
   };
 }
 
@@ -602,7 +601,7 @@ export async function loadSpaceHome(
       .eq("space_id", spaceId)
       .order("occurred_at", { ascending: false })
       .limit(8),
-    loadMenuQueue(supabase, spaceId, timeZone, now),
+    loadMenuQueue(supabase, spaceId),
     /*
       Página 22 · el ciclo de consumo **vigente** de cada restaurante del
       espacio, en una consulta. `cycle_start <= ahora < cycle_end` es lo
@@ -859,7 +858,6 @@ export async function loadSpaceHome(
       offered: menuQueue.offered,
       pending: menuQueue.rows === null ? null : menuQueue.rows.length,
       unassigned: (menuQueue.rows ?? []).filter((r) => r.state === "pending_assignment").length,
-      overdue: (menuQueue.rows ?? []).filter((r) => r.overdue).length,
     },
   };
 }

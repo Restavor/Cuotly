@@ -82,14 +82,13 @@ export async function resolveShellViewer(
     if (mine && mine.length === 1) {
       establishmentId = mine[0].id;
 
-      // §20.3 · "Restaurante con Menú Diario" es otra barra. Se sabe
-      // preguntando por el saldo del servicio: `menu_update_balance()`
-      // devuelve una fila si hay suscripción activa y ninguna si no, y es
-      // lo que el restaurante puede leer (Hito 9).
-      const { data: balance } = await supabase.rpc("menu_update_balance", {
+      // §20.3 · "Restaurante con Menú Diario" es otra barra. Lo dice
+      // `establishment_daily_menu_access()`: el servicio contratado aparte
+      // o un plan que lo incluye (RN-CRE-21), y nada si no tiene ninguno.
+      const { data: access } = await supabase.rpc("establishment_daily_menu_access", {
         p_establishment_id: establishmentId,
       });
-      if (balance && balance.length > 0) {
+      if (access) {
         resolvedRole = "client_daily_menu";
       }
     }

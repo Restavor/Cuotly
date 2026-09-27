@@ -6,11 +6,40 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149, 150 y 151 aplicadas).
+Actualizado el 27/09/2026 (149, 150 y 151 aplicadas; 152 pendiente).
 
 ## Pendiente de aplicar
 
-Nada.
+**152 · `menu_diario_dentro_del_plan`** (decisiones 85 y 86, PRD §41.6, RN-CRE-21 a 24 y 30). Lo que hace:
+
+- **Añade** `plans.includes_daily_menu` (`not null default false`) y `menu_templates.purpose`
+  (`publish` / `print`, `default 'publish'`, con `grant select (purpose)` porque `menu_templates` va por
+  privilegios de columna).
+- **Añade** dos índices únicos parciales: `menus_one_daily_per_date` (un menú `daily` no cancelado por
+  restaurante y fecha) y una plantilla activa por restaurante y uso. **Antes de aplicar hay que comprobar
+  en vivo que no hay filas que los rompan**: dos menús del día no cancelados del mismo restaurante y
+  fecha, o dos plantillas activas del mismo restaurante (todas nacen `publish`). Si las hay, se para y se
+  pregunta; no se archiva ni se cancela nada a mano.
+- **Añade** `establishment_daily_menu_access(uuid)` (lectura; `execute` a `authenticated`) y dos internas,
+  `assert_one_daily_menu_internal` y `establishment_publish_template_internal`, revocadas a
+  `public, anon, authenticated`.
+- **Quita** los `not null` de `menu_publications.cycle_id` y `debit_entry_id`: pedir la publicación ya no
+  consume. El libro `menu_update_entries` no se toca.
+- **Cambia la firma** de `create_menu_template` (quinto parámetro `p_purpose`), `create_plan` y
+  `revise_plan` (último parámetro `p_includes_daily_menu`): se borran las de antes y se crean las nuevas
+  con sus permisos.
+- **Redefine** (comparar por md5 con las de la 151 antes de aplicar): `establishment_daily_menu_subscription`,
+  `create_service_subscription`, `request_menu_publication`, `cancel_menu`, `refund_menu_update`,
+  `menu_update_balance`, `create_menu`, `update_menu_details`, `prepare_menu`, `register_menu_download`,
+  `save_menu_version`, `run_daily_menu_sweep`, `request_menu_correction` y `plan_terms_diff_internal`.
+
+En local pasan las 86 suites; la 86 (`menu_diario_dentro_del_plan.sql`) falla si se pide un segundo menú
+del día para la misma fecha, si pedir la publicación consume, si el restaurante con el Menú Diario en su
+plan no lo tiene o si se le contrata suelto, si se crea una segunda plantilla activa del mismo uso, o si
+un menú del día publicado no se puede cambiar (probado rompiendo cada regla). **Mientras no se aplique, la
+web desplegada con este código no funciona en Menú Diario**: pregunta por
+`establishment_daily_menu_access()`, que todavía no existe, y el restaurante no ve su barra de Menú
+Diario. Hay que aplicar la 152 antes de publicar la web.
 
 **Actualización del 27/09/2026: la 151** aplicada como `20260927074717 · el_detalle_del_consumo`. Antes se comprobó que la función no existía; después, su cuerpo y sus permisos dan el mismo md5 que en local.
 

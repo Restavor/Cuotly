@@ -72,8 +72,9 @@ create temp table dl_ids (k text primary key, v uuid);
 do $$
 declare v_t uuid; v_t2 uuid; v_row record;
 begin
-  v_t := public.create_menu_template('de400000-0000-0000-0000-000000000001', 'Clásica');
-  v_t2 := public.create_menu_template('de400000-0000-0000-0000-000000000001', 'Vieja');
+  -- RN-CRE-23 · la de publicar y la de imprimir.
+  v_t := public.create_menu_template('de400000-0000-0000-0000-000000000001', 'Clásica', 'included', null, 'publish');
+  v_t2 := public.create_menu_template('de400000-0000-0000-0000-000000000001', 'Vieja', 'included', null, 'print');
   insert into dl_ids values ('tpl', v_t), ('tpl2', v_t2);
 
   -- Por omisión ya se puede pintar: disposición y tres colores.
@@ -113,6 +114,19 @@ begin
 end $$;
 reset role;
 
+-- La nueva para imprimir, que sustituye a la archivada. Se fabrica a mano:
+-- por la función iría con un presupuesto aceptado (RN-MEN-11), y eso lo
+-- vigila la suite de menús.
+do $$
+declare v_p uuid;
+begin
+  insert into public.menu_templates (space_id, establishment_id, name, origin, purpose, created_by)
+  values ('de100000-0000-0000-0000-000000000001', 'de400000-0000-0000-0000-000000000001', 'Blanco y negro',
+          'quoted', 'print', 'de000000-0000-0000-0000-000000000002')
+  returning id into v_p;
+  insert into dl_ids values ('tpl_print', v_p);
+end $$;
+
 -- El restaurante no diseña.
 select set_config('request.jwt.claim.sub', 'de000000-0000-0000-0000-000000000005', false);
 set role authenticated;
@@ -147,12 +161,10 @@ begin
   end;
 
   v_v := public.save_menu_version(v_m, array['Ensalada'], array['Merluza'], array['Flan'], 'Agua', 1450, null);
-  begin
-    perform public.register_menu_download(v_m, 'png');
-    raise exception 'FALLIDO: se descargó un menú sin plantilla' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%necesita una plantilla%' then raise; end if;
-  end;
+  -- RN-CRE-23 · el restaurante no elige: el menú nace con la de publicar.
+  if (select template_id from public.menus where id = v_m) is distinct from (select v from dl_ids where k = 'tpl') then
+    raise exception 'RN-CRE-23 FALLIDO: el menú no lleva la plantilla para publicar' using errcode = 'assert_failure';
+  end if;
 
   perform public.update_menu_details(v_m, 'Menú', 'daily', current_date + 5, (select v from dl_ids where k = 'tpl'));
   begin
@@ -180,11 +192,15 @@ begin
      or (select printed from public.menu_downloads where id = v_d2) then
     raise exception 'RN-MEN-10 FALLIDO: el restaurante no ve qué descarga fue una impresión' using errcode = 'assert_failure';
   end if;
+  -- RN-CRE-23 · el papel sale en la plantilla para imprimir; el archivo, en la de publicar.
+  if (select template_id from public.menu_downloads where id = v_d3) is distinct from (select v from dl_ids where k = 'tpl_print')
+     or (select template_id from public.menu_downloads where id = v_d2) is distinct from (select v from dl_ids where k = 'tpl') then
+    raise exception 'RN-CRE-23 FALLIDO: la impresión no usa la plantilla para imprimir' using errcode = 'assert_failure';
+  end if;
 
   -- RN-MEN-04: ni un apunte, ni ciclo creado, y el menú sigue en borrador.
   if exists (select 1 from public.menu_update_entries where menu_id = v_m)
-     or exists (select 1 from public.menu_update_cycles where establishment_id = 'de400000-0000-0000-0000-000000000001')
-     or (select available from public.menu_update_balance('de400000-0000-0000-0000-000000000001')) <> 30 then
+     or exists (select 1 from public.menu_update_cycles where establishment_id = 'de400000-0000-0000-0000-000000000001') then
     raise exception 'RN-MEN-04 FALLIDO: descargar consumió una actualización' using errcode = 'assert_failure';
   end if;
   if (select state from public.menus where id = v_m) <> 'draft' then

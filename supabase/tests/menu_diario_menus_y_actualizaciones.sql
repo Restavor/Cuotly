@@ -3,22 +3,24 @@
 --
 -- Lo que se comprueba, en el orden en que le pasa a un menú:
 --
---   · RN-MEN-11 / RN-COM-10: tres plantillas incluidas y no una más,
---     archivar no libera la plaza, la cuarta es presupuestada; solo el
---     equipo con manage_clients las crea.
+--   · RN-CRE-23 (decisiones 85 y 86, sustituye RN-COM-10): una plantilla
+--     para publicar y otra para imprimir, incluidas una vez cada una; una
+--     activa de cada; archivar no libera la plaza; una nueva va por
+--     presupuesto; solo el equipo con manage_clients las crea.
 --   · RN-MEN-01/02/03: el Editor crea el menú y cada guardado es una
 --     versión nueva que nadie edita; Consulta no escribe; otro espacio no
 --     ve nada.
 --   · RN-MEN-09: preparar exige contenido y plantilla; los estados van en
 --     el orden de §63 y el historial (`menu_events`) los conserva
 --     (RN-MEN-10).
---   · RN-MEN-05 / RN-CON-06 / RN-CON-07: pedir la publicación consume UNA
---     actualización, la misma petición dos veces devuelve la misma fila,
---     el último crédito solo lo consume una petición, cancelar antes de
---     Publicado lo devuelve y después no; el equipo puede devolverlo con
---     motivo, una sola vez (RN-CON-12).
---   · RN-CON-10: si el ciclo del consumo ya cerró, la devolución es un
---     crédito compensatorio en el ciclo vigente.
+--   · RN-CRE-22 (sustituye RN-MEN-05 y RN-CON-06): pedir la publicación
+--     NO consume nada; la misma petición dos veces devuelve la misma fila
+--     (RN-CON-07); cancelar no devuelve nada porque nada se gastó, y el
+--     equipo no puede "devolver" lo que no se gastó.
+--   · RN-CRE-30: un menú del día publicado se cambia editándolo: vuelve a
+--     borrador y la web sigue con la versión publicada.
+--   · RN-CON-10: una publicación ANTIGUA que sí consumió se sigue
+--     devolviendo, como crédito compensatorio si su ciclo cerró.
 --   · RN-ASG-04 aplicado: con un único candidato de Menú Diario se asigna
 --     solo; con dos queda pendiente y avisa al equipo.
 --   · RN-MEN-06: marcar publicado registra fecha, versión, plantilla y
@@ -154,40 +156,40 @@ set role authenticated;
 
 do $$
 declare
-  v_t1 uuid; v_t2 uuid; v_t3 uuid; v_q uuid;
+  v_t1 uuid; v_t2 uuid; v_q uuid;
 begin
   begin
     perform public.create_menu_template('dd400000-0000-0000-0000-000000000002', 'Sin servicio');
     raise exception 'RN-MEN-11 FALLIDO: plantilla en un restaurante sin Menú Diario' using errcode = 'assert_failure';
   exception when others then
-    if sqlerrm not like '%no tiene contratado Menú Diario%' then raise; end if;
+    if sqlerrm not like '%no tiene Menú Diario%' then raise; end if;
   end;
 
-  v_t1 := public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Clásica');
-  v_t2 := public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Pizarra');
-  v_t3 := public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Moderna');
+  -- RN-CRE-23 · una para publicar y otra para imprimir.
+  v_t1 := public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Clásica', 'included', null, 'publish');
+  v_t2 := public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Pizarra', 'included', null, 'print');
 
+  -- Una activa de cada: otra para publicar no entra sin archivar la vigente.
   begin
-    perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Cuarta');
-    raise exception 'RN-COM-10 FALLIDO: se ha creado una cuarta plantilla incluida' using errcode = 'assert_failure';
+    perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Moderna', 'included', null, 'publish');
+    raise exception 'RN-CRE-23 FALLIDO: dos plantillas para publicar activas a la vez' using errcode = 'assert_failure';
   exception when others then
-    if sqlerrm not like '%tres plantillas incluidas ya se usaron%' then raise; end if;
+    if sqlerrm not like '%archívala antes%' then raise; end if;
   end;
 
   -- Archivar no libera la plaza: "incluidas una sola vez".
-  perform public.archive_menu_template(v_t3, 'Ya no gusta');
-  perform public.archive_menu_template(v_t3, 'Ya no gusta'); -- CA-17
+  perform public.archive_menu_template(v_t2, 'Ya no gusta');
+  perform public.archive_menu_template(v_t2, 'Ya no gusta'); -- CA-17
   begin
-    perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Cuarta');
-    raise exception 'RN-COM-10 FALLIDO: archivar una incluida liberó su plaza' using errcode = 'assert_failure';
+    perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Otra de imprimir', 'included', null, 'print');
+    raise exception 'RN-CRE-23 FALLIDO: archivar una incluida liberó su plaza' using errcode = 'assert_failure';
   exception when others then
-    if sqlerrm not like '%tres plantillas incluidas ya se usaron%' then raise; end if;
+    if sqlerrm not like '%ya se usó%' then raise; end if;
   end;
 
-  -- La cuarta se presupuesta aparte (RN-MEN-11). Desde el Hito 12 "aparte"
-  -- es un presupuesto aceptado (migración 80): sin él, no hay plantilla.
+  -- Una nueva se presupuesta aparte (RN-MEN-11): sin presupuesto, no hay plantilla.
   begin
-    perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Navidad 2026', 'quoted');
+    perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Navidad 2026', 'quoted', null, 'print');
     raise exception 'RN-MEN-11 FALLIDO: se creó una plantilla presupuestada sin presupuesto' using errcode = 'assert_failure';
   exception when others then
     if sqlerrm not like '%cuelga de un presupuesto aceptado%' then raise; end if;
@@ -197,9 +199,9 @@ begin
   perform public.send_quote(v_q);
   insert into md_quote values ('q', v_q);
 
-  if (select count(*) from public.audit_log where action = 'menu_template.archived' and entity_id = v_t3) <> 1 then
+  if (select count(*) from public.audit_log where action = 'menu_template.archived' and entity_id = v_t2) <> 1 then
     raise exception 'CLAUDE.md MUST FALLIDO: archivar dos veces dejó % apuntes (esperado 1)',
-      (select count(*) from public.audit_log where action = 'menu_template.archived' and entity_id = v_t3) using errcode = 'assert_failure';
+      (select count(*) from public.audit_log where action = 'menu_template.archived' and entity_id = v_t2) using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -214,15 +216,17 @@ begin
 end $$;
 reset role;
 
--- ...y el equipo la crea colgando de él.
+-- ...y el equipo la crea colgando de él, como la nueva para imprimir.
 select set_config('request.jwt.claim.sub', 'dd000000-0000-0000-0000-000000000002', false);
 set role authenticated;
 do $$
 begin
   perform public.create_menu_template('dd400000-0000-0000-0000-000000000001', 'Navidad 2026', 'quoted',
-                                      (select v from md_quote where k = 'q'));
-  if (select count(*) from public.menu_templates where establishment_id = 'dd400000-0000-0000-0000-000000000001') <> 4 then
-    raise exception 'RN-COM-10 FALLIDO: se esperaban 4 plantillas (3 incluidas + 1 presupuestada)' using errcode = 'assert_failure';
+                                      (select v from md_quote where k = 'q'), 'print');
+  if (select count(*) from public.menu_templates where establishment_id = 'dd400000-0000-0000-0000-000000000001') <> 3
+     or (select count(*) from public.menu_templates
+         where establishment_id = 'dd400000-0000-0000-0000-000000000001' and archived_at is null) <> 2 then
+    raise exception 'RN-CRE-23 FALLIDO: se esperaban 3 plantillas, 2 activas (una de cada)' using errcode = 'assert_failure';
   end if;
   if (select quote_id from public.menu_templates where name = 'Navidad 2026') is distinct from (select v from md_quote where k = 'q') then
     raise exception 'RN-MEN-11 FALLIDO: la plantilla presupuestada no cuelga de su presupuesto' using errcode = 'assert_failure';
@@ -261,7 +265,7 @@ begin
     perform public.create_menu('dd400000-0000-0000-0000-000000000002', 'Menú', 'daily', current_date + 7);
     raise exception 'RN-MEN-01 FALLIDO: menú en un restaurante sin Menú Diario' using errcode = 'assert_failure';
   exception when others then
-    if sqlerrm not like '%no tiene contratado Menú Diario%' and sqlerrm not like '%No tienes permiso%' then raise; end if;
+    if sqlerrm not like '%no tiene Menú Diario%' and sqlerrm not like '%No tienes permiso%' then raise; end if;
   end;
 
   select id into v_tpl from public.menu_templates where name = 'Clásica';
@@ -365,9 +369,9 @@ begin
     raise exception 'RN-MEN-09 FALLIDO: preparar no deja el menú preparado' using errcode = 'assert_failure';
   end if;
 
-  select * into v_bal from public.menu_update_balance('dd400000-0000-0000-0000-000000000001');
-  if v_bal.available <> 2 or v_bal.consumed <> 0 or v_bal.cycle_id is not null then
-    raise exception 'RN-COM-09 FALLIDO: antes de consumir, el saldo debía ser 2 sin ciclo creado (available=%, cycle=%)', v_bal.available, v_bal.cycle_id using errcode = 'assert_failure';
+  -- RN-CRE-22 · no hay contador: el saldo no tiene filas.
+  if exists (select 1 from public.menu_update_balance('dd400000-0000-0000-0000-000000000001')) then
+    raise exception 'RN-CRE-22 FALLIDO: Menú Diario sigue teniendo saldo de actualizaciones' using errcode = 'assert_failure';
   end if;
 
   v_pub := public.request_menu_publication(v_menu, 'clave-1');
@@ -380,9 +384,9 @@ begin
   end if;
   insert into md_ids values ('pub', v_pub);
 
-  select * into v_bal from public.menu_update_balance('dd400000-0000-0000-0000-000000000001');
-  if v_bal.available <> 1 or v_bal.consumed <> 1 then
-    raise exception 'RN-MEN-05 FALLIDO: pedir la publicación debía consumir exactamente 1 (available=%, consumed=%)', v_bal.available, v_bal.consumed using errcode = 'assert_failure';
+  -- RN-CRE-22 · pedir la publicación no consume nada.
+  if exists (select 1 from public.menu_update_entries where menu_id = v_menu) then
+    raise exception 'RN-CRE-22 FALLIDO: pedir la publicación consumió una actualización' using errcode = 'assert_failure';
   end if;
 
   -- RN-ASG-04: Ana es la única candidata (Luis es web, Marta no está
@@ -457,14 +461,16 @@ begin
     raise exception 'RN-MEN-07 FALLIDO: pedida después del corte, la publicación no puede estar garantizada' using errcode = 'assert_failure';
   end if;
 
-  -- Y se consumió la segunda actualización. El servicio va por dos ciclos:
-  -- ya no queda ninguna.
-  if (select available from public.menu_update_balance('dd400000-0000-0000-0000-000000000001')) <> 0 then
-    raise exception 'RN-MEN-05 FALLIDO: dos publicaciones debían dejar el saldo a 0' using errcode = 'assert_failure';
+  -- RN-CRE-24 · pedida después de las 21:00 se apunta como hecho, pero ya
+  -- no cuesta ni bloquea nada: no se consume.
+  if exists (select 1 from public.menu_update_entries where menu_id = v_late) then
+    raise exception 'RN-CRE-22 FALLIDO: la segunda publicación consumió' using errcode = 'assert_failure';
   end if;
 end $$;
 
--- RN-CON-06: el tercer menú no encuentra crédito.
+-- RN-CRE-22 · sin contador, el tercero entra también (antes, RN-CON-06
+-- lo paraba al agotar las dos actualizaciones). Y un menú de otro tipo
+-- (infantil) no choca con el del día: solo `daily` es uno por fecha.
 do $$
 declare v_m3 uuid;
 begin
@@ -472,15 +478,20 @@ begin
   perform public.save_menu_version(v_m3, array['Macarrones'], array['Nuggets'], array['Helado'], null, 900, null);
   perform public.prepare_menu(v_m3);
   insert into md_ids values ('m3', v_m3);
-  begin
-    perform public.request_menu_publication(v_m3);
-    raise exception 'RN-CON-06 FALLIDO: se consumió una actualización que no existía' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%No quedan actualizaciones%' then raise; end if;
-  end;
-  if (select state from public.menus where id = v_m3) <> 'prepared' then
-    raise exception 'RN-CON-06 FALLIDO: la petición fallida cambió el estado' using errcode = 'assert_failure';
+  perform public.request_menu_publication(v_m3);
+  if (select state from public.menus where id = v_m3) not in ('assigned', 'pending_assignment') then
+    raise exception 'RN-CRE-22 FALLIDO: sin contador, la tercera petición debía entrar' using errcode = 'assert_failure';
   end if;
+
+  -- RN-CRE-22 · un segundo menú del día para la misma fecha, no.
+  begin
+    perform public.create_menu('dd400000-0000-0000-0000-000000000001', 'Otro del día', 'daily', current_date + 7);
+    raise exception 'RN-CRE-22 FALLIDO: dos menús del día para la misma fecha' using errcode = 'assert_failure';
+  exception when others then
+    if sqlerrm not like '%Ya hay un menú del día%' then raise; end if;
+  end;
+  -- Otro tipo para esa fecha, sí.
+  perform public.create_menu('dd400000-0000-0000-0000-000000000001', 'Grupos del día', 'groups', current_date + 7);
 end $$;
 
 -- Cancelar el de hoy antes de publicar devuelve la actualización
@@ -503,16 +514,13 @@ begin
   if (select state from public.menus where id = v_late) <> 'cancelled' then
     raise exception 'RN-MEN-09 FALLIDO: cancelar no deja el menú cancelado' using errcode = 'assert_failure';
   end if;
-  if (select count(*) from public.menu_update_entries where menu_id = v_late and entry_type = 'return') <> 1
-     or (select available from public.menu_update_balance('dd400000-0000-0000-0000-000000000001')) <> 1 then
-    raise exception 'RN-MEN-05 FALLIDO: cancelar antes de Publicado debía devolver exactamente 1' using errcode = 'assert_failure';
+  -- RN-CRE-22 · nada que devolver: nada se gastó.
+  if exists (select 1 from public.menu_update_entries where menu_id = v_late) then
+    raise exception 'RN-CRE-22 FALLIDO: cancelar apuntó una devolución de algo que no se gastó' using errcode = 'assert_failure';
   end if;
 
-  -- Ahora el tercero sí entra.
-  perform public.request_menu_publication(v_m3, 'clave-3');
-  if (select available from public.menu_update_balance('dd400000-0000-0000-0000-000000000001')) <> 0 then
-    raise exception 'RN-CON-06 FALLIDO: la devolución no volvió a estar disponible' using errcode = 'assert_failure';
-  end if;
+  -- Cancelado el de hoy, vuelve a caber un menú del día para hoy.
+  perform public.create_menu('dd400000-0000-0000-0000-000000000001', 'Menú de hoy, otra vez', 'daily', current_date);
 end $$;
 
 reset role;
@@ -669,8 +677,10 @@ begin
 
   -- §61: fecha, usuario, versión, plantilla y consumo en la auditoría.
   select new_value into v_audit from public.audit_log where action = 'menu.published' and entity_id = v_menu;
-  if v_audit->>'version_id' is null or v_audit->>'template_id' is null or v_audit->>'entry_id' is null or v_audit->>'published_at' is null then
-    raise exception 'RN-MEN-06 FALLIDO: el apunte de publicación no lleva versión, plantilla, consumo y fecha: %', v_audit using errcode = 'assert_failure';
+  -- Sin consumo desde RN-CRE-22: `entry_id` va vacío.
+  if v_audit->>'version_id' is null or v_audit->>'template_id' is null or v_audit->>'published_at' is null
+     or v_audit->>'entry_id' is not null then
+    raise exception 'RN-MEN-06 FALLIDO: el apunte de publicación no lleva versión, plantilla y fecha, o lleva un consumo: %', v_audit using errcode = 'assert_failure';
   end if;
 
   -- Sin botón Comenzar: ningún evento "en curso".
@@ -702,8 +712,9 @@ begin
 end $$;
 
 -- ============================================================
--- Después de Publicado: no se cancela, no se edita, se copia; y el equipo
--- puede devolver el consumo con motivo, una sola vez.
+-- Después de Publicado: no se cancela; el menú del día se cambia
+-- editándolo (RN-CRE-30) y la web sigue con lo publicado; se copia; y no
+-- hay consumo que devolver (RN-CRE-22).
 -- ============================================================
 select set_config('request.jwt.claim.sub', 'dd000000-0000-0000-0000-000000000005', false);
 set role authenticated;
@@ -716,16 +727,21 @@ begin
   exception when others then
     if sqlerrm not like '%no se cancela%' then raise; end if;
   end;
-  begin
-    perform public.save_menu_version(v_menu, array['X'], array['Y'], array['Z'], null, null, null);
-    raise exception 'RN-MEN-03 FALLIDO: se editó un menú publicado' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%no se edita%' then raise; end if;
-  end;
+  -- RN-CRE-30 · guardar vuelve a borrador; lo publicado no se mueve.
+  perform public.save_menu_version(v_menu, array['X'], array['Y'], array['Z'], null, null, null);
+  if (select state from public.menus where id = v_menu) <> 'draft'
+     or (select published_version_id from public.menus where id = v_menu) <> (select v from md_ids where k = 'v3')
+     or (select current_version_id from public.menus where id = v_menu) = (select v from md_ids where k = 'v3') then
+    raise exception 'RN-CRE-30 FALLIDO: cambiar el menú publicado no lo deja en borrador con la web intacta' using errcode = 'assert_failure';
+  end if;
+  if not exists (select 1 from public.menu_events where menu_id = v_menu and from_state = 'published' and to_state = 'draft') then
+    raise exception 'RN-MEN-10 FALLIDO: el historial no cuenta la vuelta a borrador' using errcode = 'assert_failure';
+  end if;
 
   v_copy := public.copy_menu(v_menu, current_date + 8);
   if (select state from public.menus where id = v_copy) <> 'draft'
-     or (select desserts from public.menu_versions v join public.menus m on m.current_version_id = v.id where m.id = v_copy) <> array['Flan casero']
+     -- El contenido vigente es el recién guardado (RN-CRE-30), no el publicado.
+     or (select desserts from public.menu_versions v join public.menus m on m.current_version_id = v.id where m.id = v_copy) <> array['Z']
      or (select version from public.menu_versions v join public.menus m on m.current_version_id = v.id where m.id = v_copy) <> 1 then
     raise exception 'RN-MEN-03 FALLIDO: copiar no crea un borrador con el contenido vigente como versión 1' using errcode = 'assert_failure';
   end if;
@@ -748,24 +764,15 @@ reset role;
 select set_config('request.jwt.claim.sub', 'dd000000-0000-0000-0000-000000000002', false);
 set role authenticated;
 do $$
-declare v_pub uuid := (select v from md_ids where k = 'pub'); v_e1 uuid; v_e2 uuid;
+declare v_pub uuid := (select v from md_ids where k = 'pub');
 begin
+  -- RN-CRE-22 · no se gastó nada: no hay nada que devolver.
   begin
-    perform public.refund_menu_update(v_pub, '');
-    raise exception 'RN-CON-12 FALLIDO: devolución sin motivo' using errcode = 'assert_failure';
+    perform public.refund_menu_update(v_pub, 'Publicamos la versión equivocada');
+    raise exception 'RN-CRE-22 FALLIDO: se devolvió una actualización que no se gastó' using errcode = 'assert_failure';
   exception when others then
-    if sqlerrm not like '%necesita un motivo%' then raise; end if;
+    if sqlerrm not like '%no gastó nada%' then raise; end if;
   end;
-  v_e1 := public.refund_menu_update(v_pub, 'Publicamos la versión equivocada');
-  v_e2 := public.refund_menu_update(v_pub, 'Publicamos la versión equivocada');
-  if v_e1 <> v_e2 then
-    raise exception 'CA-17 FALLIDO: devolver dos veces creó dos créditos' using errcode = 'assert_failure';
-  end if;
-  if (select entry_type from public.menu_update_entries where id = v_e1) <> 'return'
-     or (select related_entry_id from public.menu_update_entries where id = v_e1) is null
-     or (select available from public.menu_update_balance('dd400000-0000-0000-0000-000000000001')) <> 1 then
-    raise exception 'RN-CON-12 FALLIDO: la devolución no enlaza con el débito o no cuenta en el saldo' using errcode = 'assert_failure';
-  end if;
 end $$;
 reset role;
 
@@ -807,16 +814,16 @@ end $$;
 select set_config('request.jwt.claim.sub', 'dd000000-0000-0000-0000-000000000002', false);
 set role authenticated;
 do $$
-declare v_e uuid; v_bal record;
+declare v_e uuid;
 begin
   v_e := public.refund_menu_update('dd900000-0000-0000-0000-000000000001', 'Nos equivocamos hace dos meses');
   if (select entry_type from public.menu_update_entries where id = v_e) <> 'compensatory_credit'
      or (select cycle_id from public.menu_update_entries where id = v_e) = 'dd700000-0000-0000-0000-000000000001' then
     raise exception 'RN-CON-10 FALLIDO: la devolución revivió el ciclo cerrado en vez de crear un crédito compensatorio en el vigente' using errcode = 'assert_failure';
   end if;
-  select * into v_bal from public.menu_update_balance('dd400000-0000-0000-0000-000000000001');
-  if v_bal.available <> 2 then
-    raise exception 'RN-CON-11 FALLIDO: el crédito compensatorio no cuenta en el ciclo vigente (available=%)', v_bal.available using errcode = 'assert_failure';
+  -- RN-CON-12 sigue para lo antiguo: sin motivo, no; dos veces, una.
+  if public.refund_menu_update('dd900000-0000-0000-0000-000000000001', 'Nos equivocamos hace dos meses') <> v_e then
+    raise exception 'CA-17 FALLIDO: devolver dos veces creó dos créditos' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -950,7 +957,9 @@ begin
     'assert_can_write_menu_publication(public.menus, public.menu_publications)',
     'credit_menu_update(public.menu_publications, text)',
     'menu_cutoff_at(date, uuid)',
-    'menu_publish_by_at(date, uuid)'
+    'menu_publish_by_at(date, uuid)',
+    'assert_one_daily_menu_internal(uuid, text, date, uuid)',
+    'establishment_publish_template_internal(uuid)'
   ] loop
     if has_function_privilege('authenticated', 'public.' || v_fn, 'execute')
        or has_function_privilege('anon', 'public.' || v_fn, 'execute') then

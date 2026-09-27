@@ -64,8 +64,8 @@ declare
   v_fn text;
 begin
   foreach v_fn in array array[
-    'public.create_plan(uuid, text, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text, integer)',
-    'public.revise_plan(uuid, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text, integer)',
+    'public.create_plan(uuid, text, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text, integer, boolean)',
+    'public.revise_plan(uuid, integer, integer, integer, integer, integer, integer, integer, integer, integer, integer, boolean, boolean, integer, text, boolean, text, text, integer, boolean)',
     'public.establishment_report_period(uuid)'
   ] loop
     if has_function_privilege('anon', v_fn, 'execute') then

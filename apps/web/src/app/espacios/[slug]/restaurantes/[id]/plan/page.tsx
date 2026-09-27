@@ -184,13 +184,13 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
       <Card>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-primary-dark">{t.serviceTitle}</h2>
-          {datos.menuBalance ? <StatusBadge tone="success">{t.serviceActive}</StatusBadge> : null}
+          {datos.menuAccess ? <StatusBadge tone="success">{t.serviceActive}</StatusBadge> : null}
         </div>
-        {datos.menuBalance ? (
+        {datos.menuAccess ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <p className="text-2xl font-bold text-primary-dark">{t.serviceMenu}</p>
             <ul className="space-y-2 text-sm text-text">
-              {[t.serviceMenuUpdates(datos.menuBalance.included_updates), t.serviceMenuTemplates(INCLUDED_TEMPLATE_LIMIT)].map(
+              {[t.serviceMenuOnePerDay, t.serviceMenuTemplates(INCLUDED_TEMPLATE_LIMIT)].map(
                 (linea) => (
                   <li key={linea} className="flex gap-2">
                     <Icon name="check" className="mt-0.5 h-4 w-4 shrink-0 text-cuotly-green" />
@@ -199,7 +199,9 @@ export default async function ClientPlanPage({ params }: { params: Promise<{ slu
                 ),
               )}
             </ul>
-            <InfoNote title={t.serviceMenu}>{t.serviceSeparate}</InfoNote>
+            <InfoNote title={t.serviceMenu}>
+              {datos.menuAccess === "plan" ? t.serviceInPlan : t.serviceSeparate}
+            </InfoNote>
           </div>
         ) : (
           <p className="text-sm text-text-secondary">{t.noService}</p>

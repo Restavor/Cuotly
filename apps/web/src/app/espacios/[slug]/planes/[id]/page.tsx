@@ -679,6 +679,8 @@ function PlanComparison({ current, target }: { current: CataloguePlan; target: C
         return tc.reportLevels[p.reportLevel];
       case "reportPeriod":
         return tc.reportPeriods[p.reportPeriod];
+      case "dailyMenu":
+        return p.includesDailyMenu ? tc.yes : tc.no;
     }
   };
   const filas = target

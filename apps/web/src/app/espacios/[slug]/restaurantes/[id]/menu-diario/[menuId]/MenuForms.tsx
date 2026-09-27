@@ -16,12 +16,10 @@ import {
   copyMenu,
   prepareMenu,
   provideMenuInformation,
-  requestMenuCorrection,
   requestMenuPublication,
   saveMenuVersion,
   updateMenuDetails,
 } from "../actions";
-import type { MenuCorrectionAvailability } from "@/core/daily-menu";
 
 const t = es.dailyMenuClient;
 
@@ -66,11 +64,14 @@ export function VersionEditor({
   menuId,
   current,
   editable,
+  publishedDaily = false,
   compareHref,
 }: {
   menuId: string;
   current: VersionContent | null;
   editable: boolean;
+  /** RN-CRE-30 · publicado y del día: guardar lo devuelve a borrador. */
+  publishedDaily?: boolean;
   /** A17 · "Comparar versiones" lleva a la pestaña de versiones (R18). */
   compareHref: string;
 }) {
@@ -89,6 +90,7 @@ export function VersionEditor({
         <p className="text-sm text-text-secondary">{t.editorLocked}</p>
       ) : (
         <form action={formAction} className="space-y-4">
+          {publishedDaily ? <p className="text-sm text-text-secondary">{t.editorPublishedDaily}</p> : null}
           {/*
             A17 · contra qué versión se está escribiendo. Después de un
             choque pasa a ser la que se adelantó, para que el segundo
@@ -184,26 +186,18 @@ export function VersionEditor({
   );
 }
 
-export interface TemplateOption {
-  readonly id: string;
-  readonly name: string;
-}
-
+/** Nombre, tipo y fecha. La plantilla no se elige (RN-CRE-23). */
 export function DetailsForm({
   menuId,
   name,
   kind,
   targetDate,
-  templateId,
-  templates,
   editable,
 }: {
   menuId: string;
   name: string;
   kind: string;
   targetDate: string;
-  templateId: string | null;
-  templates: readonly TemplateOption[];
   editable: boolean;
 }) {
   const action = updateMenuDetails.bind(null, menuId);
@@ -221,12 +215,6 @@ export function DetailsForm({
           options={MENU_KINDS.map((k) => ({ value: k, label: es.naming.menuKinds[k] }))}
         />
         <Field label={t.newDateLabel} name="targetDate" type="date" required defaultValue={targetDate} hint={t.newDateHint} />
-        <Select
-          label={t.newTemplateLabel}
-          name="templateId"
-          defaultValue={templateId ?? ""}
-          options={[{ value: "", label: t.newTemplateNone }, ...templates.map((tpl) => ({ value: tpl.id, label: tpl.name }))]}
-        />
         <Feedback state={state} />
         <Button type="submit" variant="secondary" disabled={pending}>
           {pending ? t.saveDetailsPending : t.saveDetails}
@@ -243,10 +231,12 @@ export function DetailsForm({
 export function ActionPanel({
   menuId,
   state,
+  kind,
   idempotencyKey,
 }: {
   menuId: string;
   state: MenuState;
+  kind: string;
   idempotencyKey: string;
 }) {
   const [prepareState, prepareAction, preparePending] = useActionState(
@@ -314,7 +304,10 @@ export function ActionPanel({
             </Button>
           </form>
         ) : (
-          <p className="text-sm text-text-secondary">{t.nothingToDo}</p>
+          // RN-CRE-30 · el menú del día publicado no se cancela: se cambia.
+          <p className="text-sm text-text-secondary">
+            {state === "published" && kind === "daily" ? t.publishedDailyHint : t.nothingToDo}
+          </p>
         )}
 
       </div>
@@ -323,51 +316,9 @@ export function ActionPanel({
 }
 
 /**
- * RN-COR-10 · pedir la corrección mínima de un menú publicado. La
- * disponibilidad y la garantía las calcula `menuCorrectionAvailability()`
- * para poder decir el motivo (CA-20); quien decide de verdad es
- * `request_menu_correction()` al pulsar.
- */
-export function CorrectionForm({
-  menuId,
-  availability,
-}: {
-  menuId: string;
-  availability: MenuCorrectionAvailability;
-}) {
-  const [state, formAction, pending] = useActionState(requestMenuCorrection.bind(null, menuId), INITIAL_MENU_ACTION);
-
-  if (!availability.available) {
-    if (availability.reason === "not_published") return null;
-    return (
-      <Card title={t.correctionTitle}>
-        <p className="text-sm text-text-secondary">
-          {availability.reason === "already_used" ? t.correctionUsed : t.correctionWindowClosed}
-        </p>
-      </Card>
-    );
-  }
-
-  return (
-    <Card title={t.correctionTitle}>
-      <form action={formAction} className="space-y-3">
-        <p className="text-sm text-text-secondary">{t.correctionHint}</p>
-        <p className="text-sm text-text-secondary">
-          {availability.guaranteed ? t.correctionGuaranteedHint : t.correctionNotGuaranteedHint}
-        </p>
-        <TextArea label={t.correctionLabel} name="description" rows={2} required />
-        <Feedback state={state} />
-        <Button type="submit" disabled={pending}>
-          {pending ? t.pending : t.correctionSubmit}
-        </Button>
-      </form>
-    </Card>
-  );
-}
-
-/**
  * R18 · "Copiar como nuevo borrador" (RN-MEN-03: un menú publicado o
- * cancelado no se edita, se copia). La misma `copy_menu()` de siempre.
+ * cancelado no se edita, se copia; el del día publicado sí se edita,
+ * RN-CRE-30). La misma `copy_menu()` de siempre.
  */
 export function CopyMenuForm({
   slug,

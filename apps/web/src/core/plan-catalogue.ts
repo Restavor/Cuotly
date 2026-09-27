@@ -151,6 +151,8 @@ export interface ComparablePlan {
   readonly reportLevelRank: number;
   /** RN-REP-32 · cada cuánto llega el informe. Sin él, mensual. */
   readonly reportPeriod?: ReportPeriodKind;
+  /** RN-CRE-21 · el plan incluye Menú Diario. Sin él, no. */
+  readonly includesDailyMenu?: boolean;
 }
 
 export type ComparisonKey =
@@ -163,7 +165,8 @@ export type ComparisonKey =
   | "startSla"
   | "ordering"
   | "report"
-  | "reportPeriod";
+  | "reportPeriod"
+  | "dailyMenu";
 
 export interface ComparisonRow {
   readonly key: ComparisonKey;
@@ -202,6 +205,8 @@ export function comparePlans(current: ComparablePlan, target: ComparablePlan): r
       Number((target.reportPeriod ?? "month") === "month"),
       true,
     ),
+    // RN-CRE-21 · incluir Menú Diario es mejor que no incluirlo.
+    row("dailyMenu", Number(current.includesDailyMenu ?? false), Number(target.includesDailyMenu ?? false), true),
   ];
 }
 
@@ -233,6 +238,8 @@ export interface PlanTerms {
   /** RN-REP-32 (decisión 83) · informe mensual o trimestral. */
   readonly reportPeriod: ReportPeriodKind;
   readonly watchesReviews: boolean;
+  /** RN-CRE-21 (decisión 85) · el plan incluye Menú Diario. */
+  readonly includesDailyMenu: boolean;
 }
 
 export interface ServiceTerms {
@@ -340,6 +347,7 @@ export function readPlanTermsForm(form: FormLike): TermsFormResult<PlanTerms> {
       reportLevel: level as PlanReportLevel,
       reportPeriod: period,
       watchesReviews: on("watchesReviews"),
+      includesDailyMenu: on("includesDailyMenu"),
     },
   };
 }

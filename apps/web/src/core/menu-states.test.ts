@@ -5,6 +5,7 @@ import {
   IN_FLIGHT_MENU_STATES,
   MENU_STATES,
   MENU_TRANSITIONS,
+  canSaveMenuVersion,
   canTransitionMenu,
   isMenuEditable,
   isMenuInFlight,
@@ -43,10 +44,10 @@ describe("RN-MEN-09 · los once estados de §63", () => {
     }
   });
 
-  it("de un estado final no sale nada, y a todos los demás se llega", () => {
-    for (const final of FINAL_MENU_STATES) {
-      expect(MENU_TRANSITIONS.filter((t) => t.from === final)).toEqual([]);
-    }
+  it("RN-CRE-30 · de un estado final solo sale el menú publicado de vuelta a borrador, y a todos los demás se llega", () => {
+    expect(MENU_TRANSITIONS.filter((t) => t.from === "cancelled")).toEqual([]);
+    expect(MENU_TRANSITIONS.filter((t) => t.from === "published").map((t) => t.to)).toEqual(["draft"]);
+    expect(FINAL_MENU_STATES).toEqual(["published", "cancelled"]);
     for (const state of MENU_STATES) {
       if (state === "draft") continue;
       expect(MENU_TRANSITIONS.some((t) => t.to === state), `nadie llega a ${state}`).toBe(true);
@@ -85,22 +86,19 @@ describe("RN-MEN-06 · sin botón Comenzar, y quién hace cada cosa", () => {
   });
 });
 
-describe("RN-MEN-05 · qué le pasa al contador en cada transición", () => {
-  it("pedir la publicación consume; cancelar antes de Publicado devuelve", () => {
-    expect(menuTransition("prepared", "publication_requested", "client")?.updates).toBe("debit");
+describe("RN-CRE-22 · sin contador: ninguna transición consume ni devuelve", () => {
+  it("RN-CRE-22 · pedir la publicación no consume y cancelar no devuelve", () => {
+    expect(menuTransition("prepared", "publication_requested", "client")?.updates).toBeNull();
     for (const state of IN_FLIGHT_MENU_STATES) {
-      expect(menuTransition(state, "cancelled", "client")?.updates, `cancelar desde ${state}`).toBe("return");
+      expect(menuTransition(state, "cancelled", "client")?.updates, `cancelar desde ${state}`).toBeNull();
     }
+    expect(MENU_TRANSITIONS.every((t) => t.updates === null)).toBe(true);
   });
 
-  it("cancelar un borrador o un preparado no devuelve nada: no consumió", () => {
-    expect(menuTransition("draft", "cancelled", "client")?.updates).toBeNull();
-    expect(menuTransition("prepared", "cancelled", "client")?.updates).toBeNull();
-  });
-
-  it("después de Publicado no se cancela ni se devuelve (§60)", () => {
-    expect(menuTransitionsFrom("published", "client")).toEqual([]);
+  it("RN-CRE-30 · de Publicado solo se vuelve a borrador (editándolo); no se cancela (§60)", () => {
+    expect(menuTransitionsFrom("published", "client")).toEqual(["draft"]);
     expect(menuTransitionsFrom("published", "worker")).toEqual([]);
+    expect(canTransitionMenu("published", "cancelled", "client")).toBe(false);
   });
 
   it("la publicación solicitada pasa a pendiente de asignación sola (system), y a asignado si hay un único candidato", () => {
@@ -114,6 +112,15 @@ describe("RN-MEN-03 · qué se edita", () => {
     for (const state of MENU_STATES) {
       expect(isMenuEditable(state)).toBe(!FINAL_MENU_STATES.includes(state));
     }
+  });
+
+  it("RN-CRE-30 · el menú del día publicado admite versión nueva; los otros tipos publicados, no", () => {
+    expect(canSaveMenuVersion("published", "daily")).toBe(true);
+    for (const kind of ["christmas", "kids", "groups", "special_event"]) {
+      expect(canSaveMenuVersion("published", kind), kind).toBe(false);
+    }
+    expect(canSaveMenuVersion("cancelled", "daily")).toBe(false);
+    expect(canSaveMenuVersion("draft", "groups")).toBe(true);
   });
 
   it("'en vuelo' son los siete estados con una publicación viva", () => {

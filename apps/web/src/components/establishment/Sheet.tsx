@@ -5,7 +5,6 @@ import {
   ButtonLink,
   Card,
   EmptyState,
-  ProgressBar,
   StatusBadge,
   Table,
   TableBody,
@@ -1979,13 +1978,11 @@ export function EstablishmentSheet({
       ) : null}
 
       {/*
-        M31 · la sección Menú Diario: la cuota del ciclo arriba a la
-        derecha, y la tabla de los últimos menús con su fecha, su
-        plantilla y su estado. La cuota es la de `menu_update_balance()`,
-        la misma que la cabecera de Menú Diario del restaurante: dos
-        pantallas no pueden contar distinto las mismas 30 actualizaciones
-        (RN-CON-02, CA-10). Sin el servicio contratado no hay cuota que
-        enseñar, y se dice.
+        M31 · la sección Menú Diario: de dónde le viene (incluido en su plan
+        o contratado aparte, RN-CRE-21) arriba a la derecha, y la tabla de
+        los últimos menús con su fecha, su plantilla y su estado. Sin
+        cuota: desde la decisión 85 no hay contador (RN-CRE-22). Sin Menú
+        Diario, se dice.
 
         Lo que no se copia: "Nuevo menú" (un menú lo prepara el restaurante
         o se crea desde Menú Diario, donde están sus plantillas), la
@@ -2019,19 +2016,9 @@ export function EstablishmentSheet({
               <div className="-mt-3 mb-4 flex flex-wrap items-start justify-between gap-4">
                 <p className="text-sm text-text-secondary">{t.dailyMenuSubtitle(header.name)}</p>
                 <div className="w-full max-w-xs rounded-[12px] border border-border p-3">
-                  <p className="text-xs text-text-secondary">{t.dailyMenuQuotaTitle}</p>
-                  <p className="text-xl font-bold text-primary-dark">
-                    {t.dailyMenuQuota(operation.menus.consumed, operation.menus.included)}
-                  </p>
-                  <ProgressBar
-                    percent={operation.menus.usedPercent}
-                    label={t.dailyMenuQuota(operation.menus.consumed, operation.menus.included)}
-                  />
-                  <p className="mt-1 text-xs text-text-secondary">
-                    {t.dailyMenuQuotaCycle(
-                      diaCorto(operation.menus.cycleStart, timeZone),
-                      diaCorto(operation.menus.cycleEnd, timeZone),
-                    )}
+                  <p className="text-xs text-text-secondary">{t.dailyMenuAccessTitle}</p>
+                  <p className="text-base font-semibold text-primary-dark">
+                    {t.dailyMenuAccess[operation.menus.access]}
                   </p>
                 </div>
               </div>

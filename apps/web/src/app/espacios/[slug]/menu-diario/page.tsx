@@ -26,11 +26,11 @@ import { createClient } from "@/lib/supabase/server";
 import { loadMenuQueue, type MenuQueueRow } from "./queue-load";
 
 /**
- * La cola de Menú Diario del equipo (Fase 2, Hito 11; §20.4, RN-MEN-06/07).
+ * La cola de Menú Diario del equipo (Fase 2, Hito 11; §20.4, RN-MEN-06).
  *
- * Lo que hay que publicar, por fecha objetivo y hora de corte, con la
- * garantía y "pasada de hora" (§62) calculadas por el servidor y por
- * `src/core/daily-menu.ts`. Qué filas ve cada cual lo decide
+ * Lo que hay que publicar, por fecha objetivo y cuándo se pidió. Sin hora
+ * de corte, garantía ni "pasada de hora" desde la decisión 85 (RN-CRE-24).
+ * Qué filas ve cada cual lo decide
  * `team_menu_queue()` con las mismas funciones que RLS: un trabajador ve
  * los menús de sus restaurantes autorizados; quién está asignado, solo
  * quien gestiona o el propio asignado (RN-ASG-17).
@@ -83,7 +83,7 @@ export default async function TeamDailyMenuPage({ params }: { params: Promise<{ 
     );
   }
 
-  const queue = await loadMenuQueue(supabase, space.id, space.timezone);
+  const queue = await loadMenuQueue(supabase, space.id);
 
   const assigneeIds = [...new Set((queue.rows ?? []).map((r) => r.assignedTo).filter((id): id is string => id !== null))];
   const { data: people } = assigneeIds.length
@@ -97,7 +97,7 @@ export default async function TeamDailyMenuPage({ params }: { params: Promise<{ 
     <div className="space-y-6">
       {/*
         Página 70 (M12) · título y subtítulo, y la cola como tabla:
-        restaurante, menú, fecha objetivo y corte, responsable, estado y
+        restaurante, menú, fecha objetivo y petición, responsable, estado y
         "Ver detalle". El "Programar menú" del dibujo no va: la publicación
         la pide el restaurante (RN-MEN-06) y el equipo la publica desde el
         detalle. Las pestañas Pendientes / Programados / Publicados tampoco:
@@ -126,7 +126,7 @@ export default async function TeamDailyMenuPage({ params }: { params: Promise<{ 
                 <TableHeaderCell>{t.establishmentColumn}</TableHeaderCell>
                 <TableHeaderCell>{t.menuColumn}</TableHeaderCell>
                 <TableHeaderCell>{t.dateColumn}</TableHeaderCell>
-                <TableHeaderCell>{t.cutoffColumn}</TableHeaderCell>
+                <TableHeaderCell>{t.requestedColumn}</TableHeaderCell>
                 <TableHeaderCell>{t.assigneeColumn}</TableHeaderCell>
                 <TableHeaderCell>{t.stateColumn}</TableHeaderCell>
                 <TableHeaderCell>{es.ui.table.view}</TableHeaderCell>
@@ -172,7 +172,9 @@ function QueueRow({
         <span className="whitespace-nowrap">{fechaCorta(row.targetDate)}</span>
       </TableCell>
       <TableCell>
-        <span className="whitespace-nowrap">{horaLocal(row.cutoffAt, timeZone)}</span>
+        <span className="whitespace-nowrap">
+          {row.requestedAt ? horaLocal(row.requestedAt, timeZone) : <span className="text-text-secondary">—</span>}
+        </span>
       </TableCell>
       <TableCell>
         {asignado !== null ? (
@@ -188,13 +190,6 @@ function QueueRow({
           <StatusBadge tone={menuTone(row.state)}>{es.naming.states.menu[row.state]}</StatusBadge>
           {row.pendingCorrections > 0 ? (
             <StatusBadge tone="warning">{t.correctionsPending(row.pendingCorrections)}</StatusBadge>
-          ) : null}
-          {row.overdue ? (
-            <StatusBadge tone="danger">{t.overdueShort}</StatusBadge>
-          ) : row.guaranteed === true ? (
-            <StatusBadge tone="info">{t.guaranteedShort}</StatusBadge>
-          ) : row.guaranteed === false ? (
-            <StatusBadge tone="neutral">{t.notGuaranteedShort}</StatusBadge>
           ) : null}
         </span>
       </TableCell>

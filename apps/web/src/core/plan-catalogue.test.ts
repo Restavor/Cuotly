@@ -173,3 +173,54 @@ describe("RN-CRE-01 · los créditos del plan en el formulario y en la comparati
     expect(fila).toEqual({ key: "credits", changed: true, better: true });
   });
 });
+
+describe("RN-CRE-21 · el plan que incluye Menú Diario", () => {
+  const base = {
+    price: "99",
+    includedSmall: "0",
+    includedPhoto: "0",
+    includedMedium: "0",
+    includedLarge: "0",
+    startSlaHours: "24",
+    executionSlaSmall: "48",
+    executionSlaPhoto: "48",
+    executionSlaMedium: "72",
+    executionSlaLarge: "120",
+    reportLevel: "standard",
+  };
+  const form = (extra: Record<string, string>) => {
+    const m = new Map(Object.entries({ ...base, ...extra }));
+    return { get: (k: string) => m.get(k) ?? null };
+  };
+
+  it("RN-CRE-21 · la casilla marcada lo incluye; sin marcar, no", () => {
+    const con = readPlanTermsForm(form({ includesDailyMenu: "on" }));
+    const sin = readPlanTermsForm(form({}));
+    expect(con.ok && con.value.includesDailyMenu).toBe(true);
+    expect(sin.ok && sin.value.includesDailyMenu).toBe(false);
+  });
+
+  it("RN-CRE-21 · pasar a un plan que lo incluye es mejor en la comparativa", () => {
+    const basico = {
+      priceCents: 2000,
+      includedSmall: 0,
+      includedPhoto: 0,
+      includedMedium: 0,
+      includedLarge: 0,
+      startSlaHours: 48,
+      canOrderRequests: false,
+      reportLevelRank: 1,
+    };
+    const impulso = { ...basico, priceCents: 9900, startSlaHours: 24, includesDailyMenu: true };
+    expect(comparePlans(basico, impulso).find((r) => r.key === "dailyMenu")).toEqual({
+      key: "dailyMenu",
+      changed: true,
+      better: true,
+    });
+    expect(comparePlans(impulso, basico).find((r) => r.key === "dailyMenu")).toEqual({
+      key: "dailyMenu",
+      changed: true,
+      better: false,
+    });
+  });
+});

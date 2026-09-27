@@ -5,7 +5,6 @@ import { notFound, redirect } from "next/navigation";
 
 import { PrintMenuButton } from "@/components/menu/PrintMenuButton";
 import { Card, StatusBadge } from "@/components/ui";
-import { isPublicationOverdue } from "@/core/daily-menu";
 import { FINAL_MENU_STATES, isMenuState, menuTone } from "@/core/menu-states";
 import { es } from "@/i18n/es";
 import { enZona, fechaCorta } from "@/i18n/dates";
@@ -23,7 +22,9 @@ import { loadSheetFrame } from "@/app/espacios/[slug]/restaurantes/[id]/frame-lo
  * Es la ficha desde la que se trabaja la publicación (§61): asignar, pedir
  * información, descargar la plantilla generada (que pone "Listo para
  * publicar"; imprimirla no, migración 144), marcar publicado, registrar un error, devolver la
- * actualización, y las correcciones del menú publicado. La pantalla elige
+ * actualización de una publicación antigua que la consumió, y las correcciones por error del
+ * equipo. Desde la decisión 85 no hay corte, garantía ni "pasada de hora" (RN-CRE-24), y
+ * pedir la publicación ya no consume (RN-CRE-22). La pantalla elige
  * qué formularios pintar por estado y por lo que el servidor dice de quien
  * mira (`has_capability`, la publicación que RLS le deja ver); quien decide
  * de verdad es la función de cada acción al pulsar.
@@ -96,7 +97,6 @@ export default async function TeamMenuPage({
     redirect(`/espacios/${slug}/restaurantes/${menu.establishment_id}/menu-diario/${menuId}`);
   }
 
-  const now = new Date();
   const timeZone = space.timezone;
 
   const [
@@ -105,7 +105,6 @@ export default async function TeamMenuPage({
     { data: template },
     { data: events },
     { data: downloads },
-    { data: deadlineRows },
     { data: publications },
     { data: corrections },
     { data: canAssign },
@@ -115,7 +114,7 @@ export default async function TeamMenuPage({
     supabase.from("establishments").select("id, name, code").eq("id", menu.establishment_id).maybeSingle(),
     supabase
       .from("menu_versions")
-      .select("id, version, starters, mains, desserts, drink, price_cents, note, after_cutoff, created_at")
+      .select("id, version, starters, mains, desserts, drink, price_cents, note, created_at")
       .eq("menu_id", menuId)
       .order("version", { ascending: false }),
     menu.template_id
@@ -132,18 +131,17 @@ export default async function TeamMenuPage({
       .eq("menu_id", menuId)
       .order("downloaded_at", { ascending: false })
       .limit(5),
-    supabase.rpc("menu_deadlines", { p_menu_id: menuId }),
     // Fila interna del equipo: RLS solo la da a quien gestiona o al asignado.
     supabase
       .from("menu_publications")
       .select(
-        "id, requested_at, requested_before_cutoff, assigned_to, assigned_at, assignment_mode, published_at, published_by, cancelled_at",
+        "id, requested_at, assigned_to, assigned_at, assignment_mode, published_at, published_by, cancelled_at, debit_entry_id",
       )
       .eq("menu_id", menuId)
       .order("requested_at", { ascending: false }),
     supabase
       .from("menu_corrections")
-      .select("id, kind, description, requested_at, requested_before_cutoff, completed_at, completion_note")
+      .select("id, kind, description, requested_at, completed_at, completion_note")
       .eq("menu_id", menuId)
       .order("requested_at", { ascending: false }),
     supabase.rpc("has_capability", { p_space_id: space.id, p_capability: "assign_jobs" }),
@@ -152,7 +150,6 @@ export default async function TeamMenuPage({
   ]);
 
   const queueRow = (queueRows ?? []).find((r) => r.menu_id === menuId) ?? null;
-  const deadlines = deadlineRows?.[0] ?? null;
   const current = versions?.find((v) => v.id === menu.current_version_id) ?? null;
   const livePublication = (publications ?? []).find((p) => p.published_at === null && p.cancelled_at === null) ?? null;
   const lastPublication = (publications ?? [])[0] ?? null;
@@ -160,13 +157,6 @@ export default async function TeamMenuPage({
   const canAct = isAssignee || canManage === true;
   const closed = FINAL_MENU_STATES.includes(menu.state);
   const inFlight = !closed && menu.state !== "draft" && menu.state !== "prepared";
-  const overdue = isPublicationOverdue({
-    now,
-    targetDate: menu.target_date,
-    timezone: timeZone,
-    guaranteed: deadlines?.guaranteed ?? null,
-    published: menu.state === "published",
-  });
 
   // Nombres de quien está asignado y de quien publicó: son del equipo y
   // esta pantalla es del equipo. El cliente nunca llega aquí.
@@ -202,9 +192,11 @@ export default async function TeamMenuPage({
 
   // §60 · si la publicación ya devolvió su actualización, se dice y no se
   // vuelve a ofrecer. El libro es la única fuente (RN-CON): un apunte de
-  // devolución o crédito compensatorio con esa publicación.
+  // devolución o crédito compensatorio con esa publicación. Solo las de
+  // antes de la migración 152 consumieron algo (RN-CRE-22).
+  const consumed = lastPublication !== null && lastPublication.debit_entry_id !== null;
   let alreadyRefunded = false;
-  if (lastPublication) {
+  if (lastPublication && consumed) {
     const { data: credits } = await supabase
       .from("menu_update_entries")
       .select("id, entry_type")
@@ -221,7 +213,6 @@ export default async function TeamMenuPage({
     kind: c.kind,
     description: c.description,
     requestedAt: c.requested_at,
-    requestedBeforeCutoff: c.requested_before_cutoff,
     completedAt: c.completed_at,
     completionNote: c.completion_note,
   }));
@@ -271,7 +262,6 @@ export default async function TeamMenuPage({
               {menu.name}
             </h1>
             <StatusBadge tone={menuTone(menu.state)}>{es.naming.states.menu[menu.state]}</StatusBadge>
-            {overdue ? <StatusBadge tone="danger">{t.overdueShort}</StatusBadge> : null}
             {puedeEditar ? (
               <Link
                 href={`${fichaHref}?vista=editar`}
@@ -352,24 +342,6 @@ export default async function TeamMenuPage({
         </div>
 
         <div className="min-w-0 space-y-4">
-          {deadlines ? (
-            <Card title={t.deadlinesTitle}>
-              <p className="text-sm text-text">{t.cutoffLine(horaLocal(deadlines.cutoff_at, timeZone))}</p>
-              <p className="text-sm text-text">{t.publishByLine(horaLocal(deadlines.publish_by_at, timeZone))}</p>
-              {deadlines.requested_at ? (
-                <p className="text-sm text-text">{t.requestedLine(horaLocal(deadlines.requested_at, timeZone))}</p>
-              ) : null}
-              <p className="mt-2 text-sm text-text-secondary">
-                {deadlines.guaranteed === null
-                  ? t.notRequested
-                  : overdue
-                    ? t.overdue
-                    : deadlines.guaranteed
-                      ? t.guaranteed
-                      : t.notGuaranteed}
-              </p>
-            </Card>
-          ) : null}
           <Card title={t.publicationTitle}>
             {menu.state === "published" && menu.published_at ? (
               <p className="text-sm text-text">
@@ -393,12 +365,15 @@ export default async function TeamMenuPage({
             ) : (
               <p className="text-sm text-text-secondary">{closed ? t.nothingToDo : t.notRequested}</p>
             )}
+            {livePublication ? (
+              <p className="mt-2 text-sm text-text-secondary">{t.requestedLine(horaLocal(livePublication.requested_at, timeZone))}</p>
+            ) : null}
             {inFlight && !canAct ? <p className="mt-2 text-sm text-text-secondary">{t.noPermissionHint}</p> : null}
           </Card>
           {canAssign === true && inFlight ? (
             <AssignMenuForm menuId={menuId} candidates={candidates} reassign={livePublication?.assigned_to !== null && livePublication !== null} />
           ) : null}
-          {/* RN-MEN-07: "el trabajador ve los cambios de versión y su hora". */}
+          {/* El trabajador ve los cambios de versión y su hora. */}
           <Card title={t.versionsTitle}>
             <ul className="space-y-1 text-sm text-text-secondary">
               {(versions ?? []).map((v) => {
@@ -407,7 +382,6 @@ export default async function TeamMenuPage({
                 return (
                   <li key={v.id}>
                     {t.versionLine(v.version, horaLocal(v.created_at, timeZone))}
-                    {v.after_cutoff ? ` · ${t.versionAfterCutoff}` : ""}
                     {afterRequest ? ` · ${t.versionAfterRequest}` : ""}
                   </li>
                 );
@@ -444,7 +418,7 @@ export default async function TeamMenuPage({
               </ul>
             ) : null}
           </Card>
-          {canManage === true && lastPublication ? (
+          {canManage === true && lastPublication && consumed ? (
             <RefundForm publicationId={lastPublication.id} alreadyRefunded={alreadyRefunded} />
           ) : null}
           {menu.state === "published" || correctionRows.length > 0 ? (

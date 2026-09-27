@@ -37,35 +37,62 @@ describe("R13 · los filtros del listado de menús", () => {
   });
 });
 
-const v = (version: number, created_at: string, after_cutoff = false) => ({ version, created_at, after_cutoff });
+const v = (version: number, created_at: string) => ({ id: `v${version}`, version, created_at });
 
-describe("A18 · RN-MEN-05 y RN-MEN-07 · los cambios que todavía no están publicados", () => {
+describe("A18 · los cambios que todavía no están publicados", () => {
   it("con contenido y sin pedir, dice qué versión se pediría", () => {
     expect(
-      menuPendingChanges({ state: "prepared", versions: [v(1, "2026-09-15T10:00:00Z"), v(2, "2026-09-15T11:00:00Z")], lastRequestAt: null }),
-    ).toEqual({ kind: "not_requested", version: 2 });
+      menuPendingChanges({
+        state: "prepared",
+        versions: [v(1, "2026-09-15T10:00:00Z"), v(2, "2026-09-15T11:00:00Z")],
+        lastRequestAt: null,
+        publishedVersionId: null,
+      }),
+    ).toEqual({ kind: "not_requested", version: 2, publishedVersion: null });
+  });
+
+  it("RN-CRE-30 · el menú del día publicado y editado vuelve a borrador y dice qué versión sigue en la web", () => {
+    expect(
+      menuPendingChanges({
+        state: "draft",
+        versions: [v(1, "2026-09-15T10:00:00Z"), v(2, "2026-09-16T09:00:00Z")],
+        lastRequestAt: "2026-09-15T12:00:00Z",
+        publishedVersionId: "v1",
+      }),
+    ).toEqual({ kind: "not_requested", version: 2, publishedVersion: 1 });
   });
 
   it("sin ninguna versión no hay nada que publicar", () => {
-    expect(menuPendingChanges({ state: "draft", versions: [], lastRequestAt: null })).toBeNull();
+    expect(menuPendingChanges({ state: "draft", versions: [], lastRequestAt: null, publishedVersionId: null })).toBeNull();
   });
 
-  it("guardado después de pedir: lo avisa, y si fue después de las 21:00 lo marca", () => {
+  it("RN-CRE-24 · guardado después de pedir: lo avisa, sin marca de hora de corte", () => {
     expect(
       menuPendingChanges({
         state: "assigned",
-        versions: [v(1, "2026-09-15T10:00:00Z"), v(2, "2026-09-15T20:30:00Z", true)],
+        versions: [v(1, "2026-09-15T10:00:00Z"), v(2, "2026-09-15T22:30:00Z")],
         lastRequestAt: "2026-09-15T12:00:00Z",
+        publishedVersionId: null,
       }),
-    ).toEqual({ kind: "saved_after_request", version: 2, afterCutoff: true });
+    ).toEqual({ kind: "saved_after_request", version: 2 });
   });
 
   it("pedido y sin cambios después, no hay aviso; publicado, tampoco", () => {
     expect(
-      menuPendingChanges({ state: "assigned", versions: [v(1, "2026-09-15T10:00:00Z")], lastRequestAt: "2026-09-15T12:00:00Z" }),
+      menuPendingChanges({
+        state: "assigned",
+        versions: [v(1, "2026-09-15T10:00:00Z")],
+        lastRequestAt: "2026-09-15T12:00:00Z",
+        publishedVersionId: null,
+      }),
     ).toBeNull();
     expect(
-      menuPendingChanges({ state: "published", versions: [v(1, "2026-09-15T10:00:00Z")], lastRequestAt: "2026-09-15T12:00:00Z" }),
+      menuPendingChanges({
+        state: "published",
+        versions: [v(1, "2026-09-15T10:00:00Z")],
+        lastRequestAt: "2026-09-15T12:00:00Z",
+        publishedVersionId: "v1",
+      }),
     ).toBeNull();
   });
 });

@@ -5,20 +5,24 @@ import type { Database } from "@/lib/supabase/database.types";
 
 import { loadEstablishmentTimezone } from "../timezone-load";
 
+/** RN-CRE-21 · de dónde le viene Menú Diario: incluido en su plan o contratado aparte. */
+export type DailyMenuAccess = "plan" | "service";
+
 /**
- * Lo que comparten R13, R15 y R19: el restaurante, el saldo del ciclo y la
- * zona del espacio. `balance` es `null` cuando el restaurante no tiene el
- * servicio (`menu_update_balance()` no devuelve fila), y cada pantalla lo
- * dice en vez de enseñar ceros (CA-20).
+ * Lo que comparten R13, R15 y R19: el restaurante, de dónde le viene Menú
+ * Diario y la zona del espacio. `access` es `null` cuando el restaurante no
+ * lo tiene, ni en su plan ni contratado aparte
+ * (`establishment_daily_menu_access()`, migración 152), y cada pantalla lo
+ * dice en vez de enseñar un menú vacío (CA-20). Desde la decisión 85 no hay
+ * contador de actualizaciones (RN-CRE-22).
  */
 export async function loadMenuSection(supabase: SupabaseClient<Database>, establishmentId: string) {
-  const [{ data: establishment }, { data: balanceRows }, timezone] = await Promise.all([
+  const [{ data: establishment }, { data: acceso }, timezone] = await Promise.all([
     supabase.from("establishments").select("id, name, code").eq("id", establishmentId).maybeSingle(),
-    supabase.rpc("menu_update_balance", { p_establishment_id: establishmentId }),
+    supabase.rpc("establishment_daily_menu_access", { p_establishment_id: establishmentId }),
     loadEstablishmentTimezone(supabase, establishmentId),
   ]);
-  const balance = balanceRows?.[0] ?? null;
+  const access: DailyMenuAccess | null = acceso === "plan" || acceso === "service" ? acceso : null;
   const fecha = (iso: string) => enZona(iso, timezone, { day: "numeric", month: "short", year: "numeric" });
-  const cycleLabel = balance === null ? null : `${fecha(balance.cycle_start)} – ${fecha(balance.cycle_end)}`;
-  return { establishment, balance, timezone, cycleLabel, fecha };
+  return { establishment, access, timezone, fecha };
 }

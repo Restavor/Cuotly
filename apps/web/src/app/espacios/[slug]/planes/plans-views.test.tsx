@@ -52,6 +52,7 @@ function plan(over: Partial<CataloguePlan> & Pick<CataloguePlan, "id" | "name" |
     queueRank: 0,
     grantsPriority: false,
     watchesReviews: false,
+    includesDailyMenu: false,
     reportLevel: "basic",
     reportLevelRank: 0,
     reportPeriod: "month",
@@ -222,11 +223,11 @@ describe("M21 · Planes", () => {
 });
 
 describe("M54 · Servicios", () => {
-  it("RN-COM-08 · Menú Diario con sus dos precios, sus 30 actualizaciones y sus 3 plantillas", () => {
+  it("RN-COM-08 y RN-CRE-23 · Menú Diario con sus dos precios, sus 30 actualizaciones y sus 2 plantillas", () => {
     render(<ServicesTab slug="s" spaceId="sp" action={null} catalogue={catalogue()} selectedId={null} timeZone="Europe/Madrid" />);
     expect(document.body.textContent).toContain(t.catalogue.premiumPrice(euros(19900)));
     expect(screen.getByText(t.catalogue.updatesValue(30))).toBeTruthy();
-    expect(screen.getByText(t.catalogue.templatesValue(3))).toBeTruthy();
+    expect(screen.getByText(t.catalogue.templatesValue(2))).toBeTruthy();
     expect(screen.getByText(t.catalogue.restaurantsCount(1))).toBeTruthy();
   });
 });

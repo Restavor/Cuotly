@@ -230,9 +230,7 @@ export default async function SpacePage({
           hint={
             !home.dailyMenu.offered && (home.dailyMenu.pending ?? 0) === 0
               ? es.spaceHome.kpi.menuNotOffered
-              : home.dailyMenu.overdue > 0
-                ? `${es.spaceHome.kpi.menuHint(home.dailyMenu.unassigned)} · ${es.spaceHome.dailyMenu.overdue(home.dailyMenu.overdue)}`
-                : es.spaceHome.kpi.menuHint(home.dailyMenu.unassigned)
+              : es.spaceHome.kpi.menuHint(home.dailyMenu.unassigned)
           }
           href={`${base}/menu-diario`}
         />

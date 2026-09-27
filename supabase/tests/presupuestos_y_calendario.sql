@@ -957,7 +957,8 @@ begin
   exception when others then
     if sqlerrm not like '%no lleva presupuesto%' then raise; end if;
   end;
-  v_t := public.create_menu_template('cc400000-0000-0000-0000-000000000003', 'Navidad', 'quoted', (select v from pq_ids where k = 'q5'));
+  -- RN-CRE-23 · la presupuestada es la de imprimir: la de publicar incluida llega después.
+  v_t := public.create_menu_template('cc400000-0000-0000-0000-000000000003', 'Navidad', 'quoted', (select v from pq_ids where k = 'q5'), 'print');
   if (select quote_id from public.menu_templates where id = v_t) <> (select v from pq_ids where k = 'q5') then
     raise exception 'RN-MEN-11 FALLIDO: la plantilla no cuelga del presupuesto' using errcode = 'assert_failure';
   end if;
@@ -1131,7 +1132,7 @@ begin
     'update_quote_draft(uuid, text, integer, text, text, boolean)', 'send_quote(uuid)', 'accept_quote(uuid, text)',
     'reject_quote(uuid, text)', 'authorize_quote_start(uuid, text)', 'quote_status(uuid)', 'job_quote_gate(uuid)',
     'client_request_quote(uuid)', 'space_calendar(uuid, date, date, uuid, uuid, text)',
-    'create_menu_template(uuid, text, text, uuid)', 'upcoming_renewals(uuid, integer)']
+    'create_menu_template(uuid, text, text, uuid, text)', 'upcoming_renewals(uuid, integer)']
   loop
     if has_function_privilege('anon', 'public.' || v_fn, 'execute') then
       raise exception 'CLAUDE.md MUST FALLIDO: % está abierta a anon', v_fn using errcode = 'assert_failure';

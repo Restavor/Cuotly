@@ -3994,6 +3994,16 @@ grande, vigilancia de reseñas ni los plazos cortos de RN-SLA-18 (decisión 84).
   es que lo publique **un agente de IA** cuando el restaurante guarde; **no se construye todavía** y no
   se simula (RN-CLS-07, CLAUDE.md). Cuando se decida, será su propia regla.
 
+*(Construido el 27/09/2026, punto 5, migración 152, suite 86: `plans.includes_daily_menu` y
+`establishment_daily_menu_access()` dicen de dónde le viene Menú Diario a cada restaurante, y la barra,
+la ficha, el plan y el calendario preguntan por ella; pedir la publicación no consume y no hay contador
+en ninguna pantalla; un menú `daily` no cancelado por fecha; `menu_templates.purpose` con una activa de
+cada uso, sin selector de plantilla para nadie; sin hora de corte, garantía, "pasada de hora" ni
+corrección mínima; el menú del día publicado se edita, vuelve a borrador y avisa de "cambios sin
+publicar"; y la casilla "Incluye Menú Diario" en el editor de planes, versionada como los demás
+términos. La web y la app móvil. Queda para el punto 7: los precios y cantidades del catálogo de
+Restavor y la ficha del servicio suelto.)*
+
 ### 41.7 Informes y oportunidades
 
 - **RN-CRE-26 (cambia RN-REP-32)**: **un plan puede recibir el informe mensual y además el

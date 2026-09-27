@@ -11,8 +11,10 @@ import { MenuSectionHeader } from "../MenuSectionHeader";
 import { loadMenuSection } from "../section-load";
 
 /**
- * R15 · las plantillas del restaurante (RN-MEN-11: tres incluidas una sola
- * vez; nuevas o rediseños, presupuestados aparte).
+ * R15 · las plantillas del restaurante (RN-CRE-23: dos incluidas una sola
+ * vez, una para publicar y otra para imprimir en blanco y negro; un diseño
+ * nuevo gasta créditos o se presupuesta). El restaurante no elige: cada
+ * menú sale en las dos (decisión 86).
  *
  * La vista previa se pinta con los platos de verdad del último menú
  * guardado, no con "Nombre del primer plato": una pantalla de producción
@@ -44,14 +46,14 @@ export default async function ClientMenuTemplatesPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { establishment, balance, cycleLabel } = await loadMenuSection(supabase, id);
+  const { establishment, access } = await loadMenuSection(supabase, id);
   if (!establishment) notFound();
   const base = `/espacios/${slug}/restaurantes/${id}/menu-diario`;
 
   const [{ data: templates }, { data: ultimos }] = await Promise.all([
     supabase
       .from("menu_templates")
-      .select("id, name, origin, layout, background_color, text_color, accent_color, heading_text, footer_text, show_prices")
+      .select("id, name, origin, purpose, layout, background_color, text_color, accent_color, heading_text, footer_text, show_prices")
       .eq("establishment_id", id)
       .is("archived_at", null)
       .order("created_at"),
@@ -93,8 +95,7 @@ export default async function ClientMenuTemplatesPage({
         active="templates"
         title={t.tabs.templates}
         subtitle={t.templatesSubtitle}
-        balance={balance}
-        cycleLabel={cycleLabel}
+        access={access}
       />
 
       {lista.length === 0 ? (
@@ -105,11 +106,11 @@ export default async function ClientMenuTemplatesPage({
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <Card title={t.templatesAvailable}>
-              {/* Tres por fila también en el teléfono, en miniatura, como la
-                  página 126 del PDF móvil: a lo ancho, cada plantilla ocupaba
-                  una pantalla entera. La vista grande está en la tarjeta de
-                  al lado (debajo, en el teléfono). */}
-              <ul className="grid grid-cols-3 gap-2 sm:gap-4">
+              {/* Las dos en la misma fila también en el teléfono, en
+                  miniatura (PDF móvil, p. 126): a lo ancho, cada plantilla
+                  ocupaba una pantalla entera. La vista grande está en la
+                  tarjeta de al lado (debajo, en el teléfono). */}
+              <ul className="grid grid-cols-2 gap-2 sm:gap-4">
                 {lista.map((tpl) => {
                   const doc = docDe(tpl);
                   const activa = tpl.id === elegida?.id;
@@ -137,6 +138,9 @@ export default async function ClientMenuTemplatesPage({
                           ) : null}
                         </div>
                         <p className="mt-2 text-sm font-semibold text-text [overflow-wrap:anywhere] sm:mt-3 sm:text-base">{tpl.name}</p>
+                        <p className="text-xs text-text-secondary sm:text-sm">
+                          {t.templatePurpose[tpl.purpose as keyof typeof t.templatePurpose] ?? tpl.purpose}
+                        </p>
                         <p className="text-xs text-text-secondary sm:text-sm">
                           {d.templateOrigin[tpl.origin as keyof typeof d.templateOrigin] ?? tpl.origin}
                         </p>

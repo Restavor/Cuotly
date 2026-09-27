@@ -7,16 +7,12 @@
 --   · La cola: el cliente no la llama, el trabajador ve sus restaurantes,
 --     el corte y la garantía salen calculados, el asignado se enseña con
 --     el criterio de la política.
---   · El barrido con la HORA FIJA: a las 19:59 no recuerda, a las 20:00
---     recuerda al propietario, al Editor y al propietario global (a
---     Consulta no), un borrador no cuenta como preparado, un restaurante
---     sin el servicio no recibe nada, dos pasadas no repiten. A las 07:59
---     no avisa; a las 08:00 avisa al equipo de la publicación pedida antes
---     del corte y sin publicar, no de la pedida después, y una sola vez.
---   · La corrección: una por publicación, sin consumir, el error del
---     equipo no cuenta, la ventana se cierra, la de después de las 21:00
---     queda sin garantía (RN-COR-10), la cierra el asignado o quien
---     gestiona, el restaurante no ve quién.
+--   · RN-CRE-24 (decisiones 85 y 86): el barrido ya no recuerda a las
+--     20:00 ni avisa a las 08:00, a ninguna hora; sigue en la cola.
+--   · RN-CRE-24: la corrección mínima del restaurante desaparece (se cambia
+--     el menú, RN-CRE-30). La corrección por error del equipo se queda: sin
+--     límite, sin consumo, la cierra el asignado o quien gestiona, el
+--     restaurante no ve quién.
 --   · Los menús se encuentran en la búsqueda global con RLS.
 --
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/tests/menu_diario_equipo_cola_y_correccion.sql
@@ -294,120 +290,23 @@ end $$;
 reset role;
 
 -- ============================================================
--- §62 · El aviso de las 08:00, con la hora fija.
---
--- Antes, una publicación fabricada que se pidió antes del corte pero cuyo
--- restaurante guardó una versión DESPUÉS: perdió la garantía (RN-MEN-07)
--- y no se avisa de ella.
+-- RN-CRE-24 · Sin hora de corte: el barrido no avisa a ninguna hora, ni a
+-- las 08:00 del día del menú (antes, §62) ni a las 20:00 de la víspera
+-- (antes, RN-MEN-08), aunque haya publicaciones pedidas y sin publicar.
 -- ============================================================
 do $$
-declare v_m uuid; v_v1 uuid; v_v2 uuid; v_e uuid; v_cycle uuid;
+declare v_n integer; v_hora time;
 begin
-  v_cycle := public.get_or_create_menu_update_cycle('ee600000-0000-0000-0000-000000000001');
-  insert into public.menus (id, space_id, establishment_id, name, kind, target_date, state, template_id, created_by)
-  values ('ee800000-0000-0000-0000-000000000009', 'ee100000-0000-0000-0000-000000000001', 'ee400000-0000-0000-0000-000000000001',
-          'Tardío', 'daily', current_date + 3, 'assigned', (select v from eq_ids where k = 'tpl'), 'ee000000-0000-0000-0000-000000000005')
-  returning id into v_m;
-  insert into public.menu_versions (space_id, menu_id, version, starters, mains, desserts, after_cutoff, created_by, created_at)
-  values ('ee100000-0000-0000-0000-000000000001', v_m, 1, '{}', '{}', '{}', false, 'ee000000-0000-0000-0000-000000000005', now() - interval '2 hours')
-  returning id into v_v1;
-  insert into public.menu_update_entries (space_id, establishment_id, cycle_id, amount, entry_type, menu_id, created_by)
-  values ('ee100000-0000-0000-0000-000000000001', 'ee400000-0000-0000-0000-000000000001', v_cycle, -1, 'debit', v_m, 'ee000000-0000-0000-0000-000000000005')
-  returning id into v_e;
-  insert into public.menu_publications (space_id, establishment_id, menu_id, requested_by, requested_at, requested_version_id,
-                                        cycle_id, debit_entry_id, requested_before_cutoff, assigned_to, assigned_at, assignment_mode)
-  values ('ee100000-0000-0000-0000-000000000001', 'ee400000-0000-0000-0000-000000000001', v_m, 'ee000000-0000-0000-0000-000000000005',
-          now() - interval '1 hour', v_v1, v_cycle, v_e, true, 'ee000000-0000-0000-0000-000000000004', now() - interval '1 hour', 'auto');
-  insert into public.menu_versions (space_id, menu_id, version, starters, mains, desserts, after_cutoff, created_by)
-  values ('ee100000-0000-0000-0000-000000000001', v_m, 2, '{}', '{}', '{}', true, 'ee000000-0000-0000-0000-000000000005')
-  returning id into v_v2;
-  update public.menus set current_version_id = v_v2 where id = v_m;
-end $$;
-
-do $$
-declare v_n integer; v_dia date := current_date + 3;
-begin
-  -- A las 07:59 del día objetivo, nada.
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           (v_dia::timestamp + time '07:59') at time zone 'Europe/Madrid');
-  if (select count(*) from public.notifications where event_type = 'menu_publication_overdue') <> 0 then
-    raise exception '§62 FALLIDO: avisó antes de las 08:00' using errcode = 'assert_failure';
-  end if;
-
-  -- A las 08:00: el menú pedido antes del corte y sin publicar → propietario, administrador y Ana.
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           (v_dia::timestamp + time '08:00') at time zone 'Europe/Madrid');
-  if v_n <> 3 then
-    raise exception '§62 FALLIDO: a las 08:00 debía avisar a 3 personas y avisó a %', v_n using errcode = 'assert_failure';
-  end if;
-  if (select count(*) from public.notifications
-        where event_type = 'menu_publication_overdue' and entity_type = 'menu' and entity_id = (select v from eq_ids where k = 'm1')
-          and recipient_id in ('ee000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000002', 'ee000000-0000-0000-0000-000000000003')) <> 3 then
-    raise exception '§18 FALLIDO: el aviso de las 08:00 no llegó al propietario, al administrador y a la asignada' using errcode = 'assert_failure';
-  end if;
-  -- El de hoy se pidió después del corte: no había garantía, no se avisa.
-  if (select count(*) from public.notifications where event_type = 'menu_publication_overdue' and entity_id = (select v from eq_ids where k = 'm3')) <> 0 then
-    raise exception '§62 FALLIDO: avisó de una publicación pedida después del corte, que no estaba garantizada' using errcode = 'assert_failure';
-  end if;
-  -- El tardío se pidió antes del corte pero cambió después: perdió la garantía (RN-MEN-07), no se avisa.
-  if (select count(*) from public.notifications where event_type = 'menu_publication_overdue' and entity_id = 'ee800000-0000-0000-0000-000000000009') <> 0 then
-    raise exception 'RN-MEN-07 FALLIDO: avisó de una publicación que perdió la garantía por una versión tardía' using errcode = 'assert_failure';
-  end if;
-  if (select deep_link from public.notifications where event_type = 'menu_publication_overdue' limit 1)
-     <> '/espacios/espacio-equipo-test/menu-diario/' || (select v from eq_ids where k = 'm1')::text then
-    raise exception 'RN-NOT-04 FALLIDO: el aviso de las 08:00 no enlaza con la ficha del equipo' using errcode = 'assert_failure';
-  end if;
-
-  -- CA-17: la segunda pasada, una hora más tarde, no repite.
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           (v_dia::timestamp + time '09:00') at time zone 'Europe/Madrid');
-  if v_n <> 0 then
-    raise exception 'CA-17 FALLIDO: la segunda pasada del barrido repitió el aviso de las 08:00' using errcode = 'assert_failure';
-  end if;
-end $$;
-
--- ============================================================
--- RN-MEN-08 · El recordatorio de las 20:00, con la hora fija.
--- ============================================================
-do $$
-declare v_n integer; v_dia date := current_date + 10;
-begin
-  -- 19:59: todavía no.
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           (v_dia::timestamp + time '19:59') at time zone 'Europe/Madrid');
-  if (select count(*) from public.notifications where event_type = 'menu_not_prepared_reminder') <> 0 then
-    raise exception 'RN-MEN-08 FALLIDO: recordó antes de las 20:00' using errcode = 'assert_failure';
-  end if;
-
-  -- 20:00, sin menú para mañana: propietario local, Editor y propietario global. Consulta no.
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           (v_dia::timestamp + time '20:00') at time zone 'Europe/Madrid');
-  if v_n <> 3 then
-    raise exception 'RN-MEN-08 FALLIDO: debía recordar a 3 personas y recordó a %', v_n using errcode = 'assert_failure';
-  end if;
-  if (select count(*) from public.notifications
-        where event_type = 'menu_not_prepared_reminder' and entity_type = 'establishment'
-          and entity_id = 'ee400000-0000-0000-0000-000000000001' and audience = 'client'
-          and recipient_id in ('ee000000-0000-0000-0000-000000000005', 'ee000000-0000-0000-0000-000000000006', 'ee000000-0000-0000-0000-000000000010')) <> 3 then
-    raise exception 'RN-MEN-08 FALLIDO: el recordatorio no fue al propietario, al Editor y al propietario global' using errcode = 'assert_failure';
-  end if;
-  if exists (select 1 from public.notifications where event_type = 'menu_not_prepared_reminder' and recipient_id = 'ee000000-0000-0000-0000-000000000007') then
-    raise exception 'RN-MEN-08 FALLIDO: Consulta recibió el recordatorio' using errcode = 'assert_failure';
-  end if;
-  -- El restaurante sin el servicio no recibe nada.
-  if exists (select 1 from public.notifications where event_type = 'menu_not_prepared_reminder' and entity_id = 'ee400000-0000-0000-0000-000000000002') then
-    raise exception 'RN-MEN-08 FALLIDO: se recordó Menú Diario a un restaurante que no lo tiene' using errcode = 'assert_failure';
-  end if;
-  if (select deep_link from public.notifications where event_type = 'menu_not_prepared_reminder' limit 1)
-     <> '/espacios/espacio-equipo-test/restaurantes/ee400000-0000-0000-0000-000000000001/menu-diario' then
-    raise exception 'RN-NOT-04 FALLIDO: el recordatorio no enlaza con el Menú Diario del restaurante' using errcode = 'assert_failure';
-  end if;
-
-  -- CA-17: a las 23:00 del mismo día, nada nuevo.
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           (v_dia::timestamp + time '23:00') at time zone 'Europe/Madrid');
-  if v_n <> 0 then
-    raise exception 'CA-17 FALLIDO: la segunda pasada repitió el recordatorio' using errcode = 'assert_failure';
+  foreach v_hora in array array[time '07:59', time '08:00', time '09:00', time '19:59', time '20:00', time '23:00'] loop
+    v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
+             ((current_date + 3)::timestamp + v_hora) at time zone 'Europe/Madrid');
+    if v_n <> 0 then
+      raise exception 'RN-CRE-24 FALLIDO: el barrido emitió % avisos a las %', v_n, v_hora using errcode = 'assert_failure';
+    end if;
+  end loop;
+  if exists (select 1 from public.notifications
+             where event_type in ('menu_publication_overdue', 'menu_not_prepared_reminder')) then
+    raise exception 'RN-CRE-24 FALLIDO: quedan avisos de hora de corte' using errcode = 'assert_failure';
   end if;
 end $$;
 
@@ -424,20 +323,6 @@ begin
   insert into eq_ids values ('draft', v_d), ('prepared', v_p);
 end $$;
 reset role;
-do $$
-declare v_n integer;
-begin
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           ((current_date + 12)::timestamp + time '20:30') at time zone 'Europe/Madrid');
-  if v_n <> 3 then
-    raise exception 'RN-MEN-08 FALLIDO: un borrador contó como menú preparado (recordó a %)', v_n using errcode = 'assert_failure';
-  end if;
-  v_n := public.run_daily_menu_sweep('ee100000-0000-0000-0000-000000000001',
-           ((current_date + 14)::timestamp + time '20:30') at time zone 'Europe/Madrid');
-  if v_n <> 0 then
-    raise exception 'RN-MEN-08 FALLIDO: con un menú preparado para mañana recordó igual (%)', v_n using errcode = 'assert_failure';
-  end if;
-end $$;
 
 -- ============================================================
 -- La cola periódica conoce el tipo nuevo: se encola y se despacha.
@@ -474,118 +359,20 @@ begin
 end $$;
 reset role;
 
--- Consulta no pide correcciones (§4.3).
-select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000007', false);
-set role authenticated;
-do $$
-begin
-  begin
-    perform public.request_menu_correction((select v from eq_ids where k = 'm1'), 'Falta una tilde');
-    raise exception '§4.3 FALLIDO: Consulta pidió una corrección' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%No tienes permiso%' then raise; end if;
-  end;
-end $$;
-reset role;
-
+-- RN-CRE-24 · la corrección mínima del restaurante ya no existe: ni
+-- Consulta ni el propietario la piden; lo publicado se cambia (RN-CRE-30).
 select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000005', false);
 set role authenticated;
 do $$
-declare v_c uuid; v_row record; v_before integer; v_after integer;
 begin
-  -- Sobre un borrador, no: la corrección es de un menú publicado.
   begin
-    perform public.request_menu_correction((select v from eq_ids where k = 'draft'), 'Nada');
-    raise exception 'RN-COR-10 FALLIDO: se pidió corrección de un borrador' using errcode = 'assert_failure';
+    perform public.request_menu_correction((select v from eq_ids where k = 'm1'), 'El precio es 14,90, no 14,50');
+    raise exception 'RN-CRE-24 FALLIDO: se pidió una corrección mínima del menú publicado' using errcode = 'assert_failure';
   exception when others then
-    if sqlerrm not like '%menú publicado%' then raise; end if;
+    if sqlerrm not like '%RN-CRE-24%' then raise; end if;
   end;
-  -- Sin texto, no.
-  begin
-    perform public.request_menu_correction((select v from eq_ids where k = 'm1'), '   ');
-    raise exception 'FALLIDO: se admitió una corrección sin texto' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%Di qué hay que corregir%' then raise; end if;
-  end;
-
-  select available into v_before from public.menu_update_balance('ee400000-0000-0000-0000-000000000001');
-  v_c := public.request_menu_correction((select v from eq_ids where k = 'm1'), 'El precio es 14,90, no 14,50');
-  insert into eq_ids values ('corr', v_c);
-  select available into v_after from public.menu_update_balance('ee400000-0000-0000-0000-000000000001');
-  if v_after <> v_before then
-    raise exception 'RN-COR FALLIDO: pedir la corrección mínima consumió una actualización' using errcode = 'assert_failure';
-  end if;
-
-  select kind, requested_before_cutoff, completed_at into v_row from public.menu_corrections where id = v_c;
-  if v_row.kind <> 'client_request' or v_row.requested_before_cutoff is distinct from true or v_row.completed_at is not null then
-    raise exception 'RN-COR-10 FALLIDO: pedida tres días antes del menú, debía quedar garantizada y abierta' using errcode = 'assert_failure';
-  end if;
-
-  -- RN-COR-01: la segunda, no.
-  begin
-    perform public.request_menu_correction((select v from eq_ids where k = 'm1'), 'Y otra cosa');
-    raise exception 'RN-COR-01 FALLIDO: se admitió una segunda corrección sobre la misma publicación' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%RN-COR-01%' then raise; end if;
-  end;
-
-  -- El historial lo cuenta (RN-MEN-10) y el menú sigue publicado.
-  if (select count(*) from public.menu_events where menu_id = (select v from eq_ids where k = 'm1') and reason like 'Corrección pedida:%') <> 1 then
-    raise exception 'RN-MEN-10 FALLIDO: la corrección no dejó evento en el historial' using errcode = 'assert_failure';
-  end if;
-  if (select state from public.menus where id = (select v from eq_ids where k = 'm1')) <> 'published' then
-    raise exception 'FALLIDO: pedir una corrección cambió el estado del menú' using errcode = 'assert_failure';
-  end if;
-
-  -- P7: el restaurante lee su corrección, pero no quién la pidió ni quién la cerró.
-  if (select count(*) from public.menu_corrections where menu_id = (select v from eq_ids where k = 'm1')) <> 1 then
-    raise exception 'FALLIDO: el restaurante no lee su propia corrección' using errcode = 'assert_failure';
-  end if;
-  begin
-    perform requested_by from public.menu_corrections where id = v_c;
-    raise exception 'P7 FALLIDO: el restaurante lee requested_by de menu_corrections' using errcode = 'assert_failure';
-  exception when insufficient_privilege then null;
-  end;
-  begin
-    perform completed_by from public.menu_corrections where id = v_c;
-    raise exception 'P7 FALLIDO: el restaurante lee completed_by de menu_corrections' using errcode = 'assert_failure';
-  exception when insufficient_privilege then null;
-  end;
-
-  -- El restaurante no cierra correcciones.
-  begin
-    perform public.complete_menu_correction(v_c, 'Hecho');
-    raise exception 'RN-COR-06 FALLIDO: el restaurante cerró su propia corrección' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%Solo el trabajador asignado%' then raise; end if;
-  end;
-end $$;
-reset role;
-
--- El aviso "Corrección pedida" va al equipo: propietario, administrador y Ana (asignada).
-do $$
-begin
-  if (select count(*) from public.notifications
-        where event_type = 'correction_requested' and entity_type = 'menu' and entity_id = (select v from eq_ids where k = 'm1')
-          and recipient_id in ('ee000000-0000-0000-0000-000000000001', 'ee000000-0000-0000-0000-000000000002', 'ee000000-0000-0000-0000-000000000003')) <> 3 then
-    raise exception '§18 FALLIDO: la corrección pedida no avisó al propietario, al administrador y a la asignada' using errcode = 'assert_failure';
-  end if;
-  if exists (select 1 from public.notifications where event_type = 'correction_requested' and entity_id = (select v from eq_ids where k = 'm1') and recipient_id = 'ee000000-0000-0000-0000-000000000004') then
-    raise exception '§18 FALLIDO: Luis, que no está asignado, recibió el aviso de la corrección' using errcode = 'assert_failure';
-  end if;
-  if (select count(*) from public.audit_log where action = 'menu.correction_requested' and entity_id = (select v from eq_ids where k = 'm1')
-        and (new_value->>'consumes_free_correction')::boolean and (new_value->>'requested_before_cutoff')::boolean) <> 1 then
-    raise exception 'CLAUDE.md MUST FALLIDO: la corrección pedida no dejó apunte de auditoría' using errcode = 'assert_failure';
-  end if;
-end $$;
-
--- Un menú publicado con corrección pendiente vuelve a la cola.
-select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000001', false);
-set role authenticated;
-do $$
-begin
-  if (select pending_corrections from public.team_menu_queue('ee100000-0000-0000-0000-000000000001') where menu_id = (select v from eq_ids where k = 'm1')) is distinct from 1 then
-    raise exception 'FALLIDO: la cola no enseña el menú publicado con una corrección pendiente' using errcode = 'assert_failure';
+  if exists (select 1 from public.menu_corrections where menu_id = (select v from eq_ids where k = 'm1')) then
+    raise exception 'RN-CRE-24 FALLIDO: quedó una corrección del restaurante' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -601,16 +388,10 @@ begin
   exception when others then
     if sqlerrm not like '%Solo el trabajador asignado%' then raise; end if;
   end;
-  begin
-    perform public.complete_menu_correction((select v from eq_ids where k = 'corr'), null);
-    raise exception 'RN-MEN-06 FALLIDO: un trabajador no asignado cerró la corrección' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%Solo el trabajador asignado%' then raise; end if;
-  end;
 end $$;
 reset role;
 
--- Ana (asignada): abre por error propio sin límite ni consumo, y cierra la del restaurante.
+-- Ana (asignada): abre por error propio sin límite ni consumo, y cierra una.
 select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000003', false);
 set role authenticated;
 do $$
@@ -618,7 +399,7 @@ declare v_e1 uuid; v_e2 uuid; v_before integer; v_after integer;
 begin
   v_e1 := public.open_menu_team_error_correction((select v from eq_ids where k = 'm1'), 'Subí la versión vieja');
   v_e2 := public.open_menu_team_error_correction((select v from eq_ids where k = 'm1'), 'Y la plantilla equivocada');
-  insert into eq_ids values ('err1', v_e1);
+  insert into eq_ids values ('err1', v_e1), ('corr', v_e2);
   if (select count(*) from public.menu_corrections where menu_id = (select v from eq_ids where k = 'm1') and kind = 'team_error') <> 2 then
     raise exception 'RN-COR-07 FALLIDO: las correcciones por error del equipo están limitadas' using errcode = 'assert_failure';
   end if;
@@ -640,8 +421,8 @@ begin
   if (select count(*) from public.menu_events where menu_id = (select v from eq_ids where k = 'm1') and reason like 'Corrección aplicada:%') <> 1 then
     raise exception 'RN-MEN-10 FALLIDO: cerrar la corrección no dejó evento en el historial' using errcode = 'assert_failure';
   end if;
-  -- Quedan las dos de error del equipo pendientes: sigue en la cola con 2.
-  if (select pending_corrections from public.team_menu_queue('ee100000-0000-0000-0000-000000000001') where menu_id = (select v from eq_ids where k = 'm1')) <> 2 then
+  -- Queda una de error del equipo pendiente: sigue en la cola con 1.
+  if (select pending_corrections from public.team_menu_queue('ee100000-0000-0000-0000-000000000001') where menu_id = (select v from eq_ids where k = 'm1')) <> 1 then
     raise exception 'FALLIDO: la cola no cuenta bien las correcciones pendientes' using errcode = 'assert_failure';
   end if;
 end $$;
@@ -659,59 +440,8 @@ begin
 end $$;
 reset role;
 
--- ============================================================
--- RN-COR-02 y RN-COR-10 · la ventana cerrada, y la salvedad de las 21:00.
--- Dos publicaciones fabricadas a mano: una de hace cuatro días (fuera de
--- ventana) y una de hoy publicada hace una hora (dentro, pero después del
--- corte de ayer a las 21:00).
--- ============================================================
-do $$
-declare v_cycle uuid; v_m uuid; v_v uuid; v_e uuid; v_i integer;
-begin
-  v_cycle := public.get_or_create_menu_update_cycle('ee600000-0000-0000-0000-000000000001');
-  for v_i in 1..2 loop
-    insert into public.menus (id, space_id, establishment_id, name, kind, target_date, state, template_id, created_by, published_at)
-    values (('ee800000-0000-0000-0000-00000000000' || v_i)::uuid, 'ee100000-0000-0000-0000-000000000001', 'ee400000-0000-0000-0000-000000000001',
-            case v_i when 1 then 'Viejo' else 'De hoy' end, 'daily',
-            case v_i when 1 then current_date - 4 else current_date end, 'published',
-            (select v from eq_ids where k = 'tpl'), 'ee000000-0000-0000-0000-000000000005',
-            case v_i when 1 then now() - interval '4 days' else now() - interval '1 hour' end)
-    returning id into v_m;
-    insert into public.menu_versions (space_id, menu_id, version, starters, mains, desserts, created_by)
-    values ('ee100000-0000-0000-0000-000000000001', v_m, 1, '{}', '{}', '{}', 'ee000000-0000-0000-0000-000000000005')
-    returning id into v_v;
-    update public.menus set current_version_id = v_v, published_version_id = v_v where id = v_m;
-    insert into public.menu_update_entries (space_id, establishment_id, cycle_id, amount, entry_type, menu_id, created_by)
-    values ('ee100000-0000-0000-0000-000000000001', 'ee400000-0000-0000-0000-000000000001', v_cycle, -1, 'debit', v_m, 'ee000000-0000-0000-0000-000000000005')
-    returning id into v_e;
-    insert into public.menu_publications (space_id, establishment_id, menu_id, requested_by, requested_at, requested_version_id,
-                                          cycle_id, debit_entry_id, requested_before_cutoff, assigned_to, published_at, published_by)
-    values ('ee100000-0000-0000-0000-000000000001', 'ee400000-0000-0000-0000-000000000001', v_m, 'ee000000-0000-0000-0000-000000000005',
-            case v_i when 1 then now() - interval '5 days' else now() - interval '2 hours' end, v_v, v_cycle, v_e, true,
-            'ee000000-0000-0000-0000-000000000003',
-            case v_i when 1 then now() - interval '4 days' else now() - interval '1 hour' end,
-            'ee000000-0000-0000-0000-000000000003');
-  end loop;
-end $$;
-
-select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000005', false);
-set role authenticated;
-do $$
-declare v_c uuid;
-begin
-  begin
-    perform public.request_menu_correction('ee800000-0000-0000-0000-000000000001', 'Tarde');
-    raise exception 'RN-COR-02 FALLIDO: se admitió una corrección cuatro días después de publicar' using errcode = 'assert_failure';
-  exception when others then
-    if sqlerrm not like '%RN-COR-02%' then raise; end if;
-  end;
-
-  v_c := public.request_menu_correction('ee800000-0000-0000-0000-000000000002', 'El postre de hoy es otro');
-  if (select requested_before_cutoff from public.menu_corrections where id = v_c) then
-    raise exception 'RN-COR-10 FALLIDO: una corrección del menú de hoy, pedida después de las 21:00 de ayer, salía garantizada' using errcode = 'assert_failure';
-  end if;
-end $$;
-reset role;
+-- RN-COR-02 y RN-COR-10 (la ventana y la salvedad de las 21:00) se
+-- fueron con la corrección mínima del restaurante (RN-CRE-24).
 
 -- ============================================================
 -- §20.5 · Los menús en la búsqueda global, con RLS.

@@ -3734,6 +3734,7 @@ export type Database = {
           layout: string;
           name: string;
           origin: string;
+          purpose: string;
           quote_id: string | null;
           show_prices: boolean;
           space_id: string;
@@ -3754,6 +3755,7 @@ export type Database = {
           layout?: string;
           name: string;
           origin: string;
+          purpose?: string;
           quote_id?: string | null;
           show_prices?: boolean;
           space_id: string;
@@ -3774,6 +3776,7 @@ export type Database = {
           layout?: string;
           name?: string;
           origin?: string;
+          purpose?: string;
           quote_id?: string | null;
           show_prices?: boolean;
           space_id?: string;
@@ -5107,6 +5110,7 @@ export type Database = {
       plans: {
         Row: {
           included_credits_half: number;
+          includes_daily_menu: boolean;
           can_order_requests: boolean;
           created_at: string;
           grants_priority: boolean;
@@ -5138,6 +5142,7 @@ export type Database = {
         };
         Insert: {
           included_credits_half?: number;
+          includes_daily_menu?: boolean;
           can_order_requests?: boolean;
           created_at?: string;
           grants_priority?: boolean;
@@ -5164,6 +5169,7 @@ export type Database = {
         };
         Update: {
           included_credits_half?: number;
+          includes_daily_menu?: boolean;
           can_order_requests?: boolean;
           created_at?: string;
           grants_priority?: boolean;
@@ -8196,6 +8202,7 @@ export type Database = {
       create_plan: {
         Args: {
           p_included_credits_half?: number;
+          p_includes_daily_menu?: boolean;
           p_can_order_requests: boolean;
           p_execution_sla_large: number;
           p_execution_sla_medium: number;
@@ -8258,6 +8265,7 @@ export type Database = {
       revise_plan: {
         Args: {
           p_included_credits_half?: number;
+          p_includes_daily_menu?: boolean;
           p_can_order_requests: boolean;
           p_execution_sla_large: number;
           p_execution_sla_medium: number;
@@ -8988,6 +8996,7 @@ export type Database = {
           p_establishment_id: string;
           p_name: string;
           p_origin?: string;
+          p_purpose?: string;
           p_quote_id?: string;
         };
         Returns: string;
@@ -9329,6 +9338,10 @@ export type Database = {
           remaining: number;
           renews_at: string;
         }[];
+      };
+      establishment_daily_menu_access: {
+        Args: { p_establishment_id: string };
+        Returns: string;
       };
       establishment_daily_menu_subscription: {
         Args: { p_establishment_id: string };

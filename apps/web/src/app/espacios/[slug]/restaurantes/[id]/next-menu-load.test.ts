@@ -55,8 +55,8 @@ beforeEach(() => vi.clearAllMocks());
 
 describe("página 24 · qué se le pide al servidor para el próximo menú", () => {
   it("sin servicio contratado NI SIQUIERA pregunta por los menús", async () => {
-    // `menu_update_balance()` no devuelve fila cuando no hay servicio.
-    rpc.mockResolvedValue({ data: [], error: null });
+    // `establishment_daily_menu_access()` no devuelve nada sin Menú Diario (RN-CRE-21).
+    rpc.mockResolvedValue({ data: null, error: null });
     const supabase = cliente([]);
 
     await expect(loadSheetNextMenu(supabase, ESTABLECIMIENTO, "Europe/Madrid")).resolves.toEqual({
@@ -66,7 +66,7 @@ describe("página 24 · qué se le pide al servidor para el próximo menú", () 
   });
 
   it("excluye los cancelados: un menú cancelado no es una publicación que venga", async () => {
-    rpc.mockResolvedValue({ data: [{ available: 3 }], error: null });
+    rpc.mockResolvedValue({ data: "plan", error: null });
     const supabase = cliente([]);
 
     await loadSheetNextMenu(supabase, ESTABLECIMIENTO, "Europe/Madrid");
@@ -75,7 +75,7 @@ describe("página 24 · qué se le pide al servidor para el próximo menú", () 
   });
 
   it("«de hoy en adelante» se mide en la zona del ESPACIO, no en la del servidor", async () => {
-    rpc.mockResolvedValue({ data: [{ available: 3 }], error: null });
+    rpc.mockResolvedValue({ data: "plan", error: null });
     const supabase = cliente([]);
 
     /*
@@ -97,7 +97,7 @@ describe("página 24 · qué se le pide al servidor para el próximo menú", () 
   });
 
   it("pide el más próximo primero, y solo uno", async () => {
-    rpc.mockResolvedValue({ data: [{ available: 3 }], error: null });
+    rpc.mockResolvedValue({ data: "plan", error: null });
     const supabase = cliente([]);
 
     await loadSheetNextMenu(supabase, ESTABLECIMIENTO, "Europe/Madrid");
@@ -107,7 +107,7 @@ describe("página 24 · qué se le pide al servidor para el próximo menú", () 
   });
 
   it("con servicio y sin menús por delante dice que no hay ninguno", async () => {
-    rpc.mockResolvedValue({ data: [{ available: 3 }], error: null });
+    rpc.mockResolvedValue({ data: "plan", error: null });
 
     await expect(
       loadSheetNextMenu(cliente([]), ESTABLECIMIENTO, "Europe/Madrid"),
@@ -115,7 +115,7 @@ describe("página 24 · qué se le pide al servidor para el próximo menú", () 
   });
 
   it("devuelve el menú tal cual lo da el servidor", async () => {
-    rpc.mockResolvedValue({ data: [{ available: 3 }], error: null });
+    rpc.mockResolvedValue({ data: "plan", error: null });
     const supabase = cliente([
       {
         id: "m1",

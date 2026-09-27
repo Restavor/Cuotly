@@ -89,6 +89,7 @@ const EMPTY_PLAN: PlanTerms = {
   reportLevel: "basic",
   reportPeriod: "month",
   watchesReviews: false,
+  includesDailyMenu: false,
 };
 
 /**
@@ -184,6 +185,7 @@ export function PlanTermsForm({
         <Check name="canOrderRequests" label={te.canOrderRequests} defaultChecked={v.canOrderRequests} />
         <Check name="grantsPriority" label={te.grantsPriority} defaultChecked={v.grantsPriority} />
         <Check name="watchesReviews" label={te.watchesReviews} defaultChecked={v.watchesReviews} />
+        <Check name="includesDailyMenu" label={te.includesDailyMenu} defaultChecked={v.includesDailyMenu} />
       </div>
 
       {planId !== null ? (

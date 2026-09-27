@@ -57,41 +57,39 @@ export function menuMonths(dates: readonly string[]): string[] {
 // ---------------------------------------------------------------------------
 
 export type PendingChanges =
-  /** Hay contenido y nadie ha pedido publicarlo todavía. */
-  | { readonly kind: "not_requested"; readonly version: number }
+  /**
+   * Hay contenido y nadie ha pedido publicarlo todavía. Si el menú ya
+   * estuvo publicado (el del día que se cambia editándolo, RN-CRE-30),
+   * `publishedVersion` dice cuál sigue en la web; si no, `null`.
+   */
+  | { readonly kind: "not_requested"; readonly version: number; readonly publishedVersion: number | null }
   /**
    * Se pidió la publicación y DESPUÉS se guardaron más versiones. El
    * equipo publica la versión vigente (RN-MEN-06: descarga la plantilla
-   * generada con ella), pero si se guardó pasadas las 21:00 del día
-   * anterior no se garantiza que entre (RN-MEN-07).
+   * generada con ella). Sin hora de corte que lo marque (RN-CRE-24).
    */
-  | {
-      readonly kind: "saved_after_request";
-      readonly version: number;
-      readonly afterCutoff: boolean;
-    };
+  | { readonly kind: "saved_after_request"; readonly version: number };
 
 export function menuPendingChanges(input: {
   readonly state: MenuState;
-  readonly versions: readonly { readonly version: number; readonly created_at: string; readonly after_cutoff: boolean }[];
+  readonly versions: readonly { readonly id: string; readonly version: number; readonly created_at: string }[];
   /** La última vez que el menú pasó a "Publicación solicitada", o `null`. */
   readonly lastRequestAt: string | null;
+  /** La versión que está en la web (`menus.published_version_id`), o `null`. */
+  readonly publishedVersionId: string | null;
 }): PendingChanges | null {
   const ultima = [...input.versions].sort((a, b) => b.version - a.version)[0];
   if (ultima === undefined) return null;
 
   if (input.state === "draft" || input.state === "prepared") {
-    return { kind: "not_requested", version: ultima.version };
+    const publicada = input.versions.find((v) => v.id === input.publishedVersionId)?.version ?? null;
+    return { kind: "not_requested", version: ultima.version, publishedVersion: publicada };
   }
 
   if (isMenuInFlight(input.state) && input.lastRequestAt !== null) {
     const despues = input.versions.filter((v) => v.created_at > (input.lastRequestAt as string));
     if (despues.length === 0) return null;
-    return {
-      kind: "saved_after_request",
-      version: ultima.version,
-      afterCutoff: despues.some((v) => v.after_cutoff),
-    };
+    return { kind: "saved_after_request", version: ultima.version };
   }
   return null;
 }

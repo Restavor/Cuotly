@@ -29,10 +29,10 @@ export default async function NewClientMenuPage({ params }: { params: Promise<{ 
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { establishment, balance, timezone } = await loadMenuSection(supabase, id);
+  const { establishment, access, timezone } = await loadMenuSection(supabase, id);
   if (!establishment) notFound();
 
-  if (!balance) {
+  if (!access) {
     return (
       <div className="space-y-6">
         <PageHeader title={t.newPageTitle} subtitle={t.newPageSubtitle} />
@@ -43,20 +43,12 @@ export default async function NewClientMenuPage({ params }: { params: Promise<{ 
     );
   }
 
-  const [{ data: templates }, { data: menus }] = await Promise.all([
-    supabase
-      .from("menu_templates")
-      .select("id, name")
-      .eq("establishment_id", id)
-      .is("archived_at", null)
-      .order("created_at"),
-    supabase
-      .from("menus")
-      .select("id, name, target_date")
-      .eq("establishment_id", id)
-      .order("target_date", { ascending: false })
-      .limit(60),
-  ]);
+  const { data: menus } = await supabase
+    .from("menus")
+    .select("id, name, target_date")
+    .eq("establishment_id", id)
+    .order("target_date", { ascending: false })
+    .limit(60);
 
   // En la zona del espacio (CLAUDE.md): "mañana" para un restaurante de
   // un espacio en otra zona no es el mañana de Restavor.
@@ -77,7 +69,6 @@ export default async function NewClientMenuPage({ params }: { params: Promise<{ 
         <NewMenuForm
           slug={slug}
           establishmentId={id}
-          templates={(templates ?? []).map((tpl) => ({ id: tpl.id, name: tpl.name }))}
           defaultDate={fechaPorDefecto}
         />
         <section id="copiar" className="scroll-mt-20">
