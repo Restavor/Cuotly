@@ -383,7 +383,6 @@ export function PlanCatalogueTab({
                 />
                 <Fact label={tc.ordering} value={yesNo(selected.canOrderRequests)} />
                 <Fact label={tc.queueRank} value={tc.queueRankValue(selected.queueRank)} hint={tc.queueRankHint} />
-                <Fact label={tc.grantsPriority} value={yesNo(selected.grantsPriority)} />
                 <Fact label={tc.watchesReviews} value={yesNo(selected.watchesReviews)} />
                 <Fact label={tc.includesDailyMenu} value={yesNo(selected.includesDailyMenu)} />
                 <Fact label={tc.reportLevel} value={tc.reportLevels[selected.reportLevel]} />

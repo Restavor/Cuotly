@@ -2131,7 +2131,7 @@ export const es = {
       priorityHint: "Lo ha ordenado así el propio restaurante, incluido en su plan.",
       priorityNone: "Sin ordenar",
       priorityNoneHint:
-        "Ordenar los cambios por importancia va incluido en el plan Premium. Este restaurante no lo ha hecho, o su plan no lo incluye.",
+        "Este restaurante no lo ha ordenado, o su plan no lo incluye (en Restavor, ningún plan lo incluye: RN-CRE-28).",
 
       startedAtLabel: "Fecha de inicio",
       startedAtNone: "Todavía no ha comenzado",
@@ -3570,7 +3570,7 @@ export const es = {
       emptyReason:
         "Cuando pidas un cambio y esté esperando, aparecerá aquí para que digas cuánto te corre.",
       notAllowed:
-        "Ordenar los cambios por importancia va incluido en el plan Premium. Con tu plan actual el equipo los atiende por orden de llegada.",
+        "Tu plan no incluye ordenar los cambios por importancia: el equipo los atiende por orden de llegada.",
       /*
        * Decisión de Bosco (12/09/2026): "si un trabajo ya se está haciendo
        * no se puede mover, no se puede reordenar".
@@ -4404,7 +4404,7 @@ export const es = {
     // (decisión 20): aquí solo se dice cuál se aplica.
     serviceBillingTitle: "Lo que se cobra por cada servicio",
     serviceBillingHint:
-      "RN-COM-08: el servicio tiene dos precios y se aplica el segundo cuando el plan activo concede prioridad (Premium+). Cambiar de plan cambia la siguiente mensualidad, nunca las ya emitidas.",
+      "Cada servicio tiene un precio al mes, sin precio reducido (RN-CRE-21). Cambiar de plan cambia la siguiente mensualidad, nunca las ya emitidas.",
     servicePriceApplied: (precio: string) => `${precio} + IVA / mes`,
     servicePricePremiumReason: "Precio con plan Premium+ activo",
     servicePriceStandardReason: "Precio sin plan Premium+",

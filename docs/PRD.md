@@ -220,13 +220,20 @@ el 13/09/2026: su flujo completo es el §26 (Fase 2, Hito 12, migración 80).
 ### 6.1 Planes de mantenimiento de Restavor
 
 Todos los precios son **más IVA** (Restavor: 21 %). **El catálogo de Restavor es Básico, Impulso y
-Premium** (decisión 84, 26/09/2026). El Básico es el de su ficha del 26/09/2026 (decisión 83,
-migración 146); Impulso y Premium siguen siendo los de las fichas del 16/09/2026 (decisión 39,
-migración 96) hasta que lleguen las suyas.
+Premium** (decisión 84, 26/09/2026), **en créditos desde el 27/09/2026** (decisión 85, migración 154):
 
-> **Decisión 85 (26/09/2026): el catálogo nuevo está en §41** —Impulso 99 € con 20 créditos, Premium
-> 199 € con 40, los créditos en vez de las categorías, Menú Diario dentro del plan—. La tabla de abajo
-> es la de antes y se queda como referencia de lo que el servidor hace hasta que §41 esté construida.
+| Plan | Precio/mes | Créditos al mes | Plazo de inicio | Turno | Informe | Menú Diario |
+|---|---:|---:|---:|---:|---|---|
+| Básico | 20 € | 0 | 48 h laborables | 0 | Trimestral, `basic` | Aparte, 199 € |
+| Impulso | 99 € | 20 | 24 h laborables | 1 | Mensual y trimestral, `standard` | Incluido |
+| Premium | 199 € | 40 | 24 h laborables | 2 | Mensual y trimestral, `advanced` | Incluido |
+
+Ninguno ordena sus solicitudes (RN-CRE-28) ni incluye cambios por categoría: se miden en créditos
+(RN-CRE-01). Menú Diario suelto cuesta 199 € sin precio reducido y no lleva contador (RN-CRE-21 y
+RN-CRE-22).
+
+> **La tabla de abajo es la de antes de la decisión 85** y se queda como referencia de lo que citan las
+> reglas anteriores; el servidor ya no la aplica al catálogo de Restavor.
 >
 > **Impulso+ y Premium+ están archivados desde el 26/09/2026** (decisión 84, migración 148,
 > RN-COM-27): no se pueden contratar ni elegir en un cambio de plan, no se borran y siguen en el
@@ -241,10 +248,9 @@ migración 96) hasta que lleguen las suyas.
 > las tenga. Qué vuelve y a qué plan lo dirá la ficha del Premium; no se le da a Premium nada de esto
 > por su cuenta.
 >
-> **Menú Diario deja de venderse aparte** (decisión 84, punto 3): *"solo funciona si tienes plan
-> impulso o premium, que está incluido dentro de ellos, no es un plan aparte"*. Todavía **no está
-> construido**: hasta que se escriban sus reglas (cuántas actualizaciones incluye cada plan, qué pasa
-> con RN-COM-08 a RN-COM-12) el servidor sigue con el servicio de §6.2.
+> **Menú Diario va incluido en Impulso y Premium** (decisión 84, punto 3, y decisión 85) y suelto
+> cuesta 199 €, también con Básico: RN-CRE-21, construido con la migración 152 y puesto en el catálogo
+> con la 154.
 
 | Plan | Precio/mes | Pequeños | Fotográficos | Medianos | Grandes | Plazo de inicio | Prioridad |
 |---|---:|---:|---:|---:|---:|---:|---|
@@ -3801,8 +3807,9 @@ y el libro de consumos escrito en créditos (RN-CRE-16); el aviso al 100 % (RN-C
 con "Créditos al mes" y la comparativa y las versiones que los cuentan (RN-CRE-01, RN-COM-23); y los
 créditos extra de una mejora en la vista previa (RN-CRE-15). En el libro del restaurante cada apunte en
 créditos se lee como porcentaje del plan con el mismo redondeo que el servidor
-(`percentOfPlan()`), porque RN-CRE-16 no le enseña créditos. Falta: Menú Diario (5), informes (6) y el
-catálogo (7). Escrito con las fichas de Impulso y Premium y el documento
+(`percentOfPlan()`), porque RN-CRE-16 no le enseña créditos. **Menú Diario (punto 5, migración 152),
+informes y oportunidades (punto 6, migración 153) y el catálogo (punto 7, migración 154)**: construidos
+el 27/09/2026; cada apartado lo dice debajo. Escrito con las fichas de Impulso y Premium y el documento
 "Sistema de créditos de mantenimiento — Restavor" que Bosco mandó el 26/09/2026 y sus respuestas a
 las preguntas (decisión 85). **Donde esta sección y otra anterior digan cosas distintas, manda esta**;
 cada regla anterior que cambia lleva una nota que remite aquí. Hasta que cada parte esté construida,
@@ -3824,6 +3831,12 @@ cada regla lleva entre paréntesis la migración que la construya cuando exista.
 Los tres con permanencia de 3 meses, renovación mensual después, y un cambio voluntario de plan que
 vuelve a empezarla (RN-COM-04 y RN-COM-05, sin cambios). Ninguno tiene hoy `grants_priority`, cambio
 grande, vigilancia de reseñas ni los plazos cortos de RN-SLA-18 (decisión 84).
+
+*(Construido el 27/09/2026, punto 7, migración 154, suite 88: `create_restavor_space()` siembra esta
+tabla y `apply_credit_catalogue_internal()` la puso en el espacio de Restavor, en el sitio porque nadie
+tenía ningún plan; Menú Diario suelto a 199 €, sin precio reducido y sin contador; las guías del centro
+de ayuda cuentan las reglas nuevas. El editor de servicios pide solo el precio y el de planes deja de
+ofrecer `grants_priority`.)*
 
 - **RN-CRE-01**: **los créditos son un término del plan** (`plans.included_credits`), no del nombre:
   Cuotly es multiempresa. En Restavor: Básico 0, Impulso 20, Premium 40. Se versionan como los demás

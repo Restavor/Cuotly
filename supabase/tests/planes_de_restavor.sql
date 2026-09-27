@@ -69,13 +69,15 @@ begin
   end if;
 
   -- Cada plan, con los números de su ficha (precio, pequeños,
-  -- fotográficos, medianos, grandes, plazo de inicio, prioridad).
+  -- fotográficos, medianos, grandes, plazo de inicio, prioridad). Desde la
+  -- decisión 85 (migración 154), Impulso y Premium se miden en créditos:
+  -- ningún cambio por categoría; los créditos los mira la suite 88.
   for r in
     select * from (values
       -- Decisión 83 · la ficha del Básico del 26/09/2026: 20 €.
       ('Básico',    2000,  0,  0, 0, 0, 48, false),
-      ('Impulso',  29900,  6,  6, 1, 0, 48, false),
-      ('Premium',  49900, 10, 12, 2, 0, 24, false)
+      ('Impulso',   9900,  0,  0, 0, 0, 24, false),
+      ('Premium',  19900,  0,  0, 0, 0, 24, false)
     ) as f(name, price, small, photo, medium, large, sla, priority)
   loop
     if not exists (
@@ -115,12 +117,10 @@ begin
     raise exception 'RN-COM-03 FALLIDO: un plan de Restavor concede la prioridad sin que ninguna ficha lo diga' using errcode = 'assert_failure';
   end if;
 
-  -- 2 · Ordenar los cambios propios: Premium (19/09/2026; Premium+ ya no
-  --     está).
-  if (select string_agg(name, ',' order by name) from public.plans
-      where space_id = v_space and can_order_requests) is distinct from 'Premium' then
-    raise exception 'RN-COM-03 FALLIDO: ordenar los cambios propios no es exactamente de Premium'
-      using errcode = 'assert_failure';
+  -- 2 · Ordenar los cambios propios: desde RN-CRE-28 (decisión 85),
+  --     ningún plan de Restavor.
+  if exists (select 1 from public.plans where space_id = v_space and can_order_requests) then
+    raise exception 'RN-CRE-28 FALLIDO: un plan de Restavor ordena sus solicitudes' using errcode = 'assert_failure';
   end if;
 
   -- 3 · El turno: Premium por delante de los planes de abajo.
@@ -138,17 +138,17 @@ begin
     raise exception 'RN-COM-03 FALLIDO: el Básico no va por detrás de Impulso y Premium' using errcode = 'assert_failure';
   end if;
 
-  -- RN-REP-32 · el Básico recibe su informe cada trimestre; los demás,
-  -- cada mes.
+  -- RN-REP-32 y RN-CRE-26 · el Básico recibe solo el trimestral; los
+  -- demás, el mensual y el trimestral.
   if (select string_agg(name, ',' order by name) from public.plans
       where space_id = v_space and report_period = 'quarter') is distinct from 'Básico' then
     raise exception 'RN-REP-32 FALLIDO: el informe trimestral no es exactamente del Básico' using errcode = 'assert_failure';
   end if;
 
-  -- RN-SLA-02 · Básico e Impulso a 48 h; Premium a 24.
+  -- RN-SLA-02 y RN-CRE-20 · Básico a 48 h; Impulso y Premium a 24.
   if (select string_agg(name, ',' order by name) from public.plans
-      where space_id = v_space and start_sla_hours = 24) is distinct from 'Premium' then
-    raise exception 'RN-SLA-02 FALLIDO: las 24 h no son exactamente de Premium' using errcode = 'assert_failure';
+      where space_id = v_space and start_sla_hours = 24) is distinct from 'Impulso,Premium' then
+    raise exception 'RN-CRE-20 FALLIDO: las 24 h no son exactamente de Impulso y Premium' using errcode = 'assert_failure';
   end if;
 
   -- RN-SLA-18 (decisión 61) · los plazos de realización cortos (48, 48, 72
@@ -169,13 +169,14 @@ begin
     raise exception 'RN-INT-10 FALLIDO: un plan de Restavor vigila reseñas sin que ninguna ficha lo diga' using errcode = 'assert_failure';
   end if;
 
-  -- RN-COM-08 a 10 · Menú Diario: 229 € y 199 €, 30 actualizaciones.
+  -- RN-CRE-21 y RN-CRE-22 · Menú Diario suelto: 199 €, sin precio
+  -- reducido y sin contador.
   if not exists (
     select 1 from public.services
     where space_id = v_space and kind = 'daily_menu'
-      and price_cents = 22900 and price_premium_cents = 19900 and included_updates = 30
+      and price_cents = 19900 and price_premium_cents is null and included_updates = 0
   ) then
-    raise exception 'RN-COM-08 FALLIDO: Menú Diario no tiene 229 € / 199 € y 30 actualizaciones' using errcode = 'assert_failure';
+    raise exception 'RN-CRE-21 FALLIDO: Menú Diario no es 199 € sin precio reducido ni contador' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -230,25 +231,27 @@ begin
   perform public.create_plan_subscription('ffd40000-0000-0000-0000-000000000003',
     (select id from public.plans where space_id = v_space and name = 'Impulso'));
 
-  -- Premium (499 €): Menú Diario a 229 €.
-  v_sub := public.create_service_subscription('ffd40000-0000-0000-0000-000000000001', v_service);
-  select base_cents, premium_applied into v_base, v_premium from public.service_monthly_price(v_sub);
-  if v_base <> 22900 or v_premium then
-    raise exception 'RN-COM-08 FALLIDO: con Premium (499 €) Menú Diario debía costar 22900 sin descuento y es % (descuento: %)', v_base, v_premium using errcode = 'assert_failure';
-  end if;
+  -- RN-CRE-21 · Premium e Impulso ya lo llevan en su plan: contratarlo
+  -- aparte sería cobrarlo dos veces, y se rechaza.
+  begin
+    perform public.create_service_subscription('ffd40000-0000-0000-0000-000000000001', v_service);
+    raise exception 'RN-CRE-21 FALLIDO: se contrató Menú Diario suelto a un Premium que ya lo incluye' using errcode = 'assert_failure';
+  exception when raise_exception then
+    if sqlerrm not like '%RN-CRE-21%' then raise; end if;
+  end;
+  begin
+    perform public.create_service_subscription('ffd40000-0000-0000-0000-000000000003', v_service);
+    raise exception 'RN-CRE-21 FALLIDO: se contrató Menú Diario suelto a un Impulso que ya lo incluye' using errcode = 'assert_failure';
+  exception when raise_exception then
+    if sqlerrm not like '%RN-CRE-21%' then raise; end if;
+  end;
 
-  -- Impulso (299 €): también 229 €.
-  v_sub := public.create_service_subscription('ffd40000-0000-0000-0000-000000000003', v_service);
-  select base_cents, premium_applied into v_base, v_premium from public.service_monthly_price(v_sub);
-  if v_base <> 22900 or v_premium then
-    raise exception 'RN-COM-08 FALLIDO: con Impulso Menú Diario debía costar 22900 sin descuento y es %', v_base using errcode = 'assert_failure';
-  end if;
-
-  -- El plan que concede la prioridad: 199 €, y el apunte lo dice.
+  -- RN-CRE-21 · desaparece el precio reducido: ni siquiera el plan que
+  -- concede la prioridad lo paga a menos de 199 €.
   v_sub := public.create_service_subscription('ffd40000-0000-0000-0000-000000000002', v_service);
   select base_cents, premium_applied into v_base, v_premium from public.service_monthly_price(v_sub);
-  if v_base <> 19900 or not v_premium then
-    raise exception 'RN-COM-08 FALLIDO: con un plan que concede la prioridad Menú Diario debía costar 19900 y es %', v_base using errcode = 'assert_failure';
+  if v_base <> 19900 or v_premium then
+    raise exception 'RN-CRE-21 FALLIDO: con un plan que concede la prioridad Menú Diario debía costar 19900 sin descuento y es %', v_base using errcode = 'assert_failure';
   end if;
 
   -- RN-CRE-27 · sin diferencia entre básicas y avanzadas: los dos ven las

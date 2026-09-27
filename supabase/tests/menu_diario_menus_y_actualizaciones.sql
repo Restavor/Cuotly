@@ -120,14 +120,19 @@ insert into public.worker_establishments (space_id, user_id, establishment_id, c
   ('dd100000-0000-0000-0000-000000000001', 'dd000000-0000-0000-0000-000000000004', 'dd400000-0000-0000-0000-000000000001', 'dd000000-0000-0000-0000-000000000001');
 
 -- ============================================================
--- El esquema: un Menú Diario sin actualizaciones no existe.
+-- RN-CRE-22 (migración 154) · Menú Diario ya no lleva contador: un servicio
+-- sin actualizaciones existe; con actualizaciones negativas, no.
 -- ============================================================
 do $$
 begin
+  insert into public.services (space_id, name, price_cents, kind, included_updates)
+  values ('dd100000-0000-0000-0000-000000000001', 'Sin contador', 100, 'daily_menu', 0);
+  delete from public.services where space_id = 'dd100000-0000-0000-0000-000000000001' and name = 'Sin contador';
+
   begin
     insert into public.services (space_id, name, price_cents, kind, included_updates)
-    values ('dd100000-0000-0000-0000-000000000001', 'Sin bolsa', 100, 'daily_menu', 0);
-    raise exception 'RN-COM-09 FALLIDO: se admite un servicio de Menú Diario con 0 actualizaciones' using errcode = 'assert_failure';
+    values ('dd100000-0000-0000-0000-000000000001', 'Negativo', 100, 'daily_menu', -1);
+    raise exception 'RN-CRE-22 FALLIDO: se admite un servicio con actualizaciones negativas' using errcode = 'assert_failure';
   exception when check_violation then null;
   end;
 end $$;

@@ -183,7 +183,7 @@ export function PlanTermsForm({
 
       <div className="space-y-2">
         <Check name="canOrderRequests" label={te.canOrderRequests} defaultChecked={v.canOrderRequests} />
-        <Check name="grantsPriority" label={te.grantsPriority} defaultChecked={v.grantsPriority} />
+        {/* `grantsPriority` ya no da nada (RN-CRE-21 y RN-CRE-27): no se ofrece. */}
         <Check name="watchesReviews" label={te.watchesReviews} defaultChecked={v.watchesReviews} />
         <Check name="includesDailyMenu" label={te.includesDailyMenu} defaultChecked={v.includesDailyMenu} />
       </div>
@@ -238,29 +238,18 @@ export function ServiceTermsForm({
           />
         </>
       ) : null}
-      <div className="grid grid-cols-1 gap-x-3 sm:grid-cols-2">
-        <Field
-          label={te.priceLabel}
-          name="price"
-          inputMode="decimal"
-          required
-          defaultValue={initial ? centsToEuros(initial.priceCents) : ""}
-        />
-        <Field
-          label={te.pricePremiumLabel}
-          name="pricePremium"
-          inputMode="decimal"
-          hint={te.pricePremiumHint}
-          defaultValue={initial?.pricePremiumCents != null ? centsToEuros(initial.pricePremiumCents) : ""}
-        />
-      </div>
+      {/*
+        Un precio y nada más (decisión 85): el precio reducido con prioridad
+        desaparece (RN-CRE-21) y Menú Diario ya no lleva contador de
+        actualizaciones (RN-CRE-22). Sin esos campos el formulario los lee
+        como "sin precio reducido" y 0.
+      */}
       <Field
-        label={te.updatesLabel}
-        name="includedUpdates"
-        type="number"
-        min={0}
-        defaultValue={initial?.includedUpdates ?? 0}
+        label={te.priceLabel}
+        name="price"
+        inputMode="decimal"
         required
+        defaultValue={initial ? centsToEuros(initial.priceCents) : ""}
       />
 
       {serviceId !== null ? (

@@ -6,11 +6,33 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 a 153 aplicadas).
+Actualizado el 27/09/2026 (149 a 153 aplicadas; 154 pendiente).
 
 ## Pendiente de aplicar
 
-Nada.
+**154 · `el_catalogo_en_creditos`** (decisión 85, PRD §6.1 y §41). Lo que hace:
+
+- **Quita** el `check` `services_daily_menu_has_updates` y redefine `assert_service_terms` (misma firma)
+  sin esa comprobación: Menú Diario ya no lleva contador (RN-CRE-22).
+- **Redefine** `create_restavor_space()` con el catálogo en créditos.
+- **Añade** `apply_credit_catalogue_internal(uuid)`, interna (revocada a `public, anon, authenticated`), y
+  **la ejecuta sobre el espacio `restavor`**:
+  - **Impulso** pasa de 299 € con 6/6/1/0 a **99 €, 20 créditos**, 24 h, los dos informes y Menú Diario
+    incluido.
+  - **Premium** pasa de 499 € con 10/12/2/0 a **199 €, 40 créditos**, los dos informes y Menú Diario
+    incluido, y deja de ordenar solicitudes.
+  - **Menú Diario** pasa de 229 € / 199 € con 30 actualizaciones a **199 € sin precio reducido y 0**.
+  - Todo en el sitio, con apunte `plan.edited` / `service.edited` por fila; el Básico no se toca.
+  - **Se para si alguien tiene ya uno de esos planes o el servicio**: el 27/09/2026 no había ninguna
+    suscripción en todo el proyecto.
+- **Versiona** cuatro guías del centro de ayuda (cobros, Menú Diario para el equipo y para el
+  restaurante, pedir un cambio) que contaban las reglas de antes.
+
+Antes de aplicar hay que comprobar por md5 que `create_restavor_space` y `assert_service_terms` son las
+de la 153, que el `check` existe con ese nombre, que sigue sin haber suscripciones y que el catálogo es el
+de la 148. En local pasan las 88 suites; la 88 (`el_catalogo_en_creditos.sql`) falla si la semilla no
+es la de la ficha, si la función no es idempotente, si reescribe un plan que alguien tiene, si queda
+abierta por RPC o si vuelve el `check` (probado rompiendo cada una).
 
 **Actualización del 27/09/2026: la 153** aplicada entera como `20260927093029 · informes_y_oportunidades`.
 **Antes**: las seis funciones que redefine estaban en producción como en la 152 (cinco idénticas;

@@ -640,6 +640,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/informes_y_oportunidades.sql
 
+      - name: "Suite 88 — El catálogo de Restavor en créditos (migración 154, §6.1 y §41)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/el_catalogo_en_creditos.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
