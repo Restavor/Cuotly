@@ -3964,18 +3964,32 @@ grande, vigilancia de reseñas ni los plazos cortos de RN-SLA-18 (decisión 84).
   no gasta créditos. **Suelto cuesta 199 € + IVA al mes** para cualquier restaurante que no tenga Impulso
   ni Premium, **también con Básico**. RN-COM-11 y RN-COM-12 siguen: sin plan de mantenimiento, sus
   solicitudes de la web van como Básico (sin créditos, todo a presupuesto, 48 h). Desaparece el precio
-  reducido con prioridad (`services.price_premium_cents`).
+  reducido con prioridad (`services.price_premium_cents`). **Que un plan lo incluya es un término del
+  plan** (`plans.includes_daily_menu`, versionado como los demás, RN-COM-20 a 24): Menú Diario está
+  disponible para un restaurante si tiene el servicio contratado **o** su plan lo incluye, y no se
+  contrata el servicio suelto a quien ya lo tiene en su plan (se pagaría dos veces).
 - **RN-CRE-22 (sustituye RN-COM-09, RN-CON-02 y RN-MEN-05)**: **un menú del día por fecha**, sin
-  contador de actualizaciones: pedir la publicación no consume nada. **Cambiarlo ese mismo día lo
-  sustituye, sin límite.** Los menús de otros tipos (§RN-MEN-01) siguen como hoy mientras no se diga
-  otra cosa.
+  contador de actualizaciones: pedir la publicación no consume nada, en ningún tipo de menú.
+  **Cambiarlo lo sustituye, sin límite** (RN-CRE-30). Los menús de otros tipos (Navidad, infantil,
+  grupos y evento especial, RN-MEN-01) **se quedan**, sin límite por fecha (decisión 86). "Uno por
+  fecha" es uno **no cancelado** del tipo `daily` por restaurante y fecha; un segundo se rechaza con
+  el motivo, y el restaurante edita el que ya tiene.
 - **RN-CRE-23 (sustituye RN-COM-10 y RN-MEN-11)**: **dos plantillas incluidas una sola vez**, adaptadas
   al diseño de la web: **una para publicar** y **otra para imprimir en blanco y negro**. Cambiar su
-  diseño, crear otras o modificarlas por estructura gasta créditos o se presupuesta.
+  diseño, crear otras o modificarlas por estructura gasta créditos o se presupuesta. **El restaurante
+  no elige plantilla** (decisión 86): cada menú sale en la de publicar para la web y en la de imprimir
+  para el papel. Por eso cada restaurante tiene **como mucho una activa de cada** (`purpose`: `publish`
+  o `print`); una nueva de ese uso sustituye a la anterior, que se archiva antes. Archivar una incluida
+  no libera su plaza (como RN-MEN-11).
 - **RN-CRE-24 (sustituye RN-MEN-07, RN-MEN-08 y RN-COR-10)**: **no hay hora de corte**: desaparecen el
   límite de las 21:00, la publicación garantizada antes de las 08:00, el recordatorio de las 20:00 y
   su aviso al equipo, y la corrección mínima del menú publicado. El restaurante escribe el menú a la
   hora que sea y pulsa Guardar.
+- **RN-CRE-30 (sustituye RN-MEN-03 para el menú del día publicado; decisión 86)**: **un menú del día
+  publicado se cambia editándolo**. Guardar una versión nueva lo devuelve a borrador con "cambios sin
+  publicar"; lo que está en la web sigue siendo la versión publicada hasta que el equipo publica la
+  nueva, y cada publicación sustituye a la anterior. Sin límite de veces y sin coste. Los otros tipos
+  siguen como RN-MEN-03: publicado, se copia.
 - **RN-CRE-25**: **quién publica**: hoy, **el equipo a mano** (RN-MEN-06), como ahora. La idea de Bosco
   es que lo publique **un agente de IA** cuando el restaurante guarde; **no se construye todavía** y no
   se simula (RN-CLS-07, CLAUDE.md). Cuando se decida, será su propia regla.

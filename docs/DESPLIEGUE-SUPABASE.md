@@ -6,9 +6,15 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 y 150 aplicadas; 151 escrita, sin aplicar).
+Actualizado el 27/09/2026 (149, 150 y 151 aplicadas).
 
 ## Pendiente de aplicar
+
+Nada.
+
+**Actualización del 27/09/2026: la 151** aplicada como `20260927074717 · el_detalle_del_consumo`. Antes se comprobó que la función no existía; después, su cuerpo y sus permisos dan el mismo md5 que en local.
+
+Lo que decía esta sección antes de aplicarla:
 
 **151 · `el_detalle_del_consumo`** (decisión 85, PRD RN-CRE-16). Solo **añade** una función,
 `establishment_credit_detail(uuid)` (lectura, `security definer`, comprueba `can_read_establishment`;

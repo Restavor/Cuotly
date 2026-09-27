@@ -2478,3 +2478,20 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
 
     Reglas en el PRD: §41, RN-CRE-01 a RN-CRE-29, con notas en cada regla anterior que cambia. Todavía
     sin construir.
+
+86. **Menú Diario dentro del plan: tipos, cambios y plantillas** (27/09/2026). Antes de construir el
+    punto 5 de la decisión 85 quedaban tres cosas que cambian el esquema y que el PRD no decidía. Bosco
+    eligió las tres propuestas:
+
+    1. **Los otros tipos de menú se quedan** (*"Se quedan"*): solo el **menú del día** es uno por
+       fecha. Navidad, infantil, grupos y evento especial siguen existiendo, sin límite por fecha y sin
+       contador, como cualquier menú desde la decisión 85.
+    2. **Cambiar un menú del día ya publicado** (*"Lo edita y vuelve al equipo"*): el restaurante edita
+       el mismo menú, lo guarda y pide publicarlo otra vez; el equipo lo vuelve a subir y sustituye al
+       anterior. Sin límite de veces. Lo que está en la web sigue siendo la versión publicada hasta que
+       el equipo publica la nueva.
+    3. **Las dos plantillas** (*"Cada menú sale en las dos"*): el restaurante **no elige plantilla**.
+       Cada restaurante tiene una para publicar (la web) y otra para imprimir en blanco y negro, y cada
+       menú sale en las dos.
+
+    Reglas en el PRD: RN-CRE-21 a RN-CRE-23 precisadas y RN-CRE-30 nueva (§41.6).
