@@ -9,8 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * F01 y A01 a A12 · la cabecera pública de la puerta de entrada: la marca
- * "Cuotly by Restavor" a la izquierda y, a la derecha, Ayuda, Mi cuenta y
- * Cerrar sesión. Debajo, la miga de pan "Cuotly / …" y la pantalla.
+ * "Restavor web" a la izquierda y, a la derecha, Ayuda, Mi cuenta y
+ * Cerrar sesión. Debajo, la miga de pan "Restavor / …" y la pantalla.
  *
  * **Lo que se enseña a la derecha depende de si hay sesión.** El diseño
  * pinta Mi cuenta y Cerrar sesión en el formulario, pero desde la

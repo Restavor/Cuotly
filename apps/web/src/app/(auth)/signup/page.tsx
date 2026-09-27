@@ -10,7 +10,7 @@ import { AccessRequestForm } from "./AccessRequestForm";
  * `/signup` a propósito: es donde va quien busca registrarse, y lo que
  * encuentra es esto.
  *
- * F01 · con la cabecera pública y la miga de pan "Cuotly / Solicitud de
+ * F01 · con la cabecera pública y la miga de pan "Restavor / Solicitud de
  * acceso". El formulario y sus estados (A01, A09 a A12) están en
  * `AccessRequestForm`, que es lo único de la pantalla que vive en el
  * navegador.

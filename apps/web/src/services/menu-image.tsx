@@ -135,7 +135,7 @@ export async function renderMenuPng(doc: MenuDocument): Promise<Uint8Array> {
 export async function renderMenuPdf(png: Uint8Array, title: string): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(title);
-  pdf.setProducer("Cuotly");
+  pdf.setProducer("Restavor web");
   const image = await pdf.embedPng(png);
   const page = pdf.addPage([595.28, 841.89]);
   page.drawImage(image, { x: 0, y: 0, width: 595.28, height: 841.89 });

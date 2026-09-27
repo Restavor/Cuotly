@@ -2495,3 +2495,16 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
        menú sale en las dos.
 
     Reglas en el PRD: RN-CRE-21 a RN-CRE-23 precisadas y RN-CRE-30 nueva (§41.6).
+
+87. **La app se llama Restavor web** (27/09/2026). Bosco: *"Ya no va a ser Cuotly by Restavor (web)
+    si no que la app se va a llamar Restavor. Lo de web va más pequeño porque va a tener 2 partes
+    Restavor web y Restavor agents."* La identidad visible pasa de `Cuotly · by Restavor` a
+    **Restavor web**: "Restavor" grande y "web" pequeño, en el mismo sitio donde antes iba la firma
+    "by Restavor". Sustituye a la identidad de §20.6, que se sigue conservando siempre aunque el
+    espacio tenga su propio nombre y logotipo. Restavor agents es la otra parte y no existe todavía.
+
+    Primer paso, solo el nombre: cabeceras (menú lateral, móvil, acceso), título de la pestaña, miga
+    de pan, pie del PDF de informes y la ficha de identidad de Ajustes. **No se han tocado todavía**:
+    las menciones a "Cuotly" como plataforma en los textos de pantalla (unas 250 en `es.ts`), el
+    remitente de correo (`Cuotly <avisos@cuotly.com>`), los identificadores del código y la base
+    (`is_platform_*`, `cuotly_payments`…) ni los documentos.

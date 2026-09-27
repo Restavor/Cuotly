@@ -33,12 +33,13 @@ function formatoHorasLaborables(minutos: number): string {
 
 export const es = {
   common: {
-    appName: "Cuotly",
-    // §20.6: "la identidad `Cuotly · by Restavor` se conserva siempre",
-    // incluso cuando el espacio tiene su propio nombre y logotipo. En el
-    // menú lateral se pinta en dos líneas, así que la firma va suelta.
-    appOwner: "by Restavor",
-    tagline: "Cuotly · by Restavor",
+    // Decisión 87: la app se llama "Restavor web" (la otra parte será
+    // Restavor agents). §20.6: la identidad se conserva siempre, incluso
+    // cuando el espacio tiene su propio nombre y logotipo. Se pinta en dos
+    // piezas —"Restavor" grande y "web" pequeño—, así que van sueltas.
+    appName: "Restavor",
+    appOwner: "web",
+    tagline: "Restavor web",
     save: "Guardar",
     cancel: "Cancelar",
     close: "Cerrar",
@@ -235,7 +236,7 @@ export const es = {
       myAccount: "Mi cuenta",
       signOut: "Cerrar sesión",
       signIn: "Iniciar sesión",
-      crumbRoot: "Cuotly",
+      crumbRoot: "Restavor",
       crumbAccess: "Solicitud de acceso",
       crumbInvitation: "Invitación",
       crumbAccount: "Acceso",
@@ -4849,7 +4850,7 @@ export const es = {
     slugHint:
       "La dirección no se cambia: es el enlace por el que entra todo el mundo y los correos ya enviados apuntan a ella.",
     brandLabel: "Identidad visual",
-    brandValue: "Emerald Control · Cuotly · by Restavor",
+    brandValue: "Emerald Control · Restavor web",
     brandHint:
       "El sistema visual, la paleta y la firma no se personalizan (§124): un único modo claro y una única densidad.",
     logoLabel: "Logotipo",
@@ -6043,8 +6044,8 @@ export const es = {
 
     // El PDF (§93). Su texto también es de aquí.
     pdf: {
-      brand: "Cuotly",
-      brandSuffix: "by Restavor",
+      brand: "Restavor",
+      brandSuffix: "web",
       contents: "Contenido",
       generatedAt: (fecha: string) => `Generado el ${fecha}`,
       periodLine: (desde: string, hasta: string) => `Periodo: ${desde} – ${hasta}`,

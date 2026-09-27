@@ -1,6 +1,6 @@
 # PRD — Cuotly · Fase 1
 
-**Producto:** Cuotly · by Restavor
+**Producto:** Restavor web (antes Cuotly · by Restavor; decisión 87)
 **Propietario:** Bosco Núñez (Restavor)
 **Versión del documento:** 1.0 — 29 de agosto de 2026
 **Alcance de este PRD:** nació para la Fase 1 y hoy cubre también las fases 2 y 3 —Menú Diario,
@@ -1199,7 +1199,8 @@ Border         #DDE5E1
 ```
 Tipografía **Inter**. Un único modo claro. Una única densidad cómoda. Sin selector de tamaño, sin modo
 oscuro, sin personalización de colores ni marca blanca. Un espacio puede cambiar su nombre y logotipo,
-pero la identidad `Cuotly · by Restavor` se conserva siempre.
+pero la identidad **Restavor web** ("Restavor" grande, "web" pequeño; decisión 87, antes
+`Cuotly · by Restavor`) se conserva siempre.
 
 ### 20.7 Estados de interfaz obligatorios
 Cargando · sin datos · error · sin conexión · sin permisos. Autoguardado en formularios largos y

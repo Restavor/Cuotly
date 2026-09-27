@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Cuotly",
-  description: "Cuotly · by Restavor — gestión del mantenimiento web de restaurantes.",
+  title: "Restavor web",
+  description: "Restavor web — gestión del mantenimiento web de restaurantes.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
