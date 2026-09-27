@@ -10,7 +10,7 @@
  */
 
 import { parseCreditsInput } from "./credits";
-import { type ReportPeriodKind, isReportPeriodKind } from "./reports";
+import { type PlanReportPeriod, isPlanReportPeriod, planReportPeriodRank } from "./reports";
 
 export const PLANS_TABS = ["planes", "servicios", "versiones", "restaurantes"] as const;
 export type PlansTab = (typeof PLANS_TABS)[number];
@@ -150,7 +150,7 @@ export interface ComparablePlan {
   readonly canOrderRequests: boolean;
   readonly reportLevelRank: number;
   /** RN-REP-32 · cada cuánto llega el informe. Sin él, mensual. */
-  readonly reportPeriod?: ReportPeriodKind;
+  readonly reportPeriod?: PlanReportPeriod;
   /** RN-CRE-21 · el plan incluye Menú Diario. Sin él, no. */
   readonly includesDailyMenu?: boolean;
 }
@@ -198,11 +198,11 @@ export function comparePlans(current: ComparablePlan, target: ComparablePlan): r
     row("startSla", current.startSlaHours, target.startSlaHours, false),
     row("ordering", Number(current.canOrderRequests), Number(target.canOrderRequests), true),
     row("report", current.reportLevelRank, target.reportLevelRank, true),
-    // RN-REP-32 · un informe cada mes es mejor que uno cada trimestre.
+    // RN-REP-32 y RN-CRE-26 · trimestral < mensual < los dos.
     row(
       "reportPeriod",
-      Number((current.reportPeriod ?? "month") === "month"),
-      Number((target.reportPeriod ?? "month") === "month"),
+      planReportPeriodRank(current.reportPeriod ?? "month"),
+      planReportPeriodRank(target.reportPeriod ?? "month"),
       true,
     ),
     // RN-CRE-21 · incluir Menú Diario es mejor que no incluirlo.
@@ -236,7 +236,7 @@ export interface PlanTerms {
   readonly queueRank: number;
   readonly reportLevel: PlanReportLevel;
   /** RN-REP-32 (decisión 83) · informe mensual o trimestral. */
-  readonly reportPeriod: ReportPeriodKind;
+  readonly reportPeriod: PlanReportPeriod;
   readonly watchesReviews: boolean;
   /** RN-CRE-21 (decisión 85) · el plan incluye Menú Diario. */
   readonly includesDailyMenu: boolean;
@@ -322,7 +322,7 @@ export function readPlanTermsForm(form: FormLike): TermsFormResult<PlanTerms> {
   // Sin el campo, mensual: es lo que tenían todos los planes antes de la
   // migración 145.
   const period = text(form, "reportPeriod") || "month";
-  if (!isReportPeriodKind(period)) return { ok: false, error: "reportPeriod" };
+  if (!isPlanReportPeriod(period)) return { ok: false, error: "reportPeriod" };
 
   const [small, photo, medium, large] = included as number[];
   const [eSmall, ePhoto, eMedium, eLarge] = execution as number[];

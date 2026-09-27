@@ -27,7 +27,7 @@ import {
   loadIntegrationsView,
 } from "@/components/establishment/integrations-load";
 import { loadOpportunities } from "@/components/establishment/opportunities-load";
-import { loadEstablishmentReports, loadMonthlyReport } from "@/components/report/reports-load";
+import { loadEstablishmentReports, loadPeriodReports } from "@/components/report/reports-load";
 import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
@@ -358,9 +358,9 @@ export default async function EstablishmentPage({
       autorizado en este restaurante; a los demás trabajadores, no, y la
       RLS ya se lo niega.
     */
-    const monthlyReport =
+    const periodReports =
       mirandoResumenDeDatos && (role === "owner" || role === "admin" || trabajadorDelRestaurante === true)
-        ? await loadMonthlyReport(supabase, {
+        ? await loadPeriodReports(supabase, {
             establishmentId: id,
             reports,
             timeZone: space.timezone,
@@ -434,7 +434,7 @@ export default async function EstablishmentPage({
           opportunities,
           opportunityViewer: puedeAprobar === true ? "approver" : "worker",
           reports,
-          monthlyReport,
+          periodReports,
           // CLAUDE.md · la zona del espacio, que esta pantalla ya lee para
           // proponer el día del pago. La ficha entera pinta con ella.
           timeZone: space.timezone,

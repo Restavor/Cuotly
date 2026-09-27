@@ -136,17 +136,17 @@ export function ruleScope(rule: OpportunityRule): OpportunityScope {
 }
 
 /**
- * Qué oportunidades deja ver el plan vigente (§101): Básico ninguna
- * ("detección interna"), Impulso, Impulso+ y Premium las básicas
- * aprobadas, Premium+ también las avanzadas (decisión 39).
+ * RN-CRE-27 (decisión 85, cambia RN-OPP-08) · qué oportunidades ve el
+ * restaurante: **las que el equipo le sube al informe**, básicas y
+ * avanzadas por igual, si su plan incluye algo; el plan de entrada, sin
+ * nada incluido, ninguna ("detección interna", §101).
  *
  * Se decide por lo que el plan ES, no por cómo se llama: Cuotly es
- * multiempresa (CLAUDE.md) y otro espacio llamará "Total" a su plan alto.
- * Sin ningún cambio incluido es el plan de entrada (Básico, que "NO
- * incluye ningún cambio"); con prioridad concedida es el alto
- * (`plans.grants_priority`, el mismo criterio de la decisión 20).
+ * multiempresa (CLAUDE.md). "Incluye algo" son créditos (RN-CRE-01) o
+ * cambios por categoría de los planes de antes; lo mismo que mira
+ * `client_opportunity_access()` en el servidor, que es quien decide.
  */
-export type PlanOpportunityAccess = "none" | "basic" | "advanced";
+export type PlanOpportunityAccess = "none" | "report";
 
 export interface PlanShape {
   readonly includedSmall: number;
@@ -154,19 +154,24 @@ export interface PlanShape {
   readonly includedMedium: number;
   readonly includedLarge: number;
   readonly grantsPriority: boolean;
+  /** PRD §41 · créditos al mes, en medios créditos. Sin él, 0. */
+  readonly includedCreditsHalf?: number;
 }
 
 export function planOpportunityAccess(plan: PlanShape | null): PlanOpportunityAccess {
   if (plan === null) return "none";
-  const incluye = plan.includedSmall + plan.includedPhoto + plan.includedMedium + plan.includedLarge;
-  if (incluye === 0) return "none";
-  return plan.grantsPriority ? "advanced" : "basic";
+  const incluye =
+    (plan.includedCreditsHalf ?? 0) + plan.includedSmall + plan.includedPhoto + plan.includedMedium + plan.includedLarge;
+  return incluye === 0 ? "none" : "report";
 }
 
-/** Si una oportunidad de este alcance entra en lo que ese plan deja ver. */
-export function planSees(access: PlanOpportunityAccess, scope: OpportunityScope): boolean {
-  if (access === "none") return false;
-  return access === "advanced" || scope === "basic";
+/**
+ * Si una oportunidad subida al informe entra en lo que ese plan deja ver.
+ * El alcance (básica o avanzada) ya no cuenta para el restaurante
+ * (RN-CRE-27): solo lo ve el equipo en la detección (RN-OPP-01).
+ */
+export function planSees(access: PlanOpportunityAccess): boolean {
+  return access === "report";
 }
 
 // ---------------------------------------------------------------------

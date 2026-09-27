@@ -389,6 +389,29 @@ export function isReportPeriodKind(value: string): value is ReportPeriodKind {
 }
 
 /**
+ * RN-CRE-26 (decisión 85) · lo que el plan dice de sus informes: el
+ * mensual, el trimestral o **los dos** (`both`). Es lo que guarda
+ * `plans.report_period`; cada informe concreto es de un periodo
+ * (`ReportPeriodKind`).
+ */
+export const PLAN_REPORT_PERIODS = ["month", "quarter", "both"] as const;
+export type PlanReportPeriod = (typeof PLAN_REPORT_PERIODS)[number];
+
+export function isPlanReportPeriod(value: string): value is PlanReportPeriod {
+  return (PLAN_REPORT_PERIODS as readonly string[]).includes(value);
+}
+
+/** RN-CRE-26 · qué informes tocan con lo que dice el plan: con `both`, el del mes y el del trimestre. */
+export function reportKindsFor(period: PlanReportPeriod): readonly ReportPeriodKind[] {
+  return period === "both" ? ["month", "quarter"] : [period];
+}
+
+/** RN-CRE-26 · trimestral < mensual < los dos: más informes es mejor (RN-COM-23). */
+export function planReportPeriodRank(period: PlanReportPeriod): number {
+  return period === "quarter" ? 1 : period === "month" ? 2 : 3;
+}
+
+/**
  * RN-REP-32 · el **último trimestre natural cerrado** en la zona del
  * espacio: enero-marzo, abril-junio, julio-septiembre u octubre-diciembre.
  * El 1 de octubre ya está cerrado julio-septiembre; el 30 de septiembre

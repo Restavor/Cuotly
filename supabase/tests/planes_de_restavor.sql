@@ -251,13 +251,13 @@ begin
     raise exception 'RN-COM-08 FALLIDO: con un plan que concede la prioridad Menú Diario debía costar 19900 y es %', v_base using errcode = 'assert_failure';
   end if;
 
-  -- RN-OPP-08 · Premium ve las básicas; el plan con prioridad, también las
-  -- avanzadas.
-  if public.client_opportunity_access('ffd40000-0000-0000-0000-000000000001') <> 'basic' then
-    raise exception 'RN-OPP-08 FALLIDO: Premium (499 €) debía ver solo las básicas' using errcode = 'assert_failure';
+  -- RN-CRE-27 · sin diferencia entre básicas y avanzadas: los dos ven las
+  -- que el equipo les sube al informe.
+  if public.client_opportunity_access('ffd40000-0000-0000-0000-000000000001') <> 'report' then
+    raise exception 'RN-CRE-27 FALLIDO: Premium (499 €) debía ver las que se le suben al informe' using errcode = 'assert_failure';
   end if;
-  if public.client_opportunity_access('ffd40000-0000-0000-0000-000000000002') <> 'advanced' then
-    raise exception 'RN-OPP-08 FALLIDO: el plan que concede la prioridad debía ver también las avanzadas' using errcode = 'assert_failure';
+  if public.client_opportunity_access('ffd40000-0000-0000-0000-000000000002') <> 'report' then
+    raise exception 'RN-CRE-27 FALLIDO: el plan que concede la prioridad debía ver las que se le suben al informe' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;

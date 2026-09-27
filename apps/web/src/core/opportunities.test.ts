@@ -409,26 +409,25 @@ describe("RN-OPP-08 · básicas, avanzadas y qué deja ver cada plan (§101, dec
     }
   });
 
-  it("RN-OPP-08: Básico no ve ninguna; Impulso, Impulso+ y Premium las básicas; Premium+ también las avanzadas (decisión 39)", () => {
+  it("RN-CRE-27: el plan de entrada no ve ninguna; con algo incluido, las que se le suben al informe, básicas y avanzadas", () => {
     const basico = { includedSmall: 0, includedPhoto: 0, includedMedium: 0, includedLarge: 0, grantsPriority: false };
-    const impulso = { includedSmall: 6, includedPhoto: 6, includedMedium: 1, includedLarge: 0, grantsPriority: false };
+    const impulso = { ...basico, includedCreditsHalf: 40 };
+    const premium = { ...basico, includedCreditsHalf: 80 };
     const impulsoPlus = { includedSmall: 16, includedPhoto: 12, includedMedium: 3, includedLarge: 0, grantsPriority: false };
-    const premium = { includedSmall: 10, includedPhoto: 12, includedMedium: 2, includedLarge: 0, grantsPriority: false };
     const premiumPlus = { includedSmall: 25, includedPhoto: 24, includedMedium: 5, includedLarge: 1, grantsPriority: true };
 
     expect(planOpportunityAccess(null)).toBe("none");
     expect(planOpportunityAccess(basico)).toBe("none");
-    expect(planOpportunityAccess(impulso)).toBe("basic");
-    expect(planOpportunityAccess(impulsoPlus)).toBe("basic");
-    expect(planOpportunityAccess(premium)).toBe("basic");
-    expect(planOpportunityAccess(premiumPlus)).toBe("advanced");
+    // Un plan solo de créditos también incluye algo.
+    expect(planOpportunityAccess(impulso)).toBe("report");
+    expect(planOpportunityAccess(premium)).toBe("report");
+    expect(planOpportunityAccess(impulsoPlus)).toBe("report");
+    expect(planOpportunityAccess(premiumPlus)).toBe("report");
 
-    expect(planSees(planOpportunityAccess(basico), "basic")).toBe(false);
-    expect(planSees(planOpportunityAccess(impulso), "basic")).toBe(true);
-    expect(planSees(planOpportunityAccess(impulsoPlus), "basic")).toBe(true);
-    expect(planSees(planOpportunityAccess(premium), "basic")).toBe(true);
-    expect(planSees(planOpportunityAccess(premium), "advanced")).toBe(false);
-    expect(planSees(planOpportunityAccess(premiumPlus), "advanced")).toBe(true);
+    expect(planSees(planOpportunityAccess(basico))).toBe(false);
+    for (const plan of [impulso, premium, impulsoPlus, premiumPlus]) {
+      expect(planSees(planOpportunityAccess(plan))).toBe(true);
+    }
   });
 });
 

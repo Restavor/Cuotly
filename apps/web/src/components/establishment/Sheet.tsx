@@ -240,12 +240,13 @@ export interface SheetData {
    */
   readonly reports: readonly ReportRow[];
   /**
-   * Decisión 78 (RN-REP-27) · el informe del último mes cerrado, con sus
-   * botones. `undefined` cuando no se está mirando el Resumen o quien mira
-   * no lo lleva: lo llevan quien gestiona la cartera y, desde la decisión
-   * 79 (RN-REP-31), el trabajador autorizado en este restaurante.
+   * Decisión 78 (RN-REP-27) · el informe del último periodo cerrado, con
+   * sus botones: uno, o dos si el plan recibe el del mes y el del trimestre
+   * (RN-CRE-26). `undefined` cuando no se está mirando el Resumen o quien
+   * mira no lo lleva: lo llevan quien gestiona la cartera y, desde la
+   * decisión 79 (RN-REP-31), el trabajador autorizado en este restaurante.
    */
-  readonly monthlyReport?: MonthlyReportView;
+  readonly periodReports?: readonly MonthlyReportView[];
   /**
    * La zona horaria del espacio (CLAUDE.md: las fechas se calculan en
    * ella). No es decorativa ni tiene valor por defecto: sin ella, `Intl`
@@ -1079,7 +1080,7 @@ export function EstablishmentSheet({
     opportunities,
     opportunityViewer,
     reports,
-    monthlyReport,
+    periodReports,
     invitations,
     timeZone,
   } = data;
@@ -2193,9 +2194,9 @@ export function EstablishmentSheet({
             manageHref={canManageClients ? sheetHref(base, MANAGEMENT_TAB, INTEGRATIONS_BLOCK) : null}
           />
 
-          {monthlyReport ? (
-            <MonthlyReportCard slug={slug} view={monthlyReport} timeZone={timeZone} />
-          ) : null}
+          {(periodReports ?? []).map((view) => (
+            <MonthlyReportCard key={view.periodKind} slug={slug} view={view} timeZone={timeZone} />
+          ))}
 
           {/*
             Maqueta 09 · "Informes generados" (§89 a §95). Cada uno enlaza
@@ -3898,7 +3899,12 @@ export function MonthlyReportCard({
           <p className="text-sm text-text">
             {trimestral ? tm.quarterNotGenerated(view.monthLabel) : tm.notGenerated(view.monthLabel)}
           </p>
-          <GenerateMonthlyButton slug={slug} establishmentId={view.establishmentId} again={false} />
+          <GenerateMonthlyButton
+            slug={slug}
+            establishmentId={view.establishmentId}
+            periodKind={view.periodKind}
+            again={false}
+          />
         </div>
       ) : (
         <div className="mt-4 space-y-4">
@@ -3933,7 +3939,12 @@ export function MonthlyReportCard({
                 </ButtonLink>
               </div>
               {view.canPublish ? null : <p className="text-xs text-text-secondary">{tm.noApprovePermission}</p>}
-              <GenerateMonthlyButton slug={slug} establishmentId={view.establishmentId} again />
+              <GenerateMonthlyButton
+                slug={slug}
+                establishmentId={view.establishmentId}
+                periodKind={view.periodKind}
+                again
+              />
             </>
           )}
         </div>

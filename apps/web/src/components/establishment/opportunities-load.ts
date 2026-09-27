@@ -173,7 +173,8 @@ export async function loadOpportunities(
 
   return {
     rows,
-    access: (access as PlanOpportunityAccess | null) ?? "none",
+    // RN-CRE-27 · `report` o `none`; cualquier otra cosa se lee como nada.
+    access: access === "report" ? "report" : "none",
     plan,
     remaining,
   };

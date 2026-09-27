@@ -1,9 +1,9 @@
 import {
   isReportLevel,
-  isReportPeriodKind,
+  isPlanReportPeriod,
   reportLevelRank,
+  type PlanReportPeriod,
   type ReportLevel,
-  type ReportPeriodKind,
 } from "@/core/reports";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -47,7 +47,8 @@ export interface CataloguePlan {
   readonly reportLevel: ReportLevel;
   readonly reportLevelRank: number;
   /** RN-REP-32 · informe mensual o trimestral. */
-  readonly reportPeriod: ReportPeriodKind;
+  /** RN-REP-32 y RN-CRE-26 · mensual, trimestral o los dos. */
+  readonly reportPeriod: PlanReportPeriod;
 }
 
 export interface CatalogueService {
@@ -178,7 +179,7 @@ export async function loadPlanCatalogue(supabase: Supabase, spaceId: string): Pr
       includesDailyMenu: p.includes_daily_menu,
       reportLevel: level,
       reportLevelRank: reportLevelRank(level),
-      reportPeriod: isReportPeriodKind(p.report_period) ? p.report_period : "month",
+      reportPeriod: isPlanReportPeriod(p.report_period) ? p.report_period : "month",
     };
   });
   const serviceRevisions: CatalogueService[] = (services.data ?? []).map((s) => ({

@@ -60,6 +60,25 @@ describe("RN-REP-32 · la tarjeta cuando el plan manda el informe cada trimestre
   });
 });
 
+describe("RN-CRE-26 · con el mensual y el trimestral, cada tarjeta genera el suyo", () => {
+  it("RN-CRE-26 · el botón de generar lleva el periodo de su tarjeta", () => {
+    render(
+      <>
+        <MonthlyReportCard slug="restavor" view={vista({ periodKind: "month", report: null })} timeZone="Europe/Madrid" />
+        <MonthlyReportCard
+          slug="restavor"
+          view={vista({ periodKind: "quarter", monthLabel: "julio a septiembre de 2026", report: null })}
+          timeZone="Europe/Madrid"
+        />
+      </>,
+    );
+    const periodos = [...document.querySelectorAll<HTMLInputElement>('input[name="periodKind"]')].map((i) => i.value);
+    expect(periodos).toEqual(["month", "quarter"]);
+    expect(screen.getByText(t.title)).toBeInTheDocument();
+    expect(screen.getByText(t.quarterTitle)).toBeInTheDocument();
+  });
+});
+
 describe("RN-REP-27 · la tarjeta del informe del mes", () => {
   it("RN-REP-27 · sin informe del mes, solo se ofrece generarlo", () => {
     render(<MonthlyReportCard slug="restavor" view={vista({ report: null })} timeZone="Europe/Madrid" />);

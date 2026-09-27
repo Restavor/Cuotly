@@ -52,7 +52,7 @@ function oportunidad(over: Partial<OpportunityRow> = {}): OpportunityRow {
   } as OpportunityRow;
 }
 
-function vista(rows: readonly OpportunityRow[], access: OpportunitiesView["access"] = "advanced") {
+function vista(rows: readonly OpportunityRow[], access: OpportunitiesView["access"] = "report") {
   return { rows, access, plan: null, remaining: null } as OpportunitiesView;
 }
 

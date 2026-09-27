@@ -154,11 +154,13 @@ begin
   if public.client_opportunity_access('ee400000-0000-0000-0000-000000000002') <> 'none' then
     raise exception 'RN-OPP-08 FALLIDO: Básico (sin ningún cambio incluido) deja ver oportunidades' using errcode = 'assert_failure';
   end if;
-  if public.client_opportunity_access('ee400000-0000-0000-0000-000000000001') <> 'basic' then
-    raise exception 'RN-OPP-08 FALLIDO: Impulso+ no deja ver las básicas' using errcode = 'assert_failure';
+  -- RN-CRE-27 · con algo incluido, las que el equipo sube al informe, sin
+  -- distinguir básicas de avanzadas.
+  if public.client_opportunity_access('ee400000-0000-0000-0000-000000000001') <> 'report' then
+    raise exception 'RN-CRE-27 FALLIDO: Impulso+ no ve las que se le suben al informe' using errcode = 'assert_failure';
   end if;
-  if public.client_opportunity_access('ee400000-0000-0000-0000-000000000003') <> 'advanced' then
-    raise exception 'RN-OPP-08 FALLIDO: Premium+ (el que concede prioridad) no deja ver las avanzadas' using errcode = 'assert_failure';
+  if public.client_opportunity_access('ee400000-0000-0000-0000-000000000003') <> 'report' then
+    raise exception 'RN-CRE-27 FALLIDO: Premium+ no ve las que se le suben al informe' using errcode = 'assert_failure';
   end if;
 end $$;
 reset role;
@@ -478,16 +480,17 @@ reset role;
 -- ============================================================
 -- RN-OPP-08 · §101 · qué ve cada plan
 -- ============================================================
--- Impulso+: la básica aprobada sí, la avanzada no.
+-- RN-CRE-27 · Impulso+: la básica y la avanzada que se le suben al
+-- informe, las dos (sin diferencia entre básicas y avanzadas).
 select set_config('request.jwt.claim.sub', 'ee000000-0000-0000-0000-000000000005', false);
 set role authenticated;
 do $$
 begin
   if (select count(*) from public.opportunities where id = (select v from op_ids where k = 'traffic')) <> 1 then
-    raise exception 'RN-OPP-08 FALLIDO: Impulso+ no ve una oportunidad básica aprobada' using errcode = 'assert_failure';
+    raise exception 'RN-CRE-27 FALLIDO: Impulso+ no ve una oportunidad básica subida al informe' using errcode = 'assert_failure';
   end if;
-  if (select count(*) from public.opportunities where id = (select v from op_ids where k = 'avanzada_impulso')) <> 0 then
-    raise exception 'RN-OPP-08 FALLIDO: Impulso+ ve una oportunidad avanzada' using errcode = 'assert_failure';
+  if (select count(*) from public.opportunities where id = (select v from op_ids where k = 'avanzada_impulso')) <> 1 then
+    raise exception 'RN-CRE-27 FALLIDO: Impulso+ no ve una oportunidad avanzada subida al informe' using errcode = 'assert_failure';
   end if;
   -- Y no ve las de otros restaurantes, aprobadas o no.
   if (select count(*) from public.opportunities where establishment_id <> 'ee400000-0000-0000-0000-000000000001') <> 0 then
@@ -555,10 +558,12 @@ begin
   end if;
 
   -- Sobre una que no puede ver, ni por llamada directa (CLAUDE.md: ocultar
-  -- el botón no es un control de acceso).
+  -- el botón no es un control de acceso). Desde RN-CRE-27 ve básicas y
+  -- avanzadas por igual; lo que no ve es lo que el equipo no le ha subido
+  -- al informe, como la que añadió a mano y sigue sin revisar.
   begin
-    perform public.act_on_opportunity((select v from op_ids where k = 'avanzada_impulso'), 'request_quote', 'Presupuesto');
-    raise exception 'RN-OPP-08 FALLIDO: el restaurante actuó sobre una oportunidad que su plan no le deja ver' using errcode = 'assert_failure';
+    perform public.act_on_opportunity((select v from op_ids where k = 'manual'), 'request_quote', 'Presupuesto');
+    raise exception 'RN-CRE-27 FALLIDO: el restaurante actuó sobre una oportunidad que no se le subió al informe' using errcode = 'assert_failure';
   exception
     when raise_exception then
       if sqlerrm not like '%no está disponible%' then raise; end if;

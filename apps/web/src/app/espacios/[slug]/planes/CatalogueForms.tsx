@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 
 import { Button, Field, Select } from "@/components/ui";
 import { REPORT_LEVELS, type PlanTerms, type ServiceTerms } from "@/core/plan-catalogue";
-import { REPORT_PERIOD_KINDS } from "@/core/reports";
+import { PLAN_REPORT_PERIODS } from "@/core/reports";
 import { es } from "@/i18n/es";
 
 import { INITIAL_PLANS, INITIAL_TERMS } from "./action-state";
@@ -170,7 +170,7 @@ export function PlanTermsForm({
           label={te.reportPeriodLabel}
           name="reportPeriod"
           defaultValue={v.reportPeriod}
-          options={REPORT_PERIOD_KINDS.map((period) => ({ value: period, label: tc.reportPeriods[period] }))}
+          options={PLAN_REPORT_PERIODS.map((period) => ({ value: period, label: tc.reportPeriods[period] }))}
         />
         <Field
           label={te.queueRankLabel}

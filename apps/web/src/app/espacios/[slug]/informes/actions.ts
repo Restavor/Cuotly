@@ -2,7 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 
-import { isReportCategory, isReportSectionKey, reportPeriodFor } from "@/core/reports";
+import {
+  isPlanReportPeriod,
+  isReportCategory,
+  isReportPeriodKind,
+  isReportSectionKey,
+  reportKindsFor,
+  reportPeriodFor,
+} from "@/core/reports";
 import { es } from "@/i18n/es";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -304,14 +311,20 @@ export async function generateMonthlyReport(
     const { data: space } = await supabase.from("spaces").select("id, timezone").eq("slug", slug).maybeSingle();
     if (!space) return fallo(new Error("Espacio no encontrado"));
 
-    // RN-REP-32 (decisión 83) · mes o trimestre lo decide el plan del
-    // restaurante, y lo pregunta el servidor: la pantalla no manda el
-    // periodo.
+    // RN-REP-32 y RN-CRE-26 · mes, trimestre o los dos lo decide el plan
+    // del restaurante, y lo pregunta el servidor. Con los dos, la tarjeta
+    // dice cuál de ellos genera, y solo vale si su plan lo incluye.
     const { data: periodo, error: periodoError } = await supabase.rpc("establishment_report_period", {
       p_establishment_id: establishmentId,
     });
     if (periodoError) return fallo(new Error(periodoError.message));
-    const trimestral = periodo === "quarter";
+    const tocan = reportKindsFor(typeof periodo === "string" && isPlanReportPeriod(periodo) ? periodo : "month");
+    const pedido = texto(formData, "periodKind");
+    const periodKind = pedido === "" ? tocan[0] : isReportPeriodKind(pedido) ? pedido : null;
+    if (periodKind === null || !tocan.includes(periodKind)) {
+      return fallo(new Error(es.reportsPage.monthly.periodNotInPlan));
+    }
+    const trimestral = periodKind === "quarter";
 
     // CLAUDE.md · el mes se calcula en la zona del espacio.
     const period = reportPeriodFor(trimestral ? "quarter" : "month", new Date(), space.timezone);

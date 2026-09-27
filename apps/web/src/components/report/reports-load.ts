@@ -14,12 +14,13 @@ import {
   type ReportSectionKey,
   type ReportSectionState,
   type ReportSnapshot,
-  type ReportPeriodKind,
+  type PlanReportPeriod,
   type ReportState,
+  isPlanReportPeriod,
   isReportCategory,
-  isReportPeriodKind,
   isReportSectionKey,
   isReportState,
+  reportKindsFor,
   reportPeriodFor,
 } from "@/core/reports";
 
@@ -304,15 +305,17 @@ export async function loadReportDetail(client: Supabase, reportId: string): Prom
 
 /**
  * Decisión 78 (RN-REP-27) · lo que la tarjeta "Informe del mes" de la ficha
- * necesita: el informe de operación del **último mes natural cerrado** en
- * la zona del espacio, si existe, y cuándo se generó su última versión.
+ * necesita: el informe de operación del **último periodo natural cerrado**
+ * en la zona del espacio, si existe, y cuándo se generó su última versión.
+ * Desde RN-CRE-26 un plan puede recibir el del mes **y** el del trimestre:
+ * entonces son dos tarjetas, una por periodo.
  *
  * Se busca en la lista que la ficha ya leyó, por familia y periodo exactos
  * —lo mismo que encuentra la clave de idempotencia al generarlo—, así que
  * no hace falta otra consulta para eso. La versión sí se pregunta: una
  * fila sin versión no tiene nada que subir.
  */
-export async function loadMonthlyReport(
+export async function loadPeriodReports(
   client: Supabase,
   input: {
     readonly establishmentId: string;
@@ -320,41 +323,46 @@ export async function loadMonthlyReport(
     readonly timeZone: string;
     readonly canPublish: boolean;
   },
-): Promise<MonthlyReportView> {
-  // RN-REP-32 · el periodo lo decide el plan del restaurante, y lo dice la
+): Promise<readonly MonthlyReportView[]> {
+  // RN-REP-32 y RN-CRE-26 · lo decide el plan del restaurante, y lo dice la
   // base con la misma puerta que el nivel del informe.
   const { data: periodo, error: periodoError } = await client.rpc("establishment_report_period", {
     p_establishment_id: input.establishmentId,
   });
   if (periodoError) throw new Error(`establishment_report_period: ${periodoError.message}`);
-  const periodKind: ReportPeriodKind =
-    typeof periodo === "string" && isReportPeriodKind(periodo) ? periodo : "month";
-  const period = reportPeriodFor(periodKind, new Date(), input.timeZone);
-  const fila =
-    input.reports.find(
-      (row) =>
-        row.category === "operation" && row.periodStart === period.start && row.periodEnd === period.end,
-    ) ?? null;
+  const delPlan: PlanReportPeriod =
+    typeof periodo === "string" && isPlanReportPeriod(periodo) ? periodo : "month";
 
-  let generatedAt: string | null = null;
-  if (fila !== null) {
-    const { data, error } = await client
-      .from("report_versions")
-      .select("generated_at")
-      .eq("report_id", fila.id)
-      .order("version_number", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) throw new Error(`report_versions: ${error.message}`);
-    generatedAt = data?.generated_at ?? null;
-  }
+  return Promise.all(
+    reportKindsFor(delPlan).map(async (periodKind): Promise<MonthlyReportView> => {
+      const period = reportPeriodFor(periodKind, new Date(), input.timeZone);
+      const fila =
+        input.reports.find(
+          (row) =>
+            row.category === "operation" && row.periodStart === period.start && row.periodEnd === period.end,
+        ) ?? null;
 
-  return {
-    establishmentId: input.establishmentId,
-    periodKind,
-    monthLabel: periodKind === "quarter" ? quarterName(period) : monthName(period),
-    report:
-      fila === null ? null : { id: fila.id, status: fila.status, sentAt: fila.sentAt, generatedAt },
-    canPublish: input.canPublish,
-  };
+      let generatedAt: string | null = null;
+      if (fila !== null) {
+        const { data, error } = await client
+          .from("report_versions")
+          .select("generated_at")
+          .eq("report_id", fila.id)
+          .order("version_number", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw new Error(`report_versions: ${error.message}`);
+        generatedAt = data?.generated_at ?? null;
+      }
+
+      return {
+        establishmentId: input.establishmentId,
+        periodKind,
+        monthLabel: periodKind === "quarter" ? quarterName(period) : monthName(period),
+        report:
+          fila === null ? null : { id: fila.id, status: fila.status, sentAt: fila.sentAt, generatedAt },
+        canPublish: input.canPublish,
+      };
+    }),
+  );
 }

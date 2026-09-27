@@ -327,7 +327,7 @@ export function OpportunitiesSection({
               viewer === "client"
                 ? view.access === "none"
                   ? t.clientEmptyNone
-                  : t.clientEmptyBasic
+                  : t.clientEmptyReport
                 : t.teamEmptyHint
             }
           />

@@ -4018,6 +4018,12 @@ Restavor y la ficha del servicio suelto.)*
   (`can_order_requests`): Premium deja de hacerlo. La prioridad que elige el cliente al crear una
   solicitud (RN-REQ-05) no cambia.
 
+*(Construido el 27/09/2026, punto 6, migración 153, suite 87: `report_period = 'both'` en el plan,
+versionado y ordenado trimestral < mensual < los dos en la comparativa; la ficha enseña una tarjeta de
+informe por periodo que toca y el servidor comprueba que el periodo pedido es del plan; las
+oportunidades del cliente son `none` o `report`, y un plan solo de créditos cuenta como "incluye algo".
+RN-CRE-28 es un valor del catálogo (`can_order_requests`): se pone con el catálogo de Restavor, punto 7.)*
+
 ### 41.8 Sin corrección gratis
 
 - **RN-CRE-29 (sustituye §13, RN-COR-01 a RN-COR-10; decisión 85)**: **ya no hay corrección mínima

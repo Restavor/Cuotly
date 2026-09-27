@@ -6,11 +6,25 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 a 152 aplicadas).
+Actualizado el 27/09/2026 (149 a 152 aplicadas; 153 pendiente).
 
 ## Pendiente de aplicar
 
-Nada.
+**153 · `informes_y_oportunidades`** (decisión 85, PRD §41.7, RN-CRE-26 y RN-CRE-27). Lo que hace:
+
+- **Amplía** el `check` de `plans.report_period` con `both` (se borra y se vuelve a crear
+  `plans_report_period_check`; no toca ninguna fila).
+- **Añade** `report_period_rank(text)`, interna (revocada a `public, anon, authenticated`).
+- **Redefine** con la misma firma (comparar por md5 con las de la 152 antes de aplicar):
+  `establishment_report_period`, `create_plan`, `revise_plan`, `plan_terms_diff_internal`,
+  `client_opportunity_access` y `client_sees_opportunity`. Esta última está en la política de
+  `opportunities`: conserva el `execute` de `authenticated`.
+
+En local pasan las 87 suites; la 87 (`informes_y_oportunidades.sql`) falla si el restaurante no ve una
+avanzada subida al informe, si un plan solo de créditos no ve ninguna, si ve una que el equipo no subió,
+si la comparativa no ordena trimestral < mensual < los dos o si la función nueva queda abierta (probado
+rompiendo cada una). **Hay que aplicarla antes de publicar la web con este código**: la tarjeta del
+informe y las oportunidades del cliente ya leen los valores nuevos.
 
 **Actualización del 27/09/2026: la 152** aplicada en tres partes, cortada por sus secciones (como la 149),
 con estas versiones:

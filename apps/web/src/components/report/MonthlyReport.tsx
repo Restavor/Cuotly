@@ -21,6 +21,7 @@ import {
 import { type ReportActionState, IDLE_REPORT_ACTION } from "@/app/espacios/[slug]/informes/action-state";
 import { Button, ButtonLink, Field, TextArea } from "@/components/ui";
 import { Modal } from "@/components/ui/Modal";
+import type { ReportPeriodKind } from "@/core/reports";
 import { es } from "@/i18n/es";
 
 const t = es.reportsPage;
@@ -51,10 +52,13 @@ function Aviso({ state, done }: { state: ReportActionState; done?: string }) {
 export function GenerateMonthlyButton({
   slug,
   establishmentId,
+  periodKind,
   again,
 }: {
   slug: string;
   establishmentId: string;
+  /** RN-CRE-26 · de qué periodo es la tarjeta; el servidor comprueba que toca. */
+  periodKind: ReportPeriodKind;
   again: boolean;
 }) {
   const [state, action, pending] = useActionState(generateMonthlyReport, IDLE_REPORT_ACTION);
@@ -63,6 +67,7 @@ export function GenerateMonthlyButton({
     <form action={action} className="space-y-2">
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="establishmentId" value={establishmentId} />
+      <input type="hidden" name="periodKind" value={periodKind} />
       <Button type="submit" variant={again ? "secondary" : "primary"} pending={pending}>
         {pending ? t.monthly.generating : again ? t.monthly.regenerate : t.monthly.generate}
       </Button>

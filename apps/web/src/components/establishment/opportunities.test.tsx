@@ -68,7 +68,7 @@ const IMPULSO = {
 function vista(overrides: Partial<OpportunitiesView> = {}): OpportunitiesView {
   return {
     rows: [oportunidad()],
-    access: "basic",
+    access: "report",
     plan: IMPULSO,
     remaining: { small: 14, photo: 12, medium: 3, large: 0 },
     ...overrides,
@@ -196,13 +196,13 @@ describe("§100 y P7 · lo que ve el restaurante", () => {
     cleanup();
     render(
       <OpportunitiesSection
-        view={vista({ rows: [], access: "basic" })}
+        view={vista({ rows: [], access: "report" })}
         viewer="client"
         establishmentId="est-1"
         path="/x"
       />,
     );
-    expect(screen.getByText(t.clientEmptyBasic)).toBeInTheDocument();
+    expect(screen.getByText(t.clientEmptyReport)).toBeInTheDocument();
   });
 
   it("el equipo sin ninguna ve que no ha saltado ninguna regla, no un error", () => {

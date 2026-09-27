@@ -4463,7 +4463,8 @@ export const es = {
       },
       // RN-REP-32 (decisión 83).
       reportPeriod: "Cada cuánto llega el informe",
-      reportPeriods: { month: "Mensual", quarter: "Trimestral" },
+      // RN-CRE-26 · un plan puede recibir los dos.
+      reportPeriods: { month: "Mensual", quarter: "Trimestral", both: "Mensual y trimestral" },
       yes: "Sí",
       no: "No",
       conditionsTitle: "Condiciones vigentes",
@@ -5723,6 +5724,8 @@ export const es = {
       generating: "Generando…",
       regenerateHint: "Vuelve a calcular las cifras y añade una versión nueva. La anterior se conserva.",
       regeneratedReason: "Se volvió a generar después de aprobarlo",
+      // RN-CRE-26 · la tarjeta pidió un periodo que su plan no recibe.
+      periodNotInPlan: "El plan de este restaurante no incluye ese informe.",
       publish: "Subir informe",
       publishing: "Subiendo…",
       review: "Revisar informe",
@@ -8198,8 +8201,8 @@ export const es = {
     // §101 · por qué un restaurante no ve ninguna.
     clientEmptyNone:
       "Tu plan no incluye las oportunidades detectadas sobre tus datos. El equipo las sigue viendo y puede contártelas.",
-    clientEmptyBasic:
-      "No hay ninguna oportunidad aprobada ahora mismo. Cuando el equipo apruebe una, aparecerá aquí.",
+    clientEmptyReport:
+      "No hay ninguna oportunidad en tu informe ahora mismo. Cuando el equipo te suba una, aparecerá aquí.",
     teamEmpty: "Ninguna regla ha saltado con los datos de este restaurante.",
     teamEmptyHint:
       "Las reglas se pasan una vez al día sobre las fuentes conectadas y con dato actual. Una fuente desconectada o desactualizada no dispara ninguna.",
@@ -8207,10 +8210,10 @@ export const es = {
       visible
         ? "El restaurante ve esta oportunidad."
         : "El restaurante NO ve esta oportunidad todavía.",
+    // RN-CRE-27 · sin diferencia entre básicas y avanzadas para el cliente.
     clientPlanNote: {
       none: "El plan de este restaurante no incluye ver oportunidades (§101).",
-      basic: "Su plan le deja ver las oportunidades básicas aprobadas.",
-      advanced: "Su plan le deja ver también las avanzadas.",
+      report: "Ve las oportunidades que el equipo le sube al informe.",
     },
   },
 
