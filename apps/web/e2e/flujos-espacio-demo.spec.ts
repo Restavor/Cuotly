@@ -53,7 +53,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ESPACIO = "demo";
 const RESTAURANTE_ID = "d4000000-0000-0000-0000-000000000001";
-const CLAVE = "Restavor web-demo-2026";
+const CLAVE = "Restavor-demo-2026";
 
 const EQUIPO = {
   propietaria: { email: "owner@cuotly.test", nombre: "Elena Ruiz (propietaria)" },

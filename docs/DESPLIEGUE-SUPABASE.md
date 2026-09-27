@@ -1,16 +1,35 @@
 # Estado del despliegue en Supabase
 
 Este archivo dice **qué migraciones del repositorio están aplicadas en el
-proyecto real de Supabase** (`Restavor web`, `mcajbfxhkxtdhjoyrqha`, eu-west-1).
+proyecto real de Supabase** (`Cuotly` —su nombre en Supabase, que no ha cambiado—, `mcajbfxhkxtdhjoyrqha`, eu-west-1).
 Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 a 154 aplicadas).
+Actualizado el 27/09/2026 (149 a 155 aplicadas).
 
 ## Pendiente de aplicar
 
 Nada.
+
+**Actualización del 27/09/2026: la 155** (decisión 87, la app se llama Restavor web) aplicada como
+`20260927201858 · la_app_se_llama_restavor_web`, **en su forma equivalente y no con el texto del
+archivo**. El archivo trae escritas enteras las 77 funciones cuyo texto nombraba a la app (176 KB);
+en el proyecto se aplicó un bloque que toma cada función tal como está, cambia el nombre y la vuelve a
+crear. Antes de aplicarlo se comprobó que dan lo mismo:
+
+- **Cabeceras** (argumentos, retorno, `SECURITY DEFINER`, `search_path`) de las 77: md5 idéntico al
+  del archivo (`84f0b871…`).
+- **Código** de las 77, quitando comentarios y espacios y con el nombre ya cambiado: idéntico función
+  a función. Lo único distinto son **comentarios dentro del cuerpo**, que en este proyecto faltan en
+  varias funciones porque se aplicaron sin ellos.
+- Por eso aquí fueron **75 y no 77**: `accept_quote` y `set_notification_preference` solo nombraban la
+  app en comentarios, que esta base no guarda. El primer intento exigía 77, falló y no aplicó nada.
+
+**Después**: ninguna función de `public` ni ningún artículo de `help_articles` dice el nombre antiguo;
+75 funciones y 7 artículos dicen "Restavor web"; la huella del código de las 75 (`42ecace2…`) es la
+misma que la del archivo; `create or replace` conservó los privilegios (las `_internal` siguen
+cerradas a `anon` y `authenticated`).
 
 **Actualización del 27/09/2026: la 154** aplicada entera como `20260927111552 · el_catalogo_en_creditos`.
 
@@ -2426,7 +2445,7 @@ los flujos. Es idempotente y NO es una migración (por eso vive fuera de
 datos de prueba en el historial del esquema).
 
 Está sembrado en el proyecto ahora mismo. Tres identidades, todas con la
-contraseña `Restavor web-demo-2026`:
+contraseña `Restavor-demo-2026`:
 
 | Correo | Papel |
 |---|---|

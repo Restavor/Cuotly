@@ -20,7 +20,7 @@
 # Uso, desde la raíz del repositorio y como root:
 #   bash scripts/supabase-local/arrancar.sh
 # Después se entra con cualquiera de las identidades de espacio-demo.sql
-# (contraseña Restavor web-demo-2026) en http://localhost:3999/login.
+# (contraseña Restavor-demo-2026) en http://localhost:3999/login.
 set -euo pipefail
 
 RAIZ="$(cd "$(dirname "$0")/../.." && pwd)"

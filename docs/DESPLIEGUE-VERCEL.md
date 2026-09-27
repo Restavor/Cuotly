@@ -13,7 +13,7 @@ Escrito el 02/09/2026 como preparación. **Desplegado de verdad el
 
 ## Lo que hay hoy en Vercel (20/09/2026)
 
-Dos proyectos, los dos conectados a `Restavor/Restavor web` y los dos sirviendo la
+Dos proyectos, los dos conectados a `Restavor/Cuotly` (el repositorio sigue llamándose así) y los dos sirviendo la
 rama `claude/cuotly-supabase-migrations-tests-q8o18p`:
 
 | Proyecto | Qué sirve | Raíz | Dirección |

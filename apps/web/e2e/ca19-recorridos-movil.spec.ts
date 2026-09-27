@@ -56,7 +56,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ESPACIO = "demo";
 const CAFE_ID = "d4000000-0000-0000-0000-000000000002";
-const CLAVE = "Restavor web-demo-2026";
+const CLAVE = "Restavor-demo-2026";
 
 const PROPIETARIA = "owner@cuotly.test";
 const TRABAJADORA = "trabajadora@cuotly.test";
