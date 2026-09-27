@@ -6,9 +6,29 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149, 150 y 151 aplicadas; 152 pendiente).
+Actualizado el 27/09/2026 (149 a 152 aplicadas).
 
 ## Pendiente de aplicar
+
+Nada.
+
+**Actualización del 27/09/2026: la 152** aplicada en tres partes, cortada por sus secciones (como la 149),
+con estas versiones:
+
+- `20260927084715 · menu_diario_dentro_del_plan_p1_plan_y_publicacion_sin_consumo` (secciones 1 y 2, líneas 1–387)
+- `20260927084944 · menu_diario_dentro_del_plan_p2_uno_por_fecha_plantillas_y_editar_publicado` (secciones 3 a 5, líneas 388–870)
+- `20260927085211 · menu_diario_dentro_del_plan_p3_sin_corte_y_planes_con_menu_diario` (secciones 6 y 7, líneas 871–final)
+
+**Antes de aplicar**: el corte se probó en una base local construida hasta la 151 (aplicada en tres
+partes da las mismas funciones, permisos y `security definer` que entera). Las 17 funciones que redefine
+o cuya firma cambia estaban en producción como en la 151: catorce idénticas; `cancel_menu`,
+`menu_update_balance` y `request_menu_publication` solo diferían en comentarios y espacios (md5 igual sin
+ellos). Las tres nuevas no existían. En vivo no había ningún menú ni ninguna plantilla, así que los dos
+índices únicos no podían chocar con nada. **Después**: las 20 funciones (cuerpo, `proacl` y
+`security definer`) dan el mismo md5 que en local, y también las cuatro columnas, los dos índices y los
+privilegios de columna de `menu_templates.purpose`.
+
+Lo que decía esta sección antes de aplicarla:
 
 **152 · `menu_diario_dentro_del_plan`** (decisiones 85 y 86, PRD §41.6, RN-CRE-21 a 24 y 30). Lo que hace:
 
