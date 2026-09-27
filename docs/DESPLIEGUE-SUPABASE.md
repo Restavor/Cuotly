@@ -6,9 +6,34 @@ Existe porque el repositorio y el proyecto pueden ir desacompasados, y
 adivinarlo mirando el esquema es justo la clase de suposición que ha
 costado caro en este proyecto.
 
-Actualizado el 27/09/2026 (149 a 153 aplicadas; 154 pendiente).
+Actualizado el 27/09/2026 (149 a 154 aplicadas).
 
 ## Pendiente de aplicar
+
+Nada.
+
+**Actualización del 27/09/2026: la 154** aplicada entera como `20260927111552 · el_catalogo_en_creditos`.
+
+**Antes**:
+- `create_restavor_space` y `assert_service_terms` eran las de la 153 (md5 idéntico).
+- `services_daily_menu_has_updates` existía.
+- No había ninguna suscripción en el proyecto.
+- El catálogo era el de la 148 (Impulso 299 € 6/6/1/0, Premium 499 € 10/12/2/0 y ordenando, Menú
+  Diario 229 € / 199 € con 30).
+- Las cuatro guías tenían el texto de antes.
+
+**Después**:
+- Las tres funciones (cuerpo, `proacl` y `security definer`) dan el mismo md5 que en local.
+- El `check` ya no está.
+- El catálogo es:
+  - Básico: 20 €, 0 créditos, 48 h, turno 0, trimestral (sin tocar).
+  - Impulso: 99 €, 40 medios créditos, 0/0/0/0, 24 h, turno 1, `both`, con Menú Diario.
+  - Premium: 199 €, 80 medios créditos, 0/0/0/0, 24 h, turno 2, sin ordenar, `both`, con Menú Diario.
+  - Menú Diario: 199 €, sin precio reducido y 0.
+- Hay tres apuntes con `via` de la 154.
+- Las cuatro guías subieron una versión.
+
+Lo que decía esta sección antes de aplicarla:
 
 **154 · `el_catalogo_en_creditos`** (decisión 85, PRD §6.1 y §41). Lo que hace:
 
