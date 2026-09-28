@@ -616,3 +616,7 @@ para y avisa: eso sería la cola abierta a internet.
   "Cargando…" enseguida, en vez de nada.
 - **Pendiente de comprobar** tras el despliegue: que el `x-vercel-id` de una respuesta termine en
   `dub1::…` (desde este entorno `*.vercel.app` está bloqueado por política de red).
+- **¿Y en España?** Se valoró el 28/09/2026 y se descartó de momento: ni Vercel ni Supabase tienen
+  región en España, y llevarlo allí obliga a dejar los dos servicios gestionados y montarlo por
+  cuenta propia (Google Cloud y Azure en Madrid, AWS en Aragón). Irlanda es la UE y el RGPD aplica
+  igual. Se reabre solo si un cliente o un contrato exige que los datos estén en España.
