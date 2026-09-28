@@ -620,3 +620,52 @@ para y avisa: eso sería la cola abierta a internet.
   región en España, y llevarlo allí obliga a dejar los dos servicios gestionados y montarlo por
   cuenta propia (Google Cloud y Azure en Madrid, AWS en Aragón). Irlanda es la UE y el RGPD aplica
   igual. Se reabre solo si un cliente o un contrato exige que los datos estén en España.
+
+## 28/09/2026 · el dominio: `app.restavor.com`
+
+Bosco tiene `restavor.com` en **GoDaddy**, con su web en la raíz y su correo
+(`info@restavor.com`) en el mismo dominio. La app va en un **subdominio** y
+no toca ni la web ni el correo.
+
+| Dirección | Proyecto | Estado |
+|---|---|---|
+| `restavor.com`, `www.restavor.com` | La web de Restavor (fuera de Vercel) | Sin cambios |
+| `app.restavor.com` | `cuotly-web` | Añadido en Vercel el 28/09/2026; falta el CNAME en GoDaddy |
+| `movil.restavor.com` | `cuotly-movil` | Añadido en Vercel el 28/09/2026; **sin CNAME a propósito**, ver abajo |
+
+**En GoDaddy solo se añade un registro CNAME. Nunca se cambian los
+*nameservers* a Vercel**: se perderían los registros MX y dejaría de llegar el
+correo de `info@restavor.com`. Registro: tipo `CNAME`, nombre `app`, valor
+`cname.vercel-dns.com` (si el panel de Vercel, en *Settings → Domains*,
+enseña otro valor para `app.restavor.com`, manda el del panel). El
+certificado HTTPS lo emite Vercel solo en cuanto el CNAME resuelve.
+
+**`movil.restavor.com` no hace falta.** Desde la decisión 77, `cuotly-movil`
+solo redirige a la web (`apps/mobile/vercel.json`), y la versión móvil es
+`app.restavor.com` abierta en el teléfono. Si algún día se quiere, lo limpio
+es poner ese subdominio en `cuotly-web` como redirección a `app.restavor.com`,
+no apuntarlo a `cuotly-movil`, cuya rama de producción no es la de trabajo.
+
+**Qué se cambia cuando `app.restavor.com` responda** (antes no: cambiarlo con
+el dominio sin resolver rompe los enlaces de los correos y el OAuth):
+
+1. Vercel, `cuotly-web`: `NEXT_PUBLIC_SITE_URL=https://app.restavor.com` y
+   redesplegar (va incrustada en el cliente).
+2. Supabase → *Authentication → URL Configuration*: *Site URL*
+   `https://app.restavor.com` y añadir `https://app.restavor.com/**` a las
+   *Redirect URLs*. `cuotly-web.vercel.app` se deja en la lista mientras
+   alguien pueda entrar por ahí.
+3. Google Cloud → el cliente OAuth: añadir la *redirect URI*
+   `https://app.restavor.com/api/integraciones/oauth/callback` (sin quitar
+   la antigua hasta comprobar la nueva).
+4. `EXPO_PUBLIC_WEB_URL=https://app.restavor.com` para la app nativa.
+5. Correo: verificar `restavor.com` en Resend (sus registros DKIM y el
+   subdominio de envío no tocan el MX de `info@`) y poner
+   `RESEND_FROM=Restavor web <avisos@restavor.com>`. Resuelve de paso
+   el remitente mal escrito de más arriba.
+
+**Coste:** ninguno por el dominio. Los subdominios son gratis en GoDaddy y
+los dominios propios, gratis en todos los planes de Vercel. Aparte, y sin
+relación con el dominio: la cuenta de Vercel está en **Hobby**, que según
+las condiciones de Vercel es para uso no comercial; a un producto con
+clientes le corresponde **Pro**.
