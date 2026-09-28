@@ -47,7 +47,7 @@ export default async function GlobalLayout({ children }: { children: React.React
    * Si la bandeja no se puede leer, la barra sale sin número. Un cero sería
    * afirmar que no hay nada sin saberlo (CLAUDE.md, CA-20).
    */
-  const [conversaciones, { data: rows }, { data: profile }] = await Promise.all([
+  const [conversaciones, { data: rows }, { profile, userAvatarUrl }] = await Promise.all([
     myConversations(supabase).catch(() => null),
     supabase
       .from("notifications")
@@ -55,12 +55,21 @@ export default async function GlobalLayout({ children }: { children: React.React
       .eq("recipient_id", user.id)
       .order("created_at", { ascending: false })
       .limit(20),
-    supabase.from("profiles").select("full_name, email, avatar_path").eq("id", user.id).maybeSingle(),
+    // La foto va encadenada a su perfil, que es quien sabe la ruta: así se
+    // firma sin esperar a la bandeja ni a las notificaciones.
+    supabase
+      .from("profiles")
+      .select("full_name, email, avatar_path")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(async ({ data }) => ({
+        profile: data,
+        userAvatarUrl: await avatarLink(supabase.storage, data?.avatar_path ?? null),
+      })),
   ]);
 
   const userLabel = profile?.full_name?.trim() || profile?.email || user.email || "";
   const userInitial = (userLabel.trim()[0] ?? "·").toUpperCase();
-  const userAvatarUrl = await avatarLink(supabase.storage, profile?.avatar_path ?? null);
 
   const notifications: ShellNotification[] = (rows ?? []).map((row) => ({
     id: row.id,

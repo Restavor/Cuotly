@@ -24,3 +24,4 @@ export { EntityCell } from "./EntityCell";
 export { Modal } from "./Modal";
 export { ToastProvider, useToast } from "./Toast";
 export { LoadingState, EmptyState, ErrorState, NoPermissionState } from "./States";
+export { PageLoading } from "./PageLoading";

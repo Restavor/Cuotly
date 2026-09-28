@@ -48,41 +48,52 @@ export default async function SpaceLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: space } = await supabase
-    .from("spaces")
-    .select("id, name, slug")
-    .eq("slug", slug)
-    .maybeSingle();
-
-  // El rol y el restaurante salen de `resolveShellViewer()`, compartido con
-  // la pantalla "Más": las dos tienen que responder lo mismo o la barra de
-  // móvil y su desbordamiento acabarían discrepando.
-  const { role, establishmentId, supportSession } = await resolveShellViewer(supabase, user.id, slug);
-
-  const { data: rows } = await supabase
-    .from("notifications")
-    .select("id, event_type, deep_link, read_at")
-    .eq("recipient_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(20);
-
-  // Nombre, inicial y foto de quien mira, para el avatar de la cabecera.
-  // Salen de `profiles`, no del token: el nombre lo edita la persona y el
-  // correo es el respaldo cuando todavía no lo ha puesto.
-  //
-  // RN-GLO-09 · la foto es la propia, así que aquí no hay ninguna frontera
-  // que cuidar: `profiles_select` deja leer la fila de uno siempre. El
-  // enlace se firma en el servidor y dura una hora; si el almacenamiento
-  // no contesta, `avatarLink` devuelve `null` y se pinta la inicial.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, email, avatar_path")
-    .eq("id", user.id)
-    .maybeSingle();
+  /*
+   * Todo lo que el armazón necesita se pregunta **a la vez**, no una cosa
+   * detrás de otra: son lecturas independientes, y en serie cada una
+   * sumaba un viaje completo a la base antes de pintar nada. La foto va
+   * encadenada a su perfil porque necesita la ruta que este devuelve.
+   */
+  const [{ data: space }, viewer, { data: rows }, { profile, userAvatarUrl }, { data: contextos }] =
+    await Promise.all([
+      supabase.from("spaces").select("id, name, slug").eq("slug", slug).maybeSingle(),
+      // El rol y el restaurante salen de `resolveShellViewer()`, compartido con
+      // la pantalla "Más": las dos tienen que responder lo mismo o la barra de
+      // móvil y su desbordamiento acabarían discrepando.
+      resolveShellViewer(supabase, user.id, slug),
+      supabase
+        .from("notifications")
+        .select("id, event_type, deep_link, read_at")
+        .eq("recipient_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      // Nombre, inicial y foto de quien mira, para el avatar de la cabecera.
+      // Salen de `profiles`, no del token: el nombre lo edita la persona y el
+      // correo es el respaldo cuando todavía no lo ha puesto.
+      //
+      // RN-GLO-09 · la foto es la propia, así que aquí no hay ninguna frontera
+      // que cuidar: `profiles_select` deja leer la fila de uno siempre. El
+      // enlace se firma en el servidor y dura una hora; si el almacenamiento
+      // no contesta, `avatarLink` devuelve `null` y se pinta la inicial.
+      supabase
+        .from("profiles")
+        .select("full_name, email, avatar_path")
+        .eq("id", user.id)
+        .maybeSingle()
+        .then(async ({ data }) => ({
+          profile: data,
+          userAvatarUrl: await avatarLink(supabase.storage, data?.avatar_path ?? null),
+        })),
+      /*
+       * Móvil · la tarjeta de contexto despliega TODOS los espacios y paneles
+       * de quien mira, para saltar entre ellos (ver más abajo).
+       */
+      supabase.rpc("my_contexts"),
+    ]);
+  const { role, establishmentId, supportSession } = viewer;
 
   const userLabel = profile?.full_name?.trim() || profile?.email || user.email || "";
   const userInitial = (userLabel.trim()[0] ?? "·").toUpperCase();
-  const userAvatarUrl = await avatarLink(supabase.storage, profile?.avatar_path ?? null);
 
   /*
    * RN-PAN-03 y RN-PAN-04 · lo que el panel del restaurante necesita para
@@ -104,7 +115,6 @@ export default async function SpaceLayout({
    * ahora se pregunta para todos. Si falla, la lista queda vacía y la
    * tarjeta se pinta sin desplegable: la vuelta al Inicio global sigue ahí.
    */
-  const { data: contextos } = await supabase.rpc("my_contexts");
   const contexts: ShellContext[] = (contextos ?? []).flatMap((c): ShellContext[] => {
     if (c.kind === "space") {
       return [

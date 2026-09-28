@@ -596,3 +596,23 @@ para y avisa: eso sería la cola abierta a internet.
   inicio de sesión correcto; la arreglada pasa a "¿Dónde quieres entrar?" con un solo inicio de
   sesión y pide `my_contexts`.
 
+
+## 28/09/2026 · la app tardaba en cargar: las funciones estaban en Washington
+
+- **Síntoma:** cada pantalla tardaba en aparecer, y al pulsar un enlace la anterior se quedaba
+  congelada hasta que llegaba la nueva entera.
+- **Causa principal:** la base de Supabase está en **Irlanda** (`eu-west-1`) y las funciones de
+  Vercel se ejecutaban en la región por defecto, **Washington** (`iad1`; lo dice el registro de
+  compilación: "Running build in Washington, D.C., USA (East) – iad1"). Cada consulta cruzaba el
+  Atlántico ida y vuelta, y una pantalla hace muchas —el proxy, el armazón y la página, varias de
+  ellas una detrás de otra—. Los usuarios, en España, también cruzaban el Atlántico para llegar a
+  la función.
+- **Arreglo:** `apps/web/vercel.json` fija `"regions": ["dub1"]` (Dublín, al lado de `eu-west-1`).
+  El plan Hobby admite elegir una región. No hay que tocar nada en el panel: se aplica en el
+  siguiente despliegue.
+- **Además, en el código:** el armazón del espacio y el Inicio lanzan a la vez las lecturas que no
+  dependen unas de otras (antes iban en serie), y el armazón del espacio, el global y el de
+  Administración tienen `loading.tsx`: al pulsar un enlace se ve el hueco de la pantalla con
+  "Cargando…" enseguida, en vez de nada.
+- **Pendiente de comprobar** tras el despliegue: que el `x-vercel-id` de una respuesta termine en
+  `dub1::…` (desde este entorno `*.vercel.app` está bloqueado por política de red).

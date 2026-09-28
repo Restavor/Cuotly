@@ -80,13 +80,18 @@ export default async function SpacePage({
   // de verdad la hace RLS —las consultas volverían vacías igual—, pero
   // decir "sin acceso" es más honesto que enseñar ceros como si no hubiera
   // trabajo (CA-20).
-  const { data: membership } = await supabase
-    .from("space_memberships")
-    .select("role")
-    .eq("space_id", space.id)
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+  //
+  // El nombre del saludo se pide a la vez: no depende de la pertenencia.
+  const [{ data: membership }, { data: perfil }] = await Promise.all([
+    supabase
+      .from("space_memberships")
+      .select("role")
+      .eq("space_id", space.id)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle(),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+  ]);
 
   if (!membership) {
     return (
@@ -97,35 +102,31 @@ export default async function SpacePage({
     );
   }
 
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
   const nombre = (perfil?.full_name ?? "").trim().split(" ")[0] ?? "";
 
   const now = new Date();
-  const home = await loadSpaceHome(supabase, space.id, space.slug, now);
   const base = `/espacios/${space.slug}`;
 
-  // §9 · cuántos pasos quedan. La función comprueba el permiso por su
-  // cuenta (RN-CIC-03) y devuelve error a quien no es el propietario, así
-  // que un fallo aquí significa "no es para ti" y se trata como tal: no
-  // se pinta el aviso.
-  const { data: pasos } = await supabase.rpc("space_onboarding_progress", {
-    p_space_id: space.id,
-  });
+  // Las tres lecturas del resumen son independientes y van a la vez: en
+  // serie, cada una esperaba a la anterior antes de salir hacia la base.
+  const [home, { data: pasos }, { count: incidenciasEsperan }] = await Promise.all([
+    loadSpaceHome(supabase, space.id, space.slug, now, space.timezone),
+    // §9 · cuántos pasos quedan. La función comprueba el permiso por su
+    // cuenta (RN-CIC-03) y devuelve error a quien no es el propietario, así
+    // que un fallo aquí significa "no es para ti" y se trata como tal: no
+    // se pinta el aviso.
+    supabase.rpc("space_onboarding_progress", { p_space_id: space.id }),
+    // §20.4, RN-SOP-15 · las incidencias a Restavor web que esperan algo del
+    // espacio: contestar a "necesita información" o dar por buena una
+    // resolución. La RLS de `incidents` decide quién las ve: un trabajador
+    // recibe cero y no ve la tarjeta, sin ninguna regla de permiso aquí.
+    supabase
+      .from("incidents")
+      .select("id", { count: "exact", head: true })
+      .eq("space_id", space.id)
+      .in("status", ["needs_information", "resolved"]),
+  ]);
   const onboardingPendiente = pasos === null ? null : pasos.filter((p) => !p.done).length;
-
-  // §20.4, RN-SOP-15 · las incidencias a Restavor web que esperan algo del
-  // espacio: contestar a "necesita información" o dar por buena una
-  // resolución. La RLS de `incidents` decide quién las ve: un trabajador
-  // recibe cero y no ve la tarjeta, sin ninguna regla de permiso aquí.
-  const { count: incidenciasEsperan } = await supabase
-    .from("incidents")
-    .select("id", { count: "exact", head: true })
-    .eq("space_id", space.id)
-    .in("status", ["needs_information", "resolved"]);
 
   return (
     <div className="space-y-6">

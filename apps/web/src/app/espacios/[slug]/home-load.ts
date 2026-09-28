@@ -573,9 +573,18 @@ export async function loadSpaceHome(
   spaceId: string,
   spaceSlug: string,
   now: Date = new Date(),
+  /**
+   * La zona del espacio, si quien llama ya la ha leído (el Inicio la tiene
+   * de su propia consulta a `spaces`): así no se vuelve a preguntar a la
+   * base antes de lanzar el resto de lecturas.
+   */
+  knownTimeZone?: string,
 ): Promise<SpaceHome> {
-  const { data: spaceRow } = await supabase.from("spaces").select("timezone").eq("id", spaceId).maybeSingle();
-  const timeZone = spaceRow?.timezone ?? "Europe/Madrid";
+  const timeZone =
+    knownTimeZone ??
+    (await supabase.from("spaces").select("timezone").eq("id", spaceId).maybeSingle()).data
+      ?.timezone ??
+    "Europe/Madrid";
 
   /** Hoy y el mes en curso, **en la zona del espacio** (CLAUDE.md). */
   const hoy = dayKeyInTimeZone(now, timeZone);
@@ -688,15 +697,31 @@ export async function loadSpaceHome(
   */
   const cicloRows = ciclos ?? [];
   const usoPorRestaurante = new Map<string, CycleUsage>();
-  if (cicloRows.length > 0) {
-    const { data: apuntes } = await supabase
-      .from("consumption_entries")
-      .select("consumption_cycle_id, category, amount")
-      .in(
-        "consumption_cycle_id",
-        cicloRows.map((c) => c.id),
-      );
 
+  /*
+    RN-EST-18 · las fotos del "Estado por restaurante", en UNA llamada para
+    todas: una por fila serían tantos viajes como restaurantes tenga el
+    espacio solo para pintar la columna de la izquierda. Salen a la vez que
+    los apuntes de los ciclos: ninguna de las dos espera a la otra.
+  */
+  const [{ data: apuntes }, fotos] = await Promise.all([
+    cicloRows.length > 0
+      ? supabase
+          .from("consumption_entries")
+          .select("consumption_cycle_id, category, amount")
+          .in(
+            "consumption_cycle_id",
+            cicloRows.map((c) => c.id),
+          )
+      : Promise.resolve({ data: null }),
+    loadEstablishmentPhotos(
+      supabase,
+      supabase.storage,
+      attention.establishments.map((e) => e.id),
+    ),
+  ]);
+
+  if (cicloRows.length > 0) {
     for (const ciclo of cicloRows) {
       const suyos = (apuntes ?? []).filter((a) => a.consumption_cycle_id === ciclo.id);
       usoPorRestaurante.set(
@@ -765,17 +790,6 @@ export async function loadSpaceHome(
   // quién lo hizo (CLAUDE.md MUST NOT). Quién hizo qué sale de la
   // auditoría, que tiene su propia pantalla y su propio permiso.
   // ------------------------------------------------------------------
-  /*
-    RN-EST-18 · las fotos del "Estado por restaurante", en UNA llamada para
-    todas: una por fila serían tantos viajes como restaurantes tenga el
-    espacio solo para pintar la columna de la izquierda.
-  */
-  const fotos = await loadEstablishmentPhotos(
-    supabase,
-    supabase.storage,
-    attention.establishments.map((e) => e.id),
-  );
-
   const establishmentName = new Map(attention.establishments.map((e) => [e.id, e.name]));
   const jobById = new Map(attention.openJobs.map((j) => [j.id, j]));
   const activity: ActivityEntry[] = (events ?? []).map((event) => {
