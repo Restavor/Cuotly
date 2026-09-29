@@ -630,7 +630,7 @@ no toca ni la web ni el correo.
 | Dirección | Proyecto | Estado |
 |---|---|---|
 | `restavor.com`, `www.restavor.com` | La web de Restavor (fuera de Vercel) | Sin cambios |
-| `app.restavor.com` | `cuotly-web` | Añadido en Vercel el 28/09/2026; falta el CNAME en GoDaddy |
+| `app.restavor.com` | `cuotly-web` | **En marcha.** CNAME `app` en GoDaddy, certificado emitido, entrada comprobada por Bosco el 29/09/2026 |
 | `movil.restavor.com` | `cuotly-movil` | Añadido en Vercel el 28/09/2026; **sin CNAME a propósito**, ver abajo |
 
 **En GoDaddy solo se añade un registro CNAME. Nunca se cambian los
@@ -669,3 +669,18 @@ los dominios propios, gratis en todos los planes de Vercel. Aparte, y sin
 relación con el dominio: la cuenta de Vercel está en **Hobby**, que según
 las condiciones de Vercel es para uso no comercial; a un producto con
 clientes le corresponde **Pro**.
+
+### Cierre del 29/09/2026
+
+- El CNAME `app` de GoDaddy apunta a `cname.vercel-dns.com`. Vercel recomienda ahora
+  `954bcc2a5f516c1a.vercel-dns-017.com` (rango nuevo de IP); el antiguo "seguirá funcionando", así que
+  el cambio es opcional. La web (`@`, `www`), el correo (`MX`) y los registros de Resend
+  (`mail.restavor.com`) no se tocaron.
+- `NEXT_PUBLIC_SITE_URL` de `cuotly-web` (producción) pasó a `https://app.restavor.com`. Va incrustada
+  al compilar, así que hizo falta una compilación nueva.
+- Supabase, *Redirect URLs*: `https://app.restavor.com/**` y `https://cuotly-web.vercel.app/**`. La
+  *Site URL* de Supabase **sigue siendo la antigua**; pasarla a `https://app.restavor.com` es lo último.
+- **Resend verifica `mail.restavor.com`, no `restavor.com`**: el remitente tiene que ser
+  `Restavor web <avisos@mail.restavor.com>`. Pendiente: comprobar que Resend lo da por verificado y
+  corregir `RESEND_FROM`.
+- Pendiente de Google Cloud: la redirect URI `https://app.restavor.com/api/integraciones/oauth/callback`.
