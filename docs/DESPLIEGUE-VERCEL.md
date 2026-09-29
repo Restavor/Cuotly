@@ -680,9 +680,12 @@ clientes le corresponde **Pro**.
   al compilar, así que hizo falta una compilación nueva.
 - Supabase, *Redirect URLs*: `https://app.restavor.com/**` y `https://cuotly-web.vercel.app/**`. La
   *Site URL* de Supabase **sigue siendo la antigua**; pasarla a `https://app.restavor.com` es lo último.
-- **Resend verifica `mail.restavor.com`, no `restavor.com`**: el remitente tiene que ser
-  `Restavor web <avisos@mail.restavor.com>`. **Hecho el 29/09/2026**: Bosco verificó el dominio en
-  Resend y `RESEND_FROM` (producción y preview) se cambió a ese valor. La cola de correos estaba vacía
+- **Remitente: `Restavor web <avisos@restavor.com>`** (lo fijó Bosco el 29/09/2026). Ojo: los registros
+  DNS que había en GoDaddy el 28/09 eran de `mail.restavor.com` (`resend._domainkey.mail`,
+  `send.mail`), y Resend solo deja enviar desde un dominio verificado. Si en Resend solo figura
+  `mail.restavor.com`, hay que verificar también `restavor.com` (o cambiar el remitente a
+  `avisos@mail.restavor.com`), o el primer envío fallará con "domain not verified". `RESEND_FROM`
+  (producción y preview) se cambió a ese valor. La cola de correos estaba vacía
   (`notification_deliveries` y `platform_emails` sin filas), así que no había nada atascado que
   pudiera rebotar. Falta el primer envío real: hazlo con una solicitud de acceso de prueba.
 - Pendiente de Google Cloud: la redirect URI `https://app.restavor.com/api/integraciones/oauth/callback`.
