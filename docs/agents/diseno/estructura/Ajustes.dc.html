@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Horarios y aforo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;background:#F7F5F1;color:#26292B}
+a{color:#2F6690}a:hover{color:#234E6E}
+.tnum{font-variant-numeric:tabular-nums}
+.card{background:#FFFFFF;border:1px solid #E4E0D8;border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.h{margin:0;font-size:16px;font-weight:700}
+.help{font-size:13px;color:#5F6368;line-height:1.4}
+.opt{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 10px;box-sizing:border-box;border-radius:12px;border:1px solid #D9D4CA;background:#FFFFFF;color:#26292B;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
+.opt:hover{background:#F1EEE8}
+.opt[aria-pressed="true"]{background:#3F7A5C;border-color:#3F7A5C;color:#FFFFFF}
+.inp{height:44px;box-sizing:border-box;border:1px solid #D9D4CA;border-radius:10px;padding:0 10px;font:inherit;font-size:15px;color:#26292B;background:#FFFFFF;width:100%}
+.mini{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:#5F6368}
+.step{display:inline-flex;align-items:center;border:1px solid #D9D4CA;border-radius:12px;overflow:hidden;background:#FFFFFF}
+.step button{width:44px;height:44px;border:0;background:#FFFFFF;font:inherit;font-size:20px;font-weight:600;color:#26292B;cursor:pointer}
+.step button:hover{background:#F1EEE8}
+.step span{min-width:44px;text-align:center;font-weight:700;font-size:16px}
+.tab{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:600;color:#5F6368;text-decoration:none;white-space:nowrap}
+.tab[aria-current="page"]{background:#26292B;color:#FFFFFF}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border-radius:14px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;text-decoration:none;border:1px solid transparent;box-sizing:border-box}
+.btn-primary{background:#3F7A5C;color:#FFFFFF}
+.btn-primary:hover{background:#346B4F}
+.link{font:inherit;font-size:15px;font-weight:700;color:#2F5E46;background:none;border:0;padding:10px 0;cursor:pointer;text-align:left}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;color:#26292B;text-decoration:none;border:0;background:transparent;cursor:pointer}
+.iconbtn:hover{background:#EDE9E2;color:#26292B}
+.iconbtn svg{width:22px;height:22px}
+.sw{position:relative;width:52px;height:32px;border-radius:999px;background:#3F7A5C;border:0;cursor:pointer;flex-shrink:0}
+.sw::after{content:"";position:absolute;top:4px;left:24px;width:24px;height:24px;border-radius:999px;background:#FFFFFF}
+</style>
+</helmet>
+<div style="width: 390px; height: 1440px; box-sizing: border-box; display: flex; flex-direction: column; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 8px; padding: 12px 12px 4px">
+<a class="iconbtn" href="Main.dc.html" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<h1 style="margin: 0; font-size: 20px; font-weight: 700">Ajustes</h1>
+</header>
+
+<nav aria-label="Secciones de ajustes" style="display: flex; gap: 4px; padding: 4px 16px 8px">
+<a class="tab" href="Ajustes.dc.html" aria-current="page">Horarios</a>
+<a class="tab" href="AjustesEquipo.dc.html">Equipo</a>
+<a class="tab" href="AjustesConexiones.dc.html">Conexiones</a>
+<a class="tab" href="AjustesPlan.dc.html">Plan</a>
+</nav>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 12px">
+
+<section class="card">
+<h2 class="h">Días que abrís</h2>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+<sc-for list="{{dias}}" as="d" hint-placeholder-count="7">
+<button class="opt" type="button" aria-pressed="{{d.on}}" onClick="{{d.pick}}" aria-label="{{d.full}}">{{d.l}}</button>
+</sc-for>
+</div>
+<span class="help">Atajo: abre o cierra ese día en todos los turnos. Abajo puedes elegir los días de cada turno.</span>
+</section>
+
+<section class="card">
+<h2 class="h">Turnos y aforo</h2>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; border-bottom: 1px solid #EFEBE4">
+<div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 15px; font-weight: 700; flex-grow: 1">Comida</span></div>
+<div role="group" aria-label="Días de la comida" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+<button class="opt" type="button" aria-pressed="false" aria-label="Lunes" style="min-height: 40px; font-size: 13px">L</button><button class="opt" type="button" aria-pressed="true" aria-label="Martes" style="min-height: 40px; font-size: 13px">M</button><button class="opt" type="button" aria-pressed="true" aria-label="Miércoles" style="min-height: 40px; font-size: 13px">X</button><button class="opt" type="button" aria-pressed="true" aria-label="Jueves" style="min-height: 40px; font-size: 13px">J</button><button class="opt" type="button" aria-pressed="true" aria-label="Viernes" style="min-height: 40px; font-size: 13px">V</button><button class="opt" type="button" aria-pressed="true" aria-label="Sábado" style="min-height: 40px; font-size: 13px">S</button><button class="opt" type="button" aria-pressed="true" aria-label="Domingo" style="min-height: 40px; font-size: 13px">D</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<label class="mini">Abre<input class="inp tnum" type="time" value="13:00"></label>
+<label class="mini">Cierra<input class="inp tnum" type="time" value="16:00"></label>
+<label class="mini">Última reserva<input class="inp tnum" type="time" value="15:00"></label>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 14px; font-weight: 600; flex-grow: 1">Máximo de personas</span>
+<div class="step"><button type="button" aria-label="Menos">−</button><span class="tnum">40</span><button type="button" aria-label="Más">+</button></div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px"><span style="font-size: 15px; font-weight: 700; flex-grow: 1">Cena</span></div>
+<div role="group" aria-label="Días de la cena" style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+<button class="opt" type="button" aria-pressed="false" aria-label="Lunes" style="min-height: 40px; font-size: 13px">L</button><button class="opt" type="button" aria-pressed="true" aria-label="Martes" style="min-height: 40px; font-size: 13px">M</button><button class="opt" type="button" aria-pressed="true" aria-label="Miércoles" style="min-height: 40px; font-size: 13px">X</button><button class="opt" type="button" aria-pressed="true" aria-label="Jueves" style="min-height: 40px; font-size: 13px">J</button><button class="opt" type="button" aria-pressed="true" aria-label="Viernes" style="min-height: 40px; font-size: 13px">V</button><button class="opt" type="button" aria-pressed="true" aria-label="Sábado" style="min-height: 40px; font-size: 13px">S</button><button class="opt" type="button" aria-pressed="true" aria-label="Domingo" style="min-height: 40px; font-size: 13px">D</button>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<label class="mini">Abre<input class="inp tnum" type="time" value="20:00"></label>
+<label class="mini">Cierra<input class="inp tnum" type="time" value="23:30"></label>
+<label class="mini">Última reserva<input class="inp tnum" type="time" value="22:30"></label>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 14px; font-weight: 600; flex-grow: 1">Máximo de personas</span>
+<div class="step"><button type="button" aria-label="Menos">−</button><span class="tnum">60</span><button type="button" aria-label="Más">+</button></div>
+</div>
+</div>
+
+<button class="link" type="button">+ Añadir turno (desayunos, meriendas…)</button>
+</section>
+
+<section class="card">
+<h2 class="h">Horas de reserva</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button class="opt" type="button" aria-pressed="{{i15}}" onClick="{{pick15}}">Cada 15 min</button>
+<button class="opt" type="button" aria-pressed="{{i30}}" onClick="{{pick30}}">Cada 30 min</button>
+</div>
+</section>
+
+<section class="card">
+<h2 class="h">Grupos grandes</h2>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 14px; font-weight: 600; flex-grow: 1">Pendiente a partir de</span>
+<div class="step"><button type="button" aria-label="Menos" onClick="{{menos}}">−</button><span class="tnum">{{grupo}}</span><button type="button" aria-label="Más" onClick="{{mas}}">+</button></div>
+</div>
+<span class="help">Las reservas de {{grupo}} o más personas que lleguen del agente o de la web quedan <strong>Pendientes</strong> hasta que las confirméis.</span>
+</section>
+
+<section class="card">
+<h2 class="h">Días cerrados</h2>
+<div style="display: flex; align-items: center; gap: 8px">
+<span class="tnum" style="font-size: 15px; flex-grow: 1"><strong>12 oct</strong> · Fiesta Nacional</span>
+<button class="iconbtn" type="button" aria-label="Quitar 12 de octubre"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18"></path><path d="M6 6l12 12"></path></svg></button>
+</div>
+<button class="link" type="button">+ Añadir día cerrado</button>
+</section>
+
+<section class="card">
+<h2 class="h">Límites para el agente y la web</h2>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 14px; font-weight: 600; flex-grow: 1">Reservar con al menos</span>
+<div class="step"><button type="button" aria-label="Menos">−</button><span class="tnum" style="min-width: 60px">2 h</span><button type="button" aria-label="Más">+</button></div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 14px; font-weight: 600; flex-grow: 1">Y como mucho a</span>
+<div class="step"><button type="button" aria-label="Menos">−</button><span class="tnum" style="min-width: 60px">60 días</span><button type="button" aria-label="Más">+</button></div>
+</div>
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-size: 14px; font-weight: 600; flex-grow: 1">Cancelar desde el enlace hasta</span>
+<div class="step"><button type="button" aria-label="Menos">−</button><span class="tnum" style="min-width: 60px">2 h antes</span><button type="button" aria-label="Más">+</button></div>
+</div>
+<span class="help">Las reservas a mano no tienen límites.</span>
+</section>
+
+</div>
+
+<div style="padding: 12px 16px 20px; border-top: 1px solid #E4E0D8">
+<button class="btn btn-primary" type="button" style="width: 100%">Guardar cambios</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1440}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var abiertos = st.dias || { L: false, M: true, X: true, J: true, V: true, S: true, D: true };
+    var nombres = { L: 'Lunes', M: 'Martes', X: 'Miércoles', J: 'Jueves', V: 'Viernes', S: 'Sábado', D: 'Domingo' };
+    var dias = ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(function (k) {
+      return {
+        l: k, full: nombres[k] + (abiertos[k] ? ': abierto' : ': cerrado'), on: abiertos[k],
+        pick: function () { var n = Object.assign({}, abiertos); n[k] = !n[k]; self.setState({ dias: n }); }
+      };
+    });
+    var iv = st.iv || 30;
+    var grupo = st.grupo || 9;
+    return {
+      dias: dias,
+      i15: iv === 15, i30: iv === 30,
+      pick15: function () { self.setState({ iv: 15 }); },
+      pick30: function () { self.setState({ iv: 30 }); },
+      grupo: grupo,
+      menos: function () { self.setState({ grupo: Math.max(2, grupo - 1) }); },
+      mas: function () { self.setState({ grupo: grupo + 1 }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Hoja de estados de una reserva</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.blk{display:flex;flex-direction:column;gap:6px}
+.th{display:flex;align-items:baseline;gap:10px;padding:0 12px}
+</style>
+</helmet>
+<div style="width: 640px; height: 1100px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; padding: 22px 20px; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<section class="card" style="gap: 14px; padding: 16px 10px">
+<span class="k" style="padding: 0 12px">Filas de reserva</span>
+
+<div class="blk"><span class="help" style="padding: 0 12px">Confirmada (normal)</span>
+<a class="row" href="Ficha.dc.html"><span class="time tnum">21:00</span><span class="who"><span class="name">Sergio Gil</span><span class="note">Alergia al marisco</span></span><span class="pax tnum">6</span><span class="chip c-plat">TheFork</span></a></div>
+
+<div class="blk"><span class="help" style="padding: 0 12px">Nueva (del agente, la web o una plataforma; se quita al abrirla)</span>
+<a class="row" href="Ficha.dc.html"><span class="time tnum">20:30</span><span class="who"><span class="name"><span class="chip c-new">Nueva</span>Marta López</span></span><span class="pax tnum">4</span><span class="chip c-ia">Agente IA</span></a></div>
+
+<div class="blk"><span class="help" style="padding: 0 12px">Pendiente (grupo grande)</span>
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px 8px; border-radius: 12px; background: #FDF7E3; border: 1px solid #F0DC94">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 40px"><span class="time tnum">14:30</span><span class="who"><span class="name">Andrés Martínez <span class="chip c-pend chip-sm">Pendiente</span></span></span><span class="pax tnum">12</span><span class="chip c-ia">Agente IA</span></div>
+<div style="display: flex; align-items: center; gap: 8px; padding-left: 60px"><span class="note">El cliente espera tu llamada</span><div style="flex-grow: 1"></div><button class="btn btn-ghost btn-sm" type="button">Rechazar</button><button class="btn btn-primary btn-sm" type="button">Confirmar</button></div>
+</div></div>
+
+<div class="blk"><span class="help" style="padding: 0 12px">Posible duplicada (mismo teléfono y mismo día)</span>
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-radius: 12px; background: #FDF7E3; border: 1px solid #F0DC94">
+<div class="row"><span class="time tnum">21:00</span><span class="who"><span class="name">Laura Vega <span class="chip c-pend chip-sm">Posible duplicada</span></span></span><span class="pax tnum">2</span><span class="chip c-plat">TheFork</span></div>
+<div class="row"><span class="time tnum">21:30</span><span class="who"><span class="name">Laura Vega</span></span><span class="pax tnum">2</span><span class="chip c-ia">Agente IA</span></div>
+<div style="display: flex; justify-content: flex-end; gap: 8px; padding: 2px 12px 2px"><button class="btn btn-ghost btn-sm" type="button">No es duplicada</button><button class="btn btn-danger-outline btn-sm" type="button">Cancelar una</button></div>
+</div></div>
+
+<div class="blk"><span class="help" style="padding: 0 12px">Cancelada (se queda tachada)</span>
+<a class="row" href="Ficha.dc.html" style="color: #6B7076"><span class="time tnum" style="text-decoration: line-through">15:00</span><span class="who"><span class="name" style="color: #6B7076; text-decoration: line-through">Elena Castro</span><span class="note" style="color: #6B7076">Cancelada por CoverManager · 11:20</span></span><span class="pax tnum" style="color: #6B7076">2</span><span class="chip c-plat" style="opacity: .75">CoverManager</span></a></div>
+
+<div class="blk"><span class="help" style="padding: 0 12px">No vino (se marca a mano, desde la hora de la reserva)</span>
+<a class="row" href="Ficha.dc.html" style="color: #6B7076"><span class="time tnum">13:30</span><span class="who"><span class="name" style="color: #6B7076">Raúl Moreno <span class="chip c-novino chip-sm">No vino</span></span></span><span class="pax tnum" style="color: #6B7076">2</span><span class="chip c-man">Manual</span></a></div>
+</section>
+
+<section class="card" style="gap: 12px">
+<span class="k">Cabecera de turno según el aforo</span>
+<div class="blk"><div class="th"><strong>Comida</strong><div style="flex-grow: 1"></div><span class="tnum"><strong>23</strong> de 40</span></div><div class="meter" style="margin: 0 12px"><span style="width: 57%"></span></div></div>
+<div class="blk"><div class="th"><strong>Cena</strong><span class="help">Casi lleno</span><div style="flex-grow: 1"></div><span class="tnum"><strong>54</strong> de 60</span></div><div class="meter" style="margin: 0 12px"><span style="width: 90%; background: #B7791F"></span></div></div>
+<div class="blk"><div class="th"><strong>Cena</strong><span class="chip c-err chip-sm">Aforo superado</span><div style="flex-grow: 1"></div><span class="tnum" style="color: #8E372D"><strong>64</strong> de 60</span></div><div class="meter" style="margin: 0 12px"><span style="width: 100%; background: #A94438"></span></div></div>
+</section>
+
+<section class="card" style="gap: 12px">
+<span class="k">Reserva a mano que no cabe</span>
+<div style="display: flex; gap: 10px; align-items: flex-start">
+<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#8E372D" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 4px"><strong>Te pasas del aforo en 3 personas</strong><span class="help">La cena quedaría en 63 de 60. ¿Guardar igualmente?</span></span>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 8px"><button class="btn btn-ghost btn-sm" type="button">Cambiar hora</button><button class="btn btn-primary btn-sm" type="button">Guardar igualmente</button></div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":640,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

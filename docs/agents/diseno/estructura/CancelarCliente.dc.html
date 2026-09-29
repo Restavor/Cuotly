@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cancelar mi reserva · enlace del cliente</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#FFFFFF}</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; padding: 24px 20px; background: #FFFFFF; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<div style="display: flex; align-items: flex-start; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<span style="font-size: 15px; color: #5F6368">Casa Pepe · Sevilla</span>
+<h1 class="h1" style="font-size: 24px">Tu reserva</h1>
+</div>
+<div role="group" aria-label="Idioma" style="display: flex; gap: 4px"><button class="opt" type="button" aria-pressed="true" style="font-size: 13px">ES</button><button class="opt" type="button" aria-pressed="false" style="font-size: 13px">EN</button></div>
+</div>
+
+<div class="card" style="gap: 6px; background: #F7F5F1">
+<strong style="font-size: 18px">Sábado, 26 de septiembre · 21:00</strong>
+<span class="tnum">2 personas · a nombre de Nuria Vidal</span>
+</div>
+
+<button class="btn btn-danger btn-lg" type="button">Cancelar mi reserva</button>
+<span class="help" style="text-align: center">Puedes cancelar aquí hasta el sábado 26 a las 19:00 (2 h antes).</span>
+<span class="help" style="text-align: center">¿Quieres cambiar la hora o las personas? Llama al <a href="#" class="tnum" style="font-weight: 700">954 000 000</a>.</span>
+
+<div style="border-top: 1px dashed #D9D4CA; margin: 8px 0"></div>
+
+<span class="k">Después de cancelar</span>
+<div class="card" style="align-items: center; text-align: center; gap: 6px">
+<span style="font-weight: 700; font-size: 17px">Reserva cancelada</span>
+<span class="help">Gracias por avisar. El restaurante ya lo sabe.</span>
+</div>
+
+<span class="k">Si ya ha pasado el plazo</span>
+<div class="card" style="align-items: center; text-align: center; gap: 6px">
+<span style="font-weight: 700; font-size: 17px">Ya no se puede cancelar desde aquí</span>
+<span class="help">Llama a Casa Pepe: <a href="#" class="tnum" style="font-weight: 700">954 000 000</a></span>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

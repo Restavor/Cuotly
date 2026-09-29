@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Panel Restavor · Solicitudes</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.req{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid #EFEBE4;border-radius:14px;background:#FFFFFF;text-decoration:none;color:#26292B}
+.req[aria-current="true"]{border:2px solid #3F7A5C}
+.kv{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;font-size:15px}
+.kv span:first-child{color:#5F6368}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<aside style="width: 248px; flex-shrink: 0; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #E4E0D8; padding: 22px 14px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px 18px">
+<div aria-hidden="true" style="width: 36px; height: 36px; border-radius: 10px; background: #26292B; color: #F7F5F1; display: flex; align-items: center; justify-content: center; font-weight: 700">R</div>
+<div style="display: flex; flex-direction: column"><span style="font-weight: 700; font-size: 15px">Panel Restavor</span><span style="font-size: 12px; color: #5F6368">[Nombre de la app]</span></div>
+</div>
+<nav aria-label="Panel" style="display: flex; flex-direction: column; gap: 4px">
+<a class="side" href="PanelRestavor.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>Inicio</a>
+<a class="side" href="PanelSolicitudes.dc.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"></path></svg>Solicitudes<span class="badge">2</span></a>
+<a class="side" href="PanelRestaurante.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"></path><path d="M5 21V8l7-5 7 5v13"></path><path d="M10 21v-6h4v6"></path></svg>Restaurantes</a>
+<a class="side" href="PanelCobros.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>Cobros y precios</a>
+<a class="side" href="PanelErrores.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>Errores<span class="badge" style="background: #A94438">3</span></a>
+</nav>
+<div style="flex-grow: 1"></div>
+<div style="padding: 10px 8px; font-size: 13px; color: #5F6368; border-top: 1px solid #EFEBE4">info@restavor.com<br><span style="font-weight: 600; color: #26292B">Restavor</span></div>
+</aside>
+
+<main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 24px 32px; display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 24px">
+
+<div style="display: flex; flex-direction: column; gap: 14px; min-width: 0">
+<h1 class="h1" style="font-size: 26px">Solicitudes</h1>
+<span class="k">Por revisar (2)</span>
+<a class="req" href="#" aria-current="true">
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700; font-size: 16px">Taberna El Candil</span><span class="help">Marcos Díaz · Sevilla · hace 2 h</span></span>
+<span class="chip c-pend chip-sm">Nueva</span>
+</a>
+<a class="req" href="#">
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700; font-size: 16px">Café Aurora</span><span class="help">Laura Pinto · Málaga · ayer</span></span>
+<span class="chip c-pend chip-sm">Nueva</span>
+</a>
+<span class="k" style="margin-top: 10px">Revisadas</span>
+<div class="req" style="color: #5F6368">
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">Bar El Rincón</span><span class="help">Aprobada el 20 sept · pendiente de pago</span></span>
+<span class="chip c-ok chip-sm">Aprobada</span>
+</div>
+<div class="req" style="color: #5F6368">
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">Pizzería Test</span><span class="help">Rechazada el 14 sept · «Datos de prueba»</span></span>
+<span class="chip c-err chip-sm">Rechazada</span>
+</div>
+</div>
+
+<section class="card" aria-labelledby="det-t" style="gap: 16px; padding: 22px 24px; align-self: start">
+<h2 id="det-t" class="h1">Taberna El Candil</h2>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="kv"><span>Persona</span><span>Marcos Díaz</span></div>
+<div class="kv"><span>Email</span><span>marcos@elcandil.es</span></div>
+<div class="kv tnum"><span>Teléfono</span><span>655 214 870</span></div>
+<div class="kv"><span>Ciudad</span><span>Sevilla</span></div>
+<div class="kv tnum"><span>Enviada</span><span>Sáb 26 sept, 12:08</span></div>
+</div>
+
+<sc-if value="{{rechazando}}" hint-placeholder-val="{{ false }}">
+<div class="field">
+<label class="lbl" for="motivo">Motivo del rechazo (opcional, lo verá el restaurante)</label>
+<textarea class="inp" id="motivo" style="height: 96px; padding: 12px 14px; resize: none" placeholder="Por ejemplo: de momento solo trabajamos en Andalucía."></textarea>
+</div>
+<div style="display: flex; justify-content: flex-end; gap: 8px">
+<button class="btn btn-ghost" type="button" onClick="{{volver}}">Volver</button>
+<button class="btn btn-danger" type="button">Enviar rechazo</button>
+</div>
+</sc-if>
+
+<sc-if value="{{normal}}" hint-placeholder-val="{{ true }}">
+<div class="bar bar-info" style="align-items: flex-start">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
+<span>Al aprobar, Marcos recibe un email para crear su contraseña y los datos para pagar. Podrá usar la app cuando registres el pago.</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<button class="btn btn-ghost btn-lg" type="button" onClick="{{rechazar}}">Rechazar</button>
+<button class="btn btn-primary btn-lg" type="button">Aprobar</button>
+</div>
+</sc-if>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var r = !!(this.state && this.state.r);
+    return {
+      rechazando: r, normal: !r,
+      rechazar: function () { self.setState({ r: true }); },
+      volver: function () { self.setState({ r: false }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

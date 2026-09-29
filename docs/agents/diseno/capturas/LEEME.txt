@@ -1,0 +1,5 @@
+Guarda aquí las imágenes PNG exportadas del lienzo de la maqueta (todas las páginas).
+
+No hace falta renombrarlas. Si el nombre de una imagen no coincide con el de una pantalla (por ejemplo "AgentsHoy.png"), Claude Code la empareja mirando qué pantalla es y apunta aquí debajo la equivalencia, así:
+
+  nombre-exportado.png = AgentsHoy

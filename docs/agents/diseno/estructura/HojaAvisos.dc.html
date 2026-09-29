@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Hoja de barras y avisos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.blk{display:flex;flex-direction:column;gap:8px}
+.menu{background:#FFFFFF;border:1px solid #E4E0D8;border-radius:14px;box-shadow:0 10px 30px rgba(38,41,43,.12);padding:6px;display:flex;flex-direction:column}
+.mi{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 10px;border-radius:10px;font:inherit;font-size:15px;background:none;border:0;color:#26292B;text-align:left;cursor:pointer}
+.mi:hover{background:#F7F5F1}
+</style>
+</helmet>
+<div style="width: 390px; height: 1250px; box-sizing: border-box; display: flex; flex-direction: column; gap: 22px; padding: 20px 16px; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<div class="blk">
+<span class="k">Selector de local (solo si tienes más de uno)</span>
+<button class="btn btn-ghost" type="button" style="justify-content: space-between; width: 100%">Casa Pepe <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+<div class="menu" role="menu">
+<button class="mi" type="button" role="menuitem"><span style="flex-grow: 1"><strong>Casa Pepe</strong><br><span class="help">Propietario</span></span><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3F7A5C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"></path></svg></button>
+<button class="mi" type="button" role="menuitem"><span style="flex-grow: 1"><strong>Casa Pepe Centro</strong><br><span class="help">Encargado</span></span></button>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Modo soporte (solo Restavor)</span>
+<div class="bar bar-support" style="border-radius: 12px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+<span style="flex-grow: 1">Estás viendo <strong>Casa Pepe</strong> como Restavor</span>
+<a href="#" style="color: #FFFFFF; font-weight: 700; padding: 8px 4px">Salir</a>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Sin conexión</span>
+<div class="bar bar-off">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20"></path><path d="M8.5 16.5a5 5 0 0 1 7 0"></path><path d="M5 12.5a10 10 0 0 1 5.2-2.7"></path><path d="M19 12.5a10 10 0 0 0-2.3-1.7"></path><path d="M12 20h.01"></path></svg>
+<span><strong>Sin conexión</strong> · datos de las 14:05. No se pueden crear ni cancelar reservas.</span>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Grupos pendientes</span>
+<div class="bar bar-pend">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+<span style="flex-grow: 1"><strong>1 grupo pendiente</strong> de confirmar</span>
+<a href="#" style="color: #4A3A00; font-weight: 700; padding: 8px 4px">Revisar</a>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Nueva reserva (sonido + aviso)</span>
+<div class="bar bar-ia">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>
+<span style="flex-grow: 1"><strong>Agente IA:</strong> Marta López · 20:30 · 4</span>
+<a href="#" style="color: #3E3270; font-weight: 700; padding: 8px 4px">Ver</a>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Pago pendiente (solo propietarios)</span>
+<div class="bar bar-late">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>
+<span style="flex-grow: 1"><strong>Pago pendiente.</strong> Quedan 5 días de margen.</span>
+<a href="AjustesPlan.dc.html" style="color: #4A3A00; font-weight: 700; padding: 8px 4px">Pagar</a>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Cuenta en pausa (todos)</span>
+<div class="bar bar-pause" style="align-items: flex-start">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><rect x="6" y="5" width="4" height="14" rx="1"></rect><path d="M14 5h4v14h-4z"></path></svg>
+<span><strong>Cuenta en pausa por un pago pendiente.</strong> Puedes ver tus reservas, pero no crear nuevas. El agente y la web no aceptan reservas.</span>
+</div>
+<button class="btn btn-block" type="button" disabled>+ Nueva reserva</button>
+</div>
+
+<div class="blk">
+<span class="k">Plataforma sin conectar (propietario y encargado)</span>
+<div class="bar bar-pause">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>
+<span><strong>CoverManager no conecta</strong> desde las 12:40. Restavor ya está avisado.</span>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Saldo bajo (propietario y encargado)</span>
+<div class="bar bar-late">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+<span style="flex-grow: 1">Quedan <strong class="tnum">1,80 €</strong> para WhatsApp y SMS.</span>
+<a href="AjustesPlan.dc.html" style="color: #4A3A00; font-weight: 700; padding: 8px 4px">Recargar</a>
+</div>
+</div>
+
+<div class="blk">
+<span class="k">Día sin reservas</span>
+<div class="card" style="align-items: center; text-align: center; padding: 22px 16px; gap: 8px">
+<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#6B7076" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+<span style="font-weight: 700">No hay reservas este día</span>
+<a class="btn btn-primary btn-sm" href="NuevaReserva.dc.html">+ Nueva reserva</a>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

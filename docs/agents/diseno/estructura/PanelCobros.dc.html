@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Panel Restavor · Cobros y precios</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.pr{display:grid;grid-template-columns:minmax(0,1fr) 150px;align-items:center;gap:10px;font-size:15px}
+.pr .inp{height:44px;font-size:15px;text-align:right}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<aside style="width: 248px; flex-shrink: 0; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #E4E0D8; padding: 22px 14px; display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 10px; padding: 0 8px 18px">
+<div aria-hidden="true" style="width: 36px; height: 36px; border-radius: 10px; background: #26292B; color: #F7F5F1; display: flex; align-items: center; justify-content: center; font-weight: 700">R</div>
+<div style="display: flex; flex-direction: column"><span style="font-weight: 700; font-size: 15px">Panel Restavor</span><span style="font-size: 12px; color: #5F6368">[Nombre de la app]</span></div>
+</div>
+<nav aria-label="Panel" style="display: flex; flex-direction: column; gap: 4px">
+<a class="side" href="PanelRestavor.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"></path><path d="M5 10v10h14V10"></path></svg>Inicio</a>
+<a class="side" href="PanelSolicitudes.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"></path></svg>Solicitudes<span class="badge">2</span></a>
+<a class="side" href="PanelRestaurante.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"></path><path d="M5 21V8l7-5 7 5v13"></path><path d="M10 21v-6h4v6"></path></svg>Restaurantes</a>
+<a class="side" href="PanelCobros.dc.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>Cobros y precios</a>
+<a class="side" href="PanelErrores.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>Errores<span class="badge" style="background: #A94438">3</span></a>
+</nav>
+<div style="flex-grow: 1"></div>
+<div style="padding: 10px 8px; font-size: 13px; color: #5F6368; border-top: 1px solid #EFEBE4">info@restavor.com<br><span style="font-weight: 600; color: #26292B">Restavor</span></div>
+</aside>
+
+<main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 24px 32px; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; align-content: start">
+
+<h1 class="h1" style="font-size: 26px; grid-column: 1 / -1">Cobros y precios</h1>
+
+<section class="card" style="padding-bottom: 8px">
+<div style="display: flex; align-items: center; gap: 10px"><h2 class="h2" style="flex-grow: 1">A cobrar en los próximos 7 días</h2><span class="help tnum">5 restaurantes · 232 € + IVA</span></div>
+<table class="tbl">
+<thead><tr><th>Restaurante</th><th>Plan</th><th>Vence</th><th>Importe</th><th>Estado</th><th style="text-align: right">Acción</th></tr></thead>
+<tbody>
+<tr><td><strong>Cafetería Lumen</strong></td><td>Mensual</td><td class="tnum">22 sept</td><td class="tnum">58,08 €</td><td><span class="pill p-late">Vencido · 3 días de margen</span></td><td style="text-align: right"><a class="btn btn-ghost btn-sm" href="PanelRegistrarPago.dc.html">Registrar pago</a></td></tr>
+<tr><td><strong>Asador Mendoza</strong></td><td>Anual</td><td class="tnum">Alta</td><td class="tnum">53,24 €</td><td><span class="pill p-pend">Pendiente de pago</span></td><td style="text-align: right"><a class="btn btn-ghost btn-sm" href="PanelRegistrarPago.dc.html">Registrar pago</a></td></tr>
+<tr><td><strong>Bar La Plaza</strong></td><td>Mensual</td><td class="tnum">30 sept</td><td class="tnum">58,08 €</td><td><span class="pill" style="background: #F1EEE8; color: #3F4A5A">Aviso enviado</span></td><td style="text-align: right"><a class="btn btn-ghost btn-sm" href="PanelRegistrarPago.dc.html">Registrar pago</a></td></tr>
+<tr><td><strong>Mesón del Río</strong></td><td>Anual</td><td class="tnum">1 oct</td><td class="tnum">53,24 €</td><td><span class="pill" style="background: #F1EEE8; color: #3F4A5A">Aviso enviado</span></td><td style="text-align: right"><a class="btn btn-ghost btn-sm" href="PanelRegistrarPago.dc.html">Registrar pago</a></td></tr>
+<tr><td><strong>Taberna Sol</strong></td><td>Mensual</td><td class="tnum">2 oct</td><td class="tnum">58,08 €</td><td><span class="pill" style="background: #F1EEE8; color: #3F4A5A">Aviso el 27 sept</span></td><td style="text-align: right"><a class="btn btn-ghost btn-sm" href="PanelRegistrarPago.dc.html">Registrar pago</a></td></tr>
+</tbody>
+</table>
+</section>
+
+<section class="card">
+<div style="display: flex; align-items: center; gap: 10px"><h2 class="h2" style="flex-grow: 1">Precios</h2><button class="btn btn-primary btn-sm" type="button">Guardar</button></div>
+<div class="pr"><label for="p1">Plan mensual (sin IVA)</label><input class="inp tnum" id="p1" type="text" value="48,00 €"></div>
+<div class="pr"><label for="p2">Plan anual, cada mes (sin IVA)</label><input class="inp tnum" id="p2" type="text" value="44,00 €"></div>
+<div class="pr"><label for="p3">Margen si no paga</label><input class="inp tnum" id="p3" type="text" value="7 días"></div>
+<div class="pr"><label for="p4">Cada WhatsApp</label><input class="inp tnum" id="p4" type="text" value="0,03 €"></div>
+<div class="pr"><label for="p5">Cada SMS</label><input class="inp tnum" id="p5" type="text" value="0,12 €"></div>
+<div class="pr"><label for="p6">Recarga mínima (sin IVA)</label><input class="inp tnum" id="p6" type="text" value="10,00 €"></div>
+<div class="pr"><label for="p7">Aviso de saldo bajo</label><input class="inp tnum" id="p7" type="text" value="2,00 €"></div>
+<span class="help">Los cambios de precio se aplican desde el siguiente pago de cada restaurante.</span>
+</section>
+
+<section class="card">
+<h2 class="h2">Saldo de avisos bajo</h2>
+<div class="line tnum"><span style="flex-grow: 1"><strong>Bar La Plaza</strong></span><span>1,80 €</span><a class="btn btn-ghost btn-sm" href="PanelRegistrarPago.dc.html">Registrar recarga</a></div>
+<div class="line tnum"><span style="flex-grow: 1"><strong>Taberna Sol</strong></span><span style="color: #8E372D">0,00 € · solo email</span><a class="btn btn-ghost btn-sm" href="PanelRegistrarPago.dc.html">Registrar recarga</a></div>
+</section>
+
+<section class="card">
+<div style="display: flex; align-items: center; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><h2 class="h2">Cobro con Stripe</h2><span class="help">Desactivado. Ahora registras los pagos a mano.</span></div>
+<button class="sw" type="button" role="switch" aria-checked="false" aria-label="Cobro con Stripe"></button>
+</div>
+<span class="help">Al activarlo, cada restaurante recibe un enlace para poner su tarjeta o domiciliación y se le cobra al terminar lo que ya ha pagado. Las recargas de saldo también se podrán pagar con tarjeta.</span>
+<div style="display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid #EFEBE4; font-size: 14px">
+<span class="k">Datos de pago que ven los restaurantes</span>
+<span>Bizum: <strong>[Bizum de Restavor]</strong></span>
+<span>IBAN: <strong>[IBAN de Restavor]</strong></span>
+<a class="link" href="#" style="padding: 4px 0; font-size: 14px">Cambiar</a>
+</div>
+</section>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

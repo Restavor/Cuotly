@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Restavor agents · Reservas · Hoy (tablet)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/ec82e4b18abdc55e9f024989d4a8779f">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 1180px; height: 820px; box-sizing: border-box; display: flex; background: #F5F7F4; color: #17211F; font-family: 'Inter', system-ui, sans-serif; overflow: hidden">
+
+<nav class="side" aria-label="Menú de Restavor agents" style="width: 224px; padding: 18px 12px 14px">
+<a class="logo" href="AppInicio.dc.html"><b>Restavor</b><small>agents</small></a>
+<div class="ctx"><b>Casa Pepe</b><span>Sevilla</span></div>
+<a class="back" href="AppInicio.dc.html">Volver al inicio de Restavor</a>
+<span class="grp">Reservas</span>
+<a class="si" href="AgentsHoy.dc.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>Hoy</a>
+<a class="si" href="Calendario.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>Calendario</a>
+<a class="si" href="AgentsAgente.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente de llamadas</a>
+<a class="si" href="Ajustes.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 19.1L7 17"></path><path d="M17 7l2.1-2.1"></path></svg>Ajustes</a>
+<div style="flex-grow: 1"></div>
+<a class="si" href="AgentsSaldo.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M3 10h18"></path><path d="M16 14.5h2"></path></svg>Saldo<span class="cnt tnum">7,40 €</span></a>
+<a class="si" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6"></path><path d="M9 12h6"></path></svg>Plan y pagos</a>
+<a class="si" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7"></path><path d="M12 17h.01"></path></svg>Ayuda</a>
+</nav>
+
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+<header class="top" style="padding: 0 20px">
+<div class="crumb"><span>Casa Pepe</span><span class="sep">›</span><span>Reservas</span><span class="sep">›</span><span>Hoy</span></div>
+<div style="flex-grow: 1"></div>
+<a href="AgentsAgente.dc.html" aria-label="Agente de llamadas: encendido. Abrir para apagarlo" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: #E9F5EF; border: 1px solid #BFE0CF; color: #0F6B53; font-size: 14px; font-weight: 600; text-decoration: none; box-sizing: border-box"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 999px; background: #168A6D"></span>Agente encendido</a>
+<a class="search" href="Buscar.dc.html" style="width: 190px; text-decoration: none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>Buscar reserva</a>
+<button class="bell" type="button" aria-label="Avisos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg><i></i></button>
+<span class="av" aria-label="José García">J</span>
+</header>
+
+<main style="flex-grow: 1; min-height: 0; box-sizing: border-box; padding: 16px 22px 18px; display: flex; flex-direction: column; gap: 12px">
+
+<div style="display: flex; align-items: center; gap: 10px">
+<button class="iconbtn" type="button" aria-label="Día anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<h1 class="t1" style="font-size: 26px">Sábado, 26 de septiembre</h1>
+<button class="iconbtn" type="button" aria-label="Día siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+<button class="btn btn-secondary btn-sm" type="button">Hoy</button>
+<div style="flex-grow: 1"></div>
+<a class="btn btn-primary btn-lg" href="NuevaReserva.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>Nueva reserva</a>
+</div>
+
+<sc-if value="{{toast}}" hint-placeholder-val="{{ true }}">
+<div role="status" style="display: flex; align-items: center; gap: 12px; padding: 6px 8px 6px 16px; border-radius: 12px; background: #ECE8F6; color: #3E3270">
+<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>
+<span style="font-size: 15px; flex-grow: 1"><strong>Nueva reserva del agente:</strong> Marta López · 20:30 · 4 personas</span>
+<a href="Ficha.dc.html" style="font-weight: 600; font-size: 15px; color: #3E3270; padding: 10px 8px">Ver</a>
+<button class="iconbtn" type="button" aria-label="Cerrar aviso" onClick="{{closeToast}}" style="background: transparent; border-color: transparent; color: #3E3270"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6L6 18"></path><path d="M6 6l12 12"></path></svg></button>
+</div>
+</sc-if>
+
+<div style="display: flex; align-items: center; gap: 8px">
+<button class="fchip" type="button" aria-pressed="{{sel.todas}}" onClick="{{pickTodas}}">Todas <span class="n">10</span></button>
+<button class="fchip" type="button" aria-pressed="{{sel.ia}}" onClick="{{pickIa}}"><svg viewBox="0 0 24 24" fill="none" stroke="#5B4B9A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente <span class="n">3</span></button>
+<button class="fchip" type="button" aria-pressed="{{sel.plat}}" onClick="{{pickPlat}}"><svg viewBox="0 0 24 24" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>Plataformas <span class="n">3</span></button>
+<button class="fchip" type="button" aria-pressed="{{sel.web}}" onClick="{{pickWeb}}"><svg viewBox="0 0 24 24" fill="none" stroke="#9A3469" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg>Web <span class="n">2</span></button>
+<button class="fchip" type="button" aria-pressed="{{sel.man}}" onClick="{{pickMan}}"><svg viewBox="0 0 24 24" fill="none" stroke="#3F4A5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>Manual <span class="n">2</span></button>
+<div style="flex-grow: 1"></div>
+<span class="tnum" style="font-size: 14px; color: #5E6B66"><strong style="color: #17211F">42 personas</strong> · 1 pendiente</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; flex-grow: 1; min-height: 0">
+
+<section class="card" aria-label="Comida" style="padding: 14px 8px 8px; gap: 2px; overflow: hidden">
+<div style="display: flex; align-items: baseline; gap: 10px; padding: 0 12px">
+<h2 class="t2" style="font-size: 18px">Comida</h2>
+<span class="tnum help" style="font-size: 14px">13:00 – 16:00</span>
+<div style="flex-grow: 1"></div>
+<span class="tnum" style="font-size: 14px"><strong>23</strong> de 40 personas</span>
+</div>
+<div class="meter" aria-hidden="true" style="margin: 6px 12px 8px"><span style="width: 57%"></span></div>
+
+<sc-if value="{{show.plat}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">13:30</span><span class="who"><span class="name">Lucía Fernández</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>2</span><span class="chip c-plat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>TheFork</span></a>
+</sc-if>
+<sc-if value="{{show.man}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html" style="color: #6B7076"><span class="time tnum">13:30</span><span class="who"><span class="name">Raúl Moreno <span class="chip c-novino">No vino</span></span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>2</span><span class="chip c-man"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>Manual</span></a>
+</sc-if>
+<sc-if value="{{show.ia}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">14:00</span><span class="who"><span class="name"><span class="chip c-new">Nueva</span>Javier Ruiz</span><span class="note">Una trona</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>4</span><span class="chip c-ia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente</span></a>
+</sc-if>
+<sc-if value="{{show.man}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">14:00</span><span class="who"><span class="name">Carmen Ortiz</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>3</span><span class="chip c-man"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>Manual</span></a>
+</sc-if>
+<sc-if value="{{show.ia}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 4px; padding: 6px 12px 8px; border-radius: 12px; background: #FDF7E3; border: 1px solid #F0DC94">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 40px">
+<span class="time tnum">14:30</span>
+<span class="who"><a href="Ficha.dc.html" class="name" style="color: #17211F; text-decoration: none">Andrés Martínez</a><span class="note" style="color: #4A3A00"><span class="chip c-pend chip-sm">Pendiente</span>Grupo grande</span></span>
+<span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>12</span>
+<span class="chip c-ia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente</span>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; padding-left: 60px">
+<div style="flex-grow: 1"></div>
+<button class="btn btn-ghost btn-sm" type="button">Rechazar</button>
+<button class="btn btn-primary btn-sm" type="button">Confirmar</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{show.web}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">14:30</span><span class="who"><span class="name">Pablo Serrano</span><span class="note">Terraza si es posible</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>2</span><span class="chip c-web"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg>Web</span></a>
+</sc-if>
+<sc-if value="{{show.plat}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html" style="color: #6B7076"><span class="time tnum" style="text-decoration: line-through">15:00</span><span class="who"><span class="name" style="text-decoration: line-through">Elena Castro</span><span class="note">Cancelada por CoverManager · 11:20</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>2</span><span class="chip c-plat" style="opacity: .75">CoverManager</span></a>
+</sc-if>
+</section>
+
+<section class="card" aria-label="Cena" style="padding: 14px 8px 8px; gap: 2px; overflow: hidden">
+<div style="display: flex; align-items: baseline; gap: 10px; padding: 0 12px">
+<h2 class="t2" style="font-size: 18px">Cena</h2>
+<span class="tnum help" style="font-size: 14px">20:00 – 23:30</span>
+<div style="flex-grow: 1"></div>
+<span class="tnum" style="font-size: 14px"><strong>19</strong> de 60 personas</span>
+</div>
+<div class="meter" aria-hidden="true" style="margin: 6px 12px 8px"><span style="width: 32%"></span></div>
+<sc-if value="{{show.ia}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">20:30</span><span class="who"><span class="name"><span class="chip c-new">Nueva</span>Marta López</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>4</span><span class="chip c-ia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente</span></a>
+</sc-if>
+<sc-if value="{{show.plat}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">21:00</span><span class="who"><span class="name">Sergio Gil</span><span class="note">Alergia al marisco</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>6</span><span class="chip c-plat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>TheFork</span></a>
+</sc-if>
+<sc-if value="{{show.web}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">21:00</span><span class="who"><span class="name">Nuria Vidal</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>2</span><span class="chip c-web"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg>Web</span></a>
+</sc-if>
+<sc-if value="{{show.man}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">21:30</span><span class="who"><span class="name">Tomás Herrera</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>2</span><span class="chip c-man"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>Manual</span></a>
+</sc-if>
+<sc-if value="{{show.plat}}" hint-placeholder-val="{{ true }}">
+<a class="row" href="Ficha.dc.html"><span class="time tnum">22:00</span><span class="who"><span class="name">Iván Rojas</span></span><span class="pax tnum"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg>5</span><span class="chip c-plat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>TheFork</span></a>
+</sc-if>
+</section>
+
+</div>
+</main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var st = this.state || {};
+    var f = st.f || 'todas';
+    var self = this;
+    function pick(v) { return function () { self.setState({ f: v }); }; }
+    function on(k) { return f === 'todas' || f === k; }
+    return {
+      sel: { todas: f === 'todas', ia: f === 'ia', plat: f === 'plat', web: f === 'web', man: f === 'man' },
+      show: { ia: on('ia'), plat: on('plat'), web: on('web'), man: on('man') },
+      pickTodas: pick('todas'), pickIa: pick('ia'), pickPlat: pick('plat'), pickWeb: pick('web'), pickMan: pick('man'),
+      toast: !st.hideToast,
+      closeToast: function () { self.setState({ hideToast: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

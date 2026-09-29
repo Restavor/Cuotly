@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Restavor agents · Reservas · Agente de llamadas (tablet)</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/ec82e4b18abdc55e9f024989d4a8779f">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.call{display:grid;grid-template-columns:52px 118px minmax(0,1fr) 58px 138px 104px;align-items:center;gap:12px;min-height:56px;padding:6px 14px;border-bottom:1px solid #E9EFEC;box-sizing:border-box}
+.c-neutral{color:#17211F;background:#EAF0EC}
+.c-line{color:#17211F;background:#FFFFFF;border:1px solid #C9D6D0}
+.c-ok{color:#0F6B53;background:#E3F3EC}
+.c-err{color:#9C3434;background:#FBEDEC}
+.btn-off{background:#FFFFFF;color:#9C3434;border-color:#E3B8B2}
+.btn-off:hover{background:#FBEDEC;color:#8A2C2C}
+.choice{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 16px;border-radius:12px;border:1px solid #DDE5E1;background:#FFFFFF;font:inherit;font-size:16px;color:#17211F;text-align:left;cursor:pointer;width:100%;box-sizing:border-box}
+.choice i{width:20px;height:20px;border-radius:999px;border:2px solid #A7B3AE;box-sizing:border-box;flex-shrink:0}
+.choice[aria-pressed="true"]{border-color:#145C4E;background:#EEF6F2}
+.choice[aria-pressed="true"] i{border:6px solid #145C4E}
+.choice small{display:block;font-size:13px;color:#5E6B66;margin-top:2px}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; position: relative; box-sizing: border-box; display: flex; background: #F5F7F4; color: #17211F; font-family: 'Inter', system-ui, sans-serif; overflow: hidden">
+
+<nav class="side" aria-label="Menú de Restavor agents" style="width: 224px; padding: 18px 12px 14px">
+<a class="logo" href="AppInicio.dc.html"><b>Restavor</b><small>agents</small></a>
+<div class="ctx"><b>Casa Pepe</b><span>Sevilla</span></div>
+<a class="back" href="AppInicio.dc.html">Volver al inicio de Restavor</a>
+<span class="grp">Reservas</span>
+<a class="si" href="AgentsHoy.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>Hoy</a>
+<a class="si" href="Calendario.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>Calendario</a>
+<a class="si" href="AgentsAgente.dc.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente de llamadas</a>
+<a class="si" href="Ajustes.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 19.1L7 17"></path><path d="M17 7l2.1-2.1"></path></svg>Ajustes</a>
+<div style="flex-grow: 1"></div>
+<a class="si" href="AgentsSaldo.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"></rect><path d="M3 10h18"></path><path d="M16 14.5h2"></path></svg>Saldo<span class="cnt tnum">7,40 €</span></a>
+<a class="si" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"></path><path d="M9 8h6"></path><path d="M9 12h6"></path></svg>Plan y pagos</a>
+<a class="si" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7"></path><path d="M12 17h.01"></path></svg>Ayuda</a>
+</nav>
+
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column">
+<header class="top" style="padding: 0 20px">
+<div class="crumb"><span>Casa Pepe</span><span class="sep">›</span><span>Reservas</span><span class="sep">›</span><span>Agente de llamadas</span></div>
+<div style="flex-grow: 1"></div>
+<button class="bell" type="button" aria-label="Avisos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></svg></button>
+<span class="av" aria-label="José García">J</span>
+</header>
+
+<main style="flex-grow: 1; min-height: 0; box-sizing: border-box; padding: 16px 22px 16px; display: flex; flex-direction: column; gap: 14px">
+
+<h1 class="t1" style="font-size: 26px">Agente de llamadas</h1>
+
+<sc-if value="{{on}}" hint-placeholder-val="{{ true }}">
+<section aria-label="Estado del agente" style="display: flex; align-items: center; gap: 18px; padding: 18px 20px; border-radius: 20px; background: #E9F5EF; border: 1px solid #BFE0CF">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 999px; background: #145C4E; color: #FFFFFF; flex-shrink: 0"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1">
+<strong style="font-size: 21px; color: #0B2F2A">Agente encendido</strong>
+<span style="font-size: 14px; color: #33413C">Coge las llamadas que no contestáis en 4 tonos · Horario: todo el día · Hoy: 8 llamadas y 3 reservas</span>
+</span>
+<button class="btn btn-lg btn-off" type="button" onClick="{{openModal}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9"></path><path d="M6.4 6.4a8 8 0 1 0 11.2 0"></path></svg>Apagar agente</button>
+</section>
+</sc-if>
+<sc-if value="{{off}}" hint-placeholder-val="{{ false }}">
+<section aria-label="Estado del agente" style="display: flex; align-items: center; gap: 18px; padding: 18px 20px; border-radius: 20px; background: #F1F3F1; border: 1px solid #D5DCD8">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 999px; background: #6B6F76; color: #FFFFFF; flex-shrink: 0"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"></path><path d="M6.4 6.4a8 8 0 1 0 11.2 0"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1">
+<strong style="font-size: 21px; color: #17211F">Agente apagado {{hasta}}</strong>
+<span style="font-size: 14px; color: #33413C">Las llamadas suenan en el local (600 123 456). Lo apagó José García a las 14:10.</span>
+</span>
+<button class="btn btn-primary btn-lg" type="button" onClick="{{turnOn}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9"></path><path d="M6.4 6.4a8 8 0 1 0 11.2 0"></path></svg>Encender agente</button>
+</section>
+</sc-if>
+
+<nav class="tabs" aria-label="Secciones del agente">
+<a class="tabu" href="AgentsAgente.dc.html" aria-current="page">Llamadas</a>
+<a class="tabu" href="AgentsInfo.dc.html">Información</a>
+<a class="tabu" href="AgenteHorarioMovil.dc.html">Horario</a>
+</nav>
+
+<section class="card" style="flex-grow: 1; min-height: 0; padding: 10px 6px 0; gap: 4px; overflow: hidden">
+<div style="display: flex; align-items: center; gap: 8px; padding: 0 10px 4px">
+<button class="iconbtn" type="button" aria-label="Día anterior" style="width: 40px; height: 40px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<h2 class="t2 tnum">Hoy, sáb 26 sept</h2>
+<button class="iconbtn" type="button" aria-label="Día siguiente" style="width: 40px; height: 40px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+<div style="flex-grow: 1"></div>
+<button class="fchip" type="button" aria-pressed="true" style="min-height: 40px">Todas <span class="n">8</span></button>
+<button class="fchip" type="button" aria-pressed="false" style="min-height: 40px">Reservas y cambios <span class="n">5</span></button>
+<button class="fchip" type="button" aria-pressed="false" style="min-height: 40px">Dudas <span class="n">1</span></button>
+<button class="fchip" type="button" aria-pressed="false" style="min-height: 40px">Pasadas al local <span class="n">1</span></button>
+</div>
+<div class="call" aria-hidden="true" style="min-height: 30px; background: #F5F7F4; font-size: 12px; font-weight: 600; color: #5E6B66">
+<span>Hora</span><span>Número</span><span>Qué pasó</span><span>Coste</span><span>Resultado</span><span></span>
+</div>
+<sc-for list="{{calls}}" as="c" hint-placeholder-count="8">
+<div class="call">
+<span class="tnum" style="font-size: 16px; font-weight: 700">{{c.hora}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span class="tnum" style="font-weight: 600">{{c.tel}}</span><span class="help tnum">{{c.dur}}</span></span>
+<span style="font-size: 14px; line-height: 1.4">{{c.resumen}}</span>
+<span class="tnum" style="font-size: 14px">{{c.coste}}</span>
+<span><span class="chip chip-sm {{c.cls}}">{{c.res}}</span></span>
+<span><sc-if value="{{c.hasRes}}" hint-placeholder-val="{{ false }}"><a class="btn btn-ghost btn-sm" href="Ficha.dc.html">Ver reserva</a></sc-if></span>
+</div>
+</sc-for>
+</section>
+
+</main>
+</div>
+
+<sc-if value="{{modal}}" hint-placeholder-val="{{ false }}">
+<div style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(11, 47, 42, .45)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="off-t" style="position: absolute; left: 50%; top: 120px; width: 500px; margin-left: -250px; background: #FFFFFF; border-radius: 20px; padding: 24px 26px; display: flex; flex-direction: column; gap: 14px; box-sizing: border-box; box-shadow: 0 24px 64px rgba(5, 21, 16, .3)">
+<h2 id="off-t" class="t1" style="font-size: 22px">¿Hasta cuándo lo apagas?</h2>
+<p class="sub">Mientras esté apagado, las llamadas sonarán en el local (600 123 456).</p>
+<div role="group" aria-label="Hasta cuándo" style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{opciones}}" as="o" hint-placeholder-count="3">
+<button class="choice" type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}"><i aria-hidden="true"></i><span>{{o.label}}<small>{{o.sub}}</small></span></button>
+</sc-for>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; padding-top: 4px">
+<button class="btn btn-ghost btn-lg" type="button" onClick="{{closeModal}}">Cancelar</button>
+<button class="btn btn-lg" type="button" onClick="{{turnOff}}" style="background: #C84C4C; color: #FFFFFF">Apagar agente</button>
+</div>
+</section>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var on = st.on === undefined ? true : st.on;
+    var eleccion = st.eleccion || '1h';
+    var defs = [
+      { id: '1h', label: 'Durante 1 hora', sub: 'Se vuelve a encender solo a las 15:10', hasta: 'hasta las 15:10' },
+      { id: 'turno', label: 'Hasta que acabe este turno', sub: 'Se vuelve a encender solo a las 16:00', hasta: 'hasta las 16:00' },
+      { id: 'manual', label: 'Hasta que lo vuelva a encender', sub: 'No se enciende solo: acuérdate de encenderlo', hasta: 'hasta que lo enciendas' }
+    ];
+    var elegida = defs.filter(function (d) { return d.id === eleccion; })[0];
+    return {
+      on: on,
+      off: !on,
+      modal: !!st.modal,
+      hasta: st.hasta || '',
+      opciones: defs.map(function (d) {
+        return { label: d.label, sub: d.sub, on: d.id === eleccion, pick: function () { self.setState({ eleccion: d.id }); } };
+      }),
+      openModal: function () { self.setState({ modal: true }); },
+      closeModal: function () { self.setState({ modal: false }); },
+      turnOff: function () { self.setState({ modal: false, on: false, hasta: elegida.hasta }); },
+      turnOn: function () { self.setState({ on: true, hasta: '' }); },
+      calls: [
+        { hora: '13:52', tel: '687 440 219', dur: '1 min 35 s', resumen: 'Marta López · hoy 20:30 · 4 personas.', coste: '0,17 €', res: 'Reserva hecha', cls: 'c-ok', hasRes: true },
+        { hora: '13:41', tel: '655 210 998', dur: '52 s', resumen: 'Preguntó si hay aparcamiento. Le explicó que hay un parking público a 2 minutos.', coste: '0,09 €', res: 'Duda', cls: 'c-neutral', hasRes: false },
+        { hora: '12:58', tel: '611 003 457', dur: '40 s', resumen: 'Quería hablar con el encargado. Pasó la llamada al 600 123 456.', coste: '0,07 €', res: 'Pasada al local', cls: 'c-line', hasRes: false },
+        { hora: '12:15', tel: '699 874 120', dur: '2 min 31 s', resumen: 'Andrés Martínez · hoy 14:30 · 12 personas. Queda pendiente de que la confirméis.', coste: '0,26 €', res: 'Grupo pendiente', cls: 'c-pend', hasRes: true },
+        { hora: '11:32', tel: '612 345 678', dur: '1 min 48 s', resumen: 'Javier Ruiz · hoy 14:00 · 4 personas. Pidió una trona.', coste: '0,19 €', res: 'Reserva hecha', cls: 'c-ok', hasRes: true },
+        { hora: '11:05', tel: '633 781 004', dur: '31 s', resumen: 'Colgó antes de decir qué quería.', coste: '0,05 €', res: 'Colgó', cls: 'c-neutral', hasRes: false },
+        { hora: '10:48', tel: '644 118 776', dur: '1 min 2 s', resumen: 'Carlos Vega cambió su reserva del miércoles 30 a las 21:00: de 4 a 6 personas.', coste: '0,11 €', res: 'Cambio', cls: 'c-neutral', hasRes: true },
+        { hora: '10:20', tel: '622 915 330', dur: '1 min 12 s', resumen: 'Rocío Díaz canceló su reserva de mañana a las 21:00 (2 personas).', coste: '0,13 €', res: 'Cancelación', cls: 'c-err', hasRes: true }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cancelar reserva</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;background:#F7F5F1;color:#26292B}
+a{color:#2F6690}a:hover{color:#234E6E}
+.tnum{font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 16px;border-radius:14px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;text-decoration:none;border:1px solid transparent;box-sizing:border-box}
+.btn-danger{background:#A94438;color:#FFFFFF}
+.btn-danger:hover{background:#933A30;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#26292B;border-color:#D9D4CA}
+a.btn-ghost:hover{background:#F1EEE8;color:#26292B}
+.opt{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;box-sizing:border-box;border-radius:12px;border:1px solid #D9D4CA;background:#FFFFFF;color:#26292B;font:inherit;font-size:15px;font-weight:600;cursor:pointer;text-align:left}
+.opt:hover{background:#F7F5F1}
+.opt .r{width:18px;height:18px;border-radius:999px;border:2px solid #9AA0A6;box-sizing:border-box;flex-shrink:0}
+.opt[aria-pressed="true"]{border-color:#A94438;background:#FBF1EF}
+.opt[aria-pressed="true"] .r{border:6px solid #A94438}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<div aria-hidden="true" style="padding: 20px 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 12px; padding: 4px 4px 8px"><span style="font-size: 20px; font-weight: 700">Reserva</span></div>
+<div style="background: #FFFFFF; border: 1px solid #E4E0D8; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+<span class="tnum" style="font-size: 34px; font-weight: 700">21:00</span>
+<span style="font-size: 22px; font-weight: 700">Sergio Gil</span>
+<span style="font-size: 15px; color: #5F6368">6 personas · Cena</span>
+</div>
+<div style="height: 64px; background: #FFFFFF; border: 1px solid #E4E0D8; border-radius: 16px"></div>
+<div style="height: 110px; background: #FFFFFF; border: 1px solid #E4E0D8; border-radius: 16px"></div>
+</div>
+
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; background: rgba(38, 41, 43, .5)"></div>
+
+<div role="dialog" aria-modal="true" aria-labelledby="cx-t" style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 10px 16px 24px; display: flex; flex-direction: column; gap: 16px">
+<div aria-hidden="true" style="align-self: center; width: 40px; height: 5px; border-radius: 999px; background: #D9D4CA"></div>
+
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 id="cx-t" style="margin: 0; font-size: 22px; font-weight: 700">¿Cancelar esta reserva?</h2>
+<span class="tnum" style="font-size: 15px; color: #5F6368">Sergio Gil · Sáb 26 sept · 21:00 · 6 personas</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<span style="font-size: 14px; font-weight: 700">Motivo <span style="font-weight: 500; color: #5F6368">(opcional)</span></span>
+<sc-for list="{{motivos}}" as="m" hint-placeholder-count="3">
+<button class="opt" type="button" aria-pressed="{{m.on}}" onClick="{{m.pick}}"><span class="r" aria-hidden="true"></span>{{m.label}}</button>
+</sc-for>
+</div>
+
+<div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #E3EEF6; color: #1F4B6B">
+<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink: 0; margin-top: 1px"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>
+<span style="font-size: 14px; line-height: 1.4">Esta reserva viene de <strong>TheFork</strong>. Se cancelará también allí. Si TheFork no responde, te avisaremos para que la canceles a mano.</span>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button class="btn btn-danger" type="button">Sí, cancelar reserva</button>
+<a class="btn btn-ghost" href="Ficha.dc.html">No, volver</a>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var sel = st.m || 'cliente';
+    var lista = [
+      { id: 'cliente', label: 'La cancela el cliente' },
+      { id: 'error', label: 'Error al apuntarla' },
+      { id: 'otro', label: 'Otro motivo' }
+    ];
+    return {
+      motivos: lista.map(function (m) {
+        return { label: m.label, on: sel === m.id, pick: function () { self.setState({ m: m.id }); } };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Aviso por WhatsApp y SMS</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.bub{background:#FFFFFF;border-radius:4px 16px 16px 16px;padding:12px 14px;font-size:15px;line-height:1.45;max-width:300px;box-shadow:0 1px 2px rgba(38,41,43,.08);white-space:pre-line}
+.bub.me{background:#E4EFE8;border-radius:16px 4px 16px 16px;align-self:flex-end}
+.qbtn{display:flex;align-items:center;justify-content:center;min-height:44px;margin-top:10px;border-top:1px solid #EFEBE4;font-weight:700;color:#2F5E46;text-decoration:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: #EDE9E2; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<span class="k">WhatsApp · confirmación</span>
+<div style="display: flex; align-items: center; gap: 10px">
+<div aria-hidden="true" style="width: 40px; height: 40px; border-radius: 999px; background: #3F7A5C; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M3 10h18"></path><path d="M9 15l2 2 4-4"></path></svg></div>
+<div style="display: flex; flex-direction: column"><strong>Reservas · [Nombre de la app]</strong><span class="help">Cuenta de empresa verificada</span></div>
+</div>
+
+<div class="bub">Hola, Javier. Tu reserva en <strong>Casa Pepe</strong> está confirmada:
+<strong>Sábado 26 de septiembre · 14:00 · 4 personas</strong>
+[Dirección del restaurante], Sevilla
+
+¿Algún cambio? Llama al 954 000 000.
+<a class="qbtn" href="CancelarCliente.dc.html">Cancelar mi reserva</a></div>
+
+<span class="k" style="margin-top: 8px">Si el cliente responde</span>
+<div class="bub me">¿Puedo llevar a mi perro?</div>
+<div class="bub">Este número solo envía avisos y no lee mensajes. Para cualquier cosa, llama a Casa Pepe: 954 000 000.</div>
+
+<span class="k" style="margin-top: 8px">SMS · si el número no tiene WhatsApp</span>
+<div class="card" style="gap: 8px">
+<span class="help">Remitente: <strong style="color: #26292B">[Alias registrado]</strong></span>
+<span style="font-size: 15px; line-height: 1.45">Casa Pepe: reserva confirmada sáb 26/09 14:00, 4 pers. Cambios: 954000000. Cancelar: [enlace corto]</span>
+</div>
+
+<span class="help">Los avisos salen en el idioma de la reserva (español o inglés). Otros avisos con el mismo formato: solicitud recibida, grupo confirmado o rechazado, reserva modificada y reserva cancelada.</span>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

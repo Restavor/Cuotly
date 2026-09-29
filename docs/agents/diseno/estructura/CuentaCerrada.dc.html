@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cuenta cerrada</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px; padding: 32px 20px 24px; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<div style="display: flex; align-items: center; gap: 10px">
+<div aria-hidden="true" style="width: 40px; height: 40px; border-radius: 12px; background: #3F7A5C; color: #FFFFFF; display: flex; align-items: center; justify-content: center"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><path d="M9 15l2 2 4-4"></path></svg></div>
+<div style="display: flex; flex-direction: column"><span style="font-size: 17px; font-weight: 700">Casa Pepe</span><span class="help">Cuenta cerrada</span></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<h1 class="h1" style="font-size: 26px">Tu cuenta está cerrada</h1>
+<p class="help" style="margin: 0; font-size: 15px">Gracias por usar [Nombre de la app]. Puedes descargar tus reservas hasta el <strong style="color: #26292B">30 de noviembre de 2026</strong>. Después se borrarán los datos de tus clientes.</p>
+</div>
+
+<button class="btn btn-primary btn-lg" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"></path><path d="M7 10l5 5 5-5"></path><path d="M5 21h14"></path></svg>Descargar mis reservas (Excel)</button>
+
+<div class="card" style="gap: 6px">
+<span style="font-weight: 700">Saldo sin gastar: <span class="tnum">4,20 €</span></span>
+<span class="help">Si quieres que te lo devolvamos, escribe a info@restavor.com.</span>
+</div>
+
+<div class="card" style="gap: 6px">
+<span style="font-weight: 700">¿Quieres volver?</span>
+<span class="help">Escríbenos antes del 30 nov y recuperas todo tal como estaba.</span>
+</div>
+
+<div style="flex-grow: 1"></div>
+<a class="link" href="Entrar.dc.html" style="text-align: center">Salir</a>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

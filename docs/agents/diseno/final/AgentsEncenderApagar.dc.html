@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Hoja · encender y apagar el agente</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/ec82e4b18abdc55e9f024989d4a8779f">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.lab{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#5E6B66}
+.btn-off{background:#FFFFFF;color:#9C3434;border-color:#E3B8B2}
+.choice{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 16px;border-radius:12px;border:1px solid #DDE5E1;background:#FFFFFF;font:inherit;font-size:16px;color:#17211F;text-align:left;width:100%;box-sizing:border-box}
+.choice i{width:20px;height:20px;border-radius:999px;border:2px solid #A7B3AE;box-sizing:border-box;flex-shrink:0}
+.choice[aria-pressed="true"]{border-color:#145C4E;background:#EEF6F2}
+.choice[aria-pressed="true"] i{border:6px solid #145C4E}
+.choice small{display:block;font-size:13px;color:#5E6B66;margin-top:2px}
+</style>
+</helmet>
+<div style="width: 1180px; height: 800px; box-sizing: border-box; padding: 28px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; background: #F5F7F4; color: #17211F; font-family: 'Inter', system-ui, sans-serif">
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<span class="lab">1 · Encendido (arriba de Agente de llamadas)</span>
+<section style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 20px; background: #E9F5EF; border: 1px solid #BFE0CF">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 999px; background: #145C4E; color: #FFFFFF; flex-shrink: 0"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1"><strong style="font-size: 20px; color: #0B2F2A">Agente encendido</strong><span style="font-size: 14px; color: #33413C">Coge las llamadas que no contestáis en 4 tonos</span></span>
+<button class="btn btn-lg btn-off" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9"></path><path d="M6.4 6.4a8 8 0 1 0 11.2 0"></path></svg>Apagar agente</button>
+</section>
+
+<span class="lab" style="padding-top: 10px">2 · Apagado</span>
+<section style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-radius: 20px; background: #F1F3F1; border: 1px solid #D5DCD8">
+<span aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 999px; background: #6B6F76; color: #FFFFFF; flex-shrink: 0"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"></path><path d="M6.4 6.4a8 8 0 1 0 11.2 0"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 4px; flex-grow: 1"><strong style="font-size: 20px">Agente apagado hasta las 15:10</strong><span style="font-size: 14px; color: #33413C">Las llamadas suenan en el local (600 123 456). Lo apagó José García a las 14:10.</span></span>
+<button class="btn btn-primary btn-lg" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9"></path><path d="M6.4 6.4a8 8 0 1 0 11.2 0"></path></svg>Encender agente</button>
+</section>
+
+<span class="lab" style="padding-top: 10px">3 · Acceso rápido en la cabecera de Hoy (tablet)</span>
+<div style="display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #FFFFFF; border: 1px solid #DDE5E1; border-radius: 14px">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: #E9F5EF; border: 1px solid #BFE0CF; color: #0F6B53; font-size: 14px; font-weight: 600"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 999px; background: #168A6D"></span>Agente encendido</span>
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; background: #F1F3F1; border: 1px solid #D5DCD8; color: #33413C; font-size: 14px; font-weight: 600"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 999px; background: #6B6F76"></span>Agente apagado · hasta 15:10</span>
+<span class="help">Al tocarlo se abre Agente de llamadas.</span>
+</div>
+
+<span class="lab" style="padding-top: 10px">Reglas</span>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.45; color: #33413C">
+<li>Lo pueden encender y apagar el propietario y el encargado. En la tablet del local, con su PIN.</li>
+<li>Apagado, el agente no coge ninguna llamada: pasan al teléfono para pasar llamadas.</li>
+<li>Si se apaga "1 hora" o "hasta que acabe este turno", se enciende solo. Queda apuntado quién lo apagó y cuándo.</li>
+<li>Apagado a mano no atiende aunque esté dentro de su horario. Al encenderlo vuelve a su horario normal (pestaña Horario).</li>
+</ul>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 14px">
+<span class="lab">4 · Al pulsar "Apagar agente"</span>
+<section role="dialog" aria-labelledby="h-t" style="background: #FFFFFF; border-radius: 20px; padding: 24px 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 16px 48px rgba(5, 21, 16, .18); border: 1px solid #DDE5E1">
+<h2 id="h-t" class="t1" style="font-size: 22px">¿Hasta cuándo lo apagas?</h2>
+<p class="sub">Mientras esté apagado, las llamadas sonarán en el local (600 123 456).</p>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<button class="choice" type="button" aria-pressed="true"><i aria-hidden="true"></i><span>Durante 1 hora<small>Se vuelve a encender solo a las 15:10</small></span></button>
+<button class="choice" type="button" aria-pressed="false"><i aria-hidden="true"></i><span>Hasta que acabe este turno<small>Se vuelve a encender solo a las 16:00</small></span></button>
+<button class="choice" type="button" aria-pressed="false"><i aria-hidden="true"></i><span>Hasta que lo vuelva a encender<small>No se enciende solo: acuérdate de encenderlo</small></span></button>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px">
+<button class="btn btn-ghost btn-lg" type="button">Cancelar</button>
+<button class="btn btn-lg" type="button" style="background: #C84C4C; color: #FFFFFF">Apagar agente</button>
+</div>
+</section>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

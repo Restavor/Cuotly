@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Nueva reserva</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;background:#F7F5F1;color:#26292B}
+a{color:#2F6690}a:hover{color:#234E6E}
+.tnum{font-variant-numeric:tabular-nums}
+.lbl{font-size:14px;font-weight:700;color:#26292B}
+.help{font-size:13px;color:#5F6368}
+.field{display:flex;flex-direction:column;gap:8px}
+.inp{height:48px;box-sizing:border-box;border:1px solid #D9D4CA;border-radius:12px;padding:0 14px;font:inherit;font-size:16px;color:#26292B;background:#FFFFFF}
+.inp::placeholder{color:#7A7F86}
+.inp:focus{outline:2px solid #3F7A5C;outline-offset:1px;border-color:#3F7A5C}
+.opt{display:inline-flex;align-items:center;justify-content:center;min-height:44px;min-width:44px;padding:0 10px;box-sizing:border-box;border-radius:12px;border:1px solid #D9D4CA;background:#FFFFFF;color:#26292B;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+.opt:hover{background:#F1EEE8}
+.opt[aria-pressed="true"]{background:#3F7A5C;border-color:#3F7A5C;color:#FFFFFF}
+.tag{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border-radius:999px;border:1px dashed #C9C3B8;background:#FFFFFF;color:#26292B;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.tag:hover{background:#F1EEE8}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border-radius:14px;font:inherit;font-weight:700;font-size:16px;cursor:pointer;text-decoration:none;border:1px solid transparent;box-sizing:border-box}
+.btn-primary{background:#3F7A5C;color:#FFFFFF}
+.btn-primary:hover{background:#346B4F;color:#FFFFFF}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;color:#26292B;text-decoration:none}
+.iconbtn:hover{background:#EDE9E2;color:#26292B}
+.iconbtn svg{width:22px;height:22px}
+</style>
+</helmet>
+<div style="width: 390px; height: 1160px; box-sizing: border-box; display: flex; flex-direction: column; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 8px; padding: 12px 12px 8px; background: #F7F5F1">
+<a class="iconbtn" href="Main.dc.html" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<h1 style="margin: 0; font-size: 20px; font-weight: 700">Nueva reserva</h1>
+</header>
+
+<form style="flex-grow: 1; display: flex; flex-direction: column; gap: 22px; padding: 8px 16px 16px">
+
+<div class="field">
+<span class="lbl">Fecha</span>
+<div style="display: flex; gap: 8px">
+<button class="opt" type="button" aria-pressed="true" style="padding: 0 16px">Hoy</button>
+<button class="opt" type="button" aria-pressed="false" style="padding: 0 16px">Mañana</button>
+<button class="opt" type="button" aria-pressed="false" style="flex-grow: 1; gap: 8px; justify-content: flex-start; padding: 0 14px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>Otro día</button>
+</div>
+<span class="help">Sábado, 26 de septiembre</span>
+</div>
+
+<div class="field">
+<span class="lbl">Personas</span>
+<div style="display: flex; gap: 6px">
+<sc-for list="{{paxList}}" as="p" hint-placeholder-count="7">
+<button class="opt tnum" type="button" aria-pressed="{{p.on}}" onClick="{{p.pick}}" style="flex-grow: 1">{{p.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div class="field">
+<span class="lbl">Turno</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button class="opt" type="button" aria-pressed="{{isComida}}" onClick="{{pickComida}}">Comida</button>
+<button class="opt" type="button" aria-pressed="{{isCena}}" onClick="{{pickCena}}">Cena</button>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E4E0D8">
+<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3F7A5C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M16 4.5a3.5 3.5 0 0 1 0 7"></path><path d="M18 14.5a6.5 6.5 0 0 1 3.5 5.5"></path></svg>
+<span class="tnum" style="font-size: 14px">{{aforoTxt}}</span>
+</div>
+</div>
+
+<div class="field">
+<span class="lbl">Hora</span>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{horas}}" as="h" hint-placeholder-count="6">
+<button class="opt tnum" type="button" aria-pressed="{{h.on}}" onClick="{{h.pick}}">{{h.label}}</button>
+</sc-for>
+</div>
+</div>
+
+<div class="field">
+<label class="lbl" for="nr-nombre">Nombre</label>
+<input class="inp" id="nr-nombre" type="text" placeholder="Nombre y apellido" autocomplete="off">
+</div>
+
+<div class="field">
+<label class="lbl" for="nr-tel">Teléfono</label>
+<input class="inp tnum" id="nr-tel" type="tel" placeholder="600 000 000">
+</div>
+
+<div class="field">
+<label class="lbl" for="nr-email">Email <span style="font-weight: 500; color: #5F6368">(opcional)</span></label>
+<input class="inp" id="nr-email" type="email" placeholder="cliente@correo.com">
+<span class="help">Si lo pones, los avisos le llegan por email. Si no, por WhatsApp o SMS (gasta saldo).</span>
+</div>
+
+<div class="field">
+<span class="lbl">Idioma de los avisos</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button class="opt" type="button" aria-pressed="{{isEs}}" onClick="{{pickEs}}">Español</button>
+<button class="opt" type="button" aria-pressed="{{isEn}}" onClick="{{pickEn}}">English</button>
+</div>
+</div>
+
+<div class="field">
+<label class="lbl" for="nr-nota">Nota</label>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<button class="tag" type="button">+ Trona</button>
+<button class="tag" type="button">+ Terraza</button>
+<button class="tag" type="button">+ Alergia</button>
+<button class="tag" type="button">+ Cumpleaños</button>
+</div>
+<textarea class="inp" id="nr-nota" rows="2" placeholder="Alergias, trona, terraza…" style="height: 76px; padding: 12px 14px; resize: none"></textarea>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #5F6368">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 999px; background: #E9ECF1; color: #3F4A5A; font-weight: 600"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>Manual</span>
+<span>La creas tú · Ana (Equipo)</span>
+</div>
+
+</form>
+
+<div style="padding: 12px 16px 20px; background: #F7F5F1; border-top: 1px solid #E4E0D8">
+<button class="btn btn-primary" type="button" style="width: 100%">Guardar reserva</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1160}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var pax = st.pax || 2;
+    var turno = st.turno || 'cena';
+    var hora = st.hora || '21:00';
+    var paxList = [1, 2, 3, 4, 5, 6, 7].map(function (n) {
+      return { label: n === 7 ? '7+' : String(n), on: pax === n, pick: function () { self.setState({ pax: n }); } };
+    });
+    var lista = turno === 'comida' ? ['13:00', '13:30', '14:00', '14:30', '15:00'] : ['20:00', '20:30', '21:00', '21:30', '22:00', '22:30'];
+    var horas = lista.map(function (h) {
+      return { label: h, on: hora === h, pick: function () { self.setState({ hora: h }); } };
+    });
+    var libres = turno === 'comida' ? 17 : 41;
+    var total = turno === 'comida' ? 40 : 60;
+    var tras = libres - pax;
+    var nombreTurno = turno === 'comida' ? 'la comida' : 'la cena';
+    return {
+      paxList: paxList,
+      horas: horas,
+      isComida: turno === 'comida',
+      isCena: turno === 'cena',
+      pickComida: function () { self.setState({ turno: 'comida', hora: '14:00' }); },
+      pickCena: function () { self.setState({ turno: 'cena', hora: '21:00' }); },
+      isEs: (st.lang || 'es') === 'es',
+      isEn: st.lang === 'en',
+      pickEs: function () { self.setState({ lang: 'es' }); },
+      pickEn: function () { self.setState({ lang: 'en' }); },
+      aforoTxt: 'Quedan ' + libres + ' de ' + total + ' plazas en ' + nombreTurno + '. Con esta reserva: ' + tras + '.'
+    };
+  }
+}
+</script>
+</body>
+</html>

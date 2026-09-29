@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Calendario del mes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;background:#F7F5F1;color:#26292B}
+a{color:#2F6690}a:hover{color:#234E6E}
+.tnum{font-variant-numeric:tabular-nums}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:12px;font:inherit;font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;border:1px solid transparent;box-sizing:border-box}
+.btn svg{width:18px;height:18px}
+.btn-primary{background:#3F7A5C;color:#FFFFFF}
+a.btn-primary:hover{background:#346B4F;color:#FFFFFF}
+.btn-ghost{background:#FFFFFF;color:#26292B;border-color:#D9D4CA}
+.btn-ghost:hover{background:#F1EEE8}
+.nav{display:flex;flex-direction:column;align-items:center;gap:4px;width:72px;padding:10px 0;border-radius:14px;text-decoration:none;color:#5F6368;font-size:12px;font-weight:600}
+.nav svg{width:24px;height:24px}
+a.nav:hover{background:#F1EEE8;color:#26292B}
+.nav[aria-current="page"]{background:#E4EFE8;color:#2F5E46}
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;border:1px solid #D9D4CA;background:#FFFFFF;color:#26292B;cursor:pointer}
+.iconbtn svg{width:20px;height:20px}
+.iconbtn:hover{background:#F1EEE8}
+.day{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:14px;background:#FFFFFF;border:1px solid #E4E0D8;text-decoration:none;color:#26292B;box-sizing:border-box;min-height:0}
+a.day:hover{border-color:#3F7A5C;color:#26292B}
+.num{font-size:17px;font-weight:700}
+.lg{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#26292B}
+.sw{width:12px;height:12px;border-radius:4px}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; box-sizing: border-box; display: flex; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<nav aria-label="Menú principal" style="width: 96px; flex-shrink: 0; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #E4E0D8; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0">
+<div aria-hidden="true" style="width: 44px; height: 44px; border-radius: 12px; background: #26292B; color: #F7F5F1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; margin-bottom: 16px">CP</div>
+<a class="nav" href="Main.dc.html">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>
+<span>Hoy</span>
+</a>
+<a class="nav" href="Calendario.dc.html" aria-current="page">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>
+<span>Calendario</span>
+</a>
+<a class="nav" href="Agente.dc.html">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>
+<span>Agente</span>
+</a>
+<a class="nav" href="Ajustes.dc.html">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 19.1L7 17"></path><path d="M17 7l2.1-2.1"></path></svg>
+<span>Ajustes</span>
+</a>
+<div style="flex-grow: 1"></div>
+<div style="font-size: 11px; color: #5F6368; text-align: center; line-height: 1.3">by<br>Restavor</div>
+</nav>
+
+<main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 20px 28px 24px; display: flex; flex-direction: column; gap: 14px">
+
+<header style="display: flex; align-items: center; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 13px; font-weight: 600; color: #5F6368; letter-spacing: .02em">CASA PEPE</span>
+<div style="display: flex; align-items: center; gap: 10px">
+<button class="iconbtn" type="button" aria-label="Mes anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -.01em">Septiembre 2026</h1>
+<button class="iconbtn" type="button" aria-label="Mes siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg></button>
+<button class="btn btn-ghost" type="button" style="font-size: 14px; padding: 0 14px">Hoy</button>
+</div>
+</div>
+<div style="flex-grow: 1"></div>
+<a class="btn btn-ghost" href="Buscar.dc.html" style="min-height: 52px; padding: 0 18px; font-size: 16px; border-radius: 14px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>Buscar</a>
+<a class="btn btn-primary" href="NuevaReserva.dc.html" style="min-height: 52px; padding: 0 24px; font-size: 16px; border-radius: 14px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"></path><path d="M5 12h14"></path></svg>
+Nueva reserva
+</a>
+</header>
+
+<div style="display: flex; align-items: center; gap: 18px">
+<span class="lg"><span class="sw" style="background: #5B4B9A"></span>Agente IA</span>
+<span class="lg"><span class="sw" style="background: #2F6690"></span>Plataformas</span>
+<span class="lg"><span class="sw" style="background: #1D6B73"></span>Web</span>
+<span class="lg"><span class="sw" style="background: #8C96A3"></span>Manual</span>
+<span class="lg"><span class="sw" style="background: #F5D76E; border: 1px solid #C9A92E"></span>Hay pendientes</span>
+<div style="flex-grow: 1"></div>
+<span class="tnum" style="font-size: 15px; color: #5F6368"><strong style="color: #26292B">Septiembre:</strong> 237 reservas · 783 personas</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; font-size: 13px; font-weight: 600; color: #5F6368; padding: 0 4px">
+<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: repeat(5, minmax(0, 1fr)); gap: 8px; flex-grow: 1; min-height: 0">
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="35">
+<sc-if value="{{c.isOpen}}" hint-placeholder-val="{{ true }}">
+<a class="day" href="Main.dc.html" style="{{c.ring}}">
+<div style="display: flex; align-items: center; gap: 6px">
+<span class="num tnum">{{c.d}}</span>
+<sc-if value="{{c.today}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: #FFFFFF; background: #3F7A5C; border-radius: 999px; padding: 2px 8px">Hoy</span></sc-if>
+<div style="flex-grow: 1"></div>
+<sc-if value="{{c.pend}}" hint-placeholder-val="{{ false }}"><span aria-label="Hay reservas pendientes" style="width: 12px; height: 12px; border-radius: 999px; background: #F5D76E; border: 1px solid #C9A92E"></span></sc-if>
+</div>
+<span class="tnum" style="font-size: 14px; font-weight: 600">{{c.lbl}}</span>
+<span class="tnum" style="font-size: 13px; color: #5F6368">{{c.pax}}</span>
+<div style="flex-grow: 1"></div>
+<div aria-hidden="true" style="display: flex; gap: 2px; height: 8px; border-radius: 999px; overflow: hidden; background: #F1EEE8">
+<span style="flex-grow: {{c.ia}}; background: #5B4B9A"></span>
+<span style="flex-grow: {{c.plat}}; background: #2F6690"></span>
+<span style="flex-grow: {{c.web}}; background: #1D6B73"></span>
+<span style="flex-grow: {{c.man}}; background: #8C96A3"></span>
+</div>
+</a>
+</sc-if>
+<sc-if value="{{c.isClosed}}" hint-placeholder-val="{{ false }}">
+<div class="day" style="background: repeating-linear-gradient(135deg, #F7F5F1 0 8px, #EFEBE4 8px 10px); border-style: dashed">
+<span class="num tnum" style="color: #5F6368">{{c.d}}</span>
+<span style="font-size: 13px; font-weight: 600; color: #5F6368">Cerrado</span>
+</div>
+</sc-if>
+<sc-if value="{{c.isOut}}" hint-placeholder-val="{{ false }}">
+<div class="day" style="background: transparent; border-color: transparent">
+<span class="num tnum" style="color: #A3A7AD; font-weight: 500">{{c.d}}</span>
+</div>
+</sc-if>
+</sc-for>
+</div>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var cells = [];
+    var start = new Date(2026, 7, 31);
+    for (var i = 0; i < 35; i++) {
+      var dt = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+      var d = dt.getDate();
+      var inMonth = dt.getMonth() === 8;
+      var dow = i % 7;
+      var closed = inMonth && dow === 0;
+      var weekend = dow >= 4;
+      var ia = 0, plat = 0, web = 0, man = 0, pax = 0;
+      if (inMonth && !closed) {
+        ia = 1 + (d * 7) % 3 + (weekend ? 2 : 0);
+        plat = 1 + (d * 3) % 4 + (weekend ? 2 : 0);
+        web = (d * 5) % 3 + (weekend ? 1 : 0);
+        man = 1 + d % 3;
+        if (d > 26) {
+          var k = d === 27 ? 0.7 : 0.35;
+          ia = Math.round(ia * k); plat = Math.round(plat * k); web = Math.round(web * k); man = Math.round(man * k);
+        }
+        if (d === 26) { ia = 3; plat = 3; web = 2; man = 2; }
+      }
+      var total = ia + plat + web + man;
+      pax = d === 26 ? 42 : Math.round(total * 3.1 + (d % 4));
+      var isToday = inMonth && d === 26;
+      cells.push({
+        d: d,
+        isOpen: inMonth && !closed,
+        isClosed: closed,
+        isOut: !inMonth,
+        today: isToday,
+        pend: inMonth && !closed && (d === 26 || d === 29),
+        ring: isToday ? 'border: 2px solid #3F7A5C' : (inMonth && d < 26 ? 'background: #FBFAF7' : ''),
+        lbl: total === 0 ? 'Sin reservas' : (total === 1 ? '1 reserva' : total + ' reservas'),
+        pax: total === 0 ? '' : pax + ' personas',
+        ia: ia, plat: plat, web: web, man: man
+      });
+    }
+    return { cells: cells };
+  }
+}
+</script>
+</body>
+</html>

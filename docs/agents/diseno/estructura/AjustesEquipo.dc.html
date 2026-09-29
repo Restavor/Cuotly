@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ajustes · Equipo y dispositivos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.av{width:36px;height:36px;border-radius:999px;background:#E9ECF1;color:#3F4A5A;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0}
+.person{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #EFEBE4}
+</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; display: flex; flex-direction: column; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 8px; padding: 12px 12px 4px">
+<a class="iconbtn plain" href="HoyMovil.dc.html" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<h1 class="h1" style="font-size: 20px">Ajustes</h1>
+</header>
+<nav aria-label="Secciones de ajustes" style="display: flex; gap: 2px; padding: 4px 12px 8px">
+<a class="tab" href="Ajustes.dc.html" style="padding: 0 10px">Horarios</a>
+<a class="tab" href="AjustesEquipo.dc.html" aria-current="page" style="padding: 0 10px">Equipo</a>
+<a class="tab" href="AjustesConexiones.dc.html" style="padding: 0 10px">Conexiones</a>
+<a class="tab" href="AjustesPlan.dc.html" style="padding: 0 10px">Plan</a>
+</nav>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 16px">
+
+<section class="card" style="gap: 4px">
+<div style="display: flex; align-items: center"><h2 class="h2" style="flex-grow: 1">Personas</h2><span class="help">5</span></div>
+
+<div class="person">
+<span class="av" aria-hidden="true">JG</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">José García</span><span class="help">Propietario · entra con email</span></span>
+</div>
+<div class="person">
+<span class="av" aria-hidden="true">MG</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">María García</span><span class="help">Propietaria · entra con email</span></span>
+<button class="iconbtn plain" type="button" aria-label="Opciones de María García"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+</div>
+<div class="person">
+<span class="av" aria-hidden="true">LM</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">Luis Martín</span><span class="help">Encargado · entra con email</span></span>
+<button class="iconbtn plain" type="button" aria-label="Opciones de Luis Martín"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="12" cy="19" r="1.8"></circle></svg></button>
+</div>
+<div class="person">
+<span class="av" aria-hidden="true">AR</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">Ana Ruiz</span><span class="help">Equipo · PIN en la tablet</span></span>
+<button class="btn btn-ghost btn-sm" type="button">Cambiar PIN</button>
+</div>
+<div class="person" style="border-bottom: 0">
+<span class="av" aria-hidden="true">DN</span>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">Diego Navas</span><span class="help">Equipo · PIN en la tablet</span></span>
+<button class="btn btn-ghost btn-sm" type="button">Cambiar PIN</button>
+</div>
+
+<button class="btn btn-ghost" type="button" style="margin-top: 6px">+ Añadir persona</button>
+<span class="help">Camareros: solo nombre y PIN de 4 cifras, sin email. Propietarios y encargados reciben una invitación por email.</span>
+</section>
+
+<section class="card">
+<h2 class="h2">Tablets y móviles del local</h2>
+<div class="line">
+<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3F4A5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M12 18h.01"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">Tablet de la barra</span><span class="help tnum">Activa desde 12 sept · usada hoy 14:02</span></span>
+<button class="btn btn-danger-outline btn-sm" type="button">Desactivar</button>
+</div>
+<div class="line">
+<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3F4A5A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M12 18h.01"></path></svg>
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span style="font-weight: 700">Móvil de la cocina</span><span class="help tnum">Activo desde 20 sept · usado ayer</span></span>
+<button class="btn btn-danger-outline btn-sm" type="button">Desactivar</button>
+</div>
+<button class="btn btn-primary" type="button">Usar este dispositivo como tablet del local</button>
+<span class="help">En un dispositivo del local se ven las reservas sin PIN. El PIN se pide para crear, editar, cancelar, confirmar o marcar «No vino». Si pierdes o te roban una tablet, desactívala aquí.</span>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

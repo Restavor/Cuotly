@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Buscar reserva</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.res{display:grid;grid-template-columns:130px 56px minmax(0,1fr) 60px 150px 110px;align-items:center;gap:12px;min-height:56px;padding:6px 14px;border-radius:12px;text-decoration:none;color:#26292B}
+a.res:hover{background:#F7F5F1;color:#26292B}
+.grp{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#5F6368;padding:10px 14px 4px}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; box-sizing: border-box; display: flex; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<nav aria-label="Menú principal" style="width: 96px; flex-shrink: 0; box-sizing: border-box; background: #FFFFFF; border-right: 1px solid #E4E0D8; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px 0">
+<div aria-hidden="true" style="width: 44px; height: 44px; border-radius: 12px; background: #26292B; color: #F7F5F1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; margin-bottom: 16px">CP</div>
+<a class="nav" href="Main.dc.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg><span>Hoy</span></a>
+<a class="nav" href="Calendario.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg><span>Calendario</span></a>
+<a class="nav" href="Agente.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg><span>Agente</span></a>
+<a class="nav" href="Ajustes.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 19.1L7 17"></path><path d="M17 7l2.1-2.1"></path></svg><span>Ajustes</span></a>
+</nav>
+
+<main style="flex-grow: 1; min-width: 0; box-sizing: border-box; padding: 24px 28px; display: flex; flex-direction: column; gap: 16px">
+
+<div style="display: flex; align-items: center; gap: 12px">
+<label for="q" style="position: relative; flex-grow: 1; display: flex; align-items: center">
+<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#5F6368" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position: absolute; left: 16px"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<input class="inp" id="q" type="search" value="gar" aria-label="Buscar por nombre o teléfono" style="height: 56px; padding-left: 50px; font-size: 18px; border-radius: 16px; border-color: #3F7A5C; border-width: 2px">
+</label>
+<a class="btn btn-ghost" href="Main.dc.html">Cerrar</a>
+</div>
+<span class="help">Busca por nombre o por teléfono (valen los 3 últimos números). Mira los últimos 30 días y todas las reservas futuras.</span>
+
+<section class="card" style="padding: 8px 8px 12px; gap: 0">
+<div class="grp">Próximas</div>
+<a class="res" href="Ficha.dc.html">
+<span class="tnum" style="font-weight: 700">Sáb 3 oct</span>
+<span class="tnum" style="font-weight: 700">21:00</span>
+<span style="font-weight: 600">Carmen <mark style="background: #F5D76E; color: #26292B; border-radius: 3px">Gar</mark>cía</span>
+<span class="tnum">4 pers.</span>
+<span><span class="chip c-web">Web</span></span>
+<span><span class="chip c-ok">Confirmada</span></span>
+</a>
+<a class="res" href="Ficha.dc.html">
+<span class="tnum" style="font-weight: 700">Vie 9 oct</span>
+<span class="tnum" style="font-weight: 700">14:00</span>
+<span style="font-weight: 600">Luis <mark style="background: #F5D76E; color: #26292B; border-radius: 3px">Gar</mark>cía</span>
+<span class="tnum">2 pers.</span>
+<span><span class="chip c-ia">Agente IA</span></span>
+<span><span class="chip c-ok">Confirmada</span></span>
+</a>
+<div class="grp" style="margin-top: 6px">Últimos 30 días</div>
+<a class="res" href="Ficha.dc.html" style="color: #6B7076">
+<span class="tnum" style="font-weight: 700">Dom 20 sept</span>
+<span class="tnum" style="font-weight: 700">21:30</span>
+<span style="font-weight: 600">Javier <mark style="background: #F5D76E; color: #26292B; border-radius: 3px">Gar</mark>rido</span>
+<span class="tnum">3 pers.</span>
+<span><span class="chip c-plat">TheFork</span></span>
+<span><span class="chip" style="background: #F1EEE8; color: #6B7076">Cancelada</span></span>
+</a>
+<a class="res" href="Ficha.dc.html">
+<span class="tnum" style="font-weight: 700">Mié 16 sept</span>
+<span class="tnum" style="font-weight: 700">14:00</span>
+<span style="font-weight: 600">Carmen <mark style="background: #F5D76E; color: #26292B; border-radius: 3px">Gar</mark>cía</span>
+<span class="tnum">4 pers.</span>
+<span><span class="chip c-web">Web</span></span>
+<span><span class="chip c-ok">Confirmada</span></span>
+</a>
+</section>
+
+<span class="help">4 resultados. Toca una reserva para abrir su ficha.</span>
+
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

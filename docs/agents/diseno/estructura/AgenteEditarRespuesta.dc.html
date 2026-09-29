@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Agente · editar una respuesta · móvil</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden; position: relative">
+
+<header style="display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<span class="k">Casa Pepe</span>
+<h1 class="h1">Agente</h1>
+</div>
+</header>
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 4px 16px">
+<div class="card" style="height: 64px"></div>
+<div class="card" style="height: 220px"></div>
+</div>
+
+<div class="scrim"></div>
+
+<section class="sheet" role="dialog" aria-modal="true" aria-labelledby="ed-t">
+<div class="grab" aria-hidden="true"></div>
+<h2 class="h1" id="ed-t" style="font-size: 20px">Editar pregunta</h2>
+<div class="field">
+<label class="lbl" for="ed-q">Qué pregunta el cliente</label>
+<input class="inp" id="ed-q" type="text" value="¿Hay aparcamiento?">
+</div>
+<div class="field">
+<label class="lbl" for="ed-a">Qué contesta el agente</label>
+<textarea class="inp" id="ed-a" rows="4" style="height: 120px; padding: 12px 14px; line-height: 1.45; resize: none">No tenemos parking propio. Hay un parking público a 2 minutos andando.</textarea>
+<span class="help">Frases cortas, como lo dirías por teléfono. Si pones precios u horarios especiales, acuérdate de cambiarlos cuando cambien.</span>
+</div>
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 10px">
+<a class="btn btn-ghost btn-lg" href="AgenteRespuestasMovil.dc.html">Cancelar</a>
+<a class="btn btn-primary btn-lg" href="AgenteRespuestasMovil.dc.html">Guardar</a>
+</div>
+<button class="link" type="button" style="align-self: center; color: #A94438">Borrar esta pregunta</button>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

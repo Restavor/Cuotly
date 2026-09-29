@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>¿Quién eres? · PIN en la tablet</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.who-btn{display:flex;align-items:center;gap:12px;min-height:60px;padding:0 14px;border-radius:14px;border:1px solid #D9D4CA;background:#FFFFFF;font:inherit;color:#26292B;cursor:pointer;text-align:left}
+.who-btn:hover{background:#F7F5F1}
+.who-btn[aria-pressed="true"]{border:2px solid #3F7A5C;background:#E4EFE8}
+.av{width:36px;height:36px;border-radius:999px;background:#E9ECF1;color:#3F4A5A;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 1180px; height: 820px; box-sizing: border-box; position: relative; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 96px; height: 820px; background: #FFFFFF; border-right: 1px solid #E4E0D8"></div>
+<div aria-hidden="true" style="position: absolute; left: 124px; top: 28px; right: 28px; display: flex; flex-direction: column; gap: 16px">
+<span style="font-size: 26px; font-weight: 700">Sábado, 26 de septiembre</span>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+<div style="height: 600px; background: #FFFFFF; border: 1px solid #E4E0D8; border-radius: 18px"></div>
+<div style="height: 600px; background: #FFFFFF; border: 1px solid #E4E0D8; border-radius: 18px"></div>
+</div>
+</div>
+<div class="scrim" aria-hidden="true"></div>
+
+<div class="modal" role="dialog" aria-modal="true" aria-labelledby="pin-t" style="left: 190px; top: 90px; width: 800px; height: 640px; flex-direction: row; gap: 28px; padding: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 12px; width: 330px">
+<h2 id="pin-t" class="h1">¿Quién eres?</h2>
+<span class="help" style="font-size: 14px">Para guardar: <strong>Nueva reserva · Carmen Ortiz · 14:00 · 3 pers.</strong></span>
+<sc-for list="{{people}}" as="p" hint-placeholder-count="4">
+<button class="who-btn" type="button" aria-pressed="{{p.on}}" onClick="{{p.pick}}">
+<span class="av" aria-hidden="true">{{p.ini}}</span>
+<span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700; font-size: 16px">{{p.name}}</span><span style="font-size: 13px; color: #5F6368">{{p.role}}</span></span>
+</button>
+</sc-for>
+<div style="flex-grow: 1"></div>
+<button class="btn btn-ghost" type="button">Cancelar</button>
+</div>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 8px; border-left: 1px solid #EFEBE4">
+<span style="font-size: 18px; font-weight: 700">Hola, {{first}}. Pon tu PIN</span>
+<div style="display: flex; gap: 14px" aria-label="{{pinLabel}}">
+<span class="{{d1}}"></span><span class="{{d2}}"></span><span class="{{d3}}"></span><span class="{{d4}}"></span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, 80px); gap: 12px">
+<sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+<button class="pinkey tnum" type="button" onClick="{{k.press}}" aria-label="{{k.aria}}" style="{{k.style}}">{{k.label}}</button>
+</sc-for>
+</div>
+<span class="help" style="text-align: center">5 PIN erróneos bloquean la tablet 1 minuto.</span>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var sel = st.sel || 'ana';
+    var pin = st.pin != null ? st.pin : '12';
+    var list = [
+      { id: 'jose', name: 'José García', role: 'Propietario', ini: 'JG' },
+      { id: 'luis', name: 'Luis Martín', role: 'Encargado', ini: 'LM' },
+      { id: 'ana', name: 'Ana Ruiz', role: 'Equipo', ini: 'AR' },
+      { id: 'diego', name: 'Diego Navas', role: 'Equipo', ini: 'DN' }
+    ];
+    var people = list.map(function (p) {
+      return { name: p.name, role: p.role, ini: p.ini, on: sel === p.id, pick: function () { self.setState({ sel: p.id, pin: '' }); } };
+    });
+    var cur = list.filter(function (p) { return p.id === sel; })[0];
+    var labels = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'Borrar', '0', 'OK'];
+    var keys = labels.map(function (l) {
+      var isTxt = l === 'Borrar' || l === 'OK';
+      return {
+        label: l, aria: l === 'Borrar' ? 'Borrar último número' : (l === 'OK' ? 'Confirmar PIN' : l),
+        style: isTxt ? 'font-size: 16px' : '',
+        press: function () {
+          if (l === 'Borrar') { self.setState({ pin: pin.slice(0, -1) }); return; }
+          if (l === 'OK') { return; }
+          if (pin.length < 4) { self.setState({ pin: pin + l }); }
+        }
+      };
+    });
+    function dc(i) { return pin.length > i ? 'dot on' : 'dot'; }
+    return {
+      people: people, first: cur.name.split(' ')[0], keys: keys,
+      d1: dc(0), d2: dc(1), d3: dc(2), d4: dc(3),
+      pinLabel: pin.length + ' de 4 números'
+    };
+  }
+}
+</script>
+</body>
+</html>

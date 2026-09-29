@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Email de confirmación</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;background:#F1EEE8;color:#26292B}
+a{color:#2F5E46}a:hover{color:#234735}
+</style>
+</helmet>
+<div style="width: 390px; height: 760px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 20px 16px; background: #F1EEE8; color: #26292B; font-family: -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif; overflow: hidden">
+
+<div style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #5F6368; padding: 0 4px">
+<span><strong style="color: #26292B">De:</strong> Casa Pepe &lt;reservas@[dominio]&gt;</span>
+<span><strong style="color: #26292B">Asunto:</strong> Tu reserva en Casa Pepe está confirmada</span>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 14px; padding: 22px 20px; display: flex; flex-direction: column; gap: 16px; font-size: 16px; line-height: 1.5">
+<p style="margin: 0">Hola, Nuria:</p>
+<p style="margin: 0">Tu reserva está confirmada.</p>
+<div style="border: 1px solid #E4E0D8; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+<strong style="font-size: 17px">Sábado, 26 de septiembre · 21:00</strong>
+<span>2 personas</span>
+<span>Casa Pepe · [Dirección del restaurante], Sevilla</span>
+</div>
+<p style="margin: 0">¿No puedes venir? <a href="#" style="font-weight: 700">Cancela tu reserva aquí</a>.</p>
+<p style="margin: 0">Para cualquier cambio, llámanos al 954 000 000.</p>
+<p style="margin: 0">¡Hasta pronto!<br>Casa Pepe</p>
+</div>
+
+<p style="margin: 0; padding: 0 4px; font-size: 12px; line-height: 1.5; color: #5F6368">Recibes este email porque has reservado en Casa Pepe. Reservas gestionadas con [Nombre de la app] · Restavor.</p>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

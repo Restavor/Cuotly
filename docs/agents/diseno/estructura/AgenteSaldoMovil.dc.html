@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Agente · saldo y recarga · móvil</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.mv{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #EFEBE4;font-size:15px}
+</style>
+</helmet>
+<div style="width: 390px; height: 1280px; box-sizing: border-box; display: flex; flex-direction: column; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 10px; padding: 14px 16px 6px">
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<span class="k">Casa Pepe</span>
+<h1 class="h1">Agente</h1>
+</div>
+<span style="font-size: 14px; font-weight: 600">Encendido</span>
+<button class="sw" type="button" role="switch" aria-checked="true" aria-label="Agente encendido"></button>
+</header>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 4px 16px 12px">
+<nav aria-label="Secciones del agente" style="display: flex; gap: 2px">
+<a class="tab" href="AgenteMovil.dc.html" style="padding: 0 12px">Llamadas</a>
+<a class="tab" href="AgenteRespuestasMovil.dc.html" style="padding: 0 12px">Respuestas</a>
+<a class="tab" href="AgenteHorarioMovil.dc.html" style="padding: 0 12px">Horario</a>
+<a class="tab" href="AgenteSaldoMovil.dc.html" aria-current="page" style="padding: 0 12px">Saldo</a>
+</nav>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px">
+
+<section class="card" style="gap: 12px">
+<span class="help">Saldo disponible</span>
+<div style="display: flex; align-items: baseline; gap: 10px"><span class="tnum" style="font-size: 34px; font-weight: 700; letter-spacing: -.01em">7,40 €</span><span class="help">unos 70 min de llamadas</span></div>
+<span class="help">Lo usan el agente, los WhatsApp y los SMS. Cada uno descuenta lo que cuesta, sin recargos.</span>
+<div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid #EFEBE4; padding-top: 12px">
+<span class="lbl">Recargar</span>
+<div role="group" aria-label="Importe" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{importes}}" as="im" hint-placeholder-count="4">
+<button class="opt tnum" type="button" aria-pressed="{{im.on}}" onClick="{{im.pick}}">{{im.label}}</button>
+</sc-for>
+</div>
+<span class="tnum" style="font-size: 15px">Pagarás <strong>{{total}}</strong> ({{neto}} + 21 % IVA)</span>
+</div>
+<button class="btn btn-primary btn-lg" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>Pagar con tarjeta</button>
+<span class="help">Se suma al momento y te llega el recibo por email. Solo el propietario puede recargar.</span>
+</section>
+
+<div class="bar bar-info">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8h.01"></path><path d="M11 12h1v4h1"></path></svg>
+<span>Te avisamos cuando queden menos de <strong>5 €</strong>. Si llega a 0, el agente pasa las llamadas al 600 123 456 y los avisos a clientes solo salen por email.</span>
+</div>
+
+<section class="card" style="gap: 2px">
+<h2 class="h2" style="padding-bottom: 6px">En qué se ha gastado · septiembre</h2>
+<div class="mv tnum"><span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><strong>Llamadas del agente</strong><span class="help">212 llamadas · 5 h 32 min</span></span><strong>34,86 €</strong></div>
+<div class="mv tnum"><span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><strong>WhatsApp</strong><span class="help">182 mensajes</span></span><strong>3,02 €</strong></div>
+<div class="mv tnum" style="border-bottom: 0"><span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><strong>SMS</strong><span class="help">6 mensajes</span></span><strong>0,48 €</strong></div>
+</section>
+
+<section class="card" style="gap: 2px">
+<h2 class="h2" style="padding-bottom: 6px">Últimos movimientos</h2>
+<div class="mv tnum"><span class="muted" style="width: 60px">Hoy</span><span style="flex-grow: 1">Llamadas del agente (8)</span><span>−1,07 €</span></div>
+<div class="mv tnum"><span class="muted" style="width: 60px">Hoy</span><span style="flex-grow: 1">WhatsApp (5)</span><span>−0,08 €</span></div>
+<div class="mv tnum"><span class="muted" style="width: 60px">Vie 25</span><span style="flex-grow: 1">Llamadas del agente (11)</span><span>−1,52 €</span></div>
+<div class="mv tnum" style="border-bottom: 0"><span class="muted" style="width: 60px">Jue 24</span><span style="flex-grow: 1">Recarga con tarjeta</span><strong style="color: #2F5E46">+20,00 €</strong></div>
+<a class="link" href="#" style="font-size: 14px">Ver todos y descargar</a>
+</section>
+
+</div>
+
+<div style="flex-grow: 1"></div>
+
+<nav class="tabbar" aria-label="Menú principal" style="grid-template-columns: repeat(4, minmax(0, 1fr))">
+<a class="tabi" href="HoyMovil.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path></svg>Hoy</a>
+<a class="tabi" href="CalendarioMovil.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path></svg>Calendario</a>
+<a class="tabi" href="AgenteMovil.dc.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente</a>
+<a class="tabi" href="Ajustes.dc.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3"></path><path d="M12 19v3"></path><path d="M4.9 4.9l2.1 2.1"></path><path d="M17 17l2.1 2.1"></path><path d="M2 12h3"></path><path d="M19 12h3"></path><path d="M4.9 19.1L7 17"></path><path d="M17 7l2.1-2.1"></path></svg>Ajustes</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1280}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var importe = st.importe || 20;
+    var importes = [10, 20, 50].map(function (n) {
+      return { label: n + ' €', on: importe === n, pick: function () { self.setState({ importe: n }); } };
+    });
+    importes.push({ label: 'Otra', on: false, pick: function () {} });
+    var total = (Math.round(importe * 121) / 100).toFixed(2).replace('.', ',') + ' €';
+    return { importes: importes, neto: importe + ' €', total: total };
+  }
+}
+</script>
+</body>
+</html>

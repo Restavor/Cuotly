@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ajustes · Conexiones</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; display: flex; flex-direction: column; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 8px; padding: 12px 12px 4px">
+<a class="iconbtn plain" href="HoyMovil.dc.html" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<h1 class="h1" style="font-size: 20px">Ajustes</h1>
+</header>
+<nav aria-label="Secciones de ajustes" style="display: flex; gap: 2px; padding: 4px 12px 8px">
+<a class="tab" href="Ajustes.dc.html" style="padding: 0 10px">Horarios</a>
+<a class="tab" href="AjustesEquipo.dc.html" style="padding: 0 10px">Equipo</a>
+<a class="tab" href="AjustesConexiones.dc.html" aria-current="page" style="padding: 0 10px">Conexiones</a>
+<a class="tab" href="AjustesPlan.dc.html" style="padding: 0 10px">Plan</a>
+</nav>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 16px">
+
+<section class="card">
+<h2 class="h2" style="display: flex; align-items: center; gap: 8px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#2F6690" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"></path></svg>Plataformas</h2>
+<div class="line">
+<span style="font-weight: 700; flex-grow: 1">TheFork</span>
+<span class="chip c-ok chip-sm">Conectada</span>
+</div>
+<div class="line" style="border-color: #E9C3BD; background: #FDF6F5; flex-wrap: wrap">
+<span style="font-weight: 700; flex-grow: 1">CoverManager</span>
+<span class="chip c-err chip-sm">No conecta</span>
+<span class="help" style="width: 100%; color: #8E372D">Desde hoy 12:40 no entran sus reservas. Restavor ya está avisado.</span>
+</div>
+<span class="help">Las conexiones con plataformas las configura Restavor. Si quieres conectar otra, escribe a info@restavor.com.</span>
+</section>
+
+<section class="card">
+<h2 class="h2" style="display: flex; align-items: center; gap: 8px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#5B4B9A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14v-2a9 9 0 0 1 18 0v2"></path><path d="M21 16a2 2 0 0 1-2 2h-1v-6h1a2 2 0 0 1 2 2z"></path><path d="M3 16a2 2 0 0 0 2 2h1v-6H5a2 2 0 0 0-2 2z"></path></svg>Agente de llamadas</h2>
+<div style="display: flex; align-items: center; gap: 8px"><span class="chip c-ok chip-sm">Encendido</span><span class="help tnum">8 llamadas hoy</span></div>
+<span class="help">El horario, lo que responde, el teléfono para pasar llamadas y el saldo están en el apartado Agente.</span>
+<a class="link" href="AgenteMovil.dc.html">Ir a Agente</a>
+</section>
+
+<section class="card">
+<h2 class="h2" style="display: flex; align-items: center; gap: 8px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1D6B73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18"></path></svg>Reservas por internet</h2>
+<div style="display: flex; align-items: center; gap: 8px"><span class="chip c-ok chip-sm">Activo en casapepe.es</span></div>
+<div class="field">
+<span class="lbl">Tu página de reservas</span>
+<div style="display: flex; gap: 8px"><span class="code" style="flex-grow: 1">[dominio]/r/casa-pepe</span><button class="btn btn-ghost btn-sm" type="button">Copiar</button></div>
+<span class="help">Ponla en Instagram, Google Maps o WhatsApp. El color y el logo los configura Restavor.</span>
+</div>
+</section>
+
+<section class="card">
+<h2 class="h2">Avisos a tus clientes</h2>
+<div style="display: flex; align-items: center; gap: 10px"><span style="flex-grow: 1">Por email</span><span class="chip c-ok chip-sm">Siempre activo</span></div>
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1"><span>Por WhatsApp o SMS</span><span class="help">Si no hay email. Gasta saldo: <strong class="tnum">7,40 €</strong></span></span>
+<button class="sw" type="button" role="switch" aria-checked="true" aria-label="Avisos por WhatsApp o SMS"></button>
+</div>
+<a class="link" href="AgenteSaldoMovil.dc.html">Ver saldo y recargar</a>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

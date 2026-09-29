@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ajustes · Plan y pagos</title>
+<script src="./support.js"></script>
+<link rel="stylesheet" href="/_blob/e08822f82e80488a7044f07bb63578aa">
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}
+.kv{display:flex;align-items:center;gap:10px;font-size:15px}
+.kv span:first-child{flex-grow:1;color:#5F6368}
+</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; display: flex; flex-direction: column; background: #F7F5F1; color: #26292B; font-family: 'Figtree', system-ui, sans-serif; overflow: hidden">
+
+<header style="display: flex; align-items: center; gap: 8px; padding: 12px 12px 4px">
+<a class="iconbtn plain" href="HoyMovil.dc.html" aria-label="Volver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<h1 class="h1" style="font-size: 20px">Ajustes</h1>
+</header>
+<nav aria-label="Secciones de ajustes" style="display: flex; gap: 2px; padding: 4px 12px 8px">
+<a class="tab" href="Ajustes.dc.html" style="padding: 0 10px">Horarios</a>
+<a class="tab" href="AjustesEquipo.dc.html" style="padding: 0 10px">Equipo</a>
+<a class="tab" href="AjustesConexiones.dc.html" style="padding: 0 10px">Conexiones</a>
+<a class="tab" href="AjustesPlan.dc.html" aria-current="page" style="padding: 0 10px">Plan</a>
+</nav>
+
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 12px; padding: 4px 16px 16px">
+
+<section class="card" style="gap: 10px">
+<div style="display: flex; align-items: center; gap: 8px"><h2 class="h2" style="flex-grow: 1">Tu plan</h2><span class="chip c-ok chip-sm">Activo</span></div>
+<div class="kv"><span>Plan</span><strong>Mensual · 48 € + IVA</strong></div>
+<div class="kv tnum"><span>Pagado hasta</span><strong>31 oct 2026</strong></div>
+<div class="kv tnum"><span>Próximo pago</span><strong>58,08 € antes del 31 oct</strong></div>
+<details style="border-top: 1px solid #EFEBE4; padding-top: 10px">
+<summary style="font-weight: 700; cursor: pointer; min-height: 32px">Cómo pagar</summary>
+<div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; padding-top: 8px">
+<span>Bizum: <strong class="tnum">[Bizum de Restavor]</strong></span>
+<span>Transferencia: <strong class="tnum">[IBAN de Restavor]</strong></span>
+<span>Concepto: <strong>Casa Pepe · noviembre</strong></span>
+</div>
+</details>
+<a class="link" href="#">Pasar al plan anual (44 € + IVA/mes, 12 meses)</a>
+</section>
+
+<section class="card" style="gap: 8px">
+<h2 class="h2">Recibos y facturas</h2>
+<div class="line tnum"><span style="flex-grow: 1">Octubre 2026 · 58,08 €</span><a class="btn btn-ghost btn-sm" href="#">PDF</a></div>
+<div class="line tnum"><span style="flex-grow: 1">Septiembre 2026 · 58,08 €</span><a class="btn btn-ghost btn-sm" href="#">PDF</a></div>
+<div class="line tnum"><span style="flex-grow: 1">Recarga de saldo · 12,10 € · recibo</span><a class="btn btn-ghost btn-sm" href="#">PDF</a></div>
+</section>
+
+<section class="card" style="gap: 10px">
+<h2 class="h2">Saldo</h2>
+<div style="display: flex; align-items: baseline; gap: 8px"><span class="tnum" style="font-size: 30px; font-weight: 700">7,40 €</span><span class="help">para el agente, WhatsApp y SMS</span></div>
+<span class="help tnum">Septiembre: 38,36 € gastados. Cada llamada o mensaje descuenta lo que cuesta.</span>
+<a class="btn btn-primary" href="AgenteSaldoMovil.dc.html">Recargar y ver movimientos</a>
+</section>
+
+<div style="flex-grow: 1"></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px">
+<button class="link" type="button" style="color: #A94438">Darme de baja</button>
+<span class="help" style="text-align: center">Sin permanencia: seguirás teniendo acceso hasta el 31 oct.</span>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
