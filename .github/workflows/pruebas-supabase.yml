@@ -1,0 +1,129 @@
+name: Pruebas · Supabase
+
+# Carga las migraciones (y, si toca, el sembrado) en el proyecto de Supabase
+# "Restavor pruebas". NUNCA toca producción:
+#   - solo corre en la rama `agents`;
+#   - solo acepta una dirección de conexión que contenga el identificador de
+#     "Restavor pruebas" y se niega si contiene el de producción;
+#   - la dirección vive en el secreto `PRUEBAS_DATABASE_URL`, que es la
+#     contraseña de esa base y de ninguna otra.
+# Si el secreto no existe, el trabajo se salta sin fallar.
+#
+# Migraciones: se aplican las que falten (`supabase db push`), en orden.
+# Sembrado: `supabase/seed/*.sql` se ejecuta solo cuando cambia algún archivo de
+# `supabase/seed/` en la subida, o al lanzarlo a mano con `sembrar = true`. Es
+# idempotente, pero reconstruye los datos de demostración, así que no se lanza
+# en cada subida de migraciones.
+# Cómo se usa: docs/agents/PRUEBAS.md.
+
+on:
+  push:
+    branches: [agents]
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/seed/**"
+      - ".github/workflows/pruebas-supabase.yml"
+  workflow_dispatch:
+    inputs:
+      sembrar:
+        description: "Ejecutar también el sembrado (reconstruye los datos de demostración)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruebas-supabase
+  cancel-in-progress: false
+
+env:
+  # Identificadores de proyecto de Supabase (no son secretos).
+  PRUEBAS_REF: bnucqykimngjwcrlpmsm
+  PRODUCCION_REF: mcajbfxhkxtdhjoyrqha
+
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comprobar rama y secreto
+        id: guardia
+        env:
+          DB_URL: ${{ secrets.PRUEBAS_DATABASE_URL }}
+        run: |
+          if [ "${GITHUB_REF_NAME}" != "agents" ]; then
+            echo "Solo se carga desde la rama agents (esta es ${GITHUB_REF_NAME})."
+            echo "seguir=no" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [ -z "${DB_URL}" ]; then
+            echo "Falta el secreto PRUEBAS_DATABASE_URL: no se hace nada."
+            echo "seguir=no" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if printf '%s' "${DB_URL}" | grep -q "${PRODUCCION_REF}"; then
+            echo "::error::La dirección del secreto es la de PRODUCCION. Se aborta."
+            exit 1
+          fi
+          if ! printf '%s' "${DB_URL}" | grep -q "postgres.${PRUEBAS_REF}@"; then
+            echo "::error::La dirección no es la de Restavor pruebas (${PRUEBAS_REF}). Se aborta."
+            exit 1
+          fi
+          echo "seguir=si" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        if: steps.guardia.outputs.seguir == 'si'
+        with:
+          fetch-depth: 0
+
+      - uses: supabase/setup-cli@v1
+        if: steps.guardia.outputs.seguir == 'si'
+        with:
+          version: latest
+
+      - name: Migraciones pendientes (simulacro)
+        if: steps.guardia.outputs.seguir == 'si'
+        env:
+          DB_URL: ${{ secrets.PRUEBAS_DATABASE_URL }}
+        run: supabase db push --db-url "${DB_URL}" --dry-run
+
+      - name: Aplicar migraciones
+        if: steps.guardia.outputs.seguir == 'si'
+        env:
+          DB_URL: ${{ secrets.PRUEBAS_DATABASE_URL }}
+        run: supabase db push --db-url "${DB_URL}" --yes
+
+      - name: ¿Hay que sembrar?
+        id: sembrar
+        if: steps.guardia.outputs.seguir == 'si'
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            [ "${{ inputs.sembrar }}" = "true" ] && echo "hacer=si" >> "$GITHUB_OUTPUT" || echo "hacer=no" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          ANTES="${{ github.event.before }}"
+          if [ -z "${ANTES}" ] || [ "${ANTES}" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "${ANTES}^{commit}" 2>/dev/null; then
+            echo "hacer=si" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "${ANTES}" "${GITHUB_SHA}" -- supabase/seed | grep -q .; then
+            echo "hacer=si" >> "$GITHUB_OUTPUT"
+          else
+            echo "hacer=no" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Sembrado (espacio de demostración)
+        if: steps.guardia.outputs.seguir == 'si' && steps.sembrar.outputs.hacer == 'si'
+        env:
+          DB_URL: ${{ secrets.PRUEBAS_DATABASE_URL }}
+        run: |
+          for f in supabase/seed/*.sql; do
+            echo "Sembrando $f"
+            psql "${DB_URL}" -v ON_ERROR_STOP=1 -f "$f" > /dev/null
+          done
+
+      - name: Resumen (solo cifras)
+        if: steps.guardia.outputs.seguir == 'si'
+        env:
+          DB_URL: ${{ secrets.PRUEBAS_DATABASE_URL }}
+        run: |
+          psql "${DB_URL}" -At -c "select 'migraciones aplicadas: ' || count(*) from supabase_migrations.schema_migrations"
+          psql "${DB_URL}" -At -c "select 'tablas en public: ' || count(*) from pg_tables where schemaname = 'public'"
+          psql "${DB_URL}" -At -c "select 'tablas sin RLS: ' || count(*) from pg_tables where schemaname = 'public' and not rowsecurity"
