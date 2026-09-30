@@ -5326,10 +5326,20 @@ Decisiones técnicas:
 
 Hallazgos que **no** son de la Fase 0 y que hay que decidir:
 
-- **El CI está en rojo en todas las subidas desde el 26/09/2026**, también en la rama de producción. En la subida "Kit de Restavor agents":
-  `rls-tests` se para en "Hito 5 — CA-05 concurrencia real" y **no ejecuta el resto de suites SQL** (incluidas 86 a 88, las de la 152 a la 154);
-  `build-and-test` falla en Playwright (typecheck, lint, pruebas unitarias y build pasan); `e2e-datos` fallaba en el sembrado (arreglado arriba, sin
-  volver a comprobar el job entero). La Definición de hecho de §15.0 exige el CI en verde: hay que arreglar esto antes de dar por buena la Fase A.
+- **El CI no está en verde desde el 17/09/2026.** Solo hay 6 ejecuciones verdes en toda la historia y la última es la #220; las 190 siguientes
+  no lo son. Investigado el 30/09/2026 sobre la subida `1e666db`, con tres causas distintas:
+  1. **`rls-tests`** se paraba en `hito5-concurrency-test.mjs` (CA-05) porque `create_request_draft()` ya no deja enviar sin prioridad
+     (RN-REQ-05, migración 106, 19/09). Ese paso hace de tapón: **en CI no se ejecutaba ninguna suite posterior**. Reproducido en local
+     (PostgreSQL 16 con `bootstrap-postgres-local.sql`): con una sola línea, `create_request_draft($1, $2, null, 'medium', '…')`, pasa.
+     Con esa base local, **las 88 suites SQL de CI pasan una a una**, `hito7-concurrency-test.mjs` pasa y el sembrado corre dos veces sin error.
+  2. **`build-and-test`**: un único test de Playwright (`hito8-experiencia.spec.ts:25`) cuenta 5 enlaces en la barra inferior y hay 4 más el botón
+     Crear en el centro (`<details>`, decisión 47). Typecheck, lint, pruebas unitarias y build pasan. No verificado en local (el servidor de
+     Playwright no arrancó en el sandbox).
+  3. **`e2e-datos`**: con el sembrado arreglado, 13 de 16 recorridos fallan. Los datos existen tal como los esperan las pruebas (SOL-0001 a
+     SOL-0004, espacio "Demo Restavor web"); fallan las pantallas o los textos que buscan: el contador "/ 30 utilizadas" y el selector de plantilla
+     "Pizarra" (migración 152), "Lo que incluye tu plan este ciclo" y "Tus solicitudes", `EST-0001` ahora repetido, "Importe cobrado", el `<option>`
+     oculto de "Marta Gil (trabajadora)" y los enlaces del Inicio. Parece una suite que no siguió al rediseño (18 a 25/09) ni a los créditos.
+     No se puede reproducir sin una Supabase completa (Auth y API): hay que arreglarla por CI, test a test.
 - Las variables de **Preview** de `cuotly-web` tenían valores de producción; corregido el 30/09/2026 (ver `docs/agents/PRUEBAS.md`).
 
 Pasos para que Bosco lo pruebe a mano: en `docs/agents/PRUEBAS.md`, sección Estado de la Fase 0.

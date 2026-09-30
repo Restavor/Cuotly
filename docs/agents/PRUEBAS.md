@@ -47,7 +47,9 @@ hay que registrarse allí con ese correo (los correos de registro solo salen si 
 panel de Supabase de Restavor pruebas → Authentication → Users) y volver a ejecutar el sembrado.
 
 El catálogo de planes **del espacio demo** es el antiguo: el sembrado está desfasado respecto a los créditos (PRD §16 lo resuelve en la Fase B).
-El espacio `restavor` (catálogo Básico, Impulso, Premium) sí sale de las migraciones.
+**En Pruebas no existe el espacio `restavor`** (el de Bosco, con el catálogo Básico, Impulso y Premium): las migraciones traen la función
+`create_restavor_space()`, pero alguien tiene que llamarla, y en producción se hizo a mano. Solo hay el espacio `demo`. Hay que crearlo antes de la
+Fase A (las pantallas del lado de Restavor, `spaces.reservations_enabled` y las solicitudes de Reservas viven en ese espacio).
 
 ## Cómo se cargan las migraciones y el sembrado
 
@@ -78,4 +80,4 @@ Si el secreto falta, el proceso se salta sin dar error. Si la base se ha pausado
   rebotes duros. Cuando una fase necesite correo real (Fase F), se usa una clave propia de pruebas y direcciones reales.
 - **Protección de las vistas previas:** Vercel pide iniciar sesión para abrir una vista previa. Stripe, `pg_cron` y las llamadas externas al agente no
   podrán entrar sin una excepción (Fases E y G). Se decide entonces.
-- **CI:** al 30/09/2026, el CI del repositorio falla en tres trabajos ya antes de la Fase 0. Ver el hito de la Fase 0 en `docs/ROADMAP.md`.
+- **CI:** no hay ninguna ejecución verde desde el 17/09/2026 (la #220). Causas y arreglos propuestos en el hito de la Fase 0 de `docs/ROADMAP.md`.
