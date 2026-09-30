@@ -5327,7 +5327,7 @@ Hallazgos que **no** son de la Fase 0 y que hay que decidir:
 
 - **El CI está en rojo en todas las subidas desde el 26/09/2026**, también en la rama de producción. En la subida "Kit de Restavor agents":
   `rls-tests` se para en "Hito 5 — CA-05 concurrencia real" y **no ejecuta el resto de suites SQL** (incluidas 86 a 88, las de la 152 a la 154);
-  `build-and-test` falla en Playwright (typecheck, lint, 856+ pruebas y build pasan); `e2e-datos` fallaba en el sembrado (arreglado arriba, sin
+  `build-and-test` falla en Playwright (typecheck, lint, pruebas unitarias y build pasan); `e2e-datos` fallaba en el sembrado (arreglado arriba, sin
   volver a comprobar el job entero). La Definición de hecho de §15.0 exige el CI en verde: hay que arreglar esto antes de dar por buena la Fase A.
 - Las variables de **Preview** de `cuotly-web` en Vercel tienen valores de producción (ver `docs/agents/PRUEBAS.md`).
 
