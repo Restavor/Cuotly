@@ -126,6 +126,12 @@ create table auth.users (
   updated_at timestamptz not null default now()
 );
 
+-- En el proyecto real `auth.users` tiene un índice único sobre el correo
+-- (`users_email_partial_key`). Sin él aquí, una suite que deja un correo sin
+-- limpiar no rompía a la siguiente y el fallo solo aparecía en CI, donde las
+-- suites comparten una sola base (30/09/2026: `info@restavor.com`).
+create unique index users_email_partial_key on auth.users (email) where email is not null;
+
 -- GoTrue resuelve el login por aquí, no por `auth.users` a secas. Las
 -- migraciones no la tocan; el sembrado sí, y comprobar que cada usuario
 -- tiene la suya es parte de su verificación final.

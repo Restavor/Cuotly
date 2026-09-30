@@ -91,13 +91,13 @@ $$;
 -- Los planes los crea `create_restavor_space()`, no una migración: en una
 -- base recién migrada no hay ni uno, así que la suite crea el espacio.
 insert into auth.users (id, email, role, aud) values
-  ('d0400000-0000-0000-0000-000000000001', 'info@restavor.com', 'authenticated', 'authenticated')
+  ('ffb00000-0000-0000-0000-000000000001', 'info@restavor.com', 'authenticated', 'authenticated')
 on conflict (id) do nothing;
 insert into public.profiles (id, email, full_name)
-values ('d0400000-0000-0000-0000-000000000001', 'info@restavor.com', 'Bosco 59')
+values ('ffb00000-0000-0000-0000-000000000001', 'info@restavor.com', 'Bosco 59')
 on conflict (id) do nothing;
 
-select set_config('request.jwt.claim.sub', 'd0400000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', true);
 -- RN-ADM-02 · el sombrero de plataforma solo existe en dos pasos.
 select set_config('request.jwt.claim.aal', 'aal2', true);
 
@@ -157,10 +157,10 @@ on conflict (id) do nothing;
 
 insert into public.spaces (id, name, slug, timezone, created_by)
 values ('d0400000-0000-0000-0000-000000000010', 'Espacio 59', 'espacio-59', 'Europe/Madrid',
-        'd0400000-0000-0000-0000-000000000001');
+        'ffb00000-0000-0000-0000-000000000001');
 
 insert into public.space_memberships (space_id, user_id, role, status)
-values ('d0400000-0000-0000-0000-000000000010', 'd0400000-0000-0000-0000-000000000001', 'owner', 'active');
+values ('d0400000-0000-0000-0000-000000000010', 'ffb00000-0000-0000-0000-000000000001', 'owner', 'active');
 
 insert into public.groups (id, space_id, name)
 values ('d0400000-0000-0000-0000-000000000015', 'd0400000-0000-0000-0000-000000000010', 'Grupo 59');
@@ -203,7 +203,7 @@ $$;
 -- RN-REP-15 · preparar un informe respeta el nivel
 -- ------------------------------------------------------------
 set local role authenticated;
-select set_config('request.jwt.claim.sub', 'd0400000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', true);
 
 do $$
 declare
@@ -249,7 +249,7 @@ update public.subscriptions set plan_id = 'd0400000-0000-0000-0000-000000000041'
 where establishment_id = 'd0400000-0000-0000-0000-000000000020';
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', 'd0400000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', true);
 
 do $$
 declare
@@ -280,11 +280,11 @@ insert into public.reports (id, space_id, establishment_id, category, name,
 values ('d0400000-0000-0000-0000-000000000050', 'd0400000-0000-0000-0000-000000000010',
         'd0400000-0000-0000-0000-000000000020', 'finance', 'Con finanzas',
         '2026-09-01', '2026-09-30', 'sent',
-        'd0400000-0000-0000-0000-000000000001', 'd0400000-0000-0000-0000-000000000001');
+        'ffb00000-0000-0000-0000-000000000001', 'ffb00000-0000-0000-0000-000000000001');
 
 insert into public.report_sections (space_id, report_id, section_key, position, included, updated_by)
 values ('d0400000-0000-0000-0000-000000000010', 'd0400000-0000-0000-0000-000000000050',
-        'finance', 1, true, 'd0400000-0000-0000-0000-000000000001');
+        'finance', 1, true, 'ffb00000-0000-0000-0000-000000000001');
 
 -- Y otro sin ella, para que se vea que lo que cierra la puerta es la
 -- sección y no el restaurante.
@@ -293,11 +293,11 @@ insert into public.reports (id, space_id, establishment_id, category, name,
 values ('d0400000-0000-0000-0000-000000000051', 'd0400000-0000-0000-0000-000000000010',
         'd0400000-0000-0000-0000-000000000020', 'operation', 'Sin finanzas',
         '2026-09-01', '2026-09-30', 'sent',
-        'd0400000-0000-0000-0000-000000000001', 'd0400000-0000-0000-0000-000000000001');
+        'ffb00000-0000-0000-0000-000000000001', 'ffb00000-0000-0000-0000-000000000001');
 
 insert into public.report_sections (space_id, report_id, section_key, position, included, updated_by)
 values ('d0400000-0000-0000-0000-000000000010', 'd0400000-0000-0000-0000-000000000051',
-        'operation', 1, true, 'd0400000-0000-0000-0000-000000000001');
+        'operation', 1, true, 'ffb00000-0000-0000-0000-000000000001');
 
 set local role authenticated;
 
@@ -337,7 +337,7 @@ $$;
 -- dos borradores para este restaurante, así que el equipo ve cuatro
 -- informes y un `count(*) = 2` mediría el número de borradores de arriba
 -- en vez de lo que esta comprobación quiere decir.
-select set_config('request.jwt.claim.sub', 'd0400000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claim.sub', 'ffb00000-0000-0000-0000-000000000001', true);
 
 do $$
 begin
