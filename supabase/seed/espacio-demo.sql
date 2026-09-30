@@ -2224,10 +2224,10 @@ end $$;
 -- ------------------------------------------------------------
 -- 12.12 · Menú Diario de Magariños (Fase 2, hitos 9 y 10).
 --
--- Magariños tiene el servicio (sección 9.4). Aquí se le dan sus tres
--- plantillas incluidas (RN-COM-10), cada una con una de las tres
--- disposiciones de la migración 78 para que la descarga enseñe las
--- tres, y dos menús del restaurante: un borrador con contenido para
+-- Magariños tiene el servicio (sección 9.4). Aquí se le dan sus dos
+-- plantillas incluidas (RN-CRE-23, migración 152: una para publicar y otra
+-- para imprimir en blanco y negro; antes eran tres) y dos menús del
+-- restaurante: un borrador con contenido para
 -- pasado mañana y uno de mañana ya pedido para publicar. Como Ana y la
 -- trabajadora de Casa Sol son las dos candidatas de Menú Diario
 -- autorizadas en Magariños, ese segundo menú queda "pendiente de
@@ -2242,30 +2242,26 @@ end $$;
 do $$
 declare
   v_est uuid := 'd4000000-0000-0000-0000-000000000003';
-  v_t1 uuid; v_t2 uuid; v_t3 uuid;
+  v_t1 uuid; v_t2 uuid;
   v_m1 uuid; v_m2 uuid;
 begin
   perform set_config('request.jwt.claims',
     json_build_object('sub', 'd0000000-0000-0000-0000-000000000001',
                       'role', 'authenticated')::text, false);
 
+  -- RN-CRE-23: una incluida de cada uso, y el servidor elige cuál se usa.
   v_t1 := public.create_menu_template(v_est, 'Clásica');
-  v_t2 := public.create_menu_template(v_est, 'Pizarra');
-  v_t3 := public.create_menu_template(v_est, 'Elegante');
+  v_t2 := public.create_menu_template(v_est, 'Impresión', 'included', null, 'print');
 
   perform public.update_menu_template_design(v_t1, 'classic', '#FFFFFF', '#1F2937', '#145C4E',
     'Magariños', 'IVA incluido · Pan y bebida incluidos', true);
-  perform public.update_menu_template_design(v_t2, 'board', '#0B2F2A', '#FFFFFF', '#D89524',
-    'Magariños · Menú del día', 'Calle Velázquez, 18 · 910 123 456', true);
-  perform public.update_menu_template_design(v_t3, 'elegant', '#FAF7F2', '#2B2118', '#8A5A2B',
-    'Restaurante Magariños', null, false);
 
   -- La propietaria local prepara los menús.
   perform set_config('request.jwt.claims',
     json_build_object('sub', 'd0000000-0000-0000-0000-000000000005',
                       'role', 'authenticated')::text, false);
 
-  v_m1 := public.create_menu(v_est, 'Menú del día', 'daily', current_date + 1, v_t2);
+  v_m1 := public.create_menu(v_est, 'Menú del día', 'daily', current_date + 1, v_t1);
   perform public.save_menu_version(v_m1,
     array['Ensalada de la huerta', 'Caldo gallego'],
     array['Merluza a la gallega', 'Carrilleras al vino tinto'],
