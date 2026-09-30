@@ -9,3 +9,5 @@ contra producción (decisión 84: el proyecto real no lleva datos de prueba).
 
 Cambiar cualquier archivo de esta carpeta (este también) y subirlo a la rama `agents` reconstruye el sembrado en Restavor pruebas.
 Las migraciones se cargan solas al subir; el sembrado, solo en ese caso o al lanzar el proceso a mano con `sembrar`.
+
+Sembrado y resumen usan `.github/scripts/conexion-pruebas.sh`, que admite `@` dentro de la contraseña.

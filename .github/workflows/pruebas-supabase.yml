@@ -114,9 +114,10 @@ jobs:
         env:
           DB_URL: ${{ secrets.PRUEBAS_DATABASE_URL }}
         run: |
+          . .github/scripts/conexion-pruebas.sh
           for f in supabase/seed/*.sql; do
             echo "Sembrando $f"
-            psql "${DB_URL}" -v ON_ERROR_STOP=1 -f "$f" > /dev/null
+            psql -v ON_ERROR_STOP=1 -f "$f" > /dev/null
           done
 
       - name: Resumen (solo cifras)
@@ -124,6 +125,7 @@ jobs:
         env:
           DB_URL: ${{ secrets.PRUEBAS_DATABASE_URL }}
         run: |
-          psql "${DB_URL}" -At -c "select 'migraciones aplicadas: ' || count(*) from supabase_migrations.schema_migrations"
-          psql "${DB_URL}" -At -c "select 'tablas en public: ' || count(*) from pg_tables where schemaname = 'public'"
-          psql "${DB_URL}" -At -c "select 'tablas sin RLS: ' || count(*) from pg_tables where schemaname = 'public' and not rowsecurity"
+          . .github/scripts/conexion-pruebas.sh
+          psql -At -c "select 'migraciones aplicadas: ' || count(*) from supabase_migrations.schema_migrations"
+          psql -At -c "select 'tablas en public: ' || count(*) from pg_tables where schemaname = 'public'"
+          psql -At -c "select 'tablas sin RLS: ' || count(*) from pg_tables where schemaname = 'public' and not rowsecurity"
