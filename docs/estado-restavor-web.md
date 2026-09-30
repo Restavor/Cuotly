@@ -108,7 +108,7 @@ errores de negocio son tipos de resultado explícitos, no excepciones. La app m�
 | Base de datos | **Supabase**, proyecto `Cuotly` (`mcajbfxhkxtdhjoyrqha`), **eu-west-1** (Irlanda) | Las migraciones se aplican al proyecto real a mano (el registro está en `docs/DESPLIEGUE-SUPABASE.md`). |
 | Tareas programadas | Cron de Vercel → `GET /api/cola` a las 07:00 y 19:00 UTC | Protegido con `CRON_SECRET` o `QUEUE_RUNNER_SECRET`; sin secreto responde 503. |
 | CI | GitHub Actions (`.github/workflows/ci.yml`) | typecheck, lint, tests, build, Playwright, `expo export`, y `supabase start` + las suites SQL una a una. |
-| Dominio propio | `app.restavor.com` añadido al proyecto `cuotly-web` el 28/09/2026 | **Falta el CNAME en GoDaddy** y después cambiar `NEXT_PUBLIC_SITE_URL`, Supabase Auth, Google OAuth y Resend (`docs/DESPLIEGUE-VERCEL.md`, última sección). |
+| Dominio propio | `app.restavor.com` en `cuotly-web` (CNAME en GoDaddy hecho el 29/09/2026) | `NEXT_PUBLIC_SITE_URL` ya apunta a él; quedan la *Site URL* de Supabase Auth y la redirect URI de Google OAuth (`docs/DESPLIEGUE-VERCEL.md`, última sección). |
 
 Variables de entorno (`.env.example`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
 `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`, `CUOTLY_OWNER_EMAIL` (=`info@restavor.com`),
@@ -116,9 +116,9 @@ Variables de entorno (`.env.example`): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_
 `_VERSION`, `_PREVIOUS`), `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, y en móvil
 `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_WEB_URL`.
 
-**Aviso de estado:** en producción **no ha salido todavía ningún correo**. `RESEND_FROM` está mal
-escrita en Vercel y el remitente por defecto (`avisos@cuotly.com`) es de un dominio que no es de
-Restavor. Los avisos se encolan y no se pierden (`docs/DESPLIEGUE-VERCEL.md`).
+**Aviso de estado (actualizado el 30/09/2026):** `RESEND_FROM` es ahora `Restavor web <avisos@restavor.com>`
+(29/09/2026), pero **todavía no ha salido ningún correo real**: falta comprobar que el dominio esté verificado en Resend y
+hacer el primer envío. Los avisos se encolan y no se pierden (`docs/DESPLIEGUE-VERCEL.md`).
 
 ---
 

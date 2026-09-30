@@ -5301,6 +5301,38 @@ ahora por el **informe** (`report_actor_role_for`, `report_can_prepare_report`) 
 espacio; las cinco políticas de lectura suman al trabajador autorizado. Ni consolidados ni
 restaurantes donde no está autorizado; aprobar oportunidades sigue siendo de "Aprobar informes".
 
+## Restavor app y Restavor agents (ampliación de `docs/agents/`)
+
+Rama `agents`, contra el entorno de pruebas (`docs/agents/PRUEBAS.md`). Nada llega a producción hasta que Bosco lo pida.
+
+### Fase 0 · Entorno de pruebas · 30/09/2026 (en curso)
+
+Criterios del PRD §15 (ENT-01 y ENT-02):
+
+- [x] Rama `agents` en GitHub.
+- [x] Proyecto de Supabase `Restavor pruebas` (`bnucqykimngjwcrlpmsm`, eu-west-1) con **las 155 migraciones**, 119 tablas y RLS en todas, y el
+  espacio de demostración sembrado. Se carga con `.github/workflows/pruebas-supabase.yml`, que solo acepta esa base.
+- [x] `docs/agents/PRUEBAS.md`.
+- [ ] Variables de Vercel solo para la vista previa de `agents` y Auth de Supabase (Site URL y Redirect URLs).
+- [ ] Bosco entra en la vista previa con `owner@cuotly.test` y ve Restavor web funcionando.
+
+Decisiones técnicas:
+
+- Las migraciones se cargan desde GitHub con el secreto `PRUEBAS_DATABASE_URL` porque desde las sesiones de Claude no se llega a la base de
+  Supabase (política de red). Es la contraseña de la base de pruebas y de ninguna otra.
+- El sembrado `espacio-demo.sql` se arregló en la sección de Menú Diario de Magariños: la migración 152 (RN-CRE-23) permite una plantilla
+  incluida para publicar y otra para imprimir, y el sembrado creaba tres.
+
+Hallazgos que **no** son de la Fase 0 y que hay que decidir:
+
+- **El CI está en rojo en todas las subidas desde el 26/09/2026**, también en la rama de producción. En la subida "Kit de Restavor agents":
+  `rls-tests` se para en "Hito 5 — CA-05 concurrencia real" y **no ejecuta el resto de suites SQL** (incluidas 86 a 88, las de la 152 a la 154);
+  `build-and-test` falla en Playwright (typecheck, lint, 856+ pruebas y build pasan); `e2e-datos` fallaba en el sembrado (arreglado arriba, sin
+  volver a comprobar el job entero). La Definición de hecho de §15.0 exige el CI en verde: hay que arreglar esto antes de dar por buena la Fase A.
+- Las variables de **Preview** de `cuotly-web` en Vercel tienen valores de producción (ver `docs/agents/PRUEBAS.md`).
+
+Pasos para que Bosco lo pruebe a mano: pendientes de las variables de Vercel.
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.
