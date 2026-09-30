@@ -15,9 +15,19 @@ Nada de lo que hay aquí existe en producción, y nada de producción se lee ni 
 
 - Hecho: la base `Restavor pruebas` tiene las **155 migraciones**, **119 tablas con RLS activado** y el espacio de demostración sembrado
   (7 cuentas, 4 restaurantes).
-- Pendiente: las variables de la vista previa en Vercel y la configuración de Auth de Supabase (Site URL y Redirect URLs).
-  Hasta que se hagan, **no abras ninguna vista previa de Vercel de la rama `agents`**: hoy las variables de Preview de `cuotly-web`
-  (Supabase, clave de servicio, Resend, Anthropic) llevan valores de **producción**.
+- Hecho (30/09/2026): variables de Vercel. Las seis que valían para Production y Preview (URL y claves de Supabase, Anthropic, Resend) valen
+  ahora **solo para Production**. Para la rama `agents` (Preview) hay tres propias: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+  (las de `Restavor pruebas`) y `NEXT_PUBLIC_SITE_URL`. Pruebas no lleva clave de Resend ni de Anthropic.
+  Consecuencia: las vistas previas de **otras** ramas se quedan sin variables de Supabase y no funcionan. Es lo previsto.
+- Pendiente, de Bosco:
+  1. Pegar en Vercel (cuotly-web → Settings → Environment Variables) `SUPABASE_SERVICE_ROLE_KEY` de `Restavor pruebas`: Environment = Preview,
+     rama `agents`, tipo Sensitive. La clave está en Supabase → Project Settings → API Keys (`service_role`). Sin ella la vista previa abre,
+     pero todo lo que usa el servidor con esa clave falla.
+  2. Confirmar la dirección de la vista previa (Vercel → Deployments → el de la rama `agents`). Se ha puesto en `NEXT_PUBLIC_SITE_URL`
+     `https://cuotly-web-git-agents-info-67216310.vercel.app` por el patrón de los alias; si es otra, se cambia.
+  3. Supabase de `Restavor pruebas` → Authentication → URL Configuration: *Site URL* con esa dirección y, en *Redirect URLs*, esa dirección
+     seguida de `/**`.
+  Hasta que esto esté, sigue sin poder comprobarse el acceso a la vista previa.
 
 ## Cuentas del sembrado
 

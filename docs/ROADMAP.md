@@ -5313,7 +5313,8 @@ Criterios del PRD §15 (ENT-01 y ENT-02):
 - [x] Proyecto de Supabase `Restavor pruebas` (`bnucqykimngjwcrlpmsm`, eu-west-1) con **las 155 migraciones**, 119 tablas y RLS en todas, y el
   espacio de demostración sembrado. Se carga con `.github/workflows/pruebas-supabase.yml`, que solo acepta esa base.
 - [x] `docs/agents/PRUEBAS.md`.
-- [ ] Variables de Vercel solo para la vista previa de `agents` y Auth de Supabase (Site URL y Redirect URLs).
+- [x] Variables de Vercel solo para la vista previa de `agents` (30/09/2026): las seis de producción ya no valen en Preview y la rama tiene las suyas.
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` de Pruebas (la pega Bosco), confirmar la dirección de la vista previa y Auth de Supabase (Site URL y Redirect URLs).
 - [ ] Bosco entra en la vista previa con `owner@cuotly.test` y ve Restavor web funcionando.
 
 Decisiones técnicas:
@@ -5329,9 +5330,9 @@ Hallazgos que **no** son de la Fase 0 y que hay que decidir:
   `rls-tests` se para en "Hito 5 — CA-05 concurrencia real" y **no ejecuta el resto de suites SQL** (incluidas 86 a 88, las de la 152 a la 154);
   `build-and-test` falla en Playwright (typecheck, lint, pruebas unitarias y build pasan); `e2e-datos` fallaba en el sembrado (arreglado arriba, sin
   volver a comprobar el job entero). La Definición de hecho de §15.0 exige el CI en verde: hay que arreglar esto antes de dar por buena la Fase A.
-- Las variables de **Preview** de `cuotly-web` en Vercel tienen valores de producción (ver `docs/agents/PRUEBAS.md`).
+- Las variables de **Preview** de `cuotly-web` tenían valores de producción; corregido el 30/09/2026 (ver `docs/agents/PRUEBAS.md`).
 
-Pasos para que Bosco lo pruebe a mano: pendientes de las variables de Vercel.
+Pasos para que Bosco lo pruebe a mano: en `docs/agents/PRUEBAS.md`, sección Estado de la Fase 0.
 
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
