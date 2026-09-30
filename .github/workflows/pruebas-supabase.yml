@@ -63,7 +63,7 @@ jobs:
             echo "::error::La dirección del secreto es la de PRODUCCION. Se aborta."
             exit 1
           fi
-          if ! printf '%s' "${DB_URL}" | grep -q "postgres.${PRUEBAS_REF}@"; then
+          if ! printf '%s' "${DB_URL}" | grep -q "postgres\.${PRUEBAS_REF}:"; then
             echo "::error::La dirección no es la de Restavor pruebas (${PRUEBAS_REF}). Se aborta."
             exit 1
           fi

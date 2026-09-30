@@ -7,4 +7,5 @@ contra producción (decisión 84: el proyecto real no lleva datos de prueba).
 - `espacio-demo.sql`: el espacio `demo` con sus cuentas `@cuotly.test`. Idempotente.
 - `reservas-demo.sql` (llega en la Fase B, PRD §16): Casa Pepe, Taberna Sol y demás datos de Reservas.
 
-Cambiar cualquier archivo de esta carpeta y subirlo a la rama `agents` reconstruye el sembrado en Restavor pruebas.
+Cambiar cualquier archivo de esta carpeta (este también) y subirlo a la rama `agents` reconstruye el sembrado en Restavor pruebas.
+Las migraciones se cargan solas al subir; el sembrado, solo en ese caso o al lanzar el proceso a mano con `sembrar`.
