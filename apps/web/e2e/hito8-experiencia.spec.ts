@@ -29,7 +29,11 @@ test.describe("CA-19 · el armazón se usa entero con la anchura de un teléfono
 
     const barra = page.getByTestId("mobile-nav");
     await expect(barra).toBeVisible();
-    await expect(barra.getByRole("link")).toHaveCount(5); // §20.3: 5 destinos + Más
+    // §20.3 / decisión 47: cinco destinos, con Crear en el centro. Crear es un
+    // menú desplegable (`<details>`), no un enlace: los enlaces son los otros
+    // cuatro (Inicio, Restaurantes, Mensajes y Más).
+    await expect(barra.getByRole("link")).toHaveCount(4);
+    await expect(barra.getByTestId("mobile-create-menu")).toBeVisible();
 
     // El menú lateral de escritorio no se cuela en el teléfono.
     await expect(page.getByRole("navigation", { name: "Menú del espacio" }).first()).toBeVisible();

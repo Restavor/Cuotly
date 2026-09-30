@@ -94,10 +94,12 @@ async function setup(admin) {
   async function createReadyRequest(description) {
     await admin.query("set role authenticated");
     await admin.query("select set_config('request.jwt.claim.sub', $1, false)", [CLIENT_ID]);
-    const { rows } = await admin.query("select public.create_request_draft($1, $2, null) as id", [
-      ESTABLISHMENT_ID,
-      description,
-    ]);
+    // RN-REQ-05 (migración 106): enviar sin prioridad es un error, así que el
+    // borrador ya nace con una. La que sea da igual para CA-05.
+    const { rows } = await admin.query(
+      "select public.create_request_draft($1, $2, null, 'medium', 'Prueba de concurrencia CA-05') as id",
+      [ESTABLISHMENT_ID, description],
+    );
     const requestId = rows[0].id;
     await admin.query("select public.submit_request($1)", [requestId]);
     await admin.query("select public.begin_request_analysis($1)", [requestId]);
