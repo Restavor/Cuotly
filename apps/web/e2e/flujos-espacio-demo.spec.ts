@@ -185,9 +185,11 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // en el Inicio —el rediseño lo dejó con indicadores, atención, carga
       // del equipo, Menú Diario y actividad—, así que se mira donde vive.
       await page.goto(`/espacios/${ESPACIO}/restaurantes`);
-      await expect(page.getByText("EST-0001")).toBeVisible();
-      await expect(page.getByText("Bar Demo")).toBeVisible();
-      await expect(page.getByText("Activo").first()).toBeVisible();
+      // Cada restaurante es un enlace con el local, su código, su plan y su
+      // estado en el nombre accesible; el código suelto sale dos veces.
+      const barDemo = page.getByRole("link", { name: /Bar Demo EST-0001/ });
+      await expect(barDemo).toBeVisible();
+      await expect(barDemo).toContainText("Activo");
     });
 
     test("decisión 42 · la raíz es el Inicio de Restavor web, también con un solo espacio", async ({
@@ -334,13 +336,13 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // INCLUIDO: "2 / 16". El número no sale de un contador: sale de sumar el
       // libro de apuntes (`establishment_cycle_allowance`), que es lo que
       // manda CLAUDE.md.
-      const pequeno = page.getByRole("listitem").filter({ hasText: "Cambio pequeño" });
-      await expect(pequeno).toContainText("2 / 16");
+      // Por el nombre accesible de la barra ("Cambio pequeño: 2 / 16"): el
+      // listado de actividad de al lado también es una lista y también
+      // nombra las fotografías.
+      await expect(page.getByRole("img", { name: "Cambio pequeño: 2 / 16" })).toBeVisible();
 
       // Las otras categorías siguen sin gastar.
-      await expect(
-        page.getByRole("listitem").filter({ hasText: "Fotografía" }),
-      ).toContainText("0 / 12");
+      await expect(page.getByRole("img", { name: "Fotografía: 0 / 12" })).toBeVisible();
     });
 
     test("ve sus cuatro solicitudes, el borrador incluido", async ({ page }) => {

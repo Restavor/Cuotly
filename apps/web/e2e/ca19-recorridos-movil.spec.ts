@@ -88,6 +88,19 @@ function avisoDeVersionGuardada(): string {
   return hora >= 21 ? "Versión guardada después de las 21:00" : "Versión guardada.";
 }
 
+/**
+ * Una fecha para el menú que no choque con otra (RN-CRE-22: un menú del día por
+ * fecha). La fecha por defecto es "mañana" y el sembrado ya trae ahí un menú, y
+ * además los dos recorridos de Menú Diario corren en paralelo y con reintento
+ * sobre el mismo restaurante, así que ninguno puede quedarse con "mañana".
+ * Entre 10 y 400 días vista, al azar.
+ */
+function fechaLibreDeMenu(): string {
+  const dias = 10 + Math.floor(Math.random() * 390);
+  const fecha = new Date(Date.now() + dias * 24 * 60 * 60 * 1000);
+  return fecha.toISOString().slice(0, 10);
+}
+
 test.describe("CA-19 · cada flujo principal se completa en un teléfono", () => {
   test.skip(
     !CON_DATOS,
@@ -456,8 +469,16 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // esto: 20 € + 21 % = 24,20 € (plan Básico, decisión 83). El formulario va dentro de la propia
     // fila, sin ventana intermedia, y el importe viene ya relleno con lo
     // que queda por cobrar.
-    const fila = page.locator("tbody tr").filter({ hasText: "Café Prueba" }).first();
-    await expect(fila).toBeVisible();
+    const filaCobro = page.locator("tbody tr").filter({ hasText: "Café Prueba" }).first();
+    await expect(filaCobro).toBeVisible();
+
+    // Desde el diseño definitivo la lista de cobros solo ofrece el enlace
+    // "Registrar pago"; el formulario vive en la ficha del cobro
+    // (`/finanzas/cobros/<id>`), no dentro de la fila.
+    await filaCobro.getByRole("link", { name: "Registrar pago" }).click();
+    await page.waitForURL(/\/finanzas\/cobros\/[0-9a-f-]{36}/, { timeout: 30_000 });
+    await cabeEnElTelefono(page, "la ficha del cobro");
+    const fila = page.getByRole("main");
 
     const importe = fila.getByLabel("Importe cobrado");
     await expect(importe).toHaveValue(/\d/);
@@ -529,9 +550,11 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // indicadores, atención, carga del equipo, Menú Diario y actividad.
     await page.goto(`/espacios/${ESPACIO}/restaurantes`);
     await cabeEnElTelefono(page, "la lista de restaurantes");
-    // `.first()`: el código sale dos veces por restaurante (el selector y la fila).
-    await expect(page.getByText("EST-0001").first()).toBeVisible();
-    await expect(page.getByText("EST-0002").first()).toBeVisible();
+    // Cada restaurante es un enlace cuyo nombre accesible lleva el local y su
+    // código ("Bar Demo EST-0001 …"). El código suelto sale dos veces (una
+    // variante oculta según la anchura) y `getByText` cogía la oculta.
+    await expect(page.getByRole("link", { name: /Bar Demo EST-0001/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Café Prueba EST-0002/ })).toBeVisible();
 
     // Gestionar equipo: la lista y la acción de invitar, disponibles en
     // móvil. No se envía la invitación —crearía filas en cada ejecución—,
@@ -581,6 +604,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await expect(page.getByLabel("Plantilla")).toHaveCount(0);
 
     await page.getByLabel("Nombre").fill(`Menú ${MARCA}`);
+    await page.getByLabel("Fecha del menú").fill(fechaLibreDeMenu());
     await page.getByRole("button", { name: "Crear menú" }).click();
     await expect(page).toHaveURL(new RegExp(`/restaurantes/${MAGARINOS_ID}/menu-diario/[0-9a-f-]{36}$`), {
       timeout: 20_000,
@@ -647,6 +671,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
       await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/nuevo`);
       await page.getByLabel("Nombre").fill(`Equipo ${MARCA}`);
+      await page.getByLabel("Fecha del menú").fill(fechaLibreDeMenu());
       // RN-CRE-23: sin elegir plantilla; el menú usa la de publicar.
       await page.getByRole("button", { name: "Crear menú" }).click();
       await page.waitForURL(new RegExp(`/restaurantes/${MAGARINOS_ID}/menu-diario/[0-9a-f-]{36}$`), { timeout: 20_000 });
