@@ -252,10 +252,26 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}`);
       await cabeEnElTelefono(page, "la ficha del restaurante");
 
-      await expect(page.getByRole("heading", { name: "Pedir un cambio" })).toBeVisible();
+      // Desde el diseño definitivo el panel del restaurante es un resumen
+      // ("Hola, Café") y pedir un cambio son TRES pasos: "Nueva solicitud" →
+      // rellenar (con prioridad y motivo, RN-REQ-05) y "Revisar solicitud" →
+      // "Confirmar envío". Antes era un formulario en la propia ficha.
+      await page.getByRole("link", { name: "Nueva solicitud" }).first().click();
+      await expect(page.getByRole("heading", { name: "Nueva solicitud", level: 1 })).toBeVisible();
       await page.getByLabel("Qué quieres cambiar").fill(`${MARCA} · cambiar el teléfono del pie`);
       await page.getByLabel("Dónde está (opcional)").fill("En el pie de todas las páginas");
-      await page.getByRole("button", { name: "Enviar solicitud" }).click();
+      await page.getByLabel("Prioridad", { exact: true }).selectOption({ label: "Media" });
+      await page.getByLabel("Motivo de la prioridad").fill("Se ve en todas las páginas");
+      await page.getByRole("button", { name: "Revisar solicitud" }).click();
+
+      await expect(
+        page.getByRole("heading", { name: "Revisar y enviar solicitud", level: 1 }),
+      ).toBeVisible({ timeout: 20_000 });
+      await page.getByRole("button", { name: "Confirmar envío" }).click();
+      await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}$/, { timeout: 30_000 });
+
+      // Enviar lleva a la ficha de la solicitud; la lista está en /solicitudes.
+      await page.goto(`/espacios/${ESPACIO}/restaurantes/${CAFE_ID}/solicitudes`);
 
       // Aparece en su lista, ya enviada y ya clasificada: RN-CLS-01 dice
       // que la clasificación ocurre "al enviarse una solicitud", así que el
@@ -431,7 +447,9 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     test.setTimeout(90_000);
 
     await entrar(page, PROPIETARIA, `/espacios/${ESPACIO}`);
-    await page.goto(`/espacios/${ESPACIO}/finanzas`);
+    // Los cobros con su formulario de pago están en la pestaña "Cobros"; el
+    // Resumen enseña solo las cifras del mes.
+    await page.goto(`/espacios/${ESPACIO}/finanzas?tab=cobros`);
     await cabeEnElTelefono(page, "el panel financiero");
 
     // El cobro de Café Prueba queda pendiente en el sembrado justo para
@@ -511,8 +529,9 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // indicadores, atención, carga del equipo, Menú Diario y actividad.
     await page.goto(`/espacios/${ESPACIO}/restaurantes`);
     await cabeEnElTelefono(page, "la lista de restaurantes");
-    await expect(page.getByText("EST-0001")).toBeVisible();
-    await expect(page.getByText("EST-0002")).toBeVisible();
+    // `.first()`: el código sale dos veces por restaurante (el selector y la fila).
+    await expect(page.getByText("EST-0001").first()).toBeVisible();
+    await expect(page.getByText("EST-0002").first()).toBeVisible();
 
     // Gestionar equipo: la lista y la acción de invitar, disponibles en
     // móvil. No se envía la invitación —crearía filas en cada ejecución—,
@@ -548,21 +567,20 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario`);
     await cabeEnElTelefono(page, "el Menú Diario del restaurante");
 
-    // El saldo sale del libro (RN-COM-09): 30 incluidas.
-    await expect(page.getByText(/\/ 30 utilizadas/).first()).toBeVisible();
+    // Ya no hay contador de actualizaciones: Menú Diario va incluido en el
+    // plan, un menú del día por fecha y sin límite de cambios (decisión 85,
+    // RN-CRE-21 a 24). La cabecera de la pantalla es lo que se comprueba.
+    await expect(page.getByRole("heading", { name: "Menú Diario", level: 1 })).toBeVisible();
 
     // R13 · "Crear menú" lleva a su propia pantalla (`/menu-diario/nuevo`).
     await page.getByRole("link", { name: "Crear menú" }).click();
     await page.waitForURL(/\/menu-diario\/nuevo/, { timeout: 20_000 });
-    // Las tres plantillas del sembrado, en el desplegable que las ofrece.
-    // Antes era un `getByText("Pizarra")` suelto y encontraba DOS: la
-    // opción del desplegable y el nombre de la plantilla en la lista de
-    // menús. Lo que este paso quiere comprobar es que la plantilla se
-    // puede elegir, así que se mira donde se elige.
-    await expect(page.getByLabel("Plantilla")).toContainText("Pizarra");
+    // RN-CRE-23: el restaurante ya NO elige plantilla al crear el menú. Hay una
+    // para publicar y otra para imprimir, y el menú usa la de publicar. Esta
+    // pantalla pide solo nombre, tipo y fecha.
+    await expect(page.getByLabel("Plantilla")).toHaveCount(0);
 
     await page.getByLabel("Nombre").fill(`Menú ${MARCA}`);
-    await page.getByLabel("Plantilla").selectOption({ label: "Clásica" });
     await page.getByRole("button", { name: "Crear menú" }).click();
     await expect(page).toHaveURL(new RegExp(`/restaurantes/${MAGARINOS_ID}/menu-diario/[0-9a-f-]{36}$`), {
       timeout: 20_000,
@@ -629,7 +647,7 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
       await page.goto(`/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/nuevo`);
       await page.getByLabel("Nombre").fill(`Equipo ${MARCA}`);
-      await page.getByLabel("Plantilla").selectOption({ label: "Pizarra" });
+      // RN-CRE-23: sin elegir plantilla; el menú usa la de publicar.
       await page.getByRole("button", { name: "Crear menú" }).click();
       await page.waitForURL(new RegExp(`/restaurantes/${MAGARINOS_ID}/menu-diario/[0-9a-f-]{36}$`), { timeout: 20_000 });
       const menuId = page.url().split("/").pop() ?? "";

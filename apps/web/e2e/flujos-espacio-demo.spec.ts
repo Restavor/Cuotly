@@ -165,19 +165,21 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // global (§36), y el espacio se elige desde ahí. `entrar()` hace los
       // dos pasos; aquí se comprueba que el segundo ha llegado a su sitio.
       await expect(page).toHaveURL(new RegExp(`/espacios/${ESPACIO}$`));
-      // El Inicio del espacio se rediseñó (commit cfd094a) y su titular pasó
-      // a ser "Inicio": el nombre del espacio vive ahora en el armazón —el
-      // selector de espacio en escritorio, la miga de pan en móvil—. Este
-      // test se quedó anclado al diseño anterior y nadie se enteró porque
-      // los recorridos con datos no los ejecutaba nadie desde el 02/09.
-      // Se comprueban las dos cosas: que es el Inicio y que es SU espacio.
-      await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
+      // El Inicio del espacio se rediseñó dos veces. Primero su titular pasó a
+      // ser "Inicio" (commit cfd094a) y después, con el saludo del diseño
+      // definitivo, a ser "Hola <nombre>," con los indicadores dentro de una
+      // región llamada "Inicio". Este test se quedó anclado al diseño anterior
+      // y nadie se enteró porque los recorridos con datos no los ejecutaba
+      // nadie desde el 02/09. Se comprueban las dos cosas: que es el Inicio
+      // (saludo + región) y que es SU espacio.
+      await expect(page.getByRole("heading", { name: "Hola Elena,", level: 1 })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Inicio" })).toBeVisible();
       await expect(page.getByText("Demo Restavor web").first()).toBeVisible();
 
       // Y el equipo, con los dos miembros por su nombre visible: eso sí
       // sigue en el Inicio, en la tarjeta "Carga del equipo".
-      await expect(page.getByText(EQUIPO.propietaria.nombre)).toBeVisible();
-      await expect(page.getByText(EQUIPO.trabajadora.nombre)).toBeVisible();
+      await expect(page.getByText(EQUIPO.propietaria.nombre).first()).toBeVisible();
+      await expect(page.getByText(EQUIPO.trabajadora.nombre).first()).toBeVisible();
 
       // El restaurante del sembrado, con su código y su estado. Ya no está
       // en el Inicio —el rediseño lo dejó con indicadores, atención, carga
@@ -202,14 +204,15 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(
         page.getByRole("heading", { name: "Mis espacios de mantenimiento" }),
       ).toBeVisible();
-      // `exact` no es cosmético: cada fila de "Necesita tu atención" lleva
-      // dentro el nombre de su contexto, así que sin él este localizador
-      // encuentra media pantalla y Playwright se planta por ambigüedad. El
-      // enlace del selector es el único cuyo nombre accesible es EXACTAMENTE
-      // el del espacio.
+      // Desde el diseño definitivo cada contexto es una tarjeta con su nombre
+      // en un párrafo y un botón "Entrar al espacio" (ya no hay un enlace cuyo
+      // nombre accesible sea el del espacio). El enlace se identifica por a
+      // dónde lleva, que es lo que importa, y el nombre por su tarjeta.
+      await expect(page.locator(`a[href="${ESPACIO_URL}"]`).first()).toBeVisible();
       await expect(
-        page.getByRole("link", { name: "Demo Restavor web", exact: true }),
+        page.getByRole("link", { name: "Entrar al espacio" }),
       ).toBeVisible();
+      await expect(page.getByText("Demo Restavor web").first()).toBeVisible();
     });
 
     test("la bandeja de solicitudes enseña las enviadas y NO el borrador del cliente", async ({
@@ -224,10 +227,12 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // (`.neq("state", "draft")` en la página). Que SOL-0001 no esté es
       // la mitad interesante de la comprobación — un borrador es del
       // cliente hasta que lo envía.
-      await expect(page.getByRole("link", { name: "SOL-0002" })).toBeVisible();
-      await expect(page.getByRole("link", { name: "SOL-0003" })).toBeVisible();
-      await expect(page.getByRole("link", { name: "SOL-0004" })).toBeVisible();
-      await expect(page.getByRole("link", { name: "SOL-0001" })).toHaveCount(0);
+      // El código ya no es un enlace: es texto de la fila, y el enlace es el
+      // botón "Ver solicitud". Se comprueba la fila.
+      await expect(fila(page, "SOL-0002")).toBeVisible();
+      await expect(fila(page, "SOL-0003")).toBeVisible();
+      await expect(fila(page, "SOL-0004")).toBeVisible();
+      await expect(fila(page, "SOL-0001")).toHaveCount(0);
 
       // Los estados, con el nombre único de CA-21 (src/i18n/es.ts), no en
       // crudo desde la base de datos.
@@ -264,7 +269,9 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // El equipo SÍ ve quién es el responsable — es su organización
       // interna (P7). Lo que no puede verlo es el cliente, y eso se
       // comprueba más abajo.
-      await expect(page.getByText(EQUIPO.trabajadora.nombre).first()).toBeVisible();
+      // En la FILA: suelto, `getByText` encuentra primero la opción del
+      // desplegable "Responsable", que existe pero no se ve.
+      await expect(fila(page, "TRB-0001")).toContainText("Marta Gil");
     });
 
     test("la trabajadora entra al mismo espacio y ve el trabajo que tiene asignado", async ({
@@ -302,48 +309,55 @@ test.describe("Flujos sobre el espacio de demostración", () => {
 
       // Exacto, y por el mismo motivo: el enlace del selector, no una fila
       // de "Necesita tu atención" que también lleve el nombre dentro.
-      await page.getByRole("link", { name: "Bar Demo", exact: true }).click();
+      // Desde el diseño definitivo el panel es una tarjeta con el botón
+      // "Entrar al panel", no un enlace con el nombre del restaurante.
+      await page.getByRole("link", { name: "Entrar al panel" }).first().click();
 
       await expect(page).toHaveURL(
         new RegExp(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`),
       );
-      await expect(page.getByRole("heading", { name: "Bar Demo" })).toBeVisible();
-      await expect(page.getByText("EST-0001")).toBeVisible();
+      // El panel del restaurante saluda ("Hola, Bar") y nombra el local y su
+      // código en párrafos; ya no hay un titular con el nombre del local.
+      await expect(page.getByText("Bar Demo").first()).toBeVisible();
+      await expect(page.getByText("EST-0001").first()).toBeVisible();
     });
 
     test("la bolsa del plan refleja lo que se ha consumido de verdad", async ({ page }) => {
       await entrar(page, CLIENTE.email, RESTAURANTE_URL);
       await page.goto(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
 
-      await expect(
-        page.getByRole("heading", { name: "Lo que incluye tu plan este ciclo" }),
-      ).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Cuotas de este ciclo" })).toBeVisible();
 
-      // Impulso+ incluye 16 cambios pequeños. El sembrado aceptó dos
-      // solicitudes de esa categoría, así que quedan 14. El número no sale
-      // de un contador: sale de sumar el libro de apuntes
-      // (`establishment_cycle_allowance`), que es lo que manda CLAUDE.md.
+      // El plan del sembrado (el catálogo antiguo, Impulso+) incluye 16
+      // cambios pequeños. El sembrado aceptó dos solicitudes de esa categoría.
+      // La tarjeta ya no dice "quedan 14 de 16" sino lo USADO sobre lo
+      // INCLUIDO: "2 / 16". El número no sale de un contador: sale de sumar el
+      // libro de apuntes (`establishment_cycle_allowance`), que es lo que
+      // manda CLAUDE.md.
       const pequeno = page.getByRole("listitem").filter({ hasText: "Cambio pequeño" });
-      await expect(pequeno).toContainText("14");
-      await expect(pequeno).toContainText("de 16");
+      await expect(pequeno).toContainText("2 / 16");
 
-      // Las otras tres categorías siguen enteras.
+      // Las otras categorías siguen sin gastar.
       await expect(
         page.getByRole("listitem").filter({ hasText: "Fotografía" }),
-      ).toContainText("de 12");
+      ).toContainText("0 / 12");
     });
 
     test("ve sus cuatro solicitudes, el borrador incluido", async ({ page }) => {
       await entrar(page, CLIENTE.email, RESTAURANTE_URL);
-      await page.goto(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
+      // La raíz del panel es ahora un resumen ("Hola, Bar"); la lista de
+      // solicitudes vive en /solicitudes.
+      await page.goto(`${RESTAURANTE_URL}/solicitudes`);
 
-      await expect(page.getByRole("heading", { name: "Tus solicitudes" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Solicitudes", level: 1 })).toBeVisible();
 
-      // Las cuatro, al revés que el equipo: el borrador es suyo.
+      // Las cuatro, al revés que el equipo: el borrador es suyo. El código va
+      // en el subtítulo de la fila ("SOL-0001 · …"), no en un enlace.
       for (const codigo of ["SOL-0001", "SOL-0002", "SOL-0003", "SOL-0004"]) {
-        await expect(page.getByRole("link", { name: codigo })).toBeVisible();
+        await expect(fila(page, codigo)).toBeVisible();
       }
-      await expect(page.getByText("Borrador")).toBeVisible();
+      // En su fila: "Borrador" también es una opción del filtro de estado.
+      await expect(fila(page, "SOL-0001")).toContainText("Borrador");
     });
 
     /**
@@ -357,23 +371,27 @@ test.describe("Flujos sobre el espacio de demostración", () => {
      */
     test("abre su borrador y encuentra los tres puntos de revisión de §68", async ({ page }) => {
       await entrar(page, CLIENTE.email, RESTAURANTE_URL);
-      await page.goto(`/espacios/${ESPACIO}/restaurantes/${RESTAURANTE_ID}`);
+      await page.goto(`${RESTAURANTE_URL}/solicitudes`);
 
-      await page.getByRole("link", { name: "SOL-0001" }).click();
+      await fila(page, "SOL-0001").getByRole("link", { name: "Ver solicitud" }).click();
 
       await expect(page).toHaveURL(/\/borrador$/);
-      await expect(page.getByRole("heading", { name: "Borrador de solicitud" })).toBeVisible();
+      // El borrador se rediseñó (R07): ya no son tres bloques numerados sino
+      // una pantalla de "Revisar y enviar" con un resumen, el destinatario, los
+      // archivos y el botón de confirmar. Siguen estando los tres puntos de
+      // §68 (alcance, destinatario, archivos), con otras palabras.
+      await expect(
+        page.getByRole("heading", { name: "Revisar y enviar solicitud", level: 1 }),
+      ).toBeVisible();
+      await expect(page.getByText("Resumen de la solicitud")).toBeVisible();
+      // 1 · alcance, con lo que el cliente escribió.
+      await expect(page.getByText(/horario de apertura de los domingos/).first()).toBeVisible();
+      // 2 · destinatario.
+      await expect(page.getByText(/^Para Bar Demo/)).toBeVisible();
+      // 3 · archivos.
+      await expect(page.getByText(/^Archivos adjuntos \(\d+\)$/)).toBeVisible();
 
-      await expect(page.getByText("1. Alcance: qué pides")).toBeVisible();
-      await expect(page.getByText("2. Destinatario: para quién es")).toBeVisible();
-      await expect(page.getByText("3. Archivos: qué lo acompaña")).toBeVisible();
-
-      // El alcance llega editable con lo que el cliente escribió.
-      await expect(page.getByLabel("Qué quieres cambiar")).toHaveValue(
-        /horario de apertura de los domingos/,
-      );
-
-      await expect(page.getByRole("button", { name: "Enviar solicitud" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Confirmar envío" })).toBeVisible();
     });
 
     /**
@@ -409,10 +427,12 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // responde "sin permiso" porque el cliente no es miembro del
       // espacio, no una lista vacía que parezca que no hay trabajo.
       await page.goto(`/espacios/${ESPACIO}/solicitudes`);
-      await expect(page.getByRole("link", { name: "SOL-0002" })).toHaveCount(0);
+      // Texto y no enlace: el código ya no es un enlace, y comprobar que no
+      // hay un enlace que ya no existe no demostraría nada.
+      await expect(page.getByText("SOL-0002")).toHaveCount(0);
 
       await page.goto(`/espacios/${ESPACIO}/trabajos`);
-      await expect(page.getByRole("link", { name: "TRB-0001" })).toHaveCount(0);
+      await expect(page.getByText("TRB-0001")).toHaveCount(0);
     });
   });
 });

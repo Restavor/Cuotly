@@ -801,7 +801,7 @@ jobs:
             # Solo desde `main`: la barra lateral del equipo se come los primeros
             # miles de caracteres y no dice nada del fallo.
             sed -n '/Error details/,/^```yaml/p' "$f/error-context.md" 2>/dev/null | head -12 || true
-            awk '/^- main/{p=1} p' "$f/error-context.md" 2>/dev/null | cut -c1-140 | head -45 || true
+            awk '/^- main/{p=1} p' "$f/error-context.md" 2>/dev/null | grep -v -e ' option "' -e '/url:' | cut -c1-140 | head -90 || true
             echo
           done
 
