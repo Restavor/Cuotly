@@ -10,6 +10,8 @@ import {
   accessRequestFieldProblems,
   accessRequestNeedsReason,
   accessRequestSubmitFailure,
+  interestedInFrom,
+  isAccessInterest,
   accessRequestTransitionAllowed,
   invitationSignupStep,
   normalizeTaxId,
@@ -217,5 +219,21 @@ describe("A11 · un envío que no llega no se cuenta como un dato mal escrito", 
     expect(accessRequestSubmitFailure("Faltan el nombre, el negocio, el teléfono o el correo")).toBe(
       "unknown",
     );
+  });
+});
+
+describe("RN-APP-03 · ¿Qué te interesa? al pedir acceso", () => {
+  it("RN-APP-03 · cada opción se traduce a lo que guarda la solicitud", () => {
+    expect(interestedInFrom("web")).toEqual(["web"]);
+    expect(interestedInFrom("reservations")).toEqual(["reservations"]);
+    expect(interestedInFrom("both")).toEqual(["web", "reservations"]);
+  });
+
+  it("RN-APP-03 · sin marcar, o con algo desconocido, vale Restavor web", () => {
+    expect(interestedInFrom(undefined)).toEqual(["web"]);
+    expect(interestedInFrom("")).toEqual(["web"]);
+    expect(interestedInFrom("todo")).toEqual(["web"]);
+    expect(isAccessInterest("both")).toBe(true);
+    expect(isAccessInterest("todo")).toBe(false);
   });
 });

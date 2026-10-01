@@ -299,3 +299,23 @@ export function accessRequestSubmitFailure(message: string): "unreachable" | "un
     ? "unreachable"
     : "unknown";
 }
+
+/**
+ * RN-APP-03 · "¿Qué te interesa?" al pedir acceso (decisión 88): Restavor web,
+ * Reservas o las dos. Es una indicación para quien aprueba la solicitud; no
+ * abre nada por sí sola. Sin marcar, o con algo desconocido, vale Restavor web,
+ * que es lo que había antes de la casilla. Lo mismo hace
+ * `submit_access_request()` (migración 157): el servidor no se fía de esto.
+ */
+export const ACCESS_INTERESTS = ["web", "reservations", "both"] as const;
+export type AccessInterest = (typeof ACCESS_INTERESTS)[number];
+
+export function isAccessInterest(value: unknown): value is AccessInterest {
+  return typeof value === "string" && (ACCESS_INTERESTS as readonly string[]).includes(value);
+}
+
+export function interestedInFrom(value: unknown): readonly ("web" | "reservations")[] {
+  if (value === "reservations") return ["reservations"];
+  if (value === "both") return ["web", "reservations"];
+  return ["web"];
+}

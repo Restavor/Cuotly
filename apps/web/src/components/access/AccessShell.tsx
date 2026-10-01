@@ -44,7 +44,12 @@ export async function AccessShell({
             className="inline-flex flex-col items-end rounded-lg leading-none focus:outline focus:outline-2 focus:outline-cuotly-green"
           >
             <span className="text-[24px] font-bold tracking-tight text-primary sm:text-[30px]">{es.common.appName}</span>
-            <span className="mt-0.5 text-[10px] font-semibold text-primary-dark sm:text-[11px]">{es.common.appOwner}</span>
+            {/* La puerta de entrada es la común (decisión 88): "Restavor" a secas, sin apellido de producto. */}
+            {es.common.productSuffix.app === "" ? null : (
+              <span className="mt-0.5 text-[10px] font-semibold text-primary-dark sm:text-[11px]">
+                {es.common.productSuffix.app}
+              </span>
+            )}
           </Link>
 
           <nav aria-label={es.common.appName} className="flex items-center gap-3 whitespace-nowrap text-[13px] text-text sm:gap-6 sm:text-[15px]">

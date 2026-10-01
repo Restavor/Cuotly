@@ -93,32 +93,52 @@ export interface ProductSwitchItem {
 }
 
 /**
+ * Lo mínimo que el armazón necesita saber para pintar el menú del logo. Es
+ * pequeño a propósito: viaja del servidor al navegador con cada pantalla.
+ */
+export interface ProductAccess {
+  readonly hasWeb: boolean;
+  readonly hasAgents: boolean;
+  /** Hay un restaurante suyo al que se le puede ofrecer Reservas. */
+  readonly canContractAgents: boolean;
+}
+
+export function productAccess(
+  summary: ProductSummary,
+  options: { readonly isPlatform?: boolean } = {},
+): ProductAccess {
+  return {
+    hasWeb: summary.hasWeb || options.isPlatform === true,
+    hasAgents: summary.hasAgents,
+    canContractAgents: summary.offers.length > 0,
+  };
+}
+
+/**
  * El menú del logo (`AppCambiarProducto`): "Inicio de Restavor", "Restavor
  * web" y "Restavor agents". Solo salen los productos que la persona puede
  * usar; lo que no tiene contratado sale como "Contratar" y únicamente si se
  * le puede ofrecer. Lo que no puede usar, no sale.
  */
 export function productSwitchItems(
-  summary: ProductSummary,
+  access: ProductAccess,
   current: ProductKey,
-  options: { readonly isPlatform?: boolean } = {},
 ): readonly ProductSwitchItem[] {
-  const hasWeb = summary.hasWeb || options.isPlatform === true;
   const items: ProductSwitchItem[] = [
     { key: "app", href: "/", state: current === "app" ? "current" : "open" },
   ];
 
-  if (hasWeb) {
+  if (access.hasWeb) {
     items.push({ key: "web", href: "/web", state: current === "web" ? "current" : "open" });
-  } else if (summary.hasAgents) {
+  } else if (access.hasAgents) {
     // Quien solo tiene Reservas puede querer el mantenimiento web: el Inicio
     // le explica qué es y cómo pedirlo.
     items.push({ key: "web", href: "/", state: "contract" });
   }
 
-  if (summary.hasAgents) {
+  if (access.hasAgents) {
     items.push({ key: "agents", href: "/agents", state: current === "agents" ? "current" : "open" });
-  } else if (summary.offers.length > 0) {
+  } else if (access.canContractAgents) {
     items.push({ key: "agents", href: "/", state: "contract" });
   }
 

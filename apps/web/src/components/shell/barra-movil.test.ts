@@ -79,7 +79,7 @@ describe("diseño móvil · la tarjeta de contexto", () => {
 
   it("la cabecera de móvil lleva la tarjeta de contexto y solo fuera del contexto global", () => {
     expect(SHELL).toContain('data-testid="mobile-context"');
-    expect(movil.slice(0, 420)).toContain("esGlobal ? null");
+    expect(movil.slice(0, 420)).toContain("esGlobal || esAgents ? null");
     expect(movil).toContain("<MobileContextCard");
   });
 

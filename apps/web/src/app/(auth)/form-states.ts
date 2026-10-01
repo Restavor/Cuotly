@@ -23,6 +23,8 @@ export type AccessRequestValues = {
   /** Decisión 68 · el país del documento (ISO alfa-2). */
   tax_country: string;
   comments: string;
+  /** RN-APP-03 · "web", "reservations" o "both". */
+  interested: string;
 };
 
 export type AccessRequestProblemField =
@@ -59,6 +61,7 @@ export const emptyAccessRequestValues: AccessRequestValues = {
   tax_id: "",
   tax_country: "ES",
   comments: "",
+  interested: "web",
 };
 
 export const accessRequestInitialState: AccessRequestFormState = {

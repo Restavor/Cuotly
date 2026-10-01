@@ -121,6 +121,11 @@ const PATHS = {
   // cuerpo y la hoja que sale por abajo.
   printer:
     "M7 8.5V3.5h10v5M7 17H5a1.5 1.5 0 0 1-1.5-1.5v-5.5A1.5 1.5 0 0 1 5 8.5h14a1.5 1.5 0 0 1 1.5 1.5v5.5A1.5 1.5 0 0 1 19 17h-2M7 13.5h10v7H7v-7Z",
+  // Restavor app · los dos productos: Restavor web es una pantalla y
+  // Restavor agents, unas chispas (diseno/final/AppInicio).
+  monitor: "M5 4.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2ZM8 20h8M12 15.5V20",
+  sparkles:
+    "M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8ZM19 15l.8 1.7 1.7.8-1.7.8L19 20l-.8-1.7-1.7-.8 1.7-.8Z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import type { ProductAccess, ProductKey } from "@/core/app/products";
 import { supportRemainingMinutes, type SupportAccessLevel } from "@/core/platform-admin";
 import { es } from "@/i18n/es";
 import { EmptyReason } from "@/components/ui/EmptyReason";
@@ -12,6 +13,10 @@ import { Icon } from "@/components/ui/Icon";
 import { leaveSupportSession } from "@/app/administracion/actions";
 import {
   activeDestination,
+  agentsActiveDestination,
+  agentsMenuGroups,
+  agentsMobileNav,
+  AGENTS_HOME,
   createOptions,
   DESTINATION_ICONS,
   globalActiveDestination,
@@ -22,9 +27,11 @@ import {
   isClientRole,
   mobileNav,
   sidebarGroups,
+  WEB_HOME,
   type NavDestination,
   type ShellRole,
 } from "./navigation";
+import { ProductLogo } from "./ProductLogo";
 import {
   ContextPickerList,
   MobileContextCard,
@@ -87,6 +94,7 @@ export interface PanelEstablishment {
 
 export function AppShell({
   context = "space",
+  productAccess = null,
   spaceSlug = "",
   spaceName = "",
   role = "owner",
@@ -118,7 +126,13 @@ export function AppShell({
    * global no tiene ninguno de los cuatro que darle, y obligarle a
    * inventárselos sería peor que no pedírselos.
    */
-  context?: "space" | "global";
+  context?: "space" | "global" | "agents";
+  /**
+   * Restavor app (decisión 88) · qué productos puede abrir quien mira, para el
+   * menú del logo. Nulo si no se ha podido saber: el logo es entonces un
+   * enlace y no un menú (no se enseña un menú de productos sin saber cuáles).
+   */
+  productAccess?: ProductAccess | null;
   spaceSlug?: string;
   spaceName?: string;
   role?: ShellRole;
@@ -184,10 +198,24 @@ export function AppShell({
   const pathname = usePathname();
 
   const esGlobal = context === "global";
-  const esPanel = !esGlobal && isClientRole(role);
+  const esAgents = context === "agents";
+  /*
+    Decisión 88 · el contexto global lo comparten la puerta común (`/`,
+    `/restaurantes`, `/mensajes`, `/cuenta`, `/ayuda`) y el Inicio de Restavor
+    web (`/web`). Lo que cambia es la marca y adónde lleva "Inicio".
+  */
+  const enWeb = esGlobal && (pathname === WEB_HOME || (pathname ?? "").startsWith(`${WEB_HOME}/`));
+  const product: ProductKey = esAgents ? "agents" : esGlobal ? (enWeb ? "web" : "app") : "web";
+  const globalHome = enWeb ? WEB_HOME : "/";
+  const esPanel = !esGlobal && !esAgents && isClientRole(role);
   const menu = useMemo(
-    () => (esGlobal ? globalMenuGroups() : sidebarGroups(spaceSlug, role, establishmentId)),
-    [esGlobal, spaceSlug, role, establishmentId],
+    () =>
+      esGlobal
+        ? globalMenuGroups(globalHome)
+        : esAgents
+          ? agentsMenuGroups()
+          : sidebarGroups(spaceSlug, role, establishmentId),
+    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId],
   );
   /**
    * RN-PAN-01 · la raíz del contexto. Para el equipo es su espacio; para
@@ -195,30 +223,46 @@ export function AppShell({
    * llevan ahí, no a una pantalla del espacio que él no puede abrir.
    */
   const contextHome = esGlobal
-    ? "/"
-    : esPanel && establishmentId !== null
+    ? globalHome
+    : esAgents
+      ? AGENTS_HOME
+      : esPanel && establishmentId !== null
       ? `/espacios/${spaceSlug}/restaurantes/${establishmentId}`
       : `/espacios/${spaceSlug}`;
   /** RN-PAN-03 · el nombre de arriba: el del local, nunca el del espacio. */
   const contextName = esGlobal
     ? es.globalContext.nav.home
-    : esPanel
+    : esAgents
+      ? es.agents.home.title
+      : esPanel
       ? establishmentName ?? es.restaurantPanel.label
       : spaceName;
   const mobile = useMemo(
-    () => (esGlobal ? globalMobileNav() : mobileNav(spaceSlug, role, establishmentId)),
-    [esGlobal, spaceSlug, role, establishmentId],
+    () =>
+      esGlobal
+        ? globalMobileNav(globalHome)
+        : esAgents
+          ? agentsMobileNav()
+          : mobileNav(spaceSlug, role, establishmentId),
+    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId],
   );
   const creates = useMemo(
-    () => (esGlobal ? globalCreateOptions() : createOptions(spaceSlug, role, establishmentId)),
-    [esGlobal, spaceSlug, role, establishmentId],
+    () =>
+      esGlobal
+        ? globalCreateOptions()
+        : esAgents
+          ? []
+          : createOptions(spaceSlug, role, establishmentId),
+    [esGlobal, esAgents, spaceSlug, role, establishmentId],
   );
   const active = useMemo(
     () =>
       esGlobal
         ? globalActiveDestination(pathname ?? "")
-        : activeDestination(spaceSlug, pathname ?? "", role, establishmentId),
-    [esGlobal, spaceSlug, pathname, role, establishmentId],
+        : esAgents
+          ? agentsActiveDestination(pathname ?? "")
+          : activeDestination(spaceSlug, pathname ?? "", role, establishmentId),
+    [esGlobal, esAgents, spaceSlug, pathname, role, establishmentId],
   );
   const unread = notifications.filter((n) => n.readAt === null).length;
 
@@ -281,15 +325,12 @@ export function AppShell({
         */}
         <aside className="hidden w-[240px] shrink-0 flex-col bg-primary-dark lg:flex">
           <div className="px-5 pb-5 pt-6">
-            <Link
-              href={contextHome}
-              className="block rounded-lg focus:outline focus:outline-2 focus:outline-cuotly-green"
-            >
-              <span className="block text-2xl font-bold leading-none tracking-tight text-surface">
-                {es.common.appName}
-              </span>
-              <span className="mt-1.5 block text-xs text-sidebar-text">{es.common.appOwner}</span>
-            </Link>
+            <ProductLogo
+              product={product}
+              access={productAccess}
+              homeHref={contextHome}
+              variant="sidebar"
+            />
           </div>
 
           {/*
@@ -307,7 +348,7 @@ export function AppShell({
           */}
           {esGlobal ? null : (
           <div className="px-3">
-            {esPanel ? (
+            {esAgents ? null : esPanel ? (
               <PanelContextBox
                 name={contextName}
                 current={establishmentId}
@@ -380,18 +421,12 @@ export function AppShell({
           <header className="sticky top-0 z-30 flex flex-col gap-2.5 border-b border-border bg-surface px-4 py-3 lg:flex-row lg:items-center lg:gap-3 lg:px-6">
             <div className="flex items-center gap-3 lg:contents">
               {/* El logotipo solo en móvil: en escritorio ya preside el menú lateral. */}
-              <Link
-                href={contextHome}
-                aria-label={`${es.common.appName} · ${es.nav.home}`}
-                className="shrink-0 rounded focus:outline focus:outline-2 focus:outline-cuotly-green lg:hidden"
-              >
-                <span className="block text-lg font-bold leading-none tracking-tight text-primary-dark">
-                  {es.common.appName}
-                </span>
-                <span className="mt-1 block text-[10px] leading-none text-text-secondary">
-                  {es.common.appOwner}
-                </span>
-              </Link>
+              <ProductLogo
+                product={product}
+                access={productAccess}
+                homeHref={contextHome}
+                variant="header"
+              />
 
               {/* La miga de pan de escritorio. La de móvil va en la fila de abajo. */}
               <nav
@@ -511,7 +546,7 @@ export function AppShell({
               botón de la propia pantalla. En el teléfono sigue en la barra
               de abajo, que es donde la maqueta de móvil sí lo dibuja.
             */}
-            {creates.length > 0 && !esGlobal ? (
+            {creates.length > 0 && !esGlobal && !esAgents ? (
               <details data-testid="create-menu" className="relative hidden lg:block">
                 <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded-field bg-primary px-3.5 py-2 text-sm font-medium text-surface transition-colors hover:bg-cuotly-green focus:outline focus:outline-2 focus:outline-cuotly-green [&::-webkit-details-marker]:hidden">
                   <Icon name="plus" className="h-4 w-4" />
@@ -577,7 +612,7 @@ export function AppShell({
               nada de lo que cambiar, y el diseño (páginas 1 a 8) no pinta
               ninguna fila ahí.
             */}
-            {esGlobal ? null : (
+            {esGlobal || esAgents ? null : (
               <div data-testid="mobile-context" className="lg:hidden">
                 {/*
                   A la izquierda, dónde estás; tocarla despliega todos tus
@@ -657,7 +692,8 @@ export function AppShell({
       <nav
         aria-label={es.nav.menuLabel}
         data-testid="mobile-nav"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 rounded-t-card bg-primary-dark pb-[env(safe-area-inset-bottom)] lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid rounded-t-card bg-primary-dark pb-[env(safe-area-inset-bottom)] lg:hidden"
+        style={{ gridTemplateColumns: `repeat(${mobile.length + Number(creates.length !== 0)}, minmax(0, 1fr))` }}
       >
         {mobile.slice(0, 2).map((destination) => (
           <MobileBarLink

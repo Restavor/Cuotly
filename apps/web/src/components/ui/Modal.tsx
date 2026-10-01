@@ -9,10 +9,12 @@ type Props = {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** `lg` es la ventana ancha de `AppContratar` (600 px); `md`, la de siempre. */
+  size?: "md" | "lg";
 };
 
 /** Modal base: fondo, bloqueo de scroll, cierre con Escape y con clic fuera. */
-export function Modal({ open, title, onClose, children }: Props) {
+export function Modal({ open, title, onClose, children, size = "md" }: Props) {
   useEffect(() => {
     if (!open) return;
 
@@ -42,7 +44,9 @@ export function Modal({ open, title, onClose, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="relative w-full max-w-md rounded-[20px] bg-surface p-6 shadow-2xl"
+        className={`relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-[20px] bg-surface p-6 shadow-2xl ${
+          size === "lg" ? "max-w-[600px]" : "max-w-md"
+        }`}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 id="modal-title" className="text-lg font-semibold text-primary-dark">

@@ -11,6 +11,8 @@ import { isClientRole, isStaffRole } from "@/components/shell/navigation";
 import { resolveShellViewer } from "@/components/shell/viewer";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+
+import { loadProductAccess } from "../../product-access";
 import { avatarLink } from "@/services/avatar-storage";
 
 import { searchEverything } from "./shell-actions";
@@ -54,7 +56,14 @@ export default async function SpaceLayout({
    * sumaba un viaje completo a la base antes de pintar nada. La foto va
    * encadenada a su perfil porque necesita la ruta que este devuelve.
    */
-  const [{ data: space }, viewer, { data: rows }, { profile, userAvatarUrl }, { data: contextos }] =
+  const [
+    { data: space },
+    viewer,
+    { data: rows },
+    { profile, userAvatarUrl },
+    { data: contextos },
+    productAccess,
+  ] =
     await Promise.all([
       supabase.from("spaces").select("id, name, slug").eq("slug", slug).maybeSingle(),
       // El rol y el restaurante salen de `resolveShellViewer()`, compartido con
@@ -89,6 +98,8 @@ export default async function SpaceLayout({
        * de quien mira, para saltar entre ellos (ver más abajo).
        */
       supabase.rpc("my_contexts"),
+      // Restavor app · el menú del logo (decisión 88).
+      loadProductAccess(supabase),
     ]);
   const { role, establishmentId, supportSession } = viewer;
 
@@ -184,6 +195,7 @@ export default async function SpaceLayout({
       userInitial={userInitial}
       userAvatarUrl={userAvatarUrl}
       userLabel={userLabel}
+      productAccess={productAccess}
       notifications={notifications}
       onSearch={searchEverything}
       establishmentId={establishmentId}

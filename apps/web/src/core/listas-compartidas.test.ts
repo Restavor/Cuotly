@@ -156,7 +156,10 @@ function casoDe(sql: string, clave: string): string | null {
  * que se parece mucho a fallar por haber encontrado algo.
  */
 function valoresDeLaLista(sql: string): readonly string[] {
-  const lista = /in\s*\(([^)]*)\)/.exec(sql) ?? /any\s*\(\s*array\[([^\]]*)\]/i.exec(sql);
+  // Sin los comentarios de SQL: un `)` dentro de uno cortaba la lista a medias
+  // (la 158 lleva «-- Migración 158 (RN-APP-03)» dentro del CHECK).
+  const limpio = sql.replace(/--[^\n]*/g, "");
+  const lista = /in\s*\(([^)]*)\)/.exec(limpio) ?? /any\s*\(\s*array\[([^\]]*)\]/i.exec(limpio);
   expect(lista, "no se ha podido leer la lista").not.toBeNull();
   return [...lista![1].matchAll(/'([a-z_0-9]+)'/g)].map((m) => m[1]);
 }

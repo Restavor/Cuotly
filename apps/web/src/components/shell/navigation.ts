@@ -227,7 +227,14 @@ export function mobileNav(
  * "Inicio" no se marcara como activo: la dirección no casaba con la del
  * menú.
  */
+/**
+ * Restavor app (decisión 88): `/` es el Inicio de la puerta común. El Inicio
+ * global que había aquí hasta el 01/10/2026 es ahora el de Restavor web, en
+ * `/web`.
+ */
 const GLOBAL_HOME = "/";
+export const WEB_HOME = "/web";
+export const AGENTS_HOME = "/agents";
 
 /**
  * RN-GLO-03 · "Restaurantes" del contexto global: los espacios de
@@ -402,10 +409,10 @@ export function moreDestinations(
  * teléfono nombren igual el mismo sitio. "Mis solicitudes" sigue
  * existiendo: se llega desde su bloque del Inicio y, en móvil, desde Más.
  */
-export function globalMenu(): readonly NavDestination[] {
+export function globalMenu(home: string = GLOBAL_HOME): readonly NavDestination[] {
   const t = es.globalContext.nav;
   return [
-    D("home", t.home, GLOBAL_HOME),
+    D("home", t.home, home),
     D("establishments", es.nav.establishments, GLOBAL_CONTEXTS),
     D("messages", t.messages, "/mensajes"),
     D("account", t.account, "/cuenta"),
@@ -419,11 +426,11 @@ export function globalMenu(): readonly NavDestination[] {
  * Agente y Ajustes son de otra naturaleza que los destinos de trabajo;
  * aquí los cinco son lo mismo.
  */
-export function globalMenuGroups(): {
+export function globalMenuGroups(home: string = GLOBAL_HOME): {
   readonly main: readonly NavDestination[];
   readonly footer: readonly NavDestination[];
 } {
-  return { main: globalMenu(), footer: [] };
+  return { main: globalMenu(home), footer: [] };
 }
 
 /**
@@ -434,9 +441,9 @@ export function globalMenuGroups(): {
  * espacios de mantenimiento y los paneles de restaurante (RN-GLO-03). Es
  * el mismo destino que el del menú lateral.
  */
-export function globalMobileNav(): readonly NavDestination[] {
+export function globalMobileNav(home: string = GLOBAL_HOME): readonly NavDestination[] {
   return [
-    D("home", es.globalContext.nav.home, GLOBAL_HOME),
+    D("home", es.globalContext.nav.home, home),
     D("establishments", es.nav.establishments, GLOBAL_CONTEXTS),
     D("messages", es.globalContext.nav.messages, "/mensajes"),
     D("more", es.nav.more, "/mas"),
@@ -476,7 +483,9 @@ export function globalCreateOptions(): readonly NavDestination[] {
  * marcarían "Inicio".
  */
 export function globalActiveDestination(pathname: string): NavDestination | null {
-  const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+  const sinConsulta = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+  // `/web` es el Inicio de Restavor web: marca "Inicio", igual que `/`.
+  const limpio = sinConsulta === WEB_HOME ? "/" : sinConsulta;
   // Lo de la barra que no está en el menú lateral también se marca.
   const menu = globalMenu();
   const claves = new Set(menu.map((d) => d.key));
@@ -535,6 +544,8 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   myRequests: "request",
   account: "person",
   space: "building",
+  // Restavor agents (Fase A): su único destino hasta que llegue el armazón (Fase B).
+  reservations: "calendar",
 };
 
 /**
@@ -666,3 +677,29 @@ const PANEL_ALIASES: Readonly<Record<string, readonly string[]>> = {
  * cualquier pantalla futura haga lo mismo sin tocar el armazón.
  */
 export const ABRIR_BUSQUEDA = "cuotly:abrir-busqueda";
+
+/**
+ * Restavor agents · el menú de la Fase A. El armazón completo —Hoy,
+ * Calendario, Agente de llamadas, Saldo…— llega en la Fase B; hasta
+ * entonces solo existe `/agents`, con la lista de restaurantes con Reservas.
+ */
+export function agentsMenuGroups(): {
+  readonly main: readonly NavDestination[];
+  readonly footer: readonly NavDestination[];
+} {
+  return { main: [D("reservations", es.agents.nav.reservations, AGENTS_HOME)], footer: [] };
+}
+
+export function agentsMobileNav(): readonly NavDestination[] {
+  return [
+    D("home", es.agents.nav.appHome, GLOBAL_HOME),
+    D("reservations", es.agents.nav.reservations, AGENTS_HOME),
+  ];
+}
+
+export function agentsActiveDestination(pathname: string): NavDestination | null {
+  const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
+  return limpio === AGENTS_HOME || limpio.startsWith(`${AGENTS_HOME}/`)
+    ? D("reservations", es.agents.nav.reservations, AGENTS_HOME)
+    : null;
+}

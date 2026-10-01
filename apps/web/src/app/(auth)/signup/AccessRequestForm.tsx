@@ -214,6 +214,25 @@ export function AccessRequestForm({
           />
         </div>
 
+        {/* RN-APP-03 · decisión 88: qué le interesa, para quien aprueba la solicitud. */}
+        <fieldset className="mb-5">
+          <legend className="mb-2 text-[15px] font-semibold text-text">{t.interestedLabel}</legend>
+          <div className="flex flex-wrap gap-x-6 gap-y-1">
+            {(["web", "reservations", "both"] as const).map((opcion) => (
+              <label key={opcion} className="flex min-h-[44px] items-center gap-2.5 text-[15px] text-text">
+                <input
+                  type="radio"
+                  name="interested"
+                  value={opcion}
+                  defaultChecked={state.values.interested === opcion}
+                  className="h-5 w-5 accent-primary"
+                />
+                {t.interestedOptions[opcion]}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
         <div className="mb-3">
           <label htmlFor="comments" className="mb-2 block text-[15px] font-semibold text-text">
             {t.commentsLabel}
@@ -302,6 +321,14 @@ function Received({
     { icon: "mail", value: values.email },
     { icon: "idCard", value: `${normalizeTaxId(values.tax_id)} · ${pais}` },
     { icon: "document", value: values.comments },
+    {
+      icon: "sparkles",
+      value: `${t.interestedSummary}: ${
+        t.interestedOptions[
+          values.interested === "reservations" || values.interested === "both" ? values.interested : "web"
+        ]
+      }`,
+    },
   ].filter((fila): fila is { icon: IconName; value: string } => fila.value !== "");
 
   return (

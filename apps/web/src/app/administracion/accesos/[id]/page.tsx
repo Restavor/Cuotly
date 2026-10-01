@@ -42,7 +42,7 @@ export default async function AdminAccessRequestDetailPage({
   const { data: row, error } = await supabase
     .from("access_requests")
     .select(
-      "id, business_name, contact_name, email, phone, tax_id, tax_id_country, tax_id_verification, tax_id_registry_name, comments, applicant_reply, status, status_reason, decided_at, account_id, created_at",
+      "id, business_name, contact_name, email, phone, tax_id, tax_id_country, tax_id_verification, tax_id_registry_name, comments, interested_in, applicant_reply, status, status_reason, decided_at, account_id, created_at",
     )
     .eq("id", id)
     .maybeSingle();
@@ -60,6 +60,10 @@ export default async function AdminAccessRequestDetailPage({
   }
 
   const t = es.platformAdmin.access;
+  const interesa = (valor: string[] | null): string | null =>
+    valor === null
+      ? null
+      : valor.map((v) => (v === "reservations" ? t.interestedReservations : t.interestedWeb)).join(" · ");
   const state = row.status as AccessRequestState;
   const final = isAccessRequestFinal(state);
 
@@ -71,6 +75,8 @@ export default async function AdminAccessRequestDetailPage({
     [t.taxId, row.tax_id ?? t.taxIdMissing],
     [t.taxCountry, row.tax_id_country === null ? null : countryName(row.tax_id_country)],
     [t.comments, row.comments],
+    // RN-APP-03 · lo que marcó en "¿Qué te interesa?". Las solicitudes anteriores a la casilla no lo traen.
+    [t.interested, interesa(row.interested_in)],
     [t.createdAt, cuando(row.created_at)],
   ];
 

@@ -1,5 +1,10 @@
 import type { AccessRequestFormState, AccessRequestValues } from "@/app/(auth)/form-states";
-import { accessRequestFieldProblems, accessRequestSubmitFailure } from "@/core/access-requests";
+import {
+  accessRequestFieldProblems,
+  accessRequestSubmitFailure,
+  interestedInFrom,
+  isAccessInterest,
+} from "@/core/access-requests";
 import { isCountryCode } from "@/core/countries";
 import {
   VIES_COUNTRY_CODES,
@@ -46,6 +51,8 @@ export type SubmitAccessRequestArgs = {
   p_tax_id_verification: TaxIdVerification;
   p_tax_id_registry_name?: string;
   p_comments?: string;
+  /** RN-APP-03 · lo que le interesa: ['web'], ['reservations'] o las dos. */
+  p_interested_in?: string[];
 };
 
 export type AccessRequestDeps = {
@@ -68,6 +75,7 @@ export function readAccessRequestValues(get: (key: string) => unknown): AccessRe
     tax_id: texto("tax_id"),
     tax_country: texto("tax_country").toUpperCase(),
     comments: texto("comments"),
+    interested: isAccessInterest(get("interested")) ? (get("interested") as string) : "web",
   };
 }
 
@@ -127,6 +135,7 @@ export async function submitAccessRequest(
       p_tax_id_verification: decision.verification,
       p_tax_id_registry_name: decision.registryName ?? undefined,
       p_comments: values.comments === "" ? undefined : values.comments,
+      p_interested_in: [...interestedInFrom(values.interested)],
     });
   } catch (error) {
     resultado = { error: { message: error instanceof Error ? error.message : "" } };

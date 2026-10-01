@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { avatarLink } from "@/services/avatar-storage";
 import { myConversations } from "@/services/global-gateway";
 
+import { loadProductAccess } from "../product-access";
 import { searchEverything } from "../espacios/[slug]/shell-actions";
 
 /**
@@ -47,7 +48,7 @@ export default async function GlobalLayout({ children }: { children: React.React
    * Si la bandeja no se puede leer, la barra sale sin número. Un cero sería
    * afirmar que no hay nada sin saberlo (CLAUDE.md, CA-20).
    */
-  const [conversaciones, { data: rows }, { profile, userAvatarUrl }] = await Promise.all([
+  const [conversaciones, { data: rows }, { profile, userAvatarUrl }, productAccess] = await Promise.all([
     myConversations(supabase).catch(() => null),
     supabase
       .from("notifications")
@@ -66,6 +67,8 @@ export default async function GlobalLayout({ children }: { children: React.React
         profile: data,
         userAvatarUrl: await avatarLink(supabase.storage, data?.avatar_path ?? null),
       })),
+    // Restavor app · el menú del logo (decisión 88).
+    loadProductAccess(supabase),
   ]);
 
   const userLabel = profile?.full_name?.trim() || profile?.email || user.email || "";
@@ -84,6 +87,7 @@ export default async function GlobalLayout({ children }: { children: React.React
       userInitial={userInitial}
       userAvatarUrl={userAvatarUrl}
       userLabel={userLabel}
+      productAccess={productAccess}
       notifications={notifications}
       unreadMessages={conversaciones === null ? 0 : totalUnread(conversaciones)}
       onSearch={searchEverything}

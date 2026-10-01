@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   homeBehavior,
+  productAccess,
   productSwitchItems,
   summarizeProducts,
   type ProductRow,
@@ -67,7 +68,7 @@ describe("RN-APP-02 · cuándo se enseña el Inicio de Restavor app", () => {
 describe("RN-APP-01 · qué ofrece el menú del logo", () => {
   it("RN-APP-01 · con los dos productos salen los tres destinos y se marca dónde está", () => {
     const s = summarizeProducts([fila("web", "A", "panel"), fila("agents", "A", "active")]);
-    expect(productSwitchItems(s, "agents")).toEqual([
+    expect(productSwitchItems(productAccess(s), "agents")).toEqual([
       { key: "app", href: "/", state: "open" },
       { key: "web", href: "/web", state: "open" },
       { key: "agents", href: "/agents", state: "current" },
@@ -76,17 +77,17 @@ describe("RN-APP-01 · qué ofrece el menú del logo", () => {
 
   it("RN-APP-01 · quien solo tiene Reservas ve Restavor web con «Contratar»", () => {
     const s = summarizeProducts([fila("agents", "A", "active")]);
-    expect(productSwitchItems(s, "agents")[1]).toEqual({ key: "web", href: "/", state: "contract" });
+    expect(productSwitchItems(productAccess(s), "agents")[1]).toEqual({ key: "web", href: "/", state: "contract" });
   });
 
   it("RN-APP-01 · quien solo tiene web y se le puede ofrecer Reservas ve «Contratar»; si no, no sale", () => {
     const conOferta = summarizeProducts([fila("web", "A", "panel"), fila("agents_offer", "A")]);
-    expect(productSwitchItems(conOferta, "web").map((i) => [i.key, i.state])).toEqual([
+    expect(productSwitchItems(productAccess(conOferta), "web").map((i) => [i.key, i.state])).toEqual([
       ["app", "open"],
       ["web", "current"],
       ["agents", "contract"],
     ]);
     const sinOferta = summarizeProducts([fila("web", null, "team")]);
-    expect(productSwitchItems(sinOferta, "web").map((i) => i.key)).toEqual(["app", "web"]);
+    expect(productSwitchItems(productAccess(sinOferta), "web").map((i) => i.key)).toEqual(["app", "web"]);
   });
 });

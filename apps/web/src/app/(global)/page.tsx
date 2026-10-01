@@ -1,301 +1,197 @@
 import Link from "next/link";
-
 import { redirect } from "next/navigation";
 
-import { ButtonLink, Card, EmptyState, ErrorState, PageHeader, StatusBadge } from "@/components/ui";
-import { fechaCorta } from "@/i18n/dates";
-import type { SpaceRequestState } from "@/core/space-requests";
+import {
+  AgentsCard,
+  AgentsOfferCard,
+  RejectedCard,
+  RequestedCard,
+  WebCard,
+  WebCardEmpty,
+} from "@/components/app/ProductCards";
+import { ButtonLink, Card, ErrorState, PageHeader } from "@/components/ui";
+import { Icon } from "@/components/ui/Icon";
+import { homeBehavior, summarizeProducts, type ProductRow } from "@/core/app/products";
+import { isPlatformPerson } from "@/core/platform-admin";
+import { totalUnread } from "@/core/global-home";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-
-import { CreateRestavorCard } from "@/components/CreateRestavorCard";
-import { isPlatformPerson, platformNeedsTwoFactor } from "@/core/platform-admin";
+import { myProducts } from "@/services/app-gateway";
+import { myConversations } from "@/services/global-gateway";
 import { myPlatformAccess } from "@/services/platform-gateway";
 
-import { Icon } from "@/components/ui/Icon";
-
-import { loadGlobalHome } from "./global-load";
 import { AttentionBoard } from "./AttentionBoard";
-import { PanelCards, SpaceCards } from "./ContextCards";
-import { InicioBuscador } from "./InicioBuscador";
+import { loadGlobalHome } from "./global-load";
 
 /**
- * G01 · el Inicio del contexto global, y **la portada de Restavor web** (PRD §36,
- * RN-GLO-02 y RN-GLO-03).
+ * El Inicio de Restavor app, la puerta común (PRD de agents §4; decisión 88;
+ * `diseno/final/AppInicio`, `AppInicioSoloWeb`, `AppInicioEstados`).
  *
- * "Necesita tu atención" con lo pendiente de **todos** los contextos a la
- * vez, debajo los contextos, y al lado lo sin leer y las solicitudes de
- * alta. Todo llega calculado desde el servidor por `loadGlobalHome()`: el
- * navegador solo esconde filas con el filtro, nunca decide qué está
- * vencido (CLAUDE.md).
+ * `/` ya no es el Inicio global de Restavor web —ese es ahora `/web`, sin otros
+ * cambios—: reparte entre los productos de quien entra. Qué productos tiene lo
+ * calcula el servidor con `my_products()` (RN-APP-01) y cuándo se enseña esta
+ * pantalla y cuándo se salta, `homeBehavior()` (RN-APP-02): con un único
+ * producto y nada que contratar se entra directo en él.
  *
- * **Aquí entra todo el mundo, siempre** (decisión 42, 16/09/2026). Hasta
- * ese día la raíz redirigía sola a tu único contexto —§20.1, "con un solo
- * contexto accesible se entra directamente"—, y eso dejaba sin ver el
- * Inicio global precisamente a quien tiene un solo espacio. Bosco lo
- * decidió al revés: se entra siempre aquí, y desde aquí a lo tuyo. El
- * selector de contexto de HU-02 no desaparece: es la parte de abajo de
- * esta pantalla (RN-GLO-03).
- *
- * Lo que la portada anterior traía y aquí sigue: la entrada a
- * Administración de Restavor web con su aviso de 2FA, y la tarjeta de crear el
- * espacio de Restavor para el Propietario de Restavor web.
+ * Nada de lo que se enseña es de relleno: lo de Restavor web llega de las
+ * mismas lecturas que el Inicio de Restavor web, y lo de Restavor agents que
+ * todavía no existe (reservas de hoy, llamadas, saldo) se dice con su motivo.
  */
 export const dynamic = "force-dynamic";
 
-export default async function GlobalHomePage() {
+export default async function AppHomePage() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
   if (!user) redirect("/login");
 
-  // Hito 19 (§8, RN-ADM-01) · quien es de Restavor web ve SIEMPRE su entrada, la
-  // primera. Se pregunta por la identidad sin la cerradura de la 2FA: si le
-  // falta, se le dice aquí. Si la consulta falla no se bloquea a nadie: se
-  // sigue como un usuario normal.
-  const [home, platform] = await Promise.all([
-    loadGlobalHome(supabase, user.id),
+  const t = es.app.home;
+  const [rows, platform] = await Promise.all([
+    myProducts(supabase).catch(() => null),
     myPlatformAccess(supabase).catch(() => null),
   ]);
-  const esPlataforma = platform !== null && isPlatformPerson(platform);
-  const t = es.globalContext.home;
 
-  /*
-    El saludo del diseño lleva el nombre de quien entra. Si el perfil no
-    tiene nombre, se saluda sin él: escribir uno sacado del correo sería
-    llamar "Info" a Bosco.
-  */
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("full_name")
-    .eq("id", user.id)
-    .maybeSingle();
-  const nombre = (perfil?.full_name ?? "").trim().split(" ")[0] ?? "";
+  // Sin saber qué productos tiene no se decide nada por ella: se dice, y se le
+  // deja una salida a Restavor web, que es donde estaba antes de esta pantalla.
+  if (rows === null) {
+    return (
+      <div className="space-y-6">
+        <ErrorState title={t.failedTitle} description={t.failedReason} />
+        <ButtonLink href="/web" variant="secondary">
+          {t.web.enter}
+        </ButtonLink>
+      </div>
+    );
+  }
 
-  const contextos = [...new Set(home.attention.map((i) => i.contextName))].filter(
-    (nombre) => nombre !== "",
+  const summary = summarizeProducts(rows);
+  const isPlatform = platform !== null && isPlatformPerson(platform);
+  const decision = homeBehavior(summary, { isPlatform });
+  if (decision.kind === "redirect") redirect(decision.to);
+
+  const showWeb = summary.hasWeb || isPlatform;
+  const [home, conversations, perfil] = await Promise.all([
+    showWeb ? loadGlobalHome(supabase, user.id).catch(() => null) : Promise.resolve(null),
+    showWeb ? Promise.resolve(undefined) : myConversations(supabase).catch(() => null),
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+  ]);
+
+  const nombre = (perfil.data?.full_name ?? "").trim().split(" ")[0] ?? "";
+
+  // Una solicitud por restaurante (la última, que es la que devuelve el servidor).
+  const requested = summary.requests.filter((r) => r.detail === "requested");
+  const rejected = summary.requests.filter((r) => r.detail === "rejected");
+  const rejectedIds = new Set(rejected.map((r) => r.establishmentId));
+  const offers = summary.offers.flatMap((row) =>
+    row.establishmentId === null
+      ? []
+      : [{ establishmentId: row.establishmentId, name: row.establishmentName ?? "" }],
   );
+  const freeOffers = offers.filter((offer) => !rejectedIds.has(offer.establishmentId));
+
+  const hasAnyProduct = showWeb || summary.hasAgents;
+  const subtitle = hasAnyProduct
+    ? t.subtitle
+    : requested.length > 0
+      ? t.subtitleRequested
+      : rejected.length > 0
+        ? t.subtitleRejected
+        : t.subtitleNothing;
+  const footer = hasAnyProduct
+    ? null
+    : requested.length > 0
+      ? t.footerRequested
+      : rejected.length > 0
+        ? t.footerRejected
+        : t.footerNothing;
+
+  const attention = home?.attention ?? [];
+  const attentionKnown = home !== null && !home.failed.attention;
+  const contexts = [...new Set(attention.map((i) => i.contextName))].filter((n) => n !== "");
+
+  const unread = home !== null ? home.unread : conversations ? totalUnread(conversations) : null;
+  const unreadFailed = home !== null ? home.failed.conversations : conversations === null;
+
+  const restaurantCount =
+    home === null || home.failed.contexts
+      ? null
+      : home.restaurants.length +
+        [...home.restaurantCount.values()].reduce((suma, n) => suma + n, 0);
 
   return (
     <div className="space-y-6">
-      {/* Página 1 del diseño definitivo móvil · el buscador ancho. En
-          escritorio ya está en la cabecera del armazón (G01), así que se
-          esconde: dos cajas que buscan lo mismo en la misma pantalla. */}
-      <div className="lg:hidden">
-        <InicioBuscador />
-      </div>
-
-      {/*
-        G01 · el título, el saludo con el nombre de quien entra y, a la
-        derecha, la acción principal. El destino del botón NO es crear: es
-        **pedir** un espacio (RN-PLA), y por eso conserva su texto. Un botón
-        que dijera "crear" y abriera una solicitud sería prometer algo que
-        la regla no da. Para el Propietario de Restavor web no se pinta: él tiene
-        su propia tarjeta más abajo, que sí crea.
-      */}
-      <PageHeader
-        title={t.title}
-        actions={
-          platform?.isOwner ? null : (
-            <ButtonLink href="/solicitar-espacio" icon="plus">
-              {t.requestSpace}
-            </ButtonLink>
-          )
-        }
-      >
-        <p className="mt-1 text-lg font-bold text-text">{t.greeting(nombre)}</p>
-        <p className="text-sm text-text-secondary">{t.chooseContext}</p>
+      <PageHeader title={t.greeting(nombre)}>
+        <p className="mt-1 text-sm text-text-secondary">{subtitle}</p>
       </PageHeader>
 
-      <Card
-        title={t.attentionTitle}
-        tone={home.attention.length > 0 ? "danger" : undefined}
-        subtitle={
-          home.attention.length > 0 ? t.attentionCount(home.attention.length) : undefined
-        }
-      >
-        {home.failed.attention ? (
-          <p className="mb-4 rounded-lg bg-warning/10 px-3 py-2.5 text-sm text-text">
-            {t.attentionFailedReason}
-          </p>
-        ) : null}
-
-        {home.attention.length === 0 ? (
-          <EmptyState
-            title={home.failed.attention ? t.attentionFailed : t.attentionEmpty}
-            description={
-              home.failed.attention ? t.attentionFailedReason : t.attentionEmptyReason
-            }
-          />
-        ) : (
-          <AttentionBoard items={home.attention} contexts={contextos} />
-        )}
-      </Card>
-
-      {esPlataforma && platform ? (
-        <Card title={es.globalContext.home.platformTitle}>
-          <p className="mb-3 text-sm text-text-secondary">
-            {es.globalContext.home.platformSubtitle}
-          </p>
-          {platformNeedsTwoFactor(platform) ? (
-            <p className="mb-3 text-sm text-danger">
-              {es.globalContext.home.platformNeedsTwoFactor}
-            </p>
-          ) : null}
-          <ButtonLink href="/administracion" variant="outline" trailingIcon="chevronRight">
-            {es.platformAdmin.nav.overview}
-          </ButtonLink>
+      {attention.length > 0 ? (
+        <Card title={t.attentionTitle} tone="danger">
+          <AttentionBoard items={attention} contexts={contexts} />
         </Card>
       ) : null}
 
-      {/*
-        G01 · "Mis espacios de mantenimiento" y "Mis paneles de restaurante",
-        uno al lado del otro, cada uno con sus tarjetas en dos columnas:
-        icono o foto, nombre, rol, cuántos restaurantes, y el botón de
-        entrar a ancho completo.
-      */}
-      {home.failed.contexts ? (
-        <ErrorState title={t.contextsFailed} description={t.contextsFailedReason} />
-      ) : home.shape === "none" ? (
-        platform?.isOwner ? (
-          <CreateRestavorCard />
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+        {showWeb ? (
+          <WebCard
+            attentionCount={attentionKnown ? attention.length : null}
+            restaurantCount={restaurantCount}
+          />
         ) : (
-          <Card title={t.noneTitle}>
-            <p className="mb-3 text-sm text-text-secondary">{t.noneReason}</p>
-            <ButtonLink href="/solicitar-espacio" variant="secondary">
-              {t.requestSpace}
-            </ButtonLink>
-          </Card>
-        )
-      ) : (
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-          {home.spaces.length > 0 ? (
-            <Card className="min-w-0" title={t.spacesTitle}>
-              <SpaceCards spaces={home.spaces} restaurantCount={home.restaurantCount} />
-            </Card>
-          ) : null}
+          <WebCardEmpty />
+        )}
 
-          {home.restaurants.length > 0 ? (
-            <Card className="min-w-0" title={t.restaurantsTitle}>
-              <PanelCards restaurants={home.restaurants} />
-            </Card>
-          ) : null}
+        <div className="flex min-w-0 flex-col gap-5">
+          {summary.agentsRows.length > 0 ? <AgentsCard rows={summary.agentsRows} /> : null}
+          {requested.map((row: ProductRow) => (
+            <RequestedCard key={row.establishmentId} row={row} />
+          ))}
+          {rejected.map((row) => (
+            <RejectedCard
+              key={row.establishmentId}
+              row={row}
+              offer={offers.find((offer) => offer.establishmentId === row.establishmentId) ?? null}
+            />
+          ))}
+          {freeOffers.length > 0 ? <AgentsOfferCard offers={freeOffers} /> : null}
         </div>
-      )}
-
-      {/*
-        G01 · la fila de abajo: lo sin leer a la izquierda y las
-        solicitudes de espacio a la derecha, cada una con su icono, su
-        frase y su botón.
-      */}
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
-        {/*
-          Los dos diseños (G01 escritorio y página 1 del móvil) pintan esto
-          como UNA fila —icono, título con su frase, botón— sin cabecera de
-          tarjeta. Con el título arriba, a 390 px la frase se partía en
-          cuatro líneas al lado del botón.
-        */}
-        <Card className="min-w-0">
-          {home.failed.conversations ? (
-            <>
-              <h3 className="mb-2 text-base font-semibold text-primary-dark">{t.unreadTitle}</h3>
-              <p className="text-sm text-text-secondary">
-                {es.globalContext.messages.failedReason}
-              </p>
-            </>
-          ) : (
-            <div className="flex items-center gap-3 sm:gap-4">
-              <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cuotly-green/10 text-cuotly-green">
-                <Icon name="messages" className="h-5 w-5" />
-                {home.unread > 0 ? (
-                  <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-bold leading-[18px] text-surface">
-                    {home.unread}
-                  </span>
-                ) : null}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-semibold text-primary-dark sm:text-base">
-                  {t.unreadTitle}
-                </h3>
-                <p className="text-xs text-text-secondary sm:text-sm">
-                  {home.unread === 0 ? t.unreadNone : t.unreadCount(home.unread)}
-                </p>
-              </div>
-              <ButtonLink href="/mensajes" variant="secondary" className="shrink-0">
-                {t.viewMessages}
-              </ButtonLink>
-            </div>
-          )}
-        </Card>
-
-        <Card
-          className="min-w-0"
-          title={t.requestsTitle}
-          action={
-            home.requests.length > 0 ? (
-              <Link
-                href="/mis-solicitudes"
-                className="text-sm font-medium text-cuotly-green hover:underline"
-              >
-                {t.openRequests}
-              </Link>
-            ) : undefined
-          }
-        >
-          {home.requests.length === 0 ? (
-            <p className="text-sm text-text-secondary">
-              {es.globalContext.requests.emptyReason}
-            </p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {home.requests.slice(0, 3).map((solicitud) => (
-                <li
-                  key={solicitud.id}
-                  className="flex flex-wrap items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-soft-surface text-primary-dark">
-                    <Icon name="request" className="h-5 w-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                      <span className="truncate text-sm font-semibold text-text">
-                        {solicitud.business_name}
-                      </span>
-                      <StatusBadge tone={spaceRequestTone(solicitud.status)}>
-                        {es.spaceRequestForm.states[solicitud.status]}
-                      </StatusBadge>
-                    </span>
-                    <span className="block truncate text-xs text-text-secondary">
-                      {t.requestSentOn(fechaCorta(solicitud.created_at))}
-                    </span>
-                  </span>
-                  <ButtonLink href="/mis-solicitudes" variant="secondary" size="sm">
-                    {t.viewRequest}
-                  </ButtonLink>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
       </div>
 
-      <p className="text-sm text-text-secondary">{t.requestsElsewhere}</p>
+      <Card className="max-w-[560px]">
+        <div className="flex items-center gap-3.5">
+          <span className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-soft-surface text-primary-dark">
+            <Icon name="messages" className="h-5 w-5" />
+            {unread !== null && unread > 0 ? (
+              <span className="absolute -right-1 -top-1 min-w-[18px] rounded-full bg-danger px-1 text-center text-[10px] font-bold leading-[18px] text-surface">
+                {unread}
+              </span>
+            ) : null}
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-semibold text-primary-dark">{t.unread.title}</h2>
+            <p className="text-sm text-text-secondary">
+              {unreadFailed || unread === null
+                ? t.unread.failed
+                : unread === 0
+                  ? t.unread.none
+                  : t.unread.count(unread)}
+            </p>
+          </div>
+          <ButtonLink href="/mensajes" variant="secondary" className="shrink-0">
+            {t.unread.view}
+          </ButtonLink>
+        </div>
+      </Card>
+
+      <p className="text-sm text-text-secondary">{footer ?? t.footerMore}</p>
+
+      {isPlatform ? (
+        <p className="text-sm">
+          <Link href="/administracion" className="font-medium text-cuotly-green hover:underline">
+            {es.platformAdmin.nav.overview}
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
-}
-
-/**
- * El tono de cada estado de una solicitud de espacio: lo que espera algo
- * del solicitante, en aviso; lo cerrado, en su color; lo demás, neutro.
- */
-function spaceRequestTone(
-  status: SpaceRequestState,
-): "success" | "warning" | "danger" | "info" | "neutral" {
-  if (status === "approved") return "success";
-  if (status === "rejected") return "danger";
-  if (status === "needs_information") return "warning";
-  if (status === "in_review") return "info";
-  return "neutral";
 }

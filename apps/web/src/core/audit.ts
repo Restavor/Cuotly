@@ -142,6 +142,8 @@ export const AUDIT_FAMILY_CAPABILITY: Readonly<Record<string, AuditCapability | 
   // en el espacio, con qué nivel y qué hizo es del propietario, como la
   // composición de su equipo (§129: "identidad visible en auditoría").
   support: "manage_space",
+  // RN-APP-03 (migración 159) · pedir Reservas es cartera de clientes.
+  reservations: "manage_clients",
   // Fase 4, Hito 19 · nombrar y retirar Administradores de Restavor web. Sin
   // espacio, como `space_request`: lo ven Bosco y quien hizo la acción por
   // la tercera rama de `audit_log_select`.
@@ -439,6 +441,9 @@ export const AUDIT_ACTIONS = [
   // RN-CRE-14 (migración 150) · quitar cosas de una solicitud que no cabe.
   "request.scope_trimmed",
   "request.submitted",
+  // RN-APP-03 (migración 158) · un restaurante pide Reservas, o el equipo lo hace por él.
+  "reservations.requested",
+  "reservations.requested_on_behalf",
   "service.conditions_published",
   "service.archived",
   "service.created",
@@ -463,6 +468,8 @@ export const AUDIT_ACTIONS = [
   "space.archived_nonpayment",
   "space.archived_trial_ended",
   "space.created",
+  // Decisión 89 · la plataforma activa o desactiva Reservas en un espacio.
+  "space.reservations_enabled_changed",
   "space.details_changed",
   "space.extras_changed",
   "space.logo_changed",

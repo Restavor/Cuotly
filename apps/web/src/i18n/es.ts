@@ -40,6 +40,9 @@ export const es = {
     appName: "Restavor",
     appOwner: "web",
     tagline: "Restavor web",
+    // Decisión 88: "Restavor" a secas es solo la puerta común; cada producto
+    // lleva su apellido. Se pinta en dos piezas, igual que `appOwner`.
+    productSuffix: { app: "", web: "web", agents: "agents" },
     save: "Guardar",
     cancel: "Cancelar",
     close: "Cerrar",
@@ -62,7 +65,7 @@ export const es = {
       subtitle: "Entra para consultar y actualizar los mantenimientos.",
       emailLabel: "Correo electrónico",
       passwordLabel: "Contraseña",
-      submit: "Entrar en Restavor web",
+      submit: "Entrar en Restavor",
       submitPending: "Entrando…",
       // RN-ACC-10 · se retiró "entrar con Google" (decisión 41). Una sola
       // forma de entrar: correo y contraseña.
@@ -258,6 +261,14 @@ export const es = {
       taxIdPlaceholder: "Documento de la persona o de la empresa",
       commentsLabel: "Comentarios (opcional)",
       commentsPlaceholder: "Cuéntanos qué necesitas o añade información que quieras compartir.",
+      // RN-APP-03 · decisión 88.
+      interestedLabel: "¿Qué te interesa?",
+      interestedOptions: {
+        web: "Mantenimiento web",
+        reservations: "Reservas",
+        both: "Las dos",
+      },
+      interestedSummary: "Te interesa",
       requiredNote: "* Campos obligatorios",
       submit: "Enviar solicitud",
       submitPending: "Enviando…",
@@ -5309,6 +5320,9 @@ export const es = {
       "space.renamed": "Espacio renombrado",
       "space.details_changed": "Datos del espacio cambiados",
       "space.logo_changed": "Logotipo del espacio cambiado",
+      "space.reservations_enabled_changed": "Reservas activadas o desactivadas en el espacio",
+      "reservations.requested": "Reservas pedidas por el restaurante",
+      "reservations.requested_on_behalf": "Solicitud de Reservas creada en nombre del restaurante",
       "space.onboarding_completed": "Puesta en marcha completada",
       "space.ownership_transferred": "Propiedad del espacio transferida",
       "space.archived_by_owner": "Espacio archivado por su propietario",
@@ -8631,7 +8645,7 @@ export const es = {
         "Las consultas a Restavor web las abre tu equipo de mantenimiento. Escríbeles desde Mensajes: te contestan como «Equipo de mantenimiento».",
       contactClientLink: "Ir a Mensajes",
     },
-    backToCuotly: "Volver al inicio de Restavor web",
+    backToCuotly: "Volver al inicio de Restavor",
     /**
      * Por qué está cada fila en "Necesita tu atención". Los seis primeros
      * son los del Inicio del espacio, dichos en singular porque aquí cada
@@ -8651,6 +8665,161 @@ export const es = {
       charge_to_pay: "Cobro pendiente",
       menu_to_prepare: "Menú por preparar",
       terms_to_accept: "Condiciones por aceptar",
+    },
+  },
+
+  /**
+   * Restavor app · la puerta común (PRD de agents §4; decisiones 88 y 89).
+   * Los textos de `diseno/final/AppInicio*`, `AppContratar` y
+   * `AppCambiarProducto` son los definitivos.
+   */
+  app: {
+    home: {
+      greeting: (nombre: string) => (nombre === "" ? "Hola" : `Hola, ${nombre}`),
+      subtitle: "Elige a qué quieres entrar.",
+      subtitleRequested: "Estamos preparando tu cuenta de Reservas. Aquí verás en qué paso va.",
+      subtitleRejected: "Tienes una respuesta de Restavor sobre tu solicitud.",
+      subtitleNothing: "Todavía no tienes nada contratado. Esto es lo que te podemos ofrecer.",
+      footerRequested:
+        "Cuando Restavor apruebe tu solicitud, te llegará un email y este Inicio cambiará solo.",
+      footerRejected: "Si crees que es un error, escríbenos y lo miramos.",
+      footerNothing: "Si crees que deberías ver algo aquí, escribe a Restavor y lo miramos.",
+      footerMore: "Iremos añadiendo más agentes a Restavor agents. Cuando haya uno nuevo, aparecerá aquí.",
+      failedTitle: "No hemos podido saber a qué puedes entrar",
+      failedReason: "Es un problema nuestro o de tu conexión. Vuelve a cargar en un momento.",
+      attentionTitle: "Necesita tu atención",
+      enter: "Entrar",
+      web: {
+        tagline: "El mantenimiento de tu web",
+        active: "Activo",
+        enter: "Entrar en Restavor web",
+        statAttention: (n: number) => (n === 1 ? "necesita tu atención" : "necesitan tu atención"),
+        statRestaurants: (n: number) => (n === 1 ? "restaurante" : "restaurantes"),
+        attentionUnknown: "No se ha podido calcular lo que necesita tu atención.",
+        none: "Sin contratar",
+        noneBody:
+          "Nos ocupamos de tu web: cambios de carta, fotos, horarios y menú del día, con un plan al mes.",
+        noneButton: "Ver Restavor web",
+      },
+      agents: {
+        tagline: "Tus agentes de inteligencia artificial",
+        taglineOffer: "Agentes de inteligencia artificial para tu restaurante",
+        enter: "Entrar en Restavor agents",
+        reservationsOf: (restaurante: string) => `Reservas · ${restaurante}`,
+        cardSuffix: " · Reservas",
+        status: {
+          approved_pending_payment: "Pendiente de pago",
+          active: "Activo",
+          past_due: "Pago atrasado",
+          paused: "En pausa",
+          ending: "Terminando",
+          closed: "Cerrada",
+        },
+        notConnectedTitle: "Reservas de hoy, llamadas y saldo",
+        notConnectedReason:
+          "Todavía no hay datos: la agenda y el agente de llamadas llegan con la siguiente fase de Restavor agents.",
+        offerBadge: "Sin contratar",
+        offerTitle: "Reservas",
+        offerFor: (restaurante: string) => `Para ${restaurante}`,
+        offerBullets: [
+          "Todas tus reservas en una sola agenda: plataformas, tu web, el teléfono y las que apuntes a mano.",
+          "Un agente que coge el teléfono cuando no podéis, responde dudas y apunta reservas.",
+          "48 € + IVA al mes, sin permanencia. Las llamadas y los mensajes se pagan con saldo, a lo que cuestan.",
+        ],
+        contract: "Contratar Reservas",
+        requestedBadge: "Solicitud enviada",
+        requestedSubtitle: (restaurante: string) =>
+          `${restaurante} · 48 € + IVA al mes, sin permanencia`,
+        stepsLabel: "Pasos",
+        steps: {
+          sent: "Solicitud enviada",
+          sentBody: (cuando: string) =>
+            `${cuando}. Te hemos enviado un email con lo que has pedido.`,
+          review: "Restavor la revisa y prepara tu agente",
+          reviewBody: "Te escribimos en 1 o 2 días laborables. Si hace falta algo, te llamamos.",
+          pay: "Pagas el primer mes",
+          payBody: "Te llegan los datos para pagar por transferencia o Bizum.",
+          use: "Empiezas a usar Reservas",
+          useBody: "Con una configuración guiada de 5 minutos.",
+        },
+        rejectedBadge: "No aprobada",
+        rejectedTitle: "Por ahora no podemos darte acceso a Reservas.",
+        rejectedWhy: "Lo que nos ha dicho Restavor",
+        rejectedNoReason: "Restavor no ha dejado ningún motivo escrito.",
+        askAgain: "Volver a pedir Reservas",
+        writeToRestavor: "Escribir a Restavor",
+      },
+      unread: {
+        title: "Mensajes sin leer",
+        none: "No tienes mensajes nuevos.",
+        count: (n: number) => (n === 1 ? "Tienes 1 mensaje nuevo." : `Tienes ${n} mensajes nuevos.`),
+        failed: "No se han podido leer los mensajes.",
+        view: "Ver mensajes",
+      },
+    },
+    /** `AppContratar` · la ventana "Contratar Reservas". */
+    contract: {
+      kicker: "Restavor agents",
+      title: "Contratar Reservas",
+      close: "Cerrar",
+      forRestaurant: "Para el restaurante",
+      includes: [
+        "Una agenda con todas tus reservas: plataformas, tu web, el teléfono y las que apuntes a mano.",
+        "Un agente de llamadas que responde dudas y apunta, cambia o cancela reservas.",
+        "Avisos a tus clientes por email, WhatsApp o SMS, y la tablet del local para tu equipo.",
+      ],
+      feeLabel: "Cuota",
+      fee: "48 € + IVA / mes",
+      feeWithTax: "58,08 € con IVA · sin permanencia",
+      balanceLabel: "Llamadas y mensajes",
+      balance: "Con saldo",
+      balanceBody: "Lo recargas tú con tarjeta. Cada uso descuenta lo que cuesta.",
+      afterTitle: "Qué pasa después",
+      after: [
+        "Restavor revisa tu solicitud y te llama para dejar listo el agente, tu teléfono y tus plataformas de reservas.",
+        "Te llega el primer cobro en Plan y pagos de Restavor agents.",
+        "En cuanto está pagado, Reservas se activa y aparece en Restavor agents.",
+      ],
+      acceptPrefix: "He leído y acepto las",
+      acceptLink: "condiciones de Reservas",
+      conditionsTitle: "Condiciones de Reservas",
+      conditionsVersion: (version: number) => `Versión ${version}`,
+      conditionsLoading: "Cargando las condiciones…",
+      conditionsMissing:
+        "No hemos podido cargar las condiciones de Reservas. Cierra esta ventana y vuelve a intentarlo.",
+      cancel: "Cancelar",
+      submit: "Enviar solicitud",
+      submitting: "Enviando…",
+      errorFallback: "No hemos podido enviar la solicitud. Inténtalo de nuevo.",
+      sent: "Solicitud enviada. Restavor la está revisando.",
+    },
+    /** `AppCambiarProducto` · el menú del logo. */
+    switcher: {
+      label: "Cambiar de producto",
+      app: { title: "Inicio de Restavor", body: "Lo importante de todo, en una pantalla" },
+      web: { title: "Restavor web", body: "El mantenimiento de tu web" },
+      agents: { title: "Restavor agents", body: "Tus agentes de inteligencia artificial" },
+      here: "Estás aquí",
+      contract: "Contratar",
+    },
+  },
+
+  /**
+   * Restavor agents · lo que existe en la Fase A: una página mínima. El
+   * armazón (Hoy, Calendario, Agente de llamadas, Saldo) llega en la Fase B.
+   */
+  agents: {
+    nav: { reservations: "Reservas", appHome: "Inicio" },
+    home: {
+      title: "Restavor agents",
+      subtitle: "Tus agentes de inteligencia artificial.",
+      listTitle: "Tus restaurantes con Reservas",
+      emptyTitle: "Todavía no tienes Reservas",
+      emptyReason: "Cuando Restavor apruebe tu solicitud, tu restaurante aparecerá aquí.",
+      comingTitle: "La agenda de Reservas llega en la siguiente fase",
+      comingReason:
+        "Todavía no hay agenda, ni agente de llamadas, ni saldo que enseñar: están en construcción y no se simulan.",
+      backToApp: "Volver al inicio de Restavor",
     },
   },
 
@@ -9073,6 +9242,9 @@ export const es = {
       back: "Volver a las solicitudes de acceso",
       fields: "Lo que ha escrito",
       comments: "Comentarios",
+      interested: "Le interesa",
+      interestedWeb: "Mantenimiento web",
+      interestedReservations: "Reservas",
       // Decisión 67 · el sexto campo. Las solicitudes de antes no lo traen.
       taxId: "DNI / CIF / NIF",
       taxIdMissing: "No consta: la solicitud es anterior a pedirlo",

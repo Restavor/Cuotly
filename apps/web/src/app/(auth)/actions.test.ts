@@ -171,11 +171,36 @@ describe("requestAccess", () => {
       p_tax_id_verification: "checksum",
       p_tax_id_registry_name: undefined,
       p_comments: undefined,
+      // Sin marcar nada vale Restavor web (RN-APP-03).
+      p_interested_in: ["web"],
     });
     // España no se pregunta a VIES: su cálculo de control basta.
     expect(viesMock).not.toHaveBeenCalled();
     expect(result.done).toBe(true);
     expect(result.error).toBeNull();
+  });
+
+  it("RN-APP-03: lo que le interesa (Reservas, o las dos) llega a la solicitud", async () => {
+    rpcMock.mockResolvedValue({ error: null });
+
+    await requestAccess(accessRequestInitialState, formData({ ...completo, interested: "reservations" }));
+    expect(rpcMock).toHaveBeenLastCalledWith(
+      "submit_access_request",
+      expect.objectContaining({ p_interested_in: ["reservations"] }),
+    );
+
+    await requestAccess(accessRequestInitialState, formData({ ...completo, interested: "both" }));
+    expect(rpcMock).toHaveBeenLastCalledWith(
+      "submit_access_request",
+      expect.objectContaining({ p_interested_in: ["web", "reservations"] }),
+    );
+
+    // Un valor que no existe no se cuela: vale Restavor web.
+    await requestAccess(accessRequestInitialState, formData({ ...completo, interested: "todo" }));
+    expect(rpcMock).toHaveBeenLastCalledWith(
+      "submit_access_request",
+      expect.objectContaining({ p_interested_in: ["web"] }),
+    );
   });
 
   it("RN-ACC-12: termina igual pase lo que pase por detrás, y no redirige nunca", async () => {
@@ -212,6 +237,7 @@ describe("requestAccess", () => {
         tax_id: "X1234567L",
         tax_country: "ES",
         comments: "",
+        interested: "web",
       },
     });
     expect(redirectMock).not.toHaveBeenCalled();
