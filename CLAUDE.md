@@ -59,7 +59,7 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - Categoría de puntos para tareas de más de 4 horas.
 - ~~Umbrales concretos de detección de oportunidades y definición de impacto/esfuerzo~~ — los fijó Bosco el 14/09/2026 (decisión 26 de `docs/DECISIONES.md`, razonada en `docs/PROPUESTA-OPORTUNIDADES.md`). Ya no se inventan: se citan.
 - El bloque legal y fiscal: términos de uso, privacidad, retenciones, numeración fiscal de facturas, jurisdicción. **Excepción desde el 12/09/2026:** las **condiciones de cada plan y servicio** sí existen (migración 75): las escribe el espacio para su propio plan, se versionan (RN-DAT-07) y el restaurante las acepta en Restavor web o el equipo registra la aceptación de fuera con fecha y contrato. Restavor web no redacta ninguna: el texto es del espacio.
-- API pública y webhooks.
+- API pública y webhooks de Restavor web. (Restavor agents tiene los suyos, los que necesita Reservas: decisión 96, más abajo.)
 - ~~Precio del almacenamiento adicional~~ — no hay precio: pasarse de lo incluido **se presupuesta aparte** (decisión 38 del 16/09/2026; RN-SUB-13, migración 95). Se avisa al 80 % y al 100 %, y al 100 % también a Restavor web. Nada se bloquea. No inventes un precio por GB.
 - Cancelación/anulación/abono de un cobro. Reembolsar lo **reabre** (RN-FIN-04b, decisión 12): devolver el dinero dejando al cliente a cero es otra operación, y no existe. No la metas dentro de `refund_charge`.
 - Sincronización bidireccional de calendarios.
@@ -79,9 +79,28 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - Menú Diario no tiene botón "Comenzar".
 - Reservas y delivery no se monitorizan. (Que Restavor compruebe por su cuenta que el botón de reservas de la web funciona, como dice la ficha del Básico, no es monitorizarlas: Restavor web no vigila la web —decisión 83—.)
 - No existe botón "Sincronizar ahora" en las integraciones analíticas.
-- Sin Stripe: los pagos se registran manualmente (transferencia o Bizum).
+- Sin Stripe: los pagos se registran manualmente (transferencia o Bizum). **Única excepción: las recargas de saldo de Restavor agents** (decisión 90, más abajo).
 - Sin modo oscuro, sin selector de densidad, sin marca blanca, sin publicidad.
 - No se crean bases de datos ni proyectos separados por restaurante.
+
+## Restavor app y Restavor agents (ampliación decidida por Bosco, decisiones 88 a 99)
+
+Restavor es una plataforma con una sola puerta: **Restavor app** (entrar, inicio, cuenta) y dos productos, **Restavor web** (este repositorio hasta ahora) y
+**Restavor agents** (agentes de IA para restaurantes; el primero, Reservas). La especificación está en `docs/agents/PRD-RESTAVOR-AGENTS.md` y las instrucciones de trabajo
+en `docs/agents/INSTRUCCIONES-PARA-CLAUDE.md`. Se construye por fases, en la rama `agents` y contra el proyecto de pruebas (`docs/agents/PRUEBAS.md`); **nada llega a producción
+sin que Bosco lo pida**. Estas son las únicas excepciones a las reglas de arriba, y solo valen donde se dice:
+
+- **La raíz es Restavor app** (88): `/` es el Inicio de Restavor app y el Inicio global de Restavor web vive en `/web`. Sustituye a la decisión 42 ("se entra siempre al Inicio global").
+- **Stripe, solo para recargas de saldo** (90). Todo lo demás sigue sin Stripe.
+- **Dinero:** céntimos enteros en todo, **salvo el libro del saldo de Restavor agents y los costes de uso, en millonésimas de euro** (94). Sigue siendo un libro inmutable con signo.
+- **P5:** el agente de llamadas actúa solo dentro de las reglas de Reservas (93). En el resto de la plataforma, la IA propone y una persona valida.
+- **API y webhooks:** solo los de Restavor agents para Reservas (96). La API pública general sigue aplazada.
+- **Orden:** Restavor app y Restavor agents van antes del bloque legal y fiscal (97); no se para por él al construirlos, pero sigue siendo obligatorio antes de dar de alta restaurantes reales.
+- **Reservas es independiente de Restavor web** (91): sus cobros no los tocan `dunning_sweep` ni `run_charge_reminders`, y el estado de `establishments` no cambia por Reservas. Sin permanencia y sin `plan_commitments` ni `consumption_cycles` (95).
+- **Datos de los comensales:** el equipo de Restavor solo los ve en una sesión de soporte de Reservas con motivo y `aal2` (92). `reservation_events` y `audit_log` nunca guardan datos personales de comensales.
+- **Avisos** (99): correo en las dos tandas del día salvo los importantes; push siempre al momento. Los avisos de Restavor web no cambian.
+- El "Agente Restavor web" del menú de Restavor web (`/espacios/<espacio>/agente`) **no se toca**: sigue "Próximamente". Es otra cosa distinta de Restavor agents.
+- Códigos de reglas nuevos: `RN-APP-xx`, `RN-AGT-xx`, `RN-RES-xx`, `RN-LLA-xx`, cada uno con su test que lo cite. Lista en `docs/agents/reglas.md`.
 
 ## Estilo de código
 

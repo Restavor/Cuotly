@@ -2515,3 +2515,48 @@ están confirmadas (decisiones 32, 33, 34, 35 y 36).
     identificadores del código y de la base (`cuotly_payments`, `CUOTLY_PLANS`, `cuotly-green`, los
     slugs), el dominio `cuotly.com` del remitente, los apuntes ya escritos en libros inmutables y
     este registro de decisiones, que cita lo que se dijo cuando se dijo.
+
+---
+
+## Restavor app y Restavor agents (decisiones 88 a 99)
+
+Las decisiones 88 a 98 son las D-A a D-K de `docs/agents/PRD-RESTAVOR-AGENTS.md` §2, que Bosco tomó el 30/09/2026
+al definir la ampliación; se registran aquí el 01/10/2026, antes de programarlas (Fase A, APP-01). Cada una
+dice qué regla anterior cambia. La 99 es de Bosco el 01/10/2026, durante la Fase A.
+
+88. **Restavor app es la raíz** (D-A). `/` pasa a ser el Inicio de Restavor app, la puerta común. El Inicio global de
+    Restavor web se mueve a `/web`, sin otros cambios. **Cambia la decisión 42** ("se entra siempre al Inicio global"):
+    se sigue entrando siempre a un Inicio, pero ahora es el de Restavor app, que decide a qué producto va cada persona
+    (PRD §4.3). Los destinos de las demás pantallas globales (`/restaurantes`, `/mensajes`, `/cuenta`, `/ayuda`) no cambian.
+89. **Restavor agents es un producto de la plataforma** (D-B), con Reservas como primer agente. El restaurante y las
+    personas son los mismos que en Restavor web. Un restaurante solo con Reservas es un `establishment` sin plan de
+    mantenimiento con el servicio Reservas. `services.kind` admite `reservations`.
+90. **Stripe, solo para recargas de saldo de Restavor agents** (D-C). **Excepción a "Sin Stripe"**: todo lo demás sigue
+    con pagos registrados a mano (transferencia o Bizum).
+91. **El ciclo de vida de Reservas es independiente** (D-D). Impago de Reservas, 7 días de margen y pausa solo de
+    reservas nuevas; la agenda nunca se bloquea. Restavor web mantiene su regla (24 h pausa, 72 h suspensión) y no
+    la afecta Reservas, ni al revés: los cobros de suscripciones al servicio Reservas los ignoran los barridos de
+    Restavor web, y Reservas tiene el suyo.
+92. **Datos de los comensales** (D-E): el equipo de Restavor solo los ve quien esté marcado como soporte y abra una
+    sesión de soporte de Reservas, con motivo, que queda registrada y que ve el restaurante. Abrirla exige el segundo
+    paso (`aal2`).
+93. **Excepción al principio P5** (D-F): el agente de llamadas **actúa solo** (crea, cambia y cancela reservas y
+    responde dudas) dentro de las reglas de Reservas. Solo los grupos grandes quedan pendientes. La lectura de
+    documentos por IA sí se enseña al restaurante para que la corrija.
+94. **Saldo a precio real** (D-G), compartido por todos los agentes de un restaurante. El libro del saldo guarda
+    millonésimas de euro (`amount_micros`). **Excepción a "dinero en céntimos"**, solo para ese libro y los costes de uso.
+95. **Sin plan anual** (D-H): Reservas es solo mensual y sin permanencia, y nunca crea `plan_commitments` ni `consumption_cycles`.
+96. **API y webhooks de Restavor agents** (D-I). Se adelanta solo lo necesario para Reservas: la API del agente, la
+    del formulario web y los webhooks de entrada. **Excepción al aplazado "API pública y webhooks"**, que sigue
+    aplazado para el resto de Restavor web.
+97. **Orden de construcción** (D-J): Restavor app y Restavor agents van **antes** del bloque legal y fiscal (cambia el
+    orden de la decisión 37). El bloque legal sigue siendo obligatorio antes de dar de alta a restaurantes reales:
+    no se para por él al construir estas fases.
+98. **Reservas en pausa: el agente no coge, pasa las llamadas al local** (D-K), para no perder ninguna llamada.
+99. **Correos en dos tandas, push al momento** (01/10/2026). Bosco: *"Los correos los dejamos en tandas; lo que tiene
+    que llegar instantáneo son los push en el móvil. Correos en 2 tandas a no ser que sea importante y los push son
+    siempre instantáneos."* Para los avisos de Restavor agents: el correo va por la cola que ya existe (07:00 y 19:00
+    UTC) salvo los importantes, y el push sale al crearse el aviso. Esto **precisa PRD de agents §9.4** (que pedía
+    también el correo al momento) y de momento **no cambia los avisos de Restavor web**: sus push siguen en la cola,
+    y generalizar la regla sería una tarea aparte. El envío directo desde `reservas@restavor.com` queda para los
+    avisos a comensales (Fase F).
