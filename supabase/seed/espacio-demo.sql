@@ -215,6 +215,23 @@ values
   ('d2000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'Premium',  49900, 10, 12, 2, 0, 24, false, 2, true,  'advanced',      'month',   false, 72, 72, 72, 120),
   ('d2000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Premium+', 59900, 25, 24, 5, 1, 24, true,  3, true,  'complete',      'month',   true,  48, 48, 72,  96);
 
+-- Impulso en créditos (catálogo real, migración 154: 99 € + IVA, 20 créditos
+-- al mes —40 medios créditos—, 24 h, turno 1, informe mensual y trimestral).
+-- El identificador 4 no lo usaba ningún restaurante del sembrado, y es el
+-- plan de Café Prueba, el restaurante donde mutan los recorridos: desde que
+-- las solicitudes se miden en créditos (decisión 85), un cambio en un plan
+-- que no los incluye (Básico) solo puede ir por presupuesto aparte, y el
+-- recorrido largo de CA-19 (validar, aceptar, asignar, publicar, corregir)
+-- necesita un plan con créditos. Los demás planes del espacio demo siguen en
+-- el catálogo antiguo: PRD §16 los pone al día en la Fase B.
+update public.plans
+set price_cents = 9900,
+    included_small = 0, included_photo = 0, included_medium = 0, included_large = 0,
+    included_credits_half = 40,
+    start_sla_hours = 24,
+    report_period = 'both'
+where id = 'd2000000-0000-0000-0000-000000000004';
+
 -- `kind` e `included_updates` (migración 77): es lo que hace que el
 -- servicio SEA Menú Diario para las funciones; por el nombre no se mira.
 insert into public.services (space_id, name, price_cents, price_premium_cents, kind, included_updates)
@@ -304,13 +321,13 @@ values
 -- los pies. Se separan los datos: "Bar Demo" no lo toca nadie, y todo lo
 -- que muta ocurre en "Café Prueba".
 --
--- Con plan **Básico**, y no es un detalle menor: Básico no incluye ningún
--- cambio (CLAUDE.md), así que `accept_request()` marca la aceptación como
--- presupuestada y NO escribe ningún apunte de consumo. El recorrido se
--- puede repetir tantas veces como haga falta sin agotar una bolsa — con
--- Impulso+, a la dieciseisava ejecución empezaría a fallar por falta de
--- crédito. Y de paso es un caso de producto real, no un apaño: un cambio
--- en Básico se presupuesta aparte.
+-- Con plan **Impulso** en créditos (20 al mes). Antes era Básico, que no
+-- incluye ningún cambio: aceptar no gastaba nada y el recorrido se podía
+-- repetir sin agotar una bolsa. Desde la decisión 85 un cambio en Básico solo
+-- puede ir por presupuesto aparte, así que el recorrido largo necesita un plan
+-- que incluya créditos. Cada ejecución gasta lo que valore el equipo (en CI,
+-- una base nueva cada vez); en una base local que se reutilice, la bolsa de 20
+-- créditos aguanta muchas pasadas y `sembrar` la devuelve entera.
 --
 -- Y con su propio cliente, porque si "Bar Demo" y "Café Prueba" fueran del
 -- mismo, ese cliente pasaría a tener dos contextos y dejaría de entrar
@@ -362,14 +379,14 @@ insert into public.subscriptions
   (id, space_id, establishment_id, kind, plan_id, status, started_at, created_by)
 values
   ('d6000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001',
-   'd4000000-0000-0000-0000-000000000002', 'plan', 'd2000000-0000-0000-0000-000000000001',
+   'd4000000-0000-0000-0000-000000000002', 'plan', 'd2000000-0000-0000-0000-000000000004',
    'active', now() - interval '5 days', 'd0000000-0000-0000-0000-000000000001');
 
 insert into public.plan_commitments
   (space_id, establishment_id, subscription_id, plan_id, started_at, ends_at, cause, created_by)
 values
   ('d1000000-0000-0000-0000-000000000001', 'd4000000-0000-0000-0000-000000000002',
-   'd6000000-0000-0000-0000-000000000002', 'd2000000-0000-0000-0000-000000000001',
+   'd6000000-0000-0000-0000-000000000002', 'd2000000-0000-0000-0000-000000000004',
    now() - interval '5 days', now() + interval '85 days', 'initial',
    'd0000000-0000-0000-0000-000000000001');
 
@@ -530,8 +547,8 @@ begin
   end if;
 
   -- Y uno del segundo restaurante que se queda SIN pagar, para que el
-  -- recorrido de CA-19 tenga sobre qué registrar un pago. Básico son 20 €
-  -- + 21 % = 24,20 €. Vence dentro de 20 días: pendiente, no vencido, así
+  -- recorrido de CA-19 tenga sobre qué registrar un pago. Impulso son 99 €
+  -- + 21 % = 119,79 €. Vence dentro de 20 días: pendiente, no vencido, así
   -- que el ciclo de impago no lo toca.
   perform public.generate_monthly_charge(
     'd6000000-0000-0000-0000-000000000002'::uuid, now() + interval '20 days');

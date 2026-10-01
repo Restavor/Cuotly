@@ -18,9 +18,10 @@ import { expect, test, type Page } from "@playwright/test";
  * Demo" (EST-0001). El otro archivo cuenta cosas exactas sobre Bar Demo
  * —cuatro solicitudes, catorce de dieciséis en la bolsa— y un recorrido
  * que crea y acepta le cambiaría el suelo bajo los pies. Café Prueba tiene
- * plan Básico a propósito: Básico no incluye ningún cambio, así que
- * aceptar aquí no gasta bolsa y el recorrido se puede repetir sin agotar
- * nada (ver `supabase/seed/espacio-demo.sql`, sección 5 bis).
+ * plan Impulso en créditos (20 al mes): desde la decisión 85 las solicitudes
+ * se miden en créditos y un plan que no los incluye (Básico) solo puede ir por
+ * presupuesto aparte, así que el recorrido largo necesita uno que sí (ver
+ * `supabase/seed/espacio-demo.sql`, sección 5 bis).
  *
  * Los pasos van en un solo test y en orden, con `test.step()`, porque un
  * recorrido ES una secuencia: no se puede publicar lo que no se ha
@@ -320,23 +321,16 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
         timeout: 15_000,
       });
 
-      // Los dos caminos de RN-CLS-03 están a la vista: aceptar la
-      // propuesta tal cual, o corregirla. Este recorrido va por el
-      // segundo, que es el que escribe la categoría y el resumen a mano y
-      // por tanto prueba más; el primero se prueba en
-      // `supabase/tests/validacion_interna.sql`, donde se comprueba que
-      // validar la propuesta tal cual guarda exactamente lo propuesto.
-      await expect(page.getByRole("button", { name: "Validar propuesta" })).toBeVisible();
-      await page.getByRole("link", { name: "Corregir clasificación" }).click();
-      await page.waitForURL(/corregir=1/, { timeout: 15_000 });
-
-      // RN-CLS-03: hasta que una persona valida, el restaurante no ve ni
-      // categoría ni resumen.
-      await page.getByLabel("Categoría").selectOption("small");
+      // Desde la decisión 85 la solicitud va en créditos: no se valida una
+      // categoría, se fijan créditos (RN-CRE-10). Sin clave de IA en el
+      // entorno de pruebas la valoración cae al equipo ("fija tú los
+      // créditos"), que es exactamente este paso. La categoría de la
+      // propuesta ya no es lo que decide nada.
+      await page.getByLabel("Créditos, gestión incluida (múltiplos de 0,5)").fill("2,5");
       await page
         .getByLabel("Resumen para el restaurante")
         .fill("Corrección del teléfono del pie de página.");
-      await page.getByRole("button", { name: "Validar y enviar al restaurante" }).click();
+      await page.getByRole("button", { name: "Guardar créditos" }).click();
 
       await expect(async () => {
         await sinErrores(page, "VALIDAR");
@@ -345,19 +339,19 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("ACEPTAR · el restaurante da el visto bueno", async () => {
-      await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}`);
-      await cabeEnElTelefono(page, "la ficha con la aceptación pendiente");
+      await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}/solicitudes`);
+      await cabeEnElTelefono(page, "la lista con la aceptación pendiente");
 
-      const pendiente = page
-        .locator("div")
-        .filter({ hasText: "Pendiente de tu aceptación" })
-        .first();
-      await expect(pendiente).toBeVisible();
+      // La aceptación ya no está en la portada del panel: se abre la
+      // solicitud y se acepta ahí, viendo cuánto de su plan va a usar.
+      await page.locator("tbody tr").filter({ hasText: MARCA }).getByRole("link", { name: "Ver solicitud" }).click();
+      await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 30_000 });
+      await expect(page.getByText(/Esta solicitud usará el \d+ % de tu plan/)).toBeVisible();
 
       await page.getByRole("button", { name: "Aceptar y que empiecen" }).first().click();
 
-      // Aceptar crea el trabajo. En Básico no gasta bolsa: se presupuesta
-      // aparte (CLAUDE.md, "Básico NO incluye ningún cambio").
+      // Aceptar crea el trabajo y gasta de los créditos del plan (RN-CRE-11).
+      await page.goto(`/espacios/${ESPACIO}/restaurantes/${CAFE_ID}/solicitudes`);
       const fila = page.locator("tbody tr").filter({ hasText: MARCA });
       await expect(async () => {
         await sinErrores(page, "ACEPTAR");
@@ -433,9 +427,9 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     });
 
     await test.step("CORREGIR · el restaurante pide su corrección gratuita", async () => {
-      await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}`);
+      await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}/solicitudes`);
 
-      await page.locator("tbody tr").filter({ hasText: MARCA }).getByRole("link").first().click();
+      await page.locator("tbody tr").filter({ hasText: MARCA }).getByRole("link", { name: "Ver solicitud" }).click();
       await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 30_000 });
       await cabeEnElTelefono(page, "el detalle de la solicitud publicada");
 
