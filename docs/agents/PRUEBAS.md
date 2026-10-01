@@ -93,4 +93,4 @@ Si el secreto falta, el proceso se salta sin dar error. Si la base se ha pausado
   rebotes duros. Cuando una fase necesite correo real (Fase F), se usa una clave propia de pruebas y direcciones reales.
 - **Protección de las vistas previas:** Vercel pide iniciar sesión para abrir una vista previa. Stripe, `pg_cron` y las llamadas externas al agente no
   podrán entrar sin una excepción (Fases E y G). Se decide entonces.
-- **CI:** no hay ninguna ejecución verde desde el 17/09/2026 (la #220). Causas y arreglos propuestos en el hito de la Fase 0 de `docs/ROADMAP.md`.
+- **CI:** en verde desde el 01/10/2026 (ejecución #420), después de estar roto del 17/09 al 01/10. Causas y arreglos en el hito de la Fase 0 de `docs/ROADMAP.md`.

@@ -5305,7 +5305,7 @@ restaurantes donde no está autorizado; aprobar oportunidades sigue siendo de "A
 
 Rama `agents`, contra el entorno de pruebas (`docs/agents/PRUEBAS.md`). Nada llega a producción hasta que Bosco lo pida.
 
-### Fase 0 · Entorno de pruebas · 30/09/2026 (en curso)
+### Fase 0 · Entorno de pruebas · 30/09/2026 al 01/10/2026 (casi cerrada: falta la comprobación de Bosco)
 
 Criterios del PRD §15 (ENT-01 y ENT-02):
 
@@ -5314,8 +5314,12 @@ Criterios del PRD §15 (ENT-01 y ENT-02):
   espacio de demostración sembrado. Se carga con `.github/workflows/pruebas-supabase.yml`, que solo acepta esa base.
 - [x] `docs/agents/PRUEBAS.md`.
 - [x] Variables de Vercel solo para la vista previa de `agents` (30/09/2026): las seis de producción ya no valen en Preview y la rama tiene las suyas.
-- [ ] `SUPABASE_SERVICE_ROLE_KEY` de Pruebas (la pega Bosco), confirmar la dirección de la vista previa y Auth de Supabase (Site URL y Redirect URLs).
-- [ ] Bosco entra en la vista previa con `owner@cuotly.test` y ve Restavor web funcionando.
+- [x] `SUPABASE_SERVICE_ROLE_KEY` de Pruebas, solo para Preview de la rama `agents` (la puso Bosco el 01/10/2026) y Auth de Supabase.
+- [x] **CI en verde** (ejecución #420, 01/10/2026): `build-and-test`, `rls-tests` (las 88 suites) y `e2e-datos` (las 16 pruebas de navegador).
+- [x] `info@restavor.com` único propietario en Pruebas: cuenta creada por Bosco, espacio `restavor` creado con ella, y relevo de propiedad del espacio
+  demo en el sembrado (sección 13). Ver `docs/agents/PRUEBAS.md`.
+- [ ] Bosco confirma qué dirección abrió (la vista previa lleva `-git-agents-`) y entra con `owner@cuotly.test` o `info@restavor.com` y ve
+  Restavor web funcionando sobre la copia.
 
 Decisiones técnicas:
 
@@ -5326,20 +5330,22 @@ Decisiones técnicas:
 
 Hallazgos que **no** son de la Fase 0 y que hay que decidir:
 
-- **El CI no está en verde desde el 17/09/2026.** Solo hay 6 ejecuciones verdes en toda la historia y la última es la #220; las 190 siguientes
-  no lo son. Investigado el 30/09/2026 sobre la subida `1e666db`, con tres causas distintas:
-  1. **`rls-tests`** se paraba en `hito5-concurrency-test.mjs` (CA-05) porque `create_request_draft()` ya no deja enviar sin prioridad
-     (RN-REQ-05, migración 106, 19/09). Ese paso hace de tapón: **en CI no se ejecutaba ninguna suite posterior**. Reproducido en local
-     (PostgreSQL 16 con `bootstrap-postgres-local.sql`): con una sola línea, `create_request_draft($1, $2, null, 'medium', '…')`, pasa.
-     Con esa base local, **las 88 suites SQL de CI pasan una a una**, `hito7-concurrency-test.mjs` pasa y el sembrado corre dos veces sin error.
-  2. **`build-and-test`**: un único test de Playwright (`hito8-experiencia.spec.ts:25`) cuenta 5 enlaces en la barra inferior y hay 4 más el botón
-     Crear en el centro (`<details>`, decisión 47). Typecheck, lint, pruebas unitarias y build pasan. No verificado en local (el servidor de
-     Playwright no arrancó en el sandbox).
-  3. **`e2e-datos`**: con el sembrado arreglado, 13 de 16 recorridos fallan. Los datos existen tal como los esperan las pruebas (SOL-0001 a
-     SOL-0004, espacio "Demo Restavor web"); fallan las pantallas o los textos que buscan: el contador "/ 30 utilizadas" y el selector de plantilla
-     "Pizarra" (migración 152), "Lo que incluye tu plan este ciclo" y "Tus solicitudes", `EST-0001` ahora repetido, "Importe cobrado", el `<option>`
-     oculto de "Marta Gil (trabajadora)" y los enlaces del Inicio. Parece una suite que no siguió al rediseño (18 a 25/09) ni a los créditos.
-     No se puede reproducir sin una Supabase completa (Auth y API): hay que arreglarla por CI, test a test.
+- **El CI estuvo en rojo del 17/09/2026 al 01/10/2026 y está reparado** (ejecución #420). Había 6 ejecuciones verdes en toda la historia, la última la
+  #220. Causas y arreglos, sin tocar migraciones ni pantallas:
+  1. **`rls-tests`** se paraba en `hito5-concurrency-test.mjs` (CA-05) porque `create_request_draft()` ya no deja enviar sin prioridad (RN-REQ-05,
+     migración 106): ese paso hacía de tapón y **no se ejecutaba ninguna suite posterior**. Arreglado con una línea. Después, la suite 65
+     (`los_cinco_niveles_de_informe.sql`) creaba a `info@restavor.com` con un identificador propio y chocaba, en la base compartida de CI, con el
+     de `plataforma_panel_soporte_y_2fa.sql`. Ahora usa el mismo, y el arranque local (`bootstrap-postgres-local.sql`) exige correo único para que el
+     choque se vea también en local. Las 88 suites pasan.
+  2. **`build-and-test`**: `hito8-experiencia.spec.ts` contaba 5 enlaces en la barra inferior; hay 4 más el botón Crear (decisión 47).
+  3. **`e2e-datos`**: 13 de 16 recorridos fallaban porque las pruebas no habían seguido al rediseño ni a los créditos. Se pusieron al día en cuatro
+     rondas, cada cambio con su motivo en un comentario: titulares y enlaces nuevos, tablas por fila, cuotas "usado / incluido", pagar desde la
+     ficha del cobro, "Reanudar trabajo" (M78), cola de Menú Diario, y nueva petición en tres pasos con prioridad (RN-REQ-05). Dos pasos
+     **comprueban ahora la ausencia** de la corrección gratuita, porque ya no existe (RN-CRE-29 y RN-CRE-24, decisión 85). El recorrido largo
+     necesitaba un plan con créditos: **Café Prueba pasa a Impulso en créditos** (20 al mes) en el sembrado; el resto del espacio demo sigue en el
+     catálogo antiguo hasta la Fase B (PRD §16).
+  Al CI se le añadió un paso que imprime, recortado, lo que había en pantalla en cada fallo (`error-context.md`), porque desde las sesiones de
+  Claude no se pueden descargar las trazas.
 - Las variables de **Preview** de `cuotly-web` tenían valores de producción; corregido el 30/09/2026 (ver `docs/agents/PRUEBAS.md`).
 
 Pasos para que Bosco lo pruebe a mano: en `docs/agents/PRUEBAS.md`, sección Estado de la Fase 0.
