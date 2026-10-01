@@ -429,24 +429,20 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       }).toPass({ timeout: 15_000 });
     });
 
-    await test.step("CORREGIR · el restaurante pide su corrección gratuita", async () => {
+    await test.step("SIN CORRECCIÓN GRATIS · lo publicado no se corrige, se pide de nuevo (RN-CRE-29)", async () => {
       await entrar(page, CLIENTE_CAFE, `/espacios/${ESPACIO}/restaurantes/${CAFE_ID}/solicitudes`);
 
       await page.locator("tbody tr").filter({ hasText: MARCA }).getByRole("link", { name: "Ver solicitud" }).click();
       await page.waitForURL(/\/solicitudes\/[0-9a-f-]{36}/, { timeout: 30_000 });
       await cabeEnElTelefono(page, "el detalle de la solicitud publicada");
 
-      // RN-COR-01: una sola por trabajo, dentro de la ventana que se abre
-      // al publicar.
-      await expect(page.getByRole("heading", { name: "Pedir una corrección" })).toBeVisible();
-      await page.getByLabel("Qué hay que corregir").fill("El prefijo está mal.");
-      await page.getByRole("button", { name: "Pedir la corrección" }).click();
-
-      // Gastada la única, la pantalla lo dice en vez de ofrecerla otra vez.
-      await expect(async () => {
-        await sinErrores(page, "CORREGIR");
-        await expect(page.getByText("Ya has usado la corrección de este trabajo")).toBeVisible();
-      }).toPass({ timeout: 15_000 });
+      // Antes (RN-COR-01) había una corrección gratuita por trabajo dentro de
+      // una ventana. Con las solicitudes en créditos (decisión 85) ya no: un
+      // error de Restavor se corrige a 0 créditos y cualquier otro retoque es
+      // una solicitud nueva. Lo que se comprueba es que la pantalla publicada
+      // no ofrece la corrección, y que sí dice que está publicada.
+      await expect(page.getByText("Publicada").first()).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Pedir una corrección" })).toHaveCount(0);
     });
 
     expect(solicitudUrl, "no se llegó a abrir el detalle de la solicitud").not.toBe("");
@@ -730,21 +726,17 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       }).toPass({ timeout: 15_000 });
     });
 
-    await test.step("CORREGIR · el restaurante pide su corrección mínima (RN-COR-10)", async () => {
+    await test.step("SIN CORRECCIÓN · el menú publicado se cambia editándolo (RN-CRE-24, RN-CRE-30)", async () => {
       await entrar(page, "magarinos@cuotly.test", `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}`);
-      // R18 · la corrección está en la pestaña «Versiones».
       await page.goto(
         `/espacios/${ESPACIO}/restaurantes/${MAGARINOS_ID}/menu-diario/${menuUrl.split("/").pop()}?vista=versiones`,
       );
       await cabeEnElTelefono(page, "el menú publicado del restaurante");
-      await expect(page.getByRole("heading", { name: "Pedir una corrección" })).toBeVisible();
-      await page.getByLabel("Qué hay que corregir").fill("El precio es 14,90.");
-      await page.getByRole("button", { name: "Pedir la corrección" }).click();
-      await expect(async () => {
-        await sinErrores(page, "PEDIR CORRECCIÓN");
-        // RN-COR-01: gastada la única, la pantalla lo dice en vez de ofrecerla otra vez.
-        await expect(page.getByText("Este menú ya usó su corrección mínima gratuita.")).toBeVisible();
-      }).toPass({ timeout: 15_000 });
+      // Desde la decisión 85 no hay corrección mínima de Menú Diario (antes,
+      // RN-COR-10): el menú del día publicado se cambia editándolo y se
+      // guarda una versión nueva. La pantalla de versiones no ofrece pedirla.
+      await expect(page.getByRole("heading", { name: "Lista de versiones" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Pedir una corrección" })).toHaveCount(0);
     });
   });
 });
