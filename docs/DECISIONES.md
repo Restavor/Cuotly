@@ -2560,3 +2560,17 @@ dice qué regla anterior cambia. La 99 es de Bosco el 01/10/2026, durante la Fas
     también el correo al momento) y de momento **no cambia los avisos de Restavor web**: sus push siguen en la cola,
     y generalizar la regla sería una tarea aparte. El envío directo desde `reservas@restavor.com` queda para los
     avisos a comensales (Fase F).
+100. **Reservas se queda en el espacio de origen al transferir un restaurante** (Fase A, 01/10/2026; decisión técnica de Claude,
+    reversible). `reservation_service_requests`, `reservation_service_events` y `reservation_settings` están en
+    `establishment_transfer_tables()` como «se queda», igual que `subscriptions`, cobros y condiciones aceptadas: su ciclo de vida y su
+    cobro cuelgan del espacio que presta el servicio (decisión 91). Qué pasa con Reservas al transferir un restaurante lo cierra Bosco
+    en la Fase E, cuando existan cobros de Reservas.
+101. **Quien es de Restavor web entra siempre en `/web`** (Fase A; decisión técnica de Claude, reversible). El PRD (§4.3) salta el Inicio con
+    un único producto, y `my_products()` da `web` solo a quien es del equipo de un espacio o tiene panel. Bosco y su equipo pueden no ser
+    miembros de ningún espacio (por ejemplo, antes de crear el espacio `restavor`) y su entrada a Administración vive en `/web`; sin esta
+    regla se quedarían sin puerta. `homeBehavior(…, { isPlatform })` los cuenta como Restavor web.
+102. **Qué es «un restaurante que solo tiene Reservas»** (Fase A; decisión técnica de Claude, reversible). PRD §4.2 dice que no da panel de
+    Restavor web, pero no dice dónde está la frontera. Aquí: hay o hubo una solicitud o unos ajustes de Reservas y **no** tiene plan ni
+    otro servicio activo. Consecuencia: si le rechazan la solicitud y no tiene plan, tampoco vuelve a tener panel de Restavor web (ve
+    «No aprobada» y «Volver a pedir Reservas» en la puerta). Si Bosco prefiere que vuelva a verlo, es un cambio de una línea en
+    `establishment_is_reservations_only()` (migración nueva).

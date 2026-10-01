@@ -5350,6 +5350,33 @@ Hallazgos que **no** son de la Fase 0 y que hay que decidir:
 
 Pasos para que Bosco lo pruebe a mano: en `docs/agents/PRUEBAS.md`, sección Estado de la Fase 0.
 
+### Fase A · Restavor app, la puerta común · 01/10/2026 (construida; falta la comprobación de Bosco)
+
+Criterios del PRD §15 (APP-00 a APP-04):
+
+- [x] **APP-00** Migraciones 156 a 160 (todas nuevas, ninguna aplicada se ha editado): servicio Reservas en el catálogo (`services.kind`, versión 1 de
+  condiciones **provisional**), disparador que impide suscribir a Reservas por otra vía, `spaces.reservations_enabled`,
+  `establishment_permissions.manage_reservations`, `access_requests.interested_in`, las tres tablas `reservation_*` con RLS y privilegios de columna,
+  `my_products()`, `request_reservations()`, `create_reservation_request_on_behalf()`, los dos avisos nuevos, la auditoría de Reservas (159) y el
+  reclamo del push al momento (160). Suite 89 (`restavor_app_puerta_comun.sql`) y las 89 suites en verde en una base limpia.
+- [x] **APP-01** Decisiones 88 a 102, excepciones en `CLAUDE.md`, `docs/agents/reglas.md`.
+- [x] **APP-02** `/` es el Inicio de Restavor app (`homeBehavior`, RN-APP-02); el Inicio global pasa a `/web`; `/agents` mínimo; menú del logo para
+  cambiar de producto; «Volver al inicio de Restavor».
+- [x] **APP-03** Marca por producto («Restavor», «Restavor web», «Restavor agents») y botón «Entrar en Restavor».
+- [x] **APP-04** «Contratar Reservas» (con las condiciones y la aceptación), casilla «¿Qué te interesa?» en la solicitud de acceso (y en lo que ve
+  quien la aprueba), y en el espacio la entrada **Reservas** con la lista de solicitudes y «Crear solicitud para este restaurante».
+- [x] Push al momento y correo en tanda (decisión 99) para los dos avisos nuevos.
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase A»).
+
+Lo que **no** está y es de fases posteriores (no se simula): aprobar y rechazar solicitudes y cobrar (Fase E), la agenda, el agente de llamadas, el
+saldo y el armazón de Restavor agents (Fases B a G), los correos a comensales (Fase F). Las condiciones de Reservas son un **texto provisional**:
+Bosco las sustituye publicando una versión nueva desde «Planes y servicios» del espacio `restavor`.
+
+Decisiones técnicas que Claude tomó y Bosco puede revertir: 100 (qué pasa con Reservas al transferir un restaurante), 101 (la plataforma entra
+siempre en `/web`) y 102 (qué es «solo Reservas»), en `docs/DECISIONES.md`.
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase B hasta que Bosco lo diga.**
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

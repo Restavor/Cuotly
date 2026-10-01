@@ -29,6 +29,26 @@ Nada de lo que hay aquí existe en producción, y nada de producción se lee ni 
      seguida de `/**`.
   Hasta que esto esté, sigue sin poder comprobarse el acceso a la vista previa.
 
+## Estado de la Fase A (01/10/2026): qué probar a mano
+
+Todo en la vista previa de la rama `agents` (Vercel → Deployments → el de la rama `agents`; su dirección lleva `-git-agents-`). Los pasos:
+
+1. Entra con `restaurante@cuotly.test` (contraseña de demostración). Debes ver **«Hola…»**, la tarjeta de **Restavor web** y la de **Restavor agents**
+   «Sin contratar» con el botón **Contratar Reservas**.
+2. Pulsa **Contratar Reservas**: se abre una ventana con el restaurante, lo que incluye, 48 € + IVA al mes, los tres pasos y la casilla de las
+   condiciones (su texto es provisional). El botón «Enviar solicitud» no se activa hasta marcar la casilla. Envíala: la tarjeta pasa a
+   **«Solicitud enviada»** con los cuatro pasos.
+3. Pulsa el logo (arriba a la izquierda) estando en Restavor web: sale el menú **Inicio de Restavor / Restavor web / Restavor agents** (este último con
+   «Contratar» si aún no lo tienes).
+4. Entra con `owner@cuotly.test` o con `info@restavor.com` (espacio `demo`): como solo tienes Restavor web, **entras directo en `/web`** (no ves
+   la puerta). En el menú del espacio hay una entrada nueva **Reservas**: ahí está la solicitud del paso 2 como «Pendiente de revisar» y el
+   formulario «Crear solicitud para este restaurante». Aprobar y rechazar todavía no existen (la pantalla lo dice).
+5. En `/signup` hay una casilla nueva **«¿Qué te interesa?»** (Mantenimiento web / Reservas / Las dos). Lo que marque quien pide acceso lo ve
+   quien aprueba en `/administracion/accesos`.
+6. En la pantalla de entrar, el botón dice **«Entrar en Restavor»**.
+7. Los avisos: el correo de la solicitud sale en la próxima tanda (07:00 y 19:00 UTC; en Pruebas no hay clave de correo, así que no sale); el
+   push sale al momento a quien tenga la app móvil instalada.
+
 ## Cuentas del sembrado
 
 Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producción).
