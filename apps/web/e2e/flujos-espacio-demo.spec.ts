@@ -127,10 +127,12 @@ test.describe("Flujos sobre el espacio de demostración", () => {
     await page.goto("/login");
     await page.getByLabel("Correo electrónico").fill(email);
     await page.getByLabel("Contraseña").fill(CLAVE);
-    await page.getByRole("button", { name: "Entrar en Restavor web" }).click();
+    await page.getByRole("button", { name: "Entrar en Restavor" }).click();
 
     try {
-      await page.waitForURL(/\/$/, { timeout: 45_000 });
+      // Decisión 88 · `/` es Restavor app, y quien solo tiene Restavor web (el equipo,
+      // un restaurante sin nada que contratar) entra directo en `/web`.
+      await page.waitForURL(/\/(web)?$/, { timeout: 45_000 });
     } catch (fallo) {
       // Si no llega, decir DÓNDE se quedó y QUÉ ponía ahí. Un
       // "waitForURL: Timeout" a secas obliga a adivinar, y ya hemos
@@ -144,7 +146,7 @@ test.describe("Flujos sobre el espacio de demostración", () => {
         .locator('[role="alert"]:visible:not(#__next-route-announcer__)')
         .allInnerTexts();
       throw new Error(
-        `Entrando como ${email} no se llegó al Inicio de Restavor web. Se quedó en ${page.url()}, ` +
+        `Entrando como ${email} no se llegó al Inicio de Restavor. Se quedó en ${page.url()}, ` +
           `con el titular "${titulo.trim()}"` +
           (alertas.length ? ` y este error en pantalla: ${alertas.join(" / ")}` : " y sin error en pantalla") +
           `. Causa original: ${fallo instanceof Error ? fallo.message.split("\n")[0] : String(fallo)}`,
@@ -194,16 +196,17 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       await expect(barDemo).toContainText("Activo");
     });
 
-    test("decisión 42 · la raíz es el Inicio de Restavor web, también con un solo espacio", async ({
+    test("decisión 88 · quien solo tiene Restavor web entra directo en Restavor web (/web), también con un solo espacio", async ({
       page,
     }) => {
-      // Este test existe por lo que cambió: hasta el 16/09/2026 la raíz
-      // redirigía sola cuando solo tenías un contexto (§20.1), y por eso
-      // quien tiene un solo espacio no veía nunca el Inicio global. Si
-      // alguien devuelve aquella redirección, esto se pone rojo.
+      // RN-APP-02. Hasta el 01/10/2026 la raíz era el Inicio de Restavor web;
+      // ahora es la puerta común, que salta cuando la persona tiene un único
+      // producto y nada que contratar (la propietaria del espacio, su equipo).
+      // Y el Inicio global de siempre —sus contextos como tarjetas— sigue
+      // intacto, en `/web`.
       await entrar(page, EQUIPO.propietaria.email);
 
-      await expect(page).toHaveURL(/\/$/);
+      await expect(page).toHaveURL(/\/web$/);
       await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
       await expect(
         page.getByRole("heading", { name: "Mis espacios de mantenimiento" }),
@@ -217,6 +220,10 @@ test.describe("Flujos sobre el espacio de demostración", () => {
         page.getByRole("link", { name: "Entrar al espacio" }),
       ).toBeVisible();
       await expect(page.getByText("Demo Restavor web").first()).toBeVisible();
+
+      // La raíz, vista a mano, salta igual: no se queda en una puerta de un solo producto.
+      await page.goto("/");
+      await expect(page).toHaveURL(/\/web$/);
     });
 
     test("la bandeja de solicitudes enseña las enviadas y NO el borrador del cliente", async ({
@@ -292,14 +299,22 @@ test.describe("Flujos sobre el espacio de demostración", () => {
   });
 
   test.describe("El cliente", () => {
-    test("entra al Inicio de Restavor web y desde ahí a su restaurante, no a un espacio", async ({ page }) => {
+    test("entra al Inicio de Restavor app y desde ahí a su restaurante, no a un espacio", async ({ page }) => {
       await entrar(page, CLIENTE.email);
 
-      // Decisión 42 · el cliente también entra al Inicio global, y desde
-      // ahí a lo suyo. Lo que se comprueba aquí es el otro lado de HU-02
-      // y de RN-GLO-03: no pertenece a ningún espacio, así que su contexto
-      // es su restaurante, y tiene que verlo listado y poder entrar.
+      // Decisión 88 · el restaurante con plan de mantenimiento y con Reservas
+      // ofrecida por su espacio (el sembrado lo activa) tiene un producto y algo
+      // que contratar: ve la puerta común, con las dos tarjetas (RN-APP-02).
       await expect(page).toHaveURL(/\/$/);
+      await expect(page.getByRole("heading", { level: 1 })).toContainText("Hola");
+      await expect(page.getByRole("button", { name: "Contratar Reservas" })).toBeVisible();
+
+      // Desde la tarjeta de Restavor web al Inicio de Restavor web (`/web`).
+      await page.getByRole("link", { name: "Entrar en Restavor web" }).click();
+      await expect(page).toHaveURL(/\/web$/);
+
+      // Lo de HU-02 y RN-GLO-03 sigue valiendo: no pertenece a ningún espacio, así
+      // que su contexto es su restaurante, y tiene que verlo listado y poder entrar.
       await expect(page.getByRole("heading", { name: "Inicio", level: 1 })).toBeVisible();
 
       // Y NO ve el espacio de mantenimiento como contexto suyo: el
@@ -437,6 +452,64 @@ test.describe("Flujos sobre el espacio de demostración", () => {
 
       await page.goto(`/espacios/${ESPACIO}/trabajos`);
       await expect(page.getByText("TRB-0001")).toHaveCount(0);
+    });
+  });
+  /**
+   * Restavor app · contratar Reservas (PRD de agents §4.4, RN-APP-03, decisión 91).
+   *
+   * Son dos tests en serie con el mismo dato, y van los últimos del archivo
+   * porque dejan una solicitud en Bar Demo: el primero la crea como restaurante
+   * y el segundo la mira como equipo. Un tercero comprueba que otro papel no la
+   * ve por URL directa (ocultar un botón no es un control de acceso).
+   */
+  test.describe("Restavor app · contratar Reservas", () => {
+    test.describe.configure({ mode: "serial" });
+
+    test("RN-APP-03 · el restaurante contrata Reservas aceptando las condiciones y ve «Solicitud enviada»", async ({
+      page,
+    }) => {
+      await entrar(page, CLIENTE.email);
+
+      await page.getByRole("button", { name: "Contratar Reservas" }).click();
+      const dialogo = page.getByRole("dialog");
+      await expect(dialogo.getByRole("heading", { name: "Contratar Reservas" })).toBeVisible();
+
+      // Sin aceptar las condiciones no se envía: el botón espera a tenerlas leídas del servidor y marcadas.
+      const enviar = dialogo.getByRole("button", { name: "Enviar solicitud" });
+      await expect(enviar).toBeDisabled();
+      await dialogo.getByRole("checkbox").check();
+      await expect(enviar).toBeEnabled();
+      await enviar.click();
+
+      // Lo que dice la puerta después: la solicitud, con sus pasos, y ya no «Contratar».
+      await expect(page.getByRole("region", { name: /Solicitud enviada/ })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Contratar Reservas" })).toHaveCount(0);
+    });
+
+    test("RN-APP-03 · el equipo del espacio ve la solicitud, con las condiciones aceptadas, en su lista de Reservas", async ({
+      page,
+    }) => {
+      await entrar(page, EQUIPO.propietaria.email, ESPACIO_URL);
+
+      // El menú del espacio lleva «Reservas» porque el espacio la ofrece.
+      await page.getByRole("link", { name: "Reservas", exact: true }).first().click();
+      await expect(page).toHaveURL(new RegExp(`/espacios/${ESPACIO}/reservas$`));
+      await expect(page.getByRole("heading", { name: "Reservas", level: 1 })).toBeVisible();
+
+      const solicitud = page.locator("li").filter({ hasText: "Bar Demo" }).filter({ hasText: "Pendiente de revisar" });
+      await expect(solicitud.first()).toBeVisible();
+      await expect(solicitud.first()).toContainText("Condiciones aceptadas");
+      // Aprobar y rechazar no están todavía: la pantalla lo dice en vez de enseñar botones falsos.
+      await expect(page.getByRole("button", { name: /Aprobar|Rechazar/ })).toHaveCount(0);
+    });
+
+    test("RN-APP-03 · quien no es del equipo no ve las solicitudes de Reservas del espacio por URL directa", async ({
+      page,
+    }) => {
+      await entrar(page, CLIENTE.email);
+      await page.goto(`${ESPACIO_URL}/reservas`);
+      await expect(page.getByText("Pendiente de revisar")).toHaveCount(0);
+      await expect(page.getByText("Solicitudes de contratación")).toHaveCount(0);
     });
   });
 });
