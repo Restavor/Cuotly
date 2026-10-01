@@ -71,22 +71,18 @@ const CON_DATOS = process.env.E2E_DATOS === "1";
 const MARCA = `E2E ${Date.now().toString(36)}`;
 
 /**
- * Lo que la pantalla dice al guardar una versión de Menú Diario depende
- * de la hora (RN-MEN-07): el menú nuevo es para mañana y el corte es a las
- * 21:00 del día anterior en la zona del espacio, que en el sembrado es
- * Europe/Madrid. Antes de esa hora dice "Versión guardada."; después,
- * "Versión guardada después de las 21:00: …". Los recorridos esperaban
- * siempre la primera frase y por eso el CI se ponía rojo en cuanto la
- * ejecución caía después de las 21:00 de Madrid, sin que nada hubiera
- * cambiado en el código. Se calcula aquí cuál toca, en vez de aceptar las
- * dos con una expresión laxa: así el recorrido sigue comprobando que la
- * marca de después del corte sale cuando debe.
+ * Lo que la pantalla dice al guardar una versión de Menú Diario.
+ *
+ * Hasta la decisión 85 (RN-CRE-22) dependía de la hora: había un corte a las
+ * 21:00 del día anterior en la zona del espacio y, pasado el corte, la frase
+ * era «Versión guardada después de las 21:00…». Ese corte ya no existe
+ * («sin hora de corte»: un menú del día por fecha, y cambiarlo lo sustituye sin
+ * límite), así que la frase es siempre la misma. El ayudante conservaba la
+ * rama de las 21:00 y por eso el CI se ponía rojo solo cuando la ejecución caía
+ * de noche en Madrid, sin que nada hubiera cambiado en el código.
  */
 function avisoDeVersionGuardada(): string {
-  const hora = Number(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Madrid", hour: "2-digit", hourCycle: "h23" }).format(new Date()),
-  );
-  return hora >= 21 ? "Versión guardada después de las 21:00" : "Versión guardada.";
+  return "Versión guardada.";
 }
 
 /**
