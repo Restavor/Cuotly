@@ -798,7 +798,10 @@ jobs:
           cd apps/web/test-results 2>/dev/null || exit 0
           for f in $(ls -d *retry1 2>/dev/null | head -20); do
             echo "=== $f"
-            head -c 2500 "$f/error-context.md" 2>/dev/null || true
+            # Solo desde `main`: la barra lateral del equipo se come los primeros
+            # miles de caracteres y no dice nada del fallo.
+            sed -n '/Error details/,/^```yaml/p' "$f/error-context.md" 2>/dev/null | head -12 || true
+            awk '/^- main/{p=1} p' "$f/error-context.md" 2>/dev/null | cut -c1-140 | head -45 || true
             echo
           done
 
