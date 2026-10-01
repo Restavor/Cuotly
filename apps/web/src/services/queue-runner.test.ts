@@ -6,6 +6,7 @@ import {
   drainPlatformEmailQueue,
   runScheduledJobs,
   runSlaSweep,
+  sendPushNow,
   type DeliveryRow,
   type MailComposer,
   type MailTransport,
@@ -26,6 +27,7 @@ function gateway(overrides: Partial<QueueGateway> = {}): QueueGateway {
     emitSlaNotification: async () => 1,
     holidays: async () => [],
     claimDeliveries: async () => [],
+    claimPushDeliveries: async () => [],
     markDeliverySent: async () => {},
     markDeliveryFailed: async () => {},
     revokePushToken: async () => true,
@@ -628,5 +630,69 @@ describe("RN-NOT-05 · un fallo de configuración no gasta los intentos de nadie
 
     expect(reclamar).not.toHaveBeenCalled();
     expect(result.blockedBy).toContain("RESEND_FROM");
+  });
+});
+
+describe("Decisión 99 · el push de Reservas sale al momento, el correo en su tanda", () => {
+  const entrega: DeliveryRow = {
+    delivery_id: "d-push",
+    notification_id: "n1",
+    attempts: 1,
+    channel: "push",
+    recipient_email: null,
+    push_tokens: ["ExponentPushToken[aaa]"],
+    event_type: "reservation_service_request",
+    audience: "staff",
+    deep_link: "/espacios/restavor/reservas",
+    space_name: "Restavor",
+    entity_type: "establishment",
+    establishment_name: "Casa Sol",
+    amount_cents: null,
+    threshold_percent: null,
+    subject: null,
+    digest_id: null,
+    digest_date: null,
+    digest_count: null,
+  };
+  const pushComposer: PushComposer = {
+    compose: (d) => ({ to: d.push_tokens ?? [], title: "t", body: "b", deepLink: d.deep_link }),
+  };
+
+  it("Decisión 99: reclama solo las entregas de push de esas claves y las envía en el acto", async () => {
+    const claim = vi.fn<QueueGateway["claimPushDeliveries"]>(async () => [entrega]);
+    const claimMixto = vi.fn<QueueGateway["claimDeliveries"]>(async () => []);
+    const sent = vi.fn<QueueGateway["markDeliverySent"]>(async () => {});
+    const push: PushTransport = {
+      send: async (m) => m.to.map((token) => ({ token, status: "ok" as const, providerId: "p1" })),
+    };
+
+    const r = await sendPushNow(
+      gateway({ claimPushDeliveries: claim, claimDeliveries: claimMixto, markDeliverySent: sent }),
+      { push, pushComposer },
+      ["reservation_service_request:r1", "reservation_service_received:r1"],
+    );
+
+    expect(r).toEqual({ sent: 1, retried: 0, dead: 0 });
+    expect(claim).toHaveBeenCalledWith(["reservation_service_request:r1", "reservation_service_received:r1"]);
+    // La cola mezclada de las dos tandas no se toca: el correo espera la suya.
+    expect(claimMixto).not.toHaveBeenCalled();
+    expect(sent).toHaveBeenCalledWith("d-push", "p1");
+  });
+
+  it("Decisión 99: sin transporte de push la entrega se reprograma, no se pierde ni se finge", async () => {
+    const failed = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const r = await sendPushNow(
+      gateway({ claimPushDeliveries: async () => [entrega], markDeliveryFailed: failed }),
+      { push: null, pushComposer },
+      ["reservation_service_request:r1"],
+    );
+    expect(r).toEqual({ sent: 0, retried: 1, dead: 0 });
+    expect(failed).toHaveBeenCalledTimes(1);
+  });
+
+  it("Decisión 99: sin claves no reclama nada", async () => {
+    const claim = vi.fn<QueueGateway["claimPushDeliveries"]>(async () => []);
+    await sendPushNow(gateway({ claimPushDeliveries: claim }), { push: null, pushComposer }, []);
+    expect(claim).not.toHaveBeenCalled();
   });
 });

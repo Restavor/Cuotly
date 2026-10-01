@@ -65,7 +65,7 @@ export default async function SpaceLayout({
     productAccess,
   ] =
     await Promise.all([
-      supabase.from("spaces").select("id, name, slug").eq("slug", slug).maybeSingle(),
+      supabase.from("spaces").select("id, name, slug, reservations_enabled").eq("slug", slug).maybeSingle(),
       // El rol y el restaurante salen de `resolveShellViewer()`, compartido con
       // la pantalla "Más": las dos tienen que responder lo mismo o la barra de
       // móvil y su desbordamiento acabarían discrepando.
@@ -196,6 +196,7 @@ export default async function SpaceLayout({
       userAvatarUrl={userAvatarUrl}
       userLabel={userLabel}
       productAccess={productAccess}
+      reservationsEnabled={space?.reservations_enabled === true}
       notifications={notifications}
       onSearch={searchEverything}
       establishmentId={establishmentId}

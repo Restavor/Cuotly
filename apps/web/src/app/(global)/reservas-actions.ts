@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { requestReservations, reservationTerms } from "@/services/app-gateway";
+import { sendReservationPushNow } from "@/services/reservation-push";
 
 /**
  * RN-APP-03 · las dos operaciones de "Contratar Reservas".
@@ -53,12 +54,15 @@ export async function requestReservationsAction(
   idempotencyKey: string,
 ): Promise<RequestReservationsResult> {
   const supabase = await createClient();
+  let requestId: string;
   try {
-    await requestReservations(supabase, establishmentId, serviceVersionId, idempotencyKey);
+    requestId = await requestReservations(supabase, establishmentId, serviceVersionId, idempotencyKey);
   } catch (error) {
     const message = error instanceof Error ? error.message.trim() : "";
     return { ok: false, error: message === "" ? es.app.contract.errorFallback : message };
   }
+  // Decisión 99 · el push sale al momento; el correo, en su tanda del día.
+  await sendReservationPushNow(requestId);
   revalidatePath("/");
   return { ok: true };
 }

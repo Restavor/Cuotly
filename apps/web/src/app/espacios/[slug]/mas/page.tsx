@@ -32,7 +32,12 @@ export default async function MorePage({ params }: { params: Promise<{ slug: str
   if (!user) redirect("/login");
 
   const { role, establishmentId } = await resolveShellViewer(supabase, user.id, slug);
-  const destinos = moreDestinations(slug, role, establishmentId);
+  const { data: espacio } = await supabase
+    .from("spaces")
+    .select("reservations_enabled")
+    .eq("slug", slug)
+    .maybeSingle();
+  const destinos = moreDestinations(slug, role, establishmentId, espacio?.reservations_enabled === true);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 sm:p-8">

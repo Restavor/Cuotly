@@ -646,7 +646,7 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/el_catalogo_en_creditos.sql
 
-      - name: "Suite 89 — Restavor app, la puerta común (migraciones 156 a 158, RN-APP-01 y RN-APP-03)"
+      - name: "Suite 89 — Restavor app, la puerta común (migraciones 156 a 160, RN-APP-01, RN-APP-03 y decisión 99)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \

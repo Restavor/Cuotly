@@ -59,7 +59,7 @@ export interface NavDestination {
 
 const D = (key: string, label: string, path: string) => ({ key, label, href: path });
 
-export function desktopMenu(spaceSlug: string): readonly NavDestination[] {
+export function desktopMenu(spaceSlug: string, reservations = false): readonly NavDestination[] {
   const base = `/espacios/${spaceSlug}`;
   return [
     D("home", es.nav.home, `${base}`),
@@ -74,6 +74,9 @@ export function desktopMenu(spaceSlug: string): readonly NavDestination[] {
     D("reports", es.nav.reports, `${base}/informes`),
     D("team", es.nav.team, `${base}/equipo`),
     D("plans", es.nav.plans, `${base}/planes`),
+    // Decisión 89 · solo en los espacios que ofrecen Reservas
+    // (`spaces.reservations_enabled`): las solicitudes de contratación.
+    ...(reservations ? [D("reservations", es.nav.reservations, `${base}/reservas`)] : []),
     // Fase 4 · Hito 21 · el centro de ayuda de §133 (RN-SOP-10).
     D("help", es.nav.help, `${base}/ayuda`),
     D("agent", es.nav.agent, `${base}/agente`),
@@ -305,12 +308,14 @@ export function fullNav(
   spaceSlug: string,
   role: ShellRole,
   establishmentId: string | null = null,
+  reservations = false,
 ): readonly NavDestination[] {
   const mine = clientBase(spaceSlug, establishmentId);
 
   switch (role) {
     case "owner":
     case "admin":
+      return desktopMenu(spaceSlug, reservations);
     case "worker":
       return desktopMenu(spaceSlug);
     // Fase 3 · Hito 14 · "Informes y datos" y "Autorizar fuentes" son dos
@@ -375,11 +380,12 @@ export function moreDestinations(
   spaceSlug: string,
   role: ShellRole,
   establishmentId: string | null = null,
+  reservations = false,
 ): readonly NavDestination[] {
   const enLaBarra = new Set(mobileNav(spaceSlug, role, establishmentId).map((d) => d.key));
 
   return [
-    ...fullNav(spaceSlug, role, establishmentId).filter((d) => !enLaBarra.has(d.key)),
+    ...fullNav(spaceSlug, role, establishmentId, reservations).filter((d) => !enLaBarra.has(d.key)),
     D("switchSpace", es.nav.switchSpace, "/"),
     D("sessions", es.nav.sessions, "/cuenta/sesiones"),
   ];
@@ -560,11 +566,11 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
  */
 const FOOTER_KEYS = new Set(["agent", "settings"]);
 
-export function desktopMenuGroups(spaceSlug: string): {
+export function desktopMenuGroups(spaceSlug: string, reservations = false): {
   readonly main: readonly NavDestination[];
   readonly footer: readonly NavDestination[];
 } {
-  const todos = desktopMenu(spaceSlug);
+  const todos = desktopMenu(spaceSlug, reservations);
   return {
     main: todos.filter((d) => !FOOTER_KEYS.has(d.key)),
     footer: todos.filter((d) => FOOTER_KEYS.has(d.key)),
@@ -592,11 +598,14 @@ export function sidebarGroups(
   spaceSlug: string,
   role: ShellRole,
   establishmentId: string | null = null,
+  reservations = false,
 ): {
   readonly main: readonly NavDestination[];
   readonly footer: readonly NavDestination[];
 } {
-  if (isStaffRole(role)) return desktopMenuGroups(spaceSlug);
+  if (isStaffRole(role)) {
+    return desktopMenuGroups(spaceSlug, reservations && (role === "owner" || role === "admin"));
+  }
 
   const todos = fullNav(spaceSlug, role, establishmentId);
   return {
@@ -627,6 +636,7 @@ export function activeDestination(
   pathname: string,
   role: ShellRole = "owner",
   establishmentId: string | null = null,
+  reservations = false,
 ): NavDestination | null {
   const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
 
@@ -640,7 +650,7 @@ export function activeDestination(
    * `#mensajes` es la misma pantalla que su Inicio.
    */
   const lista = isStaffRole(role)
-    ? desktopMenu(spaceSlug)
+    ? desktopMenu(spaceSlug, reservations && (role === "owner" || role === "admin"))
     : fullNav(spaceSlug, role, establishmentId);
   const mine = isStaffRole(role) ? null : clientBase(spaceSlug, establishmentId);
 

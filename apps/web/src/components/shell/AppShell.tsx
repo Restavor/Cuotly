@@ -95,6 +95,7 @@ export interface PanelEstablishment {
 export function AppShell({
   context = "space",
   productAccess = null,
+  reservationsEnabled = false,
   spaceSlug = "",
   spaceName = "",
   role = "owner",
@@ -133,6 +134,8 @@ export function AppShell({
    * enlace y no un menú (no se enseña un menú de productos sin saber cuáles).
    */
   productAccess?: ProductAccess | null;
+  /** Decisión 89 · el espacio ofrece Reservas: el menú del equipo lleva «Reservas». */
+  reservationsEnabled?: boolean;
   spaceSlug?: string;
   spaceName?: string;
   role?: ShellRole;
@@ -214,8 +217,8 @@ export function AppShell({
         ? globalMenuGroups(globalHome)
         : esAgents
           ? agentsMenuGroups()
-          : sidebarGroups(spaceSlug, role, establishmentId),
-    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId],
+          : sidebarGroups(spaceSlug, role, establishmentId, reservationsEnabled),
+    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId, reservationsEnabled],
   );
   /**
    * RN-PAN-01 · la raíz del contexto. Para el equipo es su espacio; para
@@ -261,8 +264,8 @@ export function AppShell({
         ? globalActiveDestination(pathname ?? "")
         : esAgents
           ? agentsActiveDestination(pathname ?? "")
-          : activeDestination(spaceSlug, pathname ?? "", role, establishmentId),
-    [esGlobal, esAgents, spaceSlug, pathname, role, establishmentId],
+          : activeDestination(spaceSlug, pathname ?? "", role, establishmentId, reservationsEnabled),
+    [esGlobal, esAgents, spaceSlug, pathname, role, establishmentId, reservationsEnabled],
   );
   const unread = notifications.filter((n) => n.readAt === null).length;
 

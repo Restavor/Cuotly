@@ -101,6 +101,10 @@ select public.ensure_reservations_service_internal('d8900000-0000-0000-0000-0000
                                                    'd8900000-0000-0000-0000-000000000001');
 update public.spaces set reservations_enabled = true where id = 'd8900000-0000-0000-0000-000000000010';
 
+-- La propietaria del espacio tiene un teléfono con la app: su aviso de Reservas lleva push.
+insert into public.push_devices (user_id, expo_push_token, platform)
+values ('d8900000-0000-0000-0000-000000000001', 'ExponentPushToken[suite89-duena]', 'ios');
+
 create temp table s89 (k text primary key, v uuid);
 grant select, insert, update on s89 to authenticated, service_role;
 
@@ -361,6 +365,62 @@ begin
     raise exception 'RN-APP-03 FALLIDO: pedir Reservas creó un compromiso, un cobro o unos ajustes';
   end if;
 end $$;
+
+-- ------------------------------------------------------------
+-- Decisión 99 · el push al momento, y el correo en su tanda
+-- ------------------------------------------------------------
+do $$
+declare
+  v_req uuid := (select v from s89 where k = 'req');
+  v_n integer;
+begin
+  -- Los tres correos (equipo y restaurante) esperan a la cola de dos tandas: pendientes y sin tocar.
+  select count(*) into v_n
+  from public.notification_deliveries d
+  join public.notifications n on n.id = d.notification_id
+  where d.channel = 'email' and d.status = 'pending' and d.attempts = 0
+    and n.dedupe_key in ('reservation_service_request:' || v_req, 'reservation_service_received:' || v_req);
+  if v_n <> 3 then
+    raise exception 'Decisión 99 FALLIDA: los correos de la solicitud debían quedar pendientes para su tanda y hay %', v_n;
+  end if;
+end $$;
+
+set local role authenticated;
+do $$
+begin
+  if has_function_privilege('authenticated', 'public.claim_push_deliveries_for_keys(text[])', 'execute')
+     or has_function_privilege('anon', 'public.claim_push_deliveries_for_keys(text[])', 'execute') then
+    raise exception 'CLAUDE.md FALLIDO: claim_push_deliveries_for_keys está abierta por RPC';
+  end if;
+end $$;
+
+set local role service_role;
+do $$
+declare
+  v_req uuid := (select v from s89 where k = 'req');
+  v_n integer;
+  v_otros integer;
+begin
+  select count(*) filter (where c.channel = 'push' and c.event_type = 'reservation_service_request'
+                          and 'ExponentPushToken[suite89-duena]' = any (c.push_tokens)),
+         count(*) filter (where c.channel <> 'push')
+  into v_n, v_otros
+  from public.claim_push_deliveries_for_keys(array[
+    'reservation_service_request:' || v_req, 'reservation_service_received:' || v_req]) c;
+
+  if v_n <> 1 or v_otros <> 0 then
+    raise exception 'Decisión 99 FALLIDA: el reclamo del push al momento debía devolver una sola entrega de push (la de la propietaria) y devolvió % de push y % de otros canales', v_n, v_otros;
+  end if;
+
+  -- Reclamar gasta un intento solo de lo que toma, y no toca el correo.
+  if exists (select 1 from public.notification_deliveries d
+             join public.notifications n on n.id = d.notification_id
+             where d.channel = 'email' and d.attempts <> 0
+               and n.dedupe_key in ('reservation_service_request:' || v_req, 'reservation_service_received:' || v_req)) then
+    raise exception 'Decisión 99 FALLIDA: el reclamo del push tocó un correo';
+  end if;
+end $$;
+set local role postgres;
 
 -- ------------------------------------------------------------
 -- RN-APP-03 · el equipo la crea en nombre del restaurante

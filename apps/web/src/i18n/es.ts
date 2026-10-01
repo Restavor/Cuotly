@@ -1121,6 +1121,8 @@ export const es = {
     reports: "Informes",
     team: "Equipo",
     plans: "Planes y servicios",
+    // Decisión 89 · solo en los espacios que ofrecen Reservas.
+    reservations: "Reservas",
     // R23 y R25 · los dos destinos del panel del restaurante con el nombre
     // del diseño definitivo.
     planAndServices: "Plan y servicios",
@@ -8820,6 +8822,47 @@ export const es = {
       comingReason:
         "Todavía no hay agenda, ni agente de llamadas, ni saldo que enseñar: están en construcción y no se simulan.",
       backToApp: "Volver al inicio de Restavor",
+    },
+  },
+
+  /**
+   * Reservas en el espacio (PRD de agents §11.2, APP-04): las solicitudes de
+   * contratación y los restaurantes con Reservas. Aprobar y rechazar son de la
+   * Fase E.
+   */
+  reservationsSpace: {
+    title: "Reservas",
+    subtitle: "Las solicitudes de los restaurantes que quieren contratar Reservas, y los que ya la tienen.",
+    noPermissionReason: "Solo el propietario o un administrador del espacio gestiona las solicitudes de Reservas.",
+    failedTitle: "No hemos podido cargar Reservas",
+    failedReason: "Es un problema nuestro o de tu conexión. Vuelve a cargar en un momento.",
+    create: {
+      title: "Crear solicitud para este restaurante",
+      body: "Para un restaurante que ha pedido Reservas fuera de la aplicación. La solicitud queda sin aceptar las condiciones: las acepta su propietario cuando entra.",
+      restaurantLabel: "Restaurante",
+      choose: "Elige un restaurante",
+      chooseOne: "Elige el restaurante para el que quieres crear la solicitud.",
+      submit: "Crear solicitud para este restaurante",
+      created: "Solicitud creada.",
+      nobody: "Todos los restaurantes del espacio ya tienen Reservas o una solicitud en marcha.",
+    },
+    requests: {
+      title: "Solicitudes de contratación",
+      emptyTitle: "Todavía no hay solicitudes",
+      emptyReason: "Cuando un restaurante pida Reservas, aparecerá aquí.",
+      unknownRestaurant: "Restaurante",
+      sentOn: (fecha: string) => `Enviada el ${fecha}`,
+      accepted: "Condiciones aceptadas",
+      notAccepted: "Sin aceptar las condiciones todavía",
+      onBehalf: "Creada en nombre del restaurante",
+      status: { requested: "Pendiente de revisar", approved: "Aprobada", rejected: "Rechazada" },
+      decideLater:
+        "Aprobar o rechazar una solicitud todavía no se puede hacer desde aquí: llega con la fase de contratación y cobro.",
+    },
+    running: {
+      title: "Restaurantes con Reservas",
+      emptyTitle: "Ningún restaurante tiene Reservas todavía",
+      emptyReason: "Aparecerán aquí cuando se apruebe su solicitud.",
     },
   },
 

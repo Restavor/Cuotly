@@ -131,6 +131,12 @@ export interface QueueGateway {
   emitSlaNotification(jobId: string, event: string, thresholdPercent: number | null): Promise<number>;
   holidays(spaceId: string): Promise<readonly HolidayRecord[]>;
   claimDeliveries(limit: number): Promise<readonly DeliveryRow[]>;
+  /**
+   * Decisión 99 · reclama SOLO las entregas de push de los avisos con esas
+   * claves de deduplicación, para mandarlas al momento sin esperar a la
+   * tanda. No toca el correo, que sale en sus dos tandas del día.
+   */
+  claimPushDeliveries(dedupeKeys: readonly string[]): Promise<readonly DeliveryRow[]>;
   markDeliverySent(deliveryId: string, providerMessageId: string | null): Promise<void>;
   markDeliveryFailed(
     deliveryId: string,
@@ -388,17 +394,8 @@ export interface DeliveryTransports {
 
 type Outcome = "sent" | "retried" | "dead";
 
-/**
- * Una entrega, un resultado. Devuelve qué pasó para que el contador de la
- * tanda lo sume; escribir en la base lo hace aquí mismo, para que un fallo
- * a mitad de tanda no deje una fila reclamada y sin marcar.
- */
-async function deliverOne(
-  gateway: QueueGateway,
-  transports: DeliveryTransports,
-  delivery: DeliveryRow,
-  now: Date,
-): Promise<Outcome> {
+/** Cómo se cierra una entrega que falla o que ya no tiene a quién llegar. */
+function outcomes(gateway: QueueGateway, delivery: DeliveryRow, now: Date) {
   const fail = async (message: string): Promise<Outcome> => {
     // RN-NOT-05: espera creciente y techo de intentos, los de
     // src/core/notifications.ts, que es donde están sus tests.
@@ -414,7 +411,24 @@ async function deliverOne(
     return "dead";
   };
 
-  if (delivery.channel === "push") {
+  return { fail, dead };
+}
+
+/** Lo único que necesita un envío de push: su transporte y su redactor. */
+export type PushTransports = Pick<DeliveryTransports, "push" | "pushComposer">;
+
+/**
+ * Una entrega de push, un resultado. Es el mismo camino de la cola de siempre
+ * —reintentos, tokens dados de baja, cierre sin teléfono— para que el push al
+ * momento (`sendPushNow`) no tenga reglas propias.
+ */
+async function deliverPush(
+  gateway: QueueGateway,
+  transports: PushTransports,
+  delivery: DeliveryRow,
+  now: Date,
+): Promise<Outcome> {
+  const { fail, dead } = outcomes(gateway, delivery, now);
     const message = transports.pushComposer.compose(delivery);
     if (message === null) {
       // Sin teléfono vigente no hay a quién mandarlo: se cierra como
@@ -453,7 +467,22 @@ async function deliverOne(
     }
     // Todos dados de baja por el proveedor: ya no queda ningún teléfono.
     return dead("Ningún dispositivo del destinatario existe ya para el proveedor de push");
-  }
+}
+
+/**
+ * Una entrega, un resultado. Devuelve qué pasó para que el contador de la
+ * tanda lo sume; escribir en la base lo hace aquí mismo, para que un fallo
+ * a mitad de tanda no deje una fila reclamada y sin marcar.
+ */
+async function deliverOne(
+  gateway: QueueGateway,
+  transports: DeliveryTransports,
+  delivery: DeliveryRow,
+  now: Date,
+): Promise<Outcome> {
+  if (delivery.channel === "push") return deliverPush(gateway, transports, delivery, now);
+
+  const { fail, dead } = outcomes(gateway, delivery, now);
 
   const message = transports.mailComposer.compose(delivery);
   if (message === null) {
@@ -616,4 +645,33 @@ export async function drainEmailQueue(
     limit,
     now,
   );
+}
+
+/**
+ * Decisión 99 · «los push salen siempre al momento».
+ *
+ * La cola de siempre saca correo y push juntos en las dos tandas del día
+ * (07:00 y 19:00 UTC, `vercel.json`). Para los avisos nuevos de Restavor
+ * agents el push no espera: quien acaba de crear algo llama a esto con las
+ * claves de sus avisos y se envía en el acto. Solo toca las entregas de push
+ * de esos avisos; el correo se queda en su tanda.
+ *
+ * Es un mejor esfuerzo: si el transporte falla o no hay teléfono, la entrega
+ * se reprograma o se cierra como en cualquier otra tanda y esto no lanza.
+ */
+export async function sendPushNow(
+  gateway: QueueGateway,
+  transports: PushTransports,
+  dedupeKeys: readonly string[],
+  now: Date = new Date(),
+): Promise<{ sent: number; retried: number; dead: number }> {
+  const result = { sent: 0, retried: 0, dead: 0 };
+  if (dedupeKeys.length === 0) return result;
+
+  const deliveries = await gateway.claimPushDeliveries(dedupeKeys);
+  for (const delivery of deliveries) {
+    const outcome = await deliverPush(gateway, transports, delivery, now);
+    result[outcome] += 1;
+  }
+  return result;
 }

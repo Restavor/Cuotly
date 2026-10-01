@@ -87,6 +87,11 @@ export function createSupabaseQueueGateway(client: AnyClient): QueueGateway {
     claimDeliveries: (limit) =>
       rpc<readonly DeliveryRow[]>(client, "claim_notification_deliveries", { p_limit: limit }),
 
+    claimPushDeliveries: (dedupeKeys) =>
+      rpc<readonly DeliveryRow[]>(client, "claim_push_deliveries_for_keys", {
+        p_dedupe_keys: [...dedupeKeys],
+      }),
+
     markDeliverySent: (deliveryId, providerMessageId) =>
       rpc<void>(client, "mark_delivery_sent", {
         p_delivery_id: deliveryId,
