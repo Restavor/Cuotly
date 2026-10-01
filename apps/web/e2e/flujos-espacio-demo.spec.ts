@@ -185,10 +185,12 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       // en el Inicio —el rediseño lo dejó con indicadores, atención, carga
       // del equipo, Menú Diario y actividad—, así que se mira donde vive.
       await page.goto(`/espacios/${ESPACIO}/restaurantes`);
-      // Cada restaurante es un enlace con el local, su código, su plan y su
-      // estado en el nombre accesible; el código suelto sale dos veces.
-      const barDemo = page.getByRole("link", { name: /Bar Demo EST-0001/ });
+      // En escritorio la lista de restaurantes es una tabla: cada restaurante
+      // es una FILA con el local y su código en la primera celda, su plan y su
+      // estado. (En móvil son tarjetas con un enlace; ver ca19.)
+      const barDemo = fila(page, "EST-0001");
       await expect(barDemo).toBeVisible();
+      await expect(barDemo).toContainText("Bar Demo");
       await expect(barDemo).toContainText("Activo");
     });
 

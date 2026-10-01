@@ -406,7 +406,10 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
         await expect(page.getByText("Bloqueado").first()).toBeVisible();
       }).toPass({ timeout: 15_000 });
 
-      await page.getByRole("button", { name: "Desbloquear" }).click();
+      // M78: en un trabajo bloqueado el equipo ve una franja con "Reanudar
+      // trabajo" (el mismo `unblock_job()` que el antiguo "Desbloquear", que
+      // queda para quien no es del equipo).
+      await page.getByRole("button", { name: "Reanudar trabajo" }).click();
       await expect(async () => {
         await sinErrores(page, "DESBLOQUEAR");
         await expect(page.getByText("En curso").first()).toBeVisible();
@@ -532,7 +535,8 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
     // "Pagado en parte" es precisamente lo que `charge_status()` deriva
     // cuando hay cobrado y queda deuda, así que ver ese estado es ver que
     // el apunte con signo se escribió.
-    await expect(fila.getByText("Pagado en parte")).toBeVisible({ timeout: 20_000 });
+    // `.first()`: la ficha del cobro enseña el estado en la cabecera y en el resumen.
+    await expect(fila.getByText("Pagado en parte").first()).toBeVisible({ timeout: 20_000 });
   });
 
   test("CONSULTAR y GESTIONAR EQUIPO · desde el teléfono", async ({ page }) => {
@@ -692,7 +696,9 @@ test.describe("CA-19 · cada flujo principal se completa en un teléfono", () =>
       await entrar(page, PROPIETARIA, `/espacios/${ESPACIO}`);
       await page.goto(`/espacios/${ESPACIO}/menu-diario`);
       await cabeEnElTelefono(page, "la cola de Menú Diario");
-      await page.getByRole("link", { name: `Equipo ${MARCA}` }).click();
+      // La cola es una tabla: el nombre del menú es texto de la fila y el
+      // enlace es "Ver detalle".
+      await page.locator("tbody tr").filter({ hasText: `Equipo ${MARCA}` }).getByRole("link").click();
       await page.waitForURL(new RegExp(menuUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"), { timeout: 30_000 });
       await cabeEnElTelefono(page, "la ficha del menú para el equipo");
 
