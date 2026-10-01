@@ -788,6 +788,20 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+      # La traza se descarga a mano y desde el contenedor de Claude Code no se
+      # puede. Cada fallo deja además un `error-context.md` con lo que había
+      # en pantalla (árbol de accesibilidad); se imprime aquí, recortado, para
+      # leerlo en el propio registro del job.
+      - name: Qué había en pantalla en cada fallo
+        if: failure()
+        run: |
+          cd apps/web/test-results 2>/dev/null || exit 0
+          for f in $(ls -d *retry1 2>/dev/null | head -20); do
+            echo "=== $f"
+            head -c 2500 "$f/error-context.md" 2>/dev/null || true
+            echo
+          done
+
       - name: Parar Supabase
         if: always()
         run: supabase stop
