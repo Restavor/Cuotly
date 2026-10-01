@@ -237,6 +237,7 @@ export type Database = {
       };
       access_requests: {
         Row: {
+          interested_in: string[] | null;
           account_id: string | null;
           applicant_reply: string | null;
           business_name: string;
@@ -259,6 +260,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          interested_in?: string[] | null;
           account_id?: string | null;
           applicant_reply?: string | null;
           business_name: string;
@@ -281,6 +283,7 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          interested_in?: string[] | null;
           account_id?: string | null;
           applicant_reply?: string | null;
           business_name?: string;
@@ -1974,6 +1977,7 @@ export type Database = {
       };
       establishment_permissions: {
         Row: {
+          manage_reservations: boolean;
           create_requests: boolean;
           edit_establishment_data: boolean;
           edit_menus: boolean;
@@ -1985,6 +1989,7 @@ export type Database = {
           view_reports: boolean;
         };
         Insert: {
+          manage_reservations?: boolean;
           create_requests?: boolean;
           edit_establishment_data?: boolean;
           edit_menus?: boolean;
@@ -1996,6 +2001,7 @@ export type Database = {
           view_reports?: boolean;
         };
         Update: {
+          manage_reservations?: boolean;
           create_requests?: boolean;
           edit_establishment_data?: boolean;
           edit_menus?: boolean;
@@ -6396,6 +6402,242 @@ export type Database = {
           },
         ];
       };
+      reservation_service_events: {
+        Row: {
+          id: string;
+          space_id: string;
+          establishment_id: string;
+          request_id: string | null;
+          type: string;
+          actor_id: string | null;
+          data: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          space_id: string;
+          establishment_id: string;
+          request_id?: string | null;
+          type: string;
+          actor_id?: string | null;
+          data?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          space_id?: string;
+          establishment_id?: string;
+          request_id?: string | null;
+          type?: string;
+          actor_id?: string | null;
+          data?: Json;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservation_service_events_space_id_fkey";
+            columns: ["space_id"];
+            isOneToOne: false;
+            referencedRelation: "spaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_events_establishment_id_fkey";
+            columns: ["establishment_id"];
+            isOneToOne: false;
+            referencedRelation: "establishments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_events_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: false;
+            referencedRelation: "reservation_service_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_events_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reservation_service_requests: {
+        Row: {
+          id: string;
+          space_id: string;
+          establishment_id: string;
+          requested_by: string | null;
+          created_on_behalf_by: string | null;
+          status: string;
+          rejection_reason: string | null;
+          service_version_id: string | null;
+          terms_accepted_by: string | null;
+          terms_accepted_at: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          idempotency_key: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          space_id: string;
+          establishment_id: string;
+          requested_by?: string | null;
+          created_on_behalf_by?: string | null;
+          status?: string;
+          rejection_reason?: string | null;
+          service_version_id?: string | null;
+          terms_accepted_by?: string | null;
+          terms_accepted_at?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          idempotency_key?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          space_id?: string;
+          establishment_id?: string;
+          requested_by?: string | null;
+          created_on_behalf_by?: string | null;
+          status?: string;
+          rejection_reason?: string | null;
+          service_version_id?: string | null;
+          terms_accepted_by?: string | null;
+          terms_accepted_at?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          idempotency_key?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservation_service_requests_space_id_fkey";
+            columns: ["space_id"];
+            isOneToOne: false;
+            referencedRelation: "spaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_requests_establishment_id_fkey";
+            columns: ["establishment_id"];
+            isOneToOne: false;
+            referencedRelation: "establishments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_requests_requested_by_fkey";
+            columns: ["requested_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_requests_created_on_behalf_by_fkey";
+            columns: ["created_on_behalf_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_requests_service_version_id_fkey";
+            columns: ["service_version_id"];
+            isOneToOne: false;
+            referencedRelation: "service_versions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_requests_terms_accepted_by_fkey";
+            columns: ["terms_accepted_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_service_requests_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      reservation_settings: {
+        Row: {
+          id: string;
+          space_id: string;
+          establishment_id: string;
+          subscription_id: string | null;
+          service_status: string;
+          grace_days: number;
+          onboarding_completed_at: string | null;
+          activated_at: string | null;
+          ending_at: string | null;
+          closed_at: string | null;
+          data_purged_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          space_id: string;
+          establishment_id: string;
+          subscription_id?: string | null;
+          service_status?: string;
+          grace_days?: number;
+          onboarding_completed_at?: string | null;
+          activated_at?: string | null;
+          ending_at?: string | null;
+          closed_at?: string | null;
+          data_purged_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          space_id?: string;
+          establishment_id?: string;
+          subscription_id?: string | null;
+          service_status?: string;
+          grace_days?: number;
+          onboarding_completed_at?: string | null;
+          activated_at?: string | null;
+          ending_at?: string | null;
+          closed_at?: string | null;
+          data_purged_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "reservation_settings_space_id_fkey";
+            columns: ["space_id"];
+            isOneToOne: false;
+            referencedRelation: "spaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_settings_establishment_id_fkey";
+            columns: ["establishment_id"];
+            isOneToOne: false;
+            referencedRelation: "establishments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "reservation_settings_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "subscriptions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       scheduled_jobs: {
         Row: {
           attempts: number;
@@ -7131,6 +7373,7 @@ export type Database = {
       };
       spaces: {
         Row: {
+          reservations_enabled: boolean;
           address: string | null;
           created_at: string;
           created_by: string;
@@ -7154,6 +7397,7 @@ export type Database = {
           timezone: string;
         };
         Insert: {
+          reservations_enabled?: boolean;
           address?: string | null;
           created_at?: string;
           created_by: string;
@@ -7177,6 +7421,7 @@ export type Database = {
           timezone?: string;
         };
         Update: {
+          reservations_enabled?: boolean;
           address?: string | null;
           created_at?: string;
           created_by?: string;
@@ -10115,6 +10360,19 @@ export type Database = {
           title: string;
         }[];
       };
+      my_products: {
+        Args: never;
+        Returns: {
+          at: string | null;
+          detail: string | null;
+          establishment_id: string | null;
+          establishment_name: string | null;
+          kind: string;
+          reason: string | null;
+          space_id: string;
+          space_slug: string;
+        }[];
+      };
       my_contexts: {
         Args: never;
         Returns: {
@@ -11526,12 +11784,38 @@ export type Database = {
         };
         Returns: string;
       };
+      create_reservation_request_on_behalf: {
+        Args: { p_establishment_id: string; p_idempotency_key?: string };
+        Returns: string;
+      };
+      request_reservations: {
+        Args: { p_establishment_id: string; p_idempotency_key?: string; p_service_version_id: string };
+        Returns: string;
+      };
+      reservation_service_terms: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          conditions: string;
+          price_cents: number;
+          published_at: string;
+          service_id: string;
+          service_version_id: string;
+          version: number;
+        }[];
+      };
+      reservations_my_role: { Args: { p_establishment_id: string }; Returns: string };
+      establishment_is_reservations_only: { Args: { p_establishment_id: string }; Returns: boolean };
+      set_space_reservations_enabled: {
+        Args: { p_enabled: boolean; p_space_id: string };
+        Returns: undefined;
+      };
       submit_access_request: {
         Args: {
           p_business_name: string;
           p_comments?: string;
           p_contact_name: string;
           p_email: string;
+          p_interested_in?: string[];
           p_phone: string;
           p_tax_id: string;
           p_tax_id_country: string;

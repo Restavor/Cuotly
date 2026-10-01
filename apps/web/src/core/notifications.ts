@@ -127,6 +127,12 @@ export const NOTIFICATION_EVENTS = [
   // el de una de 5, y porque solo el primero cruza al restaurante.
   "review_received",
   "low_review_received",
+  // Migración 158 (RN-APP-03, Fase A de Restavor agents) · un restaurante pide
+  // Reservas: al equipo que la aprueba y, como acuse, al propio restaurante.
+  // Ninguno obligatorio. Los correos van en las tandas del día y el push al
+  // momento (decisión 99).
+  "reservation_service_request",
+  "reservation_service_received",
 ] as const;
 
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];

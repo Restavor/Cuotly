@@ -814,9 +814,9 @@ begin
   -- servidor de Restavor web con `service_role` después de comprobar el
   -- documento. Abierta a `anon`, cualquiera la llamaría con un documento
   -- falso "ya comprobado".
-  if has_function_privilege('anon', 'public.submit_access_request(text, text, text, text, text, text, text, text, text)', 'execute')
-     or has_function_privilege('authenticated', 'public.submit_access_request(text, text, text, text, text, text, text, text, text)', 'execute')
-     or not has_function_privilege('service_role', 'public.submit_access_request(text, text, text, text, text, text, text, text, text)', 'execute') then
+  if has_function_privilege('anon', 'public.submit_access_request(text, text, text, text, text, text, text, text, text, text[])', 'execute')
+     or has_function_privilege('authenticated', 'public.submit_access_request(text, text, text, text, text, text, text, text, text, text[])', 'execute')
+     or not has_function_privilege('service_role', 'public.submit_access_request(text, text, text, text, text, text, text, text, text, text[])', 'execute') then
     raise exception 'RN-ACC-02 FALLIDO: la solicitud se puede mandar sin pasar por la comprobación del documento'
       using errcode = 'assert_failure';
   end if;

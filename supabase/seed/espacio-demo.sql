@@ -2443,3 +2443,20 @@ end $$;
 -- Se suelta la identidad al final, para no dejar la sesión suplantando a
 -- nadie si esto se ejecuta dentro de una sesión más larga.
 select set_config('request.jwt.claims', '', false);
+
+-- ============================================================
+-- 14 · Reservas, ofrecida en el espacio de demostración (Fase A de agents).
+-- ============================================================
+-- El espacio `demo` ofrece Reservas para poder probar la puerta de Restavor app:
+-- el catálogo (servicio Reservas con sus condiciones provisionales) y el
+-- interruptor. No crea ninguna solicitud ni suscripción: eso lo hace quien
+-- prueba, con "Contratar Reservas".
+do $$
+declare
+  v_space constant uuid := 'd1000000-0000-0000-0000-000000000001';
+begin
+  update public.spaces set reservations_enabled = true where id = v_space;
+  perform public.ensure_reservations_service_internal(v_space, (
+    select created_by from public.spaces where id = v_space));
+  raise notice 'Sección 14: el espacio de demostración ofrece Reservas';
+end $$;

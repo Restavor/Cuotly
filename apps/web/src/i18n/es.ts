@@ -1236,6 +1236,8 @@ export const es = {
       request_submitted: "Solicitud enviada",
       request_created_on_behalf: "El equipo creó una solicitud en tu nombre",
       credit_quote_requested: "Un restaurante pide presupuesto",
+      reservation_service_request: "Un restaurante pide contratar Reservas",
+      reservation_service_received: "Hemos recibido tu solicitud de Reservas",
       job_unassigned: "Trabajo sin asignar",
       job_assigned: "Trabajo asignado",
       job_started: "Trabajo comenzado",
