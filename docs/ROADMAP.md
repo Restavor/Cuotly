@@ -5372,8 +5372,9 @@ Lo que **no** está y es de fases posteriores (no se simula): aprobar y rechazar
 saldo y el armazón de Restavor agents (Fases B a G), los correos a comensales (Fase F). Las condiciones de Reservas son un **texto provisional**:
 Bosco las sustituye publicando una versión nueva desde «Planes y servicios» del espacio `restavor`.
 
-Decisiones técnicas que Claude tomó y Bosco puede revertir: 100 (qué pasa con Reservas al transferir un restaurante), 101 (la plataforma entra
-siempre en `/web`) y 102 (qué es «solo Reservas»), en `docs/DECISIONES.md`.
+Decisiones de Bosco sobre lo que dejó abierto la Fase A (01/10/2026), en `docs/DECISIONES.md`: 100 (transferir Reservas solo con una opción activada, desactivada por
+defecto; se construye en la Fase E), 101 (`info@restavor.com` entra siempre al Inicio; el resto, directo a `/web` si solo tiene Restavor web) y 102 (qué es «solo Reservas»,
+pendiente de que Bosco lo confirme).
 
 Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase B hasta que Bosco lo diga.**
 

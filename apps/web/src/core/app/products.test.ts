@@ -54,6 +54,14 @@ describe("RN-APP-02 · cuándo se enseña el Inicio de Restavor app", () => {
     expect(homeBehavior(soloSolicitud)).toEqual({ kind: "show" });
   });
 
+  it("RN-APP-02 · el propietario de Restavor web entra siempre al Inicio, tenga los productos que tenga", () => {
+    const soloWeb = summarizeProducts([fila("web", null, "team")]);
+    expect(homeBehavior(soloWeb, { isPlatform: true, isPlatformOwner: true })).toEqual({ kind: "show" });
+    expect(homeBehavior(summarizeProducts([]), { isPlatform: true, isPlatformOwner: true })).toEqual({ kind: "show" });
+    // El resto del equipo de plataforma, con solo Restavor web, entra directo en /web.
+    expect(homeBehavior(soloWeb, { isPlatform: true })).toEqual({ kind: "redirect", to: "/web" });
+  });
+
   it("RN-APP-02 · quien es de Restavor web entra en Restavor web aunque no sea miembro de ningún espacio", () => {
     expect(homeBehavior(summarizeProducts([]), { isPlatform: true })).toEqual({
       kind: "redirect",

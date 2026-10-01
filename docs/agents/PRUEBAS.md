@@ -40,8 +40,8 @@ Todo en la vista previa de la rama `agents` (Vercel → Deployments → el de la
    **«Solicitud enviada»** con los cuatro pasos.
 3. Pulsa el logo (arriba a la izquierda) estando en Restavor web: sale el menú **Inicio de Restavor / Restavor web / Restavor agents** (este último con
    «Contratar» si aún no lo tienes).
-4. Entra con `owner@cuotly.test` o con `info@restavor.com` (espacio `demo`): como solo tienes Restavor web, **entras directo en `/web`** (no ves
-   la puerta). En el menú del espacio hay una entrada nueva **Reservas**: ahí está la solicitud del paso 2 como «Pendiente de revisar» y el
+4. Entra con `owner@cuotly.test` (espacio `demo`): como solo tiene Restavor web, **entra directo en `/web`** (no ve la puerta). Con `info@restavor.com`
+   entras **siempre al Inicio** (`/`), nunca se te salta (decisión 101). En el menú del espacio hay una entrada nueva **Reservas**: ahí está la solicitud del paso 2 como «Pendiente de revisar» y el
    formulario «Crear solicitud para este restaurante». Aprobar y rechazar todavía no existen (la pantalla lo dice).
 5. En `/signup` hay una casilla nueva **«¿Qué te interesa?»** (Mantenimiento web / Reservas / Las dos). Lo que marque quien pide acceso lo ve
    quien aprueba en `/administracion/accesos`.

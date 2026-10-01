@@ -64,15 +64,20 @@ export type HomeDecision =
  * nada más —un trabajador de un espacio, un restaurante solo con Reservas—: ahí
  * se entra directo en ese producto.
  *
- * `isPlatform`: quien es de Restavor web (Bosco y su equipo) entra siempre en
- * Restavor web aunque no sea miembro de ningún espacio: su entrada a
- * Administración vive en `/web`. Sin esto, el Propietario de Restavor web que
- * aún no ha creado el espacio de Restavor se quedaría sin puerta.
+ * `isPlatform`: quien es de Restavor web (los Administradores de plataforma)
+ * entra en Restavor web aunque no sea miembro de ningún espacio: su entrada a
+ * Administración vive en `/web`. Sin esto se quedaría sin puerta.
+ *
+ * `isPlatformOwner` (decisión 101, Bosco, 01/10/2026): el propietario de
+ * Restavor web entra SIEMPRE al Inicio de Restavor app (`/`), tenga los
+ * productos que tenga: nunca se le salta.
  */
 export function homeBehavior(
   summary: ProductSummary,
-  options: { readonly isPlatform?: boolean } = {},
+  options: { readonly isPlatform?: boolean; readonly isPlatformOwner?: boolean } = {},
 ): HomeDecision {
+  if (options.isPlatformOwner === true) return { kind: "show" };
+
   const hasWeb = summary.hasWeb || options.isPlatform === true;
   const count = (hasWeb ? 1 : 0) + (summary.hasAgents ? 1 : 0);
   const somethingToDo = summary.offers.length > 0 || summary.requests.length > 0;

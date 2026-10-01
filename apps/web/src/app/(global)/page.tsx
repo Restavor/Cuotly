@@ -67,7 +67,7 @@ export default async function AppHomePage() {
 
   const summary = summarizeProducts(rows);
   const isPlatform = platform !== null && isPlatformPerson(platform);
-  const decision = homeBehavior(summary, { isPlatform });
+  const decision = homeBehavior(summary, { isPlatform, isPlatformOwner: platform?.isOwner === true });
   if (decision.kind === "redirect") redirect(decision.to);
 
   const showWeb = summary.hasWeb || isPlatform;
