@@ -2391,6 +2391,55 @@ begin
     v_conv, v_msg;
 end $$;
 
+-- ============================================================
+-- 13 · info@restavor.com, ÚNICO propietario del espacio de demostración.
+--
+-- La sección 11 le da la pertenencia como propietario si la cuenta existe,
+-- pero dejaba también a Elena (owner@cuotly.test) como propietaria, y las
+-- secciones 6, 9 y 12 la necesitan como tal para construir los flujos. Por
+-- eso el relevo va AL FINAL, cuando ya no queda nada que construir con ella:
+-- se hace con la función de verdad, `transfer_space_ownership()` (RN-CIC-05),
+-- que nombra al nuevo propietario y deja a quien transfiere como
+-- Administrador. Así el espacio tiene un solo propietario y, como el
+-- sembrado lo repite cada vez que se rehace, el relevo no se deshace.
+--
+-- Sin clave de idempotencia a propósito: la clave se guarda por espacio, el
+-- espacio de demostración tiene siempre el mismo identificador y una clave
+-- que ya existiera haría que la segunda vez no transfiriera nada.
+--
+-- Si info@restavor.com no tiene cuenta (el CI, una base local), no hace
+-- nada: Elena sigue siendo la propietaria, que es lo que esperan las
+-- pruebas automáticas.
+-- ============================================================
+do $$
+declare
+  v_space constant uuid := 'd1000000-0000-0000-0000-000000000001';
+  v_elena constant uuid := 'd0000000-0000-0000-0000-000000000001';
+  v_bosco uuid;
+begin
+  select id into v_bosco
+  from public.profiles
+  where lower(email) = lower('info@restavor.com');
+
+  if v_bosco is null then
+    raise notice 'Sección 13: info@restavor.com no tiene cuenta; Elena sigue siendo la propietaria del espacio de demostración';
+    return;
+  end if;
+
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_elena, 'role', 'authenticated')::text, false);
+
+  perform public.transfer_space_ownership(
+    v_space, v_bosco, 'Sembrado: el propietario del espacio de demostración es info@restavor.com');
+
+  if (select count(*) from public.space_memberships
+      where space_id = v_space and role = 'owner' and status = 'active') <> 1 then
+    raise exception 'El espacio de demostración tenía que quedar con un único propietario';
+  end if;
+
+  raise notice 'Sección 13: info@restavor.com es el único propietario del espacio de demostración (Elena pasa a Administradora)';
+end $$;
+
 -- Se suelta la identidad al final, para no dejar la sesión suplantando a
 -- nadie si esto se ejecuta dentro de una sesión más larga.
 select set_config('request.jwt.claims', '', false);

@@ -35,21 +35,34 @@ Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producc
 
 | Correo | Quién es |
 |---|---|
-| `owner@cuotly.test` | Propietaria del espacio de demostración (equipo) |
+| `owner@cuotly.test` | Elena. En el código y en el CI es la propietaria del espacio demo; en Pruebas pasa a Administradora, porque el propietario es `info@restavor.com` |
 | `trabajadora@cuotly.test`, `trabajador2@cuotly.test` | Trabajadores del espacio |
 | `restaurante@cuotly.test` | Propietario de "Bar Demo" |
 | `cliente2@cuotly.test` | Propietario de "Café Prueba" |
 | `magarinos@cuotly.test` | Propietaria de "Magariños" |
 | `sala.magarinos@cuotly.test` | Editor sin permisos en "Magariños" (solo lee) |
 
-`info@restavor.com` (Bosco, propietario de la plataforma) **no existe** en Pruebas: es otra base de cuentas. Para entrar en `/administracion`
-hay que registrarse allí con ese correo (los correos de registro solo salen si se configura Resend; hasta entonces, crear la cuenta desde el
-panel de Supabase de Restavor pruebas → Authentication → Users) y volver a ejecutar el sembrado.
+## Propietario: `info@restavor.com` (01/10/2026)
 
-El catálogo de planes **del espacio demo** es el antiguo: el sembrado está desfasado respecto a los créditos (PRD §16 lo resuelve en la Fase B).
-**En Pruebas no existe el espacio `restavor`** (el de Bosco, con el catálogo Básico, Impulso y Premium): las migraciones traen la función
-`create_restavor_space()`, pero alguien tiene que llamarla, y en producción se hizo a mano. Solo hay el espacio `demo`. Hay que crearlo antes de la
-Fase A (las pantallas del lado de Restavor, `spaces.reservations_enabled` y las solicitudes de Reservas viven en ese espacio).
+`info@restavor.com` es el **único propietario** en Pruebas, como en producción:
+
+- **Propietario de la plataforma** (`is_platform_owner()`, por el correo). Para entrar en `/administracion` hace falta además la verificación
+  en dos pasos en esa cuenta (RN-ADM-02); sin ella es un usuario normal, y para ver el espacio demo no hace falta.
+- **Espacio `restavor`** (el de la empresa, con el catálogo Básico, Impulso y Premium): creado en Pruebas el 01/10/2026 con esa cuenta como única
+  propietaria, llamando una vez a `create_restavor_space()`. El sembrado **no** lo toca, así que se conserva al resembrar; si alguna vez se rehace la
+  base entera, hay que repetirlo.
+- **Espacio `demo`**: el sembrado (sección 13 de `supabase/seed/espacio-demo.sql`) le da la propiedad con `transfer_space_ownership()` y deja a Elena
+  (`owner@cuotly.test`) como Administradora. Va al final del sembrado, porque las secciones anteriores necesitan a Elena como propietaria para
+  construir los flujos, y se repite en cada resembrado. Si la cuenta `info@` no existe (el CI, una base local), no hace nada y Elena sigue siendo la
+  propietaria, que es lo que esperan las pruebas automáticas. Por eso `owner@cuotly.test` no se puede quitar del código.
+
+La cuenta se creó a mano en Supabase (Authentication → Users) con una contraseña de Bosco, no con la de demostración: esa contraseña está en el
+repositorio y la del administrador no puede estarlo.
+
+**Restavor agents** todavía no tiene nada que poseer: sus tablas y pantallas llegan en la Fase B. Cuando existan, su propietario será esta misma cuenta.
+
+El catálogo de planes **del espacio demo** es el antiguo, salvo Café Prueba, que desde el 01/10/2026 está en Impulso en créditos (20 al mes) porque el
+recorrido largo de las pruebas necesita un plan con créditos (decisión 85). PRD §16 pone al día el resto en la Fase B.
 
 ## Cómo se cargan las migraciones y el sembrado
 
