@@ -5,8 +5,13 @@ import {
   agentsEntry,
   agentsPageHref,
   entryPageForStatus,
+  calendarHref,
+  editReservationHref,
   guardAgentsPage,
+  needsOnboarding,
+  reservationHref,
   restaurantBase,
+  todayHref,
 } from "./agents-routes";
 import type { ReservationServiceStatus, ReservationsActor } from "./permissions";
 
@@ -165,5 +170,47 @@ describe("AGT-03 · qué pantalla se abre en cada estado y para cada persona", (
     expect(g(restavor, "active", "today")).toBe("denied");
     expect(g(restavor, "active", "calls")).toBe("denied");
     expect(g(restavor, "active", "help")).toBe("denied");
+  });
+});
+
+describe("RES-03 · las direcciones de la agenda (Fase C)", () => {
+  const R = "e5200000-0000-0000-0000-0000000000aa";
+  it("RES-03 · la ficha, editar, Hoy en una fecha y el calendario de un mes", () => {
+    expect(reservationHref(A, R)).toBe(`/agents/${A}/reservas/${R}`);
+    expect(editReservationHref(A, R)).toBe(`/agents/${A}/reservas/${R}/editar`);
+    expect(todayHref(A, "2026-09-26")).toBe(`/agents/${A}/reservas?fecha=2026-09-26`);
+    expect(calendarHref(A, "2026-09")).toBe(`/agents/${A}/reservas/calendario?mes=2026-09`);
+  });
+  it("RES-09 · Buscar la abre quien abre Hoy, y no el Equipo sin pantalla de agenda ni Restavor sin sesión", () => {
+    expect(agentsPageHref(A, "search")).toBe(`/agents/${A}/reservas/buscar`);
+    for (const actor of [owner, manager, tablet, staff]) {
+      expect(guardAgentsPage(A, actor, "active", "search").kind, actor.kind).toBe("allow");
+    }
+    expect(guardAgentsPage(A, { kind: "restavor", twoFactor: true }, "active", "search").kind).toBe("denied");
+    expect(guardAgentsPage(A, owner, "closed", "search").kind).toBe("redirect");
+  });
+});
+
+describe("RES-13 · Primer uso (PRD de agents §5.1)", () => {
+  it("RES-13 · lo pide quien puede cambiar los horarios, con Reservas en uso y sin haberlo terminado", () => {
+    for (const status of ["active", "past_due", "paused", "ending"] as const) {
+      expect(needsOnboarding(owner, status, null), status).toBe(true);
+    }
+    expect(needsOnboarding(manager, "active", null)).toBe(true);
+  });
+  it("RES-13 · terminado, no; sin pagar o cerrada, no (esas tienen su pantalla)", () => {
+    expect(needsOnboarding(owner, "active", "2026-09-01T10:00:00Z")).toBe(false);
+    expect(needsOnboarding(owner, "approved_pending_payment", null)).toBe(false);
+    expect(needsOnboarding(owner, "closed", null)).toBe(false);
+  });
+  it("RES-13 · el Equipo con PIN no ve Ajustes y por tanto no se manda a configurar", () => {
+    expect(needsOnboarding(staff, "active", null)).toBe(false);
+    expect(needsOnboarding(tablet, "active", null)).toBe(false);
+  });
+  it("RES-13 · la pantalla se abre a quien puede cambiar los horarios y a nadie más", () => {
+    expect(agentsPageHref(A, "onboarding")).toBe(`/agents/${A}/reservas/primer-uso`);
+    expect(guardAgentsPage(A, owner, "active", "onboarding").kind).toBe("allow");
+    expect(guardAgentsPage(A, manager, "active", "onboarding").kind).toBe("allow");
+    expect(guardAgentsPage(A, staff, "active", "onboarding").kind).toBe("denied");
   });
 });

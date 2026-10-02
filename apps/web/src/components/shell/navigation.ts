@@ -816,6 +816,7 @@ export function agentsActiveDestination(pathname: string, ctx?: AgentsNavContext
     ["/reservas/agente", "calls", "calls"],
     ["/reservas/calendario", "calendar", "calendar"],
     ["/reservas/ajustes", "settings", "settings"],
+    ["/reservas/primer-uso", "settings", "settings"],
     ["/reservas", "today", "today"],
     ["/saldo", "balance", "balance"],
     ["/plan", "plan", "plan"],

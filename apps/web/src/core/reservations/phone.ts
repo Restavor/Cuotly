@@ -73,3 +73,13 @@ export function phoneEndsWith(phone: string, suffix: string): boolean {
   const digits = suffix.replace(/\D/g, "");
   return digits.length >= 3 && phone.replace(/\D/g, "").endsWith(digits);
 }
+
+/**
+ * El teléfono como se escribe en pantalla: un número español de 9 cifras en grupos de tres
+ * («612 345 678», `Ficha`), y cualquier otro tal cual en E.164. Solo para enseñar y para
+ * rellenar el formulario de editar: se guarda siempre en E.164.
+ */
+export function formatPhoneDisplay(phoneE164: string): string {
+  const m = /^\+34([6-9]\d{8})$/.exec(phoneE164);
+  return m ? `${m[1].slice(0, 3)} ${m[1].slice(3, 6)} ${m[1].slice(6)}` : phoneE164;
+}

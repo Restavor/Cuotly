@@ -2654,6 +2654,15 @@ begin
       -- `request_reservations` y `create_reservation_request_on_behalf`
       -- cuenten como comprobadas.
       --
+      -- `reservations_actor_type` y `reservations_settings_actor` (migración 169,
+      -- Fase C) son LA comprobación de quién puede escribir en la agenda y en los
+      -- horarios de Reservas —Propietario, Encargado, soporte con sesión abierta y,
+      -- para los horarios, el equipo del espacio— y ellas mismas llaman a
+      -- `reservations_my_role` y `reservations_can_read_diner_data`. Están cerradas
+      -- por RPC; su nombre está aquí para que las trece funciones de la agenda
+      -- (`book_reservation`, `cancel_reservation`, `save_reservation_shifts`…)
+      -- cuenten como comprobadas.
+      --
       -- `is_platform_account_manager` (migración 140, RN-ADM-14) es LA
       -- comprobación del cuarto permiso fino de §167 —Bosco, o un
       -- Administrador de Restavor web con `can_delete_accounts`— y ella misma
@@ -2661,7 +2670,7 @@ begin
       -- siete funciones que eliminan y recuperan cuentas, espacios y
       -- restaurantes cuenten como comprobadas.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'is_platform_account_manager|has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths|report_can_prepare|reservations_my_role'
+          !~ 'is_platform_account_manager|has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths|report_can_prepare|reservations_my_role|reservations_actor_type|reservations_settings_actor'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se

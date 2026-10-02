@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isE164, normalizePhoneE164, phoneEndsWith, samePhone } from "./phone";
+import { formatPhoneDisplay, isE164, normalizePhoneE164, phoneEndsWith, samePhone } from "./phone";
 
 describe("RN-RES-06 · teléfonos en E.164", () => {
   it("RN-RES-06 · un móvil español se acepta con o sin prefijo, con espacios y separadores", () => {
@@ -64,5 +64,16 @@ describe("RN-RES-06 · teléfonos en E.164", () => {
     expect(phoneEndsWith("+34612345678", "679")).toBe(false);
     // Menos de tres cifras no buscan nada.
     expect(phoneEndsWith("+34612345678", "78")).toBe(false);
+  });
+});
+
+describe("RES-03 · el teléfono en pantalla", () => {
+  it("RES-03 · un número español sale en grupos de tres y vuelve a normalizar al mismo E.164", () => {
+    expect(formatPhoneDisplay("+34612345678")).toBe("612 345 678");
+    const vuelta = normalizePhoneE164(formatPhoneDisplay("+34612345678"));
+    expect(vuelta).toEqual({ ok: true, value: "+34612345678" });
+  });
+  it("RES-03 · un número de otro país se enseña tal cual", () => {
+    expect(formatPhoneDisplay("+447911123456")).toBe("+447911123456");
   });
 });

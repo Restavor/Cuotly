@@ -658,6 +658,17 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/reservas_cimientos.sql
 
+      - name: "Suite 91 — La agenda de Reservas (migración 169, RN-RES-01 a RN-RES-09, RN-RES-11 y RN-RES-12)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/la_agenda.sql
+
+      - name: "Fase C — Verificar el aforo con altas simultáneas (RN-RES-02)"
+        run: |
+          cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            node scripts/agenda-concurrency-test.mjs
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

@@ -52,6 +52,11 @@ const PERMITIDOS = new Set([
   // por parámetro desde `reservation_settings.timezone`: no está escrita aquí, y calcula
   // el día para guardar la reserva, no para pintar una fecha.
   "core/reservations/dates.ts",
+  // Fase C de agents · cómo se escriben las fechas de la agenda («Sábado, 26 de septiembre»).
+  // Una fecha local de reserva no tiene hora, así que se escribe en UTC sin que ninguna zona la
+  // mueva de día; y el único instante que escribe (`formatDateTime`, el historial de una
+  // reserva) recibe la zona del restaurante por parámetro.
+  "core/reservations/format.ts",
   "components/home/ActivityFeed.tsx",
   "components/establishment/integrations-load.ts",
 ]);

@@ -85,6 +85,47 @@ avisos a comensales (F), el agente de llamadas (G), el formulario web (H) y los 
 **El PIN del Equipo de Casa Pepe** (Ana Ruiz 1234, Diego Navas 5678) se guarda cifrado con el secreto `restavor-pruebas-pin-secret`. Para que sirvan en la Fase D,
 `AGENTS_PIN_SECRET` de la vista previa de la rama `agents` tiene que valer eso. Hasta entonces no abren nada.
 
+## Estado de la Fase C (02/10/2026): qué probar a mano
+
+La agenda de Reservas, ya con datos de verdad. Antes de probar, hay que aplicar **la migración 169** (`20261003000169_reservas_la_agenda.sql`) a Restavor pruebas:
+sin ella las pantallas dicen «No hemos podido cargar la agenda» (las funciones nuevas no existen todavía). Después, en la vista previa de la rama `agents`, con
+`jose@casapepe.test` (misma contraseña de demostración) y Casa Pepe:
+
+1. **Hoy** (`Reservas › Hoy`, en Casa Pepe). Pon en la dirección `?fecha=2026-09-26` (o ve con las flechas hasta el sábado 26 de septiembre): es el día de la
+   maqueta. Arriba, **«10 reservas · 42 personas · 1 pendiente»**; los filtros **Todas 10 · Agente 3 · Plataformas 3 · Web 2 · Manual 2**; **Comida 23 de 40** y **Cena 19
+   de 60**. Raúl Moreno sale en gris con «No vino» y Elena Castro tachada al final de las 15:00 con «Cancelada por CoverManager». Pulsa **Web**, recarga la página: el filtro
+   se recuerda en ese dispositivo. La barra amarilla **«1 grupo pendiente de confirmar · Revisar»** lleva al grupo pendiente de hoy en adelante (la copia de Andrés Martínez).
+2. **Confirmar o rechazar un grupo.** En el 26/09, Andrés Martínez (12 personas) trae **Rechazar / Confirmar**. Confirmar lo deja como una reserva normal. Rechazar pide
+   confirmación («¿Rechazar este grupo?») y lo deja como «Grupo rechazado».
+3. **Nueva reserva** (botón de arriba, o el (+) del móvil). Fecha (Hoy, Mañana, Otro día), personas (1 a 6 y «7+»), turno, hora, nombre, teléfono, email opcional, idioma de
+   los avisos y nota con atajos. Debajo del turno: «Quedan X de Y plazas». Prueba una reserva de 70 personas en la cena: avisa «**Te pasas del aforo en N personas…
+   ¿Guardar igualmente?**»; «Revisar» vuelve, «Guardar igualmente» la guarda. Los días cerrados (los lunes y el 12/10) no dejan elegir hora.
+4. **Ficha** (pulsa una reserva). La hora grande, nombre, personas, turno y fecha, estado, origen, nota, teléfono con **Llamar**, «Ha venido N veces · ha fallado M veces» y el
+   **historial** legible. **Editar** cambia fecha, hora, personas y contacto (en una reserva de plataforma, la fecha, la hora y las personas están bloqueadas y se cambian
+   en la plataforma). **Cancelar reserva** pide el motivo. **Marcar «No vino»** solo se activa desde la hora de la reserva («desde las 21:00») y **deshacerlo** solo el mismo día.
+5. **Posibles duplicadas.** El domingo 27/09 hay dos reservas de Laura Vega con el mismo teléfono: salen en amarillo con «Posible duplicada» y «No es duplicada».
+6. **Buscar** (botón «Buscar reserva»). `gar` encuentra a Inés Ugarte con «gar» resaltado; `109` (los 3 últimos números) encuentra a Sergio Gil. Los resultados salen en
+   «Próximas» y «Últimos 30 días».
+7. **Calendario.** Septiembre de 2026: reservas y personas por día, una barra de colores por origen, los lunes **rayados** como «Cerrado», un **punto amarillo** el día 26 (hay
+   pendientes) y el total del mes arriba. Tocar un día abre Hoy en ese día.
+8. **Ajustes › Horarios.** Días que abrís, turnos con su aforo, «Cada 15/30 min», grupos grandes, días cerrados y límites. Prueba **quitar el turno de Cena y guardar**:
+   no se guarda y dice «No se puede: hay N reservas futuras afectadas. Muévelas o cancélalas antes.»
+9. **Primer uso.** Los restaurantes del sembrado ya lo tienen terminado. Para verlo: en el SQL editor de Supabase de Restavor pruebas,
+   `update reservation_settings set onboarding_completed_at = null where establishment_id = 'e5200000-0000-0000-0000-000000000002';` y entra en Casa Pepe Centro: te lleva a
+   **Configura tu restaurante** (días y turnos → aforo y grupos → equipo y tablet → agente). Los dos últimos pasos dicen que llegan con las Fases D y G.
+10. **Tiempo real.** Abre Hoy en dos pestañas del mismo navegador. Crea una reserva en una: la otra se refresca sola y enseña «Hay una reserva nueva». Sin
+    `RESERVATIONS_BROADCAST_SECRET` en Vercel (Preview) es la versión falsa, solo entre pestañas del mismo navegador; con la clave, funciona entre dispositivos
+    (`openssl rand -hex 32`; la misma en todos los servidores del entorno).
+11. **Quien no es del restaurante no entra.** `carla@barlaplaza.test` pegando la dirección de Casa Pepe: «No tienes acceso a Reservas en este restaurante», aunque pegue la
+    dirección de una ficha o de la búsqueda.
+
+**El recordatorio de las 2 horas** (RN-RES-05) lo lanza `/api/agents/cron/pendientes` cada 15 minutos con `supabase/operaciones/agents-cron.sql`, que se ejecuta una vez por
+entorno (ver el propio archivo). No se ha podido probar aquí (no hay `pg_cron` ni `pg_net` en local): sí la función y la ruta. Hasta que se ejecute, los grupos pendientes
+llevan su aviso al llegar pero no el de las 2 horas.
+
+Lo que **no** está y es de fases posteriores: avisos a comensales (F), PIN, tablet y sesión de soporte (D), cobro y saldo (E), encender y apagar el agente (G), formulario web (H),
+conectores (I), app instalable y modo sin conexión (J).
+
 ## Cuentas del sembrado
 
 Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producción).

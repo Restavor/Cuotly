@@ -12270,6 +12270,77 @@ export type Database = {
         }[];
       };
       reservations_my_role: { Args: { p_establishment_id: string }; Returns: string };
+      // Fase C (migración 169) · la agenda. Los resultados de negocio vuelven como `Json`
+      // ({ outcome: 'accepted' | 'needs_confirmation' | 'rejected' | ... }); ver `reservations-gateway.ts`.
+      book_reservation: {
+        Args: {
+          p_customer_name: string;
+          p_date: string;
+          p_email: string | null;
+          p_establishment_id: string;
+          p_force?: boolean;
+          p_idempotency_key?: string | null;
+          p_language?: string;
+          p_notes: string | null;
+          p_party_size: number;
+          p_phone_e164: string | null;
+          p_platform_name?: string | null;
+          p_reservation_id: string | null;
+          p_source?: string;
+          p_time: string;
+          p_whatsapp_consent?: boolean;
+        };
+        Returns: Json;
+      };
+      confirm_reservation: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      reject_reservation: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      cancel_reservation: { Args: { p_establishment_id: string; p_reason?: string; p_reservation_id: string }; Returns: Json };
+      mark_platform_cancel_done: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      mark_no_show: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      undo_no_show: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      dismiss_duplicate: { Args: { p_establishment_id: string; p_reservation_a: string; p_reservation_b: string }; Returns: Json };
+      open_reservation: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      save_reservation_shifts: { Args: { p_establishment_id: string; p_shifts: Json }; Returns: Json };
+      set_reservation_closed_date: {
+        Args: { p_closed: boolean; p_date: string; p_establishment_id: string; p_reason: string | null };
+        Returns: Json;
+      };
+      save_reservation_settings: {
+        Args: {
+          p_customer_cancel_limit_minutes: number;
+          p_establishment_id: string;
+          p_large_group_threshold: number;
+          p_max_advance_days: number;
+          p_min_notice_minutes: number;
+          p_slot_interval_minutes: number;
+        };
+        Returns: Json;
+      };
+      complete_reservations_onboarding: { Args: { p_establishment_id: string }; Returns: Json };
+      reservations_remind_pending: { Args: Record<PropertyKey, never>; Returns: number };
+      reservations_search: {
+        Args: { p_establishment_id: string; p_query: string };
+        Returns: {
+          customer_name: string;
+          date: string;
+          duplicate_flag: string;
+          id: string;
+          party_size: number;
+          phone_e164: string | null;
+          platform_name: string | null;
+          source: string;
+          status: string;
+          time: string;
+        }[];
+      };
+      reservations_calendar: {
+        Args: { p_establishment_id: string; p_month: string };
+        Returns: { date: string; people: number; reservations: number; source: string; status: string }[];
+      };
+      reservation_history: {
+        Args: { p_establishment_id: string; p_reservation_id: string };
+        Returns: { actor_name: string | null; actor_type: string; created_at: string; data: Json; id: string; type: string }[];
+      };
       establishment_is_reservations_only: { Args: { p_establishment_id: string }; Returns: boolean };
       set_space_reservations_enabled: {
         Args: { p_enabled: boolean; p_space_id: string };

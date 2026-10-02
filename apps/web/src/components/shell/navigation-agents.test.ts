@@ -202,7 +202,7 @@ describe("AGT-03 · cada destino lleva a una ruta que existe (barrido de /agents
     return existsSync(join(raiz, ruta, "page.tsx"));
   };
 
-  it("las catorce pantallas del PRD tienen su página", () => {
+  it("las pantallas del PRD tienen su página", () => {
     for (const page of AGENTS_PAGES) {
       const href = agentsPageHref(ID, page);
       expect(existe(href), `${page} → ${href} no tiene page.tsx`).toBe(true);

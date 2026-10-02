@@ -2623,3 +2623,46 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     `establishment_transfer_tables()`). La consecuencia es que, tras una transferencia, los datos de Reservas conservan el `space_id` antiguo: el Propietario y el
     Encargado del restaurante siguen entrando por su rol, pero el soporte y el equipo del espacio de destino no los ven. Es lo que dice la 100; la opción
     «Transferir también Reservas» y lo que arrastra se construyen en la Fase E.
+112. **La agenda escribe solo por funciones** (Fase C, migración 169). Las tablas de Reservas siguen sin política de escritura ni privilegio de tabla: la única
+    vía es una función `SECURITY DEFINER` por operación (`book_reservation`, `confirm_reservation`, `reject_reservation`, `cancel_reservation`, `mark_no_show`,
+    `undo_no_show`, `dismiss_duplicate`, `open_reservation`, `mark_platform_cancel_done`, y para los horarios `save_reservation_shifts`, `set_reservation_closed_date`,
+    `save_reservation_settings`, `complete_reservations_onboarding`). Cada una comprueba permiso (`reservations_actor_type`: Propietario, Encargado o soporte con
+    sesión abierta y `aal2`), estado del servicio y transición; bloquea restaurante + fecha + turno con `pg_advisory_xact_lock`; escribe evento y auditoría
+    **sin datos personales** (`changed: ["time"]`, `time_from`/`time_to`); y es idempotente (`reservations.idempotency_key` para el alta, estado final para el
+    resto: repetirlas devuelve `unchanged`). Con sesión de usuario el origen es siempre `manual` (PRD §6.8); sin sesión (el servidor: agente, web, plataforma)
+    acepta cualquier origen, que es lo que usarán las Fases G, H e I. El equipo del espacio sin sesión de soporte **no escribe reservas** pero **sí cambia
+    horarios y ajustes** (tabla §3.2: «Restavor» sí en horarios, aforo y límites). Los resultados de negocio (`accepted`, `needs_confirmation`, `rejected`) vuelven
+    como resultado, no como excepción.
+113. **Alternativas de disponibilidad en el dominio, no en SQL** (Fase C). `getAvailability` —huecos con su razón, hasta 3 alternativas del mismo día a ≤ 120 min o
+    la misma hora en los 14 días siguientes— vive en `src/core/reservations/availability.ts`, con los cinco ejemplos del PRD §6.5. `book_reservation` decide si
+    entra y por qué no (`full`, `too_soon`, `too_far`, `closed_day`, `not_a_slot`, `service_paused`, `past_date`) pero **no calcula alternativas**: las calculará la
+    API del agente (Fase G) con el dominio. La regla de aforo, antelación y grupo grande está, pues, en dos sitios (TS y SQL), y los dos llevan los ejemplos del PRD
+    como tests.
+114. **«Ha venido N veces · ha fallado M veces»** (RN-RES-09). El PRD no dice cómo se cuenta. Se cuenta por teléfono, en ese restaurante, en los últimos 24 meses y sin
+    la reserva abierta: «ha venido» = confirmada cuya hora ya pasó (nadie la marcó «No vino»); «ha fallado» = marcada «No vino». Las canceladas y las pendientes no
+    cuentan. Si Bosco prefiere otra definición, se cambia en `visitStats()` (`src/core/reservations/lifecycle.ts`).
+115. **Quitar un turno lo desactiva; reabrir un día cerrado borra su fila** (Fase C, RN-RES-01). Los turnos no se borran —hay reservas que los citan—:
+    `save_reservation_shifts` desactiva los que ya no están en la lista, y solo si ninguna reserva futura activa se queda sin sitio. Un día cerrado a propósito es un
+    ajuste, no un registro de negocio: reabrirlo quita la fila de `reservation_closed_dates` y queda en `audit_log` con la fecha. Es la única excepción a «nunca
+    `DELETE`» de la fase, y es de configuración. Cambiar el intervalo de huecos (15 o 30) **no** bloquea aunque haya reservas a horas que dejan de ser hueco: se quedan
+    como están.
+116. **Plataformas sin conector** (Fase C; los conectores son la Fase I). Hoy una reserva de plataforma **no** cambia fecha, hora ni personas (`platform_locked`: se
+    cambian en la plataforma), y al cancelarla en la app queda `pending_platform_cancel` con el aviso «Cancélala también en X» hasta pulsar «Hecho». Las maquetas
+    (`Ficha`, `CancelarReserva`, `EditarReserva`) dicen «Se cancelará también en TheFork» y «el cambio llegará solo»: **no se ha escrito**, porque hoy no es verdad.
+    Cuando exista el conector se sustituye por lo que corresponda.
+117. **Tiempo real: Broadcast con nombre secreto; versión falsa entre pestañas** (Fase C, RN-RES-13). Un canal de Supabase Broadcast por restaurante cuyo nombre es un
+    HMAC del restaurante con `RESERVATIONS_BROADCAST_SECRET`; lo que viaja es `{kind: "date", date, reason}` o `{kind: "agent"}`, nunca un dato personal ni el
+    identificador de la reserva (`core/reservations/realtime.ts` lo impide y lo prueba). Lo emite el servidor tras cada operación (API REST de Broadcast con la clave de
+    servicio; un fallo no estropea la operación). Sin clave —la versión falsa en local— no hay canal y las pantallas avisan a las demás pestañas del mismo navegador con
+    `BroadcastChannel`. El sonido corto y la barra «Hay una reserva nueva» son del navegador. El **push web** a móviles y el modo **sin conexión** son de la Fase J y no se
+    simulan.
+118. **Los avisos de la agenda, de momento solo en la campana** (Fase C, PRD §6.6 y §6.14). `reservation_new`, `reservation_group_pending` y el recordatorio de 2 h se emiten
+    a Propietario y Encargado (`reservations_notify_team`), con `p_send_email = false`: no se encola ni correo ni push, porque el canal «al momento» de Restavor agents
+    (PRD §9.4: correo y push web, saltándose la cola de dos veces al día) llega con los avisos a comensales (Fase F). Queda para esa fase el correo y el push web de estos tres
+    tipos. El recordatorio lo lanza `/api/agents/cron/pendientes` cada 15 minutos con `supabase/operaciones/agents-cron.sql`, que no se ha podido ejecutar aquí (sin
+    `pg_cron` ni `pg_net`): se comprueba la ruta y la función, no el cron.
+119. **Lo que toca la agenda y no se hace en la Fase C.** Avisos a comensales de «reserva modificada», «cancelada», «grupo aceptado/rechazado» (Fase F: la agenda solo deja
+    el evento); la barra «Pago pendiente, quedan N días» de Hoy (Fase E: necesita los cobros; sí sale la de Reservas en pausa); «Quién eres» con PIN y la tablet (Fase D);
+    encender y apagar el agente (Fase G: Hoy solo **lee** `agent_state` para su indicador); los pasos de Primer uso «Equipo y tablet» y «Agente de llamadas» (D y G: el paso lo
+    dice, no se simula); «Sin conexión · datos de las HH:MM» (Fase J).
+
