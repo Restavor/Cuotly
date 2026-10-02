@@ -685,6 +685,17 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/seed/espacio-demo.sql
 
+      # El sembrado de Reservas (Fase B, PRD de agents §16) va detrás del anterior y también dos
+      # veces: trae sus propias comprobaciones (saldos, reservas, llamadas, estados) y promete lo mismo.
+      - name: "Reservas se siembra entera, y dos veces (es idempotente)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/seed/reservas-demo.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/seed/reservas-demo.sql
+
       - name: Parar Supabase
         if: always()
         run: supabase stop
@@ -749,6 +760,9 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
             -f supabase/seed/espacio-demo.sql
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/seed/reservas-demo.sql
 
       # Las tres públicas hacen falta en tiempo de COMPILACIÓN (`next
       # build` las incrusta), así que se ponen antes de compilar y no

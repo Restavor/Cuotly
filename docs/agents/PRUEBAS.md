@@ -49,6 +49,42 @@ Todo en la vista previa de la rama `agents` (Vercel → Deployments → el de la
 7. Los avisos: el correo de la solicitud sale en la próxima tanda (07:00 y 19:00 UTC; en Pruebas no hay clave de correo, así que no sale); el
    push sale al momento a quien tenga la app móvil instalada.
 
+## Estado de la Fase B (02/10/2026): qué probar a mano
+
+Los cimientos de Restavor agents: la base de datos de Reservas, los permisos, el armazón y el sembrado. Todavía **no hay agenda**: cada pantalla
+existe, está protegida y dice en qué fase se construye; ninguna enseña datos de relleno. Todo en la vista previa de la rama `agents`, con las cuentas
+de la tabla de abajo (misma contraseña de demostración):
+
+1. **Varios restaurantes → selector.** Entra con `jose@casapepe.test` (Propietario de Casa Pepe y Encargado de Casa Pepe Centro). En el Inicio ves
+   Restavor web (Casa Pepe tiene plan de mantenimiento) y Restavor agents. Entra en agents: sale **«Elige un restaurante»** con los dos. Pulsa
+   «Entrar» en Casa Pepe: aterrizas en **Hoy**.
+2. **El menú.** En Casa Pepe, a la izquierda, la ficha del restaurante, «Volver al inicio de Restavor» y la sección **Reservas**: Hoy · Calendario ·
+   Agente de llamadas · Ajustes; abajo **Saldo (7,40 €)** · Plan y pagos · Ayuda. Cada pantalla dice «Esta pantalla llega en una fase posterior» con la
+   fase que la construye (C la agenda, D equipo y tablet, E cobro y saldo, G el agente, I plataformas). Eso es lo esperado.
+3. **Móvil** (390 px): la barra inferior es **Hoy · Calendario · (+) Nueva · Agente · Más**; «Más» lleva a una lista de verdad con Saldo, Plan, Ayuda y
+   los ajustes.
+4. **Cada papel ve lo suyo.** `luis@casapepe.test` (Encargado): el menú no lleva **Plan y pagos**, y si pegas `/agents/e5200000-0000-0000-0000-000000000001/plan`
+   te dice que no tienes permiso. `carla@barlaplaza.test`: ve Bar La Plaza (saldo 1,80 €); si pegas la dirección de Casa Pepe no te deja entrar.
+   `rosa@tabernasol.test`: solo tiene Reservas, así que entra directo (sin Restavor web, sin selector), con saldo 0,00 €.
+5. **Los seis estados.** `estados@casapepe.test` es Propietario de siete restaurantes de prueba. En el selector: **Bodega Norte** (aprobada, sin pagar)
+   lleva a «Aprobado: datos para pagar» y no enseña la agenda; **Casa Mar** (cerrada) lleva a «Reservas cerrada» y su menú queda vacío; **Cervecería
+   Roma** (en pausa) enseña todo menos el botón (+) Nueva; **Mesón del Puerto** (cobro vencido) y **Asador Vega** (en baja) entran a Hoy. **Taberna Levante**
+   (solicitud pendiente) y **Café Rechazado** (rechazada) salen en el Inicio de Restavor app como solicitudes.
+6. **Gestionar Reservas.** Como `jose@casapepe.test`, en el panel de Casa Pepe → «Usuarios y accesos»: cada Editor tiene la casilla **«Gestionar Reservas»**
+   (Luis la tiene marcada). Se guarda y se lee. También en el formulario de invitar.
+7. **Soporte de Reservas.** Como propietario del espacio (`info@restavor.com` en Pruebas), en Equipo → Permisos de una persona sale la tarjeta
+   **«Restavor agents»** con el interruptor **«Soporte de Reservas»** (marcado en Elena y en `info@`; `admin@cuotly.test` es un administrador sin marcar). Solo el
+   propietario puede cambiarlo.
+8. **Las piezas.** `/styleguide` (al final) enseña el chip de origen (Agente, TheFork, CoverManager, Web, Manual), Pendiente / Posible duplicada / No vino / Nueva, la fila
+   de reserva en sus cinco formas, la barra de aforo (verde, «Casi lleno», «Aforo superado»), la tarjeta del agente y el teclado de PIN. `/armazon/agents?actor=device`
+   enseña el menú de la tablet sin PIN (sin Ajustes, Saldo ni Plan).
+
+Lo que **no** está y es de fases posteriores: la agenda (C), el PIN real, la tablet y la sesión de soporte (D), aprobar solicitudes, cobros y recargas (E), los
+avisos a comensales (F), el agente de llamadas (G), el formulario web (H) y los conectores (I). El sembrado no registra ningún segundo paso (decisión 106).
+
+**El PIN del Equipo de Casa Pepe** (Ana Ruiz 1234, Diego Navas 5678) se guarda cifrado con el secreto `restavor-pruebas-pin-secret`. Para que sirvan en la Fase D,
+`AGENTS_PIN_SECRET` de la vista previa de la rama `agents` tiene que valer eso. Hasta entonces no abren nada.
+
 ## Cuentas del sembrado
 
 Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producción).
@@ -61,6 +97,21 @@ Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producc
 | `cliente2@cuotly.test` | Propietario de "Café Prueba" |
 | `magarinos@cuotly.test` | Propietaria de "Magariños" |
 | `sala.magarinos@cuotly.test` | Editor sin permisos en "Magariños" (solo lee) |
+
+Las de Reservas (`supabase/seed/reservas-demo.sql`, Fase B), todas con la misma contraseña:
+
+| Correo | Quién es |
+|---|---|
+| `jose@casapepe.test` | José García. Propietario de **Casa Pepe** (Sevilla; plan de mantenimiento y Reservas activa; saldo 7,40 €) y Encargado de **Casa Pepe Centro** |
+| `maria@casapepe.test` | María García. Propietaria de Casa Pepe |
+| `luis@casapepe.test` | Luis Martín. Encargado de Casa Pepe (Editor con «Gestionar Reservas») |
+| `rosa@tabernasol.test` | Rosa Prieto. Propietaria de **Taberna Sol** (solo Reservas, sin saldo; dos tandas de cena) |
+| `carla@barlaplaza.test` | Carla Sanz. Propietaria de **Bar La Plaza** (otro grupo, saldo 1,80 €), para el aislamiento |
+| `estados@casapepe.test` | Propietario de los siete restaurantes de prueba: Bodega Norte (aprobada, sin pagar), Mesón del Puerto (cobro vencido), Cervecería Roma (en pausa), Asador Vega (en baja), Casa Mar (cerrada), Taberna Levante (solicitud pendiente) y Café Rechazado (solicitud rechazada) |
+| `admin@cuotly.test` | Administrador del espacio **sin** la marca de soporte de Reservas: no ve a los comensales |
+
+Equipo de Casa Pepe sin cuenta: Ana Ruiz (PIN 1234) y Diego Navas (PIN 5678). Marca «Soporte de Reservas»: Elena e `info@restavor.com`.
+El sábado 26/09/2026 de Casa Pepe tiene las 12 reservas de la maqueta, y se copian al próximo día abierto desde hoy para mirarlas a mano.
 
 ## Propietario: `info@restavor.com` (01/10/2026)
 
@@ -79,10 +130,12 @@ Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producc
 La cuenta se creó a mano en Supabase (Authentication → Users) con una contraseña de Bosco, no con la de demostración: esa contraseña está en el
 repositorio y la del administrador no puede estarlo.
 
-**Restavor agents** todavía no tiene nada que poseer: sus tablas y pantallas llegan en la Fase B. Cuando existan, su propietario será esta misma cuenta.
+**Restavor agents** (Fase B): sus tablas y pantallas existen, y los restaurantes de prueba de Reservas están en el espacio `demo`, con las cuentas de arriba. El
+espacio `restavor` no tiene ningún restaurante con Reservas (es el de la empresa): sus pantallas de Reservas son las del equipo, que llegan en la Fase E.
 
 El catálogo de planes **del espacio demo** es el antiguo, salvo Café Prueba, que desde el 01/10/2026 está en Impulso en créditos (20 al mes) porque el
-recorrido largo de las pruebas necesita un plan con créditos (decisión 85). PRD §16 pone al día el resto en la Fase B.
+recorrido largo de las pruebas necesita un plan con créditos (decisión 85). El resto sigue en el catálogo antiguo: PRD §16 dice que el sembrado de Reservas
+no depende de ellos, y Casa Pepe usa el mismo Impulso en créditos que Café Prueba.
 
 ## Cómo se cargan las migraciones y el sembrado
 

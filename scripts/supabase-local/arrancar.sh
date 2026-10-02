@@ -45,6 +45,7 @@ if ! psql "$DB" -Atc "select 1 from public.spaces where slug = 'demo'" 2>/dev/nu
   psql "$DB" -q -v ON_ERROR_STOP=1 -f "$RAIZ/supabase/tests/bootstrap-postgres-local.sql" >/dev/null
   for f in "$RAIZ"/supabase/migrations/*.sql; do psql "$DB" -q -v ON_ERROR_STOP=1 -f "$f" >/dev/null; done
   psql "$DB" -q -v ON_ERROR_STOP=1 -f "$RAIZ/supabase/seed/espacio-demo.sql" >/dev/null 2>&1
+  psql "$DB" -q -v ON_ERROR_STOP=1 -f "$RAIZ/supabase/seed/reservas-demo.sql" >/dev/null 2>&1
   # El rol con el que entra PostgREST y cambia al de cada petición.
   psql "$DB" -q -c "do \$\$ begin if not exists (select 1 from pg_roles where rolname = 'authenticator') then create role authenticator login noinherit; end if; end \$\$" \
     -c "grant anon, authenticated, service_role to authenticator"

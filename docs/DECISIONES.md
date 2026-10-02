@@ -2584,13 +2584,18 @@ Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
     `apps/web/src/core/reservations/`. La fecha y hora local reutilizan la lógica de `core/business-clock.ts` (RN-CLK-06), sin duplicarla.
 104. **Colores de Reservas.** «Aforo superado» usa el token `danger` (PRD §6.3), no el `#A94438` de la maqueta antigua. Los pocos valores de la
     maqueta que no están en PRD §12.2 (texto del aviso del agente, gris de «No vino» y de cancelada, fondo del medidor, texto de
-    «Encendido», opción seleccionada) se añaden como tokens con nombre, con su comprobación de contraste AA. Nunca un hexadecimal suelto.
+    «Encendido») se añaden como tokens con nombre, con su comprobación de contraste AA sobre `tokens.css`. Nunca un hexadecimal suelto.
+    El medidor usa `soft-surface` de carril y no el `#e3ebe7` de la maqueta: medido, el ámbar `meter-warn` sobre aquel daba 2,9998:1 y AA pide
+    3:1 para un elemento gráfico.
 105. **El actor de Reservas no es un `ShellRole`.** `ShellRole` es del producto Restavor web y varios `switch` suyos son exhaustivos; el
     Propietario, el Encargado, el Equipo con PIN, Restavor y el Soporte se resuelven con un tipo propio (`ReservationsActor`) y la
     navegación de Restavor agents lo recibe como dato.
-106. **Segundo paso en Pruebas.** El sembrado de Reservas **no** registra ningún factor TOTP sobre `info@restavor.com` (es la cuenta real de
-    Bosco y se lo pisaría). El secreto fijo de prueba va a `owner@cuotly.test` (Elena), para los e2e que piden `aal2`; `info@restavor.com`
-    solo recibe la marca «Soporte de Reservas».
+106. **El sembrado de Reservas no registra ningún segundo paso.** PRD de agents §16 pedía registrar una app autenticadora (TOTP) con un
+    secreto fijo a la propietaria del espacio demo para probar lo que exige `aal2`. No se hace en la Fase B: `proxy.ts` manda a
+    `/cuenta/verificar` a cualquiera con un factor verificado en cada entrada, y a Elena (`owner@cuotly.test`) le rompería todos los recorridos
+    que entran con ella sin código. Se hará en la Fase D (SOP-01, la sesión de soporte), con un usuario de soporte propio. Tampoco se
+    registra nada sobre `info@restavor.com`, que es la cuenta real de Bosco. Lo que sí se siembra es la marca «Soporte de Reservas»: Elena e
+    `info@restavor.com` (si ya tiene cuenta) la llevan, y un administrador (`admin@cuotly.test`) no.
 107. **`ai_usage` se aplaza a la Fase G** (Bosco, 02/10/2026). PRD §8.1 pedía generalizarla ya (`request_id` y `classification_id` nulos y
     `agent_usage_kind`), pero hoy guarda el coste en milésimas de céntimo de dólar y Reservas lo quiere en millonésimas de euro, y solo la
     usa la lectura de documentos del agente (Fase G). Se decide allí, cuando se sepa qué se guarda de verdad.
