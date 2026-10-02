@@ -2627,7 +2627,7 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     vía es una función `SECURITY DEFINER` por operación (`book_reservation`, `confirm_reservation`, `reject_reservation`, `cancel_reservation`, `mark_no_show`,
     `undo_no_show`, `dismiss_duplicate`, `open_reservation`, `mark_platform_cancel_done`, y para los horarios `save_reservation_shifts`, `set_reservation_closed_date`,
     `save_reservation_settings`, `complete_reservations_onboarding`). Cada una comprueba permiso (`reservations_actor_type`: Propietario, Encargado o soporte con
-    sesión abierta y `aal2`), estado del servicio y transición; bloquea restaurante + fecha + turno con `pg_advisory_xact_lock`; escribe evento y auditoría
+    sesión abierta y `aal2`), estado del servicio y transición; bloquea con `pg_advisory_xact_lock` en un orden fijo (decisión 120); escribe evento y auditoría
     **sin datos personales** (`changed: ["time"]`, `time_from`/`time_to`); y es idempotente (`reservations.idempotency_key` para el alta, estado final para el
     resto: repetirlas devuelve `unchanged`). Con sesión de usuario el origen es siempre `manual` (PRD §6.8); sin sesión (el servidor: agente, web, plataforma)
     acepta cualquier origen, que es lo que usarán las Fases G, H e I. El equipo del espacio sin sesión de soporte **no escribe reservas** pero **sí cambia
@@ -2641,11 +2641,13 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
 114. **«Ha venido N veces · ha fallado M veces»** (RN-RES-09). El PRD no dice cómo se cuenta. Se cuenta por teléfono, en ese restaurante, en los últimos 24 meses y sin
     la reserva abierta: «ha venido» = confirmada cuya hora ya pasó (nadie la marcó «No vino»); «ha fallado» = marcada «No vino». Las canceladas y las pendientes no
     cuentan. Si Bosco prefiere otra definición, se cambia en `visitStats()` (`src/core/reservations/lifecycle.ts`).
-115. **Quitar un turno lo desactiva; reabrir un día cerrado borra su fila** (Fase C, RN-RES-01). Los turnos no se borran —hay reservas que los citan—:
-    `save_reservation_shifts` desactiva los que ya no están en la lista, y solo si ninguna reserva futura activa se queda sin sitio. Un día cerrado a propósito es un
-    ajuste, no un registro de negocio: reabrirlo quita la fila de `reservation_closed_dates` y queda en `audit_log` con la fecha. Es la única excepción a «nunca
-    `DELETE`» de la fase, y es de configuración. Cambiar el intervalo de huecos (15 o 30) **no** bloquea aunque haya reservas a horas que dejan de ser hueco: se quedan
-    como están.
+115. **Quitar un turno lo desactiva; reabrir un día cerrado lo marca como quitado** (Fase C, RN-RES-01). Los turnos no se borran —hay reservas que los citan—:
+    `save_reservation_shifts` desactiva los que ya no están en la lista, y solo si ninguna reserva futura activa se queda sin sitio. Un día cerrado tampoco se borra
+    (CLAUDE.md: «nunca borrar físicamente registros de negocio»): reabrirlo rellena `reservation_closed_dates.removed_at`, volver a cerrarlo reactiva esa misma fila con el motivo
+    nuevo (`on conflict (establishment_id, date) do update`), y cada paso queda en `audit_log` con la fecha. Las lecturas y `reservation_classify_slot` ignoran los
+    quitados. (La primera versión de la fase borraba la fila y la decía «excepción a nunca `DELETE`»; la revisión independiente lo señaló como contradicción con
+    CLAUDE.md y se corrigió en vez de pedir la excepción.) Cambiar el intervalo de huecos (15 o 30) **no** bloquea aunque haya reservas a horas que dejan de ser hueco:
+    se quedan como están.
 116. **Plataformas sin conector** (Fase C; los conectores son la Fase I). Hoy una reserva de plataforma **no** cambia fecha, hora ni personas (`platform_locked`: se
     cambian en la plataforma), y al cancelarla en la app queda `pending_platform_cancel` con el aviso «Cancélala también en X» hasta pulsar «Hecho». Las maquetas
     (`Ficha`, `CancelarReserva`, `EditarReserva`) dicen «Se cancelará también en TheFork» y «el cambio llegará solo»: **no se ha escrito**, porque hoy no es verdad.
@@ -2665,4 +2667,26 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     el evento); la barra «Pago pendiente, quedan N días» de Hoy (Fase E: necesita los cobros; sí sale la de Reservas en pausa); «Quién eres» con PIN y la tablet (Fase D);
     encender y apagar el agente (Fase G: Hoy solo **lee** `agent_state` para su indicador); los pasos de Primer uso «Equipo y tablet» y «Agente de llamadas» (D y G: el paso lo
     dice, no se simula); «Sin conexión · datos de las HH:MM» (Fase J).
+120. **Lo que cambió la revisión independiente de la Fase C** (migración 169 corregida en sitio, porque solo estaba aplicada en local). Una segunda revisión del diff contra el
+    PRD y CLAUDE.md no encontró bloqueantes pero sí dieciséis hallazgos, todos corregidos y cada uno con su test:
+    - **Orden de bloqueo único** (el más serio: 141 interbloqueos en 150 parejas de cancelaciones simultáneas). Siempre: clave de idempotencia → restaurante (compartido al
+      reservar o cambiar una reserva, **exclusivo** al guardar horarios) → día (uno por restaurante y fecha, de menor a mayor) → filas con `for update`, y solo después de
+      tener el día. Editar lee la fila sin bloquear, toma sus días y entonces la bloquea y vuelve a comprobar que no cambió de fecha. Quien tiene el día es el único que
+      recalcula las duplicadas de esa fecha. Así también desaparecen las duplicadas sin marcar con dos altas simultáneas en turnos distintos y las reservas que quedaban
+      en un turno recién desactivado. El script `agenda-concurrency-test.mjs` lo cubre con cuatro casos nuevos (5 a 8) que fallan contra la versión anterior.
+    - **«Reservas futuras» son las que aún no llegaron a su hora** (`starts_at > now()`), no «hoy en adelante»: una reserva de hoy ya servida no impide quitar un turno
+      (PRD §6.2). Para cerrar un día entero sigue valiendo el día.
+    - **La base de datos replica los topes del formulario** (nombre ≤ 120, personas 1–500, nota ≤ 300, correo con arroba, idioma, hora sin segundos) y no se fía de un
+      `NULL` en `p_force`, `p_source` ni `p_language` (con `NULL`, `not p_force` no es falso sino nulo y no protegía).
+    - **`open_reservation`, `dismiss_duplicate` y `mark_platform_cancel_done` comprueban el estado del servicio** como las otras seis: con Reservas cerrado solo el
+      Propietario entra, a descargar (§6.12).
+    - **Buscar**: `reservations_fold` descompone (NFD) y quita las marcas como `fold()` de `search.ts`, de modo que «joao» encuentra «João» y «dvorak» a «Dvořák» (la «ł»
+      no se descompone y queda como está en los dos lados); un `%` o un `_` en lo escrito es una letra, no un comodín; los resultados van de lo más cercano a hoy a lo más lejano.
+    - **Una reserva escrita a mano no hace sonar las demás pantallas**: se refrescan en silencio (`reason: "changed"`). «Hay una reserva nueva» con sonido es para las del
+      agente, la web y las plataformas (PRD §6.14) y lo emitirán las Fases G a I; hasta entonces ninguna pantalla lo emite sola. Al cambiar una reserva de día se refresca
+      también el día que dejó.
+    - En pausa manda la pausa (`service_paused`) aunque el día esté cerrado, en el dominio igual que en SQL. «Volver a Hoy» ya no calcula la fecha en UTC. «Revisar» con un
+      `#reserva-…` enseña todas las filas aunque la tablet recuerde un filtro, y el filtro dice cuántas filas oculta. La reserva de plataforma cancelada aquí sigue mostrando
+      «Cancélala también en X» en Hoy hasta pulsar «Hecho». Primer uso y Horarios guardan los identificadores que devuelve `save_reservation_shifts`, así que un segundo
+      «Guardar» actualiza los turnos nuevos en vez de crear otros.
 

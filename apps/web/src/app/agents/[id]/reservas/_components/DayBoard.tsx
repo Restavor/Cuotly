@@ -57,14 +57,20 @@ export function DayBoard({
 
   // Se lee al montar: el servidor no sabe qué filtro dejó esta tablet.
   useEffect(() => {
+    // Con un `#reserva-…` en la dirección (el «Revisar» de la barra de pendientes) se enseñan todas, sin tocar lo
+    // recordado: el filtro de esta tablet no puede esconder la fila a la que se acaba de ir.
+    const aimed = window.location.hash.startsWith("#reserva-");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza con el almacenamiento del navegador, que no existe en el servidor
-    setFilter(readStoredFilter(establishmentId));
+    setFilter(aimed ? "all" : readStoredFilter(establishmentId));
   }, [establishmentId]);
 
   function pick(value: OriginFilter) {
     setFilter(value);
     writeStoredFilter(establishmentId, value);
   }
+
+  // Lo que el filtro esconde se dice: una fila oculta sin aviso parece una fila que no existe.
+  const hiddenRows = filter === "all" ? 0 : blocks.reduce((sum, b) => sum + b.rows.filter((row) => row.origin !== filter).length, 0);
 
   return (
     <div className="space-y-6">
@@ -91,6 +97,12 @@ export function DayBoard({
           );
         })}
       </div>
+
+      {hiddenRows > 0 ? (
+        <p role="status" className="text-sm text-text-secondary">
+          {t.hiddenByFilter(hiddenRows)}
+        </p>
+      ) : null}
 
       {blocks.map((block) => {
         const rows = filter === "all" ? block.rows : block.rows.filter((row) => row.origin === filter);

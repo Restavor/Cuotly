@@ -192,6 +192,8 @@ export async function loadSchedule(client: Client, establishmentId: string): Pro
       .from("reservation_closed_dates")
       .select("date, reason")
       .eq("establishment_id", establishmentId)
+      // Reabrir un día no borra su fila: la marca como quitada (CLAUDE.md: nunca se borra un registro de negocio).
+      .is("removed_at", null)
       .order("date", { ascending: true }),
   ]);
   if (settings.error) throw new Error(settings.error.message);
@@ -520,7 +522,7 @@ export async function dismissDuplicate(client: Client, establishmentId: string, 
 // --- Horarios -------------------------------------------------------------
 
 export type ScheduleSaveResult =
-  | { readonly outcome: "saved" | "unchanged" }
+  | { readonly outcome: "saved" | "unchanged"; readonly shiftIds?: readonly string[] }
   | { readonly outcome: "blocked"; readonly affected: number }
   | { readonly outcome: "invalid"; readonly issue: string }
   | { readonly outcome: "rejected"; readonly reason: string };
@@ -528,7 +530,11 @@ export type ScheduleSaveResult =
 function toScheduleResult(value: Json): ScheduleSaveResult {
   const raw = asObject(value);
   const outcome = str(raw, "outcome");
-  if (outcome === "saved" || outcome === "unchanged") return { outcome };
+  if (outcome === "saved" || outcome === "unchanged") {
+    // Al guardar horarios la base de datos devuelve los identificadores de los turnos, en el orden enviado.
+    const ids = Array.isArray(raw.shift_ids) ? raw.shift_ids.filter((id): id is string => typeof id === "string") : undefined;
+    return ids ? { outcome, shiftIds: ids } : { outcome };
+  }
   if (outcome === "blocked") return { outcome, affected: num(raw, "affected") };
   if (outcome === "invalid") return { outcome, issue: str(raw, "issue") ?? "invalid" };
   return { outcome: "rejected", reason: str(raw, "reason") ?? "rejected" };

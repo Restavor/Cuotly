@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { EmptyState, ErrorState, ButtonLink, NoPermissionState, PageHeader } from "@/components/ui";
-import { reservationHref, todayHref } from "@/core/reservations/agents-routes";
+import { agentsPageHref, reservationHref } from "@/core/reservations/agents-routes";
 import { isValidLocalDate, localDateOf } from "@/core/reservations/dates";
 import { formatPhoneDisplay } from "@/core/reservations/phone";
 import { canReservations } from "@/core/reservations/permissions";
@@ -44,7 +44,7 @@ export default async function Page({ params }: { params: Promise<{ id: string; r
       <EmptyState
         title={t.common.notFoundTitle}
         description={t.common.notFoundReason}
-        action={<ButtonLink href={todayHref(id, new Date().toISOString().slice(0, 10))} className="min-h-[44px]">{t.common.backToToday}</ButtonLink>}
+        action={<ButtonLink href={agentsPageHref(id, "today")} className="min-h-[44px]">{t.common.backToToday}</ButtonLink>}
       />
     );
   }

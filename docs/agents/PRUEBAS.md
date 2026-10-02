@@ -113,7 +113,8 @@ sin ella las pantallas dicen «No hemos podido cargar la agenda» (las funciones
 9. **Primer uso.** Los restaurantes del sembrado ya lo tienen terminado. Para verlo: en el SQL editor de Supabase de Restavor pruebas,
    `update reservation_settings set onboarding_completed_at = null where establishment_id = 'e5200000-0000-0000-0000-000000000002';` y entra en Casa Pepe Centro: te lleva a
    **Configura tu restaurante** (días y turnos → aforo y grupos → equipo y tablet → agente). Los dos últimos pasos dicen que llegan con las Fases D y G.
-10. **Tiempo real.** Abre Hoy en dos pestañas del mismo navegador. Crea una reserva en una: la otra se refresca sola y enseña «Hay una reserva nueva». Sin
+10. **Tiempo real.** Abre Hoy en dos pestañas del mismo navegador. Crea una reserva a mano en una: la otra se refresca sola, **sin** barra ni sonido (la
+    barra «Hay una reserva nueva» es para las reservas del agente, la web y las plataformas, que llegan en las Fases G a I). Sin
     `RESERVATIONS_BROADCAST_SECRET` en Vercel (Preview) es la versión falsa, solo entre pestañas del mismo navegador; con la clave, funciona entre dispositivos
     (`openssl rand -hex 32`; la misma en todos los servidores del entorno).
 11. **Quien no es del restaurante no entra.** `carla@barlaplaza.test` pegando la dirección de Casa Pepe: «No tienes acceso a Reservas en este restaurante», aunque pegue la

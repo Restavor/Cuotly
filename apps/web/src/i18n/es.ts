@@ -8995,6 +8995,7 @@ export const es = {
         noShiftsAction: "Ir a Ajustes",
         offShift: "Fuera de turno",
         offShiftHint: "Reservas de plataformas fuera del horario de los turnos o en un día cerrado.",
+        hiddenByFilter: (n: number) => (n === 1 ? "1 reserva oculta por el filtro" : `${n} reservas ocultas por el filtro`),
         shiftRange: (desde: string, hasta: string) => `${desde} – ${hasta}`,
         confirm: "Confirmar",
         reject: "Rechazar",

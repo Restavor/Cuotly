@@ -104,6 +104,13 @@ describe("RES-01 · «Cancelada por X · 11:20»", () => {
     expect(cancelledNote(cancelada("rejected"), TZ)).toBe("Grupo rechazado · 11:20");
     expect(cancelledNote(cancelada(null), TZ)).toBe("Cancelada · 11:20");
   });
+  it("RES-05 · la de una plataforma cancelada aquí sigue recordando «Cancélala también en TheFork» en Hoy hasta que alguien marque «Hecho»", () => {
+    const pendiente = { ...cancelada("other", "TheFork"), pendingPlatformCancel: true };
+    expect(cancelledNote(pendiente, TZ)).toBe("Cancelada por el restaurante · 11:20 · Cancélala también en TheFork");
+    expect(cancelledNote({ ...pendiente, pendingPlatformCancel: false }, TZ)).toBe("Cancelada por el restaurante · 11:20");
+    // Cancelada desde la propia plataforma no hay nada que repetir en ella.
+    expect(cancelledNote({ ...cancelada("platform", "TheFork"), pendingPlatformCancel: false }, TZ)).toBe("Cancelada por TheFork · 11:20");
+  });
   it("RES-01 · una reserva que no está cancelada no lleva nota", () => {
     expect(cancelledNote(rec({ id: "k", customerName: "K" }), TZ)).toBeNull();
   });

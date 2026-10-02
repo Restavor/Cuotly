@@ -52,7 +52,8 @@ export interface ScheduleChange {
  * Las reservas futuras activas que el cambio dejaría sin turno (RN-RES-01): las de un
  * turno que se quita o se desactiva, las de un día de la semana que el turno ya no abre
  * y las de un día que pasa a estar cerrado. Una reserva se cuenta una sola vez.
- * `futureReservations` son las de hoy en adelante.
+ * `futureReservations` son las que aún no han llegado a su hora (`starts_at > ahora`): una de hoy que ya
+ * se sirvió no impide quitar el turno (PRD §6.2, «reservas futuras activas»; lo mismo que hace SQL).
  */
 export function affectedReservations(change: ScheduleChange, futureReservations: readonly FutureReservation[]): readonly FutureReservation[] {
   const afterById = new Map(change.after.map((s) => [s.id, s]));

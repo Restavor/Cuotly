@@ -8,6 +8,17 @@
 //   3 · La misma alta (misma clave de idempotencia) desde dos transacciones a la vez:
 //       una sola reserva.
 //   4 · Dos cambios de hora a la vez hacia el mismo hueco casi lleno: el turno no se pasa.
+//   5 · Cancelar a la vez las dos mitades de una pareja de posibles duplicadas: ninguna
+//       muere por interbloqueo (cada una tomaba su fila y luego pedía la de la otra).
+//   6 · Cambiar una reserva de día mientras se crea otra con su mismo teléfono: ninguna
+//       muere por interbloqueo (la edición tomaba la fila antes que el bloqueo del día).
+//   7 · Dos altas a la vez, mismo teléfono y mismo día, en turnos distintos: las dos
+//       quedan marcadas como posibles duplicadas.
+//   8 · Quitar un turno mientras se reserva en él: nunca queda una reserva activa en un
+//       turno desactivado (o se bloquea el cambio, o se rechaza la reserva).
+//
+// El orden de bloqueos que lo sostiene: clave de idempotencia → restaurante (compartido
+// para reservar, exclusivo para cambiar horarios) → día (por fecha) → fila.
 //
 // El test SQL (supabase/tests/la_agenda.sql) no puede atrapar esto: `psql -f` ejecuta
 // todo en UNA conexión y nunca hay dos transacciones abiertas a la vez. Por eso se
@@ -104,6 +115,34 @@ async function moveAsOwner(reservationId, date, time, party, name, phone) {
   }
 }
 
+// Cualquier llamada del servidor (service_role), en su propia transacción y conexión.
+async function asServer(sql, params) {
+  const client = new Client({ connectionString: DATABASE_URL });
+  await client.connect();
+  try {
+    await client.query("begin");
+    await client.query(`select set_config('request.jwt.claim.sub', '', true)`);
+    await client.query("set local role service_role");
+    const { rows } = await client.query(sql, params);
+    await client.query("commit");
+    return { ok: true, result: rows[0]?.r };
+  } catch (error) {
+    await client.query("rollback").catch(() => {});
+    return { ok: false, error: error.message };
+  } finally {
+    await client.end();
+  }
+}
+
+const insertReservation = (admin, shiftId, date, time, party, name, phone, status = "confirmed") =>
+  admin
+    .query(
+      `insert into public.reservations (space_id, establishment_id, shift_id, date, time, starts_at, party_size, customer_name, phone_e164, source, status)
+       values ($1, $2, $3, $4::date, $5::time, now() + interval '10 days', $6, $7, $8, 'manual', $9) returning id`,
+      [SPACE_ID, ESTABLISHMENT_ID, shiftId, date, time, party, name, phone, status],
+    )
+    .then((r) => r.rows[0].id);
+
 async function occupancy(admin, date) {
   const { rows } = await admin.query(
     `select coalesce(sum(party_size), 0)::int as n from public.reservations
@@ -196,9 +235,121 @@ async function main() {
       if (movedOk !== 1) fail(`dos cambios para una plaza: ${movedOk} aceptado(s) (esperado 1)`);
     }
 
+    // 5 · cancelar a la vez las dos mitades de una pareja de duplicadas, muchas veces: ningún interbloqueo.
+    const PAIRS = 30;
+    let cancelErrors = 0;
+    let firstCancelError = "";
+    for (let i = 0; i < PAIRS; i++) {
+      const date = await admin.query(`select ((now() at time zone 'Europe/Madrid')::date + $1::int)::text as d`, [20 + (i % 30)]).then((r) => r.rows[0].d);
+      const phone = `+34600099${String(i).padStart(3, "0")}`;
+      const first = await insertReservation(admin, SHIFT_ID, date, "21:00", 1, `Pareja ${i} A`, phone);
+      const second = await insertReservation(admin, SHIFT_ID, date, "21:30", 1, `Pareja ${i} B`, phone);
+      await admin.query(`select public.reservation_recompute_duplicates($1, $2::date)`, [ESTABLISHMENT_ID, date]);
+      const outs = await Promise.all([
+        asServer(`select public.cancel_reservation($1, $2, 'other') as r`, [ESTABLISHMENT_ID, first]),
+        asServer(`select public.cancel_reservation($1, $2, 'other') as r`, [ESTABLISHMENT_ID, second]),
+      ]);
+      for (const out of outs) {
+        if (!out.ok || out.result.outcome !== "done") {
+          cancelErrors += 1;
+          firstCancelError ||= out.ok ? JSON.stringify(out.result) : out.error;
+        }
+      }
+    }
+    if (cancelErrors > 0) fail(`cancelar a la vez las dos mitades de una pareja falló ${cancelErrors} de ${PAIRS * 2} veces: ${firstCancelError}`);
+
+    // 6 · cambiar una reserva de día mientras se crea otra con su mismo teléfono: ningún interbloqueo.
+    const MOVES = 30;
+    let moveErrors2 = 0;
+    let firstMoveError = "";
+    for (let i = 0; i < MOVES; i++) {
+      const dates = await admin
+        .query(`select ((now() at time zone 'Europe/Madrid')::date + $1::int)::text as a, ((now() at time zone 'Europe/Madrid')::date + $2::int)::text as b`, [50 + (i % 5), 56 + (i % 5)])
+        .then((r) => r.rows[0]);
+      const phone = `+34600098${String(i).padStart(3, "0")}`;
+      // Cada vuelta usa un día distinto (50..54): un día lleno de las vueltas anteriores no pesa en esta.
+      const base = await insertReservation(admin, SHIFT_ID, dates.a, "20:30", 1, `Mueve ${i}`, phone);
+      const outs = await Promise.all([
+        asServer(`select public.book_reservation($1, null, $2::date, '21:30'::time, 1, $3, $4, null, null, 'es', 'manual', false, null, false, null) as r`, [ESTABLISHMENT_ID, dates.a, `Crea ${i}`, phone]),
+        asServer(`select public.book_reservation($1, $2, $3::date, '20:30'::time, 1, $4, $5, null, null, 'es', 'manual', false, null, false, null) as r`, [ESTABLISHMENT_ID, base, dates.b, `Mueve ${i}`, phone]),
+      ]);
+      for (const out of outs) {
+        if (!out.ok) {
+          moveErrors2 += 1;
+          firstMoveError ||= out.error;
+        }
+      }
+    }
+    if (moveErrors2 > 0) fail(`crear y cambiar de día a la vez, con el mismo teléfono, falló ${moveErrors2} de ${MOVES * 2} veces: ${firstMoveError}`);
+
+    // Los dos turnos de las pruebas 7 y 8.
+    const COMIDA_ID = "dc000000-0000-0000-0000-0000000000a2";
+    await admin.query(
+      `insert into public.reservation_shifts (id, space_id, establishment_id, name, weekdays, start_time, end_time, last_booking_time, capacity)
+       values ($1, $2, $3, 'Comida', '{1,2,3,4,5,6,7}', '13:00', '16:00', '15:00', 40)`,
+      [COMIDA_ID, SPACE_ID, ESTABLISHMENT_ID],
+    );
+
+    // 7 · mismo teléfono y mismo día en turnos distintos, a la vez: las dos quedan marcadas.
+    const SPLITS = 20;
+    let unflagged = 0;
+    for (let i = 0; i < SPLITS; i++) {
+      const date = await admin.query(`select ((now() at time zone 'Europe/Madrid')::date + $1::int)::text as d`, [70 + (i % 10)]).then((r) => r.rows[0].d);
+      const phone = `+34600097${String(i).padStart(3, "0")}`;
+      const outs = await Promise.all([
+        asServer(`select public.book_reservation($1, null, $2::date, '14:00'::time, 1, $3, $4, null, null, 'es', 'manual', false, null, false, null) as r`, [ESTABLISHMENT_ID, date, `Turno ${i} Comida`, phone]),
+        asServer(`select public.book_reservation($1, null, $2::date, '21:00'::time, 1, $3, $4, null, null, 'es', 'manual', false, null, false, null) as r`, [ESTABLISHMENT_ID, date, `Turno ${i} Cena`, phone]),
+      ]);
+      if (outs.some((o) => !o.ok || o.result.outcome !== "accepted")) {
+        fail(`dos altas del mismo teléfono en turnos distintos no terminaron aceptadas: ${JSON.stringify(outs)}`);
+        break;
+      }
+      const { rows: flags } = await admin.query(
+        `select count(*)::int as n from public.reservations where establishment_id = $1 and phone_e164 = $2 and date = $3::date and duplicate_flag = 'possible'`,
+        [ESTABLISHMENT_ID, phone, date],
+      );
+      if (flags[0].n !== 2) unflagged += 1;
+    }
+    if (unflagged > 0) fail(`en ${unflagged} de ${SPLITS} parejas de altas simultáneas en turnos distintos no quedaron marcadas las dos como posibles duplicadas`);
+
+    // 8 · quitar "Comida" mientras se reserva en ella: nunca una reserva activa en un turno desactivado.
+    const SHIFT_RACES = 20;
+    const withComida = (active) =>
+      JSON.stringify([
+        { id: SHIFT_ID, name: "Cena", weekdays: [1, 2, 3, 4, 5, 6, 7], start_time: "20:00", last_booking_time: "22:30", end_time: "23:30", capacity: 10, active: true },
+        { id: COMIDA_ID, name: "Comida", weekdays: [1, 2, 3, 4, 5, 6, 7], start_time: "13:00", last_booking_time: "15:00", end_time: "16:00", capacity: 40, active },
+      ]);
+    let strandedReservations = 0;
+    for (let i = 0; i < SHIFT_RACES; i++) {
+      await admin.query(`delete from public.reservation_events where establishment_id = $1`, [ESTABLISHMENT_ID]);
+      await admin.query(`delete from public.reservations where shift_id = $1`, [COMIDA_ID]);
+      const reopened = await asServer(`select public.save_reservation_shifts($1, $2::jsonb) as r`, [ESTABLISHMENT_ID, withComida(true)]);
+      if (!reopened.ok) {
+        fail(`no se pudo reactivar el turno de la prueba 8: ${reopened.error}`);
+        break;
+      }
+      const date = await admin.query(`select ((now() at time zone 'Europe/Madrid')::date + 90)::text as d`).then((r) => r.rows[0].d);
+      const outs = await Promise.all([
+        asServer(`select public.save_reservation_shifts($1, $2::jsonb) as r`, [ESTABLISHMENT_ID, withComida(false)]),
+        asServer(`select public.book_reservation($1, null, $2::date, '14:00'::time, 2, $3, $4, null, null, 'es', 'manual', false, null, false, null) as r`, [ESTABLISHMENT_ID, date, `Quita ${i}`, `+34600096${String(i).padStart(3, "0")}`]),
+      ]);
+      const unexpected = outs.filter((o) => !o.ok);
+      if (unexpected.length > 0) {
+        fail(`quitar un turno y reservar en él a la vez terminó con error: ${unexpected[0].error}`);
+        break;
+      }
+      const { rows: stranded } = await admin.query(
+        `select count(*)::int as n from public.reservations r join public.reservation_shifts s on s.id = r.shift_id
+         where r.establishment_id = $1 and r.status in ('pending', 'confirmed') and not s.active`,
+        [ESTABLISHMENT_ID],
+      );
+      strandedReservations += stranded[0].n;
+    }
+    if (strandedReservations > 0) fail(`quedaron ${strandedReservations} reservas activas en un turno desactivado`);
+
     if (!process.exitCode) {
       console.log(
-        "RN-RES-02/concurrencia: las últimas plazas las gana una sola alta, ocho altas para tres plazas dejan entrar tres, la misma clave crea una reserva y dos cambios a la vez no pasan del aforo.",
+        "RN-RES-02/concurrencia: las últimas plazas las gana una sola alta, ocho altas para tres plazas dejan entrar tres, la misma clave crea una reserva, dos cambios a la vez no pasan del aforo, cancelar las dos mitades de una pareja o cambiar de día mientras se crea otra no se interbloquean, las duplicadas en turnos distintos quedan marcadas y quitar un turno no deja reservas en uno desactivado.",
       );
     }
   } finally {

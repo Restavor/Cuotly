@@ -767,11 +767,11 @@ declare
   v_internas text[] := array[
     'public.reservations_actor_type(uuid, text)', 'public.reservations_settings_actor(uuid)',
     'public.reservation_local_to_utc(date, time, text)', 'public.reservation_classify_slot(uuid, date, time)',
-    'public.reservation_occupancy(uuid, uuid, date, uuid)', 'public.reservation_lock_slot(uuid, date, uuid)',
+    'public.reservation_occupancy(uuid, uuid, date, uuid)', 'public.reservation_lock_schedule(uuid)', 'public.reservation_lock_day(uuid, date)', 'public.reservation_require_agenda(uuid)',
     'public.reservation_log_event(uuid, uuid, text, text, text, jsonb)', 'public.reservation_audit(uuid, text, uuid, jsonb, jsonb)',
     'public.reservation_recompute_duplicates(uuid, date)', 'public.reservation_for_update(uuid, uuid)',
     'public.reservation_set_status(public.reservations, text, text, text, text, jsonb)',
-    'public.reservations_affected_by_schedule(uuid, jsonb, date)', 'public.reservations_notify_team(uuid, uuid, text, text)',
+    'public.reservations_affected_by_schedule(uuid, jsonb)', 'public.reservations_notify_team(uuid, uuid, text, text)',
     'public.reservations_remind_pending()'];
   v_publicas text[] := array[
     'public.book_reservation(uuid, uuid, date, time, integer, text, text, text, text, text, text, boolean, text, boolean, text)',
@@ -841,7 +841,7 @@ begin
   perform public.s91_is(v, 'outcome', 'blocked', 'RN-RES-01 quitar viernes y sábado con reservas futuras');
   set local role postgres;
   select count(*) into v_n from public.reservations r
-    where r.establishment_id = 'da000000-0000-0000-0000-000000000020' and r.date >= public.s91_today() and r.status in ('pending', 'confirmed')
+    where r.establishment_id = 'da000000-0000-0000-0000-000000000020' and r.starts_at > now() and r.status in ('pending', 'confirmed')
       and r.shift_id = v_shift and extract(isodow from r.date) in (5, 6);
   perform public.s91_as('da000000-0000-0000-0000-000000000004');
   if (v ->> 'affected')::integer <> v_n or v_n = 0 then
@@ -896,9 +896,23 @@ begin
   v := public.set_reservation_closed_date('da000000-0000-0000-0000-000000000020', public.s91_d(-3), 'Pasado', true);
   perform public.s91_is(v, 'reason', 'past_date', 'RN-RES-01 un día pasado no se cierra');
   set local role postgres;
+  -- Reabrir no borra: la fila sigue, marcada como quitada (CLAUDE.md: nunca se borran registros de negocio).
+  if (select removed_at from public.reservation_closed_dates where establishment_id = 'da000000-0000-0000-0000-000000000020' and date = public.s91_d(71)) is null then
+    raise exception 'RN-RES-01 FALLIDO: reabrir un día cerrado debe dejar su fila marcada como quitada, no borrarla';
+  end if;
+  perform public.s91_as('da000000-0000-0000-0000-000000000004');
+  v := public.set_reservation_closed_date('da000000-0000-0000-0000-000000000020', public.s91_d(71), 'Otra vez', true);
+  perform public.s91_is(v, 'outcome', 'saved', 'RN-RES-01 volver a cerrar un día reabierto');
+  set local role postgres;
+  if (select removed_at is not null or reason <> 'Otra vez' from public.reservation_closed_dates where establishment_id = 'da000000-0000-0000-0000-000000000020' and date = public.s91_d(71)) then
+    raise exception 'RN-RES-01 FALLIDO: volver a cerrar un día reabierto debe reactivar su fila con el motivo nuevo';
+  end if;
+  perform public.s91_as('da000000-0000-0000-0000-000000000004');
+  v := public.set_reservation_closed_date('da000000-0000-0000-0000-000000000020', public.s91_d(71), null, false);
+  set local role postgres;
   if (select count(*) from public.audit_log where action in ('reservations.closed_date_set', 'reservations.closed_date_removed')
-      and entity_id = 'da000000-0000-0000-0000-000000000020') <> 2 then
-    raise exception 'RN-RES-01 FALLIDO: cerrar y reabrir un día debe dejar dos apuntes de auditoría';
+      and entity_id = 'da000000-0000-0000-0000-000000000020') <> 4 then
+    raise exception 'RN-RES-01 FALLIDO: cerrar, reabrir, cerrar y reabrir un día debe dejar cuatro apuntes de auditoría';
   end if;
 
   -- Los ajustes: validaciones y auditoría con el valor anterior y el nuevo.
@@ -1234,6 +1248,148 @@ begin
   if (select starts_at from public.reservations where id = v_id) <> '2026-10-25 00:30+00'::timestamptz then
     raise exception 'RN-RES-01 FALLIDO: la reserva de las 02:30 del 25/10 debería guardarse como la primera (00:30 UTC)';
   end if;
+end $$;
+
+-- ------------------------------------------------------------
+-- La revisión independiente de la Fase C: lo que se había escapado
+-- ------------------------------------------------------------
+
+-- Con NULL, `not p_force` y `p_source not in (...)` no son falsos sino nulos y no protegen:
+-- un NULL no puede saltarse la confirmación de aforo ni el control de origen.
+do $$
+declare
+  v jsonb;
+begin
+  perform public.s91_as('da000000-0000-0000-0000-000000000004');
+  v := public.book_reservation('da000000-0000-0000-0000-000000000020', null, public.s91_d(200), '21:00', 70, 'Force Nulo',
+    '+34600000401', null, null, 'es', 'manual', null, null, false, null);
+  perform public.s91_is(v, 'outcome', 'needs_confirmation', 'RN-RES-02 un force NULL cuenta como "no forzar"');
+  perform public.s91_expect_error(format(
+    'select public.book_reservation(%L, null, %L, %L, 2, %L, %L, null, null, %L, null, false, null, false, null)',
+    'da000000-0000-0000-0000-000000000020', public.s91_d(201), '21:00', 'Origen Nulo', '+34600000402', 'es'),
+    'Origen no válido', 'RN-RES-02 un origen NULL');
+  perform public.s91_expect_error(format(
+    'select public.book_reservation(%L, null, %L, %L, 2, %L, %L, null, null, null, %L, false, null, false, null)',
+    'da000000-0000-0000-0000-000000000020', public.s91_d(201), '21:00', 'Idioma Nulo', '+34600000403', 'manual'),
+    'Idioma no válido', 'RN-RES-02 un idioma NULL');
+end $$;
+
+-- La base de datos replica los topes del formulario: no se fía de quien la llama.
+do $$
+declare
+  v jsonb;
+begin
+  perform public.s91_as('da000000-0000-0000-0000-000000000004');
+  v := public.book_reservation('da000000-0000-0000-0000-000000000020', null, public.s91_d(202), '21:00:30', 2, 'Con Segundos',
+    '+34600000404', null, null, 'es', 'manual', false, null, false, null);
+  perform public.s91_is(v, 'reason', 'not_a_slot', 'RN-RES-02 "21:00:30" no es el hueco de las 21:00');
+  perform public.s91_expect_error(format('select public.s91_book(%L, %L, 501, %L, %L)', public.s91_d(202), '21:00', 'Muchos', '+34600000405'),
+    'entre 1 y 500', 'RN-RES-02 más de 500 personas');
+  perform public.s91_expect_error(format('select public.s91_book(%L, %L, 0, %L, %L)', public.s91_d(202), '21:00', 'Ninguno', '+34600000405'),
+    'entre 1 y 500', 'RN-RES-02 cero personas');
+  perform public.s91_expect_error(format('select public.s91_book(%L, %L, 2, %L, %L)', public.s91_d(202), '21:00', repeat('x', 121), '+34600000405'),
+    'demasiado largo', 'RN-RES-02 un nombre de más de 120 letras');
+  perform public.s91_expect_error(format('select public.s91_book(%L, %L, 2, %L, %L, %L, false, null, %L, null, %L)',
+    public.s91_d(202), '21:00', 'Mal Correo', '+34600000405', 'manual', 'da000000-0000-0000-0000-000000000020', 'sin-arroba'),
+    'Email no válido', 'RN-RES-02 un correo sin arroba');
+  perform public.s91_expect_error(format('select public.s91_book(%L, %L, 2, %L, %L, %L, false, null, %L, null, null, %L)',
+    public.s91_d(202), '21:00', 'Nota Larga', '+34600000405', 'manual', 'da000000-0000-0000-0000-000000000020', repeat('n', 301)),
+    'nota es demasiado larga', 'RN-RES-02 una nota de más de 300 letras');
+end $$;
+
+-- «Reservas futuras» (PRD §6.2) son las que aún no han llegado a su hora: una de hoy que ya se
+-- sirvió no impide quitar el turno. Una de hoy que todavía no ha llegado, sí.
+do $$
+declare
+  v jsonb;
+  v_pasada uuid;
+  v_futura uuid;
+  v_cena text := '{"id":"da000000-0000-0000-0000-000000000070","name":"Cena","weekdays":[1,2,3,4,5,6,7],"start_time":"20:00","last_booking_time":"22:30","end_time":"23:30","capacity":65}';
+begin
+  perform public.s91_as('da000000-0000-0000-0000-000000000004');
+  v := public.save_reservation_shifts('da000000-0000-0000-0000-000000000020', ('[' || v_cena || ',
+    {"name":"Desayuno","weekdays":[1,2,3,4,5,6,7],"start_time":"08:00","last_booking_time":"09:00","end_time":"09:30","capacity":10},
+    {"name":"Almuerzo","weekdays":[1,2,3,4,5,6,7],"start_time":"10:00","last_booking_time":"11:00","end_time":"12:00","capacity":10}]')::jsonb);
+  perform public.s91_is(v, 'outcome', 'saved', 'RN-RES-01 añadir dos turnos de mañana');
+  set local role postgres;
+  select id into v_pasada from public.reservation_shifts where establishment_id = 'da000000-0000-0000-0000-000000000020' and name = 'Desayuno';
+  select id into v_futura from public.reservation_shifts where establishment_id = 'da000000-0000-0000-0000-000000000020' and name = 'Almuerzo';
+  insert into public.reservations (space_id, establishment_id, shift_id, date, time, starts_at, party_size, customer_name, phone_e164, source, status) values
+    ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000020', v_pasada, public.s91_today(), '08:30', now() - interval '5 hours', 2, 'Ya Servida', '+34600000411', 'manual', 'confirmed'),
+    ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000020', v_futura, public.s91_today(), '10:30', now() - interval '5 hours', 2, 'Servida Almuerzo', '+34600000412', 'manual', 'confirmed'),
+    ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000020', v_futura, public.s91_today(), '11:00', now() + interval '2 hours', 2, 'Todavía No Llega', '+34600000413', 'manual', 'confirmed');
+  perform public.s91_as('da000000-0000-0000-0000-000000000004');
+  -- Quitar "Almuerzo": la de hoy que todavía no llegó lo bloquea y la ya servida no cuenta.
+  v := public.save_reservation_shifts('da000000-0000-0000-0000-000000000020', ('[' || v_cena || ',
+    {"id":"' || v_pasada || '","name":"Desayuno","weekdays":[1,2,3,4,5,6,7],"start_time":"08:00","last_booking_time":"09:00","end_time":"09:30","capacity":10}]')::jsonb);
+  perform public.s91_is(v, 'outcome', 'blocked', 'RN-RES-01 una reserva de hoy que aún no llega bloquea quitar su turno');
+  perform public.s91_is(v, 'affected', '1', 'RN-RES-01 solo cuenta la que aún no llegó');
+  -- Quitar "Desayuno": su única reserva ya se sirvió, no bloquea.
+  v := public.save_reservation_shifts('da000000-0000-0000-0000-000000000020', ('[' || v_cena || ',
+    {"id":"' || v_futura || '","name":"Almuerzo","weekdays":[1,2,3,4,5,6,7],"start_time":"10:00","last_booking_time":"11:00","end_time":"12:00","capacity":10}]')::jsonb);
+  perform public.s91_is(v, 'outcome', 'saved', 'RN-RES-01 una reserva de hoy ya servida no bloquea quitar su turno');
+  set local role postgres;
+  if not exists (select 1 from public.reservation_shifts where id = v_pasada and not active) then
+    raise exception 'RN-RES-01 FALLIDO: quitar "Desayuno" debía desactivarlo';
+  end if;
+  if (select status from public.reservations where customer_name = 'Ya Servida') <> 'confirmed' then
+    raise exception 'RN-RES-01 FALLIDO: quitar un turno no debe tocar las reservas ya servidas';
+  end if;
+end $$;
+
+-- Buscar con nombres que no son españoles y con comodines de LIKE en el texto buscado.
+do $$
+declare
+  v_n integer;
+begin
+  set local role postgres;
+  insert into public.reservations (space_id, establishment_id, shift_id, date, time, starts_at, party_size, customer_name, phone_e164, source) values
+    ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000020', 'da000000-0000-0000-0000-000000000070', public.s91_d(5), '21:00', public.reservation_local_to_utc(public.s91_d(5), '21:00', 'Europe/Madrid'), 2, 'João Šimek', '+34600000421', 'manual'),
+    ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000020', 'da000000-0000-0000-0000-000000000070', public.s91_d(5), '21:30', public.reservation_local_to_utc(public.s91_d(5), '21:30', 'Europe/Madrid'), 2, 'Łukasz Dvořák', '+34600000422', 'manual'),
+    ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000020', 'da000000-0000-0000-0000-000000000070', public.s91_d(5), '22:00', public.reservation_local_to_utc(public.s91_d(5), '22:00', 'Europe/Madrid'), 2, 'Zoë Müller', '+34600000423', 'manual');
+  perform public.s91_as('da000000-0000-0000-0000-000000000004');
+  select count(*) into v_n from public.reservations_search('da000000-0000-0000-0000-000000000020', 'joao simek');
+  if v_n <> 1 then raise exception 'RES-09 FALLIDO: buscar "joao simek" devolvió % filas (esperaba la de João Šimek)', v_n; end if;
+  -- La «ł» no se descompone (NFD) y se queda como está, igual que en `fold()` de search.ts: se busca con ella.
+  select count(*) into v_n from public.reservations_search('da000000-0000-0000-0000-000000000020', 'ŁUKASZ');
+  if v_n <> 1 then raise exception 'RES-09 FALLIDO: buscar "ŁUKASZ" devolvió % filas', v_n; end if;
+  select count(*) into v_n from public.reservations_search('da000000-0000-0000-0000-000000000020', 'DVORAK');
+  if v_n <> 1 then raise exception 'RES-09 FALLIDO: buscar "DVORAK" devolvió % filas', v_n; end if;
+  select count(*) into v_n from public.reservations_search('da000000-0000-0000-0000-000000000020', 'zoe muller');
+  if v_n <> 1 then raise exception 'RES-09 FALLIDO: buscar "zoe muller" devolvió % filas', v_n; end if;
+  -- Un % o un _ en lo que se escribe es una letra, no un comodín.
+  select count(*) into v_n from public.reservations_search('da000000-0000-0000-0000-000000000020', '%%');
+  if v_n <> 0 then raise exception 'RES-09 FALLIDO: buscar "%%" devolvió % filas (el comodín no se escapa)', v_n; end if;
+  select count(*) into v_n from public.reservations_search('da000000-0000-0000-0000-000000000020', '__');
+  if v_n <> 0 then raise exception 'RES-09 FALLIDO: buscar "__" devolvió % filas (el comodín no se escapa)', v_n; end if;
+end $$;
+
+-- Con Reservas cerrado (§6.12) solo entra el Propietario a descargar: abrir una ficha, descartar
+-- una duplicada o dar por cancelada en la plataforma tampoco las puede hacer nadie.
+do $$
+declare
+  v_a uuid;
+  v_b uuid;
+begin
+  set local role postgres;
+  insert into public.reservations (space_id, establishment_id, shift_id, date, time, starts_at, party_size, customer_name, phone_e164, source, status, is_new, pending_platform_cancel)
+  values ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000021', 'da000000-0000-0000-0000-000000000071', public.s91_d(6), '21:00',
+          public.reservation_local_to_utc(public.s91_d(6), '21:00', 'Europe/Madrid'), 2, 'Cerrado Uno', '+34600000431', 'platform', 'cancelled', true, true)
+  returning id into v_a;
+  insert into public.reservations (space_id, establishment_id, shift_id, date, time, starts_at, party_size, customer_name, phone_e164, source, status)
+  values ('da000000-0000-0000-0000-000000000010', 'da000000-0000-0000-0000-000000000021', 'da000000-0000-0000-0000-000000000071', public.s91_d(6), '21:30',
+          public.reservation_local_to_utc(public.s91_d(6), '21:30', 'Europe/Madrid'), 2, 'Cerrado Dos', '+34600000431', 'manual', 'confirmed')
+  returning id into v_b;
+  update public.reservation_settings set service_status = 'closed' where establishment_id = 'da000000-0000-0000-0000-000000000021';
+  perform public.s91_as('da000000-0000-0000-0000-000000000007');
+  perform public.s91_expect_error(format('select public.open_reservation(%L, %L)', 'da000000-0000-0000-0000-000000000021', v_a),
+    'no está disponible', 'RN-RES-12 abrir una ficha con Reservas cerrado');
+  perform public.s91_expect_error(format('select public.dismiss_duplicate(%L, %L, %L)', 'da000000-0000-0000-0000-000000000021', v_a, v_b),
+    'no está disponible', 'RN-RES-06 descartar una duplicada con Reservas cerrado');
+  perform public.s91_expect_error(format('select public.mark_platform_cancel_done(%L, %L)', 'da000000-0000-0000-0000-000000000021', v_a),
+    'no está disponible', 'RN-RES-08 dar por cancelada en la plataforma con Reservas cerrado');
+  set local role postgres;
+  update public.reservation_settings set service_status = 'active' where establishment_id = 'da000000-0000-0000-0000-000000000021';
 end $$;
 
 select 'la_agenda: OK' as resultado;

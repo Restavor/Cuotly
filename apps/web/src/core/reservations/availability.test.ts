@@ -142,6 +142,18 @@ describe("RN-RES-04 · huecos del día", () => {
     expect(r.slots.every((s) => !s.available && s.reason === "service_paused")).toBe(true);
     expect(r.alternatives).toEqual([]);
   });
+  it("RN-RES-04 · en pausa manda la pausa, aunque el día esté cerrado o la hora no sea hueco (igual que book_reservation)", () => {
+    const paused = { ...settings, serviceStatus: "paused" as const };
+    const cerrado = getAvailability(input({ settings: paused, closedDates: ["2026-09-27"], requestedTime: "21:00" }));
+    expect(cerrado.requested).toMatchObject({ available: false, reason: "service_paused" });
+    expect(cerrado.requested?.message).toBe("Ahora mismo no podemos tomar reservas por teléfono.");
+    const noHueco = getAvailability(input({ settings: paused, requestedTime: "21:15" }));
+    expect(noHueco.requested).toMatchObject({ available: false, reason: "service_paused" });
+    expect(noHueco.alternatives).toEqual([]);
+    // Una plataforma no está en pausa: ahí sigue mandando el día cerrado.
+    const plataforma = getAvailability(input({ source: "platform", settings: paused, closedDates: ["2026-09-27"], requestedTime: "21:00" }));
+    expect(plataforma.requested).toMatchObject({ available: false, reason: "closed_day" });
+  });
   it("RN-RES-04 · una plataforma sigue entrando con las reservas en pausa", () => {
     const r = getAvailability(input({ source: "platform", settings: { ...settings, serviceStatus: "paused" } }));
     expect(r.slots.every((s) => s.available)).toBe(true);

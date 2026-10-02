@@ -11,6 +11,7 @@ import { es } from "@/i18n/es";
 import { saveSettingsAction, saveShiftsAction, setClosedDateAction } from "../actions";
 import { draftIssues, emptyDraft, ShiftCard, Stepper, toDraft, toInputs, toShifts, WeekdayToggles, type DraftShift } from "./ScheduleParts";
 import type { RestaurantSchedule } from "@/services/reservations-gateway";
+import { withSavedIds } from "./schedule-draft";
 
 /**
  * Ajustes › Horarios (RES-12; PRD de agents §6.2, `Ajustes`): los días que abrís (un atajo
@@ -62,6 +63,8 @@ export function ScheduleEditor({ establishmentId, schedule }: { establishmentId:
         setFeedback(shiftsResult);
         return;
       }
+      // Los turnos nuevos ya existen: si los ajustes fallan y se vuelve a guardar, se actualizan en vez de crearse otra vez.
+      setShifts((current) => withSavedIds(current, shiftsResult.shiftIds));
       const settingsResult = await saveSettingsAction({
         establishmentId,
         settings: { slotInterval: interval, largeGroupThreshold: threshold, minNoticeMinutes: minNotice, maxAdvanceDays: maxAdvance, customerCancelLimitMinutes: cancelLimit },

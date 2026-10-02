@@ -142,6 +142,7 @@ export function ReservationForm(props: Props) {
         language,
         force,
         idempotencyKey,
+        ...(initial ? { previousDate: initial.date } : {}),
       });
       if (result.status === "needs_confirmation") {
         setConfirm(result);
@@ -153,7 +154,9 @@ export function ReservationForm(props: Props) {
         setFields(result.fields);
         return;
       }
-      announceLocalChange(establishmentId, { kind: "date", date: result.date, reason: isEdit ? "changed" : "new" });
+      // Escrita aquí es manual: se refresca en silencio. «Hay una reserva nueva» es para agente, web y plataformas.
+      announceLocalChange(establishmentId, { kind: "date", date: result.date, reason: "changed" });
+      if (initial && initial.date !== result.date) announceLocalChange(establishmentId, { kind: "date", date: initial.date, reason: "changed" });
       router.push(isEdit ? reservationHref(establishmentId, result.reservationId) : todayHref(establishmentId, result.date));
       router.refresh();
     });

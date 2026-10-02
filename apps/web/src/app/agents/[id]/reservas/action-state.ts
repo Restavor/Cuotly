@@ -23,7 +23,7 @@ export type SaveReservationResult =
     };
 
 export type ScheduleFeedback =
-  | { readonly ok: true; readonly message: string }
+  | { readonly ok: true; readonly message: string; readonly shiftIds?: readonly string[] }
   | { readonly ok: false; readonly message: string; readonly affected?: number };
 
 export interface SaveReservationInput {
@@ -40,4 +40,6 @@ export interface SaveReservationInput {
   readonly language: string;
   readonly force: boolean;
   readonly idempotencyKey: string;
+  /** Solo al editar: la fecha que tenía, para avisar también a las pantallas que miran ese día. No autoriza nada. */
+  readonly previousDate?: string;
 }

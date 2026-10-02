@@ -254,7 +254,9 @@ export function getAvailability(input: AvailabilityInput): AvailabilityResult {
 
   const classified = classifyRequestedTime(input.date, requestedTime, input.shifts, input.closedDates, input.settings.slotInterval);
   let reason: UnavailableReason | undefined;
-  if (classified.status === "closed_day") reason = "closed_day";
+  // En pausa manda la pausa (§6.5 d, y `book_reservation` en SQL): sea el día que sea y la hora que sea.
+  if (input.settings.serviceStatus === "paused" && input.source !== "platform") reason = "service_paused";
+  else if (classified.status === "closed_day") reason = "closed_day";
   else if (classified.status === "not_a_slot") reason = "not_a_slot";
   else reason = slots.find((s) => s.time === requestedTime)?.reason;
 

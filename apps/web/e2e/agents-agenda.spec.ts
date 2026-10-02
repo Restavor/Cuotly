@@ -75,6 +75,8 @@ test.describe("Restavor agents · la agenda", () => {
     await expect(page.getByText("Pablo Serrano")).toBeVisible();
     await expect(page.getByText("Nuria Vidal")).toBeVisible();
     await expect(page.getByText("Lucía Fernández")).toHaveCount(0);
+    // Lo que el filtro esconde se dice: una fila oculta sin aviso parece una fila que no existe.
+    await expect(page.getByRole("status").filter({ hasText: /reservas? ocultas? por el filtro/ })).toBeVisible();
     // El aforo del turno sigue siendo el del día entero, no el del filtro.
     await expect(page.getByRole("img", { name: "Comida: 23 de 40 personas" })).toBeVisible();
     await page.reload();
@@ -82,6 +84,21 @@ test.describe("Restavor agents · la agenda", () => {
     await expect(page.getByText("Lucía Fernández")).toHaveCount(0);
     await page.getByRole("button", { name: /Todas\s*10/ }).click();
     await expect(page.getByText("Lucía Fernández")).toBeVisible();
+  });
+
+  test("RES-01 · «Revisar» (un #reserva-… en la dirección) enseña todas aunque la tablet recuerde otro filtro, y no lo cambia", async ({ page }) => {
+    await entrar(page, "jose@casapepe.test");
+    await page.goto(`${HOY_AGENDA}?fecha=2026-09-26`);
+    await page.getByRole("button", { name: /Web\s*2/ }).click();
+    await expect(page.getByText("Lucía Fernández")).toHaveCount(0);
+    await page.goto("about:blank");
+    await page.goto(`${HOY_AGENDA}?fecha=2026-09-26#reserva-revisar`);
+    await expect(page.getByRole("button", { name: /Todas\s*10/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("Lucía Fernández")).toBeVisible();
+    // Sin el ancla, vuelve el filtro recordado.
+    await page.goto("about:blank");
+    await page.goto(`${HOY_AGENDA}?fecha=2026-09-26`);
+    await expect(page.getByRole("button", { name: /Web\s*2/ })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("RES-03 · la ficha: hora, personas, origen, nota, «Llamar» y el historial", async ({ page }) => {
@@ -223,7 +240,7 @@ test.describe("Restavor agents · la agenda", () => {
     await expect(page.getByText(/Grupo rechazado · \d{2}:\d{2}/)).toBeVisible({ timeout: 30_000 });
   });
 
-  test("RES-11 · una reserva nueva avisa a las demás pantallas abiertas del mismo navegador, sin datos personales", async ({ browser }) => {
+  test("RES-11 · una reserva escrita a mano refresca en silencio las demás pantallas abiertas, sin barra ni sonido", async ({ browser }) => {
     const fecha = fechaFutura(75);
     const contexto = await browser.newContext({ viewport: { width: 1180, height: 820 } });
     const pantallaA = await contexto.newPage();
@@ -242,9 +259,36 @@ test.describe("Restavor agents · la agenda", () => {
     await pantallaA.getByRole("button", { name: "Guardar reserva" }).click();
     await expect(pantallaA).toHaveURL(new RegExp(`fecha=${fecha}`), { timeout: 30_000 });
 
-    // La otra pantalla se entera sola: barra con el aviso y la reserva ya en la lista.
-    await expect(pantallaB.getByRole("status").filter({ hasText: "Hay una reserva nueva" })).toBeVisible({ timeout: 30_000 });
+    // La otra pantalla se entera sola y ya tiene la reserva en la lista, pero sin la barra «Hay una reserva nueva»:
+    // esa es para las del agente, la web y las plataformas (PRD §6.14), no para lo que escribe el propio equipo.
     await expect(pantallaB.getByText("Aviso E2E")).toBeVisible({ timeout: 30_000 });
+    await expect(pantallaB.getByRole("status").filter({ hasText: "Hay una reserva nueva" })).toHaveCount(0);
+    await contexto.close();
+  });
+
+  test("RES-11 · un aviso de reserva nueva (el que mandarán agente, web y plataformas) enseña la barra, sin datos personales", async ({ browser }) => {
+    const fecha = fechaFutura(75);
+    const contexto = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+    const pantallaA = await contexto.newPage();
+    await entrar(pantallaA, "jose@casapepe.test");
+    const pantallaB = await contexto.newPage();
+    await pantallaB.goto(`${HOY_AGENDA}?fecha=${fecha}`);
+    await expect(pantallaB.getByRole("heading", { level: 1 })).toBeVisible();
+
+    // Hasta las Fases G a I no hay quien lo emita desde el servidor: se manda por el mismo canal del navegador,
+    // con exactamente lo que viaja (la fecha y el motivo, nada más). El título sale ya en el HTML del servidor,
+    // antes de que la pantalla de al lado empiece a escuchar: se repite el aviso hasta que lo recoge.
+    await expect(async () => {
+      await pantallaA.evaluate(
+        ({ canal, date }) => {
+          const bus = new BroadcastChannel(canal);
+          bus.postMessage({ kind: "date", date, reason: "new" });
+          bus.close();
+        },
+        { canal: `restavor-reservas-${CASA_PEPE}`, date: fecha },
+      );
+      await expect(pantallaB.getByRole("status").filter({ hasText: "Hay una reserva nueva" })).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
     await contexto.close();
   });
 

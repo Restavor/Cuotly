@@ -5460,34 +5460,44 @@ Criterios del PRD §15 (RES-01 a RES-13):
   (dice cuántas), y **RES-13 Primer uso** (los dos pasos que existen configuran de verdad; equipo y agente dicen que llegan con las Fases D y G).
 - [x] Tests unitarios y SQL de §6.1–6.10 con sus ejemplos; e2e de crear, editar, cancelar, «No vino», confirmar y rechazar grupo, «No es duplicada», buscar, calendario, horarios,
   tiempo real y que quien no es del restaurante no entra.
+- [x] Revisión independiente del diff contra el PRD y CLAUDE.md: sin bloqueantes, dieciséis hallazgos, todos corregidos con su test (decisión 120).
 - [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase C»; **antes hay que aplicar la migración 169 a Restavor pruebas**).
 
-Pruebas hechas (02/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.644 tests** en verde (135 nuevos: disponibilidad con los cinco ejemplos del PRD, aforo por origen,
+Pruebas hechas (02/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.650 tests** en verde (141 nuevos: disponibilidad con los cinco ejemplos del PRD, aforo por origen,
 duplicadas, ciclo de vida, búsqueda, calendario, validación de horarios, formato, tiempo real, historial, vista del día y la puerta de la tarea de pendientes); `apps/mobile` y
 `packages/shared` en verde; **las 91 suites SQL** (la nueva, la 91, `la_agenda.sql`) sobre una base limpia con las 169 migraciones, y los dos sembrados dos veces (**151 tablas, 0 sin RLS**);
 el script de concurrencia `agenda-concurrency-test.mjs` (dos altas a la vez para las últimas plazas: entra una; ocho para tres plazas: entran tres; la misma clave: una reserva; dos
-cambios a la vez: no pasan del aforo); los e2e sin datos (`agents-armazon`) y **los 15 e2e de la agenda con datos** contra PostgREST local con el sembrado. La suite 91 y el script de
+cambios a la vez: no pasan del aforo; y, tras la revisión, cancelar a la vez las dos mitades de una pareja de duplicadas, cambiar de día mientras se crea otra con el mismo teléfono,
+dos altas en turnos distintos y quitar un turno mientras se reserva en él); los e2e sin datos (`agents-armazon`) y **los 17 e2e de la agenda con datos** contra PostgREST local con el sembrado. La suite 91 y el script de
 concurrencia se comprobaron con mutaciones (se rompió a propósito el aforo, los permisos, «No vino», la pausa, las duplicadas, los datos personales en eventos, el solape, la
-regla de no quitar turnos, los avisos, las 2 horas, el bloqueo y el correo/push de la cola: las doce las atrapa).
+regla de no quitar turnos, los avisos, las 2 horas, el bloqueo y el correo/push de la cola: las doce las atrapa). Los cuatro casos de concurrencia añadidos tras la revisión
+se comprobaron contra la migración anterior a las correcciones: fallan los cuatro (28 de 60 cancelaciones y 24 de 60 cambios de día mueren por interbloqueo, 15 de 20 parejas de
+altas simultáneas quedan sin marcar y 20 reservas quedan en un turno desactivado) y pasan con la corregida.
 
 Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): una reserva que entra en el cambio de hora de otoño se guardaba con la hora segunda en vez de la
 primera (PostgreSQL elige la segunda); un día cerrado dejaba pasar las reservas «Fuera de turno» sin contarlas; dos rejillas sin columna base para el teléfono y botones de 40 px
 (los barridos de móvil y de 44 px); acciones de auditoría sin su nombre en español; y `Intl` fuera de la lista de archivos permitidos.
 
-Decisiones (en `docs/DECISIONES.md`, 112 a 119):
+Revisión independiente (un subagente leyó el diff contra el PRD §6 y §11.1 y CLAUDE.md): **sin bloqueantes**. Lo más serio, un interbloqueo real —141 de 300 cancelaciones simultáneas de
+las dos mitades de una pareja de duplicadas, reproducido— que se resolvió con un orden de bloqueo único (decisión 120); también: el `DELETE` físico de días cerrados (contra CLAUDE.md),
+las reservas de hoy ya servidas contando como «futuras», un `NULL` que saltaba la confirmación de aforo, tres funciones que no miraban el estado del servicio, búsqueda que no
+encontraba «João» ni «Dvořák», y el aviso con sonido para lo escrito a mano. Todo corregido, con test, y los 17 e2e y las 91 suites de nuevo en verde.
+
+Decisiones (en `docs/DECISIONES.md`, 112 a 120):
 
 - **112** La agenda escribe solo por funciones `SECURITY DEFINER` (permiso, estado, transición, bloqueo, evento y auditoría sin datos personales, idempotencia); el equipo del espacio cambia horarios pero no escribe reservas.
 - **113** Las alternativas de disponibilidad están en el dominio (TS), no en SQL: las usará la API del agente (Fase G).
 - **114** «Ha venido N veces»: cómo se cuenta (el PRD no lo dice). **Para confirmar con Bosco.**
-- **115** Quitar un turno lo desactiva; reabrir un día cerrado borra su fila (ajuste, con auditoría): la única excepción a «nunca `DELETE`».
+- **115** Quitar un turno lo desactiva; reabrir un día cerrado marca su fila como quitada (`removed_at`) en vez de borrarla: no hay ninguna excepción a «nunca `DELETE`».
 - **116** Sin conectores (Fase I) las plataformas no cambian fecha, hora ni personas y la cancelación deja el aviso «Cancélala también en X». Las maquetas dicen «Se cancelará también en TheFork» y «el cambio llegará solo»: no se ha escrito porque hoy no es verdad.
 - **117** Tiempo real con nombre de canal secreto (HMAC); versión falsa entre pestañas; el mensaje nunca lleva datos personales.
 - **118** Los avisos de la agenda (reserva nueva, grupo pendiente, recordatorio de 2 h) van **solo en la campana**: el correo y el push web de Restavor agents llegan con la Fase F. La tarea de cada 15 minutos (`/api/agents/cron/pendientes`, `supabase/operaciones/agents-cron.sql`) no se ha podido ejecutar aquí (sin `pg_cron`).
 - **119** Lo que toca la agenda y queda para otras fases (avisos a comensales, barra de pago pendiente, PIN y tablet, encender el agente, sin conexión).
+- **120** Lo que cambió la revisión independiente: un único orden de bloqueo (clave → restaurante → día → fila), «reservas futuras» = las que aún no llegaron a su hora, topes y `NULL` en la base de datos, estado del servicio en las tres funciones que no lo miraban, búsqueda con NFD y comodines escapados, lo escrito a mano no hace sonar las demás pantallas.
 
 Hallazgos que conviene saber:
 
-- La migración 169 **no** crea tablas: añade `reservations.idempotency_key` y 31 funciones. Las dos de comprobación de permisos (`reservations_actor_type`, `reservations_settings_actor`) están clasificadas en el barrido de `hito7_mensajes_archivos_finanzas.sql`.
+- La migración 169 **no** crea tablas: añade `reservations.idempotency_key`, `reservation_closed_dates.removed_at` y 33 funciones. Las dos de comprobación de permisos (`reservations_actor_type`, `reservations_settings_actor`) están clasificadas en el barrido de `hito7_mensajes_archivos_finanzas.sql`.
 - En el sembrado, el aviso «1 grupo pendiente» de Hoy cuenta los pendientes **de hoy en adelante** (la copia de Andrés Martínez en el próximo día abierto); el del sábado 26/09 ya es pasado y se ve en su día, pero no en la barra.
 - Las maquetas de `estructura/` traen cosas que no se han hecho por no ser ciertas hoy: «La creas tú · Ana (Equipo)» (el Equipo con PIN es la Fase D: aquí sale el nombre de quien tiene la sesión) y «Se cancelará también en TheFork» (decisión 116).
 - El selector de hora de los navegadores en inglés enseña «01:00 PM»; en español, 24 horas. Se envía siempre `HH:MM`.

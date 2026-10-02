@@ -9,6 +9,7 @@ import type { RestaurantSchedule } from "@/services/reservations-gateway";
 
 import { completeOnboardingAction, saveSettingsAction, saveShiftsAction } from "../actions";
 import { draftIssues, emptyDraft, ShiftCard, Stepper, toDraft, toInputs, type DraftShift } from "./ScheduleParts";
+import { withSavedIds } from "./schedule-draft";
 
 /**
  * Primer uso (RES-13; PRD de agents §5.1 y §11.1, `PrimerUso`): días y turnos → aforo y
@@ -54,6 +55,8 @@ export function OnboardingWizard({
       startTransition(async () => {
         const shiftsResult = await saveShiftsAction({ establishmentId, shifts: toInputs(shifts) });
         if (!shiftsResult.ok) return setError(shiftsResult.message);
+        // Si se vuelve «Atrás» y se guarda otra vez, los turnos nuevos ya existen: se actualizan, no se crean de nuevo.
+        setShifts((current) => withSavedIds(current, shiftsResult.shiftIds));
         const settingsResult = await saveSettingsAction({
           establishmentId,
           settings: {
@@ -65,7 +68,6 @@ export function OnboardingWizard({
           },
         });
         if (!settingsResult.ok) return setError(settingsResult.message);
-        // Los turnos nuevos ya tienen su identificador: se recarga para trabajar con ellos.
         router.refresh();
         setStep(2);
       });

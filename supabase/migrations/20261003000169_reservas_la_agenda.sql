@@ -40,6 +40,13 @@ create unique index reservations_idempotency_idx
 comment on column public.reservations.idempotency_key is
   'Clave de idempotencia del alta: pulsar dos veces "Guardar" crea una sola reserva. Sin privilegio de select: solo la lee el servidor.';
 
+-- Reabrir un día cerrado no borra su fila (CLAUDE.md: nunca se borran registros de negocio): la
+-- marca como quitada. La unicidad (restaurante, fecha) sigue valiendo: volver a cerrarlo la reactiva.
+alter table public.reservation_closed_dates add column removed_at timestamptz;
+
+comment on column public.reservation_closed_dates.removed_at is
+  'Fase C · el día se reabrió (no se borra la fila). Un día cerrado es el que tiene removed_at nulo.';
+
 -- ------------------------------------------------------------
 -- 2 · Funciones internas (cerradas por RPC)
 -- ------------------------------------------------------------
@@ -141,7 +148,7 @@ begin
   select s.slot_interval_minutes into v_interval
   from public.reservation_settings s where s.establishment_id = p_establishment_id;
 
-  if exists (select 1 from public.reservation_closed_dates c where c.establishment_id = p_establishment_id and c.date = p_date)
+  if exists (select 1 from public.reservation_closed_dates c where c.establishment_id = p_establishment_id and c.date = p_date and c.removed_at is null)
      or not exists (
        select 1 from public.reservation_shifts sh
        where sh.establishment_id = p_establishment_id and sh.active
@@ -188,18 +195,66 @@ $$;
 
 revoke all on function public.reservation_occupancy(uuid, uuid, date, uuid) from public, anon, authenticated;
 
--- El bloqueo de restaurante + fecha + turno (RN-RES-02, garantía contra reservas simultáneas).
-create or replace function public.reservation_lock_slot(p_establishment_id uuid, p_date date, p_shift_id uuid)
+-- El ORDEN DE BLOQUEO de toda la agenda (RN-RES-02, garantía contra reservas simultáneas), siempre
+-- el mismo para que dos operaciones no se esperen una a otra:
+--
+--   1 · la clave de idempotencia (solo el alta);
+--   2 · el restaurante, en COMPARTIDO (`reservation_lock_day`) o en EXCLUSIVO (`reservation_lock_schedule`);
+--   3 · el DÍA, de menor a mayor fecha, uno por restaurante y fecha;
+--   4 · las filas (`for update`), y solo después de tener el día.
+--
+-- Con el día bloqueado, quien lo tiene es el único que lee la ocupación, recalcula las posibles
+-- duplicadas y toca las reservas de esa fecha. Cambiar los horarios pide el restaurante en
+-- exclusivo: espera a las operaciones de agenda en curso y las siguientes esperan a que termine.
+create or replace function public.reservation_lock_schedule(p_establishment_id uuid)
 returns void
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
-  select pg_advisory_xact_lock(hashtextextended(
-    'reservation:' || p_establishment_id::text || ':' || p_date::text || ':' || coalesce(p_shift_id::text, 'none'), 0));
+begin
+  perform pg_advisory_xact_lock(hashtextextended('reservation:schedule:' || p_establishment_id::text, 0));
+end;
 $$;
 
-revoke all on function public.reservation_lock_slot(uuid, date, uuid) from public, anon, authenticated;
+revoke all on function public.reservation_lock_schedule(uuid) from public, anon, authenticated;
+
+create or replace function public.reservation_lock_day(p_establishment_id uuid, p_date date)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform pg_advisory_xact_lock_shared(hashtextextended('reservation:schedule:' || p_establishment_id::text, 0));
+  perform pg_advisory_xact_lock(hashtextextended('reservation:day:' || p_establishment_id::text || ':' || p_date::text, 0));
+end;
+$$;
+
+revoke all on function public.reservation_lock_day(uuid, date) from public, anon, authenticated;
+
+-- Reservas disponible para la agenda: devuelve la zona del restaurante o falla. Lo piden todas las
+-- órdenes sobre una reserva (en `closed` solo entra el Propietario, a descargar, PRD §6.12).
+create or replace function public.reservation_require_agenda(p_establishment_id uuid)
+returns text
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_tz text;
+begin
+  select timezone into v_tz from public.reservation_settings
+  where establishment_id = p_establishment_id and service_status in ('active', 'past_due', 'paused', 'ending');
+  if v_tz is null then
+    raise exception 'Reservas no está disponible para este restaurante en este momento';
+  end if;
+  return v_tz;
+end;
+$$;
+
+revoke all on function public.reservation_require_agenda(uuid) from public, anon, authenticated;
 
 -- Un evento de la reserva. Nunca lleva nombre, teléfono, email ni nota (RN-RES-12): lo
 -- impide una restricción de la tabla, también en objetos anidados.
@@ -419,8 +474,7 @@ declare
   v_new_id uuid;
   v_notice_limit date;
   v_data jsonb;
-  v_key_new text;
-  v_key_old text;
+  v_pre_date date;
   v_email text := nullif(btrim(coalesce(p_email, '')), '');
   v_notes text := nullif(btrim(coalesce(p_notes, '')), '');
   v_phone text := nullif(btrim(coalesce(p_phone_e164, '')), '');
@@ -428,8 +482,12 @@ begin
   if v_space_id is null then
     raise exception 'Restaurante no encontrado';
   end if;
-  if p_source not in ('agent', 'platform', 'web', 'manual') then
+  -- Con NULL, `not in (...)` no es falso sino nulo y no saltaría: se comprueba el NULL aparte.
+  if p_source is null or p_source not in ('agent', 'platform', 'web', 'manual') then
     raise exception 'Origen no válido';
+  end if;
+  if p_date is null or p_time is null then
+    raise exception 'Faltan la fecha o la hora';
   end if;
   -- Con sesión de usuario el origen es siempre manual (§6.8): quien cambia es el restaurante.
   if auth.uid() is not null and p_source <> 'manual' then
@@ -447,14 +505,25 @@ begin
   v_tz := v_settings.timezone;
   v_today := (v_now at time zone v_tz)::date;
 
-  if p_party_size is null or p_party_size < 1 then
-    raise exception 'Las personas tienen que ser al menos una';
+  -- Los mismos topes que `booking-input.ts` (el formulario y el servidor): la base de datos no se fía de quien la llama.
+  if p_party_size is null or p_party_size < 1 or p_party_size > 500 then
+    raise exception 'Las personas tienen que ser entre 1 y 500';
   end if;
   if btrim(coalesce(p_customer_name, '')) = '' then
     raise exception 'Falta el nombre';
   end if;
-  if p_language not in ('es', 'en') then
+  if char_length(btrim(p_customer_name)) > 120 then
+    raise exception 'El nombre es demasiado largo';
+  end if;
+  if p_language is null or p_language not in ('es', 'en') then
     raise exception 'Idioma no válido';
+  end if;
+  if v_email is not null and v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' then
+    raise exception 'Email no válido';
+  end if;
+  -- Un hueco es una hora en punto del minuto: '21:00:30' no es el hueco de las 21:00.
+  if p_time <> date_trunc('minute', p_time::interval)::time then
+    return jsonb_build_object('outcome', 'rejected', 'reason', 'not_a_slot');
   end if;
   if v_notes is not null and char_length(v_notes) > 300 then
     raise exception 'La nota es demasiado larga';
@@ -474,11 +543,31 @@ begin
     end if;
   end if;
 
+  -- El orden de bloqueo de la agenda (ver `reservation_lock_day`): el día o los días primero, la fila después.
+  -- Al editar se bloquean la fecha de la reserva y la de destino, de menor a mayor.
+  if v_is_edit then
+    select r.date into v_pre_date from public.reservations r
+    where r.id = p_reservation_id and r.establishment_id = p_establishment_id;
+    if not found then
+      raise exception 'Reserva no encontrada';
+    end if;
+    perform public.reservation_lock_day(p_establishment_id, least(p_date, v_pre_date));
+    if p_date <> v_pre_date then
+      perform public.reservation_lock_day(p_establishment_id, greatest(p_date, v_pre_date));
+    end if;
+  else
+    perform public.reservation_lock_day(p_establishment_id, p_date);
+  end if;
+
   if v_is_edit then
     select * into v_old from public.reservations
     where id = p_reservation_id and establishment_id = p_establishment_id for update;
     if not found then
       raise exception 'Reserva no encontrada';
+    end if;
+    -- Si otra operación movió la reserva de día entre la lectura y el bloqueo (rarísimo), se bloquea también ese día.
+    if v_old.date <> v_pre_date and v_old.date <> p_date then
+      perform public.reservation_lock_day(p_establishment_id, v_old.date);
     end if;
     if v_old.status = 'cancelled' then
       return jsonb_build_object('outcome', 'rejected', 'reason', 'not_editable');
@@ -538,22 +627,6 @@ begin
 
   select * into v_class from public.reservation_classify_slot(p_establishment_id, p_date, p_time);
 
-  -- Bloqueos, siempre en el mismo orden para no provocar interbloqueos: el destino y,
-  -- si la edición cambia de fecha o de turno, también el origen.
-  if v_is_edit and (v_old.date <> p_date or v_old.shift_id is distinct from v_class.shift_id) then
-    v_key_old := v_old.date::text || ':' || coalesce(v_old.shift_id::text, 'none');
-    v_key_new := p_date::text || ':' || coalesce(v_class.shift_id::text, 'none');
-    if v_key_old < v_key_new then
-      perform public.reservation_lock_slot(p_establishment_id, v_old.date, v_old.shift_id);
-      perform public.reservation_lock_slot(p_establishment_id, p_date, v_class.shift_id);
-    else
-      perform public.reservation_lock_slot(p_establishment_id, p_date, v_class.shift_id);
-      perform public.reservation_lock_slot(p_establishment_id, v_old.date, v_old.shift_id);
-    end if;
-  else
-    perform public.reservation_lock_slot(p_establishment_id, p_date, v_class.shift_id);
-  end if;
-
   v_status := case when v_is_edit then v_old.status else 'confirmed' end;
 
   if v_source = 'platform' then
@@ -589,7 +662,7 @@ begin
       end if;
     else
       v_over := greatest(0, v_occupied + p_party_size - v_shift.capacity);
-      if v_over > 0 and not p_force then
+      if v_over > 0 and not coalesce(p_force, false) then
         return jsonb_build_object('outcome', 'needs_confirmation', 'shift_id', v_shift.id, 'overflow_by', v_over,
                                   'occupied_after', v_occupied + p_party_size, 'capacity', v_shift.capacity);
       end if;
@@ -696,11 +769,23 @@ set search_path = public
 as $$
 declare
   v_row public.reservations%rowtype;
+  v_date date;
 begin
+  -- El día primero, la fila después (ver `reservation_lock_day`): si no, dos órdenes sobre el mismo día se esperan
+  -- una a otra (una tiene la fila y pide recalcular las duplicadas, que toca la fila de la otra).
+  select r.date into v_date from public.reservations r
+  where r.id = p_reservation_id and r.establishment_id = p_establishment_id;
+  if not found then
+    raise exception 'Reserva no encontrada';
+  end if;
+  perform public.reservation_lock_day(p_establishment_id, v_date);
   select * into v_row from public.reservations
   where id = p_reservation_id and establishment_id = p_establishment_id for update;
   if not found then
     raise exception 'Reserva no encontrada';
+  end if;
+  if v_row.date <> v_date then
+    perform public.reservation_lock_day(p_establishment_id, v_row.date);
   end if;
   return v_row;
 end;
@@ -748,10 +833,7 @@ declare
   v_row public.reservations;
   v_status text;
 begin
-  select service_status into v_status from public.reservation_settings where establishment_id = p_establishment_id;
-  if v_status is null or v_status not in ('active', 'past_due', 'paused', 'ending') then
-    raise exception 'Reservas no está disponible para este restaurante en este momento';
-  end if;
+  perform public.reservation_require_agenda(p_establishment_id);
   v_row := public.reservation_for_update(p_establishment_id, p_reservation_id);
   if v_row.status = 'confirmed' then
     return jsonb_build_object('outcome', 'unchanged', 'status', 'confirmed');
@@ -775,10 +857,7 @@ declare
   v_row public.reservations;
   v_status text;
 begin
-  select service_status into v_status from public.reservation_settings where establishment_id = p_establishment_id;
-  if v_status is null or v_status not in ('active', 'past_due', 'paused', 'ending') then
-    raise exception 'Reservas no está disponible para este restaurante en este momento';
-  end if;
+  perform public.reservation_require_agenda(p_establishment_id);
   v_row := public.reservation_for_update(p_establishment_id, p_reservation_id);
   if v_row.status = 'cancelled' and v_row.cancel_reason = 'rejected' then
     return jsonb_build_object('outcome', 'unchanged', 'status', 'cancelled');
@@ -808,10 +887,7 @@ begin
      and not (auth.uid() is null and p_reason in ('agent', 'customer_link', 'platform')) then
     raise exception 'Motivo de cancelación no válido';
   end if;
-  select service_status into v_status from public.reservation_settings where establishment_id = p_establishment_id;
-  if v_status is null or v_status not in ('active', 'past_due', 'paused', 'ending') then
-    raise exception 'Reservas no está disponible para este restaurante en este momento';
-  end if;
+  perform public.reservation_require_agenda(p_establishment_id);
   v_row := public.reservation_for_update(p_establishment_id, p_reservation_id);
   if v_row.status = 'cancelled' then
     return jsonb_build_object('outcome', 'unchanged', 'status', 'cancelled');
@@ -836,6 +912,7 @@ declare
   v_actor text := public.reservations_actor_type(p_establishment_id);
   v_row public.reservations;
 begin
+  perform public.reservation_require_agenda(p_establishment_id);
   v_row := public.reservation_for_update(p_establishment_id, p_reservation_id);
   if not v_row.pending_platform_cancel then
     return jsonb_build_object('outcome', 'unchanged');
@@ -858,10 +935,7 @@ declare
   v_row public.reservations;
   v_status text;
 begin
-  select service_status into v_status from public.reservation_settings where establishment_id = p_establishment_id;
-  if v_status is null or v_status not in ('active', 'past_due', 'paused', 'ending') then
-    raise exception 'Reservas no está disponible para este restaurante en este momento';
-  end if;
+  perform public.reservation_require_agenda(p_establishment_id);
   v_row := public.reservation_for_update(p_establishment_id, p_reservation_id);
   if v_row.status = 'no_show' then
     return jsonb_build_object('outcome', 'unchanged', 'status', 'no_show');
@@ -889,11 +963,7 @@ declare
   v_row public.reservations;
   v_tz text;
 begin
-  select timezone into v_tz from public.reservation_settings
-  where establishment_id = p_establishment_id and service_status in ('active', 'past_due', 'paused', 'ending');
-  if v_tz is null then
-    raise exception 'Reservas no está disponible para este restaurante en este momento';
-  end if;
+  v_tz := public.reservation_require_agenda(p_establishment_id);
   v_row := public.reservation_for_update(p_establishment_id, p_reservation_id);
   if v_row.status = 'confirmed' then
     return jsonb_build_object('outcome', 'unchanged', 'status', 'confirmed');
@@ -923,6 +993,7 @@ declare
   v_date date;
   v_inserted integer;
 begin
+  perform public.reservation_require_agenda(p_establishment_id);
   if v_a = v_b then
     raise exception 'Hacen falta dos reservas distintas';
   end if;
@@ -930,6 +1001,11 @@ begin
     raise exception 'Reserva no encontrada';
   end if;
   select date into v_date from public.reservations where id = v_a;
+  -- Una pareja de posibles duplicadas es del mismo día (RN-RES-06).
+  if (select date from public.reservations where id = v_b) <> v_date then
+    raise exception 'Las dos reservas tienen que ser del mismo día';
+  end if;
+  perform public.reservation_lock_day(p_establishment_id, v_date);
   insert into public.reservation_duplicate_dismissals (space_id, establishment_id, reservation_a, reservation_b, dismissed_by)
   values (public.establishment_space_id(p_establishment_id), p_establishment_id, v_a, v_b,
           case when v_actor in ('member', 'restavor_support') then auth.uid() end)
@@ -957,6 +1033,7 @@ declare
   v_actor text := public.reservations_actor_type(p_establishment_id);
   v_row public.reservations;
 begin
+  perform public.reservation_require_agenda(p_establishment_id);
   v_row := public.reservation_for_update(p_establishment_id, p_reservation_id);
   if not v_row.is_new then
     return jsonb_build_object('outcome', 'unchanged');
@@ -992,9 +1069,11 @@ end $$;
 
 -- Cuántas reservas futuras activas dejaría sin sitio un cambio de turnos (§6.2). Cuenta,
 -- no enseña: la usa `save_reservation_shifts` con quien puede cambiar horarios aunque no
--- lea datos de comensales.
+-- lea datos de comensales. «Futura» es la que todavía no ha empezado: una reserva de hoy a
+-- las 13:00 ya servida no impide quitar el turno de comida (si no, la única salida sería
+-- cancelarla o marcarla «No vino», que falsea «Ha venido / ha fallado»).
 create or replace function public.reservations_affected_by_schedule(
-  p_establishment_id uuid, p_shifts jsonb, p_today date
+  p_establishment_id uuid, p_shifts jsonb
 )
 returns integer
 language sql
@@ -1012,12 +1091,12 @@ as $$
   select count(*)::integer
   from public.reservations r
   left join new_shifts n on n.id = r.shift_id
-  where r.establishment_id = p_establishment_id and r.date >= p_today
+  where r.establishment_id = p_establishment_id and r.starts_at > now()
     and r.status in ('pending', 'confirmed') and r.shift_id is not null
     and (n.id is null or not n.active or not (extract(isodow from r.date)::smallint = any (n.weekdays)));
 $$;
 
-revoke all on function public.reservations_affected_by_schedule(uuid, jsonb, date) from public, anon, authenticated;
+revoke all on function public.reservations_affected_by_schedule(uuid, jsonb) from public, anon, authenticated;
 
 create or replace function public.save_reservation_shifts(p_establishment_id uuid, p_shifts jsonb)
 returns jsonb
@@ -1029,7 +1108,6 @@ declare
   v_actor text := public.reservations_settings_actor(p_establishment_id);
   v_space_id uuid := public.establishment_space_id(p_establishment_id);
   v_settings public.reservation_settings%rowtype;
-  v_today date;
   v_el jsonb;
   v_idx integer := 0;
   v_affected integer;
@@ -1051,7 +1129,9 @@ begin
   if jsonb_typeof(p_shifts) <> 'array' then
     raise exception 'Los turnos tienen que ser una lista';
   end if;
-  v_today := (now() at time zone v_settings.timezone)::date;
+  -- El restaurante en exclusivo (ver `reservation_lock_day`): espera a las altas y cambios en curso y
+  -- las siguientes esperan a que termine, así ninguna reserva cae en un turno que se está quitando.
+  perform public.reservation_lock_schedule(p_establishment_id);
 
   -- Validación de cada turno (RN-RES-01).
   for v_el in select * from jsonb_array_elements(p_shifts) loop
@@ -1093,7 +1173,7 @@ begin
   end if;
 
   -- No se quita un turno, ni un día, si hay reservas futuras activas afectadas (§6.2).
-  v_affected := public.reservations_affected_by_schedule(p_establishment_id, p_shifts, v_today);
+  v_affected := public.reservations_affected_by_schedule(p_establishment_id, p_shifts);
   if v_affected > 0 then
     return jsonb_build_object('outcome', 'blocked', 'affected', v_affected);
   end if;
@@ -1130,7 +1210,8 @@ begin
   insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, new_value)
   values (v_space_id, auth.uid(), 'reservations.schedule_saved', 'establishment', p_establishment_id,
           jsonb_build_object('shifts', jsonb_array_length(p_shifts), 'actor', v_actor));
-  return jsonb_build_object('outcome', 'saved');
+  -- Los identificadores, en el orden de la lista: un turno nuevo ya existe y el siguiente «Guardar» lo actualiza en vez de crear otro.
+  return jsonb_build_object('outcome', 'saved', 'shift_ids', to_jsonb(v_ids));
 end;
 $$;
 
@@ -1155,6 +1236,8 @@ begin
     raise exception 'Este restaurante no tiene Reservas disponibles';
   end if;
   v_today := (now() at time zone v_settings.timezone)::date;
+  perform public.reservation_lock_schedule(p_establishment_id);
+  perform public.reservation_lock_day(p_establishment_id, p_date);
 
   if p_closed then
     if p_date < v_today then
@@ -1164,22 +1247,23 @@ begin
       return jsonb_build_object('outcome', 'invalid', 'issue', 'reason_empty');
     end if;
     -- Ya cerrado a propósito: solo cambia el motivo.
-    if not exists (select 1 from public.reservation_closed_dates where establishment_id = p_establishment_id and date = p_date) then
+    if not exists (select 1 from public.reservation_closed_dates where establishment_id = p_establishment_id and date = p_date and removed_at is null) then
       select count(*)::integer into v_affected from public.reservations
-      where establishment_id = p_establishment_id and date = p_date and status in ('pending', 'confirmed');
+      where establishment_id = p_establishment_id and date = p_date and status in ('pending', 'confirmed') and starts_at > now();
       if v_affected > 0 then
         return jsonb_build_object('outcome', 'blocked', 'affected', v_affected);
       end if;
     end if;
     insert into public.reservation_closed_dates (space_id, establishment_id, date, reason)
     values (v_space_id, p_establishment_id, p_date, v_reason)
-    on conflict (establishment_id, date) do update set reason = excluded.reason;
+    on conflict (establishment_id, date) do update set reason = excluded.reason, removed_at = null;
     insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, new_value)
     values (v_space_id, auth.uid(), 'reservations.closed_date_set', 'establishment', p_establishment_id,
             jsonb_build_object('date', p_date, 'reason', v_reason, 'actor', v_actor));
   else
-    -- Reabrir un día es un ajuste, no un registro de negocio: se quita la fila y queda en la auditoría.
-    delete from public.reservation_closed_dates where establishment_id = p_establishment_id and date = p_date;
+    -- Reabrir un día no borra su fila (CLAUDE.md): la marca como quitada y queda en la auditoría.
+    update public.reservation_closed_dates set removed_at = now()
+    where establishment_id = p_establishment_id and date = p_date and removed_at is null;
     if not found then
       return jsonb_build_object('outcome', 'unchanged');
     end if;
@@ -1208,6 +1292,7 @@ declare
   v_actor text := public.reservations_settings_actor(p_establishment_id);
   v_old public.reservation_settings%rowtype;
 begin
+  perform public.reservation_lock_schedule(p_establishment_id);
   select * into v_old from public.reservation_settings where establishment_id = p_establishment_id for update;
   if not found or v_old.service_status = 'closed' then
     raise exception 'Este restaurante no tiene Reservas disponibles';
@@ -1292,16 +1377,16 @@ end $$;
 -- 6 · Lecturas
 -- ------------------------------------------------------------
 
--- Sin tildes y en minúsculas, para buscar "andres" y encontrar "Andrés".
+-- Sin tildes y en minúsculas, para buscar "andres" y encontrar "Andrés" y "joao" y encontrar "João":
+-- descompone cada letra (NFD) y quita las marcas, igual que `fold()` de `core/reservations/search.ts`,
+-- así que la base de datos y la pantalla no discrepan (la letra «ł» no se descompone y se queda como está en las dos).
 create or replace function public.reservations_fold(p_text text)
 returns text
 language sql
 immutable
 set search_path = public
 as $$
-  select lower(translate(coalesce(p_text, ''),
-    'ÁÀÄÂáàäâÉÈËÊéèëêÍÌÏÎíìïîÓÒÖÔóòöôÚÙÜÛúùüûÑñÇç',
-    'AAAAaaaaEEEEeeeeIIIIiiiiOOOOooooUUUUuuuuNnCc'));
+  select lower(regexp_replace(normalize(coalesce(p_text, ''), nfd), '[\u0300-\u036f]', '', 'g'));
 $$;
 
 revoke all on function public.reservations_fold(text) from public, anon;
@@ -1323,13 +1408,16 @@ declare
   v_text text := btrim(coalesce(p_query, ''));
   v_digits text;
   v_tz text;
+  v_today date;
   v_from date;
+  v_like text;
 begin
   select s.timezone into v_tz from public.reservation_settings s where s.establishment_id = p_establishment_id;
   if v_tz is null then
     return;
   end if;
-  v_from := (now() at time zone v_tz)::date - 30;
+  v_today := (now() at time zone v_tz)::date;
+  v_from := v_today - 30;
 
   if v_text ~ '^[+0-9\s.()\-]+$' then
     v_digits := regexp_replace(v_text, '\D', '', 'g');
@@ -1340,14 +1428,17 @@ begin
       select r.id, r.date, r.time, r.customer_name, r.phone_e164, r.party_size, r.status, r.source, r.platform_name, r.duplicate_flag
       from public.reservations r
       where r.establishment_id = p_establishment_id and r.date >= v_from and r.phone_e164 like '%' || v_digits
-      order by r.date, r.time limit 200;
+      -- Los 200 más cercanos a hoy (futuras y pasadas): si hubiera más, se pierden las más lejanas, no las de mañana.
+      order by abs(r.date - v_today), r.date, r.time limit 200;
   elsif char_length(v_text) >= 2 then
+    -- El texto buscado no es un patrón: `%` y `_` son letras, no comodines.
+    v_like := replace(replace(replace(public.reservations_fold(v_text), '\', '\\'), '%', '\%'), '_', '\_');
     return query
       select r.id, r.date, r.time, r.customer_name, r.phone_e164, r.party_size, r.status, r.source, r.platform_name, r.duplicate_flag
       from public.reservations r
       where r.establishment_id = p_establishment_id and r.date >= v_from
-        and public.reservations_fold(r.customer_name) like '%' || public.reservations_fold(v_text) || '%'
-      order by r.date, r.time limit 200;
+        and public.reservations_fold(r.customer_name) like '%' || v_like || '%' escape '\'
+      order by abs(r.date - v_today), r.date, r.time limit 200;
   end if;
 end;
 $$;

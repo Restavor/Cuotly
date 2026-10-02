@@ -70,6 +70,11 @@ describe("RN-RES-03 · las manuales no se crean en fechas pasadas ni fuera de hu
     expect(decideBooking(base({ settings: paused, reservations: [] }))).toMatchObject({ outcome: "rejected", reason: "service_paused" });
     expect(decideBooking(base({ settings: paused, source: "platform", reservations: [] })).outcome).toBe("accepted");
   });
+  it("RN-RES-03 · en pausa y en un día cerrado, el motivo y el mensaje son los de la pausa, no uno de cada", () => {
+    const paused = { ...settings, serviceStatus: "paused" as const };
+    const d = decideBooking(base({ settings: paused, source: "agent", closedDates: ["2026-09-27"], reservations: [] }));
+    expect(d).toMatchObject({ outcome: "rejected", reason: "service_paused", message: "Ahora mismo no podemos tomar reservas por teléfono." });
+  });
 });
 
 describe("RN-RES-05 · grupos grandes", () => {

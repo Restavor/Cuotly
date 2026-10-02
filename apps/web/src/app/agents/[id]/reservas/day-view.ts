@@ -13,6 +13,14 @@ import type { DayBlockData, DayCounters, DayRowData } from "./_components/day-ty
 export function cancelledNote(record: ReservationRecord, timeZone: string): string | null {
   if (record.status !== "cancelled") return null;
   const t = es.agents.agenda.today;
+  const base = cancelledBase(record, timeZone);
+  // «Cancélala también en TheFork» (§6.9): sigue en Hoy mientras alguien no marque «Hecho», no solo en la ficha.
+  if (!record.pendingPlatformCancel) return base;
+  return `${base} · ${t.pendingPlatformCancel(record.platformName ?? es.agents.components.origins.platform)}`;
+}
+
+function cancelledBase(record: ReservationRecord, timeZone: string): string {
+  const t = es.agents.agenda.today;
   const hora = record.cancelledAt ? localDateTimeOf(record.cancelledAt, timeZone).time : "";
   switch (record.cancelReason) {
     case "customer":

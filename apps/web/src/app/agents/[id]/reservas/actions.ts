@@ -39,7 +39,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Los mensajes que escribe el propio servidor para una persona; el resto de errores técnicos no se enseñan. */
-const BUSINESS_MESSAGE = /^(No tienes|Reserva no encontrada|Restaurante no encontrado|Este restaurante|Reservas no está|Hace falta|Falta |Las personas|Teléfono|Idioma|La nota|Turno no encontrado|Motivo de cancelación)/;
+const BUSINESS_MESSAGE = /^(No tienes|Reserva no encontrada|Restaurante no encontrado|Este restaurante|Reservas no está|Hace falta|Hacen falta|Falta|Las personas|Las dos reservas|Teléfono|Email no válido|El nombre|Idioma|Origen no válido|La nota|Turno no encontrado|Motivo de cancelación)/;
 
 function messageOf(error: unknown): string {
   const text = error instanceof Error ? error.message.trim() : "";
@@ -122,7 +122,11 @@ export async function saveReservationAction(input: SaveReservationInput): Promis
     return { status: "error", message: rejectedMessage(result.reason), fields: {} };
   }
   if (!result.unchanged && !result.replayed) {
-    await announce(input.establishmentId, [v.date], input.reservationId === null ? "new" : "changed");
+    // Una reserva escrita aquí es del restaurante (manual): las demás pantallas se refrescan en silencio. El aviso
+    // «Hay una reserva nueva», con sonido, es para las del agente, la web y las plataformas (Fases G a I).
+    // Si cambió de día, también se refresca el día que dejó.
+    const previous = input.reservationId !== null && input.previousDate && input.previousDate !== v.date ? [input.previousDate] : [];
+    await announce(input.establishmentId, [v.date, ...previous], "changed");
   }
   return { status: "done", reservationId: result.reservationId, date: v.date };
 }
@@ -204,7 +208,7 @@ function scheduleFeedback(result: ScheduleSaveResult, closedDay = false): Schedu
   switch (result.outcome) {
     case "saved":
     case "unchanged":
-      return { ok: true, message: t.hours.saved };
+      return { ok: true, message: t.hours.saved, ...(result.shiftIds ? { shiftIds: result.shiftIds } : {}) };
     case "blocked":
       return { ok: false, affected: result.affected, message: closedDay ? t.hours.blockedDay(result.affected) : t.hours.blocked(result.affected) };
     case "invalid": {

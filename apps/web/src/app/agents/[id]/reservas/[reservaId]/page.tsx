@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { OriginChip, StatusChip } from "@/components/agents";
 import { Icon } from "@/components/ui/Icon";
 import { ButtonLink, EmptyState, ErrorState, NoPermissionState } from "@/components/ui";
-import { editReservationHref, todayHref } from "@/core/reservations/agents-routes";
+import { agentsPageHref, editReservationHref, todayHref } from "@/core/reservations/agents-routes";
 import { formatShortDate } from "@/core/reservations/format";
 import { formatPhoneDisplay } from "@/core/reservations/phone";
 import { VISIT_HISTORY_MONTHS, visitStats } from "@/core/reservations/lifecycle";
@@ -65,7 +65,7 @@ export default async function Page({
       <EmptyState
         title={t.common.notFoundTitle}
         description={t.common.notFoundReason}
-        action={<ButtonLink href={todayHref(id, reservation?.date ?? new Date().toISOString().slice(0, 10))} className="min-h-[44px]">{t.common.backToToday}</ButtonLink>}
+        action={<ButtonLink href={reservation ? todayHref(id, reservation.date) : agentsPageHref(id, "today")} className="min-h-[44px]">{t.common.backToToday}</ButtonLink>}
       />
     );
   }

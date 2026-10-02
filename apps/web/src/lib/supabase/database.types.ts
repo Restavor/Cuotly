@@ -2116,6 +2116,7 @@ export type Database = {
           establishment_id: string;
           id: string;
           reason: string | null;
+          removed_at: string | null;
           space_id: string;
         };
         Insert: never;
