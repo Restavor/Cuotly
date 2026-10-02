@@ -648,7 +648,7 @@ export const es = {
       sharedWithClient: "Compartido con el restaurante",
       archived: "Archivado",
       version: "Versión",
-      // RN-ARC-01 · las ocho categorías, nombradas UNA vez. Viven aquí y
+      // RN-ARC-01 · las nueve categorías, nombradas UNA vez. Viven aquí y
       // no en la ficha del equipo porque las leen los dos lados: la ficha
       // de §15.2 y el catálogo del restaurante. Un segundo diccionario de
       // lo mismo es cómo aparecieron "Completada" y "Hecha" para el mismo
@@ -662,6 +662,7 @@ export const es = {
         billing: "Facturación",
         requests_and_jobs: "Solicitudes y trabajos",
         other: "Otros",
+        agent_knowledge: "Conocimiento del agente",
       },
     },
     finance: {

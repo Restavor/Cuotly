@@ -1082,7 +1082,7 @@ El **horario de recepción** queda fuera a propósito, con su motivo escrito en 
 
 ## 19. Archivos (RN-ARC)
 
-- **RN-ARC-01**: categorías: logos, fotografías, menús, textos y documentos, informes, facturación, solicitudes y trabajos, otros.
+- **RN-ARC-01**: categorías: logos, fotografías, menús, textos y documentos, informes, facturación, solicitudes y trabajos, otros y conocimiento del agente (`agent_knowledge`, nueve en total: la novena la añadió Bosco el 02/10/2026, decisión 109, para los documentos del agente de llamadas de Reservas; Restavor web no la ofrece en ningún formulario).
 - **RN-ARC-02**: cada archivo registra nombre, categoría, espacio, grupo, establecimiento, elemento relacionado, usuario, fecha, tamaño y formato.
 - **RN-ARC-03**: sustituir un archivo **crea una versión nueva**; la anterior permanece. En fotografía se separan original, retocada y publicada.
 - **RN-ARC-04**: cada archivo se marca **Interno** o **Compartido con el restaurante**. Un trabajador puede compartir después uno interno, y queda auditado.

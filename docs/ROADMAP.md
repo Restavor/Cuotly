@@ -5416,8 +5416,9 @@ Un subagente revisó el diff completo contra el PRD y `CLAUDE.md` (reprodujo sus
 
 Decisiones (en `docs/DECISIONES.md`, 103 a 111):
 
-- **109 · pendiente de Bosco antes de la Fase G.** PRD de agents §8.1 pide una categoría de archivo `agent_knowledge`, pero `RN-ARC-01` dice que las categorías son
-  **ocho** y su suite lo comprueba. No se ha tocado: los documentos del agente se siembran como «documentos». Hay que decidir si pasan a nueve.
+- **109 · resuelta por Bosco el 02/10/2026: nueve categorías.** PRD de agents §8.1 pedía una categoría de archivo `agent_knowledge` y `RN-ARC-01` decía ocho.
+  Bosco decidió que pasen a nueve: migración `20261002000168`, `core/files.ts`, su etiqueta en `es.ts`, la suite de `hito7_mensajes_archivos_finanzas.sql` y el PRD.
+  Los documentos del agente se siguen sembrando como «documentos» (el sembrado no los sube todavía; es de la Fase G). La **102** (Fase A) también la confirmó: se queda como está.
 - `ai_usage` (PRD §8.1) se aplaza a la Fase G (decisión 107, de Bosco): hoy guarda el coste en milésimas de céntimo de dólar y Reservas lo quiere en
   millonésimas de euro.
 - El sembrado **no** registra ningún segundo paso (decisión 106): `proxy.ts` forzaría a Elena a verificar en cada entrada y rompería los recorridos que

@@ -204,7 +204,7 @@ describe("sanitizeFileName · el nombre que llega del navegador es texto del usu
 
 /**
  * CA-21 aplicado a los archivos: "solo existe UN sitio donde algo tiene
- * nombre". Las ocho categorías las leen ahora dos pantallas —la ficha del
+ * nombre". Las nueve categorías las leen ahora dos pantallas —la ficha del
  * equipo (§15.2) y el catálogo del restaurante— y por eso su diccionario
  * vive en `es.space.files.categories` y no dentro de una de las dos. Este
  * barrido es lo que impide que la próxima pantalla escriba la tercera
@@ -214,7 +214,12 @@ describe("sanitizeFileName · el nombre que llega del navegador es texto del usu
  * razón de tenerlo está en la salvedad 18 del ROADMAP: tres listas
  * escritas a mano llevaban meses discrepando de la base.
  */
-describe("RN-ARC-01 · las ocho categorías, nombradas una sola vez", () => {
+describe("RN-ARC-01 · las nueve categorías, nombradas una sola vez", () => {
+  it("son nueve y la novena es la del conocimiento del agente (decisión 109)", () => {
+    expect(FILE_CATEGORIES).toHaveLength(9);
+    expect(FILE_CATEGORIES).toContain("agent_knowledge");
+  });
+
   it("el diccionario cubre todas las categorías y no tiene ninguna de más", () => {
     expect(Object.keys(es.space.files.categories).sort()).toEqual([...FILE_CATEGORIES].sort());
   });

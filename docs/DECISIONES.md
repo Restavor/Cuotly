@@ -2573,7 +2573,7 @@ dice qué regla anterior cambia. La 99 es de Bosco el 01/10/2026, durante la Fas
     Restavor web, pero no dice dónde está la frontera. Aquí: hay o hubo una solicitud o unos ajustes de Reservas y **no** tiene plan ni
     otro servicio activo. Consecuencia: si le rechazan la solicitud y no tiene plan, tampoco vuelve a tener panel de Restavor web (ve
     «No aprobada» y «Volver a pedir Reservas» en la puerta). Si Bosco prefiere que vuelva a verlo, es un cambio de una línea en
-    `establishment_is_reservations_only()` (migración nueva).
+    `establishment_is_reservations_only()` (migración nueva). **Confirmada por Bosco el 02/10/2026: se queda como está.**
 
 ## Restavor agents · Fase B, cimientos (decisiones 103 a 111)
 
@@ -2603,11 +2603,13 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     Modo soporte de la plataforma en lectura; PRD §3.4 y §8.8 piden otra cosa. Las políticas de `reservations`, `reservation_events`,
     `reservation_notifications` y `agent_calls` solo dejan pasar al Propietario o Encargado del restaurante (`reservations_my_role`) o a
     `reservations_can_read_diner_data`: sesión de soporte de Reservas abierta, `aal2` y marca de soporte (o `can_support` de plataforma).
-109. **La categoría de archivo `agent_knowledge` queda para la Fase G y hay que preguntarle a Bosco** (Fase B, 02/10/2026). PRD de agents §8.1
-    pide una categoría nueva de `files` para los documentos del agente, pero `RN-ARC-01` (PRD de Restavor web) dice que las categorías son
-    **ocho** y su suite lo comprueba. `CLAUDE.md` manda parar ante una contradicción entre PRD, así que la Fase B no la toca: nada sube
-    documentos al agente hasta la Fase G, que es cuando se necesita. Antes de esa fase, Bosco decide si `RN-ARC-01` pasa a nueve
-    categorías (cambio de una migración, del espejo `core/files.ts` y de esa suite) o si los documentos del agente usan una de las ocho.
+109. **La categoría de archivo `agent_knowledge` es la novena: resuelta por Bosco el 02/10/2026** (Fase B). PRD de agents §8.1
+    pide una categoría nueva de `files` para los documentos del agente, pero `RN-ARC-01` (PRD de Restavor web) decía que las categorías eran
+    **ocho** y su suite lo comprobaba. `CLAUDE.md` manda parar ante una contradicción entre PRD, así que la Fase B no la tocó y se lo preguntó
+    a Bosco. **Bosco decidió: `RN-ARC-01` pasa a nueve categorías.** Hecho en la migración `20261002000168` (se recrea `files_category_check`;
+    la 25 no se toca), el espejo `core/files.ts` (`FILE_CATEGORIES`), su etiqueta en `es.space.files.categories` («Conocimiento del agente»), la
+    suite de `hito7_mensajes_archivos_finanzas.sql` (cuenta nueve y exige `agent_knowledge`) y el PRD (RN-ARC-01). Ningún formulario de
+    Restavor web la ofrece (cada uno fija su categoría) y nada sube documentos al agente hasta la Fase G.
 110. **Quién da «Gestionar Reservas», y quién del espacio ve la configuración y el saldo** (Fase B, revisión del diff). Dos cierres de la revisión:
     (1) dar o quitar «Gestionar Reservas» (el Encargado) es de quien añade Encargados (PRD de agents §3.2): el propietario del restaurante o el equipo del
     espacio. Un Editor con «Usuarios y accesos» puede cambiar los otros siete permisos y mandar la casilla sin cambiarla, pero no ascenderse ni ascender a otro

@@ -198,7 +198,7 @@ de hecho del proyecto; estos son los que importan para diseñar (la lista comple
 | `menu_templates.purpose` / `layout` | `publish`, `print` / `classic`, `board`, `elegant` |
 | `conversations.type` | `request`, `job_internal`, `establishment`, `channel` |
 | `messages.sender_role` | `staff`, `client` |
-| `files.category` | `logos`, `photos`, `menus`, `documents`, `reports`, `billing`, `requests_and_jobs`, `other` |
+| `files.category` | `logos`, `photos`, `menus`, `documents`, `reports`, `billing`, `requests_and_jobs`, `other`, `agent_knowledge` |
 | `files.visibility` | `internal`, `shared_with_client` |
 | `integrations.provider` | `ga4`, `search_console`, `business_profile`, `clarity`, `pagespeed` |
 | `integrations.status` | `not_connected`, `pending_authorization`, `connected`, `syncing`, `needs_attention`, `error`, `disconnected` |

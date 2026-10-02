@@ -13,7 +13,11 @@
 
 import { err, ok, type Result } from "./result";
 
-/** RN-ARC-01: las ocho categorías, sin inventar ninguna más. */
+/**
+ * RN-ARC-01: las nueve categorías, sin inventar ninguna más. La novena,
+ * `agent_knowledge`, la añadió Bosco el 02/10/2026 (decisión 109) para los
+ * documentos del agente de llamadas de Reservas.
+ */
 export const FILE_CATEGORIES = [
   "logos",
   "photos",
@@ -23,6 +27,7 @@ export const FILE_CATEGORIES = [
   "billing",
   "requests_and_jobs",
   "other",
+  "agent_knowledge",
 ] as const;
 
 export type FileCategory = (typeof FILE_CATEGORIES)[number];

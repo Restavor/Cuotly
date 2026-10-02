@@ -2284,14 +2284,18 @@ begin
     raise exception 'RN-MSG-01 FALLIDO: existe un tipo de conversación privada entre cliente y trabajador (%)', v_def using errcode = 'assert_failure';
   end if;
 
-  -- RN-ARC-01: las categorías de archivo son las ocho del PRD.
+  -- RN-ARC-01: las categorías de archivo son las nueve del PRD (las ocho
+  -- de Restavor web y `agent_knowledge`, decisión 109, migración 168).
   select pg_get_constraintdef(oid) into v_def
   from pg_constraint where conname = 'files_category_check';
   if v_def is null then
     raise exception 'RN-ARC-01 FALLIDO: no existe el CHECK de categorías de archivo' using errcode = 'assert_failure';
   end if;
-  if (length(v_def) - length(replace(v_def, '''::text', ''))) / length('''::text') <> 8 then
-    raise exception 'RN-ARC-01 FALLIDO: las categorías de archivo no son ocho (%)', v_def using errcode = 'assert_failure';
+  if (length(v_def) - length(replace(v_def, '''::text', ''))) / length('''::text') <> 9 then
+    raise exception 'RN-ARC-01 FALLIDO: las categorías de archivo no son nueve (%)', v_def using errcode = 'assert_failure';
+  end if;
+  if v_def !~ 'agent_knowledge' then
+    raise exception 'RN-ARC-01 FALLIDO: falta la categoría agent_knowledge (%)', v_def using errcode = 'assert_failure';
   end if;
 end $$;
 
