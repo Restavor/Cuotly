@@ -5378,6 +5378,64 @@ pendiente de que Bosco lo confirme).
 
 Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase B hasta que Bosco lo diga.**
 
+### Fase B · Cimientos de Restavor agents · 02/10/2026 (construida; falta la comprobación de Bosco)
+
+Criterios del PRD §15 (AGT-01 a AGT-05):
+
+- [x] **AGT-01** Migraciones **161 a 167** (todas nuevas, ninguna aplicada se ha editado): `reservation_settings` completa (su `grant select` pasa de tabla
+  entera a lista de columnas), turnos, días cerrados, Equipo con PIN, dispositivos, intentos de PIN, sesiones de soporte de Reservas, reservas, eventos
+  (con un `CHECK` que impide datos personales en `data`), posibles duplicadas, agente (estado, horario, conocimiento, llamadas, clave de API), libro del
+  saldo y recargas, tarifas y cambio de moneda, avisos a comensales, conexiones, incidentes, idempotencia, límite de peticiones, cifras mensuales y
+  `web_push_subscriptions`. 29 tablas nuevas, **todas con RLS, sin política de escritura, con privilegios de columna y con los dos disparadores de solo
+  lectura**, y clasificadas en `establishment_transfer_tables()`. Suite 90 (`reservas_cimientos.sql`): aislamiento entre restaurantes en las 26 tablas de
+  restaurante, el administrador sin sesión de soporte lee cero filas de comensales, el soporte las lee solo con sesión abierta + segundo paso + marca,
+  el Modo soporte de la plataforma no abre esa puerta, un Editor sin «Gestionar Reservas» no ve nada, eventos sin datos personales, libro inmutable y
+  derivado, funciones internas cerradas. Se comprobó con cuatro mutaciones que no es una suite vacua.
+- [x] **AGT-02** `canReservations(actor, acción, recurso)` con la tabla §3.2 celda a celda y el estado del servicio (`permissions.test.ts`);
+  «Gestionar Reservas» en «Usuarios y accesos» y en las invitaciones (aparte de las siete casillas de RN-EST-15); «Soporte de Reservas» en el equipo del
+  espacio, solo para el propietario y solo si el espacio ofrece Reservas.
+- [x] **AGT-03** Tokens de §12.2 (con su contraste medido sobre `tokens.css`), siete componentes (chip de origen, chip de estado, «Nueva», fila de
+  reserva, barra de aforo, tarjeta y píldora del agente, teclado de PIN) en `/styleguide`, menú por secciones, barra de móvil Hoy · Calendario · (+) Nueva ·
+  Agente · Más, `/agents` con selector y entrada por estado, `/agents/[id]` con sus catorce pantallas y `/armazon/agents`. Cada pantalla pasa por
+  `guardAgentsPage()`, la misma función que decide el menú.
+- [x] **AGT-04** Dominio puro en `apps/web/src/core/reservations/`: fechas en la zona del restaurante (con el cambio de hora de primavera y otoño), turnos y
+  huecos, E.164, aforo, tipos y transiciones, rutas y puertas de `/agents`, formato del saldo. Con los ejemplos numéricos del PRD como tests.
+- [x] **AGT-05** `supabase/seed/reservas-demo.sql` (PRD §16): Casa Pepe (12 reservas del 26/09, 8 llamadas con su coste, información del agente, saldo 7,40 €),
+  Casa Pepe Centro, Taberna Sol (solo Reservas, dos tandas), Bar La Plaza (aislamiento, 1,80 €), un restaurante por cada estado y dos solicitudes. Se
+  comprueba solo al sembrar (saldos, cifras y quién ve qué) y entra en la CI, dos veces.
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase B»).
+
+Pruebas hechas (02/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.5xx tests** en verde (los nuevos de Reservas:
+permisos, fechas, huecos, teléfonos, aforo, rutas, navegación y componentes); `apps/mobile` y `packages/shared` en verde; **las 90 suites SQL** sobre una base
+limpia con las 167 migraciones, y los dos sembrados dos veces cada uno (**151 tablas, 0 sin RLS**); el e2e sin datos (`/styleguide`, `/armazon`,
+`/armazon/agents` a 1180×820 y 390×844) en verde. Capturas de Playwright de `/styleguide` y `/armazon/agents` comparadas con las maquetas `AgentsHoy`,
+`AgentsHoyMovil`, `AgentsEncenderApagar` y `PinTablet`: coinciden en estructura, textos y orden; la diferencia consciente es el botón «Apagar agente»,
+que aquí es el botón secundario del sistema (el rojo de la maqueta es de la Fase G, que es quien lo pone).
+
+Decisiones (en `docs/DECISIONES.md`, 103 a 109):
+
+- **109 · pendiente de Bosco antes de la Fase G.** PRD de agents §8.1 pide una categoría de archivo `agent_knowledge`, pero `RN-ARC-01` dice que las categorías son
+  **ocho** y su suite lo comprueba. No se ha tocado: los documentos del agente se siembran como «documentos». Hay que decidir si pasan a nueve.
+- `ai_usage` (PRD §8.1) se aplaza a la Fase G (decisión 107, de Bosco): hoy guarda el coste en milésimas de céntimo de dólar y Reservas lo quiere en
+  millonésimas de euro.
+- El sembrado **no** registra ningún segundo paso (decisión 106): `proxy.ts` forzaría a Elena a verificar en cada entrada y rompería los recorridos que
+  entran con ella. Se hace en la Fase D con un usuario de soporte propio.
+- Los datos de comensales no se leen con `is_space_member()` (decisión 108); la marca de soporte solo cambia por la RPC del propietario (un disparador
+  cierra el UPDATE directo, que la política de la tabla habría dejado pasar).
+
+Hallazgos que conviene saber:
+
+- La suite 90 cazó, antes de subir nada, dos fallos reales de lo que se acababa de escribir: `agent_balance()` enseñaba el saldo a un extraño (un `nulo in (…)`
+  no es falso, es nulo, y el `if` no saltaba) y la marca de soporte se podía cambiar con un `UPDATE` directo (la tabla tiene `UPDATE` de tabla entera y su política
+  deja pasar a quien invita miembros).
+- Los tokens del PRD §12.2 pasan AA excepto el carril del medidor de la maqueta (`#e3ebe7`): el ámbar de «casi lleno» daba 2,9998:1 sobre él. Se usa `soft-surface`.
+- Para `RN-ARC-01`, `AGENTS_PIN_SECRET` y la sesión de soporte (Fase D), ver `docs/agents/PRUEBAS.md`.
+
+Lo que **no** está y es de fases posteriores (no se simula): la agenda (C), el PIN real, la tablet y la sesión de soporte (D), aprobar solicitudes, cobros y recargas
+(E), los avisos a comensales (F), el agente de llamadas (G), el formulario web (H), los conectores (I) y la app instalable (J).
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase C hasta que Bosco lo diga.**
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.
