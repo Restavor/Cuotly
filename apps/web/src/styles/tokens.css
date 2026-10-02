@@ -62,6 +62,53 @@
   --color-chart-1: #1d8a6a;
   --color-chart-2: #5b6cb8;
 
+  /*
+   * Restavor agents (Fase B, PRD de agents §12.2 y decisión 104). Los pares de texto y
+   * fondo se miden en `core/contrast.test.ts`, que además lee ESTE archivo para que
+   * la copia de la paleta no se separe de los valores reales.
+   *
+   * El origen de una reserva es identidad, no estado: cuatro colores propios y nunca
+   * solo color (siempre icono y texto). El de la Web es rosa a propósito, para que no
+   * se confunda con el verde de Restavor.
+   */
+  --color-origin-agent: #5b4b9a;
+  --color-origin-agent-bg: #ece8f6;
+  /* Texto del aviso «Reserva nueva del agente» sobre `origin-agent-bg`. */
+  --color-origin-agent-strong: #3e3270;
+  --color-origin-platform: #2f6690;
+  --color-origin-platform-bg: #e3eef6;
+  --color-origin-web: #9a3469;
+  --color-origin-web-bg: #f8e6ef;
+  --color-origin-manual: #3f4a5a;
+  --color-origin-manual-bg: #e9ecf1;
+
+  /* Pendiente: la insignia (`-bg`), la fila entera (`-row`) y su borde. */
+  --color-pending-text: #4a3a00;
+  --color-pending-bg: #f5d76e;
+  --color-pending-row: #fdf7e3;
+  --color-pending-border: #f0dc94;
+
+  /*
+   * Lo apagado o descartado: el chip «No vino» (texto blanco), el texto de una reserva
+   * cancelada y el círculo del agente apagado. Es un gris, no un estado.
+   */
+  --color-status-muted: #6b6f76;
+
+  /*
+   * La barra de aforo: el tramo de «casi lleno» (≥ 85 %). Superado usa `danger`, y el carril
+   * es `soft-surface` (no el `#e3ebe7` de la maqueta): sobre aquel el ámbar daba 2,9998:1 y AA
+   * pide 3:1 para un elemento gráfico; sobre `soft-surface` pasa.
+   */
+  --color-meter-warn: #b7791f;
+
+  /* La tarjeta del agente de llamadas. */
+  --color-agent-on-bg: #e9f5ef;
+  --color-agent-on-border: #bfe0cf;
+  --color-agent-on-text: #0f6b53;
+  --color-agent-off-bg: #f1f3f1;
+  --color-agent-off-border: #d5dcd8;
+  --color-agent-off-text: #33413c;
+
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --radius-field: 10px;

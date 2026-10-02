@@ -47,6 +47,11 @@ const PERMITIDOS = new Set([
   // la plataforma y no de ningún espacio, así que aquí sí va escrita
   // (RN-SOP-06). Ninguna pantalla la copia: le llega por el servidor.
   "core/support.ts",
+  // Fase B de agents · la fecha y la hora locales de una reserva, en la zona del
+  // RESTAURANTE (RN-RES-01), con el cambio de hora de primavera y otoño. La zona le llega
+  // por parámetro desde `reservation_settings.timezone`: no está escrita aquí, y calcula
+  // el día para guardar la reserva, no para pintar una fecha.
+  "core/reservations/dates.ts",
   "components/home/ActivityFeed.tsx",
   "components/establishment/integrations-load.ts",
 ]);

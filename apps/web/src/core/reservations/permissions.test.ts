@@ -1,11 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  AGENTS_DESTINATION_ACTION,
   canReservations,
-  canSeeAgentsDestination,
   canSeeAmounts,
   RESERVATION_ACTIONS,
-  type AgentsDestinationKey,
   type ReservationAction,
   type ReservationsActor,
   type ReservationServiceStatus,
@@ -124,13 +121,6 @@ describe("RN-APP-05 · la tablet del local sin PIN", () => {
     }
   });
 
-  it("RN-APP-05 · no aparecen Saldo, Plan y pagos ni Ajustes, y sí Hoy, Calendario, Agente y Ayuda", () => {
-    const visibles = (Object.keys(AGENTS_DESTINATION_ACTION) as AgentsDestinationKey[]).filter((d) =>
-      canSeeAgentsDestination(tabletSinPin, d),
-    );
-    expect(visibles.sort()).toEqual(["agent", "calendar", "help", "today"]);
-  });
-
   it("RN-APP-05 · ningún importe: ni el saldo ni la columna de coste de las llamadas", () => {
     expect(canSeeAmounts(tabletSinPin)).toBe(false);
     expect(canSeeAmounts(staff)).toBe(false);
@@ -153,18 +143,6 @@ describe("RN-APP-05 · la tablet del local sin PIN", () => {
     expect(canReservations({ kind: "device", pin: "staff" }, "toggle_agent")).toBe(false);
   });
 
-  it("RN-APP-05 · el menú del Equipo con PIN tampoco enseña Ajustes, Saldo ni Plan", () => {
-    const visibles = (Object.keys(AGENTS_DESTINATION_ACTION) as AgentsDestinationKey[]).filter((d) =>
-      canSeeAgentsDestination(staff, d),
-    );
-    expect(visibles.sort()).toEqual(["agent", "calendar", "help", "today"]);
-  });
-
-  it("RN-APP-05 · el Propietario ve los siete destinos y el Encargado, todos menos Plan y pagos", () => {
-    const todos = Object.keys(AGENTS_DESTINATION_ACTION) as AgentsDestinationKey[];
-    expect(todos.filter((d) => canSeeAgentsDestination(owner, d)).sort()).toEqual([...todos].sort());
-    expect(todos.filter((d) => !canSeeAgentsDestination(manager, d))).toEqual(["plan"]);
-  });
 });
 
 describe("RN-APP-04 · el estado del servicio de Reservas (PRD §6.12)", () => {

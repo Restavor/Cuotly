@@ -1,4 +1,11 @@
 import type { IconName } from "@/components/ui/Icon";
+import {
+  agentsPageHref,
+  guardAgentsPage,
+  restaurantBase,
+  type AgentsPage,
+} from "@/core/reservations/agents-routes";
+import type { ReservationServiceStatus, ReservationsActor } from "@/core/reservations/permissions";
 import { es } from "@/i18n/es";
 
 /**
@@ -55,6 +62,8 @@ export interface NavDestination {
   readonly key: string;
   readonly label: string;
   readonly href: string;
+  /** Un dato corto a la derecha del nombre (Restavor agents: el saldo, «7,40 €»). */
+  readonly badge?: string;
 }
 
 const D = (key: string, label: string, path: string) => ({ key, label, href: path });
@@ -550,8 +559,11 @@ export const DESTINATION_ICONS: Readonly<Record<string, IconName>> = {
   myRequests: "request",
   account: "person",
   space: "building",
-  // Restavor agents (Fase A): su único destino hasta que llegue el armazón (Fase B).
+  // Restavor agents: la lista de restaurantes (Fase A) y los destinos del armazón (Fase B).
   reservations: "calendar",
+  today: "clock",
+  calls: "headset",
+  balance: "wallet",
 };
 
 /**
@@ -689,27 +701,129 @@ const PANEL_ALIASES: Readonly<Record<string, readonly string[]>> = {
 export const ABRIR_BUSQUEDA = "cuotly:abrir-busqueda";
 
 /**
- * Restavor agents · el menú de la Fase A. El armazón completo —Hoy,
- * Calendario, Agente de llamadas, Saldo…— llega en la Fase B; hasta
- * entonces solo existe `/agents`, con la lista de restaurantes con Reservas.
+ * Restavor agents · el armazón (PRD de agents §5.1, Fase B).
+ *
+ * Sin restaurante elegido (el selector de `/agents`) el menú es el de la Fase A: un
+ * solo destino. Con un restaurante, el menú de §5.1: la sección **Reservas** (Hoy ·
+ * Calendario · Agente de llamadas · Ajustes) y, abajo, lo común a todos los agentes
+ * (Saldo con su importe · Plan y pagos · Ayuda).
+ *
+ * Lo decide `guardAgentsPage()`, la misma función que protege cada ruta: un destino que
+ * la persona no puede abrir no sale (RN-APP-05: la tablet sin PIN no enseña Saldo, Plan
+ * y pagos ni Ajustes). Eso es lo que se pinta; el servidor vuelve a comprobarlo todo.
  */
-export function agentsMenuGroups(): {
+export interface AgentsNavContext {
+  readonly establishmentId: string;
+  readonly name: string;
+  readonly locality: string | null;
+  readonly actor: ReservationsActor;
+  readonly serviceStatus: ReservationServiceStatus;
+  /** El saldo ya redactado («7,40 €»), o `null` si a esta persona no se le enseñan importes. */
+  readonly balanceLabel: string | null;
+}
+
+/** Las claves de los destinos de Restavor agents. No son `agent` ni `messages`: esas dos las usa el armazón para su insignia. */
+const AGENTS_MENU_MAIN = [
+  ["today", "today"],
+  ["calendar", "calendar"],
+  ["calls", "calls"],
+  ["settings", "settings"],
+] as const satisfies readonly (readonly [string, AgentsPage])[];
+
+const AGENTS_MENU_FOOTER = [
+  ["balance", "balance"],
+  ["plan", "plan"],
+  ["help", "help"],
+] as const satisfies readonly (readonly [string, AgentsPage])[];
+
+function agentsLabel(key: string): string {
+  const labels = es.agents.menu as Record<string, string>;
+  return labels[key] ?? key;
+}
+
+function agentsAllowed(ctx: AgentsNavContext, page: AgentsPage): boolean {
+  return guardAgentsPage(ctx.establishmentId, ctx.actor, ctx.serviceStatus, page).kind === "allow";
+}
+
+function agentsDestination(ctx: AgentsNavContext, key: string, page: AgentsPage): NavDestination {
+  const base = D(key, agentsLabel(key), agentsPageHref(ctx.establishmentId, page));
+  return key === "balance" && ctx.balanceLabel !== null ? { ...base, badge: ctx.balanceLabel } : base;
+}
+
+export function agentsMenu(ctx?: AgentsNavContext): {
   readonly main: readonly NavDestination[];
   readonly footer: readonly NavDestination[];
+  /** El título de la sección de arriba («Reservas»), o `null` sin restaurante elegido. */
+  readonly mainTitle: string | null;
 } {
-  return { main: [D("reservations", es.agents.nav.reservations, AGENTS_HOME)], footer: [] };
+  if (!ctx) {
+    return { main: [D("reservations", es.agents.nav.reservations, AGENTS_HOME)], footer: [], mainTitle: null };
+  }
+  return {
+    main: AGENTS_MENU_MAIN.filter(([, page]) => agentsAllowed(ctx, page)).map(([key, page]) =>
+      agentsDestination(ctx, key, page),
+    ),
+    footer: AGENTS_MENU_FOOTER.filter(([, page]) => agentsAllowed(ctx, page)).map(([key, page]) =>
+      agentsDestination(ctx, key, page),
+    ),
+    mainTitle: es.agents.menu.reservationsSection,
+  };
 }
 
-export function agentsMobileNav(): readonly NavDestination[] {
-  return [
-    D("home", es.agents.nav.appHome, GLOBAL_HOME),
-    D("reservations", es.agents.nav.reservations, AGENTS_HOME),
-  ];
+/**
+ * La barra de móvil: Hoy · Calendario · (+) Nueva · Agente · Más (`AgentsHoyMovil`). Como
+ * la del resto de la aplicación, la lista trae los cuatro destinos y el armazón intercala
+ * el botón de crear en medio.
+ */
+export function agentsMobileNav(ctx?: AgentsNavContext): readonly NavDestination[] {
+  if (!ctx) {
+    return [
+      D("home", es.agents.nav.appHome, GLOBAL_HOME),
+      D("reservations", es.agents.nav.reservations, AGENTS_HOME),
+    ];
+  }
+  const pages = [
+    ["today", "today"],
+    ["calendar", "calendar"],
+    ["calls", "calls"],
+    ["more", "more"],
+  ] as const satisfies readonly (readonly [string, AgentsPage])[];
+  return pages
+    .filter(([, page]) => agentsAllowed(ctx, page))
+    .map(([key, page]) => {
+      const destino = agentsDestination(ctx, key, page);
+      // En la barra de móvil el agente se llama «Agente»: «Agente de llamadas» no cabe.
+      return key === "calls" ? { ...destino, label: es.agents.menu.callsShort } : destino;
+    });
 }
 
-export function agentsActiveDestination(pathname: string): NavDestination | null {
+/** El (+) de la barra de móvil: «Nueva reserva», solo a quien puede crearlas. */
+export function agentsCreateOptions(ctx?: AgentsNavContext): readonly NavDestination[] {
+  if (!ctx || !agentsAllowed(ctx, "newReservation")) return [];
+  return [D("newReservation", es.agents.menu.newReservation, agentsPageHref(ctx.establishmentId, "newReservation"))];
+}
+
+/** El destino activo según la dirección. La ficha y «Nueva» pertenecen a Hoy. */
+export function agentsActiveDestination(pathname: string, ctx?: AgentsNavContext): NavDestination | null {
   const limpio = pathname.split("?")[0].replace(/\/+$/, "") || "/";
-  return limpio === AGENTS_HOME || limpio.startsWith(`${AGENTS_HOME}/`)
-    ? D("reservations", es.agents.nav.reservations, AGENTS_HOME)
-    : null;
+  if (!(limpio === AGENTS_HOME || limpio.startsWith(`${AGENTS_HOME}/`))) return null;
+  if (!ctx) return D("reservations", es.agents.nav.reservations, AGENTS_HOME);
+
+  const base = restaurantBase(ctx.establishmentId);
+  if (limpio !== base && !limpio.startsWith(`${base}/`)) return null;
+  const rest = limpio.slice(base.length) || "/";
+  const orden: readonly (readonly [string, string, AgentsPage])[] = [
+    ["/reservas/agente", "calls", "calls"],
+    ["/reservas/calendario", "calendar", "calendar"],
+    ["/reservas/ajustes", "settings", "settings"],
+    ["/reservas", "today", "today"],
+    ["/saldo", "balance", "balance"],
+    ["/plan", "plan", "plan"],
+    ["/ayuda", "help", "help"],
+    ["/mas", "more", "more"],
+  ];
+  for (const [prefijo, key, page] of orden) {
+    if (rest === prefijo || rest.startsWith(`${prefijo}/`)) return agentsDestination(ctx, key, page);
+  }
+  return null;
 }

@@ -33,6 +33,16 @@ import {
   TableRow,
   useToast,
 } from "@/components/ui";
+import {
+  AgentStateCard,
+  AgentStatusPill,
+  CapacityMeter,
+  NewBadge,
+  OriginChip,
+  PinPad,
+  ReservationRow,
+  StatusChip,
+} from "@/components/agents";
 
 /**
  * Página interna de referencia: enseña todos los componentes base del
@@ -43,6 +53,7 @@ import {
 export default function StyleGuidePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const { showToast } = useToast();
+  const [pin, setPin] = useState("");
 
   return (
     <main className="mx-auto max-w-6xl space-y-10 sm:p-8">
@@ -236,6 +247,99 @@ export default function StyleGuidePage() {
           <div className="rounded-lg border border-border">
             <NoPermissionState />
           </div>
+        </div>
+      </Card>
+
+      {/*
+        Restavor agents (Fase B, AGT-03): las piezas de la agenda de Reservas. Datos de
+        muestra, que es lo que esta página es; ninguna pantalla de producto los usa.
+      */}
+      <Card title="Restavor agents · origen y estado de una reserva">
+        <div className="space-y-4" data-testid="agents-chips">
+          <div className="flex flex-wrap items-center gap-2">
+            <OriginChip origin="agent" />
+            <OriginChip origin="platform" platformName="TheFork" />
+            <OriginChip origin="platform" platformName="CoverManager" />
+            <OriginChip origin="web" />
+            <OriginChip origin="manual" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <OriginChip origin="agent" size="sm" />
+            <OriginChip origin="platform" platformName="TheFork" size="sm" />
+            <OriginChip origin="web" size="sm" />
+            <OriginChip origin="manual" size="sm" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusChip kind="pending" />
+            <StatusChip kind="duplicate" />
+            <StatusChip kind="noShow" />
+            <NewBadge />
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Restavor agents · fila de reserva">
+        <ul className="space-y-1" data-testid="agents-rows">
+          <ReservationRow time="13:30" name="Lucía Fernández" partySize={2} origin="platform" platformName="TheFork" status="confirmed" />
+          <ReservationRow time="14:00" name="Javier Ruiz" note="Una trona" partySize={4} origin="agent" status="confirmed" isNew />
+          <ReservationRow
+            time="14:30"
+            name="Andrés Martínez"
+            partySize={12}
+            origin="agent"
+            status="pending"
+            largeGroup
+            actions={
+              <>
+                <Button variant="secondary">Rechazar</Button>
+                <Button>Confirmar</Button>
+              </>
+            }
+          />
+          <ReservationRow time="13:30" name="Raúl Moreno" partySize={2} origin="manual" status="no_show" />
+          <ReservationRow
+            time="15:00"
+            name="Elena Castro"
+            partySize={2}
+            origin="platform"
+            platformName="CoverManager"
+            status="cancelled"
+            cancelledNote="Cancelada por CoverManager · 14:20"
+          />
+        </ul>
+      </Card>
+
+      <Card title="Restavor agents · aforo de un turno">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3" data-testid="agents-meter">
+          <CapacityMeter name="Comida" range="13:00 – 16:00" capacity={40} occupied={23} />
+          <CapacityMeter name="Cena" range="20:00 – 23:30" capacity={60} occupied={54} />
+          <CapacityMeter name="Cena" range="20:00 – 23:30" capacity={60} occupied={64} />
+        </div>
+      </Card>
+
+      <Card title="Restavor agents · tarjeta de estado del agente">
+        <div className="space-y-4" data-testid="agents-state">
+          <AgentStateCard
+            state="on"
+            description="Coge las llamadas que no contestáis en 4 tonos · Horario: todo el día"
+            action={<Button variant="secondary">Apagar agente</Button>}
+          />
+          <AgentStateCard
+            state="off"
+            title="Agente apagado hasta las 15:10"
+            description="Las llamadas suenan en el local."
+            action={<Button>Encender agente</Button>}
+          />
+          <div className="flex flex-wrap gap-2">
+            <AgentStatusPill state="on" />
+            <AgentStatusPill state="off">Agente apagado · hasta 15:10</AgentStatusPill>
+          </div>
+        </div>
+      </Card>
+
+      <Card title="Restavor agents · teclado de PIN">
+        <div data-testid="agents-pin">
+          <PinPad value={pin} onChange={setPin} onSubmit={() => setPin("")} />
         </div>
       </Card>
     </main>

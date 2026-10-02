@@ -14,9 +14,11 @@ import { leaveSupportSession } from "@/app/administracion/actions";
 import {
   activeDestination,
   agentsActiveDestination,
-  agentsMenuGroups,
+  agentsCreateOptions,
+  agentsMenu,
   agentsMobileNav,
   AGENTS_HOME,
+  type AgentsNavContext,
   createOptions,
   DESTINATION_ICONS,
   globalActiveDestination,
@@ -96,6 +98,7 @@ export function AppShell({
   context = "space",
   productAccess = null,
   reservationsEnabled = false,
+  agentsNav = null,
   spaceSlug = "",
   spaceName = "",
   role = "owner",
@@ -136,6 +139,13 @@ export function AppShell({
   productAccess?: ProductAccess | null;
   /** Decisión 89 · el espacio ofrece Reservas: el menú del equipo lleva «Reservas». */
   reservationsEnabled?: boolean;
+  /**
+   * Restavor agents (Fase B) · el restaurante en el que se está y quién es quien mira en él.
+   * Con él, el menú es el de §5.1 (Hoy, Calendario, Agente, Ajustes, Saldo…) y la barra de
+   * móvil lleva su (+) «Nueva». Sin él (el selector de `/agents`), el de la Fase A. No
+   * autoriza nada: lo que se enseña lo decide `guardAgentsPage()` y el servidor lo repite.
+   */
+  agentsNav?: AgentsNavContext | null;
   spaceSlug?: string;
   spaceName?: string;
   role?: ShellRole;
@@ -214,11 +224,11 @@ export function AppShell({
   const menu = useMemo(
     () =>
       esGlobal
-        ? globalMenuGroups(globalHome)
+        ? { ...globalMenuGroups(globalHome), mainTitle: null }
         : esAgents
-          ? agentsMenuGroups()
-          : sidebarGroups(spaceSlug, role, establishmentId, reservationsEnabled),
-    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId, reservationsEnabled],
+          ? agentsMenu(agentsNav ?? undefined)
+          : { ...sidebarGroups(spaceSlug, role, establishmentId, reservationsEnabled), mainTitle: null },
+    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId, reservationsEnabled, agentsNav],
   );
   /**
    * RN-PAN-01 · la raíz del contexto. Para el equipo es su espacio; para
@@ -236,7 +246,7 @@ export function AppShell({
   const contextName = esGlobal
     ? es.globalContext.nav.home
     : esAgents
-      ? es.agents.home.title
+      ? agentsNav?.name ?? es.agents.home.title
       : esPanel
       ? establishmentName ?? es.restaurantPanel.label
       : spaceName;
@@ -245,27 +255,27 @@ export function AppShell({
       esGlobal
         ? globalMobileNav(globalHome)
         : esAgents
-          ? agentsMobileNav()
+          ? agentsMobileNav(agentsNav ?? undefined)
           : mobileNav(spaceSlug, role, establishmentId),
-    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId],
+    [esGlobal, esAgents, globalHome, spaceSlug, role, establishmentId, agentsNav],
   );
   const creates = useMemo(
     () =>
       esGlobal
         ? globalCreateOptions()
         : esAgents
-          ? []
+          ? agentsCreateOptions(agentsNav ?? undefined)
           : createOptions(spaceSlug, role, establishmentId),
-    [esGlobal, esAgents, spaceSlug, role, establishmentId],
+    [esGlobal, esAgents, spaceSlug, role, establishmentId, agentsNav],
   );
   const active = useMemo(
     () =>
       esGlobal
         ? globalActiveDestination(pathname ?? "")
         : esAgents
-          ? agentsActiveDestination(pathname ?? "")
+          ? agentsActiveDestination(pathname ?? "", agentsNav ?? undefined)
           : activeDestination(spaceSlug, pathname ?? "", role, establishmentId, reservationsEnabled),
-    [esGlobal, esAgents, spaceSlug, pathname, role, establishmentId, reservationsEnabled],
+    [esGlobal, esAgents, spaceSlug, pathname, role, establishmentId, reservationsEnabled, agentsNav],
   );
   const unread = notifications.filter((n) => n.readAt === null).length;
 
@@ -351,7 +361,16 @@ export function AppShell({
           */}
           {esGlobal ? null : (
           <div className="px-3">
-            {esAgents ? null : esPanel ? (
+            {esAgents ? (
+              agentsNav ? (
+                <div data-testid="agents-restaurant-card" className="rounded-field bg-sidebar-raised px-3 py-2.5">
+                  <p className="truncate text-sm font-semibold text-surface">{agentsNav.name}</p>
+                  {agentsNav.locality ? (
+                    <p className="truncate text-xs text-sidebar-text">{agentsNav.locality}</p>
+                  ) : null}
+                </div>
+              ) : null
+            ) : esPanel ? (
               <PanelContextBox
                 name={contextName}
                 current={establishmentId}
@@ -386,6 +405,11 @@ export function AppShell({
             aria-label={esPanel ? es.restaurantPanel.menuLabel : es.nav.menuLabel}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 pb-5 pt-5"
           >
+            {menu.mainTitle ? (
+              <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-sidebar-text">
+                {menu.mainTitle}
+              </p>
+            ) : null}
             <ul className="flex flex-col gap-0.5">
               {menu.main.map((destination) => (
                 <li key={destination.key}>
@@ -707,7 +731,22 @@ export function AppShell({
           />
         ))}
 
-        {creates.length > 0 ? (
+        {esAgents && creates.length === 1 ? (
+          /*
+            Restavor agents (`AgentsHoyMovil`): el (+) es «Nueva» y va directo a la
+            nueva reserva, sin menú de una sola opción.
+          */
+          <Link
+            href={creates[0].href}
+            data-testid="mobile-create-direct"
+            className="flex flex-col items-center gap-1 pb-2 text-center"
+          >
+            <span className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full border-4 border-background bg-cuotly-green text-surface shadow-sm">
+              <Icon name="plus" className="h-6 w-6" />
+            </span>
+            <span className="text-[11px] font-medium leading-none text-surface">{creates[0].label}</span>
+          </Link>
+        ) : creates.length > 0 ? (
           <details data-testid="mobile-create-menu" className="relative">
             <summary className="flex cursor-pointer list-none flex-col items-center gap-1 pb-2 text-center [&::-webkit-details-marker]:hidden">
               {/*
@@ -981,6 +1020,9 @@ function SidebarLink({
         <span className="ml-auto shrink-0 rounded bg-sidebar-border px-1.5 py-0.5 text-[10px] font-medium leading-4 text-sidebar-text">
           {es.nav.agentBadge}
         </span>
+      ) : null}
+      {destination.badge ? (
+        <span className="ml-auto shrink-0 text-xs font-semibold tabular-nums">{destination.badge}</span>
       ) : null}
     </Link>
   );

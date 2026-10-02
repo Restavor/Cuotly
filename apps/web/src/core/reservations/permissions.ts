@@ -210,33 +210,6 @@ export function canReservations(
   return true;
 }
 
-/**
- * Las pantallas de Restavor agents y la acción que las abre (PRD §3.2 y §5.1). Es lo
- * que `agentsMenu()` recorre para decidir qué destinos aparecen: lo que no se puede,
- * no sale (RN-APP-05: la tablet sin PIN no enseña Saldo, Plan y pagos ni Ajustes).
- * «Ayuda» es de todos.
- */
-export const AGENTS_DESTINATION_ACTION = {
-  today: "view_agenda",
-  calendar: "view_agenda",
-  agent: "view_calls",
-  settings: "manage_schedule_settings",
-  balance: "view_balance",
-  plan: "manage_plan",
-  help: null,
-} as const satisfies Record<string, ReservationAction | null>;
-
-export type AgentsDestinationKey = keyof typeof AGENTS_DESTINATION_ACTION;
-
-export function canSeeAgentsDestination(
-  actor: ReservationsActor,
-  destination: AgentsDestinationKey,
-  resource: ReservationResource = {},
-): boolean {
-  const action = AGENTS_DESTINATION_ACTION[destination];
-  return action === null ? true : canReservations(actor, action, resource);
-}
-
 /** ¿Se enseñan importes (saldo, coste de las llamadas)? Nunca a la tablet sin PIN ni al Equipo (RN-APP-05). */
 export function canSeeAmounts(actor: ReservationsActor, resource: ReservationResource = {}): boolean {
   return canReservations(actor, "view_balance", resource) || canReservations(actor, "view_call_cost", resource);

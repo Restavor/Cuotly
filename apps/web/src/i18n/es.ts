@@ -8841,10 +8841,87 @@ export const es = {
       listTitle: "Tus restaurantes con Reservas",
       emptyTitle: "Todavía no tienes Reservas",
       emptyReason: "Cuando Restavor apruebe tu solicitud, tu restaurante aparecerá aquí.",
-      comingTitle: "La agenda de Reservas llega en la siguiente fase",
-      comingReason:
-        "Todavía no hay agenda, ni agente de llamadas, ni saldo que enseñar: están en construcción y no se simulan.",
       backToApp: "Volver al inicio de Restavor",
+    },
+    /** Los destinos del armazón de Restavor agents (PRD §5.1). */
+    menu: {
+      reservationsSection: "Reservas",
+      today: "Hoy",
+      calendar: "Calendario",
+      calls: "Agente de llamadas",
+      /** El mismo destino en la barra de móvil, donde «Agente de llamadas» no cabe (`AgentsHoyMovil`). */
+      callsShort: "Agente",
+      settings: "Ajustes",
+      balance: "Saldo",
+      plan: "Plan y pagos",
+      help: "Ayuda",
+      more: "Más",
+      newReservation: "Nueva",
+      /** Los títulos de las pantallas que no son un destino del menú. */
+      newReservationTitle: "Nueva reserva",
+      hoursTitle: "Horarios y aforo",
+      teamTitle: "Equipo y tablet del local",
+      connectionsTitle: "Conexiones y web",
+      account: "Mi cuenta",
+      backToApp: "Volver al inicio de Restavor",
+      restaurantLabel: "Restaurante",
+    },
+    /** Los componentes de la agenda: orígenes, estados, aforo, agente y teclado de PIN. */
+    components: {
+      origins: { agent: "Agente", platform: "Plataforma", web: "Web", manual: "Manual" },
+      statuses: { pending: "Pendiente", duplicate: "Posible duplicada", noShow: "No vino" },
+      newBadge: "Nueva",
+      largeGroup: "Grupo grande",
+      people: (n: number) => (n === 1 ? "1 persona" : `${n} personas`),
+      cancelledBy: (quien: string, hora: string) => `Cancelada por ${quien} · ${hora}`,
+      meter: {
+        almostFull: "Casi lleno",
+        over: "Aforo superado",
+        /** «23» va aparte en negrita; esto es lo que le sigue: «de 40 personas» / «de 40». */
+        ofTotal: (aforo: number) => `de ${aforo} personas`,
+        ofTotalShort: (aforo: number) => `de ${aforo}`,
+        label: (turno: string, ocupadas: number, aforo: number) =>
+          `${turno}: ${ocupadas} de ${aforo} personas`,
+      },
+      agentCard: {
+        on: "Agente encendido",
+        off: "Agente apagado",
+      },
+      pin: {
+        delete: "Borrar",
+        confirm: "OK",
+        deleteAria: "Borrar último número",
+        confirmAria: "Confirmar PIN",
+        dots: (escritos: number, total: number) => `${escritos} de ${total} números`,
+      },
+    },
+    /** Lo que se dice mientras una pantalla no está construida: nunca datos de relleno (CLAUDE.md). */
+    soon: {
+      title: "Esta pantalla llega en una fase posterior",
+      reason: (fase: string) =>
+        `Todavía no hay datos que enseñar aquí: se construye en la ${fase} y no se simula antes.`,
+      phaseAgenda: "Fase C (la agenda)",
+      phaseCall: "Fase G (el agente de llamadas)",
+      phaseBilling: "Fase E (cobro y saldo)",
+      phaseTablet: "Fase D (equipo, tablet y soporte)",
+      phaseHelp: "Fase J (pulido)",
+      phaseConnectors: "Fase I (plataformas de reservas)",
+    },
+    /** `/agents` y su selector de restaurante (PRD §5.1). */
+    selector: {
+      title: "Elige un restaurante",
+      subtitle: "Tienes Reservas en más de un restaurante.",
+      open: "Entrar",
+      noAccessTitle: "No tienes acceso a Reservas en este restaurante",
+      noAccessReason:
+        "Solo el propietario del restaurante o quien tenga el permiso «Gestionar Reservas» entra en Reservas.",
+      backToList: "Volver a tus restaurantes",
+    },
+    /** Pantallas por estado del servicio (PRD §6.12); sus datos llegan en la Fase E. */
+    states: {
+      pendingPaymentTitle: "Aprobado: datos para pagar",
+      closedTitle: "Reservas cerrada",
+      conditionsTitle: "Acepta las condiciones de Reservas",
     },
   },
 

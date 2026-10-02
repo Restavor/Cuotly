@@ -21,6 +21,18 @@ import type { SVGProps } from "react";
  * §21.4: el estado se expresa con texto e icono, nunca solo con color).
  */
 const PATHS = {
+  // Restavor agents (Fase B): el origen de una reserva y la tarjeta del agente.
+  headset:
+    "M4 14v-2a8 8 0 0 1 16 0v2M4 14.5A1.5 1.5 0 0 1 5.5 13H7v5H5.5A1.5 1.5 0 0 1 4 16.5ZM20 14.5a1.5 1.5 0 0 0-1.5-1.5H17v5h1.5a1.5 1.5 0 0 0 1.5-1.5ZM17 18v.5a2 2 0 0 1-2 2h-2",
+  globe:
+    "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3 12h18M12 3c2.5 2.4 3.8 5.4 3.8 9S14.5 18.6 12 21c-2.5-2.4-3.8-5.4-3.8-9S9.5 5.4 12 3Z",
+  window:
+    "M4 6.5A1.5 1.5 0 0 1 5.5 5h13A1.5 1.5 0 0 1 20 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5ZM4 9.5h16M7 7.25h.01M9.5 7.25h.01",
+  pencil: "M4 20l.8-3.7L16.2 4.9a2.1 2.1 0 0 1 3 3L7.7 19.2ZM14.5 6.6l3 3",
+  power: "M12 3v8M7.1 6.6a7.5 7.5 0 1 0 9.8 0",
+  wallet:
+    "M4 6.5A1.5 1.5 0 0 1 5.5 5H17v3M4 6.5V18a2 2 0 0 0 2 2h12.5a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 18.5 8H5.5A1.5 1.5 0 0 1 4 6.5ZM16 14h2",
+  backspace: "M9 6h9a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-5-6 5-6ZM12.5 10l4 4M16.5 10l-4 4",
   home: "M3 10.5 12 3l9 7.5M5.25 9.75V20a1 1 0 0 0 1 1h3.5v-5.5h4.5V21h3.5a1 1 0 0 0 1-1V9.75",
   // Fase 4 · Hito 21 · el centro de ayuda (§133): un interrogante en su círculo.
   help: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9.5 9.5a2.5 2.5 0 1 1 3.6 2.25c-.7.35-1.1.9-1.1 1.6v.4M12 17h.01",
