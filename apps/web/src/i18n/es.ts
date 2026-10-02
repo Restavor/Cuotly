@@ -4177,6 +4177,11 @@ export const es = {
         "Las áreas de trabajo que puede asumir (§4.6). «General» vale para cualquier especialidad.",
       specialtiesNotApplicable: "No realiza trabajos, así que las especialidades no se le aplican.",
       adminTitle: "Lo que puede hacer como administrador",
+      /** Decisión 92 · la marca de soporte de Reservas (solo si el espacio ofrece Reservas). */
+      supportTitle: "Restavor agents",
+      supportReservations: "Soporte de Reservas",
+      supportReservationsHint:
+        "Puede abrir una sesión de soporte de Reservas, con motivo y segundo paso, para ver los datos de los comensales de un restaurante. Solo el propietario del espacio lo marca.",
       performJobs: "Realizar trabajos",
       performJobsHint: "Puede recibir y completar trabajos asignados.",
       approveReports: "Aprobar informes",
@@ -7227,6 +7232,7 @@ export const es = {
     grantPending: "Dando acceso…",
     grantEditDataLabel: "Puede editar los datos del restaurante (solo se aplica a un Editor).",
     grantViewBillingLabel: "Puede ver la facturación (solo se aplica a un Editor).",
+    grantManageReservationsLabel: "Puede gestionar Reservas (solo se aplica a un Editor).",
     grantScopeLabel: "Alcance",
     grantScopes: {
       this: "Solo este restaurante",
@@ -10102,6 +10108,11 @@ export const es = {
       view_billing: "Pagos y facturas",
       manage_users: "Usuarios y accesos",
     },
+    /** "Gestionar Reservas" (RN-APP-04): no es una de las siete de RN-EST-15, va en su propio apartado. */
+    reservationsGroup: "Restavor agents",
+    manageReservations: "Gestionar Reservas",
+    manageReservationsHint:
+      "Puede ver y manejar la agenda de Reservas, el agente de llamadas y el saldo. Solo cuenta si el restaurante tiene Reservas.",
     permissionHints: {
       create_requests: "Puede enviar solicitudes al equipo de mantenimiento.",
       edit_menus: "Puede solicitar cambios en el menú diario.",

@@ -135,6 +135,9 @@ export async function grantClientAccess(
   const scope = String(formData.get("scope") ?? "this");
   const editData = formData.get("editData") !== null;
   const viewBilling = formData.get("viewBilling") !== null;
+  // "Gestionar Reservas" (migración 163): solo cuenta para un Editor invitado a este
+  // restaurante; los dos caminos de grupo no lo llevan.
+  const manageReservations = formData.get("manageReservations") !== null;
 
   if (!email) return { error: null, granted: 0, future: false, invited: false };
 
@@ -173,6 +176,7 @@ export async function grantClientAccess(
     p_role: role,
     p_edit_establishment_data: editData,
     p_view_billing: viewBilling,
+    p_manage_reservations: manageReservations,
   });
 
   if (error) return { error: error.message, granted: 0, future: false, invited: false };

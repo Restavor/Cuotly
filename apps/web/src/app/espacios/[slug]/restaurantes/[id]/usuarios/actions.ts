@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
-import { CLIENT_PERMISSIONS } from "./users-load";
+import { CLIENT_PERMISSIONS, RESERVATIONS_PERMISSION } from "./users-load";
 
 export type SavePermissionsState = { error: string | null; saved: boolean };
 
@@ -38,8 +38,10 @@ export async function saveClientPermissions(
 
   if (!establishmentId || !userId) return { error: null, saved: false };
 
+  // Las siete de RN-EST-15 y, aparte, "Gestionar Reservas" (migración 163): una casilla
+  // sin marcar no llega en el formulario, y eso es lo que significa quitarla.
   const permissions = Object.fromEntries(
-    CLIENT_PERMISSIONS.map((name) => [name, formData.get(name) !== null]),
+    [...CLIENT_PERMISSIONS, RESERVATIONS_PERMISSION].map((name) => [name, formData.get(name) !== null]),
   );
 
   const supabase = await createClient();

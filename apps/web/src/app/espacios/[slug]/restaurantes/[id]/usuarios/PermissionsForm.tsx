@@ -6,7 +6,7 @@ import { Button } from "@/components/ui";
 import { es } from "@/i18n/es";
 
 import { saveClientPermissions, type SavePermissionsState } from "./actions";
-import { CLIENT_PERMISSIONS, type ClientPermission } from "./users-load";
+import { CLIENT_PERMISSIONS, RESERVATIONS_PERMISSION, type ClientPermission } from "./users-load";
 
 const INITIAL: SavePermissionsState = { error: null, saved: false };
 
@@ -29,11 +29,14 @@ export function PermissionsForm({
   userId,
   personName,
   current,
+  manageReservations,
 }: {
   establishmentId: string;
   userId: string;
   personName: string;
   current: Readonly<Record<ClientPermission, boolean>>;
+  /** "Gestionar Reservas": el permiso de Restavor agents, aparte de las siete. */
+  manageReservations: boolean;
 }) {
   const [state, action, pending] = useActionState(saveClientPermissions, INITIAL);
   const t = es.panelUsers;
@@ -75,6 +78,32 @@ export function PermissionsForm({
             </div>
           </div>
         ))}
+      </fieldset>
+
+      {/* Restavor agents: el Encargado de Reservas. No es una de las siete de RN-EST-15. */}
+      <fieldset className="space-y-3">
+        <legend className="text-sm font-medium text-text">{t.reservationsGroup}</legend>
+        <div className="flex items-start gap-3">
+          <input
+            id={`${userId}-${RESERVATIONS_PERMISSION}`}
+            type="checkbox"
+            name={RESERVATIONS_PERMISSION}
+            defaultChecked={manageReservations}
+            aria-describedby={`${userId}-${RESERVATIONS_PERMISSION}-hint`}
+            className="mt-1"
+          />
+          <div>
+            <label
+              htmlFor={`${userId}-${RESERVATIONS_PERMISSION}`}
+              className="block text-sm font-medium text-text"
+            >
+              {t.manageReservations}
+            </label>
+            <p id={`${userId}-${RESERVATIONS_PERMISSION}-hint`} className="text-xs text-text-secondary">
+              {t.manageReservationsHint}
+            </p>
+          </div>
+        </div>
       </fieldset>
 
       <Button type="submit" disabled={pending}>

@@ -24,6 +24,15 @@ export const CLIENT_PERMISSIONS = [
 
 export type ClientPermission = (typeof CLIENT_PERMISSIONS)[number];
 
+/**
+ * "Gestionar Reservas" (RN-APP-04, migración 163): el permiso del Encargado de Reservas.
+ * **No es una de las siete** de RN-EST-15: `client_permission()` rechaza cualquier nombre
+ * fuera de esas siete, y Reservas decide con `reservations_my_role()`. Va aparte, en su
+ * propio apartado "Restavor agents" del formulario, y la acción lo manda junto a las
+ * siete para que se guarde en la misma llamada.
+ */
+export const RESERVATIONS_PERMISSION = "manage_reservations" as const;
+
 export interface PanelUser {
   readonly userId: string;
   readonly displayName: string | null;
@@ -32,6 +41,8 @@ export interface PanelUser {
   readonly source: "establishment" | "group";
   readonly role: string;
   readonly permissions: Readonly<Record<ClientPermission, boolean>>;
+  /** "Gestionar Reservas": el Propietario lo tiene por su rol; un Editor, por su casilla. */
+  readonly manageReservations: boolean;
 }
 
 export interface PanelUsers {
@@ -87,6 +98,7 @@ export async function loadPanelUsers(
         view_billing: row.view_billing,
         manage_users: row.manage_users,
       },
+      manageReservations: row.manage_reservations,
     })),
   };
 }

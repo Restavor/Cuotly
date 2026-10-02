@@ -23,6 +23,7 @@ function member(over: Partial<TeamMember> & Pick<TeamMember, "userId" | "name" |
     since: "2026-01-12T10:00:00Z",
     adminCanPerformJobs: false,
     canApproveReports: false,
+    canSupportReservations: false,
     specialties: [],
     establishmentIds: [],
     loadPoints: 0,
@@ -38,6 +39,7 @@ const WORKER = "00000000-0000-4000-8000-000000000003";
 
 function team(over: Partial<TeamData> = {}): TeamData {
   return {
+    reservationsEnabled: false,
     members: [
       member({ userId: OWNER, name: "Bosco", role: "owner", specialties: ["web"] }),
       member({ userId: ADMIN, name: "Ana", role: "admin", loadPoints: 12, adminCanPerformJobs: true }),
@@ -133,6 +135,38 @@ describe("M70 · Permisos", () => {
     expect(screen.queryByRole("checkbox", { name: "Magariños" })).toBeNull();
     expect((screen.getByRole("switch", { name: new RegExp(t.permissions.performJobs) }) as HTMLInputElement).checked).toBe(true);
     expect((screen.getByRole("switch", { name: new RegExp(t.permissions.approveReports) }) as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("RN-APP-04 · «Soporte de Reservas» solo se ofrece si el espacio ofrece Reservas", () => {
+    render(<PermissionsTab slug="s" spaceId="sp" data={team()} personId={ADMIN} history={[]} timeZone="Europe/Madrid" />);
+    expect(screen.queryByRole("switch", { name: new RegExp(t.permissions.supportReservations) })).toBeNull();
+  });
+
+  it("RN-APP-04 · con Reservas ofrecida, el propietario ve la marca de cada persona y puede cambiarla", () => {
+    const data = team({
+      reservationsEnabled: true,
+      members: team().members.map((m) => (m.userId === ADMIN ? { ...m, canSupportReservations: true } : m)),
+    });
+    render(<PermissionsTab slug="s" spaceId="sp" data={data} personId={ADMIN} history={[]} timeZone="Europe/Madrid" />);
+    const marca = screen.getByRole("switch", { name: new RegExp(t.permissions.supportReservations) }) as HTMLInputElement;
+    expect(marca.checked).toBe(true);
+    expect(marca.disabled).toBe(false);
+    expect(marca.getAttribute("name")).toBe("supportReservations");
+    // El formulario avisa a la acción de que esta marca se puede cambiar.
+    expect(document.querySelector('input[name="editSupportReservations"]')).not.toBeNull();
+    cleanup();
+
+    // También un trabajador (no solo los administradores) puede estar marcado.
+    render(<PermissionsTab slug="s" spaceId="sp" data={data} personId={WORKER} history={[]} timeZone="Europe/Madrid" />);
+    expect((screen.getByRole("switch", { name: new RegExp(t.permissions.supportReservations) }) as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("RN-APP-04 · sin ser propietario del espacio, la marca se ve pero no se cambia", () => {
+    const data = team({ reservationsEnabled: true, caps: { manageSpace: false, invite: true, assignJobs: true } });
+    render(<PermissionsTab slug="s" spaceId="sp" data={data} personId={ADMIN} history={[]} timeZone="Europe/Madrid" />);
+    const marca = screen.getByRole("switch", { name: new RegExp(t.permissions.supportReservations) }) as HTMLInputElement;
+    expect(marca.disabled).toBe(true);
+    expect(document.querySelector('input[name="editSupportReservations"]')).toBeNull();
   });
 
   it("el historial sale del libro de auditoría, con su nombre en español y quién lo hizo", () => {

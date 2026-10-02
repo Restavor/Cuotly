@@ -31,6 +31,8 @@ export function PermissionsForm({
   specialtiesApply,
   adminFlags,
   editAdminFlags,
+  supportReservations,
+  editSupportReservations,
   general,
   history,
 }: {
@@ -48,11 +50,14 @@ export function PermissionsForm({
   /** Solo para un administrador. */
   adminFlags: { performJobs: boolean; approveReports: boolean } | null;
   editAdminFlags: boolean;
+  /** Decisión 92 · la marca «Soporte de Reservas»; `null` si el espacio no ofrece Reservas. */
+  supportReservations: boolean | null;
+  editSupportReservations: boolean;
   general: ReactNode;
   history: ReactNode;
 }) {
   const [state, action, pending] = useActionState(saveMemberPermissions, INITIAL_TEAM);
-  const algoEditable = editEstablishments || editSpecialties || editAdminFlags;
+  const algoEditable = editEstablishments || editSpecialties || editAdminFlags || editSupportReservations;
 
   return (
     <form action={action} className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
@@ -61,6 +66,7 @@ export function PermissionsForm({
       {editEstablishments ? <input type="hidden" name="editEstablishments" value="1" /> : null}
       {editSpecialties ? <input type="hidden" name="editSpecialties" value="1" /> : null}
       {editAdminFlags ? <input type="hidden" name="editAdminFlags" value="1" /> : null}
+      {editSupportReservations ? <input type="hidden" name="editSupportReservations" value="1" /> : null}
 
       <div className="min-w-0">{general}</div>
 
@@ -117,6 +123,18 @@ export function PermissionsForm({
                 disabled={!editAdminFlags}
               />
             </div>
+          </Card>
+        ) : null}
+
+        {supportReservations !== null ? (
+          <Card title={t.supportTitle}>
+            <Interruptor
+              name="supportReservations"
+              label={t.supportReservations}
+              hint={t.supportReservationsHint}
+              checked={supportReservations}
+              disabled={!editSupportReservations}
+            />
           </Card>
         ) : null}
       </div>

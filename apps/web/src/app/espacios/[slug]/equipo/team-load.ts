@@ -35,6 +35,8 @@ export interface TeamMember {
   /** La marca de la fila; para saber si puede realizar trabajos, `canPerformJobs()`. */
   readonly adminCanPerformJobs: boolean;
   readonly canApproveReports: boolean;
+  /** Decisión 92 · la marca «Soporte de Reservas»: puede abrir una sesión de soporte de Reservas. */
+  readonly canSupportReservations: boolean;
   readonly specialties: readonly string[];
   readonly establishmentIds: readonly string[];
   /** `null` cuando no se puede calcular (sin `assign_jobs` o error). */
@@ -53,6 +55,8 @@ export interface CurrentSupervision {
 }
 
 export interface TeamData {
+  /** `spaces.reservations_enabled`: solo si el espacio ofrece Reservas tiene sentido la marca de soporte. */
+  readonly reservationsEnabled: boolean;
   readonly members: readonly TeamMember[];
   readonly establishments: readonly TeamEstablishment[];
   readonly supervisions: readonly CurrentSupervision[];
@@ -80,10 +84,13 @@ export async function loadTeam(supabase: Supabase, spaceId: string, now: Date = 
     { data: manageSpace },
     { data: invite },
     { data: assignJobs },
+    { data: space },
   ] = await Promise.all([
     supabase
       .from("space_memberships")
-      .select("user_id, role, status, created_at, can_perform_jobs, can_approve_reports, profiles (full_name, email)")
+      .select(
+        "user_id, role, status, created_at, can_perform_jobs, can_approve_reports, can_support_reservations, profiles (full_name, email)",
+      )
       .eq("space_id", spaceId)
       .order("created_at"),
     supabase.from("establishments").select("id, name, status").eq("space_id", spaceId).order("name"),
@@ -105,6 +112,7 @@ export async function loadTeam(supabase: Supabase, spaceId: string, now: Date = 
     supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "manage_space" }),
     supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "invite_member" }),
     supabase.rpc("has_capability", { p_space_id: spaceId, p_capability: "assign_jobs" }),
+    supabase.from("spaces").select("reservations_enabled").eq("id", spaceId).maybeSingle(),
   ]);
 
   let loadState: TeamData["loadState"] = "no_permission";
@@ -126,6 +134,7 @@ export async function loadTeam(supabase: Supabase, spaceId: string, now: Date = 
   const availabilityOf = new Map((availability ?? []).map((a) => [a.user_id, a]));
 
   return {
+    reservationsEnabled: space?.reservations_enabled === true,
     members: (memberships ?? []).map((m) => ({
       userId: m.user_id,
       name: nameOf(m.profiles),
@@ -135,6 +144,7 @@ export async function loadTeam(supabase: Supabase, spaceId: string, now: Date = 
       since: m.created_at,
       adminCanPerformJobs: m.can_perform_jobs,
       canApproveReports: m.can_approve_reports,
+      canSupportReservations: m.can_support_reservations,
       specialties: [...(specialtiesOf.get(m.user_id) ?? [])].sort(),
       establishmentIds: establishmentsOf.get(m.user_id) ?? [],
       loadPoints: loadState === "ok" ? (load.get(m.user_id) ?? 0) : null,

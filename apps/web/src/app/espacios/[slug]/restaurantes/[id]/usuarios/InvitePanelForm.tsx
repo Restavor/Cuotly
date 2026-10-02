@@ -76,6 +76,10 @@ export function InvitePanelForm({ establishmentId }: { establishmentId: string }
           <input type="checkbox" name="viewBilling" className="mt-0.5" />
           <span>{t.grantViewBillingLabel}</span>
         </label>
+        <label className="flex items-start gap-2">
+          <input type="checkbox" name="manageReservations" className="mt-0.5" />
+          <span>{t.grantManageReservationsLabel}</span>
+        </label>
       </div>
 
       {state.error ? <p className="text-sm text-danger">{state.error}</p> : null}

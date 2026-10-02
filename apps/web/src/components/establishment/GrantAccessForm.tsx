@@ -85,6 +85,10 @@ export function GrantAccessForm({
           <input type="checkbox" name="viewBilling" className="mt-0.5" />
           <span>{t.grantViewBillingLabel}</span>
         </label>
+        <label className="flex items-start gap-2">
+          <input type="checkbox" name="manageReservations" className="mt-0.5" />
+          <span>{t.grantManageReservationsLabel}</span>
+        </label>
       </div>
 
       <fieldset className="space-y-1 text-sm text-text-secondary">

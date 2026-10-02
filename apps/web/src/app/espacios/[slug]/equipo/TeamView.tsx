@@ -434,11 +434,14 @@ export function PermissionsTab({
   const editEstablishments = data.caps.assignJobs && esTrabajador && !retirada;
   const editSpecialties = data.caps.assignJobs && realiza && !retirada;
   const editAdminFlags = data.caps.manageSpace && esAdmin && !retirada;
+  // Decisión 92 · solo el propietario del espacio marca a alguien como soporte de Reservas, y
+  // solo si el espacio ofrece Reservas. Quien ya está fuera del equipo no se marca.
+  const editSupportReservations = data.reservationsEnabled && data.caps.manageSpace && !retirada;
   const removal = memberRemoval(person.role, person.status, data.caps.manageSpace);
   // A una persona retirada no se le explica quién cambia sus permisos:
   // no se le cambian, y la tarjeta de abajo dice por qué.
   const soloLectura =
-    !retirada && !editEstablishments && !editSpecialties && !editAdminFlags;
+    !retirada && !editEstablishments && !editSpecialties && !editAdminFlags && !editSupportReservations;
   const yesNo = (v: boolean) => (v ? tp.yes : tp.no);
 
   const general = (
@@ -603,6 +606,8 @@ export function PermissionsTab({
             : null
         }
         editAdminFlags={editAdminFlags}
+        supportReservations={data.reservationsEnabled ? person.canSupportReservations : null}
+        editSupportReservations={editSupportReservations}
         general={general}
         history={historial}
       />

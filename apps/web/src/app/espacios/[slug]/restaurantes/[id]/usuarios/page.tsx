@@ -190,6 +190,15 @@ export default async function PanelUsersPage({
                               </span>
                             </li>
                           ))}
+                          <li className="flex items-center gap-1.5">
+                            <Icon
+                              name={row.manageReservations ? "check" : "close"}
+                              className={`h-3.5 w-3.5 ${row.manageReservations ? "text-cuotly-green" : "text-danger"}`}
+                            />
+                            <span className={row.manageReservations ? "text-text" : "text-text-secondary"}>
+                              {t.manageReservations}
+                            </span>
+                          </li>
                         </ul>
                       )}
                     </TableCell>
@@ -205,6 +214,7 @@ export default async function PanelUsersPage({
                               userId={row.userId}
                               personName={nombre}
                               current={row.permissions}
+                              manageReservations={row.manageReservations}
                             />
                             <RevokeAccessButton
                               userId={row.userId}

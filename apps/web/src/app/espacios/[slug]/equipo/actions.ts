@@ -231,6 +231,7 @@ export async function saveMemberPermissions(
   const editaRestaurantes = formData.get("editEstablishments") === "1";
   const editaEspecialidades = formData.get("editSpecialties") === "1";
   const editaMarcas = formData.get("editAdminFlags") === "1";
+  const editaSoporte = formData.get("editSupportReservations") === "1";
 
   try {
     const supabase = await createClient();
@@ -284,6 +285,28 @@ export async function saveMemberPermissions(
           p_space_id: spaceId,
           p_user_id: userId,
           p_value: aprueba,
+        });
+        if (error) return { error: error.message, done: false };
+      }
+    }
+
+    // Decisión 92 · la marca «Soporte de Reservas». La RPC no hace nada si el valor no cambia,
+    // pero se compara igualmente con lo guardado para no llamarla en vano.
+    if (editaSoporte) {
+      const { data: actual } = await supabase
+        .from("space_memberships")
+        .select("can_support_reservations")
+        .eq("space_id", spaceId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!actual) return { error: es.teamPage.permissions.notMember, done: false };
+
+      const soporte = formData.get("supportReservations") === "on";
+      if (soporte !== actual.can_support_reservations) {
+        const { error } = await supabase.rpc("set_member_can_support_reservations", {
+          p_space_id: spaceId,
+          p_user_id: userId,
+          p_value: soporte,
         });
         if (error) return { error: error.message, done: false };
       }
