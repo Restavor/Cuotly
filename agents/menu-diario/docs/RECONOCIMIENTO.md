@@ -222,7 +222,9 @@ Esta fase solo añade un `.md` y un `.png`, no código; se pasaron igualmente so
 |---|---|
 | `pnpm lint` | Pasa (salida 0) |
 | `pnpm typecheck` | `apps/mobile` y `packages/shared` pasan. `apps/web` falla en la primera pasada con `Cannot find name 'LayoutProps'` (`src/app/layout.tsx:17`): es un tipo global que genera Next. Tras `next typegen` (escribe en `.next`, ignorado por git) `tsc --noEmit` pasa (salida 0). **No es un fallo de esta fase**, pero ojo: el comando tal cual falla en un clon limpio sin generar tipos |
-| `pnpm test` | `packages/shared` y `apps/mobile` pasan (26 de 26). `apps/web`: **en curso al subir este commit**; el resultado se anota aquí en un commit posterior |
+| `pnpm test` | Pasa (salida 0): `apps/web` 198 archivos y 2.510 tests; `apps/mobile` 26 de 26; `packages/shared` también |
+
+Comprobación final de la base de pruebas tras el trabajo: 168 migraciones, 151 tablas (0 sin RLS), 229 filas en `audit_log`, 2 menús, 1 publicación, 2 versiones, 6 membresías, 0 descargas y **0 Edge Functions**: idéntico a la línea base de §3.1.
 
 ---
 
