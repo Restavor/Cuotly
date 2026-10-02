@@ -1,6 +1,8 @@
 import type { AgentsNavContext } from "@/components/shell/navigation";
 import type { ReservationServiceStatus, ReservationsActor } from "@/core/reservations/permissions";
 
+import { es } from "@/i18n/es";
+
 import { ArmazonAgents } from "./ArmazonAgents";
 
 /**
@@ -42,7 +44,7 @@ export default async function ArmazonAgentsPage({
 
   const nav: AgentsNavContext = {
     establishmentId: "00000000-0000-4000-8000-00000000a9e1",
-    name: "Restaurante de referencia",
+    name: es.agents.reference.restaurant,
     locality: null,
     actor: quien,
     serviceStatus: status,

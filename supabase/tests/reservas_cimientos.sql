@@ -46,7 +46,8 @@ insert into auth.users (id, email, role, aud) values
   ('d9000000-0000-0000-0000-000000000005', 'encargado-a@suite90.test', 'authenticated', 'authenticated'),
   ('d9000000-0000-0000-0000-000000000006', 'editor-a@suite90.test', 'authenticated', 'authenticated'),
   ('d9000000-0000-0000-0000-000000000007', 'propietario-b@suite90.test', 'authenticated', 'authenticated'),
-  ('d9000000-0000-0000-0000-000000000008', 'extrano@suite90.test', 'authenticated', 'authenticated');
+  ('d9000000-0000-0000-0000-000000000008', 'extrano@suite90.test', 'authenticated', 'authenticated'),
+  ('d9000000-0000-0000-0000-000000000009', 'trabajador@suite90.test', 'authenticated', 'authenticated');
 
 insert into public.profiles (id, email, full_name) values
   ('d9000000-0000-0000-0000-000000000001', 'duena@suite90.test', 'Dueña 90'),
@@ -56,7 +57,8 @@ insert into public.profiles (id, email, full_name) values
   ('d9000000-0000-0000-0000-000000000005', 'encargado-a@suite90.test', 'Encargado A 90'),
   ('d9000000-0000-0000-0000-000000000006', 'editor-a@suite90.test', 'Editor A 90'),
   ('d9000000-0000-0000-0000-000000000007', 'propietario-b@suite90.test', 'Propietario B 90'),
-  ('d9000000-0000-0000-0000-000000000008', 'extrano@suite90.test', 'Extraño 90')
+  ('d9000000-0000-0000-0000-000000000008', 'extrano@suite90.test', 'Extraño 90'),
+  ('d9000000-0000-0000-0000-000000000009', 'trabajador@suite90.test', 'Trabajador 90')
 on conflict (id) do nothing;
 
 insert into public.spaces (id, name, slug, timezone, created_by, reservations_enabled) values
@@ -66,7 +68,8 @@ insert into public.spaces (id, name, slug, timezone, created_by, reservations_en
 insert into public.space_memberships (space_id, user_id, role, status) values
   ('d9000000-0000-0000-0000-000000000010', 'd9000000-0000-0000-0000-000000000001', 'owner', 'active'),
   ('d9000000-0000-0000-0000-000000000010', 'd9000000-0000-0000-0000-000000000002', 'admin', 'active'),
-  ('d9000000-0000-0000-0000-000000000010', 'd9000000-0000-0000-0000-000000000003', 'admin', 'active');
+  ('d9000000-0000-0000-0000-000000000010', 'd9000000-0000-0000-0000-000000000003', 'admin', 'active'),
+  ('d9000000-0000-0000-0000-000000000010', 'd9000000-0000-0000-0000-000000000009', 'worker', 'active');
 
 -- Dos grupos y dos restaurantes: A (Casa Pepe) y B (Bar La Plaza), en el mismo espacio.
 insert into public.groups (id, space_id, name) values
@@ -374,6 +377,38 @@ begin
     raise exception 'RN-RES-12 FALLIDO: el Modo soporte debería seguir viendo la configuración';
   end if;
   reset role;
+end $$;
+
+-- ------------------------------------------------------------
+-- RN-RES-12 · quien solo ejecuta trabajos de mantenimiento no ve la configuración, el saldo
+-- ni la operación de Reservas: el equipo de Restavor es el propietario y los administradores
+-- ------------------------------------------------------------
+do $$
+declare
+  v_t text;
+  v_n bigint;
+  v_bloqueado boolean := false;
+begin
+  perform public.s90_as('d9000000-0000-0000-0000-000000000009', 'aal2');
+  foreach v_t in array array[
+    'reservation_settings', 'reservation_shifts', 'reservation_closed_dates', 'reservation_staff',
+    'reservation_devices', 'reservation_support_sessions', 'agent_state', 'agent_knowledge_faqs',
+    'agent_balance_entries', 'agent_topups', 'reservation_platform_connections', 'reservation_incidents',
+    'reservation_monthly_stats', 'agent_api_keys', 'reservations', 'agent_calls'
+  ] loop
+    v_n := public.s90_count(format('select 1 from public.%I', v_t));
+    if v_n <> 0 then
+      raise exception 'RN-RES-12 FALLIDO: un trabajador del espacio lee % fila(s) de %', v_n, v_t;
+    end if;
+  end loop;
+  begin
+    perform public.agent_balance('d9000000-0000-0000-0000-000000000020');
+  exception when others then v_bloqueado := true;
+  end;
+  reset role;
+  if not v_bloqueado then
+    raise exception 'RN-RES-12 FALLIDO: un trabajador del espacio pregunta el saldo de un restaurante';
+  end if;
 end $$;
 
 -- ------------------------------------------------------------
@@ -1001,6 +1036,52 @@ begin
   if exists (select 1 from public.establishment_permissions
              where establishment_membership_id = 'd9000000-0000-0000-0000-000000000042' and manage_reservations) then
     raise exception 'RN-APP-04 FALLIDO: no se puede quitar "Gestionar Reservas"';
+  end if;
+
+  -- 3 bis. Un Editor con «Usuarios y accesos» NO puede darse a sí mismo (ni dar) «Gestionar Reservas»:
+  -- se ascendería a Encargado y leería los datos de los comensales (PRD §3.2: el Encargado no añade Encargados).
+  update public.establishment_permissions set manage_users = true
+  where establishment_membership_id = 'd9000000-0000-0000-0000-000000000042';
+  perform public.s90_as('d9000000-0000-0000-0000-000000000006');
+  begin
+    perform public.set_establishment_permissions(
+      'd9000000-0000-0000-0000-000000000020', 'd9000000-0000-0000-0000-000000000006',
+      '{"manage_reservations": true}'::jsonb);
+    reset role;
+    raise exception 'RN-APP-04 FALLIDO: un Editor con manage_users se dio «Gestionar Reservas»';
+  exception when others then
+    reset role;
+    if sqlerrm like 'RN-APP-04 FALLIDO%' then raise; end if;
+  end;
+  perform public.s90_as('d9000000-0000-0000-0000-000000000006');
+  if public.s90_count('select 1 from public.reservations') <> 0 then
+    raise exception 'RN-APP-04 FALLIDO: el Editor leyó reservas tras intentar ascenderse';
+  end if;
+  -- Ni invitando a otro con el permiso.
+  begin
+    perform public.invite_to_establishment_panel(
+      'd9000000-0000-0000-0000-000000000020', 'ascenso@suite90.test', 'editor', false, false, null, true);
+    reset role;
+    raise exception 'RN-APP-04 FALLIDO: un Editor con manage_users invitó con «Gestionar Reservas»';
+  exception when others then
+    reset role;
+    if sqlerrm like 'RN-APP-04 FALLIDO%' then raise; end if;
+  end;
+  -- Lo que sí puede: cambiar los otros permisos mandando la casilla de Reservas sin cambiarla.
+  perform public.s90_as('d9000000-0000-0000-0000-000000000004');
+  perform public.set_establishment_permissions(
+    'd9000000-0000-0000-0000-000000000020', 'd9000000-0000-0000-0000-000000000006',
+    '{"create_requests": true, "manage_users": true, "manage_reservations": false}'::jsonb);
+  reset role;
+  perform public.s90_as('d9000000-0000-0000-0000-000000000006');
+  perform public.set_establishment_permissions(
+    'd9000000-0000-0000-0000-000000000020', 'd9000000-0000-0000-0000-000000000005',
+    '{"edit_menus": true, "manage_reservations": true}'::jsonb);
+  reset role;
+  if not exists (select 1 from public.establishment_permissions
+                 where establishment_membership_id = 'd9000000-0000-0000-0000-000000000041'
+                   and edit_menus and manage_reservations) then
+    raise exception 'RN-APP-04 FALLIDO: el Editor con manage_users no puede cambiar otro permiso mandando la casilla de Reservas sin tocarla';
   end if;
 
   -- 4. Invitar a alguien sin cuenta con "Gestionar Reservas": la invitación lo lleva y, al aceptarla, el permiso.

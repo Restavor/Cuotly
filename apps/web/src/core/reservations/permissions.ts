@@ -99,13 +99,16 @@ const CHANGE_ACTIONS: ReadonlySet<ReservationAction> = new Set([
 /** Las acciones que ponen una reserva nueva en la agenda o mueven su fecha, hora o personas (RN-RES-11: en pausa, no). */
 const BOOKING_ACTIONS: ReadonlySet<ReservationAction> = new Set(["create_reservation", "edit_reservation_slot"]);
 
-/** Las acciones que son de la agenda de Reservas en uso: solo con el servicio pagado. */
+/**
+ * Las acciones que son de la agenda de Reservas en uso: solo con el servicio pagado. «Información del
+ * agente» NO está aquí: PRD §6.12 dice que en «Aprobado: datos para pagar» Restavor configura el agente
+ * y las plataformas, así que la información se puede preparar antes del primer pago.
+ */
 const AGENDA_ACTIONS: ReadonlySet<ReservationAction> = new Set<ReservationAction>([
   "view_agenda",
   "view_calls",
   "view_call_cost",
   "toggle_agent",
-  "edit_agent_info",
   ...CHANGE_ACTIONS,
 ]);
 

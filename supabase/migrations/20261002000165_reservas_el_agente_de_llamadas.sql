@@ -236,25 +236,25 @@ alter table public.agent_api_keys enable row level security;
 -- equipo del espacio (PRD §3.2: Restavor ve y cambia la configuración).
 create policy agent_state_select on public.agent_state
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 create policy agent_state_events_select on public.agent_state_events
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 create policy agent_schedule_windows_select on public.agent_schedule_windows
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 create policy agent_knowledge_documents_select on public.agent_knowledge_documents
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 create policy agent_knowledge_faqs_select on public.agent_knowledge_faqs
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 create policy agent_knowledge_settings_select on public.agent_knowledge_settings
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 create policy agent_knowledge_snapshots_select on public.agent_knowledge_snapshots
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 -- Llamadas: número y resumen son datos de comensales (decisión 108).
 create policy agent_calls_select on public.agent_calls
@@ -264,7 +264,7 @@ create policy agent_calls_select on public.agent_calls
 -- La clave del agente la gestiona solo Restavor: el restaurante no la ve.
 create policy agent_api_keys_select on public.agent_api_keys
   for select to authenticated
-  using (public.is_space_member(space_id));
+  using (public.reservations_team_can_read(space_id));
 
 revoke all on public.agent_state from anon, authenticated;
 revoke all on public.agent_state_events from anon, authenticated;

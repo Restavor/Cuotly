@@ -58,6 +58,19 @@
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed/reservas-demo.sql
 
 -- ============================================================
+-- Guarda: este archivo crea cuentas con una contraseña que está escrita en el repositorio y borra
+-- cuentas por su correo. Solo se ejecuta sobre una base que ya tenga el espacio de demostración
+-- (`espacio-demo.sql`), que es lo que distingue a Restavor pruebas y a una base local de producción,
+-- donde ese espacio nunca existe (decisión 84).
+-- ============================================================
+do $$
+begin
+  if not exists (select 1 from public.spaces where slug = 'demo' and id = 'd1000000-0000-0000-0000-000000000001') then
+    raise exception 'reservas-demo.sql: falta el espacio de demostración. Ejecuta antes espacio-demo.sql, y solo sobre Restavor pruebas o una base local';
+  end if;
+end $$;
+
+-- ============================================================
 -- 0 · Quitar lo que este archivo creó antes (idempotencia).
 -- ============================================================
 -- Las tablas de Reservas, los accesos y las suscripciones cuelgan de los restaurantes con

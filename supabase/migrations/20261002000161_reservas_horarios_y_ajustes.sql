@@ -16,6 +16,45 @@
 -- Se comprueba con `supabase/tests/reservas_cimientos.sql`.
 
 -- ------------------------------------------------------------
+-- 0 · Quién del equipo del espacio ve la configuración, el saldo y la operación
+-- ------------------------------------------------------------
+-- `is_space_member()` deja pasar a CUALQUIER miembro del espacio, también a una persona
+-- que solo ejecuta trabajos de mantenimiento. PRD de agents §3.1 y §8.8 hablan del equipo
+-- de Restavor, que es el propietario y los administradores del espacio. Esta función es lo
+-- que usan las políticas de todas las tablas de Reservas que no son de comensales: el
+-- propietario y los administradores activos, y el Modo soporte de la plataforma (que es de
+-- solo lectura y no llega a los datos de comensales: esos van por
+-- `reservations_can_read()`, migración 163).
+create or replace function public.reservations_team_can_read(p_space_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select auth.uid() is not null
+    and not public.space_is_gone(p_space_id)
+    and (
+      exists (
+        select 1 from public.space_memberships m
+        where m.space_id = p_space_id and m.user_id = auth.uid()
+          and m.status = 'active' and m.role in ('owner', 'admin')
+      )
+      or public.support_access_level(p_space_id) is not null
+    );
+$$;
+
+-- Sale en políticas de RLS: conserva EXECUTE para `authenticated` (CLAUDE.md).
+revoke all on function public.reservations_team_can_read(uuid) from public, anon;
+grant execute on function public.reservations_team_can_read(uuid) to authenticated;
+
+-- La política de `reservation_settings` (migración 158) dejaba pasar a todo el espacio.
+drop policy reservation_settings_select on public.reservation_settings;
+create policy reservation_settings_select on public.reservation_settings
+  for select to authenticated
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+
+-- ------------------------------------------------------------
 -- 1 · La configuración de `reservation_settings`
 -- ------------------------------------------------------------
 -- Hasta ahora esta tabla tenía un `grant select` de TABLA ENTERA: cualquier
@@ -144,11 +183,11 @@ alter table public.reservation_closed_dates enable row level security;
 -- (Propietario y Encargado). No es un dato de comensales.
 create policy reservation_shifts_select on public.reservation_shifts
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 create policy reservation_closed_dates_select on public.reservation_closed_dates
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 revoke all on public.reservation_shifts from anon, authenticated;
 revoke all on public.reservation_closed_dates from anon, authenticated;

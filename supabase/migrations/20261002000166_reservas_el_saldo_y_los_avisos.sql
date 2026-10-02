@@ -76,7 +76,7 @@ begin
   -- `coalesce`: sin rol, `reservations_my_role()` devuelve nulo y `nulo in (...)` no es
   -- falso, es nulo; sin ello el `if` no saltaría y se enseñaría el saldo a un extraño.
   if auth.uid() is not null
-     and not (public.is_space_member(v_space_id)
+     and not (public.reservations_team_can_read(v_space_id)
               or coalesce(public.reservations_my_role(p_establishment_id) in ('owner', 'manager'), false)) then
     raise exception 'No tienes acceso al saldo de este restaurante';
   end if;
@@ -209,10 +209,10 @@ alter table public.reservation_notifications enable row level security;
 -- Saldo y recargas: el Propietario, el Encargado y el equipo del espacio (PRD §3.2).
 create policy agent_balance_entries_select on public.agent_balance_entries
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 create policy agent_topups_select on public.agent_topups
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 -- Las dos tablas de la plataforma las lee quien es de la plataforma; el servidor
 -- las lee con la clave de servicio.

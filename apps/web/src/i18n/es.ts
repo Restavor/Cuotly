@@ -8907,6 +8907,8 @@ export const es = {
       phaseHelp: "Fase J (pulido)",
       phaseConnectors: "Fase I (plataformas de reservas)",
     },
+    /** El armazón de referencia sin sesión (`/armazon/agents`): nada de esto es un dato real. */
+    reference: { restaurant: "Restaurante de referencia", user: "Armazón de referencia" },
     /** `/agents` y su selector de restaurante (PRD §5.1). */
     selector: {
       title: "Elige un restaurante",

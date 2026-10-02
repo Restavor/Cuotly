@@ -179,6 +179,14 @@ describe("RN-APP-04 · el estado del servicio de Reservas (PRD §6.12)", () => {
     expect(canReservations(restavor, "register_payment", e)).toBe(true);
   });
 
+  it("RN-APP-04 · aprobada y sin pagar, la información del agente sí se puede preparar (PRD §6.12: Restavor configura el agente)", () => {
+    const e = con("approved_pending_payment");
+    expect(canReservations(restavor, "edit_agent_info", e)).toBe(true);
+    expect(canReservations(owner, "edit_agent_info", e)).toBe(true);
+    // Encenderlo, en cambio, no: el agente aún no coge llamadas.
+    expect(canReservations(owner, "toggle_agent", e)).toBe(false);
+  });
+
   it("RN-APP-04 · cerrada, solo el Propietario, y solo para descargar sus reservas", () => {
     const e = con("closed");
     expect(canReservations(owner, "export_all_reservations", e)).toBe(true);

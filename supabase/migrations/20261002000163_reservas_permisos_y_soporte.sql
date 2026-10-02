@@ -160,6 +160,19 @@ begin
   from public.establishment_permissions ep
   where ep.establishment_membership_id = v_membresia;
 
+  -- (`coalesce`: sin rol, `reservations_my_role()` es nulo y `nulo = 'owner'` no es falso, es nulo: el `if` no saltaría.)
+  -- Migración 163 · dar o quitar «Gestionar Reservas» (el Encargado) es de quien añade Encargados:
+  -- el propietario del restaurante o el equipo del espacio (PRD de agents §3.2). Un Editor con
+  -- «Usuarios y accesos» puede cambiar los otros siete permisos, no este: si no, se ascendería
+  -- a sí mismo y leería los datos de los comensales. Mandar la casilla sin cambiarla vale.
+  if p_permissions ? 'manage_reservations'
+     and coalesce((p_permissions ->> 'manage_reservations')::boolean, false)
+         is distinct from coalesce((select ep0.manage_reservations from public.establishment_permissions ep0
+                                    where ep0.establishment_membership_id = v_membresia), false)
+     and not (v_soy_equipo or coalesce(public.reservations_my_role(p_establishment_id) = 'owner', false)) then
+    raise exception 'Solo el propietario del restaurante o el equipo de mantenimiento pueden dar o quitar «Gestionar Reservas»';
+  end if;
+
   insert into public.establishment_permissions (
     establishment_membership_id, create_requests, edit_menus, use_messages,
     upload_files, view_reports, view_billing, manage_users, manage_reservations
@@ -330,6 +343,14 @@ begin
   -- dentro no se toca al Propietario. Esta es la comprobación que hace que
   -- la tercera puerta no sea más ancha que la que ya había.
   perform public.assert_can_manage_access(p_establishment_id, p_role);
+
+  -- Migración 163 · invitar con «Gestionar Reservas» es dar el permiso del Encargado: lo mismo que
+  -- en `set_establishment_permissions()`, solo el propietario del restaurante o el equipo.
+  if p_role = 'editor' and coalesce(p_manage_reservations, false)
+     and not (public.has_capability(v_space_id, 'manage_clients')
+              or coalesce(public.reservations_my_role(p_establishment_id) = 'owner', false)) then
+    raise exception 'Solo el propietario del restaurante o el equipo de mantenimiento pueden dar «Gestionar Reservas»';
+  end if;
 
   -- CA-17 · pulsar dos veces devuelve lo mismo y no manda dos enlaces.
   if p_idempotency_key is not null then

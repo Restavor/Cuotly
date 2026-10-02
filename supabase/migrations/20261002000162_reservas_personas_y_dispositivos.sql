@@ -124,11 +124,11 @@ alter table public.reservation_support_sessions enable row level security;
 
 create policy reservation_staff_select on public.reservation_staff
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 create policy reservation_devices_select on public.reservation_devices
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 -- Solo el servidor: la política dice que nadie con sesión la lee.
 create policy reservation_pin_attempts_select on public.reservation_pin_attempts
@@ -138,7 +138,7 @@ create policy reservation_pin_attempts_select on public.reservation_pin_attempts
 -- El Historial de Reservas del restaurante (Propietario y Encargado) y el equipo.
 create policy reservation_support_sessions_select on public.reservation_support_sessions
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 revoke all on public.reservation_staff from anon, authenticated;
 revoke all on public.reservation_devices from anon, authenticated;

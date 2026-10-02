@@ -149,12 +149,12 @@ alter table public.web_push_subscriptions enable row level security;
 -- "Ver estado de las conexiones": el restaurante y el equipo (PRD §3.2).
 create policy reservation_platform_connections_select on public.reservation_platform_connections
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 -- Los incidentes son de operación: solo el equipo del espacio.
 create policy reservation_incidents_select on public.reservation_incidents
   for select to authenticated
-  using (public.is_space_member(space_id));
+  using (public.reservations_team_can_read(space_id));
 
 -- Solo el servidor: la política dice que nadie con sesión las lee.
 create policy reservations_api_idempotency_select on public.reservations_api_idempotency
@@ -165,7 +165,7 @@ create policy reservations_rate_limits_select on public.reservations_rate_limits
 -- Cifras: sin datos personales, las ven el restaurante y el equipo.
 create policy reservation_monthly_stats_select on public.reservation_monthly_stats
   for select to authenticated
-  using (public.is_space_member(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
+  using (public.reservations_team_can_read(space_id) or public.reservations_my_role(establishment_id) in ('owner', 'manager'));
 
 create policy web_push_subscriptions_select on public.web_push_subscriptions
   for select to authenticated using (user_id = auth.uid());

@@ -15,7 +15,7 @@ export function ArmazonAgents({ nav }: { nav: AgentsNavContext }) {
       context="agents"
       agentsNav={nav}
       userInitial="·"
-      userLabel="Armazón de referencia"
+      userLabel={es.agents.reference.user}
       notifications={[]}
       onSearch={buscar}
     >

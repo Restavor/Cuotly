@@ -2575,10 +2575,10 @@ dice qué regla anterior cambia. La 99 es de Bosco el 01/10/2026, durante la Fas
     «No aprobada» y «Volver a pedir Reservas» en la puerta). Si Bosco prefiere que vuelva a verlo, es un cambio de una línea en
     `establishment_is_reservations_only()` (migración nueva).
 
-## Restavor agents · Fase B, cimientos (decisiones 103 a 108)
+## Restavor agents · Fase B, cimientos (decisiones 103 a 111)
 
-Se registran el 02/10/2026, antes de programar la Fase B (AGT-01 a AGT-05). La 107 es de Bosco; las demás son decisiones técnicas de
-Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+Se registran el 02/10/2026, antes de programar la Fase B (AGT-01 a AGT-05); la 110 y la 111 salen de la revisión del diff. La 107 es de Bosco; las demás son
+decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
 
 103. **Dónde vive el dominio de Reservas.** El PRD dice `src/core/reservations/`; el código real cuelga de `apps/web`, así que es
     `apps/web/src/core/reservations/`. La fecha y hora local reutilizan la lógica de `core/business-clock.ts` (RN-CLK-06), sin duplicarla.
@@ -2608,3 +2608,16 @@ Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
     **ocho** y su suite lo comprueba. `CLAUDE.md` manda parar ante una contradicción entre PRD, así que la Fase B no la toca: nada sube
     documentos al agente hasta la Fase G, que es cuando se necesita. Antes de esa fase, Bosco decide si `RN-ARC-01` pasa a nueve
     categorías (cambio de una migración, del espejo `core/files.ts` y de esa suite) o si los documentos del agente usan una de las ocho.
+110. **Quién da «Gestionar Reservas», y quién del espacio ve la configuración y el saldo** (Fase B, revisión del diff). Dos cierres de la revisión:
+    (1) dar o quitar «Gestionar Reservas» (el Encargado) es de quien añade Encargados (PRD de agents §3.2): el propietario del restaurante o el equipo del
+    espacio. Un Editor con «Usuarios y accesos» puede cambiar los otros siete permisos y mandar la casilla sin cambiarla, pero no ascenderse ni ascender a otro
+    (`set_establishment_permissions()` e `invite_to_establishment_panel()`). (2) La configuración, el saldo, el Equipo, las conexiones y la operación de Reservas
+    los ve el **propietario y los administradores** del espacio (y el Modo soporte de la plataforma, en lectura), no cualquier miembro: un trabajador que solo
+    ejecuta trabajos de mantenimiento no los ve (`reservations_team_can_read()`, migración 161). Los datos de comensales siguen su propia puerta (decisión 108).
+    Las solicitudes y los apuntes de contratación (migración 158, ya aplicada en Pruebas) conservan su política por miembro del espacio: no llevan datos de
+    comensales y su pantalla ya es solo de propietario y administradores.
+111. **Transferir un restaurante con Reservas** (Fase B). PRD de agents §8.1 dice «no se puede mover a otro espacio un restaurante con Reservas que no esté
+    `closed`». La decisión 100 de Bosco la sustituye: Reservas **se queda** en el espacio de origen al transferir (todas las tablas nuevas están como «se queda» en
+    `establishment_transfer_tables()`). La consecuencia es que, tras una transferencia, los datos de Reservas conservan el `space_id` antiguo: el Propietario y el
+    Encargado del restaurante siguen entrando por su rol, pero el soporte y el equipo del espacio de destino no los ven. Es lo que dice la 100; la opción
+    «Transferir también Reservas» y lo que arrastra se construyen en la Fase E.
