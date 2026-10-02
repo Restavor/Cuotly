@@ -5405,14 +5405,16 @@ Criterios del PRD §15 (AGT-01 a AGT-05):
   comprueba solo al sembrar (saldos, cifras y quién ve qué) y entra en la CI, dos veces.
 - [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase B»).
 
-Pruebas hechas (02/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.5xx tests** en verde (los nuevos de Reservas:
+Pruebas hechas (02/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.509 tests** en verde (los nuevos de Reservas:
 permisos, fechas, huecos, teléfonos, aforo, rutas, navegación y componentes); `apps/mobile` y `packages/shared` en verde; **las 90 suites SQL** sobre una base
 limpia con las 167 migraciones, y los dos sembrados dos veces cada uno (**151 tablas, 0 sin RLS**); el e2e sin datos (`/styleguide`, `/armazon`,
 `/armazon/agents` a 1180×820 y 390×844) en verde. Capturas de Playwright de `/styleguide` y `/armazon/agents` comparadas con las maquetas `AgentsHoy`,
 `AgentsHoyMovil`, `AgentsEncenderApagar` y `PinTablet`: coinciden en estructura, textos y orden; la diferencia consciente es el botón «Apagar agente»,
 que aquí es el botón secundario del sistema (el rojo de la maqueta es de la Fase G, que es quien lo pone).
 
-Decisiones (en `docs/DECISIONES.md`, 103 a 109):
+Un subagente revisó el diff completo contra el PRD y `CLAUDE.md` (reprodujo sus fallos con consultas propias); sus cierres están hechos, con test: un Editor con «Usuarios y accesos» podía ascenderse a Encargado y leer los datos de los comensales, y un trabajador del espacio leía la configuración y el saldo de Reservas (decisión 110).
+
+Decisiones (en `docs/DECISIONES.md`, 103 a 111):
 
 - **109 · pendiente de Bosco antes de la Fase G.** PRD de agents §8.1 pide una categoría de archivo `agent_knowledge`, pero `RN-ARC-01` dice que las categorías son
   **ocho** y su suite lo comprueba. No se ha tocado: los documentos del agente se siembran como «documentos». Hay que decidir si pasan a nueve.
