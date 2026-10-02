@@ -652,6 +652,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/restavor_app_puerta_comun.sql
 
+      - name: "Suite 90 — Cimientos de Restavor agents (migraciones 161 a 167, RN-RES-12, RN-AGT-01 y RN-APP-04)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/reservas_cimientos.sql
+
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

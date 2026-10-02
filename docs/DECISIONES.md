@@ -2574,3 +2574,32 @@ dice qué regla anterior cambia. La 99 es de Bosco el 01/10/2026, durante la Fas
     otro servicio activo. Consecuencia: si le rechazan la solicitud y no tiene plan, tampoco vuelve a tener panel de Restavor web (ve
     «No aprobada» y «Volver a pedir Reservas» en la puerta). Si Bosco prefiere que vuelva a verlo, es un cambio de una línea en
     `establishment_is_reservations_only()` (migración nueva).
+
+## Restavor agents · Fase B, cimientos (decisiones 103 a 108)
+
+Se registran el 02/10/2026, antes de programar la Fase B (AGT-01 a AGT-05). La 107 es de Bosco; las demás son decisiones técnicas de
+Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+
+103. **Dónde vive el dominio de Reservas.** El PRD dice `src/core/reservations/`; el código real cuelga de `apps/web`, así que es
+    `apps/web/src/core/reservations/`. La fecha y hora local reutilizan la lógica de `core/business-clock.ts` (RN-CLK-06), sin duplicarla.
+104. **Colores de Reservas.** «Aforo superado» usa el token `danger` (PRD §6.3), no el `#A94438` de la maqueta antigua. Los pocos valores de la
+    maqueta que no están en PRD §12.2 (texto del aviso del agente, gris de «No vino» y de cancelada, fondo del medidor, texto de
+    «Encendido», opción seleccionada) se añaden como tokens con nombre, con su comprobación de contraste AA. Nunca un hexadecimal suelto.
+105. **El actor de Reservas no es un `ShellRole`.** `ShellRole` es del producto Restavor web y varios `switch` suyos son exhaustivos; el
+    Propietario, el Encargado, el Equipo con PIN, Restavor y el Soporte se resuelven con un tipo propio (`ReservationsActor`) y la
+    navegación de Restavor agents lo recibe como dato.
+106. **Segundo paso en Pruebas.** El sembrado de Reservas **no** registra ningún factor TOTP sobre `info@restavor.com` (es la cuenta real de
+    Bosco y se lo pisaría). El secreto fijo de prueba va a `owner@cuotly.test` (Elena), para los e2e que piden `aal2`; `info@restavor.com`
+    solo recibe la marca «Soporte de Reservas».
+107. **`ai_usage` se aplaza a la Fase G** (Bosco, 02/10/2026). PRD §8.1 pedía generalizarla ya (`request_id` y `classification_id` nulos y
+    `agent_usage_kind`), pero hoy guarda el coste en milésimas de céntimo de dólar y Reservas lo quiere en millonésimas de euro, y solo la
+    usa la lectura de documentos del agente (Fase G). Se decide allí, cuando se sepa qué se guarda de verdad.
+108. **Los datos de comensales no se leen con `is_space_member()`.** Esa función reconoce a cualquier miembro del espacio y también el
+    Modo soporte de la plataforma en lectura; PRD §3.4 y §8.8 piden otra cosa. Las políticas de `reservations`, `reservation_events`,
+    `reservation_notifications` y `agent_calls` solo dejan pasar al Propietario o Encargado del restaurante (`reservations_my_role`) o a
+    `reservations_can_read_diner_data`: sesión de soporte de Reservas abierta, `aal2` y marca de soporte (o `can_support` de plataforma).
+109. **La categoría de archivo `agent_knowledge` queda para la Fase G y hay que preguntarle a Bosco** (Fase B, 02/10/2026). PRD de agents §8.1
+    pide una categoría nueva de `files` para los documentos del agente, pero `RN-ARC-01` (PRD de Restavor web) dice que las categorías son
+    **ocho** y su suite lo comprueba. `CLAUDE.md` manda parar ante una contradicción entre PRD, así que la Fase B no la toca: nada sube
+    documentos al agente hasta la Fase G, que es cuando se necesita. Antes de esa fase, Bosco decide si `RN-ARC-01` pasa a nueve
+    categorías (cambio de una migración, del espejo `core/files.ts` y de esa suite) o si los documentos del agente usan una de las ocho.

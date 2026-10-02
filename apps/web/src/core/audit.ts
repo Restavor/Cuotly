@@ -324,6 +324,7 @@ export const AUDIT_ACTIONS = [
   // Decisión 80 · retirar a alguien del equipo (migración 139, §4.5).
   "membership.access_revoked",
   "membership.approve_reports_changed",
+  "membership.support_reservations_changed",
   "membership.establishments_changed",
   "membership.perform_jobs_changed",
   "membership.specialties_changed",

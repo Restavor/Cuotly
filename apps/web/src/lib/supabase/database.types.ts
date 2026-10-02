@@ -370,6 +370,199 @@ export type Database = {
           },
         ];
       };
+      agent_api_keys: {
+        Row: {
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          last_used_at: string | null;
+          prefix: string;
+          revoked_at: string | null;
+          space_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_balance_entries: {
+        Row: {
+          agent: string;
+          amount_micros: number;
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          kind: string;
+          note: string | null;
+          source_id: string | null;
+          source_type: string | null;
+          space_id: string;
+          stripe_checkout_session_id: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_calls: {
+        Row: {
+          anonymized_at: string | null;
+          caller_e164: string | null;
+          cost_currency: string | null;
+          cost_eur_micros: number | null;
+          cost_original_micros: number | null;
+          created_at: string;
+          duration_seconds: number | null;
+          ended_at: string | null;
+          establishment_id: string;
+          external_call_id: string;
+          forward_reason: string | null;
+          fx_rate: number | null;
+          id: string;
+          outcome: string;
+          reservation_id: string | null;
+          space_id: string;
+          started_at: string;
+          summary: string | null;
+          transferred_to_e164: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_knowledge_documents: {
+        Row: {
+          archived_at: string | null;
+          corrected_text: string | null;
+          created_at: string;
+          establishment_id: string;
+          extracted_text: string | null;
+          file_id: string;
+          id: string;
+          kind: string;
+          pages: number | null;
+          space_id: string;
+          status: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_knowledge_faqs: {
+        Row: {
+          answer: string;
+          archived_at: string | null;
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          question: string;
+          sort_order: number;
+          space_id: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_knowledge_settings: {
+        Row: {
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          instructions: string | null;
+          read_website: boolean;
+          space_id: string;
+          updated_at: string;
+          website_read_at: string | null;
+          website_text: string | null;
+          website_url: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_knowledge_snapshots: {
+        Row: {
+          content: string;
+          content_hash: string;
+          created_at: string;
+          delivered_at: string | null;
+          delivery_status: string;
+          establishment_id: string;
+          id: string;
+          space_id: string;
+          version: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_schedule_windows: {
+        Row: {
+          created_at: string;
+          end_time: string;
+          establishment_id: string;
+          id: string;
+          space_id: string;
+          start_time: string;
+          weekdays: number[];
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_state: {
+        Row: {
+          changed_at: string | null;
+          changed_by_staff_id: string | null;
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          manual_state: string;
+          off_mode: string | null;
+          off_until: string | null;
+          schedule_mode: string;
+          space_id: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_state_events: {
+        Row: {
+          actor_staff_id: string | null;
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          mode: string | null;
+          off_until: string | null;
+          space_id: string;
+          state: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      agent_topups: {
+        Row: {
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          net_cents: number;
+          receipt_sent_at: string | null;
+          space_id: string;
+          status: string;
+          stripe_checkout_session_id: string | null;
+          total_cents: number;
+          updated_at: string;
+          vat_cents: number;
+          vat_rate_percent: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       ai_usage: {
         Row: {
           classification_id: string;
@@ -1877,6 +2070,7 @@ export type Database = {
           establishment_id: string;
           expires_at: string | null;
           id: string;
+          manage_reservations: boolean;
           rejection_reason: string | null;
           reviewed_at: string | null;
           role: string;
@@ -1885,6 +2079,275 @@ export type Database = {
           updated_at: string;
           view_billing: boolean;
         };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      fx_rates: {
+        Row: {
+          created_at: string;
+          currency: string;
+          date: string;
+          id: string;
+          rate_to_eur: number;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      messaging_rates: {
+        Row: {
+          channel: string;
+          country: string;
+          created_at: string;
+          currency: string;
+          id: string;
+          price_micros: number;
+          valid_from: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_closed_dates: {
+        Row: {
+          created_at: string;
+          date: string;
+          establishment_id: string;
+          id: string;
+          reason: string | null;
+          space_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_devices: {
+        Row: {
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          last_used_at: string | null;
+          name: string;
+          revoked_at: string | null;
+          space_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_duplicate_dismissals: {
+        Row: {
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          reservation_a: string;
+          reservation_b: string;
+          space_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_events: {
+        Row: {
+          actor_label: string | null;
+          actor_staff_id: string | null;
+          actor_type: string;
+          created_at: string;
+          data: Json;
+          establishment_id: string;
+          id: string;
+          reservation_id: string;
+          space_id: string;
+          type: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_incidents: {
+        Row: {
+          created_at: string;
+          data: Json;
+          detail: string | null;
+          establishment_id: string;
+          id: string;
+          kind: string;
+          resolved_at: string | null;
+          severity: string;
+          space_id: string;
+          title: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_monthly_stats: {
+        Row: {
+          call_minutes: number;
+          calls_count: number;
+          created_at: string;
+          establishment_id: string;
+          id: string;
+          month: string;
+          people_count: number;
+          reservations_count: number;
+          source: string;
+          space_id: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_notifications: {
+        Row: {
+          anonymized_at: string | null;
+          attempts: number;
+          channel: string;
+          cost_micros: number | null;
+          created_at: string;
+          error: string | null;
+          establishment_id: string;
+          id: string;
+          language: string;
+          next_attempt_at: string | null;
+          provider_message_id: string | null;
+          recipient: string | null;
+          reservation_id: string;
+          skip_reason: string | null;
+          space_id: string;
+          status: string;
+          template: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_pin_attempts: {
+        Row: Record<string, never>;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_platform_connections: {
+        Row: {
+          capabilities: Json;
+          created_at: string;
+          display_name: string;
+          establishment_id: string;
+          id: string;
+          last_error: string | null;
+          last_error_at: string | null;
+          last_sync_at: string | null;
+          provider: string;
+          space_id: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_shifts: {
+        Row: {
+          active: boolean;
+          capacity: number;
+          created_at: string;
+          end_time: string;
+          establishment_id: string;
+          id: string;
+          last_booking_time: string;
+          name: string;
+          sort_order: number;
+          space_id: string;
+          start_time: string;
+          updated_at: string;
+          weekdays: number[];
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_staff: {
+        Row: {
+          active: boolean;
+          created_at: string;
+          deactivated_at: string | null;
+          establishment_id: string;
+          id: string;
+          kind: string;
+          name: string;
+          space_id: string;
+          user_id: string | null;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservation_support_sessions: {
+        Row: {
+          created_at: string;
+          ended_at: string | null;
+          establishment_id: string;
+          expires_at: string;
+          id: string;
+          reason: string;
+          space_id: string;
+          started_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservations: {
+        Row: {
+          agent_call_id: string | null;
+          agent_external_call_id: string | null;
+          anonymized_at: string | null;
+          cancel_reason: string | null;
+          cancelled_at: string | null;
+          created_at: string;
+          created_by_staff_id: string | null;
+          customer_name: string;
+          date: string;
+          duplicate_flag: string;
+          email: string | null;
+          establishment_id: string;
+          external_id: string | null;
+          id: string;
+          is_new: boolean;
+          language: string;
+          notes: string | null;
+          party_size: number;
+          pending_platform_cancel: boolean;
+          pending_reminded_at: string | null;
+          phone_e164: string | null;
+          platform_connection_id: string | null;
+          platform_name: string | null;
+          shift_id: string | null;
+          source: string;
+          space_id: string;
+          starts_at: string;
+          status: string;
+          time: string;
+          updated_at: string;
+          whatsapp_consent: boolean;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservations_api_idempotency: {
+        Row: Record<string, never>;
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
+      reservations_rate_limits: {
+        Row: Record<string, never>;
         Insert: never;
         Update: never;
         Relationships: [];
@@ -6570,73 +7033,38 @@ export type Database = {
       };
       reservation_settings: {
         Row: {
-          id: string;
-          space_id: string;
-          establishment_id: string;
-          subscription_id: string | null;
-          service_status: string;
-          grace_days: number;
-          onboarding_completed_at: string | null;
           activated_at: string | null;
-          ending_at: string | null;
+          brand_color: string | null;
           closed_at: string | null;
-          data_purged_at: string | null;
           created_at: string;
+          customer_cancel_limit_minutes: number;
+          data_purged_at: string | null;
+          ending_at: string | null;
+          establishment_id: string;
+          forwarding_note: string | null;
+          grace_days: number;
+          id: string;
+          large_group_threshold: number;
+          local_phone_e164: string | null;
+          logo_file_id: string | null;
+          low_balance_notified_at: string | null;
+          low_balance_threshold_cents: number;
+          max_advance_days: number;
+          messaging_enabled: boolean;
+          min_notice_minutes: number;
+          onboarding_completed_at: string | null;
+          public_slug: string | null;
+          service_status: string;
+          slot_interval_minutes: number;
+          space_id: string;
+          subscription_id: string | null;
+          timezone: string;
+          transfer_phone_e164: string | null;
           updated_at: string;
         };
-        Insert: {
-          id?: string;
-          space_id: string;
-          establishment_id: string;
-          subscription_id?: string | null;
-          service_status?: string;
-          grace_days?: number;
-          onboarding_completed_at?: string | null;
-          activated_at?: string | null;
-          ending_at?: string | null;
-          closed_at?: string | null;
-          data_purged_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          space_id?: string;
-          establishment_id?: string;
-          subscription_id?: string | null;
-          service_status?: string;
-          grace_days?: number;
-          onboarding_completed_at?: string | null;
-          activated_at?: string | null;
-          ending_at?: string | null;
-          closed_at?: string | null;
-          data_purged_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "reservation_settings_space_id_fkey";
-            columns: ["space_id"];
-            isOneToOne: false;
-            referencedRelation: "spaces";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "reservation_settings_establishment_id_fkey";
-            columns: ["establishment_id"];
-            isOneToOne: false;
-            referencedRelation: "establishments";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "reservation_settings_subscription_id_fkey";
-            columns: ["subscription_id"];
-            isOneToOne: false;
-            referencedRelation: "subscriptions";
-            referencedColumns: ["id"];
-          },
-        ];
+        Insert: never;
+        Update: never;
+        Relationships: [];
       };
       scheduled_jobs: {
         Row: {
@@ -7075,6 +7503,7 @@ export type Database = {
         Row: {
           can_approve_reports: boolean;
           can_perform_jobs: boolean;
+          can_support_reservations: boolean;
           created_at: string;
           id: string;
           role: Database["public"]["Enums"]["space_role"];
@@ -7085,6 +7514,7 @@ export type Database = {
         Insert: {
           can_approve_reports?: boolean;
           can_perform_jobs?: boolean;
+          can_support_reservations?: boolean;
           created_at?: string;
           id?: string;
           role: Database["public"]["Enums"]["space_role"];
@@ -7095,6 +7525,7 @@ export type Database = {
         Update: {
           can_approve_reports?: boolean;
           can_perform_jobs?: boolean;
+          can_support_reservations?: boolean;
           created_at?: string;
           id?: string;
           role?: Database["public"]["Enums"]["space_role"];
@@ -8138,6 +8569,19 @@ export type Database = {
           },
         ];
       };
+      web_push_subscriptions: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_seen_at: string | null;
+          revoked_at: string | null;
+          user_agent: string | null;
+          user_id: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       worker_availability: {
         Row: {
           available: boolean;
@@ -8433,6 +8877,14 @@ export type Database = {
     };
     Functions: {
       accept_revision: { Args: { p_subscription_id: string }; Returns: string };
+      agent_balance: {
+        Args: { p_establishment_id: string };
+        Returns: number;
+      };
+      agent_balance_cents: {
+        Args: { p_establishment_id: string };
+        Returns: number;
+      };
       archive_plan: { Args: { p_plan_id: string }; Returns: undefined };
       archive_service: { Args: { p_service_id: string }; Returns: undefined };
       create_group: {
@@ -8507,6 +8959,14 @@ export type Database = {
       };
       rename_plan: { Args: { p_name: string; p_plan_id: string }; Returns: undefined };
       rename_service: { Args: { p_name: string; p_service_id: string }; Returns: undefined };
+      reservations_can_read: {
+        Args: { p_establishment_id: string };
+        Returns: boolean;
+      };
+      reservations_can_read_diner_data: {
+        Args: { p_establishment_id: string };
+        Returns: boolean;
+      };
       revise_plan: {
         Args: {
           p_included_credits_half?: number;
@@ -8545,6 +9005,10 @@ export type Database = {
       revision_diff: {
         Args: { p_from: string; p_kind: string; p_to: string };
         Returns: { better: boolean; field: string; new_value: string; old_value: string }[];
+      };
+      set_member_can_support_reservations: {
+        Args: { p_space_id: string; p_user_id: string; p_value: boolean };
+        Returns: undefined;
       };
       space_revision_status: {
         Args: { p_space_id: string };
@@ -9628,6 +10092,7 @@ export type Database = {
           edit_menus: boolean;
           email: string;
           granted_at: string;
+          manage_reservations: boolean;
           manage_users: boolean;
           role: string;
           source: string;
@@ -9751,6 +10216,7 @@ export type Database = {
           p_email: string;
           p_establishment_id: string;
           p_idempotency_key?: string;
+          p_manage_reservations?: boolean;
           p_role: string;
           p_view_billing?: boolean;
         };

@@ -133,6 +133,25 @@ export const NOTIFICATION_EVENTS = [
   // momento (decisión 99).
   "reservation_service_request",
   "reservation_service_received",
+  // Migración 167 (PRD de agents §9.4, Fase B) · los avisos de Restavor agents. Todavía
+  // no los emite nadie: los crean las fases de cobro, agenda y agente. Salen al
+  // momento (decisión 99) y nunca van en el resumen diario.
+  "reservation_new",
+  "reservation_group_pending",
+  "reservation_group_pending_reminder",
+  "agent_balance_low",
+  "agent_balance_empty",
+  "agent_off_long",
+  "reservations_payment_due",
+  "reservations_past_due",
+  "reservations_paused",
+  "reservations_activated",
+  "reservations_ending",
+  "reservations_closed_purge_soon",
+  "platform_connection_error",
+  "reservation_service_approved",
+  "reservation_service_rejected",
+  "agent_topup_receipt",
 ] as const;
 
 export type NotificationEvent = (typeof NOTIFICATION_EVENTS)[number];

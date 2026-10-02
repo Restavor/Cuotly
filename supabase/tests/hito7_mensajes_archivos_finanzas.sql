@@ -3821,7 +3821,15 @@ begin
          -- ninguno—, como `profiles` y `push_devices`. Lleva RLS con
          -- política: solo la lee la plataforma y nadie la escribe por
          -- PostgREST, solo las dos funciones que eliminan y recuperan.
-         'platform_account_closures'
+         'platform_account_closures',
+         -- Migración 166 y 167 (Fase B de Restavor agents): cuatro que no son de
+         -- ningún espacio. Las tarifas de mensajería y el cambio de moneda son de
+         -- la plataforma (RN-AGT-03) y solo los lee `is_platform_member()`; el límite
+         -- de peticiones va por clave de la API o por IP, no por restaurante, y solo
+         -- lo toca el servidor; y las suscripciones de Web Push son de una persona,
+         -- como `push_devices`, y cada una ve las suyas. Las cuatro llevan RLS con
+         -- política, que es lo que el barrido sigue exigiendo.
+         'messaging_rates', 'fx_rates', 'reservations_rate_limits', 'web_push_subscriptions'
        ) then
       v_sin_space := v_sin_space || ' ' || v_t.tabla;
     end if;

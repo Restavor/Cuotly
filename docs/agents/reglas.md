@@ -14,5 +14,17 @@ Se rellena a medida que se construye cada fase. Regla de `CLAUDE.md`: toda regla
 
 **Decisión 99 (push al momento, correo en tanda):** `supabase/tests/restavor_app_puerta_comun.sql` (el reclamo `claim_push_deliveries_for_keys` devuelve solo el push y no toca el correo) y `apps/web/src/services/queue-runner.test.ts` (`sendPushNow`).
 
+## Fase B · Cimientos de Restavor agents
+
+| Código | Qué dice | PRD | Test |
+|---|---|---|---|
+| RN-APP-04 | `canReservations(actor, acción, recurso)` decide quién puede qué en Reservas: Propietario, Encargado, Equipo con PIN, Restavor, Soporte en sesión. Sin sesión de soporte, Restavor no ve datos de comensales. | §3.2 | `apps/web/src/core/reservations/permissions.test.ts` (la tabla completa) |
+| RN-APP-05 | En la tablet sin PIN no aparecen Saldo, Plan y pagos, Ajustes, la columna de coste de las llamadas ni ningún importe. | §3.2 | `apps/web/src/core/reservations/permissions.test.ts`, `apps/web/src/components/shell/navigation-agents.test.ts` |
+| RN-AGT-01 | El saldo de un restaurante es la suma de `agent_balance_entries`, un libro inmutable con signo en millonésimas de euro. Un apunte nunca se edita ni se borra. | §5.2 | `supabase/tests/reservas_cimientos.sql` |
+| RN-RES-01 | Turnos y huecos: un turno tiene días, apertura, última hora de reserva, cierre y aforo; los huecos van cada 15 o 30 minutos de la apertura a la última hora; un día sin turno activo o cerrado no tiene huecos. | §6.2 | `apps/web/src/core/reservations/shifts.test.ts`, `dates.test.ts`, `phone.test.ts` |
+| RN-RES-12 | Datos de comensales: cada restaurante solo ve lo suyo; el equipo del espacio no ve reservas, eventos, avisos ni llamadas salvo con sesión de soporte de Reservas abierta, `aal2` y marca de soporte; `reservation_events` y `audit_log` no guardan datos personales. | §6.13, §3.4, §8.8 | `supabase/tests/reservas_cimientos.sql` |
+
+La lista de tablas sin `space_id` que cita el PRD (§8.6, «suite 42») está en el barrido de `supabase/tests/hito7_mensajes_archivos_finanzas.sql`.
+
 ## Fases siguientes (pendientes)
-`RN-AGT-01 a 09` (saldo), `RN-RES-01 a 13` (Reservas), `RN-LLA-01 a 17` (agente de llamadas): se asignan en orden al construir cada fase.
+`RN-AGT-02 a 09` (saldo), `RN-RES-02 a 11` y `RN-RES-13` (Reservas), `RN-LLA-01 a 17` (agente de llamadas): se asignan en orden al construir cada fase.
