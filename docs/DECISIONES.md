@@ -2878,8 +2878,8 @@ activa hasta que él dé los datos (144). Las demás son decisiones técnicas de
 
 ## Agente Menú Diario · Fase 0, reconocimiento (decisiones 151 a 155)
 
-Se registran el 03/10/2026, tras el informe `agents/menu-diario/docs/RECONOCIMIENTO.md`. **Renumeradas el 03/10/2026** al unir la rama con `agents` (entonces eran la 112 a 116; `agents` ya usaba esos números para Reservas): la 112 es hoy la 149, la 113 la 150, la 114 la 151, la 115 la 152 y la 116 la 153. Las cuatro son de Bosco: contestó a la lista de «Qué necesito de ti para la
-Fase 1» de ese informe.
+Se registran el 03/10/2026, tras el informe `agents/menu-diario/docs/RECONOCIMIENTO.md`. **Renumeradas el 03/10/2026** al unir la rama con `agents` (entonces eran la 112 a 116; `agents` ya usaba esos números para Reservas, y dos días de trabajo después de la primera unión volvió a pisarlas): la 112 es hoy la 151, la 113 la 152, la 114 la 153, la 115 la 154 y la 116 la 155 (`agents` llegó a la 150 mientras se trabajaba aquí). Las cuatro primeras (151 a 154) son de Bosco: contestó a la lista de «Qué necesito de ti para la
+Fase 1» de ese informe; la 155 la añadió al cerrar la Fase 0.
 
 151. **Se construye el Agente Menú Diario** (Bosco, 03/10/2026; resuelve la contradicción C1 del informe). `CLAUDE.md` y `docs/PRD.md` (RN-CRE-25) decían que el agente de IA
     que publica el menú «no existe todavía y no se simula». Bosco decide construirlo con el PRD de `agents/menu-diario/PRD.md`, **por fases (una por sesión), solo contra
@@ -2911,7 +2911,7 @@ Fase 1» de ese informe.
 
 ## Agente Menú Diario · Fase 1, plan (decisiones 156 a 158)
 
-Se registran el 03/10/2026, tras el plan de la Fase 1 (`agents/menu-diario/docs/PLAN-FASE-1.md`). Son de Bosco: contestó a las decisiones D1 a D5 del plan.
+Se registran el 03/10/2026, tras el plan de la Fase 1 (`agents/menu-diario/docs/PLAN-FASE-1.md`). Son de Bosco: contestó a D1, D2 y D3 del plan (las tres con la A, la recomendada), dio el correo de D4 y fijó él la regla de publicación (156) y la del reloj (158). **Siguen sin contestar** D5 (cómo se cierra la fase) y el permiso de las tres escrituras de D4 en Bar Demo: el paso 1.3 no escribe nada en la base hasta su sí explícito.
 
 156. **Cuándo publica el agente** (Bosco, 03/10/2026; **sustituye a RA-01 del PRD del agente, §7.1**). Antes: un menú para otro día se publicaba a las 17:00 de la víspera.
     Ahora, en la zona horaria del espacio:
@@ -2926,12 +2926,12 @@ Se registran el 03/10/2026, tras el plan de la Fase 1 (`agents/menu-diario/docs/
     (estimación de 3 a 5 min: LandingSite tarda unos 35 s en cambiar la imagen y unos 50 s en publicar, y la web pública cachea 60 s; el PRD pedía como máximo 30).
     **Consecuencias anotadas:** (a) el límite de aprobación del PRD (`menu_publish_by_at − 60 min`) cae ahora en las 07:00, la misma hora de publicar: se revisa en la Fase 4;
     (b) **sigue en pie el modo aprobación de las primeras semanas** (D6 del PRD) hasta que Bosco diga otra cosa: con él, el menú espera el «Aprobar» aunque su hora ya haya llegado.
-157. **Cuentas, repositorio y rama** (Bosco, 03/10/2026; D1 a D4 del plan).
+157. **Cuentas, repositorio y rama** (Bosco, 03/10/2026; D1 a D3 y el correo de D4 del plan).
     (1) El agente usa en Restavor web el correo **menu@restavor.com** (sustituye al ejemplo `agente-menu@…` del PRD); su buzón está conectado con el de info@restavor.com.
     (2) En LandingSite el agente usa su propia cuenta (decisión 152), ya creada. **Su correo y su contraseña van como secretos (`LANDINGSITE_EMAIL`, `LANDINGSITE_PASSWORD`), nunca por el chat
-    ni en el repositorio** (corrige el «te paso la contraseña» de Bosco: se guarda como secreto antes de que el agente inicie sesión).
+    ni en el repositorio** (Bosco dijo «te paso la contraseña cuando el agente vaya a iniciar sesión»; su regla de la Fase 0, «nunca me pidas contraseñas por el chat», y la decisión 152 mandan que se cargue como secreto: se le pedirá que la guarde él mismo antes de que el agente inicie sesión).
     (3) **El repositorio pasa a privado** (D2-A) antes de crear ningún workflow con credenciales. Lo cambia Bosco en GitHub (Settings → General → Danger Zone → Change visibility):
-    no hay herramienta para hacerlo desde la sesión. El repositorio es de una cuenta personal, así que Vercel debería seguir desplegando (no comprobado).
+    esta sesión no tiene ninguna herramienta de GitHub que cambie la visibilidad (Bosco lo pidió con «pasa el repositorio a privado» y se le devuelve a él). El repositorio es de una cuenta personal, así que Vercel debería seguir desplegando (no comprobado).
     (4) **Rama (D1-A):** se une `agents` en la rama de trabajo del agente y sus decisiones se renumeran (151 a 155, ver arriba).
     (5) **Comprobación de sesión (D3-A):** la lanza una tarea programada de esta plataforma con `workflow_dispatch` desde la rama de trabajo, sin tocar la rama por defecto.
 158. **El agente siempre sabe qué día y hora es** (Bosco, 03/10/2026: «el agente siempre tiene que saber en qué día, hora, mes y año está»). Cada ejecución lee la hora del ordenador en UTC,

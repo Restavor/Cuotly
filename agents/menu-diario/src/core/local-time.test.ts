@@ -40,6 +40,57 @@ describe("local-time · zonedTimeToUtc contra PostgreSQL (Europe/Madrid)", () =>
   });
 });
 
+/*
+ * Valores de PostgreSQL (`(fecha + hora) at time zone zona`, solo cálculo) el 03/10/2026, en 15 zonas: al este y al oeste de
+ * Greenwich, de hemisferio norte y sur, con cambios de 30 y 45 minutos y a medianoche. La versión copiada de
+ * `apps/web/src/core/business-clock.ts` fallaba aquí con las zonas de desfase negativo (America/New_York y compañía).
+ */
+describe("local-time · zonedTimeToUtc contra PostgreSQL en 15 zonas (horas normales, huecos y repeticiones)", () => {
+  const casos: [string, string, string, string, string][] = [
+    ["America/New_York", "2026-03-08", "01:59", "2026-03-08T06:59:00.000Z", "normal, justo antes del salto"],
+    ["America/New_York", "2026-03-08", "02:00", "2026-03-08T07:00:00.000Z", "hueco: desfase de antes del salto"],
+    ["America/New_York", "2026-03-08", "02:30", "2026-03-08T07:30:00.000Z", "hueco: 02:30 no existe, cae a las 03:30 EDT"],
+    ["America/New_York", "2026-03-08", "03:00", "2026-03-08T07:00:00.000Z", "normal, justo después del salto"],
+    ["America/New_York", "2026-03-08", "07:00", "2026-03-08T11:00:00.000Z", "la hora por defecto el día del salto"],
+    ["America/New_York", "2026-11-01", "00:59", "2026-11-01T04:59:00.000Z", "normal, antes de la repetición"],
+    ["America/New_York", "2026-11-01", "01:00", "2026-11-01T06:00:00.000Z", "repetida: la segunda (EST)"],
+    ["America/New_York", "2026-11-01", "01:30", "2026-11-01T06:30:00.000Z", "repetida: la segunda (EST)"],
+    ["America/New_York", "2026-11-01", "02:00", "2026-11-01T07:00:00.000Z", "normal, justo después de la repetición"],
+    ["America/New_York", "2026-11-01", "07:00", "2026-11-01T12:00:00.000Z", "la hora por defecto el día del cambio"],
+    ["America/Los_Angeles", "2026-03-08", "02:30", "2026-03-08T10:30:00.000Z", "hueco"],
+    ["America/Los_Angeles", "2026-11-01", "01:30", "2026-11-01T09:30:00.000Z", "repetida"],
+    ["America/Chicago", "2026-03-08", "02:30", "2026-03-08T08:30:00.000Z", "hueco"],
+    ["America/Chicago", "2026-11-01", "01:30", "2026-11-01T07:30:00.000Z", "repetida"],
+    ["America/Havana", "2026-03-08", "00:30", "2026-03-08T05:30:00.000Z", "hueco a medianoche"],
+    ["America/Havana", "2026-11-01", "00:30", "2026-11-01T05:30:00.000Z", "repetida a medianoche"],
+    ["America/Havana", "2026-11-01", "01:00", "2026-11-01T06:00:00.000Z", "normal tras la repetición"],
+    ["America/Santiago", "2026-04-04", "23:30", "2026-04-05T03:30:00.000Z", "repetida a medianoche (hemisferio sur)"],
+    ["America/Santiago", "2026-04-05", "23:30", "2026-04-06T03:30:00.000Z", "normal"],
+    ["America/Santiago", "2026-09-06", "00:30", "2026-09-06T04:30:00.000Z", "hueco a medianoche (hemisferio sur)"],
+    ["America/St_Johns", "2026-03-08", "02:30", "2026-03-08T06:00:00.000Z", "hueco, desfase de media hora"],
+    ["America/St_Johns", "2026-11-01", "01:30", "2026-11-01T05:00:00.000Z", "repetida, desfase de media hora"],
+    ["Australia/Sydney", "2026-10-04", "02:30", "2026-10-03T16:30:00.000Z", "hueco (hemisferio sur)"],
+    ["Australia/Sydney", "2026-04-05", "02:30", "2026-04-04T16:30:00.000Z", "repetida (hemisferio sur)"],
+    ["Australia/Lord_Howe", "2026-10-04", "02:15", "2026-10-03T15:45:00.000Z", "hueco de solo 30 minutos"],
+    ["Australia/Lord_Howe", "2026-04-05", "01:45", "2026-04-04T15:15:00.000Z", "repetida de solo 30 minutos"],
+    ["Pacific/Chatham", "2026-09-27", "02:45", "2026-09-26T14:00:00.000Z", "hueco, desfase de +12:45"],
+    ["Pacific/Chatham", "2026-04-05", "03:15", "2026-04-04T14:30:00.000Z", "repetida, desfase de +12:45"],
+    ["Pacific/Auckland", "2026-09-27", "02:30", "2026-09-26T14:30:00.000Z", "hueco"],
+    ["Pacific/Auckland", "2026-04-05", "02:30", "2026-04-04T14:30:00.000Z", "repetida"],
+    ["Europe/London", "2026-03-29", "01:30", "2026-03-29T01:30:00.000Z", "hueco"],
+    ["Europe/London", "2026-10-25", "01:30", "2026-10-25T01:30:00.000Z", "repetida"],
+    ["Europe/Madrid", "2026-03-29", "02:30", "2026-03-29T01:30:00.000Z", "hueco"],
+    ["Europe/Madrid", "2026-10-25", "02:30", "2026-10-25T01:30:00.000Z", "repetida"],
+    ["Asia/Kolkata", "2026-03-29", "02:30", "2026-03-28T21:00:00.000Z", "sin cambio de hora"],
+    ["America/Sao_Paulo", "2026-11-01", "01:30", "2026-11-01T04:30:00.000Z", "sin cambio de hora"],
+  ];
+  it.each(casos)("%s %s %s → %s (%s)", (zona, fecha, hora, esperado) => {
+    const [y, mo, d] = fecha.split("-").map(Number) as [number, number, number];
+    const [h, mi] = hora.split(":").map(Number) as [number, number];
+    expect(zonedTimeToUtc(y, mo, d, h, mi, zona).toISOString()).toBe(esperado);
+  });
+});
+
 describe("local-time · «hoy» en la zona del espacio contra PostgreSQL", () => {
   const casos: [string, string, string, string][] = [
     ["00:00 local en invierno", "2026-02-09T23:00:00.000Z", "2026-02-10", "00:00"],
@@ -97,5 +148,10 @@ describe("local-time · desfase y validadores", () => {
     expect(tryLocalDateOf(new Date("2026-02-10T10:00:00Z"), "No/Existe")).toEqual({ ok: false, error: "invalid_time_zone" });
     expect(tryLocalDateOf(new Date("x"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
     expect(tryLocalDateOf(new Date("2026-02-10T10:00:00Z"), MADRID)).toEqual({ ok: true, value: "2026-02-10" });
+  });
+
+  it("tryLocalDateOf rechaza como reloj inválido un año que no se escribe con 4 cifras (no es un reloj real)", () => {
+    expect(tryLocalDateOf(new Date("0999-06-01T12:00:00Z"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
+    expect(tryLocalDateOf(new Date("+010000-01-01T12:00:00Z"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
   });
 });

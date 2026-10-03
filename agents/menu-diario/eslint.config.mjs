@@ -24,6 +24,12 @@ export default tseslint.config(
     files: ["src/core/**/*.ts"],
     rules: {
       "no-restricted-imports": ["error", { patterns: NO_IO_IN_CORE }],
+      "no-restricted-globals": [
+        "error",
+        { name: "performance", message: "performance.now() lee el reloj del sistema. El reloj lo inyecta quien llama (decisión 158)." },
+        { name: "crypto", message: "crypto da aleatoriedad: src/core es determinista." },
+        { name: "process", message: "src/core no depende del entorno de ejecución. Va en src/services." },
+      ],
       "no-restricted-properties": [
         "error",
         { object: "Date", property: "now", message: "El reloj lo inyecta quien llama (decisión 158). No leas Date.now() en src/core." },
@@ -34,6 +40,18 @@ export default tseslint.config(
         {
           selector: "NewExpression[callee.name='Date'][arguments.length=0]",
           message: "new Date() sin argumentos lee el reloj del sistema. El reloj lo inyecta quien llama (decisión 158).",
+        },
+        {
+          selector: "CallExpression[callee.name='Date']",
+          message: "Date() sin new devuelve la hora actual. El reloj lo inyecta quien llama (decisión 158).",
+        },
+        {
+          selector: "MemberExpression[object.name='globalThis'][property.name='Date']",
+          message: "No se llega a Date por globalThis para leer el reloj (decisión 158).",
+        },
+        {
+          selector: "CallExpression[callee.property.name='format'][arguments.length=0]",
+          message: "format() sin argumentos formatea la hora actual. Pasa siempre el instante (decisión 158).",
         },
       ],
     },

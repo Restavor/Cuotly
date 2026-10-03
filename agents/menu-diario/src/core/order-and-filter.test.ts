@@ -7,7 +7,11 @@ const MADRID = "Europe/Madrid";
 const NOW = new Date("2026-02-10T18:00:00Z");
 
 let seq = 0;
-/** Una tarea de prueba. `createdAt` crece con el orden en que se declara, para que el desempate sea predecible. */
+/**
+ * Una tarea de prueba. `createdAt` crece con el orden en que se declara, para que el desempate sea predecible.
+ * `publishFrom` ya está vencido por defecto: la función se prueba aislada. Con la decisión 156, una tarea de mañana no
+ * estaría lista hasta mañana a las 07:00; aquí no importa porque `orderAndFilter` es una red de seguridad.
+ */
 function task(
   id: string,
   establishmentId: string,
@@ -179,6 +183,54 @@ describe("RA-01 · fecha pasada se vuelve a comprobar al decidir", () => {
     const tasks = [task("dom", "R1", "2026-10-25", "ready", { publishFrom: new Date("2026-10-25T05:00:00Z") })];
     expect(brief(decide(tasks, new Date("2026-10-25T22:30:00Z")))).toEqual(["dom:publish"]);
     expect(brief(decide(tasks, new Date("2026-10-25T23:00:00Z")))).toEqual(["dom:error:date_in_past"]);
+  });
+});
+
+describe("RA-01 · una tarea lista con datos corruptos se reporta, no se publica ni se descarta en silencio", () => {
+  it("RA-01 · una fecha que no es «AAAA-MM-DD» real se reporta (sin esto, '2026-2-9' se compararía como texto y publicaría el menú de ayer)", () => {
+    const decisions = decide([task("mala", "R1", "2026-2-9", "ready"), task("buena", "R1", "2026-02-10", "ready")]);
+    expect(brief(decisions)).toEqual(["buena:publish", "mala:error:invalid_task_data"]);
+  });
+
+  it.each(["2026-02-30", "10/02/2026", ""])("RA-01 · la fecha %j se reporta como datos no válidos", (fecha) => {
+    expect(brief(decide([task("t", "R1", fecha, "ready")]))).toEqual(["t:error:invalid_task_data"]);
+  });
+
+  it("RA-01 · una hora ilegible (publishFrom) se reporta: antes se descartaba sin aviso", () => {
+    const mala = task("mala", "R1", "2026-02-10", "ready", { publishFrom: new Date("x") });
+    expect(brief(decide([mala]))).toEqual(["mala:error:invalid_task_data"]);
+  });
+
+  it("RA-01 · una creación ilegible (createdAt) se reporta y no descuadra el orden de las demás (24 permutaciones)", () => {
+    const base = [
+      task("c1", "R1", "2026-02-11", "ready"),
+      task("c2", "R1", "2026-02-10", "ready"),
+      task("c3", "R2", "2026-02-10", "ready"),
+      task("rota", "R2", "2026-02-10", "ready", { createdAt: new Date("x") }),
+    ];
+    const esperado = ["c2:publish", "c3:publish", "c1:publish", "rota:error:invalid_task_data"];
+    const permutaciones = (xs: OrderTask[]): OrderTask[][] =>
+      xs.length <= 1 ? [xs] : xs.flatMap((x, i) => permutaciones([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p]));
+    for (const p of permutaciones(base)) expect(brief(decide(p))).toEqual(esperado);
+  });
+
+  it("RA-01 · las corruptas salen al final, por id", () => {
+    const decisions = decide([
+      task("z", "R1", "x", "ready"),
+      task("a", "R1", "y", "ready"),
+      task("ok", "R1", "2026-02-10", "ready"),
+    ]);
+    expect(brief(decisions)).toEqual(["ok:publish", "a:error:invalid_task_data", "z:error:invalid_task_data"]);
+  });
+
+  it("RA-01 · una tarea de otro estado con datos corruptos no genera decisión", () => {
+    expect(decide([task("t", "R1", "x", "published"), task("u", "R1", "y", "waiting")])).toEqual([]);
+  });
+
+  it("RA-01 · una tarea posterior con fecha corrupta no bloquea ni rompe la comparación", () => {
+    expect(brief(decide([task("A", "R1", "2026-2-11", "published"), task("B", "R1", "2026-02-10", "ready")]))).toEqual([
+      "B:publish",
+    ]);
   });
 });
 

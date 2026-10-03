@@ -1,16 +1,21 @@
 /**
  * `src/core/local-time.ts` · fechas y horas locales de un espacio (zona horaria del espacio).
  *
- * Copiado de Restavor web, con sus mismas fórmulas, para que el agente no dependa de `apps/web`:
- *   - `zonedTimeToUtc` y el desfase: `apps/web/src/core/business-clock.ts` (RN-CLK-06).
- *   - `localDateTimeOf`, `localDateOf` y los validadores: `apps/web/src/core/reservations/dates.ts`.
- * La copia es a propósito: el robot tiene que poder ejecutarse en cualquier máquina Linux y el despachador
- * podría correr en Deno (PRD §5.2), y los originales importan sin extensión. Si se corrige un fallo de zona
- * horaria en uno, hay que corregirlo en el otro; los tests de este archivo lo vigilan contra los valores que
- * da PostgreSQL (`at time zone`), que es lo que usa `menu_publish_by_at`.
+ * Qué viene de Restavor web y qué no:
+ *   - `localDateTimeOf`, `localDateOf` y los validadores son copia de `apps/web/src/core/reservations/dates.ts`.
+ *   - `utcOffsetMinutes` sale de `apps/web/src/core/business-clock.ts` (RN-CLK-06).
+ *   - `zonedTimeToUtc` está REESCRITA. La de `business-clock.ts` coincide con PostgreSQL con las horas normales (como las
+ *     07:00 por defecto), pero NO cuando la hora configurada cae en el hueco o en la repetición del cambio de hora en
+ *     una zona al oeste de Greenwich (America/New_York, 08/03/2026 02:30: el original da 06:30Z y PostgreSQL 07:30Z).
+ *     En Europe/Madrid y demás zonas al este las dos coinciden. Este defecto, en apps/web, queda anotado aparte: aquí no se toca.
+ * La copia es a propósito: el robot tiene que poder ejecutarse en cualquier máquina Linux y el despachador podría correr
+ * en Deno (PRD §5.2), y los originales importan sin extensión.
  *
- * Los dos domingos del año en que cambia la hora (en Europe/Madrid: 29/03/2026 y 25/10/2026) son lo difícil:
- * por eso nada aquí suma «24 horas» ni «medianoche más N horas».
+ * El árbitro de `zonedTimeToUtc` es PostgreSQL (`(fecha + hora) at time zone zona`), el mismo cálculo que usa
+ * `menu_publish_by_at` en la base. Los tests de este archivo fijan sus valores en 15 zonas.
+ *
+ * Los dos domingos del año en que cambia la hora (en Europe/Madrid: 29/03/2026 y 25/10/2026) son lo difícil: por eso
+ * nada aquí suma «24 horas» ni «medianoche más N horas».
  *
  * Lógica de dominio pura: sin Supabase, sin Next, sin React y sin leer el reloj del sistema.
  */
@@ -78,10 +83,12 @@ export function utcOffsetMinutes(date: Date, timeZone: string): number {
 }
 
 /**
- * Instante UTC que corresponde a la hora local dada en `timeZone`.
- * Algoritmo de dos pasadas para resolver el desfase correcto incluso alrededor de un cambio de hora.
- * Una hora que no existe (el salto de primavera) se desplaza hacia delante y una que ocurre dos veces
- * (el cambio de otoño) es la segunda: lo mismo que hace PostgreSQL con `at time zone`.
+ * Instante UTC que corresponde a la hora local dada en `timeZone`, con la regla de PostgreSQL (`at time zone`):
+ *   - hora normal: la única que existe;
+ *   - hora que NO existe (el salto de primavera): se interpreta con el desfase de ANTES del salto, así que cae
+ *     después de él (02:30 en Madrid el 29/03/2026 es 03:30 CEST);
+ *   - hora que ocurre DOS veces (el cambio de otoño): es la segunda, la de horario estándar.
+ * Sirve para cualquier zona, también las que cambian media hora o 45 minutos (Lord_Howe, Chatham) y las de desfase negativo.
  */
 export function zonedTimeToUtc(
   year: number,
@@ -91,12 +98,21 @@ export function zonedTimeToUtc(
   minute: number,
   timeZone: string,
 ): Date {
-  const naiveUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
-  const offset1 = utcOffsetMinutes(new Date(naiveUtc), timeZone);
-  const guess1 = naiveUtc - offset1 * 60_000;
-  const offset2 = utcOffsetMinutes(new Date(guess1), timeZone);
-  const utc = offset2 === offset1 ? guess1 : naiveUtc - offset2 * 60_000;
-  return new Date(utc);
+  const wall = Date.UTC(year, month - 1, day, hour, minute, 0); // la hora local leída como si fuera UTC
+  const DAY = 86_400_000;
+  // Desfases de un día antes y un día después: entre los dos cabe como mucho un cambio de hora.
+  const before = utcOffsetMinutes(new Date(wall - DAY), timeZone);
+  const after = utcOffsetMinutes(new Date(wall + DAY), timeZone);
+  const withBefore = wall - before * 60_000;
+  if (before === after) return new Date(withBefore);
+  const withAfter = wall - after * 60_000;
+  // Un candidato vale si, en su propio instante, el desfase es el que se usó para calcularlo.
+  const beforeFits = utcOffsetMinutes(new Date(withBefore), timeZone) === before;
+  const afterFits = utcOffsetMinutes(new Date(withAfter), timeZone) === after;
+  if (beforeFits && !afterFits) return new Date(withBefore);
+  if (afterFits && !beforeFits) return new Date(withAfter);
+  // Valen los dos (hora repetida) o ninguno (hueco): en ambos casos PostgreSQL elige el instante posterior.
+  return new Date(Math.max(withBefore, withAfter));
 }
 
 /** Fecha y hora locales de un instante, en una zona. «Hoy» de un espacio sale de aquí. */
@@ -129,7 +145,10 @@ export type TimeInputError = "invalid_now" | "invalid_time_zone";
 export function tryLocalDateOf(instant: Date, timeZone: string): Result<LocalDate, TimeInputError> {
   if (Number.isNaN(instant.getTime())) return err("invalid_now");
   try {
-    return ok(localDateOf(instant, timeZone));
+    const date = localDateOf(instant, timeZone);
+    // Un año de menos de 4 cifras o de más de 4 no sale como «AAAA-MM-DD»: no es un reloj real.
+    if (!isValidLocalDate(date)) return err("invalid_now");
+    return ok(date);
   } catch (e) {
     if (e instanceof RangeError) return err("invalid_time_zone");
     throw e;

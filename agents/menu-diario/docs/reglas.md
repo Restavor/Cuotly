@@ -12,11 +12,12 @@ Las RA-01 a RA-07 vienen del PRD (`PRD.md` §7). La **RA-08** nace de la decisi�
 | **RA-05** | Errores, reintentos y plazos: 2 reintentos con 5 min de separación; error definitivo con motivo y aviso; sesión caducada; sin aprobación. | PRD §7.5 | Fase 4 y 5 | — |
 | **RA-06** | Idempotencia: una tarea por publicación; si ya está publicado con esa versión, no se hace nada; atajo tras un corte solo con `subida_hecha` y verificación estricta. | PRD §7.6 | Fase 2 y 5 | — |
 | **RA-07** | Lo que el agente no toca: restaurantes no activados, sin LandingSite, menús que no son `daily`; servicio detenido → cancelada y devuelta. | PRD §7.7 | Fase 2 y 5 | — |
-| **RA-08** | **El agente siempre sabe qué día y hora es.** Lee la hora al empezar, la deja escrita en su registro y en cada decisión, la contrasta con la de Supabase y se para si difieren más de 5 minutos. `--ahora` solo en la prueba en seco. | Decisión 158 | **Fase 1** (parte pura); la lectura de los dos relojes llega con `agente:seco` | `src/core/clock.test.ts`, `src/i18n/es.test.ts` |
+| **RA-08** | **El agente siempre sabe qué día y hora es.** Lee la hora al empezar, la deja escrita en su registro y en cada decisión, la contrasta con la de Supabase y se para si difieren más de 5 minutos. `--ahora` solo en la prueba en seco. | Decisión 158 | **Fase 1** (parte pura); la lectura de los dos relojes llega con `agente:seco` | `src/core/clock.test.ts`, `src/i18n/es.test.ts`, `tests/core-purity-lint.test.ts` (el reloj es un dato) |
 
 ## Puntos abiertos de RA-01 (no se inventan; los decide Bosco en la fase que se indica)
 
 - Una tarea atascada en `publishing` o `verifying` tras un corte de la ejecución bloquearía para siempre a las anteriores del mismo restaurante. Sin plazo ni rescate definidos (Fases 2 y 5).
 - Una tarea en `error` **después** de haber subido la imagen: ¿ocupa la web? Hoy no cuenta (Fases 2 y 5).
 - Un menú de otro día publicado **a mano** por una persona no bloquea al agente (la regla solo ve tareas). `agente:seco` lo mostrará como aviso «sin regla».
+- Entre ejecuciones: una tarea `ready` más antigua de la misma fecha podría publicarse después de una más nueva ya publicada (la misma fecha no bloquea). Dentro de una ejecución lo evita el orden por creación; entre ejecuciones lo evitará la comprobación previa de «versión vigente» (PRD §6.2-6). Dejar un test de integración cuando exista el despachador (Fase 2).
 - Con la decisión 156, el límite de aprobación del PRD (`menu_publish_by_at − 60 min`) cae en las 07:00, la misma hora de publicar. Se revisa en la Fase 4.

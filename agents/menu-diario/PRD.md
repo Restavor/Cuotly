@@ -126,7 +126,7 @@ Desde la regla RN-CRE-24 ya no generan avisos. El agente los usa como referencia
 | D2 | Todas las webs están en **una sola cuenta de LandingSite de Restavor**. Es una **cuenta propia del agente**, con correo y contraseña (decisiones 152 y 155); Google no sirve para el robot, porque bloquea los navegadores controlados por programa. |
 | D3 | El robot entra con **correo y contraseña** (decisión 155; la cuenta admite «Set password»). La sesión guardada sirve para no iniciar sesión en cada ejecución. Si LandingSite pide un código por correo o un desafío al entrar desde GitHub Actions, Bosco inicia sesión una vez en su navegador y el robot reutiliza esa sesión y avisa cuando caduque (la Fase 1 lo mide). |
 | D4 | **Robot con pasos fijos** (Playwright) + **IA de Claude solo como rescate**. |
-| D5 | Se publica en cuanto se pueda sin tapar el menú de un día anterior (regla 7.1). |
+| D5 | Se publica según la regla 7.1 (decisión 156): un menú de **hoy**, en cuanto llega la solicitud; uno de **otro día**, a las 07:00 del día del menú y nunca antes. |
 | D6 | **Modo prueba con aprobación** las primeras semanas, configurable por restaurante. Después, automático. |
 | D7 | Se aprueba por **email (Resend) con la imagen y un botón "Aprobar"**. |
 | D8 | El robot se ejecuta en **GitHub Actions** y se lanza con `workflow_dispatch`. |
@@ -537,7 +537,7 @@ Reglas:
 | R1 | Una **web de pruebas en LandingSite publicada**, con una imagen de menú y su marcador (el plan gratuito no publica). Puede ser una página oculta de una web de Restavor. **Nunca la web de un cliente.** | 0 |
 | R2 | El repositorio de Restavor web en **GitHub, privado**, con Actions activado. **Hoy es público:** Bosco lo pasa a privado antes de crear ningún workflow con credenciales (decisión 157) | 1 |
 | R3 | En "Restavor pruebas", un restaurante de pruebas que apunte a la web R1 y tenga Menú Diario | 1 |
-| R4 | Un email para el usuario agente, por ejemplo `agente-menu@restavor.com` | 1 |
+| R4 | Un email para el usuario agente: `menu@restavor.com` (decisión 157; su buzón está conectado con el de info@restavor.com) | 1 |
 | R5 | Una copia de Restavor web desplegada que use "Restavor pruebas" (por ejemplo, un entorno de vista previa en Vercel), con un usuario propietario de pruebas | 4 |
 | R6 | Acceso a Resend y a su dominio verificado | 4 |
 | R7 | Clave de la API de Anthropic con **límite de gasto mensual** (por ejemplo, 10 €) | 6 |

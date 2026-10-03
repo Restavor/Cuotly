@@ -21,6 +21,13 @@ describe("i18n · textos en español de los códigos del núcleo", () => {
     expect(es.orderReason.later_day_already_published).toBe("Ya hay publicado un menú de un día posterior");
   });
 
+  it("todos los motivos de orden y de cálculo tienen texto en español", () => {
+    for (const texto of [...Object.values(es.orderReason), ...Object.values(es.publishFromError)]) {
+      expect(texto.length).toBeGreaterThan(5);
+    }
+    expect(es.orderReason.invalid_task_data).toBe("Los datos de la tarea no son válidos");
+  });
+
   it("todo estado de tarea tiene etiqueta en español y ninguna está vacía", () => {
     for (const estado of TASK_STATES) expect(es.taskState[estado].length).toBeGreaterThan(0);
     expect(Object.keys(es.taskState).sort()).toEqual([...TASK_STATES].sort());

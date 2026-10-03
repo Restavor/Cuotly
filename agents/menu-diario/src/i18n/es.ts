@@ -19,6 +19,7 @@ export const es = {
   orderReason: {
     date_in_past: "La fecha del menú ya ha pasado",
     later_day_already_published: "Ya hay publicado un menú de un día posterior",
+    invalid_task_data: "Los datos de la tarea no son válidos",
   } satisfies Record<OrderReason, string>,
 
   taskState: {

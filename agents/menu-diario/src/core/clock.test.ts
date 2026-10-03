@@ -17,6 +17,11 @@ describe("RA-08 · el agente siempre sabe qué día y hora es (decisión 158)", 
     expect(clockOf("2026-10-25T01:30:00Z").utcOffsetMinutes).toBe(60);
   });
 
+  it("RA-08 · un reloj de un año imposible (menos o más de 4 cifras) es un error explícito, no una excepción", () => {
+    expect(localClock(new Date("0999-06-01T12:00:00Z"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
+    expect(localClock(new Date("+010000-01-01T12:00:00Z"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
+  });
+
   it("RA-08 · un reloj o una zona inválidos son un error explícito", () => {
     expect(localClock(new Date("x"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
     expect(localClock(new Date("2026-10-03T16:42:00Z"), "No/Existe")).toEqual({ ok: false, error: "invalid_time_zone" });
