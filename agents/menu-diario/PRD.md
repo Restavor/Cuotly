@@ -6,7 +6,7 @@
 | Propietario | Bosco Núñez (Restavor) |
 | Versión | 1.1 · 1 de octubre de 2026 |
 | Destinatario | Claude Code (constructor) y Bosco (revisor) |
-| Estado | Listo para la Fase 0 |
+| Estado | Fase 0 cerrada. **Fase 1 en curso** (plan en `docs/PLAN-FASE-1.md`). Este PRD recoge los cambios de las decisiones 149 a 156 de `docs/DECISIONES.md`; donde una decisión y el texto no coinciden, manda la decisión |
 
 ---
 
@@ -28,7 +28,7 @@ Cuando un restaurante envía su menú del día desde Restavor web, el agente hac
 
 1. Se queda con el menú como si fuera un trabajador más, pero solo en los restaurantes que Bosco ha activado.
 2. Prepara la imagen del menú y, mientras dura la prueba, manda a Bosco un email con la imagen y un botón "Aprobar".
-3. Espera al momento adecuado, para no tapar el menú del día anterior.
+3. Si el menú es para **hoy**, lo sube en cuanto llega. Si es para **otro día**, espera y lo sube a las **07:00 del día del menú** (decisión 154).
 4. Entra en LandingSite, sustituye la imagen del menú en la web de ese restaurante y publica.
 5. Abre la web pública y comprueba que se ve **exactamente** la imagen nueva.
 6. Marca el menú como **Publicado** en Restavor web.
@@ -107,7 +107,7 @@ Así funciona hoy:
 - Los candidatos salen de `menu_candidate_ids`: miembros activos que no son propietarios, con la especialidad `general` o `daily_menu`, autorizados en el restaurante y disponibles.
 - Esta lógica no distingue el tipo de menú.
 
-Decisión: **el usuario agente NO tiene ninguna especialidad**, así que nunca es candidato y el reparto normal no cambia en ningún restaurante ni para ningún tipo de menú. El agente solo recibe menús a través de la función nueva `agente_menu_asignar` (sección 7.2) y solo en los restaurantes activados.
+Decisión: **el usuario agente NO tiene ninguna especialidad**, así que nunca es candidato **de menús**: el reparto de menús no cambia en ningún restaurante ni para ningún tipo de menú. **Ojo (RECONOCIMIENTO §2.8, decisión 151):** sin especialidades sigue entrando en el reparto de **trabajos y tareas** y, por estar autorizado en un restaurante, ve sus finanzas e informes; se cierra con la marca que se propone en la Fase 2 (hasta entonces, en la Fase 1, se le marca «no disponible» como puente, que cierra trabajos y menús pero no tareas). El agente solo recibe menús a través de la función nueva `agente_menu_asignar` (sección 7.2) y solo en los restaurantes activados.
 
 ### 3.6 Plazos (informativos)
 
@@ -123,14 +123,14 @@ Desde la regla RN-CRE-24 ya no generan avisos. El agente los usa como referencia
 | # | Decisión |
 |---|---|
 | D1 | En la web, el menú es **una imagen PNG generada por Restavor web** con la plantilla de publicar del restaurante. El agente sustituye esa imagen. |
-| D2 | Todas las webs están en **una sola cuenta de LandingSite de Restavor**. Hoy se entra con Google. |
-| D3 | Si la cuenta admite **email + contraseña**, el robot entra solo. Si no, Bosco inicia sesión una vez en el navegador del robot y el robot reutiliza esa sesión guardada y avisa cuando caduque. |
+| D2 | Todas las webs están en **una sola cuenta de LandingSite de Restavor**. Es una **cuenta propia del agente**, con correo y contraseña (decisiones 150 y 153); Google no sirve para el robot, porque bloquea los navegadores controlados por programa. |
+| D3 | El robot entra con **correo y contraseña** (decisión 153; la cuenta admite «Set password»). La sesión guardada sirve para no iniciar sesión en cada ejecución. Si LandingSite pide un código por correo o un desafío al entrar desde GitHub Actions, Bosco inicia sesión una vez en su navegador y el robot reutiliza esa sesión y avisa cuando caduque (la Fase 1 lo mide). |
 | D4 | **Robot con pasos fijos** (Playwright) + **IA de Claude solo como rescate**. |
 | D5 | Se publica en cuanto se pueda sin tapar el menú de un día anterior (regla 7.1). |
 | D6 | **Modo prueba con aprobación** las primeras semanas, configurable por restaurante. Después, automático. |
 | D7 | Se aprueba por **email (Resend) con la imagen y un botón "Aprobar"**. |
 | D8 | El robot se ejecuta en **GitHub Actions** y se lanza con `workflow_dispatch`. |
-| D9 | El agente tiene **su propio usuario trabajador sin especialidades** en Restavor web. Así no entra en el reparto normal y la auditoría deja constancia de quién publicó. |
+| D9 | El agente tiene **su propio usuario trabajador sin especialidades** en Restavor web. Así no entra en el reparto de menús (en el de trabajos y tareas sí, hasta la decisión 151) y la auditoría deja constancia de quién publicó. |
 | D10 | El código vive **en el repositorio de Restavor web**, en `agents/menu-diario/`, para reutilizar su generador de PNG, sus tipos y sus migraciones. |
 
 ---
@@ -174,6 +174,7 @@ Bosco ── /agente-menu/aprobar (Restavor web, sesión owner/admin) ──► 
 3. **Robot.**
    - Workflow de GitHub Actions (`workflow_dispatch`) con `concurrency: { group: agente-menu, cancel-in-progress: false }`, para que nunca haya dos navegadores editando LandingSite a la vez.
    - En cada ejecución procesa en orden todas las tareas que toquen (regla 7.1).
+   - **Sabe siempre qué día y hora es** (decisión 156, RA-08): al empezar lee la hora del ordenador en UTC, la pasa a la zona del espacio y la escribe en su registro y en cada decisión («Hoy es sábado 3 de octubre de 2026, 18:42, hora de Madrid»). La contrasta con la hora que devuelve Supabase en cada respuesta y, **si difieren más de 5 minutos, se para y avisa**. La IA no decide la fecha: en el rescate se le pasa en el mensaje.
    - Es el **único** que llama a las RPC de 3.4, conectado con email y contraseña como el usuario agente.
 4. **Página de aprobación** en Restavor web (ruta Next.js `/agente-menu/aprobar?t=<token>`).
    - Exige iniciar sesión como propietario o administrador del espacio.
@@ -284,31 +285,38 @@ La fecha y la aprobación son **condiciones independientes**, no pasos en orden.
 
 ### 7.1 Cuándo publicar y en qué orden (RA-01)
 
-Todo en la zona horaria del espacio. `hoy` es la fecha local.
+> **Regla cambiada por Bosco el 03/10/2026 (decisión 154).** Antes: un menú de otro día se publicaba a las 17:00 de la víspera (`HORA_VISPERA`). Ahora no se publica nada antes de su día.
+
+Todo en la zona horaria del espacio. `hoy` es la fecha local **en el instante en que se hace el cálculo** (no la hora a la que el cliente pidió publicar).
 
 | Caso | Acción |
 |---|---|
 | `target_date < hoy` | No publicar. El robot reporta el error "La fecha del menú ya ha pasado". |
-| `target_date = hoy` | `publicar_desde = ahora`. |
-| `target_date > hoy` | `publicar_desde = (target_date − 1 día) a las HORA_VISPERA` (17:00, configurable). Si esa hora ya ha pasado, `ahora`. |
+| `target_date = hoy` | `publicar_desde = ahora`: se sube **en cuanto llega la solicitud**, cada vez. Si el restaurante manda otro menú para hoy, el agente sube el nuevo y sustituye al anterior (uno a las 8:00 y otro a las 9:00 → a las 9:00 sube el nuevo). |
+| `target_date > hoy` | `publicar_desde` = **las 07:00 del día del menú** (configurable), con la última versión enviada hasta entonces. Si llega ya pasada esa hora del día del menú, ese día es «hoy» y se publica al llegar. |
 
-**Orden.** La web tiene un solo hueco para la imagen, así que:
+«En el mismo instante» significa que el agente se pone a trabajar al instante; la web cambia unos minutos después (estimación de 3 a 5 minutos; el objetivo del PRD sigue siendo ≤ 30).
+
+**Orden (red de seguridad).** La web tiene un solo hueco para la imagen, así que:
 
 - en cada ejecución las tareas se procesan por `target_date` ascendente;
-- **una tarea no se publica si el mismo restaurante tiene otra tarea con `target_date` posterior ya publicada o en curso.** En ese caso, el robot reporta el error "Ya hay publicado un menú de un día posterior" y no toca la web.
+- se vuelve a comprobar la fecha pasada cada vez que el robot decide, no solo al crear la tarea;
+- **una tarea no se publica si el mismo restaurante tiene otra tarea con `target_date` posterior ya publicada o en curso** (`publishing`, `verifying`, `published`). En ese caso, el robot reporta el error "Ya hay publicado un menú de un día posterior" y no toca la web. La misma fecha no bloquea (así se publica una republicación del mismo día).
 
-Motivo: el menú del día se consulta a mediodía. Publicar el de mañana a las 10:00 taparía el de hoy durante el servicio.
+Con la decisión 154 esta regla casi no se usa, porque ya no se publica nada antes de su día. Se conserva por si un menú de otro día se publica por otra vía. Dos casos **abiertos**, que decide Bosco en las Fases 2 y 5 (`docs/reglas.md`): una tarea atascada en `publishing` o `verifying` tras un corte, y una tarea en `error` después de haber subido la imagen.
 
 **Tests unitarios con reloj fijo**, como mínimo:
 
-- menú para hoy;
-- menú para mañana pedido a las 10:00 y a las 18:00;
+- menú para hoy (y uno a las 8:00 y otro a las 9:00);
+- menú para mañana pedido a las 10:00 y a las 18:00 (los dos salen mañana a las 07:00);
 - menú para dentro de 3 días;
 - menú para ayer;
 - menú pedido a las 23:59;
 - cambio de hora de octubre y de marzo;
 - regla de orden: el de hoy llega después de que el de mañana ya se publicó;
 - dos tareas del mismo restaurante en la misma ejecución.
+
+La lista completa, con valores UTC contrastados con PostgreSQL, está en `src/core/publish-from.test.ts` y `src/core/order-and-filter.test.ts`.
 
 ### 7.2 Asignación al agente (RA-02)
 
@@ -359,8 +367,8 @@ Si el cliente vuelve a mandar un menú ya publicado, se crea una publicación nu
   - tarea en `bloqueada_sesion` + email con las instrucciones del apéndice C;
   - todavía no se marca error en Restavor web.
   - Si se llega a `menu_publish_by_at − 60 min`, el despachador deja `accion_pendiente = 'reportar_error'` y el robot hace el reporte para que el equipo actúe.
-  - `npm run agente:login` devuelve a `lista` las tareas bloqueadas y lanza el despachador.
-- **Sin aprobación**: si a `menu_publish_by_at − 60 min` sigue sin aprobar, se reporta el error "Pendiente de aprobación" + email.
+  - `pnpm agente:login` devuelve a `lista` las tareas bloqueadas y lanza el despachador.
+- **Sin aprobación**: si a `menu_publish_by_at − 60 min` sigue sin aprobar, se reporta el error "Pendiente de aprobación" + email. (Con la decisión 154 ese límite, las 07:00, coincide con la hora de publicar los menús de otro día: se revisa en la Fase 4.)
 
 Ningún menú puede quedarse asignado al agente sin publicarse y sin aviso.
 
@@ -372,7 +380,7 @@ Ningún menú puede quedarse asignado al agente sin publicarse y sin aviso.
 
 ### 7.7 Lo que el agente no toca (RA-07)
 
-- Los restaurantes no activados, los que no tienen `web_platform = 'landing_site'` y los menús que no son `daily` siguen el flujo humano **exactamente como hoy**. El agente no es candidato, así que el reparto no cambia.
+- Los restaurantes no activados, los que no tienen `web_platform = 'landing_site'` y los menús que no son `daily` siguen el flujo humano **exactamente como hoy**. El agente no es candidato de menús, así que el reparto de menús no cambia (el de trabajos y tareas se cierra con la decisión 151).
 - Un restaurante con el servicio detenido: tarea `cancelada`, menú devuelto al equipo, aviso por email y la web sin tocar.
 
 ---
@@ -386,7 +394,7 @@ Es una propuesta: adapta los nombres a las convenciones del repositorio.
 
 **Tablas**
 
-- **`config`** (una sola fila): `space_id`, `agente_user_id`, `hora_vispera` (17:00), `max_reintentos` (2), `coste_max_rescate_mes_eur` (5), `coste_max_rescate_ejecucion_eur` (0,50), `modelo_rescate`, `avisos_email`.
+- **`config`** (una sola fila): `space_id`, `agente_user_id`, `hora_publicacion_otro_dia` (07:00; en el código, `otherDayHour`), `max_reintentos` (2), `coste_max_rescate_mes_eur` (5), `coste_max_rescate_ejecucion_eur` (0,50), `modelo_rescate`, `avisos_email`.
 - **`restaurantes`**: `establishment_id` (PK), `activo`, `modo`, `landingsite_editor_url` (URL estable del editor del sitio), `landingsite_sitio_id` (identificador que debe aparecer en la URL; ver 9.5), `url_publica` (su dominio debe coincidir con `establishments.website_url`), `selector_imagen`, `notas`, `updated_at`.
 - **`tareas`**: `id`, `publication_id` (único), `menu_id`, `establishment_id`, `target_date`, `version_id`, `estado`, `publicar_desde`, `accion_pendiente`, `motivo_pendiente`, `aprobada_version_id`, `aprobada_at`, `aprobada_por`, `recordatorio_enviado_at`, `intentos`, `ultimo_error`, `png_path`, `imagen_antes_huella`, `evidencia_path`, `run_url`, `created_at`, `updated_at`.
 - **`eventos`** (libro inmutable): `tarea_id`, `tipo` (incluye `subida_hecha` y `uso_ia`), `detalle jsonb`, `at`.
@@ -435,7 +443,7 @@ Guarda las respuestas en `agents/menu-diario/docs/RECONOCIMIENTO.md`, con captur
 
 - Se guarda como `storageState` de Playwright, **filtrado solo a los orígenes y cookies de `landingsite.ai`**.
 - Se cifra con AES-256-GCM (clave en `SESION_CLAVE`) y se guarda en el bucket `agente-menu`. En cada ejecución se descarga y, al terminar, se sube la versión renovada.
-- `npm run agente:login` es para el ordenador de Bosco. Lee un `.env.local` que nunca se sube al repositorio, con la URL y la anon key de Supabase, el email y la contraseña del agente y `SESION_CLAVE`. Hace lo siguiente:
+- `pnpm agente:login` es para el ordenador de Bosco. Lee un `.env.local` que nunca se sube al repositorio, con la URL y la anon key de Supabase, el email y la contraseña del agente y `SESION_CLAVE`. Hace lo siguiente:
   1. abre un navegador visible y Bosco entra;
   2. filtra, cifra y sube la sesión;
   3. reactiva las tareas en `bloqueada_sesion`.
@@ -527,7 +535,7 @@ Reglas:
 | # | Qué | Fase |
 |---|---|---|
 | R1 | Una **web de pruebas en LandingSite publicada**, con una imagen de menú y su marcador (el plan gratuito no publica). Puede ser una página oculta de una web de Restavor. **Nunca la web de un cliente.** | 0 |
-| R2 | El repositorio de Restavor web en **GitHub, privado**, con Actions activado | 1 |
+| R2 | El repositorio de Restavor web en **GitHub, privado**, con Actions activado. **Hoy es público:** Bosco lo pasa a privado antes de crear ningún workflow con credenciales (decisión 155) | 1 |
 | R3 | En "Restavor pruebas", un restaurante de pruebas que apunte a la web R1 y tenga Menú Diario | 1 |
 | R4 | Un email para el usuario agente, por ejemplo `agente-menu@restavor.com` | 1 |
 | R5 | Una copia de Restavor web desplegada que use "Restavor pruebas" (por ejemplo, un entorno de vista previa en Vercel), con un usuario propietario de pruebas | 4 |
@@ -570,7 +578,7 @@ En LandingSite, con Bosco delante, responde a las 8 preguntas de 9.3. Usa Playwr
 - Carpeta `agents/menu-diario/` con lint, tests y el `CLAUDE.md` del apéndice A.
 - Alta del usuario agente en pruebas: trabajador **sin especialidades**, autorizado en el restaurante de pruebas.
 - Funciones puras `calcularPublicarDesde()` y `ordenarYFiltrar()` con todos los tests de 7.1.
-- `npm run agente:seco`: entra como el agente, lee la cola y muestra para cada menú qué haría y cuándo. **No escribe nada.**
+- `pnpm agente:seco`: entra como el agente, lee la cola y muestra para cada menú qué haría y cuándo. **No escribe nada.**
 - Workflow mínimo en Actions que, durante 2 días, comprueba cada pocas horas que la sesión filtrada de LandingSite sigue valiendo. Solo comprueba, no edita.
 
 **Aceptación:**
@@ -578,7 +586,7 @@ En LandingSite, con Bosco delante, responde a las 8 preguntas de 9.3. Usa Playwr
 - Los tests pasan.
 - La prueba en seco es correcta.
 - `audit_log` tiene el mismo número de filas antes y después de la prueba en seco.
-- El agente **no** aparece en `menu_candidate_ids` de ningún menú.
+- El agente **no** aparece en `menu_candidate_ids` de ningún menú. (Insuficiente por sí solo: con Bar Demo vacío sale cierto sin comprobar nada. Se mide también con `job_candidate_ids` y `list_task_candidates`, y se anota el límite conocido: hasta la marca de la Fase 2 el agente **sí** sale en el reparto de tareas.)
 - Hay un informe de cuánto dura la sesión.
 
 ### Fase 2 · Lado Restavor web: datos, asignación y despachador
@@ -655,7 +663,7 @@ Con el OK de Bosco:
 
 **Aceptación:**
 
-- `npm run agente:e2e` pasa.
+- `pnpm agente:e2e` pasa.
 - El primer menú real se publica tras la aprobación de Bosco.
 - Con al menos 10 publicaciones correctas, Bosco decide si ese restaurante pasa a `automatico`.
 
@@ -663,7 +671,7 @@ Con el OK de Bosco:
 
 ## 15. Verificación final de extremo a extremo
 
-`npm run agente:e2e` (solo en pruebas):
+`pnpm agente:e2e` (solo en pruebas):
 
 1. Crea un menú `daily` para **hoy** en el restaurante de pruebas, como usuario cliente de prueba, y lo manda a publicar.
 2. Lo aprueba **por el flujo real**: Playwright entra en la copia de pruebas de Restavor web como propietario de prueba y pulsa Aprobar. **No hay ningún atajo de aprobación en el código ni en las migraciones.**
@@ -688,7 +696,7 @@ Tiene que pasar antes de la Fase 7 y después de cualquier cambio en el agente.
 
 ## 17. Preguntas abiertas y supuestos
 
-- **P1.** `HORA_VISPERA` es 17:00 por defecto (después del servicio de comidas). Se puede cambiar.
+- **P1.** *(Resuelta, decisión 154.)* Un menú de otro día se publica a las 07:00 del día del menú; la hora se puede cambiar. Ya no hay hora de víspera.
 - **P2.** `AVISOS_EMAIL` por defecto: `info@restavor.com`.
 - **P3.** Si las condiciones de LandingSite prohíben automatizar, hay que decidir un plan B. La alternativa estudiada es un recuadro incrustado una sola vez que lea el menú publicado desde Restavor web.
 - **P4.** Si en la Fase 1 la sesión resulta muy frágil en GitHub Actions, se pasa a un servidor pequeño (unos 5 € al mes) sin reescribir el robot.
@@ -705,7 +713,7 @@ Tiene que pasar antes de la Fase 7 y después de cualquier cambio en el agente.
 - No modificar funciones, tablas ni políticas existentes de Restavor web: solo migraciones nuevas.
 - Las RPC de Restavor web que usan auth.uid() solo las llama el robot como usuario agente. El robot nunca usa service_role, y el chat de IA de LandingSite solo lo usa para subir el menú (PRD 9.2).
 - La guarda de sitio (PRD 9.5) se aplica siempre en código, también en el rescate.
-- Comandos: npm test · npm run agente:seco · npm run agente:e2e · npm run agente:login
+- Comandos (con pnpm; manda el `CLAUDE.md` de la raíz): pnpm test · pnpm agente:seco · pnpm agente:e2e · pnpm agente:login
 - Antes de dar algo por terminado: tests en verde + evidencia (salida, capturas o consultas).
 - Habla con Bosco en lenguaje sencillo: no es programador.
 ```
@@ -730,7 +738,7 @@ Si Claude Code se equivoca dos veces en lo mismo, escribe `/clear` y empieza la 
 |---|---|
 | "Aprobar menú de <restaurante>" | Mira la imagen. Si está bien, pulsa **Aprobar** y confirma en la página. |
 | "Recordatorio: menú sin aprobar" | Igual que el anterior. Si no apruebas antes de 1 hora del plazo, el menú pasa a Error de publicación para que el equipo lo publique a mano. |
-| "Sesión de LandingSite caducada" | En tu ordenador, abre Claude Code en la carpeta del proyecto y pide *ejecuta `npm run agente:login`*. Entra en la ventana que se abre. Listo: el agente sigue solo. |
+| "Sesión de LandingSite caducada" | En tu ordenador, abre Claude Code en la carpeta del proyecto y pide *ejecuta `pnpm agente:login`*. Entra en la ventana que se abre. Listo: el agente sigue solo. |
 | "Error de publicación" | Lee el motivo. Pulsa **Reintentar** o publícalo a mano como antes. |
 | "He usado el rescate" | Seguramente LandingSite ha cambiado algo. Pide a Claude Code que actualice los pasos fijos con la propuesta guardada. |
 

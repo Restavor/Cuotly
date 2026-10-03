@@ -5,7 +5,7 @@
 | Fecha | 02/10/2026 |
 | Rama | `claude/gallant-mccarthy-nrf8u4` (reiniciada desde `origin/agents`, decisión A de Bosco) |
 | Base de pruebas | "Restavor pruebas" (`bnucqykimngjwcrlpmsm`). Producción ("Cuotly", `mcajbfxhkxtdhjoyrqha`) **no se ha tocado** |
-| Estado | **FASE 0 CERRADA: visto bueno de Bosco el 03/10/2026.** Preguntas 1 a 7 de LandingSite respondidas (ver "Prueba en LandingSite"); lo que queda abierto de ellas (contraseña, duración de la sesión, ediciones de IA, `alt`, publicación fallida) **pasa a la Fase 1**, donde Bosco lo contestará. Bar Demo está listo. La web de pruebas muestra el menú de Bar Demo. Pendiente de confirmar: borrado de los archivos de sesión del Chrome visible (en el ordenador de Bosco, fuera del repo) |
+| Estado | **FASE 0 CERRADA: visto bueno de Bosco el 03/10/2026.** Preguntas 1 a 7 de LandingSite respondidas (ver "Prueba en LandingSite"); lo que queda abierto de ellas (contraseña, duración de la sesión, ediciones de IA, `alt`, publicación fallida) **pasa a la Fase 1**, donde Bosco lo contestará. ~~Bar Demo está listo.~~ **Ya no: el 03/10/2026 a las 13:43 UTC la base se resembró (ahora tiene 175 migraciones) y Bar Demo volvió a quedar vacío** (sin plataforma web, dirección, plantilla, menús ni Menú Diario). Hay que relanzar `sql/bar-demo-pruebas.sql` antes de la prueba en seco de la Fase 1, y se repetirá con cada resembrado. La web de pruebas muestra el menú de Bar Demo. Pendiente de confirmar: borrado de los archivos de sesión del Chrome visible (en el ordenador de Bosco, fuera del repo) |
 
 ---
 

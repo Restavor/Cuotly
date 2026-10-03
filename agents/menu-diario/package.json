@@ -1,0 +1,19 @@
+{
+  "name": "@cuotly/daily-menu-agent",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Agente Menú Diario de Restavor. Especificación en PRD.md; plan de la Fase 1 en docs/PLAN-FASE-1.md.",
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "eslint": "^9",
+    "typescript": "^5",
+    "typescript-eslint": "^8.68.0",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,14 @@
+# Nada de esto se sube nunca (PRD §11): credenciales, sesiones de LandingSite y pruebas de ejecución.
+.env
+.env.*
+!.env.example
+sesion*.json
+sesion*.enc
+*.storage-state.json
+.auth/
+artefactos/
+evidencias/
+capturas-ejecucion/
+tmp/
+node_modules/
+coverage/
