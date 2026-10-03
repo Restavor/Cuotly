@@ -4,10 +4,17 @@
   "private": true,
   "type": "module",
   "description": "Agente Menú Diario de Restavor. Especificación en PRD.md; plan de la Fase 1 en docs/PLAN-FASE-1.md.",
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "agente:seco": "node scripts/dry-run.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.112.4"
   },
   "devDependencies": {
     "@types/node": "^20",

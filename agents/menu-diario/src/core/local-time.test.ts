@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isValidLocalDate,
   isValidLocalTime,
+  dayDiff,
   isoWeekday,
   localDateOf,
   localDateTimeOf,
@@ -153,5 +154,21 @@ describe("local-time · desfase y validadores", () => {
   it("tryLocalDateOf rechaza como reloj inválido un año que no se escribe con 4 cifras (no es un reloj real)", () => {
     expect(tryLocalDateOf(new Date("0999-06-01T12:00:00Z"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
     expect(tryLocalDateOf(new Date("+010000-01-01T12:00:00Z"), MADRID)).toEqual({ ok: false, error: "invalid_now" });
+  });
+});
+
+describe("local-time · diferencia en días de calendario", () => {
+  it("cuenta días de calendario, también por los días de cambio de hora, fin de mes y año bisiesto", () => {
+    expect(dayDiff("2026-10-03", "2026-10-03")).toBe(0);
+    expect(dayDiff("2026-10-03", "2026-10-04")).toBe(1);
+    expect(dayDiff("2026-10-04", "2026-10-03")).toBe(-1);
+    expect(dayDiff("2026-10-24", "2026-10-26")).toBe(2); // por encima del cambio de hora de octubre
+    expect(dayDiff("2026-03-28", "2026-03-30")).toBe(2); // por encima del cambio de hora de marzo
+    expect(dayDiff("2028-02-28", "2028-03-01")).toBe(2); // bisiesto
+    expect(dayDiff("2026-12-31", "2027-01-01")).toBe(1);
+  });
+
+  it("una fecha inválida lanza RangeError (solo se llama con fechas ya validadas)", () => {
+    expect(() => dayDiff("2026-02-30", "2026-03-01")).toThrow(RangeError);
   });
 });

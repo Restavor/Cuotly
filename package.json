@@ -13,6 +13,7 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "comprobar:storage": "pnpm --filter @cuotly/web comprobar:storage"
+    "comprobar:storage": "pnpm --filter @cuotly/web comprobar:storage",
+    "agente:seco": "pnpm --filter @cuotly/daily-menu-agent agente:seco"
   }
 }

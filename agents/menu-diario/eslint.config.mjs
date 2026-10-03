@@ -56,4 +56,24 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // La prueba en seco NO escribe nada (PRD §14, Fase 1). Tercera capa, junto a la puerta de solo lectura (read-only-gate.ts)
+    // y a la comprobación externa de recuentos. El robot de las fases siguientes sí escribirá, en otros archivos.
+    files: [
+      "src/dry-run/**/*.ts",
+      "scripts/dry-run.ts",
+      "src/services/dry-run-reader.ts",
+      "src/services/read-only-gate.ts",
+      "src/services/read-only-client.ts",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "CallExpression[callee.property.name=/^(insert|update|delete|upsert)$/]",
+          message: "La prueba en seco no escribe en la base: sin .insert / .update / .delete / .upsert.",
+        },
+      ],
+    },
+  },
 );

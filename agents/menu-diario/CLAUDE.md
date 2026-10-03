@@ -3,7 +3,7 @@
 Reglas de esta carpeta. Se suman a las del `CLAUDE.md` de la raíz, que **manda** si algo choca (jerarquía: `CLAUDE.md` raíz > este archivo > `PRD.md` de esta carpeta).
 
 - Fuente de verdad del producto: `PRD.md`. Haz solo la fase que se pide y para al terminarla. El plan de la Fase 1 y su estado están en `docs/PLAN-FASE-1.md`.
-- Las decisiones de Bosco que cambian el PRD están en `docs/DECISIONES.md` de la raíz: **151 a 155** (Fase 0), **156** (cuándo publica el agente), **157** (cuentas, repo privado, rama) y **158** (el agente siempre sabe qué día y hora es). Donde el PRD dice otra cosa, mandan ellas.
+- Las decisiones de Bosco que cambian el PRD están en `docs/DECISIONES.md` de la raíz: **151 a 155** (Fase 0), **156** (cuándo publica el agente), **157** (cuentas, repo privado, rama), **158** (el agente siempre sabe qué día y hora es), **159** (permiso y orden de las escrituras de Bar Demo), **160** (la Fase 1 se cierra sin esperar las 48 h) y **161** (el modo aprobación dura 1 semana desde que terminen todas las fases). Donde el PRD dice otra cosa, mandan ellas.
 - IMPORTANT: pruebas solo en Supabase «Restavor pruebas» (`bnucqykimngjwcrlpmsm`) y en la web de pruebas de LandingSite. Nunca producción ni webs de clientes sin OK explícito de Bosco. Nunca se autoriza al agente en Magariños (web real).
 - No modificar funciones, tablas ni políticas existentes de Restavor web: solo migraciones nuevas (única excepción: la 153, que saca al agente de los repartos de trabajos y tareas, y se propone en la Fase 2 antes de escribirla).
 - Las RPC de Restavor web que usan `auth.uid()` solo las llama el robot como usuario agente. **El robot nunca usa `service_role`.** El chat de IA de LandingSite solo se usa para subir el menú (PRD §9.2).
@@ -22,7 +22,21 @@ pnpm --filter @cuotly/daily-menu-agent lint
 pnpm --filter @cuotly/daily-menu-agent typecheck
 ```
 
-`agente:seco`, `agente:login` y `agente:e2e` (PRD Apéndice A) llegan con su fase: no se declaran hasta que existan sus archivos.
+**`agente:seco`** (Fase 1): prueba en seco de solo lectura. Entra como el agente, lee la cola de Menú Diario y dice, menú por menú, qué haría y a qué hora. **No escribe nada.**
+
+```bash
+pnpm agente:seco                                     # desde la raíz (alias de `pnpm --filter @cuotly/daily-menu-agent agente:seco`)
+pnpm agente:seco --restaurante=EST-0001              # solo ese restaurante: restringe, nunca añade
+pnpm agente:seco --ahora=2026-10-04T08:00:00+02:00   # reloj simulado: solo aquí y con un cartel que lo avisa
+node agents/menu-diario/scripts/dry-run.ts           # sin pnpm: el código de salida llega tal cual
+```
+
+- Variables de entorno (nunca en el repositorio ni por el chat): `RESTAVOR_SUPABASE_URL`, `RESTAVOR_SUPABASE_ANON_KEY`, `AGENTE_EMAIL`, `AGENTE_PASSWORD`. Se niega a arrancar si la dirección no es la de «Restavor pruebas»; producción tiene su propio error.
+- Código de salida: **0** bien · **1** no se pudo leer · **2** configuración, inicio de sesión o reloj. `pnpm` convierte el 2 en 1; con `node` directo se ve el 2.
+- «Restaurantes activados» en la Fase 1 = agente autorizado en él ∧ `web_platform = landing_site` ∧ no eliminado. La Fase 2 lo sustituye por `agente_menu.restaurantes`.
+- Por qué no escribe: tres capas, y ninguna sola basta. (1) El código no escribe: el lint prohíbe `.insert/.update/.delete/.upsert` en los archivos de la prueba en seco. (2) `src/services/read-only-gate.ts`: el `fetch` solo deja pasar GET de una lista cerrada de tablas y columnas, GET de `team_menu_queue` y el inicio y cierre de sesión; lo demás se rechaza antes de salir del ordenador. (3) En la base, `supabase/tests/agente_menu_seco.sql` (corre en CI) falla si `team_menu_queue` o cualquier función que se ejecuta al leer deja de ser de solo lectura, y `tests/seco-sql.test.ts` falla si las listas de ese SQL y las de la puerta dejan de coincidir. Cuando se demuestra contra la base real, además, quien la demuestra cuenta las filas de todas las tablas de `public` antes y después con una conexión privilegiada que **no** es del robot.
+
+`agente:login` y `agente:e2e` (PRD Apéndice A) llegan con su fase: no se declaran hasta que existan sus archivos.
 
 ## Código
 

@@ -634,6 +634,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/menu_diario_dentro_del_plan.sql
 
+      - name: "Agente Menú Diario, Fase 1 — La prueba en seco solo lee: la cola del equipo y toda la cadena de funciones que se ejecutan al leer son de solo lectura (decisión 151, PRD del agente §14)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/agente_menu_seco.sql
+
       - name: "Suite 87 — Informes y oportunidades (migración 153, RN-CRE-26 y 27)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

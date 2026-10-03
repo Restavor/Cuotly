@@ -51,6 +51,15 @@ export function isoWeekday(date: LocalDate): number {
   return dow === 0 ? 7 : dow;
 }
 
+/** Días de calendario de `from` a `to` (positivo si `to` es posterior). Aritmética pura sobre fechas locales, sin zona. */
+export function dayDiff(from: LocalDate, to: LocalDate): number {
+  const a = DATE_RE.exec(from);
+  const b = DATE_RE.exec(to);
+  if (!a || !b || !isValidLocalDate(from) || !isValidLocalDate(to)) throw new RangeError(`Fecha no válida: ${from} / ${to}`);
+  const ms = Date.UTC(Number(b[1]), Number(b[2]) - 1, Number(b[3])) - Date.UTC(Number(a[1]), Number(a[2]) - 1, Number(a[3]));
+  return Math.round(ms / 86_400_000);
+}
+
 function formatPartsMap(date: Date, timeZone: string): Record<string, string> {
   const dtf = new Intl.DateTimeFormat("en-US", {
     timeZone,

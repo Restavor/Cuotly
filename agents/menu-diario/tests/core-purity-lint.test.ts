@@ -67,3 +67,28 @@ describe("lint · src/core es puro (decisión 158)", () => {
     expect(await rulesFor("export const a = Date.now();", "src/services/system-clock.ts")).toEqual([]);
   });
 });
+
+describe("lint · la prueba en seco no escribe en la base", () => {
+  const escrituras: [string, string][] = [
+    ["insert", 'export const a = client.from("menus").insert({ name: "x" });'],
+    ["update", 'export const a = client.from("menus").update({ name: "x" });'],
+    ["delete", 'export const a = client.from("menus").delete();'],
+    ["upsert", 'export const a = client.from("menus").upsert({ name: "x" });'],
+  ];
+  const archivos = ["src/dry-run/run.ts", "scripts/dry-run.ts", "src/services/dry-run-reader.ts", "src/services/read-only-gate.ts"];
+
+  for (const [nombre, codigo] of escrituras) {
+    it(`lint · .${nombre}() da error en el código de la prueba en seco`, async () => {
+      for (const archivo of archivos) expect(await rulesFor(codigo, archivo)).toContain("no-restricted-syntax");
+    });
+  }
+
+  it("lint · leer con .select() en la prueba en seco no da ningún error", async () => {
+    const lectura = 'export const a = client.from("menus").select("id,state").eq("state", "draft");';
+    expect(await rulesFor(lectura, "src/services/dry-run-reader.ts")).toEqual([]);
+  });
+
+  it("lint · el robot de las fases siguientes (otros archivos de services) sí podrá escribir", async () => {
+    expect(await rulesFor('export const a = client.from("tareas").insert({});', "src/services/robot-writes.ts")).toEqual([]);
+  });
+});
