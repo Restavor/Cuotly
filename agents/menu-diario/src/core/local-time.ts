@@ -87,8 +87,9 @@ export function utcOffsetMinutes(date: Date, timeZone: string): number {
  *   - hora normal: la única que existe;
  *   - hora que NO existe (el salto de primavera): se interpreta con el desfase de ANTES del salto, así que cae
  *     después de él (02:30 en Madrid el 29/03/2026 es 03:30 CEST);
- *   - hora que ocurre DOS veces (el cambio de otoño): es la segunda, la de horario estándar.
+ *   - hora que ocurre DOS veces (el cambio de otoño): es la SEGUNDA aparición (en los cambios de otoño, la de horario estándar).
  * Sirve para cualquier zona, también las que cambian media hora o 45 minutos (Lord_Howe, Chatham) y las de desfase negativo.
+ * Supone como mucho UN cambio de hora en las 48 horas alrededor de la hora pedida (cierto en las zonas con las reglas de hoy).
  */
 export function zonedTimeToUtc(
   year: number,

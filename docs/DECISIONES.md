@@ -2909,9 +2909,9 @@ Fase 1» de ese informe; la 155 la añadió al cerrar la Fase 0.
     **Sin probar todavía**: falta comprobar que el inicio de sesión con contraseña funciona desde la nube (la prueba del 03/10 se hizo por código de correo) y cuánto dura la sesión. Se prueba en
     la Fase 1. El chat de IA de LandingSite queda permitido **solo para subir el menú** (cambio de PRD 9.2 del 03/10/2026); el robot debe comprobar que el cambio es de una sola línea antes de publicar.
 
-## Agente Menú Diario · Fase 1, plan (decisiones 156 a 158)
+## Agente Menú Diario · Fase 1, plan (decisiones 156 a 161)
 
-Se registran el 03/10/2026, tras el plan de la Fase 1 (`agents/menu-diario/docs/PLAN-FASE-1.md`). Son de Bosco: contestó a D1, D2 y D3 del plan (las tres con la A, la recomendada), dio el correo de D4 y fijó él la regla de publicación (156) y la del reloj (158). **Siguen sin contestar** D5 (cómo se cierra la fase) y el permiso de las tres escrituras de D4 en Bar Demo: el paso 1.3 no escribe nada en la base hasta su sí explícito.
+Se registran el 03/10/2026, tras el plan de la Fase 1 (`agents/menu-diario/docs/PLAN-FASE-1.md`). Son de Bosco: contestó a D1, D2 y D3 del plan (las tres con la A, la recomendada), dio el correo de D4 y fijó él la regla de publicación (156) y la del reloj (158). Más tarde, ese mismo día, dio el permiso de las tres escrituras de D4 (159), decidió que el cierre no espera a las 48 h (160) y fijó cuánto dura el modo aprobación (161).
 
 156. **Cuándo publica el agente** (Bosco, 03/10/2026; **sustituye a RA-01 del PRD del agente, §7.1**). Antes: un menú para otro día se publicaba a las 17:00 de la víspera.
     Ahora, en la zona horaria del espacio:
@@ -2939,3 +2939,18 @@ Se registran el 03/10/2026, tras el plan de la Fase 1 (`agents/menu-diario/docs/
     hora que devuelve Supabase en cada respuesta: **si difieren más de 5 minutos** (cifra propuesta por Claude y aceptada por Bosco; configurable) **se para y avisa** en lugar de decidir con
     un reloj dudoso. La IA no decide la fecha: en el rescate (Fase 6) se le pasa la fecha y la hora en el mensaje. El reloj simulado `--ahora` existe solo en la prueba en seco, con cartel
     «RELOJ SIMULADO», y no puede usarse en una publicación.
+159. **Escrituras de Bar Demo del paso 1.3: permiso y orden** (Bosco, 03/10/2026: «te doy permiso para hacer la 3 si se puede hacer antes de la 1 y 2»; la 1 era pasar el repositorio a
+    privado y la 2 guardar las contraseñas como secretos). Se hace sin esperar a ninguna de las dos, porque las escrituras no dependen de ellas. Alcance: el de la 154 (solo Bar Demo,
+    por las funciones de la app y como Elena; **nunca Magariños**). **Hecho el 03/10/2026:** relanzado `agents/menu-diario/sql/bar-demo-pruebas.sql` (dos menús en borrador, 04/10 y 05/10, con
+    el mismo contenido; el script busca ahora el servicio Menú Diario por tipo, porque el resembrado cambió los ids): 10 apuntes de auditoría, todos de `owner@cuotly.test`, y 0 notificaciones.
+    **Pendiente:** el alta del agente (`sql/alta-agente-pruebas.sql`, ensayada contra la base real con una operación que se deshace entera) necesita que exista la cuenta `menu@restavor.com` en
+    Supabase, que crea Bosco con una contraseña que no pasa por el chat. **Mandar a publicar los menús de prueba** se hará al enseñar la prueba en seco, para que las fechas sean las de ese día y los
+    avisos no queden viejos (es un permiso, no una obligación).
+160. **La Fase 1 se cierra sin esperar a las 48 horas** (Bosco, 03/10/2026: «para el cierre no hace falta las 48h»). El workflow que comprueba la sesión de LandingSite se pone en marcha y su informe se
+    escribe cuando haya datos, sin bloquear el cierre. Claude entiende que tampoco bloquea el comienzo de la Fase 2, pero al terminar la Fase 1 se para y se espera el OK de Bosco (CLAUDE.md, flujo
+    obligatorio, punto 5). Consecuencia anotada: si el informe dice que entrar con contraseña desde GitHub Actions no sirve (código por correo o desafío de Cloudflare), el robot pasa a un servidor
+    propio (PRD P4) y cambia la última pieza del despachador de la Fase 2.
+161. **El modo aprobación dura 1 semana** (Bosco, 03/10/2026: «el modo aprobación dura 1 semana desde que ya terminemos todas las fases»). Concreta D6 del PRD del agente: en la puesta en marcha
+    (Fase 7) cada restaurante activado empieza en `aprobacion` y a la semana pasa a `automatico`. Sustituye a «las primeras semanas», a las 4 semanas de la métrica del periodo de prueba y a «con al menos
+    10 publicaciones correctas, Bosco decide» de la Fase 7. Cómo se pasa a automático (a mano en `modo` o con una fecha límite en la fila del restaurante) se propone en la Fase 2. En las Fases 2 a 6 el modo
+    prueba sigue siendo el de aprobación.

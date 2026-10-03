@@ -45,7 +45,7 @@ En el día a día es un robot con pasos fijos y no gasta IA. Solo recurre a la I
 
 | Métrica | Objetivo |
 |---|---|
-| Menús publicados sin intervención humana, tras el periodo de prueba (4 semanas) | ≥ 95 % |
+| Menús publicados sin intervención humana, tras el periodo de prueba (1 semana en modo aprobación, decisión 161) | ≥ 95 % |
 | Tiempo desde que toca publicar (fecha alcanzada y, si procede, aprobado) hasta que se ve en la web | ≤ 30 min |
 | Menús publicados en el restaurante equivocado o con la imagen de otro día | 0 |
 | Menús que se quedan sin publicar y sin aviso | 0 |
@@ -127,7 +127,7 @@ Desde la regla RN-CRE-24 ya no generan avisos. El agente los usa como referencia
 | D3 | El robot entra con **correo y contraseña** (decisión 155; la cuenta admite «Set password»). La sesión guardada sirve para no iniciar sesión en cada ejecución. Si LandingSite pide un código por correo o un desafío al entrar desde GitHub Actions, Bosco inicia sesión una vez en su navegador y el robot reutiliza esa sesión y avisa cuando caduque (la Fase 1 lo mide). |
 | D4 | **Robot con pasos fijos** (Playwright) + **IA de Claude solo como rescate**. |
 | D5 | Se publica según la regla 7.1 (decisión 156): un menú de **hoy**, en cuanto llega la solicitud; uno de **otro día**, a las 07:00 del día del menú y nunca antes. |
-| D6 | **Modo prueba con aprobación** las primeras semanas, configurable por restaurante. Después, automático. |
+| D6 | **Modo prueba con aprobación** durante **1 semana** desde que terminan todas las fases, configurable por restaurante (decisión 161). Después, automático. |
 | D7 | Se aprueba por **email (Resend) con la imagen y un botón "Aprobar"**. |
 | D8 | El robot se ejecuta en **GitHub Actions** y se lanza con `workflow_dispatch`. |
 | D9 | El agente tiene **su propio usuario trabajador sin especialidades** en Restavor web. Así no entra en el reparto de menús (en el de trabajos y tareas sí, hasta la decisión 153) y la auditoría deja constancia de quién publicó. |
@@ -350,7 +350,7 @@ Cada asignación o reasignación:
 
 ### 7.3 Modo por restaurante (RA-03)
 
-`agente_menu.restaurantes.modo` puede ser `aprobacion` (por defecto al dar de alta) o `automatico`. Lo cambia Bosco. En la v1 se hace en el editor de tablas de Supabase, sin pantalla.
+`agente_menu.restaurantes.modo` puede ser `aprobacion` (por defecto al dar de alta) o `automatico`. Lo cambia Bosco. En la v1 se hace en el editor de tablas de Supabase, sin pantalla. **El modo aprobación dura 1 semana desde la puesta en marcha** (decisión 161): después el restaurante pasa a `automatico`. Si lo hace Bosco a mano o una fecha límite en la fila del restaurante se propone en la Fase 2.
 
 ### 7.4 Republicaciones (RA-04)
 
@@ -587,7 +587,7 @@ En LandingSite, con Bosco delante, responde a las 8 preguntas de 9.3. Usa Playwr
 - La prueba en seco es correcta.
 - `audit_log` tiene el mismo número de filas antes y después de la prueba en seco.
 - El agente **no** aparece en `menu_candidate_ids` de ningún menú. (Insuficiente por sí solo: con Bar Demo vacío sale cierto sin comprobar nada. Se mide también con `job_candidate_ids` y `list_task_candidates`, y se anota el límite conocido: hasta la marca de la Fase 2 el agente **sí** sale en el reparto de tareas.)
-- Hay un informe de cuánto dura la sesión.
+- Hay un informe de cuánto dura la sesión. Se escribe cuando haya datos y **no bloquea el cierre de la fase** (decisión 160).
 
 ### Fase 2 · Lado Restavor web: datos, asignación y despachador
 
@@ -665,7 +665,7 @@ Con el OK de Bosco:
 
 - `pnpm agente:e2e` pasa.
 - El primer menú real se publica tras la aprobación de Bosco.
-- Con al menos 10 publicaciones correctas, Bosco decide si ese restaurante pasa a `automatico`.
+- A la semana de la puesta en marcha, el restaurante pasa a `automatico` (decisión 161).
 
 ---
 
@@ -746,7 +746,7 @@ Si Claude Code se equivoca dos veces en lo mismo, escribe `/clear` y empieza la 
   1. autoriza al agente en ese restaurante en Restavor web;
   2. pon el marcador en la imagen del menú de su web;
   3. añade su fila en `agente_menu.restaurantes` con la URL del editor y el identificador del sitio.
-- **Pasar a automático:** cambia `modo` a `automatico` en su fila.
+- **Pasar a automático:** cambia `modo` a `automatico` en su fila (a la semana de la puesta en marcha, decisión 161; la forma exacta se propone en la Fase 2).
 - **Parar el agente en una emergencia:** pon `activo = false` en sus restaurantes; el despachador devolverá al equipo los menús que tuviera. Si hace falta parar ya, en GitHub ve a Actions → el workflow del agente → *Disable workflow*.
 
 ## Apéndice D · Glosario

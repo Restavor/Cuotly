@@ -6,14 +6,21 @@
 -- "Pruebas · Supabase" con `sembrar`) borra y reconstruye Bar Demo: hay que repetirlo. Bar Demo conserva su id.
 -- Es idempotente: cada paso comprueba antes si ya está hecho.
 --
--- Permisos de Bosco (03/10/2026): (1) plataforma web, dirección, plantilla de publicar y un menú;
--- (2) opción A para Menú Diario: contratarlo con la función de la app y registrar un pago de demostración.
+-- Permisos de Bosco (03/10/2026): (1) plataforma web, dirección, plantilla de publicar y menús de prueba;
+-- (2) opción A para Menú Diario: contratarlo con la función de la app y registrar un pago de demostración;
+-- (3) relanzarlo tras el resembrado de las 13:43 UTC («te doy permiso para hacer la 3 si se puede hacer antes de la 1 y 2»,
+--     decisión 159). Solo Bar Demo, nunca Magariños (web real).
 -- Todo se hace con las funciones de la app, actuando como owner@cuotly.test (Elena Ruiz, administradora del
 -- espacio demo con manage_clients y manage_requests; el mismo actor que el sembrado), NO con la cuenta real de
 -- Bosco. La identidad se simula con set_config local a la transacción, así cada cambio deja su auditoría.
 --
 -- Ejecutado el 03/10/2026 en este orden (ver docs/RECONOCIMIENTO.md; el paso 3 se lanzó con el id del cobro fijo y aquí lo localiza solo):
---   1) plataforma y dirección  2) contratar Menú Diario  3) pago de demostración  4) plantilla y menú.
+--   1) plataforma y dirección  2) contratar Menú Diario  3) pago de demostración  4) plantilla y menús.
+-- Relanzado el 03/10/2026 por la tarde tras el resembrado. Cambios respecto a la primera vez:
+--   · el servicio Menú Diario se busca por tipo (el resembrado regenera los ids: el escrito a mano ya no existía);
+--   · se crean DOS menús en borrador, para mañana y pasado mañana (hora del espacio), con el mismo contenido: con la
+--     decisión 156 uno de hoy se publica al llegar y uno de otro día a las 07:00 de su día, y la Fase 5 necesita dos
+--     imágenes que solo cambien la fecha. Un menú solo existe una vez por fecha, así que repetirlo no los duplica.
 
 -- ===== 1. Plataforma web y dirección de la web de pruebas =====
 do $$
@@ -53,13 +60,17 @@ declare
   c_space   constant uuid := 'd1000000-0000-0000-0000-000000000001';
   c_est     constant uuid := 'd4000000-0000-0000-0000-000000000001';
   c_elena   constant uuid := 'd0000000-0000-0000-0000-000000000001';
-  c_service constant uuid := '29287d77-62cc-4b54-8266-f56dd12de6fe'; -- servicio Menú Diario del espacio demo
+  v_service uuid;
+  v_count   integer;
 begin
   if not exists (select 1 from public.establishments where id = c_est and space_id = c_space and name = 'Bar Demo') then
     raise exception 'Bar Demo no esta en el espacio demo: no se toca nada';
   end if;
-  if not exists (select 1 from public.services where id = c_service and space_id = c_space and kind = 'daily_menu' and archived_at is null) then
-    raise exception 'El servicio Menu Diario no es el esperado: no se toca nada';
+  -- El servicio se busca por tipo: tras un resembrado los ids cambian. Debe haber exactamente uno vivo.
+  select count(*), min(id::text)::uuid into v_count, v_service
+    from public.services where space_id = c_space and kind = 'daily_menu' and archived_at is null;
+  if v_count <> 1 then
+    raise exception 'Se esperaba un unico servicio Menu Diario vivo en el espacio demo y hay %: no se toca nada', v_count;
   end if;
   perform set_config('request.jwt.claims', json_build_object('sub', c_elena, 'role', 'authenticated')::text, true);
   perform set_config('request.jwt.claim.sub', c_elena::text, true);
@@ -68,7 +79,7 @@ begin
     raise exception 'No se pudo actuar como Elena con manage_clients';
   end if;
   if public.establishment_daily_menu_subscription(c_est) is null then
-    perform public.create_service_subscription(c_est, c_service);
+    perform public.create_service_subscription(c_est, v_service);
   end if;
 end $$;
 
@@ -102,8 +113,8 @@ begin
     p_paid_at => now(), p_note => 'Transferencia de demostración');
 end $$;
 
--- ===== 4. Plantilla de publicar y un menú diario en borrador, con una versión =====
--- El menú NO se prepara ni se pide publicar: eso dispararía asignación y avisos.
+-- ===== 4. Plantilla de publicar y dos menús diarios en borrador (mañana y pasado mañana), con una versión cada uno =====
+-- Los menús NO se preparan ni se piden publicar: eso dispararía asignación y avisos (se hará al enseñar la prueba en seco).
 -- RN-CRE-23: la plantilla incluida de publicar se crea una sola vez; si ya se usó y está archivada, aborta.
 do $$
 declare
@@ -112,6 +123,10 @@ declare
   c_elena constant uuid := 'd0000000-0000-0000-0000-000000000001';
   v_template uuid;
   v_menu     uuid;
+  v_tz       text;
+  v_today    date;
+  v_date     date;
+  v_offset   integer;
 begin
   if not exists (select 1 from public.establishments where id = c_est and space_id = c_space and name = 'Bar Demo') then
     raise exception 'Bar Demo no esta en el espacio demo: no se toca nada';
@@ -139,29 +154,36 @@ begin
       'Bar Demo', 'IVA incluido · Pan y bebida incluidos', true);
   end if;
 
-  -- Si ya hay un daily no cancelado (de cualquier fecha) no se crea otro: repetirlo otro día no acumula menús.
-  select id into v_menu from public.menus
-   where establishment_id = c_est and kind = 'daily' and state <> 'cancelled'
-   order by target_date, created_at limit 1;
-  if v_menu is null then
-    v_menu := public.create_menu(c_est, 'Menú del día', 'daily', date '2026-10-04', v_template);
-  end if;
-  if not exists (select 1 from public.menu_versions where menu_id = v_menu) then
-    perform public.save_menu_version(
-      p_menu_id     := v_menu,
-      p_starters    := array['Ensalada de la huerta', 'Caldo gallego'],
-      p_mains       := array['Merluza a la gallega', 'Carrilleras al vino tinto'],
-      p_desserts    := array['Tarta de Santiago', 'Fruta de temporada'],
-      p_drink       := 'Vino de la casa o agua',
-      p_price_cents := 1450,
-      p_note        := 'Pan incluido');
-  end if;
+  -- «Hoy» es la fecha local del espacio, no la de UTC (a las 23:30 UTC de invierno ya es mañana en Madrid).
+  select s.timezone into v_tz from public.spaces s where s.id = c_space;
+  v_today := (now() at time zone v_tz)::date;
+
+  foreach v_offset in array array[1, 2] loop
+    v_date := v_today + v_offset;
+    -- Un daily no cancelado por fecha: repetirlo no duplica menús.
+    select id into v_menu from public.menus
+     where establishment_id = c_est and kind = 'daily' and state <> 'cancelled' and target_date = v_date;
+    if v_menu is null then
+      v_menu := public.create_menu(c_est, 'Menú del día', 'daily', v_date, v_template);
+    end if;
+    if not exists (select 1 from public.menu_versions where menu_id = v_menu) then
+      perform public.save_menu_version(
+        p_menu_id     := v_menu,
+        p_starters    := array['Ensalada de la huerta', 'Caldo gallego'],
+        p_mains       := array['Merluza a la gallega', 'Carrilleras al vino tinto'],
+        p_desserts    := array['Tarta de Santiago', 'Fruta de temporada'],
+        p_drink       := 'Vino de la casa o agua',
+        p_price_cents := 1450,
+        p_note        := 'Pan incluido');
+    end if;
+  end loop;
 end $$;
 
 -- ===== Verificación (solo lectura) =====
 select e.web_platform, e.website_url,
        public.establishment_daily_menu_subscription(e.id) is not null as tiene_menu_diario,
        (select count(*) from public.menu_templates t where t.establishment_id = e.id and t.purpose = 'publish' and t.archived_at is null) as plantillas_publish,
-       (select count(*) from public.menus m where m.establishment_id = e.id and m.kind = 'daily' and m.state <> 'cancelled') as menus_daily
+       (select count(*) from public.menus m where m.establishment_id = e.id and m.kind = 'daily' and m.state <> 'cancelled') as menus_daily,
+       (select string_agg(m.target_date::text || ' ' || m.state::text, ', ' order by m.target_date) from public.menus m where m.establishment_id = e.id and m.kind = 'daily' and m.state <> 'cancelled') as fechas_y_estados
 from public.establishments e
 where e.id = 'd4000000-0000-0000-0000-000000000001';
