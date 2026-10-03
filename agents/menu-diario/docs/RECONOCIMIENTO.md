@@ -5,7 +5,7 @@
 | Fecha | 02/10/2026 |
 | Rama | `claude/gallant-mccarthy-nrf8u4` (reiniciada desde `origin/agents`, decisión A de Bosco) |
 | Base de pruebas | "Restavor pruebas" (`bnucqykimngjwcrlpmsm`). Producción ("Cuotly", `mcajbfxhkxtdhjoyrqha`) **no se ha tocado** |
-| Estado | **Incompleta, pendiente de Bosco** (actualizado el 03/10/2026, ver la sección siguiente). Falta el trabajo en LandingSite (preguntas 1 a 7 de PRD 9.3) y el visto bueno. Bar Demo ya está listo |
+| Estado | **Casi completa, pendiente del visto bueno de Bosco** (actualizado el 03/10/2026). Las preguntas 1 a 7 de LandingSite están respondidas con Bosco delante (ver "Prueba en LandingSite"); quedan detalles abiertos (ver "Qué queda abierto"). Bar Demo está listo. **La web de pruebas muestra ahora el menú de Bar Demo (publicado el 03/10/2026)** |
 
 ---
 
@@ -20,7 +20,7 @@ Bosco contestó a los seis puntos del §7 y, después, a lo que quedó bloqueado
 | 3 Bar Demo | Permiso concedido | **Hecho entero** con la opción A (ver "Hecho en Restavor pruebas") |
 | 4 Decisión de crear el agente | "Vale" | Decisión 112 en `docs/DECISIONES.md`, `CLAUDE.md` y nota en RN-CRE-25 de `docs/PRD.md` |
 | 5 Reparto de trabajos | "Ok" a la opción (ii) | Decisión 114. El diseño exacto se propone en la Fase 2 y se aprueba antes de escribir la migración |
-| 6 Preguntas 1 a 7 de LandingSite | Bosco entrará con la cuenta del agente | Pendiente: ver "Cómo conectar LandingSite" |
+| 6 Preguntas 1 a 7 de LandingSite | Bosco entró con la cuenta del agente | **Hecho el 03/10/2026** (ver "Prueba en LandingSite"). Acceso por código de correo: Google no deja entrar desde un navegador controlado por programa |
 | Menú Diario para Bar Demo | **Opción A** | Hecho: contratado con la función de la app y pago de demostración registrado |
 
 ### La página de pruebas (comprobada el 03/10/2026, solo lectura)
@@ -59,6 +59,74 @@ Un **resembrado** del espacio demo deshace todo esto (Bar Demo conserva su id y 
 2. **Elegir cómo se conecta** (opción 1 de arriba, si LandingSite deja poner contraseña) y, si es esa, guardar `LANDINGSITE_EMAIL` y `LANDINGSITE_PASSWORD` en el entorno + permitir los dos dominios + abrir una **sesión nueva** en la rama `claude/gallant-mccarthy-nrf8u4`.
 3. **¿Dónde vive Bar Demo a largo plazo?** Seguir con el script a mano tras cada resembrado, o llevarlo a `supabase/seed/espacio-demo.sql` (toca la carpeta de sembrados y reconstruye la base al subirlo a `agents`).
 4. **Visto bueno de la Fase 0** cuando se hayan respondido las preguntas 1 a 7 de LandingSite (PRD §14).
+
+> **Actualización tras la prueba del mismo día (sección siguiente):** los puntos 1 y 2 ya no bloquean. La cuenta del agente veía el sitio, Bosco le dio permisos de administrador y la prueba se hizo con acceso por código de correo (Google no deja entrar desde un navegador controlado por programa). Siguen pendientes la decisión sobre la contraseña (pregunta 1), el punto 3 y el visto bueno del punto 4.
+
+### Prueba en LandingSite · 03/10/2026 (hecha)
+Con Bosco delante, en un Chrome visible (Playwright 1.62.1, perfil nuevo y vacío, fuera del repo). Bosco asumió el riesgo de la cláusula 6(ix) **solo para esta prueba**, autorizó el chat de IA y autorizó **una** publicación. Sesión y cookies quedan fuera del repo. Capturas en `capturas-landingsite/`.
+
+**Estado ANTES de cambiar nada (punto de restauración)**
+- Sitio: "Restavor". Editor: `https://app.landingsite.ai/chat/0c0495e1-74b3-4744-9aa9-d94754efcae4`. El UUID `0c0495e1-74b3-4744-9aa9-d94754efcae4` es el del sitio (sale también en las subidas públicas `/assets/uploads/0c0495e1-…`). La cabecera pública `LS-onmfye544q` no aparece en el editor.
+- Historial de versiones (Ajustes → Versions): **370 versiones**; la actual es **`bc96a00`** (03/10/2026 11:20, «WIP: awaiting approval for publish_website»); la anterior, `25b74b4` (02/10 17:44).
+- Imagen actual: foto de archivo de iStock `/assets/provider/istock/2255959062.jpg` (1920 × 1280, mostrada a 720 × 480 en escritorio), `alt="Menú del día"`, componente `LandingsiteImage` en `app/routes/pruebas-agente-menu.tsx`, clases `h-auto w-full max-w-[800px]`, `loading="lazy"`. Es la segunda de las 3 imágenes de la página.
+- **Cómo se restauraría:** (1) Ajustes → Versions → «Rollback» a `bc96a00`, que devuelve el código tal como estaba, y **publicar de nuevo** (otra autorización); (2) o pedir a la IA que vuelva a poner `/assets/provider/istock/2255959062.jpg`. Lo ya publicado no se deshace hasta publicar otra vez.
+- Páginas públicas antes (sha256, 16 primeros): portada `c175c8c79ce891de`, `sitemap.xml` `2de5304f469c2048` (86 URL, todas con `lastmod` 2026-10-03T09:21:30.637Z, que parece la hora de la última publicación), página de pruebas `6be1db763209d515`.
+- PNG que se sube: `agents/menu-diario/docs/menu-prueba-bar-demo.png`, 86.724 bytes, 1240 × 1754, sha256 `041681358a36a819f4eaac68f1b8b385f9bf92b94ce74f70fe85f3791692ebce`.
+
+**Qué se hizo, en orden**
+1. «Foto antes» de `/`, `/sitemap.xml` y `/pruebas-agente-menu` (3 peticiones públicas), guardada fuera del repo.
+2. Chrome visible en el acceso de LandingSite. **Google rechazó el inicio de sesión** («No se ha podido iniciar sesión. Es posible que el navegador o la aplicación no sean seguros»), con Chrome 154 estable controlado por Playwright y perfil nuevo. No se intentó esquivarlo. Se entró con el **código de un solo uso que LandingSite envía al correo**: el correo lo escribió el robot; **el código lo escribió Bosco** en la ventana, sin pasar por el chat.
+3. La cuenta del agente **ve el sitio de Restavor** (editor «Currently Restavor»).
+4. Mensaje al chat de IA (autorizado) con el PNG adjunto: sustituir solo la imagen con `alt="Menú del día"`, sin tocar nada más y **sin publicar**. Tardó unos 35 s ([captura 04](capturas-landingsite/04-chat-ia-mensaje-preparado.png)).
+5. Verificación del cambio **antes** de publicar: una sola línea cambiada (`r2Key`), una sola versión nueva (`389c30d`, 12:13) y la vista previa ya mostraba el menú ([05](capturas-landingsite/05-cambio-de-una-linea-y-boton-update.png), [06](capturas-landingsite/06-vista-previa-despues.png)).
+6. Publicación (autorizada por Bosco, una sola vez) con el botón de la barra ([07](capturas-landingsite/07-publicando-progreso.png), [08](capturas-landingsite/08-publicado-up-to-date.png)).
+7. «Foto después» y comparación ([09](capturas-landingsite/09-web-publica-despues.png)).
+
+**Respuestas a las preguntas 1 a 7 (PRD 9.3)**
+1. **Contraseña: sí, la cuenta la admite.** «Manage account» → «Security» ofrece «Set password» (no se pulsó; no se cambió la cuenta). El formulario de acceso (Clerk) pide correo y contraseña. Hoy la cuenta entra por código de correo. **Google no sirve para el robot**: el aviso de arriba impide que `agente:login` de PRD 9.4 abra un navegador de Playwright y entre «con Google».
+2. **Sesión: bastan las cookies de `landingsite.ai`.** El perfil acabó con 13 cookies: 9 de `landingsite.ai` y 4 de Google (del intento fallido). Con **solo las 9** (y sin `localStorage`, que no hay ninguno de `landingsite.ai`) el editor abre en un contexto nuevo y aislado; también con solo las cookies, sin `localStorage`. Son de Clerk (`__client`, HttpOnly, en `.clerk.landingsite.ai`, caduca a 400 días, es la credencial duradera; `__client_uat*` en `.landingsite.ai`; `__session*` en `app.landingsite.ai`, que en Clerk suele ser un token corto renovado a partir de `__client` (no medido aquí); `clerk_active_context`), de Cloudflare (`_cfuvid`, `__cf_bm`) y de PostHog. **No se midió el conjunto mínimo exacto ni cuánto dura la sesión de verdad**: es de la Fase 1. El archivo de sesión queda fuera del repo.
+3. **URL del editor:** `https://app.landingsite.ai/chat/<UUID del sitio>`, con el UUID `0c0495e1-74b3-4744-9aa9-d94754efcae4` (sale también en las subidas públicas `/assets/uploads/0c0495e1-…`). Los ajustes cuelgan de `/chat/<UUID>/settings/…` (General, Plan, Domain, Forms, Versions, Redirects, Access, Ownership, Delete Website; **esta última, nunca**). El identificador `LS-onmfye544q` es solo la cabecera pública: **no sale en el editor**, así que la guarda de sitio de PRD 9.5 debe comprobar el **UUID**.
+4. **Sustituir una imagen: no hay control directo; se hace con el chat de IA.** El editor es una vista previa (marco `restavor-dijhwqq4.landingsite.dev`) junto a «Build with AI». El botón «T» solo edita texto, la imagen no responde al ratón y las herramientas de imagen («Upload images», «Open gallery», «Pick an element») viven en el cuadro del chat. Se adjunta el PNG (se sube a `/assets/uploads/<UUID>/<uuid>.webp`, convertido a WebP, 1240 × 1754) y se pide el cambio; la IA lee el archivo y edita una línea. **Sí gasta ediciones de IA**, aunque **no hay contador visible** (ni en «Plan» ni en el menú de usuario): no se pudo medir cuántas. El supuesto del PRD («a mano no gasta ediciones») no se cumple.
+5. **Texto alternativo:** no hay campo en el editor; es la propiedad `alt` del componente en el código, así que solo se cambia pidiéndoselo a la IA. **No se probó** (no se tocó; la IA lo mantuvo igual).
+6. **Publicar:** botón de la barra superior («Update restavor.com», título «Publish Restavor (domain: restavor.com)»), **sin diálogo de confirmación y sin IA**. Progreso en la propia barra: Starting 17 % → Preparing 24 % → Building 34–50 % → «Published!» → «Up to date»; unos 50 s desde el clic. **Publica el sitio entero**: se recompila todo el código en su versión actual (cambiaron las huellas de los scripts de todas las páginas y el `lastmod` de las 86 URL del mapa del sitio). **El editor sí indica si hay cambios sin publicar:** la barra dice «Up to date» si no hay nada pendiente y «Update restavor.com» si lo hay (comprobado: «Up to date» antes de la edición, «Update restavor.com» después, «Up to date» tras publicar; **tarda unos segundos en actualizarse tras una edición**). Ese botón no aparecía antes de que Bosco diera permisos de administrador a la cuenta (no se probó con otros roles). La página pública ya servía la imagen nueva en la primera consulta, hacia un minuto después de «Published!» (caché de 60 s).
+7. **Localizar la imagen:** el marcador `alt="Menú del día"` funciona en el editor (en el marco de la vista previa) y en la web pública (`img[alt="Menú del día"]`). En el código es el `<LandingsiteImage r2Key="…" alt="Menú del día">` de `app/routes/pruebas-agente-menu.tsx`, y los elementos llevan `data-source-loc="app/….tsx:línea:columna"`. El `src` cambia con cada subida (UUID nuevo); `srcset` con 480/768/1200/1920. Observación: la imagen nueva se sirve con `Content-Type: image/jpeg` aunque el archivo sea `.webp`.
+
+**Comparación pública antes y después (cambia la imagen, más lo que LandingSite regenera al publicar)**
+
+| Página | sha256 antes | sha256 después | Qué difiere |
+|---|---|---|---|
+| `/` | `c175c8c79ce891de` | `b1b1168a09f739a3` | 4 líneas: huella del script (`manifest-f36f0f1d.js` → `manifest-426203b4.js`). Mismo contenido y mismo tamaño |
+| `/sitemap.xml` | `2de5304f469c2048` | `d127d1da713bd52f` | Mismas 86 URL; solo cambia el `lastmod` de todas (2026-10-03T09:21:30Z → 10:17:18Z, la hora de la publicación) |
+| `/pruebas-agente-menu` | `6be1db763209d515` | `53d9e0cbb577b6d4` | 16 líneas: `src` y `srcset` de la imagen (`provider/istock/2255959062.jpg` → `uploads/0c0495e1-…/70a08bc1-….webp`) y las huellas de compilación del script y del archivo de la página |
+
+Una comprobación previa a publicar (la «foto antes» repetida justo antes de pulsar) dio hashes idénticos: nadie había publicado entre medias.
+
+**Estado final y cómo deshacer.** Versión actual `389c30d` (03/10/2026 12:13) sobre `bc96a00`; 371 versiones; publicado entre las 12:17 y las 12:18 hora local (el `lastmod` del mapa del sitio marca 10:17:18 UTC). **No se ha deshecho, por decisión de Bosco: la web de pruebas enseña ahora el menú de Bar Demo y se queda así.** Si algún día hiciera falta volver atrás: Versions → «Rollback» a `bc96a00` **y publicar otra vez** (nueva autorización), o pedir a la IA que vuelva a poner `provider/istock/2255959062.jpg`. El archivo subido (`uploads/…/70a08bc1-….webp`) queda en la biblioteca del sitio aunque se haga Rollback: no se borra nada.
+
+**Qué implica para la Fase 1 (a decidir con Bosco)**
+1. PRD 9.1 y 9.3-4 ya no valen: cambiar la imagen **no es un clic**, pasa por el chat de IA, gasta ediciones y **la IA tiene escritura sobre todo el código del sitio**. Un robot dependería de un texto fijo, de comprobar la tarjeta «Edit» (una línea, `r2Key`) y la versión nueva antes de publicar, y de abortar si toca algo más.
+2. Guarda de sitio (PRD 9.5): comprobar el **UUID** de la URL del editor, no `LS-…`.
+3. Publicar sí se puede sin IA y con indicador: PRD 9.6 es implementable (al abrir el editor, si la barra no dice «Up to date», no publicar y avisar).
+4. Acceso: Google queda descartado para el robot. Hace falta contraseña (la cuenta admite «Set password») o el código por correo, que necesita a una persona o acceso al buzón.
+5. La cláusula 6(ix) **sigue sin resolverse**: Bosco asumió el riesgo solo para esta prueba. El plan B (P3: la web lee el menú desde Restavor web, sin entrar al editor) sigue siendo la alternativa que no la roza.
+
+**Decisiones de Bosco tras la prueba (03/10/2026)**
+- La prueba se da por buena: **no hace falta repetirla ni hacer Rollback**. La web de pruebas se queda con el menú de Bar Demo.
+- **El agente puede usar el chat de IA de LandingSite, pero solo para subir el menú**: es la única acción que se le permite con el chat. Esto matiza la primera prohibición de PRD 9.2. **El PRD se actualizó el mismo día en tres sitios** que repetían esa prohibición: §9.2, el último límite del §10 (IA de rescate) y el Apéndice A. Las demás prohibiciones de 9.2 (tocar algo que no sea la imagen y su texto alternativo, cambiar ajustes, comprar, abrir o publicar otro sitio, borrar) siguen en pie. **No se tocó** lo que aún habla de entrar con Google o de «hacer clic» (§4 D2, §9.1, §9.3-4, §9.4 y los estados de sesión), a la espera de la decisión de acceso de la Fase 5 y de la planificación de la Fase 1.
+- **Acceso desde la nube:** se decide al llegar a la publicación (Fase 5). Dos vías: contraseña de LandingSite (la cuenta admite «Set password») o código por correo. Si es con código, Bosco quiere **dejar la sesión siempre iniciada** y volver a pasar el código al agente solo cuando haga falta iniciarla de nuevo. En la prueba el código lo tecleó Bosco, no el robot.
+
+**Qué queda abierto de las preguntas 1 a 7**
+- **1:** no se ha puesto contraseña ni se ha probado entrar con ella.
+- **2:** no se midió el conjunto mínimo exacto de cookies ni la duración real de la sesión.
+- **4:** el consumo exacto de ediciones de IA no se puede medir desde la interfaz (sin contador).
+- **5:** no se probó a cambiar el `alt`.
+- **6:** no se probó qué pasa si la publicación falla ni cuánto puede tardar en el peor caso.
+
+**Incidencias y avisos**
+- Al comprobar la versión de Chrome, `chrome.exe --version` abrió una ventana en el Chrome ya abierto de Bosco (Windows entrega la orden a la instancia existente). No cargó ninguna web.
+- Se dijo al principio que el botón «Up to date» respondía a la pregunta 6, luego se retiró porque no cambió justo tras la edición, y al final se confirmó: es el indicador, con unos segundos de retraso.
+- **Archivos de sesión (fuera del repo, en la carpeta temporal de la sesión):** el perfil de Chrome, `sesion-completa.json` (incluye 4 cookies de Google del intento fallido) y `sesion-landingsite.json`. **Pendiente de borrar**, a decisión de Bosco.
+- Las capturas del repo no incluyen el correo del agente. Se dejaron fuera la del menú de usuario y la de «Seguridad» por datos personales.
 
 ---
 
@@ -194,20 +262,20 @@ Fuente: `https://www.landingsite.ai/terms-of-service` (consultada el 02/10/2026)
 - Huellas de las páginas públicas **antes** de cualquier cambio (sha256, primeros 16 caracteres): portada `c175c8c79ce891de`, `sitemap.xml` `f7d84d338ea092c1`, `robots.txt` `1eff35548f3e1b8c`, página 404 `d0cdb400c627bbb4`. Sirven para comprobar después que no ha cambiado nada más (la portada puede variar por contenido dinámico; si difiere, se compara el texto visible).
 
 ### 4.3 Preguntas 1 a 7 de PRD 9.3
-**Sin responder.** Requieren entrar en LandingSite con la sesión de Bosco (desde esta sesión en la nube no hay pantalla donde Bosco pueda iniciar sesión, y tampoco se piden contraseñas por el chat). Quedan **en espera de Bosco** y de que confirme lo de §4.1 y §4.2:
+**Respondidas el 03/10/2026** con Bosco delante, en un Chrome visible (detalle, capturas y qué queda abierto en "Prueba en LandingSite · 03/10/2026", al principio de este documento). El 02/10 estaban pendientes porque desde la sesión en la nube no había pantalla donde Bosco pudiera iniciar sesión.
 
-| # | Pregunta | Estado |
+| # | Pregunta | Estado a 03/10/2026 |
 |---|---|---|
-| 1 | ¿La cuenta de Google admite añadir contraseña? | Pendiente |
-| 2 | ¿Qué cookies y orígenes mantienen la sesión (¿solo `landingsite.ai`?) | Pendiente |
-| 3 | URL estable del editor e identificador del sitio en ella | Pendiente |
-| 4 | Cómo se sustituye una imagen y si gasta ediciones de IA | Pendiente |
-| 5 | ¿Se puede editar el texto alternativo? | Pendiente |
-| 6 | Cómo se publica; ¿"Publicar" publica toda la web?; ¿avisa de cambios sin publicar? | Pendiente |
-| 7 | Cómo localizar la imagen del menú en el editor y en la web pública | Pendiente |
+| 1 | ¿La cuenta de Google admite añadir contraseña? | **Sí** («Set password» en Manage account → Security); no se puso. Google bloquea el acceso desde un navegador controlado; se entró por código de correo |
+| 2 | ¿Qué cookies y orígenes mantienen la sesión (¿solo `landingsite.ai`?) | **Bastan las 9 cookies de `landingsite.ai`**, sin Google y sin `localStorage`. Falta medir el mínimo exacto y la duración (Fase 1) |
+| 3 | URL estable del editor e identificador del sitio en ella | `https://app.landingsite.ai/chat/0c0495e1-74b3-4744-9aa9-d94754efcae4`; el identificador es el **UUID**, no `LS-…` |
+| 4 | Cómo se sustituye una imagen y si gasta ediciones de IA | **Solo con el chat de IA** (adjuntar PNG y pedirlo); gasta ediciones, sin contador visible |
+| 5 | ¿Se puede editar el texto alternativo? | Solo vía código/IA; no hay campo en el editor. No probado |
+| 6 | Cómo se publica; ¿"Publicar" publica toda la web?; ¿avisa de cambios sin publicar? | Botón «Update restavor.com» en la barra; **publica el sitio entero**; **sí avisa** («Up to date» / «Update restavor.com») |
+| 7 | Cómo localizar la imagen del menú en el editor y en la web pública | `alt="Menú del día"`, en el editor y en la web pública |
 | 8 | Condiciones de uso | **Respondida: ver §4.1** |
 
-Regla acordada: Bosco hace los pasos a mano; **antes de cada "Publicar" me avisa y le doy el OK explícito**; solo se toca la imagen de la página de pruebas.
+Reglas de la prueba: solo se tocó la imagen de la página de pruebas; el chat de IA y la publicación los autorizó Bosco expresamente (una publicación); nada se borró y no se tocaron ajustes ni otras páginas.
 
 ---
 
@@ -260,7 +328,7 @@ Regla acordada: Bosco hace los pasos a mano; **antes de cada "Publicar" me avisa
 ---
 
 ## 8. Qué no he podido comprobar
-- Preguntas 1 a 7 de LandingSite (§4.3) y si **"Publicar" publica toda la web**.
+- De las preguntas 1 a 7 de LandingSite (§4.3), quedan abiertos: contraseña puesta y probada (1), conjunto mínimo de cookies y duración de la sesión (2), consumo exacto de ediciones de IA (4), cambiar el `alt` (5) y comportamiento ante una publicación fallida (6). Ver "Qué queda abierto" al principio.
 - Si una Edge Function sirve HTML en el dominio por defecto (§2.9).
 - Si el PNG generado fuera de Next coincide píxel a píxel con una descarga real de la web desplegada, y si el PNG lleva metadatos de ppp.
 - La existencia real de la página de pruebas (§4.2).
