@@ -87,6 +87,15 @@ export async function handleStripeWebhook(request: WebhookRequest, gateway: Topu
         log: "una recarga pagada no coincide con la pedida: queda un incidente para Restavor",
       };
     }
+    if (result.outcome === "unknown") {
+      // Un pago de una sesión que ninguna recarga nuestra tiene apuntada: puede ser de otra cosa de la misma cuenta de Stripe
+      // o una recarga cuya sesión no llegó a apuntarse. Se contesta 200 (no hay nada que reintentar) y se deja rastro.
+      return {
+        status: 200,
+        body: { received: true, outcome: "unknown" },
+        log: "un pago de Stripe no corresponde a ninguna recarga apuntada: si es una recarga, hay que mirarla a mano",
+      };
+    }
     return { status: 200, body: { received: true, outcome: result.outcome } };
   } catch (error) {
     return {

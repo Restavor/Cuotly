@@ -186,6 +186,24 @@ test.describe("Restavor agents · saldo, recargas y lado de Restavor", () => {
     await page.getByTestId("manual-topup-submit").click();
     await expect(page.getByTestId("sheet-feedback").first()).toContainText("Escribe un importe en euros");
 
+    // Lo que se escribe como nota o motivo lo ve el restaurante: se avisa antes de escribirlo.
+    await expect(page.getByTestId("note-visible-warning")).toContainText("la verá el restaurante");
+    await expect(page.getByTestId("reason-visible-warning")).toContainText("lo verá el restaurante");
+
+    // El aviso de saldo bajo lo cambia Restavor (RN-AGT-05): vale 5 € y se pone en 8.
+    await expect(page.getByTestId("threshold-amount")).toHaveValue("5");
+    await page.getByTestId("threshold-amount").fill("8");
+    await page.getByTestId("threshold-submit").click();
+    await expect(page.getByTestId("sheet-feedback").last()).toContainText("Aviso de saldo bajo guardado.", { timeout: 45_000 });
+    await page.getByTestId("threshold-amount").fill("-3");
+    await page.getByTestId("threshold-submit").click();
+    await expect(page.getByTestId("sheet-feedback").last()).toContainText("Escribe un importe en euros");
+    await page.reload();
+    await expect(page.getByTestId("threshold-amount")).toHaveValue("8");
+    await page.getByTestId("threshold-amount").fill("5");
+    await page.getByTestId("threshold-submit").click();
+    await expect(page.getByTestId("sheet-feedback").last()).toContainText("Aviso de saldo bajo guardado.", { timeout: 45_000 });
+
     // El ajuste pide el segundo paso: sin él, el botón está parado y lo dice.
     await expect(page.getByTestId("adjust-needs-2fa")).toBeVisible();
     await expect(page.getByTestId("adjust-submit")).toBeDisabled();

@@ -75,10 +75,12 @@ describe("RN-AGT-04 · el webhook de Stripe", () => {
     expect(r.receiptKey).toBeUndefined();
   });
 
-  it("una sesión que no es nuestra: 200 (reintentar no la hace nuestra)", async () => {
+  it("una sesión que no es nuestra: 200 (reintentar no la hace nuestra) y queda dicho en el registro", async () => {
     const r = await handleStripeWebhook(signed(completed()), gateway({ outcome: "unknown" }));
     expect(r.status).toBe(200);
     expect(r.body.outcome).toBe("unknown");
+    expect(r.log).toMatch(/ninguna recarga apuntada/);
+    expect(r.receiptKey).toBeUndefined();
   });
 
   it("un pago que no cuadra: 200 y queda dicho en el registro; la base ya dejó el incidente", async () => {

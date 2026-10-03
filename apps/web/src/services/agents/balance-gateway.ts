@@ -265,3 +265,14 @@ export async function registerPayout(
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function setLowBalanceThreshold(
+  client: Client,
+  input: { establishmentId: string; thresholdCents: number },
+): Promise<void> {
+  const { error } = await client.rpc("set_low_balance_threshold", {
+    p_establishment_id: input.establishmentId,
+    p_cents: input.thresholdCents,
+  });
+  if (error) throw new Error(error.message);
+}

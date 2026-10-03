@@ -243,6 +243,13 @@ test.describe("Restavor agents · Equipo, tablet y soporte", () => {
     await expect(page.getByRole("button", { name: "Usar este dispositivo como tablet del local" })).toHaveCount(0);
     await page.getByRole("link", { name: "Historial", exact: true }).click();
     await expect(page.getByTestId("history-list")).toBeVisible();
+    // RN-APP-05 · el saldo no se mira desde la tablet, ni con el PIN de un Propietario: sin importes y sin puerta del PIN.
+    await page.goto(`/agents/${CASA_PEPE}/saldo`);
+    await expect(page).toHaveURL(/\/saldo$/);
+    await expect(page.getByText("El saldo lo ven el propietario y el encargado del restaurante.")).toBeVisible();
+    await expect(page.getByTestId("balance-amount")).toHaveCount(0);
+    await page.goto(`${HOY}/ajustes/historial`);
+    await expect(page.getByTestId("history-list")).toBeVisible();
     // Salir cierra los Ajustes: vuelve a Hoy y sin Ajustes en el menú.
     await page.getByRole("button", { name: "Salir de Ajustes" }).click();
     await expect(page).toHaveURL(new RegExp(`${HOY}$`), { timeout: 30_000 });

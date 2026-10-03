@@ -480,8 +480,12 @@ export const AUDIT_ACTIONS = [
   "reservations.balance_adjusted",
   "reservations.balance_payout",
   "reservations.balance_topup_manual",
+  // Migración 178 · el umbral del aviso de saldo bajo.
+  "reservations.low_balance_threshold_changed",
   "reservations.topup_expired",
   "reservations.topup_paid",
+  // Decisión 149 (migración 177) · «Transferir también Reservas».
+  "reservations.transferred",
   "reservations.cancellation_requested",
   "reservations.cancellation_undone",
   "reservations.closed",

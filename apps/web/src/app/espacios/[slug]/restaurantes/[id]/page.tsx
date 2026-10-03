@@ -435,6 +435,7 @@ export default async function EstablishmentPage({
           statusReason: statusReason ?? null,
           statusHistory,
           transfer,
+          reservationsStatus: reservasEstado,
           backups,
           notes,
           storageBytes: bytesOcupados ?? null,
