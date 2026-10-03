@@ -143,8 +143,9 @@ PIN de prueba de Casa Pepe: **Ana Ruiz 1234** y **Diego Navas 5678** (Equipo), *
 1. **Equipo** (`jose@casapepe.test` › Casa Pepe › Ajustes › **Equipo**). Ves a los cinco: José y María (Propietarios), Luis (Encargado), Ana y Diego (Equipo). «+ Añadir persona»: pon
    nombre y un PIN de 4 cifras dos veces. Un PIN que ya usa otra persona dice «Ese PIN ya lo usa otra persona de este restaurante» (**cinco veces en 24 horas y dice «Has probado demasiados PIN…»**: es el límite contra adivinar PIN; si te pasa probando, espera o pídele a Claude que lo limpie en pruebas); dos PIN distintos, «Los dos PIN no coinciden».
    «Cambiar PIN» y «Quitar» (se desactiva y su PIN queda libre). Debajo, **Mi PIN para la tablet** (el tuyo, solo desde tu cuenta) e **Invitar a un Propietario o a un Encargado**
-   (ver la decisión 126: invitar a un Propietario es de Restavor web y hoy solo lo deja el equipo del espacio).
-2. **Un Encargado** (`luis@casapepe.test`): gestiona el Equipo, pero no ve «Invitar…» ni «Quitar de Reservas».
+   Como Propietario (decisión 131) puedes invitar a otro **Propietario** (si ya tiene cuenta, entra al momento; si no, el equipo de Restavor aprueba la invitación) y, en la lista, **«Quitar propietario»**
+   a los Propietarios del restaurante (no a los del grupo): avisa de que pierde el acceso a todo el restaurante y no deja quitar al último («Tiene que quedar al menos un Propietario…»).
+2. **Un Encargado** (`luis@casapepe.test`): gestiona el Equipo, pero no ve «Invitar…», «Quitar de Reservas» ni «Quitar propietario».
 3. **Activar la tablet.** En una tablet o navegador aparte: entra con `jose@casapepe.test`, Ajustes › Equipo, abajo **«Usar este dispositivo como tablet del local»**, ponle nombre y pulsa. Pasa a
    **Reservas › Hoy** y arriba a la derecha dice «Tablet del local · <nombre>». Ya no hay «Mi cuenta», ni búsqueda general, ni avisos; el menú no tiene Ajustes, Saldo ni Plan, y abajo sale
    **«Ajustes con PIN»**. Abre `/` o `/agents`: te lleva siempre a Hoy. Al activarla **se cierra tu sesión personal en ese navegador** (la tablet no es una cuenta): `/web` y `/cuenta` te devuelven a Hoy, y pedir otro restaurante también. Para volver a usar ese navegador con tu cuenta, desactiva la tablet (paso 6) y entra de nuevo.

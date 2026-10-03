@@ -43,6 +43,16 @@ export async function loadPeople(client: Client, establishmentId: string): Promi
   );
 }
 
+/**
+ * Los Propietarios de ESTE restaurante a los que se puede quitar desde Reservas (decisión 131). Los del grupo no
+ * salen: se gestionan desde Restavor web. Solo lo lee quien gestiona el Equipo; con cuenta, nunca desde la tablet.
+ */
+export async function loadRemovableOwners(client: Client, establishmentId: string): Promise<ReadonlySet<string>> {
+  const { data, error } = await client.rpc("reservation_removable_owners", { p_establishment_id: establishmentId });
+  if (error) throw new Error(error.message);
+  return new Set((data ?? []).map((row) => row.user_id));
+}
+
 export interface DeviceRecord {
   readonly id: string;
   readonly name: string;

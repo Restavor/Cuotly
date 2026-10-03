@@ -70,6 +70,9 @@ test.describe("Restavor agents · Equipo, tablet y soporte", () => {
     await expect(filas.filter({ hasText: "José García" })).toContainText("Propietario · entra con email · PIN puesto");
     await expect(filas.filter({ hasText: "María García" })).toContainText("Sin PIN todavía");
     await expect(filas.filter({ hasText: "Luis Martín" })).toContainText("Encargado · entra con email");
+    // Decisión 131: un Propietario quita a otro Propietario (y al Encargado); al Equipo, con «Quitar».
+    await expect(filas.filter({ hasText: "María García" }).getByRole("button", { name: "Quitar propietario" })).toBeVisible();
+    await expect(filas.filter({ hasText: "Luis Martín" }).getByRole("button", { name: "Quitar de Reservas" })).toBeVisible();
     await expect(filas.filter({ hasText: "Ana Ruiz" })).toContainText("Equipo · PIN en la tablet");
     await expect(filas.filter({ hasText: "Diego Navas" })).toContainText("Equipo · PIN en la tablet");
 
@@ -110,6 +113,7 @@ test.describe("Restavor agents · Equipo, tablet y soporte", () => {
     await expect(page.getByRole("button", { name: "+ Añadir persona" })).toBeVisible();
     await expect(page.getByText("Invitar a un Propietario o a un Encargado")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Quitar de Reservas" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Quitar propietario" })).toHaveCount(0);
     await expect(page.getByText("Mi PIN para la tablet")).toBeVisible();
     await expect(page.getByTestId("my-pin-state")).toHaveText("Tienes PIN.");
   });

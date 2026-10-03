@@ -31,6 +31,7 @@ function failure(error: unknown): TeamFeedback {
   const text = error instanceof Error ? error.message : "";
   const device = decodeDeviceAuthFailure(text);
   if (device !== null) return { ok: false, message: device.code === "forbidden" ? t.noPermission : es.agents.device.denied.identityInvalid };
+  if (/^Tiene que quedar al menos un propietario/.test(text)) return { ok: false, message: t.lastOwner };
   if (/^(No tienes permiso|Solo un Propietario|Solo el propietario|El propietario|Operación no permitida)/.test(text)) return { ok: false, message: t.noPermission };
   return { ok: false, message: t.failed };
 }
@@ -177,6 +178,31 @@ export async function removeManagerAction(input: { establishmentId: string; user
     if (setError) throw new Error(setError.message);
     refresh(input.establishmentId);
     return { ok: true, message: t.managerRemoved };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/**
+ * Quitar a un Propietario del restaurante (decisión 131): lo hace otro Propietario de este restaurante o el equipo del
+ * espacio, nunca un Encargado. Le retira el acceso al restaurante entero (también en Restavor web) y su PIN deja de
+ * valer; siempre tiene que quedar un Propietario. Lo decide `revoke_establishment_access()`. Solo con cuenta.
+ */
+export async function removeOwnerAction(input: { establishmentId: string; userId: string }): Promise<TeamFeedback> {
+  const t = es.agents.team;
+  if (!UUID.test(input.establishmentId) || !UUID.test(input.userId)) return { ok: false, message: t.errors.failed };
+  const onDevice = await refusedOnDevice();
+  if (onDevice) return onDevice;
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("revoke_establishment_access", {
+      p_establishment_id: input.establishmentId,
+      p_user_id: input.userId,
+      p_reason: "Quitado desde Reservas › Equipo",
+    });
+    if (error) throw new Error(error.message);
+    refresh(input.establishmentId);
+    return { ok: true, message: t.ownerRemoved };
   } catch (error) {
     return failure(error);
   }

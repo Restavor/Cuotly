@@ -871,6 +871,12 @@ llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; la
   `manage_users` le deja ver la pantalla y gestionar a los demás Editores, pero **no tocar al
   Propietario** — si pudiera, el permiso sería una manera de quedarse con el restaurante.
 
+  **Ampliada el 03/10/2026 (decisión 131, Bosco; migración 171):** al Propietario lo toca el equipo
+  **y también un Propietario de ese restaurante** —nombrar a otro y quitarlo—, nunca un Editor ni un
+  Encargado. Quien no es del equipo no puede dejar el restaurante sin Propietario (ni quitándose a sí
+  mismo): siempre tiene que quedar uno. Quitar a un Propietario le retira el acceso a todo el
+  restaurante, también en Restavor web.
+
   El aviso del diseño —*"Solo el propietario puede invitar o retirar usuarios"*— está **dentro del
   panel del cliente** y habla de sus propios usuarios, no del equipo. Leerlo como que el equipo
   tampoco puede dejaría el panel sin poder crearse nunca: no habría nadie que pudiera ser el

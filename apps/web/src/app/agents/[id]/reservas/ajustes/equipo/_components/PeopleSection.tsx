@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { es } from "@/i18n/es";
 import type { Person } from "@/services/agents/team-gateway";
 
-import { addStaffAction, removeManagerAction, removeStaffAction, setStaffPinAction } from "../actions";
+import { addStaffAction, removeManagerAction, removeOwnerAction, removeStaffAction, setStaffPinAction } from "../actions";
 import type { TeamFeedback } from "../action-state";
 import { PinFields } from "./PinFields";
 
@@ -28,6 +28,7 @@ export function PeopleSection({
   people,
   myUserId,
   canRemoveManagers,
+  removableOwnerIds,
   idempotencyKey,
 }: {
   establishmentId: string;
@@ -36,6 +37,8 @@ export function PeopleSection({
   myUserId: string | null;
   /** Quitar a un Encargado de Reservas: solo el propietario del restaurante y el equipo del espacio (decisión 110). */
   canRemoveManagers: boolean;
+  /** Los Propietarios de este restaurante que se pueden quitar desde aquí (decisión 131): vacío si quien mira no puede. */
+  removableOwnerIds: readonly string[];
   /** Una clave nueva por pantalla: pulsar dos veces «Añadir» no crea dos personas. */
   idempotencyKey: string;
 }) {
@@ -109,6 +112,10 @@ export function PeopleSection({
                 <Button type="button" variant="secondary" className="min-h-11" onClick={() => setDialog({ kind: "remove", person })}>
                   {t.removeManager}
                 </Button>
+              ) : person.role === "owner" && removableOwnerIds.includes(person.id) ? (
+                <Button type="button" variant="secondary" className="min-h-11" onClick={() => setDialog({ kind: "remove", person })}>
+                  {t.removeOwner}
+                </Button>
               ) : null}
             </li>
           );
@@ -179,7 +186,11 @@ export function PeopleSection({
         {dialog?.kind === "remove" ? (
           <div className="space-y-4">
             <p className="text-sm">
-              {dialog.person.kind === "staff" ? t.confirmRemove(dialog.person.name) : t.confirmRemoveManager(dialog.person.name)}
+              {dialog.person.kind === "staff"
+                ? t.confirmRemove(dialog.person.name)
+                : dialog.person.role === "owner"
+                  ? t.confirmRemoveOwner(dialog.person.name)
+                  : t.confirmRemoveManager(dialog.person.name)}
             </p>
             {generalError ? (
               <p role="alert" className="text-sm text-danger">
@@ -199,11 +210,13 @@ export function PeopleSection({
                   run(() =>
                     dialog.person.kind === "staff"
                       ? removeStaffAction({ establishmentId, staffId: dialog.person.id })
-                      : removeManagerAction({ establishmentId, userId: dialog.person.id }),
+                      : dialog.person.role === "owner"
+                        ? removeOwnerAction({ establishmentId, userId: dialog.person.id })
+                        : removeManagerAction({ establishmentId, userId: dialog.person.id }),
                   )
                 }
               >
-                {dialog.person.kind === "staff" ? t.remove : t.removeManager}
+                {dialog.person.kind === "staff" ? t.remove : dialog.person.role === "owner" ? t.removeOwner : t.removeManager}
               </Button>
             </div>
           </div>

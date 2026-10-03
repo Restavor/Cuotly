@@ -12344,6 +12344,10 @@ export type Database = {
       };
       // Fase D (migración 170) · Equipo con PIN, tablet del local y soporte. El PIN llega siempre como HMAC;
       // los resultados de negocio vuelven como `Json` ({ outcome: 'created' | 'pin_in_use' | ... }).
+      reservation_removable_owners: {
+        Args: { p_establishment_id: string };
+        Returns: { user_id: string }[];
+      };
       reservation_people: {
         Args: { p_establishment_id: string };
         Returns: { created_at: string; has_pin: boolean; kind: string; name: string; ref_id: string; role: string }[];

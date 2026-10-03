@@ -5512,8 +5512,8 @@ Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase D hasta que Bosco
 Criterios del PRD §15 (EQU-01 a EQU-03, SOP-01):
 
 - [x] **EQU-01 Ajustes › Equipo**: las personas del restaurante (Propietarios, Encargados y Equipo sin cuenta, por ese orden), añadir con PIN de 4 cifras dos veces, cambiar PIN, quitar
-  (se desactiva y el PIN queda libre), PIN único entre los activos del restaurante, «Mi PIN para la tablet» (solo desde tu cuenta) e invitar a un Propietario o a un Encargado (ver decisión 126).
-  Un Encargado gestiona el Equipo; no invita ni quita Encargados. Primer uso: el paso de Equipo del asistente configura de verdad.
+  (se desactiva y el PIN queda libre), PIN único entre los activos del restaurante, «Mi PIN para la tablet» (solo desde tu cuenta) e invitar a un Propietario o a un Encargado (decisión 131: el Propietario nombra y quita Propietarios y Encargados; último Propietario protegido).
+  Un Encargado gestiona el Equipo; no invita ni quita Propietarios ni Encargados. Primer uso: el paso de Equipo del asistente configura de verdad.
 - [x] **EQU-02 La tablet del local**: se activa desde una cuenta de Propietario o Encargado, guarda solo el hash de su token en una cookie `httpOnly` y no es un usuario de Supabase
   (decisión 121). Sin PIN solo se ven las fichas; cada cambio de la agenda pide «¿Quién eres?» al guardar y queda a nombre de quien puso su PIN. «Ajustes con PIN» (solo Encargado o
   Propietario) abre Ajustes 2 minutos deslizantes. Bloqueo escalonado de PIN: 1 min, 5 min, 30 min y 2 h (decisión 122). Desactivar la tablet surte efecto al recargar. `proxy.ts` y
@@ -5544,22 +5544,22 @@ Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su tes
 acción acababa (se abre fuera, con `setTimeout`); la Fase B afirmaba que la tablet no puede crear reservas (cambiado por la decisión 123); acciones de auditoría sin nombre en español;
 un test que daba por fija una zona horaria; un perfil que el disparador creaba sin nombre; y filas de bloqueo compartidas entre dispositivos en la suite.
 
-Decisiones (en `docs/DECISIONES.md`, 121 a 130):
+Decisiones (en `docs/DECISIONES.md`, 121 a 131):
 
 - **121** Cómo actúa el Equipo desde la tablet: una única puerta de servidor (`reservation_device_act`, solo `service_role`) que valida dispositivo y PIN y llama a la MISMA función de la agenda.
 - **122** El bloqueo de PIN crece (1 min, 5, 30, 2 h; se olvida a las 24 h): con solo «1 minuto» se probarían los 10.000 PIN en unas 33 horas.
 - **123** La tablet ofrece «Nueva reserva» y los botones de cambiar; el PIN se pide al guardar y **no hay selector de persona** (la maqueta lo tiene; con PIN no hace falta).
 - **124** «Ajustes con PIN»: solo vale el PIN de un Encargado o Propietario, dos minutos deslizantes.
 - **125** Dónde se abre y cómo se vuelve del soporte de Reservas (ficha del espacio y `/administracion/reservas`, hasta la Fase E).
-- **126** **PENDIENTE DE BOSCO**: quién añade y quita Propietarios (PRD §3.2 contra RN-EST-17).
+- **126** Quién añade y quita Propietarios: **resuelta por Bosco el 03/10/2026** (decisión 131, migración 171).
 - **127** El segundo paso de prueba del sembrado. **128** `/` y `/agents` con la cookie de un dispositivo. **129** «Abrir» una ficha sin PIN se anota como el sistema.
-- **130** Lo que cambió la revisión independiente. **Dos números míos, para confirmar con Bosco:** cinco topetazos de «PIN en uso» en 24 horas y veinte dispositivos activos por restaurante.
+- **130** Lo que cambió la revisión independiente. Los dos números (cinco topetazos de «PIN en uso» en 24 horas y veinte dispositivos activos por restaurante) los **confirmó Bosco** el 03/10/2026.
+- **131** El Propietario añade y quita Propietarios y Encargados (migración 171).
 
 Hallazgos que conviene saber:
 
 - La migración 170 **se editó en su sitio** durante la fase (no estaba subida a ninguna base: mismo precedente que la decisión 120).
-- **Contradicción abierta (decisión 126):** el PRD §3.2 dice que el Propietario añade y quita Propietarios; el sistema de Restavor web (RN-EST-17, `assert_can_manage_access`) lo reserva al
-  equipo del espacio. No se ha tocado nada de Restavor web. Tampoco hay guarda de «último Propietario». Hace falta que Bosco decida.
+- **Contradicción resuelta (decisión 126 → 131):** Bosco decidió que el Propietario nombra y quita Propietarios y Encargados (RN-EST-17 ampliada en `docs/PRD.md`, migración 171, con guarda de «último Propietario»).
 - Las maquetas traen un selector de persona al pulsar guardar en la tablet; no se ha hecho (decisión 123).
 - La tablet lee con la clave de servicio, acotada al restaurante del dispositivo; `lecturas-acotadas.test.ts` falla si una lectura nueva no lo está.
 - `SUPABASE_SERVICE_ROLE_KEY` y `AGENTS_PIN_SECRET` tienen que estar en Vercel (la segunda, en Preview).

@@ -8,7 +8,7 @@ import { es } from "@/i18n/es";
 import { loadDevice } from "@/services/agents/device";
 import { myUserId } from "@/services/agents/my-name";
 import { pinSecretConfigured } from "@/services/agents/pin";
-import { loadDevices, loadPeople } from "@/services/agents/team-gateway";
+import { loadDevices, loadPeople, loadRemovableOwners } from "@/services/agents/team-gateway";
 
 import { agentsDb } from "@/app/agents/db";
 import { requireAgentsPage } from "../../../../agents-context";
@@ -82,8 +82,18 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
 
   const secret = pinSecretConfigured();
   const canInvite = mode !== "device" && canReservations(nav.actor, "manage_owners_and_managers", { serviceStatus: nav.serviceStatus });
-  // Quitar a un Encargado: el propietario del restaurante y el equipo del espacio (decisión 110); nunca desde la tablet.
+  // Quitar a un Encargado o a un Propietario: el Propietario del restaurante y el equipo del espacio (decisiones 110 y
+  // 131); nunca desde la tablet. Los Propietarios que se pueden quitar los dice la base de datos.
   const canRemoveManagers = mode !== "device" && canReservations(nav.actor, "manage_owners_and_managers", { serviceStatus: nav.serviceStatus });
+  let removableOwnerIds: string[] = [];
+  if (canRemoveManagers) {
+    try {
+      removableOwnerIds = [...(await loadRemovableOwners(db, id))];
+    } catch {
+      // Sin la lista no se ofrece quitar a nadie: es peor equivocarse hacia «se puede» que esconder un botón.
+      removableOwnerIds = [];
+    }
+  }
   // Activar este dispositivo: solo una cuenta de Propietario o Encargado, en su propio navegador.
   const canActivate = mode === "user" && (nav.actor.kind === "owner" || nav.actor.kind === "manager");
 
@@ -101,6 +111,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             people={people}
             myUserId={myId}
             canRemoveManagers={canRemoveManagers}
+            removableOwnerIds={removableOwnerIds}
             idempotencyKey={randomUUID()}
           />
           {mode === "user" && (nav.actor.kind === "owner" || nav.actor.kind === "manager") ? (

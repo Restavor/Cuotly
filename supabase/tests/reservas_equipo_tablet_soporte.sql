@@ -1322,6 +1322,67 @@ begin
 end $$;
 
 -- ------------------------------------------------------------
+-- RN-EST-17 (decisión 131) · el Propietario añade y quita Propietarios; el Encargado y un Editor con «Usuarios y accesos», no
+-- ------------------------------------------------------------
+do $$
+declare
+  v jsonb;
+  v_ok boolean;
+begin
+  begin
+    -- El Encargado (05) no invita a un Propietario ni quita a uno.
+    perform public.s92_as('db000000-0000-0000-0000-000000000005');
+    perform public.s92_expect_error($q$select public.invite_to_establishment_panel('db000000-0000-0000-0000-000000000020', 'extrano@suite92.test', 'local_owner')$q$,
+      'no tienes permiso', 'RN-EST-17 un Encargado no nombra a un Propietario');
+    perform public.s92_expect_error($q$select public.revoke_establishment_access('db000000-0000-0000-0000-000000000020', 'db000000-0000-0000-0000-000000000004')$q$,
+      'no tienes permiso', 'RN-EST-17 un Encargado no quita a un Propietario');
+    -- Un Editor con «Usuarios y accesos» (06) tampoco: si pudiera, el permiso sería una manera de quedarse con el restaurante.
+    execute 'set local role postgres';
+    update public.establishment_permissions set manage_users = true
+    where establishment_membership_id = 'db000000-0000-0000-0000-000000000042';
+    perform public.s92_as('db000000-0000-0000-0000-000000000006');
+    perform public.s92_expect_error($q$select public.invite_to_establishment_panel('db000000-0000-0000-0000-000000000020', 'extrano@suite92.test', 'local_owner')$q$,
+      'solo lo cambia', 'RN-EST-17 un Editor con «Usuarios y accesos» no nombra a un Propietario');
+    perform public.s92_expect_error($q$select public.revoke_establishment_access('db000000-0000-0000-0000-000000000020', 'db000000-0000-0000-0000-000000000004')$q$,
+      'solo lo cambia', 'RN-EST-17 un Editor con «Usuarios y accesos» no quita a un Propietario');
+
+    -- El Propietario (04) nombra a otro Propietario (08, que ya tiene cuenta: entra al momento).
+    perform public.s92_as('db000000-0000-0000-0000-000000000004');
+    if (select count(*) from public.reservation_removable_owners('db000000-0000-0000-0000-000000000020')) <> 1 then
+      raise exception 'RN-EST-17 FALLIDO: antes de nombrar a otro hay que ver un único Propietario del restaurante quitable';
+    end if;
+    perform public.invite_to_establishment_panel('db000000-0000-0000-0000-000000000020', 'extrano@suite92.test', 'local_owner');
+    if (select count(*) from public.reservation_removable_owners('db000000-0000-0000-0000-000000000020')) <> 2 then
+      raise exception 'RN-EST-17 FALLIDO: el Propietario no pudo nombrar a otro Propietario';
+    end if;
+    perform public.s92_as('db000000-0000-0000-0000-000000000008');
+    if public.reservations_my_role('db000000-0000-0000-0000-000000000020') is distinct from 'owner' then
+      raise exception 'RN-EST-17 FALLIDO: el nuevo Propietario no lo es en Reservas';
+    end if;
+
+    -- El nuevo Propietario quita al primero (un Propietario quita a otro) y queda como único.
+    v_ok := public.revoke_establishment_access('db000000-0000-0000-0000-000000000020', 'db000000-0000-0000-0000-000000000004', 'prueba');
+    if not v_ok then
+      raise exception 'RN-EST-17 FALLIDO: un Propietario no pudo quitar a otro Propietario';
+    end if;
+    -- Y no puede dejar el restaurante sin Propietario, ni quitándose a sí mismo.
+    perform public.s92_expect_error($q$select public.revoke_establishment_access('db000000-0000-0000-0000-000000000020', 'db000000-0000-0000-0000-000000000008')$q$,
+      'al menos un propietario', 'RN-EST-17 el último Propietario no se quita');
+    -- El equipo del espacio sí lo arregla (es quien crea el panel).
+    perform public.s92_as('db000000-0000-0000-0000-000000000002');
+    v_ok := public.revoke_establishment_access('db000000-0000-0000-0000-000000000020', 'db000000-0000-0000-0000-000000000008', 'prueba');
+    if not v_ok then
+      raise exception 'RN-EST-17 FALLIDO: el equipo del espacio no pudo quitar al último Propietario';
+    end if;
+    raise exception 'DESHACER_92';
+  exception when others then
+    if sqlerrm <> 'DESHACER_92' then
+      raise;
+    end if;
+  end;
+end $$;
+
+-- ------------------------------------------------------------
 -- Cierre · quién ejecuta qué
 -- ------------------------------------------------------------
 do $$
@@ -1351,7 +1412,7 @@ begin
   end loop;
   -- Las de las personas: `authenticated` sí, `anon` no.
   foreach v_sig in array array[
-    'public.reservation_people(uuid)', 'public.add_reservation_staff(uuid, text, text, text)',
+    'public.reservation_people(uuid)', 'public.reservation_removable_owners(uuid)', 'public.add_reservation_staff(uuid, text, text, text)',
     'public.set_reservation_staff_pin(uuid, uuid, text)', 'public.remove_reservation_staff(uuid, uuid)',
     'public.set_my_reservation_pin(uuid, text)', 'public.activate_reservation_device(uuid, text, text)',
     'public.revoke_reservation_device(uuid, uuid)', 'public.open_reservation_support_session(uuid, text, integer)',

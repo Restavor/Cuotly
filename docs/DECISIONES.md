@@ -2725,11 +2725,11 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     la pestaña de la Fase E reutilizará el mismo botón. La sesión pide motivo (el texto vive en la sesión y lo ve el restaurante; **no se copia a `audit_log`**, que solo guarda su
     longitud, porque puede nombrar a un comensal) y dura 30, 60 o 120 minutos (la base admite de 5 a 240). Una cookie recuerda de dónde venía para devolver allí al salir o al
     caducar; solo acepta esas dos direcciones.
-126. **PENDIENTE DE BOSCO · quién añade y quita Propietarios.** PRD §3.2 dice que el Propietario «añade y quita Propietarios y Encargados» y EQU-01 pide «invitar Propietario o Encargado
+126. **RESUELTA POR BOSCO el 03/10/2026 (ver la 131) · quién añade y quita Propietarios.** PRD §3.2 dice que el Propietario «añade y quita Propietarios y Encargados» y EQU-01 pide «invitar Propietario o Encargado
     por email». Pero `assert_can_manage_access()` (RN-EST-17, decisión 51) deja a un Propietario del restaurante tocar a los Editores y **no a otro Propietario**: «al Propietario solo
     lo toca el equipo». No se ha cambiado Restavor web. Hoy: un Propietario invita a **Encargados** (Editor con «Gestionar Reservas») y los quita de Reservas; invitar a otro
     **Propietario** funciona si lo manda el equipo del espacio y a un Propietario del restaurante le da el aviso «solo el equipo»; los Propietarios no se quitan desde Equipo (se hace en
-    «Usuarios y accesos»). Tampoco hay «no se puede quitar al último Propietario»: `revoke_establishment_access()` no lo comprueba (es de Restavor web). Bosco decide si cambia RN-EST-17.
+    «Usuarios y accesos»). Tampoco hay «no se puede quitar al último Propietario»: `revoke_establishment_access()` no lo comprueba (es de Restavor web). Bosco decide si cambia RN-EST-17. (Decidió que sí: decisión 131.)
 127. **El segundo paso de prueba** (cumple la 106). `soporte@cuotly.test` (administrador del espacio `demo`, marcado como soporte) lleva un factor TOTP verificado con un secreto fijo
     (`RESTAVORSOPORTEPRUEBASSEGUNDOPAS`, en `docs/agents/PRUEBAS.md`) sembrado en `auth.mfa_factors` (con la columna `secret` si existe); Elena e `info@restavor.com` no llevan ninguno
     (la 106 sigue en pie). `supabase/config.toml` activa el TOTP (`enroll_enabled` y `verify_enabled`) para `supabase start`, y la pasarela de desarrollo (`scripts/supabase-local`)
@@ -2750,11 +2750,18 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     - Un restaurante **eliminado definitivamente** ya no se lee ni se abre como soporte (RN-ADM-24).
     - **«Ese PIN ya lo usa otra persona» no se puede preguntar sin límite**: cada topetazo deja una fila de auditoría (`reservations.pin_collision`, sin el PIN) y con **cinco en 24 horas**
       esa persona no puede poner ni probar más PIN en ese restaurante hasta pasado el día (la respuesta ya no distingue). Y un restaurante no pasa de **veinte dispositivos activos**.
-      **Los dos números (5 y 20) son míos, no del PRD: para confirmar con Bosco.**
+      **Los dos números (5 y 20) son míos, no del PRD; Bosco los confirmó el 03/10/2026.**
     - El Equipo con PIN corre sin usuario y el disparador de «espacio archivado = solo lectura» lo dejaba pasar: la puerta de la tablet lo cierra.
     - Lo que hace el soporte dentro de su sesión queda con el identificador de la sesión en todos los apuntes de auditoría (no solo en los de la agenda), y el Historial lo enseña como
       «Restavor (soporte)».
     **Contradicción corregida:** la línea que esta fase puso en `CLAUDE.md` decía que el soporte de Reservas «es de solo lectura»; el PRD §3.4 le da escritura con la etiqueta `restavor_support`
     y así está construido. Se corrigió la línea. **Queda descrito, sin tocar:** la cookie «Ajustes abiertos» no va ligada a un dispositivo (vale en cualquier tablet del mismo restaurante 2 minutos,
     es `httpOnly` y está firmada), y con Ajustes abiertos la agenda corre a nombre de quien los abrió sin pedir PIN otra vez (decisión 124).
+131. **El Propietario añade y quita Propietarios y Encargados (Bosco, 03/10/2026; migración 171).** Resuelve la 126: Bosco decidió que **el Propietario del restaurante es el único (con el
+    equipo del espacio, que crea el panel) que puede nombrar y quitar a Propietarios y a Encargados**; un Encargado no, ni un Editor con «Usuarios y accesos». RN-EST-17 se amplía en
+    `docs/PRD.md`: `assert_can_manage_access()` deja que un Propietario de ese restaurante toque a otro Propietario (la 107 solo lo dejaba al equipo). Dos consecuencias que no estaban
+    decididas y están hechas de la forma más prudente: (1) **quien no es del equipo no puede dejar el restaurante sin Propietario**, ni quitándose a sí mismo (el equipo sí, para poder
+    arreglarlo); (2) **quitar a un Propietario le retira el acceso a todo el restaurante, también en Restavor web**, porque un Propietario no tiene un «solo en Reservas» (el Encargado sí);
+    la pantalla lo avisa antes. Los Propietarios que vienen del grupo (`global_owner`) no se quitan desde Reservas: se gestionan en Restavor web. «Administradores» lo he entendido como
+    **Encargados** (los administradores del espacio son el equipo de Restavor y ya podían). Invitar a un Propietario sin cuenta sigue necesitando la aprobación del equipo (RN-PAN-14).
 

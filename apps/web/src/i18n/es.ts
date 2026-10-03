@@ -9010,6 +9010,7 @@ export const es = {
       changePin: "Cambiar PIN",
       remove: "Quitar",
       removeManager: "Quitar de Reservas",
+      removeOwner: "Quitar propietario",
       addTitle: "Añadir persona",
       addHint: "Camareros: solo nombre y PIN de 4 cifras, sin email. Propietarios y encargados reciben una invitación por email.",
       nameLabel: "Nombre",
@@ -9023,7 +9024,10 @@ export const es = {
       pinChanged: "PIN cambiado.",
       removed: "Persona quitada. Su PIN ya no vale.",
       managerRemoved: "Ya no es Encargado de Reservas. Su PIN ya no vale.",
+      ownerRemoved: "Ya no es Propietario de este restaurante. Su PIN ya no vale.",
       confirmRemove: (nombre: string) => `¿Quitar a ${nombre} del Equipo? Su PIN dejará de valer y se conserva su historial.`,
+      confirmRemoveOwner: (nombre: string) =>
+        `¿Quitar a ${nombre} como Propietario? Pierde el acceso a todo este restaurante, también en Restavor web, y su PIN deja de valer. Siempre tiene que quedar un Propietario.`,
       confirmRemoveManager: (nombre: string) =>
         `¿Quitar a ${nombre} de Reservas? Deja de ser Encargado y su PIN deja de valer; conserva el resto de sus accesos.`,
       errors: {
@@ -9034,6 +9038,7 @@ export const es = {
         pinProbesLocked: "Has probado demasiados PIN que ya estaban en uso. Inténtalo de nuevo mañana.",
         failed: "No se ha podido guardar. Inténtalo de nuevo.",
         noPermission: "No tienes permiso para hacer esto.",
+        lastOwner: "Tiene que quedar al menos un Propietario en el restaurante.",
         pinSecretMissing: "Falta la clave de los PIN en el servidor. Avisa a Restavor.",
       },
       myPin: {
