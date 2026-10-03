@@ -2623,3 +2623,24 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     `establishment_transfer_tables()`). La consecuencia es que, tras una transferencia, los datos de Reservas conservan el `space_id` antiguo: el Propietario y el
     Encargado del restaurante siguen entrando por su rol, pero el soporte y el equipo del espacio de destino no los ven. Es lo que dice la 100; la opción
     «Transferir también Reservas» y lo que arrastra se construyen en la Fase E.
+
+## Agente Menú Diario · Fase 0, reconocimiento (decisiones 112 a 114)
+
+Se registran el 03/10/2026, tras el informe `agents/menu-diario/docs/RECONOCIMIENTO.md`. Las tres son de Bosco: contestó a la lista de «Qué necesito de ti para la
+Fase 1» de ese informe. La 115 (Bar Demo) se añade cuando está hecha.
+
+112. **Se construye el Agente Menú Diario** (Bosco, 03/10/2026; resuelve la contradicción C1 del informe). `CLAUDE.md` y `docs/PRD.md` (RN-CRE-25) decían que el agente de IA
+    que publica el menú «no existe todavía y no se simula». Bosco decide construirlo con el PRD de `agents/menu-diario/PRD.md`, **por fases (una por sesión), solo contra
+    "Restavor pruebas" y la web de pruebas hasta la Fase 7** (que exige su OK), solo para menús `daily` de los restaurantes que él active, y sin simularlo: lo que haga es
+    real. Para el resto de menús y de restaurantes no cambia nada: publica el equipo a mano. Cierra el «no se construye todavía» de RN-CRE-25; `CLAUDE.md` lleva ya la
+    excepción escrita. Cada fase empieza con plan y espera su OK (PRD §0).
+113. **Cuenta propia del agente en LandingSite** (Bosco, 03/10/2026; sustituye a D2 y D3 del PRD del agente en lo de entrar con Google). Bosco crea **a mano** una cuenta de
+    LandingSite con email y contraseña (sin Google) para que el agente entre con ella y edite. Dos cosas que quedan escritas:
+    (1) **Las credenciales no pasan nunca por el chat**: se guardan como secretos del entorno de ejecución. (2) **Esto no resuelve el riesgo de las condiciones de uso de
+    LandingSite**: su cláusula 6(ix) prohíbe a software, agentes o scripts hacer peticiones automatizadas al servicio (informe §4.1); no hay autorización de LandingSite y
+    Bosco decide seguir sabiéndolo. Lo que sí hace una cuenta propia es que, si la suspendieran, no se pierde la cuenta de Bosco. **Pendiente de comprobar** (preguntas de PRD §9.3):
+    que LandingSite deje a esa cuenta editar el sitio de Restavor (invitar como colaborador) y qué ve cada cuenta. El plan B del PRD (P3, recuadro incrustado) sigue en pie.
+114. **El agente sale del reparto de trabajos y tareas** (Bosco, 03/10/2026: «ok» a la opción (ii) del informe, §2.8). Un trabajador sin especialidades queda fuera del reparto de
+    **menús**, pero entra en el de trabajos y tareas (`is_eligible_job_candidate`, `list_task_candidates`) y, al estar autorizado en un restaurante, ve sus finanzas e informes
+    (RN-REP-31). Bosco autoriza una migración nueva que lo excluya, **excepción puntual a «no modificar funciones existentes» del PRD del agente (§12)**. Se propone el
+    diseño exacto (qué marca lleva el miembro y qué funciones toca) en la Fase 2 y **se aprueba antes de aplicarlo**; hasta entonces no se escribe ninguna migración.

@@ -4006,7 +4006,7 @@ ofrecer `grants_priority`.)*
   siguen como RN-MEN-03: publicado, se copia.
 - **RN-CRE-25**: **quién publica**: hoy, **el equipo a mano** (RN-MEN-06), como ahora. La idea de Bosco
   es que lo publique **un agente de IA** cuando el restaurante guarde; **no se construye todavía** y no
-  se simula (RN-CLS-07, CLAUDE.md). Cuando se decida, será su propia regla.
+  se simula (RN-CLS-07, CLAUDE.md). Cuando se decida, será su propia regla. *(Decisión 112, 03/10/2026: Bosco decide construirlo como el Agente Menú Diario, solo para menús `daily` y por fases; la especificación es `agents/menu-diario/PRD.md`. Hasta la Fase 7 funciona solo contra Pruebas.)*
 
 *(Construido el 27/09/2026, punto 5, migración 152, suite 86: `plans.includes_daily_menu` y
 `establishment_daily_menu_access()` dicen de dónde le viene Menú Diario a cada restaurante, y la barra,
