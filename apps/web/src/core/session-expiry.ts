@@ -14,6 +14,8 @@
  * acción ya contesta por su cuenta que falta la sesión.
  */
 
+import { deviceOwnsRequest } from "@/core/reservations/device";
+
 const PUBLIC_PREFIXES = [
   "/login",
   "/signup",
@@ -27,6 +29,11 @@ const PUBLIC_PREFIXES = [
   "/estado",
   "/armazon",
   "/styleguide",
+  // Reservas (PRD de agents §3.3): las rutas públicas y de máquinas quedan fuera de las comprobaciones de sesión.
+  "/r/",
+  "/widget/",
+  "/reservar.js",
+  "/c/",
 ] as const;
 
 export function isSupabaseAuthCookie(name: string): boolean {
@@ -39,8 +46,11 @@ export function sessionExpired(input: {
   readonly hadAuthCookie: boolean;
   readonly hasUser: boolean;
   readonly errorStatus: number | undefined;
+  /** Fase D · la petición trae la cookie de una tablet del local: en Restavor agents manda el dispositivo, no la sesión personal. */
+  readonly hasDeviceCookie?: boolean;
 }): boolean {
   if (input.method !== "GET") return false;
+  if (deviceOwnsRequest(input.pathname, input.hasDeviceCookie === true)) return false;
   if (!input.hadAuthCookie || input.hasUser) return false;
   if (input.errorStatus === undefined || input.errorStatus < 400 || input.errorStatus >= 500) return false;
   return !PUBLIC_PREFIXES.some((prefijo) => input.pathname.startsWith(prefijo));

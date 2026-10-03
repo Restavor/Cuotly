@@ -1,13 +1,22 @@
 import { randomUUID } from "node:crypto";
+import Link from "next/link";
 
 import { notFound, redirect } from "next/navigation";
 
 import { Card, EmptyState, ErrorState, NoPermissionState, PageHeader, StatusBadge } from "@/components/ui";
+import { hasDebt, type PaymentInfo } from "@/core/agents/payment-info";
 import { isReservationServiceStatus } from "@/core/app/products";
-import { fechaCorta } from "@/i18n/dates";
+import { daysLeftToDownload } from "@/core/reservations/lifecycle";
+import { formatCentsAsEuros } from "@/core/reservations/money";
+import { enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadPaymentInfo } from "@/services/agents/billing-gateway";
 
+import { OpenSupportButton } from "@/app/agents/_components/OpenSupportButton";
+import { PaymentDetailsForm } from "./_components/PaymentDetailsForm";
+import { RequestDecision } from "./_components/RequestDecision";
+import { ServiceActions } from "./_components/ServiceActions";
 import { NewReservationRequestForm } from "./NewReservationRequestForm";
 
 /**
@@ -15,9 +24,9 @@ import { NewReservationRequestForm } from "./NewReservationRequestForm";
  * contratación de los restaurantes y los que ya tienen Reservas. Solo en los
  * espacios que ofrecen Reservas (`spaces.reservations_enabled`).
  *
- * En esta fase la lista **solo muestra** y permite «Crear solicitud para este
- * restaurante». Aprobar y rechazar (con motivo) son de la Fase E, y la pantalla
- * lo dice en vez de pintar botones que no hacen nada.
+ * Fase A: «Crear solicitud para este restaurante». Fase E (COB-01 y COB-02): aprobar y rechazar (con
+ * motivo), los datos para pagar de cada restaurante con su enlace a Finanzas (donde se registra el pago),
+ * dar de baja, cerrar a mano y reactivar, y los datos de pago de Reservas (decisión 132).
  *
  * Quién ve esto lo deciden las políticas de RLS de las tres tablas y quién crea,
  * `create_reservation_request_on_behalf()`; la comprobación de aquí solo evita
@@ -41,7 +50,7 @@ export default async function SpaceReservationsPage({
 
   const { data: space } = await supabase
     .from("spaces")
-    .select("id, reservations_enabled")
+    .select("id, timezone, reservations_enabled, payment_iban, payment_bizum_phone, payment_note")
     .eq("slug", slug)
     .maybeSingle();
   if (!space || !space.reservations_enabled) notFound();
@@ -59,8 +68,14 @@ export default async function SpaceReservationsPage({
     );
   }
 
+  // Solo el propietario del espacio cambia los datos de pago (decisión 132).
+  const { data: esPropietario } = await supabase.rpc("has_capability", {
+    p_space_id: space.id,
+    p_capability: "manage_space",
+  });
+
   // Todas las columnas se enumeran: estas tablas tienen privilegios de columna (CLAUDE.md).
-  const [requests, settings, establishments] = await Promise.all([
+  const [requests, settings, establishments, membership, candidates] = await Promise.all([
     supabase
       .from("reservation_service_requests")
       .select("id, establishment_id, status, rejection_reason, terms_accepted_at, created_at")
@@ -68,7 +83,7 @@ export default async function SpaceReservationsPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("reservation_settings")
-      .select("establishment_id, service_status, activated_at, created_at")
+      .select("establishment_id, service_status, activated_at, ending_at, closed_at, data_purged_at, created_at")
       .eq("space_id", space.id)
       .order("created_at", { ascending: false }),
     supabase
@@ -77,6 +92,15 @@ export default async function SpaceReservationsPage({
       .eq("space_id", space.id)
       .neq("status", "archived")
       .order("name"),
+    // Fase D (PRD de agents §3.4): ¿estás marcado como soporte de Reservas en este espacio?
+    supabase
+      .from("space_memberships")
+      .select("can_support_reservations")
+      .eq("space_id", space.id)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    // Los restaurantes de este espacio que se pueden abrir como soporte (solo si estás marcado).
+    supabase.rpc("reservation_support_candidates", { p_query: null }),
   ]);
 
   if (requests.error || settings.error || establishments.error) {
@@ -88,9 +112,42 @@ export default async function SpaceReservationsPage({
     );
   }
 
+  // Decisión 144 · sin IBAN ni Bizum cargados no se aprueba (la base de datos lo exige; esto solo avisa antes).
+  const tienePagos = Boolean(space.payment_iban || space.payment_bizum_phone);
+  const marcadoComoSoporte = membership.data?.can_support_reservations === true;
+  const abribles = (candidates.data ?? []).filter((c) => c.space_slug === slug);
   const nombre = new Map((establishments.data ?? []).map((e) => [e.id, e.name]));
   const solicitudes = requests.data ?? [];
-  const contratadas = (settings.data ?? []).filter((s) => s.service_status !== "closed");
+  // Las cerradas siguen a la vista mientras se pueden descargar o reactivar (30 días); después, ya no.
+  const contratadas = (settings.data ?? []).filter((s) => s.service_status !== "closed" || s.data_purged_at === null);
+  // Reservas abiertas con deuda no se cuentan para «ya tiene Reservas»: una cerrada sí puede volver a pedirla.
+  const enMarcha = (settings.data ?? []).filter((s) => s.service_status !== "closed");
+
+  // Lo que debe cada restaurante, para enseñarlo y llevar a registrar el pago (se registra en Finanzas, que ya existe).
+  const deudas = new Map<string, PaymentInfo>();
+  await Promise.all(
+    contratadas
+      .filter((s) => s.service_status !== "closed")
+      .map(async (s) => {
+        try {
+          const info = await loadPaymentInfo(supabase, s.establishment_id);
+          if (info && hasDebt(info)) deudas.set(s.establishment_id, info);
+        } catch {
+          // Sin el dato no se enseña deuda: no se inventa ni un cero.
+        }
+      }),
+  );
+
+  // El saldo de cada restaurante en marcha (RVR-01). Sin el dato no se enseña ni un cero.
+  const saldos = new Map<string, number>();
+  await Promise.all(
+    contratadas
+      .filter((s) => s.service_status !== "closed")
+      .map(async (s) => {
+        const { data } = await supabase.rpc("agent_balance_cents", { p_establishment_id: s.establishment_id });
+        if (typeof data === "number") saldos.set(s.establishment_id, data);
+      }),
+  );
 
   // El apunte "requested" dice si la creó el equipo en nombre del restaurante
   // (su `data.on_behalf`): quién fue es identidad del equipo y no se lee.
@@ -110,7 +167,7 @@ export default async function SpaceReservationsPage({
 
   // A quién se le puede crear una: sin Reservas en marcha ni solicitud abierta.
   const ocupados = new Set<string>([
-    ...contratadas.map((s) => s.establishment_id),
+    ...enMarcha.map((s) => s.establishment_id),
     ...solicitudes.filter((s) => s.status === "requested").map((s) => s.establishment_id),
   ]);
   const candidatos = (establishments.data ?? []).filter((e) => !ocupados.has(e.id));
@@ -158,31 +215,107 @@ export default async function SpaceReservationsPage({
                 >
                   {t.requests.status[s.status as "requested" | "approved" | "rejected"] ?? s.status}
                 </StatusBadge>
+                {s.status === "requested" ? <RequestDecision slug={slug} requestId={s.id} canApprove={tienePagos} /> : null}
               </li>
             ))}
           </ul>
         )}
-        {/* Sin botones que no hacen nada: aprobar y rechazar llegan con la Fase E. */}
-        <p className="mt-4 text-sm text-text-secondary">{t.requests.decideLater}</p>
       </Card>
+
+      <Card title={es.agents.support.sectionTitle}>
+        <p className="mb-3 text-sm text-text-secondary">{es.agents.support.sectionBody}</p>
+        {!marcadoComoSoporte ? (
+          <p className="text-sm text-text-secondary" data-testid="support-not-marked">
+            {es.agents.support.noneMarked}
+          </p>
+        ) : abribles.length === 0 ? (
+          <EmptyState title={t.running.emptyTitle} description={t.running.emptyReason} />
+        ) : (
+          <ul className="divide-y divide-border">
+            {abribles.map((c) => (
+              <li key={c.establishment_id} className="flex flex-wrap items-center gap-3 py-3" data-testid="support-candidate">
+                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-text">{c.name}</span>
+                <OpenSupportButton establishmentId={c.establishment_id} restaurantName={c.name} returnTo={`/espacios/${slug}/reservas`} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <PaymentDetailsForm
+        slug={slug}
+        spaceId={space.id}
+        initial={{ iban: space.payment_iban, bizumPhone: space.payment_bizum_phone, note: space.payment_note }}
+        canEdit={esPropietario === true}
+      />
 
       <Card title={t.running.title}>
         {contratadas.length === 0 ? (
           <EmptyState title={t.running.emptyTitle} description={t.running.emptyReason} />
         ) : (
           <ul className="divide-y divide-border">
-            {contratadas.map((s) => (
-              <li key={s.establishment_id} className="flex flex-wrap items-center gap-3 py-3">
-                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-text">
-                  {nombre.get(s.establishment_id) ?? t.requests.unknownRestaurant}
-                </span>
-                {isReservationServiceStatus(s.service_status) ? (
-                  <StatusBadge tone={s.service_status === "active" ? "success" : "warning"}>
-                    {es.app.home.agents.status[s.service_status]}
-                  </StatusBadge>
-                ) : null}
-              </li>
-            ))}
+            {contratadas.map((s) => {
+              const deuda = deudas.get(s.establishment_id);
+              return (
+                <li key={s.establishment_id} className="flex flex-wrap items-center gap-3 py-3" data-testid={`running-${s.establishment_id}`}>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-text">
+                      {nombre.get(s.establishment_id) ?? t.requests.unknownRestaurant}
+                    </span>
+                    {deuda ? (
+                      <span className="block text-xs text-text-secondary" data-testid={`debt-${s.establishment_id}`}>
+                        {t.running.pending(
+                          formatCentsAsEuros(deuda.outstandingCents),
+                          enZona(deuda.dueAt, space.timezone, { day: "numeric", month: "long", year: "numeric" }),
+                        )}
+                      </span>
+                    ) : null}
+                    {saldos.has(s.establishment_id) ? (
+                      <span className="block text-xs text-text-secondary" data-testid={`balance-${s.establishment_id}`}>
+                        {t.running.balance(formatCentsAsEuros(saldos.get(s.establishment_id)!))}
+                      </span>
+                    ) : null}
+                    {s.service_status === "ending" && s.ending_at ? (
+                      <span className="block text-xs text-text-secondary">
+                        {t.running.endingOn(enZona(s.ending_at, space.timezone, { day: "numeric", month: "long", year: "numeric" }))}
+                      </span>
+                    ) : null}
+                    {s.service_status === "closed" ? (
+                      <span className="block text-xs text-text-secondary">
+                        {s.data_purged_at !== null || s.closed_at === null
+                          ? t.running.closedPurged
+                          : t.running.closedUntil(daysLeftToDownload(new Date(s.closed_at), new Date()))}
+                      </span>
+                    ) : null}
+                  </span>
+                  {isReservationServiceStatus(s.service_status) ? (
+                    <StatusBadge tone={s.service_status === "active" ? "success" : "warning"}>
+                      {es.app.home.agents.status[s.service_status]}
+                    </StatusBadge>
+                  ) : null}
+                  <Link
+                    href={`/espacios/${slug}/restaurantes/${s.establishment_id}/reservas`}
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-cuotly-green underline"
+                    data-testid={`open-sheet-${s.establishment_id}`}
+                  >
+                    {t.running.openSheet}
+                  </Link>
+                  {deuda ? (
+                    <Link href={`/espacios/${slug}/finanzas/cobros/${deuda.chargeId}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-cuotly-green underline">
+                      {t.running.registerPayment}
+                    </Link>
+                  ) : null}
+                  <ServiceActions
+                    slug={slug}
+                    establishmentId={s.establishment_id}
+                    status={s.service_status}
+                    endingAt={s.ending_at}
+                    closedAt={s.closed_at}
+                    dataPurged={s.data_purged_at !== null}
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
       </Card>

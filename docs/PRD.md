@@ -871,6 +871,12 @@ llega en la Fase 3 (las conexiones y sus datos, §27, desde la migración 81; la
   `manage_users` le deja ver la pantalla y gestionar a los demás Editores, pero **no tocar al
   Propietario** — si pudiera, el permiso sería una manera de quedarse con el restaurante.
 
+  **Ampliada el 03/10/2026 (decisión 131, Bosco; migración 171):** al Propietario lo toca el equipo
+  **y también un Propietario de ese restaurante** —nombrar a otro y quitarlo—, nunca un Editor ni un
+  Encargado. Quien no es del equipo no puede dejar el restaurante sin Propietario (ni quitándose a sí
+  mismo): siempre tiene que quedar uno. Quitar a un Propietario le retira el acceso a todo el
+  restaurante, también en Restavor web.
+
   El aviso del diseño —*"Solo el propietario puede invitar o retirar usuarios"*— está **dentro del
   panel del cliente** y habla de sus propios usuarios, no del equipo. Leerlo como que el equipo
   tampoco puede dejaría el panel sin poder crearse nunca: no habría nadie que pudiera ser el
@@ -4006,7 +4012,7 @@ ofrecer `grants_priority`.)*
   siguen como RN-MEN-03: publicado, se copia.
 - **RN-CRE-25**: **quién publica**: hoy, **el equipo a mano** (RN-MEN-06), como ahora. La idea de Bosco
   es que lo publique **un agente de IA** cuando el restaurante guarde; **no se construye todavía** y no
-  se simula (RN-CLS-07, CLAUDE.md). Cuando se decida, será su propia regla. *(Decisión 112, 03/10/2026: Bosco decide construirlo como el Agente Menú Diario, solo para menús `daily` y por fases; la especificación es `agents/menu-diario/PRD.md`. Hasta la Fase 7 funciona solo contra Pruebas.)*
+  se simula (RN-CLS-07, CLAUDE.md). Cuando se decida, será su propia regla. *(Decisión 149, 03/10/2026: Bosco decide construirlo como el Agente Menú Diario, solo para menús `daily` y por fases; la especificación es `agents/menu-diario/PRD.md`. Hasta la Fase 7 funciona solo contra Pruebas.)*
 
 *(Construido el 27/09/2026, punto 5, migración 152, suite 86: `plans.includes_daily_menu` y
 `establishment_daily_menu_access()` dicen de dónde le viene Menú Diario a cada restaurante, y la barra,

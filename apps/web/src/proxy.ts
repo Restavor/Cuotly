@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+import { DEVICE_COOKIE, deviceOwnsRequest } from "@/core/reservations/device";
 import { isSupabaseAuthCookie, sessionExpired } from "@/core/session-expiry";
 
 /**
@@ -40,6 +41,12 @@ export async function proxy(request: NextRequest) {
     .map((cookie) => cookie.name)
     .filter(isSupabaseAuthCookie);
 
+  // Fase D (PRD de agents §3.3) · una tablet del local trae la cookie de su dispositivo: en Restavor agents manda el
+  // dispositivo y no se redirige a `/sesion-caducada` ni a `/cuenta/verificar` aunque la sesión personal de quien
+  // lo activó haya caducado. Solo mira que la cookie exista: es una comodidad, no el control (cada pantalla y cada
+  // acción valida el dispositivo en el servidor).
+  const dispositivo = deviceOwnsRequest(request.nextUrl.pathname, request.cookies.has(DEVICE_COOKIE));
+
   // Refresca la sesión si hace falta y mantiene la cookie al día.
   const {
     data: { user },
@@ -56,6 +63,7 @@ export async function proxy(request: NextRequest) {
       hadAuthCookie: cookiesDeSesion.length > 0,
       hasUser: user !== null,
       errorStatus: errorDeSesion?.status,
+      hasDeviceCookie: request.cookies.has(DEVICE_COOKIE),
     })
   ) {
     const destino = request.nextUrl.clone();
@@ -71,7 +79,7 @@ export async function proxy(request: NextRequest) {
   // disponible) no ve ninguna pantalla hasta pasarlo. Es una comodidad, no
   // el control: las funciones de plataforma exigen `aal2` por su cuenta en
   // la base, y un usuario normal sin 2FA no cambia de sitio.
-  if (user && !SIN_SEGUNDO_PASO.some((prefijo) => request.nextUrl.pathname.startsWith(prefijo))) {
+  if (user && !dispositivo && !SIN_SEGUNDO_PASO.some((prefijo) => request.nextUrl.pathname.startsWith(prefijo))) {
     const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
     if (aal && aal.currentLevel === "aal1" && aal.nextLevel === "aal2") {
       const destino = request.nextUrl.clone();
@@ -86,7 +94,8 @@ export async function proxy(request: NextRequest) {
 
 /** Las rutas que no piden el segundo paso: la que lo pide, y salir. */
 // `/estado` es pública (§157): se lee sin sesión y también a medio segundo paso.
-const SIN_SEGUNDO_PASO = ["/cuenta/verificar", "/login", "/signup", "/auth/", "/api/", "/estado"];
+// Reservas (PRD de agents §3.3): `/r`, `/widget`, `/reservar.js` y `/c` son públicas, y `/api/` ya cubre `/api/public` y `/api/agents`.
+const SIN_SEGUNDO_PASO = ["/cuenta/verificar", "/login", "/signup", "/auth/", "/api/", "/estado", "/r/", "/widget/", "/reservar.js", "/c/"];
 
 export const config = {
   matcher: [

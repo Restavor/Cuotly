@@ -15,3 +15,8 @@ export const reservationRequestInitialState: ReservationRequestFormState = {
   done: false,
   establishmentId: "",
 };
+
+/** Lo que contestan las acciones de aprobar, rechazar, cerrar, reactivar y los datos de pago. */
+export type SpaceReservationsFeedback =
+  | { readonly ok: true; readonly message: string | null }
+  | { readonly ok: false; readonly message: string };

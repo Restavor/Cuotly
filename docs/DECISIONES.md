@@ -2623,36 +2623,297 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     `establishment_transfer_tables()`). La consecuencia es que, tras una transferencia, los datos de Reservas conservan el `space_id` antiguo: el Propietario y el
     Encargado del restaurante siguen entrando por su rol, pero el soporte y el equipo del espacio de destino no los ven. Es lo que dice la 100; la opción
     «Transferir también Reservas» y lo que arrastra se construyen en la Fase E.
+112. **La agenda escribe solo por funciones** (Fase C, migración 169). Las tablas de Reservas siguen sin política de escritura ni privilegio de tabla: la única
+    vía es una función `SECURITY DEFINER` por operación (`book_reservation`, `confirm_reservation`, `reject_reservation`, `cancel_reservation`, `mark_no_show`,
+    `undo_no_show`, `dismiss_duplicate`, `open_reservation`, `mark_platform_cancel_done`, y para los horarios `save_reservation_shifts`, `set_reservation_closed_date`,
+    `save_reservation_settings`, `complete_reservations_onboarding`). Cada una comprueba permiso (`reservations_actor_type`: Propietario, Encargado o soporte con
+    sesión abierta y `aal2`), estado del servicio y transición; bloquea con `pg_advisory_xact_lock` en un orden fijo (decisión 120); escribe evento y auditoría
+    **sin datos personales** (`changed: ["time"]`, `time_from`/`time_to`); y es idempotente (`reservations.idempotency_key` para el alta, estado final para el
+    resto: repetirlas devuelve `unchanged`). Con sesión de usuario el origen es siempre `manual` (PRD §6.8); sin sesión (el servidor: agente, web, plataforma)
+    acepta cualquier origen, que es lo que usarán las Fases G, H e I. El equipo del espacio sin sesión de soporte **no escribe reservas** pero **sí cambia
+    horarios y ajustes** (tabla §3.2: «Restavor» sí en horarios, aforo y límites). Los resultados de negocio (`accepted`, `needs_confirmation`, `rejected`) vuelven
+    como resultado, no como excepción.
+113. **Alternativas de disponibilidad en el dominio, no en SQL** (Fase C). `getAvailability` —huecos con su razón, hasta 3 alternativas del mismo día a ≤ 120 min o
+    la misma hora en los 14 días siguientes— vive en `src/core/reservations/availability.ts`, con los cinco ejemplos del PRD §6.5. `book_reservation` decide si
+    entra y por qué no (`full`, `too_soon`, `too_far`, `closed_day`, `not_a_slot`, `service_paused`, `past_date`) pero **no calcula alternativas**: las calculará la
+    API del agente (Fase G) con el dominio. La regla de aforo, antelación y grupo grande está, pues, en dos sitios (TS y SQL), y los dos llevan los ejemplos del PRD
+    como tests.
+114. **«Ha venido N veces · ha fallado M veces»** (RN-RES-09). El PRD no dice cómo se cuenta. Se cuenta por teléfono, en ese restaurante, en los últimos 24 meses y sin
+    la reserva abierta: «ha venido» = confirmada cuya hora ya pasó (nadie la marcó «No vino»); «ha fallado» = marcada «No vino». Las canceladas y las pendientes no
+    cuentan. Si Bosco prefiere otra definición, se cambia en `visitStats()` (`src/core/reservations/lifecycle.ts`).
+115. **Quitar un turno lo desactiva; reabrir un día cerrado lo marca como quitado** (Fase C, RN-RES-01). Los turnos no se borran —hay reservas que los citan—:
+    `save_reservation_shifts` desactiva los que ya no están en la lista, y solo si ninguna reserva futura activa se queda sin sitio. Un día cerrado tampoco se borra
+    (CLAUDE.md: «nunca borrar físicamente registros de negocio»): reabrirlo rellena `reservation_closed_dates.removed_at`, volver a cerrarlo reactiva esa misma fila con el motivo
+    nuevo (`on conflict (establishment_id, date) do update`), y cada paso queda en `audit_log` con la fecha. Las lecturas y `reservation_classify_slot` ignoran los
+    quitados. (La primera versión de la fase borraba la fila y la decía «excepción a nunca `DELETE`»; la revisión independiente lo señaló como contradicción con
+    CLAUDE.md y se corrigió en vez de pedir la excepción.) Cambiar el intervalo de huecos (15 o 30) **no** bloquea aunque haya reservas a horas que dejan de ser hueco:
+    se quedan como están.
+116. **Plataformas sin conector** (Fase C; los conectores son la Fase I). Hoy una reserva de plataforma **no** cambia fecha, hora ni personas (`platform_locked`: se
+    cambian en la plataforma), y al cancelarla en la app queda `pending_platform_cancel` con el aviso «Cancélala también en X» hasta pulsar «Hecho». Las maquetas
+    (`Ficha`, `CancelarReserva`, `EditarReserva`) dicen «Se cancelará también en TheFork» y «el cambio llegará solo»: **no se ha escrito**, porque hoy no es verdad.
+    Cuando exista el conector se sustituye por lo que corresponda.
+117. **Tiempo real: Broadcast con nombre secreto; versión falsa entre pestañas** (Fase C, RN-RES-13). Un canal de Supabase Broadcast por restaurante cuyo nombre es un
+    HMAC del restaurante con `RESERVATIONS_BROADCAST_SECRET`; lo que viaja es `{kind: "date", date, reason}` o `{kind: "agent"}`, nunca un dato personal ni el
+    identificador de la reserva (`core/reservations/realtime.ts` lo impide y lo prueba). Lo emite el servidor tras cada operación (API REST de Broadcast con la clave de
+    servicio; un fallo no estropea la operación). Sin clave —la versión falsa en local— no hay canal y las pantallas avisan a las demás pestañas del mismo navegador con
+    `BroadcastChannel`. El sonido corto y la barra «Hay una reserva nueva» son del navegador. El **push web** a móviles y el modo **sin conexión** son de la Fase J y no se
+    simulan.
+118. **Los avisos de la agenda, de momento solo en la campana** (Fase C, PRD §6.6 y §6.14). `reservation_new`, `reservation_group_pending` y el recordatorio de 2 h se emiten
+    a Propietario y Encargado (`reservations_notify_team`), con `p_send_email = false`: no se encola ni correo ni push, porque el canal «al momento» de Restavor agents
+    (PRD §9.4: correo y push web, saltándose la cola de dos veces al día) llega con los avisos a comensales (Fase F). Queda para esa fase el correo y el push web de estos tres
+    tipos. El recordatorio lo lanza `/api/agents/cron/pendientes` cada 15 minutos con `supabase/operaciones/agents-cron.sql`, que no se ha podido ejecutar aquí (sin
+    `pg_cron` ni `pg_net`): se comprueba la ruta y la función, no el cron.
+119. **Lo que toca la agenda y no se hace en la Fase C.** Avisos a comensales de «reserva modificada», «cancelada», «grupo aceptado/rechazado» (Fase F: la agenda solo deja
+    el evento); la barra «Pago pendiente, quedan N días» de Hoy (Fase E: necesita los cobros; sí sale la de Reservas en pausa); «Quién eres» con PIN y la tablet (Fase D);
+    encender y apagar el agente (Fase G: Hoy solo **lee** `agent_state` para su indicador); los pasos de Primer uso «Equipo y tablet» y «Agente de llamadas» (D y G: el paso lo
+    dice, no se simula); «Sin conexión · datos de las HH:MM» (Fase J).
+120. **Lo que cambió la revisión independiente de la Fase C** (migración 169 corregida en sitio, porque solo estaba aplicada en local). Una segunda revisión del diff contra el
+    PRD y CLAUDE.md no encontró bloqueantes pero sí dieciséis hallazgos, todos corregidos y cada uno con su test:
+    - **Orden de bloqueo único** (el más serio: 141 interbloqueos en 150 parejas de cancelaciones simultáneas). Siempre: clave de idempotencia → restaurante (compartido al
+      reservar o cambiar una reserva, **exclusivo** al guardar horarios) → día (uno por restaurante y fecha, de menor a mayor) → filas con `for update`, y solo después de
+      tener el día. Editar lee la fila sin bloquear, toma sus días y entonces la bloquea y vuelve a comprobar que no cambió de fecha. Quien tiene el día es el único que
+      recalcula las duplicadas de esa fecha. Así también desaparecen las duplicadas sin marcar con dos altas simultáneas en turnos distintos y las reservas que quedaban
+      en un turno recién desactivado. El script `agenda-concurrency-test.mjs` lo cubre con cuatro casos nuevos (5 a 8) que fallan contra la versión anterior.
+    - **«Reservas futuras» son las que aún no llegaron a su hora** (`starts_at > now()`), no «hoy en adelante»: una reserva de hoy ya servida no impide quitar un turno
+      (PRD §6.2). Para cerrar un día entero sigue valiendo el día.
+    - **La base de datos replica los topes del formulario** (nombre ≤ 120, personas 1–500, nota ≤ 300, correo con arroba, idioma, hora sin segundos) y no se fía de un
+      `NULL` en `p_force`, `p_source` ni `p_language` (con `NULL`, `not p_force` no es falso sino nulo y no protegía).
+    - **`open_reservation`, `dismiss_duplicate` y `mark_platform_cancel_done` comprueban el estado del servicio** como las otras seis: con Reservas cerrado solo el
+      Propietario entra, a descargar (§6.12).
+    - **Buscar**: `reservations_fold` descompone (NFD) y quita las marcas como `fold()` de `search.ts`, de modo que «joao» encuentra «João» y «dvorak» a «Dvořák» (la «ł»
+      no se descompone y queda como está en los dos lados); un `%` o un `_` en lo escrito es una letra, no un comodín; los resultados van de lo más cercano a hoy a lo más lejano.
+    - **Una reserva escrita a mano no hace sonar las demás pantallas**: se refrescan en silencio (`reason: "changed"`). «Hay una reserva nueva» con sonido es para las del
+      agente, la web y las plataformas (PRD §6.14) y lo emitirán las Fases G a I; hasta entonces ninguna pantalla lo emite sola. Al cambiar una reserva de día se refresca
+      también el día que dejó.
+    - En pausa manda la pausa (`service_paused`) aunque el día esté cerrado, en el dominio igual que en SQL. «Volver a Hoy» ya no calcula la fecha en UTC. «Revisar» con un
+      `#reserva-…` enseña todas las filas aunque la tablet recuerde un filtro, y el filtro dice cuántas filas oculta. La reserva de plataforma cancelada aquí sigue mostrando
+      «Cancélala también en X» en Hoy hasta pulsar «Hecho». Primer uso y Horarios guardan los identificadores que devuelve `save_reservation_shifts`, así que un segundo
+      «Guardar» actualiza los turnos nuevos en vez de crear otros.
 
-## Agente Menú Diario · Fase 0, reconocimiento (decisiones 112 a 115)
+## Fase D de Restavor agents · Equipo con PIN, tablet del local y soporte (03/10/2026)
 
-Se registran el 03/10/2026, tras el informe `agents/menu-diario/docs/RECONOCIMIENTO.md`. Las cuatro son de Bosco: contestó a la lista de «Qué necesito de ti para la
+Se registran el 03/10/2026, al construir la Fase D (EQU-01, EQU-02, EQU-03, SOP-01). La 122 la aprobó Bosco; la 126 queda **pendiente de Bosco**; las demás son
+decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+
+121. **Cómo actúa el Equipo desde la tablet** (migración 170). Un dispositivo no es un usuario de Supabase (PRD §3.3), así que sus peticiones entran por el servidor y por
+    **una sola puerta**, `reservation_device_act()` (solo `service_role`): valida el token del dispositivo, valida el PIN (o la prueba firmada de «Ajustes abiertos») y
+    llama a la MISMA función de la agenda de la Fase C, de modo que aforo, bloqueo e idempotencia son idénticos. Si el PIN es de un Propietario o Encargado la transacción
+    corre «como esa persona» (la sesión de la transacción pasa a su usuario mientras dura la función y se restaura); si es del Equipo, un ajuste local
+    (`restavor.device_staff`) que `reservations_actor_type()` convierte en `staff`, y `reservation_log_event()`, `reservation_audit()`, `book_reservation()` y
+    `dismiss_duplicate()` anotan por su identificador (`actor_staff_id`, `created_by_staff_id`, `dismissed_by_staff_id`). Con sesión de usuario ese ajuste no vale, y el Equipo no
+    puede cambiar ajustes ni saltándose la puerta. Las **lecturas** de la tablet van con la clave de servicio, acotadas por restaurante: `agentsDb()` (que se niega a servir
+    otro restaurante) y una prueba (`lecturas-acotadas.test.ts`) que exige el filtro en cada `.from()` que una tablet pueda ejecutar. Las dos lecturas que la base comprueba
+    por la sesión de quien llama (`reservation_people`, `reservation_history_log`) entran por la puerta como operaciones con rol mínimo de Encargado. La 170 también deja que
+    quien tiene abierta una sesión de soporte con segundo paso lea la configuración (no los datos de comensales) **del restaurante de su sesión**: la puerta de dos
+    argumentos `reservations_team_can_read(espacio, restaurante)` sustituye a la de espacio en las diecinueve políticas de lectura; la de un solo argumento queda como estaba
+    en la 161. Sin esto, alguien de la plataforma que no es miembro del espacio vería las reservas pero no los turnos, y Hoy no se pintaría.
+122. **El bloqueo de PIN crece (Bosco, 03/10/2026).** El PRD pide 5 PIN erróneos → 1 minuto. Con 4 cifras y solo eso, quien tenga la tablet probaría los 10.000 PIN en unas 33 horas.
+    Bosco pidió que crezca: la primera tanda de 5 fallos bloquea 1 minuto (como el PRD), la segunda 5, la tercera 30 y de la cuarta en adelante 2 horas; un PIN bueno lo reinicia y
+    a las 24 horas sin fallos se olvida. Los números exactos (5, 30 y 2 h) son de Claude, en `pinLockSeconds()` y en `reservation_pin_lock_seconds()`; una prueba comprueba que
+    coinciden. Cada bloqueo queda en la auditoría y sale en el Historial.
+123. **La tablet ofrece «Nueva reserva» y los botones de cambiar; el PIN se pide al pulsar guardar, y no hay selector de persona.** `PinTablet` dice «Para guardar: Nueva reserva · …»
+    (el PIN llega al guardar) y PRD §3.3 dice «cada acción que cambia algo pide ¿Quién eres? + PIN». La Fase B había escrito que la tablet sin PIN «no crea reservas» y no abría
+    «Nueva»; se corrigió: `canOffer()` ofrece en pantalla las acciones de cambiar una reserva a la tablet sin PIN (el servidor sigue sin dejarle hacer nada sin PIN) y se
+    actualizaron las dos comprobaciones de la Fase B que lo negaban (`agents-routes.test.ts`, `navigation-agents.test.ts`) y el e2e del armazón. La maqueta elige primero a la
+    persona y luego pide su PIN; como el PIN es único en el restaurante, **identifica solo** y no se ha puesto el selector (menos pulsaciones; si Bosco lo quiere, se añade).
+124. **«Ajustes con PIN».** El menú de la tablet sin PIN no lleva Ajustes (RN-APP-05); lleva «Ajustes con PIN», que abre un teclado. Solo vale el PIN de un Encargado o Propietario (el
+    del Equipo dice que no). Lo que abre es una cookie firmada con `AGENTS_PIN_SECRET` (2 minutos, con renovación por cada toque y por cada cosa que se guarda; la cuenta atrás se
+    ve en una barra con «Salir de Ajustes») y el servidor vuelve a preguntar a la base de datos, en cada pantalla, que esa persona siga siendo Encargado o Propietario. Desde la
+    tablet no se hace «Mi PIN», ni invitar, ni activar dispositivos (son de una cuenta); sí añadir, cambiar el PIN y quitar al Equipo y desactivar dispositivos.
+125. **Soporte de Reservas: dónde se abre y cómo se vuelve.** La pestaña «Reservas» de la ficha del restaurante es de la Fase E (RVR-01), así que «Abrir como soporte» está en dos sitios
+    que ya existen o son pequeños: la lista de `/espacios/<espacio>/reservas` (a quien lleva la marca) y `/administracion/reservas` (a la plataforma con `can_support`, con búsqueda);
+    la pestaña de la Fase E reutilizará el mismo botón. La sesión pide motivo (el texto vive en la sesión y lo ve el restaurante; **no se copia a `audit_log`**, que solo guarda su
+    longitud, porque puede nombrar a un comensal) y dura 30, 60 o 120 minutos (la base admite de 5 a 240). Una cookie recuerda de dónde venía para devolver allí al salir o al
+    caducar; solo acepta esas dos direcciones.
+126. **RESUELTA POR BOSCO el 03/10/2026 (ver la 131) · quién añade y quita Propietarios.** PRD §3.2 dice que el Propietario «añade y quita Propietarios y Encargados» y EQU-01 pide «invitar Propietario o Encargado
+    por email». Pero `assert_can_manage_access()` (RN-EST-17, decisión 51) deja a un Propietario del restaurante tocar a los Editores y **no a otro Propietario**: «al Propietario solo
+    lo toca el equipo». No se ha cambiado Restavor web. Hoy: un Propietario invita a **Encargados** (Editor con «Gestionar Reservas») y los quita de Reservas; invitar a otro
+    **Propietario** funciona si lo manda el equipo del espacio y a un Propietario del restaurante le da el aviso «solo el equipo»; los Propietarios no se quitan desde Equipo (se hace en
+    «Usuarios y accesos»). Tampoco hay «no se puede quitar al último Propietario»: `revoke_establishment_access()` no lo comprueba (es de Restavor web). Bosco decide si cambia RN-EST-17. (Decidió que sí: decisión 131.)
+127. **El segundo paso de prueba** (cumple la 106). `soporte@cuotly.test` (administrador del espacio `demo`, marcado como soporte) lleva un factor TOTP verificado con un secreto fijo
+    (`RESTAVORSOPORTEPRUEBASSEGUNDOPAS`, en `docs/agents/PRUEBAS.md`) sembrado en `auth.mfa_factors` (con la columna `secret` si existe); Elena e `info@restavor.com` no llevan ninguno
+    (la 106 sigue en pie). `supabase/config.toml` activa el TOTP (`enroll_enabled` y `verify_enabled`) para `supabase start`, y la pasarela de desarrollo (`scripts/supabase-local`)
+    entiende `challenge` y `verify` para poder recorrerlo en local. Si el Supabase alojado no acepta un secreto sembrado, se activa a mano desde «Mi cuenta» › Seguridad.
+128. **`/` y `/agents` con la cookie de un dispositivo.** La tablet se salta el Inicio de Restavor app y abre siempre Reservas › Hoy: la raíz y `/agents` la llevan ahí, y `proxy.ts` no
+    la manda a `/sesion-caducada` ni a `/cuenta/verificar` en `/` ni en `/agents/…` aunque la sesión personal haya caducado (solo mira que la cookie exista: es una comodidad, el
+    control es el servidor). Las rutas `/r`, `/widget`, `/reservar.js` y `/c` quedan fuera de las comprobaciones de sesión desde ya (PRD §3.3), aunque no existan hasta la Fase H.
+129. **«Abrir» una ficha sin PIN se anota como el sistema.** El PRD dice que sin PIN se ven las fichas, y abrir una quita «Nueva»: es la única escritura que la tablet hace sin PIN, y se
+    anota con actor `system` («Sistema»), no a nombre de nadie.
+130. **Lo que cambió la revisión independiente de la Fase D** (03/10/2026). Un subagente leyó el diff contra el PRD §3 y CLAUDE.md; seis hallazgos, todos comprobados y
+    corregidos con su test (suite 92, los e2e y `device-concurrency-test.mjs`):
+    - **La sesión de soporte es de un restaurante, no de un espacio.** La primera versión dejaba que la sesión abierta en un restaurante diera lectura de configuración y los
+      poderes del «equipo del espacio» (añadir Equipo, revocar tablets, cambiar ajustes) sobre TODOS los restaurantes de ese espacio, y no comprobaba que la persona siguiera
+      marcada. Ahora la lectura y la gestión pasan por `reservations_can_read_diner_data(restaurante)` (sesión viva, segundo paso y marca vigente) y por la puerta de dos argumentos.
+    - **La tablet no conserva la sesión personal.** Activarla cierra la sesión de quien la activó en ese navegador (PRD §3.3, «se ignora la sesión personal»); sin ella, Restavor web
+      y Mi cuenta llevan a la agenda de la tablet, y pedir otro restaurante también. Además, «Mi PIN», invitar y quitar a un Encargado (las tres de cuenta) se niegan en el servidor
+      si hay un dispositivo activo (ocultar el botón no es control de acceso).
+    - Un restaurante **eliminado definitivamente** ya no se lee ni se abre como soporte (RN-ADM-24).
+    - **«Ese PIN ya lo usa otra persona» no se puede preguntar sin límite**: cada topetazo deja una fila de auditoría (`reservations.pin_collision`, sin el PIN) y con **cinco en 24 horas**
+      esa persona no puede poner ni probar más PIN en ese restaurante hasta pasado el día (la respuesta ya no distingue). Y un restaurante no pasa de **veinte dispositivos activos**.
+      **Los dos números (5 y 20) son míos, no del PRD; Bosco los confirmó el 03/10/2026.**
+    - El Equipo con PIN corre sin usuario y el disparador de «espacio archivado = solo lectura» lo dejaba pasar: la puerta de la tablet lo cierra.
+    - Lo que hace el soporte dentro de su sesión queda con el identificador de la sesión en todos los apuntes de auditoría (no solo en los de la agenda), y el Historial lo enseña como
+      «Restavor (soporte)».
+    **Contradicción corregida:** la línea que esta fase puso en `CLAUDE.md` decía que el soporte de Reservas «es de solo lectura»; el PRD §3.4 le da escritura con la etiqueta `restavor_support`
+    y así está construido. Se corrigió la línea. **Queda descrito, sin tocar:** la cookie «Ajustes abiertos» no va ligada a un dispositivo (vale en cualquier tablet del mismo restaurante 2 minutos,
+    es `httpOnly` y está firmada), y con Ajustes abiertos la agenda corre a nombre de quien los abrió sin pedir PIN otra vez (decisión 124).
+131. **El Propietario añade y quita Propietarios y Encargados (Bosco, 03/10/2026; migración 171).** Resuelve la 126: Bosco decidió que **el Propietario del restaurante es el único (con el
+    equipo del espacio, que crea el panel) que puede nombrar y quitar a Propietarios y a Encargados**; un Encargado no, ni un Editor con «Usuarios y accesos». RN-EST-17 se amplía en
+    `docs/PRD.md`: `assert_can_manage_access()` deja que un Propietario de ese restaurante toque a otro Propietario (la 107 solo lo dejaba al equipo). Dos consecuencias que no estaban
+    decididas y están hechas de la forma más prudente: (1) **quien no es del equipo no puede dejar el restaurante sin Propietario**, ni quitándose a sí mismo (el equipo sí, para poder
+    arreglarlo); (2) **quitar a un Propietario le retira el acceso a todo el restaurante, también en Restavor web**, porque un Propietario no tiene un «solo en Reservas» (el Encargado sí);
+    la pantalla lo avisa antes. Los Propietarios que vienen del grupo (`global_owner`) no se quitan desde Reservas: se gestionan en Restavor web. «Administradores» lo he entendido como
+    **Encargados** (los administradores del espacio son el equipo de Restavor y ya podían). Invitar a un Propietario sin cuenta sigue necesitando la aprobación del equipo (RN-PAN-14).
+
+
+## Fase E de Restavor agents · Contratación, cobro y ciclo de vida (E1, 03/10/2026)
+
+Se registran el 03/10/2026, al construir la primera tanda de la Fase E (COB-01 y COB-02). **Bosco decidió** cuatro cosas al aprobar el plan: dos tandas con parada entre ellas (E1 =
+aprobar, cobrar y ciclo de vida; E2 = saldo, Stripe, lado de Restavor y transferir), los datos de pago en el espacio (132), los dos correos al momento (137) y que «Transferir también
+Reservas» (decisión 100) entra en la Fase E, en E2. Las demás son decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+
+132. **Los datos de pago de Reservas viven en el espacio** (Bosco; migración 173). Columnas `spaces.payment_iban`, `payment_bizum_phone` y `payment_note`, que cambia solo el propietario del
+    espacio con `set_space_payment_details()` (el IBAN **no** se copia a `audit_log`: solo si estaba puesto). «A nombre de» es la razón social del espacio (`spaces.legal_name`). El
+    restaurante no lee la fila del espacio (RLS): le llegan por `reservation_payment_info()`, que además calcula el concepto (`Reservas <restaurante> <AAAA-MM>`). Hasta que se rellenen, la
+    pantalla y el correo dicen que faltan los datos de pago: **nunca se inventa un IBAN**. Los de la demostración son de ejemplo y lo dicen.
+133. **«Vence el <fecha>» (el aviso de 5 días)** = cinco días antes del `due_at` del cobro de Reservas con deuda, una vez por cobro (clave `reservations_payment_due:<cobro>`). El cobro del
+    mes siguiente no existe hasta que empieza su periodo, así que no hay otra cosa a la que colgarlo. Solo a los Propietarios y solo con Reservas `active`.
+134. **El gancho de reactivación es un disparador sobre `financial_entries`, no una edición de `register_payment()`** (migración 173; el PRD §4.4 decía «gancho en `register_payment()`»).
+    Cualquier pago o condonación de un cobro de Reservas llama a `reservations_after_payment()`: `approved_pending_payment → active` al saldarse el primer cobro; `past_due`/`paused →
+    active` solo si **no queda ningún cobro de Reservas vencido con deuda** (un pago parcial no reactiva); en `ending` y `closed` salda la deuda pero no cambia el estado. Sobrevive a
+    cualquier redefinición futura de `register_payment()` o `waive_charge()` (que el repositorio reescribe enteras cada vez que crecen). **Fin del periodo pagado** (`ending_at`) = `period_end`
+    del último cobro de Reservas saldado entero, nunca antes de ahora; sin cobro saldado, se cierra en el siguiente barrido.
+135. **Cierre y reactivación** (migración 174). Ninguna función cancelaba una suscripción: `reservations_close_internal()` la cancela al cerrar. **Reactivar** una cerrada (solo Restavor, dentro
+    de los 30 días y antes del borrado) crea una suscripción **nueva** con la misma guarda de aprobación, copia la aceptación de condiciones anterior y emite un cobro nuevo; la deuda antigua
+    se mantiene (por eso el barrido puede devolverla a `past_due`). Después del borrado hace falta una solicitud nueva, que reutiliza la fila de `reservation_settings` (una sola por restaurante).
+    El barrido (`reservations_lifecycle_sweep(p_now)`) cruza `active → past_due → paused` en una sola pasada si ya pasó el margen, devuelve los errores por restaurante en vez de tragarlos y recibe
+    la hora como parámetro para que las suites simulen fechas.
+136. **La pestaña «Reservas» de la ficha del restaurante (RVR-01) será una subruta** `restaurantes/[id]/reservas`, no una sexta pestaña: la ficha tiene exactamente cinco, con dos tests que lo
+    exigen (`tabs.test.ts` y `tabs-movil.test.ts`, que fija `grid-cols-5` en móvil). Es de E2. Reversible.
+137. **Dos correos van al momento; el resto, en las dos tandas** (Bosco; decisión 99 precisada). «Aprobado: datos para pagar» y «Reservas está en pausa» salen en el acto con
+    `claim_email_deliveries_for_keys()` (gemela de la del push) y `sendEmailNow()`; el resto (recibida, rechazada, activada, vence, pago pendiente, baja, descarga) por la cola de las 07:00 y 19:00
+    UTC. **Los push, siempre al momento.** Si Resend no está configurado no se reclama nada (no se gastan intentos): el correo espera su tanda. El redactor
+    (`services/agents/lifecycle-emails.ts`) lleva el texto de cada tipo en `es.agents.lifecycleEmail`; «Aprobado» lleva importe, IBAN, razón social, Bizum, concepto y vencimiento.
+138. **Stripe, sin dependencia** (E2): adaptador propio con `fetch` y la firma comprobada con `node:crypto`, con transporte inyectable. Se decide al construir SAL-02.
+139. **Lo que NO se hace en la Fase E y queda anotado.** (a) La tarea diaria de las 03:00 (anonimizar a los 24 meses, `reservation_monthly_stats`, vaciar la idempotencia): no está en los criterios
+    de la fase; el cierre a los 30 días sí está. (b) «Pruebas» y los incidentes del espacio (dependen de las Fases F y G). (c) La configuración de horarios, equipo, plataformas y clave del agente
+    dentro de la ficha de Restavor (dependen de G, H e I). (d) **Pagos y facturas de Restavor web sigue listando las mensualidades de Reservas** de un restaurante que tenga también panel web
+    (PRD §12.3 pide que no salgan ahí): filtrar esas listas del lado del cliente es una tarea aparte; no afecta a ningún estado ni barrido (decisión 91).
+140. **El Excel de las reservas se escribe sin librería** (`services/agents/xlsx.ts`, zip sin comprimir; abierto y comprobado con una librería de lectura) y **la ruta `exportar` no es una pantalla**,
+    así que no está en `AGENTS_PAGES` (los tests que recorren esa lista la darían por una página): comprueba por su cuenta `export_all_reservations` en cualquier estado. **Descargar datos
+    personales deja huella** (`audit_reservations_export()`, acción `reservations.exported`: quién y cuántas filas, nunca los datos) y sin la huella no se entrega el archivo.
+141. **Las exclusiones de D-D son más que las del PRD.** Además de `dunning_sweep`, la reactivación y los recordatorios, se excluyen los cobros de Reservas de `establishment_has_overdue_debt()` y su
+    `_internal` (que usan la transferencia y el cambio de estado de un restaurante), de `establishments_with_nonpayment()` (el panel de impagos de Restavor web), de `my_client_attention()` (la
+    mensualidad y las condiciones de Reservas se atienden en Restavor agents) y `run_monthly_charges()` no emite mensualidad a una Reservas dada de baja o cerrada. Cada una recreada entera
+    desde su última definición viva (migración 172).
+142. **La revisión independiente de E1 encontró tres defectos graves, cuatro medios y varios menores; todo lo real está corregido en la migración 175** (las 172 a 174 ya estaban subidas, así que no se
+    editaron). (1) **Revisar el servicio Reservas dejaba de cobrar**: la guarda de la migración 156 rechazaba el cambio de versión que hace `apply_due_revision_internal()` y `run_monthly_charges()` se tragaba
+    el error; ahora la guarda solo impide *entrar* en Reservas, no pasar de una versión a otra. (2) **El Encargado leía datos de comensales con Reservas cerrada** (PRD §6.12, «solo el Propietario entra»):
+    `reservations_can_read()` ya no le deja con el servicio `closed`; el Propietario sí, para descargar. (3) **Un trabajador asignado podía registrar un pago de Reservas y activar el servicio** (PRD §3.2: solo
+    Restavor): el disparador del pago exige `manage_clients` cuando hay una sesión de persona (el servidor, sin sesión, como la recarga de E2, no lo necesita). (4) **Reservas se activaba sin condiciones
+    aceptadas** (PRD §4.4 paso 4, RN-DAT-07): con el cobro saldado y sin aceptación queda en `approved_pending_payment` y se activa en cuanto el Propietario acepta (`accept_reservation_terms()`).
+    (5) El correo «Aprobado» (dinero) podía salir dos veces en un doble clic: `claim_email_deliveries_for_keys()` ahora arrienda la entrega cinco minutos. (6) El barrido ya no anuncia cambios que su propio
+    bloque deshizo. (7) «Anular la baja» con deuda vencida vuelve a `past_due` o `paused`, no a `active`. (8) El motivo interno de un cierre queda en `audit_log.reason` y no en el evento que lee el Propietario.
+    (9) El IBAN se valida con el dígito de control (`iban_is_valid()`). Además, el correo que sale por la cola de dos tandas (que no lee los datos de pago) ya no dice «sin configurar»: remite a la cuenta, y
+    reactivar una cerrada saca su «Aprobado» al momento como el primero.
+143. **Lo que la revisión señaló y se deja como está, anotado.** (a) Un restaurante aprobado que **nunca paga** sigue recibiendo mensualidades (`run_monthly_charges()` solo salta `ending` y `closed`) y no hay
+    salida de `approved_pending_payment` salvo condonar el cobro (que activa Reservas): hace falta una regla de «abandono» de Bosco (cuántos días, qué pasa con los cobros); no se inventa. (b) Pedir la baja
+    desde `paused` con un periodo pagado por delante deja `ending` en marcha hasta `ending_at`: se pagó. (c) Las claves de aviso (`reservations_paused:<restaurante>:<vencimiento>`) agrupan una pausa que
+    se repite por el mismo vencimiento tras revertir un pago: el segundo aviso no sale al momento. (d) «Vence el…» del correo usa la zona de Madrid y no la del espacio. (e) `reservations_api_idempotency`
+    (sin uso todavía) no se anonimiza. (f) Tras reactivar una cerrada, `reservation_payment_info()` enseña la deuda más antigua, no el cobro nuevo. (g) Cambiar el IBAN no pide `aal2` ni avisa a nadie: la
+    auditoría dice que cambió, no de qué a qué (el IBAN no se copia a la auditoría, decisión 132).
+
+## Fase E de Restavor agents · El saldo, las recargas y el lado de Restavor (E2, 03/10/2026)
+
+Se registran el 03/10/2026, al construir la segunda tanda de la Fase E (SAL-01, SAL-02 y RVR-01). **Bosco decidió** que el pago y los datos de pago se quedan «Próximamente»: se construye todo, pero no se
+activa hasta que él dé los datos (144). Las demás son decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+
+144. **Pago y datos de pago «Próximamente» hasta que Bosco los dé** (Bosco: *«El pago y los datos se queda como próximamente, constrúyelo pero no se activa hasta que te dé los datos»*). Hay dos puertas, y
+    ninguna se abre sola por tocar código: **(a) los datos de pago del espacio** (decisión 132): sin IBAN ni Bizum cargados, `approve_reservation_request()` y `reactivate_closed_reservations()` se niegan («Antes
+    de aprobar hay que cargar los datos de pago del espacio»), el botón Aprobar sale parado diciendo por qué y la pantalla del restaurante dice «Próximamente: los datos para pagar»; así ningún cobro corre hacia
+    la pausa sin que el restaurante pueda pagarlo. **(b) Stripe**: sin `STRIPE_SECRET_KEY` **y** `STRIPE_WEBHOOK_SECRET` (una sin la otra dejaría dinero cobrado sin apuntar) no hay botón de pago, la acción no
+    llama a Stripe y el restaurante ve «Próximamente» en Recargar; Restavor sigue pudiendo registrar la recarga a mano. Se abren cuando Bosco carga el IBAN o el Bizum en «Datos de pago de Reservas» y cuando
+    pone las dos variables en Vercel. **Variables de Vercel:** las de Stripe de pruebas (`sk_test_…`, `whsec_…`) solo en **Preview** (rama `agents`); en Production, nada hasta que Bosco lo pida, y entonces las
+    reales (`sk_live_…`), nunca las mismas; las de Supabase de Preview apuntan a *Restavor pruebas* y **no** se copian a Production (decisión de la Fase 0).
+145. **El libro del saldo es inmutable de verdad, y el saldo avisa una vez por cruce** (migración 176). Hasta ahora lo era «por costumbre» (un `revoke` que no frena a la clave de servicio): un disparador impide
+    editar y borrar un apunte (RN-AGT-01), y solo deja pasar el borrado en cascada de un espacio o restaurante enteros (que la aplicación nunca hace: se archiva) y el cambio de `space_id` de una transferencia,
+    declarado con `restavor.ledger_move` y sin tocar nada más. Los avisos de saldo bajo (umbral de 5 €, el de `low_balance_threshold_cents`) y de saldo agotado salen de un disparador sobre el libro, bloquean la
+    fila de ajustes del restaurante para que dos llamadas a la vez no avisen dos veces, se vuelven a armar al recuperarse y llegan al Propietario y al Encargado. **No son obligatorios** (se pueden silenciar,
+    como los demás avisos): si se prefiere que el de «sin saldo» no se pueda silenciar, es una línea en `notification_event_is_mandatory()`.
+146. **Recargar con tarjeta** (cierra la 138). Adaptador de Stripe **sin dependencia** (`fetch` y firma con `node:crypto`, tolerancia de 5 minutos, transporte inyectable). La Checkout Session lleva dos líneas
+    (neto e IVA, la suma es lo que se paga) y la recarga como clave de idempotencia. El IVA es el de `spaces.tax_rate_percent` y se calcula en la base de datos (`create_agent_topup()`); el apunte es por el importe
+    **sin IVA**. Mínimo 10 €; **sin máximo** (no hay uno en el PRD y no se inventa; Stripe pone el suyo). El webhook contesta siempre 2xx salvo un fallo de la base de datos (500, para que Stripe reintente: la
+    función es idempotente por sesión): un pago que no coincide con lo pedido no se apunta y deja un incidente de pago para Restavor; uno que llega tras caducar la recarga sí se apunta (el dinero llegó); uno
+    asíncrono sin cobrar todavía espera. El **recibo** es un aviso (push al momento, correo en la tanda de siempre: decisión 137) y no una factura (el bloque legal sigue pendiente).
+147. **Lado de Restavor de E2** (RVR-01). La ficha de Reservas es una subruta (136) con un acceso destacado en la ficha; enseña estado e historial, saldo, el mes, movimientos, incidentes y los tres formularios del dinero
+    (registrar recarga, ajuste y devolver el saldo; estos dos con `aal2`, comprobado en la base de datos). Nunca muestra datos de comensales: de las reservas solo habría cifras, y **no se enseñan** porque hace
+    falta el resumen mensual de la tarea de las 03:00 (139): la pantalla lo dice en vez de inventarlas. Administración › Reservas lleva el interruptor `reservations_enabled` por espacio, el estado de Stripe (listo o
+    no y en qué modo, **nunca la clave**) y las tarifas de mensajería (una tarifa nueva es una fila nueva; el historial no se reescribe). El e2e de Administración no existe: `info@restavor.com` no tiene segundo paso
+    sembrado; lo cubren la suite SQL y la prueba a mano de `docs/agents/PRUEBAS.md`.
+148. **«Transferir también Reservas» (decisión 100) NO se ha construido y espera a Bosco.** Mover Reservas a otro espacio arrastra cosas que son dinero y reglas de transferencia que el PRD no resuelve: ¿qué pasa con la
+    suscripción a Reservas y sus cobros (que el origen cobra y por RN-TRA-04 se quedan en él), con el saldo del restaurante (millonésimas que el origen debe), y quién presta Reservas en el destino (que tiene que ofrecerla
+    y tener su servicio)? Lo único que queda hecho de su lado es la puerta del libro (`restavor.ledger_move`, decisión 145), que no cambia nada por sí sola. Las opciones y la pregunta están en el informe de la tanda.
+
+## Agente Menú Diario · Fase 0, reconocimiento (decisiones 149 a 153)
+
+Se registran el 03/10/2026, tras el informe `agents/menu-diario/docs/RECONOCIMIENTO.md`. **Renumeradas el 03/10/2026** al unir la rama con `agents` (entonces eran la 112 a 116; `agents` ya usaba esos números para Reservas): la 112 es hoy la 149, la 113 la 150, la 114 la 151, la 115 la 152 y la 116 la 153. Las cuatro son de Bosco: contestó a la lista de «Qué necesito de ti para la
 Fase 1» de ese informe.
 
-112. **Se construye el Agente Menú Diario** (Bosco, 03/10/2026; resuelve la contradicción C1 del informe). `CLAUDE.md` y `docs/PRD.md` (RN-CRE-25) decían que el agente de IA
+149. **Se construye el Agente Menú Diario** (Bosco, 03/10/2026; resuelve la contradicción C1 del informe). `CLAUDE.md` y `docs/PRD.md` (RN-CRE-25) decían que el agente de IA
     que publica el menú «no existe todavía y no se simula». Bosco decide construirlo con el PRD de `agents/menu-diario/PRD.md`, **por fases (una por sesión), solo contra
     "Restavor pruebas" y la web de pruebas hasta la Fase 7** (que exige su OK), solo para menús `daily` de los restaurantes que él active, y sin simularlo: lo que haga es
     real. Para el resto de menús y de restaurantes no cambia nada: publica el equipo a mano. Cierra el «no se construye todavía» de RN-CRE-25; `CLAUDE.md` lleva ya la
     excepción escrita. Cada fase empieza con plan y espera su OK (PRD §0).
-113. **Cuenta propia del agente en LandingSite** (Bosco, 03/10/2026; sustituye a D2 y D3 del PRD del agente en lo de entrar con Google). Bosco crea **a mano** una cuenta de
+150. **Cuenta propia del agente en LandingSite** (Bosco, 03/10/2026; sustituye a D2 y D3 del PRD del agente en lo de entrar con Google). Bosco crea **a mano** una cuenta de
     LandingSite con email y contraseña (sin Google) para que el agente entre con ella y edite. Dos cosas que quedan escritas:
     (1) **Las credenciales no pasan nunca por el chat**: se guardan como secretos del entorno de ejecución. (2) **Esto no resuelve el riesgo de las condiciones de uso de
     LandingSite**: su cláusula 6(ix) prohíbe a software, agentes o scripts hacer peticiones automatizadas al servicio (informe §4.1); no hay autorización de LandingSite y
     Bosco decide seguir sabiéndolo. Lo que sí hace una cuenta propia es que, si la suspendieran, no se pierde la cuenta de Bosco. **Pendiente de comprobar** (preguntas de PRD §9.3):
     que LandingSite deje a esa cuenta editar el sitio de Restavor (invitar como colaborador) y qué ve cada cuenta. El plan B del PRD (P3, recuadro incrustado) sigue en pie.
-114. **El agente sale del reparto de trabajos y tareas** (Bosco, 03/10/2026: «ok» a la opción (ii) del informe, §2.8). Un trabajador sin especialidades queda fuera del reparto de
+151. **El agente sale del reparto de trabajos y tareas** (Bosco, 03/10/2026: «ok» a la opción (ii) del informe, §2.8). Un trabajador sin especialidades queda fuera del reparto de
     **menús**, pero entra en el de trabajos y tareas (`is_eligible_job_candidate`, `list_task_candidates`) y, al estar autorizado en un restaurante, ve sus finanzas e informes
     (RN-REP-31). Bosco autoriza una migración nueva que lo excluya, **excepción puntual a «no modificar funciones existentes» del PRD del agente (§12)**. Se propone el
     diseño exacto (qué marca lleva el miembro y qué funciones toca) en la Fase 2 y **se aprueba antes de aplicarlo**; hasta entonces no se escribe ninguna migración.
-115. **Bar Demo, restaurante de pruebas del agente** (Bosco, 03/10/2026: «doy mi permiso» y, ante el bloqueo de Menú Diario, **opción A**; Magariños **no** se usa porque apunta a una web real).
+152. **Bar Demo, restaurante de pruebas del agente** (Bosco, 03/10/2026: «doy mi permiso» y, ante el bloqueo de Menú Diario, **opción A**; Magariños **no** se usa porque apunta a una web real).
     Permiso para escribir en "Restavor pruebas", solo en Bar Demo: plataforma web, dirección, plantilla de publicar, un menú diario y, con la opción A, **contratar Menú Diario con la función
     de la app y registrar un pago de demostración**. **Hecho el 03/10/2026**, por las funciones de la app y como `owner@cuotly.test`: `web_platform = landing_site` y
     `website_url = https://www.restavor.com/pruebas-agente-menu`; servicio Menú Diario contratado (permanencia de 3 meses y un cobro de 229 € + IVA = 277,09 €, precio antiguo del sembrado demo, no
     corregido); pago de demostración de ese cobro; plantilla «Clásica» de publicar; y un menú `daily` del 04/10/2026 en borrador con una versión. Siete apuntes de auditoría y ningún aviso.
     Script reproducible: `agents/menu-diario/sql/bar-demo-pruebas.sql`. **Un resembrado del espacio demo lo deshace** (Bar Demo conserva su id): hay que relanzar el script a mano, o llevarlo a
     `supabase/seed/` si Bosco lo decide.
-116. **Cómo entra el robot a LandingSite: con contraseña** (Bosco, 03/10/2026, al cerrar la Fase 0; concreta la 113). La cuenta del agente en LandingSite (creada con Google) ya tiene
+153. **Cómo entra el robot a LandingSite: con contraseña** (Bosco, 03/10/2026, al cerrar la Fase 0; concreta la 150). La cuenta del agente en LandingSite (creada con Google) ya tiene
     **contraseña de LandingSite** («Set password» de Manage account → Security), puesta por Bosco. El robot entra con correo y contraseña, no con Google (que bloquea los navegadores
     controlados por programa) ni con código de correo. Las credenciales irán como secretos de GitHub Actions (`LANDINGSITE_EMAIL`, `LANDINGSITE_PASSWORD`, PRD §11), nunca por el chat.
     **Sin probar todavía**: falta comprobar que el inicio de sesión con contraseña funciona desde la nube (la prueba del 03/10 se hizo por código de correo) y cuánto dura la sesión. Se prueba en
     la Fase 1. El chat de IA de LandingSite queda permitido **solo para subir el menú** (cambio de PRD 9.2 del 03/10/2026); el robot debe comprobar que el cambio es de una sola línea antes de publicar.
+
+## Agente Menú Diario · Fase 1, plan (decisiones 154 a 156)
+
+Se registran el 03/10/2026, tras el plan de la Fase 1 (`agents/menu-diario/docs/PLAN-FASE-1.md`). Son de Bosco: contestó a las decisiones D1 a D5 del plan.
+
+154. **Cuándo publica el agente** (Bosco, 03/10/2026; **sustituye a RA-01 del PRD del agente, §7.1**). Antes: un menú para otro día se publicaba a las 17:00 de la víspera.
+    Ahora, en la zona horaria del espacio:
+    (1) Menú para **hoy**: se sube **en cuanto llega la solicitud**, cada vez. Si el restaurante manda otro para hoy, el agente sube el nuevo y sustituye al anterior
+    (ejemplo de Bosco: uno a las 8:00 y otro a las 9:00 → a las 9:00 sube el nuevo).
+    (2) Menú para **otro día** (mañana o más adelante): **no se sube antes de su día**. Se sube a las **07:00 del día del menú** (configurable) con la última versión enviada hasta
+    entonces. Si llega ya pasadas las 07:00 de ese día, cuenta como «hoy».
+    (3) Menú de un día pasado: no se sube; error «La fecha del menú ya ha pasado».
+    Desaparecen la «hora de víspera» (`HORA_VISPERA`, 17:00) y el «si esa hora ya ha pasado, ahora»; los sustituye una hora de publicación de los menús de otro día, 07:00 por defecto.
+    **La regla de orden** (una tarea no se publica si el mismo restaurante tiene otra con día posterior ya publicada o en curso) **se conserva como red de seguridad**: casi no se usa
+    porque ya no se publica nada antes de su día. «En ese mismo instante» se entiende así: el agente se pone a trabajar al instante y la web cambia unos minutos después
+    (estimación de 3 a 5 min: LandingSite tarda unos 35 s en cambiar la imagen y unos 50 s en publicar, y la web pública cachea 60 s; el PRD pedía como máximo 30).
+    **Consecuencias anotadas:** (a) el límite de aprobación del PRD (`menu_publish_by_at − 60 min`) cae ahora en las 07:00, la misma hora de publicar: se revisa en la Fase 4;
+    (b) **sigue en pie el modo aprobación de las primeras semanas** (D6 del PRD) hasta que Bosco diga otra cosa: con él, el menú espera el «Aprobar» aunque su hora ya haya llegado.
+155. **Cuentas, repositorio y rama** (Bosco, 03/10/2026; D1 a D4 del plan).
+    (1) El agente usa en Restavor web el correo **menu@restavor.com** (sustituye al ejemplo `agente-menu@…` del PRD); su buzón está conectado con el de info@restavor.com.
+    (2) En LandingSite el agente usa su propia cuenta (decisión 150), ya creada. **Su correo y su contraseña van como secretos (`LANDINGSITE_EMAIL`, `LANDINGSITE_PASSWORD`), nunca por el chat
+    ni en el repositorio** (corrige el «te paso la contraseña» de Bosco: se guarda como secreto antes de que el agente inicie sesión).
+    (3) **El repositorio pasa a privado** (D2-A) antes de crear ningún workflow con credenciales. Lo cambia Bosco en GitHub (Settings → General → Danger Zone → Change visibility):
+    no hay herramienta para hacerlo desde la sesión. El repositorio es de una cuenta personal, así que Vercel debería seguir desplegando (no comprobado).
+    (4) **Rama (D1-A):** se une `agents` en la rama de trabajo del agente y sus decisiones se renumeran (149 a 153, ver arriba).
+    (5) **Comprobación de sesión (D3-A):** la lanza una tarea programada de esta plataforma con `workflow_dispatch` desde la rama de trabajo, sin tocar la rama por defecto.
+156. **El agente siempre sabe qué día y hora es** (Bosco, 03/10/2026: «el agente siempre tiene que saber en qué día, hora, mes y año está»). Cada ejecución lee la hora del ordenador en UTC,
+    la pasa a la zona del espacio (Europe/Madrid) y la deja escrita en su registro y en cada decisión («Hoy es sábado 3 de octubre de 2026, 18:42, hora de Madrid»). La contrasta con la
+    hora que devuelve Supabase en cada respuesta: **si difieren más de 5 minutos** (cifra propuesta por Claude y aceptada por Bosco; configurable) **se para y avisa** en lugar de decidir con
+    un reloj dudoso. La IA no decide la fecha: en el rescate (Fase 6) se le pasa la fecha y la hora en el mensaje. El reloj simulado `--ahora` existe solo en la prueba en seco, con cartel
+    «RELOJ SIMULADO», y no puede usarse en una publicación.

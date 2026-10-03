@@ -2116,6 +2116,7 @@ export type Database = {
           establishment_id: string;
           id: string;
           reason: string | null;
+          removed_at: string | null;
           space_id: string;
         };
         Insert: never;
@@ -2274,6 +2275,7 @@ export type Database = {
       reservation_staff: {
         Row: {
           active: boolean;
+          anonymized_at: string | null;
           created_at: string;
           deactivated_at: string | null;
           establishment_id: string;
@@ -7047,6 +7049,7 @@ export type Database = {
           large_group_threshold: number;
           local_phone_e164: string | null;
           logo_file_id: string | null;
+          balance_empty_notified_at: string | null;
           low_balance_notified_at: string | null;
           low_balance_threshold_cents: number;
           max_advance_days: number;
@@ -7805,6 +7808,9 @@ export type Database = {
       spaces: {
         Row: {
           reservations_enabled: boolean;
+          payment_iban: string | null;
+          payment_bizum_phone: string | null;
+          payment_note: string | null;
           address: string | null;
           created_at: string;
           created_by: string;
@@ -7829,6 +7835,9 @@ export type Database = {
         };
         Insert: {
           reservations_enabled?: boolean;
+          payment_iban?: string | null;
+          payment_bizum_phone?: string | null;
+          payment_note?: string | null;
           address?: string | null;
           created_at?: string;
           created_by: string;
@@ -7853,6 +7862,9 @@ export type Database = {
         };
         Update: {
           reservations_enabled?: boolean;
+          payment_iban?: string | null;
+          payment_bizum_phone?: string | null;
+          payment_note?: string | null;
           address?: string | null;
           created_at?: string;
           created_by?: string;
@@ -12270,6 +12282,214 @@ export type Database = {
         }[];
       };
       reservations_my_role: { Args: { p_establishment_id: string }; Returns: string };
+      // Fase E (migraciones 172 a 174) · contratación, cobro y ciclo de vida de Reservas.
+      approve_reservation_request: { Args: { p_request_id: string }; Returns: string };
+      reject_reservation_request: { Args: { p_request_id: string; p_reason: string }; Returns: undefined };
+      accept_reservation_terms: { Args: { p_establishment_id: string }; Returns: string };
+      reservation_payment_info: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          base_cents: number;
+          bizum_phone: string | null;
+          charge_id: string;
+          concept: string;
+          due_at: string;
+          iban: string | null;
+          outstanding_cents: number;
+          payee_name: string | null;
+          payment_note: string | null;
+          period_end: string;
+          period_start: string;
+          reference: string;
+          tax_cents: number;
+          total_cents: number;
+        }[];
+      };
+      reservation_plan_charges: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          charge_id: string;
+          concept: string;
+          due_at: string;
+          issued_at: string;
+          outstanding_cents: number;
+          period_end: string;
+          period_start: string;
+          status: string;
+          total_cents: number;
+        }[];
+      };
+      audit_reservations_export: { Args: { p_establishment_id: string; p_rows: number }; Returns: undefined };
+      request_reservations_cancellation: { Args: { p_establishment_id: string }; Returns: string };
+      undo_reservations_cancellation: { Args: { p_establishment_id: string }; Returns: undefined };
+      close_reservations_service: { Args: { p_establishment_id: string; p_reason: string }; Returns: undefined };
+      reactivate_closed_reservations: { Args: { p_establishment_id: string }; Returns: string };
+      set_space_payment_details: {
+        Args: { p_bizum_phone: string | null; p_iban: string | null; p_note: string | null; p_space_id: string };
+        Returns: undefined;
+      };
+      reservations_plan_actor: { Args: { p_establishment_id: string }; Returns: string };
+      // Fase E2 (migración 176) · el saldo. `complete_agent_topup`, `attach_topup_session` y `expire_agent_topup` son solo de
+      // `service_role` (el webhook de Stripe y la ruta de recarga).
+      record_manual_topup: {
+        Args: { p_establishment_id: string; p_idempotency_key: string; p_method: string; p_net_cents: number; p_note: string | null };
+        Returns: string;
+      };
+      adjust_agent_balance: {
+        Args: { p_amount_cents: number; p_establishment_id: string; p_idempotency_key: string; p_reason: string };
+        Returns: string;
+      };
+      record_balance_payout: {
+        Args: { p_amount_cents: number; p_establishment_id: string; p_idempotency_key: string; p_note: string | null };
+        Returns: string;
+      };
+      create_agent_topup: {
+        Args: { p_establishment_id: string; p_idempotency_key: string; p_net_cents: number };
+        Returns: {
+          net_cents: number;
+          topup_id: string;
+          total_cents: number;
+          vat_cents: number;
+          vat_rate_percent: number;
+        }[];
+      };
+      agent_topup_vat_rate: { Args: { p_establishment_id: string }; Returns: number };
+      agent_spend_summary: { Args: { p_establishment_id: string; p_month: string }; Returns: Json };
+      agent_minutes_estimate: { Args: { p_establishment_id: string; p_now?: string }; Returns: number | null };
+      set_messaging_rate: {
+        Args: { p_channel: string; p_country: string; p_price_micros: number; p_valid_from: string };
+        Returns: string;
+      };
+      platform_reservations_spaces: {
+        Args: Record<PropertyKey, never>;
+        Returns: { name: string; reservations_enabled: boolean; slug: string; space_id: string }[];
+      };
+      attach_topup_session: { Args: { p_session_id: string; p_topup_id: string }; Returns: boolean };
+      complete_agent_topup: { Args: { p_amount_total_cents: number; p_currency?: string; p_session_id: string }; Returns: Json };
+      expire_agent_topup: { Args: { p_session_id: string }; Returns: boolean };
+      // Solo `service_role` (el servidor): el barrido diario. El reclamo de correos al momento (`claim_email_deliveries_for_keys`)
+      // se llama sin tipos desde `queue-gateway.ts`, igual que su gemela del push.
+      reservations_lifecycle_sweep: { Args: { p_now?: string }; Returns: Json };
+      // Fase C (migración 169) · la agenda. Los resultados de negocio vuelven como `Json`
+      // ({ outcome: 'accepted' | 'needs_confirmation' | 'rejected' | ... }); ver `reservations-gateway.ts`.
+      book_reservation: {
+        Args: {
+          p_customer_name: string;
+          p_date: string;
+          p_email: string | null;
+          p_establishment_id: string;
+          p_force?: boolean;
+          p_idempotency_key?: string | null;
+          p_language?: string;
+          p_notes: string | null;
+          p_party_size: number;
+          p_phone_e164: string | null;
+          p_platform_name?: string | null;
+          p_reservation_id: string | null;
+          p_source?: string;
+          p_time: string;
+          p_whatsapp_consent?: boolean;
+        };
+        Returns: Json;
+      };
+      confirm_reservation: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      reject_reservation: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      cancel_reservation: { Args: { p_establishment_id: string; p_reason?: string; p_reservation_id: string }; Returns: Json };
+      mark_platform_cancel_done: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      mark_no_show: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      undo_no_show: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      dismiss_duplicate: { Args: { p_establishment_id: string; p_reservation_a: string; p_reservation_b: string }; Returns: Json };
+      open_reservation: { Args: { p_establishment_id: string; p_reservation_id: string }; Returns: Json };
+      save_reservation_shifts: { Args: { p_establishment_id: string; p_shifts: Json }; Returns: Json };
+      set_reservation_closed_date: {
+        Args: { p_closed: boolean; p_date: string; p_establishment_id: string; p_reason: string | null };
+        Returns: Json;
+      };
+      save_reservation_settings: {
+        Args: {
+          p_customer_cancel_limit_minutes: number;
+          p_establishment_id: string;
+          p_large_group_threshold: number;
+          p_max_advance_days: number;
+          p_min_notice_minutes: number;
+          p_slot_interval_minutes: number;
+        };
+        Returns: Json;
+      };
+      complete_reservations_onboarding: { Args: { p_establishment_id: string }; Returns: Json };
+      reservations_remind_pending: { Args: Record<PropertyKey, never>; Returns: number };
+      reservations_search: {
+        Args: { p_establishment_id: string; p_query: string };
+        Returns: {
+          customer_name: string;
+          date: string;
+          duplicate_flag: string;
+          id: string;
+          party_size: number;
+          phone_e164: string | null;
+          platform_name: string | null;
+          source: string;
+          status: string;
+          time: string;
+        }[];
+      };
+      reservations_calendar: {
+        Args: { p_establishment_id: string; p_month: string };
+        Returns: { date: string; people: number; reservations: number; source: string; status: string }[];
+      };
+      reservation_history: {
+        Args: { p_establishment_id: string; p_reservation_id: string };
+        Returns: { actor_name: string | null; actor_type: string; created_at: string; data: Json; id: string; type: string }[];
+      };
+      // Fase D (migración 170) · Equipo con PIN, tablet del local y soporte. El PIN llega siempre como HMAC;
+      // los resultados de negocio vuelven como `Json` ({ outcome: 'created' | 'pin_in_use' | ... }).
+      reservation_removable_owners: {
+        Args: { p_establishment_id: string };
+        Returns: { user_id: string }[];
+      };
+      reservation_people: {
+        Args: { p_establishment_id: string };
+        Returns: { created_at: string; has_pin: boolean; kind: string; name: string; ref_id: string; role: string }[];
+      };
+      add_reservation_staff: {
+        Args: { p_establishment_id: string; p_idempotency_key?: string | null; p_name: string; p_pin_hmac: string };
+        Returns: Json;
+      };
+      set_reservation_staff_pin: {
+        Args: { p_establishment_id: string; p_pin_hmac: string; p_staff_id: string };
+        Returns: Json;
+      };
+      remove_reservation_staff: { Args: { p_establishment_id: string; p_staff_id: string }; Returns: Json };
+      set_my_reservation_pin: { Args: { p_establishment_id: string; p_pin_hmac: string }; Returns: Json };
+      activate_reservation_device: {
+        Args: { p_establishment_id: string; p_name: string; p_token_hash: string };
+        Returns: string;
+      };
+      revoke_reservation_device: { Args: { p_device_id: string; p_establishment_id: string }; Returns: Json };
+      reservation_device_resolve: { Args: { p_token_hash: string }; Returns: Json };
+      reservation_device_vouch: { Args: { p_establishment_id: string; p_staff_id: string }; Returns: Json };
+      reservation_device_identify: { Args: { p_pin_hmac: string; p_token_hash: string }; Returns: Json };
+      reservation_device_act: {
+        Args: { p_args?: Json; p_operation: string; p_pin_hmac: string | null; p_staff_id: string | null; p_token_hash: string };
+        Returns: Json;
+      };
+      open_reservation_support_session: {
+        Args: { p_establishment_id: string; p_minutes?: number; p_reason: string };
+        Returns: Json;
+      };
+      close_reservation_support_session: { Args: { p_session_id: string }; Returns: Json };
+      my_reservation_support_session: {
+        Args: { p_establishment_id: string };
+        Returns: { expires_at: string; session_id: string }[];
+      };
+      reservation_support_candidates: {
+        Args: { p_query?: string | null };
+        Returns: { city: string | null; establishment_id: string; name: string; service_status: string; space_slug: string }[];
+      };
+      reservation_history_log: {
+        Args: { p_establishment_id: string; p_limit?: number };
+        Returns: { actor_label: string; at: string; detail: Json; kind: string }[];
+      };
       establishment_is_reservations_only: { Args: { p_establishment_id: string }; Returns: boolean };
       set_space_reservations_enabled: {
         Args: { p_enabled: boolean; p_space_id: string };

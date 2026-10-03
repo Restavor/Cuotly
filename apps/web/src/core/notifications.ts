@@ -193,6 +193,14 @@ export const MANDATORY_EVENTS: readonly NotificationEvent[] = [
   // es perder el acceso, la segunda palabra de RN-NOT-03.
   "space_deleted_by_platform",
   "establishment_deleted_by_platform",
+  // Fase E de Restavor agents (decisión 99 y PRD §6.12): lo que mueve dinero o pausa un servicio no se silencia.
+  "reservation_service_approved",
+  "reservation_service_rejected",
+  "reservations_payment_due",
+  "reservations_past_due",
+  "reservations_paused",
+  "reservations_ending",
+  "reservations_closed_purge_soon",
 ];
 
 export function isMandatoryEvent(event: NotificationEvent): boolean {

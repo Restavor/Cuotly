@@ -139,11 +139,14 @@ describe("AGT-03 · la barra de móvil: Hoy · Calendario · (+) Nueva · Agente
     ]);
   });
 
-  it("el (+) es «Nueva» y lleva a la nueva reserva; la tablet sin PIN no lo tiene", () => {
+  it("el (+) es «Nueva» y lleva a la nueva reserva; la tablet sin PIN también lo tiene: el PIN se pide al guardar", () => {
     expect(agentsCreateOptions(owner)).toEqual([
       { key: "newReservation", label: "Nueva", href: `${BASE}/reservas/nueva` },
     ]);
-    expect(agentsCreateOptions(tabletSinPin)).toEqual([]);
+    // Fase D (`PinTablet`: «Para guardar: Nueva reserva…»): la tablet abre el formulario sin PIN y lo pide al guardar.
+    expect(agentsCreateOptions(tabletSinPin)).toEqual([
+      { key: "newReservation", label: "Nueva", href: `${BASE}/reservas/nueva` },
+    ]);
     // En pausa no se crean reservas (§6.12), así que tampoco hay (+).
     expect(agentsCreateOptions(ctx({ kind: "owner" }, "paused"))).toEqual([]);
     // Sin restaurante elegido, nada que crear.
@@ -202,7 +205,7 @@ describe("AGT-03 · cada destino lleva a una ruta que existe (barrido de /agents
     return existsSync(join(raiz, ruta, "page.tsx"));
   };
 
-  it("las catorce pantallas del PRD tienen su página", () => {
+  it("las pantallas del PRD tienen su página", () => {
     for (const page of AGENTS_PAGES) {
       const href = agentsPageHref(ID, page);
       expect(existe(href), `${page} → ${href} no tiene page.tsx`).toBe(true);

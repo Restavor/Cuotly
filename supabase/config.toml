@@ -322,8 +322,10 @@ max_enrolled_factors = 10
 
 # Control MFA via App Authenticator (TOTP)
 [auth.mfa.totp]
-enroll_enabled = false
-verify_enabled = false
+# Fase D (decisión 106): el sembrado registra un factor TOTP de prueba a `soporte@cuotly.test` y los e2e de
+# «Abrir como soporte» (segundo paso, `aal2`) generan su código. Solo afecta a `supabase start`.
+enroll_enabled = true
+verify_enabled = true
 
 # Configure MFA via Phone Messaging
 [auth.mfa.phone]

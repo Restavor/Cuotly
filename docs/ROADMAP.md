@@ -5439,6 +5439,247 @@ Lo que **no** está y es de fases posteriores (no se simula): la agenda (C), el 
 
 Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase C hasta que Bosco lo diga.**
 
+### Fase C · La agenda · 02/10/2026 (construida; falta la comprobación de Bosco)
+
+Criterios del PRD §15 (RES-01 a RES-13):
+
+- [x] **RES-01 Hoy**: fecha con flechas y «Hoy», Buscar, Nueva reserva, indicador del agente (solo lee), barras (grupos pendientes con «Revisar», Reservas en pausa, baja pedida),
+  filtros por origen con contadores que se recuerdan en el dispositivo, un bloque por turno con su aforo del día entero y «Fuera de turno». Canceladas tachadas al final de su hora,
+  «No vino» en gris, resumen «N reservas · M personas · K pendientes» sin canceladas ni «No vino». Con el día 26/09 del sembrado da lo de la maqueta: 10 · 42 · 1, filtros 10/3/3/2/2,
+  Comida 23 de 40 y Cena 19 de 60.
+- [x] **RES-02 Nueva reserva** y **RES-04 Editar** (un solo formulario): fecha (Hoy, Mañana, Otro día), personas (1–6 y 7+), turno, hora, nombre, teléfono, email opcional, idioma de
+  los avisos, nota con atajos; «Quedan X de Y plazas»; aviso de aforo con «Guardar igualmente»; días cerrados sin horas. Obligatorios nombre y (teléfono o email); teléfono válido.
+- [x] **RES-03 Ficha**: hora grande, nombre, personas, turno y fecha, estado, origen, nota, **Llamar** (`tel:`), «Ha venido N veces · ha fallado M veces» (decisión 114), historial
+  legible, Editar, «No vino» (desactivado hasta la hora, «desde las HH:MM») y Cancelar reserva. Al abrirla se quita «Nueva».
+- [x] **RES-05 Cancelar** (motivo, repetir no duplica, aviso «Cancélala también en X» para plataformas sin conector), **RES-06 No vino** (solo tras la hora; deshacer el mismo día),
+  **RES-07 Confirmar/Rechazar** grupos (rechazar pide confirmación), **RES-08 Duplicadas** («No es duplicada», recálculo al crear, editar y cancelar).
+- [x] **RES-09 Buscar** (nombre sin tildes ni mayúsculas, o los 3 últimos números; 30 días atrás y todas las futuras; «Próximas» y «Últimos 30 días» con la coincidencia resaltada).
+- [x] **RES-10 Calendario**: reservas y personas por día, barra por origen, días cerrados rayados, punto amarillo si hay pendientes, total del mes; tocar un día abre Hoy. Agregado en
+  la base de datos (`reservations_calendar`).
+- [x] **RES-11 Tiempo real** con la versión falsa en local (decisión 117), **RES-12 Ajustes › Horarios** con la regla de no quitar turnos, días ni cerrar un día con reservas futuras
+  (dice cuántas), y **RES-13 Primer uso** (los dos pasos que existen configuran de verdad; equipo y agente dicen que llegan con las Fases D y G).
+- [x] Tests unitarios y SQL de §6.1–6.10 con sus ejemplos; e2e de crear, editar, cancelar, «No vino», confirmar y rechazar grupo, «No es duplicada», buscar, calendario, horarios,
+  tiempo real y que quien no es del restaurante no entra.
+- [x] Revisión independiente del diff contra el PRD y CLAUDE.md: sin bloqueantes, dieciséis hallazgos, todos corregidos con su test (decisión 120).
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase C»; **antes hay que aplicar la migración 169 a Restavor pruebas**).
+
+Pruebas hechas (02/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.650 tests** en verde (141 nuevos: disponibilidad con los cinco ejemplos del PRD, aforo por origen,
+duplicadas, ciclo de vida, búsqueda, calendario, validación de horarios, formato, tiempo real, historial, vista del día y la puerta de la tarea de pendientes); `apps/mobile` y
+`packages/shared` en verde; **las 91 suites SQL** (la nueva, la 91, `la_agenda.sql`) sobre una base limpia con las 169 migraciones, y los dos sembrados dos veces (**151 tablas, 0 sin RLS**);
+el script de concurrencia `agenda-concurrency-test.mjs` (dos altas a la vez para las últimas plazas: entra una; ocho para tres plazas: entran tres; la misma clave: una reserva; dos
+cambios a la vez: no pasan del aforo; y, tras la revisión, cancelar a la vez las dos mitades de una pareja de duplicadas, cambiar de día mientras se crea otra con el mismo teléfono,
+dos altas en turnos distintos y quitar un turno mientras se reserva en él); los e2e sin datos (`agents-armazon`) y **los 17 e2e de la agenda con datos** contra PostgREST local con el sembrado. La suite 91 y el script de
+concurrencia se comprobaron con mutaciones (se rompió a propósito el aforo, los permisos, «No vino», la pausa, las duplicadas, los datos personales en eventos, el solape, la
+regla de no quitar turnos, los avisos, las 2 horas, el bloqueo y el correo/push de la cola: las doce las atrapa). Los cuatro casos de concurrencia añadidos tras la revisión
+se comprobaron contra la migración anterior a las correcciones: fallan los cuatro (28 de 60 cancelaciones y 24 de 60 cambios de día mueren por interbloqueo, 15 de 20 parejas de
+altas simultáneas quedan sin marcar y 20 reservas quedan en un turno desactivado) y pasan con la corregida.
+
+**Revisión independiente** (un subagente leyó el diff contra el PRD y `CLAUDE.md`; reprodujo cada defecto en una copia de la base): **tres altos o medios graves** —revisar el servicio Reservas dejaba de
+cobrar a todos sus restaurantes, el Encargado leía datos de comensales con Reservas cerrada y un trabajador asignado podía registrar un pago y activar el servicio—, **un cuarto medio** (Reservas se
+activaba sin condiciones aceptadas) y varios menores (el correo del dinero podía salir dos veces, el barrido anunciaba cambios que había deshecho, «Anular la baja» con deuda devolvía el servicio
+completo, el motivo interno del cierre llegaba al Propietario, el IBAN sin dígito de control). **Todo corregido en la migración 175** (las 172 a 174 ya estaban subidas) y con su test en el bloque 16 de la
+suite 93; cada corrección se comprobó con una mutación (se vuelve a la función anterior y el test falla): las ocho fallan. El resto de lo señalado (un restaurante aprobado que nunca paga, claves de aviso
+repetidas tras revertir un pago, «Vence» en zona de Madrid…) queda anotado en la decisión 143. Comprobó además, sin hallar nada, las ACL de las funciones internas, los interbloqueos, los borrados físicos,
+datos personales en auditoría, fugas entre restaurantes, la tablet, la inyección de fórmulas en el Excel y los límites de fechas.
+
+Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): una reserva que entra en el cambio de hora de otoño se guardaba con la hora segunda en vez de la
+primera (PostgreSQL elige la segunda); un día cerrado dejaba pasar las reservas «Fuera de turno» sin contarlas; dos rejillas sin columna base para el teléfono y botones de 40 px
+(los barridos de móvil y de 44 px); acciones de auditoría sin su nombre en español; y `Intl` fuera de la lista de archivos permitidos.
+
+Revisión independiente (un subagente leyó el diff contra el PRD §6 y §11.1 y CLAUDE.md): **sin bloqueantes**. Lo más serio, un interbloqueo real —141 de 300 cancelaciones simultáneas de
+las dos mitades de una pareja de duplicadas, reproducido— que se resolvió con un orden de bloqueo único (decisión 120); también: el `DELETE` físico de días cerrados (contra CLAUDE.md),
+las reservas de hoy ya servidas contando como «futuras», un `NULL` que saltaba la confirmación de aforo, tres funciones que no miraban el estado del servicio, búsqueda que no
+encontraba «João» ni «Dvořák», y el aviso con sonido para lo escrito a mano. Todo corregido, con test, y los 17 e2e y las 91 suites de nuevo en verde.
+
+Decisiones (en `docs/DECISIONES.md`, 112 a 120):
+
+- **112** La agenda escribe solo por funciones `SECURITY DEFINER` (permiso, estado, transición, bloqueo, evento y auditoría sin datos personales, idempotencia); el equipo del espacio cambia horarios pero no escribe reservas.
+- **113** Las alternativas de disponibilidad están en el dominio (TS), no en SQL: las usará la API del agente (Fase G).
+- **114** «Ha venido N veces»: cómo se cuenta (el PRD no lo dice). **Para confirmar con Bosco.**
+- **115** Quitar un turno lo desactiva; reabrir un día cerrado marca su fila como quitada (`removed_at`) en vez de borrarla: no hay ninguna excepción a «nunca `DELETE`».
+- **116** Sin conectores (Fase I) las plataformas no cambian fecha, hora ni personas y la cancelación deja el aviso «Cancélala también en X». Las maquetas dicen «Se cancelará también en TheFork» y «el cambio llegará solo»: no se ha escrito porque hoy no es verdad.
+- **117** Tiempo real con nombre de canal secreto (HMAC); versión falsa entre pestañas; el mensaje nunca lleva datos personales.
+- **118** Los avisos de la agenda (reserva nueva, grupo pendiente, recordatorio de 2 h) van **solo en la campana**: el correo y el push web de Restavor agents llegan con la Fase F. La tarea de cada 15 minutos (`/api/agents/cron/pendientes`, `supabase/operaciones/agents-cron.sql`) no se ha podido ejecutar aquí (sin `pg_cron`).
+- **119** Lo que toca la agenda y queda para otras fases (avisos a comensales, barra de pago pendiente, PIN y tablet, encender el agente, sin conexión).
+- **120** Lo que cambió la revisión independiente: un único orden de bloqueo (clave → restaurante → día → fila), «reservas futuras» = las que aún no llegaron a su hora, topes y `NULL` en la base de datos, estado del servicio en las tres funciones que no lo miraban, búsqueda con NFD y comodines escapados, lo escrito a mano no hace sonar las demás pantallas.
+
+Hallazgos que conviene saber:
+
+- La migración 169 **no** crea tablas: añade `reservations.idempotency_key`, `reservation_closed_dates.removed_at` y 33 funciones. Las dos de comprobación de permisos (`reservations_actor_type`, `reservations_settings_actor`) están clasificadas en el barrido de `hito7_mensajes_archivos_finanzas.sql`.
+- En el sembrado, el aviso «1 grupo pendiente» de Hoy cuenta los pendientes **de hoy en adelante** (la copia de Andrés Martínez en el próximo día abierto); el del sábado 26/09 ya es pasado y se ve en su día, pero no en la barra.
+- Las maquetas de `estructura/` traen cosas que no se han hecho por no ser ciertas hoy: «La creas tú · Ana (Equipo)» (el Equipo con PIN es la Fase D: aquí sale el nombre de quien tiene la sesión) y «Se cancelará también en TheFork» (decisión 116).
+- El selector de hora de los navegadores en inglés enseña «01:00 PM»; en español, 24 horas. Se envía siempre `HH:MM`.
+
+Lo que **no** está y es de fases posteriores: avisos a comensales (F), PIN, tablet y sesión de soporte (D), cobro y saldo (E), encender y apagar el agente (G), formulario web (H), conectores (I),
+app instalable y modo sin conexión (J).
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase D hasta que Bosco lo diga.**
+
+### Fase D · Equipo con PIN, tablet del local y soporte · 03/10/2026 (construida; falta la comprobación de Bosco)
+
+Criterios del PRD §15 (EQU-01 a EQU-03, SOP-01):
+
+- [x] **EQU-01 Ajustes › Equipo**: las personas del restaurante (Propietarios, Encargados y Equipo sin cuenta, por ese orden), añadir con PIN de 4 cifras dos veces, cambiar PIN, quitar
+  (se desactiva y el PIN queda libre), PIN único entre los activos del restaurante, «Mi PIN para la tablet» (solo desde tu cuenta) e invitar a un Propietario o a un Encargado (decisión 131: el Propietario nombra y quita Propietarios y Encargados; último Propietario protegido).
+  Un Encargado gestiona el Equipo; no invita ni quita Propietarios ni Encargados. Primer uso: el paso de Equipo del asistente configura de verdad.
+- [x] **EQU-02 La tablet del local**: se activa desde una cuenta de Propietario o Encargado, guarda solo el hash de su token en una cookie `httpOnly` y no es un usuario de Supabase
+  (decisión 121). Sin PIN solo se ven las fichas; cada cambio de la agenda pide «¿Quién eres?» al guardar y queda a nombre de quien puso su PIN. «Ajustes con PIN» (solo Encargado o
+  Propietario) abre Ajustes 2 minutos deslizantes. Bloqueo escalonado de PIN: 1 min, 5 min, 30 min y 2 h (decisión 122). Desactivar la tablet surte efecto al recargar. `proxy.ts` y
+  `/`, `/agents` entienden la cookie del dispositivo (decisión 128).
+- [x] **EQU-03 Varios restaurantes**: la tablet vale solo para el suyo (pedir otro la devuelve a Hoy en el suyo); quien lleva varios los ve en su cuenta como siempre.
+- [x] **SOP-01 Soporte de Reservas**: «Abrir como soporte» exige el segundo paso (`aal2`), la marca de soporte de Reservas, un motivo y 30/60/120 minutos; la sesión es de ese restaurante y solo de él,
+  caduca y se cierra con «Salir». El motivo no se copia a `audit_log`. **Ajustes › Historial** enseña a la persona del restaurante quién hizo qué, y del equipo de Restavor solo
+  «Restavor (soporte)», nunca quién fue (CLAUDE.md, P7).
+- [x] Tests unitarios, suite SQL 92 (RN-APP-06 a RN-APP-09), e2e de equipo, tablet, PIN, bloqueo, Ajustes con PIN, desactivar y soporte con TOTP de verdad.
+- [x] Revisión independiente del diff contra el PRD y CLAUDE.md: sin bloqueantes pero **dos altos y cuatro medios o bajos**, todos corregidos con su test (decisión 130).
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase D»; **antes hay que aplicar la migración 170, poner `AGENTS_PIN_SECRET` en Vercel y resembrar**).
+
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.706 tests** en verde; **las 92 suites SQL** (la 92 con 6 bloques nuevos tras la revisión) en el orden del CI sobre una base limpia con las 170
+migraciones, y los dos sembrados dos veces (**151 tablas, 0 sin RLS**); `agenda-concurrency-test.mjs` y el nuevo `device-concurrency-test.mjs` (veinte PIN equivocados a la vez dejan pasar
+solo cuatro avisos y un único bloqueo; con el dispositivo bloqueado ni el PIN bueno entra; la segunda ronda dura más que la primera; quitando a propósito el bloqueo de la fila del
+dispositivo falla); **29 e2e con datos** contra PostgREST local con el sembrado (los 17 de la agenda y 12 nuevos, entre ellos el segundo paso con un código TOTP calculado). La suite 92 se comprobó con 11
+mutaciones (se rompió a propósito la matriz de operaciones, el rol mínimo, el PIN de otro restaurante, el bloqueo, el olvido a las 24 h, la suplantación, «Ajustes abiertos», el aal2 del
+soporte, el motivo en auditoría y la identidad en el historial): las 11 las atrapa. La primera pasada solo atrapaba 9: «Ajustes abiertos» no tenía test y ahora lo tiene.
+
+Revisión independiente (un subagente leyó el diff contra el PRD §3 y CLAUDE.md): **dos altos**: la sesión de soporte de un restaurante daba poderes de «equipo del espacio» sobre todos los
+restaurantes del mismo espacio (reproducido: añadir Equipo y listar personas de otro restaurante), y tres acciones de cuenta (Mi PIN, invitar, quitar Encargado) solo se protegían ocultando el
+botón mientras la sesión personal del Propietario seguía abierta en la tablet. Más: soporte sobre un restaurante eliminado, «ese PIN ya está en uso» como oráculo sin límite (y tablets sin tope),
+el Equipo escribiendo en un espacio archivado, la etiqueta de soporte ausente en parte de la auditoría y una línea de `CLAUDE.md` que decía «solo lectura» contra el PRD. Todo corregido y con test
+(a las 11 mutaciones de la suite 92 se suman 6 nuevas, todas atrapadas: la sesión por restaurante, el restaurante eliminado, el sondeo de PIN, el espacio archivado, el tope de tablets y la etiqueta de soporte). Quedan descritos sin tocar la cookie
+«Ajustes abiertos» sin ligar a un dispositivo y que con Ajustes abiertos la agenda corre sin pedir PIN otra vez.
+
+Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): el modal de PIN no aparecía porque se abría dentro de una transición que no terminaba hasta que la
+acción acababa (se abre fuera, con `setTimeout`); la Fase B afirmaba que la tablet no puede crear reservas (cambiado por la decisión 123); acciones de auditoría sin nombre en español;
+un test que daba por fija una zona horaria; un perfil que el disparador creaba sin nombre; y filas de bloqueo compartidas entre dispositivos en la suite.
+
+Decisiones (en `docs/DECISIONES.md`, 121 a 131):
+
+- **121** Cómo actúa el Equipo desde la tablet: una única puerta de servidor (`reservation_device_act`, solo `service_role`) que valida dispositivo y PIN y llama a la MISMA función de la agenda.
+- **122** El bloqueo de PIN crece (1 min, 5, 30, 2 h; se olvida a las 24 h): con solo «1 minuto» se probarían los 10.000 PIN en unas 33 horas.
+- **123** La tablet ofrece «Nueva reserva» y los botones de cambiar; el PIN se pide al guardar y **no hay selector de persona** (la maqueta lo tiene; con PIN no hace falta).
+- **124** «Ajustes con PIN»: solo vale el PIN de un Encargado o Propietario, dos minutos deslizantes.
+- **125** Dónde se abre y cómo se vuelve del soporte de Reservas (ficha del espacio y `/administracion/reservas`, hasta la Fase E).
+- **126** Quién añade y quita Propietarios: **resuelta por Bosco el 03/10/2026** (decisión 131, migración 171).
+- **127** El segundo paso de prueba del sembrado. **128** `/` y `/agents` con la cookie de un dispositivo. **129** «Abrir» una ficha sin PIN se anota como el sistema.
+- **130** Lo que cambió la revisión independiente. Los dos números (cinco topetazos de «PIN en uso» en 24 horas y veinte dispositivos activos por restaurante) los **confirmó Bosco** el 03/10/2026.
+- **131** El Propietario añade y quita Propietarios y Encargados (migración 171).
+
+Hallazgos que conviene saber:
+
+- La migración 170 **se editó en su sitio** durante la fase (no estaba subida a ninguna base: mismo precedente que la decisión 120).
+- **Contradicción resuelta (decisión 126 → 131):** Bosco decidió que el Propietario nombra y quita Propietarios y Encargados (RN-EST-17 ampliada en `docs/PRD.md`, migración 171, con guarda de «último Propietario»).
+- Las maquetas traen un selector de persona al pulsar guardar en la tablet; no se ha hecho (decisión 123).
+- La tablet lee con la clave de servicio, acotada al restaurante del dispositivo; `lecturas-acotadas.test.ts` falla si una lectura nueva no lo está.
+- `SUPABASE_SERVICE_ROLE_KEY` y `AGENTS_PIN_SECRET` tienen que estar en Vercel (la segunda, en Preview).
+
+Lo que **no** está y es de fases posteriores: aprobar solicitudes, cobros y recargas (E), avisos a comensales (F), encender el agente (G), formulario web (H), conectores (I), app instalable y
+modo sin conexión (J).
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase E hasta que Bosco lo diga.**
+
+### Fase E · Contratación, cobro y saldo · primera tanda (E1) · 03/10/2026 (construida; falta la comprobación de Bosco)
+
+Bosco aprobó el plan en **dos tandas** (decisión de él): **E1** = aprobar, cobrar y el ciclo de vida (COB-01 y COB-02); **E2** = libro del saldo, Stripe, lado de Restavor y «Transferir también Reservas»
+(SAL-01, SAL-02, RVR-01 y decisión 100). Esta es E1. Los datos de pago van en el espacio y solo dos correos salen al momento (también decisiones suyas). Rama `agents`.
+
+Criterios del PRD §15 (COB-01, COB-02):
+
+- [x] **COB-01 Aprobar y rechazar** (`approve_reservation_request`, `reject_reservation_request`; solo el equipo, `manage_clients`): aprobar crea en una transacción la suscripción al servicio
+  Reservas **sin `plan_commitments` ni `consumption_cycles`**, los ajustes en `approved_pending_payment`, el primer cobro (48 € + IVA = **58,08 €**), la aceptación de condiciones si ya la dio y el
+  aviso «Aprobado: datos para pagar»; repetirlo no duplica nada; rechazar pide motivo. Desde `/espacios/<espacio>/reservas`, con «Aprobar» y «Rechazar» en cada solicitud.
+- [x] **Aceptar condiciones y «Aprobado: datos para pagar»** (`/agents/<id>/condiciones` y `/pendiente-de-pago`): los cuatro pasos de la maqueta, periodo, cuota, IVA y total, vencimiento con los días
+  que quedan, IBAN a nombre de la razón social, Bizum y concepto con «Copiar», y «Subir justificante» (que no activa nada). Si la solicitud la creó el equipo, antes se aceptan las condiciones.
+  Los datos de pago son del espacio (decisión 132); sin cargar, dice que faltan. El correo lleva lo mismo.
+- [x] **Ciclo de vida completo** (`reservations_lifecycle_sweep(p_now)`, tarea `/api/agents/cron/ciclo` cada hora, a las 08:00 de Madrid): `active → past_due`, a los 7 días `paused`, pago parcial
+  que sigue en pausa y pago completo que reactiva **al momento** (disparador sobre `financial_entries`, decisión 134), baja que sigue hasta el final del periodo pagado y se puede anular,
+  `closed` (la suscripción se cancela) y, a los 30 días, anonimización sin borrar nada; recordatorios (5 días antes, día del vencimiento, 2 días antes de acabar el margen, descarga 7 días antes del borrado).
+- [x] **Los dos sentidos de D-D**: un cobro de Reservas vencido **no** pausa el restaurante en Restavor web, y un impago de Restavor web **no** pausa Reservas. Se excluyen los cobros de Reservas de
+  ocho funciones de Restavor web (migración 172; decisión 141, más de las que nombraba el PRD).
+- [x] **COB-02 Plan y pagos, darse de baja, Reservas cerrada y Excel**: `/plan` (estado, datos para pagar, cobros, «Darme de baja» con confirmación y «Anular la baja»), «Pago pendiente, quedan N días» y
+  el aviso de pausa en Hoy (solo el Propietario), `/cuenta-cerrada` con los días que quedan y la descarga de **todas las reservas en Excel** (sin librería, comprobado con una de lectura; deja huella en la
+  auditoría). Restavor da de baja, anula la baja, **cierra a mano** (solo desde la pausa, con motivo) y **reactiva** (dentro de los 30 días, con todos sus datos y un cobro nuevo).
+- [x] **Correos**: «Aprobado: datos para pagar» y «Reservas está en pausa» salen al momento (`claim_email_deliveries_for_keys`, `sendEmailNow`); recibida, rechazada, activada, vence, pago pendiente, baja y
+  descarga, por las dos tandas; los push, siempre al momento. Sin Resend configurado nada se rompe: el correo espera su tanda.
+- [x] Tests: suite SQL **93** (`reservas_cobro_y_ciclo.sql`, 16 bloques, RN-APP-03 y RN-RES-11 con fechas simuladas), unitarios (dominio, correos, entrega al momento, ruta de cron, Excel) y **10 e2e con datos**
+  (`agents-cobro.spec.ts`: aprobar, rechazar, condiciones, datos para pagar, pagar y activar, pago pendiente, pausa, baja, cerrada con descarga, permisos y móvil).
+- [x] Sembrado: los **cobros y pagos de Reservas** coherentes con cada estado (17 cobros) y los datos de pago de ejemplo, con sus comprobaciones (el barrido de verdad no cambia ningún estado del sembrado).
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase E, primera tanda»; **antes hay que aplicar las migraciones 172 a 175 y resembrar**).
+
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.759 tests** en verde; **las 93 suites SQL** sobre una base limpia con las 175 migraciones, y el sembrado de Reservas dos veces; los
+**58 e2e con datos** (los 10 nuevos y los 48 de antes) sobre una base limpia contra PostgREST local con el sembrado; `next build` de producción. La suite 93 se comprobó con **12 mutaciones** (se rompió a propósito seis de las exclusiones de Restavor web —el impago, la reactivación, la deuda vencida, los recordatorios, «Necesita tu atención» y el panel de impagos—, el gancho de reactivación, el pago
+parcial, el margen de 7 días, la anonimización del teléfono, la exclusión de bajas en `run_monthly_charges` y el propio detector de cobros de Reservas): las 12 las atrapa. La
+primera pasada de mutaciones dejó pasar una —la exclusión de `reactivate_establishment_after_payment` no tenía test porque el cobro de Reservas del test no estaba vencido en ese momento— y ahora lo tiene.
+
+Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): un cobro de Reservas vencido hace 80 horas **suspendía Restavor web** (ninguna función de Restavor web distinguía el servicio del
+cobro); `my_client_attention` y `establishments_with_nonpayment` también lo contaban; una descarga anónima del Excel daba 500 en vez de 401; el sembrado dejaba de ser repetible en cuanto la aplicación escribía
+una fila de auditoría a nombre de una cuenta suyas; y varias guardas del repositorio (zona horaria escrita en el dominio, lista de avisos obligatorios, rejillas sin columna de móvil, lecturas de la tablet).
+
+Decisiones (en `docs/DECISIONES.md`, **132 a 143**): 132 datos de pago en el espacio (de Bosco), 133 el aviso de 5 días, 134 el gancho de reactivación como disparador y el fin del periodo pagado, 135 cierre y reactivación,
+136 la pestaña «Reservas» de la ficha será una subruta (E2), 137 los dos correos al momento (de Bosco), 138 Stripe sin dependencia (E2), 139 lo que queda fuera de la Fase E, 140 el Excel sin librería y su auditoría,
+141 las exclusiones de D-D, 142 lo que cambió la revisión independiente y 143 lo que la revisión señaló y queda anotado.
+
+Hallazgos que conviene saber:
+
+- **La migración 173 se editó en su sitio** durante la fase (no estaba subida a ninguna base: mismo precedente que las decisiones 120 y 130).
+- **Dos e2e de antes se ajustaron**, y no por una regresión: uno daba por hecho que «Aprobar» y «Rechazar» todavía no existían (ahora existen), y el de la sesión de soporte de la Fase D hacía un `goto` en medio
+  de la navegación que sigue al segundo paso (`net::ERR_ABORTED`, una carrera del test): ahora espera a que termine. Los e2e que **crean** solicitudes (los de «Contratar Reservas») no se pueden repetir sobre
+  la misma base: hay que rehacerla o resembrar, y el sembrado de Reservas (idempotente) solo deja como estaba lo suyo.
+- Tras la migración 175 se repitió todo: las 93 suites SQL, 2.759 unitarios y los 58 e2e. En una pasada de los e2e, «Aprobar» tardó más de 45 s en mostrar su mensaje (la aprobación sí se hizo) y falló; en la repetición sobre una base limpia pasaron los 58. No lo he podido reproducir ni explicar: queda anotado por si vuelve.
+- `register_payment()` y `waive_charge()` **no se tocan**: el gancho es un disparador, así que ninguna redefinición futura lo pierde.
+- Los cobros de Reservas **siguen saliendo en «Pagos y facturas» de Restavor web** de un restaurante que tenga también panel (PRD §12.3 pide que no); no afecta a ningún estado. Queda anotado (decisión 139).
+- Con Reservas `approved_pending_payment` el menú lateral todavía enseña «Ajustes» (la maqueta dice «Se abren cuando Restavor confirme el pago»): diferencia de la Fase B, no de esta.
+- Las maquetas traen «Mientras tanto, Restavor prepara…» (teléfono del agente, TheFork, formulario): no se ha escrito porque hoy no es verdad (llegan con G, I y H).
+- `payment_iban` y compañía se leen solo por `reservation_payment_info()`: el restaurante no lee la fila del espacio.
+
+Lo que **no** está y es de la siguiente tanda o de fases posteriores: el libro del saldo, las pantallas de Saldo, las recargas con Stripe y la recarga manual (E2); la pestaña «Reservas» de la ficha del restaurante y el
+ajuste de saldo (E2); «Transferir también Reservas» (E2); los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I), la app instalable y el modo sin conexión (J).
+
+Se paró aquí, como pide `CLAUDE.md`. (Bosco dio paso a E2 el 03/10/2026: el bloque de abajo.)
+
+### Fase E · Contratación, cobro y saldo · segunda tanda (E2) · 03/10/2026 (construida; falta la comprobación de Bosco y una decisión suya)
+
+Bosco dio paso a E2 con una condición: **el pago y los datos de pago se quedan «Próximamente»; se construye todo, pero no se activa hasta que él dé los datos** (decisión 144). Rama `agents`. Migración 176.
+
+Criterios del PRD §15 (SAL-01, SAL-02, RVR-01):
+
+- [x] **SAL-01 El libro del saldo y sus pantallas.** Un disparador impide editar y borrar un apunte (también al servidor); recarga a mano de Restavor, **ajuste** (motivo y segundo paso) y **devolución del saldo** (solo con la baja
+  pedida o cerrada), todos con clave de idempotencia; avisos de **saldo bajo** (5 €) y **saldo agotado**, **una vez por cruce** y también con llamadas a la vez; `/agents/<id>/saldo` con el saldo al céntimo, «unos N minutos de
+  llamadas» (solo con llamadas de los últimos 30 días), el gasto del mes por tipo en la zona del restaurante, los últimos movimientos, «Ver todos» y **Excel**; las barras de Hoy («Saldo bajo», «Te has quedado sin saldo»).
+- [x] **SAL-02 Recargar con tarjeta (Stripe, modo de pruebas), «Próximamente» sin Stripe.** Solo el Propietario; 10, 20, 50 € u otro (mínimo 10 €) más el IVA del espacio, con «Pagarás 24,20 € (20,00 € + 21 % IVA)»; adaptador de
+  Stripe **sin dependencia** con firma y tolerancia; webhook idempotente por sesión (**el apunte es por el importe sin IVA**; el mismo webhook veinte veces es un solo apunte; lo pagado que no cuadra no se apunta y deja un incidente;
+  lo que llega tras caducar se apunta); recibo (push al momento, correo en su tanda). Sin `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET`, el restaurante ve «Próximamente» y Restavor registra la recarga a mano.
+- [x] **RVR-01 Lado de Restavor.** La ficha de Reservas de cada restaurante (subruta con acceso destacado en la ficha, decisión 136): estado e historial del servicio, saldo, el mes, movimientos, incidentes abiertos, «Registrar
+  recarga», «Ajuste», «Devolver el saldo» y «Abrir como soporte»; la entrada Reservas del espacio con el saldo de cada restaurante y su enlace; y en **Administración › Reservas** los espacios que ofrecen Reservas con su
+  interruptor, el estado de Stripe (nunca la clave) y las tarifas de mensajería. Nunca datos de comensales.
+- [x] **Decisión 144 · la puerta de los datos de pago.** Sin IBAN ni Bizum cargados en el espacio no se aprueba ni se reactiva Reservas; el botón Aprobar sale parado diciendo por qué.
+- [ ] **«Transferir también Reservas» (decisión 100): NO construido, espera a Bosco** (decisión 148): hay que decidir qué pasa con la suscripción, los cobros y el saldo.
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase E, segunda tanda»; **antes: migración 176 y resembrar**) y, cuando quiera activar el pago, da los datos (IBAN o Bizum) y las claves de
+  Stripe de pruebas (solo en Preview).
+
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.850 tests** en verde; **las 94 suites SQL** sobre una base limpia con las 176 migraciones (suite nueva **94**, `reservas_saldo.sql`: el libro,
+los avisos por cruce, la recarga a mano, el ajuste y la devolución, la recarga con tarjeta y su webhook, el gasto y los minutos, las tarifas y la puerta de los datos de pago), y los dos sembrados dos veces; el script de
+concurrencia `topup-concurrency-test.mjs` (el mismo webhook veinte veces a la vez, una sola recarga; veinte «crear recarga» y veinte recargas a mano con la misma clave, una sola; diez llamadas a la vez, un solo aviso de saldo
+bajo y uno de agotado); los **68 e2e con datos** (los 10 nuevos de `agents-saldo.spec.ts`, con claves de Stripe **falsas** en el servidor del test; en la pasada completa pasaron 64, falló la carrera de «Salir de Ajustes» de la tablet con los tres que dependen de ella, y al repetir ese archivo pasaron sus 12), `next build` de producción. Se comprobó con **tres mutaciones** (se quita el
+bloqueo del disparador de avisos, la idempotencia del webhook y el importe sin IVA): las tres las atrapan la suite, el script o ambos.
+
+Hallazgos que conviene saber:
+
+- **La migración 176 se editó en su sitio** durante la tanda (no estaba subida a ninguna base: mismo precedente que las 120, 130 y 173).
+- Pagar de verdad con Stripe **no se prueba de punta a punta**: no hay red hacia Stripe desde el entorno de pruebas ni en CI. El apunte, el IVA, la idempotencia y la firma están probados por separado (suite 94, script de concurrencia,
+  `stripe.test.ts` y `stripe-webhook.test.ts`); el e2e comprueba el formulario, el importe con IVA y que el webhook rechaza una firma falsa. El primer pago real con la tarjeta de prueba lo hace Bosco con los pasos de PRUEBAS.
+- El e2e de Administración › Reservas **no existe** (`info@restavor.com` no tiene segundo paso sembrado): lo cubren la suite SQL y la prueba a mano.
+- Dos e2e intermitentes vistos en estas sesiones, **ninguno de E2** y los dos pasaron al repetir: «Aprobar» tardó más de 45 s una vez, y «Salir de Ajustes» en la tablet aterrizó una vez en `/desbloquear` (el cambio de la
+  sesión de Ajustes y la navegación del cliente compiten, Fase D). Quedan anotados por si vuelven.
+- Hoy el saldo solo se mueve con recargas y ajustes (y con lo que siembra el sembrado): el gasto real de llamadas y avisos llega con las Fases F y G; `RN-AGT-07` (un aviso solo sale con saldo suficiente) es de la Fase F.
+
+Decisiones (en `docs/DECISIONES.md`, **144 a 148**): 144 pago y datos de pago «Próximamente» (de Bosco), 145 el libro inmutable de verdad y los avisos por cruce, 146 recargar con tarjeta, 147 el lado de Restavor, 148 «Transferir
+también Reservas» sin construir.
+
+Lo que **no** está: «Transferir también Reservas» (espera a Bosco); las cifras de reservas en la ficha (hace falta el resumen mensual); los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I) y la app
+instalable y el modo sin conexión (J).
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase F hasta que Bosco lo diga.**
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

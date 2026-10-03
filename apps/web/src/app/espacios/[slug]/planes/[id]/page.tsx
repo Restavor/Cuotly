@@ -130,6 +130,8 @@ export default async function EstablishmentPlanPage({
       .from("services")
       .select("id, name, price_cents")
       .eq("space_id", space.id)
+      // Reservas no se contrata aquí: solo se aprueba su solicitud (RN-APP-03); un disparador lo impediría.
+      .neq("kind", "reservations")
       .is("superseded_at", null)
       .is("archived_at", null)
       .order("name"),

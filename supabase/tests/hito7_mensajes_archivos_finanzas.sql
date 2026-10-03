@@ -2654,6 +2654,29 @@ begin
       -- `request_reservations` y `create_reservation_request_on_behalf`
       -- cuenten como comprobadas.
       --
+      -- `reservations_actor_type` y `reservations_settings_actor` (migración 169,
+      -- Fase C) son LA comprobación de quién puede escribir en la agenda y en los
+      -- horarios de Reservas —Propietario, Encargado, soporte con sesión abierta y,
+      -- para los horarios, el equipo del espacio— y ellas mismas llaman a
+      -- `reservations_my_role` y `reservations_can_read_diner_data`. Están cerradas
+      -- por RPC; su nombre está aquí para que las trece funciones de la agenda
+      -- (`book_reservation`, `cancel_reservation`, `save_reservation_shifts`…)
+      -- cuenten como comprobadas.
+      --
+      -- `reservations_plan_actor` (migración 174, Fase E) es LA comprobación de quién
+      -- puede darse de baja de Reservas o anular la baja —el Propietario del
+      -- restaurante o Restavor (`manage_clients`)— y ella misma llama a
+      -- `reservations_my_role` y `has_capability`. Su nombre está aquí para que
+      -- `request_reservations_cancellation` y `undo_reservations_cancellation`
+      -- cuenten como comprobadas.
+      --
+      -- `agent_balance_can_read` (migración 176, Fase E2) es la comprobación de quién
+      -- mira el saldo de un restaurante —el Propietario, el Encargado o el equipo del
+      -- espacio— y ella misma llama a `reservations_my_role` y
+      -- `reservations_team_can_read`. Su nombre está aquí para que
+      -- `agent_spend_summary`, `agent_minutes_estimate` y `agent_topup_vat_rate`
+      -- cuenten como comprobadas.
+      --
       -- `is_platform_account_manager` (migración 140, RN-ADM-14) es LA
       -- comprobación del cuarto permiso fino de §167 —Bosco, o un
       -- Administrador de Restavor web con `can_delete_accounts`— y ella misma
@@ -2661,7 +2684,7 @@ begin
       -- siete funciones que eliminan y recuperan cuentas, espacios y
       -- restaurantes cuenten como comprobadas.
       and regexp_replace(p.prosrc, '--[^\n]*', '', 'g')
-          !~ 'is_platform_account_manager|has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths|report_can_prepare|reservations_my_role'
+          !~ 'is_platform_account_manager|has_capability|can_read|can_write|is_space_member|is_platform_owner|is_establishment_|is_group_member|is_authorized_worker|client_can_view_billing|client_can_set_priority|client_can_accept_terms|client_can_view_reports|report_actor_role|assert_can_manage_integrations|is_platform_approver|is_platform_subscription_manager|is_platform_member|is_platform_supporter|support_access_level|current_supervisors|incident_side_of_caller|space_owner_is_me|is_channel_member|client_permission|assert_can_manage_access|establishment_photo_paths|report_can_prepare|reservations_my_role|reservations_actor_type|reservations_settings_actor|reservations_manage_actor|reservations_is_support_marked|reservations_plan_actor|agent_balance_can_read'
       and p.proname not in (
         -- Las ocho que las políticas de RLS evalúan como el rol que
         -- consulta: sin su EXECUTE para `authenticated` las políticas se
@@ -2924,7 +2947,16 @@ begin
         -- excepción). Solo devuelven otro identificador del mismo
         -- catálogo; quién puede leer lo que cuelga de él lo sigue
         -- decidiendo la política.
-        'plan_lineage', 'service_lineage'
+        'plan_lineage', 'service_lineage',
+        -- Migración 170 (Fase D de agents). `reservations_manage_actor()` (quién gestiona el
+        -- Equipo y los dispositivos) y `reservations_is_support_marked()` (quién está marcado
+        -- como soporte) son LAS comprobaciones de PRD de agents §3.2 y §3.4; están cerradas por
+        -- RPC y sus nombres entran en la heurística de arriba para que cuenten las públicas que
+        -- las llaman. Las dos de la sesión de soporte que quedan son la propia persona tocando lo
+        -- suyo: `close_reservation_support_session` exige `actor_id = auth.uid()` (y lanza
+        -- excepción si no) y `my_reservation_support_session` filtra por `actor_id = auth.uid()`
+        -- dentro del `where`. La suite 92 prueba las dos con otra persona.
+        'close_reservation_support_session', 'my_reservation_support_session'
       )
       -- Los ayudantes del propio fixture (`h7_make_job` y compañía), que
       -- este archivo crea y borra: son andamiaje del test, no producto.

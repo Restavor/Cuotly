@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/ui/Icon";
@@ -32,6 +33,8 @@ export function ReservationRow({
   largeGroup = false,
   cancelledNote,
   actions,
+  href,
+  id,
 }: {
   time: string;
   name: string;
@@ -49,6 +52,10 @@ export function ReservationRow({
   cancelledNote?: string;
   /** Los botones de una fila pendiente o duplicada: «Rechazar» y «Confirmar», «No es duplicada»… */
   actions?: ReactNode;
+  /** A dónde lleva la fila (la ficha de la reserva). Sin él, la fila no es un enlace. */
+  href?: string;
+  /** El ancla de la fila: «Revisar» lleva a ella. */
+  id?: string;
 }) {
   const t = es.agents.components;
   const cancelled = status === "cancelled";
@@ -104,14 +111,29 @@ export function ReservationRow({
     </div>
   );
 
-  if (!boxed) return <li className="rounded-xl px-3">{line}</li>;
+  const content = href ? (
+    <Link href={href} className="block rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-cuotly-green">
+      {line}
+    </Link>
+  ) : (
+    line
+  );
+
+  if (!boxed) {
+    return (
+      <li id={id} className={`rounded-xl px-3 ${href ? "hover:bg-soft-surface" : ""}`}>
+        {content}
+      </li>
+    );
+  }
 
   return (
     <li
+      id={id}
       data-row="pending"
-      className="rounded-xl border border-pending-border bg-pending-row px-3 pb-2 pt-1.5"
+      className="scroll-mt-24 rounded-xl border border-pending-border bg-pending-row px-3 pb-2 pt-1.5"
     >
-      {line}
+      {content}
       {actions ? <div className="flex flex-wrap justify-end gap-2 sm:pl-[60px]">{actions}</div> : null}
     </li>
   );

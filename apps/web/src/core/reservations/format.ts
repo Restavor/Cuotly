@@ -1,0 +1,66 @@
+/**
+ * `src/core/reservations/format.ts` · cómo se escriben las fechas de la agenda («Sábado, 26
+ * de septiembre», «Sáb 26 sept», «Septiembre 2026»). Salen de `Intl` en español, no de
+ * listas escritas a mano, y siempre en UTC: una fecha local de reserva ("2026-09-26") no
+ * tiene hora, así que no hay zona que la mueva de día.
+ *
+ * Lógica de dominio pura: sin Supabase, sin Next.js, sin React.
+ */
+import { isValidLocalDate } from "./dates";
+import type { LocalDate } from "./dates";
+
+function formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat("es-ES", { ...options, timeZone: "UTC" });
+}
+
+function capitalize(text: string): string {
+  return text.length === 0 ? text : text[0].toUpperCase() + text.slice(1);
+}
+
+function asDate(date: LocalDate): Date {
+  if (!isValidLocalDate(date)) throw new RangeError(`Fecha no válida: ${date}`);
+  const [y, m, d] = date.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+/** «Sábado, 26 de septiembre». */
+export function formatLongDate(date: LocalDate): string {
+  return capitalize(formatter({ weekday: "long", day: "numeric", month: "long" }).format(asDate(date)));
+}
+
+/** «Sáb 26 sept» (sin los puntos que pone `Intl`). */
+export function formatShortDate(date: LocalDate): string {
+  const d = asDate(date);
+  const weekday = capitalize(formatter({ weekday: "short" }).format(d).replace(".", ""));
+  const month = formatter({ month: "short" }).format(d).replace(".", "");
+  return `${weekday} ${d.getUTCDate()} ${month}`;
+}
+
+/** «Septiembre 2026». */
+export function formatMonth(month: string): string {
+  const d = asDate(`${month}-01`);
+  return `${capitalize(formatter({ month: "long" }).format(d))} ${d.getUTCFullYear()}`;
+}
+
+/** El nombre de un día de la semana (1 = lunes … 7 = domingo): «lunes», o su inicial «L» si es `narrow`. */
+export function weekdayName(weekday: number, style: "long" | "short" | "narrow" = "long"): string {
+  // El 5 de enero de 2026 fue lunes.
+  const d = new Date(Date.UTC(2026, 0, 4 + weekday));
+  const text = formatter({ weekday: style }).format(d).replace(".", "");
+  return style === "narrow" ? text.toUpperCase() : capitalize(text);
+}
+
+/** Una duración en minutos como la escribe la pantalla de ajustes: «2 h», «90 min», «1 h 30 min». */
+export function formatMinutes(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+}
+
+/** «24 sept, 18:42»: la fecha y la hora de un instante en la zona del restaurante, para el historial de una reserva. */
+export function formatDateTime(instant: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone }).formatToParts(instant);
+  const get = (type: string) => (parts.find((p) => p.type === type)?.value ?? "").replace(".", "");
+  return `${get("day")} ${get("month")}, ${get("hour")}:${get("minute")}`;
+}

@@ -15,11 +15,11 @@ Bosco contestó a los seis puntos del §7 y, después, a lo que quedó bloqueado
 
 | § 7 | Respuesta de Bosco | Estado a 03/10/2026 |
 |---|---|---|
-| 1 LandingSite | Cuenta propia para el agente (decisión 113). Es un **correo nuevo y vacío, con el que inició sesión en LandingSite usando Google** | **Riesgo de la cláusula 6(ix) sin resolver** (una cuenta propia solo protege la de Bosco). **Pendiente y bloqueante:** la cuenta está vacía, así que **no ve el sitio de Restavor** hasta que Bosco la invite desde su cuenta principal; y entrar "con Google" desde aquí es la peor vía (ver "Cómo conectar LandingSite") |
+| 1 LandingSite | Cuenta propia para el agente (decisión 150). Es un **correo nuevo y vacío, con el que inició sesión en LandingSite usando Google** | **Riesgo de la cláusula 6(ix) sin resolver** (una cuenta propia solo protege la de Bosco). **Pendiente y bloqueante:** la cuenta está vacía, así que **no ve el sitio de Restavor** hasta que Bosco la invite desde su cuenta principal; y entrar "con Google" desde aquí es la peor vía (ver "Cómo conectar LandingSite") |
 | 2 Página de pruebas | "Arreglado" | **Confirmado: responde 200** en `https://www.restavor.com/pruebas-agente-menu` (con anti-caché). Ver "La página de pruebas" |
 | 3 Bar Demo | Permiso concedido | **Hecho entero** con la opción A (ver "Hecho en Restavor pruebas") |
-| 4 Decisión de crear el agente | "Vale" | Decisión 112 en `docs/DECISIONES.md`, `CLAUDE.md` y nota en RN-CRE-25 de `docs/PRD.md` |
-| 5 Reparto de trabajos | "Ok" a la opción (ii) | Decisión 114. El diseño exacto se propone en la Fase 2 y se aprueba antes de escribir la migración |
+| 4 Decisión de crear el agente | "Vale" | Decisión 149 en `docs/DECISIONES.md`, `CLAUDE.md` y nota en RN-CRE-25 de `docs/PRD.md` |
+| 5 Reparto de trabajos | "Ok" a la opción (ii) | Decisión 151. El diseño exacto se propone en la Fase 2 y se aprueba antes de escribir la migración |
 | 6 Preguntas 1 a 7 de LandingSite | Bosco entró con la cuenta del agente | **Hecho el 03/10/2026** (ver "Prueba en LandingSite"). Acceso por código de correo: Google no deja entrar desde un navegador controlado por programa |
 | Menú Diario para Bar Demo | **Opción A** | Hecho: contratado con la función de la app y pago de demostración registrado |
 
@@ -118,7 +118,7 @@ Una comprobación previa a publicar (la «foto antes» repetida justo antes de p
 - **Acceso desde la nube:** se decide al llegar a la publicación (Fase 5). Dos vías: contraseña de LandingSite (la cuenta admite «Set password») o código por correo. Si es con código, Bosco quiere **dejar la sesión siempre iniciada** y volver a pasar el código al agente solo cuando haga falta iniciarla de nuevo. En la prueba el código lo tecleó Bosco, no el robot.
 
 **Qué queda abierto de las preguntas 1 a 7**
-- **1:** Bosco **ya puso la contraseña** (decisión 116, 03/10/2026) y no se ha probado entrar con ella desde la nube (se prueba en la Fase 1).
+- **1:** Bosco **ya puso la contraseña** (decisión 153, 03/10/2026) y no se ha probado entrar con ella desde la nube (se prueba en la Fase 1).
 - **2:** no se midió el conjunto mínimo exacto de cookies ni la duración real de la sesión.
 - **4:** el consumo exacto de ediciones de IA no se puede medir desde la interfaz (sin contador).
 - **5:** no se probó a cambiar el `alt`.

@@ -137,6 +137,12 @@ export interface QueueGateway {
    * tanda. No toca el correo, que sale en sus dos tandas del día.
    */
   claimPushDeliveries(dedupeKeys: readonly string[]): Promise<readonly DeliveryRow[]>;
+  /**
+   * Decisión 137 · la gemela del push para los dos correos de Restavor agents que no
+   * esperan a la tanda («Aprobado: datos para pagar» y «Reservas está en pausa»):
+   * reclama SOLO las entregas de correo de los avisos con esas claves.
+   */
+  claimEmailDeliveries(dedupeKeys: readonly string[]): Promise<readonly DeliveryRow[]>;
   markDeliverySent(deliveryId: string, providerMessageId: string | null): Promise<void>;
   markDeliveryFailed(
     deliveryId: string,
@@ -671,6 +677,44 @@ export async function sendPushNow(
   const deliveries = await gateway.claimPushDeliveries(dedupeKeys);
   for (const delivery of deliveries) {
     const outcome = await deliverPush(gateway, transports, delivery, now);
+    result[outcome] += 1;
+  }
+  return result;
+}
+
+/** Lo único que necesita un correo al momento: su transporte y su redactor. */
+export type MailTransports = Pick<DeliveryTransports, "mail" | "mailComposer">;
+
+/**
+ * Decisión 137 · los dos correos importantes del ciclo de vida de Reservas salen al
+ * momento, sin esperar a las dos tandas del día (decisión 99: «correos en tandas a no ser
+ * que sea importante»). Mismo camino que cualquier otra entrega —reintentos, cierre sin
+ * dirección— para que no tenga reglas propias.
+ *
+ * Si el transporte de correo no puede enviar por cómo está configurado, NO se reclama
+ * nada: reclamar gasta un intento, y la entrega espera tranquila a su tanda. Es un mejor
+ * esfuerzo: no lanza.
+ */
+export async function sendEmailNow(
+  gateway: QueueGateway,
+  transports: MailTransports,
+  dedupeKeys: readonly string[],
+  now: Date = new Date(),
+): Promise<{ sent: number; retried: number; dead: number; blockedBy: string | null }> {
+  const result = { sent: 0, retried: 0, dead: 0, blockedBy: null as string | null };
+  if (dedupeKeys.length === 0) return result;
+
+  const motivo = transports.mail.unusableReason?.() ?? null;
+  if (motivo !== null) return { ...result, blockedBy: motivo };
+
+  const deliveries = await gateway.claimEmailDeliveries(dedupeKeys);
+  for (const delivery of deliveries) {
+    const outcome = await deliverOne(
+      gateway,
+      { ...transports, push: null, pushComposer: { compose: () => null } },
+      delivery,
+      now,
+    );
     result[outcome] += 1;
   }
   return result;

@@ -82,8 +82,164 @@ de la tabla de abajo (misma contraseña de demostración):
 Lo que **no** está y es de fases posteriores: la agenda (C), el PIN real, la tablet y la sesión de soporte (D), aprobar solicitudes, cobros y recargas (E), los
 avisos a comensales (F), el agente de llamadas (G), el formulario web (H) y los conectores (I). El sembrado no registra ningún segundo paso (decisión 106).
 
-**El PIN del Equipo de Casa Pepe** (Ana Ruiz 1234, Diego Navas 5678) se guarda cifrado con el secreto `restavor-pruebas-pin-secret`. Para que sirvan en la Fase D,
-`AGENTS_PIN_SECRET` de la vista previa de la rama `agents` tiene que valer eso. Hasta entonces no abren nada.
+**El PIN del Equipo de Casa Pepe** (Ana Ruiz 1234, Diego Navas 5678) se guarda cifrado con el secreto `restavor-pruebas-pin-secret`. Para que sirvan,
+`AGENTS_PIN_SECRET` de la vista previa de la rama `agents` tiene que valer eso (Fase D, más abajo).
+
+## Estado de la Fase C (02/10/2026): qué probar a mano
+
+La agenda de Reservas, ya con datos de verdad. Antes de probar, hay que aplicar **la migración 169** (`20261003000169_reservas_la_agenda.sql`) a Restavor pruebas:
+sin ella las pantallas dicen «No hemos podido cargar la agenda» (las funciones nuevas no existen todavía). Después, en la vista previa de la rama `agents`, con
+`jose@casapepe.test` (misma contraseña de demostración) y Casa Pepe:
+
+1. **Hoy** (`Reservas › Hoy`, en Casa Pepe). Pon en la dirección `?fecha=2026-09-26` (o ve con las flechas hasta el sábado 26 de septiembre): es el día de la
+   maqueta. Arriba, **«10 reservas · 42 personas · 1 pendiente»**; los filtros **Todas 10 · Agente 3 · Plataformas 3 · Web 2 · Manual 2**; **Comida 23 de 40** y **Cena 19
+   de 60**. Raúl Moreno sale en gris con «No vino» y Elena Castro tachada al final de las 15:00 con «Cancelada por CoverManager». Pulsa **Web**, recarga la página: el filtro
+   se recuerda en ese dispositivo. La barra amarilla **«1 grupo pendiente de confirmar · Revisar»** lleva al grupo pendiente de hoy en adelante (la copia de Andrés Martínez).
+2. **Confirmar o rechazar un grupo.** En el 26/09, Andrés Martínez (12 personas) trae **Rechazar / Confirmar**. Confirmar lo deja como una reserva normal. Rechazar pide
+   confirmación («¿Rechazar este grupo?») y lo deja como «Grupo rechazado».
+3. **Nueva reserva** (botón de arriba, o el (+) del móvil). Fecha (Hoy, Mañana, Otro día), personas (1 a 6 y «7+»), turno, hora, nombre, teléfono, email opcional, idioma de
+   los avisos y nota con atajos. Debajo del turno: «Quedan X de Y plazas». Prueba una reserva de 70 personas en la cena: avisa «**Te pasas del aforo en N personas…
+   ¿Guardar igualmente?**»; «Revisar» vuelve, «Guardar igualmente» la guarda. Los días cerrados (los lunes y el 12/10) no dejan elegir hora.
+4. **Ficha** (pulsa una reserva). La hora grande, nombre, personas, turno y fecha, estado, origen, nota, teléfono con **Llamar**, «Ha venido N veces · ha fallado M veces» y el
+   **historial** legible. **Editar** cambia fecha, hora, personas y contacto (en una reserva de plataforma, la fecha, la hora y las personas están bloqueadas y se cambian
+   en la plataforma). **Cancelar reserva** pide el motivo. **Marcar «No vino»** solo se activa desde la hora de la reserva («desde las 21:00») y **deshacerlo** solo el mismo día.
+5. **Posibles duplicadas.** El domingo 27/09 hay dos reservas de Laura Vega con el mismo teléfono: salen en amarillo con «Posible duplicada» y «No es duplicada».
+6. **Buscar** (botón «Buscar reserva»). `gar` encuentra a Inés Ugarte con «gar» resaltado; `109` (los 3 últimos números) encuentra a Sergio Gil. Los resultados salen en
+   «Próximas» y «Últimos 30 días».
+7. **Calendario.** Septiembre de 2026: reservas y personas por día, una barra de colores por origen, los lunes **rayados** como «Cerrado», un **punto amarillo** el día 26 (hay
+   pendientes) y el total del mes arriba. Tocar un día abre Hoy en ese día.
+8. **Ajustes › Horarios.** Días que abrís, turnos con su aforo, «Cada 15/30 min», grupos grandes, días cerrados y límites. Prueba **quitar el turno de Cena y guardar**:
+   no se guarda y dice «No se puede: hay N reservas futuras afectadas. Muévelas o cancélalas antes.»
+9. **Primer uso.** Los restaurantes del sembrado ya lo tienen terminado. Para verlo: en el SQL editor de Supabase de Restavor pruebas,
+   `update reservation_settings set onboarding_completed_at = null where establishment_id = 'e5200000-0000-0000-0000-000000000002';` y entra en Casa Pepe Centro: te lleva a
+   **Configura tu restaurante** (días y turnos → aforo y grupos → equipo y tablet → agente). Los dos últimos pasos dicen que llegan con las Fases D y G.
+10. **Tiempo real.** Abre Hoy en dos pestañas del mismo navegador. Crea una reserva a mano en una: la otra se refresca sola, **sin** barra ni sonido (la
+    barra «Hay una reserva nueva» es para las reservas del agente, la web y las plataformas, que llegan en las Fases G a I). Sin
+    `RESERVATIONS_BROADCAST_SECRET` en Vercel (Preview) es la versión falsa, solo entre pestañas del mismo navegador; con la clave, funciona entre dispositivos
+    (`openssl rand -hex 32`; la misma en todos los servidores del entorno).
+11. **Quien no es del restaurante no entra.** `carla@barlaplaza.test` pegando la dirección de Casa Pepe: «No tienes acceso a Reservas en este restaurante», aunque pegue la
+    dirección de una ficha o de la búsqueda.
+
+**El recordatorio de las 2 horas** (RN-RES-05) lo lanza `/api/agents/cron/pendientes` cada 15 minutos con `supabase/operaciones/agents-cron.sql`, que se ejecuta una vez por
+entorno (ver el propio archivo). No se ha podido probar aquí (no hay `pg_cron` ni `pg_net` en local): sí la función y la ruta. Hasta que se ejecute, los grupos pendientes
+llevan su aviso al llegar pero no el de las 2 horas.
+
+Lo que **no** está y es de fases posteriores: avisos a comensales (F), PIN, tablet y sesión de soporte (D), cobro y saldo (E), encender y apagar el agente (G), formulario web (H),
+conectores (I), app instalable y modo sin conexión (J).
+
+## Estado de la Fase D (03/10/2026): qué probar a mano
+
+El Equipo con PIN, la tablet del local y el soporte de Reservas. **Antes de probar** hay que hacer tres cosas en Restavor pruebas:
+
+1. **Migración 170** (`20261003000170_reservas_equipo_tablet_y_soporte.sql`): la aplica sola el proceso `Pruebas · Supabase` al subir la rama `agents`. Sin ella las pantallas
+   nuevas dicen «No hemos podido cargar…».
+2. **`AGENTS_PIN_SECRET` en Vercel** (cuotly-web → Settings → Environment Variables): Environment = Preview, rama `agents`, tipo Sensitive, valor `restavor-pruebas-pin-secret`
+   (con ese valor el sembrado cifró los PIN). Sin ella la pantalla de Equipo dice «Falta configurar los PIN» y ninguna tablet comprueba nada. `SUPABASE_SERVICE_ROLE_KEY` también tiene
+   que estar (la tablet lee con ella).
+3. **Resembrar** (Actions › `Pruebas · Supabase` › «sembrar», o se hace solo si cambia algo de `supabase/seed/`): añade a `soporte@cuotly.test`, los PIN de José y Luis y su factor TOTP.
+
+PIN de prueba de Casa Pepe: **Ana Ruiz 1234** y **Diego Navas 5678** (Equipo), **José García 4321** (Propietario), **Luis Martín 8765** (Encargado); María García, sin PIN todavía.
+
+1. **Equipo** (`jose@casapepe.test` › Casa Pepe › Ajustes › **Equipo**). Ves a los cinco: José y María (Propietarios), Luis (Encargado), Ana y Diego (Equipo). «+ Añadir persona»: pon
+   nombre y un PIN de 4 cifras dos veces. Un PIN que ya usa otra persona dice «Ese PIN ya lo usa otra persona de este restaurante» (**cinco veces en 24 horas y dice «Has probado demasiados PIN…»**: es el límite contra adivinar PIN; si te pasa probando, espera o pídele a Claude que lo limpie en pruebas); dos PIN distintos, «Los dos PIN no coinciden».
+   «Cambiar PIN» y «Quitar» (se desactiva y su PIN queda libre). Debajo, **Mi PIN para la tablet** (el tuyo, solo desde tu cuenta) e **Invitar a un Propietario o a un Encargado**
+   Como Propietario (decisión 131) puedes invitar a otro **Propietario** (si ya tiene cuenta, entra al momento; si no, el equipo de Restavor aprueba la invitación) y, en la lista, **«Quitar propietario»**
+   a los Propietarios del restaurante (no a los del grupo): avisa de que pierde el acceso a todo el restaurante y no deja quitar al último («Tiene que quedar al menos un Propietario…»).
+2. **Un Encargado** (`luis@casapepe.test`): gestiona el Equipo, pero no ve «Invitar…», «Quitar de Reservas» ni «Quitar propietario».
+3. **Activar la tablet.** En una tablet o navegador aparte: entra con `jose@casapepe.test`, Ajustes › Equipo, abajo **«Usar este dispositivo como tablet del local»**, ponle nombre y pulsa. Pasa a
+   **Reservas › Hoy** y arriba a la derecha dice «Tablet del local · <nombre>». Ya no hay «Mi cuenta», ni búsqueda general, ni avisos; el menú no tiene Ajustes, Saldo ni Plan, y abajo sale
+   **«Ajustes con PIN»**. Abre `/` o `/agents`: te lleva siempre a Hoy. Al activarla **se cierra tu sesión personal en ese navegador** (la tablet no es una cuenta): `/web` y `/cuenta` te devuelven a Hoy, y pedir otro restaurante también. Para volver a usar ese navegador con tu cuenta, desactiva la tablet (paso 6) y entra de nuevo.
+4. **Cada acción pide PIN.** En la tablet, «Nueva reserva» se rellena sin PIN; al **Guardar** sale **«¿Quién eres?»**. Prueba un PIN malo (1111): «PIN incorrecto. Te quedan 4 intentos.»; luego el de
+   Ana (1234): se guarda y en la ficha, en el historial, sale **Ana Ruiz**. Cancelar, confirmar un grupo o «No vino» también piden el PIN. **5 PIN malos seguidos** bloquean la tablet 1 minuto
+   (la segunda tanda 5 min, la tercera 30 min y de la cuarta en adelante 2 h): el teclado se desactiva y dice «Demasiados intentos…».
+5. **Ajustes con PIN.** «Ajustes con PIN» en el menú: el PIN de Ana dice «Ese PIN es del Equipo…»; el de **José (4321)** o **Luis (8765)** abre Ajustes con una barra **«Ajustes abiertos con el PIN de
+   José García · Se cierran en 2:00»** y «Salir de Ajustes». A los 2 minutos sin tocar se cierran solos. Con ellos abiertos puedes ver Equipo (añadir, cambiar PIN, quitar, desactivar tablets) e Historial;
+   no «Mi PIN» ni activar dispositivos (son de tu cuenta). Si desde tu cuenta le quitas «Gestionar Reservas» a Luis, su PIN y los Ajustes que abrió dejan de valer al momento.
+6. **Desactivar la tablet.** Desde tu cuenta, Ajustes › Equipo › Tablets y móviles del local › **Desactivar**: la tablet, al recargar, dice «Este dispositivo se ha desactivado» con «Entrar con mi cuenta».
+7. **Soporte de Reservas.** Entra con `soporte@cuotly.test` (misma contraseña) y verifica el segundo paso: añade a tu app autenticadora (Google Authenticator, Aegis…) el secreto
+   **`RESTAVORSOPORTEPRUEBASSEGUNDOPAS`** (escríbelo junto, sin espacios; tipo «basado en tiempo», 6 cifras, 30 s). Ve a **Espacios › Restavor demo › Reservas** (`/espacios/demo/reservas`):
+   en «Abrir Reservas como soporte» sale Casa Pepe → **Abrir como soporte**, pon un motivo y la duración. Aterrizas en Hoy con la barra **«Estás viendo Reservas de Casa Pepe como Restavor (soporte)
+   · quedan 60 min · Salir»** y ves los nombres de los comensales. **Salir** te devuelve al espacio y deja de verse todo. Después, como `jose@casapepe.test`, Ajustes › **Historial**: «Restavor entró
+   como soporte · <motivo>» y nunca quién fue. `admin@cuotly.test` (administrador sin la marca) ve «No estás marcado como soporte de Reservas» y no entra a las reservas ni por la dirección.
+   Para tu cuenta real (`info@restavor.com`), activa antes el segundo paso en Mi cuenta › Seguridad y usa `/administracion/reservas`.
+
+Lo que **no** está y es de fases posteriores: aprobar solicitudes, cobros y recargas (E), los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I), la app instalable y el
+modo sin conexión (J).
+
+## Estado de la Fase E, primera tanda (03/10/2026): qué probar a mano
+
+Aprobar y cobrar Reservas, y su ciclo de vida (E1: aprobar, rechazar, condiciones, datos para pagar, pausa, baja, cierre, Excel). **Todavía no están** el saldo, las recargas con Stripe, la pestaña de
+Reservas en la ficha del restaurante ni «Transferir también Reservas» (E2). **Antes de probar**, en Restavor pruebas:
+
+1. **Migraciones 172 a 175**: las aplica sola `Pruebas · Supabase` al subir la rama `agents`. Sin ellas las pantallas nuevas dicen «No hemos podido cargar…».
+2. **Resembrar** (Actions › `Pruebas · Supabase` › «sembrar», o solo si cambia algo de `supabase/seed/`): el sembrado ahora trae **los cobros y los pagos de cada restaurante de estado** y unos
+   datos de pago de ejemplo para el espacio demo (IBAN de ejemplo, Bizum `600 000 000`: no son una cuenta real).
+3. Para que el **correo** salga de verdad hacen falta `RESEND_API_KEY` y `RESEND_FROM` en Vercel (Preview). Sin ellos todo funciona y el correo queda esperando su tanda; lo ves en la campana.
+4. Para el **barrido diario** hace falta ejecutar `supabase/operaciones/agents-cron.sql` en Restavor pruebas (`agents-ciclo`, cada hora; barre a las 08:00 de Madrid). A mano se lanza con
+   `curl -H "Authorization: Bearer <CRON_SECRET>" "https://<vista previa>/api/agents/cron/ciclo?force=1"`.
+
+Cuentas (misma contraseña de siempre): `admin@cuotly.test` (administrador del espacio: aprueba y registra pagos), `owner@cuotly.test` (propietaria del espacio: además cambia los datos de pago),
+`estados@casapepe.test` (Propietario de los restaurantes de estado) y `luis@casapepe.test` (Encargado).
+
+1. **Aprobar.** Con `admin@cuotly.test`: Espacios › Restavor demo › **Reservas**. En «Solicitudes de contratación» sale **Taberna Levante · Pendiente de revisar** con **Aprobar** y **Rechazar**.
+   Aprueba: dice «Solicitud aprobada. Hemos avisado al restaurante con los datos para pagar.» y Taberna Levante pasa a «Restaurantes con Reservas» con **«Pendiente: 58,08 € · vence el …»** y el
+   enlace **Registrar el pago**. **Rechazar** pide un motivo (sin él, «Escribe el motivo del rechazo.») y lo enseña en la solicitud.
+2. **Datos de pago** (`owner@cuotly.test`, misma pantalla): la tarjeta **Datos de pago de Reservas** (IBAN, Bizum, nota). Un IBAN mal escrito se rechaza; el administrador la ve pero no la cambia.
+3. **Las condiciones y los datos para pagar.** Con `estados@casapepe.test`, abre `/agents/e5200000-0000-0000-0000-000000000005/pendiente-de-pago` (Bodega Norte, aprobada y sin pagar). Como no
+   aceptó las condiciones, antes te lleva a **«Acepta las condiciones de Reservas»** (marca la casilla y **Aceptar y ver cómo pagar**; sin marcar no avanza). Después, **«Aprobado: datos para pagar»**
+   con los cuatro pasos arriba (Aprobado · Condiciones · **Pagar el primer mes** · Empezar), el periodo, cuota 48,00 €, IVA 10,08 €, total **58,08 €**, cuándo vence, y cómo pagar: IBAN a nombre de la razón
+   social, Bizum y concepto, cada uno con **Copiar**; y «Subir justificante» (no activa nada: solo avisa al equipo).
+4. **Pagar activa.** Con `admin@cuotly.test`: en Reservas, Bodega Norte › **Registrar el pago** (te lleva al cobro en Finanzas) › **Registrar el pago**. Vuelve a entrar como `estados@…` en esa
+   dirección: ya no pide pagar y te lleva a Reservas (Primer uso). Un pago **parcial** no activa, y un pago completo **sin condiciones aceptadas** tampoco: Reservas se activa cuando el Propietario las acepta.
+5. **Pago pendiente y pausa.** `estados@…` › **Mesón del Puerto** (cobro vencido hace 3 días): en Hoy sale **«Pago pendiente, quedan 4 días»** con «Ver cómo pagar»; en **Plan y pagos** el estado, los datos
+   para pagar y los cobros (uno «Vencido»). **Cervecería Roma** (vencida hace 9 días) está **en pausa**: «Paga y se reactiva al momento»; en Hoy, el aviso de pausa y no se pueden crear reservas.
+   Registrar el pago completo de su cobro (como en el paso 4) la reactiva al momento.
+6. **Baja.** `estados@…` › **Asador Vega** › Plan y pagos: «Baja confirmada. Reservas funciona hasta el …» y **Anular la baja**. Anúlala; después **Darme de baja** pide confirmación («¿Seguro…?») y confirma.
+   Restavor puede dar de baja, anular la baja, **Cerrar Reservas** (solo desde la pausa, con motivo) y **Reactivar** (dentro de los 30 días) desde la lista de «Restaurantes con Reservas».
+7. **Cerrada y Excel.** `estados@…` › **Casa Mar** (cerrada hace 9 días): «Reservas cerrada», «Quedan 21 días para descargar tus reservas» y **Descargar todas las reservas (Excel)**. Ábrelo: una fila por reserva,
+   en español. El Encargado (`luis@casapepe.test`) no puede descargarlo (403) ni abrir Plan y pagos. Con Reservas cerrada el Encargado tampoco lee ya las reservas (solo el Propietario). A los 30 días del cierre el barrido anonimiza los datos personales y la pantalla lo dice.
+8. **Nada cambia en Restavor web.** Un cobro de Reservas vencido no pausa el restaurante en Restavor web (su Inicio y su facturación siguen igual), y un impago de Restavor web no pausa Reservas.
+
+Para repetir el recorrido, vuelve a ejecutar `supabase/seed/reservas-demo.sql`: es idempotente y deja cada restaurante como estaba.
+
+Lo que **no** está y es de fases posteriores: el saldo, las recargas y la ficha de Restavor con su pestaña «Reservas» (E2), los avisos a comensales (F), encender el agente (G), el formulario web (H),
+los conectores (I), la app instalable y el modo sin conexión (J). Los cobros de Reservas **siguen saliendo en «Pagos y facturas» de Restavor web** de un restaurante que tenga también panel (decisión 139).
+
+## Estado de la Fase E, segunda tanda (03/10/2026): qué probar a mano
+
+El saldo, las recargas con tarjeta (Stripe, modo de pruebas) y el lado de Restavor (la ficha de Reservas de un restaurante y Administración). **Pago y datos de pago están «Próximamente» hasta
+que Bosco los dé** (decisión 144): todo está construido, pero no se activa solo. **Todavía no está** «Transferir también Reservas» (decisión 100): espera una decisión de Bosco sobre qué pasa con
+la suscripción, los cobros y el saldo (decisión 148). **Antes de probar**, en Restavor pruebas:
+
+1. **Migración 176**: la aplica sola `Pruebas · Supabase` al subir la rama `agents`. **Resembrar** (Actions › `Pruebas · Supabase` › «sembrar»): el sembrado deja los avisos de saldo ya dados.
+2. **Para ver las recargas con tarjeta activas** (si no, verás «Próximamente», que también es lo que hay que comprobar): en Stripe, modo de pruebas, copia la clave secreta (`sk_test_…`) y crea un webhook a
+   `https://<vista previa>/api/agents/webhooks/stripe` con los eventos `checkout.session.completed` y `checkout.session.expired`; copia su secreto (`whsec_…`). En Vercel (Settings › Environment Variables,
+   solo **Preview**, rama `agents`) pon `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET` y vuelve a desplegar. **No pongas nada en Production**: nada de agents sale a producción hasta que se pida. En Administración
+   › Reservas se ve si están listas y en qué modo (nunca la clave).
+
+Cuentas: `jose@casapepe.test` (Propietario de Casa Pepe, saldo 7,40 €), `luis@casapepe.test` (Encargado), `carla@barlaplaza.test` (Bar La Plaza, saldo 1,80 €), `admin@cuotly.test` (administrador del
+espacio, sin segundo paso), `soporte@cuotly.test` (administrador **con** segundo paso, secreto `RESTAVORSOPORTEPRUEBASSEGUNDOPAS`) e `info@restavor.com` (propietario de Restavor web, con su segundo paso).
+
+1. **Saldo.** Con José: `/agents/<Casa Pepe>/saldo` (en el menú, «Saldo» con el importe). Sale **7,40 €**, para cuántos minutos de llamadas da (solo si hubo llamadas en los últimos 30 días), «Te avisamos
+   cuando queden menos de 5 €», el gasto del mes por llamadas, WhatsApp y SMS (si el mes no tiene gasto lo dice) y los últimos movimientos; «Ver todos» enseña más y «Descargar en Excel» baja un `.xlsx`.
+   Con Luis (Encargado) ves lo mismo pero no hay recarga: «Solo el propietario puede recargar». La tablet del local no ve el saldo.
+2. **Recargar.** Sin Stripe configurado: «Próximamente» y cómo pedir una recarga a mano. Con Stripe: elige 10, 20 o 50 € u otro importe (menos de 10 € no vale); abajo dice **«Pagarás 24,20 € (20,00 € + 21 % IVA)»**;
+   «Pagar con tarjeta» te lleva a Stripe (tarjeta de prueba `4242 4242 4242 4242`, cualquier fecha futura y CVC). Al volver, «Estamos esperando la confirmación»; en cuanto Stripe avisa, el saldo sube **20,00 €**
+   (el IVA no es saldo), llega el aviso con el recibo y aparece «Recarga con tarjeta» en los movimientos. Cancelar en Stripe: «No se te ha cobrado nada».
+3. **Saldo bajo y agotado.** Con Carla (Bar La Plaza, 1,80 €): en Saldo y en Hoy sale **«Saldo bajo: te quedan 1,80 €»** con «Recargar». Cuando Restavor ajusta un saldo a 0 o menos, sale «Te has quedado sin saldo» y un aviso
+   (una sola vez hasta que se recupere).
+4. **La ficha de Reservas, del lado de Restavor.** Con `admin@cuotly.test`: Restaurantes › Casa Pepe: arriba hay un acceso **«Reservas»** (también desde Espacio › Reservas, donde cada restaurante en marcha enseña su saldo).
+   En la ficha de Reservas: estado y historial del servicio, saldo, el mes, movimientos e incidentes. **Registrar recarga**: 20 € por Bizum → el saldo pasa a 27,40 € y avisa al restaurante. **Ajuste** y **Devolver el saldo**
+   están parados con «Para esto tienes que haber verificado tu identidad en dos pasos».
+5. **Ajuste con el segundo paso.** Con `soporte@cuotly.test` (con el código de 6 cifras): Casa Pepe › Reservas › Ajuste: `-1,50` sin motivo no se guarda; con motivo sí, y sale «Ajuste de Restavor» en los movimientos y en el Historial.
+   **Devolver el saldo** solo aparece con la baja pedida o Reservas cerrada (prueba con Asador Vega, de baja, o Casa Mar, cerrada).
+6. **Administración › Reservas** (con `info@restavor.com` y su segundo paso): los espacios que ofrecen Reservas con «Apagar/Encender Reservas», el estado de Stripe y las tarifas de mensajería (un WhatsApp son 0,016 €;
+   una tarifa nueva vale desde hoy o una fecha futura y las anteriores no se tocan).
+7. **La puerta de los datos de pago (decisión 144).** Con `owner@cuotly.test`: Espacio › Reservas › «Datos de pago de Reservas»: borra el IBAN y el Bizum y guarda. Con `admin@cuotly.test`, el botón **Aprobar** de una solicitud
+   queda parado con «Antes de aprobar, el propietario del espacio tiene que cargar los datos de pago». Vuelve a ponerlos y se abre.
+
+Lo que **no** está y es de la siguiente tanda o de fases posteriores: «Transferir también Reservas» (decisión 148), las cifras de reservas en la ficha (hace falta el resumen mensual, decisión 139), el gasto real de llamadas
+y avisos (Fases F y G: hoy el saldo solo se mueve con recargas y ajustes y con lo que siembra el sembrado), y la configuración de horarios, equipo, plataformas y clave del agente dentro de la ficha (G, H e I).
 
 ## Cuentas del sembrado
 
@@ -109,8 +265,10 @@ Las de Reservas (`supabase/seed/reservas-demo.sql`, Fase B), todas con la misma 
 | `carla@barlaplaza.test` | Carla Sanz. Propietaria de **Bar La Plaza** (otro grupo, saldo 1,80 €), para el aislamiento |
 | `estados@casapepe.test` | Propietario de los siete restaurantes de prueba: Bodega Norte (aprobada, sin pagar), Mesón del Puerto (cobro vencido), Cervecería Roma (en pausa), Asador Vega (en baja), Casa Mar (cerrada), Taberna Levante (solicitud pendiente) y Café Rechazado (solicitud rechazada) |
 | `admin@cuotly.test` | Administrador del espacio **sin** la marca de soporte de Reservas: no ve a los comensales |
+| `soporte@cuotly.test` | Administrador del espacio **con** la marca de soporte de Reservas y el segundo paso registrado (secreto `RESTAVORSOPORTEPRUEBASSEGUNDOPAS`, TOTP de 6 cifras): para «Abrir como soporte» (Fase D) |
 
-Equipo de Casa Pepe sin cuenta: Ana Ruiz (PIN 1234) y Diego Navas (PIN 5678). Marca «Soporte de Reservas»: Elena e `info@restavor.com`.
+Equipo de Casa Pepe sin cuenta: Ana Ruiz (PIN 1234) y Diego Navas (PIN 5678). PIN de la tablet de José 4321 y de Luis 8765 (María, sin PIN). Marca «Soporte de Reservas»: Elena,
+`soporte@cuotly.test` e `info@restavor.com`.
 El sábado 26/09/2026 de Casa Pepe tiene las 12 reservas de la maqueta, y se copian al próximo día abierto desde hoy para mirarlas a mano.
 
 ## Propietario: `info@restavor.com` (01/10/2026)

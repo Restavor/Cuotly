@@ -31,6 +31,7 @@ import { loadEstablishmentReports, loadPeriodReports } from "@/components/report
 import { INTEGRATION_FLASH_PARAM } from "./integraciones/action-state";
 import { EstablishmentSheet } from "@/components/establishment/Sheet";
 import { StatusNotice } from "@/components/establishment/StatusNotice";
+import { ReservasAccess } from "@/components/establishment/ReservasAccess";
 import { loadBackups, loadPendingTransfer } from "./transfer-load";
 import { loadStatusHistory } from "./status-history-load";
 import { loadPanelInvitations } from "./usuarios/users-load";
@@ -130,10 +131,17 @@ export default async function EstablishmentPage({
 
     const { data: space } = await supabase
       .from("spaces")
-      .select("id, timezone")
+      .select("id, timezone, reservations_enabled")
       .eq("slug", slug)
       .maybeSingle();
     if (!space) notFound();
+
+    // RVR-01 (decisión 136) · el acceso a Reservas desde la ficha, solo si el espacio las ofrece y el restaurante las
+    // tiene. Mostrarlo no autoriza nada: la pantalla de Reservas repite los permisos.
+    const reservasEstado = space.reservations_enabled
+      ? ((await supabase.from("reservation_settings").select("service_status").eq("establishment_id", id).maybeSingle()).data
+          ?.service_status ?? null)
+      : null;
 
     // El día que propone el formulario de registrar un pago es hoy **en la
     // zona del espacio**, calculado en el servidor: el navegador de quien
@@ -372,6 +380,8 @@ export default async function EstablishmentPage({
         : undefined;
 
     return (
+      <>
+        {reservasEstado !== null ? <ReservasAccess href={`${base}/reservas`} status={reservasEstado} /> : null}
       <EstablishmentSheet
         base={base}
         slug={slug}
@@ -440,6 +450,7 @@ export default async function EstablishmentPage({
           timeZone: space.timezone,
         }}
       />
+      </>
     );
   }
 

@@ -92,6 +92,7 @@ cd "$RAIZ/apps/web"
 NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY="$ANON" \
 SUPABASE_SERVICE_ROLE_KEY="$SERVICIO" \
 NEXT_PUBLIC_SITE_URL=http://localhost:3999 \
+AGENTS_PIN_SECRET="${AGENTS_PIN_SECRET:-restavor-pruebas-pin-secret}" \
   nohup npx next dev -p 3999 >"$LOGS/next.log" 2>&1 &
 echo $! >"$LOGS/next.pid"
 echo "Listo. Registros en $LOGS"

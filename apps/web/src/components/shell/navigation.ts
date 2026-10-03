@@ -720,6 +720,12 @@ export interface AgentsNavContext {
   readonly serviceStatus: ReservationServiceStatus;
   /** El saldo ya redactado («7,40 €»), o `null` si a esta persona no se le enseñan importes. */
   readonly balanceLabel: string | null;
+  /** Fase D · el nombre de la tablet del local cuando quien mira es el dispositivo; `null` si es una persona. */
+  readonly deviceName?: string | null;
+  /** Fase D · quién tiene abiertos los Ajustes en la tablet (PIN de Encargado o Propietario) y cuántos segundos le quedan. */
+  readonly elevation?: { readonly name: string; readonly secondsLeft: number } | null;
+  /** Fase D · la sesión de soporte de Reservas abierta, cuando quien mira es el soporte de Restavor. */
+  readonly supportSession?: { readonly id: string; readonly expiresAt: string } | null;
 }
 
 /** Las claves de los destinos de Restavor agents. No son `agent` ni `messages`: esas dos las usa el armazón para su insignia. */
@@ -816,6 +822,7 @@ export function agentsActiveDestination(pathname: string, ctx?: AgentsNavContext
     ["/reservas/agente", "calls", "calls"],
     ["/reservas/calendario", "calendar", "calendar"],
     ["/reservas/ajustes", "settings", "settings"],
+    ["/reservas/primer-uso", "settings", "settings"],
     ["/reservas", "today", "today"],
     ["/saldo", "balance", "balance"],
     ["/plan", "plan", "plan"],
