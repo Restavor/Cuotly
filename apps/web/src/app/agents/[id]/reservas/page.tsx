@@ -8,6 +8,7 @@ import { ButtonLink, EmptyState, ErrorState, NoPermissionState } from "@/compone
 import { addDays, isValidLocalDate, localDateOf, localDateTimeOf } from "@/core/reservations/dates";
 import { agentsPageHref, needsOnboarding, todayHref } from "@/core/reservations/agents-routes";
 import { formatLongDate } from "@/core/reservations/format";
+import { daysLeftOfGrace, showsPaymentBar } from "@/core/reservations/lifecycle";
 import { canOffer } from "@/core/reservations/permissions";
 import { es } from "@/i18n/es";
 import { agentsDb } from "@/app/agents/db";
@@ -17,6 +18,7 @@ import {
   loadPendingGroups,
   loadSchedule,
 } from "@/services/reservations-gateway";
+import { loadPaymentInfo, loadServiceDates } from "@/services/agents/billing-gateway";
 import { realtimeChannelFor } from "@/services/reservations-realtime";
 
 import { requireAgentsPage } from "../../agents-context";
@@ -65,6 +67,20 @@ export default async function Page({
 
   const now = new Date();
   const today = localDateOf(now, schedule.timeZone);
+
+  // «Pago pendiente, quedan N días» (PRD §6.12): solo el Propietario, y solo con el pago pendiente. Si no se
+  // ha podido calcular, la barra sale sin el número: nunca un número inventado.
+  const isOwner = nav.actor.kind === "owner";
+  let payBarDays: number | null | undefined;
+  if (isOwner && showsPaymentBar(nav.serviceStatus)) {
+    payBarDays = null;
+    try {
+      const [info, dates] = await Promise.all([loadPaymentInfo(supabase, id), loadServiceDates(supabase, id)]);
+      if (info && dates) payBarDays = daysLeftOfGrace(new Date(info.dueAt), now, dates.graceDays);
+    } catch {
+      payBarDays = null;
+    }
+  }
   const date = fecha !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(fecha) && isValidLocalDate(fecha) ? fecha : today;
 
   let view;
@@ -164,10 +180,32 @@ export default async function Page({
         </div>
       </div>
 
+      {payBarDays !== undefined ? (
+        <div role="status" className="flex items-center gap-3 rounded-xl border border-pending-border bg-pending-row px-4 py-3 text-sm" data-testid="pay-bar">
+          <Icon name="warning" className="h-5 w-5 shrink-0 text-pending-text" />
+          <span className="flex-1 font-semibold text-pending-text">
+            {payBarDays === null ? es.agents.billing.today.payBarUnknown : es.agents.billing.today.payBar(payBarDays)}
+          </span>
+          <Link
+            href={agentsPageHref(id, "plan")}
+            className="inline-flex min-h-[44px] items-center rounded-field px-3 font-semibold text-pending-text underline"
+          >
+            {es.agents.billing.today.payBarCta}
+          </Link>
+        </div>
+      ) : null}
       {nav.serviceStatus === "paused" ? (
-        <div role="status" className="rounded-xl border border-pending-border bg-pending-row px-4 py-3 text-sm">
+        <div role="status" className="rounded-xl border border-pending-border bg-pending-row px-4 py-3 text-sm" data-testid="paused-bar">
           <p className="font-semibold text-pending-text">{t.today.pausedBar}</p>
           <p className="text-text-secondary">{t.today.pausedBarReason}</p>
+          {isOwner ? (
+            <p className="mt-1 text-text-secondary">
+              {es.agents.billing.today.pausedPay}{" "}
+              <Link href={agentsPageHref(id, "plan")} className="inline-flex min-h-[44px] items-center font-semibold text-pending-text underline">
+                {es.agents.billing.today.pausedPayCta}
+              </Link>
+            </p>
+          ) : null}
         </div>
       ) : null}
       {nav.serviceStatus === "ending" ? (

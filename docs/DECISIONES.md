@@ -2765,3 +2765,44 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     la pantalla lo avisa antes. Los Propietarios que vienen del grupo (`global_owner`) no se quitan desde Reservas: se gestionan en Restavor web. «Administradores» lo he entendido como
     **Encargados** (los administradores del espacio son el equipo de Restavor y ya podían). Invitar a un Propietario sin cuenta sigue necesitando la aprobación del equipo (RN-PAN-14).
 
+
+## Fase E de Restavor agents · Contratación, cobro y ciclo de vida (E1, 03/10/2026)
+
+Se registran el 03/10/2026, al construir la primera tanda de la Fase E (COB-01 y COB-02). **Bosco decidió** cuatro cosas al aprobar el plan: dos tandas con parada entre ellas (E1 =
+aprobar, cobrar y ciclo de vida; E2 = saldo, Stripe, lado de Restavor y transferir), los datos de pago en el espacio (132), los dos correos al momento (137) y que «Transferir también
+Reservas» (decisión 100) entra en la Fase E, en E2. Las demás son decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+
+132. **Los datos de pago de Reservas viven en el espacio** (Bosco; migración 173). Columnas `spaces.payment_iban`, `payment_bizum_phone` y `payment_note`, que cambia solo el propietario del
+    espacio con `set_space_payment_details()` (el IBAN **no** se copia a `audit_log`: solo si estaba puesto). «A nombre de» es la razón social del espacio (`spaces.legal_name`). El
+    restaurante no lee la fila del espacio (RLS): le llegan por `reservation_payment_info()`, que además calcula el concepto (`Reservas <restaurante> <AAAA-MM>`). Hasta que se rellenen, la
+    pantalla y el correo dicen que faltan los datos de pago: **nunca se inventa un IBAN**. Los de la demostración son de ejemplo y lo dicen.
+133. **«Vence el <fecha>» (el aviso de 5 días)** = cinco días antes del `due_at` del cobro de Reservas con deuda, una vez por cobro (clave `reservations_payment_due:<cobro>`). El cobro del
+    mes siguiente no existe hasta que empieza su periodo, así que no hay otra cosa a la que colgarlo. Solo a los Propietarios y solo con Reservas `active`.
+134. **El gancho de reactivación es un disparador sobre `financial_entries`, no una edición de `register_payment()`** (migración 173; el PRD §4.4 decía «gancho en `register_payment()`»).
+    Cualquier pago o condonación de un cobro de Reservas llama a `reservations_after_payment()`: `approved_pending_payment → active` al saldarse el primer cobro; `past_due`/`paused →
+    active` solo si **no queda ningún cobro de Reservas vencido con deuda** (un pago parcial no reactiva); en `ending` y `closed` salda la deuda pero no cambia el estado. Sobrevive a
+    cualquier redefinición futura de `register_payment()` o `waive_charge()` (que el repositorio reescribe enteras cada vez que crecen). **Fin del periodo pagado** (`ending_at`) = `period_end`
+    del último cobro de Reservas saldado entero, nunca antes de ahora; sin cobro saldado, se cierra en el siguiente barrido.
+135. **Cierre y reactivación** (migración 174). Ninguna función cancelaba una suscripción: `reservations_close_internal()` la cancela al cerrar. **Reactivar** una cerrada (solo Restavor, dentro
+    de los 30 días y antes del borrado) crea una suscripción **nueva** con la misma guarda de aprobación, copia la aceptación de condiciones anterior y emite un cobro nuevo; la deuda antigua
+    se mantiene (por eso el barrido puede devolverla a `past_due`). Después del borrado hace falta una solicitud nueva, que reutiliza la fila de `reservation_settings` (una sola por restaurante).
+    El barrido (`reservations_lifecycle_sweep(p_now)`) cruza `active → past_due → paused` en una sola pasada si ya pasó el margen, devuelve los errores por restaurante en vez de tragarlos y recibe
+    la hora como parámetro para que las suites simulen fechas.
+136. **La pestaña «Reservas» de la ficha del restaurante (RVR-01) será una subruta** `restaurantes/[id]/reservas`, no una sexta pestaña: la ficha tiene exactamente cinco, con dos tests que lo
+    exigen (`tabs.test.ts` y `tabs-movil.test.ts`, que fija `grid-cols-5` en móvil). Es de E2. Reversible.
+137. **Dos correos van al momento; el resto, en las dos tandas** (Bosco; decisión 99 precisada). «Aprobado: datos para pagar» y «Reservas está en pausa» salen en el acto con
+    `claim_email_deliveries_for_keys()` (gemela de la del push) y `sendEmailNow()`; el resto (recibida, rechazada, activada, vence, pago pendiente, baja, descarga) por la cola de las 07:00 y 19:00
+    UTC. **Los push, siempre al momento.** Si Resend no está configurado no se reclama nada (no se gastan intentos): el correo espera su tanda. El redactor
+    (`services/agents/lifecycle-emails.ts`) lleva el texto de cada tipo en `es.agents.lifecycleEmail`; «Aprobado» lleva importe, IBAN, razón social, Bizum, concepto y vencimiento.
+138. **Stripe, sin dependencia** (E2): adaptador propio con `fetch` y la firma comprobada con `node:crypto`, con transporte inyectable. Se decide al construir SAL-02.
+139. **Lo que NO se hace en la Fase E y queda anotado.** (a) La tarea diaria de las 03:00 (anonimizar a los 24 meses, `reservation_monthly_stats`, vaciar la idempotencia): no está en los criterios
+    de la fase; el cierre a los 30 días sí está. (b) «Pruebas» y los incidentes del espacio (dependen de las Fases F y G). (c) La configuración de horarios, equipo, plataformas y clave del agente
+    dentro de la ficha de Restavor (dependen de G, H e I). (d) **Pagos y facturas de Restavor web sigue listando las mensualidades de Reservas** de un restaurante que tenga también panel web
+    (PRD §12.3 pide que no salgan ahí): filtrar esas listas del lado del cliente es una tarea aparte; no afecta a ningún estado ni barrido (decisión 91).
+140. **El Excel de las reservas se escribe sin librería** (`services/agents/xlsx.ts`, zip sin comprimir; abierto y comprobado con una librería de lectura) y **la ruta `exportar` no es una pantalla**,
+    así que no está en `AGENTS_PAGES` (los tests que recorren esa lista la darían por una página): comprueba por su cuenta `export_all_reservations` en cualquier estado. **Descargar datos
+    personales deja huella** (`audit_reservations_export()`, acción `reservations.exported`: quién y cuántas filas, nunca los datos) y sin la huella no se entrega el archivo.
+141. **Las exclusiones de D-D son más que las del PRD.** Además de `dunning_sweep`, la reactivación y los recordatorios, se excluyen los cobros de Reservas de `establishment_has_overdue_debt()` y su
+    `_internal` (que usan la transferencia y el cambio de estado de un restaurante), de `establishments_with_nonpayment()` (el panel de impagos de Restavor web), de `my_client_attention()` (la
+    mensualidad y las condiciones de Reservas se atienden en Restavor agents) y `run_monthly_charges()` no emite mensualidad a una Reservas dada de baja o cerrada. Cada una recreada entera
+    desde su última definición viva (migración 172).

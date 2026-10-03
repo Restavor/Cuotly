@@ -166,6 +166,45 @@ PIN de prueba de Casa Pepe: **Ana Ruiz 1234** y **Diego Navas 5678** (Equipo), *
 Lo que **no** está y es de fases posteriores: aprobar solicitudes, cobros y recargas (E), los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I), la app instalable y el
 modo sin conexión (J).
 
+## Estado de la Fase E, primera tanda (03/10/2026): qué probar a mano
+
+Aprobar y cobrar Reservas, y su ciclo de vida (E1: aprobar, rechazar, condiciones, datos para pagar, pausa, baja, cierre, Excel). **Todavía no están** el saldo, las recargas con Stripe, la pestaña de
+Reservas en la ficha del restaurante ni «Transferir también Reservas» (E2). **Antes de probar**, en Restavor pruebas:
+
+1. **Migraciones 172, 173 y 174**: las aplica sola `Pruebas · Supabase` al subir la rama `agents`. Sin ellas las pantallas nuevas dicen «No hemos podido cargar…».
+2. **Resembrar** (Actions › `Pruebas · Supabase` › «sembrar», o solo si cambia algo de `supabase/seed/`): el sembrado ahora trae **los cobros y los pagos de cada restaurante de estado** y unos
+   datos de pago de ejemplo para el espacio demo (IBAN de ejemplo, Bizum `600 000 000`: no son una cuenta real).
+3. Para que el **correo** salga de verdad hacen falta `RESEND_API_KEY` y `RESEND_FROM` en Vercel (Preview). Sin ellos todo funciona y el correo queda esperando su tanda; lo ves en la campana.
+4. Para el **barrido diario** hace falta ejecutar `supabase/operaciones/agents-cron.sql` en Restavor pruebas (`agents-ciclo`, cada hora; barre a las 08:00 de Madrid). A mano se lanza con
+   `curl -H "Authorization: Bearer <CRON_SECRET>" "https://<vista previa>/api/agents/cron/ciclo?force=1"`.
+
+Cuentas (misma contraseña de siempre): `admin@cuotly.test` (administrador del espacio: aprueba y registra pagos), `owner@cuotly.test` (propietaria del espacio: además cambia los datos de pago),
+`estados@casapepe.test` (Propietario de los restaurantes de estado) y `luis@casapepe.test` (Encargado).
+
+1. **Aprobar.** Con `admin@cuotly.test`: Espacios › Restavor demo › **Reservas**. En «Solicitudes de contratación» sale **Taberna Levante · Pendiente de revisar** con **Aprobar** y **Rechazar**.
+   Aprueba: dice «Solicitud aprobada. Hemos avisado al restaurante con los datos para pagar.» y Taberna Levante pasa a «Restaurantes con Reservas» con **«Pendiente: 58,08 € · vence el …»** y el
+   enlace **Registrar el pago**. **Rechazar** pide un motivo (sin él, «Escribe el motivo del rechazo.») y lo enseña en la solicitud.
+2. **Datos de pago** (`owner@cuotly.test`, misma pantalla): la tarjeta **Datos de pago de Reservas** (IBAN, Bizum, nota). Un IBAN mal escrito se rechaza; el administrador la ve pero no la cambia.
+3. **Las condiciones y los datos para pagar.** Con `estados@casapepe.test`, abre `/agents/e5200000-0000-0000-0000-000000000005/pendiente-de-pago` (Bodega Norte, aprobada y sin pagar). Como no
+   aceptó las condiciones, antes te lleva a **«Acepta las condiciones de Reservas»** (marca la casilla y **Aceptar y ver cómo pagar**; sin marcar no avanza). Después, **«Aprobado: datos para pagar»**
+   con los cuatro pasos arriba (Aprobado · Condiciones · **Pagar el primer mes** · Empezar), el periodo, cuota 48,00 €, IVA 10,08 €, total **58,08 €**, cuándo vence, y cómo pagar: IBAN a nombre de la razón
+   social, Bizum y concepto, cada uno con **Copiar**; y «Subir justificante» (no activa nada: solo avisa al equipo).
+4. **Pagar activa.** Con `admin@cuotly.test`: en Reservas, Bodega Norte › **Registrar el pago** (te lleva al cobro en Finanzas) › **Registrar el pago**. Vuelve a entrar como `estados@…` en esa
+   dirección: ya no pide pagar y te lleva a Reservas (Primer uso). Un pago **parcial** no activa.
+5. **Pago pendiente y pausa.** `estados@…` › **Mesón del Puerto** (cobro vencido hace 3 días): en Hoy sale **«Pago pendiente, quedan 4 días»** con «Ver cómo pagar»; en **Plan y pagos** el estado, los datos
+   para pagar y los cobros (uno «Vencido»). **Cervecería Roma** (vencida hace 9 días) está **en pausa**: «Paga y se reactiva al momento»; en Hoy, el aviso de pausa y no se pueden crear reservas.
+   Registrar el pago completo de su cobro (como en el paso 4) la reactiva al momento.
+6. **Baja.** `estados@…` › **Asador Vega** › Plan y pagos: «Baja confirmada. Reservas funciona hasta el …» y **Anular la baja**. Anúlala; después **Darme de baja** pide confirmación («¿Seguro…?») y confirma.
+   Restavor puede dar de baja, anular la baja, **Cerrar Reservas** (solo desde la pausa, con motivo) y **Reactivar** (dentro de los 30 días) desde la lista de «Restaurantes con Reservas».
+7. **Cerrada y Excel.** `estados@…` › **Casa Mar** (cerrada hace 9 días): «Reservas cerrada», «Quedan 21 días para descargar tus reservas» y **Descargar todas las reservas (Excel)**. Ábrelo: una fila por reserva,
+   en español. El Encargado (`luis@casapepe.test`) no puede descargarlo (403) ni abrir Plan y pagos. A los 30 días del cierre el barrido anonimiza los datos personales y la pantalla lo dice.
+8. **Nada cambia en Restavor web.** Un cobro de Reservas vencido no pausa el restaurante en Restavor web (su Inicio y su facturación siguen igual), y un impago de Restavor web no pausa Reservas.
+
+Para repetir el recorrido, vuelve a ejecutar `supabase/seed/reservas-demo.sql`: es idempotente y deja cada restaurante como estaba.
+
+Lo que **no** está y es de fases posteriores: el saldo, las recargas y la ficha de Restavor con su pestaña «Reservas» (E2), los avisos a comensales (F), encender el agente (G), el formulario web (H),
+los conectores (I), la app instalable y el modo sin conexión (J). Los cobros de Reservas **siguen saliendo en «Pagos y facturas» de Restavor web** de un restaurante que tenga también panel (decisión 139).
+
 ## Cuentas del sembrado
 
 Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producción).

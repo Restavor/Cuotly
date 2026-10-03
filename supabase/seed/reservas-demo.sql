@@ -46,8 +46,9 @@
 --     `/cuenta/verificar` a cualquiera con un factor verificado en cada entrada, y a Elena le
 --     rompería todos los recorridos que entran con ella sin código (decisión 106). El segundo paso
 --     de prueba (Fase D) lo lleva un usuario de soporte propio, `soporte@cuotly.test`.
---   · No emite cobros ni recibos de Reservas (Fase E): el estado de cada restaurante es el de
---     `reservation_settings`, tal como lo dejaría la aprobación y el barrido.
+--   · No emite recibos de Reservas: la app no emite facturas (PRD de agents §5.2). Los cobros y los pagos
+--     sí (Fase E, sección 4b): cada restaurante tiene los que dejarían la aprobación, el barrido y el
+--     registro de sus pagos, y el estado de `reservation_settings` es coherente con ellos.
 --   · No sube archivos de verdad: los tres documentos del agente apuntan a rutas del almacenamiento
 --     que no existen. La lectura y la subida llegan en la Fase G.
 --   · Los PIN del Equipo van cifrados con el secreto de PRUEBAS, `restavor-pruebas-pin-secret`
@@ -83,6 +84,14 @@ end $$;
 delete from public.audit_log
 where space_id = 'd1000000-0000-0000-0000-000000000001'
   and entity_id in (select id from public.establishments where id::text like 'e5200000-%');
+-- Lo que las cuentas de este archivo hayan hecho después (aceptar condiciones, pedir la baja…) deja filas de auditoría que
+-- apuntan a ellas: sin quitarlas, no se pueden borrar las cuentas y el archivo dejaría de ser repetible.
+delete from public.audit_log
+where actor_id in (
+  select id from auth.users
+  where email like '%@casapepe.test' or email like '%@tabernasol.test' or email like '%@barlaplaza.test'
+     or email = 'admin@cuotly.test' or email = 'soporte@cuotly.test'
+);
 delete from public.establishments where id::text like 'e5200000-%';
 delete from public.groups where id::text like 'e5100000-%';
 delete from auth.users
@@ -302,6 +311,80 @@ join lateral (values ('approved'), ('activated'), ('past_due'), ('paused'), ('en
     or (t.tipo = 'closed' and s.service_status = 'closed')
   )
 where s.id::text like 'e5400000-%';
+
+-- ============================================================
+-- 4b · Los cobros de Reservas y sus pagos (Fase E): lo que dejarían `approve_reservation_request()`, el
+-- motor de cobros y el registro de pagos, para que cada estado sea coherente con su deuda.
+--
+--   active ................ dos mensualidades pagadas (las de hace 60 y 30 días).
+--   approved_pending_payment  su primer cobro, sin pagar y en plazo.
+--   past_due .............. la segunda mensualidad vencida hace 3 días (quedan 4 de margen).
+--   paused ................ la segunda mensualidad vencida hace 9 días (pasó el margen de 7).
+--   ending / closed ....... las dos mensualidades pagadas.
+--
+-- El 21 % de IVA es el del espacio (`tax_rate_percent`): 4.800 + 1.008 = 5.808 céntimos.
+-- A mano y no con las funciones de verdad, por lo mismo que la sección 3 (hay que fijar las fechas).
+-- ============================================================
+update public.spaces
+set payment_iban = 'ES9121000418450200051332', payment_bizum_phone = '+34 600 000 000',
+    payment_note = 'Dato de demostración: no es una cuenta real.'
+where id = 'd1000000-0000-0000-0000-000000000001';
+
+insert into public.charges
+  (id, space_id, establishment_id, subscription_id, concept, period_start, period_end,
+   base_cents, tax_rate_percent, tax_cents, total_cents, due_at, issued_at)
+select
+  ('e5700000-0000-0000-0000-0000000000' || lpad((s.n * 10 + c.k)::text, 2, '0'))::uuid,
+  'd1000000-0000-0000-0000-000000000001', s.est::uuid, s.sub::uuid,
+  'Mensualidad Reservas', st.started_at + (c.k || ' months')::interval, st.started_at + ((c.k + 1) || ' months')::interval,
+  4800, 21, 1008, 5808,
+  case
+    when s.estado = 'approved_pending_payment' then now() + interval '7 days'
+    when s.estado = 'past_due' and c.k = 1 then now() - interval '3 days'
+    when s.estado = 'paused' and c.k = 1 then now() - interval '9 days'
+    else st.started_at + (c.k || ' months')::interval + interval '7 days'
+  end,
+  st.started_at + (c.k || ' months')::interval
+from (values
+  (1, 'e5200000-0000-0000-0000-000000000001', 'e5300000-0000-0000-0000-000000000011', 'active'),
+  (2, 'e5200000-0000-0000-0000-000000000002', 'e5300000-0000-0000-0000-000000000012', 'active'),
+  (3, 'e5200000-0000-0000-0000-000000000003', 'e5300000-0000-0000-0000-000000000013', 'active'),
+  (4, 'e5200000-0000-0000-0000-000000000004', 'e5300000-0000-0000-0000-000000000014', 'active'),
+  (5, 'e5200000-0000-0000-0000-000000000005', 'e5300000-0000-0000-0000-000000000015', 'approved_pending_payment'),
+  (6, 'e5200000-0000-0000-0000-000000000006', 'e5300000-0000-0000-0000-000000000016', 'past_due'),
+  (7, 'e5200000-0000-0000-0000-000000000007', 'e5300000-0000-0000-0000-000000000017', 'paused'),
+  (8, 'e5200000-0000-0000-0000-000000000008', 'e5300000-0000-0000-0000-000000000018', 'ending'),
+  (9, 'e5200000-0000-0000-0000-000000000009', 'e5300000-0000-0000-0000-000000000019', 'closed')
+) as s(n, est, sub, estado)
+join public.subscriptions st on st.id = s.sub::uuid
+join lateral (values (0), (1)) as c(k)
+  on (s.estado <> 'approved_pending_payment' or c.k = 0);
+
+-- Sin plan de mantenimiento ni consumo: Reservas nunca los crea (D-H).
+insert into public.financial_entries (space_id, establishment_id, charge_id, entry_type, amount_cents, reason)
+select c.space_id, c.establishment_id, c.id, 'charge', c.total_cents, 'Mensualidad Reservas'
+from public.charges c where c.id::text like 'e5700000-%';
+
+-- Los pagos: todas las mensualidades, salvo la sin pagar de Bodega Norte y las vencidas de Mesón y Cervecería.
+insert into public.payments
+  (id, space_id, establishment_id, charge_id, amount_cents, method, paid_at, recorded_by, recorded_role)
+select
+  ('e5800000-0000-0000-0000-' || right(c.id::text, 12))::uuid,
+  c.space_id, c.establishment_id, c.id, c.total_cents, 'transfer', least(c.due_at, now()) - interval '1 day',
+  'd0000000-0000-0000-0000-000000000001', 'owner'
+from public.charges c
+where c.id::text like 'e5700000-%'
+  and c.establishment_id not in ('e5200000-0000-0000-0000-000000000005')
+  and not (c.establishment_id = 'e5200000-0000-0000-0000-000000000006' and c.id::text like '%61')
+  and not (c.establishment_id = 'e5200000-0000-0000-0000-000000000007' and c.id::text like '%71');
+
+insert into public.payment_confirmations (space_id, payment_id, confirmed_by, confirmed_role)
+select p.space_id, p.id, 'd0000000-0000-0000-0000-000000000001', 'owner'
+from public.payments p where p.id::text like 'e5800000-%';
+
+insert into public.financial_entries (space_id, establishment_id, charge_id, entry_type, amount_cents, payment_id, reason)
+select p.space_id, p.establishment_id, p.charge_id, 'payment', -p.amount_cents, p.id, 'Pago de la mensualidad'
+from public.payments p where p.id::text like 'e5800000-%';
 
 -- Las dos solicitudes: una pendiente de aprobar y una rechazada (con su motivo).
 insert into public.reservation_service_requests
@@ -710,6 +793,44 @@ declare
   v_casa constant uuid := 'e5200000-0000-0000-0000-000000000001';
   v_n integer;
 begin
+  -- Fase E · los cobros de Reservas son coherentes con el estado de cada restaurante.
+  if (select count(*) from public.charges where id::text like 'e5700000-%') <> 17 then
+    raise exception 'Tenía que haber 17 cobros de Reservas y hay %', (select count(*) from public.charges where id::text like 'e5700000-%');
+  end if;
+  if (select count(*) from public.plan_commitments where subscription_id::text like 'e5300000-0000-0000-0000-0000000000_%' and service_id is not null) <> 0 then
+    raise exception 'Reservas no puede crear plan_commitments (D-H)';
+  end if;
+  -- Bodega Norte: un cobro de 58,08 € sin pagar y todavía en plazo.
+  if public.reservations_charge_outstanding('e5700000-0000-0000-0000-000000000050') <> 5808 then
+    raise exception 'El primer cobro de Bodega Norte tenía que estar sin pagar (5.808 céntimos)';
+  end if;
+  -- Mesón del Puerto vencido hace 3 días y Cervecería Roma hace 9: past_due y paused tienen su deuda.
+  if public.reservations_overdue_since('e5200000-0000-0000-0000-000000000006') is null
+     or public.reservations_overdue_since('e5200000-0000-0000-0000-000000000006') < now() - interval '4 days' then
+    raise exception 'Mesón del Puerto tenía que deber un cobro vencido hace unos 3 días';
+  end if;
+  if public.reservations_overdue_since('e5200000-0000-0000-0000-000000000007') > now() - interval '8 days' then
+    raise exception 'Cervecería Roma tenía que deber un cobro vencido hace más de 7 días';
+  end if;
+  -- Los que están al corriente no deben nada.
+  if public.reservations_overdue_since('e5200000-0000-0000-0000-000000000001') is not null
+     or public.reservations_overdue_since('e5200000-0000-0000-0000-000000000008') is not null
+     or public.reservations_overdue_since('e5200000-0000-0000-0000-000000000009') is not null then
+    raise exception 'Casa Pepe, Asador Vega y Casa Mar no deben nada';
+  end if;
+  -- El barrido de verdad no cambia ningún estado del sembrado: el sembrado ya es lo que él dejaría.
+  declare
+    v_barrido jsonb := public.reservations_lifecycle_sweep(now());
+  begin
+    if jsonb_array_length(v_barrido -> 'changes') <> 0 or jsonb_array_length(v_barrido -> 'errors') <> 0 then
+      raise exception 'El barrido cambiaría el sembrado, y no debería: %', v_barrido;
+    end if;
+  end;
+  -- Y la deuda de cada uno es independiente de Restavor web (D-D): nadie está pausado ahí por Reservas.
+  if exists (select 1 from public.establishments where id::text like 'e5200000-%' and status in ('paused', 'suspended')) then
+    raise exception 'Ningún restaurante del sembrado puede estar pausado en Restavor web por culpa de Reservas';
+  end if;
+
   -- El saldo de Casa Pepe es 7,40 € y el de Bar La Plaza, 1,80 €.
   if public.agent_balance(v_casa) <> 7400000 then
     raise exception 'El saldo de Casa Pepe tenía que ser 7,40 € (7.400.000 µ€) y es % µ€', public.agent_balance(v_casa);

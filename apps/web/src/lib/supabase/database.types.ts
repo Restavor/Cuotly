@@ -2275,6 +2275,7 @@ export type Database = {
       reservation_staff: {
         Row: {
           active: boolean;
+          anonymized_at: string | null;
           created_at: string;
           deactivated_at: string | null;
           establishment_id: string;
@@ -7806,6 +7807,9 @@ export type Database = {
       spaces: {
         Row: {
           reservations_enabled: boolean;
+          payment_iban: string | null;
+          payment_bizum_phone: string | null;
+          payment_note: string | null;
           address: string | null;
           created_at: string;
           created_by: string;
@@ -7830,6 +7834,9 @@ export type Database = {
         };
         Insert: {
           reservations_enabled?: boolean;
+          payment_iban?: string | null;
+          payment_bizum_phone?: string | null;
+          payment_note?: string | null;
           address?: string | null;
           created_at?: string;
           created_by: string;
@@ -7854,6 +7861,9 @@ export type Database = {
         };
         Update: {
           reservations_enabled?: boolean;
+          payment_iban?: string | null;
+          payment_bizum_phone?: string | null;
+          payment_note?: string | null;
           address?: string | null;
           created_at?: string;
           created_by?: string;
@@ -12271,6 +12281,56 @@ export type Database = {
         }[];
       };
       reservations_my_role: { Args: { p_establishment_id: string }; Returns: string };
+      // Fase E (migraciones 172 a 174) · contratación, cobro y ciclo de vida de Reservas.
+      approve_reservation_request: { Args: { p_request_id: string }; Returns: string };
+      reject_reservation_request: { Args: { p_request_id: string; p_reason: string }; Returns: undefined };
+      accept_reservation_terms: { Args: { p_establishment_id: string }; Returns: string };
+      reservation_payment_info: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          base_cents: number;
+          bizum_phone: string | null;
+          charge_id: string;
+          concept: string;
+          due_at: string;
+          iban: string | null;
+          outstanding_cents: number;
+          payee_name: string | null;
+          payment_note: string | null;
+          period_end: string;
+          period_start: string;
+          reference: string;
+          tax_cents: number;
+          total_cents: number;
+        }[];
+      };
+      reservation_plan_charges: {
+        Args: { p_establishment_id: string };
+        Returns: {
+          charge_id: string;
+          concept: string;
+          due_at: string;
+          issued_at: string;
+          outstanding_cents: number;
+          period_end: string;
+          period_start: string;
+          status: string;
+          total_cents: number;
+        }[];
+      };
+      audit_reservations_export: { Args: { p_establishment_id: string; p_rows: number }; Returns: undefined };
+      request_reservations_cancellation: { Args: { p_establishment_id: string }; Returns: string };
+      undo_reservations_cancellation: { Args: { p_establishment_id: string }; Returns: undefined };
+      close_reservations_service: { Args: { p_establishment_id: string; p_reason: string }; Returns: undefined };
+      reactivate_closed_reservations: { Args: { p_establishment_id: string }; Returns: string };
+      set_space_payment_details: {
+        Args: { p_bizum_phone: string | null; p_iban: string | null; p_note: string | null; p_space_id: string };
+        Returns: undefined;
+      };
+      reservations_plan_actor: { Args: { p_establishment_id: string }; Returns: string };
+      // Solo `service_role` (el servidor): el barrido diario. El reclamo de correos al momento (`claim_email_deliveries_for_keys`)
+      // se llama sin tipos desde `queue-gateway.ts`, igual que su gemela del push.
+      reservations_lifecycle_sweep: { Args: { p_now?: string }; Returns: Json };
       // Fase C (migración 169) · la agenda. Los resultados de negocio vuelven como `Json`
       // ({ outcome: 'accepted' | 'needs_confirmation' | 'rejected' | ... }); ver `reservations-gateway.ts`.
       book_reservation: {

@@ -5569,6 +5569,64 @@ modo sin conexión (J).
 
 Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase E hasta que Bosco lo diga.**
 
+### Fase E · Contratación, cobro y saldo · primera tanda (E1) · 03/10/2026 (construida; falta la comprobación de Bosco)
+
+Bosco aprobó el plan en **dos tandas** (decisión de él): **E1** = aprobar, cobrar y el ciclo de vida (COB-01 y COB-02); **E2** = libro del saldo, Stripe, lado de Restavor y «Transferir también Reservas»
+(SAL-01, SAL-02, RVR-01 y decisión 100). Esta es E1. Los datos de pago van en el espacio y solo dos correos salen al momento (también decisiones suyas). Rama `agents`.
+
+Criterios del PRD §15 (COB-01, COB-02):
+
+- [x] **COB-01 Aprobar y rechazar** (`approve_reservation_request`, `reject_reservation_request`; solo el equipo, `manage_clients`): aprobar crea en una transacción la suscripción al servicio
+  Reservas **sin `plan_commitments` ni `consumption_cycles`**, los ajustes en `approved_pending_payment`, el primer cobro (48 € + IVA = **58,08 €**), la aceptación de condiciones si ya la dio y el
+  aviso «Aprobado: datos para pagar»; repetirlo no duplica nada; rechazar pide motivo. Desde `/espacios/<espacio>/reservas`, con «Aprobar» y «Rechazar» en cada solicitud.
+- [x] **Aceptar condiciones y «Aprobado: datos para pagar»** (`/agents/<id>/condiciones` y `/pendiente-de-pago`): los cuatro pasos de la maqueta, periodo, cuota, IVA y total, vencimiento con los días
+  que quedan, IBAN a nombre de la razón social, Bizum y concepto con «Copiar», y «Subir justificante» (que no activa nada). Si la solicitud la creó el equipo, antes se aceptan las condiciones.
+  Los datos de pago son del espacio (decisión 132); sin cargar, dice que faltan. El correo lleva lo mismo.
+- [x] **Ciclo de vida completo** (`reservations_lifecycle_sweep(p_now)`, tarea `/api/agents/cron/ciclo` cada hora, a las 08:00 de Madrid): `active → past_due`, a los 7 días `paused`, pago parcial
+  que sigue en pausa y pago completo que reactiva **al momento** (disparador sobre `financial_entries`, decisión 134), baja que sigue hasta el final del periodo pagado y se puede anular,
+  `closed` (la suscripción se cancela) y, a los 30 días, anonimización sin borrar nada; recordatorios (5 días antes, día del vencimiento, 2 días antes de acabar el margen, descarga 7 días antes del borrado).
+- [x] **Los dos sentidos de D-D**: un cobro de Reservas vencido **no** pausa el restaurante en Restavor web, y un impago de Restavor web **no** pausa Reservas. Se excluyen los cobros de Reservas de
+  ocho funciones de Restavor web (migración 172; decisión 141, más de las que nombraba el PRD).
+- [x] **COB-02 Plan y pagos, darse de baja, Reservas cerrada y Excel**: `/plan` (estado, datos para pagar, cobros, «Darme de baja» con confirmación y «Anular la baja»), «Pago pendiente, quedan N días» y
+  el aviso de pausa en Hoy (solo el Propietario), `/cuenta-cerrada` con los días que quedan y la descarga de **todas las reservas en Excel** (sin librería, comprobado con una de lectura; deja huella en la
+  auditoría). Restavor da de baja, anula la baja, **cierra a mano** (solo desde la pausa, con motivo) y **reactiva** (dentro de los 30 días, con todos sus datos y un cobro nuevo).
+- [x] **Correos**: «Aprobado: datos para pagar» y «Reservas está en pausa» salen al momento (`claim_email_deliveries_for_keys`, `sendEmailNow`); recibida, rechazada, activada, vence, pago pendiente, baja y
+  descarga, por las dos tandas; los push, siempre al momento. Sin Resend configurado nada se rompe: el correo espera su tanda.
+- [x] Tests: suite SQL **93** (`reservas_cobro_y_ciclo.sql`, 15 bloques, RN-APP-03 y RN-RES-11 con fechas simuladas), unitarios (dominio, correos, entrega al momento, ruta de cron, Excel) y **10 e2e con datos**
+  (`agents-cobro.spec.ts`: aprobar, rechazar, condiciones, datos para pagar, pagar y activar, pago pendiente, pausa, baja, cerrada con descarga, permisos y móvil).
+- [x] Sembrado: los **cobros y pagos de Reservas** coherentes con cada estado (17 cobros) y los datos de pago de ejemplo, con sus comprobaciones (el barrido de verdad no cambia ningún estado del sembrado).
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase E, primera tanda»; **antes hay que aplicar las migraciones 172 a 174 y resembrar**).
+
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.759 tests** en verde; **las 93 suites SQL** sobre una base limpia con las 174 migraciones, y el sembrado de Reservas dos veces; los
+**58 e2e con datos** (los 10 nuevos y los 48 de antes) sobre una base limpia contra PostgREST local con el sembrado; `next build` de producción. La suite 93 se comprobó con **12 mutaciones** (se rompió a propósito seis de las exclusiones de Restavor web —el impago, la reactivación, la deuda vencida, los recordatorios, «Necesita tu atención» y el panel de impagos—, el gancho de reactivación, el pago
+parcial, el margen de 7 días, la anonimización del teléfono, la exclusión de bajas en `run_monthly_charges` y el propio detector de cobros de Reservas): las 12 las atrapa. La
+primera pasada de mutaciones dejó pasar una —la exclusión de `reactivate_establishment_after_payment` no tenía test porque el cobro de Reservas del test no estaba vencido en ese momento— y ahora lo tiene.
+
+Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): un cobro de Reservas vencido hace 80 horas **suspendía Restavor web** (ninguna función de Restavor web distinguía el servicio del
+cobro); `my_client_attention` y `establishments_with_nonpayment` también lo contaban; una descarga anónima del Excel daba 500 en vez de 401; el sembrado dejaba de ser repetible en cuanto la aplicación escribía
+una fila de auditoría a nombre de una cuenta suyas; y varias guardas del repositorio (zona horaria escrita en el dominio, lista de avisos obligatorios, rejillas sin columna de móvil, lecturas de la tablet).
+
+Decisiones (en `docs/DECISIONES.md`, **132 a 141**): 132 datos de pago en el espacio (de Bosco), 133 el aviso de 5 días, 134 el gancho de reactivación como disparador y el fin del periodo pagado, 135 cierre y reactivación,
+136 la pestaña «Reservas» de la ficha será una subruta (E2), 137 los dos correos al momento (de Bosco), 138 Stripe sin dependencia (E2), 139 lo que queda fuera de la Fase E, 140 el Excel sin librería y su auditoría,
+141 las exclusiones de D-D.
+
+Hallazgos que conviene saber:
+
+- **La migración 173 se editó en su sitio** durante la fase (no estaba subida a ninguna base: mismo precedente que las decisiones 120 y 130).
+- **Dos e2e de antes se ajustaron**, y no por una regresión: uno daba por hecho que «Aprobar» y «Rechazar» todavía no existían (ahora existen), y el de la sesión de soporte de la Fase D hacía un `goto` en medio
+  de la navegación que sigue al segundo paso (`net::ERR_ABORTED`, una carrera del test): ahora espera a que termine. Los e2e que **crean** solicitudes (los de «Contratar Reservas») no se pueden repetir sobre
+  la misma base: hay que rehacerla o resembrar, y el sembrado de Reservas (idempotente) solo deja como estaba lo suyo.
+- `register_payment()` y `waive_charge()` **no se tocan**: el gancho es un disparador, así que ninguna redefinición futura lo pierde.
+- Los cobros de Reservas **siguen saliendo en «Pagos y facturas» de Restavor web** de un restaurante que tenga también panel (PRD §12.3 pide que no); no afecta a ningún estado. Queda anotado (decisión 139).
+- Con Reservas `approved_pending_payment` el menú lateral todavía enseña «Ajustes» (la maqueta dice «Se abren cuando Restavor confirme el pago»): diferencia de la Fase B, no de esta.
+- Las maquetas traen «Mientras tanto, Restavor prepara…» (teléfono del agente, TheFork, formulario): no se ha escrito porque hoy no es verdad (llegan con G, I y H).
+- `payment_iban` y compañía se leen solo por `reservation_payment_info()`: el restaurante no lee la fila del espacio.
+
+Lo que **no** está y es de la siguiente tanda o de fases posteriores: el libro del saldo, las pantallas de Saldo, las recargas con Stripe y la recarga manual (E2); la pestaña «Reservas» de la ficha del restaurante y el
+ajuste de saldo (E2); «Transferir también Reservas» (E2); los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I), la app instalable y el modo sin conexión (J).
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza E2 hasta que Bosco lo diga.**
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

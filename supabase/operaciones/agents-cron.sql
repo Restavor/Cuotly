@@ -13,10 +13,13 @@
 -- de producción, y nunca al revés (docs/agents/PRUEBAS.md). El secreto es el `CRON_SECRET` que ya
 -- usa `/api/cola`: las rutas `/api/agents/cron/<tarea>` aceptan el mismo `Authorization: Bearer`.
 --
--- Fase C · una sola tarea: cada 15 minutos, `/api/agents/cron/pendientes` recuerda los grupos
--- pendientes con más de 2 horas (RN-RES-05). Las demás tareas de §10.6 (reintentos de avisos,
--- encender el agente, barrido del ciclo de vida, anonimizar…) se añaden aquí cuando se construyan
--- sus fases, cada una con su ruta.
+-- Fase C · cada 15 minutos, `/api/agents/cron/pendientes` recuerda los grupos pendientes con más
+-- de 2 horas (RN-RES-05).
+-- Fase E · cada hora, `/api/agents/cron/ciclo` lanza el barrido del ciclo de vida de Reservas
+-- (RN-RES-11): `pg_cron` va en UTC, así que se lanza cada hora y la ruta solo barre a las 08:00 de
+-- Madrid (con el cambio de hora). Repetirla es inocuo: es idempotente.
+-- Las demás tareas de §10.6 (reintentos de avisos, encender el agente, anonimizar a 24 meses…) se
+-- añaden aquí cuando se construyan sus fases, cada una con su ruta.
 --
 -- Necesita las extensiones `pg_cron`, `pg_net` y `vault` de Supabase (Database → Extensions).
 -- En local no existen: ahí la tarea se lanza llamando a la ruta o a la función directamente.
@@ -62,6 +65,24 @@ select cron.schedule(
       ),
       body := '{}'::jsonb,
       timeout_milliseconds := 30000
+    );
+  $job$
+);
+
+-- Cada hora: el barrido del ciclo de vida de Reservas (la ruta decide si son las 08:00 de Madrid).
+select cron.unschedule(jobid) from cron.job where jobname = 'agents-ciclo';
+select cron.schedule(
+  'agents-ciclo',
+  '0 * * * *',
+  $job$
+    select net.http_post(
+      url := (select decrypted_secret from vault.decrypted_secrets where name = 'agents_cron_base_url') || '/api/agents/cron/ciclo',
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'agents_cron_secret'),
+        'Content-Type', 'application/json'
+      ),
+      body := '{}'::jsonb,
+      timeout_milliseconds := 55000
     );
   $job$
 );

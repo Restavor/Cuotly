@@ -670,6 +670,12 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/reservas_equipo_tablet_soporte.sql
 
+      - name: "Suite 93 — Contratación, cobro y ciclo de vida de Reservas (migraciones 172 a 174, RN-APP-03, RN-RES-11 y D-D)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/reservas_cobro_y_ciclo.sql
+
       - name: "Fase C — Verificar el aforo con altas simultáneas (RN-RES-02)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \

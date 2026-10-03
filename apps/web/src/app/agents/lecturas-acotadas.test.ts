@@ -25,6 +25,9 @@ const CANDIDATOS = [
   join(SRC, "app", "agents", "agents-context.ts"),
   join(SRC, "services", "reservations-gateway.ts"),
   join(SRC, "services", "agents", "team-gateway.ts"),
+  // Fase E: la pasarela del plan y los pagos y el Excel de las reservas.
+  join(SRC, "services", "agents", "billing-gateway.ts"),
+  join(SRC, "services", "agents", "reservations-export.ts"),
 ];
 
 const FILTRO = /\.eq\(\s*"(establishment_id|id)"\s*,\s*(establishmentId|input\.establishmentId|id)\s*\)/;
@@ -52,7 +55,17 @@ describe("RN-APP-08 · toda lectura que puede hacer una tablet va acotada a su r
   it("RN-APP-08 · las pantallas y acciones no usan el cliente de la persona (`createClient`) para leer la agenda: pasan por `agentsDb`", () => {
     const usan: string[] = [];
     // Las excepciones tienen motivo: solo trabajan con la sesión de una persona con cuenta (invitar, «Mi PIN», quitar a un Encargado, soporte).
-    const SOLO_CUENTA = new Set([join("app", "agents", "[id]", "reservas", "ajustes", "equipo", "actions.ts")]);
+    // Fase E: contratar, pagar, darse de baja y descargar todo es del Propietario con su cuenta (PRD §3.2); la tablet
+    // del local no entra (`guardAgentsPage` la deja fuera y cada acción lo repite).
+    const SOLO_CUENTA = new Set([
+      join("app", "agents", "[id]", "reservas", "ajustes", "equipo", "actions.ts"),
+      join("app", "agents", "[id]", "condiciones", "page.tsx"),
+      join("app", "agents", "[id]", "pendiente-de-pago", "page.tsx"),
+      join("app", "agents", "[id]", "plan", "page.tsx"),
+      join("app", "agents", "[id]", "plan", "actions.ts"),
+      join("app", "agents", "[id]", "cuenta-cerrada", "page.tsx"),
+      join("app", "agents", "[id]", "reservas", "exportar", "route.ts"),
+    ]);
     for (const ruta of CANDIDATOS) {
       const rel = relative(SRC, ruta);
       if (SOLO_CUENTA.has(rel)) continue;

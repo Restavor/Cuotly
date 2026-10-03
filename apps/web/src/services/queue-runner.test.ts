@@ -6,6 +6,7 @@ import {
   drainPlatformEmailQueue,
   runScheduledJobs,
   runSlaSweep,
+  sendEmailNow,
   sendPushNow,
   type DeliveryRow,
   type MailComposer,
@@ -28,6 +29,7 @@ function gateway(overrides: Partial<QueueGateway> = {}): QueueGateway {
     holidays: async () => [],
     claimDeliveries: async () => [],
     claimPushDeliveries: async () => [],
+    claimEmailDeliveries: async () => [],
     markDeliverySent: async () => {},
     markDeliveryFailed: async () => {},
     revokePushToken: async () => true,
@@ -693,6 +695,78 @@ describe("Decisión 99 · el push de Reservas sale al momento, el correo en su t
   it("Decisión 99: sin claves no reclama nada", async () => {
     const claim = vi.fn<QueueGateway["claimPushDeliveries"]>(async () => []);
     await sendPushNow(gateway({ claimPushDeliveries: claim }), { push: null, pushComposer }, []);
+    expect(claim).not.toHaveBeenCalled();
+  });
+});
+
+describe("Decisión 137 · sendEmailNow (los dos correos importantes del ciclo de vida de Reservas)", () => {
+  const entrega: DeliveryRow = {
+    delivery_id: "d-mail",
+    notification_id: "n1",
+    attempts: 1,
+    channel: "email",
+    recipient_email: "duena@casasol.test",
+    push_tokens: null,
+    event_type: "reservation_service_approved",
+    audience: "client",
+    deep_link: "/agents/e1",
+    space_name: "Restavor",
+    entity_type: "establishment",
+    establishment_name: "Casa Sol",
+    amount_cents: 5808,
+    threshold_percent: null,
+    subject: null,
+    digest_id: null,
+    digest_date: null,
+    digest_count: null,
+  };
+  const mailComposer = { compose: (d: DeliveryRow) => ({ to: d.recipient_email!, subject: "s", body: "b" }) };
+
+  it("Decisión 137: reclama solo las entregas de correo de esas claves y las envía en el acto", async () => {
+    const claim = vi.fn<QueueGateway["claimEmailDeliveries"]>(async () => [entrega]);
+    const claimMixto = vi.fn<QueueGateway["claimDeliveries"]>(async () => []);
+    const claimPush = vi.fn<QueueGateway["claimPushDeliveries"]>(async () => []);
+    const sent = vi.fn<QueueGateway["markDeliverySent"]>(async () => {});
+    const send = vi.fn(async () => "resend-1");
+
+    const r = await sendEmailNow(
+      gateway({ claimEmailDeliveries: claim, claimDeliveries: claimMixto, claimPushDeliveries: claimPush, markDeliverySent: sent }),
+      { mail: { send }, mailComposer },
+      ["reservation_service_approved:r1"],
+    );
+
+    expect(r).toEqual({ sent: 1, retried: 0, dead: 0, blockedBy: null });
+    expect(claim).toHaveBeenCalledWith(["reservation_service_approved:r1"]);
+    expect(claimMixto).not.toHaveBeenCalled();
+    expect(claimPush).not.toHaveBeenCalled();
+    expect(sent).toHaveBeenCalledWith("d-mail", "resend-1");
+  });
+
+  it("Decisión 137: si el correo no se puede enviar por cómo está configurado, no reclama nada (no gasta intentos)", async () => {
+    const claim = vi.fn<QueueGateway["claimEmailDeliveries"]>(async () => [entrega]);
+    const r = await sendEmailNow(
+      gateway({ claimEmailDeliveries: claim }),
+      { mail: { send: async () => null, unusableReason: () => "RESEND_API_KEY no está configurada" }, mailComposer },
+      ["reservation_service_approved:r1"],
+    );
+    expect(r.blockedBy).toBe("RESEND_API_KEY no está configurada");
+    expect(claim).not.toHaveBeenCalled();
+  });
+
+  it("Decisión 137: un fallo de envío se reprograma como en cualquier otra tanda", async () => {
+    const failed = vi.fn<QueueGateway["markDeliveryFailed"]>(async () => {});
+    const r = await sendEmailNow(
+      gateway({ claimEmailDeliveries: async () => [entrega], markDeliveryFailed: failed }),
+      { mail: { send: async () => { throw new Error("proveedor caído"); } }, mailComposer },
+      ["reservation_service_approved:r1"],
+    );
+    expect(r).toMatchObject({ sent: 0, retried: 1, dead: 0 });
+    expect(failed).toHaveBeenCalledTimes(1);
+  });
+
+  it("Decisión 137: sin claves no reclama nada", async () => {
+    const claim = vi.fn<QueueGateway["claimEmailDeliveries"]>(async () => []);
+    await sendEmailNow(gateway({ claimEmailDeliveries: claim }), { mail: { send: async () => null }, mailComposer }, []);
     expect(claim).not.toHaveBeenCalled();
   });
 });

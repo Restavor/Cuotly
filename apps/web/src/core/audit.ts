@@ -471,6 +471,19 @@ export const AUDIT_ACTIONS = [
   "reservations.staff_removed",
   "reservations.support_session_closed",
   "reservations.support_session_opened",
+  // Fase E (migraciones 172 a 174) · contratación, cobro y ciclo de vida de Reservas, y el Excel. Ninguna lleva datos de
+  // comensales ni el IBAN (RN-RES-12, decisión 132).
+  "reservations.activated",
+  "reservations.approved",
+  "reservations.cancellation_requested",
+  "reservations.cancellation_undone",
+  "reservations.closed",
+  "reservations.exported",
+  "reservations.past_due",
+  "reservations.paused",
+  "reservations.purged",
+  "reservations.reactivated",
+  "reservations.rejected",
   "service.conditions_published",
   "service.archived",
   "service.created",
@@ -500,6 +513,7 @@ export const AUDIT_ACTIONS = [
   "space.details_changed",
   "space.extras_changed",
   "space.logo_changed",
+  "space.payment_details_changed",
   "space.payment_term_changed",
   "space.plan_change_cancelled",
   "space.plan_change_scheduled",
@@ -528,6 +542,7 @@ export const AUDIT_ACTIONS = [
   "subscription.plan_change_scheduled",
   "subscription.plan_changed",
   "subscription.plan_created",
+  "subscription.service_cancelled",
   "subscription.service_created",
   // Maqueta 13 · las dos maneras de aceptar las condiciones (decisión del
   // 12/09/2026, opción c): el restaurante en Restavor web, o el equipo

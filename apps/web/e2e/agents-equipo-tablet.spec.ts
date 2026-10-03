@@ -281,6 +281,9 @@ test.describe("Restavor agents · Equipo, tablet y soporte", () => {
     await page.getByLabel("Código de seis cifras").fill(codigoTotp());
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
     await expect(page.getByLabel("Código de seis cifras")).toHaveCount(0, { timeout: 45_000 });
+    // Que termine la navegación de después del segundo paso: sin esperar, el `goto` de abajo la interrumpe a veces
+    // (`net::ERR_ABORTED`), y no es un fallo de la aplicación sino una carrera entre dos navegaciones.
+    await page.waitForLoadState("networkidle");
 
     // Sin sesión de soporte no se ve a los comensales, ni por la dirección.
     await page.goto(`${HOY}?fecha=2026-09-26`);

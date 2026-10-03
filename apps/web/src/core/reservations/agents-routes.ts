@@ -7,8 +7,8 @@
  * que le tocan: «Aprobado: datos para pagar» solo mientras falta el primer pago,
  * «Reservas cerrada» solo cuando está cerrada, y la agenda en el resto.
  *
- * Queda para su fase un desvío que el PRD también nombra: «Acepta las condiciones»
- * antes de los datos de pago (Fase E). «Primer uso» mientras no está terminado lo decide
+ * «Acepta las condiciones» antes de los datos de pago (PRD §4.4 paso 4) lo decide la propia
+ * pantalla de pago: sin la aceptación hecha, lleva a `conditions`. «Primer uso» mientras no está terminado lo decide
  * la agenda (Hoy) y `needsOnboarding()`, porque depende de un dato del restaurante y no
  * solo de su estado.
  *
@@ -78,6 +78,15 @@ const PAGE_PATH: Readonly<Record<AgentsPage, string>> = {
 
 export function agentsPageHref(establishmentId: string, page: AgentsPage): string {
   return `${restaurantBase(establishmentId)}${PAGE_PATH[page]}`;
+}
+
+/**
+ * El Excel con todas las reservas: `/agents/<id>/reservas/exportar` (PRD §6.13 y §11.1). No es una
+ * pantalla sino una descarga, así que no está en `AGENTS_PAGES`: su ruta comprueba por su cuenta
+ * `export_all_reservations` (Propietario, y soporte en sesión) en cualquier estado del servicio.
+ */
+export function exportReservationsHref(establishmentId: string): string {
+  return `${restaurantBase(establishmentId)}/reservas/exportar`;
 }
 
 /** La ficha de una reserva: `/agents/<id>/reservas/<reservaId>`. La abre quien abre Hoy. */

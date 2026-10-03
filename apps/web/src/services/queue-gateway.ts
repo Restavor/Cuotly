@@ -15,6 +15,8 @@ import type { HolidayRecord } from "@/core/business-clock";
 import { normalizeMailFrom } from "@/core/notifications";
 import { es } from "@/i18n/es";
 import { euros } from "@/i18n/money";
+
+import { composeLifecycleEmail, type LifecycleMailExtras } from "./agents/lifecycle-emails";
 import type {
   DeliveryRow,
   MailComposer,
@@ -89,6 +91,11 @@ export function createSupabaseQueueGateway(client: AnyClient): QueueGateway {
 
     claimPushDeliveries: (dedupeKeys) =>
       rpc<readonly DeliveryRow[]>(client, "claim_push_deliveries_for_keys", {
+        p_dedupe_keys: [...dedupeKeys],
+      }),
+
+    claimEmailDeliveries: (dedupeKeys) =>
+      rpc<readonly DeliveryRow[]>(client, "claim_email_deliveries_for_keys", {
         p_dedupe_keys: [...dedupeKeys],
       }),
 
@@ -221,7 +228,7 @@ export function createPlatformEmailComposer(baseUrl: string): PlatformEmailCompo
  * superficie (CLAUDE.md: nunca literales de UI). El enlace es absoluto
  * porque un correo no tiene origen desde el que resolver una ruta.
  */
-export function createMailComposer(baseUrl: string): MailComposer {
+export function createMailComposer(baseUrl: string, lifecycleExtras?: LifecycleMailExtras): MailComposer {
   return {
     compose(delivery: DeliveryRow) {
       if (!delivery.recipient_email) return null;
@@ -246,6 +253,10 @@ export function createMailComposer(baseUrl: string): MailComposer {
           body: es.notifications.digest.body(delivery.space_name, cuantos, destino),
         };
       }
+
+      // Restavor agents (Fase E): los avisos del ciclo de vida de Reservas llevan su propio texto.
+      const lifecycle = composeLifecycleEmail(delivery, baseUrl, lifecycleExtras);
+      if (lifecycle !== null) return lifecycle;
 
       const events = es.notifications.events as Record<string, string | undefined>;
       const label = events[delivery.event_type] ?? es.notifications.title;

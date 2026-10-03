@@ -125,3 +125,124 @@ export function visitStats(history: readonly VisitRecord[], currentId: string, n
   }
   return { came, failed };
 }
+
+// ---------------------------------------------------------------------------
+// El ciclo de vida del servicio Reservas (RN-RES-11, D-D; PRD de agents §6.12)
+//
+// Los mismos números que `reservations_lifecycle_sweep()` (migración 174): 7 días de
+// margen desde el vencimiento más antiguo, pausa, baja hasta el final del periodo
+// pagado, 30 días de descarga y anonimización. La base de datos es la autoridad; esto
+// es lo que las pantallas enseñan («quedan N días») y lo que el test compara con ella.
+// ---------------------------------------------------------------------------
+
+/** Días de margen entre el vencimiento más antiguo sin pagar y la pausa (`reservation_settings.grace_days`). */
+export const RESERVATIONS_GRACE_DAYS = 7;
+/** Días que Reservas cerrada se conserva para descargar antes de anonimizar. */
+export const RESERVATIONS_PURGE_AFTER_DAYS = 30;
+/** El recordatorio de descarga sale esta cantidad de días antes del borrado. */
+export const RESERVATIONS_PURGE_REMINDER_DAYS = 7;
+/** El aviso de «vence el <fecha>» sale esta cantidad de días antes del vencimiento (decisión 133). */
+export const RESERVATIONS_PAYMENT_NOTICE_DAYS = 5;
+/** El segundo aviso de «Pago pendiente» sale esta cantidad de días antes de acabar el margen. */
+export const RESERVATIONS_GRACE_NOTICE_DAYS = 2;
+
+const DAY_MS = 86_400_000;
+
+/** El instante en que acaba el margen y Reservas pasa a pausa. */
+export function graceDeadline(overdueSince: Date, graceDays: number = RESERVATIONS_GRACE_DAYS): Date {
+  return new Date(overdueSince.getTime() + graceDays * DAY_MS);
+}
+
+/** «Pago pendiente, quedan N días»: días enteros que quedan de margen, nunca menos de 0. */
+export function daysLeftOfGrace(overdueSince: Date, now: Date, graceDays: number = RESERVATIONS_GRACE_DAYS): number {
+  const left = graceDeadline(overdueSince, graceDays).getTime() - now.getTime();
+  return left <= 0 ? 0 : Math.ceil(left / DAY_MS);
+}
+
+/** El día en que se anonimizan los datos de una Reservas cerrada. */
+export function purgeDate(closedAt: Date): Date {
+  return new Date(closedAt.getTime() + RESERVATIONS_PURGE_AFTER_DAYS * DAY_MS);
+}
+
+/** Días enteros que quedan para descargar las reservas de una Reservas cerrada, nunca menos de 0. */
+export function daysLeftToDownload(closedAt: Date, now: Date): number {
+  const left = purgeDate(closedAt).getTime() - now.getTime();
+  return left <= 0 ? 0 : Math.ceil(left / DAY_MS);
+}
+
+export interface ServiceLifecycleState {
+  readonly status: string;
+  /** Desde cuándo está vencido el cobro de Reservas más antiguo con deuda, o `null`. */
+  readonly overdueSince: Date | null;
+  readonly endingAt: Date | null;
+  readonly closedAt: Date | null;
+  readonly dataPurged: boolean;
+  readonly graceDays?: number;
+}
+
+export type SweepOutcome =
+  | { readonly status: "active" | "past_due" | "paused" | "ending" | "closed" | "approved_pending_payment"; readonly purge: boolean };
+
+/**
+ * Lo que decide el barrido diario para un restaurante, en una pasada y en el mismo orden
+ * que en SQL (`active → past_due`, `past_due → paused`, `ending → closed`, y a los 30 días
+ * del cierre, anonimizar). `approved_pending_payment` no se barre: espera su primer pago.
+ */
+export function sweepOutcome(s: ServiceLifecycleState, now: Date): SweepOutcome {
+  let status = s.status as SweepOutcome["status"];
+  if (status === "approved_pending_payment") return { status, purge: false };
+
+  if (status === "active" && s.overdueSince !== null) status = "past_due";
+  if (status === "past_due" && s.overdueSince === null) status = "active";
+  if (status === "past_due" && s.overdueSince !== null) {
+    if (now.getTime() >= graceDeadline(s.overdueSince, s.graceDays).getTime()) status = "paused";
+  }
+  if (status === "ending" && s.endingAt !== null && now.getTime() >= s.endingAt.getTime()) status = "closed";
+
+  const closedAt = status === "closed" && s.status !== "closed" ? now : s.closedAt;
+  const purge =
+    status === "closed" && !s.dataPurged && closedAt !== null && now.getTime() >= purgeDate(closedAt).getTime();
+  return { status, purge };
+}
+
+/** Darse de baja: desde activa, con pago pendiente o en pausa (§6.12). */
+export function canRequestCancellation(status: string): boolean {
+  return status === "active" || status === "past_due" || status === "paused";
+}
+
+/** «Anular la baja»: solo en `ending` y antes de que acabe el periodo pagado. */
+export function canUndoCancellation(status: string, endingAt: Date | null, now: Date): boolean {
+  return status === "ending" && (endingAt === null || endingAt.getTime() > now.getTime());
+}
+
+/** Restavor cierra a mano solo desde la pausa. */
+export function canCloseByHand(status: string): boolean {
+  return status === "paused";
+}
+
+/** Restavor reactiva una Reservas cerrada solo durante los 30 días y antes del borrado. */
+export function canReactivateClosed(status: string, closedAt: Date | null, dataPurged: boolean, now: Date): boolean {
+  return status === "closed" && !dataPurged && closedAt !== null && now.getTime() < purgeDate(closedAt).getTime();
+}
+
+/** «Pago pendiente, quedan N días» se enseña solo en `past_due` y solo al Propietario (§6.12). */
+export function showsPaymentBar(status: string): boolean {
+  return status === "past_due";
+}
+
+/** El texto de Hoy «Reservas en pausa»: solo con el servicio en pausa. */
+export function showsPausedBar(status: string): boolean {
+  return status === "paused";
+}
+
+/** La hora (de Madrid) a la que corre el barrido diario del ciclo de vida (PRD §10.6: 08:00). */
+export const LIFECYCLE_SWEEP_HOUR = 8;
+
+/**
+ * `pg_cron` va en UTC y lanza la tarea cada hora; solo a las 08:00 de Madrid (con el cambio de hora de verano e
+ * invierno) la ruta hace el barrido. La zona la pone quien llama (la de Restavor como plataforma, `CUOTLY_TIMEZONE`):
+ * el dominio no escribe ninguna. Idempotente: lanzarla de más no daña.
+ */
+export function isLifecycleSweepHour(now: Date, timeZone: string): boolean {
+  return localDateTimeOf(now, timeZone).time.startsWith(`${String(LIFECYCLE_SWEEP_HOUR).padStart(2, "0")}:`);
+}

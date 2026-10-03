@@ -499,8 +499,10 @@ test.describe("Flujos sobre el espacio de demostración", () => {
       const solicitud = page.locator("li").filter({ hasText: "Bar Demo" }).filter({ hasText: "Pendiente de revisar" });
       await expect(solicitud.first()).toBeVisible();
       await expect(solicitud.first()).toContainText("Condiciones aceptadas");
-      // Aprobar y rechazar no están todavía: la pantalla lo dice en vez de enseñar botones falsos.
-      await expect(page.getByRole("button", { name: /Aprobar|Rechazar/ })).toHaveCount(0);
+      // Fase E: la solicitud pendiente se aprueba o se rechaza desde aquí (la aprobación y el cobro tienen su propio
+      // recorrido en `agents-cobro.spec.ts`; este solo comprueba que el botón existe y es del equipo).
+      await expect(page.getByRole("button", { name: "Aprobar", exact: true })).toHaveCount(1);
+      await expect(page.getByRole("button", { name: "Rechazar", exact: true })).toHaveCount(1);
     });
 
     test("RN-APP-03 · quien no es del equipo no ve las solicitudes de Reservas del espacio por URL directa", async ({
