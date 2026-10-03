@@ -118,7 +118,7 @@ Una comprobación previa a publicar (la «foto antes» repetida justo antes de p
 - **Acceso desde la nube:** se decide al llegar a la publicación (Fase 5). Dos vías: contraseña de LandingSite (la cuenta admite «Set password») o código por correo. Si es con código, Bosco quiere **dejar la sesión siempre iniciada** y volver a pasar el código al agente solo cuando haga falta iniciarla de nuevo. En la prueba el código lo tecleó Bosco, no el robot.
 
 **Qué queda abierto de las preguntas 1 a 7**
-- **1:** no se ha puesto contraseña ni se ha probado entrar con ella.
+- **1:** Bosco **ya puso la contraseña** (decisión 116, 03/10/2026) y no se ha probado entrar con ella desde la nube (se prueba en la Fase 1).
 - **2:** no se midió el conjunto mínimo exacto de cookies ni la duración real de la sesión.
 - **4:** el consumo exacto de ediciones de IA no se puede medir desde la interfaz (sin contador).
 - **5:** no se probó a cambiar el `alt`.

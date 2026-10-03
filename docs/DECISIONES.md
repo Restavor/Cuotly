@@ -2651,3 +2651,8 @@ Fase 1» de ese informe.
     corregido); pago de demostración de ese cobro; plantilla «Clásica» de publicar; y un menú `daily` del 04/10/2026 en borrador con una versión. Siete apuntes de auditoría y ningún aviso.
     Script reproducible: `agents/menu-diario/sql/bar-demo-pruebas.sql`. **Un resembrado del espacio demo lo deshace** (Bar Demo conserva su id): hay que relanzar el script a mano, o llevarlo a
     `supabase/seed/` si Bosco lo decide.
+116. **Cómo entra el robot a LandingSite: con contraseña** (Bosco, 03/10/2026, al cerrar la Fase 0; concreta la 113). La cuenta del agente en LandingSite (creada con Google) ya tiene
+    **contraseña de LandingSite** («Set password» de Manage account → Security), puesta por Bosco. El robot entra con correo y contraseña, no con Google (que bloquea los navegadores
+    controlados por programa) ni con código de correo. Las credenciales irán como secretos de GitHub Actions (`LANDINGSITE_EMAIL`, `LANDINGSITE_PASSWORD`, PRD §11), nunca por el chat.
+    **Sin probar todavía**: falta comprobar que el inicio de sesión con contraseña funciona desde la nube (la prueba del 03/10 se hizo por código de correo) y cuánto dura la sesión. Se prueba en
+    la Fase 1. El chat de IA de LandingSite queda permitido **solo para subir el menú** (cambio de PRD 9.2 del 03/10/2026); el robot debe comprobar que el cambio es de una sola línea antes de publicar.
