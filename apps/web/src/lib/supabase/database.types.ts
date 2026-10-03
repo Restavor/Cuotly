@@ -7049,6 +7049,7 @@ export type Database = {
           large_group_threshold: number;
           local_phone_e164: string | null;
           logo_file_id: string | null;
+          balance_empty_notified_at: string | null;
           low_balance_notified_at: string | null;
           low_balance_threshold_cents: number;
           max_advance_days: number;
@@ -12328,6 +12329,44 @@ export type Database = {
         Returns: undefined;
       };
       reservations_plan_actor: { Args: { p_establishment_id: string }; Returns: string };
+      // Fase E2 (migración 176) · el saldo. `complete_agent_topup`, `attach_topup_session` y `expire_agent_topup` son solo de
+      // `service_role` (el webhook de Stripe y la ruta de recarga).
+      record_manual_topup: {
+        Args: { p_establishment_id: string; p_idempotency_key: string; p_method: string; p_net_cents: number; p_note: string | null };
+        Returns: string;
+      };
+      adjust_agent_balance: {
+        Args: { p_amount_cents: number; p_establishment_id: string; p_idempotency_key: string; p_reason: string };
+        Returns: string;
+      };
+      record_balance_payout: {
+        Args: { p_amount_cents: number; p_establishment_id: string; p_idempotency_key: string; p_note: string | null };
+        Returns: string;
+      };
+      create_agent_topup: {
+        Args: { p_establishment_id: string; p_idempotency_key: string; p_net_cents: number };
+        Returns: {
+          net_cents: number;
+          topup_id: string;
+          total_cents: number;
+          vat_cents: number;
+          vat_rate_percent: number;
+        }[];
+      };
+      agent_topup_vat_rate: { Args: { p_establishment_id: string }; Returns: number };
+      agent_spend_summary: { Args: { p_establishment_id: string; p_month: string }; Returns: Json };
+      agent_minutes_estimate: { Args: { p_establishment_id: string; p_now?: string }; Returns: number | null };
+      set_messaging_rate: {
+        Args: { p_channel: string; p_country: string; p_price_micros: number; p_valid_from: string };
+        Returns: string;
+      };
+      platform_reservations_spaces: {
+        Args: Record<PropertyKey, never>;
+        Returns: { name: string; reservations_enabled: boolean; slug: string; space_id: string }[];
+      };
+      attach_topup_session: { Args: { p_session_id: string; p_topup_id: string }; Returns: boolean };
+      complete_agent_topup: { Args: { p_amount_total_cents: number; p_currency?: string; p_session_id: string }; Returns: Json };
+      expire_agent_topup: { Args: { p_session_id: string }; Returns: boolean };
       // Solo `service_role` (el servidor): el barrido diario. El reclamo de correos al momento (`claim_email_deliveries_for_keys`)
       // se llama sin tipos desde `queue-gateway.ts`, igual que su gemela del push.
       reservations_lifecycle_sweep: { Args: { p_now?: string }; Returns: Json };

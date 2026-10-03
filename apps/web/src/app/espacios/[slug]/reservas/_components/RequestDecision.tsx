@@ -12,7 +12,7 @@ import { approveRequestAction, rejectRequestAction } from "../actions";
  * Aprobar o rechazar una solicitud de Reservas (PRD de agents §4.4, COB-01). Rechazar pide el motivo, que verá
  * el restaurante. Quién puede lo decide la base de datos: estos botones solo los ve quien gestiona clientes.
  */
-export function RequestDecision({ slug, requestId }: { slug: string; requestId: string }) {
+export function RequestDecision({ slug, requestId, canApprove = true }: { slug: string; requestId: string; canApprove?: boolean }) {
   const t = es.reservationsSpace.requests;
   const router = useRouter();
   const [rejecting, setRejecting] = useState(false);
@@ -22,11 +22,17 @@ export function RequestDecision({ slug, requestId }: { slug: string; requestId: 
 
   return (
     <div className="w-full space-y-3">
+      {!canApprove ? (
+        <p className="text-sm font-semibold text-pending-text" data-testid="approve-needs-payment-details">
+          {t.needPaymentDetails}
+        </p>
+      ) : null}
       {!rejecting ? (
         <div className="flex flex-wrap gap-3">
           <Button
             className="min-h-11"
             pending={busy}
+            disabled={!canApprove}
             data-testid="approve-request"
             onClick={() => {
               setFeedback(null);

@@ -112,6 +112,8 @@ export default async function SpaceReservationsPage({
     );
   }
 
+  // Decisión 144 · sin IBAN ni Bizum cargados no se aprueba (la base de datos lo exige; esto solo avisa antes).
+  const tienePagos = Boolean(space.payment_iban || space.payment_bizum_phone);
   const marcadoComoSoporte = membership.data?.can_support_reservations === true;
   const abribles = (candidates.data ?? []).filter((c) => c.space_slug === slug);
   const nombre = new Map((establishments.data ?? []).map((e) => [e.id, e.name]));
@@ -133,6 +135,17 @@ export default async function SpaceReservationsPage({
         } catch {
           // Sin el dato no se enseña deuda: no se inventa ni un cero.
         }
+      }),
+  );
+
+  // El saldo de cada restaurante en marcha (RVR-01). Sin el dato no se enseña ni un cero.
+  const saldos = new Map<string, number>();
+  await Promise.all(
+    contratadas
+      .filter((s) => s.service_status !== "closed")
+      .map(async (s) => {
+        const { data } = await supabase.rpc("agent_balance_cents", { p_establishment_id: s.establishment_id });
+        if (typeof data === "number") saldos.set(s.establishment_id, data);
       }),
   );
 
@@ -202,7 +215,7 @@ export default async function SpaceReservationsPage({
                 >
                   {t.requests.status[s.status as "requested" | "approved" | "rejected"] ?? s.status}
                 </StatusBadge>
-                {s.status === "requested" ? <RequestDecision slug={slug} requestId={s.id} /> : null}
+                {s.status === "requested" ? <RequestDecision slug={slug} requestId={s.id} canApprove={tienePagos} /> : null}
               </li>
             ))}
           </ul>
@@ -257,6 +270,11 @@ export default async function SpaceReservationsPage({
                         )}
                       </span>
                     ) : null}
+                    {saldos.has(s.establishment_id) ? (
+                      <span className="block text-xs text-text-secondary" data-testid={`balance-${s.establishment_id}`}>
+                        {t.running.balance(formatCentsAsEuros(saldos.get(s.establishment_id)!))}
+                      </span>
+                    ) : null}
                     {s.service_status === "ending" && s.ending_at ? (
                       <span className="block text-xs text-text-secondary">
                         {t.running.endingOn(enZona(s.ending_at, space.timezone, { day: "numeric", month: "long", year: "numeric" }))}
@@ -275,6 +293,13 @@ export default async function SpaceReservationsPage({
                       {es.app.home.agents.status[s.service_status]}
                     </StatusBadge>
                   ) : null}
+                  <Link
+                    href={`/espacios/${slug}/restaurantes/${s.establishment_id}/reservas`}
+                    className="inline-flex min-h-11 items-center text-sm font-semibold text-cuotly-green underline"
+                    data-testid={`open-sheet-${s.establishment_id}`}
+                  >
+                    {t.running.openSheet}
+                  </Link>
                   {deuda ? (
                     <Link href={`/espacios/${slug}/finanzas/cobros/${deuda.chargeId}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-cuotly-green underline">
                       {t.running.registerPayment}

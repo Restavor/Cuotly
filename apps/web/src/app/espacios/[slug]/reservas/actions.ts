@@ -68,7 +68,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Los mensajes de negocio de la base de datos están en español y se enseñan tal cual; cualquier otro, el genérico. */
 const BUSINESS_MESSAGE =
-  /^(No tienes permiso|Solo |Esta solicitud|Este restaurante|Este espacio|Rechazar|Cerrar|Reservas |Restaurante no|Solicitud no|El IBAN|El teléfono|La nota|El motivo|El espacio|Pasaron|Hace falta)/;
+  /^(No tienes permiso|Antes de|Solo |Esta solicitud|Este restaurante|Este espacio|Rechazar|Cerrar|Reservas |Restaurante no|Solicitud no|El IBAN|El teléfono|La nota|El motivo|El espacio|Pasaron|Hace falta)/;
 
 function failure(error: unknown): SpaceReservationsFeedback {
   const text = error instanceof Error ? error.message.trim() : "";

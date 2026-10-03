@@ -679,6 +679,10 @@ values
 --     un ajuste de apertura de 5,76 € para que cuadre.
 -- Bar La Plaza termina en 1,80 €. El resto, a cero.
 -- ============================================================
+-- El sembrado escribe el libro «de golpe», con fechas pasadas: sin los avisos de saldo (migración 176), que
+-- salen cuando el saldo CRUZA un umbral de verdad. Al final se deja anotado el estado que tendrían.
+alter table public.agent_balance_entries disable trigger agent_balance_entries_alerts;
+
 insert into public.agent_balance_entries (space_id, establishment_id, kind, amount_micros, source_type, source_id, note, created_at)
 values
   ('d1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'adjustment', 5760000, null, null,
@@ -737,6 +741,13 @@ values
 insert into public.agent_balance_entries (space_id, establishment_id, kind, amount_micros, source_type, note, created_at) values
   ('d1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000004', 'topup', 10000000, 'topup', 'Recarga con tarjeta (sembrado)', timestamptz '2026-09-10 10:00+02'),
   ('d1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000004', 'call', -8200000, 'call', 'Llamadas del mes (sembrado)', timestamptz '2026-09-20 10:00+02');
+
+alter table public.agent_balance_entries enable trigger agent_balance_entries_alerts;
+
+-- Bar La Plaza (1,80 €) está por debajo de los 5 € desde el 20 de septiembre: el aviso ya se dio.
+update public.reservation_settings
+set low_balance_notified_at = timestamptz '2026-09-20 10:00+02'
+where establishment_id = 'e5200000-0000-0000-0000-000000000004';
 
 -- ============================================================
 -- 11 · Los rastros de cada reserva (`reservation_events`, SIN datos personales) y las cifras del mes.

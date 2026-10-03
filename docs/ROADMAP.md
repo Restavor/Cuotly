@@ -5634,7 +5634,51 @@ Hallazgos que conviene saber:
 Lo que **no** está y es de la siguiente tanda o de fases posteriores: el libro del saldo, las pantallas de Saldo, las recargas con Stripe y la recarga manual (E2); la pestaña «Reservas» de la ficha del restaurante y el
 ajuste de saldo (E2); «Transferir también Reservas» (E2); los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I), la app instalable y el modo sin conexión (J).
 
-Se paró aquí, como pide `CLAUDE.md`: **no se empieza E2 hasta que Bosco lo diga.**
+Se paró aquí, como pide `CLAUDE.md`. (Bosco dio paso a E2 el 03/10/2026: el bloque de abajo.)
+
+### Fase E · Contratación, cobro y saldo · segunda tanda (E2) · 03/10/2026 (construida; falta la comprobación de Bosco y una decisión suya)
+
+Bosco dio paso a E2 con una condición: **el pago y los datos de pago se quedan «Próximamente»; se construye todo, pero no se activa hasta que él dé los datos** (decisión 144). Rama `agents`. Migración 176.
+
+Criterios del PRD §15 (SAL-01, SAL-02, RVR-01):
+
+- [x] **SAL-01 El libro del saldo y sus pantallas.** Un disparador impide editar y borrar un apunte (también al servidor); recarga a mano de Restavor, **ajuste** (motivo y segundo paso) y **devolución del saldo** (solo con la baja
+  pedida o cerrada), todos con clave de idempotencia; avisos de **saldo bajo** (5 €) y **saldo agotado**, **una vez por cruce** y también con llamadas a la vez; `/agents/<id>/saldo` con el saldo al céntimo, «unos N minutos de
+  llamadas» (solo con llamadas de los últimos 30 días), el gasto del mes por tipo en la zona del restaurante, los últimos movimientos, «Ver todos» y **Excel**; las barras de Hoy («Saldo bajo», «Te has quedado sin saldo»).
+- [x] **SAL-02 Recargar con tarjeta (Stripe, modo de pruebas), «Próximamente» sin Stripe.** Solo el Propietario; 10, 20, 50 € u otro (mínimo 10 €) más el IVA del espacio, con «Pagarás 24,20 € (20,00 € + 21 % IVA)»; adaptador de
+  Stripe **sin dependencia** con firma y tolerancia; webhook idempotente por sesión (**el apunte es por el importe sin IVA**; el mismo webhook veinte veces es un solo apunte; lo pagado que no cuadra no se apunta y deja un incidente;
+  lo que llega tras caducar se apunta); recibo (push al momento, correo en su tanda). Sin `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET`, el restaurante ve «Próximamente» y Restavor registra la recarga a mano.
+- [x] **RVR-01 Lado de Restavor.** La ficha de Reservas de cada restaurante (subruta con acceso destacado en la ficha, decisión 136): estado e historial del servicio, saldo, el mes, movimientos, incidentes abiertos, «Registrar
+  recarga», «Ajuste», «Devolver el saldo» y «Abrir como soporte»; la entrada Reservas del espacio con el saldo de cada restaurante y su enlace; y en **Administración › Reservas** los espacios que ofrecen Reservas con su
+  interruptor, el estado de Stripe (nunca la clave) y las tarifas de mensajería. Nunca datos de comensales.
+- [x] **Decisión 144 · la puerta de los datos de pago.** Sin IBAN ni Bizum cargados en el espacio no se aprueba ni se reactiva Reservas; el botón Aprobar sale parado diciendo por qué.
+- [ ] **«Transferir también Reservas» (decisión 100): NO construido, espera a Bosco** (decisión 148): hay que decidir qué pasa con la suscripción, los cobros y el saldo.
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase E, segunda tanda»; **antes: migración 176 y resembrar**) y, cuando quiera activar el pago, da los datos (IBAN o Bizum) y las claves de
+  Stripe de pruebas (solo en Preview).
+
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.850 tests** en verde; **las 94 suites SQL** sobre una base limpia con las 176 migraciones (suite nueva **94**, `reservas_saldo.sql`: el libro,
+los avisos por cruce, la recarga a mano, el ajuste y la devolución, la recarga con tarjeta y su webhook, el gasto y los minutos, las tarifas y la puerta de los datos de pago), y los dos sembrados dos veces; el script de
+concurrencia `topup-concurrency-test.mjs` (el mismo webhook veinte veces a la vez, una sola recarga; veinte «crear recarga» y veinte recargas a mano con la misma clave, una sola; diez llamadas a la vez, un solo aviso de saldo
+bajo y uno de agotado); los **68 e2e con datos** (los 10 nuevos de `agents-saldo.spec.ts`, con claves de Stripe **falsas** en el servidor del test; en la pasada completa pasaron 64, falló la carrera de «Salir de Ajustes» de la tablet con los tres que dependen de ella, y al repetir ese archivo pasaron sus 12), `next build` de producción. Se comprobó con **tres mutaciones** (se quita el
+bloqueo del disparador de avisos, la idempotencia del webhook y el importe sin IVA): las tres las atrapan la suite, el script o ambos.
+
+Hallazgos que conviene saber:
+
+- **La migración 176 se editó en su sitio** durante la tanda (no estaba subida a ninguna base: mismo precedente que las 120, 130 y 173).
+- Pagar de verdad con Stripe **no se prueba de punta a punta**: no hay red hacia Stripe desde el entorno de pruebas ni en CI. El apunte, el IVA, la idempotencia y la firma están probados por separado (suite 94, script de concurrencia,
+  `stripe.test.ts` y `stripe-webhook.test.ts`); el e2e comprueba el formulario, el importe con IVA y que el webhook rechaza una firma falsa. El primer pago real con la tarjeta de prueba lo hace Bosco con los pasos de PRUEBAS.
+- El e2e de Administración › Reservas **no existe** (`info@restavor.com` no tiene segundo paso sembrado): lo cubren la suite SQL y la prueba a mano.
+- Dos e2e intermitentes vistos en estas sesiones, **ninguno de E2** y los dos pasaron al repetir: «Aprobar» tardó más de 45 s una vez, y «Salir de Ajustes» en la tablet aterrizó una vez en `/desbloquear` (el cambio de la
+  sesión de Ajustes y la navegación del cliente compiten, Fase D). Quedan anotados por si vuelven.
+- Hoy el saldo solo se mueve con recargas y ajustes (y con lo que siembra el sembrado): el gasto real de llamadas y avisos llega con las Fases F y G; `RN-AGT-07` (un aviso solo sale con saldo suficiente) es de la Fase F.
+
+Decisiones (en `docs/DECISIONES.md`, **144 a 148**): 144 pago y datos de pago «Próximamente» (de Bosco), 145 el libro inmutable de verdad y los avisos por cruce, 146 recargar con tarjeta, 147 el lado de Restavor, 148 «Transferir
+también Reservas» sin construir.
+
+Lo que **no** está: «Transferir también Reservas» (espera a Bosco); las cifras de reservas en la ficha (hace falta el resumen mensual); los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I) y la app
+instalable y el modo sin conexión (J).
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase F hasta que Bosco lo diga.**
 
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional

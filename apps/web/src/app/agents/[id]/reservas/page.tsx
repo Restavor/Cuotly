@@ -9,7 +9,8 @@ import { addDays, isValidLocalDate, localDateOf, localDateTimeOf } from "@/core/
 import { agentsPageHref, needsOnboarding, todayHref } from "@/core/reservations/agents-routes";
 import { formatLongDate } from "@/core/reservations/format";
 import { daysLeftOfGrace, showsPaymentBar } from "@/core/reservations/lifecycle";
-import { canOffer } from "@/core/reservations/permissions";
+import { canOffer, canReservations } from "@/core/reservations/permissions";
+import { formatCentsAsEuros } from "@/core/reservations/money";
 import { es } from "@/i18n/es";
 import { agentsDb } from "@/app/agents/db";
 import {
@@ -18,6 +19,7 @@ import {
   loadPendingGroups,
   loadSchedule,
 } from "@/services/reservations-gateway";
+import { loadBalanceBar } from "@/services/agents/balance-gateway";
 import { loadPaymentInfo, loadServiceDates } from "@/services/agents/billing-gateway";
 import { realtimeChannelFor } from "@/services/reservations-realtime";
 
@@ -79,6 +81,20 @@ export default async function Page({
       if (info && dates) payBarDays = daysLeftOfGrace(new Date(info.dueAt), now, dates.graceDays);
     } catch {
       payBarDays = null;
+    }
+  }
+  // «Saldo bajo» y «Te has quedado sin saldo» (PRD §5.2 RN-AGT-05 y RN-AGT-06): el Propietario y el Encargado, mientras
+  // Reservas está en marcha. Si no se ha podido leer, no hay barra (nunca un saldo inventado).
+  let balanceBar: Awaited<ReturnType<typeof loadBalanceBar>> | null = null;
+  if (
+    canReservations(nav.actor, "view_balance", { serviceStatus: nav.serviceStatus }) &&
+    (nav.serviceStatus === "active" || nav.serviceStatus === "past_due" || nav.serviceStatus === "paused" || nav.serviceStatus === "ending")
+  ) {
+    try {
+      const bar = await loadBalanceBar(supabase, id);
+      balanceBar = bar.state === "ok" ? null : bar;
+    } catch {
+      balanceBar = null;
     }
   }
   const date = fecha !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(fecha) && isValidLocalDate(fecha) ? fecha : today;
@@ -191,6 +207,28 @@ export default async function Page({
             className="inline-flex min-h-[44px] items-center rounded-field px-3 font-semibold text-pending-text underline"
           >
             {es.agents.billing.today.payBarCta}
+          </Link>
+        </div>
+      ) : null}
+      {balanceBar ? (
+        <div
+          role="status"
+          className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${
+            balanceBar.state === "empty" ? "border-danger/30 bg-danger/5" : "border-pending-border bg-pending-row"
+          }`}
+          data-testid={balanceBar.state === "empty" ? "balance-empty-bar" : "balance-low-bar"}
+        >
+          <Icon name="warning" className="h-5 w-5 shrink-0 text-pending-text" />
+          <span className="flex-1 font-semibold text-pending-text">
+            {balanceBar.state === "empty"
+              ? es.agents.balance.emptyBar
+              : es.agents.balance.lowBarShort(formatCentsAsEuros(balanceBar.balanceCents))}
+          </span>
+          <Link
+            href={agentsPageHref(id, "balance")}
+            className="inline-flex min-h-[44px] items-center rounded-field px-3 font-semibold text-pending-text underline"
+          >
+            {isOwner ? es.agents.balance.recharge : es.agents.balance.seeBalance}
           </Link>
         </div>
       ) : null}

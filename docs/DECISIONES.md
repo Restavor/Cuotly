@@ -2822,3 +2822,34 @@ Reservas» (decisión 100) entra en la Fase E, en E2. Las demás son decisiones 
     se repite por el mismo vencimiento tras revertir un pago: el segundo aviso no sale al momento. (d) «Vence el…» del correo usa la zona de Madrid y no la del espacio. (e) `reservations_api_idempotency`
     (sin uso todavía) no se anonimiza. (f) Tras reactivar una cerrada, `reservation_payment_info()` enseña la deuda más antigua, no el cobro nuevo. (g) Cambiar el IBAN no pide `aal2` ni avisa a nadie: la
     auditoría dice que cambió, no de qué a qué (el IBAN no se copia a la auditoría, decisión 132).
+
+## Fase E de Restavor agents · El saldo, las recargas y el lado de Restavor (E2, 03/10/2026)
+
+Se registran el 03/10/2026, al construir la segunda tanda de la Fase E (SAL-01, SAL-02 y RVR-01). **Bosco decidió** que el pago y los datos de pago se quedan «Próximamente»: se construye todo, pero no se
+activa hasta que él dé los datos (144). Las demás son decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+
+144. **Pago y datos de pago «Próximamente» hasta que Bosco los dé** (Bosco: *«El pago y los datos se queda como próximamente, constrúyelo pero no se activa hasta que te dé los datos»*). Hay dos puertas, y
+    ninguna se abre sola por tocar código: **(a) los datos de pago del espacio** (decisión 132): sin IBAN ni Bizum cargados, `approve_reservation_request()` y `reactivate_closed_reservations()` se niegan («Antes
+    de aprobar hay que cargar los datos de pago del espacio»), el botón Aprobar sale parado diciendo por qué y la pantalla del restaurante dice «Próximamente: los datos para pagar»; así ningún cobro corre hacia
+    la pausa sin que el restaurante pueda pagarlo. **(b) Stripe**: sin `STRIPE_SECRET_KEY` **y** `STRIPE_WEBHOOK_SECRET` (una sin la otra dejaría dinero cobrado sin apuntar) no hay botón de pago, la acción no
+    llama a Stripe y el restaurante ve «Próximamente» en Recargar; Restavor sigue pudiendo registrar la recarga a mano. Se abren cuando Bosco carga el IBAN o el Bizum en «Datos de pago de Reservas» y cuando
+    pone las dos variables en Vercel. **Variables de Vercel:** las de Stripe de pruebas (`sk_test_…`, `whsec_…`) solo en **Preview** (rama `agents`); en Production, nada hasta que Bosco lo pida, y entonces las
+    reales (`sk_live_…`), nunca las mismas; las de Supabase de Preview apuntan a *Restavor pruebas* y **no** se copian a Production (decisión de la Fase 0).
+145. **El libro del saldo es inmutable de verdad, y el saldo avisa una vez por cruce** (migración 176). Hasta ahora lo era «por costumbre» (un `revoke` que no frena a la clave de servicio): un disparador impide
+    editar y borrar un apunte (RN-AGT-01), y solo deja pasar el borrado en cascada de un espacio o restaurante enteros (que la aplicación nunca hace: se archiva) y el cambio de `space_id` de una transferencia,
+    declarado con `restavor.ledger_move` y sin tocar nada más. Los avisos de saldo bajo (umbral de 5 €, el de `low_balance_threshold_cents`) y de saldo agotado salen de un disparador sobre el libro, bloquean la
+    fila de ajustes del restaurante para que dos llamadas a la vez no avisen dos veces, se vuelven a armar al recuperarse y llegan al Propietario y al Encargado. **No son obligatorios** (se pueden silenciar,
+    como los demás avisos): si se prefiere que el de «sin saldo» no se pueda silenciar, es una línea en `notification_event_is_mandatory()`.
+146. **Recargar con tarjeta** (cierra la 138). Adaptador de Stripe **sin dependencia** (`fetch` y firma con `node:crypto`, tolerancia de 5 minutos, transporte inyectable). La Checkout Session lleva dos líneas
+    (neto e IVA, la suma es lo que se paga) y la recarga como clave de idempotencia. El IVA es el de `spaces.tax_rate_percent` y se calcula en la base de datos (`create_agent_topup()`); el apunte es por el importe
+    **sin IVA**. Mínimo 10 €; **sin máximo** (no hay uno en el PRD y no se inventa; Stripe pone el suyo). El webhook contesta siempre 2xx salvo un fallo de la base de datos (500, para que Stripe reintente: la
+    función es idempotente por sesión): un pago que no coincide con lo pedido no se apunta y deja un incidente de pago para Restavor; uno que llega tras caducar la recarga sí se apunta (el dinero llegó); uno
+    asíncrono sin cobrar todavía espera. El **recibo** es un aviso (push al momento, correo en la tanda de siempre: decisión 137) y no una factura (el bloque legal sigue pendiente).
+147. **Lado de Restavor de E2** (RVR-01). La ficha de Reservas es una subruta (136) con un acceso destacado en la ficha; enseña estado e historial, saldo, el mes, movimientos, incidentes y los tres formularios del dinero
+    (registrar recarga, ajuste y devolver el saldo; estos dos con `aal2`, comprobado en la base de datos). Nunca muestra datos de comensales: de las reservas solo habría cifras, y **no se enseñan** porque hace
+    falta el resumen mensual de la tarea de las 03:00 (139): la pantalla lo dice en vez de inventarlas. Administración › Reservas lleva el interruptor `reservations_enabled` por espacio, el estado de Stripe (listo o
+    no y en qué modo, **nunca la clave**) y las tarifas de mensajería (una tarifa nueva es una fila nueva; el historial no se reescribe). El e2e de Administración no existe: `info@restavor.com` no tiene segundo paso
+    sembrado; lo cubren la suite SQL y la prueba a mano de `docs/agents/PRUEBAS.md`.
+148. **«Transferir también Reservas» (decisión 100) NO se ha construido y espera a Bosco.** Mover Reservas a otro espacio arrastra cosas que son dinero y reglas de transferencia que el PRD no resuelve: ¿qué pasa con la
+    suscripción a Reservas y sus cobros (que el origen cobra y por RN-TRA-04 se quedan en él), con el saldo del restaurante (millonésimas que el origen debe), y quién presta Reservas en el destino (que tiene que ofrecerla
+    y tener su servicio)? Lo único que queda hecho de su lado es la puerta del libro (`restavor.ledger_move`, decisión 145), que no cambia nada por sí sola. Las opciones y la pregunta están en el informe de la tanda.

@@ -123,4 +123,39 @@ describe("RN-RES-11 · los correos del ciclo de vida", () => {
     })!;
     expect(m.body).toContain("Reservas Casa Sol 2026-10");
   });
+
+  it("RN-AGT-05 · el correo de saldo bajo lleva el saldo que queda y manda a recargar", () => {
+    const m = composeLifecycleEmail(
+      entrega({ event_type: "agent_balance_low", amount_cents: 400, deep_link: `/agents/${EST}/saldo` }),
+      "https://x.test",
+    )!;
+    expect(m.subject).toBe("Te queda poco saldo");
+    expect(m.body).toContain("Casa Sol");
+    expect(m.body).toContain("4,00");
+    expect(m.body).toContain("Recarga desde Saldo");
+    expect(m.body).toContain(`https://x.test/agents/${EST}/saldo`);
+  });
+
+  it("RN-AGT-06 · el correo de saldo agotado dice qué deja de funcionar: llamadas, WhatsApp y SMS; los correos no", () => {
+    const m = composeLifecycleEmail(entrega({ event_type: "agent_balance_empty", amount_cents: null }), "https://x.test")!;
+    expect(m.subject).toBe("Te has quedado sin saldo");
+    expect(m.body).toContain("no coge llamadas");
+    expect(m.body).toContain("los correos sí");
+  });
+
+  it("RN-AGT-04 · el recibo de la recarga lleva el importe y dice que no es una factura", () => {
+    const m = composeLifecycleEmail(entrega({ event_type: "agent_topup_receipt", amount_cents: 2420 }), "https://x.test")!;
+    expect(m.subject).toBe("Recibo de tu recarga de saldo");
+    expect(m.body).toContain("24,20");
+    expect(m.body).toContain("no una factura");
+  });
+
+  it("RN-AGT-04 · los tres tipos del saldo se redactan aquí y salen por la cola de dos tandas con su texto (no el genérico)", () => {
+    for (const type of ["agent_balance_low", "agent_balance_empty", "agent_topup_receipt"]) {
+      expect(isLifecycleEmailEvent(type)).toBe(true);
+      const m = createMailComposer("https://x.test").compose(entrega({ event_type: type }))!;
+      expect(m.subject).not.toBe("");
+      expect(m.body).toContain("Casa Sol");
+    }
+  });
 });

@@ -65,6 +65,11 @@ describe("RN-APP-08 · toda lectura que puede hacer una tablet va acotada a su r
       join("app", "agents", "[id]", "plan", "actions.ts"),
       join("app", "agents", "[id]", "cuenta-cerrada", "page.tsx"),
       join("app", "agents", "[id]", "reservas", "exportar", "route.ts"),
+      // Fase E2: el saldo lo ven el Propietario, el Encargado y Restavor con su cuenta; la tablet del local no lo ve (ni
+      // `view_balance` ni `guardAgentsPage` la dejan) y recargar es solo del Propietario.
+      join("app", "agents", "[id]", "saldo", "page.tsx"),
+      join("app", "agents", "[id]", "saldo", "actions.ts"),
+      join("app", "agents", "[id]", "saldo", "exportar", "route.ts"),
     ]);
     for (const ruta of CANDIDATOS) {
       const rel = relative(SRC, ruta);

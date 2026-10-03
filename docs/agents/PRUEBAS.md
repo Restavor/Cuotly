@@ -205,6 +205,42 @@ Para repetir el recorrido, vuelve a ejecutar `supabase/seed/reservas-demo.sql`: 
 Lo que **no** está y es de fases posteriores: el saldo, las recargas y la ficha de Restavor con su pestaña «Reservas» (E2), los avisos a comensales (F), encender el agente (G), el formulario web (H),
 los conectores (I), la app instalable y el modo sin conexión (J). Los cobros de Reservas **siguen saliendo en «Pagos y facturas» de Restavor web** de un restaurante que tenga también panel (decisión 139).
 
+## Estado de la Fase E, segunda tanda (03/10/2026): qué probar a mano
+
+El saldo, las recargas con tarjeta (Stripe, modo de pruebas) y el lado de Restavor (la ficha de Reservas de un restaurante y Administración). **Pago y datos de pago están «Próximamente» hasta
+que Bosco los dé** (decisión 144): todo está construido, pero no se activa solo. **Todavía no está** «Transferir también Reservas» (decisión 100): espera una decisión de Bosco sobre qué pasa con
+la suscripción, los cobros y el saldo (decisión 148). **Antes de probar**, en Restavor pruebas:
+
+1. **Migración 176**: la aplica sola `Pruebas · Supabase` al subir la rama `agents`. **Resembrar** (Actions › `Pruebas · Supabase` › «sembrar»): el sembrado deja los avisos de saldo ya dados.
+2. **Para ver las recargas con tarjeta activas** (si no, verás «Próximamente», que también es lo que hay que comprobar): en Stripe, modo de pruebas, copia la clave secreta (`sk_test_…`) y crea un webhook a
+   `https://<vista previa>/api/agents/webhooks/stripe` con los eventos `checkout.session.completed` y `checkout.session.expired`; copia su secreto (`whsec_…`). En Vercel (Settings › Environment Variables,
+   solo **Preview**, rama `agents`) pon `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET` y vuelve a desplegar. **No pongas nada en Production**: nada de agents sale a producción hasta que se pida. En Administración
+   › Reservas se ve si están listas y en qué modo (nunca la clave).
+
+Cuentas: `jose@casapepe.test` (Propietario de Casa Pepe, saldo 7,40 €), `luis@casapepe.test` (Encargado), `carla@barlaplaza.test` (Bar La Plaza, saldo 1,80 €), `admin@cuotly.test` (administrador del
+espacio, sin segundo paso), `soporte@cuotly.test` (administrador **con** segundo paso, secreto `RESTAVORSOPORTEPRUEBASSEGUNDOPAS`) e `info@restavor.com` (propietario de Restavor web, con su segundo paso).
+
+1. **Saldo.** Con José: `/agents/<Casa Pepe>/saldo` (en el menú, «Saldo» con el importe). Sale **7,40 €**, para cuántos minutos de llamadas da (solo si hubo llamadas en los últimos 30 días), «Te avisamos
+   cuando queden menos de 5 €», el gasto del mes por llamadas, WhatsApp y SMS (si el mes no tiene gasto lo dice) y los últimos movimientos; «Ver todos» enseña más y «Descargar en Excel» baja un `.xlsx`.
+   Con Luis (Encargado) ves lo mismo pero no hay recarga: «Solo el propietario puede recargar». La tablet del local no ve el saldo.
+2. **Recargar.** Sin Stripe configurado: «Próximamente» y cómo pedir una recarga a mano. Con Stripe: elige 10, 20 o 50 € u otro importe (menos de 10 € no vale); abajo dice **«Pagarás 24,20 € (20,00 € + 21 % IVA)»**;
+   «Pagar con tarjeta» te lleva a Stripe (tarjeta de prueba `4242 4242 4242 4242`, cualquier fecha futura y CVC). Al volver, «Estamos esperando la confirmación»; en cuanto Stripe avisa, el saldo sube **20,00 €**
+   (el IVA no es saldo), llega el aviso con el recibo y aparece «Recarga con tarjeta» en los movimientos. Cancelar en Stripe: «No se te ha cobrado nada».
+3. **Saldo bajo y agotado.** Con Carla (Bar La Plaza, 1,80 €): en Saldo y en Hoy sale **«Saldo bajo: te quedan 1,80 €»** con «Recargar». Cuando Restavor ajusta un saldo a 0 o menos, sale «Te has quedado sin saldo» y un aviso
+   (una sola vez hasta que se recupere).
+4. **La ficha de Reservas, del lado de Restavor.** Con `admin@cuotly.test`: Restaurantes › Casa Pepe: arriba hay un acceso **«Reservas»** (también desde Espacio › Reservas, donde cada restaurante en marcha enseña su saldo).
+   En la ficha de Reservas: estado y historial del servicio, saldo, el mes, movimientos e incidentes. **Registrar recarga**: 20 € por Bizum → el saldo pasa a 27,40 € y avisa al restaurante. **Ajuste** y **Devolver el saldo**
+   están parados con «Para esto tienes que haber verificado tu identidad en dos pasos».
+5. **Ajuste con el segundo paso.** Con `soporte@cuotly.test` (con el código de 6 cifras): Casa Pepe › Reservas › Ajuste: `-1,50` sin motivo no se guarda; con motivo sí, y sale «Ajuste de Restavor» en los movimientos y en el Historial.
+   **Devolver el saldo** solo aparece con la baja pedida o Reservas cerrada (prueba con Asador Vega, de baja, o Casa Mar, cerrada).
+6. **Administración › Reservas** (con `info@restavor.com` y su segundo paso): los espacios que ofrecen Reservas con «Apagar/Encender Reservas», el estado de Stripe y las tarifas de mensajería (un WhatsApp son 0,016 €;
+   una tarifa nueva vale desde hoy o una fecha futura y las anteriores no se tocan).
+7. **La puerta de los datos de pago (decisión 144).** Con `owner@cuotly.test`: Espacio › Reservas › «Datos de pago de Reservas»: borra el IBAN y el Bizum y guarda. Con `admin@cuotly.test`, el botón **Aprobar** de una solicitud
+   queda parado con «Antes de aprobar, el propietario del espacio tiene que cargar los datos de pago». Vuelve a ponerlos y se abre.
+
+Lo que **no** está y es de la siguiente tanda o de fases posteriores: «Transferir también Reservas» (decisión 148), las cifras de reservas en la ficha (hace falta el resumen mensual, decisión 139), el gasto real de llamadas
+y avisos (Fases F y G: hoy el saldo solo se mueve con recargas y ajustes y con lo que siembra el sembrado), y la configuración de horarios, equipo, plataformas y clave del agente dentro de la ficha (G, H e I).
+
 ## Cuentas del sembrado
 
 Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producción).

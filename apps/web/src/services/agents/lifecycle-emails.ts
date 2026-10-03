@@ -29,6 +29,10 @@ export const LIFECYCLE_EMAIL_EVENTS = [
   "reservations_paused",
   "reservations_ending",
   "reservations_closed_purge_soon",
+  // Fase E2 · el saldo.
+  "agent_balance_low",
+  "agent_balance_empty",
+  "agent_topup_receipt",
 ] as const;
 
 export type LifecycleEmailEvent = (typeof LIFECYCLE_EMAIL_EVENTS)[number];
@@ -135,6 +139,18 @@ export function composeLifecycleEmail(
     case "reservations_closed_purge_soon":
       subject = t.purgeSoon.subject;
       paragraphs = [t.purgeSoon.intro(restaurant), t.purgeSoon.outro];
+      break;
+    case "agent_balance_low":
+      subject = t.balanceLow.subject;
+      paragraphs = [t.balanceLow.intro(restaurant, amount), t.balanceLow.outro];
+      break;
+    case "agent_balance_empty":
+      subject = t.balanceEmpty.subject;
+      paragraphs = [t.balanceEmpty.intro(restaurant), t.balanceEmpty.outro];
+      break;
+    case "agent_topup_receipt":
+      subject = t.topupReceipt.subject;
+      paragraphs = [t.topupReceipt.intro(restaurant, amount), t.topupReceipt.outro];
       break;
   }
 

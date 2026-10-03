@@ -370,6 +370,7 @@ export const AUDIT_ACTIONS = [
   "platform.admin_granted",
   "platform.admin_revoked",
   "platform.admin_updated",
+  "platform.messaging_rate_set",
   "platform.establishment_deleted",
   "platform.establishment_restored",
   "platform.space_deleted",
@@ -475,6 +476,12 @@ export const AUDIT_ACTIONS = [
   // comensales ni el IBAN (RN-RES-12, decisión 132).
   "reservations.activated",
   "reservations.approved",
+  // Fase E2 (migración 176) · el saldo: recargas y ajustes. Ninguna lleva datos de pago de nadie.
+  "reservations.balance_adjusted",
+  "reservations.balance_payout",
+  "reservations.balance_topup_manual",
+  "reservations.topup_expired",
+  "reservations.topup_paid",
   "reservations.cancellation_requested",
   "reservations.cancellation_undone",
   "reservations.closed",

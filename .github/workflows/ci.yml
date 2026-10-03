@@ -670,11 +670,17 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/reservas_equipo_tablet_soporte.sql
 
-      - name: "Suite 93 — Contratación, cobro y ciclo de vida de Reservas (migraciones 172 a 174, RN-APP-03, RN-RES-11 y D-D)"
+      - name: "Suite 93 — Contratación, cobro y ciclo de vida de Reservas (migraciones 172 a 175, RN-APP-03, RN-RES-11 y D-D)"
         run: |
           psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/reservas_cobro_y_ciclo.sql
+
+      - name: "Suite 94 — El saldo, las recargas y los datos de pago de Reservas (migración 176, RN-AGT-01 a RN-AGT-09)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/reservas_saldo.sql
 
       - name: "Fase C — Verificar el aforo con altas simultáneas (RN-RES-02)"
         run: |
@@ -685,6 +691,11 @@ jobs:
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             node scripts/device-concurrency-test.mjs
+
+      - name: "Fase E2 — Verificar que el saldo no se duplica ni se avisa dos veces con peticiones simultáneas (RN-AGT-04, RN-AGT-05)"
+        run: |
+          cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            node scripts/topup-concurrency-test.mjs
 
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
@@ -816,6 +827,12 @@ jobs:
             echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY:?supabase status no imprimió SERVICE_ROLE_KEY}"
             # Fase D · el sembrado cifra los PIN de prueba con este valor; la tablet del local lo necesita para comprobarlos.
             echo "AGENTS_PIN_SECRET=restavor-pruebas-pin-secret"
+            # Fase E2 · claves FALSAS de Stripe: con ellas la pantalla de Saldo enseña el formulario de recarga y el
+            # webhook comprueba firmas (el test del webhook usa una falsa y espera un 400). Pagar de verdad no se
+            # prueba: no hay red hacia Stripe. Sin estas dos variables las recargas salen «Próximamente».
+            echo "STRIPE_SECRET_KEY=sk_test_clave_falsa_solo_para_los_recorridos"
+            echo "STRIPE_WEBHOOK_SECRET=whsec_secreto_falso_solo_para_los_recorridos"
+            echo "E2E_STRIPE=1"
           } >> "$GITHUB_ENV"
 
       - name: Instalar navegador de Playwright
