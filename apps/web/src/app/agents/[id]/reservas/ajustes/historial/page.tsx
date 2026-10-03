@@ -13,6 +13,13 @@ function text(value: unknown): string | null {
   return typeof value === "string" && value !== "" ? value : null;
 }
 
+/** Los canales de aviso que quedaron encendidos, escritos: «correo, WhatsApp». */
+function noticeChannelsText(detail: Readonly<Record<string, unknown>>): string {
+  const t = es.agents.history.events;
+  const on = (["email", "whatsapp", "sms"] as const).filter((channel) => detail[channel] === true).map((channel) => t.noticeChannelNames[channel]);
+  return on.length === 0 ? t.noticeChannelsNone : on.join(", ");
+}
+
 /** La frase de una fila del Historial. Sin la clave conocida no se inventa: «X hizo un cambio». */
 function sentence(entry: HistoryEntry, timeZone: string): string {
   const t = es.agents.history.events;
@@ -59,6 +66,8 @@ function sentence(entry: HistoryEntry, timeZone: string): string {
       return t.topupExpired();
     case "reservations.low_balance_threshold_changed":
       return t.lowBalanceThresholdChanged(who);
+    case "reservations.notice_channels_changed":
+      return t.noticeChannelsChanged(who, noticeChannelsText(entry.detail));
     case "reservations.transferred":
       return t.transferred(who);
     case "reservations.support_session": {

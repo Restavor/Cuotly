@@ -195,18 +195,21 @@ insert into public.groups (id, space_id, name) values
   ('e5100000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'Bar La Plaza'),
   ('e5100000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'Restaurantes de prueba de Reservas');
 
-insert into public.establishments (id, space_id, group_id, name, status, city, phone_primary, website_url) values
-  ('e5200000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000001', 'Casa Pepe', 'active', 'Sevilla', '954 000 000', 'https://casapepe.es'),
-  ('e5200000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000001', 'Casa Pepe Centro', 'active', 'Sevilla', null, null),
-  ('e5200000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000002', 'Taberna Sol', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000003', 'Bar La Plaza', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Bodega Norte', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000006', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Mesón del Puerto', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000007', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Cervecería Roma', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000008', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Asador Vega', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000009', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Casa Mar', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000010', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Taberna Levante', 'active', null, null, null),
-  ('e5200000-0000-0000-0000-000000000011', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Café Rechazado', 'active', null, null, null);
+-- Fase F (avisos a comensales): Casa Pepe lleva dirección y correo de contacto, que necesitan los textos de
+-- `textos-avisos.md` (la dirección, en «reserva confirmada» y «grupo aceptado»; el correo, de `Reply-To`). Taberna Sol se
+-- queda SIN dirección y sin teléfono del local a propósito: es el caso «faltan datos» (el aviso no sale y queda un incidente).
+insert into public.establishments (id, space_id, group_id, name, status, city, phone_primary, website_url, address, contact_email) values
+  ('e5200000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000001', 'Casa Pepe', 'active', 'Sevilla', '954 000 000', 'https://casapepe.es', 'Calle Sierpes 12, 41004 Sevilla', 'reservas@casapepe.test'),
+  ('e5200000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000001', 'Casa Pepe Centro', 'active', 'Sevilla', null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000002', 'Taberna Sol', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000003', 'Bar La Plaza', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Bodega Norte', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000006', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Mesón del Puerto', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000007', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Cervecería Roma', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000008', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Asador Vega', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000009', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Casa Mar', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000010', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Taberna Levante', 'active', null, null, null, null, null),
+  ('e5200000-0000-0000-0000-000000000011', 'd1000000-0000-0000-0000-000000000001', 'e5100000-0000-0000-0000-000000000004', 'Café Rechazado', 'active', null, null, null, null, null);
 
 -- Quién entra en cada uno. José: Propietario de Casa Pepe y Encargado de Casa Pepe Centro (para el
 -- selector de restaurante). Luis: Encargado de Casa Pepe. El de «estados» es el Propietario de los
@@ -296,6 +299,16 @@ from (values
 ) as v(id, est, sub, estado, slug, local_phone, transfer_phone, nota);
 
 -- Los teléfonos y la nota de Casa Pepe son de PRD §16; el resto de restaurantes no los tiene todavía.
+
+-- Fase F · tarifas de PRUEBA de los avisos (RN-AGT-03): las mismas cifras que los apuntes sembrados del saldo (WhatsApp
+-- 0,016 €, SMS 0,08 €), solo para España y Portugal. Las reales las carga Restavor en Administración › Reservas y NO
+-- salen de este archivo. Sin tarifa del país del número, el aviso no sale (`no_rate`): Francia no tiene a propósito.
+insert into public.messaging_rates (channel, country, price_micros, currency, valid_from) values
+  ('whatsapp_utility', 'ES', 16000, 'EUR', date '2026-01-01'),
+  ('sms', 'ES', 80000, 'EUR', date '2026-01-01'),
+  ('whatsapp_utility', 'PT', 16000, 'EUR', date '2026-01-01'),
+  ('sms', 'PT', 80000, 'EUR', date '2026-01-01')
+on conflict (channel, country, valid_from) do nothing;
 
 -- Los apuntes del ciclo de vida: de cada restaurante, los que llevan hasta su estado.
 insert into public.reservation_service_events (space_id, establishment_id, type, data)

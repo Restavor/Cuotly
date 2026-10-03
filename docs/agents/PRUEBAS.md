@@ -246,6 +246,51 @@ espacio, sin segundo paso), `soporte@cuotly.test` (administrador **con** segundo
 Lo que **no** está y es de la siguiente tanda o de fases posteriores: las cifras de reservas en la ficha (hace falta el resumen mensual, decisión 139), el gasto real de llamadas
 y avisos (Fases F y G: hoy el saldo solo se mueve con recargas y ajustes y con lo que siembra el sembrado), y la configuración de horarios, equipo, plataformas y clave del agente dentro de la ficha (G, H e I).
 
+## Estado de la Fase F (03/10/2026): qué probar a mano
+
+Los avisos a los comensales de Reservas (PRD §6.11 y §10.3): correo, WhatsApp y SMS, con el canal que el restaurante deje activado, el enlace para cancelar y el coste real descontado del saldo. **Todo se prueba con el
+proveedor FALSO**: no sale ningún mensaje de verdad. Resend, Meta y el proveedor de SMS están hechos pero apagados hasta que Bosco ponga sus claves (`docs/agents/guia-proveedores-de-avisos.md`). **Antes de probar**, en Restavor pruebas:
+
+1. **Migración 179**: la aplica sola `Pruebas · Supabase` al subir la rama `agents`. **Resembrar** (Actions › `Pruebas · Supabase` › «sembrar»): el sembrado trae tarifas de prueba de España y Portugal (WhatsApp 0,016 €,
+   SMS 0,08 €), la dirección de Casa Pepe y `Taberna Sol` sin teléfono ni dirección (para ver el caso «falta el dato»).
+2. En Vercel (Settings › Environment Variables, solo **Preview**, rama `agents`) pon `ENABLE_FAKE_MESSAGING=true` y `CRON_SECRET` (el mismo texto que ya usan los otros trabajos) y vuelve a desplegar. **No pongas nada en
+   Production.** Sin `ENABLE_FAKE_MESSAGING` los avisos con proveedor falso no salen y la pantalla de Pruebas dice que no está activada.
+3. **La vista previa de Vercel está protegida**: los enlaces `/c/…` de los comensales y los webhooks no se abren sin sesión de Vercel. Para probar el enlace como lo vería un comensal, o bien abre el enlace con tu sesión de
+   Vercel, o en Settings › Deployment Protection añade una excepción para `/c/*`.
+4. Para el **trabajo de cada minuto** (reintentos) hace falta ejecutar `supabase/operaciones/agents-cron.sql` en Restavor pruebas (`agents-avisos`). A mano se lanza con
+   `curl -H "Authorization: Bearer <CRON_SECRET>" "https://<vista previa>/api/agents/cron/avisos"` o con el botón «Procesar avisos pendientes ahora» de Pruebas › Mensajes.
+
+Cuentas: `jose@casapepe.test` (Propietario de Casa Pepe), `luis@casapepe.test` (Encargado), `admin@cuotly.test` (administrador del espacio: ve Pruebas › Mensajes) e `info@restavor.com`.
+
+1. **Con correo.** Con José, `/agents/<Casa Pepe>/reservas/nueva`: otro día, 2 personas, Cena, 21:00, nombre «Prueba Correo», teléfono `611 222 301`, email `prueba@correo.com`. Guarda. Con `admin@cuotly.test`:
+   Espacio › Reservas › **«Mensajes de prueba de los avisos a clientes»**: sale un mensaje por **Correo**, «Tu reserva en Casa Pepe está confirmada», sin coste. En la ficha de la reserva, el Historial dice «Aviso «reserva
+   confirmada» enviado por email».
+2. **Solo con teléfono.** Otra reserva sin email y con teléfono `611 222 302`: el aviso sale por **WhatsApp**, con «Coste: 0,016 €», y el saldo de Casa Pepe baja ese importe (a la millonésima en el libro, al céntimo en pantalla).
+   «Entregado» marca el mensaje como entregado; «No cobrado» devuelve el importe.
+3. **Sin WhatsApp.** Una reserva con teléfono acabado en `0404` (por ejemplo `611 220 404`): el WhatsApp no se entrega, el historial dice «WhatsApp no disponible en ese número: se envía por SMS» y sale un **SMS** (sin tildes ni eñes,
+   «Coste: 0,08 €»). Con «Precio real (0,05 €)» el coste se corrige y se devuelve la diferencia. Un número acabado en `0500` falla dos veces y sale a la tercera (los reintentos tardan 1 y 5 minutos; «Procesar avisos
+   pendientes ahora» no se salta la espera).
+4. **Un fijo no recibe nada.** Teléfono `955 123 456`: no sale ningún mensaje y la ficha dice «Aviso no enviado: no hay correo ni un móvil al que escribir».
+5. **En inglés.** En «Idioma de los avisos» elige English: el aviso sale en inglés («Your booking at Casa Pepe is confirmed»).
+6. **El enlace del comensal.** En Pruebas › Mensajes, «Enlace del cliente» abre `/c/<32 caracteres>`: «Tu reserva», restaurante, fecha, hora, personas y nombre, el plazo (2 h antes) y «Llama al …», con selector ES/EN. Recargar
+   la página **no cancela nada**. «Cancelar mi reserva» (púlsalo dos veces seguidas) cancela una sola vez: «Reserva cancelada». En la ficha de la reserva, Historial: «Reserva cancelada · desde el enlace del cliente» y el aviso
+   de cancelación. Un enlace inventado dice «Este enlace no es válido». Una reserva dentro del plazo (a menos de 2 h) dice «Ya no se puede cancelar desde aquí» y el teléfono.
+7. **Los interruptores.** Con José: Ajustes › Conexiones › «Avisos a tus clientes»: Correo, WhatsApp y SMS, cada uno con su interruptor. Apaga WhatsApp y guarda: una reserva solo con teléfono pasa a SMS. Apaga los tres: «Con los
+   tres apagados no avisamos a ningún cliente» y la ficha dice «Aviso no enviado: los canales de aviso están desactivados». Con Luis (Encargado) se cambian igual; en la tablet del local se ven fijos con «Cámbialo desde tu cuenta».
+   Vuelve a dejarlos los tres activos.
+8. **Sin saldo y sin datos.** Con Carla (`carla@barlaplaza.test`, 1,80 €) gasta el saldo creando reservas con solo teléfono hasta que quede menos de 0,016 €: el aviso no sale y la ficha dice «Aviso no enviado: sin saldo».
+   Con Taberna Sol (sin teléfono del local): «Aviso no enviado: faltan el teléfono o la dirección del restaurante».
+
+Para repetir los recorridos automáticos (`pnpm test:e2e:datos`) hace falta `ENABLE_FAKE_MESSAGING=true` y `CRON_SECRET` en el servidor del test (CI ya lo pone); `agents-avisos.spec.ts` gasta saldo de Casa Pepe y se
+lanza después del resto. **Cuidado:** una vista previa en modo falso nunca debe apuntar a una base con comensales reales (los mensajes falsos y su enlace de cancelar quedan legibles para quien gestiona clientes).
+
+Lo que **no** se puede probar aquí, y cómo se prueba cuando haya cuentas reales: Resend, Meta y el proveedor de SMS no se llaman de verdad (peticiones, firmas y respuestas están probadas con transporte inyectable y vectores
+publicados). La guía `docs/agents/guia-proveedores-de-avisos.md` dice cómo activarlos y cómo comprobar el primer aviso real, **empezando por tus propios teléfono y correo en `MESSAGING_RECIPIENT_ALLOWLIST`**: con proveedor
+real fuera de producción, solo se envía a esa lista. Los códigos de error de Meta y SMS hay que confirmarlos en su documentación al activarlos (`core/reservations/provider-errors.ts`).
+
+Lo que **no** está y es de fases posteriores: el agente de llamadas (G), el formulario web y sus avisos al equipo (H), los conectores (I), el push web y la app instalable (J), el correo a Restavor por cada incidente, el
+recordatorio del día antes y la anonimización a los 24 meses.
+
 ## Cuentas del sembrado
 
 Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producción).

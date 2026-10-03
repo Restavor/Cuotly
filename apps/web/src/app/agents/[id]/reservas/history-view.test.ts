@@ -53,4 +53,36 @@ describe("RES-03 · el historial legible de la ficha", () => {
   it("un tipo que no conoce no inventa nada", () => {
     expect(describeEvent(ev({ type: "algo_nuevo", actorType: "system", actorName: "Sistema" }), null, TZ).text).toBe("Cambio en la reserva");
   });
+
+  it("AVI-01 · un aviso enviado dice cuál y por dónde, sin el contacto del cliente", () => {
+    const sent = describeEvent(ev({ type: "notification_sent", actorType: "system", actorName: "Sistema", data: { template: "confirmed", channel: "whatsapp" } }), null, TZ);
+    expect(sent.text).toBe("Aviso «reserva confirmada» enviado por WhatsApp");
+    expect(describeEvent(ev({ type: "notification_sent", actorType: "system", actorName: "Sistema", data: { template: "cancelled", channel: "email" } }), null, TZ).text).toBe(
+      "Aviso «reserva cancelada» enviado por email",
+    );
+  });
+  it("RN-AGT-07 · un aviso que no sale por falta de saldo lo dice como pide el PRD: «Aviso no enviado: sin saldo»", () => {
+    expect(describeEvent(ev({ type: "notification_skipped", actorType: "system", actorName: "Sistema", data: { template: "confirmed", reason: "no_balance" } }), null, TZ).text).toBe(
+      "Aviso no enviado: sin saldo",
+    );
+  });
+  it("RN-RES-10 · cada motivo por el que un aviso no sale tiene su frase, y uno nuevo no inventa nada", () => {
+    for (const reason of ["no_consent", "no_contact", "messaging_disabled", "no_rate", "not_allowed", "missing_data", "enqueue_error"]) {
+      const text = describeEvent(ev({ type: "notification_skipped", actorType: "system", actorName: "Sistema", data: { reason } }), null, TZ).text;
+      expect(text, reason).not.toBe("Aviso no enviado");
+      expect(text, reason).toMatch(/^(Aviso no enviado|El aviso no se pudo preparar)/);
+    }
+    expect(describeEvent(ev({ type: "notification_skipped", actorType: "system", actorName: "Sistema", data: { reason: "algo_nuevo" } }), null, TZ).text).toBe("Aviso no enviado");
+  });
+  it("RN-RES-10 · un WhatsApp que no llega y pasa a SMS lo cuenta; sin respaldo, dice que ese número no tiene WhatsApp", () => {
+    const base = { type: "notification_failed", actorType: "system", actorName: "Sistema" } as const;
+    expect(describeEvent(ev({ ...base, data: { template: "confirmed", channel: "whatsapp", reason: "whatsapp_undeliverable", fallback: "sms" } }), null, TZ).text).toBe(
+      "WhatsApp no disponible en ese número: se envía por SMS",
+    );
+    expect(describeEvent(ev({ ...base, data: { template: "confirmed", channel: "whatsapp", reason: "whatsapp_undeliverable" } }), null, TZ).text).toBe(
+      "Aviso no entregado: ese número no tiene WhatsApp",
+    );
+    expect(describeEvent(ev({ ...base, data: { reason: "max_attempts" } }), null, TZ).text).toBe("Aviso no enviado: no se pudo entregar tras varios intentos");
+    expect(describeEvent(ev({ ...base, data: { reason: "meta_999999" } }), null, TZ).text).toBe("Aviso no enviado: el proveedor lo ha rechazado");
+  });
 });

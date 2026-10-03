@@ -88,7 +88,7 @@ Un `editor` sin `manage_reservations` **no ve Reservas**. El Equipo no ve nada d
 | Ver estado de las conexiones | Sí | Sí | No | Sí | Sí |
 | Ver saldo y movimientos | Sí | Sí | No | Sí (importe y movimientos) | Sí |
 | **Recargar saldo** | Sí | No ("Pide al propietario que recargue") | No | Solo registrar recargas a mano | No |
-| Interruptor de WhatsApp/SMS | Sí | Sí | No | Sí | Sí |
+| Interruptores de aviso (correo, WhatsApp y SMS; Fase F, decisión 152), desde una cuenta | Sí | Sí | No (los ve fijos) | Sí | Sí |
 | Plan, pagos, darse de baja de Reservas | Sí | No | No | Sí | No |
 | Descargar todas las reservas (Excel) | Sí | No | No | No | Sí |
 | Conectar plataformas, clave del agente, números de teléfono del agente, "cómo le llegan las llamadas", color y logo del formulario | No | No | No | **Solo Restavor** (con `aal2`) | — |
@@ -269,12 +269,13 @@ Marcas: **Nueva** (`is_new`: reservas de agente, web o plataforma; se quita al a
 ### 6.11 Avisos al cliente (RN-RES-10)
 - Plantillas: `confirmed`, `pending_received`, `group_confirmed`, `group_rejected`, `modified`, `cancelled`. **Mandan los textos de `docs/agents/textos-avisos.md`.** Todas con enlace de cancelar salvo `group_rejected` y `cancelled`.
 - **Nunca** para reservas de plataforma.
-- Canal: si hay email → solo email. Si no hay email, hay teléfono **y** `whatsapp_consent` → WhatsApp; si Meta dice que el número no puede recibir WhatsApp → SMS. Nunca dos canales. Sin email y sin consentimiento → no sale (`no_consent`). En manuales el consentimiento viene marcado (el personal informa).
+- Canal (Fase F, decisiones 151 a 153): el **primero que sirva entre correo → WhatsApp → SMS**, mirando solo los canales que el restaurante tiene activados (`notify_email`, `notify_whatsapp`, `notify_sms`) y los que el comensal puede recibir: correo si dio email; WhatsApp o SMS si dio un **móvil** y `whatsapp_consent` (vale para los dos; un fijo español +34 8/9 no recibe ninguno). Si Meta dice que el número no puede recibir WhatsApp → el mismo aviso por SMS (si está activado). Un solo canal por aviso, decidido con la misma función SQL al encolar y al enviar. Sin email y sin consentimiento → no sale (`no_consent`); todo apagado → `messaging_disabled`. En manuales el consentimiento viene marcado (el personal informa).
 - WhatsApp/SMS solo con el interruptor activado y **saldo igual o mayor que el precio del mensaje** (RN-AGT-07); si no, no sale y queda en el historial ("Aviso no enviado: sin saldo").
 - SMS sin tildes ni eñes (se transliteran), un solo mensaje de 160 caracteres como máximo.
 - Idioma: el de la reserva (`es`/`en`).
-- **Se envían al momento**, no con la cola de dos veces al día de Restavor web: envío directo al guardar + reintentos (máximo 3) con una tarea cada minuto (§10). Todo en `reservation_notifications` y en el historial de la reserva.
-- Enlace estable `/c/[token]` (128 bits, índice único).
+- **Se envían al momento**, no con la cola de dos veces al día de Restavor web: envío directo al guardar + reintentos (1, 5 y 15 minutos; cuatro intentos en total) con una tarea cada minuto (§10). Todo en `reservation_notifications` y en el historial de la reserva.
+- Enlace estable `/c/[token]`: los **32 primeros caracteres hexadecimales** del `cancel_token` (122 bits aleatorios, índice único; el token entero de 64 no cabe en un SMS de 160). Cancelar desde el enlace también avisa (`cancelled`).
+- Sin teléfono del restaurante (y sin dirección en `confirmed` y `group_confirmed`) el aviso no sale (`missing_data`, decisión 164); sin tarifa del país del número, tampoco (`no_rate`). Solo sale el último aviso de cada reserva.
 - Respuestas al WhatsApp de Restavor → respuesta automática "Este número solo envía avisos y no lee mensajes. Para cualquier cosa, llama a <restaurante>: <teléfono>."
 - Emails: remitente "<Restaurante> <reservas@restavor.com>", `Reply-To` = email del restaurante; pie "Reservas con Restavor".
 
@@ -408,7 +409,7 @@ Nombres en inglés. Toda tabla nueva lleva `space_id NOT NULL` (el del restauran
 | local_phone_e164 | text | teléfono del local (el que se desvía al agente) |
 | transfer_phone_e164 | text | teléfono para pasar llamadas; `CHECK` distinto de `local_phone_e164` |
 | forwarding_note | text | "cómo le llegan las llamadas", lo escribe Restavor |
-| messaging_enabled | boolean | WhatsApp/SMS activados (por defecto true) |
+| notify_email, notify_whatsapp, notify_sms | boolean | Un interruptor por canal de aviso a comensales (por defecto true los tres; sustituyen a `messaging_enabled`, decisión 152) |
 | brand_color, logo_file_id | text / uuid | del formulario web (los pone Restavor) |
 | low_balance_threshold_cents | integer | 500 |
 | low_balance_notified_at | timestamptz | aviso una vez por cruce |
@@ -446,7 +447,7 @@ Nombres en inglés. Toda tabla nueva lleva `space_id NOT NULL` (el del restauran
 **`web_push_subscriptions`** (de la persona, sin `space_id` ni `establishment_id`, como `push_devices`; añadirla a la lista de tablas sin espacio de la suite 42): `user_id`, `endpoint` (único), `p256dh`, `auth`, `user_agent`, `created_at`, `last_seen_at`, `revoked_at`.
 **`messaging_rates`** (plataforma): `channel` (`whatsapp_utility`, `sms`), `country` (`ES`), `price_micros`, `currency`, `valid_from`. Solo la edita Restavor.
 **`fx_rates`** (plataforma): `date`, `currency`, `rate_to_eur`.
-**`reservation_notifications`** (avisos a comensales; distinto de `notifications`, que es para usuarios): `reservation_id`, `template`, `channel` (`email, whatsapp, sms`), `language`, `recipient`, `status` (`queued, sent, delivered, failed, skipped`), `skip_reason` (`no_balance, messaging_disabled, platform_source, no_contact, no_consent`), `attempts`, `next_attempt_at`, `provider_message_id`, `cost_micros`, `error`, `anonymized_at`.
+**`reservation_notifications`** (avisos a comensales; distinto de `notifications`, que es para usuarios): `reservation_id`, `template`, `channel` (`email, whatsapp, sms`), `language`, `recipient`, `status` (`queued, sent, delivered, failed, skipped`), `skip_reason` (`no_balance, messaging_disabled, platform_source, no_contact, no_consent`), `attempts`, `next_attempt_at`, `provider_message_id`, `cost_micros`, `error`, `anonymized_at`. **(Fase F, migración 179)** También `event_id` (el evento de la agenda del que nace; único con el canal), `fallback_of` (el WhatsApp al que sustituye un SMS), `provider` (`resend, meta, sms, fake`), `sent_at`, `delivered_at`, el precio (`price_final_at`, `price_original`, `price_currency`, `price_checks`) y `error` solo como **código**; `channel` puede ser nulo solo si el aviso se omite antes de elegirlo; `skip_reason` admite además `no_rate, obsolete, not_allowed, missing_data`.
 
 ### 8.7 Conexiones, operación y datos
 **`reservation_platform_connections`**: `provider`, `display_name`, `credentials_encrypted` (cifradas con el sistema de `INTEGRATIONS_VAULT_KEY` del repositorio), `status` (`connected, error, disconnected`), `capabilities jsonb` (`can_cancel`, `can_modify`, `has_webhooks`), `last_sync_at`, `last_error`, `last_error_at`.
@@ -496,7 +497,7 @@ Los `message` están pensados para decirlos tal cual. Los ejemplos de `docs/agen
 - `POST /api/public/reservas/cancel/{token}`: cancelación del cliente (§6.9).
 
 ### 9.3 Webhooks de entrada (`/api/agents/webhooks/...`)
-- `platforms/{provider}` (firma validada por cada conector) · `whatsapp` (estados, "no entregable" → SMS, precio, mensajes entrantes → respuesta automática) · `sms` (estados y precio real) · `email` (rebotes → incidente) · `stripe` (`checkout.session.completed` → recarga; `checkout.session.expired` → recarga caducada; firma con `STRIPE_WEBHOOK_SECRET`; idempotente) · `agent/{provider}` (si la plataforma del agente avisa así del final de llamada, se convierte en lo mismo que `POST /calls`).
+- `platforms/{provider}` (firma validada por cada conector) · `whatsapp` (verificación GET, `X-Hub-Signature-256`, estados, "no entregable" → SMS, "no cobrado", mensajes entrantes → respuesta automática) · `sms` (`X-Twilio-Signature` sobre la URL pública; estados y precio real) · `email` (firma Svix; rebotes → incidente) · `stripe` (`checkout.session.completed` → recarga; `checkout.session.expired` → recarga caducada; firma con `STRIPE_WEBHOOK_SECRET`; idempotente) · `agent/{provider}` (si la plataforma del agente avisa así del final de llamada, se convierte en lo mismo que `POST /calls`).
 
 ### 9.4 Avisos a personas de la app
 Con el sistema de avisos del repositorio (`notifications`, campana, preferencias) más **push web** (nuevo canal `web_push`, tabla `web_push_subscriptions`, §13).
@@ -587,7 +588,7 @@ Tablet horizontal (1180×820) y móvil (390×844) para Restavor agents; escritor
 | `/agents/[id]/reservas/agente/horario` | Horario y teléfono para pasar llamadas | Estructura: `AgenteHorarioMovil` |
 | `/agents/[id]/reservas/ajustes/horarios` | Días, turnos, aforo, huecos, grupos, días cerrados, límites | Estructura: `Ajustes` |
 | `/agents/[id]/reservas/ajustes/equipo` | Equipo con PIN, "Mi PIN para la tablet", dispositivos | Estructura: `AjustesEquipo`, `PinTablet` |
-| `/agents/[id]/reservas/ajustes/conexiones` | Estado de plataformas, página de reservas con "Copiar", interruptor WhatsApp/SMS | Estructura: `AjustesConexiones` (la parte del agente ya está en Agente) |
+| `/agents/[id]/reservas/ajustes/conexiones` | Estado de plataformas, página de reservas con "Copiar", los tres interruptores de aviso (correo, WhatsApp y SMS) | Estructura: `AjustesConexiones` (la parte del agente ya está en Agente) |
 | `/agents/[id]/reservas/primer-uso` | Primer uso: días y turnos → aforo y grupos → equipo y tablet → agente (teléfonos e información) | Estructura: `PrimerUso` |
 | `/agents/[id]/reservas/ajustes/historial` | Historial de Reservas: cambios de ajustes, encendidos/apagados, sesiones de soporte ("Restavor entró como soporte · motivo · hora") | Sin maqueta: lista sencilla con el estilo de `AgentsAgente` › Llamadas |
 | `/agents/[id]/reservas/exportar` | Descargar todas las reservas en Excel (Propietario) | Botón en Ajustes y en "Reservas cerrada" |

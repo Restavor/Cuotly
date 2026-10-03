@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 import { codigoTotp } from "./totp";
 
@@ -29,6 +29,23 @@ const BAR_LA_PLAZA = "e5200000-0000-0000-0000-000000000004";
 const SALDO = `/agents/${CASA_PEPE}/saldo`;
 const FICHA = `/espacios/demo/restaurantes/${CASA_PEPE}`;
 
+/**
+ * El saldo de Casa Pepe «de antes»: desde la Fase F, cada reserva con teléfono que otros recorridos crean a la vez
+ * (agenda, tablet) gasta unos céntimos de WhatsApp o SMS, así que el saldo sembrado puede haber bajado un poco. Vale
+ * lo esperado o hasta un euro menos; nunca más (sin ingresos inesperados).
+ */
+async function saldoCasaPepe(saldo: Locator, esperado: number, timeout = 15_000) {
+  await expect
+    .poll(
+      async () => {
+        const euros = Number((await saldo.innerText()).replace(/[^0-9,]/g, "").replace(",", "."));
+        return euros <= esperado + 0.005 && euros > esperado - 1;
+      },
+      { timeout, message: `el saldo debería ser ${esperado} € (o hasta 1 € menos por avisos de otros recorridos)` },
+    )
+    .toBe(true);
+}
+
 async function entrar(page: Page, email: string) {
   await page.goto("/login");
   await page.getByLabel("Correo electrónico").fill(email);
@@ -57,7 +74,7 @@ test.describe("Restavor agents · saldo, recargas y lado de Restavor", () => {
     await entrar(page, "jose@casapepe.test");
     await page.goto(SALDO);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Saldo");
-    await expect(page.getByTestId("balance-amount")).toContainText("7,40");
+    await saldoCasaPepe(page.getByTestId("balance-amount"), 7.4);
     // «Unos N minutos» solo sale si hay llamadas con coste en los últimos 30 días: depende de la fecha en que se mire.
     const minutos = page.getByTestId("balance-minutes");
     if ((await minutos.count()) > 0) await expect(minutos).toContainText("minutos de llamadas");
@@ -123,7 +140,7 @@ test.describe("Restavor agents · saldo, recargas y lado de Restavor", () => {
   test("RN-AGT-01 · el Encargado ve el saldo pero no recarga; el Propietario de otro restaurante no ve el de Casa Pepe", async ({ page }) => {
     await entrar(page, "luis@casapepe.test");
     await page.goto(SALDO);
-    await expect(page.getByTestId("balance-amount")).toContainText("7,40");
+    await saldoCasaPepe(page.getByTestId("balance-amount"), 7.4);
     await expect(page.getByTestId("topup-owner-only")).toBeVisible();
     await expect(page.getByTestId("topup-pay")).toHaveCount(0);
     await expect(page.getByTestId("topup-soon")).toHaveCount(0);
@@ -169,7 +186,7 @@ test.describe("Restavor agents · saldo, recargas y lado de Restavor", () => {
     await acceso.getByRole("link", { name: "Abrir Reservas de este restaurante" }).click();
     await expect(page).toHaveURL(new RegExp(`${FICHA}/reservas$`));
 
-    await expect(page.getByTestId("sheet-balance")).toContainText("7,40");
+    await saldoCasaPepe(page.getByTestId("sheet-balance"), 7.4);
     await expect(page.getByTestId("sheet-events")).toBeVisible();
     // Nunca datos de comensales: ni nombres ni teléfonos en esta pantalla.
     await expect(page.getByText("Lucía Fernández")).toHaveCount(0);
@@ -178,7 +195,7 @@ test.describe("Restavor agents · saldo, recargas y lado de Restavor", () => {
     await page.getByTestId("manual-topup-method").selectOption("bizum");
     await page.getByTestId("manual-topup-submit").click();
     await expect(page.getByTestId("sheet-feedback").first()).toContainText("Recarga registrada.", { timeout: 45_000 });
-    await expect(page.getByTestId("sheet-balance")).toContainText("27,40", { timeout: 45_000 });
+    await saldoCasaPepe(page.getByTestId("sheet-balance"), 27.4, 45_000);
     await expect(page.getByTestId("sheet-movements")).toContainText("Recarga registrada por Restavor");
 
     // Un importe que no es un importe se dice, no se guarda.
@@ -231,7 +248,7 @@ test.describe("Restavor agents · saldo, recargas y lado de Restavor", () => {
     await expect(page.getByTestId("sheet-movements")).toContainText("Ajuste de Restavor", { timeout: 45_000 });
     await expect(page.getByTestId("sheet-movements")).toContainText("Llamada de prueba contada dos veces");
     // El saldo es el de antes más 20 € de la recarga a mano, menos 1,50 €.
-    await expect(page.getByTestId("sheet-balance")).toContainText("25,90");
+    await saldoCasaPepe(page.getByTestId("sheet-balance"), 25.9);
   });
 
   test("RVR-01 · la entrada Reservas del espacio enseña el saldo de cada restaurante y lleva a su ficha", async ({ page }) => {

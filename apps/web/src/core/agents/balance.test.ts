@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   balanceState,
+  canAffordNotice,
+  noticePriceAdjustment,
+  toEurMicros,
   formatCallTime,
   isCardTopup,
   isMovementKind,
@@ -264,5 +267,39 @@ describe("RN-AGT-03 · el precio de un mensaje, en millonésimas", () => {
     expect(formatMicrosAsEuros(80_000)).toBe("0,08 €");
     expect(formatMicrosAsEuros(0)).toBe("0,00 €");
     expect(() => formatMicrosAsEuros(-1)).toThrow(RangeError);
+  });
+});
+
+describe("RN-AGT-07 · el coste de un aviso de WhatsApp o SMS", () => {
+  it("RN-AGT-07 · sale con saldo igual o mayor que su precio, no con menos", () => {
+    expect(canAffordNotice(16_000, 16_000)).toBe(true);
+    expect(canAffordNotice(16_001, 16_000)).toBe(true);
+    expect(canAffordNotice(15_999, 16_000)).toBe(false);
+    expect(canAffordNotice(0, 16_000)).toBe(false);
+    expect(canAffordNotice(-1, 0)).toBe(false);
+  });
+
+  it("RN-AGT-07 · un importe en euros pasa a millonésimas; en otra moneda, con el cambio que multiplica", () => {
+    expect(toEurMicros(0.08, "EUR", null)).toBe(80_000);
+    expect(toEurMicros(0.016, "eur", null)).toBe(16_000);
+    expect(toEurMicros(0.2, "USD", 0.5)).toBe(100_000);
+    expect(toEurMicros(0, "EUR", null)).toBe(0);
+  });
+
+  it("RN-AGT-07 · sin cambio para otra moneda no hay precio: nunca se toma el importe como euros", () => {
+    expect(toEurMicros(0.2, "USD", null)).toBeNull();
+    expect(toEurMicros(0.2, "USD", 0)).toBeNull();
+    expect(toEurMicros(-1, "EUR", null)).toBeNull();
+    expect(toEurMicros(Number.NaN, "EUR", null)).toBeNull();
+  });
+
+  it("RN-AGT-07 · la corrección del precio real: más caro cobra la diferencia, más barato la devuelve, igual no apunta nada", () => {
+    // Cobrados 0,08 € (neto −80.000).
+    expect(noticePriceAdjustment(-80_000, 100_000)).toBe(-20_000);
+    expect(noticePriceAdjustment(-80_000, 50_000)).toBe(30_000);
+    expect(noticePriceAdjustment(-80_000, 80_000)).toBe(0);
+    // Devuelto y luego cobrado por el proveedor: se cobra lo que cobró.
+    expect(noticePriceAdjustment(0, 40_000)).toBe(-40_000);
+    expect(noticePriceAdjustment(0, 0)).toBe(0);
   });
 });

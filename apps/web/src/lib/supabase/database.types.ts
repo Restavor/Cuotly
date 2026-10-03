@@ -2203,20 +2203,21 @@ export type Database = {
         Relationships: [];
       };
       reservation_notifications: {
+        // Migración 179 · el destinatario, el identificador del proveedor y el código de error no se leen por API:
+        // `grant select` por lista de columnas (CLAUDE.md, `select *` sobre esta tabla devuelve 403).
         Row: {
           anonymized_at: string | null;
           attempts: number;
-          channel: string;
+          channel: string | null;
           cost_micros: number | null;
           created_at: string;
-          error: string | null;
+          delivered_at: string | null;
           establishment_id: string;
           id: string;
           language: string;
           next_attempt_at: string | null;
-          provider_message_id: string | null;
-          recipient: string | null;
           reservation_id: string;
+          sent_at: string | null;
           skip_reason: string | null;
           space_id: string;
           status: string;
@@ -7056,8 +7057,10 @@ export type Database = {
           low_balance_notified_at: string | null;
           low_balance_threshold_cents: number;
           max_advance_days: number;
-          messaging_enabled: boolean;
           min_notice_minutes: number;
+          notify_email: boolean;
+          notify_sms: boolean;
+          notify_whatsapp: boolean;
           onboarding_completed_at: string | null;
           public_slug: string | null;
           service_status: string;
@@ -12351,6 +12354,46 @@ export type Database = {
         Args: { p_cents: number; p_establishment_id: string };
         Returns: undefined;
       };
+      // Fase F · avisos a los comensales (migración 179).
+      set_notice_channels: {
+        Args: { p_email: boolean; p_establishment_id: string; p_sms: boolean; p_whatsapp: boolean };
+        Returns: undefined;
+      };
+      // Solo `service_role`:
+      claim_reservation_notices: {
+        Args: { p_allowlist?: string[] | null; p_block_reserved?: boolean; p_enforce_allowlist?: boolean; p_establishment_id: string; p_limit?: number };
+        Returns: Json;
+      };
+      report_reservation_notice: {
+        Args: { p_attempt: number; p_error?: string | null; p_notice_id: string; p_provider?: string | null; p_provider_message_id?: string | null; p_result: string };
+        Returns: Json;
+      };
+      reservation_notice_provider_event: {
+        Args: {
+          p_error?: string | null;
+          p_event: string;
+          p_notice_id: string | null;
+          p_price_amount?: number | null;
+          p_price_currency?: string | null;
+          p_provider: string | null;
+          p_provider_message_id: string | null;
+        };
+        Returns: Json;
+      };
+      reservation_notice_due_establishments: {
+        Args: { p_limit?: number };
+        Returns: { establishment_id: string }[];
+      };
+      reservation_notices_price_pending: {
+        Args: { p_limit?: number };
+        Returns: { notice_id: string; provider: string; provider_message_id: string }[];
+      };
+      reservation_fake_notice_event: { Args: { p_event: string; p_notice_id: string; p_price_amount?: number | null }; Returns: Json };
+      reservation_fake_notices: { Args: { p_space_id: string }; Returns: Json };
+      reservation_customer_view: { Args: { p_token: string }; Returns: Json };
+      reservation_customer_cancel: { Args: { p_token: string }; Returns: Json };
+      reservation_rate_limit_hit: { Args: { p_bucket: string; p_max: number; p_window_seconds: number }; Returns: boolean };
+      whatsapp_autoreply_context: { Args: { p_phone: string }; Returns: Json };
       create_agent_topup: {
         Args: { p_establishment_id: string; p_idempotency_key: string; p_net_cents: number };
         Returns: {

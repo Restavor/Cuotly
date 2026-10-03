@@ -5690,6 +5690,67 @@ instalable y el modo sin conexión (J).
 
 Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase F hasta que Bosco lo diga.**
 
+### Fase F · Avisos a los comensales · 03/10/2026 (construida; falta la comprobación de Bosco)
+
+Bosco dio paso a la Fase F («Vamos con la fase F»): eligió **WhatsApp y SMS automáticos con los canales elegibles desde la cuenta** (decisión 151) y hacerla **en una sola tanda**, con una revisión y una parada al final. Rama `agents`. Migración 179 (la revisión independiente se corrigió en ella antes de subirla: todavía no estaba en ninguna rama).
+
+Criterios del PRD §15 (AVI-01 a AVI-06):
+
+- [x] **AVI-01 El motor de avisos.** Un aviso nace de un evento de la agenda en la misma transacción (crear, confirmar/rechazar grupo, cambiar fecha, hora o personas, cancelar); canal único entre correo → WhatsApp → SMS
+  según los interruptores y lo que el comensal puede recibir; envío directo tras guardar y reintentos de 1, 5 y 15 minutos con una tarea de cada minuto; solo sale el último aviso de cada reserva; un fallo al preparar un
+  aviso nunca impide guardar la reserva. Las reservas de plataforma no avisan.
+- [x] **AVI-02 Correo** (`EmailConfirmacion`): textos de `textos-avisos.md` en español e inglés, HTML y texto, remitente «<Restaurante> <reservas@restavor.com>», `Reply-To` del restaurante, rebotes → incidente.
+- [x] **AVI-03 WhatsApp**: plantilla de Meta con botón de URL (12 plantillas en `docs/agents/plantillas-whatsapp.md`, comparadas con el código por un test), respuesta automática, y paso a SMS si el número no tiene WhatsApp.
+- [x] **AVI-04 SMS** «Restavor»: sin tildes ni eñes, un solo mensaje de 160 caracteres, el nombre del restaurante se acorta si no cabe.
+- [x] **AVI-05 `/c/[token]`** (`CancelarCliente`), ES/EN, sin sesión: ver la reserva y cancelarla hasta `hora − plazo`; abrirla no cancela; doble envío, una sola cancelación; enlace no válido, ya cancelada, pendiente, rechazada,
+  plazo vencido, pasada y cerrada con su texto; cabeceras sin caché, sin referrer y sin indexar.
+- [x] **AVI-06 Coste real en el saldo.** Gasto por tarifa del país del número con saldo suficiente (RN-AGT-07), devolución única al no salir, corrección del SMS con el precio real; sin tarifa o sin saldo, no sale y lo dice
+  la ficha.
+- [x] **Los tres interruptores** (decisión 152): Ajustes › Conexiones › «Avisos a tus clientes», con auditoría; la tablet los ve fijos.
+- [x] **Pruebas › Mensajes** (decisión 159): el proveedor falso, solo con `ENABLE_FAKE_MESSAGING=true` y fuera de producción, con botones para simular entrega, no entregable, precio real y «no cobrado».
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase F»; **antes: migración 179, resembrar y `ENABLE_FAKE_MESSAGING=true` + `CRON_SECRET` en Preview**) y, cuando quiera activar los
+  avisos reales, sigue `docs/agents/guia-proveedores-de-avisos.md` (Resend, Meta y el proveedor de SMS) y carga las tarifas reales en Administración › Reservas.
+
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **3.142 tests** en verde (251 archivos); **las 97 suites SQL** en el orden de CI sobre una base limpia con las 179 migraciones (suites nuevas
+**96**, `reservas_avisos.sql`: cada transición de la agenda y su aviso, los tres interruptores en todas sus combinaciones, canal y fijo español, cobro exacto y sin segundo cobro, devolución única, precio real del SMS, WhatsApp
+no entregable → SMS, tope de intentos, informes fuera de orden, tarifa, datos y lista permitida, un fallo forzado de `enqueue` que no impide guardar, aviso obsoleto, pausa y cerrada, privacidad de eventos, incidentes y
+`audit_log`, funciones internas cerradas por RPC; y **97**, `reservas_avisos_enlace.sql`: ver y cancelar por enlace con el plazo exacto, repetir, desconocido, cerrada, plataforma, cancelar a la vez que el restaurante y los
+privilegios); los dos sembrados dos veces y **0 tablas sin RLS**; los **seis scripts de concurrencia** (el nuevo `avisos-concurrency-test.mjs`: reclamos simultáneos sobre el mismo restaurante, cada aviso sale y se cobra una
+vez, con saldo para 3 entran 3 de 10, reclamo × purga, barrido y agenda sin interbloqueos, el mismo webhook veinte veces = una corrección); los **76 e2e con datos** (68 anteriores + los 8 nuevos de `agents-avisos.spec.ts`, con `ENABLE_FAKE_MESSAGING=true` en el servidor del test: alta con correo, solo teléfono → WhatsApp con su coste, `…0404` → SMS, inglés, un fijo sin avisos, el enlace del propio aviso con doble envío, enlace no válido, los interruptores de Conexiones, que quien no es del restaurante no entra, y Pruebas en móvil sin desbordar), con capturas a 1180×820 y 390×844 en `apps/web/test-results/capturas-avisos/`. Se comprobó con mutaciones (quitar el bloqueo de la fila
+de ajustes del reclamo hace fallar el script de concurrencia).
+
+Revisión independiente (03/10/2026): un revisor leyó el diff contra el PRD y `CLAUDE.md` y no encontró bloqueantes. Lo real se corrigió en la propia 179 (todavía no estaba en ninguna rama), con su prueba: un aviso que
+cambia de canal y vuelve se **vuelve a cobrar** en vez de salir gratis (cobro y devolución con clave por ciclo; nueva prueba en la suite 96, comprobada con la mutación del código antiguo); un aviso cuyo marcado como fallido
+también falla ya no se queda a la cabeza de la cola; el envío de cada minuto tiene un **presupuesto de tiempo** (40 s) y aplaza con el reintento normal lo que no cabe; el incidente de «falta la dirección pública del sitio» ya
+no dice «proveedor no configurado»; y se ajustaron textos de documentación (122 bits del enlace, `LEGAL_TERMS_URL` aún sin uso, caveats del modo falso). Se aceptan como límites: `+1` cuenta como Estados Unidos para la tarifa, los
+límites de la respuesta automática de WhatsApp usan 4.096 cubos, y las funciones espejo de `core/reservations/notices.ts` son referencia (decide siempre la base de datos).
+
+Hallazgos que conviene saber:
+
+- **`agents-saldo.spec.ts` ya no espera el saldo de Casa Pepe al céntimo**: desde la Fase F, cada reserva con teléfono que crean la agenda y la tablet gasta unos céntimos de WhatsApp o SMS (con el proveedor falso). Admite
+  hasta un euro menos que el sembrado. `test:e2e:datos` lanza `agents-avisos` **en una segunda ejecución**, después del resto, porque gasta más saldo.
+- **`agents-agenda` RES-12 depende de la hora del día**: el sembrado pone las reservas de «hoy» a horas fijas y el test necesita una futura; pasadas las ~23:00 de Madrid falla (y arrastra los siguientes). No es de la Fase F;
+  pasa si se ejecuta antes o con una reserva futura en la base.
+- **Pruebas › Mensajes solo enseña lo que el proveedor falso aceptó.** Un WhatsApp que no llegó a salir (número sin WhatsApp) no es un mensaje: queda como fallido en el historial de la ficha y su SMS de respaldo sí sale en
+  Pruebas. El e2e lo comprueba así.
+- **`…0404` simula «sin WhatsApp»** (el SMS de respaldo sale bien) y **`…0405`** simula «sin nada»; `…0500` falla de forma temporal hasta el intento 3.
+- `scripts/agenda-concurrency-test.mjs` borraba eventos de la agenda para repetir una prueba; desde la Fase F un aviso apunta a su evento, así que ahora limpia antes los avisos de esa prueba (la base no borra eventos:
+  la aplicación nunca lo hace).
+- Resend, Meta y el proveedor de SMS **no se prueban de punta a punta** aquí (el entorno no tiene salida a ellos): peticiones, firmas (con vectores publicados) y respuestas se prueban con transporte inyectable; los códigos
+  de error de Meta y del proveedor de SMS se confirman al activarlos.
+- Si el servidor se cae justo entre enviar y anotar, o un envío da tiempo agotado, un WhatsApp o un SMS puede salir **dos veces** (los proveedores no ofrecen clave de idempotencia) y se cobra una.
+- El precio real de un SMS en dólares se aplica cuando exista el cambio del BCE (Fase G); hasta entonces queda el provisional y un incidente.
+- La vista previa de Vercel está protegida: `/c/*` y los webhooks necesitan una excepción (explicado en la guía).
+
+Decisiones (en `docs/DECISIONES.md`, **151 a 165**): 151 WhatsApp y SMS automáticos solo para avisos de Reservas (de Bosco), 152 los tres interruptores, 153 un aviso nace de un evento y el canal, 154 el enlace corto y
+`/c/[token]`, 155 envío directo y reintentos, 156 coste real, 157 respaldo de WhatsApp a SMS, 158 reserva cerrada, 159 el proveedor falso, 160 los adaptadores sin dependencia, 161 incidentes, 162 respuesta automática,
+163 el aviso al equipo se aplaza a G y H, 164 datos del restaurante obligatorios y 165 salvaguardas de envío.
+
+Lo que **no** está: el agente de llamadas (G), el formulario web y los avisos al equipo (H), los conectores de plataformas (I), el push web, la app instalable y el modo sin conexión (J), el correo a Restavor por cada
+incidente, el recordatorio del día antes, recibir SMS y la anonimización a los 24 meses.
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase G hasta que Bosco lo diga.**
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

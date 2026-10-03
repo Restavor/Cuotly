@@ -34,6 +34,8 @@ const RUTAS = [
   `/espacios/demo/restaurantes/${CAFE}`,
   `/espacios/demo/restaurantes/${CAFE}/facturacion`,
   `/espacios/demo/restaurantes/${CAFE}/solicitudes/${CUALQUIERA}`,
+  // Fase F · la página pública del comensal (un enlace que no existe: solo comprueba que la ruta contesta).
+  `/c/${"0".repeat(32)}`,
 ];
 
 export default async function calentarRutas() {

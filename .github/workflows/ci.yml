@@ -688,6 +688,18 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/reservas_transferencia.sql
 
+      - name: "Suite 96 — Avisos a los comensales (migración 179, RN-RES-10, RN-AGT-07, RN-AGT-03, RN-RES-12 y decisiones 151 a 165)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/reservas_avisos.sql
+
+      - name: "Suite 97 — El enlace del comensal (migración 179, RN-RES-08, RN-RES-10, RN-RES-11 y decisiones 154 y 158)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/reservas_avisos_enlace.sql
+
       - name: "Fase C — Verificar el aforo con altas simultáneas (RN-RES-02)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
@@ -702,6 +714,11 @@ jobs:
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             node scripts/topup-concurrency-test.mjs
+
+      - name: "Fase F — Verificar que un aviso sale y se cobra UNA vez con reclamos simultáneos (RN-AGT-07, RN-RES-10)"
+        run: |
+          cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            node scripts/avisos-concurrency-test.mjs
 
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
@@ -839,6 +856,9 @@ jobs:
             echo "STRIPE_SECRET_KEY=sk_test_clave_falsa_solo_para_los_recorridos"
             echo "STRIPE_WEBHOOK_SECRET=whsec_secreto_falso_solo_para_los_recorridos"
             echo "E2E_STRIPE=1"
+            # Fase F · avisos a comensales con el proveedor FALSO (nunca en producción) y el secreto del cron.
+            echo "ENABLE_FAKE_MESSAGING=true"
+            echo "CRON_SECRET=restavor-pruebas-cron-secret"
           } >> "$GITHUB_ENV"
 
       - name: Instalar navegador de Playwright

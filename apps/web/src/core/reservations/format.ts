@@ -64,3 +64,34 @@ export function formatDateTime(instant: Date, timeZone: string): string {
   const get = (type: string) => (parts.find((p) => p.type === type)?.value ?? "").replace(".", "");
   return `${get("day")} ${get("month")}, ${get("hour")}:${get("minute")}`;
 }
+
+// ---------------------------------------------------------------------------
+// Fechas de los avisos a los comensales (`docs/agents/textos-avisos.md`)
+// ---------------------------------------------------------------------------
+
+/** Una fecha de aviso se escribe en el idioma de la reserva, no en el de la interfaz. */
+export type NoticeDateLanguage = "es" | "en";
+
+function noticeParts(date: LocalDate, language: NoticeDateLanguage, options: Intl.DateTimeFormatOptions): Map<string, string> {
+  const parts = new Intl.DateTimeFormat(language === "es" ? "es-ES" : "en-GB", { ...options, timeZone: "UTC" }).formatToParts(asDate(date));
+  return new Map(parts.map((p) => [p.type, p.value.replace(".", "")]));
+}
+
+/**
+ * `{fecha_larga}`: «sábado 26 de septiembre» / «Saturday 26 September». Sin coma ni mayúscula inicial en español:
+ * va dentro de una frase («el sábado 26 de septiembre a las 21:00»).
+ */
+export function formatNoticeLongDate(date: LocalDate, language: NoticeDateLanguage): string {
+  const p = noticeParts(date, language, { weekday: "long", day: "numeric", month: "long" });
+  const [weekday, day, month] = [p.get("weekday"), p.get("day"), p.get("month")];
+  return language === "es" ? `${weekday} ${day} de ${month}` : `${weekday} ${day} ${month}`;
+}
+
+/** `{fecha_corta}`: «sáb 26/09» / «Sat 26/09» (en inglés, con mayúscula inicial). */
+export function formatNoticeShortDate(date: LocalDate, language: NoticeDateLanguage): string {
+  const d = asDate(date);
+  const weekday = noticeParts(date, language, { weekday: "short" }).get("weekday") ?? "";
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${language === "es" ? weekday.toLowerCase() : capitalize(weekday)} ${day}/${month}`;
+}

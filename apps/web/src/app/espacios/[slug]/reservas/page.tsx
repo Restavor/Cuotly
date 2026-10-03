@@ -12,6 +12,7 @@ import { enZona, fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { loadPaymentInfo } from "@/services/agents/billing-gateway";
+import { fakeMessagingAllowed } from "@/services/agents/messaging/providers";
 
 import { OpenSupportButton } from "@/app/agents/_components/OpenSupportButton";
 import { PaymentDetailsForm } from "./_components/PaymentDetailsForm";
@@ -175,6 +176,13 @@ export default async function SpaceReservationsPage({
   return (
     <div className="space-y-6">
       <PageHeader title={t.title} subtitle={t.subtitle} />
+      {fakeMessagingAllowed() ? (
+        <p className="text-sm">
+          <Link href={`/espacios/${slug}/reservas/pruebas/mensajes`} className="font-semibold text-primary underline">
+            {t.fakeMessagesLink}
+          </Link>
+        </p>
+      ) : null}
 
       <Card title={t.create.title}>
         <p className="mb-3 text-sm text-text-secondary">{t.create.body}</p>

@@ -321,6 +321,8 @@ async function main() {
       ]);
     let strandedReservations = 0;
     for (let i = 0; i < SHIFT_RACES; i++) {
+      // Desde la Fase F, un aviso apunta al evento del que nace: se limpian primero los avisos de la prueba.
+      await admin.query(`delete from public.reservation_notifications where establishment_id = $1`, [ESTABLISHMENT_ID]);
       await admin.query(`delete from public.reservation_events where establishment_id = $1`, [ESTABLISHMENT_ID]);
       await admin.query(`delete from public.reservations where shift_id = $1`, [COMIDA_ID]);
       const reopened = await asServer(`select public.save_reservation_shifts($1, $2::jsonb) as r`, [ESTABLISHMENT_ID, withComida(true)]);

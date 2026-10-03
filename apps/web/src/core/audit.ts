@@ -482,6 +482,8 @@ export const AUDIT_ACTIONS = [
   "reservations.balance_topup_manual",
   // Migración 178 · el umbral del aviso de saldo bajo.
   "reservations.low_balance_threshold_changed",
+  // Migración 179 (decisión 152) · los canales de aviso a los comensales: correo, WhatsApp y SMS.
+  "reservations.notice_channels_changed",
   "reservations.topup_expired",
   "reservations.topup_paid",
   // Decisión 149 (migración 177) · «Transferir también Reservas».

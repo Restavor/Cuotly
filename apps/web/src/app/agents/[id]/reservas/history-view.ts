@@ -65,6 +65,24 @@ export function describeEvent(event: HistoryEvent, platformName: string | null, 
     case "platform_cancel_done":
       text = t.platform_cancel_done;
       break;
+    // Fase F · los avisos al comensal: la frase sale de códigos (plantilla, canal, motivo), nunca de un texto del proveedor.
+    case "notification_sent": {
+      const template = (t.notificationTemplates as Record<string, string>)[String(data.template)];
+      const channel = (t.notificationChannels as Record<string, string>)[String(data.channel)];
+      text = template && channel ? t.notificationSent(template, channel) : t.notificationFailed.other;
+      break;
+    }
+    case "notification_failed": {
+      const reasons = t.notificationFailed as Record<string, string>;
+      const reason = typeof data.reason === "string" ? data.reason : "";
+      text = reason === "whatsapp_undeliverable" && data.fallback === "sms" ? t.notificationFailed.whatsapp_undeliverable_fallback : (reasons[reason] ?? t.notificationFailed.other);
+      break;
+    }
+    case "notification_skipped": {
+      const reasons = t.notificationSkipped as Record<string, string>;
+      text = reasons[typeof data.reason === "string" ? data.reason : ""] ?? t.notificationSkipped.other;
+      break;
+    }
     default:
       text = t.other;
   }

@@ -205,3 +205,37 @@ export function isMovementKind(value: string): value is MovementKind {
 export function isCardTopup(sourceType: string | null): boolean {
   return sourceType === "topup";
 }
+
+// ---------------------------------------------------------------------------
+// El coste de un aviso de WhatsApp o SMS (Fase F; RN-AGT-07)
+// ---------------------------------------------------------------------------
+
+/**
+ * RN-AGT-07 · un WhatsApp o un SMS solo sale si el saldo es **igual o mayor** que su precio: los avisos nunca dejan
+ * el saldo en negativo. La comprobación de verdad la hace la base de datos con la fila de ajustes bloqueada
+ * (`reservation_notice_prepare()`); esto sirve para que una pantalla diga «alcanza» o «no alcanza» con la misma regla.
+ */
+export function canAffordNotice(balanceMicros: number, priceMicros: number): boolean {
+  return balanceMicros >= priceMicros;
+}
+
+/**
+ * Un importe en la moneda del proveedor → millonésimas de euro. `rateToEur` multiplica (`fx_rates.rate_to_eur`).
+ * Sin cambio para una moneda que no es el euro no hay precio (`null`): nunca se toma el importe como si fueran euros.
+ */
+export function toEurMicros(amount: number, currency: string, rateToEur: number | null): number | null {
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  if (currency.toUpperCase() === "EUR") return Math.round(amount * 1_000_000);
+  if (rateToEur === null || !(rateToEur > 0)) return null;
+  return Math.round(amount * 1_000_000 * rateToEur);
+}
+
+/**
+ * La corrección del precio real de un SMS: el apunte que deja lo neto cobrado en el precio real. `netMicros` es la
+ * suma del libro de ese aviso (negativa si está cobrado). Un resultado negativo cobra la diferencia; uno positivo la
+ * devuelve; cero no apunta nada. Igual que `reservation_notice_provider_event()` con el suceso `price`.
+ */
+export function noticePriceAdjustment(netMicros: number, finalPriceMicros: number): number {
+  const adjustment = -finalPriceMicros - netMicros;
+  return adjustment === 0 ? 0 : adjustment;
+}

@@ -2875,3 +2875,50 @@ activa hasta que él dé los datos (144). Las demás son decisiones técnicas de
     ninguna recarga. **Límites que se aceptan y se dejan dichos:** lo ya pagado al origen al transferir no se devuelve solo (149); el webhook contesta 200 a una sesión desconocida (reintentar no la hace nuestra) y solo deja
     un registro del servidor; no hay máximo de recarga (el PRD no lo fija); el aviso de saldo no es obligatorio (145); con `service_role` el borrado en cascada de un espacio sigue permitido (la aplicación nunca lo usa: se
     archiva); y el pago real con Stripe sigue sin probarse de punta a punta fuera de la vista previa.
+
+## Fase F de Restavor agents · Avisos a los comensales (03/10/2026)
+
+151. **WhatsApp y SMS automáticos, solo para los avisos a comensales de Reservas** (Bosco, 03/10/2026): *«Se programa desde la cuenta si quieren que se envíen correos, WhatsApp y/o SMS; puedes seleccionar solo uno o todos
+    los canales»*. Es una excepción acotada a `docs/PRD.md` §18 («WhatsApp nunca automático») y a `ESPECIFICACION-MAESTRA` §69/§72: vale solo para Restavor agents › Reservas y para el aviso de una reserva a quien reservó.
+    Los avisos de Restavor web no cambian. También está en `CLAUDE.md`.
+152. **Tres interruptores de canal** (`notify_email`, `notify_whatsapp`, `notify_sms`, los tres activos por defecto) sustituyen a `messaging_enabled`. Los cambia, **desde una cuenta**, el Propietario, el Encargado, Restavor y
+    el soporte en sesión (`set_notice_channels()`, con auditoría `reservations.notice_channels_changed`); la tablet los ve fijos y dice «Cámbialo desde tu cuenta», así no hay que tocar `reservation_device_act`. Con los tres
+    apagados no se avisa a nadie y la pantalla lo dice. Se ajustan PRD de agents §3.2, §6.11, §8.2, §8.6 y §9.3.
+153. **Un aviso nace de un evento de la agenda, en la misma transacción** (`reservation_log_event()` → `reservation_notice_enqueue()`, que solo inserta; único por evento y canal). **Canal** = el primero que sirva entre
+    correo → WhatsApp → SMS, entre los activados y los que el comensal puede recibir, decidido por **una sola función SQL** (`reservation_notice_pick_channel`) al encolar, **al reclamar** y en el respaldo. El permiso del
+    comensal (`whatsapp_consent`) vale para WhatsApp y SMS. Un fijo español (+34 8 o 9) no recibe ninguno. Sin contacto, `no_contact`; teléfono sin permiso, `no_consent`; todo apagado, `messaging_disabled`. Las
+    reservas de plataforma no dejan nada. Un aviso es **obsoleto** si la reserva ya no lo admite o existe uno posterior de la misma reserva: solo sale el último. Un fallo al prepararlo **nunca** impide guardar la reserva
+    (evento `notification_skipped {enqueue_error}` e incidente).
+154. **Enlace corto de 32 caracteres** (los 32 primeros hexadecimales de `cancel_token`, índice único; el token sale de un UUID v4, así que son 122 bits aleatorios, de sobra para un enlace de un solo uso; entero no cabe en un SMS) y `/c/[token]` **sin sesión**. Abrir el enlace no escribe ni se
+    limita (escáneres de correo, vistas previas); cancelar es un envío de formulario, con límite de intentos por IP y el plazo comprobado **en SQL**. Cancelar el propio comensal **también avisa** («reserva cancelada»).
+    Cabeceras: sin caché, sin referrer, sin indexar, sin marcos.
+155. **Envío directo y reintentos.** Primer intento tras la respuesta de la acción (`after()`), luego 1, 5 y 15 minutos (cuatro intentos como máximo, tope aplicado al reclamar); un error definitivo no se reintenta; cada
+    informe lleva el número de intento y solo vale si sigue siendo el vigente (`status='queued' and attempts=…`); los estados solo avanzan. Los errores del proveedor se guardan **como código**, nunca su texto (puede
+    llevar el contacto). Un código desconocido es temporal con tope, jamás «no entregable» (que paga un SMS de respaldo). Un trabajo de cada minuto (`/api/agents/cron/avisos`) es la red de seguridad.
+156. **Coste real.** Al reclamar un WhatsApp o SMS se bloquea la fila de ajustes (orden ajustes → aviso → libro, un restaurante por llamada), se comprueba saldo ≥ la tarifa **del país del número** (por prefijo; sin
+    tarifa, `no_rate`) y se apunta el gasto con clave `notice:<id>:charge:<canal>`; un reintento no vuelve a cobrar. **Toda salida sin enviar** (omitido, obsoleto, anonimizado, interruptor apagado, fallido, tope de
+    intentos, no entregable, no cobrado) liquida contra lo neto del libro con una sola devolución `notice:<id>:refund:<canal>`, nunca de cero. El SMS se corrige con el precio real que informa el proveedor (clave
+    `notice:<id>:price`; en dólares, con `fx_rates`; sin cambio, queda el provisional y un incidente, nunca ×1).
+157. **WhatsApp no entregable → fila nueva por SMS** (`fallback_of`), creada en la misma transacción que marca el WhatsApp fallido; sin SMS activado termina fallido. Un rebote duro de correo no tiene respaldo: queda
+    `notification_failed` en la ficha y un incidente.
+158. **Reserva cerrada** (`closed`): no se crean avisos y `/c/[token]` dice «Ya no se puede cancelar desde aquí. Llama a …». En pausa, avisos y enlace siguen (PRD §6.12).
+159. **Proveedor falso sin tabla**, solo con `ENABLE_FAKE_MESSAGING=true` **y** `VERCEL_ENV` distinto de `production` (`selectProviders()` lo decide y lo prueba). Los avisos quedan con `provider='fake'` y
+    **Pruebas › Mensajes** (`/espacios/<espacio>/reservas/pruebas/mensajes`, para quien gestiona clientes en Restavor) los redacta al vuelo con los textos de verdad. El final del teléfono simula casos: `…0404` sin WhatsApp
+    (pasa a SMS, que sale), `…0405` sin nada, `…0500` fallo temporal hasta el intento 3. Botones para simular entrega, no entregable, precio real y «no cobrado»: llaman a las mismas funciones que los webhooks. Es una
+    excepción acotada a la decisión 108 (datos de demostración) y a RN-RES-12: son datos de prueba y nunca existe en producción. **Dos cautelas:** una vista previa en modo falso nunca debe apuntar a una base con
+    comensales reales (las filas `provider='fake'` y su enlace de cancelar se quedan legibles para quien gestiona clientes), y fuera de Vercel `VERCEL_ENV` no existe: ahí `ENABLE_FAKE_MESSAGING` no se pone nunca en
+    una instalación que envíe avisos reales.
+160. **Adaptadores sin dependencia** (`fetch` y `node:crypto`, transporte inyectable y tiempo máximo en cada llamada, como Stripe, decisión 138): **Resend** (HTML y texto, `Reply-To`, `Idempotency-Key` con el cuerpo, etiqueta
+    `notice_id`), **WhatsApp Cloud API de Meta** (plantilla con botón de URL, `biz_opaque_callback_data`, versión de Graph en `WHATSAPP_GRAPH_VERSION`) y **SMS compatible con Twilio** (`SMS_ACCOUNT_SID`, `SMS_AUTH_TOKEN`,
+    `SMS_SENDER_ID`; intercambiable). Webhooks con el patrón de Stripe (sin secreto 503, firma mala 400, evento ajeno 200, fallo de la base 500): Meta (`X-Hub-Signature-256` y verificación GET), SMS
+    (`X-Twilio-Signature` sobre la URL pública) y Resend (Svix, tolerancia de 5 minutos). Las firmas se prueban con vectores publicados por cada proveedor.
+161. **Incidentes de Reservas** (contactos enmascarados; un `CHECK` impide claves personales como en los eventos; uno abierto por restaurante, tipo y código): rebote duro de correo, proveedor sin configurar o
+    rechazado, tarifa ausente, datos del restaurante que faltan y fallo al preparar un aviso. El correo a Restavor por cada incidente (PRD §8.7) y el listado del espacio llegarán con más orígenes.
+162. **Respuesta automática de WhatsApp** en el idioma del último aviso a ese número y con el teléfono del restaurante que se lo mandó; si no se sabe de cuál, el texto genérico en español e inglés; una respuesta por
+    número y hora.
+163. **Aplazado de la decisión 118:** el correo y el push de los avisos **al equipo** se encienden en las Fases G y H, cuando existan reservas del agente y de la web.
+164. **Datos del restaurante obligatorios:** sin teléfono del local (y sin dirección en «confirmada» y «grupo aceptado») el aviso **no sale** (`missing_data`) y deja un incidente; así el texto es siempre el de
+    `textos-avisos.md`, sin variantes inventadas.
+165. **Salvaguardas de envío.** Fuera de producción y con proveedor real solo se envía a los destinatarios de `MESSAGING_RECIPIENT_ALLOWLIST` (vacía = nada); siempre se rechazan correos a dominios reservados (`.test`,
+    `.example`, `.invalid`, `.localhost`); se comprueba **antes de cobrar**. Todo texto que viene de un comensal o de la ficha se sanea (sin saltos de línea ni espacios repetidos, sin enlaces, largo máximo, HTML
+    escapado, nombre de remitente limpio) antes de llegar a un correo, WhatsApp o SMS.

@@ -18,8 +18,11 @@
 -- Fase E · cada hora, `/api/agents/cron/ciclo` lanza el barrido del ciclo de vida de Reservas
 -- (RN-RES-11): `pg_cron` va en UTC, así que se lanza cada hora y la ruta solo barre a las 08:00 de
 -- Madrid (con el cambio de hora). Repetirla es inocuo: es idempotente.
--- Las demás tareas de §10.6 (reintentos de avisos, encender el agente, anonimizar a 24 meses…) se
--- añaden aquí cuando se construyan sus fases, cada una con su ruta.
+-- Fase F · cada minuto, `/api/agents/cron/avisos` envía los avisos a los comensales que tocan (los
+-- reintentos de 1, 5 y 15 minutos y los que se quedaron sin enviar) y consulta el precio real de los SMS
+-- (RN-RES-10, RN-AGT-07). El primer intento sale al guardar la reserva; esta tarea es la red de seguridad.
+-- Las demás tareas de §10.6 (encender el agente, anonimizar a 24 meses…) se añaden aquí cuando se
+-- construyan sus fases, cada una con su ruta.
 --
 -- Necesita las extensiones `pg_cron`, `pg_net` y `vault` de Supabase (Database → Extensions).
 -- En local no existen: ahí la tarea se lanza llamando a la ruta o a la función directamente.
@@ -77,6 +80,24 @@ select cron.schedule(
   $job$
     select net.http_post(
       url := (select decrypted_secret from vault.decrypted_secrets where name = 'agents_cron_base_url') || '/api/agents/cron/ciclo',
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'agents_cron_secret'),
+        'Content-Type', 'application/json'
+      ),
+      body := '{}'::jsonb,
+      timeout_milliseconds := 55000
+    );
+  $job$
+);
+
+-- Cada minuto: los avisos a los comensales (reintentos y red de seguridad del envío al guardar).
+select cron.unschedule(jobid) from cron.job where jobname = 'agents-avisos';
+select cron.schedule(
+  'agents-avisos',
+  '* * * * *',
+  $job$
+    select net.http_post(
+      url := (select decrypted_secret from vault.decrypted_secrets where name = 'agents_cron_base_url') || '/api/agents/cron/avisos',
       headers := jsonb_build_object(
         'Authorization', 'Bearer ' || (select decrypted_secret from vault.decrypted_secrets where name = 'agents_cron_secret'),
         'Content-Type', 'application/json'

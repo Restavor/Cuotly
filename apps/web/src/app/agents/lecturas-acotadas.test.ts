@@ -70,6 +70,8 @@ describe("RN-APP-08 · toda lectura que puede hacer una tablet va acotada a su r
       join("app", "agents", "[id]", "saldo", "page.tsx"),
       join("app", "agents", "[id]", "saldo", "actions.ts"),
       join("app", "agents", "[id]", "saldo", "exportar", "route.ts"),
+      // Fase F: los canales de aviso a los clientes se cambian desde una cuenta (decisión 152); la tablet los ve fijos.
+      join("app", "agents", "[id]", "reservas", "ajustes", "conexiones", "actions.ts"),
     ]);
     for (const ruta of CANDIDATOS) {
       const rel = relative(SRC, ruta);

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 
 import { validateReservationInput } from "@/core/reservations/booking-input";
 import { decodeDeviceAuthFailure, type DeviceAuthFailure } from "@/core/reservations/device";
@@ -8,6 +9,7 @@ import type { ChangeReason, ReservationsChange } from "@/core/reservations/realt
 import { es } from "@/i18n/es";
 import { agentsDb } from "@/app/agents/db";
 import { renewElevation } from "@/services/agents/device";
+import { dispatchDinerNotices } from "@/services/agents/messaging/dispatch";
 import { PinSecretMissingError } from "@/services/agents/pin";
 import {
   bookReservation,
@@ -105,6 +107,10 @@ function rejectedMessage(reason: string, availableFrom?: string, platformName?: 
 /** Avisa a los dispositivos abiertos de que cambió una fecha (sin datos personales) y refresca las pantallas del servidor. */
 async function announce(establishmentId: string, dates: readonly string[], reason: ChangeReason): Promise<void> {
   revalidatePath(`/agents/${establishmentId}`, "layout");
+  // Fase F · el primer intento de los avisos a los comensales sale al guardar, DESPUÉS de contestar a quien guardó
+  // (`after()`): el aviso es lo secundario y nunca retrasa ni impide la reserva. Si algo falla, el aviso queda en la
+  // cola y la tarea de cada minuto lo recoge. Nunca lanza.
+  after(() => dispatchDinerNotices(establishmentId));
   const unique = [...new Set(dates.filter((d) => DATE.test(d)))];
   const changes: ReservationsChange[] = unique.map((date) => ({ kind: "date", date, reason }));
   await Promise.all(changes.map((change) => broadcastChange(establishmentId, change)));
