@@ -185,7 +185,7 @@ begin
   perform public.s94_expect_error(format($q$ delete from public.agent_balance_entries where id = %L $q$, v_id),
     'no se borra', 'RN-AGT-01: un apunte del libro no se borra');
 
-  -- Con la clave de servicio ni siquiera hay privilegio de tabla: se queda sin permiso.
+  -- La clave de servicio tampoco lo edita: o no tiene el privilegio o lo frena el disparador (según el entorno).
   perform public.s94_server();
   perform public.s94_expect_error(format($q$ update public.agent_balance_entries set amount_micros = 1 where id = %L $q$, v_id),
     'permission denied|no se edita', 'RN-AGT-01: la clave de servicio tampoco edita el libro');
@@ -514,8 +514,8 @@ begin
   perform public.s94_eq(v_res ->> 'outcome', 'mismatch', 'RN-AGT-04: otra moneda tampoco');
   perform public.s94_boss();
   perform public.s94_eq(public.s94_balance(v_a), v_before, 'RN-AGT-04: el saldo no se ha movido');
-  perform public.s94_eq((select count(*)::text from public.reservation_incidents where establishment_id = v_a and kind = 'payment' and severity = 'error'), '2',
-    'RN-AGT-04: cada pago que no cuadra deja un incidente');
+  perform public.s94_eq((select count(*)::text from public.reservation_incidents where establishment_id = v_a and kind = 'payment' and severity = 'error'), '1',
+    'RN-AGT-04: dos avisos que no cuadran de la misma recarga dejan un solo incidente abierto (migración 178)');
   perform public.s94_eq((select status from public.agent_topups where id = v_top2), 'created', 'RN-AGT-04: la recarga sigue creada');
 
   -- El pago bueno: apunte por el importe SIN IVA.
@@ -631,6 +631,111 @@ begin
     'RN-AGT-09: tampoco con llamadas de hace más de 30 días');
 end $$;
 select 'RN-AGT-09 gasto y minutos: OK';
+
+
+-- ------------------------------------------------------------
+-- Correcciones de la revisión independiente de E2 (migración 178)
+-- ------------------------------------------------------------
+do $$
+declare
+  v_a uuid := 'de000000-0000-0000-0000-000000000020';
+  v_b uuid := 'de000000-0000-0000-0000-000000000021';
+  v_d uuid := 'de000000-0000-0000-0000-000000000023';
+  v_f uuid := 'de000000-0000-0000-0000-000000000025';
+  v_id uuid;
+  v_id2 uuid;
+  v_before text;
+begin
+  -- ===== El soporte de plataforma, con una sesión abierta en ESE restaurante, lee su saldo (PRD §3.2) =====
+  perform public.s94_boss();
+  perform public.s94_as('ffb00000-0000-0000-0000-000000000001', 'aal2');
+  perform public.s94_expect_error(format($q$ select public.agent_balance_cents(%L) $q$, v_f),
+    'acceso', 'PRD §3.2: sin sesión de soporte abierta, la plataforma no lee el saldo de un restaurante');
+  perform public.open_reservation_support_session(v_f, 'Revisar el saldo de una recarga', 30);
+  perform public.s94_eq((public.agent_balance_cents(v_f) is not null)::text, 'true', 'PRD §3.2: con la sesión de soporte abierta, lee el saldo');
+  perform public.s94_eq((public.agent_spend_summary(v_f, date '2026-09-01') -> 'calls' ->> 'count'), '3', 'PRD §3.2: y el gasto del mes');
+  perform public.s94_eq((public.agent_topup_vat_rate(v_f) is not null)::text, 'true', 'PRD §3.2: y el IVA que se aplicaría');
+  -- Pero solo de ESE restaurante.
+  perform public.s94_expect_error(format($q$ select public.agent_balance_cents(%L) $q$, v_a),
+    'acceso', 'PRD §3.4: la sesión de soporte es de un restaurante, no de todo el espacio');
+  perform public.s94_boss();
+
+  -- ===== El libro no se vacía con TRUNCATE (RN-AGT-01) =====
+  perform public.s94_expect_error($q$ truncate public.agent_balance_entries $q$, 'no se vacía', 'RN-AGT-01: el libro no se vacía con TRUNCATE');
+  perform public.s94_server();
+  perform public.s94_expect_error($q$ truncate public.agent_balance_entries $q$, 'no se vacía|permission denied', 'RN-AGT-01: ni con la clave de servicio');
+  perform public.s94_boss();
+
+  -- ===== El aviso por cruce también con varios apuntes en una sola sentencia (RN-AGT-05) =====
+  -- D (de baja pedida) también avisa; parte con 7 € tras la devolución de más arriba, así que se baja de golpe a 2 €.
+  perform public.s94_boss();
+  update public.reservation_settings set low_balance_notified_at = null, balance_empty_notified_at = null where establishment_id = v_d;
+  perform public.s94_eq(public.s94_balance(v_d), '7000000', 'RN-AGT-05: D parte con 7 €');
+  insert into public.agent_balance_entries (space_id, establishment_id, kind, amount_micros, source_type) values
+    ('de000000-0000-0000-0000-000000000010', v_d, 'call', -2500000, 'call'),
+    ('de000000-0000-0000-0000-000000000010', v_d, 'call', -2500000, 'call');
+  perform public.s94_eq(public.s94_notes(v_d, 'agent_balance_low'), '1',
+    'RN-AGT-05: dos llamadas en una sola sentencia que cruzan el umbral avisan una vez (y con la baja pedida también se avisa)');
+  perform public.s94_eq((select amount_cents::text from public.notifications where establishment_id = v_d and event_type = 'agent_balance_low' limit 1), '200',
+    'RN-AGT-05: con el saldo de después de las dos (2,00 €)');
+  -- Un solo apunte que cruza el cero, en una sentencia con otro del mismo restaurante.
+  insert into public.agent_balance_entries (space_id, establishment_id, kind, amount_micros, source_type) values
+    ('de000000-0000-0000-0000-000000000010', v_d, 'call', -1500000, 'call'),
+    ('de000000-0000-0000-0000-000000000010', v_d, 'whatsapp', -1000000, 'notification');
+  perform public.s94_eq(public.s94_notes(v_d, 'agent_balance_empty'), '1', 'RN-AGT-06: dos apuntes en una sentencia que dejan el saldo en negativo avisan de agotado una vez');
+
+  -- Los otros estados en marcha también avisan; una Reservas cerrada, no.
+  update public.reservation_settings set service_status = 'paused', low_balance_notified_at = null where establishment_id = v_b;
+  -- B parte de donde esté: se lleva a 10 € justos con un apunte de ajuste, sin suponer el estado de antes.
+  perform public.s94_ledger(v_b, 'adjustment', 10000000 - public.s94_balance(v_b)::bigint);
+  perform public.s94_eq(public.s94_balance(v_b), '10000000', 'RN-AGT-05: B parte con 10 €');
+  update public.reservation_settings set low_balance_threshold_cents = 500, low_balance_notified_at = null, balance_empty_notified_at = null where establishment_id = v_b;
+  perform public.s94_ledger(v_b, 'call', -6000000);
+  perform public.s94_eq(public.s94_notes(v_b, 'agent_balance_low'), '1', 'RN-AGT-05: con Reservas en pausa también se avisa del saldo bajo');
+  update public.reservation_settings set service_status = 'past_due', low_balance_notified_at = null where establishment_id = v_b;
+  perform public.s94_ledger(v_b, 'topup', 10000000);
+  perform public.s94_ledger(v_b, 'call', -12000000);
+  perform public.s94_eq(public.s94_notes(v_b, 'agent_balance_low'), '2', 'RN-AGT-05: y con un pago pendiente');
+
+  -- ===== Una clave de idempotencia repetida devuelve el MISMO apunte (RN-AGT-02, RN-AGT-04, RN-AGT-08) =====
+  perform public.s94_as('de000000-0000-0000-0000-000000000002', 'aal2');
+  v_id := public.record_manual_topup(v_a, 700, 'bizum', null, 'k-same-1');
+  v_id2 := public.record_manual_topup(v_a, 700, 'bizum', null, 'k-same-1');
+  perform public.s94_eq(v_id2::text, v_id::text, 'RN-AGT-04: la misma clave y el mismo importe devuelven el mismo apunte');
+  perform public.s94_expect_error(format($q$ select public.record_manual_topup(%L, 900, 'bizum', null, 'k-same-1') $q$, v_a),
+    'otra operación', 'RN-AGT-04: la misma clave con otro importe no devuelve el apunte ajeno');
+  perform public.s94_expect_error(format($q$ select public.adjust_agent_balance(%L, 700, 'misma clave', 'k-same-1') $q$, v_a),
+    'otra operación', 'RN-AGT-02: ni un ajuste con la clave de una recarga');
+  perform public.s94_expect_error(format($q$ select public.record_balance_payout(%L, 100, 'misma clave', 'k-pay-1') $q$, v_d),
+    'otra operación', 'RN-AGT-08: la misma clave de una devolución con otro importe no devuelve la anterior');
+
+  -- ===== Un pago que no cuadra deja UN incidente por recarga (RN-AGT-04) =====
+  perform public.s94_as('de000000-0000-0000-0000-000000000003');
+  perform public.create_agent_topup(v_a, 3000, 'k-top-inc');
+  perform public.s94_boss();
+  perform public.s94_server();
+  perform public.attach_topup_session((select id from public.agent_topups where idempotency_key = 'k-top-inc'), 'cs_test_inc');
+  perform public.complete_agent_topup('cs_test_inc', 100, 'eur');
+  perform public.complete_agent_topup('cs_test_inc', 100, 'eur');
+  perform public.complete_agent_topup('cs_test_inc', 200, 'eur');
+  perform public.s94_boss();
+  perform public.s94_eq((select count(*)::text from public.reservation_incidents where establishment_id = v_a and data ->> 'topup_id' = (select id::text from public.agent_topups where idempotency_key = 'k-top-inc')), '1',
+    'RN-AGT-04: tres avisos de Stripe del mismo pago que no cuadra dejan un solo incidente');
+
+  -- ===== El umbral de saldo bajo lo cambia Restavor (RN-AGT-05) =====
+  perform public.s94_as('de000000-0000-0000-0000-000000000003');
+  perform public.s94_expect_error(format($q$ select public.set_low_balance_threshold(%L, 1000) $q$, v_a),
+    'Solo Restavor', 'RN-AGT-05: el Propietario no cambia el umbral');
+  perform public.s94_as('de000000-0000-0000-0000-000000000002');
+  perform public.s94_expect_error(format($q$ select public.set_low_balance_threshold(%L, -1) $q$, v_a),
+    'negativo', 'RN-AGT-05: el umbral no es negativo');
+  perform public.set_low_balance_threshold(v_a, 1000);
+  perform public.s94_boss();
+  perform public.s94_eq((select low_balance_threshold_cents::text from public.reservation_settings where establishment_id = v_a), '1000', 'RN-AGT-05: el umbral queda en 10 €');
+  perform public.s94_eq((select count(*)::text from public.audit_log where action = 'reservations.low_balance_threshold_changed' and entity_id = v_a), '1',
+    'RN-AGT-05: cambiarlo deja su huella');
+end $$;
+select 'correcciones de la revisión de E2: OK';
 
 -- Tarifas de mensajería, solo Bosco con el segundo paso.
 do $$
@@ -775,7 +880,8 @@ begin
     'public.agent_spend_summary(uuid, date)',
     'public.agent_minutes_estimate(uuid, timestamptz)',
     'public.set_messaging_rate(text, text, bigint, date)',
-    'public.platform_reservations_spaces()']
+    'public.platform_reservations_spaces()',
+    'public.set_low_balance_threshold(uuid, integer)']
   loop
     if not has_function_privilege('authenticated', f, 'execute') then
       raise exception 'authenticated no puede ejecutar %', f;

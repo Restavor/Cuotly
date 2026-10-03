@@ -218,6 +218,8 @@ export interface SheetData {
    */
   readonly storageBytes: number | null;
   readonly canProposeTransfer: boolean;
+  /** Decisión 149 · el estado de Reservas del restaurante (`null` si no tiene): decide si se ofrece «Transferir también Reservas». */
+  readonly reservationsStatus?: string | null;
   /**
    * Maqueta 17 · las integraciones del restaurante (Fase 3, Hito 14).
    * `null` cuando no se pudieron leer: entonces se dice, no se pinta un
@@ -1075,6 +1077,7 @@ export function EstablishmentSheet({
     notes,
     storageBytes,
     canProposeTransfer,
+    reservationsStatus,
     integrations,
     digital,
     opportunities,
@@ -3645,6 +3648,7 @@ export function EstablishmentSheet({
                 establishmentId={header.id}
                 pending={transfer}
                 canPropose={canProposeTransfer}
+                reservationsStatus={reservationsStatus ?? null}
               />
 
               {canManageClients ? (

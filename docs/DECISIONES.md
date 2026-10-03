@@ -2850,9 +2850,31 @@ activa hasta que él dé los datos (144). Las demás son decisiones técnicas de
     falta el resumen mensual de la tarea de las 03:00 (139): la pantalla lo dice en vez de inventarlas. Administración › Reservas lleva el interruptor `reservations_enabled` por espacio, el estado de Stripe (listo o
     no y en qué modo, **nunca la clave**) y las tarifas de mensajería (una tarifa nueva es una fila nueva; el historial no se reescribe). El e2e de Administración no existe: `info@restavor.com` no tiene segundo paso
     sembrado; lo cubren la suite SQL y la prueba a mano de `docs/agents/PRUEBAS.md`.
-148. **«Transferir también Reservas» (decisión 100) NO se ha construido y espera a Bosco.** Mover Reservas a otro espacio arrastra cosas que son dinero y reglas de transferencia que el PRD no resuelve: ¿qué pasa con la
-    suscripción a Reservas y sus cobros (que el origen cobra y por RN-TRA-04 se quedan en él), con el saldo del restaurante (millonésimas que el origen debe), y quién presta Reservas en el destino (que tiene que ofrecerla
-    y tener su servicio)? Lo único que queda hecho de su lado es la puerta del libro (`restavor.ledger_move`, decisión 145), que no cambia nada por sí sola. Las opciones y la pregunta están en el informe de la tanda.
+148. **«Transferir también Reservas» (decisión 100): lo que Bosco eligió** (03/10/2026). Mover Reservas a otro espacio arrastra dinero que el PRD no resuelve (la suscripción y los cobros, que el origen cobra y por
+    RN-TRA-04 se quedan en él; el saldo, que el origen debe; y quién presta Reservas en el destino). Se le dieron tres opciones y **eligió la más completa: «Todo viaja con una suscripción nueva»**. Lo construido está
+    en la 149.
+149. **Transferir también Reservas** (migración 177; desactivada por defecto como manda la 100). La propuesta lleva `with_reservations` y `propose_establishment_transfer()` gana un parámetro (la firma antigua se
+    sustituye: una llamada con tres argumentos sigue valiendo, con la opción desactivada). **Solo se puede** con Reservas `active`, **sin ningún cobro de Reservas pendiente** (ni vencido ni por vencer: lo que se debe
+    se cobra antes, y así la deuda no se escapa cambiando de espacio) y hacia un espacio que **ofrezca Reservas** y tenga **datos de pago** (144); se comprueba al proponer y otra vez al aceptar. **Al aceptar**
+    (`reservations_transfer_internal()`): las 28 tablas de Reservas cambian de `space_id` —el libro del saldo también, sin tocar un céntimo: la marca `restavor.ledger_move` solo deja cambiar ese campo— ; la
+    suscripción del origen se **cancela** (sus cobros, pagos y deuda se quedan allí); el destino crea **una suscripción nueva** con su servicio y su primer cobro, y el restaurante pasa por «Aprobado: datos para
+    pagar» (acepta las condiciones **del destino** —no se copian las del origen— y paga allí su primer mes, como en una contratación). **Consecuencia que conviene saber:** lo ya pagado al origen por el mes en curso
+    no se devuelve solo (lo decide el origen a mano), y hasta que el restaurante acepte y pague, Reservas está en `approved_pending_payment` (la misma pantalla de una contratación). Los datos de comensales viajan
+    con el restaurante pero siguen sin verlos el equipo del destino sin una sesión de soporte (RN-RES-12). `reservations_transfer_tables()` lista las 28 tablas y una suite falla si aparece otra de Reservas sin
+    clasificar. **Alternativa descartada:** crear la suscripción del destino ya `active` con lo pagado al origen como crédito: exigía repartir un mes entre dos espacios.
+150. **Correcciones de la revisión independiente de E2** (03/10/2026; migración 178, porque la 176 y la 177 ya estaban en la rama). Un revisor leyó el diff contra el PRD y `CLAUDE.md`; lo real se arregló con su prueba:
+    **(1)** el soporte de plataforma con una sesión de Reservas abierta **en ese restaurante** lee su saldo (PRD §3.2: «Soporte, en sesión: sí»; `agent_balance()` y `agent_balance_can_read()` solo conocían la puerta de
+    espacio) y solo el de ese restaurante; **(2)** el libro del saldo no se vacía con `TRUNCATE` (tenía disparador de UPDATE y DELETE, y `service_role` tiene el privilegio); **(3)** el aviso de saldo pasa de disparador por
+    fila a **por sentencia** con tabla de transición: con varias llamadas en un solo `INSERT` el de fila veía el saldo ya sumado y no avisaba; también avisa con Reservas en pausa, con pago pendiente o con la baja pedida,
+    y no con Reservas cerrada o sin pagar; **(4)** una **clave de idempotencia repetida devuelve el mismo apunte**; la misma clave con otro importe o para otra operación da error en vez del apunte ajeno (recarga a mano,
+    ajuste y devolución); **(5)** un pago de Stripe que no cuadra deja **un incidente abierto por recarga**, no uno por reintento de Stripe; **(6)** el umbral de saldo bajo **lo cambia Restavor** (`set_low_balance_threshold()`,
+    con auditoría y volviendo a armar el aviso si el saldo ya está por encima): RN-AGT-05 lo decía y no había cómo; **(7)** reabrir un cierre vuelve a armar también el aviso de saldo agotado. En la aplicación: la **tablet
+    no ve el saldo ni con el PIN de un Encargado** (la barra de Hoy lo habría leído con la clave de servicio, que se salta la comprobación de usuario; RN-APP-05 y la decisión de la Fase D), la devolución del saldo manda
+    su push al momento como los demás apuntes, la ficha cuenta el mes en la zona **del restaurante** y no en la del espacio, los formularios avisan de que la nota y el motivo **los ve el restaurante** y que no lleven
+    nombres del equipo, el Historial del restaurante tiene frases para los apuntes del saldo y para transferir (antes salía «hizo un cambio»), y el webhook deja rastro cuando llega un pago de una sesión que no es de
+    ninguna recarga. **Límites que se aceptan y se dejan dichos:** lo ya pagado al origen al transferir no se devuelve solo (149); el webhook contesta 200 a una sesión desconocida (reintentar no la hace nuestra) y solo deja
+    un registro del servidor; no hay máximo de recarga (el PRD no lo fija); el aviso de saldo no es obligatorio (145); con `service_role` el borrado en cascada de un espacio sigue permitido (la aplicación nunca lo usa: se
+    archiva); y el pago real con Stripe sigue sin probarse de punta a punta fuera de la vista previa.
 
 ## Agente Menú Diario · Fase 0, reconocimiento (decisiones 151 a 155)
 

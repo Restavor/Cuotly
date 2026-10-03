@@ -86,7 +86,9 @@ export default async function Page({
   // «Saldo bajo» y «Te has quedado sin saldo» (PRD §5.2 RN-AGT-05 y RN-AGT-06): el Propietario y el Encargado, mientras
   // Reservas está en marcha. Si no se ha podido leer, no hay barra (nunca un saldo inventado).
   let balanceBar: Awaited<ReturnType<typeof loadBalanceBar>> | null = null;
+  // La tablet no enseña importes ni con el PIN de un Encargado (RN-APP-05): esta lectura iría con la clave de servicio.
   if (
+    access.mode !== "device" &&
     canReservations(nav.actor, "view_balance", { serviceStatus: nav.serviceStatus }) &&
     (nav.serviceStatus === "active" || nav.serviceStatus === "past_due" || nav.serviceStatus === "paused" || nav.serviceStatus === "ending")
   ) {

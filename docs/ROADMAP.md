@@ -5636,9 +5636,9 @@ ajuste de saldo (E2); «Transferir también Reservas» (E2); los avisos a comens
 
 Se paró aquí, como pide `CLAUDE.md`. (Bosco dio paso a E2 el 03/10/2026: el bloque de abajo.)
 
-### Fase E · Contratación, cobro y saldo · segunda tanda (E2) · 03/10/2026 (construida; falta la comprobación de Bosco y una decisión suya)
+### Fase E · Contratación, cobro y saldo · segunda tanda (E2) · 03/10/2026 (construida; falta la comprobación de Bosco)
 
-Bosco dio paso a E2 con una condición: **el pago y los datos de pago se quedan «Próximamente»; se construye todo, pero no se activa hasta que él dé los datos** (decisión 144). Rama `agents`. Migración 176.
+Bosco dio paso a E2 con una condición: **el pago y los datos de pago se quedan «Próximamente»; se construye todo, pero no se activa hasta que él dé los datos** (decisión 144). Rama `agents`. Migraciones 176 (saldo y recargas), 177 (transferir) y 178 (correcciones de la revisión).
 
 Criterios del PRD §15 (SAL-01, SAL-02, RVR-01):
 
@@ -5652,30 +5652,40 @@ Criterios del PRD §15 (SAL-01, SAL-02, RVR-01):
   recarga», «Ajuste», «Devolver el saldo» y «Abrir como soporte»; la entrada Reservas del espacio con el saldo de cada restaurante y su enlace; y en **Administración › Reservas** los espacios que ofrecen Reservas con su
   interruptor, el estado de Stripe (nunca la clave) y las tarifas de mensajería. Nunca datos de comensales.
 - [x] **Decisión 144 · la puerta de los datos de pago.** Sin IBAN ni Bizum cargados en el espacio no se aprueba ni se reactiva Reservas; el botón Aprobar sale parado diciendo por qué.
-- [ ] **«Transferir también Reservas» (decisión 100): NO construido, espera a Bosco** (decisión 148): hay que decidir qué pasa con la suscripción, los cobros y el saldo.
+- [x] **«Transferir también Reservas» (decisión 100), con lo que Bosco eligió** (decisión 148: todo viaja con una suscripción nueva; decisión 149; migración 177). Desactivada por defecto; solo con Reservas activa, sin cobros
+  pendientes y hacia un espacio que la ofrezca y tenga datos de pago. Al aceptar viajan las 28 tablas de Reservas (el saldo, sin cambiar un céntimo), la suscripción del origen se cancela (su dinero y su deuda se quedan allí)
+  y el destino crea la suya: el restaurante acepta las condiciones del destino y paga allí su primer mes («Aprobado: datos para pagar»). Casilla en la propuesta de la ficha y aviso al destino de que incluye Reservas.
 - [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase E, segunda tanda»; **antes: migración 176 y resembrar**) y, cuando quiera activar el pago, da los datos (IBAN o Bizum) y las claves de
   Stripe de pruebas (solo en Preview).
 
-Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.850 tests** en verde; **las 94 suites SQL** sobre una base limpia con las 176 migraciones (suite nueva **94**, `reservas_saldo.sql`: el libro,
-los avisos por cruce, la recarga a mano, el ajuste y la devolución, la recarga con tarjeta y su webhook, el gasto y los minutos, las tarifas y la puerta de los datos de pago), y los dos sembrados dos veces; el script de
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.857 tests** en verde; **las 95 suites SQL** sobre una base limpia con las 178 migraciones (suites nuevas **94**, `reservas_saldo.sql`: el libro,
+los avisos por cruce, la recarga a mano, el ajuste y la devolución, la recarga con tarjeta y su webhook, el gasto y los minutos, las tarifas y la puerta de los datos de pago; y **95**, `reservas_transferencia.sql`: la lista de tablas, la opción desactivada por defecto, quién y cuándo se puede, el traspaso entero y que el restaurante vuelve a estar activo al aceptar las condiciones del destino y pagar allí), y los dos sembrados dos veces; el script de
 concurrencia `topup-concurrency-test.mjs` (el mismo webhook veinte veces a la vez, una sola recarga; veinte «crear recarga» y veinte recargas a mano con la misma clave, una sola; diez llamadas a la vez, un solo aviso de saldo
-bajo y uno de agotado); los **68 e2e con datos** (los 10 nuevos de `agents-saldo.spec.ts`, con claves de Stripe **falsas** en el servidor del test; en la pasada completa pasaron 64, falló la carrera de «Salir de Ajustes» de la tablet con los tres que dependen de ella, y al repetir ese archivo pasaron sus 12), `next build` de producción. Se comprobó con **tres mutaciones** (se quita el
-bloqueo del disparador de avisos, la idempotencia del webhook y el importe sin IVA): las tres las atrapan la suite, el script o ambos.
+bajo y uno de agotado); los **68 e2e con datos** (los 10 nuevos de `agents-saldo.spec.ts`, con claves de Stripe **falsas** en el servidor del test; en la pasada completa tras la revisión pasaron 67 y falló una vez el paso «ACEPTAR» de un recorrido de móvil de Restavor web (`ca19-recorridos-movil`, código que E2 no toca: la solicitud seguía «Pendiente de aceptación» a los 15 s con la máquina cargada), y al repetir ese archivo pasaron sus 5), `next build` de producción. Se comprobó con **nueve mutaciones** (en la migración 176: se quita el
+bloqueo del disparador de avisos, la idempotencia del webhook y el importe sin IVA; en la 177: sin comprobar los cobros pendientes, sin cancelar la suscripción del origen, sin viajar el libro, sin la suscripción nueva, sin
+comprobar que el destino ofrezca Reservas y activando Reservas sin pasar por pagar): las nueve las atrapan la suite, el script o ambos.
 
 Hallazgos que conviene saber:
 
-- **La migración 176 se editó en su sitio** durante la tanda (no estaba subida a ninguna base: mismo precedente que las 120, 130 y 173).
+- **La migración 176 se editó en su sitio** durante la tanda, antes de subirla (mismo precedente que las 120, 130 y 173); la **177** (transferir) es nueva porque la 176 ya estaba subida.
 - Pagar de verdad con Stripe **no se prueba de punta a punta**: no hay red hacia Stripe desde el entorno de pruebas ni en CI. El apunte, el IVA, la idempotencia y la firma están probados por separado (suite 94, script de concurrencia,
   `stripe.test.ts` y `stripe-webhook.test.ts`); el e2e comprueba el formulario, el importe con IVA y que el webhook rechaza una firma falsa. El primer pago real con la tarjeta de prueba lo hace Bosco con los pasos de PRUEBAS.
 - El e2e de Administración › Reservas **no existe** (`info@restavor.com` no tiene segundo paso sembrado): lo cubren la suite SQL y la prueba a mano.
-- Dos e2e intermitentes vistos en estas sesiones, **ninguno de E2** y los dos pasaron al repetir: «Aprobar» tardó más de 45 s una vez, y «Salir de Ajustes» en la tablet aterrizó una vez en `/desbloquear` (el cambio de la
+- Tres e2e intermitentes vistos en estas sesiones, **ninguno de E2** y los tres pasaron al repetir (el tercero, el «ACEPTAR» de `ca19-recorridos-movil`, con la máquina cargada por cuatro trabajadores a la vez): «Aprobar» tardó más de 45 s una vez, y «Salir de Ajustes» en la tablet aterrizó una vez en `/desbloquear` (el cambio de la
   sesión de Ajustes y la navegación del cliente compiten, Fase D). Quedan anotados por si vuelven.
 - Hoy el saldo solo se mueve con recargas y ajustes (y con lo que siembra el sembrado): el gasto real de llamadas y avisos llega con las Fases F y G; `RN-AGT-07` (un aviso solo sale con saldo suficiente) es de la Fase F.
 
-Decisiones (en `docs/DECISIONES.md`, **144 a 148**): 144 pago y datos de pago «Próximamente» (de Bosco), 145 el libro inmutable de verdad y los avisos por cruce, 146 recargar con tarjeta, 147 el lado de Restavor, 148 «Transferir
-también Reservas» sin construir.
+**Revisión independiente de E2 (03/10/2026).** Un revisor leyó el diff contra el PRD y `CLAUDE.md`; lo real se corrigió en la **migración 178** (la 176 y la 177 ya estaban en la rama): el soporte en sesión lee el saldo
+de su restaurante, el libro no se vacía con `TRUNCATE`, el aviso de saldo funciona con varios apuntes en una sentencia y también con Reservas en pausa o con pago pendiente, una clave de idempotencia repetida devuelve el mismo apunte
+(o falla si es de otra operación), un pago que no cuadra deja un solo incidente por recarga, Restavor puede cambiar el umbral de saldo bajo y reabrir un cierre vuelve a armar el aviso de agotado. En la aplicación, la
+tablet ya no ve el saldo ni con PIN, la devolución manda su push, la ficha cuenta el mes en la zona del restaurante, los formularios avisan de que la nota la ve el restaurante, el Historial tiene frases para el saldo y el
+webhook deja rastro de un pago desconocido. Se comprobó con **cinco mutaciones más** (sin disparador de TRUNCATE, sin la lectura del soporte, el aviso con el delta mal sumado, sin dedupe del incidente, sin el error de
+clave reutilizada): las atrapa la suite 94. Los límites que se aceptan están en la decisión 150.
 
-Lo que **no** está: «Transferir también Reservas» (espera a Bosco); las cifras de reservas en la ficha (hace falta el resumen mensual); los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I) y la app
+Decisiones (en `docs/DECISIONES.md`, **144 a 150**): 144 pago y datos de pago «Próximamente» (de Bosco), 145 el libro inmutable de verdad y los avisos por cruce, 146 recargar con tarjeta, 147 el lado de Restavor, 148 lo que
+Bosco eligió para transferir con Reservas, 149 cómo se construyó y 150 las correcciones de la revisión.
+
+Lo que **no** está: el e2e de «Transferir también Reservas» (hacen falta dos espacios sembrados: lo cubren la suite 95 y un test de componente); las cifras de reservas en la ficha (hace falta el resumen mensual); los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I) y la app
 instalable y el modo sin conexión (J).
 
 Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase F hasta que Bosco lo diga.**

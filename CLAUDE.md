@@ -64,7 +64,6 @@ Estos puntos están **aplazados deliberadamente**. Si una tarea los toca, deja e
 - Cancelación/anulación/abono de un cobro. Reembolsar lo **reabre** (RN-FIN-04b, decisión 12): devolver el dinero dejando al cliente a cero es otra operación, y no existe. No la metas dentro de `refund_charge`.
 - Sincronización bidireccional de calendarios.
 - Pago y datos de pago de Reservas (decisión 144, de Bosco el 03/10/2026): **construidos, pero «Próximamente» hasta que él dé los datos**. Sin IBAN ni Bizum cargados en el espacio no se aprueba ni se reactiva Reservas, y sin `STRIPE_SECRET_KEY` y `STRIPE_WEBHOOK_SECRET` no hay recarga con tarjeta. No actives ninguna de las dos puertas por tu cuenta, no pongas variables de Stripe en Production ni inventes un IBAN.
-- «Transferir también Reservas» (decisión 100): sin construir hasta que Bosco decida qué pasa con la suscripción, los cobros y el saldo (decisión 148).
 - ~~Crear, editar y archivar planes y servicios~~ — las reglas las fijó Bosco el 23/09/2026 (decisión 72, opción A: quien no acepta un cambio que le perjudica sigue en la versión que aceptó). Están en el PRD como RN-COM-19 a RN-COM-30. Ya no se inventan: se citan.
 
 ## Decisiones que NO deben reaparecer

@@ -23,7 +23,7 @@ export async function loadPendingTransfer(
 ): Promise<PendingTransfer | null> {
   const { data } = await supabase
     .from("establishment_transfers")
-    .select("id, reason, proposed_at, from_space_id")
+    .select("id, reason, proposed_at, from_space_id, with_reservations")
     .eq("establishment_id", establishmentId)
     .eq("state", "pending")
     .maybeSingle();
@@ -39,6 +39,7 @@ export async function loadPendingTransfer(
     // propietaria de los dos espacios, y entonces la propuesta se ve de
     // una manera desde cada ficha.
     iProposed: data.from_space_id === spaceId,
+    withReservations: data.with_reservations,
   };
 }
 

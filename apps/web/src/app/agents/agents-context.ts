@@ -182,11 +182,16 @@ export async function requireAgentsPage(establishmentId: string, page: AgentsPag
     guard.kind === "denied" &&
     restaurant.mode === "device" &&
     page !== "unlock" &&
+    // El saldo no se mira desde la tablet ni con PIN (decisión de la Fase D; el PIN no abre importes): no hay a qué desbloquear.
+    page !== "balance" &&
     guardAgentsPage(establishmentId, { kind: "device", pin: "manager" }, restaurant.nav.serviceStatus, page).kind === "allow"
   ) {
     redirect(agentsPageHref(establishmentId, "unlock"));
   }
-  return { kind: guard.kind === "allow" ? "ok" : "denied", nav: restaurant.nav, mode: restaurant.mode };
+  // Una tablet con el PIN de un Encargado pasaría la tabla de permisos del saldo, pero el saldo se lee con la sesión de una
+  // persona y la tablet no la tiene (RN-APP-05, decisión de la Fase D): se le niega aquí, no se deja a medias.
+  const deviceNeverSeesBalance = restaurant.mode === "device" && page === "balance";
+  return { kind: guard.kind === "allow" && !deviceNeverSeesBalance ? "ok" : "denied", nav: restaurant.nav, mode: restaurant.mode };
 }
 
 /** La dirección de una pantalla del restaurante; atajo para quien ya tiene su contexto. */

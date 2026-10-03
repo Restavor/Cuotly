@@ -59,7 +59,7 @@ export default async function EstablishmentReservationsPage({ params }: { params
     // Todas las columnas se enumeran: esta tabla tiene privilegios de columna (CLAUDE.md).
     supabase
       .from("reservation_settings")
-      .select("service_status, activated_at, ending_at, closed_at, data_purged_at")
+      .select("service_status, activated_at, ending_at, closed_at, data_purged_at, timezone")
       .eq("establishment_id", id)
       .maybeSingle(),
   ]);
@@ -86,7 +86,8 @@ export default async function EstablishmentReservationsPage({ params }: { params
 
   const status = settings.data.service_status;
   const now = new Date();
-  const tz = space.timezone;
+  // Las fechas de Reservas se cuentan en la zona del restaurante (la de su agenda), no en la del espacio.
+  const tz = settings.data.timezone;
   const longDate = (iso: string) => enZona(iso, tz, { day: "numeric", month: "long", year: "numeric" });
 
   let balance;
@@ -209,6 +210,7 @@ export default async function EstablishmentReservationsPage({ params }: { params
         canWrite={canWrite === true}
         twoFactor={assurance.data?.currentLevel === "aal2"}
         canPayout={status === "ending" || status === "closed"}
+        thresholdCents={balance.thresholdCents}
       />
 
       <Card title={t.incidentsTitle}>

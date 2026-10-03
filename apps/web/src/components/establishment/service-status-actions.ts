@@ -145,6 +145,8 @@ export async function proposeEstablishmentTransfer(
       p_establishment_id: establishmentId,
       p_to_space_id: toSpaceId,
       p_reason: reason,
+      // Decisión 149 · desactivada por defecto: solo viaja si se marca.
+      p_with_reservations: formData.get("withReservations") === "on",
     }),
   );
 }

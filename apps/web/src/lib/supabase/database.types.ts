@@ -2500,6 +2500,7 @@ export type Database = {
           reason: string | null;
           state: string;
           to_space_id: string;
+          with_reservations: boolean;
         };
         Insert: {
           decided_at?: string | null;
@@ -2513,6 +2514,7 @@ export type Database = {
           reason?: string | null;
           state?: string;
           to_space_id: string;
+          with_reservations?: boolean;
         };
         Update: {
           decided_at?: string | null;
@@ -2526,6 +2528,7 @@ export type Database = {
           reason?: string | null;
           state?: string;
           to_space_id?: string;
+          with_reservations?: boolean;
         };
         Relationships: [
           {
@@ -11348,6 +11351,7 @@ export type Database = {
           p_establishment_id: string;
           p_reason?: string;
           p_to_space_id: string;
+          p_with_reservations?: boolean;
         };
         Returns: string;
       };
@@ -12342,6 +12346,10 @@ export type Database = {
       record_balance_payout: {
         Args: { p_amount_cents: number; p_establishment_id: string; p_idempotency_key: string; p_note: string | null };
         Returns: string;
+      };
+      set_low_balance_threshold: {
+        Args: { p_cents: number; p_establishment_id: string };
+        Returns: undefined;
       };
       create_agent_topup: {
         Args: { p_establishment_id: string; p_idempotency_key: string; p_net_cents: number };

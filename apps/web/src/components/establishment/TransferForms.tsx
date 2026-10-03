@@ -21,6 +21,8 @@ export interface PendingTransfer {
   readonly proposedAt: string;
   /** `true` cuando quien mira es el espacio que la propuso. */
   readonly iProposed: boolean;
+  /** Decisión 149 · «Transferir también Reservas». */
+  readonly withReservations: boolean;
 }
 
 function Feedback({ state }: { state: { error: string | null; done: boolean } }) {
@@ -62,10 +64,13 @@ export function TransferBlock({
   establishmentId,
   pending,
   canPropose,
+  reservationsStatus = null,
 }: {
   establishmentId: string;
   pending: PendingTransfer | null;
   canPropose: boolean;
+  /** El estado de Reservas de este restaurante, o `null` si no tiene (decisión 149). */
+  reservationsStatus?: string | null;
 }) {
   if (pending !== null) {
     return pending.iProposed ? (
@@ -83,10 +88,10 @@ export function TransferBlock({
     );
   }
 
-  return <ProposeForm establishmentId={establishmentId} />;
+  return <ProposeForm establishmentId={establishmentId} reservationsStatus={reservationsStatus} />;
 }
 
-function ProposeForm({ establishmentId }: { establishmentId: string }) {
+function ProposeForm({ establishmentId, reservationsStatus }: { establishmentId: string; reservationsStatus: string | null }) {
   const [state, action, pending] = useActionState(
     proposeEstablishmentTransfer,
     INITIAL_SERVICE_STATUS,
@@ -102,6 +107,26 @@ function ProposeForm({ establishmentId }: { establishmentId: string }) {
           <li>{t.transferWhatStays}</li>
           <li>{t.transferNeedsAccept}</li>
         </ul>
+        {reservationsStatus !== null ? (
+          <div className="rounded-field border border-border p-3" data-testid="transfer-reservations">
+            <label className="flex min-h-11 items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                name="withReservations"
+                className="mt-1 h-5 w-5 shrink-0"
+                disabled={reservationsStatus !== "active"}
+                data-testid="transfer-with-reservations"
+              />
+              <span>
+                <span className="block font-semibold text-text">{t.transferReservationsLabel}</span>
+                <span className="block text-text-secondary">{t.transferReservationsHint}</span>
+                {reservationsStatus !== "active" ? (
+                  <span className="mt-1 block font-semibold text-pending-text">{t.transferReservationsOnlyActive}</span>
+                ) : null}
+              </span>
+            </label>
+          </div>
+        ) : null}
         <Field label={t.transferSpaceLabel} name="toSpaceId" hint={t.transferSpaceHint} required />
         <TextArea label={t.serviceReasonLabel} name="reason" rows={2} required />
         <Feedback state={state} />
@@ -124,6 +149,11 @@ function WithdrawForm({ transfer }: { transfer: PendingTransfer }) {
       <p className="mb-3 text-sm text-text">{t.transferWaiting}</p>
       {transfer.reason ? (
         <p className="mb-3 text-sm text-text-secondary">{transfer.reason}</p>
+      ) : null}
+      {transfer.withReservations ? (
+        <p className="mb-3 text-sm text-text-secondary" data-testid="transfer-includes-reservations">
+          {t.transferReservationsIncluded}
+        </p>
       ) : null}
       <form action={action} className="space-y-3">
         <input type="hidden" name="transferId" value={transfer.id} />
@@ -159,6 +189,7 @@ function DecideForm({ transfer }: { transfer: PendingTransfer }) {
       <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-text-secondary">
         <li>{t.transferWhatTravels}</li>
         <li>{t.transferWhatStays}</li>
+        {transfer.withReservations ? <li data-testid="transfer-includes-reservations">{t.transferReservationsIncluded}</li> : null}
         <li>{t.transferNoUndo}</li>
       </ul>
 

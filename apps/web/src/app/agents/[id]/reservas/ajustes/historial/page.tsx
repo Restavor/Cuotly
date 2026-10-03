@@ -47,6 +47,20 @@ function sentence(entry: HistoryEntry, timeZone: string): string {
       return t.closedDateRemoved(who, shown);
     case "reservations.onboarding_completed":
       return t.onboardingCompleted(who);
+    case "reservations.balance_topup_manual":
+      return t.balanceTopupManual(who);
+    case "reservations.balance_adjusted":
+      return t.balanceAdjusted(who);
+    case "reservations.balance_payout":
+      return t.balancePayout(who);
+    case "reservations.topup_paid":
+      return t.topupPaid();
+    case "reservations.topup_expired":
+      return t.topupExpired();
+    case "reservations.low_balance_threshold_changed":
+      return t.lowBalanceThresholdChanged(who);
+    case "reservations.transferred":
+      return t.transferred(who);
     case "reservations.support_session": {
       const reason = text(entry.detail.reason) ?? "";
       const ended = text(entry.detail.ended_at);

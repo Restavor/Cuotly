@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { parseEuros } from "@/core/agents/balance";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
-import { adjustBalance, registerManualTopup, registerPayout, type TeamMoneyMethod } from "@/services/agents/balance-gateway";
+import { adjustBalance, registerManualTopup, registerPayout, setLowBalanceThreshold, type TeamMoneyMethod } from "@/services/agents/balance-gateway";
 import { deliverNoticesNow } from "@/services/agents/lifecycle-delivery";
 
 import type { SheetFeedback } from "./action-state";
@@ -31,6 +31,8 @@ function failure(error: unknown): SheetFeedback {
   if (/más de lo que hay/i.test(text)) return { ok: false, message: t.tooMuch };
   if (/dado de baja/i.test(text)) return { ok: false, message: t.notEnding };
   if (/por qué/i.test(text)) return { ok: false, message: t.reasonRequired };
+  if (/otra operación/i.test(text)) return { ok: false, message: t.keyReused };
+  if (/aviso de saldo bajo no puede/i.test(text)) return { ok: false, message: t.thresholdInvalid };
   return { ok: false, message: t.failed };
 }
 
@@ -114,14 +116,39 @@ export async function registerPayoutAction(input: {
   const amount = parseEuros(input.amount);
   if (!amount.ok) return { ok: false, message: amount.reason === "zero" ? t.amountZero : t.invalidAmount };
   try {
-    await registerPayout(await createClient(), {
+    const entryId = await registerPayout(await createClient(), {
       establishmentId: input.establishmentId,
       amountCents: amount.cents,
       note: input.note.trim() === "" ? null : input.note.trim(),
       idempotencyKey: `${input.formKey}:payout:${amount.cents}`,
     });
+    // Devolver puede dejar el saldo bajo o a cero: el aviso sale como con cualquier otro apunte.
+    await pushNow(input.establishmentId, entryId);
     refresh(input.slug, input.establishmentId);
     return { ok: true, message: t.payoutDone };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** El saldo por debajo del cual se avisa de «saldo bajo» (RN-AGT-05): lo cambia Restavor; cambiarlo deja huella. */
+export async function setLowBalanceThresholdAction(input: {
+  slug: string;
+  establishmentId: string;
+  amount: string;
+}): Promise<SheetFeedback> {
+  const t = es.reservationsSpace.sheet.forms;
+  if (!UUID.test(input.establishmentId)) return { ok: false, message: t.failed };
+  const amount = parseEuros(input.amount);
+  // Cero es válido aquí (sin aviso de saldo bajo, solo el de agotado): `parseEuros` lo da como «zero».
+  if (!amount.ok && amount.reason !== "zero") return { ok: false, message: t.invalidAmount };
+  try {
+    await setLowBalanceThreshold(await createClient(), {
+      establishmentId: input.establishmentId,
+      thresholdCents: amount.ok ? amount.cents : 0,
+    });
+    refresh(input.slug, input.establishmentId);
+    return { ok: true, message: t.thresholdDone };
   } catch (error) {
     return failure(error);
   }

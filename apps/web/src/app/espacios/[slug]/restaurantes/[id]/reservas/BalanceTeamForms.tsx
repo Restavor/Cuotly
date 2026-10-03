@@ -6,7 +6,7 @@ import { Button, Card, Field, TextArea } from "@/components/ui";
 import { es } from "@/i18n/es";
 
 import type { SheetFeedback } from "./action-state";
-import { adjustBalanceAction, registerManualTopupAction, registerPayoutAction } from "./actions";
+import { adjustBalanceAction, registerManualTopupAction, registerPayoutAction, setLowBalanceThresholdAction } from "./actions";
 
 type MethodKey = keyof typeof es.reservationsSpace.sheet.forms.methods;
 
@@ -30,12 +30,14 @@ export function BalanceTeamForms({
   canWrite,
   twoFactor,
   canPayout,
+  thresholdCents,
 }: {
   slug: string;
   establishmentId: string;
   canWrite: boolean;
   twoFactor: boolean;
   canPayout: boolean;
+  thresholdCents: number;
 }) {
   const t = es.reservationsSpace.sheet.forms;
   const [busy, startTransition] = useTransition();
@@ -53,6 +55,9 @@ export function BalanceTeamForms({
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutNote, setPayoutNote] = useState("");
   const [payoutResult, setPayoutResult] = useState<SheetFeedback | null>(null);
+
+  const [threshold, setThreshold] = useState(String(thresholdCents / 100).replace(".", ","));
+  const [thresholdResult, setThresholdResult] = useState<SheetFeedback | null>(null);
 
   if (!canWrite) {
     return (
@@ -109,6 +114,9 @@ export function BalanceTeamForms({
             </select>
           </div>
           <Field label={t.noteLabel} name="topup-note" value={topupNote} onChange={(e) => setTopupNote(e.target.value)} />
+          <p className="text-xs text-text-secondary" data-testid="note-visible-warning">
+            {t.noteVisible}
+          </p>
           <Feedback result={topupResult} />
           <Button type="submit" pending={busy} data-testid="manual-topup-submit">
             {t.topupButton}
@@ -141,9 +149,32 @@ export function BalanceTeamForms({
         >
           <Field label={t.adjustAmountLabel} name="adjust-amount" value={adjustAmount} onChange={(e) => setAdjustAmount(e.target.value)} inputMode="decimal" data-testid="adjust-amount" />
           <TextArea label={t.reasonLabel} name="adjust-reason" value={adjustReason} onChange={(e) => setAdjustReason(e.target.value)} data-testid="adjust-reason" />
+          <p className="text-xs text-text-secondary" data-testid="reason-visible-warning">
+            {t.reasonVisible}
+          </p>
           <Feedback result={adjustResult} />
           <Button type="submit" pending={busy} disabled={!twoFactor} data-testid="adjust-submit">
             {t.adjustButton}
+          </Button>
+        </form>
+      </Card>
+
+      <Card title={t.thresholdTitle}>
+        <p className="mb-3 text-sm text-text-secondary">{t.thresholdHelp}</p>
+        <form
+          noValidate
+          className="space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            startTransition(async () => {
+              setThresholdResult(await setLowBalanceThresholdAction({ slug, establishmentId, amount: threshold }));
+            });
+          }}
+        >
+          <Field label={t.thresholdLabel} name="threshold-amount" value={threshold} onChange={(e) => setThreshold(e.target.value)} inputMode="decimal" data-testid="threshold-amount" />
+          <Feedback result={thresholdResult} />
+          <Button type="submit" pending={busy} data-testid="threshold-submit">
+            {t.thresholdButton}
           </Button>
         </form>
       </Card>
@@ -169,6 +200,7 @@ export function BalanceTeamForms({
           >
             <Field label={t.amountLabel} name="payout-amount" value={payoutAmount} onChange={(e) => setPayoutAmount(e.target.value)} inputMode="decimal" data-testid="payout-amount" />
             <Field label={t.noteLabel} name="payout-note" value={payoutNote} onChange={(e) => setPayoutNote(e.target.value)} />
+            <p className="text-xs text-text-secondary">{t.noteVisible}</p>
             <Feedback result={payoutResult} />
             <Button type="submit" pending={busy} disabled={!twoFactor} data-testid="payout-submit">
               {t.payoutButton}
