@@ -411,7 +411,7 @@ Es una propuesta: adapta los nombres a las convenciones del repositorio.
 
 ### 9.2 Prohibido
 
-- Usar el chat de IA de LandingSite.
+- Usar el chat de IA de LandingSite para cualquier cosa que no sea **subir el menú**. Subir el menú (adjuntar la imagen y pedir que sustituya la del menú) es la **única** acción para la que se permite el chat de IA (decisión de Bosco, 03/10/2026, tras la Fase 0: sin el chat no hay forma de cambiar la imagen).
 - Tocar cualquier cosa que no sea la imagen del menú y su texto alternativo.
 - Cambiar ajustes del sitio o de la cuenta.
 - Comprar nada.
@@ -470,8 +470,8 @@ Si "Publicar" publica la web entera, el robot podría sacar a la luz cambios que
 
 - la navegación solo puede ir a `landingsite_editor_url` (y sus páginas internas con el mismo `landingsite_sitio_id`) y a `url_publica`;
 - la guarda de sitio de 9.5 se aplica igual;
-- no se puede escribir texto, salvo en el campo de texto alternativo;
-- no se puede abrir el chat de IA de LandingSite;
+- no se puede escribir texto, salvo en el campo de texto alternativo y en el mensaje al chat de IA de LandingSite para subir el menú (9.2);
+- el chat de IA de LandingSite solo se puede usar para subir el menú (9.2);
 - no se puede hacer nada de lo prohibido en 9.2.
 
 **Coste.** Máximo 0,50 € por ejecución y 5 € al mes. Si se superan, se para y se trata como error.
@@ -703,7 +703,7 @@ Tiene que pasar antes de la Fase 7 y después de cualquier cambio en el agente.
 - Fuente de verdad: PRD.md. Haz solo la fase que se pide.
 - IMPORTANT: pruebas solo en Supabase "Restavor pruebas" (bnucqykimngjwcrlpmsm) y en la web de pruebas de LandingSite. Nunca producción ni webs de clientes sin OK explícito de Bosco.
 - No modificar funciones, tablas ni políticas existentes de Restavor web: solo migraciones nuevas.
-- Las RPC de Restavor web que usan auth.uid() solo las llama el robot como usuario agente. El robot nunca usa service_role ni el chat de IA de LandingSite.
+- Las RPC de Restavor web que usan auth.uid() solo las llama el robot como usuario agente. El robot nunca usa service_role, y el chat de IA de LandingSite solo lo usa para subir el menú (PRD 9.2).
 - La guarda de sitio (PRD 9.5) se aplica siempre en código, también en el rescate.
 - Comandos: npm test · npm run agente:seco · npm run agente:e2e · npm run agente:login
 - Antes de dar algo por terminado: tests en verde + evidencia (salida, capturas o consultas).
