@@ -1,5 +1,5 @@
 /**
- * `src/core/clock.ts` · RA-08, el agente siempre sabe qué día y hora es (decisión 156 de Bosco, 03/10/2026).
+ * `src/core/clock.ts` · RA-08, el agente siempre sabe qué día y hora es (decisión 158 de Bosco, 03/10/2026).
  *
  * Al empezar cada ejecución el robot lee la hora del ordenador en UTC, la pasa a la zona del espacio y la deja escrita
  * en su registro y en cada decisión. La contrasta con la hora que devuelve Supabase en cada respuesta: si difieren
@@ -19,7 +19,7 @@ import {
 } from "./local-time.ts";
 import { err, ok, type Result } from "./result.ts";
 
-/** Diferencia máxima tolerada entre el reloj del ordenador y el de Supabase (decisión 156). */
+/** Diferencia máxima tolerada entre el reloj del ordenador y el de Supabase (decisión 158). */
 export const DEFAULT_MAX_CLOCK_SKEW_MS = 5 * 60_000;
 
 export type LocalClock = {

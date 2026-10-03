@@ -9,7 +9,7 @@ function clockOf(iso: string, timeZone = MADRID) {
   return r.value;
 }
 
-describe("RA-08 · el agente siempre sabe qué día y hora es (decisión 156)", () => {
+describe("RA-08 · el agente siempre sabe qué día y hora es (decisión 158)", () => {
   it("RA-08 · los dos días de cambio de hora dan el desfase correcto", () => {
     expect(clockOf("2026-03-29T00:59:59Z").utcOffsetMinutes).toBe(60);
     expect(clockOf("2026-03-29T01:00:00Z").utcOffsetMinutes).toBe(120);

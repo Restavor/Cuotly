@@ -3,14 +3,14 @@
 Reglas de esta carpeta. Se suman a las del `CLAUDE.md` de la raíz, que **manda** si algo choca (jerarquía: `CLAUDE.md` raíz > este archivo > `PRD.md` de esta carpeta).
 
 - Fuente de verdad del producto: `PRD.md`. Haz solo la fase que se pide y para al terminarla. El plan de la Fase 1 y su estado están en `docs/PLAN-FASE-1.md`.
-- Las decisiones de Bosco que cambian el PRD están en `docs/DECISIONES.md` de la raíz: **149 a 153** (Fase 0), **154** (cuándo publica el agente), **155** (cuentas, repo privado, rama) y **156** (el agente siempre sabe qué día y hora es). Donde el PRD dice otra cosa, mandan ellas.
+- Las decisiones de Bosco que cambian el PRD están en `docs/DECISIONES.md` de la raíz: **151 a 155** (Fase 0), **156** (cuándo publica el agente), **157** (cuentas, repo privado, rama) y **158** (el agente siempre sabe qué día y hora es). Donde el PRD dice otra cosa, mandan ellas.
 - IMPORTANT: pruebas solo en Supabase «Restavor pruebas» (`bnucqykimngjwcrlpmsm`) y en la web de pruebas de LandingSite. Nunca producción ni webs de clientes sin OK explícito de Bosco. Nunca se autoriza al agente en Magariños (web real).
-- No modificar funciones, tablas ni políticas existentes de Restavor web: solo migraciones nuevas (única excepción: la 151, que saca al agente de los repartos de trabajos y tareas, y se propone en la Fase 2 antes de escribirla).
+- No modificar funciones, tablas ni políticas existentes de Restavor web: solo migraciones nuevas (única excepción: la 153, que saca al agente de los repartos de trabajos y tareas, y se propone en la Fase 2 antes de escribirla).
 - Las RPC de Restavor web que usan `auth.uid()` solo las llama el robot como usuario agente. **El robot nunca usa `service_role`.** El chat de IA de LandingSite solo se usa para subir el menú (PRD §9.2).
 - La guarda de sitio (PRD §9.5) se aplica siempre en código, también en el rescate, y comprueba el **UUID** del editor, no `LS-…` (RECONOCIMIENTO).
 - **Credenciales nunca por el chat ni en el repositorio**: correo y contraseña del agente en Restavor web, de LandingSite y `SESION_CLAVE` van como secretos de GitHub Actions o variables del entorno. Nada de eso en logs, capturas ni artefactos.
-- **Ningún workflow que use credenciales hasta que el repositorio sea privado** (decisión 155).
-- El agente siempre sabe qué día y hora es (decisión 156): el reloj lo lee quien arranca y se pasa como dato (`now`). En `src/core` no existe `Date.now()` ni `new Date()` sin argumentos (lo impide el lint).
+- **Ningún workflow que use credenciales hasta que el repositorio sea privado** (decisión 157).
+- El agente siempre sabe qué día y hora es (decisión 158): el reloj lo lee quien arranca y se pasa como dato (`now`). En `src/core` no existe `Date.now()` ni `new Date()` sin argumentos (lo impide el lint).
 
 ## Comandos
 
@@ -38,7 +38,7 @@ pnpm --filter @cuotly/daily-menu-agent typecheck
 |---|---|
 | `calcularPublicarDesde()` | `computePublishFrom()` (`src/core/publish-from.ts`) |
 | `ordenarYFiltrar()` | `orderAndFilter()` (`src/core/order-and-filter.ts`) |
-| `HORA_VISPERA` (17:00 de la víspera) | **desaparece** (decisión 154). La sustituye `otherDayHour`, 07:00 del día del menú |
+| `HORA_VISPERA` (17:00 de la víspera) | **desaparece** (decisión 156). La sustituye `otherDayHour`, 07:00 del día del menú |
 | `preparando` · `esperando` · `lista` | `preparing` · `waiting` · `ready` |
 | `publicando` · `verificando` · `publicada` | `publishing` · `verifying` · `published` |
 | `error` · `bloqueada_sesion` | `error` · `session_blocked` |

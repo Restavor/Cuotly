@@ -20,7 +20,7 @@ function errorOf(r: ReturnType<typeof run>): string {
 }
 
 /*
- * RA-01 · cuándo publica el agente (decisión 154, Bosco 03/10/2026):
+ * RA-01 · cuándo publica el agente (decisión 156, Bosco 03/10/2026):
  *   hoy → al llegar · otro día → 07:00 del día del menú · día pasado → no se publica.
  * Todos los valores UTC esperados están contrastados con PostgreSQL (`at time zone 'Europe/Madrid'`).
  */

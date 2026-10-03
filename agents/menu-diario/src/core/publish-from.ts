@@ -1,5 +1,5 @@
 /**
- * `src/core/publish-from.ts` · RA-01, cuándo publica el agente (decisión 154 de Bosco, 03/10/2026).
+ * `src/core/publish-from.ts` · RA-01, cuándo publica el agente (decisión 156 de Bosco, 03/10/2026).
  * Sustituye a la regla de la víspera de las 17:00 que traía el PRD del agente (§7.1).
  *
  * Todo en la zona horaria del espacio. «Hoy» es la fecha local en ese instante.
@@ -11,7 +11,7 @@
  *                                  versión enviada hasta entonces. Si llega ya pasada esa hora del día del menú, ese día es
  *                                  «hoy» y se publica al llegar.
  *
- * Pura: el reloj (`now`) lo pone quien llama; la función nunca lee la hora del sistema (decisión 156).
+ * Pura: el reloj (`now`) lo pone quien llama; la función nunca lee la hora del sistema (decisión 158).
  */
 import {
   isValidLocalDate,
@@ -24,7 +24,7 @@ import {
 } from "./local-time.ts";
 import { err, ok, type Result } from "./result.ts";
 
-/** Hora local a la que se publica un menú de otro día, si no se configura otra (decisión 154). */
+/** Hora local a la que se publica un menú de otro día, si no se configura otra (decisión 156). */
 export const DEFAULT_OTHER_DAY_HOUR: LocalTime = "07:00";
 
 export type PublishFromInput = {

@@ -1,5 +1,5 @@
 /**
- * `src/core/order-and-filter.ts` · RA-01, en qué orden se publica (PRD §7.1, que sigue en pie con la decisión 154).
+ * `src/core/order-and-filter.ts` · RA-01, en qué orden se publica (PRD §7.1, que sigue en pie con la decisión 156).
  *
  * La web tiene un solo hueco para la imagen del menú. En cada ejecución:
  *   - solo se consideran las tareas `ready` cuya hora (`publishFrom`) ya ha llegado;
@@ -7,7 +7,7 @@
  *   - una tarea cuya fecha ya ha pasado no se publica (`date_in_past`; se vuelve a comprobar aquí, no solo al
  *     crear la tarea: publicar el menú de ayer tapando el de hoy sería peor que un aviso);
  *   - una tarea no se publica si el mismo restaurante tiene otra con fecha POSTERIOR ya publicada o en curso
- *     (`later_day_already_published`). Con la decisión 154 casi no se usa, porque ya no se publica nada antes de su
+ *     (`later_day_already_published`). Con la decisión 156 casi no se usa, porque ya no se publica nada antes de su
  *     día: se conserva como red de seguridad.
  *
  * Misma fecha NO bloquea: así una republicación del mismo día (uno a las 8:00 y otro a las 9:00) se publica.

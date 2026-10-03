@@ -32,7 +32,7 @@ describe("i18n · textos en español de los códigos del núcleo", () => {
   });
 });
 
-describe("RA-08 · el agente escribe qué día y hora es (decisión 156)", () => {
+describe("RA-08 · el agente escribe qué día y hora es (decisión 158)", () => {
   it("RA-08 · el ejemplo de Bosco: sábado 3 de octubre de 2026, 18:42, hora de Madrid", () => {
     expect(formatClock(clockOf("2026-10-03T16:42:00Z"))).toBe(
       "Hoy es sábado 3 de octubre de 2026, 18:42, hora de Madrid (UTC+02:00)",
