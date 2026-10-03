@@ -2624,10 +2624,10 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     Encargado del restaurante siguen entrando por su rol, pero el soporte y el equipo del espacio de destino no los ven. Es lo que dice la 100; la opción
     «Transferir también Reservas» y lo que arrastra se construyen en la Fase E.
 
-## Agente Menú Diario · Fase 0, reconocimiento (decisiones 112 a 114)
+## Agente Menú Diario · Fase 0, reconocimiento (decisiones 112 a 115)
 
-Se registran el 03/10/2026, tras el informe `agents/menu-diario/docs/RECONOCIMIENTO.md`. Las tres son de Bosco: contestó a la lista de «Qué necesito de ti para la
-Fase 1» de ese informe. La 115 (Bar Demo) se añade cuando está hecha.
+Se registran el 03/10/2026, tras el informe `agents/menu-diario/docs/RECONOCIMIENTO.md`. Las cuatro son de Bosco: contestó a la lista de «Qué necesito de ti para la
+Fase 1» de ese informe.
 
 112. **Se construye el Agente Menú Diario** (Bosco, 03/10/2026; resuelve la contradicción C1 del informe). `CLAUDE.md` y `docs/PRD.md` (RN-CRE-25) decían que el agente de IA
     que publica el menú «no existe todavía y no se simula». Bosco decide construirlo con el PRD de `agents/menu-diario/PRD.md`, **por fases (una por sesión), solo contra
@@ -2644,3 +2644,9 @@ Fase 1» de ese informe. La 115 (Bar Demo) se añade cuando está hecha.
     **menús**, pero entra en el de trabajos y tareas (`is_eligible_job_candidate`, `list_task_candidates`) y, al estar autorizado en un restaurante, ve sus finanzas e informes
     (RN-REP-31). Bosco autoriza una migración nueva que lo excluya, **excepción puntual a «no modificar funciones existentes» del PRD del agente (§12)**. Se propone el
     diseño exacto (qué marca lleva el miembro y qué funciones toca) en la Fase 2 y **se aprueba antes de aplicarlo**; hasta entonces no se escribe ninguna migración.
+115. **Bar Demo, restaurante de pruebas del agente** (Bosco, 03/10/2026: «doy mi permiso»; Magariños **no** se usa porque apunta a una web real). Permiso para escribir en
+    "Restavor pruebas" cuatro cosas en Bar Demo: plataforma web, dirección, plantilla de publicar y un menú diario, y «nada más». **Hecho el 03/10/2026:** `web_platform = landing_site`
+    y `website_url = https://www.restavor.com/pruebas-agente-menu`, por `set_establishment_data()` como `owner@cuotly.test` (una fila de `audit_log`), con el script
+    `agents/menu-diario/sql/bar-demo-pruebas.sql`. **No hecho, bloqueado:** la plantilla y el menú, porque `create_menu_template` y `create_menu` exigen Menú Diario y Bar Demo no lo tiene
+    (plan Impulso+ sin Menú Diario, ningún servicio); contratarlo emite un cobro de 229 € + IVA y una permanencia de 3 meses que el permiso no cubre. Se decide aparte
+    (informe, «Qué necesito de Bosco ahora»). Un resembrado del espacio demo deshace lo hecho: hay que relanzar el script.
