@@ -1,7 +1,8 @@
 "use client";
 
+import { useDeviceGate } from "@/app/agents/_components/DeviceGate";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { OriginChip } from "@/components/agents";
 import { Button, Field, Modal, TextArea } from "@/components/ui";
@@ -91,6 +92,9 @@ export function ReservationForm(props: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [fields, setFields] = useState<Partial<Record<BookingField, true>>>({});
   const [confirm, setConfirm] = useState<Extract<SaveReservationResult, { status: "needs_confirmation" }> | null>(null);
+  const gate = useDeviceGate();
+  /** El PIN tecleado en la tablet para esta misma acción, solo mientras el aviso de aforo espera «Guardar igualmente». */
+  const lastPin = useRef<string | null>(null);
   const [occupied, setOccupied] = useState<Readonly<Record<string, number>> | null>(null);
 
   // Los huecos del día elegido, por turno.
@@ -129,7 +133,14 @@ export function ReservationForm(props: Props) {
     setMessage(null);
     setFields({});
     startTransition(async () => {
-      const result = await saveReservationAction({
+      // En la tablet del local pide «¿Quién eres?» + PIN. Si el aviso de aforo pide «Guardar igualmente», es la misma
+      // acción: se reutiliza el PIN que se acaba de teclear en vez de volver a pedirlo.
+      const result = await gate.run(
+        es.agents.device.pin.for.save,
+        (pin) => {
+          lastPin.current = pin ?? null;
+          return saveReservationAction({
+        pin,
         establishmentId,
         reservationId: initial?.reservationId ?? null,
         date,
@@ -143,7 +154,11 @@ export function ReservationForm(props: Props) {
         force,
         idempotencyKey,
         ...(initial ? { previousDate: initial.date } : {}),
-      });
+          });
+        },
+        force ? (lastPin.current ?? undefined) : undefined,
+      );
+      if (result === null) return;
       if (result.status === "needs_confirmation") {
         setConfirm(result);
         return;

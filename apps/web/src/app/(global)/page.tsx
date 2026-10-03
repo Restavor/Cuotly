@@ -16,6 +16,8 @@ import { isPlatformPerson } from "@/core/platform-admin";
 import { totalUnread } from "@/core/global-home";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { agentsPageHref } from "@/core/reservations/agents-routes";
+import { loadDevice } from "@/services/agents/device";
 import { myProducts } from "@/services/app-gateway";
 import { myConversations } from "@/services/global-gateway";
 import { myPlatformAccess } from "@/services/platform-gateway";
@@ -40,6 +42,10 @@ import { loadGlobalHome } from "./global-load";
 export const dynamic = "force-dynamic";
 
 export default async function AppHomePage() {
+  // La tablet del local se salta el Inicio de Restavor app y abre siempre Reservas › Hoy (PRD de agents §3.3).
+  const device = await loadDevice();
+  if (device.kind === "active") redirect(agentsPageHref(device.establishmentId, "today"));
+
   const supabase = await createClient();
   const {
     data: { user },

@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppShell, type ShellNotification } from "@/components/shell/AppShell";
 import type { AgentsNavContext } from "@/components/shell/navigation";
+import { Icon } from "@/components/ui/Icon";
 import { totalUnread } from "@/core/global-home";
+import { agentsPageHref } from "@/core/reservations/agents-routes";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 import { avatarLink } from "@/services/avatar-storage";
@@ -10,6 +13,10 @@ import { myConversations } from "@/services/global-gateway";
 
 import { searchEverything } from "../espacios/[slug]/shell-actions";
 import { loadProductAccess } from "../product-access";
+import { DeviceGateProvider } from "./_components/DeviceGate";
+import { ElevationBar } from "./_components/ElevationBar";
+import { SupportBar } from "./_components/SupportBar";
+import { noSearchAction } from "./device-actions";
 
 type EventKey = keyof typeof es.notifications.events;
 
@@ -29,6 +36,49 @@ export async function AgentsShell({
   nav?: AgentsNavContext | null;
   children: React.ReactNode;
 }) {
+  // La tablet del local no es una persona con cuenta (PRD de agents §3.3): sin avisos, sin mensajes, sin «Mi cuenta» ni
+  // cambio de producto. Entra por su dispositivo, y cada acción que cambia algo pide «¿Quién eres?» + PIN.
+  if (nav && nav.deviceName != null) {
+    const todayHref = agentsPageHref(nav.establishmentId, "today");
+    return (
+      <AppShell
+        context="agents"
+        agentsNav={nav}
+        userInitial={(nav.deviceName.trim()[0] ?? "T").toUpperCase()}
+        userAvatarUrl={null}
+        userLabel={nav.deviceName}
+        productAccess={null}
+        notifications={[]}
+        unreadMessages={0}
+        onSearch={noSearchAction}
+        agentsBanner={
+          nav.elevation ? (
+            <ElevationBar
+              establishmentId={nav.establishmentId}
+              name={nav.elevation.name}
+              secondsLeft={nav.elevation.secondsLeft}
+              todayHref={todayHref}
+            />
+          ) : null
+        }
+        agentsSidebarExtra={
+          nav.elevation ? null : (
+            <Link
+              href={agentsPageHref(nav.establishmentId, "unlock")}
+              data-testid="device-unlock-link"
+              className="flex min-h-11 items-center gap-3 rounded-field px-3 text-sm font-medium text-sidebar-text hover:bg-sidebar-raised hover:text-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+            >
+              <Icon name="lock" className="h-4 w-4 shrink-0" />
+              {es.agents.device.unlock.link}
+            </Link>
+          )
+        }
+      >
+        <DeviceGateProvider>{children}</DeviceGateProvider>
+      </AppShell>
+    );
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -76,6 +126,11 @@ export async function AgentsShell({
       notifications={notifications}
       unreadMessages={conversaciones === null ? 0 : totalUnread(conversaciones)}
       onSearch={searchEverything}
+      agentsBanner={
+        nav?.supportSession ? (
+          <SupportBar restaurantName={nav.name} sessionId={nav.supportSession.id} expiresAt={nav.supportSession.expiresAt} />
+        ) : null
+      }
     >
       {children}
     </AppShell>

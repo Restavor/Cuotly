@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ErrorState, NoPermissionState, PageHeader } from "@/components/ui";
 import { agentsPageHref } from "@/core/reservations/agents-routes";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
 import { loadSchedule } from "@/services/reservations-gateway";
 
 import { requireAgentsPage } from "../../../agents-context";
@@ -22,7 +22,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const t = es.agents.agenda;
   if (access.kind === "denied") return <NoPermissionState />;
 
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
   let schedule;
   try {
     schedule = await loadSchedule(supabase, id);

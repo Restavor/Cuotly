@@ -18,7 +18,9 @@ export default async function MorePage({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const access = await requireAgentsPage(id, "more");
   const t = es.agents.menu;
-  const { nav } = access;
+  const { nav, mode } = access;
+  // La tablet no es una cuenta (PRD de agents §3.3): sin «Mi cuenta» ni volver a la puerta de Restavor.
+  const esTablet = mode === "device";
 
   const abre = (page: AgentsPage) =>
     guardAgentsPage(nav.establishmentId, nav.actor, nav.serviceStatus, page).kind === "allow";
@@ -26,6 +28,7 @@ export default async function MorePage({ params }: { params: Promise<{ id: strin
   const reservas: readonly (readonly [AgentsPage, string, IconName])[] = [
     ["settings", t.hoursTitle, "settings"],
     ["team", t.teamTitle, "team"],
+    ["history", es.agents.history.title, "request"],
     ["connections", t.connectionsTitle, "switchSpace"],
   ];
   const agentes: readonly (readonly [AgentsPage, string, IconName, string | undefined])[] = [
@@ -48,6 +51,8 @@ export default async function MorePage({ params }: { params: Promise<{ id: strin
     </li>
   );
 
+  // En la tablet con los Ajustes cerrados, la puerta del PIN es lo que sustituye a «Ajustes».
+  const abrirConPin = esTablet && nav.elevation == null;
   const visiblesReservas = reservas.filter(([page]) => abre(page));
   const visiblesAgentes = agentes.filter(([page]) => abre(page));
 
@@ -55,9 +60,12 @@ export default async function MorePage({ params }: { params: Promise<{ id: strin
     <div className="space-y-6">
       <PageHeader title={t.more} subtitle={nav.name} />
 
-      {visiblesReservas.length > 0 ? (
+      {visiblesReservas.length > 0 || abrirConPin ? (
         <Card title={t.reservationsSection}>
-          <ul className="divide-y divide-border">{visiblesReservas.map(([page, label, icon]) => fila(page, label, icon))}</ul>
+          <ul className="divide-y divide-border">
+            {visiblesReservas.map(([page, label, icon]) => fila(page, label, icon))}
+            {abrirConPin ? fila("unlock", es.agents.device.unlock.link, "lock") : null}
+          </ul>
         </Card>
       ) : null}
 
@@ -69,18 +77,20 @@ export default async function MorePage({ params }: { params: Promise<{ id: strin
         </Card>
       ) : null}
 
-      <ul className="space-y-2 text-sm">
-        <li>
-          <Link href="/" className="font-medium text-cuotly-green hover:underline">
-            {t.backToApp}
-          </Link>
-        </li>
-        <li>
-          <Link href="/cuenta" className="font-medium text-cuotly-green hover:underline">
-            {t.account}
-          </Link>
-        </li>
-      </ul>
+      {esTablet ? null : (
+        <ul className="space-y-2 text-sm">
+          <li>
+            <Link href="/" className="font-medium text-cuotly-green hover:underline">
+              {t.backToApp}
+            </Link>
+          </li>
+          <li>
+            <Link href="/cuenta" className="font-medium text-cuotly-green hover:underline">
+              {t.account}
+            </Link>
+          </li>
+        </ul>
+      )}
     </div>
   );
 }

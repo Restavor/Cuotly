@@ -5507,6 +5507,60 @@ app instalable y modo sin conexión (J).
 
 Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase D hasta que Bosco lo diga.**
 
+### Fase D · Equipo con PIN, tablet del local y soporte · 03/10/2026 (construida; falta la comprobación de Bosco)
+
+Criterios del PRD §15 (EQU-01 a EQU-03, SOP-01):
+
+- [x] **EQU-01 Ajustes › Equipo**: las personas del restaurante (Propietarios, Encargados y Equipo sin cuenta, por ese orden), añadir con PIN de 4 cifras dos veces, cambiar PIN, quitar
+  (se desactiva y el PIN queda libre), PIN único entre los activos del restaurante, «Mi PIN para la tablet» (solo desde tu cuenta) e invitar a un Propietario o a un Encargado (ver decisión 126).
+  Un Encargado gestiona el Equipo; no invita ni quita Encargados. Primer uso: el paso de Equipo del asistente configura de verdad.
+- [x] **EQU-02 La tablet del local**: se activa desde una cuenta de Propietario o Encargado, guarda solo el hash de su token en una cookie `httpOnly` y no es un usuario de Supabase
+  (decisión 121). Sin PIN solo se ven las fichas; cada cambio de la agenda pide «¿Quién eres?» al guardar y queda a nombre de quien puso su PIN. «Ajustes con PIN» (solo Encargado o
+  Propietario) abre Ajustes 2 minutos deslizantes. Bloqueo escalonado de PIN: 1 min, 5 min, 30 min y 2 h (decisión 122). Desactivar la tablet surte efecto al recargar. `proxy.ts` y
+  `/`, `/agents` entienden la cookie del dispositivo (decisión 128).
+- [x] **EQU-03 Varios restaurantes**: la tablet vale solo para el suyo (pedir otro es «sin acceso»); quien lleva varios los ve en su cuenta como siempre.
+- [x] **SOP-01 Soporte de Reservas**: «Abrir como soporte» exige el segundo paso (`aal2`), la marca de soporte de Reservas, un motivo y 30/60/120 minutos; la sesión es de solo lectura,
+  caduca y se cierra con «Salir». El motivo no se copia a `audit_log`. **Ajustes › Historial** enseña a la persona del restaurante quién hizo qué, y del equipo de Restavor solo
+  «Restavor (soporte)», nunca quién fue (CLAUDE.md, P7).
+- [x] Tests unitarios, suite SQL 92 (RN-APP-06 a RN-APP-09), e2e de equipo, tablet, PIN, bloqueo, Ajustes con PIN, desactivar y soporte con TOTP de verdad.
+- [ ] Revisión independiente del diff contra el PRD y CLAUDE.md (ver «Revisión independiente», más abajo).
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase D»; **antes hay que aplicar la migración 170, poner `AGENTS_PIN_SECRET` en Vercel y resembrar**).
+
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.706 tests** en verde; **las 92 suites SQL** en el orden del CI sobre una base limpia con las 170
+migraciones, y los dos sembrados dos veces (**151 tablas, 0 sin RLS**); `agenda-concurrency-test.mjs` y el nuevo `device-concurrency-test.mjs` (veinte PIN equivocados a la vez dejan pasar
+solo cuatro avisos y un único bloqueo; con el dispositivo bloqueado ni el PIN bueno entra; la segunda ronda dura más que la primera; quitando a propósito el bloqueo de la fila del
+dispositivo falla); **22 e2e con datos** contra PostgREST local con el sembrado (12 nuevos, entre ellos el segundo paso con un código TOTP calculado). La suite 92 se comprobó con 11
+mutaciones (se rompió a propósito la matriz de operaciones, el rol mínimo, el PIN de otro restaurante, el bloqueo, el olvido a las 24 h, la suplantación, «Ajustes abiertos», el aal2 del
+soporte, el motivo en auditoría y la identidad en el historial): las 11 las atrapa. La primera pasada solo atrapaba 9: «Ajustes abiertos» no tenía test y ahora lo tiene.
+
+Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): el modal de PIN no aparecía porque se abría dentro de una transición que no terminaba hasta que la
+acción acababa (se abre fuera, con `setTimeout`); la Fase B afirmaba que la tablet no puede crear reservas (cambiado por la decisión 123); acciones de auditoría sin nombre en español;
+un test que daba por fija una zona horaria; un perfil que el disparador creaba sin nombre; y filas de bloqueo compartidas entre dispositivos en la suite.
+
+Decisiones (en `docs/DECISIONES.md`, 121 a 129):
+
+- **121** Cómo actúa el Equipo desde la tablet: una única puerta de servidor (`reservation_device_act`, solo `service_role`) que valida dispositivo y PIN y llama a la MISMA función de la agenda.
+- **122** El bloqueo de PIN crece (1 min, 5, 30, 2 h; se olvida a las 24 h): con solo «1 minuto» se probarían los 10.000 PIN en unas 33 horas.
+- **123** La tablet ofrece «Nueva reserva» y los botones de cambiar; el PIN se pide al guardar y **no hay selector de persona** (la maqueta lo tiene; con PIN no hace falta).
+- **124** «Ajustes con PIN»: solo vale el PIN de un Encargado o Propietario, dos minutos deslizantes.
+- **125** Dónde se abre y cómo se vuelve del soporte de Reservas (ficha del espacio y `/administracion/reservas`, hasta la Fase E).
+- **126** **PENDIENTE DE BOSCO**: quién añade y quita Propietarios (PRD §3.2 contra RN-EST-17).
+- **127** El segundo paso de prueba del sembrado. **128** `/` y `/agents` con la cookie de un dispositivo. **129** «Abrir» una ficha sin PIN se anota como el sistema.
+
+Hallazgos que conviene saber:
+
+- La migración 170 **se editó en su sitio** durante la fase (no estaba subida a ninguna base: mismo precedente que la decisión 120).
+- **Contradicción abierta (decisión 126):** el PRD §3.2 dice que el Propietario añade y quita Propietarios; el sistema de Restavor web (RN-EST-17, `assert_can_manage_access`) lo reserva al
+  equipo del espacio. No se ha tocado nada de Restavor web. Tampoco hay guarda de «último Propietario». Hace falta que Bosco decida.
+- Las maquetas traen un selector de persona al pulsar guardar en la tablet; no se ha hecho (decisión 123).
+- La tablet lee con la clave de servicio, acotada al restaurante del dispositivo; `lecturas-acotadas.test.ts` falla si una lectura nueva no lo está.
+- `SUPABASE_SERVICE_ROLE_KEY` y `AGENTS_PIN_SECRET` tienen que estar en Vercel (la segunda, en Preview).
+
+Lo que **no** está y es de fases posteriores: aprobar solicitudes, cobros y recargas (E), avisos a comensales (F), encender el agente (G), formulario web (H), conectores (I), app instalable y
+modo sin conexión (J).
+
+Se paró aquí, como pide `CLAUDE.md`: **no se empieza la Fase E hasta que Bosco lo diga.**
+
 ## Antes de lanzar
 El bloque legal y fiscal (§170.1 de la especificación maestra) **debe revisarlo un profesional
 cualificado**. No se lanza sin eso.

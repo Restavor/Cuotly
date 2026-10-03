@@ -108,10 +108,11 @@ test.describe("Restavor agents · barra de teléfono", () => {
     }
   });
 
-  test("la tablet sin PIN no tiene el (+) y su barra son tres destinos y Más", async ({ page }) => {
+  test("la tablet sin PIN tiene el (+) Nueva (el PIN se pide al guardar) y su barra: Hoy, Calendario, Nueva, Agente y Más", async ({ page }) => {
     await page.goto("/armazon/agents?actor=device");
     const barra = page.getByTestId("mobile-nav");
-    await expect(barra.getByTestId("mobile-create-direct")).toHaveCount(0);
-    await expect(barra.getByRole("link")).toHaveCount(4);
+    // Fase D (`PinTablet`: «Para guardar: Nueva reserva…»): abrir el formulario no cambia nada; el PIN se pide al guardar.
+    await expect(barra.getByTestId("mobile-create-direct")).toHaveCount(1);
+    await expect(barra.getByRole("link")).toHaveCount(5);
   });
 });

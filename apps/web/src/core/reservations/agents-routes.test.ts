@@ -145,11 +145,12 @@ describe("AGT-03 · qué pantalla se abre en cada estado y para cada persona", (
     expect(g(manager, "active", "plan")).toBe("denied");
   });
 
-  it("RN-APP-05 · la tablet sin PIN no abre Ajustes, Saldo ni Plan, ni crea reservas", () => {
-    for (const page of ["settings", "team", "connections", "balance", "plan", "newReservation"] as const) {
+  it("RN-APP-05 · la tablet sin PIN no abre Ajustes, Equipo, Historial, Saldo ni Plan", () => {
+    for (const page of ["settings", "team", "history", "connections", "balance", "plan"] as const) {
       expect(g(tablet, "active", page), page).toBe("denied");
     }
-    for (const page of ["today", "calendar", "calls", "help", "more"] as const) {
+    // Abrir el formulario de «Nueva reserva» no cambia nada: el PIN se pide al guardar (`PinTablet`, PRD §3.3).
+    for (const page of ["today", "calendar", "calls", "help", "more", "newReservation", "unlock"] as const) {
       expect(g(tablet, "active", page), page).toBe("allow");
     }
   });

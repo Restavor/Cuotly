@@ -19,7 +19,8 @@
 --       jose@casapepe.test     José García, Propietario (y Encargado de Casa Pepe Centro)
 --       maria@casapepe.test    María García, Propietaria
 --       luis@casapepe.test     Luis Martín, Encargado (Editor con «Gestionar Reservas»)
---       Equipo sin cuenta: Ana Ruiz (PIN 1234) y Diego Navas (PIN 5678)
+--       Equipo sin cuenta: Ana Ruiz (PIN 1234) y Diego Navas (PIN 5678). PIN de la tablet de José 4321 y de
+--       Luis 8765 (María, sin PIN todavía).
 --   Casa Pepe Centro ..... para el selector de restaurante; sin saldo.
 --   Taberna Sol .......... solo Reservas (sin plan de mantenimiento); dos tandas de cena de martes a
 --                          sábado (para las alternativas); sin saldo (el caso «sin saldo»).
@@ -30,6 +31,10 @@
 --       Bodega Norte (aprobada, sin pagar) · Mesón del Puerto (cobro vencido) · Cervecería Roma
 --       (en pausa) · Asador Vega (en baja) · Casa Mar (cerrada), y dos solicitudes:
 --       Taberna Levante (pendiente de aprobar) y Café Rechazado (rechazada).
+--   soporte@cuotly.test .. un administrador del espacio CON la marca de soporte de Reservas y el segundo
+--                          paso (app autenticadora) ya registrado con un secreto de prueba fijo
+--                          (`RESTAVORSOPORTEPRUEBASSEGUNDOPAS`, en `docs/agents/PRUEBAS.md`): para
+--                          probar «Abrir como soporte» (Fase D, `aal2`). Los e2e generan el código.
 --   admin@cuotly.test .... un administrador del espacio SIN la marca de soporte de Reservas, para
 --                          comprobar que no ve a los comensales. La marca la llevan Elena
 --                          (owner@cuotly.test) e info@restavor.com si ya tiene cuenta.
@@ -37,10 +42,10 @@
 --
 -- Lo que NO hace, y por qué:
 --
---   · No registra un factor TOTP a nadie. PRD §16 lo pedía para probar el segundo paso, pero
---     `proxy.ts` manda a `/cuenta/verificar` a cualquiera con un factor verificado en cada entrada:
---     a Elena le rompería todos los recorridos que entran con ella sin código. Se hace en la Fase D,
---     con un usuario de soporte propio (decisión 106).
+--   · No registra ningún factor TOTP a Elena ni a `info@restavor.com`: `proxy.ts` manda a
+--     `/cuenta/verificar` a cualquiera con un factor verificado en cada entrada, y a Elena le
+--     rompería todos los recorridos que entran con ella sin código (decisión 106). El segundo paso
+--     de prueba (Fase D) lo lleva un usuario de soporte propio, `soporte@cuotly.test`.
 --   · No emite cobros ni recibos de Reservas (Fase E): el estado de cada restaurante es el de
 --     `reservation_settings`, tal como lo dejaría la aprobación y el barrido.
 --   · No sube archivos de verdad: los tres documentos del agente apuntan a rutas del almacenamiento
@@ -82,7 +87,7 @@ delete from public.establishments where id::text like 'e5200000-%';
 delete from public.groups where id::text like 'e5100000-%';
 delete from auth.users
 where email like '%@casapepe.test' or email like '%@tabernasol.test' or email like '%@barlaplaza.test'
-   or email = 'admin@cuotly.test';
+   or email = 'admin@cuotly.test' or email = 'soporte@cuotly.test';
 
 -- ============================================================
 -- 1 · Las cuentas.
@@ -107,7 +112,8 @@ from (values
   ('e5000000-0000-0000-0000-000000000004', 'rosa@tabernasol.test', 'Rosa Prieto'),
   ('e5000000-0000-0000-0000-000000000005', 'carla@barlaplaza.test', 'Carla Sanz'),
   ('e5000000-0000-0000-0000-000000000006', 'estados@casapepe.test', 'Propietario de los restaurantes de estado'),
-  ('e5000000-0000-0000-0000-000000000007', 'admin@cuotly.test', 'Administrador sin soporte de Reservas')
+  ('e5000000-0000-0000-0000-000000000007', 'admin@cuotly.test', 'Administrador sin soporte de Reservas'),
+  ('e5000000-0000-0000-0000-000000000008', 'soporte@cuotly.test', 'Soporte de Reservas')
 ) as v(id, email, nombre);
 
 insert into auth.identities
@@ -129,13 +135,40 @@ insert into public.space_memberships (space_id, user_id, role, status)
 values ('d1000000-0000-0000-0000-000000000001', 'e5000000-0000-0000-0000-000000000007', 'admin', 'active')
 on conflict (space_id, user_id) do update set role = 'admin', status = 'active';
 
+-- Un usuario de soporte propio (decisión 106, Fase D): administrador del espacio, con la marca y con el segundo paso.
+insert into public.space_memberships (space_id, user_id, role, status)
+values ('d1000000-0000-0000-0000-000000000001', 'e5000000-0000-0000-0000-000000000008', 'admin', 'active')
+on conflict (space_id, user_id) do update set role = 'admin', status = 'active';
+
 update public.space_memberships
 set can_support_reservations = true
 where space_id = 'd1000000-0000-0000-0000-000000000001'
   and user_id in (
     'd0000000-0000-0000-0000-000000000001',
+    'e5000000-0000-0000-0000-000000000008',
     (select id from public.profiles where lower(email) = lower('info@restavor.com'))
   );
+
+-- El segundo paso de `soporte@cuotly.test`: un factor TOTP ya verificado, con un secreto de prueba fijo (base32). En el
+-- Supabase real la tabla tiene la columna `secret`; la emulación de las suites (`bootstrap-postgres-local.sql`) no, y
+-- sin ella el factor existe pero no hay código que generar (ahí solo se comprueba lo que la base lee: que hay un factor).
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'auth' and table_name = 'mfa_factors' and column_name = 'secret') then
+    execute $q$
+      insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at, secret)
+      values ('e5000000-0000-0000-0000-0000000000f8', 'e5000000-0000-0000-0000-000000000008', 'Autenticador de pruebas',
+              'totp', 'verified', now(), now(), 'RESTAVORSOPORTEPRUEBASSEGUNDOPAS')
+    $q$;
+  else
+    execute $q$
+      insert into auth.mfa_factors (id, user_id, friendly_name, factor_type, status, created_at, updated_at)
+      values ('e5000000-0000-0000-0000-0000000000f8', 'e5000000-0000-0000-0000-000000000008', 'Autenticador de pruebas',
+              'totp', 'verified', now(), now())
+    $q$;
+  end if;
+end $$;
 
 -- ============================================================
 -- 2 · Grupos, restaurantes y accesos.
@@ -320,15 +353,19 @@ insert into public.reservation_closed_dates (space_id, establishment_id, date, r
 -- 6 · El Equipo de Casa Pepe (sin cuenta, con PIN) y las personas con cuenta.
 --
 -- El PIN se guarda cifrado con el secreto de PRUEBAS, que no es ningún secreto de producción.
+-- Ana 1234 y Diego 5678 (Equipo); José, Propietario, 4321 y Luis, Encargado, 8765 (para «Ajustes con PIN» en la
+-- tablet); María, Propietaria, sin PIN todavía (para ver «Sin PIN todavía»).
 -- ============================================================
 insert into public.reservation_staff (id, space_id, establishment_id, kind, name, user_id, pin_hmac) values
   ('e5800000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'staff', 'Ana Ruiz', null,
    encode(extensions.hmac('1234', 'restavor-pruebas-pin-secret', 'sha256'), 'hex')),
   ('e5800000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'staff', 'Diego Navas', null,
    encode(extensions.hmac('5678', 'restavor-pruebas-pin-secret', 'sha256'), 'hex')),
-  ('e5800000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'member', 'José García', 'e5000000-0000-0000-0000-000000000001', null),
+  ('e5800000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'member', 'José García', 'e5000000-0000-0000-0000-000000000001',
+   encode(extensions.hmac('4321', 'restavor-pruebas-pin-secret', 'sha256'), 'hex')),
   ('e5800000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'member', 'María García', 'e5000000-0000-0000-0000-000000000002', null),
-  ('e5800000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'member', 'Luis Martín', 'e5000000-0000-0000-0000-000000000003', null);
+  ('e5800000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000001', 'e5200000-0000-0000-0000-000000000001', 'member', 'Luis Martín', 'e5000000-0000-0000-0000-000000000003',
+   encode(extensions.hmac('8765', 'restavor-pruebas-pin-secret', 'sha256'), 'hex'));
 
 -- ============================================================
 -- 7 · Las conexiones de Casa Pepe y su error.
@@ -754,6 +791,20 @@ begin
     raise exception 'José tenía que ser Propietario de Casa Pepe y Encargado de Casa Pepe Centro';
   end if;
   reset role;
+
+  -- Soporte de Reservas: marcado y con segundo paso; el administrador de al lado, no.
+  if not exists (select 1 from public.space_memberships
+                 where space_id = 'd1000000-0000-0000-0000-000000000001' and user_id = 'e5000000-0000-0000-0000-000000000008'
+                   and can_support_reservations)
+     or exists (select 1 from public.space_memberships
+                where space_id = 'd1000000-0000-0000-0000-000000000001' and user_id = 'e5000000-0000-0000-0000-000000000007'
+                  and can_support_reservations) then
+    raise exception 'La marca de soporte de Reservas la lleva soporte@cuotly.test y no admin@cuotly.test';
+  end if;
+  if not exists (select 1 from auth.mfa_factors
+                 where user_id = 'e5000000-0000-0000-0000-000000000008' and factor_type = 'totp' and status = 'verified') then
+    raise exception 'soporte@cuotly.test tenía que tener un factor TOTP verificado';
+  end if;
 
   perform set_config('request.jwt.claims', '', false);
   raise notice 'Reservas: Casa Pepe, Casa Pepe Centro, Taberna Sol, Bar La Plaza y los restaurantes de estado están sembrados';

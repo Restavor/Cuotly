@@ -7,6 +7,7 @@ import { isReservationServiceStatus } from "@/core/app/products";
 import { agentsEntry, agentsPageHref, entryPageForStatus, type AgentsRestaurantRef } from "@/core/reservations/agents-routes";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadDevice } from "@/services/agents/device";
 import { myProducts } from "@/services/app-gateway";
 
 /**
@@ -17,6 +18,10 @@ import { myProducts } from "@/services/app-gateway";
 export const dynamic = "force-dynamic";
 
 export default async function AgentsHomePage() {
+  // En la tablet del local no hay selector: es de un solo restaurante y abre siempre Reservas › Hoy.
+  const device = await loadDevice();
+  if (device.kind === "active") redirect(agentsPageHref(device.establishmentId, "today"));
+
   const supabase = await createClient();
   const {
     data: { user },

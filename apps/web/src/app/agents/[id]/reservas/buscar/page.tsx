@@ -7,7 +7,7 @@ import { agentsPageHref, reservationHref } from "@/core/reservations/agents-rout
 import { formatShortDate } from "@/core/reservations/format";
 import { parseSearchQuery, searchReservations, type SearchHit } from "@/core/reservations/search";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
 import { loadSchedule, searchReservationRows, type ReservationRecordLite } from "@/services/reservations-gateway";
 
 import { requireAgentsPage } from "../../../agents-context";
@@ -74,7 +74,7 @@ export default async function Page({
   if (access.kind === "denied") return <NoPermissionState />;
 
   const query = parseSearchQuery(q);
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
 
   let hits: { upcoming: readonly SearchHit<ReservationRecordLite>[]; past: readonly SearchHit<ReservationRecordLite>[] } | null = null;
   let failed = false;

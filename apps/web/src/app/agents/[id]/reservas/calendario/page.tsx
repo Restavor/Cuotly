@@ -6,10 +6,10 @@ import { agentsPageHref, calendarHref, todayHref } from "@/core/reservations/age
 import { addMonths, buildCalendarMonth, isValidMonth, originBar } from "@/core/reservations/calendar";
 import { localDateOf } from "@/core/reservations/dates";
 import { formatMonth, formatShortDate, weekdayName } from "@/core/reservations/format";
-import { canReservations } from "@/core/reservations/permissions";
+import { canOffer } from "@/core/reservations/permissions";
 import { RESERVATION_ORIGINS } from "@/core/reservations/types";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
 import { loadCalendarRows, loadSchedule } from "@/services/reservations-gateway";
 import { realtimeChannelFor } from "@/services/reservations-realtime";
 
@@ -45,7 +45,7 @@ export default async function Page({
   if (access.kind === "denied") return <NoPermissionState />;
   const { nav } = access;
 
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
   let schedule;
   try {
     schedule = await loadSchedule(supabase, id);
@@ -66,7 +66,7 @@ export default async function Page({
 
   const hasShifts = schedule.shifts.some((s) => s.active);
   const calendar = buildCalendarMonth(month, rows, schedule.shifts, schedule.closedDates.map((c) => c.date));
-  const canCreate = canReservations(nav.actor, "create_reservation", { serviceStatus: nav.serviceStatus });
+  const canCreate = canOffer(nav.actor, "create_reservation", { serviceStatus: nav.serviceStatus });
 
   return (
     <div className="space-y-5">

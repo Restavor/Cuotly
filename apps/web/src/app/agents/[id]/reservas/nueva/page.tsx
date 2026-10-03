@@ -1,9 +1,10 @@
 import { NoPermissionState, EmptyState, ErrorState, ButtonLink, PageHeader } from "@/components/ui";
 import { agentsPageHref } from "@/core/reservations/agents-routes";
 import { isValidLocalDate, localDateOf } from "@/core/reservations/dates";
-import { canReservations } from "@/core/reservations/permissions";
+import { canOffer } from "@/core/reservations/permissions";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
+import { myDisplayName } from "@/services/agents/my-name";
 import { loadSchedule } from "@/services/reservations-gateway";
 
 import { requireAgentsPage } from "../../../agents-context";
@@ -36,7 +37,7 @@ export default async function Page({
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
   let schedule;
   try {
     schedule = await loadSchedule(supabase, id);
@@ -49,13 +50,10 @@ export default async function Page({
   const today = localDateOf(new Date(), schedule.timeZone);
   const startDate = fecha !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(fecha) && isValidLocalDate(fecha) && fecha >= today ? fecha : today;
 
-  const { data: userData } = await supabase.auth.getUser();
-  const { data: profile } = userData.user
-    ? await supabase.from("profiles").select("full_name, email").eq("id", userData.user.id).maybeSingle()
-    : { data: null };
-  const creatorName = profile?.full_name?.trim() || profile?.email || "";
+  // La tablet no es nadie en concreto: quien la crea es quien ponga su PIN al guardar (`PinTablet`).
+  const creatorName = access.mode === "device" ? t.newReservation.creatorByPin : await myDisplayName();
 
-  const canCreate = canReservations(nav.actor, "create_reservation", { serviceStatus: nav.serviceStatus });
+  const canCreate = canOffer(nav.actor, "create_reservation", { serviceStatus: nav.serviceStatus });
   const creationBlockedReason = canCreate ? null : t.newReservation.pausedReason;
 
   return (

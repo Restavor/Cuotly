@@ -5361,6 +5361,15 @@ export const es = {
       "reservations.onboarding_completed": "Primer uso de Reservas terminado",
       "reservations.schedule_saved": "Horarios de Reservas guardados",
       "reservations.settings_saved": "Ajustes de Reservas guardados",
+      "reservations.device_activated": "Dispositivo del local de Reservas activado",
+      "reservations.device_revoked": "Dispositivo del local de Reservas desactivado",
+      "reservations.my_pin_set": "PIN de la tablet de Reservas puesto o cambiado",
+      "reservations.pin_locked": "Tablet de Reservas bloqueada por demasiados PIN erróneos",
+      "reservations.staff_added": "Persona del Equipo de Reservas añadida",
+      "reservations.staff_pin_changed": "PIN de una persona del Equipo de Reservas cambiado",
+      "reservations.staff_removed": "Persona del Equipo de Reservas quitada",
+      "reservations.support_session_closed": "Sesión de soporte de Reservas cerrada",
+      "reservations.support_session_opened": "Sesión de soporte de Reservas abierta",
       "space.onboarding_completed": "Puesta en marcha completada",
       "space.ownership_transferred": "Propiedad del espacio transferida",
       "space.archived_by_owner": "Espacio archivado por su propietario",
@@ -8922,6 +8931,218 @@ export const es = {
       phaseConnectors: "Fase I (plataformas de reservas)",
     },
     /**
+     * Fase D · la tablet del local y el PIN (PRD de agents §3.3). Los textos de `PinTablet` y
+     * `AjustesEquipo` de `docs/agents/diseno/` son los definitivos.
+     */
+    device: {
+      pinSecretMissing: "Falta la clave de los PIN en el servidor. Avisa a Restavor.",
+      /** Lo que se dice cuando la tablet deniega algo. Nunca un error técnico. */
+      denied: {
+        wrongPin: (quedan?: number) =>
+          quedan === undefined
+            ? "PIN incorrecto."
+            : quedan === 1
+              ? "PIN incorrecto. Te queda 1 intento."
+              : `PIN incorrecto. Te quedan ${quedan} intentos.`,
+        locked: (minutos: number | null) =>
+          minutos === null
+            ? "Demasiados intentos. La tablet está bloqueada un rato."
+            : minutos === 1
+              ? "Demasiados intentos. La tablet está bloqueada 1 minuto."
+              : `Demasiados intentos. La tablet está bloqueada ${minutos} minutos.`,
+        forbidden: "Esto pide el PIN de un Encargado o de un Propietario.",
+        identityInvalid: "Esa persona ya no tiene acceso. Vuelve a poner tu PIN.",
+        noDevice: "Esta tablet se ha desactivado. Entra con tu cuenta.",
+      },
+      /** `PinTablet`: «¿Quién eres?» antes de cada acción que cambia algo. */
+      pin: {
+        title: "¿Quién eres?",
+        enter: "Pon tu PIN",
+        lockNote: "5 PIN erróneos bloquean la tablet 1 minuto.",
+        cancel: "Cancelar",
+        checking: "Comprobando…",
+        close: "Cerrar",
+        for: {
+          save: "Para guardar la reserva",
+          confirm: "Para confirmar el grupo",
+          reject: "Para rechazar el grupo",
+          noShow: "Para marcar «No vino»",
+          undoNoShow: "Para deshacer «No vino»",
+          cancel: "Para cancelar la reserva",
+          platformDone: "Para dar la cancelación por hecha",
+          dismiss: "Para marcar «No es duplicada»",
+        },
+      },
+      /** Ajustes en la tablet: solo con el PIN de un Encargado o de un Propietario, y 2 minutos sin tocar. */
+      unlock: {
+        link: "Ajustes con PIN",
+        title: "Ajustes con PIN",
+        reason: "Los ajustes piden el PIN de un Encargado o de un Propietario. Se cierran solos a los 2 minutos sin tocar.",
+        back: "Volver a Hoy",
+        notManager: "Ese PIN es del Equipo. Los ajustes piden el de un Encargado o de un Propietario.",
+        failed: "No se han podido abrir los Ajustes. Inténtalo de nuevo.",
+      },
+      elevation: {
+        open: (nombre: string) => `Ajustes abiertos con el PIN de ${nombre}`,
+        closesIn: (tiempo: string) => `Se cierran en ${tiempo}`,
+        exit: "Salir de Ajustes",
+      },
+      /** El nombre del dispositivo en la cabecera de la tablet. */
+      badge: (nombre: string) => `Tablet del local · ${nombre}`,
+      revoked: {
+        title: "Este dispositivo se ha desactivado",
+        reason: "Ya no es una tablet del local. Entra con tu cuenta para seguir.",
+        action: "Entrar con mi cuenta",
+      },
+    },
+    /** Fase D · Ajustes › Equipo (`AjustesEquipo`, EQU-01). */
+    team: {
+      title: "Equipo y tablet del local",
+      subtitle: "Quién entra en Reservas y desde dónde.",
+      peopleTitle: "Personas",
+      peopleCount: (n: number) => (n === 1 ? "1 persona" : `${n} personas`),
+      roles: { owner: "Propietario", manager: "Encargado", staff: "Equipo" },
+      entry: { member: "entra con email", staff: "PIN en la tablet" },
+      pinSet: "PIN puesto",
+      pinMissing: "Sin PIN todavía",
+      you: "Tú",
+      changePin: "Cambiar PIN",
+      remove: "Quitar",
+      removeManager: "Quitar de Reservas",
+      addTitle: "Añadir persona",
+      addHint: "Camareros: solo nombre y PIN de 4 cifras, sin email. Propietarios y encargados reciben una invitación por email.",
+      nameLabel: "Nombre",
+      pinLabel: "PIN de 4 cifras",
+      pinRepeatLabel: "Repite el PIN",
+      newPinLabel: "PIN nuevo",
+      save: "Guardar",
+      cancel: "Cancelar",
+      add: "Añadir",
+      added: "Persona añadida.",
+      pinChanged: "PIN cambiado.",
+      removed: "Persona quitada. Su PIN ya no vale.",
+      managerRemoved: "Ya no es Encargado de Reservas. Su PIN ya no vale.",
+      confirmRemove: (nombre: string) => `¿Quitar a ${nombre} del Equipo? Su PIN dejará de valer y se conserva su historial.`,
+      confirmRemoveManager: (nombre: string) =>
+        `¿Quitar a ${nombre} de Reservas? Deja de ser Encargado y su PIN deja de valer; conserva el resto de sus accesos.`,
+      errors: {
+        name: "Pon el nombre.",
+        pin: "El PIN son 4 cifras.",
+        pinsDiffer: "Los dos PIN no coinciden.",
+        pinInUse: "Ese PIN ya lo usa otra persona de este restaurante. Elige otro.",
+        failed: "No se ha podido guardar. Inténtalo de nuevo.",
+        noPermission: "No tienes permiso para hacer esto.",
+        pinSecretMissing: "Falta la clave de los PIN en el servidor. Avisa a Restavor.",
+      },
+      myPin: {
+        title: "Mi PIN para la tablet",
+        body: "Con tu PIN actúas en la tablet del local con tus permisos de Propietario o de Encargado.",
+        set: "Tienes PIN.",
+        unset: "Todavía no tienes PIN.",
+        done: "Tu PIN está guardado.",
+        button: "Poner o cambiar mi PIN",
+      },
+      invite: {
+        title: "Invitar a un Propietario o a un Encargado",
+        hint: "Se le manda una invitación por email. Si todavía no tiene cuenta, el equipo de Restavor la aprueba antes.",
+        emailLabel: "Email",
+        roleLabel: "Rol",
+        manager: "Encargado de Reservas",
+        owner: "Propietario",
+        send: "Enviar invitación",
+        sent: "Invitación enviada.",
+        direct: "Ya tenía cuenta: tiene acceso desde ahora.",
+        errors: { email: "Escribe un email válido." },
+      },
+      devices: {
+        title: "Tablets y móviles del local",
+        empty: "Todavía no hay ningún dispositivo del local.",
+        since: (cuando: string) => `Activo desde ${cuando}`,
+        lastUsed: (cuando: string) => `usado ${cuando}`,
+        todayAt: (hora: string) => `hoy ${hora}`,
+        never: "sin usar todavía",
+        deactivate: "Desactivar",
+        confirmDeactivate: (nombre: string) =>
+          `¿Desactivar «${nombre}»? Dejará de ser una tablet del local en ese momento. Si es esta, vuelves a tu cuenta.`,
+        deactivated: "Dispositivo desactivado.",
+        thisOne: "Este dispositivo",
+        activateTitle: "Usar este dispositivo como tablet del local",
+        activateBody:
+          "En un dispositivo del local se ven las reservas sin PIN. El PIN se pide para crear, editar, cancelar, confirmar o marcar «No vino». Si pierdes o te roban una tablet, desactívala aquí.",
+        activateWarning:
+          "Al activarlo, este navegador deja de usar tu cuenta y abre siempre Reservas › Hoy. Para volver a usar tu cuenta, desactiva primero el dispositivo.",
+        deviceNameLabel: "Nombre del dispositivo",
+        deviceNamePlaceholder: "Tablet de la barra",
+        activate: "Usar este dispositivo como tablet del local",
+        activating: "Activando…",
+        errors: { name: "Pon un nombre al dispositivo.", failed: "No se ha podido activar el dispositivo." },
+        onlyAccount: "Solo se puede activar desde tu cuenta, no desde otra tablet.",
+      },
+      pinSecretMissingTitle: "Falta configurar los PIN",
+      pinSecretMissingBody:
+        "El servidor no tiene la clave de los PIN (`AGENTS_PIN_SECRET`). Sin ella no se pueden poner PIN ni activar tablets. Avisa a Restavor.",
+      loadFailed: "No hemos podido cargar el Equipo.",
+    },
+    /** Fase D · la sesión de soporte de Reservas (PRD §3.4, SOP-01). */
+    support: {
+      bar: (restaurante: string) => `Estás viendo Reservas de ${restaurante} como Restavor (soporte)`,
+      remaining: (minutos: number) => (minutos <= 1 ? "queda menos de 1 minuto" : `quedan ${minutos} min`),
+      leave: "Salir",
+      sectionTitle: "Abrir Reservas como soporte",
+      sectionBody:
+        "Verás los datos de los comensales del restaurante que elijas. Hace falta el segundo paso de verificación y un motivo: queda registrado y el restaurante lo ve.",
+      noneMarked: "No estás marcado como soporte de Reservas en este espacio. Solo el propietario del espacio puede marcarte.",
+      open: "Abrir como soporte",
+      dialogTitle: (restaurante: string) => `Abrir Reservas de ${restaurante} como soporte`,
+      reasonLabel: "Motivo",
+      reasonHint: "Queda registrado y lo ve el restaurante («Restavor entró como soporte · motivo»).",
+      minutesLabel: "Duración",
+      minutes: (n: number) => (n === 60 ? "1 hora" : n === 120 ? "2 horas" : `${n} minutos`),
+      submit: "Abrir",
+      errors: {
+        reason: "Escribe el motivo.",
+        twoFactor:
+          "Para abrir Reservas como soporte hace falta el segundo paso de verificación. Actívalo en Mi cuenta y vuelve a entrar con tu código.",
+        notMarked: "No estás marcado como soporte de Reservas para este restaurante.",
+        failed: "No se ha podido abrir la sesión de soporte.",
+      },
+      expired: "La sesión de soporte ha terminado.",
+      platformTitle: "Abrir Reservas como soporte",
+      platformSearch: "Busca un restaurante",
+      platformEmpty: "Ningún restaurante con Reservas coincide.",
+      statusLabel: { open: "Abierta", platform: "Plataforma" },
+    },
+    /** Fase D · Ajustes › Historial (PRD §11.1). */
+    history: {
+      title: "Historial de Reservas",
+      subtitle: "Cambios en los ajustes, el Equipo y los dispositivos, y cuándo ha entrado Restavor como soporte.",
+      empty: "Todavía no hay nada que enseñar",
+      emptyReason: "Aquí aparecerán los cambios de ajustes, de Equipo y de dispositivos.",
+      loadFailed: "No hemos podido cargar el historial.",
+      supportEntered: (motivo: string) => `Restavor entró como soporte · ${motivo}`,
+      supportEnded: (hora: string) => `terminó a las ${hora}`,
+      events: {
+        staffAdded: (quien: string, nombre: string) => `${quien} añadió a ${nombre} al Equipo`,
+        staffPinChanged: (quien: string, nombre: string) => `${quien} cambió el PIN de ${nombre}`,
+        staffRemoved: (quien: string, nombre: string) => `${quien} quitó a ${nombre} del Equipo`,
+        myPinSet: (quien: string) => `${quien} puso o cambió su PIN para la tablet`,
+        deviceActivated: (quien: string) => `${quien} activó un dispositivo del local`,
+        deviceRevoked: (quien: string) => `${quien} desactivó un dispositivo del local`,
+        pinLocked: (segundos: number) =>
+          segundos >= 3600
+            ? `Una tablet se bloqueó ${Math.round(segundos / 3600)} h por demasiados PIN erróneos`
+            : segundos >= 60
+              ? `Una tablet se bloqueó ${Math.round(segundos / 60)} min por demasiados PIN erróneos`
+              : `Una tablet se bloqueó por demasiados PIN erróneos`,
+        scheduleSaved: (quien: string) => `${quien} cambió los horarios y turnos`,
+        settingsSaved: (quien: string) => `${quien} cambió los ajustes de Reservas`,
+        closedDateSet: (quien: string, fecha: string) => `${quien} cerró el ${fecha}`,
+        closedDateRemoved: (quien: string, fecha: string) => `${quien} reabrió el ${fecha}`,
+        onboardingCompleted: (quien: string) => `${quien} terminó la configuración inicial`,
+        other: (quien: string) => `${quien} hizo un cambio`,
+      },
+    },
+    /**
      * La agenda de Reservas (Fase C; PRD de agents §6 y §11.1): Hoy, Nueva reserva, la
      * ficha, editar, cancelar, buscar, el calendario, los horarios y el primer uso.
      * Los textos de las maquetas de `docs/agents/diseno/` son los definitivos.
@@ -9050,6 +9271,8 @@ export const es = {
         noteHint: "Solo la ve el equipo del restaurante.",
         origin: "Manual",
         createdBy: (quien: string) => `La creas tú · ${quien}`,
+        /** En la tablet del local no hay «quién» hasta que alguien pone su PIN al guardar. */
+        creatorByPin: "con tu PIN",
         save: "Guardar reserva",
         seatsLeft: (libres: number, aforo: number) =>
           libres >= 0 ? `Quedan ${libres} de ${aforo} plazas` : `Pasadas ${-libres} de ${aforo} plazas`,
@@ -9217,7 +9440,7 @@ export const es = {
       },
       hours: {
         title: "Horarios y aforo",
-        tabs: { hours: "Horarios", team: "Equipo", connections: "Conexiones" },
+        tabs: { hours: "Horarios", team: "Equipo", history: "Historial", connections: "Conexiones" },
         tabsLabel: "Secciones de ajustes",
         openDays: "Días que abrís",
         openDaysHint: "Atajo: abre o cierra ese día en todos los turnos. Abajo puedes elegir los días de cada turno.",
@@ -9296,7 +9519,9 @@ export const es = {
         capacityTitle: "¿Cuánta gente cabe y cuándo es un grupo grande?",
         capacityHint: "El aforo es el máximo de personas a la vez en cada turno. Los grupos grandes del agente y de la web quedan pendientes hasta que los confirmes.",
         teamTitle: "Equipo y tablet del local",
-        teamReason: "Añadir a tu equipo con su PIN y activar la tablet del local llega con la Fase D. Todavía no se puede hacer desde aquí.",
+        teamReason:
+          "Añade a tu equipo con su PIN y activa la tablet del local desde Ajustes › Equipo. Puedes hacerlo ahora o cuando quieras; el Equipo entra en la tablet solo con su PIN.",
+        teamAction: "Abrir Equipo y tablet",
         agentTitle: "Agente de llamadas",
         agentReason: "Sus teléfonos y su información los configura Restavor y llegan con la Fase G. Todavía no se puede hacer desde aquí.",
         back: "Atrás",
@@ -9565,6 +9790,7 @@ export const es = {
       requests: "Solicitudes de alta",
       charges: "Cobros e impagos",
       support: "Modo soporte",
+      reservations: "Reservas (soporte)",
       incidents: "Incidencias",
       status: "Estado y festivos",
       audit: "Auditoría",

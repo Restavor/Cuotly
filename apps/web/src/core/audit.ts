@@ -459,6 +459,17 @@ export const AUDIT_ACTIONS = [
   "reservations.onboarding_completed",
   "reservations.schedule_saved",
   "reservations.settings_saved",
+  // Fase D (migración 170) · el Equipo con PIN, los dispositivos del local, los bloqueos de PIN y las sesiones de soporte de
+  // Reservas. Ninguna lleva un PIN ni datos de comensales (RN-RES-12); la del soporte tampoco el texto del motivo.
+  "reservations.device_activated",
+  "reservations.device_revoked",
+  "reservations.my_pin_set",
+  "reservations.pin_locked",
+  "reservations.staff_added",
+  "reservations.staff_pin_changed",
+  "reservations.staff_removed",
+  "reservations.support_session_closed",
+  "reservations.support_session_opened",
   "service.conditions_published",
   "service.archived",
   "service.created",

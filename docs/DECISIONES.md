@@ -2690,3 +2690,52 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
       «Cancélala también en X» en Hoy hasta pulsar «Hecho». Primer uso y Horarios guardan los identificadores que devuelve `save_reservation_shifts`, así que un segundo
       «Guardar» actualiza los turnos nuevos en vez de crear otros.
 
+## Fase D de Restavor agents · Equipo con PIN, tablet del local y soporte (03/10/2026)
+
+Se registran el 03/10/2026, al construir la Fase D (EQU-01, EQU-02, EQU-03, SOP-01). La 122 la aprobó Bosco; la 126 queda **pendiente de Bosco**; las demás son
+decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents/` deja abierto.
+
+121. **Cómo actúa el Equipo desde la tablet** (migración 170). Un dispositivo no es un usuario de Supabase (PRD §3.3), así que sus peticiones entran por el servidor y por
+    **una sola puerta**, `reservation_device_act()` (solo `service_role`): valida el token del dispositivo, valida el PIN (o la prueba firmada de «Ajustes abiertos») y
+    llama a la MISMA función de la agenda de la Fase C, de modo que aforo, bloqueo e idempotencia son idénticos. Si el PIN es de un Propietario o Encargado la transacción
+    corre «como esa persona» (la sesión de la transacción pasa a su usuario mientras dura la función y se restaura); si es del Equipo, un ajuste local
+    (`restavor.device_staff`) que `reservations_actor_type()` convierte en `staff`, y `reservation_log_event()`, `reservation_audit()`, `book_reservation()` y
+    `dismiss_duplicate()` anotan por su identificador (`actor_staff_id`, `created_by_staff_id`, `dismissed_by_staff_id`). Con sesión de usuario ese ajuste no vale, y el Equipo no
+    puede cambiar ajustes ni saltándose la puerta. Las **lecturas** de la tablet van con la clave de servicio, acotadas por restaurante: `agentsDb()` (que se niega a servir
+    otro restaurante) y una prueba (`lecturas-acotadas.test.ts`) que exige el filtro en cada `.from()` que una tablet pueda ejecutar. Las dos lecturas que la base comprueba
+    por la sesión de quien llama (`reservation_people`, `reservation_history_log`) entran por la puerta como operaciones con rol mínimo de Encargado. La 170 también amplía
+    `reservations_team_can_read()`: quien tiene abierta una sesión de soporte con segundo paso lee la configuración (no los datos de comensales) de los restaurantes de ese
+    espacio; sin esto, alguien de la plataforma que no es miembro del espacio vería las reservas pero no los turnos, y Hoy no se pintaría.
+122. **El bloqueo de PIN crece (Bosco, 03/10/2026).** El PRD pide 5 PIN erróneos → 1 minuto. Con 4 cifras y solo eso, quien tenga la tablet probaría los 10.000 PIN en unas 33 horas.
+    Bosco pidió que crezca: la primera tanda de 5 fallos bloquea 1 minuto (como el PRD), la segunda 5, la tercera 30 y de la cuarta en adelante 2 horas; un PIN bueno lo reinicia y
+    a las 24 horas sin fallos se olvida. Los números exactos (5, 30 y 2 h) son de Claude, en `pinLockSeconds()` y en `reservation_pin_lock_seconds()`; una prueba comprueba que
+    coinciden. Cada bloqueo queda en la auditoría y sale en el Historial.
+123. **La tablet ofrece «Nueva reserva» y los botones de cambiar; el PIN se pide al pulsar guardar, y no hay selector de persona.** `PinTablet` dice «Para guardar: Nueva reserva · …»
+    (el PIN llega al guardar) y PRD §3.3 dice «cada acción que cambia algo pide ¿Quién eres? + PIN». La Fase B había escrito que la tablet sin PIN «no crea reservas» y no abría
+    «Nueva»; se corrigió: `canOffer()` ofrece en pantalla las acciones de cambiar una reserva a la tablet sin PIN (el servidor sigue sin dejarle hacer nada sin PIN) y se
+    actualizaron las dos comprobaciones de la Fase B que lo negaban (`agents-routes.test.ts`, `navigation-agents.test.ts`) y el e2e del armazón. La maqueta elige primero a la
+    persona y luego pide su PIN; como el PIN es único en el restaurante, **identifica solo** y no se ha puesto el selector (menos pulsaciones; si Bosco lo quiere, se añade).
+124. **«Ajustes con PIN».** El menú de la tablet sin PIN no lleva Ajustes (RN-APP-05); lleva «Ajustes con PIN», que abre un teclado. Solo vale el PIN de un Encargado o Propietario (el
+    del Equipo dice que no). Lo que abre es una cookie firmada con `AGENTS_PIN_SECRET` (2 minutos, con renovación por cada toque y por cada cosa que se guarda; la cuenta atrás se
+    ve en una barra con «Salir de Ajustes») y el servidor vuelve a preguntar a la base de datos, en cada pantalla, que esa persona siga siendo Encargado o Propietario. Desde la
+    tablet no se hace «Mi PIN», ni invitar, ni activar dispositivos (son de una cuenta); sí añadir, cambiar el PIN y quitar al Equipo y desactivar dispositivos.
+125. **Soporte de Reservas: dónde se abre y cómo se vuelve.** La pestaña «Reservas» de la ficha del restaurante es de la Fase E (RVR-01), así que «Abrir como soporte» está en dos sitios
+    que ya existen o son pequeños: la lista de `/espacios/<espacio>/reservas` (a quien lleva la marca) y `/administracion/reservas` (a la plataforma con `can_support`, con búsqueda);
+    la pestaña de la Fase E reutilizará el mismo botón. La sesión pide motivo (el texto vive en la sesión y lo ve el restaurante; **no se copia a `audit_log`**, que solo guarda su
+    longitud, porque puede nombrar a un comensal) y dura 30, 60 o 120 minutos (la base admite de 5 a 240). Una cookie recuerda de dónde venía para devolver allí al salir o al
+    caducar; solo acepta esas dos direcciones.
+126. **PENDIENTE DE BOSCO · quién añade y quita Propietarios.** PRD §3.2 dice que el Propietario «añade y quita Propietarios y Encargados» y EQU-01 pide «invitar Propietario o Encargado
+    por email». Pero `assert_can_manage_access()` (RN-EST-17, decisión 51) deja a un Propietario del restaurante tocar a los Editores y **no a otro Propietario**: «al Propietario solo
+    lo toca el equipo». No se ha cambiado Restavor web. Hoy: un Propietario invita a **Encargados** (Editor con «Gestionar Reservas») y los quita de Reservas; invitar a otro
+    **Propietario** funciona si lo manda el equipo del espacio y a un Propietario del restaurante le da el aviso «solo el equipo»; los Propietarios no se quitan desde Equipo (se hace en
+    «Usuarios y accesos»). Tampoco hay «no se puede quitar al último Propietario»: `revoke_establishment_access()` no lo comprueba (es de Restavor web). Bosco decide si cambia RN-EST-17.
+127. **El segundo paso de prueba** (cumple la 106). `soporte@cuotly.test` (administrador del espacio `demo`, marcado como soporte) lleva un factor TOTP verificado con un secreto fijo
+    (`RESTAVORSOPORTEPRUEBASSEGUNDOPAS`, en `docs/agents/PRUEBAS.md`) sembrado en `auth.mfa_factors` (con la columna `secret` si existe); Elena e `info@restavor.com` no llevan ninguno
+    (la 106 sigue en pie). `supabase/config.toml` activa el TOTP (`enroll_enabled` y `verify_enabled`) para `supabase start`, y la pasarela de desarrollo (`scripts/supabase-local`)
+    entiende `challenge` y `verify` para poder recorrerlo en local. Si el Supabase alojado no acepta un secreto sembrado, se activa a mano desde «Mi cuenta» › Seguridad.
+128. **`/` y `/agents` con la cookie de un dispositivo.** La tablet se salta el Inicio de Restavor app y abre siempre Reservas › Hoy: la raíz y `/agents` la llevan ahí, y `proxy.ts` no
+    la manda a `/sesion-caducada` ni a `/cuenta/verificar` en `/` ni en `/agents/…` aunque la sesión personal haya caducado (solo mira que la cookie exista: es una comodidad, el
+    control es el servidor). Las rutas `/r`, `/widget`, `/reservar.js` y `/c` quedan fuera de las comprobaciones de sesión desde ya (PRD §3.3), aunque no existan hasta la Fase H.
+129. **«Abrir» una ficha sin PIN se anota como el sistema.** El PRD dice que sin PIN se ven las fichas, y abrir una quita «Nueva»: es la única escritura que la tablet hace sin PIN, y se
+    anota con actor `system` («Sistema»), no a nombre de nadie.
+

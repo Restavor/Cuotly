@@ -1,13 +1,11 @@
-import Link from "next/link";
-
 import { ErrorState, NoPermissionState, PageHeader } from "@/components/ui";
-import { agentsPageHref } from "@/core/reservations/agents-routes";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
 import { loadSchedule } from "@/services/reservations-gateway";
 
 import { requireAgentsPage } from "../../../../agents-context";
 import { ScheduleEditor } from "../../_components/ScheduleEditor";
+import { SettingsTabs } from "../_components/SettingsTabs";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +27,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
   let schedule;
   try {
     schedule = await loadSchedule(supabase, id);
@@ -38,29 +36,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   }
   if (schedule === null) return <ErrorState title={t.common.failedLoad} description={t.common.failedLoadReason} />;
 
-  const tabs = [
-    { href: agentsPageHref(id, "settings"), label: t.hours.tabs.hours, current: true },
-    { href: agentsPageHref(id, "team"), label: t.hours.tabs.team, current: false },
-    { href: agentsPageHref(id, "connections"), label: t.hours.tabs.connections, current: false },
-  ];
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <PageHeader title={t.hours.title} subtitle={access.nav.name} />
-      <nav aria-label={t.hours.tabsLabel} className="flex gap-1 border-b border-border">
-        {tabs.map((tab) => (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            aria-current={tab.current ? "page" : undefined}
-            className={`inline-flex min-h-[44px] items-center border-b-2 px-4 text-sm font-semibold ${
-              tab.current ? "border-primary text-primary" : "border-transparent text-text-secondary hover:text-text"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        ))}
-      </nav>
+      <SettingsTabs establishmentId={id} current="hours" />
       <ScheduleEditor establishmentId={id} schedule={schedule} />
     </div>
   );

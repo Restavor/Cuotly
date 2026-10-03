@@ -3,9 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import { validateReservationInput } from "@/core/reservations/booking-input";
+import { decodeDeviceAuthFailure, type DeviceAuthFailure } from "@/core/reservations/device";
 import type { ChangeReason, ReservationsChange } from "@/core/reservations/realtime";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
+import { renewElevation } from "@/services/agents/device";
+import { PinSecretMissingError } from "@/services/agents/pin";
 import {
   bookReservation,
   cancelReservation,
@@ -44,6 +47,35 @@ const BUSINESS_MESSAGE = /^(No tienes|Reserva no encontrada|Restaurante no encon
 function messageOf(error: unknown): string {
   const text = error instanceof Error ? error.message.trim() : "";
   return BUSINESS_MESSAGE.test(text) ? text : es.agents.agenda.common.failed;
+}
+
+/** El mensaje de un acceso denegado en la tablet (PIN malo, bloqueada, rol que no alcanza, dispositivo desactivado). */
+function deviceMessage(failure: DeviceAuthFailure): string {
+  const t = es.agents.device.denied;
+  switch (failure.code) {
+    case "wrong_pin":
+      return t.wrongPin(failure.remaining);
+    case "locked":
+      return t.locked(failure.lockedUntil ? Math.max(1, Math.ceil((Date.parse(failure.lockedUntil) - Date.now()) / 60_000)) : null);
+    case "forbidden":
+      return t.forbidden;
+    case "identity_invalid":
+      return t.identityInvalid;
+    case "no_device":
+      return t.noDevice;
+  }
+}
+
+/**
+ * Lo que se le dice a quien hizo la acción y, si es un acceso denegado de la tablet, el motivo para que el
+ * teclado de PIN vuelva a pedirlo. Nunca se enseña un error técnico.
+ */
+function failureOf(error: unknown): { readonly message: string; readonly device?: DeviceAuthFailure } {
+  const text = error instanceof Error ? error.message : "";
+  const device = decodeDeviceAuthFailure(text);
+  if (device !== null) return { message: deviceMessage(device), device };
+  if (error instanceof PinSecretMissingError) return { message: es.agents.device.pinSecretMissing };
+  return { message: messageOf(error) };
 }
 
 function rejectedMessage(reason: string, availableFrom?: string, platformName?: string): string {
@@ -91,9 +123,10 @@ export async function saveReservationAction(input: SaveReservationInput): Promis
   }
   const v = checked.value;
 
-  const supabase = await createClient();
+  let supabase;
   let result;
   try {
+    supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     result = await bookReservation(supabase, {
       establishmentId: input.establishmentId,
       reservationId: input.reservationId,
@@ -109,7 +142,7 @@ export async function saveReservationAction(input: SaveReservationInput): Promis
       idempotencyKey: input.reservationId === null && /^[\w-]{8,100}$/.test(input.idempotencyKey) ? input.idempotencyKey : null,
     });
   } catch (error) {
-    return { status: "error", message: messageOf(error), fields: {} };
+    return { status: "error", ...failureOf(error), fields: {} };
   }
 
   if (result.outcome === "needs_confirmation") {
@@ -138,6 +171,8 @@ function feedback(result: CommandResult, okMessage: string | null = null, platfo
 
 /** Confirmar, rechazar, «No vino», deshacer, «Hecho» de la plataforma y abrir la ficha. */
 export async function reservationCommandAction(input: {
+  /** El PIN que se acaba de teclear en la tablet del local para ESTA acción (PRD §3.3); no autoriza nada por sí solo. */
+  pin?: string;
   establishmentId: string;
   reservationId: string;
   command: ReservationCommand;
@@ -147,19 +182,20 @@ export async function reservationCommandAction(input: {
   if (!UUID.test(input.establishmentId) || !UUID.test(input.reservationId)) {
     return { ok: false, message: es.agents.agenda.common.failed };
   }
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const result = await reservationCommand(supabase, input.command, input.establishmentId, input.reservationId);
     // Abrir la ficha no cambia nada que las demás pantallas tengan que volver a pedir.
     if (result.outcome === "done" && input.command !== "open") await announce(input.establishmentId, [input.date], "changed");
     return feedback(result);
   } catch (error) {
-    return { ok: false, message: messageOf(error) };
+    return { ok: false, ...failureOf(error) };
   }
 }
 
 /** Cancelar con motivo (RES-05). */
 export async function cancelReservationAction(input: {
+  pin?: string;
   establishmentId: string;
   reservationId: string;
   reason: string;
@@ -169,18 +205,19 @@ export async function cancelReservationAction(input: {
     return { ok: false, message: es.agents.agenda.common.failed };
   }
   const reason = input.reason === "customer" || input.reason === "error" ? input.reason : "other";
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const result = await cancelReservation(supabase, input.establishmentId, input.reservationId, reason);
     if (result.outcome === "done") await announce(input.establishmentId, [input.date], "changed");
     return feedback(result);
   } catch (error) {
-    return { ok: false, message: messageOf(error) };
+    return { ok: false, ...failureOf(error) };
   }
 }
 
 /** «No es duplicada» (RES-08). */
 export async function dismissDuplicateAction(input: {
+  pin?: string;
   establishmentId: string;
   reservationA: string;
   reservationB: string;
@@ -189,13 +226,13 @@ export async function dismissDuplicateAction(input: {
   if (![input.establishmentId, input.reservationA, input.reservationB].every((id) => UUID.test(id))) {
     return { ok: false, message: es.agents.agenda.common.failed };
   }
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const result = await dismissDuplicate(supabase, input.establishmentId, input.reservationA, input.reservationB);
     if (result.outcome === "done") await announce(input.establishmentId, [input.date], "changed");
     return feedback(result);
   } catch (error) {
-    return { ok: false, message: messageOf(error) };
+    return { ok: false, ...failureOf(error) };
   }
 }
 
@@ -222,51 +259,63 @@ function scheduleFeedback(result: ScheduleSaveResult, closedDay = false): Schedu
   }
 }
 
-export async function saveShiftsAction(input: { establishmentId: string; shifts: readonly ShiftInput[] }): Promise<ScheduleFeedback> {
+export async function saveShiftsAction(input: { pin?: string; establishmentId: string; shifts: readonly ShiftInput[] }): Promise<ScheduleFeedback> {
   if (!UUID.test(input.establishmentId)) return { ok: false, message: es.agents.agenda.common.failed };
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const result = await saveShifts(supabase, input.establishmentId, input.shifts);
-    if (result.outcome === "saved") revalidatePath(`/agents/${input.establishmentId}`, "layout");
+    if (result.outcome === "saved") {
+      revalidatePath(`/agents/${input.establishmentId}`, "layout");
+      await renewElevation(input.establishmentId);
+    }
     return scheduleFeedback(result);
   } catch (error) {
-    return { ok: false, message: messageOf(error) };
+    return { ok: false, ...failureOf(error) };
   }
 }
 
-export async function setClosedDateAction(input: { establishmentId: string; date: string; reason: string; closed: boolean }): Promise<ScheduleFeedback> {
+export async function setClosedDateAction(input: { pin?: string; establishmentId: string; date: string; reason: string; closed: boolean }): Promise<ScheduleFeedback> {
   if (!UUID.test(input.establishmentId) || !DATE.test(input.date)) return { ok: false, message: es.agents.agenda.common.failed };
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const result = await setClosedDate(supabase, input.establishmentId, input.date, input.closed ? input.reason.trim() : null, input.closed);
-    if (result.outcome === "saved") revalidatePath(`/agents/${input.establishmentId}`, "layout");
+    if (result.outcome === "saved") {
+      revalidatePath(`/agents/${input.establishmentId}`, "layout");
+      await renewElevation(input.establishmentId);
+    }
     return scheduleFeedback(result, true);
   } catch (error) {
-    return { ok: false, message: messageOf(error) };
+    return { ok: false, ...failureOf(error) };
   }
 }
 
-export async function saveSettingsAction(input: { establishmentId: string; settings: SettingsInput }): Promise<ScheduleFeedback> {
+export async function saveSettingsAction(input: { pin?: string; establishmentId: string; settings: SettingsInput }): Promise<ScheduleFeedback> {
   if (!UUID.test(input.establishmentId)) return { ok: false, message: es.agents.agenda.common.failed };
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const result = await saveSettings(supabase, input.establishmentId, input.settings);
-    if (result.outcome === "saved") revalidatePath(`/agents/${input.establishmentId}`, "layout");
+    if (result.outcome === "saved") {
+      revalidatePath(`/agents/${input.establishmentId}`, "layout");
+      await renewElevation(input.establishmentId);
+    }
     return scheduleFeedback(result);
   } catch (error) {
-    return { ok: false, message: messageOf(error) };
+    return { ok: false, ...failureOf(error) };
   }
 }
 
-export async function completeOnboardingAction(input: { establishmentId: string }): Promise<ScheduleFeedback> {
+export async function completeOnboardingAction(input: { pin?: string; establishmentId: string }): Promise<ScheduleFeedback> {
   if (!UUID.test(input.establishmentId)) return { ok: false, message: es.agents.agenda.common.failed };
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const result = await completeOnboarding(supabase, input.establishmentId);
-    if (result.outcome === "saved" || result.outcome === "unchanged") revalidatePath(`/agents/${input.establishmentId}`, "layout");
+    if (result.outcome === "saved" || result.outcome === "unchanged") {
+      revalidatePath(`/agents/${input.establishmentId}`, "layout");
+      await renewElevation(input.establishmentId);
+    }
     return scheduleFeedback(result);
   } catch (error) {
-    return { ok: false, message: messageOf(error) };
+    return { ok: false, ...failureOf(error) };
   }
 }
 
@@ -277,13 +326,14 @@ export async function completeOnboardingAction(input: { establishmentId: string 
  * contra sí misma.
  */
 export async function dayOccupancyAction(input: {
+  pin?: string;
   establishmentId: string;
   date: string;
   excludeReservationId: string | null;
 }): Promise<{ readonly ok: true; readonly occupied: Readonly<Record<string, number>> } | { readonly ok: false }> {
   if (!UUID.test(input.establishmentId) || !DATE.test(input.date)) return { ok: false };
-  const supabase = await createClient();
   try {
+    const supabase = await agentsDb(input.establishmentId, { pin: input.pin });
     const records = await loadDayReservations(supabase, input.establishmentId, input.date);
     const occupied: Record<string, number> = {};
     for (const r of records) {

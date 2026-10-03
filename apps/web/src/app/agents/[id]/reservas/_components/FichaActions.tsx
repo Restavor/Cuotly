@@ -1,5 +1,6 @@
 "use client";
 
+import { useDeviceGate } from "@/app/agents/_components/DeviceGate";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
@@ -66,6 +67,7 @@ export function FichaActions({
   const [dialog, setDialog] = useState<"cancel" | "reject" | null>(openReject ? "reject" : openCancel ? "cancel" : null);
   const [reason, setReason] = useState<"customer" | "error" | "other">("customer");
   const [now, setNow] = useState(() => Date.now());
+  const gate = useDeviceGate();
 
   // «No vino» se activa solo al llegar la hora, sin recargar.
   useEffect(() => {
@@ -87,7 +89,13 @@ export function FichaActions({
 
   function command(name: "confirm" | "reject" | "no_show" | "undo_no_show" | "platform_cancel_done", leave = false) {
     setError(null);
-    startTransition(async () => after(await reservationCommandAction({ establishmentId, reservationId, command: name, date }), leave));
+    const f = es.agents.device.pin.for;
+    const forWhat = { confirm: f.confirm, reject: f.reject, no_show: f.noShow, undo_no_show: f.undoNoShow, platform_cancel_done: f.platformDone }[name];
+    startTransition(async () => {
+      // En la tablet del local pide «¿Quién eres?» + PIN; en una cuenta, se ejecuta tal cual.
+      const result = await gate.run(forWhat, (pin) => reservationCommandAction({ pin, establishmentId, reservationId, command: name, date }));
+      if (result !== null) after(result, leave);
+    });
   }
 
   if (!canChange) return null;
@@ -126,7 +134,12 @@ export function FichaActions({
                 pending={busy}
                 onClick={() => {
                   setError(null);
-                  startTransition(async () => after(await dismissDuplicateAction({ establishmentId, reservationA: reservationId, reservationB: p.id, date })));
+                  startTransition(async () => {
+                    const result = await gate.run(es.agents.device.pin.for.dismiss, (pin) =>
+                      dismissDuplicateAction({ pin, establishmentId, reservationA: reservationId, reservationB: p.id, date }),
+                    );
+                    if (result !== null) after(result);
+                  });
                 }}
               >
                 {t.notDuplicate}
@@ -205,7 +218,12 @@ export function FichaActions({
                   command("reject", true);
                   return;
                 }
-                startTransition(async () => after(await cancelReservationAction({ establishmentId, reservationId, reason, date }), true));
+                startTransition(async () => {
+                  const result = await gate.run(es.agents.device.pin.for.cancel, (pin) =>
+                    cancelReservationAction({ pin, establishmentId, reservationId, reason, date }),
+                  );
+                  if (result !== null) after(result, true);
+                });
               }}
             >
               {dialog === "reject" ? c.confirmReject : c.confirm}

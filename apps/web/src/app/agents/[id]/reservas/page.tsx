@@ -8,9 +8,9 @@ import { ButtonLink, EmptyState, ErrorState, NoPermissionState } from "@/compone
 import { addDays, isValidLocalDate, localDateOf, localDateTimeOf } from "@/core/reservations/dates";
 import { agentsPageHref, needsOnboarding, todayHref } from "@/core/reservations/agents-routes";
 import { formatLongDate } from "@/core/reservations/format";
-import { canReservations } from "@/core/reservations/permissions";
+import { canOffer } from "@/core/reservations/permissions";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
 import {
   loadAgentIndicator,
   loadDayReservations,
@@ -48,7 +48,7 @@ export default async function Page({
   if (access.kind === "denied") return <NoPermissionState />;
 
   const { nav } = access;
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
 
   let schedule;
   try {
@@ -91,8 +91,8 @@ export default async function Page({
     return <ErrorState title={t.today.noDataTitle} description={t.today.noDataReason} />;
   }
 
-  const canCreate = canReservations(nav.actor, "create_reservation", { serviceStatus: nav.serviceStatus });
-  const canDecide = canReservations(nav.actor, "decide_group", { serviceStatus: nav.serviceStatus });
+  const canCreate = canOffer(nav.actor, "create_reservation", { serviceStatus: nav.serviceStatus });
+  const canDecide = canOffer(nav.actor, "decide_group", { serviceStatus: nav.serviceStatus });
   const closedReason = schedule.closedDates.find((c) => c.date === date)?.reason || null;
   const hasShifts = schedule.shifts.some((s) => s.active);
   const isEmpty = view.blocks.every((b) => b.rows.length === 0);

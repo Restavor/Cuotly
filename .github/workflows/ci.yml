@@ -664,10 +664,21 @@ jobs:
             -v ON_ERROR_STOP=1 \
             -f supabase/tests/la_agenda.sql
 
+      - name: "Suite 92 — Equipo con PIN, tablet del local y soporte de Reservas (migración 170, RN-APP-06 a RN-APP-09)"
+        run: |
+          psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/reservas_equipo_tablet_soporte.sql
+
       - name: "Fase C — Verificar el aforo con altas simultáneas (RN-RES-02)"
         run: |
           cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
             node scripts/agenda-concurrency-test.mjs
+
+      - name: "Fase D — Verificar el bloqueo de PIN con intentos simultáneos (RN-APP-07)"
+        run: |
+          cd apps/web && DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
+            node scripts/device-concurrency-test.mjs
 
       - name: "Hito 7 — Verificar idempotencia real de post_message (dos mensajes simultáneos)"
         run: |
@@ -797,6 +808,8 @@ jobs:
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY:?supabase status no imprimió ANON_KEY}"
             echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
             echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY:?supabase status no imprimió SERVICE_ROLE_KEY}"
+            # Fase D · el sembrado cifra los PIN de prueba con este valor; la tablet del local lo necesita para comprobarlos.
+            echo "AGENTS_PIN_SECRET=restavor-pruebas-pin-secret"
           } >> "$GITHUB_ENV"
 
       - name: Instalar navegador de Playwright

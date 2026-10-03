@@ -213,6 +213,24 @@ export function canReservations(
   return true;
 }
 
+/**
+ * ¿Se OFRECE esta acción en pantalla? Es `canReservations` con una diferencia, la de la tablet del local sin PIN
+ * (PRD §3.3): sin PIN solo se ven Hoy, Calendario, Buscar, fichas y llamadas, y **cada acción que cambia algo pide
+ * «¿Quién eres?» + PIN al pulsarla**. Así que los botones de cambiar una reserva se ofrecen a la tablet, y lo que
+ * decide si esa persona puede es su PIN en el servidor (`reservation_device_act`): la tabla de `canReservations`
+ * sigue siendo la que dice qué puede hacer cada rol, y la tablet sin PIN no puede nada por sí sola.
+ */
+export function canOffer(
+  actor: ReservationsActor,
+  action: ReservationAction,
+  resource: ReservationResource = {},
+): boolean {
+  if (actor.kind === "device" && actor.pin === undefined && CHANGE_ACTIONS.has(action)) {
+    return canReservations({ kind: "staff" }, action, resource);
+  }
+  return canReservations(actor, action, resource);
+}
+
 /** ¿Se enseñan importes (saldo, coste de las llamadas)? Nunca a la tablet sin PIN ni al Equipo (RN-APP-05). */
 export function canSeeAmounts(actor: ReservationsActor, resource: ReservationResource = {}): boolean {
   return canReservations(actor, "view_balance", resource) || canReservations(actor, "view_call_cost", resource);

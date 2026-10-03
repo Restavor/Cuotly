@@ -8,9 +8,9 @@ import { agentsPageHref, editReservationHref, todayHref } from "@/core/reservati
 import { formatShortDate } from "@/core/reservations/format";
 import { formatPhoneDisplay } from "@/core/reservations/phone";
 import { VISIT_HISTORY_MONTHS, visitStats } from "@/core/reservations/lifecycle";
-import { canReservations } from "@/core/reservations/permissions";
+import { canOffer } from "@/core/reservations/permissions";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
 import {
   loadDuplicatePartners,
   loadHistory,
@@ -52,7 +52,7 @@ export default async function Page({
   if (!UUID.test(reservaId)) notFound();
 
   const { nav } = access;
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
   let reservation;
   let schedule;
   try {
@@ -82,8 +82,8 @@ export default async function Page({
 
   const shift = schedule.shifts.find((s) => s.id === reservation.shiftId) ?? null;
   const stats = visits === null ? null : visitStats(visits, reservation.id, new Date());
-  const canChange = canReservations(nav.actor, "cancel_reservation", { serviceStatus: nav.serviceStatus });
-  const canEdit = canReservations(nav.actor, "edit_reservation_notes", { serviceStatus: nav.serviceStatus }) && reservation.status !== "cancelled";
+  const canChange = canOffer(nav.actor, "cancel_reservation", { serviceStatus: nav.serviceStatus });
+  const canEdit = canOffer(nav.actor, "edit_reservation_notes", { serviceStatus: nav.serviceStatus }) && reservation.status !== "cancelled";
   const status = reservation.status;
 
   const statusChip =

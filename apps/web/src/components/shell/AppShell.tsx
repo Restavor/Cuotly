@@ -114,6 +114,8 @@ export function AppShell({
   supportSession = null,
   userAvatarUrl = null,
   unreadMessages = 0,
+  agentsBanner = null,
+  agentsSidebarExtra = null,
   children,
 }: {
   /**
@@ -203,6 +205,13 @@ export function AppShell({
    * peor que no enseñar ninguno (CLAUDE.md, CA-20).
    */
   unreadMessages?: number;
+  /**
+   * Fase D · una franja bajo la cabecera de Restavor agents: la barra de la sesión de soporte de Reservas o la de
+   * «Ajustes abiertos con PIN» en la tablet. Es lo que le recuerda a quien mira en casa de quién está.
+   */
+  agentsBanner?: React.ReactNode;
+  /** Fase D · un control al pie del menú lateral de Restavor agents («Ajustes con PIN» en la tablet). */
+  agentsSidebarExtra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
@@ -212,6 +221,12 @@ export function AppShell({
 
   const esGlobal = context === "global";
   const esAgents = context === "agents";
+  /**
+   * Fase D (PRD de agents §3.3) · la tablet del local no es una persona con cuenta: sin búsqueda global, sin avisos
+   * del espacio, sin «Mi cuenta» y sin volver a la puerta de Restavor (la tablet abre siempre Reservas › Hoy). Lo que
+   * se oculta aquí tampoco lo permitiría el servidor: ocultar un control no es el control de acceso.
+   */
+  const esTablet = esAgents && agentsNav?.deviceName != null;
   /*
     Decisión 88 · el contexto global lo comparten la puerta común (`/`,
     `/restaurantes`, `/mensajes`, `/cuenta`, `/ayuda`) y el Inicio de Restavor
@@ -392,12 +407,14 @@ export function AppShell({
               de los espacios" son dos sitios distintos, y fundirlos haría
               que uno de los dos no se encontrara nunca.
             */}
-            <Link
-              href="/"
-              className="mt-2 block px-1 text-xs font-medium text-sidebar-text underline hover:text-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
-            >
-              {es.globalContext.backToCuotly}
-            </Link>
+            {esTablet ? null : (
+              <Link
+                href="/"
+                className="mt-2 block px-1 text-xs font-medium text-sidebar-text underline hover:text-surface focus:outline focus:outline-2 focus:outline-cuotly-green"
+              >
+                {es.globalContext.backToCuotly}
+              </Link>
+            )}
           </div>
           )}
 
@@ -428,6 +445,7 @@ export function AppShell({
                   <SidebarLink destination={destination} active={active?.key === destination.key} />
                 </li>
               ))}
+              {agentsSidebarExtra ? <li>{agentsSidebarExtra}</li> : null}
             </ul>
           </nav>
         </aside>
@@ -476,6 +494,7 @@ export function AppShell({
                 )}
               </nav>
 
+            {esTablet ? <span className="ml-auto" /> : (
             <button
               ref={searchTrigger}
               type="button"
@@ -488,7 +507,9 @@ export function AppShell({
               <span className="hidden sm:inline">{es.search.open}</span>
               <kbd className="ml-auto hidden text-xs lg:inline">{es.search.shortcut}</kbd>
             </button>
+            )}
 
+            {esTablet ? null : (
             <div className="relative">
               <button
                 type="button"
@@ -553,6 +574,7 @@ export function AppShell({
                 </section>
               ) : null}
             </div>
+            )}
 
             {/*
               §20.5 · el botón global Crear. Sigue siendo un `<details>`: se
@@ -599,6 +621,14 @@ export function AppShell({
               </details>
             ) : null}
 
+            {esTablet ? (
+              <span
+                data-testid="device-badge"
+                className="flex min-h-9 shrink-0 items-center rounded-full bg-primary-dark px-3 text-xs font-semibold text-surface"
+              >
+                {es.agents.device.badge(agentsNav?.deviceName ?? "")}
+              </span>
+            ) : (
             <Link
               href="/cuenta"
               aria-label={`${es.nav.account} · ${userLabel}`}
@@ -624,6 +654,7 @@ export function AppShell({
                 <span aria-hidden="true">{userInitial}</span>
               )}
               </Link>
+            )}
             </div>
 
             {/*
@@ -655,6 +686,8 @@ export function AppShell({
               </div>
             )}
           </header>
+
+          {agentsBanner}
 
           {supportSession ? (
             <div
@@ -799,7 +832,7 @@ export function AppShell({
         ))}
       </nav>
 
-      {searchOpen ? <GlobalSearch onClose={closeSearch} onSearch={onSearch} /> : null}
+      {searchOpen && !esTablet ? <GlobalSearch onClose={closeSearch} onSearch={onSearch} /> : null}
     </div>
   );
 }

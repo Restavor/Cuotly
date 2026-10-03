@@ -82,8 +82,8 @@ de la tabla de abajo (misma contraseña de demostración):
 Lo que **no** está y es de fases posteriores: la agenda (C), el PIN real, la tablet y la sesión de soporte (D), aprobar solicitudes, cobros y recargas (E), los
 avisos a comensales (F), el agente de llamadas (G), el formulario web (H) y los conectores (I). El sembrado no registra ningún segundo paso (decisión 106).
 
-**El PIN del Equipo de Casa Pepe** (Ana Ruiz 1234, Diego Navas 5678) se guarda cifrado con el secreto `restavor-pruebas-pin-secret`. Para que sirvan en la Fase D,
-`AGENTS_PIN_SECRET` de la vista previa de la rama `agents` tiene que valer eso. Hasta entonces no abren nada.
+**El PIN del Equipo de Casa Pepe** (Ana Ruiz 1234, Diego Navas 5678) se guarda cifrado con el secreto `restavor-pruebas-pin-secret`. Para que sirvan,
+`AGENTS_PIN_SECRET` de la vista previa de la rama `agents` tiene que valer eso (Fase D, más abajo).
 
 ## Estado de la Fase C (02/10/2026): qué probar a mano
 
@@ -127,6 +127,44 @@ llevan su aviso al llegar pero no el de las 2 horas.
 Lo que **no** está y es de fases posteriores: avisos a comensales (F), PIN, tablet y sesión de soporte (D), cobro y saldo (E), encender y apagar el agente (G), formulario web (H),
 conectores (I), app instalable y modo sin conexión (J).
 
+## Estado de la Fase D (03/10/2026): qué probar a mano
+
+El Equipo con PIN, la tablet del local y el soporte de Reservas. **Antes de probar** hay que hacer tres cosas en Restavor pruebas:
+
+1. **Migración 170** (`20261003000170_reservas_equipo_tablet_y_soporte.sql`): la aplica sola el proceso `Pruebas · Supabase` al subir la rama `agents`. Sin ella las pantallas
+   nuevas dicen «No hemos podido cargar…».
+2. **`AGENTS_PIN_SECRET` en Vercel** (cuotly-web → Settings → Environment Variables): Environment = Preview, rama `agents`, tipo Sensitive, valor `restavor-pruebas-pin-secret`
+   (con ese valor el sembrado cifró los PIN). Sin ella la pantalla de Equipo dice «Falta configurar los PIN» y ninguna tablet comprueba nada. `SUPABASE_SERVICE_ROLE_KEY` también tiene
+   que estar (la tablet lee con ella).
+3. **Resembrar** (Actions › `Pruebas · Supabase` › «sembrar», o se hace solo si cambia algo de `supabase/seed/`): añade a `soporte@cuotly.test`, los PIN de José y Luis y su factor TOTP.
+
+PIN de prueba de Casa Pepe: **Ana Ruiz 1234** y **Diego Navas 5678** (Equipo), **José García 4321** (Propietario), **Luis Martín 8765** (Encargado); María García, sin PIN todavía.
+
+1. **Equipo** (`jose@casapepe.test` › Casa Pepe › Ajustes › **Equipo**). Ves a los cinco: José y María (Propietarios), Luis (Encargado), Ana y Diego (Equipo). «+ Añadir persona»: pon
+   nombre y un PIN de 4 cifras dos veces. Un PIN que ya usa otra persona dice «Ese PIN ya lo usa otra persona de este restaurante»; dos PIN distintos, «Los dos PIN no coinciden».
+   «Cambiar PIN» y «Quitar» (se desactiva y su PIN queda libre). Debajo, **Mi PIN para la tablet** (el tuyo, solo desde tu cuenta) e **Invitar a un Propietario o a un Encargado**
+   (ver la decisión 126: invitar a un Propietario es de Restavor web y hoy solo lo deja el equipo del espacio).
+2. **Un Encargado** (`luis@casapepe.test`): gestiona el Equipo, pero no ve «Invitar…» ni «Quitar de Reservas».
+3. **Activar la tablet.** En una tablet o navegador aparte: entra con `jose@casapepe.test`, Ajustes › Equipo, abajo **«Usar este dispositivo como tablet del local»**, ponle nombre y pulsa. Pasa a
+   **Reservas › Hoy** y arriba a la derecha dice «Tablet del local · <nombre>». Ya no hay «Mi cuenta», ni búsqueda general, ni avisos; el menú no tiene Ajustes, Saldo ni Plan, y abajo sale
+   **«Ajustes con PIN»**. Abre `/` o `/agents`: te lleva siempre a Hoy. La tablet **sigue abierta aunque caduque tu sesión** (puedes cerrar sesión de tu cuenta en otro navegador).
+4. **Cada acción pide PIN.** En la tablet, «Nueva reserva» se rellena sin PIN; al **Guardar** sale **«¿Quién eres?»**. Prueba un PIN malo (1111): «PIN incorrecto. Te quedan 4 intentos.»; luego el de
+   Ana (1234): se guarda y en la ficha, en el historial, sale **Ana Ruiz**. Cancelar, confirmar un grupo o «No vino» también piden el PIN. **5 PIN malos seguidos** bloquean la tablet 1 minuto
+   (la segunda tanda 5 min, la tercera 30 min y de la cuarta en adelante 2 h): el teclado se desactiva y dice «Demasiados intentos…».
+5. **Ajustes con PIN.** «Ajustes con PIN» en el menú: el PIN de Ana dice «Ese PIN es del Equipo…»; el de **José (4321)** o **Luis (8765)** abre Ajustes con una barra **«Ajustes abiertos con el PIN de
+   José García · Se cierran en 2:00»** y «Salir de Ajustes». A los 2 minutos sin tocar se cierran solos. Con ellos abiertos puedes ver Equipo (añadir, cambiar PIN, quitar, desactivar tablets) e Historial;
+   no «Mi PIN» ni activar dispositivos (son de tu cuenta). Si desde tu cuenta le quitas «Gestionar Reservas» a Luis, su PIN y los Ajustes que abrió dejan de valer al momento.
+6. **Desactivar la tablet.** Desde tu cuenta, Ajustes › Equipo › Tablets y móviles del local › **Desactivar**: la tablet, al recargar, dice «Este dispositivo se ha desactivado» con «Entrar con mi cuenta».
+7. **Soporte de Reservas.** Entra con `soporte@cuotly.test` (misma contraseña) y verifica el segundo paso: añade a tu app autenticadora (Google Authenticator, Aegis…) el secreto
+   **`RESTAVORSOPORTEPRUEBASSEGUNDOPAS`** (escríbelo junto, sin espacios; tipo «basado en tiempo», 6 cifras, 30 s). Ve a **Espacios › Restavor demo › Reservas** (`/espacios/demo/reservas`):
+   en «Abrir Reservas como soporte» sale Casa Pepe → **Abrir como soporte**, pon un motivo y la duración. Aterrizas en Hoy con la barra **«Estás viendo Reservas de Casa Pepe como Restavor (soporte)
+   · quedan 60 min · Salir»** y ves los nombres de los comensales. **Salir** te devuelve al espacio y deja de verse todo. Después, como `jose@casapepe.test`, Ajustes › **Historial**: «Restavor entró
+   como soporte · <motivo>» y nunca quién fue. `admin@cuotly.test` (administrador sin la marca) ve «No estás marcado como soporte de Reservas» y no entra a las reservas ni por la dirección.
+   Para tu cuenta real (`info@restavor.com`), activa antes el segundo paso en Mi cuenta › Seguridad y usa `/administracion/reservas`.
+
+Lo que **no** está y es de fases posteriores: aprobar solicitudes, cobros y recargas (E), los avisos a comensales (F), encender el agente (G), el formulario web (H), los conectores (I), la app instalable y el
+modo sin conexión (J).
+
 ## Cuentas del sembrado
 
 Todas con la contraseña `Restavor-demo-2026` (solo en pruebas, nunca en producción).
@@ -151,8 +189,10 @@ Las de Reservas (`supabase/seed/reservas-demo.sql`, Fase B), todas con la misma 
 | `carla@barlaplaza.test` | Carla Sanz. Propietaria de **Bar La Plaza** (otro grupo, saldo 1,80 €), para el aislamiento |
 | `estados@casapepe.test` | Propietario de los siete restaurantes de prueba: Bodega Norte (aprobada, sin pagar), Mesón del Puerto (cobro vencido), Cervecería Roma (en pausa), Asador Vega (en baja), Casa Mar (cerrada), Taberna Levante (solicitud pendiente) y Café Rechazado (solicitud rechazada) |
 | `admin@cuotly.test` | Administrador del espacio **sin** la marca de soporte de Reservas: no ve a los comensales |
+| `soporte@cuotly.test` | Administrador del espacio **con** la marca de soporte de Reservas y el segundo paso registrado (secreto `RESTAVORSOPORTEPRUEBASSEGUNDOPAS`, TOTP de 6 cifras): para «Abrir como soporte» (Fase D) |
 
-Equipo de Casa Pepe sin cuenta: Ana Ruiz (PIN 1234) y Diego Navas (PIN 5678). Marca «Soporte de Reservas»: Elena e `info@restavor.com`.
+Equipo de Casa Pepe sin cuenta: Ana Ruiz (PIN 1234) y Diego Navas (PIN 5678). PIN de la tablet de José 4321 y de Luis 8765 (María, sin PIN). Marca «Soporte de Reservas»: Elena,
+`soporte@cuotly.test` e `info@restavor.com`.
 El sábado 26/09/2026 de Casa Pepe tiene las 12 reservas de la maqueta, y se copian al próximo día abierto desde hoy para mirarlas a mano.
 
 ## Propietario: `info@restavor.com` (01/10/2026)

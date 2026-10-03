@@ -4,9 +4,9 @@ import { EmptyState, ErrorState, ButtonLink, NoPermissionState, PageHeader } fro
 import { agentsPageHref, reservationHref } from "@/core/reservations/agents-routes";
 import { isValidLocalDate, localDateOf } from "@/core/reservations/dates";
 import { formatPhoneDisplay } from "@/core/reservations/phone";
-import { canReservations } from "@/core/reservations/permissions";
+import { canOffer } from "@/core/reservations/permissions";
 import { es } from "@/i18n/es";
-import { createClient } from "@/lib/supabase/server";
+import { agentsDb } from "@/app/agents/db";
 import { loadReservation, loadSchedule } from "@/services/reservations-gateway";
 
 import { requireAgentsPage } from "../../../../agents-context";
@@ -31,7 +31,7 @@ export default async function Page({ params }: { params: Promise<{ id: string; r
   if (!UUID.test(reservaId)) notFound();
   const { nav } = access;
 
-  const supabase = await createClient();
+  const supabase = await agentsDb(id);
   let reservation;
   let schedule;
   try {
@@ -49,7 +49,7 @@ export default async function Page({ params }: { params: Promise<{ id: string; r
     );
   }
 
-  const canEdit = canReservations(nav.actor, "edit_reservation_notes", { serviceStatus: nav.serviceStatus });
+  const canEdit = canOffer(nav.actor, "edit_reservation_notes", { serviceStatus: nav.serviceStatus });
   if (!canEdit) return <NoPermissionState />;
   if (reservation.status === "cancelled") {
     return (
@@ -65,7 +65,7 @@ export default async function Page({ params }: { params: Promise<{ id: string; r
 
   const today = localDateOf(new Date(), schedule.timeZone);
   const platformName = reservation.platformName ?? es.agents.components.origins.platform;
-  const canChangeScheduling = canReservations(nav.actor, "edit_reservation_slot", { serviceStatus: nav.serviceStatus });
+  const canChangeScheduling = canOffer(nav.actor, "edit_reservation_slot", { serviceStatus: nav.serviceStatus });
   const lockedReason =
     reservation.source === "platform"
       ? t.rejected.platform_locked(platformName)

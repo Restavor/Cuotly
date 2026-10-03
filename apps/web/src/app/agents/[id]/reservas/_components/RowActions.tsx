@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { useDeviceGate } from "@/app/agents/_components/DeviceGate";
 import { Button } from "@/components/ui";
 import { es } from "@/i18n/es";
 
 import { dismissDuplicateAction, reservationCommandAction } from "../actions";
+import type { ActionFeedback } from "../action-state";
 import { announceLocalChange } from "./local-change";
 
 /**
@@ -39,11 +41,14 @@ export function RowActions({
   const router = useRouter();
   const [busy, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const gate = useDeviceGate();
 
-  function run(task: () => Promise<{ ok: boolean; message: string | null }>) {
+  /** En la tablet del local la acción pide «¿Quién eres?» + PIN; en una cuenta, se ejecuta tal cual. */
+  function run(forWhat: string, task: (pin: string | undefined) => Promise<ActionFeedback>) {
     setError(null);
     startTransition(async () => {
-      const result = await task();
+      const result = await gate.run(forWhat, task);
+      if (result === null) return;
       if (!result.ok) {
         setError(result.message);
         return;
@@ -72,7 +77,11 @@ export function RowActions({
             type="button"
             className="min-h-[44px]"
             pending={busy}
-            onClick={() => run(() => reservationCommandAction({ establishmentId, reservationId, command: "confirm", date }))}
+            onClick={() =>
+              run(es.agents.device.pin.for.confirm, (pin) =>
+                reservationCommandAction({ pin, establishmentId, reservationId, command: "confirm", date }),
+              )
+            }
           >
             {busy ? t.working : t.confirm}
           </Button>
@@ -92,8 +101,8 @@ export function RowActions({
             className="min-h-[44px]"
             pending={busy}
             onClick={() =>
-              run(() =>
-                dismissDuplicateAction({ establishmentId, reservationA: reservationId, reservationB: duplicatePartnerId, date }),
+              run(es.agents.device.pin.for.dismiss, (pin) =>
+                dismissDuplicateAction({ pin, establishmentId, reservationA: reservationId, reservationB: duplicatePartnerId, date }),
               )
             }
           >

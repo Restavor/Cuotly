@@ -16,6 +16,7 @@
  * enseña; el servidor vuelve a comprobar cada acción (CLAUDE.md).
  */
 import {
+  canOffer,
   canReservations,
   type ReservationAction,
   type ReservationServiceStatus,
@@ -34,6 +35,8 @@ export const AGENTS_PAGES = [
   "settings",
   "onboarding",
   "team",
+  "history",
+  "unlock",
   "connections",
   "balance",
   "plan",
@@ -61,6 +64,8 @@ const PAGE_PATH: Readonly<Record<AgentsPage, string>> = {
   settings: "/reservas/ajustes/horarios",
   onboarding: "/reservas/primer-uso",
   team: "/reservas/ajustes/equipo",
+  history: "/reservas/ajustes/historial",
+  unlock: "/reservas/desbloquear",
   connections: "/reservas/ajustes/conexiones",
   balance: "/saldo",
   plan: "/plan",
@@ -124,6 +129,10 @@ const PAGE_ACTION: Readonly<Record<AgentsPage, ReservationAction | null>> = {
   settings: "manage_schedule_settings",
   onboarding: "manage_schedule_settings",
   team: "manage_staff_and_devices",
+  // Historial: lo ve quien cambia los ajustes (Propietario, Encargado, Restavor y el soporte en sesión).
+  history: "manage_schedule_settings",
+  // «Ajustes con PIN»: la puerta de la tablet. La abre cualquiera que entre; la página decide si procede.
+  unlock: null,
   connections: "view_connections",
   balance: "view_balance",
   plan: "manage_plan",
@@ -197,7 +206,7 @@ export function guardAgentsPage(
     // «Ayuda» y «Más» son de todos los que entran en Reservas; cerrada, no (arriba).
     return canEnterReservations(actor, status) ? { kind: "allow" } : { kind: "denied" };
   }
-  if (canReservations(actor, action, { serviceStatus: status })) return { kind: "allow" };
+  if (canOffer(actor, action, { serviceStatus: status })) return { kind: "allow" };
 
   // Sin pagar, la agenda aún no se usa: se lleva a quien puede a los datos de pago.
   if (status === "approved_pending_payment" && canReservations(actor, "manage_plan", { serviceStatus: status })) {

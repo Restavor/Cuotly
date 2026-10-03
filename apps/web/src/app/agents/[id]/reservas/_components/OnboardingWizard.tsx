@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-import { Button, EmptyState } from "@/components/ui";
+import { Button, ButtonLink, EmptyState } from "@/components/ui";
+import { agentsPageHref } from "@/core/reservations/agents-routes";
 import { es } from "@/i18n/es";
 import type { RestaurantSchedule } from "@/services/reservations-gateway";
 
@@ -14,8 +15,8 @@ import { withSavedIds } from "./schedule-draft";
 /**
  * Primer uso (RES-13; PRD de agents §5.1 y §11.1, `PrimerUso`): días y turnos → aforo y
  * grupos → equipo y tablet → agente. Los dos primeros pasos configuran de verdad; el equipo
- * con PIN y la tablet (Fase D) y el agente (Fase G) todavía no existen y el paso lo dice, no
- * los simula. Al terminar queda `onboarding_completed_at` y Hoy deja de mandar aquí.
+ * con PIN y la tablet (Fase D) llevan a Ajustes › Equipo, donde se hacen de verdad; el agente (Fase G) todavía
+ * no existe y el paso lo dice, no lo simula. Al terminar queda `onboarding_completed_at` y Hoy deja de mandar aquí.
  */
 export function OnboardingWizard({
   establishmentId,
@@ -145,7 +146,12 @@ export function OnboardingWizard({
       {step === 2 ? (
         <section className="space-y-4" aria-labelledby="ob-2">
           <h1 id="ob-2" className="text-[22px] font-bold text-primary-dark sm:text-[28px]">{t.teamTitle}</h1>
-          <EmptyState title={t.teamTitle} description={t.teamReason} />
+          <p className="text-sm text-text-secondary">{t.teamReason}</p>
+          <p>
+            <ButtonLink href={agentsPageHref(establishmentId, "team")} variant="secondary">
+              {t.teamAction}
+            </ButtonLink>
+          </p>
         </section>
       ) : null}
 

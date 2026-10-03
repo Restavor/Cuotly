@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canOffer,
   canReservations,
   canSeeAmounts,
   RESERVATION_ACTIONS,
@@ -199,5 +200,36 @@ describe("RN-APP-04 · el estado del servicio de Reservas (PRD §6.12)", () => {
         expect(canReservations(actor, accion, e), `${actor.kind} ${accion}`).toBe(false);
       }
     }
+  });
+});
+
+describe("RN-APP-05 · qué se ofrece en pantalla en la tablet sin PIN (PRD de agents §3.3)", () => {
+  const tablet = { kind: "device" } as const;
+
+  it("RN-APP-05 · la tablet sin PIN ofrece cambiar reservas: el PIN se pide al pulsar, no antes", () => {
+    for (const accion of ["create_reservation", "edit_reservation_slot", "edit_reservation_notes", "cancel_reservation", "decide_group", "mark_no_show"] as const) {
+      expect(canReservations(tablet, accion), `${accion} sin PIN no lo puede nadie por sí solo`).toBe(false);
+      expect(canOffer(tablet, accion), `${accion} se ofrece`).toBe(true);
+    }
+  });
+
+  it("RN-APP-05 · lo que no es cambiar una reserva no se ofrece a la tablet sin PIN, igual que antes", () => {
+    for (const accion of ["manage_schedule_settings", "manage_staff_and_devices", "toggle_agent", "view_balance", "view_call_cost", "topup", "manage_plan", "export_all_reservations"] as const) {
+      expect(canOffer(tablet, accion), accion).toBe(false);
+    }
+    expect(canOffer(tablet, "view_agenda")).toBe(true);
+    expect(canOffer(tablet, "view_calls")).toBe(true);
+  });
+
+  it("RN-APP-05 · con el estado del servicio sigue mandando: en pausa no se ofrece crear ni mover, sin pagar no hay agenda, cerrada nada", () => {
+    expect(canOffer(tablet, "create_reservation", { serviceStatus: "paused" })).toBe(false);
+    expect(canOffer(tablet, "cancel_reservation", { serviceStatus: "paused" })).toBe(true);
+    expect(canOffer(tablet, "create_reservation", { serviceStatus: "approved_pending_payment" })).toBe(false);
+    expect(canOffer(tablet, "create_reservation", { serviceStatus: "closed" })).toBe(false);
+  });
+
+  it("RN-APP-05 · para el resto de actores canOffer es canReservations", () => {
+    const actores = [{ kind: "owner" }, { kind: "manager" }, { kind: "staff" }, { kind: "restavor", twoFactor: false }, { kind: "support", twoFactor: true }, { kind: "device", pin: "staff" }, { kind: "device", pin: "manager" }] as const;
+    for (const actor of actores) for (const accion of RESERVATION_ACTIONS) expect(canOffer(actor, accion), `${actor.kind} ${accion}`).toBe(canReservations(actor, accion));
   });
 });

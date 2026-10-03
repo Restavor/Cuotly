@@ -12342,6 +12342,51 @@ export type Database = {
         Args: { p_establishment_id: string; p_reservation_id: string };
         Returns: { actor_name: string | null; actor_type: string; created_at: string; data: Json; id: string; type: string }[];
       };
+      // Fase D (migración 170) · Equipo con PIN, tablet del local y soporte. El PIN llega siempre como HMAC;
+      // los resultados de negocio vuelven como `Json` ({ outcome: 'created' | 'pin_in_use' | ... }).
+      reservation_people: {
+        Args: { p_establishment_id: string };
+        Returns: { created_at: string; has_pin: boolean; kind: string; name: string; ref_id: string; role: string }[];
+      };
+      add_reservation_staff: {
+        Args: { p_establishment_id: string; p_idempotency_key?: string | null; p_name: string; p_pin_hmac: string };
+        Returns: Json;
+      };
+      set_reservation_staff_pin: {
+        Args: { p_establishment_id: string; p_pin_hmac: string; p_staff_id: string };
+        Returns: Json;
+      };
+      remove_reservation_staff: { Args: { p_establishment_id: string; p_staff_id: string }; Returns: Json };
+      set_my_reservation_pin: { Args: { p_establishment_id: string; p_pin_hmac: string }; Returns: Json };
+      activate_reservation_device: {
+        Args: { p_establishment_id: string; p_name: string; p_token_hash: string };
+        Returns: string;
+      };
+      revoke_reservation_device: { Args: { p_device_id: string; p_establishment_id: string }; Returns: Json };
+      reservation_device_resolve: { Args: { p_token_hash: string }; Returns: Json };
+      reservation_device_vouch: { Args: { p_establishment_id: string; p_staff_id: string }; Returns: Json };
+      reservation_device_identify: { Args: { p_pin_hmac: string; p_token_hash: string }; Returns: Json };
+      reservation_device_act: {
+        Args: { p_args?: Json; p_operation: string; p_pin_hmac: string | null; p_staff_id: string | null; p_token_hash: string };
+        Returns: Json;
+      };
+      open_reservation_support_session: {
+        Args: { p_establishment_id: string; p_minutes?: number; p_reason: string };
+        Returns: Json;
+      };
+      close_reservation_support_session: { Args: { p_session_id: string }; Returns: Json };
+      my_reservation_support_session: {
+        Args: { p_establishment_id: string };
+        Returns: { expires_at: string; session_id: string }[];
+      };
+      reservation_support_candidates: {
+        Args: { p_query?: string | null };
+        Returns: { city: string | null; establishment_id: string; name: string; service_status: string; space_slug: string }[];
+      };
+      reservation_history_log: {
+        Args: { p_establishment_id: string; p_limit?: number };
+        Returns: { actor_label: string; at: string; detail: Json; kind: string }[];
+      };
       establishment_is_reservations_only: { Args: { p_establishment_id: string }; Returns: boolean };
       set_space_reservations_enabled: {
         Args: { p_enabled: boolean; p_space_id: string };

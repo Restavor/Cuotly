@@ -1,7 +1,14 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 
-import { EmptyState, ErrorState, PageHeader } from "@/components/ui";
+import { redirect } from "next/navigation";
+
+import { Button, EmptyState, ErrorState, PageHeader } from "@/components/ui";
 import { es } from "@/i18n/es";
+import { loadDevice } from "@/services/agents/device";
+
+import { forgetDeviceAction } from "../device-actions";
+import { SUPPORT_RETURN_COOKIE, safeReturnPath } from "../support-return";
 
 import { AgentsShell } from "../AgentsShell";
 import { loadAgentsRestaurant } from "../agents-context";
@@ -19,8 +26,28 @@ export default async function AgentRestaurantLayout({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const restaurant = await loadAgentsRestaurant(id);
   const t = es.agents.selector;
+
+  // Una cookie de dispositivo que ya no vale (se desactivó): se dice y se ofrece entrar con la cuenta.
+  if ((await loadDevice()).kind === "revoked") {
+    const r = es.agents.device.revoked;
+    return (
+      <main className="mx-auto max-w-lg space-y-6 p-6">
+        <EmptyState title={r.title} description={r.reason} />
+        <form action={forgetDeviceAction}>
+          <Button type="submit">{r.action}</Button>
+        </form>
+      </main>
+    );
+  }
+
+  const restaurant = await loadAgentsRestaurant(id);
+
+  // Soporte cuya sesión terminó: vuelve a donde vino (la ficha del espacio, o Administración).
+  if (restaurant.state === "support_expired") {
+    const back = safeReturnPath((await cookies()).get(SUPPORT_RETURN_COOKIE)?.value ?? "");
+    redirect(back === "/" ? `/espacios/${restaurant.spaceSlug}/reservas` : back);
+  }
 
   if (restaurant.state === "ok") {
     return <AgentsShell nav={restaurant.nav}>{children}</AgentsShell>;

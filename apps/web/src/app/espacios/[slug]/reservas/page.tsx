@@ -8,6 +8,7 @@ import { fechaCorta } from "@/i18n/dates";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
 
+import { OpenSupportButton } from "@/app/agents/_components/OpenSupportButton";
 import { NewReservationRequestForm } from "./NewReservationRequestForm";
 
 /**
@@ -60,7 +61,7 @@ export default async function SpaceReservationsPage({
   }
 
   // Todas las columnas se enumeran: estas tablas tienen privilegios de columna (CLAUDE.md).
-  const [requests, settings, establishments] = await Promise.all([
+  const [requests, settings, establishments, membership, candidates] = await Promise.all([
     supabase
       .from("reservation_service_requests")
       .select("id, establishment_id, status, rejection_reason, terms_accepted_at, created_at")
@@ -77,6 +78,15 @@ export default async function SpaceReservationsPage({
       .eq("space_id", space.id)
       .neq("status", "archived")
       .order("name"),
+    // Fase D (PRD de agents §3.4): ¿estás marcado como soporte de Reservas en este espacio?
+    supabase
+      .from("space_memberships")
+      .select("can_support_reservations")
+      .eq("space_id", space.id)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    // Los restaurantes de este espacio que se pueden abrir como soporte (solo si estás marcado).
+    supabase.rpc("reservation_support_candidates", { p_query: null }),
   ]);
 
   if (requests.error || settings.error || establishments.error) {
@@ -88,6 +98,8 @@ export default async function SpaceReservationsPage({
     );
   }
 
+  const marcadoComoSoporte = membership.data?.can_support_reservations === true;
+  const abribles = (candidates.data ?? []).filter((c) => c.space_slug === slug);
   const nombre = new Map((establishments.data ?? []).map((e) => [e.id, e.name]));
   const solicitudes = requests.data ?? [];
   const contratadas = (settings.data ?? []).filter((s) => s.service_status !== "closed");
@@ -164,6 +176,26 @@ export default async function SpaceReservationsPage({
         )}
         {/* Sin botones que no hacen nada: aprobar y rechazar llegan con la Fase E. */}
         <p className="mt-4 text-sm text-text-secondary">{t.requests.decideLater}</p>
+      </Card>
+
+      <Card title={es.agents.support.sectionTitle}>
+        <p className="mb-3 text-sm text-text-secondary">{es.agents.support.sectionBody}</p>
+        {!marcadoComoSoporte ? (
+          <p className="text-sm text-text-secondary" data-testid="support-not-marked">
+            {es.agents.support.noneMarked}
+          </p>
+        ) : abribles.length === 0 ? (
+          <EmptyState title={t.running.emptyTitle} description={t.running.emptyReason} />
+        ) : (
+          <ul className="divide-y divide-border">
+            {abribles.map((c) => (
+              <li key={c.establishment_id} className="flex flex-wrap items-center gap-3 py-3" data-testid="support-candidate">
+                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-text">{c.name}</span>
+                <OpenSupportButton establishmentId={c.establishment_id} restaurantName={c.name} returnTo={`/espacios/${slug}/reservas`} />
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
 
       <Card title={t.running.title}>
