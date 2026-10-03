@@ -74,10 +74,12 @@ describe("RN-APP-03 · el correo «Aprobado: datos para pagar»", () => {
     expect(m.body).not.toContain("Bizum al");
   });
 
-  it("RN-APP-03 · si el correo cae en la cola sin los datos, lleva el importe y manda a Restavor a verlos", () => {
+  it("RN-APP-03 · si el correo cae en la cola sin los datos, lleva el importe y remite a la cuenta sin decir que faltan", () => {
     const m = composeLifecycleEmail(entrega(), "https://x.test")!;
     expect(m.body).toContain("Importe: 58,08");
-    expect(m.body).toContain("Todavía no tenemos a mano los datos de pago");
+    // No dice «sin configurar» (el IBAN puede estar puesto: la cola simplemente no lo leyó).
+    expect(m.body).not.toContain("Todavía no tenemos a mano los datos de pago");
+    expect(m.body).toContain("Tienes los datos para pagar");
   });
 
   it("RN-APP-03 · el mismo texto sale por la cola de dos tandas (createMailComposer)", () => {

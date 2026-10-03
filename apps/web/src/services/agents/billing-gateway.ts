@@ -164,9 +164,11 @@ export async function closeService(client: Client, establishmentId: string, reas
   if (error) throw new Error(error.message);
 }
 
-export async function reactivateClosed(client: Client, establishmentId: string): Promise<void> {
-  const { error } = await client.rpc("reactivate_closed_reservations", { p_establishment_id: establishmentId });
+/** Devuelve la suscripción nueva: la clave de su aviso «Aprobado» (`reservation_service_approved:<suscripción>`). */
+export async function reactivateClosed(client: Client, establishmentId: string): Promise<string | null> {
+  const { data, error } = await client.rpc("reactivate_closed_reservations", { p_establishment_id: establishmentId });
   if (error) throw new Error(error.message);
+  return typeof data === "string" ? data : null;
 }
 
 export async function savePaymentDetails(

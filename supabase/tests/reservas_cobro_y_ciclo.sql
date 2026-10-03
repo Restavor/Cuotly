@@ -68,7 +68,9 @@ insert into public.establishments (id, space_id, group_id, code, name, status) v
   ('dc000000-0000-0000-0000-000000000021', 'dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000016', 'R93B', 'Bar La Plaza 93', 'active'),
   ('dc000000-0000-0000-0000-000000000022', 'dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000015', 'R93C', 'Mesón 93', 'active'),
   ('dc000000-0000-0000-0000-000000000023', 'dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000015', 'R93W', 'Asador Web 93', 'active'),
-  ('dc000000-0000-0000-0000-000000000024', 'dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000015', 'R93E', 'Tapas 93', 'active');
+  ('dc000000-0000-0000-0000-000000000024', 'dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000015', 'R93E', 'Tapas 93', 'active'),
+  ('dc000000-0000-0000-0000-000000000025', 'dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000015', 'R93F', 'Marisquería 93', 'active'),
+  ('dc000000-0000-0000-0000-000000000026', 'dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000016', 'R93G', 'Cafetería 93', 'active');
 
 insert into public.establishment_memberships (id, establishment_id, user_id, role) values
   ('dc000000-0000-0000-0000-000000000040', 'dc000000-0000-0000-0000-000000000020', 'dc000000-0000-0000-0000-000000000004', 'local_owner'),
@@ -76,10 +78,18 @@ insert into public.establishment_memberships (id, establishment_id, user_id, rol
   ('dc000000-0000-0000-0000-000000000043', 'dc000000-0000-0000-0000-000000000021', 'dc000000-0000-0000-0000-000000000007', 'local_owner'),
   ('dc000000-0000-0000-0000-000000000044', 'dc000000-0000-0000-0000-000000000022', 'dc000000-0000-0000-0000-000000000004', 'local_owner'),
   ('dc000000-0000-0000-0000-000000000045', 'dc000000-0000-0000-0000-000000000023', 'dc000000-0000-0000-0000-000000000004', 'local_owner'),
-  ('dc000000-0000-0000-0000-000000000046', 'dc000000-0000-0000-0000-000000000024', 'dc000000-0000-0000-0000-000000000004', 'local_owner');
+  ('dc000000-0000-0000-0000-000000000046', 'dc000000-0000-0000-0000-000000000024', 'dc000000-0000-0000-0000-000000000004', 'local_owner'),
+  ('dc000000-0000-0000-0000-000000000047', 'dc000000-0000-0000-0000-000000000025', 'dc000000-0000-0000-0000-000000000004', 'local_owner'),
+  ('dc000000-0000-0000-0000-000000000048', 'dc000000-0000-0000-0000-000000000025', 'dc000000-0000-0000-0000-000000000005', 'editor'),
+  ('dc000000-0000-0000-0000-000000000049', 'dc000000-0000-0000-0000-000000000026', 'dc000000-0000-0000-0000-000000000004', 'local_owner');
 
 insert into public.establishment_permissions (establishment_membership_id, manage_reservations, view_billing) values
-  ('dc000000-0000-0000-0000-000000000041', true, false);
+  ('dc000000-0000-0000-0000-000000000041', true, false),
+  ('dc000000-0000-0000-0000-000000000048', true, false);
+
+-- El trabajador está asignado a G: aun así no registra pagos de Reservas (revisión de E1).
+insert into public.worker_establishments (space_id, user_id, establishment_id) values
+  ('dc000000-0000-0000-0000-000000000010', 'dc000000-0000-0000-0000-000000000009', 'dc000000-0000-0000-0000-000000000026');
 
 update public.spaces set legal_name = 'Restavor Pruebas S.L.' where id = 'dc000000-0000-0000-0000-000000000010';
 
@@ -1058,5 +1068,176 @@ begin
   perform public.s93_boss();
 end $$;
 select 'funciones internas cerradas: OK';
+
+-- ------------------------------------------------------------
+-- 16 · Correcciones de la revisión independiente de E1 (migración 175)
+-- ------------------------------------------------------------
+do $$
+declare
+  v_f uuid := 'dc000000-0000-0000-0000-000000000025';
+  v_g uuid := 'dc000000-0000-0000-0000-000000000026';
+  v_ver uuid;
+  v_req uuid;
+  v_sub uuid;
+  v_first uuid;
+  v_svc uuid;
+  v_svc2 uuid;
+  v_before integer;
+  v_ending timestamptz;
+  v_res jsonb;
+  v_charge uuid;
+  v_key text;
+  v_out bigint;
+begin
+  -- ===== F · revisar el servicio no deja de cobrar; el Encargado no lee al cerrar =====
+  perform public.s93_as('dc000000-0000-0000-0000-000000000004');
+  select service_version_id into v_ver from public.reservation_service_terms(v_f);
+  v_req := public.request_reservations(v_f, v_ver, 'suite93-f');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000002');
+  v_sub := public.approve_reservation_request(v_req);
+  select id into v_first from public.charges where subscription_id = v_sub;
+  perform public.register_payment(v_first, 5808, 'transfer', now(), null, 'primer pago F', 'suite93-f1');
+  perform public.s93_boss();
+  perform public.s93_eq(public.s93_status(v_f), 'active', 'RN-RES-11: F activa tras pagar con condiciones aceptadas');
+
+  -- RN-RES-11 · Restavor revisa el servicio Reservas: la mensualidad siguiente se emite.
+  select service_id into v_svc from public.subscriptions where id = v_sub;
+  perform public.s93_as('dc000000-0000-0000-0000-000000000001');
+  v_svc2 := public.revise_service(v_svc, 4000, 0, 0, 'suite93-rev');
+  perform public.s93_boss();
+  perform public.s93_eq((v_svc2 <> v_svc)::text, 'true', 'RN-RES-11: revisar el servicio crea una versión nueva');
+  update public.subscriptions set started_at = now() - interval '40 days' where id = v_sub;
+  update public.services set published_at = now() - interval '60 days' where id = v_svc2;
+  v_before := (select count(*) from public.charges where subscription_id = v_sub);
+  perform public.generate_monthly_charge_internal(v_sub, null);
+  perform public.s93_eq((select service_id::text from public.subscriptions where id = v_sub), v_svc2::text,
+    'RN-RES-11: la suscripción pasó a la versión revisada del servicio');
+  perform public.s93_eq((select count(*)::text from public.charges where subscription_id = v_sub), (v_before + 1)::text,
+    'RN-RES-11: tras revisar el servicio, la mensualidad siguiente se emite (no deja de cobrar)');
+
+  -- RN-RES-12 · el Encargado lee las reservas mientras el servicio está abierto y deja de leerlas al cerrarse.
+  insert into public.reservation_shifts (id, space_id, establishment_id, name, weekdays, start_time, end_time, last_booking_time, capacity)
+  values ('dc000000-0000-0000-0000-000000000082', 'dc000000-0000-0000-0000-000000000010', v_f, 'Cena', '{1,2,3,4,5,6,7}', '20:00', '23:30', '22:30', 30);
+  insert into public.reservations
+    (id, space_id, establishment_id, shift_id, date, time, starts_at, party_size, customer_name, phone_e164, email, notes, source, status)
+  values ('dc000000-0000-0000-0000-0000000000b1', 'dc000000-0000-0000-0000-000000000010', v_f, 'dc000000-0000-0000-0000-000000000082',
+          (now() at time zone 'Europe/Madrid')::date, '21:00', now(), 2, 'Marta Gil', '+34600333444', 'marta@example.com', null, 'manual', 'confirmed');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000005');
+  perform public.s93_eq((select count(*)::text from public.reservations where establishment_id = v_f), '1',
+    'RN-RES-12: con Reservas activa, el Encargado lee las reservas');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000004');
+  v_ending := public.request_reservations_cancellation(v_f);
+  perform public.s93_boss();
+  perform public.s93_sweep(v_ending + interval '1 hour');
+  perform public.s93_eq(public.s93_status(v_f), 'closed', 'RN-RES-11: F cerrada al acabar el periodo');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000005');
+  perform public.s93_eq((select count(*)::text from public.reservations where establishment_id = v_f), '0',
+    'RN-RES-12: con Reservas cerrada, el Encargado ya no lee datos de comensales');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000004');
+  perform public.s93_eq((select count(*)::text from public.reservations where establishment_id = v_f), '1',
+    'RN-RES-12: con Reservas cerrada, el Propietario sí puede descargar sus datos');
+  perform public.s93_boss();
+
+  -- ===== G · pagos solo de Restavor, condiciones antes de activar, anular la baja con deuda =====
+  perform public.s93_as('dc000000-0000-0000-0000-000000000002');
+  v_req := public.create_reservation_request_on_behalf(v_g, 'suite93-g');
+  v_sub := public.approve_reservation_request(v_req);
+  select id into v_first from public.charges where subscription_id = v_sub;
+  v_out := (select c.total_cents from public.charges c where c.id = v_first);
+
+  -- RN-FIN-06 · un trabajador asignado no registra un pago de Reservas (solo Restavor).
+  perform public.s93_as('dc000000-0000-0000-0000-000000000009');
+  perform public.s93_expect_error(format($q$ select public.register_payment(%L, %s, 'transfer', now(), null, 'del trabajador', 'suite93-w') $q$, v_first, v_out),
+    'Solo Restavor registra', 'RN-FIN-06: un trabajador no registra un pago de Reservas');
+  perform public.s93_boss();
+  perform public.s93_eq(public.s93_status(v_g), 'approved_pending_payment', 'RN-FIN-06: el intento del trabajador no activó nada');
+  perform public.s93_eq((select count(*)::text from public.payments where charge_id = v_first), '0', 'RN-FIN-06: ni quedó el pago');
+
+  -- RN-DAT-07 · pagado sin condiciones aceptadas, no se activa; al aceptarlas, se activa.
+  perform public.s93_as('dc000000-0000-0000-0000-000000000002');
+  perform public.register_payment(v_first, v_out::integer, 'transfer', now(), null, 'pago G', 'suite93-g1');
+  perform public.s93_boss();
+  perform public.s93_eq(public.s93_status(v_g), 'approved_pending_payment',
+    'RN-DAT-07: con el cobro saldado pero sin condiciones aceptadas, Reservas no se activa');
+  perform public.s93_eq((select (activated_at is null)::text from public.reservation_settings where establishment_id = v_g), 'true',
+    'RN-DAT-07: sin condiciones aceptadas no hay activated_at');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000004');
+  perform public.accept_reservation_terms(v_g);
+  perform public.s93_boss();
+  perform public.s93_eq(public.s93_status(v_g), 'active', 'RN-DAT-07: al aceptar las condiciones, con el cobro ya saldado, se activa');
+  perform public.s93_eq((select (activated_at is not null)::text from public.reservation_settings where establishment_id = v_g), 'true',
+    'RN-DAT-07: queda activated_at');
+
+  -- Decisión 137 · el correo «Aprobado» tiene arrendamiento: dos reclamos seguidos no lo reclaman dos veces.
+  v_key := 'reservation_service_approved:' || v_req::text;
+  perform public.s93_eq(public.s93_srv(format('select count(*)::text from public.claim_email_deliveries_for_keys(array[%L])', v_key)), '1',
+    'decisión 137: el primer reclamo toma el correo');
+  perform public.s93_eq(public.s93_srv(format('select count(*)::text from public.claim_email_deliveries_for_keys(array[%L])', v_key)), '0',
+    'decisión 137: el segundo reclamo, mientras se envía el primero, no lo toma otra vez');
+
+  -- RN-RES-11 · anular la baja con deuda vencida no devuelve el servicio completo.
+  v_charge := public.s93_charge(v_sub, v_g, now() - interval '40 days', now() - interval '3 days');
+  perform public.s93_sweep(now());
+  perform public.s93_eq(public.s93_status(v_g), 'past_due', 'RN-RES-11: G con un cobro vencido hace 3 días pasa a past_due');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000004');
+  perform public.request_reservations_cancellation(v_g);
+  perform public.undo_reservations_cancellation(v_g);
+  perform public.s93_boss();
+  perform public.s93_eq(public.s93_status(v_g), 'past_due', 'RN-RES-11: anular la baja con deuda dentro del margen vuelve a past_due, no a active');
+  update public.charges set due_at = now() - interval '10 days' where id = v_charge;
+  perform public.s93_as('dc000000-0000-0000-0000-000000000004');
+  perform public.request_reservations_cancellation(v_g);
+  perform public.undo_reservations_cancellation(v_g);
+  perform public.s93_boss();
+  perform public.s93_eq(public.s93_status(v_g), 'paused', 'RN-RES-11: anular la baja con el margen agotado vuelve a paused');
+
+  -- RN-RES-11 · el barrido no anuncia un cambio que su propio bloque deshizo. G está `active` con
+  -- un cobro vencido hace 10 días: en una pasada iría active → past_due → paused. Si falla el
+  -- paso a paused (un evento que no se puede escribir), el bloque entero se deshace y el primer
+  -- cambio (active → past_due), que ya estaba anotado, no puede salir en el resultado.
+  update public.reservation_settings set service_status = 'active' where establishment_id = v_g;
+  create function public.s93_boom() returns trigger language plpgsql as $f$
+  begin
+    if new.type = 'paused' and new.establishment_id = 'dc000000-0000-0000-0000-000000000026' then
+      raise exception 'boom 93';
+    end if;
+    return new;
+  end $f$;
+  create trigger s93_boom before insert on public.reservation_service_events
+    for each row execute function public.s93_boom();
+  perform public.s93_server();
+  v_res := public.reservations_lifecycle_sweep(now());
+  perform public.s93_boss();
+  drop trigger s93_boom on public.reservation_service_events;
+  drop function public.s93_boom();
+  perform public.s93_eq(public.s93_status(v_g), 'active', 'RN-RES-11: lo que el bloque deshizo, deshecho queda');
+  perform public.s93_eq((jsonb_array_length(v_res -> 'errors') >= 1)::text, 'true', 'RN-RES-11: el fallo se informa en errors');
+  perform public.s93_eq((exists (select 1 from jsonb_array_elements(v_res -> 'changes') c
+                                 where c ->> 'establishment_id' = v_g::text))::text, 'false',
+    'RN-RES-11: el barrido no anuncia un cambio que se deshizo');
+
+  -- Decisión 132 · el motivo interno de un cierre no llega al evento que lee el Propietario.
+  perform public.s93_eq((exists (select 1 from public.reservation_service_events e
+                                 where e.type = 'closed' and e.data ? 'reason'))::text, 'false',
+    'RN-RES-11: el motivo interno del cierre no está en reservation_service_events');
+  perform public.s93_eq((exists (select 1 from public.audit_log a
+                                 where a.action = 'reservations.closed' and a.reason is not null))::text, 'true',
+    'RN-RES-11: el motivo del cierre sí queda en la auditoría');
+
+  -- Decisión 132 · el IBAN lleva dígito de control.
+  perform public.s93_eq(public.iban_is_valid('ES9121000418450200051332')::text, 'true', 'IBAN: el de ejemplo español es válido');
+  perform public.s93_eq(public.iban_is_valid('GB82WEST12345698765432')::text, 'true', 'IBAN: el de ejemplo británico es válido');
+  perform public.s93_eq(public.iban_is_valid('ES9121000418450200051331')::text, 'false', 'IBAN: una errata en la última cifra se rechaza');
+  perform public.s93_as('dc000000-0000-0000-0000-000000000001');
+  perform public.s93_expect_error(
+    $q$ select public.set_space_payment_details('dc000000-0000-0000-0000-000000000010', 'ES9121000418450200051331', null, null) $q$,
+    'IBAN', 'decisión 132: guardar un IBAN con errata se rechaza');
+  perform public.s93_boss();
+  if has_function_privilege('anon', 'public.iban_is_valid(text)', 'execute')
+     or has_function_privilege('authenticated', 'public.iban_is_valid(text)', 'execute') then
+    raise exception 'iban_is_valid está abierta por RPC';
+  end if;
+end $$;
+select 'correcciones de la revisión de E1: OK';
 
 rollback;

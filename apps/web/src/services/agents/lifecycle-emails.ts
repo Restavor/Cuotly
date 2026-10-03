@@ -64,6 +64,16 @@ function paymentLines(info: PaymentInfo | undefined): string[] {
 }
 
 /**
+ * Sin datos leídos (el correo sale por la cola de las 07:00 y las 19:00, que no los carga) no se
+ * inventa ni se dice «sin configurar»: se da el importe si se sabe y se remite a la cuenta, donde sí están.
+ */
+function paymentLinesOrPointer(info: PaymentInfo | undefined, amount: string | null): string[] {
+  if (info) return paymentLines(info);
+  const t = es.agents.lifecycleEmail.approved;
+  return [...(amount ? [t.amountWithTax(amount)] : []), t.seeInApp];
+}
+
+/**
  * El correo de un aviso de Reservas, o `null` si ese tipo no es de este módulo (quien llama
  * sigue con el texto genérico de siempre) o no hay a quién escribir.
  */
@@ -86,7 +96,7 @@ export function composeLifecycleEmail(
   switch (delivery.event_type) {
     case "reservation_service_approved": {
       subject = t.approved.subject;
-      const lines = paymentLines(payment);
+      const lines = paymentLinesOrPointer(payment, amount);
       paragraphs = [
         t.approved.intro(restaurant),
         lines.length > 0
@@ -108,15 +118,15 @@ export function composeLifecycleEmail(
       break;
     case "reservations_payment_due":
       subject = t.paymentDue.subject;
-      paragraphs = [t.paymentDue.intro(restaurant, amount), paymentLines(payment).join("\n"), t.paymentDue.outro].filter(Boolean);
+      paragraphs = [t.paymentDue.intro(restaurant, amount), paymentLinesOrPointer(payment, null).join("\n"), t.paymentDue.outro].filter(Boolean);
       break;
     case "reservations_past_due":
       subject = t.pastDue.subject;
-      paragraphs = [t.pastDue.intro(restaurant), paymentLines(payment).join("\n"), t.pastDue.outro].filter(Boolean);
+      paragraphs = [t.pastDue.intro(restaurant), paymentLinesOrPointer(payment, null).join("\n"), t.pastDue.outro].filter(Boolean);
       break;
     case "reservations_paused":
       subject = t.paused.subject;
-      paragraphs = [t.paused.intro(restaurant), paymentLines(payment).join("\n"), t.paused.outro].filter(Boolean);
+      paragraphs = [t.paused.intro(restaurant), paymentLinesOrPointer(payment, null).join("\n"), t.paused.outro].filter(Boolean);
       break;
     case "reservations_ending":
       subject = t.ending.subject;

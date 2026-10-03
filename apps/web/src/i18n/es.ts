@@ -9739,6 +9739,8 @@ export const es = {
         concept: (concept: string) => `Concepto: ${concept}`,
         due: (date: string) => `Vence el ${date}.`,
         unconfigured: "Todavía no tenemos a mano los datos de pago. Entra en Restavor para verlos en cuanto estén.",
+        // Cuando el correo sale en su tanda y no se han leído los datos al componerlo: no se dice «sin configurar».
+        seeInApp: "Tienes los datos para pagar (cuenta, concepto e importe) en tu cuenta de Restavor.",
         outro: "Cuando registremos tu pago, Reservas se activa al momento.",
       },
       rejected: {

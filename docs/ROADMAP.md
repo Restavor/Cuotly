@@ -5474,6 +5474,14 @@ regla de no quitar turnos, los avisos, las 2 horas, el bloqueo y el correo/push 
 se comprobaron contra la migración anterior a las correcciones: fallan los cuatro (28 de 60 cancelaciones y 24 de 60 cambios de día mueren por interbloqueo, 15 de 20 parejas de
 altas simultáneas quedan sin marcar y 20 reservas quedan en un turno desactivado) y pasan con la corregida.
 
+**Revisión independiente** (un subagente leyó el diff contra el PRD y `CLAUDE.md`; reprodujo cada defecto en una copia de la base): **tres altos o medios graves** —revisar el servicio Reservas dejaba de
+cobrar a todos sus restaurantes, el Encargado leía datos de comensales con Reservas cerrada y un trabajador asignado podía registrar un pago y activar el servicio—, **un cuarto medio** (Reservas se
+activaba sin condiciones aceptadas) y varios menores (el correo del dinero podía salir dos veces, el barrido anunciaba cambios que había deshecho, «Anular la baja» con deuda devolvía el servicio
+completo, el motivo interno del cierre llegaba al Propietario, el IBAN sin dígito de control). **Todo corregido en la migración 175** (las 172 a 174 ya estaban subidas) y con su test en el bloque 16 de la
+suite 93; cada corrección se comprobó con una mutación (se vuelve a la función anterior y el test falla): las ocho fallan. El resto de lo señalado (un restaurante aprobado que nunca paga, claves de aviso
+repetidas tras revertir un pago, «Vence» en zona de Madrid…) queda anotado en la decisión 143. Comprobó además, sin hallar nada, las ACL de las funciones internas, los interbloqueos, los borrados físicos,
+datos personales en auditoría, fugas entre restaurantes, la tablet, la inyección de fórmulas en el Excel y los límites de fechas.
+
 Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): una reserva que entra en el cambio de hora de otoño se guardaba con la hora segunda en vez de la
 primera (PostgreSQL elige la segunda); un día cerrado dejaba pasar las reservas «Fuera de turno» sin contarlas; dos rejillas sin columna base para el teléfono y botones de 40 px
 (los barridos de móvil y de 44 px); acciones de auditoría sin su nombre en español; y `Intl` fuera de la lista de archivos permitidos.
@@ -5592,12 +5600,12 @@ Criterios del PRD §15 (COB-01, COB-02):
   auditoría). Restavor da de baja, anula la baja, **cierra a mano** (solo desde la pausa, con motivo) y **reactiva** (dentro de los 30 días, con todos sus datos y un cobro nuevo).
 - [x] **Correos**: «Aprobado: datos para pagar» y «Reservas está en pausa» salen al momento (`claim_email_deliveries_for_keys`, `sendEmailNow`); recibida, rechazada, activada, vence, pago pendiente, baja y
   descarga, por las dos tandas; los push, siempre al momento. Sin Resend configurado nada se rompe: el correo espera su tanda.
-- [x] Tests: suite SQL **93** (`reservas_cobro_y_ciclo.sql`, 15 bloques, RN-APP-03 y RN-RES-11 con fechas simuladas), unitarios (dominio, correos, entrega al momento, ruta de cron, Excel) y **10 e2e con datos**
+- [x] Tests: suite SQL **93** (`reservas_cobro_y_ciclo.sql`, 16 bloques, RN-APP-03 y RN-RES-11 con fechas simuladas), unitarios (dominio, correos, entrega al momento, ruta de cron, Excel) y **10 e2e con datos**
   (`agents-cobro.spec.ts`: aprobar, rechazar, condiciones, datos para pagar, pagar y activar, pago pendiente, pausa, baja, cerrada con descarga, permisos y móvil).
 - [x] Sembrado: los **cobros y pagos de Reservas** coherentes con cada estado (17 cobros) y los datos de pago de ejemplo, con sus comprobaciones (el barrido de verdad no cambia ningún estado del sembrado).
-- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase E, primera tanda»; **antes hay que aplicar las migraciones 172 a 174 y resembrar**).
+- [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase E, primera tanda»; **antes hay que aplicar las migraciones 172 a 175 y resembrar**).
 
-Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.759 tests** en verde; **las 93 suites SQL** sobre una base limpia con las 174 migraciones, y el sembrado de Reservas dos veces; los
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.759 tests** en verde; **las 93 suites SQL** sobre una base limpia con las 175 migraciones, y el sembrado de Reservas dos veces; los
 **58 e2e con datos** (los 10 nuevos y los 48 de antes) sobre una base limpia contra PostgREST local con el sembrado; `next build` de producción. La suite 93 se comprobó con **12 mutaciones** (se rompió a propósito seis de las exclusiones de Restavor web —el impago, la reactivación, la deuda vencida, los recordatorios, «Necesita tu atención» y el panel de impagos—, el gancho de reactivación, el pago
 parcial, el margen de 7 días, la anonimización del teléfono, la exclusión de bajas en `run_monthly_charges` y el propio detector de cobros de Reservas): las 12 las atrapa. La
 primera pasada de mutaciones dejó pasar una —la exclusión de `reactivate_establishment_after_payment` no tenía test porque el cobro de Reservas del test no estaba vencido en ese momento— y ahora lo tiene.
@@ -5606,9 +5614,9 @@ Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su tes
 cobro); `my_client_attention` y `establishments_with_nonpayment` también lo contaban; una descarga anónima del Excel daba 500 en vez de 401; el sembrado dejaba de ser repetible en cuanto la aplicación escribía
 una fila de auditoría a nombre de una cuenta suyas; y varias guardas del repositorio (zona horaria escrita en el dominio, lista de avisos obligatorios, rejillas sin columna de móvil, lecturas de la tablet).
 
-Decisiones (en `docs/DECISIONES.md`, **132 a 141**): 132 datos de pago en el espacio (de Bosco), 133 el aviso de 5 días, 134 el gancho de reactivación como disparador y el fin del periodo pagado, 135 cierre y reactivación,
+Decisiones (en `docs/DECISIONES.md`, **132 a 143**): 132 datos de pago en el espacio (de Bosco), 133 el aviso de 5 días, 134 el gancho de reactivación como disparador y el fin del periodo pagado, 135 cierre y reactivación,
 136 la pestaña «Reservas» de la ficha será una subruta (E2), 137 los dos correos al momento (de Bosco), 138 Stripe sin dependencia (E2), 139 lo que queda fuera de la Fase E, 140 el Excel sin librería y su auditoría,
-141 las exclusiones de D-D.
+141 las exclusiones de D-D, 142 lo que cambió la revisión independiente y 143 lo que la revisión señaló y queda anotado.
 
 Hallazgos que conviene saber:
 
@@ -5616,6 +5624,7 @@ Hallazgos que conviene saber:
 - **Dos e2e de antes se ajustaron**, y no por una regresión: uno daba por hecho que «Aprobar» y «Rechazar» todavía no existían (ahora existen), y el de la sesión de soporte de la Fase D hacía un `goto` en medio
   de la navegación que sigue al segundo paso (`net::ERR_ABORTED`, una carrera del test): ahora espera a que termine. Los e2e que **crean** solicitudes (los de «Contratar Reservas») no se pueden repetir sobre
   la misma base: hay que rehacerla o resembrar, y el sembrado de Reservas (idempotente) solo deja como estaba lo suyo.
+- Tras la migración 175 se repitió todo: las 93 suites SQL, 2.759 unitarios y los 58 e2e. En una pasada de los e2e, «Aprobar» tardó más de 45 s en mostrar su mensaje (la aprobación sí se hizo) y falló; en la repetición sobre una base limpia pasaron los 58. No lo he podido reproducir ni explicar: queda anotado por si vuelve.
 - `register_payment()` y `waive_charge()` **no se tocan**: el gancho es un disparador, así que ninguna redefinición futura lo pierde.
 - Los cobros de Reservas **siguen saliendo en «Pagos y facturas» de Restavor web** de un restaurante que tenga también panel (PRD §12.3 pide que no); no afecta a ningún estado. Queda anotado (decisión 139).
 - Con Reservas `approved_pending_payment` el menú lateral todavía enseña «Ajustes» (la maqueta dice «Se abren cuando Restavor confirme el pago»): diferencia de la Fase B, no de esta.

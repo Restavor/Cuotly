@@ -2806,3 +2806,19 @@ Reservas» (decisión 100) entra en la Fase E, en E2. Las demás son decisiones 
     `_internal` (que usan la transferencia y el cambio de estado de un restaurante), de `establishments_with_nonpayment()` (el panel de impagos de Restavor web), de `my_client_attention()` (la
     mensualidad y las condiciones de Reservas se atienden en Restavor agents) y `run_monthly_charges()` no emite mensualidad a una Reservas dada de baja o cerrada. Cada una recreada entera
     desde su última definición viva (migración 172).
+142. **La revisión independiente de E1 encontró tres defectos graves, cuatro medios y varios menores; todo lo real está corregido en la migración 175** (las 172 a 174 ya estaban subidas, así que no se
+    editaron). (1) **Revisar el servicio Reservas dejaba de cobrar**: la guarda de la migración 156 rechazaba el cambio de versión que hace `apply_due_revision_internal()` y `run_monthly_charges()` se tragaba
+    el error; ahora la guarda solo impide *entrar* en Reservas, no pasar de una versión a otra. (2) **El Encargado leía datos de comensales con Reservas cerrada** (PRD §6.12, «solo el Propietario entra»):
+    `reservations_can_read()` ya no le deja con el servicio `closed`; el Propietario sí, para descargar. (3) **Un trabajador asignado podía registrar un pago de Reservas y activar el servicio** (PRD §3.2: solo
+    Restavor): el disparador del pago exige `manage_clients` cuando hay una sesión de persona (el servidor, sin sesión, como la recarga de E2, no lo necesita). (4) **Reservas se activaba sin condiciones
+    aceptadas** (PRD §4.4 paso 4, RN-DAT-07): con el cobro saldado y sin aceptación queda en `approved_pending_payment` y se activa en cuanto el Propietario acepta (`accept_reservation_terms()`).
+    (5) El correo «Aprobado» (dinero) podía salir dos veces en un doble clic: `claim_email_deliveries_for_keys()` ahora arrienda la entrega cinco minutos. (6) El barrido ya no anuncia cambios que su propio
+    bloque deshizo. (7) «Anular la baja» con deuda vencida vuelve a `past_due` o `paused`, no a `active`. (8) El motivo interno de un cierre queda en `audit_log.reason` y no en el evento que lee el Propietario.
+    (9) El IBAN se valida con el dígito de control (`iban_is_valid()`). Además, el correo que sale por la cola de dos tandas (que no lee los datos de pago) ya no dice «sin configurar»: remite a la cuenta, y
+    reactivar una cerrada saca su «Aprobado» al momento como el primero.
+143. **Lo que la revisión señaló y se deja como está, anotado.** (a) Un restaurante aprobado que **nunca paga** sigue recibiendo mensualidades (`run_monthly_charges()` solo salta `ending` y `closed`) y no hay
+    salida de `approved_pending_payment` salvo condonar el cobro (que activa Reservas): hace falta una regla de «abandono» de Bosco (cuántos días, qué pasa con los cobros); no se inventa. (b) Pedir la baja
+    desde `paused` con un periodo pagado por delante deja `ending` en marcha hasta `ending_at`: se pagó. (c) Las claves de aviso (`reservations_paused:<restaurante>:<vencimiento>`) agrupan una pausa que
+    se repite por el mismo vencimiento tras revertir un pago: el segundo aviso no sale al momento. (d) «Vence el…» del correo usa la zona de Madrid y no la del espacio. (e) `reservations_api_idempotency`
+    (sin uso todavía) no se anonimiza. (f) Tras reactivar una cerrada, `reservation_payment_info()` enseña la deuda más antigua, no el cobro nuevo. (g) Cambiar el IBAN no pide `aal2` ni avisa a nadie: la
+    auditoría dice que cambió, no de qué a qué (el IBAN no se copia a la auditoría, decisión 132).

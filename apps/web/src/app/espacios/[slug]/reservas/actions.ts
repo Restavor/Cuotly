@@ -137,7 +137,12 @@ export async function closeServiceAction(input: { slug: string; establishmentId:
 export async function reactivateClosedAction(input: { slug: string; establishmentId: string }): Promise<SpaceReservationsFeedback> {
   if (!UUID.test(input.establishmentId)) return { ok: false, message: es.reservationsSpace.errors.failed };
   try {
-    await reactivateClosed(await createClient(), input.establishmentId);
+    const subscriptionId = await reactivateClosed(await createClient(), input.establishmentId);
+    if (subscriptionId) {
+      // Es otro «Aprobado: datos para pagar», con el cobro nuevo: sale al momento como el primero.
+      const key = `reservation_service_approved:${subscriptionId}`;
+      await deliverNoticesNow({ pushKeys: [key], emailKeys: [key], establishmentIds: [input.establishmentId] });
+    }
     refresh(input.slug);
     return { ok: true, message: es.reservationsSpace.running.reactivatedDone };
   } catch (error) {
