@@ -2644,9 +2644,10 @@ Fase 1» de ese informe.
     **menús**, pero entra en el de trabajos y tareas (`is_eligible_job_candidate`, `list_task_candidates`) y, al estar autorizado en un restaurante, ve sus finanzas e informes
     (RN-REP-31). Bosco autoriza una migración nueva que lo excluya, **excepción puntual a «no modificar funciones existentes» del PRD del agente (§12)**. Se propone el
     diseño exacto (qué marca lleva el miembro y qué funciones toca) en la Fase 2 y **se aprueba antes de aplicarlo**; hasta entonces no se escribe ninguna migración.
-115. **Bar Demo, restaurante de pruebas del agente** (Bosco, 03/10/2026: «doy mi permiso»; Magariños **no** se usa porque apunta a una web real). Permiso para escribir en
-    "Restavor pruebas" cuatro cosas en Bar Demo: plataforma web, dirección, plantilla de publicar y un menú diario, y «nada más». **Hecho el 03/10/2026:** `web_platform = landing_site`
-    y `website_url = https://www.restavor.com/pruebas-agente-menu`, por `set_establishment_data()` como `owner@cuotly.test` (una fila de `audit_log`), con el script
-    `agents/menu-diario/sql/bar-demo-pruebas.sql`. **No hecho, bloqueado:** la plantilla y el menú, porque `create_menu_template` y `create_menu` exigen Menú Diario y Bar Demo no lo tiene
-    (plan Impulso+ sin Menú Diario, ningún servicio); contratarlo emite un cobro de 229 € + IVA y una permanencia de 3 meses que el permiso no cubre. Se decide aparte
-    (informe, «Qué necesito de Bosco ahora»). Un resembrado del espacio demo deshace lo hecho: hay que relanzar el script.
+115. **Bar Demo, restaurante de pruebas del agente** (Bosco, 03/10/2026: «doy mi permiso» y, ante el bloqueo de Menú Diario, **opción A**; Magariños **no** se usa porque apunta a una web real).
+    Permiso para escribir en "Restavor pruebas", solo en Bar Demo: plataforma web, dirección, plantilla de publicar, un menú diario y, con la opción A, **contratar Menú Diario con la función
+    de la app y registrar un pago de demostración**. **Hecho el 03/10/2026**, por las funciones de la app y como `owner@cuotly.test`: `web_platform = landing_site` y
+    `website_url = https://www.restavor.com/pruebas-agente-menu`; servicio Menú Diario contratado (permanencia de 3 meses y un cobro de 229 € + IVA = 277,09 €, precio antiguo del sembrado demo, no
+    corregido); pago de demostración de ese cobro; plantilla «Clásica» de publicar; y un menú `daily` del 04/10/2026 en borrador con una versión. Siete apuntes de auditoría y ningún aviso.
+    Script reproducible: `agents/menu-diario/sql/bar-demo-pruebas.sql`. **Un resembrado del espacio demo lo deshace** (Bar Demo conserva su id): hay que relanzar el script a mano, o llevarlo a
+    `supabase/seed/` si Bosco lo decide.

@@ -5,54 +5,60 @@
 | Fecha | 02/10/2026 |
 | Rama | `claude/gallant-mccarthy-nrf8u4` (reiniciada desde `origin/agents`, decisión A de Bosco) |
 | Base de pruebas | "Restavor pruebas" (`bnucqykimngjwcrlpmsm`). Producción ("Cuotly", `mcajbfxhkxtdhjoyrqha`) **no se ha tocado** |
-| Estado | **Incompleta, pendiente de Bosco** (actualizado el 03/10/2026, ver la sección siguiente). Falta el trabajo en LandingSite (preguntas 1 a 7 de PRD 9.3), la plantilla y el menú de Bar Demo, y el visto bueno |
+| Estado | **Incompleta, pendiente de Bosco** (actualizado el 03/10/2026, ver la sección siguiente). Falta el trabajo en LandingSite (preguntas 1 a 7 de PRD 9.3) y el visto bueno. Bar Demo ya está listo |
 
 ---
 
 ## Actualización del 03/10/2026 (respuestas de Bosco al §7)
 
-Bosco contestó a los seis puntos del §7. Lo que cambia, y lo que sigue abierto:
+Bosco contestó a los seis puntos del §7 y, después, a lo que quedó bloqueado. Estado:
 
 | § 7 | Respuesta de Bosco | Estado a 03/10/2026 |
 |---|---|---|
-| 1 LandingSite | Crea **una cuenta propia para el agente** y el agente entra con ella (decisión 113). No contesta si pide permiso a LandingSite ni si descarta el plan B | **Riesgo de la cláusula 6(ix) sin resolver**: una cuenta propia no lo elimina, solo protege la cuenta de Bosco. Pendiente: crear la cuenta, invitarla al sitio de Restavor y comprobar que LandingSite lo permite |
-| 2 Página de pruebas | "Está creada y publicada en `restavor.com/pruebas-agente-menu`" | **Sigue dando 404 desde el entorno de Claude** (03/10 08:07 UTC), con anti-caché, `/es/`, `/en/`, sin `www` y con mayúscula; el `sitemap.xml` es idéntico al del 02/10. Pendiente: que Bosco abra esa dirección en su navegador y me diga qué ve, o me dé la dirección exacta del editor |
-| 3 Bar Demo | Permiso concedido: plataforma web, dirección, plantilla de publicar y un menú | **Hecho solo la plataforma y la dirección** (ver abajo). **Plantilla y menú, bloqueados**: Bar Demo no tiene Menú Diario |
-| 4 Decisión de crear el agente | "Vale" | Registrada: decisión 112 en `docs/DECISIONES.md`, `CLAUDE.md` y nota en RN-CRE-25 de `docs/PRD.md` |
-| 5 Reparto de trabajos | "Ok" a la opción (ii) | Decisión 114. Se propone el diseño en la Fase 2 y se aprueba antes de escribir la migración |
-| 6 Preguntas 1 a 7 de LandingSite | Bosco entrará con la cuenta del agente | Pendiente: ver "Cómo entrar a LandingSite desde aquí" |
+| 1 LandingSite | Cuenta propia para el agente (decisión 113). Es un **correo nuevo y vacío, con el que inició sesión en LandingSite usando Google** | **Riesgo de la cláusula 6(ix) sin resolver** (una cuenta propia solo protege la de Bosco). **Pendiente y bloqueante:** la cuenta está vacía, así que **no ve el sitio de Restavor** hasta que Bosco la invite desde su cuenta principal; y entrar "con Google" desde aquí es la peor vía (ver "Cómo conectar LandingSite") |
+| 2 Página de pruebas | "Arreglado" | **Confirmado: responde 200** en `https://www.restavor.com/pruebas-agente-menu` (con anti-caché). Ver "La página de pruebas" |
+| 3 Bar Demo | Permiso concedido | **Hecho entero** con la opción A (ver "Hecho en Restavor pruebas") |
+| 4 Decisión de crear el agente | "Vale" | Decisión 112 en `docs/DECISIONES.md`, `CLAUDE.md` y nota en RN-CRE-25 de `docs/PRD.md` |
+| 5 Reparto de trabajos | "Ok" a la opción (ii) | Decisión 114. El diseño exacto se propone en la Fase 2 y se aprueba antes de escribir la migración |
+| 6 Preguntas 1 a 7 de LandingSite | Bosco entrará con la cuenta del agente | Pendiente: ver "Cómo conectar LandingSite" |
+| Menú Diario para Bar Demo | **Opción A** | Hecho: contratado con la función de la app y pago de demostración registrado |
+
+### La página de pruebas (comprobada el 03/10/2026, solo lectura)
+- `https://www.restavor.com/pruebas-agente-menu` → **200**. Título "Página de pruebas · Menú del día", texto "Página interna de Restavor para probar la publicación automática del menú diario. No es un restaurante real", `<meta name="robots" content="noindex, nofollow">`. Cabecera `x-landingsite-site-id: LS-onmfye544q` (la misma que la portada: es el mismo sitio que la web real de Restavor).
+- Tiene **3 imágenes**; la del menú es la **foto de archivo `/assets/provider/istock/2255959062.jpg` con `alt="Menú del día"`**. Ese texto alternativo es el marcador estable que propone el PRD (9.3-7). Las otras dos son subidas del propio sitio (`/assets/uploads/0c0495e1-…/…webp`).
+- **Sí aparece en `sitemap.xml`** (86 URL; ayer 85), aunque está en `noindex`. No cuelga del menú, pero la dirección es descubrible. Solo existe en español (`/es/pruebas-agente-menu` da 404).
+- Caché de la página: `public, max-age=60` (ayer, 300). Para verificar una publicación hay que contar con hasta 1 minuto de retraso.
+- La imagen que sustituirá el agente es una **foto de archivo de LandingSite**, no un PNG subido: al cambiarla se sube un archivo nuevo a `/assets/uploads/…`.
 
 ### Hecho en "Restavor pruebas" (con el permiso de Bosco)
-- **Bar Demo** (`d4000000-0000-0000-0000-000000000001`): `web_platform = landing_site` y `website_url = https://www.restavor.com/pruebas-agente-menu`, antes los dos nulos.
-- Se hizo por la función de la app `set_establishment_data` (la única puerta: un UPDATE directo lo rechaza el disparador `establishments_guard_data`), actuando como **`owner@cuotly.test`** (la persona de prueba que ya usa el sembrado; administradora del espacio demo con `manage_clients`), **no** con la cuenta real de Bosco. Script reproducible: `agents/menu-diario/sql/bar-demo-pruebas.sql`.
-- Comprobado: `audit_log` tiene **una** fila `establishment.data_changed` de ese actor, con `old_value {web_platform: null, website_url: null}` y `new_value {landing_site, https://www.restavor.com/pruebas-agente-menu}` (la función no admite campo de motivo).
-- **No comprobado:** que no haya cambiado nada más. La consulta de recuentos generales de tablas (antes/después) fue **rechazada por Bosco** y no se repitió. Tampoco se volvió a ejecutar el script en la base viva para demostrar la idempotencia: la función devuelve `false` y no escribe si el dato ya está así (comprobado leyendo su definición viva), y una de las lecturas lo probó en una copia local desechable con una versión más amplia del script, pero **no** con este archivo.
-- Un **resembrado** del espacio demo (push a `agents` que toque `supabase/seed/`, o el proceso con `sembrar`) lo deshace: Bar Demo conserva su id y código `EST-0001`, pero vuelve a quedar sin plataforma ni dirección. Hay que relanzar el script a mano.
+Todo por las funciones de la propia app y actuando como **`owner@cuotly.test`** (Elena Ruiz, administradora del espacio demo con `manage_clients` y `manage_requests`; el mismo actor que el sembrado), **no** con la cuenta real de Bosco. Script reproducible: `agents/menu-diario/sql/bar-demo-pruebas.sql`.
+1. **Plataforma y dirección** de Bar Demo (`d4000000-…-0001`): `web_platform = landing_site`, `website_url = https://www.restavor.com/pruebas-agente-menu` (antes nulos). Por `set_establishment_data`, la única puerta (un UPDATE directo lo rechaza el disparador `establishments_guard_data`).
+2. **Menú Diario contratado** con `create_service_subscription`: una suscripción de servicio activa, una **permanencia de 3 meses** y un **cobro de 277,09 € (229 € + IVA)** que vencía el 10/10. El precio es el del sembrado demo (anterior a la decisión 85, que fija 199 €): no se corrigió.
+3. **Pago de demostración** de ese cobro por `register_payment` ("Transferencia de demostración", 27.709 de 27.709 céntimos), como hace el sembrado con el plan de Bar Demo. Bar Demo no queda con deuda pendiente.
+4. **Plantilla de publicar** "Clásica" (`classic`, fondo `#FFFFFF`, texto `#1F2937`, acento `#145C4E`, cabecera "Bar Demo", pie "IVA incluido · Pan y bebida incluidos", con precio). Consume la plantilla incluida de publicar de Bar Demo (RN-CRE-23: no se puede crear otra incluida aunque se archive esta).
+5. **Un menú `daily`** "Menú del día" para el **04/10/2026**, en **borrador**, con 1 versión (primeros: Ensalada de la huerta, Caldo gallego; segundos: Merluza a la gallega, Carrilleras al vino tinto; postres: Tarta de Santiago, Fruta de temporada; "Vino de la casa o agua"; 14,50 €; "Pan incluido"). **No se preparó ni se pidió publicar**, para no disparar asignación ni avisos. Los platos son los del menú de prueba de Magariños (solo el texto; Magariños no se tocó).
 
-### Bloqueo nuevo: Bar Demo no tiene Menú Diario
-Averiguado por cuatro lecturas en paralelo (código y base viva, solo lectura):
-- Bar Demo tiene el plan **Impulso+** (`includes_daily_menu = false`) y **ninguna suscripción al servicio** Menú Diario. `establishment_daily_menu_access()` devuelve nulo.
-- `create_menu_template`, `create_menu` y `request_menu_publication` lo exigen ("El restaurante no tiene Menú Diario, ni contratado ni en su plan"). Sin él no se puede crear la plantilla de publicar ni el menú **por las funciones de la app**, y saltárselas con inserciones a mano se salta eventos y auditoría (`CLAUDE.md`).
-- En el espacio demo **ningún plan incluye Menú Diario**: el catálogo demo es el antiguo (Impulso+ y Premium+ sin archivar, servicio a 229 €). El catálogo nuevo (Impulso 99 € y Premium 199 €, con Menú Diario incluido) existe solo en el espacio `restavor`. El único restaurante con Menú Diario es **Magariños**, contratado como servicio (el sembrado llama a `create_service_subscription`).
-- **Contratarlo** (`create_service_subscription`) escribe: una suscripción de servicio, una **permanencia de 3 meses**, y un **cobro de 229 € + IVA = 277,09 €** con su apunte en el libro y dos filas de auditoría. El cobro quedaría **sin pagar** (vence a 7 días; sin `pg_cron` ni barrido activo en Pruebas, pero si alguien lanzara el barrido de impagos, Bar Demo pasaría a `paused` y `suspended` y bloquearía justo lo que queremos probar). El precio de 229 € contradice la decisión 85 (199 €): es dato antiguo del sembrado demo, no se corrige por cuenta propia.
-- **Nada de esto lo cubre el permiso de Bosco ("nada más")**, así que no se ha hecho. Opciones y recomendación en el chat y abajo en "Qué necesito de Bosco ahora".
-- Además: `docs/agents/PRUEBAS.md` dice que Café Prueba está en "Impulso en créditos" con Menú Diario incluido; **la base viva no lo confirma** (Café Prueba tiene el plan Impulso del catálogo antiguo, `includes_daily_menu = false`). Documentación desfasada respecto a la base.
+**Comprobado** (consulta de auditoría acotada a lo creado desde las 09:00 UTC del 03/10): siete apuntes de `audit_log`, todos del actor Elena (`subscription.service_created`, `charge.issued`, `payment.registered`, `menu_template.created`, `menu_template.design_updated`, `menu.created`, `menu.version_saved`), **0 avisos nuevos** en `notifications`, **1 evento de menú** (creación en borrador), Bar Demo sigue `active`, con Menú Diario. Antes, a las 08:54 UTC, el apunte `establishment.data_changed` de la plataforma y la dirección.
+**No comprobado:** una comparación de recuentos de todas las tablas antes/después (Bosco rechazó esa consulta y no se repitió); solo se ha verificado lo anterior.
+Un **resembrado** del espacio demo deshace todo esto (Bar Demo conserva su id y `EST-0001`): hay que relanzar el script a mano.
 
-### Cómo entrar a LandingSite desde aquí
-- `https://app.landingsite.ai/login` y `https://www.landingsite.ai` responden desde el entorno. **Bloqueados por la red** (probado el 03/10): `imagedelivery.net` y `assets.ls-assets.com` (imágenes y recursos del editor); hay que permitirlos y puede que aparezcan más al probar el editor.
-- Las credenciales **no pasan nunca por el chat**: Bosco las guarda como **variables de entorno del entorno en la nube** (menú del entorno en la barra de título de la sesión → Edit), con los nombres **`LANDINGSITE_EMAIL`** y **`LANDINGSITE_PASSWORD`**. **Una sesión nueva** las recoge; esta no.
-- Hace falta, además, que LandingSite **permita a esa cuenta editar el sitio de Restavor** (invitarla como colaborador o similar). Es la pregunta que decide si esta vía funciona.
-- Dos cautelas: esa cuenta debe crearla Bosco **a mano** (la cláusula 6(ix) prohíbe a scripts crear cuentas), y el trabajo en LandingSite será **mínimo y lento** (pocas peticiones, una sola ejecución, como lo haría una persona).
+### PNG de prueba
+`docs/menu-prueba-bar-demo.png` (1240 × 1754) se **regeneró a partir del menú real de Bar Demo en la base** (4 de octubre, plantilla "Clásica"), con el mismo código de la web (`buildMenuDocument` + `renderMenuPng`, fuera de Next). Sustituye al anterior (que usaba datos de Magariños con cabecera "Bar Demo"). Dos renders seguidos dan los mismos bytes (sha256 `04168135…`). Sigue sin comprobarse que coincida píxel a píxel con una descarga hecha desde la web desplegada (§2.1).
+
+### Cómo conectar LandingSite (pendiente de Bosco)
+- Cuentas "con Google" no tienen contraseña de LandingSite. Opciones, de mejor a peor:
+  1. **(Recomendada) Ponerle contraseña de LandingSite** a la cuenta del agente: desde el login con ese correo, "He olvidado mi contraseña" (o ajustes de cuenta) si LandingSite lo permite; es la pregunta 1 del PRD (9.3). Después, `LANDINGSITE_EMAIL` y `LANDINGSITE_PASSWORD` como variables del entorno en la nube (menú del entorno en la barra de título de la sesión → Edit), y **una sesión nueva** (esta no las recoge). **Nunca por el chat.**
+  2. **Entrar con Google desde aquí: no recomendado.** Exigiría guardar la **contraseña de la cuenta de Google** (más sensible que la de LandingSite), y Google suele bloquear o pedir verificación a inicios de sesión desde un entorno nuevo y con navegador automatizado, y no hay pantalla donde Bosco pueda resolverlo.
+  3. **Si LandingSite no admite contraseña:** Bosco inicia sesión una vez en **su propio navegador** (plan del PRD, 9.4, `npm run agente:login`, es de la Fase 1 y necesita su ordenador) y se guarda solo la sesión de `landingsite.ai`, cifrada. No sirve en esta sesión de nube.
+- **Antes de nada, invitar a esa cuenta al sitio de Restavor** desde la cuenta principal de Bosco (colaborador o similar). Una cuenta nueva y vacía no ve ningún sitio. Es la pregunta que decide si todo esto funciona; si LandingSite no permite invitar, la vía de la cuenta propia no sirve y vuelve a plantearse (plan B del PRD, P3).
+- Red: hay que permitir `imagedelivery.net` y `assets.ls-assets.com` (bloqueados el 03/10; `app.landingsite.ai/login` y `www.landingsite.ai` sí responden). Puede que aparezcan más al probar el editor.
+- Cautelas: la cuenta la crea Bosco **a mano** (la cláusula 6(ix) prohíbe a scripts crear cuentas), y el trabajo en LandingSite será **mínimo y lento** (pocas peticiones, como una persona).
 
 ### Qué necesito de Bosco ahora
-1. **Menú Diario para Bar Demo** (decide si seguimos con plantilla y menú):
-   - **A (recomendada):** contratarlo con la función de la app (`create_service_subscription`, como hizo el sembrado con Magariños) **y** registrar un pago de demostración (`register_payment`, "Transferencia de demostración", como hizo el sembrado con el plan de Bar Demo) para que no quede deuda. Es la vía limpia: deja auditoría y respeta las reglas; el coste es una permanencia de 3 meses y 277,09 € "pagados de mentira" en la base de pruebas.
-   - **B:** contratarlo y dejar el cobro pendiente (más simple, pero Bar Demo puede acabar `paused`/`suspended` si algún proceso barre impagos).
-   - **C:** usar solo el restaurante que ya lo tiene (Magariños). Descartada por Bosco: apunta a una web real.
-   - **D:** meter la suscripción por SQL directo, como el sembrado hace con los planes. No deja cobro, pero se salta permanencia, auditoría y facturación.
-2. **La dirección exacta de la página de pruebas** (404 desde aquí).
-3. **Crear la cuenta del agente en LandingSite**, invitarla al sitio, y guardar `LANDINGSITE_EMAIL` y `LANDINGSITE_PASSWORD` en el entorno; permitir en la red `imagedelivery.net` y `assets.ls-assets.com`; y abrir una **sesión nueva** en la misma rama.
-4. **¿Dónde vive Bar Demo a largo plazo?** Hoy todo se pierde en un resembrado. Opciones: seguir con el script a mano tras cada resembrado, o llevarlo a `supabase/seed/` (toca la carpeta de sembrados y reconstruye la base al subirlo a `agents`).
+1. **Invitar la cuenta del agente al sitio de Restavor** y decir si LandingSite lo permitió.
+2. **Elegir cómo se conecta** (opción 1 de arriba, si LandingSite deja poner contraseña) y, si es esa, guardar `LANDINGSITE_EMAIL` y `LANDINGSITE_PASSWORD` en el entorno + permitir los dos dominios + abrir una **sesión nueva** en la rama `claude/gallant-mccarthy-nrf8u4`.
+3. **¿Dónde vive Bar Demo a largo plazo?** Seguir con el script a mano tras cada resembrado, o llevarlo a `supabase/seed/espacio-demo.sql` (toca la carpeta de sembrados y reconstruye la base al subirlo a `agents`).
+4. **Visto bueno de la Fase 0** cuando se hayan respondido las preguntas 1 a 7 de LandingSite (PRD §14).
 
 ---
 
@@ -161,7 +167,7 @@ Esta misma consulta debe dar lo mismo al final de la fase.
 ### 3.2 Datos de menús (todo es de Magariños)
 - Establecimientos: Bar Demo (`d4000000-…-001`) con `web_platform` y `website_url` **nulos**; **Magariños** (`d4000000-…-003`) con `web_platform = landing_site` y `website_url = https://www.magarinos.es` (web real, no usar).
 - Menús: dos `daily` de Magariños, "Menú del día": 03/10/2026 en `pending_assignment` y 04/10/2026 en `draft`. Plantillas: solo las de Magariños ("Clásica" publicar, "Impresión").
-- **Bar Demo no tiene ningún menú ni plantilla.** El requisito R3 del PRD (restaurante de pruebas apuntando a la web R1, con Menú Diario) **no está cumplido**.
+- **Bar Demo no tenía ningún menú ni plantilla** (a 02/10). El requisito R3 del PRD **no estaba cumplido**; el 03/10 se cumplió (ver la actualización de arriba).
 - Los trabajadores de pruebas (`trabajadora@cuotly.test`, `trabajador2@cuotly.test`) sí son candidatos humanos de menús (especialidad `general`), así que `request_menu_publication` asignaría solo si hay uno único; hay dos, por lo que el menú del 03/10 queda "sin asignar".
 
 ### 3.3 PNG de prueba para la web
