@@ -464,6 +464,7 @@ export const AUDIT_ACTIONS = [
   "reservations.device_activated",
   "reservations.device_revoked",
   "reservations.my_pin_set",
+  "reservations.pin_collision",
   "reservations.pin_locked",
   "reservations.staff_added",
   "reservations.staff_pin_changed",

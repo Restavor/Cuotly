@@ -52,9 +52,12 @@ export async function activateDeviceAction(input: { establishmentId: string; nam
     p_token_hash: hashDeviceToken(token),
   });
   if (error) {
-    return { ok: false, message: /^(Solo un Propietario|Reservas no está|Hace falta)/.test(error.message) ? error.message : t.errors.failed };
+    return { ok: false, message: /^(Solo un Propietario|Reservas no está|Hace falta|Este restaurante ya tiene)/.test(error.message) ? error.message : t.errors.failed };
   }
   await setDeviceCookie(token);
+  // En un dispositivo activado se ignora la sesión personal (PRD §3.3): se cierra aquí, en este navegador, para que la
+  // cuenta de quien lo activó no quede abierta en la tablet del local (ni en Restavor web ni en Mi cuenta).
+  await supabase.auth.signOut({ scope: "local" });
   revalidatePath(`/agents/${input.establishmentId}`, "layout");
   return { ok: true, message: null, href: agentsPageHref(input.establishmentId, "today") };
 }

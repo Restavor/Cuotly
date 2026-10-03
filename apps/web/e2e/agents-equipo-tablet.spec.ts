@@ -1,4 +1,4 @@
-import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { codigoTotp } from "./totp";
 
@@ -55,13 +55,6 @@ async function activarTablet(page: Page, nombre: string) {
   await page.getByRole("button", { name: "Usar este dispositivo como tablet del local" }).click();
   await page.waitForURL(new RegExp(`${HOY}$`), { timeout: 45_000 });
   await expect(page.getByTestId("device-badge")).toContainText(nombre);
-}
-
-/** Desactiva la tablet de este navegador desde su propia cuenta de Propietario (limpia lo que el test activó). */
-async function quitarSesionPersonal(contexto: BrowserContext) {
-  const cookies = await contexto.cookies();
-  await contexto.clearCookies();
-  await contexto.addCookies(cookies.filter((c) => c.name === "restavor_device"));
 }
 
 test.describe("Restavor agents · Equipo, tablet y soporte", () => {
@@ -149,22 +142,28 @@ test.describe("Restavor agents · Equipo, tablet y soporte", () => {
     await expect(page).toHaveURL(new RegExp(`${HOY}$`));
   });
 
-  test("RN-APP-08 · la tablet sigue abierta aunque caduque la sesión personal de quien la activó", async ({ page, context }) => {
+  test("RN-APP-08 · al activar la tablet se cierra la sesión personal de quien la activó: sin cuenta ni Restavor web, solo su agenda", async ({ page, context }) => {
     await activarTablet(page, "Tablet e2e 2");
-    await quitarSesionPersonal(context);
+    // En un dispositivo activado se ignora la sesión personal (PRD §3.3): no queda ninguna en este navegador.
+    const cookies = await context.cookies();
+    expect(cookies.filter((c) => /^sb-.*auth-token/.test(c.name))).toHaveLength(0);
     await page.goto(`${HOY}?fecha=2026-09-26`);
     await expect(page).toHaveURL(new RegExp(`${HOY}\\?fecha=2026-09-26$`));
     await expect(page.getByTestId("device-badge")).toContainText("Tablet e2e 2");
     await expect(page.getByText("Lucía Fernández")).toBeVisible();
-    // Y sin sesión personal una página de Restavor web sí pide entrar: la tablet solo manda en Restavor agents.
+    // Restavor web no es de la tablet: sin sesión personal la lleva a su agenda, no a una cuenta.
     await page.goto("/web");
-    await expect(page).toHaveURL(/login|sesion-caducada/);
+    await expect(page).toHaveURL(new RegExp(`${HOY}$`));
+    await page.goto("/cuenta");
+    await expect(page).toHaveURL(new RegExp(`${HOY}$`));
   });
 
   test("RN-APP-08 · una tablet solo abre su restaurante, aunque la dirección diga otro", async ({ page }) => {
     await activarTablet(page, "Tablet e2e 3");
     await page.goto(`/agents/${CASA_PEPE_CENTRO}/reservas`);
-    await expect(page.getByText("No tienes acceso a Reservas en este restaurante")).toBeVisible();
+    // No hay acceso a otro restaurante: vuelve a Hoy en el suyo.
+    await expect(page).toHaveURL(new RegExp(`${HOY}$`));
+    await expect(page.getByTestId("device-badge")).toContainText("Tablet e2e 3");
   });
 
   test("RN-APP-08 · cada acción pide «¿Quién eres?» + PIN y queda a nombre de quien lo puso", async ({ page }) => {

@@ -2,8 +2,10 @@ import { redirect } from "next/navigation";
 
 import { AppShell, type ShellNotification } from "@/components/shell/AppShell";
 import { totalUnread } from "@/core/global-home";
+import { agentsPageHref } from "@/core/reservations/agents-routes";
 import { es } from "@/i18n/es";
 import { createClient } from "@/lib/supabase/server";
+import { loadDevice } from "@/services/agents/device";
 import { avatarLink } from "@/services/avatar-storage";
 import { myConversations } from "@/services/global-gateway";
 
@@ -42,7 +44,13 @@ export default async function GlobalLayout({ children }: { children: React.React
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  if (!user) {
+    // Una tablet del local no tiene sesión personal (se cierra al activarla): lo de Restavor web no es suyo y la
+    // lleva a su agenda en vez de a «Entrar» (PRD de agents §3.3).
+    const device = await loadDevice();
+    if (device.kind === "active") redirect(agentsPageHref(device.establishmentId, "today"));
+    redirect("/login");
+  }
 
   /*
    * Si la bandeja no se puede leer, la barra sale sin número. Un cero sería

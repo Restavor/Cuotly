@@ -2703,9 +2703,10 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     `dismiss_duplicate()` anotan por su identificador (`actor_staff_id`, `created_by_staff_id`, `dismissed_by_staff_id`). Con sesión de usuario ese ajuste no vale, y el Equipo no
     puede cambiar ajustes ni saltándose la puerta. Las **lecturas** de la tablet van con la clave de servicio, acotadas por restaurante: `agentsDb()` (que se niega a servir
     otro restaurante) y una prueba (`lecturas-acotadas.test.ts`) que exige el filtro en cada `.from()` que una tablet pueda ejecutar. Las dos lecturas que la base comprueba
-    por la sesión de quien llama (`reservation_people`, `reservation_history_log`) entran por la puerta como operaciones con rol mínimo de Encargado. La 170 también amplía
-    `reservations_team_can_read()`: quien tiene abierta una sesión de soporte con segundo paso lee la configuración (no los datos de comensales) de los restaurantes de ese
-    espacio; sin esto, alguien de la plataforma que no es miembro del espacio vería las reservas pero no los turnos, y Hoy no se pintaría.
+    por la sesión de quien llama (`reservation_people`, `reservation_history_log`) entran por la puerta como operaciones con rol mínimo de Encargado. La 170 también deja que
+    quien tiene abierta una sesión de soporte con segundo paso lea la configuración (no los datos de comensales) **del restaurante de su sesión**: la puerta de dos
+    argumentos `reservations_team_can_read(espacio, restaurante)` sustituye a la de espacio en las diecinueve políticas de lectura; la de un solo argumento queda como estaba
+    en la 161. Sin esto, alguien de la plataforma que no es miembro del espacio vería las reservas pero no los turnos, y Hoy no se pintaría.
 122. **El bloqueo de PIN crece (Bosco, 03/10/2026).** El PRD pide 5 PIN erróneos → 1 minuto. Con 4 cifras y solo eso, quien tenga la tablet probaría los 10.000 PIN en unas 33 horas.
     Bosco pidió que crezca: la primera tanda de 5 fallos bloquea 1 minuto (como el PRD), la segunda 5, la tercera 30 y de la cuarta en adelante 2 horas; un PIN bueno lo reinicia y
     a las 24 horas sin fallos se olvida. Los números exactos (5, 30 y 2 h) son de Claude, en `pinLockSeconds()` y en `reservation_pin_lock_seconds()`; una prueba comprueba que
@@ -2738,4 +2739,22 @@ decisiones técnicas de Claude, reversibles, sobre lo que el PRD de `docs/agents
     control es el servidor). Las rutas `/r`, `/widget`, `/reservar.js` y `/c` quedan fuera de las comprobaciones de sesión desde ya (PRD §3.3), aunque no existan hasta la Fase H.
 129. **«Abrir» una ficha sin PIN se anota como el sistema.** El PRD dice que sin PIN se ven las fichas, y abrir una quita «Nueva»: es la única escritura que la tablet hace sin PIN, y se
     anota con actor `system` («Sistema»), no a nombre de nadie.
+130. **Lo que cambió la revisión independiente de la Fase D** (03/10/2026). Un subagente leyó el diff contra el PRD §3 y CLAUDE.md; seis hallazgos, todos comprobados y
+    corregidos con su test (suite 92, los e2e y `device-concurrency-test.mjs`):
+    - **La sesión de soporte es de un restaurante, no de un espacio.** La primera versión dejaba que la sesión abierta en un restaurante diera lectura de configuración y los
+      poderes del «equipo del espacio» (añadir Equipo, revocar tablets, cambiar ajustes) sobre TODOS los restaurantes de ese espacio, y no comprobaba que la persona siguiera
+      marcada. Ahora la lectura y la gestión pasan por `reservations_can_read_diner_data(restaurante)` (sesión viva, segundo paso y marca vigente) y por la puerta de dos argumentos.
+    - **La tablet no conserva la sesión personal.** Activarla cierra la sesión de quien la activó en ese navegador (PRD §3.3, «se ignora la sesión personal»); sin ella, Restavor web
+      y Mi cuenta llevan a la agenda de la tablet, y pedir otro restaurante también. Además, «Mi PIN», invitar y quitar a un Encargado (las tres de cuenta) se niegan en el servidor
+      si hay un dispositivo activo (ocultar el botón no es control de acceso).
+    - Un restaurante **eliminado definitivamente** ya no se lee ni se abre como soporte (RN-ADM-24).
+    - **«Ese PIN ya lo usa otra persona» no se puede preguntar sin límite**: cada topetazo deja una fila de auditoría (`reservations.pin_collision`, sin el PIN) y con **cinco en 24 horas**
+      esa persona no puede poner ni probar más PIN en ese restaurante hasta pasado el día (la respuesta ya no distingue). Y un restaurante no pasa de **veinte dispositivos activos**.
+      **Los dos números (5 y 20) son míos, no del PRD: para confirmar con Bosco.**
+    - El Equipo con PIN corre sin usuario y el disparador de «espacio archivado = solo lectura» lo dejaba pasar: la puerta de la tablet lo cierra.
+    - Lo que hace el soporte dentro de su sesión queda con el identificador de la sesión en todos los apuntes de auditoría (no solo en los de la agenda), y el Historial lo enseña como
+      «Restavor (soporte)».
+    **Contradicción corregida:** la línea que esta fase puso en `CLAUDE.md` decía que el soporte de Reservas «es de solo lectura»; el PRD §3.4 le da escritura con la etiqueta `restavor_support`
+    y así está construido. Se corrigió la línea. **Queda descrito, sin tocar:** la cookie «Ajustes abiertos» no va ligada a un dispositivo (vale en cualquier tablet del mismo restaurante 2 minutos,
+    es `httpOnly` y está firmada), y con Ajustes abiertos la agenda corre a nombre de quien los abrió sin pedir PIN otra vez (decisión 124).
 

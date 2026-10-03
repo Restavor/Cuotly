@@ -172,7 +172,24 @@ set search_path = public
 as $$
 declare
   v_staff uuid := public.reservations_device_staff(p_establishment_id);
+  v_session uuid;
+  v_new jsonb := p_new;
 begin
+  if v_staff is not null then
+    v_new := coalesce(v_new, '{}'::jsonb) || jsonb_build_object('by_staff_id', v_staff);
+  elsif auth.uid() is not null
+        and not coalesce(public.reservations_my_role(p_establishment_id) in ('owner', 'manager'), false) then
+    -- Lo que hace el soporte dentro de su sesión queda con la sesión (PRD §3.4).
+    select s.id into v_session
+    from public.reservation_support_sessions s
+    where s.establishment_id = p_establishment_id and s.actor_id = auth.uid()
+      and s.ended_at is null and s.expires_at > now()
+    order by s.started_at desc limit 1;
+    if v_session is not null then
+      v_new := coalesce(v_new, '{}'::jsonb) || jsonb_build_object('via', 'restavor_support', 'support_session_id', v_session);
+    end if;
+  end if;
+
   insert into public.audit_log (space_id, actor_id, action, entity_type, entity_id, old_value, new_value)
   values (
     public.establishment_space_id(p_establishment_id), auth.uid(),
@@ -184,11 +201,11 @@ begin
       when 'device_activated' then 'reservations.device_activated'
       when 'device_revoked' then 'reservations.device_revoked'
       when 'pin_locked' then 'reservations.pin_locked'
+      when 'pin_collision' then 'reservations.pin_collision'
       when 'support_session_opened' then 'reservations.support_session_opened'
       when 'support_session_closed' then 'reservations.support_session_closed'
     end,
-    'establishment', p_establishment_id, p_old,
-    case when v_staff is null then p_new else coalesce(p_new, '{}'::jsonb) || jsonb_build_object('by_staff_id', v_staff) end
+    'establishment', p_establishment_id, p_old, v_new
   );
 end;
 $$;
@@ -263,12 +280,11 @@ $$;
 
 revoke all on function public.reservations_settings_actor(uuid) from public, anon, authenticated;
 
--- Quién del espacio lee la configuración de Reservas (turnos, ajustes, Equipo, dispositivos…): la 161 con una
--- puerta más. Quien tiene abierta una sesión de soporte de Reservas con segundo paso lee la configuración (no los
--- datos de los comensales: esos siguen su propia puerta, `reservations_can_read_diner_data`) de los restaurantes
--- de ESE espacio. Sin esto, alguien de la plataforma con `can_support` que no es miembro del espacio abriría la
--- sesión y vería las reservas pero no los turnos, y Hoy no se podría pintar. No amplía lo que ya podía abrir:
--- la sesión se abre sobre un restaurante concreto de ese espacio.
+-- Quién del espacio lee la configuración de Reservas (turnos, ajustes, Equipo, dispositivos…): la de la 161,
+-- sin cambios. Es una puerta de ESPACIO: Propietarios y Administradores del espacio y el Modo soporte de Restavor web.
+-- Una sesión de soporte de Reservas NO entra por aquí (abre un restaurante, no un espacio): entra por la puerta de
+-- dos argumentos de más abajo y por `reservations_can_read_diner_data`, que mira el restaurante, el segundo paso y que
+-- la persona siga marcada como soporte.
 create or replace function public.reservations_team_can_read(p_space_id uuid)
 returns boolean
 language sql
@@ -285,19 +301,99 @@ as $$
           and m.status = 'active' and m.role in ('owner', 'admin')
       )
       or public.support_access_level(p_space_id) is not null
-      or (
-        public.session_is_two_factor()
-        and exists (
-          select 1 from public.reservation_support_sessions s
-          where s.space_id = p_space_id and s.actor_id = auth.uid()
-            and s.ended_at is null and s.expires_at > now()
-        )
-      )
     );
 $$;
 
 revoke all on function public.reservations_team_can_read(uuid) from public, anon;
 grant execute on function public.reservations_team_can_read(uuid) to authenticated;
+
+-- La puerta de los datos de los comensales (la de la 163) con una condición más: un restaurante eliminado
+-- definitivamente (o de un espacio eliminado) ya no se lee, ni con la sesión abierta (RN-ADM-24).
+create or replace function public.reservations_can_read_diner_data(p_establishment_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select auth.uid() is not null
+    and public.session_is_two_factor()
+    and not public.establishment_is_gone(p_establishment_id)
+    and exists (
+      select 1
+      from public.reservation_support_sessions s
+      where s.establishment_id = p_establishment_id
+        and s.actor_id = auth.uid()
+        and s.ended_at is null
+        and s.expires_at > now()
+        and (
+          public.is_platform_supporter()
+          or exists (
+            select 1 from public.space_memberships m
+            where m.space_id = s.space_id and m.user_id = auth.uid()
+              and m.status = 'active' and m.can_support_reservations
+          )
+        )
+    );
+$$;
+
+revoke all on function public.reservations_can_read_diner_data(uuid) from public, anon;
+grant execute on function public.reservations_can_read_diner_data(uuid) to authenticated;
+
+-- La misma puerta, por restaurante: además del equipo del espacio, quien tiene abierta una sesión de soporte de
+-- Reservas EN ESE restaurante (segundo paso, sesión viva y marca de soporte vigente) lee su configuración, no la de
+-- los demás restaurantes del espacio. Sin esto, alguien de la plataforma con `can_support` que no es miembro del
+-- espacio abriría la sesión y vería las reservas pero no los turnos, y Hoy no se podría pintar.
+create or replace function public.reservations_team_can_read(p_space_id uuid, p_establishment_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select public.reservations_team_can_read(p_space_id)
+    or (
+      public.establishment_space_id(p_establishment_id) = p_space_id
+      and public.reservations_can_read_diner_data(p_establishment_id)
+    );
+$$;
+
+revoke all on function public.reservations_team_can_read(uuid, uuid) from public, anon;
+grant execute on function public.reservations_team_can_read(uuid, uuid) to authenticated;
+
+-- Las políticas de lectura que usaban la puerta de espacio pasan a la de restaurante. Se reescriben desde el catálogo
+-- para no copiar a mano diecinueve políticas; si alguna tabla no tuviera `establishment_id`, la migración falla.
+do $$
+declare
+  r record;
+  v_expr text;
+  v_done integer := 0;
+begin
+  for r in
+    select p.polname, c.relname, p.polcmd, pg_get_expr(p.polqual, p.polrelid) as qual
+    from pg_policy p
+    join pg_class c on c.oid = p.polrelid
+    join pg_namespace n on n.oid = c.relnamespace and n.nspname = 'public'
+    where pg_get_expr(p.polqual, p.polrelid) like '%reservations_team_can_read(space_id)%'
+  loop
+    if r.polcmd <> 'r' then
+      raise exception 'La política % de % no es de lectura', r.polname, r.relname;
+    end if;
+    if not exists (
+      select 1 from information_schema.columns
+      where table_schema = 'public' and table_name = r.relname and column_name = 'establishment_id'
+    ) then
+      raise exception 'La tabla % no tiene establishment_id', r.relname;
+    end if;
+    v_expr := replace(r.qual, 'reservations_team_can_read(space_id)', 'reservations_team_can_read(space_id, establishment_id)');
+    execute format('alter policy %I on public.%I using (%s)', r.polname, r.relname, v_expr);
+    v_done := v_done + 1;
+  end loop;
+  if v_done < 19 then
+    raise exception 'Se esperaban al menos 19 políticas con la puerta de espacio y se reescribieron %', v_done;
+  end if;
+end;
+$$;
 
 -- Un evento de la reserva. Nunca lleva nombre, teléfono, email ni nota (RN-RES-12). El Equipo se
 -- anota por su identificador (`actor_staff_id`): el nombre se busca al enseñar el historial.
@@ -843,6 +939,27 @@ begin
 end;
 $$;
 
+-- «Ese PIN ya lo usa otra persona» es lo único que cuenta qué PIN existen: quien pudiera preguntarlo sin límite
+-- adivinaría los de todos. Cada vez que alguien con cuenta se topa con un PIN ya en uso queda una fila de auditoría
+-- (sin el PIN); con cinco en 24 horas, esa persona no puede probar más PIN en ese restaurante hasta que pase el día.
+create or replace function public.reservations_pin_probe_blocked(p_establishment_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select auth.uid() is not null and (
+    select count(*) from public.audit_log a
+    where a.action = 'reservations.pin_collision'
+      and a.entity_type = 'establishment' and a.entity_id = p_establishment_id
+      and a.actor_id = auth.uid()
+      and a.created_at > now() - interval '24 hours'
+  ) >= 5;
+$$;
+
+revoke all on function public.reservations_pin_probe_blocked(uuid) from public, anon, authenticated;
+
 -- Añade a alguien del Equipo: nombre y PIN. Pulsar dos veces con la misma clave no duplica.
 create or replace function public.add_reservation_staff(
   p_establishment_id uuid, p_name text, p_pin_hmac text, p_idempotency_key text default null
@@ -871,6 +988,9 @@ begin
   if p_pin_hmac is null or p_pin_hmac !~ '^[0-9a-f]{64}$' then
     raise exception 'PIN no válido';
   end if;
+  if public.reservations_pin_probe_blocked(p_establishment_id) then
+    return jsonb_build_object('outcome', 'pin_probes_locked');
+  end if;
 
   if p_idempotency_key is not null then
     select st.id into v_id from public.reservation_staff st
@@ -891,6 +1011,7 @@ begin
       where st.establishment_id = p_establishment_id and st.idempotency_key = p_idempotency_key;
       return jsonb_build_object('outcome', 'created', 'id', v_id);
     end if;
+    perform public.reservations_audit_setting(p_establishment_id, 'pin_collision', null, null);
     return jsonb_build_object('outcome', 'pin_in_use');
   end;
 
@@ -914,6 +1035,9 @@ begin
   if p_pin_hmac is null or p_pin_hmac !~ '^[0-9a-f]{64}$' then
     raise exception 'PIN no válido';
   end if;
+  if public.reservations_pin_probe_blocked(p_establishment_id) then
+    return jsonb_build_object('outcome', 'pin_probes_locked');
+  end if;
   select * into v_row from public.reservation_staff
   where id = p_staff_id and establishment_id = p_establishment_id and kind = 'staff' for update;
   if not found or not v_row.active then
@@ -926,6 +1050,7 @@ begin
     update public.reservation_staff set pin_hmac = p_pin_hmac where id = v_row.id;
   exception when unique_violation then
     get stacked diagnostics v_constraint = constraint_name;
+    perform public.reservations_audit_setting(p_establishment_id, 'pin_collision', null, null);
     return jsonb_build_object('outcome', 'pin_in_use');
   end;
   perform public.reservations_audit_setting(p_establishment_id, 'staff_pin_changed', null, jsonb_build_object('staff_id', v_row.id));
@@ -981,6 +1106,9 @@ begin
   if p_pin_hmac is null or p_pin_hmac !~ '^[0-9a-f]{64}$' then
     raise exception 'PIN no válido';
   end if;
+  if public.reservations_pin_probe_blocked(p_establishment_id) then
+    return jsonb_build_object('outcome', 'pin_probes_locked');
+  end if;
   select coalesce(nullif(btrim(p.full_name), ''), split_part(p.email, '@', 1)) into v_name from public.profiles p where p.id = auth.uid();
   v_name := left(coalesce(v_name, 'Sin nombre'), 80);
 
@@ -1001,6 +1129,7 @@ begin
     end if;
   exception when unique_violation then
     get stacked diagnostics v_constraint = constraint_name;
+    perform public.reservations_audit_setting(p_establishment_id, 'pin_collision', null, null);
     return jsonb_build_object('outcome', 'pin_in_use');
   end;
   perform public.reservations_audit_setting(p_establishment_id, 'my_pin_set', null, jsonb_build_object('user_id', auth.uid()));
@@ -1030,6 +1159,9 @@ begin
   end if;
   if not exists (select 1 from public.reservation_settings where establishment_id = p_establishment_id and service_status in ('active', 'past_due', 'paused', 'ending')) then
     raise exception 'Reservas no está disponible para este restaurante en este momento';
+  end if;
+  if (select count(*) from public.reservation_devices d where d.establishment_id = p_establishment_id and d.revoked_at is null) >= 20 then
+    raise exception 'Este restaurante ya tiene veinte dispositivos activos; desactiva alguno antes de activar otro';
   end if;
   if v_name = '' then
     raise exception 'Falta el nombre del dispositivo';
@@ -1293,6 +1425,17 @@ begin
     return jsonb_build_object('outcome', 'forbidden');
   end if;
 
+  -- El Equipo corre sin usuario y el disparador de «espacio archivado = solo lectura» lo deja pasar: aquí se le cierra.
+  -- (Un Propietario o Encargado con PIN ya corre como él y topa con el disparador.)
+  if v_role = 'staff' and p_operation <> 'open'
+     and exists (
+       select 1 from public.spaces sp
+       where sp.id = public.establishment_space_id(v_est)
+         and sp.cuotly_status in ('archived_trial_ended', 'archived_nonpayment')
+     ) then
+    raise exception 'Este espacio está archivado y es de solo lectura: se puede pagar, exportar y contactar con soporte (§4.6)';
+  end if;
+
   -- Quién actúa. Un Propietario o Encargado: la transacción pasa a ser suya mientras dura la función.
   -- Del Equipo: el ajuste local que lee `reservations_actor_type`.
   if v_role in ('owner', 'manager') then
@@ -1391,7 +1534,8 @@ begin
   if not public.session_is_two_factor() then
     raise exception 'Abrir Reservas como soporte pide el segundo paso de verificación';
   end if;
-  if v_space_id is null or public.space_is_gone(v_space_id) or not public.reservations_is_support_marked(p_establishment_id) then
+  if v_space_id is null or public.space_is_gone(v_space_id) or public.establishment_is_gone(p_establishment_id)
+     or not public.reservations_is_support_marked(p_establishment_id) then
     raise exception 'No estás marcado como soporte de Reservas para este restaurante';
   end if;
   if not exists (select 1 from public.reservation_settings where establishment_id = p_establishment_id) then
@@ -1489,7 +1633,7 @@ begin
     from public.reservation_settings rs
     join public.establishments e on e.id = rs.establishment_id
     join public.spaces sp on sp.id = e.space_id
-    where not public.space_is_gone(sp.id)
+    where not public.space_is_gone(sp.id) and not public.establishment_is_gone(e.id)
       and (
         public.is_platform_supporter()
         or exists (select 1 from public.space_memberships m
@@ -1530,6 +1674,7 @@ begin
              case
                when a.new_value ? 'by_staff_id' then
                  coalesce((select st.name from public.reservation_staff st where st.id = (a.new_value ->> 'by_staff_id')::uuid), 'Equipo')
+               when a.new_value ->> 'via' = 'restavor_support' then 'Restavor (soporte)'
                when a.actor_id is null then 'Sistema'
                when exists (select 1 from public.establishment_memberships em where em.establishment_id = p_establishment_id and em.user_id = a.actor_id)
                  or exists (select 1 from public.group_memberships gm where gm.group_id = v_group and gm.user_id = a.actor_id)

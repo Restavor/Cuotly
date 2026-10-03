@@ -1158,6 +1158,170 @@ begin
 end $$;
 
 -- ------------------------------------------------------------
+-- Tras la revisión independiente · lo que una sesión de soporte NO abre, restaurantes eliminados, PIN probados y tope de tablets
+-- ------------------------------------------------------------
+
+-- La sesión de soporte es de UN restaurante: la de Bosco en B (abierta más arriba) no da ni lectura ni gestión en A,
+-- aunque sean del mismo espacio.
+do $$
+declare
+  v_n integer;
+begin
+  perform public.s92_as('ffb00000-0000-0000-0000-000000000001', 'aal2');
+  if (select count(*) from public.reservation_shifts where establishment_id = 'db000000-0000-0000-0000-000000000021') <> 1 then
+    raise exception 'RN-APP-09 FALLIDO: la sesión abierta en B no lee su propia configuración (el caso de control)';
+  end if;
+  select count(*) into v_n from public.reservation_shifts where establishment_id = 'db000000-0000-0000-0000-000000000020';
+  if v_n <> 0 then
+    raise exception 'RN-APP-09 FALLIDO: la sesión de soporte de B lee % turnos de A', v_n;
+  end if;
+  if (select count(*) from public.reservation_settings where establishment_id = 'db000000-0000-0000-0000-000000000020') <> 0
+     or (select count(*) from public.reservation_staff where establishment_id = 'db000000-0000-0000-0000-000000000020') <> 0
+     or (select count(*) from public.reservation_devices where establishment_id = 'db000000-0000-0000-0000-000000000020') <> 0
+     or (select count(*) from public.agent_balance_entries where establishment_id = 'db000000-0000-0000-0000-000000000020') <> 0 then
+    raise exception 'RN-APP-09 FALLIDO: la sesión de soporte de B lee ajustes, Equipo, dispositivos o saldo de A';
+  end if;
+  perform public.s92_expect_error($q$select public.reservation_people('db000000-0000-0000-0000-000000000020')$q$,
+    'no tienes permiso', 'RN-APP-09 la sesión de B no lista a las personas de A');
+  perform public.s92_expect_error(format($q$select public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Intruso', %L, 'intruso-1')$q$, public.s92_pin('7777')),
+    'no tienes permiso', 'RN-APP-09 la sesión de B no añade Equipo en A');
+  perform public.s92_expect_error($q$select public.revoke_reservation_device('db000000-0000-0000-0000-000000000020', 'db000000-0000-0000-0000-0000000000ff')$q$,
+    'no tienes permiso', 'RN-APP-09 la sesión de B no revoca dispositivos de A');
+  perform public.s92_expect_error($q$select public.set_reservation_closed_date('db000000-0000-0000-0000-000000000020', current_date + 30, 'Intruso', true)$q$,
+    'no tienes permiso', 'RN-APP-09 la sesión de B no cambia los ajustes de A');
+  -- En el restaurante de la sesión sí gestiona (RN-APP-09: el soporte actúa dentro de su sesión).
+  select count(*) into v_n from public.reservation_people('db000000-0000-0000-0000-000000000021');
+  if v_n < 1 then
+    raise exception 'RN-APP-09 FALLIDO: la sesión de B no ve a las personas de B';
+  end if;
+  -- Lo que hace dentro de su sesión queda con la sesión y el Historial lo enseña como «Restavor (soporte)».
+  perform public.s92_is(public.add_reservation_staff('db000000-0000-0000-0000-000000000021', 'Alta de soporte', public.s92_pin('5151'), 'alta-soporte-92'),
+    'outcome', 'created', 'RN-APP-09 el soporte da de alta dentro de su sesión');
+  if not exists (
+    select 1 from public.reservation_history_log('db000000-0000-0000-0000-000000000021', 200) h
+    where h.kind = 'reservations.staff_added' and h.actor_label = 'Restavor (soporte)'
+  ) then
+    raise exception 'RN-APP-09 FALLIDO: el alta del soporte no sale en el Historial como «Restavor (soporte)»';
+  end if;
+  execute 'set local role postgres';
+  if not exists (
+    select 1 from public.audit_log a
+    where a.action = 'reservations.staff_added' and a.entity_id = 'db000000-0000-0000-0000-000000000021'
+      and a.new_value ->> 'via' = 'restavor_support' and a.new_value ? 'support_session_id'
+  ) then
+    raise exception 'RN-APP-09 FALLIDO: el alta del soporte no lleva la sesión en auditoría';
+  end if;
+end $$;
+
+-- Un restaurante eliminado definitivamente ya no se lee ni se abre como soporte (RN-ADM-24); todo dentro de un
+-- bloque que se deshace.
+do $$
+begin
+  begin
+    execute 'set local role postgres';
+    perform set_config('cuotly.platform_change', 'on', true);
+    update public.establishments set permanently_deleted_at = now() where id = 'db000000-0000-0000-0000-000000000021';
+    perform set_config('cuotly.platform_change', '', true);
+    perform public.s92_as('ffb00000-0000-0000-0000-000000000001', 'aal2');
+    if public.reservations_can_read_diner_data('db000000-0000-0000-0000-000000000021') then
+      raise exception 'RN-ADM-24 FALLIDO: la sesión de soporte lee un restaurante eliminado definitivamente';
+    end if;
+    if (select count(*) from public.reservation_support_candidates('plaza 92')) <> 0 then
+      raise exception 'RN-ADM-24 FALLIDO: un restaurante eliminado definitivamente sigue saliendo para abrir como soporte';
+    end if;
+    perform public.s92_expect_error($q$select public.open_reservation_support_session('db000000-0000-0000-0000-000000000021', 'Reabrir', 30)$q$,
+      'no estás marcado', 'RN-ADM-24 no se abre soporte en un restaurante eliminado');
+    raise exception 'DESHACER_92';
+  exception when others then
+    if sqlerrm <> 'DESHACER_92' then
+      raise;
+    end if;
+  end;
+end $$;
+
+-- «Ese PIN ya lo usa otra persona» no se puede preguntar sin límite: cinco topetazos en 24 horas y esa persona no
+-- puede probar más PIN en ese restaurante (ni uno libre: la respuesta no distingue).
+do $$
+declare
+  v jsonb;
+  v_before integer;
+  v_i integer;
+begin
+  perform public.s92_as('db000000-0000-0000-0000-000000000004');
+  v := public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Sonda 92', public.s92_pin('9999'), 'sonda-92');
+  perform public.s92_is(v, 'outcome', 'created', 'RN-APP-06 se crea a quien se va a sondear');
+
+  perform public.s92_as('db000000-0000-0000-0000-000000000005');
+  execute 'set local role postgres';
+  select count(*) into v_before from public.audit_log
+  where action = 'reservations.pin_collision' and actor_id = 'db000000-0000-0000-0000-000000000005';
+  perform public.s92_as('db000000-0000-0000-0000-000000000005');
+  for v_i in 1 .. (5 - v_before) loop
+    v := public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Probador ' || v_i, public.s92_pin('9999'), 'probador-92-' || v_i);
+    perform public.s92_is(v, 'outcome', 'pin_in_use', 'RN-APP-06 el topetazo ' || v_i || ' sigue contestando «en uso»');
+  end loop;
+  v := public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Probador libre', public.s92_pin('0001'), 'probador-92-libre');
+  perform public.s92_is(v, 'outcome', 'pin_probes_locked', 'RN-APP-06 tras cinco topetazos no se prueban más PIN (un PIN libre)');
+  v := public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Probador otro', public.s92_pin('9999'), 'probador-92-otro');
+  perform public.s92_is(v, 'outcome', 'pin_probes_locked', 'RN-APP-06 tras cinco topetazos no se prueban más PIN (uno en uso)');
+  v := public.set_my_reservation_pin('db000000-0000-0000-0000-000000000020', public.s92_pin('0002'));
+  perform public.s92_is(v, 'outcome', 'pin_probes_locked', 'RN-APP-06 tampoco desde «Mi PIN»');
+  -- Es por persona: el Propietario sigue pudiendo.
+  perform public.s92_as('db000000-0000-0000-0000-000000000004');
+  v := public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Persona nueva 92', public.s92_pin('0003'), 'nueva-92');
+  perform public.s92_is(v, 'outcome', 'created', 'RN-APP-06 el bloqueo es por persona');
+  -- Y pasadas 24 horas se levanta.
+  execute 'set local role postgres';
+  update public.audit_log set created_at = now() - interval '25 hours'
+  where action = 'reservations.pin_collision' and actor_id = 'db000000-0000-0000-0000-000000000005';
+  perform public.s92_as('db000000-0000-0000-0000-000000000005');
+  v := public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Probador libre', public.s92_pin('0001'), 'probador-92-libre');
+  perform public.s92_is(v, 'outcome', 'created', 'RN-APP-06 a las 24 horas se puede volver a poner un PIN');
+end $$;
+
+-- En un espacio archivado (solo lectura) el Equipo con PIN tampoco escribe: corre sin usuario y el disparador de solo
+-- lectura lo dejaría pasar si la puerta de la tablet no lo cerrara.
+do $$
+begin
+  perform public.s92_as('db000000-0000-0000-0000-000000000004');
+  perform public.activate_reservation_device('db000000-0000-0000-0000-000000000020', 'Tablet archivo', public.s92_tok(150));
+  perform public.add_reservation_staff('db000000-0000-0000-0000-000000000020', 'Camarero archivo', public.s92_pin('6262'), 'archivo-92');
+  begin
+    execute 'set local role postgres';
+    perform set_config('cuotly.space_status_change', 'on', true);
+    update public.spaces set cuotly_status = 'archived_nonpayment' where id = 'db000000-0000-0000-0000-000000000010';
+    perform set_config('cuotly.space_status_change', '', true);
+    perform public.s92_server();
+    perform public.s92_expect_error(
+      format($q$select public.s92_act(%L, '6262', 'cancel', jsonb_build_object('reservation_id', 'db000000-0000-0000-0000-0000000000ee'))$q$, public.s92_tok(150)),
+      'archivado', 'RN-APP-08 el Equipo no escribe en un espacio archivado');
+    raise exception 'DESHACER_92';
+  exception when others then
+    if sqlerrm <> 'DESHACER_92' then
+      raise;
+    end if;
+  end;
+end $$;
+
+-- Un restaurante no activa dispositivos sin tope: con veinte activos, el siguiente espera.
+do $$
+declare
+  v_n integer;
+  v_i integer;
+begin
+  perform public.s92_as('db000000-0000-0000-0000-000000000004');
+  select count(*) into v_n from public.reservation_devices where establishment_id = 'db000000-0000-0000-0000-000000000020' and revoked_at is null;
+  for v_i in 1 .. (20 - v_n) loop
+    perform public.activate_reservation_device('db000000-0000-0000-0000-000000000020', 'Tablet tope ' || v_i, public.s92_tok(200 + v_i));
+  end loop;
+  perform public.s92_expect_error(format($q$select public.activate_reservation_device('db000000-0000-0000-0000-000000000020', 'Una más', %L)$q$, public.s92_tok(300)),
+    'veinte dispositivos', 'RN-APP-08 el dispositivo veintiuno no se activa');
+  -- El tope es por restaurante.
+  perform public.s92_as('db000000-0000-0000-0000-000000000007');
+  perform public.activate_reservation_device('db000000-0000-0000-0000-000000000021', 'Tablet de B', public.s92_tok(301));
+end $$;
+
+-- ------------------------------------------------------------
 -- Cierre · quién ejecuta qué
 -- ------------------------------------------------------------
 do $$
@@ -1169,7 +1333,7 @@ begin
     'public.reservations_device_staff(uuid)', 'public.reservations_role_of(uuid, uuid)',
     'public.reservation_pin_lock_seconds(integer)', 'public.reservations_manage_actor(uuid)',
     'public.reservations_audit_setting(uuid, text, jsonb, jsonb)', 'public.reservation_device_vouch(uuid, uuid)',
-    'public.reservations_is_support_marked(uuid)'
+    'public.reservations_is_support_marked(uuid)', 'public.reservations_pin_probe_blocked(uuid)'
   ] loop
     if has_function_privilege('authenticated', v_sig, 'execute') or has_function_privilege('anon', v_sig, 'execute') then
       raise exception 'RN-RES-12 FALLIDO: % es interna y está abierta por RPC', v_sig;

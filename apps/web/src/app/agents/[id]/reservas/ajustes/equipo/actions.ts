@@ -35,6 +35,16 @@ function failure(error: unknown): TeamFeedback {
   return { ok: false, message: t.failed };
 }
 
+/**
+ * Lo que es de una cuenta (su PIN, invitar, quitar a un Encargado) no se hace desde la tablet del local aunque en ese
+ * navegador quede una sesión personal: la tablet manda y la sesión personal se ignora (PRD §3.3). Ocultar el botón no
+ * basta (CLAUDE.md): se comprueba aquí.
+ */
+async function refusedOnDevice(): Promise<TeamFeedback | null> {
+  if ((await loadDevice()).kind !== "active") return null;
+  return { ok: false, message: es.agents.team.errors.noPermission };
+}
+
 function refresh(establishmentId: string) {
   revalidatePath(agentsPageHref(establishmentId, "team"));
 }
@@ -62,6 +72,7 @@ export async function addStaffAction(input: {
       idempotencyKey: /^[\w-]{8,100}$/.test(input.idempotencyKey) ? input.idempotencyKey : null,
     });
     if (outcome === "pin_in_use") return { ok: false, message: t.errors.pinInUse, field: "pin" };
+    if (outcome === "pin_probes_locked") return { ok: false, message: t.errors.pinProbesLocked, field: "pin" };
     await renewElevation(input.establishmentId);
     refresh(input.establishmentId);
     return { ok: true, message: t.added };
@@ -85,6 +96,7 @@ export async function setStaffPinAction(input: {
     const client = await agentsDb(input.establishmentId);
     const outcome = await setStaffPin(client, { establishmentId: input.establishmentId, staffId: input.staffId, pinHmac: pinHmac(input.pin) });
     if (outcome === "pin_in_use") return { ok: false, message: t.errors.pinInUse, field: "pin" };
+    if (outcome === "pin_probes_locked") return { ok: false, message: t.errors.pinProbesLocked, field: "pin" };
     await renewElevation(input.establishmentId);
     refresh(input.establishmentId);
     return { ok: true, message: t.pinChanged };
@@ -118,10 +130,13 @@ export async function setMyPinAction(input: {
   if (!UUID.test(input.establishmentId)) return { ok: false, message: t.errors.failed };
   if (!isPin(input.pin)) return { ok: false, message: t.errors.pin, field: "pin" };
   if (input.pin !== input.pinRepeat) return { ok: false, message: t.errors.pinsDiffer, field: "pinRepeat" };
+  const onDevice = await refusedOnDevice();
+  if (onDevice) return onDevice;
   try {
     const client = await createClient();
     const outcome = await setMyPin(client, { establishmentId: input.establishmentId, pinHmac: pinHmac(input.pin) });
     if (outcome === "pin_in_use") return { ok: false, message: t.errors.pinInUse, field: "pin" };
+    if (outcome === "pin_probes_locked") return { ok: false, message: t.errors.pinProbesLocked, field: "pin" };
     refresh(input.establishmentId);
     return { ok: true, message: t.myPin.done };
   } catch (error) {
@@ -137,6 +152,8 @@ export async function setMyPinAction(input: {
 export async function removeManagerAction(input: { establishmentId: string; userId: string }): Promise<TeamFeedback> {
   const t = es.agents.team;
   if (!UUID.test(input.establishmentId) || !UUID.test(input.userId)) return { ok: false, message: t.errors.failed };
+  const onDevice = await refusedOnDevice();
+  if (onDevice) return onDevice;
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("establishment_panel_users", { p_establishment_id: input.establishmentId });
@@ -180,6 +197,8 @@ export async function inviteAction(input: {
   const email = input.email.trim().toLowerCase();
   if (!UUID.test(input.establishmentId)) return { ok: false, message: t.errors.failed };
   if (!EMAIL.test(email)) return { ok: false, message: t.invite.errors.email, field: "email" };
+  const onDevice = await refusedOnDevice();
+  if (onDevice) return onDevice;
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("invite_to_establishment_panel", {

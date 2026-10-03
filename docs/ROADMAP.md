@@ -5518,26 +5518,33 @@ Criterios del PRD §15 (EQU-01 a EQU-03, SOP-01):
   (decisión 121). Sin PIN solo se ven las fichas; cada cambio de la agenda pide «¿Quién eres?» al guardar y queda a nombre de quien puso su PIN. «Ajustes con PIN» (solo Encargado o
   Propietario) abre Ajustes 2 minutos deslizantes. Bloqueo escalonado de PIN: 1 min, 5 min, 30 min y 2 h (decisión 122). Desactivar la tablet surte efecto al recargar. `proxy.ts` y
   `/`, `/agents` entienden la cookie del dispositivo (decisión 128).
-- [x] **EQU-03 Varios restaurantes**: la tablet vale solo para el suyo (pedir otro es «sin acceso»); quien lleva varios los ve en su cuenta como siempre.
-- [x] **SOP-01 Soporte de Reservas**: «Abrir como soporte» exige el segundo paso (`aal2`), la marca de soporte de Reservas, un motivo y 30/60/120 minutos; la sesión es de solo lectura,
+- [x] **EQU-03 Varios restaurantes**: la tablet vale solo para el suyo (pedir otro la devuelve a Hoy en el suyo); quien lleva varios los ve en su cuenta como siempre.
+- [x] **SOP-01 Soporte de Reservas**: «Abrir como soporte» exige el segundo paso (`aal2`), la marca de soporte de Reservas, un motivo y 30/60/120 minutos; la sesión es de ese restaurante y solo de él,
   caduca y se cierra con «Salir». El motivo no se copia a `audit_log`. **Ajustes › Historial** enseña a la persona del restaurante quién hizo qué, y del equipo de Restavor solo
   «Restavor (soporte)», nunca quién fue (CLAUDE.md, P7).
 - [x] Tests unitarios, suite SQL 92 (RN-APP-06 a RN-APP-09), e2e de equipo, tablet, PIN, bloqueo, Ajustes con PIN, desactivar y soporte con TOTP de verdad.
-- [ ] Revisión independiente del diff contra el PRD y CLAUDE.md (ver «Revisión independiente», más abajo).
+- [x] Revisión independiente del diff contra el PRD y CLAUDE.md: sin bloqueantes pero **dos altos y cuatro medios o bajos**, todos corregidos con su test (decisión 130).
 - [ ] Bosco comprueba la vista previa (pasos en `docs/agents/PRUEBAS.md`, «Estado de la Fase D»; **antes hay que aplicar la migración 170, poner `AGENTS_PIN_SECRET` en Vercel y resembrar**).
 
-Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.706 tests** en verde; **las 92 suites SQL** en el orden del CI sobre una base limpia con las 170
+Pruebas hechas (03/10/2026): `pnpm -r typecheck` y `pnpm -r lint` limpios; `apps/web` **2.706 tests** en verde; **las 92 suites SQL** (la 92 con 6 bloques nuevos tras la revisión) en el orden del CI sobre una base limpia con las 170
 migraciones, y los dos sembrados dos veces (**151 tablas, 0 sin RLS**); `agenda-concurrency-test.mjs` y el nuevo `device-concurrency-test.mjs` (veinte PIN equivocados a la vez dejan pasar
 solo cuatro avisos y un único bloqueo; con el dispositivo bloqueado ni el PIN bueno entra; la segunda ronda dura más que la primera; quitando a propósito el bloqueo de la fila del
-dispositivo falla); **22 e2e con datos** contra PostgREST local con el sembrado (12 nuevos, entre ellos el segundo paso con un código TOTP calculado). La suite 92 se comprobó con 11
+dispositivo falla); **29 e2e con datos** contra PostgREST local con el sembrado (los 17 de la agenda y 12 nuevos, entre ellos el segundo paso con un código TOTP calculado). La suite 92 se comprobó con 11
 mutaciones (se rompió a propósito la matriz de operaciones, el rol mínimo, el PIN de otro restaurante, el bloqueo, el olvido a las 24 h, la suplantación, «Ajustes abiertos», el aal2 del
 soporte, el motivo en auditoría y la identidad en el historial): las 11 las atrapa. La primera pasada solo atrapaba 9: «Ajustes abiertos» no tenía test y ahora lo tiene.
+
+Revisión independiente (un subagente leyó el diff contra el PRD §3 y CLAUDE.md): **dos altos**: la sesión de soporte de un restaurante daba poderes de «equipo del espacio» sobre todos los
+restaurantes del mismo espacio (reproducido: añadir Equipo y listar personas de otro restaurante), y tres acciones de cuenta (Mi PIN, invitar, quitar Encargado) solo se protegían ocultando el
+botón mientras la sesión personal del Propietario seguía abierta en la tablet. Más: soporte sobre un restaurante eliminado, «ese PIN ya está en uso» como oráculo sin límite (y tablets sin tope),
+el Equipo escribiendo en un espacio archivado, la etiqueta de soporte ausente en parte de la auditoría y una línea de `CLAUDE.md` que decía «solo lectura» contra el PRD. Todo corregido y con test
+(a las 11 mutaciones de la suite 92 se suman 6 nuevas, todas atrapadas: la sesión por restaurante, el restaurante eliminado, el sondeo de PIN, el espacio archivado, el tope de tablets y la etiqueta de soporte). Quedan descritos sin tocar la cookie
+«Ajustes abiertos» sin ligar a un dispositivo y que con Ajustes abiertos la agenda corre sin pedir PIN otra vez.
 
 Lo que las pruebas automáticas cazaron antes de subir (y que ahora tiene su test): el modal de PIN no aparecía porque se abría dentro de una transición que no terminaba hasta que la
 acción acababa (se abre fuera, con `setTimeout`); la Fase B afirmaba que la tablet no puede crear reservas (cambiado por la decisión 123); acciones de auditoría sin nombre en español;
 un test que daba por fija una zona horaria; un perfil que el disparador creaba sin nombre; y filas de bloqueo compartidas entre dispositivos en la suite.
 
-Decisiones (en `docs/DECISIONES.md`, 121 a 129):
+Decisiones (en `docs/DECISIONES.md`, 121 a 130):
 
 - **121** Cómo actúa el Equipo desde la tablet: una única puerta de servidor (`reservation_device_act`, solo `service_role`) que valida dispositivo y PIN y llama a la MISMA función de la agenda.
 - **122** El bloqueo de PIN crece (1 min, 5, 30, 2 h; se olvida a las 24 h): con solo «1 minuto» se probarían los 10.000 PIN en unas 33 horas.
@@ -5546,6 +5553,7 @@ Decisiones (en `docs/DECISIONES.md`, 121 a 129):
 - **125** Dónde se abre y cómo se vuelve del soporte de Reservas (ficha del espacio y `/administracion/reservas`, hasta la Fase E).
 - **126** **PENDIENTE DE BOSCO**: quién añade y quita Propietarios (PRD §3.2 contra RN-EST-17).
 - **127** El segundo paso de prueba del sembrado. **128** `/` y `/agents` con la cookie de un dispositivo. **129** «Abrir» una ficha sin PIN se anota como el sistema.
+- **130** Lo que cambió la revisión independiente. **Dos números míos, para confirmar con Bosco:** cinco topetazos de «PIN en uso» en 24 horas y veinte dispositivos activos por restaurante.
 
 Hallazgos que conviene saber:
 

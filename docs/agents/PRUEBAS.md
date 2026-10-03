@@ -141,13 +141,13 @@ El Equipo con PIN, la tablet del local y el soporte de Reservas. **Antes de prob
 PIN de prueba de Casa Pepe: **Ana Ruiz 1234** y **Diego Navas 5678** (Equipo), **José García 4321** (Propietario), **Luis Martín 8765** (Encargado); María García, sin PIN todavía.
 
 1. **Equipo** (`jose@casapepe.test` › Casa Pepe › Ajustes › **Equipo**). Ves a los cinco: José y María (Propietarios), Luis (Encargado), Ana y Diego (Equipo). «+ Añadir persona»: pon
-   nombre y un PIN de 4 cifras dos veces. Un PIN que ya usa otra persona dice «Ese PIN ya lo usa otra persona de este restaurante»; dos PIN distintos, «Los dos PIN no coinciden».
+   nombre y un PIN de 4 cifras dos veces. Un PIN que ya usa otra persona dice «Ese PIN ya lo usa otra persona de este restaurante» (**cinco veces en 24 horas y dice «Has probado demasiados PIN…»**: es el límite contra adivinar PIN; si te pasa probando, espera o pídele a Claude que lo limpie en pruebas); dos PIN distintos, «Los dos PIN no coinciden».
    «Cambiar PIN» y «Quitar» (se desactiva y su PIN queda libre). Debajo, **Mi PIN para la tablet** (el tuyo, solo desde tu cuenta) e **Invitar a un Propietario o a un Encargado**
    (ver la decisión 126: invitar a un Propietario es de Restavor web y hoy solo lo deja el equipo del espacio).
 2. **Un Encargado** (`luis@casapepe.test`): gestiona el Equipo, pero no ve «Invitar…» ni «Quitar de Reservas».
 3. **Activar la tablet.** En una tablet o navegador aparte: entra con `jose@casapepe.test`, Ajustes › Equipo, abajo **«Usar este dispositivo como tablet del local»**, ponle nombre y pulsa. Pasa a
    **Reservas › Hoy** y arriba a la derecha dice «Tablet del local · <nombre>». Ya no hay «Mi cuenta», ni búsqueda general, ni avisos; el menú no tiene Ajustes, Saldo ni Plan, y abajo sale
-   **«Ajustes con PIN»**. Abre `/` o `/agents`: te lleva siempre a Hoy. La tablet **sigue abierta aunque caduque tu sesión** (puedes cerrar sesión de tu cuenta en otro navegador).
+   **«Ajustes con PIN»**. Abre `/` o `/agents`: te lleva siempre a Hoy. Al activarla **se cierra tu sesión personal en ese navegador** (la tablet no es una cuenta): `/web` y `/cuenta` te devuelven a Hoy, y pedir otro restaurante también. Para volver a usar ese navegador con tu cuenta, desactiva la tablet (paso 6) y entra de nuevo.
 4. **Cada acción pide PIN.** En la tablet, «Nueva reserva» se rellena sin PIN; al **Guardar** sale **«¿Quién eres?»**. Prueba un PIN malo (1111): «PIN incorrecto. Te quedan 4 intentos.»; luego el de
    Ana (1234): se guarda y en la ficha, en el historial, sale **Ana Ruiz**. Cancelar, confirmar un grupo o «No vino» también piden el PIN. **5 PIN malos seguidos** bloquean la tablet 1 minuto
    (la segunda tanda 5 min, la tercera 30 min y de la cuarta en adelante 2 h): el teclado se desactiva y dice «Demasiados intentos…».

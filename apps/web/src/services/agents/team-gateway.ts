@@ -69,11 +69,11 @@ export async function loadDevices(client: Client, establishmentId: string): Prom
 }
 
 /** Los resultados de negocio del Equipo: vuelven como resultado, no como excepción. */
-export type TeamOutcome = "created" | "done" | "unchanged" | "pin_in_use";
+export type TeamOutcome = "created" | "done" | "unchanged" | "pin_in_use" | "pin_probes_locked";
 
 function outcomeOf(value: Json): TeamOutcome {
   const outcome = typeof value === "object" && value !== null && !Array.isArray(value) ? value.outcome : undefined;
-  if (outcome === "created" || outcome === "done" || outcome === "unchanged" || outcome === "pin_in_use") return outcome;
+  if (outcome === "created" || outcome === "done" || outcome === "unchanged" || outcome === "pin_in_use" || outcome === "pin_probes_locked") return outcome;
   throw new Error("Respuesta no válida del servidor");
 }
 

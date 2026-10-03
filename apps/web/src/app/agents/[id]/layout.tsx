@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Button, EmptyState, ErrorState, PageHeader } from "@/components/ui";
+import { agentsPageHref } from "@/core/reservations/agents-routes";
 import { es } from "@/i18n/es";
 import { loadDevice } from "@/services/agents/device";
 
@@ -29,7 +30,8 @@ export default async function AgentRestaurantLayout({
   const t = es.agents.selector;
 
   // Una cookie de dispositivo que ya no vale (se desactivó): se dice y se ofrece entrar con la cuenta.
-  if ((await loadDevice()).kind === "revoked") {
+  const device = await loadDevice();
+  if (device.kind === "revoked") {
     const r = es.agents.device.revoked;
     return (
       <main className="mx-auto max-w-lg space-y-6 p-6">
@@ -51,6 +53,12 @@ export default async function AgentRestaurantLayout({
 
   if (restaurant.state === "ok") {
     return <AgentsShell nav={restaurant.nav}>{children}</AgentsShell>;
+  }
+
+  // Una tablet solo es de su restaurante: si pide otro vuelve a Hoy en el suyo (sin sesión personal no hay otro sitio
+  // al que mandarla ni cuenta con la que mirar).
+  if (device.kind === "active" && restaurant.state === "no_access") {
+    redirect(agentsPageHref(device.establishmentId, "today"));
   }
 
   return (
